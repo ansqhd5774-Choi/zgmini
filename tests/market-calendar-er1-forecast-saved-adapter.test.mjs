@@ -50,7 +50,7 @@ test('share classes collapse to one issuer and select available estimates',()=>{
     .coverage.scoreableIssuers,1);
 });
 
-test('saved history can fill one metric but no historical numeric zero is invented',()=>{
+test('missing forecast is unscored even when historical actuals are supplied',()=>{
   const input=forecastRowsFromSaved({asOf,savedDays:[
     data('2026-11-13','pre',[row('ABC',{
       revenueEstimate:null})]),
@@ -60,10 +60,21 @@ test('saved history can fill one metric but no historical numeric zero is invent
     body:[{symbol:'ABC',date:'2026-09-01',
     eps:0.4,revenue:123}]}}});
   const result=scoreER1ForecastIssuers(input.issuerRows,{asOf});
-  assert.equal(result.coverage.scoreableIssuers,1);
-  assert.equal(result.coverage.mixed,1);
-  assert.equal(result.coverage.unscoreableReasons.ER1_FORECAST_METRICS_MISSING,1);
-  assert.equal(result.rankings[0].revenueBasis,'ACTUAL');
+  assert.equal(result.coverage.scoreableIssuers,0);
+  assert.equal(result.coverage.mixed,0);
+  assert.equal(result.coverage.unscoreableReasons.ER1_FORECAST_METRICS_MISSING,2);
+  assert.equal(input.issuerRows[0].releases.length,1);
+});
+
+test('calendar item on as-of day is included with expected EPS',()=>{
+  const input=forecastRowsFromSaved({asOf,savedDays:[
+    data(asOf,'pre',[row('DAY',{eps:456,revenue:456,
+      epsEstimate:-0.3,revenueEstimate:80})])
+  ]});
+  const result=scoreER1ForecastIssuers(input.issuerRows,{asOf});
+  assert.equal(input.coverage.futureSymbols,1);
+  assert.equal(result.rankings[0].referenceDate,asOf);
+  assert.equal(result.rankings[0].basis,'ESTIMATE');
 });
 
 test('future actual values cannot alter forecast-only score',()=>{
