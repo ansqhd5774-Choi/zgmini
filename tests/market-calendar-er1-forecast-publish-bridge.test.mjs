@@ -73,15 +73,16 @@ test('local staging and D1 publication are distinct verified steps',async()=>{
   const stagedReceipt=await stageForecastMonth(out,{saveDerived:async body=>{
     staged++;assert.equal(body,out.body);return out.bodySha256;}});
   assert.equal(staged,1);assert.equal(published,0);
-  await assert.rejects(publishForecastMonth(out,stagedReceipt,{syncD1:async()=>{
-    published++;return {code:'NOV30_ER1_D1_VERIFIED',wrote:true};},
+  await assert.rejects(publishForecastMonth(out,stagedReceipt,{syncD1:{
+    publicKey:out.publicKey,run:async()=>{
+     published++;return {code:'NOV30_ER1_D1_VERIFIED',wrote:true};}},
     storedAt:Date.now()}),/ER1_FORECAST_BRIDGE_B_AUTH_STOP/);
   assert.equal(published,0);
   const result=await publishForecastMonth(out,stagedReceipt,{approvedB:true,
     approvedBodySha256:out.bodySha256,storedAt:Date.now(),
-    remote:'mock',core:'mock',syncD1:async input=>{
+    remote:'mock',core:'mock',syncD1:{publicKey:out.publicKey,run:async input=>{
       published++;assert.equal(input.body,out.body);
-      return {code:'NOV30_ER1_D1_VERIFIED',wrote:true};}});
+      return {code:'NOV30_ER1_D1_VERIFIED',wrote:true};}}});
   assert.equal(result.status,'PASS');assert.equal(published,1);
   assert.equal(result.d1Writes,1);
 });
@@ -93,15 +94,17 @@ test('stage checksum mismatch and unverified D1 receipt fail closed',async()=>{
   await assert.rejects(publishForecastMonth(out,{readyForB:true,
     bodySha256:out.bodySha256},{approvedB:true,
     approvedBodySha256:out.bodySha256,storedAt:Date.now(),
-    syncD1:async()=>({code:'DEC31_ER1_SUBMITTED',wrote:true})}),
+    syncD1:{publicKey:out.publicKey,run:async()=>({code:'DEC31_ER1_SUBMITTED',wrote:true})}}),
     /ER1_FORECAST_BRIDGE_D1_READBACK_STOP/);
 });
 
 test('month-scoped D1 receipt rejects a November helper used for December',async()=>{
-  const out=prepare('2026-12');
+  const out=prepare('2026-12');let called=0;
   await assert.rejects(publishForecastMonth(out,{readyForB:true,
     bodySha256:out.bodySha256},{approvedB:true,
     approvedBodySha256:out.bodySha256,storedAt:Date.now(),
-    syncD1:async()=>({code:'NOV30_ER1_D1_VERIFIED',wrote:true})}),
-    /ER1_FORECAST_BRIDGE_D1_READBACK_STOP/);
+    syncD1:{publicKey:FORECAST_PUBLIC_KEYS['2026-11'],run:async()=>{
+      called++;return {code:'NOV30_ER1_D1_VERIFIED',wrote:true};}}}),
+    /ER1_FORECAST_BRIDGE_B_AUTH_STOP/);
+  assert.equal(called,0);
 });
