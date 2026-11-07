@@ -43,6 +43,14 @@ export async function readExistingThemePublic({fetchImpl=fetch,now=Date.now()}={
  const response=await fetchImpl(`https://zgmini.kr/api/theme-fear-greed/?theme_stage4=${now}`,{
   method:'GET',redirect:'error',headers:{'cache-control':'no-cache',accept:'application/json'},
   signal:AbortSignal.timeout(20000)});
+ if(response?.status===503){
+  // The common cycle can bootstrap exactly this known stale public contract.
+  // Other failures remain unavailable; they must not authorize any D1 write.
+  let body=null;
+  try{body=await response.json();}catch{}
+  if(body?.status==='UNAVAILABLE'&&body.reason==='STORED_DATA_STALE')
+   return {status:'UNAVAILABLE',reason:'STORED_DATA_STALE'};
+ }
  need(response?.ok===true,'THEME_PUBLIC_API_HTTP_'+(response?.status??'UNKNOWN'));
  return response.json();
 }
