@@ -79,7 +79,8 @@ export async function employmentR6StoredDisplayResponse(request,db,{now=Date.now
   }
   const publishedAt=Number(row.stored_at);
   if(!validEmploymentR6PublicDisplay(body)||!Number.isSafeInteger(publishedAt)
-    ||publishedAt>now||body.sourceStoredAt>publishedAt){
+    ||publishedAt>now||body.sourceStoredAt>publishedAt
+    ||Date.parse(body.asOfDate+"T00:00:00Z")>now){
     return Response.json({status:"UNAVAILABLE",reason:"STORED_PUBLICATION_STALE"},{status:503,headers});
   }
   if(publishedAt<now-8*86400000){
