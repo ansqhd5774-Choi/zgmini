@@ -95,6 +95,8 @@ jobs:
           exit 1
       - name: Validate inflation criterion, previous/current values, dates and sources at 1440/390
         run: node tests/inflation-criterion-browser-r1.mjs
+      - name: Validate employment R6 stored 29-row presentation at 1440/390
+        run: node tests/employment-r6-public-browser-r1.mjs
       - name: Validate introduction before hydration and dismissal preferences
         run: node tests/about-intro-bootstrap-browser-r6.mjs
       - name: Validate chat UI at 390, 768, 1440 and 1920 px with mocked backend
@@ -123,6 +125,7 @@ jobs:
             artifacts/dashboard-history/
             artifacts/about-intro-bootstrap/
             artifacts/inflation-criterion-review/
+            artifacts/employment-r6-browser/
           if-no-files-found: warn
       - name: Show local dev errors on failure
         if: failure()
