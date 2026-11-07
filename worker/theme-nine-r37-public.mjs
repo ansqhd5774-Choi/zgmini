@@ -84,6 +84,9 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now,indepen
     (record.deltaManifestSha256!==null&&!sha(record.deltaManifestSha256))))return false;
  const clocks=[Date.parse(record.sourceStoredAt),Date.parse(record.publishedAt),Number(storedAt)];
  if(clocks.some(t=>t>now||now-t>=PUBLIC_DISPLAY_MAX_AGE_MS))return false;
+ // Reject a future observation day without excluding today's valid session.
+ // Comparing against 23:59Z would wrongly reject today's intraday record.
+ if(Date.parse(record.observationDate+'T00:00:00Z')>now)return false;
  if(now-Date.parse(record.observationDate+'T23:59:59Z')>=PUBLIC_DISPLAY_MAX_AGE_MS)return false;
  if(!record.officialAumAsOf||typeof record.officialAumAsOf!=='object'||
   Array.isArray(record.officialAumAsOf)||
