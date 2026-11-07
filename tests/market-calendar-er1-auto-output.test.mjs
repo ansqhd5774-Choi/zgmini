@@ -163,12 +163,35 @@ test('local output write failure is reported as failure, never a completed score
 });
 
 test('late UTC source cannot contaminate prior New York as-of month score',async()=>{
- await at('2027-01-01T00:45:00Z',async now=>{
+ await at('2027-01-01T00:29:30Z',async now=>{
   const store=fakeStore(savedMonth('2027-01','2026-12-31T18:00:00Z',
    {lateDay:'2027-01-31'}));
   const result=await refreshSavedER1MonthlyOutputs({store,now});
   assert.equal(result.months.find(x=>x.month==='2027-01')?.status,
    'PIT_INPUT_INCOMPLETE');
   assert.equal(store.writes,0);
+ });
+});
+
+test('new NY day retains saved observations across the UTC midnight boundary',async()=>{
+ await at('2027-01-01T04:00:00Z',async now=>{
+  // New York is still on December 31, although the valid saved input was
+  // collected on January 1 UTC. Previously all 31 days were discarded.
+  const store=fakeStore(savedMonth('2027-01','2027-01-01T03:00:00Z'));
+  const result=await refreshSavedER1MonthlyOutputs({store,now});
+  assert.equal(result.months.find(x=>x.month==='2027-01')?.status,'READY_OUTPUT');
+  const output=store.outputs.get(er1MonthlyPublicKey('2027-01')).body;
+  assert.equal(output.asOf,'2026-12-31');
+  assert.equal(output.recordCount,4);
+ });
+});
+
+test('future timestamps remain excluded from NY instant-based PIT calculation',async()=>{
+ await at('2027-01-01T04:00:00Z',async now=>{
+  const store=fakeStore(savedMonth('2027-01','2027-01-01T04:00:01Z'));
+  const result=await refreshSavedER1MonthlyOutputs({store,now});
+  assert.equal(result.months.find(x=>x.month==='2027-01')?.status,
+   'PIT_INPUT_INCOMPLETE');
+  assert.equal(store.outputs.has(er1MonthlyPublicKey('2027-01')),false);
  });
 });

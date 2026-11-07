@@ -46,7 +46,8 @@ async function scoreSavedMonth(store,month,asOf,now){
   }catch{return {month,status:'MONTH_SOURCE_INVALID',providerRequests:0};}
  }
  let prepared;
- try{prepared=forecastRowsFromSaved({savedDays,asOf});}
+ try{prepared=forecastRowsFromSaved({savedDays,asOf,
+   asOfStoredAt:new Date(now).toISOString()});}
  catch{return {month,status:'MONTH_SOURCE_INVALID',providerRequests:0};}
  // A UTC-late snapshot is not eligible for a prior NY observation day.
  if(prepared.coverage.savedDays!==savedDays.length)
