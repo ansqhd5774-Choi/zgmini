@@ -7,9 +7,36 @@ import {adaptivePairWeights} from './theme-optional-pair-weight-r3.mjs';
 import {ensure,digest,safeDirectory,readDefinitionEvidence,verifyDefinitionSelection,validDate} from './theme-config-registry.mjs';
 import {scoreR32Theme} from './theme-platform.mjs';
 import {scoreOneR25} from './theme-nine-r25-individual-score.mjs';
+// Return dates and ticker IDs only. Never return raw bars, prices, credentials,
+// or manifest contents while diagnosing the private R25 SPY-calendar failure.
+export function auditConfiguredR32SessionDates({definition,sessions}={}){
+ const spySessions=sessions?.get(definition?.benchmark);
+ ensure(Array.isArray(spySessions)&&spySessions.length,'CONFIG_R32_SPY_REQUIRED');
+ const spyDates=new Set(spySessions.map(row=>row.date));
+ const mismatches=[];
+ for(const symbol of definition.etfs){
+  const outside=(sessions.get(symbol)??[]).filter(row=>!spyDates.has(row.date));
+  if(outside.length)mismatches.push({symbol,missingCount:outside.length,
+   sampleDates:outside.slice(0,8).map(row=>validDate(row.date)?row.date:'INVALID_DATE'),
+   truncated:outside.length>8});
+ }
+ return {status:mismatches.length?'CONFIG_R32_NON_SPY_DATE':'PASS',
+  reasonCode:mismatches.length?'THEME_NINE_R25_NON_SPY_DATE':null,
+  lastPass:'SPY_REFERENCE_DATES_READ',
+  firstFail:mismatches.length?'ETF_DATE_NOT_PRESENT_IN_SPY':null,
+  spyDateCount:spyDates.size,mismatches};
+}
 export function scoreConfiguredR32Sessions({definition,sessions,aum,allowDatedOfficialAum=false}){
  const spySessions=sessions.get(definition.benchmark);
  ensure(Array.isArray(spySessions)&&spySessions.length,'CONFIG_R32_SPY_REQUIRED');
+ const dateAudit=auditConfiguredR32SessionDates({definition,sessions});
+ if(dateAudit.firstFail){
+  const error=Object.assign(new Error(dateAudit.reasonCode),{
+   code:dateAudit.reasonCode,reasonCode:dateAudit.reasonCode,
+   lastPass:dateAudit.lastPass,firstFail:dateAudit.firstFail,
+   diagnostic:dateAudit});
+  throw error;
+ }
  const individual=Object.fromEntries(definition.etfs.map(s=>[s,scoreOneR25({symbol:s,spySessions,ownSessions:sessions.get(s)??[]}).history]));
  return scoreR32Theme({definition,dates:spySessions.slice(-252).map(p=>p.date),individual,aum,allowDatedOfficialAum});
 }
