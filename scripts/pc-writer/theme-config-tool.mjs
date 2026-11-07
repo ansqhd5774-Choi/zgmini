@@ -132,7 +132,10 @@ export async function runConfiguredSchedule({dataRoot,now=new Date(),fetchImpl=f
   const file=path.join(dir,'scheduled-budget.json'),day=now.toISOString().slice(0,10);
   if(fs.existsSync(file))ensure(!fs.lstatSync(file).isSymbolicLink(),'CONFIG_BUDGET_REDIRECT');
   const prior=fs.existsSync(file)?JSON.parse(fs.readFileSync(file,'utf8')):null;
-  if(prior)ensure(validDate(prior.day)&&Number.isInteger(prior.calls)&&prior.calls>=0&&prior.calls<=4,'CONFIG_BUDGET_INVALID');
+  // A configured budget may be above the old four-request default. A later
+  // reduction cannot invalidate already spent requests or permit new GETs.
+  if(prior)ensure(validDate(prior.day)&&Number.isSafeInteger(prior.calls)&&
+   prior.calls>=0,'CONFIG_BUDGET_INVALID');
   const state={day,calls:prior?.day===day?prior.calls:0,nextId:prior?.nextId??entries[0].definition.id};
   const save=()=>{const tmp=file+'.'+process.pid+'.tmp';fs.writeFileSync(tmp,JSON.stringify(state)+'\n',{flag:'wx'});fs.renameSync(tmp,file);};
   const start=Math.max(0,entries.findIndex(r=>r.definition.id===state.nextId)),results=[];
@@ -227,8 +230,20 @@ async function cli(){
  if(mode==='--scheduled'){
   ensure(!arg,'CONFIG_USAGE');
   // This is still the single existing configured-theme scheduled entry.
-  // Private collection/calculation runs first with the original UTC 4-GET budget.
-  const now=new Date(),privateCycle=await runConfiguredSchedule({dataRoot:root(),now});
+  // Private collection/calculation runs first with its approved UTC request
+  // budget (four by default, without changing any configured resource policy).
+  const now=new Date();
+  let privateCycle,privateScheduleFailed=false;
+  try{privateCycle=await runConfiguredSchedule({dataRoot:root(),now});}
+  catch(e){
+   // V2 registration/lock/policy failures must not suppress the independent
+   // public-ten stored-only replay. Never treat an uncertain V2 GET count as 0.
+   privateScheduleFailed=true;
+   const reason=typeof e?.code==='string'&&/^[A-Z][A-Z0-9_]{1,95}$/.test(e.code)?
+    e.code:'CONFIG_PRIVATE_SCHEDULE_ERROR';
+   privateCycle={status:'PARTIAL_REVIEW_REQUIRED',
+    reason,providerCallsToday:null};
+  }
   // Independently process the existing public ten even when V2 registration
   // is empty. Only private saved-data/checkpoint proofs are produced here;
   // the prior publication owner remains unchanged until cutover.
@@ -238,7 +253,12 @@ async function cli(){
   }catch(e){platform={status:'PRIVATE_BINDINGS_REVIEW_REQUIRED',
    reason:e.code??'THEME_PLATFORM_PLAN_IO_ERROR',providerCalls:0,d1Writes:0};}
   let publicCycle;
-  try{
+  if(privateScheduleFailed){
+   // The V2 writer cannot proceed on an uncertain private-source cycle; only
+   // the separate public-ten stored replay is independent of this failure.
+   publicCycle={status:'SKIPPED_PRIVATE_SCHEDULE_ERROR',
+    reason:privateCycle.reason,providerCalls:0,d1Writes:0};
+  }else try{
    const {runConfiguredAutoPublish}=await import('./theme-config-auto-publish.mjs');
    publicCycle=await runConfiguredAutoPublish({dataRoot:root()});
   }catch(e){
@@ -250,6 +270,7 @@ async function cli(){
     publicCycle.status==='PUBLICATION_PARTIAL_REVIEW_REQUIRED'?
     'PARTIAL_REVIEW_REQUIRED':privateCycle.status,
    privateStatus:privateCycle.status,
+   ...(privateScheduleFailed?{privateReason:privateCycle.reason}:{}),
    platformConnection:platform,
    publicConnection:publicCycle,
    d1Writes:publicCycle.d1Writes??0};

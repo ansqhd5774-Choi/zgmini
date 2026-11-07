@@ -10,7 +10,7 @@ import {planRegistered,runConfiguredOnce,runConfiguredSchedule,
  runScheduledStoredPlatform,loadBundledShadowParquet,createBundledShadowDecoder,
  safeConfiguredFailure} from '../scripts/pc-writer/theme-config-tool.mjs';
 import {installConfiguredTool,configuredDependencyClosure} from '../scripts/pc-writer/theme-config-install.mjs';
-import {execFileSync} from 'node:child_process';
+import {execFileSync,spawnSync} from 'node:child_process';
 import {scoreRegistered} from '../scripts/pc-writer/theme-config-score.mjs';
 import {scoreAll252} from '../scripts/pc-writer/theme-optional-score-r188.mjs';
 const definition={schema:'ZGMINI_THEME_CONFIG_V1',id:'fixture-theme',label:'검증용 테마',provider:'getmarkethistory',profile:'ADAPTIVE_R2_PAIR_R3',etfs:['AAA','BBB'],benchmark:'SPY',startDate:'2023-01-01'};
@@ -208,6 +208,25 @@ test('scheduled collection has a durable global daily request budget and rotates
  const next=await runConfiguredSchedule({dataRoot:root,now:new Date('2026-10-30T00:00:00Z'),fetchImpl});
  assert.ok(next.providerCallsToday<=4);assert.equal(next.d1Writes,0);
 });
+test('a V2 scheduling failure does not skip the independent stored-only public-ten cycle',t=>{
+ const root=setup(t),policyDir=path.join(root,'theme-config');
+ fs.mkdirSync(policyDir,{recursive:true});
+ fs.writeFileSync(path.join(policyDir,'resource-policy.json'),
+  JSON.stringify({dailyProviderRequests:0})+'\n');
+ const cli=path.resolve('scripts/pc-writer/theme-config-tool.mjs');
+ const out=spawnSync(process.execPath,[cli,'--scheduled'],{encoding:'utf8',
+  env:{...process.env,ZGMINI_DATA_ROOT:root}});
+ const report=JSON.parse(out.stdout||out.stderr);
+ assert.equal(out.status,2);
+ assert.equal(report.status,'PARTIAL_REVIEW_REQUIRED');
+ assert.equal(report.privateStatus,'PARTIAL_REVIEW_REQUIRED');
+ assert.equal(report.privateReason,'CONFIG_DAILY_RESOURCE_POLICY');
+ assert.equal(report.platformConnection.publicTargetIds.length,10);
+ assert.equal(report.platformConnection.d1Writes,0);
+ assert.equal(report.platformConnection.providerCalls,0);
+ assert.equal(report.publicConnection.status,'SKIPPED_PRIVATE_SCHEDULE_ERROR');
+ assert.equal(report.publicConnection.d1Writes,0);
+});
 test('a failed configured theme does not prevent the next theme and budget survives failures',async t=>{
  const root=setup(t);register(root);register(root,{...definition,id:'second-theme',label:'두 번째'});let calls=0;
  const result=await runConfiguredSchedule({dataRoot:root,now:new Date('2026-10-29T00:00:00Z'),fetchImpl:async url=>{
@@ -252,4 +271,16 @@ test('resource budget is configurable without changing or capping the registered
  assert.equal(calls,12);assert.equal(result.requestLimitPerUtcDay,12);assert.equal(result.results.length,4);
  assert.equal(result.status,'PRIVATE_SCHEDULE_WAITING_SOURCE_OR_BUDGET');
  assert.equal(fs.readdirSync(path.join(home,'theme-config/definitions')).length,6);
+ const sameDay=await runConfiguredSchedule({dataRoot:home,
+  now:new Date('2026-10-28T09:00:00Z'),fetchImpl,
+  resourcePolicy:{dailyProviderRequests:12}});
+ assert.equal(sameDay.providerCallsToday,12);
+ assert.equal(sameDay.results.length,0);
+ assert.equal(calls,12);
+ const lowered=await runConfiguredSchedule({dataRoot:home,
+  now:new Date('2026-10-28T12:00:00Z'),fetchImpl,
+  resourcePolicy:{dailyProviderRequests:4}});
+ assert.equal(lowered.providerCallsToday,12);
+ assert.equal(lowered.results.length,0);
+ assert.equal(calls,12);
 });

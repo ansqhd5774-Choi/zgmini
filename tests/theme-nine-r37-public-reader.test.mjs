@@ -54,6 +54,28 @@ test('R37 reader upgrades existing themes without introducing an eleventh theme'
  assert.equal(result.modelRevision,THEME_NINE_R37_VERSION);
 });
 
+test('future confirmed R37 observation cannot upgrade the existing public anchor',async()=>{
+ const futureDate='2026-10-28';
+ const futureHistory=[...history.slice(0,-1),{date:futureDate,score:50}];
+ const future={...ready,observationDate:futureDate,
+  themes:ready.themes.map(t=>({...t,history:futureHistory}))};
+ assert.equal(eligibleNineR37(future,baseline,
+  {now,storedAt:now-1000,independentAnchor:true}),false);
+ assert.equal(await addVerifiedNineR37(db(future),baseline,{now}),baseline);
+});
+
+test('future R51 legacy provisional point is not an observed market session',()=>{
+ const future={...ready,phase:'PROVISIONAL',
+  provisionalLineage:{source:'EXISTING_PUBLIC_PROVISIONAL_AS_PUBLISHED',
+   publicVersion:baseline.version,confirmedObservationDate:ready.observationDate,
+   latestCandidateSha256:null,sameMethodology:false,
+   publicProvisionalPointsSha256:sha},
+  provisional:{asOf:'2026-10-28T00:00:00Z',points:[
+   {date:'2026-10-28',scores:{'로봇·자동화':50}}]}};
+ assert.equal(eligibleNineR37(future,baseline,
+  {now,storedAt:now-1000,independentAnchor:true}),false);
+});
+
 test('R54 new R37 anchor rechecks a newer biotech sidecar and keeps R32 methodology',async()=>{
  const earlierDates=Array.from({length:252},(_,i)=>
   new Date(Date.parse('2026-10-20T00:00:00Z')-(251-i)*86400000).toISOString().slice(0,10));

@@ -72,6 +72,7 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now,indepen
  if(!sha(record.rawManifestSha256)||!sha(record.r25InputSha256)||
   !sha(record.shadowSha256)||!sha(record.officialAumEvidenceSha256)||
   !validDate(record.observationDate)||
+  Date.parse(record.observationDate+'T00:00:00Z')>now||
   // Independently verified R32 observations must not be relabelled to match
   // the legacy writer's date. The D1 publisher enforces no-regression CAS;
   // the reader accepts either date order and validates the R32 calendar.
@@ -132,6 +133,7 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now,indepen
    for(let i=0;i<fromNew.length;i++){
     const point=fromNew[i];
     if(!validDate(point?.date)||
+     Date.parse(point.date+'T00:00:00Z')>now||
      (i>0&&point.date<=prev)||
      !point.scores||typeof point.scores!=='object'||
      Array.isArray(point.scores)||!Object.keys(point.scores).length||
@@ -146,7 +148,8 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now,indepen
    const point=fromNew[i];
    // Match the existing R2 public contract: its first provisional day may
    // equal the confirmed anchor. Only subsequent days must increase strictly.
-   if(!validDate(point?.date)||(!independentAnchor&&point.date!==fromBase[i]?.date)||point.date<prev||
+   if(!validDate(point?.date)||Date.parse(point.date+'T00:00:00Z')>now||
+    (!independentAnchor&&point.date!==fromBase[i]?.date)||point.date<prev||
     (i>0&&point.date<=prev)||
     !point.scores||typeof point.scores!=='object'||Array.isArray(point.scores)||
     !same(Object.keys(point.scores).sort(),THEME_NINE_R37_ROSTER.map(t=>t.theme).sort())||
