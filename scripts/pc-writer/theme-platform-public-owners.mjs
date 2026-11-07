@@ -6,7 +6,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {planPublicPhysicalCycle} from './theme-platform-public-cycle.mjs';
-import {runNineR54PublicConnect,approvedNineR54SevenToken} from './theme-nine-r54-public-connect.mjs';
+import {runNineR54PublicConnect,runNineR54ConfirmedRecovery,
+ approvedNineR54SevenToken} from './theme-nine-r54-public-connect.mjs';
 import {createNineR54D1Query} from './theme-nine-r54-d1-client.mjs';
 import {buildNineR88FromStorage} from './theme-nine-r88-provisional.mjs';
 import {publishNineR88} from './theme-nine-r88-publish.mjs';
@@ -33,6 +34,7 @@ const expected=Object.freeze([
  ['space','provisional',SPACE_PROVISIONAL_KEY],
 ]);
 const defaultOperations=Object.freeze({runR37:runNineR54PublicConnect,
+ runR37Confirmed:runNineR54ConfirmedRecovery,
  token:approvedNineR54SevenToken,query:createNineR54D1Query,
  buildR88:buildNineR88FromStorage,publishR88:publishNineR88,
  runDc:startDcPowerR3,
@@ -96,8 +98,13 @@ export function createExistingPublicOwnerAdapters({sources,dataRoot='E:/ZGmini/d
  const ops={...defaultOperations,...operations};
  const token=()=>ops.token({dataRoot});
  const invoke={
-  [THEME_NINE_R37_KEY]:()=>ops.runR37({dataRoot,configDirectory,
-   publisherConsent:true}),
+  [THEME_NINE_R37_KEY]:input=>{
+   // A stale-base bootstrap must remain confirmed-only even if the API
+   // changes to READY between the coordinator check and this owner call.
+   const owner=input?.confirmedOnlyRecovery===true?
+    ops.runR37Confirmed:ops.runR37;
+   return owner({dataRoot,configDirectory,publisherConsent:true});
+  },
   [R88_KEY]:async()=>{
    const consent=path.join(dataRoot,'pc-writer','theme-nine-r54',
     'PUBLISHER_CONSENT_TEN_R88.txt');
@@ -148,7 +155,7 @@ export function createExistingPublicOwnerAdapters({sources,dataRoot='E:/ZGmini/d
    input.family===group.family&&input.methodologyVersion===group.methodologyVersion,
   'THEME_STAGE4_OWNER_REQUEST_MISMATCH');
   // Only the known legacy owner is called; no new D1 keys or per-theme writes.
-  const report=await invoke[group.feedKey]();
+  const report=await invoke[group.feedKey](input);
   return normalizeReport(report,{legacyR37OrR88:group.family==='r37'});
  }]));
 }
