@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {buildNineR54PublicRecord} from '../scripts/pc-writer/theme-nine-r54-public-record.mjs';
+import {buildNineR54PublicRecord,buildNineR54ConfirmedPublicRecord}
+ from '../scripts/pc-writer/theme-nine-r54-public-record.mjs';
 import {buildNineR51ExistingPublicProvisionalOverlay}
  from '../scripts/pc-writer/theme-nine-r51-provisional-overlay.mjs';
 import {verifyNineR54Production} from '../scripts/pc-writer/theme-nine-r54-deployment-gate.mjs';
@@ -55,6 +56,32 @@ test('R54 matches tenth-theme anonymous-risk disclosure and R37 reader',()=>{
  assert.equal(record.privateReplayVerified,true);
  assert.equal(record.provisional.points[0].scores['로봇·자동화'],62);
  assert.equal(eligibleNineR37(record,base,{now,storedAt:now}),true);
+});
+
+test('R54 confirmed-only publishes independently from an expired legacy base without provisional scores',()=>{
+ const {provisional:_omitted,...confirmedInput}=candidate;
+ const confirmed={...confirmedInput,phase:'CONFIRMED'};
+ const record=buildNineR54ConfirmedPublicRecord({...args,
+  candidate:confirmed,publicBase:null});
+ assert.equal(record.phase,'CONFIRMED');
+ assert.equal(record.provisional,undefined);
+ assert.equal(record.accountGoodStandingVerified,false);
+ assert.equal(record.derivedLicenseVerified,false);
+ assert.equal(record.licensingRiskAcceptedByPublisher,true);
+ assert.equal(eligibleNineR37(record,{status:'READY',phase:'CONFIRMED',
+  observationDate:record.observationDate,themes:record.themes},
+  {now,storedAt:now,independentAnchor:true}),true);
+ for(const changed of [
+  {publisherConsent:false},
+  {sourceManifestVerified:false},
+  {privateReplayVerified:false},
+  {candidateSha256:'BAD_SHA'},
+  {candidate:{...confirmed,phase:'PROVISIONAL'}},
+  {candidate:{...confirmed,provisional:{points:[{date:'2026-10-27'}]}}},
+  {candidate:{...confirmed,themes:[...confirmed.themes.slice(0,8)]}},
+  {now:Date.parse('2026-11-06T06:00:00Z')},
+ ])assert.throws(()=>buildNineR54ConfirmedPublicRecord({...args,
+  candidate:confirmed,publicBase:null,...changed}),/THEME_NINE_R54_/);
 });
 
 test('R54 accepts publisher-consented R32 confirmed with untouched legacy provisional subsets',()=>{

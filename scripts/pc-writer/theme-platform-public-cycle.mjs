@@ -101,11 +101,16 @@ export function verifyPublicPhysicalProjection({plan,feed}={}){
 // Unexpected/uncertain writer outcomes stop further writes, pending explicit
 // CAS/readback reconciliation; they are never automatically retried.
 export async function runPublicPhysicalCycle({sources,registrations=[],grant,
- contextByFeed={},owners={},allowPublish=false,readPublic=null}={}){
+ contextByFeed={},owners={},allowPublish=false,readPublic=null,
+ recoverConfirmedOnStale=false}={}){
  const plan=planPublicPhysicalCycle({sources,registrations});
  if(!allowPublish)return plan;
  ensure(grant?.schema==='ZGMINI_THEME_DELEGATION_V1',
   'THEME_PUBLIC_GRANT_REQUIRED');
+ if(recoverConfirmedOnStale)ensure(typeof readPublic==='function',
+  'THEME_PUBLIC_RECOVERY_READER_REQUIRED');
+ const results=[];
+ let d1Writes=0,recoveredR37=false;
  // The six physical owners overlay the existing L7/R178 public Reader; none
  // refreshes its required base. An unavailable base would otherwise allow
  // confirmed D1 writes before R88 encounters a 503 and aborts the cycle.
@@ -116,14 +121,64 @@ export async function runPublicPhysicalCycle({sources,registrations=[],grant,
   catch(error){return {...plan,status:'PUBLIC_BASE_READER_UNAVAILABLE',
    reason:error?.code??'PUBLIC_BASE_READER_QUERY_FAILED',
    completedGroups:0,verifiedGroups:0,results:[],projection:null};}
-  if(baseline?.status!=='READY')
-   return {...plan,status:'PUBLIC_BASE_READER_UNAVAILABLE',
-    reason:baseline?.reason??'PUBLIC_BASE_READER_NOT_READY',
-    completedGroups:0,verifiedGroups:0,results:[],projection:null};
+  if(baseline?.status!=='READY'){
+   const stale=baseline?.status==='UNAVAILABLE'&&
+    baseline?.reason==='STORED_DATA_STALE';
+   if(!recoverConfirmedOnStale||!stale)
+    return {...plan,status:'PUBLIC_BASE_READER_UNAVAILABLE',
+     reason:baseline?.reason??'PUBLIC_BASE_READER_NOT_READY',
+     completedGroups:0,verifiedGroups:0,results:[],projection:null};
+   // Only the single R37 physical owner has a separately SHA-verified GMH
+   // confirmed-only bootstrap. Never infer a new provisional score or write
+   // the other five keys until the public Reader is verified READY again.
+   const group=plan.groups.find(g=>g.family==='r37'&&g.kind==='confirmed');
+   ensure(group,'THEME_R37_RECOVERY_OWNER_MISSING');
+   const decision=decideThemeAction({action:'publish',grant,
+    context:contextByFeed[group.feedKey]??{}});
+   const owner=owners[group.feedKey];
+   if(decision.decision!=='PROCEED'||typeof owner!=='function')
+    return {...plan,status:'PUBLIC_BASE_RECOVERY_BLOCKED',
+     reason:decision.decision!=='PROCEED'?decision.reason:
+      'EXISTING_PUBLIC_OWNER_NOT_CONNECTED',completedGroups:0,
+     verifiedGroups:0,results:[],projection:null};
+   let report;
+   try{report=await owner({feedKey:group.feedKey,kind:group.kind,
+    family:group.family,methodologyVersion:group.methodologyVersion,
+    confirmedOnlyRecovery:true});}
+   catch(error){return {...plan,status:'STATE_UNKNOWN_STOPPED',
+    reason:error?.code??'PUBLIC_RECOVERY_OWNER_WRITE_STATE_UNKNOWN',
+    completedGroups:1,verifiedGroups:0,
+    results:[{...group,status:'STATE_UNKNOWN'}],projection:null};}
+   if(!Number.isSafeInteger(report?.d1Writes)||report.d1Writes<0||
+    report.d1Writes>1||report.providerCalls!==0||
+    (report.schedulerWrites!==undefined&&report.schedulerWrites!==0))
+    return {...plan,status:'STATE_UNKNOWN_STOPPED',
+     reason:'PUBLIC_RECOVERY_OWNER_EFFECT_UNVERIFIED',completedGroups:1,
+     verifiedGroups:0,results:[{...group,status:'STATE_UNKNOWN'}],projection:null};
+   d1Writes=report.d1Writes;
+   recoveredR37=true;
+   results.push({...group,status:report.status==='PUBLIC_API_VERIFIED'?
+    'VERIFIED':report.status==='D1_VERIFIED_AWAIT_PUBLIC_API_REFRESH'?
+     'PUBLIC_READBACK_PENDING':'STATE_UNKNOWN',
+    ownerStatus:report.status,d1Writes});
+   if(results[0].status==='STATE_UNKNOWN')
+    return {...plan,status:'STATE_UNKNOWN_STOPPED',d1Writes,
+     completedGroups:1,verifiedGroups:0,results,projection:null};
+   if(results[0].status==='PUBLIC_READBACK_PENDING')
+    return {...plan,status:'PUBLIC_BASE_RECOVERY_PENDING',d1Writes,
+     completedGroups:1,verifiedGroups:0,results,projection:null};
+   try{baseline=await readPublic();}
+   catch(error){return {...plan,status:'PUBLIC_BASE_RECOVERY_PENDING',
+    reason:error?.code??'PUBLIC_READER_QUERY_FAILED',d1Writes,
+    completedGroups:1,verifiedGroups:1,results,projection:null};}
+   if(baseline?.status!=='READY')
+    return {...plan,status:'PUBLIC_BASE_RECOVERY_PENDING',
+     reason:baseline?.reason??'PUBLIC_READER_NOT_READY',d1Writes,
+     completedGroups:1,verifiedGroups:1,results,projection:null};
+  }
  }
- const results=[];
- let d1Writes=0;
  for(const group of plan.groups){
+  if(recoveredR37&&group.family==='r37'&&group.kind==='confirmed')continue;
   const context=contextByFeed[group.feedKey]??{};
   const decision=decideThemeAction({action:'publish',grant,context});
   if(decision.decision!=='PROCEED'){

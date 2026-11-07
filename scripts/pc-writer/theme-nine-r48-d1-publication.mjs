@@ -18,14 +18,21 @@ const immutableSameDay=record=>Object.fromEntries(Object.entries(record)
   .filter(([key])=>!rebaseOnlyFields.has(key)));
 
 export async function publishNineR48D1({query,record,publicBase,now=Date.now(),
-  expectedStoredAt=null}={}){
+  expectedStoredAt=null,independentConfirmed=false}={}){
   if(typeof query!=='function'||!Number.isSafeInteger(now)||now<=0)
     fail('D1_ADAPTER_OR_CLOCK');
-  // The live public feed must be supplied by the caller. Never synthesize
-  // it from a local private candidate to circumvent same-day/phase checks.
+  // The existing publication requires the live public feed. The explicit
+  // confirmed-only recovery mode uses the SHA-replayed R32 calendar as its
+  // own anchor, with no R51 provisional scores or inferred legacy freshness.
+  if(independentConfirmed&&(publicBase!=null||record?.phase!=='CONFIRMED'||
+    record.provisional?.points?.length))fail('INDEPENDENT_CONFIRMED_SCOPE');
   const publicConfirmed=publicBase?.confirmedObservationDate??publicBase?.observationDate;
-  if(!eligibleNineR37(record,publicBase,{now,storedAt:now,
-    independentAnchor:record.observationDate>publicConfirmed}))
+  const anchor=independentConfirmed?{status:'READY',phase:'CONFIRMED',
+    observationDate:record.observationDate,
+    confirmedObservationDate:record.observationDate,
+    themes:record.themes.filter(t=>t.theme!=='AI·반도체')}:publicBase;
+  if(!eligibleNineR37(record,anchor,{now,storedAt:now,
+    independentAnchor:independentConfirmed||record.observationDate>publicConfirmed}))
     fail('PUBLICATION_EVIDENCE_OR_BASE_NOT_READY');
   if(record.sourceContract==='THEME_NINE_R47_PRIVATE_RECURRING_NINE_THEME_SHADOW_V1'&&
     (!hashes.every(k=>/^[a-f0-9]{64}$/.test(record[k]))||
