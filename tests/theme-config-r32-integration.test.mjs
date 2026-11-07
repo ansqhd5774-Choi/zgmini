@@ -7,12 +7,34 @@ import {pathToFileURL} from 'node:url';
 import {installConfiguredTool} from '../scripts/pc-writer/theme-config-install.mjs';
 import {R32} from '../scripts/pc-writer/theme-platform.mjs';
 import {digest,registerDefinition,readRegistered,validateDefinition} from '../scripts/pc-writer/theme-config-registry.mjs';
-import {scoreRegistered,readConfiguredSessions} from '../scripts/pc-writer/theme-config-score.mjs';
+import {scoreRegistered,readConfiguredSessions,scoreConfiguredR32Sessions,auditConfiguredR32SessionDates} from '../scripts/pc-writer/theme-config-score.mjs';
 import {configuredProvisionalCandidate} from '../scripts/pc-writer/theme-config-provisional.mjs';
 import {preflightConfiguredPublication} from '../scripts/pc-writer/theme-config-publication-preflight.mjs';
 import {publishConfiguredThemeD1,publishPreparedConfiguredThemeD1} from '../scripts/pc-writer/theme-config-publication-d1.mjs';
 import {readConfiguredThemes} from '../worker/theme-configured-public.mjs';
 const now=Date.parse('2026-10-31T01:00:00Z');
+test('private R25 non-SPY date reports bounded safe metadata without changing the scorer',()=>{
+ const definition={benchmark:'SPY',etfs:['WISE','IGV']};
+ const sessions=new Map([
+  ['SPY',[{date:'2026-10-28',close:100},{date:'2026-10-30',close:101}]],
+  ['WISE',[{date:'2026-10-28',close:20},{date:'2026-10-29',close:21}]],
+  ['IGV',[{date:'2026-10-30',close:25}]],
+ ]);
+ const audit=auditConfiguredR32SessionDates({definition,sessions});
+ assert.equal(audit.reasonCode,'THEME_NINE_R25_NON_SPY_DATE');
+ assert.equal(audit.firstFail,'ETF_DATE_NOT_PRESENT_IN_SPY');
+ assert.equal(audit.lastPass,'SPY_REFERENCE_DATES_READ');
+ assert.deepEqual(audit.mismatches,[{symbol:'WISE',missingCount:1,sampleDates:['2026-10-29'],truncated:false}]);
+ assert.equal(JSON.stringify(audit).includes('close'),false);
+ assert.throws(()=>scoreConfiguredR32Sessions({definition,sessions,aum:{}}),error=>
+  error.code==='THEME_NINE_R25_NON_SPY_DATE'&&error.firstFail==='ETF_DATE_NOT_PRESENT_IN_SPY'&&
+  error.diagnostic.mismatches[0].symbol==='WISE');
+ sessions.set('WISE',Array.from({length:11},(_,n)=>({date:`2026-11-${String(n+1).padStart(2,'0')}`,close:20+n})));
+ const capped=auditConfiguredR32SessionDates({definition,sessions}).mismatches[0];
+ assert.equal(capped.missingCount,11);assert.equal(capped.sampleDates.length,8);assert.equal(capped.truncated,true);
+ sessions.set('WISE',[{date:'2026-10-28',close:20}]);
+ assert.equal(auditConfiguredR32SessionDates({definition,sessions}).status,'PASS');
+});
 function fixture(t){
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'theme-config-r32-'));t.after(()=>fs.rmSync(root,{recursive:true}));
  const etfs=['AAA','BBB','CCC'];
