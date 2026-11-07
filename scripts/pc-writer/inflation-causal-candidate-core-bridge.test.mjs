@@ -119,6 +119,8 @@ test('provider failure is isolated and a previous good observation is not claime
    ppi:async args=>{await args.quotaFetch('https://official.example/ppi');
     return {status:'UNCHANGED',providerRequests:1};}},
   checkpointIO:{load:()=>doc,save:()=>{}},latestIO:g=>latest[g]});
+ assert.equal(doc.attempted.cpi.failureCode,'BLS_CANDIDATE_BAD');
+ assert.ok(!JSON.stringify(doc).includes('private'));
  assert.equal(result.status,'PARTIAL_PREVIOUS_INPUTS_PRESERVED');
  assert.equal(result.providerRequests,1);
  assert.equal(doc.processed.cpi,undefined);
@@ -163,5 +165,43 @@ test('checkpoint persists after staged provider readback and never shares existi
   const recheck=planInflationCandidateCoreDue({approved:true,bootstrapApproved:true,
    checkpoint:cp,now:new Date('2026-11-22T23:30:00.000Z'),providerEnv:keys});
   assert.equal(recheck.due.length,0);
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
+test('failed groups persist safe codes without changing retry timing or last-good checkpoint',async()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-infl-bridge-'));
+ const base=path.join(root,'pc-writer');fs.mkdirSync(base);
+ try{
+  const doc=checkpoint(),latest={cpi:'2026-09-01'};
+  doc.processed.cpi={eventKey:'release:bls:cpi:2026-10-01',observationDate:'2026-09-01'};
+  const eventKey=EVENTS.find(x=>x.id==='cpi');
+  const stable=JSON.stringify(doc.processed);
+  const changed=[];
+  const input={approved:true,base,officialEvents:[eventKey],officialSources:sources,
+   providerEnv:keys,quotaFetch:async()=>({ok:true}),
+   checkpointIO:{load:()=>doc,save:x=>changed.push(JSON.stringify(x))},latestIO:g=>latest[g]};
+  const first=await collectInflationCandidatesIfDue({...input,now:NOW,
+   collectors:{cpi:async()=>{throw Object.assign(Error('token=DO_NOT_LEAK'),
+    {code:'CREDENTIALS_LEAK_ATTEMPT'});}}});
+  assert.equal(first.failed[0].code,'INFL_CANDIDATE_SOURCE_FAILED');
+  assert.equal(doc.attempted.cpi.failureCode,'INFL_CANDIDATE_SOURCE_FAILED');
+  assert.equal(JSON.stringify(doc.processed),stable);
+  assert.ok(!JSON.stringify(doc).includes('DO_NOT_LEAK'));
+  const immediate=planInflationCandidateCoreDue({approved:true,events:[eventKey],sources,
+   checkpoint:doc,providerEnv:keys,now:new Date('2026-11-21T20:00:00.000Z')});
+  assert.deepEqual(immediate.due,[]);
+  const second=await collectInflationCandidatesIfDue({...input,
+   now:new Date('2026-11-22T23:30:00.000Z'),collectors:{cpi:async args=>{
+    await args.quotaFetch('https://official.example/cpi');latest.cpi='2026-10-01';
+    return {status:'SAVED_READBACK',providerRequests:1};}}});
+  assert.equal(second.failed.length,0);
+  assert.equal(second.completed[0].status,'OBSERVATION_ADVANCED');
+  assert.equal(doc.attempted.cpi.failureCode,undefined);
+  assert.equal(doc.processed.cpi.observationDate,'2026-10-01');
+  assert.ok(changed.length>=4);
+  doc.attempted.cpi.failureCode='SECRET_ARBITRARY';
+  assert.throws(()=>planInflationCandidateCoreDue({approved:true,events:[eventKey],sources,
+   checkpoint:doc,providerEnv:keys,now:new Date('2026-11-24T23:30:00Z')}),
+   /INFL_CANDIDATE_CORE_CHECKPOINT_INVALID/);
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
