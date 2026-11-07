@@ -61,6 +61,82 @@ test('stale mandatory L7/R178 Reader stops the six owner cycle before any D1 wri
  assert.deepEqual(invocations,[]);
 });
 
+test('stale base can bootstrap only the existing R37 confirmed physical owner once',async()=>{
+ const plan=planPublicPhysicalCycle(),invocations=[];
+ const handlers=owners(plan,invocations);
+ const r37=plan.groups.find(g=>g.family==='r37'&&g.kind==='confirmed');
+ handlers[r37.feedKey]=async input=>{
+  invocations.push(input);
+  return {status:'D1_VERIFIED_AWAIT_PUBLIC_API_REFRESH',
+   d1Writes:1,providerCalls:0};
+ };
+ const actual=await runPublicPhysicalCycle({grant,allowPublish:true,
+  recoverConfirmedOnStale:true,contextByFeed:allApproved(plan),
+  owners:handlers,readPublic:async()=>({status:'UNAVAILABLE',
+   reason:'STORED_DATA_STALE'})});
+ assert.equal(actual.status,'PUBLIC_BASE_RECOVERY_PENDING');
+ assert.equal(actual.d1Writes,1);
+ assert.equal(actual.completedGroups,1);
+ assert.equal(actual.results[0].feedKey,r37.feedKey);
+ assert.equal(invocations.length,1);
+ assert.equal(invocations[0].confirmedOnlyRecovery,true);
+ assert.equal(invocations[0].themes,undefined);
+});
+
+test('one recovery plus ready readback processes the other five groups without repeating R37',async()=>{
+ const plan=planPublicPhysicalCycle(),invocations=[];
+ const handlers=owners(plan,invocations);
+ let reads=0;
+ const actual=await runPublicPhysicalCycle({grant,allowPublish:true,
+  recoverConfirmedOnStale:true,contextByFeed:allApproved(plan),owners:handlers,
+  readPublic:async()=>++reads===1?{status:'UNAVAILABLE',
+   reason:'STORED_DATA_STALE'}:publicFixture(plan)});
+ assert.equal(actual.status,'PUBLIC_PHYSICAL_OWNER_CYCLE_VERIFIED');
+ assert.equal(actual.completedGroups,6);
+ assert.equal(actual.verifiedGroups,6);
+ assert.equal(actual.d1Writes,6);
+ assert.equal(reads,3);
+ assert.equal(invocations.length,6);
+ assert.equal(new Set(invocations.map(i=>i.feedKey)).size,6);
+ assert.equal(invocations[0].confirmedOnlyRecovery,true);
+});
+
+test('stale recovery never bypasses existing rights or rescues a different 503 reason',async()=>{
+ const plan=planPublicPhysicalCycle(),invocations=[];
+ const approvals=allApproved(plan),handlers=owners(plan,invocations);
+ const r37=plan.groups.find(g=>g.family==='r37'&&g.kind==='confirmed');
+ approvals[r37.feedKey].rightsEvidenceValid=false;
+ const blocked=await runPublicPhysicalCycle({grant,allowPublish:true,
+  recoverConfirmedOnStale:true,contextByFeed:approvals,owners:handlers,
+  readPublic:async()=>({status:'UNAVAILABLE',reason:'STORED_DATA_STALE'})});
+ assert.equal(blocked.status,'PUBLIC_BASE_RECOVERY_BLOCKED');
+ assert.equal(blocked.reason,'RIGHTS_EVIDENCE_MISSING');
+ const unrelated=await runPublicPhysicalCycle({grant,allowPublish:true,
+  recoverConfirmedOnStale:true,contextByFeed:allApproved(plan),owners:handlers,
+  readPublic:async()=>({status:'UNAVAILABLE',reason:'BACKEND_FAILURE'})});
+ assert.equal(unrelated.status,'PUBLIC_BASE_READER_UNAVAILABLE');
+ assert.equal(invocations.length,0);
+ await assert.rejects(runPublicPhysicalCycle({grant,allowPublish:true,
+  recoverConfirmedOnStale:true,contextByFeed:allApproved(plan),
+  owners:handlers}),/THEME_PUBLIC_RECOVERY_READER_REQUIRED/);
+});
+
+test('ambiguous confirmed recovery stops before the other five physical owners',async()=>{
+ const plan=planPublicPhysicalCycle(),invocations=[];
+ const handlers=owners(plan,invocations);
+ const r37=plan.groups.find(g=>g.family==='r37'&&g.kind==='confirmed');
+ handlers[r37.feedKey]=async input=>{
+  invocations.push(input);return {status:'D1_STATE_UNKNOWN',
+   d1Writes:1,providerCalls:0};};
+ const result=await runPublicPhysicalCycle({grant,allowPublish:true,
+  recoverConfirmedOnStale:true,contextByFeed:allApproved(plan),
+  owners:handlers,readPublic:async()=>({status:'UNAVAILABLE',
+   reason:'STORED_DATA_STALE'})});
+ assert.equal(result.status,'STATE_UNKNOWN_STOPPED');
+ assert.equal(result.d1Writes,1);
+ assert.equal(invocations.length,1);
+});
+
 test('public 503 from Reader lookup cannot leave confirmed D1 feeds partially written',async()=>{
  const plan=planPublicPhysicalCycle(),invocations=[];
  const actual=await runPublicPhysicalCycle({grant,allowPublish:true,
