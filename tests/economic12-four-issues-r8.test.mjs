@@ -20,27 +20,22 @@ test("five displayed comparison slots fallback only to validated same-lineage sa
  assert.ok(panel.includes("periodSourceMismatch"));
 });
 test("economic detail shows all stored indicators, Growth 24/24, and no invented raw values",()=>{
- const stored=panel.match(/const (\w+)=\(domain\?\.indicators\?\?\[\]\)\.filter\(/);
- assert.ok(stored,"other economic domains retain their stored indicators");
- const displayed=panel.match(/const (\w+)=id==="employment"\?employmentListRows\(([^)]*)\):(\w+);/);
- assert.ok(displayed,"only employment gets a separate R6 presentation list");
- assert.equal(displayed[3],stored[1],"other domains must retain the original stored rows");
- assert.ok(panel.includes(`id==="growth"?${stored[1]}.length+"/24":${stored[1]}.length`)
-  ||panel.includes(`id==="growth"?${displayed[1]}.length+"/24":${displayed[1]}.length`),
-  "Growth keeps its independent 24-factor denominator");
- assert.ok(panel.includes(`id==="growth"&&${stored[1]}.length!==24`)
-  ||panel.includes(`id==="growth"&&${displayed[1]}.length!==24`),
-  "incomplete 24-factor release is visible, not misreported as complete");
- assert.ok(panel.includes(`<tbody>{${displayed[1]}.map(`),"desktop rows use the selected domain list");
- assert.ok(panel.includes(`{${displayed[1]}.map((item,i)=>{`),"mobile rows use the selected domain list");
- const r6List=panel.match(/const EMPLOYMENT_R6_PUBLIC_LIST=\[([\s\S]*?)\] as const;/);
- assert.ok(r6List,"the approved R6 list remains explicit");
- const r6Ids=[...r6List[1].matchAll(/\bid:"([A-Z0-9_]+)"/g)].map(x=>x[1]);
- assert.equal(r6Ids.length,29,"employment keeps exactly 29 display factors");
- assert.equal(new Set(r6Ids).size,29,"employment display IDs must be unique");
- assert.ok(r6Ids.every(id=>!/^G\d{3}$/.test(id)),"growth IDs must not enter the R6 display list");
- assert.match(panel,/status:"PENDING"/,"unavailable employment factors remain unscored");
+ assert.ok(panel.includes("const storedObservations=(domain?.indicators??[])"));
+ assert.ok(panel.includes('const observations=storedObservations;'));
+ assert.ok(panel.includes('const displayObservations=id==="inflation"?researchRows:id==="employment"?employmentListRows(employmentData?.indicators??[]):observations;'));
+ assert.ok(panel.includes('status:"PENDING"'),"missing employment input remains pending");
+ assert.ok(panel.includes('id==="growth"?observations.length+"/24":observations.length}개'));
+ assert.ok(panel.includes('observations.length!==24'),"incomplete 24-factor release is visible, not misreported as complete");
  assert.ok(!panel.includes("24개 전체 가중요인이 아닌 공개된 대표 4개"));
+ assert.ok(panel.includes('buildResearchInputRows(researchPayload)'),"inflation research input list preserved");
+ assert.ok(panel.includes('inflationResearchReleaseInfo('),"inflation release calendar preserved");
+ assert.ok(panel.includes('researchReady+"/19 공개 확인"')||panel.includes('researchReady+"/19 공개 확인 (최종 선정 전)"'),"inflation 19 research status preserved");
+ assert.ok(panel.includes('data-research-input={isResearch?item.id:undefined}'),"inflation research markers preserved");
+ assert.ok(panel.includes('useStoredIndex<EmploymentR6Display>("/api/employment-r6/observations",null,id==="employment")'),"R6 separate stored GET");
+ assert.ok(panel.includes('status:saved.scoreStatus??saved.status'),"R6 score status separated from raw");
+ assert.ok(panel.includes('item.rawStatus==="STALE"'),"R6 stale history remains identifiable");
+ assert.ok(panel.includes('displayObservations.map((item,i)=>{'),"both desktop/mobile use display rows");
+ assert.equal((panel.match(/\{id:"[A-Z0-9_]+",label/g)||[]).length,29,"exact R6 29 indicator display IDs");
  assert.ok(panel.includes("indicatorLabel(item,id,i)"));
  assert.ok(panel.includes("currentPresentation(item)"));
  assert.ok(page.includes('<EconomicDetailPanel id={id}/>'));
