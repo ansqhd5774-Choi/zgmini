@@ -228,11 +228,13 @@ export async function runNineR54ConfirmedRecovery({dataRoot='E:/ZGmini/data',
   independentConfirmed:true,now,
   expectedStoredAt:before?Number(before.stored_at):null});
  let live=null;
+ let publicReadError=null;
  try{live=await fetchPublic({fetchImpl,now:now+1,publicationBase:false});}
  catch(error){
-  // D1 has been atomically written and read back. A stale public read-model
-  // is an independently reported pending deployment/refresh, not a D1 failure.
-  if(error?.code!=='THEME_NINE_R54_PUBLIC_BASE_STORED_DATA_STALE')throw error;
+  // D1 CAS and independent readback have already succeeded. An inaccessible,
+  // malformed or stale public API is a pending public verification, not a
+  // reason to lose the known D1 state or retry the owner automatically.
+  publicReadError=error?.code??'THEME_NINE_R54_PUBLIC_READBACK_FAILED';
  }
  const visible=record.themes.filter(t=>t.theme!=='AI·반도체');
  const actual=new Map(live?.themes?.map(t=>[t.theme,t])??[]);
@@ -248,7 +250,7 @@ export async function runNineR54ConfirmedRecovery({dataRoot='E:/ZGmini/data',
   confirmedDate:record.observationDate,provisionalMode:'NONE_CONFIRMED_ONLY',
   provisionalDates:[],themesValidated:9,historyRows:2268,
   rawFilesShaVerified:sourceProof.rawFilesShaVerified,publicR32ModelMatched:!!matched,
-  providerCalls:0,otherFeedsChanged:false};
+  publicReadError,providerCalls:0,otherFeedsChanged:false};
 }
 
 export async function runNineR54PublicConnect({dataRoot='E:/ZGmini/data',
