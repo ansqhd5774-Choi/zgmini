@@ -13,6 +13,7 @@ import {attachStoredDomainScoreComparisons,sameVerifiedLineage} from './market-s
 import {publicationCompatibility,recoverPublication,appendPublicationEvent} from './publication-guard.mjs';
 import {koreaPublicationPlan} from './korea-publication.mjs';
 import {readAssetR10Projection} from './asset-r10-projection.mjs';
+import {preservePreviousR10,R10_RECALCULATED_STATUS} from './asset-r10-refresh-gate.mjs';
 import {buildSupplyR10} from './supply-r10.mjs';
 import {acceptsStoredUpdate} from '../../lib/market-score/live-refresh.mjs';
 import {publishCoreArrowState} from './score-arrow-publication.mjs';
@@ -151,9 +152,12 @@ try{
   await attemptOutput(report,'projection:'+id,async()=>{
   // Recompute only from saved inputs when the R10 input set is installed.
   // No provider fetch, and failure preserves the previous valid release file.
-  if(id==='assetBubble'&&fs.existsSync(path.join(base,'local-asset-bubble-r10-breadth-research.json'))){
-   try{execFileSync(process.execPath,[path.join(root,'scripts/pc-writer/build-asset-r10-release.mjs')],{cwd:root,stdio:'pipe',windowsHide:true});}
-   catch{report.assetR10Calculation={status:'FAILED_PREVIOUS_RELEASE_PRESERVED'};}
+  const r10InputInstalled=id==='assetBubble'&&fs.existsSync(path.join(base,'local-asset-bubble-r10-breadth-research.json'));
+  if(r10InputInstalled){
+   try{
+    execFileSync(process.execPath,[path.join(root,'scripts/pc-writer/build-asset-r10-release.mjs')],{cwd:root,stdio:'pipe',windowsHide:true});
+    report.assetR10Calculation={status:R10_RECALCULATED_STATUS};
+   }catch{report.assetR10Calculation={status:'FAILED_PREVIOUS_RELEASE_PRESERVED'};}
   }
   const scope={...env,DB:id==='koreaFearGreed'?history:core};
   let r10=null;
@@ -163,6 +167,13 @@ try{
   }
   if(id==='supplyShock'&&r10)report.supplyR10={status:r10.status,reason:r10.reason??null,score:r10.payload?.score??null,scoreObservationMonth:r10.payload?.scoreObservationMonth??null};
   if(id==='assetBubble'&&r10)report.assetR10={status:r10.status,reason:r10.reason??null,reasons:r10.reasons??[]};
+  // A valid *previous* release is not proof that the current R10 calculation
+  // succeeded. Keep it intact, but never stamp or republish it as fresh.
+  if(preservePreviousR10({inputInstalled:r10InputInstalled,calculationStatus:report.assetR10Calculation?.status,projectionStatus:r10?.status})){
+   report.assetR10={status:'PREVIOUS_RELEASE_PRESERVED',reason:report.assetR10Calculation?.status==='FAILED_PREVIOUS_RELEASE_PRESERVED'?'R10_RELEASE_CALCULATION_FAILED':'R10_RELEASE_NOT_READY'};
+   report.projections.push({id,status:'PREVIOUS_RELEASE_PRESERVED'});
+   return;
+  }
   if(id==='supplyShock'&&r10?.status!=='READY'){
    report.projections.push({id,status:'PREVIOUS_RELEASE_PRESERVED'});
    return;
