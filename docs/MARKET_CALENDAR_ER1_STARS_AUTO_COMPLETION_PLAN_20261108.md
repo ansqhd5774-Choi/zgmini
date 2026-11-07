@@ -99,3 +99,10 @@
 
 - 후속 A [#755](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/755) **PASS (19:55:29Z)**: 세 번째 조회에서도 `core.lockPresent=true`, Core collection checkpoint는 19:55:19Z `COMPLETE`로 진행, 승인 PC source SHA는 기존 `24610129461d027524a018daeba9f8b0cf9ed02c` 보존. #748·#751 이후에도 실제 Core 작업이 진행 중이고 유휴 확인되지 않았다. 기능 소스 새 `main`은 다른 작업으로 진전됐지만 수정 ER1 계산기 blob은 동일하며, 기존 후보 SHA `1be1734e9d8cf74375b3663ceee0033b928108a2`는 변하지 않는다.
 - **확인된 현재 차단:** 공유 PC Core가 활성 상태이므로 Writer B 소스 전환에 필요한 안전 유휴 창을 확보하지 못한다. 단순 검사 Gate의 오탐으로 주장하지 않는다. 소스/산식 추가 변경 없이 정상 유휴 확보 후 재설치 필요. 별도 공통 프로세스 개선이 필요하다면 #745·#748·#751·#755의 실제 증거를 바탕으로 소유자에게 좁은 범위로 전달한다.
+
+## 7. 공통 경합 재현 및 프로세스 인계 (2026-11-08 KST)
+
+- 시장 캘린더 Writer B #745 외에 **물가지표 Writer B [#753](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/753)도 동일한 `WRITER_B_INSTALL_STOP_RESTORED / WRITER_B_CORE_ACTIVE_WINDOW_DEFERRED`**. 기능 소스 문제가 아닌 공유 유지보수 창 확보 문제로 확인.
+- Core 활성 여부 A [#758](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/758)에서는 순간 `STATE_UNKNOWN / CORE_NO_ACTIVE_TASK_ENGINE`, 직후 잠금 조회 A [#759](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/759)는 여전히 `core.lockPresent=true`; 조회가 비동시이므로 orphan/stale 잠금은 미확정. Core checkpoint와 승인 source는 정상 보존.
+- 실증·원인 구분·공통 담당 요청·보호 조건을 [공통 프로세스 이슈 #761](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/761)에 기록했다. 타 대화에 자동 전달되지 않으므로 프로세스 총괄 대화에서 실제 수신 후 대응해야 한다.
+- 기능 원담당인 본 작업은 승인 소스/manifest를 보존하고 기다린다. **공통 안전 유휴 구간 확보**와 **설치 직전 실제 PC source/hash 재조회** 없이 같은 B 요청을 되풀이하지 않는다. 원담당 후속은 1파일 PC 설치 → Core 계산/로컬 재조회 → D1 게시/공개 API/UI 검증 → 마지막 미래 예약 검증.
