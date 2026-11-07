@@ -88,10 +88,23 @@ test('complete January saved EPS cohort automatically becomes local output witho
    assert.equal(saved.body.method,'ER1_ESTIMATED_EPS_SIGNED_RANK_100_97_20261107');
    assert.equal(saved.body.threshold,97);
    assert.ok(!JSON.stringify(saved.body).includes('epsEstimate'));
+   // Newly eligible issuers are detected in the existing PC cycle only;
+   // their English names never enter the stored public score contract.
+   assert.equal(result.months[0].aliasCoverage.status,'READY_PRIVATE_REVIEW');
+   assert.equal(result.months[0].aliasCoverage.highStarIssuerCount,1);
+   assert.deepEqual(result.months[0].aliasCoverage.candidates.map(row=>
+    [row.ticker,row.stars,row.reason]),
+    [['HIGH',2,'UNREGISTERED_TICKER']]);
+   assert.ok(!JSON.stringify(result.months[0].aliasCoverage).includes('HIGH Inc'));
+   assert.equal(Object.hasOwn(result.months[0].aliasCoverage.candidates[0],
+    'englishIssuer'),false);
+   assert.ok(!JSON.stringify(saved.body).includes('HIGH Inc'));
    assert.equal(store.writes,1);
    const again=await refreshSavedER1MonthlyOutputs({store,now});
    assert.equal(again.status,'NO_NEW_OUTPUT');
    assert.equal(again.months[0].status,'UNCHANGED');
+   assert.deepEqual(again.months[0].aliasCoverage,
+    result.months[0].aliasCoverage);
    assert.equal(store.writes,1);
   }finally{globalThis.fetch=previousFetch;}
  });
