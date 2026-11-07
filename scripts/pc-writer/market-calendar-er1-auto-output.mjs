@@ -7,6 +7,7 @@ import {earningsApiForwardDay,earningsApiNewYorkDay,earningsApiWindow,
 import {forecastRowsFromSaved} from '../../lib/market-calendar-er1-forecast-saved-adapter.mjs';
 import {scoreER1ForecastIssuers} from '../../lib/market-calendar-er1-forecast-score.mjs';
 import {makeER1PublicDisplay} from '../../lib/market-calendar-er1-public-display.mjs';
+import {reportUnmappedHighStarIssuers} from '../../lib/market-calendar-issuer-alias-coverage.mjs';
 import {er1MonthlyPublicKey} from '../../lib/market-calendar-er1-month-key.mjs';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -96,19 +97,33 @@ async function scoreSavedMonth(store,month,asOf,now,pcHome){
  let body;
  try{body=makeER1PublicDisplay(scored);}
  catch{return {month,status:'MONTH_PUBLIC_CONTRACT_INVALID',providerRequests:0};}
+ // Review-only metadata travels in the local run report. Never add names to
+ // the public output body or block a valid score on an alias diagnostic error.
+ let aliasCoverage;
+ try{
+  const privateReview=reportUnmappedHighStarIssuers(savedDays,body);
+  // The PC run report may be forwarded to an Issue. Keep vendor issuer names
+  // solely in the existing saved private input, never in run logs or ledgers.
+  aliasCoverage={...privateReview,candidates:privateReview.candidates.map(
+   ({ticker,stars,score,firstEventDate,reason})=>
+    ({ticker,stars,score,firstEventDate,reason}))};
+ }
+ catch(error){aliasCoverage={status:'UNAVAILABLE',
+  reason:/^ER1_ALIAS_COVERAGE_[A-Z_]+$/.test(error?.message??'')?
+   error.message:'ER1_ALIAS_COVERAGE_DIAGNOSTIC_FAILED'};}
  const previous=await store.readOutput(key);
  if((Number.isSafeInteger(previous?.storedAt)&&previous.storedAt>now)||
   previous?.body?.asOf>asOf)
   return {month,status:'NEWER_OUTPUT_PRESERVED',providerRequests:0};
  if(previous&&JSON.stringify(previous.body)===JSON.stringify(body))
   return {month,status:'UNCHANGED',scoreableIssuers:body.recordCount,
-   providerRequests:0};
+   aliasCoverage,providerRequests:0};
  await store.writeOutput(key,body,now);
  const verified=await store.readOutput(key);
  if(verified?.storedAt!==now||JSON.stringify(verified.body)!==JSON.stringify(body))
   bad('ER1_AUTO_LOCAL_OUTPUT_READBACK_FAILED');
  return {month,status:'READY_OUTPUT',scoreableIssuers:body.recordCount,
-  sqliteDays:savedDays.length-privateDays,privateDays,providerRequests:0};
+  sqliteDays:savedDays.length-privateDays,privateDays,aliasCoverage,providerRequests:0};
 }
 
 export async function refreshSavedER1MonthlyOutputs({store,now=Date.now(),
