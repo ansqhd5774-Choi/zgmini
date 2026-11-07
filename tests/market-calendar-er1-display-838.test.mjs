@@ -67,7 +67,7 @@ test('838 actuals plus unavailable symbols display score only for actuals, other
  assert.match(await filtered.text(),/X837/);
 });
 
-test('saved legacy stars are removed, scored issuers show 97-point ER1 result, missing show literal hyphen',async()=>{
+test('saved legacy stars are removed, scored issuers receive numeric ER1 star bands, missing show hyphen',async()=>{
  const candidate=scoreER1Issuers(sampleRows,{asOf:'2026-11-02'});
  const publicDerived=makeER1PublicDisplay(candidate);
  const state=earningsDisplaySnapshot(projection([event('X837'),event('X0'),event('NVDA')]));
@@ -78,14 +78,17 @@ test('saved legacy stars are removed, scored issuers show 97-point ER1 result, m
  assert.equal(full.status,200);
  const html=await full.text();
  assert.equal((html.match(/>★★★<\/div>/g)??[]).length,1);
+ assert.equal((html.match(/>★<\/div>/g)??[]).length,1);
  assert.equal((html.match(/aria-label="기업 실적 점수 없음">-<\/div>/g)??[]).length,1);
  assert.match(html,/기업 실적 점수 40\.03점/);
  assert.doesNotMatch(html,/재무건전성|시장 중요도|중요도 [123]/);
  const filtered=earningsDisplayResponse(state,url+'&importance=3',publicDerived);
  assert.equal(filtered.headers.get('x-display-count'),'1');
  assert.match(await filtered.text(),/X837/);
- for(const level of [1,2])assert.equal(earningsDisplayResponse(state,
-  url+`&importance=${level}`,publicDerived).headers.get('x-display-count'),'0');
+ assert.equal(earningsDisplayResponse(state,url+'&importance=1',publicDerived)
+  .headers.get('x-display-count'),'1');
+ assert.equal(earningsDisplayResponse(state,url+'&importance=2',publicDerived)
+  .headers.get('x-display-count'),'0');
 });
 
 test('absent, incomplete or tampered score snapshots never restore old FHS/R43 stars',async()=>{
@@ -116,7 +119,7 @@ test('public snapshot gate rejects stale dates, raw fields and false observed-sy
  assert.ok(validateER1PublicDisplay(valid));
 });
 
-test('scores just below 97 do not round up into the ★★★ display threshold',async()=>{
+test('scores just below 97 do not round up to ★★★ and instead show ★★',async()=>{
  const result=scoreER1Issuers(sampleRows,{asOf:'2026-11-02'});
  const valid=makeER1PublicDisplay(result);
  const match=valid.scores.find(row=>row.tickers.includes('X0'));
@@ -125,9 +128,40 @@ test('scores just below 97 do not round up into the ★★★ display threshold'
  const state=earningsDisplaySnapshot(projection([event('X0')]));
  const html=await earningsDisplayResponse(state,url,valid).text();
  assert.match(html,/96\.99점/);
- assert.doesNotMatch(html,/★★★<\/div>/);
+ assert.match(html,/>★★<\/div>/);
+ assert.doesNotMatch(html,/>★★★<\/div>/);
+ assert.equal(earningsDisplayResponse(state,url+'&importance=2',valid)
+  .headers.get('x-display-count'),'1');
  assert.equal(earningsDisplayResponse(state,url+'&importance=3',valid)
   .headers.get('x-display-count'),'0');
+});
+
+test('fixed 97 and 85 boundaries produce exclusive ★★★/★★/★ bands and keep zero distinct from missing',async()=>{
+ const result=scoreER1Issuers(sampleRows,{asOf:'2026-11-02'});
+ const publicDerived=makeER1PublicDisplay(result);
+ const newScores=new Map([['X0',97],['X1',96.999],['X2',85],
+  ['X3',84.999],['X4',0]]);
+ for(const row of publicDerived.scores){
+  if(newScores.has(row.issuerId))row.score=newScores.get(row.issuerId);
+ }
+ publicDerived.star3Count=publicDerived.scores.filter(row=>row.score>=97).length;
+ assert.ok(validateER1PublicDisplay(publicDerived));
+ const state=earningsDisplaySnapshot(projection([
+  ...[...newScores.keys()].map(event),event('MISSING')
+ ]));
+ const all=earningsDisplayResponse(state,url,publicDerived);
+ assert.equal(all.headers.get('x-display-count'),'6');
+ const html=await all.text();
+ assert.equal((html.match(/>★★★<\/div>/g)??[]).length,1);
+ assert.equal((html.match(/>★★<\/div>/g)??[]).length,2);
+ assert.equal((html.match(/>★<\/div>/g)??[]).length,2);
+ assert.equal((html.match(/기업 실적 점수 없음">-<\/div>/g)??[]).length,1);
+ for(const [level,count] of [[3,1],[2,2],[1,2]]){
+  assert.equal(earningsDisplayResponse(state,url+`&importance=${level}`,publicDerived)
+   .headers.get('x-display-count'),String(count));
+ }
+ assert.equal(earningsDisplayResponse(state,url+'&importance=1,2,3',publicDerived)
+  .headers.get('x-display-count'),'5');
 });
 
 test('main keeps the economic calendar separate; only verified ER1 vendor display owns earnings stars',()=>{

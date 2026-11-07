@@ -40,10 +40,11 @@ test('38 PC-only vendor rows become 31-day sanitized HTML without estimates',()=
  const grades={status:'READY_ER1_PUBLIC',method:ER1_METHOD,asOf:'2026-11-03',
   threshold:97,coverage:{inputSymbols:1,observedIssuers:1,scoreableIssuers:1,unscoreableReasons:{}},
   recordCount:1,star3Count:1,scores:[{issuerId:'BOX',tickers:['BOX'],score:98.5}]};
- const graded=earningsDisplayHtml(snapshot,{start:'2026-12-01',end:'2026-12-31'},grades);
+ // December uses its own published ER1 cohort, never the generic October key.
+ const graded=earningsDisplayHtml(snapshot,{start:'2026-12-01',end:'2026-12-31'},null,grades);
  assert.match(graded.html,/★★★/);
  assert.match(graded.html,/기업 실적 점수 98\.50점/);
- assert.equal(earningsDisplayHtml(snapshot,{start:'2026-12-01',end:'2026-12-31',importance:3},grades).count,1);
+ assert.equal(earningsDisplayHtml(snapshot,{start:'2026-12-01',end:'2026-12-31',importance:3},null,grades).count,1);
  const merged=withDec2026Display({status:'READY_DISPLAY',mode:'OWN_SITE_HTML_ONLY',
   rawVendorJsonExposed:false,publicJsonFeed:false,redistribution:false,
   coveredDays:['2026-11-30','2026-12-01'],byDay:{'2026-11-30':[],'2026-12-01':[]}},snapshot);

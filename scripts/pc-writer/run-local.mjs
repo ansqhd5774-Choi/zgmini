@@ -204,6 +204,14 @@ try{
  const {storeLocalCollectionHealth}=await import('./collection-health.mjs');
  const health=await storeLocalCollectionHealth(core,history,now,base);
  report.collectionHealth={normal:health.normal,total:health.total,status:health.status};
+ // Score only complete future monthly cohorts from already-saved PC inputs.
+ // This local calculation also runs without --publish; an unavailable D1
+ // cannot prevent the derived score from being stored for a later publication.
+ await attemptOutput(report,'market-calendar-er1-future',async()=>{
+  const {publicFeedStore}=await import('../../worker/public-feed-store.mjs');
+  const {refreshSavedER1MonthlyOutputs}=await import('./market-calendar-er1-auto-output.mjs');
+  report.er1Future=await refreshSavedER1MonthlyOutputs({store:publicFeedStore(core),now});
+ });
  if(publish){
   // Each output below owns its validation and readback; marketReady never gates peers.
   const remote=client(config,()=>credential(root),{onDiagnostic:diagnostic=>appendD1Diagnostic(base,{runAt:report.at,source},diagnostic)});
