@@ -105,6 +105,14 @@ test("visitor GET reads a single verified D1 public row; never fetches provider 
     assert.equal(trace.length,1);
     assert.match(trace[0],/^SELECT body,stored_at FROM market_public_snapshots_v1/);
     assert.equal(response.headers.get("x-data-snapshot-at"),new Date(now).toISOString());
+    const futureAsOf=buildEmploymentR6OneYearReadModel([],
+      {asOfDate:"2099-11-08",sourceStoredAt:now-7200000});
+    const futureResponse=await employmentR6StoredDisplayResponse(
+      new Request("https://zgmini.kr/api/employment-r6/observations"),
+      db({body:JSON.stringify(futureAsOf),stored_at:now}),{now:now+5000},
+    );
+    assert.equal(futureResponse.status,503);
+    assert.equal((await futureResponse.json()).reason,"STORED_PUBLICATION_STALE");
     const stale=await employmentR6StoredDisplayResponse(new Request("https://zgmini.kr/api/employment-r6/observations"),db({body:JSON.stringify(body),stored_at:now}),{now:now+9*86400000});
     assert.equal(stale.status,503);
     assert.equal((await stale.json()).reason,"STORED_PUBLICATION_EXPIRED");
