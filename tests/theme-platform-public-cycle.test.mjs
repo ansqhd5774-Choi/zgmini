@@ -49,6 +49,31 @@ test('without explicit opt-in the coordinator cannot call any publisher',async()
  assert.equal(invocations.length,0);
 });
 
+test('stale mandatory L7/R178 Reader stops the six owner cycle before any D1 write',async()=>{
+ const plan=planPublicPhysicalCycle(),invocations=[];
+ const actual=await runPublicPhysicalCycle({grant,allowPublish:true,
+  contextByFeed:allApproved(plan),owners:owners(plan,invocations),
+  readPublic:async()=>({status:'UNAVAILABLE',reason:'STORED_DATA_STALE'})});
+ assert.equal(actual.status,'PUBLIC_BASE_READER_UNAVAILABLE');
+ assert.equal(actual.reason,'STORED_DATA_STALE');
+ assert.equal(actual.completedGroups,0);
+ assert.equal(actual.d1Writes,0);
+ assert.deepEqual(invocations,[]);
+});
+
+test('public 503 from Reader lookup cannot leave confirmed D1 feeds partially written',async()=>{
+ const plan=planPublicPhysicalCycle(),invocations=[];
+ const actual=await runPublicPhysicalCycle({grant,allowPublish:true,
+  contextByFeed:allApproved(plan),owners:owners(plan,invocations),
+  readPublic:async()=>{throw Object.assign(new Error('503'),
+   {code:'THEME_PUBLIC_API_HTTP_503'});}});
+ assert.equal(actual.status,'PUBLIC_BASE_READER_UNAVAILABLE');
+ assert.equal(actual.reason,'THEME_PUBLIC_API_HTTP_503');
+ assert.equal(actual.completedGroups,0);
+ assert.equal(actual.d1Writes,0);
+ assert.deepEqual(invocations,[]);
+});
+
 test('approved one-shot owner dispatch runs six feeds once, never eight R37 writes',async()=>{
  const plan=planPublicPhysicalCycle(),invocations=[];
  const actual=await runPublicPhysicalCycle({grant,allowPublish:true,
