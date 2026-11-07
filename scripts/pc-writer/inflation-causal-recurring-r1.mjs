@@ -17,13 +17,19 @@ const GROUPS=Object.freeze([
 const ISO_DAY=/^20\d\d-(0[1-9]|1[0-2])-([0-2]\d|3[01])$/;
 const validDay=v=>typeof v==='string'&&ISO_DAY.test(v)&&
  Number.isFinite(Date.parse(v))&&new Date(v+'T00:00:00Z').toISOString().slice(0,10)===v;
+const validTimestamp=v=>typeof v==='string'&&Number.isFinite(Date.parse(v))&&
+ new Date(v).toISOString()===v;
 const err=code=>Object.assign(new Error(code),{code});
 const validKey=v=>typeof v==='string'&&v.trim().length>0;
 
-function releaseDate(group,events,today){
+function releaseDate(group,events,today,utcHour){
  if(!Array.isArray(events)||events.length>1000)return null;
+ // Official release feeds here provide a calendar date, not a release time.
+ // Do not mark that day's release handled during a pre-announcement Core tick.
+ // 22:00 UTC is a conservative US-day cutoff; the following UTC days qualify.
  const dates=events.filter(e=>e?.source===group.source&&e?.id===group.event&&
-  validDay(e.date)&&e.date<=today&&typeof e.sourceUrl==='string'&&
+  validDay(e.date)&&(e.date<today||(e.date===today&&utcHour>=22))&&
+  typeof e.sourceUrl==='string'&&
   /^https:\/\//.test(e.sourceUrl)).map(e=>e.date).sort();
  return dates.at(-1)??null;
 }
@@ -36,13 +42,21 @@ export function planInflation19Due({enabled=false,gasDailyApproved=false,events=
  const today=current.toISOString().slice(0,10),due=[],skipped=[];
  for(const group of GROUPS){
   const previous=checkpoint?.processed?.[group.key];
+  const attempt=checkpoint?.attempted?.[group.key];
+  const attemptedRecently=eventKey=>attempt?.eventKey===eventKey&&
+   validTimestamp(attempt.at)&&current.getTime()>=Date.parse(attempt.at)&&
+   current.getTime()-Date.parse(attempt.at)<24*3600000;
   if(group.key==='gas'){
-   if(gasDailyApproved===true&&previous!==today)due.push({key:group.key,eventKey:today,maxRequests:group.maxRequests});
+   if(gasDailyApproved===true&&(!validDay(previous)||previous<today)&&
+    (!validDay(attempt?.eventKey)||attempt.eventKey<today))
+    due.push({key:group.key,eventKey:today,maxRequests:group.maxRequests});
    else skipped.push(group.key);
    continue;
   }
-  const day=releaseDate(group,events,today);
-  if(day&&previous!==day)due.push({key:group.key,eventKey:day,maxRequests:group.maxRequests});
+  const day=releaseDate(group,events,today,current.getUTCHours());
+  if(day&&(!validDay(previous)||previous<day)&&
+   (!validDay(attempt?.eventKey)||attempt.eventKey<=day)&&!attemptedRecently(day))
+   due.push({key:group.key,eventKey:day,maxRequests:group.maxRequests});
   else skipped.push(group.key);
  }
  return {status:due.length?'DUE':'NO_VERIFIED_RELEASE_DUE',due,skipped};
@@ -68,14 +82,18 @@ function checkpointFile(base){
 }
 
 function loadCheckpoint(file){
- if(!fs.existsSync(file))return {schema:INFL19_RECURRING_SCHEMA,processed:{}};
+ if(!fs.existsSync(file))return {schema:INFL19_RECURRING_SCHEMA,processed:{},attempted:{}};
  const s=fs.lstatSync(file);
  if(!s.isFile()||s.isSymbolicLink()||s.size>65536)throw err('INFL19_RECURRING_CHECKPOINT_FILE_DENIED');
  let value;try{value=JSON.parse(fs.readFileSync(file,'utf8'));}
  catch{throw err('INFL19_RECURRING_CHECKPOINT_INVALID');}
  if(value?.schema!==INFL19_RECURRING_SCHEMA||typeof value.processed!=='object'||
   !value.processed||Array.isArray(value.processed)||
-  Object.entries(value.processed).some(([k,v])=>!GROUPS.some(g=>g.key===k)||!validDay(v)))
+  Object.entries(value.processed).some(([k,v])=>!GROUPS.some(g=>g.key===k)||!validDay(v))||
+  (value.attempted!==undefined&&(
+   typeof value.attempted!=='object'||!value.attempted||Array.isArray(value.attempted)||
+   Object.entries(value.attempted).some(([k,v])=>!GROUPS.some(g=>g.key===k)||
+    !validDay(v?.eventKey)||!validTimestamp(v?.at)))))
   throw err('INFL19_RECURRING_CHECKPOINT_INVALID');
  return value;
 }
@@ -118,11 +136,18 @@ export async function collectInflation19IfDue({
   sce:(await import('./inflation-sce-collector.mjs')).collectSceOneYear,
  };
  const report={status:'COMPLETE',providerRequests:0,updated:[],skipped:[...plan.skipped],failed:[]};
- const next={schema:INFL19_RECURRING_SCHEMA,processed:{...previous.processed}};
+ const next={schema:INFL19_RECURRING_SCHEMA,processed:{...previous.processed},
+  attempted:{...(previous.attempted??{})}};
  for(const due of plan.due){
   const group=GROUPS.find(x=>x.key===due.key);
   const key=credentialsOf(environment,group);
   if(group.credential&&!validKey(key)){report.skipped.push(group.key);continue;}
+  // Persist the attempted event BEFORE making any network request. A crash or
+  // partial provider failure cannot cause unbounded retry on every Core tick.
+  next.attempted[group.key]={eventKey:due.eventKey,
+   at:(now instanceof Date?now:new Date(now)).toISOString()};
+  try{(checkpointIO?.save??(value=>saveCheckpoint(file,value)))(next);}
+  catch{report.failed.push({source:group.key,code:'INFL19_RECURRING_ATTEMPT_CHECKPOINT_FAILED'});continue;}
   let groupRequests=0;
   const meteredFetch=async(...args)=>{
    if(groupRequests>=group.maxRequests)throw err('INFL19_RECURRING_REQUEST_BOUND_EXCEEDED');

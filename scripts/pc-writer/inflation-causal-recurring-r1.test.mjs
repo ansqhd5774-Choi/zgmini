@@ -27,6 +27,14 @@ test('unverified or future release never causes a monthly API request',()=>{
  assert.deepEqual(x.due,[]);assert.equal(x.status,'NO_VERIFIED_RELEASE_DUE');
 });
 
+test('date-only release cannot be completed before the conservative US-day cutoff',()=>{
+ const early=new Date('2026-11-07T13:00:00.000Z');
+ const x=planInflation19Due({enabled:true,now:early,events:releases});
+ assert.deepEqual(x.due,[]);
+ const late=planInflation19Due({enabled:true,now,events:releases});
+ assert.equal(late.due.length,3);
+});
+
 test('exact verified release events and separately approved daily gas qualify',()=>{
  const x=planInflation19Due({enabled:true,now,events:releases,gasDailyApproved:true});
  assert.deepEqual(x.due.map(v=>v.key),['bls8','electricity','sce','gas']);
@@ -39,8 +47,28 @@ test('checkpoint suppresses already handled event and gas UTC day',()=>{
  assert.deepEqual(x.due.map(v=>v.key),['electricity','sce']);
 });
 
+test('later completed event checkpoint must never regress to an older release',()=>{
+ const x=planInflation19Due({enabled:true,now,events:releases,gasDailyApproved:true,
+  checkpoint:{processed:{bls8:'2026-11-08',gas:'2026-11-08'},
+   attempted:{electricity:{eventKey:'2026-11-08',at:'2026-11-07T20:00:00.000Z'}}}});
+ assert.deepEqual(x.due.map(v=>v.key),['sce']);
+});
+
+test('failed event is throttled for 24h, gas failure for the entire UTC day',()=>{
+ const checkpoint={processed:{},attempted:{
+  bls8:{eventKey:'2026-11-07',at:'2026-11-07T22:00:00.000Z'},
+  gas:{eventKey:'2026-11-07',at:'2026-11-07T22:00:00.000Z'}}};
+ const nowSoon=new Date('2026-11-07T23:59:00Z');
+ const x=planInflation19Due({enabled:true,now:nowSoon,checkpoint,events:[releases[0]],gasDailyApproved:true});
+ assert.deepEqual(x.due,[]);
+ const nextDay=new Date('2026-11-08T22:01:00Z');
+ const y=planInflation19Due({enabled:true,now:nextDay,checkpoint,events:[releases[0]],gasDailyApproved:true});
+ assert.deepEqual(y.due.map(e=>e.key),['bls8','gas']);
+});
+
 test('real approved fetch is mandatory for enabled due and never silently falls back',async()=>{
  await assert.rejects(()=>collectInflation19IfDue({approved:true,
+  now,
   checkpointIO:{file:'/none',load:()=>({schema:INFL19_RECURRING_SCHEMA,processed:{}})},
   officialEvents:releases,providerEnv:{BLS_API_KEY:'test'}}),
   /INFL19_RECURRING_APPROVED_QUOTA_FETCH_REQUIRED/);
@@ -50,7 +78,8 @@ test('released BLS8 is fetched once, saved and is not fetched twice',async()=>{
  const cp={schema:INFL19_RECURRING_SCHEMA,processed:{}};
  let network=0,saveCount=0;
  const deps={approved:true,base:'/staged/pc-writer',now,officialEvents:[releases[0]],
-  checkpointIO:{file:'/none',load:()=>cp,save:x=>{saveCount++;cp.processed={...x.processed};}},
+  checkpointIO:{file:'/none',load:()=>cp,save:x=>{
+   saveCount++;cp.processed={...x.processed};cp.attempted={...x.attempted};}},
   providerEnv:{BLS_API_KEY:'SECRET-DO-NOT-LOG'},
   quotaFetch:async()=>{network++;return {ok:true}},
   collectors:{bls8:async({quotaFetch,blsKey})=>{
@@ -59,7 +88,7 @@ test('released BLS8 is fetched once, saved and is not fetched twice',async()=>{
  };
  const first=await collectInflation19IfDue(deps);
  assert.equal(first.status,'COMPLETE');assert.equal(first.providerRequests,1);
- assert.equal(first.updated[0].source,'bls8');assert.equal(saveCount,1);
+ assert.equal(first.updated[0].source,'bls8');assert.equal(saveCount,2);
  assert.equal(network,1);assert.equal(JSON.stringify(first).includes('SECRET'),false);
  const second=await collectInflation19IfDue(deps);
  assert.equal(second.status,'NO_VERIFIED_RELEASE_DUE');assert.equal(network,1);
@@ -70,7 +99,8 @@ test('one source failure keeps previous checkpoint and allows independent due so
  let b=0,e=0;
  const r=await collectInflation19IfDue({approved:true,base:'/staged/pc-writer',now,
   officialEvents:releases.slice(0,2),providerEnv:{BLS_API_KEY:'k',EIA_API_KEY:'k2'},
-  checkpointIO:{file:'/none',load:()=>cp,save:x=>{cp.processed={...x.processed};}},
+  checkpointIO:{file:'/none',load:()=>cp,save:x=>{
+   cp.processed={...x.processed};cp.attempted={...x.attempted};}},
   quotaFetch:async()=>({ok:true}),collectors:{
    bls8:async({quotaFetch})=>{await quotaFetch('https://bls.gov');b++;throw Error('unsafe credential URL: key=123');},
    electricity:async({quotaFetch})=>{await quotaFetch('https://eia.gov');await quotaFetch('https://eia.gov');e++;return {status:'UNCHANGED',providerRequests:2};},
@@ -78,13 +108,16 @@ test('one source failure keeps previous checkpoint and allows independent due so
  assert.equal(b,1);assert.equal(e,1);assert.equal(r.status,'PARTIAL_PREVIOUS_CHECKPOINT_PRESERVED');
  assert.equal(r.providerRequests,3);assert.equal(cp.processed.electricity,'2026-11-07');
  assert.equal(cp.processed.bls8,undefined);assert.equal(JSON.stringify(r).includes('key=123'),false);
+ // The failed BLS attempt is checkpointed, so a second Core tick cannot refetch.
+ const again=planInflation19Due({enabled:true,now,checkpoint:cp,events:releases.slice(0,2)});
+ assert.deepEqual(again.due,[]);
 });
 
 test('collector cannot use more than its bounded approved quota calls',async()=>{
  let network=0;
  const r=await collectInflation19IfDue({approved:true,base:'/staged/pc-writer',now,
   officialEvents:[releases[0]],providerEnv:{BLS_REGISTRATION_KEY:'key'},
-  checkpointIO:{file:'/none',load:()=>({schema:INFL19_RECURRING_SCHEMA,processed:{}}),save:()=>{throw Error('must not write');}},
+  checkpointIO:{file:'/none',load:()=>({schema:INFL19_RECURRING_SCHEMA,processed:{}}),save:()=>{}},
   quotaFetch:async()=>{network++;return {ok:true}},collectors:{
    bls8:async({quotaFetch})=>{await quotaFetch('first');await quotaFetch('second');return {status:'SAVED_READBACK',providerCalls:2}},
   }});
@@ -127,7 +160,8 @@ test('SCE source uses safe pre-existing directory and measures redirect requests
  let count=0;
  const r=await collectInflation19IfDue({approved:true,base,now,
   officialEvents:[releases[2]],
-  checkpointIO:{file:'/none',load:()=>checkpoint,save:x=>{checkpoint.processed={...x.processed};}},
+  checkpointIO:{file:'/none',load:()=>checkpoint,save:x=>{
+   checkpoint.processed={...x.processed};checkpoint.attempted={...x.attempted};}},
   quotaFetch:async()=>{count++;return {ok:true}},
   collectors:{sce:async({fetcher,directory})=>{
    assert.equal(directory,path.join(base,'inflation-causal','sce31'));
