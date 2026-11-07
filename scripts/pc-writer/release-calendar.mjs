@@ -8,7 +8,7 @@ import {TREASURY_CUSIP_XML_URL,parseTreasuryCusipXml} from '../../lib/treasury-c
 import {TIC_RELEASE_DATES_URL,parseTicReleaseDatesHtml} from '../../lib/tic-calendar.mjs';
 import {publicFeedStore} from '../../worker/public-feed-store.mjs';
 import {marketOperationalStore} from '../../worker/market-operational-store.mjs';
-import {collectEarningsApiLocal} from './earnings-api-local.mjs';
+import {collectEarningsApiLocal,collectEarningsApiForwardLocal} from './earnings-api-local.mjs';
 
 const requestHeaders={'user-agent':'ZGMINI/1.0 (+https://zgmini.kr/about/)'};
 const isoYear=(date,year)=>date.startsWith(String(year)+'-');
@@ -239,6 +239,12 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
  try{
   await collectEarningsApiLocal({db,apiKey:globalThis.__zgminiLocalProviderEnv?.EARNINGS_API_KEY,
    now,fetchImpl});
+ }catch{ /* Never let an optional vendor block official release collection. */ }
+ // One separate D+30 observation per New York day; independent of the legacy
+ // 14-day private display source, with no new scheduling or publishing.
+ try{
+  await collectEarningsApiForwardLocal({db,
+   apiKey:globalThis.__zgminiLocalProviderEnv?.EARNINGS_API_KEY,now,fetchImpl});
  }catch{ /* Never let an optional vendor block official release collection. */ }
  const attempt=await store.readAttempt(key);
  const previous=await store.readOutput(key);
