@@ -38,6 +38,7 @@ function mocked(trace){
   query:options=>{trace.push(['query',Object.keys(options)]);return async()=>({results:[]});},
   dcDb:options=>{trace.push(['dcDb',Object.keys(options)]);return {};},
   runR37:async args=>{trace.push(['r37',args]);return report;},
+  runR37Confirmed:async args=>{trace.push(['r37Confirmed',args]);return report;},
   buildR88:async args=>{trace.push(['buildR88',args]);return {record:{
    observationDate:args.targetDate,confirmedObservationDate:args.base.confirmedObservationDate}};},
   publishR88:async args=>{trace.push(['publishR88',args]);
@@ -81,7 +82,8 @@ test('live stale 503 through the existing adapter bootstraps R37 once only',asyn
  const f=fixture();try{
   const trace=[];
   const operations=mocked(trace);
-  operations.runR37=async args=>{trace.push(['r37',args]);return {
+  operations.runR37=async()=>{throw Error('UNEXPECTED_FULL_R54_PROVISIONAL_PATH');};
+  operations.runR37Confirmed=async args=>{trace.push(['r37Confirmed',args]);return {
    status:'D1_VERIFIED_AWAIT_PUBLIC_API_REFRESH',d1Writes:1,
    providerCalls:0,schedulerWrites:0};};
   const readPublic=()=>readExistingThemePublic({fetchImpl:async()=>({
@@ -93,8 +95,38 @@ test('live stale 503 through the existing adapter bootstraps R37 once only',asyn
   assert.equal(result.status,'PUBLIC_BASE_RECOVERY_PENDING');
   assert.equal(result.completedGroups,1);
   assert.equal(result.d1Writes,1);
-  assert.deepEqual(trace.filter(([name])=>['r37','dc','space','publishR88','dcR8',
-   'spaceR8'].includes(name)).map(([name])=>name),['r37']);
+  assert.deepEqual(trace.filter(([name])=>['r37','r37Confirmed','dc','space',
+   'publishR88','dcR8','spaceR8'].includes(name)).map(([name])=>name),
+  ['r37Confirmed']);
+  assert.equal(trace.find(([name])=>name==='r37Confirmed')[1].publisherConsent,true);
+ }finally{f.cleanup();}
+});
+
+test('a stale-to-ready Reader race still uses confirmed-only R37 and five other physical owners once',async()=>{
+ const f=fixture();try{
+  const trace=[];
+  const operations=mocked(trace);
+  operations.runR37=async()=>{throw Error('UNEXPECTED_R54_PROVISIONAL_PATH');};
+  let reads=0;
+  const readPublic=async()=>{
+   reads++;
+   return reads===1?{status:'UNAVAILABLE',reason:'STORED_DATA_STALE'}:base;
+  };
+  const owners=createExistingPublicOwnerAdapters({dataRoot:f.dir,allowPublish:true,
+   anonymousLicenseRiskAccepted:true,publicRead:readPublic,operations});
+  const result=await runPublicPhysicalCycle({grant,allowPublish:true,
+   contextByFeed:context,owners,readPublic,recoverConfirmedOnStale:true});
+  assert.equal(result.d1Writes,6,JSON.stringify(result.results));
+  assert.equal(result.physicalFeedCount,6);
+  assert.equal(result.completedGroups,6);
+  // The R88 owner has a verified D1 CAS, but its public Reader still awaits
+  // independent verification; six writes do not mean six public verifications.
+  assert.equal(result.verifiedGroups,5);
+  assert.equal(result.results.filter(r=>r.status==='PUBLIC_READBACK_PENDING').length,1);
+  assert.equal(result.status,'PARTIAL_REVIEW_REQUIRED');
+  assert.deepEqual(trace.filter(([name])=>['r37','r37Confirmed','dc','space',
+   'publishR88','dcR8','spaceR8'].includes(name)).map(([name])=>name).sort(),
+  ['r37Confirmed','dc','space','publishR88','dcR8','spaceR8'].sort());
  }finally{f.cleanup();}
 });
 
