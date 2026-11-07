@@ -242,6 +242,46 @@ test('read-only authority diagnostic detects the actual seed + provisional sidec
  assert.equal(actual.providerCalls,0);assert.equal(actual.d1Writes,0);
  assert.equal(actual.schedulerWrites,0);assert.equal(reads,2);assert.equal(seedReads,1);assert.equal(writes,0);
 });
+test('read-only seven-theme diagnostic still checks D1 when the public API reports a stale snapshot',async()=>{
+ const seed=approvedCoreSeed();
+ let reads=0,seedReads=0,writes=0;
+ const db={read:async key=>{reads++;return {storedAt:NOW-1000,body:key==='theme-etf-only-rolling'
+  ?{status:'READY',version:'THEME_ETF_ROLLING_R178',observationDate:latest,
+   publicationAuthorized:true,upstreamCommercialRightsVerified:true,
+   derivedLicenseVerified:true,sourcePriceReconciled:true,
+   sourceStoredAt:'2026-10-23T01:00:00Z',asOf:'2026-10-23T01:00:00Z',
+   lineage:{primarySource:'GETMARKETHISTORY_1H_CLOSE',
+    secondarySource:'MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED'}}
+  :{status:'UNAVAILABLE'}};},readSeed:async()=>{seedReads++;return seed;},
+  replace:async()=>{writes++;}};
+ const report=await diagnoseSevenProvisionalLane({storage:db,now:()=>NOW,
+  readPublic:async()=>({status:'UNAVAILABLE',reason:'STORED_DATA_STALE',themes:[]})});
+ assert.equal(report.status,'READONLY_REPORTED');
+ assert.equal(report.publicReference.status,'UNAVAILABLE');
+ assert.equal(report.publicReference.reason,'STORED_DATA_STALE');
+ assert.equal(report.activeLane,'PUBLIC_REFERENCE_UNAVAILABLE');
+ assert.equal(report.rolling.available,true);
+ assert.equal(report.rolling.gates.confirmedDate,false);
+ assert.equal(report.rolling.exactPublicScoreMatch,false);
+ assert.equal(report.fallback.exactPublicScoreMatch,false);
+ assert.equal(report.rolling.sourceStoredAt,'2026-10-23T01:00:00Z');
+ assert.equal(report.providerCalls,0);assert.equal(report.d1Writes,0);
+ assert.equal(report.schedulerWrites,0);assert.equal(reads,2);assert.equal(seedReads,1);assert.equal(writes,0);
+});
+test('read-only seven-theme diagnostic recovers from a public transport error without asserting parity',async()=>{
+ let reads=0;
+ const db={read:async()=>{reads++;throw Error('mock D1 read unavailable');},
+  readSeed:async()=>{throw Error('mock seed unavailable');}};
+ const report=await diagnoseSevenProvisionalLane({storage:db,now:()=>NOW,
+  readPublic:async()=>{throw Error('mock HTTP 503');}});
+ assert.equal(report.status,'READONLY_REPORTED');
+ assert.equal(report.publicReference.reason,'PUBLIC_API_UNREADABLE');
+ assert.equal(report.activeLane,'PUBLIC_REFERENCE_UNAVAILABLE');
+ assert.equal(report.rolling.available,false);assert.equal(report.fallback.available,false);
+ assert.equal(report.rolling.exactPublicScoreMatch,false);
+ assert.equal(report.fallback.exactPublicScoreMatch,false);
+ assert.equal(reads,2);assert.equal(report.d1Writes,0);assert.equal(report.providerCalls,0);
+});
 test('AI private cycle attaches only date-exact verified 23rd secondary score and does not write D1',async()=>{
  await fixture('ai-semiconductor',async({root})=>{
   const provisionalDate='2026-10-22';let writes=0,reads=0,scoreCalls=0;
