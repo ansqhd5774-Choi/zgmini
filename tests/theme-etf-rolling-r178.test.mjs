@@ -16,6 +16,31 @@ test('valid derived scores; no primary/backup bar data in API output',async()=>{
  const body=await readRollingPublic(db,b,{now});assert.equal(body.phase,'PROVISIONAL');assert.equal(body.themes.length,7);
  assert.equal(body.provisional.points[0].date,'2026-10-19');assert.equal('privateBars'in body,false);
 });
+test('fresh GMH-only confirmed rolling can revive the immutable seed without an EOD provisional point',async()=>{
+ const b=seed(),p=rolling(b),current=Date.parse('2026-11-08T04:00:00Z');
+ const end=Date.parse('2026-11-06T00:00:00Z');
+ const dates=Array.from({length:252},(_,i)=>new Date(end-(251-i)*86400000)
+  .toISOString().slice(0,10));
+ p.phase='CONFIRMED';p.observationDate='2026-11-06';
+ p.confirmedObservationDate=p.observationDate;
+ p.asOf='2026-11-08T03:00:00Z';p.sourceStoredAt=p.asOf;
+ p.themes=p.themes.map(t=>({...t,score:42,
+  history:dates.map(date=>({date,score:42}))}));
+ p.provisional={asOf:p.asOf,points:[]};
+ p.lineage.confirmedPrimaryCount=13;
+ p.lineage.secondaryPendingCount=0;
+ p.lineage.latestCompletedSession=p.observationDate;
+ assert.equal(await validRollingPublic(p,b,{now:current}),true);
+ const db={prepare(){return{bind(){return{first:async()=>({body:JSON.stringify(p),
+  stored_at:current-1000})}}}}};
+ const exposed=await readRollingPublic(db,b,{now:current});
+ assert.equal(exposed.status,'READY');
+ assert.equal(exposed.phase,'CONFIRMED');
+ assert.equal(exposed.observationDate,'2026-11-06');
+ assert.equal(Object.hasOwn(exposed,'provisional'),false);
+ p.sourcePriceReconciled=false;
+ assert.equal(await validRollingPublic(p,b,{now:current}),false);
+});
 test('unaltered immutable seed is required',async()=>{
  const b=seed(),p=rolling(b);p.themes[0].history[0].score=99;
  assert.equal(await validRollingPublic(p,b,{now}),false);
