@@ -94,3 +94,5 @@
 - 교차 리뷰 반영 후 `node --test inflation-causal-candidate-*.test.mjs` **27/27 PASS**. 이는 모의 응답+로컬 저장 단계, PC 실수집/공개 배포 PASS 아님.
 
 **현재 실행 차단의 정확한 범위:** 승인/설치되지 않은 신규 후보 source 7개를 PC에서 실행할 수 없음. 그러나 이 상태는 기존 19개 자동 수집과 다른 기능의 정지를 뜻하지 않는다. 예약 자연 검증은 마지막 후속 단계로 유지한다.
+
+- 공통 공식 호스트 등록은 최신 main 기반 별도 [PR #1007](https://github.com/ansqhd5774-Choi/zgmini/pull/1007)로 제출. TREASURY/FEDBOARD soft quota 계측과 기존 공급자 mapping 회귀만 포함. **PR 미병합 및 PC 미설치**이므로 #16/#29의 실제 공통 quota 계측 완료로 판정하지 않음.
