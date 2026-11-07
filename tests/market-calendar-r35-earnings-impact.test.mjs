@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {earningsDisplaySnapshot,earningsDisplayHtml,earningsDisplayResponse} from '../lib/earnings-api-display.mjs';
+import {koreanCompanyName} from '../lib/market-calendar-company-ko.mjs';
 
 const base=Date.parse('2026-10-29T00:00:00Z');
 const days=Array.from({length:14},(_,i)=>new Date(base+i*86400000).toISOString().slice(0,10));
@@ -171,4 +172,52 @@ test('Alphabet share classes use a single Korean display name and both English t
  assert.equal(display(state,{query:'알파벳'}).count,1);
  assert.equal(display(state,{query:'Alphabet'}).count,1);
  assert.equal(display(state,{query:'GOOGL'}).count,1);
+});
+
+test('new three-star and two-star issuer aliases preserve the English issuer and support Korean search',()=>{
+ const samples=[
+  ['CHTR','Charter Communications, Inc.','차터 커뮤니케이션스'],
+  ['AMG','Affiliated Managers Group, Inc.','어필리에이티드 매니저스 그룹'],
+  ['WF','Woori Bank','우리은행'],
+  ['VST','Vistra Corp.','비스트라 에너지'],
+  ['OXY','Occidental Petroleum Corporation','옥시덴탈 페트롤리움'],
+  ['GTN.A','Gray Media, Inc.','그레이 미디어'],
+  ['PBR.A','Petroleo Brasileiro S.A.- Petrobras','페트로브라스'],
+  ['MOG.A','Moog Inc.','무그'],
+  ['A','Agilent Technologies, Inc.','애질런트 테크놀로지스'],
+  ['ZM','Zoom Communications, Inc.','줌 커뮤니케이션즈'],
+ ];
+ const state=snapshot(samples.map(([ticker,company])=>event(ticker,days[0],'after_market',false,company)));
+ const original=JSON.stringify(state.byDay);
+ const html=display(state).html;
+ for(const [ticker,company,ko] of samples){
+  assert.equal(koreanCompanyName([ticker],company),ko);
+  assert.ok(html.includes(`${ko} (${company} · ${ticker})`),ticker);
+  assert.equal(display(state,{query:ko}).count,1,ticker);
+  if(ticker.length>1)assert.equal(display(state,{query:ticker}).count,1,ticker);
+ }
+ assert.equal(JSON.stringify(state.byDay),original);
+});
+
+test('expanded aliases reject recycled short symbols and unrelated issuer names',()=>{
+ for(const [ticker,company] of [
+  ['B','Other Bank Inc.'],['J','Just Another Inc.'],
+  ['A','A Fictional Business'],['GTN.A','Different Media Inc.'],
+  ['PBR','Power Brands Inc.'],['ZM','Zebra Mining Inc.'],
+ ])assert.equal(koreanCompanyName([ticker],company),null,`${ticker}:${company}`);
+});
+
+test('expanded aliases identify issuer names escaped in saved HTML without weakening HTML escaping',()=>{
+ const state=snapshot([
+  event('KKR',days[0],'after_market',false,'KKR & Co. Inc.'),
+  event('JJSF',days[0],'after_market',false,'J & J Snack Foods Corp.'),
+  event('BJ',days[0],'after_market',false,"BJ's Wholesale Club Holdings, Inc."),
+ ]);
+ const html=display(state).html;
+ assert.match(html,/케이케이알 \(KKR &amp; Co\. Inc\. · KKR\)/);
+ assert.match(html,/J&amp;J 스낵 푸즈 \(J &amp; J Snack Foods Corp\. · JJSF\)/);
+ assert.match(html,/BJ스 홀세일 클럽 \(BJ&#39;s Wholesale Club Holdings, Inc\. · BJ\)/);
+ assert.equal(display(state,{query:'케이케이알'}).count,1);
+ assert.equal(display(state,{query:'스낵'}).count,1);
+ assert.equal(display(state,{query:'홀세일'}).count,1);
 });
