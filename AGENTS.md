@@ -1,5 +1,8 @@
 ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 
+## 외부 시장데이터 API 공개 권한 정본 (2026-11-07)
+- 외부 사이트 공개용 수집원을 새로 조사하기 전 [무료 API 공개 권한 대장](docs/API_SOURCE_RIGHTS_REGISTRY.md)을 확인한다. **Alpaca Basic IEX** 무료 시세와 **MarketParquet 무료 일봉**은 접근·내부 수집이 가능해도 현재 확인된 범위에서 공개 파생 지표·차트 이용권이 없다. MarketParquet 전체 시장 등락 지수 무료 예외 서면 문의는 답변 대기 중이다. **무료 호출 성공 ≠ 공개 권리**이며 타 피드(SIP 등)로 결론을 확대하지 않는다. 기존 게시를 임의 숨김·삭제하지 말고, 공급자 최신 직접 답변이나 이용 방식 변경시에만 관련 권한을 재검증한다.
+
 ## 테마 확장 공통 기준
 - 신규 테마·산식 작업의 정본은 기존 전용 브랜치 `codex/theme-fear-greed-integration-20261025`의 `docs/THEME_PLATFORM_STANDARD.md`, `docs/THEME_ONBOARDING_PLAYBOOK.md`, `config/theme-platform-delegation.json`이다. 일반챗·CMD 실행 방식은 같은 브랜치 `docs/CMD_EXECUTION_PLAYBOOK.md`를 함께 참조한다. 전체 브랜치에 중복 커밋하지 않고 이 공통 원본을 확인한다.
 - R18→R33은 같은 R32 개발·적용 작업이다. 테마 수·ETF 후보 수의 사업상 최대/목표 개수를 두지 않는다. 승인 범위의 통상 등록·검증·운영 작업은 반복 승인 없이 진행하되 기술·권리·인증 검증을 우회하지 않는다.
