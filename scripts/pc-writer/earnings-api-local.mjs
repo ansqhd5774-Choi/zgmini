@@ -117,4 +117,3 @@ export async function collectEarningsApiForwardLocal({db,apiKey,now=Date.now(),
    publicationStatus:'HELD_UNCONFIRMED'};
  }finally{await locks.finish(FORWARD_JOB_KEY,lease,Date.now(),'IDLE');}
 }
-
