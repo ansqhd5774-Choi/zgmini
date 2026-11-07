@@ -122,3 +122,25 @@
 - 기존 공개19 계약은 정확히 19행을 요구하고 4축 점수와 분리돼 있음. 신규 7개는 별도 연구용 D1 key/API/UI 계약을 정해 승인받아야 하며, 기존 19개 행이나 기존 점수·가중치를 변경하지 않음. #15·#17·#30은 정의·권리·산식 선택 이전 `DEFERRED`; #27은 #26 PCE와 동일 원천이므로 중복 수집하지 않음.
 - **최신 진행률:** 원본 후보 검토 11/11 완료. 비중복 10개 중 등록·소스 설치·활성화 **7/10**, 첫 실PC 데이터 저장 **4/7**, 공개 D1/API/UI 신규 반영 **0/7**. 기타 3개는 의사결정 대기. 
 - **다음 필수 실행:** 첫 유효 Core 수집 주기에서 #28 원자료 저장·재조회 증거 확인(기존 24시간 안전 간격 유지); #22·#23은 승인된 최소 실패 코드 진단과 해당 원인별 수정만 수행. 신규 공개 계약과 보류 3개 정의는 사용자 승인 범위 확정 후 구현. **예약 자동 갱신 검증은 실제 수집·저장·공개 반영을 모두 완료한 다음 후속 작업으로만 실행**.
+
+## 10. 7개 신규 공개 연구자료 계약 제안 — 사용자 승인 전 비구현
+
+**상태: DRAFT/APPROVAL_REQUIRED.** 소스 설치·사설 원자료 저장 승인과 신규 공개 API 계약 승인은 서로 다르다. 이 절은 선택지 기록이며 Worker/D1/API/UI 구현·병합·배포를 허가하지 않는다.
+
+- 제안 저장: 기존 D1 `market_public_snapshots_v1`의 **별도** 키 `detail:inflation-causal-candidates-7:r1`. 기존 19개 키 `detail:inflation-causal-public-19:r1`·연구 경로 `/api/inflation-causal-inputs`·기존 4축 점수/market-score는 변경하지 않음.
+- 제안 공개 GET/HEAD: `/api/inflation-candidate-inputs`. 방문자는 이미 게시한 D1 projection만 읽음(공급자 호출·PC 원자료 접근·계산 없음). `no-store`, noindex, 잘못된 method/query 거부.
+- 제안 payload: `schemaVersion=inflation-causal-candidates-7-r1-v1`, `status=READY|PARTIAL`, `score=null`, `sourceVersion`, `sourceStoredAt`, `indicators` **정확히 7행**. 각 행: `id,series,unit,status,value,previousValue,observationDate,previousObservationDate,sourceStoredAt,availableAt,history`. 관측일/수집일/게시일 별도; null/0/missing/stale 구분. 수치는 유한수·원 단위 그대로(관세 순수납액 음수도 허용). history는 원자료에서 선택한 최신 최대 13개로 제한하며 장기 전체 원자료는 공개 안 함. 성공 시 D1 재조회 및 공개 API/UI 값까지 검증.
+- **판단/점수**: 일곱 행 모두 초기 표시 `연구 원자료·미평가`. 기존 4축 점수에 가중치·상승/하락 방향 판정·추정 전가율을 추가하지 않음. 부족/오류가 있으면 `PARTIAL`·해당 행 `PENDING`; 기존 정상본을 덮거나 오래된 자료를 최신이라 표시하지 않음.
+- 개발 기준은 신규 UI/기능 브랜치의 오래된 파일이 아닌 최신 `main`. 승인 시 이미 있는 공통 PC 게시 B lane과 Worker/D1 readback을 재사용, 새로운 전용 CMD/예약/Cloudflare Cron은 생성하지 않음.
+
+| 원본 번호 | 제안 공개 명칭 | series 또는 공식 선택자 | 원 단위·주기 |
+|---|---|---|---|
+| #2 | 미국 일반 휘발유 가격 | EIA `EMM_EPMR_PTE_NUS_DPG` | USD/갤런 · 주간 |
+| #16 | 미국 관세 순수납액 | Treasury MTS `Customs Duties` / line 405 | USD · 월간(법정 세율 아님) |
+| #22 | 소비자물가 임대료 | BLS `CUSR0000SEHA` | 지수 · 월간(후행) |
+| #23 | 소비자물가 자가주거비(OER) | BLS `CUSR0000SEHC01` | 지수 · 월간(후행) |
+| #24 | 최종수요 생산자물가 | BLS `WPSFD4` | 지수 · 월간 |
+| #28 | 미국 제조업 총재고 | Census M3 `MTM/TI`, SA, US | 백만 USD · 월간 |
+| #29 | 미국 제조업 산업생산지수 | Fed G17 `GMF` | 지수 · 월간 |
+
+**승인 질문:** 기존 19개·4축 점수 완전 보존, 별도 연구용 D1 키/API/UI, 원자료 요약 7행만 공개하는 위 계약을 승인할지. 승인 전에는 신규 D1/공개 API/UI 쓰기 0건으로 유지한다.
