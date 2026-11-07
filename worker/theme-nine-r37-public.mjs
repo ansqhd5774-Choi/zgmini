@@ -114,6 +114,8 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now,indepen
   const fromBase=base.provisional?.points,fromNew=record.provisional?.points;
   if(!Array.isArray(fromNew)||fromNew.length<1||fromNew.length>32||
    (!independentAnchor&&(!Array.isArray(fromBase)||fromBase.length!==fromNew.length)))return false;
+  // Do not publish tomorrow's provisional score as an observation made today.
+  if(fromNew.some(p=>validDate(p?.date)&&Date.parse(p.date+'T00:00:00Z')>now))return false;
   if(record.provisionalLineage?.source===R51_PUBLIC_LEGACY_SOURCE){
    // For the current public contract, 26 Oct has three optional scores and
    // 27 Oct has seven core scores. This mode NEVER recalculates or replaces
