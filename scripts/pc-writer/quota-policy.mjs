@@ -20,6 +20,8 @@ export const PROVIDER_QUOTA_POLICY=Object.freeze({
  WORLDBANK:Object.freeze({label:'World Bank',hard:false,perDay:null,minIntervalMs:1_000,limitSource:'unknown'}),
  MARKETPARQUET:Object.freeze({label:'MarketParquet',hard:false,perMinute:60,minIntervalMs:1_000,limitSource:'provider-report',note:'free tier; paid tier may differ'}),
  NYFED:Object.freeze({label:'NY Fed',hard:false,perDay:null,minIntervalMs:1_000,limitSource:'release-frequency'}),
+ TREASURY:Object.freeze({label:'US Treasury FiscalData',hard:false,perDay:null,minIntervalMs:1_000,limitSource:'unknown',note:'MTS monthly official feed; no published hard quota assumed'}),
+ FEDBOARD:Object.freeze({label:'Federal Reserve Board data',hard:false,perDay:null,minIntervalMs:1_000,limitSource:'unknown',note:'G.17 monthly official text; no published hard quota assumed'}),
  CNN:Object.freeze({label:'CNN internal feed',hard:false,perMinute:12,minIntervalMs:5*minute,limitSource:'cache-policy',note:'unofficial endpoint; no SLA'}),
  FEARGREEDCHART:Object.freeze({label:'FearGreedChart',hard:false,perMinute:12,minIntervalMs:5*minute,limitSource:'cache-policy'})
 });
@@ -36,6 +38,7 @@ const HOSTS=[
  ['data.bis.org','BIS'],['api.worldbank.org','WORLDBANK'],['thedocs.worldbank.org','WORLDBANK'],
  ['marketparquet.com','MARKETPARQUET'],['api.marketparquet.com','MARKETPARQUET'],
  ['markets.newyorkfed.org','NYFED'],['www.newyorkfed.org','NYFED'],
+ ['api.fiscaldata.treasury.gov','TREASURY'],['www.federalreserve.gov','FEDBOARD'],
  ['production.dataviz.cnn.io','CNN']
 ];
 
