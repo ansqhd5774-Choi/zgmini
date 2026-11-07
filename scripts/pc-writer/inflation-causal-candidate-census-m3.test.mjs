@@ -9,8 +9,10 @@ import {
   normalizeCensusM3Inventories,
 } from './inflation-causal-candidate-census-m3.mjs';
 
-const HEADERS=['data_type_code','time_slot_id','seasonally_adj','category_code','cell_value','error_data','us'];
-const row=(year,month,value='900000')=>['TI',`${year}-${month}`,'yes','MTM',value,'','1'];
+const HEADERS=['data_type_code','time_slot_id','seasonally_adj','category_code','cell_value','error_data','us','time'];
+// The official EITS example returns a numeric internal time_slot_id (e.g. 1329)
+// and a distinct ISO month field `time` (e.g. 2012-01).
+const row=(year,month,value='900000')=>['TI','1329','yes','MTM',value,'','1',`${year}-${month}`];
 const payload=(...rows)=>[HEADERS,...rows];
 const response=x=>new Response(JSON.stringify(x),{status:200});
 const base=()=>{
@@ -22,15 +24,15 @@ const now=new Date('2026-11-08T00:00:00.000Z');
 
 test('official Census M3 MTM/TI uses only U.S. total manufacturer SA inventory levels',()=>{
   const items=normalizeCensusM3Inventories(payload(
-    ['NO','2026-09','yes','MTM','50000','','1'],
-    ['TI','2026-09','no','MTM','300000','','1'],
+    ['NO','1329','yes','MTM','50000','','1','2026-09'],
+    ['TI','1329','no','MTM','300000','','1','2026-09'],
     row(2026,'09','900000.00'),row(2026,'08','850000'),
   ));
   assert.deepEqual(items.map(x=>[x.date,x.value]),[['2026-08-01',850000],['2026-09-01',900000]]);
   assert.equal(items[1].unit,'USD_MILLION_SA_NOMINAL');
   assert.throws(()=>normalizeCensusM3Inventories(payload(row(2026,'09'),row(2026,'09'))),/VALUE_OR_DUPLICATE/);
   assert.throws(()=>normalizeCensusM3Inventories(payload(row(2026,'09','NA'))),/VALUE_OR_DUPLICATE/);
-  assert.throws(()=>normalizeCensusM3Inventories(payload(['NO','2026-09','yes','MTM','5','','1'])),/NOT_FOUND/);
+  assert.throws(()=>normalizeCensusM3Inventories(payload(['NO','1329','yes','MTM','5','','1','2026-09'])),/NOT_FOUND/);
 });
 
 test('collects two source years and archives private provider snapshots without key leakage',async t=>{
