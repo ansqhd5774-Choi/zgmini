@@ -185,6 +185,29 @@ test('grant rights separation prevents invocation of blocked existing owner',asy
  }finally{f.cleanup();}
 });
 
+test('unlicensed provisional feeds stay isolated while approved confirmed feeds retain their own lanes',async()=>{
+ const f=fixture();try{
+  const trace=[];
+  const owners=createExistingPublicOwnerAdapters({dataRoot:f.dir,allowPublish:true,
+   anonymousLicenseRiskAccepted:true,
+   publicRead:async()=>base,operations:mocked(trace)});
+  const rights=structuredClone(context);
+  for(const group of plan.groups.filter(g=>g.kind==='provisional'))
+   rights[group.feedKey].rightsEvidenceValid=false;
+  const outcome=await runPublicPhysicalCycle({grant,allowPublish:true,
+   contextByFeed:rights,owners,readPublic:async()=>base});
+  assert.equal(outcome.status,'PARTIAL_REVIEW_REQUIRED');
+  assert.equal(outcome.verifiedGroups,3);
+  assert.equal(outcome.d1Writes,3);
+  assert.equal(outcome.providerCalls,0);
+  assert.equal(outcome.schedulerWrites,0);
+  assert.deepEqual(outcome.results.filter(r=>r.kind==='provisional')
+   .map(r=>r.reason),Array(3).fill('RIGHTS_EVIDENCE_MISSING'));
+  assert.deepEqual(trace.filter(([name])=>['buildR88','publishR88','dcR8','spaceR8']
+   .includes(name)),[]);
+ }finally{f.cleanup();}
+});
+
 test('uncertain D1 follow-up stops subsequent physical owner calls',async()=>{
  const f=fixture();try{
   const trace=[];
