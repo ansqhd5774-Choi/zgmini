@@ -56,7 +56,7 @@ const currentPresentation=(item:Indicator)=>{
   const score=item.rawStatus==="READY"&&item.scoreStatus==="READY"&&validScore(item.score)?` · 평가 ${item.score.toFixed(1)}점`:"";
   return {value:textValue(item.value,item.unit),detail:detail+score,type:"raw"};
  }
- if(item.status==="READY"){
+ if(item.status==="READY"&&item.rawStatus!=="STALE"){
   const printed=[item.displayValue,item.formattedValue].find(s=>typeof s==="string"&&s.trim());
   if(printed)return {value:printed,detail:observedPeriodLabel(item,item.observationDate??item.asOfDate),type:"raw"};
   if(finite(item.value))return {value:textValue(item.value,item.unit),detail:observedPeriodLabel(item,item.observationDate??item.asOfDate),type:"raw"};
