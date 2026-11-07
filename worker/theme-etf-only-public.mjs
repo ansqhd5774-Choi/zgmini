@@ -6,7 +6,7 @@ import {addVerifiedDcPower} from './theme-data-center-power-r1.mjs';
 import {addVerifiedDcPowerProvisionalR1} from './theme-data-center-power-provisional-r1.mjs';
 import {addVerifiedSpaceSatellite} from './theme-space-satellite-r1.mjs';
 import {addVerifiedSpaceProvisionalR1} from './theme-space-satellite-provisional-r1.mjs';
-import {addVerifiedNineR37} from './theme-nine-r37-public.mjs';
+import {addVerifiedNineR37,readIndependentNineR37Confirmed} from './theme-nine-r37-public.mjs';
 import {addVerifiedNineR88} from './theme-nine-r88-provisional.mjs';
 import {readRollingPublic} from './theme-etf-rolling-public.mjs';
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
@@ -110,8 +110,25 @@ export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(
  }
  const observedAt=Date.parse(record.observationDate+'T23:59:59Z');
  const sourceAt=Date.parse(record.sourceStoredAt),storedAt=Number(row.stored_at);
- if(!Number.isFinite(storedAt)||storedAt>now||sourceAt>now||observedAt>now||now-observedAt>=PUBLIC_DISPLAY_MAX_AGE_MS)
+ if(!Number.isFinite(storedAt)||storedAt>now||sourceAt>now||observedAt>now||now-observedAt>=PUBLIC_DISPLAY_MAX_AGE_MS){
+  // R37's complete, independently verified R32 confirmed record must not be
+  // globally blocked by the older L7 PAIR50 seed's expiration. The special
+  // publication-base reader remains unchanged for existing writer contracts.
+  if(includeNineR37){
+   const confirmed=await readIndependentNineR37Confirmed(db,{now});
+   if(confirmed){
+    const withDc=await addVerifiedDcPower(db,confirmed,{now});
+    const withSpace=await addVerifiedSpaceSatellite(db,withDc,{now});
+    const withSpaceProvisional=await addVerifiedSpaceProvisionalR1(db,withSpace,{now});
+    const withDcProvisional=await addVerifiedDcPowerProvisionalR1(db,withSpaceProvisional,{now});
+    const exposed=await addVerifiedNineR88(db,withDcProvisional,{now});
+    return Response.json(exposed,{headers:{...headers,
+     'cache-control':'public, max-age=60, must-revalidate',
+     'x-data-snapshot-at':confirmed.sourceStoredAt}});
+   }
+  }
   return Response.json({status:'UNAVAILABLE',reason:'STORED_DATA_STALE',themes:[]},{status:503,headers});
+ }
  // Whitelist public derived score points: never return raw price/volume or internal audit rows.
  // Keep the confirmed 252 sessions immutable; read optional derived two-day output.
  // A missing/invalid provisional record never blocks the last good confirmed result.
