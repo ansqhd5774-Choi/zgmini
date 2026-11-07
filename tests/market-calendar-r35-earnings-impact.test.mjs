@@ -186,6 +186,12 @@ test('new three-star and two-star issuer aliases preserve the English issuer and
   ['MOG.A','Moog Inc.','무그'],
   ['A','Agilent Technologies, Inc.','애질런트 테크놀로지스'],
   ['ZM','Zoom Communications, Inc.','줌 커뮤니케이션즈'],
+  ['KR','Kroger Company (The)','크로거'],
+  ['DG','Dollar General Corporation','달러 제너럴'],
+  ['HPE','Hewlett Packard Enterprise Company','휴렛팩커드 엔터프라이즈'],
+  ['LEN','Lennar Corporation','레나'],
+  ['ACN','Accenture plc','액센츄어'],
+  ['MU','Micron Technology, Inc.','마이크론 테크놀로지'],
  ];
  const state=snapshot(samples.map(([ticker,company])=>event(ticker,days[0],'after_market',false,company)));
  const original=JSON.stringify(state.byDay);
@@ -194,7 +200,11 @@ test('new three-star and two-star issuer aliases preserve the English issuer and
   assert.equal(koreanCompanyName([ticker],company),ko);
   assert.ok(html.includes(`${ko} (${company} · ${ticker})`),ticker);
   assert.equal(display(state,{query:ko}).count,1,ticker);
-  if(ticker.length>1)assert.equal(display(state,{query:ticker}).count,1,ticker);
+  // Substring searches can also match another issuer (LEN in Agilent).
+  // Isolate each ticker when asserting an exact single-result search.
+  if(ticker.length>1)assert.equal(display(snapshot([
+   event(ticker,days[0],'after_market',false,company),
+  ]),{query:ticker}).count,1,ticker);
  }
  assert.equal(JSON.stringify(state.byDay),original);
 });
@@ -204,6 +214,9 @@ test('expanded aliases reject recycled short symbols and unrelated issuer names'
   ['B','Other Bank Inc.'],['J','Just Another Inc.'],
   ['A','A Fictional Business'],['GTN.A','Different Media Inc.'],
   ['PBR','Power Brands Inc.'],['ZM','Zebra Mining Inc.'],
+  ['KR','Korean Retail Inc.'],['DG','Different Gas Company'],
+  ['HPE','HPE Finance Services'],['LEN','Lending Holdings'],
+  ['ACN','Account Networks'],['MU','Multi Utilities Inc.'],
  ])assert.equal(koreanCompanyName([ticker],company),null,`${ticker}:${company}`);
 });
 
