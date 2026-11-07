@@ -23,7 +23,7 @@ export function normalizeCensusM3Inventories(payload){
   if(!Array.isArray(payload)||payload.length<2||payload.length>20_000||
     !Array.isArray(payload[0]))throw fail('CENSUS_M3_SHAPE_INVALID');
   const headers=payload[0];
-  const mandatory=['data_type_code','time_slot_id','seasonally_adj','category_code','cell_value','us'];
+  const mandatory=['data_type_code','time_slot_id','seasonally_adj','category_code','cell_value','us','time'];
   if(!mandatory.every(x=>headers.includes(x))||new Set(headers).size!==headers.length)
     throw fail('CENSUS_M3_HEADERS_INVALID');
   const observations=[],seen=new Set();
@@ -33,7 +33,9 @@ export function normalizeCensusM3Inventories(payload){
     if(row.data_type_code!=='TI'||row.category_code!=='MTM'||
       String(row.seasonally_adj).toLowerCase()!=='yes')continue;
     if(String(row.us)!=='1')throw fail('CENSUS_M3_NATIONAL_FACET_INVALID');
-    const date=monthDate(row.time_slot_id),raw=String(row.cell_value??'').replace(/,/g,'').trim();
+    // time_slot_id is a Census internal integer, NOT a YYYY-MM observation date.
+    // The required `time=YEAR` predicate returns a separate ISO month `time` field.
+    const date=monthDate(row.time),raw=String(row.cell_value??'').replace(/,/g,'').trim();
     if(!date||!/^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(raw)||!Number.isFinite(Number(raw))||
       Number(raw)<0||seen.has(date))throw fail('CENSUS_M3_INVENTORIES_VALUE_OR_DUPLICATE');
     seen.add(date);
