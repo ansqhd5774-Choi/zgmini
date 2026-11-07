@@ -61,9 +61,9 @@ export function configuredManualCommand({dataRoot,home,version,mode,argument=fal
  const runner=path.join(home,'versions',version,'scripts','pc-writer','theme-config-tool.mjs');
  return ['@echo off','setlocal EnableExtensions DisableDelayedExpansion',`set "ZGMINI_DATA_ROOT=${fs.realpathSync(dataRoot)}"`,`"E:\\ZGmini\\runtime\\node.exe" "${runner}" ${mode}${argument?' "%~1"':''}`,'set "RESULT=%ERRORLEVEL%"','pause','exit /b %RESULT%',''].join('\r\n');
 }
-export function installConfiguredTool({dataRoot,sourceSha,registerTask=false,stageOnly=false}={}){
- ensure(!stageOnly||!registerTask,'CONFIG_STAGE_CANNOT_REGISTER_TASK');
- ensure(/^[a-f0-9]{40}$/.test(sourceSha??''),'CONFIG_INSTALL_SOURCE_SHA');
+// The package and the immutable installer must use the same file inventory.
+// Dynamic JS imports alone cannot discover JSON/docs loaded through fs.
+export function configuredToolInstallFiles({root=repo}={}){
  let files=['theme-config-registry.mjs','theme-config-score.mjs','theme-config-tool.mjs',
   'theme-platform-store.mjs',
   'theme-optional-collect.mjs','theme-optional-adaptive-r2.mjs',
@@ -85,7 +85,12 @@ export function installConfiguredTool({dataRoot,sourceSha,registerTask=false,sta
  files.push('config/theme-nine-r20-approved-candidates.json','config/theme-platform-delegation.json',
   'docs/THEME_PLATFORM_STANDARD.md','docs/THEME_ONBOARDING_PLAYBOOK.md','docs/CMD_EXECUTION_PLAYBOOK.md');
  files.push('examples/theme-registration-r32.template.json');
- files=configuredDependencyClosure(files);
+ return configuredDependencyClosure(files,{root});
+}
+export function installConfiguredTool({dataRoot,sourceSha,registerTask=false,stageOnly=false}={}){
+ ensure(!stageOnly||!registerTask,'CONFIG_STAGE_CANNOT_REGISTER_TASK');
+ ensure(/^[a-f0-9]{40}$/.test(sourceSha??''),'CONFIG_INSTALL_SOURCE_SHA');
+ const files=configuredToolInstallFiles();
  const manifest=Object.fromEntries(files.map(f=>[f,digest(fs.readFileSync(path.join(repo,f)))]));
  const version=digest(JSON.stringify(manifest)).slice(0,16),home=safeDirectory(dataRoot,'pc-writer/theme-config-tool',{create:true});
  const relative='versions/'+version,versionDir=safeDirectory(home,relative,{create:true});

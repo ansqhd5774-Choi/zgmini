@@ -6,12 +6,22 @@ import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {digest} from '../scripts/pc-writer/theme-config-registry.mjs';
+import {configuredToolInstallFiles} from '../scripts/pc-writer/theme-config-install.mjs';
 import {PACKAGE_FILES,PACKAGE_SCHEMA,PACKAGE_REPOSITORY,
  PACKAGE_MANIFEST_MAX_BYTES,parseTaskStateCsv} from '../scripts/pc-writer/theme-config-package-runner.mjs';
 
 const repo=path.resolve(import.meta.dirname,'..');
 const sourceSha='a'.repeat(40);
 const sourceTreeSha='b'.repeat(40);
+test('the sealed package includes every immutable installer file, including data-only evidence',()=>{
+ const installFiles=configuredToolInstallFiles();
+ assert.ok(installFiles.every(rel=>PACKAGE_FILES.includes(rel)));
+ for(const rel of [
+  'config/theme-nine-r26-official-aum-evidence.json',
+  'config/theme-nine-r32-dated-aum-approval.json',
+  'scripts/pc-writer/theme-space-satellite-r23-dated-aum-evidence.json'
+ ])assert.ok(PACKAGE_FILES.includes(rel),rel);
+});
 const sourcePath=rel=>['RUN_PREFLIGHT.cmd','RUN_INSTALL.cmd','RUN_DIAGNOSE.cmd','README_KO.txt'].includes(rel)?
  path.join(repo,'packaging','theme-config',rel):path.join(repo,...rel.split('/'));
 const hashes=root=>{

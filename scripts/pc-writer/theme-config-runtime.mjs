@@ -6,7 +6,7 @@ import {safeDirectory,digest,ensure} from './theme-config-registry.mjs';
 import {configuredManualCommand} from './theme-config-install.mjs';
 import {upgradeConfiguredSchedule} from './theme-config-upgrade.mjs';
 export function upgradeConfiguredRuntime({dataRoot,sourceSha,currentProof=null,
- getTaskXml=null,getTaskState=null,stageBundle,now=new Date()}={}){
+ getTaskXml=null,getTaskState=null,stageBundle,now=new Date(),platform=process.platform}={}){
  const home=safeDirectory(dataRoot,'pc-writer/theme-config-tool');
  const lock=path.join(home,'runtime-upgrade.lock');let owned=false;
  const active=path.join(home,'ACTIVE_RUNTIME.json');
@@ -30,7 +30,7 @@ export function upgradeConfiguredRuntime({dataRoot,sourceSha,currentProof=null,
   }
   const name='PLATFORM_UPGRADE_'+now.getTime()+'.json';
   const inspect=()=>{ensure(state()===3,'CONFIG_RUNTIME_TASK_NOT_READY');return getTaskXml();};
-  const result=upgradeConfiguredSchedule({dataRoot,sourceSha,installedOverride:old,resultFileName:name,getTaskXml:inspect,stageBundle,now});
+  const result=upgradeConfiguredSchedule({dataRoot,sourceSha,installedOverride:old,resultFileName:name,getTaskXml:inspect,stageBundle,now,platform});
   const next={authority:'VERIFIED_INSTALLED_SOURCE_MANIFEST',status:'CONFIG_TOOL_INSTALLED',home,
    sourceSha,version:result.newVersion,manifest:result.installedManifest,upgradeResult:name};
   // Only the existing common registration/list/update entry points are moved.

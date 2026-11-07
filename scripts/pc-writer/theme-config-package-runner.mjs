@@ -6,7 +6,8 @@ import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {digest,safeDirectory} from './theme-config-registry.mjs';
-import {configuredScheduledCommand,configuredDependencyClosure} from './theme-config-install.mjs';
+import {configuredScheduledCommand,configuredDependencyClosure,
+ configuredToolInstallFiles} from './theme-config-install.mjs';
 import {upgradeConfiguredSchedule} from './theme-config-upgrade.mjs';
 import {upgradeConfiguredRuntime} from './theme-config-runtime.mjs';
 
@@ -21,38 +22,10 @@ export const PACKAGE_FILES=configuredDependencyClosure([
  'scripts/pc-writer/theme-config-timeout-diagnose.mjs',
  'scripts/pc-writer/theme-config-task-state.js',
  'scripts/pc-writer/theme-config-upgrade.mjs',
- 'scripts/pc-writer/theme-config-install.mjs',
- 'scripts/pc-writer/theme-config-registry.mjs',
- 'scripts/pc-writer/theme-config-score.mjs',
- 'scripts/pc-writer/theme-config-tool.mjs',
- 'scripts/pc-writer/theme-platform-store.mjs',
- 'scripts/pc-writer/theme-optional-collect.mjs',
- 'scripts/pc-writer/theme-optional-adaptive-r2.mjs',
- 'scripts/pc-writer/theme-optional-pair-weight-r3.mjs',
- 'scripts/pc-writer/theme-space-satellite-adaptive-r2.mjs',
- 'scripts/pc-writer/theme-shared-spy-readonly-r1.mjs',
- 'scripts/pc-writer/theme-optional-score-r188.mjs',
- 'scripts/pc-writer/theme-config-publication-preflight.mjs',
- 'scripts/pc-writer/theme-config-publication-d1.mjs',
- 'scripts/pc-writer/theme-config-auto-publish.mjs',
- 'scripts/pc-writer/theme-nine-r54-d1-client.mjs',
- 'scripts/pc-writer/theme-biotech-auth-r7.mjs',
- 'worker/public-display-freshness.mjs',
- 'worker/theme-configured-public.mjs',
- 'config/theme-data-registry.json',
- 'config/theme-public-operational-bindings.json',
- 'scripts/pc-writer/theme-space-satellite-r26-approved-roster.json',
- 'config/theme-nine-r20-approved-candidates.json',
- 'config/theme-platform-delegation.json',
- 'examples/theme-registration.template.json',
- 'examples/theme-registration-r32.template.json',
- 'docs/THEME_CONFIG_TOOL.md',
- 'docs/THEME_PLATFORM_STANDARD.md',
- 'docs/THEME_ONBOARDING_PLAYBOOK.md',
- 'docs/CMD_EXECUTION_PLAYBOOK.md',
+ ...configuredToolInstallFiles(),
 ]);
 // Manifest size grows with the verified dependency closure. The former fixed
-// 16 KiB gate rejected a legitimate 105-file package before any hash check.
+// 16 KiB gate rejected the legitimate expanded package before any hash check.
 // Bound accepted bytes by the exact allowlisted paths; the schema, file set,
 // and every SHA-256 must still match after parsing.
 export const PACKAGE_MANIFEST_MAX_BYTES=8192+PACKAGE_FILES.reduce((bytes,name)=>

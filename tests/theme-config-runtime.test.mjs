@@ -10,7 +10,7 @@ function setup(t){
  const initial=installConfiguredTool({dataRoot:root,sourceSha:'a'.repeat(40)}),home=initial.home;
  const proof={...initial,authority:'VERIFIED_INSTALLED_SOURCE_MANIFEST'};
  const xml='<Task>'+path.join(home,'THEME_SCHEDULED.vbs')+'T13:00:00</Task>';
- return {root,home,proof,options:{dataRoot:root,currentProof:proof,getTaskXml:()=>xml,getTaskState:()=>3}};
+ return {root,home,proof,options:{dataRoot:root,currentProof:proof,getTaskXml:()=>xml,getTaskState:()=>3,platform:'win32'}};
 }
 test('common update can run again using active manifest without deleting historical install result',t=>{
  const f=setup(t),original=fs.readFileSync(path.join(f.home,'INSTALL_RESULT.json'));
