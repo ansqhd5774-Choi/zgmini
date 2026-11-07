@@ -72,6 +72,32 @@ test('approved candidate writes ONLY new R37 key with CAS and readback',async()=
  assert.deepEqual(db.calls.filter(c=>c.write)[0].params[0],THEME_NINE_R37_KEY);
 });
 
+test('independent confirmed recovery writes R37 without a ready public base and retains D1 CAS',async()=>{
+ const db=fake();
+ const out=await publishNineR48D1({query:db.query,record:allowed,
+  publicBase:null,independentConfirmed:true,now});
+ assert.equal(out.written,1);
+ assert.equal(db.calls.filter(c=>c.write).length,1);
+ assert.equal(db.calls.find(c=>c.write).params[0],THEME_NINE_R37_KEY);
+ await assert.rejects(publishNineR48D1({query:db.query,record:allowed,
+  publicBase:null,independentConfirmed:true,now,expectedStoredAt:111}),
+  /D1_CAS_EXPECTED_STAMP/);
+ const sameDayChanged={...allowed,themes:allowed.themes.map((t,i)=>i===0?{
+  ...t,score:54,history:t.history.map((p,j)=>j===251?{...p,score:54}:p)
+ }:t)};
+ await assert.rejects(publishNineR48D1({query:db.query,record:sameDayChanged,
+  publicBase:null,independentConfirmed:true,now:now+1,expectedStoredAt:now}),
+  /D1_PRIOR_HISTORY_IMMUTABLE/);
+ for(const invalid of [
+  {...allowed,phase:'PROVISIONAL'},
+  {...allowed,publicationAuthorized:false},
+  {...allowed,provisional:{points:[{date:'2026-10-27',scores:{}}]}},
+ ])await assert.rejects(publishNineR48D1({query:db.query,record:invalid,
+  publicBase:null,independentConfirmed:true,now:now+1,expectedStoredAt:now}),
+  /INDEPENDENT_CONFIRMED_SCOPE|PUBLICATION_EVIDENCE_OR_BASE_NOT_READY/);
+ assert.equal(db.calls.filter(c=>c.write).length,1);
+});
+
 test('same day idempotent, but changed scores and older sessions fail safely',async()=>{
  const db=fake(allowed);
  const unchanged=await publishNineR48D1({query:db.query,record:allowed,
