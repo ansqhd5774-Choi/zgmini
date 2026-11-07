@@ -94,12 +94,16 @@ test('approved one-shot owner dispatch runs six feeds once, never eight R37 writ
  assert.ok(!Object.hasOwn(invocations[0],'record'));
 });
 
-test('owner reports alone cannot claim the ten-theme public cutover is done',async()=>{
+test('missing mandatory Reader callback blocks all six owners before writes',async()=>{
  const plan=planPublicPhysicalCycle(),invocations=[];
  const actual=await runPublicPhysicalCycle({grant,allowPublish:true,
   contextByFeed:allApproved(plan),owners:owners(plan,invocations)});
- assert.equal(actual.verifiedGroups,6);
- assert.equal(actual.status,'PUBLIC_READBACK_PENDING');
+ assert.equal(actual.verifiedGroups,0);
+ assert.equal(actual.status,'PUBLIC_BASE_READER_UNAVAILABLE');
+ assert.equal(actual.reason,'PUBLIC_BASE_READER_CALLBACK_REQUIRED');
+ assert.equal(actual.completedGroups,0);
+ assert.equal(actual.d1Writes,0);
+ assert.deepEqual(invocations,[]);
  assert.equal(actual.projection,null);
 });
 
@@ -127,7 +131,8 @@ test('private additional registrations do not become public or receive writer ca
  assert.equal(plan.publicTargetIds.length,10);
  assert.equal(plan.physicalFeedCount,6);
  const result=await runPublicPhysicalCycle({registrations:reg,grant,allowPublish:true,
-  contextByFeed:allApproved(plan),owners:owners(plan,invocations)});
+  contextByFeed:allApproved(plan),owners:owners(plan,invocations),
+  readPublic:async()=>publicFixture(plan)});
  assert.equal(result.verifiedGroups,6);
  assert.equal(invocations.length,6);
 });
@@ -139,7 +144,8 @@ test('missing rights or installed owner block only their feed without writes',as
  const handlers=owners(plan,invocations);
  delete handlers[plan.groups[1].feedKey];
  const output=await runPublicPhysicalCycle({grant,allowPublish:true,
-  contextByFeed:approvals,owners:handlers});
+  contextByFeed:approvals,owners:handlers,
+  readPublic:async()=>publicFixture(plan)});
  assert.equal(output.status,'PARTIAL_REVIEW_REQUIRED');
  assert.equal(output.verifiedGroups,4);
  assert.equal(output.results[0].reason,'RIGHTS_EVIDENCE_MISSING');
@@ -157,7 +163,8 @@ test('unrecognized or uncertain write outcome stops later owner calls, never ret
    providerCalls:0,schedulerWrites:0};
  };
  const result=await runPublicPhysicalCycle({grant,allowPublish:true,
-  contextByFeed:allApproved(plan),owners:handlers});
+  contextByFeed:allApproved(plan),owners:handlers,
+  readPublic:async()=>publicFixture(plan)});
  assert.equal(result.status,'STATE_UNKNOWN_STOPPED');
  assert.equal(result.completedGroups,2);
  assert.equal(result.d1Writes,2);
@@ -172,7 +179,8 @@ test('missing writer effect counts never count as a successful D1 readback',asyn
   invocations.push(input);return {status:'PUBLIC_API_VERIFIED'};
  };
  const result=await runPublicPhysicalCycle({grant,allowPublish:true,
-  contextByFeed:allApproved(plan),owners:handlers});
+  contextByFeed:allApproved(plan),owners:handlers,
+  readPublic:async()=>publicFixture(plan)});
  assert.equal(result.status,'STATE_UNKNOWN_STOPPED');
  assert.equal(result.d1Writes,0);
  assert.equal(invocations.length,1);
@@ -186,7 +194,8 @@ test('pending public Reader readback is distinct from verified D1 publication',a
    d1Writes:1,providerCalls:0};
  };
  const result=await runPublicPhysicalCycle({grant,allowPublish:true,
-  contextByFeed:allApproved(plan),owners:handlers});
+  contextByFeed:allApproved(plan),owners:handlers,
+  readPublic:async()=>publicFixture(plan)});
  assert.equal(result.status,'PARTIAL_REVIEW_REQUIRED');
  assert.equal(result.results[0].status,'PUBLIC_READBACK_PENDING');
  assert.equal(result.d1Writes,6);
@@ -201,7 +210,8 @@ test('R88 D1 CAS/readback alone never certifies public API completion',async()=>
    d1Writes:1,providerCalls:0};
  };
  const result=await runPublicPhysicalCycle({grant,allowPublish:true,
-  contextByFeed:allApproved(plan),owners:handlers});
+  contextByFeed:allApproved(plan),owners:handlers,
+  readPublic:async()=>publicFixture(plan)});
  assert.equal(result.status,'PARTIAL_REVIEW_REQUIRED');
  assert.equal(result.verifiedGroups,5);
  assert.equal(result.results.find(g=>g.feedKey===r88.feedKey).status,

@@ -109,18 +109,21 @@ export async function runPublicPhysicalCycle({sources,registrations=[],grant,
  // The six physical owners overlay the existing L7/R178 public Reader; none
  // refreshes its required base. An unavailable base would otherwise allow
  // confirmed D1 writes before R88 encounters a 503 and aborts the cycle.
- // Reuse the supplied readback callback for a read-only, pre-write check.
- if(typeof readPublic==='function'){
-  let baseline;
-  try{baseline=await readPublic();}
-  catch(error){return {...plan,status:'PUBLIC_BASE_READER_UNAVAILABLE',
-   reason:error?.code??'PUBLIC_BASE_READER_QUERY_FAILED',
-   completedGroups:0,verifiedGroups:0,results:[],projection:null};}
-  if(baseline?.status!=='READY')
-   return {...plan,status:'PUBLIC_BASE_READER_UNAVAILABLE',
-    reason:baseline?.reason??'PUBLIC_BASE_READER_NOT_READY',
-    completedGroups:0,verifiedGroups:0,results:[],projection:null};
- }
+ // A missing callback is not permission to skip the pre-write guard. The
+ // existing R178 base can be stale even when all six owner feeds are valid.
+ if(typeof readPublic!=='function')
+  return {...plan,status:'PUBLIC_BASE_READER_UNAVAILABLE',
+   reason:'PUBLIC_BASE_READER_CALLBACK_REQUIRED',
+   completedGroups:0,verifiedGroups:0,results:[],projection:null};
+ let baseline;
+ try{baseline=await readPublic();}
+ catch(error){return {...plan,status:'PUBLIC_BASE_READER_UNAVAILABLE',
+  reason:error?.code??'PUBLIC_BASE_READER_QUERY_FAILED',
+  completedGroups:0,verifiedGroups:0,results:[],projection:null};}
+ if(baseline?.status!=='READY')
+  return {...plan,status:'PUBLIC_BASE_READER_UNAVAILABLE',
+   reason:baseline?.reason??'PUBLIC_BASE_READER_NOT_READY',
+   completedGroups:0,verifiedGroups:0,results:[],projection:null};
  const results=[];
  let d1Writes=0;
  for(const group of plan.groups){
@@ -175,7 +178,7 @@ export async function runPublicPhysicalCycle({sources,registrations=[],grant,
  const ownersReady=!unknown&&results.length===plan.groups.length&&
   results.every(r=>r.status==='VERIFIED');
  let projection=null;
- if(ownersReady&&typeof readPublic==='function'){
+ if(ownersReady){
   try{projection=verifyPublicPhysicalProjection({plan,feed:await readPublic()});}
   catch(error){projection={status:'PUBLIC_READBACK_ERROR',
    reason:error?.code??'PUBLIC_READER_QUERY_FAILED'};}

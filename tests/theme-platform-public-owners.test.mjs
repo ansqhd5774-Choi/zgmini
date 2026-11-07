@@ -179,7 +179,7 @@ test('grant rights separation prevents invocation of blocked existing owner',asy
    publicRead:async()=>base,operations:mocked(trace)});
   const gate=structuredClone(context);gate[plan.groups[0].feedKey].rightsEvidenceValid=false;
   const result=await runPublicPhysicalCycle({grant,allowPublish:true,
-   contextByFeed:gate,owners});
+   contextByFeed:gate,owners,readPublic:async()=>base});
   assert.equal(result.results[0].reason,'RIGHTS_EVIDENCE_MISSING');
   assert.equal(trace.some(row=>row[0]==='r37'),false);
  }finally{f.cleanup();}
@@ -217,7 +217,7 @@ test('uncertain D1 follow-up stops subsequent physical owner calls',async()=>{
   const owners=createExistingPublicOwnerAdapters({dataRoot:f.dir,allowPublish:true,
    publicRead:async()=>base,operations:mocks});
   const result=await runPublicPhysicalCycle({grant,allowPublish:true,
-   contextByFeed:context,owners});
+   contextByFeed:context,owners,readPublic:async()=>base});
   assert.equal(result.status,'STATE_UNKNOWN_STOPPED');
   assert.equal(result.completedGroups,1);
   assert.equal(trace.some(row=>['dc','space','publishR88'].includes(row[0])),false);
@@ -233,7 +233,7 @@ test('optional writer missing its provider effect count cannot be certified zero
    anonymousLicenseRiskAccepted:true,
    publicRead:async()=>base,operations:mocks});
   const result=await runPublicPhysicalCycle({grant,allowPublish:true,
-   contextByFeed:context,owners});
+   contextByFeed:context,owners,readPublic:async()=>base});
   assert.equal(result.status,'STATE_UNKNOWN_STOPPED');
   assert.equal(result.completedGroups,2);
   assert.equal(result.results[1].reason,'PUBLIC_OWNER_EFFECT_UNVERIFIED');
