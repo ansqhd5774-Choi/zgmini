@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {runNineR54PublicConnect}
+import {runNineR54PublicConnect,selectNineR54CliMode,runNineR54CliMode}
  from '../scripts/pc-writer/theme-nine-r54-public-connect.mjs';
 import {THEME_NINE_R37_KEY,THEME_NINE_R37_ROSTER,
  THEME_NINE_R37_ROSTER_SHA,THEME_NINE_R37_VERSION,THEME_NINE_R37_METHOD}
@@ -33,6 +33,32 @@ const candidate={contract:'THEME_NINE_R48_R47_PRIVATE_R37_CANDIDATE_V1',
   score:52,history:dates.map(date=>({date,score:52}))})),
  publicationAuthorized:false,derivedOnlyNoRaw:true,
  providerCalls:0,d1Writes:0,schedulerWrites:0};
+
+test('confirmed-only CLI is an explicit, non-provisional execution mode',()=>{
+ assert.equal(selectNineR54CliMode(['--once','--publish','--confirmed-only']),
+  'CONFIRMED_ONLY');
+ assert.equal(selectNineR54CliMode(['--once','--publish',
+  '--accept-anonymous-license-risk']),'LEGACY_AUTO');
+ for(const args of [[],['--once','--confirmed-only'],
+  ['--once','--publish','--confirmed-only','--extra'],
+  ['--once','--publish','--allow-provisional']])
+  assert.equal(selectNineR54CliMode(args),null);
+});
+
+test('confirmed-only command never invokes the legacy provisional-capable owner',async()=>{
+ let confirmed=0,legacy=0;
+ const commands={runConfirmed:async input=>{confirmed++;
+  assert.equal(input.publisherConsent,true);return {status:'CONFIRMED_ONLY'};},
+ runLegacy:async()=>{legacy++;throw Error('LEGACY_MUST_NOT_RUN');}};
+ const result=await runNineR54CliMode('CONFIRMED_ONLY',
+  {publisherConsent:true},commands);
+ assert.equal(result.status,'CONFIRMED_ONLY');
+ assert.equal(confirmed,1);
+ assert.equal(legacy,0);
+ await assert.rejects(runNineR54CliMode('INVALID',{},commands),
+  /CLI_MODE_INVALID/);
+ assert.equal(legacy,0);
+});
 
 function fixture(t,{changedCandidate=null,publicReason='STORED_DATA_STALE'}={}){
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-r54-confirmed-'));
