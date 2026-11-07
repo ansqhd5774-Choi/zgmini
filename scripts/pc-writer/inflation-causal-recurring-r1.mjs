@@ -135,7 +135,8 @@ export async function collectInflation19IfDue({
   electricity:(await import('./inflation-causal-gas-electric.mjs')).collectIndustrialElectricity,
   sce:(await import('./inflation-sce-collector.mjs')).collectSceOneYear,
  };
- const report={status:'COMPLETE',providerRequests:0,updated:[],skipped:[...plan.skipped],failed:[]};
+ const report={status:'COMPLETE',providerRequests:0,updated:[],unchanged:[],
+  skipped:[...plan.skipped],failed:[]};
  const next={schema:INFL19_RECURRING_SCHEMA,processed:{...previous.processed},
   attempted:{...(previous.attempted??{})}};
  for(const due of plan.due){
@@ -174,15 +175,27 @@ export async function collectInflation19IfDue({
    // with its own existing storage/readback/unchanged contract.
    if(!['SAVED_READBACK','UNCHANGED','UNCHANGED_VALID_INPUT_PRESERVED','STORED'].includes(result?.status))
     throw err('INFL19_RECURRING_COLLECTOR_CONTRACT_DENIED');
+   const unchanged=['UNCHANGED','UNCHANGED_VALID_INPUT_PRESERVED'].includes(result.status);
+   if(unchanged&&group.key!=='gas'){
+    // Date-only calendar events can precede the provider's actual publication.
+    // The pre-call attempted checkpoint already prevents a retry for 24 hours;
+    // do not permanently mark this release processed until data is read back.
+    report.unchanged.push({source:group.key,status:'UNCHANGED_WAITING_NEXT_DUE',
+     providerRequests:count});
+    continue;
+   }
    next.processed[group.key]=due.eventKey;
    (checkpointIO?.save??(value=>saveCheckpoint(file,value)))(next);
-   report.updated.push({source:group.key,status:result.status,providerRequests:count});
+   if(unchanged)report.unchanged.push({source:group.key,status:result.status,providerRequests:count});
+   else report.updated.push({source:group.key,status:result.status,providerRequests:count});
   }catch(error){
    report.failed.push({source:group.key,code:/^INFL19_[A-Z0-9_]+$/.test(error?.code??'')?
     error.code:'INFL19_RECURRING_SOURCE_FAILED'});
   }finally{report.providerRequests+=groupRequests;}
  }
  if(report.failed.length)report.status='PARTIAL_PREVIOUS_CHECKPOINT_PRESERVED';
+ else if(!report.updated.length&&report.unchanged.length)
+  report.status='UNCHANGED_AWAITING_NEXT_DUE';
  return report;
 }
 

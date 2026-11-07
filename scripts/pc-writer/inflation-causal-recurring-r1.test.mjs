@@ -106,7 +106,8 @@ test('one source failure keeps previous checkpoint and allows independent due so
    electricity:async({quotaFetch})=>{await quotaFetch('https://eia.gov');await quotaFetch('https://eia.gov');e++;return {status:'UNCHANGED',providerRequests:2};},
   }});
  assert.equal(b,1);assert.equal(e,1);assert.equal(r.status,'PARTIAL_PREVIOUS_CHECKPOINT_PRESERVED');
- assert.equal(r.providerRequests,3);assert.equal(cp.processed.electricity,'2026-11-07');
+ assert.equal(r.providerRequests,3);assert.equal(cp.processed.electricity,undefined);
+ assert.deepEqual(r.unchanged,[{source:'electricity',status:'UNCHANGED_WAITING_NEXT_DUE',providerRequests:2}]);
  assert.equal(cp.processed.bls8,undefined);assert.equal(JSON.stringify(r).includes('key=123'),false);
  // The failed BLS attempt is checkpointed, so a second Core tick cannot refetch.
  const again=planInflation19Due({enabled:true,now,checkpoint:cp,events:releases.slice(0,2)});
@@ -171,4 +172,52 @@ test('SCE source uses safe pre-existing directory and measures redirect requests
   }}});
  assert.equal(r.status,'COMPLETE');assert.equal(count,2);
  assert.equal(r.providerRequests,2);assert.equal(checkpoint.processed.sce,'2026-11-07');
+});
+
+test('monthly UNCHANGED retries only after cooldown and a successful later readback',async()=>{
+ const cp={schema:INFL19_RECURRING_SCHEMA,processed:{},attempted:{}};
+ let attempts=0,clock=now;
+ const run=()=>collectInflation19IfDue({approved:true,base:'/staged/pc-writer',now:clock,
+  officialEvents:[releases[0]],providerEnv:{BLS_API_KEY:'test'},
+  checkpointIO:{file:'/none',load:()=>cp,save:x=>{
+   cp.processed={...x.processed};cp.attempted={...x.attempted};}},
+  quotaFetch:async()=>({ok:true}),collectors:{bls8:async({quotaFetch})=>{
+   await quotaFetch('https://api.bls.gov');attempts++;
+   return {status:attempts===1?'UNCHANGED_VALID_INPUT_PRESERVED':'SAVED_READBACK',providerCalls:1};
+  }}});
+ const first=await run();
+ assert.equal(first.status,'UNCHANGED_AWAITING_NEXT_DUE');
+ assert.equal(first.unchanged[0].status,'UNCHANGED_WAITING_NEXT_DUE');
+ assert.equal(cp.processed.bls8,undefined);assert.equal(attempts,1);
+ clock=new Date('2026-11-07T22:59:00.000Z');
+ const sameDay=await run();
+ assert.equal(sameDay.status,'NO_VERIFIED_RELEASE_DUE');assert.equal(attempts,1);
+ clock=new Date('2026-11-08T22:01:00.000Z');
+ const retried=await run();
+ assert.equal(retried.status,'COMPLETE');assert.equal(attempts,2);
+ assert.equal(cp.processed.bls8,'2026-11-07');
+});
+
+test('gas UNCHANGED closes the day, but the next UTC day may run again',async()=>{
+ const cp={schema:INFL19_RECURRING_SCHEMA,processed:{},attempted:{}};
+ let network=0,clock=now;
+ const run=()=>collectInflation19IfDue({approved:true,base:'/staged/pc-writer',now:clock,
+  gasDailyApproved:true,providerEnv:{FRED_API_KEY:'test'},
+  checkpointIO:{file:'/none',load:()=>cp,save:x=>{
+   cp.processed={...x.processed};cp.attempted={...x.attempted};}},
+  quotaFetch:async()=>({ok:true}),collectors:{gas:async({quotaFetch})=>{
+   await quotaFetch('https://api.stlouisfed.org');network++;
+   return {status:'UNCHANGED',providerRequests:1};
+  }}});
+ const first=await run();
+ assert.equal(first.status,'UNCHANGED_AWAITING_NEXT_DUE');
+ assert.equal(first.unchanged[0].source,'gas');
+ assert.equal(cp.processed.gas,'2026-11-07');assert.equal(network,1);
+ clock=new Date('2026-11-07T23:59:00.000Z');
+ const sameDay=await run();
+ assert.equal(sameDay.status,'NO_VERIFIED_RELEASE_DUE');assert.equal(network,1);
+ clock=new Date('2026-11-08T22:01:00.000Z');
+ const nextDay=await run();
+ assert.equal(nextDay.status,'UNCHANGED_AWAITING_NEXT_DUE');
+ assert.equal(cp.processed.gas,'2026-11-08');assert.equal(network,2);
 });
