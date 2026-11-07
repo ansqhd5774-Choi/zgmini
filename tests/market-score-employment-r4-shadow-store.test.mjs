@@ -66,6 +66,34 @@ test("retrieval/availableAt/response-provenance-only changes stay NOOP and prese
   sqlite.close();
 });
 
+test("a failed middle batch never commits CURRENT without its matching HISTORY",async()=>{
+  const {sqlite,db}=sqliteD1();
+  const store=createEmploymentR4ShadowStore(db);
+  const observations=Array.from({length:90},(_,i)=>row({
+    observationDate:new Date(Date.UTC(2026,0,1+i)).toISOString().slice(0,10),
+  }));
+  const originalBatch=db.batch;
+  let calls=0;
+  db.batch=async statements=>{
+    if(++calls===2)throw Error("INJECTED_BATCH_FAILURE");
+    return await originalBatch(statements);
+  };
+  await assert.rejects(store.upsertRows({rows:observations}),/INJECTED_BATCH_FAILURE/);
+  const T=EMPLOYMENT_R4_SHADOW_TABLES;
+  const counts=()=>({
+    current:sqlite.prepare(`SELECT COUNT(*) n FROM ${T.current}`).get().n,
+    history:sqlite.prepare(`SELECT COUNT(*) n FROM ${T.history}`).get().n,
+  });
+  // Every successful chunk is internally complete even if later chunks fail.
+  assert.deepEqual(counts(),{current:40,history:40});
+  db.batch=originalBatch;
+  const retry=await store.upsertRows({rows:observations});
+  assert.equal(retry.noop,40);
+  assert.equal(retry.inserted,50);
+  assert.deepEqual(counts(),{current:90,history:90});
+  sqlite.close();
+});
+
 test("latestRun returns newest run and supports status filter",async()=>{
   const {sqlite,db}=sqliteD1();const store=createEmploymentR4ShadowStore(db);
   await store.recordRun({runId:"r1",provider:"EMPLOYMENT_R4_SHADOW",collectorRevision:"R1",status:"FAIL",startedAt:"2026-09-20T00:00:00Z",completedAt:"2026-09-20T00:01:00Z",detail:{}});
