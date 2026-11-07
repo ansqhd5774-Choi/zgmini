@@ -98,6 +98,20 @@ test('data-center source risk acknowledgement is independent from general publis
  }finally{f.cleanup();}
 });
 
+test('data-center confirmed owner preserves the existing R3 single-writer lock',async()=>{
+ const f=fixture();try{
+  const state=path.join(f.dir,'themes','data-center-power','state');
+  fs.mkdirSync(state,{recursive:true});
+  const lock=path.join(state,'dc-power-r3.lock');
+  fs.writeFileSync(lock,'other-existing-owner\n');
+  const owners=createExistingPublicOwnerAdapters({dataRoot:f.dir,allowPublish:true,
+   anonymousLicenseRiskAccepted:true,publicRead:async()=>base});
+  await assert.rejects(()=>call(owners,by('data-center','confirmed')),
+   {code:'DC_POWER_R3_ALREADY_LOCKED'});
+  assert.equal(fs.readFileSync(lock,'utf8'),'other-existing-owner\n');
+ }finally{f.cleanup();}
+});
+
 test('default does not opt into any operational mutation or token lookup',async()=>{
  const f=fixture();try{
   const trace=[];
