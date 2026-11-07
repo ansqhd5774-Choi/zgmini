@@ -40,6 +40,53 @@ const db=(record)=>({prepare(){return {bind(key){
  return {async first(){return record?{body:JSON.stringify(record),stored_at:now-1000}:null;}};
 }};}});
 
+test('expired L7 cannot hide independently fresh R37 confirmed themes',async()=>{
+ const oldDay='2026-10-12';
+ const oldDates=Array.from({length:252},(_,i)=>
+  new Date(Date.parse(oldDay+'T00:00:00Z')-(251-i)*86400000).toISOString().slice(0,10));
+ const seed={status:'READY',version:THEME_ETF_ONLY_PUBLIC_VERSION,
+  methodologyVersion:THEME_ETF_ONLY_METHOD,publicationAuthorized:true,
+  upstreamCommercialRightsVerified:true,derivedLicenseVerified:true,
+  individualStocksUsed:0,scoreMethod:'ETF_ONLY_PROXY',
+  sourcePriceMode:'UNADJUSTED_HOURLY_CLOSE_PROXY_DISCLOSED',
+  weights:{trend:.4,relativeStrength:.2,volatility:.4},pairWeight:.5,
+  sourceVersion:'VERIFIED_LEGACY',sourceStoredAt:'2026-10-13T00:00:00Z',
+  publishedAt:'2026-10-13T00:00:00Z',observationDate:oldDay,
+  themes:THEME_ETF_ONLY_PAIRS.map(t=>({...t,latestScore:40,
+   history:oldDates.map(date=>({date,score:40}))}))};
+ const source=(r37,{storedAt=now-1000}={})=>({prepare(sql){return {bind(key){return {async first(){
+  if(sql.includes('market_public_snapshots_v1'))return {body:JSON.stringify(seed),stored_at:now-1000};
+  if(key===THEME_NINE_R37_KEY)return {body:JSON.stringify(r37),stored_at:storedAt};
+  return null;
+ }};}};}});
+ const response=await readThemeEtfOnly(source(ready),{now});
+ assert.equal(response.status,200);
+ const publicFeed=await response.json();
+ assert.equal(publicFeed.status,'READY');
+ assert.equal(publicFeed.phase,'CONFIRMED');
+ assert.equal(publicFeed.modelRevision,THEME_NINE_R37_VERSION);
+ assert.equal(publicFeed.methodologyVersion,THEME_NINE_R37_METHOD);
+ assert.equal(publicFeed.themes.length,8);
+ assert.equal(publicFeed.themes.find(t=>t.theme==='AI·반도체'),undefined);
+ assert.equal(publicFeed.themes[0].history.length,252);
+ assert.deepEqual(publicFeed.themes[0].etfs,THEME_NINE_R37_ROSTER[0].etfs);
+ assert.equal(publicFeed.provisional.points.length,0);
+ // Existing R54 publication-base callers must not silently switch methods.
+ const publicationBase=await readThemeEtfOnly(source(ready),{now,includeNineR37:false});
+ assert.equal(publicationBase.status,503);
+ assert.equal((await publicationBase.json()).reason,'STORED_DATA_STALE');
+ // Invalid/expired/unauthorized R37 must never relabel an expired L7 as fresh.
+ for(const candidate of [
+  source(ready,{storedAt:now-9*86400000}),
+  source({...ready,publicationAuthorized:false}),
+  source({...ready,rosterSha256:'0'.repeat(64)}),
+ ]){
+  const rejected=await readThemeEtfOnly(candidate,{now});
+  assert.equal(rejected.status,503);
+  assert.equal((await rejected.json()).reason,'STORED_DATA_STALE');
+ }
+});
+
 test('R37 reader upgrades existing themes without introducing an eleventh theme',async()=>{
  const result=await addVerifiedNineR37(db(ready),baseline,{now});
  assert.equal(result.themes.length,10);
