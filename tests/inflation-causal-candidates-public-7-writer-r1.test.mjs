@@ -103,6 +103,43 @@ test('a four-to-seven advance retains last good values and no score',async()=>{
   assert.equal(f.calls.filter(x=>x.type==='UPDATE').length,1);
 });
 
+test('same envelope maximum accepts PENDING-to-READY from an older supplier fetch',async()=>{
+  const f=dbFixture(),w=inflationCandidates7PublicWriter(f.db);
+  const before=payload(4,T0);
+  await w.write(before,{storedAt:T1});
+  const after=structuredClone(before);
+  after.indicators[4]=ready(INFLATION_CANDIDATES_7[4],T0-30_000,42.5,'2026-09-01');
+  after.sourceVersion='INFL7_TEST_CPI_PPI_NEW_ROW';
+  assert.equal(after.sourceStoredAt,before.sourceStoredAt);
+  assert.ok(Date.parse(after.indicators[4].sourceStoredAt)<after.sourceStoredAt);
+  const result=await w.write(after,{storedAt:T2});
+  assert.equal(result.status,'READBACK_VERIFIED');
+  const saved=JSON.parse(f.rows.get(INFLATION_CANDIDATES_7_PUBLIC_KEY).body).payload;
+  assert.equal(saved.sourceStoredAt,T0);
+  assert.equal(saved.indicators[4].status,'READY');
+  assert.equal(saved.indicators[4].value,42.5);
+  assert.equal(saved.indicators.filter(row=>row.status==='READY').length,5);
+});
+
+test('same envelope maximum accepts corrected non-maximum row with newer own timestamp',async()=>{
+  const f=dbFixture(),w=inflationCandidates7PublicWriter(f.db);
+  const before=payload(4,T0);
+  before.indicators[1].sourceStoredAt=new Date(T0-60_000).toISOString();
+  await w.write(before,{storedAt:T1});
+  const after=structuredClone(before);
+  after.indicators[1].sourceStoredAt=new Date(T0-10_000).toISOString();
+  after.indicators[1].value=63.25;
+  after.indicators[1].history[0].value=63.25;
+  after.sourceVersion='INFL7_TEST_NONMAX_CORRECTION';
+  assert.equal(after.sourceStoredAt,before.sourceStoredAt);
+  const result=await w.write(after,{storedAt:T2});
+  assert.equal(result.status,'READBACK_VERIFIED');
+  const saved=JSON.parse(f.rows.get(INFLATION_CANDIDATES_7_PUBLIC_KEY).body).payload;
+  assert.equal(saved.sourceStoredAt,T0);
+  assert.equal(saved.indicators[1].value,63.25);
+  assert.equal(saved.indicators[0].value,0);
+});
+
 test('older source checkpoint and same-source conflicting value cannot overwrite',async()=>{
   const f=dbFixture(),w=inflationCandidates7PublicWriter(f.db);
   await w.write(payload(4,T1),{storedAt:T2});
