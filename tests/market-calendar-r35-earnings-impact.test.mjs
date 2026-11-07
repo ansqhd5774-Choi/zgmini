@@ -114,3 +114,50 @@ test('R42 Berkshire share classes merge by issuer, with both tickers searchable'
  assert.equal(display(state,{query:'BRK.B'}).count,1);
  assert.doesNotMatch(result.html,/동일 날짜 정보 상충/);
 });
+
+test('known Korean company name is visible with untouched English issuer and ticker',()=>{
+ const state=snapshot([event('AAPL',days[0],'after_market',true,'Apple Inc.'),
+  event('PLTR',days[0],'after_market',false,'Palantir Technologies Inc.')]);
+ const original=JSON.stringify(state.byDay);
+ const result=display(state);
+ assert.match(result.html,/애플 \(Apple Inc\. · AAPL\)/);
+ assert.match(result.html,/팔란티어 테크놀로지스 \(Palantir Technologies Inc\. · PLTR\)/);
+ assert.equal(JSON.stringify(state.byDay),original); // display only, saved HTML unchanged
+ assert.equal(display(state,{query:'애플'}).count,1);
+ assert.equal(display(state,{query:'팔란티어'}).count,1);
+ assert.equal(display(state,{query:'apple'}).count,1);
+ assert.equal(display(state,{query:'AAPL'}).count,1);
+ assert.equal(display(state,{query:'pltr'}).count,1);
+});
+
+test('unverified names retain vendor English and search does not fabricate Korean names',()=>{
+ const state=snapshot([event('AMD',days[0],'after_market',false,'Advanced Micro Devices, Inc.'),
+  event('ZZZZ',days[0],'after_market',false,'Unknown & <Test>')]);
+ const html=display(state).html;
+ assert.match(html,/Advanced Micro Devices, Inc\. \(AMD\)/);
+ assert.match(html,/Unknown &amp; &lt;Test&gt; \(ZZZZ\)/);
+ assert.equal(display(state,{query:'에이엠디'}).count,0);
+ assert.equal(display(state,{query:'Unknown'}).count,1);
+});
+
+test('Korean aliases preserve class deduplication, source HTML and star filters',()=>{
+ const state=snapshot([event('BRK.A',days[0],'after_market',true,'Berkshire Hathaway Inc.'),
+  event('BRK.B',days[0],'after_market',true,'Berkshire Hathaway Inc.')]);
+ const result=display(state);
+ assert.equal(result.count,1);
+ assert.match(result.html,/버크셔 해서웨이 \(Berkshire Hathaway Inc\. · BRK\.A·BRK\.B\)/);
+ assert.equal(display(state,{query:'버크셔'}).count,1);
+ assert.equal(display(state,{query:'BRK.B'}).count,1);
+ assert.equal(display(state,{importance:3}).count,0);
+});
+
+test('Alphabet share classes use a single Korean display name and both English tickers remain searchable',()=>{
+ const state=snapshot([event('GOOG',days[0],'after_market',true,'Alphabet Inc.'),
+  event('GOOGL',days[0],'after_market',true,'Alphabet Inc.')]);
+ const result=display(state);
+ assert.equal(result.count,1);
+ assert.match(result.html,/알파벳 \(Alphabet Inc\. · GOOG·GOOGL\)/);
+ assert.equal(display(state,{query:'알파벳'}).count,1);
+ assert.equal(display(state,{query:'Alphabet'}).count,1);
+ assert.equal(display(state,{query:'GOOGL'}).count,1);
+});
