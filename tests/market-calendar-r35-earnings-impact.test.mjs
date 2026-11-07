@@ -132,12 +132,23 @@ test('known Korean company name is visible with untouched English issuer and tic
 
 test('unverified names retain vendor English and search does not fabricate Korean names',()=>{
  const state=snapshot([event('AMD',days[0],'after_market',false,'Advanced Micro Devices, Inc.'),
-  event('ZZZZ',days[0],'after_market',false,'Unknown & <Test>')]);
+  event('ZZZZ',days[0],'after_market',false,'Unknown & <Test>'),
+  event('AAPL',days[0],'after_market',false,'Unrelated Company Inc.')]);
  const html=display(state).html;
  assert.match(html,/Advanced Micro Devices, Inc\. \(AMD\)/);
  assert.match(html,/Unknown &amp; &lt;Test&gt; \(ZZZZ\)/);
  assert.equal(display(state,{query:'에이엠디'}).count,0);
  assert.equal(display(state,{query:'Unknown'}).count,1);
+ assert.match(html,/Unrelated Company Inc\. \(AAPL\)/);
+ assert.equal(display(state,{query:'애플'}).count,0); // ticker reuse never mislabels a company
+});
+
+test('Korean issuer alias does not bypass escaping of an English company name',()=>{
+ const state=snapshot([event('AAPL',days[0],'after_market',false,'Apple & <Partners>')]);
+ const result=display(state);
+ assert.match(result.html,/애플 \(Apple &amp; &lt;Partners&gt; · AAPL\)/);
+ assert.doesNotMatch(result.html,/<Partners>/);
+ assert.equal(display(state,{query:'애플'}).count,1);
 });
 
 test('Korean aliases preserve class deduplication, source HTML and star filters',()=>{
