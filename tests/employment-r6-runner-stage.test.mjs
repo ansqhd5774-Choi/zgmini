@@ -68,6 +68,9 @@ test("Runner-facing stage emits only bounded aggregate and 29 statuses from real
   assert.equal(report.d1Writes,0);
   assert.equal(report.sqliteOpened,true);
   assert.equal(report.operationalDirectoryWrites,"NOT_ASSERTED");
+  assert.equal(report.walFailure,null);
+  assert.equal(report.walPreflight.coreObserved,true);
+  assert.equal(report.walPreflight.candidateObserved,true);
   assert.ok(Buffer.byteLength(json)+Buffer.byteLength(txt)<16384);
   assert.doesNotMatch(json+txt,/ORIGINAL-CANDIDATE-PATH-MUST-NOT-APPEAR/);
   assert.doesNotMatch(json+txt,/4\.2|sourceHash|sourceHashes|sourceStoredAt|history\W*:/);
@@ -118,6 +121,15 @@ test("uppercase private exception text is not mistaken for a public diagnostic c
   assert.equal(report.code,"RUNNER_R6_READ_FAILED");
   assert.equal(report.pitAuditError,"RUNNER_R6_READ_FAILED");
   assert.doesNotMatch(JSON.stringify(report),/PRIVATE_TOKEN_MUST_NOT_LEAK/);
+  const blocked=projectEmploymentR6RunnerResult({
+    error:Error("WAL_SIDECAR_NOT_READY"),
+    walFailure:{dbRole:secret,phase:secret,
+      detail:{headerMode:secret,walState:secret,shmState:secret,observedAt:secret}},
+  });
+  assert.equal(blocked.walFailure.dbRole,"UNKNOWN");
+  assert.equal(blocked.walFailure.phase,"UNKNOWN");
+  assert.equal(blocked.walFailure.walState,"UNOBSERVED");
+  assert.doesNotMatch(JSON.stringify(blocked),/PRIVATE_TOKEN_MUST_NOT_LEAK/);
 });
 
 test("SQLite-open evidence remains true when both PIT audit and stage fail after opening",async t=>{
@@ -147,6 +159,32 @@ test("WAL read-only open is fail-closed before SQLite can create missing sidecar
   assert.deepEqual(fs.readdirSync(env.dir).sort(),filesBefore);
   const report=JSON.parse(fs.readFileSync(path.join(env.output,result.reportFile+".json"),"utf8"));
   assert.equal(report.sqliteOpened,false);
+  assert.equal(report.walPreflight.coreObserved,false);
+  assert.equal(report.walPreflight.candidateObserved,false);
+  assert.deepEqual({role:report.walFailure.dbRole,phase:report.walFailure.phase,
+    header:report.walFailure.headerMode,wal:report.walFailure.walState,
+    shm:report.walFailure.shmState},{role:"CORE",phase:"INITIAL_SEAL",
+    header:"WAL",wal:"ABSENT",shm:"ABSENT"});
+  assert.match(report.walFailure.observedAt,/^\d{4}-\d{2}-\d{2}T/);
+  const txt=fs.readFileSync(path.join(env.output,result.reportFile+".txt"),"utf8");
+  assert.match(txt,/WAL_FAILURE_ROLE: CORE/);
+  assert.doesNotMatch(txt,/employment-r6-runner-fixture-|PRIVATE/);
+});
+
+test("WAL failure identifies isolated candidate when Core preflight succeeded",async t=>{
+  const env=environment(t);fixture(env.core);fixture(env.candidate,{wal:true,row:true});
+  assert.equal(fs.existsSync(env.candidate+"-wal"),false);
+  const result=await runEmploymentR6Runner(argv(env));
+  assert.equal(result.status,"BLOCKED");
+  const report=JSON.parse(fs.readFileSync(path.join(env.output,result.reportFile+".json"),"utf8"));
+  assert.equal(report.walPreflight.coreObserved,true);
+  assert.equal(report.walPreflight.candidateObserved,false);
+  assert.equal(report.walFailure.dbRole,"CANDIDATE");
+  assert.equal(report.walFailure.phase,"INITIAL_SEAL");
+  assert.equal(report.walFailure.walState,"ABSENT");
+  assert.equal(report.walFailure.shmState,"ABSENT");
+  assert.equal(report.sqliteOpened,false);
+  assert.equal(fs.existsSync(env.candidate+"-wal"),false);
 });
 
 test("already-present WAL sidecars permit a bounded read without claiming zero directory I/O",async t=>{

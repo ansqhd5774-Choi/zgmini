@@ -51,6 +51,17 @@ const SAFE_ERRORS=new Set([
 ]);
 const safeCode=value=>SAFE_ERRORS.has(value)?value:"RUNNER_R6_READ_FAILED";
 const safeCount=value=>Number.isSafeInteger(value)&&value>=0?value:null;
+const WAL_FAILURE_CODES=new Set(["WAL_SIDECAR_NOT_READY","WAL_SIDECAR_CHANGED"]);
+const SIDECAR_STATES=new Set(["PRESENT_FILE","ABSENT","NOT_FILE","ACCESS_DENIED","STAT_ERROR"]);
+
+function sidecarState(dbPath,suffix){
+  try{return fs.statSync(dbPath+suffix).isFile()?"PRESENT_FILE":"NOT_FILE";}
+  catch(error){
+    if(error?.code==="ENOENT")return "ABSENT";
+    if(error?.code==="EACCES"||error?.code==="EPERM")return "ACCESS_DENIED";
+    return "STAT_ERROR";
+  }
+}
 
 export function runnerOptionsFrom(argv){
   if(!Array.isArray(argv)||argv.length%2!==0)throw Error("RUNNER_R6_ARGUMENT_NOT_ALLOWED");
@@ -84,13 +95,22 @@ export function inspectWalSidecars(dbPath){
       throw Error("RUNNER_R6_SQLITE_HEADER_INVALID");
     }
     const wal=header[18]===2||header[19]===2;
-    if(wal&&!["-wal","-shm"].every(suffix=>{
-      try{return fs.statSync(dbPath+suffix).isFile();}catch{return false;}
-    }))throw Error("WAL_SIDECAR_NOT_READY");
+    if(wal){
+      const walState=sidecarState(dbPath,"-wal");
+      const shmState=sidecarState(dbPath,"-shm");
+      if(walState!=="PRESENT_FILE"||shmState!=="PRESENT_FILE"){
+        const blocked=Error("WAL_SIDECAR_NOT_READY");
+        blocked.walDetail={headerMode:"WAL",walState,shmState,
+          observedAt:new Date().toISOString()};
+        throw blocked;
+      }
+    }
     return {walMode:wal,walSidecarsPreexisting:wal};
   }catch(error){
     const code=safeCode(error?.message);
-    throw Error(code==="RUNNER_R6_READ_FAILED"?"RUNNER_R6_SQLITE_INSPECTION_FAILED":code);
+    const normalized=Error(code==="RUNNER_R6_READ_FAILED"?"RUNNER_R6_SQLITE_INSPECTION_FAILED":code);
+    if(code==="WAL_SIDECAR_NOT_READY")normalized.walDetail=error.walDetail;
+    throw normalized;
   }finally{if(file!==undefined)fs.closeSync(file);}
 }
 
@@ -132,7 +152,7 @@ function projectPit(pitCoverage){
 }
 
 export function projectEmploymentR6RunnerResult({body=null,pitCoverage=null,pitCoverageError=null,
-  error=null,wal=null,sqliteOpened=false}={}){
+  error=null,wal=null,sqliteOpened=false,walFailure=null}={}){
   if(!error&&(!body||!validEmploymentR6PublicDisplay(body))){
     throw Error("RUNNER_R6_PUBLIC_DISPLAY_INVALID");
   }
@@ -158,11 +178,26 @@ export function projectEmploymentR6RunnerResult({body=null,pitCoverage=null,pitC
     // A read-only SQLite connection can still touch WAL sidecar files.
     operationalDirectoryWrites:"NOT_ASSERTED",
     walPreflight:{
+      coreObserved:wal?.core!=null,
+      candidateObserved:wal?.candidate!=null,
       coreWalMode:wal?.core?.walMode===true,
       candidateWalMode:wal?.candidate?.walMode===true,
       coreWalSidecarsPreexisting:wal?.core?.walSidecarsPreexisting===true,
       candidateWalSidecarsPreexisting:wal?.candidate?.walSidecarsPreexisting===true,
     },
+    walFailure:failure&&WAL_FAILURE_CODES.has(failure)?{
+      dbRole:["CORE","CANDIDATE"].includes(walFailure?.dbRole)?walFailure.dbRole:"UNKNOWN",
+      phase:["INITIAL_SEAL","BEFORE_READ","AFTER_READ"].includes(walFailure?.phase)
+        ?walFailure.phase:"UNKNOWN",
+      headerMode:walFailure?.detail?.headerMode==="WAL"?"WAL":"UNKNOWN",
+      walState:SIDECAR_STATES.has(walFailure?.detail?.walState)
+        ?walFailure.detail.walState:"UNOBSERVED",
+      shmState:SIDECAR_STATES.has(walFailure?.detail?.shmState)
+        ?walFailure.detail.shmState:"UNOBSERVED",
+      observedAt:typeof walFailure?.detail?.observedAt==="string"
+        && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(walFailure.detail.observedAt)
+        ?walFailure.detail.observedAt:null,
+    }:null,
   };
   for(const name of ["sourceFeatures","recentlyObservedFeatures","chartReadyFeatures",
     "chartPartialFeatures","scoredFeatures","recentlyScoredFeatures"]){
@@ -199,6 +234,10 @@ function writeRunnerReport(outputDir,report){
     "ONE_YEAR_CHART_READY: "+(report.summary.chartReadyFeatures??"NO_EVIDENCE"),
     "CORE_PIT_HISTORY_MISSING: "+(report.pit.coreCurrentKeysMissingHistory??"NO_EVIDENCE"),
     "CANDIDATE_RECONCILIATION: "+report.pit.candidateReconciliationPreviewStatus,
+    "WAL_FAILURE_ROLE: "+(report.walFailure?.dbRole??"NONE"),
+    "WAL_FAILURE_PHASE: "+(report.walFailure?.phase??"NONE"),
+    "WAL_FAILURE_STATES: "+(report.walFailure
+      ?report.walFailure.walState+"/"+report.walFailure.shmState:"NONE"),
     "PROVIDER_CALLS: 0","D1_WRITES: 0","PUBLICATION: NOT_REQUESTED",
     "WAL_DIRECTORY_WRITES: NOT_ASSERTED","",
   ].join("\r\n");
@@ -213,23 +252,37 @@ export async function runEmploymentR6Runner(argv){
   try{options=runnerOptionsFrom(argv);}catch(error){
     return {status:"BLOCKED",code:safeCode(error?.message),reportFile:null};
   }
-  let report,sqliteOpened=false;
+  let report,sqliteOpened=false,walFailure=null;
+  const wal={core:null,candidate:null};
+  const protect=(dbRole,phase,check)=>{
+    try{return check();}
+    catch(error){
+      if(WAL_FAILURE_CODES.has(safeCode(error?.message))){
+        walFailure={dbRole,phase,detail:error?.walDetail??null};
+      }
+      throw error;
+    }
+  };
   try{
-    const coreSeal=captureWalSidecarSeal(options.dbPath);
-    const candidateSeal=captureWalSidecarSeal(options.candidateDbPath);
-    const wal={core:coreSeal.preflight,candidate:candidateSeal.preflight};
-    const check=dbPath=>{
-      if(dbPath===options.dbPath)assertWalSidecarSeal(dbPath,coreSeal);
-      else if(dbPath===options.candidateDbPath)assertWalSidecarSeal(dbPath,candidateSeal);
+    const coreSeal=protect("CORE","INITIAL_SEAL",()=>captureWalSidecarSeal(options.dbPath));
+    wal.core=coreSeal.preflight;
+    const candidateSeal=protect("CANDIDATE","INITIAL_SEAL",()=>captureWalSidecarSeal(options.candidateDbPath));
+    wal.candidate=candidateSeal.preflight;
+    const check=(dbPath,phase)=>{
+      if(dbPath===options.dbPath)protect("CORE",phase,()=>assertWalSidecarSeal(dbPath,coreSeal));
+      else if(dbPath===options.candidateDbPath){
+        protect("CANDIDATE",phase,()=>assertWalSidecarSeal(dbPath,candidateSeal));
+      }
       else throw Error("RUNNER_R6_ARGUMENT_NOT_ALLOWED");
     };
     const diagnostic=await stageEmploymentR6OneYearWithPitAudit({...options,
-      beforeReadOnlyOpen:check,afterReadOnlyOpen:check,
+      beforeReadOnlyOpen:dbPath=>check(dbPath,"BEFORE_READ"),
+      afterReadOnlyOpen:dbPath=>check(dbPath,"AFTER_READ"),
       onSqliteOpened:()=>{sqliteOpened=true;},
     });
     report=projectEmploymentR6RunnerResult({...diagnostic,wal,sqliteOpened});
   }catch(error){
-    report=projectEmploymentR6RunnerResult({error,sqliteOpened});
+    report=projectEmploymentR6RunnerResult({error,wal,sqliteOpened,walFailure});
   }
   let reportFile=null;
   try{reportFile=writeRunnerReport(options.outputDir,report);}
