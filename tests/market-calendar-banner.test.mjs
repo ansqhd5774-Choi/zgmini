@@ -76,7 +76,7 @@ test('banner recognizes ER1 >=97 only and excludes old FHS and unrated earnings'
  assert.equal(unpublished.count,0,'October generic ER1 must never grade November without its own cohort');
  const rendered=earningsDisplayHtml(display,{start,end:coveredDays.at(-1),importance:3},er1,null,novemberER1);
  assert.equal(rendered.count,1);
- assert.match(rendered.html,/aria-label="기업 실적 점수 99\.00점"/);
+ assert.match(rendered.html,/aria-label="기업 실적 점수 99\.00점 · 별 3개"/);
  const rows=earningsBannerRows(rendered.html,when);
  assert.deepEqual(rows.map(row=>row.ticker),['ADEA']);
  assert.equal(rows[0].kind,'실적');

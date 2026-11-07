@@ -32,7 +32,7 @@ test('R42 earnings importance filter requires a validated ER1 score',()=>{
  // A verified score at the approved threshold is the sole three-star path.
  const verified=earningsDisplayHtml(s,star3,verifiedER1);
  assert.equal(verified.count,1);
- assert.match(verified.html,/aria-label="기업 실적 점수 97\.00점"[^>]*>★★★<\/div>/);
+ assert.match(verified.html,/aria-label="기업 실적 점수 97\.00점 · 별 3개"[^>]*>★★★<\/div>/);
  assert.equal(earningsDisplayHtml(s,{start:day,end:day,importance:[1]},verifiedER1).count,0);
  assert.equal(earningsDisplayHtml(s,{start:day,end:day}).count,1);
  assert.equal(s.byDay[day][0],before);

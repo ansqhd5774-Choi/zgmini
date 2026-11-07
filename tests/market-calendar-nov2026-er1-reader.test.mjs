@@ -59,7 +59,8 @@ test('actual API route reads the November key separately and sends it to the ER1
  const route=readFileSync(new URL('../app/api/earnings-calendar-display/route.ts',import.meta.url),'utf8');
  assert.match(route,/NOV2026_ER1_PUBLIC_KEY,withNov2026Display/);
  assert.match(route,/store\.readOutput\(NOV2026_ER1_PUBLIC_KEY\)/);
- assert.match(route,/request\.url,er1,decemberER1,novemberER1\)/);
+ assert.match(route,/request\.url,er1,decemberER1,novemberER1,monthlyER1\)/);
+ assert.match(route,/er1MonthlyPublicKey\(month\)/);
  assert.match(route,/store\.readOutput\(ER1_EARNINGS_DISPLAY_PUBLIC_KEY\)/);
  assert.match(route,/store\.readOutput\(DEC2026_ER1_PUBLIC_KEY\)/);
 });

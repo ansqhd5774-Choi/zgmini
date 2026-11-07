@@ -36,7 +36,9 @@ test('EPS-only forecast keeps positive above loss regardless of revenue',async()
   assert.equal(checked.method,FORECAST_METHOD);
   const html=await earningsDisplayResponse(source(),req,null,null,pub).text();
   assert.match(html,/ER1 예상 EPS · 2026-11-06 기준/);
-  assert.match(html,/예상 EPS 자료 없음 · 별 1개/);
+  assert.equal((html.match(/>★<\/div>/g)??[]).length,2);
+  assert.match(html,/기업 실적 점수 없음">-<\/div>/);
+  assert.doesNotMatch(html,/예상 EPS 자료 없음 · 별 1개/);
   assert.doesNotMatch(html,/ER1 예상 EPS·매출/);
 });
 
@@ -48,5 +50,6 @@ test('previous 60-40 forecast D1 snapshot remains valid during method migration'
   assert.equal(validateER1PublicDisplay(previous)?.method,FORECAST_LEGACY_METHOD);
   const html=await earningsDisplayResponse(source(),req,null,null,previous).text();
   assert.match(html,/ER1 예상 EPS·매출 · 2026-11-06 기준/);
-  assert.match(html,/예상 EPS 또는 매출 자료 없음 · 별 1개/);
+  assert.match(html,/기업 실적 점수 없음">-<\/div>/);
+  assert.doesNotMatch(html,/예상 EPS 또는 매출 자료 없음 · 별 1개/);
 });

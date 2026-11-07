@@ -40,19 +40,23 @@ test('forecast public contract exposes scores only, not actual or forecast EPS',
   assert.equal(validateER1PublicDisplay({...snapshot,epsEstimate:1}),null);
 });
 
-test('unscored issuer is one star on announcement day, not an invented 0',async()=>{
+test('unscored issuer remains hyphen; only numeric forecast scores receive one star',async()=>{
   const source=display([event('MISS'),event('LOSS'),event('GAIN')]);
   const score=makeER1PublicDisplay(forecast());
   const response=earningsDisplayResponse(source,request,null,null,score);
   assert.equal(response.status,200);
   const html=await response.text();
-  assert.match(html,/예상 EPS 점수 미산출 · 중요도 1[^>]*>★<\/div>/);
+ assert.match(html,/기업 실적 점수 없음">-<\/div>/);
   assert.match(html,/ER1 예상 EPS ·/);
   assert.doesNotMatch(html,/기업 실적 점수 0\.00점/);
+ assert.equal((html.match(/>★<\/div>/g)??[]).length,2);
   const filtered=earningsDisplayResponse(source,request+'&importance=1',
     null,null,score);
-  assert.equal(filtered.headers.get('x-display-count'),'1');
-  assert.match(await filtered.text(),/MISS/);
+ assert.equal(filtered.headers.get('x-display-count'),'2');
+ const filteredHtml=await filtered.text();
+ assert.match(filteredHtml,/LOSS/);
+ assert.match(filteredHtml,/GAIN/);
+ assert.doesNotMatch(filteredHtml,/MISS/);
 });
 
 test('without a valid forecast cohort or with actual-only snapshot, hyphen remains',async()=>{
@@ -82,6 +86,7 @@ test('legacy actual-only method still excludes same-day hindsight and remains re
   const tomorrow=await earningsDisplayResponse(source,tomorrowReq,null,null,actual).text();
   assert.match(tomorrow,/ER1 실제 EPS·매출/);
   assert.match(tomorrow,/60\.00점/);
+ assert.match(tomorrow,/>★<\/div>/);
 });
 
 test('December forecast does not rewrite dates preceding the as-of day',async()=>{
@@ -100,14 +105,14 @@ test('December forecast does not rewrite dates preceding the as-of day',async()=
     const on=await earningsDisplayResponse(source,
       `https://zgmini.kr/api/earnings-calendar-display?start=${date}&end=${date}`,
       null,score).text();
-    assert.match(on,/예상 EPS 점수 미산출 · 중요도 1[^>]*>★<\/div>/);
+    assert.match(on,/기업 실적 점수 없음">-<\/div>/);
   }finally{Date.now=previousNow;}
 });
 
-test('existing December actual-only grading keeps its previously approved date behavior',async()=>{
+test('December actual-only scores do not leak backward into earlier announcement days',async()=>{
   const coveredDays=Array.from({length:14},(_,i)=>
     new Date(Date.parse('2026-12-01T00:00:00Z')+i*86400000).toISOString().slice(0,10));
-  const source=display([event('LEGACY','2026-12-01')],coveredDays);
+  const source=display([event('LEGACY','2026-12-01'),event('LEGACY','2026-12-07')],coveredDays);
   const legacy={status:'READY_ER1_PUBLIC',method:ER1_METHOD,asOf:'2026-12-06',
     threshold:ER1_STAR3_THRESHOLD,
     coverage:{inputSymbols:1,observedIssuers:1,scoreableIssuers:1,
@@ -116,16 +121,14 @@ test('existing December actual-only grading keeps its previously approved date b
   const previousNow=Date.now;
   try{
     Date.now=()=>Date.parse('2026-12-07T00:00:00Z');
-    const html=await earningsDisplayResponse(source,
+    const earlier=await earningsDisplayResponse(source,
       'https://zgmini.kr/api/earnings-calendar-display?start=2026-12-01&end=2026-12-01',
       null,legacy).text();
-    assert.match(html,/기업 실적 점수 99\.00점/);
-    assert.match(html,/★★★/);
-    // Original generic ER1 third-argument fallback is still used when a
-    // dedicated December snapshot has not been supplied.
-    const generic=await earningsDisplayResponse(source,
-      'https://zgmini.kr/api/earnings-calendar-display?start=2026-12-01&end=2026-12-01',
-      legacy).text();
-    assert.match(generic,/기업 실적 점수 99\.00점/);
+    assert.match(earlier,/기업 실적 점수 없음">-<\/div>/);
+    const later=await earningsDisplayResponse(source,
+      'https://zgmini.kr/api/earnings-calendar-display?start=2026-12-07&end=2026-12-07',
+      null,legacy).text();
+    assert.match(later,/기업 실적 점수 99\.00점/);
+    assert.match(later,/>★★★<\/div>/);
   }finally{Date.now=previousNow;}
 });
