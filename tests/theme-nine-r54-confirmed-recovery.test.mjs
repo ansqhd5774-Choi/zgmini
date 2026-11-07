@@ -99,6 +99,34 @@ test('503 STORED_DATA_STALE recovers a verified GMH confirmed-only feed and neve
  assert.equal(JSON.parse(f.row().body).provisional,undefined);
 });
 
+for(const failure of ['http502','network']){
+ test(`confirmed D1 readback remains known when subsequent public API fails: ${failure}`,async t=>{
+  const old=process.env.ZGMINI_R54_TEST_MODE;
+  process.env.ZGMINI_R54_TEST_MODE='1';
+  t.after(()=>{if(old===undefined)delete process.env.ZGMINI_R54_TEST_MODE;
+   else process.env.ZGMINI_R54_TEST_MODE=old;});
+  const f=fixture(t);
+  let fetchCalls=0;
+  f.args.fetchImpl=async()=>{
+   fetchCalls++;
+   if(fetchCalls===1)return {ok:false,status:503,
+    json:async()=>({status:'UNAVAILABLE',reason:'STORED_DATA_STALE'})};
+   if(failure==='http502')return {ok:false,status:502,
+    json:async()=>({status:'UNAVAILABLE',reason:'BACKEND_UNAVAILABLE'})};
+   throw Object.assign(new Error('network test'),{code:'ECONNRESET'});
+  };
+  const result=await runNineR54PublicConnect(f.args);
+  assert.equal(result.status,'D1_VERIFIED_AWAIT_PUBLIC_API_REFRESH');
+  assert.equal(result.publicReadError,failure==='http502'?
+   'THEME_NINE_R54_PUBLIC_API_HTTP_502':'ECONNRESET');
+  assert.equal(result.d1Writes,1);
+  assert.equal(result.providerCalls,0);
+  assert.equal(f.writeCount(),1);
+  assert.equal(f.stageR51Calls(),0);
+  assert.equal(fetchCalls,2);
+ });
+}
+
 test('R54 never treats unrelated HTTP 503 as a recoverable stale-public contract',async t=>{
  const old=process.env.ZGMINI_R54_TEST_MODE;
  process.env.ZGMINI_R54_TEST_MODE='1';
