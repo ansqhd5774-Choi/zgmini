@@ -81,8 +81,13 @@ export function buildConfiguredPackage({sourceSha,outputDir}={}){
  fs.utimesSync(path.join(root,'package-manifest.json'),epoch,epoch);
  for(const dir of [...dirs].sort((a,b)=>b.length-a.length))fs.utimesSync(dir,epoch,epoch);
  const zipPath=path.join(outputDir,name+'.zip');
- execFileSync(process.platform==='win32'?'tar.exe':'zip',process.platform==='win32'?['-a','-cf',zipPath,name]:['-q','-X','-r',zipPath,name],{
-  cwd:outputDir,stdio:['ignore','pipe','pipe'],timeout:30000});
+ // Recursive filesystem traversal order is not stable across copies or hosts.
+ // Add the same allowlisted files in a canonical order on both platforms.
+ const archivePaths=[...entries.map(entry=>name+'/'+entry.path),
+  name+'/package-manifest.json'].sort();
+ const archiveInput=Buffer.from(archivePaths.join('\n')+'\n','utf8');
+ execFileSync(process.platform==='win32'?'tar.exe':'zip',process.platform==='win32'?['-a','-cf',zipPath,'-T','-']:['-q','-X',zipPath,'-@'],{
+  cwd:outputDir,stdio:['pipe','pipe','pipe'],input:archiveInput,timeout:30000});
  const result={status:'PACKAGE_BUILT_NO_PC_WRITES',sourceSha,sourceTreeSha:treeSha,
   zipPath,zipSha256:digest(fs.readFileSync(zipPath)),manifestSha256:digest(manifestBytes),
   packageRoot:root,fileCount:entries.length};
