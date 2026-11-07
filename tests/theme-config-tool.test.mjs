@@ -7,7 +7,8 @@ import {pathToFileURL} from 'node:url';
 import {validateDefinition,registerDefinition,readRegistered,digest} from '../scripts/pc-writer/theme-config-registry.mjs';
 import {collectConfigured} from '../scripts/pc-writer/theme-optional-collect.mjs';
 import {planRegistered,runConfiguredOnce,runConfiguredSchedule,
- loadBundledShadowParquet,createBundledShadowDecoder,safeConfiguredFailure} from '../scripts/pc-writer/theme-config-tool.mjs';
+ runScheduledStoredPlatform,loadBundledShadowParquet,createBundledShadowDecoder,
+ safeConfiguredFailure} from '../scripts/pc-writer/theme-config-tool.mjs';
 import {installConfiguredTool,configuredDependencyClosure} from '../scripts/pc-writer/theme-config-install.mjs';
 import {execFileSync} from 'node:child_process';
 import {scoreRegistered} from '../scripts/pc-writer/theme-config-score.mjs';
@@ -31,6 +32,45 @@ test('private calendar error output is bounded and contains no raw prices or arb
 });
 function setup(t){const root=fs.mkdtempSync(path.join(os.tmpdir(),'zg-theme-config-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));return root;}
 function register(root,d=definition){return registerDefinition({dataRoot:root,definition:d,legacyRegistry:legacy});}
+test('existing scheduled entry dispatches stored common 10 even with zero V2 registrations',async t=>{
+ const root=setup(t),now=new Date('2026-11-08T00:00:00Z');
+ let calls=0;
+ const result=await runScheduledStoredPlatform({dataRoot:root,now,execute:async args=>{
+  calls++;
+  assert.equal(args.dataRoot,root);
+  assert.equal(args.now,now);
+  assert.equal(args.checkpointWindow,'NY_19_CUTOFF');
+  assert.equal(typeof args.readFeed,'function');
+  assert.equal(typeof args.readPublicBase,'function');
+  assert.equal(typeof args.decoder.parquetReadObjects,'function');
+  return {status:'PARTIAL',coverage:{public:{themes:10,complete:10,blocked:10}},
+   providerCalls:0,d1Writes:0,publicConnection:'NOT_ACTIVATED',
+   checkpointPersistence:'DURABLE_PC_REVISION_HISTORY',d1Reads:2,
+   publicApiReads:1,inputFingerprint:'a'.repeat(64),
+   sourceMode:'SAVED_PLUS_PUBLIC_API_AND_D1_READS'};
+ }});
+ assert.equal(calls,1);
+ assert.equal(result.status,'PARTIAL');
+ assert.equal(result.publicTargetIds.length,10);
+ assert.deepEqual(result.privateRegisteredIds,[]);
+ assert.equal(result.physicalFeedGroups,6);
+ assert.equal(result.coverage.public.complete,10);
+ assert.equal(result.coverage.public.blocked,10);
+ assert.equal(result.checkpointPersistence,'DURABLE_PC_REVISION_HISTORY');
+ assert.equal(result.providerCalls,0);
+ assert.equal(result.d1Writes,0);
+ assert.equal(result.schedulerWrites,0);
+ assert.equal(fs.existsSync(path.join(root,'theme-platform')),false);
+});
+test('scheduled common runner rejects an injected provider or publication side effect',async t=>{
+ const root=setup(t);
+ await assert.rejects(runScheduledStoredPlatform({dataRoot:root,execute:async()=>({
+  status:'COMPLETE',providerCalls:1,d1Writes:0,publicConnection:'NOT_ACTIVATED',
+ })}),/THEME_SCHEDULED_PRIVATE_EFFECT_CONTRACT/);
+ await assert.rejects(runScheduledStoredPlatform({dataRoot:root,execute:async()=>({
+  status:'COMPLETE',providerCalls:0,d1Writes:1,publicConnection:'NOT_ACTIVATED',
+ })}),/THEME_SCHEDULED_PRIVATE_EFFECT_CONTRACT/);
+});
 test('shared shadow decoder is lazy and supports R88 callable and optional R8 object contracts',async()=>{
  let loads=0;const seen=[];
  const decode=createBundledShadowDecoder({load:async()=>{

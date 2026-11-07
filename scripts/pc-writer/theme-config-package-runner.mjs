@@ -51,6 +51,12 @@ export const PACKAGE_FILES=configuredDependencyClosure([
  'docs/THEME_ONBOARDING_PLAYBOOK.md',
  'docs/CMD_EXECUTION_PLAYBOOK.md',
 ]);
+// Manifest size grows with the verified dependency closure. The former fixed
+// 16 KiB gate rejected a legitimate 105-file package before any hash check.
+// Bound accepted bytes by the exact allowlisted paths; the schema, file set,
+// and every SHA-256 must still match after parsing.
+export const PACKAGE_MANIFEST_MAX_BYTES=8192+PACKAGE_FILES.reduce((bytes,name)=>
+ bytes+Buffer.byteLength(name)+128,0);
 const packageHere=fileURLToPath(new URL('../../',import.meta.url));
 const fail=code=>{throw Object.assign(new Error(code),{code});};
 const need=(ok,code)=>{if(!ok)fail(code);};
@@ -92,7 +98,7 @@ export function verifyConfiguredPackage(packageRoot=packageHere){
  need(fs.lstatSync(root).isDirectory()&&samePath(fs.realpathSync(root),root),
   'PACKAGE_ROOT_REDIRECT');
  const raw=readRegular(path.join(root,'package-manifest.json'));
- need(raw.length<=16384,'PACKAGE_MANIFEST_SIZE');
+ need(raw.length<=PACKAGE_MANIFEST_MAX_BYTES,'PACKAGE_MANIFEST_SIZE');
  let manifest;try{manifest=JSON.parse(raw);}catch{fail('PACKAGE_MANIFEST_JSON');}
  need(manifest?.schema===PACKAGE_SCHEMA&&
   manifest.repository===PACKAGE_REPOSITORY&&hex40(manifest.sourceSha)&&

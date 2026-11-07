@@ -6,7 +6,7 @@ import path from 'node:path';
 import {identity} from '../scripts/pc-writer/theme-platform.mjs';
 import {storedInputFingerprint,runStoredOperationalPrivate,replayCheckedStore,
  createStoredD1FeedReader,readStoredPublicR32Base,
- createTransientThemeCheckpointStore} from
+ createTransientThemeCheckpointStore,nyObservationWindow} from
  '../scripts/pc-writer/theme-platform-stored-run.mjs';
 
 const memory=()=>{let state;return {load:async()=>structuredClone(state),
@@ -74,6 +74,30 @@ test('NY-window observation hour changes the checkpoint identity, without a new 
   now:new Date('2026-11-07T23:00:00Z')});
  assert.equal(observed.length,2);
  assert.notEqual(observed[0],observed[1]);
+});
+
+test('scheduled checkpoint resumes within one NY 19:00 window and rolls at the real DST-aware boundary',async t=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'theme-stored-window-'));
+ t.after(()=>fs.rmSync(root,{recursive:true}));
+ const keys=[],states=new Map();
+ const store={load:async key=>{keys.push(key);return structuredClone(states.get(key)??null);},
+  save:async(key,state,prior)=>{assert.equal(states.get(key)?.revision??0,prior);
+   states.set(key,structuredClone(state));}};
+ const initial=await runStoredOperationalPrivate({dataRoot:root,adapters:handlers,store,
+  now:new Date('2026-11-07T23:05:00Z'),checkpointWindow:'NY_19_CUTOFF'});
+ const resumed=await runStoredOperationalPrivate({dataRoot:root,adapters:handlers,store,
+  now:new Date('2026-11-07T23:55:00Z'),checkpointWindow:'NY_19_CUTOFF'});
+ const rolled=await runStoredOperationalPrivate({dataRoot:root,adapters:handlers,store,
+  now:new Date('2026-11-08T00:05:00Z'),checkpointWindow:'NY_19_CUTOFF'});
+ assert.equal(initial.executed,60);
+ assert.equal(resumed.executed,0);
+ assert.equal(rolled.executed,60);
+ assert.equal(keys[0],keys[1]);
+ assert.notEqual(keys[1],keys[2]);
+ assert.equal(nyObservationWindow(new Date('2026-07-07T22:59:00Z')),'2026-07-06');
+ assert.equal(nyObservationWindow(new Date('2026-07-07T23:00:00Z')),'2026-07-07');
+ assert.equal(nyObservationWindow(new Date('2026-11-07T23:59:00Z')),'2026-11-06');
+ assert.equal(nyObservationWindow(new Date('2026-11-08T00:00:00Z')),'2026-11-07');
 });
 
 test('checkpoint resume replays stored artifact proof and fails closed if tampered',async()=>{

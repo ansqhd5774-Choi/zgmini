@@ -31,10 +31,23 @@ test('existing installer stages complete common CLI and inspect runs offline',as
   env:{...process.env,ZGMINI_DATA_ROOT:root},timeout:15000}));
  assert.equal(scheduled.status,'NO_REGISTERED_THEMES');assert.equal(scheduled.publicConnection.status,'NO_REGISTERED_THEMES');
  assert.equal(scheduled.d1Writes,0);
- assert.equal(scheduled.platformConnection.status,'PRIVATE_BINDINGS_PLANNED_NOT_EXECUTED');
+ // No saved inputs in this isolated fixture: the ten public IDs are really
+ // processed and blocked, not merely listed or presented as fresh scores.
+ assert.equal(scheduled.platformConnection.status,'PARTIAL');
  assert.equal(scheduled.platformConnection.publicTargetIds.length,10);
  assert.equal(scheduled.platformConnection.physicalFeedGroups,6);
+ assert.equal(scheduled.platformConnection.coverage.public.themes,10);
+ assert.equal(scheduled.platformConnection.coverage.public.complete,0);
+ assert.equal(scheduled.platformConnection.coverage.public.blocked,20);
+ assert.equal(scheduled.platformConnection.checkpointPersistence,'DURABLE_PC_REVISION_HISTORY');
  assert.equal(scheduled.platformConnection.providerCalls,0);
+ assert.equal(scheduled.platformConnection.d1Writes,0);
+ const checkpointDir=path.join(root,'theme-platform','checkpoints');
+ assert.equal(fs.existsSync(checkpointDir),true);
+ const revisions=()=>fs.readdirSync(checkpointDir).flatMap(key=>
+  fs.readdirSync(path.join(checkpointDir,key)).map(file=>key+'/'+file)).sort();
+ const saved= revisions();
+ assert.ok(saved.length>0,'scheduled shared batch must persist its private checkpoints');
  const plan=JSON.parse(execFileSync(process.execPath,[runner,'--platform-plan'],{encoding:'utf8',windowsHide:true,
   env:{...process.env,ZGMINI_DATA_ROOT:root},timeout:15000}));
  assert.deepEqual(plan.publicTargetIds,scheduled.platformConnection.publicTargetIds);
@@ -50,7 +63,7 @@ test('existing installer stages complete common CLI and inspect runs offline',as
   assert.equal(failed.checkpointPersistence,'TRANSIENT_MEMORY_ONLY');
   assert.equal(failed.coverage.public.status,'PARTIAL');
  }
- assert.equal(fs.existsSync(path.join(root,'theme-platform')),false);
+ assert.deepEqual(revisions(),saved,'one-shot shadow must not modify scheduled checkpoints');
 });
 test('missing local dependency is detected at package build, not user execution',t=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'theme-platform-import-'));t.after(()=>fs.rmSync(root,{recursive:true}));

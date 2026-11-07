@@ -104,6 +104,22 @@ export function storedInputFingerprint({dataRoot,registrations=[]}={}){
  return identity({inputs,source,registrations:registrations.map(r=>({id:r.definition.id,sha256:r.sha256}))});
 }
 
+// A scheduled batch must resume against the same actual saved inputs until
+// the New York 19:00 observation cutoff changes. Using the UTC hour as the
+// durable key would replay all ten public themes every hour and discard a
+// partially completed checkpoint. Explicit one-shot shadows retain their
+// historical hourly identity and in-memory checkpoint behavior.
+export function nyObservationWindow(now){
+ need(now instanceof Date&&!Number.isNaN(now.getTime()),'THEME_STORED_CLOCK');
+ const entries=Object.fromEntries(new Intl.DateTimeFormat('en-US',{
+  timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit',
+  hour:'2-digit',hourCycle:'h23',
+ }).formatToParts(now).filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
+ const day=`${entries.year}-${entries.month}-${entries.day}`;
+ if(Number(entries.hour)>=19)return day;
+ return new Date(Date.parse(day+'T00:00:00Z')-86400000).toISOString().slice(0,10);
+}
+
 // Recheck old checkpoint proofs against the immutable stored artifacts before
 // allowing the shared engine to skip completed stages. Input manifest identity
 // alone is insufficient if an artifact is removed or replaced between runs.
@@ -140,9 +156,11 @@ export function replayCheckedStore({store,adapters,registry}){
 
 export async function runStoredOperationalPrivate({dataRoot,
  maxStages=Infinity,after=null,now=new Date(),adapters=null,store=null,
- readFeed=null,readPublicBase=null,decoder=null}={}){
+ readFeed=null,readPublicBase=null,decoder=null,checkpointWindow=null}={}){
  need(typeof dataRoot==='string'&&dataRoot,'THEME_STORED_DATA_ROOT');
  need(now instanceof Date&&!Number.isNaN(now.getTime()),'THEME_STORED_CLOCK');
+ need(checkpointWindow===null||checkpointWindow==='NY_19_CUTOFF',
+  'THEME_STORED_CHECKPOINT_WINDOW');
  const registrations=listRegistered(dataRoot);
  const fingerprint=storedInputFingerprint({dataRoot,registrations});
  let d1Reads=0,publicApiReads=0;
@@ -159,9 +177,11 @@ export async function runStoredOperationalPrivate({dataRoot,
   adapters:actualAdapters,registry:buildOperationalRegistry({registrations})}):actualStore;
  const output=await runOperationalPrivateBatch({registrations,
   adapters:actualAdapters,store:guardedStore,
-  // The R47 input window changes at the NY 19:00 ET cutoff, so the observed
-  // UTC hour is part of checkpoint identity even when raw manifests do not move.
-  runKey:'stored-input:'+fingerprint+':observed-utc-hour:'+now.toISOString().slice(0,13),
+  // Scheduled runs resume within one NY 19:00 observation window. Explicit
+  // one-shot shadows retain the previous UTC-hour-specific replay identity.
+  runKey:'stored-input:'+fingerprint+':'+(checkpointWindow==='NY_19_CUTOFF'?
+   'ny-19-session:'+nyObservationWindow(now):
+   'observed-utc-hour:'+now.toISOString().slice(0,13)),
   maxStages,after});
  return {...output,inputFingerprint:fingerprint,
   // Default adapters consume saved inputs; the checkpoint itself is written.

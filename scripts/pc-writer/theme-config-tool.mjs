@@ -153,6 +153,31 @@ export async function runConfiguredSchedule({dataRoot,now=new Date(),fetchImpl=f
   return {status:results.some(r=>r.status.startsWith('STOP'))?'PARTIAL_REVIEW_REQUIRED':waiting?'PRIVATE_SCHEDULE_WAITING_SOURCE_OR_BUDGET':'PRIVATE_SCHEDULE_COMPLETED',results,coverage,nextId:state.nextId,providerCallsToday:state.calls,requestLimitPerUtcDay:dailyBudget,d1Writes:0,schedulerWrites:0};
  }finally{fs.unlinkSync(lock);}
 }
+
+// Reuse the existing scheduled entry, but execute the shared stored-only
+// engine for legacy public themes as well as the registered V2 family. This
+// does not transfer any existing publication key or invoke a provider GET.
+export async function runScheduledStoredPlatform({dataRoot,now=new Date(),execute=null}={}){
+ const plan=planOperationalBatch({dataRoot});
+ const {runStoredOperationalPrivate,createStoredD1FeedReader,
+  readStoredPublicR32Base}=await import('./theme-platform-stored-run.mjs');
+ const result=await (execute??runStoredOperationalPrivate)({dataRoot,now,
+  checkpointWindow:'NY_19_CUTOFF',
+  readFeed:createStoredD1FeedReader({dataRoot}),
+  readPublicBase:()=>readStoredPublicR32Base({now:now.getTime()}),
+  decoder:createBundledShadowDecoder()});
+ ensure(result&&result.d1Writes===0&&result.providerCalls===0&&
+  result.publicConnection==='NOT_ACTIVATED',
+  'THEME_SCHEDULED_PRIVATE_EFFECT_CONTRACT');
+ return {status:result.status,publicTargetIds:plan.publicTargetIds,
+  privateRegisteredIds:plan.privateRegisteredIds,
+  physicalFeedGroups:plan.feedGroups.length,
+  uniqueStoredInputPlans:plan.uniqueStoredInputPlans,
+  coverage:result.coverage,checkpointPersistence:result.checkpointPersistence,
+  inputFingerprint:result.inputFingerprint,sourceMode:result.sourceMode,
+  providerCalls:0,d1Reads:result.d1Reads??0,publicApiReads:result.publicApiReads??0,
+  d1Writes:0,schedulerWrites:0};
+}
 async function cli(){
  const [mode,arg,...extra]=process.argv.slice(2);ensure(!extra.length,'CONFIG_USAGE');
  if(mode==='--platform-plan'){
@@ -203,18 +228,13 @@ async function cli(){
   ensure(!arg,'CONFIG_USAGE');
   // This is still the single existing configured-theme scheduled entry.
   // Private collection/calculation runs first with the original UTC 4-GET budget.
-  const privateCycle=await runConfiguredSchedule({dataRoot:root()});
-  // Discover all existing public and registered themes through one shared
-  // manifest. Stage 2 is read-only: activation of stored-result handlers and
-  // transfer of D1 writer ownership require their separate cutover proofs.
+  const now=new Date(),privateCycle=await runConfiguredSchedule({dataRoot:root(),now});
+  // Independently process the existing public ten even when V2 registration
+  // is empty. Only private saved-data/checkpoint proofs are produced here;
+  // the prior publication owner remains unchanged until cutover.
   let platform;
   try{
-   const plan=planOperationalBatch({dataRoot:root()});
-   platform={status:plan.status,publicTargetIds:plan.publicTargetIds,
-    privateRegisteredIds:plan.privateRegisteredIds,
-    physicalFeedGroups:plan.feedGroups.length,
-    uniqueStoredInputPlans:plan.uniqueStoredInputPlans,
-    providerCalls:0,d1Writes:0};
+   platform=await runScheduledStoredPlatform({dataRoot:root(),now});
   }catch(e){platform={status:'PRIVATE_BINDINGS_REVIEW_REQUIRED',
    reason:e.code??'THEME_PLATFORM_PLAN_IO_ERROR',providerCalls:0,d1Writes:0};}
   let publicCycle;

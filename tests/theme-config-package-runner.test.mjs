@@ -6,7 +6,8 @@ import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {execFileSync} from 'node:child_process';
 import {digest} from '../scripts/pc-writer/theme-config-registry.mjs';
-import {PACKAGE_FILES,PACKAGE_SCHEMA,PACKAGE_REPOSITORY,parseTaskStateCsv} from '../scripts/pc-writer/theme-config-package-runner.mjs';
+import {PACKAGE_FILES,PACKAGE_SCHEMA,PACKAGE_REPOSITORY,
+ PACKAGE_MANIFEST_MAX_BYTES,parseTaskStateCsv} from '../scripts/pc-writer/theme-config-package-runner.mjs';
 
 const repo=path.resolve(import.meta.dirname,'..');
 const sourceSha='a'.repeat(40);
@@ -37,6 +38,20 @@ test('native Task Scheduler CSV accepts only exact ready state and task identity
   /PACKAGE_TASK_CSV_STATE_UNRECOGNIZED/);
  assert.throws(()=>parseTaskStateCsv(Buffer.from('"\\\\OTHER-TASK","N/A","Ready"')),
   /PACKAGE_TASK_CSV_STATE_UNRECOGNIZED/);
+});
+
+test('manifest bound follows the exact dependency closure without dropping hash checks',async t=>{
+ const f=await fixture(t);
+ const manifest=path.join(f.packageRoot,'package-manifest.json');
+ const original=fs.readFileSync(manifest);
+ assert.ok(original.length>16384,'the actual expanded package exceeds the old limit');
+ assert.ok(original.length<=PACKAGE_MANIFEST_MAX_BYTES,'valid full package must fit');
+ assert.equal(f.preflight().status,'PREFLIGHT_PASS');
+ const overLimit=await fixture(t);
+ const oversizeManifest=path.join(overLimit.packageRoot,'package-manifest.json');
+ const oversizeBytes=fs.readFileSync(oversizeManifest);
+ fs.appendFileSync(oversizeManifest,' '.repeat(PACKAGE_MANIFEST_MAX_BYTES-oversizeBytes.length+1));
+ assert.equal(overLimit.preflight().reason,'PACKAGE_MANIFEST_SIZE');
 });
 
 async function fixture(t){
