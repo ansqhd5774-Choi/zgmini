@@ -283,6 +283,17 @@ test('an independently verified newer R32 date advances without rewriting the le
  assert.equal(visible.themes.length,10);
 });
 
+test('independent R32 anchor rejects future observation days even with consistent histories',async()=>{
+ const futureDay='2026-11-01';
+ const futureDates=Array.from({length:252},(_,i)=>
+  new Date(Date.parse(futureDay+'T00:00:00Z')-(251-i)*86400000).toISOString().slice(0,10));
+ const forged={...ready,observationDate:futureDay,
+  themes:ready.themes.map(t=>({...t,history:futureDates.map(date=>({date,score:t.score}))}))};
+ assert.equal(eligibleNineR37(forged,baseline,
+  {now,storedAt:now-1000,independentAnchor:true}),false);
+ assert.equal(await addVerifiedNineR37(db(forged),baseline,{now}),baseline);
+});
+
 test('independent R32 anchor still rejects forged future dates, broken histories and missing approval',async()=>{
  for(const edit of [{observationDate:'2026-10-28'},
   {publicationAuthorized:false},{sourceManifestVerified:false},
