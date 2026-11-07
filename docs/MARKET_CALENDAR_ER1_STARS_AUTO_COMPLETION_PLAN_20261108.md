@@ -85,3 +85,13 @@
 - 이 문서 작성은 계획 확보에 한정한다. 작성 자체로 PC 운영 파일·D1·스케줄러를 변경하지 않는다.
 - 기능 담당이 코드·테스트·PC 설치·공개 검증을 직접 수행한다. 공통 Controller/Writer B 계약 자체의 별도 결함이 증명된 경우에만 프로세스 총괄에게 정확한 재현 증거와 최소 개선안을 인계한다.
 - 실패가 나면 `LAST PASS / FIRST FAIL / 정확한 오류 / 영향 / 담당 / 최소 수정 / 재검증`으로 기록하고, 기존 승인된 완료 작업을 이유 없이 반복하지 않는다.
+
+## 6. 실행 경과 갱신 — 2026-11-08 KST
+
+- 기능 코드 PR [#1005](https://github.com/ansqhd5774-Choi/zgmini/pull/1005) **병합**: `main` `1be1734e9d8cf74375b3663ceee0033b928108a2`. 계산기/테스트 2파일만 변경, 247/247 관련 테스트 PASS.
+- PC A급 [#742](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/742) **PASS**: 이전 설치 합성 source `24610129461d027524a018daeba9f8b0cf9ed02c`, checkout tracked-clean 및 Writer checkpoint 일치. 파일별 세부 목록은 요약 제한으로 원격 전송되지 않아 대상 원본 해시는 #735 설치 증거에서 재사용하고 정규 설치 시 CAS 재검증하도록 했다.
+- 기존 Writer B 계산기 1파일 승인 manifest PR [#744](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/744) **병합**. Manifest `approvals/writer-updates/er1-nov-private-fallback-onefile-20261108.json`, SHA256 `fa5f926c3de5cff62b4d7314c521ed460af579cbe42a18baffa1d844156f1919`.
+- PC B 단회 설치 [#745](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/745): **`WRITER_B_INSTALL_STOP_RESTORED / WRITER_B_CORE_ACTIVE_WINDOW_DEFERRED`**. 원격 결과 `results/writer-b-source-install-fdd1f29d-760b-4fc4-bde1-875e12dd22ae.json/.txt` 두 파일 회수, 동일 requestId 재실행 금지. 성공 source SHA 없음; 설치 완료로 판정하지 않는다.
+- 후속 A [#748](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/748) **PASS / operationalWrites=0**: `core.lockPresent=true`, 승인 source SHA 여전히 `24610129461d027524a018daeba9f8b0cf9ed02c`, 최근 Core checkpoint COMPLETE/VERIFIED, 보호 상태 불변.
+- **현재 마지막 PASS:** GitHub 계산기 통합/manifest 승인, PC 읽기 전용 Core 현상 확인. **최초 FAIL:** 실제 PC Writer B 교체의 Core 활성 대기창. 재실행은 Core 유휴가 실측되고 중복 작업/공유 source 충돌이 해소된 뒤, 당시 base HEAD·원본 해시를 다시 대조해 새로운 고유 B 요청으로만 검토한다. 잠금 강제 삭제·Core 중지·승인 범위 확장 금지.
+- **다음 필수 작업:** Core의 정상 유휴 확인 → 정확한 1파일 Writer B 설치 → 실제 Core 계산·local read-back → D1·API/UI 비교. 예약 자연 실행 검증은 마지막 후속 단계로 유지한다.
