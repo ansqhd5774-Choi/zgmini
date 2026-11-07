@@ -7,13 +7,28 @@ import {pathToFileURL} from 'node:url';
 import {validateDefinition,registerDefinition,readRegistered,digest} from '../scripts/pc-writer/theme-config-registry.mjs';
 import {collectConfigured} from '../scripts/pc-writer/theme-optional-collect.mjs';
 import {planRegistered,runConfiguredOnce,runConfiguredSchedule,
- loadBundledShadowParquet,createBundledShadowDecoder} from '../scripts/pc-writer/theme-config-tool.mjs';
+ loadBundledShadowParquet,createBundledShadowDecoder,safeConfiguredFailure} from '../scripts/pc-writer/theme-config-tool.mjs';
 import {installConfiguredTool,configuredDependencyClosure} from '../scripts/pc-writer/theme-config-install.mjs';
 import {execFileSync} from 'node:child_process';
 import {scoreRegistered} from '../scripts/pc-writer/theme-config-score.mjs';
 import {scoreAll252} from '../scripts/pc-writer/theme-optional-score-r188.mjs';
 const definition={schema:'ZGMINI_THEME_CONFIG_V1',id:'fixture-theme',label:'검증용 테마',provider:'getmarkethistory',profile:'ADAPTIVE_R2_PAIR_R3',etfs:['AAA','BBB'],benchmark:'SPY',startDate:'2023-01-01'};
 const legacy={themes:[{id:'biotech',label:'바이오·신약'}]};
+test('private calendar error output is bounded and contains no raw prices or arbitrary error fields',()=>{
+ const error={code:'THEME_NINE_R25_NON_SPY_DATE',secret:'DO_NOT_PRINT',diagnostic:{
+  status:'CONFIG_R32_NON_SPY_DATE',mismatches:[{symbol:'IGV',missingCount:2,
+   sampleDates:['2026-10-29','2026-10-30','INVALID'],truncated:false,
+   prices:[123,124],token:'DO_NOT_PRINT'}]}};
+ const report=safeConfiguredFailure(error);
+ assert.deepEqual(report,{reasonCode:'THEME_NINE_R25_NON_SPY_DATE',
+  lastPass:'SPY_REFERENCE_DATES_READ',firstFail:'ETF_DATE_NOT_PRESENT_IN_SPY',
+  missingSymbolCount:1,mismatches:[{symbol:'IGV',missingCount:2,
+   sampleDates:['2026-10-29','2026-10-30'],truncated:false}],truncated:false});
+ assert.equal(JSON.stringify(report).includes('DO_NOT_PRINT'),false);
+ assert.deepEqual(safeConfiguredFailure({code:'OTHER',diagnostic:error.diagnostic}),{});
+ assert.deepEqual(safeConfiguredFailure({code:'THEME_NINE_R25_NON_SPY_DATE'}),
+  {reasonCode:'THEME_NINE_R25_NON_SPY_DATE'});
+});
 function setup(t){const root=fs.mkdtempSync(path.join(os.tmpdir(),'zg-theme-config-'));t.after(()=>fs.rmSync(root,{recursive:true,force:true}));return root;}
 function register(root,d=definition){return registerDefinition({dataRoot:root,definition:d,legacyRegistry:legacy});}
 test('shared shadow decoder is lazy and supports R88 callable and optional R8 object contracts',async()=>{
