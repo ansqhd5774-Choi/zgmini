@@ -59,6 +59,45 @@ test('existing public reader uses canonical trailing slash with redirect disallo
  assert.equal(trace[0].options.redirect,'error');
 });
 
+test('existing public reader exposes only the exact stale 503 contract for recovery',async()=>{
+ const stale=await readExistingThemePublic({fetchImpl:async()=>({ok:false,status:503,
+  json:async()=>({status:'UNAVAILABLE',reason:'STORED_DATA_STALE',internal:'hidden'})})});
+ assert.deepEqual(stale,{status:'UNAVAILABLE',reason:'STORED_DATA_STALE'});
+ for(const body of [{status:'UNAVAILABLE',reason:'BACKEND_UNAVAILABLE'},
+  {status:'READY',reason:'STORED_DATA_STALE'}]){
+  await assert.rejects(()=>readExistingThemePublic({fetchImpl:async()=>({
+   ok:false,status:503,json:async()=>body})}),
+  {code:'THEME_PUBLIC_API_HTTP_503'});
+ }
+ await assert.rejects(()=>readExistingThemePublic({fetchImpl:async()=>({
+  ok:false,status:503,json:async()=>{throw Error('not json');}})}),
+ {code:'THEME_PUBLIC_API_HTTP_503'});
+ await assert.rejects(()=>readExistingThemePublic({fetchImpl:async()=>({
+  ok:false,status:502,json:async()=>({status:'UNAVAILABLE',reason:'STORED_DATA_STALE'})})}),
+ {code:'THEME_PUBLIC_API_HTTP_502'});
+});
+
+test('live stale 503 through the existing adapter bootstraps R37 once only',async()=>{
+ const f=fixture();try{
+  const trace=[];
+  const operations=mocked(trace);
+  operations.runR37=async args=>{trace.push(['r37',args]);return {
+   status:'D1_VERIFIED_AWAIT_PUBLIC_API_REFRESH',d1Writes:1,
+   providerCalls:0,schedulerWrites:0};};
+  const readPublic=()=>readExistingThemePublic({fetchImpl:async()=>({
+   ok:false,status:503,json:async()=>({status:'UNAVAILABLE',reason:'STORED_DATA_STALE'})})});
+  const owners=createExistingPublicOwnerAdapters({dataRoot:f.dir,allowPublish:true,
+   anonymousLicenseRiskAccepted:true,publicRead:readPublic,operations});
+  const result=await runPublicPhysicalCycle({grant,allowPublish:true,
+   contextByFeed:context,owners,readPublic,recoverConfirmedOnStale:true});
+  assert.equal(result.status,'PUBLIC_BASE_RECOVERY_PENDING');
+  assert.equal(result.completedGroups,1);
+  assert.equal(result.d1Writes,1);
+  assert.deepEqual(trace.filter(([name])=>['r37','dc','space','publishR88','dcR8',
+   'spaceR8'].includes(name)).map(([name])=>name),['r37']);
+ }finally{f.cleanup();}
+});
+
 test('six exact existing owners: one per physical D1 key, stored-only, no eight-theme R37 slice',async()=>{
  const f=fixture();try{
   const trace=[];
