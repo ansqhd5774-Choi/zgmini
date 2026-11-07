@@ -25,6 +25,7 @@
 | 운영 Core(2026-11-02 STAGE) | 원자료 8/29, 최근 1분기 2/29, 1년 READY 2/29, PIT 이력 공백 2,880건 ([고용 Runner 인계](EMPLOYMENT_R6_PC_RUNNER_HANDOFF.md)) | 당시 스냅샷. 현재 Core 데이터 수로 단정 금지 |
 | 실행기 설치 | [#184](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/184) 등록 성공; [#586](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/586) `PASS/R6_HOST_ALREADY_REGISTERED` | 호스트 등록·보호 확인. 후보 STAGE PASS 아님 |
 | 후보 STAGE | [#185](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/185) `RESOURCE_WAIT_MEMORY`; [#217](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/217) `WAL_SIDECAR_NOT_READY`, SQLite 미열림·쓰기 0 | 후보/Core 대조 미검증. 두 요청은 소비된 ID로 재실행 금지 |
+| WAL/메모리 실제 경량 진단 (2026-11-08) | [#729](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/729) `BLOCKED/RESOURCE_WAIT_MEMORY`, Core `WAL`·`-wal/-shm` 모두 존재·ready, 후보 `ROLLBACK`·ready, 가용 RAM 1,333MiB < 필요 1,536MiB. SQLite 열기·운영/D1 쓰기 0, 보호 상태 불변. [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/42402667929-1-seat-1.json) | 이전 #217의 WAL 차단은 이번에 재현되지 않음. 실제 현재 장애는 메모리 대기이며, 진단 재실행 금지 |
 | 코드·CI | 브랜치 작성 전 HEAD `afdd8fab…`, [Node.js CI](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/41522685973) PASS, [UI CI](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/41522685634) FAIL(지연 대시보드/계정 fixture) | 현재 개발 변경 관련 성공과 별도 CI 실패를 구분; 운영 반영 아님 |
 | 공개 사이트(2026-11-08) | [고용지표 페이지](https://zgmini.kr/economic-indicators/employment/)의 29개 행 모두 원값/점수/미니차트 미제공; 상단 별도 점수 42.7 | 전체 UI 데이터 연결 미완료 |
 
@@ -37,14 +38,16 @@
 | S1 | 공식 원자료·연구 후보 범위. 기존 BLS/DOL 수집·발표 일정 | 공식 발표된 관측치와 후보의 최근 분기/1년 창을 출처·관측일별 분류. 신규 공급자 요청·보강 횟수는 기존 승인 계약을 먼저 대조 | 29개별 근거 있는 `READY/PARTIAL/UNAVAILABLE` 분류, 결측 임의 보간 0 | `READY` (후보 일부 확보), 23/29 |
 | S2 | R6 수집/저장·공개 reader 코드, 승인 산식·PIT 계약 | 기존 브랜치 코드를 재사용, 신규 변경 범위의 집중 테스트·CI만 수행 | 현행 기능 코드/Node CI PASS. 운영 PASS는 별도 | `DONE` (개발 범위 한정), 운영 미적용 |
 | S3 | 고정 PC Runner 호스트·A 작업 등록 | #184/#586 증거 재사용. 설치·전체 Controller 점검 반복 없음 | 해당 시점 호스트 등록·보호 확인 | `DONE` (등록 범위 한정) |
-| S4 | Core↔후보 **읽기 전용** 대조 | **가장 먼저** WAL/메모리 경량 진단 → 정상 조건에서 기존 heavy STAGE | 동일 실행 SHA·29 상태·PIT 계보·관측일/출처·후보 무결성 및 쓰기 0을 고유 TXT/JSON으로 확인 | `BLOCKED`: #217 WAL |
+| S4 | Core↔후보 **읽기 전용** 대조 | **가장 먼저** WAL/메모리 경량 진단 → 정상 조건에서 기존 heavy STAGE | 동일 실행 SHA·29 상태·PIT 계보·관측일/출처·후보 무결성 및 쓰기 0을 고유 TXT/JSON으로 확인 | `BLOCKED`: #729 메모리 1,333/1,536MiB; WAL 사전조건 확인됨 |
 | S5 | 기존 Core 수집·계산·로컬 저장 | S4 결과에서 검증된 source/데이터 범위 확인 → 현재 운영 PC 승인 source·config와 opt-in의 승인 범위를 대조 → 기존 5분 Core 후속 단계로 연결. 새 Task 금지 | 공식 발표 due 시 공급자 그룹 수집, 원자료 hash/PIT append 또는 NOOP, 계산, 로컬 결과 재조회, checkpoint/시각 전진. Core 잠금 보호 | `DEFERRED` (앞 단계 완료 뒤) |
 | S6 | 기존 D1 공개 스냅샷 `market_public_snapshots_v1` / `detail:employment-r6:one-year:v1` | 운영 **Core DB만** STAGE한 승인 결과를 게시. 격리 후보 PUBLISH 금지 | 게시 body/hash/stored_at 동일 재조회, 오류·timeout 시 먼저 기존 D1/ledger 확인, 이중 게시 0 | `DEFERRED` (앞 단계 완료 뒤) |
 | S7 | 기존 API·고용 페이지·Cloudflare Git integration | S6 완료 후 D1 GET reader의 29개 ID·6개 요약 카운터·1년/최근 92일 창·sourceVersion/sourceStoredAt를 검증하고 기존 배포 경로 사용. 실제 UI 표현 수정이 필요하면 기존 UI 전용 브랜치 계약 준수 | main 반영 SHA, exact deployment, API와 D1, PC/모바일 29행의 원값·점수·날짜·차트/결측 상태 일치 | `DEFERRED` (앞 단계 완료 뒤) |
 
 **S1의 29개 지표 데이터 범위 검증은 S4의 Core 편입 승인이 아니다.** S4가 PASS해도 운영 Core의 PIT 공백 2,880건이 해소됐다고 가정하거나 후보를 자동 승격하지 않는다. S5·S6의 실제 승인/설치 조건이 별도로 남는다.
 
-## 4. 다음 필수 실행: WAL 원인 분류 1회
+## 4. WAL 원인 분류 결과 및 조건부 재개
+
+**2026-11-08 실제 갱신:** #729 경량 사전진단 한 건을 정상 접수·회수했다. `lastPass=ALLOWLISTED_WORKER_STARTED`, `firstFail=ALLOWLISTED_OPERATION`, 실제 실행 SHA `aada254071879544f87ffd286f02a7d6053cd8ba`(Controller), 요청 고용 브랜치 SHA `bf289de83855172afdf30b86f7eb38d3c4d97570`(서로 다름). `RESOURCE_WAIT_MEMORY`는 1,536MiB 기준 대비 가용 1,333MiB에서 안전하게 중단된 결과다. 아래 1~3번은 **이미 수행한 절차 기록**이므로 반복하지 않는다.
 
 1. **원담당**이 기존 `#185/#217`과 동일한 신규 실행이 없는지 확인하고, 현재 작업 브랜치 live HEAD·Controller에 설치된 operation을 확인한다. Controller는 [#586](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/586)의 기존 성공 증거를 재사용하되 과거 SHA를 현재 설치 SHA로 고정하지 않는다.
 2. 현재 `config/operations.json`에 있는 `employment-r6-wal-memory-preflight`(A/light, 60초)를 **새 UUID requestId 한 건**, 기존 7필드 `ZGMINI_PC_JOB_V1` JSON과 `pc-job` label로 접수한다. 임의 CMD·DB 경로·SQL·스크립트 문자열을 Issue에 넣지 않는다.
@@ -90,4 +93,4 @@ S1의 23/29은 일시적 수치 지표다. 공식 미발표·BED 등의 결측�
 - 사용자에게 CMD 실행/로그 전달 반복 요청을 하지 않는다. 기존 Runner 허용 operation으로 실행·회수한다. 운영 원자료·키·개인 경로·전체 config를 GitHub Issue/댓글·TXT·계획서에 노출하지 않는다.
 - 출시 후 **다음 공식 발표에서 자연 자동 갱신 여부**는 별도 후속 추적으로 기록한다. 발표가 없는 기간의 `UNCHANGED`를 수집 실패로 판정하거나, 이 자연 관찰을 초기 UI 출시의 불필요한 선행 Gate로 만들지 않는다.
 
-**다음 필수 행동(단일):** 현재 고용 브랜치 SHA·기존 동일 작업 접수 여부 확인 후, `employment-r6-wal-memory-preflight` A/light 1건을 직접 요청하고 원격 JSON/TXT를 분석한다.
+**다음 필수 행동(단일):** #729를 기존 완료 진단으로 보존한다. **가용 RAM 1,536MiB 이상이라는 새로운 환경 증거가 확보되면**, PC의 승인 immutable 후보 번들/source SHA(과거 #217 실제 번들 `afdd8fab1c03b321e4b8b0853bb236c0800a0a14`)와 현재 host manifest의 정확한 일치를 확인한 후, 기존 `employment-r6-candidate-stage-readonly` A/heavy를 **새 고유 요청 1회** 실행하고 결과를 회수한다. 문서 커밋으로 바뀐 브랜치 HEAD를 승인 후보 실행 SHA로 대체하지 않는다. 자원 변화 전 동일 실패 반복 금지.
