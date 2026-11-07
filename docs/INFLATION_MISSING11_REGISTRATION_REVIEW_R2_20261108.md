@@ -84,3 +84,13 @@
 - 원본 후보 판별·원천 검토 **11/11 완료**.
 - 비중복 독립 후보 10개 중 **7개 소스 구현·fixture 통과**, **3개 정의·권리 보류**. **소스 구현률 7/10**이며 실제 등록률과 다름.
 - **실제 신규 PC 등록·원자료 저장·공개 완료: 검증된 0/10**. 이후 현장 Runtime 증거로만 상향.
+
+## 7. 교차 코드 검토·실패 재현 반영
+
+- 독립 코드 리뷰에서 **Census M3 `time_slot_id` 오해**를 실제 공식 문서와 대조해 발견. 이 필드는 내부 숫자 ID(공식 예시 `1329`)이고 관측월은 별도 `time` (`2012-01`). 수집 모듈과 테스트의 날짜 파싱을 `time` 기준으로 수정; 공식형 fixture로 재검증. https://www2.census.gov/data/api-documentation/EITS_API_User_Guide_Dec2020.pdf
+- Treasury MTS `Customs Duties / line_code_nbr=405`는 실제 139개월 API 응답을 통해 독립 확인했고, 센트 단위 `gross - refund = net` 139/139 일치. 단순 인공 fixture 근거가 아님.
+- **공통 quota 정합성 주의:** 현재 `main` `scripts/pc-writer/quota-policy.mjs`는 `api.fiscaldata.treasury.gov` 및 `www.federalreserve.gov`를 provider로 등록하지 않음. 기존 `quota-fetch.mjs`는 미등록 호스트를 quota 원장 없이 통과하므로, #16·#29 활성화 이전에 공식 호스트를 공통 quota 정책에 최소 등록·검증해야 함. 임의 수집 주기나 과도한 하드 임계치는 추가하지 않음. 현재는 수집 코드/테스트일 뿐 호출자가 미설치.
+- 정확히 지정된 6개 source group으로 7 후보를 한 번씩 호출하도록 **기본 비활성 상태의 명시 범위 one-shot dispatcher** `scripts/pc-writer/inflation-causal-candidate-once.mjs` 및 fixture 테스트 추가. 새로운 Core 훅·예약·운영 플래그를 생성하지 않았고, 호출량은 그룹별 1회(단 Census M3 2회) 제한.
+- 교차 리뷰 반영 후 `node --test inflation-causal-candidate-*.test.mjs` **27/27 PASS**. 이는 모의 응답+로컬 저장 단계, PC 실수집/공개 배포 PASS 아님.
+
+**현재 실행 차단의 정확한 범위:** 승인/설치되지 않은 신규 후보 source 7개를 PC에서 실행할 수 없음. 그러나 이 상태는 기존 19개 자동 수집과 다른 기능의 정지를 뜻하지 않는다. 예약 자연 검증은 마지막 후속 단계로 유지한다.
