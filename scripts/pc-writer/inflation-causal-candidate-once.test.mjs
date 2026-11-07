@@ -67,3 +67,17 @@ test('quota overrun in one provider is contained; next independent provider exec
   assert.deepEqual(result.failed,[{group:'treasury',code:'INFL_CANDIDATE_REQUEST_BOUND'}]);
   assert.deepEqual(result.completed.map(x=>x.group),['fed']);
 });
+
+test('preserves fixed collector error codes but redacts unknown errors',async()=>{
+  const named=async()=>{throw Object.assign(new Error('sensitive provider response'),
+    {code:'TREASURY_CUSTOMS_PAGINATION_INCOMPLETE'});};
+  const unknown=async()=>{throw Object.assign(new Error('https://secret.example/key=private'),
+    {code:'SENSITIVE_PROVIDER_KEY_LEAK'});};
+  const result=await runInflationCandidateOnce({approved:true,groups:['treasury','fed'],
+    quotaFetch:async()=>({ok:true}),collectors:{treasury:named,fed:unknown}});
+  assert.deepEqual(result.failed,[
+    {group:'treasury',code:'TREASURY_CUSTOMS_PAGINATION_INCOMPLETE'},
+    {group:'fed',code:'INFL_CANDIDATE_SOURCE_FAILED'},
+  ]);
+  assert.equal(result.providerRequests,0);
+});
