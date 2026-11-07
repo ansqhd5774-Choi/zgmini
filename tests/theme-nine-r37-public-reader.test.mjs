@@ -294,6 +294,19 @@ test('independent R32 anchor rejects future observation days even with consisten
  assert.equal(await addVerifiedNineR37(db(forged),baseline,{now}),baseline);
 });
 
+test('R37 provisional future points are not exposed before their observation day',()=>{
+ const futurePoint={date:'2026-11-01',scores:Object.fromEntries(
+  THEME_NINE_R37_ROSTER.map(t=>[t.theme,50]))};
+ const currentPoint={...futurePoint,date:'2026-10-27'};
+ const candidate=point=>({base:{...baseline,phase:'PROVISIONAL',
+  provisional:{asOf:point.date,points:[point]}},
+  record:{...ready,phase:'PROVISIONAL',
+   provisional:{asOf:point.date,points:[point]}}});
+ const future=candidate(futurePoint),current=candidate(currentPoint);
+ assert.equal(eligibleNineR37(future.record,future.base,{now,storedAt:now-1000}),false);
+ assert.equal(eligibleNineR37(current.record,current.base,{now,storedAt:now-1000}),true);
+});
+
 test('independent R32 anchor still rejects forged future dates, broken histories and missing approval',async()=>{
  for(const edit of [{observationDate:'2026-10-28'},
   {publicationAuthorized:false},{sourceManifestVerified:false},
