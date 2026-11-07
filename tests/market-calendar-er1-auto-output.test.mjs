@@ -1,5 +1,8 @@
 import {test,mock} from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import {er1MonthlyPublicKey} from '../lib/market-calendar-er1-month-key.mjs';
 import {savedER1MonthDays,futureER1Months,refreshSavedER1MonthlyOutputs} from
   '../scripts/pc-writer/market-calendar-er1-auto-output.mjs';
@@ -29,6 +32,22 @@ function fakeStore(inputs){
   readInput:async key=>inputs.get(key)??null,
   readOutput:async key=>outputs.get(key)??null,
   writeOutput:async(key,body,now)=>{writes++;outputs.set(key,{body,storedAt:now});}};
+}
+
+function splitNovemberArchive(inputs,pcHome,{missingPrivate=null}={}){
+ const folder=path.join(pcHome,'er1-input','nov30-forward-days');
+ fs.mkdirSync(folder,{recursive:true});
+ for(let n=17;n<=30;n++){
+  const day=`2026-11-${String(n).padStart(2,'0')}`;
+  const input=inputs.get('release-calendar:earnings-api:'+day);
+  inputs.delete('release-calendar:earnings-api:'+day);
+  if(day===missingPrivate)continue;
+  fs.writeFileSync(path.join(folder,day+'.json'),JSON.stringify({
+   storedAt:new Date(input.storedAt).toISOString(),
+   body:JSON.parse(input.body.text),
+  }));
+ }
+ return folder;
 }
 
 async function at(iso,action){
@@ -90,6 +109,49 @@ test('November 2026 complete saved cohort updates a new key, not the legacy publ
   assert.deepEqual(store.outputs.get(legacyKey).body,legacy);
   assert.equal(store.writes,1);
  });
+});
+
+test('November reads 16 SQLite and 14 archived private days without another GET',async()=>{
+ const pcHome=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-er1-nov-'));
+ try{
+  await at('2026-11-07T19:00:00Z',async now=>{
+   const inputs=savedMonth('2026-11','2026-11-06T18:00:00Z');
+   splitNovemberArchive(inputs,pcHome);
+   const store=fakeStore(inputs);
+   const result=await refreshSavedER1MonthlyOutputs({store,now,pcHome});
+   const november=result.months.find(x=>x.month==='2026-11');
+   assert.equal(november.status,'READY_OUTPUT');
+   assert.equal(november.sqliteDays,16);
+   assert.equal(november.privateDays,14);
+   assert.equal(november.providerRequests,0);
+   assert.equal(store.outputs.get(er1MonthlyPublicKey('2026-11')).body.recordCount,4);
+   assert.equal(store.writes,1);
+  });
+ }finally{fs.rmSync(pcHome,{recursive:true,force:true});}
+});
+
+test('missing or damaged private November day preserves the prior valid output',async()=>{
+ const pcHome=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-er1-nov-'));
+ try{
+  await at('2026-11-07T19:00:00Z',async now=>{
+   const inputs=savedMonth('2026-11','2026-11-06T18:00:00Z');
+   const folder=splitNovemberArchive(inputs,pcHome);
+   const store=fakeStore(inputs);
+   const key=er1MonthlyPublicKey('2026-11');
+   await refreshSavedER1MonthlyOutputs({store,now,pcHome});
+   const previous=JSON.stringify(store.outputs.get(key).body);
+   fs.unlinkSync(path.join(folder,'2026-11-30.json'));
+   let result=await refreshSavedER1MonthlyOutputs({store,now,pcHome});
+   assert.equal(result.months.find(x=>x.month==='2026-11').status,
+    'SAVED_MONTH_INCOMPLETE');
+   fs.writeFileSync(path.join(folder,'2026-11-30.json'),'not json');
+   result=await refreshSavedER1MonthlyOutputs({store,now,pcHome});
+   assert.equal(result.months.find(x=>x.month==='2026-11').status,
+    'MONTH_SOURCE_INVALID');
+   assert.equal(store.writes,1);
+   assert.equal(JSON.stringify(store.outputs.get(key).body),previous);
+  });
+ }finally{fs.rmSync(pcHome,{recursive:true,force:true});}
 });
 
 test('December 2026 uses the same automatic month path and preserves legacy December',async()=>{
