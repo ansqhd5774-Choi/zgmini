@@ -11,7 +11,8 @@ import {buildNineR48PrivatePublicationCandidate} from './theme-nine-r48-r47-brid
 import {buildNineR51PrivateProvisionalOverlay,
  buildNineR51ExistingPublicProvisionalOverlay,R51_PUBLIC_LEGACY_SOURCE}
  from './theme-nine-r51-provisional-overlay.mjs';
-import {buildNineR54PublicRecord} from './theme-nine-r54-public-record.mjs';
+import {buildNineR54PublicRecord,buildNineR54ConfirmedPublicRecord}
+ from './theme-nine-r54-public-record.mjs';
 import {verifyNineR54Production} from './theme-nine-r54-deployment-gate.mjs';
 import {createNineR54D1Query} from './theme-nine-r54-d1-client.mjs';
 import {publishNineR48D1} from './theme-nine-r48-d1-publication.mjs';
@@ -167,6 +168,11 @@ async function fetchPublic({fetchImpl=fetch,now=Date.now(),publicationBase=true}
  const response=await fetchImpl(url,{method:'GET',redirect:'error',
   headers:{'cache-control':'no-cache',accept:'application/json'},
   signal:AbortSignal.timeout(20000)});
+ if(response.status===503){
+  let body;try{body=await response.json();}catch{}
+  if(body?.status==='UNAVAILABLE'&&body.reason==='STORED_DATA_STALE')
+   need(false,'PUBLIC_BASE_STORED_DATA_STALE');
+ }
  need(response.ok,'PUBLIC_API_HTTP_'+response.status);
  const parsed=await response.json();
  need(parsed?.status==='READY'&&Array.isArray(parsed.themes)&&
@@ -174,15 +180,96 @@ async function fetchPublic({fetchImpl=fetch,now=Date.now(),publicationBase=true}
  return parsed;
 }
 
+// Recovery only: an expired legacy public feed must not prevent a newer
+// SHA-replayed GMH confirmed score from being stored. This path never
+// fetches MarketParquet, invokes R51, or publishes provisional scores.
+export async function runNineR54ConfirmedRecovery({dataRoot='E:/ZGmini/data',
+ configDirectory=path.resolve(here,'../../config'),now=Date.now(),
+ publisherConsent=false,fetchImpl=fetch,tokenFn=approvedNineR54SevenToken,
+ stageR48=stageCurrentNineR48,gate=verifyNineR54Production,
+ queryFactory=createNineR54D1Query,
+ verifyPair=verifyNineR54PrivatePair,
+ verifyManifest=verifyNineR54RawManifest}={}){
+ need(publisherConsent===true,'EXPLICIT_PUBLISHER_CONSENT_REQUIRED');
+ need(process.platform==='win32'||process.env.ZGMINI_R54_TEST_MODE==='1',
+  'WINDOWS_PC_REQUIRED');
+ const staged=stageR48({dataRoot,configDirectory});
+ need(staged?.status==='R48_PRIVATE_CANDIDATE_STAGED_NOT_PUBLISHED',
+  'R48_PRIVATE_STAGE_FAILED');
+ const root=fs.realpathSync(dataRoot);
+ const file=path.basename(staged.candidatePath);
+ need(/^THEME_NINE_R48_PRIVATE_CANDIDATE_\d{4}-\d{2}-\d{2}_[a-f0-9]{16}\.json$/.test(file),
+  'R48_SOURCE_FILENAME_INVALID');
+ const bytes=safeFile(path.join(root,'themes','legacy-nine-r48-private-candidate'),file);
+ need(sha(bytes)===staged.candidateSha256&&
+  sha(bytes).slice(0,16)===file.match(/_([a-f0-9]{16})\.json$/)?.[1],
+  'R48_CANDIDATE_SHA_DRIFT');
+ const candidate=JSON.parse(bytes);
+ need(candidate?.phase==='CONFIRMED'&&candidate.observationDate===staged.sourceDate,
+  'R48_CONFIRMED_ONLY');
+ const source=verifyPair({dataRoot:root,configDirectory,candidate});
+ const sourceProof=verifyManifest({dataRoot:root,source:source.source});
+ need(source.source.latestSpySessionDate===candidate.observationDate,
+  'SOURCE_LAST_SPY_DATE_DRIFT');
+ const stat=fs.statSync(source.sourceFile);
+ need(stat.mtimeMs<=now&&now-stat.mtimeMs<8*86400000,
+  'LATEST_R47_SOURCE_STALE');
+ const record=buildNineR54ConfirmedPublicRecord({candidate,
+  candidateSha256:staged.candidateSha256,sourceStoredAt:stat.mtime.toISOString(),
+  sourceManifestVerified:sourceProof.sourceManifestVerified,
+  privateReplayVerified:true,publisherConsent,now});
+ const deployment=await gate({readerBytes:fs.readFileSync(path.resolve(here,
+  '../../worker/theme-nine-r37-public.mjs')),fetchImpl});
+ const token=await tokenFn({dataRoot:root});
+ const query=queryFactory({dataRoot:root,tokenFn:()=>token,fetchImpl});
+ const readSql="SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'";
+ const before=(await query(readSql,['theme-legacy-nine-r37'],{write:false})).results?.[0];
+ const saved=await publishNineR48D1({query,record,publicBase:null,
+  independentConfirmed:true,now,
+  expectedStoredAt:before?Number(before.stored_at):null});
+ let live=null;
+ try{live=await fetchPublic({fetchImpl,now:now+1,publicationBase:false});}
+ catch(error){
+  // D1 has been atomically written and read back. A stale public read-model
+  // is an independently reported pending deployment/refresh, not a D1 failure.
+  if(error?.code!=='THEME_NINE_R54_PUBLIC_BASE_STORED_DATA_STALE')throw error;
+ }
+ const visible=record.themes.filter(t=>t.theme!=='AI·반도체');
+ const actual=new Map(live?.themes?.map(t=>[t.theme,t])??[]);
+ const matched=live?.modelRevision===record.version&&
+  live?.methodologyVersion===record.methodologyVersion&&
+  live?.confirmedObservationDate===record.observationDate&&
+  visible.every(t=>actual.get(t.theme)?.score===t.score&&
+   same(actual.get(t.theme)?.history,t.history))&&
+  !actual.has('AI·반도체');
+ return {status:matched?'PUBLIC_API_VERIFIED':'D1_VERIFIED_AWAIT_PUBLIC_API_REFRESH',
+  d1Writes:saved.written,dbStatus:saved.status,
+  productionMainSha:deployment.mainSha,sourceDate:candidate.observationDate,
+  confirmedDate:record.observationDate,provisionalMode:'NONE_CONFIRMED_ONLY',
+  provisionalDates:[],themesValidated:9,historyRows:2268,
+  rawFilesShaVerified:sourceProof.rawFilesShaVerified,publicR32ModelMatched:!!matched,
+  providerCalls:0,otherFeedsChanged:false};
+}
+
 export async function runNineR54PublicConnect({dataRoot='E:/ZGmini/data',
  configDirectory=path.resolve(here,'../../config'),now=Date.now(),
  publisherConsent=false,fetchImpl=fetch,tokenFn=approvedNineR54SevenToken,
  stageR48=stageCurrentNineR48,stageR51=stageNineR51Current,
- gate=verifyNineR54Production,queryFactory=createNineR54D1Query}={}){
+ gate=verifyNineR54Production,queryFactory=createNineR54D1Query,
+ verifyPair=verifyNineR54PrivatePair,
+ verifyManifest=verifyNineR54RawManifest}={}){
  need(publisherConsent===true,'EXPLICIT_PUBLISHER_CONSENT_REQUIRED');
  need(process.platform==='win32'||process.env.ZGMINI_R54_TEST_MODE==='1',
   'WINDOWS_PC_REQUIRED');
- const publicBase=await fetchPublic({fetchImpl,now});
+ let publicBase;
+ try{publicBase=await fetchPublic({fetchImpl,now});}
+ catch(error){
+  if(error?.code==='THEME_NINE_R54_PUBLIC_BASE_STORED_DATA_STALE')
+   return runNineR54ConfirmedRecovery({dataRoot,configDirectory,now,
+    publisherConsent,fetchImpl,tokenFn,stageR48,gate,queryFactory,
+    verifyPair,verifyManifest});
+  throw error;
+ }
  const staged=stageR48({dataRoot,configDirectory});
  need(staged?.status==='R48_PRIVATE_CANDIDATE_STAGED_NOT_PUBLISHED',
   'R48_PRIVATE_STAGE_FAILED');
