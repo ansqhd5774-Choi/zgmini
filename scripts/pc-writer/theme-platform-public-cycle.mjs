@@ -106,6 +106,21 @@ export async function runPublicPhysicalCycle({sources,registrations=[],grant,
  if(!allowPublish)return plan;
  ensure(grant?.schema==='ZGMINI_THEME_DELEGATION_V1',
   'THEME_PUBLIC_GRANT_REQUIRED');
+ // The six physical owners overlay the existing L7/R178 public Reader; none
+ // refreshes its required base. An unavailable base would otherwise allow
+ // confirmed D1 writes before R88 encounters a 503 and aborts the cycle.
+ // Reuse the supplied readback callback for a read-only, pre-write check.
+ if(typeof readPublic==='function'){
+  let baseline;
+  try{baseline=await readPublic();}
+  catch(error){return {...plan,status:'PUBLIC_BASE_READER_UNAVAILABLE',
+   reason:error?.code??'PUBLIC_BASE_READER_QUERY_FAILED',
+   completedGroups:0,verifiedGroups:0,results:[],projection:null};}
+  if(baseline?.status!=='READY')
+   return {...plan,status:'PUBLIC_BASE_READER_UNAVAILABLE',
+    reason:baseline?.reason??'PUBLIC_BASE_READER_NOT_READY',
+    completedGroups:0,verifiedGroups:0,results:[],projection:null};
+ }
  const results=[];
  let d1Writes=0;
  for(const group of plan.groups){
