@@ -65,6 +65,7 @@
 .mc-importance-heading{display:inline-flex;align-items:center;gap:4px;color:var(--zg-gold,#FFD166);white-space:nowrap}
 .mc-importance{display:inline-flex;align-items:center;gap:2px;color:var(--zg-gold,#FFD166);white-space:nowrap;min-width:0}
 .mc-event{display:flex;align-items:center;flex-wrap:wrap;gap:4px 7px;min-width:0;line-height:1.45}
+.mc-vendor-row .mc-event>span:first-child{min-width:0;overflow-wrap:anywhere}
 .mc-event>a{color:#eaf5fa;font-size:12px;font-weight:800;letter-spacing:-.015em;overflow-wrap:anywhere;text-decoration:none}
 .mc-event>a:hover{color:#69c9ec;text-decoration:underline}
 .mc-tag-major,.mc-tag-status{font-size:9px;font-weight:900;border-radius:3px;line-height:1.4;padding:2px 5px;white-space:nowrap}
