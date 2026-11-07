@@ -96,3 +96,6 @@
 - 후속 A [#751](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/751) **PASS (19:51:49Z)**: 다시 `core.lockPresent=true`, writer checkpoint는 19:51:29Z `VERIFIED`로 전진, 승인 source SHA 변경 없음. #748(19:48Z)과 두 시점 모두 잠금이 지속되어 #745가 진단한 Core 활성 창 문제의 재현 근거를 보강한다. 이는 영구 lock 또는 scheduler 결함으로 확정한 증거는 아니다. 기존 유효 Core를 강제 정지하지 않으며, 실제 유휴 증거 전 새 B 요청을 생성하지 않는다.
 - **현재 마지막 PASS:** GitHub 계산기 통합/manifest 승인, PC 읽기 전용 Core 현상 확인. **최초 FAIL:** 실제 PC Writer B 교체의 Core 활성 대기창. 재실행은 Core 유휴가 실측되고 중복 작업/공유 source 충돌이 해소된 뒤, 당시 base HEAD·원본 해시를 다시 대조해 새로운 고유 B 요청으로만 검토한다. 잠금 강제 삭제·Core 중지·승인 범위 확장 금지.
 - **다음 필수 작업:** Core의 정상 유휴 확인 → 정확한 1파일 Writer B 설치 → 실제 Core 계산·local read-back → D1·API/UI 비교. 예약 자연 실행 검증은 마지막 후속 단계로 유지한다.
+
+- 후속 A [#755](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/755) **PASS (19:55:29Z)**: 세 번째 조회에서도 `core.lockPresent=true`, Core collection checkpoint는 19:55:19Z `COMPLETE`로 진행, 승인 PC source SHA는 기존 `24610129461d027524a018daeba9f8b0cf9ed02c` 보존. #748·#751 이후에도 실제 Core 작업이 진행 중이고 유휴 확인되지 않았다. 기능 소스 새 `main`은 다른 작업으로 진전됐지만 수정 ER1 계산기 blob은 동일하며, 기존 후보 SHA `1be1734e9d8cf74375b3663ceee0033b928108a2`는 변하지 않는다.
+- **확인된 현재 차단:** 공유 PC Core가 활성 상태이므로 Writer B 소스 전환에 필요한 안전 유휴 창을 확보하지 못한다. 단순 검사 Gate의 오탐으로 주장하지 않는다. 소스/산식 추가 변경 없이 정상 유휴 확보 후 재설치 필요. 별도 공통 프로세스 개선이 필요하다면 #745·#748·#751·#755의 실제 증거를 바탕으로 소유자에게 좁은 범위로 전달한다.
