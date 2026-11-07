@@ -59,3 +59,28 @@
 - **DONE:** 원본 11개 명칭 복원, #27 중복 판정, 위 공식 source/기존 코드 교차 점검, 최소 경로 선정.
 - **NOT DONE:** 신규 10개 원자료 실제 PC 등록·수집/저장·D1/API/UI 갱신, #15/#17/#30 정의·권리 승인, 예약 자연실행 검증(후속).
 - **현재 작업 진행률:** 등록 검토 대상 11개 중 **1개 중복 정리 완료(1/11)**, 나머지 10개는 실제 등록 PASS가 아님. 연구 문서 작성만으로 진행률을 올리지 않는다.
+
+## 6. 2026-11-08 소스 구현·검증 실적 (운영 설치와 구분)
+
+- 구현 기준 repo: `ansqhd5774-Choi/zgmini`, 기존 기능 브랜치 `fix/economic12-inflation-legacy4-r35-20261021`.
+- **신규 후보 7개에 대한 별도 PC 원자료 수집 소스 5개와 fixture 테스트 5개를 브랜치에 커밋**. 기존 공개19 저장·4축 점수·Core 예약·D1/API/UI는 수정하지 않음.
+- #22/#23 CPI와 #24 PPI는 `inflation-causal-candidate-bls3.mjs`가 발표 이벤트별 cpi/ppi 입력을 구분. #16은 `inflation-causal-candidate-treasury.mjs`, #29는 `inflation-causal-candidate-fed-g17.mjs`, #28은 `inflation-causal-candidate-census-m3.mjs`, #2는 `inflation-causal-candidate-eia-gasoline.mjs`.
+- 모든 소스 위치: `scripts/pc-writer/`이며 같은 basename + `.test.mjs` 5개를 함께 추가. 신규 사설 경로 `inflation-causal-candidates-r1/`를 사용하며 이전 `inflation-causal-r1/` 및 게시19는 건드리지 않음.
+- **로컬 `node --test inflation-causal-candidate-*.test.mjs` = 21/21 PASS.** 잘못된 series·월·국가·단위·수치·중복·필수 키·할당량 제어 부재를 차단하고, 이전 정상 저장본 보존·원자료 SHA·재조회·정정월 갱신을 검증.
+- #16 재무부 MTS `line_code_nbr=405` / `classification_desc=Customs Duties` 공식 실조회: 2015-03~2026-09 **139/139개월** 전부 월말·해당 행·월 순수납(`gross-refund=net`) 정합, 금액의 음수 3건 보존. 센트 정수 기반 검증. `classification_id`는 가변이므로 고정키 사용 안 함.
+- #2 EIA 공식 v2 경로 및 `EMM_EPMR_PTE_NUS_DPG` facet 확인. **실제 키 기반 API 응답은 아직 미확인**이므로 공급자 응답·단위 단회 확인 전 활성화 금지. 실패 시 마지막 정상 원자료 보존.
+- #29 Growth G020의 `CHAIN_LINKED_PIT_INDEX` 가공값을 원본으로 재사용하지 않고 Fed `ip_sa.txt`의 `GMF` 직접 파싱. #28 Growth G016 매핑 `MTM/TI`만 재사용, D1 원자료를 PC 소스로 간주하지 않음.
+- **실제 PC 등록·설치·실수집·checkpoint·공개 D1/API/UI 확인은 아직 0건**. 소스 구현을 운영 설치 성공으로 계산 금지.
+
+### 다음 필수 실행 순서 (예약 검증 후순위)
+
+1. 원담당이 새 후보를 기존 Core lock/공통 quotaFetch 아래 격리 경로로 호출하는 **기능 연결 코드·테스트**를 추가. 기존 인플레19 GROUPS/flag/checkpoint를 확장해 계약을 깨지 않고, 동일 신규 후보로 기능별 예약·CMD를 생성하지 않음.
+2. #2 EIA 단회 실제 응답 확인, #16·#22·#23·#24·#28·#29의 승인된 PC 공급자 GET·로컬 저장·재조회. 신규 source/조회·활성화 효과는 승인된 공통 B/A 범위와 정확한 manifest로 등록. 기존 설치 성공을 가정하지 않음.
+3. #15 관세율 법정 적용범위, #17 DataWeb 계정·권리·수입액 분모, #30 파생 산식은 승인 결정 전 별도 `DEFERRED`; #27은 기존 #26과 중복으로 별도 수집·가중치 없음.
+4. 승인 범위의 연구 보조 관측 공개 계약·D1/API/UI 확인 후, **마지막 후속 작업으로만 예약 자동 갱신 검증**.
+
+### 진행률 명시
+
+- 원본 후보 판별·원천 검토 **11/11 완료**.
+- 비중복 독립 후보 10개 중 **7개 소스 구현·fixture 통과**, **3개 정의·권리 보류**. **소스 구현률 7/10**이며 실제 등록률과 다름.
+- **실제 신규 PC 등록·원자료 저장·공개 완료: 검증된 0/10**. 이후 현장 Runtime 증거로만 상향.
