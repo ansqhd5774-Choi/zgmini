@@ -6,7 +6,7 @@ import test from 'node:test';
 const file=fs.readFileSync(path.resolve('app/economic-indicators/economic-detail-panel.tsx'),'utf8');
 
 test('inflation research 19 replace the legacy four in the table and mobile list',()=>{
- assert.match(file,/displayObservations=id==="inflation"\?researchRows:observations/);
+ assert.match(file,/displayObservations=id==="inflation"\?researchRows:id==="employment"\?employmentListRows\(employmentData\?\.indicators\?\?\[\]\):observations/);
  assert.equal((file.match(/displayObservations\.map\(/g)||[]).length,2);
  assert.match(file,/수집 원자료 19개/);
  assert.doesNotMatch(file,/기존 평가점수/);
@@ -15,7 +15,8 @@ test('inflation research 19 replace the legacy four in the table and mobile list
 });
 test('calculation and scoring logic uses original stored rows only',()=>{
  assert.match(file,/const scored=storedObservations\.filter/);
- assert.match(file,/const observations=id==="employment"\?employmentListRows\(storedObservations\):storedObservations/);
+ assert.match(file,/const observations=storedObservations;/);
+ assert.match(file,/displayObservations=id==="inflation"\?researchRows:id==="employment"\?employmentListRows\(employmentData\?\.indicators\?\?\[\]\):observations/);
  assert.match(file,/researchRows=id==="inflation"/);
  assert.match(file,/id==="inflation"\&\&i<researchRows\.length/);
 });
