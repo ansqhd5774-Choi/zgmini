@@ -100,7 +100,7 @@
 - PC 로컬 Core와 원격 main의 원본 차이를 보존하려고 [제어 PR #789](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/789) 병합 후 읽기 전용 삽입 검사 [#790](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/790) 요청. 최초 두 앵커 #790은 STOP, 수정된 단일 앵커 [#792](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/792) A 프리뷰 PASS였으며 현재 실PC 설치는 아래 8절 최신 증거를 따른다.
 - 신규 7개 실제 수집·로컬 재조회 → 산식·공개 계약 승인 범위 확인 → D1/API/UI 검증이 필수다. **예약 자동 갱신 검증은 모든 기능 완료 후 마지막 후속**으로 둔다.
 
-## 8. 2026-11-08 실PC source 설치·활성화·원자료 첫 조회 (최신)
+## 8. 2026-11-08 실PC source 설치·활성화·원자료 첫 조회 (당시 기록; 9절 최신)
 
 - 공통 Writer B의 인용문 lexer 오탐을 [PR #795](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/795)로 수정, 기존 포함 42/42 PASS. 오탐 STOP #794는 재실행하지 않음.
 - 신규 7개 수집/연결 source 9파일은 B [#796](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/796) `WRITER_B_INSTALLED_VERIFIED`, JSON/TXT 2/2, PC LOCAL_OVERLAY source SHA `591d43d53f043cee531ef1e02bb59716c8356b36`, 승인 source `56b8ae8bec2a2d966e1da9ea7d6c284908468e89` 확인. GitHub source merge와 실PC 설치를 구분함.
@@ -111,3 +111,14 @@
 - CPI #22·#23은 동일 BLS 파일의 PPI #24 정상 확인과 `processed=false`를 근거로 미저장 가능성이 높지만 공급자·쿼터·형식 중 최초 오류 미확정. Census #28은 해당 시점 수집 시도 후 파일이 없으며 전년·당해 연도 2개 응답 중 어느 단계가 실패했는지 구분되지 않음. **이미 존재하는 내부 안전 오류 코드를 후속 진단에서 읽는 최소 개선**을 검토하되, 무조건 재시도·예약 변경·키 노출로 우회하지 않음.
 - **진행률 분리:** 원본 후보 검토 **11/11**, 비중복 독립 후보 10개 중 source/PC 설치·활성화 **7/10**; 실제 저장 유효 **3/7**(나머지 4건 원인 확인 중); 신규 공개 D1/API/UI **0/7**. #15·#17·#30 정의/권리 `DEFERRED`, #27은 기존 #26의 동일 원자료라 이중 등록 없음.
 - **다음 필수 실행:** #809 JSON·TXT 2/2를 회수해 #29 단일 A 재조회로 유효성 재판정. CPI·Census 현재 실패 코드를 보존적으로 확보 → 해당 원인만 수정·실PC 원자료 저장 검증. 이후 기존 19+점수 무변경 조건에서 신규 공개 연구 보조 계약의 사용자 승인 범위를 확정한 뒤 D1/API/UI 게시. **예약 자동 갱신 검증은 모든 기능 작업 완료 후** 별도 후속 단계다.
+
+## 9. 2026-11-08 추가 실PC 검증 및 Census 수정 설치 (최신)
+
+- #29 Fed G17 A 조회의 19xx 연도 오탐 수정은 source [PR #807](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/807) 병합 후 첫 B #809·#810에서 **승인/허용파일 내용 해시 불일치로 설치 전 STOP**. 원격 파일의 정확한 종결 개행을 기준으로 재작성한 [승인 PR #811](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/811) 이후, [실PC B #812](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/812) **SUCCEEDED/APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED**, 실제 Controller source `d89d9f94753cdf55b1a1ce02ea6215ab7206f3e6`, 원본 보호 유지, JSON/TXT 2/2 확인. 실패한 ID는 재실행하지 않음.
+- [A #814](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/814) PASS, 해당 Controller SHA로 실행, 공급자 GET·운영 쓰기·D1 쓰기 모두 0. **유효 저장값 4/7**로 상향: #2 EIA 520개(2026-11-02), #16 Treasury 139개(2026-09-30), #24 BLS PPI 203개(2026-09-01), #29 Fed G17 657개(2026-09-01). #22·#23 CPI는 INVALID, #28 Census는 MISSING이며 이 3개 그룹 모두 기존 checkpoint `attempted=true,processed=false`. 최초 공급자 실패 코드는 현재 보존되지 않아 미확정.
+- #28 Census 공식 metadata의 `time`은 `predicateOnly=true`; `time_slot_date`는 응답형 날짜 필드임을 확인. [source PR #1015](https://github.com/ansqhd5774-Choi/zgmini/pull/1015) 병합, 실제 응답 헤더 기반 테스트 **4/4 PASS**. 기존 MTM/TI·미국 전국·SA·연도 분리·quota·raw archive는 유지.
+- #28 단일 파일 수정 전/후 SHA256을 고정한 [Writer B 승인 PR #817](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/817) 병합, [실PC B #818](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/818) **WRITER_B_INSTALLED_VERIFIED**, 로컬 소스 `122bec565153f3a120ce431daec7789869ee2923`, 변경 파일 정확히 1개, JSON/TXT 2/2, 별도 예약·DB·D1 변경 없음. **수정 소스 설치는 Census 원자료 저장 성공과 별개**이므로 아직 #28 MISSING 유지.
+- #22·#23 CPI는 공식 API v2 요청 2개 시계열·2007~2026(20년)과 날짜·숫자 파서에서 확정적인 소스 오류가 발견되지 않음. 기존 PPI #24 저장 PASS와 CPI `processed=false`만으로 세부 실패 단계 판단 불가. 내부 실패 코드만 제한적으로 저장하는 **미병합 초안 [PR #1013](https://github.com/ansqhd5774-Choi/zgmini/pull/1013)** 테스트 10/10 PASS. 단, 비공개 checkpoint 필드 변경이므로 **명시 승인 전 병합·PC 설치 금지**.
+- 기존 공개19 계약은 정확히 19행을 요구하고 4축 점수와 분리돼 있음. 신규 7개는 별도 연구용 D1 key/API/UI 계약을 정해 승인받아야 하며, 기존 19개 행이나 기존 점수·가중치를 변경하지 않음. #15·#17·#30은 정의·권리·산식 선택 이전 `DEFERRED`; #27은 #26 PCE와 동일 원천이므로 중복 수집하지 않음.
+- **최신 진행률:** 원본 후보 검토 11/11 완료. 비중복 10개 중 등록·소스 설치·활성화 **7/10**, 첫 실PC 데이터 저장 **4/7**, 공개 D1/API/UI 신규 반영 **0/7**. 기타 3개는 의사결정 대기. 
+- **다음 필수 실행:** 첫 유효 Core 수집 주기에서 #28 원자료 저장·재조회 증거 확인(기존 24시간 안전 간격 유지); #22·#23은 승인된 최소 실패 코드 진단과 해당 원인별 수정만 수행. 신규 공개 계약과 보류 3개 정의는 사용자 승인 범위 확정 후 구현. **예약 자동 갱신 검증은 실제 수집·저장·공개 반영을 모두 완료한 다음 후속 작업으로만 실행**.
