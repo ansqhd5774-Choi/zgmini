@@ -10,8 +10,7 @@ import {runNineR54PublicConnect,approvedNineR54SevenToken} from './theme-nine-r5
 import {createNineR54D1Query} from './theme-nine-r54-d1-client.mjs';
 import {buildNineR88FromStorage} from './theme-nine-r88-provisional.mjs';
 import {publishNineR88} from './theme-nine-r88-publish.mjs';
-import {runDcPowerPublishR3} from './theme-data-center-power-publish-r3.mjs';
-import {dcPowerVersionedD1} from './theme-data-center-power-d1-r3.mjs';
+import {startDcPowerR3} from './theme-data-center-power-publish-r3.mjs';
 import {runSpacePublishR32} from './theme-space-satellite-publish-r32.mjs';
 import {runDcPowerR8} from './theme-data-center-power-auto-r8.mjs';
 import {runSpaceR8} from './theme-space-satellite-auto-r8.mjs';
@@ -36,7 +35,7 @@ const expected=Object.freeze([
 const defaultOperations=Object.freeze({runR37:runNineR54PublicConnect,
  token:approvedNineR54SevenToken,query:createNineR54D1Query,
  buildR88:buildNineR88FromStorage,publishR88:publishNineR88,
- runDc:runDcPowerPublishR3,dcDb:dcPowerVersionedD1,
+ runDc:startDcPowerR3,
  runSpace:runSpacePublishR32,runDcR8:runDcPowerR8,runSpaceR8});
 const ISO=/^\d{4}-\d{2}-\d{2}$/;
 
@@ -115,10 +114,10 @@ export function createExistingPublicOwnerAdapters({sources,dataRoot='E:/ZGmini/d
    // from a general Stage4 opt-in or silently supplied by this adapter.
    need(anonymousLicenseRiskAccepted===true,
     'DC_POWER_R3_EXPLICIT_ANONYMOUS_RISK_ACKNOWLEDGEMENT_REQUIRED');
-   const approvedToken=await token();
-   const db=ops.dcDb({dataRoot,tokenFn:()=>approvedToken});
+   // Use the established owner entrypoint so its single-lane R3 lock and
+   // approved credential chain cannot be skipped by Stage4 coordination.
    return ops.runDc({dataRoot,allowCollect:false,allowPublish:true,
-    acceptAnonymousLicenseRisk:anonymousLicenseRiskAccepted,db});
+    acceptAnonymousLicenseRisk:anonymousLicenseRiskAccepted});
   },
   [SPACE_SATELLITE_R2_PUBLIC_KEY]:async()=>{
    const approvedToken=await token();
