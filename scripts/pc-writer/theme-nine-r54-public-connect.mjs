@@ -371,15 +371,31 @@ export async function runNineR54PublicConnect({dataRoot='E:/ZGmini/data',
   otherFeedsChanged:false,providerCalls:0};
 }
 
+// A confirmed-only operational invocation must never silently switch into
+// the R51 provisional publisher just because the public API becomes READY
+// between a read-only preflight and execution. Keep the existing explicit
+// full-mode command unchanged for historically approved callers.
+export function selectNineR54CliMode(args){
+ if(args.length!==3||args[0]!=='--once'||args[1]!=='--publish')return null;
+ if(args[2]==='--confirmed-only')return 'CONFIRMED_ONLY';
+ if(args[2]==='--accept-anonymous-license-risk')return 'LEGACY_AUTO';
+ return null;
+}
+
+export async function runNineR54CliMode(mode,input,{runConfirmed=runNineR54ConfirmedRecovery,
+ runLegacy=runNineR54PublicConnect}={}){
+ need(mode==='CONFIRMED_ONLY'||mode==='LEGACY_AUTO','CLI_MODE_INVALID');
+ return mode==='CONFIRMED_ONLY'?runConfirmed(input):runLegacy(input);
+}
+
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
- const args=process.argv.slice(2);
- if(args.length!==3||args[0]!=='--once'||args[1]!=='--publish'||
-  args[2]!=='--accept-anonymous-license-risk'){
-  console.error('Usage: theme-nine-r54-public-connect.mjs --once --publish --accept-anonymous-license-risk');
+ const mode=selectNineR54CliMode(process.argv.slice(2));
+ if(!mode){
+  console.error('Usage: theme-nine-r54-public-connect.mjs --once --publish (--confirmed-only | --accept-anonymous-license-risk)');
   process.exitCode=2;
  }else{
   try{
-   const report=await runNineR54PublicConnect({publisherConsent:true,
+   const report=await runNineR54CliMode(mode,{publisherConsent:true,
     dataRoot:process.env.ZGMINI_DATA_ROOT||'E:/ZGmini/data'});
    console.log(JSON.stringify(report,null,2));
    if(report.status==='D1_VERIFIED_AWAIT_PUBLIC_API_REFRESH')process.exitCode=3;
