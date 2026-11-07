@@ -17,7 +17,7 @@ export async function validRollingPublic(rolling,base,{now=Date.now(),expectedMe
  if(rolling.individualStocksUsed!==0||rolling.baseObservationDate!==base.observationDate||rolling.coverage?.etfs!==13||rolling.coverage?.benchmark!=='SPY'||rolling.coverage?.complete!==true)return false;
  if(!stamp(rolling.asOf)||!stamp(rolling.sourceStoredAt)||Date.parse(rolling.asOf)>now||Date.parse(rolling.sourceStoredAt)>now||now-Date.parse(rolling.asOf)>=PUBLIC_DISPLAY_MAX_AGE_MS)return false;
  if(!/^([a-f0-9]{64})$/.test(rolling.baseHash??'')||rolling.baseHash!==await immutableBaseHash(base))return false;
- if(!Array.isArray(rolling.themes)||rolling.themes.length!==base.themes.length||!date(rolling.observationDate)||rolling.confirmedObservationDate!==rolling.observationDate)return false;
+ if(!Array.isArray(rolling.themes)||rolling.themes.length!==base.themes.length||!date(rolling.observationDate)||Date.parse(rolling.observationDate+'T00:00:00Z')>now||rolling.confirmedObservationDate!==rolling.observationDate)return false;
  let common=null;
  for(let i=0;i<base.themes.length;i++){
   const x=rolling.themes[i],seed=base.themes[i];

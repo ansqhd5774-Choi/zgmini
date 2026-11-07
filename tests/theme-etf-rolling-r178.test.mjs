@@ -41,6 +41,18 @@ test('fresh GMH-only confirmed rolling can revive the immutable seed without an 
  p.sourcePriceReconciled=false;
  assert.equal(await validRollingPublic(p,b,{now:current}),false);
 });
+test('future confirmed observation date cannot be published as already collected GMH data',async()=>{
+ const b=seed(),p=rolling(b),future='2026-11-09';
+ p.phase='CONFIRMED';
+ p.observationDate=future;
+ p.confirmedObservationDate=future;
+ p.themes=p.themes.map(t=>({...t,history:[...t.history.slice(1),{date:future,score:42}]}));
+ p.provisional={asOf:p.asOf,points:[]};
+ p.lineage.confirmedPrimaryCount=13;
+ p.lineage.secondaryPendingCount=0;
+ p.lineage.latestCompletedSession=future;
+ assert.equal(await validRollingPublic(p,b,{now}),false);
+});
 test('unaltered immutable seed is required',async()=>{
  const b=seed(),p=rolling(b);p.themes[0].history[0].score=99;
  assert.equal(await validRollingPublic(p,b,{now}),false);
