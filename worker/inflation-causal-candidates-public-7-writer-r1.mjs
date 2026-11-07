@@ -32,6 +32,24 @@ function preserveLastGood(previous,next){
   }
 }
 
+function assertRowCheckpointAdvance(previous,next){
+  let changed=0;
+  for(let i=0;i<previous.indicators.length;i++){
+    const before=previous.indicators[i],after=next.indicators[i];
+    if(JSON.stringify(before)===JSON.stringify(after))continue;
+    changed++;
+    // A new source can be older than the most recently stored *other*
+    // source. Require that this row's own provenance advances instead of
+    // requiring the envelope's max(sourceStoredAt) to advance.
+    if(after.status!=='READY'||
+      (before.status==='READY'&&
+       Date.parse(after.sourceStoredAt)<=Date.parse(before.sourceStoredAt)))
+      fail('INFL7_PUBLIC_CHECKPOINT_CONFLICT');
+  }
+  if(changed===0||previous.sourceVersion===next.sourceVersion)
+    fail('INFL7_PUBLIC_CHECKPOINT_CONFLICT');
+}
+
 // Call only after a trusted PC process has read and reduced local saved sources.
 // The caller owns rights review, authorized publication and D1 access; a visitor
 // request must never be routed here. No credentials or raw source enter payload.
@@ -51,12 +69,10 @@ export function inflationCandidates7PublicWriter(db){
       const previous=validStored(old,storedAt);
       if(previous.sourceStoredAt>frozen.sourceStoredAt)
         fail('INFL7_PUBLIC_SUPERSEDED');
-      if(previous.sourceStoredAt===frozen.sourceStoredAt&&
-        JSON.stringify(previous)!==JSON.stringify(frozen))
-        fail('INFL7_PUBLIC_CHECKPOINT_CONFLICT');
       preserveLastGood(previous,frozen);
       if(JSON.stringify(previous)===JSON.stringify(frozen))
         return {status:'ALREADY_STORED',key,storedAt:Number(old.stored_at)};
+      assertRowCheckpointAdvance(previous,frozen);
     }
 
     const body=JSON.stringify({payload:frozen,projection:{status:'READY',
