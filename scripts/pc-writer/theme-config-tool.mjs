@@ -17,6 +17,24 @@ const legacy=()=>{
  return {...historic,themes:[...historic.themes,...publicBindings.themes.map(({id,label})=>({id,label}))]};
 };
 export {listRegistered};
+// The scheduled/CLI wrappers previously discarded the private R25 error's
+// structured SPY-calendar diagnostic. Expose only bounded, verified date and
+// ticker metadata; never serialize an arbitrary error object or local bars.
+export function safeConfiguredFailure(error){
+ if(error?.code!=='THEME_NINE_R25_NON_SPY_DATE')return {};
+ const info=error?.diagnostic;
+ if(info?.status!=='CONFIG_R32_NON_SPY_DATE'||!Array.isArray(info.mismatches))
+  return {reasonCode:'THEME_NINE_R25_NON_SPY_DATE'};
+ const mismatches=info.mismatches.slice(0,8).map(item=>({
+  symbol:/^[A-Z][A-Z0-9.]{0,11}$/.test(item?.symbol??'')?item.symbol:'REDACTED',
+  missingCount:Number.isSafeInteger(item?.missingCount)&&item.missingCount>=0?item.missingCount:null,
+  sampleDates:Array.isArray(item?.sampleDates)?item.sampleDates.slice(0,8).filter(validDate):[],
+  truncated:item?.truncated===true,
+ }));
+ return {reasonCode:'THEME_NINE_R25_NON_SPY_DATE',lastPass:'SPY_REFERENCE_DATES_READ',
+  firstFail:'ETF_DATE_NOT_PRESENT_IN_SPY',missingSymbolCount:info.mismatches.length,
+  mismatches,truncated:info.mismatches.length>8};
+}
 // The read-only PC shadow may execute only the decoder copied into its
 // B-approved immutable source bundle. Other writers keep their existing
 // dependency lookup; no dynamic scan of unrelated project installations is
@@ -124,7 +142,8 @@ export async function runConfiguredSchedule({dataRoot,now=new Date(),fetchImpl=f
    try{
     const limitedFetch=async(...args)=>{ensure(state.calls<dailyBudget,'CONFIG_DAILY_REQUEST_BUDGET');state.calls++;save();return fetchImpl(...args);};
     results.push(await runConfiguredOnce({dataRoot,id:r.definition.id,end:day,fetchImpl:limitedFetch,maxRequests:Math.min(4,dailyBudget-state.calls)}));
-   }catch(e){results.push({id:r.definition.id,status:'STOP',reason:e.code??'CONFIG_SOURCE_OR_IO_ERROR'});}
+   }catch(e){results.push({id:r.definition.id,status:'STOP',reason:e.code??'CONFIG_SOURCE_OR_IO_ERROR',
+    ...safeConfiguredFailure(e)});}
   }
   const attempted=new Map(results.map(result=>[result.id,result.status]));
   const coverage=entries.map(({definition:{id}})=>({
@@ -235,5 +254,6 @@ async function cli(){
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  try{const result=await cli();console.log(JSON.stringify(result,null,2));if(result?.status?.startsWith('STOP')||result?.status==='PARTIAL_REVIEW_REQUIRED'||
   process.argv[2]==='--platform-shadow'&&result?.status!=='COMPLETE')process.exitCode=2;}
- catch(e){console.error(JSON.stringify({status:'STOP',reason:e.code??'CONFIG_INVALID_OR_IO_ERROR',d1Writes:0,schedulerWrites:0}));process.exitCode=2;}
+ catch(e){console.error(JSON.stringify({status:'STOP',reason:e.code??'CONFIG_INVALID_OR_IO_ERROR',
+  ...safeConfiguredFailure(e),d1Writes:0,schedulerWrites:0}));process.exitCode=2;}
 }
