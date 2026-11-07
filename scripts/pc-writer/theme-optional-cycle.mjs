@@ -165,12 +165,18 @@ export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPu
  const result={report:'AI_SEVEN_PROVISIONAL_AUTHORITY_READONLY_R3',status:'STARTED',
   providerCalls:0,d1Writes:0,schedulerWrites:0,reason:null};
  try{
-  const db=storage??await cloudflareD1({dataRoot}),feed=await readPublic();
-  ensure(feed?.status==='READY'&&feed.themes?.length>=7,'PUBLIC_SEVEN_REFERENCE_MISSING');
-  const reference=sevenCoreReference(feed),clock=now();
-  const pending=reference.phase==='PROVISIONAL'?(reference.provisional?.points??[]).map(p=>p.date):[];
-  result.publicReference={phase:reference.phase,confirmedDate:reference.observationDate,
-   visibleUnionDates:(feed.provisional?.points??[]).map(p=>p.date),pendingDates:pending};
+  const db=storage??await cloudflareD1({dataRoot});
+  let feed=null,publicReadError=null,reference=null;
+  try{feed=await readPublic();}catch(e){publicReadError=e?.code??'PUBLIC_API_UNREADABLE';}
+  if(feed?.status==='READY'&&feed.themes?.length>=7){
+   try{reference=sevenCoreReference(feed);}catch(e){publicReadError=e?.code??'PUBLIC_SEVEN_REFERENCE_INVALID';}
+  }
+  const clock=now();
+  const pending=reference?.phase==='PROVISIONAL'?(reference.provisional?.points??[]).map(p=>p.date):[];
+  result.publicReference=reference?{status:'READY',phase:reference.phase,confirmedDate:reference.observationDate,
+   visibleUnionDates:(feed.provisional?.points??[]).map(p=>p.date),pendingDates:pending}:
+   {status:'UNAVAILABLE',reason:feed?.reason??publicReadError??'PUBLIC_SEVEN_REFERENCE_MISSING',
+    phase:null,confirmedDate:null,visibleUnionDates:[],pendingDates:[]};
   const fetchOptional=async key=>{try{
    const row=await db.read(key);return {body:row.body,storedAt:row.storedAt,error:null};
   }catch{return {body:null,storedAt:null,error:'D1_OUTPUT_NOT_READABLE'};}};
@@ -187,15 +193,15 @@ export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPu
    sourcePriceReconciled:r?.sourcePriceReconciled===true,
    primarySource:r?.lineage?.primarySource==='GETMARKETHISTORY_1H_CLOSE',
    secondarySource:r?.lineage?.secondarySource==='MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED',
-   pendingCount:r?.lineage?.secondaryPendingCount===pending.length,
-   confirmedDate:r?.observationDate===reference.observationDate,
-   pendingDates:equal((r?.provisional?.points??[]).map(p=>p.date),pending),
-   latestSession:r?.lineage?.latestCompletedSession===pending.at(-1),
+   pendingCount:!!reference&&r?.lineage?.secondaryPendingCount===pending.length,
+   confirmedDate:!!reference&&r?.observationDate===reference.observationDate,
+   pendingDates:!!reference&&equal((r?.provisional?.points??[]).map(p=>p.date),pending),
+   latestSession:!!reference&&r?.lineage?.latestCompletedSession===pending.at(-1),
   };
   const rollingRowFresh=Number.isSafeInteger(roll.storedAt)&&roll.storedAt<=clock&&
    clock-roll.storedAt<PUBLIC_DISPLAY_MAX_AGE_MS;
   const rollingValid=rollingRowFresh&&!!seed&&!!r&&await validRollingPublic(r,seed,{now:clock});
-  const scoreMatches=(themes,points,confirmed)=>confirmed===reference.observationDate&&
+  const scoreMatches=(themes,points,confirmed)=>!!reference&&confirmed===reference.observationDate&&
    Array.isArray(themes)&&themes.length===7&&themes.every((t,i)=>
     t.theme===reference.themes[i].theme&&t.score===reference.themes[i].score&&
     equal(t.history?.map(p=>p.date),reference.themes[i].history?.map(p=>p.date))&&
@@ -203,7 +209,8 @@ export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPu
    equal(points?.map(p=>p.date)??[],pending)&&
    (points??[]).every((p,i)=>reference.themes.every(t=>p.scores?.[t.theme]===reference.provisional?.points?.[i]?.scores?.[t.theme]));
   const rollingMatches=rollingValid&&scoreMatches(r.themes,r.provisional?.points??[],r.observationDate);
-  result.rolling={available:!!r,error:roll.error,observationDate:r?.observationDate??null,
+  result.rolling={available:!!r,error:roll.error,storedAt:roll.storedAt??null,
+   sourceStoredAt:r?.sourceStoredAt??null,asOf:r?.asOf??null,observationDate:r?.observationDate??null,
    pendingDates:(r?.provisional?.points??[]).map(p=>p.date),latestSession:r?.lineage?.latestCompletedSession??null,
    secondarySourceName:r?.lineage?.secondarySource??null,gates,
    allAuthorityGatesPass:Object.values(gates).every(Boolean),storedRowFresh:rollingRowFresh,
@@ -213,7 +220,7 @@ export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPu
   const fallbackRowValid=Number.isSafeInteger(side.storedAt)&&side.storedAt<=clock;
   const fallbackValid=fallbackRowValid&&!!seed&&!!p&&
    validThemeEtfProvisional(p,seed.observationDate,{now:clock,themes:seed.themes});
-  const fallbackSeedMatches=!!seed&&reference.observationDate===seed.observationDate&&
+  const fallbackSeedMatches=!!reference&&!!seed&&reference.observationDate===seed.observationDate&&
    seed.themes.every((t,i)=>t.theme===reference.themes[i].theme&&
     t.latestScore===reference.themes[i].score&&
     equal(t.history?.map(p=>p.date),reference.themes[i].history?.map(p=>p.date))&&
@@ -221,7 +228,8 @@ export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPu
   const fallbackMatches=fallbackValid&&fallbackSeedMatches&&
    equal(p.points.map(z=>z.date),pending)&&p.points.every((z,i)=>
     reference.themes.every(t=>z.scores?.[t.theme]===reference.provisional?.points?.[i]?.scores?.[t.theme]));
-  result.fallback={available:!!p,error:side.error,sourceName:p?.sourceName??null,
+  result.fallback={available:!!p,error:side.error,storedAt:side.storedAt??null,
+   sourceStoredAt:p?.sourceStoredAt??null,asOf:p?.asOf??null,sourceName:p?.sourceName??null,
    confirmedDate:p?.confirmedObservationDate??null,pendingDates:(p?.points??[]).map(x=>x.date),
    rights:{publicationAuthorized:p?.publicationAuthorized===true,
     upstreamCommercialRightsVerified:p?.upstreamCommercialRightsVerified===true,
@@ -229,8 +237,8 @@ export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPu
     sourcePriceReconciled:p?.sourcePriceReconciled===true},
    storedRowValid:fallbackRowValid,readerValidatorPass:fallbackValid,
    seedScoresMatch:fallbackSeedMatches,exactPublicScoreMatch:fallbackMatches};
-  result.activeLane=rollingMatches?'ROLLING_R178':fallbackMatches?'SEED_PLUS_PROVISIONAL_SIDECAR':
-   'UNVERIFIED_NO_PUBLIC_SCORE_PARITY';
+  result.activeLane=!reference?'PUBLIC_REFERENCE_UNAVAILABLE':rollingMatches?'ROLLING_R178':
+   fallbackMatches?'SEED_PLUS_PROVISIONAL_SIDECAR':'UNVERIFIED_NO_PUBLIC_SCORE_PARITY';
   result.status='READONLY_REPORTED';
  }catch(e){result.status='BLOCKED';result.reason=e?.code??'UNKNOWN_ERROR';}
  return result;
