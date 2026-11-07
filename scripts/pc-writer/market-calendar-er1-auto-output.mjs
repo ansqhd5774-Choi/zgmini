@@ -8,10 +8,39 @@ import {forecastRowsFromSaved} from '../../lib/market-calendar-er1-forecast-save
 import {scoreER1ForecastIssuers} from '../../lib/market-calendar-er1-forecast-score.mjs';
 import {makeER1PublicDisplay} from '../../lib/market-calendar-er1-public-display.mjs';
 import {er1MonthlyPublicKey} from '../../lib/market-calendar-er1-month-key.mjs';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 
 const INPUT_PREFIX='release-calendar:earnings-api:';
 const MONTH=/^20\d\d-(0[1-9]|1[0-2])$/;
+const NOV_PRIVATE_MONTH='2026-11';
+const NOV_PRIVATE_DIR='nov30-forward-days';
+const MAX_PRIVATE_BYTES=2_001_024;
 const bad=code=>{throw Error(code)};
+
+// The historical November capture retained 14 immutable day responses outside
+// SQLite. The normal rolling/D+30 collector stores later months in SQLite;
+// never carry this one-time archive fallback into a different month.
+function archivedNovemberDay(pcHome,day){
+ const file=path.join(pcHome,'er1-input',NOV_PRIVATE_DIR,day+'.json');
+ let stat;
+ try{stat=fs.lstatSync(file);}catch(error){
+  if(error?.code==='ENOENT')return null;
+  bad('ER1_AUTO_PRIVATE_DAY_READ_FAILED');
+ }
+ if(!stat.isFile()||stat.isSymbolicLink()||stat.size<2||
+  stat.size>MAX_PRIVATE_BYTES)bad('ER1_AUTO_PRIVATE_DAY_INVALID');
+ let saved;
+ try{saved=JSON.parse(fs.readFileSync(file,'utf8'));}
+ catch{bad('ER1_AUTO_PRIVATE_DAY_INVALID');}
+ const when=Date.parse(saved?.storedAt);
+ if(saved?.body?.date!==day||typeof saved.storedAt!=='string'||
+  !Number.isSafeInteger(when)||when<1)
+  bad('ER1_AUTO_PRIVATE_DAY_INVALID');
+ return {storedAt:when,body:{requestedDate:day,
+  text:JSON.stringify(saved.body)}};
+}
 
 export function savedER1MonthDays(month){
  if(typeof month!=='string'||!MONTH.test(month))bad('ER1_AUTO_MONTH_INVALID');
@@ -28,12 +57,17 @@ export function futureER1Months(now){
  return months.filter(month=>er1MonthlyPublicKey(month)!==null);
 }
 
-async function scoreSavedMonth(store,month,asOf,now){
+async function scoreSavedMonth(store,month,asOf,now,pcHome){
  const key=er1MonthlyPublicKey(month);
  if(!key)bad('ER1_AUTO_MONTH_NOT_APPROVED');
- const savedDays=[];
+ const savedDays=[];let privateDays=0;
  for(const day of savedER1MonthDays(month)){
-  const saved=await store.readInput(INPUT_PREFIX+day);
+  let saved=await store.readInput(INPUT_PREFIX+day);
+  if(!saved&&month===NOV_PRIVATE_MONTH){
+   try{saved=archivedNovemberDay(pcHome,day);}
+   catch{return {month,status:'MONTH_SOURCE_INVALID',providerRequests:0};}
+   if(saved)privateDays++;
+  }
   if(!saved||!Number.isSafeInteger(saved.storedAt)||saved.storedAt<1||
    saved.storedAt>now+300000||saved.body?.requestedDate!==day||
    typeof saved.body.text!=='string')
@@ -74,16 +108,18 @@ async function scoreSavedMonth(store,month,asOf,now){
  if(verified?.storedAt!==now||JSON.stringify(verified.body)!==JSON.stringify(body))
   bad('ER1_AUTO_LOCAL_OUTPUT_READBACK_FAILED');
  return {month,status:'READY_OUTPUT',scoreableIssuers:body.recordCount,
-  providerRequests:0};
+  sqliteDays:savedDays.length-privateDays,privateDays,providerRequests:0};
 }
 
-export async function refreshSavedER1MonthlyOutputs({store,now=Date.now()}={}){
+export async function refreshSavedER1MonthlyOutputs({store,now=Date.now(),
+ pcHome=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer')}={}){
  if(!store||typeof store.readInput!=='function'||
   typeof store.readOutput!=='function'||typeof store.writeOutput!=='function'||
-  !Number.isSafeInteger(now)||now<1)bad('ER1_AUTO_STORE_OR_CLOCK_INVALID');
+  !Number.isSafeInteger(now)||now<1||typeof pcHome!=='string'||
+  !path.isAbsolute(pcHome))bad('ER1_AUTO_STORE_OR_CLOCK_INVALID');
  const asOf=earningsApiNewYorkDay(now),months=[];
  for(const month of futureER1Months(now)){
-  months.push(await scoreSavedMonth(store,month,asOf,now));
+  months.push(await scoreSavedMonth(store,month,asOf,now,pcHome));
  }
  return {status:months.some(x=>x.status==='READY_OUTPUT')?'UPDATED':'NO_NEW_OUTPUT',
   months,providerRequests:0};
