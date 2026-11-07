@@ -144,3 +144,16 @@
 | #29 | 미국 제조업 산업생산지수 | Fed G17 `GMF` | 지수 · 월간 |
 
 **승인 질문:** 기존 19개·4축 점수 완전 보존, 별도 연구용 D1 키/API/UI, 원자료 요약 7행만 공개하는 위 계약을 승인할지. 승인 전에는 신규 D1/공개 API/UI 쓰기 0건으로 유지한다.
+
+
+## 11. 2026-11-08 사설 실패 코드 실PC 적용·A 조회 및 신규 7개 공개 준비 (최신)
+
+- CPI/Census 다음 정상 수집 실패 때에만 내부 체크포인트에 안전한 정규화 오류 코드 `attempted[group].failureCode`를 선택적으로 기록하는 [기능 PR #1013](https://github.com/ansqhd5774-Choi/zgmini/pull/1013) 병합. **main 반영 source `5d2c0758f57b9ee9c3c2b910b2dd84300af85583`**. 기존 24시간 cooldown·last-good·원자료 비공개 유지, 기능 테스트 10/10 PASS.
+- 제어 저장소 단일 파일 B 승인 [PR #824](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/824) 및 [PC #826](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/826) 실제 결과 **`WRITER_B_INSTALLED_VERIFIED`**, JSON/TXT 2/2, PC 운영 source `551cc9b704d7b977a9c9fe6a82c737372bfc8018`. #28 Census 수정 source를 포함한 기존 운영 base를 보존하며 진단 파일 1개만 교체. 설치는 신규 데이터 수집 성공과 별개.
+- 제어 A/light 모듈에 위 선택적 필드를 안전하게 노출하는 제어 [PR #825](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/825) 병합 `ece6573862a68badd02d169c09e486f0970468fd`, 테스트 9/9 PASS. B 승인 [PR #827](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/827), [PC 설치 #828](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/828) 실제 **`SUCCEEDED/APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED`**, actual Controller `ece6573862a68badd02d169c09e486f0970468fd`, 보호 상태 불변, JSON/TXT 2/2.
+- 바로 이어 [A 조회 #830](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/830) 실제 **`PASS/INFLATION_CANDIDATES_RUNTIME_READONLY_EVIDENCE`**. 원격 결과 `results/42425514780-1-seat-4.json` 및 TXT 모두 직접 조회; Controller `ece657...`, 운영 source `551cc9...`, 원자료/운영/D1 쓰기 0, 공급자 호출 0, 보호 상태 전후 SHA 일치. **유효 4/7 그대로**: #2 EIA 520, #16 Treasury 139, #24 PPI 203, #29 G17 657. #22·#23 CPI `INVALID`, #28 Census `MISSING`. 기존 checkpoint에 아직 `failureCode:null`인 것은 **신규 수집 실패 원인 확정이 아님**. 마지막 Core 시도 `2026-11-07T22:40:02.928Z`; 24시간 안전 간격 전 강제 재시도 금지, 이후 정상 수집 결과로 원인별 수정 결정.
+- 기존 기능 브랜치 `fix/economic12-inflation-legacy4-r35-20261021`에 **별도 연구용 신규 7행** catalog/read-only preview/공개 validator+reader/별도 D1 Writer/대상 테스트 등 정확히 신규 6파일을 작성. 최신 작성 SHA `30bc6c457fd714793f949f60ec2295072729e607`, 독립 테스트 **25/25 PASS**. 점수 `null`, 기존 19행·기존 4축 점수·D1 운영값 불변. **main 회수·실PC 신규 게시기 설치·D1 기록·신규 API route·UI·Production 검증은 모두 미완료**이며 source 작성만으로 게시 완료가 아님.
+- 남은 게시 계약 이슈: 이전 `READY` 행이 신규 수집 시 `PENDING`이면 Writer가 last-good 보호를 위해 전체 게시를 거부하여 다른 행의 정상 갱신까지 막을 수 있음. 원출처·관측일·저장 시각의 진실성을 유지하는 보존 표현 계약 결정 전 무조건 fallback 금지.
+- 최신 GitHub `main`(`fcfd4468dc24c5d38763c78a2a4732c76c0628ad`) 대비 기능 브랜치는 43커밋 앞/927 뒤, UI 전용 `codex/ui-improvements`는 261 앞/389 뒤. **분기 전체 병합·stale 파일 덮어쓰기 금지**. 사용자 지정 UI 브랜치에서 개별 변경을 작성해도 검증된 파일의 최신 main 선택적 회수·리뷰가 별도로 필요.
+- **현 진행률:** 원래 미등록 11개 검토 **11/11**, 중복 제거된 독립 10개 중 source·PC 활성화 **7/10** (#15/#17/#30 보류), 실제 유효 원자료 저장 **4/7**, 신규 7개 공개 D1/API/UI **0/7**. 기존 #26/#27 PCE 동일 원자료의 이중 등록 없음.
+- **다음 필수 행동:** 이미 설치한 진단을 다음 정상 Core 실행 checkpoint에서 조회하고 CPI/Census 최초 실패 코드만 근거로 최소 수정; 한편 7개 게시 계약의 last-good 보존 표현·브랜치 선택적 통합 경로 확정 후 PC 게시 B → D1 readback → GET → UI Production 검증을 진행한다. #15/#17/#30은 정의·권리 승인 전 등록하지 않는다. **예약 자동 갱신 검증은 모든 실제 게시 작업 완료 이후 추가 후속**으로만 둔다.
