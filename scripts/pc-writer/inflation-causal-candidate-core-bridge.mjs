@@ -29,8 +29,8 @@ const isDate=value=>typeof value==='string'&&/^20\d{2}-(0[1-9]|1[0-2])-(0[1-9]|[
  new Date(value+'T00:00:00Z').toISOString().slice(0,10)===value;
 const isIso=value=>typeof value==='string'&&Number.isFinite(Date.parse(value))&&
  new Date(value).toISOString()===value;
-const safeError=e=>/^INFL_CANDIDATE_[A-Z0-9_]{1,90}$/.test(e?.code??'')?
- e.code:'INFL_CANDIDATE_CORE_FAILED';
+const safeFailureCode=code=>/^(?:INFL_CANDIDATE|BLS_CANDIDATE|TREASURY_CUSTOMS|CENSUS_M3|FED_G17|EIA_REGULAR)_[A-Z0-9_]{1,90}$/.test(code??'')?
+ code:'INFL_CANDIDATE_SOURCE_FAILED';
 const validKey=(env,group)=>{
  const cred=INFLATION_CANDIDATE_GROUPS[group]?.credential;
  if(!cred)return true;
@@ -49,7 +49,9 @@ function validateCheckpoint(doc){
     !isDate(value.observationDate))throw fail('INFL_CANDIDATE_CORE_CHECKPOINT_INVALID');
  for(const [key,value] of Object.entries(doc.attempted))
   if(!GROUPS.includes(key)||typeof value?.eventKey!=='string'||value.eventKey.length>240||
-    !isIso(value.at))throw fail('INFL_CANDIDATE_CORE_CHECKPOINT_INVALID');
+    !isIso(value.at)||(value.failureCode!==undefined&&
+     safeFailureCode(value.failureCode)!==value.failureCode))
+    throw fail('INFL_CANDIDATE_CORE_CHECKPOINT_INVALID');
  return doc;
 }
 
@@ -207,6 +209,18 @@ export async function collectInflationCandidatesIfDue({base,approved=false,
   }else completed.push({group:entry.group,status:'AWAITING_NEW_OBSERVATION',latest:after});
  }
  failed.push(...report.failed);
+ // Persist bounded diagnostic codes on the already-owned attempt checkpoint.
+ // Existing 24h attempt timing and last-good processed pointers are untouched.
+ const failedAttempts=failed.filter(item=>admitted.some(x=>x.group===item.group)&&
+   checkpoint.attempted[item.group]);
+ if(failedAttempts.length){
+  for(const item of failedAttempts)
+   checkpoint.attempted[item.group].failureCode=safeFailureCode(item.code);
+  try{save(checkpoint);}catch{
+   for(const item of failedAttempts)
+    failed.push({group:item.group,code:'INFL_CANDIDATE_CORE_FAILURE_CODE_SAVE_FAILED'});
+  }
+ }
  return {status:failed.length?'PARTIAL_PREVIOUS_INPUTS_PRESERVED':
   report.skipped.length?'PARTIAL_CREDENTIALS_UNAVAILABLE':
   completed.some(x=>x.status==='OBSERVATION_ADVANCED')?'COMPLETE':'UNCHANGED_WAITING_NEW_OBSERVATION',
