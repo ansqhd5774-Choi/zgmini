@@ -62,7 +62,7 @@ export default function InflationCandidate7Inputs(){
      <th>최근 원값</th><th>발표 주기</th><th>판단</th><th>최근 관측</th><th>ⓘ</th></tr></thead>
     <tbody>{INFLATION_CANDIDATES_7.map(meta=>{
      const row=rows.get(meta.id),ready=available(row,meta),stale=ready&&row?.status==="STALE",trend=points(row,ready);
-     return <tr key={meta.id} data-judgement="neutral" data-research-candidate={meta.id}>
+     return <tr key={meta.id} data-research-candidate={meta.id}>
       <td><EconomicFavoriteButton domainId="inflation" indicatorId={"candidate-"+meta.id} label={meta.name}/></td>
       <th scope="row"><strong>{meta.name}</strong><small>{meta.series}</small></th>
       <td>{meta.provider}</td><td>{stale?"갱신 지연":ready?"원자료 확보":"원자료 게시 대기"}</td>
@@ -85,7 +85,7 @@ export default function InflationCandidate7Inputs(){
   </div>
   <div className="inflation-r2-mobile-list">{INFLATION_CANDIDATES_7.map(meta=>{
    const row=rows.get(meta.id),ready=available(row,meta),stale=ready&&row?.status==="STALE",trend=points(row,ready);
-   return <article className="inflation-r2-mobile-card" key={meta.id} data-judgement="neutral" data-research-candidate={meta.id}>
+   return <article className="inflation-r2-mobile-card" key={meta.id} data-research-candidate={meta.id}>
     <div className="inflation-r2-mobile-head"><div className="economic-mobile-name">
      <EconomicFavoriteButton domainId="inflation" indicatorId={"candidate-"+meta.id} label={meta.name}/>
      <div><strong>{meta.name}</strong><small>{meta.series}</small></div></div>
