@@ -27,6 +27,7 @@ test("a syntactically successful provider response with zero rows is PARTIAL, ne
   });
   assert.equal(result.status, "PARTIAL");
   assert.equal(result.groupResults[0].status, "PARTIAL");
+  assert.equal(result.groupResults[0].failureCode, "NO_OBSERVATIONS");
   assert.equal(result.groupResults[0].collectedRows, 0);
   assert.equal(runs.length, 1);
   assert.equal(runs[0].status, "PARTIAL");
