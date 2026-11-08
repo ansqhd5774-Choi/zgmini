@@ -1,0 +1,144 @@
+import assert from "node:assert/strict";
+import {test} from "node:test";
+import {buildEmploymentR6OneYearReadModel} from "../lib/market-score/employment-r6-one-year-read-model.mjs";
+import {
+  EMPLOYMENT_R6_PUBLIC_DISPLAY_KEY,
+  employmentR6StoredDisplayResponse,
+  validEmploymentR6PublicDisplay,
+} from "../worker/employment-r6-public-display.mjs";
+import {publishEmploymentR6OneYear} from "../scripts/pc-writer/employment-r6-one-year-stage.mjs";
+
+const now=Date.parse("2026-11-01T12:00:00.000Z");
+const body=buildEmploymentR6OneYearReadModel([],{
+  asOfDate:"2026-11-01",
+  sourceStoredAt:Date.parse("2026-11-01T10:00:00.000Z"),
+});
+
+function db(row,trace=[]){
+  return {prepare(sql){
+    trace.push(sql);
+    return {bind(key){
+      assert.equal(key,EMPLOYMENT_R6_PUBLIC_DISPLAY_KEY);
+      return {first:async()=>row};
+    }};
+  }};
+}
+function remote(row=null){
+  let current=row,writes=0;
+  return {
+    async query(_db,sql,params){
+      assert.match(sql,/^SELECT body,stored_at FROM market_public_snapshots_v1/);
+      assert.deepEqual(params,[EMPLOYMENT_R6_PUBLIC_DISPLAY_KEY]);
+      return {results:current?[current]:[]};
+    },
+    async request(_db,batch){
+      assert.equal(batch.length,1);
+      assert.match(batch[0].sql,/^INSERT INTO market_public_snapshots_v1/);
+      const [key,value,storedAt,sourceAt]=batch[0].params;
+      assert.equal(key,EMPLOYMENT_R6_PUBLIC_DISPLAY_KEY);
+      if(!current||JSON.parse(current.body).sourceStoredAt<=sourceAt){
+        current={body:value,stored_at:storedAt};writes++;
+      }
+      return [{success:true}];
+    },
+    get current(){return current;},
+    get writes(){return writes;},
+  };
+}
+
+test("public R6 display validates 29 approved IDs, provenance and score/raw separation",()=>{
+  assert(validEmploymentR6PublicDisplay(body));
+  assert.equal(body.indicators.length,29);
+  assert.equal(body.indicators[0].score,null);
+  assert.equal(body.indicators[0].rawStatus,"UNAVAILABLE");
+  const wrongId=structuredClone(body);wrongId.indicators[0].id="FAKE";
+  assert(!validEmploymentR6PublicDisplay(wrongId));
+  const wrongScore=structuredClone(body);wrongScore.indicators[0].scoreStatus="READY";wrongScore.indicators[0].score=1000;
+  assert(!validEmploymentR6PublicDisplay(wrongScore));
+  const wrongDate=structuredClone(body);wrongDate.indicators[0].history=[{date:"2027-01-01",value:99}];
+  assert(!validEmploymentR6PublicDisplay(wrongDate));
+  const missingQuarter=structuredClone(body);delete missingQuarter.window.recentQuarterStart;
+  assert(!validEmploymentR6PublicDisplay(missingQuarter));
+  const extendedQuarter=structuredClone(body);extendedQuarter.window.recentQuarterStart="2025-01-01";
+  assert(!validEmploymentR6PublicDisplay(extendedQuarter));
+  const shiftedYear=structuredClone(body);shiftedYear.window.start="2024-11-01";
+  assert(!validEmploymentR6PublicDisplay(shiftedYear));
+  const fakeRecent=structuredClone(body);
+  delete fakeRecent.window.recentQuarterStart;
+  fakeRecent.indicators[0].rawStatus="READY";
+  fakeRecent.indicators[0].value=4.2;
+  fakeRecent.indicators[0].observationDate="2025-01-31";
+  assert(!validEmploymentR6PublicDisplay(fakeRecent));
+  const fakeRetrieved=structuredClone(body);
+  fakeRetrieved.indicators[0].retrievedAt="2026-12-01T00:00:00.000Z";
+  assert(!validEmploymentR6PublicDisplay(fakeRetrieved));
+  const missingAccessDate=structuredClone(body);
+  missingAccessDate.indicators[0].rawStatus="READY";
+  missingAccessDate.indicators[0].value=4.2;
+  missingAccessDate.indicators[0].observationDate="2026-09-30";
+  assert(!validEmploymentR6PublicDisplay(missingAccessDate));
+  const noSummary=structuredClone(body);delete noSummary.summary;
+  assert(!validEmploymentR6PublicDisplay(noSummary));
+  const falseSummary=structuredClone(body);falseSummary.summary.chartReadyFeatures=29;
+  assert(!validEmploymentR6PublicDisplay(falseSummary));
+  const fractionalSummary=structuredClone(body);fractionalSummary.summary.scoredFeatures=0.5;
+  assert(!validEmploymentR6PublicDisplay(fractionalSummary));
+  const fabricatedRelease=structuredClone(body);
+  fabricatedRelease.indicators[0].nextReleaseDate="2026-01-01";
+  assert(!validEmploymentR6PublicDisplay(fabricatedRelease));
+  const invalidCadence=structuredClone(body);
+  invalidCadence.indicators[0].releaseCadence="daily-guessed";
+  assert(!validEmploymentR6PublicDisplay(invalidCadence));
+});
+
+test("visitor GET reads a single verified D1 public row; never fetches provider data",async()=>{
+  const trace=[];
+  const originalFetch=globalThis.fetch;
+  globalThis.fetch=()=>{throw Error("PROVIDER_CALL_FORBIDDEN");};
+  try{
+    const response=await employmentR6StoredDisplayResponse(
+      new Request("https://zgmini.kr/api/employment-r6/observations"),
+      db({body:JSON.stringify(body),stored_at:now},trace),{now:now+5000},
+    );
+    assert.equal(response.status,200);
+    assert.equal((await response.json()).indicators.length,29);
+    assert.equal(trace.length,1);
+    assert.match(trace[0],/^SELECT body,stored_at FROM market_public_snapshots_v1/);
+    assert.equal(response.headers.get("x-data-snapshot-at"),new Date(now).toISOString());
+    const futureAsOf=buildEmploymentR6OneYearReadModel([],
+      {asOfDate:"2099-11-08",sourceStoredAt:now-7200000});
+    const futureResponse=await employmentR6StoredDisplayResponse(
+      new Request("https://zgmini.kr/api/employment-r6/observations"),
+      db({body:JSON.stringify(futureAsOf),stored_at:now}),{now:now+5000},
+    );
+    assert.equal(futureResponse.status,503);
+    assert.equal((await futureResponse.json()).reason,"STORED_PUBLICATION_STALE");
+    const stale=await employmentR6StoredDisplayResponse(new Request("https://zgmini.kr/api/employment-r6/observations"),db({body:JSON.stringify(body),stored_at:now}),{now:now+9*86400000});
+    assert.equal(stale.status,503);
+    assert.equal((await stale.json()).reason,"STORED_PUBLICATION_EXPIRED");
+    const invalidSummary=structuredClone(body);delete invalidSummary.summary;
+    const invalid=await employmentR6StoredDisplayResponse(new Request("https://zgmini.kr/api/employment-r6/observations"),db({body:JSON.stringify(invalidSummary),stored_at:now}),{now:now+5000});
+    assert.equal(invalid.status,503);
+    assert.equal((await invalid.json()).reason,"STORED_PUBLICATION_STALE");
+    const malformed=await employmentR6StoredDisplayResponse(new Request("https://zgmini.kr/api/employment-r6/observations"),db({body:"{",stored_at:now}),{now:now+5000});
+    assert.equal(malformed.status,503);
+    assert.equal((await malformed.json()).reason,"INVALID_STORED_BODY_STALE");
+    const missing=await employmentR6StoredDisplayResponse(new Request("https://zgmini.kr/api/employment-r6/observations"),db(null),{now});
+    assert.equal(missing.status,503);
+    assert.equal((await missing.json()).reason,"STORED_PUBLICATION_PENDING");
+  }finally{globalThis.fetch=originalFetch;}
+});
+
+test("publisher only writes a verified public snapshot, guards downgrades and reads back",async()=>{
+  const target=remote();
+  const first=await publishEmploymentR6OneYear({body,remote:target,dbId:"test-db",now});
+  assert.equal(first.status,"VERIFIED");
+  assert.equal(target.writes,1);
+  const repeat=await publishEmploymentR6OneYear({body,remote:target,dbId:"test-db",now:now+1});
+  assert.equal(repeat.status,"UNCHANGED");
+  assert.equal(target.writes,1);
+  const newer=structuredClone(body);newer.sourceStoredAt=now+100;
+  const protectedTarget=remote({body:JSON.stringify(newer),stored_at:now+101});
+  await assert.rejects(publishEmploymentR6OneYear({body,remote:protectedTarget,dbId:"test-db",now:now+200}),/REMOTE_SOURCE_NEWER/);
+  assert.equal(protectedTarget.writes,0);
+});

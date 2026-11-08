@@ -1,4 +1,5 @@
-import {attemptOutput} from './independent-publication.mjs';
+import {attemptOutput,isER1MonthlyFeedKey,er1MonthlyD1Readback,retainRecentER1Readback,assertER1ReadbackConsistent,canReuseER1VintageEvidence} from './independent-publication.mjs';
+import {publishER1MonthlyVintages} from './er1-monthly-vintage-publication.mjs';
 import {appendD1Diagnostic} from './d1-diagnostics.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -220,6 +221,15 @@ try{
   const remote=client(config,()=>credential(root),{onDiagnostic:diagnostic=>appendD1Diagnostic(base,{runAt:report.at,source},diagnostic)});
   report.remote=remote.stats;
   report.recovery=await recoverPublication(remote,config.core,base);
+  // Capture the last verified PIT evidence before the SUBMITTING ledger is
+  // overwritten; reading it later would always return an empty archive list.
+  let previousVintageEvidence=[];
+  try{
+   const priorLedger=read(path.join(base,'local-publication-ledger.json'));
+   if(['VERIFIED','PARTIAL'].includes(priorLedger.status)&&
+    Array.isArray(priorLedger.er1VintageReadbacks))
+    previousVintageEvidence=priorLedger.er1VintageReadbacks;
+  }catch{}
   save(path.join(base,'local-publication-ledger.json'),{status:'SUBMITTING',source,at:Date.now()});
   const {claimMarket,releaseMarket,publishMarket}=await import('./publish.mjs');
   if(marketReady)await attemptOutput(report,'market-publication',async()=>{
@@ -272,6 +282,11 @@ try{
     report.inflation19=await publishInflation19Auto({pcHome:base,remote,coreDb:config.core});
    });
   }
+  // Approved seven-row research sidecar; isolated from the legacy 19 and scores.
+  await attemptOutput(report,'inflation-7-publication',async()=>{
+   const {publishInflationCandidates7Auto}=await import('./inflation-causal-candidates-public-7-auto-publication-r1.mjs');
+   report.inflation7=await publishInflationCandidates7Auto({pcHome:base,remote,coreDb:config.core});
+  });
   // Reuse the existing public snapshot table; publish only the bounded display score.
   await attemptOutput(report,'rate-sentiment-publication',async()=>{report.rateSentiment.publication=(await publishPublicRateSentiment(remote,config.core,rateSentiment)).status;});
   try{report.stagflation.publication=(await publishStagflation(remote,config.core,stagflation)).status;}catch(error){report.stagflation.publication='UNVERIFIED';report.stagflation.reason=/^STAGFLATION_[A-Z_]+$/.test(error.message??'')?error.message:'STAGFLATION_PUBLICATION_FAILED';}
@@ -289,13 +304,42 @@ try{
   }
   });
   const outputs=(await core.prepare("SELECT * FROM public_feed_snapshots_v1 WHERE kind='output' AND snapshot_key='current'").all()).results;
+  const er1FeedReadbacks=[];
+  const er1VintageReadbacks=[];
+  const recordER1Readback=(row,d1Row)=>{
+   if(!isER1MonthlyFeedKey(row.feed_key))return null;
+   return retainRecentER1Readback(er1FeedReadbacks,er1MonthlyD1Readback(row,d1Row));
+  };
   for(const row of outputs){
    await attemptOutput(report,'feed:'+row.feed_key,async()=>{
    const existing=(await remote.query(config.core,"SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'",[row.feed_key])).results[0];
-   if(existing?.stored_at>=row.stored_at)return;
-   if(existing&&!acceptsStoredUpdate(JSON.parse(existing.body),JSON.parse(row.body)))return;
+   if(isER1MonthlyFeedKey(row.feed_key)){
+    const evidence=er1MonthlyD1Readback(row,existing);
+    const previous=Array.isArray(previousVintageEvidence)?previousVintageEvidence.find(item=>
+     item?.key===row.feed_key):null;
+    if(canReuseER1VintageEvidence(evidence,previous)){
+     // Unchanged, authenticated current output plus previously verified dated
+     // archives: reuse existing evidence instead of rescanning old months.
+     er1VintageReadbacks.push({...previous,reused:true});
+     assertER1ReadbackConsistent(recordER1Readback(row,existing));
+     return;
+    }
+    // Publish/read back every PIT vintage before replacing this month's
+    // current D1 cohort. Failures preserve current and leave other feeds free.
+    const vintage=await publishER1MonthlyVintages(core,remote,config.core,row.feed_key,{current:row});
+    er1VintageReadbacks.push({key:row.feed_key,...vintage,
+     localStoredAt:evidence.localStoredAt,localBodySha256:evidence.localBodySha256});
+    if(vintage.status!=='VERIFIED')throw Error('ER1_VINTAGE_BACKLOG_PENDING');
+   }
+   if(existing?.stored_at>=row.stored_at){
+    assertER1ReadbackConsistent(recordER1Readback(row,existing));return;
+   }
+   if(existing&&!acceptsStoredUpdate(JSON.parse(existing.body),JSON.parse(row.body))){
+    recordER1Readback(row,existing);return;
+   }
    await remote.request(config.core,[{sql:"INSERT INTO public_feed_snapshots_v1(kind,feed_key,snapshot_key,body,stored_at) VALUES('output',?,'current',?,?) ON CONFLICT(kind,feed_key,snapshot_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at WHERE excluded.stored_at>public_feed_snapshots_v1.stored_at",params:[row.feed_key,row.body,row.stored_at]}]);
    const check=(await remote.query(config.core,"SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'",[row.feed_key])).results[0];
+   recordER1Readback(row,check);
    if(check?.stored_at!==row.stored_at||check?.body!==row.body)throw Error('LOCAL_FEED_PUBLICATION_MISMATCH');
    });
   }
@@ -305,11 +349,26 @@ try{
    const {publishCnnObservedArchive}=await import('./cnn-observed-archive-publication-r1.mjs');
    report.cnnObservedArchive=await publishCnnObservedArchive(core,remote,config.core);
   });
+  // Explicit opt-in only. R6 reads the approved Core and publishes a separate
+  // stored 1Y snapshot; its failure cannot interrupt existing market outputs.
+  report.employmentR6OneYear={status:'DISABLED'};
+  if(config.employmentR6OneYearAutoPublication===true){
+   await attemptOutput(report,'employment-r6-one-year-publication',async()=>{
+    const {runEmploymentR6AutoPublication}=await import('./employment-r6-auto-publication.mjs');
+    report.employmentR6OneYear=await runEmploymentR6AutoPublication({
+     enabled:true,pcHome:base,approvedSource:config.source,runningSource:source,
+     remote,dbId:config.core,now,
+    });
+   });
+  }
   await attemptOutput(report,'arrows',async()=>{report.scoreArrows=await publishCoreArrowState(remote,config.core);});
   report.remote=remote.stats;
-  save(path.join(base,'local-publication-ledger.json'),{status:report.failures?.length?'PARTIAL':'VERIFIED',source,at:Date.now()});
+  save(path.join(base,'local-publication-ledger.json'),{status:report.failures?.length?'PARTIAL':'VERIFIED',
+   source,at:Date.now(),er1FeedReadbacks,er1VintageReadbacks:er1VintageReadbacks
+    .sort((a,b)=>b.key.localeCompare(a.key))});
  }
  report.status=report.failures?.length?(publish?'VERIFIED_WITH_GAPS':'DRY_RUN_PARTIAL'):publish?'VERIFIED':'DRY_RUN_PASS';
  if(report.failures?.length)process.exitCode=1;
 }catch(error){report.status='FAILED';report.error=/^[A-Z0-9_]+$/.test(error.message??'')?error.message:error.code??'LOCAL_WRITER_FAILED';process.exitCode=1;}
 finally{globalThis.fetch=originalFetch;console.warn=originalWarn;hook.deregister();core.close();history.close();save(path.join(base,'local-writer-last-run.json'),report);if(publish){appendPublicationEvent(base,{at:report.at,source,status:report.status,error:report.error??null,recovery:report.recovery?.outcome??null});try{updateDataAlert(base,{key:'publication',failed:report.status!=='VERIFIED'});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}}console.log(JSON.stringify(report));}
+
