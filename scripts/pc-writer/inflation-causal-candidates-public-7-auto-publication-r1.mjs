@@ -3,6 +3,7 @@
 // Only a trusted PC caller with an explicitly approved publication scope may
 // invoke it; visitor GETs never collect, calculate, or write D1 data.
 import {isDeepStrictEqual} from 'node:util';
+import {createHash} from 'node:crypto';
 import {INFLATION_CANDIDATES_7_PUBLIC_KEY} from '../../worker/inflation-causal-candidates-public-7-r1.mjs';
 
 const fail=code=>{throw Error(code);};
@@ -15,6 +16,41 @@ export function comparableCandidates7(payload){
     fail('INFL7_AUTO_PAYLOAD_INVALID');
   const {sourceVersion,sourceStoredAt,...rest}=payload;
   return {...rest,indicators:payload.indicators.map(({sourceStoredAt,...row})=>row)};
+}
+
+// A missing or regressed input may only reuse a previously validated public
+// observation with its original value, date, history and source timestamp.
+// Other READY rows must still advance independently in the same D1 snapshot.
+export function preserveCandidates7RowEvidence(previous,preview){
+  if(!previous)return preview;
+  const payload=clean(preview);
+  payload.indicators=payload.indicators.map((row,i)=>{
+    const before=previous.indicators[i];
+    if(!['READY','STALE'].includes(before.status))return row;
+    if(row.status==='PENDING'||
+      (row.status==='READY'&&
+       (row.observationDate<before.observationDate||
+        Date.parse(row.sourceStoredAt)<Date.parse(before.sourceStoredAt))))
+      return {...before,status:'STALE'};
+    return row;
+  });
+  if(isDeepStrictEqual(payload.indicators,preview.indicators))return preview;
+  payload.status=payload.indicators.every(row=>row.status==='READY')?'READY':'PARTIAL';
+  payload.sourceStoredAt=Math.max(...payload.indicators.filter(row=>
+    row.status==='READY'||row.status==='STALE').map(row=>Date.parse(row.sourceStoredAt)));
+  payload.sourceVersion='INFL7_PRESENTATION_'+createHash('sha256')
+    .update(JSON.stringify(payload.indicators)).digest('hex');
+  return payload;
+}
+
+function staleCandidate7OnCompleteOutage(previous){
+  const payload=clean(previous);
+  payload.indicators=payload.indicators.map(row=>row.status==='READY'?
+    {...row,status:'STALE'}:row);
+  payload.status='PARTIAL';
+  payload.sourceVersion='INFL7_PRESENTATION_'+createHash('sha256')
+    .update(JSON.stringify(payload.indicators)).digest('hex');
+  return payload;
 }
 
 function validRemote(row,validate,now){
@@ -63,30 +99,34 @@ export async function publishInflationCandidates7Auto({
   // The preview reads already-saved PC raw sources and returns only seven
   // bounded summary rows; a missing provider is PENDING, not synthetic zero.
   const preview=await previewFn(pcHome,{now});
-  if(preview?.status!=='PASS_READONLY'||preview.ready<1||preview.ready>7)
+  const allMissing=preview?.status==='PENDING'&&preview.ready===0&&
+    preview.payload==null&&preview.providerCalls===0&&preview.coreWrites===0&&
+    preview.dbWrites===0&&preview.d1Writes===0&&preview.schedulerWrites===0;
+  if(!allMissing&&(preview?.status!=='PASS_READONLY'||
+      preview.ready<1||preview.ready>7))
     return noWrites('SKIPPED_INPUTS_NOT_READY',preview?.ready??0);
   if(preview.providerCalls!==0||preview.coreWrites!==0||
     preview.dbWrites!==0||preview.d1Writes!==0||preview.schedulerWrites!==0)
     fail('INFL7_AUTO_PREVIEW_SIDE_EFFECT_DENIED');
-  const payload=validate(preview.payload,{now});
-  if(payload.score!==null||payload.indicators.length!==7||
-    !/^INFL7_PRESENTATION_[a-f0-9]{64}$/.test(payload.sourceVersion)||
-    payload.indicators.filter(row=>row.status==='READY').length!==preview.ready)
-    fail('INFL7_AUTO_RESEARCH_CONTRACT_DENIED');
-
   const previous=await readRemote(remote,coreDb,validate,now);
+  if(allMissing&&!previous)
+    return noWrites('SKIPPED_INPUTS_NOT_READY',0);
+  let candidate;
+  if(!allMissing){
+    candidate=validate(preview.payload,{now});
+    if(candidate.score!==null||candidate.indicators.length!==7||
+      !/^INFL7_PRESENTATION_[a-f0-9]{64}$/.test(candidate.sourceVersion)||
+      candidate.indicators.filter(row=>row.status==='READY').length!==preview.ready)
+      fail('INFL7_AUTO_RESEARCH_CONTRACT_DENIED');
+  }
+  const payload=validate(allMissing?staleCandidate7OnCompleteOutage(previous):
+    preserveCandidates7RowEvidence(previous,candidate),{now});
   if(previous?.sourceStoredAt>payload.sourceStoredAt)
     return noWrites('REMOTE_NEWER_PRESERVED',preview.ready);
   if(previous&&isDeepStrictEqual(comparableCandidates7(previous),
                                  comparableCandidates7(payload)))
     return noWrites(previous.sourceVersion===payload.sourceVersion?
       'UNCHANGED_VERIFIED':'SKIPPED_METADATA_ONLY',preview.ready);
-  // Keep the last *actually observed* public row if a source temporarily
-  // disappears. Until a provenance-preserving merge contract is approved,
-  // do not let a partial preview overwrite it or block a regular Core run.
-  if(previous?.indicators.some((before,i)=>
-    before.status==='READY'&&payload.indicators[i].status!=='READY'))
-    return noWrites('SKIPPED_LAST_GOOD_REGRESSION',preview.ready);
   if(previous?.sourceVersion===payload.sourceVersion)
     fail('INFL7_AUTO_VERSION_COLLISION');
   const result=await writerFactory(remote.adapter(coreDb,{allowWrites:true}))
