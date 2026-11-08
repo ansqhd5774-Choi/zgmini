@@ -208,3 +208,5 @@
 **현재 단계별 진행률:** 원본 31개 상태 분류 **31/31**, 신규 7개 PC source·활성화 **7/7**(별도 보류 3개), 유효 원자료 **4/7**, 신규 공개 **0/7**. 추산 전체 기능 진행률 **약 42% 유지**; 작업 내역의 source PASS는 기능 운영 완료로 가산하지 않는다.
 
 **다음 필수 행동:** (1) 승인된 신규 7행 코드만 최신 `main`에 안전한 PR로 선별 회수 및 변경 범위 테스트, (2) 기존 PC B 게시 lane 연결·실제 D1 기록·readback, (3) 신규 Worker GET/HEAD·UI Production 검증, (4) 정상 Core 이후 #22/#23/#28 저장 여부 및 최초 오류 코드만 근거로 해당 원인 수정. **예약 자동 갱신 검증은 모든 수집·저장·계산/표시·D1·API·UI 기능 완료 후 별도 후속작업**이다.
+
+**UI STALE 표시 준비 (2026-11-08):** UI 전용 브랜치 `codex/ui-improvements`의 새 7행 컴포넌트 `app/economic-indicators/inflation-candidate-7-inputs.tsx`에서 READY/STALE 원래 수치·관측일·저장시각 유지, `STALE`는 PC·모바일 모두 '갱신 지연' 표시, PENDING은 결측 유지. [UI commit `4d02ea7adb55f937f373d2bf49bb64c231b84bf6`](https://github.com/ansqhd5774-Choi/zgmini/commit/4d02ea7adb55f937f373d2bf49bb64c231b84bf6). GitHub 원격 단일 파일 재조회 일치, 기존 main 파일·Production에는 미반영. **UI 빌드·실브라우저 결과는 미검증**. 기존 19개 인라인 표시를 담은 최신 main `economic-detail-panel.tsx`를 오래된 UI 브랜치 버전으로 전체 교체하지 않는다.
