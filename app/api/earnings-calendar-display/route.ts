@@ -41,7 +41,7 @@ export async function GET(request:Request){
    (!dayBound(requestedStart)||day>=requestedStart!)&&
    (!dayBound(requestedEnd)||day<=requestedEnd!));
   if(days.length){
-   try{vintages=(await store.readOutputVintages(key,{days,limit:80})).map(row=>row.body);}catch{}
+   try{vintages=(await store.readOutputVintages(key,{days,limit:80})).map((row:{body:unknown})=>row.body);}catch{}
   }
   return [month,[current,...vintages].filter(Boolean)] as const;
  })));
