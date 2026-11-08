@@ -44,7 +44,7 @@ export default function InflationCandidate7Inputs(){
  const rows=useMemo(()=>new Map((verified?payload!.indicators:[]).map(row=>[row.id,row])),
   [verified,payload]);
  const available=(row:Row|undefined,meta:{series:string;unit:string})=>
-  row?.status==="READY"&&row.series===meta.series&&row.unit===meta.unit&&
+  (row?.status==="READY"||row?.status==="STALE")&&row.series===meta.series&&row.unit===meta.unit&&
   finite(row.value)&&dated(row.observationDate);
  return <section className="inflation-indicator-section inflation-r2-indicators economic-indicators" aria-labelledby="economic-inflation-candidate-7">
   <header><div><p className="cnn-eyebrow">ADDITIONAL RESEARCH INPUTS · STORED DATA</p>
@@ -59,24 +59,24 @@ export default function InflationCandidate7Inputs(){
    <table className="inflation-indicator-table inflation-indicator-table-r2 economic-table">
     <colgroup>{Array.from({length:10},(_,index)=><col key={index}/>)}</colgroup>
     <thead><tr><th>☆</th><th>지표</th><th>출처</th><th>연구 상태</th><th>이전 원값</th>
-     <th>현재 원값</th><th>발표 주기</th><th>판단</th><th>최근 관측</th><th>ⓘ</th></tr></thead>
+     <th>최근 원값</th><th>발표 주기</th><th>판단</th><th>최근 관측</th><th>ⓘ</th></tr></thead>
     <tbody>{INFLATION_CANDIDATES_7.map(meta=>{
-     const row=rows.get(meta.id),ready=available(row,meta),trend=points(row,ready);
+     const row=rows.get(meta.id),ready=available(row,meta),stale=ready&&row?.status==="STALE",trend=points(row,ready);
      return <tr key={meta.id} data-judgement="neutral" data-research-candidate={meta.id}>
       <td><EconomicFavoriteButton domainId="inflation" indicatorId={"candidate-"+meta.id} label={meta.name}/></td>
       <th scope="row"><strong>{meta.name}</strong><small>{meta.series}</small></th>
-      <td>{meta.provider}</td><td>{ready?"원자료 확보":"원자료 게시 대기"}</td>
+      <td>{meta.provider}</td><td>{stale?"갱신 지연":ready?"원자료 확보":"원자료 게시 대기"}</td>
       <td className="inflation-r2-value"><strong>{ready&&finite(row?.previousValue)?fmt(row!.previousValue!,meta.unit):"—"}</strong>
        <small>{ready?day(row?.previousObservationDate):"—"}</small></td>
-      <td className="inflation-r2-value" data-value-kind={ready?"raw":"missing"}>
+      <td className="inflation-r2-value" data-value-kind={stale?"stale":ready?"raw":"missing"}>
        <strong>{ready&&finite(row?.value)?fmt(row.value,meta.unit):"—"}</strong>
-       <small>{ready?"관측 "+day(row?.observationDate):"공개 요약 미게시"}</small></td>
+       <small>{ready?(stale?"마지막 정상 관측 ":"관측 ")+day(row?.observationDate)+(stale?" · 갱신 지연":""):"공개 요약 미게시"}</small></td>
       <td className="inflation-r2-release"><strong>{meta.cadence}</strong><small>다음 발표일 —</small></td>
       <td><span className="inflation-judgement">미평가</span></td>
       <td className="inflation-r2-spark-cell"><InflationMiniChart label={meta.name} points={trend}/></td>
       <td><ContentHelp label={meta.name+" 도움말"}>
        <p>원본 번호 #{meta.id} · {meta.provider} · {meta.series} · {meta.unit}</p>
-       <p>PC 원본 저장: {ready?storedKst(row?.sourceStoredAt):"확인되지 않음"} · 원자료 관측일: {ready?day(row?.observationDate):"—"}</p>
+       <p>PC 원본 저장: {ready?storedKst(row?.sourceStoredAt):"확인되지 않음"} · 원자료 관측일: {ready?day(row?.observationDate):"—"}{stale?" · 갱신 지연(마지막 정상값 보존)":""}</p>
        <p>연구용 원자료이며 물가지표 점수나 판단 결과에 포함되지 않습니다.</p>
       </ContentHelp></td>
      </tr>;
@@ -84,7 +84,7 @@ export default function InflationCandidate7Inputs(){
    </table>
   </div>
   <div className="inflation-r2-mobile-list">{INFLATION_CANDIDATES_7.map(meta=>{
-   const row=rows.get(meta.id),ready=available(row,meta),trend=points(row,ready);
+   const row=rows.get(meta.id),ready=available(row,meta),stale=ready&&row?.status==="STALE",trend=points(row,ready);
    return <article className="inflation-r2-mobile-card" key={meta.id} data-judgement="neutral" data-research-candidate={meta.id}>
     <div className="inflation-r2-mobile-head"><div className="economic-mobile-name">
      <EconomicFavoriteButton domainId="inflation" indicatorId={"candidate-"+meta.id} label={meta.name}/>
@@ -93,14 +93,14 @@ export default function InflationCandidate7Inputs(){
       <ContentHelp label={meta.name+" 도움말"}><p>{meta.provider} · {meta.unit}</p>
        <p>원본 저장: {ready?storedKst(row?.sourceStoredAt):"미확인"}</p>
       </ContentHelp></div></div>
-    <p className="inflation-r2-mobile-content">출처: {meta.provider} · {ready?"원자료 확보":"공개 요약 미게시"}</p>
+    <p className="inflation-r2-mobile-content">출처: {meta.provider} · {stale?"갱신 지연 · 마지막 정상 관측 보존":ready?"원자료 확보":"공개 요약 미게시"}</p>
     <p className="inflation-r2-mobile-criterion"><span>기준</span>연구 원자료 · 점수 미산출</p>
     <div className="inflation-r2-mobile-spark"><span>최근 관측</span><InflationMiniChart label={meta.name} points={trend}/></div>
     <div className="inflation-r2-mobile-metrics"><div><span>이전 원값</span>
      <strong>{ready&&finite(row?.previousValue)?fmt(row!.previousValue!,meta.unit):"—"}</strong>
      <small>{ready?day(row?.previousObservationDate):"—"}</small></div>
-     <div><span>현재 원값</span><strong>{ready&&finite(row?.value)?fmt(row.value,meta.unit):"—"}</strong>
-     <small>{ready?"관측 "+day(row?.observationDate):"공개 요약 미게시"}</small></div>
+     <div><span>최근 원값</span><strong>{ready&&finite(row?.value)?fmt(row.value,meta.unit):"—"}</strong>
+     <small>{ready?(stale?"마지막 정상 관측 ":"관측 ")+day(row?.observationDate)+(stale?" · 갱신 지연":""):"공개 요약 미게시"}</small></div>
      <div><span>발표 주기</span><strong>{meta.cadence}</strong><small>다음 발표일 —</small></div></div>
    </article>;
   })}</div>
