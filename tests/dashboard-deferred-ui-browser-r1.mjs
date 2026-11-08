@@ -7,10 +7,14 @@ const base=process.env.CHAT_PREVIEW_URL??'http://127.0.0.1:5173';
 mkdirSync('artifacts/dashboard-deferred-ui',{recursive:true});
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 const sampleHistory=Array.from({length:90},(_,i)=>({date:new Date(Date.UTC(2026,7,1)+i*86400000).toISOString().slice(0,10),score:45+Math.sin(i/8)*12}));
-const breadthHistory={market:'usa',universe:'SP500',window:'1Y',from:'2025-10-30',to:'2026-10-30',
- records:Array.from({length:366},(_,i)=>({observationDate:new Date(Date.UTC(2025,9,30)+i*86400000).toISOString().slice(0,10),
-  eligibleCount:500,counts:{rising:240+(i%12<5?45:-45),unchanged:20,falling:240-(i%12<5?45:-45)}}))
-  .filter(record=>![0,6].includes(new Date(record.observationDate+'T00:00:00Z').getUTCDay()))};
+// Match the stored R2 public percentage contract, not the retired R1 count endpoint.
+const breadthDays=Array.from({length:366},(_,i)=>new Date(Date.UTC(2025,9,30)+i*86400000).toISOString().slice(0,10))
+ .filter(day=>![0,6].includes(new Date(day+'T00:00:00Z').getUTCDay())).slice(-250);
+const breadthHistory={version:2,market:'usa',phase:'CONFIRMED',status:'READY',publicationStage:'PUBLIC_FINAL',
+ source:'MARKETPARQUET_STOCK_DAILY',universe:'US_MARKETPARQUET_ACTIVE_STOCKS',
+ firstDate:breadthDays[0],lastDate:breadthDays.at(-1),
+ points:breadthDays.map((date,i)=>({date,risingPct:(240+(i%12<5?45:-45))/5,
+  unchangedPct:4,fallingPct:(240-(i%12<5?45:-45))/5}))};
 try{
  for(const width of [390,1440])for(const signedIn of [false,true]){
   const page=await browser.newPage({viewport:{width,height:900},hasTouch:width===390});
@@ -26,7 +30,7 @@ try{
     :path==='/api/favorites'?{favorites:[]}
     :path==='/api/market-data'?{status:'fallback',updatedAt:'',indicators:{},summary:[]}
     :path==='/api/fear-greed'?{status:'verified',score:34.5,rating:'공포',observedAt:'2026-10-30T12:00:00Z',history:sampleHistory}
-    :path==='/api/market-breadth/history'?(breadthHistoryRequests++,breadthHistory)
+    :path==='/api/market-breadth-r2-history'?(breadthHistoryRequests++,breadthHistory)
     :{status:'UNAVAILABLE'};
    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(payload)});
   });
@@ -102,15 +106,15 @@ try{
    const windows=[['3M',93,'3개월'],['1M',31,'1개월'],['1W',7,'1주'],['1D',1,'1일'],['6M',186,'6개월'],['1Y',366,'1년'],['3M',93,'3개월']];
    for(const [period,days,label] of windows){
     await page.locator(`.usa-target-card .cnn-period-button[data-period-short="${period}"]`).click();
-    const from=period==='1Y'?breadthHistory.from:new Date(Date.UTC(2026,9,30)-(days-1)*86400000).toISOString().slice(0,10);
+    const from=period==='1Y'?breadthHistory.firstDate:new Date(Date.UTC(2026,9,30)-(days-1)*86400000).toISOString().slice(0,10);
     const expected=from.replaceAll('-','.');
     await page.waitForFunction(value=>document.querySelector('.usa-target-card .fg-breadth-slot [role="region"] time')?.textContent===value,
      expected,{timeout:5000});
     const dates=await detail.locator('time').allTextContents();
-    assert.deepEqual(dates,[expected,'2026.10.30'],period+' breadth dates follow CNN selection');
+    assert.deepEqual(dates,[expected,breadthHistory.lastDate.replaceAll('-','.')],period+' breadth dates follow CNN selection');
     const aria=await breadthSvg.getAttribute('aria-label');
-    const expectedPoints=breadthHistory.records.filter(record=>record.observationDate>=from&&record.observationDate<=breadthHistory.to).length;
-    assert.ok(aria?.includes('상승·하락 우세도')&&aria.includes(`${label} 이력`)&&aria.includes(`저장된 ${expectedPoints}개 거래일`),period+' net breadth chart window and label');
+    const expectedPoints=breadthHistory.points.filter(point=>point.date>=from&&point.date<=breadthHistory.lastDate).length;
+    assert.ok(aria?.includes('MarketParquet R2')&&aria.includes('상승·하락 우세도')&&aria.includes(`${label} 확정 비율 이력`),period+' net breadth chart window and verified source');
     assert.equal(await netBars.count(),expectedPoints,period+' renders one signed net bar per stored trading session');
     if(expectedPoints>2){
      const positions=await netBars.evaluateAll(bars=>bars.map(bar=>Number(bar.getAttribute('x'))));
@@ -125,8 +129,8 @@ try{
      assert.equal(await detail.locator('rect[class*="historyNetNegativeBar"]').count(),1,'Latest day is negative even with unchanged issues present');
      assert.equal(await detail.locator('circle[class*="historyTrendDot"]').count(),1,'One-day period shows its five-session average as a dot');
      await breadthSvg.focus();
-     const latestFive=breadthHistory.records.slice(-5);
-     const expectedMean=latestFive.reduce((sum,record)=>sum+100*(record.counts.rising-record.counts.falling)/record.eligibleCount,0)/5;
+     const latestFive=breadthHistory.points.slice(-5);
+     const expectedMean=latestFive.reduce((sum,point)=>sum+point.risingPct-point.fallingPct,0)/5;
      assert.ok((await detail.locator('[class*="historyTooltip"] div').filter({hasText:'5거래일 평균'}).innerText()).includes(`${expectedMean>0?'+':''}${expectedMean.toFixed(1)}%p`),'One-day mean uses five previous sessions');
     }
    }
@@ -136,7 +140,7 @@ try{
    await netTooltip.waitFor({state:'visible',timeout:4000});
    assert.match(await netTooltip.innerText(),/우세/,'Pointer tooltip announces dominance');
    assert.match(await netTooltip.innerText(),/[+-]?18\.0%p/,'Tooltip calculates net from raw counts with unchanged issues in denominator');
-   assert.match(await netTooltip.innerText(),/보합/,'Tooltip retains unchanged issue detail');
+   assert.match(await netTooltip.innerText(),/보합.*4\.0%/s,'Tooltip retains unchanged percent from the published projection');
    assert.match(await netTooltip.innerText(),/5거래일 평균/,'Pointer tooltip retains the five-session trend');
    console.log('PASS net breadth zero-baseline bars, pointer tooltip and 1D/1W/1M/3M/6M/1Y periods with one history request');
   }
