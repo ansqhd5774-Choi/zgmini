@@ -27,6 +27,20 @@ export function er1MonthlyD1Readback(local,remote,{now=Date.now}={}){
   localBodySha256:localSha,d1StoredAt:remoteValid?remote.stored_at:null,
   d1BodySha256:d1Sha,observedAt:new Date(now()).toISOString()};
 }
+// Bound the existing ledger to the latest monthly keys, independent of SQLite row order.
+export function retainRecentER1Readback(readbacks,evidence){
+ if(!Array.isArray(readbacks)||!isER1MonthlyFeedKey(evidence?.key))return null;
+ const previous=readbacks.findIndex(item=>item?.key===evidence.key);
+ if(previous>=0)readbacks.splice(previous,1);
+ readbacks.push(evidence);
+ readbacks.sort((left,right)=>right.key.localeCompare(left.key));
+ if(readbacks.length>24)readbacks.length=24;
+ return evidence;
+}
+// The remote newer policy is preserved; only identical-timestamp divergence fails.
+export function assertER1ReadbackConsistent(evidence){
+ if(evidence?.status==='BODY_MISMATCH')throw Error('LOCAL_FEED_PUBLICATION_MISMATCH');
+}
 export async function attemptOutput(report,id,run){
  try{await run();return true;}
  catch(error){
