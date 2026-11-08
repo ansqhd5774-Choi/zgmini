@@ -1,8 +1,6 @@
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
 import {assertFeedInput,assertFeedOutput} from './public-feed-input-safety.mjs';
 import {CNN_OBSERVED_ARCHIVE_KEY,mergeCnnArchivedDay,groupVerifiedCnnObservations} from '../lib/cnn-observed-archive-r1.mjs';
-import {er1MonthlyPublicKey} from '../lib/market-calendar-er1-month-key.mjs';
-import {validateER1PublicDisplay} from '../lib/market-calendar-er1-public-display.mjs';
 // Public reads have no collector dependency and never initialize or write tables.
 export const FEED_POLICY=Object.freeze({
  'fear-greed':{intervalMs:15*60000,maxAgeMs:PUBLIC_DISPLAY_MAX_AGE_MS},
@@ -21,7 +19,13 @@ export function publicFeedStore(db){
   // ER1 monthly observations use the New York asOf day, not the UTC write day.
   // Two NY observations may occur during one UTC date; never collapse them.
   const month=/^market-calendar:earnings-er1-score-(20\d\d-\d\d)-public$/.exec(key)?.[1];
-  const er1=kind==='output'&&er1MonthlyPublicKey(month)===key;
+  // This shared store also ships in unrelated PC release packages. Resolve
+  // ER1-only validators only for monthly ER1 writes, keeping those packages'
+  // import closure independent of the earnings calendar.
+  const er1=kind==='output'&&month&&
+   (await import('../lib/market-calendar-er1-month-key.mjs')).er1MonthlyPublicKey(month)===key;
+  const validateER1PublicDisplay=er1?
+   (await import('../lib/market-calendar-er1-public-display.mjs')).validateER1PublicDisplay:null;
   if(er1&&!validateER1PublicDisplay(body,{now}))throw Error('ER1_MONTHLY_PUBLIC_VINTAGE_INVALID');
   const vintage=er1?body.asOf:new Date(now).toISOString().slice(0,10);
   const onConflict=er1?' WHERE excluded.stored_at>=public_feed_snapshots_v1.stored_at':'';
