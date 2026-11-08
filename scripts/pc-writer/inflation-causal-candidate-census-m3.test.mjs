@@ -30,6 +30,14 @@ test('official Census M3 MTM/TI uses only U.S. total manufacturer SA inventory l
   ));
   assert.deepEqual(items.map(x=>[x.date,x.value]),[['2026-08-01',850000],['2026-09-01',900000]]);
   assert.equal(items[1].unit,'USD_MILLION_SA_NOMINAL');
+  // Census official EITS examples emit time_slot_date as a midnight timestamp.
+  const stamped=row(2026,'07','800000');stamped[2]='2026-07-01 00:00:00.0';
+  assert.deepEqual(normalizeCensusM3Inventories(payload(stamped)).map(x=>[x.date,x.value]),
+    [['2026-07-01',800000]]);
+  const nonMidnight=row(2026,'07');nonMidnight[2]='2026-07-01 12:00:00.0';
+  assert.throws(()=>normalizeCensusM3Inventories(payload(nonMidnight)),/VALUE_OR_DUPLICATE/);
+  const invalidStamped=row(2026,'02');invalidStamped[2]='2026-02-30 00:00:00.0';
+  assert.throws(()=>normalizeCensusM3Inventories(payload(invalidStamped)),/VALUE_OR_DUPLICATE/);
   assert.throws(()=>normalizeCensusM3Inventories(payload(row(2026,'09'),row(2026,'09'))),/VALUE_OR_DUPLICATE/);
   assert.throws(()=>normalizeCensusM3Inventories(payload(row(2026,'09','NA'))),/VALUE_OR_DUPLICATE/);
   const invalidDate=row(2026,'02','500000');invalidDate[2]='2026-02-30';
