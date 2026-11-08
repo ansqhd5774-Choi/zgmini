@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {isER1MonthlyFeedKey,er1MonthlyD1Readback,retainRecentER1Readback,
- assertER1ReadbackConsistent,attemptOutput}
+ assertER1ReadbackConsistent,canReuseER1VintageEvidence,attemptOutput}
  from '../scripts/pc-writer/independent-publication.mjs';
 
 const sha=value=>createHash('sha256').update(value,'utf8').digest('hex');
@@ -84,4 +84,16 @@ test('existing independent output failure behavior is not changed',async()=>{
  const second=await attemptOutput(report,'feed:other',async()=>true);
  assert.equal(first,false);assert.equal(second,true);
  assert.deepEqual(report.failures,[{id:'feed:test',reason:'D1_FAIL'}]);
+});
+
+test('verified old monthly archive evidence is reused only for the exact D1-matched source',()=>{
+ const local=row();
+ const current=er1MonthlyD1Readback(local,local);
+ const previous={key:current.key,status:'VERIFIED',
+  localStoredAt:current.localStoredAt,localBodySha256:current.localBodySha256};
+ assert.equal(canReuseER1VintageEvidence(current,previous),true);
+ assert.equal(canReuseER1VintageEvidence({...current,status:'BODY_MISMATCH'},previous),false);
+ assert.equal(canReuseER1VintageEvidence(current,{...previous,localStoredAt:1}),false);
+ assert.equal(canReuseER1VintageEvidence(current,{...previous,localBodySha256:'different'}),false);
+ assert.equal(canReuseER1VintageEvidence(current,{...previous,key:'other'}),false);
 });

@@ -26,11 +26,24 @@ export async function GET(request:Request){
  // Use only the months present in a stored public calendar projection. Visitor
  // query parameters never cause arbitrary D1-key or vendor lookups.
  const months=new Set((display?.coveredDays??[]).map((day:string)=>day.slice(0,7)));
+ const query=new URL(request.url).searchParams;
+ const requestedStart=query.get('start'),requestedEnd=query.get('end');
+ const dayBound=(value:string|null)=>value!==null&&/^20\d\d-\d\d-\d\d$/.test(value);
  const monthlyER1=Object.fromEntries(await Promise.all([...months].map(async month=>{
   const key=er1MonthlyPublicKey(month);
   if(!key)return [month,null] as const;
-  try{return [month,(await store.readOutput(key))?.body??null] as const;}
-  catch{return [month,null] as const;}
+  // Read only bounded, previously published public score vintages. In particular,
+  // a month may have been scored before its first event day in the prior month.
+  let current=null,vintages=[];
+  try{current=(await store.readOutput(key))?.body??null;}catch{}
+  const days=(display?.coveredDays??[]).filter((day:string)=>
+   day.slice(0,7)===month&&(display?.byDay?.[day]?.length??0)>0&&
+   (!dayBound(requestedStart)||day>=requestedStart!)&&
+   (!dayBound(requestedEnd)||day<=requestedEnd!));
+  if(days.length){
+   try{vintages=(await store.readOutputVintages(key,{days,limit:80})).map((row:{body:unknown})=>row.body);}catch{}
+  }
+  return [month,[current,...vintages].filter(Boolean)] as const;
  })));
  return earningsDisplayResponse(display,request.url,er1,decemberER1,novemberER1,monthlyER1);
 }

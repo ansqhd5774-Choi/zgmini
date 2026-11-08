@@ -41,6 +41,13 @@ export function retainRecentER1Readback(readbacks,evidence){
 export function assertER1ReadbackConsistent(evidence){
  if(evidence?.status==='BODY_MISMATCH')throw Error('LOCAL_FEED_PUBLICATION_MISMATCH');
 }
+// Reuse yesterday's verified archive only when the authenticated current D1
+// body and the exact local version are unchanged; never trust a stale ledger.
+export function canReuseER1VintageEvidence(current,previous){
+ return current?.status==='MATCHED'&&previous?.status==='VERIFIED'&&
+  current?.key===previous?.key&&current?.localStoredAt===previous?.localStoredAt&&
+  current?.localBodySha256===previous?.localBodySha256;
+}
 export async function attemptOutput(report,id,run){
  try{await run();return true;}
  catch(error){

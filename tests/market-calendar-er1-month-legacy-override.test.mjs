@@ -94,3 +94,39 @@ test('invalid November dynamic output preserves previously verified legacy cohor
   assert.doesNotMatch(html,/>★★<\/div>/);
  });
 });
+
+test('rolling monthly output retains a past event grade from the verified dated vintage',async()=>{
+ await at('2026-11-21',async()=>{
+  const oldDay='2026-11-05',newDay='2026-11-16';
+  const source=display('2026-11-03',[event('EARLY',oldDay),event('LATE',newDay)]);
+  const old=cohort('2026-11-01',[['EARLY',97],['LATE',60]]);
+  // A day-eight rolling current cohort omits the already elapsed EARLY event.
+  const current=cohort('2026-11-08',[['LATE',85]]);
+  const month={'2026-11':[current,old]};
+  const earlier=await earningsDisplayResponse(source,url(oldDay),null,null,null,month).text();
+  assert.match(earlier,/기업 실적 점수 97\.00점/);
+  assert.match(earlier,/>★★★<\/div>/);
+  const newer=await earningsDisplayResponse(source,url(newDay),null,null,null,month).text();
+  assert.match(newer,/기업 실적 점수 85\.00점/);
+  assert.match(newer,/>★★<\/div>/);
+  assert.doesNotMatch(newer,/기업 실적 점수 60\.00점/);
+  assert.equal(earningsDisplayResponse(source,url(oldDay,3),null,null,null,month)
+   .headers.get('x-display-count'),'1');
+  assert.equal(earningsDisplayResponse(source,url(newDay,2),null,null,null,month)
+   .headers.get('x-display-count'),'1');
+  assert.equal(earningsDisplayResponse(source,url(oldDay,2),null,null,null,month)
+   .headers.get('x-display-count'),'0');
+ });
+});
+
+test('a prior-month observation remains eligible for next-month events',async()=>{
+ await at('2026-12-05',async()=>{
+  const day='2026-12-03',source=display('2026-12-01',[event('CROSS',day)]);
+  const observedInNovember=cohort('2026-11-29',[['CROSS',97]]);
+  const futureCurrent=cohort('2026-12-04',[['CROSS',85]]);
+  const html=await earningsDisplayResponse(source,url(day),null,null,null,
+   {'2026-12':[futureCurrent,observedInNovember]}).text();
+  assert.match(html,/>★★★<\/div>/);
+  assert.doesNotMatch(html,/>★★<\/div>/);
+ });
+});

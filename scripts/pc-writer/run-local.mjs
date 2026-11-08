@@ -1,4 +1,5 @@
-import {attemptOutput,isER1MonthlyFeedKey,er1MonthlyD1Readback,retainRecentER1Readback,assertER1ReadbackConsistent} from './independent-publication.mjs';
+import {attemptOutput,isER1MonthlyFeedKey,er1MonthlyD1Readback,retainRecentER1Readback,assertER1ReadbackConsistent,canReuseER1VintageEvidence} from './independent-publication.mjs';
+import {publishER1MonthlyVintages} from './er1-monthly-vintage-publication.mjs';
 import {appendD1Diagnostic} from './d1-diagnostics.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -220,6 +221,15 @@ try{
   const remote=client(config,()=>credential(root),{onDiagnostic:diagnostic=>appendD1Diagnostic(base,{runAt:report.at,source},diagnostic)});
   report.remote=remote.stats;
   report.recovery=await recoverPublication(remote,config.core,base);
+  // Capture the last verified PIT evidence before the SUBMITTING ledger is
+  // overwritten; reading it later would always return an empty archive list.
+  let previousVintageEvidence=[];
+  try{
+   const priorLedger=read(path.join(base,'local-publication-ledger.json'));
+   if(['VERIFIED','PARTIAL'].includes(priorLedger.status)&&
+    Array.isArray(priorLedger.er1VintageReadbacks))
+    previousVintageEvidence=priorLedger.er1VintageReadbacks;
+  }catch{}
   save(path.join(base,'local-publication-ledger.json'),{status:'SUBMITTING',source,at:Date.now()});
   const {claimMarket,releaseMarket,publishMarket}=await import('./publish.mjs');
   if(marketReady)await attemptOutput(report,'market-publication',async()=>{
@@ -295,6 +305,7 @@ try{
   });
   const outputs=(await core.prepare("SELECT * FROM public_feed_snapshots_v1 WHERE kind='output' AND snapshot_key='current'").all()).results;
   const er1FeedReadbacks=[];
+  const er1VintageReadbacks=[];
   const recordER1Readback=(row,d1Row)=>{
    if(!isER1MonthlyFeedKey(row.feed_key))return null;
    return retainRecentER1Readback(er1FeedReadbacks,er1MonthlyD1Readback(row,d1Row));
@@ -302,6 +313,24 @@ try{
   for(const row of outputs){
    await attemptOutput(report,'feed:'+row.feed_key,async()=>{
    const existing=(await remote.query(config.core,"SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'",[row.feed_key])).results[0];
+   if(isER1MonthlyFeedKey(row.feed_key)){
+    const evidence=er1MonthlyD1Readback(row,existing);
+    const previous=Array.isArray(previousVintageEvidence)?previousVintageEvidence.find(item=>
+     item?.key===row.feed_key):null;
+    if(canReuseER1VintageEvidence(evidence,previous)){
+     // Unchanged, authenticated current output plus previously verified dated
+     // archives: reuse existing evidence instead of rescanning old months.
+     er1VintageReadbacks.push({...previous,reused:true});
+     assertER1ReadbackConsistent(recordER1Readback(row,existing));
+     return;
+    }
+    // Publish/read back every PIT vintage before replacing this month's
+    // current D1 cohort. Failures preserve current and leave other feeds free.
+    const vintage=await publishER1MonthlyVintages(core,remote,config.core,row.feed_key,{current:row});
+    er1VintageReadbacks.push({key:row.feed_key,...vintage,
+     localStoredAt:evidence.localStoredAt,localBodySha256:evidence.localBodySha256});
+    if(vintage.status!=='VERIFIED')throw Error('ER1_VINTAGE_BACKLOG_PENDING');
+   }
    if(existing?.stored_at>=row.stored_at){
     assertER1ReadbackConsistent(recordER1Readback(row,existing));return;
    }
@@ -335,7 +364,8 @@ try{
   await attemptOutput(report,'arrows',async()=>{report.scoreArrows=await publishCoreArrowState(remote,config.core);});
   report.remote=remote.stats;
   save(path.join(base,'local-publication-ledger.json'),{status:report.failures?.length?'PARTIAL':'VERIFIED',
-   source,at:Date.now(),er1FeedReadbacks});
+   source,at:Date.now(),er1FeedReadbacks,er1VintageReadbacks:er1VintageReadbacks
+    .sort((a,b)=>b.key.localeCompare(a.key))});
  }
  report.status=report.failures?.length?(publish?'VERIFIED_WITH_GAPS':'DRY_RUN_PARTIAL'):publish?'VERIFIED':'DRY_RUN_PASS';
  if(report.failures?.length)process.exitCode=1;
