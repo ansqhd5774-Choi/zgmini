@@ -1,4 +1,4 @@
-import {attemptOutput,isER1MonthlyFeedKey,er1MonthlyD1Readback} from './independent-publication.mjs';
+import {attemptOutput,isER1MonthlyFeedKey,er1MonthlyD1Readback,retainRecentER1Readback,assertER1ReadbackConsistent} from './independent-publication.mjs';
 import {appendD1Diagnostic} from './d1-diagnostics.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -296,13 +296,15 @@ try{
   const outputs=(await core.prepare("SELECT * FROM public_feed_snapshots_v1 WHERE kind='output' AND snapshot_key='current'").all()).results;
   const er1FeedReadbacks=[];
   const recordER1Readback=(row,d1Row)=>{
-   if(isER1MonthlyFeedKey(row.feed_key)&&er1FeedReadbacks.length<24)
-    er1FeedReadbacks.push(er1MonthlyD1Readback(row,d1Row));
+   if(!isER1MonthlyFeedKey(row.feed_key))return null;
+   return retainRecentER1Readback(er1FeedReadbacks,er1MonthlyD1Readback(row,d1Row));
   };
   for(const row of outputs){
    await attemptOutput(report,'feed:'+row.feed_key,async()=>{
    const existing=(await remote.query(config.core,"SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'",[row.feed_key])).results[0];
-   if(existing?.stored_at>=row.stored_at){recordER1Readback(row,existing);return;}
+   if(existing?.stored_at>=row.stored_at){
+    assertER1ReadbackConsistent(recordER1Readback(row,existing));return;
+   }
    if(existing&&!acceptsStoredUpdate(JSON.parse(existing.body),JSON.parse(row.body))){
     recordER1Readback(row,existing);return;
    }
