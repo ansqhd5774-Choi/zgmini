@@ -34,7 +34,7 @@ export function validateInflationCandidates7Public(payload,{now=Date.now()}={}){
     !Array.isArray(payload.indicators)||payload.indicators.length!==7)
     throw Error('INFL7_PUBLIC_ENVELOPE_INVALID');
 
-  let ready=0;
+  let ready=0,stale=0;
   for(let i=0;i<INFLATION_CANDIDATES_7.length;i++){
     const meta=INFLATION_CANDIDATES_7[i],row=payload.indicators[i];
     if(!object(row)||!allowed(row,rowFields)||row.id!==meta.id||
@@ -44,7 +44,7 @@ export function validateInflationCandidates7Public(payload,{now=Date.now()}={}){
         !allowed(point,['date','value'])||!strictDate(point.date)||!finite(point.value)||
         (j>0&&point.date<=row.history[j-1].date)))
       throw Error('INFL7_PUBLIC_ROW_INVALID');
-    if(row.status==='READY'){
+    if(row.status==='READY'||row.status==='STALE'){
       if(!finite(row.value)||!strictDate(row.observationDate)||!strictIso(row.sourceStoredAt)||
         Date.parse(row.sourceStoredAt)>now||
         (row.availableAt!==null&&row.availableAt!==undefined&&!strictIso(row.availableAt))||
@@ -56,13 +56,14 @@ export function validateInflationCandidates7Public(payload,{now=Date.now()}={}){
         row.history.at(-1).value!==row.value||
         row.history.some(point=>point.date>row.observationDate))
         throw Error('INFL7_PUBLIC_READY_INVALID');
-      ready++;
+      if(row.status==='READY')ready++;
+      else stale++;
     }else if(row.value!==null||row.previousValue!==null||row.observationDate!==null||
       row.previousObservationDate!==null||row.sourceStoredAt!==null||
       row.availableAt!==null||row.history.length!==0)
       throw Error('INFL7_PUBLIC_NONREADY_LEAK');
   }
-  if((ready===7)!==(payload.status==='READY')||ready===0)
+  if((ready===7)!==(payload.status==='READY')||ready+stale===0)
     throw Error('INFL7_PUBLIC_COVERAGE_INVALID');
   return payload;
 }
