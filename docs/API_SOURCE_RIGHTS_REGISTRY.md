@@ -78,6 +78,21 @@
 | Nasdaq Trader | `1a1b735a8cadb890` | 발신만 확인 |
 | Finskills | `1a1b735ad3a7a091` | 발신만 확인 |
 
+## 4-1. 2026-11-08 실제 운영 게시 권한 점검 — 공개 증거와 계약 증거 분리
+
+**원담당 조사 이슈:** [#1018 MarketParquet 공개 데이터 권한 긴급 확인](https://github.com/ansqhd5774-Choi/zgmini/issues/1018). 아래는 2026-11-08 09:05~09:07 KST 읽기 전용 실서비스 스냅샷이며 실제 PC 구매 계정·결제 권한·운영 source 판정을 대신하지 않는다.
+
+| 게시 경로 | 실제 공개 관측 | 데이터 계보/권리 판정 |
+|---|---|---|
+| [홈 미국 등락 지수](https://zgmini.kr/) 및 [등락 이력 API](https://zgmini.kr/api/market-breadth-r2-history?market=usa) | 2026-10-30 상승 **26.4%**·보합 **5.8%**·하락 **67.8%**. API `READY / PUBLIC_FINAL / MARKETPARQUET_STOCK_DAILY`, 2025-11-04~2026-10-30 일별 파생 비율 이력 공개 | **R2 별도 인증 manifest 공급원**: 기능 브랜치 `codex/us-breadth-public-r1-20261031` `us-breadth-confirmed-download-r30.mjs`가 API 키로 `/api/v1/manifest/stock_daily` 다운로드. **실제 계정 플랜·구매 권리 미확인**. 레거시 Free Sample 코드와 동일하다고 단정하지 않음 |
+| [수급·폭 경제지표](https://zgmini.kr/economic-indicators/breadth/) | 수급·폭 **61.2점**과 5개 하위 지표·각 1년 차트에 `MarketParquet · 저장 산출` 공개 | `/api/market-score` → D1 `public:breadth-v11:v1`(또는 v9 fallback). `breadth-r10-v9-shadow/audit.mjs`의 유효 입력 검사에 `source=MarketParquet Free Sample`, `provenance_json.provider=MARKETPARQUET_FREE_SAMPLE`, `feed=stock_daily` 요구; v11 엔진이 해당 저장 행을 사용. **무료 샘플 기반 파생값의 공개 가능성이 코드상 매우 높음**. 실제 운영 D1 버전·PC 원자료를 재조회해 최종 확정 필요 |
+| 최신 확정/잠정 등락 현재값 API | `confirmed-r2: FULL_MARKET_STALE_OBSERVATION`, `provisional: PROVISIONAL_NOT_CURRENT` | 현재값 미제공이 위 **이력·상세페이지 공개 사실을 지우지 않음**. 호출 실패를 권한 확보/공개 중단으로 오판하지 않음 |
+| 테마 공포탐욕 공개 API | `UNAVAILABLE / STORED_DATA_STALE / themes=[]` | 이번 스냅샷에서 **GMH 기반 공개 점수 노출 미확인**. 별도 권한 미확인 상태는 유지 |
+
+- **권한 측면:** MarketParquet 11/05·11/08 사람 담당자 불허 회신은 확정이고 **무료 파생 게시 예외는 거절**. 무료 계정 API 호출이나 `PUBLIC_FINAL`·SHA 검증은 상업/공개 라이선스의 증거가 아니다. 당사자 별도 유료 구매·데이터 날짜 범위가 실제로 있는지는 운영 증거로 대조해야 한다. **같은 공급자에게 재문의 메일을 보내서 해소할 단계가 아님.**
+- **최소 후속:** 미국 등락 지수 원담당은 R2 인증 manifest, v11/v9 저장 원자료, D1 게시 키 각각의 계보와 **licenseRef/상품/적용 날짜 범위**를 안전하게 조회한다. 사용권 증빙이 없다면 공개 조정 또는 정식 라이선스 확보 중 **운영자 승인에 따른 좁은 범위의 조치**를 결정한다. 이 기록 자체로 데이터·웹 UI를 임의 숨김/삭제·재게시/구독하지 않는다.
+- **재발방지:** 공급자별 유료/무료 source 의 실제 사용권 상태를 게시 입력과 연결하는 검증을 검토한다. 미확인 시 해당 공급자 관련 **신규** 외부 게시에 한정하고, 다른 공급자·전체 Controller·기존 독립 작업을 전역 차단하지 않는다. 예약/자연 갱신 검증은 필요한 실제 조치가 끝난 이후의 후속 작업이다.
+
 ## 5. 재조사 방지·운영 원칙
 
 1. 신규 데이터 소스 조사·공급자 권한 이메일 발송 **전에 이 대장과 같은 공급자의 기존 발신/수신 스레드를 함께 확인**한다. 정확히 같은 상품·플랜·이용 방식에 `DENIED` 또는 이미 답변된 상태라면 재문의하지 않는다. 새로운 요금제·별도 계약·사용 방식이 실질적으로 바뀔 때만 새로운 질문을 구성한다.
