@@ -25,9 +25,15 @@ function validStored(previous,storedAt){
 function preserveLastGood(previous,next){
   for(let i=0;i<previous.indicators.length;i++){
     const before=previous.indicators[i],after=next.indicators[i];
-    if(before.status!=='READY')continue;
-    if(after.status!=='READY'||after.observationDate<before.observationDate||
+    if(!['READY','STALE'].includes(before.status))continue;
+    if(!['READY','STALE'].includes(after.status)||
+      after.observationDate<before.observationDate||
       Date.parse(after.sourceStoredAt)<Date.parse(before.sourceStoredAt))
+      fail('INFL7_PUBLIC_LAST_GOOD_REGRESSION');
+    // STALE represents the *identical* last observed fact, never a synthesized
+    // or updated value. Only a source-backed READY row may advance provenance.
+    if(after.status==='STALE'&&
+      JSON.stringify({...after,status:before.status})!==JSON.stringify(before))
       fail('INFL7_PUBLIC_LAST_GOOD_REGRESSION');
   }
 }
@@ -41,9 +47,16 @@ function assertRowCheckpointAdvance(previous,next){
     // A new source can be older than the most recently stored *other*
     // source. Require that this row's own provenance advances instead of
     // requiring the envelope's max(sourceStoredAt) to advance.
-    if(after.status!=='READY'||
-      (before.status==='READY'&&
-       Date.parse(after.sourceStoredAt)<=Date.parse(before.sourceStoredAt)))
+    const sameExceptStatus=JSON.stringify({...after,status:before.status})===
+      JSON.stringify(before);
+    if(after.status==='STALE'&&
+       (!['READY','STALE'].includes(before.status)||!sameExceptStatus))
+      fail('INFL7_PUBLIC_CHECKPOINT_CONFLICT');
+    if(after.status==='READY'&&['READY','STALE'].includes(before.status)&&
+      !(before.status==='STALE'&&sameExceptStatus)&&
+      Date.parse(after.sourceStoredAt)<=Date.parse(before.sourceStoredAt))
+      fail('INFL7_PUBLIC_CHECKPOINT_CONFLICT');
+    if(!['READY','STALE'].includes(after.status))
       fail('INFL7_PUBLIC_CHECKPOINT_CONFLICT');
   }
   if(changed===0||previous.sourceVersion===next.sourceVersion)
