@@ -16,9 +16,12 @@ const safeFile=file=>{try{const s=fs.lstatSync(file);return s.isFile()&&!s.isSym
 const validIso=x=>typeof x==='string'&&Number.isFinite(Date.parse(x))&&new Date(x).toISOString()===x;
 const monthDate=x=>{
   const raw=String(x??'').trim();
-  const match=raw.match(/^(20\d{2})-(0[1-9]|1[0-2])(?:-(0[1-9]|[12]\d|3[01]))?$/);
+  // Census EITS time_slot_date may include a zero-time suffix: YYYY-MM-DD 00:00:00.0.
+  // Accept only midnight to avoid interpreting arbitrary timestamps as observations.
+  const date=raw.replace(/^(20\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])) 00:00:00(?:\.0+)?$/, '$1');
+  const match=date.match(/^(20\d{2})-(0[1-9]|1[0-2])(?:-(0[1-9]|[12]\d|3[01]))?$/);
   if(!match)return null;
-  if(match[3]&&new Date(`${raw}T00:00:00Z`).toISOString().slice(0,10)!==raw)return null;
+  if(match[3]&&new Date(`${date}T00:00:00Z`).toISOString().slice(0,10)!==date)return null;
   return `${match[1]}-${match[2]}-01`;
 };
 
