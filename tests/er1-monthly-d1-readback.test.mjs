@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {isER1MonthlyFeedKey,er1MonthlyD1Readback,attemptOutput}
+import {isER1MonthlyFeedKey,er1MonthlyD1Readback,retainRecentER1Readback,
+ assertER1ReadbackConsistent,attemptOutput}
  from '../scripts/pc-writer/independent-publication.mjs';
 
 const sha=value=>createHash('sha256').update(value,'utf8').digest('hex');
@@ -40,6 +41,42 @@ test('missing, older and invalid readbacks have distinct statuses',()=>{
  assert.equal(er1MonthlyD1Readback(row(),{body:'{}',stored_at:1799999999999}).status,'REMOTE_OLDER');
  assert.equal(er1MonthlyD1Readback(row(),{body:undefined,stored_at:1800000000000}).status,'INVALID_REMOTE_OUTPUT');
  assert.equal(er1MonthlyD1Readback({...row(),body:null},undefined).status,'INVALID_LOCAL_OUTPUT');
+});
+
+test('bounded monthly D1 evidence always retains newest 24 despite unordered rows',()=>{
+ const rows=Array.from({length:30},(_,index)=>row('{}',1800000000000,
+  new Date(Date.UTC(2026,index,1)).toISOString().slice(0,7)));
+ const order=rows.map((_,index)=>index).sort((left,right)=>
+  (left*13%31)-(right*13%31));
+ const evidence=[];
+ for(const index of order){
+  const local=rows[index];
+  retainRecentER1Readback(evidence,er1MonthlyD1Readback(local,local));
+  assert.ok(evidence.length<=24);
+ }
+ const expected=rows.slice(-24).map(item=>item.feed_key).reverse();
+ assert.deepEqual(evidence.map(item=>item.key),expected);
+ // A repeated monthly output replaces its own evidence without increasing size.
+ retainRecentER1Readback(evidence,er1MonthlyD1Readback(rows.at(-1),{
+  body:'{"score":85}',stored_at:rows.at(-1).stored_at}));
+ assert.equal(evidence.length,24);
+ assert.equal(evidence[0].status,'BODY_MISMATCH');
+});
+
+test('same-timestamp ER1 body mismatch fails only that feed without overwriting D1',async()=>{
+ const local=row();const originalRemote={body:'{"score":85}',stored_at:local.stored_at};
+ const evidence=er1MonthlyD1Readback(local,originalRemote);
+ const report={};
+ const ok=await attemptOutput(report,'feed:'+local.feed_key,async()=>{
+  assertER1ReadbackConsistent(evidence);
+ });
+ assert.equal(ok,false);
+ assert.deepEqual(report.failures,[{id:`feed:${local.feed_key}`,
+  reason:'LOCAL_FEED_PUBLICATION_MISMATCH'}]);
+ assert.equal(originalRemote.body,'{"score":85}');
+ assert.doesNotThrow(()=>assertER1ReadbackConsistent(
+  er1MonthlyD1Readback(local,{body:'{}',stored_at:local.stored_at+1})));
+ assert.doesNotThrow(()=>assertER1ReadbackConsistent(null));
 });
 
 test('existing independent output failure behavior is not changed',async()=>{
