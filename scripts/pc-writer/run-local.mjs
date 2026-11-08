@@ -272,6 +272,11 @@ try{
     report.inflation19=await publishInflation19Auto({pcHome:base,remote,coreDb:config.core});
    });
   }
+  // Approved seven-row research sidecar; isolated from the legacy 19 and scores.
+  await attemptOutput(report,'inflation-7-publication',async()=>{
+   const {publishInflationCandidates7Auto}=await import('./inflation-causal-candidates-public-7-auto-publication-r1.mjs');
+   report.inflation7=await publishInflationCandidates7Auto({pcHome:base,remote,coreDb:config.core});
+  });
   // Reuse the existing public snapshot table; publish only the bounded display score.
   await attemptOutput(report,'rate-sentiment-publication',async()=>{report.rateSentiment.publication=(await publishPublicRateSentiment(remote,config.core,rateSentiment)).status;});
   try{report.stagflation.publication=(await publishStagflation(remote,config.core,stagflation)).status;}catch(error){report.stagflation.publication='UNVERIFIED';report.stagflation.reason=/^STAGFLATION_[A-Z_]+$/.test(error.message??'')?error.message:'STAGFLATION_PUBLICATION_FAILED';}
