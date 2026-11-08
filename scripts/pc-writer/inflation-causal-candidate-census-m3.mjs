@@ -15,15 +15,18 @@ const safeDir=dir=>{try{const s=fs.lstatSync(dir);return s.isDirectory()&&!s.isS
 const safeFile=file=>{try{const s=fs.lstatSync(file);return s.isFile()&&!s.isSymbolicLink()&&s.size>0&&s.size<=24_000_000;}catch{return false;}};
 const validIso=x=>typeof x==='string'&&Number.isFinite(Date.parse(x))&&new Date(x).toISOString()===x;
 const monthDate=x=>{
-  const match=String(x??'').match(/^(20\d{2})-?(0?[1-9]|1[0-2])$/);
-  return match?`${match[1]}-${String(Number(match[2])).padStart(2,'0')}-01`:null;
+  const raw=String(x??'').trim();
+  const match=raw.match(/^(20\d{2})-(0[1-9]|1[0-2])(?:-(0[1-9]|[12]\d|3[01]))?$/);
+  if(!match)return null;
+  if(match[3]&&new Date(`${raw}T00:00:00Z`).toISOString().slice(0,10)!==raw)return null;
+  return `${match[1]}-${match[2]}-01`;
 };
 
 export function normalizeCensusM3Inventories(payload){
   if(!Array.isArray(payload)||payload.length<2||payload.length>20_000||
     !Array.isArray(payload[0]))throw fail('CENSUS_M3_SHAPE_INVALID');
   const headers=payload[0];
-  const mandatory=['data_type_code','time_slot_id','seasonally_adj','category_code','cell_value','us','time'];
+  const mandatory=['data_type_code','time_slot_id','time_slot_date','seasonally_adj','category_code','cell_value','us'];
   if(!mandatory.every(x=>headers.includes(x))||new Set(headers).size!==headers.length)
     throw fail('CENSUS_M3_HEADERS_INVALID');
   const observations=[],seen=new Set();
@@ -35,7 +38,7 @@ export function normalizeCensusM3Inventories(payload){
     if(String(row.us)!=='1')throw fail('CENSUS_M3_NATIONAL_FACET_INVALID');
     // time_slot_id is a Census internal integer, NOT a YYYY-MM observation date.
     // The required `time=YEAR` predicate returns a separate ISO month `time` field.
-    const date=monthDate(row.time),raw=String(row.cell_value??'').replace(/,/g,'').trim();
+    const date=monthDate(row.time_slot_date),raw=String(row.cell_value??'').replace(/,/g,'').trim();
     if(!date||!/^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(raw)||!Number.isFinite(Number(raw))||
       Number(raw)<0||seen.has(date))throw fail('CENSUS_M3_INVENTORIES_VALUE_OR_DUPLICATE');
     seen.add(date);
@@ -92,7 +95,7 @@ export async function collectCensusM3Inventories({base,censusKey,quotaFetch,now=
   for(const y of [year-1,year]){
     const url=new URL(CENSUS_M3_ENDPOINT);
     for(const [k,v] of Object.entries({
-      get:'data_type_code,time_slot_id,seasonally_adj,category_code,cell_value,error_data',
+      get:'data_type_code,time_slot_id,time_slot_date,seasonally_adj,category_code,cell_value,error_data',
       time:String(y),category_code:'MTM',seasonally_adj:'yes',key:censusKey.trim(),'for':'us:*',
     }))url.searchParams.set(k,v);
     const res=await quotaFetch(url,{method:'GET',redirect:'manual',signal:AbortSignal.timeout(20_000)});
