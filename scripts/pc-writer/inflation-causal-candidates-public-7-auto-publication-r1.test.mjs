@@ -103,13 +103,75 @@ test('new source in lower-timestamp row advances even if envelope maximum is fix
   assert.deepEqual(f.calls,['INSERT','UPDATE']);
 });
 
-test('source regression preserves earlier READY row and does not hold Core lane',async()=>{
+test('source loss exposes original last-good as STALE and still publishes other rows',async()=>{
   const f=fixture(),before=payload(4),after=payload(1,T1,'d');
   await run(f,before);
   const result=await run(f,after,T2);
-  assert.equal(result.status,'SKIPPED_LAST_GOOD_REGRESSION');
-  assert.equal(result.d1Writes,0);
-  assert.deepEqual(f.calls,['INSERT']);
+  assert.equal(result.status,'READBACK_VERIFIED');
+  assert.equal(result.d1Writes,1);
+  assert.deepEqual(f.calls,['INSERT','UPDATE']);
+  const saved=JSON.parse(f.rows.get(INFLATION_CANDIDATES_7_PUBLIC_KEY).body).payload;
+  assert.equal(saved.status,'PARTIAL');
+  assert.equal(saved.indicators[0].status,'READY');
+  for(let i=1;i<4;i++){
+    const retained=saved.indicators[i];
+    assert.equal(retained.status,'STALE');
+    assert.equal(retained.value,before.indicators[i].value);
+    assert.equal(retained.observationDate,before.indicators[i].observationDate);
+    assert.equal(retained.sourceStoredAt,before.indicators[i].sourceStoredAt);
+    assert.deepEqual(retained.history,before.indicators[i].history);
+  }
+  assert.equal(saved.indicators[4].status,'PENDING');
+  // The next independent READY update must not be blocked by STALE rows.
+  const next=structuredClone(after);
+  next.indicators[0]=ready(INFLATION_CANDIDATES_7[0],T2+1000,55);
+  next.sourceVersion='INFL7_PRESENTATION_'+'e'.repeat(64);
+  next.sourceStoredAt=T2+1000;
+  assert.equal((await run(f,next,T2+2000)).status,'READBACK_VERIFIED');
+  assert.deepEqual(f.calls,['INSERT','UPDATE','UPDATE']);
+});
+
+test('STALE row can recover as READY from identical stored evidence',async()=>{
+  const f=fixture(),before=payload(4),lost=payload(1,T1,'d');
+  await run(f,before);
+  await run(f,lost,T2);
+  const recovered=structuredClone(before);
+  recovered.indicators[0]=lost.indicators[0];
+  recovered.sourceStoredAt=T1;
+  recovered.sourceVersion='INFL7_PRESENTATION_'+'e'.repeat(64);
+  assert.equal((await run(f,recovered,T2+1000)).status,'READBACK_VERIFIED');
+  const rows=JSON.parse(f.rows.get(INFLATION_CANDIDATES_7_PUBLIC_KEY).body).payload.indicators;
+  for(let i=0;i<4;i++)assert.equal(rows[i].status,'READY');
+  assert.deepEqual(f.calls,['INSERT','UPDATE','UPDATE']);
+});
+
+test('complete source outage marks the previous observations STALE, never fabricates an empty snapshot',async()=>{
+  const f=fixture(),before=payload(4);
+  await run(f,before);
+  const request=()=>publishInflationCandidates7Auto({
+    pcHome:'TEST_ONLY',remote:f.remote,coreDb:'approved-core',now:T2,
+    previewFn:()=>({status:'PENDING',ready:0,payload:null,providerCalls:0,
+      coreWrites:0,dbWrites:0,d1Writes:0,schedulerWrites:0}),
+    validate:validateInflationCandidates7Public,
+    writerFactory:inflationCandidates7PublicWriter,
+  });
+  assert.equal((await request()).status,'READBACK_VERIFIED');
+  let saved=JSON.parse(f.rows.get(INFLATION_CANDIDATES_7_PUBLIC_KEY).body).payload;
+  assert.equal(saved.status,'PARTIAL');
+  assert.equal(saved.indicators.filter(row=>row.status==='STALE').length,4);
+  assert.equal(saved.indicators.filter(row=>row.status==='PENDING').length,3);
+  assert.deepEqual(saved.indicators[0].history,before.indicators[0].history);
+  assert.equal(saved.indicators[0].sourceStoredAt,before.indicators[0].sourceStoredAt);
+  assert.equal((await request()).status,'UNCHANGED_VERIFIED');
+  assert.deepEqual(f.calls,['INSERT','UPDATE']);
+
+  const blank=fixture();
+  assert.equal((await publishInflationCandidates7Auto({
+    pcHome:'TEST_ONLY',remote:blank.remote,coreDb:'approved-core',now:T2,
+    previewFn:()=>({status:'PENDING',ready:0,payload:null,providerCalls:0,
+      coreWrites:0,dbWrites:0,d1Writes:0,schedulerWrites:0}),
+  })).status,'SKIPPED_INPUTS_NOT_READY');
+  assert.equal(blank.calls.length,0);
 });
 
 test('unready or side-effectful preview, malformed stored checkpoint fail closed',async()=>{
