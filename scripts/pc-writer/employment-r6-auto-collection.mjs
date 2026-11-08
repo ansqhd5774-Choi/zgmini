@@ -19,10 +19,21 @@ export async function runEmploymentR6AutoCollection({
     throw Error("EMPLOYMENT_R6_COLLECTION_INPUT_INVALID");
   }
   const result=await collect({env:{DB:db},db,fetchImpl,now,mode:"RELEASE"});
+  // Preserve only safe diagnostic codes/counts; never forward error messages,
+  // provider response bodies, source URLs, credentials, or raw snapshots.
+  const safeCode=value=>typeof value==="string"&&/^[A-Z][A-Z0-9_]{0,99}$/.test(value)?value:null;
+  const safeRequests=value=>Number.isSafeInteger(value)&&value>=0&&value<=100000?value:null;
   return {
     status:result.status,
     providerRequests:result.providerRequests??0,
-    groups:(result.groupResults??[]).map(item=>({groupName:item.groupName,status:item.status})),
-    plannedGroups:(result.plannedGroups??[]).map(item=>({groupName:item.groupName,status:item.status,due:item.due})),
+    groups:(result.groupResults??[]).map(item=>({
+      groupName:item.groupName,status:item.status,
+      ...(safeCode(item.failureCode)?{failureCode:safeCode(item.failureCode)}:{}),
+      ...(safeRequests(item.providerRequests)!==null?{providerRequests:item.providerRequests}:{}),
+    })),
+    plannedGroups:(result.plannedGroups??[]).map(item=>({
+      groupName:item.groupName,status:item.status,due:item.due,
+      ...(safeCode(item.failureCode)?{failureCode:safeCode(item.failureCode)}:{}),
+    })),
   };
 }
