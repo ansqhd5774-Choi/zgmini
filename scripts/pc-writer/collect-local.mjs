@@ -1,9 +1,11 @@
 import path from 'node:path';
 import os from 'node:os';
+import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {localDatabase} from './local-db.mjs';
 import {loadLocalProviders,installLocalRuntime} from './local-env.mjs';
 import {save} from './d1.mjs';
+import {read} from './d1.mjs';
 import {createQuotaFetch} from './quota-fetch.mjs';
 import {recordCollectionChecks} from './collection-checks.mjs';
 import {appendCollectionEvent,appendProviderFailure} from './collection-events.mjs';
@@ -37,8 +39,30 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   const {Rev7D1Store}=await import('../../worker/korea-rev7-d1.mjs');
   if(importOnly)return {status:'LOCAL_IMPORT_PASS'};
   let result,releaseCalendar={status:'SKIPPED_KOREA_LANE',providerRequests:0},sectorFearGreedEtf={status:'SKIPPED_KOREA_LANE',providerRequests:0};
+  let employmentR6Collection={status:'DISABLED',providerRequests:0};
   if(lane==='korea')result=await refreshKoreaRev7({env:{...env,DB:history},store:new Rev7D1Store(history,{leaseMs:600000}),now:new Date(),maxDates:1,deferCalculation:true});
   else{
+   // This side lane is inert unless the installed PC config explicitly opts in
+   // and approves the exact source SHA. Existing market collection is isolated.
+   try{
+    const config=read(path.join(base,'config.json'));
+    if(config.enabled===true&&config.collectionTarget==='pc'
+      &&config.employmentR6AutoCollection===true){
+     const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
+     const runningSource=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
+     execFileSync('git',['diff','--quiet','HEAD','--','lib','worker','scripts/pc-writer'],
+      {cwd:root,stdio:'pipe',windowsHide:true});
+     const {runEmploymentR6AutoCollection}=await import('./employment-r6-auto-collection.mjs');
+     employmentR6Collection=await runEmploymentR6AutoCollection({
+      enabled:true,approvedSource:config.source,runningSource,
+      db:core,fetchImpl:globalThis.fetch,now:()=>new Date(),
+     });
+    }
+   }catch(error){
+    const code=String(error?.code??error?.message??'');
+    employmentR6Collection={status:'FAILED_PRESERVE_EXISTING',providerRequests:0,
+     code:/^EMPLOYMENT_R6_[A-Z_]+$/.test(code)?code:'EMPLOYMENT_R6_COLLECTION_FAILED'};
+   }
    // Independent calendar failures cannot block market collection/publication.
    try{releaseCalendar=await collectReleaseCalendar(core,{fetchImpl:globalThis.fetch});}catch{releaseCalendar={status:'FAILED_PRESERVE_EXISTING',providerRequests:0};}
    try{
@@ -58,6 +82,7 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   }
   // Reports contain statuses only; provider URLs, credentials, and exception messages are excluded.
   const report={at:new Date().toISOString(),lane,status:result.status,job:result.job??null,attempted:result.attempted??null,feeds:result.feeds?.map(({key,status})=>({key,status})),sectorFearGreedEtf:{status:sectorFearGreedEtf.status,providerRequests:sectorFearGreedEtf.providerRequests??0,commonLatest:sectorFearGreedEtf.commonLatest??null,code:sectorFearGreedEtf.code??sectorFearGreedEtf.error??null},providers,quota:quota.summary()};
+  report.employmentR6Collection=employmentR6Collection;
   for(const key of ['phase','reason','sourceStatus'])if(typeof result?.[key]==='string'&&/^[A-Za-z0-9_.:-]{1,120}$/.test(result[key]))report[key]=result[key];
   report.releaseCalendar=releaseCalendar;
   if(result.failureDiagnostic)report.failureDiagnostic=result.failureDiagnostic;
