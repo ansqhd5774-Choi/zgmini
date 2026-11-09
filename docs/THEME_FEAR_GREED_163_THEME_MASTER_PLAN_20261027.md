@@ -23,7 +23,7 @@
 | 세부 ID·담당 | 다음 실제 실행 | 완료 판정에 필요한 증거 | 상태 |
 | --- | --- | --- | --- |
 | **P1-01 · 테마 원담당** | 기존 공개 10개 ID/표시 순서, R32 연구 교집합 8개, 독립 우주·데이터센터, 공통 R37/R88 물리 feed를 매핑한다. | 10/10 책임·입력/산식/Reader 매핑; 기존 T1 연결 명세 | **DONE — 기존 T1 20% 증거 재사용** |
-| **P1-02 · 테마 원담당** | 실제 PC L7/R181 설치 source·최초 실패 코드·저장 GMH 원본 SHA/관측일·R178 rolling 원장/checkpoint 및 D1/API 현상태를 승인된 A급 조회로 확인한다. | 실행 ID, 설치 SHA, LAST PASS/FIRST FAIL, Reader READY 또는 정확한 503·STALE 사유 | **NEXT — 이전 11/8 503은 이력, 최신 재조회 필요** |
+| **P1-02 · 테마 원담당** | 실제 PC L7/R181 설치 source·최초 실패 코드·저장 GMH 원본 SHA/관측일·R178 rolling 원장/checkpoint 및 D1/API 현상태를 승인된 A급 조회로 확인한다. | 실행 ID, 설치 SHA, LAST PASS/FIRST FAIL, Reader READY 또는 정확한 503·STALE 사유 | **PARTIAL — 11/9 설치 SHA·실원장 확인 완료; 최초 HTTP 코드, GMH/R178 저장·D1·최신 API 미확인. 동일 A 재요청 금지** |
 | **P1-03 · 공통 총괄 / 테마 원담당** | 공유 Controller lock은 공통 단일 담당이 소유자·stage·원장·백업을 읽기 전용으로 확인·정규 복구한다. 테마 담당은 복구 후 필요한 Reader 실행만 재개한다. 이미 성공한 R181 B/A 설치를 무조건 반복하지 않는다. | 요청별 terminal JSON/TXT, 설치 소스/복구 증거, 승인 작업 claim 가능 상태 | **공유 운영 쓰기만 조건부 BLOCKED; 독립 소스 작업은 계속** |
 | **P1-04 · 테마 원담당** | 승인 GMH 확정 원자료의 실존·가격 모드·ETF/SPY 거래일을 검증하고 기존 R181→R178 경로에서 계산·로컬 저장→rolling D1 CAS/write/readback을 수행한다. 기존 seed는 덮어쓰지 않는다. | 원본/계산 SHA, observationDate·storedAt·checkpoint, `theme-etf-only-rolling` 재조회와 공개 Reader READY | P1-02·승인 운영 경로 확인 후 |
 | **P1-05 · 테마 원담당** | 확정 R32 8개와 독립 우주(R32 변형)·데이터센터(PAIR50)를 동일 저장 입력으로 shadow 검산한다. 기존 20논리 단계→6물리 키·게시 전 Reader 안전 검사를 재사용한다. | 10개별 승인 버전·252일/가용일·결측·원값 동등/승인된 차이, 게시 전 6키 중복/부분쓰기 방지 | 소스 27/27 통과 이력 재사용, 실제 저장 검산 필요 |
@@ -36,7 +36,16 @@
 | **P3-01 · 테마 원담당** | 그때 가장 인기 있는 차기 후보 **한 건**을 비교·선정한다. ETF 후보별 3가지 O/X 기준(보유 공개·실수집·운용사 C 이상), 실제 ETF/SPY 자료·기준일별 공식 AUM·권리를 확인한다. | 선정/제외 근거, 공개 승인·권리 SHA, 실제 원자료와 승인 R25/R32 적용 가능성 | P2 공통 경로 실증 후 반복 |
 | **P3-02 · 테마 원담당** | 승인 한 건의 수집→로컬 저장→계산·검산→D1 CAS/readback→API/UI를 완료하고 즉시 P4 운영 대상에 추가한다. | 신규 공개 ID 1건+기존 정상 ID 모두 유지, 관측일·결측·이력·PC/모바일 화면 일치 | 한 건씩 163 목표까지 반복 |
 
-**가장 가까운 실제 실행:** P1-02 한 건의 승인 A급 조회로 L7/R181 최초 실패 코드와 저장 GMH/R178 현황을 확보한다. 이 증거로 P1-04 수행 가능 여부를 결정한다. #917/#996의 공통 잠금 정리는 공통 총괄만 수행하고, 테마 담당이 잠금을 우회·강제 해제하거나 기존 요청을 중복 제출하지 않는다.
+**가장 가까운 실제 실행:** P1-02는 2026-11-09 승인 A 조회 [pc-control #1033](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1033)에서 이미 완료된 범위(파일 SHA/세 원장)를 재사용한다. 첫 실패 원인 **안전 분류 개선은 기존 공통 이슈 [#896](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/896)** 소유자에게 유지하고, 원담당은 **기존 승인 A 목록에서 GMH 원본 SHA/관측일·R178 rolling checkpoint 및 D1/API 현상태 조회 경로가 실제 설치됐는지 확인**한다. 경로가 없다면 임의 CMD·미승인 운영 쿼리로 우회하지 않고, 필요한 최소 확장 범위를 분리한다. 같은 R181 A 요청과 108파일 B 재설치는 반복하지 않는다. #917/#996 공유 잠금 정리는 공통 총괄 담당만 수행한다.
+
+### 2026-11-09 P1-02 실제 PC 증거 — 최종 검증 아님
+
+- **LAST PASS(읽기 전용 조회만):** [#1033 / `results/42597414102-1-seat-3.json`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/42597414102-1-seat-3.json), requestId `pc-c5ff88b8-0e9e-467a-934f-9902f9346234`, job `run-42597414102-1-seat-3`, 완료 `2026-11-09T09:58:36.676Z`(18:58:36 KST), `PASS/L7_RUNTIME_READONLY_INVENTORY`. 이는 **운영 READY와 무관**하며 result의 `operationalReadiness=NOT_ASSERTED`를 따른다.
+- **실제 설치 파일:** `r181-primary-cycle.mjs` SHA256 `be0303b112d6f4471137aa134bf98f696a8a8dfe60d1d13502646c5e0b509d62`; `r179-publish-core.mjs` SHA256 `f9ea0a1bfaf52909b7a434b65ba93887f56660bc979a3cb7e0992597bc9f3b68`; `r171-publish.mjs` SHA256 `d6b921acd2b935360a4f1df2ce7329b4fdde0d999dddd5ee3f7f6169c9046ba8`. Controller 실행 SHA `badad9124157879d7a645b64f2768113d632355b`; A 요청의 기능 소스는 `zgmini/main@42817df04b160ad5012e1c2f171aca918491dfba`로 **이 작업 브랜치 HEAD와 다름**.
+- **운영 FIRST FAIL(정확 코드 미확인):** `R181_PRIMARY_LAST_RUN.json`는 `STOP`, 갱신 `2026-11-09T05:00:11.212Z`(14:00:11 KST). 안전 신호는 `HTTP/R181/SPY`이나 `safeHttpFailure=null` 및 `firstFail=null`이므로 HTTP 상태 코드나 원인 확정 **불가**. `R179`은 `PUBLIC_API_ROLLING_MISMATCH`(2026-10-28 관측일), `R183`은 `PUBLISHER_CHILD_FAILED_REVIEW`.
+- **미증명:** 이 A는 고정 소스·원장·예약 XML 구조만 검사하며 `sqliteOpened=false`, `providerCalls=0`, `d1Writes=0`, `operationalWrites=0`. GMH 원본의 실제 자료·원본 SHA·R178 rolling checkpoint·D1 readback·공개 Reader 최신성 **검증하지 못했다**. [#675 Shadow 10/10 확정·0/10 잠정](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/675)은 당시 공개 가능성 스냅샷이지 저장 증명이 아니다.
+- **후속 순서:** ① 권한 내 R178 읽기 경로 확인 및 공개 API 최신 상태 확인 → ② 공통 #896 첫 실패 안전 분류 결과 수신 → ③ R181 실데이터·R178 로컬 저장 검증 → ④ 권리 충족 feed만 승인된 CAS D1 게시·API/UI readback. 공개 Reader 503이면 쓰기 선행검사를 우회하지 않는다.
+- **진행률:** 통합 T1 **20% → 20%**, 실데이터 게시 증가 **0건**. 163개 전체 달성률은 운영 검증 완료 신규/전체 ID 수를 미확인했으므로 산출 보류한다. 예약 미래 자연 갱신 검증은 완료 후 후속이다.
 
 **운영·권리 경계:** 2026-11-08 공개 `503/STORED_DATA_STALE`, Shadow 확정 10/10·잠정 0/10은 당시 스냅샷이다. **현재 Reader가 READY인지 먼저 확인**한다. `readPublic`이 503/UNAVAILABLE이면 승인 6키 게시를 시작하지 않는다. 공급자가 승인하지 않은 잠정값·가짜 최신일·0 대체·가격 모드 혼합·데이터센터 미승인 R32 적용·미공개 AI·반도체의 자동 출시를 금지한다.
 
