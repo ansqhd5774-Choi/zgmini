@@ -44,7 +44,7 @@
 
 - 2026-11-09 기준 연준 Z.1 최신 공식 자료는 2026-Q2이며 **Q3 발표 예정은 2026-12-10**이다([Federal Reserve](https://www.federalreserve.gov/releases/z1/)). `valuationPressure`·`riskAssetShare`·`speculativeFlows`의 Q3 신규값은 아직 존재하지 않으므로 Q2 실제 관측일을 보존한다. `priceAcceleration`·`breadthDivergence`·`excessLiquidity`의 Q3는 각 PC 원자료·완결성 검증 전에는 READY로 보고하지 않는다.
 - R10 raw sidecar는 같은 `sourceVersion/sourceStoredAt`의 내용 변경을 `ASSET_R10_RAW_CONFLICTING_CONTENT`로 안전 거부한다. 보호 규칙을 완화하지 않으며 **새로운 유효 checkpoint**만 게시한다.
-- 오래된 Draft PR #961의 전체 diff 병합을 금지하고 최신 main `3910adf7…`에서 **PC raw 생성 1 + raw 검증 1 + UI 2 + 테스트 2 = 6파일만** [선택 통합 Draft PR #1050](https://github.com/ansqhd5774-Choi/zgmini/pull/1050)에 준비했다. 격리 관련 48/48·페이지 동등성 3/3 = **51/51 PASS**, 원격 compare 정확 6파일, HEAD `17c3c0485d30ec59e68f0e70c9472a5b1afab339`. Draft·미병합, 실제 웹 배포·화면 검증 전이므로 단계6 NOT_DONE 유지.
+- 오래된 Draft PR #961의 전체 diff 병합을 금지하고 최신 main `3910adf7…`에서 **PC raw 생성 1 + raw 검증 1 + UI 2 + 테스트 2 = 6파일만** [선택 통합 Draft PR #1050](https://github.com/ansqhd5774-Choi/zgmini/pull/1050)에 준비했다. 격리 관련 48/48·페이지 동등성 3/3 = **51/51 PASS**, 원격 compare 정확 6파일, HEAD `17c3c0485d30ec59e68f0e70c9472a5b1afab339`. [GitHub CI Run 42620675447](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/42620675447) **SUCCESS** (build·typecheck·regression·PC publication recovery·Cloudflare read contracts 전부 PASS). Draft·미병합, 실제 웹 배포·화면 검증 전이므로 단계6 NOT_DONE 유지.
 
 ## 4. 모든 R10 작업 보고의 필수 형식
 
