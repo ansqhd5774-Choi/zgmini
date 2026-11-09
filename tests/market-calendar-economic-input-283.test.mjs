@@ -60,3 +60,16 @@ test('unannounced state/metro 2027 releases are never promoted to confirmed date
  assert.ok(x.officialWithPublishedEvent< x.officialEligible);
  assert.equal(x.syntheticEventsCreated,0);
 });
+
+test('BLS state and metro releases do not borrow the national employment date',()=>{
+ const r=ECONOMIC_CALENDAR_SOURCE_REGISTRY;
+ const state=r.entries.find(x=>x.provider==='BLS_CES_SAE'&&x.sourceId==='SMS00000000000000022');
+ const metro=r.entries.find(x=>x.provider==='BLS_CES_SAE'&&x.sourceId==='SMS99999990000000022');
+ assert.deepEqual(state.officialLinks,[{source:'bls',idPrefix:'bls-state-employment-and-unemployment'}]);
+ assert.deepEqual(metro.officialLinks,[{source:'bls',idPrefix:'bls-metropolitan-area-employment-and-unemployment'}]);
+ const x=describeOfficialCalendarCoverage(buildSourceLinkRegistry([
+  ...[state,metro].map(({provider,sourceId,geography,origin,eligibility,officialLinks})=>({
+   area:'employment',provider,sourceId,geography,origin,eligibility,officialLinks})),
+ ]),{events:[{source:'bls',id:'employment',date:'2027-01-08'}]},{today:'2027-01-01'});
+ assert.equal(x.officialWithPublishedEvent,0);
+});
