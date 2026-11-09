@@ -10,8 +10,9 @@ const row=(id,date,value)=>({
 
 test("29 separate stored raw series remain distinct from strict 10-year scores",()=>{
   const observations=[
-    row("U3_UNEMPLOYMENT_RATE","2025-10-31",4.7),
+    row("U3_UNEMPLOYMENT_RATE","2025-09-30",4.7),
     row("U3_UNEMPLOYMENT_RATE","2025-11-30",4.6),
+    row("U3_UNEMPLOYMENT_RATE","2025-12-31",4.55),
     row("U3_UNEMPLOYMENT_RATE","2026-04-30",4.4),
     row("U3_UNEMPLOYMENT_RATE","2026-09-30",4.2),
     row("U3_UNEMPLOYMENT_RATE","2026-12-31",1),
@@ -25,8 +26,8 @@ test("29 separate stored raw series remain distinct from strict 10-year scores",
   assert.equal(u3.score,null);
   assert.equal(u3.value,4.2);
   assert.equal(u3.previousValue,4.4);
-  assert.deepEqual(u3.history.map(p=>p.date),["2025-11-30","2026-04-30","2026-09-30"]);
-  assert.equal(u3.history[1].breakBefore,true);
+  assert.deepEqual(u3.history.map(p=>p.date),["2025-11-30","2025-12-31","2026-04-30","2026-09-30"]);
+  assert.equal(u3.history[2].breakBefore,true);
   assert.equal(u3.chartStatus,"READY");
   assert.equal(result.indicators[1].rawStatus,"UNAVAILABLE");
 });
