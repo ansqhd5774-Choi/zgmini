@@ -122,3 +122,11 @@
 - 설계 산출물: [docs/DASHBOARD_SCORE_INPUT_LINEAGE_DESIGN_R1.md](DASHBOARD_SCORE_INPUT_LINEAGE_DESIGN_R1.md). 새 원자료 없음/동일일 새 입력/공식 정정/TTL/미완성 분기/다회 계산/날짜 경계/공개 실패의 최소 8개 테스트 계약 및 승인 Gate 정리. **설계 문서만** 원격 readback 검증; 기존 산식/DB/Writer/예약/Production 모두 불변.
 - **진척:** 1단계 68/68 식별(운영 완전 인과증거 미완), 2단계 대표 API 11/11 관측·PC 7건 대조(인과 0/68), 3단계 **설계 초안 1/1·실제 승인/코드/운영 PASS 0/1**, 4–7단계 미완. 완료 확정 0/7 유지. 계획 가중 실구현율은 검증 근거 부족으로 산정 보류.
 - **다음 1건:** 기능별 PC 승인/실행 source와 이 `main` 입력 경로가 실제 일치하는지 기존 승인 읽기 전용 증거에서 확인하고, **백엔드 변경 대상 브랜치** 및 새 DB/메타데이터·일별 cut-off 필요 여부를 특정한다. 이 증거 없이 UI 전용 브랜치에서 Writer/DB 계약을 변경하지 않는다. 예약 추가 0건.
+
+
+## 11. 실행 실적 — 2026-11-10 KST (제4차, PC source 추적)
+
+- 기존 #1136 고유 Windows A급 결과 원문 재조회 PASS. 05:32 KST 고정 checkout/config/checkpoint source `70d2d1dbd8180255133bdd7fc925ae07bb8d6cc9` 일치, **실제 Core 프로세스 source 확인 아님**(`runtimeSourceVerified=false`).
+- 해당 로컬 HEAD를 `zgmini`와 `zgmini-pc-control` GitHub 커밋/ref로 읽기 전용 대조했으나 **두 저장소 모두 원격 commit 조회 불가(422/404)**. `SOURCE_REF_UNRESOLVED`를 **운영 source 인과확인 미완료**로 분리; PC 파일 손상/전역 장애로 오판하지 않음. 자세한 증거는 `docs/DASHBOARD_SCORE_INPUT_LINEAGE_DESIGN_R1.md` 6절.
+- **완료 증거:** 68/68 ID, 11/11 대표 공개 GET, 7건 기존 PC 원장, 입력 감지 설계 초안 및 main/UI branch 공유 Writer 소스 SHA 차이 식별. **미완료:** 실제 PC source↔원격 코드 대조, 68개 종단 인과 PASS 0/68, 실제 코드·DB·D1·UI 적용 0건. 전체 7단계 완료 PASS 0/7 그대로.
+- **다음 필수 행동 1건:** 기존 허용된 읽기 전용 수단으로 실제 PC `sourceRoot`의 이번 변경 관련 Writer/projection 파일 해시와 원격 추적 가능 소스 버전을 대조한다. 현재 허용목록으로 불가능하면 그 기능만 `AUTOMATION_BLOCKED`로 명시하고, 무관 기능 조사·실제 원담당 업무는 계속한다. 정확한 백엔드 대상 기존 브랜치·소비자 계약을 결정하기 전 운영 변경은 하지 않는다.
