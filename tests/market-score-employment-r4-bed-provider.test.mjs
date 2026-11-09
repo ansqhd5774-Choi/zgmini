@@ -7,6 +7,7 @@ import {
   createEmploymentR4BedProvider,
 } from "../lib/market-score/employment-r4-bed-provider.mjs";
 import { EMPLOYMENT_R4_PIT_CLASSES } from "../lib/market-score/employment-r4-shadow-contract.mjs";
+import { collectEmploymentR4BedShadow } from "../lib/market-score/employment-r4-bed-collector.mjs";
 
 function payload(ids,year="2025",period="Q04",valueBase=1) {
   return {status:"REQUEST_SUCCEEDED",Results:{series:ids.map((seriesID,i)=>({
@@ -50,6 +51,9 @@ test("BED parser accepts official Results array and preserves PIT/raw hashes",as
   assert.ok(parsed.rows.every(x=>x.provenance.sourceUrl.includes("/v2/")));
   assert.ok(parsed.rows.every(x=>x.provenance.rawRecordHash?.length===64));
   assert.ok(parsed.rows.every(x=>x.pitClass===EMPLOYMENT_R4_PIT_CLASSES.historicalCurrentVintage));
+  await assert.rejects(parseBlsBedShadowRows({status:"REQUEST_SUCCEEDED",Results:[{}]},{retrievedAt:"2026-10-28T13:00:00Z",requestedSeriesIds:ids}),/BLS_BED_RESPONSE_MALFORMED/);
+  await assert.rejects(parseBlsBedShadowRows({status:"REQUEST_SUCCEEDED",Results:[null]},{retrievedAt:"2026-10-28T13:00:00Z",requestedSeriesIds:ids}),/BLS_BED_RESPONSE_MALFORMED/);
+  await assert.rejects(parseBlsBedShadowRows({status:"REQUEST_SUCCEEDED",Results:[{series:42}]},{retrievedAt:"2026-10-28T13:00:00Z",requestedSeriesIds:ids}),/BLS_BED_RESPONSE_MALFORMED/);
 });
 
 test("provider batches 114 series into three keyed v2 POSTs and never scores",async()=>{
@@ -77,7 +81,11 @@ test("provider batches 114 series into three keyed v2 POSTs and never scores",as
 test("BED without a registered key fails closed before any network request",async()=>{
   let calls=0;
   const p=createEmploymentR4BedProvider({fetchImpl:async()=>{calls++;throw new Error("should not fetch");}});
-  await assert.rejects(p.fetchBedQuarterly(),/BLS_REGISTRATION_KEY_MISSING/);
+  await assert.rejects(p.fetchBedQuarterly(),error=>{
+    assert.match(error.message,/BLS_REGISTRATION_KEY_MISSING/);
+    assert.equal(error.requestCount,0);
+    return true;
+  });
   assert.equal(calls,0);
 });
 
@@ -85,10 +93,47 @@ test("BED 429 and malformed responses never retry or overwrite with fabricated z
   let calls=0;
   const opts={env:{BLS_REGISTRATION_KEY:"fixture-key"}};
   const rateLimited=createEmploymentR4BedProvider({...opts,fetchImpl:async()=>{calls++;return {ok:false,status:429};}});
-  await assert.rejects(rateLimited.fetchBedQuarterly(),/BLS_BED_HTTP_429/);
+  await assert.rejects(rateLimited.fetchBedQuarterly(),error=>{
+    assert.match(error.message,/BLS_BED_HTTP_429/);
+    assert.equal(error.requestCount,1);
+    return true;
+  });
   assert.equal(calls,1);
   calls=0;
   const malformed=createEmploymentR4BedProvider({...opts,fetchImpl:async()=>{calls++;return {ok:true,status:200,json:async()=>({status:"REQUEST_SUCCEEDED",Results:null})};}});
-  await assert.rejects(malformed.fetchBedQuarterly(),/BLS_BED_RESPONSE_MALFORMED/);
+  await assert.rejects(malformed.fetchBedQuarterly(),error=>{
+    assert.match(error.message,/BLS_BED_RESPONSE_MALFORMED/);
+    assert.equal(error.requestCount,1);
+    return true;
+  });
   assert.equal(calls,1);
+});
+
+test("BED second-batch HTTP 429 records two attempts through collector failure ledger",async()=>{
+  let calls=0;
+  const provider=createEmploymentR4BedProvider({
+    env:{BLS_API_KEY:"fixture-key"},
+    fetchImpl:async(_url,{body})=>{
+      calls++;
+      return calls===1
+        ?{ok:true,status:200,json:async()=>payload(JSON.parse(body).seriesid)}
+        :{ok:false,status:429};
+    },
+  });
+  const records=[];
+  const store={
+    async initialize(){},
+    async acquire(){return{acquired:true};},
+    async getCurrentRows(){return[];},
+    async recordRun(row){records.push(row);},
+    async release(){},
+  };
+  await assert.rejects(collectEmploymentR4BedShadow({db:{prepare(){}},provider,storeFactory:()=>store}),error=>{
+    assert.match(error.message,/BLS_BED_HTTP_429/);
+    assert.equal(error.requestCount,2);
+    return true;
+  });
+  assert.equal(calls,2);
+  assert.equal(records.at(-1).providerRequests,2);
+  assert.equal(records.at(-1).status,"FAIL");
 });
