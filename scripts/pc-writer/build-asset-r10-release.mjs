@@ -78,9 +78,16 @@ const gate=assetR10PublicationDryRun(payload);if(gate.status!=='PASS')throw Erro
 save(path.join(base,'local-asset-bubble-r10-release-payload.json'),payload);
 console.log(JSON.stringify({status:'LOCAL_RELEASE_READY',score:payload.score,scoreObservationQuarter:payload.scoreObservationQuarter,currentQuarterStatus:payload.currentQuarterStatus,trendPoints:payload.trend.length,gate:gate.status,providerRequests:0,remoteWrites:0}));
 }
-// The explicit Writer CLI marker survives Windows drive/junction aliases: the
-// ESM loader may canonicalize an entry path while argv[1] retains its alias.
-export function shouldRunR10ReleaseCli({argv=process.argv,modulePath=fileURLToPath(import.meta.url)}={}){
- return argv.includes('--run-r10-release')||Boolean(argv[1]&&path.resolve(argv[1])===modulePath);
+// The explicit marker supports newer Writer callers; realpath equivalence also
+// supports the installed legacy caller across Windows C:/E: junction aliases.
+export function shouldRunR10ReleaseCli({argv=process.argv,modulePath=fileURLToPath(import.meta.url),realpath=fs.realpathSync.native}={}){
+ if(argv.includes('--run-r10-release'))return true;
+ if(!argv[1])return false;
+ const entry=path.resolve(argv[1]);
+ if(entry===modulePath)return true;
+ try{
+  const lhs=realpath(entry),rhs=realpath(modulePath);
+  return process.platform==='win32'?lhs.toLowerCase()===rhs.toLowerCase():lhs===rhs;
+ }catch{return false;}
 }
 if(shouldRunR10ReleaseCli())buildRelease();
