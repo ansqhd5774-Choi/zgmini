@@ -135,6 +135,57 @@ test("BLS shared quota stop is preserved as a bounded group/run failure code", a
   assert.equal(otherProvider.result.groupResults[0].failureCode, "PROVIDER_QUOTA_GUARD");
 });
 
+test("real BLS and BED providers exclude pre-network quota refusals from physical requests", async () => {
+  const now = () => new Date("2026-11-09T12:00:00.000Z");
+  const quotaStop = () => Object.assign(Error("PROVIDER_QUOTA_GUARD"), {
+    code: "PROVIDER_QUOTA_GUARD", provider: "BLS",
+    reason: "BLS_UNREG_25_PER_24H_STOP",
+  });
+  const blocked = createEmploymentR6Provider({
+    now, fetchImpl: async () => { throw quotaStop(); },
+  });
+  await assert.rejects(
+    () => blocked.fetchBlsGroup("BLS_JOLTS", { mode: "BACKFILL", currentYear: 2026 }),
+    error => error.code === "PROVIDER_QUOTA_GUARD" && error.requestCount === 0,
+  );
+  await assert.rejects(
+    () => blocked.fetchBed({ mode: "BACKFILL", currentYear: 2026 }),
+    error => error.code === "PROVIDER_QUOTA_GUARD" && error.requestCount === 0,
+  );
+
+  let fetchCalls = 0;
+  const partlySent = createEmploymentR6Provider({
+    now,
+    fetchImpl: async () => {
+      fetchCalls++;
+      if (fetchCalls === 1) {
+        return new Response(JSON.stringify({ status: "REQUEST_SUCCEEDED", Results: { series: [] } }), {
+          status: 200, headers: { "content-type": "application/json" },
+        });
+      }
+      throw quotaStop();
+    },
+  });
+  await assert.rejects(
+    () => partlySent.fetchBlsGroup("BLS_JOLTS", { mode: "BACKFILL", currentYear: 2026 }),
+    error => error.requestCount === 1,
+  );
+  assert.equal(fetchCalls, 2);
+
+  const uncertainNetwork = createEmploymentR6Provider({
+    now,
+    fetchImpl: async () => {
+      const error = quotaStop();
+      error.requestReserved = true;
+      throw error;
+    },
+  });
+  await assert.rejects(
+    () => uncertainNetwork.fetchBlsGroup("BLS_JOLTS", { mode: "BACKFILL", currentYear: 2026 }),
+    error => error.requestCount === 1,
+  );
+});
+
 test("provider calls remain counted when a later raw snapshot DB write fails", async () => {
   const runs = [];
   const store = {
