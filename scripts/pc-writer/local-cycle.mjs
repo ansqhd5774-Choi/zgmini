@@ -5,7 +5,6 @@ import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {save,read} from './d1.mjs';
 import {collectSupplyR10} from './supply-r10.mjs';
-import {collectAlpacaIncremental} from './alpaca-incremental.mjs';
 import {refreshSp500ShadowIfDue} from './asset-r10-sp500-refresh.mjs';
 import {dispatchEarningsRiskProvisionalR23} from './earnings-risk-provisional-r23-hook.mjs';
 import {collectionPublicationPolicy} from './collection-publication-policy.mjs';
@@ -32,7 +31,9 @@ try{
  const publicationPolicy=collectionPublicationPolicy({requested:publishRequested,collectionExit:collection.status,collectionStatus:collectionReport?.status,quotaGuarded});
  const publishAllowed=publicationPolicy.publishAllowed;
  const publishSkipped=null;
- let supplyR10=null,alpacaIncremental=null,sp500Shadow=null,sectorFearGreedR3=null,sectorFearGreedR3Report=null;
+ // User-excluded R10 source (2026-11-10): no further Alpaca incremental calls.
+ // Sector and other independent Alpaca consumers retain their own contracts.
+ let supplyR10=null,alpacaIncremental={status:'EXCLUDED_BY_USER',runRequests:0},sp500Shadow=null,sectorFearGreedR3=null,sectorFearGreedR3Report=null;
  const {publication,progressive}=await progressivePublication({
   enabled:lane==='core'&&publishAllowed,
   publish:async({early})=>{
@@ -51,8 +52,6 @@ try{
   }catch{
    sp500Shadow={status:'FAILED_PREVIOUS_INPUTS_PRESERVED',providerRequests:null};
   }
-  try{const result=await collectAlpacaIncremental(base);alpacaIncremental={status:result.status,runRequests:result.runRequests??0};}
-  catch{alpacaIncremental={status:'FAILED_PREVIOUS_INPUTS_PRESERVED',runRequests:null};}
  }
 
  if(lane==='core'){

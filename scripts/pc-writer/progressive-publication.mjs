@@ -13,15 +13,13 @@ export function auxiliaryInputCheckpoint(base){
   const outputs=db.prepare("SELECT feed_key,snapshot_key,body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' ORDER BY feed_key,snapshot_key").all();
   const file=path.join(base,'supply-r10','inputs.json');
   const supply=fs.existsSync(file)?fs.readFileSync(file,'utf8'):null;
-  const alpacaFile=path.join(base,'asset-r10-alpaca','incremental-checkpoint.json');
-  const alpaca=fs.existsSync(alpacaFile)?fs.readFileSync(alpacaFile,'utf8'):null;
   // The S&P 500 shadow input is collected between the early and final Writer
   // passes. Include its actual stored checkpoint; otherwise fresh market-price
   // observations could be mistaken for unchanged auxiliary inputs and the
   // final R10 calculation/publication would be skipped.
   const hasInputTable=db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='market_input_batches_v1'").get();
   const sp500=hasInputTable?db.prepare("SELECT batch_key,body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE 'shadowSp500Benchmark:%' ORDER BY stored_at DESC LIMIT 1").get()??null:null;
-  return createHash('sha256').update(JSON.stringify({outputs,supply,alpaca,sp500})).digest('hex');
+  return createHash('sha256').update(JSON.stringify({outputs,supply,sp500})).digest('hex');
  }catch{return null;}finally{db?.close();}
 }
 
