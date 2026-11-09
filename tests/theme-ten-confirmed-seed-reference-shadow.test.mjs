@@ -14,6 +14,8 @@ import {SPACE_SATELLITE_R2_PUBLIC_KEY,SPACE_SATELLITE_R2_PUBLIC_VERSION,
  SPACE_SATELLITE_R2_PUBLIC_METHOD,SPACE_SATELLITE_R2_HISTORY_MODE,
  SPACE_SATELLITE_R2_SINGLE_POLICY}
  from '../worker/theme-space-satellite-r2.mjs';
+import {SPACE_SATELLITE_PUBLIC_KEY,SPACE_SATELLITE_PUBLIC_VERSION,
+ SPACE_SATELLITE_PUBLIC_METHOD} from '../worker/theme-space-satellite-r1.mjs';
 
 const now=Date.parse('2026-11-09T12:00:00Z');
 const time='2026-11-09T08:00:00Z';
@@ -88,7 +90,7 @@ function makeRecords(){
   observationDate:date,score:50,
   history:freshHistory.map(x=>({...x})),scoredDays:252,
   aumAsOf:{UFO:'2026-10-19',NASA:'2026-10-19',WARP:'2026-10-19',ROKT:'2026-10-19'}};
- return {seed,r37,dc,space};
+ return {seed,r37,dc,space,spaceR1:null};
 }
 function fakeDb(records){
  const rows=new Map([
@@ -96,6 +98,7 @@ function fakeDb(records){
   [THEME_NINE_R37_KEY,records.r37],
   [DC_POWER_PUBLIC_KEY,records.dc],
   [SPACE_SATELLITE_R2_PUBLIC_KEY,records.space],
+  [SPACE_SATELLITE_PUBLIC_KEY,records.spaceR1],
  ]);
  const calls=[];
  const db={prepare(sql){
@@ -193,6 +196,21 @@ test('missing DC and invalid/null DC score both block complete ten',async()=>{
 test('missing R2 and no R1 space blocks complete ten',async()=>{
  const missing=makeRecords();missing.space=null;
  assert.equal((await run(missing).promise).reason,'SPACE_CONFIRMED_NOT_ELIGIBLE');
+});
+
+test('valid older R1 space record is used only if R2 is absent',async()=>{
+ const records=makeRecords();records.spaceR1={...records.space,
+  version:SPACE_SATELLITE_PUBLIC_VERSION,
+  methodologyVersion:SPACE_SATELLITE_PUBLIC_METHOD,
+  historicalWeightMode:'CURRENT_BASKET_FIXED_AUM_RETROSPECTIVE_NOT_HISTORICAL_AUM'};
+ records.space=null;
+ const {promise,calls}=run(records);const result=await promise;
+ assert.equal(result.status,'PRIVATE_CONFIRMED_SHADOW_VALIDATED_NOT_PUBLIC_READY');
+ assert.equal(result.themes.length,10);
+ assert.equal(result.themes.at(-1).theme,'우주·위성');
+ assert.ok(calls.includes(SPACE_SATELLITE_R2_PUBLIC_KEY));
+ assert.ok(calls.includes(SPACE_SATELLITE_PUBLIC_KEY));
+ assert.equal(result.d1Writes,0);
 });
 
 test('R2 space allows partial-null history with true scoredDays count',async()=>{
