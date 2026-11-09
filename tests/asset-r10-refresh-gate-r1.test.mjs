@@ -17,3 +17,16 @@ test('R10 preserves a valid existing release if the input research file is missi
   assert.equal(preservePreviousR10({inputInstalled:false,calculationStatus:null,projectionStatus:'READY'}),true);
   assert.equal(preservePreviousR10({inputInstalled:false,calculationStatus:null,projectionStatus:'PENDING'}),false);
 });
+
+import {readFileSync} from 'node:fs';
+import {PUBLIC_PROJECTION_KEYS} from '../worker/market-public-projection-store.mjs';
+
+test('R10 preserve check is limited to assetBubble and cannot intercept supplyShock',()=>{
+  const order=Object.keys(PUBLIC_PROJECTION_KEYS);
+  assert.ok(order.indexOf('supplyShock')>order.indexOf('assetBubble'));
+  // An unscoped guard would incorrectly preserve a healthy supplyShock release.
+  assert.equal(preservePreviousR10({inputInstalled:false,projectionStatus:'READY'}),true);
+  const source=readFileSync(new URL('../scripts/pc-writer/run-local.mjs',import.meta.url),'utf8');
+  assert.match(source,/if\(id==='assetBubble'&&preservePreviousR10\(/);
+  assert.doesNotMatch(source,/if\(preservePreviousR10\(/);
+});
