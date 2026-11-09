@@ -171,7 +171,7 @@ export async function publishEmploymentR6OneYear({body,remote,dbId,now=Date.now(
   if(!Number.isSafeInteger(now)||now<body.sourceStoredAt)throw Error("INVALID_PUBLICATION_TIME");
   const current=(await remote.query(dbId,"SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?",[EMPLOYMENT_R6_PUBLIC_DISPLAY_KEY])).results?.[0];
   const prior=current?.body?JSON.parse(current.body):null;
-  if(prior&&validEmploymentR6PublicDisplay(prior)&&prior.sourceStoredAt>body.sourceStoredAt){
+  if(prior&&validEmploymentR6PublicDisplay(prior,{allowLegacy:true})&&prior.sourceStoredAt>body.sourceStoredAt){
     throw Error("REMOTE_SOURCE_NEWER");
   }
   if(prior&&hash(prior)===hash(body))return {status:"UNCHANGED",storedAt:current.stored_at};
