@@ -172,3 +172,18 @@
 - lib/market-score/sector-fear-greed-r3-public.mjs; scripts/pc-writer/sector-fear-greed-r3-local-cycle.mjs.
 - config/theme-data-registry.json; app/api/theme-fear-greed/route.ts; app/theme-fear-greed/theme-explorer.tsx.
 - PC 정본: ansqhd5774-Choi/zgmini-pc-control main의 AGENTS.md, docs/GENERAL_CHAT_START.md, docs/PC_AUTOMATION_STANDARD.md. 과거 성공 사례는 관측 시점/범위 내 재사용; 현재 PC·Cloudflare SHA는 추정하지 않는다.
+
+
+## 9. 재사용한 PC 실증 원장 — 현재/과거 증거의 범위
+
+이번 조회는 **새 pc-job를 생성하지 않고** 기존 고유 요청의 원격 결과 JSON을 직접 재검증했다.
+
+| 원본 요청/관측(KST) | 확인된 사실 | 판단 범위 | 미증명 |
+|---|---|---|---|
+| zgmini-pc-control #1127, 2026-11-10 05:03 | A급 core-runtime-source-readonly, Run 42689236967, status STATE_UNKNOWN, code CORE_NO_ACTIVE_TASK_ENGINE. 당시 승인 config source SHA 4273137a85adcc90c863a27f703baa749b05cb64, 요청 개발 SHA b23550194cba6be5c311e000b097ed425edcb3d0, Controller 실행 SHA badad9124157879d7a645b64f2768113d632355b. lastPass ALLOWLISTED_WORKER_STARTED, firstFail ALLOWLISTED_OPERATION. | 읽기 전용 요청이 수행됐고 **그 순간 활성 task engine 프로세스가 확인되지 않음**. 운영 쓰기0. | Core가 항상 꺼져 있다/수집 실패/DB 손상이라는 의미가 아님. runtimeSourceVerified=false, **실제 실행 중인 Core source SHA는 아직 UNKNOWN**. |
+| zgmini-pc-control #943, 2026-11-09 00:07 | A급 writer-publication-evidence-readonly, Run 42493168212, PASS ER1_WRITER_METADATA_READONLY. Writer source 165ca9ebbacf1782f7535aa6a8a3e9cfea80df44, 로컬 출력 해시=해당 D1 key 해시, perKeyReadback VERIFIED, matchedToLocal=true. | **시장캘린더 ER1 2026-11 공개 key 하나에 대한** 11/08 실제 Writer 게시 시점 readback 재사용. | 68개 점수 전체의 갱신 증거 아님. productionVerified=false, publicApiUiVerified=false. |
+
+- 원본 JSON: zgmini-pc-control/main/results/42689236967-1-seat-1.json 및 results/42493168212-1-seat-1.json (GitHub blob fetch 일치).
+- 공통 조정 #68의 2026-11-10 상태 기준, Controller #917 RECOVERY_REQUIRED는 Controller 전환·동일 lease 설치 범위에 영향. 독립 A/Reader·개별 소스 조사 전체에 전역 BLOCKER로 확장하지 않는다.
+- 개발 소스 main, PC 승인 config SHA, 실제 실행 프로세스 SHA, Writer source SHA, Cloudflare 배포 SHA는 **서로 다른 식별자**다. 위 두 사례의 SHA를 68개 점수의 현행 운영 버전으로 치환하지 않는다.
+- 단계1 잔여: 다음에 독립적 기존 기능 담당의 공개 sourceVersion과 저장 checkpoint·실제 관측일을 source 범위별로 대조한다. #1127 무조건 재발행 금지. 활성 task engine 부재 시 조회 불확정 결과를 보존하고 다른 독립 검증을 진행한다.
