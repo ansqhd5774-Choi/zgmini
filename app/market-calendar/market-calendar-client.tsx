@@ -23,7 +23,7 @@ type CalendarFeed={status:string;updatedAt?:string;sources?:Record<string,Source
 type CalendarRow={key:string;date:string;at:string|null;name:string;country:Country;category:string;kind:EventKind;actual:string|null;forecast:string|null;previous:string|null;major:boolean;importance:number;source:string;sourceUrl:string;checkedAt:string|null;status:'scheduled'|'released';fresh:boolean;modelInputCount?:number};
 
 const dayLabels=['일','월','화','수','목','금','토'];
-const sourceNames:Record<string,string>={bls:'BLS',bea:'BEA',fed:'연준',fed_calendar:'연준',census:'Census',eia:'EIA',usda:'USDA',cftc:'CFTC',treasury:'미국 재무부',tic:'미국 재무부 TIC',eia_epm:'EIA',nyfed:'뉴욕 연은'};
+const sourceNames:Record<string,string>={bls:'BLS',bea:'BEA',fed:'연준',fed_calendar:'연준',fed_fomc:'연준',census:'Census',eia:'EIA',usda:'USDA',cftc:'CFTC',treasury:'미국 재무부',tic:'미국 재무부 TIC',eia_epm:'EIA',nyfed:'뉴욕 연은'};
 const eventKinds:Record<string,{category:string;name:string;major:boolean}>={
  employment:{category:'고용',name:'미국 고용보고서 · 비농업고용·실업률',major:true},
  pce:{category:'물가',name:'미국 개인소득·지출(PCE)',major:true},
@@ -78,6 +78,7 @@ const dateCaption=(key:string)=>`${Number(key.slice(5,7))}.${key.slice(8,10)}`;
 const weekTitle=(start:string)=>`${Number(start.slice(5,7))}월 ${Math.ceil(Number(start.slice(8,10))/7)}주차`;
 const officialName=(item:OfficialEvent,defaultName:string)=>{
  if(item.id==='cftc-cot')return /Holiday-delayed/i.test(item.title)?`${defaultName} · 공휴일 지연`:defaultName;
+ if(item.id==='fomc'&&/잠정|tentative/i.test(item.title))return `${defaultName} · 일정 잠정`;
  if(item.id!=='gdp')return defaultName;
  const stage=/\bAdvance Estimate\b/i.test(item.title)?'1차 추정':/\bSecond Estimate\b/i.test(item.title)?'2차 추정':/\bThird Estimate\b/i.test(item.title)?'3차 추정':/\bInitial Estimate\b/i.test(item.title)?'초기 추정':/\bUpdated Estimate\b/i.test(item.title)?'수정 추정':null;
  return stage?`${defaultName} · ${stage}`:defaultName;
@@ -103,6 +104,7 @@ function mergeOfficial(feed:CalendarFeed|null):CalendarRow[]{
  const fromFeed:CalendarRow[]=[];
  const seen=new Set<string>();
  for(const item of collapseCrossSourceTradeDuplicates(feed.events)){
+  const fomcEvent=item.source==='fed_fomc'&&item.id==='fomc';
   const fedCalendarEvent=item.source==='fed_calendar'&&item.id.startsWith('fed-calendar-');
   const eiaEvent=item.source==='eia'&&['eia-wpsr','eia-wngsr','eia-steo'].includes(item.id);
   const eiaEpmEvent=item.source==='eia_epm'&&item.id==='eia-epm';
@@ -114,7 +116,7 @@ function mergeOfficial(feed:CalendarFeed|null):CalendarRow[]{
   const treasuryEvent=item.source==='treasury'&&/^treasury-(?:auction|announcement)-[a-z0-9]{9}$/.test(item.id);
   const ticEvent=item.source==='tic'&&/^tic-(?:monthly|quarterly-nonfinancial|quarterly-external-debt|annual-foreign-us-(?:preliminary|final)|annual-us-foreign-(?:preliminary|final))-20\d\d-(?:0[1-9]|1[0-2])$/.test(item.id);
   if(!validDate(item.date)||!(eventKinds[item.id]||fedCalendarEvent||eiaEvent||eiaEpmEvent||nyfedEvent||usdaEvent||cftcEvent||treasuryEvent||ticEvent||((item.source==='bls'||item.source==='bea'||item.source==='census')&&item.id.startsWith(`${item.source}-`)))||typeof item.sourceUrl!=='string'||!item.sourceUrl.startsWith('https://'))continue;
-  if(item.id==='fomc'||item.id==='press')continue;
+  if(item.id==='press'||(item.id==='fomc'&&!fomcEvent))continue;
   const duplicate=`${item.id}:${item.date}`;
   if(seen.has(duplicate))continue;
   seen.add(duplicate);
@@ -125,18 +127,22 @@ function mergeOfficial(feed:CalendarFeed|null):CalendarRow[]{
   const meta=eventKinds[item.id]??{category,name:item.title,major:false};
   // Provider feed supplies dates only. Keep an exact clock time solely when
   // the already verified manual snapshot matches this event and day.
-  const timed=manual.find(row=>row.key.startsWith(`manual-${item.id}-`)&&row.date===item.date);
+  const timed=manual.find(row=>row.key.startsWith(`manual-${item.id}-`)&&
+   (row.date===item.date||(fomcEvent&&row.at&&usDay(new Date(row.at))===item.date)));
   const cftcAt=cftcEvent?cftcCotReleaseAt(item.date):null;
   const ticAt=ticEvent?ticReleaseAt(item.date):null;
   const eventAt=timed?.at??cftcAt??ticAt;
   const displayDate=eventAt&&(cftcAt||ticAt)?kstDay(new Date(eventAt)):item.date;
+  const fomcDisplayDate=fomcEvent&&timed?timed.date:displayDate;
   // Existing verified actuals supersede past date-only schedule placeholders.
   const hasActual=manual.some(row=>row.status==='released'&&row.date===item.date&&((item.id==='cpi'&&row.source==='BLS')||(item.id==='pce'&&row.source==='BEA')));
   if(hasActual)continue;
-  fromFeed.push({key:`official-${duplicate}`,date:displayDate,at:eventAt,name:officialName(item,meta.name),country:'US',category:meta.category,kind:'economic',actual:null,forecast:null,previous:null,major:meta.major,importance:releaseImportance(item.id,item.title),source:sourceNames[item.source]??item.source,sourceUrl:item.sourceUrl,checkedAt:timed?.checkedAt??checkedAt,fresh:timed?false:fresh,status:'scheduled',modelInputCount:modelInputsForCalendarEvent(item)});
+  fromFeed.push({key:`official-${duplicate}`,date:fomcDisplayDate,at:eventAt,name:officialName(item,meta.name),country:'US',category:meta.category,kind:'economic',actual:null,forecast:null,previous:null,major:meta.major,importance:releaseImportance(item.id,item.title),source:sourceNames[item.source]??item.source,sourceUrl:item.sourceUrl,checkedAt:timed?.checkedAt??checkedAt,fresh:timed?false:fresh,status:'scheduled',modelInputCount:modelInputsForCalendarEvent(item)});
  }
  const scheduledIds=new Set(fromFeed.map(row=>row.key.slice('official-'.length)));
- return [...fromFeed,...manual.filter(row=>row.status==='released'||!scheduledIds.has(`${row.key.split('-')[1]}:${row.date}`))];
+ return [...fromFeed,...manual.filter(row=>row.status==='released'||
+  !(scheduledIds.has(`${row.key.split('-')[1]}:${row.date}`)||
+   (row.key.startsWith('manual-fomc-')&&row.at&&scheduledIds.has(`fomc:${usDay(new Date(row.at))}`))))];
 }
 
 export default function MarketCalendar(){
