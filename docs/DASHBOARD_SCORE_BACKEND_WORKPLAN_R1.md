@@ -26,7 +26,7 @@
 
 ## 다음 단일 필수 작업
 
-Controller #917의 별도 복구 담당자와 자원을 충돌시키지 않으면서, 독립적으로 **T02 데이터센터·전력 등록 테마**의 실제 R1 계산 입력·공개 계약을 조사하고 shadow 후보를 좁힌다. D09 PC 실측은 기존 승인 Reader/실행 증거에 `projection-checkpoint-r52.mjs`의 설치 SHA와 해당 입력이 확인되는 즉시 이어서 진행한다. 현재 확인한 A급 설치 사전이미지 조회 고정 목록에는 이 파일이 없으므로, Controller 작업 중 새 manifest/PC-job을 요청하지 않는다. 운영 변경이 필요하면 실제 겹치는 부분만 별도 승인받는다. 나머지 점수의 입력/주기를 임의 통일하지 않는다.
+Controller #917의 별도 복구 담당자와 자원을 충돌시키지 않으면서, 독립적으로 **D05 미국 종합 CM-R1**의 실제 입력 중 새 관측·정정에 영향받는 최소 필드와 저장된 일별 사건 계약을 조사한다. T02 데이터센터·전력은 개인 후보 계산까지 입증됐어도 권리 확인 및 공용 theme baseline 복구가 분리된 선행 의존성이라 직접 게시하지 않는다. D09 PC 실측은 기존 승인 Reader/실행 증거에 `projection-checkpoint-r52.mjs`의 설치 SHA와 해당 입력이 확인되는 즉시 이어서 진행한다. 현재 확인한 A급 설치 사전이미지 조회 고정 목록에는 이 파일이 없으므로, Controller 작업 중 새 manifest/PC-job을 요청하지 않는다. 운영 변경이 필요하면 실제 겹치는 부분만 별도 승인받는다. 나머지 점수의 입력/주기를 임의 통일하지 않는다.
 
 ## D09 신용위험 — 최초 읽기 전용 후보 연결 증거
 
@@ -55,6 +55,15 @@ Controller #917의 별도 복구 담당자와 자원을 충돌시키지 않으�
 - 실제 직접 GET `https://zgmini.kr/api/sector-fear-greed` 응답: 유효 JSON, `status=READY`, `phase=CONFIRMED`, `observationDate=confirmedObservationDate=2026-11-06`, `methodologyVersion=SECTOR-FEAR-GREED-R3-FIVE-AXIS-COMPLETE`, `sourceVersion=SECTOR-FEAR-GREED-R3-ROLLING-252-V1`, `referenceObservations=756`; **11개** sector 모두 존재, S01 `technology=18.6035`.
 - 공개 `history`는 **252개** 점, 첫 날짜 2025-11-06/마지막 2026-11-06이며 마지막 S01 값 18.6035; `sourceGeneratedAt=2026-11-07T00:02:27.703Z`, `updatedAt=2026-11-07T00:02:40.895Z`. 이는 **한 번 재계산·게시된 252일 추세**이지 모든 날짜에 각각 확정 게시됐다는 증거가 아니다.
 - 테스트 총합: 공통 서명 **9/9**, D09 **12/12**, S01 **13/13**, 합 **34/34 PASS**. 소스 기반 shadow 후보 연결 **D09+S01 두 종류**(2/68 논리 항목만 특정, S01 모듈을 나머지 S02–S11 설치 완료로 계산하지 않음); 공개 계약 GET 2개 PASS; 종단 검증·신규 일별 게시 여전히 **0/68**. 운영 PC 변경·스케줄·Writer·D1·Cloudflare 쓰기 **0건**.
+
+## 2026-11-10 T02 데이터센터·전력 테마 입력·발행 계약 조사 (구현 보류)
+
+- `config/theme-data-registry.json`에서 T02 `data-center-power`, ETF **DTCR/GRID**, 기준 **SPY**, 산식 `ETF_ONLY_T40_R20_V40_PAIR50`, 상태 `PRIVATE_PC_SCORE_AND_TASK_VERIFIED_PUBLICATION_PENDING`을 확인했다. 2026-10-25 기록은 private 점수 **12.32143**, 관측일 **2026-10-23**, `d1Writes=0`으로 **현재 공개 검증값이 아니다**.
+- `scripts/pc-writer/theme-data-center-power-r1.mjs`는 `themes/data-center-power/raw-manifest.json`의 각 파일 SHA-256과 `DTCR/GRID/SPY` 시계열을 확인하고 공통 **628세션 이상**, 최종 **252점** 개인 계산 결과를 생성한다. 가격은 공식 종가가 아닌 `UNADJUSTED_15_NY_HOURLY_PROXY_WITH_OFFICIAL_EARLY_CLOSE_12` 방식이라 원자료 계약을 그대로 표시해야 한다.
+- `worker/theme-data-center-power-r1.mjs::eligibleDcPower`는 **공통 공개 테마 기본 feed READY 및 최소 7개 테마**, 관측/게시 최신성, 독립 검증된 권리 또는 `licensingRiskAcceptedByPublisher=true`의 명시적 제한 승인, 원자료와 계산 결과 무결성, 과거 252점 정렬을 요구한다. 승인 없는 권리 수용값 생성·D1 측면 게시 금지.
+- 실제 GET `https://zgmini.kr/api/theme-fear-greed`: 유효 JSON, `status=UNAVAILABLE`, `reason=STORED_DATA_STALE`, 공개 `themes=[]` **0/30**. 이는 T02 하나의 코드 오류나 현재 PC 수집 실패를 곧바로 입증하지 않는다. **현재 T02 공개 end-to-end BLOCKED**, 68개 전체를 이 문제로 대기시키지 않는다.
+- 이 사유로 T02 shadow 스코어를 신규 운영 필드·게시 흐름에 연결하지 않는다. 먼저 승인된 D05 입력 계약에 대한 독립 개발을 계속하며, 테마 원담당의 기본 feed 복구와 별개로 진행한다.
+- GitHub 최신 `main`이 **e77f1435894d12a8fd01425d0649b566e1cf856d**로 이동해 본 전용 브랜치는 **11 ahead / 4 behind** 상태다. 해당 4커밋 변경 파일은 `scripts/pc-writer/run-local.mjs`, `scripts/pc-writer/build-asset-r10-release.mjs`, 자산 릴리스 테스트이며 본 브랜치의 신규 7파일과 직접 경로 중복은 없다. 승인 없는 rebase/reset/merge는 하지 않는다.
 
 ## 진행률 표기
 
