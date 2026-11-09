@@ -111,3 +111,12 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 - 신규 8/8 + 누적 **58/58** 단위 시뮬레이션 PASS; 신규 GitHub 2파일 blob SHA·본문 remote readback 2/2 확인. 기존 `worker/candidate-market-operational-store.mjs`, `scripts/pc-writer/market.mjs`, DB schema, Writer/PC task, D1, 운영 source는 수정하지 않음.
 - **진행률:** 실제 PC 동일 원자료 checkpoint→계산→로컬 이력→D1→API/UI 성공 **0/68 (0%→0%)**. 운영/source 승인 및 다른 기능 진행률과 혼합하지 않음.
 - **다음 단일 필수 실행:** 최신 승인된 실제 PC Reader/원장에 원자료 배치 key·digest를 같은 계산 사건으로 꺼낼 수 있는 A급 조회 계약이 존재하는지 확인한다. 기존 조회 결과에 부재하면 정확한 해당 파일/Reader의 경계와 승인 효과만 분리하고, source-only sim을 운영 PASS로 부풀리지 않는다.
+
+## 2026-11-10 D05 실제 PC 증거 경로 판정 및 공통 인계
+
+- 최신 `zgmini-pc-control` main `config/operations.json`과 `controller/operations.mjs`, `controller/source-inventory-runtime-readonly.mjs`, `controller/fear-greed-archive-readonly.mjs` 검토: 허용된 원자료 재고 A는 7계열별 배치 COUNT/MAX(stored_at)·요약만 반환하고, archive A는 `composite-observed` 계산 점수/시간·서명만 반환한다. **과거 계산 사건의 실제 선택 batch key/body SHA/checkpoint를 결합한 계약 없음**.
+- 이미 실행된 [PC #1023](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1023) / Run `42595227055`는 `source-inventory-runtime-readonly`에 `BLOCKED / OPERATION_NOT_ALLOWED`, `LAST PASS=EVENT_RECEIVED`, `FIRST FAIL=EVENT_OR_REQUEST_VALIDATION`, PC 운영 변경 0이었다. **저장소 allowlist와 설치 Controller allowlist 불일치가 실제 관측된 것**이므로 같은 Issue 재요청·다른 이름으로 우회하지 않는다.
+- **두 독립 간극**: (1) 현재 설치 A로 특정 D05 계산 출처 조회 불가(`EVIDENCE_ACCESS_GAP`), (2) 기존 archive `signature`는 점수/도메인 결과 기반 출력 FNV32라 2026-10-31 당시 원입력 인과 추적이 기록된 증거가 아님(`HISTORICAL_INPUT_LINEAGE_UNPROVEN`). 오늘 최신 7개 batch SHA 조회만으로 과거 사건을 복원 불가. 신규 Reader 증거 조회를 설치해도 **과거 입력 메타데이터가 원래 기록되지 않았다면 과거 출처 PROVEN 불가**.
+- 새 [공통 요청 #1206](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1206)에 원장 재사용·과거 사건 1건 인과 기록 가부·미기록 시 미래 계산 사건에 선택된 7 batch 및 SEC/E1-R5/Breadth 입력 체크포인트를 일치시킬 최소 비민감 계약만 인계. 소유권은 공통 조회 Controller/운영 Reader와 D05 원담당 기능으로 분리, 복구 중인 공유 Controller 설치 lane을 임의 점유하지 않음.
+- **진행률:** 시작·종료 실제 68개 공개 종단 완료 **0/68(0%→0%)**. 이번에는 개발/모의 테스트 재실행·PC 새 Issue·수집/DB·Writer·D1·운영 배포 **0건**. 공통 지원 이슈 #1206 발행 및 원문 근거 정리만 완료.
+- **다음 필수 행동 하나:** D05 원담당은 독립적으로 기존 `market.mjs` 계산 시점의 배치·SEC/E1-R5/Breadth 증거를 **입력/결과 계약 변경 없이** 어떤 이벤트 ID에 연결할 수 있는지 코드 호출 경계 한 곳을 확정하고, 공통 담당에게는 #1206의 과거 원장 증거 가부 판정을 맡긴다. 승인 없는 운영 연결·일별 백필·새 Controller 설치·기능별 예약 생성 금지.
