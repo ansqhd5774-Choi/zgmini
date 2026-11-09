@@ -40,6 +40,8 @@
 
 **11/09 23시 KST 보충:** [pc-control #1087](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1087)의 `WRITER_B_1063_CORE_RECOVERED`/2개 결과 readback은 **고용 Writer B #1063 잠금 복구**만 실증했다. [#996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/996)와 #917 Controller `RECOVERY_REQUIRED`는 별개로 지속되며 PR #1088은 Draft·실PC 미적용, R181 FIRST FAIL 미확보. 본 분리는 신규 PC 실행·공개 Gate 변경이 아니다.
 
+**2026-11-09 R181 신규 호환성 단서(원인 미확정):** GetMarketHistory 공식 [2026-11 API 이전 안내](https://getmarkethistory.com/docs/migrating-2026-11)와 [변경 이력](https://getmarkethistory.com/docs/changelog)에 따라 기존 요청 인수 `symbol/symbols`·`source/sources`는 각각 `ticker/tickers`·`dataset/datasets`로 변경됐고, 구 인수는 HTTP `400/renamed_parameter`, 미지원 인수는 `400/unknown_parameter`가 된다. 다만 R181 실PC 파일 `theme-market-history-r131/marketparquet-r167/r181-primary-cycle.mjs`의 GitHub 정본 경로는 현재 확인되지 않았고, 실제 최초 R181 `HTTP status`·`code`·`request_id`도 미확보다. **이 변경이 R181 STOP 원인이라고 단정하거나 확인 전 수집 URL을 임의 수정하지 않는다.** #996의 정규 복구 후 승인 읽기 전용 R181 진단에서 안전한 HTTP status/code와 실설치 source의 *파라미터 이름만* 대조한다. 파라미터 문제가 확인되면 기존 산식·권리·자료 계약·주기 불변의 최소 URL 수정만 승인 source에 적용하고 동일 대상 1회 재검증한다. 기존 다른 GET 수집기 `scripts/pc-writer/theme-optional-collect.mjs`는 경로형 `/api/v1/bars/stocks/{ticker}/1h`를 사용하며, 이 경로형 API는 변경 대상이 아니다.
+
 ### 2026-11-09 P1-02 실제 PC 증거 — 최종 검증 아님
 
 - **LAST PASS(읽기 전용 조회만):** [#1033 / `results/42597414102-1-seat-3.json`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/42597414102-1-seat-3.json), requestId `pc-c5ff88b8-0e9e-467a-934f-9902f9346234`, job `run-42597414102-1-seat-3`, 완료 `2026-11-09T09:58:36.676Z`(18:58:36 KST), `PASS/L7_RUNTIME_READONLY_INVENTORY`. 이는 **운영 READY와 무관**하며 result의 `operationalReadiness=NOT_ASSERTED`를 따른다.
