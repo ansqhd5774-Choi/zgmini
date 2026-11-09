@@ -92,3 +92,24 @@
 - 2026-11-10 05:03 KST A급 기존 #1127의 PC 승인 source SHA 4273137a85adcc90c863a27f703baa749b05cb64 확인, 실제 task engine runtime SHA는 CORE_NO_ACTIVE_TASK_ENGINE/STATE_UNKNOWN. 2026-11-09 00:07 KST 기존 #943의 **시장캘린더 ER1 key 한 건**의 로컬↔D1 해시 검증 PASS, 68개 전체 게시 증거가 아님.
 - **숫자 관리:** 68/68은 ID 식별의 100%이지 1단계 전체 15% 또는 사업 구현 100%를 의미하지 않음. 전체 프로젝트 가중 진행률은 여전히 **산정 보류**(runtime·저장·게시 증거별 세분 검증 필요).
 - **다음 필수 실행:** 이미 존재하는 기능별 Writer/PC 결과 원장과 공개 API 관측시각을 같은 sourceVersion/checkpoint로 대조해 영역별 마지막 유효 관측일·저장/계산/게시일 및 실제 지연을 기록한다. #1127의 STATE_UNKNOWN은 새로운 무조건 재요청 사유가 아님. 신규 자동 수집 예약/Cron 0개, 산식/DB/TTL/승인 source 변경 0건.
+
+
+## 9. 실행 실적 기록 — 2026-11-10 KST (제2차)
+
+- 실제 공개 웹 GET **11/11개 경로** 점검 + 홈페이지 읽기 전용 관측. 기존 PC pc-job **7건** 재조회·서로 다른 증거 수준 판정. 새 PC Issue·자동수집·예약·D1/SQLite 쓰기·배포 **0건**.
+- 이번 상세 기준선: [docs/DASHBOARD_SCORE_RUNTIME_BASELINE_R1.md](DASHBOARD_SCORE_RUNTIME_BASELINE_R1.md). 원격 GitHub readback 문서 일치 확인. 이 문서는 배포 성공 증거가 아닌 일회성 관측이다.
+- **단계 1(15% 배점): 진행 중.** 논리 식별/분류 **68/68**; 공급자 원관측→PC 저장→계산→D1 실읽기→UI로 이어지는 완전한 동일 checkpoint 증명 **0/68**. ID 식별만으로 단계 완료 처리하지 않는다.
+- **단계 2(15% 배점): 진행 중.** 공개 GET 실측 **11/11**, 기존 PC 증거 **7건**의 효력·시점 분류. 동일 checkpoint를 연결한 입력별 지연의 완전한 실측 **0/68**. HTTP 200·최근 저장 시각만으로 신규 입력 반영 PASS 처리 금지.
+- **단계 3–7(70% 배점):** 날짜/확정/정정 계약 미완료, 운영 구현·D1 게시·UI 이력·종단 시뮬레이션 신규 PASS **0건**. 전체 가중 실구현 진행률 **산정 보류**(기존 운영 기능의 실제 완료 증거를 무시하지 않되 근거 없는 숫자 배제).
+
+### LAST PASS / FIRST FAIL / NON_BLOCKING 분리
+
+1. **LAST PASS:** 기존 #1128에서 2026-11-10 05:07 KST Core local-cycle COMPLETE, 기존 #1136에서 05:32 KST checkout/config/checkpoint source SHA `70d2d1dbd8180255133bdd7fc925ae07bb8d6cc9` 동일; 공개 종합 API 12/12 도메인 READY. 이것이 해당 68개 원자료 전부의 신규 갱신 증명은 아니다.
+2. **현재 데이터 미갱신:** 미국 등락 R2 공개 API `FULL_MARKET_STALE_OBSERVATION`, 테마 공개 `STORED_DATA_STALE`·**0/30**. 정상 운영 중인 무관한 지표까지 차단하지 않는다.
+3. **원본 관측과 저장시각 차이:** 자산버블 새 저장 11/10 04:47 KST이나 확정 점수 관측분기 **2026-Q2**; 금리심리 새 저장 11/10 04:58 KST이나 원관측일 11/05; 섹터 11개 점수 기준 11/06. 각 저장시각만으로 새 공식 발표를 주장할 수 없다.
+4. **확인한 공통 인과 결함(개발 source 단계):** `worker/projection-checkpoint-r52.mjs`의 `readCoreCheckpoint`가 `market_public_snapshots_v1.current.stored_at`으로 `core:<timestamp>` 버전을 구성한다. `scripts/pc-writer/run-local.mjs`가 새 원자료 없이 current를 재저장할 수 있어, **공개 스냅샷 저장 변화 ≠ 공급자 원자료 변화**. 실제 운영 source 동일 여부와 입력별 반복 결과는 별도 조회 전 **UNKNOWN**. 승인 산식·DB·READY·운영 source는 변경하지 않는다.
+5. **분리된 공통 문제:** #917 Controller 복구/설치 lane의 `RECOVERY_REQUIRED`는 해당 lane의 확인 사항. 기존 #1128 PASS가 보여주는 독립 Core 정상실행을 전체 중단으로 잘못 분류하지 않는다. Writer asset #1067 `PREVIOUS_RELEASE_PRESERVED`는 신규 D1 공개 증거가 아니다.
+
+### 이어서 수행할 단일 필수 작업
+
+**새 입력이 없는데 재게시만 된 경우를 실제로 걸러낼 원본 checkpoint 위치·생성/갱신 경로를 main 코드와 기존 읽기 전용 원장에서 식별**한다. 이후 기존 Writer의 `sourceVersion`을 실제 입력 변경과 대조하는 최소 수정안을 만들고, DB/API 계약 변경이 필요하면 정확한 영향 범위를 사용자 승인에 올린다. 현재 점수 산식·발표주기·확정 Gate·이력·배포·자동 예약은 건드리지 않는다.
