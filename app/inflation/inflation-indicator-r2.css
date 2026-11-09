@@ -80,6 +80,10 @@
  .inflation-r2-mobile-criterion{display:flex;align-items:center;gap:7px;margin:6px 0 0;color:#d4e0e9;font-size:10px}
  .inflation-r2-mobile-criterion span{color:#7891a6;font-weight:700}
  .inflation-r2-mobile-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));margin-top:10px;border-top:1px solid rgba(68,103,133,.24)}
+ /* Treasury #16: long full-precision USD values must not overlap mobile columns. */
+ .inflation-r2-mobile-card[data-research-candidate="16"] .inflation-r2-mobile-metrics{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+ .inflation-r2-mobile-card[data-research-candidate="16"] .inflation-r2-mobile-metrics>div+div{border-left:0}
+ .inflation-r2-mobile-card[data-research-candidate="16"] .inflation-r2-mobile-metrics>div:last-child{grid-column:1/-1;border-top:1px solid rgba(68,103,133,.24)}
  .inflation-r2-mobile-metrics>div{min-width:0;padding:8px 6px 0}
  .inflation-r2-mobile-metrics>div+div{border-left:1px solid rgba(68,103,133,.24)}
  .inflation-r2-mobile-metrics span,.inflation-r2-mobile-metrics strong,.inflation-r2-mobile-metrics small{display:block;min-width:0;text-align:center}
