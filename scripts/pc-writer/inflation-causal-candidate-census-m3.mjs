@@ -16,9 +16,12 @@ const safeFile=file=>{try{const s=fs.lstatSync(file);return s.isFile()&&!s.isSym
 const validIso=x=>typeof x==='string'&&Number.isFinite(Date.parse(x))&&new Date(x).toISOString()===x;
 const monthDate=x=>{
   const raw=String(x??'').trim();
-  const match=raw.match(/^(20\d{2})-(0[1-9]|1[0-2])(?:-(0[1-9]|[12]\d|3[01]))?$/);
+  // Census EITS time_slot_date may include a zero-time suffix: YYYY-MM-DD 00:00:00.0.
+  // Accept only midnight to avoid interpreting arbitrary timestamps as observations.
+  const date=raw.replace(/^(20\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])) 00:00:00(?:\.0+)?$/, '$1');
+  const match=date.match(/^(20\d{2})-(0[1-9]|1[0-2])(?:-(0[1-9]|[12]\d|3[01]))?$/);
   if(!match)return null;
-  if(match[3]&&new Date(`${raw}T00:00:00Z`).toISOString().slice(0,10)!==raw)return null;
+  if(match[3]&&new Date(`${date}T00:00:00Z`).toISOString().slice(0,10)!==date)return null;
   return `${match[1]}-${match[2]}-01`;
 };
 
@@ -26,8 +29,12 @@ export function normalizeCensusM3Inventories(payload){
   if(!Array.isArray(payload)||payload.length<2||payload.length>20_000||
     !Array.isArray(payload[0]))throw fail('CENSUS_M3_SHAPE_INVALID');
   const headers=payload[0];
-  const mandatory=['data_type_code','time_slot_id','time_slot_date','seasonally_adj','category_code','cell_value','us'];
-  if(!mandatory.every(x=>headers.includes(x))||new Set(headers).size!==headers.length)
+  const mandatory=['data_type_code','time_slot_id','seasonally_adj','category_code','cell_value','us'];
+  // EITS includes the canonical month as an implicit `time` output column.
+  // Some responses omit the optional time_slot_date even when it is requested.
+  if(!mandatory.every(x=>headers.includes(x))||
+    (!headers.includes('time')&&!headers.includes('time_slot_date'))||
+    new Set(headers).size!==headers.length)
     throw fail('CENSUS_M3_HEADERS_INVALID');
   const observations=[],seen=new Set();
   for(const values of payload.slice(1)){
@@ -38,7 +45,7 @@ export function normalizeCensusM3Inventories(payload){
     if(String(row.us)!=='1')throw fail('CENSUS_M3_NATIONAL_FACET_INVALID');
     // time_slot_id is a Census internal integer, NOT a YYYY-MM observation date.
     // The required `time=YEAR` predicate returns a separate ISO month `time` field.
-    const date=monthDate(row.time_slot_date),raw=String(row.cell_value??'').replace(/,/g,'').trim();
+    const date=monthDate(row.time??row.time_slot_date),raw=String(row.cell_value??'').replace(/,/g,'').trim();
     if(!date||!/^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(raw)||!Number.isFinite(Number(raw))||
       Number(raw)<0||seen.has(date))throw fail('CENSUS_M3_INVENTORIES_VALUE_OR_DUPLICATE');
     seen.add(date);
@@ -95,7 +102,9 @@ export async function collectCensusM3Inventories({base,censusKey,quotaFetch,now=
   for(const y of [year-1,year]){
     const url=new URL(CENSUS_M3_ENDPOINT);
     for(const [k,v] of Object.entries({
-      get:'data_type_code,time_slot_id,time_slot_date,seasonally_adj,category_code,cell_value,error_data',
+      // Match the existing Growth G016 MTM/TI request: EITS returns `time`
+      // implicitly, with the observation month as YYYY-MM.
+      get:'data_type_code,time_slot_id,seasonally_adj,category_code,cell_value,error_data',
       time:String(y),category_code:'MTM',seasonally_adj:'yes',key:censusKey.trim(),'for':'us:*',
     }))url.searchParams.set(k,v);
     const res=await quotaFetch(url,{method:'GET',redirect:'manual',signal:AbortSignal.timeout(20_000)});
@@ -135,3 +144,4 @@ export async function collectCensusM3Inventories({base,censusKey,quotaFetch,now=
     latest:observations.at(-1).date,sourceStoredAt:doc.sourceStoredAt,fileSha256,
     sourceHashes:provenance.map(x=>x.sourceSha256)};
 }
+

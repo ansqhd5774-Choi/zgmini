@@ -35,6 +35,25 @@ test('distinct CPI and PPI series and periods are strict; M13 is not a month',()
   assert.throws(()=>normalizeInflationCandidateBls(payload(makeSeries(finalDemandPpi,'.')),{group:'ppi'}),/VALUE_OR_DUPLICATE/);
 });
 
+test('official BLS 2025-10 shelter CPI missing marker stays absent without dropping valid months',()=>{
+  const asSeries=id=>({seriesID:id,data:[
+    {year:'2026',period:'M09',value:'450.429',footnotes:[{}]},
+    {year:'2025',period:'M10',value:'-',footnotes:[{code:'X',text:'Data unavailable due to the 2025 lapse in appropriations'}]},
+    {year:'2025',period:'M09',value:'438.237',footnotes:[{}]},
+  ]});
+  const output=normalizeInflationCandidateBls(payload(asSeries(rent),asSeries(ownerEquivalentRent)),{group:'cpi'});
+  for(const id of [rent,ownerEquivalentRent]){
+    assert.deepEqual(output[id].map(x=>x.date),['2025-09-01','2026-09-01']);
+    assert.equal(output[id].some(x=>x.date==='2025-10-01'),false);
+  }
+  const bad=asSeries(rent);
+  bad.data[1].footnotes=[{code:'P'}];
+  assert.throws(()=>normalizeInflationCandidateBls(payload(bad,asSeries(ownerEquivalentRent)),{group:'cpi'}),/VALUE_OR_DUPLICATE/);
+  bad.data[1].footnotes=[{code:'X'}];
+  bad.data.push({year:'2026',period:'M09',value:'452.000',footnotes:[]});
+  assert.throws(()=>normalizeInflationCandidateBls(payload(bad,asSeries(ownerEquivalentRent)),{group:'cpi'}),/VALUE_OR_DUPLICATE/);
+});
+
 test('CPI and PPI provider events save independently and preserve all three series',async t=>{
   const ctx=fixtureBase();t.after(ctx.clear);
   const requests=[];
