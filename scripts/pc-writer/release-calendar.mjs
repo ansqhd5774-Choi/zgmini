@@ -14,6 +14,17 @@ const requestHeaders={'user-agent':'ZGMINI/1.0 (+https://zgmini.kr/about/)'};
 const isoYear=(date,year)=>date.startsWith(String(year)+'-');
 const monthName=['january','february','march','april','may','june','july','august','september','october','november','december'];
 
+// Only bounded, non-sensitive codes are returned to the existing PC-local
+// collection report. The public calendar source contract stays unchanged.
+const safeTreasuryFailureCode=error=>{
+ const code=typeof error?.message==='string'?error.message:'';
+ if(/^TREASURY_HTTP_[1-5]\d{2}$/.test(code))return code;
+ if(/^TREASURY_(?:REDIRECT_NOT_ALLOWED|XML_TOO_LARGE_OR_EMPTY|OFFICIAL_XML_INVALID|RELEASE_ENTRIES_MISSING|ENTRY_SECTIONS_MISSING|ENTRY_FIELD_INVALID|DATES_UNAVAILABLE|STORED_DATES_UNAVAILABLE|DUPLICATE_CUSIP_DATE|FROM_DATE_INVALID)$/.test(code))return code;
+ if(error?.name==='TimeoutError'||error?.name==='AbortError')return 'TREASURY_TIMEOUT';
+ if(error?.name==='TypeError')return 'TREASURY_FETCH_FAILED';
+ return 'TREASURY_COLLECTION_FAILED';
+};
+
 async function fetchEiaPart({store,key,kind,now,fetchImpl,countRequest}){
  const url=EIA_SOURCE_URLS[kind];
  if(!url)throw Error('EIA_KIND_UNSUPPORTED');
@@ -343,6 +354,7 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
  try{
   await store.writeAttempt(key,now);
   const sources={},events=[];
+  let treasuryFailureCode=null;
   const year=new Date(now).getUTCFullYear();
   for(const [source,spec] of Object.entries(RELEASE_SOURCES)){
    try{
@@ -506,7 +518,8 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
     const saved=await store.readInput(key+':'+source);
     const parsed=parseReleaseCalendar(saved.body.text,source);
     sources[source]={status:'READY',checkedAt:new Date(now).toISOString(),sourceUrl:spec.page};events.push(...parsed);
-   }catch{
+   }catch(error){
+    if(source==='treasury')treasuryFailureCode=safeTreasuryFailureCode(error);
     sources[source]={status:'SOURCE_FAILED',checkedAt:previous?.body?.sources?.[source]?.checkedAt??null,
      attemptedAt:new Date(now).toISOString(),sourceUrl:spec.page,
      ...(source==='bls'?{annualCollectorVersion:1,coveredYears:[],missingYears:[year,year+1]}:{})};
@@ -517,6 +530,7 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
    updatedAt:new Date(now).toISOString(),sources,events:events.sort((a,b)=>a.date.localeCompare(b.date))};
   await store.writeOutput(key,body,now);
   return {status:body.status,providerRequests:requests,
-   sources:Object.fromEntries(Object.entries(sources).map(([k,v])=>[k,v.status]))};
+   sources:Object.fromEntries(Object.entries(sources).map(([k,v])=>[k,v.status])),
+   ...(treasuryFailureCode?{treasuryFailureCode}:{})};
  }finally{await locks.finish('release-calendar',lease,now,'IDLE');}
 }
