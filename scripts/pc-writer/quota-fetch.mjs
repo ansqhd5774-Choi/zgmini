@@ -18,7 +18,15 @@ async function blsRequestClass(input,init){
  catch{throw blsGuard('BLS_REQUEST_URL_UNKNOWN');}
  const version=/^\/publicAPI\/v([12])\/timeseries\/data\/?$/.exec(url.pathname)?.[1];
  const method=init?.method??(typeof Request!=='undefined'&&input instanceof Request?input.method:'GET');
- if(!version||String(method).toUpperCase()!=='POST')
+ const verb=String(method).toUpperCase();
+ // R4 geographic-diffusion retries a missing v1 series using a GET against
+ // /data/{seriesId}. Each retry is one unregistered provider request too.
+ // Official BLS series IDs can contain underscore, dash and hash. A literal
+ // hash in an ID must be percent-encoded in an HTTP path (%23).
+ const v1Single=/^\/publicAPI\/v1\/timeseries\/data\/((?:[A-Za-z0-9_-]|%23){1,80})\/?$/.test(url.pathname);
+ if(v1Single&&verb==='GET'&&!url.search&&!url.hash&&
+   (init?.body===undefined||init.body===null))return 'unregistered';
+ if(!version||verb!=='POST')
   throw blsGuard('BLS_REQUEST_SHAPE_UNVERIFIED');
  if(version==='1')return 'unregistered';
  let raw=init?.body;
