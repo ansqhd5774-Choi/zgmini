@@ -123,6 +123,12 @@ export async function applyOfficialManualStore({base,blsBytes,censusBytes,
     entered=true;
     // Re-read existing state and plan INSIDE the shared write lease.
     const prepared=await prepareOfficialManualStore({base:home,blsBytes,censusBytes,now,readWorkbook});
+    // This operation only fills missing CPI series in the existing BLS/PPI
+    // candidate. It must never create a CPI-only replacement if the prior
+    // WPSFD4 observation file was lost or has not yet been installed.
+    if(!Array.isArray(prepared.plan.documents.bls?.series?.WPSFD4)||
+      prepared.plan.documents.bls.series.WPSFD4.length===0)
+      fail('INFL_MANUAL_STORE_PPI_PREIMAGE_REQUIRED');
     if(prepared.status==='UNCHANGED')return {status:'UNCHANGED',stored:false,
       requestId:lease.requestId,latest:prepared.latest};
     const directory=childDirectory(home,DIRECTORY);
