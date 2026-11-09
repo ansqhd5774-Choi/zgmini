@@ -2,6 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {EMPLOYMENT_R6_FEATURES, EMPLOYMENT_R6_FORMULA_CONTRACT} from '../lib/market-score/employment-r6-formula.mjs';
 import {computeFeaturePoint, computeFamilyScores, computeEmploymentScore} from '../lib/market-score/employment-r6-feature-engine.mjs';
+import {buildEmploymentR6OneYearReadModel} from '../lib/market-score/employment-r6-one-year-read-model.mjs';
+import {validEmploymentR6PublicDisplay} from '../worker/employment-r6-public-display.mjs';
 
 const cpsIds=['U3_UNEMPLOYMENT','U6_UNEMPLOYMENT','LFPR','EPOP'];
 const find=id=>EMPLOYMENT_R6_FEATURES.find(f=>f.id===id);
@@ -85,4 +87,26 @@ test('the formula remains 29-required, same weights, no survivor reweighting',()
   assert.equal(EMPLOYMENT_R6_FORMULA_CONTRACT.officialCps2025OctoberGap.referenceMonths,119);
   const partial=computeFamilyScores(cpsIds.map(id=>computeFeaturePoint(find(id),fixture(find(id)))));
   assert.equal(computeEmploymentScore([],partial).status,'PARTIAL');
+});
+
+test('the new formula reads as a valid public snapshot only with genuine official CPS absence',()=>{
+  const observations=cpsIds.flatMap(id=>fixture(find(id)).map(row=>({...row,
+    retrievedAt:'2026-10-31T12:00:00.000Z'})));
+  const sourceStoredAt=Date.parse('2026-11-01T00:00:00.000Z');
+  const model=buildEmploymentR6OneYearReadModel(observations,{asOfDate:'2026-11-01',sourceStoredAt});
+  assert.equal(validEmploymentR6PublicDisplay(model),true);
+  assert.equal(model.summary.scoredFeatures,4);
+  for(const id of cpsIds){
+    const indicator=model.indicators.find(item=>item.id===id);
+    assert.equal(indicator.scoreStatus,'READY');
+    assert.equal(indicator.officialMissingReferenceDate,'2025-10-31');
+  }
+  assert.equal(validEmploymentR6PublicDisplay({...model,formulaHash:'sha256:18e18d1025d8c5b1ea9e4aa1bdd33596cfb8b5d5df7e59a6c2629f230be5480d'}),false);
+  const corrupted=buildEmploymentR6OneYearReadModel([
+    ...observations,
+    {logicalSeriesId:'U3_UNEMPLOYMENT_RATE',observationDate:'2025-10-31',value:4.7,
+      sourceHash:'manufactured-october-2025',retrievedAt:'2026-10-31T12:00:00.000Z'},
+  ],{asOfDate:'2026-11-01',sourceStoredAt});
+  assert.equal(corrupted.indicators[0].scoreStatus,'PARTIAL_SOURCE_CONFLICT');
+  assert.equal(validEmploymentR6PublicDisplay(corrupted),false);
 });
