@@ -5,8 +5,9 @@ import {THEME_NINE_R37_KEY,THEME_NINE_R37_ROSTER,eligibleNineR37}
  from './theme-nine-r37-public.mjs';
 import {addVerifiedDcPower} from './theme-data-center-power-r1.mjs';
 import {addVerifiedSpaceSatellite} from './theme-space-satellite-r1.mjs';
+import {THEME_ETF_ONLY_PUBLIC_KEY,validateThemeEtfOnlyPublic}
+ from './theme-etf-only-public.mjs';
 
-const SEED_KEY='public:theme-etf-only:r1';
 const NAMES=THEME_NINE_R37_ROSTER.filter(x=>x.theme!=='AI·반도체').map(x=>x.theme);
 const noPublic=(status,reason)=>({status,reason,publicReady:false,
  providerCalls:0,d1Writes:0,schedulerWrites:0,themes:[]});
@@ -22,19 +23,16 @@ function parsed(source){
 }
 
 /**
- * Probe only: must be invoked with the existing production L7 seed validator.
+ * Probe only: use the unmodified production L7 seed validator directly.
  * A stale but structurally approved seed can be a *reference*, NEVER output.
  * Missing/invalid seed and absent/invalid confirmed sidecars fail closed.
  * This does not confer vendor rights or authorize a new reader/API contract.
  */
-export async function buildPrivateTenConfirmedSeedReferenceShadow(db,{now=Date.now(),
- validateLegacySeed}={}){
- if(typeof validateLegacySeed!=='function')
-  return noPublic('PRIVATE_SHADOW_BLOCKED','LEGACY_SEED_VALIDATOR_REQUIRED');
- const seedRow=await row(db,'market_public_snapshots_v1',SEED_KEY);
+export async function buildPrivateTenConfirmedSeedReferenceShadow(db,{now=Date.now()}={}){
+ const seedRow=await row(db,'market_public_snapshots_v1',THEME_ETF_ONLY_PUBLIC_KEY);
  const seed=parsed(seedRow);
  let approvedSeed=false;
- try{approvedSeed=!!seed&&validateLegacySeed(seed)===true;}
+ try{approvedSeed=!!seed&&validateThemeEtfOnlyPublic(seed)===true;}
  catch{approvedSeed=false;}
  if(!approvedSeed)
   return noPublic('PRIVATE_SHADOW_BLOCKED','LEGACY_SEED_REFERENCE_UNAVAILABLE');
