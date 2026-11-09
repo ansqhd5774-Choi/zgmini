@@ -135,3 +135,48 @@ test('manual plan preserves existing PPI/history and keeps static origin auditab
   assert.equal(result.dbWrites,0);
   assert.equal(result.coreCheckpointWrites,0);
 });
+
+test('manual plan rejects unapproved revisions to existing BLS and Census observations',()=>{
+  const bls=parseOfficialBlsHousingFlatfile(encode([header,...rows].join('\n')));
+  const census={sourceKind:'CENSUS_OFFICIAL_NAICS_HISTORICAL_XLSX',
+    sourceSha256:'c'.repeat(64),observations:parseOfficialCensusInventoryRows([
+      row(34,'AMTMTI',2025,c2025),row(35,'AMTMTI',2026,c2026),
+    ])};
+  const previousBls={schemaVersion:1,provider:'BLS',
+    sourceVersion:'INFLATION_CAUSAL_CANDIDATE_BLS3_R1',
+    sourceStoredAt:'2026-11-07T10:00:00.000Z',
+    series:{[BLS_RENT_ID]:[{date:'2026-09-01',value:999.9}]}};
+  assert.throws(()=>planOfficialManualCandidateDocuments({bls,census,previousBls}),
+    /INFL_MANUAL_HISTORICAL_REVISION_UNAPPROVED/);
+  const previousCensus={schemaVersion:1,provider:'US_CENSUS_M3',
+    sourceVersion:'INFLATION_CAUSAL_CANDIDATE_CENSUS_M3_R1',
+    sourceStoredAt:'2026-11-07T10:00:00.000Z',selector:'MTM\/TI',
+    observations:[{date:'2026-09-01',value:999999}]};
+  assert.throws(()=>planOfficialManualCandidateDocuments({bls,census,previousCensus}),
+    /INFL_MANUAL_HISTORICAL_REVISION_UNAPPROVED/);
+});
+
+test('manual reimport with identical overlap keeps previous timestamps and historical rows',()=>{
+  const bls=parseOfficialBlsHousingFlatfile(encode([header,...rows].join('\n')));
+  const census={sourceKind:'CENSUS_OFFICIAL_NAICS_HISTORICAL_XLSX',
+    sourceSha256:'c'.repeat(64),observations:parseOfficialCensusInventoryRows([
+      row(34,'AMTMTI',2025,c2025),row(35,'AMTMTI',2026,c2026),
+    ])};
+  const first=planOfficialManualCandidateDocuments({bls,census,
+    now:'2026-11-09T10:00:00.000Z'});
+  const second=planOfficialManualCandidateDocuments({bls,census,
+    previousBls:first.documents.bls,previousCensus:first.documents.census,
+    now:'2026-11-09T11:00:00.000Z'});
+  assert.equal(second.status,'UNCHANGED');
+  assert.deepEqual(second.writes,{bls:false,census:false});
+  assert.equal(second.documents.bls.sourceStoredAt,'2026-11-09T10:00:00.000Z');
+  assert.equal(second.documents.census.sourceStoredAt,'2026-11-09T10:00:00.000Z');
+
+  const priorRow={date:'2024-01-01',value:400};
+  const withHistory={...first.documents.bls,series:{...first.documents.bls.series,
+    [BLS_RENT_ID]:[priorRow,...first.documents.bls.series[BLS_RENT_ID]]}};
+  const updated=planOfficialManualCandidateDocuments({bls,census,
+    previousBls:withHistory,previousCensus:first.documents.census});
+  assert.equal(updated.status,'UNCHANGED');
+  assert.deepEqual(updated.documents.bls.series[BLS_RENT_ID][0],priorRow);
+});
