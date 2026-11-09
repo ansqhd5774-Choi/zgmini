@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import {deflateRawSync} from 'node:zlib';
 import {
   parseOfficialBlsHousingFlatfile,parseOfficialCensusInventoryRows,
   parseOfficialCensusInventoryWorkbook,planOfficialManualCandidateDocuments,
@@ -100,6 +101,63 @@ test('Census official workbook AMTMTI rows preserve year/month and latest 2026-0
   assert.equal(got.latest,'2026-09-01');
   assert.match(got.sourceSha256,/^[a-f0-9]{64}$/);
   assert.equal(got.observations.length,21);
+});
+
+// Generate a tiny real XLSX/ZIP containing the same Census worksheet shape.
+// This tests the default xlsx-lite file reader, not only an injected mock.
+function xlsxFixture(){
+  const sheetRow=(number,year,values)=>{
+    const cells=[`<c r="A${number}" t="inlineStr"><is><t>AMTMTI</t></is></c>`,
+      `<c r="B${number}"><v>${year}</v></c>`];
+    for(const [i,value] of values.entries())if(value!==''&&value!==null)
+      cells.push(`<c r="${'CDEFGHIJKLMN'[i]}${number}"><v>${value}</v></c>`);
+    return `<row r="${number}">${cells.join('')}</row>`;
+  };
+  const files=[
+    ['xl/workbook.xml','<workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="m3-outp-invp" sheetId="1" r:id="rId1"/></sheets></workbook>'],
+    ['xl/_rels/workbook.xml.rels','<Relationships><Relationship Id="rId1" Target="worksheets/sheet1.xml"/></Relationships>'],
+    ['xl/worksheets/sheet1.xml',`<worksheet><sheetData>${sheetRow(34,2025,c2025)}${sheetRow(35,2026,c2026)}</sheetData></worksheet>`],
+  ];
+  const crc32=bytes=>{
+    let crc=0xffffffff;
+    for(const byte of bytes){
+      crc^=byte;
+      for(let i=0;i<8;i++)crc=(crc>>>1)^(crc&1?0xedb88320:0);
+    }
+    return (crc^0xffffffff)>>>0;
+  };
+  const locals=[],central=[];let offset=0;
+  for(const [filename,xml] of files){
+    const name=Buffer.from(filename),raw=Buffer.from(xml);
+    const compressed=deflateRawSync(raw),crc=crc32(raw);
+    const header=Buffer.alloc(30);
+    header.writeUInt32LE(0x04034b50,0);header.writeUInt16LE(20,4);
+    header.writeUInt16LE(8,8);header.writeUInt32LE(crc,14);
+    header.writeUInt32LE(compressed.length,18);header.writeUInt32LE(raw.length,22);
+    header.writeUInt16LE(name.length,26);
+    locals.push(header,name,compressed);
+    const directory=Buffer.alloc(46);
+    directory.writeUInt32LE(0x02014b50,0);
+    directory.writeUInt16LE(20,4);directory.writeUInt16LE(20,6);
+    directory.writeUInt16LE(8,10);directory.writeUInt32LE(crc,16);
+    directory.writeUInt32LE(compressed.length,20);directory.writeUInt32LE(raw.length,24);
+    directory.writeUInt16LE(name.length,28);directory.writeUInt32LE(offset,42);
+    central.push(directory,name);
+    offset+=header.length+name.length+compressed.length;
+  }
+  const centralBytes=Buffer.concat(central),eocd=Buffer.alloc(22);
+  eocd.writeUInt32LE(0x06054b50,0);eocd.writeUInt16LE(files.length,8);
+  eocd.writeUInt16LE(files.length,10);eocd.writeUInt32LE(centralBytes.length,12);
+  eocd.writeUInt32LE(offset,16);
+  return Buffer.concat([...locals,centralBytes,eocd]);
+}
+
+test('Census actual default XLSX reader parses a compressed workbook end to end',async()=>{
+  const result=await parseOfficialCensusInventoryWorkbook(xlsxFixture());
+  assert.equal(result.latest,'2026-09-01');
+  assert.equal(result.observations.length,21);
+  assert.equal(result.observations.at(-1).value,976044);
+  assert.equal(result.observations.find(x=>x.date==='2025-10-01').value,947012);
 });
 
 test('Census workbook rejects a duplicate AMTMTI year and an internal missing month',()=>{
