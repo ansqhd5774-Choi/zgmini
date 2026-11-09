@@ -20,7 +20,7 @@ test('produces only the five existing public Treasury event fields',()=>{
 });
 
 test('missing announcement skips only announcement; never copies the auction date',()=>{
- for(const missing of [null,undefined,'']){
+ for(const missing of [null,undefined,'','null']){
   const events=parseTreasuryAuctionHistoryRows([row({announcemt_date:missing})],range);
   assert.equal(events.length,1);
   assert.equal(events[0].id,'treasury-auction-912797aa1');
@@ -85,6 +85,9 @@ test('rejects malformed rows rather than fabricating CUSIPs, dates, or types',()
  ])assert.throws(()=>parseTreasuryAuctionHistoryRows([row(changed)],range),/TREASURY_HISTORY_/);
  assert.throws(()=>parseTreasuryAuctionHistoryRows({},range),/ROWS_INVALID/);
  assert.throws(()=>parseTreasuryAuctionHistoryRows([null],range),/ROW_INVALID/);
+ const [missingReopen]=parseTreasuryAuctionHistoryRows([
+  row({reopening:'null',announcemt_date:null})],range);
+ assert.equal(missingReopen.title,'미국 4주물 단기국채 입찰');
 });
 
 test('simulated 415 rows across three pages retain every unique auction',()=>{
