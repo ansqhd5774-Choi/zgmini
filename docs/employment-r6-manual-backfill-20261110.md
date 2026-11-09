@@ -2,6 +2,15 @@
 
 > 작업 정본: `feat/bls-registered-v2-20261109` (Draft PR #1036). 기존 산식·가중치·TTL·DB 계약은 임의로 수정하지 않는다. **자동 수집/정규 예약 검증은 기능 완료 후 후속이며, 수동 검증에 날짜·60초·24시간 같은 내부 대기 Gate를 새로 만들지 않는다.** 공급자 호출량·공유 Writer 안전 보호는 별개로 보존한다.
 
+## 2026-11-10 KST R2 5파일 Windows 실제 설치 신규 증거
+
+- 완료 목표 **6/8 = 75.0% 유지**. R2 런타임 설치 자체는 PASS지만, 저장 원자료 재계산 → D1 최신 R2 snapshot → 실제 공개 API/UI 전 구간은 아직 검증되지 않았다. 자동 자연 갱신 검증을 완료 선행 Gate로 삼지 않는다.
+- 제어 A 승인 전용 [#1192](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1192) main 병합(승인 5파일 경로만; Controller 변경 없음), 실제 A [#1193](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1193)에서 PC HEAD=config=checkpoint `48d3478030590ca63aaab2435e88c896608c70d3`, R2 5경로 **5/5 원본 SHA256 일치**, tracked dirty 0을 확인.
+- 정규 B 승인 manifest `approvals/writer-updates/employment-r6-cps-r2-fivefile-20261110.json`, 원문 SHA256 `dc6b0707ae4778ecf99cdcb186a96a0c64aac9441fd42ec09f509640ee1f325c`. [제어 PR #1194](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1194) main 병합(`3e8a442011209291288c388947ac5bf361febbff`).
+- 실제 B [#1195](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1195), requestId `f18e341c-e37e-4975-8a1b-2fa9818b9fae`, Run `42721416977`: **WRITER_B_INSTALLED_VERIFIED/WRITER_B_INSTALL_VERIFIED**, 동일 requestId 원격 `results/writer-b-source-install-f18e341c-e37e-4975-8a1b-2fa9818b9fae.json/.txt` **2/2 readback**, 정확히 5파일 변경. 이전 PC base `48d3478030590ca63aaab2435e88c896608c70d3`, R2 후보 `b37c7c029d36c6d29c50a5173018836918db5c78`에서 로컬 overlay source `de81749f83c086f5cb0cad7ed1d5cc958de19280` 생성. provenance SHA256 `7c30ba7cc6cf59612bfd319a0010ad545edcfbc8174ced7aef25248630c2d0ed`. 이 SHA는 GitHub branch SHA가 아니라 **PC 로컬 커밋**이며 자동 push/Cloudflare 배포되지 않는다. **NO_REEXECUTE**.
+- 후속 A [#1197](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1197) 기존 `pc-source-preflight`로 R2 설치 직후 운영 source/checkpoint 읽기 전용 대조 요청(대기/결과 확인 중). Core 실제 주기 출처·R2 게시 완료를 이 A 결과와 혼동하지 말 것.
+- 남은 필수 작업: ① 새 로컬 source 기반 Core의 R2 저장 계산·D1 저장/readback 직접 검증 ② Draft 기능 [#1057](https://github.com/ansqhd5774-Choi/zgmini/pull/1057)의 승인된 Cloudflare Git Integration 배포와 Production API/UI R2 formula/methodology 대조 ③ DOL/BED 원본 누락은 별도 안전 A가 실제로 설치될 때만 읽기 전용 결손 확인. 오래된 수동 B 승인 `installedSourceSha=144f...` 또는 과거 #1169 requestId 재사용 금지. 시간/9시/24시간 Gate 금지.
+
 ## 실제 완료 근거
 
 - 전체 기능 완료 **6/8 = 75.0%**; 수동 데이터 수집·게시 단계는 **PARTIAL**, 100% 완료로 계산하지 않는다.
