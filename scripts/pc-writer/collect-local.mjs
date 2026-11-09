@@ -7,6 +7,7 @@ import {loadLocalProviders,installLocalRuntime} from './local-env.mjs';
 import {save} from './d1.mjs';
 import {read} from './d1.mjs';
 import {createQuotaFetch} from './quota-fetch.mjs';
+import {resolveBlsCoreActivation} from './bls-core-activation.mjs';
 import {recordCollectionChecks} from './collection-checks.mjs';
 import {appendCollectionEvent,appendProviderFailure} from './collection-events.mjs';
 import {safeMacroDiagnostic} from '../../worker/macro-result-contract-r61.mjs';
@@ -17,8 +18,9 @@ import {overdueRateJob} from './rate-refresh-priority.mjs';
 import {collectSectorFearGreedR3EtfIncremental} from './sector-fear-greed-r3-etf-incremental.mjs';
 import {collectReleaseCalendar} from './release-calendar.mjs';
 
-// A trusted, source-pinned PC host may provide its reviewed shared BLS guard.
-// The ordinary CLI passes no grant; no env/Issue/config value self-activates it.
+// A trusted PC host may provide a reviewed shared BLS guard in-process. Direct
+// CLI execution can only load a separately B-provisioned sealed grant; a plain
+// environment/Issue/config toggle does not activate the shared reservation.
 export async function collectLocal(base,{lane='core',importOnly=false,job=null,blsUnregistered=undefined}={}){
  const core=localDatabase(path.join(base,'storage','core.sqlite'));
  const history=localDatabase(path.join(base,'storage','history.sqlite'));
@@ -104,7 +106,9 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
  try{
   const jobArg=process.argv.find(arg=>arg.startsWith('--job='));
   const job=jobArg?jobArg.slice('--job='.length):null;
-  console.log(JSON.stringify(await collectLocal(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),{lane:process.argv.includes('--korea')?'korea':'core',importOnly:process.argv.includes('--import-only'),job})));
+  const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
+  const blsUnregistered=process.argv.includes('--import-only')?undefined:resolveBlsCoreActivation(base);
+  console.log(JSON.stringify(await collectLocal(base,{lane:process.argv.includes('--korea')?'korea':'core',importOnly:process.argv.includes('--import-only'),job,blsUnregistered})));
  }
  catch(error){const report={at:new Date().toISOString(),lane:process.argv.includes('--korea')?'korea':'core',status:'FAILED',reason:'LOCAL_COLLECTION_FAILED',failureDiagnostic:safeCollectionFailure(error)};try{appendCollectionEvent(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),report);}catch{}console.log(JSON.stringify({...report,...(process.argv.includes('--import-only')?{importError:error.message}:{})}));process.exitCode=1;}
 }
