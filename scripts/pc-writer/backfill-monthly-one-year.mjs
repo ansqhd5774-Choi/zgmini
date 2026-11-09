@@ -4,10 +4,12 @@ import {fileURLToPath} from "node:url";
 import {localDatabase} from "./local-db.mjs";
 import {loadLocalProviders,installLocalRuntime} from "./local-env.mjs";
 import {createQuotaFetch} from "./quota-fetch.mjs";
+import {resolveBlsCoreActivation} from "./bls-core-activation.mjs";
 import {save} from "./d1.mjs";
 
-// A trusted in-process host may supply a reviewed shared BLS guard. Direct
-// scheduled/CLI execution supplies no grant, preserving its existing behavior.
+// A trusted in-process host may supply a reviewed shared BLS guard. Direct CLI
+// execution requires a separately B-provisioned sealed grant and otherwise
+// preserves existing behavior.
 export async function backfillMonthlyOneYear({
   base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),".zgmini","pc-writer"),
   asOf=new Date().toISOString().slice(0,10),
@@ -45,7 +47,14 @@ export async function backfillMonthlyOneYear({
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
- const report=await backfillMonthlyOneYear();
- if(report.status==="FAILED")process.exitCode=1;
- console.log(JSON.stringify(report));
+ try{
+  const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),".zgmini","pc-writer");
+  const report=await backfillMonthlyOneYear({base,blsUnregistered:resolveBlsCoreActivation(base)});
+  if(report.status==="FAILED")process.exitCode=1;
+  console.log(JSON.stringify(report));
+ }catch(error){
+  process.exitCode=1;
+  console.log(JSON.stringify({status:"FAILED",code:/^BLS_CORE_ACTIVATION_[A-Z_]+$/.test(error?.code??"")?
+   error.code:"MONTHLY_ONE_YEAR_BACKFILL_FAILED"}));
+ }
 }
