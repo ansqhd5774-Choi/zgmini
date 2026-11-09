@@ -21,7 +21,7 @@
 
 ## 다음 필수 실행 (필요한 것만)
 
-1. **DOL/BED 원본 누락 원인 1회 확인:** 기존 승인된 A 37개 중 R6 `run.detail_json.missingSeries`, ETA539 `parserMeta.latestCompleteWeek`, SQLite `STATE_INITIAL_CLAIMS` 51지역 최신 분포를 조회하는 기능은 없음. 공통 Controller 작업자와 조정하여 정확한 **0쓰기·0 공급자 호출·0 D1 쓰기, 비민감 집계값만** 조회하는 최소 A 범위/승인을 마련하기 전에는 우회 SQL이나 새 B 재수집을 실행하지 않음. 원장 조회에서 실제 최초 결손이 밝혀지면 그 한 곳만 수정·검증.
+1. **DOL/BED 원본 누락 원인 1회 확인:** 기존 승인된 A 34개 중 R6 `run.detail_json.missingSeries`, ETA539 `parserMeta.latestCompleteWeek`, SQLite `STATE_INITIAL_CLAIMS` 51지역 최신 분포를 조회하는 기능은 없음. 공통 Controller 작업자와 조정하여 정확한 **0쓰기·0 공급자 호출·0 D1 쓰기, 비민감 집계값만** 조회하는 최소 A 범위/승인을 마련하기 전에는 우회 SQL이나 새 B 재수집을 실행하지 않음. 원장 조회에서 실제 최초 결손이 밝혀지면 그 한 곳만 수정·검증.
 2. **R2 예외 PC 적용:** 다른 기능/공통 Writer source 변동을 역검증하고, R2 변경 파일의 정규 원본 hash/overlay manifest/실제 승인 설치 경로로 반영. 승인 없는 운영 source 자동 교체, 광범위 PR #1036 무검토 main 병합, 임의 Cloudflare 직접 배포는 금지. 기능 담당이 수행.
 3. **저장→D1→API/UI 최종 대조:** 실제 R2 methodology/formula hash, 29개 관측일·점수·차트·원자료 수·sourceStoredAt·결측/지연을 각각 확인. 실패 지표를 0이나 가짜 관측으로 채우지 않는다. 기능이 충족된 뒤에만 예약 자연 갱신 검증 후속.
 
