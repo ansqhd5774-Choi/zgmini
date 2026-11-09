@@ -85,6 +85,19 @@ test("registered BED does not inherit the obsolete unregistered 25/day gate",asy
   assert.equal(received.env.BLS_REGISTRATION_KEY,"fixture-key");
 });
 
+test("BED runtime preserves failed-provider attempted request count in result and RUN ledger",async()=>{
+  const fsx=fakeStore();
+  const out=await runEmploymentR4BedQuarterlyStep({
+    env:{DB:db,BLS_API_KEY:"fixture-key"},now,storeFactory:fsx.factory,
+    gateReader:async()=>({latestStatus:null,latestCompletedAt:null,existingRuntimeAttempts24h:0,bedRuntimeAttempts24h:0}),
+    collectBed:async()=>{const error=new Error("BLS_BED_HTTP_429");error.requestCount=2;throw error;},
+  });
+  assert.equal(out.status,"FAIL");
+  assert.equal(out.providerRequests,2);
+  assert.equal(fsx.runs.at(-1).providerRequests,2);
+  assert.equal(fsx.runs.at(-1).status,"FAIL");
+});
+
 test("newly observed quarter produces SUCCESS and starts quarterly cadence",async()=>{
   const fsx=fakeStore();
   const out=await runEmploymentR4BedQuarterlyStep({
