@@ -1,5 +1,8 @@
 # ZGMINI 68개 점수 실제 일별 이력 — 백엔드 실행 계획 R1
 
+> **범위 정정 (2026-11-10 KST):** 사용자가 이 대화의 원래 목표를 **대시보드 점수 출력 기준 통일**로 재확인했다. 이 문서와 브랜치의 입력 감지·실제 일별 이력 구축은 **별도의 백엔드 개선 과제**이며, 원래 UI 출력 통일의 완료 조건·진행률 분모·필수 선행 Gate가 아니다. **현재 대화에서 이 브랜치의 후속 구현은 `DEFERRED_SEPARATE_SCOPE`**로 구분한다. 사용자/기능 담당자의 별도 진행 지시를 임의 취소하거나 기존 승인·코드·테스트를 폐기하는 뜻은 아니다. UI 출력 작업은 `codex/ui-improvements`에서 계속하며, 원인 분석 정본은 [`docs/DASHBOARD_SCORE_OUTPUT_SCOPE_DRIFT_R1.md`](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/ui-improvements/docs/DASHBOARD_SCORE_OUTPUT_SCOPE_DRIFT_R1.md) 참조. 아래 '다음 단일 필수 작업'은 이 **별도 백엔드 과제 재개 시에만** 적용된다.
+
+
 - 기준: `ansqhd5774-Choi/zgmini` `main` `a34762f2932667bb8111477653b92d5bb4b476c4`
 - 전용 개발 브랜치: `codex/dashboard-score-daily-r1` (UI 변경 금지)
 - 기존 사용자 확정 기준: `codex/ui-improvements/docs/DASHBOARD_SCORE_DAILY_UPDATE_STANDARD_R1.md`, `DASHBOARD_DAILY_SCORE_EXECUTION_PLAN_R1.md`, `DASHBOARD_SCORE_INPUT_LINEAGE_DESIGN_R1.md`
