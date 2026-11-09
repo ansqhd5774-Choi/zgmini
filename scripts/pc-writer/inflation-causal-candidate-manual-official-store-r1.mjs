@@ -83,7 +83,10 @@ function writeDocument(directory,name,doc){
     // A failed rename/readback is reported with the backup location; never
     // silently roll back another feature's concurrent operation or delete data.
     if(fs.existsSync(temp))try{fs.unlinkSync(temp);}catch{}
-    fail('INFL_MANUAL_STORE_DOCUMENT_WRITE_FAILED');
+    const failure=new Error('INFL_MANUAL_STORE_DOCUMENT_WRITE_FAILED');
+    failure.code='INFL_MANUAL_STORE_DOCUMENT_WRITE_FAILED';
+    failure.recovery={destination,backup,expectedSha256:expected};
+    throw failure;
   }
   return {sha256:expected,backup};
 }
@@ -128,9 +131,19 @@ export async function applyOfficialManualStore({base,blsBytes,censusBytes,
       census:writeArchive(directory,prepared.plan.expectedRawArchives.census.archive,censusBytes),
     };
     const writes={};
-    for(const key of ['bls','census']){
-      if(!prepared.plan.writes[key])continue;
-      writes[key]=writeDocument(directory,TARGETS[key],prepared.plan.documents[key]);
+    try{
+      for(const key of ['bls','census']){
+        if(!prepared.plan.writes[key])continue;
+        writes[key]=writeDocument(directory,TARGETS[key],prepared.plan.documents[key]);
+      }
+    }catch(error){
+      // Each individual file has an exact backup. Report a partially finished
+      // two-file run explicitly; an authorized operator owns recovery.
+      const failure=new Error('INFL_MANUAL_STORE_PARTIAL_COMMIT');
+      failure.code='INFL_MANUAL_STORE_PARTIAL_COMMIT';
+      failure.recovery={requestId:lease.requestId,committed:writes,
+        failingTarget:error.recovery??null,failureCode:error.code??'UNKNOWN'};
+      throw failure;
     }
     return {status:'SAVED_READBACK',stored:true,requestId:lease.requestId,
       sourceStoredAt:Object.fromEntries(Object.entries(writes).map(([key])=>[
