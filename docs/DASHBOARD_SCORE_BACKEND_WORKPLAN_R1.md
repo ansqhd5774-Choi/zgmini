@@ -103,3 +103,11 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 - 로컬 신규 **8/8** 및 누적 **50/50** 테스트 PASS; 코드·테스트 원격 2파일 신규 반영 후 blob SHA·본문 readback 2/2 일치 확인. 원격 임의 운영 실증·PC 설치·D1 쓰기 아님.
 - **미완료:** 현재 score 계산 경로에서 선택 입력을 어댑터에 전달하는 실제 shadow 연결, 계산 당시 7 batch 및 SEC/E1-R5/Breadth의 동시 증거, PC source 런타임, D1/API/UI 동일 계산 사건. 68개 종단 **0/68 (전체 0%)** 보존.
 - **다음 단일 행동:** 실제 `readStoredMarketInputs`가 이미 선택한 batch들을 계산 결과와 함께 전달하는 **선택형 read-only evidence callback**을 전용 개발 브랜치에서 검토·시뮬레이션한다. 현재 반환 JSON·공개 계약을 바꾸지 않는 설계만 검증하고, 운영 변경 및 공유 Writer 소유권·승인이 필요한 단계는 분리한다.
+
+## 2026-11-10 D05 계산 입력 비차단 shadow 관찰 (운영 미적용)
+
+- `lib/score-history/market-input-observation-shadow-r1.mjs` 및 시험 신규 반영. 기존 `readStoredMarketInputs` 함수를 인자로 받아 Reader가 실제 호출한 `store.readInput(key)` 선택값을 감시하고, 그대로 Reader로 반환한다. 선택된 7개 batch마다 기존 비파괴 `readSelectedMarketBatchProvenance`를 호출해 출처 증거를 분리 생성한다.
+- **검증 실패도 점수 계산 입력 자체는 바꾸지 않음.** 선택배치 부재 `MISSING`, 중복/읽지 않은 키/DB 미일치 `UNPROVEN`을 구분하고, 임의 SQL 실패 상세는 기록하지 않는다. 원래 Reader 자체 오류는 정상적으로 상위에 전달한다. **7배치 VERIFIED도 D05 SEC/E1-R5/Breadth의 완전 인과/게시 완료가 아님**을 `SHADOW_7_BATCHES_ONLY`로 고정.
+- 신규 8/8 + 누적 **58/58** 단위 시뮬레이션 PASS; 신규 GitHub 2파일 blob SHA·본문 remote readback 2/2 확인. 기존 `worker/candidate-market-operational-store.mjs`, `scripts/pc-writer/market.mjs`, DB schema, Writer/PC task, D1, 운영 source는 수정하지 않음.
+- **진행률:** 실제 PC 동일 원자료 checkpoint→계산→로컬 이력→D1→API/UI 성공 **0/68 (0%→0%)**. 운영/source 승인 및 다른 기능 진행률과 혼합하지 않음.
+- **다음 단일 필수 실행:** 최신 승인된 실제 PC Reader/원장에 원자료 배치 key·digest를 같은 계산 사건으로 꺼낼 수 있는 A급 조회 계약이 존재하는지 확인한다. 기존 조회 결과에 부재하면 정확한 해당 파일/Reader의 경계와 승인 효과만 분리하고, source-only sim을 운영 PASS로 부풀리지 않는다.
