@@ -4,7 +4,6 @@ Disallow: /api/
 Allow: /api/fear-greed$
 Allow: /api/indicators/korea-funds$
 Allow: /api/market-score$
-Disallow: /signin-with-chatgpt
 Disallow: /signout-with-chatgpt
 
 Sitemap: https://zgmini.kr/sitemap.xml
