@@ -44,24 +44,39 @@ function childBatch(base,requestId){
   const source=new URL('../scripts/pc-writer/bls-unregistered-reservation.mjs',import.meta.url).href;
   const script=`import {reserveR6UnregisteredBlsBatch} from ${JSON.stringify(source)};
     const opts=JSON.parse(process.argv[1]);
-    try {reserveR6UnregisteredBlsBatch(opts);process.stdout.write('RESERVED');}
-    catch(e){process.stdout.write(e.code??'UNEXPECTED_ERROR');process.exitCode=2;}`;
-  return new Promise((resolve,reject)=>{
-    const child=spawn(process.execPath,['--input-type=module','--eval',script,
-      JSON.stringify({base,approvedBase:base,requestId,count:18,now})],
-      {stdio:['ignore','pipe','pipe']});
-    let stdout='',stderr='';
-    child.stdout.setEncoding('utf8').on('data',s=>stdout+=s);
+    process.stdout.write('READY\\n');
+    process.stdin.once('data',()=>{
+      try {reserveR6UnregisteredBlsBatch(opts);process.stdout.write('RESERVED');}
+      catch(e){process.stdout.write(e.code??'UNEXPECTED_ERROR');process.exitCode=2;}
+    });`;
+  const child=spawn(process.execPath,['--input-type=module','--eval',script,
+    JSON.stringify({base,approvedBase:base,requestId,count:18,now})],
+    {stdio:['pipe','pipe','pipe'],shell:false});
+  let stdout='',stderr='',readyResolve,readyReject,readySeen=false;
+  const ready=new Promise((resolve,reject)=>{readyResolve=resolve;readyReject=reject;});
+  const done=new Promise((resolve,reject)=>{
+    child.stdout.setEncoding('utf8').on('data',s=>{
+      stdout+=s;
+      if(!readySeen&&stdout.includes('READY\n')){readySeen=true;readyResolve();}
+    });
     child.stderr.setEncoding('utf8').on('data',s=>stderr+=s);
-    child.on('error',reject);
-    child.on('close',code=>resolve({code,stdout,stderr}));
+    child.on('error',error=>{readyReject(error);reject(error);});
+    child.on('close',code=>{
+      if(!readySeen)readyReject(Error('CHILD_EXITED_BEFORE_READY'));
+      resolve({code,stdout:stdout.replace('READY\n',''),stderr});
+    });
   });
+  return {ready,go:()=>child.stdin.end('GO\n'),done};
 }
 
 test('independent Node processes competing for the last 18 physical slots cannot both reserve',async()=>{
   const base=fixture(7);
   try{
-    const results=await Promise.all([childBatch(base,job),childBatch(base,competingJob)]);
+    const children=[childBatch(base,job),childBatch(base,competingJob)];
+    await Promise.all(children.map(child=>child.ready));
+    // Both children are running and waiting at the same explicit barrier.
+    children.forEach(child=>child.go());
+    const results=await Promise.all(children.map(child=>child.done));
     assert.equal(results.filter(x=>x.code===0&&x.stdout==='RESERVED').length,1,
       JSON.stringify(results));
     const refused=results.find(x=>x.code!==0);
