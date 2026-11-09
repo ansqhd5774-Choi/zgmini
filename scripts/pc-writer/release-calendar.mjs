@@ -6,6 +6,7 @@ import {USDA_WASDE_URL,parseUsdaWasdeHtml} from '../../lib/usda-calendar.mjs';
 import {CFTC_COT_URL,parseCftcCotHtml} from '../../lib/cftc-calendar.mjs';
 import {TREASURY_CUSIP_XML_URL,parseTreasuryCusipXml} from '../../lib/treasury-calendar.mjs';
 import {TREASURY_AUCTION_HISTORY_URL,fetchTreasuryAuctionHistoryPages} from '../../lib/treasury-auction-history-source.mjs';
+import {TREASURY_DIRECT_HISTORY_URL,fetchTreasuryDirectAuctionHistory,parseTreasuryDirectAuctionRows} from '../../lib/treasury-auction-history-taws.mjs';
 import {parseTreasuryAuctionHistoryRows,mergeTreasuryHistoryEvents} from '../../lib/treasury-auction-history.mjs';
 import {TIC_RELEASE_DATES_URL,parseTicReleaseDatesHtml} from '../../lib/tic-calendar.mjs';
 import {publicFeedStore} from '../../worker/public-feed-store.mjs';
@@ -17,6 +18,7 @@ const isoYear=(date,year)=>date.startsWith(String(year)+'-');
 const monthName=['january','february','march','april','may','june','july','august','september','october','november','december'];
 const TREASURY_FAILURE_CODE=/^TREASURY_(?:HTTP_[1-5]\d{2}|REDIRECT_NOT_ALLOWED|XML_TOO_LARGE_OR_EMPTY|OFFICIAL_XML_INVALID|RELEASE_ENTRIES_MISSING|ENTRY_SECTIONS_MISSING|ENTRY_FIELD_INVALID|DATES_UNAVAILABLE|STORED_DATES_UNAVAILABLE|DUPLICATE_CUSIP_DATE|FROM_DATE_INVALID|TIMEOUT|FETCH_FAILED|COLLECTION_FAILED)$/;
 const TREASURY_HISTORY_FAILURE_CODE=/^TREASURY_HISTORY_(?:HTTP_[1-5]\d{2}|WINDOW_INVALID|PAGE_INVALID|CLIENT_INVALID|TIMEOUT|FETCH_FAILED|REDIRECT_NOT_ALLOWED|CONTENT_TYPE_INVALID|PAGE_TOO_LARGE|BODY_READ_FAILED|JSON_INVALID|PAGE_META_INVALID|PAGE_COUNT_MISMATCH|ROW_KEY_INVALID|PAGE_DUPLICATE|TOTAL_MISMATCH|READBACK_INVALID|ROWS_INVALID|ROW_INVALID|CUSIP_INVALID|AUCTION_DATE_INVALID|ANNOUNCEMENT_DATE_INVALID|REOPENING_INVALID|EVENT_CONFLICT|COLLECTION_FAILED)$/;
+const TREASURY_TAWS_FAILURE_CODE=/^TREASURY_TAWS_(?:HTTP_[1-5]\d{2}|WINDOW_INVALID|CLIENT_INVALID|TIMEOUT|FETCH_FAILED|REDIRECT_NOT_ALLOWED|CONTENT_TYPE_INVALID|TOO_LARGE|BODY_READ_FAILED|JSON_INVALID|ROWS_INVALID|ROW_INVALID|AUCTION_DATE_INVALID|RESULT_INVALID|CUSIP_INVALID|CHRONOLOGY_INVALID|TYPE_INVALID|REOPENING_INVALID|TERM_INVALID|DUPLICATE_AUCTION|AWARDED_DATES_MISSING|READBACK_INVALID)$/;
 
 // Only bounded, non-sensitive codes are returned to the existing PC-local
 // collection report. The public calendar source contract stays unchanged.
@@ -30,7 +32,8 @@ const safeTreasuryFailureCode=error=>{
 };
 const safeTreasuryHistoryFailureCode=error=>{
  const code=typeof error?.message==='string'?error.message:'';
- return TREASURY_HISTORY_FAILURE_CODE.test(code)?code:'TREASURY_HISTORY_COLLECTION_FAILED';
+ return TREASURY_HISTORY_FAILURE_CODE.test(code)||TREASURY_TAWS_FAILURE_CODE.test(code)?
+  code:'TREASURY_HISTORY_COLLECTION_FAILED';
 };
 
 async function fetchEiaPart({store,key,kind,now,fetchImpl,countRequest}){
@@ -131,7 +134,7 @@ async function collectCftcSource({store,key,now,fetchImpl,countRequest,previous}
   coveredYears:[...coveredYears].sort()}};
 }
 
-async function collectTreasurySource({store,key,now,fetchImpl,countRequest,previous}){
+async function collectTreasurySource({store,privateStore,key,now,fetchImpl,countRequest,previous}){
  const url=TREASURY_CUSIP_XML_URL;
  countRequest();
  const response=await fetchImpl(url,{signal:AbortSignal.timeout(15000),headers:requestHeaders});
@@ -154,43 +157,66 @@ async function collectTreasurySource({store,key,now,fetchImpl,countRequest,previ
  const older=(previous?.body?.events??[]).filter(e=>e.source==='treasury'&&
   (e.date<today||!observedIds.has(e.id)));
  let history=[],historyReady=false,historyFailureCode=null;
+ const fromDate=new Date(Date.parse(today+'T00:00:00Z')-364*86400000).toISOString().slice(0,10);
  try{
-  // A normal Core collection collects the previous 365 UTC calendar days
-  // from FiscalData; the separate weekly feed remains the official near-term
-  // release source. No second provider request during normalization.
-  const fromDate=new Date(Date.parse(today+'T00:00:00Z')-364*86400000).toISOString().slice(0,10);
-  const fetched=await fetchTreasuryAuctionHistoryPages({fromDate,toDate:today,fetchImpl,countRequest});
-  const savedRows=[];
-  for(const page of fetched.pages){
-   const historyKey=`${key}:treasury:history:page:${page.number}`;
-   await store.writeInput(historyKey,{text:page.text,sourceUrl:TREASURY_AUCTION_HISTORY_URL,
-    fromDate,toDate:today,pageNumber:page.number},now);
-   const saved=await store.readInput(historyKey);
-   if(saved?.storedAt!==now||saved.body?.fromDate!==fromDate||
-    saved.body?.toDate!==today||saved.body?.pageNumber!==page.number||
-    saved.body?.text!==page.text)throw Error('TREASURY_HISTORY_READBACK_INVALID');
-   let parsed;
-   try{parsed=JSON.parse(saved.body.text);}catch{throw Error('TREASURY_HISTORY_READBACK_INVALID');}
-   if(!Array.isArray(parsed?.data)||parsed.data.length!==page.count||
-    Number(parsed?.meta?.count)!==page.count||
-    Number(parsed?.meta?.['total-count'])!==fetched.totalCount||
-    Number(parsed?.meta?.['total-pages'])!==fetched.pageCount)
-    throw Error('TREASURY_HISTORY_READBACK_INVALID');
-   savedRows.push(...parsed.data);
-  }
-  if(savedRows.length!==fetched.totalCount)throw Error('TREASURY_HISTORY_READBACK_INVALID');
-  history=parseTreasuryAuctionHistoryRows(savedRows,{fromDate,toDate:today});
+  // Full awarded history takes one TA_WS query. Its issue-date search has an
+  // extended endDate, but normalization only uses the requested auction days.
+  const fetched=await fetchTreasuryDirectAuctionHistory({fromDate,toDate:today,fetchImpl,countRequest});
+  const historyKey=key+':treasury:taws';
+  // The ~3MB original JSON exceeds publicFeedStore's single-input limit.
+  // Reuse the existing compressed, private PC input store instead of adding
+  // a table or sending the supplier's original rows to public D1.
+  await privateStore.writeInput(historyKey,{text:fetched.text,sourceUrl:TREASURY_DIRECT_HISTORY_URL,
+   fromDate,toDate:today,awardedCount:fetched.awardedCount},now);
+  const saved=await privateStore.readInput(historyKey);
+  if(saved?.storedAt!==now||saved.body?.fromDate!==fromDate||
+   saved.body?.toDate!==today||saved.body?.sourceUrl!==TREASURY_DIRECT_HISTORY_URL||
+   saved.body?.awardedCount!==fetched.awardedCount||saved.body?.text!==fetched.text)
+   throw Error('TREASURY_TAWS_READBACK_INVALID');
+  let raw;
+  try{raw=JSON.parse(saved.body.text);}catch{throw Error('TREASURY_TAWS_READBACK_INVALID');}
+  const rows=parseTreasuryDirectAuctionRows(raw,{fromDate,toDate:today});
+  if(rows.length!==fetched.awardedCount)throw Error('TREASURY_TAWS_READBACK_INVALID');
+  history=parseTreasuryAuctionHistoryRows(rows,{fromDate,toDate:today});
   historyReady=true;
  }catch(error){
-  // A failed annual backfill keeps weekly and prior official dates. Only a
-  // bounded code is persisted in the PC-private input lane for this attempt.
+  // FiscalData can preserve some history, but its published data lagged the
+  // official auction results by 21 auctions on 2026-11-09. Never mark this
+  // incomplete fallback READY or overwrite the original TA_WS failure code.
   historyFailureCode=safeTreasuryHistoryFailureCode(error);
+  try{
+   const fetched=await fetchTreasuryAuctionHistoryPages({fromDate,toDate:today,fetchImpl,countRequest});
+   const savedRows=[];
+   for(const page of fetched.pages){
+    const historyKey=`${key}:treasury:history:page:${page.number}`;
+    await store.writeInput(historyKey,{text:page.text,sourceUrl:TREASURY_AUCTION_HISTORY_URL,
+     fromDate,toDate:today,pageNumber:page.number},now);
+    const saved=await store.readInput(historyKey);
+    if(saved?.storedAt!==now||saved.body?.fromDate!==fromDate||
+     saved.body?.toDate!==today||saved.body?.pageNumber!==page.number||
+     saved.body?.text!==page.text)throw Error('TREASURY_HISTORY_READBACK_INVALID');
+    let parsed;
+    try{parsed=JSON.parse(saved.body.text);}catch{throw Error('TREASURY_HISTORY_READBACK_INVALID');}
+    if(!Array.isArray(parsed?.data)||parsed.data.length!==page.count||
+     Number(parsed?.meta?.count)!==page.count||
+     Number(parsed?.meta?.['total-count'])!==fetched.totalCount||
+     Number(parsed?.meta?.['total-pages'])!==fetched.pageCount)
+     throw Error('TREASURY_HISTORY_READBACK_INVALID');
+    savedRows.push(...parsed.data);
+   }
+   if(savedRows.length!==fetched.totalCount)throw Error('TREASURY_HISTORY_READBACK_INVALID');
+   history=parseTreasuryAuctionHistoryRows(savedRows,{fromDate,toDate:today});
+  }catch{ /* The previous valid calendar and current weekly release survive. */ }
+  // Only bounded, non-sensitive error codes are preserved in a PC-local lane.
   try{await store.writeInput(key+':treasury:history:failure-code-r1',
    {version:1,code:historyFailureCode},now);}catch{}
  }
- // Current weekly release wins same-ID/date title conflicts; older observed
- // dates and history remain visible without fabricating new dates.
- const events=mergeTreasuryHistoryEvents([...observed,...older],history);
+ // Current weekly release wins same-ID/date title conflicts. A successful
+ // official annual reread supersedes an older saved title for the same event;
+ // on partial fallback, keep the last valid older title instead.
+ const officialKeys=new Set(historyReady?history.map(e=>e.id+':'+e.date):[]);
+ const retainedOlder=older.filter(e=>!officialKeys.has(e.id+':'+e.date));
+ const events=mergeTreasuryHistoryEvents([...observed,...retainedOlder],history);
  return {events,state:{status:historyReady?'READY':'PARTIAL',checkedAt:new Date(now).toISOString(),
   sourceUrl:RELEASE_SOURCES.treasury.page,coveredCusips:[...new Set(observed.map(e=>e.id.split('-').at(-1)))].length},
   ...(historyFailureCode?{historyFailureCode}:{})};
@@ -394,10 +420,10 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
  let annualTreasuryAttempted=previous?.body?.sources?.treasury?.status==='SOURCE_FAILED';
  if(attempt&&!annualTreasuryAttempted){
   try{
-   const firstPage=await store.readInput(key+':treasury:history:page:1');
-   const failure=firstPage?.storedAt===attempt.storedAt?null:
+   const officialYear=await locks.readInput(key+':treasury:taws');
+   const failure=officialYear?.storedAt===attempt.storedAt?null:
     await store.readInput(treasuryHistoryDiagnosticKey);
-   annualTreasuryAttempted=firstPage?.storedAt===attempt.storedAt||
+   annualTreasuryAttempted=officialYear?.storedAt===attempt.storedAt||
     failure?.storedAt===attempt.storedAt;
   }catch{ /* An unreadable input cannot validate completed annual collection. */ }
  }
@@ -420,7 +446,8 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
    try{
     const diagnostic=await store.readInput(treasuryHistoryDiagnosticKey);
     if(diagnostic?.storedAt===attempt.storedAt&&diagnostic?.body?.version===1&&
-     TREASURY_HISTORY_FAILURE_CODE.test(diagnostic.body.code??''))
+     (TREASURY_HISTORY_FAILURE_CODE.test(diagnostic.body.code??'')||
+      TREASURY_TAWS_FAILURE_CODE.test(diagnostic.body.code??'')))
      treasuryHistoryFailureCode=diagnostic.body.code;
    }catch{}
   }
@@ -463,7 +490,7 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
      continue;
     }
     if(source==='treasury'){
-     const treasury=await collectTreasurySource({store,key,now,fetchImpl,countRequest:()=>requests++,previous});
+     const treasury=await collectTreasurySource({store,privateStore:locks,key,now,fetchImpl,countRequest:()=>requests++,previous});
      sources.treasury=treasury.state;
      events.push(...treasury.events);
      if(treasury.historyFailureCode)treasuryHistoryFailureCode=treasury.historyFailureCode;
