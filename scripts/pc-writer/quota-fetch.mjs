@@ -79,7 +79,10 @@ export function createQuotaFetch({
     else reservation.spendR6UnregisteredBlsSlot({...opts,requestId:r6LeaseId});
    }catch(error){
     if(error?.code?.startsWith('BLS_UNREG_'))throw blsGuard(error.code);
-    throw error;
+    // Missing/corrupt optional guard code is also a *pre-network quota stop*,
+    // not a provider network failure. Preserve the physical zero-call count
+    // for R6 and never leak raw import/runtime errors to public diagnostics.
+    throw blsGuard('BLS_UNREG_GUARD_UNAVAILABLE');
    }
   }
   // Failed reservation means zero physical requests and must not be written as
