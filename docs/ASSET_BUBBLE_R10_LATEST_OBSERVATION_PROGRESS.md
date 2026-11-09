@@ -46,6 +46,14 @@
 - R10 raw sidecar는 같은 `sourceVersion/sourceStoredAt`의 내용 변경을 `ASSET_R10_RAW_CONFLICTING_CONTENT`로 안전 거부한다. 보호 규칙을 완화하지 않으며 **새로운 유효 checkpoint**만 게시한다.
 - 오래된 Draft PR #961의 전체 diff 병합을 금지하고 최신 main `3910adf7…`에서 **PC raw 생성 1 + raw 검증 1 + UI 2 + 테스트 2 = 6파일만** [선택 통합 Draft PR #1050](https://github.com/ansqhd5774-Choi/zgmini/pull/1050)에 준비했다. 격리 관련 48/48·페이지 동등성 3/3 = **51/51 PASS**, 원격 compare 정확 6파일, HEAD `17c3c0485d30ec59e68f0e70c9472a5b1afab339`. [GitHub CI Run 42620675447](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/42620675447) **SUCCESS** (build·typecheck·regression·PC publication recovery·Cloudflare read contracts 전부 PASS). Draft·미병합, 실제 웹 배포·화면 검증 전이므로 단계6 NOT_DONE 유지.
 
+### 운영 화면 변경 전 기준점 — 실제 PC·모바일 조회 (2026-11-09 KST)
+
+- **읽기 전용 운영 브라우저 검증:** https://zgmini.kr/asset-bubble/ 의 실제 화면은 종합 READY, 안전점수 **22.6**, 평가 분기 **2026-Q2**, 구성요소 진단 **2026-Q4 PARTIAL**, 카드의 저장 데이터 기준일 **2026.11.9**로 표시된다. 이는 기존 공개 점수/기본 관측 카드이며 **신규 R10 latestObservation 게시 완료를 의미하지 않는다**.
+- **PC 화면:** 여섯 개 기존 구성 카드 각각의 저장된 이전/현재값·관측일·원자료 출처와 차트가 렌더링된다. 시장폭 괴리는 실제 3분기만, 나머지 다섯 지표는 실제 5분기 이력만 표시한다. 개발중 확장 카드 4개는 결측을 ‘—’로 표시하며 임의 값이 없다.
+- **모바일 화면:** 375×812 viewport의 동일 운영 URL에서 종합 22.6, 날짜/평가분기 및 기존 구성 카드 **6/6개**가 DOM으로 확인됐다. `meta viewport=width=device-width, initial-scale=1`, main width 360px / viewport 375px으로 가로 본문 초과 없음. 화면 캡처와 DOM 확인 후 viewport override 원복. 모바일 세부 차트의 새로운 마지막 관측점은 **아직 신규 게시 전이어서 완료 판정 불가**.
+- **표본 교차 확인:** 가격가속 현재 **36.508 로그 %p** (관측 2026-06-30), 시장폭 괴리 현재 **28.156 백분위점** (관측 2026-06-30), 과잉유동성 현재 **-1.242 %p** (관측 2026-04-01). 신규 Q3 값으로 오표기되지 않았다.
+- 이 검사는 **단계6 새 코드 배포 검증이 아닌 기존 운영 UI 회귀 기준점**이다. 단계별 완료 및 전체 33.3%는 변동하지 않는다. 새로운 PC 체크포인트·D1 게시 뒤 똑같은 카드/점수/날짜/마지막 관측점을 비교한다.
+
 ## 4. 모든 R10 작업 보고의 필수 형식
 
 작업 시작과 종료마다 다음 5줄을 **실제 증거 기준으로** 남긴다.
