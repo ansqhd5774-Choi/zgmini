@@ -3385,18 +3385,9 @@ body .zg-r55-market .zg-r55-shell[data-expanded="false"] article.zg-r55-card>.zg
   .zg-dashboard[data-view="dashboard"] .zg-r55-scale-labels{display:none}
   .zg-dashboard[data-view="dashboard"] [data-testid="breadth-unavailable-reason"]{display:none}
 
-  /* Default secondary information becomes one compact row; full views stay unchanged. */
-  .zg-dashboard[data-view="dashboard"] .zg-dashboard-secondary{display:grid;grid-template-columns:minmax(0,.72fr) minmax(0,1.28fr);gap:8px;margin-top:8px;align-items:stretch}
-  .zg-dashboard[data-view="dashboard"] .zg-dashboard-secondary>.zg-section,
-  .zg-dashboard[data-view="dashboard"] .zg-dashboard-secondary>.zg-strength-grid{margin-top:0}
-  .zg-dashboard[data-view="dashboard"] .zg-dashboard-secondary>.zg-section:has(.zg-scenario-empty){padding:8px}
-  .zg-dashboard[data-view="dashboard"] .zg-dashboard-secondary>.zg-section:has(.zg-scenario-empty) .zg-section-heading{min-height:22px;margin-bottom:4px}
-  .zg-dashboard[data-view="dashboard"] .zg-dashboard-secondary>.zg-section:has(.zg-scenario-empty) .zg-section-heading p{display:none}
-  .zg-dashboard[data-view="dashboard"] .zg-dashboard-secondary .zg-scenario-empty{min-height:46px;padding:8px;gap:8px}
-  .zg-dashboard[data-view="dashboard"] .zg-dashboard-secondary .zg-scenario-empty>svg{width:20px;height:20px}
-  .zg-dashboard[data-view="dashboard"] .zg-dashboard-secondary .zg-scenario-empty h3{margin:0;font-size:12px}
-  .zg-dashboard[data-view="dashboard"] .zg-dashboard-secondary .zg-scenario-empty p{margin-top:4px;font-size:11px;line-height:1.2}
-  .zg-dashboard[data-view="dashboard"] .zg-dashboard-secondary .zg-scenario-empty>span{font-size:22px}
+  /* Sector/theme charts occupy the full dashboard width after the outbreak card is removed. */
+  .zg-dashboard[data-view="dashboard"] .zg-dashboard-secondary{display:grid;grid-template-columns:minmax(0,1fr);gap:8px;margin-top:8px;align-items:stretch}
+  .zg-dashboard[data-view="dashboard"] .zg-dashboard-secondary>.zg-strength-grid{grid-template-columns:repeat(2,minmax(0,1fr));margin-top:0}
 
   .zg-dashboard[data-view="dashboard"] .zg-strength-grid-compact{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
   .zg-dashboard[data-view="dashboard"] .zg-strength-grid-compact .zg-strength{padding:8px}
