@@ -95,6 +95,30 @@ test('approved maintenance staging preserves old PPI, archives exact bytes, read
   assert.equal(fs.readFileSync(blsPath,'utf8'),before);
 });
 
+test('approved repair replaces corrupt CPI only, keeping the PPI and original backup intact',async t=>{
+  const {root,base}=scratch();t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  const target=path.join(base,'inflation-causal-candidates-r1');fs.mkdirSync(target);
+  const blsPath=path.join(target,'bls-cpi-ppi3.json');
+  const original={schemaVersion:1,provider:'BLS',
+    sourceVersion:'INFLATION_CAUSAL_CANDIDATE_BLS3_R1',
+    sourceStoredAt:'2026-11-07T10:00:00.000Z',frequency:'MONTHLY',
+    series:{WPSFD4:[{date:'2026-09-01',value:220.5,footnotes:[]}],
+      CUSR0000SEHA:[{date:'2026-09-01',value:null}],
+      CUSR0000SEHC01:[{date:'2026-08-01',value:440},
+        {date:'2026-08-01',value:440}]}};
+  const originalBytes=Buffer.from(JSON.stringify(original));
+  fs.writeFileSync(blsPath,originalBytes);
+  const result=await applyOfficialManualStore({...options(base),withApprovedWriterB:approved});
+  assert.equal(result.status,'SAVED_READBACK');
+  const updated=JSON.parse(fs.readFileSync(blsPath,'utf8'));
+  assert.deepEqual(updated.series.WPSFD4,original.series.WPSFD4);
+  assert.equal(updated.series.CUSR0000SEHA.at(-1).value,450.429);
+  assert.equal(updated.series.CUSR0000SEHC01.at(-1).value,445.195);
+  assert.deepEqual(updated.provenanceByGroup.cpi.repairedInvalidBlsSeriesIds,
+    ['CUSR0000SEHA','CUSR0000SEHC01']);
+  assert.deepEqual(fs.readFileSync(result.writes.bls.backup),originalBytes);
+});
+
 test('corrupt prior Census provenance is rejected and not replaced',async t=>{
   const {root,base}=scratch();t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
   const target=path.join(base,'inflation-causal-candidates-r1');fs.mkdirSync(target);
