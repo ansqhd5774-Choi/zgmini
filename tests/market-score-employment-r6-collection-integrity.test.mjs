@@ -2,7 +2,9 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { planEmploymentR6Collection, runEmploymentR6CollectionStep } from "../lib/market-score/employment-r6-collector.mjs";
-import { createEmploymentR6Provider } from "../lib/market-score/employment-r6-provider.mjs";
+import { createEmploymentR6Provider, expectedBlsCallsForGroup, parseBlsR6Rows, planBlsYearWindows, BLS_R6_REGISTERED_API_URL } from "../lib/market-score/employment-r6-provider.mjs";
+import { EMPLOYMENT_R6_GROUPS } from "../lib/market-score/employment-r6-contract.mjs";
+import { runEmploymentR6AutoCollection } from "../scripts/pc-writer/employment-r6-auto-collection.mjs";
 import { createEmploymentR6Store } from "../lib/market-score/employment-r6-store.mjs";
 
 const NATIONAL_CLAIMS_XML = "<week><weekEnded>10/31/2026</weekEnded>"
@@ -254,4 +256,109 @@ test("DOL release never records stale initial-claims observations as SUCCESS", a
   assert.equal(current.result.groupResults[0].status, "SUCCESS");
   assert.equal(current.run.detail.latestInitialClaimsObservationDate, "2026-10-31");
   assert.equal(current.run.detail.releaseAt, "2026-11-05T13:30:00.000Z");
+});
+
+
+test("registered R6 BLS v2 budgets are 7 release and 14 two-window backfill calls for 131 series", () => {
+  const groups = Object.keys(EMPLOYMENT_R6_GROUPS).filter(name => name.startsWith("BLS_"));
+  assert.equal(groups.length, 5);
+  const release = groups.reduce((sum, group) => sum + expectedBlsCallsForGroup(group, { registered: true }), 0);
+  const backfill = groups.reduce((sum, group) => sum + expectedBlsCallsForGroup(group, { mode: "BACKFILL", registered: true }), 0);
+  assert.equal(release, 7);
+  assert.equal(backfill, 14);
+  assert.equal(groups.reduce((sum, group) => sum + (EMPLOYMENT_R6_GROUPS[group].seriesIds?.length ?? 114), 0), 131);
+  assert.deepEqual(planBlsYearWindows({ mode: "BACKFILL", currentYear: 2026 }),
+    [{ startyear: "2016", endyear: "2025" }, { startyear: "2026", endyear: "2026" }]);
+  assert.equal(groups.reduce((sum, group) => sum + expectedBlsCallsForGroup(group, { mode: "BACKFILL" }), 0), 18);
+});
+
+test("registered R6 BLS parser accepts official Results array and legacy object without PIT regression", () => {
+  const series = [{ seriesID: "LNS14000000", data: [{ year: "2026", period: "M09", value: "4.2", footnotes: [] }] }];
+  const options = { releaseGroup: "BLS_EMPLOYMENT_SITUATION", retrievedAt: "2026-11-09T12:00:00.000Z" };
+  const object = parseBlsR6Rows({ Results: { series } }, options);
+  const array = parseBlsR6Rows({ Results: [{ series }] }, options);
+  assert.deepEqual(array.rows, object.rows);
+  assert.deepEqual(array.missingSeries, object.missingSeries);
+  assert.equal(array.rows[0].observationDate, "2026-09-30");
+  assert.equal(array.rows[0].availableAt, "2026-11-09T12:00:00.000Z");
+});
+
+test("registered R6 BED uses 50-series BLS v2 batches across existing two backfill windows", async () => {
+  const calls = [];
+  const key = "fixture-only-not-a-real-credential";
+  const provider = createEmploymentR6Provider({
+    env: { BLS_REGISTRATION_KEY: key },
+    now: () => new Date("2026-11-09T12:00:00.000Z"),
+    fetchImpl: async (url, options) => {
+      assert.equal(url, BLS_R6_REGISTERED_API_URL);
+      assert.equal(options.method, "POST");
+      const body = JSON.parse(options.body);
+      assert.equal(body.registrationkey, key);
+      assert.ok(body.seriesid.length > 0 && body.seriesid.length <= 50);
+      calls.push(body);
+      const series = body.seriesid.map(seriesID => ({
+        seriesID, data: [{ year: "2025", period: "Q01", value: "1", footnotes: [] }],
+      }));
+      return Response.json({ status: "REQUEST_SUCCEEDED", Results: calls.length % 2 ? [{ series }] : { series } });
+    },
+  });
+  const result = await provider.fetchBed({ mode: "BACKFILL", currentYear: 2026 });
+  assert.equal(result.requestCount, 6);
+  assert.equal(result.snapshots.length, 6);
+  assert.equal(result.rows.length, 228);
+  assert.deepEqual([...new Set(calls.map(call => call.startyear))], ["2016", "2026"]);
+  assert.equal(calls.filter(call => call.startyear === "2016").flatMap(call => call.seriesid).length, 114);
+  assert.equal(calls.filter(call => call.startyear === "2026").flatMap(call => call.seriesid).length, 114);
+  assert.ok(!JSON.stringify(result.snapshots.map(x => x.detail)).includes(key));
+});
+
+test("R6 provider with no registered key fails closed before any BLS network request", async () => {
+  let requests = 0;
+  const provider = createEmploymentR6Provider({
+    fetchImpl: async () => { requests++; throw Error("SHOULD_NOT_REACH_NETWORK"); },
+    now: () => new Date("2026-11-09T12:00:00.000Z"),
+  });
+  await assert.rejects(() => provider.fetchBlsGroup("BLS_JOLTS"), { code: "BLS_REGISTRATION_KEY_MISSING" });
+  await assert.rejects(() => provider.fetchBed(), { code: "BLS_REGISTRATION_KEY_MISSING" });
+  assert.equal(requests, 0);
+});
+
+test("R6 registered local 500/day gate retains quota accounting and blocks overflow", async () => {
+  let providerCalls = 0;
+  const store = {
+    async initialize() {},
+    async getLatestRunInMode() { return null; },
+    async getProviderRequestsSince() { return 499; },
+  };
+  const run = await runEmploymentR6CollectionStep({
+    env: { BLS_API_KEY: "fixture-registered-key" },
+    db: { prepare() { return {}; } },
+    mode: "BACKFILL", groups: ["BLS_JOLTS"],
+    now: () => new Date("2026-11-09T12:00:00.000Z"),
+    storeFactory: () => store,
+    providerFactory: () => ({ async fetchGroup() { providerCalls++; throw Error("MUST_NOT_FETCH"); } }),
+  });
+  assert.equal(run.providerRequests, 0);
+  assert.equal(providerCalls, 0);
+  assert.equal(run.groupResults[0].status, "SKIPPED_BLS_BUDGET");
+  assert.equal(run.groupResults[0].dailyLimit, 500);
+  assert.equal(run.groupResults[0].expectedRequests, 2);
+});
+
+test("PC R6 auto collection forwards only BLS keys and keeps diagnostics secret-free", async () => {
+  let received;
+  const result = await runEmploymentR6AutoCollection({
+    enabled: true, approvedSource: "source-sha", runningSource: "source-sha",
+    db: { prepare() {} }, fetchImpl: async () => {},
+    env: { BLS_API_KEY: "fixture-private-key", FRED_API_KEY: "other-private-key" },
+    collect: async args => {
+      received = args;
+      return { status: "NOOP", providerRequests: 0, groupResults: [], plannedGroups: [] };
+    },
+  });
+  assert.equal(received.env.BLS_API_KEY, "fixture-private-key");
+  assert.ok(!Object.hasOwn(received.env, "FRED_API_KEY"));
+  assert.equal(received.env.DB, received.db);
+  assert.ok(!JSON.stringify(result).includes("fixture-private-key"));
+  assert.ok(!JSON.stringify(result).includes("other-private-key"));
 });
