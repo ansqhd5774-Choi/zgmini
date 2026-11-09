@@ -159,7 +159,10 @@ try{
   const r10InputInstalled=id==='assetBubble'&&fs.existsSync(path.join(base,'local-asset-bubble-r10-breadth-research.json'));
   if(r10InputInstalled){
    try{
-    execFileSync(process.execPath,[path.join(root,'scripts/pc-writer/build-asset-r10-release.mjs')],{cwd:root,stdio:'pipe',windowsHide:true});
+    const releaseOutput=execFileSync(process.execPath,[path.join(root,'scripts/pc-writer/build-asset-r10-release.mjs'),'--run-r10-release'],{cwd:root,stdio:'pipe',windowsHide:true,encoding:'utf8'}).trim();
+    const receipt=JSON.parse(releaseOutput.split(/\r?\n/).at(-1));
+    if(receipt.status!=='LOCAL_RELEASE_READY'||receipt.gate!=='PASS')throw Error('R10_RELEASE_RECEIPT_NOT_READY');
+    if(readAssetR10Projection(base).status!=='READY')throw Error('R10_RELEASE_LOCAL_READBACK_NOT_READY');
     report.assetR10Calculation={status:R10_RECALCULATED_STATUS};
    }catch{report.assetR10Calculation={status:'FAILED_PREVIOUS_RELEASE_PRESERVED'};}
   }
