@@ -130,3 +130,11 @@
 - 해당 로컬 HEAD를 `zgmini`와 `zgmini-pc-control` GitHub 커밋/ref로 읽기 전용 대조했으나 **두 저장소 모두 원격 commit 조회 불가(422/404)**. `SOURCE_REF_UNRESOLVED`를 **운영 source 인과확인 미완료**로 분리; PC 파일 손상/전역 장애로 오판하지 않음. 자세한 증거는 `docs/DASHBOARD_SCORE_INPUT_LINEAGE_DESIGN_R1.md` 6절.
 - **완료 증거:** 68/68 ID, 11/11 대표 공개 GET, 7건 기존 PC 원장, 입력 감지 설계 초안 및 main/UI branch 공유 Writer 소스 SHA 차이 식별. **미완료:** 실제 PC source↔원격 코드 대조, 68개 종단 인과 PASS 0/68, 실제 코드·DB·D1·UI 적용 0건. 전체 7단계 완료 PASS 0/7 그대로.
 - **다음 필수 행동 1건:** 기존 허용된 읽기 전용 수단으로 실제 PC `sourceRoot`의 이번 변경 관련 Writer/projection 파일 해시와 원격 추적 가능 소스 버전을 대조한다. 현재 허용목록으로 불가능하면 그 기능만 `AUTOMATION_BLOCKED`로 명시하고, 무관 기능 조사·실제 원담당 업무는 계속한다. 정확한 백엔드 대상 기존 브랜치·소비자 계약을 결정하기 전 운영 변경은 하지 않는다.
+
+
+## 12. 실행 실적 — 2026-11-10 KST (제5차, 승인 overlay 정합 증명)
+
+- #1136 PC read-only 실제 파일 해시를 원격 source/승인 B manifest와 대조해 **선택 3파일의 provenance 3/3** 확인: `run-local.mjs`는 최신 main 원문 SHA-256과 일치, `collect-local.mjs`는 승인 `bls-registered-v2-13-writer-b-20261109.json` afterSha256과 일치, `employment-r6-provider.mjs`는 승인 `employment-r6-2015-600-onefile-20261109.json` afterSha256과 일치.
+- 이 세 파일은 **현재 PC 정적 파일**에 관한 증거다. 실제 실행 중 Core source SHA, 점수별 `projection-checkpoint-r52.mjs`의 PC 설치 해시, D1/UI 종단 갱신은 계속 미확인. 파일별 승인 overlay를 최신 main 전체로 덮어쓰지 않는다.
+- **진척:** 이번 추적 대상 0/3→3/3(100%); 전체 콘텐츠 인과 PASS 0/68→0/68, 7단계 최종 PASS 0/7 유지. 설계·파일 대조 성과를 배포·사업 완료율로 환산 금지.
+- **다음 필수 행동:** 이미 승인된 고정 A급 조회가 `worker/projection-checkpoint-r52.mjs`의 파일 해시를 지원하는지 확인하고, 지원하지 않으면 정확한 읽기 전용 허용목록/manifest 절차를 별도 공통 담당과 조정한다. 현재 정상 Core/타 기능은 기다리게 하지 않는다. 신규 예약·임의 B 설치 금지.
