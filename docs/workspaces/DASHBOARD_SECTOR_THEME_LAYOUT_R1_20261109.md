@@ -52,3 +52,11 @@ node --test tests/dashboard-secondary-two-panel-r1.test.mjs tests/market-explore
 - 실행: 브라우저의 PC/모바일 실제 레이아웃과 768~959px 경계 실측, 필요 시 최소 CSS 수정 및 관련 테스트
 - 통과 조건: 데스크톱 균등 2열, 모바일 전체폭 1열, 메뉴/카드 제거, 원 데이터·상호작용·독립 `/outbreak/` 보존, 시각적 잘림/겹침/공백 없음
 - 후속: 목적 제한 PR 경로의 사용자 승인·검증 후 GitHub main → Cloudflare → 공개 UI 확인. 자연 예약 갱신·무관한 고도화는 이번 목표의 선행 조건이 아니다.
+
+
+## 2026-11-09 후속 검사 관측 (사실과 범위 분리)
+
+- 관련 소스 테스트: 작업 파일 트리 `a0d6580ef0d070f693ec13dac97a5d2919d7c7e9`와 동일한 로컬 트리에서 `16/16 PASS`. 기존 상세 `/outbreak/` 페이지와 섹터/테마 차트 component 사용도 정적 확인.
+- 전체 `npm run typecheck`: **FAIL**, 첫 오류는 이번 변경 8파일 밖 `app/economic-indicators/inflation-research-inputs.tsx`가 `../../lib/inflation-causal-public-catalog.mjs`를 찾지 못한 `TS2307`; 이어서 해당 파일의 `TS7006/TS18048` 오류. 이 실패를 UI 구현 실패로 단정하지 않지만 전체 타입 검사 통과로 표현하지 않는다. 다른 지표 담당의 기존 source를 임의 변경하지 않는다.
+- 로컬 Vite 화면 서버: `uv_interface_addresses` 환경 오류로 기동 실패. PC/모바일 스크린샷을 확보하지 못했으므로 **실화면 검증은 미완료**다. 브라우저 도구에서도 화면 상태 조회가 시간 초과돼 디자인 PASS로 판단할 증거가 없다.
+- 다음 실행: 승인된 UI source의 실제 렌더 경로가 확보되면 390/510/768/959/960/1280/1366/1440px를 측정한다. UI 범위 밖 타입 오류는 해당 변경 PR의 CI에서 재현되는지 별도로 분류한다. 배포용 8파일 선별 경로 승인 전 무관한 main/운영 파일은 수정하지 않는다.
