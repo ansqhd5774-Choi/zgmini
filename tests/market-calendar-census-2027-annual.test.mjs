@@ -4,6 +4,9 @@ import {parseReleaseCalendar} from '../lib/release-calendar.mjs';
 import {economicInputCalendarCoverage,modelInputsForCalendarEvent} from '../lib/market-calendar-economic-input-display.mjs';
 import {ECONOMIC_CALENDAR_SOURCE_REGISTRY} from '../lib/market-calendar-economic-input-index.mjs';
 import {describeOfficialCalendarCoverage} from '../lib/market-calendar-source-links.mjs';
+import {localDatabase} from '../scripts/pc-writer/local-db.mjs';
+import {publicFeedStore} from '../worker/public-feed-store.mjs';
+import {collectReleaseCalendar} from '../scripts/pc-writer/release-calendar.mjs';
 
 // Published dates on the official Census 2027 list, represented as a synthetic
 // six-column page. Reference periods are test fixtures, not provider snapshots.
@@ -47,4 +50,46 @@ test('Census 2027 whole-year BFS and M3 dates parse into 23 distinct official re
  const source=describeOfficialCalendarCoverage(ECONOMIC_CALENDAR_SOURCE_REGISTRY,feed,{today:'2027-01-01'});
  assert.equal(source.officialWithStoredEvent,10);
  assert.equal(source.syntheticEventsCreated,0);
+});
+
+test('a failed next-year Census refresh retains the previously stored full-year official dates',async()=>{
+ const db=localDatabase(':memory:');
+ try{
+  const now=Date.parse('2026-11-09T12:00:00Z');
+  const store=publicFeedStore(db);
+  await store.initialize();
+  const past2027Html=`<table><tbody>${[
+   ...bfsDates.map((date,i)=>censusRow('Business Formation Statistics',date,`BFS ${i}`)),
+   ...m3Dates.map((date,i)=>censusRow("Full Report - Manufacturers' Shipments, Inventories and Orders",date,`M3 ${i}`)),
+  ].join('')}</tbody></table>`;
+  const prior2027=parseReleaseCalendar(past2027Html,'census');
+  assert.equal(prior2027.length,23);
+  const prior2025=parseReleaseCalendar(
+   `<table><tbody>${censusRow('Business Formation Statistics','2025-11-13','October 2025')}</tbody></table>`,'census');
+  assert.equal(prior2025.length,1);
+  await store.writeOutput('release-calendar',{
+   status:'READY',events:[...prior2025,...prior2027],
+   sources:{census:{status:'READY',coveredYears:[2026,2027]}},
+  },now-3600000);
+  const requested=[];
+  const fetchImpl=async url=>{
+   requested.push(url);
+   if(url.includes('calendar-listview-2026.html'))return new Response(
+    `<table><tbody>${censusRow('Business Formation Statistics','2026-11-13','October 2026')}</tbody></table>`);
+   return new Response('Temporarily unavailable',{status:503});
+  };
+  await collectReleaseCalendar(db,{now,fetchImpl});
+  const stored=(await store.readOutput('release-calendar')).body;
+  assert.equal(stored.sources.census.status,'READY');
+  assert.deepEqual(stored.sources.census.coveredYears,[2026],
+   'preserved older dates are not misreported as freshly fetched 2027 coverage');
+  const retained=stored.events.filter(event=>event.source==='census'&&event.date.startsWith('2027-'));
+  assert.equal(retained.length,23,'one failed next-year request must not delete already confirmed dates');
+  assert.deepEqual(new Set(retained.map(event=>`${event.id}:${event.date}`)),
+   new Set(prior2027.map(event=>`${event.id}:${event.date}`)));
+  assert.deepEqual(stored.events.filter(event=>event.source==='census'&&event.date.startsWith('2025-')),
+   prior2025,'an annual refresh must retain already published historic Census releases');
+  assert.equal(requested.filter(url=>url.includes('census.gov')).length,3,
+   'one annual 2026 fetch and two official 2027 fallbacks');
+ }finally{db.close();}
 });
