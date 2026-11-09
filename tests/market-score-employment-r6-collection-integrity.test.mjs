@@ -363,3 +363,42 @@ test("PC R6 auto collection forwards only BLS keys and keeps diagnostics secret-
   assert.ok(!JSON.stringify(result).includes("fixture-private-key"));
   assert.ok(!JSON.stringify(result).includes("other-private-key"));
 });
+
+test("R6 rejects malformed nested BLS Results but accepts genuinely empty series arrays", () => {
+  const options = { releaseGroup: "BLS_EMPLOYMENT_SITUATION", retrievedAt: "2026-11-09T12:00:00.000Z" };
+  const malformed = [
+    { status: "REQUEST_SUCCEEDED", Results: null },
+    { status: "REQUEST_SUCCEEDED", Results: [{}] },
+    { status: "REQUEST_SUCCEEDED", Results: [{ series: "bad" }] },
+    { status: "REQUEST_SUCCEEDED", Results: { series: null } },
+    { status: "REQUEST_SUCCEEDED", Results: [] },
+    { status: "REQUEST_SUCCEEDED", Results: [{ series: [{ seriesID: "LNS14000000", data: null }] }] },
+  ];
+  for (const payload of malformed) {
+    assert.throws(() => parseBlsR6Rows(payload, options), { code: "BLS_RESULTS_INVALID" });
+  }
+  for (const Results of [{ series: [] }, [{ series: [] }]]) {
+    const parsed = parseBlsR6Rows({ status: "REQUEST_SUCCEEDED", Results }, options);
+    assert.equal(parsed.rows.length, 0);
+    assert.equal(parsed.missingSeries.length, 9);
+  }
+});
+
+test("R6 malformed BLS BED batch fails before returning any raw snapshot as a valid group", async () => {
+  let calls = 0;
+  const provider = createEmploymentR6Provider({
+    env: { BLS_API_KEY: "fixture-secret" },
+    now: () => new Date("2026-11-09T12:00:00.000Z"),
+    fetchImpl: async () => {
+      calls++;
+      // First valid but empty bucket is not malformed. Second malformed
+      // bucket must reject the whole group, not return a partial success.
+      const Results = calls === 1 ? [{ series: [] }] : [{ series: "bad" }];
+      return Response.json({ status: "REQUEST_SUCCEEDED", Results });
+    },
+  });
+  await assert.rejects(() => provider.fetchBed({ mode: "BACKFILL", currentYear: 2026 }),
+    error => error.code === "BLS_RESULTS_INVALID" && error.requestCount === 2);
+  assert.equal(calls, 2);
+});
+
