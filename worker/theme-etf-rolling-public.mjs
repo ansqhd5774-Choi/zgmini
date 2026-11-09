@@ -3,6 +3,8 @@
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
 export const THEME_ETF_ROLLING_KEY='theme-etf-only-rolling';
 export const THEME_ETF_ROLLING_VERSION='THEME_ETF_ROLLING_R178';
+// Source-only opt-in: never accepted by the current public Reader.
+export const THEME_ETF_GMH_ONLY_CANDIDATE_CONTRACT='GMH_1H_CONFIRMED_ONLY_R1';
 const date=d=>typeof d==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(d)&&!Number.isNaN(Date.parse(d+'T00:00:00Z'))&&new Date(d+'T00:00:00Z').toISOString().slice(0,10)===d;
 const stamp=t=>typeof t==='string'&&Number.isFinite(Date.parse(t));
 const score=x=>typeof x==='number'&&Number.isFinite(x)&&x>=0&&x<=100;
@@ -11,7 +13,7 @@ const historyValid=(a)=>Array.isArray(a)&&a.length===252&&a.every((x,i)=>date(x?
 export async function immutableBaseHash(base,{digest=async b=>{const raw=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(b));return Array.from(new Uint8Array(raw)).map(x=>x.toString(16).padStart(2,'0')).join('')}}={}){
  return digest(JSON.stringify(base.themes.map(t=>({theme:t.theme,etfs:t.etfs,history:t.history}))));
 }
-export async function validRollingPublic(rolling,base,{now=Date.now(),expectedMethod='ETF_ONLY_T40_R20_V40_PAIR50'}={}){
+export async function validRollingPublic(rolling,base,{now=Date.now(),expectedMethod='ETF_ONLY_T40_R20_V40_PAIR50',allowGmhOnlyCandidate=false}={}){
  if(!rolling||rolling.status!=='READY'||rolling.version!==THEME_ETF_ROLLING_VERSION||!['CONFIRMED','PROVISIONAL'].includes(rolling.phase)||rolling.methodologyVersion!==expectedMethod)return false;
  for(const flag of ['publicationAuthorized','upstreamCommercialRightsVerified','derivedLicenseVerified','sourcePriceReconciled'])if(rolling[flag]!==true)return false;
  if(rolling.individualStocksUsed!==0||rolling.baseObservationDate!==base.observationDate||rolling.coverage?.etfs!==13||rolling.coverage?.benchmark!=='SPY'||rolling.coverage?.complete!==true)return false;
@@ -32,14 +34,22 @@ export async function validRollingPublic(rolling,base,{now=Date.now(),expectedMe
  for(const p of points){if(!date(p?.date)||p.date<=prev||Date.parse(p.date+'T00:00:00Z')>now||!p.scores||typeof p.scores!=='object'||Array.isArray(p.scores))return false;
   const names=base.themes.map(t=>t.theme);if(Object.keys(p.scores).length!==names.length||names.some(name=>!Object.hasOwn(p.scores,name)||!score(p.scores[name])))return false;prev=p.date;}
  if(rolling.lineage?.latestCompletedSession!==prev||!Number.isInteger(rolling.lineage?.confirmedPrimaryCount)||!Number.isInteger(rolling.lineage?.secondaryPendingCount)||rolling.lineage?.secondaryPendingCount!==points.length)return false;
- if(rolling.lineage.primarySource!=='GETMARKETHISTORY_1H_CLOSE'||rolling.lineage.secondarySource!=='MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED')return false;
+ // Existing dual-source rows remain byte-for-byte compatible. The explicit GMH-only
+ // candidate is confirmed-only and rejected unless the caller opted in.
+ const sourceContract=rolling.lineage.sourceContract??null;
+ if(sourceContract===THEME_ETF_GMH_ONLY_CANDIDATE_CONTRACT){
+  if(!allowGmhOnlyCandidate||rolling.phase!=='CONFIRMED'||points.length!==0||
+   rolling.lineage.primarySource!=='GETMARKETHISTORY_1H_CLOSE'||
+   rolling.lineage.secondarySource!==null||rolling.lineage.confirmedPrimaryCount!==13)return false;
+ }else if(sourceContract!==null||rolling.lineage.primarySource!=='GETMARKETHISTORY_1H_CLOSE'||
+  rolling.lineage.secondarySource!=='MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED')return false;
  return now-Date.parse(prev+'T23:59:59Z')<PUBLIC_DISPLAY_MAX_AGE_MS;
 }
-export async function readRollingPublic(db,base,{now=Date.now()}={}){
+export async function readRollingPublic(db,base,{now=Date.now(),allowGmhOnlyCandidate=false}={}){
  let row=null;try{row=await db.prepare("SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'").bind(THEME_ETF_ROLLING_KEY).first()}catch{return null}
  if(!row||!Number.isSafeInteger(Number(row.stored_at))||Number(row.stored_at)>now||now-Number(row.stored_at)>=PUBLIC_DISPLAY_MAX_AGE_MS)return null;
  let payload;try{payload=JSON.parse(row.body)}catch{return null}
- if(!await validRollingPublic(payload,base,{now}))return null;
+ if(!await validRollingPublic(payload,base,{now,allowGmhOnlyCandidate}))return null;
  // Emit only the public derived-score schema already consumed by the dashboard.
  return {status:'READY',version:base.version,methodologyVersion:base.methodologyVersion,
   observationDate:payload.observationDate,confirmedObservationDate:payload.confirmedObservationDate,
