@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {validRollingPublic,readRollingPublic,THEME_ETF_ROLLING_KEY} from '../worker/theme-etf-rolling-public.mjs';
+import {validRollingPublic,readRollingPublic,THEME_ETF_ROLLING_KEY,THEME_ETF_GMH_ONLY_CANDIDATE_CONTRACT} from '../worker/theme-etf-rolling-public.mjs';
 const names=['로봇·자동화','클라우드·SaaS','자율주행','원전·SMR','방산','핀테크','사이버보안'];
 const now=Date.parse('2026-10-21T12:00:00Z');
 const dates=Array.from({length:252},(_,i)=>new Date(Date.parse('2026-10-16T00:00:00Z')-(251-i)*86400000).toISOString().slice(0,10));
@@ -69,4 +69,46 @@ test('more than two provisional dates rejected',async()=>{
 test('not-yet-stored rolling output is optional, not a base read blocker',async()=>{
  const b=seed(),db={prepare(){return{bind(){return{first:async()=>null}}}}};
  assert.equal(await readRollingPublic(db,b,{now}),null);
+});
+
+test('GMH-only confirmed candidate requires explicit opt-in and preserves score-only output',async()=>{
+ const b=seed(),p=rolling(b);
+ p.phase='CONFIRMED';p.provisional={asOf:p.asOf,points:[]};
+ p.lineage.sourceContract=THEME_ETF_GMH_ONLY_CANDIDATE_CONTRACT;
+ p.lineage.secondarySource=null;p.lineage.confirmedPrimaryCount=13;
+ p.lineage.secondaryPendingCount=0;p.lineage.latestCompletedSession=p.observationDate;
+ p.privateBars=[{close:123.45}];
+ assert.equal(await validRollingPublic(p,b,{now}),false);
+ assert.equal(await validRollingPublic(p,b,{now,allowGmhOnlyCandidate:true}),true);
+ const db={prepare(){return{bind(){return{first:async()=>({body:JSON.stringify(p),stored_at:now-500})}}}}};
+ assert.equal(await readRollingPublic(db,b,{now}),null);
+ const publicResult=await readRollingPublic(db,b,{now,allowGmhOnlyCandidate:true});
+ assert.equal(publicResult.status,'READY');
+ assert.equal(publicResult.phase,'CONFIRMED');
+ assert.equal('privateBars' in publicResult,false);
+ assert.equal('lineage' in publicResult,false);
+ assert.equal('provisional' in publicResult,false);
+});
+test('GMH-only candidate fails closed on rights, provenance, phase, coverage and expiry',async()=>{
+ const b=seed(),p=rolling(b);
+ p.phase='CONFIRMED';p.provisional={asOf:p.asOf,points:[]};
+ p.lineage.sourceContract=THEME_ETF_GMH_ONLY_CANDIDATE_CONTRACT;
+ p.lineage.secondarySource=null;p.lineage.confirmedPrimaryCount=13;
+ p.lineage.secondaryPendingCount=0;p.lineage.latestCompletedSession=p.observationDate;
+ const expectDenied=async patch=>{
+  const candidate=structuredClone(p);patch(candidate);
+  assert.equal(await validRollingPublic(candidate,b,{now,allowGmhOnlyCandidate:true}),false);
+ };
+ await expectDenied(p=>p.upstreamCommercialRightsVerified=false);
+ await expectDenied(p=>p.derivedLicenseVerified=false);
+ await expectDenied(p=>p.sourcePriceReconciled=false);
+ await expectDenied(p=>p.publicationAuthorized=false);
+ await expectDenied(p=>p.lineage.sourceContract='UNKNOWN');
+ await expectDenied(p=>p.lineage.primarySource='UNVERIFIED');
+ await expectDenied(p=>p.lineage.secondarySource='MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED');
+ await expectDenied(p=>p.lineage.confirmedPrimaryCount=12);
+ await expectDenied(p=>p.phase='PROVISIONAL');
+ await expectDenied(p=>p.coverage.complete=false);
+ await expectDenied(p=>p.baseHash='0'.repeat(64));
+ await expectDenied(p=>p.asOf='2026-10-01T00:00:00Z');
 });
