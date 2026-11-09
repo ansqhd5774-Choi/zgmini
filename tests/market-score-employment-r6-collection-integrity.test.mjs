@@ -2,6 +2,75 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { runEmploymentR6CollectionStep } from "../lib/market-score/employment-r6-collector.mjs";
+import { createEmploymentR6Provider } from "../lib/market-score/employment-r6-provider.mjs";
+
+const NATIONAL_CLAIMS_XML = "<week><weekEnded>10/31/2026</weekEnded>"
+  + "<InitialClaims><SA>189000</SA><SA4WK>195000</SA4WK></InitialClaims>"
+  + "<ContinuedClaims><SA>1900000</SA></ContinuedClaims>"
+  + "<IUR><SA>1.2</SA></IUR></week>";
+
+test("DOL ETA-539 failure preserves valid national claims as a partial group", async () => {
+  const fetchedUrls = [];
+  const provider = createEmploymentR6Provider({
+    fetchImpl: async url => {
+      fetchedUrls.push(url);
+      if (fetchedUrls.length === 1) {
+        return new Response(NATIONAL_CLAIMS_XML, { status: 200 });
+      }
+      throw Object.assign(Error("SIMULATED_ETA539_UNAVAILABLE"), { code: "SIMULATED_ETA539_UNAVAILABLE" });
+    },
+    now: () => new Date("2026-11-09T00:00:00.000Z"),
+  });
+  const fetched = await provider.fetchDolClaims({ mode: "BACKFILL", currentYear: 2026 });
+  assert.equal(fetchedUrls.length, 2);
+  assert.equal(fetched.requestCount, 2);
+  assert.equal(fetched.rows.length, 4);
+  assert.equal(fetched.rows.find(x => x.logicalSeriesId === "INITIAL_CLAIMS")?.value, 189000);
+  assert.equal(fetched.snapshots.length, 1);
+  assert.match(fetched.snapshots[0].requestKey, /^DOL_NATIONAL:/);
+  assert.deepEqual(fetched.missingSeries, ["STATE_INITIAL_CLAIMS"]);
+  assert.equal(fetched.partialFailureCode, "DOL_ETA539_SOURCE_FAILED");
+
+  const runs = [], savedSnapshots = [], savedRows = [];
+  const store = {
+    async initialize() {},
+    async acquire() { return { acquired: true }; },
+    async release() { return true; },
+    async writeRawSnapshot(snapshot) {
+      savedSnapshots.push(snapshot);
+      return { snapshotId: savedSnapshots.length, bodySha256: "test", chunkCount: 1, noop: false };
+    },
+    async upsertObservationRows({ rows }) {
+      savedRows.push(...rows);
+      return { inserted: rows.length, revised: 0, noop: 0, rejected: 0 };
+    },
+    async recordRun(run) { runs.push(run); return 45; },
+  };
+  const result = await runEmploymentR6CollectionStep({
+    db: { prepare() { return {}; } },
+    mode: "BACKFILL",
+    groups: ["DOL_UI_WEEKLY_CLAIMS"],
+    now: () => new Date("2026-11-09T00:00:00.000Z"),
+    storeFactory: () => store,
+    providerFactory: () => ({ async fetchGroup() { return fetched; } }),
+  });
+  assert.equal(result.status, "PARTIAL");
+  assert.equal(result.groupResults[0].failureCode, "DOL_ETA539_SOURCE_FAILED");
+  assert.equal(runs[0].failureCode, "DOL_ETA539_SOURCE_FAILED");
+  assert.equal(savedSnapshots.length, 1);
+  assert.equal(savedRows.length, 4);
+});
+
+test("DOL national fetch failure remains FAIL without a state-only success", async () => {
+  let requested = 0;
+  const provider = createEmploymentR6Provider({
+    fetchImpl: async () => { requested++; return new Response("", { status: 503 }); },
+    now: () => new Date("2026-11-09T00:00:00.000Z"),
+  });
+  await assert.rejects(() => provider.fetchDolClaims({ mode: "BACKFILL", currentYear: 2026 }),
+    error => error.message.includes("HTTP_503") && error.requestCount === 1);
+  assert.equal(requested, 1);
+});
 
 test("a syntactically successful provider response with zero rows is PARTIAL, never a completed release", async () => {
   const runs = [];
