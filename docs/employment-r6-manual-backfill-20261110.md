@@ -19,6 +19,14 @@
 2. `STATE_CLAIMS_BREADTH`: 공개 최신 2025-07-19, score `PARTIAL_HISTORY`. 공식 ETA539 이후 자료는 존재하므로 DOL fetch/parse/snapshot/SQLite 51지역 완전주/특성 계산 중 **최초 결손 위치 미확정**. #1169의 DOL 호출 2회 결과는 `SERIES_PARTIAL`일 뿐 원인을 특정하지 않음.
 3. BED 그룹 `SERIES_PARTIAL`: BED 114개 series를 2015–2025와 2026 두 구간으로 조회할 때 미발표 2026 분기 항목이 누락으로 잡혔을 가능성 높음. **원본 missingSeries 없이 확정 금지**. 과거 10년 점수 READY와 최신 1Y 차트 부족은 양립하며 재수집을 일률적으로 요구하지 않음.
 
+## 동일 날짜 수동 재시도 잔여 Gate 교정 (개발 완료, 미설치)
+
+- #1158로 공통 B operation의 날짜 단위 claim을 고유 requestId 기준으로 바꿨지만, 기능 `employment-r6-collector.mjs`의 BACKFILL/ONE_YEAR planner에도 `attemptedToday` 조건이 남아 있는 것을 발견했다. 이는 새로운 소유자 승인 수동 요청까지 막을 수 있는 별개의 문제다.
+- 기능 브랜치 `lib/market-score/employment-r6-collector.mjs`와 `tests/market-score-employment-r6-collection-integrity.test.mjs` 수정: **승인된 UUID `approvedManualRequestId`가 명시된 B 단발 호출만** 같은 UTC 날짜의 PARTIAL 재시도를 허용하고, 이미 완료된 BACKFILL window는 그대로 SKIP. 보통 자동 `RELEASE` 및 requestId 미전달 `ONE_YEAR/BACKFILL`의 기존 방어·실제 BLS 쿼터·Core lock은 모두 유지한다. 잘못된 UUID는 STOP.
+- 연결 측은 제어 저장소 기존 브랜치 `fix/employment-r6-active-source-pin-20261110`의 Draft [#1179](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1179), 1개 operation 파일에서 인증된 `auth.request.requestId`만 collector에 전달한다. **양쪽 변경 소스가 모두 실제 승인 설치되지 않으면 운영 수집기에는 아직 효력이 없음**.
+- 기능 GitHub [CI Run 42714663526](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/42714663526): Build, Type check, regression, PC publication, Cloudflare candidate read **모두 PASS**. 무승인 main 병합·PC 설치·재수집·Production 배포 없음.
+- 다음 실제 실행은 기능 R2 source/B 운영의 정확한 현재 preimage/overlay SHA 및 Controller #917 단일 설치 담당자 조정을 거쳐 정규 반영하고, 새로운 승인 고유 requestId **필요할 때 1회**만 수동 실행한다. 단순 시계 경과 대기는 금지한다.
+
 ## CPS 예외 R2의 선택적 반영 범위 (기존 전용 브랜치만 사용)
 
 - 현 기능 PR #1036의 37파일 전체를 그대로 main에 병합하지 않는다. 이 작업과 직접 관련된 diff는 **5개**: `lib/market-score/employment-r6-formula.mjs`(R2 식별자/정확한 4개 범위), `employment-r6-feature-engine.mjs`(2025-10 실측 미발표 한 달만 119개 기준), `employment-r6-one-year-read-model.mjs`(공식 결측 증거 표시), `worker/employment-r6-public-display.mjs`(검증된 R1 공개 결과 읽기 유지), `scripts/pc-writer/employment-r6-one-year-stage.mjs`(R1 게시 선행 이력 비교). 위 파일 외 수집기·예약·R4·Quota·DB·TTL 변경을 R2 릴리스에 묶지 않는다.
