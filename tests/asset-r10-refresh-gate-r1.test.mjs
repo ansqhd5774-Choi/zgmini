@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {preservePreviousR10,R10_RECALCULATED_STATUS} from '../scripts/pc-writer/asset-r10-refresh-gate.mjs';
+import {readFileSync} from 'node:fs';
+import {PUBLIC_PROJECTION_KEYS} from '../worker/market-public-projection-store.mjs';
 
 test('R10 success is publishable only with new successful calculation and READY payload',()=>{
   assert.equal(preservePreviousR10({inputInstalled:true,calculationStatus:R10_RECALCULATED_STATUS,projectionStatus:'READY'}),false);
@@ -17,9 +19,6 @@ test('R10 preserves a valid existing release if the input research file is missi
   assert.equal(preservePreviousR10({inputInstalled:false,calculationStatus:null,projectionStatus:'READY'}),true);
   assert.equal(preservePreviousR10({inputInstalled:false,calculationStatus:null,projectionStatus:'PENDING'}),false);
 });
-
-import {readFileSync} from 'node:fs';
-import {PUBLIC_PROJECTION_KEYS} from '../worker/market-public-projection-store.mjs';
 
 test('R10 preserve check is limited to assetBubble and cannot intercept supplyShock',()=>{
   const order=Object.keys(PUBLIC_PROJECTION_KEYS);
