@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {preservePreviousR10,R10_RECALCULATED_STATUS} from '../scripts/pc-writer/asset-r10-refresh-gate.mjs';
+import {readFileSync} from 'node:fs';
+import {PUBLIC_PROJECTION_KEYS} from '../worker/market-public-projection-store.mjs';
 
 test('R10 success is publishable only with new successful calculation and READY payload',()=>{
   assert.equal(preservePreviousR10({inputInstalled:true,calculationStatus:R10_RECALCULATED_STATUS,projectionStatus:'READY'}),false);
@@ -16,4 +18,14 @@ test('R10 failed calculation preserves last release even if old payload still re
 test('R10 preserves a valid existing release if the input research file is missing',()=>{
   assert.equal(preservePreviousR10({inputInstalled:false,calculationStatus:null,projectionStatus:'READY'}),true);
   assert.equal(preservePreviousR10({inputInstalled:false,calculationStatus:null,projectionStatus:'PENDING'}),false);
+});
+
+test('R10 preserve check is limited to assetBubble and cannot intercept supplyShock',()=>{
+  const order=Object.keys(PUBLIC_PROJECTION_KEYS);
+  assert.ok(order.indexOf('supplyShock')>order.indexOf('assetBubble'));
+  // An unscoped guard would incorrectly preserve a healthy supplyShock release.
+  assert.equal(preservePreviousR10({inputInstalled:false,projectionStatus:'READY'}),true);
+  const source=readFileSync(new URL('../scripts/pc-writer/run-local.mjs',import.meta.url),'utf8');
+  assert.match(source,/if\(id==='assetBubble'&&preservePreviousR10\(/);
+  assert.doesNotMatch(source,/if\(preservePreviousR10\(/);
 });
