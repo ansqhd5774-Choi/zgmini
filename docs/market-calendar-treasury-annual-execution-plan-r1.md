@@ -1,5 +1,28 @@
 # 시장 캘린더 Treasury 연간 수집 — 마지막 단계 실행 계획 R1
 
+## 최신 운영 검증 — 2026-11-10 KST (아래 2026-11-09 실행 계획보다 우선)
+
+**실제 작업률: 95% → 95%.** 초기 83%·Writer B 복구 차단은 이 문서의 **과거 계획 기록**이며 현 시점 차단이 아니다. 완료한 개발·설치·수집·공개 단계를 재실행하지 않는다.
+
+| 실제 단계 | 유효 증거 | 상태 |
+|---|---|---|
+| 공식 연간 365일 TA_WS 소스·저장/재조회·계산 코드 | 4개 실행 파일, 관련 45/45 회귀·CI 성공, 승인 source `40111539a3536d99b22c99551d30f1b170246682` | DONE |
+| 운영 Writer 설치 | PC 제어 [#1132](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1132), Run 42690541955, `WRITER_B_INSTALLED_VERIFIED`, 운영 overlay source `70d2d1dbd8180255133bdd7fc925ae07bb8d6cc9` | DONE |
+| 운영 수집/checkpoint | PC 허용 A [#1135](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1135), Run 42692713050, `calendarStatus=READY`, `providerRequests=24`, source 13개 중 Treasury 포함, `at=2026-11-09T20:23:10.889Z` | DONE |
+| D1 실제 개별 저장 행 | 사용자 승인 후 운영 `zgmini-core-r42`에서 읽기 전용 SELECT **1회**: `output/release-calendar/current`, `stored_at=1794255759536` → `2026-11-09T20:22:39.536Z` | DONE |
+| 공개 API/UI | `/api/release-calendar`: `status=READY`, `updatedAt=2026-11-09T20:22:39.536Z`(D1과 0 ms 일치), 전체 **2,288** · Treasury **894**; 실제 `/market-calendar/` 2025년 11월 Treasury **53** | DONE |
+| PC private 입력 원본 메타데이터 직접 감사 | 현 승인 A `release-calendar-runtime-readonly`에는 `sqliteOpened=false`, `awardedCount`·본문 SHA 반환 없음 | DEFERRED / 별도 승인 경로 필요 |
+
+**공개 365일 수치 직접 분해:** 2025-11-10~2026-11-09 Treasury **876** = 공고 **436** + 입찰 **440**. 이후 예정 18 = 공고 8 + 입찰 10. 894 전체에서 `id+date` 중복 **0**. 공식 TA_WS 낙찰 436건→과거 공고·입찰 872건과 수치가 합치하며 365일 내 입찰 추가 4건과 이후 예정 18건은 주간 XML 병합분으로 **추정**된다. 출처별 원본 row 감사를 대체한다고 주장하지 않는다.
+
+**원문 저장·재조회 성공 판단의 근거:** 실제 설치된 `release-calendar.mjs`는 `privateStore.writeInput` → `readInput` → 원문 text, `storedAt`, 조회 기간, `awardedCount` 동등성 검증 → 파싱 행수 검증을 완료해야 `historyReady=true`가 되고, 주간 성공과 함께일 때만 `sources.treasury.status=READY`가 된다. 운영 공개 `READY` 및 동시각 수집·게시 증거가 이 경로와 부합한다. 그러나 **원본 건수·해시의 직접 PC 별도 조회 결과는 아직 없다.**
+
+**다음 필수 한 행동:** 공통 Controller 담당자의 설치 작업에 개입하지 않고, 기존 공통 등록 경로로 `release-calendar-runtime-readonly`의 **고정된 TA_WS 입력 1개**에 대한 비민감 감사 메타데이터(`exists/storedAt/fromDate/toDate/awardedCount/parsedRowCount/textSha256`)만 읽도록 범위·승인·실제 설치 여부를 조정한다. 설치 확인 후 A급 **1회** 결과를 기존 `#1135`·D1·공개 894건과 대조해 종료 판단한다. 원문 text·키·DB 임의 SQL·신규 예약·Writer 재설치·Controller 수동 우회는 금지. 이 부가 감사를 별도 후속으로 승인 분리한다면 **기능 수집→게시→UI는 완료**, 감사만 DEFERRED로 기록한다.
+
+**SHA 경계:** 아래 R1 계획의 과거 SHA·차단 문구를 현 운영 설치 상태로 읽지 않는다. 이번 문서 갱신은 개발 브랜치의 설명만 갱신하며 승인된 PC 설치 SHA, D1 및 공개 웹의 런타임을 변경하거나 재배포하지 않는다.
+
+---
+
 기준: 2026-11-09 UTC. 전용 개발 브랜치 `codex/market-calendar-treasury-cache-private-code-r1-20261109`, Draft PR #1051. 이 문서는 실행 순서와 종료 조건을 고정하며 승인 산식·계약·DB·예약을 변경하지 않는다.
 
 ## 목표·기준 진행률
