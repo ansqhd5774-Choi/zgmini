@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { planEmploymentR6Collection, runEmploymentR6CollectionStep } from "../lib/market-score/employment-r6-collector.mjs";
 import { createEmploymentR6Provider, expectedBlsCallsForGroup, parseBlsR6Rows, planBlsYearWindows, BLS_R6_REGISTERED_API_URL } from "../lib/market-score/employment-r6-provider.mjs";
 import { EMPLOYMENT_R6_GROUPS } from "../lib/market-score/employment-r6-contract.mjs";
+import { EMPLOYMENT_R4_CORE_STATES } from "../lib/market-score/employment-r4-shadow-contract.mjs";
 import { runEmploymentR6AutoCollection } from "../scripts/pc-writer/employment-r6-auto-collection.mjs";
 import { createEmploymentR6Store } from "../lib/market-score/employment-r6-store.mjs";
 
@@ -177,6 +178,30 @@ test("DOL ETA-539 failure preserves valid national claims as a partial group", a
   assert.equal(runs[0].failureCode, "DOL_ETA539_SOURCE_FAILED");
   assert.equal(savedSnapshots.length, 1);
   assert.equal(savedRows.length, 4);
+});
+
+test("DOL BACKFILL retains a 600-week window for strict ten-year state breadth", async () => {
+  const eta539Csv = [
+    "ST,RPTDATE,C2,C3",
+    ...EMPLOYMENT_R4_CORE_STATES.flatMap(st => [
+      `${st},11/08/2026,10/31/2026,100`,
+      `${st},11/01/2026,10/24/2026,101`,
+    ]),
+  ].join("\n");
+  let requestCount = 0;
+  const provider = createEmploymentR6Provider({
+    fetchImpl: async () => new Response(++requestCount === 1 ? NATIONAL_CLAIMS_XML : eta539Csv, { status: 200 }),
+    now: () => new Date("2026-11-09T00:00:00.000Z"),
+  });
+  const fetched = await provider.fetchDolClaims({ mode: "BACKFILL", currentYear: 2026 });
+  assert.equal(requestCount, 2);
+  assert.equal(fetched.requestCount, 2);
+  const stateSnapshot = fetched.snapshots.find(x => x.requestKey === "DOL_ETA539:600w");
+  assert.ok(stateSnapshot);
+  assert.equal(stateSnapshot.detail.historyWeeks, 600);
+  assert.deepEqual(stateSnapshot.detail.parserMeta.selectedWeeks, ["2026-10-24", "2026-10-31"]);
+  assert.equal(fetched.rows.filter(row => row.logicalSeriesId === "STATE_INITIAL_CLAIMS").length, 102);
+  assert.deepEqual(fetched.missingSeries, []);
 });
 
 test("DOL national fetch failure remains FAIL without a state-only success", async () => {
