@@ -157,6 +157,49 @@ test('lock contention and missing, unverified or corrupt ledger fail closed',()=
     /BLS_UNREG_LEDGER_INVALID/);}finally{clean(unverified);}
 });
 
+test('renamed lock replaced by a different owner is preserved and no permit escapes',()=>{
+  const base=fixture(0),read=fs.readFileSync;
+  const file=path.join(base,'bls-unregistered-reservations.lock');
+  const former=file+'.moved';
+  const seed=path.join(base,'bls-unregistered-reservations.json');
+  let replaced=false;
+  try{
+    fs.readFileSync=function(target,...args){
+      if(!replaced&&String(target)===seed){
+        replaced=true;
+        fs.renameSync(file,former);
+        fs.writeFileSync(file,'FOREIGN_LOCK_OWNER');
+      }
+      return read.call(fs,target,...args);
+    };
+    assert.throws(()=>reserveOneUnregisteredBlsRequest({base,now}),
+      /BLS_UNREG_RESERVATION_LOCK_OWNER_CHANGED/);
+    assert.equal(replaced,true);
+    assert.equal(read.call(fs,file,'utf8'),'FOREIGN_LOCK_OWNER');
+    assert.equal(fs.existsSync(former),true);
+  }finally{fs.readFileSync=read;clean(base);}
+});
+
+test('same-inode lock payload changed by a different owner is never unlinked',()=>{
+  const base=fixture(0),read=fs.readFileSync;
+  const file=path.join(base,'bls-unregistered-reservations.lock');
+  const seed=path.join(base,'bls-unregistered-reservations.json');
+  let replaced=false;
+  try{
+    fs.readFileSync=function(target,...args){
+      if(!replaced&&String(target)===seed){
+        replaced=true;
+        fs.writeFileSync(file,'FOREIGN_LOCK_OWNER');
+      }
+      return read.call(fs,target,...args);
+    };
+    assert.throws(()=>reserveOneUnregisteredBlsRequest({base,now}),
+      /BLS_UNREG_RESERVATION_LOCK_OWNER_CHANGED/);
+    assert.equal(replaced,true);
+    assert.equal(read.call(fs,file,'utf8'),'FOREIGN_LOCK_OWNER');
+  }finally{fs.readFileSync=read;clean(base);}
+});
+
 test('torn journal or missing durable journal stops before any new request',()=>{
   const base=fixture(0);
   try{
