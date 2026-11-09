@@ -17,7 +17,7 @@ test('isolated calendar collection preserves failed-source history, bounds reque
    if(url.includes('federalreserve'))return new Response('<p><strong>2026:</strong>November 17</p>');
    return new Response('<tr><td>Advance Monthly Sales for Retail and Food Services</td><td>November 17, 2026</td></tr>');
   };
-  const result=await collectReleaseCalendar(db,{now,fetchImpl});assert.equal(result.status,'PARTIAL');assert.equal(result.providerRequests,calls);assert.ok(calls>4&&calls<=22);const initialCalls=calls;
+  const result=await collectReleaseCalendar(db,{now,fetchImpl});assert.equal(result.status,'PARTIAL');assert.equal(result.providerRequests,calls);assert.ok(calls>4&&calls<=25,`bounded annual BLS requests: ${calls}`);const initialCalls=calls;
   const stored=await store.readOutput('release-calendar');assert.equal(stored.body.sources.bls.status,'SOURCE_FAILED');assert.equal(stored.body.events.filter(e=>e.source==='bls').length,1);assert.equal(stored.body.sources.bea.status,'READY');
   assert.equal((await collectReleaseCalendar(db,{now:now+60000,fetchImpl})).status,'CACHED');assert.equal(calls,initialCalls);
   const locks=marketOperationalStore(db);await locks.claim('release-calendar',now+7*3600000);

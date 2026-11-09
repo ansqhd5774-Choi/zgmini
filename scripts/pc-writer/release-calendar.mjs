@@ -1,6 +1,6 @@
 // R29 PC private earnings extension; R27 official events remain unchanged.
 // No new task, DB table, forced collection or public vendor feed output.
-import {RELEASE_CALENDAR_KEY,RELEASE_SOURCES,parseReleaseCalendar,nyFedCalendarPages} from '../../lib/release-calendar.mjs';
+import {RELEASE_CALENDAR_KEY,RELEASE_SOURCES,parseReleaseCalendar,parseBlsAnnualCalendar,parseBlsBedNextRelease,nyFedCalendarPages} from '../../lib/release-calendar.mjs';
 import {EIA_SOURCE_URLS,parseEiaScheduleHtml,parseEiaWpsrCalendarJson} from '../../lib/eia-calendar.mjs';
 import {USDA_WASDE_URL,parseUsdaWasdeHtml} from '../../lib/usda-calendar.mjs';
 import {CFTC_COT_URL,parseCftcCotHtml} from '../../lib/cftc-calendar.mjs';
@@ -233,6 +233,88 @@ async function fetchCensusYear({store,key,source,spec,year,now,fetchImpl,countRe
  throw Error('CENSUS_OFFICIAL_YEAR_UNAVAILABLE');
 }
 
+// One official HTTP request collects each entire BLS calendar year. The
+// installed ICS feed remains first-class; annual pages only fill its gaps.
+async function fetchBlsAnnualYear({store,key,year,now,fetchImpl,countRequest}){
+ const url=`https://www.bls.gov/schedule/${year}/home.htm`;
+ countRequest();
+ const response=await fetchImpl(url,{signal:AbortSignal.timeout(15000),headers:requestHeaders});
+ if(!response.ok)throw Error('BLS_ANNUAL_HTTP_'+response.status);
+ if(response.url&&response.url!==url)throw Error('BLS_ANNUAL_REDIRECT_NOT_ALLOWED');
+ const text=await response.text();
+ if(!text||text.length>1000000)throw Error('BLS_ANNUAL_SOURCE_TOO_LARGE_OR_EMPTY');
+ parseBlsAnnualCalendar(text,year,{sourceUrl:url});
+ const inputKey=`${key}:bls:annual:${year}`;
+ await store.writeInput(inputKey,{text,sourceUrl:url},now);
+ const saved=await store.readInput(inputKey);
+ return parseBlsAnnualCalendar(saved.body.text,year,{sourceUrl:url});
+}
+
+async function fetchBlsBed({store,key,now,fetchImpl,countRequest}){
+ const url='https://www.bls.gov/news.release/cewbd.htm';
+ countRequest();
+ const response=await fetchImpl(url,{signal:AbortSignal.timeout(15000),headers:requestHeaders});
+ if(!response.ok)throw Error('BLS_BED_HTTP_'+response.status);
+ if(response.url&&response.url!==url)throw Error('BLS_BED_REDIRECT_NOT_ALLOWED');
+ const text=await response.text();
+ if(!text||text.length>1000000)throw Error('BLS_BED_SOURCE_TOO_LARGE_OR_EMPTY');
+ parseBlsBedNextRelease(text,{sourceUrl:url});
+ await store.writeInput(`${key}:bls:bed`,{text,sourceUrl:url},now);
+ const saved=await store.readInput(`${key}:bls:bed`);
+ return parseBlsBedNextRelease(saved.body.text,{sourceUrl:url});
+}
+
+async function collectBlsSource({store,key,spec,year,now,fetchImpl,countRequest,previous}){
+ const annual=[],coveredYears=[],missingYears=[];
+ let ics=[],icsReady=false;
+ try{
+  countRequest();
+  const response=await fetchImpl(spec.url,{signal:AbortSignal.timeout(15000),headers:requestHeaders});
+  if(!response.ok)throw Error('BLS_ICS_HTTP_'+response.status);
+  const text=await response.text();
+  if(!text||text.length>1000000)throw Error('BLS_ICS_SOURCE_TOO_LARGE_OR_EMPTY');
+  parseReleaseCalendar(text,'bls');
+  await store.writeInput(`${key}:bls`,{text,sourceUrl:spec.url},now);
+  const saved=await store.readInput(`${key}:bls`);
+  ics=parseReleaseCalendar(saved.body.text,'bls');
+  icsReady=true;
+ }catch{ /* Annual official pages can still be used when ICS is unavailable. */ }
+ for(const requestedYear of [year,year+1]){
+  try{
+   annual.push(...await fetchBlsAnnualYear({store,key,year:requestedYear,now,fetchImpl,countRequest}));
+   coveredYears.push(requestedYear);
+  }catch{missingYears.push(requestedYear);}
+ }
+ let bed=[];
+ try{bed=await fetchBlsBed({store,key,now,fetchImpl,countRequest});}catch{}
+ if(!icsReady&&!coveredYears.length&&!bed.length)throw Error('BLS_ALL_OFFICIAL_SOURCES_UNAVAILABLE');
+ const verifiedYears=new Set(coveredYears);
+ const today=new Date(now).toISOString().slice(0,10);
+ // BED is independently announced and must survive a transient news-page
+ // failure even when the annual calendar for that year was refreshed.
+ const preserved=(previous?.body?.events??[]).filter(e=>{
+  if(e.source!=='bls')return false;
+  // An updated official BED announcement supersedes an old *future* date.
+  // Keep historical BED observations, or all dates if today's fetch failed.
+  if(e.id==='bls-business-employment-dynamics')return !bed.length||e.date<today;
+  const eventYear=Number(e.date.slice(0,4));
+  // A partial future ICS feed does not prove the whole future year complete.
+  if(!verifiedYears.has(eventYear))return !icsReady||eventYear>=year+1;
+  // A full-year page covers its listed release IDs, but must not erase other
+  // earlier official ICS releases when the ICS endpoint temporarily fails.
+  if(annual.some(current=>current.id===e.id&&Number(current.date.slice(0,4))===eventYear))return false;
+  return !icsReady||eventYear>=year+1;
+ });
+ // Latest ICS data wins a same-ID/date collision; annual rows fill unlisted years.
+ const events=[...new Map([...preserved,...annual,...bed,...ics]
+  .map(event=>[event.id+':'+event.date,event])).values()];
+ const ready=icsReady||coveredYears.includes(year);
+ return {events,state:{status:ready?'READY':'PARTIAL',
+  checkedAt:new Date(now).toISOString(),sourceUrl:spec.page,
+  coveredYears,missingYears,icsStatus:icsReady?'READY':'SOURCE_FAILED',
+  annualCollectorVersion:1,annualEventCount:annual.length,bedEventCount:bed.length}};
+}
+
 export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}={}){
  const store=publicFeedStore(db),locks=marketOperationalStore(db),key=RELEASE_CALENDAR_KEY;
  // PC private vendor raw inputs are independent from the R27 public calendar.
@@ -251,7 +333,8 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
  // New source definitions should be picked up by the next normal Core cycle,
  // even if the earlier, smaller source set is inside the six-hour cache.
  const sourceSetComplete=Object.keys(RELEASE_SOURCES)
-  .every(source=>Object.hasOwn(previous?.body?.sources??{},source));
+  .every(source=>Object.hasOwn(previous?.body?.sources??{},source))&&
+  previous?.body?.sources?.bls?.annualCollectorVersion===1;
  if(attempt&&sourceSetComplete&&now-attempt.storedAt>=0&&now-attempt.storedAt<6*3600000)
   return {status:'CACHED',providerRequests:0};
  const lease=await locks.claim('release-calendar',now);
@@ -263,6 +346,12 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
   const year=new Date(now).getUTCFullYear();
   for(const [source,spec] of Object.entries(RELEASE_SOURCES)){
    try{
+    if(source==='bls'){
+     const bls=await collectBlsSource({store,key,spec,year,now,fetchImpl,countRequest:()=>requests++,previous});
+     sources.bls=bls.state;
+     events.push(...bls.events);
+     continue;
+    }
     if(source==='eia'){
      const eia=await collectEiaSource({store,key,now,fetchImpl,countRequest:()=>requests++,previous});
      sources.eia=eia.state;
@@ -372,7 +461,7 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
       coveredYears:following.length?[year,year+1]:[year]};
      continue;
     }
-    // BLS, BEA and Fed remain the installed R20 collection path unchanged.
+    // BEA and Fed retain the installed R20 collection path unchanged.
     requests++;
     const url=spec.url.replace('{year}',String(year));
     const response=await fetchImpl(url,{signal:AbortSignal.timeout(15000),headers:requestHeaders});
@@ -384,7 +473,8 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
     sources[source]={status:'READY',checkedAt:new Date(now).toISOString(),sourceUrl:spec.page};events.push(...parsed);
    }catch{
     sources[source]={status:'SOURCE_FAILED',checkedAt:previous?.body?.sources?.[source]?.checkedAt??null,
-     attemptedAt:new Date(now).toISOString(),sourceUrl:spec.page};
+     attemptedAt:new Date(now).toISOString(),sourceUrl:spec.page,
+     ...(source==='bls'?{annualCollectorVersion:1,coveredYears:[],missingYears:[year,year+1]}:{})};
     events.push(...(previous?.body?.events??[]).filter(e=>e.source===source));
    }
   }
