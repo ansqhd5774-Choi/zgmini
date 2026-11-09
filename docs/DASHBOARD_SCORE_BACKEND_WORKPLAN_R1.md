@@ -100,6 +100,6 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 
 - 기존 개발용 대조기 `market-batch-provenance-r1.mjs`에 **읽기 전용 조회 어댑터** `lib/score-history/market-batch-provenance-read-r1.mjs`와 테스트를 추가. 실제 Reader가 **이미 선택한** `{body,storedAt}`를 호출자가 전달하면 기존 `market_input_batches_v1`의 최근 10개 후보를 `SELECT batch_key,body,stored_at ... WHERE batch_key LIKE ?`로 읽어 유일한 저장행인지 검사한다. **기존 Reader 자체·계산기·운영 쿼리·DB schema 수정 0건**.
 - 같은 원자료 본문이지만 저장시각이 다른 경우, 선택행 소실, 동일시각 중복, 잘못된 prefix, SQLite 조회 오류에서는 출처를 임의 결정하거나 자동 재시도하지 않는다. gzip 등 디코딩은 기존 호출자가 제공한다. 원본 전체 데이터·키는 로그·D1로 복제하지 않는다.
-- 로컬 신규 **8/8** 및 누적 **50/50** 테스트 PASS; 코드·테스트 원격 2파일 신규 반영 후 본문 readback 확인 예정. 원격 임의 운영 실증·PC 설치·D1 쓰기 아님.
+- 로컬 신규 **8/8** 및 누적 **50/50** 테스트 PASS; 코드·테스트 원격 2파일 신규 반영 후 blob SHA·본문 readback 2/2 일치 확인. 원격 임의 운영 실증·PC 설치·D1 쓰기 아님.
 - **미완료:** 현재 score 계산 경로에서 선택 입력을 어댑터에 전달하는 실제 shadow 연결, 계산 당시 7 batch 및 SEC/E1-R5/Breadth의 동시 증거, PC source 런타임, D1/API/UI 동일 계산 사건. 68개 종단 **0/68 (전체 0%)** 보존.
 - **다음 단일 행동:** 실제 `readStoredMarketInputs`가 이미 선택한 batch들을 계산 결과와 함께 전달하는 **선택형 read-only evidence callback**을 전용 개발 브랜치에서 검토·시뮬레이션한다. 현재 반환 JSON·공개 계약을 바꾸지 않는 설계만 검증하고, 운영 변경 및 공유 Writer 소유권·승인이 필요한 단계는 분리한다.
