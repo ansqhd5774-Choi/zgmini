@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {buildPrivateTenConfirmedSeedReferenceShadow as shadow}
  from '../worker/theme-ten-confirmed-seed-reference-shadow.mjs';
+import {THEME_ETF_ONLY_PAIRS,THEME_ETF_ONLY_PUBLIC_VERSION,
+ THEME_ETF_ONLY_METHOD,validateThemeEtfOnlyPublic}
+ from '../worker/theme-etf-only-public.mjs';
 import {THEME_NINE_R37_ROSTER,THEME_NINE_R37_KEY,THEME_NINE_R37_METHOD,
  THEME_NINE_R37_VERSION,THEME_NINE_R37_ROSTER_SHA}
  from '../worker/theme-nine-r37-public.mjs';
@@ -25,10 +28,17 @@ const expected=[...THEME_NINE_R37_ROSTER.filter(t=>t.theme!=='AI·반도체')
 
 function makeRecords(){
  const oldHistory=history(oldDate),freshHistory=history(date);
- const seed={status:'READY',version:'VALIDATED_SEED_TEST_REFERENCE',
-  observationDate:oldDate,
-  themes:THEME_NINE_R37_ROSTER.slice(0,7).map(t=>
-   ({theme:t.theme,latestScore:1,history:oldHistory}))};
+ const seed={status:'READY',version:THEME_ETF_ONLY_PUBLIC_VERSION,
+  methodologyVersion:THEME_ETF_ONLY_METHOD,
+  publicationAuthorized:true,upstreamCommercialRightsVerified:true,
+  derivedLicenseVerified:true,individualStocksUsed:0,
+  scoreMethod:'ETF_ONLY_PROXY',
+  sourcePriceMode:'UNADJUSTED_HOURLY_CLOSE_PROXY_DISCLOSED',
+  weights:{trend:0.4,relativeStrength:0.2,volatility:0.4},pairWeight:0.5,
+  sourceVersion:'TEST_ONLY_L7_REFERENCE',observationDate:oldDate,
+  sourceStoredAt:'2026-10-20T10:00:00Z',publishedAt:'2026-10-20T11:00:00Z',
+  themes:THEME_ETF_ONLY_PAIRS.map(t=>({theme:t.theme,etfs:[...t.etfs],
+   latestScore:1,history:oldHistory.map(x=>({...x,score:1}))}))};
  const aum=Object.fromEntries([...new Set(THEME_NINE_R37_ROSTER.flatMap(t=>t.etfs))]
   .map(s=>[s,'2026-10-19']));
  const r37={status:'READY',version:THEME_NINE_R37_VERSION,
@@ -97,14 +107,13 @@ function fakeDb(records){
  },run(){throw Error('D1 write forbidden');},exec(){throw Error('D1 write forbidden');}};
  return {db,calls};
 }
-const validator=seed=>seed.status==='READY'&&
- seed.version==='VALIDATED_SEED_TEST_REFERENCE'&&seed.themes?.length===7;
 const run=(records,other={})=>{
  const {db,calls}=fakeDb(records);
- return {promise:shadow(db,{now,validateLegacySeed:validator,...other}),calls};
+ return {promise:shadow(db,{now,...other}),calls};
 };
 
 test('fresh real-R37 + DC + R2-space guards yield exactly 8+2 PRIVATE confirmed',async()=>{
+ assert.equal(validateThemeEtfOnlyPublic(makeRecords().seed),true);
  const {promise,calls}=run(makeRecords());const result=await promise;
  assert.equal(result.status,'PRIVATE_CONFIRMED_SHADOW_VALIDATED_NOT_PUBLIC_READY');
  assert.equal(result.publicReady,false);
@@ -123,20 +132,30 @@ test('outdated seven-seed score is never returned, and AI research name stays hi
  assert.notEqual(result.observationDate,oldDate);
 });
 
-test('missing legacy validator blocks before any D1 reads',async()=>{
- const {db,calls}=fakeDb(makeRecords());
- const result=await shadow(db,{now});
- assert.equal(result.reason,'LEGACY_SEED_VALIDATOR_REQUIRED');
- assert.equal(calls.length,0);
-});
-
-test('seed absent or seed validator rejects: no public candidate',async()=>{
+test('seed absent: no private ten candidate',async()=>{
  const missing=makeRecords();missing.seed=null;
  assert.equal((await run(missing).promise).reason,'LEGACY_SEED_REFERENCE_UNAVAILABLE');
- const rejected=await run(makeRecords(),{validateLegacySeed:()=>false}).promise;
- assert.equal(rejected.reason,'LEGACY_SEED_REFERENCE_UNAVAILABLE');
- const thrown=await run(makeRecords(),{validateLegacySeed:()=>{throw Error('redacted');}}).promise;
- assert.equal(thrown.reason,'LEGACY_SEED_REFERENCE_UNAVAILABLE');
+});
+
+test('real L7 validator rejects seed rights/version/ETF list/history/date/score/stamp',async()=>{
+ for(const edit of [
+  s=>s.publicationAuthorized=false,
+  s=>s.upstreamCommercialRightsVerified=false,
+  s=>s.derivedLicenseVerified=false,
+  s=>s.version='UNAPPROVED',
+  s=>s.themes.reverse(),
+  s=>s.themes[0].etfs.reverse(),
+  s=>s.themes[0].history.pop(),
+  s=>s.themes[0].history.at(-1).date='2026-10-19',
+  s=>s.themes[0].latestScore=2,
+  s=>s.sourceStoredAt='NOT_A_TIMESTAMP',
+ ]){
+  const records=makeRecords();edit(records.seed);
+  assert.equal(validateThemeEtfOnlyPublic(records.seed),false);
+  const {promise,calls}=run(records);
+  assert.equal((await promise).reason,'LEGACY_SEED_REFERENCE_UNAVAILABLE');
+  assert.deepEqual(calls,['public:theme-etf-only:r1']);
+ }
 });
 
 test('R37 confirmed feed absent or provisional: no 8+2 candidate',async()=>{
