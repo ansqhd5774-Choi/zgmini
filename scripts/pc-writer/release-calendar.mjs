@@ -5,6 +5,8 @@ import {EIA_SOURCE_URLS,parseEiaScheduleHtml,parseEiaWpsrCalendarJson} from '../
 import {USDA_WASDE_URL,parseUsdaWasdeHtml} from '../../lib/usda-calendar.mjs';
 import {CFTC_COT_URL,parseCftcCotHtml} from '../../lib/cftc-calendar.mjs';
 import {TREASURY_CUSIP_XML_URL,parseTreasuryCusipXml} from '../../lib/treasury-calendar.mjs';
+import {TREASURY_AUCTION_HISTORY_URL,fetchTreasuryAuctionHistoryPages} from '../../lib/treasury-auction-history-source.mjs';
+import {parseTreasuryAuctionHistoryRows,mergeTreasuryHistoryEvents} from '../../lib/treasury-auction-history.mjs';
 import {TIC_RELEASE_DATES_URL,parseTicReleaseDatesHtml} from '../../lib/tic-calendar.mjs';
 import {publicFeedStore} from '../../worker/public-feed-store.mjs';
 import {marketOperationalStore} from '../../worker/market-operational-store.mjs';
@@ -14,6 +16,7 @@ const requestHeaders={'user-agent':'ZGMINI/1.0 (+https://zgmini.kr/about/)'};
 const isoYear=(date,year)=>date.startsWith(String(year)+'-');
 const monthName=['january','february','march','april','may','june','july','august','september','october','november','december'];
 const TREASURY_FAILURE_CODE=/^TREASURY_(?:HTTP_[1-5]\d{2}|REDIRECT_NOT_ALLOWED|XML_TOO_LARGE_OR_EMPTY|OFFICIAL_XML_INVALID|RELEASE_ENTRIES_MISSING|ENTRY_SECTIONS_MISSING|ENTRY_FIELD_INVALID|DATES_UNAVAILABLE|STORED_DATES_UNAVAILABLE|DUPLICATE_CUSIP_DATE|FROM_DATE_INVALID|TIMEOUT|FETCH_FAILED|COLLECTION_FAILED)$/;
+const TREASURY_HISTORY_FAILURE_CODE=/^TREASURY_HISTORY_(?:HTTP_[1-5]\d{2}|WINDOW_INVALID|PAGE_INVALID|CLIENT_INVALID|TIMEOUT|FETCH_FAILED|REDIRECT_NOT_ALLOWED|CONTENT_TYPE_INVALID|PAGE_TOO_LARGE|BODY_READ_FAILED|JSON_INVALID|PAGE_META_INVALID|PAGE_COUNT_MISMATCH|ROW_KEY_INVALID|PAGE_DUPLICATE|TOTAL_MISMATCH|READBACK_INVALID|ROWS_INVALID|ROW_INVALID|CUSIP_INVALID|AUCTION_DATE_INVALID|ANNOUNCEMENT_DATE_INVALID|REOPENING_INVALID|EVENT_CONFLICT|COLLECTION_FAILED)$/;
 
 // Only bounded, non-sensitive codes are returned to the existing PC-local
 // collection report. The public calendar source contract stays unchanged.
@@ -24,6 +27,10 @@ const safeTreasuryFailureCode=error=>{
  if(error?.name==='TimeoutError'||error?.name==='AbortError')return 'TREASURY_TIMEOUT';
  if(error?.name==='TypeError')return 'TREASURY_FETCH_FAILED';
  return 'TREASURY_COLLECTION_FAILED';
+};
+const safeTreasuryHistoryFailureCode=error=>{
+ const code=typeof error?.message==='string'?error.message:'';
+ return TREASURY_HISTORY_FAILURE_CODE.test(code)?code:'TREASURY_HISTORY_COLLECTION_FAILED';
 };
 
 async function fetchEiaPart({store,key,kind,now,fetchImpl,countRequest}){
@@ -146,9 +153,47 @@ async function collectTreasurySource({store,key,now,fetchImpl,countRequest,previ
  // Same CUSIP+kind in the new batch supersedes its prior future date.
  const older=(previous?.body?.events??[]).filter(e=>e.source==='treasury'&&
   (e.date<today||!observedIds.has(e.id)));
- const events=[...new Map([...older,...observed].map(e=>[e.id+':'+e.date,e])).values()];
- return {events,state:{status:'READY',checkedAt:new Date(now).toISOString(),
-  sourceUrl:RELEASE_SOURCES.treasury.page,coveredCusips:[...new Set(observed.map(e=>e.id.split('-').at(-1)))].length}};
+ let history=[],historyReady=false,historyFailureCode=null;
+ try{
+  // A normal Core collection collects the previous 365 UTC calendar days
+  // from FiscalData; the separate weekly feed remains the official near-term
+  // release source. No second provider request during normalization.
+  const fromDate=new Date(Date.parse(today+'T00:00:00Z')-364*86400000).toISOString().slice(0,10);
+  const fetched=await fetchTreasuryAuctionHistoryPages({fromDate,toDate:today,fetchImpl,countRequest});
+  const savedRows=[];
+  for(const page of fetched.pages){
+   const historyKey=`${key}:treasury:history:page:${page.number}`;
+   await store.writeInput(historyKey,{text:page.text,sourceUrl:TREASURY_AUCTION_HISTORY_URL,
+    fromDate,toDate:today,pageNumber:page.number},now);
+   const saved=await store.readInput(historyKey);
+   if(saved?.storedAt!==now||saved.body?.fromDate!==fromDate||
+    saved.body?.toDate!==today||saved.body?.pageNumber!==page.number||
+    saved.body?.text!==page.text)throw Error('TREASURY_HISTORY_READBACK_INVALID');
+   let parsed;
+   try{parsed=JSON.parse(saved.body.text);}catch{throw Error('TREASURY_HISTORY_READBACK_INVALID');}
+   if(!Array.isArray(parsed?.data)||parsed.data.length!==page.count||
+    Number(parsed?.meta?.count)!==page.count||
+    Number(parsed?.meta?.['total-count'])!==fetched.totalCount||
+    Number(parsed?.meta?.['total-pages'])!==fetched.pageCount)
+    throw Error('TREASURY_HISTORY_READBACK_INVALID');
+   savedRows.push(...parsed.data);
+  }
+  if(savedRows.length!==fetched.totalCount)throw Error('TREASURY_HISTORY_READBACK_INVALID');
+  history=parseTreasuryAuctionHistoryRows(savedRows,{fromDate,toDate:today});
+  historyReady=true;
+ }catch(error){
+  // A failed annual backfill keeps weekly and prior official dates. Only a
+  // bounded code is persisted in the PC-private input lane for this attempt.
+  historyFailureCode=safeTreasuryHistoryFailureCode(error);
+  try{await store.writeInput(key+':treasury:history:failure-code-r1',
+   {version:1,code:historyFailureCode},now);}catch{}
+ }
+ // Current weekly release wins same-ID/date title conflicts; older observed
+ // dates and history remain visible without fabricating new dates.
+ const events=mergeTreasuryHistoryEvents([...observed,...older],history);
+ return {events,state:{status:historyReady?'READY':'PARTIAL',checkedAt:new Date(now).toISOString(),
+  sourceUrl:RELEASE_SOURCES.treasury.page,coveredCusips:[...new Set(observed.map(e=>e.id.split('-').at(-1)))].length},
+  ...(historyFailureCode?{historyFailureCode}:{})};
 }
 
 async function collectTicSource({store,key,now,fetchImpl,countRequest,previous}){
@@ -330,6 +375,7 @@ async function collectBlsSource({store,key,spec,year,now,fetchImpl,countRequest,
 export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}={}){
  const store=publicFeedStore(db),locks=marketOperationalStore(db),key=RELEASE_CALENDAR_KEY;
  const treasuryDiagnosticKey=key+':treasury:failure-code-r1';
+ const treasuryHistoryDiagnosticKey=key+':treasury:history:failure-code-r1';
  // PC private vendor raw inputs are independent from the R27 public calendar.
  try{
   await collectEarningsApiLocal({db,apiKey:globalThis.__zgminiLocalProviderEnv?.EARNINGS_API_KEY,
@@ -345,13 +391,23 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
  const previous=await store.readOutput(key);
  // New source definitions should be picked up by the next normal Core cycle,
  // even if the earlier, smaller source set is inside the six-hour cache.
+ let annualTreasuryAttempted=previous?.body?.sources?.treasury?.status==='SOURCE_FAILED';
+ if(attempt&&!annualTreasuryAttempted){
+  try{
+   const firstPage=await store.readInput(key+':treasury:history:page:1');
+   const failure=firstPage?.storedAt===attempt.storedAt?null:
+    await store.readInput(treasuryHistoryDiagnosticKey);
+   annualTreasuryAttempted=firstPage?.storedAt===attempt.storedAt||
+    failure?.storedAt===attempt.storedAt;
+  }catch{ /* An unreadable input cannot validate completed annual collection. */ }
+ }
  const sourceSetComplete=Object.keys(RELEASE_SOURCES)
   .every(source=>Object.hasOwn(previous?.body?.sources??{},source))&&
-  previous?.body?.sources?.bls?.annualCollectorVersion===1;
+  previous?.body?.sources?.bls?.annualCollectorVersion===1&&annualTreasuryAttempted;
  if(attempt&&sourceSetComplete&&now-attempt.storedAt>=0&&now-attempt.storedAt<6*3600000){
   // The next Core cycle overwrites the PC-local last-run report. Preserve only
   // a bounded failure code for the same private six-hour collection attempt.
-  let treasuryFailureCode=null;
+  let treasuryFailureCode=null,treasuryHistoryFailureCode=null;
   if(previous?.storedAt===attempt.storedAt&&previous?.body?.sources?.treasury?.status==='SOURCE_FAILED'){
    try{
     const diagnostic=await store.readInput(treasuryDiagnosticKey);
@@ -360,8 +416,17 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
      treasuryFailureCode=diagnostic.body.code;
    }catch{ /* A private diagnostic read cannot block regular collection. */ }
   }
+  if(previous?.storedAt===attempt.storedAt&&previous?.body?.sources?.treasury?.status==='PARTIAL'){
+   try{
+    const diagnostic=await store.readInput(treasuryHistoryDiagnosticKey);
+    if(diagnostic?.storedAt===attempt.storedAt&&diagnostic?.body?.version===1&&
+     TREASURY_HISTORY_FAILURE_CODE.test(diagnostic.body.code??''))
+     treasuryHistoryFailureCode=diagnostic.body.code;
+   }catch{}
+  }
   return {status:'CACHED',providerRequests:0,
-   ...(treasuryFailureCode?{sources:{treasury:'SOURCE_FAILED'},treasuryFailureCode}:{})};
+   ...(treasuryFailureCode?{sources:{treasury:'SOURCE_FAILED'},treasuryFailureCode}:{}),
+   ...(treasuryHistoryFailureCode?{sources:{treasury:'PARTIAL'},treasuryHistoryFailureCode}:{})};
  }
  const lease=await locks.claim('release-calendar',now);
  if(!lease)return {status:'RUNNING',providerRequests:0};
@@ -369,7 +434,7 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
  try{
   await store.writeAttempt(key,now);
   const sources={},events=[];
-  let treasuryFailureCode=null;
+  let treasuryFailureCode=null,treasuryHistoryFailureCode=null;
   const year=new Date(now).getUTCFullYear();
   for(const [source,spec] of Object.entries(RELEASE_SOURCES)){
    try{
@@ -401,6 +466,7 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
      const treasury=await collectTreasurySource({store,key,now,fetchImpl,countRequest:()=>requests++,previous});
      sources.treasury=treasury.state;
      events.push(...treasury.events);
+     if(treasury.historyFailureCode)treasuryHistoryFailureCode=treasury.historyFailureCode;
      continue;
     }
     if(source==='tic'){
@@ -550,6 +616,7 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
    {version:1,code:treasuryFailureCode},now);}catch{}
   return {status:body.status,providerRequests:requests,
    sources:Object.fromEntries(Object.entries(sources).map(([k,v])=>[k,v.status])),
-   ...(treasuryFailureCode?{treasuryFailureCode}:{})};
+   ...(treasuryFailureCode?{treasuryFailureCode}:{}),
+   ...(treasuryHistoryFailureCode?{treasuryHistoryFailureCode}:{})};
  }finally{await locks.finish('release-calendar',lease,now,'IDLE');}
 }
