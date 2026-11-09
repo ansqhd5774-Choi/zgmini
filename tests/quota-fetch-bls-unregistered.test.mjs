@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
 import {randomUUID} from 'node:crypto';
 import {createQuotaFetch} from '../scripts/pc-writer/quota-fetch.mjs';
@@ -167,6 +168,36 @@ test('missing approved seed fails closed without provider traffic',async()=>{
   await assert.rejects(quota.fetch(bls1,post({seriesid:['X']})),error=>
    error.code==='PROVIDER_QUOTA_GUARD'&&error.reason==='BLS_UNREG_LEDGER_UNAVAILABLE');
   assert.equal(physical,0);
+ }finally{clean(base);}
+});
+
+test('missing optional BLS reservation module is a pre-network guard stop, not a network error',async()=>{
+ const base=fs.mkdtempSync(path.join(os.tmpdir(),'r6-bls-missing-guard-'));
+ let physical=0;
+ try{
+  // A standalone copy deliberately omits the optional reservation sidecar.
+  // Only test stubs for unrelated existing quota dependencies are present.
+  fs.copyFileSync(new URL('../scripts/pc-writer/quota-fetch.mjs',import.meta.url),
+   path.join(base,'quota-fetch.mjs'));
+  fs.writeFileSync(path.join(base,'quota-ledger.mjs'),
+   'export class QuotaLedger {constructor(){this.count=0;}beforeRequest(){this.count++;}afterResponse(){}summary(){return {providers:{BLS:{requests:this.count}}};}}');
+  fs.writeFileSync(path.join(base,'quota-policy.mjs'),
+   "export const providerForUrl=url=>String(url).includes('api.bls.gov')?'BLS':'ALPACA';");
+  const {createQuotaFetch:isolatedCreate}=await import(pathToFileURL(path.join(base,'quota-fetch.mjs')).href);
+  const quota=isolatedCreate({base,mode:'observe',originalFetch:async()=>{
+   physical++;return ok();
+  },blsUnregistered:{enabled:true,approvedBase:base}});
+  const guarded=quota.fetchR6WithLease(randomUUID());
+  await assert.rejects(guarded(bls1,post({seriesid:['X']})),error=>
+   error.code==='PROVIDER_QUOTA_GUARD'&&error.provider==='BLS'&&
+   error.reason==='BLS_UNREG_GUARD_UNAVAILABLE'&&error.requestReserved!==true);
+  assert.equal(physical,0);
+  assert.equal(quota.summary().providers.BLS.requests,0);
+  // collect-local's existing catch rethrows a PROVIDER_QUOTA_GUARD intact;
+  // changing its network-error wrapping would break the R6 zero-call contract.
+  const source=fs.readFileSync(new URL('../scripts/pc-writer/collect-local.mjs',import.meta.url),'utf8');
+  assert.match(source,/if\(error\?\.code==='PROVIDER_QUOTA_GUARD'\)throw error/);
+  assert.match(source,/error\?\.code==='PROVIDER_QUOTA_GUARD'\?'PROVIDER_QUOTA_GUARD':'NETWORK_ERROR'/);
  }finally{clean(base);}
 });
 
