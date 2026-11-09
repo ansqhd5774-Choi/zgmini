@@ -86,3 +86,12 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 
 - 시작·현재 실운영 종단 검증: **0/68 (0%)**. 기초 9/9 + D09 12/12 + S01 13/13의 개발 시험 **34/34**는 별도 지표이며 68개 공개 완료율에 더하지 않는다.
 - 브랜치 코드 개발은 테스트 통과와 원격 commit/read-back으로만 완료 처리한다. 실제 PC·D1·API/UI 검증은 별도 게이트다.
+
+## 2026-11-10 D05 선택 배치 출처 shadow 검증 (비운영 개발)
+
+- `lib/score-history/market-batch-provenance-r1.mjs`와 `tests/market-batch-provenance-r1.test.mjs`를 전용 개발 브랜치에 신규 기록. 실제 계산 Reader·DB·Writer·API 코드 변경은 없음.
+- 기존 Reader가 **이미 선택해 반환한** `{body,storedAt}`와 호출자가 읽기 전용으로 전달한 후보 `{batch_key,body,stored_at}`를 비교해 정확히 1행만 일치하면 원배치 키·저장시각·비가역 저장본문 SHA-256만 반환한다. 불일치·중복 timestamp/본문·복호 실패는 `PROVENANCE_UNPROVEN/AMBIGUOUS`로 안전 거부한다.
+- 기존 Reader가 후보 `batch_key`를 아직 넘기지 않으므로 이 함수만으로 **실제 PC 인과 증명이 된 것은 아니다**. 본문 SHA는 저장된 인코딩 바이트의 식별자로, 공급자 공식 revision·산식 입력 전체·일별 계산 이력 정합성의 증거가 아니다. D05는 7배치 외 SEC/E1-R5/Breadth 입력이 있으므로 전체 점수의 서명으로 직접 사용 금지.
+- 로컬 회귀 검증: 신규 **8/8 PASS**, 기존 **34/34 PASS**, 합계 **42/42 PASS**. 원격 생성 후 두 신규 파일 blob SHA·본문 readback 일치. 신규 PC Issue·원자료 수집·SQLite/D1/Writer·예약·운영 배포 **0건**.
+- **진행률:** 실제 원자료→계산→D1→API/UI 동일 사건 종단 검증 **0/68 (0%→0%)**. 백엔드는 원래 UI 출력 통일과 별도 범위이며 이번 코드가 UI 완료율에 가산되지 않는다.
+- **다음 단일 필수 작업:** 기존 D05 원장에 남은 계산 사건 하나와 동일시점 원배치 키·본문 digest가 승인된 조회 경로에서 함께 확보되는지 확인한다. 부재 시 `INPUT_LINEAGE_UNPROVEN`으로 기록하고 기존 Reader 계약을 변경하기 전에 필요 입력·작업자·공용 소유 범위를 확정한다.
