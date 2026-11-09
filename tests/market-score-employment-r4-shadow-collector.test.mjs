@@ -16,7 +16,7 @@ function claimsCsv(){
   lines.push("PR,09/19/2026,2,09/12/2026,9999,9999");
   return lines.join("\n");
 }
-function blsPayload(){return{Results:{series:Object.entries(EMPLOYMENT_R4_DIFFUSION_SERIES).map(([seriesID],idx)=>({seriesID,data:[{year:"2026",period:"M08",value:String(55+idx),footnotes:[]},{year:"2026",period:"M07",value:String(50+idx),footnotes:[]}]}))}}}
+function blsPayload(){return{status:"REQUEST_SUCCEEDED",Results:{series:Object.entries(EMPLOYMENT_R4_DIFFUSION_SERIES).map(([seriesID],idx)=>({seriesID,data:[{year:"2026",period:"M08",value:String(55+idx),footnotes:[]},{year:"2026",period:"M07",value:String(50+idx),footnotes:[]}]}))}}}
 
 test("provider parsers preserve 51-state core and mark only latest provider observation FORWARD",async()=>{
   const rt="2026-09-20T00:00:00.000Z";
@@ -234,6 +234,34 @@ test("R4 shadow BLS missing key, 429, and malformed response stop without retry"
     return true;
   });
   assert.equal(calls,1);
+});
+
+test("R4 shadow never accepts HTTP200 with missing success status in primary or fallback",async()=>{
+  const opts={env:{BLS_API_KEY:"fixture-key"}};
+  let calls=0;
+  const primary=createEmploymentR4ShadowProvider({...opts,fetchImpl:async()=>{
+    calls++;
+    return{ok:true,status:200,json:async()=>({Results:{series:[]}})};
+  }});
+  await assert.rejects(primary.fetchGeographicDiffusion(),error=>{
+    assert.match(error.message,/BLS_DIFFUSION_STATUS/);
+    assert.equal(error.requestCount,1);
+    return true;
+  });
+  assert.equal(calls,1);
+  calls=0;
+  const response=blsPayload();
+  response.Results.series.pop();
+  const fallback=createEmploymentR4ShadowProvider({...opts,fetchImpl:async()=>{
+    calls++;
+    return{ok:true,status:200,json:async()=>calls===1?response:({Results:{series:[]}})};
+  }});
+  await assert.rejects(fallback.fetchGeographicDiffusion(),error=>{
+    assert.match(error.message,/BLS_DIFFUSION_MISSING/);
+    assert.equal(error.requestCount,2);
+    return true;
+  });
+  assert.equal(calls,2);
 });
 
 test("R4 shadow failed fallback records all nine attempted BLS requests in collector",async()=>{
