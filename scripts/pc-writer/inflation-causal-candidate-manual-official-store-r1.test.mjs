@@ -93,6 +93,16 @@ test('approved maintenance staging preserves old PPI, archives exact bytes, read
   const again=await applyOfficialManualStore({...options(base),withApprovedWriterB:approved});
   assert.equal(again.status,'UNCHANGED');
   assert.equal(fs.readFileSync(blsPath,'utf8'),before);
+  // An erased archive must be restored even when the candidate observations
+  // and provenance are unchanged; never rewrite their stored_at in this case.
+  fs.unlinkSync(result.archives.census.file);
+  const restored=await applyOfficialManualStore({...options(base),withApprovedWriterB:approved});
+  assert.equal(restored.status,'ARCHIVED_READBACK');
+  assert.equal(restored.stored,true);
+  assert.ok(fs.existsSync(restored.archives.census.file));
+  assert.equal(fs.readFileSync(blsPath,'utf8'),before);
+  assert.equal((await applyOfficialManualStore({...options(base),
+    withApprovedWriterB:approved})).status,'UNCHANGED');
 });
 
 test('approved repair replaces corrupt CPI only, keeping the PPI and original backup intact',async t=>{
