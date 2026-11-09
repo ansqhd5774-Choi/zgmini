@@ -8,11 +8,11 @@ const design=css.split('/* Economic terrain score-map R3: centered header and co
 
 test('economic terrain keeps the five agreed zones and numeric thresholds',()=>{
  assert.ok(component.includes("width:25,color:'#fa628b'"));
- assert.ok(component.includes("width:20,color:'#ffc64b'"));
- assert.ok(component.includes("width:10,color:'#a6bdd0'"));
- assert.ok(component.includes("width:20,color:'#2de0c4'"));
+ assert.ok(component.includes("width:15,color:'#ffc64b'"));
+ assert.ok(component.includes("width:20,color:'#a6bdd0'"));
+ assert.ok(component.includes("width:15,color:'#2de0c4'"));
  assert.ok(component.includes("width:25,color:'#13bfa7'"));
- assert.match(component,/\[0,25,45,55,75,100\]/);
+ assert.match(component,/\[0,25,40,60,75,100\]/);
  for(const [i,color] of ['#fa628b','#ffc64b','#a6bdd0','#2de0c4','#13bfa7'].entries()){
   assert.ok(design.includes(`.zg-terrain-axis-bands>div:nth-child(${i+1}){background:${color}}`));
  }
@@ -28,9 +28,9 @@ test('axis header is centered and strengthened with a 100-point scale',()=>{
 
 test('background spans five percentages while each score retains its dashed line and dot',()=>{
  assert.match(design,/rgba\(250,98,139,\.10\) 0 25%/);
- assert.match(design,/rgba\(255,198,75,\.10\) 25% 45%/);
- assert.match(design,/rgba\(166,189,208,\.10\) 45% 55%/);
- assert.match(design,/rgba\(45,224,196,\.10\) 55% 75%/);
+ assert.match(design,/rgba\(255,198,75,\.10\) 25% 40%/);
+ assert.match(design,/rgba\(166,189,208,\.10\) 40% 60%/);
+ assert.match(design,/rgba\(45,224,196,\.10\) 60% 75%/);
  assert.match(design,/rgba\(19,191,167,\.10\) 75% 100%/);
  assert.match(component,/className="zg-terrain-line" style=\{\{width:`\$\{card.score\}%`\}\}/);
  assert.match(component,/className="zg-terrain-dot" style=\{\{left:`\$\{card.score\}%`\}\}/);
