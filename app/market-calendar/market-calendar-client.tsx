@@ -7,6 +7,7 @@ import {collapseCrossSourceTradeDuplicates} from '../../lib/market-calendar-cros
 import {toggleStarImportance} from '../../lib/market-calendar-importance-toggle.mjs';
 import {cftcCotReleaseAt} from '../../lib/market-calendar-cftc-time.mjs';
 import {ticReleaseAt} from '../../lib/market-calendar-tic-time.mjs';
+import {economicInputCalendarCoverage,modelInputsForCalendarEvent} from '../../lib/market-calendar-economic-input-display.mjs';
 import snapshot from '../guides/release-snapshot.json';
 import EarningsDisplayClient from './earnings-display-client';
 
@@ -19,7 +20,7 @@ type FilterImportance=number[]|null;
 type OfficialEvent={id:string;date:string;title:string;source:string;sourceUrl:string};
 type SourceState={status:string;checkedAt?:string|null};
 type CalendarFeed={status:string;updatedAt?:string;sources?:Record<string,SourceState>;events?:OfficialEvent[]};
-type CalendarRow={key:string;date:string;at:string|null;name:string;country:Country;category:string;kind:EventKind;actual:string|null;forecast:string|null;previous:string|null;major:boolean;importance:number;source:string;sourceUrl:string;checkedAt:string|null;status:'scheduled'|'released';fresh:boolean};
+type CalendarRow={key:string;date:string;at:string|null;name:string;country:Country;category:string;kind:EventKind;actual:string|null;forecast:string|null;previous:string|null;major:boolean;importance:number;source:string;sourceUrl:string;checkedAt:string|null;status:'scheduled'|'released';fresh:boolean;modelInputCount?:number};
 
 const dayLabels=['일','월','화','수','목','금','토'];
 const sourceNames:Record<string,string>={bls:'BLS',bea:'BEA',fed:'연준',fed_calendar:'연준',census:'Census',eia:'EIA',usda:'USDA',cftc:'CFTC',treasury:'미국 재무부',tic:'미국 재무부 TIC',eia_epm:'EIA',nyfed:'뉴욕 연은'};
@@ -132,7 +133,7 @@ function mergeOfficial(feed:CalendarFeed|null):CalendarRow[]{
   // Existing verified actuals supersede past date-only schedule placeholders.
   const hasActual=manual.some(row=>row.status==='released'&&row.date===item.date&&((item.id==='cpi'&&row.source==='BLS')||(item.id==='pce'&&row.source==='BEA')));
   if(hasActual)continue;
-  fromFeed.push({key:`official-${duplicate}`,date:displayDate,at:eventAt,name:officialName(item,meta.name),country:'US',category:meta.category,kind:'economic',actual:null,forecast:null,previous:null,major:meta.major,importance:releaseImportance(item.id,item.title),source:sourceNames[item.source]??item.source,sourceUrl:item.sourceUrl,checkedAt:timed?.checkedAt??checkedAt,fresh:timed?false:fresh,status:'scheduled'});
+  fromFeed.push({key:`official-${duplicate}`,date:displayDate,at:eventAt,name:officialName(item,meta.name),country:'US',category:meta.category,kind:'economic',actual:null,forecast:null,previous:null,major:meta.major,importance:releaseImportance(item.id,item.title),source:sourceNames[item.source]??item.source,sourceUrl:item.sourceUrl,checkedAt:timed?.checkedAt??checkedAt,fresh:timed?false:fresh,status:'scheduled',modelInputCount:modelInputsForCalendarEvent(item)});
  }
  const scheduledIds=new Set(fromFeed.map(row=>row.key.slice('official-'.length)));
  return [...fromFeed,...manual.filter(row=>row.status==='released'||!scheduledIds.has(`${row.key.split('-')[1]}:${row.date}`))];
@@ -168,6 +169,8 @@ export default function MarketCalendar(){
 
  const range=useMemo(()=>view==='week'?{start:monday(selected),end:plusDays(monday(selected),6)}:{start:monthStart(selected),end:monthEnd(selected)},[selected,view]);
  const allRows=useMemo(()=>mergeOfficial(feed),[feed]);
+ const nextCalendarYear=Number(today.slice(0,4))+1;
+ const modelCoverage=useMemo(()=>economicInputCalendarCoverage(feed,{nextYear:nextCalendarYear}),[feed,nextCalendarYear]);
  const periodRows=useMemo(()=>allRows.filter(row=>row.date>=range.start&&row.date<=range.end&&(kind==='all'||row.kind===kind)&&(country==='all'||row.country===country)&&(importance===null||importance.includes(row.importance))&&(!query||`${row.name} ${row.category} ${row.source} ${row.country}`.toLowerCase().includes(query.trim().toLowerCase()))).sort((a,b)=>a.date.localeCompare(b.date)||(a.at??'').localeCompare(b.at??'')||a.name.localeCompare(b.name)),[allRows,range,kind,country,importance,query]);
  const filtered=useMemo(()=>rowsForSelectedDay(periodRows,activeDate) as CalendarRow[],[periodRows,activeDate]);
  const days=useMemo(()=>Array.from({length:diffDays(range.end,range.start)+1},(_,i)=>plusDays(range.start,i)),[range]);
@@ -236,6 +239,7 @@ export default function MarketCalendar(){
   </div>
   <div className="mc-head" aria-hidden="true"><span className="mc-importance-heading" title="경제지표: 예상 시장 영향도 / 기업 실적: 예상 EPS ER1 점수, ★★★ 97점 이상"><Star size={12} fill="currentColor" aria-hidden="true"/>별등급</span><span>날짜</span><span>시간</span><span>국가</span><span>구분</span><span>발표 일정</span><span>발표</span><span>예상</span><span>이전</span><span>남은 시간</span></div>
   <div className="mc-results" aria-live="polite">
+   {loadState==='ready'&&modelCoverage&&<p className="mc-data-state" title="개발 코드 모델 입력 기준입니다. 발표 주기 별도 관리 72개 · 시장 일별 자료 21개 · 비정기·파생 신호 4개. PC 원자료의 활성·저장 완료 수가 아닙니다.">경제 모델 입력 {modelCoverage.totalInputs}개(코드 기준) · 공식 발표 연결 {modelCoverage.officialStored}/{modelCoverage.officialEligible}개(전체 저장 이력) · {modelCoverage.nextYear}년 발표일 확인 {modelCoverage.nextYearConfirmed}/{modelCoverage.officialEligible}개 · 개별 발표일 비대상 {modelCoverage.nonRelease}개</p>}
    <EarningsDisplayClient start={range.start} end={range.end} activeDate={activeDate} query={query} importance={importance} enabled={(kind==='all'||kind==='earnings')&&country!=='KR'} onCounts={setVendorCounts}/>
    {loadState!=='ready'&&<p className="mc-data-state">{loadState==='loading'?'공식 일정 저장본 확인 중':'공식 일정 저장본 조회 실패'} · 수동 확인 자료와 분리하여 표시합니다.</p>}
    {loadState==='ready'&&feed?.status!=='READY'&&<p className="mc-data-state">공식 일정 저장본 미확정 · 기존 확인 자료는 확인일 기준으로 표시합니다.</p>}
@@ -248,7 +252,7 @@ export default function MarketCalendar(){
      <time className="mc-time" dateTime={row.at??row.date}>{row.at?kstTime(row.at):'미정'}</time>
      <span className="mc-country">{row.country==='US'?'미국':'한국'}</span>
       <span className="mc-kind mc-kind-indicator">지표</span>
-     <div className="mc-event"><a href={row.sourceUrl} target="_blank" rel="noopener noreferrer" title="공식 발표 일정 출처로 이동">{row.name}</a><span className={`mc-tag-status ${row.status==='released'?'released':''}`}>{row.status==='released'?'확인된 발표값':row.fresh?'공식 저장':'확인일 기준'}</span><small className="mc-source">{row.category} · {row.source} · {row.checkedAt?`확인 ${row.checkedAt.slice(0,10)}`:'확인일 미제공'}</small></div>
+     <div className="mc-event"><a href={row.sourceUrl} target="_blank" rel="noopener noreferrer" title="공식 발표 일정 출처로 이동">{row.name}</a><span className={`mc-tag-status ${row.status==='released'?'released':''}`}>{row.status==='released'?'확인된 발표값':row.fresh?'공식 저장':'확인일 기준'}</span><small className="mc-source">{row.category} · {row.source} · {row.checkedAt?`확인 ${row.checkedAt.slice(0,10)}`:'확인일 미제공'}{row.modelInputCount?` · 관련 모델 입력 ${row.modelInputCount}개(코드 기준)`:''}</small></div>
      <div className="mc-number" data-kind="actual"><span className="mc-mobile-label">발표</span>{row.actual??'—'}</div>
      <div className="mc-number muted" data-kind="forecast"><span className="mc-mobile-label">예상</span>{row.forecast??'—'}</div>
      <div className="mc-number muted" data-kind="previous"><span className="mc-mobile-label">이전</span>{row.previous??'—'}</div>
