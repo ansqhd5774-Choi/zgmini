@@ -172,7 +172,7 @@ try{
   if(id==='assetBubble'&&r10)report.assetR10={status:r10.status,reason:r10.reason??null,reasons:r10.reasons??[]};
   // A valid *previous* release is not proof that the current R10 calculation
   // succeeded. Keep it intact, but never stamp or republish it as fresh.
-  if(preservePreviousR10({inputInstalled:r10InputInstalled,calculationStatus:report.assetR10Calculation?.status,projectionStatus:r10?.status})){
+  if(id==='assetBubble'&&preservePreviousR10({inputInstalled:r10InputInstalled,calculationStatus:report.assetR10Calculation?.status,projectionStatus:r10?.status})){
    report.assetR10={status:'PREVIOUS_RELEASE_PRESERVED',reason:report.assetR10Calculation?.status==='FAILED_PREVIOUS_RELEASE_PRESERVED'?'R10_RELEASE_CALCULATION_FAILED':'R10_RELEASE_NOT_READY'};
    report.projections.push({id,status:'PREVIOUS_RELEASE_PRESERVED'});
    return;
