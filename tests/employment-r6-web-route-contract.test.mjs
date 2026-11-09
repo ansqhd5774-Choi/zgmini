@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {EMPLOYMENT_R6_FEATURES,EMPLOYMENT_R6_FORMULA_HASH} from "../lib/market-score/employment-r6-formula.mjs";
+import {EMPLOYMENT_R6_FEATURES,EMPLOYMENT_R6_FORMULA_HASH,EMPLOYMENT_R6_FORMULA_REVISION} from "../lib/market-score/employment-r6-formula.mjs";
 import {employmentR6OneYearStart,employmentR6RecentQuarterStart} from "../lib/market-score/employment-r6-window.mjs";
 import {EMPLOYMENT_R6_PUBLIC_DISPLAY_KEY,employmentR6StoredDisplayResponse,validEmploymentR6PublicDisplay} from "../worker/employment-r6-public-display.mjs";
 
@@ -10,6 +10,7 @@ function payload(asOfDate="2026-11-01"){
   return {
     kind:"EMPLOYMENT_R6_ONE_YEAR_STORED_DISPLAY_R1",
     formulaHash:EMPLOYMENT_R6_FORMULA_HASH,
+    methodologyVersion:EMPLOYMENT_R6_FORMULA_REVISION,
     asOfDate,
     sourceStoredAt:now-3600000,
     window:{start:employmentR6OneYearStart(asOf),end:asOfDate,recentQuarterStart:employmentR6RecentQuarterStart(asOf)},
