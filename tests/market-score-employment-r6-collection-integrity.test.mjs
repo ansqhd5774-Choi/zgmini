@@ -402,3 +402,74 @@ test("R6 malformed BLS BED batch fails before returning any raw snapshot as a va
   assert.equal(calls, 2);
 });
 
+test("R6 shared BLS quota refusal preserves only safe group and persisted failure codes", async () => {
+  const verify = async (reason, provider = "BLS") => {
+    const runs = [];
+    const store = {
+      async initialize() {},
+      async getLatestRunInMode() { return null; },
+      async getProviderRequestsSince() { return 0; },
+      async acquire() { return { acquired: true }; },
+      async release() { return true; },
+      async recordRun(run) { runs.push(run); return 1; },
+    };
+    const result = await runEmploymentR6CollectionStep({
+      env: { BLS_API_KEY: "fixture-registered-v2" },
+      db: { prepare() { return {}; } }, mode: "BACKFILL", groups: ["BLS_JOLTS"],
+      now: () => new Date("2026-11-09T12:00:00.000Z"),
+      storeFactory: () => store,
+      providerFactory: () => ({
+        async fetchGroup() {
+          throw Object.assign(Error("PROVIDER_QUOTA_GUARD"), {
+            code: "PROVIDER_QUOTA_GUARD", provider, reason,
+          });
+        },
+      }),
+    });
+    assert.equal(result.providerRequests, 0);
+    assert.equal(result.status, "FAIL");
+    return { result, runs };
+  };
+  const safe = await verify("BLS_UNREG_25_PER_24H_STOP");
+  assert.equal(safe.result.groupResults[0].failureCode, "BLS_UNREG_25_PER_24H_STOP");
+  assert.equal(safe.runs[0].failureCode, "BLS_UNREG_25_PER_24H_STOP");
+  for (const [reason, provider] of [["BLS_UNREG_UNSAFE/secret", "BLS"], ["BLS_UNREG_25_PER_24H_STOP", "OTHER"]]) {
+    const { result, runs } = await verify(reason, provider);
+    assert.equal(result.groupResults[0].failureCode, "PROVIDER_QUOTA_GUARD");
+    assert.equal(runs[0].failureCode, "PROVIDER_QUOTA_GUARD");
+  }
+});
+
+test("registered R6 v2 BLS and BED count pre-network quota refusal as zero requests", async () => {
+  const now = () => new Date("2026-11-09T12:00:00.000Z");
+  const refused = () => Object.assign(Error("PROVIDER_QUOTA_GUARD"), {
+    code: "PROVIDER_QUOTA_GUARD", provider: "BLS", reason: "BLS_UNREG_25_PER_24H_STOP",
+  });
+  const blocked = createEmploymentR6Provider({
+    env: { BLS_API_KEY: "fixture-registered-v2" }, now,
+    fetchImpl: async () => { throw refused(); },
+  });
+  await assert.rejects(() => blocked.fetchBlsGroup("BLS_JOLTS", { mode: "BACKFILL", currentYear: 2026 }),
+    error => error.code === "PROVIDER_QUOTA_GUARD" && error.requestCount === 0);
+  await assert.rejects(() => blocked.fetchBed({ mode: "BACKFILL", currentYear: 2026 }),
+    error => error.code === "PROVIDER_QUOTA_GUARD" && error.requestCount === 0);
+  let calls = 0;
+  const partlySent = createEmploymentR6Provider({
+    env: { BLS_API_KEY: "fixture-registered-v2" }, now,
+    fetchImpl: async () => {
+      calls++;
+      if (calls === 1) return Response.json({ status: "REQUEST_SUCCEEDED", Results: { series: [] } });
+      throw refused();
+    },
+  });
+  await assert.rejects(() => partlySent.fetchBlsGroup("BLS_JOLTS", { mode: "BACKFILL", currentYear: 2026 }),
+    error => error.requestCount === 1);
+  assert.equal(calls, 2);
+  const uncertain = createEmploymentR6Provider({
+    env: { BLS_API_KEY: "fixture-registered-v2" }, now,
+    fetchImpl: async () => {
+      const error = refused(); error.requestReserved = true; throw error;
+    },
+  });
+  await assert.rejects(() => uncertain.fetchBlsGroup("BLS_JOLTS"), error => error.requestCount === 1);
+});
