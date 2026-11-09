@@ -1,5 +1,16 @@
 # 고용 R6 2026-11-10 수동 BACKFILL 실증 및 잔여 실행 계획
 
+## 최신 실행 판정 — 2026-11-10 KST / PC R2 설치와 Cloudflare Production R2 코드 검증
+
+> 아래가 이 문서의 최신 상태 정본이며 뒤의 'Draft/미배포/미설치' 표기는 당시 증거에 관한 **과거 이력**이다. 장래 자동 갱신 검증은 여전히 기능 최종 완료의 선행 Gate가 아니다.
+
+- **전체 진행률 6/8 = 75.0%(시작 75.0% → 현재 75.0%)**. 실제 PC R2 5파일 B 설치와 Cloudflare Production R2 소스 배포는 완료. 다만 저장 원자료 기반 R2 계산·로컬 출력·D1 readback·공개 R2 API/UI 전 구간 증거가 없으므로 다음 2개 필수 단계는 미완료.
+- 정규 B PC [#1195](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1195) Run **42721416977**, result **WRITER_B_INSTALLED_VERIFIED**, 설치 5/5·보호 확인·고유 JSON/TXT 2/2 원격 회수. 실제 PC 로컬 overlay/source/config **de81749f83c086f5cb0cad7ed1d5cc958de19280**; GitHub SHA와 구분. 소모한 고유 requestId 재실행 금지.
+- 후속 읽기 전용 A [#1197](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1197) Run **42721995133** PASS: PC source=config=HEAD 로컬 overlay SHA 일치·필수 6/6·dirty 0. 다만 실행 당시 기존 Writer checkpoint는 R2 B 설치 이전. A [#1199](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1199) Run **42722211137** PASS: Core lock 관측, 로컬 cycle/writer 마지막 확인 시각은 R2 설치 이전. A [#1200](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1200) Run **42722462277** STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE: 일회성 PID snapshot 불확정이지 실행 실패 아님. 금지 operation [#1204](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1204) OPERATION_NOT_ALLOWED, 잠금 우회·강제 삭제 금지.
+- 승인된 기능 선택 릴리스 [#1057](https://github.com/ansqhd5774-Choi/zgmini/pull/1057) 8파일(기능 5+회귀 3) **main 병합 완료**, commit **643b7c7c4372ffad552443fc312c6cb1b944e2fc**. Node.js CI [42723083286](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/42723083286) SUCCESS, Production SEO [42723083379](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/42723083379) SUCCESS. Cloudflare 연결된 GitHub/Production 배포 내역에서 해당 **동일 main SHA** 빌드 READY(약 1분 29초) 확인, Active Deployment **ef5e4a8d**, Traffic **100%**. GitHub 머지와 Cloudflare 실 운영을 분리 검증함.
+- Public API `https://zgmini.kr/api/employment-r6/observations` 브라우저 읽기 확인: 게시 데이터는 아직 `EMP-R6-FORMULA-R1`, `sourceStoredAt=1794262879306`, 29 raw/24 scored/18 recently scored/22 chart READY. 웹 코드 R2 배포를 **데이터 R2 갱신으로 오인 금지**. R2 기대는 승인된 `EMP-R6-FORMULA-R2-CPS-2025-10`/formula hash `sha256:04486846cd6063452d1c764116d3a31209f074d23a8764bf5b6ec8467095210e`; 실제 Runtime 전까지 28 scored라고 주장 금지.
+- **다음 필수 실행:** 운영 Core/Writer가 승인된 로컬 R2 source로 실제 stage→저장 결과→D1 publish/readback 수행했는지 기존 원장·checkpoint 우선 조회. 현재 읽기 전용 증거만으로 성공 주장 불가. 공유 Core lock을 강제 해제하거나 임의 새 CMD/B/SQL·중복 provider BACKFILL을 실행하지 않는다. 그 뒤 공개 API/UI R2 버전·29개 관측/점수·last valid 및 결측 1개 대조. DOL/BED 원본 결손은 이미 기획된 안전 A [#1184](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1184)가 공통 Controller 담당의 정규 등록 후에만 별도 진단하며 R2 게시 선행 Gate가 아니다.
+
 > 작업 정본: `feat/bls-registered-v2-20261109` (Draft PR #1036). 기존 산식·가중치·TTL·DB 계약은 임의로 수정하지 않는다. **자동 수집/정규 예약 검증은 기능 완료 후 후속이며, 수동 검증에 날짜·60초·24시간 같은 내부 대기 Gate를 새로 만들지 않는다.** 공급자 호출량·공유 Writer 안전 보호는 별개로 보존한다.
 
 ## 2026-11-10 KST R2 5파일 Windows 실제 설치 신규 증거
