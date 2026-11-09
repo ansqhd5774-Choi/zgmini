@@ -23,7 +23,7 @@
 | 세부 ID·담당 | 다음 실제 실행 | 완료 판정에 필요한 증거 | 상태 |
 | --- | --- | --- | --- |
 | **P1-01 · 테마 원담당** | 기존 공개 10개 ID/표시 순서, R32 연구 교집합 8개, 독립 우주·데이터센터, 공통 R37/R88 물리 feed를 매핑한다. | 10/10 책임·입력/산식/Reader 매핑; 기존 T1 연결 명세 | **DONE — 기존 T1 20% 증거 재사용** |
-| **P1-02 · 테마 원담당** | 실제 PC L7/R181 설치 source·최초 실패 코드·저장 GMH 원본 SHA/관측일·R178 rolling 원장/checkpoint 및 D1/API 현상태를 승인된 A급 조회로 확인한다. | 실행 ID, 설치 SHA, LAST PASS/FIRST FAIL, Reader READY 또는 정확한 503·STALE 사유 | **PARTIAL — 11/9 설치 SHA·실원장 확인 완료; 최초 HTTP 코드, GMH/R178 저장·D1·최신 API 미확인. 동일 A 재요청 금지** |
+| **P1-02 · 테마 원담당** | 실제 PC L7/R181 설치 source·최초 실패 코드·저장 GMH 원본 SHA/관측일·R178 rolling 원장/checkpoint 및 D1/API 현상태를 승인된 A급 조회로 확인한다. | 실행 ID, 설치 SHA, LAST PASS/FIRST FAIL, Reader READY 또는 정확한 503·STALE 사유 | **PARTIAL — 11/9 설치 SHA·실원장·API STALE 확인; 최초 HTTP 코드, GMH/R178 저장·D1 미확인. 동일 A 재요청 금지** |
 | **P1-03 · 공통 총괄 / 테마 원담당** | 공유 Controller lock은 공통 단일 담당이 소유자·stage·원장·백업을 읽기 전용으로 확인·정규 복구한다. 테마 담당은 복구 후 필요한 Reader 실행만 재개한다. 이미 성공한 R181 B/A 설치를 무조건 반복하지 않는다. | 요청별 terminal JSON/TXT, 설치 소스/복구 증거, 승인 작업 claim 가능 상태 | **공유 운영 쓰기만 조건부 BLOCKED; 독립 소스 작업은 계속** |
 | **P1-04 · 테마 원담당** | 승인 GMH 확정 원자료의 실존·가격 모드·ETF/SPY 거래일을 검증하고 기존 R181→R178 경로에서 계산·로컬 저장→rolling D1 CAS/write/readback을 수행한다. 기존 seed는 덮어쓰지 않는다. | 원본/계산 SHA, observationDate·storedAt·checkpoint, `theme-etf-only-rolling` 재조회와 공개 Reader READY | P1-02·승인 운영 경로 확인 후 |
 | **P1-05 · 테마 원담당** | 확정 R32 8개와 독립 우주(R32 변형)·데이터센터(PAIR50)를 동일 저장 입력으로 shadow 검산한다. 기존 20논리 단계→6물리 키·게시 전 Reader 안전 검사를 재사용한다. | 10개별 승인 버전·252일/가용일·결측·원값 동등/승인된 차이, 게시 전 6키 중복/부분쓰기 방지 | 소스 27/27 통과 이력 재사용, 실제 저장 검산 필요 |
