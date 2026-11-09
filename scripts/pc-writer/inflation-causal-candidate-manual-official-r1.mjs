@@ -19,6 +19,38 @@ const MONTH=/^(?:19|20|21)\d{2}-(?:0[1-9]|1[0-2])-01$/;
 const NUMBER=/^(?:0|[1-9]\d*)(?:\.\d+)?$/;
 const SOURCE_IDS=[BLS_RENT_ID,BLS_OER_ID];
 
+async function boundedOfficialGet(url,maxBytes,fetchImpl){
+  const response=await fetchImpl(url,{method:'GET',redirect:'manual',
+    signal:AbortSignal.timeout(40_000)});
+  if(response?.status>=300&&response.status<400)
+    fail('INFL_MANUAL_OFFICIAL_DOWNLOAD_REDIRECT_DENIED');
+  if(!response?.ok||!response.body?.getReader)
+    fail('INFL_MANUAL_OFFICIAL_DOWNLOAD_FAILED');
+  const reader=response.body.getReader(),parts=[];let total=0;
+  for(;;){
+    const {done,value}=await reader.read();if(done)break;
+    total+=value.byteLength;
+    if(total>maxBytes){await reader.cancel();fail('INFL_MANUAL_OFFICIAL_DOWNLOAD_TOO_LARGE');}
+    parts.push(Buffer.from(value));
+  }
+  return Buffer.concat(parts);
+}
+
+// Single explicit read from canonical public static files. This path uses
+// neither the BLS registered API nor the Census EITS API or Core retry ledger.
+// Do not call it from a visitor GET or from a timer.
+export async function fetchOfficialManualCandidateSources({fetchImpl=globalThis.fetch}={}){
+  if(typeof fetchImpl!=='function')fail('INFL_MANUAL_OFFICIAL_FETCH_UNAVAILABLE');
+  const [blsBytes,censusBytes]=await Promise.all([
+    boundedOfficialGet(BLS_HOUSING_URL,8_000_000,fetchImpl),
+    boundedOfficialGet(CENSUS_INVENTORY_URL,6_000_000,fetchImpl),
+  ]);
+  return {blsBytes,censusBytes,
+    sourceUrls:{bls:BLS_HOUSING_URL,census:CENSUS_INVENTORY_URL},
+    sourceHashes:{bls:hash(blsBytes),census:hash(censusBytes)},
+    supplierApiCalls:0,coreCheckpointWrites:0};
+}
+
 function checkBytes(source,maxBytes,kind){
   if(!(source instanceof Uint8Array)||source.byteLength<20||source.byteLength>maxBytes)
     fail(`INFL_MANUAL_${kind}_BYTES_INVALID`);
@@ -60,6 +92,18 @@ export function parseOfficialBlsHousingFlatfile(source){
   for(const id of SOURCE_IDS){
     found[id].sort((a,b)=>a.date.localeCompare(b.date));
     if(found[id].length<2)fail('INFL_MANUAL_BLS_HISTORY_INCOMPLETE');
+  }
+  const latest=found[BLS_RENT_ID].at(-1).date;
+  if(found[BLS_OER_ID].at(-1).date!==latest)
+    fail('INFL_MANUAL_BLS_LATEST_MISMATCH');
+  const [latestYear,latestMonth]=latest.split('-').map(Number);
+  const cutoff=new Date(Date.UTC(latestYear,latestMonth-12,1)).toISOString().slice(0,10);
+  for(const id of SOURCE_IDS){
+    const recent=found[id].filter(x=>x.date>=cutoff&&x.date<=latest);
+    // 2025-10 is officially absent. A rolling twelve-month window must
+    // contain at least eleven actual observations, never synthetic values.
+    if(recent.length<11||recent.length>12)
+      fail('INFL_MANUAL_BLS_RECENT_HISTORY_INCOMPLETE');
   }
   return {
     provider:'BLS',sourceKind:'BLS_OFFICIAL_CU_STATIC_FLATFILE',sourceUrl:BLS_HOUSING_URL,
@@ -156,7 +200,8 @@ export function planOfficialManualCandidateDocuments({bls,census,previousBls=nul
     previousCensus.sourceVersion!==CENSUS_CANDIDATE_VERSION||
     !isIso(previousCensus.sourceStoredAt)||
     previousCensus.selector!=='MTM/TI'||
-    !validateRows(previousCensus.observations)))
+    !validateRows(previousCensus.observations)||
+    (previousCensus.provenance!==undefined&&!Array.isArray(previousCensus.provenance))))
     fail('INFL_MANUAL_PRIOR_CENSUS_INVALID');
   for(const id of SOURCE_IDS)if(!validateRows(bls.series?.[id]))
     fail('INFL_MANUAL_BLS_SERIES_INVALID');
@@ -175,10 +220,14 @@ export function planOfficialManualCandidateDocuments({bls,census,previousBls=nul
   const blsChanged=!same(series,previousBls?.series),
     censusChanged=!same(observations,previousCensus?.observations);
 
-  const blsProvenance={origin:'BLS_OFFICIAL_STATIC_FILE',method:'EXPLICIT_MANUAL_IMPORT',
+  // Parser shape validation and a SHA-256 digest do not establish download
+  // authenticity. The approved operator must separately verify provenance.
+  const blsProvenance={origin:'CLAIMED_BLS_OFFICIAL_STATIC_COPY',
+    provenanceVerified:false,method:'EXPLICIT_MANUAL_IMPORT',
     sourceUrl:BLS_HOUSING_URL,sourceSha256:bls.sourceSha256,
     archive:`raw/bls-cpi-official-${bls.sourceSha256}.txt`};
-  const censusProvenance={origin:'CENSUS_OFFICIAL_HISTORICAL_XLSX',
+  const censusProvenance={origin:'CLAIMED_CENSUS_OFFICIAL_XLSX_COPY',
+    provenanceVerified:false,
     method:'EXPLICIT_MANUAL_IMPORT',sourceUrl:CENSUS_INVENTORY_URL,
     sourceSha256:census.sourceSha256,
     archive:`raw/census-m3-official-${census.sourceSha256}.xlsx`};
