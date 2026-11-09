@@ -1,5 +1,7 @@
 # ZGMINI 대시보드 아웃브레이크 제거·섹터/테마 공탐 확장 R1
 
+> 최신 운영 결과는 문서 끝의 **2026-11-09 배포 검증 후 최종 상태**를 따른다. 위의 BLOCKED/READY 기록은 배포 전 시점의 역사적 기록이다.
+
 - 계획 기준일: 2026-11-09 (KST)
 - 저장소: `ansqhd5774-Choi/zgmini`
 - 기존 UI 작업 브랜치: `codex/ui-improvements` (신규 개발 브랜치 생성 없음)
@@ -60,3 +62,33 @@ node --test tests/dashboard-secondary-two-panel-r1.test.mjs tests/market-explore
 - 전체 `npm run typecheck`: **FAIL**, 첫 오류는 이번 변경 8파일 밖 `app/economic-indicators/inflation-research-inputs.tsx`가 `../../lib/inflation-causal-public-catalog.mjs`를 찾지 못한 `TS2307`; 이어서 해당 파일의 `TS7006/TS18048` 오류. 이 실패를 UI 구현 실패로 단정하지 않지만 전체 타입 검사 통과로 표현하지 않는다. 다른 지표 담당의 기존 source를 임의 변경하지 않는다.
 - 로컬 Vite 화면 서버: `uv_interface_addresses` 환경 오류로 기동 실패. PC/모바일 스크린샷을 확보하지 못했으므로 **실화면 검증은 미완료**다. 브라우저 도구에서도 화면 상태 조회가 시간 초과돼 디자인 PASS로 판단할 증거가 없다.
 - 다음 실행: 승인된 UI source의 실제 렌더 경로가 확보되면 390/510/768/959/960/1280/1366/1440px를 측정한다. UI 범위 밖 타입 오류는 해당 변경 PR의 CI에서 재현되는지 별도로 분류한다. 배포용 8파일 선별 경로 승인 전 무관한 main/운영 파일은 수정하지 않는다.
+
+
+## 2026-11-09 배포 검증 후 최종 상태 (최신 기록)
+
+- 사용자 승인: 목적 제한 배포용 브랜치 허용, 배포 전 디자인 초안 확인 후 '승인. 계속해라'. 디자인 시안은 기존 대화에서 공유.
+- 소스 PR: [#1052](https://github.com/ansqhd5774-Choi/zgmini/pull/1052). 배포용 브랜치 `deploy/dashboard-sector-theme-layout-r1-20261109`, 기준 main `3910adf77222af166c25e73028f734cfccdf38f5`, 구현 SHA `1b1bff50893fca77c4a77b5029cfde6468b543e3`, CI 보정 SHA `fdcadc7053dd2fe434ea24e140a71c1b102b19fc`.
+- 선택 변경: UI 4파일(`app/page.tsx`, `components/site-header.tsx`, `app/globals.css`, `app/outbreak-events.css`) + 관련 테스트 5파일, 총 **9파일**. 최초 8파일에서 CI가 밝혀낸 기존 헤더 기대값 1줄(`tests/recession-inflation-layout-r1.test.mjs`)을 추가 정정. main에 있던 독립 CSS 후속 변경 보존. 산식·DB·공급자·수집·운영 source 변경 없음.
+- PR Node.js `check` 성공: `fdcadc7053dd2fe434ea24e140a71c1b102b19fc`. UI Browser job의 대시보드 390px/1440px 검사는 PASS. 전체 `ui` job은 별도 한국 공포탐욕 상세 페이지 소개문 1440px 표시 기대 테스트(`tests/fear-greed-education-browser-r4.mjs:54`)에서 FAIL. 이번 변경 이전 다른 PR run `42600906526`에서도 정확히 동일 실패가 발생했음을 확인; 관련 Korea 파일이나 검사는 수정하지 않음. 이 기존 이슈는 별도 담당 범위.
+- GitHub main 병합 성공: PR #1052 squash SHA `c9c9a46831c9569ad212f8e3a3ca5d3a47bc6791`. 후속 다른 담당이 물가지표 파일 4개를 추가한 최신 main `b23550194cba6be5c311e000b097ed425edcb3d0`에도 UI 변경 보존. 최신 main Node.js `check`, `verify`, `notify`, Cloudflare `Workers Builds: zgmini-migration-candidate-r5` **4/4 SUCCESS**.
+- Cloudflare 배포 증거: 최신 main SHA `b23550194cba6be5c311e000b097ed425edcb3d0`의 Git Integration Production build `3e86f458-1869-4011-b80e-ded337776d64` 성공. GitHub 빌드 성공과 공개 화면을 별도 검증함.
+- 실제 공개 웹 PC 검증: `https://zgmini.kr/` 새로고침 후 상단 아웃브레이크 메뉴 0, 대시보드 `OutbreakSummary` 0. 브라우저 실측 viewport 1363px, 바깥 grid 1300px, 섹터 카드 644px와 테마 카드 644px 동일 폭/동일 top 934px, 가로 넘침 없음. 스크린샷에서 두 패널의 2열과 기존 섹터 차트 데이터를 확인. 테마 데이터 패널은 아직 비어 있지만 기존 데이터 가용성 문제이고 이번 디자인 변경으로 허위 수치를 채우지 않음.
+- 모바일 검증 범위: CI의 390px 대시보드 브라우저 상호작용 PASS, `@media(max-width:767px)` 1열 CSS 규칙 및 신규 정적 회귀 테스트 PASS. **실제 공개 운영 사이트를 390px 모바일 뷰포트로 직접 캡처한 결과는 미확보**. '모바일 Production 실화면 PASS' 또는 모든 경계 해상도 검증 완료로 과장하지 않음.
+
+### 최신 단계·진행률
+
+| 구분 | 상태 | 증거 |
+|---|---|---|
+| 범위·정본/노하우 반영 | DONE 100% | 브랜치·main 비교, 기존 승인 보존 |
+| 소스 최소 구현 | DONE 100% | 9파일만 main 병합 |
+| 관련 회귀·전체 필수 CI | DONE 100% | Node.js check 성공, 390/1440 대시보드 UI PASS |
+| 배포 및 공개 PC 디자인 확인 | DONE 100% | Git Integration 성공 + 1363px 공개 레이아웃 실측 |
+| 모바일 Production 실화면·경계 확인 | PARTIAL 70% | 390px CI 검증 및 CSS 계약 통과; 공개 모바일 뷰포트 미확보 |
+
+**전체 작업 진행률(검증 기준 가중 집계): 97%.** 모바일 운영 뷰포트 390/510/767px와 768~1023px 경계 실측이 남았다. 기존 모바일 1열과 독립 /outbreak/ 라우트 유지라는 구현 목표는 충족하며, 이 잔여 확인을 이유로 자동갱신·다른 기능 개발을 선행 조건으로 만들지 않는다.
+
+### 다음 필수 행동
+
+- 현 UI 담당: 승인된 일반 브라우저 반응형 뷰포트 기능이 확보되면 공개 `zgmini.kr`에서 390/510/767/768/959/960/1023px 레이아웃·데이터 노출·가로스크롤을 **읽기 전용으로 1회** 확인한다.
+- 첫 관련 실패가 나오면 원본 사진/viewport/선택자와 정확한 CSS 규칙만 점검하고, 새로운 기능 브랜치에서 최소 수정 후 PR/CI를 진행한다. unrelated Korea 교육 검사는 독립 인계이며 이번 배포 브랜치에서 수정하지 않는다.
+- 이후 개발 작업의 기본 컨텍스트는 **`codex/ui-improvements`**이고, 임시 `deploy/dashboard-sector-theme-layout-r1-20261109`는 추가 개발 금지.
