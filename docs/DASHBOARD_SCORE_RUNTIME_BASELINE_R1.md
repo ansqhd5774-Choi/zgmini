@@ -83,3 +83,20 @@
 - **운영 분모 전체 PASS:** 0/68(동일 checkpoint로 수집→계산→D1→API/UI 전체 입증 기준).
 - **계획 배점 판정:** 단계1 운영 기준선 PARTIAL, 단계2 인과 지연 측정 PARTIAL, 단계3 일별 확정 계약 아직 미승인. 이 근거만으로 15%+15%를 완료 처리하지 않음.
 - **다음 한 건:** 가장 영향 큰 대표 경로인 CM-R1 시장점수의 실제 **원자료 checkpoint/signature와 current.stored_at을 분리**하는 최소 데이터 계보 설계를 작성하고, 기존 SQLite/Writer 계약으로 가능한지 확인한다. DB·D1 스키마 변경 필요 시 범위를 제시하고 승인 전 쓰기 금지. 원담당 기능 수집/게시와 병렬로 독립 조사 지속.
+
+
+## 6. 추가 read-only 소스 추적 — 입력 checkpoint의 실제 후보 (2026-11-10)
+
+기존 main 소스 원문 확인만 수행했으며 설치·운영/DB/API 계약의 수정과 새로운 PC 요청은 없다.
+
+| 범위 | 현재 계산에서 실제 읽는 저장 항목/분기 | 가짜 신규 입력 방지에 필요한 검증 관점 |
+|---|---|---|
+| 종합 시장 계산 | `worker/market-operational-store.mjs`의 `market_input_batches_v1`에서 `macro, credit, supply, fundFlows, bisDsr, bisTc, rates`를 로컬에서 읽고, `scripts/pc-writer/market.mjs`가 저장 입력으로 계산 | 공개 `current.stored_at`이 아닌 실제 사용 입력의 관측/version 및 본문 변화를 계산 사건에 결합해야 함 |
+| 경기침체/신용/부채/공급 등 projection | `worker/projection-source-r52.mjs`의 `PROJECTION_INPUT_BATCHES`: 경기침체 `macro+credit+rates`, 신용 `macro+credit`, 부채 `macro+credit+bisDsr+bisTc`, 공급 `macro+supply` 등 | 영향받는 `scoreId`별 입력집합이 다르므로 종합 `current` 한 행의 시간만으로 모든 점수의 신규 입력을 판정하면 안 됨 |
+| 인플레이션/실적침체/한국 공포탐욕 | 인플레이션은 저장된 PIT series+PC1, 실적침체는 저장된 E1 domain snapshot, 한국 공포탐욕은 `kfg_rev7_snapshots` 및 history | 서로 다른 원천/시각을 단일 `core:<stored_at>` 문자열로 뭉칠 수 없음. 이미 한국 공포탐욕은 별도 `kfg:<date>:<calculated_at>` 계약 존재 |
+| 현재 점수·일별 공개 스냅샷 | `market-operational-store.mjs.writeScore`는 동일 날짜와 `current`의 body·stored_at을 UPSERT; `publish.mjs`도 원격 같은 두 key를 UPSERT | 당일 공개 key 갱신은 기존 구조에서 허용, 그러나 공식 원자료 발표·불변 당시 일별 확정점의 증거는 아님 |
+| 보조수집 사이 2차 게시 | `progressive-publication.mjs`의 해시는 `public_feed_snapshots_v1 output`+supply/alpaca+S&P500 shadow만 포함 | 보조집합 변화의 구분에 유용하나 전 입력/68개 전체 변경 여부를 보증하지 않음 |
+
+**안전한 보완 방향(미적용 제안):** 지표별 유효 입력의 `observationDate/releasedAt` 및 저장 원장, 실제 사용 입력 내용 또는 식별 해시, 계산기 build version, 계산 기준일과 공식 유효기간/READY 변화가 필요한 시각을 함께 포함하는 입력 사건 계약을 검토한다. 값 변화 0이어도 **TTL 만료·휴장/거래일 경계·공식 정정·필수 관측월 변경**은 정당한 재계산 사유일 수 있으므로 순수 본문 해시만으로 무조건 생략하면 안 된다. 이미 승인된 sourceVersion/D1 계약과 충돌 여부, 현재 PC 설치 SHA를 먼저 확인한 뒤 최소 변경안을 확정해야 한다.
+
+**소스 수준 LAST PASS:** 현 main은 `writeInput` 저장테이블, `writeScore` 공개스냅샷, `readProjectionCheckpoint` 버전 유도 지점이 각각 구분됨을 확인. **FIRST FAIL(설계 인과성):** `readCoreCheckpoint`가 본래 원자료의 새 관측을 직접 증명하지 않는 `current.stored_at`을 사용할 수 있음. **실운영 장애/잘못 게시된 실제 건수:** 아직 입출력 원장 연계 실증이 없어 **UNKNOWN**. 이로 인해 기존 정상 결과를 임의 FAIL로 간주하지 않는다.
