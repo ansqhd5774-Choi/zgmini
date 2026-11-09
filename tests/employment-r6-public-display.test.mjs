@@ -141,4 +141,11 @@ test("publisher only writes a verified public snapshot, guards downgrades and re
   const protectedTarget=remote({body:JSON.stringify(newer),stored_at:now+101});
   await assert.rejects(publishEmploymentR6OneYear({body,remote:protectedTarget,dbId:"test-db",now:now+200}),/REMOTE_SOURCE_NEWER/);
   assert.equal(protectedTarget.writes,0);
+  const oldFormula=structuredClone(body);
+  oldFormula.formulaHash="sha256:18e18d1025d8c5b1ea9e4aa1bdd33596cfb8b5d5df7e59a6c2629f230be5480d";
+  oldFormula.methodologyVersion="EMP-R6-FORMULA-R1";
+  oldFormula.sourceStoredAt=now+300;
+  const legacyTarget=remote({body:JSON.stringify(oldFormula),stored_at:now+301});
+  await assert.rejects(publishEmploymentR6OneYear({body,remote:legacyTarget,dbId:"test-db",now:now+500}),/REMOTE_SOURCE_NEWER/);
+  assert.equal(legacyTarget.writes,0);
 });
