@@ -113,3 +113,12 @@
 ### 이어서 수행할 단일 필수 작업
 
 **새 입력이 없는데 재게시만 된 경우를 실제로 걸러낼 원본 checkpoint 위치·생성/갱신 경로를 main 코드와 기존 읽기 전용 원장에서 식별**한다. 이후 기존 Writer의 `sourceVersion`을 실제 입력 변경과 대조하는 최소 수정안을 만들고, DB/API 계약 변경이 필요하면 정확한 영향 범위를 사용자 승인에 올린다. 현재 점수 산식·발표주기·확정 Gate·이력·배포·자동 예약은 건드리지 않는다.
+
+
+## 10. 실행 실적 기록 — 2026-11-10 KST (제3차, 입력 인과 설계)
+
+- 최신 `main` 원문과 기존 `codex/ui-improvements`의 실제 blob SHA를 7개 관련 파일에서 개별 대조했다. 핵심 `run-local.mjs`, `progressive-publication.mjs` **2개는 서로 다름**; 기능 전용 UI 브랜치의 과거 Writer를 최신 운영 공통 코드 위에 덮어쓰면 위험하므로 코드 수정 0건으로 보존했다.
+- 기존 `PROJECTION_INPUT_BATCHES`, 인플레이션 PIT/PC1, E1, 한국 공포탐욕 별도 history 원천을 추적해 **공개 저장시계 vs 입력 관측시계** 구별 설계 작성. 이미 확정된 섹터 provisional→confirmed 우선권 보호 사례(`docs/SECTOR_PROVISIONAL.md`, `tests/sector-provisional.test.mjs`)를 재사용 검토했다.
+- 설계 산출물: [docs/DASHBOARD_SCORE_INPUT_LINEAGE_DESIGN_R1.md](DASHBOARD_SCORE_INPUT_LINEAGE_DESIGN_R1.md). 새 원자료 없음/동일일 새 입력/공식 정정/TTL/미완성 분기/다회 계산/날짜 경계/공개 실패의 최소 8개 테스트 계약 및 승인 Gate 정리. **설계 문서만** 원격 readback 검증; 기존 산식/DB/Writer/예약/Production 모두 불변.
+- **진척:** 1단계 68/68 식별(운영 완전 인과증거 미완), 2단계 대표 API 11/11 관측·PC 7건 대조(인과 0/68), 3단계 **설계 초안 1/1·실제 승인/코드/운영 PASS 0/1**, 4–7단계 미완. 완료 확정 0/7 유지. 계획 가중 실구현율은 검증 근거 부족으로 산정 보류.
+- **다음 1건:** 기능별 PC 승인/실행 source와 이 `main` 입력 경로가 실제 일치하는지 기존 승인 읽기 전용 증거에서 확인하고, **백엔드 변경 대상 브랜치** 및 새 DB/메타데이터·일별 cut-off 필요 여부를 특정한다. 이 증거 없이 UI 전용 브랜치에서 Writer/DB 계약을 변경하지 않는다. 예약 추가 0건.
