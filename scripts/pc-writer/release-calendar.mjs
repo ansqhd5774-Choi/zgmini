@@ -289,14 +289,21 @@ async function collectBlsSource({store,key,spec,year,now,fetchImpl,countRequest,
  try{bed=await fetchBlsBed({store,key,now,fetchImpl,countRequest});}catch{}
  if(!icsReady&&!coveredYears.length&&!bed.length)throw Error('BLS_ALL_OFFICIAL_SOURCES_UNAVAILABLE');
  const verifiedYears=new Set(coveredYears);
+ const today=new Date(now).toISOString().slice(0,10);
  // BED is independently announced and must survive a transient news-page
  // failure even when the annual calendar for that year was refreshed.
  const preserved=(previous?.body?.events??[]).filter(e=>{
   if(e.source!=='bls')return false;
-  if(e.id==='bls-business-employment-dynamics')return true;
+  // An updated official BED announcement supersedes an old *future* date.
+  // Keep historical BED observations, or all dates if today's fetch failed.
+  if(e.id==='bls-business-employment-dynamics')return !bed.length||e.date<today;
   const eventYear=Number(e.date.slice(0,4));
   // A partial future ICS feed does not prove the whole future year complete.
-  return !verifiedYears.has(eventYear)&&(!icsReady||eventYear>=year+1);
+  if(!verifiedYears.has(eventYear))return !icsReady||eventYear>=year+1;
+  // A full-year page covers its listed release IDs, but must not erase other
+  // earlier official ICS releases when the ICS endpoint temporarily fails.
+  if(annual.some(current=>current.id===e.id&&Number(current.date.slice(0,4))===eventYear))return false;
+  return !icsReady||eventYear>=year+1;
  });
  // Latest ICS data wins a same-ID/date collision; annual rows fill unlisted years.
  const events=[...new Map([...preserved,...annual,...bed,...ics]

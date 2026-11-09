@@ -82,3 +82,31 @@ test('existing calendar store combines ICS and year-at-a-time BLS pages without 
   assert.equal(annual2027Requests,2);
  }finally{db.close();}
 });
+
+test('a corrected BED future date replaces the old date, while an ICS outage preserves other releases',async()=>{
+ const db=localDatabase(':memory:');
+ try{
+  const store=publicFeedStore(db);await store.initialize();
+  const now=Date.parse('2026-11-09T01:00:00Z');
+  await store.writeOutput('release-calendar',{
+   events:[
+    {id:'bls-business-employment-dynamics',source:'bls',date:'2026-10-28',title:'Business Employment Dynamics'},
+    {id:'bls-business-employment-dynamics',source:'bls',date:'2027-01-20',title:'Business Employment Dynamics'},
+    {id:'jolts',source:'bls',date:'2026-12-10',title:'Job Openings and Labor Turnover Survey'},
+   ],sources:{bls:{status:'READY',checkedAt:new Date(now-3600000).toISOString()}},
+  },now-3600000);
+  const fetchImpl=async url=>{
+   if(url.endsWith('/bls.ics'))return new Response('unavailable',{status:503});
+   if(url.endsWith('/2026/home.htm'))return new Response(annualPage(2026));
+   if(url.endsWith('/2027/home.htm'))return new Response(annualPage(2027));
+   if(url.endsWith('/news.release/cewbd.htm'))return new Response(bedPage);
+   return new Response('unavailable',{status:503});
+  };
+  await collectReleaseCalendar(db,{now,fetchImpl});
+  const saved=(await store.readOutput('release-calendar')).body;
+  const bedDates=saved.events.filter(e=>e.source==='bls'&&e.id==='bls-business-employment-dynamics').map(e=>e.date).sort();
+  assert.deepEqual(bedDates,['2026-10-28','2027-01-27']);
+  assert.ok(saved.events.some(e=>e.source==='bls'&&e.id==='jolts'&&e.date==='2026-12-10'));
+  assert.equal(saved.sources.bls.icsStatus,'SOURCE_FAILED');
+ }finally{db.close();}
+});
