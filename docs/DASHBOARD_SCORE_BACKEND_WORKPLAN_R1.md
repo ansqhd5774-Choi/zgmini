@@ -12,7 +12,7 @@
 |---|---|---|---|
 | 1 | 입력·게시 출처 대조 | 68개 score별 실제 원천, 관측/정정, 계산 version, 저장 위치, PC 승인 SHA, 공개 경로와 마지막 유효점 매핑 | 콘텐츠 식별 68/68, 상세 인과 검증 0/68 |
 | 2 | 순수 입력 변경 판별 구현 | 저장·게시시간만 바뀐 재저장은 동일; 관측, revision, 유효성, 실효 날짜 경계, 계산법 변경은 차이; 검증되지 않은 게시 실패는 재시도 허용 | `lib/score-history/input-lineage-r1.mjs`, 9/9 단위 시험 PASS |
-| 3 | 기존 source/Writer 연결을 소수 점수로 검증 | 대시보드·업종·테마 각 1개 후보의 원천 서명과 기존 운영 체크포인트 병행 추적; 기존 `sourceVersion`/`sourceStoredAt` 변경 없음; PC Runtime·운영 파일 승인 출처 먼저 확인 | 미실행 |
+| 3 | 기존 source/Writer 연결을 소수 점수로 검증 | 대시보드·업종·테마 각 1개 후보의 원천 서명과 기존 운영 체크포인트 병행 추적; 기존 `sourceVersion`/`sourceStoredAt` 변경 없음; PC Runtime·운영 파일 승인 출처 먼저 확인 | D09 사전 로드 입력 대상 shadow 어댑터·12/12 시뮬레이션 PASS; 실제 PC/Writer 연결 미실행 |
 | 4 | 실제 일별 사건 기록·공개 확대 | 마지막 유효 점수 보존, 신규 정정 사건 분리, 없는 과거 점수 조작 금지, 공개 D1/API/UI 동시 검증. 개별 PASS 건수로 확대 | 0/68 |
 
 ## 필수 보호·중단 조건
@@ -26,7 +26,16 @@
 
 ## 다음 단일 필수 작업
 
-68개 입력 출처표 중 현재 공개된 실제 source reader에 대해 `scoreId → 원자료/최종관측/정정 → 계산 version → 공개 key`의 입증 가능한 매핑을 먼저 확정한다. 다음에는 기존 PC 승인 source의 `projection-checkpoint-r52.mjs` 파일 해시/관련 런타임 정합성을 읽기 전용으로 확인하고, **일개 점수 파일**에서 shadow signature를 계산하는 소규모 연결 시험만 진행한다. 운영 변경이 요구되면 그 변경점만 승인받는다.
+기존 PC 승인 source의 `projection-checkpoint-r52.mjs` 파일 해시/관련 런타임 정합성을 읽기 전용으로 확인한다. 이후 **D09 신용위험 1개**에 대해 설치된 기존 Reader가 제공하는 실제 저장 입력으로 shadow signature를 계산하고, 현행 checkpoint 및 저장된 공개 결과와 비교한다. 운영 변경이 요구되면 그 변경점만 승인받는다. 나머지 67개는 동일 구조를 무작정 복제하지 않고 개별 공급원/주기/실제 계산 입력을 확인한다.
+
+## D09 신용위험 — 최초 읽기 전용 후보 연결 증거
+
+- 실제 빌더 `worker/projection-builders/creditRisk.ts`의 계산 입력: `inputs.external.cmdiRows`의 `observationDate,hy,ig,market`, `inputs.series.DGS2/DGS5/DGS10/DGS30`의 `observationDate,value`, 저장된 `diagnostics8.creditRiskDefense`의 `status,score` 및 `credit-43` NFCI 보조 표시 필드.
+- 실제 로더 `worker/projection-source-r52.mjs`는 `creditRisk`에 `macro+credit` 입력을 선택하고, `anchorToLatestBatch=true`, 해당 매크로 슬라이스/기존 full-macro fallback을 이용한다. 기존 36시간 TTL·원본 재조회 보호를 그대로 이용한다.
+- 현재 공개 projection 저장 key: `market_public_snapshots_v1`의 `detail:credit-risk:v1`. 공개 본문은 이미 저장된 결과이며 새 서명을 게시하는 구조가 아니다.
+- 신규 `lib/score-history/credit-risk-input-lineage-r1.mjs`는 **위 로더가 이미 반환한 값을 함수 인수로 받는 비파괴 shadow 함수**다. 새 API/수집/DB 읽기/쓰기 없음. 오직 scorer가 사용하는 값을 선택·해시하며 출력은 비복원성 SHA-256 한 개와 상태 메타데이터다.
+- 단위 시뮬레이션 12/12 통과: 실제 사용 데이터 정정·신규 관측·공개 점수/보조값 변경/TTL 결측/실제 as-of 경계는 감지; 무관한 PAYEMS/레포 및 확인·저장 시각만 변경하면 서명 유지. 기존 범용 9/9 포함 **전체 21/21** 통과.
+- **명확한 미증명:** PC 운영의 실제 파일 SHA, 실제 원자료 body hash/공식 revision, 실제 D09 score·checkpoint과 shadow 서명 대조, Writer 연동, D1·API·UI 게시 0건. 과거 CURRENT_VINTAGE 이력을 당시 확정 이력으로 변조하지 않는다.
 
 ## 진행률 표기
 
