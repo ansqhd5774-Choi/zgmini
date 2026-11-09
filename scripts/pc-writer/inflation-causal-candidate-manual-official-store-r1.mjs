@@ -129,13 +129,19 @@ export async function applyOfficialManualStore({base,blsBytes,censusBytes,
     if(!Array.isArray(prepared.plan.documents.bls?.series?.WPSFD4)||
       prepared.plan.documents.bls.series.WPSFD4.length===0)
       fail('INFL_MANUAL_STORE_PPI_PREIMAGE_REQUIRED');
-    if(prepared.status==='UNCHANGED')return {status:'UNCHANGED',stored:false,
-      requestId:lease.requestId,latest:prepared.latest};
+    const archiveAbsent=Object.values(prepared.plan.expectedRawArchives).some(source=>
+      !fs.existsSync(path.join(home,DIRECTORY,'raw',path.basename(source.archive))));
     const directory=childDirectory(home,DIRECTORY);
     const archives={
       bls:writeArchive(directory,prepared.plan.expectedRawArchives.bls.archive,blsBytes),
       census:writeArchive(directory,prepared.plan.expectedRawArchives.census.archive,censusBytes),
     };
+    // Also recover missing immutable source archives for an otherwise equal
+    // candidate. Never refresh the candidate timestamp in this case.
+    if(prepared.status==='UNCHANGED')return {
+      status:archiveAbsent?'ARCHIVED_READBACK':'UNCHANGED',stored:archiveAbsent,
+      requestId:lease.requestId,archives,latest:prepared.latest,
+      apiCalls:0,dbWrites:0,d1Writes:0,coreCheckpointWrites:0};
     const writes={};
     try{
       for(const key of ['bls','census']){
