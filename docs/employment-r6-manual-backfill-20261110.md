@@ -19,6 +19,12 @@
 2. `STATE_CLAIMS_BREADTH`: 공개 최신 2025-07-19, score `PARTIAL_HISTORY`. 공식 ETA539 이후 자료는 존재하므로 DOL fetch/parse/snapshot/SQLite 51지역 완전주/특성 계산 중 **최초 결손 위치 미확정**. #1169의 DOL 호출 2회 결과는 `SERIES_PARTIAL`일 뿐 원인을 특정하지 않음.
 3. BED 그룹 `SERIES_PARTIAL`: BED 114개 series를 2015–2025와 2026 두 구간으로 조회할 때 미발표 2026 분기 항목이 누락으로 잡혔을 가능성 높음. **원본 missingSeries 없이 확정 금지**. 과거 10년 점수 READY와 최신 1Y 차트 부족은 양립하며 재수집을 일률적으로 요구하지 않음.
 
+## CPS 예외 R2의 선택적 반영 범위 (기존 전용 브랜치만 사용)
+
+- 현 기능 PR #1036의 37파일 전체를 그대로 main에 병합하지 않는다. 이 작업과 직접 관련된 diff는 **5개**: `lib/market-score/employment-r6-formula.mjs`(R2 식별자/정확한 4개 범위), `employment-r6-feature-engine.mjs`(2025-10 실측 미발표 한 달만 119개 기준), `employment-r6-one-year-read-model.mjs`(공식 결측 증거 표시), `worker/employment-r6-public-display.mjs`(검증된 R1 공개 결과 읽기 유지), `scripts/pc-writer/employment-r6-one-year-stage.mjs`(R1 게시 선행 이력 비교). 위 파일 외 수집기·예약·R4·Quota·DB·TTL 변경을 R2 릴리스에 묶지 않는다.
+- 기존 브랜치 `feat/bls-registered-v2-20261109`에 R2 소스·테스트가 이미 존재. **새 실험 브랜치 생성 없음**. 로컬 격리 재검증 `employment-r6-cps-official-gap.test.mjs` + `employment-r6-one-year-read-model.test.mjs` **20/20 PASS**; `employment-r6-public-display.test.mjs`는 현재 부분 scratch 미러에 `scripts/pc-writer/d1.mjs`가 없어 `ERR_MODULE_NOT_FOUND`로 실행 불가. 이 환경 누락을 소스 회귀 실패나 운영 장애로 오인하지 않음. 기존 완전한 GitHub CI Run 42698723901은 4237/4237, publication 11/11, Cloudflare 후보 69/69 PASS.
+- 실제 선택적 main 반영은 source 기반 정확 diff/안전 검증 후 **승인된 배포 경로**로만 진행하고, PC R2 운영 Writer는 별도 승인된 정규 설치 preimage/manifest/해시 일치가 먼저 필요하다.
+
 ## 다음 필수 실행 (필요한 것만)
 
 1. **DOL/BED 원본 누락 원인 1회 확인:** 기존 승인된 A 34개 중 R6 `run.detail_json.missingSeries`, ETA539 `parserMeta.latestCompleteWeek`, SQLite `STATE_INITIAL_CLAIMS` 51지역 최신 분포를 조회하는 기능은 없음. 공통 Controller 작업자와 조정하여 정확한 **0쓰기·0 공급자 호출·0 D1 쓰기, 비민감 집계값만** 조회하는 최소 A 범위/승인을 마련하기 전에는 우회 SQL이나 새 B 재수집을 실행하지 않음. 원장 조회에서 실제 최초 결손이 밝혀지면 그 한 곳만 수정·검증.
