@@ -44,7 +44,7 @@ const taWsRows=[...Array.from({length:436},(_,n)=>awarded(n)),
 const taWsBody=JSON.stringify(taWsRows);
 
 async function simulate({historyAvailable=true,tawsAvailable=true,tawsPayload=taWsBody,
- previousTreasury=[]}={}){
+ previousTreasury=[],weeklyStatus=200,weeklyPayload=weeklyXml}={}){
  const db=localDatabase(':memory:');
  const store=publicFeedStore(db),privateStore=marketOperationalStore(db);
  await store.initialize();
@@ -52,7 +52,11 @@ async function simulate({historyAvailable=true,tawsAvailable=true,tawsPayload=ta
   {events:previousTreasury,sources:{treasury:{status:'READY'}}},now-8*3600000);
  let weeklyCalls=0,historyCalls=0,historyUrl=null,tawsCalls=0,tawsUrl=null;
  const fetchImpl=async url=>{
-  if(url===TREASURY_CUSIP_XML_URL){weeklyCalls++;return new Response(weeklyXml);}
+  if(url===TREASURY_CUSIP_XML_URL){
+   weeklyCalls++;
+   return new Response(weeklyStatus===200?weeklyPayload:'Weekly source unavailable',
+    {status:weeklyStatus});
+  }
   if(url.startsWith(TREASURY_DIRECT_HISTORY_URL)){
    tawsCalls++;tawsUrl=url;
    return tawsAvailable?new Response(tawsPayload,{headers:{'content-type':'application/json'}}):
@@ -72,7 +76,8 @@ async function simulate({historyAvailable=true,tawsAvailable=true,tawsPayload=ta
   const persisted=await store.readInput('release-calendar:treasury:history:page:1');
   const officialStored=await privateStore.readInput('release-calendar:treasury:taws');
   const diagnostic=await store.readInput('release-calendar:treasury:history:failure-code-r1');
-  return {collected,output,cached,persisted,officialStored,diagnostic,
+  const weeklyDiagnostic=await store.readInput('release-calendar:treasury:failure-code-r1');
+  return {collected,output,cached,persisted,officialStored,diagnostic,weeklyDiagnostic,
    weeklyCalls,historyCalls,historyUrl,tawsCalls,tawsUrl};
  }finally{db.close();}
 }
@@ -102,6 +107,66 @@ test('one regular Core attempt stores and rereads a whole official year without 
  assert.equal(state.cached.status,'CACHED');
  assert.equal(state.cached.providerRequests,0);
  assert.equal(state.weeklyCalls+state.tawsCalls+state.historyCalls,2);
+});
+
+test('weekly HTTP failure does not block annual awarded history and preserves earlier future dates',async()=>{
+ const previous={id:'treasury-auction-912797old',source:'treasury',
+  date:'2026-11-18',title:'이전 주간 공식 국채 입찰',
+  sourceUrl:'https://www.treasurydirect.gov/auctions/auction-announcements/'};
+ const state=await simulate({weeklyStatus:503,previousTreasury:[previous]});
+ assert.equal(state.weeklyCalls,1);
+ assert.equal(state.tawsCalls,1);
+ assert.equal(state.historyCalls,0);
+ assert.equal(state.output.sources.treasury.status,'PARTIAL');
+ assert.equal(state.collected.treasuryFailureCode,'TREASURY_HTTP_503');
+ assert.equal(state.cached.treasuryFailureCode,'TREASURY_HTTP_503');
+ assert.equal(state.weeklyDiagnostic.body.code,'TREASURY_HTTP_503');
+ assert.equal(state.officialStored.body.awardedCount,436);
+ assert.equal(state.output.events.filter(e=>e.source==='treasury'&&e.date<='2026-11-09').length,872);
+ assert.ok(state.output.events.some(e=>e.id===previous.id&&e.date===previous.date));
+ assert.equal(Object.hasOwn(state.output,'treasuryFailureCode'),false);
+ assert.equal(Object.hasOwn(state.output.sources.treasury,'treasuryFailureCode'),false);
+ assert.equal(Object.hasOwn(state.collected,'treasuryHistoryFailureCode'),false);
+});
+
+test('malformed weekly XML leaves official annual collection working without exposing raw HTML',async()=>{
+ const state=await simulate({weeklyPayload:'<html>not official xml</html>'});
+ assert.equal(state.output.sources.treasury.status,'PARTIAL');
+ assert.equal(state.collected.treasuryFailureCode,'TREASURY_OFFICIAL_XML_INVALID');
+ assert.equal(state.cached.treasuryFailureCode,'TREASURY_OFFICIAL_XML_INVALID');
+ assert.equal(state.tawsCalls,1);
+ assert.equal(state.officialStored.body.awardedCount,436);
+ assert.equal(state.output.events.filter(e=>e.source==='treasury').length,872);
+ assert.equal(JSON.stringify(state.collected).includes('not official xml'),false);
+});
+
+test('both weekly and annual sources failing preserves previous dates and both private errors',async()=>{
+ const previous={id:'treasury-auction-912797old',source:'treasury',
+  date:'2026-08-10',title:'이전 유효 국채 입찰',
+  sourceUrl:'https://www.treasurydirect.gov/auctions/auction-announcements/'};
+ const state=await simulate({weeklyStatus:503,tawsAvailable:false,
+  historyAvailable:false,previousTreasury:[previous]});
+ assert.equal(state.output.sources.treasury.status,'SOURCE_FAILED');
+ assert.equal(state.weeklyCalls,1);
+ assert.equal(state.tawsCalls,1);
+ assert.equal(state.historyCalls,1);
+ assert.equal(state.collected.treasuryFailureCode,'TREASURY_HTTP_503');
+ assert.equal(state.collected.treasuryHistoryFailureCode,'TREASURY_TAWS_HTTP_503');
+ assert.equal(state.cached.treasuryFailureCode,'TREASURY_HTTP_503');
+ assert.equal(state.cached.treasuryHistoryFailureCode,'TREASURY_TAWS_HTTP_503');
+ assert.ok(state.output.events.some(e=>e.id===previous.id&&e.date===previous.date));
+ assert.equal(Object.hasOwn(state.output,'treasuryHistoryFailureCode'),false);
+ assert.equal(Object.hasOwn(state.output,'treasuryFailureCode'),false);
+});
+
+test('failed weekly and TAWS but successful FiscalData remains partial, not complete or failed',async()=>{
+ const state=await simulate({weeklyStatus:503,tawsAvailable:false});
+ assert.equal(state.output.sources.treasury.status,'PARTIAL');
+ assert.equal(state.collected.treasuryFailureCode,'TREASURY_HTTP_503');
+ assert.equal(state.cached.treasuryFailureCode,'TREASURY_HTTP_503');
+ assert.equal(state.collected.treasuryHistoryFailureCode,'TREASURY_TAWS_HTTP_503');
+ assert.equal(state.cached.treasuryHistoryFailureCode,'TREASURY_TAWS_HTTP_503');
+ assert.equal(state.output.events.filter(e=>e.source==='treasury').length,824);
 });
 
 test('failed annual request preserves weekly and prior history while honestly remaining partial',async()=>{
@@ -194,5 +259,35 @@ test('previous weekly-only cache is invalidated once to collect newly required a
   assert.equal(taws,1);
   assert.equal(history,0);
   assert.equal((await store.readOutput('release-calendar')).body.sources.treasury.status,'READY');
+ }finally{db.close();}
+});
+
+test('legacy SOURCE_FAILED inside six hours is not proof an annual request was attempted',async()=>{
+ const db=localDatabase(':memory:');
+ try{
+  const store=publicFeedStore(db);await store.initialize();
+  const earlier=now-3600000;
+  const sources=Object.fromEntries(Object.keys(RELEASE_SOURCES).map(source=>
+   [source,{status:source==='treasury'?'SOURCE_FAILED':'READY',
+    ...(source==='bls'?{annualCollectorVersion:1}:{})}]));
+  await store.writeAttempt('release-calendar',earlier);
+  await store.writeOutput('release-calendar',{events:[],sources},earlier);
+  let weeklyCalls=0,tawsCalls=0;
+  const fetchImpl=async url=>{
+   if(url===TREASURY_CUSIP_XML_URL){
+    weeklyCalls++;return new Response('Unavailable',{status:503});
+   }
+   if(url.startsWith(TREASURY_DIRECT_HISTORY_URL)){
+    tawsCalls++;return new Response(taWsBody,{headers:{'content-type':'application/json'}});
+   }
+   return new Response('Unavailable',{status:503});
+  };
+  const result=await collectReleaseCalendar(db,{now,fetchImpl});
+  assert.notEqual(result.status,'CACHED');
+  assert.equal(weeklyCalls,1);
+  assert.equal(tawsCalls,1);
+  const published=(await store.readOutput('release-calendar')).body;
+  assert.equal(published.sources.treasury.status,'PARTIAL');
+  assert.equal(published.events.filter(e=>e.source==='treasury').length,872);
  }finally{db.close();}
 });
