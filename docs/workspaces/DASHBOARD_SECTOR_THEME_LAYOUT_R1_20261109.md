@@ -92,3 +92,5 @@ node --test tests/dashboard-secondary-two-panel-r1.test.mjs tests/market-explore
 - 현 UI 담당: 승인된 일반 브라우저 반응형 뷰포트 기능이 확보되면 공개 `zgmini.kr`에서 390/510/767/768/959/960/1023px 레이아웃·데이터 노출·가로스크롤을 **읽기 전용으로 1회** 확인한다.
 - 첫 관련 실패가 나오면 원본 사진/viewport/선택자와 정확한 CSS 규칙만 점검하고, 새로운 기능 브랜치에서 최소 수정 후 PR/CI를 진행한다. unrelated Korea 교육 검사는 독립 인계이며 이번 배포 브랜치에서 수정하지 않는다.
 - 이후 개발 작업의 기본 컨텍스트는 **`codex/ui-improvements`**이고, 임시 `deploy/dashboard-sector-theme-layout-r1-20261109`는 추가 개발 금지.
+
+- 2026-11-09 운영 모바일 검증 시도: 브라우저 반응형 도구 호출에 **조직 정책에 의해 DevTools 금지** 알림이 실제 표시됨. 보안 정책을 우회하지 않고 알림을 닫음. 공개 모바일 직접 캡처는 미실시 상태를 유지. 기존 390px CI 통과와 1363px 운영 PC 실측은 별개 확정 증거. 다음 단계는 승인된 정상 모바일 단말 화면 확인 1회뿐이며 재시도 자동화/DevTools 우회는 하지 않는다.
