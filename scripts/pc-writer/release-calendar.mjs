@@ -13,6 +13,7 @@ import {collectEarningsApiLocal,collectEarningsApiForwardLocal} from './earnings
 const requestHeaders={'user-agent':'ZGMINI/1.0 (+https://zgmini.kr/about/)'};
 const isoYear=(date,year)=>date.startsWith(String(year)+'-');
 const monthName=['january','february','march','april','may','june','july','august','september','october','november','december'];
+const TREASURY_FAILURE_CODE=/^TREASURY_(?:HTTP_[1-5]\d{2}|REDIRECT_NOT_ALLOWED|XML_TOO_LARGE_OR_EMPTY|OFFICIAL_XML_INVALID|RELEASE_ENTRIES_MISSING|ENTRY_SECTIONS_MISSING|ENTRY_FIELD_INVALID|DATES_UNAVAILABLE|STORED_DATES_UNAVAILABLE|DUPLICATE_CUSIP_DATE|FROM_DATE_INVALID|TIMEOUT|FETCH_FAILED|COLLECTION_FAILED)$/;
 
 // Only bounded, non-sensitive codes are returned to the existing PC-local
 // collection report. The public calendar source contract stays unchanged.
@@ -328,6 +329,7 @@ async function collectBlsSource({store,key,spec,year,now,fetchImpl,countRequest,
 
 export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}={}){
  const store=publicFeedStore(db),locks=marketOperationalStore(db),key=RELEASE_CALENDAR_KEY;
+ const treasuryDiagnosticKey=key+':treasury:failure-code-r1';
  // PC private vendor raw inputs are independent from the R27 public calendar.
  try{
   await collectEarningsApiLocal({db,apiKey:globalThis.__zgminiLocalProviderEnv?.EARNINGS_API_KEY,
@@ -346,8 +348,21 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
  const sourceSetComplete=Object.keys(RELEASE_SOURCES)
   .every(source=>Object.hasOwn(previous?.body?.sources??{},source))&&
   previous?.body?.sources?.bls?.annualCollectorVersion===1;
- if(attempt&&sourceSetComplete&&now-attempt.storedAt>=0&&now-attempt.storedAt<6*3600000)
-  return {status:'CACHED',providerRequests:0};
+ if(attempt&&sourceSetComplete&&now-attempt.storedAt>=0&&now-attempt.storedAt<6*3600000){
+  // The next Core cycle overwrites the PC-local last-run report. Preserve only
+  // a bounded failure code for the same private six-hour collection attempt.
+  let treasuryFailureCode=null;
+  if(previous?.storedAt===attempt.storedAt&&previous?.body?.sources?.treasury?.status==='SOURCE_FAILED'){
+   try{
+    const diagnostic=await store.readInput(treasuryDiagnosticKey);
+    if(diagnostic?.storedAt===attempt.storedAt&&diagnostic?.body?.version===1&&
+      typeof diagnostic.body.code==='string'&&TREASURY_FAILURE_CODE.test(diagnostic.body.code))
+     treasuryFailureCode=diagnostic.body.code;
+   }catch{ /* A private diagnostic read cannot block regular collection. */ }
+  }
+  return {status:'CACHED',providerRequests:0,
+   ...(treasuryFailureCode?{sources:{treasury:'SOURCE_FAILED'},treasuryFailureCode}:{})};
+ }
  const lease=await locks.claim('release-calendar',now);
  if(!lease)return {status:'RUNNING',providerRequests:0};
  let requests=0;
@@ -529,6 +544,10 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
   const body={status:Object.values(sources).every(s=>s.status==='READY')?'READY':'PARTIAL',
    updatedAt:new Date(now).toISOString(),sources,events:events.sort((a,b)=>a.date.localeCompare(b.date))};
   await store.writeOutput(key,body,now);
+  // Only the local SQLite input lane receives this non-sensitive diagnostic.
+  // The public output body and normal six-hour attempt time remain untouched.
+  if(treasuryFailureCode)try{await store.writeInput(treasuryDiagnosticKey,
+   {version:1,code:treasuryFailureCode},now);}catch{}
   return {status:body.status,providerRequests:requests,
    sources:Object.fromEntries(Object.entries(sources).map(([k,v])=>[k,v.status])),
    ...(treasuryFailureCode?{treasuryFailureCode}:{})};
