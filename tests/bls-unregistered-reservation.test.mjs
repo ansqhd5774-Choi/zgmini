@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {spawn} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {
   BLS_UNREGISTERED_SCHEMA,
@@ -36,6 +37,39 @@ function fixture(used,{verified=true}={}){
   return base;
 }
 const clean=base=>fs.rmSync(base,{recursive:true,force:true});
+
+// Actual independent Node workers share the same physical journal/lock.
+// This is distinct from making two sequential calls in one test process.
+function childBatch(base,requestId){
+  const source=new URL('../scripts/pc-writer/bls-unregistered-reservation.mjs',import.meta.url).href;
+  const script=`import {reserveR6UnregisteredBlsBatch} from ${JSON.stringify(source)};
+    const opts=JSON.parse(process.argv[1]);
+    try {reserveR6UnregisteredBlsBatch(opts);process.stdout.write('RESERVED');}
+    catch(e){process.stdout.write(e.code??'UNEXPECTED_ERROR');process.exitCode=2;}`;
+  return new Promise((resolve,reject)=>{
+    const child=spawn(process.execPath,['--input-type=module','--eval',script,
+      JSON.stringify({base,approvedBase:base,requestId,count:18,now})],
+      {stdio:['ignore','pipe','pipe']});
+    let stdout='',stderr='';
+    child.stdout.setEncoding('utf8').on('data',s=>stdout+=s);
+    child.stderr.setEncoding('utf8').on('data',s=>stderr+=s);
+    child.on('error',reject);
+    child.on('close',code=>resolve({code,stdout,stderr}));
+  });
+}
+
+test('independent Node processes competing for the last 18 physical slots cannot both reserve',async()=>{
+  const base=fixture(7);
+  try{
+    const results=await Promise.all([childBatch(base,job),childBatch(base,competingJob)]);
+    assert.equal(results.filter(x=>x.code===0&&x.stdout==='RESERVED').length,1,
+      JSON.stringify(results));
+    const refused=results.find(x=>x.code!==0);
+    assert.equal(refused?.code,2,JSON.stringify(results));
+    assert.match(refused.stdout,/BLS_UNREG_(RESERVATION_LOCKED|25_PER_24H_STOP)/);
+    assert.deepEqual(inspectUnregisteredBlsSlots({base,now}),{used24h:25,remaining24h:0});
+  }finally{clean(base);}
+});
 
 test('7 historical + R6 18 atomically fills all 25; duplicates and ordinary calls blocked',()=>{
   const base=fixture(7);
