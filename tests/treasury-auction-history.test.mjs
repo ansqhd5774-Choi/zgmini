@@ -30,6 +30,28 @@ test('missing announcement skips only announcement; never copies the auction dat
  assert.equal(onlyAuction.id,'treasury-auction-912797aa1');
 });
 
+test('historical TIPS and FRN flags and reopened original terms retain accurate titles',()=>{
+ const events=parseTreasuryAuctionHistoryRows([
+  row({cusip:'912810AA1',security_type:'Note',security_term:'9-Year 8-Month',
+   original_security_term:'10-Year',inflation_index_security:'Yes',reopening:'Yes'}),
+  row({cusip:'912810AB2',security_type:'Note',security_term:'1-Year 9-Month',
+   original_security_term:'2-Year',floating_rate:'Yes',reopening:'Yes'}),
+  row({cusip:'912810AC3',security_type:'Bond',security_term:'29-Year 6-Month',
+   original_security_term:'30-Year',reopening:'No'}),
+  row({cusip:'912810AD4',security_type:'Bill',security_term:'2-Day',
+   original_security_term:'2-Day',reopening:'No'})
+ ],range);
+ assert.equal(events.length,8);
+ assert.ok(events.find(event=>event.id==='treasury-auction-912810aa1')?.title
+  .includes('10년물 물가연동국채 입찰 · 재발행'));
+ assert.ok(events.find(event=>event.id==='treasury-auction-912810ab2')?.title
+  .includes('2년물 변동금리국채 입찰 · 재발행'));
+ assert.ok(events.find(event=>event.id==='treasury-auction-912810ac3')?.title
+  .includes('30년물 국채 입찰'));
+ assert.ok(events.find(event=>event.id==='treasury-auction-912810ad4')?.title
+  .includes('2일물 단기국채 입찰'));
+});
+
 test('inclusive range, 365-day maximum, and chronology are strictly validated',()=>{
  const dates=parseTreasuryAuctionHistoryRows([
   row({cusip:'912797AB2',announcemt_date:'2025-11-10',auction_date:'2025-11-10'}),
