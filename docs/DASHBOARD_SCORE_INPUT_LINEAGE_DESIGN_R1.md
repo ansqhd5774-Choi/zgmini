@@ -54,3 +54,11 @@
 - 68개 분모 식별 **68/68**; 공개 API 경로 조사 **11/11**; 재사용 PC 원장 **7건**.
 - 인과 chain 완전 실증 **0/68**. 설계 원인과 회귀 범위 식별 완료; **3단계 계약 확정/구현/운영 PASS는 아님**.
 - 다음 필수 작업: 실제 PC 승인 source의 score별 원본 체크포인트·현행 소비자 계약 차이를 읽기 전용으로 확인해 최소 수정 파일을 특정한다. 뒤이어 필요한 데이터·이력 계약 승인과 기능 브랜치 경로를 확정한다.
+
+
+## 6. 실제 PC 승인 source의 원격 추적 가능성 확인 — 읽기 전용
+
+- 기존 PC 원본 결과: `zgmini-pc-control/main/results/42693903840-1-seat-1.json`, #1136, 2026-11-10 05:32 KST. `sourceRoot=projects/zgmini-earnings-history-pc-release`, `sourceHead=approvedConfigSource=checkpointSource=70d2d1dbd8180255133bdd7fc925ae07bb8d6cc9`, `evidenceLevel=FIXED_CHECKOUT_NOT_LIVE_CORE_PROCESS`, `runtimeSourceVerified=false`, `coreTaskSourceLinked=false`.
+- 이 SHA를 `zgmini`와 `zgmini-pc-control` 두 GitHub 원격 저장소의 커밋/파일 ref로 조회했으나 둘 다 **No commit found(422), file ref 404**. 이는 현재 접근 가능한 두 원격에서 해당 local commit을 재조회할 수 없다는 뜻이지, 기존 Windows 체크아웃 파일이 손상됐거나 PC Core가 중단됐다는 증거는 아니다.
+- **영향:** 해당 PC에 실제 설치된 `projection-checkpoint-r52.mjs`/Writer의 코드가 이 문서에서 본 최신 `main`과 같다는 전제를 세울 수 없음. 지금 확인한 `core:<stored_at>` 문제는 **main source 설계상 위험**으로 유지하며, 현 PC에 동일 결함이 실제 존재·발현한다는 판정은 **UNKNOWN**.
+- **다음 최소 확인:** 이미 승인된 PC 읽기 전용 경로가 실제 `sourceRoot`의 대상 파일별 해시/내용 버전을 안전하게 회수할 수 있는지 확인. 권한·허용목록 밖 코드 조회, 운영 변경, 무근거 새 pc-job 반복은 하지 않는다. 명시된 기능 백엔드 브랜치 및 원격 provenance가 확보될 때까지 이 UI 전용 브랜치에서 Writer 코드를 수정하지 않는다.
