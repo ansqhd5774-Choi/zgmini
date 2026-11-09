@@ -60,6 +60,13 @@ test('storage refuses absent or counterfeit Writer-B lease before any mutation',
   assert.equal(fs.existsSync(path.join(base,'inflation-causal-candidates-r1')),false);
 });
 
+test('approved storage fails closed when the existing PPI candidate is missing',async t=>{
+  const {root,base}=scratch();t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+  await assert.rejects(()=>applyOfficialManualStore({...options(base),withApprovedWriterB:approved}),
+    /INFL_MANUAL_STORE_PPI_PREIMAGE_REQUIRED/);
+  assert.equal(fs.existsSync(path.join(base,'inflation-causal-candidates-r1')),false);
+});
+
 test('approved maintenance staging preserves old PPI, archives exact bytes, reads back and is idempotent',async t=>{
   const {root,base}=scratch();t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
   const target=path.join(base,'inflation-causal-candidates-r1');fs.mkdirSync(target);
