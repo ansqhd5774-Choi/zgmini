@@ -55,7 +55,7 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
      const {runEmploymentR6AutoCollection}=await import('./employment-r6-auto-collection.mjs');
      employmentR6Collection=await runEmploymentR6AutoCollection({
       enabled:true,approvedSource:config.source,runningSource,
-      db:core,fetchImpl:globalThis.fetch,now:()=>new Date(),
+      db:core,env,fetchImpl:globalThis.fetch,now:()=>new Date(),
      });
     }
    }catch(error){
