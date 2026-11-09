@@ -39,3 +39,30 @@ test("approved collector uses the complete release planner, not the four-group c
     {groupName:"BLS_BED",status:"WAITING_FOR_COLLECTION_WINDOW",due:false},
   ]);
 });
+
+test("group diagnostics preserve safe FAIL, PARTIAL and CIRCUIT_OPEN codes only",async()=>{
+  const result=await runEmploymentR6AutoCollection({...options,enabled:true,
+    collect:async()=>({status:"FAIL",providerRequests:3,
+      groupResults:[
+        {groupName:"DOL_UI_WEEKLY_CLAIMS",status:"FAIL",failureCode:"HTTP_403",providerRequests:1,rawBody:"SECRET_1"},
+        {groupName:"BLS_JOLTS",status:"PARTIAL",failureCode:"NO_OBSERVATIONS",providerRequests:2,errorMessage:"SECRET_2"},
+        {groupName:"BLS_ECI",status:"FAIL",failureCode:"Authorization:Bearer SECRET_3",providerRequests:100001},
+      ],
+      plannedGroups:[
+        {groupName:"DOL_UI_WEEKLY_CLAIMS",status:"DUE",due:true},
+        {groupName:"BLS_JOLTS",status:"CIRCUIT_OPEN",due:false,failureCode:"BLS_REQUEST_NOT_PROCESSED",retryAt:"SECRET_4"},
+      ],
+    }),
+  });
+  assert.equal(result.status,"FAIL");
+  assert.deepEqual(result.groups,[
+    {groupName:"DOL_UI_WEEKLY_CLAIMS",status:"FAIL",failureCode:"HTTP_403",providerRequests:1},
+    {groupName:"BLS_JOLTS",status:"PARTIAL",failureCode:"NO_OBSERVATIONS",providerRequests:2},
+    {groupName:"BLS_ECI",status:"FAIL"},
+  ]);
+  assert.deepEqual(result.plannedGroups,[
+    {groupName:"DOL_UI_WEEKLY_CLAIMS",status:"DUE",due:true},
+    {groupName:"BLS_JOLTS",status:"CIRCUIT_OPEN",due:false,failureCode:"BLS_REQUEST_NOT_PROCESSED"},
+  ]);
+  assert(!JSON.stringify(result).includes("SECRET_"));
+});
