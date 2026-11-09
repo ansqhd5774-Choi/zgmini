@@ -67,6 +67,14 @@
 
 **진행률 판정:** 이번 진단으로 실패 분기는 좁아졌지만 저장·게시·최신화가 회복된 증거가 없어 **T1 20% → 20%**. 공개 목표 10개, 현재 테마 응답 0개(11/9 API 본문 기준), 신규 출시 0개. 미래 예약 자동 갱신 검증은 후속 단계 유지.
 
+### 2026-11-09 P1-05 비공개 확정 8+2 Reader 실모듈 검증 — 공개 미연결
+
+- **변경 범위:** 전용 브랜치에만 `worker/theme-ten-confirmed-seed-reference-shadow.mjs`와 `tests/theme-ten-confirmed-seed-reference-shadow.test.mjs`를 추가. `readThemeEtfOnly`/현행 R178/6키 Writer/공개 API/DB/TTL·산식·배포·PC 운영 source는 **변경 0건**. 소스 커밋 `b11ac3cb7a85aadb910fda98851628e2ba390f66`, 테스트 커밋 `cb92e7bd5a3c10a07e58b1fef3344900a9f7166c`; 원격 파일 원문 일치 PASS.
+- **검증 방식:** 기존 저장된 7테마 seed는 **별도 기존 L7 validator가 유효성을 확인한 과거 구조 참조**로만 사용하며, 오래된 seed의 점수·관측일을 공개 후보로 재사용하지 않는다. 실제 `eligibleNineR37`의 `independentAnchor`로 신규 R37 확정 9테마를 검증하고 AI·반도체를 제외한 공개 승인 8개만 지정된 순서로 구성한다. 데이터센터/우주는 **실제 기존** `addVerifiedDcPower`/`addVerifiedSpaceSatellite`(R2 우선, R1 fallback) 검증과 252일 부분 이력·240일 겹침·`delayed` 동작을 재사용한다. R88 및 잠정 피드 합성·게시 금지.
+- **검증 결과:** 실제 source 모듈 연동 신규 비공개 테스트 **12/12 PASS** + 기존 물리 게시 안전 테스트 **27/27 PASS** = **39/39 PASS, 실패 0**. 생략 데이터/권리/AUM/날짜/마지막 점/AI 제외/우주 부분 null/데이터센터 null 거부/지연 관측일을 분기 검증했다. 외부 provider 호출 0, D1 쓰기 0, Scheduler 변경 0.
+- **엄격한 한계:** 이 모듈은 **비공개 독립 R178-rolling 무관 shadow**이지 공개 Reader 대체·10/10 현장 실증이 아니다. 기존의 구조상 유효한 과거 7테마 seed 레코드가 반드시 존재해야 하며, 없거나 validator 실패 시 중단한다(완전 seed-free 아님). 신규 테스트의 seed 검증 콜백은 격리 fixture이며 실제 `validateThemeEtfOnlyPublic` 연동 및 PC 저장 R37·DC·우주 최신성·권리 실제 증거는 **미완**이다. `PUBLIC_READY`가 아닌 `PRIVATE_CONFIRMED_SHADOW_VALIDATED_NOT_PUBLIC_READY`만 반환한다. MarketParquet 무료 게시 불허와 GMH 익명 권리 미확인은 기존 그대로이며 새 원장/공개값은 없음.
+- **다음 실행:** **기능 원담당**은 기존 실제 L7 seed validator로 비공개 shadow 콜백을 연결하는 통합 회귀를 완료하고, **공통 단일 담당**의 #996 승인 복구 후 기존 R181 FIRST FAIL 및 저장 1키 조회로 실제 8+2 데이터 존재·권리 여부를 판단한다. 현행 운영 Reader/DB/공개 계약 변경에는 별도 승인 필요. T1 **20%→20%**, 공개 테마 0/10(직전 실조회), 신규 운영 완료 0, 163개 최종 프로그램 완성률 판정 보류.
+
 ### 2026-11-09 P1-02/P1-06 독립 감사를 통한 실제 진입 조건 확정
 
 - **공통 설치(운영 실증, 11/9 11:53 UTC):** [pc-control #996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/996) 실제 Controller SHA `badad9124157879d7a645b64f2768113d632355b`, `installLock.held=true`/ownerPid `38632`, `recoveryRequired=true`, `REQUEST_LEDGER_UNAVAILABLE`, `STATE_UNKNOWN`; 영향 범위 `SHARED_INSTALL_ONLY`. Receiver LISTENING, Runner 6개 idle이므로 전체 PC와 독립 조회가 중단된 상태로 확대하지 않는다. PR #1034 source 테스트 21/21 PASS·main 병합이 실PC 설치 완료라는 뜻은 아니다. 공통 담당의 소유자·원장 확인/승인 복구를 기다리되, 기능 브랜치 독립 업무를 진행한다.
