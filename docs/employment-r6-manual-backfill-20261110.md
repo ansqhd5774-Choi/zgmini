@@ -34,6 +34,24 @@
 - **선택적 릴리스 검증 중(2026-11-10 KST):** `main` SHA `165a0ddbc3d8d0b918eee36e63895bd2a65b24fd`에서 배포 전용 브랜치 `release/employment-r6-cps-r2-20261110`, Draft [#1057](https://github.com/ansqhd5774-Choi/zgmini/pull/1057), HEAD `b37c7c029d36c6d29c50a5173018836918db5c78` 생성. 변경은 **기능 5파일 + 직접 회귀 테스트 3파일 = 총 8파일**, 기존 개발 PR #1036 전체 38파일 제외(main 대비 비교). 격리 관련 테스트 20/20 PASS; 첫 CI [42718590112](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/42718590112)의 Build/Type/게시 복구/Cloudflare 후보 PASS, 웹 라우트 fixture `methodologyVersion` 누락으로 Regression 2건 FAIL. 영향 테스트 1파일만 추가하여 웹 라우트 격리 2/2 PASS, 수정 CI [42719075523](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/42719075523) **SUCCESS**: Build/Type check, Regression 4178건(4169 PASS/0 FAIL/6 SKIP/3 TODO), 게시 복구 11/11, Cloudflare 후보 계약 69/69 PASS. **Draft 미병합·PC 미설치·Production 미배포**.
 - 실제 선택적 main 반영은 source 기반 정확 diff/안전 검증 후 **승인된 배포 경로**로만 진행하고, PC R2 운영 Writer는 별도 승인된 정규 설치 preimage/manifest/해시 일치가 먼저 필요하다.
 
+## R2 실제 적용용 5파일 SHA-256 및 Writer 원본조회 (2026-11-10 KST)
+
+- PC Writer B에 필요한 런타임은 **5파일**(웹용 `worker/employment-r6-public-display.mjs`도 `employment-r6-one-year-stage.mjs`에서 직접 import함); 회귀 테스트 3파일은 B 설치 대상 아님. Production Cloudflare 게시에는 별도 같은 Worker 소스 배포/검증 필요.
+- 아래 목표 SHA-256은 Draft 릴리스 [#1057](https://github.com/ansqhd5774-Choi/zgmini/pull/1057)의 HEAD `b37c7c029d36c6d29c50a5173018836918db5c78` 내 **Git blob SHA1과 로컬 `git hash-object` 5/5 동일**을 확인한 원본 파일 바이트의 해시다. **PC 운영 beforeSHA 또는 설치 성공이 아님**.
+
+| PC 적용 대상 파일 | R2 목표 afterSHA256 |
+|---|---|
+| `lib/market-score/employment-r6-formula.mjs` | `9c811f735db664ac6fada79d692a2c9fff244e85b434dfe2a8c4c8ea4211c204` |
+| `lib/market-score/employment-r6-feature-engine.mjs` | `49c4f47e5e2fccf541722148752a65bf1d76f19b7a8974d7533e7e983de63294` |
+| `lib/market-score/employment-r6-one-year-read-model.mjs` | `45faa17a3306ef5bc6dead703fa64eadb95b53c20e405ea151fab6cb2f00eae2` |
+| `scripts/pc-writer/employment-r6-one-year-stage.mjs` | `2c65cf6c1c0564dbead7c8a0ed5b8d5bbce9a80125f54cfc8aa23de9ee232f38` |
+| `worker/employment-r6-public-display.mjs` | `2c7110e13f7025dff7c204d8a3727d14c937898e612ed35d38686ef6be88562e` |
+
+- 실제 PC A [#1167](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1167)에서는 당시 제한된 13파일 hash 관측 성공(`144f3b8f...`), 그러나 Core 실행 source 연결 및 writer checkpoint 동일성 미입증. 그 뒤 다른 기능 B 설치로 source 변경됨.
+- 더 최근 A [#1174](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1174) `STATE_UNKNOWN/WRITER_PREIMAGE_CHECKOUT_NOT_CORROBORATED`, sourceRoot/head/config 및 위 5파일의 **현재 beforeSHA 불확정**, 운영 쓰기 0. 이전 SHA를 현재 원본으로 승격 금지.
+- **이번 신규 A** [#1188](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1188), requestId `pc-4e77ddc4-380a-40a0-a057-0ab11144f872`, 설치된 `pc-source-preflight` 조회 1회 요청. 최신 checkout 식별 문제의 구체 상태 확인용. 중복 재요청 없이 고유 결과/Run으로 상태 판단. Controller #917 복구와 Writer B는 독립 자원이나, 실제 겹치는 Writer 잠금·CAS는 보존.
+- 다음 담당(고용 R6 원담당) 필수 행동: #1188 결과로 checkout/승인 source가 신뢰 가능하면 승인된 **5경로** 현재 beforeSHA·lease를 고정한 Writer B manifest 작성, 단회 설치 후 R2 계산·D1·API/UI 확인. checkout이 불확정이면 source 진단의 **최초 실패 조건만** 수정; 승인 없는 원격 shell·DB·재설치 우회 금지.
+
 ## 다음 필수 실행 (필요한 것만)
 
 1. **DOL/BED 원본 누락 원인 1회 확인:** 제어 전용 브랜치 `feat/employment-r6-collection-evidence-a-20261110`, Draft [#1184](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1184), HEAD `8b39872b5ebab34c58065657a228612e09ddfebd`에서 기존 Controller 허용목록/dispatch에 최소 A `employment-r6-collection-evidence-readonly` 구현·fixture 5/5 PASS. 해당 A는 `run.detail_json.missingSeries`, ETA539 parser meta, 정확한 51지역/52주 비교 저장 커버리지만 비민감 집계로 조회하며 **공급자 재수집·DB/D1 쓰기 0**. **Draft 미병합/PC 미설치**로 실제 결손은 미확정이다. #917 Controller 복구 단일 담당자의 manifest·원본해시 검증 후 정규 B 설치/등록이 확인되면 새로운 고유 `pc-job` A 요청 1회 실행, TXT/JSON 결과로 최초 결손을 확정한다. 설치 전 우회 SQL·재수집 반복 금지.
