@@ -37,6 +37,12 @@ const dev=[
 ] as const;
 
 function dateLabel(v?:string|null){if(!v)return "—";const d=new Date(v.length===10?v+"T00:00:00Z":v);return Number.isFinite(d.getTime())?new Intl.DateTimeFormat("ko-KR",{dateStyle:"medium",timeZone:"Asia/Seoul"}).format(d):v}
+const quarterStartFactorIds=new Set(["valuationPressure","riskAssetShare","speculativeFlows","excessLiquidity"]);
+function observationPeriodLabel(v:string|null|undefined,id:string){
+ if(!v||!quarterStartFactorIds.has(id)||!/^[0-9]{4}-(01|04|07|10)-01$/.test(v))return dateLabel(v);
+ const quarter=Math.floor((Number(v.slice(5,7))-1)/3)+1;
+ return `${v.slice(0,4)}년 ${quarter}분기`;
+}
 function stage(s:number|null|undefined){if(typeof s!=="number"||!Number.isFinite(s))return "데이터 준비 중";if(s>=75)return "매우 양호";if(s>=60)return "양호";if(s>=45)return "중립";if(s>=25)return "버블 주의";return "버블 위험"}
 function judge(s:number|null|undefined,status?:string){if(status!=="READY"||typeof s!=="number"||!Number.isFinite(s))return {label:"데이터 준비 중",tone:"neutral"};if(s>=60)return {label:"긍정",tone:"positive"};if(s>=45)return {label:"중립",tone:"neutral"};return {label:"부정",tone:"negative"}}
 function fmt(r:Row|null|undefined){if(!r||typeof r.value!=="number"||!Number.isFinite(r.value))return "—";const n=Math.abs(r.value)>=100?1:3;return r.value.toFixed(n)+(r.unit?" "+r.unit:"")}
@@ -101,8 +107,8 @@ export default function AssetBubblePanel({initialPayload}:{initialPayload?:Paylo
       <td><AssetFavoriteButton id={id} label={m.label}/></td>
       <th scope="row"><strong>{m.label}</strong><small>{row?.status==="READY"?"저장 데이터":"자료 확인 중"}</small></th>
       <td>{m.content}</td><td className="asset-r2-criterion">{m.criterion}</td>
-      <td className="asset-r2-value"><strong>{fmtValue(row?.previousValue,row?.unit)}</strong><small>{dateLabel(row?.previousObservationDate)}</small></td>
-      <td className="asset-r2-value"><strong>{fmt(row)}</strong><small>{dateLabel(row?.observationDate)}</small>{sourceLabel(row?.source)&&<small>{sourceLabel(row?.source)}</small>}</td>
+      <td className="asset-r2-value"><strong>{fmtValue(row?.previousValue,row?.unit)}</strong><small>{observationPeriodLabel(row?.previousObservationDate,id)}</small></td>
+      <td className="asset-r2-value"><strong>{fmt(row)}</strong><small>{observationPeriodLabel(row?.observationDate,id)}</small>{sourceLabel(row?.source)&&<small>{sourceLabel(row?.source)}</small>}</td>
       <td className="asset-r2-release"><strong>{releaseLabel(row?.nextReleaseDate)}</strong><small>확인된 일정만</small></td>
       <td><span className="inflation-judgement">{j.label}</span></td>
        <td className="asset-r2-spark-cell"><InflationMiniChart label={m.label} points={row?.trend} periodLabel="실제 저장된 관측 2개"/></td>
@@ -123,8 +129,8 @@ export default function AssetBubblePanel({initialPayload}:{initialPayload?:Paylo
      <p className="asset-r2-mobile-criterion"><span>기준</span>{m.criterion}</p>
       <div className="asset-r2-mobile-spark"><span>관측 추이</span><InflationMiniChart label={m.label} points={row?.trend} periodLabel="실제 저장된 관측 2개"/></div>
      <div className="asset-r2-mobile-metrics">
-      <div><span>이전</span><strong>{fmtValue(row?.previousValue,row?.unit)}</strong><small>{dateLabel(row?.previousObservationDate)}</small></div>
-      <div><span>현재</span><strong>{fmt(row)}</strong><small>{dateLabel(row?.observationDate)}</small>{sourceLabel(row?.source)&&<small>{sourceLabel(row?.source)}</small>}</div>
+      <div><span>이전</span><strong>{fmtValue(row?.previousValue,row?.unit)}</strong><small>{observationPeriodLabel(row?.previousObservationDate,id)}</small></div>
+      <div><span>현재</span><strong>{fmt(row)}</strong><small>{observationPeriodLabel(row?.observationDate,id)}</small>{sourceLabel(row?.source)&&<small>{sourceLabel(row?.source)}</small>}</div>
       <div><span>발표</span><strong>{releaseLabel(row?.nextReleaseDate)}</strong><small>확인된 일정만</small></div>
      </div>
     </article>})}
