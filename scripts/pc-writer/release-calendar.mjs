@@ -1,6 +1,6 @@
 // R29 PC private earnings extension; R27 official events remain unchanged.
 // No new task, DB table, forced collection or public vendor feed output.
-import {RELEASE_CALENDAR_KEY,RELEASE_SOURCES,parseReleaseCalendar,parseBlsAnnualCalendar,parseBlsBedNextRelease,nyFedCalendarPages} from '../../lib/release-calendar.mjs';
+import {RELEASE_CALENDAR_KEY,RELEASE_SOURCES,parseReleaseCalendar,parseBlsAnnualCalendar,parseBlsBedNextRelease,parseFomcAnnualCalendar,nyFedCalendarPages} from '../../lib/release-calendar.mjs';
 import {EIA_SOURCE_URLS,parseEiaScheduleHtml,parseEiaWpsrCalendarJson} from '../../lib/eia-calendar.mjs';
 import {USDA_WASDE_URL,parseUsdaWasdeHtml} from '../../lib/usda-calendar.mjs';
 import {CFTC_COT_URL,parseCftcCotHtml} from '../../lib/cftc-calendar.mjs';
@@ -407,6 +407,35 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
      const ready=available.includes(current);
      sources[source]={status:ready?'READY':'PARTIAL',checkedAt:ready?new Date(now).toISOString():null,
       attemptedAt:new Date(now).toISOString(),sourceUrl:spec.page,coveredMonths:available,missingMonths:missing};
+     continue;
+    }
+    if(source==='fed_fomc'){
+     requests++;
+     const response=await fetchImpl(spec.url,{signal:AbortSignal.timeout(15000),headers:requestHeaders});
+     if(!response.ok)throw Error('CALENDAR_HTTP_'+response.status);
+     const html=await response.text();
+     if(!html||html.length>1000000)throw Error('CALENDAR_TOO_LARGE_OR_EMPTY');
+     // Validate before replacing the last good source input. A following
+     // year's absence is normal until the Federal Reserve publishes it.
+     parseFomcAnnualCalendar(html,year);
+     await store.writeInput(`${key}:${source}:${year}`,{text:html,sourceUrl:spec.url},now);
+     const saved=await store.readInput(`${key}:${source}:${year}`);
+     const current=parseFomcAnnualCalendar(saved.body.text,year);
+     let following=[],followingPublished=false;
+     try{
+      following=parseFomcAnnualCalendar(saved.body.text,year+1);
+      followingPublished=true;
+     }catch(error){
+      if(error?.message!=='FOMC_YEAR_NOT_PUBLISHED')throw error;
+      following=(previous?.body?.events??[]).filter(event=>event.source===source&&Number(event.date.slice(0,4))===year+1);
+     }
+     const historic=(previous?.body?.events??[]).filter(event=>event.source===source&&event.date<`${year}-01-01`);
+     const observedDay=new Date(now).toISOString().slice(0,10);
+     const dated=[...current,...following].map(event=>({...event,
+      title:event.date>observedDay?'FOMC Meeting · 일정 잠정':'FOMC Meeting'}));
+     events.push(...new Map([...historic,...dated].map(event=>[event.id+':'+event.date,event])).values());
+     sources[source]={status:'READY',checkedAt:new Date(now).toISOString(),sourceUrl:spec.page,
+      coveredYears:followingPublished?[year,year+1]:[year],nextYearPublished:followingPublished};
      continue;
     }
     if(source==='nyfed'){
