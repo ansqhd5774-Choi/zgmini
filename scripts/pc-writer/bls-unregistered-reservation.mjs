@@ -3,6 +3,7 @@
 // The shared ledger requires an independently approved, coverage-attested seed.
 import fs from 'node:fs';
 import path from 'node:path';
+import {createHash} from 'node:crypto';
 
 export const BLS_UNREGISTERED_SCHEMA='ZGMINI_BLS_UNREGISTERED_RESERVATIONS_V1';
 export const BLS_UNREGISTERED_24H_LIMIT=25;
@@ -13,6 +14,9 @@ const validInt=n=>Number.isSafeInteger(n)&&n>=0;
 const ledgerPath=base=>path.join(base,'bls-unregistered-reservations.json');
 const lockPath=base=>path.join(base,'bls-unregistered-reservations.lock');
 const journalPath=base=>path.join(base,'bls-unregistered-reservations.journal');
+const anchorPath=base=>path.join(base,'bls-unregistered-reservations.anchor');
+const ANCHOR_SCHEMA='ZGMINI_BLS_UNREGISTERED_ANCHOR_V1';
+const sha256=data=>createHash('sha256').update(data).digest('hex');
 
 function approvedPhysicalBase(base,approvedBase){
   if(typeof base!=='string'||typeof approvedBase!=='string'||
@@ -45,8 +49,8 @@ function withExclusiveLock(base,callback){
 }
 
 function readState(base,now){
-  let value;
-  try{value=JSON.parse(fs.readFileSync(ledgerPath(base),'utf8'));}
+  let value,seedBytes;
+  try{seedBytes=fs.readFileSync(ledgerPath(base));value=JSON.parse(seedBytes.toString('utf8'));}
   catch{fail('BLS_UNREG_LEDGER_UNAVAILABLE');}
   if(value?.schema!==BLS_UNREGISTERED_SCHEMA || value?.coverageAttested!==true ||
     !Array.isArray(value.requestTimes) || value.requestTimes.length>100000 ||
@@ -60,12 +64,21 @@ function readState(base,now){
     fail('BLS_UNREG_LEDGER_INVALID');
   // The approved seed is immutable. All new reservations are replayed from an
   // append-only, fsynced journal; incomplete final records stop all requests.
-  let journal;
-  try{journal=fs.readFileSync(journalPath(base),'utf8');}
+  let journal,anchor;
+  try{
+    journal=fs.readFileSync(journalPath(base),'utf8');
+    anchor=JSON.parse(fs.readFileSync(anchorPath(base),'utf8'));
+  }
   catch{fail('BLS_UNREG_JOURNAL_UNAVAILABLE');}
   if(journal.length>8_000_000 || (journal.length>0 && !journal.endsWith('\n')))
     fail('BLS_UNREG_JOURNAL_INVALID');
-  for(const line of journal?journal.slice(0,-1).split('\n'):[]){
+  const lines=journal?journal.slice(0,-1).split('\n'):[];
+  if(anchor?.schema!==ANCHOR_SCHEMA ||
+    anchor.seedSha256!==sha256(seedBytes) ||
+    anchor.journalSha256!==sha256(journal) ||
+    !validInt(anchor.sequence) || anchor.sequence!==lines.length)
+    fail('BLS_UNREG_ANCHOR_MISMATCH');
+  for(const line of lines){
     let event;
     try{event=JSON.parse(line);}catch{fail('BLS_UNREG_JOURNAL_INVALID');}
     if(!event || !validInt(event.at) || event.at>now)
@@ -97,18 +110,32 @@ const usedSlots=(state,now)=>state.requestTimes.length+
     .reduce((total,lease)=>total+lease.capacity,0);
 
 function appendDurableEvent(base,event){
-  let fd;
+  let fd,anchorFd;
   try{
-    // Journal must already exist as part of the approved seed. Never create
-    // a fresh empty journal during an actual provider request.
-    fs.statSync(journalPath(base));
+    // Seed, journal and anchor must all pre-exist from approved provisioning.
+    // This operation is serialized by the same exclusive process-wide lock.
+    const existing=fs.readFileSync(journalPath(base));
+    const anchor=JSON.parse(fs.readFileSync(anchorPath(base),'utf8'));
     fd=fs.openSync(journalPath(base),'a');
     const bytes=Buffer.from(JSON.stringify(event)+'\n');
     if(fs.writeSync(fd,bytes,0,bytes.length)!==bytes.length)
       fail('BLS_UNREG_JOURNAL_SHORT_WRITE');
-    fs.fsyncSync(fd); // complete persistence before a physical provider call
+    fs.fsyncSync(fd);
+    const updated={...anchor,sequence:anchor.sequence+1,
+      journalSha256:sha256(Buffer.concat([existing,bytes]))};
+    anchorFd=fs.openSync(anchorPath(base),'r+');
+    fs.ftruncateSync(anchorFd,0);
+    const anchorBytes=Buffer.from(JSON.stringify(updated)+'\n');
+    if(fs.writeSync(anchorFd,anchorBytes,0,anchorBytes.length,0)!==anchorBytes.length)
+      fail('BLS_UNREG_ANCHOR_SHORT_WRITE');
+    // Only a fully fsynced journal AND anchored head allow the caller to send.
+    // A crash between these writes leaves a mismatch and stops recovery.
+    fs.fsyncSync(anchorFd);
   }catch{fail('BLS_UNREG_JOURNAL_DURABILITY_UNKNOWN');}
-  finally{if(fd!==undefined)fs.closeSync(fd);}
+  finally{
+    if(anchorFd!==undefined)fs.closeSync(anchorFd);
+    if(fd!==undefined)fs.closeSync(fd);
+  }
 }
 
 function visit(base,approvedBase,now,fn){
