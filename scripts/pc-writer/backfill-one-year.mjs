@@ -6,6 +6,7 @@ import {createHash} from 'node:crypto';
 import {localDatabase} from './local-db.mjs';
 import {loadLocalProviders,installLocalRuntime} from './local-env.mjs';
 import {createQuotaFetch} from './quota-fetch.mjs';
+import {resolveBlsCoreActivation} from './bls-core-activation.mjs';
 import {save} from './d1.mjs';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
@@ -175,7 +176,9 @@ export async function backfillOneYear(base=process.env.ZGMINI_PC_HOME??DEFAULT_B
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
- backfillOneYear().then(result=>console.log(JSON.stringify(result))).catch(error=>{
+ const base=process.env.ZGMINI_PC_HOME??DEFAULT_BASE;
+ Promise.resolve().then(()=>backfillOneYear(base,{blsUnregistered:resolveBlsCoreActivation(base)}))
+ .then(result=>console.log(JSON.stringify(result))).catch(error=>{
   console.log(JSON.stringify({status:'FAILED',code:/^[A-Z0-9_:-]+$/.test(String(error?.message??''))?String(error.message):String(error?.code??'ONE_YEAR_BACKFILL_FAILED')}));
   process.exitCode=1;
  });
