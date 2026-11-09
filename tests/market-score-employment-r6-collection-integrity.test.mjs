@@ -172,6 +172,25 @@ test("real BLS and BED providers exclude pre-network quota refusals from physica
   );
   assert.equal(fetchCalls, 2);
 
+  const storedRuns = [];
+  const store = {
+    async initialize() {},
+    async getLatestRunInMode() { return null; },
+    async getProviderRequestsSince() { return 0; },
+    async acquire() { return { acquired: true }; },
+    async release() { return true; },
+    async recordRun(value) { storedRuns.push(value); return 19; },
+  };
+  const integrated = await runEmploymentR6CollectionStep({
+    db: { prepare() { return {}; } }, now, mode: "BACKFILL",
+    groups: ["BLS_JOLTS"], storeFactory: () => store,
+    fetchImpl: async () => { throw quotaStop(); },
+  });
+  assert.equal(integrated.status, "FAIL");
+  assert.equal(integrated.providerRequests, 0);
+  assert.equal(integrated.groupResults[0].failureCode, "BLS_UNREG_25_PER_24H_STOP");
+  assert.equal(storedRuns[0].providerRequests, 0);
+
   const uncertainNetwork = createEmploymentR6Provider({
     now,
     fetchImpl: async () => {
