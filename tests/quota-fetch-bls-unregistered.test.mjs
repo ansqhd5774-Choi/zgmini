@@ -58,6 +58,35 @@ test('v1 POST and v2 without key each reserve one unregistered physical slot',as
  }finally{clean(base);}
 });
 
+test('R4 v1 missing-series GET consumes a shared slot for every physical retry',async()=>{
+ const base=fixture({used:7});
+ let physical=0;
+ try{
+  const quota=createQuotaFetch({base,mode:'observe',originalFetch:async()=>{
+   physical++;return ok();
+  },blsUnregistered:{enabled:true,approvedBase:base}});
+  for(const id of ['LASST260000000000003','SMI12000000000000001']){
+   await quota.fetch(bls1+id,{headers:{'user-agent':'ZGMINI-R4-Shadow/1.0'}});
+  }
+  assert.equal(physical,2);
+  assert.equal(inspectUnregisteredBlsSlots({base,approvedBase:base}).used24h,9);
+ }finally{clean(base);}
+});
+
+test('official v1 single-series IDs containing dash or encoded hash remain guarded and count',async()=>{
+ const base=fixture();
+ let physical=0;
+ try{
+  const quota=createQuotaFetch({base,mode:'observe',originalFetch:async()=>{
+   physical++;return ok();
+  },blsUnregistered:{enabled:true,approvedBase:base}});
+  await quota.fetch(bls1+'LNS-14000000',{method:'GET'});
+  await quota.fetch(bls1+'LNS%2314000000',{method:'GET'});
+  assert.equal(physical,2);
+  assert.equal(inspectUnregisteredBlsSlots({base,approvedBase:base}).used24h,2);
+ }finally{clean(base);}
+});
+
 test('v2 registration key is distinct and does not consume unregistered slots',async()=>{
  const base=fixture();
  let physical=0;
@@ -96,6 +125,10 @@ test('unknown BLS endpoint/body/key shape fail before any HTTP call',async()=>{
    [bls2,{method:'POST',body:JSON.stringify({seriesid:[],registrationkey:0})}],
    ['https://api.bls.gov/publicAPI/v3/timeseries/data/',post({seriesid:[]})],
    [bls1,{method:'GET'}],
+   [bls1+'LNS14000000',{method:'POST'}],
+   [bls1+'LNS14000000/extra',{method:'GET'}],
+   [bls1+'LNS14000000?source=other',{method:'GET'}],
+   [bls1+'LNS14000000',{method:'GET',body:'bad-body'}],
   ]){
    await assert.rejects(quota.fetch(url,init),error=>
     error.code==='PROVIDER_QUOTA_GUARD'&&error.provider==='BLS');
