@@ -73,7 +73,7 @@ export default function InflationCandidate7Inputs(){
        <small>{ready?(stale?"마지막 정상 관측 ":"관측 ")+day(row?.observationDate)+(stale?" · 갱신 지연":""):"공개 요약 미게시"}</small></td>
       <td className="inflation-r2-release"><strong>{meta.cadence}</strong><small>다음 발표일 —</small></td>
       <td><span className="inflation-judgement">미평가</span></td>
-      <td className="inflation-r2-spark-cell"><InflationMiniChart label={meta.name} points={trend}/></td>
+      <td className="inflation-r2-spark-cell"><InflationMiniChart label={meta.name} points={trend} periodLabel={meta.cadence==="주간"?`최근 ${trend.length}회 관측`:"최근 1년"}/></td>
       <td><ContentHelp label={meta.name+" 도움말"}>
        <p>원본 번호 #{meta.id} · {meta.provider} · {meta.series} · {meta.unit}</p>
        <p>PC 원본 저장: {ready?storedKst(row?.sourceStoredAt):"확인되지 않음"} · 원자료 관측일: {ready?day(row?.observationDate):"—"}{stale?" · 갱신 지연(마지막 정상값 보존)":""}</p>
@@ -95,7 +95,7 @@ export default function InflationCandidate7Inputs(){
       </ContentHelp></div></div>
     <p className="inflation-r2-mobile-content">출처: {meta.provider} · {stale?"갱신 지연 · 마지막 정상 관측 보존":ready?"원자료 확보":"공개 요약 미게시"}</p>
     <p className="inflation-r2-mobile-criterion"><span>기준</span>연구 원자료 · 점수 미산출</p>
-    <div className="inflation-r2-mobile-spark"><span>최근 관측</span><InflationMiniChart label={meta.name} points={trend}/></div>
+    <div className="inflation-r2-mobile-spark"><span>최근 관측</span><InflationMiniChart label={meta.name} points={trend} periodLabel={meta.cadence==="주간"?`최근 ${trend.length}회 관측`:"최근 1년"}/></div>
     <div className="inflation-r2-mobile-metrics"><div><span>이전 원값</span>
      <strong>{ready&&finite(row?.previousValue)?fmt(row!.previousValue!,meta.unit):"—"}</strong>
      <small>{ready?day(row?.previousObservationDate):"—"}</small></div>
