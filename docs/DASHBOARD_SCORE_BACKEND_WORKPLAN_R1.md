@@ -26,7 +26,7 @@
 
 ## 다음 단일 필수 작업
 
-Controller #917의 별도 복구 담당자와 자원을 충돌시키지 않으면서, 독립적으로 **D05 미국 종합 CM-R1**의 실제 입력 중 새 관측·정정에 영향받는 최소 필드와 저장된 일별 사건 계약을 조사한다. T02 데이터센터·전력은 개인 후보 계산까지 입증됐어도 권리 확인 및 공용 theme baseline 복구가 분리된 선행 의존성이라 직접 게시하지 않는다. D09 PC 실측은 기존 승인 Reader/실행 증거에 `projection-checkpoint-r52.mjs`의 설치 SHA와 해당 입력이 확인되는 즉시 이어서 진행한다. 현재 확인한 A급 설치 사전이미지 조회 고정 목록에는 이 파일이 없으므로, Controller 작업 중 새 manifest/PC-job을 요청하지 않는다. 운영 변경이 필요하면 실제 겹치는 부분만 별도 승인받는다. 나머지 점수의 입력/주기를 임의 통일하지 않는다.
+Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05의 원자료 배치·12개 영역 Reader가 이미 기록하는 checkpoint/원관측일/정정 근거**를 저장 위치별로 찾아 `composite-observed`의 기존 계산 사건 1개와 인과적으로 연결할 수 있는지 읽기 전용으로 확인한다. 기존 공개 이력 경로 재사용이 우선이며 신규 DB/예약/Writer 생성 금지. T02 데이터센터·전력은 개인 후보 계산까지 입증됐어도 권리 확인 및 공용 theme baseline 복구가 분리된 선행 의존성이라 직접 게시하지 않는다. D09 PC 실측은 기존 승인 Reader/실행 증거에 `projection-checkpoint-r52.mjs`의 설치 SHA와 해당 입력이 확인되는 즉시 이어서 진행한다. 현재 확인한 A급 설치 사전이미지 조회 고정 목록에는 이 파일이 없으므로, Controller 작업 중 새 manifest/PC-job을 요청하지 않는다. 운영 변경이 필요하면 실제 겹치는 부분만 별도 승인받는다. 나머지 점수의 입력/주기를 임의 통일하지 않는다.
 
 ## D09 신용위험 — 최초 읽기 전용 후보 연결 증거
 
@@ -64,6 +64,17 @@ Controller #917의 별도 복구 담당자와 자원을 충돌시키지 않으�
 - 실제 GET `https://zgmini.kr/api/theme-fear-greed`: 유효 JSON, `status=UNAVAILABLE`, `reason=STORED_DATA_STALE`, 공개 `themes=[]` **0/30**. 이는 T02 하나의 코드 오류나 현재 PC 수집 실패를 곧바로 입증하지 않는다. **현재 T02 공개 end-to-end BLOCKED**, 68개 전체를 이 문제로 대기시키지 않는다.
 - 이 사유로 T02 shadow 스코어를 신규 운영 필드·게시 흐름에 연결하지 않는다. 먼저 승인된 D05 입력 계약에 대한 독립 개발을 계속하며, 테마 원담당의 기본 feed 복구와 별개로 진행한다.
 - GitHub 최신 `main`이 **e77f1435894d12a8fd01425d0649b566e1cf856d**로 이동해 본 전용 브랜치는 **11 ahead / 4 behind** 상태다. 해당 4커밋 변경 파일은 `scripts/pc-writer/run-local.mjs`, `scripts/pc-writer/build-asset-r10-release.mjs`, 자산 릴리스 테스트이며 본 브랜치의 신규 7파일과 직접 경로 중복은 없다. 승인 없는 rebase/reset/merge는 하지 않는다.
+
+## 2026-11-10 D05 미국 종합 CM-R1 실이력 재사용 및 인과 간극 점검
+
+- 라이브 `GET https://zgmini.kr/api/market-score`: 유효 JSON, `status=SUCCESS`, `modelVersion=CM-R1`, `asOfDate=2026-11-09`, `overall.status=READY`, `score=47.31578798432822`, 12개 경제영역 **12/12 READY**. 현행 `overall.trend`는 **293점**이며 `dataQuality.historyMode=CURRENT_VINTAGE_ONLY`, `lookAheadSafe=false`; 이 추세를 당시 확정 기록으로 취급 금지.
+- 별도 **기존 실제 계산 이력** `GET https://zgmini.kr/api/market-score/observations?period=1Y`: 유효 JSON, `status=READY`, `version=COMPOSITE_CALCULATED_SCORES_R1`, `availableDays=8`, `totalObservedPoints=30`, `sampled=false`, `timeMeaning=PC_CALCULATED_AT`. 최초 `2026-10-31T10:45:07.750Z`(46.88569913684497), 최종 `2026-11-09T20:42:51.176Z`(47.31578798432822). 현재 점수와 마지막 실제 계산점은 수치상 일치.
+- 이미 구현된 경로: `scripts/pc-writer/market.mjs::calculateMarket`가 local 저장 입력/영역별 Reader로 12개 점수를 계산 → `run-local.mjs`가 current 저장 후 `appendCompositeObservedFromCurrent` 호출 → 기존 `market_public_snapshots_v1`의 `composite-observed:UTC-YYYY-MM-DD`에 `{version,date,points:[{calculatedAt,score,asOfDate,signature}]}` 기록 → `publishCompositeObservedArchive`가 D1 하루 key별 **최대 24일/run** 게시 및 동일 body/stored_at 재조회 → 공개 observations GET. **새 이력 DB나 새 작업을 만들지 않는다.**
+- 현재 `signature`는 종합점수·asOfDate·12개 영역 id/status/score/asOfDate/methodologyVersion의 **FNV32 8자리**다. 실제 공급자 raw SHA/official revision/releaseAt/관측값 전체의 변화가 보장된 증거는 아니다. 날짜만 변해도 신규 서명 가능하며 동일 날짜 원자료 정정 시 계산 점수 불변이면 누락될 수 있다.
+- 동일 signature면 새 계산 사건을 생략하며, 동일 날짜 **15분 미만** 변경도 skip, 일별 cap **100개**. 전일과 동일 점수의 새 UTC 날짜도 cross-day signature 중복 여부에 따라 생략될 수 있다. 이는 현재 **계산 사건 archive** 동작으로, 사용자 확정 기준의 매일 최종 KST 스냅샷/이월·정정 revision/supersedes와 동치가 아니다. 임의로 15분 제한·UTC DB 키·원본 이력을 변경하지 않는다.
+- API에서 보이는 **8일/30점**은 당시 PC 계산 시각이 기록됐다는 공개 증거지만, 그 개별 점이 어떤 원공급자 관측·checkpoint→로컬 원자료→산식→D1에 연결되는지는 아직 실측 미완료. 현재 UI의 재구성 293점과 혼합 카운트·수치 비교 금지.
+- 기존 PC core-status #1128 `run-42689955371-1-seat-2`는 `local-cycle-last-run.json=COMPLETE`, `local-collection-last-run.json=COMPLETE`, `local-writer-last-run.json=VERIFIED` 확인. **SQLite 미개방(`sqliteOpened=false`)·D05의 local archive body/D1 동일 checksum 검증 없음**이므로 0/68 종단 PASS는 유지.
+- D05의 완성에 필요한 최소 후속은 **기존 Reader가 제공하는 관측일·원자료 revision/checkpoint와 계산 사건의 실제 인과 연결**이다. 운영 산식·Writer·D1 계약 변경은 필요한 영향 범위가 확인되고 승인되기 전 실시하지 않는다. 이번 작업은 GitHub 개발 계획 문서만 수정; PC/DB/Writer/예약/Cloudflare 쓰기 **0건**.
 
 ## 진행률 표기
 
