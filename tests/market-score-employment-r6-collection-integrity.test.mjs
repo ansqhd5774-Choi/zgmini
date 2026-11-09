@@ -170,7 +170,7 @@ test("approved manual ONE_YEAR permits same-day retry; ordinary scheduled planne
   const store = {
     async initialize() {},
     async getLatestRun() {
-      return {completed_at:"2026-11-10T00:30:00.000Z",
+      return {status:"PARTIAL",completed_at:"2026-11-10T00:30:00.000Z",
         detail_json:'{"mode":"ONE_YEAR"}'};
     },
   };
@@ -185,6 +185,12 @@ test("approved manual ONE_YEAR permits same-day retry; ordinary scheduled planne
     ...args,approvedManualRequestId:"b938f56d-96f0-4840-8888-94e3ff108d29",
   });
   assert.deepEqual(manual.map(x=>[x.due,x.status]), [[true,"ONE_YEAR_DUE"]]);
+  store.getLatestRun=async()=>({status:"SUCCESS",completed_at:"2026-11-10T00:30:00.000Z",
+    detail_json:'{"mode":"ONE_YEAR"}'});
+  const completed=await planEmploymentR6Collection({
+    ...args,approvedManualRequestId:"b938f56d-96f0-4840-8888-94e3ff108d29",
+  });
+  assert.deepEqual(completed.map(x=>[x.due,x.status]),[[false,"ONE_YEAR_ALREADY_ATTEMPTED"]]);
 });
 
 test("BACKFILL records the expanded window only when raw snapshot metadata verifies it", async () => {
