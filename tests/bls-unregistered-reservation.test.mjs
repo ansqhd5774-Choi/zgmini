@@ -18,6 +18,7 @@ const inspectUnregisteredBlsSlots=opts=>inspectStrict({...opts,approvedBase:opts
 
 const now=Date.parse('2026-11-09T04:00:00Z');
 const job='fce55270-a893-44c6-b9c4-0aadd73059ce';
+const competingJob='0a70cc67-a3da-4cd8-8d53-adcbb44a2186';
 function fixture(used,{verified=true}={}){
   const base=fs.mkdtempSync(path.join(os.tmpdir(),'r6-bls-slots-'));
   fs.writeFileSync(path.join(base,'bls-unregistered-reservations.json'),JSON.stringify({
@@ -48,6 +49,28 @@ test('8 historical + 18 never reserves or consumes a network slot',()=>{
     assert.throws(()=>reserveR6UnregisteredBlsBatch({base,requestId:job,count:18,now}),
       /BLS_UNREG_25_PER_24H_STOP/);
     assert.deepEqual(inspectUnregisteredBlsSlots({base,now}),{used24h:8,remaining24h:17});
+  }finally{clean(base);}
+});
+
+test('two competing 18-slot batches cannot both fit inside the same remaining 18',()=>{
+  const base=fixture(7);
+  try{
+    reserveR6UnregisteredBlsBatch({base,requestId:job,count:18,now});
+    assert.throws(()=>reserveR6UnregisteredBlsBatch({
+      base,requestId:competingJob,count:18,now,
+    }),/BLS_UNREG_25_PER_24H_STOP/);
+    assert.equal(inspectUnregisteredBlsSlots({base,now}).used24h,25);
+  }finally{clean(base);}
+});
+
+test('R4 nine physical fallbacks plus R6 eighteen are refused (9+18=27)',()=>{
+  const base=fixture(0);
+  try{
+    for(let i=0;i<9;i++)reserveOneUnregisteredBlsRequest({base,now:now+i});
+    assert.throws(()=>reserveR6UnregisteredBlsBatch({
+      base,requestId:job,count:18,now:now+10,
+    }),/BLS_UNREG_25_PER_24H_STOP/);
+    assert.equal(inspectUnregisteredBlsSlots({base,now:now+10}).used24h,9);
   }finally{clean(base);}
 });
 
