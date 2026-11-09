@@ -26,6 +26,10 @@ test("provider parsers preserve 51-state core and mark only latest provider obse
   const d=await parseBlsDiffusionShadowRows(blsPayload(),{retrievedAt:rt});
   assert.equal(d.rows.length,16);assert.equal(d.rows.filter(x=>x.pitClass===EMPLOYMENT_R4_PIT_CLASSES.forwardObserved).length,8);
   assert.equal(d.rows.filter(x=>x.availableAt===rt).length,8);
+  const arrayPayload=blsPayload();arrayPayload.Results=[arrayPayload.Results];
+  const arrayParsed=await parseBlsDiffusionShadowRows(arrayPayload,{retrievedAt:rt});
+  assert.equal(arrayParsed.rows.length,16);
+  assert.equal(arrayParsed.rows.filter(x=>x.pitClass===EMPLOYMENT_R4_PIT_CLASSES.forwardObserved).length,8);
 });
 
 function sampleRow(logicalSeriesId,geo,value,hashChar="a"){return{logicalSeriesId,provider:"TEST",providerSeriesId:`TEST:${logicalSeriesId}`,geographyType:"STATE",geographyCode:geo,frequency:"WEEKLY",unit:"COUNT",seasonalAdjustment:"NA",populationCoverage:"TEST",observationDate:"2026-09-12",releaseDate:null,availableAt:"2026-09-20T00:00:00Z",retrievedAt:"2026-09-20T00:00:00Z",value,sourceRevision:null,sourceHash:hashChar.repeat(64),qualityStatus:"READY",pitClass:EMPLOYMENT_R4_PIT_CLASSES.forwardObserved,schemaVersion:1,provenance:{}}}
@@ -152,20 +156,23 @@ test("BLS provider keeps one multi-series POST when all 8 diffusion series are r
   const rt="2026-09-29T00:00:00.000Z";
   const calls=[];
   const fetchImpl=async(url,opts={})=>{
-    calls.push({url:String(url),method:opts.method??"GET"});
+    calls.push({url:String(url),method:opts.method??"GET",body:JSON.parse(opts.body)});
     assert.equal(opts.method,"POST");
-    return {ok:true,status:200,async json(){return blsPayload()}};
+    return {ok:true,status:200,async json(){const response=blsPayload();response.Results=[response.Results];return response;}};
   };
-  const provider=createEmploymentR4ShadowProvider({fetchImpl,now:()=>new Date(rt)});
+  const provider=createEmploymentR4ShadowProvider({fetchImpl,now:()=>new Date(rt),env:{BLS_API_KEY:"fixture-key"}});
   const out=await provider.fetchGeographicDiffusion();
   assert.equal(out.requestCount,1);
   assert.equal(out.transport.fallbackUsed,false);
   assert.equal(out.transport.primaryReturned,8);
   assert.equal(new Set(out.rows.map(r=>r.providerSeriesId)).size,8);
   assert.equal(calls.length,1);
+  assert.ok(calls[0].url.includes("/v2/"));
+  assert.equal(calls[0].body.registrationkey,"fixture-key");
+  assert.ok(out.rows.every(x=>x.provenance.sourceUrl.includes("/v2/")));
 });
 
-test("BLS provider falls back to official single-series GET only for missing diffusion IDs",async()=>{
+test("BLS provider falls back to keyed single-series POST only for missing diffusion IDs",async()=>{
   const rt="2026-09-29T00:00:00.000Z";
   const ids=Object.keys(EMPLOYMENT_R4_DIFFUSION_SERIES);
   const calls=[];
@@ -175,15 +182,17 @@ test("BLS provider falls back to official single-series GET only for missing dif
   }]}});
   const fetchImpl=async(url,opts={})=>{
     const u=String(url);
-    calls.push({url:u,method:opts.method??"GET"});
-    if((opts.method??"GET")==="POST"){
+    const body=JSON.parse(opts.body);
+    calls.push({url:u,method:opts.method??"GET",body});
+    if(body.seriesid.length>1){
       return {ok:true,status:200,async json(){return{status:"REQUEST_SUCCEEDED",message:[],Results:{series:[]}}}};
     }
-    const id=decodeURIComponent(u.slice(u.lastIndexOf("/")+1));
+    const id=body.seriesid[0];
     assert.ok(ids.includes(id));
-    return {ok:true,status:200,async json(){return singlePayload(id)}};
+    const response=singlePayload(id);response.Results=[response.Results];
+    return {ok:true,status:200,async json(){return response}};
   };
-  const provider=createEmploymentR4ShadowProvider({fetchImpl,now:()=>new Date(rt)});
+  const provider=createEmploymentR4ShadowProvider({fetchImpl,now:()=>new Date(rt),env:{BLS_REGISTRATION_KEY:"fixture-key"}});
   const out=await provider.fetchGeographicDiffusion();
   assert.equal(out.requestCount,9);
   assert.equal(out.transport.primaryReturned,0);
@@ -191,6 +200,23 @@ test("BLS provider falls back to official single-series GET only for missing dif
   assert.equal(out.transport.fallbackRequests,8);
   assert.equal(new Set(out.rows.map(r=>r.providerSeriesId)).size,8);
   assert.equal(out.rows.filter(r=>r.pitClass===EMPLOYMENT_R4_PIT_CLASSES.forwardObserved).length,8);
-  assert.equal(calls.filter(x=>x.method==="POST").length,1);
-  assert.equal(calls.filter(x=>x.method==="GET").length,8);
+  assert.equal(calls.filter(x=>x.method==="POST").length,9);
+  assert.equal(calls.filter(x=>x.method==="GET").length,0);
+  assert.ok(calls.every(x=>x.url.includes("/v2/")&&x.body.registrationkey==="fixture-key"));
+  assert.ok(calls.every(x=>x.body.startyear&&x.body.endyear));
+});
+
+test("R4 shadow BLS missing key, 429, and malformed response stop without retry",async()=>{
+  let calls=0;
+  const noKey=createEmploymentR4ShadowProvider({fetchImpl:async()=>{calls++;throw new Error("should not fetch");}});
+  await assert.rejects(noKey.fetchGeographicDiffusion(),/BLS_REGISTRATION_KEY_MISSING/);
+  assert.equal(calls,0);
+  const opts={env:{BLS_API_KEY:"fixture-key"}};
+  const rateLimited=createEmploymentR4ShadowProvider({...opts,fetchImpl:async()=>{calls++;return {ok:false,status:429};}});
+  await assert.rejects(rateLimited.fetchGeographicDiffusion(),/BLS_DIFFUSION_HTTP_429/);
+  assert.equal(calls,1);
+  calls=0;
+  const malformed=createEmploymentR4ShadowProvider({...opts,fetchImpl:async()=>{calls++;return {ok:true,status:200,json:async()=>({status:"REQUEST_SUCCEEDED",Results:null})};}});
+  await assert.rejects(malformed.fetchGeographicDiffusion(),/BLS_DIFFUSION_RESPONSE_MALFORMED/);
+  assert.equal(calls,1);
 });
