@@ -89,3 +89,9 @@
 - Draft PR [#1056](https://github.com/ansqhd5774-Choi/zgmini/pull/1056) 첫 GitHub Node.js CI run `42712436598`: **빌드 PASS·타입 검사 PASS**, 전체 회귀 **4168 PASS / 1 FAIL / 6 SKIP / 3 TODO**. 최초 실패는 `tests/economic-terrain-mobile-r5.test.mjs:22`의 구형 지형도 명칭/폭(`취약/주의/중립/양호/우수`, `25/20/10/20/25`) 기대값이었다. 새 정책으로 바뀐 표시를 과거 정책으로 다시 검증하던 **관련 테스트 계약 미갱신**이며, 실사용 원자료/점수 계산 실패가 아니다.
 - 관련 모바일 레이아웃 검증 단언(26px 행, 중앙 정렬, 차트 트랙, 선택 상태)은 유지하고 구간 명칭/폭만 새 승인 기준으로 업데이트. 로컬 Node 지형도 3개 파일(디자인/축/모바일) 회귀 **9/9 PASS**. `codex/ui-improvements` commit `e3babe2eca334d6cd8df0265a7d029a3ab50f674`, 별도 통합 브랜치 commit `c2ac343971eefc3d010461e1990f31dd4dad45ef`에 동일 수정 반영. 통합 PR 변경 파일 수 **6개**, `main` 무변경.
 - 재실행 CI `42712891336` 시작 확인. 이 기록 시점에는 **RUNNING**이며 최종 PASS 미확정. 다음 필수 검증은 해당 run의 결과·첫 실패 코드 확인, 실패 시 관련 범위 최소 수정 후 재검증이다.
+
+## 9. 통합 브랜치 최종 CI 증거
+
+- Draft PR [#1056](https://github.com/ansqhd5774-Choi/zgmini/pull/1056)의 HEAD `c2ac343971eefc3d010461e1990f31dd4dad45ef` 대상 GitHub Node.js CI run `42712891336` **최종 SUCCESS**.
+- 설치·빌드·산출물 업로드·타입 검사 **PASS**. `node --test tests/*.test.mjs`: **4178 총계 / 4169 PASS / 0 FAIL / 6 SKIP / 3 TODO**. PC 게시 복구 **11/11 PASS**, Cloudflare 읽기 계약 **69/69 PASS**. 첫 실패는 모바일 테스트 계약 수정으로 해소됐다.
+- 구현 완료는 **소스/빌드/테스트 기준**이다. 아직 공개 사이트 배포가 아니므로 PC·390px 실제 화면과 정확한 Production Deployment SHA 확인은 **미완료**로 유지한다. `main` 병합, Production 변경, API·DB·Writer·Controller 변경 **0건**.
