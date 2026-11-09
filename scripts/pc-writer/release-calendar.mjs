@@ -449,16 +449,22 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
     }
     if(source==='census'){
      const current=await fetchCensusYear({store,key,source,spec,year,now,fetchImpl,countRequest:()=>requests++});
-     let following=[];
+     let following=[],followingCollected=false;
      try{
       following=await fetchCensusYear({store,key,source,spec,year:year+1,now,fetchImpl,countRequest:()=>requests++});
+      followingCollected=true;
      }catch{
-      // Next-year publication is optional. Current-year success stays READY.
+      // Next-year publication is optional. A temporary failure must not erase
+      // next-year official dates already stored by an earlier successful run.
+      following=(previous?.body?.events??[]).filter(event=>
+       event.source===source&&isoYear(event.date,year+1));
      }
-     const unique=[...new Map([...current,...following].map(e=>[e.id+':'+e.date,e])).values()];
+     const historic=(previous?.body?.events??[]).filter(event=>
+      event.source===source&&event.date<`${year}-01-01`);
+     const unique=[...new Map([...historic,...current,...following].map(e=>[e.id+':'+e.date,e])).values()];
      events.push(...unique);
      sources[source]={status:'READY',checkedAt:new Date(now).toISOString(),sourceUrl:spec.page,
-      coveredYears:following.length?[year,year+1]:[year]};
+      coveredYears:followingCollected?[year,year+1]:[year]};
      continue;
     }
     // BEA and Fed retain the installed R20 collection path unchanged.
