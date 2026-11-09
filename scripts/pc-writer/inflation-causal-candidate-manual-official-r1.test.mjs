@@ -266,3 +266,32 @@ test('manual reimport with identical overlap keeps previous timestamps and histo
   assert.equal(updated.status,'UNCHANGED');
   assert.deepEqual(updated.documents.bls.series[BLS_RENT_ID][0],priorRow);
 });
+
+test('equal historical values still record a newly acquired official source',()=>{
+  const bls=parseOfficialBlsHousingFlatfile(encode([header,...rows].join('\n')));
+  const census={sourceKind:'CENSUS_OFFICIAL_NAICS_HISTORICAL_XLSX',
+    sourceSha256:'c'.repeat(64),observations:parseOfficialCensusInventoryRows([
+      row(34,'AMTMTI',2025,c2025),row(35,'AMTMTI',2026,c2026),
+    ])};
+  const first=planOfficialManualCandidateDocuments({bls,census,
+    now:'2026-11-09T10:00:00.000Z'});
+  const oldBls={...first.documents.bls,sourceAcquisition:'CORE_COLLECTED',
+    provenanceByGroup:undefined};
+  const oldCensus={...first.documents.census,sourceAcquisition:'CORE_COLLECTED',
+    provenance:[]};
+  const official=planOfficialManualCandidateDocuments({bls,census,
+    previousBls:oldBls,previousCensus:oldCensus,
+    now:'2026-11-09T11:00:00.000Z'});
+  assert.equal(official.status,'PREPARED');
+  assert.deepEqual(official.writes,{bls:true,census:true});
+  assert.deepEqual(official.documents.bls.series,oldBls.series);
+  assert.deepEqual(official.documents.census.observations,oldCensus.observations);
+  assert.equal(official.documents.bls.provenanceByGroup.cpi.sourceSha256,
+    bls.sourceSha256);
+  assert.equal(official.documents.census.provenance.at(-1).sourceSha256,
+    census.sourceSha256);
+  const repeated=planOfficialManualCandidateDocuments({bls,census,
+    previousBls:official.documents.bls,previousCensus:official.documents.census,
+    now:'2026-11-09T12:00:00.000Z'});
+  assert.equal(repeated.status,'UNCHANGED');
+});
