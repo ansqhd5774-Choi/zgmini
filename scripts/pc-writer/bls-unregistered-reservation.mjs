@@ -3,7 +3,7 @@
 // The shared ledger requires an independently approved, coverage-attested seed.
 import fs from 'node:fs';
 import path from 'node:path';
-import {createHash} from 'node:crypto';
+import {createHash,randomUUID} from 'node:crypto';
 
 export const BLS_UNREGISTERED_SCHEMA='ZGMINI_BLS_UNREGISTERED_RESERVATIONS_V1';
 export const BLS_UNREGISTERED_24H_LIMIT=25;
@@ -36,15 +36,48 @@ function withExclusiveLock(base,callback){
   if(typeof base!=='string'||!path.isAbsolute(base))fail('BLS_UNREG_BASE_INVALID');
   try{if(!fs.statSync(base).isDirectory())fail('BLS_UNREG_BASE_INVALID');}
   catch{fail('BLS_UNREG_BASE_INVALID');}
+  const file=lockPath(base);
   let fd;
-  try{fd=fs.openSync(lockPath(base),'wx',0o600);}
+  try{fd=fs.openSync(file,'wx',0o600);}
   catch{fail('BLS_UNREG_RESERVATION_LOCKED');}
-  try{return callback();}
-  finally{
+  // An empty `wx` file alone proves exclusivity only at acquisition time.
+  // A concurrent cleanup/rename must never let this owner unlink somebody
+  // else's replacement lock. Keep the open descriptor's identity and an
+  // unpredictable exact payload as independent ownership witnesses.
+  const bytes=Buffer.from(JSON.stringify({
+    schema:'ZGMINI_BLS_UNREGISTERED_LOCK_V1',pid:process.pid,nonce:randomUUID(),
+  }));
+  let identity=null;
+  const stillOwned=()=>{
+    try{
+      const current=fs.lstatSync(file);
+      return current.isFile()&&!current.isSymbolicLink()&&
+        current.dev===identity?.dev&&current.ino===identity?.ino&&
+        fs.readFileSync(file).equals(bytes);
+    }catch{return false;}
+  };
+  try{
+    // Failure while creating the ownership record is an unknown lock state.
+    // Preserve the file for manual reconciliation; do not forcibly clean it.
+    try{
+      if(fs.writeSync(fd,bytes,0,bytes.length,0)!==bytes.length)
+        fail('BLS_UNREG_RESERVATION_LOCK_WRITE_UNKNOWN');
+      identity=fs.fstatSync(fd);
+      if(!stillOwned())fail('BLS_UNREG_RESERVATION_LOCK_OWNER_CHANGED');
+    }catch(error){
+      if(error?.code?.startsWith('BLS_UNREG_'))throw error;
+      fail('BLS_UNREG_RESERVATION_LOCK_WRITE_UNKNOWN');
+    }
+    // A stolen/replaced lock must stop a permit even when the journal write
+    // itself finished. The reserved slot remains conservatively charged.
+    return callback();
+  }finally{
     fs.closeSync(fd);
-    // Only remove the lock created by this call. Crashed-process locks remain
-    // for verified/manual recovery; no automatic stale lock breaking.
-    fs.unlinkSync(lockPath(base));
+    if(identity!==null){
+      if(!stillOwned())fail('BLS_UNREG_RESERVATION_LOCK_OWNER_CHANGED');
+      try{fs.unlinkSync(file);}
+      catch{fail('BLS_UNREG_RESERVATION_LOCK_RELEASE_UNKNOWN');}
+    }
   }
 }
 
