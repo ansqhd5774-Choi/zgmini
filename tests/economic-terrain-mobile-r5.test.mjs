@@ -19,10 +19,10 @@ test('all 12 mobile rows use 26px: rank, name, gauge, score, chevron',()=>{
  assert.match(mobile,/\.zg-terrain-axis-plot\{grid-column:3;grid-row:1/);
 });
 
-test('zone labels stay centered inside their original weighted colors',()=>{
+test('zone labels stay centered inside five unified stability bands',()=>{
  assert.match(mobile,/\.zg-terrain-axis-bands>div\{position:relative;justify-content:center;align-items:center/);
  assert.match(mobile,/\.zg-terrain-axis-bands strong\{position:static;width:auto;font-size:7\.5px/);
- for(const [name,width,color] of [['취약',25,'#fa628b'],['주의',20,'#ffc64b'],['중립',10,'#a6bdd0'],['양호',20,'#2de0c4'],['우수',25,'#13bfa7']]){
+ for(const [name,width,color] of [['위험',25,'#fa628b'],['주의',15,'#ffc64b'],['중립',20,'#a6bdd0'],['양호',15,'#2de0c4'],['안정',25,'#13bfa7']]){
   assert.ok(component.includes(`name:'${name}'`));
   assert.ok(component.includes(`width:${width},color:'${color}'`));
  }
