@@ -83,3 +83,9 @@
 - **현재 진행:** 관측 23/23·경제 비교 12/12 완료, 발견된 실제 구간 불일치의 **브랜치 소스 수정 2/2 완료**, Node 구간·축 회귀 **7/7 통과**, SSR 회귀/데스크톱·390px 실제 화면/연결 빌드/Production 배포 검증은 **미완료**. 공개 사이트는 이 commit이 아직 적용됐다고 주장하지 않는다.
 - **통합 준비:** 최신 `main`에서 분기한 `codex/dashboard-score-display-bands-r1-20261110`에는 동일 변경 **5개 파일만** 옮겨 Draft PR [#1056](https://github.com/ansqhd5774-Choi/zgmini/pull/1056)을 생성했다. PR 기준 `main` 대비 **ahead 5/behind 0**, GitHub `mergeable=true` 확인. PR은 Draft/미병합이며 Production은 변경되지 않았다.
 - **다음 필수 행동:** 별도 브랜치 전체 병합 없이 위 5개 변경만 검토하고 관련 회귀 테스트 실행 → PC·390px UI 스냅샷 확인 → 승인된 GitHub 연동 배포 후 exact SHA/Deployment/API/UI 확인. 배포 범위 승인이 필요한 경우 먼저 확인한다. 기존 UI 브랜치가 main과 크게 갈라져 있으므로 단순 전체 병합은 금지한다. 백엔드 68개 이력 작업은 계속 별도 범위다.
+
+## 8. Draft PR CI 회귀 실패·수정 기록
+
+- Draft PR [#1056](https://github.com/ansqhd5774-Choi/zgmini/pull/1056) 첫 GitHub Node.js CI run `42712436598`: **빌드 PASS·타입 검사 PASS**, 전체 회귀 **4168 PASS / 1 FAIL / 6 SKIP / 3 TODO**. 최초 실패는 `tests/economic-terrain-mobile-r5.test.mjs:22`의 구형 지형도 명칭/폭(`취약/주의/중립/양호/우수`, `25/20/10/20/25`) 기대값이었다. 새 정책으로 바뀐 표시를 과거 정책으로 다시 검증하던 **관련 테스트 계약 미갱신**이며, 실사용 원자료/점수 계산 실패가 아니다.
+- 관련 모바일 레이아웃 검증 단언(26px 행, 중앙 정렬, 차트 트랙, 선택 상태)은 유지하고 구간 명칭/폭만 새 승인 기준으로 업데이트. 로컬 Node 지형도 3개 파일(디자인/축/모바일) 회귀 **9/9 PASS**. `codex/ui-improvements` commit `e3babe2eca334d6cd8df0265a7d029a3ab50f674`, 별도 통합 브랜치 commit `c2ac343971eefc3d010461e1990f31dd4dad45ef`에 동일 수정 반영. 통합 PR 변경 파일 수 **6개**, `main` 무변경.
+- 재실행 CI `42712891336` 시작 확인. 이 기록 시점에는 **RUNNING**이며 최종 PASS 미확정. 다음 필수 검증은 해당 run의 결과·첫 실패 코드 확인, 실패 시 관련 범위 최소 수정 후 재검증이다.
