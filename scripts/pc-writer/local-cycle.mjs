@@ -43,6 +43,17 @@ try{
    inflationRecurring={status:'FAILED_PREVIOUS_INPUTS_PRESERVED',providerRequests:null};
   }
  }
+ // Candidate research inputs share the existing Core lock and run before
+ // the early Writer pass; their own approved provider gate is default-off.
+ let inflationCandidates={status:lane==='core'?'DISABLED':'SKIPPED_KOREA_LANE',providerRequests:0};
+ if(lane==='core'&&collection.status===0){
+  try{
+   const {runInflationCandidatesFromCore}=await import('./inflation-causal-candidate-core-bridge.mjs');
+   inflationCandidates=await runInflationCandidatesFromCore(base);
+  }catch{
+   inflationCandidates={status:'FAILED_PREVIOUS_INPUTS_PRESERVED',providerRequests:null};
+  }
+ }
  let supplyR10=null,alpacaIncremental=null,sp500Shadow=null,sectorFearGreedR3=null,sectorFearGreedR3Report=null;
  const {publication,progressive}=await progressivePublication({
   enabled:lane==='core'&&publishAllowed,
@@ -196,7 +207,7 @@ try{
   sectors:sectorFearGreedR3Report?.sectors??null,
   error:sectorFearGreedR3Report?.error??(sectorFearGreedR3?.error?.code??null),
  }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
- const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,inflationRecurring,supplyR10,alpacaIncremental,sp500Shadow,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,publicationPolicy,progressive,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsRiskProvisionalR23,researchEarningsR5Prospective,status:publication.status===0?(publicationPolicy.collectionDegraded?'COMPLETE_WITH_COLLECTION_GAPS':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
+ const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,inflationRecurring,inflationCandidates,supplyR10,alpacaIncremental,sp500Shadow,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,publicationPolicy,progressive,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsRiskProvisionalR23,researchEarningsR5Prospective,status:publication.status===0?(publicationPolicy.collectionDegraded?'COMPLETE_WITH_COLLECTION_GAPS':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
  save(path.join(base,'local-cycle-last-run.json'),report);console.log(JSON.stringify(report));
  if(publishRequested)try{updateDataAlert(base,{key:'publication',failed:publication.status!==0});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
  if(publication.status!==0)process.exitCode=1;
