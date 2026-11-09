@@ -3,7 +3,6 @@
 // The shared ledger requires an independently approved, coverage-attested seed.
 import fs from 'node:fs';
 import path from 'node:path';
-import {randomUUID} from 'node:crypto';
 
 export const BLS_UNREGISTERED_SCHEMA='ZGMINI_BLS_UNREGISTERED_RESERVATIONS_V1';
 export const BLS_UNREGISTERED_24H_LIMIT=25;
@@ -13,6 +12,7 @@ const fail=code=>{const e=Error(code);e.code=code;throw e;};
 const validInt=n=>Number.isSafeInteger(n)&&n>=0;
 const ledgerPath=base=>path.join(base,'bls-unregistered-reservations.json');
 const lockPath=base=>path.join(base,'bls-unregistered-reservations.lock');
+const journalPath=base=>path.join(base,'bls-unregistered-reservations.journal');
 
 function approvedPhysicalBase(base,approvedBase){
   if(typeof base!=='string'||typeof approvedBase!=='string'||
@@ -58,6 +58,34 @@ function readState(base,now){
       !validInt(lease?.capacity) || lease.capacity>18 ||
       !validInt(lease?.spent) || lease.spent>lease.capacity))
     fail('BLS_UNREG_LEDGER_INVALID');
+  // The approved seed is immutable. All new reservations are replayed from an
+  // append-only, fsynced journal; incomplete final records stop all requests.
+  let journal;
+  try{journal=fs.readFileSync(journalPath(base),'utf8');}
+  catch{fail('BLS_UNREG_JOURNAL_UNAVAILABLE');}
+  if(journal.length>8_000_000 || (journal.length>0 && !journal.endsWith('\n')))
+    fail('BLS_UNREG_JOURNAL_INVALID');
+  for(const line of journal?journal.slice(0,-1).split('\n'):[]){
+    let event;
+    try{event=JSON.parse(line);}catch{fail('BLS_UNREG_JOURNAL_INVALID');}
+    if(!event || !validInt(event.at) || event.at>now)
+      fail('BLS_UNREG_JOURNAL_INVALID');
+    const keys=Object.keys(event).sort().join('|');
+    if(event.type==='ONE' && keys==='at|type'){
+      value.requestTimes.push(event.at);
+    }else if(event.type==='BATCH' && keys==='at|count|requestId|type' &&
+      SHALESS_UUID.test(event.requestId) && validInt(event.count) &&
+      event.count>=1 && event.count<=18 && !Object.hasOwn(value.leases,event.requestId)){
+      value.leases[event.requestId]={at:event.at,capacity:event.count,spent:0};
+    }else if(event.type==='SPEND' && keys==='at|requestId|type' &&
+      SHALESS_UUID.test(event.requestId)){
+      const lease=value.leases[event.requestId];
+      if(!lease || event.at<lease.at || event.at-lease.at>=DAY ||
+        lease.spent>=lease.capacity)fail('BLS_UNREG_JOURNAL_INVALID');
+      lease.spent++;
+      lease.at=event.at;
+    }else fail('BLS_UNREG_JOURNAL_INVALID');
+  }
   // Ordinary calls and prebooked batch slots are disjoint. A batch lease stays
   // fully charged until 24h after its latest *physical attempt*, not booking.
   value.requestTimes=value.requestTimes.filter(t=>t>now-DAY);
@@ -68,10 +96,19 @@ const usedSlots=(state,now)=>state.requestTimes.length+
   Object.values(state.leases).filter(lease=>lease.at>now-DAY)
     .reduce((total,lease)=>total+lease.capacity,0);
 
-function saveState(base,value){
-  const file=ledgerPath(base),temporary=`${file}.tmp-${process.pid}-${randomUUID()}`;
-  fs.writeFileSync(temporary,JSON.stringify(value)+'\n',{mode:0o600,flag:'wx'});
-  fs.renameSync(temporary,file);
+function appendDurableEvent(base,event){
+  let fd;
+  try{
+    // Journal must already exist as part of the approved seed. Never create
+    // a fresh empty journal during an actual provider request.
+    fs.statSync(journalPath(base));
+    fd=fs.openSync(journalPath(base),'a');
+    const bytes=Buffer.from(JSON.stringify(event)+'\n');
+    if(fs.writeSync(fd,bytes,0,bytes.length)!==bytes.length)
+      fail('BLS_UNREG_JOURNAL_SHORT_WRITE');
+    fs.fsyncSync(fd); // complete persistence before a physical provider call
+  }catch{fail('BLS_UNREG_JOURNAL_DURABILITY_UNKNOWN');}
+  finally{if(fd!==undefined)fs.closeSync(fd);}
 }
 
 function visit(base,approvedBase,now,fn){
@@ -88,7 +125,8 @@ export function reserveOneUnregisteredBlsRequest({base,approvedBase,now=Date.now
   return visit(base,approvedBase,now,(state,root)=>{
     if(usedSlots(state,now)>=BLS_UNREGISTERED_24H_LIMIT)
       fail('BLS_UNREG_25_PER_24H_STOP');
-    state.requestTimes.push(now);saveState(root,state);
+    appendDurableEvent(root,{type:'ONE',at:now});
+    state.requestTimes.push(now);
     const used=usedSlots(state,now);
     return {reserved:1,used24h:used,remaining24h:25-used};
   });
@@ -103,8 +141,8 @@ export function reserveR6UnregisteredBlsBatch({base,approvedBase,requestId,count
     if(Object.hasOwn(state.leases,requestId))fail('BLS_UNREG_DUPLICATE_BATCH_STOP');
     if(usedSlots(state,now)+count>BLS_UNREGISTERED_24H_LIMIT)
       fail('BLS_UNREG_25_PER_24H_STOP');
+    appendDurableEvent(root,{type:'BATCH',at:now,requestId,count});
     state.leases[requestId]={at:now,capacity:count,spent:0};
-    saveState(root,state);
     const used=usedSlots(state,now);
     return {requestId,reserved:count,used24h:used,remaining24h:25-used};
   });
@@ -118,12 +156,12 @@ export function spendR6UnregisteredBlsSlot({base,approvedBase,requestId,now=Date
     const lease=state.leases[requestId];
     if(!lease || lease.at<=now-DAY || lease.spent>=lease.capacity)
       fail('BLS_UNREG_BATCH_EXHAUSTED');
+    appendDurableEvent(root,{type:'SPEND',at:now,requestId});
     lease.spent++;
     // Extend *all* booked slots until 24h after the newest actual attempt.
     // Holding unused slots longer is conservative and prevents t0-window expiry
     // from undercounting a provider call made later than the booking time.
     lease.at=now;
-    saveState(root,state);
     return {requestId,spent:lease.spent,reserved:lease.capacity};
   });
 }
