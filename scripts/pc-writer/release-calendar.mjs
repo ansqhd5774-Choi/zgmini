@@ -136,19 +136,28 @@ async function collectCftcSource({store,key,now,fetchImpl,countRequest,previous}
 
 async function collectTreasurySource({store,privateStore,key,now,fetchImpl,countRequest,previous}){
  const url=TREASURY_CUSIP_XML_URL;
- countRequest();
- const response=await fetchImpl(url,{signal:AbortSignal.timeout(15000),headers:requestHeaders});
- if(!response.ok)throw Error('TREASURY_HTTP_'+response.status);
- if(response.url&&response.url!==url)throw Error('TREASURY_REDIRECT_NOT_ALLOWED');
- const xml=await response.text();
- if(!xml||xml.length>3*1024*1024)throw Error('TREASURY_XML_TOO_LARGE_OR_EMPTY');
- const official=parseTreasuryCusipXml(xml,{fromDate:'2025-01-01'});
- if(!official.length)throw Error('TREASURY_DATES_UNAVAILABLE');
- const inputKey=key+':treasury';
- await store.writeInput(inputKey,{text:xml,sourceUrl:url},now);
- const saved=await store.readInput(inputKey);
- const observed=parseTreasuryCusipXml(saved.body.text,{fromDate:'2025-01-01'});
- if(!observed.length)throw Error('TREASURY_STORED_DATES_UNAVAILABLE');
+ let observed=[],weeklyReady=false,weeklyFailureCode=null;
+ try{
+  countRequest();
+  const response=await fetchImpl(url,{signal:AbortSignal.timeout(15000),headers:requestHeaders});
+  if(!response.ok)throw Error('TREASURY_HTTP_'+response.status);
+  if(response.url&&response.url!==url)throw Error('TREASURY_REDIRECT_NOT_ALLOWED');
+  const xml=await response.text();
+  if(!xml||xml.length>3*1024*1024)throw Error('TREASURY_XML_TOO_LARGE_OR_EMPTY');
+  const official=parseTreasuryCusipXml(xml,{fromDate:'2025-01-01'});
+  if(!official.length)throw Error('TREASURY_DATES_UNAVAILABLE');
+  const inputKey=key+':treasury';
+  await store.writeInput(inputKey,{text:xml,sourceUrl:url},now);
+  const saved=await store.readInput(inputKey);
+  observed=parseTreasuryCusipXml(saved.body.text,{fromDate:'2025-01-01'});
+  if(!observed.length)throw Error('TREASURY_STORED_DATES_UNAVAILABLE');
+  weeklyReady=true;
+ }catch(error){
+  // A rotating weekly feed must not prevent the independent annual auction
+  // history from being collected. Preserve previous weekly dates on failure.
+  observed=[];
+  weeklyFailureCode=safeTreasuryFailureCode(error);
+ }
  const today=new Date(now).toISOString().slice(0,10);
  const observedIds=new Set(observed.map(e=>e.id));
  // This is a rotating weekly release: older still-upcoming auctions may no
@@ -217,8 +226,15 @@ async function collectTreasurySource({store,privateStore,key,now,fetchImpl,count
  const officialKeys=new Set(historyReady?history.map(e=>e.id+':'+e.date):[]);
  const retainedOlder=older.filter(e=>!officialKeys.has(e.id+':'+e.date));
  const events=mergeTreasuryHistoryEvents([...observed,...retainedOlder],history);
- return {events,state:{status:historyReady?'READY':'PARTIAL',checkedAt:new Date(now).toISOString(),
-  sourceUrl:RELEASE_SOURCES.treasury.page,coveredCusips:[...new Set(observed.map(e=>e.id.split('-').at(-1)))].length},
+ const status=weeklyReady&&historyReady?'READY':
+  weeklyReady||historyReady||history.length?'PARTIAL':'SOURCE_FAILED';
+ return {events,state:{status,
+  checkedAt:status==='SOURCE_FAILED'?previous?.body?.sources?.treasury?.checkedAt??null:
+   new Date(now).toISOString(),
+  ...(weeklyFailureCode?{attemptedAt:new Date(now).toISOString()}:{}),
+  sourceUrl:RELEASE_SOURCES.treasury.page,
+  ...(weeklyReady?{coveredCusips:[...new Set(observed.map(e=>e.id.split('-').at(-1)))].length}:{})},
+  ...(weeklyFailureCode?{weeklyFailureCode}:{}),
   ...(historyFailureCode?{historyFailureCode}:{})};
 }
 
@@ -417,8 +433,10 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
  const previous=await store.readOutput(key);
  // New source definitions should be picked up by the next normal Core cycle,
  // even if the earlier, smaller source set is inside the six-hour cache.
- let annualTreasuryAttempted=previous?.body?.sources?.treasury?.status==='SOURCE_FAILED';
- if(attempt&&!annualTreasuryAttempted){
+ // A legacy SOURCE_FAILED public flag does not prove that the new annual
+ // collection was ever attempted; only same-attempt private evidence does.
+ let annualTreasuryAttempted=false;
+ if(attempt){
   try{
    const officialYear=await locks.readInput(key+':treasury:taws');
    const failure=officialYear?.storedAt===attempt.storedAt?null:
@@ -434,7 +452,8 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
   // The next Core cycle overwrites the PC-local last-run report. Preserve only
   // a bounded failure code for the same private six-hour collection attempt.
   let treasuryFailureCode=null,treasuryHistoryFailureCode=null;
-  if(previous?.storedAt===attempt.storedAt&&previous?.body?.sources?.treasury?.status==='SOURCE_FAILED'){
+  if(previous?.storedAt===attempt.storedAt&&
+   ['SOURCE_FAILED','PARTIAL'].includes(previous?.body?.sources?.treasury?.status)){
    try{
     const diagnostic=await store.readInput(treasuryDiagnosticKey);
     if(diagnostic?.storedAt===attempt.storedAt&&diagnostic?.body?.version===1&&
@@ -442,7 +461,8 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
      treasuryFailureCode=diagnostic.body.code;
    }catch{ /* A private diagnostic read cannot block regular collection. */ }
   }
-  if(previous?.storedAt===attempt.storedAt&&previous?.body?.sources?.treasury?.status==='PARTIAL'){
+  if(previous?.storedAt===attempt.storedAt&&
+   ['PARTIAL','SOURCE_FAILED'].includes(previous?.body?.sources?.treasury?.status)){
    try{
     const diagnostic=await store.readInput(treasuryHistoryDiagnosticKey);
     if(diagnostic?.storedAt===attempt.storedAt&&diagnostic?.body?.version===1&&
@@ -452,8 +472,10 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
    }catch{}
   }
   return {status:'CACHED',providerRequests:0,
-   ...(treasuryFailureCode?{sources:{treasury:'SOURCE_FAILED'},treasuryFailureCode}:{}),
-   ...(treasuryHistoryFailureCode?{sources:{treasury:'PARTIAL'},treasuryHistoryFailureCode}:{})};
+   ...(treasuryFailureCode||treasuryHistoryFailureCode?
+    {sources:{treasury:previous?.body?.sources?.treasury?.status}}:{}),
+   ...(treasuryFailureCode?{treasuryFailureCode}:{}),
+   ...(treasuryHistoryFailureCode?{treasuryHistoryFailureCode}:{})};
  }
  const lease=await locks.claim('release-calendar',now);
  if(!lease)return {status:'RUNNING',providerRequests:0};
@@ -493,6 +515,7 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
      const treasury=await collectTreasurySource({store,privateStore:locks,key,now,fetchImpl,countRequest:()=>requests++,previous});
      sources.treasury=treasury.state;
      events.push(...treasury.events);
+     if(treasury.weeklyFailureCode)treasuryFailureCode=treasury.weeklyFailureCode;
      if(treasury.historyFailureCode)treasuryHistoryFailureCode=treasury.historyFailureCode;
      continue;
     }
