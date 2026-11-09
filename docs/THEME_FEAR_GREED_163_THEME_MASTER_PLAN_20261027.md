@@ -52,6 +52,17 @@
 
 **진행률 관리:** ① 현재 운영 통합 `T1~T5`는 마지막 유효 20%에서 실증 단계 도달 시에만 40/65/85/100%로 상향한다. ② 프로그램 163개는 `실제 게시·운영 검증 완료 ID 수 / 163`을 별도로 산출하며, 과거 공개 이름 10개만으로 완료 10/163을 확정하지 않는다. ③ 공개 목표 10개와 실제 API 정상/결측/권리차단 개수, 승인 신규 출시 수를 각 보고마다 별도 기록한다. 문서 수정·소스 PASS만으로 운영 진행률을 올리지 않는다.
 
+### 2026-11-09 P1-02 추가 분석 — 공개 STALE의 분기와 실제 승인 조회 범위
+
+1. **Reader 소스 교차 확인:** `worker/theme-etf-only-public.mjs`가 최신 `main` 및 전용 브랜치에서 같은 blob `bb3f56c5f3a62b7dfa4aae19a1b18381611e6335`이다. 해당 코드의 `readThemeEtfOnly`는 기존 `market_public_snapshots_v1`의 `public:theme-etf-only:r1` row를 읽고 `validateThemeEtfOnlyPublic(record)`에 통과한 다음, 사용 가능한 R178 rolling 값이 없고 기본 기록의 날짜/저장 시각 제한이 걸릴 때 `STORED_DATA_STALE`를 반환한다. **실제 배포 SHA는 이번에 별도 검증하지 않았으므로 사이트 응답의 원인 분류는 현재 공개 소스와 응답 일치에 기초한 추론**이다. D1 레코드 전체가 비었다거나 GMH 계정이 차단됐다고 단정하지 않는다.
+2. **만료 기준은 8일:** `worker/public-display-freshness.mjs`의 `PUBLIC_DISPLAY_MAX_AGE_MS=8*86400000`; 이 TTL 및 원본·가중치·권리 계약을 임의 확대하거나 오래된 값을 최신으로 표시하지 않는다. 기존 `STORED_DATA_STALE`는 화면 로직 완성이나 단순 UI 오류의 증거가 아니라, **승인된 새로운 저장 결과 확보가 필요한 공개 차단**이다.
+3. **R178의 검사 대상:** `worker/theme-etf-rolling-public.mjs`가 D1 `public_feed_snapshots_v1`에서 `kind=output`, `feed_key=theme-etf-only-rolling`, `snapshot_key=current`를 조회하고 권리·252거래일 이력·관측일·시간·baseHash를 검증한다. 해당 특정 row의 존재·만료·검증 탈락 여부는 현재 공개 응답만으로 특정되지 않는다.
+4. **승인 A 목록 실제 조사:** `zgmini-pc-control/main/config/operations.json`에 있는 `theme-l7-runtime-readonly`는 세 파일/원장/예약 XML만, `source-inventory-runtime-readonly`는 SQLite 전체 current-output 집계만 조회한다. `r54-sixfile-inventory-readonly`는 파일 inventory, `writer-publication-evidence-readonly`는 별도 ER1, `theme-platform-shadow-readonly`는 공개 shadow만 수행한다. **R178 원본 SHA·관측일·rolling checkpoint·D1 정확한 1키 readback을 검증하는 설치된 A급은 확인되지 않았다.** 이미 완료한 #1033 재요청은 해당 공백을 메우지 못한다.
+5. **공통 진단 source와 PC Runtime 분리:** [공통 PR #1034](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1034)는 R181 오류흐름의 안전한 정적 진단 소스 병합 단계에 도달했지만, **실제 PC #1033 Controller SHA `badad9124157879d7a645b64f2768113d632355b`에는 아직 미적용**. 공유 설치 [#996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/996)은 2026-11-09 11:53 UTC 읽기 원장 기준 `STATE_UNKNOWN`, `installLock.held=true`, `recoveryRequired=true`, 소유 요청 미확정. 이 상태는 **공유 설치에만 영향**이며 독립 소스 조사·Reader 조회의 신규 전면 중단 사유가 아니다.
+6. **최소 다음 실행:** 테마 원담당은 별도 기능용 승인 범위를 문서화해 고정 R178 1키의 `exists/metadataHash/observationDate/sourceStoredAt/checkpoint/failureCode`만 마스킹해 회수하는 **읽기 전용 경로**를 준비한다(키·전체 원자료 유출, provider/D1 쓰기 0). 공통 총괄만 공유 #996의 소유·원장·백업을 검토해 승인 설치를 조정한다. 원담당은 그 결과와 [#896](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/896)의 R181 실제 FIRST FAIL을 받은 뒤 **기존 수집→저장→계산→D1 readback→API/UI**를 재개한다. 잠정치 공개 권리는 별도 확인하며 권리 미증명 값은 게시하지 않는다.
+
+**진행률 판정:** 이번 진단으로 실패 분기는 좁아졌지만 저장·게시·최신화가 회복된 증거가 없어 **T1 20% → 20%**. 공개 목표 10개, 현재 테마 응답 0개(11/9 API 본문 기준), 신규 출시 0개. 미래 예약 자동 갱신 검증은 후속 단계 유지.
+
 ## 2026-10-29 사용자 확정: 다음 작업 고정 및 잠정치 정의 불변
 
 - **현재 목표 한정:** 10번째 우주·위성에서 이미 승인·검증한 R32 산식, 기존 9개 연구 테마(공개 8개 교집합)를 기존 확정치·잠정치 자동 갱신/배포 경로에 연결하고 실제 Cloudflare D1·공개 API까지 게시한다. 완료 판정은 실D1 readback 및 공개 API/UI 검증이다.
