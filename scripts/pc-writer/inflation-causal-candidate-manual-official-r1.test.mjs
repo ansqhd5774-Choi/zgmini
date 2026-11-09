@@ -156,6 +156,34 @@ test('manual plan rejects unapproved revisions to existing BLS and Census observ
     /INFL_MANUAL_HISTORICAL_REVISION_UNAPPROVED/);
 });
 
+test('manual plan repairs only invalid existing CPI, preserving valid PPI without historical rewrites',()=>{
+  const bls=parseOfficialBlsHousingFlatfile(encode([header,...rows].join('\n')));
+  const census={sourceKind:'CENSUS_OFFICIAL_NAICS_HISTORICAL_XLSX',
+    sourceSha256:'c'.repeat(64),observations:parseOfficialCensusInventoryRows([
+      row(34,'AMTMTI',2025,c2025),row(35,'AMTMTI',2026,c2026),
+    ])};
+  const ppi=[{date:'2026-09-01',value:220.5,footnotes:[]}];
+  const brokenBls={schemaVersion:1,provider:'BLS',
+    sourceVersion:'INFLATION_CAUSAL_CANDIDATE_BLS3_R1',
+    sourceStoredAt:'2026-11-07T10:00:00.000Z',
+    series:{WPSFD4:ppi,
+      [BLS_RENT_ID]:[{date:'2026-09-01',value:null}],
+      [BLS_OER_ID]:[{date:'2026-08-01',value:440},
+        {date:'2026-08-01',value:440}]}};
+  const planned=planOfficialManualCandidateDocuments({bls,census,previousBls:brokenBls});
+  assert.equal(planned.status,'PREPARED');
+  assert.deepEqual(planned.repairedInvalidBlsSeriesIds,[BLS_RENT_ID,BLS_OER_ID]);
+  assert.deepEqual(planned.documents.bls.series.WPSFD4,ppi);
+  assert.equal(planned.documents.bls.series[BLS_RENT_ID].at(-1).value,450.429);
+  assert.equal(planned.documents.bls.series[BLS_OER_ID].at(-1).value,445.195);
+  assert.deepEqual(planned.documents.bls.provenanceByGroup.cpi.repairedInvalidBlsSeriesIds,
+    [BLS_RENT_ID,BLS_OER_ID]);
+  const brokenPpi={...brokenBls,series:{...brokenBls.series,
+    WPSFD4:[{date:'2026-09-01',value:null}]}};
+  assert.throws(()=>planOfficialManualCandidateDocuments({bls,census,previousBls:brokenPpi}),
+    /INFL_MANUAL_PRIOR_BLS_INVALID/);
+});
+
 test('manual reimport with identical overlap keeps previous timestamps and historical rows',()=>{
   const bls=parseOfficialBlsHousingFlatfile(encode([header,...rows].join('\n')));
   const census={sourceKind:'CENSUS_OFFICIAL_NAICS_HISTORICAL_XLSX',
