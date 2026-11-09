@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {RELEASE_SOURCES} from '../lib/release-calendar.mjs';
+import {RELEASE_SOURCES,parseReleaseCalendar} from '../lib/release-calendar.mjs';
 import {buildEconomicModelInputCensus} from '../scripts/audit-market-calendar-economic-inputs.mjs';
 import {buildSourceLinkRegistry,describeOfficialCalendarCoverage} from '../lib/market-calendar-source-links.mjs';
 import {classifyEconomicModelInput} from '../lib/market-calendar-source-classifier.mjs';
@@ -47,8 +47,8 @@ test('identical official releases may serve multiple inputs without manufacturin
  const before=JSON.stringify(all);
  const x=describeOfficialCalendarCoverage(r,{events:all},{today:'2027-01-01'});
  assert.equal(x.totalInputs,283);
- assert.ok(x.officialWithPublishedEvent>100); // BED has 114 input keys on one event.
- assert.ok(x.officialAwaitingPublishedEvent>0);
+ assert.ok(x.officialWithStoredEvent>100); // BED has 114 input keys on one event.
+ assert.ok(x.officialWithoutStoredEvent>0);
  assert.equal(x.syntheticEventsCreated,0);
  assert.equal(JSON.stringify(all),before);
 });
@@ -57,7 +57,7 @@ test('unannounced state/metro 2027 releases are never promoted to confirmed date
  const r=ECONOMIC_CALENDAR_SOURCE_REGISTRY;
  const onlyBed=[{id:'bls-business-employment-dynamics',source:'bls',date:'2027-06-01'}];
  const x=describeOfficialCalendarCoverage(r,{events:onlyBed},{today:'2027-01-01'});
- assert.ok(x.officialWithPublishedEvent< x.officialEligible);
+ assert.ok(x.officialWithStoredEvent< x.officialEligible);
  assert.equal(x.syntheticEventsCreated,0);
 });
 
@@ -71,5 +71,36 @@ test('BLS state and metro releases do not borrow the national employment date',(
   ...[state,metro].map(({provider,sourceId,geography,origin,eligibility,officialLinks})=>({
    area:'employment',provider,sourceId,geography,origin,eligibility,officialLinks})),
  ]),{events:[{source:'bls',id:'employment',date:'2027-01-08'}]},{today:'2027-01-01'});
- assert.equal(x.officialWithPublishedEvent,0);
+ assert.equal(x.officialWithStoredEvent,0);
+});
+
+test('source associations match the current BLS, BEA, Census, and Fed parser IDs',()=>{
+ const ics=(title,date)=>`BEGIN:VCALENDAR\nBEGIN:VEVENT\nDTSTART:${date.replaceAll('-','')}T083000\nSUMMARY:${title}\nEND:VEVENT\nEND:VCALENDAR`;
+ const bls=[
+  ...parseReleaseCalendar(ics('State Employment and Unemployment (Monthly)','2026-11-20'),'bls'),
+  ...parseReleaseCalendar(ics('Metropolitan Area Employment and Unemployment (Monthly)','2026-12-02'),'bls'),
+  ...parseReleaseCalendar(ics('Job Openings and Labor Turnover Survey','2026-11-03'),'bls'),
+  ...parseReleaseCalendar(ics('Producer Price Index','2026-11-13'),'bls'),
+ ];
+ const bea=parseReleaseCalendar(ics('Personal Income and Outlays, September 2026','2026-10-29'),'bea');
+ const census=parseReleaseCalendar(`<table><tr><td>Full Report - Manufacturers' Shipments, Inventories and Orders</td><td>January 7, 2027</td><td>10:00 AM</td><td>November 2026</td></tr><tr><td>Business Formation Statistics</td><td>January 13, 2027</td><td>10:00 AM</td><td>December 2026</td></tr></table>`,'census');
+ const fed=parseReleaseCalendar('<p><strong>2027:</strong> January 15</p>','fed');
+ const links=ECONOMIC_CALENDAR_SOURCE_REGISTRY.entries;
+ const matches=(provider,sourceId,events)=>{
+  const input=links.find(x=>x.provider===provider&&x.sourceId===sourceId);
+  assert.ok(input,provider+':'+sourceId);
+  const subset=buildSourceLinkRegistry([{
+   area:'test',provider,sourceId,geography:input.geography,origin:input.origin,
+   eligibility:input.eligibility,officialLinks:input.officialLinks,
+  }]);
+  assert.equal(describeOfficialCalendarCoverage(subset,{events}).officialWithStoredEvent,1);
+ };
+ matches('BLS_CES_SAE','SMS00000000000000022',bls);
+ matches('BLS_CES_SAE','SMS99999990000000022',bls);
+ matches('BLS_JOLTS','JTS000000000000000JOL',bls);
+ matches('FRED','PPIFIS',bls);
+ matches('BEA','U20306:1',bea);
+ matches('CENSUS_M3','MTM:NO',census);
+ matches('CENSUS_BFS','BA_BA',census);
+ matches('FRB_G17','IP:B50001',fed);
 });
