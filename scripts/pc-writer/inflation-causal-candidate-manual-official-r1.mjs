@@ -240,8 +240,18 @@ export function planOfficialManualCandidateDocuments({bls,census,previousBls=nul
   }
   const observations=mergeWithoutHistoricalRevision(
     previousCensus?.observations,census.observations);
-  const blsChanged=!same(series,previousBls?.series),
-    censusChanged=!same(observations,previousCensus?.observations);
+  // Equal observations alone do not prove that an official-source import was
+  // retained. Record the source hash/metadata once even when a prior collector
+  // happened to save identical values without an auditable static archive.
+  const blsSourceRecorded=previousBls?.sourceAcquisition===MANUAL_OFFICIAL_VERSION&&
+    previousBls?.provenanceByGroup?.cpi?.method==='EXPLICIT_MANUAL_IMPORT'&&
+    previousBls.provenanceByGroup.cpi.sourceSha256===bls.sourceSha256;
+  const censusSourceRecorded=previousCensus?.sourceAcquisition===MANUAL_OFFICIAL_VERSION&&
+    previousCensus?.provenance?.some(entry=>
+      entry?.method==='EXPLICIT_MANUAL_IMPORT'&&
+      entry.sourceSha256===census.sourceSha256)===true;
+  const blsChanged=!same(series,previousBls?.series)||!blsSourceRecorded,
+    censusChanged=!same(observations,previousCensus?.observations)||!censusSourceRecorded;
 
   // Parser shape validation and a SHA-256 digest do not establish download
   // authenticity. The approved operator must separately verify provenance.
