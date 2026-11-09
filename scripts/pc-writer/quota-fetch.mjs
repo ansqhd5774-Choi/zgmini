@@ -1,9 +1,5 @@
 import {QuotaLedger} from './quota-ledger.mjs';
 import {providerForUrl} from './quota-policy.mjs';
-import {
- reserveOneUnregisteredBlsRequest,
- spendR6UnregisteredBlsSlot,
-} from './bls-unregistered-reservation.mjs';
 
 const R6_UUID=/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const blsGuard=reason=>{
@@ -68,8 +64,11 @@ export function createQuotaFetch({
   if(isGuarded&&requestType==='unregistered'){
    const opts={base,approvedBase:blsUnregistered.approvedBase,now:Date.now()};
    try{
-    if(r6LeaseId===null)reserveOneUnregisteredBlsRequest(opts);
-    else spendR6UnregisteredBlsSlot({...opts,requestId:r6LeaseId});
+    // Optional sidecar: never make its import mandatory for legacy PC source.
+    // A missing or damaged approved module fails closed before network I/O.
+    const reservation=await import('./bls-unregistered-reservation.mjs');
+    if(r6LeaseId===null)reservation.reserveOneUnregisteredBlsRequest(opts);
+    else reservation.spendR6UnregisteredBlsSlot({...opts,requestId:r6LeaseId});
    }catch(error){
     if(error?.code?.startsWith('BLS_UNREG_'))throw blsGuard(error.code);
     throw error;
