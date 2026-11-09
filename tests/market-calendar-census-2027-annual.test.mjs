@@ -12,7 +12,7 @@ import {collectReleaseCalendar} from '../scripts/pc-writer/release-calendar.mjs'
 // six-column page. Reference periods are test fixtures, not provider snapshots.
 const bfsDates=[
  '2027-01-13','2027-02-10','2027-03-12','2027-04-14','2027-05-12','2027-06-11',
- '2027-07-15','2027-08-11','2027-09-13','2027-10-14','2027-11-10',
+ '2027-07-15','2027-08-11','2027-09-13','2027-10-14','2027-11-10','2027-12-10',
 ];
 const m3Dates=[
  '2027-01-07','2027-02-03','2027-03-04','2027-04-02','2027-05-04','2027-06-03',
@@ -26,19 +26,19 @@ const displayDate=day=>{
 const censusRow=(title,day,period)=>
  `<tr><td>${title}</td><td>${displayDate(day)}</td><td>10:00 AM</td><td>${period}</td><td>Final</td><td>Official</td></tr>`;
 
-test('Census 2027 whole-year BFS and M3 dates parse into 23 distinct official releases and 10 model inputs',()=>{
+test('Census 2027 whole-year BFS and M3 dates parse into 24 distinct official releases and 10 model inputs',()=>{
  const rows=[
   ...bfsDates.map((date,i)=>censusRow('Business Formation Statistics',date,`Reference BFS ${i+1}`)),
   ...m3Dates.map((date,i)=>censusRow("Full Report - Manufacturers' Shipments, Inventories and Orders",date,`Reference M3 ${i+1}`)),
  ];
  const html=`<table><thead><tr><th>Release</th><th>Date</th></tr></thead><tbody>${rows.join('')}</tbody></table>`;
  const events=parseReleaseCalendar(html,'census');
- assert.equal(events.length,23);
- assert.equal(new Set(events.map(e=>`${e.id}:${e.date}`)).size,23);
+ assert.equal(events.length,24);
+ assert.equal(new Set(events.map(e=>`${e.id}:${e.date}`)).size,24);
  assert.deepEqual([...new Set(events.map(e=>e.date))].sort(),[...bfsDates,...m3Dates].sort());
  const bfs=events.filter(e=>e.id.startsWith('census-business-formation-statistics-'));
  const m3=events.filter(e=>e.id.startsWith('census-full-report-manufacturers-shipments-inventories-and-orders-'));
- assert.equal(bfs.length,11);
+ assert.equal(bfs.length,12);
  assert.equal(m3.length,12);
  assert.ok(bfs.every(e=>e.source==='census'&&modelInputsForCalendarEvent(e)===3));
  assert.ok(m3.every(e=>e.source==='census'&&modelInputsForCalendarEvent(e)===7));
@@ -63,7 +63,7 @@ test('a failed next-year Census refresh retains the previously stored full-year 
    ...m3Dates.map((date,i)=>censusRow("Full Report - Manufacturers' Shipments, Inventories and Orders",date,`M3 ${i}`)),
   ].join('')}</tbody></table>`;
   const prior2027=parseReleaseCalendar(past2027Html,'census');
-  assert.equal(prior2027.length,23);
+  assert.equal(prior2027.length,24);
   const prior2025=parseReleaseCalendar(
    `<table><tbody>${censusRow('Business Formation Statistics','2025-11-13','October 2025')}</tbody></table>`,'census');
   assert.equal(prior2025.length,1);
@@ -84,7 +84,7 @@ test('a failed next-year Census refresh retains the previously stored full-year 
   assert.deepEqual(stored.sources.census.coveredYears,[2026],
    'preserved older dates are not misreported as freshly fetched 2027 coverage');
   const retained=stored.events.filter(event=>event.source==='census'&&event.date.startsWith('2027-'));
-  assert.equal(retained.length,23,'one failed next-year request must not delete already confirmed dates');
+  assert.equal(retained.length,24,'one failed next-year request must not delete already confirmed dates');
   assert.deepEqual(new Set(retained.map(event=>`${event.id}:${event.date}`)),
    new Set(prior2027.map(event=>`${event.id}:${event.date}`)));
   assert.deepEqual(stored.events.filter(event=>event.source==='census'&&event.date.startsWith('2025-')),
