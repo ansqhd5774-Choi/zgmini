@@ -97,6 +97,44 @@ test("BACKFILL does not call BLS provider when remaining R6 quota is insufficien
   assert.equal(run.groupResults[0].expectedRequests, 2);
 });
 
+test("BLS shared quota stop is preserved as a bounded group/run failure code", async () => {
+  const runCase = async (reason, provider = "BLS") => {
+    const runs = [];
+    const store = {
+      async initialize() {},
+      async getLatestRunInMode() { return null; },
+      async getProviderRequestsSince() { return 0; },
+      async acquire() { return { acquired: true }; },
+      async release() { return true; },
+      async recordRun(run) { runs.push(run); return 1; },
+    };
+    const result = await runEmploymentR6CollectionStep({
+      db: { prepare() { return {}; } },
+      mode: "BACKFILL", groups: ["BLS_JOLTS"],
+      now: () => new Date("2026-11-09T12:00:00.000Z"),
+      storeFactory: () => store,
+      providerFactory: () => ({
+        async fetchGroup() {
+          throw Object.assign(Error("PROVIDER_QUOTA_GUARD"), {
+            code: "PROVIDER_QUOTA_GUARD", provider, reason,
+          });
+        },
+      }),
+    });
+    return { result, runs };
+  };
+  const accepted = await runCase("BLS_UNREG_25_PER_24H_STOP");
+  assert.equal(accepted.result.status, "FAIL");
+  assert.equal(accepted.result.providerRequests, 0);
+  assert.equal(accepted.result.groupResults[0].failureCode, "BLS_UNREG_25_PER_24H_STOP");
+  assert.equal(accepted.runs[0].failureCode, "BLS_UNREG_25_PER_24H_STOP");
+  const rejected = await runCase("BLS_UNREG_UNSAFE/secret");
+  assert.equal(rejected.result.groupResults[0].failureCode, "PROVIDER_QUOTA_GUARD");
+  assert.equal(rejected.runs[0].failureCode, "PROVIDER_QUOTA_GUARD");
+  const otherProvider = await runCase("BLS_UNREG_25_PER_24H_STOP", "OTHER");
+  assert.equal(otherProvider.result.groupResults[0].failureCode, "PROVIDER_QUOTA_GUARD");
+});
+
 test("provider calls remain counted when a later raw snapshot DB write fails", async () => {
   const runs = [];
   const store = {
@@ -255,3 +293,4 @@ test("DOL release never records stale initial-claims observations as SUCCESS", a
   assert.equal(current.run.detail.latestInitialClaimsObservationDate, "2026-10-31");
   assert.equal(current.run.detail.releaseAt, "2026-11-05T13:30:00.000Z");
 });
+
