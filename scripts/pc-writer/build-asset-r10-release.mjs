@@ -78,4 +78,9 @@ const gate=assetR10PublicationDryRun(payload);if(gate.status!=='PASS')throw Erro
 save(path.join(base,'local-asset-bubble-r10-release-payload.json'),payload);
 console.log(JSON.stringify({status:'LOCAL_RELEASE_READY',score:payload.score,scoreObservationQuarter:payload.scoreObservationQuarter,currentQuarterStatus:payload.currentQuarterStatus,trendPoints:payload.trend.length,gate:gate.status,providerRequests:0,remoteWrites:0}));
 }
-if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))buildRelease();
+// The explicit Writer CLI marker survives Windows drive/junction aliases: the
+// ESM loader may canonicalize an entry path while argv[1] retains its alias.
+export function shouldRunR10ReleaseCli({argv=process.argv,modulePath=fileURLToPath(import.meta.url)}={}){
+ return argv.includes('--run-r10-release')||Boolean(argv[1]&&path.resolve(argv[1])===modulePath);
+}
+if(shouldRunR10ReleaseCli())buildRelease();
