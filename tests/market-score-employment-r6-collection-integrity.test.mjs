@@ -75,6 +75,28 @@ test("BACKFILL planner skips completed groups despite later RELEASE runs and bou
   assert.equal(retryPlan[0].due, true);
 });
 
+test("BACKFILL does not call BLS provider when remaining R6 quota is insufficient", async () => {
+  let providerCalls = 0;
+  const store = {
+    async initialize() {},
+    async getLatestRunInMode() { return null; },
+    async getProviderRequestsSince() { return 24; },
+  };
+  const run = await runEmploymentR6CollectionStep({
+    db: { prepare() { return {}; } },
+    mode: "BACKFILL", groups: ["BLS_JOLTS"],
+    now: () => new Date("2026-11-09T12:00:00.000Z"),
+    storeFactory: () => store,
+    providerFactory: () => ({ async fetchGroup() { providerCalls++; throw Error("MUST_NOT_FETCH"); } }),
+  });
+  assert.equal(run.status, "NOOP");
+  assert.equal(run.providerRequests, 0);
+  assert.equal(providerCalls, 0);
+  assert.equal(run.groupResults[0].status, "SKIPPED_BLS_BUDGET");
+  assert.equal(run.groupResults[0].usedBlsRequests24h, 24);
+  assert.equal(run.groupResults[0].expectedRequests, 2);
+});
+
 test("DOL ETA-539 failure preserves valid national claims as a partial group", async () => {
   const fetchedUrls = [];
   const provider = createEmploymentR6Provider({
