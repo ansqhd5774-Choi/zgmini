@@ -95,3 +95,9 @@
 - Draft PR [#1056](https://github.com/ansqhd5774-Choi/zgmini/pull/1056)의 HEAD `c2ac343971eefc3d010461e1990f31dd4dad45ef` 대상 GitHub Node.js CI run `42712891336` **최종 SUCCESS**.
 - 설치·빌드·산출물 업로드·타입 검사 **PASS**. `node --test tests/*.test.mjs`: **4178 총계 / 4169 PASS / 0 FAIL / 6 SKIP / 3 TODO**. PC 게시 복구 **11/11 PASS**, Cloudflare 읽기 계약 **69/69 PASS**. 첫 실패는 모바일 테스트 계약 수정으로 해소됐다.
 - 구현 완료는 **소스/빌드/테스트 기준**이다. 아직 공개 사이트 배포가 아니므로 PC·390px 실제 화면과 정확한 Production Deployment SHA 확인은 **미완료**로 유지한다. `main` 병합, Production 변경, API·DB·Writer·Controller 변경 **0건**.
+
+## 10. Cloudflare 미리보기 가능성 점검
+
+- 2026-11-10 KST 실제 Cloudflare 대시보드 `Workers & Pages`에서 `zgmini-migration-candidate-r5` 운영 앱과 연결 GitHub 저장소 `ansqhd5774-Choi/zgmini` 확인. 표시된 운영 빌드 목록은 `main` 기준이며 해시 칸에 **`Previews disabled`**가 표시된다. Draft PR #1056의 6개 파일에 대한 독립 미리보기 주소는 이 조회에서 확인되지 않았다.
+- **해석:** GitHub CI `SUCCESS`는 실제 미리보기 배포/Production 배포가 아니다. 미리보기 미확보를 이유로 위험한 직배포나 main 강제 병합을 시도하지 않는다. 실제 PC·390px UI 시각 검사와 Production 정확한 SHA 검증은 사용자 승인된 연결 배포 이후 진행한다.
+- 진행 기준 **4/5단계(80%)**: 기준선 감사, 통일 정책, 6개 파일 소스 수정, 전체 CI 통과 완료. 마지막 1단계인 배포·실화면 PC/390px·정확 SHA 검증은 미완료. `main`은 현재 여전히 이번 PR을 포함하지 않는다.
