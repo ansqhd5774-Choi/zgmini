@@ -59,7 +59,9 @@ function lock(base){
  return ()=>{try{fs.unlinkSync(file)}catch{}};
 }
 
-export async function backfillOneYear(base=process.env.ZGMINI_PC_HOME??DEFAULT_BASE,{asOf=dateOnly(Date.now())}={}){
+// This opt-in can only be supplied by a trusted in-process B host entry.
+// Existing CLI invocations and environment/config contents cannot enable it.
+export async function backfillOneYear(base=process.env.ZGMINI_PC_HOME??DEFAULT_BASE,{asOf=dateOnly(Date.now()),blsUnregistered=undefined}={}){
  if(!validDate(asOf))throw new TypeError('BACKFILL_ASOF_INVALID');
  const release=lock(base);
  const reportFile=path.join(base,REPORT_NAME);
@@ -72,7 +74,7 @@ export async function backfillOneYear(base=process.env.ZGMINI_PC_HOME??DEFAULT_B
  const env={...loadLocalProviders(base),DB:core,DB_CORE:core,DB_HISTORY:history,ZGMINI_COMPUTE_TARGET:'pc'};
  const hooks=installLocalRuntime(env);
  const originalFetch=globalThis.fetch;
- const quota=createQuotaFetch({base,originalFetch,mode:'enforce'});
+ const quota=createQuotaFetch({base,originalFetch,mode:'enforce',blsUnregistered});
  globalThis.fetch=quota.fetch;
  try{
   const [{runMarketOperationalRefresh}, {marketOperationalStore}, employmentHistory, employmentProvider, employmentStore, earningsModule, consumptionSeed, consumptionSeedJson, {calculateMarket}]=await Promise.all([
