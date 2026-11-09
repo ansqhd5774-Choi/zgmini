@@ -39,9 +39,11 @@ test('historical TIPS and FRN flags and reopened original terms retain accurate 
   row({cusip:'912810AC3',security_type:'Bond',security_term:'29-Year 6-Month',
    original_security_term:'30-Year',reopening:'No'}),
   row({cusip:'912810AD4',security_type:'Bill',security_term:'2-Day',
-   original_security_term:'2-Day',reopening:'No'})
+   original_security_term:'2-Day',reopening:'No'}),
+  row({cusip:'912810AE5',security_type:'Bill',security_term:'4-Week',
+   original_security_term:'17-Week',reopening:'Yes'})
  ],range);
- assert.equal(events.length,8);
+ assert.equal(events.length,10);
  assert.ok(events.find(event=>event.id==='treasury-auction-912810aa1')?.title
   .includes('10년물 물가연동국채 입찰 · 재발행'));
  assert.ok(events.find(event=>event.id==='treasury-auction-912810ab2')?.title
@@ -50,6 +52,8 @@ test('historical TIPS and FRN flags and reopened original terms retain accurate 
   .includes('30년물 국채 입찰'));
  assert.ok(events.find(event=>event.id==='treasury-auction-912810ad4')?.title
   .includes('2일물 단기국채 입찰'));
+ assert.ok(events.find(event=>event.id==='treasury-auction-912810ae5')?.title
+  .includes('4주물 단기국채 입찰 · 재발행'));
 });
 
 test('inclusive range, 365-day maximum, and chronology are strictly validated',()=>{
