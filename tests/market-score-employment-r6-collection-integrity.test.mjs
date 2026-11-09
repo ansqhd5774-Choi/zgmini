@@ -1,13 +1,101 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 
-import { runEmploymentR6CollectionStep } from "../lib/market-score/employment-r6-collector.mjs";
+import { planEmploymentR6Collection, runEmploymentR6CollectionStep } from "../lib/market-score/employment-r6-collector.mjs";
 import { createEmploymentR6Provider } from "../lib/market-score/employment-r6-provider.mjs";
+import { createEmploymentR6Store } from "../lib/market-score/employment-r6-store.mjs";
 
 const NATIONAL_CLAIMS_XML = "<week><weekEnded>10/31/2026</weekEnded>"
   + "<InitialClaims><SA>189000</SA><SA4WK>195000</SA4WK></InitialClaims>"
   + "<ContinuedClaims><SA>1900000</SA></ContinuedClaims>"
   + "<IUR><SA>1.2</SA></IUR></week>";
+
+test("BACKFILL run history lookup uses persisted mode, not the latest RELEASE run", async () => {
+  let select = null;
+  const db = {
+    prepare(sql) {
+      return {
+        bind(...values) {
+          select = { sql, values };
+          return {
+            first: async () => ({ status: "SUCCESS", detail_json: '{"mode":"BACKFILL","backfillYear":2026}' }),
+          };
+        },
+        run: async () => ({}),
+      };
+    },
+  };
+  const store = createEmploymentR6Store(db, {
+    r4StoreFactory: () => ({ initialize: async () => {} }),
+  });
+  const run = await store.getLatestRunInMode("EMPLOYMENT_R6_BLS_JOLTS", "BACKFILL");
+  assert.equal(run.status, "SUCCESS");
+  assert.match(select.sql, /json_extract\(detail_json,'\$\.mode'\)=\?/);
+  assert.deepEqual(select.values, ["EMPLOYMENT_R6_BLS_JOLTS", "BACKFILL"]);
+});
+
+test("BACKFILL planner skips completed groups despite later RELEASE runs and bounds retries", async () => {
+  const previous = {
+    BLS_EMPLOYMENT_SITUATION: {
+      status: "SUCCESS", completed_at: "2026-11-08T01:00:00.000Z",
+      detail_json: JSON.stringify({ mode: "BACKFILL", backfillYear: 2026 }),
+    },
+    BLS_JOLTS: {
+      status: "PARTIAL", completed_at: "2026-11-09T01:00:00.000Z",
+      detail_json: JSON.stringify({ mode: "BACKFILL", backfillYear: 2026 }),
+    },
+  };
+  const requestedModes = [];
+  const store = {
+    async initialize() {},
+    async getLatestRunInMode(provider, mode) {
+      requestedModes.push(mode);
+      return previous[provider.replace("EMPLOYMENT_R6_", "")] ?? null;
+    },
+  };
+  const plan = await planEmploymentR6Collection({
+    db: { prepare() { return {}; } },
+    now: () => new Date("2026-11-09T12:00:00.000Z"), mode: "BACKFILL",
+    groups: ["BLS_EMPLOYMENT_SITUATION", "BLS_JOLTS", "BLS_ECI"],
+    storeFactory: () => store,
+  });
+  assert.deepEqual(plan.map(x => [x.groupName, x.due, x.status]), [
+    ["BLS_EMPLOYMENT_SITUATION", false, "BACKFILL_ALREADY_COMPLETE"],
+    ["BLS_JOLTS", false, "BACKFILL_ALREADY_ATTEMPTED_TODAY"],
+    ["BLS_ECI", true, "BACKFILL_DUE"],
+  ]);
+  assert.deepEqual(requestedModes, ["BACKFILL", "BACKFILL", "BACKFILL"]);
+
+  const retryPlan = await planEmploymentR6Collection({
+    db: { prepare() { return {}; } },
+    now: () => new Date("2026-11-10T12:00:00.000Z"), mode: "BACKFILL",
+    groups: ["BLS_JOLTS"], storeFactory: () => store,
+  });
+  assert.equal(retryPlan[0].status, "BACKFILL_RETRY_DUE");
+  assert.equal(retryPlan[0].due, true);
+});
+
+test("BACKFILL does not call BLS provider when remaining R6 quota is insufficient", async () => {
+  let providerCalls = 0;
+  const store = {
+    async initialize() {},
+    async getLatestRunInMode() { return null; },
+    async getProviderRequestsSince() { return 24; },
+  };
+  const run = await runEmploymentR6CollectionStep({
+    db: { prepare() { return {}; } },
+    mode: "BACKFILL", groups: ["BLS_JOLTS"],
+    now: () => new Date("2026-11-09T12:00:00.000Z"),
+    storeFactory: () => store,
+    providerFactory: () => ({ async fetchGroup() { providerCalls++; throw Error("MUST_NOT_FETCH"); } }),
+  });
+  assert.equal(run.status, "NOOP");
+  assert.equal(run.providerRequests, 0);
+  assert.equal(providerCalls, 0);
+  assert.equal(run.groupResults[0].status, "SKIPPED_BLS_BUDGET");
+  assert.equal(run.groupResults[0].usedBlsRequests24h, 24);
+  assert.equal(run.groupResults[0].expectedRequests, 2);
+});
 
 test("DOL ETA-539 failure preserves valid national claims as a partial group", async () => {
   const fetchedUrls = [];
