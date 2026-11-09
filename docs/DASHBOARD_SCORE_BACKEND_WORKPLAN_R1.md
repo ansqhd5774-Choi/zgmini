@@ -26,7 +26,7 @@
 
 ## 다음 단일 필수 작업
 
-기존 PC 승인 source의 `projection-checkpoint-r52.mjs` 파일 해시/관련 런타임 정합성을 읽기 전용으로 확인한다. 이후 **D09 신용위험 1개**에 대해 설치된 기존 Reader가 제공하는 실제 저장 입력으로 shadow signature를 계산하고, 현행 checkpoint 및 저장된 공개 결과와 비교한다. 운영 변경이 요구되면 그 변경점만 승인받는다. 나머지 67개는 동일 구조를 무작정 복제하지 않고 개별 공급원/주기/실제 계산 입력을 확인한다.
+Controller #917의 별도 복구 담당자와 자원을 충돌시키지 않으면서, 독립적으로 **S01 업종 점수**의 실제 승인 계산 입력·출력 계약을 source에서 좁혀 첫 shadow 후보로 연결한다. D09 PC 실측은 기존 승인 Reader/실행 증거에 `projection-checkpoint-r52.mjs`의 설치 SHA와 해당 입력이 확인되는 즉시 이어서 진행한다. 현재 확인한 A급 설치 사전이미지 조회 고정 목록에는 이 파일이 없으므로, Controller 작업 중 새 manifest/PC-job을 요청하지 않는다. 운영 변경이 필요하면 실제 겹치는 부분만 별도 승인받는다. 나머지 점수의 입력/주기를 임의 통일하지 않는다.
 
 ## D09 신용위험 — 최초 읽기 전용 후보 연결 증거
 
@@ -37,7 +37,17 @@
 - 단위 시뮬레이션 12/12 통과: 실제 사용 데이터 정정·신규 관측·공개 점수/보조값 변경/TTL 결측/실제 as-of 경계는 감지; 무관한 PAYEMS/레포 및 확인·저장 시각만 변경하면 서명 유지. 기존 범용 9/9 포함 **전체 21/21** 통과.
 - **명확한 미증명:** PC 운영의 실제 파일 SHA, 실제 원자료 body hash/공식 revision, 실제 D09 score·checkpoint과 shadow 서명 대조, Writer 연동, D1·API·UI 게시 0건. 과거 CURRENT_VINTAGE 이력을 당시 확정 이력으로 변조하지 않는다.
 
+## 2026-11-10 D09 공개 API 독립 조회 증거 (읽기 전용)
+
+- 검증 경로: `https://zgmini.kr/api/credit-risk-detail`; 외부 HTTP 직접 GET에서 **200**, `application/json`, 수신 **9,163 bytes**, `JSON.parse` **PASS**. 브라우저 표시 텍스트만 일부 인용부호가 변형되어 파싱되지 않았으나 직접 HTTP 본문 검증으로 서버 JSON 실패가 **아님**을 구분했다.
+- 응답: `status=READY`, `score=72.21387249113027`, `scoreMatch=true`, `asOfDate=2026-11-09`, `methodologyVersion=CREDIT_RISK_DIAGNOSTIC_R1`.
+- 계산 입력에 나타나는 최신 관측일: HY/IG/Total CMDI 모두 **2026-10-23**, 채권 변동성 **2026-11-05**. 관측일과 API 기준일을 혼동하지 않는다.
+- 추세 **51점**, 첫 번째 **2025-11-14**, 마지막 **2026-11-09** 점수 **72.21387249113027**. `historyMode=CURRENT_VINTAGE_DERIVED_1Y`, `lookAheadSafe=false`이므로 **이 51점을 당시 확정 원자료 기반의 일별 실제 이력 51건으로 집계하지 않는다.**
+- 공개 응답에는 `sourceVersion`/`sourceStoredAt`이 없다. 이는 해당 endpoint의 현재 표시 계약 관측일 뿐 D1 원본 부재나 Writer 결함의 증거가 아니다.
+- 공통 PC 읽기 전용 결과 `results/42693903840-1-seat-1.json`(#1136)에서는 22개 설치 전용 파일 근거를 확인했으나 D09 `worker/projection-checkpoint-r52.mjs`와 실제 D09 입력 SHA는 포함되지 않았다. `runtimeSourceVerified=false`이므로 checkout SHA를 실행 중 원천으로 간주하지 않는다.
+- **확정 상태:** D09 공개 API 계약 조회 **1/1 PASS** / 원관측→PC→계산→Writer→D1→공개 전 구간 **0/68 PASS**. API 확인은 실운영 종단 완료율에 가산하지 않는다. 새로운 예약, PC 변경, D1/배포 변경 **0건**.
+
 ## 진행률 표기
 
-- 시작·현재 실운영 종단 검증: **0/68 (0%)**. 코드 토대의 통과율 **9/9**는 별도 지표이며 68개 공개 완료율에 더하지 않는다.
+- 시작·현재 실운영 종단 검증: **0/68 (0%)**. 기초 9/9 + D09 12/12의 개발 시험 **21/21**는 별도 지표이며 68개 공개 완료율에 더하지 않는다.
 - 브랜치 코드 개발은 테스트 통과와 원격 commit/read-back으로만 완료 처리한다. 실제 PC·D1·API/UI 검증은 별도 게이트다.
