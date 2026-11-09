@@ -2,7 +2,7 @@
 
 - 기준일: 2026-11-10 KST
 - 기능 저장소: `ansqhd5774-Choi/zgmini`
-- 원작업 브랜치: `fix/asset-bubble-r10-latest-observations-20261103` (Draft PR #961). 최신 main 선택 통합: `fix/asset-r10-latest-main-slice-20261109` (Draft PR #1050, base `3910adf7…`, HEAD `17c3c048…`).
+- 원작업 브랜치: `fix/asset-bubble-r10-latest-observations-20261103` (Draft PR #961). 최신 main 선택 통합: [PR #1050](https://github.com/ansqhd5774-Choi/zgmini/pull/1050) 병합 `a34762f…`; Writer 범위 수정 [PR #1055](https://github.com/ansqhd5774-Choi/zgmini/pull/1055) 병합 `c00eeac…`. 다른 오래된 브랜치 전체 병합 금지.
 - 공통 실행/승인 정본: `ansqhd5774-Choi/zgmini-pc-control` 최신 `main`의 `AGENTS.md`, `docs/GENERAL_CHAT_START.md`, `docs/PC_AUTOMATION_STANDARD.md`.
 - 범위: **기존 승인 산식/가중치/평가분기·기존 R10 결과를 보존하면서 구성 6개 지표의 검증된 최신 개별 관측치만 현재/이전/관측 추이에 반영.**
 - 이 문서는 실행·승인·설치 완료 증거가 아니며, 다른 ChatGPT 대화에 자동 전달되는 메시지도 아니다.
@@ -15,27 +15,28 @@
 4. 동일 sourceVersion/sourceStoredAt을 덮어쓰거나 날짜·결측치를 임의로 채우지 않는다. PC/모바일에서 현재·이전·날짜·차트 마지막 점을 확인한다.
 5. 기능 개발·배포를 모두 완료한 **이후**에만 자연 예약 자동 갱신 검증을 후속으로 수행한다. 과거 Controller 복구, 무관한 전체 테스트, 타 기능의 대기 자체를 R10 기능 완료의 Gate로 추가하지 않는다.
 
-## 2. 6단계 진행률 (동일 가중치, 시작 기준선)
+## 2. 6단계 진행률 (동일 가중치 · 2026-11-10 실제 검증)
 
-| 단계 | 담당·업무 | 완료 증거/통과 기준 | 2026-11-09 |
+| 단계 | 완료 조건 | 실제 증거 | 판정 |
 |---|---|---|---|
-| 1 | R10 담당: 기존 계약·원자료 6개 확인 | `/api/asset-bubble-raw` READY, scoreObservationQuarter=2026-Q2, score=22.57324…, factors=6, 산식 보존 | DONE |
-| 2 | R10 담당: 최신 개별 관측치 후보 개발 | 원 후보 PR #961 48/48 PASS. 최신 main 선택 Draft PR #1050 **정확 6파일·51/51 PASS**, diff check 통과. **운영 미반영** | DONE (후보 코드) |
-| 3 | R10 담당: 현재 PC source 원본 확인·승인된 Writer 설치 | 단일 파일 B #1155 및 #1164 `WRITER_B_INSTALLED_VERIFIED`, PC 소스 `144f3b8…`, 원본 해시·launcher·Task XML 검증·결과 2/2 확인 | **DONE** |
-| 4 | R10 담당: 새로운 6개 개별 관측치 생성·로컬 저장 | 신규 체크포인트와 로컬 결과·원장에 검증된 최신 관측치 6/6개 존재, 실제 관측일과 원본 일치 | NOT_DONE |
-| 5 | R10 담당: 기존 게시기 → D1/API | 승인된 신규 source checkpoint 게시, D1 readback·`/api/asset-bubble-raw`·`/api/asset-bubble-history` 값/버전/시각 대조, 최신 6/6개 공개 | NOT_DONE |
-| 6 | R10 담당: 사이트 PR 및 PC/모바일 | 선택 통합 PR #1050의 최종 Git Integration 배포, 화면 현재/이전/관측일/마지막 점 6개 일치, 종합점수 22.6 유지 | NOT_DONE |
+| 1 | 6개 source·기존 점수 계약·평가분기 확인 | 원자료 6개, 평가분기 2026-Q2, 22.5732425점 | **DONE** |
+| 2 | 최신 개별 관측치·UI 후보 구현 및 회귀 검증 | 선택 PR #1050(6파일) 병합 `a34762f…`, 단일 보존 분기 수정 PR #1055(2파일) 병합 `c00eeac…`, CI 성공 | **DONE** |
+| 3 | 승인된 실제 PC Writer source 설치 | B [#1164](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1164), [#1172](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1172) 설치 검증, PC 운영 SHA `48d3478030590ca63aaab2435e88c896608c70d3` | **DONE** |
+| 4 | PC 로컬 저장자료로 계산·현재 유효 관측 6개 구성 | A [#1175](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1175) `RECALCULATED_FROM_SAVED_INPUTS` / `projectionStatus=READY`, ledger VERIFIED, 6개 실제 관측 구성 | **DONE** |
+| 5 | 기존 게시기 D1 write/readback와 공개 raw/history API 확인 | #1175 Writer 원장 raw `READBACK_VERIFIED` / history `UNCHANGED_VERIFIED`, 오류 0. `/api/asset-bubble-raw` READY·6 factors·Q3 신규 3개, history PARTIAL(정당한 두 분기 결측) | **DONE** |
+| 6 | Git Integration 운영 배포·PC/모바일 화면 값·관측일·차트 확인 | Cloudflare `zgmini-migration-candidate-r5` Production 빌드: R10 PR #1050 `3dd521be`, 수정 #1055 `1a3e3002` 모두 READY. 운영 버전 `e32acd3c` (Git SHA `165a0ddb…`)가 `c00eeac…` 후속 1커밋임을 GitHub compare로 검증. PC/모바일 6개 카드의 실제 값·날짜·마지막 점 및 22.6점 확인 | **DONE** |
 
-**시작→현재 전체 공정률 = DONE 2 / 6 = 33.3% → DONE 3 / 6 = 50.0% (+16.7%p).** 각 단계는 최종 통과 증거가 있어야 100%로 계산한다. 진행 중·일부 통과는 DONE으로 세지 않으며, 세부 진행은 별도 숫자로 보고한다. **새 후속 분기 `latestObservation` 공개 = 0/6 (2026-11-09 최초 브라우저 관측)**. 신규 Q3 관측의 공식 발표 가능 범위는 **최대 3/6**이며, 실제 유효 개수는 PC 검증 전 미확정이다. 운영 원자료가 11월 8일 갱신됐다는 사실만으로 게시 성공으로 보지 않는다.
+**이번 실행 시작→종료 전체 진행률 = 3/6 = 50.0% → 6/6 = 100.0% (+50.0%p).** 기능의 이번 승인 범위(최신 유효 관측치 표시, 기존 종합점수 보존, PC→D1→공개 API→화면)는 완료. 장래 공식 발표 이후의 자연 자동 갱신 관찰은 별도 후속 검증이며 완료 Gate가 아니다. **새 자동 수집 예약 0건**, 임의 Controller/DB/산식/가중치/수집주기 변경 0건.
 
-## 3. 2026-11-10 현재 유효 실행과 다음 필수 행동
+## 3. 실제 통과 증거와 운영상 한계
 
-- **LAST PASS:** B #1164 / Run `42709232093`, 단일 `run-local.mjs` PC 설치 성공. A #1170 / Run `42710681323`: 신규 PC SHA `144f3b8f…`로 2026-11-10 07:15 KST Writer 실제 실행 및 ledger `VERIFIED`.
-- **FIRST FAIL:** 같은 #1170의 R10 `calculationStatus=RECALCULATED_FROM_SAVED_INPUTS`이나 `projectionStatus=PREVIOUS_RELEASE_PRESERVED`, sidecar raw/history 0/2. D1/API/UI R10 갱신 미확인. Writer 전체 `VERIFIED`는 R10 완료의 증거가 아니다.
-- **원인:** `run-local.mjs`의 `preservePreviousR10` 분기가 모든 `PUBLIC_PROJECTION_KEYS`에 적용됨. `assetBubble` 뒤의 `supplyShock` 처리에서 `assetR10` 상태를 덮어쓸 수 있음. 승인 산식과 데이터는 바꾸지 않고 `id==='assetBubble'` 범위 검사 1줄로 수정.
-- **개발 브랜치:** `fix/asset-bubble-r10-latest-observations-20261103`에 수정·회귀 테스트 반영. 기존 브랜치의 235커밋 수준 분기 이력 때문에 전체 merge 금지. 현행 main 기준 선택 반영 [PR #1055](https://github.com/ansqhd5774-Choi/zgmini/pull/1055)은 정확히 소스 1 + 테스트 1 = 2파일, 로컬 19/19 PASS; CI·main 병합·운영 설치 여부는 각각 후속 증거로 판단.
-- **다음 필수 실행:** (1) PR #1055 CI 및 정확 2파일 확인 후 main 반영 → (2) 새 `run-local.mjs` 한 파일만 기존 Writer B 승인 경로로 Task XML/런처/preimage 해시 포함 설치 → (3) 설치 후 PC R10 `READY` + 로컬 결과 + D1 sidecar 두 키 readback → (4) 공개 API와 PC/모바일 검증. 새 수집 예약·기존 스케줄 변경·공통 Controller 수정은 금지.
-- **공식 발표의 한계:** 연준 Z.1 2026-Q3 미발표분을 생성하지 않는다. 최신값과 새 Q3 추가 관측의 개수는 구분하고, 검증 가능한 값만 표시한다.
+- **LAST PASS:** Windows Writer 2026-11-10 **07:30:20 KST** 실행(수정 PC source `48d34780…`), 07:36 KST 기록 검증. 독립 읽기 전용 A [#1175](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1175) / Run `42713659986`, `proofStatus=RECORDED_READBACK_VERIFIED`; R10 계산 `RECALCULATED_FROM_SAVED_INPUTS`, projection·sidecar 모두 READY, 2개 공개 키 확인, failures `[]`. A 자체는 D1을 재질의하지 않아 `productionD1Verified=false`이지만, 실제 Writer `publishAssetR10Sidecars`의 운영 원장에 **D1 사전조회·write 후 재조회** 결과가 기록되고 공개 API에서 동일 값이 조회됐다. A의 증거 수준 `LOCAL_WRITER_CHECKPOINT_ONLY`를 독립 D1 조회로 과장하지 않는다.
+- **오류 해결:** 이전 A #1170 `PREVIOUS_RELEASE_PRESERVED`는 모든 projection을 가로채던 범위 누락 때문. `id==='assetBubble'`로 국소 수정한 PR #1055와 B #1172 재설치 이후, 동일 Writer 경로에서 READY로 정상 전환. 다른 Writer 기능·공통 Controller에는 변경하지 않았다.
+- **실제 공개:** https://zgmini.kr/api/asset-bubble-raw — `asOfDate=2026-11-09`, `scoreObservationQuarter=2026-Q2`, 6개 요인 `READY`, 종합 22.5732425. **새 2026-Q3 최신 관측 3개:** `priceAcceleration=-5.416628` (2026-09-30), `breadthDivergence=8.220065` (2026-09-30), `excessLiquidity=-0.311295` (2026-07-01). `valuationPressure`·`riskAssetShare`·`speculativeFlows`는 Z.1 Q3 공식 미발표로 **기존 2026-Q2 최신 유효값을 보존**. 3/6 Q3 추가와 6/6 최신 유효값 확보를 혼동하지 않는다.
+- **원격 역사:** https://zgmini.kr/api/asset-bubble-history — `status=PARTIAL`, 정확히 `breadthDivergence`의 2025-Q2·2025-Q3 두 과거 분기점 결측. 기존 1년 원자료를 임의 보간하지 않는다. history source metadata가 raw보다 하루 오래된 것은 Writer가 내용 동등성을 검증해 `UNCHANGED_VERIFIED`로 유지한 결과이다. 따라서 현재 원자료 값은 동일하지만 remote 두 sidecar의 metadata 문자가 같다고 주장하지 않는다.
+- **배포:** Cloudflare 접속한 계정의 Git Integration `zgmini-migration-candidate-r5` Production 배포 목록에서 사이트 계정·GitHub `ansqhd5774-Choi/zgmini` 연결과 실제 두 R10 commit의 빌드 READY 확인. 현재 활성 `e32acd3c`↔Git SHA `165a0ddbc3d8d0b918eee36e63895bd2a65b24fd`; GitHub compare로 R10 수정 SHA `c00eeac3dbda7bb911c6d639216b214c144e9f6e`보다 **1커밋 후속**임을 확인. 생산 사이트 실제 DOM/모바일 화면과 연결.
+- **PC/모바일:** https://zgmini.kr/asset-bubble/ 화면 종합 안전점수 **22.6**, 실제 평가 분기 **2026-Q2** 및 진단 **2026-Q4 PARTIAL**, 구성 6개 이전/현재값·실제 날짜·차트 마지막 점 검증. 모바일 viewport 390×844에서는 화면 가로 overflow **0px**(clientWidth 375, scrollWidth 375). R10 Q3 신규 3요인의 현재 칸 값과 소형 차트 마지막 점 날짜는 각각 2026-09-30·2026-09-30·2026-07-01.
+- **다음 필수 작업:** 이번 R10 기능의 추가 설치·재수집·재게시 없음. 다른 기능 담당자 작업을 중단시키지 않는다. 추후 공식 신규 분기 발표 뒤 정상 승인된 기존 주기의 자연 갱신은 **별도 후속 검증**에서 다루며, 사용자 금지에 따라 신규 자동 예약/수집을 생성하지 않는다.
 
 ## 3A. 2026-11-09까지의 공유 Writer 차단 이력 — 현행 작업 지시 아님
 
