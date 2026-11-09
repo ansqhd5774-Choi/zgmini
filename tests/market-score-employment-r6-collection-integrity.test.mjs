@@ -306,6 +306,7 @@ test("registered R6 BED uses 50-series BLS v2 batches across existing two backfi
   assert.equal(result.requestCount, 6);
   assert.equal(result.snapshots.length, 6);
   assert.equal(result.rows.length, 228);
+  assert.equal(result.rows[0].provenance.sourceUrl, BLS_R6_REGISTERED_API_URL);
   assert.deepEqual([...new Set(calls.map(call => call.startyear))], ["2016", "2026"]);
   assert.equal(calls.filter(call => call.startyear === "2016").flatMap(call => call.seriesid).length, 114);
   assert.equal(calls.filter(call => call.startyear === "2026").flatMap(call => call.seriesid).length, 114);
