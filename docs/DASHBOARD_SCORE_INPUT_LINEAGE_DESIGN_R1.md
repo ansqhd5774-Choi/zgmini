@@ -62,3 +62,18 @@
 - 이 SHA를 `zgmini`와 `zgmini-pc-control` 두 GitHub 원격 저장소의 커밋/파일 ref로 조회했으나 둘 다 **No commit found(422), file ref 404**. 이는 현재 접근 가능한 두 원격에서 해당 local commit을 재조회할 수 없다는 뜻이지, 기존 Windows 체크아웃 파일이 손상됐거나 PC Core가 중단됐다는 증거는 아니다.
 - **영향:** 해당 PC에 실제 설치된 `projection-checkpoint-r52.mjs`/Writer의 코드가 이 문서에서 본 최신 `main`과 같다는 전제를 세울 수 없음. 지금 확인한 `core:<stored_at>` 문제는 **main source 설계상 위험**으로 유지하며, 현 PC에 동일 결함이 실제 존재·발현한다는 판정은 **UNKNOWN**.
 - **다음 최소 확인:** 이미 승인된 PC 읽기 전용 경로가 실제 `sourceRoot`의 대상 파일별 해시/내용 버전을 안전하게 회수할 수 있는지 확인. 권한·허용목록 밖 코드 조회, 운영 변경, 무근거 새 pc-job 반복은 하지 않는다. 명시된 기능 백엔드 브랜치 및 원격 provenance가 확보될 때까지 이 UI 전용 브랜치에서 Writer 코드를 수정하지 않는다.
+
+
+## 7. 원격 커밋 미조회 상태에서 실제 PC 파일 provenance를 일부 회복
+
+기존 #1136의 `sourceRoot` 파일별 SHA-256과 GitHub 원본 내용의 **바이트 SHA-256**을 대조했다. 원격 commit `70d2…` 자체는 접근 불가하지만 다음 파일별 provenance는 확인된다.
+
+| PC 원본 파일 | #1136 Windows 실제 SHA-256 | 대조한 원본 | 판정 |
+|---|---|---|---|
+| `scripts/pc-writer/run-local.mjs` | `71145f8db8f80346236896940749ba810b6125ba8947abfb0ba51864381d7699` | `zgmini` 최신 `main` 원문 UTF-8 LF SHA-256 동일; UI branch는 불일치 | **PC 정적 파일↔main 파일 내용 일치** (실행 중인 프로세스의 source는 아님) |
+| `scripts/pc-writer/collect-local.mjs` | `3257e485ac2fc536316306291168559fbbceabadeca6da7381d73acb6a5a3d1a` | 제어 저장소 `approvals/writer-updates/bls-registered-v2-13-writer-b-20261109.json`의 afterSha256 동일 | **승인 B overlay 출처 일치**; 최신 main과 다른 것은 반드시 무단 변경 아님 |
+| `lib/market-score/employment-r6-provider.mjs` | `a3474258efcbd12c8ac081d07a0d7ffb3055b5ddd8d35080248aecf60ba30381` | `approvals/writer-updates/employment-r6-2015-600-onefile-20261109.json`의 afterSha256 동일 | **승인 B overlay 출처 일치**; 최신 main과 다름 |
+
+- **이번 단계의 실제 성과:** 선택한 3개 PC 파일은 **3/3 원본 SHA와 GitHub main 또는 승인 manifest 근거를 연결**했다. 총 68개 점수의 원자료→계산→D1→UI 추적과는 별도 분모다.
+- **미증명:** `worker/projection-checkpoint-r52.mjs`의 현재 Windows 파일 SHA-256은 #1136 고정 허용목록에 없어 UNKNOWN. 이 파일이 main과 같다는 증거는 아직 없고 `runtimeSourceVerified=false`도 그대로다.
+- `70d2…`가 왜 두 원격 저장소에서 조회되지 않는지는 추가 정보 없이 추정하지 않는다. 이미 승인돼 설치된 per-file overlay는 보존하고, 새 `main` 전체 덮어쓰기/리셋/설치로 출처를 맞추지 않는다.
