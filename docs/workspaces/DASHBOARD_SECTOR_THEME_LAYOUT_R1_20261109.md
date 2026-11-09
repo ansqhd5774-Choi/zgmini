@@ -94,3 +94,13 @@ node --test tests/dashboard-secondary-two-panel-r1.test.mjs tests/market-explore
 - 이후 개발 작업의 기본 컨텍스트는 **`codex/ui-improvements`**이고, 임시 `deploy/dashboard-sector-theme-layout-r1-20261109`는 추가 개발 금지.
 
 - 2026-11-09 운영 모바일 검증 시도: 브라우저 반응형 도구 호출에 **조직 정책에 의해 DevTools 금지** 알림이 실제 표시됨. 보안 정책을 우회하지 않고 알림을 닫음. 공개 모바일 직접 캡처는 미실시 상태를 유지. 기존 390px CI 통과와 1363px 운영 PC 실측은 별개 확정 증거. 다음 단계는 승인된 정상 모바일 단말 화면 확인 1회뿐이며 재시도 자동화/DevTools 우회는 하지 않는다.
+
+
+## 2026-11-09 병렬 추가 검증 기록 (진행률 유지 97%)
+
+- 독립 조사 3개 경로: 원격 main 소스·반응형 CSS, PR #1052 GitHub Actions CI, Cloudflare/SEO 공개 URL을 각각 읽기 전용으로 재확인. 신규 UI 회귀는 발견되지 않음.
+- CI run `42622613765`에서 `390px`/`1440px` × 로그인/비로그인 대시보드 4/4 PASS, 모바일 차트 터치 툴팁 PASS. UI 전체 job의 한국 공포탐욕 소개문 실패는 변경 전 run `42600906526`과 동일. 실제 Production 모바일 렌더와 동일시하지 않음.
+- Actions 스크린샷 artifact `13676699668`을 회수해 `dashboard-deferred-ui/dashboard-390.png`와 `dashboard-1440.png`를 직접 확인. **두 이미지는 화면 위쪽 900px만 보여 섹터/테마 카드 자체가 화면 밖에 있음**. 따라서 이 이미지들로 해당 카드의 실측을 통과 처리하지 않음.
+- 모바일 CSS 기준은 390px에서 콘텐츠 컨테이너 약 370px, `@media(max-width:767px)` 내부 1열, PC 960px 이상 2열 균등. 기존 정적 테스트 `tests/dashboard-secondary-two-panel-r1.test.mjs` 2/2 PASS.
+- 별도 로컬 렌더 실측은 Vite/Cloudflare 로컬 서버의 네트워크 연결 오류 및 이 환경 Chromium의 `socket() failed: Operation not permitted`로 실행 불가. 조직 DevTools 금지를 우회하거나 실제 Production 접속 정책을 회피하지 않았음.
+- 실제 공개 사이트의 모바일 390/510/767px와 전환점 768~1023px 실화면 캡처 및 카드 폭/넘침 실측이 유일한 잔여 검증. 신규 구현·운영·배포 변경 없음. 이 시점의 전체 진행률은 **97% 유지**.
