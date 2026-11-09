@@ -9,7 +9,7 @@
 
 ## 1. 최종 통과 조건
 
-1. 6개 지표 모두 검증된 `latestObservation` 값·이전값·실제 관측일/분기를 가진다. 발표 가능일·월말 완결성·시장폭 자료품질 등 기존 개별 검증을 통과해야 한다.
+1. 6개 지표 모두 **공식 발표된 마지막 유효 관측**의 현재값·이전값·실제 관측일/분기를 표시한다. 평가 분기 이후 새로 공개·검증된 관측이 있을 때만 선택적 `latestObservation`을 추가한다. 발표 가능일·월말 완결성·시장폭 자료품질 등 기존 개별 검증을 통과해야 한다. 미발표 분기는 생성하지 않는다.
 2. 종합점수 평가 분기는 현재 `2026-Q2`이며 점수 약 `22.6` 및 가중치·산식·scored/raw/history 기존 계약을 임의 변경하지 않는다. 최신 개별 관측치와 점수 평가 분기를 혼동하지 않는다.
 3. PC 공급자 수집 → SQLite/로컬 원자료 저장·재조회 → 저장 자료 기반 계산 → 새로운 결과/checkpoint 로컬 저장 → 기존 게시기로 D1 반영 → 공개 API/UI 재조회가 동일 소스/날짜/값으로 연결된다.
 4. 동일 sourceVersion/sourceStoredAt을 덮어쓰거나 날짜·결측치를 임의로 채우지 않는다. PC/모바일에서 현재·이전·날짜·차트 마지막 점을 확인한다.
@@ -21,23 +21,29 @@
 |---|---|---|---|
 | 1 | R10 담당: 기존 계약·원자료 6개 확인 | `/api/asset-bubble-raw` READY, scoreObservationQuarter=2026-Q2, score=22.57324…, factors=6, 산식 보존 | DONE |
 | 2 | R10 담당: 최신 개별 관측치 후보 개발 | PR #961의 관련 테스트 48/48 PASS, 차이·범위 검토. **Draft로 운영 미반영** | DONE (후보 코드) |
-| 3 | R10 담당: 현재 PC source 원본 확인·승인된 Writer 설치 | PC 현재 HEAD=config.source·2파일 before/after SHA·의존 파일·원본 보호·lease/CAS를 확인하고, 필요한 경우 공통 Writer B 1회 설치 및 실제 SHA·백업·JSON/TXT 재조회. 이미 목표 파일이면 설치 생략 | NOT_DONE |
+| 3 | R10 담당: 현재 PC source 원본 확인·승인된 Writer 설치 | PC HEAD=config.source·2파일 before/after SHA·의존 파일·원본 보호·lease/CAS, 필요시 공통 Writer B 단회 설치 및 실제 SHA·백업·JSON/TXT 검증 | **BLOCKED** — A 조회 2건 PASS, B #1066 공유 설치 점유 안전 STOP |
 | 4 | R10 담당: 새로운 6개 개별 관측치 생성·로컬 저장 | 신규 체크포인트와 로컬 결과·원장에 검증된 최신 관측치 6/6개 존재, 실제 관측일과 원본 일치 | NOT_DONE |
 | 5 | R10 담당: 기존 게시기 → D1/API | 승인된 신규 source checkpoint 게시, D1 readback·`/api/asset-bubble-raw`·`/api/asset-bubble-history` 값/버전/시각 대조, 최신 6/6개 공개 | NOT_DONE |
 | 6 | R10 담당: 사이트 PR 및 PC/모바일 | 사용자 승인 범위에서 PR #961을 최신 main과 검증·정규 Git Integration 배포, 화면 현재/이전/관측일/마지막 점 6개 일치, 종합점수 22.6 유지 | NOT_DONE |
 
-**시작 전체 공정률 = DONE 2 / 6 = 33.3%.** 각 단계는 최종 통과 증거가 있어야 100%로 계산한다. 진행 중·일부 통과는 DONE으로 세지 않으며, 세부 진행은 별도 숫자로 보고한다. **목표 기능의 실제 최신 6개 공개율 = 0 / 6 = 0%** (2026-11-09 브라우저 관측). 운영 원자료가 11월 8일 갱신됐다는 사실만으로 `latestObservation` 게시 성공으로 보지 않는다.
+**시작→현재 전체 공정률 = DONE 2 / 6 = 33.3% → DONE 2 / 6 = 33.3% (변동 0%p).** 각 단계는 최종 통과 증거가 있어야 100%로 계산한다. 진행 중·일부 통과는 DONE으로 세지 않으며, 세부 진행은 별도 숫자로 보고한다. **새 후속 분기 `latestObservation` 공개 = 0/6 (2026-11-09 최초 브라우저 관측)**. 신규 Q3 관측의 공식 발표 가능 범위는 **최대 3/6**이며, 실제 유효 개수는 PC 검증 전 미확정이다. 운영 원자료가 11월 8일 갱신됐다는 사실만으로 게시 성공으로 보지 않는다.
 
 ## 3. 현재 필수 실행 하나와 최소 순서
 
-**다음 실행 = 3단계의 범위형 PC 원본 확인.**
+**다음 필수 행동 = 공유 Writer #1063 복구 원장 대조 및 승인된 정상화(공통 단일 복구 담당).** R10 담당은 같은 B #1066을 재접수하지 않는다.
 
-- 입력: R10 후보 `lib/diagnostic-layer/asset-bubble-r10-raw-evidence-r1.mjs`, `worker/asset-bubble-r10-raw-r1.mjs`, 현 PC 소스 HEAD/config.source 및 공통 Writer lease 상태.
-- 기존 승인 경로: `writer-install-preimage-readonly`로 필요 파일만 조회. 기존 성공 #882를 재사용하고, 오래된 `a23c12cc…`를 현재 운영 HEAD로 간주하지 않는다.
-- 통과 조건: 실제 경로·소스/파일 해시·dirty 여부·소비 모듈 의존성·기존 승인/백업 가능성 및 실제 공유 쓰기 충돌 범위 확정.
-- 이후: 공통 `pc-writer-source-install`의 정확한 `APPROVED_B` manifest로 필요한 범위만 단회 설치 → 신규 로컬 관측치 6/6 → D1/API 게시 → PC/모바일 검증.
-- 공유 Writer 25파일은 #68의 단일 담당(시장 캘린더)과 **동일 Writer HEAD/config.source 및 실제 lease만** 순서 조정한다. 독립 코드/조회는 병렬 계속. 전용 R10 B receiver 신규 개발, Controller 전체 재설치·전체 PID 추적을 자동 선행 조건으로 만들지 않는다.
+- **기존 증거 재사용:** R10 두 파일 PC 조회 [#1055](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1055) PASS, 현재 관측 시점 HEAD=config.source `825cfbd6…`, 목표/원본 SHA 확정. 기존 공통 범위 승인 파일을 재사용한 의존성 조회 [#1059](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1059) PASS. 시장 달력 import 파일은 존재하며 GitHub LF↔PC CRLF 차이만 확인. JSON/TXT 2/2 회수.
+- **기술적 승인 명세:** R10 2파일만 담은 [control PR #1062](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1062) `main` 병합 `19e80d29…`, manifest SHA-256 `f49412ebb8d396197c32e5eadaee21f5ab095a1f9f1d9f8787921865ff22f7cd`. 후보 `zgmini` SHA `f541efbd…`; 산식·DB·Task·D1 변경 승인 없음.
+- **실제 안전 중단:** R10 Writer B [#1066](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1066), Run `42617895258`: `WRITER_B_PREFLIGHT_STOP / WRITER_B_SHARED_INSTALL_BUSY_NOOP_STOP`, JSON/TXT 2/2, 설치 완료 증거 없음. 다른 담당 B [#1063](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1063)에서 `WRITER_B_RECOVERY_REQUIRED / WRITER_B_CORE_REENABLE_SOURCE_PAIR_STOP` 확인. [공통 #68 인계](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6740260933). 안전 거부 우회·같은 요청 재실행 금지.
+- **복구 후 R10 담당의 바로 다음 실행:** 기존 #1063의 백업·lease·원장과 최신 실제 PC HEAD/config.source가 안전하게 정리됐다는 증거를 회수한다. 새로운 변경 기준이 생겼다면 정확한 before SHA/CAS와 R10 2파일 B manifest만 재산출하여 공통 1회 설치한다. 다른 기능 소스/DB는 변경하지 않는다. 그 뒤 **신규 검증 체크포인트 → 로컬 결과 → D1/API → PC·모바일**을 순서대로 확인한다.
+- 공유 Writer 실제 쓰기만 직렬화한다. 독립 코드/조회는 병렬 계속. 전용 R10 B receiver 신규 개발, Controller 전체 재설치·전체 PID 추적을 자동 선행 조건으로 만들지 않는다.
 - 게시 전에 PR #961이 Draft/미병합인지, 최신 main 대비 변경 파일, 관련 테스트, 배포 승인을 재확인한다. PR 병합·CI는 PC 설치나 Production 게시 증거가 아니다.
+
+### 공식 원자료 발표 시차와 웹 통합 주의
+
+- 2026-11-09 기준 연준 Z.1 최신 공식 자료는 2026-Q2이며 **Q3 발표 예정은 2026-12-10**이다([Federal Reserve](https://www.federalreserve.gov/releases/z1/)). `valuationPressure`·`riskAssetShare`·`speculativeFlows`의 Q3 신규값은 아직 존재하지 않으므로 Q2 실제 관측일을 보존한다. `priceAcceleration`·`breadthDivergence`·`excessLiquidity`의 Q3는 각 PC 원자료·완결성 검증 전에는 READY로 보고하지 않는다.
+- R10 raw sidecar는 같은 `sourceVersion/sourceStoredAt`의 내용 변경을 `ASSET_R10_RAW_CONFLICTING_CONTENT`로 안전 거부한다. 보호 규칙을 완화하지 않으며 **새로운 유효 checkpoint**만 게시한다.
+- 웹 반영 시 오래된 Draft PR #961의 전체 diff(무관한 삭제 포함)를 병합하지 않는다. **UI 2파일 + 동일 버전 `worker/asset-bubble-r10-raw-r1.mjs`의 선택적 변경**을 최신 `main`에서 통합·테스트한 뒤 정규 Cloudflare Git Integration 배포·실화면 검증한다.
 
 ## 4. 모든 R10 작업 보고의 필수 형식
 
