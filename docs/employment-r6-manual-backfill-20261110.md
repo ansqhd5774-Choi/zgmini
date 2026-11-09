@@ -1,5 +1,13 @@
 # 고용 R6 2026-11-10 수동 BACKFILL 실증 및 잔여 실행 계획
 
+## 검증된 최신 운영 완료 — R2 D1/API/UI (2026-11-10 KST)
+
+- **프로젝트 진행률 6/8(75.0%) → 7/8(87.5%).** R2 4개 CPS 예외의 정규 PC source 5파일 설치(기존 #1195)·선택 main/Cloudflare Production 배포(643b7c… / ef5e4a8d)뿐 아니라 **Cloudflare D1 저장값 직접 SELECT + 공개 API + 운영 UI** 검증까지 완료했다. 여전히 `STATE_CLAIMS_BREADTH` 점수 미평가 1개 및 DOL/BED 원본 결손 위치 원인은 미완료. 독립 PC 파일의 R2 결과 원장과 Core 실행 source 연결 증거는 추가 확인 여지가 있으나, 이미 검증된 공개 D1 기록을 미게시로 되돌려 보고하지 않는다.
+- Cloudflare **실제 D1 `zgmini-core-r42`** `market_public_snapshots_v1`의 `snapshot_key='detail:employment-r6:one-year:v1'`를 **읽기 전용 SELECT**로 검증: `stored_at=1794267318678` = **2026-11-10 08:35:18.678 KST**, `sourceStoredAt=1794262879306` = 2026-11-10 07:21:19.306 KST. `methodologyVersion=EMP-R6-FORMULA-R2-CPS-2025-10` 및 `formulaHash=sha256:04486846cd6063452d1c764116d3a31209f074d23a8764bf5b6ec8467095210e` 둘 다 정본 R2와 일치. 총 29원자료 / 28 평가 READY / 22 최근 평가 READY / 22 차트 READY. `sourceStoredAt`이 R1과 같아도 **동일 승인 저장 원자료를 R2로 재계산·재게시**한 것은 정상이며, D1 `stored_at`은 갱신되었다.
+- 별도 D1 `json_each` 읽기 전용 검증: `U3_UNEMPLOYMENT` READY **48.74**(2026-10-31), `U6_UNEMPLOYMENT` READY **42.86**, `LFPR` READY **21.85**, `EPOP` READY **22.69**. 4개 모두 값 생성·보간 없이 기존 **119개 공식 실측 월** 예외만 사용. **유일한 미평가 `STATE_CLAIMS_BREADTH` = PARTIAL_HISTORY, 2025-07-19**, 0점 대체 없음.
+- 실제 공개 `https://zgmini.kr/api/employment-r6/observations`는 R2 methodology/formula 및 28/29 결과를 반환(Worker GET은 D1 저장 본문만 조회·반환하는 구현). 실제 `https://zgmini.kr/economic-indicators/employment/`의 29개 표에는 CPS 4개 평가 48.7/42.9/21.8/22.7과 '최근 평가 22/29'가 표시된다. 상단 42.7점은 별도 시장 점수이며 R6 28개 점수의 평균이 아님.
+- **남은 1/8 필수 작업:** 저장된 DOL 51지역/52주 `STATE_CLAIMS_BREADTH` 최초 데이터 결손 식별→승인된 범위 재수집/재계산→D1/API/UI 평가 완성. BED 114 series `SERIES_PARTIAL` 및 차트는 DOL과 분리해 정확한 `missingSeries`와 발표 주기 확인 후 필요한 범위만 보정. 기존 Controller #917 운영 담당자와 겹치는 Controller 변경은 직접 실행·우회하지 않음. 신규 자연 갱신 예약 검증은 후속으로 유지.
+
 ## 최신 실행 판정 — 2026-11-10 KST / PC R2 설치와 Cloudflare Production R2 코드 검증
 
 > 아래가 이 문서의 최신 상태 정본이며 뒤의 'Draft/미배포/미설치' 표기는 당시 증거에 관한 **과거 이력**이다. 장래 자동 갱신 검증은 여전히 기능 최종 완료의 선행 Gate가 아니다.
