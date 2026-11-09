@@ -51,6 +51,15 @@
 - **현재 공통 장애:** [Controller #917](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/917) 38/38 현행·백업 무결성은 확인됐지만 `RECOVERY_REQUIRED`이며, [Draft #1088](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1088)은 **source 격리 테스트 76/76 PASS, 실제 C급 복구 0회**로 남아 있다. [후속 #996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/996)의 운영 terminal 증거도 미확정. 공통 소유자의 정규 복구 완료 증거 전에는 공유 B 중복 요청이나 R181 정규 A의 불필요한 재실행을 만들지 않는다.
 - **다음 한 실행:** #917 단일 담당의 terminal 복구·적용 source SHA를 확인 → 실제 설치된 비식별 R181 A로 **SPY 첫 HTTP status/code 1회** 확보(기존 A에 *쿼리 이름* 출력 계약은 아직 없음) → 기존 PC 저장 원자료·R178 checkpoint·D1 단일키 읽기 경로 확인 → 권리·가격모드 충족된 결과만 승인 게시·API/UI 검증. **T1 20%→20%, 실운영 새 게시 0건, 기존 공개 10개 현재 API 0/10 표시, 자동 예약 추가 0건**. 이 자료 조사는 R181 실PC 오류의 원인 확정 또는 공개 복구가 아니다.
 
+### 2026-11-10 GMH 단독 확정치 비공개 후보 — 기본 비활성, 운영 계약 유지
+
+- **목적·범위:** 기존 공개 10개 정상화를 위한 R178 입력 대안 중 하나를 전용 브랜치에서 **source-only 후보**로 구현했다. [Reader 후보 변경](https://github.com/ansqhd5774-Choi/zgmini/commit/e13e33e108ccb567e5a9be19a78e7d38706f56a1)과 [회귀 테스트 추가](https://github.com/ansqhd5774-Choi/zgmini/commit/2ac4fe68b41e7bf7dacdc8b007c9d585f309b952), 정확히 **2파일**이며 운영 배포·PC 설치·D1 쓰기는 **0건**이다.
+- **실제 코드 계약:** `GMH_1H_CONFIRMED_ONLY_R1` 표지가 있는 rolling 결과는 호출자가 `allowGmhOnlyCandidate=true`를 명시할 때만 검증한다. 기존 Reader 호출자는 이 옵션을 전달하지 않으므로 **기본 false·기존 GMH+MarketParquet 계보 유지**다. 허용 후보는 GMH 1시간 확정치, `phase=CONFIRMED`, 잠정점 **0개**, `secondarySource=null`, 기준 SPY/13 ETF, 252일 유효 이력과 불변 seed 해시를 요구한다. 기존 **4개 공개·원천·파생권·가격 정합 플래그가 모두 실제 검증된 true**여야 하며, 미확인 권리를 true로 위조하지 않는다.
+- **source-only 테스트 증거:** 기존 7개+신규 2개 **총 9/9 PASS** (Node 격리 인메모리 실행, 실패 0). 후보의 기본 거부/명시적 허용, 공개 반환 score·history 외 비공개 price bar 미노출, 권리·계보·확정/잠정·범위·해시·시각 오류의 안전 거부를 점검했다. 이는 **비공개 합성 테스트**로서 GitHub CI·실제 PC·공개 게시 성공을 의미하지 않는다.
+- **아직 미완료:** 운영 GMH 14종은 **티커 카탈로그 14/14 확인**에 그치며, **14/14 공통 정규장 701거래일 가격·가격모드·PC 원자료 저장/재조회·R178 계산·local checkpoint는 미검증**이다. R181의 `HTTP/R181/SPY` FIRST FAIL status/code도 미확정이다. 무료 MarketParquet의 파생 공개 불허 및 익명 GMH 계정·상업적 파생 공개 권리 미확정은 그대로 보존한다. **운영 Reader opt-in, 출처 계약 승인, 배포, D1/API/UI 성공 0건**.
+- **다음 필수 실행:** 공통 #917 담당의 실제 복구 증거를 받은 뒤 이미 승인된 비식별 R181 조회로 SPY 첫 HTTP status/code를 **1회 회수**한다. 동시에 가능한 승인 조회로 PC 저장 GMH 원본/정규장 14종 공통 701일, checkpoint 및 D1 1키를 확인한다. 실제 권리·관측·가격모드가 충족되고 별도 출처 계약 변경이 승인될 때만 생산자 연결·Shadow 비교→정규 설치→D1/API/UI 게시로 간다. 예약 작업 신설·반복 자동수집 대기 없음.
+- **통합 T1 진행률:** **20% → 20%**, 공개 목표 10개 중 직전 API 정상 **0/10**, 실운영 추가 게시 **0건**. 163개 전체 완료율은 따로 산출한다.
+
 ### 2026-11-09 P1-02 실제 PC 증거 — 최종 검증 아님
 
 - **LAST PASS(읽기 전용 조회만):** [#1033 / `results/42597414102-1-seat-3.json`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/42597414102-1-seat-3.json), requestId `pc-c5ff88b8-0e9e-467a-934f-9902f9346234`, job `run-42597414102-1-seat-3`, 완료 `2026-11-09T09:58:36.676Z`(18:58:36 KST), `PASS/L7_RUNTIME_READONLY_INVENTORY`. 이는 **운영 READY와 무관**하며 result의 `operationalReadiness=NOT_ASSERTED`를 따른다.
