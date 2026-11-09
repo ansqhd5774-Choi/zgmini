@@ -167,3 +167,16 @@ test('R6 lease rejects invalid IDs and keyed BLS requests without phantom usage'
   assert.equal(inspectUnregisteredBlsSlots({base,approvedBase:base}).used24h,0);
  }finally{clean(base);}
 });
+
+test('Alpaca reservation path remains unchanged when BLS guard is enabled',async()=>{
+ const base=fixture();
+ let physical=0;
+ try{
+  const quota=createQuotaFetch({base,mode:'enforce',originalFetch:async()=>{physical++;return ok();},
+   blsUnregistered:{enabled:true,approvedBase:base}});
+  await quota.fetch('https://data.alpaca.markets/v2/stocks/bars');
+  assert.equal(physical,1);
+  assert.equal(quota.summary().providers.ALPACA?.requests,1);
+  assert.equal(inspectUnregisteredBlsSlots({base,approvedBase:base}).used24h,0);
+ }finally{clean(base);}
+});
