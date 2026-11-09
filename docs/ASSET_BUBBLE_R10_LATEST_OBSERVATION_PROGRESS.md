@@ -1,6 +1,6 @@
 # 자산 버블 R10 최신 개별 관측치 — 목표·단계·진행률 정본
 
-- 기준일: 2026-11-09 KST
+- 기준일: 2026-11-10 KST
 - 기능 저장소: `ansqhd5774-Choi/zgmini`
 - 원작업 브랜치: `fix/asset-bubble-r10-latest-observations-20261103` (Draft PR #961). 최신 main 선택 통합: `fix/asset-r10-latest-main-slice-20261109` (Draft PR #1050, base `3910adf7…`, HEAD `17c3c048…`).
 - 공통 실행/승인 정본: `ansqhd5774-Choi/zgmini-pc-control` 최신 `main`의 `AGENTS.md`, `docs/GENERAL_CHAT_START.md`, `docs/PC_AUTOMATION_STANDARD.md`.
@@ -21,14 +21,23 @@
 |---|---|---|---|
 | 1 | R10 담당: 기존 계약·원자료 6개 확인 | `/api/asset-bubble-raw` READY, scoreObservationQuarter=2026-Q2, score=22.57324…, factors=6, 산식 보존 | DONE |
 | 2 | R10 담당: 최신 개별 관측치 후보 개발 | 원 후보 PR #961 48/48 PASS. 최신 main 선택 Draft PR #1050 **정확 6파일·51/51 PASS**, diff check 통과. **운영 미반영** | DONE (후보 코드) |
-| 3 | R10 담당: 현재 PC source 원본 확인·승인된 Writer 설치 | PC HEAD=config.source·2파일 before/after SHA·의존 파일·원본 보호·lease/CAS, 필요시 공통 Writer B 단회 설치 및 실제 SHA·백업·JSON/TXT 검증 | **BLOCKED** — A 조회 2건 PASS, B #1066 공유 설치 점유 안전 STOP |
+| 3 | R10 담당: 현재 PC source 원본 확인·승인된 Writer 설치 | 단일 파일 B #1155 및 #1164 `WRITER_B_INSTALLED_VERIFIED`, PC 소스 `144f3b8…`, 원본 해시·launcher·Task XML 검증·결과 2/2 확인 | **DONE** |
 | 4 | R10 담당: 새로운 6개 개별 관측치 생성·로컬 저장 | 신규 체크포인트와 로컬 결과·원장에 검증된 최신 관측치 6/6개 존재, 실제 관측일과 원본 일치 | NOT_DONE |
 | 5 | R10 담당: 기존 게시기 → D1/API | 승인된 신규 source checkpoint 게시, D1 readback·`/api/asset-bubble-raw`·`/api/asset-bubble-history` 값/버전/시각 대조, 최신 6/6개 공개 | NOT_DONE |
 | 6 | R10 담당: 사이트 PR 및 PC/모바일 | 선택 통합 PR #1050의 최종 Git Integration 배포, 화면 현재/이전/관측일/마지막 점 6개 일치, 종합점수 22.6 유지 | NOT_DONE |
 
-**시작→현재 전체 공정률 = DONE 2 / 6 = 33.3% → DONE 2 / 6 = 33.3% (변동 0%p).** 각 단계는 최종 통과 증거가 있어야 100%로 계산한다. 진행 중·일부 통과는 DONE으로 세지 않으며, 세부 진행은 별도 숫자로 보고한다. **새 후속 분기 `latestObservation` 공개 = 0/6 (2026-11-09 최초 브라우저 관측)**. 신규 Q3 관측의 공식 발표 가능 범위는 **최대 3/6**이며, 실제 유효 개수는 PC 검증 전 미확정이다. 운영 원자료가 11월 8일 갱신됐다는 사실만으로 게시 성공으로 보지 않는다.
+**시작→현재 전체 공정률 = DONE 2 / 6 = 33.3% → DONE 3 / 6 = 50.0% (+16.7%p).** 각 단계는 최종 통과 증거가 있어야 100%로 계산한다. 진행 중·일부 통과는 DONE으로 세지 않으며, 세부 진행은 별도 숫자로 보고한다. **새 후속 분기 `latestObservation` 공개 = 0/6 (2026-11-09 최초 브라우저 관측)**. 신규 Q3 관측의 공식 발표 가능 범위는 **최대 3/6**이며, 실제 유효 개수는 PC 검증 전 미확정이다. 운영 원자료가 11월 8일 갱신됐다는 사실만으로 게시 성공으로 보지 않는다.
 
-## 3. 현재 필수 실행 하나와 최소 순서
+## 3. 2026-11-10 현재 유효 실행과 다음 필수 행동
+
+- **LAST PASS:** B #1164 / Run `42709232093`, 단일 `run-local.mjs` PC 설치 성공. A #1170 / Run `42710681323`: 신규 PC SHA `144f3b8f…`로 2026-11-10 07:15 KST Writer 실제 실행 및 ledger `VERIFIED`.
+- **FIRST FAIL:** 같은 #1170의 R10 `calculationStatus=RECALCULATED_FROM_SAVED_INPUTS`이나 `projectionStatus=PREVIOUS_RELEASE_PRESERVED`, sidecar raw/history 0/2. D1/API/UI R10 갱신 미확인. Writer 전체 `VERIFIED`는 R10 완료의 증거가 아니다.
+- **원인:** `run-local.mjs`의 `preservePreviousR10` 분기가 모든 `PUBLIC_PROJECTION_KEYS`에 적용됨. `assetBubble` 뒤의 `supplyShock` 처리에서 `assetR10` 상태를 덮어쓸 수 있음. 승인 산식과 데이터는 바꾸지 않고 `id==='assetBubble'` 범위 검사 1줄로 수정.
+- **개발 브랜치:** `fix/asset-bubble-r10-latest-observations-20261103`에 수정·회귀 테스트 반영. 기존 브랜치의 235커밋 수준 분기 이력 때문에 전체 merge 금지. 현행 main 기준 선택 반영 [PR #1055](https://github.com/ansqhd5774-Choi/zgmini/pull/1055)은 정확히 소스 1 + 테스트 1 = 2파일, 로컬 19/19 PASS; CI·main 병합·운영 설치 여부는 각각 후속 증거로 판단.
+- **다음 필수 실행:** (1) PR #1055 CI 및 정확 2파일 확인 후 main 반영 → (2) 새 `run-local.mjs` 한 파일만 기존 Writer B 승인 경로로 Task XML/런처/preimage 해시 포함 설치 → (3) 설치 후 PC R10 `READY` + 로컬 결과 + D1 sidecar 두 키 readback → (4) 공개 API와 PC/모바일 검증. 새 수집 예약·기존 스케줄 변경·공통 Controller 수정은 금지.
+- **공식 발표의 한계:** 연준 Z.1 2026-Q3 미발표분을 생성하지 않는다. 최신값과 새 Q3 추가 관측의 개수는 구분하고, 검증 가능한 값만 표시한다.
+
+## 3A. 2026-11-09까지의 공유 Writer 차단 이력 — 현행 작업 지시 아님
 
 **다음 필수 행동 = 공유 Writer #1063 복구 원장 대조 및 승인된 정상화(공통 단일 복구 담당).** R10 담당은 같은 B #1066을 재접수하지 않는다.
 
