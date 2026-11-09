@@ -7,20 +7,21 @@ import {fileURLToPath} from 'node:url';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const src=file=>fs.readFileSync(path.join(root,'scripts','pc-writer',file),'utf8');
 
-test('regular Core only forwards an explicit trusted in-process BLS option',()=>{
+test('regular Core forwards only an explicit in-process or sealed-host BLS option',()=>{
  const code=src('collect-local.mjs');
  assert.match(code,/export async function collectLocal\(base,\{[^\n]*blsUnregistered=undefined\}\=\{\}\)/);
  assert.match(code,/createQuotaFetch\(\{base,originalFetch,blsUnregistered\}\)/);
- // The pre-existing CLI still supplies lane/importOnly/job, not a grant.
- assert.match(code,/collectLocal\(process\.env\.ZGMINI_PC_HOME[^\n]*\{lane:process\.argv/);
+ // A B host-sealed grant is resolved before the collection opens its DB.
+ assert.match(code,/blsUnregistered=process\.argv\.includes\('--import-only'\)\?undefined:resolveBlsCoreActivation\(base\)/);
+ assert.match(code,/collectLocal\(base,\{lane:process\.argv/);
  assert.doesNotMatch(code,/blsUnregistered\s*:\s*\{\s*enabled\s*:\s*true/);
 });
 
-test('existing R4 one-year backfill keeps enforce mode and opt-in defaults off',()=>{
+test('existing R4 one-year backfill keeps enforce mode and sealed opt-in default',()=>{
  const code=src('backfill-one-year.mjs');
  assert.match(code,/export async function backfillOneYear\([^\n]*blsUnregistered=undefined\}\=\{\}\)/);
  assert.match(code,/createQuotaFetch\(\{base,originalFetch,mode:'enforce',blsUnregistered\}\)/);
- assert.match(code,/if\(process\.argv\[1\][^\n]*\{\s*backfillOneYear\(\)/);
+ assert.match(code,/Promise\.resolve\(\)\.then\(\(\)=>backfillOneYear\(base,\{blsUnregistered:resolveBlsCoreActivation\(base\)\}\)\)/);
  assert.doesNotMatch(code,/blsUnregistered\s*:\s*\{\s*enabled\s*:\s*true/);
 });
 
