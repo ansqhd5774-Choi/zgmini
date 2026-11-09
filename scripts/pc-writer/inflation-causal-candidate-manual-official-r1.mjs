@@ -175,6 +175,8 @@ const isIso=value=>typeof value==='string'&&Number.isFinite(Date.parse(value))&&
 const validateRows=rows=>Array.isArray(rows)&&rows.length>0&&
   rows.every(x=>MONTH.test(x?.date??'')&&typeof x.value==='number'&&
     Number.isFinite(x.value)&&x.value>=0);
+const uniqueRows=rows=>validateRows(rows)&&
+  new Set(rows.map(row=>row.date)).size===rows.length;
 // Historical source revisions may be legitimate, but they need their own
 // explicitly approved reconciliation. This initial missing-series backfill
 // cannot silently rewrite observations already held by the PC.
@@ -206,24 +208,35 @@ export function planOfficialManualCandidateDocuments({bls,census,previousBls=nul
     previousBls.schemaVersion!==1||previousBls.provider!=='BLS'||
     previousBls.sourceVersion!==BLS_CANDIDATE_VERSION||!isIso(previousBls.sourceStoredAt)||
     !previousBls.series||typeof previousBls.series!=='object'||
-    Object.values(previousBls.series).some(rows=>!validateRows(rows))))
+    Array.isArray(previousBls.series)||
+    // Existing CPI can be corrupt (the reason for this repair), but no
+    // unrelated series, especially PPI WPSFD4, may be altered or ignored.
+    Object.entries(previousBls.series).some(([id,rows])=>
+      !SOURCE_IDS.includes(id)&&!uniqueRows(rows))))
     fail('INFL_MANUAL_PRIOR_BLS_INVALID');
   if(previousCensus!==null&&(
     previousCensus.schemaVersion!==1||previousCensus.provider!=='US_CENSUS_M3'||
     previousCensus.sourceVersion!==CENSUS_CANDIDATE_VERSION||
     !isIso(previousCensus.sourceStoredAt)||
     previousCensus.selector!=='MTM/TI'||
-    !validateRows(previousCensus.observations)||
+    !uniqueRows(previousCensus.observations)||
     (previousCensus.provenance!==undefined&&!Array.isArray(previousCensus.provenance))))
     fail('INFL_MANUAL_PRIOR_CENSUS_INVALID');
-  for(const id of SOURCE_IDS)if(!validateRows(bls.series?.[id]))
+  for(const id of SOURCE_IDS)if(!uniqueRows(bls.series?.[id]))
     fail('INFL_MANUAL_BLS_SERIES_INVALID');
-  if(!validateRows(census.observations))
+  if(!uniqueRows(census.observations))
     fail('INFL_MANUAL_CENSUS_OBSERVATIONS_INVALID');
 
   const series={...previousBls?.series};
+  const repairedInvalidBlsSeriesIds=[];
   for(const id of SOURCE_IDS){
-    series[id]=mergeWithoutHistoricalRevision(previousBls?.series?.[id],bls.series[id]);
+    const prior=previousBls?.series?.[id];
+    if(prior!==undefined&&!uniqueRows(prior)){
+      // The entire prior file is backed up before applying this repair.
+      // Never carry invalid CPI records into the official candidate.
+      repairedInvalidBlsSeriesIds.push(id);
+      series[id]=bls.series[id];
+    }else series[id]=mergeWithoutHistoricalRevision(prior,bls.series[id]);
   }
   const observations=mergeWithoutHistoricalRevision(
     previousCensus?.observations,census.observations);
@@ -235,6 +248,7 @@ export function planOfficialManualCandidateDocuments({bls,census,previousBls=nul
   const blsProvenance={origin:'CLAIMED_BLS_OFFICIAL_STATIC_COPY',
     provenanceVerified:false,method:'EXPLICIT_MANUAL_IMPORT',
     sourceUrl:BLS_HOUSING_URL,sourceSha256:bls.sourceSha256,
+    repairedInvalidBlsSeriesIds,
     archive:`raw/bls-cpi-official-${bls.sourceSha256}.txt`};
   const censusProvenance={origin:'CLAIMED_CENSUS_OFFICIAL_XLSX_COPY',
     provenanceVerified:false,
@@ -256,6 +270,7 @@ export function planOfficialManualCandidateDocuments({bls,census,previousBls=nul
   }:previousCensus;
   return {status:blsChanged||censusChanged?'PREPARED':'UNCHANGED',
     writes:{bls:blsChanged,census:censusChanged},
+    repairedInvalidBlsSeriesIds,
     expectedRawArchives:{bls:blsProvenance,census:censusProvenance},
     documents:{bls:blsDoc,census:censusDoc},
     apiCalls:0,dbWrites:0,d1Writes:0,coreCheckpointWrites:0};
