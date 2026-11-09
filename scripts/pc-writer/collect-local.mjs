@@ -17,7 +17,9 @@ import {overdueRateJob} from './rate-refresh-priority.mjs';
 import {collectSectorFearGreedR3EtfIncremental} from './sector-fear-greed-r3-etf-incremental.mjs';
 import {collectReleaseCalendar} from './release-calendar.mjs';
 
-export async function collectLocal(base,{lane='core',importOnly=false,job=null}={}){
+// A trusted, source-pinned PC host may provide its reviewed shared BLS guard.
+// The ordinary CLI passes no grant; no env/Issue/config value self-activates it.
+export async function collectLocal(base,{lane='core',importOnly=false,job=null,blsUnregistered=undefined}={}){
  const core=localDatabase(path.join(base,'storage','core.sqlite'));
  const history=localDatabase(path.join(base,'storage','history.sqlite'));
  const env={...loadLocalProviders(base),DB:core,DB_CORE:core,DB_HISTORY:history,ZGMINI_COMPUTE_TARGET:'pc'};
@@ -25,7 +27,7 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
  const originalFetch=globalThis.fetch,providers={};
  let providerDiagnosticWriteFailures=0;
  const recordProviderFailure=(input,event)=>{try{appendProviderFailure(base,input,event);}catch{providerDiagnosticWriteFailures++;}};
- const quota=createQuotaFetch({base,originalFetch});
+ const quota=createQuotaFetch({base,originalFetch,blsUnregistered});
  globalThis.fetch=async(input,init)=>{
   const host=new URL(typeof input==='string'||input instanceof URL?input:input.url).hostname;
   const item=providers[host]??={requests:0,statuses:{}};item.requests++;
