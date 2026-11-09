@@ -79,7 +79,8 @@ test('Treasury unexpected exceptions never disclose raw messages or secrets',asy
 
 test('Treasury success creates exactly two observed events and no diagnostic',async()=>{
  const {result,published,cached}=await simulate(()=>new Response(validXml));
- assert.equal(published.sources.treasury.status,'READY');
+ // The mocked caller only returns weekly XML; new annual history GET is 503.
+ assert.equal(published.sources.treasury.status,'PARTIAL');
  assert.equal(published.sources.treasury.coveredCusips,1);
  assert.equal(published.events.filter(e=>e.source==='treasury').length,3);
  assert.equal(Object.hasOwn(result,'treasuryFailureCode'),false);
@@ -93,7 +94,7 @@ test('Treasury next successful official attempt cannot reuse an earlier failure 
   {nextTreasuryReply:()=>new Response(validXml)});
  assert.equal(result.treasuryFailureCode,'TREASURY_HTTP_429');
  assert.equal(cached.treasuryFailureCode,'TREASURY_HTTP_429');
- assert.equal(recovered.sources.treasury,'READY');
+ assert.equal(recovered.sources.treasury,'PARTIAL');
  assert.equal(Object.hasOwn(recovered,'treasuryFailureCode'),false);
  assert.equal(Object.hasOwn(recoveredCached,'treasuryFailureCode'),false);
  assert.equal(recoveredCached.providerRequests,0);
