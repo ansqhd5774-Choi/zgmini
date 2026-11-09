@@ -175,6 +175,19 @@ const isIso=value=>typeof value==='string'&&Number.isFinite(Date.parse(value))&&
 const validateRows=rows=>Array.isArray(rows)&&rows.length>0&&
   rows.every(x=>MONTH.test(x?.date??'')&&typeof x.value==='number'&&
     Number.isFinite(x.value)&&x.value>=0);
+// Historical source revisions may be legitimate, but they need their own
+// explicitly approved reconciliation. This initial missing-series backfill
+// cannot silently rewrite observations already held by the PC.
+function mergeWithoutHistoricalRevision(previous=[],incoming=[]){
+  const byDate=new Map(previous.map(row=>[row.date,row]));
+  for(const row of incoming){
+    const existing=byDate.get(row.date);
+    if(existing!==undefined&&existing.value!==row.value)
+      fail('INFL_MANUAL_HISTORICAL_REVISION_UNAPPROVED');
+    if(existing===undefined)byDate.set(row.date,row);
+  }
+  return [...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date));
+}
 
 // Prepare candidate files compatible with the current read-only seven-input
 // presentation. These are PLANS, not writes. In particular, caller must not
@@ -210,13 +223,10 @@ export function planOfficialManualCandidateDocuments({bls,census,previousBls=nul
 
   const series={...previousBls?.series};
   for(const id of SOURCE_IDS){
-    const rows=[...(previousBls?.series?.[id]??[]),...bls.series[id]];
-    series[id]=[...new Map(rows.map(row=>[row.date,row])).values()]
-      .sort((a,b)=>a.date.localeCompare(b.date));
+    series[id]=mergeWithoutHistoricalRevision(previousBls?.series?.[id],bls.series[id]);
   }
-  const observations=[...new Map([
-    ...(previousCensus?.observations??[]),...census.observations,
-  ].map(row=>[row.date,row])).values()].sort((a,b)=>a.date.localeCompare(b.date));
+  const observations=mergeWithoutHistoricalRevision(
+    previousCensus?.observations,census.observations);
   const blsChanged=!same(series,previousBls?.series),
     censusChanged=!same(observations,previousCensus?.observations);
 
