@@ -268,7 +268,7 @@ test("registered R6 BLS v2 budgets are 7 release and 14 two-window backfill call
   assert.equal(backfill, 14);
   assert.equal(groups.reduce((sum, group) => sum + (EMPLOYMENT_R6_GROUPS[group].seriesIds?.length ?? 114), 0), 131);
   assert.deepEqual(planBlsYearWindows({ mode: "BACKFILL", currentYear: 2026 }),
-    [{ startyear: "2016", endyear: "2025" }, { startyear: "2026", endyear: "2026" }]);
+    [{ startyear: "2015", endyear: "2025" }, { startyear: "2026", endyear: "2026" }]);
   assert.equal(groups.reduce((sum, group) => sum + expectedBlsCallsForGroup(group, { mode: "BACKFILL" }), 0), 18);
 });
 
@@ -307,8 +307,8 @@ test("registered R6 BED uses 50-series BLS v2 batches across existing two backfi
   assert.equal(result.snapshots.length, 6);
   assert.equal(result.rows.length, 228);
   assert.equal(result.rows[0].provenance.sourceUrl, BLS_R6_REGISTERED_API_URL);
-  assert.deepEqual([...new Set(calls.map(call => call.startyear))], ["2016", "2026"]);
-  assert.equal(calls.filter(call => call.startyear === "2016").flatMap(call => call.seriesid).length, 114);
+  assert.deepEqual([...new Set(calls.map(call => call.startyear))], ["2015", "2026"]);
+  assert.equal(calls.filter(call => call.startyear === "2015").flatMap(call => call.seriesid).length, 114);
   assert.equal(calls.filter(call => call.startyear === "2026").flatMap(call => call.seriesid).length, 114);
   assert.ok(!JSON.stringify(result.snapshots.map(x => x.detail)).includes(key));
 });
