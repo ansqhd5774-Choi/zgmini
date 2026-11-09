@@ -37,7 +37,7 @@ test("BACKFILL run history lookup uses persisted mode, not the latest RELEASE ru
   assert.deepEqual(select.values, ["EMPLOYMENT_R6_BLS_JOLTS", "BACKFILL"]);
 });
 
-test("BACKFILL planner skips completed groups despite later RELEASE runs and bounds retries", async () => {
+test("BACKFILL planner refreshes successful groups after a provider-window change and bounds retries", async () => {
   const previous = {
     BLS_EMPLOYMENT_SITUATION: {
       status: "SUCCESS", completed_at: "2026-11-08T01:00:00.000Z",
@@ -63,7 +63,7 @@ test("BACKFILL planner skips completed groups despite later RELEASE runs and bou
     storeFactory: () => store,
   });
   assert.deepEqual(plan.map(x => [x.groupName, x.due, x.status]), [
-    ["BLS_EMPLOYMENT_SITUATION", false, "BACKFILL_ALREADY_COMPLETE"],
+    ["BLS_EMPLOYMENT_SITUATION", true, "BACKFILL_WINDOW_REFRESH_DUE"],
     ["BLS_JOLTS", false, "BACKFILL_ALREADY_ATTEMPTED_TODAY"],
     ["BLS_ECI", true, "BACKFILL_DUE"],
   ]);
@@ -76,6 +76,111 @@ test("BACKFILL planner skips completed groups despite later RELEASE runs and bou
   });
   assert.equal(retryPlan[0].status, "BACKFILL_RETRY_DUE");
   assert.equal(retryPlan[0].due, true);
+});
+
+test("BACKFILL window refresh preserves today's attempt guard and other completed groups", async () => {
+  const previous = {
+    BLS_EMPLOYMENT_SITUATION: {
+      status: "SUCCESS", completed_at: "2026-11-09T01:00:00.000Z",
+      detail_json: JSON.stringify({ mode: "BACKFILL", backfillYear: 2026 }),
+    },
+    DOL_UI_WEEKLY_CLAIMS: {
+      status: "SUCCESS", completed_at: "2026-11-08T01:00:00.000Z",
+      detail_json: JSON.stringify({ mode: "BACKFILL", backfillYear: 2026 }),
+    },
+    BLS_JOLTS: {
+      status: "SUCCESS", completed_at: "2026-11-08T01:00:00.000Z",
+      detail_json: JSON.stringify({ mode: "BACKFILL", backfillYear: 2026 }),
+    },
+  };
+  const store = {
+    async initialize() {},
+    async getLatestRunInMode(provider) {
+      return previous[provider.replace("EMPLOYMENT_R6_", "")] ?? null;
+    },
+  };
+  const planAt = date => planEmploymentR6Collection({
+    db: { prepare() { return {}; } }, now: () => new Date(date), mode: "BACKFILL",
+    groups: ["BLS_EMPLOYMENT_SITUATION", "DOL_UI_WEEKLY_CLAIMS", "BLS_JOLTS"],
+    storeFactory: () => store,
+  });
+  const today = await planAt("2026-11-09T12:00:00.000Z");
+  assert.deepEqual(today.map(x => [x.groupName, x.due, x.status]), [
+    ["BLS_EMPLOYMENT_SITUATION", false, "BACKFILL_ALREADY_ATTEMPTED_TODAY"],
+    ["DOL_UI_WEEKLY_CLAIMS", true, "BACKFILL_WINDOW_REFRESH_DUE"],
+    ["BLS_JOLTS", false, "BACKFILL_ALREADY_COMPLETE"],
+  ]);
+  const tomorrow = await planAt("2026-11-10T12:00:00.000Z");
+  assert.equal(tomorrow[0].due, true);
+  assert.equal(tomorrow[0].status, "BACKFILL_WINDOW_REFRESH_DUE");
+
+  previous.BLS_EMPLOYMENT_SITUATION.detail_json = JSON.stringify({
+    mode: "BACKFILL", backfillYear: 2026, backfillWindowVersion: "BLS_2015_LEAD_IN_V1",
+  });
+  previous.DOL_UI_WEEKLY_CLAIMS.detail_json = JSON.stringify({
+    mode: "BACKFILL", backfillYear: 2026, backfillWindowVersion: "DOL_ETA539_600_WEEKS_V1",
+  });
+  const complete = await planAt("2026-11-10T12:00:00.000Z");
+  assert.deepEqual(complete.map(x => [x.groupName, x.due, x.status]), [
+    ["BLS_EMPLOYMENT_SITUATION", false, "BACKFILL_ALREADY_COMPLETE"],
+    ["DOL_UI_WEEKLY_CLAIMS", false, "BACKFILL_ALREADY_COMPLETE"],
+    ["BLS_JOLTS", false, "BACKFILL_ALREADY_COMPLETE"],
+  ]);
+});
+
+test("BACKFILL records the expanded window only when raw snapshot metadata verifies it", async () => {
+  const savedRuns = [];
+  const store = {
+    async initialize() {},
+    async getLatestRunInMode() { return null; },
+    async acquire() { return { acquired: true }; },
+    async release() { return true; },
+    async getProviderRequestsSince() { return 0; },
+    async writeRawSnapshot() { return { snapshotId: 1, bodySha256: "fixture", chunkCount: 1, noop: false }; },
+    async upsertObservationRows({ rows }) {
+      return { inserted: rows.length, revised: 0, noop: 0, rejected: 0 };
+    },
+    async recordRun(run) { savedRuns.push(run); return savedRuns.length; },
+  };
+  let expanded = true;
+  const provider = {
+    async fetchGroup(groupName) {
+      if (groupName === "BLS_EMPLOYMENT_SITUATION") {
+        const windows = [
+          { startyear: expanded ? "2015" : "2016", endyear: "2025" },
+          { startyear: "2026", endyear: "2026" },
+        ];
+        return {
+          rows: [{ logicalSeriesId: "AHE", observationDate: "2026-10-31" }],
+          snapshots: windows.map(window => ({
+            releaseGroup: groupName, provider: "BLS", detail: { window },
+          })),
+          requestCount: 2,
+        };
+      }
+      return {
+        rows: [{ logicalSeriesId: "INITIAL_CLAIMS", observationDate: "2026-10-31" }],
+        snapshots: [{
+          requestKey: expanded ? "DOL_ETA539:600w" : "DOL_ETA539:530w",
+          detail: { historyWeeks: expanded ? 600 : 530 },
+        }],
+        requestCount: 2,
+      };
+    },
+  };
+  const run = () => runEmploymentR6CollectionStep({
+    env: { BLS_API_KEY: "test-only-fake" }, db: { prepare() { return {}; } },
+    mode: "BACKFILL", groups: ["BLS_EMPLOYMENT_SITUATION", "DOL_UI_WEEKLY_CLAIMS"],
+    now: () => new Date("2026-11-10T12:00:00.000Z"),
+    storeFactory: () => store, providerFactory: () => provider,
+  });
+  assert.equal((await run()).status, "SUCCESS");
+  assert.equal(savedRuns[0].detail.backfillWindowVersion, "BLS_2015_LEAD_IN_V1");
+  assert.equal(savedRuns[1].detail.backfillWindowVersion, "DOL_ETA539_600_WEEKS_V1");
+  expanded = false;
+  assert.equal((await run()).status, "SUCCESS");
+  assert.equal(Object.hasOwn(savedRuns[2].detail, "backfillWindowVersion"), false);
+  assert.equal(Object.hasOwn(savedRuns[3].detail, "backfillWindowVersion"), false);
 });
 
 test("BACKFILL does not call BLS provider when remaining R6 quota is insufficient", async () => {
