@@ -24,6 +24,7 @@ function fixture(used,{verified=true}={}){
     schema:BLS_UNREGISTERED_SCHEMA,coverageAttested:verified,
     requestTimes:Array(used).fill(now-1000),leases:{},
   }));
+  fs.writeFileSync(path.join(base,'bls-unregistered-reservations.journal'),'');
   return base;
 }
 const clean=base=>fs.rmSync(base,{recursive:true,force:true});
@@ -75,6 +76,19 @@ test('lock contention and missing, unverified or corrupt ledger fail closed',()=
   const unverified=fixture(0,{verified:false});
   try{assert.throws(()=>reserveOneUnregisteredBlsRequest({base:unverified,now}),
     /BLS_UNREG_LEDGER_INVALID/);}finally{clean(unverified);}
+});
+
+test('torn journal or missing durable journal stops before any new request',()=>{
+  const base=fixture(0);
+  try{
+    fs.writeFileSync(path.join(base,'bls-unregistered-reservations.journal'),
+      '{"type":"ONE","at":');
+    assert.throws(()=>reserveOneUnregisteredBlsRequest({base,now}),
+      /BLS_UNREG_JOURNAL_INVALID/);
+    fs.unlinkSync(path.join(base,'bls-unregistered-reservations.journal'));
+    assert.throws(()=>reserveOneUnregisteredBlsRequest({base,now}),
+      /BLS_UNREG_JOURNAL_UNAVAILABLE/);
+  }finally{clean(base);}
 });
 
 test('no stale lease reuse after 24 hours and ordinary reservations age out',()=>{
