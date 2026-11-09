@@ -5,7 +5,7 @@ import {scoreInputLineage,scoreInputRebuildDecision} from '../lib/score-history/
 const A='a'.repeat(64),B='b'.repeat(64);
 const macro={key:'macro',state:'READY',observationId:'2026-10',revisionId:'original',bodySha256:A};
 const credit={key:'credit',state:'READY',observationId:'2026-10',revisionId:'original',bodySha256:B};
-const make=(overrides={})=>scoreInputLineage({scoreId:'D27',methodologyVersion:'R6',eligibilityState:'READY',sources:[macro,credit],...overrides});
+const make=(overrides={})=>scoreInputLineage({scoreId:'sampleCreditRisk',methodologyVersion:'TEST_R1',eligibilityState:'READY',sources:[macro,credit],...overrides});
 
 test('same effective inputs are stable despite reorder and fresh output save times',()=>{
  const first=make();
@@ -42,7 +42,7 @@ test('an effective trading-session boundary changes the signature only when supp
 });
 
 test('approved methodology version is part of the input identity',()=>{
- assert.notEqual(make().inputSignature,make({methodologyVersion:'R7'}).inputSignature);
+ assert.notEqual(make().inputSignature,make({methodologyVersion:'TEST_R2'}).inputSignature);
 });
 
 test('unchanged input can skip only after verified publication; failure remains retryable',()=>{
