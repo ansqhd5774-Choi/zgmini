@@ -103,12 +103,6 @@ const worker = {
     const canonicalRedirect=canonicalHttpsRedirect(request);
     if(canonicalRedirect) return canonicalRedirect;
     const url = new URL(request.url);
-    if (url.pathname.replace(/\/$/, '') === '/signin-with-chatgpt') {
-      return new Response('This sign-in endpoint is no longer available.', {
-        status: 410,
-        headers: {'content-type': 'text/plain; charset=utf-8', 'x-robots-tag': 'noindex, nofollow', 'cache-control': 'no-store'},
-      });
-    }
     if (url.pathname.replace(/\/$/, '') === '/api/internal/korea-rev7-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx});
     if (url.pathname.replace(/\/$/, '') === '/api/internal/market-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx,refresh:runMarketExternalRefresh,responseBudgetMs:5000,logTag:'MARKET_EXTERNAL'});
     if (url.pathname.replace(/\/$/, '') === '/api/internal/employment-r6-scheduled') return koreaRev7ExternalScheduler(request, runtimeEnv, {ctx,refresh:runEmploymentR6Producer,responseBudgetMs:5000,logTag:'EMP_R6_EXTERNAL'});
