@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {createHash} from 'node:crypto';
 import {
   BLS_UNREGISTERED_SCHEMA,
   reserveOneUnregisteredBlsRequest as reserveOneStrict,
@@ -21,11 +22,17 @@ const job='fce55270-a893-44c6-b9c4-0aadd73059ce';
 const competingJob='0a70cc67-a3da-4cd8-8d53-adcbb44a2186';
 function fixture(used,{verified=true}={}){
   const base=fs.mkdtempSync(path.join(os.tmpdir(),'r6-bls-slots-'));
-  fs.writeFileSync(path.join(base,'bls-unregistered-reservations.json'),JSON.stringify({
+  const seed=JSON.stringify({
     schema:BLS_UNREGISTERED_SCHEMA,coverageAttested:verified,
     requestTimes:Array(used).fill(now-1000),leases:{},
-  }));
+  });
+  const hash=s=>createHash('sha256').update(s).digest('hex');
+  fs.writeFileSync(path.join(base,'bls-unregistered-reservations.json'),seed);
   fs.writeFileSync(path.join(base,'bls-unregistered-reservations.journal'),'');
+  fs.writeFileSync(path.join(base,'bls-unregistered-reservations.anchor'),JSON.stringify({
+    schema:'ZGMINI_BLS_UNREGISTERED_ANCHOR_V1',seedSha256:hash(seed),
+    journalSha256:hash(''),sequence:0,
+  }));
   return base;
 }
 const clean=base=>fs.rmSync(base,{recursive:true,force:true});
@@ -111,6 +118,39 @@ test('torn journal or missing durable journal stops before any new request',()=>
     fs.unlinkSync(path.join(base,'bls-unregistered-reservations.journal'));
     assert.throws(()=>reserveOneUnregisteredBlsRequest({base,now}),
       /BLS_UNREG_JOURNAL_UNAVAILABLE/);
+  }finally{clean(base);}
+});
+
+test('whole-line prefix truncation and seed shrink are rejected by sealed head',()=>{
+  const base=fixture(1);
+  try{
+    reserveOneUnregisteredBlsRequest({base,now});
+    reserveOneUnregisteredBlsRequest({base,now:now+1});
+    const journalPath=path.join(base,'bls-unregistered-reservations.journal');
+    const original=fs.readFileSync(journalPath,'utf8');
+    fs.writeFileSync(journalPath,original.split('\n')[0]+'\n');
+    assert.throws(()=>reserveOneUnregisteredBlsRequest({base,now:now+2}),
+      /BLS_UNREG_ANCHOR_MISMATCH/);
+    fs.writeFileSync(journalPath,original);
+    const seedPath=path.join(base,'bls-unregistered-reservations.json');
+    const seed=JSON.parse(fs.readFileSync(seedPath,'utf8'));
+    seed.requestTimes=[];
+    fs.writeFileSync(seedPath,JSON.stringify(seed));
+    assert.throws(()=>reserveOneUnregisteredBlsRequest({base,now:now+2}),
+      /BLS_UNREG_ANCHOR_MISMATCH/);
+  }finally{clean(base);}
+});
+
+test('fsync failure never returns a permit and incomplete anchor stops next request',()=>{
+  const base=fixture(0),oldFsync=fs.fsyncSync;
+  try{
+    fs.fsyncSync=()=>{throw Error('simulated-storage-error');};
+    assert.throws(()=>reserveOneUnregisteredBlsRequest({base,now}),
+      /BLS_UNREG_JOURNAL_DURABILITY_UNKNOWN/);
+  }finally{fs.fsyncSync=oldFsync;}
+  try{
+    assert.throws(()=>reserveOneUnregisteredBlsRequest({base,now:now+1}),
+      /BLS_UNREG_ANCHOR_MISMATCH/);
   }finally{clean(base);}
 });
 
