@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {EMPLOYMENT_R6_FEATURES, EMPLOYMENT_R6_FORMULA_CONTRACT} from '../lib/market-score/employment-r6-formula.mjs';
 import {computeFeaturePoint, computeFamilyScores, computeEmploymentScore} from '../lib/market-score/employment-r6-feature-engine.mjs';
 import {buildEmploymentR6OneYearReadModel} from '../lib/market-score/employment-r6-one-year-read-model.mjs';
-import {validEmploymentR6PublicDisplay} from '../worker/employment-r6-public-display.mjs';
+import {validEmploymentR6PublicDisplay,employmentR6StoredDisplayResponse} from '../worker/employment-r6-public-display.mjs';
 
 const cpsIds=['U3_UNEMPLOYMENT','U6_UNEMPLOYMENT','LFPR','EPOP'];
 const find=id=>EMPLOYMENT_R6_FEATURES.find(f=>f.id===id);
@@ -109,4 +109,22 @@ test('the new formula reads as a valid public snapshot only with genuine officia
   ],{asOfDate:'2026-11-01',sourceStoredAt});
   assert.equal(corrupted.indicators[0].scoreStatus,'PARTIAL_SOURCE_CONFLICT');
   assert.equal(validEmploymentR6PublicDisplay(corrupted),false);
+});
+
+test('rollout reads verified R1 while keeping R2-only writer validation and version labels',async()=>{
+  const sourceStoredAt=Date.parse('2026-11-01T00:00:00.000Z');
+  const model=buildEmploymentR6OneYearReadModel([],{asOfDate:'2026-11-01',sourceStoredAt});
+  const legacy=structuredClone(model);
+  legacy.formulaHash='sha256:18e18d1025d8c5b1ea9e4aa1bdd33596cfb8b5d5df7e59a6c2629f230be5480d';
+  legacy.methodologyVersion='EMP-R6-FORMULA-R1';
+  assert.equal(validEmploymentR6PublicDisplay(legacy),false,'new writer must not accept old hash');
+  assert.equal(validEmploymentR6PublicDisplay(legacy,{allowLegacy:true}),true,'GET may serve verified R1');
+  const publishedAt=sourceStoredAt+1000;
+  const db={prepare:()=>({bind:()=>({first:async()=>({body:JSON.stringify(legacy),stored_at:publishedAt})})})};
+  const response=await employmentR6StoredDisplayResponse(new Request('https://zgmini.kr/api/employment-r6/observations'),db,{now:publishedAt+5000});
+  assert.equal(response.status,200);
+  assert.equal((await response.json()).formulaHash,legacy.formulaHash);
+  const mismatched=structuredClone(legacy);
+  mismatched.methodologyVersion=model.methodologyVersion;
+  assert.equal(validEmploymentR6PublicDisplay(mismatched,{allowLegacy:true}),false);
 });
