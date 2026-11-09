@@ -97,6 +97,34 @@ test("BACKFILL does not call BLS provider when remaining R6 quota is insufficien
   assert.equal(run.groupResults[0].expectedRequests, 2);
 });
 
+test("provider calls remain counted when a later raw snapshot DB write fails", async () => {
+  const runs = [];
+  const store = {
+    async initialize() {},
+    async getLatestRunInMode() { return null; },
+    async acquire() { return { acquired: true }; },
+    async release() { return true; },
+    async getProviderRequestsSince() { return 0; },
+    async writeRawSnapshot() { throw Error("SIMULATED_LOCAL_DB_WRITE_STOP"); },
+    async recordRun(run) { runs.push(run); return 1; },
+  };
+  const result = await runEmploymentR6CollectionStep({
+    db: { prepare() { return {}; } },
+    mode: "BACKFILL", groups: ["BLS_JOLTS"],
+    now: () => new Date("2026-11-09T12:00:00.000Z"),
+    storeFactory: () => store,
+    providerFactory: () => ({
+      async fetchGroup() { return { requestCount: 2, rows: [], snapshots: [{ body: "test" }] }; },
+    }),
+  });
+  assert.equal(result.status, "FAIL");
+  assert.equal(result.providerRequests, 2);
+  assert.equal(result.groupResults[0].providerRequests, 2);
+  assert.equal(runs.length, 1);
+  assert.equal(runs[0].providerRequests, 2);
+  assert.equal(runs[0].failureCode, "SIMULATED_LOCAL_DB_WRITE_STOP");
+});
+
 test("DOL ETA-539 failure preserves valid national claims as a partial group", async () => {
   const fetchedUrls = [];
   const provider = createEmploymentR6Provider({
