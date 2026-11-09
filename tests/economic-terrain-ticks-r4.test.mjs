@@ -13,11 +13,11 @@ test('axis aligns centered labels with bars and shrinks by 21 pixels',()=>{
  assert.match(revised,/\.zg-terrain-axis-plot\{display:flex;flex-direction:column\}/);
 });
 
-test('six boundary ticks appear above unchanged five color zones',()=>{
+test('six boundary ticks appear above five unified economic score zones',()=>{
  assert.match(revised,/\.zg-terrain-axis-ticks\{order:-1;flex:0 0 14px;height:14px\}/);
  assert.match(revised,/\.zg-terrain-axis-bands\{order:0;flex:0 0 45px;height:45px\}/);
- assert.match(component,/\[0,25,45,55,75,100\]/);
- for(const pct of [25,20,10,20,25])assert.ok(component.includes(`width:${pct},color:`));
+ assert.match(component,/\[0,25,40,60,75,100\]/);
+ for(const pct of [25,15,20,15,25])assert.ok(component.includes(`width:${pct},color:`));
 });
 
 test('mobile keeps precise tick positions while removing bottom gutter',()=>{
