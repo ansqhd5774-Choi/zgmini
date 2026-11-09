@@ -13,7 +13,7 @@ test('monthly backfill stays a direct CLI with the prior report/exit contract',(
  assert.match(source,/blsUnregistered=undefined/);
  assert.match(source,/createQuotaFetch\(\{base,originalFetch,mode:"enforce",blsUnregistered\}\)/);
  assert.match(source,/if\(process\.argv\[1\]&&path\.resolve\(process\.argv\[1\]\)===fileURLToPath\(import\.meta\.url\)\)/);
- assert.match(source,/backfillMonthlyOneYear\(\)/);
+ assert.match(source,/backfillMonthlyOneYear\(\{base,blsUnregistered:resolveBlsCoreActivation\(base\)\}\)/);
  assert.match(source,/if\(report\.status==="FAILED"\)process\.exitCode=1/);
  assert.match(source,/console\.log\(JSON\.stringify\(report\)\)/);
 });
@@ -32,6 +32,8 @@ test('import is side-effect-free; explicit in-process grant is forwarded and cle
    'export const createQuotaFetch=opts=>{globalThis.__r6MonthlyTest.options=opts;return {fetch:opts.originalFetch,summary:()=>({})}};\n');
   fs.writeFileSync(path.join(sandbox,'d1.mjs'),
    'export const save=()=>{globalThis.__r6MonthlyTest.saveCount++};\n');
+  fs.writeFileSync(path.join(sandbox,'bls-core-activation.mjs'),
+   'export const resolveBlsCoreActivation=()=>undefined;\n');
   globalThis.__r6MonthlyTest=state;
   const imported=await import(pathToFileURL(path.join(sandbox,'backfill-monthly-one-year.mjs')).href);
   assert.equal(typeof imported.backfillMonthlyOneYear,'function');
