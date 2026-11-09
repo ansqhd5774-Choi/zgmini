@@ -20,7 +20,7 @@ test("official DOL Thanksgiving Wednesday supersedes the normal Thursday release
   assert.equal(due.releaseAt,"2026-11-25T13:30:00.000Z");
   const stored=releasePlanForGroup("DOL_UI_WEEKLY_CLAIMS",{
     now:"2026-11-26T16:00:00Z",
-    latestRun:{status:"SUCCESS",detail_json:JSON.stringify({releaseAt:due.releaseAt})},
+    latestRun:{status:"SUCCESS",detail_json:JSON.stringify({releaseAt:due.releaseAt,latestInitialClaimsObservationDate:"2026-11-21"})},
   });
   assert.equal(stored.status,"RELEASE_ALREADY_STORED");
 });
@@ -78,4 +78,16 @@ test("state/metro combined fetch keeps each source's actual release date stable"
   // The unchanged state observation must not acquire a synthetic metro-date revision.
   assert.equal(stateDay[0].value,metroDay[0].value);
   assert.equal(stateDay[0].releaseDate,metroDay[0].releaseDate);
+});
+
+
+test("DOL success must carry current-release observation proof before suppressing another attempt",()=>{
+  const releaseAt="2026-11-05T13:30:00.000Z";
+  const plan=detail=>releasePlanForGroup("DOL_UI_WEEKLY_CLAIMS",{
+    now:"2026-11-06T12:00:00Z",
+    latestRun:{status:"SUCCESS",detail_json:JSON.stringify({releaseAt,...detail})},
+  });
+  assert.equal(plan({}).status,"DUE");
+  assert.equal(plan({latestInitialClaimsObservationDate:"2026-10-10"}).status,"DUE");
+  assert.equal(plan({latestInitialClaimsObservationDate:"2026-10-31"}).status,"RELEASE_ALREADY_STORED");
 });
