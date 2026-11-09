@@ -128,6 +128,65 @@ test("BACKFILL window refresh preserves today's attempt guard and other complete
   ]);
 });
 
+test("a separately approved manual BACKFILL request may retry a same-day partial without redoing complete groups", async () => {
+  const store = {
+    async initialize() {},
+    async getLatestRunInMode(provider) {
+      if (provider.endsWith("BLS_JOLTS")) return {
+        status: "PARTIAL", completed_at: "2026-11-10T00:30:00.000Z",
+        detail_json: '{"mode":"BACKFILL","backfillYear":2026}',
+      };
+      return {
+        status: "SUCCESS", completed_at: "2026-11-10T00:30:00.000Z",
+        detail_json: JSON.stringify({
+          mode: "BACKFILL", backfillYear: 2026, backfillWindowVersion: "BLS_2015_LEAD_IN_V1",
+        }),
+      };
+    },
+  };
+  const args = {
+    db: {prepare() {return {};}},
+    now: () => new Date("2026-11-10T01:00:00.000Z"),
+    mode: "BACKFILL",
+    groups: ["BLS_EMPLOYMENT_SITUATION", "BLS_JOLTS"],
+    storeFactory: () => store,
+  };
+  const automatic = await planEmploymentR6Collection(args);
+  assert.deepEqual(automatic.map(x => [x.due,x.status]), [
+    [false,"BACKFILL_ALREADY_COMPLETE"],[false,"BACKFILL_ALREADY_ATTEMPTED_TODAY"],
+  ]);
+  const manual = await planEmploymentR6Collection({
+    ...args,approvedManualRequestId:"12f859ac-a464-4ddb-b6c4-96c5bdd44d22",
+  });
+  assert.deepEqual(manual.map(x => [x.due,x.status]), [
+    [false,"BACKFILL_ALREADY_COMPLETE"],[true,"BACKFILL_RETRY_DUE"],
+  ]);
+  await assert.rejects(() => planEmploymentR6Collection({
+    ...args, approvedManualRequestId:"unverified",
+  }), /R6_MANUAL_REQUEST_ID_INVALID/);
+});
+
+test("approved manual ONE_YEAR permits same-day retry; ordinary scheduled planner retains day guard", async () => {
+  const store = {
+    async initialize() {},
+    async getLatestRun() {
+      return {completed_at:"2026-11-10T00:30:00.000Z",
+        detail_json:'{"mode":"ONE_YEAR"}'};
+    },
+  };
+  const args = {
+    db:{prepare() {return {};}},
+    now:() => new Date("2026-11-10T01:00:00.000Z"),
+    mode:"ONE_YEAR",groups:["BLS_JOLTS"],storeFactory:() => store,
+  };
+  const ordinary=await planEmploymentR6Collection(args);
+  assert.deepEqual(ordinary.map(x=>[x.due,x.status]), [[false,"ONE_YEAR_ALREADY_ATTEMPTED"]]);
+  const manual=await planEmploymentR6Collection({
+    ...args,approvedManualRequestId:"b938f56d-96f0-4840-8888-94e3ff108d29",
+  });
+  assert.deepEqual(manual.map(x=>[x.due,x.status]), [[true,"ONE_YEAR_DUE"]]);
+});
+
 test("BACKFILL records the expanded window only when raw snapshot metadata verifies it", async () => {
   const savedRuns = [];
   const store = {
