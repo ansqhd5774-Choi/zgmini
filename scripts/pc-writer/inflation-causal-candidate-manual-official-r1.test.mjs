@@ -3,21 +3,45 @@ import assert from 'node:assert/strict';
 import {
   parseOfficialBlsHousingFlatfile,parseOfficialCensusInventoryRows,
   parseOfficialCensusInventoryWorkbook,planOfficialManualCandidateDocuments,
-  BLS_RENT_ID,BLS_OER_ID,
+  BLS_RENT_ID,BLS_OER_ID,fetchOfficialManualCandidateSources,
+  BLS_HOUSING_URL,CENSUS_INVENTORY_URL,
 } from './inflation-causal-candidate-manual-official-r1.mjs';
 
 const header='series_id\tyear\tperiod\tvalue\tfootnote_codes';
-const rows=[
-  `${BLS_RENT_ID}\t2025\tM09\t438.237`,
-  `${BLS_RENT_ID}\t2025\tM10\t-\tX`,
-  `${BLS_RENT_ID}\t2026\tM08\t449.321`,
-  `${BLS_RENT_ID}\t2026\tM09\t450.429`,
-  `${BLS_OER_ID}\t2025\tM09\t431.134`,
-  `${BLS_OER_ID}\t2025\tM10\t-\tX`,
-  `${BLS_OER_ID}\t2026\tM08\t443.677`,
-  `${BLS_OER_ID}\t2026\tM09\t445.195`,
-];
+const dates=['2025-09','2025-10','2025-11','2025-12','2026-01',
+  '2026-02','2026-03','2026-04','2026-05','2026-06',
+  '2026-07','2026-08','2026-09'];
+const values={
+  [BLS_RENT_ID]:[438.237,null,439.002,440.189,441.285,441.865,
+    442.705,445.118,446.729,447.397,448.542,449.321,450.429],
+  [BLS_OER_ID]:[431.134,null,432.524,433.866,434.814,435.784,
+    437.024,439.341,440.620,441.685,442.836,443.677,445.195],
+};
+const rows=Object.entries(values).flatMap(([series,observations])=>
+  observations.map((value,index)=>{
+    const [year,month]=dates[index].split('-');
+    return `${series}\t${year}\tM${month}\t${value??'-'}${value===null?'\tX':''}`;
+  }));
 const encode=x=>Buffer.from(x,'utf8');
+
+test('explicit one-time static GET uses official URLs and no registered API endpoint',async()=>{
+  const requests=[];
+  const fakeFetch=async(url,options)=>{
+    requests.push({url,options});
+    const bytes=url===BLS_HOUSING_URL?encode([header,...rows].join('\n')):
+      Buffer.from([0x50,0x4b,0x03,0x04,...Array(28).fill(0)]);
+    return new Response(bytes,{status:200});
+  };
+  const collected=await fetchOfficialManualCandidateSources({fetchImpl:fakeFetch});
+  assert.deepEqual(requests.map(x=>x.url),[BLS_HOUSING_URL,CENSUS_INVENTORY_URL]);
+  assert.ok(requests.every(x=>x.options.redirect==='manual'));
+  assert.equal(collected.supplierApiCalls,0);
+  assert.equal(collected.coreCheckpointWrites,0);
+  assert.match(collected.sourceHashes.bls,/^[a-f0-9]{64}$/);
+  await assert.rejects(()=>fetchOfficialManualCandidateSources({
+    fetchImpl:async()=>new Response('',{status:302,headers:{location:'https://example.com'}}),
+  }),/INFL_MANUAL_OFFICIAL_DOWNLOAD_REDIRECT_DENIED/);
+});
 
 test('BLS official flatfile recognizes both original CPI series, preserving official missing month',()=>{
   const result=parseOfficialBlsHousingFlatfile(encode([header,...rows].join('\n')));
@@ -32,6 +56,15 @@ test('BLS official flatfile recognizes both original CPI series, preserving offi
 test('BLS flatfile stops on duplicate month instead of silently overwriting',()=>{
   assert.throws(()=>parseOfficialBlsHousingFlatfile(encode([header,...rows,rows[0]].join('\n'))),
     /INFL_MANUAL_BLS_DUPLICATE/);
+});
+
+test('BLS rejects a short excerpt and mismatched latest observation',()=>{
+  const short=rows.filter(x=>x.includes('\tM08\t')||x.includes('\tM09\t'));
+  assert.throws(()=>parseOfficialBlsHousingFlatfile(encode([header,...short].join('\n'))),
+    /INFL_MANUAL_BLS_RECENT_HISTORY_INCOMPLETE/);
+  assert.throws(()=>parseOfficialBlsHousingFlatfile(encode([
+    header,...rows.filter(x=>!(x.startsWith(BLS_OER_ID)&&x.includes('2026\tM09'))),
+  ].join('\n'))),/INFL_MANUAL_BLS_LATEST_MISMATCH/);
 });
 
 test('BLS flatfile never converts a nonofficial missing value to zero',()=>{
@@ -95,8 +128,9 @@ test('manual plan preserves existing PPI/history and keeps static origin auditab
   assert.deepEqual(result.documents.bls.series.WPSFD4,prevBls.series.WPSFD4);
   assert.equal(result.documents.bls.series[BLS_RENT_ID].at(-1).value,450.429);
   assert.equal(result.documents.census.observations.at(-1).value,976044);
-  assert.equal(result.documents.bls.provenanceByGroup.cpi.origin,'BLS_OFFICIAL_STATIC_FILE');
-  assert.equal(result.documents.census.provenance[0].origin,'CENSUS_OFFICIAL_HISTORICAL_XLSX');
+  assert.equal(result.documents.bls.provenanceByGroup.cpi.origin,'CLAIMED_BLS_OFFICIAL_STATIC_COPY');
+  assert.equal(result.documents.census.provenance[0].origin,'CLAIMED_CENSUS_OFFICIAL_XLSX_COPY');
+  assert.equal(result.documents.bls.provenanceByGroup.cpi.provenanceVerified,false);
   assert.equal(result.apiCalls,0);
   assert.equal(result.dbWrites,0);
   assert.equal(result.coreCheckpointWrites,0);
