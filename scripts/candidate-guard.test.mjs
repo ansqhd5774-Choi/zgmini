@@ -14,7 +14,10 @@ test('real stored public feed reader works through SELECT-only boundary',async()
 test('mutation and internal GET fail closed before handler',async()=>{
  let calls=0;const w=candidateWorker({fetch(){calls++;return new Response('ok');}});
  for(const method of ['POST','PUT','PATCH','DELETE']) assert.equal((await w.fetch(new Request('https://candidate/api/market-score',{method}),{},{})).status,403);
- for(const p of ['/api/internal/market-refresh','/api/%69nternal/market-refresh','/api/favorites','/signin-with-chatgpt']) assert.equal((await w.fetch(new Request('https://candidate'+p),{},{})).status,403);
+ for(const p of ['/api/internal/market-refresh','/api/%69nternal/market-refresh','/api/favorites']) assert.equal((await w.fetch(new Request('https://candidate'+p),{},{})).status,403);
+ const retired=await w.fetch(new Request('https://candidate/signin-with-chatgpt?return_to=/'),{},{});
+ assert.equal(retired.status,410);assert.equal(retired.headers.get('x-robots-tag'),'noindex, nofollow');
+ assert.equal((await w.fetch(new Request('https://candidate/signin-with-chatgpt',{method:'POST'}),{},{})).status,403);
  assert.equal(calls,0);assert.equal(w.scheduled,undefined);
 });
 test('public GET maintained and spoofed identity removed',async()=>{
