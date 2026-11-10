@@ -5,6 +5,9 @@ import {EIA_SOURCE_URLS,parseEiaScheduleHtml,parseEiaWpsrCalendarJson} from '../
 import {USDA_WASDE_URL,parseUsdaWasdeHtml} from '../../lib/usda-calendar.mjs';
 import {CFTC_COT_URL,parseCftcCotHtml} from '../../lib/cftc-calendar.mjs';
 import {TREASURY_CUSIP_XML_URL,parseTreasuryCusipXml} from '../../lib/treasury-calendar.mjs';
+import {TREASURY_AUCTION_HISTORY_URL,fetchTreasuryAuctionHistoryPages} from '../../lib/treasury-auction-history-source.mjs';
+import {TREASURY_DIRECT_HISTORY_URL,fetchTreasuryDirectAuctionHistory,parseTreasuryDirectAuctionRows} from '../../lib/treasury-auction-history-taws.mjs';
+import {parseTreasuryAuctionHistoryRows,mergeTreasuryHistoryEvents} from '../../lib/treasury-auction-history.mjs';
 import {TIC_RELEASE_DATES_URL,parseTicReleaseDatesHtml} from '../../lib/tic-calendar.mjs';
 import {publicFeedStore} from '../../worker/public-feed-store.mjs';
 import {marketOperationalStore} from '../../worker/market-operational-store.mjs';
@@ -14,6 +17,8 @@ const requestHeaders={'user-agent':'ZGMINI/1.0 (+https://zgmini.kr/about/)'};
 const isoYear=(date,year)=>date.startsWith(String(year)+'-');
 const monthName=['january','february','march','april','may','june','july','august','september','october','november','december'];
 const TREASURY_FAILURE_CODE=/^TREASURY_(?:HTTP_[1-5]\d{2}|REDIRECT_NOT_ALLOWED|XML_TOO_LARGE_OR_EMPTY|OFFICIAL_XML_INVALID|RELEASE_ENTRIES_MISSING|ENTRY_SECTIONS_MISSING|ENTRY_FIELD_INVALID|DATES_UNAVAILABLE|STORED_DATES_UNAVAILABLE|DUPLICATE_CUSIP_DATE|FROM_DATE_INVALID|TIMEOUT|FETCH_FAILED|COLLECTION_FAILED)$/;
+const TREASURY_HISTORY_FAILURE_CODE=/^TREASURY_HISTORY_(?:HTTP_[1-5]\d{2}|WINDOW_INVALID|PAGE_INVALID|CLIENT_INVALID|TIMEOUT|FETCH_FAILED|REDIRECT_NOT_ALLOWED|CONTENT_TYPE_INVALID|PAGE_TOO_LARGE|BODY_READ_FAILED|JSON_INVALID|PAGE_META_INVALID|PAGE_COUNT_MISMATCH|ROW_KEY_INVALID|PAGE_DUPLICATE|TOTAL_MISMATCH|READBACK_INVALID|ROWS_INVALID|ROW_INVALID|CUSIP_INVALID|AUCTION_DATE_INVALID|ANNOUNCEMENT_DATE_INVALID|REOPENING_INVALID|EVENT_CONFLICT|COLLECTION_FAILED)$/;
+const TREASURY_TAWS_FAILURE_CODE=/^TREASURY_TAWS_(?:HTTP_[1-5]\d{2}|WINDOW_INVALID|CLIENT_INVALID|TIMEOUT|FETCH_FAILED|REDIRECT_NOT_ALLOWED|CONTENT_TYPE_INVALID|TOO_LARGE|BODY_READ_FAILED|JSON_INVALID|ROWS_INVALID|ROW_INVALID|AUCTION_DATE_INVALID|RESULT_INVALID|CUSIP_INVALID|CHRONOLOGY_INVALID|TYPE_INVALID|REOPENING_INVALID|TERM_INVALID|DUPLICATE_AUCTION|AWARDED_DATES_MISSING|READBACK_INVALID)$/;
 
 // Only bounded, non-sensitive codes are returned to the existing PC-local
 // collection report. The public calendar source contract stays unchanged.
@@ -24,6 +29,11 @@ const safeTreasuryFailureCode=error=>{
  if(error?.name==='TimeoutError'||error?.name==='AbortError')return 'TREASURY_TIMEOUT';
  if(error?.name==='TypeError')return 'TREASURY_FETCH_FAILED';
  return 'TREASURY_COLLECTION_FAILED';
+};
+const safeTreasuryHistoryFailureCode=error=>{
+ const code=typeof error?.message==='string'?error.message:'';
+ return TREASURY_HISTORY_FAILURE_CODE.test(code)||TREASURY_TAWS_FAILURE_CODE.test(code)?
+  code:'TREASURY_HISTORY_COLLECTION_FAILED';
 };
 
 async function fetchEiaPart({store,key,kind,now,fetchImpl,countRequest}){
@@ -124,21 +134,30 @@ async function collectCftcSource({store,key,now,fetchImpl,countRequest,previous}
   coveredYears:[...coveredYears].sort()}};
 }
 
-async function collectTreasurySource({store,key,now,fetchImpl,countRequest,previous}){
+async function collectTreasurySource({store,privateStore,key,now,fetchImpl,countRequest,previous}){
  const url=TREASURY_CUSIP_XML_URL;
- countRequest();
- const response=await fetchImpl(url,{signal:AbortSignal.timeout(15000),headers:requestHeaders});
- if(!response.ok)throw Error('TREASURY_HTTP_'+response.status);
- if(response.url&&response.url!==url)throw Error('TREASURY_REDIRECT_NOT_ALLOWED');
- const xml=await response.text();
- if(!xml||xml.length>3*1024*1024)throw Error('TREASURY_XML_TOO_LARGE_OR_EMPTY');
- const official=parseTreasuryCusipXml(xml,{fromDate:'2025-01-01'});
- if(!official.length)throw Error('TREASURY_DATES_UNAVAILABLE');
- const inputKey=key+':treasury';
- await store.writeInput(inputKey,{text:xml,sourceUrl:url},now);
- const saved=await store.readInput(inputKey);
- const observed=parseTreasuryCusipXml(saved.body.text,{fromDate:'2025-01-01'});
- if(!observed.length)throw Error('TREASURY_STORED_DATES_UNAVAILABLE');
+ let observed=[],weeklyReady=false,weeklyFailureCode=null;
+ try{
+  countRequest();
+  const response=await fetchImpl(url,{signal:AbortSignal.timeout(15000),headers:requestHeaders});
+  if(!response.ok)throw Error('TREASURY_HTTP_'+response.status);
+  if(response.url&&response.url!==url)throw Error('TREASURY_REDIRECT_NOT_ALLOWED');
+  const xml=await response.text();
+  if(!xml||xml.length>3*1024*1024)throw Error('TREASURY_XML_TOO_LARGE_OR_EMPTY');
+  const official=parseTreasuryCusipXml(xml,{fromDate:'2025-01-01'});
+  if(!official.length)throw Error('TREASURY_DATES_UNAVAILABLE');
+  const inputKey=key+':treasury';
+  await store.writeInput(inputKey,{text:xml,sourceUrl:url},now);
+  const saved=await store.readInput(inputKey);
+  observed=parseTreasuryCusipXml(saved.body.text,{fromDate:'2025-01-01'});
+  if(!observed.length)throw Error('TREASURY_STORED_DATES_UNAVAILABLE');
+  weeklyReady=true;
+ }catch(error){
+  // A rotating weekly feed must not prevent the independent annual auction
+  // history from being collected. Preserve previous weekly dates on failure.
+  observed=[];
+  weeklyFailureCode=safeTreasuryFailureCode(error);
+ }
  const today=new Date(now).toISOString().slice(0,10);
  const observedIds=new Set(observed.map(e=>e.id));
  // This is a rotating weekly release: older still-upcoming auctions may no
@@ -146,9 +165,77 @@ async function collectTreasurySource({store,key,now,fetchImpl,countRequest,previ
  // Same CUSIP+kind in the new batch supersedes its prior future date.
  const older=(previous?.body?.events??[]).filter(e=>e.source==='treasury'&&
   (e.date<today||!observedIds.has(e.id)));
- const events=[...new Map([...older,...observed].map(e=>[e.id+':'+e.date,e])).values()];
- return {events,state:{status:'READY',checkedAt:new Date(now).toISOString(),
-  sourceUrl:RELEASE_SOURCES.treasury.page,coveredCusips:[...new Set(observed.map(e=>e.id.split('-').at(-1)))].length}};
+ let history=[],historyReady=false,historyFailureCode=null;
+ const fromDate=new Date(Date.parse(today+'T00:00:00Z')-364*86400000).toISOString().slice(0,10);
+ try{
+  // Full awarded history takes one TA_WS query. Its issue-date search has an
+  // extended endDate, but normalization only uses the requested auction days.
+  const fetched=await fetchTreasuryDirectAuctionHistory({fromDate,toDate:today,fetchImpl,countRequest});
+  const historyKey=key+':treasury:taws';
+  // The ~3MB original JSON exceeds publicFeedStore's single-input limit.
+  // Reuse the existing compressed, private PC input store instead of adding
+  // a table or sending the supplier's original rows to public D1.
+  await privateStore.writeInput(historyKey,{text:fetched.text,sourceUrl:TREASURY_DIRECT_HISTORY_URL,
+   fromDate,toDate:today,awardedCount:fetched.awardedCount},now);
+  const saved=await privateStore.readInput(historyKey);
+  if(saved?.storedAt!==now||saved.body?.fromDate!==fromDate||
+   saved.body?.toDate!==today||saved.body?.sourceUrl!==TREASURY_DIRECT_HISTORY_URL||
+   saved.body?.awardedCount!==fetched.awardedCount||saved.body?.text!==fetched.text)
+   throw Error('TREASURY_TAWS_READBACK_INVALID');
+  let raw;
+  try{raw=JSON.parse(saved.body.text);}catch{throw Error('TREASURY_TAWS_READBACK_INVALID');}
+  const rows=parseTreasuryDirectAuctionRows(raw,{fromDate,toDate:today});
+  if(rows.length!==fetched.awardedCount)throw Error('TREASURY_TAWS_READBACK_INVALID');
+  history=parseTreasuryAuctionHistoryRows(rows,{fromDate,toDate:today});
+  historyReady=true;
+ }catch(error){
+  // FiscalData can preserve some history, but its published data lagged the
+  // official auction results by 21 auctions on 2026-11-09. Never mark this
+  // incomplete fallback READY or overwrite the original TA_WS failure code.
+  historyFailureCode=safeTreasuryHistoryFailureCode(error);
+  try{
+   const fetched=await fetchTreasuryAuctionHistoryPages({fromDate,toDate:today,fetchImpl,countRequest});
+   const savedRows=[];
+   for(const page of fetched.pages){
+    const historyKey=`${key}:treasury:history:page:${page.number}`;
+    await store.writeInput(historyKey,{text:page.text,sourceUrl:TREASURY_AUCTION_HISTORY_URL,
+     fromDate,toDate:today,pageNumber:page.number},now);
+    const saved=await store.readInput(historyKey);
+    if(saved?.storedAt!==now||saved.body?.fromDate!==fromDate||
+     saved.body?.toDate!==today||saved.body?.pageNumber!==page.number||
+     saved.body?.text!==page.text)throw Error('TREASURY_HISTORY_READBACK_INVALID');
+    let parsed;
+    try{parsed=JSON.parse(saved.body.text);}catch{throw Error('TREASURY_HISTORY_READBACK_INVALID');}
+    if(!Array.isArray(parsed?.data)||parsed.data.length!==page.count||
+     Number(parsed?.meta?.count)!==page.count||
+     Number(parsed?.meta?.['total-count'])!==fetched.totalCount||
+     Number(parsed?.meta?.['total-pages'])!==fetched.pageCount)
+     throw Error('TREASURY_HISTORY_READBACK_INVALID');
+    savedRows.push(...parsed.data);
+   }
+   if(savedRows.length!==fetched.totalCount)throw Error('TREASURY_HISTORY_READBACK_INVALID');
+   history=parseTreasuryAuctionHistoryRows(savedRows,{fromDate,toDate:today});
+  }catch{ /* The previous valid calendar and current weekly release survive. */ }
+  // Only bounded, non-sensitive error codes are preserved in a PC-local lane.
+  try{await store.writeInput(key+':treasury:history:failure-code-r1',
+   {version:1,code:historyFailureCode},now);}catch{}
+ }
+ // Current weekly release wins same-ID/date title conflicts. A successful
+ // official annual reread supersedes an older saved title for the same event;
+ // on partial fallback, keep the last valid older title instead.
+ const officialKeys=new Set(historyReady?history.map(e=>e.id+':'+e.date):[]);
+ const retainedOlder=older.filter(e=>!officialKeys.has(e.id+':'+e.date));
+ const events=mergeTreasuryHistoryEvents([...observed,...retainedOlder],history);
+ const status=weeklyReady&&historyReady?'READY':
+  weeklyReady||historyReady||history.length?'PARTIAL':'SOURCE_FAILED';
+ return {events,state:{status,
+  checkedAt:status==='SOURCE_FAILED'?previous?.body?.sources?.treasury?.checkedAt??null:
+   new Date(now).toISOString(),
+  ...(weeklyFailureCode?{attemptedAt:new Date(now).toISOString()}:{}),
+  sourceUrl:RELEASE_SOURCES.treasury.page,
+  ...(weeklyReady?{coveredCusips:[...new Set(observed.map(e=>e.id.split('-').at(-1)))].length}:{})},
+  ...(weeklyFailureCode?{weeklyFailureCode}:{}),
+  ...(historyFailureCode?{historyFailureCode}:{})};
 }
 
 async function collectTicSource({store,key,now,fetchImpl,countRequest,previous}){
@@ -330,6 +417,7 @@ async function collectBlsSource({store,key,spec,year,now,fetchImpl,countRequest,
 export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}={}){
  const store=publicFeedStore(db),locks=marketOperationalStore(db),key=RELEASE_CALENDAR_KEY;
  const treasuryDiagnosticKey=key+':treasury:failure-code-r1';
+ const treasuryHistoryDiagnosticKey=key+':treasury:history:failure-code-r1';
  // PC private vendor raw inputs are independent from the R27 public calendar.
  try{
   await collectEarningsApiLocal({db,apiKey:globalThis.__zgminiLocalProviderEnv?.EARNINGS_API_KEY,
@@ -345,14 +433,27 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
  const previous=await store.readOutput(key);
  // New source definitions should be picked up by the next normal Core cycle,
  // even if the earlier, smaller source set is inside the six-hour cache.
+ // A legacy SOURCE_FAILED public flag does not prove that the new annual
+ // collection was ever attempted; only same-attempt private evidence does.
+ let annualTreasuryAttempted=false;
+ if(attempt){
+  try{
+   const officialYear=await locks.readInput(key+':treasury:taws');
+   const failure=officialYear?.storedAt===attempt.storedAt?null:
+    await store.readInput(treasuryHistoryDiagnosticKey);
+   annualTreasuryAttempted=officialYear?.storedAt===attempt.storedAt||
+    failure?.storedAt===attempt.storedAt;
+  }catch{ /* An unreadable input cannot validate completed annual collection. */ }
+ }
  const sourceSetComplete=Object.keys(RELEASE_SOURCES)
   .every(source=>Object.hasOwn(previous?.body?.sources??{},source))&&
-  previous?.body?.sources?.bls?.annualCollectorVersion===1;
+  previous?.body?.sources?.bls?.annualCollectorVersion===1&&annualTreasuryAttempted;
  if(attempt&&sourceSetComplete&&now-attempt.storedAt>=0&&now-attempt.storedAt<6*3600000){
   // The next Core cycle overwrites the PC-local last-run report. Preserve only
   // a bounded failure code for the same private six-hour collection attempt.
-  let treasuryFailureCode=null;
-  if(previous?.storedAt===attempt.storedAt&&previous?.body?.sources?.treasury?.status==='SOURCE_FAILED'){
+  let treasuryFailureCode=null,treasuryHistoryFailureCode=null;
+  if(previous?.storedAt===attempt.storedAt&&
+   ['SOURCE_FAILED','PARTIAL'].includes(previous?.body?.sources?.treasury?.status)){
    try{
     const diagnostic=await store.readInput(treasuryDiagnosticKey);
     if(diagnostic?.storedAt===attempt.storedAt&&diagnostic?.body?.version===1&&
@@ -360,8 +461,21 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
      treasuryFailureCode=diagnostic.body.code;
    }catch{ /* A private diagnostic read cannot block regular collection. */ }
   }
+  if(previous?.storedAt===attempt.storedAt&&
+   ['PARTIAL','SOURCE_FAILED'].includes(previous?.body?.sources?.treasury?.status)){
+   try{
+    const diagnostic=await store.readInput(treasuryHistoryDiagnosticKey);
+    if(diagnostic?.storedAt===attempt.storedAt&&diagnostic?.body?.version===1&&
+     (TREASURY_HISTORY_FAILURE_CODE.test(diagnostic.body.code??'')||
+      TREASURY_TAWS_FAILURE_CODE.test(diagnostic.body.code??'')))
+     treasuryHistoryFailureCode=diagnostic.body.code;
+   }catch{}
+  }
   return {status:'CACHED',providerRequests:0,
-   ...(treasuryFailureCode?{sources:{treasury:'SOURCE_FAILED'},treasuryFailureCode}:{})};
+   ...(treasuryFailureCode||treasuryHistoryFailureCode?
+    {sources:{treasury:previous?.body?.sources?.treasury?.status}}:{}),
+   ...(treasuryFailureCode?{treasuryFailureCode}:{}),
+   ...(treasuryHistoryFailureCode?{treasuryHistoryFailureCode}:{})};
  }
  const lease=await locks.claim('release-calendar',now);
  if(!lease)return {status:'RUNNING',providerRequests:0};
@@ -369,7 +483,7 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
  try{
   await store.writeAttempt(key,now);
   const sources={},events=[];
-  let treasuryFailureCode=null;
+  let treasuryFailureCode=null,treasuryHistoryFailureCode=null;
   const year=new Date(now).getUTCFullYear();
   for(const [source,spec] of Object.entries(RELEASE_SOURCES)){
    try{
@@ -398,9 +512,11 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
      continue;
     }
     if(source==='treasury'){
-     const treasury=await collectTreasurySource({store,key,now,fetchImpl,countRequest:()=>requests++,previous});
+     const treasury=await collectTreasurySource({store,privateStore:locks,key,now,fetchImpl,countRequest:()=>requests++,previous});
      sources.treasury=treasury.state;
      events.push(...treasury.events);
+     if(treasury.weeklyFailureCode)treasuryFailureCode=treasury.weeklyFailureCode;
+     if(treasury.historyFailureCode)treasuryHistoryFailureCode=treasury.historyFailureCode;
      continue;
     }
     if(source==='tic'){
@@ -550,6 +666,7 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
    {version:1,code:treasuryFailureCode},now);}catch{}
   return {status:body.status,providerRequests:requests,
    sources:Object.fromEntries(Object.entries(sources).map(([k,v])=>[k,v.status])),
-   ...(treasuryFailureCode?{treasuryFailureCode}:{})};
+   ...(treasuryFailureCode?{treasuryFailureCode}:{}),
+   ...(treasuryHistoryFailureCode?{treasuryHistoryFailureCode}:{})};
  }finally{await locks.finish('release-calendar',lease,now,'IDLE');}
 }
