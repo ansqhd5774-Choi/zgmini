@@ -1,5 +1,50 @@
 # 고용 R6 2026-11-10 수동 BACKFILL 실증 및 잔여 실행 계획
 
+
+## R6.1 최신 실행 계획 정본 — 2026-11-10 KST
+
+**최종 목표:** 승인 산식 R2와 기존 PC 수집→SQLite 원자료 보존→저장자료 계산→로컬 결과→D1 게시→공개 API/UI를 이용해 고용 R6 **29/29개 지표 실제 점수 READY**를 입증한다. 단순 GitHub PR·진단·테스트 PASS를 기능 완료로 산정하지 않는다. 다른 월·분기 지표의 정상 발표 간격을 오류로 보지 않는다.
+
+**전체 시작 진행률 = 7/8(87.5%); 계획 반영 후에도 7/8(87.5%)**. 원담당: 본 고용 R6 일반챗. 기능 개발 브랜치: `feat/bls-registered-v2-20261109` (현 PR #1036은 대규모 변경이므로 무검토 병합 금지). 제어 최신 `main`의 R6.1 `AGENTS.md`·`GENERAL_CHAT_START.md`·`PC_AUTOMATION_STANDARD.md` 및 중앙 인계 정본을 읽었다. 기존 Controller #917 성공·R2 게시 성공은 신규 성과로 다시 계산하지 않는다.
+
+### 고정된 8단계 목표 및 증거
+
+| 단계 | 완료 조건 | 현재 판정·근거 |
+| --- | --- | --- |
+| 1. 데이터/산식 계약 | 원본 29개와 승인 R6 산식·결측 규칙 확정 | **DONE** — 기존 R2 승인 산식 및 29개 계약 |
+| 2. 기존 공식 수집·저장 | BLS/DOL 기존 승인 BACKFILL, SQLite·원장 재조회 | **DONE(기존 완료 범위)** — #1169 부분 수집·저장/게시; DOL 결손은 8단계로 이관 |
+| 3. CPS R2 예외 구현 | 실제 2025-10 CPS 미발표 4개만 119월 참조, 나머지 산식 보존 | **DONE** — 기능 #1057, 승인 예외·관련 CI |
+| 4. PC R2 설치 | 승인 5파일과 실제 PC SHA/보호 검증 | **DONE** — #1195 설치 및 #1197 읽기 전용 재조회 |
+| 5. 웹 R2 배포 | GitHub source→Cloudflare Production 실제 Deployment 검증 | **DONE** — `643b7c7c…` / Deployment `ef5e4a8d` |
+| 6. R2 점수 저장·D1 게시 | 저장 원자료 재계산, D1 실제 저장값/방법론 재조회 | **DONE(28/29)** — D1 `stored_at=1794267318678`, R2 formula hash 검증 |
+| 7. 공개 API/UI 검증 | Production API와 실제 화면이 D1 R2 게시값과 일치 | **DONE(28/29)** — `/api/employment-r6/observations` 및 고용 페이지 비교 |
+| 8. 마지막 DOL 점수 완성 | `STATE_CLAIMS_BREADTH`의 공식 원자료 → 10년 계산 READY → 로컬/D1/API/UI 모두 29/29 검증 | **BLOCKED(실PC 실행 부분 한정)** — 현재 `PARTIAL_HISTORY`, 2025-07-19, 점수 미평가 1개 |
+
+**계산:** 기존 실증 DONE 7개 ÷ 고정 8개 = **87.5%**. 마지막 8단계의 아래 5개 세부항목은 운영 완료 **0/5**로 시작한다. 설계·PR·테스트를 운영 완료로 중복 계산하지 않고 **8-1부터 8-5까지 모두 실측 PASS일 때만 전체 8/8(100%)**로 변경한다. 과거 6/8 표기·과거 Draft/미배포 문구는 당시 이력이며 현재 정본이 아니다.
+
+### 8단계 세부 필수 실행 계획
+
+| 순서 | 실제 담당·대상 | 행동 및 통과 조건 | 미충족 시 분기 |
+| --- | --- | --- | --- |
+| **8-1. 원본 결손 읽기** | 원담당 / PC `employment-r6-collection-evidence-readonly` A, 기존 #1217 고유 요청·결과 | 제어 `main` #1218 + #1221의 고정 A **실제 설치 여부**와 승인 source SHA 대조 → 설치된 경우 고유 `pc-job` **1회** 결과 JSON/TXT 회수 → ETA539 530/600주 스냅샷, 51지역×577주 연속성·결손 최초 위치/최신 공식 관측일 판정 | 설치되지 않았다면 #68 단일 공용 적용 담당에게 정확한 누적 승인 manifest/설치 전제 인계. 미설치 코드를 A로 임의 실행 금지. #1217은 결과 댓글 0건 관측 시 **중복 요청 금지**, 기존 실행 ID부터 확인 |
+| **8-2. 600주 승인 소스 판정** | 원담당 / 승인 B 오버레이 2파일과 PC Writer 현행 해시 | 제어 `main`의 승인 provider 600주 overlay 및 collector 버전 갱신 overlay, `r6-registered-data-b` V3 계약을 재사용. 실제 `HEAD`·`config.source`·파일별 before/target SHA·Writer lease·현재 예약/실행 상태 대조 후 `OLD`/`TARGET`/`OTHER`/`UNKNOWN` 분류 | `TARGET`이면 중복 설치 없이 다음 단계; `OLD`이면 기존 승인 manifest와 실제 before를 연결한 정규 단회 B; `OTHER/UNKNOWN`이면 정확한 원본/의존성만 검증하고 덮어쓰기 금지 |
+| **8-3. 승인 단회 BACKFILL** | 원담당 / 기존 Writer B `BACKFILL`, DOL ETA539 공식 공급자 | 필요한 경우 승인·공유 lane 보호 확인 뒤 **새 고유 요청 1회** 수집. DOL 원자료/스냅샷/SQLite/checkpoint 실제 증가·저장 재조회, 600주 중 최소 577주 연속 51지역 확보 확인. 기존 BLS/DOL 호출 상한·quota 및 같은 날 재수집 방지 계약을 유지 | 미발표·공급자 결손은 `PARTIAL` 및 정확한 최초 실패 주/코드로 기록. 실패값 0·보간·수동 공급자 우회 호출 금지; 기존 원장·source/lease 확인 전 재신청 금지 |
+| **8-4. 저장값 계산** | 원담당 / 승인 R2 feature-engine 및 PC 결과·원장 | 공급자 재호출 없이 **저장된 원자료만** 사용. `STATE_CLAIMS_BREADTH`의 현재·10년 참조 521주와 선행 55주(총 최소 577주×51=29,427행), 전년 대비 4주 기준·PIT 검증 후 `READY` 유한 점수와 관측일·`sourceStoredAt`·원장 일치 확인 | 결손이면 `PARTIAL_HISTORY` 유지. 산식·가중치·TTL·DB 계약 변경·가짜 최신 날짜 금지 |
+| **8-5. 최종 게시 검증** | 원담당 / 기존 승인 D1 게시기·Cloudflare 공개 API/UI | 로컬 계산 결과→D1 `detail:employment-r6:one-year:v1` 저장값/버전/`stored_at` 재조회→실제 Production API/고용 화면에서 **29/29 scored READY**, 날짜·단위·마지막 점·결측/신선도 표시 정합 확인 | HTTP 200·코드 push만으로 완료 선언 금지. 기존 Git Integration 배포 상태 보존, 데이터 게시를 위해 별도 웹 재배포 강제 금지 |
+
+**현재 다음 필수 실행 하나:** 원담당이 `#1217` 기존 요청의 실행/결과 증거와 **실제 설치된 R6 A 허용목록**을 조회한다. 미설치라면 #68 기존 단일 적용 담당에게 #1221 범위 및 누적 승인/바이트 확인을 인계하고, 독립적으로 8-2 승인 overlay 정합성·테스트를 계속한다. 사용자가 #996 C급 확인을 별도 총괄에게 진행하도록 맡겼으므로 여기서 #996 lock/Workflow/Controller를 직접 복구·변경하지 않는다.
+
+### R6.1 중앙 인계·공유 자원·후속작업
+
+- 정규 Writer B에서 인증된 **수리 가능한 확정 실패**만 격리 Windows Runner `zgmini-handoff-ci-isolated` → `agent-handoff` → **단일 중앙 ChatGPT** → **원본 GitHub Issue** 경로로 반환한다. `SUCCESS`·`WAIT_RECORDED`·`STATE_UNKNOWN`은 수리 사건이 아니며 검증만을 위한 인위적 실패/기존 단회 요청 재실행은 0회.
+- GitHub 결과 댓글은 원담당 일반챗의 **자동 수신/자동 재개**나 PC 운영 적용이 아니다. 본 대화가 실제 재개될 때 원본 결과를 확인하고 고용 R6 작업을 이어간다. 새 격리 인계 경로의 자연 적격 장애 전체 왕복은 `DEFERRED`, 고용 R6 기능 완료의 전역 Gate가 아니다.
+- **실제 공유 자원만 직렬화:** Controller·동일 Core 실행 checkout/Writer 파일·DB lease 경합은 #68 단일 담당/원본 보호와 연결. 독립 문서·GitHub 소스 검증·개발 테스트는 진행한다. #917 복구는 별도 `RECOVERY_COMPLETED` 기존 증거. #996은 최근 원본 Windows `RECOVERY_REQUIRED` / `SHARED_INSTALL_ONLY` 및 C급 별도 담당·사용자 제한적 증거 승인 상태이므로 **현재 겹치는 Controller 설치에만** 영향을 적용하고 다른 독립 기능 Gate로 확장하지 않는다.
+- **후속(DEFERRED):** 29/29 실제 운영 게시가 끝난 뒤에만 첫 공식 관측 갱신의 자연 자동 반영 검증. 기존 예약 Task를 기능 완료 선행 조건으로 추가·중복 생성하지 않는다.
+- **변경 금지:** 산식·가중치·원자료·수집 주기·DB/D1 계약·TTL·DNS·Cloudflare 직접 배포·운영 Source/Task 임의 수정 없음. 완료 증거는 각 실행 ID·Runtime SHA·원장·저장 시각·D1/API/UI readback으로만 인정.
+
+---
+
+
 ## STATE_CLAIMS_BREADTH 10년 이력-530주 BACKFILL 정합성 확인 — 2026-11-10
 
 - 소스 정합성: `zgmini/main` `employment-r6-provider.mjs`의 ETA539 BACKFILL은 `historyWeeks=530`. 동일 main의 승인 점수 엔진은 `STATE_CLAIMS_BREADTH` 파생값 계산 시 과거 전년대비 4주 비교에 **55주 선행**을 요구하고, 점수 계산 시 현재 이전 **10년 주간 참조 521주** 전부를 요구한다. 최신 2026-10-31 예시 **최소 원자료 577주×51지역=29,427행**. 530 완전주는 파생 475주로 최대 10년 참조 521주 대비 **47주 부족**하므로, 독립적으로 더 오래 보존된 원자료가 없다면 구조적으로 `PARTIAL_HISTORY`만 발생한다.
@@ -35,7 +80,7 @@
 
 ## 최신 실행 판정 — 2026-11-10 KST / PC R2 설치와 Cloudflare Production R2 코드 검증
 
-> 아래가 이 문서의 최신 상태 정본이며 뒤의 'Draft/미배포/미설치' 표기는 당시 증거에 관한 **과거 이력**이다. 장래 자동 갱신 검증은 여전히 기능 최종 완료의 선행 Gate가 아니다.
+> **당시 상태 기록:** R2 배포 직후의 진행률로, 현재 정본은 문서 맨 앞 R6.1 절이다. 뒤의 Draft/미배포/미설치 표기도 해당 시점의 이력이다. 장래 자동 갱신 검증은 여전히 기능 최종 완료의 선행 Gate가 아니다.
 
 - **전체 진행률 6/8 = 75.0%(시작 75.0% → 현재 75.0%)**. 실제 PC R2 5파일 B 설치와 Cloudflare Production R2 소스 배포는 완료. 다만 저장 원자료 기반 R2 계산·로컬 출력·D1 readback·공개 R2 API/UI 전 구간 증거가 없으므로 다음 2개 필수 단계는 미완료.
 - 정규 B PC [#1195](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1195) Run **42721416977**, result **WRITER_B_INSTALLED_VERIFIED**, 설치 5/5·보호 확인·고유 JSON/TXT 2/2 원격 회수. 실제 PC 로컬 overlay/source/config **de81749f83c086f5cb0cad7ed1d5cc958de19280**; GitHub SHA와 구분. 소모한 고유 requestId 재실행 금지.
@@ -105,10 +150,10 @@
 - **이번 신규 A** [#1188](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1188), requestId `pc-4e77ddc4-380a-40a0-a057-0ab11144f872`, 설치된 `pc-source-preflight` 조회 1회 요청. 최신 checkout 식별 문제의 구체 상태 확인용. 중복 재요청 없이 고유 결과/Run으로 상태 판단. Controller #917 복구와 Writer B는 독립 자원이나, 실제 겹치는 Writer 잠금·CAS는 보존.
 - 다음 담당(고용 R6 원담당) 필수 행동: #1188 결과로 checkout/승인 source가 신뢰 가능하면 승인된 **5경로** 현재 beforeSHA·lease를 고정한 Writer B manifest 작성, 단회 설치 후 R2 계산·D1·API/UI 확인. checkout이 불확정이면 source 진단의 **최초 실패 조건만** 수정; 승인 없는 원격 shell·DB·재설치 우회 금지.
 
-## 다음 필수 실행 (필요한 것만)
+## 다음 필수 실행 (당시 이력 — 최신 R6.1 계획은 문서 맨 앞)
 
 1. **DOL/BED 원본 누락 원인 1회 확인:** 제어 전용 브랜치 `feat/employment-r6-collection-evidence-a-20261110`, Draft [#1184](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1184), HEAD `8b39872b5ebab34c58065657a228612e09ddfebd`에서 기존 Controller 허용목록/dispatch에 최소 A `employment-r6-collection-evidence-readonly` 구현·fixture 5/5 PASS. 해당 A는 `run.detail_json.missingSeries`, ETA539 parser meta, 정확한 51지역/52주 비교 저장 커버리지만 비민감 집계로 조회하며 **공급자 재수집·DB/D1 쓰기 0**. **Draft 미병합/PC 미설치**로 실제 결손은 미확정이다. #917 Controller 복구 단일 담당자의 manifest·원본해시 검증 후 정규 B 설치/등록이 확인되면 새로운 고유 `pc-job` A 요청 1회 실행, TXT/JSON 결과로 최초 결손을 확정한다. 설치 전 우회 SQL·재수집 반복 금지.
 2. **R2 예외 PC 적용:** 다른 기능/공통 Writer source 변동을 역검증하고, R2 변경 파일의 정규 원본 hash/overlay manifest/실제 승인 설치 경로로 반영. 승인 없는 운영 source 자동 교체, 광범위 PR #1036 무검토 main 병합, 임의 Cloudflare 직접 배포는 금지. 기능 담당이 수행.
 3. **저장→D1→API/UI 최종 대조:** 실제 R2 methodology/formula hash, 29개 관측일·점수·차트·원자료 수·sourceStoredAt·결측/지연을 각각 확인. 실패 지표를 0이나 가짜 관측으로 채우지 않는다. 기능이 충족된 뒤에만 예약 자연 갱신 검증 후속.
 
-**현재 판정:** 6/8(75.0%), `PARTIAL`; 자동 수집 선행 조건 없음. 승인 권한 밖 Controller 변경은 총괄의 독립 작업과 충돌하지 않도록 직렬 조정한다.
+**당시 판정:** 6/8(75.0%), `PARTIAL`; 이후 D1/API/UI R2 실측으로 현재 7/8(87.5%) 완료 증거가 갱신됨. 승인 권한 밖 Controller 변경은 총괄의 독립 작업과 충돌하지 않도록 직렬 조정한다.
