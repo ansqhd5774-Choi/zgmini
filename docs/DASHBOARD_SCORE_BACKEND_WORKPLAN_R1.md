@@ -226,3 +226,16 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 | 4 | D05 담당: 승인된 실제 미래 사건 **1건**을 운영 PC Runtime·로컬 읽기·D1 key·공개 API/UI로 재조회한 뒤 점수별 68개로 점진 확대 | 출처와 게시까지 같은 사건으로 입증된 경우에만 해당 항목의 1년 종단 PASS 집계. 자연 장애 E2E/예약 자동 갱신은 후속 관측. |
 
 **현재 종단 완료율: 0/68(0%→0%).** 별도 검증 지표는 D1 행↔API 사건 **1/1 PASS**, 개발 시뮬레이션 **75/75 PASS**, 공개 실제 계산 사건 **UTC 9일·KST 8일/34건**. 이 조사와 기록은 운영 기능 완료 주장이나 UI 브랜치 완료 Gate가 아니다.
+
+
+## 2026-11-10 D05 이어서 작업 — 68개 재사용 가능성 조사·미래 계약 승인 분리
+
+- 공통 [#1206](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1206) 독립 재조회: **open, 댓글 0**. #1023의 설치 미허용 요청은 재시도하지 않는다. 별도 Controller #996 C 복구의 `STATE_UNKNOWN`/원본 lease와 D05 읽기·개발은 분리하며 이 복구에 개입하지 않는다.
+- 공개 [CNN 공포탐욕 실제 관측 1년 API](https://zgmini.kr/api/fear-greed/observations?period=1Y)를 연결 브라우저에서 **직접 JSON.parse PASS**: `status=READY`, `version=CNN_OBSERVED_ARCHIVE_R1`, 실제 보관 UTC 관측일 **5일**, 실제 사건 **108건**, `sampled=false`, 첫 `2026-10-30T23:59:48Z`, 마지막 `2026-11-06T23:59:54Z`. '1Y 조회 가능'을 실제 1Y 저장·공개 완료로 잘못 집계하지 않는다.
+- 테마 R32의 과거 실제 가격 9개×252일=2,268 계산점·305 raw파일 SHA 및 일부 게시, 업종 R3의 11개×252일 저장가격 기반 rolling 계산은 기존 성과다. **과거 252일 각각 당시 계산/확정·선택 source SHA를 동시 보존한 원장은 아직 미입증**이므로 신규 1Y 완료 점수 0개. 기존 성공 점수/원본 파일을 삭제하거나 재계산해 덮어쓰지 않는다.
+- `run-local.mjs`의 **`DRY_RUN`에서도** `writeScore` 및 `appendCompositeObservedFromCurrent`로 **PC 로컬 DB 쓰기가 발생 가능**함을 소스로 재확인. 인위적 실제 실행은 하지 않았고 독립 순수 fixture **75/75 PASS**를 재사용했다.
+- 기존 D05 shadow는 SELECT 후 사후 역매칭이므로 **실제 선택 순간의 직접 증거가 아니며**, `readStoredMarketInputs` 36시간/BIS TTL·macro per-series 병합 이후 **선택 자체가 실효 사용을 보장하지 않는다**. SEC/E1-R5/Breadth도 별도 Reader다. 계약 설계에서 `SELECTED_7_BATCHES_ONLY`와 전체 PIT 계보를 분리한다.
+- 새 별도 문서 [`D05_FUTURE_INPUT_LINEAGE_APPROVAL_SCOPE_R1.md`](D05_FUTURE_INPUT_LINEAGE_APPROVAL_SCOPE_R1.md)에 **미래 사건의 Reader 선택형 비민감 metadata·로컬 append-only 원장·고유 eventId/중복/부분쓰기 안전 처리·운영 승인 항목**을 명시했다. **설계안이지 적용 승인이 아니며**, 새 DB/D1 key·Writer·PC 설치·Cron/배포 변경은 0건.
+- **다음 단일 결정:** 사용자/Writer 원담당이 *범위 A(선택 7배치 부분 계보)* 개발·로컬 원장 필드/보존/실제 경로·별도 정규 B 영향에 명시 승인할지 판단한다. 승인 전에는 개발 브랜치의 현행 검증 코드를 운영에 연결하지 않는다. 독립 공개 관측 축적과 다른 점수 기능은 계속한다. 범위 B(12영역 전체 실효 입력)는 별도 단계다.
+
+**68개 1년 종단 완료율: 0/68(0%→0%)**. 신규 확인 성과: CNN 실제 관측 **5일/108건**, 승인 검토용 **미래 계보 계약 문서 1건**, 이전 D05 D1↔API 실제 사건 1/1 PASS 유지.
