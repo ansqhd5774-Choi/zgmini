@@ -130,3 +130,13 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 - 기존 증거/입력 단위 시험 포함 로컬 **63/63 PASS**, `node --check` PASS. 신규 코드·시험 GitHub 정확 본문 readback **2/2 PASS**, 브랜치 개발만 수행. 공유 `run-local.mjs`, DB schema, Writer source/설치, Core Task, D1, 공개 API/UI는 **변경 0**.
 - **전체 68개 실운영 종단:** **0/68 (0%→0%)**. 개발 관찰 callback이 실제 운영 저장 증거는 아니다.
 - **다음 필수 행동:** 공통 #1206의 과거 연계 증거 가부를 기다리는 동안, D05 원담당은 `run-local.mjs`의 기존 계산 사건 `now`와 archive 성공 상태를 연결해 **검증 성공 사건에만 비민감 lineage를 보존**할 단일 저장/원장 계약을 승인 범위와 함께 준비한다. 실제 Writer 변경·B 설치·공개 게시 전환은 소유권/승인 확인 뒤에만 수행하며 7배치만으로 12영역 전체 READY 표기 금지.
+
+
+## 2026-11-10 D05 계산 사건↔로컬 archive readback 대조 — 개발 한정
+
+- 동일 계산 호출 `now`를 기준으로 `lib/score-history/composite-archive-lineage-link-r1.mjs` 신규 추가. 기존 `compositeSampleFromVerified`를 재사용해 `calculatedAt/asOfDate/score`와 **출력 FNV32 서명**을 산출하고, 로컬 `composite-observed:YYYY-MM-DD` 행을 **읽기 전용으로 재조회**해 정확히 같은 사건 1건인지 확인한다. `market_public_snapshots_v1`·`run-local.mjs`·기존 archive append 구현은 수정하지 않음.
+- archive 결과가 `LOCAL_STORED`가 아니면 실패 종료. 특히 `UNCHANGED`는 신규 계산 이력 증거로 인정하지 않는다. 저장시각, 이벤트 시각, 점수/출력 서명, archive 버전/개수, 7개 선택 배치의 key·storedAt·SHA-256이 불완전하거나 다르면 `UNPROVEN`/안전 거부한다. SQLite/운영 원자료 쓰기·재시도·민감 본문 반환 없음.
+- 성공 상태도 **`LINKED_SELECTED_7_BATCHES_ONLY` / `LOCAL_PC_ONLY`**로 고정. 7개 *선택값*의 로컬 기록만 대조한 개발용 함수이며, TTL 후 실제 반영 입력·SEC/E1-R5/Breadth·공식 revision·PC Runtime·D1/API/UI 게시의 증거는 아니다. 검증기는 기존 `run-local.mjs` 호출에 아직 연결되지 않았고 새 메타데이터를 영속 기록하지 않는다.
+- 단위 시뮬레이션 신규 **12/12 PASS**, 기존 포함 누적 **75/75 PASS**; 신규 2파일 GitHub 원격 본문·blob readback **2/2 일치**. 운영 PC·Writer·DB·D1·API·UI 변경 **0건**.
+- **실제 68개 종단 완료율: 0/68(0%→0%)**. 본 백엔드 개발은 사용자 원래 대시보드 출력 통일과 별도 범위이며 UI 작업 완료 조건으로 전환하지 않는다.
+- **다음 필수 행동 하나:** D05 원담당은 계산→archive 성공 지점의 기존 승인 운영 ledger 중 *새 비민감 메타데이터를 저장할 수 있는 계약이 있는지* 정확한 소유권·필드 범위와 함께 확인한다. 없다면 승인 없는 Writer/DB 변경 없이 이 호출 연결·메타데이터 영속화는 보류한다. 이후 독립 SEC/E1-R5/Breadth 원입력 증거를 확보한 뒤 실제 사건 1건 검증으로 진행한다.
