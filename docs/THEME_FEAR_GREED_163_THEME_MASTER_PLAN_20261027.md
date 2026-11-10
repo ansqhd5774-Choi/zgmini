@@ -12,6 +12,23 @@
 - **진단 계약 차이:** 실제 설치 SHA `badad912…`의 `controller/theme-l7-runtime-readonly.mjs`에는 `safeR181HttpErrorFlow`가 없고, 최신 `pc-control/main` 같은 파일에만 있다(각 blob `be5b9a6…` / `a841aef…`). 소스 병합은 운영 설치가 아니다. 따라서 기존 A를 반복하더라도 `HTTP/R181/SPY`의 정확한 status/code가 자동 회수된다고 약속하지 않는다. 공통 owner의 **최소 승인 진단·접수 경로 복구**와 실제 설치 SHA를 확인하고, 기능 원담당은 그 이후 **고유 요청 1회**로 비식별 R181 FIRST FAIL을 회수한다. 다른 Runner/수집·계산·게시를 막지 않는다.
 - **실운영 남은 검증:** GMH 14종의 실제 공통 정규장 701일·가격 모드·로컬 원자료 및 R178 checkpoint 확인, 신규 공급원 계약/권리 충족, 승인 게시의 D1/API/UI readback. 소스-only GMH 후보와 운영 데이터·배포를 혼동하지 않는다. 신규 예약·임의 CMD·DB 쓰기 **0건**. 테마 통합 T1 **20%→20%**; 직전 확인 공개 API는 **0/10**, 이번 신규 공개 검증 **0건**.
 
+## 2026-11-10 공통 R6.1 반영 — 테마 원담당 확정 실행 계획
+
+- **기준:** 제어 저장소 `ansqhd5774-Choi/zgmini-pc-control` `main@bba84e671c7caa626ebad189bcea14d1f66c5059`의 `AGENTS.md`, `docs/GENERAL_CHAT_START.md`, `docs/PC_AUTOMATION_STANDARD.md` 업무 관련 조항. 기능 개발 기준 `zgmini/main@643b7c7c4372ffad552443fc312c6cb1b944e2fc`; 이 계획의 전용 브랜치는 `codex/theme-fear-greed-integration-20261025`. 2026-11-10 제어 문서 확인은 **작업 재개 절차**일 뿐 PC Runtime·다른 일반챗 자동 적용 증거가 아니다.
+- **목표와 진행률:** P1 기존 공개 **10개 정상화** → P4 현재 공개 대상 안정적 운영 → P2 등록형 확장 → P3 인기순 163개 순차 확장(기존 사용자 확정 순서 **1→4→2→3**). 테마 통합 기술 **T1 20%→20%**, 163개 전체 실제 운영 완료율은 근거 부족으로 산출 보류. 직전 공개 응답은 **2026-11-09 기준 0/10, `STORED_DATA_STALE`**이며 11/10 현시점 재측정 결과로 오인하지 않는다.
+- **완료 증거 재사용:** P1-01 테마 로스터·R32 8개 교집합 매핑, P1-03 Controller #917 실제 `RECOVERY_COMPLETED`(8/8), 공용 대기열 5/5, 사후 22/22 PASS, 관련 131/131 PASS, 기존 A #1215/#1216는 **DONE**. 공용 격리 Writer B의 자연 수리 사고 전체 왕복 검증은 **DEFERRED/NON_BLOCKING**; 기능 재개를 기다리게 하지 않는다. 기능 원담당은 기능 수집·계산·게시를, 공통 담당은 pc-job 접수/Controller 등 **공통 장애만** 처리한다.
+
+| 순서·담당 | 다음 필수 작업과 안전 경계 | 완료 조건·실증 증거 | 현재 판정 |
+| --- | --- | --- | --- |
+| **P1-A · 테마 원담당 + 공통 경로 담당(접수만)** | [#1219](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1219)의 기존 유일 requestId `pc-e2710720-1a35-4a75-ab37-4940ecd33edd` 접수/Run/댓글·JSON/TXT를 먼저 판정한다. 현재 **Issue OPEN·pc-job 라벨·PC 결과 0**: `AUTOMATION_BLOCKED`이며 실제 R181 실패 증거가 아니다. **같은 요청 재발행·무조건 재실행 금지**. 기능 원담당은 기존 설치 A가 회수할 수 있는 비식별 R181 상태·HTTP status/code/파라미터 **이름만** 정리하고, 실제 미지원 진단·접수 경로는 공통 소유자에게 최소 변경으로 인계한다. | 고유 기존 Issue의 결과를 회수하거나 공통 소유자의 정확한 접수 불가/해소 증거 확보. 지원되는 승인된 진단이 준비되면 **별도 고유 A 1회**로 R181 `LAST PASS/FIRST FAIL` 회수. 운영 source/DB 임의 조회·재설치 금지. | **P1-02 PARTIAL / 진단 경로만 국소 장애** |
+| **P1-B · 테마 원담당** | 승인된 GMH 수집 결과에서 ETF 13+SPY **14/14**의 같은 뉴욕 정규장 1h 최종봉·공통 **701거래일** 조건, 원가격 모드·원본 SHA·관측일, SQLite 원자료 저장·재조회, R178 rolling/checkpoint를 판정한다. 실제 공급자 HTTP 실패가 드러나면 해당 파라미터명·실제 code만 대조해 최소 수정안을 만들고 승인된 수집 1회를 검증한다. | PC 원본/DB/checkpoint, `sourceVersion`·`sourceStoredAt`·관측일, SPY 일자, 부족/오류 사유의 1대1 readback. GMH 14/14 **티커 카탈로그 발견은 701일 원자료 확보가 아니다**. | **원본·R178 실저장 미확인** |
+| **P1-C · 테마 원담당** | 공개 권리를 feed별 확인한다. 무료 MarketParquet 파생 공개는 불허, 익명 GMH 새 파생 공개권은 미확정. R178 4개 검증 flag·가격모드·권리·승인 근거를 실제로 충족한 자료만 게시 후보로 삼는다. 비공개 저장·계산·권리 조사 등 독립 업무는 병행한다. 기존 GMH 단독 후보는 **기본 OFF**. | 권리/출처·가격모드 계약별 `ALLOW/BLOCKED/UNKNOWN`과 증거 명시; 임의 권리 승인·허위 READY·가격 출처 교체 0. 계약 변경이 필요한 경우 **별도 사용자 승인 후** 진행. | **P1-06 PARTIAL / 신규 공개권 미확정** |
+| **P1-D · 테마 원담당** | 실제 저장 자료로 기존 R32 확정 8개와 독립 우주·데이터센터 2개를 승인된 각 산식으로 shadow 재계산, 10/10 ID·순서·252점/결측·기존 마지막 유효값 동등성 검증. 계산 중 공급자 재호출·임의 0 보간·미공개 AI 추가 금지. | 계산 원본↔결과 SHA·날짜·결측·실제 PC 검산, 10개별 `READY/STALE/MISSING/RIGHTS_BLOCKED` 확정; 기존 합성 **40/40 PASS는 실PC 성공이 아님**. | **P1-04/05 실PC 미완** |
+| **P1-E · 테마 원담당** | 권리·계약·실저장 검증과 승인 조건이 충족된 owner feed만 기존 6개 물리 key의 승인 CAS로 게시한다. D1 readback→공개 API→PC/모바일 UI에서 테마별 날짜·점수·확정/잠정·차트 끝점을 대조한다. Reader STALE 안전 차단 우회 금지. | **기존 공개 목표 10/10** 정상·결측 상태별 실측 개수, 로컬 ledger·D1·API/UI의 동일 버전과 시간, 기존 이력 보존. 게시 성공은 HTTP 200만으로 판정하지 않는다. | **P1-07 운영 게시 0건** |
+| **P4 → P2 → P3 · 테마 원담당** | P1에서 정상화된 공개 테마부터 지속 운영·관측일/결측 추적(P4). 이후 기존 공통 등록·계산·Reader로 신규 정의 1건 비공개 실증(P2), 인기순 승인 테마를 **1건씩 수집→저장→계산→D1→API/UI→P4 편입**(P3). 테마별 신규 CMD/예약·무단 배포 금지. | P4 공개 ID별 실제 갱신·이력 지속, P2 설정만 추가하여 재사용 성공, P3 실제 신규 운영 검증 ID 누적/163. 예약 자연 갱신 최종 검증은 기능 완료 후 후속. | **P1 우선, 독립 개발은 병렬 가능** |
+
+**바로 이어갈 실행 하나:** 테마 원담당이 [#1219](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1219)의 기존 접수 결과를 재조회하고, 설치 A/최신 공통 진단의 **실제로 지원하는 비식별 R181 FIRST FAIL 필드**를 비교해 필요한 최소 조회 계약을 확정한다. 공통 담당이 담당할 접수 오류는 정확한 증거와 함께 분리하고, 권리/원자료 검증처럼 독립 가능한 기능 작업은 중단하지 않는다. 원본 #1219에 새 실행 증거가 없으면 반복 요청 없이 `AUTOMATION_BLOCKED`를 유지한다.
+
 ## 2026-11-09 사용자 확정: 상위 4단계 우선순위 1 → 4 → 2 → 3
 
 163개 전체 구축에는 장기간이 걸릴 수 있으므로, **기존 공개 콘텐츠를 방치하거나 163개 완성 시점까지 운영 안정화를 유예하지 않는다.** 이전에 보고한 4단계를 다음 순서로 실행한다.
@@ -43,7 +60,7 @@
 | **P3-01 · 테마 원담당** | 그때 가장 인기 있는 차기 후보 **한 건**을 비교·선정한다. ETF 후보별 3가지 O/X 기준(보유 공개·실수집·운용사 C 이상), 실제 ETF/SPY 자료·기준일별 공식 AUM·권리를 확인한다. | 선정/제외 근거, 공개 승인·권리 SHA, 실제 원자료와 승인 R25/R32 적용 가능성 | P2 공통 경로 실증 후 반복 |
 | **P3-02 · 테마 원담당** | 승인 한 건의 수집→로컬 저장→계산·검산→D1 CAS/readback→API/UI를 완료하고 즉시 P4 운영 대상에 추가한다. | 신규 공개 ID 1건+기존 정상 ID 모두 유지, 관측일·결측·이력·PC/모바일 화면 일치 | 한 건씩 163 목표까지 반복 |
 
-**가장 가까운 실제 실행(11/9 재확인):** 이미 완료된 [pc-control #1033](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1033)의 source SHA/세 원장 증거를 재사용한다. **기존 승인 A operation 목록에는 GMH 원본 SHA·관측일, R178 checkpoint 및 D1 `theme-etf-only-rolling/current` 단일 row 메타를 함께 읽는 경로가 없다(원담당 조사 완료)**. 이를 임의 SQL/CMD로 우회하지 않고 비밀값 없는 단일 키/체크포인트 조회 계약만 별도 정규 승인 범위로 제안한다. 공통 총괄은 [#996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/996) 공유 설치 잠금·원장 복구를 단독 담당하고, 이미 main에 병합된 [진단 #1034](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1034)의 실제 승인 설치가 확인된 다음 **R181 읽기 전용 A 1회로 HTTP FIRST FAIL**을 확인한다. 이후 실제 권리·원자료 충족 피드만 수집→계산→로컬 저장→D1/API/UI로 이어간다. 동일 #1033 A·108파일 B 재요청, R178 게시 hard gate 완화, 권리 미확인 신규 게시, #996 잠금 우회 금지.
+**2026-11-09 당시 실행 판단(현재 다음 실행은 위 2026-11-10 R6.1 표 우선):** 이미 완료된 [pc-control #1033](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1033)의 source SHA/세 원장 증거를 재사용한다. **기존 승인 A operation 목록에는 GMH 원본 SHA·관측일, R178 checkpoint 및 D1 `theme-etf-only-rolling/current` 단일 row 메타를 함께 읽는 경로가 없다(원담당 조사 완료)**. 이를 임의 SQL/CMD로 우회하지 않고 비밀값 없는 단일 키/체크포인트 조회 계약만 별도 정규 승인 범위로 제안한다. 공통 총괄은 [#996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/996) 공유 설치 잠금·원장 복구를 단독 담당하고, 이미 main에 병합된 [진단 #1034](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1034)의 실제 승인 설치가 확인된 다음 **R181 읽기 전용 A 1회로 HTTP FIRST FAIL**을 확인한다. 이후 실제 권리·원자료 충족 피드만 수집→계산→로컬 저장→D1/API/UI로 이어간다. 동일 #1033 A·108파일 B 재요청, R178 게시 hard gate 완화, 권리 미확인 신규 게시, #996 잠금 우회 금지.
 
 **11/09 23시 KST 보충:** [pc-control #1087](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1087)의 `WRITER_B_1063_CORE_RECOVERED`/2개 결과 readback은 **고용 Writer B #1063 잠금 복구**만 실증했다. [#996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/996)와 #917 Controller `RECOVERY_REQUIRED`는 별개로 지속되며 PR #1088은 Draft·실PC 미적용, R181 FIRST FAIL 미확보. 본 분리는 신규 PC 실행·공개 Gate 변경이 아니다.
 
@@ -363,7 +380,7 @@
 | 미공개 AI·반도체 | R32 연구 252점 | 별도 신규 테마 출시에 필요한 승인·자동화 | `NOT_PUBLISHED` |
 | 163개 신규 테마 | 프로그램 목표와 순차 방식 확정 | 다음 인기 테마 1개부터 반복 | `NOT_163_COMPLETE` |
 
-**가장 가까운 한 가지 다음 작업(2026-10-29 최신):** [실제 R32 아키텍처 정본](THEME_NINE_LIVE_ARCHITECTURE.md)의 R51 날짜 정렬 첫 차단점부터 해결한다. 최신 27일 R48 원가격 계산 후보를 검증된 같은 모드로 확보한 뒤 R54 D1 CAS/readback, 공개 API 모델 Revision/점수 일치를 **실제로 확인해야만 게시 완료**다. 이전의 R46 인증·R47 2차 실행·Task 설치 자체를 다시 최우선 개발 목표로 삼거나 배포 성공이라고 보고하지 않는다.
+**2026-10-29 당시 실행 판단(현재 다음 실행은 위 2026-11-10 R6.1 표 우선):** [실제 R32 아키텍처 정본](THEME_NINE_LIVE_ARCHITECTURE.md)의 R51 날짜 정렬 첫 차단점부터 해결한다. 최신 27일 R48 원가격 계산 후보를 검증된 같은 모드로 확보한 뒤 R54 D1 CAS/readback, 공개 API 모델 Revision/점수 일치를 **실제로 확인해야만 게시 완료**다. 이전의 R46 인증·R47 2차 실행·Task 설치 자체를 다시 최우선 개발 목표로 삼거나 배포 성공이라고 보고하지 않는다.
 
 ## 8. 인수인계·완료 판정·변경 금지선
 
