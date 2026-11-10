@@ -46,25 +46,42 @@ function simulateAnchor(records,{now=NOW}={}){
    if(Object.hasOwn(theme,'rawBars')||Object.hasOwn(theme,'priceBars'))
     return {status:'RAW_INPUT_PRESENT',family:family.id,label};
    const hist=theme.history;
+   // Space R2 permits historical null scores; DC and R37 do not.
+   // All families require a numeric last confirmed score.
+   const space=family.id==='space';
    if(!Array.isArray(hist)||hist.length!==252||!isScore(theme.score)||
-    hist.some((p,i)=>!isDate(p?.date)||!isScore(p?.score)||
+    hist.some((p,i)=>!isDate(p?.date)||
+     !(isScore(p?.score)||(space&&p?.score===null))||
      (i>0&&p.date<=hist[i-1].date))||
     hist.at(-1).score!==theme.score||!isDate(theme.observationDate)||
     hist.at(-1).date!==theme.observationDate)
     return {status:'HISTORY_OR_SCORE_INVALID',family:family.id,label};
+   const base=visible.get(R37_PUBLIC[0]);
+   const delayed=family.id!=='r37'&&base&&theme.observationDate!==base.observationDate;
+   if(family.id!=='r37'){
+    // Existing DC/Space validators accept an older observation date with
+    // >=240 overlapping trading dates, but never a newer/stale sidecar.
+    const observedEnd=Date.parse(theme.observationDate+'T23:59:59Z');
+    if(!base||theme.observationDate>base.observationDate||
+     observedEnd>now||now-observedEnd>=MAX_AGE)
+     return {status:'SIDECAR_OBSERVATION_INVALID',family:family.id,label};
+    const baseDates=new Set(base.history.map(p=>p.date));
+    const overlap=hist.filter(p=>baseDates.has(p.date)).length;
+    if(delayed?overlap<240:overlap!==252)
+     return {status:'SIDECAR_OVERLAP_INVALID',family:family.id,label,overlap};
+   }
    if(visible.has(label))return {status:'PUBLIC_THEME_DUPLICATE',label};
    visible.set(label,{theme:label,score:theme.score,
-    observationDate:theme.observationDate,sourceVersion:record.sourceSha,
+    observationDate:theme.observationDate,...(delayed?{delayed:true}:{}),
+    sourceVersion:record.sourceSha,
     history:hist.map(p=>({date:p.date,score:p.score}))});
   }
   sources.push({family:family.id,feed:record.feedKey});
  }
  const themes=DISPLAY.map(label=>visible.get(label));
  if(themes.length!==10||themes.some(v=>!v))return {status:'PUBLIC_TEN_INCOMPLETE'};
- const observed=new Set(themes.map(t=>t.observationDate));
- if(observed.size!==1)return {status:'API_DATE_CONTRACT_REVIEW',
-  // Preserve each date; never choose the newest and relabel older scores.
-  observations:themes.map(t=>({theme:t.theme,date:t.observationDate})),d1Writes:0};
+ // Preserve individual observed dates and delayed flags; the existing
+ // DC/Space Reader contracts do not require one global observation date.
  return {status:'PRIVATE_STRUCTURAL_SPIKE_PASS_NOT_PUBLIC_READY',
   themes,sources,d1Writes:0,publicationRights:'NOT_EVALUATED',
   provisionalCoverage:'NOT_EVALUATED',tradingCalendar:'SYNTHETIC_WEEKDAYS_NOT_VERIFIED',
@@ -138,16 +155,42 @@ test('raw provider bars are forbidden in the candidate public payload',()=>{
  assert.equal(simulateAnchor(records).status,'RAW_INPUT_PRESENT');
 });
 
-test('different valid family dates require explicit API contract review',()=>{
+test('older valid Space observation stays individually dated and delayed, never relabelled',()=>{
  const records=fixture();
  const days=weekdaysEnding('2026-11-04',252);
  records.space.themes[0].history=days.map(date=>({date,score:20}));
  records.space.themes[0].observationDate=days.at(-1);
  const result=simulateAnchor(records);
- assert.equal(result.status,'API_DATE_CONTRACT_REVIEW');
- assert.equal(result.observations.length,10);
+ assert.equal(result.status,'PRIVATE_STRUCTURAL_SPIKE_PASS_NOT_PUBLIC_READY');
+ assert.equal(result.themes.length,10);
+ assert.equal(result.themes.at(-1).observationDate,'2026-11-04');
+ assert.equal(result.themes.at(-1).delayed,true);
+ assert.equal(result.themes[0].observationDate,'2026-11-05');
  assert.equal(result.d1Writes,0);
- assert.equal(result.observations.at(-1).date,'2026-11-04');
+});
+
+test('older Space history may contain null while its confirmed final score remains numeric',()=>{
+ const records=fixture();
+ records.space.themes[0].history[20].score=null;
+ const result=simulateAnchor(records);
+ assert.equal(result.status,'PRIVATE_STRUCTURAL_SPIKE_PASS_NOT_PUBLIC_READY');
+ assert.equal(result.themes.at(-1).history[20].score,null);
+ assert.equal(result.themes.at(-1).score,20);
+ assert.equal(result.d1Writes,0);
+});
+
+test('missing DC score is not silently treated as a Space-style null',()=>{
+ const records=fixture();
+ records['data-center'].themes[0].history[20].score=null;
+ assert.equal(simulateAnchor(records).status,'HISTORY_OR_SCORE_INVALID');
+});
+
+test('newer independent observation than base refuses rather than changing base date',()=>{
+ const records=fixture();
+ const days=weekdaysEnding('2026-11-06',252);
+ records.space.themes[0].history=days.map(date=>({date,score:20}));
+ records.space.themes[0].observationDate=days.at(-1);
+ assert.equal(simulateAnchor(records).status,'SIDECAR_OBSERVATION_INVALID');
 });
 
 test('all outcomes remain private-only; no branch can claim READY or write',()=>{
