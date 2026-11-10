@@ -140,3 +140,11 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 - 단위 시뮬레이션 신규 **12/12 PASS**, 기존 포함 누적 **75/75 PASS**; 신규 2파일 GitHub 원격 본문·blob readback **2/2 일치**. 운영 PC·Writer·DB·D1·API·UI 변경 **0건**.
 - **실제 68개 종단 완료율: 0/68(0%→0%)**. 본 백엔드 개발은 사용자 원래 대시보드 출력 통일과 별도 범위이며 UI 작업 완료 조건으로 전환하지 않는다.
 - **다음 필수 행동 하나:** D05 원담당은 계산→archive 성공 지점의 기존 승인 운영 ledger 중 *새 비민감 메타데이터를 저장할 수 있는 계약이 있는지* 정확한 소유권·필드 범위와 함께 확인한다. 없다면 승인 없는 Writer/DB 변경 없이 이 호출 연결·메타데이터 영속화는 보류한다. 이후 독립 SEC/E1-R5/Breadth 원입력 증거를 확보한 뒤 실제 사건 1건 검증으로 진행한다.
+
+
+## 2026-11-10 D05 기존 Writer ledger 재사용 적합성 판정
+
+- 최신 `main`의 `scripts/pc-writer/run-local.mjs`, `publish.mjs`, `publication-guard.mjs`, `composite-observed-archive-r1.mjs` **읽기 전용 조사** 결과, `local-market-ledger.json`은 원입력 기록이 아니라 공개 `current`의 `SUBMITTING→VERIFIED` 및 `bodyHash/storedAt` 충돌 보호용 **단일 상태 파일**이다. 여기에 7배치 SHA 이력을 추가하거나 덮어쓰기 금지.
+- `local-publication-ledger.json`도 원격 게시 중 복구용 상태이고, `local-writer-last-run.json`은 실행마다 덮어쓰는 결과 보고서다. `publication-events.jsonl`은 append-only이나 현재 계약은 게시 실행 상태·오류의 기록용으로, 계산 입력 계보를 영속화하는 **승인된 불변 사건 원장으로 확인되지 않았다**. 기존 `composite-observed` SQLite/D1 key에는 점수·계산시각·출력 서명만 있다.
+- **판정: 재사용 가능한 승인된 완전 입력 계보 ledger 미확인 (`PERSISTENCE_CONTRACT_GAP`)**. 신규 필드/전용 파일/DB 키·retention을 임의 신설하지 않고, 이번에는 PC/Writer/원장/D1 쓰기 **0건**. #1206 공통 입력 조회 근거와 별개로 D05 전용 **비민감 사건 메타데이터 영속 계약**의 소유자·범위·승인 여부를 먼저 확정해야 한다.
+- **종단 완료율 유지: 0/68(0%→0%)**. 다음 실제 실행은 기존 승인 ledger 계약이 확인되거나 신규 영속 경로가 명시 승인된 후, 개발용 readback 함수를 **1개 실제 D05 계산 사건**에 최소 범위로 연결하는 것이다. 승인 이전에는 공용 Writer 설치·운영 수정 보류.
