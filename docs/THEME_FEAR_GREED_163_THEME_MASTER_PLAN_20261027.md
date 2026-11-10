@@ -29,6 +29,14 @@
 
 **바로 이어갈 실행 하나:** 테마 원담당이 [#1219](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1219)의 기존 접수 결과를 재조회하고, 설치 A/최신 공통 진단의 **실제로 지원하는 비식별 R181 FIRST FAIL 필드**를 비교해 필요한 최소 조회 계약을 확정한다. 공통 담당이 담당할 접수 오류는 정확한 증거와 함께 분리하고, 권리/원자료 검증처럼 독립 가능한 기능 작업은 중단하지 않는다. 원본 #1219에 새 실행 증거가 없으면 반복 요청 없이 `AUTOMATION_BLOCKED`를 유지한다.
 
+### 2026-11-10 P1-02 최초 실행 관측 — 기존 A 중복 불필요, 실제 HTTP 원인 미해명
+
+- **공개 API 당일 직접 조회:** Chrome `https://zgmini.kr/api/theme-fear-greed` 본문 `{"status":"UNAVAILABLE","reason":"STORED_DATA_STALE","themes":[]}` 확인. 직전 11/9 기록과 별개로 **11/10 현재 관측 정상 0/10**, HTTP status 숫자는 별도 단정하지 않음. D1 물리 key 부재 또는 Reader 원인 자체의 직접 증거는 아님.
+- **원본 PC 증거 재해석:** 기존 성공 A [#1033 JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/42597414102-1-seat-3.json)은 R181 file SHA `be0303b112d6f4471137aa134bf98f696a8a8dfe60d1d13502646c5e0b509d62`/7089B, ledger `STOP` 및 `reasonProfiles.signals=[HTTP,R181,SPY]`까지만 증명, `safeHttpFailure=null`. 설치 Controller의 `safeErrorFlow`는 정적 소스 위치이며 실실행된 HTTP status/code는 미회수. 제어 `main`의 새 `safeR181HttpErrorFlow`도 정적 source-flow인 점을 확인했으므로 **설치만으로 실제 status가 회수된다고 가정하지 않음**.
+- **[#1219](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1219) 접수 분리:** Issue OPEN·라벨 pc-job·댓글 0. opened 후 2초에 라벨 추가 기록, 워크플로는 `issues: opened` + 최초 이벤트 라벨을 요구함. 최초 event payload가 없어 라벨 경쟁을 최종 원인으로 단정하지 않지만 **PC 실행 증거 0, AUTOMATION_BLOCKED**. 요청된 `core-runtime-source-readonly`는 과거 다른 요청에서 `CORE_NO_ACTIVE_TASK_ENGINE/STATE_UNKNOWN`을 반환한 사례가 있고 R181 HTTP 조회 operation이 아님. **기존 #1219/requestId 중복 요청 금지**.
+- **바로 가능한 최소 작업:** 원담당은 R181 **고정 원본 SHA**와 기존 진단 필드만을 근거로 요청 파라미터 **이름-only**, 명시적 HTTP status/code·failureStage를 실제로 어디서 안전하게 얻을 수 있는지 **비식별 읽기 전용 계약**을 정리한다. 원본 예외 문자열·URL·토큰·전체 source 유출 금지. 설치된 A가 없는 신규 진단 등록/pc-job 접수 결함은 공통 담당에게 정확한 계약으로 분리하고, 승인 설치·source readback 후 고유 요청 1회로 검증. R181 명확한 FIRST FAIL 전에는 공급자 URL을 추정 변경하지 않음. [기능 원본 증거 댓글](https://github.com/ansqhd5774-Choi/zgmini/issues/1009#issuecomment-6767936384) 참조.
+- **운영 효과:** 신규 provider 호출 0·운영 쓰기 0·D1 게시 0·예약 추가 0. P1-01/P1-03 완료 유지, P1-02 부분 완료 유지; T1 **20%→20%**. 독립 P1-B/C/D 비공개 검증은 공통 입구 복구를 기다리지 않음.
+
 ## 2026-11-09 사용자 확정: 상위 4단계 우선순위 1 → 4 → 2 → 3
 
 163개 전체 구축에는 장기간이 걸릴 수 있으므로, **기존 공개 콘텐츠를 방치하거나 163개 완성 시점까지 운영 안정화를 유예하지 않는다.** 이전에 보고한 4단계를 다음 순서로 실행한다.
