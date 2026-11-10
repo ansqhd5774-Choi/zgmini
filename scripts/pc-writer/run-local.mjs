@@ -154,7 +154,7 @@ try{
     archiveResult:report.compositeObserved,runtimeSourceSha:source,
     approvedSourceSha:config.source,recordedAt:new Date().toISOString(),
     ledgerPath:path.join(base,'score-lineage','d05-composite-events-v1.jsonl'),
-    exclusiveWriter:d05Writer,
+    exclusiveWriter:d05Writer,initializeApprovedDirectory:true,
    });
    report.d05PrivateLineageStatus=['APPENDED_VERIFIED_LOCAL_ONLY','NOOP_SAME_EVENT'].includes(result?.status)
     ?result.status:'UNPROVEN';
