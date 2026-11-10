@@ -7,6 +7,16 @@
 
 **전체 시작 진행률 = 7/8(87.5%); 계획 반영 후에도 7/8(87.5%)**. 원담당: 본 고용 R6 일반챗. 기능 개발 브랜치: `feat/bls-registered-v2-20261109` (현 PR #1036은 대규모 변경이므로 무검토 병합 금지). 제어 최신 `main`의 R6.1 `AGENTS.md`·`GENERAL_CHAT_START.md`·`PC_AUTOMATION_STANDARD.md` 및 중앙 인계 정본을 읽었다. 기존 Controller #917 성공·R2 게시 성공은 신규 성과로 다시 계산하지 않는다.
 
+### 2026-11-10 병렬 감사·Production 화면 실측 — 최신 우선 판정
+
+- **고용 R6 전체 7/8=87.5% → 7/8=87.5%; 마지막 8단계 운영 0/5.** 고정 최종 목표는 `STATE_CLAIMS_BREADTH`까지 공식 자료로 실제 **29/29 scored READY**를 로컬 계산·D1·API·UI에서 검증하는 것이다. 기존 **28/29 scored**와 공개 UI의 **최근 평가 22/29**는 서로 다른 집계이며 완료로 오인하지 않는다.
+- **실제 Production 웹디버그(읽기 전용):** `https://zgmini.kr/economic-indicators/employment/`에서 전체 29개 구성, 1년 차트 22/29, 최근 평가 22/29 확인. `주별 실업수당 확산도`의 최신 화면 원자료는 **54.9% · 2025-07-19(과거 관측)**, 상태 **평가 없음 / 1년 이력 부족**. HTTP 정상·다른 지표 READY는 DOL 최종 점수의 증거가 아니다.
+- **PC A #1217·#1227 실제 미접수 근거:** 두 Issue는 라벨 생성 시차, 댓글·개별 Actions 실행·JSON/TXT 모두 미확인. 추가 감사에서 #996 운영 관측의 `pc-job.yml=disabled_manually`, `FIRST_FAIL=INTAKE_PAUSED` 및 공용 `tools/update.mjs`의 설치 중 Workflow 일시 비활성 코드 확인. **현재 확인된 주된 장애는 intake 비활성에 따른 `AUTOMATION_BLOCKED`**이며, label-after-create 경합은 별도 가능성일 뿐 원인 확정 아님. PC 런타임 수집 실패(`RUNTIME_FAILED`)로 분류하거나 세 번째 A/기존 요청 재실행 금지. 이후 #996 담당의 재개·기존 요청 결과부터 재조회.
+- **DOL 결손 판정 교정:** #1169 `DOL_UI_WEEKLY_CLAIMS=SERIES_PARTIAL`은 **국가 필수 4시리즈 중 누락 또는 ETA539 51지역 완전주 0개**를 뜻할 수 있으며, 그 문구만으로 600주 응답·577주 연속성·지역 결손 위치를 알 수 없다. 주차 일부가 불연속/577주 미만이어도 수집기는 `SUCCESS`를 반환할 수 있고 R2 점수는 `PARTIAL_HISTORY`일 수 있다. 기존 #1221 승인 A `employment-r6-collection-evidence-readonly`의 `knownMissingSeries`, `selectedWeeks`, `firstSelectedWeek`, `latestCompleteWeek`, `fullTenYearRawCoverage.status/firstFailureWeek`를 실제 PC에 **정식 등록된 뒤 단회 읽기**해야 한다. 530/577주·51지역 결손·연속주 단절·4주 분모 0 및 DB WAL 미확정에 대한 기존 격리 **13/13 PASS** 증거 재사용.
+- **Writer B 재실행 금지 근거:** #1169 승인 V3 `installedSourceSha=144f3b8f…`; 이후 #1195 정규 R2 5파일 설치 결과 PC 로컬 `sourceSha=de81749f83c086f5cb0cad7ed1d5cc958de19280`, #1197 당시 `config.source` 확인. 그러나 **현재 Git HEAD/13 보호 파일 해시 미확정**이므로 과거 B manifest로 재요청하면 `R6_B_INSTALLED_SOURCE_STOP` 위험. #1169은 16호출(BLS14/DOL2)·SQLite 저장·D1 재조회 후 `PARTIAL_PUBLISH_VERIFIED`이며 수리 가능한 Writer 자체 장애로 자동 인계하지 않는다. 현 V3는 **DOL만 지정해 수집하는 옵션이 없음**. 누락 원인/새 정확한 승인 source 계약 전 B 생성 금지.
+- **동일일 보호 경계:** `BACKFILL_ALREADY_ATTEMPTED_TODAY`는 내부적으로 **UTC 날짜(`toISOString().slice(0,10)`)** 기준이며 KST ‘오늘’의 24시간 재호출 금지를 보장하지 않는다. 수집 한도에 여유가 있다고 수동 B를 반복하지 않는다. 추가 공급자 호출·PC 운영 변경·DB/D1 쓰기 **0건**.
+- **다음 필수 실행 1개:** 별도 총괄 담당이 #996 공유 Controller/Workflow 복구 및 기존 #1217/#1227 잔여 intake 결과를 실증한 뒤, **기존 요청의 JSON/TXT부터 회수**한다. 그 다음 승인된 #1221 A의 실설치·현재 source/config/HEAD/파일 해시 확인 → DOL 577연속주×51지역 최초 결손 읽기 → 필요시 정확한 승인 B 한 번 → 저장 원자료 계산→D1/API/UI **29/29** 검증. 공유 C급 복구·lock/lease/운영 설치는 담당자 영역으로 유지. 별도 기능 작업·개발 테스트는 이어가며, 예약 자연 갱신/격리 인계 전체 왕복은 **완료 후 DEFERRED**.
+
 ### 2026-11-10 21:59 KST 실행 재개 체크포인트 — 신규 실측
 
 - **전체 7/8=87.5% → 7/8=87.5%; 8단계 운영 완료 0/5.** 직전 검증된 코드·계획 커밋 `84db2f5681955e0e9781cccb3950f0fa9024ac47`의 [Node CI 42763453755](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/42763453755)는 `completed/success`. CI는 실PC 29/29 완료 증거가 아니다.
