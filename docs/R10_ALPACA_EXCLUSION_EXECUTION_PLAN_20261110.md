@@ -12,7 +12,7 @@
 - PC 제어 정본: `ansqhd5774-Choi/zgmini-pc-control` 최신 `main`의 `AGENTS.md`, `docs/GENERAL_CHAT_START.md`, `docs/PC_AUTOMATION_STANDARD.md`, `docs/AGENT_HANDOFF_CENTRAL_ORCHESTRATOR_V1.md`. 2026-11-10 사용자 R6.1에서 강조한 격리 Writer B 사고 처리·일반챗 재개 기준을 따른다.
 - 기능 저장소: `ansqhd5774-Choi/zgmini`; 작업 브랜치 **`fix/asset-r10-alpaca-exclusion-runtime-20261110`**, 승인된 운영 B manifest 고정 후보 커밋 `9856ba04189eae332837b62551cb89577c56b376`, 수집기 소스 영구 차단·회귀 테스트 반영 커밋 `ead573c9f7a0d38a81cf2666e7138c2a997e3f29`, Draft [PR #1058](https://github.com/ansqhd5774-Choi/zgmini/pull/1058). 두 소스 SHA와 PC 설치 SHA를 혼동하지 않는다.
 - 오래된 R10 분기 `fix/asset-bubble-r10-latest-observations-20261103`의 전체 내용은 현 main보다 크게 뒤져 있으므로 통째 PC checkout에 적용하지 않는다.
-- 기존 R10 금지 패치 8개 파일의 관련 Node 테스트 **31/31 PASS**. 별도 발견된 collector 직접 호출 회귀 위험을 기능 브랜치의 수집기 1줄 가드와 직접 호출 0회·파일 쓰기 0건 테스트 1개로 보완(기존 변경 8파일 + 신규 수집기 1파일 + 계획서 1파일 = PR 변경 총 10파일: 문서 2, 코드/테스트 8). 해당 관련 3개 테스트 파일 **15/15 PASS**, 문법·diff 검사 PASS. PC에 미설치: main/PR/CI 성과를 운영 성공으로 표시 금지.
+- 기존 R10 금지 패치 8개 파일의 관련 Node 테스트 **31/31 PASS**. 별도 발견된 collector 직접 호출 회귀 위험을 기능 브랜치의 수집기 1줄 가드와 직접 호출 0회·파일 쓰기 0건 테스트 1개로 보완(기존 변경 8파일 + 신규 수집기 1파일 + 기존 쿼터 테스트 개정 1파일 + 계획서 1파일 = PR 변경 총 11파일: 문서 2, 코드/테스트 9). 해당 관련 3개 테스트 파일 **15/15 PASS** 및 기존 R10 5개 수집·재개 테스트를 사용 중단 후 원본/체크포인트/쿼터 상태 불변 검사로 보완한 관련 4개 테스트 파일 **31/31 PASS**, 문법·diff 검사 PASS. PC에 미설치: main/PR/CI 성과를 운영 성공으로 표시 금지.
 - Windows A 근거: [#1207](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1207) 정확한 PC 파일 preimage; [#1209](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1209) collector 함수 초반 `EXCLUDED_BY_USER/runRequests:0` insert-only `PASS_READONLY`. [#1216](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1216) 2026-11-10T00:49:55Z `core.lockPresent=false` 및 PC 승인 source `de81749f83c086f5cb0cad7ed1d5cc958de19280` 관측은 **그 시각만의 자료**, 동시 자연 유휴 2회나 live Core 실행 소스 전체 연결 증거는 아니다.
 - 제어 저장소 기존 승인 manifest: `approvals/writer-updates/r10-alpaca-excluded-minimal-overlay-20261110.json`, SHA-256 **`4c14d8ed23f62fa5c64f482d61fe203cff53312713ebd10bf732a6f6a1f54108`**; 정확히 2개 운영 Writer 파일 수정, 3개 기존 타 담당 누적 파일 보호.
 - 첫 정규 B [#1210](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1210) / Run `42724651597`: `WRITER_B_PREFLIGHT_STOP/WRITER_B_CORE_ACTIVE_WINDOW_DEFERRED`; 결과 JSON/TXT 2/2, 운영 변경 **0**, 동일 요청 재사용/자동 재실행 **금지**.
@@ -23,7 +23,7 @@
 | 단계 | 상태 | 완료/통과 조건 | 필수 증거·담당 |
 | --- | --- | --- | --- |
 | **1. 사용 금지 결정·보존 범위** | **DONE 20/20** | Alpaca 신규 호출/과거 B 재사용/신규 R10 게시 금지·원본/마지막 게시 보존 확정 | 사용자 명시 결정, R10 담당 |
-| **2. 현 main 기준 소스 패치** | **DONE 20/20** | 기존 8파일 변경 + 신규 수집기 1파일 직접 차단 + 기존 테스트 1파일 보강, 산식·타 기능 보존, 기존 31/31 및 추가 집중 15/15 PASS | PR #1058 / `9856ba…` + `ead573c…`, R10 담당 |
+| **2. 현 main 기준 소스 패치** | **DONE 20/20** | 기존 8파일 변경 + 신규 수집기 1파일 직접 차단 + 기존 테스트 1파일 보강, 산식·타 기능 보존, 기존 31/31 및 최신 집중 31/31 PASS | PR #1058 / `9856ba…` + `ead573c…` + `64c682a…`, R10 담당 |
 | **3. 실제 PC preimage·승인 설치 설계** | **DONE 20/20** | A preimage/insert preview, 2파일 manifest, 보호 해시, B #1210 무변경 이연 정확 분류 | #1207/#1209/#1210 및 승인 JSON, R10 담당 |
 | **4. 실제 Writer 2파일 안전 설치** | **PENDING 0/20** | 신규 고유 정규 B 1회 `SUCCEEDED`·PC 실제 afterSHA·config source/작업 정의·원본 백업·JSON/TXT 재조회. 원본 누적 Writer 3파일 불변 | 신규 B Issue/Run/원격 결과·PC 상태; R10 담당 |
 | **5. 전체 R10 금지 효과·공개 검증** | **PENDING 0/20** | provider 호출 0, 과거 B 자료로 새 6요소/점수 생성 0, health/scheduler/checkpoint에서 금지 상태 명확, 과거 유효 게시 보존; 승인된 신규 공개 결과가 있을 때 SQLite/D1/API/UI 일치·시각 검증 | 운영 checkpoint/ledger, 관련 A/B 최소 후속 변경, 공개 화면; R10 담당 |
