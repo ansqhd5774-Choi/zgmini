@@ -384,3 +384,10 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 **개별 공개 읽기 경로 미확인 19개**: 양자컴퓨팅, 블록체인·디지털자산, AR·VR, 데이터센터 액체냉각, 실리콘 포토닉스, 드론·UAM, 휴머노이드, 전고체 배터리, 수소, 태양광, 핵융합, 탄소포집, 희토류·핵심광물, 자원 재활용, 의료기기, 디지털헬스, AI 신약개발, K-콘텐츠·드라마, 게임·e스포츠. `/api/theme-configured`는 `public_feed_snapshots_v1`의 `theme-configured:%` 동적 항목을 읽을 수 있으므로, 이 19개가 실제 저장·운영되지 않는다고 단정하지 않는다. 또한 `theme-explorer.tsx`가 직접 요청하는 것은 `/api/theme-fear-greed`여서 동적 configured 전용 API의 READY 데이터가 곧바로 탐색기 30개에 표시된다고도 단정하지 않는다.
 
 **판정:** 30 UI 명칭 확정, 11개 이름 대응 reader 소스 확인, 19개 개별 경로 미확인, 동적 추가 런타임 미검증, 30개 당일 확정점수의 1Y PIT 보관 실증 **0건**. 다음 확인은 기존 A급 승인 조회로 실제 D1 현재 feed 키/PC 저장 키를 읽어 11개 READY와 19개 동적 등록 여부를 대조하는 것이다. 새로운 계산식·복제 게시기·예약을 만들지 않는다.
+
+### 2026-11-11 공개 테마 실화면·API 재조회 (KST 약 06:41, 비운영)
+
+- 공개 `GET https://zgmini.kr/api/theme-fear-greed` 응답: `{"status":"UNAVAILABLE","reason":"STORED_DATA_STALE","themes":[]}`. 화면 30개 등록 여부와 별개로 현재 **이 API가 읽을 수 있는 정상 최신 점수는 0개**이며, 기존 D1 점수가 삭제됐다는 의미는 아니다.
+- 공개 `GET https://zgmini.kr/api/theme-configured` 응답: `status=PENDING`, `version=ZGMINI_CONFIGURED_THEMES_READER_V1`, `themes=[]`, supportedMethodologies 2종. **현재 해당 별도 API에 공개 가능한 동적 등록 점수 0개**. 내부 PC/D1 과거 행이 없다고 역추정하지 않는다.
+- 실제 `/theme-fear-greed/` 화면은 `테마 데이터 대기`, `ETF 전용 3축 연구 · 공개 데이터 대기`를 표시하고, 그 관측 DOM에서는 수치형 테마 카드가 나타나지 않았다. 개발 소스의 30개 UI 표시명 존재와 프로덕션의 현재 렌더 결과를 구분한다.
+- **공개 제공 단계의 현재 문제:** `STORED_DATA_STALE`; 데이터 원인·원담당 설치/스케줄/판권 승인 및 D1 실제 행은 이번 공개 GET으로 식별할 수 없다. 현재 기능 담당의 정상 게시 복구가 우선이며, 공통 #996 C급 복구·원본 DB 조작·임의 재배포로 우회하지 않는다. 1Y PIT 전체 종단은 계속 **0/68(잠정 분모)**.
