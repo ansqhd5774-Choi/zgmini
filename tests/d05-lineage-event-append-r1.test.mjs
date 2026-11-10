@@ -1,10 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,readFile,writeFile,rm,access} from 'node:fs/promises';
+import {mkdtemp,readFile,writeFile,rm,access,symlink} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
-import {join} from 'node:path';
+import {dirname,join} from 'node:path';
 import {buildD05LineageEvent} from '../lib/score-history/d05-lineage-event-contract-r1.mjs';
-import {appendD05LineageEvent,d05AppendFitsCapacity} from '../lib/score-history/d05-lineage-event-append-r1.mjs';
+import {appendD05LineageEvent,d05AppendFitsCapacity,
+ createD05LocalCycleExclusiveWriter} from '../lib/score-history/d05-lineage-event-append-r1.mjs';
 
 const calculatedAt='2026-11-10T12:00:13.385Z';
 const at=Date.parse(calculatedAt);
@@ -132,4 +133,42 @@ test('ledger capacity counts the appended line, not only the prior file',()=>{
  assert.equal(d05AppendFitsCapacity(400,1,400),false);
  assert.equal(d05AppendFitsCapacity(-1,1,400),false);
  assert.equal(d05AppendFitsCapacity(0,1,Number.MAX_SAFE_INTEGER),false);
+});
+
+test('only a live owning local-cycle parent can grant the D05 append lease',async t=>{
+ const ledgerPath=await fixture(t),pcHome=dirname(ledgerPath);
+ const lockPath=join(pcHome,'local-cycle.lock');
+ const owner={pid:process.pid,at:Date.now()};
+ await writeFile(lockPath,JSON.stringify(owner));
+ const getParentPid=()=>process.pid,processAlive=pid=>pid===process.pid;
+ const writer=createD05LocalCycleExclusiveWriter({pcHome,getParentPid,processAlive});
+ assert.ok(writer);
+ assert.equal(await writer.assertExclusive(),true);
+ assert.equal((await appendD05LineageEvent({ledgerPath,entry:event(),
+  exclusiveWriter:writer})).status,'APPENDED_VERIFIED_LOCAL_ONLY');
+ await rm(lockPath);
+ assert.equal(await writer.assertExclusive(),false);
+ assert.equal((await appendD05LineageEvent({ledgerPath,entry:event(),
+  exclusiveWriter:writer})).code,'LINEAGE_WRITER_LEASE_REQUIRED');
+});
+
+test('D05 parent lease refuses direct invocation, changed owner and symlinks',async t=>{
+ const ledgerPath=await fixture(t),pcHome=dirname(ledgerPath);
+ const lockPath=join(pcHome,'local-cycle.lock');
+ const getParentPid=()=>process.pid,processAlive=pid=>pid===process.pid;
+ const create=()=>createD05LocalCycleExclusiveWriter({pcHome,getParentPid,processAlive});
+ assert.equal(create(),null);
+ assert.equal(createD05LocalCycleExclusiveWriter({pcHome:'relative-path'}),null);
+ await writeFile(lockPath,JSON.stringify({pid:process.pid+1,at:Date.now()}));
+ assert.equal(create(),null);
+ const at=Date.now();
+ await writeFile(lockPath,JSON.stringify({pid:process.pid,at}));
+ const owner=create();assert.ok(owner);
+ await writeFile(lockPath,JSON.stringify({pid:process.pid,at:at+1}));
+ assert.equal(await owner.assertExclusive(),false);
+ assert.equal(createD05LocalCycleExclusiveWriter({pcHome,getParentPid,
+  processAlive:()=>false}),null);
+ await rm(lockPath);
+ await symlink(ledgerPath,lockPath);
+ assert.equal(create(),null);
 });
