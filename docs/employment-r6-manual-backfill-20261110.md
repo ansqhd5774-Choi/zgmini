@@ -7,6 +7,13 @@
 
 **전체 시작 진행률 = 7/8(87.5%); 계획 반영 후에도 7/8(87.5%)**. 원담당: 본 고용 R6 일반챗. 기능 개발 브랜치: `feat/bls-registered-v2-20261109` (현 PR #1036은 대규모 변경이므로 무검토 병합 금지). 제어 최신 `main`의 R6.1 `AGENTS.md`·`GENERAL_CHAT_START.md`·`PC_AUTOMATION_STANDARD.md` 및 중앙 인계 정본을 읽었다. 기존 Controller #917 성공·R2 게시 성공은 신규 성과로 다시 계산하지 않는다.
 
+### 2026-11-10 22시대 KST #996 중단 후 고용 R6 안전 재개 판정
+
+- **프로젝트 7/8=87.5% 유지, 8단계 운영 0/5.** 별도 총괄 대화가 전달한 원본 Windows #996 C 복구 중간 결과는 `STATE_UNKNOWN_PRESERVE_C_CLAIM_AND_ORIGINAL_LEASE`, 최초 실패 `C_GITHUB_BACKLOG_PLAN_ORIGINAL_BODY_INVALID` / `ORIGINAL_JOB_DISPOSITIONS`. Workflow 변경·backlog 종료 **시도**는 각각 1회지만 실제 변경 성공·C lease 처리 여부는 이 출력만으로 확정 불가. **총괄 소유자가 원본 보존·읽기 전용 역검증 중**이며 여기서 C CMD 재실행·lock/Workflow/backlog 조작·우회 금지. 이 결과는 현재 사용자 제공 증거이며, 조회한 [#996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/996) 댓글에는 아직 완료 판정이 없음.
+- **기존 A 미수신 재조회:** [#1217](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1217)과 [#1227](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1227)은 GitHub 조회 당시 모두 `open`, 결과 댓글 `0`, PC 실행 TXT/JSON 증거 없음. 같은 효과의 요청·provider B 재실행 **0건**. #996 성공·PC intake 안전 재개가 실제 검증되기 전에는 새 A를 생성하지 않음.
+- **독립 기능 검증:** 기존 격리 코드 `node --test tests/employment-r6-collection-evidence-readonly.test.mjs` **13/13 PASS, FAIL 0**, 530/577주·51지역·연속성·분모 0·WAL/승인 경로 안전 거부 검증. 이 테스트는 **PC 실설치/실SQLite 577주 충족/29점 게시 증거가 아님**.
+- **단일 다음 실행 조건:** 총괄의 #996 `RECOVERY_COMPLETED` 등 실제 보존·Workflow/backlog 처분 증거 확인 → **기존 #1217/#1227 결과를 먼저 확인** → 제어 A 설치/승인 source와 SQLite 결손 정밀 조회. 독립 기능 작업은 계속하되 공유 제어/DB/Writer 자원은 담당자에게 맡김.
+
 ### 2026-11-10 병렬 감사·Production 화면 실측 — 최신 우선 판정
 
 - **고용 R6 전체 7/8=87.5% → 7/8=87.5%; 마지막 8단계 운영 0/5.** 고정 최종 목표는 `STATE_CLAIMS_BREADTH`까지 공식 자료로 실제 **29/29 scored READY**를 로컬 계산·D1·API·UI에서 검증하는 것이다. 기존 **28/29 scored**와 공개 UI의 **최근 평가 22/29**는 서로 다른 집계이며 완료로 오인하지 않는다.
