@@ -1,5 +1,11 @@
 # 고용 R6 2026-11-10 수동 BACKFILL 실증 및 잔여 실행 계획
 
+## 진단 준비 갱신 — DOL/BED 저장자료 A 조회 (2026-11-10 KST)
+
+- 고용 R6 전체 **7/8 = 87.5% 유지**. DOL `STATE_CLAIMS_BREADTH`가 유일한 미평가 항목이며, 실제 결손 위치·재수집·최종 게시는 아직 미완료.
+- 제어 Draft [#1184](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1184) 진단이 실제 `main`의 ETA539 BACKFILL **530주** 원본 키를 인식하도록 수정했다(`600주` 후보와 `112주`·`60주` 유지). 진단의 과거 4주 기준도 승인된 R6 산식과 일치시켜 **1주 값 0은 유효, 지역별 과거 4주 합계 0만 제외**하도록 수정했다. SQLite 값/원자료·수집·계산·D1 쓰기 없는 격리 테스트 **8/8 PASS**.
+- 진단의 최신 제어 HEAD는 **`7d6da076a88c6a33eef5034c9fab914d541ae721`**. **Draft·미병합·실PC 미설치**이며 CI/실제 DOL/BED readback은 미검증. 공통 Controller [#917](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/917)의 단일 운영 복구 담당이 설치 자원을 사용 중이므로 공유 Controller를 중복 변경하지 않는다. 원격 결과가 확보되면 DOL 최초 결손만 최소 보정하여 29/29 점수 게시 여부를 다시 판정한다.
+
 ## 검증된 최신 운영 완료 — R2 D1/API/UI (2026-11-10 KST)
 
 - **프로젝트 진행률 6/8(75.0%) → 7/8(87.5%).** R2 4개 CPS 예외의 정규 PC source 5파일 설치(기존 #1195)·선택 main/Cloudflare Production 배포(643b7c… / ef5e4a8d)뿐 아니라 **Cloudflare D1 저장값 직접 SELECT + 공개 API + 운영 UI** 검증까지 완료했다. 여전히 `STATE_CLAIMS_BREADTH` 점수 미평가 1개 및 DOL/BED 원본 결손 위치 원인은 미완료. 독립 PC 파일의 R2 결과 원장과 Core 실행 source 연결 증거는 추가 확인 여지가 있으나, 이미 검증된 공개 D1 기록을 미게시로 되돌려 보고하지 않는다.
