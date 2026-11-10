@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {mkdtemp,readFile,writeFile,rm,access,symlink} from 'node:fs/promises';
+import {mkdir,mkdtemp,readFile,writeFile,rm,access,symlink} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {dirname,join} from 'node:path';
 import {buildD05LineageEvent} from '../lib/score-history/d05-lineage-event-contract-r1.mjs';
@@ -57,6 +57,51 @@ test('missing exclusive Writer authority refuses before touching disk',async t=>
  }
  assert.equal(await missing(ledgerPath),true);
  assert.equal(await missing(ledgerPath+'.lock'),true);
+});
+
+test('approved opt-in creates only its private score-lineage leaf after lease proof',async t=>{
+ const dir=await mkdtemp(join(tmpdir(),'zgmini-d05-leaf-fixture-'));
+ t.after(()=>rm(dir,{recursive:true,force:true}));
+ const directory=join(dir,'score-lineage');
+ const ledgerPath=join(directory,'d05-composite-events-v1.jsonl');
+ assert.equal((await appendD05LineageEvent({ledgerPath,entry:event(),
+  initializeApprovedDirectory:true,exclusiveWriter:undefined})).code,
+ 'LINEAGE_WRITER_LEASE_REQUIRED');
+ assert.equal(await missing(directory),true);
+ const first=await appendD05LineageEvent({ledgerPath,entry:event(),
+  initializeApprovedDirectory:true,exclusiveWriter:lease()});
+ assert.equal(first.status,'APPENDED_VERIFIED_LOCAL_ONLY');
+ assert.equal(JSON.parse((await readFile(ledgerPath,'utf8')).trim()).eventId,
+  event().eventId);
+ const second=await appendD05LineageEvent({ledgerPath,entry:event(),
+  initializeApprovedDirectory:true,exclusiveWriter:lease()});
+ assert.equal(second.status,'NOOP_SAME_EVENT');
+ assert.equal(await missing(ledgerPath+'.lock'),true);
+});
+
+test('opt-in refuses other directories or filenames without creating a parent',async t=>{
+ const dir=await mkdtemp(join(tmpdir(),'zgmini-d05-scope-fixture-'));
+ t.after(()=>rm(dir,{recursive:true,force:true}));
+ for(const ledgerPath of [join(dir,'other','d05-composite-events-v1.jsonl'),
+  join(dir,'score-lineage','another-name.jsonl')]){
+  const result=await appendD05LineageEvent({ledgerPath,entry:event(),
+   initializeApprovedDirectory:true,exclusiveWriter:lease()});
+  assert.equal(result.code,'LINEAGE_DIRECTORY_SCOPE_UNAPPROVED');
+  assert.equal(await missing(dirname(ledgerPath)),true);
+ }
+});
+
+test('opt-in refuses a symlinked private leaf and never follows it',
+ {skip:process.platform==='win32'},async t=>{
+ const dir=await mkdtemp(join(tmpdir(),'zgmini-d05-symlink-fixture-'));
+ t.after(()=>rm(dir,{recursive:true,force:true}));
+ const target=join(dir,'other-target');await mkdir(target);
+ await symlink(target,join(dir,'score-lineage'),'dir');
+ const ledgerPath=join(dir,'score-lineage','d05-composite-events-v1.jsonl');
+ const result=await appendD05LineageEvent({ledgerPath,entry:event(),
+  initializeApprovedDirectory:true,exclusiveWriter:lease()});
+ assert.equal(result.code,'LINEAGE_DIRECTORY_UNSAFE');
+ assert.equal(await missing(join(target,'d05-composite-events-v1.jsonl')),true);
 });
 
 test('invalid source contract and unapproved relative path do not create files',async t=>{
