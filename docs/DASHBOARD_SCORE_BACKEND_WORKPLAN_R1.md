@@ -341,3 +341,13 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 - **격리 검증:** 신규 fixture 5/5 PASS, D05 입력·archive·어댑터·R10 release 집중 회귀를 합쳐 **81/81 PASS**, 실제 운영 PC·SQLite·D1/API 쓰기 0건. 이 검증기는 실제 저장 데이터 조회기가 아니고, 새 A 등록·Writer 설치·D1 날짜별 게시를 실행하거나 승인하지 않는다.
 
 **실제 68개 1년 종단 진행률 0/68(0%→0%).** 다음 필수 행동은 #1228에 대한 기존 A 범위 판정 또는 지원된 고정 읽기 계약의 첫 유효 PC 결과를 회수하는 것이다. 그 결과 날짜별 원장과 같은 시각의 D1·확정 API를 이 검증기에 넣어 **단일 실제 사건을 우선 입증**하며, 1년 252회 PIT 원장/입력 미확보 부분은 별도로 유지한다. 무관한 대시보드·테마 작업은 계속한다.
+
+## 2026-11-11 독립 이력 경로 재점검 — D1 날짜 행과 테마 실행 증거
+
+- **실제 공개 계산 이력 전진:** `GET https://zgmini.kr/api/market-score/observations?period=1Y`에서 `READY`, `COMPOSITE_CALCULATED_SCORES_R1`, UTC **9일·36건**을 직접 확인. 최근 실제 사건은 `2026-11-10T17:37:34.025Z`, `asOfDate=2026-11-10`, `score=47.97904040009388`. 이전 35건에서 1건 추가됐지만 이는 종합 점수 계산 사건이지 68개 점수 전체의 PIT 증거가 아니다.
+- **업종:** 고정 A 지원 요청 [#1228](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1228)은 open·회신 0. PC 날짜별 원본/입력 SHA를 임의 SQL·CMD나 다른 operation으로 우회 조회하지 않는다.
+- **독립 대시보드 기회:** `worker/market-operational-store.mjs::writeScore`와 `scripts/pc-writer/publish.mjs::marketPlan`은 `market_public_snapshots_v1`의 `YYYY-MM-DD` 날짜 행과 `current`에 **12개 도메인/종합점수** 본문을 저장·게시하도록 구현돼 있다. 같은 날짜 재계산은 `ON CONFLICT DO UPDATE`로 덮어쓰므로 **불변 PIT 원장 아님**. 공개 `1Y` API는 종합점수만 반환한다. 기존 D1 Studio `zgmini-core-r42` 행 탐색으로 `2026-11-10` 날짜 행의 `body`/`stored_at`을 조회해 동일 시점의 `current`와 대조하는 것이 후속 실제 읽기 작업이다. 공개 `/api/market-score`는 V11/V9 breadth overlay가 가능하므로 raw 12개 도메인과 무조건 1:1 동일값이라고 주장하지 않고 해당 version을 분리한다. 이번 브라우저에서는 Cloudflare 로그인 필요로 **실제 D1 날짜 행 신규 검증 0건**.
+- **테마:** 현재 `config/theme-data-registry.json` 명시 등록은 10개이며 T01~T30의 전체 ID·원천·게시 경로 매핑은 아직 증명되지 않았다. 기존 승인된 `theme-l7-runtime-readonly` 결과 `results/42597414102-1-seat-3.json`에는 R181 `STOP`, R179 `PUBLIC_API_ROLLING_MISMATCH`, R183 `PUBLISHER_CHILD_FAILED_REVIEW`가 보존돼 있다. 지난 실패가 현재도 지속된다고 단정하지 않으며 테마 원담당이 FIRST FAIL을 조사한다. Rolling 252점은 당시 확정된 252회 게시 증거가 아니다.
+- **다음 필수 실제 행동:** 인증된 기존 D1 Studio에서 `2026-11-10` 날짜 1행 `body`·`stored_at` 읽기 → 같은 시점의 `current` 및 공개 API의 비교 가능한 필드만 대조한다(읽기 전용, SQL/쓰기 없이). 브라우저 인증 제한이면 이 D1 조회만 `D1_STUDIO_AUTH_REQUIRED`로 분리하고 업종 #1228/테마 원담당 작업을 계속한다. 원입력 SHA/revision 및 1년 당시 확정 기록은 여전히 별도 미증명이다.
+
+**전체 1년 실제 종단 완료 0/68(0%→0%).** 신규 공개 계산 1건 관측과 기존 저장 경로 확인 외 PC·Writer·D1·Cloudflare 운영 쓰기·신규 예약/배포 0건.
