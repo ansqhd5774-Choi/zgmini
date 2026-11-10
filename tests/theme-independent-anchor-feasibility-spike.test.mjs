@@ -63,7 +63,7 @@ function simulateAnchor(records,{now=NOW}={}){
     // >=240 overlapping trading dates, but never a newer/stale sidecar.
     const observedEnd=Date.parse(theme.observationDate+'T23:59:59Z');
     if(!base||theme.observationDate>base.observationDate||
-     observedEnd>now||now-observedEnd>=MAX_AGE)
+     now-observedEnd>=MAX_AGE)
      return {status:'SIDECAR_OBSERVATION_INVALID',family:family.id,label};
     const baseDates=new Set(base.history.map(p=>p.date));
     const overlap=hist.filter(p=>baseDates.has(p.date)).length;
