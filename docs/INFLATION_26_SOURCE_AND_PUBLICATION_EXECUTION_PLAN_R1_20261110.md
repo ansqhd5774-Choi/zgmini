@@ -17,12 +17,12 @@
 | 신규 7개 PC source 설치·활성화 | 과거 7/7 | 현행 파일·승인 SHA는 실제 실행 시 좁게 확인 |
 | PC 유효 원자료 | **23/26** | **26/26**; 누락 BLS 2 + Census 1 |
 | 신규 7개 중 유효 사설 원자료 | **4/7** | **7/7**; 원자료 readback 필수 |
-| 신규 7개 실제 D1→API→UI 게시 | **0/7 확인** | **7/7 실제 값·날짜 검증** |
+| 신규 7개 Production API·데스크톱 UI 값 공개 | **4/7 직접 확인** | **7/7 실제 값·날짜 검증** |
 | 전체 프로젝트 추산 진행률 | **42%** | 현장 증거 확보에 따라 재산정 |
 
 누락: BLS CPI 임대료 `CUSR0000SEHA`(#22), 자가주거비 OER `CUSR0000SEHC01`(#23), Census M3 제조업 총재고 `MTM/TI`(#28). 기존 4/7은 EIA 휘발유, Treasury 관세 순수납, BLS PPI `WPSFD4`, Fed G.17 제조업 생산이다. `INVALID`/`MISSING`을 0이나 추정값으로 대체하지 않는다.
 
-`zgmini/main`에는 신규 7행 공개 validator/reader, 전용 writer, `run-local.mjs`의 `publishInflationCandidates7Auto` 연결, `worker/candidate-r52.ts` GET/HEAD 분기, 물가 상세 UI의 `InflationCandidate7Inputs` 연결이 **source 수준에서 이미 확인**되었다. 오래된 작업 문서의 'main 미회수·라우터/UI 미연결' 표현은 최신 source에 그대로 적용하지 않는다. 이것은 **설치·Cloudflare Production·D1 실제 값 확인이 아니다**. 오래된 기능/UI 브랜치 전체 병합 금지.
+`zgmini/main`에는 신규 7행 공개 validator/reader, 전용 writer, `run-local.mjs`의 `publishInflationCandidates7Auto` 연결, `worker/candidate-r52.ts` GET/HEAD 분기, 물가 상세 UI의 `InflationCandidate7Inputs` 연결이 **source 수준에서 이미 확인**되었다. 오래된 작업 문서의 'main 미회수·라우터/UI 미연결' 표현은 최신 source에 그대로 적용하지 않는다. 이 source 확인만으로는 **설치·Cloudflare Production·D1 실제 값을 입증하지 못한다**. 아래 6절의 별도 실제 공개 관측을 구분한다. 오래된 기능/UI 브랜치 전체 병합 금지.
 
 ## 2. 개정 공통 지침의 적용
 
@@ -71,3 +71,10 @@
 그다음 안전하게 실행 가능한 첫 실작업을 선택한다: 게시 B 경로가 준비되면 **기존 유효 4개 READY/STALE + 누락 3개 PENDING(과거 유효본 확인 시 STALE)**의 7행 첫 공개를 수행하고 D1/API/UI를 검증한다. 수동 공식 B의 Core 잠금 소유 증거가 충족되면 **새 단회 요청으로 3개 확보**를 수행한다. 두 축 중 하나가 실제 차단이면 다른 축을 계속한다. 새 정상 실행을 인위적 자동 장애 검증으로 바꾸지 않는다.
 
 모든 단계별 결과는 `DONE / RUNNING / STATE_UNKNOWN / BLOCKED / DEFERRED`, 대상 source SHA, 원본 Issue/requestId/Run, 실제 PC 결과쌍, lastPass/firstFail, 저장·D1·API·UI readback을 분리해 후속 기록한다. 진행률은 **실제 완료한 단계만** 가산하며 문서 작성 후 **42% 유지**. 각 재개 시 이 계획과 마지막 실증 단계에서 다음 실행 하나를 선정한다.
+
+## 6. 실행 개시 후 확인 — Production 4/7 공개 (2026-11-10 KST)
+
+- **실제 조회:** `https://zgmini.kr/api/inflation-candidate-inputs`는 `schemaVersion=inflation-causal-candidates-7-r1-v1`, `status=PARTIAL`, `score=null`, `sourceVersion=INFL7_PRESENTATION_c891b9b21dc39a33c88acd08692bbdc2d9278e32881ec4759b09ec42cbd10231`, 정확히 **7행**을 반환했다. `READY` 4개는 #2 EIA(4.153 USD/갤런, 2026-11-02), #16 Treasury(5,910,402,249.78 USD, 2026-09-30), #24 BLS PPI(159.78, 2026-09-01), #29 Fed G17(99.4361, 2026-09-01). `PENDING` 3개 #22/#23/#28은 `value:null`, `history:[]`, 관측일 null로 유지한다.
+- **실제 UI 관측:** `https://zgmini.kr/economic-indicators/inflation/` 데스크톱 화면에서 별도 '추가 물가 관련 연구 원자료 (7개)' 표가 표시됐다. 기존 유효 4개 값/관측일·차트, 미확보 3개 대시(—)/'원자료 게시 대기'가 API와 부합한다. 기존 19행 표와 기존 4축 물가 점수 **54.3**도 별도 표시됐다. 모바일 시각 결과는 미확인이다.
+- **저장 계약 근거:** `zgmini/main`의 `readInflationCandidates7PublicResponse()`는 D1 `market_public_snapshots_v1`의 `detail:inflation-causal-candidates-7:r1` 행을 조회·본문과 `stored_at` 일치 검증 후 응답한다. 따라서 공개 API는 저장 D1 projection을 서비스하는 것으로 source와 실응답이 정합한다. 다만 **별도 관리자 D1 직접 재조회/실제 PC Writer ledger·설치 SHA/Cloudflare exact deployment** 증거는 이 관측만으로 확보하지 않았다.
+- **조치:** 이미 성공한 첫 4/7 공개를 다시 게시하지 않는다. B2의 최초 부분 공개는 관측 범위에서 **DONE(Production API·데스크톱 UI 4/7)**으로 바꾸고, 남은 필수 작업을 A1~A4의 **3개 원자료 실제 수동 수집**, B3의 후속 7/7 갱신·저장 원장 검증, B4의 **모바일 및 정확한 배포/Publisher/D1 재조회**로 좁힌다. 전체 진행률은 기존 산정 근거가 부족하므로 임의 변경하지 않고 **42% 유지**한다.
