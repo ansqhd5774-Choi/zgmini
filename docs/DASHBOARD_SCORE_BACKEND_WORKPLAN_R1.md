@@ -198,3 +198,31 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 - **증명된 범위:** `D1 저장 행 1건 ↔ 공개 API에서 같은 계산 사건`까지만 PASS. 해당 D1 `signature=null`이며 입력 SHA/revision/checkpoint, 로컬 저장 당시 Runtime source, 공급자 원관측→계산 및 전체 1년치 68개 이력은 **미증명**이다. 실제 종단 1Y 완료율 **0/68 (0%→0%)** 유지. 이 PASS가 과거 원입력 증거나 다른 점수의 완료율로 자동 전이되지 않는다.
 - **2단계 현재 문제:** [공통 지원 #1206](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1206) 읽기 재조회 결과 **댓글 0**; 기존 #1023 설치 조회 거부와 archive의 historical input key 부재는 해결됐다는 증거가 없다. 과거 사건은 `HISTORICAL_INPUT_LINEAGE_UNPROVEN`으로 유지하고 최신 배치로 소급 추정하지 않는다. 공통 총괄의 원인 지원과 독립 관측 축적은 각자 계속하며 재차 인위적 Writer B/Controller 시험을 만들지 않는다.
 - **다음 필수 실행 하나:** 공통 원담당이 승인된 기존 원장/Reader에서 **같은 계산 사건의 과거 원입력 선택 ID·revision·SEC/E1-R5·Breadth checkpoint**를 실제로 회수할 수 있는지 #1206에 범위 제한해 판정한다. **미보존이면** 향후 사건의 최소 비민감 metadata 영속 계약에 관한 소유권·승인 여부만 확정하고 과거 계보 복원이나 Writer/DB 필드 신설은 실시하지 않는다. 이 의존성 때문에 정상 D05 게시나 다른 콘텐츠 업무를 중지하지 않는다.
+
+
+## 2026-11-10 D05 병렬 실측·KST 일별 시뮬레이션 및 미래 입력 계보 계약 점검
+
+### 실제 공개 이력의 날짜 기준 검증 (읽기 전용)
+
+- 동일 공개 `GET /api/market-score/observations?period=1Y`의 `COMPOSITE_CALCULATED_SCORES_R1` 계산 사건 **34건**을 각 `observedAt`(UTC)에서 `Asia/Seoul = UTC+09:00` 계산 날짜로 변환·그룹화했다. 공식 `asOfDate`나 D1의 기존 UTC day key는 변경하지 않았다.
+- 공개 `availableDays=9`는 **UTC 계산 날짜 9일/34건**이다. 이를 KST 계산 날짜별로 집계하면 **8일/34건**이며, 각 KST 날짜의 마지막 실제 계산 사건만 고르는 **비파괴 시뮬레이션의 점수는 8개**다. 2026-10-31부터 2026-11-10까지 KST 일자 중 **11-01·11-02·11-06**은 실제 계산 사건이 없다. 이 날짜는 이전 점수로 채우거나 `DONE`으로 판정하지 않는다.
+- 34건 중 **18건**은 공식 `asOfDate`와 **KST 계산일**이 다르다. `asOfDate`(자료·모델 기준일), `calculatedAt/observedAt`(실제 계산 시각), `stored_at`(저장 기록), UTC D1 key, KST 표시일을 서로 다른 의미로 보존해야 한다. KST 표시/계약 변경은 이번 검증에 포함되지 않는다.
+- 8개 KST 마지막 사건 점수는 실제 아카이브에서 선택한 것이지만, 과거 같은 사건의 원입력 SHA·수정 이력·전체 산식 재현을 검증한 점수가 아니다. 본 시뮬레이션을 1년 실제 히스토리 복원 또는 운영 게시 성공으로 계상하지 않는다.
+
+### 두 독립 조사 담당의 범위별 결론
+
+1. **과거 계산 사건 출처:** 승인된 과거 PC A 읽기 결과 [#613](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/613)의 SQLite `composite-observed:2026-10-31` 저장 존재와 운영 완료는 확인했으나, 그때 실제 선택된 **7 batch의 원본 key/SHA 및 SEC/E1-R5/Breadth checkpoint**는 증거에 없었다. Archive 출력 FNV32 및 sidecar `UNATTESTED_LEDGER`만으로 12개 영역 원입력 계보를 소급 확정할 수 없다. 공통 [#1206](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1206) 당시 open/댓글 0으로 실증 회신 미확인. 과거 [#1023](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1023)의 A 실행은 `OPERATION_NOT_ALLOWED`, LAST PASS=`EVENT_RECEIVED`, FIRST FAIL=`EVENT_OR_REQUEST_VALIDATION`; 이 거부 요청을 재실행하거나 다른 operation으로 우회하지 않는다. 판정: `HISTORICAL_INPUT_LINEAGE_UNPROVEN`(정상 D05 축적에 대한 차단 아님).
+2. **미래 계산 사건 입력 증거:** 개발 브랜치의 `market.mjs` 선택형 `onInputEvidence`와 `composite-archive-lineage-link-r1.mjs`는 **같은 계산시각·점수·출력 서명·archive 재조회·저장된 7개 선택 batch ID/시각/SHA**가 완전히 맞을 때만 `LINKED_SELECTED_7_BATCHES_ONLY`를 반환한다. 현행 `scripts/pc-writer/run-local.mjs`는 이 선택형 검증 연결을 호출하지 않는다. `UNCHANGED`는 신규 원장 사건이 아니며, 이미 있는 `local-market-ledger.json`·`local-publication-ledger.json`·`local-writer-last-run.json`·`publication-events.jsonl`은 새 불변 원입력 계보 원장으로 승인된 저장 계약이 아니다.
+3. **독립 개발 시뮬레이션:** 원격 개발 브랜치의 기존 테스트를 로컬 Node로 재실행해 **75/75 PASS, 0 FAIL**. 그중 계산 callback **5/5**, 사건↔archive linker **12/12**다. 유효 연결·시각 불일치·중복/미저장 사건·SHA 부족/불일치를 격리 fixture로 검증했다. 이는 실제 Windows Writer/D1 종단 증거와 구별한다. 테스트 실행 과정에서 운영 PC·Writer·SQLite·D1·Cloudflare 쓰기 **0건**.
+4. **브랜치 통합 주의:** 당시 `zgmini` `main` 대비 전용 개발 브랜치 **37 ahead / 8 behind**이며 `run-local.mjs`도 source SHA가 달랐다. 무단 merge/rebase/reset 및 다른 담당자 Writer 소스 덮어쓰기는 하지 않는다.
+
+### 다음 실행 계획 — 의존성 한정
+
+| 순서 | 수행 주체와 단일 행동 | 판정 증거 및 보호 |
+|---|---|---|
+| 1 | D05 담당·공통 #1206 소유자: 이미 승인된 read-only archive/입력 원장의 **같은 역사적 사건**에 7 batch 및 SEC/E1-R5/Breadth 선택 증거가 남았는지 좁은 범위로 확정 | 회수 시 원본 ID·SHA·시각과 승인 출처 교차검증. 없으면 `HISTORICAL_INPUT_LINEAGE_UNPROVEN`으로 종료하고 최신 값으로 채우지 않음. 정상 수집·공개는 계속. |
+| 2 | D05 담당: **미래 사건만** 대상으로 선택형 callback→기존 로컬 점수 저장→`LOCAL_STORED` archive readback→7 batch 부분 계보 대조를 연결하는 최소 B 변경의 **영향과 담당**을 문서화 | 별도 승인 전에는 공유 `run-local.mjs` 변경·설치 없음. SEC/E1-R5/Breadth 증거와 공식 revision은 별도 검증 필요. |
+| 3 | 승인권자·Writer 원담당: **PC 로컬 비민감 불변 사건 원장**의 필드·경로·보존 기간·파일 소유권·운영 source/설치 범위를 명시해 승인 여부 결정 | 승인된 정규 B에서만 적용. `UNCHANGED/UNPROVEN`은 안전 비증명, 정상 계산·게시 비차단. 원문·토큰·전체 원자료를 GitHub/D1에 기록 금지. |
+| 4 | D05 담당: 승인된 실제 미래 사건 **1건**을 운영 PC Runtime·로컬 읽기·D1 key·공개 API/UI로 재조회한 뒤 점수별 68개로 점진 확대 | 출처와 게시까지 같은 사건으로 입증된 경우에만 해당 항목의 1년 종단 PASS 집계. 자연 장애 E2E/예약 자동 갱신은 후속 관측. |
+
+**현재 종단 완료율: 0/68(0%→0%).** 별도 검증 지표는 D1 행↔API 사건 **1/1 PASS**, 개발 시뮬레이션 **75/75 PASS**, 공개 실제 계산 사건 **UTC 9일·KST 8일/34건**. 이 조사와 기록은 운영 기능 완료 주장이나 UI 브랜치 완료 Gate가 아니다.
