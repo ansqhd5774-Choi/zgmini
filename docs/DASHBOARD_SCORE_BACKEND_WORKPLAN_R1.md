@@ -188,3 +188,13 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 5. 승인 없는 운영 source·산식·가중치·TTL·원자료·DB/D1·예약·DNS·Cloudflare·UI 수정은 하지 않는다. 원격 브랜치 문서 변경은 PC 실제 설치나 사이트 게시의 증거가 아니다.
 
 **이번 지침·계획 반영 전후 68개 기능 종단 완료율: 0/68 → 0/68(0%→0%).** 9일/33건은 위 실측 시점의 별도 부분 성과다. 다음 **실제 기능 실행**은 독립 D1 한 행 대조이며, UI 원담당 업무의 선행 조건이 아니다.
+
+
+## 2026-11-10 D05 R6.1 재개 실행 결과 — D1 단일 행↔공개 API
+
+- **1단계 실제 승인된 읽기 전용 검증 PASS 1/1:** Cloudflare D1 계정 zgmini-core-r42의 기존 `market_public_snapshots_v1` 테이블을 Studio **행 탐색/페이지 이동만으로** 열었다. SQL 입력·실행, 운영 PC 호출·Writer·DB/D1 쓰기·Cloudflare 배포 **0건**. 단일 저장 key **`composite-observed:2026-10-31`** 행의 `body` JSON.parse 성공, `version=COMPOSITE_CALCULATED_SCORES_R1`, `date=2026-10-31`, `stored_at=1793443507750`, `points` 1개 확인.
+- **독립 공개 API와 필드별 일치:** D1 `calculatedAt=2026-10-31T10:45:07.750Z`, `score=46.88569913684497`, `asOfDate=2026-10-31` ↔ `GET /api/market-score/observations?period=1Y`의 첫 `observedAt/score/asOfDate`와 완전히 일치. 날짜 버전도 일치. D1 `stored_at`은 해당 계산시각의 epoch milliseconds와 같지만 이를 실제 D1 게시 완료시각으로 대체 해석하지 않는다.
+- **현재 공개 이력 증가:** API 응답 직접 JSON.parse `READY`, `availableDays=9`, `totalObservedPoints=34`, 마지막 `2026-11-10T12:00:13.385Z` / score `47.97618582151962` / asOfDate `2026-11-10`. 앞선 **9일/33건**은 당시 실제 관측값으로 보존하며 **이번 확인 9일/34건**으로 갱신. 브라우저 자동 번역으로 표시된 JSON 숫자 일부가 변형돼 일시 파싱 실패했지만 API 페이지 새로고침 직후 원문 JSON.parse 통과해 서버 오류가 아님을 구분했다.
+- **증명된 범위:** `D1 저장 행 1건 ↔ 공개 API에서 같은 계산 사건`까지만 PASS. 해당 D1 `signature=null`이며 입력 SHA/revision/checkpoint, 로컬 저장 당시 Runtime source, 공급자 원관측→계산 및 전체 1년치 68개 이력은 **미증명**이다. 실제 종단 1Y 완료율 **0/68 (0%→0%)** 유지. 이 PASS가 과거 원입력 증거나 다른 점수의 완료율로 자동 전이되지 않는다.
+- **2단계 현재 문제:** [공통 지원 #1206](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1206) 읽기 재조회 결과 **댓글 0**; 기존 #1023 설치 조회 거부와 archive의 historical input key 부재는 해결됐다는 증거가 없다. 과거 사건은 `HISTORICAL_INPUT_LINEAGE_UNPROVEN`으로 유지하고 최신 배치로 소급 추정하지 않는다. 공통 총괄의 원인 지원과 독립 관측 축적은 각자 계속하며 재차 인위적 Writer B/Controller 시험을 만들지 않는다.
+- **다음 필수 실행 하나:** 공통 원담당이 승인된 기존 원장/Reader에서 **같은 계산 사건의 과거 원입력 선택 ID·revision·SEC/E1-R5·Breadth checkpoint**를 실제로 회수할 수 있는지 #1206에 범위 제한해 판정한다. **미보존이면** 향후 사건의 최소 비민감 metadata 영속 계약에 관한 소유권·승인 여부만 확정하고 과거 계보 복원이나 Writer/DB 필드 신설은 실시하지 않는다. 이 의존성 때문에 정상 D05 게시나 다른 콘텐츠 업무를 중지하지 않는다.
