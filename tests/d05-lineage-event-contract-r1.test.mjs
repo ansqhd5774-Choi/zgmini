@@ -107,3 +107,19 @@ test('bad dates, score, output signature and source prefix cannot be recorded',(
  assert.equal(build({link:{...link,sources:sources.map((x,i)=>i===1?{...x,batchKey:'macro:other'}:x)}}).code,
   'SELECTED_SEVEN_INCOMPLETE');
 });
+
+test('a calculation can only select batches stored no later than its timestamp',()=>{
+ const future=build({link:{...link,sources:sources.map((x,i)=>i===3?
+  {...x,storedAt:now+1}:x)}});
+ assert.equal(future.status,'UNPROVEN');
+ assert.equal(future.code,'SELECTED_INPUT_AFTER_CALCULATION');
+ // A selected source stored at the calculation instant remains valid.
+ assert.equal(build({link:{...link,sources:sources.map((x,i)=>i===3?
+  {...x,storedAt:now}:x)}}).status,'PREPARED_LOCAL_ONLY');
+});
+
+test('a lineage event cannot be recorded before its calculation',()=>{
+ assert.equal(build({recordedAt:'2026-11-10T12:00:13.384Z'}).code,
+  'RECORD_TIME_BEFORE_CALCULATION');
+ assert.equal(build({recordedAt:calculatedAt}).status,'PREPARED_LOCAL_ONLY');
+});

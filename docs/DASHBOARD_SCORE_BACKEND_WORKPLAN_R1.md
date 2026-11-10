@@ -272,3 +272,12 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 - **다음 단일 기능 행동:** Writer 원담당과 공유하는 기존 launcher/Task·checkpoint 원본의 **동일 시점** 결합 증거가 나오면 정확한 실제 Core owner/경로를 특정한다. 그때까지는 실제 PC에 신규 파일·lock·원장/Writer 수정 없이, 새 로컬 metadata 효과의 필드·실제 경로·보존 기간·동시 실행 진입점과 승인 범위의 차이만 제한적으로 확정한다. 등록 A의 소스 관찰은 정상 운영 프로세스가 실제 동작한 증거가 확보된 경우에만 중복 없이 재검토한다. #996 C 복구와 공유 쓰기는 다른 담당 소유를 유지한다.
 
 **이번 실운영 종단 진척: 0/68(0%→0%).** 재사용한 A급 PASS 2건(#1188·#1197), A급 상태 미확정 1건(#1196)과 응답 대기 1건(#1227)은 개발·운영 성과로 섞지 않는다. PC/원본 DB/D1/Controller/배포 쓰기 0건.
+
+## 2026-11-11 D05 미래 입력 사건 시간 인과 검증 보완
+
+- **비운영 순수 계약의 실제 결함:** 기존 `buildD05LineageEvent`는 계산 `calculatedAt`보다 **나중에 저장된 7개 Reader 입력**과 계산보다 **먼저 기록된 `recordedAt`**도 `PREPARED_LOCAL_ONLY`로 수용할 수 있었다. 실제 계산 당시 존재하지 않았던 배치를 입력 증거로 인정할 위험이므로, 승인 산식·기존 Reader·DB를 변경하지 않고 별도 계약의 시간 순서만 수정했다.
+- **최소 수정:** `sources[].storedAt <= archiveStoredAt(=calculatedAt)`와 `recordedAt >= calculatedAt`을 검증한다. 위반 시 각각 `UNPROVEN / SELECTED_INPUT_AFTER_CALCULATION`, `UNPROVEN / RECORD_TIME_BEFORE_CALCULATION`로 닫는다. 정확히 같은 시각은 유효하다. 이전 7개 부분 증거 `effectiveUseVerified=false`·`completeD05InputLineage=false` 및 `PREPARED_LOCAL_ONLY` 비운영 상태를 유지한다.
+- **검증:** 미래 입력 1ms·역전 기록 1ms·동일 시각 경계값 2개 회귀 추가. Reader 직접 선택·시장 계산 callback·사후 SHA 대조·archive link·JSONL 충돌/중복/손상 등 관련 **63/63 Node fixture PASS(0 FAIL)**. 실제 원장 파일 append·PC B 설치·Writer/SQLite/D1/Cloudflare 쓰기 **0건**. 코어 기존 런처는 #1197의 static source trace만 있으며 Runtime SHA 확정 이전에 기록기를 연결하지 않는다.
+- **다음 필수 행동:** Writer 원담당이 실제 Task 엔진 동작 시 확보한 고유 실행 SHA·원본 런처와 동일 사건 로컬 checkpoint의 결합 증거를 재사용한다. 그 후 신규 JSONL 저장 효과의 경로·보존·소유권·실제 공용 lock/원자적 append 범위를 기존 승인 계약과 대조하고, 승인된 정규 B manifest에 최소 변경을 한정한다. #996 C 복구와 과거 계보 소급 생성은 하지 않는다.
+
+**68개 1년 실제 종단 검증: 0/68 (0%→0%).** 이 시간 인과 결함 수정은 개발 계약의 안전성 개선이지 운영 계산·저장·게시 완료가 아니다.
