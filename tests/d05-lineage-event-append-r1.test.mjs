@@ -4,7 +4,7 @@ import {mkdtemp,readFile,writeFile,rm,access} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {buildD05LineageEvent} from '../lib/score-history/d05-lineage-event-contract-r1.mjs';
-import {appendD05LineageEvent} from '../lib/score-history/d05-lineage-event-append-r1.mjs';
+import {appendD05LineageEvent,d05AppendFitsCapacity} from '../lib/score-history/d05-lineage-event-append-r1.mjs';
 
 const calculatedAt='2026-11-10T12:00:13.385Z';
 const at=Date.parse(calculatedAt);
@@ -123,4 +123,13 @@ test('concurrent cooperative callers cannot duplicate one event',async t=>{
  assert.equal(text.trim().split('\n').length,1);
  assert.equal(JSON.parse(text).eventId,event().eventId);
  assert.equal(await missing(ledgerPath+'.lock'),true);
+});
+
+test('ledger capacity counts the appended line, not only the prior file',()=>{
+ assert.equal(d05AppendFitsCapacity(360,40,400),true);
+ assert.equal(d05AppendFitsCapacity(361,40,400),false);
+ assert.equal(d05AppendFitsCapacity(399,1,400),true);
+ assert.equal(d05AppendFitsCapacity(400,1,400),false);
+ assert.equal(d05AppendFitsCapacity(-1,1,400),false);
+ assert.equal(d05AppendFitsCapacity(0,1,Number.MAX_SAFE_INTEGER),false);
 });

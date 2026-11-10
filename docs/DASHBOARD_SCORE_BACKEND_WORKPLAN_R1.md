@@ -292,3 +292,12 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 - **다음 실제 기능 단계:** 새 어댑터를 운영에 호출하지 않은 채, 본선용 변경은 최신 main의 R10 보호를 보존하는 최소 diff/manifest로 준비한다. 실제 Task/Writer owner·locking 및 신규 영속 효과 승인 후에만 정규 B 적용, 동일 계산 사건의 로컬 저장→계보 재조회→D1→공개 API/UI 검증을 수행한다. 정상 D05 수집·다른 콘텐츠 작업은 공통 #996과 별개로 진행 가능하다.
 
 **1년 원자료→계산→저장→공개까지 완성한 점수: 0/68(0%→0%).** 관측 사건은 **34→35건**, 공개 계산 관측일은 UTC **9일**·KST **8일**이며, 개발 source 검증과 운영 게시 성과를 서로 혼동하지 않는다. 이 범위 조사에서 PC/DB/D1/Cloudflare 운영 쓰기 **0건**.
+
+## 2026-11-11 D05 JSONL 독립 검토 후 안전 보완·현행 Writer 최소 이식 위치
+
+- **발견 결함 2건 수정:** 개발용 JSONL adapter가 기존 파일의 64MiB 상한만 검사하면 신규 행 append 직후 크기 초과를 성공 처리하고 다음 사건에서 영구 거부할 수 있었다. 기록 직전 `기존 바이트+신규 라인 바이트 <= 64MiB`를 검증하며 초과는 `UNPROVEN / LINEAGE_LEDGER_CAPACITY_EXCEEDED`로 반환하도록 수정했다. 또한 Windows의 64비트 파일 ID를 Number로 비교하면 정밀도 손실 가능성이 있어 기존 ledger·readback·lock `stat/lstat({bigint:true})`로 일치 판정을 통일했다.
+- **관련 회귀:** 기존 계약·Reader shadow·archive linker·신규 adapter의 파일·동시성 fixture **53/53 PASS(0 FAIL)**. 신규 용량 경계 검사 1건 추가. Linux 격리 실행만 확인했으며 실제 Windows `O_NOFOLLOW` 지원/실행 lock·NTFS 동작·PC 설치는 아직 미검증. 비협조 Writer와 crash stale lock은 자동 수정하거나 강제 회수하지 않는다.
+- **최신 main 병합 경계 재확인:** 실제 main `643b7c7c4372ffad552443fc312c6cb1b944e2fc`의 `run-local.mjs` Asset R10 `--run-r10-release`/receipt gate/결과 재조회 및 `assetBubble` 전용 기존 결과 보호를 반드시 보존. D05 증거 수집에는 `calculateMarket(root,core,now,{onInputEvidence})`의 callback이 필요하며 `body`가 `attemptOutput` 내부 지역변수라 별도 성공 변수로 보존해야 한다. 로컬 `writeScore` 및 아카이브 `LOCAL_STORED` 성공 뒤에만 `linkMarketInputEvidenceToStoredArchive`를 호출해 `buildD05LineageEvent` 후보를 생성하는 최소 hunk가 적절하다. `UNCHANGED`, 실패 또는 원본 SHA/독점 lease 미확정 시 JSONL 쓰기 금지. 민감 batch metadata는 공개 report/D1에 넣지 않음. 이 연결은 **계획만 검증했으며 `run-local` 실제 변경·연결은 하지 않았다.**
+- **다음 필수 실행:** Writer 원담당의 동일 시점 Core Action/Runtime source·단일 owner/lease 및 비민감 JSONL 실제 경로·보존·쓰기 효과 승인 범위를 확정한 뒤 최신 main 기반 최소 B manifest·R10 회귀 테스트를 준비한다. 승인이 없으면 D05 개발 단위 fixture·공개 관측 추적은 유지하지만 PC에 새 영속 기록기를 설치하거나 기존 소스를 통째로 교체하지 않는다. #996 C급 상태 복구는 별도 담당 소유다.
+
+**진행률: 실운영 1Y 68개 종단 0/68(0%→0%), 개발 격리 검증 53/53 PASS.** PC·SQLite·D1·Cloudflare 쓰기 0건.
