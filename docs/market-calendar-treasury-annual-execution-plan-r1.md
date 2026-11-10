@@ -35,6 +35,20 @@
 | **2. 승인 누적 Controller 적용** | #68의 **기존 단일 Controller 적용 담당**; 시장 캘린더 담당은 #1191 소스·테스트·예상 출력 인계 | #996 해제 후 실제 설치 Controller `badad9124157879d7a645b64f2768113d632355b`에서 정확한 현재 파일 해시·allowlist 확인. [공통 PR #1191](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1191)(`main` 병합 `2cdd237f90368fc7b8a39fc53b5746df6557c073`, 2파일·14/14 PASS)과 이미 대기 중인 물가 [#1211](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1211)·[#1212](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1212) 등 **실제 승인된** 변경만 파일별 누적 diff·manifest·SHA·백업으로 조정. 정규 B **단회** 적용 후 설치 SHA·A 등록·Runner·보호 재조회. 최신 `main` 500여 커밋을 무조건 통째로 설치하지 않는다. | 설치된 `config/operations.json`에 `source-inventory-runtime-readonly`가 A로 등록되고 해당 실행 파일의 실제 바이트가 승인 source와 일치. `#1191`의 GitHub 병합만으로 PASS 금지. 시장 캘린더 **95점 유지**(최종 A 실행 선행 조건). |
 | **3. TA_WS 개인 입력 감사 A 1회** | **시장 캘린더 원담당** | 2단계 실제 설치 완료 확인 후, 기존 `pc-job`의 고유 Issue/requestId로 허용 A `source-inventory-runtime-readonly` 1회. 기존 PC SQLite `market_input_batches_v1`의 최근 `release-calendar:treasury:taws:YYYY-MM-DD` 1건만 요약 반환; 결과 JSON/TXT·Run·seat를 재조회. 신규 shell·수동 SQL·공급처 GET·Writer B·게시·예약 없음. | `core.sqliteOpened=true`, `core.treasuryTawsInput.status=OBSERVED`, `eligibleCountMatchesStored=true`, 저장 날짜/365일 조회 범위 일치, `rawRowCount`·`storedAwardedCount`·`eligibleAwardedRows`·`textBytes`·64자리 `textSha256` 확인. 해당 원본의 수집 시점이 2026-11-09이면 낙찰 436과 대조하되 공개 Treasury 전체 894와 **직접 동일시 금지**. 데이터·source·관측 시각 정합성까지 확인한 뒤 **+5점 → 100점**. |
 
+### 공유 설치를 위한 최소 의존성 사전 점검 — 소스 기준
+
+**실제 PC 승인 manifest 아님.** 설치된 Controller `badad9124157879d7a645b64f2768113d632355b`와 제어 `main`의 라우팅·허용목록을 파일 단위로 비교한 **적용 담당자용 후보 범위**다.
+
+| 파일 | 설치 `badad912…` Git blob | `main` Git blob | 소스 차이 |
+|---|---|---|---|
+| `config/operations.json` | `d22d18bd9b252cbaa5e6b8e082377a872630b2b3` | `f01c171939cca3745f8198002e8d3f0e877a6fb5` | A 5개 신규 등록, 기존 31개 유지·변경 0 |
+| `controller/operations.mjs` | `f6ef5a4dccf9b1b09f50db6edfa61004e6503b44` | `4a2c498f63e2399c66bde6c81b5e4fdf2e23facf` | 신규 import 5줄 + dispatch 6줄, 기존 라인 삭제 0 |
+| `controller/source-inventory-runtime-readonly.mjs` | 없음 | `db9e9c8347277287cc6ef10bad310be125314d52` | Treasury 고정 입력 최신 1건 메타 감사(이 기능 담당), 소스 SHA-256 `d319459497f5afb6fc00d31402960d917670b82a13c724dcb9e57266bf6f78a1` |
+
+**중요:** main `controller/operations.mjs`를 통째로 설치할 때는 원담당 A 이외에 새 import된 `inflation-core-lock-observation-readonly.mjs`, `writer-b-1063-recovery-readonly.mjs`, `shared-resource-release-readonly.mjs`, `employment-r6-collection-evidence-readonly.mjs`도 함께 필요하다. 따라서 **후보 파일 7개 = config 1 + 라우터 1 + 신규 모듈 5**다. 새 모듈의 상대 import는 기존 Controller에 있던 `core-runtime-source-readonly.mjs` 1개를 재사용하고 나머지는 Node 내장 모듈이다. 적용 담당자가 현행 설치 SHA/해시 및 다른 변경의 승인을 대조해 **최종 누적 파일 목록·바이트·SHA-256·사전 보호·lease**를 확정한다. 테스트 파일은 운영 설치 파일로 계산하지 않는다. 누락된 import만을 개별 덮어써서 기존 5개 A 기능의 라우팅을 잃지 않는다.
+
+2026-11-10 #996 원본에는 사용자 `PHASE_SCOPED_EVIDENCE_EXCEPTION` C 동의 댓글이 등록됐으나, [복구 Draft #1222](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1222) 최신 R2의 실제 운영 효과는 **0**으로 보고됐다. 동의/소스·ZIP 검증과 #996 실제 해제 PASS는 별도이며, 이 계획은 그 C 작업을 직접 실행하지 않는다.
+
 **현재 차단 범위:** [#68 실측](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6756862819)상 2026-11-10 10:36 KST의 #996 `RECOVERY_REQUIRED` (`FIRST_FAIL=INTAKE_PAUSED`, `installLock.held=true`, `workflowState=disabled_manually`, `blockScope=SHARED_INSTALL_ONLY`). 최신 사후 변경 증거가 생기면 **원본 결과로만 갱신**한다. **공유 Controller 설치만 BLOCKED**이며, 시장 캘린더 기존 수집/게시/방문자 조회 및 독립 개발은 차단되지 않는다. #917 복구 완료는 그대로 인정한다.
 
 ## 4. 종료 판정·실패 분기·후속 관측
