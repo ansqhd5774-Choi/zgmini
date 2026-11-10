@@ -1,0 +1,73 @@
+# ZGMINI 물가지표 — 26개 원자료 확보·공개 완료 실행계획 R1
+
+- 작성: 2026-11-10 KST
+- 작업 브랜치: `fix/economic12-inflation-legacy4-r35-20261021` (`ansqhd5774-Choi/zgmini`)
+- 개발 정본: `zgmini` 최신 `main` (계획 작성 시 확인 SHA `643b7c7c4372ffad552443fc312c6cb1b944e2fc`)
+- 운영 절차 정본: 비공개 `zgmini-pc-control` 최신 `main`의 `AGENTS.md`, `docs/GENERAL_CHAT_START.md`, `docs/PC_AUTOMATION_STANDARD.md`, 공용 인계·자원 수명주기 계약
+- 근거: 기존 [미등록 11개 검토](INFLATION_MISSING11_REGISTRATION_REVIEW_R2_20261108.md), 제어 PR #1205/#1211/#1212, 소비된 B #1177, 기존 PC A #830, 사용자 제공 물가지표 최종 인계
+- **시작/계획 반영 종료 전체 기능 진행률: 42% → 42%.** 문서·소스 검증을 실제 수집·게시로 산입하지 않는다.
+
+## 1. 목표·분모·현재 상태
+
+원본 후보 31개 = 기존 연구자료 19개 + 신규 수집 대상 7개 + 정의/권리 보류 3개(#15·#17·#30) + #26과 통합 1개(#27) + 제외 1개(#20). **기능의 현재 수집 목표는 중복 없는 26개(19+7)**이며, 보류 3개를 무단 추가하거나 26개 확보의 선행조건으로 삼지 않는다.
+
+| 증거 단위 | 현재 실증 | 최종 목표/해석 |
+| --- | ---: | --- |
+| 원본 31개 판정 | 31/31 | 확정·보류·제외 구분 유지 |
+| 신규 7개 PC source 설치·활성화 | 과거 7/7 | 현행 파일·승인 SHA는 실제 실행 시 좁게 확인 |
+| PC 유효 원자료 | **23/26** | **26/26**; 누락 BLS 2 + Census 1 |
+| 신규 7개 중 유효 사설 원자료 | **4/7** | **7/7**; 원자료 readback 필수 |
+| 신규 7개 실제 D1→API→UI 게시 | **0/7 확인** | **7/7 실제 값·날짜 검증** |
+| 전체 프로젝트 추산 진행률 | **42%** | 현장 증거 확보에 따라 재산정 |
+
+누락: BLS CPI 임대료 `CUSR0000SEHA`(#22), 자가주거비 OER `CUSR0000SEHC01`(#23), Census M3 제조업 총재고 `MTM/TI`(#28). 기존 4/7은 EIA 휘발유, Treasury 관세 순수납, BLS PPI `WPSFD4`, Fed G.17 제조업 생산이다. `INVALID`/`MISSING`을 0이나 추정값으로 대체하지 않는다.
+
+`zgmini/main`에는 신규 7행 공개 validator/reader, 전용 writer, `run-local.mjs`의 `publishInflationCandidates7Auto` 연결, `worker/candidate-r52.ts` GET/HEAD 분기, 물가 상세 UI의 `InflationCandidate7Inputs` 연결이 **source 수준에서 이미 확인**되었다. 오래된 작업 문서의 'main 미회수·라우터/UI 미연결' 표현은 최신 source에 그대로 적용하지 않는다. 이것은 **설치·Cloudflare Production·D1 실제 값 확인이 아니다**. 오래된 기능/UI 브랜치 전체 병합 금지.
+
+## 2. 개정 공통 지침의 적용
+
+1. 시작·재개 시 제어 저장소 최신 `main`의 지침 3개와 본 업무 관련 승인/변경 범위를 확인하되 **학습만 반복하거나 전체 Controller 진단을 전역 Gate로 삼지 않는다**.
+2. 수리 가능한 **확정 Writer B 실패**만 격리 Windows `zgmini-handoff-ci-isolated`→`agent-handoff`→단일 중앙 ChatGPT→**원본 GitHub Issue** 회신으로 처리한다. 정상 `PASS`, `WAIT_RECORDED`, `STATE_UNKNOWN`을 가짜 수리 장애로 만들지 않는다. 인위적 실패·기존 B #1177 재실행 금지.
+3. 원본 Issue 댓글은 이 일반챗의 자동 수신/재개, 운영 PC 설치 또는 원자료 변경의 증거가 아니다. 실제 대화 재개 시 해당 원본 결과를 확인해 기능 작업을 계속한다. 자연 발생 장애 전체 왕복은 **DEFERRED**, 물가지표 기능 완료의 Gate가 아니다.
+4. 공유 Controller/Writer/Core source의 **실제 겹치는 쓰기만** 단일 owner·lease로 직렬화한다. 독립 source·read-only 준비와 신규 7행 게시 증거 분석은 계속한다. 공용 원장 #68은 PC 잠금 해제 근거가 아니다.
+
+## 3. 필수 실행계획 — 두 개의 독립 작업 축
+
+### A. 누락 공식 원자료 3개 복구 (실제 PC 실행 축)
+
+| 순서 | 수행 | 정확한 통과 조건 | 실패·대기 처리 |
+| --- | --- | --- | --- |
+| A1. 현재 운영 입력 확인 | 기존 승인된 A/read-only 경로로 설치된 Controller A operation 존재, 실제 PC source/config/Task·Core/Korea 런타임 경로와 `E:\ZGmini\data\pc-writer\local-cycle.lock`의 **canonical 동일성**을 필요한 범위에서 검증. 예약 Task의 실제 런타임을 Runner 환경으로 추정하지 않음. | 원본 Issue/Run·JSON/TXT의 SHA·관측 시각·출처 및 실제 잠금 소유 근거 일치. 정적·순간 A 관측만으로 B 승인 선언 금지. | A 미설치 또는 소유 미관측이면 `UNVERIFIED`; 새 임의 shell, lock 삭제, Task 정지·경로 추정 금지. 이 축만 대기. |
+| A2. 오류에 한정한 수정 | A1로 입증된 **잘못된 검증기 조건만** 최소 수정. 실제 Core/Korea 공유 lock, Writer mutex, CAS·해시·백업 및 fail-closed 보호 유지. | 같은 Windows 경로의 관련 회귀 PASS와 새 입력 manifest/source 검증. | 단지 시간이 지나도록 Core 소유자를 못 본 사실을 잠금 오설정 또는 Core 실패로 단정하지 않음. |
+| A3. 공식 수동 단회 B | 기존 승인 `inflation-manual-b`의 고정 BLS flatfile과 Census 공식 원본 **두 GET**을 새 고유 Issue/requestId·현재 해시 manifest로 1회 실행. Core 자연 활동 관측 후 실제 유휴·잠금 안전 확보. | **BLS 2 + Census 1** parse/store 원본 보호·checkpoint/JSON 2파일 재조회·결과 TXT/JSON 2/2 및 실제 원본 Issue 성공 영수증. | **09:00·다음 날·자연 예약 수집 대기 없음**. 안전 중단 시 실제 code/lastPass/firstFail/쓰기를 기록. #1177이나 불명확 요청 재실행 0회. |
+| A4. 완전성 검증 | 기존 23개를 보존하며 새 3개가 정확한 series/월/단위·관측일·수집일·source SHA·last-good와 함께 읽히는지 현장 확인. | **26/26 원자료 유효**, 신규 7/7 저장·재조회. PPI 등 기존 정상본 무변경. | 특정 공식 파일에 자료가 실제 없다면 `MISSING`으로 정직하게 보고하고 별도 보류/제외 결정을 사용자에게 요청; 임의 수치 채움 금지. |
+
+`#996` Controller 업데이트는 **별도 원담당이 맡는 공유 설치/복구 자원**이다. #917 과거 완료를 #996 완료로 추론하지 않는다. #996의 C 증거 예외 승인이 존재하더라도 운영 설치·보호/Workflow 복구 PASS까지는 원본 증거가 필요하다. 이 문서의 작성자가 #996 lease·Workflow·backlog·잠금을 바꾸거나 B를 중복 요청하지 않는다. 독립 작업은 계속한다.
+
+### B. 신규 7개 연구자료 공개 (A와 독립적으로 준비·진행)
+
+| 순서 | 수행 | 정확한 통과 조건 | 분리 원칙 |
+| --- | --- | --- | --- |
+| B1. 정본 source 연결 검토 | 현행 `zgmini/main`의 `run-local.mjs` 7행 sidecar, 기존 공통 Writer 게시 경로, `candidate-r52.ts`, UI 컴포넌트·catalog 실제 연결과 배포 기준 SHA를 확인. 승인된 19행·4축 불변 회귀만 수행. | 현재 main source·테스트·승인된 게시 계약 일치. | 이미 연결된 코드를 불필요하게 재개발·전체 브랜치 병합하지 않음. |
+| B2. 저장 기반 계산·정상행 우선 게시 | 실제 PC **저장 자료만** 읽어 7행 `score:null` projection 생성. 기존 유효 4개는 관측·갱신 상태에 맞춰 READY/STALE로 게시하고 누락 3개는 PENDING/기존 유효본이 있다면 원래 날짜를 유지한 STALE. 승인된 기존 Writer B 게시 lane 사용. | 전용 D1 key `detail:inflation-causal-candidates-7:r1`, 기존 19 key/4축 무변경, 공개 7행 전수 상태·값·원래 관측일·`sourceStoredAt` readback. | **26/26 확보 전에도 4/7 기존 유효값을 화면에 표시할 수 있도록** 독립 처리. 실패값 0 치환·마지막 유효 결과 덮어쓰기 금지. |
+| B3. 3개 확보 뒤 완성 게시 | A4 성공 후 새 3개 저장 자료를 사용해 동일 기존 계산→Writer→D1 재게시. 공급자 GET을 계산 중 재호출하지 않음. | 7/7 READY 또는 공식 발표·stale 기준에 따른 정직한 상태, D1 값·버전·checkpoint·시각 정확 재조회. | Core scheduler/DB/TTL/가중치/배포 경로 무승인 변경 없음. |
+| B4. Production 공개 판정 | GitHub 배포 repo/branch/SHA→Cloudflare Git Integration exact Deployment 확인, `/api/inflation-candidate-inputs` GET/HEAD, 물가 PC·모바일 화면 각 값/단위/날짜/결측/STALE 마지막 점 확인. | D1·API·UI 동일 7행, 관측일·수집일·게시일 구분, 19개·4축 회귀 유지. | HTTP 200·READY 외피만으로 완료 선언 금지. 데이터 게시마다 재배포·Git push 강요하지 않음. |
+
+실행 병렬성: B1/정적 B4 검토는 A1~A3와 독립적으로 수행 가능. **실제 동일 Writer/DB/D1 공유 쓰기**는 owner·lease 승인 순서에 따라 직렬 실행한다. B2는 A4 전에 승인된 PARTIAL 공개 계약으로 실행 가능하며, B3는 A4 완료 후 진행한다.
+
+## 4. 승인·보호·의사결정 경계
+
+- 사용자가 승인한 공개 범위는 **연구자료 별도 7행** 및 기존 D1 key/GET/UI 표현뿐이다. 기존 19개 원자료, 4축 물가 점수, 가중치, DB/TTL, 수집 주기, 예약, DNS, 공개 path의 임의 변경 금지.
+- #15 관세율, #17 관세 노출 비중, #30 자체 공급 부족 산식은 **DEFERRED**. 별도 정의·권리·산식 결정 전 공개 점수나 26개 수집 목표에 넣지 않는다. #27은 #26과 원본 중복.
+- 공유 운영 설치·잠금·환경·source에 대한 새 범위의 효과만 추가 승인을 확인한다. 기존 동일 보호 목적의 상시 승인을 반복 요청하지 않는다. A급에 B급 쓰기 권한을 넣지 않는다.
+- 승인된 BLS/Census 수동 수집에는 **시간대 09:00 Gate, 매일 자동 예약, 새 CMD, ChatGPT 일정**이 없다. 공식 호출량·기존 quota와 원본 파일 크기 제한은 유지한다.
+- 원본 키·전량 원자료·환경변수·process 명령행·민감한 운영 경로를 GitHub Issue/댓글/공개 DB/채팅에 올리지 않는다. E: 지속 DB/원본은 보존하고 일회성 출력은 TEMP/승인된 결과 회수 경로 사용.
+- 자동 장애 인계의 자연 E2E와 정규 예약 첫 자동 갱신 검증은 **모든 기능 수집·계산·저장·게시·화면 완료 이후 후속 관측**이다. 선행 Gate 아님.
+
+## 5. 다음 실행 하나와 증거 갱신 규칙
+
+**즉시 다음 실행:** 최신 `main`에 이미 존재하는 7행 `run-local`·Worker 라우트·UI 연결의 정본 SHA와 현재 실제 설치/Production 범위를 대조하여 **첫 승인된 기존 Writer 게시 실행에 필요한 정확한 manifest·source/lease 조건**을 고정한다. 이 확인은 읽기/정적 준비이며 #996 복구 담당의 공유 자원에 쓰지 않는다. 동시에 A1 잠금 경로 관측 operation의 현재 Windows 설치 가능 여부만 좁게 확인한다.
+
+그다음 안전하게 실행 가능한 첫 실작업을 선택한다: 게시 B 경로가 준비되면 **기존 유효 4개 READY/STALE + 누락 3개 PENDING(과거 유효본 확인 시 STALE)**의 7행 첫 공개를 수행하고 D1/API/UI를 검증한다. 수동 공식 B의 Core 잠금 소유 증거가 충족되면 **새 단회 요청으로 3개 확보**를 수행한다. 두 축 중 하나가 실제 차단이면 다른 축을 계속한다. 새 정상 실행을 인위적 자동 장애 검증으로 바꾸지 않는다.
+
+모든 단계별 결과는 `DONE / RUNNING / STATE_UNKNOWN / BLOCKED / DEFERRED`, 대상 source SHA, 원본 Issue/requestId/Run, 실제 PC 결과쌍, lastPass/firstFail, 저장·D1·API·UI readback을 분리해 후속 기록한다. 진행률은 **실제 완료한 단계만** 가산하며 문서 작성 후 **42% 유지**. 각 재개 시 이 계획과 마지막 실증 단계에서 다음 실행 하나를 선정한다.
