@@ -332,3 +332,12 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 **1년 진짜 종단 완료율: 0/68 → 0/68(0%).** 이번 단계는 공개 업종 11개×252점 존재와 기존 날짜별 로컬 저장 설계까지 **확인**, 각 날짜의 실제 PC 원장·입력 SHA 및 해당 날짜 D1 게시까지는 **미확인**이다. 다음 실행 담당은 S01/R3 원담당과 기존 A operation 지원 담당이며, 원본 조회가 가능해졌을 때 **실제 날짜 키 1건의 PC→D1→API 일치**부터 확인한다.
 
 - **공통 지원 인계 등록:** [제어 저장소 Issue #1228](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1228)에 S01~S11 날짜별 원장 **고정·비민감 A 읽기 계약의 기존 지원 여부 및 최소 지원 요청**을 등록했다. `pc-job` 라벨·직접 실행 요청·운영 효과는 없으며, 이 Issue 자체가 다른 일반챗으로 자동 전달되거나 실제 PC 검증을 수행한 결과는 아니다. S01 실증만 지원 확인 대기, 타 기능 독립 작업은 계속한다.
+
+## 2026-11-11 S01 날짜별 동일 사건 검증기 준비 — A 결과 대기 중 독립 개발
+
+- **기존 A 재사용 범위 직접 대조:** 제어 저장소의 `controller/fear-greed-archive-readonly.mjs`는 `fear-greed`·`fear-greed-observed`·`fear-greed-verified-checks`와 종합점수 `composite-observed`만 고정 조회한다. `writer-publication-evidence-readonly.mjs`는 ER1 캘린더 `current`만, `source-inventory-runtime-readonly.mjs`는 공개 feed의 `current` 종류 **개수만** 조회한다. 업종 R3 날짜별 로컬 행 조회는 세 기능의 설치된 허용 범위 밖이며 [#1228](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1228) 응답 0건을 확인했다. 다른 operation에 임의 SQL을 넣는 우회는 금지한다.
+- **기존 공개 계약에서 중요한 차이:** 업종 `sector-fear-greed-r3-local-cycle.mjs`는 관측일이 이전 `current`와 같으면 `UNCHANGED`로 저장하지 않고, 다를 때만 `writeOutput` 날짜형 `snapshot_key`를 기록한다. 따라서 `YYYY-MM-DD` 키는 **해당 점수를 PC에 저장한 UTC 날짜**이고 `body.observationDate`는 **미국 시장의 실제 관측일**이다. `worker/sector-fear-greed-r3-public.mjs`는 다른 잠정 feed가 유효하면 응답 `phase=PROVISIONAL`에서 최신 11개 score와 history 마지막 점을 바꾸므로 잠정 응답을 기존 확정 스냅샷과 동일 사건으로 비교하면 안 된다.
+- **새 비운영 순수 검증기:** `lib/score-history/sector-r3-dated-readback-r1.mjs`에 `sectorR3DisplayDigest`(public derived 11개 score·관측일·방법론·source 버전의 안정적 SHA256)와 `compareSectorR3DatedReadbacks`를 추가했다. 향후 승인된 A 요약 `PC 날짜 행` ↔ 승인된 `D1 current` 요약의 **본문 SHA256/저장 시각/관측일** ↔ 공개 API 확정 관측 11개 **점수 digest**를 엄격히 대조한다. 잘못된 UTC 키/미래 관측/손상 해시/점수 불일치/잠정 상태는 `UNPROVEN`으로 닫는다. 성공 상태도 **`SAME_EVENT_DISPLAY_READBACK_PASS`, `oneYearPitVerified=false`**로 제한해 1개 사건이 1년 증거로 둔갑하지 않도록 했다.
+- **격리 검증:** 신규 fixture 5/5 PASS, D05 입력·archive·어댑터·R10 release 집중 회귀를 합쳐 **81/81 PASS**, 실제 운영 PC·SQLite·D1/API 쓰기 0건. 이 검증기는 실제 저장 데이터 조회기가 아니고, 새 A 등록·Writer 설치·D1 날짜별 게시를 실행하거나 승인하지 않는다.
+
+**실제 68개 1년 종단 진행률 0/68(0%→0%).** 다음 필수 행동은 #1228에 대한 기존 A 범위 판정 또는 지원된 고정 읽기 계약의 첫 유효 PC 결과를 회수하는 것이다. 그 결과 날짜별 원장과 같은 시각의 D1·확정 API를 이 검증기에 넣어 **단일 실제 사건을 우선 입증**하며, 1년 252회 PIT 원장/입력 미확보 부분은 별도로 유지한다. 무관한 대시보드·테마 작업은 계속한다.
