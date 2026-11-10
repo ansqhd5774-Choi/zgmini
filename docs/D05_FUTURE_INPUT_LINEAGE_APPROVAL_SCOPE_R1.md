@@ -87,3 +87,14 @@
 - **사용자에게 확인할 최소 새 운영 효과:** *앞으로 계산되는 D05의 선택된 7개 시장 입력에 한해 위 필드의 비민감 계보 JSONL을 PC 전용 지속 데이터 경로에 생성·계속 append할 것인지*, 실제 등록 Writer 경로 아래 위치 후보 `score-lineage/d05-composite-events-v1.jsonl`, 보존기간 및 단일 Writer 소유 원칙을 명시 승인받는다. 기존 정규 B 절차 자체의 중복 승인을 요청하는 것은 아니다. 범위 B 전체 12영역 계보와 #996 C 복구는 이 결정 범위 밖이다.
 
 **운영 1년 종단 검증 0/68(0%→0%).** 새 효과 승인·실제 Runtime 근거가 나오기 전까지 운영 파일·DB·D1·Cloudflare 쓰기는 0건이다.
+
+
+## 2026-11-11 D05 12파일 전용 Windows A 사전조회 확정 — #1230
+
+- 기능 개발 정본: `zgmini main=643b7c7c4372ffad552443fc312c6cb1b944e2fc`, 원격 D05 작업 브랜치 `f859e0d9950d3e24194ffa5596b046f005e3dd36` 기준. 앞 절의 **11파일 후보는 구버전 목록**이다. D05 계산 사건 후 저장을 이어 주는 `lib/score-history/d05-lineage-local-record-r1.mjs`를 포함하여 **기존 수정 예정 4개 + 신규 8개 = 12개**를 최소 A 조회 대상으로 고정했다. `run-local.mjs`는 여전히 D05 연결이 없는 main과 동일 파일이므로 정규 B의 목표(after) 파일로 확정하지 않는다.
+- 공통 읽기 전용 매니페스트: `zgmini-pc-control/approvals/writer-preimage/d05-selected7-lineage-20261111.json`, UTF-8 원본 SHA-256 `f4c7110367a582f68c29e1a6e07ff7aaa1ecad757159d9abca67c460cc9efabd` (파일 12개로 한정, A, 운영 변경 효과 없음).
+- [고유 실PC 요청 #1230](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1230), `requestId=pc-ff5fb18c-bd6a-455d-8a80-ed2c0e83a223`, Run `42914966096` seat 4. 결과 [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/42914966096-1-seat-4.json) / [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/42914966096-1-seat-4.txt) 원격 2/2 회수. `PASS/WRITER_APPROVED_PREIMAGE_READONLY`, 운영 쓰기 0·공급자 호출 0·D1 쓰기 0·SQLite 열기 없음. 기존 M 4개 모두 `PRESENT`, `trackedDirty=false`, before SHA256 확인; 신규 A 8개는 모두 `ABSENT`. 원본 소스 HEAD=config.source=checkpoint `de81749f83c086f5cb0cad7ed1d5cc958de19280`.
+- 위 #1230의 근거 수준은 `FIXED_CHECKOUT_NOT_LIVE_CORE_PROCESS`, `runtimeSourceVerified=false`, `coreTaskSourceLinked=false`. 기존 [#1227](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1227) 실행 중 Core 출처 요청은 결과 미회수 상태라 중복 요청하지 않는다. 따라서 운영 실행 SHA, 모든 Writer 경로의 단일 lock/lease 소유, 실제 `ZGMINI_PC_HOME`·JSONL 보존/백업/ACL, D05 `run-local` 선택 hook은 아직 미확정/미구현이다. 승인된 정규 Writer B를 실제 설치하거나 PC JSONL 원장을 만들지 않았다.
+- **다음 필수 실행:** #1227 기존 실행 증거를 회수하고 12파일 실제 before SHA를 정규 B 승인 manifest에 활용한다. `run-local.mjs` 계산/아카이브 동일 사건 후 선택형 메타 수집 호출을 비운영 fixture에서 먼저 검증하고, 실제 lock/경로/보존·범위가 확정된 후에만 B 설치와 미래 사건 한 건 저장·재조회로 넘어간다. 과거 사건의 입력 해시를 소급 생성하지 않는다.
+
+**전체 1년 종단 완료 0/68(0%→0%). #1230 A 사전조회는 준비 단계의 별도 실증 PASS이며 최종 완료율에는 가산하지 않는다.**
