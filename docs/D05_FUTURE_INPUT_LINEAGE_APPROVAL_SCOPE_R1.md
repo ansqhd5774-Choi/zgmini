@@ -110,7 +110,7 @@
 
 | 대상 | after SHA-256 |
 |---|---|
-| `scripts/pc-writer/run-local.mjs` | `418e46aeb79388e348bc23eff0d793a69a364f0c2cce875bf576a9ea448de934` |
+| `scripts/pc-writer/run-local.mjs` | `fdc641e3c6585a1e9690b0cc4a9cbe10d8bbb025154bfc40523b7c05b56e80ed` |
 | `scripts/pc-writer/market.mjs` | `192b4c3aa2e3237ffe73200d0c713e20d7f89ced53e3fb1d156fb857de6925fd` |
 | `worker/market-input-validation.mjs` | `f029c8bd370dd8f40b0e203d33553904c1765277b89161e05f1ac694112095d6` |
 | `worker/candidate-market-operational-store.mjs` | `6b57a121709e9725109aa6c3c502624b63eb32b5b117fd67aad4f7f57a17b28e` |
@@ -120,8 +120,16 @@
 | `lib/score-history/composite-archive-lineage-link-r1.mjs` | `d0723d49166cc32e44e67953f3c2cea400edb3b9ac9f1468615699d7fe2586d5` |
 | `lib/score-history/d05-lineage-event-contract-r1.mjs` | `d379412bb5365a639e57b63614bd83d3b5bef71b8ca86a861624c57a281c865e` |
 | `lib/score-history/d05-lineage-after-archive-r1.mjs` | `d865e471523fb3edc4edd4e7271b786f1be675bdf11192129a28577fb7d956b5` |
-| `lib/score-history/d05-lineage-event-append-r1.mjs` | `aafbff565f7a57aaee759125e46ae63ab851227c65feb2d56dacdd799b2e098d` |
-| `lib/score-history/d05-lineage-local-record-r1.mjs` | `f912cd83fe9c9e7867cedc376e244e4cd0a5a672241809c6a5724365ab0e173c` |
+| `lib/score-history/d05-lineage-event-append-r1.mjs` | `c7fc2263c5c04de222aeaffaa3144681a9774cd012dd540793c0917d3d0404ce` |
+| `lib/score-history/d05-lineage-local-record-r1.mjs` | `8a862d2ece6a56d9757ac01868bd8f54a8e691f2ed27bf868a722b1e814e7ac9` |
 
 - **현재 필수 미증명/중단:** [#1227](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1227) live Core source A 조회는 `AUTOMATION_BLOCKED/PC_JOB_INTAKE_NOT_OBSERVED`이며 무작정 동일 재요청하지 않는다. PC의 실제 `ZGMINI_PC_HOME`, Task/lock 소유·source, JSONL 경로/NTFS ACL/백업/보존 능력, 승인 정규 B 설치 경로가 필요하다. D05 append 기본 파일 크기 상한은 64MiB: 15분 96건/일을 15개월 지속하면 약 98MiB가 필요할 수 있으므로, 운영 B 전에 실제 발생률과 15개월 보존/용량 대책을 명시적으로 확정해야 한다. 무단 자동 회전/삭제 없음.
 - **다음 실행:** 공통 총괄의 #1227 접수 원인 확인/승인된 정확한 1회 read-only 실증으로 live source/Task를 확인 → 기존 #1230 before + 위 after의 정규 B manifest/백업·lease·ACL 검증 → 승인된 PC 설치 한 번 → 실제 미래 사건 1건 JSONL 원장/SQLite/점수 재조회. 1Y 최종 **0/68 (0%)**, 완료 선언 불가.
+
+
+## 2026-11-11 D05 JSONL 최초 디렉터리 준비 조건 보완
+
+- 동작 검토에서 승인된 JSONL 파일을 `O_CREAT`으로 열기 전에 부모 `score-lineage` 폴더가 없으면 `LINEAGE_LOCK_IO_FAILED`로 중단될 수 있음이 확인되었다. 이 상태로 운영 B를 소비하지 않도록 **정확한 저장 경로에 한한 선택형 초기화**를 개발 브랜치에 추가했다.
+- Writer `local-cycle.lock`의 살아 있는 부모 PID·파일 동일성을 검산하고 성공한 계산/로컬 복합 아카이브가 확인될 때만 `initializeApprovedDirectory:true`가 전달된다. `score-lineage/d05-composite-events-v1.jsonl`의 바로 위 단일 leaf만 `recursive:false,mode:0o700`으로 만들 수 있다. 기존 데이터 부모, 임의 디렉터리·파일명, 심볼릭 링크 leaf, 보호되지 않는 부모는 거부한다. 직접 `run-local` 실행·부재/상실된 Writer lease는 생성하지 못한다. 폴더 존재 시에는 보존/재사용하며 원장·잠금을 삭제/복구하지 않는다.
+- 개발 증거: D05 + Asset R10 집중 회귀 **74/74 PASS**, 단회 파일 append/중복 NOOP·무권한 생성 거부·다른 경로 거부·symlink leaf 거부 포함. 커밋: `d3c975204eb31936b81f7caa60ea872d50191ecd`, `ff1d7dc755a430b76d5d44e0a85a464d68edf5d4`, `51d58bbc489e1a447e5c72eabe11228e31d2d1f8`, 테스트 `6ecb99e6c16881164b9a973b9369353ce9d748fb`. 위 표의 12개 after SHA-256 중 3개를 이 구현으로 교체했다.
+- **운영 미실증 유지:** Windows NTFS의 상속 ACL은 POSIX `mode`만으로 검증되지 않는다. 운영 E: 실제 경로/ACL·백업·15개월 용량·Task 첫 hop/실행 SHA는 정규 B 이전에 확인하며, #1227 intake 미확정과 #1230 fixed checkout 증거를 구분한다. 운영 PC 데이터/DB/D1/예약 실제 쓰기 **0건**. 1Y 종단 **0/68(0%)**.
