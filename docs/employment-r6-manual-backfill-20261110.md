@@ -1,5 +1,14 @@
 # 고용 R6 2026-11-10 수동 BACKFILL 실증 및 잔여 실행 계획
 
+## #917 완료 이후 재개 점검 — 2026-11-10 KST
+
+- **전체 진행률 7/8 = 87.5% → 7/8 = 87.5%**. 승인된 R2 계산·D1/API/UI의 28/29 점수 게시 성공은 유지한다. 유일한 미평가 `STATE_CLAIMS_BREADTH`(DOL ETA539) `PARTIAL_HISTORY`은 아직 미완료이며 보간값/0점 대체 없음.
+- 공유 Controller [#917](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/917) 복구는 실제 Windows `RECOVERY_COMPLETED`, 독립 사후 22/22 PASS, 관련 테스트 131/131 PASS로 확인. 운영 Controller 설치 SHA는 여전히 `badad9124157879d7a645b64f2768113d632355b`; 이번 복구가 신규 A 진단 설치를 의미하지는 않는다.
+- DOL/BED 원자료 결손을 구분할 **읽기 전용 A 진단 코드**는 최신 제어 main에 [#1218](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1218)로 병합, 제어 commit `2b5f2f5d92210f81ab4db0966721ecc93b8bb621`. 변경 범위 4파일, 격리 fixture 8/8 PASS. 기존 Draft [#1184](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1184)를 재실행하거나 중복 병합하지 않는다. **실제 Windows 등록/실행 0건**.
+- 기존 설치된 `core-runtime-source-readonly` A는 고유 요청 [#1217](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1217), requestId `pc-8da91b23-f5d6-4a94-bcd5-13b0dfcdee61`로 단회 접수. 현재 결과 댓글/정확한 실행 증거는 미회수. 요청 중복 생성·무한 재시도 없이 원본 Issue/Workflow/JSON·TXT 확인부터 수행한다.
+- 공유 Controller의 별도 과거 승인 설치 [#996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/996)에 최신 원격 결과 `UNKNOWN / RUNNER_SET_DRIFT`, `ACTUAL_CONTROLLER_SHA=badad912...`, `WORKFLOW_ENABLED=false`가 기록됨. 이는 #917 복구와 **서로 다른 요청**으로, #917 성공을 소급 취소하지 않으나 공용 **새 Controller 설치 전** #996 정확한 실제 lease/원장/Workflow 상태 확인이 필요하다. 현재 `badad912...→main` 차이는 누적 다수 Controller/config 변경을 포함해 #1218의 4파일만 선별 허용하는 manifest로 대체할 수 없다. [공용 조정 #68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68) 단일 적용 담당/정확한 승인 범위에 따른다.
+- **다음 필수 실행:** #1217 원본 A 실행 유무 및 #996 공유 설치 상태 독립 재조회 → 승인된 누적 delta/공용 Controller B 적용 조정 → #1218 A 실제 등록 후 DOL 51지역/52주 최초 결손 위치·BED `missingSeries` 조회 → 필요한 원본만 승인된 수동 수집·저장자료 재계산 → D1/API/UI 29/29 판정. 예약 자연 갱신은 기능 종료 후.
+
 ## 진단 준비 갱신 — DOL/BED 저장자료 A 조회 (2026-11-10 KST)
 
 - 고용 R6 전체 **7/8 = 87.5% 유지**. DOL `STATE_CLAIMS_BREADTH`가 유일한 미평가 항목이며, 실제 결손 위치·재수집·최종 게시는 아직 미완료.
