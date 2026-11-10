@@ -123,7 +123,7 @@
 | `lib/score-history/d05-lineage-event-append-r1.mjs` | `c7fc2263c5c04de222aeaffaa3144681a9774cd012dd540793c0917d3d0404ce` |
 | `lib/score-history/d05-lineage-local-record-r1.mjs` | `8a862d2ece6a56d9757ac01868bd8f54a8e691f2ed27bf868a722b1e814e7ac9` |
 
-- **현재 필수 미증명/중단:** [#1227](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1227) live Core source A 조회는 `AUTOMATION_BLOCKED/PC_JOB_INTAKE_NOT_OBSERVED`이며 무작정 동일 재요청하지 않는다. PC의 실제 `ZGMINI_PC_HOME`, Task/lock 소유·source, JSONL 경로/NTFS ACL/백업/보존 능력, 승인 정규 B 설치 경로가 필요하다. D05 append 기본 파일 크기 상한은 64MiB: 15분 96건/일을 15개월 지속하면 약 98MiB가 필요할 수 있으므로, 운영 B 전에 실제 발생률과 15개월 보존/용량 대책을 명시적으로 확정해야 한다. 무단 자동 회전/삭제 없음.
+- **현재 필수 미증명/중단:** [#1227](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1227) live Core source A 조회는 `AUTOMATION_BLOCKED/PC_JOB_INTAKE_NOT_OBSERVED`이며 무작정 동일 재요청하지 않는다. PC의 실제 `ZGMINI_PC_HOME`, Task/lock 소유·source, JSONL 경로/NTFS ACL/백업/보존 능력, 승인 정규 B 설치 경로가 필요하다. D05 append 기본 파일 크기 상한은 64MiB: 15분마다 1건(96건/일)을 15개월(약 457일) 지속하면 약 94MiB가 필요할 수 있으므로, 실제 발생 빈도를 점검하고 한도 접근 시 승인된 용량 확장 대책을 수립한다. 최초 실제 관측 9일 37건(평균 약 4.11건/일)을 단순 연장하면 같은 기간 약 4MiB 수준으로 추정되며, 극단적인 최대 빈도 가정만으로 정규 B를 불필요하게 차단하지 않는다. 이 추정은 미래 기록·15개월 완전성 보증이 아니다. 무단 자동 회전/삭제 없음.
 - **다음 실행:** 공통 총괄의 #1227 접수 원인 확인/승인된 정확한 1회 read-only 실증으로 live source/Task를 확인 → 기존 #1230 before + 위 after의 정규 B manifest/백업·lease·ACL 검증 → 승인된 PC 설치 한 번 → 실제 미래 사건 1건 JSONL 원장/SQLite/점수 재조회. 1Y 최종 **0/68 (0%)**, 완료 선언 불가.
 
 
@@ -133,3 +133,9 @@
 - Writer `local-cycle.lock`의 살아 있는 부모 PID·파일 동일성을 검산하고 성공한 계산/로컬 복합 아카이브가 확인될 때만 `initializeApprovedDirectory:true`가 전달된다. `score-lineage/d05-composite-events-v1.jsonl`의 바로 위 단일 leaf만 `recursive:false,mode:0o700`으로 만들 수 있다. 기존 데이터 부모, 임의 디렉터리·파일명, 심볼릭 링크 leaf, 보호되지 않는 부모는 거부한다. 직접 `run-local` 실행·부재/상실된 Writer lease는 생성하지 못한다. 폴더 존재 시에는 보존/재사용하며 원장·잠금을 삭제/복구하지 않는다.
 - 개발 증거: D05 + Asset R10 집중 회귀 **74/74 PASS**, 단회 파일 append/중복 NOOP·무권한 생성 거부·다른 경로 거부·symlink leaf 거부 포함. 커밋: `d3c975204eb31936b81f7caa60ea872d50191ecd`, `ff1d7dc755a430b76d5d44e0a85a464d68edf5d4`, `51d58bbc489e1a447e5c72eabe11228e31d2d1f8`, 테스트 `6ecb99e6c16881164b9a973b9369353ce9d748fb`. 위 표의 12개 after SHA-256 중 3개를 이 구현으로 교체했다.
 - **운영 미실증 유지:** Windows NTFS의 상속 ACL은 POSIX `mode`만으로 검증되지 않는다. 운영 E: 실제 경로/ACL·백업·15개월 용량·Task 첫 hop/실행 SHA는 정규 B 이전에 확인하며, #1227 intake 미확정과 #1230 fixed checkout 증거를 구분한다. 운영 PC 데이터/DB/D1/예약 실제 쓰기 **0건**. 1Y 종단 **0/68(0%)**.
+
+
+## 2026-11-11 D05 최초 기록 용량 판단
+
+- 계산 기준: 최초 로컬 복합 아카이브 약 9일/37건, 개발 fixture 대표 사건 2,238바이트, 15개월=약 457일. 그대로 연장 시 약 4.0MiB, 15분마다 한 건씩이라면 약 93.6MiB. 64MiB 한도는 현재 관측 빈도의 예상 보존량에는 여유가 있으나 15분 최댓값까지 보장하지 않는다.
+- 파일은 append-only, 초과 시 `LINEAGE_LEDGER_CAPACITY_EXCEEDED`로 신규 사건만 안전 거절하며 기존 기록은 보존한다. 자동 삭제/회전 또는 자의적인 128MiB 확대는 하지 않았다. 초기 정규 B 설치의 본질적 필수 미증명은 Task 첫 hop·운영 source/lease·NTFS ACL이다. 용량은 실제 빈도와 추세 확인으로 관리하는 **NON_BLOCKING/모니터 항목**으로 분리한다.
