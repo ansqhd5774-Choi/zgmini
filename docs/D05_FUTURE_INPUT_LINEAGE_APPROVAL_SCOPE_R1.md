@@ -18,7 +18,7 @@
 | **A. 미래 7배치 부분 계보** | 기존 Reader의 유효 행 결정 순간에만 선택형 비민감 metadata hook: 정확한 batch key·원래 저장시각·저장 body SHA-256. 계산 후 TTL·macro series 실효 반영 여부를 별도 판단. 기존 계산·선택 순서·조회 횟수·산식 유지. | 7개 저장 배치의 **부분 인과 증거**. 아직 SEC/E1-R5·Breadth 포함 12영역 완료 아님. |
 | **B. D05 전체 동일 사건 계보** | 승인된 독립 SEC/E1-R5·Breadth Reader의 실효 입력 ID·관측일·공식 정정/revision·local checkpoint를 A와 같은 계산 사건에 묶는다. | 필요한 모든 실효 원입력·정정 이력과 원본 해시가 확인된 경우에만 `FULL_INPUT_LINEAGE_VERIFIED` 후보. 증거 부족은 `UNPROVEN` 유지. |
 
-**범위 A의 비운영 개발·시뮬레이션만 승인됐다.** 두 범위 모두 실제 **운영 B 설치·소유권·필드·저장 위치·보존 기간의 사전 승인 필요**. A 개발 승인이 B 개발·운영 승인을 의미하지 않는다.
+**범위 A의 비운영 개발·시뮬레이션만 승인됐다.** 기존 공통 정본 5절의 승인된 기능 등록·진단·정규 Writer B 유지보수 절차는 재사용하며 **B급이라는 이유만으로 같은 승인을 반복 요구하지 않는다**. 단, 새 D05 로컬 원장 영속 저장 효과가 기존 업무 승인 범위를 벗어나는지 먼저 대조한다. 범위 밖인 실제 **원장 필드·경로·보존 기간·쓰기 효과**만 확정 승인하고, 운영 manifest·해시·원본 보호는 승인 여부와 별개로 필수다. A 개발 승인이 B 범위의 전체 실효 계보 또는 미승인 저장 효과를 자동 승인하지 않는다.
 
 ## PC 전용 원장 저장 계약 초안 — 확정 아님
 
@@ -57,6 +57,16 @@
 - 승인 없는 새 DB/D1 table/key·TTL/산식/주기·작업 Task/Controller·Cloudflare 배포·UI 변경 금지. 공통 #996 C 복구에는 개입하지 않는다.
 - 당시 확정 이력 1년을 재구성했거나 모든 68개를 처리했다는 주장은 금지. KST 일별 확정 cutoff, 이월·revision/supersedes 공개 계약은 **별도 승인 과제**다.
 - 현재 별도 실측: D05 공개 계산 사건 UTC 9일/KST 8일·총 34건; CNN 실제 관측 사건 **5일·108건**. 과거 252세션 재계산 점수는 날짜별 당시 확정 점수와 구분. **68개 실제 1년 종단 PASS=0/68**.
+
+## 2026-11-11 정규 Writer 실행 경로·잠금 판정 (소스 전용, PC 미변경)
+
+- 공통 제어 저장소 최신 `main` **`bba84e671c7caa626ebad189bcea14d1f66c5059`**의 세 지침을 읽고 적용했다. 승인된 공용 도구·정규 B는 재사용하되 신규 로컬 저장 효과는 정확히 분리한다. [공통 #1206](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1206)은 2026-11-11 확인 시 open/댓글 0; 과거 계산 사건 계보는 미입증 상태다.
+- **정규 Core 소스 경로:** `scripts/pc-writer/quota-runner.mjs`에서 `local-cycle.mjs`로 진입하고, 부모 `local-cycle.mjs`가 `local-cycle.lock`을 획득한 상태에서 `run-local.mjs --publish`를 동기 자식 호출한다. 이 **부모 경로 내 직렬화**는 소스로 확인했다.
+- **증명되지 않은 다른 실행:** `run-local.mjs` 자체는 동등한 lock을 잡지 않는다. 직접/수동 실행 가능성과 별도 Writer lane의 실제 등록 Task·승인 source/`config.source`는 PC Runtime에서 미확인이다. SQLite의 WAL/`BEGIN IMMEDIATE`는 **별도 JSONL 파일 append를 직렬화하지 않는다**. 정규 Core lock 하나만으로 신규 JSONL 파일 안전을 전체 실행 범위에 주장할 수 없다.
+- **사건 연결 지점:** `market.mjs`의 개발 `onInputEvidence`는 선택형이고 `run-local.mjs`의 실제 `calculateMarket(root,core,now)`는 이를 넘기지 않는다. 기존 `writeScore` 이후 `appendCompositeObservedFromCurrent`가 `LOCAL_STORED`를 입증한 같은 사건에서만 **미래 7배치 부분 증거 후보**를 연결할 수 있다. `UNCHANGED`와 불명확한 결과를 기록 성공으로 바꾸지 않는다.
+- **브랜치 구분:** 2026-11-11 조사 시점 GitHub 비교에서 기능 브랜치는 `zgmini` `main` 대비 **41 ahead / 8 behind**. 당시 원격 기능 HEAD `e05f6458043a0dc823ea0ad53cf061f7c2fa99dc`; 파일 트리 검증 `384cddec1c93ec04167e83c0d3a97dca5372e54a`. 이를 실제 PC 승인/실행 source SHA로 사용하지 않으며, 승인 없는 merge/rebase/reset·공유 `run-local.mjs` 덮어쓰기 금지.
+
+**다음 최소 실행:** 설치된 Writer 실제 Task/실행 wrapper·sourceRoot/HEAD/`config.source`·`ZGMINI_PC_HOME`·잠금 소유자의 **지원되는 원본 읽기 경로**를 확인한다. 모든 실행이 기존 Core lock을 통과하는지 검증되면 그 안의 단일 소유 후속 lane을 우선 재사용한다. 미보장 직접 경로가 있으면 별도 직렬화/부분쓰기 복구 계약을 설계한다. 정확한 로컬 원장 저장 효과와 manifest·before/after SHA·백업·중복/충돌·원격 증거 회수 범위를 준비한 후에만 실제 PC 설치 여부를 결정한다. #996 C 복구 lease에 개입하지 않으며, 인위적 Writer B 실패는 만들지 않는다.
 
 ## 승인 결정에 필요한 확인 항목
 

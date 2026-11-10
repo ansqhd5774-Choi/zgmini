@@ -250,3 +250,15 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 - **남은 단일 필수 개발 경계:** 기존 실제 D05 Writer의 **단일 소유자·동시 계산/배치 기록 직렬화·원자적 파일 append/부분쓰기 복구 가능성**과 승인된 로컬 경로·필드·보존기간을 확인한다. 그 증거와 별도 B 설치 범위 승인이 확보되기 전엔 파일 기록기·`run-local.mjs` 연결 및 실 PC 검증을 시작하지 않는다. 한편 정상 수집/게시·다른 기능은 이 분리 과제로 막지 않는다.
 
 **완성률은 동일:** 실제 원자료→계산→로컬 저장→D1→API/UI로 1년 전부 검증한 항목 **0/68(0%→0%)**. 개발 fixture 통과 **101/101**, 공개 D05 D1↔API 한 사건 **1/1**, 공개 이력 UTC **9일·34건/KST 8일**, CNN 관측 **5일·108건**은 별도 사실이다.
+
+## 2026-11-11 D05 Writer 직렬화·정규 B 범위 재판정
+
+- **최신 공통 지침:** `zgmini-pc-control` `main` SHA `bba84e671c7caa626ebad189bcea14d1f66c5059`의 `AGENTS.md`·`GENERAL_CHAT_START.md`·`PC_AUTOMATION_STANDARD.md`를 확인. 공통 정본 5절의 이미 승인된 source 등록·A 조회·정규 B 유지보수는 재승인할 사안이 아니다. **새 D05 영속 로컬 원장 저장 효과**(필드·경로·보존·운영 owner)가 기존 업무 승인을 벗어나는 부분인지 별도 대조한다.
+- **정규 Core 잠금 소스 확인:** `quota-runner.mjs` → `local-cycle.mjs`가 `local-cycle.lock`을 취득 → 같은 부모에서 `run-local.mjs --publish` 동기 실행 → 부모 종료 시 lock 정리. 해당 경로만은 직렬화된다. `run-local.mjs`에 자체 lock은 없고 `--publish` 없는 직접 실행도 DB에 저장할 수 있다. SQLite WAL/`BEGIN IMMEDIATE`는 새 JSONL의 중복·부분쓰기 보호 계약을 대체하지 않는다.
+- **계산 연결의 현재 한계:** 기존 `run-local.mjs::calculateMarket(root,core,now)`는 개발용 선택형 `onInputEvidence`를 전달하지 않는다. `writeScore` 이후 `appendCompositeObservedFromCurrent`가 `LOCAL_STORED`로 확인한 계산 사건이 후보이며 `UNCHANGED/UNKNOWN`에는 원장 생성 없음. 저장 후보 판정 순수 함수 `d05-lineage-event-contract-r1.mjs`만 존재하고 실제 파일 I/O는 없다.
+- **운영 근거 미확정:** 실 PC Task의 실제 Action/소스 `HEAD`·`config.source`·데이터 경로 및 직접 실행 호출자는 소스만으로 확정 불가. [공통 #1206](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1206) open/댓글 0, #1023의 설치 불허 A는 재요청하지 않음. #996 C `STATE_UNKNOWN`/원본 lease는 다른 담당 관리하므로 관여하지 않음. 공유 Core source 설치 자원이 실제 겹칠 때만 공용 단일 적용 담당과 직렬화.
+- **소스 통합 주의:** GitHub 조사 당시 원격 기능 브랜치 `e05f6458043a0dc823ea0ad53cf061f7c2fa99dc`는 `main`보다 **41 ahead / 8 behind**. 기능 HEAD를 운영 source로 간주하거나 승인 없이 rebase/merge/Writer 파일 덮어쓰지 않는다.
+
+**다음 필수 행동 1건:** 이미 지원되는 승인 A·등록 원본 증거에서 D05 실제 `run-local` 진입 wrapper/Task·sourceRoot/HEAD/config.source·Writer 소유/lock 범위를 정확히 확인한다. 없는 계약을 임의 shell로 우회하지 않고, 확인된 실행 경로만 대상으로 *공유 기록의 단일 소유·원자적 저장/부분쓰기 복원·필드/경로/보존 효과*를 확정한 최소 manifest와 관련 fixture를 준비한다. 정규 B 자체를 새 기능명만으로 재승인 요구하지 않되, 신규 저장 효과와 기존 공개/운영 승인 범위의 차이는 확인한다. 실제 PC·SQLite·JSONL·D1·UI 쓰기 **0건**.
+
+**종단 진행률 0/68(0%→0%)**. 독립 코드 회귀 **101/101 PASS**와 위 소스 읽기 판단은 운영 원자료→계산→저장→공개 1년 PASS에 합산하지 않는다.
