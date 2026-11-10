@@ -5,6 +5,15 @@
 - 상태: `PROGRAM_CHARTER_RECORDED / R57_PRIVATE_PC_INSTALLED / R48_R54_INVOKED / CLOUDFLARE_MAIN_BUILD_PASS / R51_DATE_UNALIGNED / R32_D1_NOT_PUBLISHED / NOT_163_THEMES_IMPLEMENTED`
 - 효력: **범위·목표·작업 연속성 및 인수인계 규칙을 문서화**한다. 기존 산식·선정·공개·DB·예약 작업·배포 승인 계약을 변경하지 않는다.
 
+## 2026-11-10 추가 재개 — #996 상태 불확정과 테마 공개 피드 조회 계약
+
+- **사용자 전달 최신 공통 상황:** #996 실제 C 실행이 `STATE_UNKNOWN_PRESERVE_C_CLAIM_AND_ORIGINAL_LEASE` / `C_GITHUB_BACKLOG_PLAN_ORIGINAL_BODY_INVALID` / `ORIGINAL_JOB_DISPOSITIONS`에서 중단됐다. 이는 #917 과거 복구 실증을 뒤집어 재실행해도 된다는 뜻이 아니다. 정확한 변경 여부와 C claim·원본 lease는 공통 총괄의 별도 복구 영역이며 **테마 원담당은 C CMD 재실행·lock 해제·같은 PC에 신규 운영 쓰기를 하지 않는다**. 소스 감사·권리 검토·비공개 시험 등 독립 기능 작업은 계속한다.
+- **기존 정확한 여섯 물리 공개 feed:** `config/theme-public-operational-bindings.json`의 R37 확정 `theme-legacy-nine-r37`, R37 잠정 `theme-nine-r32-provisional-r88`, 데이터센터 확정 `theme-data-center-power-r1`, 잠정 `theme-data-center-power-provisional-r1`, 우주 확정 `theme-space-satellite-r2`, 잠정 `theme-space-satellite-provisional-r1`. 공개 목표는 논리 테마 10개이며 feed 여섯 개는 별도 계보·권리·CAS 검증을 필요로 한다.
+- **승인 도구 범위 검증:** 제어 `config/operations.json`의 현재 A급 목록에는 이 여섯 feed의 D1 `bodyHash/storedAt/observationDate`와 로컬 R178 checkpoint를 함께 조회하는 작업이 **없다**. 설치 A `theme-l7-runtime-readonly`는 고정 3소스/3원장/Task를 점검하며 `sqliteOpened=false`; `theme-platform-shadow-readonly`는 승인 manifest가 필요한 별도 source shadow이고 실제 D1 메타 재조회 대체가 아니다. 기존 Writer `scripts/pc-writer/read-publication-readback.mjs`는 D1 `feed_key/stored_at`을 조회하는 **재사용 가능한 내부 코드**이나 현재 등록된 A급 operation은 아니다. 임의 CMD/SQL로 직접 실행하지 않는다.
+- **공급원 분리 관측:** 공식 GMH 문서에서 익명 `/api/v1/bars/stocks/us/{ticker}/1h` 최신 100개 및 기간 지정 시간봉 제공을 명시한다. 그러나 이번 제한적 SPY GET은 검색 계층의 내부 오류, 클라우드 브라우저의 `ERR_BLOCKED_BY_CLIENT`로 **본 데이터 응답을 받지 못했다**. 이것은 GMH 장애·R181 400/403의 증거가 아니다. 공식 2026-11 API 호환성 변경은 여전히 **가설**, R181 실PC FIRST FAIL은 미회수다.
+- **다음 필수 단계:** 공통 owner가 #996 C claim/lease와 접수 경로의 실제 상태를 안전하게 정리한 뒤, 기능 담당은 **기존 Writer D1 메타 조회와 고정 R178 체크포인트를 비식별로 합친 승인 A급 범위**를 먼저 확보한다. 여섯 feed의 존재·저장시각·버전·관측일·확정/잠정·권리/원본을 읽기 전용으로 1회 재조회하고, 결과로 기존 R178 복구 vs 독립 8+2를 판정한다. 소스 검토만으로 DB 값을 추정하거나 공개 Reader 503·권리 Gate를 우회하지 않는다.
+- **이번 턴 실효:** 신규 PC job/Writer B/C 실행 0, PC·D1·Production 변경 0. 테마 기술 T1 **20%→20%**, 최근 실측 공개 10개 중 정상 **0/10** 유지(직전 API 11/10 본문).
+
 ## 2026-11-10 최신 재개: Controller #917 복구 완료, 테마 A 접수 별도 실패
 
 - **공용 복구 완료 증거:** 사용자가 실제 Windows `RECOVERY_COMPLETED`, 독립 사후 **22/22 PASS**, 관련 **131/131 PASS**를 전달했다. [공통 PR #1214](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1214), 기존 성공 A [#1215](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1215) (`WRITER_APPROVED_PREIMAGE_READONLY`)·[#1216](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1216) (`CORE_READONLY_DIAGNOSIS`)의 원격 결과 댓글을 재확인했다. 공유 Controller #917의 기존 `RECOVERY_REQUIRED`를 **현재 테마 실행 전역 BLOCKER로 유지하지 않는다**. 설치 Controller SHA는 `badad9124157879d7a645b64f2768113d632355b` 그대로이며, 라이브 Core source SHA는 미확인이다.
