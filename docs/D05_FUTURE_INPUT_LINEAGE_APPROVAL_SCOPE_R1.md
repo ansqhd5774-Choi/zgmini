@@ -31,7 +31,7 @@
   - `effectiveUseVerified=false`, `completeD05InputLineage=false` (12영역 실효 입력 미완료일 때 고정)
   - `recordedAt`, 민감정보 없는 `stableEvidenceDigestSha256` (`recordedAt` 제외한 동일 사건 증거의 안정적 SHA-256), `selectionEvidence` (`DIRECT_ID_AND_EXACT_ROW_MATCH` 또는 `POST_SELECTION_UNIQUE_MATCH`)
 - 원장 필드·지속 저장·보존기간(최소 1년 이후 공식 정정 유예 포함 여부)·백업/복원·권한·호환성은 **사용자가 확정하기 전까지 미승인**. 본문 원자료·token·전체 env/SQL 출력·외부 전송을 금지한다.
-- **단일 Writer 직렬화/원자적 append 계약도 미확정**이다. 정규 B 설치용 lease가 계산 도중 발생하는 모든 로컬 기록을 직렬화한다는 증거는 없다. append 파일 어댑터·`run-local.mjs` 실행 연결·실제 JSONL 쓰기는 이 소유권 및 부분쓰기 복원 계약 확인 전 구현·실행하지 않는다.
+- **단일 Writer 직렬화/원자적 append 운영 계약도 미확정**이다. 정규 B 설치용 lease가 계산 도중 발생하는 모든 로컬 기록을 직렬화한다는 증거는 없다. 개발 전용 JSONL 어댑터는 격리된 임시경로 fixture로 구현·검증했지만, `run-local.mjs` 실행 연결·실제 PC JSONL 쓰기·운영 경로 확정은 소유권 및 승인 계약 확인 전 수행하지 않는다.
 
 ## 이번 범위 A 개발 결과 — 비운영 코드만
 
@@ -77,3 +77,13 @@
 - [ ] 실제 설치 전 운영 source SHA/lease/Reader의 원본 보호 확인
 
 **진행률: 0/68(0%→0%).** 사용자가 허용한 것은 범위 A 개발에 한정한다. 문서·브랜치 코드를 저장해도 나머지 운영 항목이 승인되거나 설치·게시됐다고 처리하지 않는다.
+
+## 2026-11-11 변경 후보 축소·운영 효과 승인 대기 (개발 완료 증거와 구분)
+
+- **현행 정본:** 제어 저장소 `main=bba84e671c7caa626ebad189bcea14d1f66c5059`, 기능 저장소 `main=643b7c7c4372ffad552443fc312c6cb1b944e2fc`, D05 개발 브랜치 `43bdd4b367542d73129d70e4026e4ba9a1c239e4`. 이들은 실제 Windows 활성 source SHA가 아니다.
+- **소스 overlay 영향 전수 대조(필수 기능 파일 11개):** `run-local.mjs` **동일 1개**, `market.mjs`·`market-input-validation.mjs`·`candidate-market-operational-store.mjs` **수정 3개**, `lib/score-history/`의 `market-batch-provenance`, `market-batch-provenance-read`, `market-input-observation-shadow`, `composite-archive-lineage-link`, `d05-lineage-event-contract`, `d05-lineage-after-archive`, `d05-lineage-event-append` **신규 7개**. 향후 승인된 Writer hook을 연결하면 `run-local.mjs`도 최소 수정 대상이 된다. 단, 개발 브랜치 전체를 운영 source로 지정하거나 11개 전체를 곧바로 설치하는 manifest는 **아직 만들지 않았다**.
+- **개발 검증:** 현행 main Asset R10 `run-local.mjs`의 영수증 gate·readback·기존 release 보호 소스를 개발 브랜치에 그대로 보존하여 전체 파일 일치 검증. D05는 선택 7배치·아카이브 `LOCAL_STORED` 동일 사건을 확인하는 **비운영 PREPARED 후보 함수**와 별도 JSONL adapter까지 개발, 모의 DB·Linux 임시 경로 관련 **83/83 PASS**. Writer 호출·PC 적용·실제 Windows NTFS/잠금·원장 영속 효과 검증은 아니다.
+- **읽기 전용 원본 회수 상태:** [#1188](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1188)·[#1197](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1197) `STATIC_LAUNCHER_TRACE_ONLY`는 Task `wscript.exe → run-original-then-archive.vbs`까지만 입증. #1196은 `CORE_NO_ACTIVE_TASK_ENGINE`, #1213/#1217/#1219/#1227·#1206은 결과 회신 0. 실제 Node Runtime SHA·동일 사건 lock/lease owner가 없으므로 동일 A 재요청·거부 #1023 우회·운영 적용을 하지 않는다.
+- **사용자에게 확인할 최소 새 운영 효과:** *앞으로 계산되는 D05의 선택된 7개 시장 입력에 한해 위 필드의 비민감 계보 JSONL을 PC 전용 지속 데이터 경로에 생성·계속 append할 것인지*, 실제 등록 Writer 경로 아래 위치 후보 `score-lineage/d05-composite-events-v1.jsonl`, 보존기간 및 단일 Writer 소유 원칙을 명시 승인받는다. 기존 정규 B 절차 자체의 중복 승인을 요청하는 것은 아니다. 범위 B 전체 12영역 계보와 #996 C 복구는 이 결정 범위 밖이다.
+
+**운영 1년 종단 검증 0/68(0%→0%).** 새 효과 승인·실제 Runtime 근거가 나오기 전까지 운영 파일·DB·D1·Cloudflare 쓰기는 0건이다.

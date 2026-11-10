@@ -310,3 +310,11 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 - **남은 단일 필수 행동:** 실제 Writer Task→원본 launcher→lock/lease 경로의 **동일 사건 Runtime 증거**와 신규 JSONL 영속 경로·필드·보존·단일 쓰기 소유자의 승인 범위가 확정되면, **최신 main 기반 최소 B manifest**에 계산 callback→기존 점수 저장→archive `LOCAL_STORED`→비공개 후보→독점 Writer 기록기 순으로 연결한다. R10 보호를 계속 보존하고 `UNCHANGED`·실패·불명확한 원본 SHA는 기록하지 않으며, 공개 API/UI에서 1년 전체 68개를 개별 입증한다. #996 C 복구는 별도 담당 소유로 유지한다.
 
 **실제 1년 종단 완료 0/68(0%→0%), 개발 회귀 83/83 PASS.** PC·운영 DB/D1·Cloudflare 쓰기 0건.
+
+## 2026-11-11 D05 실제 PC 근거 재조회·10파일 잠정 overlay 범위 확정
+
+- 제어 정본 `main=bba84e671c7caa626ebad189bcea14d1f66c5059` 유지. #1188/#1197는 Task `wscript.exe → run-original-then-archive.vbs`의 정적 추적 PASS일 뿐 Node Runtime source SHA·Writer 전체 lock 경로는 **미증명**. #1196 `CORE_NO_ACTIVE_TASK_ENGINE`은 관측 순간 무프로세스 상태이고 Core 실패 확정이 아니다. #1213/#1217/#1219/#1227 및 과거 #1206 모두 조회 시 새 결과 회신 0건. 중복 A나 #1023의 미허용 조회를 재요청하지 않았다.
+- 최신 `zgmini main=643b7c7c4372ffad552443fc312c6cb1b944e2fc`와 기능 브랜치 `43bdd4b367542d73129d70e4026e4ba9a1c239e4`를 기능 관련 11개 파일로 직접 비교: `run-local.mjs` **동일 1개**, Reader/Market **수정 3개**, 입력 계보 lib **신규 7개**. 이는 설치용으로 승인된 10파일 overlay가 아니다. 실제 Writer hook을 연결하면 최소 파일이 달라지며, Runtime before SHA·정규 B manifest·보존/백업은 별도 증거가 필요하다.
+- [미래 계보 승인 범위 문서](D05_FUTURE_INPUT_LINEAGE_APPROVAL_SCOPE_R1.md)의 과거 '파일 어댑터 구현 금지' 문구를 **개발용 독립 fixture 완료/운영 연결 미승인**으로 정합화했다. 현재 필요한 사용자 결정은 **미래 7배치 부분 계보의 PC 로컬 비민감 JSONL 영속 기록 효과**, 그 경로·보존기간·단일 소유권에 한정한다. 기존 정규 B 유지보수 승인 자체를 재요청하지 않는다. 승인 전엔 개발과 공개 자료 읽기만 계속한다.
+
+**실제 D05 1년 종단 완료율 0/68(0%→0%).** 신규 운영 효과·PC 설치·D1/Cloudflare 쓰기 0건. 다음 필수 행동은 위 신규 영속 저장 범위 결정 후 실제 Writer source/lease와 승인 manifest를 정확히 결합하는 것이다.
