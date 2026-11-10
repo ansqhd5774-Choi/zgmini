@@ -5,11 +5,25 @@ import path from 'node:path';
 import os from 'node:os';
 import {spawnSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
+import {collectAlpacaIncremental} from '../scripts/pc-writer/alpaca-incremental.mjs';
 import {assertR10BreadthSourceAllowed} from '../scripts/pc-writer/build-asset-r10-release.mjs';
 import {additionalCollectionEntries} from '../scripts/pc-writer/additional-collection-health.mjs';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 const script=path.resolve(here,'../scripts/pc-writer/build-asset-r10-release.mjs');
+
+test('R10 direct collector entrypoint never calls Alpaca or writes collection state',async()=>{
+ const base=fs.mkdtempSync(path.join(os.tmpdir(),'r10-alpaca-direct-exclusion-'));
+ try{
+  let providerCalls=0;
+  const result=await collectAlpacaIncremental(base,{fetchImpl:async()=>{
+   providerCalls++;throw Error('UNEXPECTED_PROVIDER_CALL');
+  }});
+  assert.deepEqual(result,{status:'EXCLUDED_BY_USER',runRequests:0});
+  assert.equal(providerCalls,0);
+  assert.deepEqual(fs.readdirSync(base),[]);
+ }finally{fs.rmdirSync(base);}
+});
 
 test('R10 excludes saved Alpaca B and refuses unapproved substitute sources',()=>{
  assert.throws(()=>assertR10BreadthSourceAllowed('ALPACA_IEX'),/R10_ALPACA_SOURCE_EXCLUDED/);
