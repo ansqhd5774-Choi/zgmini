@@ -406,3 +406,22 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 **이번 시작→종료 실제 1년치 종단 완료: 잠정 0/68(0%) → 0/68(0%).** 독립 검증 성과는 승인 PC A 한 번 **PASS**, 실제 composite 이력 **9일/37건**, 공개 API **9일/37건 동일 마지막 계산 사건**, 대시보드 저장·공개 경로 **25/25 소스 확인**. PC 원자료 수정·Writer 설치·D1 쓰기·배포·예약 변경 **0건**.
 
 **다음 단일 필수 행동:** D05 원담당/공통 #1206 소유자가 **같은 계산 사건의 당시 7개 batch 선택 ID·원본 SHA 및 추가 SEC/E1-R5/Breadth Reader/checkpoint가 기존 승인 원장에 실제 남았는지** 범위 한정해 판정한다. 미보존이면 과거를 재구성하지 않고 **미래 사건 비민감 원장/정규 B 영향과 사용자 승인을 구분**한다. 업종 #1228은 별도 지원 요청으로 보존하고, CNN sidecar는 해당 원담당 원인 확인으로 분리한다. 신규 관측 및 공개 축적은 독립적으로 계속되며 예약 자연 갱신 검증은 기능 완료 후에만 진행한다.
+
+
+## 2026-11-11 대시보드 등락 비율 2개 독립 판정 — 이력과 이용권 분리
+
+- **계획 분모 보존:** 대시보드 27은 점수형 25와 상승·보합·하락 **비율형 2개**로 구성된다. 등락 패널을 근거 없이 단일 0~100 점수로 변형하지 않는다. 이 2개를 포함한 기획 대상 잠정 68은 변경하지 않되, 종단 PIT score 입증은 유형별로 판정한다.
+- **미국 비율 API 현재 실제 조회:** [`GET /api/market-breadth-r2-history?market=usa`](https://zgmini.kr/api/market-breadth-r2-history?market=usa)는 `READY/CONFIRMED/PUBLIC_FINAL`, `MARKETPARQUET_STOCK_DAILY`, 고유 거래일 **249개**(`2025-11-04`~`2026-10-30`), `finalizedAt=2026-11-01T17:05:13.996Z`. 마지막 세 비율은 상승 **26.42176453**, 보합 **5.79465109**, 하락 **67.78358438**(%). 과거 종가를 사용해 **한 번에 확정한 249개 날짜별 재계산**과 각 날짜 당시 개별 확정·게시된 불변 PIT 249건은 다르다.
+- 현재 [확정 endpoint](https://zgmini.kr/api/market-breadth?market=usa&phase=confirmed-r2)는 `FULL_MARKET_STALE_OBSERVATION`, [잠정 endpoint](https://zgmini.kr/api/market-breadth?market=usa&phase=provisional)는 `PROVISIONAL_NOT_CURRENT`, R1 확정은 `STALE_OBSERVATION`. 이는 **2026-11-08에 이미 권한 대장에 기재된 기존 상태**이며 신규 실패라고 보고하지 않는다.
+- **이용권 독립 경계:** [기존 원담당 이슈 #1018](https://github.com/ansqhd5774-Choi/zgmini/issues/1018)는 MarketParquet 2026-11-05·11-08의 사람 답변에서 **무료 파생 결과 공개 예외 거절**, 별도 유료 entitlements/범위 실증 미확인, 공개 R2 이력·별도 수급폭 계보를 구분한다. `PUBLIC_FINAL`·249일·정상 API 응답은 **이용권 증명이 아니다**. 해당 원담당의 source/plan/licenseRef 판정 전 신규 공개·재게시·대체·자동 중단·유료 구매·중복 문의를 시도하지 않는다. D05 종합점수와 무관한 공급자는 정상 업무를 계속한다.
+- **한국 비율 패널:** `app/korea-composite-view.tsx`에서 `<MarketBreadthStrip market="korea"/>`에 실제 `counts`를 전달하지 않으며, strip 컴포넌트의 한국 경로는 별도 history endpoint가 아닌 전달된 `counts`만 표시한다. 승인된 원자료·계산·저장 계약을 먼저 확인해야 하며 1년 비율 PIT 공개 실증 0건.
+- **두 패널 결과:** 미국/한국 실제 당시 게시한 1Y 비율 사건 **0/2 실증**, 미국의 249일 계산 추세는 별도 부분 실적. 기존 68 전체 **0/68(0%)→0/68(0%)**.
+
+### D05 과거 계보 기존 허용 조회 전수 확인
+
+- 제어 저장소 `config/operations.json`의 A급 **36개** 중 **계산 사건별 선택 7 batch·SEC/E1-R5/Breadth 입력을 같은 사건 ID로 반환하는 고정 작업은 없다**. `controller/fear-greed-archive-readonly.mjs`는 `composite-observed:%`를 조회해 날짜·건수·마지막 시각·stored_at 등 **요약만** 반환한다. `source-inventory-runtime-readonly.mjs`의 7 batch `COUNT/MAX(stored_at)`는 사건 연결 증거가 아니다.
+- 기존 PC [#1229](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1229)에서 확인한 `9일/37건`은 운영 저장·게시 증거이며 개별 원자료 당시 선택 인과는 없음. 해당 실행의 제어 실행 SHA `badad9124157879d7a645b64f2768113d632355b`와 PC 승인 운영 SHA `de81749f83c086f5cb0cad7ed1d5cc958de19280`는 feature 개발 브랜치 HEAD와 **별도**다.
+- **판정:** `HISTORICAL_INPUT_LINEAGE_UNPROVEN + EVIDENCE_ACCESS_GAP`는 "과거 입력이 실제로 존재하지 않는다"는 뜻이 아니라, 현존 허용 조회 증거로 특정 사건 인과를 증명하지 못했다는 뜻이다. 동일 A 반복과 거부된 #1023 재요청은 불필요. 공통 [#1206](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1206)에 #1229 신규 증거 전달 및 회신 요청을 이미 기록했다.
+- **실제 다음 실행 조건:** #1206 원장 존재 판정 후 미보존이면 **미래 사건에 한한 비민감 7배치 입력 JSONL 영속 append의 필드·경로·보존기간·정규 Writer 연결과 단일 소유 실행** 효과를 별도 확정 승인받는다. 현 단계는 **범위 A 비운영 개발 승인만** 있으므로 `run-local` 운영 설치·DB/D1/공개 변경 금지.
+
+**이번 조사는 공개 GET·GitHub/소스 읽기 및 계획서 갱신만 수행. 새 PC job·Writer 설치·D1 쓰기·Cloudflare 배포·예약 변경 0건.**
