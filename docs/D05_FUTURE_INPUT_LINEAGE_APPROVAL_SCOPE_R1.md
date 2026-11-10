@@ -1,15 +1,15 @@
 # ZGMINI D05 미래 계산 사건 입력 계보 — 승인 검토 계약 R1
 
-> 2026-11-10 KST · 상태: **PROPOSAL_ONLY / NOT_APPROVED**. 본 문서는 전용 개발 브랜치에서 승인 범위를 검토하기 위한 설계안이다. 운영 Writer·Reader·DB·D1·Controller·예약·공개 UI 변경, 설치 승인 또는 PC 실행을 뜻하지 않는다.
+> 2026-11-10 KST · 상태: **SCOPE_A_DEVELOPMENT_APPROVED / PC_OPERATION_NOT_APPROVED**. 사용자의 "계속해라"에 따라 전용 브랜치의 비운영 코드·fixture 검증을 착수했다. 운영 Writer·Reader·DB·D1·Controller·예약·공개 UI 변경, 정규 B 설치 또는 PC 실행은 승인받지 않았다.
 
 ## 목적·현재 근거
 
 - D05 종합점수 CM-R1에서 **실제로 발생하는 미래 계산 사건 1개**의 당시 선택 입력과 로컬 저장 점수·공개 사건을 같은 `calculatedAt`으로 추적한다. 과거 사건의 누락된 원자료 SHA·revision을 최신 데이터로 소급 생성하지 않는다.
 - 현행 `composite-observed:UTC-YYYY-MM-DD`에는 `calculatedAt,score,asOfDate,signature`와 로컬 `stored_at`이 있고, D1↔공개 관측 API 사건 **1건/1건 일치**를 읽기 전용으로 확인했다. 출력 FNV32 서명은 **입력 원문 해시가 아니다**.
 - 개발 브랜치의 선택형 `onInputEvidence`와 `linkMarketInputEvidenceToStoredArchive`는 사후 7 batch 읽기 증거를 비교한다. 성공 상태는 **`LINKED_SELECTED_7_BATCHES_ONLY` / `LOCAL_PC_ONLY`**이며 12영역 전체 원입력·공식 revision·실효 TTL·게시 D1 결과 증명은 아니다. 기존 `run-local.mjs`에는 미연결이다.
-- `readValidatedInput`는 `SELECT body,stored_at ... LIMIT 10`으로 첫 유효 행을 골라 `{body,storedAt}`만 반환한다. 개발 shadow는 별도 SELECT로 나중에 `batch_key/body/stored_at`을 역매칭하므로 선택 순간의 직접 증인이 아니다. 저장 경합, 중복, 최근 10개 이탈 때 `UNPROVEN`이다.
+- 기존 `readValidatedInput`의 기본 SQL `SELECT body,stored_at ... LIMIT 10`과 반환 `{body,storedAt}`은 유지했다. 범위 A 개발에서는 **명시적으로 선택한 경우에만** 원래 유효 행 결정 SQL에 `batch_key`를 추가하고 선택 순간 ID·시각을 callback으로 포착한다. 개발 shadow는 여전히 별도 SELECT로 저장행 본문 SHA-256을 재검증한다. 선택 순간 ID와 나중 읽은 행이 불일치하면 `UNPROVEN`이며, 선택 metadata만으로 완전한 인과를 주장하지 않는다.
 - `readStoredMarketInputs`는 선택 후 36시간/BIS별 TTL 및 macro `seriesStoredAt` 병합을 적용한다. **선택된 배치=계산에 실제 반영된 원자료**로 단정할 수 없다. SEC 위험, E1-R5 실적, Breadth 및 다른 Reader는 별도로 추적해야 한다.
-- 개발 fixture 테스트 **75/75 PASS**. 실제 Windows Writer·과거 원입력·전체 D1 종단은 미검증. 기존 [공통 #1206](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1206) 당시 open/댓글 0; #1023의 `OPERATION_NOT_ALLOWED` A는 재실행 금지.
+- 범위 A 개발 전 fixture 기준 **75/75 PASS**, 선택 metadata·불변 사건 후보 판정 및 교차 키 증거 거부 추가 후 관련 회귀 **101/101 PASS**. 실제 Windows Writer·과거 원입력·전체 D1 종단은 미검증. 기존 [공통 #1206](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1206) 마지막 확인 당시 open/댓글 0; #1023의 `OPERATION_NOT_ALLOWED` A는 재실행 금지.
 
 ## 최소 승인 대상 — 두 개의 독립 범위
 
@@ -18,7 +18,7 @@
 | **A. 미래 7배치 부분 계보** | 기존 Reader의 유효 행 결정 순간에만 선택형 비민감 metadata hook: 정확한 batch key·원래 저장시각·저장 body SHA-256. 계산 후 TTL·macro series 실효 반영 여부를 별도 판단. 기존 계산·선택 순서·조회 횟수·산식 유지. | 7개 저장 배치의 **부분 인과 증거**. 아직 SEC/E1-R5·Breadth 포함 12영역 완료 아님. |
 | **B. D05 전체 동일 사건 계보** | 승인된 독립 SEC/E1-R5·Breadth Reader의 실효 입력 ID·관측일·공식 정정/revision·local checkpoint를 A와 같은 계산 사건에 묶는다. | 필요한 모든 실효 원입력·정정 이력과 원본 해시가 확인된 경우에만 `FULL_INPUT_LINEAGE_VERIFIED` 후보. 증거 부족은 `UNPROVEN` 유지. |
 
-두 범위 모두 **운영 B 설치·소유권·필드·저장 위치·보존 기간의 사전 승인 필요**. A만 승인되면 B가 자동 승인되지 않는다.
+**범위 A의 비운영 개발·시뮬레이션만 승인됐다.** 두 범위 모두 실제 **운영 B 설치·소유권·필드·저장 위치·보존 기간의 사전 승인 필요**. A 개발 승인이 B 개발·운영 승인을 의미하지 않는다.
 
 ## PC 전용 원장 저장 계약 초안 — 확정 아님
 
@@ -29,8 +29,16 @@
   - `runtimeSourceSha`와 `approvedSourceSha`(각각 실제 실행/승인 정본으로 구분)
   - `inputScope=SELECTED_7_BATCHES_ONLY`, `inputStatus`, `sources[7]`의 `sourceKey,batchKey,storedAt,storedBodySha256` (선택 확인 때만)
   - `effectiveUseVerified=false`, `completeD05InputLineage=false` (12영역 실효 입력 미완료일 때 고정)
-  - `recordedAt`, 민감정보 없는 `recordDigestSha256`
+  - `recordedAt`, 민감정보 없는 `stableEvidenceDigestSha256` (`recordedAt` 제외한 동일 사건 증거의 안정적 SHA-256), `selectionEvidence` (`DIRECT_ID_AND_EXACT_ROW_MATCH` 또는 `POST_SELECTION_UNIQUE_MATCH`)
 - 원장 필드·지속 저장·보존기간(최소 1년 이후 공식 정정 유예 포함 여부)·백업/복원·권한·호환성은 **사용자가 확정하기 전까지 미승인**. 본문 원자료·token·전체 env/SQL 출력·외부 전송을 금지한다.
+- **단일 Writer 직렬화/원자적 append 계약도 미확정**이다. 정규 B 설치용 lease가 계산 도중 발생하는 모든 로컬 기록을 직렬화한다는 증거는 없다. append 파일 어댑터·`run-local.mjs` 실행 연결·실제 JSONL 쓰기는 이 소유권 및 부분쓰기 복원 계약 확인 전 구현·실행하지 않는다.
+
+## 이번 범위 A 개발 결과 — 비운영 코드만
+
+1. 기존 Reader `readValidatedInput`와 7개 입력을 읽는 `readStoredMarketInputs`에 **선택형 `onSelection` 관측만 추가**했다. 기본 선택 순서·기본 SQL·입력 반환·TTL·계산 산식은 그대로 유지한다. callback 예외는 유효 입력 선택을 중단하지 않는다.
+2. `market-input-observation-shadow-r1.mjs`는 유효 행 선택 순간 `batchKey/storedAt`과 기존 별도 읽기에서 검증한 저장 body SHA-256을 대조한다. 각 입력 ID가 일치한 항목만 `READER_DIRECT_ID`로 표시하고, 조회 중인 키와 다른 callback `sourceKey`·모순·중복은 `UNPROVEN`으로 안전 거부한다. 7개 모두 직접 확인했을 때만 사건 전체를 직접 증명으로 분류한다. `composite-archive-lineage-link-r1.mjs`는 정확한 같은 사건의 `score/asOfDate`를 부분 증거에 포함한다.
+3. 신규 순수 함수 `d05-lineage-event-contract-r1.mjs`는 `PREPARED_LOCAL_ONLY` 7배치 부분 사건 후보를 만들고, 기존 JSONL 문자열과 비교해 `APPEND_READY`/`NOOP_SAME_EVENT`/`UNPROVEN`을 판정한다. **파일·DB 읽기/쓰기 기능은 없다.** 동일 이벤트 다른 digest 충돌, 손상/부분 행, 위조 필드를 거부한다. 모든 상태에서 `effectiveUseVerified=false`, `completeD05InputLineage=false`, `publicD1Verified=false`를 보존한다.
+4. 관련 fixture/회귀 **101/101 PASS**. 이는 source 개발 검증이며 실제 PC source SHA·정규 B 설치·로컬 원장 append·D1/API 공개 연계·1년 완성 증거가 아니다.
 
 ## 승인 이후에만 허용될 실행 순서
 
@@ -52,9 +60,10 @@
 
 ## 승인 결정에 필요한 확인 항목
 
-- [ ] 범위 A만 우선 승인할지, 범위 B까지 분리 추진할지
+- [x] 범위 A **전용 브랜치 개발·fixture 시험만** 진행 (운영 효과 제외)
+- [ ] 범위 B의 실효 입력/전체 계보 개발 및 운영 승인 여부 결정
 - [ ] D05 PC 로컬 불변 메타데이터 원장 신설/필드/실제 경로/보존 기간 승인
 - [ ] Reader 선택형 메타 수집·Writer 연결/로컬 append 변경과 정확한 정규 B manifest/백업·재검증 범위 승인
 - [ ] 실제 설치 전 운영 source SHA/lease/Reader의 원본 보호 확인
 
-**진행률: 0/68(0%→0%).** 이 문서의 저장만으로 어느 확인 항목도 승인으로 처리하지 않는다.
+**진행률: 0/68(0%→0%).** 사용자가 허용한 것은 범위 A 개발에 한정한다. 문서·브랜치 코드를 저장해도 나머지 운영 항목이 승인되거나 설치·게시됐다고 처리하지 않는다.

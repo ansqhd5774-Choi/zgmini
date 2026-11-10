@@ -32,8 +32,8 @@ export function marketOperationalStore(db){
  const deny=()=>{throw Error('CANDIDATE_WRITE_DISABLED')};
  return Object.freeze({
   initialize:async()=>true,
-  async readInput(key){
-   if(VALIDATED_INPUT_KEYS.includes(key))return readValidatedInput(db,key,decodeInput);
+  async readInput(key,{onSelection}={}){
+   if(VALIDATED_INPUT_KEYS.includes(key))return readValidatedInput(db,key,decodeInput,{onSelection});
    const row=await db.prepare('SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1').bind(key+':%').first();
    if(!row)return null;
    const latest={body:decodeInput(row.body),storedAt:row.stored_at};
@@ -61,8 +61,9 @@ export function marketOperationalStore(db){
  });
 }
 
-export async function readStoredMarketInputs(store,now=Date.now()){
- const batches=await Promise.all(['macro','credit','supply','fundFlows','bisDsr','bisTc','rates'].map(key=>store.readInput(key)));
+export async function readStoredMarketInputs(store,now=Date.now(),{onSelection}={}){
+ const batches=await Promise.all(['macro','credit','supply','fundFlows','bisDsr','bisTc','rates'].map(key=>
+  typeof onSelection==='function'?store.readInput(key,{onSelection}):store.readInput(key)));
  const fresh=(x,i)=>x&&now>=x.storedAt&&now-x.storedAt<(i===4||i===5?BIS_INPUT_TTL:INPUT_TTL)?(i===0?mergeStoredMacro(null,x,now):x.body):{};
  return batches.map(fresh).reduce((all,part)=>({...all,...part,series:{...all.series,...part.series},external:{...all.external,...part.external},providerSummary:{...all.providerSummary,...part.providerSummary}}),{series:{},external:{},providerSummary:{}});
 }

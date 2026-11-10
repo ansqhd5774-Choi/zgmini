@@ -79,3 +79,58 @@ test('unselected keys remain unproven, not treated as verified or missing',async
 test('invalid store/reader is rejected before operating',async()=>{
  await assert.rejects(observeStoredMarketInputs({reader:()=>({}),store:{}}),/MARKET_SHADOW_READER_REQUIRED/);
 });
+
+test('optional direct Reader witness must match the shadow exact-row hash evidence',async()=>{
+ const env=setup();
+ const store={readInput:async(key,{onSelection}={})=>{
+  const value=await env.store.readInput(key);
+  onSelection?.({sourceKey:key,batchKey:key+':2026-11-09',storedAt});
+  return value;
+ }};
+ const reader=async(s,now,{onSelection})=>{
+  await Promise.all(keys.map(key=>s.readInput(key,{onSelection})));
+  return {status:'INPUTS_UNCHANGED'};
+ };
+ const result=await observeStoredMarketInputs({reader,store,db:env.db,decode:JSON.parse,now:storedAt});
+ assert.equal(result.provenance.verifiedCount,7);
+ assert.ok(result.provenance.sources.every(x=>x.selectionWitness==='READER_DIRECT_ID'));
+});
+
+test('contradictory direct witness fails closed without changing Reader output',async()=>{
+ const env=setup();
+ const store={readInput:async(key,{onSelection}={})=>{
+  const value=await env.store.readInput(key);
+  onSelection?.({sourceKey:key,batchKey:key==='macro'?'macro:incorrect':key+':2026-11-09',storedAt});
+  return value;
+ }};
+ const body={status:'INPUTS_UNCHANGED'};
+ const reader=async(s,now,{onSelection})=>{
+  await Promise.all(keys.map(key=>s.readInput(key,{onSelection})));
+  return body;
+ };
+ const result=await observeStoredMarketInputs({reader,store,db:env.db,decode:JSON.parse,now:storedAt});
+ assert.equal(result.inputs,body);
+ assert.equal(result.provenance.verifiedCount,6);
+ assert.deepEqual(result.provenance.sources[0],
+  {sourceKey:'macro',status:'UNPROVEN',code:'DIRECT_SELECTION_MISMATCH'});
+});
+
+test('a cross-key callback is rejected for the actually requested input',async()=>{
+ const env=setup();
+ const store={readInput:async(key,{onSelection}={})=>{
+  const value=await env.store.readInput(key);
+  onSelection?.({sourceKey:key==='macro'?'credit':key,batchKey:key+':2026-11-09',storedAt});
+  return value;
+ }};
+ const actual={status:'UNCHANGED'};
+ const reader=async(s,now,{onSelection})=>{
+  await Promise.all(keys.map(key=>s.readInput(key,{onSelection})));
+  return actual;
+ };
+ const result=await observeStoredMarketInputs({reader,store,db:env.db,decode:JSON.parse,now:storedAt});
+ assert.equal(result.inputs,actual);
+ assert.equal(result.provenance.verifiedCount,6);
+ assert.deepEqual(result.provenance.sources[0],
+  {sourceKey:'macro',status:'UNPROVEN',code:'DIRECT_SELECTION_MISMATCH'});
+ assert.equal(result.provenance.sources[1].selectionWitness,'READER_DIRECT_ID');
+});

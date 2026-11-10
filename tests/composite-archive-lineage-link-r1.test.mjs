@@ -36,9 +36,12 @@ test('joins only a readback-confirmed exact local calculation event',async()=>{
  const result=await read();
  assert.equal(result.status,'LINKED_SELECTED_7_BATCHES_ONLY');
  assert.equal(result.calculatedAt,sample.calculatedAt);
+ assert.equal(result.asOfDate,sample.asOfDate);
+ assert.equal(result.score,sample.score);
  assert.equal(result.archiveStoredAt,now);
  assert.equal(result.outputSignature,sample.signature);
  assert.equal(result.sources.length,7);
+ assert.ok(result.sources.every(x=>x.selectionWitness==='POST_SELECTION_MATCH_ONLY'));
  assert.equal(result.effectiveUseVerified,false);
  assert.equal(result.completeD05InputLineage,false);
  assert.equal(result.publicD1Verified,false);

@@ -16,8 +16,23 @@ export function assertMarketInput(key,body){
  if(VALIDATED_INPUT_KEYS.includes(key)&&!validMarketInput(key,body))throw Error('INPUT_NOT_VALID');
 }
 // Existing daily history only; recovery retains the original acquisition clock.
-export async function readValidatedInput(db,key,decode){
- const rows=await db.prepare('SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 10').bind(key+':%').all();
- for(const row of rows.results??[]){try{const body=decode(row.body);if(validMarketInput(key,body))return {body,storedAt:row.stored_at};}catch{}}
+export async function readValidatedInput(db,key,decode,{onSelection}={}){
+ // Existing readers retain their exact SQL and return value. The opt-in
+ // development witness includes only the row ID and storage clock, not body.
+ const observing=typeof onSelection==='function';
+ const sql=observing
+  ?'SELECT batch_key,body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 10'
+  :'SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 10';
+ const rows=await db.prepare(sql).bind(key+':%').all();
+ for(const row of rows.results??[]){
+  try{
+   const body=decode(row.body);
+   if(!validMarketInput(key,body))continue;
+   if(observing){
+    try{await onSelection({sourceKey:key,batchKey:row.batch_key,storedAt:row.stored_at});}catch{}
+   }
+   return {body,storedAt:row.stored_at};
+  }catch{}
+ }
  return null;
 }

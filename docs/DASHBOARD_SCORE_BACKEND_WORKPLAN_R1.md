@@ -239,3 +239,14 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 - **다음 단일 결정:** 사용자/Writer 원담당이 *범위 A(선택 7배치 부분 계보)* 개발·로컬 원장 필드/보존/실제 경로·별도 정규 B 영향에 명시 승인할지 판단한다. 승인 전에는 개발 브랜치의 현행 검증 코드를 운영에 연결하지 않는다. 독립 공개 관측 축적과 다른 점수 기능은 계속한다. 범위 B(12영역 전체 실효 입력)는 별도 단계다.
 
 **68개 1년 종단 완료율: 0/68(0%→0%)**. 신규 확인 성과: CNN 실제 관측 **5일/108건**, 승인 검토용 **미래 계보 계약 문서 1건**, 이전 D05 D1↔API 실제 사건 1/1 PASS 유지.
+
+## 2026-11-10 D05 범위 A 개발 실행 — 선택 순간 메타데이터·불변 사건 후보
+
+- **승인 경계:** 사용자의 후속 "계속해라"를 기존 제안의 **범위 A 전용 개발 브랜치 코드/fixture 착수 승인**으로 적용. 실제 PC Writer B 설치, 파일 기반 원장 생성·수정, 계산 실행, D1/Cloudflare 배포, 산식·TTL·데이터 계약 변경은 포함되지 않는다. 공통 Controller #996 `STATE_UNKNOWN` 복구·lease에는 개입하지 않는다.
+- **Reader 선택 순간 관측:** `worker/market-input-validation.mjs`에 선택형 `onSelection`을 추가했다. observer가 없을 때 원래 `SELECT body,stored_at ... LIMIT 10`, 유효 후보 선택·반환을 변경하지 않는다. observer가 있을 때만 `batch_key`를 함께 SELECT하고 유효 행 선택 ID/시각을 반환 전에 관측한다. `worker/candidate-market-operational-store.mjs`는 기존 7개 Reader에 이를 선택적으로 전달한다. observer 실패도 정상 입력 선택을 차단하지 않는다.
+- **증거와 계산 사건 연결:** 기존 비차단 `market-input-observation-shadow-r1.mjs`에서 선택 순간 원본 ID와 사후 동일 행 SHA-256/저장시각이 일치하는지 검증하여 `READER_DIRECT_ID` 또는 제한적 `POST_SELECTION_MATCH_ONLY`로 표시한다. 실제 `readInput(key)`와 다른 sourceKey로 callback한 교차 키 증거·모순·중복은 `UNPROVEN`. `composite-archive-lineage-link-r1.mjs`가 동일 `calculatedAt`, archive 저장시각, 출력 FNV 서명 및 저장 점수·`asOfDate`까지 확인한 뒤에만 **7배치 부분** 연결 후보를 제공한다.
+- **쓰기 없는 원장 계약 개발:** 신규 `lib/score-history/d05-lineage-event-contract-r1.mjs`는 오직 `PREPARED_LOCAL_ONLY`의 비민감 JSONL *후보*를 만들고, 텍스트 기반 `APPEND_READY`, 동일 사건 `NOOP_SAME_EVENT`, 충돌·손상 시 `UNPROVEN`을 결정한다. 안정적 증거 digest는 `recordedAt`을 제외해 재수신해도 동일하다. **실제 append/File I/O·run-local 연결은 없음.** 공용 정규 B lease만으로 로컬 이벤트 append 경합이 방지된다고 가정하지 않는다.
+- **검증:** Reader 직접 선택, 예외 비차단, 순서/원본 SQL 회귀, 7개 부분 사건, 교차 키 증거 거부, 중복·손상·충돌을 포함한 **관련 Node fixture 101/101 PASS(0 FAIL)**. 이전 shadow 기준 75/75보다 시험 범위가 확장된 것으로 **실제 Windows 운영 PASS가 아니다**. 변경은 기능 전용 브랜치에만 기록한다.
+- **남은 단일 필수 개발 경계:** 기존 실제 D05 Writer의 **단일 소유자·동시 계산/배치 기록 직렬화·원자적 파일 append/부분쓰기 복구 가능성**과 승인된 로컬 경로·필드·보존기간을 확인한다. 그 증거와 별도 B 설치 범위 승인이 확보되기 전엔 파일 기록기·`run-local.mjs` 연결 및 실 PC 검증을 시작하지 않는다. 한편 정상 수집/게시·다른 기능은 이 분리 과제로 막지 않는다.
+
+**완성률은 동일:** 실제 원자료→계산→로컬 저장→D1→API/UI로 1년 전부 검증한 항목 **0/68(0%→0%)**. 개발 fixture 통과 **101/101**, 공개 D05 D1↔API 한 사건 **1/1**, 공개 이력 UTC **9일·34건/KST 8일**, CNN 관측 **5일·108건**은 별도 사실이다.
