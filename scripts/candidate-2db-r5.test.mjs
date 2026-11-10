@@ -21,6 +21,16 @@ test('mutations/internal/auth blocked before any database call; no scheduled',as
  assert.equal(retired.status,410);assert.equal(retired.headers.get('x-robots-tag'),'noindex, nofollow');
  assert.equal((await w.fetch(new Request('https://candidate/signin-with-chatgpt',{method:'POST'}),{},{})).status,403);
  assert.equal(calls,0);assert.equal(w.scheduled,undefined);});
+test('retired sign-in HEAD and canonical URL variants never reach application or database',async()=>{
+ let calls=0;const w=candidate2dbWorker({fetch(){calls++;return new Response('unexpected')}});
+ for(const path of ['/signin-with-chatgpt','/signin-with-chatgpt/?return_to=%2F','/%73ignin-with-chatgpt']){
+  const r=await w.fetch(new Request('https://candidate'+path,{method:'HEAD'}),{},{});
+  assert.equal(r.status,410);assert.equal(r.headers.get('x-robots-tag'),'noindex, nofollow');
+  assert.equal(r.headers.get('cache-control'),'no-store');assert.equal(await r.text(),'');
+ }
+ for(const path of ['/signout-with-chatgpt','/%2573ignin-with-chatgpt'])assert.equal((await w.fetch(new Request('https://candidate'+path),{},{})).status,403);
+ assert.equal(calls,0);
+});
 test('candidate earnings reader skips schema initialization while retaining SELECT-only boundary',async()=>{const f=fixture();const file='lib/market-score/earnings-e1-r3-d1-store.mjs';const c=candidate2dbImportBoundary(process.cwd()).transform(fs.readFileSync(file,'utf8'),path.resolve(file)).code;assert(!c.includes('CREATE TABLE'));const mod=await import('data:text/javascript;base64,'+Buffer.from(c).toString('base64'));const store=mod.createEarningsE1R3D1Store(f.env.DB_CORE);await store.initialize();await store.getCurrentFacts('2026-06-30');assert(f.trace.every(x=>x.name==='CORE'&&/^SELECT/.test(x.sql)));});
 
 test('candidate V2 quota diagnostic exposes category only and preserves error contract',async()=>{const file='worker/kfg-v2-postcheck.mjs';let c=candidate2dbImportBoundary(process.cwd()).transform(fs.readFileSync(file,'utf8'),path.resolve(file)).code;c=c.replace(/from (['"])(\.\/[^'"]+)\1/g,(_,q,p)=>'from '+JSON.stringify(pathToFileURL(path.resolve('worker',p)).href));const mod=await import('data:text/javascript;base64,'+Buffer.from(c).toString('base64'));const handler=mod.createKfgV2PostcheckHandler({env:{DB_HISTORY:{}},publicAccess:true,snapshotReader:async()=>{throw new Error('D1_ERROR',{cause:new Error("Your account has exceeded D1's free tier daily row read limit.")});}});const r=await handler(new Request('https://candidate/api/korea-research-v2'));assert.equal(r.status,500);assert.equal(r.headers.get('x-zgmini-read-error'),'D1_QUOTA');assert.deepEqual(await r.json(),{temporary:'TEMPORARY_KFG_V2_POSTCHECK_ONLY',error:'READ_POSTCHECK_FAILED'});});

@@ -20,6 +20,16 @@ test('mutation and internal GET fail closed before handler',async()=>{
  assert.equal((await w.fetch(new Request('https://candidate/signin-with-chatgpt',{method:'POST'}),{},{})).status,403);
  assert.equal(calls,0);assert.equal(w.scheduled,undefined);
 });
+test('retired sign-in HEAD and URL variants stay noindex without calling application',async()=>{
+ let calls=0;const w=candidateWorker({fetch(){calls++;return new Response('unexpected')}});
+ for(const path of ['/signin-with-chatgpt','/signin-with-chatgpt/?return_to=%2F','/%73ignin-with-chatgpt']){
+  const r=await w.fetch(new Request('https://candidate'+path,{method:'HEAD'}),{},{});
+  assert.equal(r.status,410);assert.equal(r.headers.get('x-robots-tag'),'noindex, nofollow');
+  assert.equal(r.headers.get('cache-control'),'no-store');assert.equal(await r.text(),'');
+ }
+ assert.equal((await w.fetch(new Request('https://candidate/signout-with-chatgpt'),{},{})).status,403);
+ assert.equal(calls,0);
+});
 test('public GET maintained and spoofed identity removed',async()=>{
  const w=candidateWorker({fetch(r,e){assert.equal(r.headers.get('oai-authenticated-user-id'),null);assert.equal(e.SECRET,undefined);return new Response('public');}});
  for(const p of ['/','/api/market-score','/api/recession-detail','/recession-detail','/flags/us.svg']) assert.equal((await w.fetch(new Request('https://candidate'+p,{headers:{'oai-authenticated-user-id':'spoof'}}),{SECRET:'fixture'},{})).status,200);
