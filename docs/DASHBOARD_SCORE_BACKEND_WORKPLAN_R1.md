@@ -351,3 +351,11 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 - **다음 필수 실제 행동:** 인증된 기존 D1 Studio에서 `2026-11-10` 날짜 1행 `body`·`stored_at` 읽기 → 같은 시점의 `current` 및 공개 API의 비교 가능한 필드만 대조한다(읽기 전용, SQL/쓰기 없이). 브라우저 인증 제한이면 이 D1 조회만 `D1_STUDIO_AUTH_REQUIRED`로 분리하고 업종 #1228/테마 원담당 작업을 계속한다. 원입력 SHA/revision 및 1년 당시 확정 기록은 여전히 별도 미증명이다.
 
 **전체 1년 실제 종단 완료 0/68(0%→0%).** 신규 공개 계산 1건 관측과 기존 저장 경로 확인 외 PC·Writer·D1·Cloudflare 운영 쓰기·신규 예약/배포 0건.
+
+## 2026-11-11 D05 날짜별 D1 본문 대조기 — 운영 읽기 전용 준비
+
+- `lib/score-history/market-dated-d1-readback-r1.mjs`는 나중에 정상 접근 가능한 기존 D1 Studio가 **이미 반환한** 날짜 행·`current` 행·공개 `GET /api/market-score` 본문을 입력으로만 받는다. D1·PC·API를 자체 호출/쓰기하지 않는다. 날짜키는 UTC `stored_at`에서 도출하며 `body.asOfDate`와 혼동하지 않고, 같은 시각이라도 날짜 행/현재 본문이 다르면 거부한다.
+- D1 12개 영역 및 종합점수와 공개 API를 비교하되, 현재 공개 `app/api/market-score/route.ts`에서 V11/V9 수급·폭 **단일 영역만 overlay**할 수 있음을 구분한다. 12개 일치면 `D1_DATE_CURRENT_PUBLIC_MATCH`; 승인된 V11/V9 수급·폭만 다르면 `D1_DATE_CURRENT_11_DOMAINS_MATCH` 및 `sameEventDisplayVerified=false`; 그 외 점수·영역·시각 차이는 `UNPROVEN`으로 안전 거부한다. 어느 경로도 `oneYearPitVerified=true`를 만들지 않는다.
+- 순수 fixture 5건과 관련 D05·업종·Asset R10 회귀 총 **111/111 PASS**, 실제 D1 날짜 행 입력·운영 연결·원본 SHA 대조·배포 **0건**. 실제 D1 Studio Cloudflare Google 로그인에서 `Unable to sign in`을 반환했으므로 로그인 방식을 무한 재시도하지 않고 `D1_STUDIO_AUTH_REQUIRED`로 별도 둔다.
+
+**1년 원천→PC→계산→D1→API/UI 종단 0/68(0%→0%).** 다음 필수 일은 기존 계정의 승인된 D1 행 조회 가능시 `2026-11-10` 날짜 행 1개와 같은 사건의 `current`를 읽고 위 검증기를 **실제 값으로** 실행하는 것이다. #1228 업종 PC 날짜 행 접근 문제와 테마 원담당 작업은 독립적으로 유지한다.
