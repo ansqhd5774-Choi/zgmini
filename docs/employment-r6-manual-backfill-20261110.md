@@ -7,6 +7,15 @@
 
 **전체 시작 진행률 = 7/8(87.5%); 계획 반영 후에도 7/8(87.5%)**. 원담당: 본 고용 R6 일반챗. 기능 개발 브랜치: `feat/bls-registered-v2-20261109` (현 PR #1036은 대규모 변경이므로 무검토 병합 금지). 제어 최신 `main`의 R6.1 `AGENTS.md`·`GENERAL_CHAT_START.md`·`PC_AUTOMATION_STANDARD.md` 및 중앙 인계 정본을 읽었다. 기존 Controller #917 성공·R2 게시 성공은 신규 성과로 다시 계산하지 않는다.
 
+### 2026-11-10 21:59 KST 실행 재개 체크포인트 — 신규 실측
+
+- **전체 7/8=87.5% → 7/8=87.5%; 8단계 운영 완료 0/5.** 개발 브랜치 HEAD `84db2f5681955e0e9781cccb3950f0fa9024ac47`의 [Node CI 42763453755](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/42763453755)는 `completed/success`. CI는 실PC 29/29 완료 증거가 아니다.
+- **기존 #1217의 정확한 미접수 정황:** 생성 `2026-11-10T01:13:35Z`, `pc-job` 라벨 별도 `01:13:37Z` 추가, 댓글 0. `.github/workflows/pc-job.yml`은 `issues.opened` 이벤트에서 label을 검사한다. 해당 시각 조회한 Actions 100건 단위 페이지에 대응 PC Job 실행이 없으므로 **PC 실행 미입증**. 원인은 라벨 생성 시차 또는 운영 Workflow 비활성 등 구분 전이며 `RUNTIME_FAILED`로 단정하지 않는다.
+- **단회 교정 A 요청 #1227:** `pc-6f7a24d4-823d-4648-b2c3-a645a352bef7`, `core-runtime-source-readonly`, source `zgmini/main@643b7c7c4372ffad552443fc312c6cb1b944e2fc`; GitHub create에서 `labels:[pc-job]`을 지정했음에도 Issue 생성 `2026-11-10T12:58:56Z` 후 GitHub 별도 `labeled` 이벤트 `12:58:58Z`가 확인됨. 확인 당시 댓글 0·해당 PC Job Actions 0. **추가 A Issue/동일 요청 재실행 금지.** #1217/#1227 실행/전달 미확정 원본만 추적하며 공용 #996의 잠금/Workflow는 총괄 담당자가 조정한다.
+- **확인된 가장 최근 승인 B BACKFILL 원본 #1169:** [실제 결과 JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/employment-r6-registered-a4e1dc0d-f7ef-4ff8-80df-9ce56ad3d796.json)은 `R6_B_PARTIAL_PUBLISH_VERIFIED`, BLS 14회+DOL 2회=16회, `DOL_UI_WEEKLY_CLAIMS: PARTIAL/SERIES_PARTIAL`, `BLS_BED: PARTIAL/SERIES_PARTIAL`, SQLite `COLLECTOR_RECORDED`, D1 `VERIFIED`, sourceFeatures 29/chartReadyFeatures 22. **DOL이 미수집인 것은 아니며 완전한 577×51 원자료인지 미입증**; 수집기 당일 `BACKFILL_ALREADY_ATTEMPTED_TODAY` 판단이 있어 같은 날 단회 요청을 증거 없이 반복하지 않는다.
+- **기존 승인 V3 정적 경로 확인:** provider 600주 after SHA256 `a3474258efcbd12c8ac081d07a0d7ffb3055b5ddd8d35080248aecf60ba30381`; collector after SHA256 `f22b2f1447e462d3101caf027323572606db61352ab6a53524dd406cca7a4915`. 제어 `main`의 각 APPROVED_B 1파일 overlay 및 2개 V3 manifest가 이를 참조하지만, **현재 실PC 2개 파일의 실제 해시와 활성 Controller source는 미확인**. overlay 설치 완료 또는 신규 게시 가능하다고 해석하지 않는다.
+- **다음 필수 실행 하나:** 기존 A #1227의 실제 Actions/JSON/TXT 수신 여부를 **새 요청 없이** 확인하고, 공유 적용 담당이 #996 별도 복구 후 최신 승인 A `employment-r6-collection-evidence-readonly`의 실제 설치를 증빙하면 600주 SQLite 결손 위치부터 조회한다. #996 총괄이 진행하는 C급 운영 복구는 원담당이 중복 실행하지 않는다. 이와 독립적으로 DOL의 `SERIES_PARTIAL`을 데이터 결손 유형별로 검토한다. 자연 예약 갱신·격리 인계 종단 실증은 최종 29/29 이후 `DEFERRED`.
+
 ### 고정된 8단계 목표 및 증거
 
 | 단계 | 완료 조건 | 현재 판정·근거 |
