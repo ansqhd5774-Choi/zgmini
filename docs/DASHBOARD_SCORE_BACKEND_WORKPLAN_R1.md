@@ -376,3 +376,11 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 | 합계 기획 항목 68 | **68개 모두 실제 PIT 점수인지 미확정** | **0/68(잠정 기준)** |
 
 **다음 최소 실행:** 27·11·30 로스터의 **ID→계산기→PC 저장 키→D1 키→API** 대응을 실제 등록/Runtime 증거로 확정한다. 특히 테마 UI 20개 미등록과 등락 비율형 2개를 사용자 승인 없이 0~100 새 점수로 변환하거나 분모에서 삭제하지 않는다. 기존 승인된 D05·업종 실증은 독립 진행 가능하다. 실제 운영 쓰기/배포·예약 0건.
+
+### 테마 30개 공개 읽기 경로 정밀 추적 — 2026-11-11
+
+소스만 읽어 확인한 **표시명 기준 공개 읽기 경로 11개**는 정규 7개(로봇·자동화, 클라우드·SaaS, 자율주행, 원전·SMR, 방산, 핀테크, 사이버보안)와 개별 verified reader 4개(AI 반도체, 바이오·신약, 데이터센터·전력, 우주·위성)다. 정규 7개는 `worker/theme-etf-only-public.mjs`의 `THEME_ETF_ONLY_PAIRS`, 개별 4개는 `worker/theme-ai-semiconductor-optional.mjs`·`theme-biotech-optional.mjs`·`theme-data-center-power-r1.mjs`·`theme-space-satellite-r1.mjs`의 조건부 D1 read/merge를 통해 `/api/theme-fear-greed`로 연결된다. **11개가 현재 D1에 READY로 올라와 있다는 뜻은 아니다.** `theme-nine-r37-public.mjs`의 9개는 독립 신규 테마 9개가 아니라 이미 존재하는 테마 점수의 조건부 산식 대체이며, AI·반도체와 UI의 AI 반도체 표기 차이는 별도 대응이 필요하다.
+
+**개별 공개 읽기 경로 미확인 19개**: 양자컴퓨팅, 블록체인·디지털자산, AR·VR, 데이터센터 액체냉각, 실리콘 포토닉스, 드론·UAM, 휴머노이드, 전고체 배터리, 수소, 태양광, 핵융합, 탄소포집, 희토류·핵심광물, 자원 재활용, 의료기기, 디지털헬스, AI 신약개발, K-콘텐츠·드라마, 게임·e스포츠. `/api/theme-configured`는 `public_feed_snapshots_v1`의 `theme-configured:%` 동적 항목을 읽을 수 있으므로, 이 19개가 실제 저장·운영되지 않는다고 단정하지 않는다. 또한 `theme-explorer.tsx`가 직접 요청하는 것은 `/api/theme-fear-greed`여서 동적 configured 전용 API의 READY 데이터가 곧바로 탐색기 30개에 표시된다고도 단정하지 않는다.
+
+**판정:** 30 UI 명칭 확정, 11개 이름 대응 reader 소스 확인, 19개 개별 경로 미확인, 동적 추가 런타임 미검증, 30개 당일 확정점수의 1Y PIT 보관 실증 **0건**. 다음 확인은 기존 A급 승인 조회로 실제 D1 현재 feed 키/PC 저장 키를 읽어 11개 READY와 19개 동적 등록 여부를 대조하는 것이다. 새로운 계산식·복제 게시기·예약을 만들지 않는다.
