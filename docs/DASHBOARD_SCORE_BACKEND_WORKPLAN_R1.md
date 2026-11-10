@@ -120,3 +120,13 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 - 새 [공통 요청 #1206](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1206)에 원장 재사용·과거 사건 1건 인과 기록 가부·미기록 시 미래 계산 사건에 선택된 7 batch 및 SEC/E1-R5/Breadth 입력 체크포인트를 일치시킬 최소 비민감 계약만 인계. 소유권은 공통 조회 Controller/운영 Reader와 D05 원담당 기능으로 분리, 복구 중인 공유 Controller 설치 lane을 임의 점유하지 않음.
 - **진행률:** 시작·종료 실제 68개 공개 종단 완료 **0/68(0%→0%)**. 이번에는 개발/모의 테스트 재실행·PC 새 Issue·수집/DB·Writer·D1·운영 배포 **0건**. 공통 지원 이슈 #1206 발행 및 원문 근거 정리만 완료.
 - **다음 필수 행동 하나:** D05 원담당은 독립적으로 기존 `market.mjs` 계산 시점의 배치·SEC/E1-R5/Breadth 증거를 **입력/결과 계약 변경 없이** 어떤 이벤트 ID에 연결할 수 있는지 코드 호출 경계 한 곳을 확정하고, 공통 담당에게는 #1206의 과거 원장 증거 가부 판정을 맡긴다. 승인 없는 운영 연결·일별 백필·새 Controller 설치·기능별 예약 생성 금지.
+
+## 2026-11-10 D05 계산 호출 경계 opt-in 연결 — 개발 브랜치 한정
+
+- 최신 main의 `scripts/pc-writer/market.mjs::calculateMarket`가 `readStoredMarketInputs`로 7개 선택값을 읽고, 동일 `run-local.mjs`의 `now`로 `current` 저장 후 `appendCompositeObservedFromCurrent(db,now)`를 호출하는 경계를 확인했다. archive의 `calculatedAt`과 입력 선택 시각을 **연결할 수 있는 후보 호출 지점**은 이 `collectInputs`이며 기존 과거 archive에 연결 증거가 기록돼 있었다는 뜻은 아니다.
+- 기존 `market.mjs`에 선택형 `{onInputEvidence}` 네 번째 인자만 추가. 호출자가 제공한 경우에만 기존 `observeStoredMarketInputs` shadow를 사용하고, 점수 계산이 성공한 때 해당 `now` ISO·asOfDate·score 및 **7배치 부분 증거**를 callback으로 반환한다. 기본 호출 `calculateMarket(root,db,now)`는 이전 Reader를 그대로 1회 실행하며, 추가 출처 SELECT·점수 산식·산출물 JSON·Writer 저장/게시 방식 변화가 없다.
+- shadow 증거 조회 실패·조회한 본문 불일치·callback 자체 예외는 계산 결과를 변경하지 않는다. 원래 Reader/점수 계약 오류는 그대로 실패하며 callback으로 거짓 PASS를 보고하지 않는다. `SHADOW_7_BATCHES_ONLY`이므로 독립 SEC/E1-R5/Breadth, 공식 source revision, D1 게시 성공, 과거 입력 연결을 증명하지 않는다.
+- `tests/market-calculation-evidence-hook-r1.test.mjs` 신규 **5/5**: 기본 호출 읽기 7/추가 SELECT 0; opt-in 호출 읽기 7/증거 SELECT 7 및 같은 계산시각; batch 불일치 UNPROVEN+점수 보존; 보고 callback 오류 비차단; 원래 Reader 오류 전파. 실제 외부 의존성은 격리 fixture이며 **실PC Windows 통합 PASS가 아니다**.
+- 기존 증거/입력 단위 시험 포함 로컬 **63/63 PASS**, `node --check` PASS. 신규 코드·시험 GitHub 정확 본문 readback **2/2 PASS**, 브랜치 개발만 수행. 공유 `run-local.mjs`, DB schema, Writer source/설치, Core Task, D1, 공개 API/UI는 **변경 0**.
+- **전체 68개 실운영 종단:** **0/68 (0%→0%)**. 개발 관찰 callback이 실제 운영 저장 증거는 아니다.
+- **다음 필수 행동:** 공통 #1206의 과거 연계 증거 가부를 기다리는 동안, D05 원담당은 `run-local.mjs`의 기존 계산 사건 `now`와 archive 성공 상태를 연결해 **검증 성공 사건에만 비민감 lineage를 보존**할 단일 저장/원장 계약을 승인 범위와 함께 준비한다. 실제 Writer 변경·B 설치·공개 게시 전환은 소유권/승인 확인 뒤에만 수행하며 7배치만으로 12영역 전체 READY 표기 금지.
