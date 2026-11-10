@@ -359,3 +359,20 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 - 순수 fixture 5건과 관련 D05·업종·Asset R10 회귀 총 **111/111 PASS**, 실제 D1 날짜 행 입력·운영 연결·원본 SHA 대조·배포 **0건**. 실제 D1 Studio Cloudflare Google 로그인에서 `Unable to sign in`을 반환했으므로 로그인 방식을 무한 재시도하지 않고 `D1_STUDIO_AUTH_REQUIRED`로 별도 둔다.
 
 **1년 원천→PC→계산→D1→API/UI 종단 0/68(0%→0%).** 다음 필수 일은 기존 계정의 승인된 D1 행 조회 가능시 `2026-11-10` 날짜 행 1개와 같은 사건의 `current`를 읽고 위 검증기를 **실제 값으로** 실행하는 것이다. #1228 업종 PC 날짜 행 접근 문제와 테마 원담당 작업은 독립적으로 유지한다.
+
+## 2026-11-11 68개 분모 정밀 대조 — 화면 항목과 실제 점수 계약 분리
+
+**기존 `27+11+30=68`은 UI/기능 기획 항목 수이며 모두 동일한 형식의 PIT 점수 68개로 실증됐다는 뜻이 아니다.** 사용자의 목표 숫자를 임의로 변경하지 않고 미확정 영역을 보존한다.
+
+- **대시보드 27 = 점수형 카드 25 + 비율형 등락 패널 2:** `app/dashboard-ui.tsx`에 경제 도메인 **12**(`inflation,employment,rates,credit,growth,consumption,earnings,liquidity,fundFlows,breadth,dollarFx,commodities`), 위험 점수 **8**(`inflationStability,recessionDefense,stagflationSafety,creditRiskDefense,earningsRecessionDefense,assetBubbleSafety,debtRiskSafety,supplyShockSafety`), 미국/한국 공탐 **2**, 종합 **1**, 금리심리 **1**, 이란참고 **1**의 점수형 출력이 존재한다. 미국/한국 등락 **2**는 0~100 단일 점수가 아니라 상승·보합·하락 **세 비율**이며, 한국 패널은 현재 `counts` 미전달로 연결 예정. `domains.breadth` 점수형과 등락 비율형은 별개다. 미국 등락 249~250 거래일 자료는 점수 1년 PIT가 아니라 해당 비율 이력으로 별도 검증할 대상이다. 한국 공탐은 `RECONSTRUCTED_CURRENT_VINTAGE`, `pointInTimeVerified=false` 표시로 과거 PIT 증거 사용 불가.
+- **업종 11:** 실제 R3의 11개 점수 구조는 존재하나 252개 재계산 추세는 개별 당일 확정 이력 252건이 아니다. 날짜별 PC 원장 확인 요청 #1228 보존.
+- **테마 UI 표시명 30:** `components/market-explorer-catalog.ts`에서 AI·디지털 **10**, 산업·모빌리티 **6**, 에너지·자원 **8**, 헬스케어·소비 **6**의 정확한 후보 UI 수 확인. 반면 `config/theme-data-registry.json`이 명시하는 계산 등록 ID는 **10**이며 이름 정확 일치 **9**, `AI 반도체`/`AI·반도체` 표기 차이 **1**. UI 후보 **20개는 현재 등록부에 없음**. 그중 `우주·위성`은 다른 구버전 공개 코드/문서에 존재하므로 미등록=미운영 단정 금지. 임의 신규 테마 산식·상한·등록 생성도 금지. 공식 T01~T30 ID↔원천↔PC/D1/API 매핑은 아직 완성되지 않았다.
+
+| 집계 기준 | 확인 | 1년 실제 종단 확인 |
+|---|---:|---:|
+| 대시보드 UI 27: 점수형 25 + 비율형 2 | 화면 구조 확인, 정본 PIT ID 매핑 일부 미완 | 0 |
+| 업종 점수 11 | 소스·공개 R3 11개 확인 | 0 |
+| 테마 UI 후보 30: 현재 명시 registry 10, 미등록 20 | UI 30 확인, 전체 실행 등록 미확인 | 0 |
+| 합계 기획 항목 68 | **68개 모두 실제 PIT 점수인지 미확정** | **0/68(잠정 기준)** |
+
+**다음 최소 실행:** 27·11·30 로스터의 **ID→계산기→PC 저장 키→D1 키→API** 대응을 실제 등록/Runtime 증거로 확정한다. 특히 테마 UI 20개 미등록과 등락 비율형 2개를 사용자 승인 없이 0~100 새 점수로 변환하거나 분모에서 삭제하지 않는다. 기존 승인된 D05·업종 실증은 독립 진행 가능하다. 실제 운영 쓰기/배포·예약 0건.
