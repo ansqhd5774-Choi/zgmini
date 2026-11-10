@@ -98,3 +98,30 @@
 - **다음 필수 실행:** #1227 기존 실행 증거를 회수하고 12파일 실제 before SHA를 정규 B 승인 manifest에 활용한다. `run-local.mjs` 계산/아카이브 동일 사건 후 선택형 메타 수집 호출을 비운영 fixture에서 먼저 검증하고, 실제 lock/경로/보존·범위가 확정된 후에만 B 설치와 미래 사건 한 건 저장·재조회로 넘어간다. 과거 사건의 입력 해시를 소급 생성하지 않는다.
 
 **전체 1년 종단 완료 0/68(0%→0%). #1230 A 사전조회는 준비 단계의 별도 실증 PASS이며 최종 완료율에는 가산하지 않는다.**
+
+
+## 2026-11-11 D05 사용자 승인 범위 및 선택형 연결 구현 갱신
+
+- 사용자 후속 승인 범위: **공개 게시 없는 PC 내부 D05 계산 사건별 복합점수 및 일곱 입력의 `batchKey/storedAt/SHA256` 메타데이터만** `E:\\ZGmini\\data\\pc-writer\\score-lineage\\d05-composite-events-v1.jsonl`에 append, **최소 15개월 보존**, 임의 자동 삭제/외부 게시 없음. 이는 해당 메타데이터 보존 효과의 승인일 뿐, 설치 source/대상 PC·잠금/백업/ACL/유지보수 B 실행 완료의 증거는 아니다. 과거 미기록 이벤트에 입력 해시를 소급 작성하지 않는다.
+- D05 개발 브랜치 `codex/dashboard-score-daily-r1`에서 원격 커밋 `47dcf90b0d1454d5c4f9bf0720aaf87c34fecd6c`(exclusive Writer 증명), `03743a7f2000a42ea8f2e0b59308a50329f4b328`(관련 테스트), `5d2a7a4cdb6681784eeacfb6d9053a78e688ff9a`(`run-local.mjs` 연결)를 확인했다. 기능 source는 **아직 PC 미설치**.
+- `local-cycle.mjs`의 부모 PID와 기존 `local-cycle.lock` 소유·정규 파일·불변성/생존 여부를 확인할 때만 선택적으로 입력 7종 메타를 포착한다. 시장 결과 저장과 기존 복합 아카이브의 `LOCAL_STORED`가 같은 사건으로 성립한 경우에만 private JSONL 추가를 시도한다. 잠금 미확인, 증거 미성립 또는 추가 저장 실패는 D05 기록을 `UNPROVEN`으로 분리하며 기존 계산/저장/게시 성공 자체를 허위로 변경하지 않는다. 기존 수식·DB·D1·TTL·예약·공개 계약은 유지.
+- 개발 검증: `node --check` 배포 후보 12/12 PASS, D05 및 기존 Asset R10 관련 집중 회귀 `node --test` **74/74 PASS(실PC 실행 아님)**. 브랜치 최신 12개 소스 파일은 원격 원문과 로컬 구현 원문이 각각 동일함을 확인. 최초 읽기 전용 실PC 사전조회 [#1230](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1230)는 기존 수정 4개 `trackedDirty=false` / 신규 8개 `ABSENT`를 확정하였으나, live Task 소유·source를 입증하지 않는다.
+- 12파일 **배포 후보 after SHA-256** (정규 B manifest 작성시 실제 before와 대조하며, 그 자체가 B 실행 승인은 아님):
+
+| 대상 | after SHA-256 |
+|---|---|
+| `scripts/pc-writer/run-local.mjs` | `418e46aeb79388e348bc23eff0d793a69a364f0c2cce875bf576a9ea448de934` |
+| `scripts/pc-writer/market.mjs` | `192b4c3aa2e3237ffe73200d0c713e20d7f89ced53e3fb1d156fb857de6925fd` |
+| `worker/market-input-validation.mjs` | `f029c8bd370dd8f40b0e203d33553904c1765277b89161e05f1ac694112095d6` |
+| `worker/candidate-market-operational-store.mjs` | `6b57a121709e9725109aa6c3c502624b63eb32b5b117fd67aad4f7f57a17b28e` |
+| `lib/score-history/market-batch-provenance-r1.mjs` | `7a2ae14ee841d5305edeb53cefe0e6e8d83255457bc290e2c22dfc532bbacdc2` |
+| `lib/score-history/market-batch-provenance-read-r1.mjs` | `1132572c528d772a92dc1f2732660898efe808fec2011aba5418b2deb9f21a08` |
+| `lib/score-history/market-input-observation-shadow-r1.mjs` | `a57b724904110de5ce97de1eea88e327bb14d170aaa4d572f7f7564039d3283e` |
+| `lib/score-history/composite-archive-lineage-link-r1.mjs` | `d0723d49166cc32e44e67953f3c2cea400edb3b9ac9f1468615699d7fe2586d5` |
+| `lib/score-history/d05-lineage-event-contract-r1.mjs` | `d379412bb5365a639e57b63614bd83d3b5bef71b8ca86a861624c57a281c865e` |
+| `lib/score-history/d05-lineage-after-archive-r1.mjs` | `d865e471523fb3edc4edd4e7271b786f1be675bdf11192129a28577fb7d956b5` |
+| `lib/score-history/d05-lineage-event-append-r1.mjs` | `aafbff565f7a57aaee759125e46ae63ab851227c65feb2d56dacdd799b2e098d` |
+| `lib/score-history/d05-lineage-local-record-r1.mjs` | `f912cd83fe9c9e7867cedc376e244e4cd0a5a672241809c6a5724365ab0e173c` |
+
+- **현재 필수 미증명/중단:** [#1227](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1227) live Core source A 조회는 `AUTOMATION_BLOCKED/PC_JOB_INTAKE_NOT_OBSERVED`이며 무작정 동일 재요청하지 않는다. PC의 실제 `ZGMINI_PC_HOME`, Task/lock 소유·source, JSONL 경로/NTFS ACL/백업/보존 능력, 승인 정규 B 설치 경로가 필요하다. D05 append 기본 파일 크기 상한은 64MiB: 15분 96건/일을 15개월 지속하면 약 98MiB가 필요할 수 있으므로, 운영 B 전에 실제 발생률과 15개월 보존/용량 대책을 명시적으로 확정해야 한다. 무단 자동 회전/삭제 없음.
+- **다음 실행:** 공통 총괄의 #1227 접수 원인 확인/승인된 정확한 1회 read-only 실증으로 live source/Task를 확인 → 기존 #1230 before + 위 after의 정규 B manifest/백업·lease·ACL 검증 → 승인된 PC 설치 한 번 → 실제 미래 사건 1건 JSONL 원장/SQLite/점수 재조회. 1Y 최종 **0/68 (0%)**, 완료 선언 불가.
