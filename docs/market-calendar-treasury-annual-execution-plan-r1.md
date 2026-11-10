@@ -64,3 +64,10 @@
 - 2026-11-09 당시 FiscalData `auctions_query` 415 vs 공식 TreasuryDirect TA_WS 낙찰 436(차이 21), 날짜 상한 +30일 보정 후 `competitiveAuctionCloseDate` 실제 365일 재필터링. 연간 원문 압축 PC 전용 `marketOperationalStore.writeInput/readInput` 계약, 주간 XML의 미래 입찰·공고 병합과 부분 실패 시 마지막 유효값 보존은 이미 구현·검증됨.
 - 최초 개발 R1의 83%/Writer B 공유 복구 차단/“TA_WS 어댑터 연결”은 **과거 실행 단계**이며 현재 실행 지시가 아니다. 현재 운영 검증 95%와 #996 공유 설치 차단이 우선한다.
 - 참고: [FOMC 연간 일정 PR #1039](https://github.com/ansqhd5774-Choi/zgmini/pull/1039), [시장 캘린더 공개 PR #823](https://github.com/ansqhd5774-Choi/zgmini/pull/823), [캘린더 PR #995](https://github.com/ansqhd5774-Choi/zgmini/pull/995), [최종 비공개 감사 공통 PR #1191](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1191). 기존 성공 증거는 재사용하며 재수집·재게시·Controller 임의 설치로 중복 성과를 만들지 않는다.
+
+## 6. 최신 공개 재관측 — 2026-11-10 22:25 KST (읽기 전용)
+
+- 공개 [API](https://zgmini.kr/api/release-calendar) `READY`; `updatedAt=2026-11-10T08:35:05.649Z`. 전체 **2,288**, Treasury **894**(공고 444/입찰 450), `id+date` 중복 **0**. 2025-11-10~2026-11-10 양끝 포함 Treasury **880**(공고 439/입찰 441), 2026-11-10 이후 예정 **14**.
+- [2026년 11월 시장 캘린더 데스크톱 UI](https://zgmini.kr/market-calendar/) Treasury **37건** = 같은 달 공개 API **37건**. 2025년 11월 API Treasury **53건**도 과거 관측과 일치.
+- 이전 2026-11-09 공개 총 2,288/Treasury 894는 유지, `updatedAt`은 2026-11-09T20:22:39.536Z → 2026-11-10T08:35:05.649Z로 전진. 최근 365일 기간 자체가 하루 이동해 과거 Treasury 876→880으로 바뀌었으므로 **2026-11-09 원본 낙찰 436을 11월 10일 최신 보관 원본의 고정 기대 건수로 사용하지 않는다**.
+- **증거 범위 구분:** 이 관측은 공개 API·데스크톱 UI에 한정. 11월 10일 D1 행을 독립 SELECT하지 않았으며, 모바일 전용 화면도 미검증. 전날의 승인 D1 SELECT 1회 일치 증거를 오늘 새 게시분에 그대로 소급 적용하지 않는다. PC 비공개 TA_WS 메타 조회는 미완료 5점. 공급자 호출·PC/DB/배포 쓰기 0건. 프로젝트 **95/100 유지**.
