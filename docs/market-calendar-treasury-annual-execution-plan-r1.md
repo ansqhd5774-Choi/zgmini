@@ -1,74 +1,52 @@
-# 시장 캘린더 Treasury 연간 수집 — 마지막 단계 실행 계획 R1
+# 시장 캘린더 Treasury 최근 365일 — R6.1 최종 실행 계획
 
-## 최신 운영 검증 — 2026-11-10 KST (아래 2026-11-09 실행 계획보다 우선)
+> 최종 정본: 2026-11-10 KST. 대상 저장소 `ansqhd5774-Choi/zgmini`, 개발 브랜치 `codex/market-calendar-treasury-cache-private-code-r1-20261109`, [Draft PR #1051](https://github.com/ansqhd5774-Choi/zgmini/pull/1051). 이 계획은 현재 미완료 범위만 갱신하며 산식·API 계약·DB·TTL·예약·배포를 변경하지 않는다.
 
-**실제 작업률: 95% → 95%.** 초기 83%·Writer B 복구 차단은 이 문서의 **과거 계획 기록**이며 현 시점 차단이 아니다. 완료한 개발·설치·수집·공개 단계를 재실행하지 않는다.
+## 1. 최종 목표·현재 완료 지점·진행률
 
-| 실제 단계 | 유효 증거 | 상태 |
-|---|---|---|
-| 공식 연간 365일 TA_WS 소스·저장/재조회·계산 코드 | 4개 실행 파일, 관련 45/45 회귀·CI 성공, 승인 source `40111539a3536d99b22c99551d30f1b170246682` | DONE |
-| 운영 Writer 설치 | PC 제어 [#1132](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1132), Run 42690541955, `WRITER_B_INSTALLED_VERIFIED`, 운영 overlay source `70d2d1dbd8180255133bdd7fc925ae07bb8d6cc9` | DONE |
-| 운영 수집/checkpoint | PC 허용 A [#1135](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1135), Run 42692713050, `calendarStatus=READY`, `providerRequests=24`, source 13개 중 Treasury 포함, `at=2026-11-09T20:23:10.889Z` | DONE |
-| D1 실제 개별 저장 행 | 사용자 승인 후 운영 `zgmini-core-r42`에서 읽기 전용 SELECT **1회**: `output/release-calendar/current`, `stored_at=1794255759536` → `2026-11-09T20:22:39.536Z` | DONE |
-| 공개 API/UI | `/api/release-calendar`: `status=READY`, `updatedAt=2026-11-09T20:22:39.536Z`(D1과 0 ms 일치), 전체 **2,288** · Treasury **894**; 실제 `/market-calendar/` 2025년 11월 Treasury **53** | DONE |
-| PC private 입력 원본 메타데이터 직접 감사 | 현 승인 A `release-calendar-runtime-readonly`에는 `sqliteOpened=false`, `awardedCount`·본문 SHA 반환 없음 | DEFERRED / 별도 승인 경로 필요 |
+**최종 목표:** 공식 TreasuryDirect TA_WS에서 최근 365일 낙찰·공고 이력을 PC에 수집 → 비공개 SQLite 원문 저장·재조회 → 저장된 자료로 일정 계산 → 기존 Writer/D1 게시 → 공개 API/UI 표시. 마지막 5점은 별도 PC 원문 입력의 비민감 메타데이터를 실제 A급으로 읽어 원본 완전성 근거를 독립 확인한다. 이 마지막 감사는 이미 완료된 수집·게시·화면 작동을 소급 무효화하지 않는다.
 
-**공개 365일 수치 직접 분해:** 2025-11-10~2026-11-09 Treasury **876** = 공고 **436** + 입찰 **440**. 이후 예정 18 = 공고 8 + 입찰 10. 894 전체에서 `id+date` 중복 **0**. 공식 TA_WS 낙찰 436건→과거 공고·입찰 872건과 수치가 합치하며 365일 내 입찰 추가 4건과 이후 예정 18건은 주간 XML 병합분으로 **추정**된다. 출처별 원본 row 감사를 대체한다고 주장하지 않는다.
+**프로젝트 전체 진행률: 시작 95/100점(95%) → 이 계획 갱신 후 95/100점(95%).** 완료된 5개 운영 단계를 다시 수행하거나 신규 성과로 중복 산입하지 않는다.
 
-**원문 저장·재조회 성공 판단의 근거:** 실제 설치된 `release-calendar.mjs`는 `privateStore.writeInput` → `readInput` → 원문 text, `storedAt`, 조회 기간, `awardedCount` 동등성 검증 → 파싱 행수 검증을 완료해야 `historyReady=true`가 되고, 주간 성공과 함께일 때만 `sources.treasury.status=READY`가 된다. 운영 공개 `READY` 및 동시각 수집·게시 증거가 이 경로와 부합한다. 그러나 **원본 건수·해시의 직접 PC 별도 조회 결과는 아직 없다.**
+| 구분 | 배점 | 완료 | 완료 기준 및 고정 증거 |
+|---|---:|---:|---|
+| 공식 365일 원문 수집·저장/재조회·계산 코드 | 20 | 20 | 승인 feature source `40111539a3536d99b22c99551d30f1b170246682`, 관련 회귀·CI 45/45 PASS |
+| 실제 운영 Writer 설치 | 15 | 15 | [PC #1132](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1132), Run `42690541955`, `WRITER_B_INSTALLED_VERIFIED`, Writer overlay `70d2d1dbd8180255133bdd7fc925ae07bb8d6cc9` |
+| PC 정규 수집·로컬 checkpoint | 25 | 25 | [A #1135](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1135), Run `42692713050`, `calendarStatus=READY`, 공급자 요청 24, Treasury 포함 13개 원천, checkpoint `2026-11-09T20:23:10.889Z` |
+| 실제 D1 저장·시각 재조회 | 20 | 20 | 사용자 승인 운영 D1 `zgmini-core-r42` 읽기 전용 SELECT 1회: `public_feed_snapshots_v1`의 `output/release-calendar/current`, `stored_at=1794255759536` |
+| Production API·캘린더 UI 검증 | 15 | 15 | [API](https://zgmini.kr/api/release-calendar) `READY`, `updatedAt=2026-11-09T20:22:39.536Z`(D1과 0ms 일치), 전체 2,288 · Treasury 894; [UI](https://zgmini.kr/market-calendar/) 2025년 11월 Treasury 53 |
+| PC 비공개 TA_WS 입력 메타 독립 A 조회 | 5 | 0 | **운영 설치된 A**로 최신 보관 원본의 건수·기간·지문을 읽고 결과 JSON/TXT를 검증하기 전까지 미완료 |
 
-**다음 필수 한 행동:** 공통 Controller 담당자의 설치 작업에 개입하지 않고, 기존 공통 등록 경로로 `release-calendar-runtime-readonly`의 **고정된 TA_WS 입력 1개**에 대한 비민감 감사 메타데이터(`exists/storedAt/fromDate/toDate/awardedCount/parsedRowCount/textSha256`)만 읽도록 범위·승인·실제 설치 여부를 조정한다. 설치 확인 후 A급 **1회** 결과를 기존 `#1135`·D1·공개 894건과 대조해 종료 판단한다. 원문 text·키·DB 임의 SQL·신규 예약·Writer 재설치·Controller 수동 우회는 금지. 이 부가 감사를 별도 후속으로 승인 분리한다면 **기능 수집→게시→UI는 완료**, 감사만 DEFERRED로 기록한다.
+**관측 범위 대조:** 2025-11-10~2026-11-09 공개 Treasury 876 = 공고 436 + 입찰 440; 이후 예정 18 = 공고 8 + 입찰 10; 총 894, `id+date` 중복 0. 공식 TA_WS 낙찰 436건과 공개 과거 입찰 440건의 차이 4건은 기존 주간 원천 병합의 가능성이며, 직접 원문 감사 없이 확정된 원인이라고 표현하지 않는다. 과거 FiscalData 낙찰 415건은 365일 대체 완료 기준이 아니다. 낙찰 436은 해당 관측일의 기준값이지 모든 미래 실행의 고정 개수 조건이 아니다.
 
-**SHA 경계:** 아래 R1 계획의 과거 SHA·차단 문구를 현 운영 설치 상태로 읽지 않는다. 이번 문서 갱신은 개발 브랜치의 설명만 갱신하며 승인된 PC 설치 SHA, D1 및 공개 웹의 런타임을 변경하거나 재배포하지 않는다.
+## 2. R6.1 최신 계약과 영향 범위
 
----
+- 시작·재개 시 제어 저장소 `ansqhd5774-Choi/zgmini-pc-control` 최신 `main`의 `AGENTS.md`, `docs/GENERAL_CHAT_START.md`, `docs/PC_AUTOMATION_STANDARD.md`에서 **현재 작업과 관련된 변경**을 확인한다. 별도 중앙 인계는 `docs/AGENT_HANDOFF_CENTRAL_ORCHESTRATOR_V1.md`, 공유 설치는 `docs/CONTROLLER_APPLY_QUEUE.md`를 따른다.
+- 승인된 Writer B의 **인증된 실제 수리 가능 실패**만 격리 Windows Runner `zgmini-handoff-ci-isolated` → `agent-handoff` Incident → 단일 중앙 ChatGPT → **원본 Issue 결과 반환**으로 처리한다. `PASS`·`WAIT_RECORDED`·정상 자원 대기·미확정은 자동 수리 대상이 아니다. 인위 실패와 원래 단회 요청 재실행 금지.
+- 원본 Issue 회신은 다른 일반챗의 자동 수신·실제 PC 운영 적용이 아니다. 시장 캘린더 원담당이 **실제 대화 재개 시** 해당 원본 Issue 결과를 확인하고 이 계획의 다음 실행을 맡는다. 신규 수신 ACK Gate·인위적 자연 E2E 실증은 만들지 않는다.
+- 코드 main 반영·PC 승인 source·실제 설치 SHA·D1 저장 시각·API/UI 관측 시각은 개별 상태다. 격리 Runner CI 성공이나 Controller #917 복구를 새 A 실제 설치로 오인하지 않는다.
+- 독립 기능 검증·조회는 계속하고 공유 Controller/동일 운영 파일 쓰기만 [단일 적용 원장 #68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68)에서 자원별 한 명이 조정한다.
 
-기준: 2026-11-09 UTC. 전용 개발 브랜치 `codex/market-calendar-treasury-cache-private-code-r1-20261109`, Draft PR #1051. 이 문서는 실행 순서와 종료 조건을 고정하며 승인 산식·계약·DB·예약을 변경하지 않는다.
+## 3. 남은 필수 단계와 정확한 실행 순서
 
-## 목표·기준 진행률
+| 순서 | 담당 | 입력·필수 실행 | 통과 증거 / 진행률 영향 |
+|---|---|---|---|
+| **1. #996 공유 설치 복구** | 기존 [#996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/996) 지정 단일 프로세스 담당. **시장 캘린더는 중복 복구/설치 요청 금지.** | #917 `RECOVERY_COMPLETED`는 보존. 별도 #996 원본 PC의 `INTAKE_PAUSED`·`RUNNER_SET_DRIFT`·설치 잠금·수동 비활성 Workflow를 원본 owner/ledger/marker로 확인하고, 정규 C급 명시 승인·보호 복구·독립 사후 확인. [#68 최신 조정 기록](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6757156699)과 원본 증거를 사용한다. | 공유 설치 자원의 실제 해제 `PASS` 및 소유자 명확화. **시장 캘린더의 기존 95점 유지**(외부 설치 선행 조건). |
+| **2. 승인 누적 Controller 적용** | #68의 **기존 단일 Controller 적용 담당**; 시장 캘린더 담당은 #1191 소스·테스트·예상 출력 인계 | #996 해제 후 실제 설치 Controller `badad9124157879d7a645b64f2768113d632355b`에서 정확한 현재 파일 해시·allowlist 확인. [공통 PR #1191](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1191)(`main` 병합 `2cdd237f90368fc7b8a39fc53b5746df6557c073`, 2파일·14/14 PASS)과 이미 대기 중인 물가 [#1211](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1211)·[#1212](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1212) 등 **실제 승인된** 변경만 파일별 누적 diff·manifest·SHA·백업으로 조정. 정규 B **단회** 적용 후 설치 SHA·A 등록·Runner·보호 재조회. 최신 `main` 500여 커밋을 무조건 통째로 설치하지 않는다. | 설치된 `config/operations.json`에 `source-inventory-runtime-readonly`가 A로 등록되고 해당 실행 파일의 실제 바이트가 승인 source와 일치. `#1191`의 GitHub 병합만으로 PASS 금지. 시장 캘린더 **95점 유지**(최종 A 실행 선행 조건). |
+| **3. TA_WS 개인 입력 감사 A 1회** | **시장 캘린더 원담당** | 2단계 실제 설치 완료 확인 후, 기존 `pc-job`의 고유 Issue/requestId로 허용 A `source-inventory-runtime-readonly` 1회. 기존 PC SQLite `market_input_batches_v1`의 최근 `release-calendar:treasury:taws:YYYY-MM-DD` 1건만 요약 반환; 결과 JSON/TXT·Run·seat를 재조회. 신규 shell·수동 SQL·공급처 GET·Writer B·게시·예약 없음. | `core.sqliteOpened=true`, `core.treasuryTawsInput.status=OBSERVED`, `eligibleCountMatchesStored=true`, 저장 날짜/365일 조회 범위 일치, `rawRowCount`·`storedAwardedCount`·`eligibleAwardedRows`·`textBytes`·64자리 `textSha256` 확인. 해당 원본의 수집 시점이 2026-11-09이면 낙찰 436과 대조하되 공개 Treasury 전체 894와 **직접 동일시 금지**. 데이터·source·관측 시각 정합성까지 확인한 뒤 **+5점 → 100점**. |
 
-- 목표: 매 수집 시점 기준 과거 **365일** Treasury 입찰·공고를 공식 자료에서 **PC 수집 → 원문 SQLite 저장 → 동일 원문 재조회 → 일정 정규화 → 기존 Writer/D1 → 기존 공개 API/UI**에 실제 표시한다.
-- 운영 완료 기준: 기존 6단계 중 5단계 완료, **83%**. 소스·테스트가 완료되어도 PC 설치, 게시 원격 재조회 없이는 이를 올리지 않는다.
-- 마지막 유효 완료: 주간 Treasury 공식 XML 수집·저장·표시 경로와 기존 공개 캘린더/Writer 구조는 유지. FiscalData-only 후보는 코드·회귀·CI까지 통과했으나 **1년 완전성 미달**로 Draft 유지.
-- 실측 기준(2025-11-10~2026-11-09): FiscalData `auctions_query` 확정 입찰 **415건**, TreasuryDirect `TA_WS/securities/search`는 발행일 조회 상한을 +30일 보정하고 실제 입찰일 재필터링하여 **낙찰 확정 436건**. 예정 입찰 4건 제외, 두 소스 간 **21건 차이**. TA_WS 기준 입찰 436 + 공고 436 = **872개 역사 이벤트**. 이 수치는 **해당 관측 시점의 증거**이지 미래 수집의 고정 개수 조건이 아니다.
+**현재 차단 범위:** [#68 실측](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6756862819)상 2026-11-10 10:36 KST의 #996 `RECOVERY_REQUIRED` (`FIRST_FAIL=INTAKE_PAUSED`, `installLock.held=true`, `workflowState=disabled_manually`, `blockScope=SHARED_INSTALL_ONLY`). 최신 사후 변경 증거가 생기면 **원본 결과로만 갱신**한다. **공유 Controller 설치만 BLOCKED**이며, 시장 캘린더 기존 수집/게시/방문자 조회 및 독립 개발은 차단되지 않는다. #917 복구 완료는 그대로 인정한다.
 
-## 다음 실행: 필수 3단계
+## 4. 종료 판정·실패 분기·후속 관측
 
-### 1. 공식 연간 원자료를 기존 Treasury Writer에 연결 — READY
+1. A 조회에서 `NOT_STORED`, `WAL_SIDECARS_ABSENT_UNVERIFIED`, `STATE_UNKNOWN` 또는 메타 불일치가 나오면 **100% 금지**. 기존 유효 공개 결과는 보존하고 최초 실패 코드·원본 Issue·영향 범위만 확인한다. WAL sidecar 부재만으로 DB 손상/데이터 유실을 단정하지 않는다. 같은 A를 무조건 재요청하지 않는다.
+2. 감사 출력의 `scope=ELIGIBLE_RESULT_COUNT_NOT_FULL_PARSER_REVALIDATION`는 **원문 전체 파서 독립 재실행을 뜻하지 않는다**. 지문은 그 원문의 동일성 식별 값이며 사전 기준 SHA와 비교하지 않았다면 '외부 SHA 일치'라고 주장하지 않는다. 원문 내용·CUSIP·키·공급자 전체 응답은 반환·게시 금지.
+3. 명세·승인·설치·A 실제 결과·D1/API/UI의 **서로 다른 증거**를 대조하고 6단계 100/100점 여부를 최종 보고한다. 월별/분기별 신선도는 공식 발표·신규 자료 기준으로 확인하며 HTTP 200/READY만으로 미래 갱신을 확정하지 않는다.
+4. PC 예약 자연 자동 반영 및 신설 격리 장애 인계의 **자연 발생 수리 실패 E2E**는 본 기능 종료 후 `DEFERRED` 후속 관측. 기존 Writer B 단회 실행을 고의 재실행하거나 테스트용 실패를 만들지 않는다.
+5. 현재 남은 **다음 하나의 행동**: #996 단일 담당의 실제 해제 결과가 #68/원본 Issue에 들어왔는지 확인한 후, 공용 Controller 단일 적용 담당의 누적 승인 manifest·설치 시점을 조정한다. 현재 담당인 시장 캘린더는 이미 제출한 [#68 조정 기록](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6756069355)을 재사용하고 다른 담당의 공유 PC 작업을 가로채지 않는다.
 
-- **담당:** 시장 캘린더 원담당. **입력:** `lib/treasury-auction-history-taws.mjs`의 공식 TA_WS 어댑터와 기존 `scripts/pc-writer/release-calendar.mjs`·`worker/market-operational-store.mjs`.
-- 기존 주간 XML은 미래 일정의 공식 수집기로 유지한다. 연간 이력은 `TA_WS/securities/search`를 우선 **1회 GET**하여 낙찰 확정 행만 기존 Treasury 5필드 이벤트 계약으로 변환한다. `issueDate` 조회의 상한을 +30일 보정하되 **`competitiveAuctionCloseDate`로 실제 365일만 재필터링**한다.
-- 원문 약 3MB는 기존 `publicFeedStore` 단건 입력 한도보다 크므로, **기존 `marketOperationalStore.writeInput`의 압축된 PC 전용 로컬 원자료**로 보관하고 `readInput`의 동일 원문·시각·조회 범위를 확인한 후에만 계산한다. D1·GitHub에 공급처 원문을 업로드하지 않는다. 신규 테이블·키·예약·외부비용을 만들지 않는다.
-- TA_WS 실패 시 현재 유효한 주간·이전 날짜를 보존하고 FiscalData를 보조 수집할 수 있으나 **415건 보조 자료를 연간 완전 `READY`로 표시하지 않는다**. 기존 `PARTIAL`과 PC 전용 짧은 실패 코드로 실제 원인을 구분한다. 요청마다 공급처를 재호출하는 계산 경로 금지.
-- **통과:** 2026-11-09 관측 스냅샷의 낙찰 436건→역사 이벤트 872건 및 주간 이벤트 병합, 예정/기간 외/중복 제외, 로컬 원문 저장·완전 재조회 일치, 실패 시 과거 값 보존. 정상 수집은 TA_WS 1 GET(별도 주간 GET 제외).
+## 5. 이전 완료 증거·계획 보존
 
-### 2. 영향 범위 회귀·GitHub 정본 확정 — READY
-
-- **담당:** 시장 캘린더 원담당. **입력:** 1단계의 4개 실행 파일(기존 Writer 1개·Treasury 라이브러리 3개)과 관련 테스트. 현재 Draft PR #1051을 갱신한다.
-- 성공·공급처 실패·부분 fallback·3MB 압축 저장·정확 재조회·캐시 첫 연간 수집·과거 유효 이벤트 보존을 모의 시험한다. 기존 주간 CUSIP/FiscalData 회귀와 관련 빌드·타입 검사를 수행한다.
-- 최신 `main` 대비 실제 차이·신규 import 종속성·공유 Writer 충돌 파일만 확인한다. 다른 담당자의 변경을 보존하고 승인 없이 reset/rebase/stash/강제 push하지 않는다. 공개 점수·산식·중요도·D1 스키마·TTL·UI 배치·예약 변경 0건을 확인한다.
-- **통과:** 영향 범위 테스트 전부 PASS, 해당 PR CI PASS, diff에 무관한 기능 수정 없음. Draft를 풀거나 main 반영/운영 설치를 완료했다는 판단은 별개다.
-
-### 3. 정규 운영 설치 → 공개 데이터 실제 확인 — 현재 BLOCKED (Writer B 공유 복구)
-
-- **담당:** 설치·수집·게시·검증은 시장 캘린더 원담당, **공유 Writer B 복구는 기존 중앙 담당 #1068**. 새 복구 담당/중복 설치 요청을 만들지 않는다.
-- **입력:** 2단계에서 확정한 정확한 source SHA와 **4개 import 포함 적용 파일의 종속성 폐쇄 목록**, 승인 manifest·파일별 SHA256·실제 PC preimage·백업·단일 Writer lease. 이전 Treasury 설치 #1064를 반복 실행하지 않는다.
-- #1068 공유 복구가 실제 결과로 해제되면 최신 운영 SHA/preimage를 대조하고 정규 B 설치를 **한 번** 진행한다. 설치한 PC에서 실제 연간 원문·checkpoint·정규화 결과를 재조회한다.
-- 기존 Writer 경로로 D1 게시 후 **저장 값·sourceVersion·관측일·게시일**을 확인하고 기존 `/api/release-calendar` 및 시장 캘린더의 PC/모바일 화면에서 같은 이벤트를 재조회한다. HTTP 200 또는 외피 `READY`만으로 끝내지 않는다.
-- **통과:** 설치 성공 결과/보호 백업, 로컬 연간 입력·결과, D1, 공개 API, UI의 동일 이벤트·날짜·상태 증거. 이때 운영 전체 **100%** 판정 가능.
-
-## 제외할 작업·검증 구분
-
-- 별도 Controller, 신규 CMD/스케줄러/DB/API/화면 개편, 기존 승인 산식/계약/TTL 변경, 공유 Writer B 반복 설치·잠금 우회는 **불필요·미승인**.
-- 예약 자연 자동 갱신 검증은 **기능 완료 후** 독립 후속 작업; 이번 3단계 완료 조건에 넣지 않는다.
-- 실패·지연 보고는 **최초 실패 코드 / 마지막 PASS / 실제 영향 / 담당 / 다음 한 행동**으로 제한. 코드 PR 성공은 PC 설치나 사이트 게시 성공이 아니다.
-
-## 실제 성공 사례 재사용
-
-- [FOMC 연간 일정 PR #1039](https://github.com/ansqhd5774-Choi/zgmini/pull/1039): 공식 원문 저장·재조회·일정화·이전 값 보존.
-- [기존 Earnings API 수집기](https://github.com/ansqhd5774-Choi/zgmini/blob/main/lib/earnings-api-calendar.mjs): 수집 원문과 공개 projection 분리.
-- [Consumption R5](https://github.com/ansqhd5774-Choi/zgmini/blob/main/scripts/pc-writer/consumption-r5.mjs): PC 운영 원문 저장→재조회→해시 확인.
-- [시장 캘린더 공개 PR #823](https://github.com/ansqhd5774-Choi/zgmini/pull/823): 기존 `/api/release-calendar`·UI 재사용, 신규 예약/DB 불필요.
-- [캘린더 PR #995](https://github.com/ansqhd5774-Choi/zgmini/pull/995): PC Writer→D1→API→UI의 별도 실증이 완료 판단 근거.
-
-**재개 즉시 수행할 단 하나의 행동:** TA_WS 어댑터를 기존 Treasury Writer의 PC 압축 원문 저장·재조회 경로에 연결하고 정규화·부분 실패 시험을 통과시킨다.
+- 2026-11-09 당시 FiscalData `auctions_query` 415 vs 공식 TreasuryDirect TA_WS 낙찰 436(차이 21), 날짜 상한 +30일 보정 후 `competitiveAuctionCloseDate` 실제 365일 재필터링. 연간 원문 압축 PC 전용 `marketOperationalStore.writeInput/readInput` 계약, 주간 XML의 미래 입찰·공고 병합과 부분 실패 시 마지막 유효값 보존은 이미 구현·검증됨.
+- 최초 개발 R1의 83%/Writer B 공유 복구 차단/“TA_WS 어댑터 연결”은 **과거 실행 단계**이며 현재 실행 지시가 아니다. 현재 운영 검증 95%와 #996 공유 설치 차단이 우선한다.
+- 참고: [FOMC 연간 일정 PR #1039](https://github.com/ansqhd5774-Choi/zgmini/pull/1039), [시장 캘린더 공개 PR #823](https://github.com/ansqhd5774-Choi/zgmini/pull/823), [캘린더 PR #995](https://github.com/ansqhd5774-Choi/zgmini/pull/995), [최종 비공개 감사 공통 PR #1191](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1191). 기존 성공 증거는 재사용하며 재수집·재게시·Controller 임의 설치로 중복 성과를 만들지 않는다.
