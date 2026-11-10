@@ -78,3 +78,24 @@
 - **실제 UI 관측:** `https://zgmini.kr/economic-indicators/inflation/` 데스크톱 화면에서 별도 '추가 물가 관련 연구 원자료 (7개)' 표가 표시됐다. 기존 유효 4개 값/관측일·차트, 미확보 3개 대시(—)/'원자료 게시 대기'가 API와 부합한다. 기존 19행 표와 기존 4축 물가 점수 **54.3**도 별도 표시됐다. 모바일 시각 결과는 미확인이다.
 - **저장 계약 근거:** `zgmini/main`의 `readInflationCandidates7PublicResponse()`는 D1 `market_public_snapshots_v1`의 `detail:inflation-causal-candidates-7:r1` 행을 조회·본문과 `stored_at` 일치 검증 후 응답한다. 따라서 공개 API는 저장 D1 projection을 서비스하는 것으로 source와 실응답이 정합한다. 다만 **별도 관리자 D1 직접 재조회/실제 PC Writer ledger·설치 SHA/Cloudflare exact deployment** 증거는 이 관측만으로 확보하지 않았다.
 - **조치:** 이미 성공한 첫 4/7 공개를 다시 게시하지 않는다. B2의 최초 부분 공개는 관측 범위에서 **DONE(Production API·데스크톱 UI 4/7)**으로 바꾸고, 남은 필수 작업을 A1~A4의 **3개 원자료 실제 수동 수집**, B3의 후속 7/7 갱신·저장 원장 검증, B4의 **모바일 및 정확한 배포/Publisher/D1 재조회**로 좁힌다. 전체 진행률은 기존 산정 근거가 부족하므로 임의 변경하지 않고 **42% 유지**한다.
+
+## 7. 병렬 독립 검증 및 정확한 재개 지점 (2026-11-10 KST)
+
+이번 범위는 **승인된 정규 기능의 실제 26/26 수집과 7/7 공개**로 고정한다. 세 독립 담당은 (i) BLS/Census 공식 수동 입력과 파서, (ii) Controller A 진단 실행 가능 여부, (iii) PC 결과·D1/API/UI 공개 증거를 **읽기 전용으로 병렬 조사**했다. 이 조사는 운영 수집·게시 성공을 의미하지 않는다.
+
+| 독립 작업 | 새로 확인한 결과 | 작업 판단 |
+| --- | --- | --- |
+| 공식 원본·파서 | 기존 PC #987 / Run `42574375718`의 마지막 관측 `2026-11-08T22:45:02.525Z`: CPI #22/#23 `BLS_CANDIDATE_VALUE_OR_DUPLICATE`, Census #28 `CENSUS_M3_HEADERS_INVALID`. 기존 API 경로 BLS 파서는 날짜 중복·비정상 value·음수 등에서 해당 코드를 낼 수 있어, 원본 payload 없는 상태에서 원인 분기를 단정할 수 없다. | 승인된 `inflation-manual-b`는 실패한 API 요청 경로 대신 공식 BLS `cu.data.12.USHousing` flatfile 1회와 Census `naicsinvp.xlsx` 1회를 고정 GET한다. 공식 파일 존재 확인만 완료; **실제 PC 다운로드·파싱·3개 저장은 미실행**. 해당 다른 API 파서를 추정으로 개조하지 않는다. |
+| 코드 회귀 | 기존 수동 공식 경로의 관련 테스트 **29/29 PASS** 및 최신 공개 main 7행 검증·Writer·Core 연결 테스트 **27/27 PASS**. | 두 묶음은 검사 대상·실행 조건이 달라 단일 실행 56건으로 오인하지 않는다. Fixture PASS는 Windows 운영 source/원자료·D1 보장 아님. |
+| 공통 PC 접수 상태 | 실제 Controller SHA `badad9124157879d7a645b64f2768113d632355b`에 `inflation-core-lock-observation-readonly` A operation 미설치. 제어 main에 등록 source 존재하나 #996 `INTAKE_PAUSED/RUNNER_SET_DRIFT`·`pc-job` Workflow `disabled_manually`·공유 설치 lock. [#996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/996)에서 18항목 중 16 true/2 unproven, C 증거 예외 동의만 존재. | **A1은 `AUTOMATION_BLOCKED`**, 실제 수집 실패 `RUNTIME_FAILED`가 아니다. #996의 중앙 담당 C 복구 PASS/원장·Workflow 재검증 전 물가 신규 A·B Issue 생성 금지. 이 기능 담당이 공유 lock을 직접 해제하거나 이전 #1177을 재사용하지 않는다. |
+| 게시 독립 검증 | [#987](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/987) 원본의 `LOCAL_SNAPSHOT_AND_CHECKPOINT_ONLY` 및 `d1Writes=0` 확인. 실제 공개 API·데스크톱 UI 7행 중 READY 4/PENDING 3, 모바일 카드 DOM 7개·<=767px CSS 있음. | B2의 **이미 이루어진 4/7 부분 공개를 재실행하지 않는다**. D1 **직접 관리자 readback/Writer ledger**, Cloudflare exact Production Deployment SHA 및 390px 이하 **모바일 실화면**은 아직 독립 미검증. 기존 19·4축 보존. |
+
+### 담당·입력·완료 판정이 명확한 다음 실행
+
+1. **공용 Controller 단일 담당 (#996, 물가지표 담당 아님):** 현재 공유 복구 진행을 끝내고 `RECOVERY_COMPLETED`·설치 source SHA·Workflow 활성·설치 lock 상태를 원본 Issue/Windows JSON/TXT로 확인한다. *물가 작업의 다음 원격 실행을 허용하는 실제 외부 의존성*이며, 과거 #917 복구 PASS로 대체할 수 없다.
+2. **물가지표 원담당 (A1):** #996 재검증 후 단일 기존 설치 승인 경로로 `inflation-core-lock-observation-readonly` operation의 현장 등록을 확인하고, **새 고유 A 요청 1회**로 Core/Korea 실제 실행 경로·Task/Node/E: 잠금 canonical owner를 JSON/TXT 회수한다. 승인 조건 없는 실행 또는 Source 병합만의 성공 선언 금지.
+3. **물가지표 원담당 (A2~A4):** 보호 증거의 **첫 실패 코드가 특정되면 그 조건만 수정**; 기존 Writer lock/CAS 원본 보존. 통과하면 새 고유 승인 B 1회로 위 공식 BLS/Census 2개 GET을 **현재 시각에 수동 수행**하고 SQLite 원자료 3개 readback, 신규 7/7, 전체 26/26 확인. **09:00 예약/기다림 없음**. 실패 시 소비된 요청을 재시도하지 않는다.
+4. **물가지표 원담당 (B3~B4):** 저장 자료만으로 기존 계산→Writer→D1 projection을 갱신한다. 실제 D1 값·`stored_at`·sourceVersion·checkpoint, API 7행, 데스크톱/390px 모바일 7행과 기존 19·4축을 동일 원본으로 대조한다. 정확한 Cloudflare 배포 SHA/실제 게시 원장은 **본 게시 범위에서만** 확인하며 A1~A4를 불필요하게 막지 않는다.
+5. **후속 관측 (DEFERRED):** Writer B 자연 장애의 격리 인계 E2E 및 정규 예약 자동 갱신은 기능 수집·게시 완료 이후 따로 본다. 정상/안전 대기를 가짜 실패로 만들지 않는다.
+
+**이번 점검 후 전체 기능 진행률: 42% → 42%.** 신규 코드 변경 0건, 새 PC 운영 요청 0건, 운영 데이터·공유 lease 변경 0건. 마지막 실제 원자료 23/26, 공개 값 4/7이므로 완료율을 높이지 않는다. 위 1번의 실제 복구 증거가 나오기 전에는 원담당의 A 실행은 대기하되, 독립 공개 검증·기능 source 작업은 계속 가능하다.
