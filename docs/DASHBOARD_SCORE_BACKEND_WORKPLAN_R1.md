@@ -301,3 +301,12 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 - **다음 필수 실행:** Writer 원담당의 동일 시점 Core Action/Runtime source·단일 owner/lease 및 비민감 JSONL 실제 경로·보존·쓰기 효과 승인 범위를 확정한 뒤 최신 main 기반 최소 B manifest·R10 회귀 테스트를 준비한다. 승인이 없으면 D05 개발 단위 fixture·공개 관측 추적은 유지하지만 PC에 새 영속 기록기를 설치하거나 기존 소스를 통째로 교체하지 않는다. #996 C급 상태 복구는 별도 담당 소유다.
 
 **진행률: 실운영 1Y 68개 종단 0/68(0%→0%), 개발 격리 검증 53/53 PASS.** PC·SQLite·D1·Cloudflare 쓰기 0건.
+
+## 2026-11-11 D05 최신 main R10 보호 이식·저장 사건 준비 함수 개발
+
+- **운영 소스 적용 아닌 개발 브랜치 호환 보완:** 기능 브랜치의 `scripts/pc-writer/run-local.mjs`에서 최신 `zgmini main=643b7c7c4372ffad552443fc312c6cb1b944e2fc` R10의 두 보호 hunk만 이식했다. `build-asset-r10-release.mjs --run-r10-release`의 마지막 JSON receipt `LOCAL_RELEASE_READY/PASS`, 로컬 `readAssetR10Projection(base).status==='READY'` 대조 후에만 계산 성공 처리하며 이전 결과 보존 분기는 `assetBubble`에 한정한다. 수정 뒤 **`run-local.mjs` 전체 26,919문자 소스가 해당 main 파일과 완전히 일치**함을 원격 파일 원문/로컬 source 비교로 검증했다. `run-local.mjs`는 실제 PC에 설치하지 않았고 운영 소스·산식·D1/배포에는 적용하지 않았다. 기능 브랜치는 여전히 다른 main 변경과 전체 병합된 상태가 아니므로 이 파일의 동일성을 B 설치 승인이나 최신 main 전체 호환 증거로 확대하지 않는다.
+- **순수 준비 함수 별도 개발:** 신규 `lib/score-history/d05-lineage-after-archive-r1.mjs`는 동일 사건의 계산시각/점수·7개 선택 입력·로컬 archive 저장/재조회가 전부 확인된 후에만 `buildD05LineageEvent`의 `PREPARED_LOCAL_ONLY` 후보를 돌려준다. `UNCHANGED`·저장 실패·입력 불일치·archive timestamp 불일치·source SHA 미확정·역전 recordedAt은 `UNPROVEN`으로 반환. `run-local.mjs`의 계산·쓰기 경로에 호출 연결하지 않았고 신규 JSONL 실제 append·공개 report/D1 추가 **0건**.
+- **단위 시뮬레이션:** 신규 `tests/d05-lineage-after-archive-r1.test.mjs` 4건으로 정상 후보·변경 없음·손상 계보·부적합 source SHA/시간을 검증했다. Asset R10·입력 callback·archive linker·JSONL 격리 fixture 통합 실행 **83/83 PASS(0 FAIL)**, Writer source `node --check` PASS. 테스트의 모의 DB 및 Linux 임시 JSONL은 실제 Windows 운영·R10 실실행·장기 1년 저장의 증거가 아니다. `run-local.mjs`는 DRY_RUN도 SQLite에 쓰기 때문에 직접 실행 금지 유지.
+- **남은 단일 필수 행동:** 실제 Writer Task→원본 launcher→lock/lease 경로의 **동일 사건 Runtime 증거**와 신규 JSONL 영속 경로·필드·보존·단일 쓰기 소유자의 승인 범위가 확정되면, **최신 main 기반 최소 B manifest**에 계산 callback→기존 점수 저장→archive `LOCAL_STORED`→비공개 후보→독점 Writer 기록기 순으로 연결한다. R10 보호를 계속 보존하고 `UNCHANGED`·실패·불명확한 원본 SHA는 기록하지 않으며, 공개 API/UI에서 1년 전체 68개를 개별 입증한다. #996 C 복구는 별도 담당 소유로 유지한다.
+
+**실제 1년 종단 완료 0/68(0%→0%), 개발 회귀 83/83 PASS.** PC·운영 DB/D1·Cloudflare 쓰기 0건.
