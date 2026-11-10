@@ -148,3 +148,12 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 - `local-publication-ledger.json`도 원격 게시 중 복구용 상태이고, `local-writer-last-run.json`은 실행마다 덮어쓰는 결과 보고서다. `publication-events.jsonl`은 append-only이나 현재 계약은 게시 실행 상태·오류의 기록용으로, 계산 입력 계보를 영속화하는 **승인된 불변 사건 원장으로 확인되지 않았다**. 기존 `composite-observed` SQLite/D1 key에는 점수·계산시각·출력 서명만 있다.
 - **판정: 재사용 가능한 승인된 완전 입력 계보 ledger 미확인 (`PERSISTENCE_CONTRACT_GAP`)**. 신규 필드/전용 파일/DB 키·retention을 임의 신설하지 않고, 이번에는 PC/Writer/원장/D1 쓰기 **0건**. #1206 공통 입력 조회 근거와 별개로 D05 전용 **비민감 사건 메타데이터 영속 계약**의 소유자·범위·승인 여부를 먼저 확정해야 한다.
 - **종단 완료율 유지: 0/68(0%→0%)**. 다음 실제 실행은 기존 승인 ledger 계약이 확인되거나 신규 영속 경로가 명시 승인된 후, 개발용 readback 함수를 **1개 실제 D05 계산 사건**에 최소 범위로 연결하는 것이다. 승인 이전에는 공용 Writer 설치·운영 수정 보류.
+
+
+## 2026-11-10 D05 독립 입력·실제 공개 관측 재점검
+
+- 최신 `main` 읽기 조사: D05 계산 핸들러는 7배치 외에 **독립 E1-R5 실적 생산 사이클, SEC 기반 E1-R4 위험진단, B1-R5 수급·폭 Reader, 별도 고용·물가·소비·성장 등 저장 Reader**를 사용한다. 7배치 `SHADOW_7_BATCHES_ONLY`는 12영역 전체 원입력 계보가 아니다. E1-R5 `inputFingerprint`는 파일 경로/크기/수정시각·기업집합 해시이며 파일 바이트 SHA/SEC accession 전체 결합 증거 아님. B1-R5의 최신 universe·가격/EMA 집계는 당시 선택 ID가 출력에 고정되지 않고 일부 저장행이 정정될 수 있어 과거 인과 복원 불가. [공통 #1206](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1206)은 여전히 open/댓글 0이며 과거 증거 판정 미회신.
+- **2026-11-10 KST 실제 공개 읽기:** `GET https://zgmini.kr/api/market-score/observations?period=1Y` → `READY`, `COMPOSITE_CALCULATED_SCORES_R1`, `availableDays=9`, `totalObservedPoints=33`, 최신 `2026-11-10T00:55:52.080Z` / `asOfDate=2026-11-10` / score `47.01390256458039`. 공개 `/api/market-score`의 `SUCCESS`/`CM-R1`/`asOfDate=2026-11-10`/종합 점수 동일을 브라우저에서 관찰. **별도 D1 테이블 단일 행 readback·실PC 당시 SHA 대조는 미실시**, API 반환 성공만으로 전체 PC→D1 독립 검증 완료는 아님.
+- 운영 중인 `appendCompositeObservedFromCurrent`→`publishCompositeObservedArchive`→읽기전용 관측 API가 **실제 신규 관측 9일·33점을 축적**하고 있음. 과거 날짜의 비관측 추세점은 이 `PC_CALCULATED_AT` 사건 33건과 혼합해 '그날 실제 계산'으로 주장하지 않는다. 신규 immutable 원입력 lineage/ledger 부재는 **이미 승인된 성공 계산점의 정상 보존·공개를 중단시키는 Gate가 아니다**. 개발용 lineage 보강만 별도 승인 범위로 분리한다.
+- **진행률:** 68개 전체 1년 실원자료→저장→공개 같은 사건 종단 PASS `0/68(0%→0%)` 유지. D05의 공개 관측 축적은 별도 부분 달성 `9일/33건`으로 정량 보고한다. `main`/운영 PC·Writer·DB·D1·UI 변경 **0건**.
+- **다음 단일 필수 행동:** 신규 기능·원장 추가보다 먼저 D05 공개 관측 33건의 **개별 D1 저장 행 `body/stored_at`와 API의 동일점 1건**을 승인된 read-only 조회로 대조할 수 있는지 확인한다. 가능하면 기존 성공 증거 재사용; A급 접근/권한이 막히면 정확한 불가 원인만 기록하고 독립 기능 작업은 계속한다. SEC/Breadth 선택 ID 추가 포착은 별도 기능 확장·승인 뒤로 분리한다.
