@@ -1,6 +1,6 @@
 # ZGMINI D05 미래 계산 사건 입력 계보 — 승인 검토 계약 R1
 
-> 2026-11-10 KST · 상태: **SCOPE_A_DEVELOPMENT_APPROVED / PC_OPERATION_NOT_APPROVED**. 사용자의 "계속해라"에 따라 전용 브랜치의 비운영 코드·fixture 검증을 착수했다. 운영 Writer·Reader·DB·D1·Controller·예약·공개 UI 변경, 정규 B 설치 또는 PC 실행은 승인받지 않았다.
+> 2026-11-10 최초 개발 범위 기록(당시 운영 설치 전). **2026-11-11 최신 상태:** 승인된 D05 selected-seven 12파일은 정규 Writer B [#1234](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1234)로 운영 PC에 설치·사후 SHA 검증되었다. 별도 D05 실제 JSONL 사건·ACL·백업·1년치 결과는 미검증이며 **전체 0/68(0%)**다. 아래 과거 시점 미승인·미설치 설명은 각 기록 당시의 상태다.
 
 ## 목적·현재 근거
 
@@ -139,3 +139,13 @@
 
 - 계산 기준: 최초 로컬 복합 아카이브 약 9일/37건, 개발 fixture 대표 사건 2,238바이트, 15개월=약 457일. 그대로 연장 시 약 4.0MiB, 15분마다 한 건씩이라면 약 93.6MiB. 64MiB 한도는 현재 관측 빈도의 예상 보존량에는 여유가 있으나 15분 최댓값까지 보장하지 않는다.
 - 파일은 append-only, 초과 시 `LINEAGE_LEDGER_CAPACITY_EXCEEDED`로 신규 사건만 안전 거절하며 기존 기록은 보존한다. 자동 삭제/회전 또는 자의적인 128MiB 확대는 하지 않았다. 초기 정규 B 설치의 본질적 필수 미증명은 Task 첫 hop·운영 source/lease·NTFS ACL이다. 용량은 실제 빈도와 추세 확인으로 관리하는 **NON_BLOCKING/모니터 항목**으로 분리한다.
+
+
+## 2026-11-11 정규 PC 설치 완료와 데이터 증거 분리
+
+- **정규 Writer B 설치:** 고정 manifest `ansqhd5774-Choi/zgmini-pc-control/approvals/writer-updates/d05-selected7-lineage-20261111.json` SHA-256 `b0752c8af1c959bed893377893a96ecae0141a60669104f150c9b37826bfe1e6`은 공통 순수 검증 함수 PASS(수정 4+추가 8, Task XML/첫-hop/Sidecar witness). 원격 원문 재조회 일치 후 [#1234](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1234), Run `42926880769`에서 `WRITER_B_INSTALLED_VERIFIED`, JSON/TXT 2/2 검증. 설치 결과 `LOCAL_OVERLAY` source `d560eb857c0f8a9a53dffbfd899e60ee29c697ab`, 원본 base `de81749f83c086f5cb0cad7ed1d5cc958de19280`. Loader/Task/DB/D1/예약 변경 승인 없음.
+- **운영 승인 SHA 사후 재조회:** [#1235](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1235), Run `42927463348`, A `core-status` `PASS/CORE_READONLY_DIAGNOSIS`. `config.source`와 PC 승인 SHA 모두 `d560eb857c0f8a9a53dffbfd899e60ee29c697ab`; Core Task XML SHA-256 `dd81987c7efa4b1e343af30329a580613bb920dec89c1aa7a436ef935f0bb028` 불변. 읽기 전용·PC 운영 쓰기 0. 이 조회는 Task가 **새 D05 hook을 실행했다는 증거가 아님**. 관측된 마지막 `local-cycle-last-run.json` 변경 `2026-11-10T23:50:28.260Z`는 설치 요청 전에 해당한다.
+- **사전 실행경로 증거:** [#1231](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1231) A는 `STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE`(그 시각 동적 프로세스 없음), [#1232](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1232)는 기존 첫-hop VBS의 정적 추적 PASS, [#1233](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1233)는 preinstall Task/checkpoint PASS. 동적 실행 증거로 확대하지 않는다.
+- **실제 JSONL 검증 미완료:** 기존 A 허용목록 36종에 `score-lineage/d05-composite-events-v1.jsonl`의 건수·날짜 범위·source 일치·ACL·백업을 검증하는 항목 없음. 정규 `run-local` 부모 독점 lease 및 계산·아카이브 `LOCAL_STORED` 등 조건 충족 때만 실제 사건이 생긴다. 직접 `run-local` 실행으로 가공 사건을 만들지 않는다. 동일 사건 `UNCHANGED`는 신규 행을 만들지 않을 수 있다.
+- **최소 A 진단 준비:** 공통 Control의 [Draft PR #1236](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1236), head `da40eccf0f39a1454d6b315b0b7783905ace6469`, 고정 경로·최대 64MiB·symlink/TOCTOU/UTF-8/7-source/internal digest 검사·원문 비공개 A/light 4파일. 합성 테스트 7/7 PASS 및 원본 D05 builder 실제 이벤트 교차검증 1/1 PASS. **PR은 미병합·운영 Controller 미설치**이며 새 A operation이 작동한다고 간주하지 않는다. 공용 적용 원장 [#68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6782960254)에 설치 조정 항목만 등록; 수신·승인·설치는 별개다.
+- **다음 필수 행동:** PR #1236 영향 범위 검토와 공용 Controller 단일 적용자 조정 → 기존 승인된 정확한 유지보수 설치·보호 검증 → 고유 D05 읽기 A 1회·원격 JSON/TXT 직접 재조회 → eventCount/최초·최종 관측일/설치 SHA 일치 건수 확인. NTFS ACL·백업 실증 전에는 비공개 저장 보장으로 보고하지 않는다. 1년치 복합 입력 원자료·산식·D1/API/UI 종단 완료는 여전히 **0/68(0%)**.
