@@ -59,6 +59,15 @@ test('one-time public R10 HTTP GET readback has bounded, inspectable responses',
    };
    console.log('R10_PUBLIC_READBACK_ONCE '+JSON.stringify(result));
    if(parseError!==null)errors.push(path+':'+parseError);
+   if(path==='/api/collection-health'&&parseError===null){
+    if(response.status!==200||!Array.isArray(value?.items))
+     errors.push('COLLECTION_HEALTH_UNAVAILABLE');
+    else if(value.items.some(item=>item?.id==='job:assetR10Alpaca'))
+     errors.push('R10_RETIRED_HEALTH_JOB_STILL_REGISTERED');
+    if(!Number.isFinite(Date.parse(value?.checkedAt))
+      ||Date.parse(value.checkedAt)<Date.parse('2026-11-12T14:07:00Z'))
+     errors.push('HEALTH_OUTPUT_NOT_REBUILT_AFTER_INSTALL');
+   }
   }catch(error){
    const code=typeof error?.name==='string'?error.name:'FETCH_ERROR';
    console.log('R10_PUBLIC_READBACK_ONCE '+JSON.stringify({
