@@ -7,6 +7,20 @@
 - 근거: 기존 [미등록 11개 검토](INFLATION_MISSING11_REGISTRATION_REVIEW_R2_20261108.md), 제어 PR #1205/#1211/#1212, 소비된 B #1177, 기존 PC A #830, 사용자 제공 물가지표 최종 인계
 - **시작/계획 반영 종료 전체 기능 진행률: 42% → 42%.** 문서·소스 검증을 실제 수집·게시로 산입하지 않는다.
 
+
+## 0. 2026-11-13 현행 작업 재개 기준 — #996 전역 차단 정정
+
+> **진행률은 실제 물가지표 작업 42%, 원자료 23/26·공개 4/7로 유지한다.** 아래 §7·§8의 2026-11-10 당시 `#996 복구 완료 전 모든 물가지표 A/B 신규 작업 금지` 표기는 **현행 범위에 적용하지 않는 과거 대기 판정**이다. 2026-11-12 운영 PC 실제 R10 Writer B 설치·A readback 성공, 설치 Controller의 4개 기존 기능 A allowlist, 최신 제어 `main`/프로젝트 R6.0의 위험도별 구분에 따라 수정한다. 단, #996의 C급 유지보수 원본 잠금·공유 Controller 설치에 대한 NO-GO는 **그 자원만** 유효하며 허가 없는 우회·직접 수정은 금지한다.
+
+**원담당이 즉시 실행할 다음 기능 단계 (승인 범위):**
+1. 완료된 4/7 공개를 다시 게시하지 않고, **공식 BLS 2개 + Census 1개** 수집에 필요한 PC Task→VBS→Node→공유 `local-cycle.lock`의 *실제 소유·canonical 경로*만 원본 결과에서 정밀 확인한다. 소비된 [B #1177 / Run 42714127327](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1177)은 `INFL_MANUAL_B_CORE_OWNER_NOT_OBSERVED_STOP`, 공식 GET 0·원자료 쓰기 0. 동일 requestId 재실행은 금지.
+2. **독립 A 수행과 신규 A 미설치를 구분:** 현재 마지막으로 검증된 운영 설치 Controller `badad9124157879d7a645b64f2768113d632355b`에는 `core-runtime-source-readonly`, `inflation-candidates-runtime-readonly`가 기존 A로 등록되어 있으나, 210초 연속 `inflation-core-lock-observation-readonly`는 최신 control `main`에만 있고 운영에는 **미등록**. 이 미설치 operation만 `AUTOMATION_BLOCKED`. 과거 Core 단발 A 9건을 조회한 결과 모두 `CORE_NO_ACTIVE_TASK_ENGINE`으로 종료되어 같은 순간 A 반복은 새 소유권 증거가 되지 않는다. 새 운영 A 등록은 해당 Controller 설치의 정규 Owner·기존 승인/lease·#996 C 범위와 실제 충돌 여부를 **그 설치 효과에만** 적용한다.
+3. **정적 수집 경로 대조 완료:** `zgmini/main`의 `scripts/pc-writer/install-local.mjs`는 Core **5분 간격**, Korea **1시간 간격**, 모두 `local-cycle.mjs --publish`(Korea는 `--korea` 추가)로 launcher를 생성한다. `core-runtime-source-wmi.mjs`의 `--publish` allowlist 자체는 이 설치기 계약과 일치하므로 **그 인자를 근거 없이 삭제·완화하지 않는다**. 실제 Windows Task·launcher가 현행 파일과 다를 가능성은 실제 원본 readback으로만 판정. `local-cycle.mjs`는 Core/Korea 공유 `local-cycle.lock`을 사용하지만 Korea가 #1177 실패 원인이었다는 증거는 없음.
+4. **공식 자료 확인은 PC 수집이 아님:** [BLS 공식 `cu.data.12.USHousing`](https://download.bls.gov/pub/time.series/cu/cu.data.12.USHousing)은 최신 파일이 약 2.7MB로 승인 8MB 한도 내이고 두 CPI 시계열이 존재. [Census 공식 M3 Total Inventories](https://www.census.gov/manufacturing/m3/historical/timeseries.html)의 링크는 승인된 `naicsinvp.xlsx` 경로와 일치한다. XLSX 내부 시트 `m3-outp-invp`/선택행 `AMTMTI`는 웹 검사로 **미검증**; 실제 승인 PC의 고정 파서가 다운로드 후 검증해야 한다. 파일이 보인다는 이유로 `26/26` 저장 완료를 주장하지 않는다.
+5. **안전한 다음 실제 쓰기:** Task/Core 소유권의 인증된 증거·정확한 source/preimage/manifest·기존 Writer/Core 독점 잠금 조건이 모두 통과한 경우에만 기존 승인 범위의 **새 고유 단회 B**로 실제 GET→파싱→기존 PPI 원자료 보존·2개 JSON 저장/원격 결과쌍 재조회→저장 자료 기반 계산→D1/API/UI 7/7을 진행한다. 09:00 실행 시각·새 자동 예약·인위적 B 실패·#996 복구 완료를 별도 선행 Gate로 만들지 않는다. 소유권 증거가 없으면 *그 B 실행만* `BLOCKED`, 독립 공개 브라우저/연결 검증 및 기존 다른 기능 작업은 계속한다.
+
+**원본 진단·정규 인계:** [#1177의 2026-11-13 후속 조사](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1177#issuecomment-6830069503), [공통 #68 원담당 인계](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6829732572). 이 문서의 source-only 수정은 실제 원담당 일반챗 수신, Controller 설치, PC 수집·게시, C급 복구의 성공 증거가 아니다.
+
 ## 1. 목표·분모·현재 상태
 
 원본 후보 31개 = 기존 연구자료 19개 + 신규 수집 대상 7개 + 정의/권리 보류 3개(#15·#17·#30) + #26과 통합 1개(#27) + 제외 1개(#20). **기능의 현재 수집 목표는 중복 없는 26개(19+7)**이며, 보류 3개를 무단 추가하거나 26개 확보의 선행조건으로 삼지 않는다.
@@ -81,6 +95,8 @@
 
 ## 7. 병렬 독립 검증 및 정확한 재개 지점 (2026-11-10 KST)
 
+> **역사적 기록:** 이 절의 당시 ‘#996 C 복구 → 모든 물가 A/B 재개’ 순서는 현재 §0으로 대체한다. 당시 관측된 오류·미설치 사실은 보존하지만 전역 Gate로 사용하지 않는다.
+
 이번 범위는 **승인된 정규 기능의 실제 26/26 수집과 7/7 공개**로 고정한다. 세 독립 담당은 (i) BLS/Census 공식 수동 입력과 파서, (ii) Controller A 진단 실행 가능 여부, (iii) PC 결과·D1/API/UI 공개 증거를 **읽기 전용으로 병렬 조사**했다. 이 조사는 운영 수집·게시 성공을 의미하지 않는다.
 
 | 독립 작업 | 새로 확인한 결과 | 작업 판단 |
@@ -101,6 +117,8 @@
 **이번 점검 후 전체 기능 진행률: 42% → 42%.** 신규 코드 변경 0건, 새 PC 운영 요청 0건, 운영 데이터·공유 lease 변경 0건. 마지막 실제 원자료 23/26, 공개 값 4/7이므로 완료율을 높이지 않는다. 위 1번의 실제 복구 증거가 나오기 전에는 원담당의 A 실행은 대기하되, 독립 공개 검증·기능 source 작업은 계속 가능하다.
 
 ## 8. #996 실제 C 중단 이후 상태 분리 (2026-11-10 KST, 후속 재개)
+
+> **역사적 기록:** 당시 실제 C 중단·안전 경계는 보존한다. 2026-11-13 현행 독립 물가지표 진행·특정 설치 제한은 §0으로 판정한다.
 
 - **사용자가 전달한 총괄 대화 최신 결과:** #996 실제 C 복구가 시작됐다가 `STATE_UNKNOWN_PRESERVE_C_CLAIM_AND_ORIGINAL_LEASE`로 중단. 최초 실패 `C_GITHUB_BACKLOG_PLAN_ORIGINAL_BODY_INVALID`, 단계 `ORIGINAL_JOB_DISPOSITIONS`. Workflow 변경 시도 1회, backlog 종료 시도 1회, lease 보관 시도 0회. **시도 횟수는 실제 상태 변경 성공 여부의 증거가 아니다.** 이 결과는 현재 비공개 원본 #996 Issue의 완결된 Windows 사후 JSON/TXT 검증과 별도로 사용자 전달 관측으로 분류한다.
 - **실제로 해야 할 일:** #996 단일 Controller 담당자가 기존 C claim/lease 및 GitHub Workflow·backlog/원본 Issue를 **읽기 전용으로** 회수하고 LAST PASS/FIRST FAIL·부작용·정확한 안전 복구 경로를 입증한다. 동일 CMD 재실행·다른 복구 도구 우회·물가 A/B 신규 요청 금지. 확정된 복구 및 설치 operation 가용 여부가 입증된 시점에만 위 7절의 물가 A1→A4를 재개한다.
