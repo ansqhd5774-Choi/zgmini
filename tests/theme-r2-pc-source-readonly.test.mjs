@@ -1,0 +1,73 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {auditThemeR2Sources,R2_EXISTING_PUBLIC_PAIRS} from '../scripts/pc-writer/theme-r2-pc-source-readonly.mjs';
+import {R158_PAIRS} from '../lib/market-score/theme-etf-provisional-score.mjs';
+
+test('R2 portable inventory uses the unchanged 7 public pair mappings',()=>{
+  assert.deepEqual(R2_EXISTING_PUBLIC_PAIRS,R158_PAIRS);
+});
+
+test('R2 source discovery distinguishes price history from actual verified rights',async()=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-r2-source-'));
+  try {
+    const date=i=>new Date(Date.UTC(2024,0,2+i)).toISOString().slice(0,10);
+    const days=(n,b)=>Array.from({length:n},(_,i)=>({date:date(i),proxyClose:b+i/100}));
+    fs.writeFileSync(path.join(root,'local-theme-joined-price-history.json'),JSON.stringify({joined:{
+      SPY:{days:days(420,100)},BOTZ:{days:days(420,35)},ROBO:{days:days(220,28)},
+    }}));
+    fs.writeFileSync(path.join(root,'local-sector-iex-price-history.json'),JSON.stringify({series:{
+      QTUM:days(400,50).map(x=>({date:x.date,close:x.proxyClose})),
+    }}));
+    fs.writeFileSync(path.join(root,'local-theme-score-history.json'),JSON.stringify({
+      series:{WQTM:Array.from({length:500},(_,i)=>({date:date(i),score:77}))},
+    }));
+    fs.writeFileSync(path.join(root,'local-etf-secrets.json'),'{bad JSON}');
+    const result=await auditThemeR2Sources(root);
+    assert.equal(result.status,'BOUNDED_DISCOVERY_NOT_VALIDATED');
+    assert.equal(result.inventory.SPY.candidateSources[0].sampledUniqueDates,420);
+    assert.equal(result.inventory.BOTZ.candidateSources[0].sampledUniqueDates,420);
+    assert.equal(result.inventory.ROBO.candidateSources[0].sampledUniqueDates,220);
+    assert.equal(result.inventory.QTUM.candidateSources[0].sourceClass,'EXCLUDED_IEX_HIST');
+    assert.equal(result.inventory.WQTM.candidateSources.length,0,'scores must not be misread as prices');
+    assert.equal(result.priceScoresComputed,false);
+    assert.equal(result.published,false);
+    assert.equal(result.thresholds.absoluteEtfAdmissionRequirement,false);
+    assert.equal(result.scan.jsonInspected,3,'sensitive filename is excluded');
+    assert.equal(result.inventory.BOTZ.candidateSources[0].sampledUniqueDates>=377,true);
+  } finally {fs.rmSync(root,{recursive:true,force:true});}
+});
+
+test('absent PC source is an explicit incomplete report with no fallback',async()=>{
+  const result=await auditThemeR2Sources('/unlikely/zgmini/no-pc-source-here');
+  assert.equal(result.status,'SOURCE_ROOT_MISSING');
+  assert.equal(result.files.length,0);
+  assert.equal(result.blockingReasons.includes('SOURCE_ROOT_MISSING'),true);
+  assert.equal(result.providerCalls,0);
+});
+
+test('prioritize theme raw price rows before sector JSON cap and do not mistake scores for closes',async()=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-r2-sector-cap-'));
+  try {
+    for(let i=0;i<155;i++) fs.writeFileSync(path.join(root,`local-sector-price-${String(i).padStart(3,'0')}.json`),
+      JSON.stringify({data:[{date:'2026-10-20',SPY:500}]}));
+    fs.writeFileSync(path.join(root,'zz-theme-r2-raw-daily.json'),JSON.stringify({data:[
+      {date:'2026-10-19',BOTZ:27,ROBO:42,SPY:600},
+      {date:'2026-10-20',BOTZ:28,ROBO:43,SPY:601},
+    ]}));
+    fs.writeFileSync(path.join(root,'local-theme-score-history.json'),JSON.stringify({data:[
+      {date:'2026-10-20',BOTZ:74,ROBO:58},
+    ]}));
+    const result=await auditThemeR2Sources(root);
+    assert.equal(result.version,'THEME_R2_PC_SOURCE_INVENTORY_V2');
+    assert.equal(result.scan.candidateFilesFound,157);
+    assert.equal(result.scan.fileCapReached,true);
+    assert.equal(result.blockingReasons.includes('FILE_CATALOG_SAMPLE_INCOMPLETE'),true);
+    assert.equal(result.inventory.BOTZ.candidateSources[0].sampledUniqueDates,2);
+    assert.equal(result.inventory.ROBO.candidateSources[0].sampledUniqueDates,2);
+    assert.equal(result.inventory.SPY.candidateSources.some(x=>x.source==='zz-theme-r2-raw-daily.json'),true);
+    assert.equal(result.files.some(x=>x.source==='local-theme-score-history.json'),false);
+  } finally {fs.rmSync(root,{recursive:true,force:true});}
+});
