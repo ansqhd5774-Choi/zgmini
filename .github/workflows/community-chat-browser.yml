@@ -111,6 +111,8 @@ jobs:
         run: node tests/fear-greed-education-browser-r4.mjs
       - name: Validate dashboard history period changes and newer snapshot refresh
         run: node tests/dashboard-history-browser-r5.mjs
+      - name: Verify R10 actual Production hydration at 1440 and 390 (one-shot only)
+        run: node tests/r10-production-browser-readonly-once.mjs
       - name: Upload browser UI evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -126,6 +128,7 @@ jobs:
             artifacts/about-intro-bootstrap/
             artifacts/inflation-criterion-review/
             artifacts/employment-r6-browser/
+            artifacts/r10-production-browser/
           if-no-files-found: warn
       - name: Show local dev errors on failure
         if: failure()
