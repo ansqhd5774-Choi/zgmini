@@ -31,6 +31,23 @@
 
 **다음 필수 실행 하나:** 독립 원담당은 이미 설치된 승인 A의 사전검증 범위 및 기존 Writer B 보호 원본을 재사용해 PC **source HEAD/config.source/4개 pin 파일 SHA/실제 Task→Node→lock owner**의 정합성을 정확히 확보한다. 필요한 A 진단이 현재 Controller 미등록이면 그 설치만 별도 Owner·기존 승인 경로로 검토하고 원자료 수집 외 독립 개발·검증은 지속. 모든 증거가 맞을 때만 새 명시 승인 manifest·고유 단회 B 수집으로 23/26→26/26을 목표로 진행한다. **새 B·Core lock 수정·Controller 설치는 이번 A 조회에서 수행하지 않았다**. 전체 물가 완료율 42%, 유효 저장 23/26, 공개 4/7 유지.
 
+### 0.2 2026-11-13 02:16 KST 승인 manifest의 4개 파일 실PC 바이트 일치 검증
+
+**새로 완료한 기능 준비 검증 (원자료 수집/게시 아님):** 기존 설치 Controller `badad9124157879d7a645b64f2768113d632355b`의 A/light `writer-install-preimage-readonly`와 **이미 승인된** 3파일 [`inflation-manual-official-r1.json`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/approvals/writer-preimage/inflation-manual-official-r1.json), 2파일 [`inflation-core-hook-2-20261109.json`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/approvals/writer-preimage/inflation-core-hook-2-20261109.json) scope를 재사용. 새 승인 manifest/Controller 설치/운영 파일 쓰기 없이 **서로 독립된 PC seat 2/4에서 2건 실행**:
+- [#1327](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1327) / [Run 43267687874](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43267687874): `PASS/WRITER_APPROVED_PREIMAGE_READONLY`, 공식 파서 3파일 PRESENT/해시 실측
+- [#1328](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1328) / [Run 43267690493](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43267690493): 동일 PASS, `local-cycle.mjs`과 Core-bridge 2파일 PRESENT/해시 실측
+- 두 Run 모두 JSON/TXT 원격 재조회 2/2, `operationalWrites=0`, `providerCalls=0`, `d1Writes=0`, `protectedStateUnchanged=true`, `sourceIdentityConsistent=true`, checkout Git HEAD=config 승인 SHA=Writer checkpoint SHA `05d7ae49e0a84cbeebd90ef4de6dd7284094bf97`.
+- [현재 고정 공식 수동 B 승인 manifest](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/approvals/inflation-manual-b/official-static-two-source-20261110.json)에 지정된 **4개 파일 SHA-256을 실PC 관측과 전수 비교 4/4 일치**:
+
+| 고정 source 파일 | 실PC SHA-256 | 기존 B 승인 SHA와 일치 |
+|---|---|---|
+| `scripts/pc-writer/inflation-causal-candidate-manual-official-r1.mjs` | `53c01bbc129e1c4c5ff129d37fae8e0ff801c30bfe50a6ad0ab1227d394a5ed6` | YES |
+| `scripts/pc-writer/inflation-causal-candidate-manual-official-store-r1.mjs` | `3ef346bd5e240cdcdbd741a0f62b665bba42bf33556e37a6efa359f07de834ec` | YES |
+| `lib/diagnostic-layer/xlsx-lite.mjs` | `44d4c230a0620faea0d8bb2575e6f13c9ab7cfb5700aa11d752017db747f619a` | YES |
+| `scripts/pc-writer/local-cycle.mjs` | `2e6200e5637fb99f339fdc74a64592f34c1272423a39366b8559c16ea1b13b5d` | YES |
+
+**새로 해제한 불명확성:** “4개 파일 설치 해시를 원격에서 알 수 없음”은 **해결(4/4)**. 남은 실제 B 필수조건은 **① Core Task→Node→동일 E: 잠금 소유권의 실증** (`coreTaskSourceLinked=false`는 정적 source-only 상태, 실제 B preflight 과거 #1177도 미관측) 및 **② 새 PC Git HEAD `05d7ae49...`에 맞는 원래 승인 효과 범위 내의 신규 source-pinned B manifest/1회 승인**. 기존 manifest `sourceSha=48d347...`는 파일 4개가 같아도 **전체 source HEAD 해시가 달라 동일 파일이라는 이유로 무조건 재사용할 수 없음**. 그 이후에만 기존 고정 공식 BLS/Census 2 GET→3 저장→26/26→게시 검증으로 이동한다. 임의 Core Task/launcher 교체·잠금 삭제·기존 #1177 재실행 금지. 물가지표 전체 42%, PC 원자료 23/26, 공개 4/7 유지.
+
 ## 1. 목표·분모·현재 상태
 
 원본 후보 31개 = 기존 연구자료 19개 + 신규 수집 대상 7개 + 정의/권리 보류 3개(#15·#17·#30) + #26과 통합 1개(#27) + 제외 1개(#20). **기능의 현재 수집 목표는 중복 없는 26개(19+7)**이며, 보류 3개를 무단 추가하거나 26개 확보의 선행조건으로 삼지 않는다.
