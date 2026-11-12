@@ -18,7 +18,7 @@ try{
   const mainStatus=response?.status()??null;
   let readyState=false;
   try{
-   await page.waitForFunction(()=>document.querySelector('[data-testid="asset-bubble-detail-hero"]')?.getAttribute('data-market-state')==='ready',{timeout:35000});
+   await page.waitForFunction(()=>document.querySelector('[data-testid="asset-bubble-detail-hero"]')?.getAttribute('data-market-state')==='ready',null,{timeout:35000});
    readyState=true;
   }catch{}
   // The valid raw-sidecar join happens after the scored GET and may take longer.
@@ -30,7 +30,7 @@ try{
      const strong=[...row.querySelectorAll('.asset-r2-value strong')];
      return strong.length===2&&strong[1].textContent?.trim()!=='—';
     });
-   },{timeout:20000});
+   },null,{timeout:20000});
    rawReady=true;
   }catch{}
   const snapshot=await page.evaluate(()=>{
