@@ -60,6 +60,18 @@
 
 **원담당 다음 실제 행동 하나:** Task Engine과 VBS/Node/lock.pid의 **동일 시각 인증 연속 관측**을 기존 승인된 방법으로 확보한다. 단발 A 재시도·일반 프로세스 inventory 반복을 중단한다. 승인된 A/heavy 운영 설치를 계획한다면 전체 669커밋을 승인 없이 통합하지 말고 현재 설치 SHA→정확한 승인된 목표의 필요 파일·보호 원장/PR 계보·유지보수기 계약을 먼저 대조한다. 이후에만 현재 PC source `05d7ae49...`의 승인 manifest와 기존 범위·lease를 보존하는 새 1회 B를 적용한다. 원자료 23/26·공개 4/7·전체 42% 불변.
 
+### 0.4 2026-11-13 승인 B가 자체 수행하는 Core 소유권 12분 관측 — 설치 선행 Gate 정정
+
+**새로 확인한 운영 경로·소스 계약 (원본 [제어 main `inflation-manual-b/windows-adapter.mjs`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/inflation-manual-b/windows-adapter.mjs), [고정 Workflow](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/.github/workflows/pc-inflation-official-manual-b-once.yml), [승인 계약](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/inflation-manual-b/contract.mjs)):**
+- 단회 B의 `observeLiveCoreLockOwner`는 이미 `12*60_000`ms 자연 Task 관측→Task 관련 Core 프로세스→`E:\\ZGmini\\data\\pc-writer\\local-cycle.lock`의 `pid/at`→고정 WMI `core-lock-owner-probe.js` Task 계보→읽기 전후 lock 바이트 동일성을 **실제 B 내부에서 fail-closed 검증**한다. 5분 Core 예약/중첩 VBS 조상 확인이 A의 단발 실패와 달리 같은 B 실행 안에서 이뤄진다. 검사 완료 후에도 승인된 기존 Writer/Core lock, 자연 idle, 저장 원본 보존 조건은 유지된다.
+- 2026-11-10 추가된 **A/heavy 210초 observer의 Controller 설치는 이 공식 B 자체 검사의 실행 계약상 전제 조건이 아니다.** Observer는 별도 원인 진단 보조이며 `authorizesB:false`. #996 C 복구가 공유 Controller 설치를 잠가도 이 사실만으로 독립된 Writer B를 자동 차단하거나 Controller를 먼저 교체할 이유는 없다. 다만 실제 Writer source/lock/lease가 서로 겹칠 경우 해당 **실행 효과만** 보호한다.
+- 공식 B Workflow는 기본 `ZGMINI_INFLATION_MANUAL_B_ENABLED == 'true'` opt-in이며, 문서에 **reviewed B manifest/operator approval** 요구가 명시돼 있다. **현재 variable 활성 상태는 GitHub 읽기 커넥터로 확인되지 않음**. #1177 당시 실제 B Run은 있었으나 이를 현재 활성의 증거로 재사용할 수 없다.
+- [#1327/#1328](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1327)로 실PC 4개 source 파일 SHA 4/4가 과거 승인 B와 같고, [#1326](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1326) PC source checkout/config/Writer checkpoint `05d7ae49e0a84cbeebd90ef4de6dd7284094bf97` 정합성 확인. 단, 기존 공식 B 승인 `sourceSha=48d3478030590ca63aaab2435e88c896608c70d3` 불일치, 현 PC source SHA의 GitHub 원격 `zgmini` commit 조회 불가(로컬 운영 checkout origin은 미검증). 이것이 새 B **승인 재검토 대상**이다. 기존 #1177 requestId·승인 manifest 원본을 직접 재사용·overwrite하지 않는다.
+- 이미 생성된 [SOURCE_ONLY 비승인 검토본](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/codex/controller-ops-lessons-20261105/docs/proposals/inflation-official-manual-b-pc-05d7-review-20261113.json)은 `DRAFT_NOT_APPROVED` 상태/비실행 경로를 보존. 대상 URL·파일·파일해시·효과 범위 그대로의 새로운 승인 후보를 원담당이 기존 기준과 대조하고, **정확한 승인/Workflow opt-in/Writer lock 비경합이 검증될 때만 새 고유 Issue 단회 B 실행** → 실제 GET/로컬 저장/계산/공개 조회. 추가 진단기 설치·미완료 C 복구·정규 예약 검증을 B 전역 선행 Gate로 만들지 않는다.
+- 원본 [#996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/996)은 2026-11-13 현재 C NO-GO 보호. 2026-11-10 [#68 운영 읽기 증거](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6756862819)의 Controller `badad912...`, 유지보수기 `16064e29...`, install lease `held=true/RECOVERY_REQUIRED`는 역사적 범위에서만 재사용하며 현재 lease 해제 추정 금지. [공통 소스 PR #1333](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1333) main 병합 및 CI 74/74 PASS가 실Windows 유지보수기 교체/Controller 등록을 의미하지 않음.
+
+**원담당의 단일 우선 실행:** 새 단회 B의 source pin 승인/Workflow opt-in 및 기존 Writer lock 경합 범위를 확인한다. GO이면 B가 내장한 12분 Task→Core Node→E: lock 증명과 공식 자료 저장을 **같은 승인된 요청 1회**에서 시도한다. 승인 또는 소유권이 입증되지 않으면 그 B만 `BLOCKED`; A를 반복하거나 #996을 우회하지 않는다. 물가지표 완료율 42%, 23/26·4/7 유지.
+
 ## 1. 목표·분모·현재 상태
 
 원본 후보 31개 = 기존 연구자료 19개 + 신규 수집 대상 7개 + 정의/권리 보류 3개(#15·#17·#30) + #26과 통합 1개(#27) + 제외 1개(#20). **기능의 현재 수집 목표는 중복 없는 26개(19+7)**이며, 보류 3개를 무단 추가하거나 26개 확보의 선행조건으로 삼지 않는다.
