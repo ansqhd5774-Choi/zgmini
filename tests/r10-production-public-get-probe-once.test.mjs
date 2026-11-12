@@ -4,7 +4,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 const ORIGIN='https://zgmini.kr';
-const ENDPOINTS=['/api/asset-bubble-detail','/api/asset-bubble-raw'];
+const ENDPOINTS=['/api/asset-bubble-detail','/api/asset-bubble-raw','/api/collection-health'];
 const safeString=(x,max=160)=>typeof x==='string'?x.slice(0,max):null;
 const safeNumber=x=>typeof x==='number'&&Number.isFinite(x)?x:null;
 const summary=(value)=>{
@@ -20,6 +20,12 @@ const summary=(value)=>{
   scoreObservationQuarter:safeString(payload.scoreObservationQuarter),
   diagnosticQuarter:safeString(payload.diagnosticQuarter),
   asOfDate:safeString(payload.asOfDate),
+  collectionHealthTotal:safeNumber(obj.total),
+  collectionHealthNormal:safeNumber(obj.normal),
+  collectionHealthFailed:safeNumber(obj.failed),
+  collectionHealthUnknown:safeNumber(obj.unknown),
+  collectionHealthCheckedAt:safeString(obj.checkedAt),
+  alpacaR10HealthEntry:Array.isArray(obj.items)?(obj.items.find(x=>x?.id==='job:assetR10Alpaca')??null):null,
   projectionStatus:safeString(obj.projection?.status)
  };
 };
