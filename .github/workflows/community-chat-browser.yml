@@ -80,6 +80,8 @@ jobs:
         run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
       - name: Install browser for offline UI interactions
         run: npx playwright install --with-deps chromium
+      - name: Verify R10 actual Production hydration at 1440 and 390 (one-shot only)
+        run: node tests/r10-production-browser-readonly-once.mjs
       - name: Start local dev UI (no remote bindings and no deployment)
         run: |
           npm run dev > /tmp/zgmini-chat-vite.log 2>&1 &
@@ -111,8 +113,6 @@ jobs:
         run: node tests/fear-greed-education-browser-r4.mjs
       - name: Validate dashboard history period changes and newer snapshot refresh
         run: node tests/dashboard-history-browser-r5.mjs
-      - name: Verify R10 actual Production hydration at 1440 and 390 (one-shot only)
-        run: node tests/r10-production-browser-readonly-once.mjs
       - name: Upload browser UI evidence
         if: always()
         uses: actions/upload-artifact@v4
