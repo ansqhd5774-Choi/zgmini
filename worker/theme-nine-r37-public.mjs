@@ -84,6 +84,9 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now,indepen
     (record.deltaManifestSha256!==null&&!sha(record.deltaManifestSha256))))return false;
  const clocks=[Date.parse(record.sourceStoredAt),Date.parse(record.publishedAt),Number(storedAt)];
  if(clocks.some(t=>t>now||now-t>=PUBLIC_DISPLAY_MAX_AGE_MS))return false;
+ // Reject a future observation day without excluding today's valid session.
+ // Comparing against 23:59Z would wrongly reject today's intraday record.
+ if(Date.parse(record.observationDate+'T00:00:00Z')>now)return false;
  if(now-Date.parse(record.observationDate+'T23:59:59Z')>=PUBLIC_DISPLAY_MAX_AGE_MS)return false;
  if(!record.officialAumAsOf||typeof record.officialAumAsOf!=='object'||
   Array.isArray(record.officialAumAsOf)||
@@ -111,6 +114,8 @@ export function eligibleNineR37(record,base,{now=Date.now(),storedAt=now,indepen
   const fromBase=base.provisional?.points,fromNew=record.provisional?.points;
   if(!Array.isArray(fromNew)||fromNew.length<1||fromNew.length>32||
    (!independentAnchor&&(!Array.isArray(fromBase)||fromBase.length!==fromNew.length)))return false;
+  // Do not publish tomorrow's provisional score as an observation made today.
+  if(fromNew.some(p=>validDate(p?.date)&&Date.parse(p.date+'T00:00:00Z')>now))return false;
   if(record.provisionalLineage?.source===R51_PUBLIC_LEGACY_SOURCE){
    // For the current public contract, 26 Oct has three optional scores and
    // 27 Oct has seven core scores. This mode NEVER recalculates or replaces
@@ -196,4 +201,31 @@ export async function addVerifiedNineR37(db,base,{now=Date.now()}={}){
     provisionalSourceVersion:base.sourceVersion??null,
     provisionalSourceStoredAt:base.sourceStoredAt??null}:{}),
   }:{}),modelRevision:record.version};
+}
+
+// The R32 confirmed feed has its own complete 252-day history and approved
+// roster. It can remain independently readable after the older seven-theme
+// PAIR50 seed expires. Never borrow provisional scores from that expired seed.
+export async function readIndependentNineR37Confirmed(db,{now=Date.now()}={}){
+ let row;
+ try{row=await db.prepare("SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'")
+  .bind(THEME_NINE_R37_KEY).first();}catch{return null;}
+ if(!row)return null;
+ let record;try{record=JSON.parse(row.body);}catch{return null;}
+ const publicRoster=THEME_NINE_R37_ROSTER.filter(item=>item.theme!=='AI·반도체');
+ const approved=publicRoster.map(required=>record?.themes?.find(t=>t.theme===required.theme));
+ if(approved.some(item=>!item))return null;
+ const independentBase={status:'READY',phase:record.phase,
+  observationDate:record.observationDate,
+  confirmedObservationDate:record.observationDate,themes:approved};
+ if(!eligibleNineR37(record,independentBase,{now,
+  storedAt:Number(row.stored_at),independentAnchor:true}))return null;
+ return {status:'READY',version:record.version,
+  modelRevision:record.version,methodologyVersion:record.methodologyVersion,
+  observationDate:record.observationDate,
+  confirmedObservationDate:record.observationDate,phase:'CONFIRMED',
+  sourceVersion:record.sourceVersion??record.version,
+  sourceStoredAt:record.sourceStoredAt,
+  themes:approved.map(t=>({theme:t.theme,etfs:[...t.etfs],score:t.score,
+   history:t.history.map(p=>({date:p.date,score:p.score}))}))};
 }
