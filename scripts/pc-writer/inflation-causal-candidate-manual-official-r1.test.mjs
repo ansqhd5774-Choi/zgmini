@@ -105,7 +105,7 @@ test('Census official workbook AMTMTI rows preserve year/month and latest 2026-0
 
 // Generate a tiny real XLSX/ZIP containing the same Census worksheet shape.
 // This tests the default xlsx-lite file reader, not only an injected mock.
-function xlsxFixture(){
+function xlsxFixture({targetBeforeId=false}={}){
   const sheetRow=(number,year,values)=>{
     const cells=[`<c r="A${number}" t="inlineStr"><is><t>AMTMTI</t></is></c>`,
       `<c r="B${number}"><v>${year}</v></c>`];
@@ -115,7 +115,9 @@ function xlsxFixture(){
   };
   const files=[
     ['xl/workbook.xml','<workbook xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships"><sheets><sheet name="m3-outp-invp" sheetId="1" r:id="rId1"/></sheets></workbook>'],
-    ['xl/_rels/workbook.xml.rels','<Relationships><Relationship Id="rId1" Target="worksheets/sheet1.xml"/></Relationships>'],
+    ['xl/_rels/workbook.xml.rels',targetBeforeId
+      ? '<Relationships><Relationship Type="worksheet" Target="worksheets/sheet1.xml" Id="rId1"/></Relationships>'
+      : '<Relationships><Relationship Id="rId1" Target="worksheets/sheet1.xml"/></Relationships>'],
     ['xl/worksheets/sheet1.xml',`<worksheet><sheetData>${sheetRow(34,2025,c2025)}${sheetRow(35,2026,c2026)}</sheetData></worksheet>`],
   ];
   const crc32=bytes=>{
@@ -158,6 +160,13 @@ test('Census actual default XLSX reader parses a compressed workbook end to end'
   assert.equal(result.observations.length,21);
   assert.equal(result.observations.at(-1).value,976044);
   assert.equal(result.observations.find(x=>x.date==='2025-10-01').value,947012);
+});
+
+test('Census XLSX parser accepts Target-before-Id relationship attribute order',async()=>{
+  const result=await parseOfficialCensusInventoryWorkbook(xlsxFixture({targetBeforeId:true}));
+  assert.equal(result.latest,'2026-09-01');
+  assert.equal(result.observations.length,21);
+  assert.equal(result.observations.at(-1).value,976044);
 });
 
 test('Census workbook rejects a duplicate AMTMTI year and an internal missing month',()=>{
