@@ -66,3 +66,12 @@
 - 새 격리 경로의 자연 장애 전체 왕복 후속 실증은 `DEFERRED`이며 본 R10 기능의 완료 Gate가 아니다.
 - 매 종료 보고 형식: **이번 결과 / 검사 증거 / R10 단계별 완료(분자/분모)·전체 프로젝트와 구분 / 실제 BLOCKER만 / 다음 실행 하나와 담당 / 저장소·브랜치·commit**.
 - **2026-11-12 현재 상태: R10 4/5 = 80%.** 정규 [Writer B #1308](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1308) / [Run 43174588398](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43174588398) `WRITER_B_INSTALLED_VERIFIED`, 신규 PC 로컬 승인 source `84df5e80f4bcdadd2a274d6f55a90290426c2406`, `LOCAL_OVERLAY`, 지정 2파일 설치. JSON/TXT 원격 readback 2/2, `RECOVERY=NONE`, 원본 3개 보호, source/config/Task 보존. [#1309](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1309) Core status PASS, [#1310](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1310) collector afterSHA `49d2f7de...` PASS, [#1311](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1311) release builder afterSHA `66a3d806...` PASS. `sourceHead=config.source=84df5e80...` 확인. **아직 이전 Writer 체크포인트 source는 `d560eb85...`이므로 설치 이후 자연 Core 실행/Writer 결과가 새 SHA로 전진한 증거는 없다.** 확인 전에는 Alpaca provider 호출 0·신규 R10 점수/게시 0의 실운영 효과나 공개 D1/API/UI 완료를 주장하지 않는다. 5단계가 다음 필수 업무. 기존 [#1210](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1210) 재실행 금지, #996 Controller C 복구는 별도.
+
+
+<!-- zgmini-r10-post-install-natural-writer-20261112 -->
+## 2026-11-12 추가 실운영 증거 — 새 Source의 자연 Writer 실행
+
+- 신규 B 이후 첫 [A #1312](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1312) / Run 43175305876은 조회 자체 PASS지만, 원장 `SUBMITTING` 및 지난 Writer source `d560eb85...`라 `proofStatus=STATE_UNKNOWN`. 이는 출처가 다른 실행이 진행 중인 상태이지 실패 판정이 아니다.
+- 후속 [A #1313](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1313) / [Run 43175689711](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43175689711), 원격 JSON/TXT 2/2 PASS: 2026-11-12T07:25:13.728Z에 신규 운영 Writer source `84df5e80f4bcdadd2a274d6f55a90290426c2406`로 자연 `PUBLISH` 실행, Writer `VERIFIED`, 게시 원장 `VERIFIED` 및 source 일치. `assetR10Calculation=FAILED_PREVIOUS_RELEASE_PRESERVED`, `assetR10=PREVIOUS_RELEASE_PRESERVED`, R10 신규 Sidecar 게시 없음. 실제 기존 유효 결과 보존/신규 R10 계산 억제 증거 확보.
+- 이 A의 `providerCalls=0`은 **A 조회 자체의 호출 수**다. R10 신규 Core 전체 공급자 호출 0의 별도 원장 계측을 대신하지 않는다. `productionD1Verified=false`, `runtimeSourceVerified=false`, `publicationPerformed=false`는 해당 A 판정 범위에서 유지한다.
+- **마일스톤 4/5(80%) 유지.** 5단계 잔여는 R10 provider 분리 계측·기존 유효 게시의 Production D1/API/UI 값/시각 확인, 필요할 때만 health/checkpoint의 실제 영향 최소 보완. C급 #996이나 타 기능의 완료 대기를 전역 Gate로 두지 않는다.
