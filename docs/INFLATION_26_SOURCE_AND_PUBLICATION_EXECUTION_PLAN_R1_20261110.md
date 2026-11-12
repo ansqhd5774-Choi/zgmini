@@ -80,6 +80,14 @@
 - **기존 수집기 계약 재검토:** `zgmini/main/scripts/pc-writer/inflation-causal-candidate-manual-official-r1.mjs`의 `planOfficialManualCandidateDocuments`는 invalid CPI 시리즈를 공식자료로 수리하고 유효한 PPI 이력·정정되지 않은 값은 보존; `...store-r1.mjs`는 기존 PPI preimage 필수, 쓰기 전 공식 BLS/Census 파싱, 원본 별도 아카이브·백업·readback을 요구. [기존 파서 테스트](https://github.com/ansqhd5774-Choi/zgmini/blob/main/scripts/pc-writer/inflation-causal-candidate-manual-official-r1.test.mjs) 및 [저장 테스트](https://github.com/ansqhd5774-Choi/zgmini/blob/main/scripts/pc-writer/inflation-causal-candidate-manual-official-store-r1.test.mjs)에는 corrupted CPI 복구·PPI 보존·Census XLSX fixture 검증이 존재. **이번에는 테스트를 재실행하거나 현재 Census 원본 XLSX를 실제 파싱하지 않았음**. static 원본의 현재 workbook 시트/행 구조는 승인 B의 preflight로 검증해야 하며 실패하면 신규 write 전 안전 중단.
 - **원담당 다음 필수 실행(변경 없음):** 현 PC `05d7ae49...`에 대한 새 source-pinned **명시 승인** 및 Workflow opt-in 상태·Writer lane 충돌 여부를 먼저 확인하고, GO일 때만 한 번의 고유 B에서 Task-linked Core owner→정적 공급자 GET 2개→파싱·원본 보존·저장 재조회를 실행. #1177 고유 ID 재사용·미승인 manifest의 `APPROVED_B` 임의 승격·추가 Controller 설치·잠금 삭제 불가. 이번 A로 실제 원자료 분모 **23/26**, 신규 유효값 **4/7**, 전체 물가지표 진행률 **42% 유지** 확인.
 
+### 0.6 2026-11-13 신규 B source-pin 승인 검토 PR — 승인·활성화·PC 실행 분리
+
+**실행·계약 범위 검증 완료 (운영 효과 0):** 제어 저장소 [Draft PR #1336](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1336)에서 현재 PC source pin만 다시 묶은 `approvals/inflation-manual-b/official-static-two-source-pc-05d7-20261113.json`을 제안. 기존 승인 [PR #1131](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1131)의 원본 manifest를 보존하고 **정확히 두 필드**(`status: APPROVED_B→DRAFT_NOT_APPROVED`, `sourceSha: 48d3478030590ca63aaab2435e88c896608c70d3→05d7ae49e0a84cbeebd90ef4de6dd7284094bf97`)만 다름. 기존 PC A #1326 checkout HEAD/config/Writer 일치, #1327/#1328 승인 파일 해시 실PC 4/4 일치를 **원격 JSON 바이트 재조회로 확인**. URL 2개·기존 JSON 2대상·Core lease/단회 runCount·DB/D1/Task/source 쓰기 금지·크기 제한 전부 동일. 제어 `inflation-manual-b/contract.mjs`는 `status=APPROVED_B`만 수락하므로 제안 **비실행**. 이는 테스트를 정식 Windows B로 실행한 결과가 아니라 기존 결과 기반의 계약 대조임.
+
+**Workflow 실측 분리:** [격리 CI #43279174086](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43279174086)는 현 시점 `INFLATION_B_REPO_VARIABLE_ENABLED=false`를 기록, 실PC Writer/DB/Controller 파일 변경 없음. 신규 승인 파일 작성/PR 병합만으로 Workflow가 자동 활성화되지 않는다.
+
+**다음 필수 승인·실행:** 원담당/정규 승인 Owner가 #1336의 현재 source provenance·기존 동일효과 범위를 검토해 `DRAFT_NOT_APPROVED→APPROVED_B`와 승인 원본 Git blob·SHA256을 확정할 수 있을 때에만 명시 승인·병합을 진행한다. 이후 정규 GitHub 권한으로 정확한 일회성 B Workflow opt-in을 승인·활성화하고 **새 고유 B Issue 단 1회**로 B 내부 12분 Core Task-linked lock proof→공식 BLS/Census GET 2건→CPI repair/PPI 보존·Census XLSX 파싱→로컬 write/readback 수행. DB/D1 게시·계산은 저장 증거 후 기존 공개 파이프라인에서 별도 검증. 아직 진행률 **42%·원자료 23/26·공개 4/7 불변**.
+
 ## 1. 목표·분모·현재 상태
 
 원본 후보 31개 = 기존 연구자료 19개 + 신규 수집 대상 7개 + 정의/권리 보류 3개(#15·#17·#30) + #26과 통합 1개(#27) + 제외 1개(#20). **기능의 현재 수집 목표는 중복 없는 26개(19+7)**이며, 보류 3개를 무단 추가하거나 26개 확보의 선행조건으로 삼지 않는다.
