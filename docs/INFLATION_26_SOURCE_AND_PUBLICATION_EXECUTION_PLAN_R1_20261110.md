@@ -48,6 +48,18 @@
 
 **새로 해제한 불명확성:** “4개 파일 설치 해시를 원격에서 알 수 없음”은 **해결(4/4)**. 남은 실제 B 필수조건은 **① Core Task→Node→동일 E: 잠금 소유권의 실증** (`coreTaskSourceLinked=false`는 정적 source-only 상태, 실제 B preflight 과거 #1177도 미관측) 및 **② 새 PC Git HEAD `05d7ae49...`에 맞는 원래 승인 효과 범위 내의 신규 source-pinned B manifest/1회 승인**. 기존 manifest `sourceSha=48d347...`는 파일 4개가 같아도 **전체 source HEAD 해시가 달라 동일 파일이라는 이유로 무조건 재사용할 수 없음**. 그 이후에만 기존 고정 공식 BLS/Census 2 GET→3 저장→26/26→게시 검증으로 이동한다. 임의 Core Task/launcher 교체·잠금 삭제·기존 #1177 재실행 금지. 물가지표 전체 42%, PC 원자료 23/26, 공개 4/7 유지.
 
+### 0.3 2026-11-13 02:30~02:38 KST — 동시성 증거로 Core 조회 시점 한계 분리
+
+**실제 운영 PC 추가 읽기 전용 실행 (각 고유 Issue, 반복 재실행 없음):**
+
+1. [#1329](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1329) / [Run 43270223267](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43270223267): 기존 설치 A `core-runtime-source-readonly`, 관측 2026-11-13 02:31 KST, `STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE`, 보호 상태 불변·운영 쓰기 0, 결과 JSON/TXT 2/2 일치. **단발 시점 무관측**, Core 장애·잠금 owner 부재 확정 아님.
+2. [#1330](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1330) / [Run 43271171353](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43271171353): **기존 독립** `pc-process-inventory-readonly`(Controller 설치 불필요), 2026-11-13 02:37 KST 운영 `PC`/Runner `zgmini-pc-01`에서 `ZGMINI-PC-Local-Core=Running`, `Korea=Ready`, `wscript.exe` 중첩→`node.exe`로 이어지는 일부 부모-자식 계보 관측. 선택 프로세스 55/55(목록 미절단). 민감한 command line·환경변수 미출력. **각 Node의 Core source/Task EnginePID/lock.pid 소유권은 이 고정 inventory가 반환하지 않아 미증명**. 과거 동일 workflow #1258에도 Running과 중첩 VBS/Node가 함께 관측된 이력 재사용.
+3. [#1331](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1331) / [Run 43271527104](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43271527104): #1330 현장 Running 관측 **약 63초 뒤인 02:38 KST** 기존 A 단발 조회 실행, 다시 `STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE`, 결과 JSON/TXT 2/2 직접 대조 PASS·보호 상태 불변·쓰기는 0. 이 63초의 시점 차이 때문에 “Task가 Running이어도 GetInstances가 반드시 0” 또는 “Node가 Task와 분리됨”이라고 단정하면 안 됨. 소유권 검증 실패의 FIRST FAIL은 `Task Engine anchor 미관측`이며, 정확한 VBS control flow/lock owner 진단이 이어져야 함.
+
+**정확한 설치 영향과 대체 경로:** 기존 PC Controller `badad9124157879d7a645b64f2768113d632355b`→ 제어 `main` `850abbb2cd82886e535053cc38a6616d0440988d`의 GitHub compare는 **669커밋 차이**, API 변경 파일 배열은 최대 300개만 반환(전체 변경 목록이 아님). 신규 `inflation-core-lock-observation-readonly`는 2026-11-10 commit `b47f03b8...` 도입 후 `37b2c552...`에서 기존 A/heavy 240초·1536MiB 공통 프로필에 맞춤. **이 observer는 현재 PC에 미설치이며 관측 결과 자체도 `authorizesB:false`**. 최신 전체 main을 조용히 설치하거나 해당 module만 임의 Workflow/CMD로 우회하지 말 것. 필요한 것은 기존 공용 Controller 정규 업데이트 Owner·정확한 통합 diff/manifest·원본 보호/lease 확인뿐이며, #996 C NO-GO는 실제 공유 설치 충돌 영역에만 적용.
+
+**원담당 다음 실제 행동 하나:** Task Engine과 VBS/Node/lock.pid의 **동일 시각 인증 연속 관측**을 기존 승인된 방법으로 확보한다. 단발 A 재시도·일반 프로세스 inventory 반복을 중단한다. 승인된 A/heavy 운영 설치를 계획한다면 전체 669커밋을 승인 없이 통합하지 말고 현재 설치 SHA→정확한 승인된 목표의 필요 파일·보호 원장/PR 계보·유지보수기 계약을 먼저 대조한다. 이후에만 현재 PC source `05d7ae49...`의 승인 manifest와 기존 범위·lease를 보존하는 새 1회 B를 적용한다. 원자료 23/26·공개 4/7·전체 42% 불변.
+
 ## 1. 목표·분모·현재 상태
 
 원본 후보 31개 = 기존 연구자료 19개 + 신규 수집 대상 7개 + 정의/권리 보류 3개(#15·#17·#30) + #26과 통합 1개(#27) + 제외 1개(#20). **기능의 현재 수집 목표는 중복 없는 26개(19+7)**이며, 보류 3개를 무단 추가하거나 26개 확보의 선행조건으로 삼지 않는다.
