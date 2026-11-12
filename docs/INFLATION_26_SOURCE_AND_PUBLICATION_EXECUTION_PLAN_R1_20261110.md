@@ -72,6 +72,14 @@
 
 **원담당의 단일 우선 실행:** 새 단회 B의 source pin 승인/Workflow opt-in 및 기존 Writer lock 경합 범위를 확인한다. GO이면 B가 내장한 12분 Task→Core Node→E: lock 증명과 공식 자료 저장을 **같은 승인된 요청 1회**에서 시도한다. 승인 또는 소유권이 입증되지 않으면 그 B만 `BLOCKED`; A를 반복하거나 #996을 우회하지 않는다. 물가지표 완료율 42%, 23/26·4/7 유지.
 
+### 0.5 2026-11-13 03:11 KST 물가 후보 7종 실PC 원자료 재조회 — CPI INVALID/Census MISSING
+
+- **운영 PC A #1334 / Run #43277201713:** 고유 `pc-inflation-7-saved-readback-20261113-01`, 설치 Controller `badad912...`의 기존 `inflation-candidates-runtime-readonly` 실행 `PASS/INFLATION_CANDIDATES_RUNTIME_READONLY_EVIDENCE`. [Issue #1334](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1334), [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/43277201713-1-seat-2.json)·[TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/43277201713-1-seat-2.txt) 원격 2/2 독립 재조회·공통 필드 일치; `operationalWrites=providerCalls=d1Writes=0`, `protectedStateUnchanged=true`.
+- **실제로 남은 3개:** CPI #22 `CUSR0000SEHA`, #23 `CUSR0000SEHC01`은 BLS 저장 파일 **PRESENT이지만 각 시계열 `INVALID`**. BLS 동일 파일의 기존 PPI #24 `WPSFD4`는 **PRESENT_VALID·203개월**이므로 전체 BLS 파일을 없애거나 CPI-only 덮어쓰기 금지. Census #28 `AMTMTI`는 파일 **MISSING**. 나머지 Fed #29 657건·Treasury #16 139건·EIA #2 520건은 PRESENT_VALID. 7개 중 4개 유효.
+- **과거 진단 에러(현재 원인 단정 금지):** `cpi` checkpoint `BLS_CANDIDATE_VALUE_OR_DUPLICATE`, `census` checkpoint `CENSUS_M3_HEADERS_INVALID`, 마지막 시도 2026-11-08T22:45:02.525Z. 해당 코드는 기존 API collector가 실패한 원본 이력이며, 현재 독립 정적 BLS 파일·Census XLSX도 동일한 오류를 낸다는 뜻이 아님.
+- **기존 수집기 계약 재검토:** `zgmini/main/scripts/pc-writer/inflation-causal-candidate-manual-official-r1.mjs`의 `planOfficialManualCandidateDocuments`는 invalid CPI 시리즈를 공식자료로 수리하고 유효한 PPI 이력·정정되지 않은 값은 보존; `...store-r1.mjs`는 기존 PPI preimage 필수, 쓰기 전 공식 BLS/Census 파싱, 원본 별도 아카이브·백업·readback을 요구. [기존 파서 테스트](https://github.com/ansqhd5774-Choi/zgmini/blob/main/scripts/pc-writer/inflation-causal-candidate-manual-official-r1.test.mjs) 및 [저장 테스트](https://github.com/ansqhd5774-Choi/zgmini/blob/main/scripts/pc-writer/inflation-causal-candidate-manual-official-store-r1.test.mjs)에는 corrupted CPI 복구·PPI 보존·Census XLSX fixture 검증이 존재. **이번에는 테스트를 재실행하거나 현재 Census 원본 XLSX를 실제 파싱하지 않았음**. static 원본의 현재 workbook 시트/행 구조는 승인 B의 preflight로 검증해야 하며 실패하면 신규 write 전 안전 중단.
+- **원담당 다음 필수 실행(변경 없음):** 현 PC `05d7ae49...`에 대한 새 source-pinned **명시 승인** 및 Workflow opt-in 상태·Writer lane 충돌 여부를 먼저 확인하고, GO일 때만 한 번의 고유 B에서 Task-linked Core owner→정적 공급자 GET 2개→파싱·원본 보존·저장 재조회를 실행. #1177 고유 ID 재사용·미승인 manifest의 `APPROVED_B` 임의 승격·추가 Controller 설치·잠금 삭제 불가. 이번 A로 실제 원자료 분모 **23/26**, 신규 유효값 **4/7**, 전체 물가지표 진행률 **42% 유지** 확인.
+
 ## 1. 목표·분모·현재 상태
 
 원본 후보 31개 = 기존 연구자료 19개 + 신규 수집 대상 7개 + 정의/권리 보류 3개(#15·#17·#30) + #26과 통합 1개(#27) + 제외 1개(#20). **기능의 현재 수집 목표는 중복 없는 26개(19+7)**이며, 보류 3개를 무단 추가하거나 26개 확보의 선행조건으로 삼지 않는다.
