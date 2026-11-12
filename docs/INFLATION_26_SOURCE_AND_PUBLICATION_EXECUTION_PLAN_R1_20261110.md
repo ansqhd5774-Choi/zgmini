@@ -21,6 +21,14 @@
 
 **원본 진단·정규 인계:** [#1177의 2026-11-13 후속 조사](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1177#issuecomment-6830069503), [공통 #68 원담당 인계](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6829732572). 이 문서의 source-only 수정은 실제 원담당 일반챗 수신, Controller 설치, PC 수집·게시, C급 복구의 성공 증거가 아니다.
 
+### 0.1 2026-11-13 02:07 KST 실제 PC A 조회 — 소유권 인증과 B 승인 원본 구분
+
+**신규 실PC 완료 근거:** 제어 [#1325](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1325) / [Run #43266064260](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43266064260), 기존 설치 A `core-status` 단회 실행 `PASS/CORE_READONLY_DIAGNOSIS`. 고유 requestId `pc-inflation-core-status-nov13-coord-01`, 실PC Controller `badad9124157879d7a645b64f2768113d632355b`, 원격 [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/43266064260-1-seat-5.json) + [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/43266064260-1-seat-5.txt) **2/2 독립 재조회·동일 필드 일치**. `operationalWrites=0`, `providerCalls=0`, `d1Writes=0`, 보호 전후 SHA 동일. 2026-11-13 02:07 KST 관측에 `lockPresent=true`, Core cycle 02:02 KST `COMPLETE`, collection 02:07 `COMPLETE`, Writer 01:59 `VERIFIED`. 정규 Core/수집/Writer 최근 처리가 존재하므로 전체 운영 정지·#996 전역 차단 주장은 오판. **`core-status`는 lock.pid/Task EnginePID/실제 VBS 프로세스 조상을 증명하지 않는다**. `lockPresent=true`는 곧바로 소유권 PASS나 stale lock 삭제 허용이 아님.
+
+**추가로 확인한 실질적 B 선행 불일치:** 기존 [승인 manifest](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/approvals/inflation-manual-b/official-static-two-source-20261110.json)는 `sourceSha=48d3478030590ca63aaab2435e88c896608c70d3`·`runCount=1`로 고정되어 있으나, 이번 운영 PC `core-status`가 보고한 `pcOperationalApprovedSha=05d7ae49e0a84cbeebd90ef4de6dd7284094bf97`. 동일 source SHA가 아니므로 기존 manifest와 이전 B #1177 requestId를 **새 요청에 그대로 재사용 금지**. 기존 B의 `verifyManualPreimage`는 `sourceHead===manifest.sourceSha`와 `configSource===manifest.sourceSha` 및 4개 코드 파일 SHA를 검사한다. 또한 이번 `core-status`는 PC `config.source`의 승인 SHA만 보고하므로 **PC 실제 Git HEAD·4개 설치 파일 바이트는 아직 미검증**. 이 값을 그대로 신규 manifest의 sourceSha로 채워 바로 B를 승인했다고 주장하지 않는다.
+
+**다음 필수 실행 하나:** 독립 원담당은 이미 설치된 승인 A의 사전검증 범위 및 기존 Writer B 보호 원본을 재사용해 PC **source HEAD/config.source/4개 pin 파일 SHA/실제 Task→Node→lock owner**의 정합성을 정확히 확보한다. 필요한 A 진단이 현재 Controller 미등록이면 그 설치만 별도 Owner·기존 승인 경로로 검토하고 원자료 수집 외 독립 개발·검증은 지속. 모든 증거가 맞을 때만 새 명시 승인 manifest·고유 단회 B 수집으로 23/26→26/26을 목표로 진행한다. **새 B·Core lock 수정·Controller 설치는 이번 A 조회에서 수행하지 않았다**. 전체 물가 완료율 42%, 유효 저장 23/26, 공개 4/7 유지.
+
 ## 1. 목표·분모·현재 상태
 
 원본 후보 31개 = 기존 연구자료 19개 + 신규 수집 대상 7개 + 정의/권리 보류 3개(#15·#17·#30) + #26과 통합 1개(#27) + 제외 1개(#20). **기능의 현재 수집 목표는 중복 없는 26개(19+7)**이며, 보류 3개를 무단 추가하거나 26개 확보의 선행조건으로 삼지 않는다.
