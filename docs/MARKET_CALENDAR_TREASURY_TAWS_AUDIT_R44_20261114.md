@@ -173,3 +173,43 @@
 **다음 필수 실행 하나(실제 승인 조건):** **중앙 공유 Controller 적용 Owner**가 운영 PC의 현재 설치 `source-inventory-runtime-readonly` A allowlist+라우팅/installed SHA·실제 lease·승인 B 적용 상태를 기존 허용 비민감 원본 경로에서 확인해 #68에 인증된 설치 가능/불가 결과를 돌려줄 것. 설치 PASS인 경우에만 시장 원담당이 고유 A 1회로 TA_WS 365일 rows/date/hash/WAL JSON/TXT 감사 → 동일 버전 D1/Production API/UI 대조. 공개 API는 승인된 무료 접근이 정상화되면 해당 범위를 1회 검증하며 현재 접근 실패를 다른 기능 전역 BLOCKER로 확장하지 않음.
 
 **변경·운영:** 이 문서 증거 추가 1파일만. 신규 기능 소스/테스트/CI, PC A/B/Runner 요청, Controller/Writer/SQLite/D1/Cloudflare 배포/예약 변경 **0건**. 공유 설치 중앙 Owner 인계는 실제 설치·타 일반챗 자동수신 아님.
+
+
+<!-- market-calendar-r60-taws-failclosed-verdict-20261114 -->
+## 11. 60차 — TA_WS 신규 A JSON의 결손·실패 판정 계약 실제 Node 회귀 수리
+
+**공통 정본:** [#68 60차](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6865373693) 시장 담당. 전체 **95/100→95/100**. 공식 2027 FOMC/PR #1063/58차 공개 HTTP 차단은 기존 증거 재사용하고 반복 실행하지 않음.
+
+### 11.1 Reader 원본에서 독립 확인한 경계
+
+- 제어 `main/controller/source-inventory-runtime-readonly.mjs` blob `db9e9c8347277287cc6ef10bad310be125314d52` (60차 조회): `treasuryTawsInputSummary`가 `fromDate/toDate`에 **365일 초과만 거부**. **1일~364일인 단축 구간도 `status=OBSERVED`가 가능**. `eligibleCountMatchesStored=false`인 건수 불일치에도 `status=OBSERVED`, 외부 총괄 `result.status=PASS`는 DB read 성공을 뜻하며 입력 원자료 완전성 보장은 아님.
+- `treasuryTawsInput.status='NOT_STORED'`는 원문 결손, `UNREADABLE_OR_INVALID`는 파싱/메타 손상, `WAL_SIDECARS_ABSENT_UNVERIFIED`는 SQLite 조회 불확정 — **모두 365일 감사 PASS 금지**. `sqliteOpened=false` 상태도 금지.
+- Reader `textSha256`는 **PC 저장된 body.text**의 SHA-256. 외부 공급자 원문과 일치하는지에 대한 사전 기준 digest가 없으며 원문 중복 건수도 반환하지 않음. 따라서 metadata만으로 원문 **독립 중복 검사·외부 해시 동일성·100% 기능 완료를 증명할 수 없음**. 원문 CUSIP/텍스트를 Github·채팅에 노출하지 않음.
+
+### 11.2 실제 독립 소스·테스트 (운영 Controller 수정 없이)
+
+**전용 브랜치에 신규 코드 2파일 commit, 모두 원격 blob readback PASS:**
+
+1. [`lib/market-calendar-taws-audit-verdict.mjs`](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/zgmini-gpt-workspace-20261025/lib/market-calendar-taws-audit-verdict.mjs) — Git blob `d47bc10662968e0238698d34a8e38f2bd9f82500`. `judgeTreasuryTaws365Audit(reader,{expectedToDate})`은 **실PC A의 bounded 비민감 JSON이 이미 존재할 때만** 사용되는 pure source-only 판정기. SQLite/외부 HTTP/Controller/운영 write를 수행하지 않는다. 기존 Reader 계약·출력·Controller 설치 manifest를 변경하지 않는다.
+2. [`tests/market-calendar-taws-audit-verdict.test.mjs`](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/zgmini-gpt-workspace-20261025/tests/market-calendar-taws-audit-verdict.test.mjs) — Git blob `f0d1054e26ca0dc6fd5ea0f697e77b656ea2335c`. 아래 독립 Node 22.16.0 실행 성공 및 로컬 테스트 파일 `git hash-object`와 원격 Git blob 두 파일 **정확히 일치**.
+
+```text
+node --test tests/market-calendar-taws-audit-verdict.test.mjs
+1..12
+# pass 12
+# fail 0
+# duration_ms 112.019822
+```
+
+**검증 내용(12개):** 완전 메타를 받아도 `readyForFinalCompletion=false`/raw duplicate `NOT_PROVIDED_BY_READER` 고정; `NOT_STORED`/null; invalid/unknown; WAL/SQLite 미개방; 1/364/366일 **365일 미충족**; 무효 달력 날짜; 다른 정상 수집 checkpoint 날짜 부재/불일치; `eligibleCountMatchesStored` 및 실제 적격 카운트 불일치; invalid storedAt/count; digest/scope 거부; provider/D1/운영 쓰기 보호; top-level `STATE_UNKNOWN`. 실제 호출자가 원본 Reader의 `OBSERVED`와 글로벌 `PASS`만 보고 100%로 승격하지 못하도록 fail-closed 판정.
+
+**해석 주의:** `METADATA_PASS`는 오직 **정확히 365일, 체크포인트 일치, 저장 행/적격 건수, 로컬 SHA256 형식·크기, SQLite read-only 호출**에 대한 source-only 전제 확인. `readyForFinalCompletion=false`을 고정하여 **실제 TA_WS PC 원문 A 0/1, 원문 중복·외부 digest 검증 미실행, 최신 D1/API/PC·모바일 UI 버전 재조회 미완료** 구분. 새 계산 산식·원본 데이터 계약·TTL·운영 코드를 변경하지 않음.
+
+### 11.3 LAST PASS / FIRST FAIL / 단일 다음 작업
+
+- **LAST PASS(신규 실제 검증):** 격리 컨테이너 Node `v22.16.0` 12/12 PASS. 전용 브랜치 두 소스 파일 remote readback blob 일치. **기존 실제 PC** #1299/Run 43166235600 `release-calendar-runtime-readonly PASS`, `sqliteOpened=false`는 기존 증거로만 보존.
+- **FIRST FAIL(계약상 재현한 차단):** 양끝 포함 365일 미만/초과 → `TAWS_WINDOW_NOT_EXACT_365_DAYS`; `eligibleCountMatchesStored=false` → `TAWS_AWARDED_COUNT_MISMATCH`; 결손 → `TAWS_NOT_STORED`; WAL/SQLite unknown → `READER_OR_SQLITE_NOT_PASS`. **이들은 synthetic source-only fixture 결과이지 실제 운영 PC 데이터 실패 확정이 아님**.
+- **실PC 감사 BLOCKER:** 과거 운영 Controller `badad912...`에서 신규 `source-inventory-runtime-readonly` 미등록; 60차 중앙 원장 기준 #1351 일반 PC 조회 Job `queued`, 최신 설치 PASS·원자료 365일 A JSON/TXT 없음. 신규 요청/우회/중복 실행 **0**.
+- **다음 하나 / 공용 Controller 단일 Owner:** 승인된 실제 운영 PC read-only 증거로 **신규 `source-inventory-runtime-readonly`의 실설치 SHA·allowlist·라우팅 PASS**를 확인한 뒤 시장 원담당에게 인증 JSON/TXT로 반환. 그때만 원담당이 고유 A 한 번으로 실제 TA_WS 원문 감사→pure 판정기 적용→D1/API/UI 같은 버전/중복 범위 확인. 공유 #996 보호·lease·승인 manifest를 우회하지 않음.
+
+**60차 변경:** 위 개발 소스 2파일 + 본 증거문서 1파일. 신규 PC A/B/Controller/Runner/CMD/SQL/D1/Cloudflare/수집·계산·게시·예약 변경 **0**. 실제 기능 전체 진행률 **95% 유지**.
