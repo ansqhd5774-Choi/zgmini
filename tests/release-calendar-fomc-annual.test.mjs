@@ -9,16 +9,19 @@ import {releaseImportance} from '../lib/market-calendar-importance.mjs';
 
 const meetingDates={
  2026:['2026-01-28','2026-03-18','2026-04-29','2026-06-17','2026-07-29','2026-09-16','2026-10-28','2026-12-09'],
- 2027:['2027-01-27','2027-03-17','2027-04-28','2027-06-09','2027-07-28','2027-09-15','2027-10-27','2027-12-08'],
+ // Official revision announced 2026-11-12. October is strategy-only;
+ // the year's final policy decision meeting moved from December to November.
+ // https://www.federalreserve.gov/newsevents/pressreleases/monetary20261112a.htm
+ 2027:['2027-01-27','2027-03-17','2027-04-28','2027-06-09','2027-07-28','2027-09-15','2027-10-27','2027-11-17'],
 };
-const names=['January','March','April','June','July','September','October','December'];
+const names=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const annualSection=year=>`<div class="panel panel-default"><div class="panel-heading"><h4><a id="${year}">${year} FOMC Meetings</a></h4></div><div class="panel-body">${meetingDates[year].map((date,index)=>{
  const last=Number(date.slice(-2)),start=last-1;
- return `<div class="${index%2?'fomc-meeting--shaded ':''}row fomc-meeting" "><div class="fomc-meeting__month col-xs-4"><strong>${names[index]}</strong></div><div class="fomc-meeting__date col-xs-4">${start}-${last}${index===1?'*':''}</div></div>`;
-}).join('')}</div><div class="panel-footer">* Meeting associated with a Summary of Economic Projections.</div></div>`;
+ return `<div class="${index%2?'fomc-meeting--shaded ':''}row fomc-meeting" "><div class="fomc-meeting__month col-xs-4"><strong>${names[Number(date.slice(5,7))-1]}</strong></div><div class="fomc-meeting__date col-xs-4">${start}-${last}${year===2026&&index===1?'*':''}</div></div>`;
+}).join('')}</div><div class="panel-footer">${year===2027?'Note: tentative meeting dates; October 26-27 is dedicated to strategy.':'* Meeting associated with a Summary of Economic Projections.'}</div></div>`;
 const officialFixture=`<h1>Meeting calendars</h1>${annualSection(2026)}${annualSection(2027)}<p>Each meeting date is tentative until confirmed at the meeting immediately preceding it.</p>`;
 
-test('Fed annual sections produce exactly eight last-day decisions per published year, with no assumed clock',()=>{
+test('Fed annual sections produce exactly eight published meeting dates per year, with no assumed clock',()=>{
  for(const [year,dates] of Object.entries(meetingDates)){
   const events=parseFomcAnnualCalendar(officialFixture,Number(year));
   assert.deepEqual(events.map(event=>event.date),dates);
@@ -29,10 +32,27 @@ test('Fed annual sections produce exactly eight last-day decisions per published
  assert.equal(releaseImportance('fomc','FOMC Meeting'),3);
 });
 
+test('Federal Reserve 2026-11-12 revision ends 2027 meetings in November; October is strategy-only',()=>{
+ const events=parseFomcAnnualCalendar(officialFixture,2027);
+ assert.equal(events.length,8);
+ assert.deepEqual(events.filter(event=>event.date>='2027-10-01').map(event=>event.date),['2027-10-27','2027-11-17']);
+ assert.equal(events.some(event=>event.date==='2027-12-08'),false);
+ // This validates published meeting dates, not rate-decision classification.
+});
+
+test('calendar labels the 2027 October strategy-only meeting without claiming a rate decision',()=>{
+ const client=readFileSync(new URL('../app/market-calendar/market-calendar-client.tsx',import.meta.url),'utf8');
+ assert.match(client,/item\.source==='fed_fomc'&&item\.id==='fomc'&&item\.date==='2027-10-27'/);
+ assert.match(client,/미국 FOMC 통화정책 전략 회의 · 금리 결정 없음/);
+ assert.match(client,/if\(item\.id==='fomc'&&\/잠정\|tentative\/i\.test\(item\.title\)\)return \`\$\{name\} · 일정 잠정\`/);
+ assert.match(client,/importance:releaseImportance\(item\.id,item\.title\)/);
+ assert.match(client,/if\(item\.id==='fomc'&&\(item\.source!=='fed_fomc'|!fomcEvent\)\)continue;|if\(item\.id==='press'\|\|\(item\.id==='fomc'&&!fomcEvent\)\)continue;/);
+});
+
 test('Fed annual parser rejects unpublished or incomplete year without synthesizing dates',()=>{
  assert.throws(()=>parseFomcAnnualCalendar(officialFixture,2028),/FOMC_YEAR_NOT_PUBLISHED/);
- assert.throws(()=>parseFomcAnnualCalendar(officialFixture.replaceAll('December','Dec'),2027),/FOMC_MEETING_ROW_INVALID/);
- assert.throws(()=>parseFomcAnnualCalendar(officialFixture.replace('7-8</div>','9-8</div>'),2027),/FOMC_MEETING_DATE_INVALID/);
+ assert.throws(()=>parseFomcAnnualCalendar(officialFixture.replaceAll('November','Nov'),2027),/FOMC_MEETING_ROW_INVALID/);
+ assert.throws(()=>parseFomcAnnualCalendar(annualSection(2027).replace('16-17</div>','18-17</div>'),2027),/FOMC_MEETING_DATE_INVALID/);
  assert.throws(()=>parseFomcAnnualCalendar(annualSection(2027).replace(/<div class="panel-footer">[\s\S]*$/, ''),2027),/FOMC_SECTION_INCOMPLETE/);
 });
 
