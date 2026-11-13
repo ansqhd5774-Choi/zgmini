@@ -137,3 +137,30 @@
 - **범위 한정 차단**: `AUTOMATION_BLOCKED(NO_APPROVED_EXACT_KEY_D1_READBACK_ACCESS)`. 기존 본 대화 연결과 Controller 작업으로 현행 5키의 *인증된 원격* D1 SELECT를 실행할 수 없음. 이는 임의 read SQL/op를 만들거나 원래 #296 쓰기 요청을 재실행하라는 허가가 아님.
 - **진행률**: **75%→75%(3/4)**. API Reader MISMATCH 0건 확정; 소스/테스트/API·D1·Cloudflare 운영 쓰기 및 신규 Runner 요청 0. 기존 읽기 실행의 원본 증거 확보와 검증 판정만 새로 완료.
 - **다음 필수 실행 하나(Cloudflare/D1 승인 소유자)**: **현재 시각의 기존 승인 exact-key 읽기 결과 5개**를 `key, exists, stored_at(ms), bodySha256, sourceVersion, observationDate, publishedAt`로 확보하고 정확한 Production Deployment ID/commit SHA를 **기존 정규 검증 결과 경로**로 인계. API 원담당은 각 receipt의 source/시간과 공개 5개 JSON을 비교한 뒤에만 `VERIFIED/MISMATCH`로 판정. source/DB/TTL/Worker 변경 금지.
+
+## 53차 — 정확키 D1 저장 본문과 API 응답 변환의 실제 소스 대조 (2026-11-14 KST)
+
+**53차 원본:** [#68 6863923778](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6863923778). 51차 완료점 75%(3/4) 보존. 44차 API 실측·51차 #296/#757 원장은 재사용하며 재실행하지 않음. 대상 main: `643b7c7c4372ffad552443fc312c6cb1b944e2fc`, 제어 main: `69e25a08a903dc8e52ef1093ec15837de4c20858`.
+
+### 새 검증 결과 — 공개 데이터 동치 판정의 안전한 비교 단위
+
+| D1 정확키 / 테이블 | 현재 main Reader 동작 | 승인된 읽기 결과와 비교할 정확한 단위 |
+| --- | --- | --- |
+| `market_public_snapshots_v1/detail:inflation-causal-public-19:r1` | `worker/inflation-causal-public-r1.mjs`가 D1의 `{payload,projection}` 중 검증된 `payload`만 JSON으로 응답 | `bodySha256`은 **원본 D1 body 문자열**로 계산. `API JSON`은 `saved.payload`와 내용·버전·관측일 대조. `projection.builtAt===D1.stored_at`, projection의 `sourceVersion/sourceStoredAt===payload` 확인 |
+| `market_public_snapshots_v1/detail:inflation-causal-candidates-7:r1` | `worker/inflation-causal-candidates-public-7-r1.mjs` 역시 `{payload,projection}` 저장, 검증 후 payload만 응답 | 상동. HTTP JSON 전체 SHA와 D1 body SHA가 **같아야 한다는 주장은 잘못** |
+| `public_feed_snapshots_v1/output/release-calendar/current` | `app/api/release-calendar/route.ts`가 `publicFeedStore.readOutput('release-calendar')`의 `row.body`를 응답 | 정확히 `kind=output,feed_key=release-calendar,snapshot_key=current` 조회. 저장 본문과 JSON 내용 대조, 개별 `sources.*.checkedAt`·`updatedAt` 검증. 계약상 모든 피드에 `sourceVersion`이 필수는 아님 |
+| `market_public_snapshots_v1/public:theme-etf-only:r1` | `worker/theme-etf-only-public.mjs`의 base seed는 그대로 반환되지 않을 수 있음. `readRollingPublic`은 별도 `public_feed_snapshots_v1/output/theme-etf-only-rolling/current`을 읽고 검증된 선택적 sidecar를 추가 가능 | 5개 키 중 base seed의 `exists/stored_at/bodySha256` 확인은 필요하지만 **그것 하나만으로 최종 7~10개 공개 응답 본문 동치 인증 불가**. base 및 실제 적용된 rolling/sidecar provenance를 구분. 503 `STORED_DATA_STALE`을 base 키 부재나 API 버그로 단정 금지 |
+| `market_public_snapshots_v1/detail:employment-r6:one-year:v1` | `worker/employment-r6-public-display.mjs`는 저장 `body`를 검증 후 직접 응답하고 `x-data-snapshot-at`을 D1 `stored_at`으로 생성 | 저장 body와 API JSON 내용, `sourceStoredAt`·`asOfDate`·29행·`formulaHash/methodologyVersion`·8일 freshness 확인. **이 계약은 `sourceVersion` 필수 검증을 선언하지 않음** |
+
+### 실제 저장·응답 측정과 분리할 증거
+
+- 위 판정은 **GitHub main source 정적 검증**이다. 현재 인증된 D1 SELECT 결과, 5개 현재 `stored_at/bodySha256`, 생산 시점 API JSON과 정확한 Cloudflare Production Deployment ID/SHA는 **아직 회수되지 않음**. D1 동치 **0/5**, 확정 API Reader mismatch 0.
+- 44차 공개 API 응답과 새로운 시각의 D1 row가 서로 다른 source/version이면 즉시 버그로 판정하지 않고 **관측 시각 및 정확한 게시 버전**부터 맞춘다. 원본 D1 body 자체·키·인증 토큰·원자료를 GitHub에 올리지 않음.
+- 기존 `scripts/pc-writer/independent-publication.mjs`의 `er1MonthlyD1Readback`은 **ER1 월간 피드 한정**(`isER1MonthlyFeedKey` 필터)이므로 5개 대상에 대한 현행 승인 Reader로 재목적 사용 불가.
+- 새 Cloudflare 접근권한/SQL/Controller operation/Runner 요청/one-shot Writer 재실행 없음. 코드·산식·D1·TTL·UI·배포 변경 없음. 이 문서만 기록.
+
+**LAST PASS:** 5개 저장 경로의 실제 조회 키와 JSON 응답 변환/검증 source 대조 완료. 기존 44차 공개 실측 재사용.  
+**FIRST FAIL (기존 관측):** 테마 HTTP 503/`STORED_DATA_STALE` (게시 freshness, Reader mismatch 아님).  
+**FIRST UNVERIFIED:** 현재 5키 원격 D1 메타/본문 SHA·동일 시각 API payload·Cloudflare 정확한 Deployment ID/SHA.  
+**상태/진행률:** `AUTOMATION_BLOCKED(NO_APPROVED_EXACT_KEY_D1_READBACK_ACCESS)` — 마지막 동치 검증 단계만; **75%→75%(3/4)**.  
+**다음 필수 실행 하나 / 담당:** **이미 승인된 Cloudflare/D1 읽기 소유자**가 정확키 5개의 `key,exists,stored_at,bodySha256` 및 각 Reader 계약에 맞는 `sourceVersion` 또는 `formulaHash/methodologyVersion`, 관측/게시 시각과 Production Deployment ID/SHA를 **기존 안전한 읽기 결과 경로**로 반환. 이후 API 담당이 정상화한 구조와 공개 원문을 비교하며, theme rolling/sidecar 미검증은 별도 UNVERIFIED로 유지한다.
