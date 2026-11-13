@@ -109,3 +109,31 @@
 **이번 변경:** 이 증거 문서 1개만; 테스트·CI/새 PR/PC/D1/Worker/운영 쓰기 0. 전체 진행률 **75%→75%(3/4)**.
 
 **다음 필수 행동 하나:** Cloudflare/D1 승인 소유자가 **기존 권한을 이용하는 정확히 해당 5개 키의 읽기 전용 응답 수단/결과**(존재·저장 시각·본문 SHA256·버전 및 Cloudflare Production exact deployment ID/SHA)만 확보해 원담당에게 반환한다. 사용자의 임의 SQL 실행이나 새로운 Controller op 도입이 아니라, 기존 정규 승인 읽기 경로의 확인/인계다. 확보하면 이 대화가 재개되어 API 실측 payload와 각 row를 정밀 비교하고, 확정 MISMATCH일 때만 최소 수정·테스트·선별 PR 진행.
+
+
+## 51차 API–사이트 연결 — 원본 D1 증거 재사용/현재 데이터 동치 판정 (2026-11-14 KST)
+
+**51차 지시**: [총괄 #68 댓글 6863655392](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6863655392), API 담당 항목 6. 현행 기능 `main=643b7c7c4372ffad552443fc312c6cb1b944e2fc`·제어 `main=69e25a08a903dc8e52ef1093ec15837de4c20858`, 브랜치 divergence 271 ahead/554 behind(51차 조사 시작 시점). 기존 완료점 75%=3/4 유지, 전체 merge/rebase·운영 변경 금지.
+
+### 이번에 신규 확인한 **기존 승인 실행의 실제** 증거
+- [D1 게시 #296 결과](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/296#issuecomment-6629178833): **그 시각** 정확한 D1 키 `detail:inflation-causal-public-19:r1`, `D1_READBACK_VERIFIED` / `INFL19_PUBLIC_PUBLISHED_READBACK`, 19개 READY, `sourceVersion=INFL19_PRESENTATION_3a974384f3772b194849f6632c04b01ef5c1086702a0ed610b552d02cb213cf9`, `sourceStoredAt=1793787605696` (원본 요청은 쓰기 1회였으나 **이번 요청에서 재실행하지 않음**).
+- [PC↔Public diff #757 결과](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/757#issuecomment-6712341556): `PASS/INFLDIFF_CHANGED`, `METADATA_ONLY`; PC version `INFL19_PRESENTATION_9c416a72dfcf4594b32df3775d5168734ed9cf8dd5cffda14259c44c8fb7a61a`, API version `INFL19_PRESENTATION_c77a4931df8baa7ac73c564e640f9080d0b614fb05bfd6e3891f138c8d2fcda5`, changed ID `18`의 `sourceStoredAt`만 변경. **해당 PC/공개 버전의 데이터·시각 차이에 대한 비교**이지 현재 D1 값/Production 배포 검증 아님.
+- [#736](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/736#issuecomment-6711645301), [#378](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/378#issuecomment-6642650288), [#314](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/314#issuecomment-6632193361)도 동일 one-shot 비교 이력. 결과는 `INFLDIFF_CHANGED`, **원본 완료/요청ID를 재사용·중복 실행하지 않음**.
+- **이번 대상 최신 공개 19**는 앞선 44차에서 `sourceVersion=INFL19_PRESENTATION_c12faa065da4ee689caa696b5ddc4a0e712bee632c9543a92edfcd79956a0f9b`, `sourceStoredAt=1794528018103`. #296/#757과 버전이 모두 다름. 따라서 과거 PASS를 현행 D1 `stored_at/bodySha256`의 합격으로 승격할 수 없음.
+- 기타 4개 공개 endpoint에 대해서도 **현행 버전이 일치하는 기존 승인 D1 readback 영수증**을 확인하지 못했다. 제어 A `writer-publication-evidence-readonly`는 ER1 로컬/게시 영수증 전용. 48차 allowlist/도구 계약은 재사용하고 중복 조사·요청 없음.
+
+### 51차 현재 판정
+| 정확한 공개 저장 키 | 기존 직접 D1 영수증 | 지금 API와 동일 버전/본문 | 상태 |
+|---|---|---|---|
+| `market_public_snapshots_v1 / detail:inflation-causal-public-19:r1` | **과거 #296 PASS** (오래된 sourceVersion) | **불일치하는 버전이라 현재 동치 인증 불가** | **UNVERIFIED** |
+| `market_public_snapshots_v1 / detail:inflation-causal-candidates-7:r1` | 미확보 | 미검증 | **UNVERIFIED** |
+| `public_feed_snapshots_v1 / output/release-calendar/current` | 미확보 | 미검증 | **UNVERIFIED** |
+| `market_public_snapshots_v1 / public:theme-etf-only:r1` | 미확보 | HTTP 503 `STORED_DATA_STALE`·독립 row 미검증 | **UNVERIFIED** |
+| `market_public_snapshots_v1 / detail:employment-r6:one-year:v1` | 미확보 | 미검증 | **UNVERIFIED** |
+
+- **LAST PASS**: 원본 #296의 당시 exact-key D1 게시+readback, #757 등 시차별 PC↔공개 API 비교 결과를 정확한 원본 Issue에서 확인. 5개 Production HTTP/JSON 상태(44차)는 기존 검증 완료점 재사용. 구 버전과 44차 공개 버전의 불일치를 식별, 구 영수증의 잘못된 재사용 차단.
+- **FIRST FAIL**: 현행 테마 API `503/STORED_DATA_STALE` (공개 데이터 freshness 실패, API Reader 원문 MISMATCH 확정 아님). `#757 INFLDIFF_CHANGED`는 과거 PC↔Public의 자연 시차이며 현행 API↔D1 실패로 오분류 금지.
+- **FIRST UNVERIFIED**: 현행 5개 D1 row의 `exists/stored_at/bodySha256/sourceVersion`, 필드별 관측일·게시일의 API 1:1 동치, Cloudflare Production exact Deployment ID/SHA.
+- **범위 한정 차단**: `AUTOMATION_BLOCKED(NO_APPROVED_EXACT_KEY_D1_READBACK_ACCESS)`. 기존 본 대화 연결과 Controller 작업으로 현행 5키의 *인증된 원격* D1 SELECT를 실행할 수 없음. 이는 임의 read SQL/op를 만들거나 원래 #296 쓰기 요청을 재실행하라는 허가가 아님.
+- **진행률**: **75%→75%(3/4)**. API Reader MISMATCH 0건 확정; 소스/테스트/API·D1·Cloudflare 운영 쓰기 및 신규 Runner 요청 0. 기존 읽기 실행의 원본 증거 확보와 검증 판정만 새로 완료.
+- **다음 필수 실행 하나(Cloudflare/D1 승인 소유자)**: **현재 시각의 기존 승인 exact-key 읽기 결과 5개**를 `key, exists, stored_at(ms), bodySha256, sourceVersion, observationDate, publishedAt`로 확보하고 정확한 Production Deployment ID/commit SHA를 **기존 정규 검증 결과 경로**로 인계. API 원담당은 각 receipt의 source/시간과 공개 5개 JSON을 비교한 뒤에만 `VERIFIED/MISMATCH`로 판정. source/DB/TTL/Worker 변경 금지.
