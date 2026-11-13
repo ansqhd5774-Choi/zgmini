@@ -1,3 +1,46 @@
+<!-- employment-r6-60th-exact-b-hash-and-reader-runtime-link-20261114 -->
+## 고용 R6 — 60차 승인 Provider·Collector 후보 바이트 및 현장 Reader 반환 대조 (2026-11-14 KST)
+
+**기능 진행률 87.5%(7/8) → 87.5%(7/8).** 60차 중앙 원본 https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6865373693. 제어 main `69e25a08a903dc8e52ef1093ec15837de4c20858`, 기능 main `643b7c7c4372ffad552443fc312c6cb1b944e2fc`, 전용 HEAD(before) `0424a5e9a735072435e70bd965527c2255134473`. 제어 AGENTS.md·GENERAL_CHAT_START.md·PC_AUTOMATION_STANDARD.md 및 2PC 명세를 관련 범위 재확인. 58차 Windows Reader [15/15 PASS Run 43509885494](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43509885494) **재실행 0**.
+
+### 새로운 실제 무결성 대조 — 정확한 2개 B 후보 원문 SHA-256
+
+GitHub Connector로 각 **B manifest + manifest의 정확한 candidateSourceSha Git 파일 원문**을 다시 읽고, 원문 바이트의 SHA-256을 독립 계산하여 `afterSha256`과 직접 대조했다. 해시 함수 자체는 표준 `abc` 벡터로 자체 검증했다.
+
+| 항목 | Provider | Collector |
+|---|---|---|
+| 정규 승인 원문 | `approvals/writer-updates/employment-r6-2015-600-onefile-20261109.json` | `approvals/writer-updates/employment-r6-backfill-window-collector-20261109.json` |
+| 승인 상태/효과 | APPROVED_B, **당시 B 설치 성공 #1040** | APPROVED_B, **원본 B 설치 미입증 #1063** |
+| 승인 candidateSourceSha | `e04889841beb4c9efe1c263d748f2b45cf7a4c2a` | `b1541453df0a92af748eb8e191c96bb3ef1e6071` |
+| 승인 파일 1개 | `lib/market-score/employment-r6-provider.mjs` | `lib/market-score/employment-r6-collector.mjs` |
+| 승인 before SHA-256 | `750e4d867b0f357b4ba7603661e9dbaa3d77921e13678488fcbf9d3fd85d4140` | `5be5155196c8539639f6bb5228d5af145646e0aff7f7c92a86ba3341d83efc39` |
+| 승인 after SHA-256 | `a3474258efcbd12c8ac081d07a0d7ffb3055b5ddd8d35080248aecf60ba30381` | `f22b2f1447e462d3101caf027323572606db61352ab6a53524dd406cca7a4915` |
+| **실제 Git 후보 원문 계산 SHA-256** | `a3474258efcbd12c8ac081d07a0d7ffb3055b5ddd8d35080248aecf60ba30381` **MATCH** | `f22b2f1447e462d3101caf027323572606db61352ab6a53524dd406cca7a4915` **MATCH** |
+| 후보 Git blob SHA | `214cd04819cabef3ba93643a5e283201edfb3a17` | `ca74957ab150b254347d4d1a1452d31350cc3f8a` |
+| 기능 main Git blob SHA (다른 source) | `fe6c914982ba0b147ff38999faa4e6dbdb659bff` | `6041062b77eb510e4dcd9ed52ec20e28e68c39fb` |
+| 원담당 브랜치 Git blob SHA (다른 source) | `dcf82943d20d2ff49bc3c81fefac4be7508d0874` | `929d41c7faaacf9980604836ac0c6c083eda1769` |
+
+**주의:** Git blob 불일치는 단순히 Git branch/source 내용의 차이이며, 현장 설치된 source SHA나 실PC의 성공/실패를 나타내지 않는다. 실제 PC `E:\\ZGmini\\projects\\zgmini-earnings-history-pc-release`는 **B manifest의 당시 지정 경로**이지 현재 root의 재조회 증거가 아니다. 검증된 Provider 역사적 [#1040 result](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1040#issuecomment-6738212099): `WRITER_B_INSTALLED_VERIFIED`, `sourceSha=f422cd570b679f21cebbd76db11310fa9087ee5f` 당시 LOCAL_OVERLAY. Collector [#1063 result](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1063#issuecomment-6742556270): `WRITER_B_RECOVERY_REQUIRED/WRITER_B_CORE_REENABLE_SOURCE_PAIR_STOP`, `sourceSha=null`; #1087 Core 복구는 collector 설치 증명 아님. #1195 별도 B 5파일 성공 범위에도 provider·collector 없음. **새 Draft PR #1062/#1064나 개발 main 바이트는 과거 B manifest 승인 자동 승계 아님.**
+
+### Reader A의 정확한 현재 소스 및 반환/판정 필드
+
+- **등록된 GitHub 제어 main**: `config/operations.json` blob `c906683afd487762f5bc32f50a199679df200dc3`에 `employment-r6-collection-evidence-readonly` grade `A`, timeout 60s, resource light. `controller/operations.mjs` blob `b507697ce089254cd61932f1d5b703b48f93e0db`가 `inspectEmploymentR6CollectionEvidence(dataRoot)` 호출함. **운영 PC Controller 현재 설치 SHA 및 allowlist 미검증**.
+- GitHub main의 Reader blob `2daa4e03b6affe5fd44c68311eca57ddee614b0e`; 별도 개선 [Draft #1361 HEAD `aa5032ee5646ae352e87f63d72917885157d6db6`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1361)의 Reader blob `9ead740f2935b5f6f511c2006e7533c525128ca3`. 서로 **다름**. 후자는 [Windows Node Run 43509885494](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43509885494) 15/15 PASS지만 **Draft/unmerged/미설치**. 중앙 Owner는 현재 PC 설치 증거 없이 그 반환 형태가 운영에 적용됐다고 추정하지 말 것.
+- Readback 기본: `status`, `code`, `sqliteOpened`, `scope`, `providerCalls`, `d1Writes`, `operationalWrites`; DOL/BED 각 `BACKFILL/ONE_YEAR/RELEASE`의 `status`, `completedAt`, `failureCode`, `providerRequests`, `collectedRows`, `inserted/revised/rejected`, `missingSeriesCount`, `knownMissingSeries`, `latestInitialClaimsObservationDate`(DOL).
+- `eta539[]`: `mode`, `snapshotStoredAt`, `httpStatus`, `historyWeeks`, `selectedWeeks`, `firstSelectedWeek`, `latestCompleteWeek`, `coreCount`. `[{"status":"NOT_STORED"}]` 가능. **600w 요청 마커/HTTP 200만으로 실제 577주×51지역 저장을 의미하지 않음**.
+- `stateClaims`: `sampledWeeks`, `firstWeek`, `lastWeek`, `complete51Weeks`, `incompleteWeeks`, `latestComplete51Week`, `latestStrict52WeekCandidate`, `strict52WeekCandidateCount`, `firstWindowBreak`, `latestWindowBreak`, `recentIncompleteWeeks`; **실제 원자료 10년 검증은** `stateClaims.fullTenYearRawCoverage.{status,observedRawWeeks,requiredRawWeeks,requiredRows,referenceWeeks,firstRequiredWeek,latestRequiredWeek,firstFailureWeek}`. 개선 Reader에서 `status=REGION_51_COVERAGE_GAP` 시 `missingRegionCodes` 선택 반환. 결손 주 전체가 빠진 경우 `firstFailureWeek`만 가능. 누락/결측과 0을 혼동하지 말 것.
+- `stateClaims.fullTenYearRawCoverage.status` 가능 상태: `INSUFFICIENT_RAW_WEEKS` / `NONCONSECUTIVE_10Y_WEEKS` / `REGION_51_COVERAGE_GAP` / `PRIOR_4W_ZERO_BASE` / `RAW_PRECONDITIONS_COMPLETE`. `result.status=PASS`와 `code=R6_DOL_BED_STORED_EVIDENCE_READONLY`는 **읽기 진단 성공만 의미**, 실제 `RAW_PRECONDITIONS_COMPLETE`와 다르고, 그것조차 점수/게시 29/29 성공의 충분조건이 아님. `COUNT_ONLY_NOT_PIT_OR_FORMULA_VERIFICATION` 표시 계약 유지. 고정 시점 577주×51=29427행은 합성 표준이고 실제 관측일별 requiredWeeks는 Reader 산출값으로만 비교.
+
+### 중앙 실PC 기존 결과 링크·다음 단일 결과 반환 조건
+
+- **기존 운영 #1351:** [Run 43429486924](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43429486924) Job `131899103441`, original requestId `pc-8ff3a2e8-1bc9-4470-81ad-7789fc0b2b13`, **현 시각 `queued/conclusion=null`, Windows/JSON/TXT 0**. 기존 요청의 operation은 `core-runtime-source-readonly`로 **고용 새 Reader 실행 요청이 아님**. 별도 CI PC `DESKTOP-N62L0NG`는 운영 호스트 `PC`의 설치·원자료 증거가 아니다. 중앙 60차 지시 자체도 아직 실PC 반환 증거 아님.
+- **기존 승인된 운영 PC readback이 도착해야 비교할 비민감 실제 필드**: `capturedAt/host`; 6개 `zgmini-pc-control` Runner online/busy 및 #1351 배정; Controller `installedSha`·`installedOperations`(해당 고용 A 포함 여부)·`beforeSha`·lease; Writer의 `sourceRoot`, 실제 `HEAD`, `config.source` SHA; 현장 `employment-r6-provider.mjs`와 `employment-r6-collector.mjs` **실제 SHA-256** (위 승인 before/after와 비교, 일치하지 않으면 UNKNOWN/DRIFT로 판정하되 즉시 덮어쓰기 금지); Watchdog/Guardian/PAUSE/DRAIN, Supervisor PID/fresh heartbeat. 값이 없으면 null/UNKNOWN으로 보존. **키·원문·실경로 전체·JWT/토큰 출력 금지**.
+- 중앙 Owner가 동일 시각 실제 source/allowlist 확인 뒤 이미 설치·승인된 Reader A 수행 조건이 충족한 경우에만 고유 안전 절차로 1회 조회하여 `eta539[]`, `stateClaims.fullTenYearRawCoverage`를 기존 원장과 연결한다. 현재 설치 없으면 Reader 신규 설치는 정확한 별도 승인 Owner 경로만 허용. 확보된 `firstFailureWeek` 및 허용된 `missingRegionCodes`가 실제 최초 결손 주·지역 증거이며 28/29 보존, 필요 자료만 기존 승인 수집→로컬 계산·저장→게시 검증한다.
+
+**LAST PASS:** exact approved Provider·Collector candidate 파일 2/2 SHA-256 = B manifest afterSha256 실제 원문 검증; 58차 Node 15/15 기성 PASS, Reader main vs Draft blob 및 기능 branch blob 차이 확인; GitHub #1351 상태 확인. **FIRST FAIL:** 현행 운영 PC 설치 SHA·Writer 파일 현재 바이트·Controller 새 A 허용목록·원자료 51×577주 실측 없음(`AUTOMATION_BLOCKED/STATE_UNKNOWN`, 실제 RUNTIME_FAILED 아님). **다음 한 작업:** 중앙 단일 Owner 기존 승인 실PC READ-ONLY 결과 1회 회수하여 위 정해진 불일치/등록/Reader 필드에 실제 관측을 연결. 추가 pc-job/RDC/CMD/Writer B/Controller C/SQLite/D1 쓰기·배포/강제해제 0.
+
+---
+
 <!-- employment-r6-58th-exact-node-source-ci-20261114 -->
 ## 고용 R6 58차 — PR #1361 정확한 HEAD Reader Node 테스트 실행, FIRST FAIL 최소 수정, 재실행 PASS (2026-11-14 KST)
 
