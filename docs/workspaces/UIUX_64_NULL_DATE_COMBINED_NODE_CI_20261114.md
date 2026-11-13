@@ -37,3 +37,14 @@
 ## 4. 다음 필수 실행 하나
 
 **담당: 승인된 소스 통합 Owner.** 결합 Draft [PR #1068](https://github.com/ansqhd5774-Choi/zgmini/pull/1068) HEAD `12f0bf05c306788e76a3974dfefcc499499e7fe1`의 5파일 + [Node CI #43517251887](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43517251887)을 기준으로 **정규 main 통합 GO/NO-GO 결정**. 이전 #1067 단독 PR의 중복 merge 여부를 확인할 것. PR/CI로 운영 설치나 Production 완료를 선언하지 않고, 승인된 배포와 무료 브라우저 접근 정상화 후 실제 8뷰+API 일치 검증은 별도 단계.
+
+
+## 65차 — 정규 main 통합 판단을 실제 요청하고 HOLD 상태 보존
+
+- 기준일 2026-11-14 KST, UIUX 전체 진행률 **25%→25%**. 최신 기능 main `643b7c7c4372ffad552443fc312c6cb1b944e2fc`, UI 브랜치 착수 HEAD `78e864ab7e7f6b80e9c039a72bf5ffea88aa61ef`, 제어 main `69e25a08a903dc8e52ef1093ec15837de4c20858`. 65차 공식 [#68 지시 #6866393700](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6866393700)의 **UIUX 항목**만 적용했다.
+- [중앙 소스 리뷰 #6866344306](https://github.com/ansqhd5774-Choi/zgmini/pull/1068#issuecomment-6866344306)는 정확 HEAD `12f0bf05c306788e76a3974dfefcc499499e7fe1`, base main `643b7c7c4372ffad552443fc312c6cb1b944e2fc`, 5개 변경파일에 대해 `SOURCE_INTEGRATION_REVIEW_GO`를 선언하지만 `MAIN_MERGE_HOLD`와 `PRODUCTION_UNVERIFIED`를 명시적으로 유지한다. [Draft PR #1068](https://github.com/ansqhd5774-Choi/zgmini/pull/1068)는 **OPEN/Draft/미병합**이고 메인 변경이 없다. [#1067](https://github.com/ansqhd5774-Choi/zgmini/pull/1067)의 3개 파일은 #1068에 포함되므로 별도 병합 금지.
+- **LAST PASS (재사용):** 해당 정확 HEAD의 [Node CI #43517251887](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43517251887) `completed/success`, Build/Type PASS, Regression **4,184/4,193 PASS, 0 FAIL, 6 SKIP, 3 TODO**; PC publication 11/11, Cloudflare readonly 69/69. source-only 중앙 리뷰 GO. 성공된 테스트·소스 검증 재실행 **0건**.
+- **FIRST FAIL/남은 한정 실패:** [모의 Browser Run #43517251882](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43517251882)는 `tests/fear-greed-education-browser-r4.mjs:54`의 한국 교육 hidden selector `.zg-fg-korea .zg-fg-intro` 타임아웃으로 **FAIL**. [이전 #1067 브라우저 #43512979910](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43512979910)에도 같은 실패가 있어 중앙은 결합 UI 5파일의 회귀로 확정하지 않는다. FAIL을 PASS로 지우거나 동일 브라우저 실행 반복하지 않음. 실제 Production 4 URL × PC1440/모바일390 **8/8 UNVERIFIED**, 동시 공개 API JSON 5개·Cloudflare Deployment SHA는 미확인. 승인 무료 브라우저 Host permission/SOCKS/DNS/credit 차단도 이전 실패로 보존하고 재요청 0.
+- **이번 실제 후속 실행:** 허용된 GitHub PR 댓글 경로로 정규 source 통합 Owner에게 [#1068 exact SHA GO/HOLD 결정 요청 #6866461139](https://github.com/ansqhd5774-Choi/zgmini/pull/1068#issuecomment-6866461139)을 **한 번만 등록**, 본문 완전 일치 원격 재조회 PASS. 명시된 요청은 중앙 SOURCE_GO와 독립된 `MAIN_MERGE_GO/HOLD` 결정이며, 댓글은 승인 또는 타 일반 대화 자동 수신의 증거가 아니다.
+- **운영 변경:** 신규 기능 코드 변경·추가 테스트·CI 재실행·source merge·PR Draft 해제·Cloudflare/DB/D1/PC/Runner 실행 **0건**. 본 문서 인계 판정만 변경.
+- **다음 필수 실행 정확히 하나:** **승인된 source 통합 Owner가 #1068 5개 파일/정확 HEAD에 대해 정규 main 병합 GO 또는 HOLD/NO-GO를 기록**. 권한 있는 GO 및 정상 통합·배포가 실제 확정될 때만 Production API/8뷰 검증으로 이동. 소스 GO·노드 CI 성공을 병합/배포 실증으로 승격하지 않는다.
