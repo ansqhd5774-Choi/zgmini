@@ -1,3 +1,22 @@
+<!-- employment-r6-followup-reader-first-gap-20261114 -->
+## 53차 후속 독립 소스 — 기존 A Reader 최초 결손 주·지역 정밀화 (2026-11-14 KST)
+
+**기능:** 87.5%(7/8) → 87.5%(7/8); D1 기존 28/29 READY, 마지막 1개 PARTIAL_HISTORY 유지. 원본 53차 승인·운영 설치 확인은 직전 섹션과 [#68 결과 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6864040245)로 완료되어 중복 재검사/재요청 없음.
+
+**발견된 실질적 결함:** 신규 A `employment-r6-collection-evidence-readonly`의 `fullTenYearRawCoverage`가 (1) 저장 576주 등 부족분 중 특정 완전 주 부재의 첫 실제 결손 날짜 대신 null을 내거나, (2) 577주 개수는 맞지만 한 날짜가 통째로 빠진 경우 해당 누락일 대신 다른 저장 주를 가리킬 수 있음. 지역 50/51인 주의 실제 빠진 고정 주 코드는 반환하지 않아 53차의 첫 결손 주·지역 실측 목적과 불일치. **운영 DB에서 발생했는지는 UNKNOWN.**
+
+**실제 허용 source-only 작업:** 공통 Controller 설치는 건드리지 않고 제어 main `69e25a08` 기준 독립 브랜치 `fix/employment-r6-evidence-first-gap-20261114`에 정확한 2파일 선택적 수정 및 [Draft PR #1361](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1361), [커밋 6286a7de](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/6286a7deeed0f17e25cb4148835a4539f3523db7) 원격 저장. `controller/employment-r6-collection-evidence-readonly.mjs`은 승인된 주간/선행 4주 산식·A read-only scope 유지하면서 필수 달력 주를 map으로 정확히 일치시켜 최초 실제 없는 날짜를 반환, 첫 `REGION_51_COVERAGE_GAP`에서 해당 주의 고정 51개 공공 지역 코드만 1회 SELECT DISTINCT하여 누락 코드 배열을 반환. 원자료·비밀·값 반환 없음, DB 쓰기·공급자 호출·D1·설치 변경 0. `tests/employment-r6-collection-evidence-readonly.test.mjs` 기존 2개 assertion 강화 + synthetic 2개 추가.
+
+**검증의 정확한 범위:** Diff 2파일/1 commit, PR open/draft/main 미병합. [자동 CI Run #43502771075](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43502771075)는 SUCCESS지만 실제 **C996 무관 27/27 tests**만 수행해 본 Reader 회귀 2개나 전체 Reader 테스트 합격으로 환산 **금지**. 동등 로직을 Node22 메모리 SQLite에서 독립 시뮬레이션한 5시나리오 PASS는 실제 GitHub Reader 모듈/실PC 데이터 실증이 아님. 신규 소스 정밀 Reader 테스트의 실제 CI PASS는 **NOT_VERIFIED**.
+
+**LAST PASS:** 정확한 PR #1361 2파일 remote source readback/독립 로직 시뮬 5/5 PASS; 직전 #1062/#1064 CI 성공은 별개 보존. **FIRST FAIL:** Reader 변경 자체의 대상 테스트 CI 없음, 운영 A 설치 확인 없음, [기존 #1351](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43429486924) Runner queued/PC JSON·TXT 0. 운영 DOL 실제 최초 결손 주·지역 UNKNOWN; source-only PR 성공 ≠ 29/29 게시.
+
+**다음 한 단계(운영 경로 Owner):** 기존 승인된 운영 PC 직접 읽기로 #1351 Runner/Controller 설치 SHA·A 허용목록, provider·collector 설치 실바이트와 manifest 전후 SHA를 반환한다. 신규 Reader 패치를 포함한 Controller 설치는 본 Draft나 임의 테스트 PASS로 허가되지 않으며 중앙 단일 Owner의 정확한 범위·기존 보호/승인·Reader 대상 회귀 검증 후에만 가능. 해당 A 실제 등록/조회 뒤 최초 결손 주·지역과 577연속 완전주×51지역을 실측하고 기존 28개 유효 결과 보존하여 마지막 지표를 계산·게시한다.
+
+**운영 PC/SQLite/공급자/D1/Cloudflare 변경 0, 기존 requestId 중복 실행 0, RDC 0.**
+
+---
+
 <!-- employment-r6-53rd-operational-approval-boundary-20261114 -->
 ## 53차 고용 R6 — B 승인 소스와 신규 A 실제 등록 분리 (2026-11-14 KST)
 
