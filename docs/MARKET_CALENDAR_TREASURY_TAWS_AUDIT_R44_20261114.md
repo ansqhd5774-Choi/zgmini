@@ -65,3 +65,13 @@
 6. **남은 TA_WS 5점:** 지금까지 진본 PC `source-inventory-runtime-readonly` 신규 A 설치 및 Treasury 원문 365일 최신 `row/eligible/SHA/WAL` 실제 JSON/TXT 없음. #1299 기존 A `sqliteOpened=false`는 독립 원문 감사 대체 불가. 실제 Reader 설치 증거 확인 후 신규 고유 1회 → 원문 감사 → D1/Production 같은 버전 재조회만 완료 조건. **전체 95/100 유지**.
 
 **48차 변경 파일/증거:** 이 문서 단독 수정 + 신규 테스트 1파일의 독립 Draft PR #1063; 원격 재조회/CI는 결과별 분리. 설치 manifest·Controller/Runner/Writer·운영 SQLite·D1·재수집·배포·DNS·예약 변경 없음.
+
+
+<!-- market-calendar-r48-fomc-ci-success-20261114 -->
+### 48차 FOMC 격리 회귀 결과 확정 — 실제 CI PASS, 운영 효과 0
+
+- Draft [PR #1063](https://github.com/ansqhd5774-Choi/zgmini/pull/1063), 테스트 전용 HEAD `d191a91a4b73936c25c2cfa3499674264f313594`.
+- **첫 CI 실패:** [Run #43496396856](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43496396856) `Regression tests`의 `tests/release-calendar-fomc-annual.test.mjs:46`, `AssertionError: Missing expected exception`. `officialFixture.replace('16-17',...)`가 2027년 November 대신 2026년 June의 동일 날짜를 먼저 손상시킨 테스트 fixture 범위 결함. 운영 FOMC 수집 오류가 아님.
+- **최소 수정:** 오염 검사를 `annualSection(2027).replace('16-17</div>','18-17</div>')`로 제한. [수정 커밋 `d191a91`](https://github.com/ansqhd5774-Choi/zgmini/commit/d191a91a4b73936c25c2cfa3499674264f313594).
+- **재검증 완료:** [Run #43496813871](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43496813871) `completed/success`. 동일 GitHub CI job `check`의 **Build, Type check, Regression tests, PC publication recovery tests, Cloudflare candidate read contracts 모두 PASS**. PR 변경 파일 **`tests/release-calendar-fomc-annual.test.mjs` 하나**, Draft 미병합 유지.
+- **판정:** 공식 최신 2027 일정 회귀 테스트 패치 합격(DONE SOURCE_ONLY). 실제 FED 공급원 GET/HTML·원본 PC `SOURCE_FAILED` 근본원인·동일 Production D1/TA_WS 감사 **NOT_VERIFIED**. 설치/운영 변경 0, **시장 캘린더 전체 95% 유지**.
