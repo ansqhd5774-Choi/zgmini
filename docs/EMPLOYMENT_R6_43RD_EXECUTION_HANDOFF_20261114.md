@@ -1,3 +1,36 @@
+<!-- employment-r6-51st-execution-primary-20261114 -->
+## 51차 최신 실제 실행 결과 (2026-11-14 KST)
+
+**전용 담당 고용 R6. 시작 7/8=87.5% → 종료 7/8=87.5%.** 기존 공개 D1 `28/29 scored READY`, `STATE_CLAIMS_BREADTH` 한 개 `PARTIAL_HISTORY`(점수 null, 마지막 게시 관측일 2025-07-19) 보존. 현 PC 신규 원자료/게시 실증 0건.
+
+**51차 원본 고용 담당 지시:** [제어 #68 51차](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6863655392), 원문 지시: Draft #1062(2파일)·#1064(3파일) 기존 완료 재사용, 둘의 파일 교집합 0, 600w 요청 성공 ≠ 577연속주×51지역 PASS, source-only 안전 검증 독립 계속. `main`은 기능 `643b7c7c4372ffad552443fc312c6cb1b944e2fc`, 제어 `69e25a08a903dc8e52ef1093ec15837de4c20858`로 확인, 전용 브랜치 `main` 대비 71 ahead / 93 behind (51차 소스 작업 후 비교). 전체 병합/rebase/강제 정리 없음.
+
+### 실제 완료 소스 작업 — 현재 main의 승인된 안전 동작을 전용 브랜치에 복원
+
+정적 소스 교차검토 결과 **전용 오래된 브랜치의 DOL `fetchDolClaims`는 전국 DOL 1차 응답 성공 후 ETA539 2차 호출이 실패하면 전체 그룹을 throw**하여 전국 원자료를 정상 저장·부분 실패 기록하는 최신 `main`의 보호 동작이 빠져 있었음. 해당 고장 *가능성*은 소스로 확정, **실제 #1169 부분 수집 원인은 아직 UNKNOWN**.
+
+- `lib/market-score/employment-r6-provider.mjs`: 최신 `main`의 전국 정상 데이터 보존 / state ETA539 실패 `DOL_ETA539_SOURCE_FAILED` 분리 / snapshots 국가 1개만 보존하는 기존 검증 동작을 지정 브랜치로 선택적으로 이식. 단, 원담당에 이미 반영된 승인 BACKFILL **600주** 요청 설정은 보존. [커밋 `a1f7ab44`](https://github.com/ansqhd5774-Choi/zgmini/commit/a1f7ab442e3eceec4d426dc73f159c3fd3c872b3).
+- `lib/market-score/employment-r6-collector.mjs`: `partialFailureCode`의 안전한 `DOL_ETA539_SOURCE_FAILED` 판정 유지, 기존 DOL 전용 provenance·600주 수집 성공/당일 시도 중복 방지 유지. [커밋 `2aa7d4dd`](https://github.com/ansqhd5774-Choi/zgmini/commit/2aa7d4dd30645841c00692d2acc673ff1d042fa1).
+- `tests/employment-r6-backfill-600w-resume.test.mjs`: 전국 XML 정상 200 → ETA539 HTTP 503을 **가상 fetch**로 주입, 4개 전국 지표 보존·state 누락·run PARTIAL·에러 기록·가짜 600주 window 성공 표시 금지 확인. 기존 7개 회귀와 합계 **8/8**. 전용 커밋 [`680596a0`](https://github.com/ansqhd5774-Choi/zgmini/commit/680596a054ce571855a2a610f15560b29258dee0).
+- **별도 선택적 검증**: [기능 Draft PR #1064](https://github.com/ansqhd5774-Choi/zgmini/pull/1064) 현재 main 기준 변경 파일 정확히 **3개 동일**(`provider`, `collector`, `tests/employment-r6-backfill-600w-resume.test.mjs`), HEAD `bce5a2a52cbe34bd9f85e41d8e2e33b59b84f190`. 현재 `main`의 DOL 부분 실패 보호 동작과 600주 로직의 함께 쓰임 검증. [CI Run #43500043358](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43500043358) **SUCCESS** / 신규 테스트 8/8 PASS / 전체 4186 tests, 4177 PASS, 0 FAIL, 6 SKIP, 3 TODO, 별도 11/11·69/69 PASS. Draft는 아직 main 미병합·PC 미설치. [기존 #1062](https://github.com/ansqhd5774-Choi/zgmini/pull/1062) `c3` 공란→허위 0 패치/4회 회귀 성공 별도 보존, 두 PR 파일 교집합 0.
+
+### 독립 공식 원본 조회와 증거 경계
+
+- ETA539 공식 데이터 원본 `https://oui.doleta.gov/unemploy/csv/ar539.csv`; DOL [정부 데이터 카탈로그](https://catalog.data.gov/dataset/unemployment-insurance-weekly-claims-extended-benefits-trigger-data-eta-539)에서 ETA539 과거 주간 자료를 공식 등재한 사실 확인.
+- 독립 WEB CSV 직접 GET은 `text/csv` 미지원으로 원문 파싱 불가, 이번 분리 실행 환경 다운로드는 DNS 문제로 실패. **운영 PC 요청·공급자 API 수집기 호출은 0회**, 원문 직접 전체 감사/첫 결손일 확인 `NOT_VERIFIED`. 웹 다운로드 장애를 운영 공급자 장애로 확정하지 않음.
+- **현재 DOL 첫 실제 결손 주·지역**: UNKNOWN. 마지막 유효 게시 관측 2025-07-19은 최초 누락 관측일이 아님. 검증해야 할 원자료 계약은 **577개 연속 완전주×51지역**, 계산 29/29은 실제 로컬/게시 재조회 전 `NOT_DONE`.
+
+### LAST PASS / FIRST FAIL / 다음 필수 실행 하나
+
+- **LAST PASS** = 51차 본인 소스 수정 dev 브랜치 3파일·기능 PR #1064(3파일) Remote CI 성공, 8/8 회귀/전체 0 FAIL. 기존 D1 28/29 공개 성공(2026-11-10 실측) 독립 보존.
+- **FIRST FAIL (운영 게이트)** = 현재 운영 Controller 마지막 실측 `badad912…`의 `employment-r6-collection-evidence-readonly` 미등록/정밀 A readback 0. 최신 GitHub control main 37 allowlist는 설치 근거 아님. 기존 [#1351 / Run #43429486924](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43429486924)은 재조회 여전히 **queued/Runner 미배정**, PC JSON/TXT 없음, `AUTOMATION_PENDING`. 실제 DOL `RUNTIME_FAILED` 증거 아님.
+- **단 하나의 다음 필수 실행 (중앙 단일 운영 Owner):** 기존 #1351 실행 배정·원본 PC source/installed Controller allowlist·lease/Owner 상태를 **기존 승인된 직접 읽기 경로로** 확인하고, 공유 #996 C 보호/정규 exact manifest 범위에서 `employment-r6-collection-evidence-readonly` 등록·실제 A readback 증거를 확보해 원담당에게 반환. #1351 새 요청/재실행·무승인 설치·임의 CMD/SQL/RDC 금지.
+- 이후 고용 원담당: 신규 A 단회로 **첫 결손 주·지역, ETA539 600w snapshot/SQLite checkpoint**, 운영 PC provider/collector exact SHA 조회 → 부족 구간만 승인 B 수집/SQLite 재조회 → 승인 기존 R2로 29/29 로컬 계산·ledger→D1 sourceVersion/storedAt→Production API/UI 동일성 확인. 자연 예약 검증 제외.
+
+**51차 운영 자원 변경:** 운영 PC source/SQLite/D1/Controller/Task/Cloudflare 0건. 검증 CI 가상 테스트의 데이터는 실제 raw 관측 아님.
+
+---
+
 <!-- employment-r6-48th-primary-status-20261114 -->
 ## 48차 최신 실행 결과 (2026-11-14 KST · 아래 43차 기록은 당시 이력)
 
