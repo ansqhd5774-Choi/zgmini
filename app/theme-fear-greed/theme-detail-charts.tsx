@@ -2,6 +2,7 @@
 import {useEffect,useMemo,useRef,useState} from 'react';
 import {usePlotArea,useXAxisScale,useYAxisScale,ReferenceDot} from 'recharts';
 import {extremaLeader,placeExtremaLabels} from '../../lib/chart-extrema.mjs';
+import {validThemeChartDay} from '../../lib/theme-chart-day-r62.mjs';
 import {themeTooltipRows} from '../../lib/theme-tooltip-rows.mjs';
 import {Search} from 'lucide-react';
 import {CartesianGrid,Line,LineChart,ReferenceArea,ReferenceLine,ResponsiveContainer,Tooltip,XAxis,YAxis} from 'recharts';
@@ -16,7 +17,7 @@ const CATALOG=THEME_GROUPS.flatMap(g=>g.items.map(name=>({name,group:g.name})));
 const COLORS=['#a3e635','#2dd4bf','#38bdf8','#ff8729','#b777ed','#ffd438','#f15aa7','#ff6464','#9fb1c5','#16d8d7','#e76aba'];
 const PERIODS=[['1W',7],['1M',30],['3M',90],['6M',180],['1Y',365]] as const;
 const validScore=(v:unknown):v is number=>typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=100;
-const validDate=(v:unknown):v is string=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(Date.parse(v+'T00:00:00Z'));
+const validDate=(v:unknown):v is string=>validThemeChartDay(v);
 const deltaText=(v:number|null)=>v===null?'—':(v>0?'+':'')+v.toFixed(1)+'p';
 const deltaState=(v:number|null)=>v===null?'is-missing':v>0?'is-up':v<0?'is-down':'is-flat';
 const scoreColor=(v:number|null)=>v===null?'#8299ac':v>=75?'var(--zg-score-extreme-greed)':v>=55?'var(--zg-score-greed)':v>=45?'var(--zg-score-neutral)':v>=25?'var(--zg-score-fear)':'var(--zg-score-extreme-fear)';
@@ -121,6 +122,7 @@ export default function ThemeDetailCharts(){
  const [compareDays,setCompareDays]=useState(90),[comparisonPinned,setComparisonPinned]=useState(false);
  // Never display a cached score once the stored-only API has failed.
  const ready=useMemo(()=>acceptedThemes(error?null:payload),[error,payload]);
+ const displayAsOf=validDate(payload?.observationDate)?payload?.observationDate:null;
  const topOne=useMemo(()=>new Set(ready.slice(0,1).map(t=>t.name)),[ready]);
  const currentVisible=visible??topOne;
  const matches=(name:string,g:string)=>(group==='전체'||group===g)&&name.toLocaleLowerCase('ko').includes(query.trim().toLocaleLowerCase('ko'));
@@ -162,7 +164,7 @@ export default function ThemeDetailCharts(){
  const soloHigh=soloPoints.reduce<(typeof soloPoints)[number]|null>((best,p)=>!best||p.score>best.score?p:best,null);
  const soloCurrent=soloPoints.at(-1);
  return <div className="zg-sfg-content zg-tfg-content">
-  <p className="zg-sfg-as-of">{ready.length?'기준일 '+(payload?.observationDate??ready[0].date).replaceAll('-','.')+' · 공개 '+ready.length+'개 / 전체 '+CATALOG.length+'개':'전체 '+CATALOG.length+'개 테마'}</p>
+  <p className="zg-sfg-as-of">{ready.length?'기준일 '+(displayAsOf??ready[0].date).replaceAll('-','.')+' · 공개 '+ready.length+'개 / 전체 '+CATALOG.length+'개':'전체 '+CATALOG.length+'개 테마'}</p>
   <div className="zg-tfg-toolbar">
    <div className="zg-tfg-search-control" ref={searchContainerRef}>
     <button type="button" className="zg-tfg-search-toggle" aria-label={searchOpen?'테마 검색 닫기':'테마 검색 열기'} aria-expanded={searchOpen} aria-controls="zg-tfg-search-popover" onClick={()=>{if(searchOpen)closeSearch();else setSearchOpen(true);}}><Search size={16} aria-hidden="true"/></button>
