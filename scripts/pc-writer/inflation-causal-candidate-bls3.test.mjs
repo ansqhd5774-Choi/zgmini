@@ -138,6 +138,9 @@ test('official BLS 2025-10 X gap is not fabricated as numeric CPI (both series)'
   const duplicate=sample(rent,'438.237','451.337');
   duplicate.data.push({year:'2025',period:'M10',value:'438.7',footnotes:[]});
   assert.throws(()=>normalizeInflationCandidateBls(payload(duplicate,sample(ownerEquivalentRent,'431.134','446.588')),{group:'cpi'}),/VALUE_OR_DUPLICATE/);
+  const malformed=sample(rent,'438.237','451.337');
+  malformed.data.push(null);
+  assert.throws(()=>normalizeInflationCandidateBls(payload(malformed,sample(ownerEquivalentRent,'431.134','446.588')),{group:'cpi'}),/MONTH_INVALID/);
   const allMissing=sample(rent,'438.237','451.337');
   allMissing.data=[x];
   assert.throws(()=>normalizeInflationCandidateBls(payload(allMissing,sample(ownerEquivalentRent,'431.134','446.588')),{group:'cpi'}),/SERIES_EMPTY/);
