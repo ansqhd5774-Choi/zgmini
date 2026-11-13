@@ -43,3 +43,39 @@
 - **테마:** [실제 Windows #43293983366-1-seat-4](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/43293983366-1-seat-4.json), 2026-11-12 19:49 UTC, `PASS/L7_RUNTIME_READONLY_INVENTORY`, `operationalReadiness=NOT_ASSERTED`. 당시 로컬 `R181_PRIMARY_LAST_RUN.status=STOP` (2026-11-12 05:00 UTC), `R179_PUBLICATION_LAST_RUN.status=PUBLIC_API_ROLLING_MISMATCH` (2026-10-30); 실제 수집·게시 원담당 후속 조사 대상이며 **`/api/theme-fear-greed` 라우트 자체 오류 증거가 아님**. 테마 10개 Production 수치와 권리 조건의 충족 미확정.
 - **고용:** [실제 Windows #43174901071-1-seat-3](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/43174901071-1-seat-3.json), 2026-11-12 07:24 UTC, `PASS/WRITER_APPROVED_PREIMAGE_READONLY`. R6 opt-in 설정 두 항목 `ENABLED`, 그러나 고정 checkout `sourceIdentityConsistent=false`, `runtimeSourceVerified=false`, `coreTaskSourceLinked=false`이며 관측 대상 파일 다수 `NOT_OBSERVED`. **R6 최신 PC 계산·D1 게시·29개 공개 값 검증이 아님**.
 - 위 기록은 과거 실행 시각에 한정된다. 현재 Production 배포 SHA, 개별 `stored_at`, D1 body hash 및 API payload/관측일과의 동치는 직접 확보 전 `STATE_UNKNOWN`을 유지한다. 이 문서 작성 시 별도 신규 PC 요청, 원자료·D1 쓰기, Worker 직접 배포는 **0건**.
+
+
+## 44차 — 실제 Production HTTP/JSON 관측 (2026-11-14 KST)
+
+### 새 유효 증거
+- 정본 `zgmini` main `643b7c7c4372ffad552443fc312c6cb1b944e2fc`; 본인 브랜치 `main` 대비 `ahead 269 / behind 554` (diverged), 전체 병합·rebase 금지.
+- 5개 공개 주소 모두 기존 연결된 공개 읽기 서비스에서 **실제 URL 직접 조회**, 새 캐시 사용 없는 `maxAge:0` 요청의 응답 메타데이터 HTTP 코드와 JSON 본문 확인. 일반 검색 브라우저 `not accessible`은 실제 API 오류가 아니며 아래 조회가 이를 대체했다.
+- 조회는 읽기 전용. PC/Provider/D1/Worker 쓰기 0, 유료 서비스 가입·자동 충전·직접 배포 없음.
+- 아래 `VERIFIED`는 **공개 HTTP+JSON 관측에 한정**된다. 별도 D1 body hash/readback이 없는 항목은 종단 간 검증 결과 `UNVERIFIED`로 분류한다.
+
+| Public endpoint | HTTP | 실제 공개 결과·값·시각 | 공개 HTTP/JSON | 독립 D1 | 전체 동치 |
+| --- | --- | --- | --- | --- | --- |
+| `/api/inflation-causal-inputs` | 200 | `READY`; 19/19 READY, numeric 19/19; `sourceVersion=INFL19_PRESENTATION_c12faa065da4ee689caa696b5ddc4a0e712bee632c9543a92edfcd79956a0f9b`; `sourceStoredAt=1794528018103` (2026-11-13T00:00:18.103Z). 실제 예: ID1 102.07 USD/배럴 (2026-10-01), ID3 3 USD/MMBtu (2026-11-11), ID4 9.64 센트/kWh (2026-08). 행별 원자료 관측일은 독립 | VERIFIED | UNVERIFIED | UNVERIFIED |
+| `/api/inflation-candidate-inputs` | 200 | `PARTIAL`; 7행 중 READY 4(ID 2/16/24/29), PENDING 3(ID 22/23/28), 결측은 `null`이고 임의 0 아님. `sourceVersion=INFL7_PRESENTATION_c891b9b21dc39a33c88acd08692bbdc2d9278e32881ec4759b09ec42cbd10231`; `sourceStoredAt=1794091202928` (2026-11-07T22:40:02.928Z). 예: ID2 4.153(2026-11-02), ID16 5910402249.78(2026-09-30), ID24 159.78, ID29 99.4361 | VERIFIED | UNVERIFIED | UNVERIFIED |
+| `/api/release-calendar` | 200 | 피드 `PARTIAL`, 총 2,358 events. Treasury `READY`, 전기간 이벤트 894건; 2025-11-14~2026-11-14 범위 872건, 199개 이벤트 날짜, 중복 ID+date 0건. `sources.treasury.checkedAt=2026-11-13T15:22:25.384Z`, 피드 `updatedAt` 동일. 피드 전체 `PARTIAL`은 `sources.fed_fomc=SOURCE_FAILED` 등 다른 공급원 상태와 구분. 이 API는 `sourceVersion/sourceStoredAt` 대신 `updatedAt/sources.*.checkedAt` 계약 | VERIFIED | UNVERIFIED | UNVERIFIED |
+| `/api/theme-fear-greed` | 503 | `UNAVAILABLE / STORED_DATA_STALE`, `themes:[]`. 실제 게시본 freshness gate 불합격. 이 오류를 라우트 누락·D1 원자료 상실로 단정할 수 없음. 현 응답은 sourceVersion·sourceStoredAt·게시일 미제공; 마지막 유효 결과 보존은 D1 별도 검증 필요 | VERIFIED(503 상태) | UNVERIFIED | UNVERIFIED |
+| `/api/employment-r6/observations` | 200 | 전체 `PARTIAL`, 지표 **29/29 제공**. raw READY 22/STALE 7, score READY 28/PARTIAL_HISTORY 1, chart READY 22/PARTIAL 5/UNAVAILABLE 2. `sourceStoredAt=1794491411289` (2026-11-12T13:50:11.289Z), `asOfDate=2026-11-13`, `methodologyVersion=EMP-R6-FORMULA-R2-CPS-2025-10`, `formulaHash=sha256:04486846cd6063452d1c764116d3a31209f074d23a8764bf5b6ec8467095210e`. `STATE_CLAIMS_BREADTH`: `STALE/PARTIAL_HISTORY`, 관측 2025-07-19. raw STALE 나머지는 BED 6개 | VERIFIED | UNVERIFIED | UNVERIFIED |
+
+### D1 독립 readback 및 Production 배포 증거
+- 5개 Public GET는 소스상 D1 저장 결과를 읽는 동작이나 **Public GET 성공만으로 별도 D1 원격 조회의 `stored_at`/본문 SHA-256 확인을 대신하지 않는다.**
+- 현재 연결된 도구에는 위 5개 exact D1 key를 개별 readback하는 승인된 D1 연결이 없었음. 기존 PC A급 allowlist에는 특정 기능의 로컬 상태·원장 검사는 있으나 이 5개 D1 키의 공용 원격 독립 SELECT 명령은 확인되지 않음. 사용자 지침에 따라 임의 SQL/Controller operation/원격 shell을 생성하지 않음.
+- 따라서 5개 D1 `stored_at`, D1 body hash, 5개 API 출력과 D1 payload의 1:1 동치: **UNVERIFIED**. 기존 과거 Windows 결과는 당시 로컬/게시 증거일 뿐 현재 live D1 readback 대체 불가.
+- `main`에 대한 GitHub combined commit status는 `statuses:[]`; Cloudflare의 정확한 Production Deployment ID/SHA를 제시하는 증거가 아님. **Production 배포 SHA/Build/Version ID = 미확인**.
+- API 코드를 변경할 확정된 `MISMATCH` 증거는 **0건**; 실제 Theme `STORED_DATA_STALE`는 데이터 공급/게시·freshness 단계의 FIRST FAIL (API 경로 자체 실패로 확정하지 않음). 위 달력 `fed_fomc SOURCE_FAILED`는 Treasury API 결함으로 오분류 금지.
+
+### 실행 단계·전담 인계
+- 이번 API 검증 **2/4(50%) → 3/4(75%)**: 최신 브랜치/기존 계약 2단계 재사용, 실제 Production 5개 HTTP/JSON 실측 단계 신규 완료. D1 독립 재조회/배포 SHA 동치 단계 미완료.
+- LAST PASS: 공개 API 5개 응답 상태·JSON 데이터 개수/결측/버전/시각 실측. FIRST FAIL: Theme `503 STORED_DATA_STALE`, 별도 `fed_fomc SOURCE_FAILED`. FIRST UNVERIFIED: 독립 D1 body hash/stored_at 및 exact Production deploy SHA.
+- 실제 수정: 이 검증 문서 **1개**. 서버/API/산식/TTL/schema/DB/UI 수정 0, 새 PR/CI/배포 없음.
+- **API 담당 다음 필수 실행**: 기존 승인된 독립 D1 최소 읽기 근거가 제공되면 5개 공개 키의 `stored_at`·본문 해시·버전을 API payload와 대조. 현재 허용된 경로가 없다면 권한 문제를 `AUTOMATION_BLOCKED`로 유지하고 새로운 임의 D1 명령을 만들지 않는다.
+- **테마 원담당 인계**: 2026-11-14 공개 `/api/theme-fear-greed` HTTP 503 `STORED_DATA_STALE`; 과거 R181 STOP/R179 `PUBLIC_API_ROLLING_MISMATCH`는 참고 시점 분리. 새 provider 재호출·임의 덮어쓰기 없이 기존 PC 게시/rolling 원장→sourceStoredAt→D1 readback 순서로 실제 stale 원인 확인.
+- **시장 캘린더 원담당 인계**: Treasury는 READY, 365일 창 872행; 별도 `fed_fomc SOURCE_FAILED`로 피드 PARTIAL. source별 실패 복구는 기능 원담당. Treasury 담당의 365일 365개 **날짜별 점**이라는 의미로 수치 변환하지 않는다.
+- **물가 원담당 인계**: 후보 7개 중 3 PENDING (22/23/28)는 생산·게시 완료 여부 재확인. 200/PARTIAL은 자동으로 API 결함 아님.
+- **고용 원담당 인계**: `STATE_CLAIMS_BREADTH` 하나가 `STALE/PARTIAL_HISTORY`; 새 raw 관측 확보 및 승인된 정상 게시 필요 여부 확인. 29개 행 제공과 29개 점수 완비는 다르다.
+- UIUX 담당: 이번 서버 실측에서 별도의 화면 렌더링 불일치는 확정하지 못함. UI 수정·같은 파일 동시 수정 없음. 별도 확인 시 위 endpoint·값·관측일을 표기하는 방식만 범위 내 전달.
+- **총괄 복귀 보고**: Production API 5개는 실제 관측(200/200/200/503/200)했고 저장형 상태/결측을 분리. 전부 D1 동치 UNVERIFIED, API MISMATCH 확정 0, Production deploy SHA 불명. 근거 없는 코드 수정/배포 하지 않았으며 다음은 승인된 D1 exact-key readback과 테마 stale 데이터 게시 원인 독립 처리.
