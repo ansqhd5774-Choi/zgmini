@@ -1,3 +1,18 @@
+<!-- employment-r6-65th-certified-runtime-receipt-condition-20261114 -->
+## 고용 R6 65차 — 신규 현장 영수증 부재 조건 확인 및 완료 증거 보존
+
+**기능 진행률 87.5%(7/8) → 87.5%(7/8).** [중앙 65차 원문](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6866393700) 및 최신 제어 main `69e25a08a903dc8e52ef1093ec15837de4c20858`; 본인 기능 브랜치 65차 시작 HEAD `bf30c3e393a3800d3e4ec59a6eb90babfd6a003f`. 완료된 [Reader Win Node 15/15 Run #43509885494](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43509885494)와 [Provider·Collector 후보 실제 source SHA256 2/2 MATCH 60차](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6865524867)는 **재실행/재계산 없이 재사용**.
+
+**이번 확인 한정:** 중앙 #68의 64→65차 신규 댓글과 기존 [#1351 Run #43429486924](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43429486924)·Job `131899103441` 및 #1351 최신 댓글을 새 운영 PC 인증 영수증 수신 여부로 조회. Run/Job `queued/conclusion=null`, `runner_name=null`, job steps=0. 중앙 65차 원문 자체에도 운영 6개 Runner registry/labels/online/busy 및 Writer Provider·Collector 실제 파일 SHA256/config.source/Controller installed A allowlist **신규 실측 결과 없음**이 명시됐다. 제어 Source-only [Draft #1360](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1360) CI와 격리 Win source testing은 운영 Runner 배정 및 Reader 실제 설치 증거가 아니다. Reader 개선 [Draft #1361](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1361) source의 `firstFailureWeek/missingRegionCodes?`는 실제 운영 SQLite에서 **NOT_OBSERVED**. 운영 DB/D1/API/UI 새 결과 없음. 이전 관측 **28/29 READY / `STATE_CLAIMS_BREADTH` 미완료** 유지(현시각 D1 새 직접 관측 아님).
+
+**LAST PASS:** 최신 중앙 수신 목록과 기존 #1351 GitHub Run·Job 정합 대조; 과거 approved B 2/2 및 Reader Win 15/15 정규 증거 재사용. **FIRST FAIL:** GitHub Job Runner pickup 없음. 현재 6 Runner 등록/조건의 정확한 배정 실패 원인, 운영 Writer file bytes SHA, Controller installed A allowlist, 실제 51지역×577주 첫 결손 주·지역은 `STATE_UNKNOWN`; 고용 수집기 `RUNTIME_FAILED` 입증 아님.
+
+**다음 한 실행(중앙 운영 단일 Owner):** 기존 승인 경로에서 운영 6 Runner의 4개 라벨/online/busy/Job assignment **동일 시각 비민감 영수증 1회** 회수한 뒤, 정상 배정 경로가 증명되면 기존 Writer Provider/Collector 현재 파일SHA256·source/config·Controller installed SHA/A allowlist 수신; 설치·승인 확인 후에만 Reader 1회 실제 원자료 `stateClaims.fullTenYearRawCoverage.firstFailureWeek/missingRegionCodes?` 읽기 및 필요한 최소 수집/계산/게시 수행. **이 결과가 수신되기 전 동일 큐 조회·신규 pc-job/Runner 강제 재실행/임의 CMD/DB·D1 쓰기/Controller·Writer 설치/RDC/잠금 해제 금지**.
+
+이번 신규 소스 로직·테스트·운영 변경 0건. GitHub 원담당 문서 65차 증거 기록만 수행. `#68` 인계문 자체는 다른 ChatGPT 대화의 실행/수신 아님.
+
+---
+
 <!-- employment-r6-60th-exact-b-hash-and-reader-runtime-link-20261114 -->
 ## 고용 R6 — 60차 승인 Provider·Collector 후보 바이트 및 현장 Reader 반환 대조 (2026-11-14 KST)
 
