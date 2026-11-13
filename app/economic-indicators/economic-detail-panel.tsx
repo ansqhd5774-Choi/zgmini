@@ -6,6 +6,7 @@ import {liquidityStoredScoreComparisons} from "../../worker/projection-builders/
 import {MarketCardHeader} from "../market-card-header";
 import {MarketScoreOrb} from "../market-score-orb";
 import {MarketTrendFrame} from "../market-trend-frame";
+import {isRealEconomicScoreDay} from "../../lib/economic-score-trend-date.mjs";
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from "../market-fear-greed-chart";
 import {InflationMiniChart,type InflationMiniTrendPoint} from "../inflation/inflation-mini-chart";
 import {ContentHelp} from "../content-help";
@@ -41,7 +42,7 @@ type Snapshot={status:string;asOfDate?:string|null;domains?:Domain[]};
 type ResearchSnapshot={schemaVersion?:string;status?:string;indicators?:Array<Record<string,unknown>>};
 type ReleaseCalendar={sources?:Record<string,{status?:string;checkedAt?:string|null}>;events?:Array<{id?:string;source?:string;date?:string;sourceUrl?:string}>};
 type EmploymentR6Display={kind:string;status:string;sourceStoredAt:number;indicators:Indicator[];summary:{chartReadyFeatures:number;chartPartialFeatures:number;scoredFeatures:number;recentlyScoredFeatures:number}};
-const dated=(s:unknown):s is string=>typeof s==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&!Number.isNaN(Date.parse(s+"T00:00:00Z"));
+const dated=(s:unknown):s is string=>isRealEconomicScoreDay(s);
 const finite=(n:unknown):n is number=>typeof n==="number"&&Number.isFinite(n);
 const validScore=(n:unknown):n is number=>finite(n)&&n>=0&&n<=100;
 const dateLabel=(s?:string|null)=>typeof s==="string"&&/^\d{4}-(0[1-9]|1[0-2])$/.test(s)?s.replace("-", ". ")+"월":typeof s==="string"&&/^\d{4}-\d{2}-\d{2}/.test(s)?s.slice(0,10).replaceAll("-",". ")+".":"—";
