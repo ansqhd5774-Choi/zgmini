@@ -3,6 +3,7 @@ import {Fragment,useMemo,type CSSProperties} from "react";
 import {useStoredIndex} from "../../components/use-stored-index";
 import {economicDetailById,type EconomicDomainId} from "../../lib/economic-detail-catalog";
 import {liquidityStoredScoreComparisons} from "../../worker/projection-builders/liquidity-stored-history.mjs";
+import {economicOneYearChart} from "../../lib/economic-trend-chart-r60.mjs";
 import {MarketCardHeader} from "../market-card-header";
 import {MarketScoreOrb} from "../market-score-orb";
 import {MarketTrendFrame} from "../market-trend-frame";
@@ -156,9 +157,11 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
   const start=new Date(latest+"T00:00:00Z");start.setUTCFullYear(start.getUTCFullYear()-1);
   return history.filter(p=>p.label>=start.toISOString().slice(0,10));
  },[history]);
- const chart=oneYear.map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint));
- const last=chart.at(-1);
- const latestPoint:MarketFearGreedChartValidPoint|null=last&&finite(last.score)?{date:last.date,score:last.score}:null;
+ // Keep published null dates only in the visual series; saved-value history
+ // remains unchanged for approved period-score comparisons.
+ const chart:MarketFearGreedChartPoint[]=useMemo(()=>economicOneYearChart(domain?.trend),[domain?.trend]);
+ const last=chart.findLast(point=>validScore(point.score));
+ const latestPoint:MarketFearGreedChartValidPoint|null=last&&validScore(last.score)?{date:last.date,score:last.score}:null;
  const axisLabels=new Map(chart.map(p=>[p.date,p.date.slice(5,7)]));
  const axisTicks=chart.filter((_,i)=>i===0||i===chart.length-1||i%Math.max(1,Math.floor(chart.length/6))===0).map(p=>p.date);
  const lastSavedHistory=history.at(-1)??null;
@@ -204,7 +207,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
    <div className="fg-header-slot"><MarketCardHeader flag="/flags/us.svg" eyebrow="ZGMINI ECONOMIC DETAIL" title={"미국 "+config.name} description="저장된 시장 점수 기준" dateLabel="데이터 기준일" date={dateLabel(date)} source={publicNote}/></div>
    <div className="fg-content-slot">
     <div className="fg-score-slot"><MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={comparisons} comparisonAriaLabel={config.name+" 시장 우호점수 기간별 변화"}/>{v9&&score!==null&&<div className="economic-v9-status" data-testid="breadth-v9-update"><span>{v9Pending?"집계 중":"자료 반영"} · 관측 {dateLabel(observed)}</span>{v9Delta!==null&&Math.abs(v9Delta)>0.0000001&&<strong data-move={v9Delta>0?"up":"down"}>{v9Delta>0?"▲":"▽"}{Math.abs(v9Delta).toFixed(1)}</strong>}</div>}</div>
-    <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={chart} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} showExtrema={chart.length>=3} instanceKey={"economic-"+id} gradientId={"economic-"+id+"-fill"} color={color} formatTooltipLabel={dateLabel} marketScoreBands={id!=="inflation"} emptyLabel={loading?"불러오는 중":"저장된 점수 이력 없음"}/></div></div></MarketTrendFrame>
+    <MarketTrendFrame className="fg-analysis-slot"><div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart data={chart} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} showExtrema={chart.filter(point=>validScore(point.score)).length>=3} instanceKey={"economic-"+id} gradientId={"economic-"+id+"-fill"} color={color} formatTooltipLabel={dateLabel} marketScoreBands={id!=="inflation"} emptyLabel={loading?"불러오는 중":"저장된 점수 이력 없음"}/></div></div></MarketTrendFrame>
    </div>
    <div className="fg-footer-slot"><div className="cnn-panel-note"><span>{v9?"관측 기준":"차트 원칙"}</span><strong>{v9?`${dateLabel(date)} 기준 · ${dateLabel(observed)} 관측 점수${v9Pending?" 유지 · 신규 자료 반영 시 갱신":""}`:periodSourceMismatch&&lastSavedHistory&&score!==null?`현재 ${score.toFixed(1)}점(${dateLabel(date)}) · 이력 마지막 ${lastSavedHistory.value.toFixed(1)}점(${dateLabel(lastSavedHistory.label)}) · ${hasVerifiedPeriodComparisons?"기간 비교는 검증된 별도 저장 점수 기준":"서로 달라 기간별 비교 보류"}`:lastSavedHistory?`저장 이력 마지막 ${dateLabel(lastSavedHistory.label)} · 확인된 비교기간만 표시`:"저장 점수 이력 없음 · 비교 불가 기간은 —"}</strong></div></div>
   </section>
