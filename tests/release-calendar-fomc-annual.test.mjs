@@ -40,6 +40,15 @@ test('Federal Reserve 2026-11-12 revision ends 2027 meetings in November; Octobe
  // This validates published meeting dates, not rate-decision classification.
 });
 
+test('calendar labels the 2027 October strategy-only meeting without claiming a rate decision',()=>{
+ const client=readFileSync(new URL('../app/market-calendar/market-calendar-client.tsx',import.meta.url),'utf8');
+ assert.match(client,/item\.source==='fed_fomc'&&item\.id==='fomc'&&item\.date==='2027-10-27'/);
+ assert.match(client,/미국 FOMC 통화정책 전략 회의 · 금리 결정 없음/);
+ assert.match(client,/if\(item\.id==='fomc'&&\/잠정\|tentative\/i\.test\(item\.title\)\)return \`\$\{name\} · 일정 잠정\`/);
+ assert.match(client,/importance:releaseImportance\(item\.id,item\.title\)/);
+ assert.match(client,/if\(item\.id==='fomc'&&\(item\.source!=='fed_fomc'|!fomcEvent\)\)continue;|if\(item\.id==='press'\|\|\(item\.id==='fomc'&&!fomcEvent\)\)continue;/);
+});
+
 test('Fed annual parser rejects unpublished or incomplete year without synthesizing dates',()=>{
  assert.throws(()=>parseFomcAnnualCalendar(officialFixture,2028),/FOMC_YEAR_NOT_PUBLISHED/);
  assert.throws(()=>parseFomcAnnualCalendar(officialFixture.replaceAll('November','Nov'),2027),/FOMC_MEETING_ROW_INVALID/);
