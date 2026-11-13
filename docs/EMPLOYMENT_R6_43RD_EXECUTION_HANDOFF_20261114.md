@@ -1,3 +1,18 @@
+<!-- employment-r6-48th-primary-status-20261114 -->
+## 48차 최신 실행 결과 (2026-11-14 KST · 아래 43차 기록은 당시 이력)
+
+- **기능 완료율 87.5%=7/8 유지**, 이전 D1 28/29 scored READY 재사용. 이번에 실제 PC 수집/계산/게시·D1 쓰기 0건.
+- 48차 지시 [공통 #68 원본](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6863150401) 중 고용 원담당 범위 확인; 같은 운영 단계를 막연히 재검증하지 않고 **수집기 source 결손 실제 수정**.
+- 전용 브랜치 `codex/employment-1y-reader-r1` 수정: `lib/market-score/employment-r6-provider.mjs`의 기존 DOL BACKFILL 530→**600주**(기존 다른 브랜치/승인된 계약과 일치); `lib/market-score/employment-r6-store.mjs` 마지막 `BACKFILL` 모드 전용 run 조회; `lib/market-score/employment-r6-collector.mjs` 600주 실제 요청 provenance `DOL_ETA539_600_WEEKS_V1` 및 동일 UTC일 중복 수집 방지/기존 600주 SUCCESS 재실행 방지; `tests/employment-r6-backfill-600w-resume.test.mjs` **7건** 신설.
+- 정확한 전용 브랜치 순차 커밋: provider `96ad08e59a6dee6e4093679ea4ff1c9a50552d0c`, store `367c86bb017edfa385160a796c0a0495c27dae6a`, collector `274ac3b6374b8b85e55d9963be56fefc2516d1c7`, test `e262fb3fefcdf751cf6a0e1a4ac485efcf1ccc6d`.
+- 현재 main 기준 **3파일만** 분리한 [Draft PR #1064](https://github.com/ansqhd5774-Choi/zgmini/pull/1064), HEAD `3cc193e4695f1c610a8bb24e7cbab123726dcd10` (provider·collector·test; main store에는 기존 mode-specific 조회 있음). [CI #43496830194](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43496830194) **SUCCESS**, 신규 7/7 PASS, 전체 **4,185건/4,176 PASS/0 FAIL/6 SKIP/3 TODO**, 별도 회귀 11/11, 공개 경계 관련 69/69 PASS. `main` 병합이나 PC 설치는 진행하지 않음.
+- 기존 [Draft PR #1062](https://github.com/ansqhd5774-Choi/zgmini/pull/1062)의 빈 ETA539 c3 결측→가짜 0 수정/4회 회귀 PASS도 **별도 SOURCE_ONLY** 증거로 유지. 두 PR을 실제 600주 운영 설치·첫 DOL 결손 해결 증거로 사용하지 않음.
+- 공식 DOL 실제 첫 결손 주·지역: 여전히 **UNKNOWN**(운영 raw 600주·SQLite 577연속주×51지역 readback 없음). 단순 요청 WINDOW가 600이라는 사실은 실제 577주 완전성 증명이 아님. 이전 #1169 PARTIAL/기존 28개 유효 결과 보존.
+- 운영 차단: 마지막 Controller 설치 관측 `badad912…`의 신규 `employment-r6-collection-evidence-readonly` 미등록. 공통 Controller 적용 41차 13파일 source-only 후보는 [기존 #68 인계](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6862442751) 그대로이며, 겹치는 공유 설치 쓰기만 Controller Owner가 담당. [#1351/Run #43429486924](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43429486924) 마지막 조회 `queued`/Runner 미배정, 같은 requestId 재실행 0.
+- **다음 필수 실행 하나:** Controller/Runner 단일 Owner가 **기존 #1351 Runner 배정·PC 실제 source/lease/Controller 허용목록을 승인된 읽기로 검증하고 신규 R6 정밀 A 등록의 정규 적용 증거**를 고용 담당자에게 전달. 그 뒤 고용 원담당이 저장된 DOL 최초 결손을 단회 읽기→정확한 보완 B→29/29 로컬·D1·API/UI 확인. 승인 없는 운영 source/DB/D1/Controller 변경, RDC, 자연 예약 검증 0.
+
+---
+
 # ZGMINI 고용 R6 — 43차 프로세스 총괄 복귀 전달문
 
 **기준일 2026-11-14 KST · 담당 원대화 `codex/employment-1y-reader-r1`.**
