@@ -1,5 +1,15 @@
 # ZGMINI R181 — 62차 최초 실패 단계·HTTP 관측 경로 판정
 
+## 65차 운영 원본 인계 수신 판정 — 2026-11-14 KST
+
+- **65차 공식 지시:** [제어 #68/6866393700](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6866393700). 64차의 정확한 운영 원본 요청은 [#68/6866167504](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6866167504)에 **이미 한 번 접수**, 기능 원장 [#1009/6866168214](https://github.com/ansqhd5774-Choi/zgmini/issues/1009#issuecomment-6866168214)과 연결됨.
+- **이번 새 판단(이력 성공 검증 재수행 아님):** 제어 #68의 64차 요청 이후 65차 지시까지의 실제 댓글, 기능 #1009의 64차 요청 이후 댓글 및 현재 전용 브랜치 ref를 확인. 원본 소스/원장 write-site/현행 SHA/승인 범위에 대한 **중앙 운영 Owner의 신규 원담당 인계 기록 0건**. 중앙 65차 역시 이 단계가 미해결이라고 판정. GitHub 댓글 검색 범위 내 미수신이라는 뜻이며, 운영 PC 실제 source가 소실됐다는 뜻은 아님.
+- 기능 HEAD `15bca7f777dea209b75505909e6cfd727fb43872`(본 증거 업데이트 전), 제어 `main@69e25a08a903dc8e52ef1093ec15837de4c20858`, 기능 `main@643b7c7c4372ffad552443fc312c6cb1b944e2fc`. 기존 정확한 운영 수집기 SHA256은 **2026-11-12 당시 관측값** `be0303b112d6f4471137aa134bf98f696a8a8dfe60d1d13502646c5e0b509d62`; 현 시점 설치 동일성/원본 source/원장 수정 범위 **UNKNOWN**.
+- **행동 제한:** 기존 R181 STOP 9건 재검토 0, 신규 PC/RUNNER/Provider/D1/SQL/배포 0, 신규 Collector 소스 구현·테스트·CI 0. 공통 Reader에서 임의 HTTP 상태 추정 금지. 이전 R158 Node 5/5와 기존 구조 판단은 완료 증거 그대로 재사용.
+- **LAST PASS:** 64차 요청 원장과 65차 중앙 수신 판정 교차 확인. **FIRST FAIL:** 원본 source와 catch/HTTP response/원장 write-site/수정 권한에 대한 실제 Owner receipt 없음 → 현재 R181 오류 계측 최소 코드 수정 **AUTOMATION_BLOCKED(OWNER_SOURCE_HANDOFF_NOT_RECEIVED)**. 기능 T1 **20% → 20%**, 최신 실운영/공개 종단 검증을 새로 수행하지 않아 마지막 공개 0/10, D1 7키 0/7 VERIFIED.
+- **다음 한 실행:** 새 요청을 만들지 않고 기존 **64차 #68/6866167504** Owner 인계에서 승인된 읽기 전용 원본·설치 SHA/원장 write-site·변경 권한이 **실제 수신**되면 그 일치하는 수집기 원본에만 `firstFailStage` 및 `httpStatus|NO_STATUS` 최소 수정·회귀시험을 수행. 중앙 Owner의 확인 전에는 문서·테스트 코드로 운영 성공을 주장하지 않음.
+
+
 - 기준: 2026-11-14 KST; 전담 `codex/theme-fear-greed-integration-20261025`.
 - 지시: [공통 62차 #68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6865704255).
 - 대상 기능 진행률: **T1 20% → 20%**, 마지막 공개 정상화 **0/10**.
