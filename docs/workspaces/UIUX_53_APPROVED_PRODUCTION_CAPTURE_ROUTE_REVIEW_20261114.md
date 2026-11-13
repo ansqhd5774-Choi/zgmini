@@ -17,6 +17,25 @@
 4. 저장소 기본 브랜치 내 `production browser`, `production screenshot`, `page.goto('https://zgmini.kr` 검색에서도 네 화면·두 폭의 실 Production PNG 증거를 확인하지 못했다. 이 검색은 모든 역사적 Artifact 부재의 증명이 아니며 범위는 기본 브랜치/조회 결과에 한정한다.
 5. 51차에 기록한 Chrome host permission denied/공개 GET access denied, 46차 Browser Use SOCKS, 48차 독립 컨테이너 DNS 실패를 **기존 실패 증거 그대로 재사용**했다. 기존 무료·승인 Live Browser가 회복됐다는 새 증거를 확보하지 못했으므로 동일 실패 호출·유료 수단·접근 우회 없음.
 
+
+## 55차 후속 소스 계약 정정 — 물가 두 개의 서로 다른 화면
+
+55차 지시 [#68 / 6864363828](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6864363828) 후, 기존 Production 브라우저 권한 오류를 재실행하지 않고 기능 main의 실제 페이지/컴포넌트 정적 원문을 대조했다. 이전 본 문서의 마지막 실행 항목에 적힌 `/inflation/`은 12대 경제지표 물가와 **다른 R2 진단 화면**이므로 아래와 같이 고친다. 기록된 기존 R2 점수 57.5를 12대 경제지표의 물가 점수로 전용하지 않는다.
+
+| 화면 종류 | main의 canonical 경로 | 실제 UI 조회 계약 | 교차 확인 코드 |
+| --- | --- | --- | --- |
+| **12대 경제지표 물가** (이번 4화면 범위) | `/economic-indicators/inflation/` | `/api/market-score`의 `domains[id=inflation]`; 원자료 연구표 `/api/inflation-causal-inputs`, 물가 발표일 `/api/release-calendar` | `app/economic-indicators/inflation/page.tsx`, `app/economic-indicators/economic-detail-panel.tsx:145-148`, `components/economic-terrain.tsx` |
+| **별도 Inflation R2 위험진단** (이전 API 점수 57.5의 대상) | `/inflation/` | `/api/inflation-detail` | `app/inflation/page.tsx`, `app/inflation/inflation-panel.tsx:192` |
+| 12대 경제지표 고용 | `/economic-indicators/employment/` | `/api/market-score` + `/api/employment-r6/observations` | `app/economic-indicators/employment/page.tsx`, 공통 패널 |
+| 시장 캘린더 | `/market-calendar/` | `/api/release-calendar` | `app/market-calendar/page.tsx`, `market-calendar-client.tsx:167` |
+| 테마 공포탐욕 | `/theme-fear-greed/` | `/api/theme-fear-greed`, 부가 `/api/theme-configured` | `app/theme-fear-greed/page.tsx`, `theme-detail-charts.tsx:119-120` |
+
+즉, 4개 실제 목표 화면의 5개 핵심 API 비교에서는 잘못 선택한 `/api/inflation-detail` 대신 `/api/inflation-causal-inputs`를 해당 물가 원자료 계약으로 적용하고, 테마 보조 구성 `/api/theme-configured`도 테마 UI 검증 대상일 때 따로 확인한다. `/api/market-score`가 **12대 물가·고용 점수의 정본**이고 R2 별도 점수 57.5는 다른 계약이다. 실제 Production 데이터·숫자·브라우저 표시를 새로 확인한 것은 아니다.
+
+- **LAST PASS 신규 범위:** main 소스의 5개 화면 라우트, 각 페이지 canonical 및 컴포넌트 API 연결 교차 대조 완료.
+- **FIRST FAIL 유지:** 51차 브라우저 Host 권한 거부; 55차 동일 오류 재호출 0, 라이브 화면 0/8.
+- **기능 진행률:** 25% → 25%, `AUTOMATION_BLOCKED(PRODUCTION_BROWSER_OR_PUBLIC_READ_ACCESS)`. UI 코드·운영 변경 0.
+
 ## LAST PASS / FIRST FAIL / 상태
 
 - **LAST PASS:** 48차 기존 로컬 mock CI Artifact 57 PNG 무결성 및 물가/고용 PC1440/모바일390 테스트 PASS; 46차 시점 4 HTML GET과 5 공개 API 응답 수신. 51차 결과 문서/원장 원격 검증 PASS. 이력이며 이번에 다시 실행하지 않음.
@@ -27,4 +46,4 @@
 
 ## 다음 필수 실행 하나
 
-기존 승인된 **무료 Live Browser 접근이 정상화됐다는 확인 가능한 증거가 나타난 경우에만**, 공식 URL `/inflation/`, `/market-calendar/`, `/theme-fear-greed/`, `/economic-indicators/employment/`를 1440/390에서 실제 PNG8개로 캡처하고 같은 시각 API 5개 응답의 점수·단위·관측일/게시일·`sourceStoredAt`·stale·차트 축/마지막 점·overflow와 대조한다. 접근 정상화 전 새 mock 테스트·기존 권한 오류 반복·미확정 UI 수정은 금지한다.
+기존 승인된 **무료 Live Browser 접근이 정상화됐다는 확인 가능한 증거가 나타난 경우에만**, 공식 URL `/economic-indicators/inflation/`, `/market-calendar/`, `/theme-fear-greed/`, `/economic-indicators/employment/`를 1440/390에서 실제 PNG8개로 캡처하고 같은 시각 API 5개 응답의 점수·단위·관측일/게시일·`sourceStoredAt`·stale·차트 축/마지막 점·overflow와 대조한다. 접근 정상화 전 새 mock 테스트·기존 권한 오류 반복·미확정 UI 수정은 금지한다.
