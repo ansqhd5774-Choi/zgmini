@@ -53,7 +53,7 @@ export function normalizeInflationCandidateBls(payload,{group}={}){
         throw error('BLS_CANDIDATE_MONTH_INVALID');
       const date=`${row.year}-${row.period.slice(1)}-01`;
       if(seen.has(date))throw error('BLS_CANDIDATE_VALUE_OR_DUPLICATE');
-      const footnotes=Array.isArray(row.footnotes)?row.footnotes:[];
+      const footnotes=Array.isArray(row?.footnotes)?row.footnotes:[];
       // The BLS CPI API publishes unavailable months as "-" with footnote X
       // (e.g. October 2025). Preserve the gap, not a fabricated index value;
       // the unmodified provider response remains in the raw archive.
