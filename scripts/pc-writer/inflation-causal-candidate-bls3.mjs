@@ -51,10 +51,20 @@ export function normalizeInflationCandidateBls(payload,{group}={}){
       if(row?.period==='M13')continue;
       if(!/^\d{4}$/.test(String(row?.year??''))||!/^M(0[1-9]|1[0-2])$/.test(row?.period??''))
         throw error('BLS_CANDIDATE_MONTH_INVALID');
-      const date=`${row.year}-${row.period.slice(1)}-01`,value=Number(row?.value);
-      if(seen.has(date)||typeof row?.value!=='string'||!row.value.trim()||
+      const date=`${row.year}-${row.period.slice(1)}-01`;
+      if(seen.has(date))throw error('BLS_CANDIDATE_VALUE_OR_DUPLICATE');
+      const footnotes=Array.isArray(row.footnotes)?row.footnotes:[];
+      // The BLS CPI API publishes unavailable months as "-" with footnote X
+      // (e.g. October 2025). Preserve the gap, not a fabricated index value;
+      // the unmodified provider response remains in the raw archive.
+      if(typeof row?.value==='string'&&row.value.trim()==='-'&&
+        footnotes.some(note=>note?.code==='X')){
+        seen.add(date);continue;
+      }
+      const value=Number(row?.value);
+      if(typeof row?.value!=='string'||!row.value.trim()||
         !Number.isFinite(value)||value<0)throw error('BLS_CANDIDATE_VALUE_OR_DUPLICATE');
-      seen.add(date);rows.push({date,value,footnotes:Array.isArray(row.footnotes)?row.footnotes:[]});
+      seen.add(date);rows.push({date,value,footnotes});
     }
     if(!rows.length)throw error('BLS_CANDIDATE_SERIES_EMPTY');
     found[id]=rows.sort((a,b)=>a.date.localeCompare(b.date));
