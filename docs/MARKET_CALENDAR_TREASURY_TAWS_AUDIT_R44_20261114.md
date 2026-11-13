@@ -75,3 +75,29 @@
 - **최소 수정:** 오염 검사를 `annualSection(2027).replace('16-17</div>','18-17</div>')`로 제한. [수정 커밋 `d191a91`](https://github.com/ansqhd5774-Choi/zgmini/commit/d191a91a4b73936c25c2cfa3499674264f313594).
 - **재검증 완료:** [Run #43496813871](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43496813871) `completed/success`. 동일 GitHub CI job `check`의 **Build, Type check, Regression tests, PC publication recovery tests, Cloudflare candidate read contracts 모두 PASS**. PR 변경 파일 **`tests/release-calendar-fomc-annual.test.mjs` 하나**, Draft 미병합 유지.
 - **판정:** 공식 최신 2027 일정 회귀 테스트 패치 합격(DONE SOURCE_ONLY). 실제 FED 공급원 GET/HTML·원본 PC `SOURCE_FAILED` 근본원인·동일 Production D1/TA_WS 감사 **NOT_VERIFIED**. 설치/운영 변경 0, **시장 캘린더 전체 95% 유지**.
+
+
+<!-- market-calendar-r51-fomc-2027-strategy-label-fix-20261114 -->
+## 7. 51차 후속 실행 — 실제 FOMC 전략회의 표시 결함 최소 수정, PC 원인 미확정
+
+**지시 정본:** [공통 #68 51차](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6863655392), [시장 세부 #835](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/835#issuecomment-6863634692). 담당 `codex/zgmini-gpt-workspace-20261025-12`. 전체 **95%→95%**. `zgmini/main=643b7c7c4372ffad552443fc312c6cb1b944e2fc`; 대폭 분기한 전용 브랜치 전체 병합/rebase 안 함.
+
+### 7.1 기존 PC 원장 및 단계별 FIRST FAIL 확인
+
+- 2026-11-12 실PC [#1299](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1299), [Run 43166235600](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43166235600) JSON/TXT 2/2: `PASS/RELEASE_CALENDAR_SOURCE_INVENTORY_READONLY`, `controlSourceSha=badad9124157879d7a645b64f2768113d632355b`, `collection.calendarStatus=CACHED`, `providerRequests=0`, `sqliteOpened=false`. 이 원장은 개별 `fed_fomc`의 HTTP status/파서 에러/원문 읽기 결과를 **반환하지 않으므로**, 2026-11-13 공개 `fed_fomc=SOURCE_FAILED`의 **FIRST_FAIL(provider GET 대 parse)은 `UNKNOWN_NOT_OBSERVED`**. GitHub 기존 PC Issues/검색·Reader 소스 조회에서도 해당 원본 오류 증거 없음. 승인된 PC 원자료 직접 읽기, 수집 재실행, 임의 SQL 실행 0.
+- 이전 신규 A [#1023](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1023) `BLOCKED/OPERATION_NOT_ALLOWED` = **TA_WS Reader 설치 단계**의 과거 firstFail; FOMC 자체 원자료/공급자 실패 아님. 신규 `source-inventory-runtime-readonly` 설치 인증·beforeSHA·lease 관측 없어 A 호출하지 않음. Treasury 비공개 원문 365일 감사 그대로 미완료.
+- Production 2026-11-13T15:22:25.384Z [API 담당 실측](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/835#issuecomment-6863123928) 재사용: calendar PARTIAL 2358, **Treasury READY 894**, Treasury 2025-11-14~2026-11-14 구간 872 / 공개 `id+date` 중복0, 별도 `fed_fomc SOURCE_FAILED`. 현행 D1 exact row bodySha/stored_at 및 최신 Production UI 렌더 불검증.
+
+### 7.2 2027년 10월 전략-only 회의 **잘못된 표시명 코드** 확인/수정
+
+- 미국 연준 [2026-11-12 공식 발표](https://www.federalreserve.gov/newsevents/pressreleases/monetary20261112a.htm)에 따르면 2027-10-26~27 회의는 정책 전략 논의 전용이므로 **2027-10-27 기준금리 정책결정·투표·정책성명 없음**. 전체 2027 FOMC 회의 8건 vs 정책결정 7건. 기존 `zgmini/main/app/market-calendar/market-calendar-client.tsx`는 `eventKinds.fomc.name='미국 FOMC 기준금리 결정'`, `officialName`이 모든 `fed_fomc:fomc` 날짜에 적용: 10/27을 금리 결정으로 오인 표기하는 **확정 source-label 결함**. 실제 Production에 해당 이벤트가 적재돼 보였다는 별도 화면 증거는 없음.
+- 기존 main 기반 [Draft PR #1063](https://github.com/ansqhd5774-Choi/zgmini/pull/1063)에 **변경 총 2파일**로 확장: `app/market-calendar/market-calendar-client.tsx`는 `source==='fed_fomc' && id==='fomc' && date==='2027-10-27'`인 **정확한 1개 날짜/원천**에 한해서 `미국 FOMC 통화정책 전략 회의 · 금리 결정 없음`을 적용. 기존 `일정 잠정` 접미, 다른 정기 FOMC 표시명·category·importance·시간·원본 이벤트·원자료·수집기·저장·계산·TTL·D1/API/게시 경로 **그대로**.
+- `tests/release-calendar-fomc-annual.test.mjs`: 기존 2027 Nov 17 vs Dec 8 일정 회귀 + **공식 출처/전략-only label/잠정 처리/기존 중요도 불변** 코드 계약 검사 추가. 이 검사는 source-level 의미 보장이고 실제 Production UI 캡처 검증 대체가 아님.
+- 최종 HEAD: `45bdc448fe05dd5df7299088c3e4cb613c9b2d33`, [CI Run #43499646946](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43499646946) **completed/success**, Job `132141828167`의 Build / Type check / Regression tests / PC publication recovery tests / Cloudflare candidate read contracts **5/5 PASS**. PR `draft/open/mergeable=true/미병합`. 운영 Windows, Controller/Runner, 공급자 GET/SQLite, D1, Cloudflare Production, 예약 쓰기 0.
+- 공개 `fed_fomc=SOURCE_FAILED`는 아직 별도 원본 첫 오류 단계 미확정. 테스트/표시 수정 CI 성공만으로 실제 FOMC 수집·게시 복구 또는 Treasury 원문 A 감사를 완료했다고 주장 금지.
+
+### 7.3 다음 단일 필수 실행
+
+**공유 Controller 단일 적용 담당:** 기존 운영 PC before SHA/승인 manifest/raw SHA256/9~13파일 보조 의존/lease·백업·보호를 확인하고 **`source-inventory-runtime-readonly`의 실제 설치 및 allowlist/라우팅 PASS** 증거를 제공. 설치 확인 후 원담당이 새 고유 A 1회로 TA_WS 본문 기간(포함 365일)/행수/eligible/textSha256/SQLite WAL·JSON/TXT를 검사한 다음 D1·Production API/UI 동일 버전 결과로 95→100% 판정. FOMC 공개 `SOURCE_FAILED`의 첫 provider/parse 실패는 별도 증거 접근 경로로 계속 분석.
+
+**51차 변경/증거:** 담당 브랜치 본 문서 1파일 갱신 + main 기반 PR #1063 `client.tsx`/FOMC test 2파일, CI PASS. 원본 48차 코드/CI 통과 기록 보존. 운영 변경 0, **전체 95% 유지**.
