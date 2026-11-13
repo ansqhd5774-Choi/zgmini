@@ -1,3 +1,37 @@
+<!-- employment-r6-53rd-operational-approval-boundary-20261114 -->
+## 53차 고용 R6 — B 승인 소스와 신규 A 실제 등록 분리 (2026-11-14 KST)
+
+**기능 전체:** 87.5%(7/8) → 87.5%(7/8). **운영 공개 마지막 유효값:** 28/29 scored READY, `STATE_CLAIMS_BREADTH`는 `PARTIAL_HISTORY`/score null. 첫 실제 결손 주·지역 **UNKNOWN**. 공급자 호출·운영 SQLite/Controller/Writer/D1/Cloudflare 변경 **0**.
+
+**원본 53차 지시:** [제어 #68 6863923778](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6863923778). Control main `69e25a08`; 기능 main `643b7c7c`. 53차 범위는 설치 승인의 **정확한 과거 파일/해시·실제 설치**와 신규 A의 **개발 main 등록·운영 등록**을 구별하고 중앙 단일 Owner의 다음 read-only 반환 계약을 확정하는 것.
+
+### 승인 B 600주 — 기존 승인 및 실물의 범위
+
+1. **Provider BACKFILL 600주, 1파일:** [승인 manifest](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/approvals/writer-updates/employment-r6-2015-600-onefile-20261109.json) `APPROVED_B`, source branch `feat/bls-registered-v2-20261109`, candidate `e0488984`, 변경 `lib/market-score/employment-r6-provider.mjs` 단 1파일, after SHA-256 `a3474258efcbd12c8ac081d07a0d7ffb3055b5ddd8d35080248aecf60ba30381`. 기존 [Issue #1040/Run 42603899010](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1040#issuecomment-6738212099)는 `WRITER_B_INSTALLED_VERIFIED`/JSON·TXT readback 2/2, 당시 LOCAL_OVERLAY source SHA `f422cd570b679f21cebbd76db11310fa9087ee5f`. **당시 Provider 설치 성공**이며 현재 설치 파일·active source SHA의 증명은 아님.
+2. **Collector 600주 window/ledger, 1파일:** [별도 승인 manifest](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/approvals/writer-updates/employment-r6-backfill-window-collector-20261109.json) `APPROVED_B`, candidate `b1541453`, 변경 `lib/market-score/employment-r6-collector.mjs` 단 1파일, after SHA-256 `f22b2f1447e462d3101caf027323572606db61352ab6a53524dd406cca7a4915`. [#1063/Run 42617811190](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1063#issuecomment-6740229895)의 최종 결과는 `WRITER_B_RECOVERY_REQUIRED` / `WRITER_B_CORE_REENABLE_SOURCE_PAIR_STOP`, `sourceSha=null`, `installationVerified=false`(결과 JSON). [#1087/Run 42634492692](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1087#issuecomment-6742480737)의 Core 활성화/lock 복구 PASS는 설치 성공의 대체가 아님. 현 Collector 실제 바이트/HEAD-config pair **UNKNOWN**.
+3. 두 승인은 **그 당시 source 후보·파일·before/afterSHA와 1회 설치**에만 해당. [Draft #1062](https://github.com/ansqhd5774-Choi/zgmini/pull/1062)(ETA539 결측 2파일)·[Draft #1064](https://github.com/ansqhd5774-Choi/zgmini/pull/1064)(600w 3파일, HEAD `bce5a2a5`) 또는 현재 담당 브랜치 `65b2917` 전체를 신규 설치 승인한 것이 아님. 신규 source 재설치·재수집이 실제 필요한지는 **현재 PC exact SHA 확인 후** 최소 범위/신규 manifest를 Owner가 판단. 동일 요청 재실행 0.
+
+### 신규 A — 개발 등록과 설치 확인 차이
+
+- Control 최신 main `config/operations.json` 및 `controller/operations.mjs`에는 `employment-r6-collection-evidence-readonly`가 A/light, 60초로 등록되고 [Reader source](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/controller/employment-r6-collection-evidence-readonly.mjs)가 있음(정적 소스).
+- **최근 실PC Controller 실측**은 `badad912…`/31개 allowlist로 위 A **미등록**. GitHub main 37개와 다름. 운영 PC 현재 설치 SHA·실제 53차 등록 상태는 직접 readback 없어 **UNKNOWN**(과거 미등록과 구분). 신규 Reader A 실PC 실행/JSON·TXT 0건.
+- 기존 [#1351/Run #43429486924](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43429486924)는 **다른 operation** `core-runtime-source-readonly`의 소비된 원본, `queued`/Runner 미배정, Windows 결과 0. `employment-r6-collection-evidence-readonly`의 요청·성공으로 분류 금지. 중복 실행/재발행 금지.
+- A는 고정 로컬 SQLite를 읽어 `DOL_ETA539:530w/600w` metadata, 원자료 완전주 수·첫 결손 주·지역 수·국가/주 run 요약과 `fullTenYearRawCoverage`를 **비민감 집계만** 반환하도록 작성. 단, **실제 첫 누락 지역명/주**는 반환된 진단 필드의 한계 내에서 판정하며 필요한 경우 추가 승인된 정밀 범위가 필수. 정적 Reader 존재만으로 577주×51지역=29,427지역-주 성공을 인정하지 않음.
+
+### 독립 소스 보완 / 검증 범위
+
+- 51차 기존 커밋 `151b1194`까지 보존. 추가 [담당 커밋 `65b2917`](https://github.com/ansqhd5774-Choi/zgmini/commit/65b29179774777b9654b32976bd48dd3303ba9bf)은 **오래된 전용 브랜치에 현 main에서 이미 검증된** DOL 오래된 관측일의 잘못된 SUCCESS 방지, provider 호출 후 SQLite write 실패시 요청 수 보존, 같은 synthetic 회귀 2건을 최소 3파일로 이식한 **SOURCE_ONLY** 작업. 병합/운영 적용 없음.
+- [#1064 HEAD CI #43500043358](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43500043358) `completed/success`, 기존 8/8 회귀·전체 4186 tests/0 fail. [#1062 CI #43489515759](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43489515759) `completed/success`/기존 4/4. **새 전용 브랜치 추가 회귀 2건을 실행한 신규 CI는 확보하지 않았으므로 PASS로 주장하지 않음.** 소스 브랜치 전체 main 대비 diverged, 강제 merge/rebase/clean 없음.
+
+### LAST PASS / FIRST FAIL / 단 하나의 다음 필수 실행
+
+- **LAST PASS:** historical B Provider #1040 `WRITER_B_INSTALLED_VERIFIED` + 정확한 로컬 source SHA/2/2 JSON·TXT(당시 시점), 최신 2 Draft PR source CI 성공, 53차 브랜치 commit 원격 readback. 운영 점수의 마지막 검증 `28/29`는 기존 증거를 보존하는 상태이며 신규 D1 검증은 아님.
+- **FIRST FAIL (실제 선행 접근):** 현행 운영 PC의 `employment-r6-collection-evidence-readonly` 설치·등록을 입증하는 A readback 부재, #1351의 운영 Runner `queued` 배정 증거 미확보. 판정 `AUTOMATION_BLOCKED / OPERATING_PC_READER_INSTALL_UNVERIFIED`; DOL 수집 `RUNTIME_FAILED`와 구별. Collector #1063 설치 실패 이력은 별도 보존.
+- **다음 필수 실행 하나 = 중앙 기존 운영 PC/Controller 단일 Owner가 승인된 직접 읽기 경로로 다음을 한 번에 반환:** `host=PC`, `capturedAt`, 6 Runner online/busy·Supervisor/Watchdog/Guardian/PAUSE·DRAIN/maintenance lease owner·before SHA, 기존 #1351 job 배정, **Controller 설치 SHA/allowlist의 신규 A 존재**, 실제 `sourceRoot/HEAD/config.source`, `provider.mjs`·`collector.mjs` 현장 SHA-256, 과거 #1040/#1063 afterSHA 대비 일치 여부, 2/2 결과와 정확한 Issue/Run 참조. 비밀/원자료는 반환하지 않음. 신규 A가 미설치면 중앙 Owner만 기존 승인 manifest/source 보호 기준으로 설치 가능 여부를 판정; 승인 이전 새 실행 금지.
+- **Owner 반환 후 원담당:** 등록 완료 시 신규 A **정확히 1회**로 SQLite 600주 snapshot·51개 지역×577연속주 실측→첫 결손 주/지역에 필요한 최소 원자료 확보→승인된 로컬 계산·저장→D1/API/UI `29/29 READY` 검증. 우선 검증 단계가 실제로 닫히기 전 게시 금지.
+
+---
+
 <!-- employment-r6-51st-execution-primary-20261114 -->
 ## 51차 최신 실제 실행 결과 (2026-11-14 KST)
 
