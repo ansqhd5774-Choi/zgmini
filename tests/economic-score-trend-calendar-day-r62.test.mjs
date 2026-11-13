@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {isRealEconomicScoreDay} from '../lib/economic-score-trend-date.mjs';
+import {economicOneYearChart} from '../lib/economic-trend-chart-r60.mjs';
 
 const panel=()=>readFileSync(new URL('../app/economic-indicators/economic-detail-panel.tsx',import.meta.url),'utf8');
 
@@ -28,13 +29,27 @@ test('a malformed last observation cannot replace the last genuine score day',()
  assert.equal(valid.at(-1).score,54);
 });
 
-test('economic detail score trend and raw mini trend both use strict daily guard',()=>{
+test('economic detail score trend validates real days, gaps, and latest valid marker',()=>{
  const source=panel();
  assert.match(source,/import \{isRealEconomicScoreDay\} from "\.\.\/\.\.\/lib\/economic-score-trend-date\.mjs";/);
  assert.match(source,/const dated=\(s:unknown\):s is string=>isRealEconomicScoreDay\(s\);/);
  assert.match(source,/if\(dated\(d\)&&validScore\(v\)\)byDay\.set\(d,v\)/);
  assert.match(source,/\(dated\(date\)\|\|\(typeof date===/);
- assert.match(source,/const last=chart\.at\(-1\)/);
+ assert.match(source,/const last=chart\.findLast\(point=>validScore\(point\.score\)\)/);
+ const timeline=economicOneYearChart([
+  {date:'2026-02-30',score:99},
+  {date:'2026-02-27',score:51},
+  {date:'2026-02-28',score:null,value:83},
+  {date:'2026-03-01',score:58},
+  {date:'2026-03-02',score:null,value:83},
+ ]);
+ assert.deepEqual(timeline,[
+  {date:'2026-02-27',score:51},
+  {date:'2026-02-28',score:null},
+  {date:'2026-03-01',score:58},
+  {date:'2026-03-02',score:null},
+ ]);
+ assert.deepEqual(timeline.findLast(p=>typeof p.score==='number'),{date:'2026-03-01',score:58});
 });
 
 test('month-only raw trends remain distinct from daily score history',()=>{
@@ -43,9 +58,17 @@ test('month-only raw trends remain distinct from daily score history',()=>{
  assert.equal(isRealEconomicScoreDay('2026-10'),false,'daily score history does not fabricate YYYY-MM-DD');
 });
 
-test('score selection remains stored-only and the plot still uses source values',()=>{
+test('stored-only score selection and raw chart values preserve null and zero',()=>{
  const source=panel();
  assert.match(source,/useStoredIndex<Snapshot>\("\/api\/market-score"\)/);
  assert.match(source,/domain\?\.status==="READY"&&validScore\(domain\.score\)/);
- assert.match(source,/const chart=oneYear\.map\(p=>\(\{date:p\.label,score:p\.value\}/);
+ assert.match(source,/const chart:MarketFearGreedChartPoint\[\]=useMemo\(\(\)=>economicOneYearChart\(domain\?\.trend\)/);
+ assert.match(source,/<MarketFearGreedChart data=\{chart\}/);
+ const chart=economicOneYearChart([
+  {date:'2026-10-01',value:27},
+  {date:'2026-10-02',score:null,value:83},
+  {date:'2026-10-03',score:0,value:83},
+ ]);
+ assert.deepEqual(chart.map(p=>p.score),[27,null,0]);
 });
+
