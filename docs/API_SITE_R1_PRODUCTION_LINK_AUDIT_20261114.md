@@ -164,3 +164,32 @@
 **FIRST UNVERIFIED:** 현재 5키 원격 D1 메타/본문 SHA·동일 시각 API payload·Cloudflare 정확한 Deployment ID/SHA.  
 **상태/진행률:** `AUTOMATION_BLOCKED(NO_APPROVED_EXACT_KEY_D1_READBACK_ACCESS)` — 마지막 동치 검증 단계만; **75%→75%(3/4)**.  
 **다음 필수 실행 하나 / 담당:** **이미 승인된 Cloudflare/D1 읽기 소유자**가 정확키 5개의 `key,exists,stored_at,bodySha256` 및 각 Reader 계약에 맞는 `sourceVersion` 또는 `formulaHash/methodologyVersion`, 관측/게시 시각과 Production Deployment ID/SHA를 **기존 안전한 읽기 결과 경로**로 반환. 이후 API 담당이 정상화한 구조와 공개 원문을 비교하며, theme rolling/sidecar 미검증은 별도 UNVERIFIED로 유지한다.
+
+## 58차 — 5개 Production API 무료 공개 GET 접근 단회 실측 (2026-11-13T21:15:42.790Z)
+
+**지시:** [제어 #68 6864999213](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6864999213) 담당 6번. 작업 전 제어 `main`의 `AGENTS.md`, `docs/GENERAL_CHAT_START.md`, `docs/PC_AUTOMATION_STANDARD.md`와 기능 전용 브랜치 `ad9b6d0fac74042d67cff86ce11780e16ac1a8c3` 확인. 제어 main `69e25a08a903dc8e52ef1093ec15837de4c20858`, 기능 main `643b7c7c4372ffad552443fc312c6cb1b944e2fc`.
+
+### 이번 실제 시도와 종료 원인
+
+기존 무료 공개 웹 URL 읽기 도구로 아래 5개 Production GET URL을 **각 1회** 요청했다:
+
+| 대상 | 원격 도구 결과 | 서비스 HTTP status | 현재 관측일/버전 |
+| --- | --- | --- | --- |
+| `https://zgmini.kr/api/inflation-causal-inputs` | `URL_NOT_ACCESSIBLE_VIA_TOOL` | NOT_OBSERVED | NOT_OBSERVED |
+| `https://zgmini.kr/api/inflation-candidate-inputs` | `URL_NOT_ACCESSIBLE_VIA_TOOL` | NOT_OBSERVED | NOT_OBSERVED |
+| `https://zgmini.kr/api/release-calendar` | `URL_NOT_ACCESSIBLE_VIA_TOOL` | NOT_OBSERVED | NOT_OBSERVED |
+| `https://zgmini.kr/api/theme-fear-greed` | `URL_NOT_ACCESSIBLE_VIA_TOOL` | NOT_OBSERVED | NOT_OBSERVED |
+| `https://zgmini.kr/api/employment-r6/observations` | `URL_NOT_ACCESSIBLE_VIA_TOOL` | NOT_OBSERVED | NOT_OBSERVED |
+
+독립 실행 환경에서 공용 DNS의 `socket.getaddrinfo('zgmini.kr',443)`를 1회 확인했으나 `gaierror(-3): Temporary failure in name resolution`. 실제 GET 응답을 받기 전의 도구/환경 실패다. **Production의 404/503 또는 API 버그로 분류하지 않는다**. 대체 유료 Browser Use/종량제 플러그인, 권한 우회, 동일 URL 재시도 금지.
+
+기능 main의 기존 Cloudflare 배포 정본은 `GitHub main → Cloudflare Git Integration → exact Deployment → Production`. 공개 소스 검색에서 **현재의 exact Deployment ID/실제 source SHA를 반환하는 검증 가능한 공개 경로를 확보하지 못함**. GitHub main SHA는 **배포 SHA의 대용이 아니다**. 정적 소스·과거 44차 실측을 현행 Runtime 데이터로 승격하지 않는다.
+
+### 종료 판정
+
+- **LAST PASS:** 지시/승인/전용 브랜치 확인과 5개 공개 URL 단회 시도 결과 기록, 과거 완료 53차 Reader 변환 계약 재사용.
+- **FIRST FAIL (이번 실제 단계):** 공개 5 GET의 `URL_NOT_ACCESSIBLE_VIA_TOOL`, 독립 환경 DNS `EAI_AGAIN` / `gaierror -3`, **서비스 HTTP status 미수집**. 기존 Theme 503은 과거 실측에만 유효.
+- **FIRST UNVERIFIED:** 현재 API 5응답/관측일/version, Production exact Deployment ID/SHA, 현재 D1 exact-key 5 `exists/stored_at/bodySha256`.
+- **범위 제한 차단:** `AUTOMATION_BLOCKED(PUBLIC_API_READ_ACCESS)` 및 기존 `AUTOMATION_BLOCKED(NO_APPROVED_EXACT_KEY_D1_READBACK_ACCESS)`는 각각 독립이다. Production/API 장애 판정 아님. D1 0/5/UNVERIFIED.
+- **변경:** 본 원장 1파일 이외 변경 없음. 신규 PC/Runner/SQL/D1/Writer/Cloudflare/배포/소스/회귀 재실행 0. **진행률 75%→75%(3/4)**.
+- **다음 필수 행동 하나:** 기존 승인된 Cloudflare/Production **무료 읽기 권한 소유자**가 현 시각 API 5건의 HTTP/JSON 비민감 metadata와 정확한 Deployment ID/source SHA, 별도 정규 D1 5키 읽기 영수증을 기존 결과 경로로 반환하면 API 원담당이 53차 `{payload,projection}`·direct-body·seed/rolling 계약에 따라 직접 대조한다. 승인 경로 없이 새로운 임의 SQL/배포/read operation을 만들지 않는다.
