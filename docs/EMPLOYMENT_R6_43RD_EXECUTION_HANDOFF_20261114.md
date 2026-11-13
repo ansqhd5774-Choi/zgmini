@@ -1,3 +1,25 @@
+<!-- employment-r6-55th-actual-owner-source-v8-proof-20261114 -->
+## 55차 — 현재 원격 소스/승인 범위·실 PC readback 부재 구분 및 실제 Reader 함수 검증 (2026-11-14 KST)
+
+**전체 기능:** 87.5%(7/8) → 87.5%(7/8), 기존 D1 28/29 READY / `STATE_CLAIMS_BREADTH=PARTIAL_HISTORY`, 실제 누락 주·지역 UNKNOWN. **55차 원문:** https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6864363828 . 53차 완료 항목·기존 #1062/#1064·#1361 Draft 원장 재사용; 기존 pc-job/Runner 재발행 없음.
+
+### 실제 수행 및 증거
+1. [제어 main `69e25a08`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/69e25a08a903dc8e52ef1093ec15837de4c20858)의 `config/operations.json` blob `c906683afd...`에 신규 `employment-r6-collection-evidence-readonly` **A급 60초/light 등록** 원격 확인. 이는 **개발 정본 등록이지 운영 Controller 설치 A 허용목록 검증이 아님**.
+2. 역사적 B #1040 `WRITER_B_INSTALLED_VERIFIED` / 1파일 `employment-r6-provider.mjs`, candidate `e0488984...`, after SHA256 `a3474258...`, 실제 Run `42603899010` 성공. #1063 `employment-r6-collector.mjs` candidate `b1541453...`, after SHA256 `f22b2f14...`는 Run `42617811190` `WRITER_B_RECOVERY_REQUIRED`, installationVerified=false. #1087 복구는 Core 복구이지 collector B 설치 증거 아님. 둘 다 **현장 현재 바이트 SHA 검증 안 됨**.
+3. 독립 #1195 [B 5파일 성공](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1195#issuecomment-6754390582) `release/employment-r6-cps-r2-20261110` candidate `b37c7c02...` 확인; exact scope는 `formula.mjs`, `feature-engine.mjs`, `one-year-read-model.mjs`, `one-year-stage.mjs`, `public-display.mjs` 5개이고 **provider/collector 0개**, 따라서 #1195 성공도 Collector 현재 설치 성공으로 소급 불가.
+4. 기존 PC 진단 [#1351 Run 43429486924](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43429486924) 현재 `queued/conclusion=null`. 실제 Windows 실행·결과 JSON/TXT **0**, 고유 requestId `pc-8ff3a2e8-1bc9-4470-81ad-7789fc0b2b13`. 격리 CI PC는 운영 PC 허용목록 증거 아님.
+5. R6 전용 [Draft #1361](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1361) blob `9ead740f2935b5f6f511c2006e7533c525128ca3`에서 `coverage`/실제 `fullTenYearRawCoverage` 함수 원문을 추출하여 V8에서 **실제 함수 코드 실행**: 합성 주간 row count로 6/6 PASS: 577 완전주, 576주에서 중간 주 2016-03-05 결손, 577 관측/중간 주 결손, 2026-10-31 50/51 주, prior-4w zero, 530주 부족/required 577주·29427행. **직접 함수 단위 증거**이며 Node sqlite 전체 모듈 통합 테스트·지역코드 DB 조회·실운영 실행 PASS는 아님. 기존 [C996 CI #43502771075](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43502771075) 는 다른 소스 27/27 PASS만 수행하므로 Reader 직접 CI `NOT_VERIFIED` 유지.
+6. GitHub 각 exact manifest 원격 확인으로 현재 55차에 기존 성공 설치 기록을 부풀리지 않고 정규 중앙 Owner 실측에 필요한 출처/바이트 해시/경로를 특정함. source/deployment/운영 변경 **0**.
+
+### 단일 중앙 Owner 현장 readback 계약 및 현재 차단
+중앙 단일 소유자가 **기존 승인된 운영 PC 직접 읽기 경로**로 관측시각(KST/UTC), 운영 host/Runner 6좌석 online-busy, #1351 배정/시도와 미실행 이유, Watchdog STATUS·Guardian STOP·PAUSE/DRAIN·Supervisor PID/heartbeat·lease owner, Controller 설치 SHA 및 허용 A 목록 (`employment-r6-collection-evidence-readonly` 실제 존재/부재), Writer sourceRoot 및 HEAD/config.source SHA, `employment-r6-provider.mjs`/`employment-r6-collector.mjs` 실제 파일 SHA256를 **비민감 고정 필드·기존 고유 원장으로** 반환. 상태가 불명이면 UNKNOWN으로 기록. 별도 무승인 설치/B 덮어쓰기/#1351 재실행·수동 CMD/SQL/D1/DNS/Controller 복구 금지.
+
+**LAST PASS:** 원격 control A 등록·B 1/1 실패 분리·#1195 5파일 실제 범위·Draft reader 함수 6/6 PASS 및 source CI 범위/원장 보존. **FIRST FAIL:** 운영 #1351 queued/PC Windows 0; 현재 Provider+Collector exact SHA 및 installed A 현장 검사 부재. 577주×51지역 첫 결손·29/29 미완료. **다음 한 필수 행동:** 중앙 단일 Owner의 위 **기존 정규 운영 PC 읽기 원장 1회** 회수(공유 쓰기 없이); 그 결과로 승인된 A에서 실제 첫 결손 주/지역 조회, 필요 시 승인된 B 최소 원자료 보완→로컬 계산/게시/화면 검증.
+
+**변경 건수:** GitHub 전용 원담당 인계 문서 1건, 공유 Controller/Writer/PC/DB/D1/API/UI/Cloudflare 0, Runner 재실행 0, RDC 0.
+
+---
+
 <!-- employment-r6-followup-reader-first-gap-20261114 -->
 ## 53차 후속 독립 소스 — 기존 A Reader 최초 결손 주·지역 정밀화 (2026-11-14 KST)
 
