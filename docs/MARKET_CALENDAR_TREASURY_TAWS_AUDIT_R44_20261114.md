@@ -130,3 +130,26 @@
 - **다음 단일 필수 실행/담당:** 공유 Controller **단일 적용 Owner**가 현재 실제 운영 설치 before SHA·#996 공유 보호/lease·정규 승인 manifest(raw SHA-256)·9/13파일 신규 A 의존성을 대조하여 `source-inventory-runtime-readonly`의 **정식 A 설치/등록을 실제 Windows JSON/TXT로 증명**. 그 후 시장 캘린더 원담당이 TA_WS 365일 원문 감사 A 단 1회 실행; D1/API/UI 게시버전까지 대조 후 100% 여부 결정. FOMC 최초 단계는 기존 승인 Reader가 반환하지 않으므로 안전한 운영 원인 조회 권한·진단 경로가 별도로 실제 승인될 때만 독립 관측; 현재 FOMC API 원인을 추정하거나 신규 수집을 강제하지 않는다.
 
 **53차 변경파일:** 본 담당 브랜치 증거문서 1개만 append; 신규 코드·테스트·PR·PC 설치/변경 **0건**. 완료된 검증을 반복하지 않음.
+
+
+<!-- market-calendar-r55-reader-pc-live-evidence-20261114 -->
+## 9. 55차 실증 — Treasury 365일 원문 A의 현재 운영 등록/공유 설치 Owner 원장 대조
+
+**55차 지시:** [#68 6864363828](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6864363828) 시장 담당 M-02. 기존 FOMC 첫 HTTP/parse 오류 탐색 **재수행하지 않음**(`UNKNOWN_NOT_OBSERVED` 유지). FOMC 개정 표시 source [Draft PR #1063](https://github.com/ansqhd5774-Choi/zgmini/pull/1063) HEAD `45bdc448fe05dd5df7299088c3e4cb613c9b2d33`, CI [#43499646946](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43499646946) SUCCESS **재사용**, Production 반영·FOMC source 복구 미입증. 전체 **95%→95%**.
+
+### 9.1 기존 승인된 운영 조회/Owner 원본 실제 재조회 결과
+
+1. **마지막 인증 Windows 실측 = 2026-11-12T20:43:44.585Z.** [#1342 Run #43303078533](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1342), [원본 운영 PC JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/pc-process-inventory-43303078533-1-operating.json) **직접 재조회**: `role=operating`, `host=PC`, `status=PASS`, `maintenance.actualControllerSha=badad9124157879d7a645b64f2768113d632355b`, `installLockHeld=true`, `installLockRecoveryRequired=true`, `receiverStatus=LISTENING`, `operationalWrites=0`. 이는 **해당 시각** 상태이지 오늘 실PC SHA·Runner/lease 생존 증거 아님.
+2. 당시 설치 SHA `badad912...`의 Git 원본 `config/operations.json`(blob `d22d18bd9b252cbaa5e6b8e082377a872630b2b3`)은 **A 31개 중 `source-inventory-runtime-readonly` 미등록**, 반면 제어 GitHub `main` 파일(blob `c906683afd487762f5bc32f50a199679df200dc3`)에는 **37개 중 신규 A 등록**. main 소스 변경은 PC 설치 성공 증거가 아님. 전날 설치 SHA 이상의 새 PC 설치 인증 JSON/TXT는 원장/Issue 조회에서 발견하지 못함.
+3. 공용 총괄 [기존 단회 pc-job #1351](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1351), [Actions Run 43429486924](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43429486924), Job `131899103441` **GitHub 최신 재조회 `queued`, `conclusion=null`, attempt 1, Windows Runner 미배정**. Run artifacts 조회 `[]`, 새 JSON/TXT **0건**. `#1351`은 신규 Treasury A가 아닌 기존 `core-runtime-source-readonly`의 운영 상태 조회 요청이며 **새 조회 요청 중복 발행 금지**. queued 자체로 PC Offline·Controller 장애 원인 단정 금지.
+4. 실제 공유 설치 보호 [#996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/996) 원장: C 80%/`NO-GO`, native CAS/추가 continuation 승인 미충족, 현재 실PC Owner/lease readback 없음. [공용 Reader 13파일 source-only 후보](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/codex/controller-ops-lessons-20261105/docs/CONTROLLER_READER_A_SOURCE_DIFF_PREFLIGHT_20261114.md)는 **실제 승인 B manifest 아님**, 원본 before SHA256·backup·실제 공유 lease·중앙 Owner 없이는 Controller 설치 불가. #996은 **충돌하는 공용 설치 쓰기만 차단**, 기존 Treasury 수집·D1 게시의 신규 실패라고 해석 금지.
+5. #68 중앙 단일 담당자 및 [적용 대기열 정본](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/docs/CONTROLLER_APPLY_QUEUE.md)을 확인. **신규 `source-inventory-runtime-readonly` 설치의 PASS/등록/실PC 실행 증거는 55차 원격 조회 기준 0건.** GitHub `main`/PR/격리 CI PASS는 실PC 등록과 별개.
+
+### 9.2 LAST PASS/FIRST FAIL 및 정확한 다음 필수 실행
+
+- **LAST PASS — 실제 운영 PC:** #1342 / Run 43303078533 / 2026-11-12T20:43:44.585Z: Controller `badad912...`, 보호 lock 및 recovery 필요 상태를 변경 없이 readback. **기존 캘린더 A PASS:** #1299 / Run 43166235600 `release-calendar-runtime-readonly` / `CACHED` / `sqliteOpened=false`, Treasury 원문 감사 아님.
+- **FIRST FAIL — 신규 TA_WS A 이전:** 과거 [#1023](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1023) `OPERATION_NOT_ALLOWED/EVENT_OR_REQUEST_VALIDATION`. **현재 새 원본 실패 관측은 없음**; `#1351 queued`는 `AUTOMATION_PENDING/WAITING_FOR_RUNNER_ASSIGNMENT_EVIDENCE`, 새 실행 실패 아님. 현 PC installed op/beforeSHA/lease = `STATE_UNKNOWN`; 설치 범위 = `AUTOMATION_BLOCKED(NOT_INSTALLED_OR_UNVERIFIED)`.
+- **다음 필수 실행 하나 / 담당 = 기존 공용 Controller 단일 적용 Owner:** **이미 승인된 운영 PC 직접 read-only 경로에서 현시각** 6 Runner Online/busy·Watchdog Guardian PAUSE/DRAIN·Supervisor heartbeat, Controller `installed SHA + operations allowlist/source-inventory-runtime-readonly 등록 여부`, 실제 `controller-install` lease owner/recoveryRequired, 후보 파일 before SHA-256·현재 유지보수 승인 경계를 **한 번** 실측하고 #1351 원본/공용 #68에 JSON/TXT 또는 승인된 비민감 영수증으로 반환. 그 결과 실제 등록 PASS이면 시장 담당만 승인 A **새 고유 1회** TA_WS 365일 원문 기간/건수/eligible/text SHA/WAL을 검사. 미등록이면 중앙 담당이 충돌하지 않는 정규 B 승인/설치 가능성 판단(지금은 NO-GO), 새 임의 pc-job/CMD/SQL/복구 우회 금지.
+- **판정:** 실제 원문 365일 감사 0/1, Production 최신 D1/API/UI 동일 버전 검증 미완료. 기존 Treasury 수집·계산·저장·게시 성공 95점을 보존, 전체 95%→95%, 신규 PC A/B/Runner request·유료 plugin·RDC·DB/D1/Cloudflare·예약·운영 source 변경 **0건**.
+
+**55차 파일 변경:** 이 담당 브랜치 증거기록 1파일 append only; 운영 PC·기능 코드·manifest/test 재실행 없음. 55차 공용 #68 인계는 실제 중앙 담당의 자동 수신이나 PC 설치 성공 아님.
