@@ -101,3 +101,32 @@
 **공유 Controller 단일 적용 담당:** 기존 운영 PC before SHA/승인 manifest/raw SHA256/9~13파일 보조 의존/lease·백업·보호를 확인하고 **`source-inventory-runtime-readonly`의 실제 설치 및 allowlist/라우팅 PASS** 증거를 제공. 설치 확인 후 원담당이 새 고유 A 1회로 TA_WS 본문 기간(포함 365일)/행수/eligible/textSha256/SQLite WAL·JSON/TXT를 검사한 다음 D1·Production API/UI 동일 버전 결과로 95→100% 판정. FOMC 공개 `SOURCE_FAILED`의 첫 provider/parse 실패는 별도 증거 접근 경로로 계속 분석.
 
 **51차 변경/증거:** 담당 브랜치 본 문서 1파일 갱신 + main 기반 PR #1063 `client.tsx`/FOMC test 2파일, CI PASS. 원본 48차 코드/CI 통과 기록 보존. 운영 변경 0, **전체 95% 유지**.
+
+
+<!-- market-calendar-r53-fomc-first-fail-reader-contract-20261114 -->
+## 8. 53차 — `fed_fomc SOURCE_FAILED` 원본 오류 확보 가능성 실제 감사 (승인 Reader 기존 계약)
+
+**지시:** [공통 #68 53차](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6863923778), 담당 시장 캘린더. **전체 기능 95% → 95%**. 이번 필수 독립 실행은 기존 승인 A 조회기·원본 PC 실행 JSON/TXT·현재 코드의 실제 반환 계약을 대조해 FOMC 오류 단계의 증거 접근 여부를 결정하는 것. 이미 완료된 PR #1063 두 파일/CI #43499646946 SUCCESS를 다시 실행하지 않았다.
+
+### 8.1 기존 승인 A의 실제 기능·실행 한계 (LAST PASS)
+
+- 실제 PC 원본 [#1135 / Run 42692713050](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1135): `release-calendar-runtime-readonly` `PASS / RELEASE_CALENDAR_SOURCE_INVENTORY_READONLY`, 당시 `collection.calendarStatus=READY`, 13개 `sourceKeys`에 `fed_fomc` 존재, `providerRequests=24`, `sqliteOpened=false`. **이것은 2026-11-09 당시 수집 상태의 증거이지 지금 FOMC 성공을 보장하지 않음**.
+- 더 최신 실PC [#1299 / Run 43166235600](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1299): 인증 JSON/TXT 2/2 `PASS`, `collection.at=2026-11-12T06:05:13.049Z`, `calendarStatus=CACHED`, `providerRequests=0`, `sourceKeys=[]`, `sqliteOpened=false`, installed Controller `badad9124157879d7a645b64f2768113d632355b`.
+- 실제 설치 버전과 동일 범위의 [기존 Reader 소스](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/controller/release-calendar-runtime-readonly.mjs)의 반환 계약: `local-collection-last-run.json`의 `releaseCalendar`에서 **전체 calendarStatus, providerRequests, sourceKeys/sourceCount만** 제한해 읽음. 원천별 `sources.fed_fomc.status/attemptedAt`, 공급자 HTTP 응답, 파서 예외코드, 원문 input 및 SQLite/WAL **전부 반환하지 않음**. 이 Reader의 `collection-events`는 earnings API 특정 호스트 관측일 뿐 FOMC provider 실패 증거가 아님.
+- 실제 PC Controller beforeSHA `badad912...` [config/operations.json](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/badad9124157879d7a645b64f2768113d632355b/config/operations.json)은 A `release-calendar-runtime-readonly`를 허용하지만 신규 `source-inventory-runtime-readonly`는 **미등록**. 최신 제어 GitHub main에는 등록되나 **PC 적용 인증된 readback 없음**.
+- [신규 Reader 원본 소스](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/controller/source-inventory-runtime-readonly.mjs)도 FOMC 실패코드를 조회하는 동작은 없음. `market_input_batches_v1` 고정 TA_WS `release-calendar:treasury:taws:YYYY-MM-DD` 한 건과 2027 Census 진단 등을 조회하는 **별도** 입력 Reader로, 승인/설치 전 A 호출 불가.
+
+### 8.2 최초 원인 증거 미존재를 코드 수준에서 확정 (FIRST FAIL 분류)
+
+- 기능 `main/scripts/pc-writer/release-calendar.mjs`의 기존 `fed_fomc` 수집 경로: 공급자 `https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm` GET `response.ok` → HTML 텍스트 1 MB 상한 → `parseFomcAnnualCalendar(html,year)` 검사 → 유효 입력 `release-calendar:fed_fomc:YYYY` 로컬 저장/재조회 → output READY.
+- **실패 코드 저장 계약이 없음:** 공통 `catch(error)`는 `source==='treasury'`의 경우에만 좁은 별도 `treasuryFailureCode`를 설정. `fed_fomc`는 `sources.fed_fomc={status:'SOURCE_FAILED',checkedAt:지난유효값,attemptedAt,sourceUrl}`만 유지하고 해당 `error.message`, HTTP code, parser stage를 별도 원장에 쓰지 않음. 이전 유효 FOMC 일정은 유지. 따라서 **현재 저장 출력만으로 최초 HTTP vs parse 단계 복원 불가**, 통제된 새 관측/승인된 별도 진단 증거가 없다면 `FIRST_FAIL=UNKNOWN_NOT_OBSERVED`(증거 부재); `SOURCE_FAILED` 자체는 실제 API의 source-level 실패 상태.
+- 2026-11-14 [Fed 공식 일정](https://www.federalreserve.gov/monetarypolicy/fomccalendars.htm) 공개 본문에는 **2026·2027년 각 8개 회의**, 2027 10-26/27 `Monetary Policy Strategy Meeting`, 마지막 11-16/17 표시. 이는 공개 문서 **텍스트** 확인이며 실제 운영 PC가 받은 HTML 바이트/상태코드나 파서 성공 증거는 아님. 독립 웹 `/api/release-calendar` GET은 이번 도구에서 실패해 11/13 당시 [API 담당 #835](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/835#issuecomment-6863123928) 관측만 재사용: calendar PARTIAL 2358, Treasury READY 894, Treasury 365일 872·공개 중복0, `fed_fomc=SOURCE_FAILED`. 오늘 최신 D1 body SHA/동일 게시 확인 없음.
+- **FOMC 진단과 Treasury 감사를 혼동 금지:** 과거 [#1023](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1023) `OPERATION_NOT_ALLOWED`는 TA_WS 신규 Reader **설치 단계** 거절이지 FOMC provider HTTP 실패가 아님. PC #1299 `CACHED`/no-provider-request는 새로운 실패 원인을 생성하지 않음. `git main` source registration이나 CI PASS도 운영 설치 성공으로 승격 금지.
+
+### 8.3 이번 실제 수행·다음 하나
+
+- 실제 완료 작업: **기존 허용 A(설치/출력)와 소스 동작·FOMC 실패 로그 생산 계약 3방향 교차 감사 완료**. `FOMC_HTTP_OR_PARSE_ERROR_NOT_PERSISTED`라는 진단 접근 한계를 확정. 이는 새로운 수집/계산/게시 성과가 아니므로 **95/100 유지**.
+- 독립 코드를 증거 없이 수정하지 않음. [Draft PR #1063](https://github.com/ansqhd5774-Choi/zgmini/pull/1063) HEAD `45bdc448fe05dd5df7299088c3e4cb613c9b2d33`의 표시 수정 2파일·[CI #43499646946 SUCCESS](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43499646946)는 변경 없이 재사용. 운영 PC 명령·신규 A/Runner/CMD/임의 SQL/DB·D1·배포·예약 변경 **0건**.
+- **다음 단일 필수 실행/담당:** 공유 Controller **단일 적용 Owner**가 현재 실제 운영 설치 before SHA·#996 공유 보호/lease·정규 승인 manifest(raw SHA-256)·9/13파일 신규 A 의존성을 대조하여 `source-inventory-runtime-readonly`의 **정식 A 설치/등록을 실제 Windows JSON/TXT로 증명**. 그 후 시장 캘린더 원담당이 TA_WS 365일 원문 감사 A 단 1회 실행; D1/API/UI 게시버전까지 대조 후 100% 여부 결정. FOMC 최초 단계는 기존 승인 Reader가 반환하지 않으므로 안전한 운영 원인 조회 권한·진단 경로가 별도로 실제 승인될 때만 독립 관측; 현재 FOMC API 원인을 추정하거나 신규 수집을 강제하지 않는다.
+
+**53차 변경파일:** 본 담당 브랜치 증거문서 1개만 append; 신규 코드·테스트·PR·PC 설치/변경 **0건**. 완료된 검증을 반복하지 않음.
