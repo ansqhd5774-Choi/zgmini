@@ -243,3 +243,19 @@ Test 실행환경은 **비운영 격리 컨테이너**이고 GitHub Actions/운�
 **다음 단 하나 / 중앙 Controller 단일 Owner:** #996 공유 설치 보호/lease와 정규 승인 계약을 지키면서 현행 **실PC Controller installed SHA + 신규 `source-inventory-runtime-readonly` allowlist/라우팅**을 기존 승인 read-only 경로로 확인해 인증된 설치 JSON/TXT를 반환. 설치 PASS 이후 시장 원담당만 새 고유 A 단 1회 → 62차 영수증 2/2 검증→60차 365일 fail-closed 메타 판정→독립 원문 중복·D1/API/UI 버전 readback. 설치 전 새 pc-job/Runner·CMD/SQL/D1/배포 우회 금지.
 
 **62차 변경:** 기능 브랜치 source+test 2파일 / 이 기록 1파일. 실제 PC·Controller/Runner/Writer·원자료·SQLite·D1·Cloudflare·예약 변경 **0**.
+
+
+<!-- market-calendar-r65-install-gate-20261114 -->
+## 13. 65차 — 실PC 신규 A 설치 증거 수신 여부와 감사 Reader 응답 계약의 조건부 실행 판정
+
+**지시 정본:** [#68 65차 #6866393700](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6866393700). **전체 95%→95%**. 중앙 65차 본문에 운영 `source-inventory-runtime-readonly` installedSHA/allowlist/라우팅 PASS 또는 새 Windows JSON/TXT 영수증 수신 없음. 중앙 기존 #1351/Run `43429486924` Job `131899103441` `queued/conclusion=null`은 중앙 정본 상태 **재사용**하며 GitHub Workflow·PC를 새로 폴링/재실행하지 않음. 마지막 PC #1342의 `badad912...`은 당시 실측 버전으로서 지금 현재 설치 SHA로 대체하지 않음.
+
+**이번 독립 source 계약 검사:** 제어 main `controller/source-inventory-runtime-readonly.mjs` blob `db9e9c8347277287cc6ef10bad310be125314d52`의 `inspectSourceInventory`는 core·history를 각각 read-only 열고 `result.status=PASS`이면 둘 다 PASS, `code=SOURCE_INVENTORY_STORED_READONLY`를 반환. `controller/operations.mjs` blob `b507697ce089254cd61932f1d5b703b48f93e0db`의 해당 operation dispatch는 소스상 존재. **운영 설치/호출 성립 증거가 아님.**
+
+**원담당 소스 재사용:** `lib/market-calendar-taws-audit-verdict.mjs` blob `d47bc10662968e0238698d34a8e38f2bd9f82500`는 Reader 최상위 PASS와 SQLite core PASS·365일을 확인하며, `lib/market-calendar-taws-pc-receipt.mjs` blob `1841029aab3f5dba63581865a0fb95b00ab88541`는 동일 `SOURCE_INVENTORY_STORED_READONLY`와 PC JSON/TXT·run/request/Controller SHA·0쓰기 검증 후 순수 판정기로 연결. **이번 계약 대조에서 새 소스 수정 필요 결함 입증 없음**. 기존 격리 Node 12/12, 8/8 PASS를 증거 재사용; 재실행/신규 CI 없음.
+
+**LAST PASS:** 기존 PC #1342의 당시 설치 상태 및 #1299 이전 calendar Reader PASS; 60/62차 격리 Node 기존 12/12+8/8 PASS. **FIRST FAIL:** 과거 #1023 `OPERATION_NOT_ALLOWED/EVENT_OR_REQUEST_VALIDATION`(그 당시 신규 A 미등록), 현재 TA_WS 신규 A는 호출하지 않았으므로 새 실행 실패 아님. **현재 상태:** `AUTOMATION_BLOCKED/INSTALLATION_NOT_VERIFIED`은 실제 Treasury TA_WS 365일 원문 A 감사에만 적용. source-registration은 현재 설치 성공을 보장하지 않음. 비공개 원문 rows/eligible/SHA/WAL 0/1, raw duplicate·외부 원본 해시·D1/API/UI 동시 버전 검증 미완료. 기존 정상 수집·계산·저장·게시 증거 95% 보존.
+
+**다음 필수 실행 하나/중앙 운영 PC 단일 Owner:** 기존 승인된 현재 PC read-only 영수증으로 **installed Controller SHA·`source-inventory-runtime-readonly` allowlist/라우팅 PASS**와 관측 시각을 확보하여 #68에 반환. 세 항목이 인증될 때만 시장 원담당이 승인된 새 고유 A **단 1회** → 62차 JSON/TXT 영수증 어댑터·60차 365일 판정 적용 → 별도 원문 중복 및 동시 D1/API/UI 조회. 승인 없는 새 pc-job·Runner/CMD/SQL/잠금 해제/Controller/Writer/D1·Cloudflare 배포 금지.
+
+**65차 변경:** 기능 소스/테스트/CI 0, 기존 브랜치 이 진척 기록 1개만 append; 실제 운영 데이터/설정/배포 변경 0. GitHub 인계는 타 일반챗 자동 수신·운영 PC 신규 설치 성공 아님.
