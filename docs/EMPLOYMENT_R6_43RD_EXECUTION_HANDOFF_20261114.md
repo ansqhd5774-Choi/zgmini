@@ -1,3 +1,24 @@
+<!-- employment-r6-58th-exact-node-source-ci-20261114 -->
+## 고용 R6 58차 — PR #1361 정확한 HEAD Reader Node 테스트 실행, FIRST FAIL 최소 수정, 재실행 PASS (2026-11-14 KST)
+
+**기능 진행률:** 87.5%(7/8) → 87.5%(7/8). 종단 D1 scored 28/29 READY, `STATE_CLAIMS_BREADTH=PARTIAL_HISTORY` / 점수 null 유지. **58차 중앙 원본:** https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6864999213 . 제어 main `69e25a08a903dc8e52ef1093ec15837de4c20858`의 AGENTS.md(blob `2a6c70cc`), docs/GENERAL_CHAT_START.md(`766434ad`), docs/PC_AUTOMATION_STANDARD.md(`dd9e30ad`) 및 본인 전용 브랜치 확인. 기존 53/55차 완성 source/CI/원장 재사용.
+
+### 새 실제 실행·원격 증거
+- **원본 Draft PR #1361** `fix/employment-r6-evidence-first-gap-20261114`, 최초 exact HEAD `6286a7deeed0f17e25cb4148835a4539f3523db7`, 변경 2파일 (Reader 및 test) 보존. 본문 예시 6/6 함수 시뮬이나 별도 C996 CI 27/27은 실제 Node Reader 통합 테스트로 계산하지 않음.
+- **격리 source-only 1회 시험 경로:** 별도 `test/employment-r6-pr1361-exact-head-node-20261114` 브랜치 `.github/workflows/employment-r6-pr1361-exact-node-once.yml`을 `on: push` 해당 브랜치/해당 workflow 파일로 한정. `actions/checkout` 고정 `ref`로 검증 대상 PR source SHA 명시; `persist-credentials:false`, `permissions:contents:read`, Node22, `runs-on:[self-hosted,Windows,X64,zgmini-handoff-ci-isolated]` 정확한 분리 label, `DESKTOP-N62L0NG` host assert; 신규 운영 pc-job/예약/Runner/RDC 없음.
+- **첫 실제 Node 실행** [Run `43509609145`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43509609145), Job `132176124088`: `TEST_SHA=6286a7de...`, `node --test tests/employment-r6-collection-evidence-readonly.test.mjs`, 결과 **15 total / 14 PASS / 1 FAIL**. LAST PASS test #12 WAL, FIRST FAIL test #13 `unapproved data path and symbolic core file fail without opening SQLite`; 구체 원인 `EPERM: operation not permitted, symlink ...other.sqlite -> ...core.sqlite`. 격리 Windows 권한으로 OS symlink 생성 불가; Reader 계산/DB 쿼리 실패로 오분류하지 않음. Runner 보안 권한/설정 임의 변경 금지.
+- **정확히 테스트 1파일 최소 수정:** Draft PR 브랜치 HEAD [`aa5032ee5646ae352e87f63d72917885157d6db6`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/aa5032ee5646ae352e87f63d72917885157d6db6). 실제 symlink 생성 대신 주입한 `filesystem`의 `lstatSync/realpathSync` 경계에서 동일 symbolic-file 상태를 모의; 허용되지 않는 경로 판정·DB 미오픈 assert·실제 파일 미생성 assert 강화. Reader 본체/계산 산식/키/운영 설정/허용목록 변경 **0**. PR 현재 변경 여전히 정확히 Reader+test 2파일.
+- **재실행 성공:** workflow 테스트 ref를 새 정확 SHA `aa5032ee...`에 핀하고 자동 격리 source-only 실행 [Run `43509885494`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43509885494), Job `132177070009`; Windows `DESKTOP-N62L0NG` / `zgmini-handoff-ci-spare-01`, Node `v22.23.4`, 로그 `TEST_SHA=aa5032ee5646ae352e87f63d72917885157d6db6`, 정확한 명령 `node --test tests/employment-r6-collection-evidence-readonly.test.mjs`. **15 tests, 15 PASS, 0 FAIL, 0 SKIP**, `R6_SOURCE_ONLY_ISOLATED_HOST=TRUE`, Run `completed/success`; 소스 HEAD/호스트/시험 범위/로그 직접 조회 완료.
+- 제어 PR #1361 여전히 **Draft/open/unmerged**, 운영 PC Controller/Writer 설치·D1 게시 증거 아님. 기존 운영 [#1351 Run 43429486924](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43429486924) **queued/conclusion=null**, Windows 실행·JSON/TXT 0. Provider #1040 역사적 B 성공, Collector #1063 설치 미입증 구분 보존.
+
+**LAST PASS:** 정확 PR HEAD `aa5032ee...`의 전체 Reader Node 15/15 PASS, 임의 symlink 권한 변경 0, 회귀 fixture 보존, remote Run/job/log/PR 2파일 readback 확인.
+**FIRST FAIL:** 운영 PC 설치 A allowlist/current Writer Provider·Collector file SHA·source/config 실측 결과 여전히 부재. 첫 51지역×577연속주 결손 주/지역 UNKNOWN, D1 29/29 未 입증. 최초 CI #43509609145 EPERM은 최소 test fixture 수정 후 해당 scope의 #43509885494 PASS로 해소.
+**다음 필수 실행 하나:** **중앙 기존 승인 운영 PC 단일 Owner**의 비민감 READ-ONLY 현장 반환 (관측시각, 실제 운영 Runner 6 상태, #1351 배정, Controller 설치 SHA+A 등록, Writer sourceRoot/HEAD/config.source 및 Provider/Collector SHA256, Supervisor/Watchdog/Guardian/lease). 그 증거에 따라 승인된 R6 A 조회기를 실제 PC에 설치·조회할 수 있는지 판단 후 첫 결손 데이터 확인→승인된 최소 수집/저장/계산/게시/API/UI까지 진행. Draft/CI 결과만으로 현장 설치/29/29 선언 금지.
+
+**외부 운영 변경:** PC 수집/SQLite/Writer/Controller/D1/Cloudflare/운영 Runner **0**. GitHub 소스 test 1파일만 교정, 분리된 CI 일회성 workflow 1파일/격리 Run 2개, 원담당 문서 갱신.
+
+---
+
 <!-- employment-r6-55th-actual-owner-source-v8-proof-20261114 -->
 ## 55차 — 현재 원격 소스/승인 범위·실 PC readback 부재 구분 및 실제 Reader 함수 검증 (2026-11-14 KST)
 
