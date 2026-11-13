@@ -107,3 +107,38 @@ test('no approved key/quota, invalid group and unsafe PC base stop before networ
   await assert.rejects(()=>collectInflationCandidateBls({...common,base:ctx.temp,blsKey:'k'}),/PC_BASE_DENIED/);
   assert.equal(calls,0);
 });
+
+
+test('official BLS 2025-10 X gap is not fabricated as numeric CPI (both series)',()=>{
+  // Official flatfile cu.data.12.USHousing: 2025 M10 "-" X for #22 and #23.
+  // API-shaped fixture; not a claim that this exact API payload was saved on PC.
+  const x={year:'2025',period:'M10',value:'-',footnotes:[{code:'X',text:'Data unavailable due to the 2025 lapse in appropriations.'}]};
+  const sample=(id,sep,oct)=>({
+    seriesID:id,data:[
+      {year:'2026',period:'M10',value:oct,footnotes:[]},
+      x,
+      {year:'2025',period:'M09',value:sep,footnotes:[]},
+    ],
+  });
+  const valid=normalizeInflationCandidateBls(payload(
+    sample(rent,'438.237','451.337'),
+    sample(ownerEquivalentRent,'431.134','446.588'),
+  ),{group:'cpi'});
+  assert.deepEqual(valid[rent].map(r=>r.date),['2025-09-01','2026-10-01']);
+  assert.deepEqual(valid[ownerEquivalentRent].map(r=>r.date),['2025-09-01','2026-10-01']);
+  assert.equal(valid[rent][1].value,451.337);
+  assert.equal(valid[ownerEquivalentRent][1].value,446.588);
+  // A lone '-' or an unrelated footnote is still an invalid provider value.
+  for(const footnotes of [[],[{code:'P',text:'Preliminary'}]]){
+    const bad=sample(rent,'438.237','451.337');
+    bad.data[1]={...x,footnotes};
+    assert.throws(()=>normalizeInflationCandidateBls(payload(bad,sample(ownerEquivalentRent,'431.134','446.588')),{group:'cpi'}),/VALUE_OR_DUPLICATE/);
+  }
+  // Even a missing-value row counts as the observed month for duplicate detection.
+  const duplicate=sample(rent,'438.237','451.337');
+  duplicate.data.push({year:'2025',period:'M10',value:'438.7',footnotes:[]});
+  assert.throws(()=>normalizeInflationCandidateBls(payload(duplicate,sample(ownerEquivalentRent,'431.134','446.588')),{group:'cpi'}),/VALUE_OR_DUPLICATE/);
+  const allMissing=sample(rent,'438.237','451.337');
+  allMissing.data=[x];
+  assert.throws(()=>normalizeInflationCandidateBls(payload(allMissing,sample(ownerEquivalentRent,'431.134','446.588')),{group:'cpi'}),/SERIES_EMPTY/);
+});
