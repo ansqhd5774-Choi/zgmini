@@ -48,3 +48,25 @@
 - **이번 실제 후속 실행:** 허용된 GitHub PR 댓글 경로로 정규 source 통합 Owner에게 [#1068 exact SHA GO/HOLD 결정 요청 #6866461139](https://github.com/ansqhd5774-Choi/zgmini/pull/1068#issuecomment-6866461139)을 **한 번만 등록**, 본문 완전 일치 원격 재조회 PASS. 명시된 요청은 중앙 SOURCE_GO와 독립된 `MAIN_MERGE_GO/HOLD` 결정이며, 댓글은 승인 또는 타 일반 대화 자동 수신의 증거가 아니다.
 - **운영 변경:** 신규 기능 코드 변경·추가 테스트·CI 재실행·source merge·PR Draft 해제·Cloudflare/DB/D1/PC/Runner 실행 **0건**. 본 문서 인계 판정만 변경.
 - **다음 필수 실행 정확히 하나:** **승인된 source 통합 Owner가 #1068 5개 파일/정확 HEAD에 대해 정규 main 병합 GO 또는 HOLD/NO-GO를 기록**. 권한 있는 GO 및 정상 통합·배포가 실제 확정될 때만 Production API/8뷰 검증으로 이동. 소스 GO·노드 CI 성공을 병합/배포 실증으로 승격하지 않는다.
+
+
+## 5. 65차 승인·병합 단계 원격 후속 확인
+
+**확인일:** 2026-11-14 KST · [65차 중앙 지시](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6866393700)와 [중앙 정확 HEAD source review](https://github.com/ansqhd5774-Choi/zgmini/pull/1068#issuecomment-6866344306)를 실제 읽고, 이전 성공 source/CI 테스트는 재실행하지 않았다.
+
+| 판정 경계 | 실제 이번 조회 결과 |
+| --- | --- |
+| **SOURCE_INTEGRATION_REVIEW_GO** | 중앙 별도 리뷰 **완료**; 결합 HEAD `12f0bf05c306788e76a3974dfefcc499499e7fe1`, 정확 **5파일**. #1067의 null-score 수정도 포함되어 중복 병합 금지 |
+| **NODE_CI_REUSED** | [Run #43517251887](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43517251887) `completed/success`, 4193 tests / 4184 pass / 0 fail / 6 skip / 3 todo; 기존 증거 재사용, **신규 테스트/Run 0** |
+| **MAIN_MERGE_HOLD** | PR #1068 `Draft/Open`, `mergeable=true`, `merged=false`. base `643b7c7c4372ffad552443fc312c6cb1b944e2fc` 유지. GitHub formal approval review 0, requested reviewer 0; 중앙 source review GO와 **정규 소스 통합 Owner의 명시적인 main merge GO/HOLD 결정은 별개**. 이번 지시 기준 해당 최종 병합 결정 미확인 |
+| **#1067 중복 보호** | [중앙 #1067 조정 댓글](https://github.com/ansqhd5774-Choi/zgmini/pull/1067#issuecomment-6866345061) 원문 확인. #1067 단독 merge·종료/리베이스/강제이동 0 |
+| **MOCK_BROWSER_FAIL_REUSED** | [Run #43517251882](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43517251882) 기존 교육 UI hidden selector timeout; **통합 Node CI 성공이나 실제 Production PASS로 환산하지 않음** |
+| **PRODUCTION_UNVERIFIED** | Production Deployment SHA·동시 API 원문·4뷰 × 1440/390 **0/8**. 이전 승인 무료 브라우저 접근 오류 재요청 0 |
+
+**LAST PASS (65차의 새 범위):** 실제 Github 중앙 SOURCE_GO 기록, 최신 PR base/HEAD·Draft·mergeable·formal review/중복 PR 상태를 분리 확인. 원담당 완료 64차 CI는 재사용.
+
+**FIRST FAIL (현재 필수 단계):** `MAIN_MERGE_HOLD` — 지정 정규 통합 Owner의 **병합 의사결정 기록 부재**; 코드 회귀 실패나 CI 재실행 사유가 아님. Production 접근 차단은 별도 `AUTOMATION_BLOCKED`.
+
+**신규 코드/회귀/CI/원격 실행/배포:** **0**. 전용 브랜치의 기존 증거 문서 한 곳만 65차 판정 현황 갱신. **기능 전체 진행률 25% → 25%**.
+
+**다음 필수 실행 하나:** 승인된 통합 Owner가 **#1068 하나**의 정확 HEAD `12f0bf05c306788e76a3974dfefcc499499e7fe1`, 5파일 및 기존 Node SUCCESS에 대한 **명시적인 정규 main merge GO/HOLD 결정을 기록**한다. GO일 때만 정규 병합과 Cloudflare Git Integration Deployment를 *별도 승인된 실행 경로*에서 진행하고 Production API/UI 증거를 판정한다. 이 원담당 대화는 해당 Owner 결정/배포를 대리 실행하지 않는다.
