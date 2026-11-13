@@ -153,3 +153,23 @@
 - **판정:** 실제 원문 365일 감사 0/1, Production 최신 D1/API/UI 동일 버전 검증 미완료. 기존 Treasury 수집·계산·저장·게시 성공 95점을 보존, 전체 95%→95%, 신규 PC A/B/Runner request·유료 plugin·RDC·DB/D1/Cloudflare·예약·운영 source 변경 **0건**.
 
 **55차 파일 변경:** 이 담당 브랜치 증거기록 1파일 append only; 운영 PC·기능 코드·manifest/test 재실행 없음. 55차 공용 #68 인계는 실제 중앙 담당의 자동 수신이나 PC 설치 성공 아님.
+
+
+<!-- market-calendar-r58-official-2027-public-api-once-20261114 -->
+## 10. 58차 — 연준 2027 전략회의 vs 금리결정의 실제 공개 읽기 검증 시도
+
+**중앙 지시:** [#68 58차](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6864999213), 시장 캘린더만 수행. **시작/종료 95/100 → 95/100**. 기존 FOMC 과거 최초 HTTP/파서 오류는 비저장 확정이므로 재조사 0.
+
+**실제 검증(2026-11-14 KST 대화 실행, 공개 읽기):**
+
+1. **공식 일정 원문 PASS:** [Fed 2026-11-12 공식 개정 보도자료](https://www.federalreserve.gov/newsevents/pressreleases/monetary20261112a.htm) 직접 공개 열람. 2027년 회의 8개: Jan 26-27, Mar 16-17, Apr 27-28, Jun 8-9, Jul 27-28, Sep 14-15, **Oct 26-27 = broader monetary policy strategy only / no policy decision**, **Nov 16-17 = regular rate decision**; 종전 Dec 7-8 삭제. 관측한 것은 공식 웹 공개 텍스트이며 운영 PC 공급자 API/HTML 원본 저장 검증 아님.
+2. **개발 source 계약 PASS(소스에 한정):** [Draft PR #1063](https://github.com/ansqhd5774-Choi/zgmini/pull/1063) `head=45bdc448fe05dd5df7299088c3e4cb613c9b2d33`, 2파일, `draft=true`, `merged=false`; [기존 CI #43499646946](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43499646946) SUCCESS 재사용. `app/market-calendar/market-calendar-client.tsx`는 `fed_fomc/fomc/2027-10-27`만 **`미국 FOMC 통화정책 전략 회의 · 금리 결정 없음`**으로 표시하고 다른 FOMC 날짜의 기본 금리결정 표시와 기존 중요도 산식을 유지. `tests/release-calendar-fomc-annual.test.mjs`는 2027 Nov 17 포함/Dec 8 제외 확인. 현재 `main`의 시장 UI Git blob `f95ffd7d78270578eeabc8ca5ffa028f3e670263`에는 해당 예외 없음. **source-level 정합성 = PASS; Production 배포/실화면 PASS 아님**.
+3. **공개 시장 화면 GET:** `https://zgmini.kr/market-calendar/` 공개 웹 HTML 열람 성공. HTML 추출에는 로딩 문구(`공식 일정 저장본 확인 중`)와 2026년 10월 일정 예시가 있으나 2027년 동적 API/화면 값은 나타나지 않음. `2027-10-27` 이벤트 존재·표시명·업데이트 시간 **NOT_VERIFIED**. 단순 HTML 200/기존 초기 페이지를 렌더 성공으로 취급하지 않음.
+4. **공개 API 1회 읽기 시도 / FIRST FAIL — 접근 도구:** `https://zgmini.kr/api/release-calendar`의 웹 조회 결과 `Internal Error / URL not accessible via this tool`. 외부 HTTP 격리 샌드박스에서 같은 URL 직접 공개 GET 1회 요청 시 `ConnectionError / NameResolutionError / Temporary failure in name resolution`(실제 HTTP response/status/body 전혀 수신하지 못함). 별도 유료 브라우저/원격 PC/권한 우회·같은 실패 URL 추가 반복 0. **PUBLIC_API_ACCESS_AUTOMATION_BLOCKED**, 서버 실제 오류·`SOURCE_FAILED`의 신규 상태라고 주장 불가. 실물 API JSON이 없으므로 2027 Sep 15/Oct 27/Nov 17 이벤트 행수·id/date/title/source·`updatedAt`·`sources.fed_fomc`·cache/Production SHA **UNVERIFIED**.
+5. **기존 비공개/승인 PC 단계 변화 없음:** 지난 [#1342](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1342) 시점 설치 Controller SHA `badad9124157879d7a645b64f2768113d632355b`의 A allowlist에 `source-inventory-runtime-readonly` 미등록. [#1351](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1351) 기존 Job은 58차 중앙 원장 시점 `queued`; 신규 설치 성공 영수증 미확보. 이 감사만 `AUTOMATION_BLOCKED(NOT_INSTALLED_OR_UNVERIFIED)`. Treasury 365일 원문 A·D1 최신 exact readback **미실행**, 기존 수집/게시 증거 95점 보존.
+
+**58차 LAST PASS / FIRST FAIL:** LAST PASS=Fed 2026-11-12 발표 원문 열람+PR #1063 diff/기존 CI source-level 검증; 역사 PC LAST PASS=#1342 운영 Controller SHA/lease 원본과 #1299 calendar A `sqliteOpened=false`. FIRST FAIL=이번 **공개 API 접근 단계**에서 fetch inaccessible/DNS resolution, 서버 오류 판단 아님. 이전 신규 A 첫 `OPERATION_NOT_ALLOWED`은 과거 #1023, 현재 재현 안 함.
+
+**다음 필수 실행 하나(실제 승인 조건):** **중앙 공유 Controller 적용 Owner**가 운영 PC의 현재 설치 `source-inventory-runtime-readonly` A allowlist+라우팅/installed SHA·실제 lease·승인 B 적용 상태를 기존 허용 비민감 원본 경로에서 확인해 #68에 인증된 설치 가능/불가 결과를 돌려줄 것. 설치 PASS인 경우에만 시장 원담당이 고유 A 1회로 TA_WS 365일 rows/date/hash/WAL JSON/TXT 감사 → 동일 버전 D1/Production API/UI 대조. 공개 API는 승인된 무료 접근이 정상화되면 해당 범위를 1회 검증하며 현재 접근 실패를 다른 기능 전역 BLOCKER로 확장하지 않음.
+
+**변경·운영:** 이 문서 증거 추가 1파일만. 신규 기능 소스/테스트/CI, PC A/B/Runner 요청, Controller/Writer/SQLite/D1/Cloudflare 배포/예약 변경 **0건**. 공유 설치 중앙 Owner 인계는 실제 설치·타 일반챗 자동수신 아님.
