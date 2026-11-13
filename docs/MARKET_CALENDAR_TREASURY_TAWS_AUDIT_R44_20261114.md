@@ -213,3 +213,33 @@ node --test tests/market-calendar-taws-audit-verdict.test.mjs
 - **다음 하나 / 공용 Controller 단일 Owner:** 승인된 실제 운영 PC read-only 증거로 **신규 `source-inventory-runtime-readonly`의 실설치 SHA·allowlist·라우팅 PASS**를 확인한 뒤 시장 원담당에게 인증 JSON/TXT로 반환. 그때만 원담당이 고유 A 한 번으로 실제 TA_WS 원문 감사→pure 판정기 적용→D1/API/UI 같은 버전/중복 범위 확인. 공유 #996 보호·lease·승인 manifest를 우회하지 않음.
 
 **60차 변경:** 위 개발 소스 2파일 + 본 증거문서 1파일. 신규 PC A/B/Controller/Runner/CMD/SQL/D1/Cloudflare/수집·계산·게시·예약 변경 **0**. 실제 기능 전체 진행률 **95% 유지**.
+
+
+<!-- market-calendar-r62-pc-json-txt-receipt-validator-20261114 -->
+## 12. 62차 — 승인 A급 실PC JSON/TXT 출처 검증 어댑터 실제 구현 및 독립 Node 실행
+
+**중앙 정본:** [#68 62차](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6865704255). 시장 캘린더 **95/100→95/100**. 이전 60차 TA_WS 순수 판단기 `12/12 PASS`, FOMC 공식 일정·PR #1063와 과거 공개 API 실패는 **재시험하지 않고 재사용**.
+
+**독립 다음 실행의 정확한 목적:** 60차 `judgeTreasuryTaws365Audit`는 `source-inventory-runtime-readonly`의 **내부 `result` 객체**만 판정. 실제 운영 A 결과는 기존 [#1299 JSON/TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/43166235600-1-seat-3.json)처럼 `ZGMINI_PC_RESULT_V1` 전체 envelope와 별도 TXT key=value 영수증으로 반환됨. 실제 `requestId/jobId/operation/seat/installed Controller SHA`, `actualExecutionSha`, `protectedBefore/AfterSha256`, `firstFail/exitCode`, JSON/TXT 2/2 일치를 확인 **전** 내부 TA_WS metadata를 완료 판정하면 잘못된 Run·다른 operation·설치 버전의 결과가 통과할 위험. **기존 PC #1299는 `release-calendar-runtime-readonly`이며 신규 TA_WS A의 PASS가 아님.**
+
+**이번 실제 변경 — 시장 기능 전용 브랜치 2파일 추가, 공용 Controller 변경 0:**
+
+1. [`lib/market-calendar-taws-pc-receipt.mjs`](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/zgmini-gpt-workspace-20261025/lib/market-calendar-taws-pc-receipt.mjs): export `checkTreasuryTawsPcReceipt(receipt,txt,expected)`. 독립 원본 Issue/Run·설치 확인에서 전달받는 `expected.requestId/jobId/controlSourceSha/expectedToDate`를 필수 입력으로 삼아 **허용 `source-inventory-runtime-readonly` 1회만** 검사. Controller 실행 SHA 일치, `status=PASS`, `exitCode=0`, `firstFail=null`, 저장 보호 동일 SHA256, provider/D1/operationalWrites=0, JSON/TXT 필수 19필드 정확 동치와 중복 TXT 키 거부 → 기존 60차 메타 판정 호출. 잘못된 경우 bounded 코드만 반환하고 원본·민감 필드 노출 안 함. 실PC나 Github/SQLite/D1/API에 접속하거나 운영 파일에 쓰지 않음. Blob `1841029aab3f5dba63581865a0fb95b00ab88541`.
+2. [`tests/market-calendar-taws-pc-receipt.test.mjs`](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/zgmini-gpt-workspace-20261025/tests/market-calendar-taws-pc-receipt.test.mjs): 합성 PC 영수증 fixture 8개. 오승인 `operation/requestId/seat`, installedSHA drift, TXT status 누락/중복/불일치, 보호 원장 변화·운영 쓰기, `NOT_STORED`, 독립 checkpoint 불일치, nested STATUS_UNKNOWN, 비민감 출력 검증. Blob `354f6e5acb5c148bf5dea67e38b9e981682b994a`.
+
+**실제 source-only 실행:** 격리 `Node v22.16.0`, 기존 60차 판정기 파일 blob `d47bc10662968e0238698d34a8e38f2bd9f82500`과 동일한 소스 사본에 연결:
+```text
+node --test tests/market-calendar-taws-pc-receipt.test.mjs
+1..8
+# pass 8
+# fail 0
+```
+Test 실행환경은 **비운영 격리 컨테이너**이고 GitHub Actions/운영 Windows 실행이 아님. 신규 2개 파일의 `git hash-object`를 GitHub에서 실제 2/2 readback하여 **각각 완전 일치**. 변경 commits: `95fe768986a8aa660e3d1788c2418716333025cf` (source) / `a6b41b5c680617714aa797d6bd7da56ecefc0821` (test). 이전 12/12는 재실행하지 않음.
+
+**LAST PASS:** 이전 PC #1299 당시 `release-calendar-runtime-readonly` PASS, `sqliteOpened=false`; **이번 신규 PASS는 격리 Node 8/8 + GitHub blob 2/2 일치**. **FIRST FAIL:** 합성 receipt의 실제 `PC_JOB_IDENTITY_OR_STATUS_MISMATCH`, `PC_INSTALLED_SHA_UNVERIFIED`, `PC_JSON_TXT_PAIR_UNVERIFIED`, `PC_PROTECTION_OR_READONLY_UNVERIFIED`, `TAWS_NOT_STORED` 등이 의도대로 거부. 실제 TA_WS 원본 실패가 아님.
+
+**현재 실PC 장벽:** 중앙 #62 기준 [#1351 Run 43429486924](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43429486924) `queued`, Windows pickup 0, 최신 실PC `source-inventory-runtime-readonly` 설치 SHA·허용목록·라우팅·새 A JSON/TXT **UNVERIFIED**. 60차 메타·62차 영수증 검증은 실제 원문 365일 수집/저장/검증·외부 hash/원문 중복/D1/Production UI 증거가 아니므로 **기능 95% 유지**.
+
+**다음 단 하나 / 중앙 Controller 단일 Owner:** #996 공유 설치 보호/lease와 정규 승인 계약을 지키면서 현행 **실PC Controller installed SHA + 신규 `source-inventory-runtime-readonly` allowlist/라우팅**을 기존 승인 read-only 경로로 확인해 인증된 설치 JSON/TXT를 반환. 설치 PASS 이후 시장 원담당만 새 고유 A 단 1회 → 62차 영수증 2/2 검증→60차 365일 fail-closed 메타 판정→독립 원문 중복·D1/API/UI 버전 readback. 설치 전 새 pc-job/Runner·CMD/SQL/D1/배포 우회 금지.
+
+**62차 변경:** 기능 브랜치 source+test 2파일 / 이 기록 1파일. 실제 PC·Controller/Runner/Writer·원자료·SQLite·D1·Cloudflare·예약 변경 **0**.
