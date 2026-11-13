@@ -7,6 +7,7 @@ import {loadLocalProviders,installLocalRuntime} from './local-env.mjs';
 import {save} from './d1.mjs';
 import {read} from './d1.mjs';
 import {createQuotaFetch} from './quota-fetch.mjs';
+import {resolveBlsCoreActivation} from './bls-core-activation.mjs';
 import {recordCollectionChecks} from './collection-checks.mjs';
 import {appendCollectionEvent,appendProviderFailure} from './collection-events.mjs';
 import {safeMacroDiagnostic} from '../../worker/macro-result-contract-r61.mjs';
@@ -17,7 +18,9 @@ import {overdueRateJob} from './rate-refresh-priority.mjs';
 import {collectSectorFearGreedR3EtfIncremental} from './sector-fear-greed-r3-etf-incremental.mjs';
 import {collectReleaseCalendar} from './release-calendar.mjs';
 
-export async function collectLocal(base,{lane='core',importOnly=false,job=null}={}){
+// Shared unregistered BLS reservations require an explicit trusted B host
+// option or an independently sealed CLI grant; no env toggle activates it.
+export async function collectLocal(base,{lane='core',importOnly=false,job=null,blsUnregistered=undefined}={}){
  const core=localDatabase(path.join(base,'storage','core.sqlite'));
  const history=localDatabase(path.join(base,'storage','history.sqlite'));
  const env={...loadLocalProviders(base),DB:core,DB_CORE:core,DB_HISTORY:history,ZGMINI_COMPUTE_TARGET:'pc'};
@@ -25,7 +28,7 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
  const originalFetch=globalThis.fetch,providers={};
  let providerDiagnosticWriteFailures=0;
  const recordProviderFailure=(input,event)=>{try{appendProviderFailure(base,input,event);}catch{providerDiagnosticWriteFailures++;}};
- const quota=createQuotaFetch({base,originalFetch});
+ const quota=createQuotaFetch({base,originalFetch,blsUnregistered});
  globalThis.fetch=async(input,init)=>{
   const host=new URL(typeof input==='string'||input instanceof URL?input:input.url).hostname;
   const item=providers[host]??={requests:0,statuses:{}};item.requests++;
@@ -55,7 +58,7 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
      const {runEmploymentR6AutoCollection}=await import('./employment-r6-auto-collection.mjs');
      employmentR6Collection=await runEmploymentR6AutoCollection({
       enabled:true,approvedSource:config.source,runningSource,
-      db:core,fetchImpl:globalThis.fetch,now:()=>new Date(),
+      db:core,env,fetchImpl:globalThis.fetch,now:()=>new Date(),
      });
     }
    }catch(error){
@@ -102,7 +105,9 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
  try{
   const jobArg=process.argv.find(arg=>arg.startsWith('--job='));
   const job=jobArg?jobArg.slice('--job='.length):null;
-  console.log(JSON.stringify(await collectLocal(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),{lane:process.argv.includes('--korea')?'korea':'core',importOnly:process.argv.includes('--import-only'),job})));
+  const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
+  const blsUnregistered=process.argv.includes('--import-only')?undefined:resolveBlsCoreActivation(base);
+  console.log(JSON.stringify(await collectLocal(base,{lane:process.argv.includes('--korea')?'korea':'core',importOnly:process.argv.includes('--import-only'),job,blsUnregistered})));
  }
  catch(error){const report={at:new Date().toISOString(),lane:process.argv.includes('--korea')?'korea':'core',status:'FAILED',reason:'LOCAL_COLLECTION_FAILED',failureDiagnostic:safeCollectionFailure(error)};try{appendCollectionEvent(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),report);}catch{}console.log(JSON.stringify({...report,...(process.argv.includes('--import-only')?{importError:error.message}:{})}));process.exitCode=1;}
 }

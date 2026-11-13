@@ -21,7 +21,7 @@ const now=()=>new Date("2026-10-28T13:00:00Z");
 test("only a true forward release SUCCESS activates the 90-day cadence",async()=>{
   const fsx=fakeStore();let calls=0;
   const out=await runEmploymentR4BedQuarterlyStep({
-    env:{DB:db},now,storeFactory:fsx.factory,
+    env:{DB:db,BLS_API_KEY:"fixture-key"},now,storeFactory:fsx.factory,
     gateReader:async()=>({latestStatus:"SUCCESS",latestCompletedAt:"2026-09-01T00:00:00Z",existingRuntimeAttempts24h:0,bedRuntimeAttempts24h:0}),
     collectBed:async()=>{calls++;},
   });
@@ -32,16 +32,16 @@ test("only a true forward release SUCCESS activates the 90-day cadence",async()=
 test("baseline-only run is BASELINE_STORED rather than quarterly SUCCESS",async()=>{
   const fsx=fakeStore();
   const out=await runEmploymentR4BedQuarterlyStep({
-    env:{DB:db},now,storeFactory:fsx.factory,
+    env:{DB:db,BLS_API_KEY:"fixture-key"},now,storeFactory:fsx.factory,
     gateReader:async()=>({latestStatus:null,latestCompletedAt:null,existingRuntimeAttempts24h:0,bedRuntimeAttempts24h:0}),
     providerFactory:()=>({}),
     collectBed:async()=>({
-      status:"SUCCESS",providerRequests:5,collectedRows:228,forwardRows:0,priorSeries:0,
+      status:"SUCCESS",providerRequests:3,collectedRows:228,forwardRows:0,priorSeries:0,
       inserted:228,revised:0,noop:0,rejected:0,currentRows:228,historyRowsAdded:228,missingSeries:[]
     }),
   });
   assert.equal(out.status,"BASELINE_STORED");
-  assert.equal(out.providerRequests,5);
+  assert.equal(out.providerRequests,3);
   assert.equal(fsx.runs.at(-1).status,"BASELINE_STORED");
   assert.ok(fsx.releases.length>=1);
 });
@@ -49,11 +49,11 @@ test("baseline-only run is BASELINE_STORED rather than quarterly SUCCESS",async(
 test("repeat with no new BED release is NO_NEW_FORWARD_RELEASE",async()=>{
   const fsx=fakeStore();
   const out=await runEmploymentR4BedQuarterlyStep({
-    env:{DB:db},now,storeFactory:fsx.factory,
+    env:{DB:db,BLS_API_KEY:"fixture-key"},now,storeFactory:fsx.factory,
     gateReader:async()=>({latestStatus:"BASELINE_STORED",latestCompletedAt:"2026-09-01T00:00:00Z",existingRuntimeAttempts24h:0,bedRuntimeAttempts24h:0}),
     providerFactory:()=>({}),
     collectBed:async()=>({
-      status:"SUCCESS",providerRequests:5,collectedRows:228,forwardRows:0,priorSeries:114,
+      status:"SUCCESS",providerRequests:3,collectedRows:228,forwardRows:0,priorSeries:114,
       inserted:0,revised:0,noop:228,rejected:0,currentRows:228,historyRowsAdded:0,missingSeries:[]
     }),
   });
@@ -61,31 +61,56 @@ test("repeat with no new BED release is NO_NEW_FORWARD_RELEASE",async()=>{
   assert.equal(fsx.runs.at(-1).status,"NO_NEW_FORWARD_RELEASE");
 });
 
-test("BED runtime protects the shared BLS unregistered daily query budget",async()=>{
+test("BED runtime fails closed without a registered BLS key",async()=>{
   const fsx=fakeStore();let calls=0;
   const out=await runEmploymentR4BedQuarterlyStep({
     env:{DB:db},now,storeFactory:fsx.factory,
     gateReader:async()=>({latestStatus:null,latestCompletedAt:null,existingRuntimeAttempts24h:11,bedRuntimeAttempts24h:0}),
     collectBed:async()=>{calls++;},
   });
-  assert.equal(out.status,"SKIPPED_BLS_SHARED_BUDGET");
+  assert.equal(out.status,"SKIPPED_BLS_KEY_UNAVAILABLE");
   assert.equal(calls,0);
-  assert.equal(EMPLOYMENT_R4_BED_RUNTIME_CONTRACT.bedRequestsPerAttempt,5);
+  assert.equal(EMPLOYMENT_R4_BED_RUNTIME_CONTRACT.bedRequestsPerAttempt,3);
+});
+
+test("registered BED does not inherit the obsolete unregistered 25/day gate",async()=>{
+  const fsx=fakeStore();let received=null;
+  const out=await runEmploymentR4BedQuarterlyStep({
+    env:{DB:db,BLS_REGISTRATION_KEY:"fixture-key"},now,storeFactory:fsx.factory,
+    gateReader:async()=>({latestStatus:null,latestCompletedAt:null,existingRuntimeAttempts24h:11,bedRuntimeAttempts24h:0}),
+    providerFactory:(args)=>{received=args;return{};},
+    collectBed:async()=>({status:"SUCCESS",providerRequests:3,collectedRows:114,forwardRows:0,priorSeries:0}),
+  });
+  assert.equal(out.status,"BASELINE_STORED");
+  assert.equal(received.env.BLS_REGISTRATION_KEY,"fixture-key");
+});
+
+test("BED runtime preserves failed-provider attempted request count in result and RUN ledger",async()=>{
+  const fsx=fakeStore();
+  const out=await runEmploymentR4BedQuarterlyStep({
+    env:{DB:db,BLS_API_KEY:"fixture-key"},now,storeFactory:fsx.factory,
+    gateReader:async()=>({latestStatus:null,latestCompletedAt:null,existingRuntimeAttempts24h:0,bedRuntimeAttempts24h:0}),
+    collectBed:async()=>{const error=new Error("BLS_BED_HTTP_429");error.requestCount=2;throw error;},
+  });
+  assert.equal(out.status,"FAIL");
+  assert.equal(out.providerRequests,2);
+  assert.equal(fsx.runs.at(-1).providerRequests,2);
+  assert.equal(fsx.runs.at(-1).status,"FAIL");
 });
 
 test("newly observed quarter produces SUCCESS and starts quarterly cadence",async()=>{
   const fsx=fakeStore();
   const out=await runEmploymentR4BedQuarterlyStep({
-    env:{DB:db},now,storeFactory:fsx.factory,
+    env:{DB:db,BLS_API_KEY:"fixture-key"},now,storeFactory:fsx.factory,
     gateReader:async()=>({latestStatus:"BASELINE_STORED",latestCompletedAt:"2026-09-01T00:00:00Z",existingRuntimeAttempts24h:0,bedRuntimeAttempts24h:0}),
     providerFactory:()=>({}),
     collectBed:async()=>({
-      status:"SUCCESS",providerRequests:5,collectedRows:342,forwardRows:114,priorSeries:114,
+      status:"SUCCESS",providerRequests:3,collectedRows:342,forwardRows:114,priorSeries:114,
       inserted:114,revised:0,noop:228,rejected:0,currentRows:342,historyRowsAdded:114,missingSeries:[]
     }),
   });
   assert.equal(out.status,"SUCCESS");
-  assert.equal(out.providerRequests,5);
+  assert.equal(out.providerRequests,3);
   assert.equal(out.scoreComputed,false);
   assert.equal(fsx.runs.at(-1).provider,"EMPLOYMENT_R4_BED_RUNTIME");
   assert.equal(fsx.runs.at(-1).detail.forwardRows,114);

@@ -7,6 +7,7 @@ export async function runEmploymentR6AutoCollection({
   approvedSource,
   runningSource,
   db,
+  env,
   fetchImpl,
   now=()=>new Date(),
   collect=runEmploymentR6CollectionStep,
@@ -18,7 +19,9 @@ export async function runEmploymentR6AutoCollection({
   if(!db||typeof db.prepare!=="function"||typeof fetchImpl!=="function"){
     throw Error("EMPLOYMENT_R6_COLLECTION_INPUT_INVALID");
   }
-  const result=await collect({env:{DB:db},db,fetchImpl,now,mode:"RELEASE"});
+  // Forward only BLS credential fields; never expose unrelated provider secrets.
+  const result=await collect({env:{DB:db,BLS_API_KEY:env?.BLS_API_KEY,
+    BLS_REGISTRATION_KEY:env?.BLS_REGISTRATION_KEY},db,fetchImpl,now,mode:"RELEASE"});
   // Preserve only safe diagnostic codes/counts; never forward error messages,
   // provider response bodies, source URLs, credentials, or raw snapshots.
   const safeCode=value=>typeof value==="string"&&/^[A-Z][A-Z0-9_]{0,99}$/.test(value)?value:null;
