@@ -79,3 +79,33 @@
 - **고용 원담당 인계**: `STATE_CLAIMS_BREADTH` 하나가 `STALE/PARTIAL_HISTORY`; 새 raw 관측 확보 및 승인된 정상 게시 필요 여부 확인. 29개 행 제공과 29개 점수 완비는 다르다.
 - UIUX 담당: 이번 서버 실측에서 별도의 화면 렌더링 불일치는 확정하지 못함. UI 수정·같은 파일 동시 수정 없음. 별도 확인 시 위 endpoint·값·관측일을 표기하는 방식만 범위 내 전달.
 - **총괄 복귀 보고**: Production API 5개는 실제 관측(200/200/200/503/200)했고 저장형 상태/결측을 분리. 전부 D1 동치 UNVERIFIED, API MISMATCH 확정 0, Production deploy SHA 불명. 근거 없는 코드 수정/배포 하지 않았으며 다음은 승인된 D1 exact-key readback과 테마 stale 데이터 게시 원인 독립 처리.
+
+
+## 48차 API 원담당 — 승인된 독립 D1 경로 실행 가능성 판정 (2026-11-14 KST)
+
+**원장 원문:** [48차 총괄 #68 / comment 6863150401](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6863150401). 본인 담당 항목 1번만 수행한다. 44차의 Production 5개 HTTP/JSON 원본 실측과 3/4(75%) 완료점 재사용.
+
+### 실제 수행·검증
+1. 현행 소스 기준: 기능 `main=643b7c7c4372ffad552443fc312c6cb1b944e2fc`, 제어 `main=69e25a08a903dc8e52ef1093ec15837de4c20858`. 본 브랜치 `main` 대비 `ahead 270 / behind 554`, diverged. 전체 merge/rebase 없이 보존.
+2. 제어 저장소 `config/operations.json` A급 등록 37개를 직접 읽고 `controller/writer-publication-evidence-readonly.mjs`의 정확한 SQL 조회 대상/결과 원장을 대조했다. 이 Reader는 **로컬 SQLite의 `market-calendar:earnings-er1-score-YYYY-MM-public` 및 기존 Writer의 ER1 D1 publication ledger**만 읽는다. 48차가 요구한 물가19/후보7/고용29/테마 primary/달력 release-calendar 5개 exact remote D1 key를 읽지 않는다.
+3. 제어 저장소에서 `market_public_snapshots_v1`, `public_feed_snapshots_v1`, `D1_READBACK`, `perKeyReadback` 관련 기존 모듈을 탐색했다. 공개 프로그램 소스에는 관련 키를 소비하는 Reader/Publisher가 있지만, 현행 이 대화에서 승인된 **5개 exact-key 원격 D1 최소 SELECT/readback 인터페이스는 발견되지 않았다.** `source-inventory-runtime-readonly` 등은 정적/로컬 소스·원장 점검이어서 원격 D1 행 증거로 승격 불가.
+4. 연결 플러그인/연결된 기능에서 Cloudflare D1 직접 조회 도구도 확인되지 않음(Cloudflare 자격증명·계정/DB ID 없음). 인접 DB(Postgres 등) 플러그인을 Cloudflare D1이라고 간주하거나 임의 SQL/new Controller operation/remote shell을 발급하지 않았다. **이는 HTTP/PC 실행에서 403 오류를 받았다는 뜻이 아니라, 승인된 정확한 readback action이 현재 등록되어 있지 않다는 뜻이다.**
+5. Cloudflare exact Deployment ID/SHA를 주는 연결 도구/승인 증거도 발견되지 않았다. GitHub `main` SHA는 소스 기준이며 Cloudflare Production 배포 SHA로 승격하지 않는다.
+6. 이전 Production 5개 실측(200/200/200/503/200)은 재사용한다. Theme `503/STORED_DATA_STALE`은 데이터 신선도 실패로 **CONFIRMED DATA UNAVAILABLE**, API Reader 바이트 불일치로는 미확정. Treasury `READY`이면서 전체 `PARTIAL`의 별도 `fed_fomc SOURCE_FAILED`, 고용 `STATE_CLAIMS_BREADTH STALE/PARTIAL_HISTORY`, 물가 후보 PENDING 22/23/28 역시 서비스 연결 버그로 승격하지 않는다.
+
+### 5개 독립 D1 확인 대상/결과
+| 공개 API | D1 table | key / filter | API HTTP+JSON | 독립 D1 `exists/stored_at/bodySha256/sourceVersion` | API↔D1 판정 |
+|---|---|---|---|---|---|
+| `/api/inflation-causal-inputs` | `market_public_snapshots_v1` | `snapshot_key=detail:inflation-causal-public-19:r1` | VERIFIED 200/READY19 | UNVERIFIED | UNVERIFIED |
+| `/api/inflation-candidate-inputs` | `market_public_snapshots_v1` | `snapshot_key=detail:inflation-causal-candidates-7:r1` | VERIFIED 200/PARTIAL4+3 | UNVERIFIED | UNVERIFIED |
+| `/api/release-calendar` | `public_feed_snapshots_v1` | `kind=output,feed_key=release-calendar,snapshot_key=current` | VERIFIED 200/PARTIAL, Treasury READY894 | UNVERIFIED | UNVERIFIED |
+| `/api/theme-fear-greed` | `market_public_snapshots_v1` | `snapshot_key=public:theme-etf-only:r1` (승인된 sidecar 키는 별도 소유) | VERIFIED 503/STORED_DATA_STALE | UNVERIFIED | UNVERIFIED |
+| `/api/employment-r6/observations` | `market_public_snapshots_v1` | `snapshot_key=detail:employment-r6:one-year:v1` | VERIFIED 200/PARTIAL, indicators29 | UNVERIFIED | UNVERIFIED |
+
+**LAST PASS:** 48차 원장 정확 지시 확인 + 현재 allowlist/ER1 전용 A Reader 제한을 소스 내용으로 검증.  
+**FIRST UNVERIFIED:** 5개 exact-key D1 `exists/stored_at/bodySha256/sourceVersion`; Cloudflare Production Deployment SHA.  
+**FIRST FAIL (실제 공개 상태):** Theme `STORED_DATA_STALE` (API↔D1 원문 불일치 증거 아님).  
+**상태:** `AUTOMATION_BLOCKED(NO_APPROVED_EXACT_KEY_D1_READBACK_ACCESS)` — **읽기 경로만**. API 코드 MISMATCH 0 확정; RUNTIME_FAILED/전체 기능 BLOCKED로 확대 금지.  
+**이번 변경:** 이 증거 문서 1개만; 테스트·CI/새 PR/PC/D1/Worker/운영 쓰기 0. 전체 진행률 **75%→75%(3/4)**.
+
+**다음 필수 행동 하나:** Cloudflare/D1 승인 소유자가 **기존 권한을 이용하는 정확히 해당 5개 키의 읽기 전용 응답 수단/결과**(존재·저장 시각·본문 SHA256·버전 및 Cloudflare Production exact deployment ID/SHA)만 확보해 원담당에게 반환한다. 사용자의 임의 SQL 실행이나 새로운 Controller op 도입이 아니라, 기존 정규 승인 읽기 경로의 확인/인계다. 확보하면 이 대화가 재개되어 API 실측 payload와 각 row를 정밀 비교하고, 확정 MISMATCH일 때만 최소 수정·테스트·선별 PR 진행.
