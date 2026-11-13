@@ -61,3 +61,28 @@ test('a latest valid observation remains the last marker even with earlier gaps'
  const last=[...rows].reverse().find(point=>typeof point.score==='number');
  assert.deepEqual(last,{date:'2026-10-04',score:55});
 });
+
+test('explicit score:null takes precedence over numeric raw value while legacy value remains',()=>{
+ const rows=economicOneYearChart([
+  {date:'2026-11-11',score:51},
+  {date:'2026-11-12',score:null,value:83},
+  {date:'2026-11-13',score:58},
+  {date:'2026-11-14',value:29},
+  {date:'2026-11-15',score:0,value:83},
+ ]);
+ assert.deepEqual(rows,[
+  {date:'2026-11-11',score:51},
+  {date:'2026-11-12',score:null},
+  {date:'2026-11-13',score:58},
+  {date:'2026-11-14',score:29},
+  {date:'2026-11-15',score:0},
+ ]);
+});
+test('a final explicit null score stays missing and last marker remains last valid',()=>{
+ const rows=economicOneYearChart([
+  {date:'2026-11-11',score:44},
+  {date:'2026-11-12',score:null,value:83},
+ ]);
+ assert.deepEqual(rows.at(-1),{date:'2026-11-12',score:null});
+ assert.deepEqual(rows.findLast(point=>typeof point.score==='number'),{date:'2026-11-11',score:44});
+});
