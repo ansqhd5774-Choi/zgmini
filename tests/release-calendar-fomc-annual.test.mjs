@@ -42,8 +42,8 @@ test('Federal Reserve 2026-11-12 revision ends 2027 meetings in November; Octobe
 
 test('Fed annual parser rejects unpublished or incomplete year without synthesizing dates',()=>{
  assert.throws(()=>parseFomcAnnualCalendar(officialFixture,2028),/FOMC_YEAR_NOT_PUBLISHED/);
- assert.throws(()=>parseFomcAnnualCalendar(officialFixture.replaceAll('December','Dec'),2027),/FOMC_MEETING_ROW_INVALID/);
- assert.throws(()=>parseFomcAnnualCalendar(officialFixture.replace('7-8</div>','9-8</div>'),2027),/FOMC_MEETING_DATE_INVALID/);
+ assert.throws(()=>parseFomcAnnualCalendar(officialFixture.replaceAll('November','Nov'),2027),/FOMC_MEETING_ROW_INVALID/);
+ assert.throws(()=>parseFomcAnnualCalendar(officialFixture.replace('16-17</div>','18-17</div>'),2027),/FOMC_MEETING_DATE_INVALID/);
  assert.throws(()=>parseFomcAnnualCalendar(annualSection(2027).replace(/<div class="panel-footer">[\s\S]*$/, ''),2027),/FOMC_SECTION_INCOMPLETE/);
 });
 
