@@ -20,7 +20,7 @@ export function validR32History(record){
  for(const p of record.history){
   if(!p||Object.keys(p).some(k=>!['date','score','mode','contributingETFs','weightsPercent','issuerAumAsOf','datedOfficialAumUsed','excluded'].includes(k)))return false;
   if(!isDate(p.date)||p.date<=previous||typeof p.mode!=='string'||!Array.isArray(p.contributingETFs)||new Set(p.contributingETFs).size!==p.contributingETFs.length||
-   p.contributingETFs.some(s=>!record.etfs.includes(s))||!Array.isArray(p.excluded)||p.excluded.some(r=>Object.keys(r).length!==2||!record.etfs.includes(r.ticker)||typeof r.reason!=='string'))return false;
+   p.contributingETFs.some(s=>!record.etfs.includes(s))||!Array.isArray(p.excluded)||p.excluded.some(r=>!r||typeof r!=='object'||Array.isArray(r)||Object.keys(r).length!==2||!record.etfs.includes(r.ticker)||typeof r.reason!=='string'))return false;
   previous=p.date;
   if(p.score===null){if(p.mode!=='NO_REAL_SCORED_ETF'||p.contributingETFs.length||p.weightsPercent!==null) return false;continue;}
   if(typeof p.score!=='number'||!Number.isFinite(p.score)||p.score<0||p.score>100||!p.contributingETFs.length||!p.weightsPercent||!p.issuerAumAsOf)return false;
