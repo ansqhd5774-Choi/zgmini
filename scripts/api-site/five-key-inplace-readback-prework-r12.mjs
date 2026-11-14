@@ -2,11 +2,11 @@
 // credentials, call public HTTP, register an operation, or authorize any run.
 // An approved owner supplies a read-only D1 binding and a public API reader.
 // Raw D1/API bodies live only inside the caller's protected process memory.
-import {PUBLIC_READBACK_SLOTS,comparePublicReadback} from './compare-five-public-readbacks-r1.mjs';
+import {PUBLIC_READBACK_SLOTS,comparePublicReadback,MAX_PUBLIC_READBACK_SPAN_MS} from './compare-five-public-readbacks-r1.mjs';
 
 export const W05_INPLACE_SCHEMA='ZGMINI_W05_FIVE_KEY_INPLACE_PREWORK_R12';
 const SLOTS=Object.freeze(['inflation19','inflation7','calendar','theme','employment']);
-const MAX_BODY_LENGTH=1_800_000;
+const MAX_BODY_BYTES=1_800_000;
 const iso=ms=>new Date(ms).toISOString();
 const safeClock=clock=>{
  const ms=clock();
@@ -30,7 +30,7 @@ async function readFixed(db,slot){
  const spec=W05_FIXED_READS[slot];
  const row=await db.prepare(spec.sql).bind(...spec.bind).first();
  if(row===null||row===undefined)return null;
- if(typeof row.body!=='string'||!row.body.length||row.body.length>MAX_BODY_LENGTH||
+ if(typeof row.body!=='string'||!row.body.length||Buffer.byteLength(row.body,'utf8')>MAX_BODY_BYTES||
     !Number.isSafeInteger(Number(row.stored_at))||Number(row.stored_at)<=0)
   throw Error('MALFORMED_STORED_ROW');
  return {body:row.body,stored_at:Number(row.stored_at)};
@@ -57,8 +57,11 @@ function sanitized(slot,comparison){
  return receipt;
 }
 
-export async function collectFiveKeyInPlace({db,readApi,compare=comparePublicReadback,clock=Date.now}={}){
- if(!db||typeof db.prepare!=='function'||typeof readApi!=='function'||typeof compare!=='function'||typeof clock!=='function')
+export async function collectFiveKeyInPlace({db,readApi,clock=Date.now,...unknown}={}){
+ // Production prework must ALWAYS use the pinned imported W05 comparator.
+ // Reject test doubles or arbitrary caller-supplied analysis code.
+ if(Object.keys(unknown).length)throw Error('W05_UNSUPPORTED_OPTION');
+ if(!db||typeof db.prepare!=='function'||typeof readApi!=='function'||typeof clock!=='function')
   throw Error('W05_OWNER_SUPPLIED_READERS_REQUIRED');
  const results=[];
  for(const slot of SLOTS){
@@ -78,6 +81,10 @@ export async function collectFiveKeyInPlace({db,readApi,compare=comparePublicRea
   if(Date.parse(readAt)>Date.parse(observedAt)||Date.parse(observedAt)>Date.parse(afterAt)){
    results.push(noBody(slot,'OBSERVATION_ORDER_UNVERIFIED'));continue;
   }
+  // Time spent on the second D1 read counts toward the same-window proof.
+  if(Date.parse(afterAt)-Date.parse(readAt)>MAX_PUBLIC_READBACK_SPAN_MS){
+   results.push(noBody(slot,'OBSERVATION_WINDOW_UNVERIFIED'));continue;
+  }
   // Both existence and exact serialized bytes must remain unchanged over API read.
   if((before===null)!==(after===null)||
      (before!==null&&(before.stored_at!==after.stored_at||before.body!==after.body))){
@@ -87,7 +94,7 @@ export async function collectFiveKeyInPlace({db,readApi,compare=comparePublicRea
    const d1={...spec,readAt,exists:before!==null,
      ...(before?{stored_at:before.stored_at,body:before.body}:{})};
    const api={observedAt,statusCode:response?.statusCode,body:response?.body};
-   results.push(sanitized(slot,compare(slot,{d1,api,now:safeClock(clock)})));
+   results.push(sanitized(slot,comparePublicReadback(slot,{d1,api,now:safeClock(clock)})));
   }catch{results.push(noBody(slot,'COMPARISON_UNVERIFIED'));}
  }
  return {
