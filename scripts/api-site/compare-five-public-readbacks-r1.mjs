@@ -38,13 +38,15 @@ export function comparePublicReadback(slot,{d1,api,now=Date.now()}={}){
  if(d1.exists!==true||!safeMs(d1.stored_at)||d1.stored_at>now||
     typeof d1.body!=='string'||d1.body.length===0)
   return result(slot,'INVALID_D1_RECEIPT');
+ const evidence={d1StoredAt:d1.stored_at,d1BodySha256:sha256(d1.body),d1ReadAt:d1.readAt,apiObservedAt:api.observedAt};
+ // Preserve the original, directly observed HTTP error verdict before the
+ // cross-source time-window check. A 503 is not evidence of a payload mismatch.
+ if(api.statusCode!==200||!isObject(api.body))
+  return result(slot,'API_NOT_READY', {...evidence,httpStatus:Number.isInteger(api.statusCode)?api.statusCode:null});
  const d1ReadMs=Date.parse(d1.readAt),apiReadMs=Date.parse(api.observedAt);
  if(d1.stored_at>d1ReadMs||d1.stored_at>apiReadMs||
     Math.abs(d1ReadMs-apiReadMs)>MAX_PUBLIC_READBACK_SPAN_MS)
   return result(slot,'UNVERIFIED_OBSERVATION_WINDOW',{maxSpanMs:MAX_PUBLIC_READBACK_SPAN_MS});
- const evidence={d1StoredAt:d1.stored_at,d1BodySha256:sha256(d1.body),d1ReadAt:d1.readAt,apiObservedAt:api.observedAt};
- if(api.statusCode!==200||!isObject(api.body))
-  return result(slot,'API_NOT_READY', {...evidence,httpStatus:Number.isInteger(api.statusCode)?api.statusCode:null});
  let saved;
  try{saved=JSON.parse(d1.body)}catch{return result(slot,'INVALID_D1_JSON',evidence)}
  if(!isObject(saved))return result(slot,'INVALID_D1_JSON',evidence);
