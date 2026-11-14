@@ -45,20 +45,18 @@ try{
   await education.waitFor({state:'hidden'});
   await page.goto(base+'/fear-greed/korea/',{waitUntil:'networkidle',timeout:45000});
   const koreaIntro=page.locator('.zg-fg-korea .zg-fg-intro');
-  if(width<761){
-   // The approved mobile design puts the introduction behind the info control.
+  const koreaIntroButton=page.locator('.zg-fg-korea .zg-fg-intro-button');
+  if(width<768){
    await koreaIntro.waitFor({state:'hidden'});
-   const introToggle=page.getByRole('button',{name:'한국 공포탐욕지수 소개'});
-   await introToggle.click();
-   assert.equal(await introToggle.getAttribute('aria-expanded'),'true');
+   assert.equal(await koreaIntroButton.getAttribute('aria-expanded'),'false','Mobile Korea intro starts collapsed');
+   await koreaIntroButton.click();
+   assert.equal(await koreaIntroButton.getAttribute('aria-expanded'),'true','Mobile Korea intro expands');
    await koreaIntro.waitFor({state:'visible'});
-  }else await koreaIntro.waitFor({state:'visible'});
+  }else{
+   await koreaIntro.waitFor({state:'visible'});
+  }
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'Korea introduction has no horizontal overflow');
   await page.screenshot({path:`artifacts/fear-greed-education/korea-intro-${width}.png`});
-  if(width<761){
-   await page.getByRole('button',{name:'한국 공포탐욕지수 소개'}).click();
-   await koreaIntro.waitFor({state:'hidden'});
-  }
   for(const route of ['/economic-indicators/employment/','/theme-fear-greed/','/sector-fear-greed/','/guides/fomc/','/inflation/','/risk-indicators/','/economic-indicators/','/about/']){
    await page.goto(base+route,{waitUntil:'networkidle',timeout:45000});
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,route+' has no horizontal overflow');
