@@ -33,7 +33,19 @@ test('Fed annual parser rejects unpublished or incomplete year without synthesiz
  assert.throws(()=>parseFomcAnnualCalendar(officialFixture,2028),/FOMC_YEAR_NOT_PUBLISHED/);
  assert.throws(()=>parseFomcAnnualCalendar(officialFixture.replaceAll('December','Dec'),2027),/FOMC_MEETING_ROW_INVALID/);
  assert.throws(()=>parseFomcAnnualCalendar(officialFixture.replace('7-8</div>','9-8</div>'),2027),/FOMC_MEETING_DATE_INVALID/);
- assert.throws(()=>parseFomcAnnualCalendar(annualSection(2027).replace(/<div class="panel-footer">[\s\S]*$/, ''),2027),/FOMC_SECTION_INCOMPLETE/);
+ const footerless=annualSection(2027).replace(/<div class="panel-footer">[\s\S]*$/, '');
+ assert.deepEqual(parseFomcAnnualCalendar(footerless,2027).map(event=>event.date),meetingDates[2027]);
+ // A later annual panel must not bleed into this year's eight rows.
+ assert.deepEqual(parseFomcAnnualCalendar(footerless+annualSection(2026),2027)
+  .map(event=>event.date),meetingDates[2027]);
+ // Official 2026-11-12 revised 2027 schedule ends November 16-17.
+ const revised=footerless.replace('<strong>December</strong>','<strong>November</strong>')
+  .replace('7-8</div>','16-17</div>');
+ assert.equal(parseFomcAnnualCalendar(revised,2027).at(-1).date,'2027-11-17');
+ // Missing footer is allowed, but missing or malformed meeting rows are not.
+ assert.throws(()=>parseFomcAnnualCalendar(
+  footerless.replace('<div class="row fomc-meeting" "','"div class=\"ignored-meeting\" "'),2027),
+  /FOMC_ANNUAL_COVERAGE_INVALID/);
 });
 
 test('existing writer stores official raw input once, retains all eight 2027 events after source failure',async()=>{
