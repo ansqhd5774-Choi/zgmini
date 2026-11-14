@@ -12,6 +12,9 @@ export const PUBLIC_READBACK_SLOTS=Object.freeze({
 });
 const isObject=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const safeMs=x=>Number.isSafeInteger(x)&&x>0;
+// An exact-key comparison cannot imply a same-window observation across
+// arbitrarily separated reads; both timestamps must postdate the row write.
+export const MAX_PUBLIC_READBACK_SPAN_MS=120_000;
 const validIso=x=>typeof x==='string'&&Number.isFinite(Date.parse(x))&&new Date(x).toISOString()===x;
 const sha256=s=>createHash('sha256').update(s,'utf8').digest('hex');
 const result=(slot,status,extra={})=>({slot,status,...extra});
@@ -35,6 +38,10 @@ export function comparePublicReadback(slot,{d1,api,now=Date.now()}={}){
  if(d1.exists!==true||!safeMs(d1.stored_at)||d1.stored_at>now||
     typeof d1.body!=='string'||d1.body.length===0)
   return result(slot,'INVALID_D1_RECEIPT');
+ const d1ReadMs=Date.parse(d1.readAt),apiReadMs=Date.parse(api.observedAt);
+ if(d1.stored_at>d1ReadMs||d1.stored_at>apiReadMs||
+    Math.abs(d1ReadMs-apiReadMs)>MAX_PUBLIC_READBACK_SPAN_MS)
+  return result(slot,'UNVERIFIED_OBSERVATION_WINDOW',{maxSpanMs:MAX_PUBLIC_READBACK_SPAN_MS});
  const evidence={d1StoredAt:d1.stored_at,d1BodySha256:sha256(d1.body),d1ReadAt:d1.readAt,apiObservedAt:api.observedAt};
  if(api.statusCode!==200||!isObject(api.body))
   return result(slot,'API_NOT_READY', {...evidence,httpStatus:Number.isInteger(api.statusCode)?api.statusCode:null});
