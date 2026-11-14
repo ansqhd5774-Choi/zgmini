@@ -46,7 +46,9 @@ try{
     {mode:'invalid',expected:'최신 관측일 2026.11.14 · 공개 2개'},
    ]){
     mode=scenario.mode;
-    await page.goto(base+'/theme-fear-greed/',{waitUntil:'networkidle',timeout:45000});
+    // Vite + polling stored readers may keep requests active after the page is
+    // fully visible. Assert the real hydrated header, not network quiescence.
+    await page.goto(base+'/theme-fear-greed/',{waitUntil:'domcontentloaded',timeout:45000});
     await page.waitForFunction(expected=>{
      const element=document.querySelector('.zg-tfg-content .zg-sfg-as-of');
      return element?.textContent?.trim()===expected;
