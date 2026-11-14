@@ -108,3 +108,13 @@ test('two valid timestamps outside the bounded read window cannot claim structur
  const safelyLate={...api(body),observedAt:new Date(now-1).toISOString()};
  assert.equal(check('calendar',row,safelyLate).status,'STRUCTURAL_MATCH_NOT_RUNTIME_PROOF');
 });
+
+test('known HTTP 503 remains API_NOT_READY even when captures are not coincident',()=>{
+ const body={status:'READY',events:[]};
+ const row=d1('calendar',body,{stored_at:now-10*60_000});
+ const staleObservation={observedAt:new Date(now-10*60_000).toISOString(),
+   statusCode:503,body:{status:'unavailable',reason:'STORED_DATA_STALE'}};
+ const result=check('calendar',row,staleObservation);
+ assert.equal(result.status,'API_NOT_READY');
+ assert.equal(result.httpStatus,503);
+});
