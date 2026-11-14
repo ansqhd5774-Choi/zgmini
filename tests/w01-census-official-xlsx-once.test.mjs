@@ -18,7 +18,7 @@ const MAX = 6_000_000;
 async function fetchBoundedOnce(url) {
   // Same URL/redirect/time limit as approved W01 source. Exactly one GET.
   const response = await fetch(url, {method: 'GET', redirect: 'manual', signal: AbortSignal.timeout(40_000)});
-  assert.equal(response.status, 200, \`OFFICIAL_CENSUS_HTTP_\${response.status}\`);
+  assert.equal(response.status, 200, `OFFICIAL_CENSUS_HTTP_${response.status}`);
   assert.equal(response.url, url, 'OFFICIAL_CENSUS_FINAL_URL_DRIFT');
   assert.ok(response.body?.getReader, 'OFFICIAL_CENSUS_NO_STREAM');
   const size = Number(response.headers.get('content-length'));
@@ -59,5 +59,5 @@ test('W01 ONCE: actual Census AMTMTI workbook parses with #1061 production XLSX-
     assert.equal(parsed.observations.at(-1)?.date,parsed.latest);
     // Bounded public integrity metadata only. Never log source cells or raw
     // rows, write the download to a file, or mark any PC storage as complete.
-    t.diagnostic(\`W01_OFFICIAL_CENSUS_PARSED_REAL_FILE bytes=\${bytes.length} sha256=\${sha} series=AMTMTI months=\${parsed.observations.length} latest=\${parsed.latest}\`);
+    t.diagnostic(`W01_OFFICIAL_CENSUS_PARSED_REAL_FILE bytes=${bytes.length} sha256=${sha} series=AMTMTI months=${parsed.observations.length} latest=${parsed.latest}`);
   });
