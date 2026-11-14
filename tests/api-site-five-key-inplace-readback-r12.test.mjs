@@ -18,7 +18,11 @@ const themeEtfs=[
  {theme:'방산',etfs:['ITA','SHLD']},
  {theme:'핀테크',etfs:['FINX','ARKF']},
  {theme:'사이버보안',etfs:['CIBR','BUG']}];
-const themeSeed={version:'THEME_ETF_ONLY_R144_252_PUBLIC_V1',
+const themeSeed={version:'THEME_ETF_ONLY_R144_252_PUBLIC_V1',status:'READY',
+ publicationAuthorized:true,upstreamCommercialRightsVerified:true,
+ derivedLicenseVerified:true,individualStocksUsed:0,scoreMethod:'ETF_ONLY_PROXY',
+ sourcePriceMode:'UNADJUSTED_HOURLY_CLOSE_PROXY_DISCLOSED',
+ weights:{trend:0.4,relativeStrength:0.2,volatility:0.4},pairWeight:0.5,
  methodologyVersion:'ETF_ONLY_T40_R20_V40_PAIR50',
  sourceVersion:'seed-fixture',sourceStoredAt:new Date(storedAt-1000).toISOString(),
  publishedAt:new Date(storedAt-500).toISOString(),observationDate:'2026-11-14',
@@ -144,4 +148,25 @@ test('HTTP 503 is reported as API_NOT_READY even with syntactically valid D1',as
  const res=await run(f,{readApi,clock});
  assert.equal(res.results[2].status,'API_NOT_READY');
  assert.equal(res.results[2].httpStatus,503);
+});
+
+
+test('W05 protected adapter cannot return seed-aligned when rights flags are absent',async()=>{
+ const f=fixture({mutate:(slot,row)=>{
+  if(slot==='theme'){const value=JSON.parse(row.body);delete value.derivedLicenseVerified;
+   row.body=JSON.stringify(value);}
+ }});
+ const result=await run(f,{clock});
+ assert.equal(result.results[3].status,'THEME_SEED_POLICY_UNVERIFIED');
+ assert.equal(result.results[3].rollingAndSidecarsVerified,false);
+ assert.equal(result.runtimeVerified,false);
+});
+test('W05 protected adapter treats 200-with-UNAVAILABLE as public readiness failure',async()=>{
+ const f=fixture();
+ const readApi=async slot=>({
+  statusCode:200,body:slot==='theme'?{...apiBodies.theme,status:'UNAVAILABLE'}:apiBodies[slot],
+ });
+ const result=await run(f,{clock,readApi});
+ assert.equal(result.results[3].status,'API_NOT_READY');
+ assert.equal(result.runtimeVerified,false);
 });
