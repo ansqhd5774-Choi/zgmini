@@ -44,7 +44,17 @@ try{
   await disclosure.locator('summary').click();
   await education.waitFor({state:'hidden'});
   await page.goto(base+'/fear-greed/korea/',{waitUntil:'networkidle',timeout:45000});
-  await page.locator('.zg-fg-korea .zg-fg-intro').waitFor({state:'visible'});
+  const koreaIntro=page.locator('.zg-fg-korea .zg-fg-intro');
+  const koreaIntroButton=page.locator('.zg-fg-korea .zg-fg-intro-button');
+  if(width<768){
+   await koreaIntro.waitFor({state:'hidden'});
+   assert.equal(await koreaIntroButton.getAttribute('aria-expanded'),'false','Mobile Korea intro starts collapsed');
+   await koreaIntroButton.click();
+   assert.equal(await koreaIntroButton.getAttribute('aria-expanded'),'true','Mobile Korea intro expands');
+   await koreaIntro.waitFor({state:'visible'});
+  }else{
+   await koreaIntro.waitFor({state:'visible'});
+  }
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'Korea introduction has no horizontal overflow');
   await page.screenshot({path:`artifacts/fear-greed-education/korea-intro-${width}.png`});
   for(const route of ['/economic-indicators/employment/','/theme-fear-greed/','/sector-fear-greed/','/guides/fomc/','/inflation/','/risk-indicators/','/economic-indicators/','/about/']){
