@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {comparePublicReadback,PUBLIC_READBACK_SLOTS,MAX_PUBLIC_READBACK_SPAN_MS} from '../scripts/api-site/compare-five-public-readbacks-r1.mjs';
+import {THEME_ETF_ONLY_PUBLIC_VERSION,THEME_ETF_ONLY_METHOD,THEME_ETF_ONLY_PAIRS,validateThemeEtfOnlyPublic} from '../worker/theme-etf-only-public.mjs';
 const now=Date.parse('2026-11-14T00:00:00.000Z');
 const readAt='2026-11-14T00:00:00.000Z';
 const storedAt=now-60_000;
@@ -212,4 +213,23 @@ test('W05 theme: 200 HTTP with status UNAVAILABLE or PENDING is not a composed a
   const response=api({...composedTheme(),status});
   assert.equal(check('theme',d1('theme',theme),response).status,'API_NOT_READY');
  }
+});
+
+
+test('W05 theme fixed seed policy is aligned with the real Worker public validator',()=>{
+ assert.equal(theme.version,THEME_ETF_ONLY_PUBLIC_VERSION);
+ assert.equal(theme.methodologyVersion,THEME_ETF_ONLY_METHOD);
+ assert.deepEqual(theme.themes.map(t=>({theme:t.theme,etfs:t.etfs})),THEME_ETF_ONLY_PAIRS.map(t=>({theme:t.theme,etfs:[...t.etfs]})));
+ // Pure synthetic 252-day history, no provider or D1 calls. The exact actual
+ // Reader validator accepts the full licensed seed, not only the W05 shape.
+ const last=Date.parse(theme.observationDate+'T00:00:00.000Z');
+ const history=Array.from({length:252},(_,i)=>({date:new Date(last-(251-i)*86400000).toISOString().slice(0,10),score:42}));
+ const full={...theme,themes:theme.themes.map(t=>({...t,latestScore:42,history}))};
+ assert.equal(validateThemeEtfOnlyPublic(full),true);
+ assert.equal(check('theme',d1('theme',full),api(composedTheme())).status,
+  'SEED_READBACK_ONLY_COMPOSED_UNVERIFIED');
+ const unlicensed={...full,derivedLicenseVerified:false};
+ assert.equal(validateThemeEtfOnlyPublic(unlicensed),false);
+ assert.equal(check('theme',d1('theme',unlicensed),api(composedTheme())).status,
+  'THEME_SEED_POLICY_UNVERIFIED');
 });
