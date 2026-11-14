@@ -50,13 +50,16 @@ function fixture({mutate,failDb,failApi,missing}={}){
   return{statusCode:200,body:apiBodies[slot]};};
  return{db,seen,counts,readApi};
 }
+// Pass only permitted owner inputs. The fixture's counters/seen arrays must
+// never become executable option surface in the production adapter.
+const run=(fixture,options={})=>collectFiveKeyInPlace({db:fixture.db,readApi:fixture.readApi,...options});
 test('exact fixed queries are narrow and enumerated once',()=>{
  assert.deepEqual(Object.keys(W05_FIXED_READS),keyOrder);
  assert.deepEqual(W05_FIXED_READS.calendar.bind,['output','release-calendar','current']);
  assert.equal(new Set(keyOrder.map(k=>W05_FIXED_READS[k].bind.join('|'))).size,5);
 });
 test('all five approved keys are read twice but no values escape results',async()=>{
- const f=fixture();const res=await collectFiveKeyInPlace({...f,clock});
+ const f=fixture();const res=await run(f,{clock});
  assert.equal(res.schema,W05_INPLACE_SCHEMA);
  assert.equal(res.status,'PARTIAL_OR_UNVERIFIED'); // Theme overlays require separate provenance.
  assert.equal(res.runtimeVerified,false);assert.equal(res.ownerAuthorizationVerified,false);
@@ -76,50 +79,50 @@ test('all five approved keys are read twice but no values escape results',async(
 });
 test('D1 row changed after public GET produces source drift without comparing',async()=>{
  const f=fixture({mutate:(slot,row,n)=>{if(slot==='inflation19'&&n===2)row.body='CHANGED_SENSITIVE';}});
- const res=await collectFiveKeyInPlace({...f,clock});
+ const res=await run(f,{clock});
  assert.equal(res.results[0].status,'SOURCE_DRIFT_UNVERIFIED');
  assert.equal(res.results[1].status,'STRUCTURAL_MATCH_NOT_RUNTIME_PROOF');
  assert.equal(res.status,'PARTIAL_OR_UNVERIFIED');
 });
 test('D1 row disappeared or stored_at changed is not a match',async()=>{
  const f=fixture({mutate:(slot,row,n)=>{if(slot==='inflation7'&&n===2)row.stored_at+=1;}});
- const res=await collectFiveKeyInPlace({...f,clock});
+ const res=await run(f,{clock});
  assert.equal(res.results[1].status,'SOURCE_DRIFT_UNVERIFIED');
 });
 test('row removed after API GET is source drift, not missing-row proof',async()=>{
  const f=fixture({mutate:(slot,row,n)=>slot==='calendar'&&n===2?null:undefined});
- const res=await collectFiveKeyInPlace({...f,clock});
+ const res=await run(f,{clock});
  assert.equal(res.results[2].status,'SOURCE_DRIFT_UNVERIFIED');
 });
 test('clock moving backwards invalidates claimed observation ordering',async()=>{
  const f=fixture();let tick=0;const jump=()=>{tick++;return tick===2?stamp-3000:stamp;};
- const res=await collectFiveKeyInPlace({...f,clock:jump});
+ const res=await run(f,{clock:jump});
  assert.equal(res.results[0].status,'OBSERVATION_ORDER_UNVERIFIED');
 });
 test('missing row in both reads is reported as missing but never verified',async()=>{
- const f=fixture({missing:'calendar'});const res=await collectFiveKeyInPlace({...f,clock});
+ const f=fixture({missing:'calendar'});const res=await run(f,{clock});
  assert.equal(res.results[2].status,'CONFIRMED_D1_ROW_MISSING');assert.equal(res.runtimeVerified,false);
 });
 test('read failures are separated by exact slot and secrets are discarded',async()=>{
- const d=fixture({failDb:'inflation7'}),r=await collectFiveKeyInPlace({...d,clock});
+ const d=fixture({failDb:'inflation7'}),r=await run(d,{clock});
  assert.equal(r.results[1].status,'D1_READ_UNVERIFIED');
- const h=fixture({failApi:'theme'}),res=await collectFiveKeyInPlace({...h,clock});
+ const h=fixture({failApi:'theme'}),res=await run(h,{clock});
  assert.equal(res.results[3].status,'PUBLIC_API_READ_UNVERIFIED');
  assert.doesNotMatch(JSON.stringify(res),/SECRET_SQL_EXCEPTION|API_KEY_SECRET_EXCEPTION/);
 });
 test('malformed body and oversized raw row reject without return of bytes',async()=>{
  for(const body of [null,'x'.repeat(1800001),'가'.repeat(600001)]){
   const f=fixture({mutate:(slot,row)=>{if(slot==='employment')row.body=body;}});
-  const res=await collectFiveKeyInPlace({...f,clock});
+  const res=await run(f,{clock});
   assert.equal(res.results[4].status,'D1_READ_UNVERIFIED');
   assert.equal(res.runtimeVerified,false);
  }
 });
 test('caller cannot replace the fixed comparer or provide unknown execution options',async()=>{
  const f=fixture();
- await assert.rejects(collectFiveKeyInPlace({...f,clock,compare:()=>({status:'PASS'})}),
+ await assert.rejects(run(f,{clock,compare:()=>({status:'PASS'})}),
   /W05_UNSUPPORTED_OPTION/);
- await assert.rejects(collectFiveKeyInPlace({...f,clock,sql:'SELECT * FROM elsewhere'}),
+ await assert.rejects(run(f,{clock,sql:'SELECT * FROM elsewhere'}),
   /W05_UNSUPPORTED_OPTION/);
 });
 test('missing owner-supplied readers do not create implicit access',async()=>{
@@ -129,7 +132,7 @@ test('missing owner-supplied readers do not create implicit access',async()=>{
 test('complete two-read window expires if the D1 recheck finishes late',async()=>{
  const f=fixture();let tick=0;
  const slowClock=()=>++tick===3?stamp+120001:stamp;
- const res=await collectFiveKeyInPlace({...f,clock:slowClock});
+ const res=await run(f,{clock:slowClock});
  assert.equal(res.results[0].status,'OBSERVATION_WINDOW_UNVERIFIED');
  assert.equal(res.runtimeVerified,false);
 });
@@ -138,7 +141,7 @@ test('HTTP 503 is reported as API_NOT_READY even with syntactically valid D1',as
  const readApi=async slot=>slot==='calendar'
   ?{statusCode:503,body:{reason:'STORED_DATA_STALE'}}
   :{statusCode:200,body:apiBodies[slot]};
- const res=await collectFiveKeyInPlace({...f,readApi,clock});
+ const res=await run(f,{readApi,clock});
  assert.equal(res.results[2].status,'API_NOT_READY');
  assert.equal(res.results[2].httpStatus,503);
 });
