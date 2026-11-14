@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {comparePublicReadback,PUBLIC_READBACK_SLOTS} from '../scripts/api-site/compare-five-public-readbacks-r1.mjs';
+import {comparePublicReadback,PUBLIC_READBACK_SLOTS,MAX_PUBLIC_READBACK_SPAN_MS} from '../scripts/api-site/compare-five-public-readbacks-r1.mjs';
 const now=Date.parse('2026-11-14T00:00:00.000Z');
 const readAt='2026-11-14T00:00:00.000Z';
 const storedAt=now-60_000;
@@ -83,4 +83,38 @@ test('no raw body or credentials are returned in public summary',()=>{
  const result=check('calendar',row,api(JSON.parse(row.body)));
  assert.equal(result.status,'STRUCTURAL_MATCH_NOT_RUNTIME_PROOF');
  assert.doesNotMatch(JSON.stringify(result),/private-fixture-value|secret|body":/);
+});
+
+test('same JSON observed before D1 write is not a valid simultaneous comparison',()=>{
+ const body={status:'READY',events:[{id:'fomc'}]};
+ const row=d1('calendar',body);
+ const earlyApi={...api(body),observedAt:new Date(row.stored_at-1).toISOString()};
+ assert.equal(check('calendar',row,earlyApi).status,'UNVERIFIED_OBSERVATION_WINDOW');
+});
+
+test('D1 receipt cannot claim to read a row before its own stored_at',()=>{
+ const body={status:'READY',events:[{id:'fomc'}]};
+ const row=d1('calendar',body,{readAt:new Date(storedAt-1).toISOString()});
+ assert.equal(check('calendar',row,api(body)).status,'UNVERIFIED_OBSERVATION_WINDOW');
+});
+
+test('two valid timestamps outside the bounded read window cannot claim structural match',()=>{
+ const body={status:'READY',events:[]},oldStored=now-10*60_000;
+ const row=d1('calendar',body,{stored_at:oldStored});
+ const farAway={...api(body),observedAt:new Date(now-MAX_PUBLIC_READBACK_SPAN_MS-1).toISOString()};
+ assert.equal(check('calendar',row,farAway).status,'UNVERIFIED_OBSERVATION_WINDOW');
+ const atBoundary={...api(body),observedAt:new Date(now-MAX_PUBLIC_READBACK_SPAN_MS).toISOString()};
+ assert.equal(check('calendar',row,atBoundary).status,'STRUCTURAL_MATCH_NOT_RUNTIME_PROOF');
+ const safelyLate={...api(body),observedAt:new Date(now-1).toISOString()};
+ assert.equal(check('calendar',row,safelyLate).status,'STRUCTURAL_MATCH_NOT_RUNTIME_PROOF');
+});
+
+test('known HTTP 503 remains API_NOT_READY even when captures are not coincident',()=>{
+ const body={status:'READY',events:[]};
+ const row=d1('calendar',body,{stored_at:now-10*60_000});
+ const staleObservation={observedAt:new Date(now-10*60_000).toISOString(),
+   statusCode:503,body:{status:'unavailable',reason:'STORED_DATA_STALE'}};
+ const result=check('calendar',row,staleObservation);
+ assert.equal(result.status,'API_NOT_READY');
+ assert.equal(result.httpStatus,503);
 });
