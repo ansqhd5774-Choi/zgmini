@@ -13,7 +13,7 @@ try{
   page.on('request',request=>{if(request.url().includes('/styles/fear-greed-education-r1.css'))educationRequests.push(request.url());});
   await page.addInitScript(()=>sessionStorage.setItem('zgmini-about-intro-dismissed-r1','1'));
   await page.route('https://**',route=>route.abort());
-  await page.route('**/api/**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({status:'UNAVAILABLE',user:null})}));
+  await page.route('**/api/**',route=>{const employment=route.request().url().includes('/api/employment-r6/observations');return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(employment?{kind:'employment-r6',status:'UNAVAILABLE',sourceStoredAt:0,indicators:[],summary:{chartReadyFeatures:0,chartPartialFeatures:0,scoredFeatures:0,recentlyScoredFeatures:0}}:{status:'UNAVAILABLE',user:null})});});
   await page.goto(base,{waitUntil:'networkidle',timeout:45000});
   assert.equal(educationRequests.length,0,'Dashboard must not request detail education CSS');
   await page.locator('[data-testid="investor-search-dashboard"]').scrollIntoViewIfNeeded();
