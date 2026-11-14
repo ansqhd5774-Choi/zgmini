@@ -22,6 +22,7 @@ on:
       - 'app/risk-indicators/**'
       - 'app/country-fear-greed.tsx'
       - 'app/fear-greed/korea/page.tsx'
+      - 'app/fear-greed/korea/korea-layout-parity-r1.css'
       - 'app/fear-greed/investor-intent-guide.tsx'
       - 'app/dashboard-ui.tsx'
       - 'app/market-fear-greed-chart.tsx'
