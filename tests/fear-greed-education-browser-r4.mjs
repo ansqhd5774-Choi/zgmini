@@ -51,7 +51,19 @@ try{
    assert.equal(await koreaIntroButton.getAttribute('aria-expanded'),'false','Mobile Korea intro starts collapsed');
    await koreaIntroButton.click();
    assert.equal(await koreaIntroButton.getAttribute('aria-expanded'),'true','Mobile Korea intro expands');
-   await koreaIntro.waitFor({state:'visible'});
+   try { await koreaIntro.waitFor({state:'visible',timeout:10000}); }
+   catch(error){
+    const diagnostic=await page.evaluate(()=>{
+     const el=document.querySelector('.zg-fg-korea .zg-fg-intro');
+     const parent=el?.closest('.zg-fg-korea-intro-content');
+     const button=document.querySelector('.zg-fg-korea .zg-fg-intro-button');
+     const inspect=node=>node?{className:node.className,display:getComputedStyle(node).display,visibility:getComputedStyle(node).visibility,rect:node.getBoundingClientRect().toJSON()}:null;
+     return {intro:inspect(el),parent:inspect(parent),button:inspect(button),expanded:button?.getAttribute('aria-expanded'),styleSheets:[...document.styleSheets].map(s=>s.href).filter(Boolean)};
+    });
+    console.error('KOREA_INTRO_FIRST_FAIL',JSON.stringify({width,diagnostic,pageErrors:errors}));
+    await page.screenshot({path:`artifacts/fear-greed-education/korea-intro-fail-${width}.png`,fullPage:true});
+    throw error;
+   }
   }else{
    await koreaIntro.waitFor({state:'visible'});
   }
