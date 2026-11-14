@@ -13,7 +13,7 @@ try{
   page.on('request',request=>{if(request.url().includes('/styles/fear-greed-education-r1.css'))educationRequests.push(request.url());});
   await page.addInitScript(()=>sessionStorage.setItem('zgmini-about-intro-dismissed-r1','1'));
   await page.route('https://**',route=>route.abort());
-  await page.route('**/api/**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({status:'UNAVAILABLE',user:null})}));
+  await page.route('**/api/**',route=>{const employment=route.request().url().includes('/api/employment-r6/observations');return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(employment?{kind:'employment-r6',status:'UNAVAILABLE',sourceStoredAt:0,indicators:[],summary:{chartReadyFeatures:0,chartPartialFeatures:0,scoredFeatures:0,recentlyScoredFeatures:0}}:{status:'UNAVAILABLE',user:null})});});
   await page.goto(base,{waitUntil:'networkidle',timeout:45000});
   assert.equal(educationRequests.length,0,'Dashboard must not request detail education CSS');
   await page.locator('[data-testid="investor-search-dashboard"]').scrollIntoViewIfNeeded();
@@ -45,24 +45,44 @@ try{
   await education.waitFor({state:'hidden'});
   await page.goto(base+'/fear-greed/korea/',{waitUntil:'networkidle',timeout:45000});
   const koreaIntro=page.locator('.zg-fg-korea .zg-fg-intro');
-  if(width<761){
-   // The approved mobile design puts the introduction behind the info control.
+  const koreaIntroButton=page.locator('.zg-fg-korea .zg-fg-intro-button');
+  if(width<768){
    await koreaIntro.waitFor({state:'hidden'});
-   const introToggle=page.getByRole('button',{name:'한국 공포탐욕지수 소개'});
-   await introToggle.click();
-   assert.equal(await introToggle.getAttribute('aria-expanded'),'true');
+   assert.equal(await koreaIntroButton.getAttribute('aria-expanded'),'false','Mobile Korea intro starts collapsed');
+   await koreaIntroButton.click();
+   assert.equal(await koreaIntroButton.getAttribute('aria-expanded'),'true','Mobile Korea intro expands');
+   try { await koreaIntro.waitFor({state:'visible',timeout:10000}); }
+   catch(error){
+    const diagnostic=await page.evaluate(()=>{
+     const el=document.querySelector('.zg-fg-korea .zg-fg-intro');
+     const parent=el?.closest('.zg-fg-korea-intro-content');
+     const button=document.querySelector('.zg-fg-korea .zg-fg-intro-button');
+     const inspect=node=>node?{className:node.className,display:getComputedStyle(node).display,visibility:getComputedStyle(node).visibility,rect:node.getBoundingClientRect().toJSON()}:null;
+     return {intro:inspect(el),parent:inspect(parent),button:inspect(button),expanded:button?.getAttribute('aria-expanded'),styleSheets:[...document.styleSheets].map(s=>s.href).filter(Boolean)};
+    });
+    console.error('KOREA_INTRO_FIRST_FAIL',JSON.stringify({width,diagnostic,pageErrors:errors}));
+    await page.screenshot({path:`artifacts/fear-greed-education/korea-intro-fail-${width}.png`,fullPage:true});
+    throw error;
+   }
+  }else{
    await koreaIntro.waitFor({state:'visible'});
-  }else await koreaIntro.waitFor({state:'visible'});
+  }
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'Korea introduction has no horizontal overflow');
   await page.screenshot({path:`artifacts/fear-greed-education/korea-intro-${width}.png`});
-  if(width<761){
-   await page.getByRole('button',{name:'한국 공포탐욕지수 소개'}).click();
-   await koreaIntro.waitFor({state:'hidden'});
-  }
   for(const route of ['/economic-indicators/employment/','/theme-fear-greed/','/sector-fear-greed/','/guides/fomc/','/inflation/','/risk-indicators/','/economic-indicators/','/about/']){
    await page.goto(base+route,{waitUntil:'networkidle',timeout:45000});
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,route+' has no horizontal overflow');
-   assert.equal(await page.locator('h1').count(),1,route+' has one visible heading');
+   const headingCount=await page.locator('h1').count();
+   if(headingCount!==1){
+    const diagnostic=await page.evaluate(()=>({
+     title:document.title,url:location.href,readyState:document.readyState,
+     bodyText:document.body?.innerText?.slice(0,1200)??'',
+     rootHtml:document.querySelector('main')?.outerHTML?.slice(0,1600)??'',
+    }));
+    console.error('HEADING_FIRST_FAIL',JSON.stringify({route,width,headingCount,diagnostic,pageErrors:errors}));
+    await page.screenshot({path:`artifacts/fear-greed-education/heading-fail-${width}.png`,fullPage:true});
+   }
+   assert.equal(headingCount,1,route+' has one visible heading');
    assert.ok((await page.locator('h1').innerText()).trim(),route+' nonempty heading');
    const searchGuide=page.locator('[data-testid^="investor-search-"]');
    if(await searchGuide.count()){
