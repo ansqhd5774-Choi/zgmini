@@ -25,7 +25,11 @@ const themePairs=[
  {theme:'핀테크',etfs:['FINX','ARKF']},
  {theme:'사이버보안',etfs:['CIBR','BUG']},
 ];
-const theme={version:'THEME_ETF_ONLY_R144_252_PUBLIC_V1',
+const theme={version:'THEME_ETF_ONLY_R144_252_PUBLIC_V1',status:'READY',
+ publicationAuthorized:true,upstreamCommercialRightsVerified:true,
+ derivedLicenseVerified:true,individualStocksUsed:0,scoreMethod:'ETF_ONLY_PROXY',
+ sourcePriceMode:'UNADJUSTED_HOURLY_CLOSE_PROXY_DISCLOSED',
+ weights:{trend:0.4,relativeStrength:0.2,volatility:0.4},pairWeight:0.5,
  methodologyVersion:'ETF_ONLY_T40_R20_V40_PAIR50',
  sourceVersion:'theme-fixture',sourceStoredAt:'2026-11-13T22:00:00.000Z',
  publishedAt:'2026-11-13T23:00:00.000Z',observationDate:'2026-11-13',
@@ -173,5 +177,39 @@ test('partial or malformed theme seed metadata never becomes a structural match'
   p=>{p.themes[0].etfs=[];},
  ]){const saved=JSON.parse(JSON.stringify(theme));mutate(saved);
   assert.equal(check('theme',d1('theme',saved),api(composedTheme())).status,'INVALID_THEME_SEED_METADATA');
+ }
+});
+
+
+test('W05 theme: seed without approved publication rights must not be classed as aligned',()=>{
+ const fields=['publicationAuthorized','upstreamCommercialRightsVerified','derivedLicenseVerified'];
+ for(const field of fields){
+  const seed=JSON.parse(JSON.stringify(theme));delete seed[field];
+  const result=check('theme',d1('theme',seed),api(composedTheme()));
+  assert.equal(result.status,'THEME_SEED_POLICY_UNVERIFIED',field);
+  assert.notEqual(result.status,'SEED_READBACK_ONLY_COMPOSED_UNVERIFIED');
+ }
+});
+test('W05 theme: wrong seed scoring method, price mode or immutable ETF roster is not aligned',()=>{
+ for(const mutate of [
+  s=>{s.sourcePriceMode='SILENT_TOTAL_RETURN';},
+  s=>{s.scoreMethod='STOCK_PICKING';},
+  s=>{s.individualStocksUsed=1;},
+  s=>{s.weights.volatility=0.3;},
+  s=>{s.pairWeight=0.6;},
+  s=>{s.version='FAKE_THEME_SEED_VERSION';},
+  s=>{s.methodologyVersion='FAKE_METHODOLOGY';},
+  s=>{s.themes[0].etfs=['SPY','ROBO'];}
+ ]){const seed=JSON.parse(JSON.stringify(theme));mutate(seed);
+  assert.equal(check('theme',d1('theme',seed),api({...composedTheme(),version:seed.version,
+   methodologyVersion:seed.methodologyVersion,
+   themes:[...seed.themes,...composedTheme().themes.slice(7)]})).status,
+   'THEME_SEED_POLICY_UNVERIFIED');
+ }
+});
+test('W05 theme: 200 HTTP with status UNAVAILABLE or PENDING is not a composed alignment',()=>{
+ for(const status of ['UNAVAILABLE','PENDING','unavailable']){
+  const response=api({...composedTheme(),status});
+  assert.equal(check('theme',d1('theme',theme),response).status,'API_NOT_READY');
  }
 });
