@@ -236,3 +236,13 @@
 - **AMTMTI 34행 2025년 Jan~Dec C:N**: `941981,943013,944064,943249,944036,946202,948226,947640,946694,947012,948592,949081`.
 - **AMTMTI 35행 2026년 Jan~Sep C:K**: `949640,950428,956676,959836,962037,963357,967298,972304,976044`. Oct~Dec L:N은 실제 XML에 셀이 없음; 미발표 달을 0으로 채우지 않음. 동일 수치의 기존 합성 fixture는 실물과 **값·위치가 일치**.
 - 따라서 실제 관측된 Census workbook의 **시트/셀/relationship 속성 순서와 기존 기능 파서 계약에 즉시 알려진 충돌이 없음**. PR #1061의 일반 호환성 개선은 별개 선택지이며 현행 #1336 B 승인의 신규 선행 Gate가 아니다. B 승인 여부는 담당자와 활성 opt-in 계약에 따르고, 실제 수집 시 원본 바이너리 SHA·parse/store/readback 결과를 기록. 기존 PPI #24 `WPSFD4` 203건 파일 SHA·checkpoint 보존.
+
+
+### 9.6 W01 예약 1회차 — Census 문서상 N/A와 실물 AMTMTI 분리 (2026-11-14)
+
+- **시작 기준:** 물가 브랜치 `656b5025f0175186b87c078ec92b7926aebefcc7`, 기능 42%/원자료 23·26/공개 후보 4·7. 중앙 #68의 W01 최신 인계 [72차](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6867292186)와 중앙 브랜치 통합계획 75차를 확인. 전회 BLS API POST X-gap 소스 수정 6/6 PASS 및 #1334 A 스냅샷은 재실행하지 않음.
+- **Census #28 독립 신규 확인:** Census 공식 NAICS 역사자료 설명 `https://www.census.gov/manufacturing/m3/historical_data/naicshist.pdf`는 결측 칸이 비어 있거나 `N/A`일 수 있다고 명시. 현 `zgmini/main`의 `parseOfficialCensusInventoryRows`를 정확히 분리해 **비영구 격리 JS 함수검사 4종** 수행: 후행 빈 셀/문자 `-`는 18개월 유효, `N/A`/`n/a`는 `INFL_MANUAL_CENSUS_VALUE_INVALID`로 거부. 이 검사는 문서상 포맷에 대한 **조건부 호환성 위험**이며, 운영/공식 원자료의 실제 실패를 입증하지 않음.
+- **기존 실물 증거 재사용:** 바로 앞 §9.5의 공식 XLSX 974,835바이트·시트 `m3-outp-invp`·`AMTMTI` 2025년 12개월/2026년 Jan–Sep 9개월 실제 확인 값에 `N/A` 존재 증거는 없음. 이번 환경의 XLSX 바이너리 직접 취득은 웹 도구에서 MIME 미지원, 별도 인터넷 경로에서는 DNS 실패. **실제 파일→Node XLSX 파서 end-to-end는 미검증**. 기존 #1060 격리 공식 파일 파싱·PR #1061 XLSX 관계 순서 테스트를 중복 수행하지 않음.
+- **판정:** `CENSUS_NA_COMPATIBILITY_POTENTIAL_NON_BLOCKING` / `OFFICIAL_CURRENT_AMTMTI_FAILURE_NOT_REPRODUCED`. 기존 파서/결측 처리 변경, 신규 테스트 또는 PR, 운영 설치/수집/원자료·PPI/SQLite/D1/UI/Cloudflare 쓰기 모두 0. 정적 GET B PR #1336은 여전히 `DRAFT_NOT_APPROVED`; 현행 opt-in은 새 live readback 없음(마지막 확인 false). B 실행만 `B_EXECUTION_HOLD`.
+- **LAST PASS:** GitHub 최신 소스와 공식 Census 설명 및 기존 XLSX 실물 관측값의 일관성 검토; 독립 조건부 함수검사 4종 완료. **FIRST FAIL(필수 운영 단계):** `B_MANIFEST_NOT_APPROVED` — 정확한 source-pinned 새 B 승인이 미확정이며 현재 실PC 수집은 검증되지 않음.
+- **다음 필수 행동 하나:** 정규 승인 권한자가 기존 [PR #1336](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1336)의 pinned source·기존 4파일 및 동일효과를 근거로 **명시 GO/NO-GO** 결정. GO와 정상 opt-in/Runner/lock 검증 후에만 원담당의 새 고유 B 단회로 실제 BLS/Census 수집·저장/readback 확인. 기존 #1177 재사용 금지. **기능 진행률 42%→42%.**
