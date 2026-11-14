@@ -14,6 +14,33 @@ const isObject=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
 const populated=x=>typeof x==='string'&&x.trim().length>0;
 const exactStrings=(a,b)=>Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&
  a.every((item,i)=>typeof item==='string'&&item===b[i]);
+// Mirror only the immutable public seed policy gates used by the actual
+// stored Theme Reader. These are necessary, not sufficient, for publication
+// validity: rolling/sidecars, full 252-point history and D1 source rights
+// must still be verified by the approved Owner in the runtime.
+const THEME_SEED_VERSION='THEME_ETF_ONLY_R144_252_PUBLIC_V1';
+const THEME_SEED_METHOD='ETF_ONLY_T40_R20_V40_PAIR50';
+const THEME_SEED_PAIRS=Object.freeze([
+ Object.freeze({theme:'로봇·자동화',etfs:Object.freeze(['BOTZ','ROBO'])}),
+ Object.freeze({theme:'클라우드·SaaS',etfs:Object.freeze(['SKYY','CLOU'])}),
+ Object.freeze({theme:'자율주행',etfs:Object.freeze(['DRIV','BOTZ'])}),
+ Object.freeze({theme:'원전·SMR',etfs:Object.freeze(['NLR','URA'])}),
+ Object.freeze({theme:'방산',etfs:Object.freeze(['ITA','SHLD'])}),
+ Object.freeze({theme:'핀테크',etfs:Object.freeze(['FINX','ARKF'])}),
+ Object.freeze({theme:'사이버보안',etfs:Object.freeze(['CIBR','BUG'])}),
+]);
+const hasThemeSeedPolicy=x=>x.status==='READY'&&
+ x.version===THEME_SEED_VERSION&&x.methodologyVersion===THEME_SEED_METHOD&&
+ x.publicationAuthorized===true&&x.upstreamCommercialRightsVerified===true&&
+ x.derivedLicenseVerified===true&&x.individualStocksUsed===0&&
+ x.scoreMethod==='ETF_ONLY_PROXY'&&
+ x.sourcePriceMode==='UNADJUSTED_HOURLY_CLOSE_PROXY_DISCLOSED'&&
+ x.weights?.trend===0.4&&x.weights?.relativeStrength===0.2&&
+ x.weights?.volatility===0.4&&x.pairWeight===0.5&&
+ Array.isArray(x.themes)&&x.themes.length===THEME_SEED_PAIRS.length&&
+ x.themes.every((item,i)=>isObject(item)&&
+  item.theme===THEME_SEED_PAIRS[i].theme&&
+  exactStrings(item.etfs,THEME_SEED_PAIRS[i].etfs));
 const safeMs=x=>Number.isSafeInteger(x)&&x>0;
 // An exact-key comparison cannot imply a same-window observation across
 // arbitrarily separated reads; both timestamps must postdate the row write.
@@ -65,6 +92,10 @@ export function comparePublicReadback(slot,{d1,api,now=Date.now()}={}){
   return result(slot,'STRUCTURAL_MATCH_NOT_RUNTIME_PROOF',{...evidence,sourceVersion:p.sourceVersion,sourceStoredAt:p.sourceStoredAt});
  }
  if(expected.mode==='COMPOSED'){
+  // A 200 HTTP with an explicit non-READY JSON status is not evidence of
+  // a live composed public theme, even if some seed labels still match.
+  if(api.body.status!=='READY')
+   return result(slot,'API_NOT_READY',{...evidence,httpStatus:api.statusCode});
   // The Worker preserves the seven immutable seed ETF identities and its
   // version/methodology while rolling scores and optional sidecars may change.
   // Check only these invariant base identities; never equate the rolling
@@ -77,6 +108,11 @@ export function comparePublicReadback(slot,{d1,api,now=Date.now()}={}){
        !Array.isArray(item.etfs)||item.etfs.length!==2||
        item.etfs.some(etf=>!populated(etf))))
    return result(slot,'INVALID_THEME_SEED_METADATA',evidence);
+  // Metadata parity alone is insufficient when the stored base violates the
+  // immutable approval/rights/price-mode/ETF-roster contract. Never return
+  // even the limited seed-aligned classification for an unauthorized seed.
+  if(!hasThemeSeedPolicy(saved))
+   return result(slot,'THEME_SEED_POLICY_UNVERIFIED',evidence);
   for(const field of ['version','methodologyVersion']){
    if(api.body[field]!==saved[field])
     return result(slot,'THEME_SEED_LINEAGE_MISMATCH',{...evidence,field});
