@@ -16,7 +16,23 @@ const inflationEnvelope=payload=>({payload,projection:{status:'READY',builtAt:st
   sourceVersion:payload.sourceVersion,sourceStoredAt:payload.sourceStoredAt}});
 const employment={kind:'EMPLOYMENT_R6_ONE_YEAR_STORED_DISPLAY_R1',asOfDate:'2026-11-13',sourceStoredAt:storedAt-1000,
   formulaHash:'sha256:fixture',methodologyVersion:'EMP-R6-FORMULA-R2',indicators:Array.from({length:29},(_,i)=>({id:i+1}))};
-const theme={sourceVersion:'theme-fixture',sourceStoredAt:'2026-11-13T22:00:00.000Z',publishedAt:'2026-11-13T23:00:00.000Z',observationDate:'2026-11-13',themes:[]};
+const themePairs=[
+ {theme:'로봇·자동화',etfs:['BOTZ','ROBO']},
+ {theme:'클라우드·SaaS',etfs:['SKYY','CLOU']},
+ {theme:'자율주행',etfs:['DRIV','BOTZ']},
+ {theme:'원전·SMR',etfs:['NLR','URA']},
+ {theme:'방산',etfs:['ITA','SHLD']},
+ {theme:'핀테크',etfs:['FINX','ARKF']},
+ {theme:'사이버보안',etfs:['CIBR','BUG']},
+];
+const theme={version:'THEME_ETF_ONLY_R144_252_PUBLIC_V1',
+ methodologyVersion:'ETF_ONLY_T40_R20_V40_PAIR50',
+ sourceVersion:'theme-fixture',sourceStoredAt:'2026-11-13T22:00:00.000Z',
+ publishedAt:'2026-11-13T23:00:00.000Z',observationDate:'2026-11-13',
+ themes:themePairs.map(t=>({...t,latestScore:42,history:[]}))};
+const composedTheme=()=>({...theme,status:'READY',sourceVersion:'rolling-fixture-new-version',
+ themes:[...themePairs.map(t=>({...t,score:47,history:[]})),
+  {theme:'AI 반도체',etfs:['SMH','SOXX'],score:47,history:[]}]});
 
 test('five keys are fixed and enforce table, feed kind and compound key exactly',()=>{
  assert.equal(Object.keys(PUBLIC_READBACK_SLOTS).length,5);
@@ -65,10 +81,12 @@ test('employment direct body requires 29 indicators and formula identity',()=>{
  assert.equal(check('employment',d1('employment',{...employment,indicators:[]}),api(employment)).status,'INVALID_EMPLOYMENT_METADATA');
  assert.equal(check('employment',receipt,api({...employment,methodologyVersion:'different'})).status,'PUBLIC_BODY_MISMATCH');
 });
-test('theme seed alone cannot certify optional rolling and sidecar composition',()=>{
- const r=check('theme',d1('theme',theme),api({...theme,status:'READY',themes:[{theme:'overlay'}]}));
+test('theme seed identity can align while rolling and optional sidecars remain unverified',()=>{
+ const r=check('theme',d1('theme',theme),api(composedTheme()));
  assert.equal(r.status,'SEED_READBACK_ONLY_COMPOSED_UNVERIFIED');
+ assert.equal(r.seedIdentityShapeAligned,true);
  assert.equal(r.rollingAndSidecarsVerified,false);
+ assert.equal(r.seedSourceVersion,theme.sourceVersion);
 });
 test('503 stale is a public API readiness failure, not a D1 mismatch verdict',()=>{
  const r=check('theme',d1('theme',theme),{observedAt:apiAt,statusCode:503,body:{reason:'STORED_DATA_STALE'}});
@@ -117,4 +135,43 @@ test('known HTTP 503 remains API_NOT_READY even when captures are not coincident
  const result=check('calendar',row,staleObservation);
  assert.equal(result.status,'API_NOT_READY');
  assert.equal(result.httpStatus,503);
+});
+
+test('theme public output must preserve immutable seed version and methodology',()=>{
+ for(const [field,value] of [['version','different'],['methodologyVersion','INVALID']]){
+  const r=check('theme',d1('theme',theme),api({...composedTheme(),[field]:value}));
+  assert.equal(r.status,'THEME_SEED_LINEAGE_MISMATCH');
+  assert.equal(r.field,field);
+  assert.equal(r.rollingAndSidecarsVerified,undefined);
+ }
+});
+test('different rolling sourceVersion is valid, missing sourceVersion is not evidence',()=>{
+ const r=check('theme',d1('theme',theme),api(composedTheme()));
+ assert.equal(r.status,'SEED_READBACK_ONLY_COMPOSED_UNVERIFIED');
+ const lost=check('theme',d1('theme',theme),api({...composedTheme(),sourceVersion:''}));
+ assert.equal(lost.status,'THEME_SEED_LINEAGE_MISMATCH');
+ assert.equal(lost.field,'sourceVersion');
+});
+test('seed base ETF identities must be preserved across rolling and sidecars',()=>{
+ for(const mutate of [
+  p=>{p.themes[0].etfs=['SPY','ROBO'];},
+  p=>{p.themes[1].theme='changed theme';},
+  p=>{p.themes=[...p.themes].slice(1);},
+  p=>{p.themes=[...p.themes].reverse();},
+ ]){const payload=composedTheme();mutate(payload);
+  const r=check('theme',d1('theme',theme),api(payload));
+  assert.equal(r.status,'THEME_SEED_LINEAGE_MISMATCH');
+  assert.equal(r.field,'baseThemes');
+ }
+});
+test('partial or malformed theme seed metadata never becomes a structural match',()=>{
+ for(const mutate of [
+  p=>{p.sourceVersion='';},
+  p=>{p.version='';},
+  p=>{p.methodologyVersion='';},
+  p=>{p.themes=p.themes.slice(0,6);},
+  p=>{p.themes[0].etfs=[];},
+ ]){const saved=JSON.parse(JSON.stringify(theme));mutate(saved);
+  assert.equal(check('theme',d1('theme',saved),api(composedTheme())).status,'INVALID_THEME_SEED_METADATA');
+ }
 });
