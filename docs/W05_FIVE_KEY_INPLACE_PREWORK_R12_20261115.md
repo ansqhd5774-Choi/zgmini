@@ -49,3 +49,21 @@
 - 이 보고서의 GitHub 코드는 로컬 Node v22.16.0 테스트 파일과 `git hash-object`로 **정확 blob 일치** 확인: 어댑터 `5c91acf1ff0f0325323165bd22ef2ef479e10b4c`, 시험 `42bc5d18dddc8877e3ecbf985ade253aa3e156d9`.
 
 원담당이 읽을 마지막 유효 단계: **#1071 동시 관측 → #1072 테마 identity → 본 #1073 5키 보호 실행 선행 코드**, 읽기 전용·권한 있는 D1 환경/정확 Production deployment provenance는 별도 운영 실행으로 남는다.
+
+## 2026-11-15 사전 작업 품질 감사 — 선행 100% 완료 보고 정정
+
+**중요 정정:** 이전 12차 `11/11 Node PASS`는 실제 W05 `comparePublicReadback`이 아닌 로컬 shim을 사용한 **어댑터 제어 흐름 시험**이었다. 이 실험을 실비교기 통합 PASS 또는 운영 적용 준비 100%로 표현하는 것은 부정확하다. 전체 운영 진척 0/5는 그대로다.
+
+현재 지원 브랜치 코드·시험에서 **재현하고 바로 수정한 결함 3건**:
+
+1. 호출자가 `compare` 테스트 대역을 건네면 임의 상태를 만들 수 있었음 → 현재 내보낸 어댑터는 원본 W05 import 비교기만 실행하며 `compare/sql` 등 알 수 없는 인수는 `W05_UNSUPPORTED_OPTION`으로 거부.
+2. 본문 크기 제한이 JavaScript 문자열 문자 수 기준 → 현재 `Buffer.byteLength(body,'utf8')` 기준 1,800,000바이트 상한. 다중 바이트 UTF-8 반례 추가.
+3. 두 번째 D1 조회가 120초를 초과해도 첫 조회와 API 호출 시각 차이만으로 통과할 수 있었음 → 전체 첫 D1 수신부터 재조회 완료까지 `MAX_PUBLIC_READBACK_SPAN_MS=120000`을 넘어가면 `OBSERVATION_WINDOW_UNVERIFIED` 반환.
+
+**확인한 테스트 오류 1건도 수정:** 새 옵션 허용목록 가드를 추가했는데 기존 fixture의 `seen/counts`를 `...fixture`로 퍼뜨려 13건 중 10건이 `W05_UNSUPPORTED_OPTION`으로 실패하는 것을 확인. 지금은 owner 제공 값 `db/readApi`와 `clock`만 전달하고, 임의 비교기·SQL 전달 거부를 별도로 부정 시험한다.
+
+**검증:** 원격 GitHub의 실제 W05 comparator + 실제 adapter + 최종 13개 테스트를 동일 격리 V8에서 평가. 결정론적 crypto/deepEqual/Buffer 대역만 적용해 `13/13 PASS` 기록. **이는 GitHub 정규 Node CI가 아니므로 정규 통합시험은 여전히 미완료**. 기존 로컬 Node 11/11 shim 결과와 합산하거나 100% 배포 준비 판정으로 승격하지 않는다.
+
+**아직 해결되지 않은 의존성:** 승인된 D1 바인딩과 API callback 실행 환경·자격, 공개 API의 실제 response 소스/URL·캐시 정책 및 Cloudflare deployment SHA, 출처 서명/원본 원자적 스냅샷 및 ABA 재기록 검증. 이 코드 단독으로는 실제 `5/5` 판정과 live readiness를 증명할 수 없다. 실행 전 원담당의 **실제 comparator Native Node 통합 + 허용된 Windows/Cloudflare 환경 확인**이 필수다.
+
+**운영 권한:** 이 수정은 독립 지원 Draft #1073 내부 2파일 수정과 문서 정정만 수행했다. Watchdog #1385 오류 수정과는 별개이며 원담당의 병합·운영 실행/예약/PC/DB/D1를 변경하지 않는다.
