@@ -28,7 +28,7 @@
 - `LOCAL_STRUCTURAL_MATCH_OWNER_ATTESTATION_PENDING`은 운영 검증이 아니며 `ownerAuthorizationVerified=false`, `deploymentIdentityVerified=false`, `runtimeVerified=false`는 원본 함수에서 항상 고정이다. 테마는 seed와 첫 7개 identity가 맞아도 **rolling/sidecar 원본을 읽지 않았으므로** `SEED_READBACK_ONLY_COMPOSED_UNVERIFIED`; 이 5키 결과만으로 테마 전체 PASS를 만들 수 없다.
 - 두 SELECT 사이 row가 바뀌면 반드시 UNVERIFIED. 전후 동일한 ABA 변경/Writer가 업데이트 시각·본문을 그대로 되돌린 경우까지 원자적 트랜잭션으로 증명하지는 않는다. 증거 시간구간과 sourceVersion/checkpoint/Deployment provenance 추가 대조를 승인된 담당자가 수행한다.
 
-## 실제 격리 시험
+## 이전 격리 시험 (초기 버전 — 최신 결과 아님)
 
 `node --test tests/api-site-five-key-inplace-readback-r12.test.mjs` — **Node v22.16.0, 11/11 PASS, fail 0**. 본 시험은 정확 SQL·바인딩, 5키 순서, 두 번 읽기, 저장 후 변조/삭제, 시계 역행, 일부 slot 실패 격리, 비밀 문자열 제거, 입력 데이터 크기·형식, 무권한 호출 방지 등 11개 합성 사례. **시험 시 기존 W05 comparator를 동일 export 형태의 테스트 shim으로 대체하여 어댑터 제어 흐름만 Node에서 실행했다.** 이것은 기존 실제 comparator의 Node 통합 시험이나 운영 D1/API readback이 아니다. 10차/11차 기존 격리 V8 comparator 15/15·19/19은 별도 증거로만 재사용하며 이 시험의 11개와 더해 운영 PASS로 계산하지 않는다.
 
@@ -36,7 +36,7 @@
 
 본 PR은 10→11차 stacked Draft 위에 **신규 코드+시험+이 문서 3개 파일만** 추가한다. 기존 원담당 W05 브랜치/main/운영 D1·SQLite/Worker/Controller/Runner/Task/Cloudflare/예약 변경 0.
 
-**W05 Owner에게 바로 넘길 사항:** (1) 10차 #1071 → 11차 #1072 → 본 12차 stacked PR 순서로 선택적 통합 검토, (2) 원본 comparator와 이 어댑터를 한 프로세스로 가져오는 정규 Node 회귀 시험, (3) 정규 승인된 기존 D1/Cloudflare 소유자가 현장 보호 실행 경로를 확보할 때만 실제 5키 비교 결과 회수. 단순 source PASS로 기존 W05 75% 또는 실D1 0/5를 변경하지 않는다. 단순 대기·재조사 대신 다른 독립 구현을 이어가야 한다.
+**W05 Owner에게 바로 넘길 사항:** (1) 10차 #1071 → 11차 #1072 → 본 12차 stacked PR 순서로 선택적 통합 검토, (2) 아래에 실제 Node 13/13 통합 시험을 재사용하고 GitHub 정규 CI/리뷰를 별도 완료, (3) 정규 승인된 기존 D1/Cloudflare 소유자가 현장 보호 실행 경로를 확보할 때만 실제 5키 비교 결과 회수. 단순 source PASS로 기존 W05 75% 또는 실D1 0/5를 변경하지 않는다. 단순 대기·재조사 대신 다른 독립 구현을 이어가야 한다.
 
 ## 추가 통합 사전검증 — 실제 W05 원본 함수 재사용
 
@@ -62,8 +62,22 @@
 
 **확인한 테스트 오류 1건도 수정:** 새 옵션 허용목록 가드를 추가했는데 기존 fixture의 `seen/counts`를 `...fixture`로 퍼뜨려 13건 중 10건이 `W05_UNSUPPORTED_OPTION`으로 실패하는 것을 확인. 지금은 owner 제공 값 `db/readApi`와 `clock`만 전달하고, 임의 비교기·SQL 전달 거부를 별도로 부정 시험한다.
 
-**검증:** 원격 GitHub의 실제 W05 comparator + 실제 adapter + 최종 13개 테스트를 동일 격리 V8에서 평가. 결정론적 crypto/deepEqual/Buffer 대역만 적용해 `13/13 PASS` 기록. **이는 GitHub 정규 Node CI가 아니므로 정규 통합시험은 여전히 미완료**. 기존 로컬 Node 11/11 shim 결과와 합산하거나 100% 배포 준비 판정으로 승격하지 않는다.
+**검증:** 원격 GitHub의 실제 W05 comparator + 실제 adapter + 최종 13개 테스트를 동일 격리 V8에서 평가. 결정론적 crypto/deepEqual/Buffer 대역만 적용해 `13/13 PASS` 기록. **이 V8 13/13은 GitHub 정규 Node CI가 아니다. 아래에서 실제 Node 13/13을 별도 수행했다.** 기존 로컬 Node 11/11 shim 결과와 합산하거나 100% 배포 준비 판정으로 승격하지 않는다.
 
-**아직 해결되지 않은 의존성:** 승인된 D1 바인딩과 API callback 실행 환경·자격, 공개 API의 실제 response 소스/URL·캐시 정책 및 Cloudflare deployment SHA, 출처 서명/원본 원자적 스냅샷 및 ABA 재기록 검증. 이 코드 단독으로는 실제 `5/5` 판정과 live readiness를 증명할 수 없다. 실행 전 원담당의 **실제 comparator Native Node 통합 + 허용된 Windows/Cloudflare 환경 확인**이 필수다.
+**아직 해결되지 않은 의존성:** 승인된 D1 바인딩과 API callback 실행 환경·자격, 공개 API의 실제 response 소스/URL·캐시 정책 및 Cloudflare deployment SHA, 출처 서명/원본 원자적 스냅샷 및 ABA 재기록 검증. 이 코드 단독으로는 실제 `5/5` 판정과 live readiness를 증명할 수 없다. 실행 전 원담당의 **실제 comparator Native Node 통합 결과 재사용 후 GitHub 정규 CI/선별 검토 + 허용된 Windows/Cloudflare 환경 확인**이 필수다.
 
 **운영 권한:** 이 수정은 독립 지원 Draft #1073 내부 2파일 수정과 문서 정정만 수행했다. Watchdog #1385 오류 수정과는 별개이며 원담당의 병합·운영 실행/예약/PC/DB/D1를 변경하지 않는다.
+
+## 최종 소스 검증 — 정확한 GitHub 3개 blob의 Native Node 통합
+
+앞서 기록한 테스트 대역 기반 Node 11/11, V8 13/13과 구별하여 **실제 원본 모듈 3개를 로컬 Node v22.16.0으로 가져와** 아래를 수행했다. 반영 전 GitHub의 `fetch_file` 현재 branch 값과 로컬 `git hash-object`를 정확히 비교했다.
+
+| 실제 모듈 | Git blob SHA-1 (원격과 로컬 완전 동일) |
+| --- | --- |
+| `scripts/api-site/compare-five-public-readbacks-r1.mjs` | `0d565f4587eb1a37ea020a97f68d97ef518a0090` |
+| `scripts/api-site/five-key-inplace-readback-prework-r12.mjs` | `089d98b1e6759e79051cae24aea6b8e46298bbf4` |
+| `tests/api-site-five-key-inplace-readback-r12.test.mjs` | `b27f6f7251171ded486eef750b43aa61a442c1e3` |
+
+`node --check`로 어댑터·테스트 파일 문법 확인 후 `node --test tests/api-site-five-key-inplace-readback-r12.test.mjs` 실행. **Node v22.16.0 13/13 PASS, 0 FAIL, 0 SKIP**, 실제 Node `crypto.createHash`, `util.isDeepStrictEqual`, `Buffer.byteLength`를 사용했으며 **테스트 shim을 사용하지 않았다**. 동일 원본 5키×D1 두 번/HTTP 합성, row 변조, 저장 시각 드리프트, 시계 역행, 120초 경계, UTF-8 바이트 초과, 임의 비교기 주입 차단, 503 우선 등 부정 회귀를 포함한다. **실제 D1/공개 HTTP 연결을 실행한 것이 아니며 GitHub Actions CI는 시작되지 않았다.** 운영 승인과 W05 0/5 현행 결과는 달라지지 않는다.
+
+**수정의 적용 범위:** 본 수정은 지원 브랜치의 기존 #1073 Draft 변경 두 코드 파일·테스트·문서에만 해당. 이전 12차 `100%`는 사전 작업 초안의 산출물 작성률일 뿐 운영 준비 완료율이 아니다. 향후에는 실제 Node 통합 증거와 합성/실운영 증거를 구분해 보고한다.
