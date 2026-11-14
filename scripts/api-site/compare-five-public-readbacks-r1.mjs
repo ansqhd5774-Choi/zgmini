@@ -11,6 +11,9 @@ export const PUBLIC_READBACK_SLOTS=Object.freeze({
  employment:Object.freeze({table:'market_public_snapshots_v1',snapshot_key:'detail:employment-r6:one-year:v1',mode:'DIRECT'}),
 });
 const isObject=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
+const populated=x=>typeof x==='string'&&x.trim().length>0;
+const exactStrings=(a,b)=>Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&
+ a.every((item,i)=>typeof item==='string'&&item===b[i]);
 const safeMs=x=>Number.isSafeInteger(x)&&x>0;
 // An exact-key comparison cannot imply a same-window observation across
 // arbitrarily separated reads; both timestamps must postdate the row write.
@@ -62,11 +65,30 @@ export function comparePublicReadback(slot,{d1,api,now=Date.now()}={}){
   return result(slot,'STRUCTURAL_MATCH_NOT_RUNTIME_PROOF',{...evidence,sourceVersion:p.sourceVersion,sourceStoredAt:p.sourceStoredAt});
  }
  if(expected.mode==='COMPOSED'){
-  // An exact seed key proves nothing about the independently stored rolling/sidecar overlays.
-  if(typeof saved.sourceVersion!=='string'||!validIso(saved.sourceStoredAt)||
-     !validIso(saved.publishedAt)||typeof saved.observationDate!=='string')
+  // The Worker preserves the seven immutable seed ETF identities and its
+  // version/methodology while rolling scores and optional sidecars may change.
+  // Check only these invariant base identities; never equate the rolling
+  // sourceVersion with the seed sourceVersion or certify optional overlays.
+  if(!populated(saved.version)||!populated(saved.methodologyVersion)||
+     !populated(saved.sourceVersion)||!validIso(saved.sourceStoredAt)||
+     !validIso(saved.publishedAt)||typeof saved.observationDate!=='string'||
+     !Array.isArray(saved.themes)||saved.themes.length!==7||
+     saved.themes.some(item=>!isObject(item)||!populated(item.theme)||
+       !Array.isArray(item.etfs)||item.etfs.length!==2||
+       item.etfs.some(etf=>!populated(etf))))
    return result(slot,'INVALID_THEME_SEED_METADATA',evidence);
-  return result(slot,'SEED_READBACK_ONLY_COMPOSED_UNVERIFIED',{...evidence,seedSourceVersion:saved.sourceVersion,
+  for(const field of ['version','methodologyVersion']){
+   if(api.body[field]!==saved[field])
+    return result(slot,'THEME_SEED_LINEAGE_MISMATCH',{...evidence,field});
+  }
+  if(!populated(api.body.sourceVersion))
+   return result(slot,'THEME_SEED_LINEAGE_MISMATCH',{...evidence,field:'sourceVersion'});
+  if(!Array.isArray(api.body.themes)||api.body.themes.length<saved.themes.length||
+     saved.themes.some((item,i)=>api.body.themes[i]?.theme!==item.theme||
+       !exactStrings(api.body.themes[i]?.etfs,item.etfs)))
+   return result(slot,'THEME_SEED_LINEAGE_MISMATCH',{...evidence,field:'baseThemes'});
+  return result(slot,'SEED_READBACK_ONLY_COMPOSED_UNVERIFIED',{...evidence,
+   seedSourceVersion:saved.sourceVersion,seedIdentityShapeAligned:true,
    rollingAndSidecarsVerified:false});
  }
  if(slot==='employment'){
