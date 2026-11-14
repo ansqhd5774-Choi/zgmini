@@ -46,7 +46,8 @@ try{
   await page.goto(base+'/fear-greed/korea/',{waitUntil:'networkidle',timeout:45000});
   const koreaIntro=page.locator('.zg-fg-korea .zg-fg-intro');
   const koreaIntroButton=page.locator('.zg-fg-korea .zg-fg-intro-button');
-  if(width<768){
+  {
+   // Both mobile and desktop approved Korea headers use a collapsed info disclosure.
    await koreaIntro.waitFor({state:'hidden'});
    assert.equal(await koreaIntroButton.getAttribute('aria-expanded'),'false','Mobile Korea intro starts collapsed');
    await koreaIntroButton.click();
@@ -64,8 +65,6 @@ try{
     await page.screenshot({path:`artifacts/fear-greed-education/korea-intro-fail-${width}.png`,fullPage:true});
     throw error;
    }
-  }else{
-   await koreaIntro.waitFor({state:'visible'});
   }
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'Korea introduction has no horizontal overflow');
   await page.screenshot({path:`artifacts/fear-greed-education/korea-intro-${width}.png`});
