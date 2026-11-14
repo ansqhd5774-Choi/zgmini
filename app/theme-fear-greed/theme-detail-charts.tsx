@@ -4,6 +4,7 @@ import {usePlotArea,useXAxisScale,useYAxisScale,ReferenceDot} from 'recharts';
 import {extremaLeader,placeExtremaLabels} from '../../lib/chart-extrema.mjs';
 import {themeTooltipRows} from '../../lib/theme-tooltip-rows.mjs';
 import {mergeConfiguredThemeFeed} from '../../lib/theme-configured-merge.mjs';
+import {latestVisibleThemeDay} from '../../lib/theme-visible-asof-r1.mjs';
 import {Search} from 'lucide-react';
 import {CartesianGrid,Line,LineChart,ReferenceArea,ReferenceLine,ResponsiveContainer,Tooltip,XAxis,YAxis} from 'recharts';
 import {THEME_GROUPS} from '../../components/market-explorer-catalog';
@@ -125,6 +126,9 @@ export default function ThemeDetailCharts(){
  const [compareDays,setCompareDays]=useState(90),[comparisonPinned,setComparisonPinned]=useState(false);
  // Never display a cached score once the stored-only API has failed.
  const ready=useMemo(()=>acceptedThemes(mergeConfiguredThemeFeed(error?null:payload,configuredError?null:configured)),[error,payload,configuredError,configured]);
+ // Show the newest date of a displayed validated score, not the (possibly
+ // stale/unavailable) legacy payload's independent observationDate.
+ const displayAsOf=latestVisibleThemeDay(ready);
  const topOne=useMemo(()=>new Set(ready.slice(0,1).map(t=>t.name)),[ready]);
  const currentVisible=visible??topOne;
  const matches=(name:string,g:string)=>(group==='전체'||group===g)&&name.toLocaleLowerCase('ko').includes(query.trim().toLocaleLowerCase('ko'));
@@ -166,7 +170,7 @@ export default function ThemeDetailCharts(){
  const soloHigh=soloPoints.reduce<(typeof soloPoints)[number]|null>((best,p)=>!best||p.score>best.score?p:best,null);
  const soloCurrent=soloPoints.at(-1);
  return <div className="zg-sfg-content zg-tfg-content">
-  <p className="zg-sfg-as-of">{ready.length?'기준일 '+(payload?.observationDate??ready[0].date).replaceAll('-','.')+' · 공개 '+ready.length+'개':'테마 데이터 대기'}</p>
+  <p className="zg-sfg-as-of">{ready.length?(displayAsOf?'최신 관측일 '+displayAsOf.replaceAll('-','.'):'관측일 미확인')+' · 공개 '+ready.length+'개':'테마 데이터 대기'}</p>
   <div className="zg-tfg-toolbar">
    <div className="zg-tfg-search-control" ref={searchContainerRef}>
     <button type="button" className="zg-tfg-search-toggle" aria-label={searchOpen?'테마 검색 닫기':'테마 검색 열기'} aria-expanded={searchOpen} aria-controls="zg-tfg-search-popover" onClick={()=>{if(searchOpen)closeSearch();else setSearchOpen(true);}}><Search size={16} aria-hidden="true"/></button>
