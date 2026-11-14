@@ -70,3 +70,16 @@
 **신규 코드/회귀/CI/원격 실행/배포:** **0**. 전용 브랜치의 기존 증거 문서 한 곳만 65차 판정 현황 갱신. **기능 전체 진행률 25% → 25%**.
 
 **다음 필수 실행 하나:** 승인된 통합 Owner가 **#1068 하나**의 정확 HEAD `12f0bf05c306788e76a3974dfefcc499499e7fe1`, 5파일 및 기존 Node SUCCESS에 대한 **명시적인 정규 main merge GO/HOLD 결정을 기록**한다. GO일 때만 정규 병합과 Cloudflare Git Integration Deployment를 *별도 승인된 실행 경로*에서 진행하고 Production API/UI 증거를 판정한다. 이 원담당 대화는 해당 Owner 결정/배포를 대리 실행하지 않는다.
+
+
+## W06 자동 실행 1차 — 한국 공포탐욕 모바일 소개 CSS 직접 결함 최소 수정
+
+- **상위 최종 목적:** ZGMINI 실제 Production의 물가·고용·시장·테마 공포탐욕 4화면을 PC1440/모바일390에서 정확히 표시하고 API 동치·실배포까지 검증. **현재 기능 진행률 25%→25%**, 실화면 PC **0/4**, 모바일 **0/4**, API/UI 동치 **UNVERIFIED**.
+- **기준 지시:** [중앙 65차](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6866393700), [중앙 UIUX 병목 원인](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6868300957). 공통 최신 main/사용자 최종 목표/기존 PR SOURCE_GO와 MAIN_MERGE_HOLD 구분 확인.
+- **확정 FIRST FAIL:** [기존 Mock Browser Run #43517251882](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43517251882)의 한국 모바일 `.zg-fg-intro` hidden timeout. React `korea-intro-heading.tsx`는 부모 `zg-fg-korea-intro-content--expanded`만 토글하지만, CSS 102행의 구 자식 `.zg-fg-intro:not(.zg-fg-intro--expanded){display:none}`가 자식을 계속 숨김. 동시에 기존 브라우저 테스트는 모바일에서 버튼을 누르지 않고 문단 visible을 요구해 UI 설계와도 불일치.
+- **소스 수정 1:** [commit 90f4dacc](https://github.com/ansqhd5774-Choi/zgmini/commit/90f4daccd96f5e3de086d36900823ab397524291), `app/fear-greed/korea/korea-layout-parity-r1.css` **구 자식 hide 한 줄 제거**. 기존 모바일 부모 wrapper의 collapsed/expanded CSS와 desktop 기본 표시 유지. Blob `d4f6777c7383f3503f6b16a2e11ccbd98505d886`.
+- **회귀 명세 수정 2:** [commit fac6939f](https://github.com/ansqhd5774-Choi/zgmini/commit/fac6939fa25d3e984e186b043f3233b82d7517dd), `tests/fear-greed-education-browser-r4.mjs`: 390px에서 초기 hidden/aria-expanded=false → 버튼 click → aria-expanded=true/문단 visible, 1440px에서 기존 visible을 검사. Blob `c1d92c6b0262e79c570373be565567e036be21ee`.
+- **원격 readback:** 전용 HEAD `fac6939fa25d3e984e186b043f3233b82d7517dd`에서 CSS/test blob 및 6개 소스 계약 체크 PASS. **Playwright 실제 실행·Node CI·Production 렌더링은 이번에 실행하지 않았으므로 PASS 아님**. mock-browser 실패를 새 변경이 해결했다고 확정하지 않음.
+- **PR #1068:** exact HEAD `12f0bf05c306788e76a3974dfefcc499499e7fe1`, 5파일 SOURCE_GO / Draft / main 미병합 `MAIN_MERGE_HOLD` 유지. 이번 CSS/test 2파일은 해당 5파일에 포함하지 않았고, #1067 중복 병합 금지. 브랜치 전체 병합·rebase·reset/force push/Cloudflare·PC/DB/D1 변경 0.
+- **LAST PASS:** W06 소유 2파일 최소 소스 수정 및 GitHub 원격 readback. **FIRST UNVERIFIED:** 신규 Playwright 390/1440 집중 회귀 실행 증거, 이어서 정규 병합·실배포·Production 8뷰·API 동치.
+- **다음 필수 1개:** 기존 승인된 GitHub Mock Browser CI 경로로 **수정 HEAD 정확한 390/1440 단회 회귀**를 실행하여 실제 PASS/FAIL 로그와 PNG를 확보. 실패하면 최초 실패만 최소 수정; PASS 이후 독립 선별 PR/정규 통합 Owner 결정. 별도 #1068 병합 판단은 기존 총괄/정규 Owner 범위에서 병렬 처리.
