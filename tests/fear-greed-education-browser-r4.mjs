@@ -60,7 +60,17 @@ try{
   for(const route of ['/economic-indicators/employment/','/theme-fear-greed/','/sector-fear-greed/','/guides/fomc/','/inflation/','/risk-indicators/','/economic-indicators/','/about/']){
    await page.goto(base+route,{waitUntil:'networkidle',timeout:45000});
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,route+' has no horizontal overflow');
-   assert.equal(await page.locator('h1').count(),1,route+' has one visible heading');
+   const headingCount=await page.locator('h1').count();
+   if(headingCount!==1){
+    const diagnostic=await page.evaluate(()=>({
+     title:document.title,url:location.href,readyState:document.readyState,
+     bodyText:document.body?.innerText?.slice(0,1200)??'',
+     rootHtml:document.querySelector('main')?.outerHTML?.slice(0,1600)??'',
+    }));
+    console.error('HEADING_FIRST_FAIL',JSON.stringify({route,width,headingCount,diagnostic,pageErrors:errors}));
+    await page.screenshot({path:`artifacts/fear-greed-education/heading-fail-${width}.png`,fullPage:true});
+   }
+   assert.equal(headingCount,1,route+' has one visible heading');
    assert.ok((await page.locator('h1').innerText()).trim(),route+' nonempty heading');
    const searchGuide=page.locator('[data-testid^="investor-search-"]');
    if(await searchGuide.count()){
