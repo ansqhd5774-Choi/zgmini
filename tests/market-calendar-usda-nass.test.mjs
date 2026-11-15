@@ -114,3 +114,13 @@ test('HTTP/content-type/store readback failure cannot claim collection success',
  await assert.rejects(collectNassReportSchedule({...base,fetchImpl:async()=>new Response(sourceHtml(),{
   status:200,headers:{'content-type':'text/html'}})}),/NASS_INPUT_INVALID|NASS_CATALOGUE_IDENTITY_INVALID/);
 });
+
+test('market calendar UI accepts only matching USDA-NASS provider identities',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const client=readFileSync(new URL('../app/market-calendar/market-calendar-client.tsx',import.meta.url),'utf8');
+ assert.match(client,/usda_nass:'USDA NASS'/);
+ assert.match(client,/const nassEvent=item\.source==='usda_nass'/);
+ assert.match(client,/if\(item\.id\.startsWith\('usda-nass-'\)&&!nassEvent\)continue/);
+ assert.match(client,/\|\|usdaEvent\|\|nassEvent\|\|cftcEvent/);
+ assert.match(client,/item\.source==='usda_nass'\?'원자재'/);
+});
