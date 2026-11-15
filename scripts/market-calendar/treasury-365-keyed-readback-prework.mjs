@@ -165,6 +165,9 @@ export function compareTreasury365ReceiptToPublic({
   observedCount++;
  }
  const counts={...evidence,publicEventCount:observedCount,
+  // Digest parity is safe to expose; never disclose the individual CUSIPs.
+  expectedKeySetSha256:privateReceipt.expectedKeySetSha256,
+  expectedEventPayloadSha256:privateReceipt.expectedEventPayloadSha256,
   publicKeySetSha256:digest(observedKeys),
   publicEventPayloadSha256:digest(observedPayloads),
  };
