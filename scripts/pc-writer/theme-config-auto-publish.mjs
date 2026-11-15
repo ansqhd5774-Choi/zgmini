@@ -15,7 +15,8 @@ const secureDirectory=dir=>{
  return dir;
 };
 export async function runConfiguredAutoPublish({dataRoot,now=Date.now(),
- registrations=null,preflight=null,publish=null,queryFactory=null,tokenFn=null,readCapabilities=null}={}){
+ registrations=null,preflight=null,publish=null,queryFactory=null,tokenFn=null,readCapabilities=null,
+ prepareHandoff=null}={}){
  ensure(Number.isSafeInteger(now)&&now>0,'CONFIG_PUBLIC_SCHEDULE_CLOCK');
  const entries=registrations??listRegistered(dataRoot);
  if(!entries.length)return {status:'NO_REGISTERED_THEMES',
@@ -56,6 +57,26 @@ export async function runConfiguredAutoPublish({dataRoot,now=Date.now(),
     }catch{r32ReaderReady=false;}
    }
    if(!r32ReaderReady){results.push({id,status:'PUBLICATION_BLOCKED',reason:'CONFIG_PUBLIC_R32_READER_NOT_DEPLOYED'});continue;}
+   // Only the existing Writer may publish. Recheck that its candidate is the
+   // exact SHA-verified saved private result before opening D1 credentials.
+   // This does not grant any additional provider publication rights.
+   let handoff;
+   try{
+    prepareHandoff??=(await import('./theme-platform-configured-writer-handoff.mjs'))
+     .prepareConfiguredExistingWriterHandoff;
+    handoff=prepareHandoff({dataRoot:root,id,now});
+   }catch(e){
+    results.push({id,status:'PUBLICATION_BLOCKED',reason:errorCode(e)});continue;
+   }
+   if(handoff?.status!=='LOCAL_HANDOFF_MATCH_NOT_PUBLISHED'||
+    handoff.feedKey!=='theme-configured:'+id||
+    handoff.scoreArtifactSha256!==verified.candidateSha256||
+    handoff.observationDate!==verified.candidate?.observationDate||
+    handoff.sourceVersion!==verified.candidate?.sourceVersion||
+    handoff.publicationExecuted!==false||handoff.d1Writes!==0){
+    results.push({id,status:'PUBLICATION_BLOCKED',
+     reason:handoff?.reason??'CONFIG_PUBLIC_STORED_HANDOFF_MISMATCH'});continue;
+   }
   }
   if(!queryAttempted){
    queryAttempted=true;
