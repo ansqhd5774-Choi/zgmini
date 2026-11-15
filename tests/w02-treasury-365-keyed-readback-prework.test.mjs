@@ -60,22 +60,22 @@ test('W02 447 stored official rows -> 436 awarded -> 436 auction + 436 announcem
  assert.doesNotMatch(JSON.stringify(verdict),/treasury-auction-9|PRIVATE_SOURCE|bidToCoverRatio|cusip/);
 });
 
-test('W02 equal counts with a different Treasury event date can NEVER certify 365d identity',()=>{
+test('W02 equal counts but a changed Treasury date are advisory without weekly merge proof',()=>{
  const wrong=structuredClone(snapshot);
  wrong.events[0]={...wrong.events[0],date:'2026-11-04'};
  const verdict=check({d1BodyText:JSON.stringify(wrong),apiBody:wrong});
- assert.equal(verdict.status,'TREASURY_PUBLIC_KEY_MISMATCH');
+ assert.equal(verdict.status,'ADVISORY_DIFFERENCE_MERGE_PROVENANCE_UNVERIFIED');
  assert.equal(verdict.publicEventCount,872);
  // The key-set SHA proves mismatch without exposing individual CUSIPs.
  assert.equal(verdict.expectedEventCount,872);
  assert.notEqual(verdict.publicKeySetSha256,check().publicKeySetSha256);
 });
-test('W02 unchanged public count does not hide replaced auction CUSIP',()=>{
+test('W02 unchanged public count with a different CUSIP cannot certify identity but is not auto-failure',()=>{
  const wrong=structuredClone(snapshot);
  const pos=wrong.events.findIndex(x=>x.id.startsWith('treasury-auction'));
  wrong.events[pos]={...wrong.events[pos],id:'treasury-auction-9zzzzzzzz'};
  const verdict=check({d1BodyText:JSON.stringify(wrong),apiBody:wrong});
- assert.equal(verdict.status,'TREASURY_PUBLIC_KEY_MISMATCH');
+ assert.equal(verdict.status,'ADVISORY_DIFFERENCE_MERGE_PROVENANCE_UNVERIFIED');
  // The key-set SHA proves mismatch without exposing individual CUSIPs.
  assert.equal(verdict.expectedEventCount,872);
  assert.notEqual(verdict.publicKeySetSha256,check().publicKeySetSha256);
@@ -152,14 +152,14 @@ test('W02 inside-PC receipt contains only SHA/counts and never private raw or CU
  assert.equal(publicVerdict.ownerAuthorizationVerified,false);
  assert.doesNotMatch(JSON.stringify(publicVerdict),/bidToCoverRatio|competitiveAuctionCloseDate/);
 });
-test('W02 identical event keys but corrupted Treasury title or URL fail on metadata digest',()=>{
+test('W02 changed title or URL is advisory: weekly XML can take precedence',()=>{
  for(const patch of [
   {title:'잘못된 입찰 종류'}, {sourceUrl:'https://wrong.example/auctions/'}
  ]){
   const changed=structuredClone(snapshot);
   changed.events[0]={...changed.events[0],...patch};
   assert.equal(check({d1BodyText:JSON.stringify(changed),apiBody:changed}).status,
-   'TREASURY_PUBLIC_EVENT_METADATA_MISMATCH');
+   'ADVISORY_DIFFERENCE_MERGE_PROVENANCE_UNVERIFIED');
  }
 });
 test('W02 only exact bounded private receipt schema can be used without raw transfer',()=>{
@@ -183,4 +183,36 @@ test('W02 only exact bounded private receipt schema can be used without raw tran
  assert.throws(()=>buildTreasury365PrivateReceipt({
   privateText:rawText,fromDate:'2025-11-11',toDate
  }),/W02_TREASURY_365_DAY_WINDOW_INVALID/);
+});
+
+
+test('W02 weekly XML priority can legitimately replace a matching annual event title',()=>{
+ const weekly=structuredClone(snapshot);
+ const original=weekly.events[0];
+ weekly.events[0]={...original,title:'공식 주간 발행 일정 우선 표시',status:'scheduled'};
+ const verdict=check({d1BodyText:JSON.stringify(weekly),apiBody:weekly});
+ assert.equal(verdict.status,'ADVISORY_DIFFERENCE_MERGE_PROVENANCE_UNVERIFIED');
+ assert.equal(verdict.publicKeySetSha256,verdict.expectedKeySetSha256);
+ assert.notEqual(verdict.publicEventPayloadSha256,verdict.expectedEventPayloadSha256);
+ assert.equal(verdict.sourceLineageVerified,false);
+});
+test('W02 additional valid weekly Treasury event inside window is not a new completion gate',()=>{
+ const weekly=structuredClone(snapshot);
+ weekly.events.push({source:'treasury',id:'treasury-auction-9ffffffff',
+  date:'2026-11-09',title:'공식 주간 재무부 일정',
+  sourceUrl:'https://www.treasurydirect.gov/auctions/auction-announcements/'});
+ const verdict=check({d1BodyText:JSON.stringify(weekly),apiBody:weekly});
+ assert.equal(verdict.status,'ADVISORY_DIFFERENCE_MERGE_PROVENANCE_UNVERIFIED');
+ assert.equal(verdict.publicEventCount,873);
+ assert.equal(verdict.sourceLineageVerified,false);
+});
+test('W02 independent duplicates and invalid event shapes remain hard invalid, not advisory',()=>{
+ const duplicate=structuredClone(snapshot);
+ duplicate.events.push(structuredClone(duplicate.events[0]));
+ assert.equal(check({d1BodyText:JSON.stringify(duplicate),apiBody:duplicate}).status,
+  'PUBLIC_TREASURY_DUPLICATE');
+ const malformed=structuredClone(snapshot);
+ malformed.events[0]={...malformed.events[0],id:'UNKNOWN_SOURCE'};
+ assert.equal(check({d1BodyText:JSON.stringify(malformed),apiBody:malformed}).status,
+  'PUBLIC_TREASURY_EVENT_INVALID');
 });
