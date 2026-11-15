@@ -3,7 +3,12 @@ import {collectOptional} from '../scripts/pc-writer/theme-optional-collect.mjs';
 import {inspectManifest} from '../scripts/pc-writer/theme-data-inventory.mjs';
 test('bounded pages resume without redownloading committed pages and raw hashes are verifiable',async()=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'theme-collect-'));let calls=0;
- const fetchImpl=async url=>{calls++;assert.equal(url.origin,'https://getmarkethistory.com');const s=url.pathname.split('/').at(-2),page=url.searchParams.get('cursor')==='page2'?2:1;
+ const fetchImpl=async url=>{calls++;assert.equal(url.origin,'https://getmarkethistory.com');
+  assert.match(url.pathname,/^\/api\/v1\/bars\/stocks\/us\/(?:IBB|XBI|SPY)\/1h$/,
+   'full stocks/us dataset path is required by official 2026-11 contract');
+  assert.equal(url.searchParams.has('source'),false);
+  assert.equal(url.searchParams.has('symbol'),false);
+  const s=url.pathname.split('/').at(-2),page=url.searchParams.get('cursor')==='page2'?2:1;
   const body=JSON.stringify({symbol:s,timestamp:`2026-10-${20+page}T19:00:00Z`,close:100+page,is_gap:false})+'\n';return new Response(body,{headers:page===1?{'x-next-cursor':'page2'}:{}});};
  try{const opts={dataRoot:root,themeId:'biotech',start:'2026-10-20',end:'2026-10-23',fetchImpl};
   const first=await collectOptional(opts);assert.equal(first.providerCalls,4);assert.equal(first.status,'CHECKPOINT_READY_TO_RESUME');
@@ -22,6 +27,7 @@ test('a new daily AI window makes fresh provider requests while keeping identica
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'theme-ai-daily-'));let calls=0;
  const fetchImpl=async url=>{
   calls++;
+  assert.match(url.pathname,/^\/api\/v1\/bars\/stocks\/us\/(?:SMH|SOXX|SPY)\/1h$/);
   const symbol=url.pathname.split('/').at(-2);
   return new Response(JSON.stringify({symbol,timestamp:'2026-10-21T19:00:00Z',close:100,is_gap:false})+'\n');
  };
