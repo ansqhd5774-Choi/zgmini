@@ -147,12 +147,16 @@ export function compareTreasury365ReceiptToPublic({
  for(const event of stored.events){
   if(event?.source!=='treasury')continue;
   const eventDate=day(event.date);
-  if(eventDate===null||typeof event.id!=='string'||
+  if(eventDate===null)return result('PUBLIC_TREASURY_EVENT_INVALID',evidence);
+  // Only audit the exact approved 365-day window. Valid outside-window
+  // weekly events are outside this receipt's scope and must not cause a
+  // false historical mismatch or require this helper to read their metadata.
+  if(eventDate<from||eventDate>to)continue;
+  if(typeof event.id!=='string'||
    !/^treasury-(?:announcement|auction)-[a-z0-9]{9}$/.test(event.id)||
    typeof event.title!=='string'||!event.title.trim()||
    typeof event.sourceUrl!=='string'||!event.sourceUrl.startsWith('https://'))
    return result('PUBLIC_TREASURY_EVENT_INVALID',evidence);
-  if(eventDate<from||eventDate>to)continue;
   const key=eventKey(event);
   if(observedKeys.has(key))
    return result('PUBLIC_TREASURY_DUPLICATE',evidence);

@@ -50,8 +50,9 @@ test('W02 447 stored official rows -> 436 awarded -> 436 auction + 436 announcem
  assert.equal(verdict.privateAwardedRowCount,436);
  assert.equal(verdict.expectedEventCount,872);
  assert.equal(verdict.publicEventCount,872);
- assert.equal(verdict.missingEventCount,0);
- assert.equal(verdict.extraEventCount,0);
+ // A hash-only receipt cannot reveal individual missing/extra keys.
+ assert.equal(Object.hasOwn(verdict,'missingEventCount'),false);
+ assert.equal(Object.hasOwn(verdict,'extraEventCount'),false);
  assert.equal(verdict.expectedKeySetSha256,verdict.publicKeySetSha256);
  for(const field of ['runtimeVerified','sourceLineageVerified',
   'deploymentIdentityVerified','ownerAuthorizationVerified'])
@@ -65,8 +66,9 @@ test('W02 equal counts with a different Treasury event date can NEVER certify 36
  const verdict=check({d1BodyText:JSON.stringify(wrong),apiBody:wrong});
  assert.equal(verdict.status,'TREASURY_PUBLIC_KEY_MISMATCH');
  assert.equal(verdict.publicEventCount,872);
- assert.equal(verdict.missingEventCount,1);
- assert.equal(verdict.extraEventCount,1);
+ // The key-set SHA proves mismatch without exposing individual CUSIPs.
+ assert.equal(verdict.expectedEventCount,872);
+ assert.notEqual(verdict.publicKeySetSha256,check().publicKeySetSha256);
 });
 test('W02 unchanged public count does not hide replaced auction CUSIP',()=>{
  const wrong=structuredClone(snapshot);
@@ -74,8 +76,9 @@ test('W02 unchanged public count does not hide replaced auction CUSIP',()=>{
  wrong.events[pos]={...wrong.events[pos],id:'treasury-auction-9zzzzzzzz'};
  const verdict=check({d1BodyText:JSON.stringify(wrong),apiBody:wrong});
  assert.equal(verdict.status,'TREASURY_PUBLIC_KEY_MISMATCH');
- assert.equal(verdict.missingEventCount,1);
- assert.equal(verdict.extraEventCount,1);
+ // The key-set SHA proves mismatch without exposing individual CUSIPs.
+ assert.equal(verdict.expectedEventCount,872);
+ assert.notEqual(verdict.publicKeySetSha256,check().publicKeySetSha256);
  assert.doesNotMatch(JSON.stringify(verdict),/9zzzzzzzz/);
 });
 test('W02 duplicate public 365d Treasury events fail without silently deduplicating',()=>{
@@ -137,7 +140,8 @@ test('W02 inside-PC receipt contains only SHA/counts and never private raw or CU
  assert.equal(receipt.expectedEventCount,872);
  assert.equal(receipt.privateRawTextSha256,sha(rawText));
  const serialized=JSON.stringify(receipt);
- assert.doesNotMatch(serialized,/9[A-Z0-9]{8}|bidToCoverRatio|competitiveAuctionCloseDate|4-Week/);
+ assert.equal(serialized.includes(cusip(0)),false);
+ assert.doesNotMatch(serialized,/bidToCoverRatio|competitiveAuctionCloseDate|4-Week/);
  const publicVerdict=compareTreasury365ReceiptToPublic({
   privateReceipt:receipt,d1BodyText:JSON.stringify(snapshot),
   d1StoredAt:storedAt,d1ReadAt:stamp,apiBody:structuredClone(snapshot),
