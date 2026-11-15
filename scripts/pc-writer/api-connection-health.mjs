@@ -47,7 +47,7 @@ export function buildApiConnectionHealthFromLog(base,now=Date.now(),{fileSystem=
  const rowsTruncated=lines.length>MAX_ROWS;
  if(rowsTruncated)lines=lines.slice(-MAX_ROWS);
  const hosts=new Map();const seen=new Set();
- let invalidEvents=0,duplicateEvents=0;
+ let invalidEvents=0,duplicateEvents=0,endpointEvidenceEvents=0,endpointIncompleteEvents=0;
  for(const line of lines){
   if(!line)continue;
   if(seen.has(line)){duplicateEvents++;continue;}seen.add(line);
@@ -70,8 +70,28 @@ export function buildApiConnectionHealthFromLog(base,now=Date.now(),{fileSystem=
    const success=codes.reduce((sum,[key,count])=>sum+(key.startsWith('2')?count:0),0);
    const failures=request.requests-success;
    let h=hosts.get(host);
-   if(!h){h={host,requests:0,days:new Set(),events:[],last:null,lastSuccessAt:null};hosts.set(host,h);}
+   if(!h){h={host,requests:0,days:new Set(),events:[],last:null,lastSuccessAt:null,endpointIds:new Set(),endpointDays:new Set()};hosts.set(host,h);}
    h.requests+=request.requests;h.days.add(kstDay(at));h.events.push(at);
+   // Legacy records and child-process collectors lack this optional evidence.
+   // They never contribute fabricated method/path endpoint counts.
+   const routes=obj.endpointPaths?.[host];
+   let routeRequests=0,validRoutes=0,invalidRoutes=0;
+   if(routes&&typeof routes==='object'&&!Array.isArray(routes)){
+    const entries=Object.entries(routes);
+    for(const [id,route] of entries.slice(0,128)){
+     if(!/^[a-f0-9]{32}$/.test(id)||!route||!integer(route.requests)||route.requests<1||
+       !route.statuses||typeof route.statuses!=='object'||Array.isArray(route.statuses)){
+      invalidRoutes++;continue;
+     }
+     const statusRows=Object.entries(route.statuses);
+     if(statusRows.some(([k,n])=>!(STATUSES.test(k)||k==='NETWORK_ERROR'||k==='PROVIDER_QUOTA_GUARD')||!integer(n))||
+        statusRows.reduce((sum,[,n])=>sum+n,0)!==route.requests){invalidRoutes++;continue;}
+     routeRequests+=route.requests;h.endpointIds.add(id);validRoutes++;
+    }
+    if(entries.length>128)invalidRoutes+=entries.length-128;
+   }
+   if(validRoutes){h.endpointDays.add(kstDay(at));endpointEvidenceEvents++;}
+   if(!validRoutes||invalidRoutes||routeRequests!==request.requests||obj.endpointTrackingOmitted>0)endpointIncompleteEvents++;
    if(success)h.lastSuccessAt=Math.max(h.lastSuccessAt??0,at);
    if(!h.last||h.last.at<=at)h.last={at,outcome:success&&!failures?'success':failures&&!success?'failure':'mixed'};
   }
@@ -84,11 +104,18 @@ export function buildApiConnectionHealthFromLog(base,now=Date.now(),{fileSystem=
    const cadence=times.length>=5&&h.days.size>=3&&gaps.length>=4?
     Math.min(48*3600_000,Math.max(5*60000,median(gaps))):null;
    return {host:h.host,requests:h.requests,observedDays:h.days.size,
+    endpointFingerprints:h.endpointIds.size,endpointEvidenceDays:h.endpointDays.size,
     lastAttemptAt:h.last?.at??null,lastSuccessAt:h.lastSuccessAt,
     lastOutcome:h.last?.outcome??'unknown',expectedIntervalMs:cadence};
   });
+ const observedEndpointFingerprints=items.reduce((sum,item)=>sum+item.endpointFingerprints,0);
  return {version:1,scope:'external-provider-hosts',source:'PC_COLLECTION_EVENTS_FETCH_WRAPPER',
   coverage:'PARTIAL',observedAt:new Date(now).toISOString(),windowHours:336,
+  endpointObservation:{type:'HTTP_METHOD_PATH_SHA256_PREFIX',coverage:'PARTIAL',
+   observedFingerprintCount:observedEndpointFingerprints||null,
+   observedHostCount:items.filter(item=>item.endpointFingerprints>0).length,
+   endpointEvidenceEvents,endpointIncompleteEvents,
+   independentCollectorsCovered:false},
   diagnostics:{reason:tailTruncated||rowsTruncated||invalidEvents||duplicateEvents||hosts.size>MAX_HOSTS?
     'LOG_PARTIAL':'WRAPPER_ONLY',tailTruncated,rowsTruncated,invalidEvents,duplicateEvents,
     unverifiedCollectors:true},
