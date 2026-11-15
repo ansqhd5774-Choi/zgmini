@@ -284,3 +284,16 @@ Test 실행환경은 **비운영 격리 컨테이너**이고 GitHub Actions/운�
 3. 별도 Treasury 365일 원문 감사와 공개 D1/날짜/중복 집계를 같은 버전에서 맞추고 시장 캘린더 경제·실적·시장 이벤트 전체 콘텐츠 완료 범위를 판단한다. FOMC 단건 결과만으로 종결 금지.
 
 **진행률 정정:** W02 `100%` 오판 **철회**; 기존 `95%`를 정밀 재산정 전 잠정 기준으로 유지한다. ZGMINI 전체 기존 `57.4%`도 임의 상향하지 않는다. 작업 범위는 W02로 고정한다. #68 정정 https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6889029125
+
+
+<!-- w02-20261115-er1-installed-and-treasury-public-count-parity -->
+## 2026-11-15 후속 — ER1 최초 오류 stage 식별기 실PC 설치와 Treasury 365일 공개 정량 대조
+
+- **기존 W02 완료 재사용:** 2027 FOMC 최신 일정 8건/구 12월8일 제거, 공식 공급자 READY, 경제모델 283개 연결 현황 표시; 같은 설치·수집·CI 재실행 없음.
+- **Treasury 공개 D1 Reader의 정확한 365일 범위 실증:** PC A #1401의 원자료 2025-11-15~2026-11-14 365일 적격 낙찰 436건 및 raw447건, SHA256 `c70216a051dd9a24a6b9189193535da23fc136f22e1e0219455d896545bf74de` 재사용. 실제 `https://zgmini.kr/api/release-calendar` JSON `READY`, `updatedAt=2026-11-15T03:45:06.198Z`; 같은 날짜 경계의 `treasury-auction-*` 436건, `treasury-announcement-*` 436건, 기타 0건, `id+date` 중복0. PC eligible=공개 auction 정확 436/436 일치. 단 PC raw 텍스트 해시와 D1 원문 해시 1:1 동일성은 미관측이라 건수 이상 주장을 하지 않는다.
+- **실제 ER1 기존 공개 게시 PASS ≠ 최신 계산 성공:** #1408/Run43675906586 A 결과는 Nov public output local stored_at `1794546027801` sha `0675aada329b09eaed5644d9dea4d090626c664dd216d4551474dccbe7914b51` 와 D1 per-key 동일, Writer verified; 그러나 월 신규 계산 Nov=`MONTH_SOURCE_INVALID`, Dec=`SAVED_MONTH_INCOMPLETE`, 신규 output 0. 프라이버시 원본/ERP 공급자 데이터를 조회하거나 무효 자료로 대체하지 않는다.
+- **코드 수정/CI/병합:** `zgmini` #1088, 2파일, CI [#43676695346](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43676695346) SUCCESS, `main@d60a6be5e54fb5e7b450f74c4fd1f45b4f874dbb`. 기존 `er1Future.months[].status` 출력 안에서 실인증 A가 구별 가능한 정적 safe `MONTH_SOURCE_INVALID_ARCHIVE_<DAY>_<CODE>`, `...DAY...`, `...ADAPTER...`를 쓰고, 사설 입력·회사명·메트릭을 유출하지 않는다. 산식/유효 이전 저장본 보호와 게시 로직 불변.
+- **PC A 최신 before 원본:** #1409/Run43676796454 PASS, `scripts/pc-writer/market-calendar-er1-auto-output.mjs` `beforeSHA256=f13accdeed8601b898343eb09331470f4d6783ca94af22022543be7ea7e2b66e`, 당시 PC config/HEAD/checkpoint `55e62c19672d03e93bfa573c56ba4bab1d28e979`, tracked-clean/source identity consistent, 해당 before는 GitHub main 과거 동일 바이트.
+- **실PC Writer B 실제 설치 성공:** control #1410 승인 exact one-file manifest sha `2fe8f544dea2474423891cbac3a5bc2faacaca2c8ece3c59ba47916f9e664fc1`, 파일 afterSHA256 `aa75821a58fa3cee3e6f712943d7636f6bfcec72362bdfb76d081a643b803a49`, FOMC parser/collector 2개 SHA 보호. #1411/Run43677169400 원격 반환 **`WRITER_B_INSTALLED_VERIFIED/WRITER_B_INSTALL_VERIFIED`, JSON/TXT 2/2 재조회**, 운영 source 일부 외 Provider/DB/D1/Task/예약 변경 허용0. 이 설치는 아직 **최신 11월 신규 계산 성공 증거가 아님**.
+- **다음 W02 실작업 1개:** 정상 Core Writer가 설치 이후 `months[2026-11]`을 갱신하면 기존 허용 `writer-publication-evidence-readonly` A **한 번**으로 첫 오류 stage/day/code를 조회. 해당 실제 실패 원인만 수정하고 정상 11월 ER1 계산→로컬 새 output→D1 per-key SHA→실제 공개/API·화면 연결을 끝낼 것. 이후에도 미완료 콘텐츠/권리 범위가 있으면 별도 확인하고 W02 전체 완료를 단정하지 않는다.
+- **진척 정정:** W02 100% 선언 철회, 잠정95% (최신 실제 ER1 장애로 재산정 필요), 전체 ZGMINI 57.4% 잠정 유지. W02 끝나기 전 타 기능으로 전환하거나 사용자의 중간 육안/예약 검증을 요구하지 않는다. 중앙 정본 https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6889231373
