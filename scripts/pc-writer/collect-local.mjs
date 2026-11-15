@@ -9,6 +9,7 @@ import {read} from './d1.mjs';
 import {createQuotaFetch} from './quota-fetch.mjs';
 import {recordCollectionChecks} from './collection-checks.mjs';
 import {appendCollectionEvent,appendProviderFailure} from './collection-events.mjs';
+import {providerEndpointFingerprint,PROVIDER_ENDPOINTS_PER_HOST_MAX} from './provider-endpoint-fingerprint.mjs';
 import {safeMacroDiagnostic} from '../../worker/macro-result-contract-r61.mjs';
 import {safeCollectionFailure} from '../../worker/collection-failure-diagnostic.mjs';
 import {alertCollectionReport,dueCollectionRecovery} from './local-data-alert.mjs';
@@ -24,15 +25,25 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
  const history=localDatabase(path.join(base,'storage','history.sqlite'));
  const env={...loadLocalProviders(base),DB:core,DB_CORE:core,DB_HISTORY:history,ZGMINI_COMPUTE_TARGET:'pc'};
  const hooks=installLocalRuntime(env);
- const originalFetch=globalThis.fetch,providers={};
+ const originalFetch=globalThis.fetch,providers={},endpointPaths={};
+ let endpointTrackingOmitted=0;
  let providerDiagnosticWriteFailures=0;
  const recordProviderFailure=(input,event)=>{try{appendProviderFailure(base,input,event);}catch{providerDiagnosticWriteFailures++;}};
  const quota=createQuotaFetch({base,originalFetch});
  globalThis.fetch=async(input,init)=>{
   const host=new URL(typeof input==='string'||input instanceof URL?input:input.url).hostname;
   const item=providers[host]??={requests:0,statuses:{}};item.requests++;
-  try{const response=await quota.fetch(input,init);item.statuses[response.status]=(item.statuses[response.status]??0)+1;if(!response.ok)recordProviderFailure(input,{phase:'HTTP',httpStatus:response.status});return response;}
-  catch(error){recordProviderFailure(input,{phase:'FETCH',error});const status=error?.code==='PROVIDER_QUOTA_GUARD'?'PROVIDER_QUOTA_GUARD':'NETWORK_ERROR';item.statuses[status]=(item.statuses[status]??0)+1;if(error?.code==='PROVIDER_QUOTA_GUARD')throw error;const failure=Error('LOCAL_PROVIDER_NETWORK_ERROR');failure.code='LOCAL_PROVIDER_NETWORK_ERROR';throw failure;}
+  const route=providerEndpointFingerprint(input,init);
+  const hostRoutes=route?.host===host?(endpointPaths[host]??={}):null;
+  const endpoint=hostRoutes&&(hostRoutes[route.id]??(Object.keys(hostRoutes).length<PROVIDER_ENDPOINTS_PER_HOST_MAX?
+   (hostRoutes[route.id]={requests:0,statuses:{}}):null));
+  if(!endpoint)endpointTrackingOmitted++;
+  const recordStatus=status=>{
+   item.statuses[status]=(item.statuses[status]??0)+1;
+   if(endpoint){endpoint.requests++;endpoint.statuses[status]=(endpoint.statuses[status]??0)+1;}
+  };
+  try{const response=await quota.fetch(input,init);recordStatus(response.status);if(!response.ok)recordProviderFailure(input,{phase:'HTTP',httpStatus:response.status});return response;}
+  catch(error){recordProviderFailure(input,{phase:'FETCH',error});const status=error?.code==='PROVIDER_QUOTA_GUARD'?'PROVIDER_QUOTA_GUARD':'NETWORK_ERROR';recordStatus(status);if(error?.code==='PROVIDER_QUOTA_GUARD')throw error;const failure=Error('LOCAL_PROVIDER_NETWORK_ERROR');failure.code='LOCAL_PROVIDER_NETWORK_ERROR';throw failure;}
  };
  try{
   const {runPublicFeeds}=await import('../../worker/public-feed-collectors.ts');
@@ -88,7 +99,7 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
    }
   }
   // Reports contain statuses only; provider URLs, credentials, and exception messages are excluded.
-  const report={at:new Date().toISOString(),lane,status:result.status,job:result.job??null,attempted:result.attempted??null,feeds:result.feeds?.map(({key,status})=>({key,status})),sectorFearGreedEtf:{status:sectorFearGreedEtf.status,providerRequests:sectorFearGreedEtf.providerRequests??0,commonLatest:sectorFearGreedEtf.commonLatest??null,code:sectorFearGreedEtf.code??sectorFearGreedEtf.error??null},providers,quota:quota.summary()};
+  const report={at:new Date().toISOString(),lane,status:result.status,job:result.job??null,attempted:result.attempted??null,feeds:result.feeds?.map(({key,status})=>({key,status})),sectorFearGreedEtf:{status:sectorFearGreedEtf.status,providerRequests:sectorFearGreedEtf.providerRequests??0,commonLatest:sectorFearGreedEtf.commonLatest??null,code:sectorFearGreedEtf.code??sectorFearGreedEtf.error??null},providers,endpointPaths,endpointTrackingOmitted,quota:quota.summary()};
   report.employmentR6Collection=employmentR6Collection;
   for(const key of ['phase','reason','sourceStatus'])if(typeof result?.[key]==='string'&&/^[A-Za-z0-9_.:-]{1,120}$/.test(result[key]))report[key]=result[key];
   report.releaseCalendar=releaseCalendar;
