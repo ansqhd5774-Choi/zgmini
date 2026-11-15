@@ -63,7 +63,7 @@ test('unrelated/empty pages and oversized input cannot claim a READY source',()=
  assert.throws(()=>parseNassReportSchedule('no catalogue'),/NASS_INPUT_INVALID/);
  assert.throws(()=>parseNassReportSchedule(page(report('Unrelated Stock Tips',2026,['2026-12-10']))),
   /NASS_CROP_PRODUCTION_DATES_MISSING/);
- assert.throws(()=>parseNassReportSchedule(sourceHtml().repeat(500)),
+ assert.throws(()=>parseNassReportSchedule(sourceHtml().repeat(5000)),
   /NASS_INPUT_INVALID/);
 });
 test('collector uses one official GET, saves private HTML, reparses readback and retains prior history',async()=>{
