@@ -58,6 +58,10 @@ test('W04 3/4 national series cannot write unarchived national observations; 600
  assert.equal(nationalRows.length,0,'unarchived national rows must not enter the ledger');
  assert.equal(fetched.rows.filter(r=>r.geographyType==='STATE').length,51);
  assert.equal(fetched.snapshots.length,1,'partial national raw cannot replace complete archive');
+ assert.equal(fetched.nationalResponseEvidence.responseFormat,'WEEK_FRAGMENT');
+ assert.equal(fetched.nationalResponseEvidence.parsedNationalSeriesCount,3);
+ assert.equal(fetched.nationalResponseEvidence.latestNationalObservationDate,'2026-10-31');
+ assert.match(fetched.nationalResponseEvidence.bodySha256,/^[a-f0-9]{64}$/);
  assert.ok(fetched.snapshots.every(s=>!s.requestKey.startsWith('DOL_NATIONAL:')));
  assert.equal(fetched.snapshots[0].requestKey,'DOL_ETA539:600w');
  assert.equal(fetched.snapshots[0].detail.historyWeeks,600);
@@ -82,6 +86,7 @@ test('W04 3/4 national series cannot write unarchived national observations; 600
  assert.equal(result.groupResults[0].failureCode,'DOL_NATIONAL_SERIES_INCOMPLETE');
  assert.equal(runs[0].failureCode,'DOL_NATIONAL_SERIES_INCOMPLETE');
  assert.equal(runs[0].detail.backfillWindowVersion,'DOL_ETA539_600_WEEKS_V1');
+ assert.deepEqual(runs[0].detail.nationalResponseEvidence,fetched.nationalResponseEvidence);
  assert.equal(written.length,51);
  assert.equal(snapshots.length,1);
  assert.equal(result.publicOutput,false);
@@ -100,10 +105,35 @@ test('W04 complete national 4-series retains raw archive and 51-region 600w path
  assert.deepEqual(x.missingSeries,[]);
  assert.equal(x.partialFailureCode,undefined);
  assert.equal(x.snapshots.length,2);
+ assert.equal(x.nationalResponseEvidence.parsedNationalSeriesCount,4);
+ assert.equal(x.nationalResponseEvidence.responseFormat,'WEEK_FRAGMENT');
  assert.match(x.snapshots[0].requestKey,/^DOL_NATIONAL:/);
  assert.equal(x.snapshots[1].requestKey,'DOL_ETA539:600w');
  const values=x.rows.filter(r=>r.geographyType==='NATIONAL');
  assert.deepEqual(values.map(r=>r.logicalSeriesId),[
   'INITIAL_CLAIMS','INITIAL_CLAIMS_4W','CONTINUED_CLAIMS',
   'INSURED_UNEMPLOYMENT_RATE']);
+});
+
+test('W04 failed national HTTP 200 classified without persisting provider error text',async()=>{
+ const bad='Unable to connect! SQLSTATE=HY000 private-response-must-not-leak';
+ const provider=createEmploymentR6Provider({now,fetchImpl:async(url)=>
+  String(url)===DOL_ETA539_URL
+   ?new Response(stateCsv,{status:200,headers:{'content-type':'text/csv'}})
+   :new Response(bad,{status:200,headers:{'content-type':'text/plain; charset=utf-8'}}),
+ });
+ const fetched=await provider.fetchDolClaims({mode:'RELEASE',currentYear:2026});
+ assert.equal(fetched.rows.length,51);
+ assert.equal(fetched.snapshots.length,1,'do not archive invalid national body');
+ assert.equal(fetched.partialFailureCode,'DOL_NATIONAL_NO_VALID_ROWS');
+ assert.deepEqual(fetched.nationalResponseEvidence && {
+  status:fetched.nationalResponseEvidence.httpStatus,
+  type:fetched.nationalResponseEvidence.contentTypeCategory,
+  format:fetched.nationalResponseEvidence.responseFormat,
+  parsed:fetched.nationalResponseEvidence.parsedNationalSeriesCount,
+  last:fetched.nationalResponseEvidence.latestNationalObservationDate,
+ },{status:200,type:'text/plain',format:'TEXT',parsed:0,last:null});
+ assert.match(fetched.nationalResponseEvidence.bodySha256,/^[a-f0-9]{64}$/);
+ assert.equal(fetched.nationalResponseEvidence.bodyCharLength,bad.length);
+ assert.ok(!JSON.stringify(fetched.nationalResponseEvidence).includes('private-response-must-not-leak'));
 });
