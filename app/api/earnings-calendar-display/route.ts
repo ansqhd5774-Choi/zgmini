@@ -2,6 +2,7 @@ import {env} from 'cloudflare:workers';
 import {publicFeedStore} from '../../../worker/public-feed-store.mjs';
 import {earningsDisplayResponse,EARNINGS_API_DISPLAY_KEY} from '../../../lib/earnings-api-display.mjs';
 import {ER1_EARNINGS_DISPLAY_PUBLIC_KEY} from '../../../lib/market-calendar-er1-public-display.mjs';
+import {DELTA_R44_OUTPUT_KEY} from '../../../lib/market-calendar-deltascreener-public.mjs';
 import {er1MonthlyPublicKey} from '../../../lib/market-calendar-er1-month-key.mjs';
 import {DEC2026_EARNINGS_HTML_KEY,DEC2026_ER1_PUBLIC_KEY,withDec2026Display} from '../../../lib/market-calendar-dec2026-display.mjs';
 import {NOV2026_EARNINGS_HTML_H1_KEY,NOV2026_EARNINGS_HTML_H2_KEY,
@@ -22,6 +23,9 @@ export async function GET(request:Request){
  try{er1=(await store.readOutput(ER1_EARNINGS_DISPLAY_PUBLIC_KEY))?.body??null;}catch{}
  try{decemberER1=(await store.readOutput(DEC2026_ER1_PUBLIC_KEY))?.body??null;}catch{}
  try{novemberER1=(await store.readOutput(NOV2026_ER1_PUBLIC_KEY))?.body??null;}catch{}
+ // Only previously published derived grades are read; no supplier fetch on GET.
+ let marketCapR44=null;
+ try{marketCapR44=(await store.readOutput(DELTA_R44_OUTPUT_KEY))?.body??null;}catch{}
  const display=withDec2026Display(withNov2026Display(snapshot,novemberH1,novemberH2),december);
  // Use only the months present in a stored public calendar projection. Visitor
  // query parameters never cause arbitrary D1-key or vendor lookups.
@@ -45,5 +49,5 @@ export async function GET(request:Request){
   }
   return [month,[current,...vintages].filter(Boolean)] as const;
  })));
- return earningsDisplayResponse(display,request.url,er1,decemberER1,novemberER1,monthlyER1);
+ return earningsDisplayResponse(display,request.url,er1,decemberER1,novemberER1,monthlyER1,marketCapR44);
 }
