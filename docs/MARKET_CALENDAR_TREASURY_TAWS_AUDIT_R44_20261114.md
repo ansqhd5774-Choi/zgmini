@@ -259,3 +259,28 @@ Test 실행환경은 **비운영 격리 컨테이너**이고 GitHub Actions/운�
 **다음 필수 실행 하나/중앙 운영 PC 단일 Owner:** 기존 승인된 현재 PC read-only 영수증으로 **installed Controller SHA·`source-inventory-runtime-readonly` allowlist/라우팅 PASS**와 관측 시각을 확보하여 #68에 반환. 세 항목이 인증될 때만 시장 원담당이 승인된 새 고유 A **단 1회** → 62차 JSON/TXT 영수증 어댑터·60차 365일 판정 적용 → 별도 원문 중복 및 동시 D1/API/UI 조회. 승인 없는 새 pc-job·Runner/CMD/SQL/잠금 해제/Controller/Writer/D1·Cloudflare 배포 금지.
 
 **65차 변경:** 기능 소스/테스트/CI 0, 기존 브랜치 이 진척 기록 1개만 append; 실제 운영 데이터/설정/배포 변경 0. GitHub 인계는 타 일반챗 자동 수신·운영 PC 신규 설치 성공 아님.
+
+
+<!-- w02-20261115-correction-and-er1-first-fail -->
+## 2026-11-15 — W02 전체 완료 오판 철회 및 최신 ER1 실제 FIRST FAIL (단일 소유 브랜치 인계)
+
+**사용자 확정:** W02 전체 작업을 끝내기 전에 다른 담당으로 이동하지 않는다. 별도 예약 검증을 미완료 업무/완료 Gate/진행률 분모로 만들지 않는다. 모든 ZGMINI 기능 개발·실운영 적용 후에만 사용자에게 홈페이지 육안 최종 확인을 요청한다.
+
+**기존 완료 증거 중 재사용 (재검사 금지):**
+- FOMC 2027 공식 개정: 기능 PR #1082 main `67e04c138b73a3f35a0440e2633b7e638639078f`; PC Writer B #1405 / Run `43669279911` `WRITER_B_INSTALLED_VERIFIED`; 정상 Core 자연 회차 후 공개 `/api/release-calendar` `READY`, 2027 공식 FOMC 8개, 마지막 `2027-11-17` 존재, 구 `2027-12-08` 부재, 2027-10-27 전략회의 전용 UI 반영. 이것은 **FOMC 부분 완료**이고 W02 전체 완료가 아니다.
+- `PARTIAL` 중 모델 283·공식 연결 186·비일정 97 숨김 방지: PR #1087 main `867e96669ea48bf6f1d6a1310fa305dd276f3e53` 및 Production HTML/배포 JS 반영 확인.
+- Treasury TA_WS: #1401/Run `43648101352` 실제 PC Core 원문 2025-11-15~2026-11-14 정확 365일, raw 447/eligible stored 436/eligible independently counted 436, local text SHA256 `c70216a051dd9a24a6b9189193535da23fc136f22e1e0219455d896545bf74de` 확인. 이는 로컬 원문 감사 합격이며 **공개 D1 같은 본문 hash 독립 대조는 아직 미증명**.
+
+**새 실제 ER1 운영 증거(반복한 과거 검사 아님):**
+- 기존 allowlist `writer-publication-evidence-readonly` 단회 #1408/Run `43675906586`/2026-11-15T04:15:09Z, 운영 Windows seat3, `PASS/ER1_WRITER_METADATA_READONLY`, `sqliteOpened=true`, 공급자 GET 0, 운영/원장/D1 쓰기 0. JSON/TXT 원격 2/2.
+- 현행 PC Writer `2026-11-15T04:10:46.547Z` `PUBLISH/VERIFIED`, ledger `2026-11-15T04:12:55.559Z` `VERIFIED`.
+- 2026-11 monthly output `market-calendar:earnings-er1-score-2026-11-public`, local `storedAt=1794546027801`, local body sha256 `0675aada329b09eaed5644d9dea4d090626c664dd216d4551474dccbe7914b51`; **같은 Writer 게시 시각의 D1 per-key readback `VERIFIED`/matchedToLocal true, D1 storedAt 및 bodySHA 동일**. 따라서 예전 #835의 'D1 per-key readback 0건'은 현행 사실이 아니다. 단 `productionVerified=false,publicApiUiVerified=false`이므로 최종 공개 UI 재현 성공으로 확장하지 않는다.
+- **실제 첫 기능 실패:** `er1Future.status=NO_NEW_OUTPUT`, `months[2026-11].status=MONTH_SOURCE_INVALID`; `months[2026-12].status=SAVED_MONTH_INCOMPLETE` (현재 미래 월의 미수집이라는 정상 가능성을 별도 분리). 11월 신규 계산이 기존 공개본을 유지한 상태로 정체되어 있음. 최신 공개 D1에 *기존* 본문이 게시된 것과 **신규 계산 성공은 별개**.
+- 현행 계산기 `scripts/pc-writer/market-calendar-er1-auto-output.mjs`의 `MONTH_SOURCE_INVALID` 분기는 **아카이브 14일 사설 원문 읽기/JSON**, **해당 월 저장 일별 텍스트 재파싱**, **`forecastRowsFromSaved` 재구성/지표 검증**으로 최소 3갈래; A의 현재 출력은 실패 날짜·단계·안전 코드가 없어 **최초 원인을 하나로 확정할 수 없다**. 입력을 추정으로 대체하거나 계산·산식·공개 이미 게시된 값을 조작하지 않는다.
+
+**다음 정확한 해결 작업 (반복 점검 금지):**
+1. 기존 설치 Reader/보고 범위에서 11월 **실제 첫 invalid 저장일·파싱/사설 아카이브/모델 입력 단계와 allowlist된 실패코드** 한 건을 식별한다. 이미 #1408에서 완료한 게시 hash 비교 재요청 금지. 현재 A가 이 정보를 출력하지 않으므로 새 수집/SQL/비공개 원문 GitHub 업로드로 우회하지 말 것. 필요한 진단 확장은 정규 소스·승인 경로에서 **그 실패 분기만** 처리.
+2. 확인된 원인(실제 저장 원문 형식/입력 정규화/사설 경로 중 하나)에 해당하는 최소 소스 수정→변경 영향 회귀→승인 Writer B 설치→정상 Core ER1 신규 `READY_OUTPUT`/원장 per-key readback→공개 API·화면 연결. 승인되지 않은 데이터 가공, 무단 공급자 GET/DB/D1 수동 쓰기, Core 재기동 금지.
+3. 별도 Treasury 365일 원문 감사와 공개 D1/날짜/중복 집계를 같은 버전에서 맞추고 시장 캘린더 경제·실적·시장 이벤트 전체 콘텐츠 완료 범위를 판단한다. FOMC 단건 결과만으로 종결 금지.
+
+**진행률 정정:** W02 `100%` 오판 **철회**; 기존 `95%`를 정밀 재산정 전 잠정 기준으로 유지한다. ZGMINI 전체 기존 `57.4%`도 임의 상향하지 않는다. 작업 범위는 W02로 고정한다. #68 정정 https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6889029125
