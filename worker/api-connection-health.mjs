@@ -4,6 +4,7 @@ export const API_CONNECTION_HEALTH_KEY='api-connection-health';
 export const API_CONNECTION_SNAPSHOT_MAX_AGE_MS=2*60*60*1000;
 const WINDOW_MS=14*24*60*60*1000;
 const HOST=/^(?=.{4,180}$)[a-z0-9-]+(?:\.[a-z0-9-]+)+$/;
+const PUBLIC_HOST=host=>HOST.test(host)&&!/(?:^|\.)(?:localhost|local|internal|test|invalid)$/.test(host)&&!/^\d+(?:\.\d+){3}$/.test(host);
 const time=(x,now)=>Number.isSafeInteger(x)&&x>0&&x<=now+60_000?x:null;
 const nonnegative=x=>Number.isSafeInteger(x)&&x>=0;
 const UNKNOWN={status:'unknown',scope:'external-provider-hosts',coverage:'UNVERIFIED',normal:null,failed:null,unknown:null,total:null,items:[]};
@@ -18,7 +19,7 @@ export function summarizeApiConnectionHealth(snapshot,now=Date.now()){
   return {...UNKNOWN,checkedAt:snapshot.observedAt,reason:'SOURCE_STALE'};
  const seen=new Set(),items=[];
  for(const raw of snapshot.items){
-  if(typeof raw?.host!=='string'||!HOST.test(raw.host)||seen.has(raw.host)||
+  if(typeof raw?.host!=='string'||!PUBLIC_HOST(raw.host)||seen.has(raw.host)||
     !nonnegative(raw.requests)||!nonnegative(raw.observedDays)||raw.observedDays>14||
     !['success','failure','mixed','unknown'].includes(raw.lastOutcome)||
     (raw.lastAttemptAt!==null&&!time(raw.lastAttemptAt,now))||
