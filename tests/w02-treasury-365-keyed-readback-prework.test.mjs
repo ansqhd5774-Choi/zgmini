@@ -1,7 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {compareTreasury365KeyedEvidence,W02_TREASURY_365_AUDIT_SCHEMA}
+import {compareTreasury365KeyedEvidence,buildTreasury365PrivateReceipt,
+ compareTreasury365ReceiptToPublic,W02_TREASURY_365_AUDIT_SCHEMA,
+ W02_TREASURY_365_PRIVATE_RECEIPT_SCHEMA}
  from '../scripts/market-calendar/treasury-365-keyed-readback-prework.mjs';
 import {parseTreasuryDirectAuctionRows}
  from '../lib/treasury-auction-history-taws.mjs';
@@ -125,4 +127,56 @@ test('W02 valid extra future weekly event outside 365d does not falsify historic
  const verdict=check({d1BodyText:JSON.stringify(mixed),apiBody:mixed});
  assert.equal(verdict.status,'KEYED_CONTENT_MATCH_LINEAGE_NOT_VERIFIED');
  assert.equal(verdict.publicEventCount,872);
+});
+
+test('W02 inside-PC receipt contains only SHA/counts and never private raw or CUSIP',()=>{
+ const receipt=buildTreasury365PrivateReceipt({privateText:rawText,fromDate,toDate});
+ assert.equal(receipt.schema,W02_TREASURY_365_PRIVATE_RECEIPT_SCHEMA);
+ assert.equal(receipt.privateRawRowCount,447);
+ assert.equal(receipt.privateAwardedRowCount,436);
+ assert.equal(receipt.expectedEventCount,872);
+ assert.equal(receipt.privateRawTextSha256,sha(rawText));
+ const serialized=JSON.stringify(receipt);
+ assert.doesNotMatch(serialized,/9[A-Z0-9]{8}|bidToCoverRatio|competitiveAuctionCloseDate|4-Week/);
+ const publicVerdict=compareTreasury365ReceiptToPublic({
+  privateReceipt:receipt,d1BodyText:JSON.stringify(snapshot),
+  d1StoredAt:storedAt,d1ReadAt:stamp,apiBody:structuredClone(snapshot),
+  apiObservedAt:apiStamp,now:storedAt+10000
+ });
+ assert.equal(publicVerdict.status,'KEYED_CONTENT_MATCH_LINEAGE_NOT_VERIFIED');
+ assert.equal(publicVerdict.sourceLineageVerified,false);
+ assert.equal(publicVerdict.ownerAuthorizationVerified,false);
+ assert.doesNotMatch(JSON.stringify(publicVerdict),/bidToCoverRatio|competitiveAuctionCloseDate/);
+});
+test('W02 identical event keys but corrupted Treasury title or URL fail on metadata digest',()=>{
+ for(const patch of [
+  {title:'잘못된 입찰 종류'}, {sourceUrl:'https://wrong.example/auctions/'}
+ ]){
+  const changed=structuredClone(snapshot);
+  changed.events[0]={...changed.events[0],...patch};
+  assert.equal(check({d1BodyText:JSON.stringify(changed),apiBody:changed}).status,
+   'TREASURY_PUBLIC_EVENT_METADATA_MISMATCH');
+ }
+});
+test('W02 only exact bounded private receipt schema can be used without raw transfer',()=>{
+ const receipt=buildTreasury365PrivateReceipt({privateText:rawText,fromDate,toDate});
+ const base={privateReceipt:receipt,d1BodyText:JSON.stringify(snapshot),
+  d1StoredAt:storedAt,d1ReadAt:stamp,apiBody:snapshot,
+  apiObservedAt:apiStamp,now:storedAt+10000};
+ for(const patch of [
+  {schema:'UNAUTHORIZED'}, {expectedKeySetSha256:'not-a-hash'},
+  {privateAwardedRowCount:999}, {raw:'PRIVATE_JSON'},
+  {expectedEventCount:10000}
+ ]){
+  const result=compareTreasury365ReceiptToPublic({
+   ...base,privateReceipt:{...receipt,...patch}
+  });
+  assert.equal(result.status,'UNVERIFIED_INPUT_CONTRACT');
+ }
+ assert.throws(()=>buildTreasury365PrivateReceipt({
+  privateText:'NOT_JSON',fromDate,toDate
+ }),/W02_TREASURY_PRIVATE_VALIDATION_FAILED/);
+ assert.throws(()=>buildTreasury365PrivateReceipt({
+  privateText:rawText,fromDate:'2025-11-11',toDate
+ }),/W02_TREASURY_365_DAY_WINDOW_INVALID/);
 });
