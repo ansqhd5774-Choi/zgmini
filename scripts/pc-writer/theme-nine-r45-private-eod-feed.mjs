@@ -166,7 +166,7 @@ export async function readNineR45SavedDates({dataRoot=DATA_ROOT,dates,decoder=nu
 }
 
 export async function collectNineR45FromSavedMarketParquet({dataRoot=DATA_ROOT}={}){
- const rosterFile=path.join(HERE,'theme-nine-r20-approved-candidates.json');
+ const rosterFile=path.resolve(HERE,'../../config/theme-platform-r20-research-candidates.json');
  if(!fs.existsSync(rosterFile))fail('APPROVED_ROSTER_FILE_MISSING');
  const rosterBytes=fs.readFileSync(rosterFile);
  if(sha(rosterBytes)!==ROSTER_SHA)fail('APPROVED_ROSTER_SHA_DRIFT');
