@@ -171,3 +171,70 @@ test('W04 national mixed-week release retains latest availableAt per separate se
   assert.equal(rows.filter(row=>row.availableAt===retrievedAt).length,4,
     'all four newest distinct series must be available as of same release');
 });
+
+test('W04 national transport failure preserves 51-state source without exposing provider body',async()=>{
+  const calls=[];
+  const provider=createEmploymentR6Provider({now,fetchImpl:async url=>{
+    calls.push(String(url));
+    return String(url)===DOL_ETA539_URL
+      ? new Response(stateCsv,{status:200,headers:{'content-type':'text/csv'}})
+      : new Response('PRIVATE_DOL_HTTP_503_BODY_MUST_NOT_LEAK',{
+          status:503,headers:{'content-type':'text/html'},
+        });
+  }});
+  const fetched=await provider.fetchDolClaims({mode:'BACKFILL',currentYear:2026});
+  assert.equal(calls.length,2,'one National POST and one ETA539 GET; no retry');
+  assert.equal(fetched.requestCount,2);
+  assert.equal(fetched.partialFailureCode,'DOL_NATIONAL_HTTP_FAILED');
+  assert.equal(fetched.rows.length,51);
+  assert.ok(fetched.rows.every(row=>row.geographyType==='STATE'));
+  assert.deepEqual(fetched.missingSeries,[
+    'INITIAL_CLAIMS','INITIAL_CLAIMS_4W','CONTINUED_CLAIMS',
+    'INSURED_UNEMPLOYMENT_RATE',
+  ]);
+  assert.equal(fetched.snapshots.length,1);
+  assert.equal(fetched.snapshots[0].requestKey,'DOL_ETA539:600w');
+  assert.deepEqual(fetched.nationalResponseEvidence,{
+    httpStatus:503,contentTypeCategory:'MISSING',responseFormat:'UNAVAILABLE',
+    bodySha256:null,bodyCharLength:null,requestFailureCode:'DOL_NATIONAL_HTTP_FAILED',
+    parsedNationalSeriesCount:0,latestNationalObservationDate:null,
+  });
+  assert.ok(!JSON.stringify(fetched).includes('PRIVATE_DOL_HTTP_503_BODY_MUST_NOT_LEAK'));
+  const runs=[];
+  const store={
+    async initialize(){},async getLatestRunInMode(){return null;},
+    async acquire(){return {acquired:true};},async release(){},
+    async writeRawSnapshot(){return {snapshotId:1,bodySha256:'safe',chunkCount:1,noop:false};},
+    async upsertObservationRows({rows}){return {inserted:rows.length,revised:0,noop:0,rejected:0};},
+    async recordRun(run){runs.push(run);return 1;},
+  };
+  const output=await runEmploymentR6CollectionStep({
+    db:{prepare(){return {};}},mode:'BACKFILL',now,
+    groups:['DOL_UI_WEEKLY_CLAIMS'],storeFactory:()=>store,
+    providerFactory:()=>({async fetchGroup(){return fetched;}}),
+  });
+  assert.equal(output.status,'PARTIAL');
+  assert.equal(output.groupResults[0].failureCode,'DOL_NATIONAL_HTTP_FAILED');
+  assert.equal(runs[0].failureCode,'DOL_NATIONAL_HTTP_FAILED');
+  assert.equal(runs[0].detail.nationalResponseEvidence.httpStatus,503);
+  assert.equal(runs[0].collectedRows,51);
+  assert.equal(output.publicOutput,false);
+});
+
+test('W04 National network failure still performs independent ETA539 read once',async()=>{
+  let calls=0;
+  const provider=createEmploymentR6Provider({now,fetchImpl:async url=>{
+    calls++;
+    if(String(url)!==DOL_ETA539_URL)throw new Error('PRIVATE_PROVIDER_TOKEN_NETWORK_MESSAGE');
+    return new Response(stateCsv,{status:200});
+  }});
+  const fetched=await provider.fetchDolClaims({mode:'BACKFILL',currentYear:2026});
+  assert.equal(calls,2);
+  assert.equal(fetched.requestCount,2);
+  assert.equal(fetched.partialFailureCode,'DOL_NATIONAL_REQUEST_FAILED');
+  assert.equal(fetched.rows.length,51);
+  assert.equal(fetched.snapshots.length,1);
+  assert.equal(fetched.nationalResponseEvidence.httpStatus,null);
+  assert.equal(fetched.nationalResponseEvidence.requestFailureCode,'DOL_NATIONAL_REQUEST_FAILED');
+  assert.ok(!JSON.stringify(fetched).includes('PRIVATE_PROVIDER_TOKEN_NETWORK_MESSAGE'));
+});
