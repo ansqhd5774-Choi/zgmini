@@ -9,7 +9,7 @@ import {read} from './d1.mjs';
 import {createQuotaFetch} from './quota-fetch.mjs';
 import {recordCollectionChecks} from './collection-checks.mjs';
 import {appendCollectionEvent,appendProviderFailure} from './collection-events.mjs';
-import {providerEndpointFingerprint,PROVIDER_ENDPOINTS_PER_HOST_MAX} from './provider-endpoint-fingerprint.mjs';
+import {providerEndpointFingerprint,PROVIDER_ENDPOINTS_PER_HOST_MAX,appendProviderEndpointEvent} from './provider-endpoint-fingerprint.mjs';
 import {safeMacroDiagnostic} from '../../worker/macro-result-contract-r61.mjs';
 import {safeCollectionFailure} from '../../worker/collection-failure-diagnostic.mjs';
 import {alertCollectionReport,dueCollectionRecovery} from './local-data-alert.mjs';
@@ -25,27 +25,31 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
  const history=localDatabase(path.join(base,'storage','history.sqlite'));
  const env={...loadLocalProviders(base),DB:core,DB_CORE:core,DB_HISTORY:history,ZGMINI_COMPUTE_TARGET:'pc'};
  const hooks=installLocalRuntime(env);
- const originalFetch=globalThis.fetch,providers={},endpointPaths={};
- let endpointTrackingOmitted=0;
+ const originalFetch=globalThis.fetch,providers={};
  let providerDiagnosticWriteFailures=0;
  const recordProviderFailure=(input,event)=>{try{appendProviderFailure(base,input,event);}catch{providerDiagnosticWriteFailures++;}};
  const quota=createQuotaFetch({base,originalFetch});
  globalThis.fetch=async(input,init)=>{
   const host=new URL(typeof input==='string'||input instanceof URL?input:input.url).hostname;
   const item=providers[host]??={requests:0,statuses:{}};item.requests++;
-  const route=providerEndpointFingerprint(input,init);
-  const hostRoutes=route?.host===host?(endpointPaths[host]??={}):null;
-  const endpoint=hostRoutes&&(hostRoutes[route.id]??(Object.keys(hostRoutes).length<PROVIDER_ENDPOINTS_PER_HOST_MAX?
-   (hostRoutes[route.id]={requests:0,statuses:{}}):null));
-  if(!endpoint)endpointTrackingOmitted++;
-  const recordStatus=status=>{
-   item.statuses[status]=(item.statuses[status]??0)+1;
-   if(endpoint){endpoint.requests++;endpoint.statuses[status]=(endpoint.statuses[status]??0)+1;}
-  };
-  try{const response=await quota.fetch(input,init);recordStatus(response.status);if(!response.ok)recordProviderFailure(input,{phase:'HTTP',httpStatus:response.status});return response;}
-  catch(error){recordProviderFailure(input,{phase:'FETCH',error});const status=error?.code==='PROVIDER_QUOTA_GUARD'?'PROVIDER_QUOTA_GUARD':'NETWORK_ERROR';recordStatus(status);if(error?.code==='PROVIDER_QUOTA_GUARD')throw error;const failure=Error('LOCAL_PROVIDER_NETWORK_ERROR');failure.code='LOCAL_PROVIDER_NETWORK_ERROR';throw failure;}
+  try{const response=await quota.fetch(input,init);item.statuses[response.status]=(item.statuses[response.status]??0)+1;if(!response.ok)recordProviderFailure(input,{phase:'HTTP',httpStatus:response.status});return response;}
+  catch(error){recordProviderFailure(input,{phase:'FETCH',error});const status=error?.code==='PROVIDER_QUOTA_GUARD'?'PROVIDER_QUOTA_GUARD':'NETWORK_ERROR';item.statuses[status]=(item.statuses[status]??0)+1;if(error?.code==='PROVIDER_QUOTA_GUARD')throw error;const failure=Error('LOCAL_PROVIDER_NETWORK_ERROR');failure.code='LOCAL_PROVIDER_NETWORK_ERROR';throw failure;}
  };
  try{
+  // Observe the real HTTP fetch wrapper without changing its quota/response behavior.
+  // The single-child collector log remains append-only and never stores URLs.
+  const endpointPaths={};let endpointTrackingOmitted=0;
+  const previousCollectorFetch=globalThis.fetch;
+  globalThis.fetch=async(input,init)=>{
+   const route=providerEndpointFingerprint(input,init);
+   const bucket=route?(endpointPaths[route.host]??={}):null;
+   const entry=bucket&&(bucket[route.id]??(Object.keys(bucket).length<PROVIDER_ENDPOINTS_PER_HOST_MAX?
+    (bucket[route.id]={requests:0,statuses:{}}):null));
+   if(!entry)endpointTrackingOmitted++;
+   const count=status=>{if(entry){entry.requests++;entry.statuses[status]=(entry.statuses[status]??0)+1;}};
+   try{const response=await previousCollectorFetch(input,init);count(response.status);return response;}
+   catch(error){count(error?.code==='PROVIDER_QUOTA_GUARD'?'PROVIDER_QUOTA_GUARD':'NETWORK_ERROR');throw error;}
+  };
   const {runPublicFeeds}=await import('../../worker/public-feed-collectors.ts');
   const {runMarketOperationalRefresh}=await import('../../worker/market-operational-refresh.mjs');
   const {refreshKoreaRev7}=await import('../../worker/korea-rev7-refresh.mjs');
@@ -99,7 +103,7 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
    }
   }
   // Reports contain statuses only; provider URLs, credentials, and exception messages are excluded.
-  const report={at:new Date().toISOString(),lane,status:result.status,job:result.job??null,attempted:result.attempted??null,feeds:result.feeds?.map(({key,status})=>({key,status})),sectorFearGreedEtf:{status:sectorFearGreedEtf.status,providerRequests:sectorFearGreedEtf.providerRequests??0,commonLatest:sectorFearGreedEtf.commonLatest??null,code:sectorFearGreedEtf.code??sectorFearGreedEtf.error??null},providers,endpointPaths,endpointTrackingOmitted,quota:quota.summary()};
+  const report={at:new Date().toISOString(),lane,status:result.status,job:result.job??null,attempted:result.attempted??null,feeds:result.feeds?.map(({key,status})=>({key,status})),sectorFearGreedEtf:{status:sectorFearGreedEtf.status,providerRequests:sectorFearGreedEtf.providerRequests??0,commonLatest:sectorFearGreedEtf.commonLatest??null,code:sectorFearGreedEtf.code??sectorFearGreedEtf.error??null},providers,quota:quota.summary()};
   report.employmentR6Collection=employmentR6Collection;
   for(const key of ['phase','reason','sourceStatus'])if(typeof result?.[key]==='string'&&/^[A-Za-z0-9_.:-]{1,120}$/.test(result[key]))report[key]=result[key];
   report.releaseCalendar=releaseCalendar;
@@ -110,6 +114,8 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   if(result.job==='earnings'&&result?.sourceDiagnostic?.provider==='WIKIPEDIA'&&result.sourceDiagnostic.stage==='UNIVERSE_REQUEST'&&Number.isInteger(result.sourceDiagnostic.httpStatus))
    report.sourceDiagnostic={provider:'WIKIPEDIA',stage:'UNIVERSE_REQUEST',httpStatus:result.sourceDiagnostic.httpStatus};
   report.providerDiagnosticWriteFailures=providerDiagnosticWriteFailures;
+  report.endpointPaths=endpointPaths;report.endpointTrackingOmitted=endpointTrackingOmitted;
+  try{appendProviderEndpointEvent(base,report);}catch{report.endpointDiagnosticWriteFailures=1;}
   appendCollectionEvent(base,report);
   save(path.join(base,'local-collection-last-run.json'),report);
   recordCollectionChecks(base,report);
