@@ -241,7 +241,7 @@ test('ER1 fixed status isolates an invalid private forecast metric without expos
   const result=await refreshSavedER1MonthlyOutputs({store,now});
   const status=result.months[0].status;
   assert.equal(status,
-   'MONTH_SOURCE_INVALID_ADAPTER_ER1_FORECAST_SAVED_METRIC_INVALID');
+   'MONTH_SOURCE_INVALID_ADAPTER_ER1_FORECAST_SAVED_METRIC_EPS_ESTIMATE_STRING');
   assert.match(status,/^[A-Z0-9_]{1,80}$/);
   assert.ok(!JSON.stringify(result).includes('private malformed metric'));
   assert.equal(store.writes,0);
