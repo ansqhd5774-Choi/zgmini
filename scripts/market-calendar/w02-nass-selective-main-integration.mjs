@@ -13,13 +13,13 @@ const once=(text,oldValue,newValue,label)=>{
  return text.slice(0,at)+newValue+text.slice(at+oldValue.length);
 };
 const nl=text=>text.includes('\r\n')?'\r\n':'\n';
-const patchRegistry=text=>{
+export const patchRegistry=text=>{
  const anchor=text.match(/^ usda:\{[^\r\n]+format:'usda'\},$/m)?.[0];
  if(!anchor)throw Error('NASS_REGISTRY_MISSING');
  const entry=" usda_nass:{url:'https://www.nass.usda.gov/Publications/Reports_by_Release_Day/index.php',page:'https://www.nass.usda.gov/Publications/Reports_by_Release_Day/index.php',format:'nass-report-dates'},";
  return once(text,anchor,anchor+nl(text)+entry,'NASS_REGISTRY');
 };
-const patchCollector=text=>{
+export const patchCollector=text=>{
  const eol=nl(text);
  let updated=once(text,
   "import {USDA_WASDE_URL,parseUsdaWasdeHtml} from '../../lib/usda-calendar.mjs';",
@@ -44,7 +44,7 @@ const patchCollector=text=>{
  ].join(eol);
  return once(updated,anchor,anchor+eol+extra,'NASS_COLLECTOR');
 };
-const patchUi=text=>{
+export const patchUi=text=>{
  let updated=once(text,"usda:'USDA'","usda:'USDA',usda_nass:'USDA NASS'",'NASS_UI_LABEL');
  const anchor="  const usdaEvent=item.source==='usda'&&item.id==='usda-wasde';";
  updated=once(updated,anchor,anchor+nl(text)+
