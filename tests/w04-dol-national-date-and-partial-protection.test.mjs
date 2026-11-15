@@ -36,7 +36,7 @@ test('W04 DOL national parser rejects impossible weeks instead of inventing obse
  }
 });
 
-test('W04 3/4 national series cannot replace complete raw; 600w state rows and ledger survive',async()=>{
+test('W04 3/4 national series cannot write unarchived national observations; 600w states survive',async()=>{
  let fetchedCount=0;
  const provider=createEmploymentR6Provider({
   now,fetchImpl:async(url)=>{
@@ -50,12 +50,15 @@ test('W04 3/4 national series cannot replace complete raw; 600w state rows and l
  assert.equal(fetchedCount,2,'no extra retries or requests');
  assert.equal(fetched.requestCount,2);
  assert.equal(fetched.partialFailureCode,'DOL_NATIONAL_SERIES_INCOMPLETE');
- assert.deepEqual(fetched.missingSeries,['INSURED_UNEMPLOYMENT_RATE']);
- assert.equal(fetched.rows.length,54,'3 valid national + 51 validated states');
+ assert.deepEqual(fetched.missingSeries,[
+  'INITIAL_CLAIMS','INITIAL_CLAIMS_4W','CONTINUED_CLAIMS',
+  'INSURED_UNEMPLOYMENT_RATE']);
+ assert.equal(fetched.rows.length,51,'quarantine 3 unarchived national; keep 51 validated states');
  const nationalRows=fetched.rows.filter(r=>r.geographyType==='NATIONAL');
- assert.equal(nationalRows.length,3);
+ assert.equal(nationalRows.length,0,'unarchived national rows must not enter the ledger');
  assert.equal(fetched.rows.filter(r=>r.geographyType==='STATE').length,51);
  assert.equal(fetched.snapshots.length,1,'partial national raw cannot replace complete archive');
+ assert.ok(fetched.snapshots.every(s=>!s.requestKey.startsWith('DOL_NATIONAL:')));
  assert.equal(fetched.snapshots[0].requestKey,'DOL_ETA539:600w');
  assert.equal(fetched.snapshots[0].detail.historyWeeks,600);
  const written=[],runs=[],snapshots=[];
@@ -79,7 +82,7 @@ test('W04 3/4 national series cannot replace complete raw; 600w state rows and l
  assert.equal(result.groupResults[0].failureCode,'DOL_NATIONAL_SERIES_INCOMPLETE');
  assert.equal(runs[0].failureCode,'DOL_NATIONAL_SERIES_INCOMPLETE');
  assert.equal(runs[0].detail.backfillWindowVersion,'DOL_ETA539_600_WEEKS_V1');
- assert.equal(written.length,54);
+ assert.equal(written.length,51);
  assert.equal(snapshots.length,1);
  assert.equal(result.publicOutput,false);
 });
