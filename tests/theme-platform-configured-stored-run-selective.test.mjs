@@ -129,3 +129,27 @@ test('approved local revision checkpoint implementation persists and resumes wit
  assert.ok(fs.existsSync(path.join(home,'revision-6.json')),
   'original immutable history must not be overwritten');
 });
+
+test('bounded multi-theme stored batch resumes remaining stages without resetting history',async t=>{
+ const f=fixture(t,2);
+ const {createThemeCheckpointStore}=await import('../scripts/pc-writer/theme-platform-store.mjs');
+ const store=createThemeCheckpointStore({dataRoot:f.root});
+ const args={dataRoot:f.root,registrations:f.registrations,store,
+  calculator:f.calc,provisionalCalculator:f.provisional};
+ const first=await runConfiguredStoredPrivateBatch({...args,maxStages:5});
+ assert.equal(first.status,'RUNNING');
+ assert.equal(first.executed,5);
+ assert.equal(first.publicConnection,'NOT_ACTIVATED');
+ const current=path.join(f.root,'theme-platform','checkpoints',first.fingerprint);
+ assert.ok(fs.existsSync(path.join(current,'revision-5.json')));
+ const resumed=await runConfiguredStoredPrivateBatch({...args,maxStages:20});
+ assert.equal(resumed.status,'COMPLETE');
+ assert.equal(resumed.executed,7);
+ assert.equal(resumed.fingerprint,first.fingerprint);
+ assert.ok(fs.existsSync(path.join(current,'revision-12.json')));
+ assert.ok(fs.existsSync(path.join(current,'revision-5.json')),
+  'a resumed run must retain its earlier exact immutable revisions');
+ const again=await runConfiguredStoredPrivateBatch(args);
+ assert.equal(again.executed,0);
+ assert.equal(fs.readdirSync(current).length,12);
+});
