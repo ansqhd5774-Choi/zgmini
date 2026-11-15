@@ -104,3 +104,32 @@ test('new NASS source bypasses the old 13-source six-hour cache exactly once, pr
   assert.equal(calls.length,1);
  }finally{db.close();}
 });
+
+test('a changed official NASS source URL bypasses only the old six-hour cache then resumes normal caching',async()=>{
+ const db=localDatabase(':memory:');
+ try{
+  const store=publicFeedStore(db);
+  await store.initialize();
+  const oldUrl='https://www.nass.usda.gov/Publications/Reports_by_Release_Day/index.php';
+  const oldSources=Object.fromEntries(Object.keys(RELEASE_SOURCES).map(source=>[
+   source,{status:source==='usda_nass'?'SOURCE_FAILED':'READY',
+    checkedAt:source==='usda_nass'?null:new Date(now-3600000).toISOString(),
+    sourceUrl:source==='usda_nass'?oldUrl:RELEASE_SOURCES[source].page,
+    ...(source==='bls'?{annualCollectorVersion:1}:{})}
+  ]));
+  await store.writeAttempt(RELEASE_CALENDAR_KEY,now-3600000);
+  await store.writeOutput(RELEASE_CALENDAR_KEY,{status:'PARTIAL',
+   updatedAt:new Date(now-3600000).toISOString(),sources:oldSources,events:[]},now-3600000);
+  const calls=[];
+  const restored=await collectReleaseCalendar(db,{now,fetchImpl:mock(calls)});
+  assert.notEqual(restored.status,'CACHED');
+  assert.equal(restored.sources.usda_nass,'READY');
+  assert.deepEqual(calls,[NASS_REPORT_SCHEDULE_URL]);
+  const saved=await store.readOutput(RELEASE_CALENDAR_KEY);
+  assert.equal(saved.body.sources.usda_nass.sourceUrl,NASS_REPORT_SCHEDULE_URL);
+  assert.equal(saved.body.events.filter(e=>e.source==='usda_nass').length,7);
+  const next=await collectReleaseCalendar(db,{now:now+60000,fetchImpl:mock(calls)});
+  assert.equal(next.status,'CACHED');
+  assert.equal(calls.length,1);
+ }finally{db.close();}
+});
