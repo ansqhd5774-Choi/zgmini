@@ -20,7 +20,7 @@ export const OPERATIONAL_METHODS=Object.freeze({
 });
 const here=fileURLToPath(new URL('../../',import.meta.url));
 const publicBindings='config/theme-public-operational-bindings.json';
-const researchCandidates='config/theme-nine-r20-approved-candidates.json';
+const researchCandidates='config/theme-platform-r20-research-candidates.json';
 const historicBindings='config/theme-data-registry.json';
 const spaceRoster='scripts/pc-writer/theme-space-satellite-r26-approved-roster.json';
 const required=(ok,code)=>ensure(ok,code);
