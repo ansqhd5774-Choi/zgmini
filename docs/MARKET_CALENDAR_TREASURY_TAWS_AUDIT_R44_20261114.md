@@ -394,3 +394,14 @@ Test 실행환경은 **비운영 격리 컨테이너**이고 GitHub Actions/운�
 - 실제 공식 HTML로 파서 실행 48/48 events PASS, isolated V8 fixture 수집기/보존/경계 체크 6/6 PASS 및 날짜/중복/필수 보고서 3/3 PASS. **정규 Node CI 8개 미실행**, PC 설치·Core 수집·D1 게시·Production UI 미실행. 가짜 CI·실설치 합격 판정 금지.
 - **최신 main 보호:** 전용 브랜치 구형 collector는 약 36줄, 현재 main collector는 약 556줄. 구 버전 collector 또는 UI를 main·운영 PC에 덮어쓰면 최신 FOMC/EIA/TIC/Treasury/ER1 훼손 위험. 따라서 구형 collector 수정 0. 정식 결합에는 현재 main 원본 기준으로 신규 source spec/adapter에 대한 최소 수집 루프 branch+failure preserves, 현재 main UI의 source ID whitelist 반영, Node CI, 승인 Writer B 설치가 남았다. 전용 브랜치 전체 merge/rebase 및 무승인 main/운영 설치 금지.
 - 진행률 W02 **95% 잠정 유지**, ZGMINI **57.4%** 유지. 다음 실작업은 현행 main 기반 최소 선택적 결합 및 CI이며 사용자 홈페이지 검증 요청은 전체 개발 완료 뒤에만. PC/DB/D1/Cloudflare/예약 변경 없음.
+
+<!-- w02-r84-nass-regular-ci-reuse-20261115 -->
+## R84 — USDA-NASS 정규 CI 성공 원담당 인수, 중복 소스 작업 종료
+
+원담당 단독 Git 객체 commit `8f7789aefe67b1f0d63ff7220f3eca7db98c15b8` (main `84b889687a1d23f81a182a6d5b62100027386a9f`의 1-커밋 자식, 5개 기능 파일)과 독립 사전지원 Draft PR #1093 최종 HEAD `4ef960ac7b24e4f7c16d009086b8c1f2a5c24714`의 **동일 5개 변경 파일을 실제 GitHub blob SHA 5/5 동일** 확인. Parser `810fb397...`, parser test `3c7f3335...`, source registry `b0f31725...`, 556줄 기존 Core collector 최소 결합 `9fcc26de...`, 최신 market-calendar UI `2f5c71eb...`. **한 개의 통합 기능만 존재**하며 원담당 detached Git commit과 support PR을 중복 반영하면 안 된다.
+
+독립 지원은 해당 동일 5개 파일과 합성 실연결 2개 테스트 파일을 합해 **Draft PR #1093 (7파일)**에 올려 [GitHub Node CI #43691902671](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43691902671) **completed/success** 달성. Build/Type PASS, 4198 tests (4188 PASS, 0 FAIL, 7 SKIP, 3 TODO), NASS 8+신규 Core 연동 3 PASS, PC publication recovery 11 PASS, Cloudflare read contract 69 PASS. W02 R82/R83에 기록한 '정규 CI 미실행'은 **이후 확보된 실제 최종 PR #1093 증거로 해소됨**. 테스트 재실행·재구현·새 임시 PR/브랜치 불필요.
+
+**남은 실운영 단계 / 현재 차단 지점:** PR #1093는 `[NO MERGE]` 제목의 **Draft**이며 main HEAD는 여전히 `84b88968...`. Source `main` 미병합, 승인 운영 Windows 3파일 (`lib/market-calendar-usda-nass.mjs`, `lib/release-calendar.mjs`, `scripts/pc-writer/release-calendar.mjs`) 설치 전, 정규 Core/SQLite raw·output/NASS 48건·D1/API/UI 실제 신규 반영 미관측. PR Draft가 자동으로 운영 설치 권한을 부여하지는 않는다. **승인된 중앙 통합 Owner만** #1093의 동일 5파일과 필요 회귀 2파일을 단일 경로로 선택 반영하며, 현재 PC 실제 preimage 수집·보호 원장·B source install manifest의 기존 승인 경로에 따라 운영 3파일을 적용한다. 공유 설치 새 잠금 해제·임의 CMD/Provider GET/SQL/D1/Cloudflare 배포 및 예약 변경 금지. 새 권리/lineage Gate를 더하지 않는다.
+
+**진행률:** W02 기존 95% 잠정, 전체 ZGMINI 이전 무가중 57.4% 유지. 공식 NASS 페이지 48개 파서 및 전체 CI는 완료, 실운영 미완료이므로 전체 완료(100%) 주장하지 않는다. 사용자의 홈페이지 최종 육안 검증 요청은 모든 기능 실제 마무리 후만.
