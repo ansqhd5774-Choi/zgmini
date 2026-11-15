@@ -83,11 +83,24 @@ function validatePrepared(preflight,now){
 // 'prepared' is useful for pure tests; production calls the guarded wrapper
 // below, which *replays* the stored source and verifies the operator approval.
 export async function publishPreparedConfiguredThemeD1({preflight,query,now=Date.now(),
- expectedStoredAt=null}={}){
+ expectedStoredAt=null,expectedHandoff=null}={}){
  if(typeof query!=='function'||!Number.isSafeInteger(now)||now<=0||
   (expectedStoredAt!==null&&(!Number.isSafeInteger(expectedStoredAt)||expectedStoredAt<=0)))
   fail('ADAPTER_CLOCK_OR_EXPECTED_STAMP');
  const candidate=validatePrepared(preflight,now),key=preflight.feedKey;
+ // The scheduled R32 path verifies an immutable private score before opening
+ // D1. Recheck that exact proof against the publisher's fresh local preflight:
+ // source or operator-approval drift must not change the published candidate.
+ if(expectedHandoff!==null){
+  const h=expectedHandoff;
+  if(h?.status!=='LOCAL_HANDOFF_MATCH_NOT_PUBLISHED'||
+   h.feedKey!==key||h.scoreArtifactSha256!==candidate.candidateSha256||
+   h.observationDate!==candidate.observationDate||
+   h.sourceVersion!==candidate.sourceVersion||
+   h.localApprovalSha256!==candidate.approvalSha256||
+   h.publicationExecuted!==false||h.d1Writes!==0)
+   fail('HANDOFF_DRIFT');
+ }
  const select=async()=>{
   const r=await query(READ,[key],{write:false}),row=r?.results?.[0];
   if(!row)return null;
@@ -147,8 +160,8 @@ export async function publishPreparedConfiguredThemeD1({preflight,query,now=Date
 // Only this entry point is for live callers: local preflight is re-run at
 // publish time and a caller cannot supply an old approved candidate.
 export async function publishConfiguredThemeD1({dataRoot,id,query,now=Date.now(),
- expectedStoredAt=null}={}){
+ expectedStoredAt=null,expectedHandoff=null}={}){
  const {preflightConfiguredPublication}=await import('./theme-config-publication-preflight.mjs');
  const preflight=preflightConfiguredPublication({dataRoot,id,now});
- return publishPreparedConfiguredThemeD1({preflight,query,now,expectedStoredAt});
+ return publishPreparedConfiguredThemeD1({preflight,query,now,expectedStoredAt,expectedHandoff});
 }

@@ -116,3 +116,33 @@ test('502 before commit preserves D1 state and never retries write',async()=>{
  assert.equal(db.row,null);
  assert.equal(db.calls.filter(c=>c.write).length,1);
 });
+
+test('W03 final Writer enforces immutable score, source and approval identity before D1 I/O',async()=>{
+ const expectedHandoff={
+  status:'LOCAL_HANDOFF_MATCH_NOT_PUBLISHED',feedKey:key,
+  scoreArtifactSha256:candidate.candidateSha256,
+  observationDate:candidate.observationDate,sourceVersion:candidate.sourceVersion,
+  localApprovalSha256:candidate.approvalSha256,
+  publicationExecuted:false,d1Writes:0
+ };
+ for(const changed of [
+  {scoreArtifactSha256:'f'.repeat(64)},
+  {observationDate:'2026-10-27'},
+  {sourceVersion:'GMH_MANIFEST_SHA256_'+'e'.repeat(64)},
+  {localApprovalSha256:'e'.repeat(64)},
+  {publicationExecuted:true},{d1Writes:1},{feedKey:key+'-wrong'}
+ ]){
+  const db=fakeD1();
+  await assert.rejects(publishPreparedConfiguredThemeD1({
+   preflight:prepared(),query:db.query,now,
+   expectedHandoff:{...expectedHandoff,...changed}
+  }),/THEME_CONFIG_PUBLIC_HANDOFF_DRIFT/);
+  assert.equal(db.calls.length,0);
+ }
+ const db=fakeD1();
+ const result=await publishPreparedConfiguredThemeD1({
+  preflight:prepared(),query:db.query,now,expectedHandoff
+ });
+ assert.equal(result.status,'WRITTEN_AND_READBACK_VERIFIED');
+ assert.equal(db.calls.filter(call=>call.write).length,1);
+});

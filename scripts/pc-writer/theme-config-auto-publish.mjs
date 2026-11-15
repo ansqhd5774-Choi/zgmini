@@ -47,6 +47,7 @@ export async function runConfiguredAutoPublish({dataRoot,now=Date.now(),
    continue;
   }
   eligible++;
+  let expectedHandoff=null;
   if(definition.schema==='ZGMINI_THEME_CONFIG_V2'){
    if(r32ReaderReady===null){
     try{
@@ -77,6 +78,7 @@ export async function runConfiguredAutoPublish({dataRoot,now=Date.now(),
     results.push({id,status:'PUBLICATION_BLOCKED',
      reason:handoff?.reason??'CONFIG_PUBLIC_STORED_HANDOFF_MISMATCH'});continue;
    }
+   expectedHandoff=handoff;
   }
   if(!queryAttempted){
    queryAttempted=true;
@@ -108,7 +110,7 @@ export async function runConfiguredAutoPublish({dataRoot,now=Date.now(),
    // its own CAS select, optional write and exact D1 readback.
    publish??=(await import('./theme-config-publication-d1.mjs'))
     .publishConfiguredThemeD1;
-   const result=await publish({dataRoot:root,id,query:measuredQuery,now,expectedStoredAt});
+   const result=await publish({dataRoot:root,id,query:measuredQuery,now,expectedStoredAt,expectedHandoff});
    d1Writes+=result.written??0;
    results.push({id,status:result.status,
     observationDate:result.observationDate,storedAt:result.storedAt});
