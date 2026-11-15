@@ -59,7 +59,7 @@ export default function CollectionHealthIndicator(){
  },[open]);
  const verified=health?.total!==null&&health?.total!==undefined&&health.total>0;
  const headline=verified
-  ?'외부 API 수집처 '+health!.total+'곳 관측 · HTTP 응답 '+(health!.normal??0)+' · 오류/지연 '+(health!.failed??0)
+  ?'외부 API 수집처 '+health!.total+'곳 관측 · HTTP 응답 '+(health!.normal??0)+' · 오류/지연 '+(health!.failed??0)+((health!.unknown??0)>0?' · 미확인 '+health!.unknown:'')
   :'외부 API 연결 상태 미확인';
  const records=health?.items?.filter(item=>item.repeated)??[];
  const state=health?.status??'unknown';

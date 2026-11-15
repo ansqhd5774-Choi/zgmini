@@ -30,9 +30,12 @@ export function summarizeApiConnectionHealth(snapshot,now=Date.now()){
   seen.add(raw.host);
   const repeated=raw.observedDays>=2&&raw.requests>=2;
   const age=raw.lastAttemptAt===null?Infinity:now-raw.lastAttemptAt;
-  const overdue=repeated&&raw.expectedIntervalMs!==null&&age>Math.max(30*60_000,Math.round(raw.expectedIntervalMs*2.5));
+  // Three isolated collection days can include an intraday burst; the median
+  // of that burst is not reliable evidence of an hourly recurring schedule.
+  const cadenceSupported=raw.observedDays>=7&&raw.expectedIntervalMs!==null;
+  const overdue=repeated&&cadenceSupported&&age>Math.max(30*60_000,Math.round(raw.expectedIntervalMs*2.5));
   const lastFailure=raw.lastOutcome==='failure'||raw.lastOutcome==='mixed';
-  const tooOldWithoutCadence=repeated&&raw.expectedIntervalMs===null&&age>36*3600_000;
+  const tooOldWithoutCadence=repeated&&!cadenceSupported&&age>36*3600_000;
   const state=!repeated?'unknown':overdue?'stale':tooOldWithoutCadence?'unknown':lastFailure?'failed':raw.lastOutcome==='success'?'normal':'unknown';
   items.push({host:raw.host,requests:raw.requests,observedDays:raw.observedDays,
     repeated,lastAttemptAt:raw.lastAttemptAt,lastSuccessAt:raw.lastSuccessAt,
