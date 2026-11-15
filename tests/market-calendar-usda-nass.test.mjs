@@ -91,6 +91,18 @@ test('collector uses one official GET, saves private HTML, reparses readback and
  assert.equal(result.events.some(e=>e.date==='2026-12-11'),false);
  assert.equal(result.events.some(e=>e.source==='usda'),false);
 });
+test('same-count tampering of a saved official date fails exact readback comparison',async()=>{
+ const now=Date.parse('2026-11-15T12:00:00Z');
+ const html=sourceHtml();
+ const store={
+  async writeInput(){},
+  async readInput(){return {body:{text:html.replace('2026-12-10','2026-12-11')}};}
+ };
+ await assert.rejects(collectNassReportSchedule({store,key:'release-calendar',now,
+  fetchImpl:async()=>new Response(html,{status:200,headers:{'content-type':'text/html'}})}),
+  /NASS_STORED_EVENTS_MISMATCH/);
+});
+
 test('HTTP/content-type/store readback failure cannot claim collection success',async()=>{
  const now=Date.parse('2026-11-15T12:00:00Z');
  const store={async writeInput(){},async readInput(){return {body:{text:'not official'}}}};
