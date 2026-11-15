@@ -34,6 +34,7 @@ function fixture(t){
   definition:{schema:'ZGMINI_THEME_CONFIG_V2',id,label,etfs:['AAA'],
    profile:R32,aumEvidence:{path:'approval/test.json',sha256:suffix('f')}}};
  const confirmed={status:'READY',version:CONFIGURED_V2,themeId:id,
+  etfs:['AAA'],methodologyVersion:R32,
   definitionSha256:registration.sha256,approvalSha256:suffix('e'),
   candidateSha256:suffix('c'),publicationAuthorized:true,
   sourceVersion:'GMH_MANIFEST_SHA256_'+suffix('1'),
