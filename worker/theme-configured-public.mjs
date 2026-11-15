@@ -90,8 +90,10 @@ export async function readConfiguredThemes(db,{now=Date.now()}={}){
  for(const row of rows){
   let record;
   try{record=JSON.parse(row.body);}catch{continue;}
-  if(!eligibleConfiguredPublic(record,row.feed_key,Number(row.stored_at),now))
-   continue;
+  // Malformed stored records must not hide other verified themes.
+  let eligible=false;
+  try{eligible=eligibleConfiguredPublic(record,row.feed_key,Number(row.stored_at),now);}catch{continue;}
+  if(!eligible)continue;
   if(record.version===CONFIGURED_V2)r32Records.set(record.themeId,record);
   themes.push({id:record.themeId,theme:record.theme,etfs:[...record.etfs],
    methodologyVersion:record.methodologyVersion,observationDate:record.observationDate,
