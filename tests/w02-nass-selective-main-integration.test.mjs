@@ -60,7 +60,7 @@ test('UI accepts NASS only with matching official provider and leaves original I
 });
 test('missing or multiple source anchors fail closed rather than rewriting unrelated code',()=>{
  assert.throws(()=>patchRegistry(registry().replace(usdaEntry,'no USDA')),/NASS_REGISTRY_MISSING/);
- assert.throws(()=>patchCollector(collector().replace("source==='usda'","source==='other'"))/NASS_COLLECTOR_ANCHOR_MISMATCH/);
+ assert.throws(()=>patchCollector(collector().replace("source==='usda'","source==='other'")),/NASS_COLLECTOR_ANCHOR_MISMATCH/);
  assert.throws(()=>patchUi(ui().replace('||usdaEvent||cftcEvent','||x||cftcEvent')),/NASS_UI_EVENT_ANCHOR_MISMATCH/);
 });
 test('stale or incomplete main checkout cannot be accepted as an integration preimage',()=>{
