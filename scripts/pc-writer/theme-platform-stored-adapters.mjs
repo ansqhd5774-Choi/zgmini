@@ -103,9 +103,11 @@ export function createVerifiedStoredProvisionalCalculator({readFeed,readPublicBa
  decoder=null,calculateR88=calculateStoredR88,
  optionalFactory=createVerifiedOptionalProvisionalCalculator,
  configuredCalculator=calculateStoredConfiguredProvisional}={}){
- need(typeof readFeed==='function','THEME_STORED_PUBLIC_READBACK_REQUIRED');
  need(now instanceof Date&&!Number.isNaN(now.getTime()),'THEME_STORED_CLOCK');
- const optional=optionalFactory({readFeed,now,decoder});
+ // Registered provisional is replayed from saved inputs and needs no D1 reader.
+ // Only the two optional public families require approved fixed-key D1 access.
+ const optional=typeof readFeed==='function'?
+  optionalFactory({readFeed,now,decoder}):null;
  return async({dataRoot,theme,group,confirmedResult}={})=>{
   if(group==='r37'){
    // The existing public API projects modelRevision and R88 Reader version;
@@ -118,8 +120,10 @@ export function createVerifiedStoredProvisionalCalculator({readFeed,readPublicBa
     'THEME_STORED_R32_PUBLIC_API_INVALID');
    return calculateR88({dataRoot,publicBase,confirmedResult,now,decoder});
   }
-  if(group==='data-center'||group==='space')
+  if(group==='data-center'||group==='space'){
+   need(optional,'THEME_STORED_PUBLIC_READBACK_REQUIRED');
    return optional({dataRoot,theme,group,confirmedResult});
+  }
   if(group==='configured:'+theme.id)
    return configuredCalculator({dataRoot,theme,confirmedResult,now,decoder});
   need(false,'THEME_STORED_PROVISIONAL_FAMILY_UNSUPPORTED');
