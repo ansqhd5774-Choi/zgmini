@@ -160,7 +160,7 @@ test('missing or damaged private November day preserves the prior valid output',
    fs.writeFileSync(path.join(folder,'2026-11-30.json'),'not json');
    result=await refreshSavedER1MonthlyOutputs({store,now,pcHome});
    assert.equal(result.months.find(x=>x.month==='2026-11').status,
-    'MONTH_SOURCE_INVALID');
+    'MONTH_SOURCE_INVALID_ARCHIVE_20261130_ER1_AUTO_PRIVATE_DAY_INVALID');
    assert.equal(store.writes,1);
    assert.equal(JSON.stringify(store.outputs.get(key).body),previous);
   });
@@ -222,7 +222,28 @@ test('invalid source day fails independently; does not publish a misleading scor
   const store=fakeStore(savedMonth('2027-01','2026-12-31T18:00:00Z',
    {invalidDay:'2027-01-16'}));
   const result=await refreshSavedER1MonthlyOutputs({store,now});
-  assert.equal(result.months[0].status,'MONTH_SOURCE_INVALID');
+  assert.equal(result.months[0].status,
+   'MONTH_SOURCE_INVALID_DAY_20270116_EARNINGS_API_DATE_MISMATCH');
+  assert.equal(store.writes,0);
+ });
+});
+
+
+test('ER1 fixed status isolates an invalid private forecast metric without exposing data',async()=>{
+ await at('2027-01-01T14:00:00Z',async now=>{
+  const inputs=savedMonth('2027-01','2026-12-31T18:00:00Z');
+  const key='release-calendar:earnings-api:2027-01-10';
+  const input=inputs.get(key);
+  const body=JSON.parse(input.body.text);
+  body.pre[0].epsEstimate='private malformed metric';
+  inputs.set(key,{...input,body:{...input.body,text:JSON.stringify(body)}});
+  const store=fakeStore(inputs);
+  const result=await refreshSavedER1MonthlyOutputs({store,now});
+  const status=result.months[0].status;
+  assert.equal(status,
+   'MONTH_SOURCE_INVALID_ADAPTER_ER1_FORECAST_SAVED_METRIC_INVALID');
+  assert.match(status,/^[A-Z0-9_]{1,80}$/);
+  assert.ok(!JSON.stringify(result).includes('private malformed metric'));
   assert.equal(store.writes,0);
  });
 });

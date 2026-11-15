@@ -19,6 +19,15 @@ const NOV_PRIVATE_MONTH='2026-11';
 const NOV_PRIVATE_DIR='nov30-forward-days';
 const MAX_PRIVATE_BYTES=2_001_024;
 const bad=code=>{throw Error(code)};
+// Fixed, non-sensitive status codes pass through the existing A/read-only
+// ER1 writer metadata reader without exposing private issuer/vendor records.
+const invalidReason=(stage,day,error)=>{
+ const date=typeof day==='string'&&/^20\d\d-\d\d-\d\d$/.test(day)?day.replaceAll('-',''):null;
+ const code=typeof error?.message==='string'&&
+  /^(?:ER1_AUTO_PRIVATE_DAY_[A-Z_]+|EARNINGS_API_[A-Z0-9_]+|ER1_FORECAST_SAVED_[A-Z_]+)$/.test(error.message)?
+  error.message:'UNKNOWN';
+ return ['MONTH_SOURCE_INVALID',stage,date,code].filter(Boolean).join('_');
+};
 
 // The historical November capture retained 14 immutable day responses outside
 // SQLite. The normal rolling/D+30 collector stores later months in SQLite;
@@ -66,7 +75,7 @@ async function scoreSavedMonth(store,month,asOf,now,pcHome){
   let saved=await store.readInput(INPUT_PREFIX+day);
   if(!saved&&month===NOV_PRIVATE_MONTH){
    try{saved=archivedNovemberDay(pcHome,day);}
-   catch{return {month,status:'MONTH_SOURCE_INVALID',providerRequests:0};}
+   catch(error){return {month,status:invalidReason('ARCHIVE',day,error),providerRequests:0};}
    if(saved)privateDays++;
   }
   if(!saved||!Number.isSafeInteger(saved.storedAt)||saved.storedAt<1||
@@ -78,12 +87,12 @@ async function scoreSavedMonth(store,month,asOf,now,pcHome){
    parseEarningsApiDay(saved.body.text,day);
    savedDays.push({day,body:JSON.parse(saved.body.text),
     storedAt:new Date(saved.storedAt).toISOString()});
-  }catch{return {month,status:'MONTH_SOURCE_INVALID',providerRequests:0};}
+  }catch(error){return {month,status:invalidReason('DAY',day,error),providerRequests:0};}
  }
  let prepared;
  try{prepared=forecastRowsFromSaved({savedDays,asOf,
    asOfStoredAt:new Date(now).toISOString()});}
- catch{return {month,status:'MONTH_SOURCE_INVALID',providerRequests:0};}
+ catch(error){return {month,status:invalidReason('ADAPTER',null,error),providerRequests:0};}
  // A UTC-late snapshot is not eligible for a prior NY observation day.
  if(prepared.coverage.savedDays!==savedDays.length)
   return {month,status:'PIT_INPUT_INCOMPLETE',providerRequests:0};
