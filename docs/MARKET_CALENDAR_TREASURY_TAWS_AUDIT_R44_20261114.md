@@ -381,3 +381,16 @@ Test 실행환경은 **비운영 격리 컨테이너**이고 GitHub Actions/운�
 - **다음 W02 유효 작업:** 2026-10-27 승인된 최종 콘텐츠 범위(경제 발표·기업 실적·주요 시장 이벤트) 중 운영에 연결되지 않은 **권리가 확인된 구체적 공급원/실제 기능 결함**을 하나씩 구현. `2026-12 ER1 SAVED_MONTH_INCOMPLETE`(미래 자료)와 `2027 CFTC 공식 연도표 미발표`를 오류로 간주하거나 가상값 게시 금지. `2027 Census READY_WITH_FALLBACK`는 공식 annual 시도 실패 후 공식 list fallback으로 성공한 기록이므로 다른 증거 없이 시스템 실패·새 파서 결함으로 판정하지 않는다. 새로운 기능 결함이 확인되지 않는 한 중복 A/PR/문서 대기열 생성 금지.
 
 **이번 변경은 승인 기준 해석·원담당 계획 한 항목만 갱신.** 운영 PC·SQLite·D1·배포·공급자 GET·예약·W02 원장 외 담당 브랜치 무변경.
+
+<!-- w02-r81-nass-official-source-staged-20261115 -->
+## 81차 — 신규 콘텐츠 코드 구현: USDA-NASS 농업 발표 일정
+
+**종전 EIA STEO는 이미 PC 수집기에 연결돼 있으므로 중복 신규 작업을 배제.** 기존 USDA WASDE와 다른 공식 NASS 작물 생산·작황 진행·파종 의향 발표를 선택했다.
+
+- 공식 원문: https://www.nass.usda.gov/Publications/Reports_by_Release_Day/index.php . 명시된 연도 및 time datetime 속성에서만 날짜 파싱, 추정 날짜 0.
+- 재사용 안내: https://www.nass.usda.gov/Data_and_Statistics/Citation_Request/index.php . NASS 공공영역 정보 자유 다운로드·복제 허용, USDA-NASS 출처 표시 권고. 제3자 콘텐츠 임의 재배포 없음.
+- 실제 2026 NASS 원문 HTML 149,192 bytes: Crop Production 12, Crop Progress 35, Prospective Plantings 1 = **48개**, id/date 중복 0. 2026-11-15 이후 실제 인쇄 일정: 작황 11/16·11/23·11/30, 작물생산 12/10. 2027 일정 가상 생성 금지.
+- 코드: lib/market-calendar-usda-nass.mjs (Blob 810fb397a38add0a290a2a2603577546a54fa887): 공식 발표 파서·기존 비공개 input 저장/정확 재판독용 adapter. tests/market-calendar-usda-nass.test.mjs (Blob 3c7f3335a913a3ef8620253e778351fbb768df1c): 8개 Node 회귀 테스트 정의. app/market-calendar/market-calendar-client.tsx (Blob 158f131720b637fa5991d27fbadc1f86c4b859b0): 공급원 일치 검증 후 USDA NASS 3 ID 허용/원자재 분류/출처 표시. 전체 전용 브랜치 최신 작업 commit 8bed3178d2581ce8dbb3c209e1f014f24c8ebaba.
+- 실제 공식 HTML로 파서 실행 48/48 events PASS, isolated V8 fixture 수집기/보존/경계 체크 6/6 PASS 및 날짜/중복/필수 보고서 3/3 PASS. **정규 Node CI 8개 미실행**, PC 설치·Core 수집·D1 게시·Production UI 미실행. 가짜 CI·실설치 합격 판정 금지.
+- **최신 main 보호:** 전용 브랜치 구형 collector는 약 36줄, 현재 main collector는 약 556줄. 구 버전 collector 또는 UI를 main·운영 PC에 덮어쓰면 최신 FOMC/EIA/TIC/Treasury/ER1 훼손 위험. 따라서 구형 collector 수정 0. 정식 결합에는 현재 main 원본 기준으로 신규 source spec/adapter에 대한 최소 수집 루프 branch+failure preserves, 현재 main UI의 source ID whitelist 반영, Node CI, 승인 Writer B 설치가 남았다. 전용 브랜치 전체 merge/rebase 및 무승인 main/운영 설치 금지.
+- 진행률 W02 **95% 잠정 유지**, ZGMINI **57.4%** 유지. 다음 실작업은 현행 main 기반 최소 선택적 결합 및 CI이며 사용자 홈페이지 검증 요청은 전체 개발 완료 뒤에만. PC/DB/D1/Cloudflare/예약 변경 없음.
