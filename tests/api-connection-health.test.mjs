@@ -45,7 +45,7 @@ test('mixed 2xx and network error must not be labelled normal',()=>{
 });
 
 test('scheduled silence is stale only when repeated cadence has evidence',()=>{
- const stamps=[-8,-7,-6,-5,-4].map(n=>now+n*86400000);
+ const stamps=[-10,-9,-8,-7,-6,-5,-4].map(n=>now+n*86400000);
  const x=summarize(stamps.map(t=>event(t,'api.earningsapi.com','200')));
  assert.equal(x.items[0].state,'stale');assert.equal(x.failed,1);
  assert.equal(x.items[0].expectedIntervalMs,86400000);
@@ -111,4 +111,14 @@ test('14x24h rolling window can span 15 distinct KST calendar days',()=>{
  assert.equal(result.total,1);
  assert.equal(result.reason,null);
  assert.equal(result.items[0].state,'normal');
+});
+
+test('three burst-only collection days do not imply hourly source stoppage',()=>{
+ const day=86400000;
+ const ev=[-11,-10,-9].flatMap(d=>[event(now+d*day,'cdn.www.census.gov','200'),event(now+d*day+3600000,'cdn.www.census.gov','200')]);
+ const result=summarize(ev);
+ assert.equal(result.items[0].observedDays,3);
+ assert.equal(result.items[0].state,'unknown');
+ assert.equal(result.failed,0);
+ assert.equal(result.unknown,1);
 });
