@@ -49,7 +49,12 @@ export async function readRollingPublic(db,base,{now=Date.now(),allowGmhOnlyCand
  let row=null;try{row=await db.prepare("SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'").bind(THEME_ETF_ROLLING_KEY).first()}catch{return null}
  if(!row||!Number.isSafeInteger(Number(row.stored_at))||Number(row.stored_at)>now||now-Number(row.stored_at)>=PUBLIC_DISPLAY_MAX_AGE_MS)return null;
  let payload;try{payload=JSON.parse(row.body)}catch{return null}
- if(!await validRollingPublic(payload,base,{now,allowGmhOnlyCandidate}))return null;
+ // Optional R178 overlays must not crash the legacy base route on malformed
+ // confirmed seed/rolling records. Keep all existing approval and freshness gates.
+ let eligible=false;
+ try{eligible=await validRollingPublic(payload,base,{now,allowGmhOnlyCandidate});}
+ catch{return null;}
+ if(!eligible)return null;
  // Emit only the public derived-score schema already consumed by the dashboard.
  return {status:'READY',version:base.version,methodologyVersion:base.methodologyVersion,
   observationDate:payload.observationDate,confirmedObservationDate:payload.confirmedObservationDate,
