@@ -3,6 +3,7 @@
 import {RELEASE_CALENDAR_KEY,RELEASE_SOURCES,parseReleaseCalendar,parseBlsAnnualCalendar,parseBlsBedNextRelease,parseFomcAnnualCalendar,nyFedCalendarPages} from '../../lib/release-calendar.mjs';
 import {EIA_SOURCE_URLS,parseEiaScheduleHtml,parseEiaWpsrCalendarJson} from '../../lib/eia-calendar.mjs';
 import {USDA_WASDE_URL,parseUsdaWasdeHtml} from '../../lib/usda-calendar.mjs';
+import {collectNassReportSchedule} from '../../lib/market-calendar-usda-nass.mjs';
 import {CFTC_COT_URL,parseCftcCotHtml} from '../../lib/cftc-calendar.mjs';
 import {TREASURY_CUSIP_XML_URL,parseTreasuryCusipXml} from '../../lib/treasury-calendar.mjs';
 import {TIC_RELEASE_DATES_URL,parseTicReleaseDatesHtml} from '../../lib/tic-calendar.mjs';
@@ -389,6 +390,15 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
      const usda=await collectUsdaSource({store,key,now,fetchImpl,countRequest:()=>requests++,previous});
      sources.usda=usda.state;
      events.push(...usda.events);
+     continue;
+    }
+    if(source==='usda_nass'){
+     // Official USDA-NASS date feed. The adapter owns private readback;
+     // normal Core owns the 6-hour guard, locking and D1 publication.
+     const nass=await collectNassReportSchedule({store,key,now,fetchImpl,
+      countRequest:()=>requests++,previous});
+     sources.usda_nass=nass.state;
+     events.push(...nass.events);
      continue;
     }
     if(source==='cftc'){
