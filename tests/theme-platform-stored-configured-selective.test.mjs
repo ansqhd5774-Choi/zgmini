@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {calculateStoredConfiguredConfirmed} from
+import {calculateStoredConfiguredConfirmed,createConfiguredStoredPrivateAdapters} from
  '../scripts/pc-writer/theme-platform-stored-configured.mjs';
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const id='test-configured',internalId='registered-'+id,hash='a'.repeat(64);
@@ -55,4 +55,46 @@ test('unapproved or drifting saved score cannot become stage VERIFIED',t=>{
   {score:null},{observationDate:'2025-11-30'},{status:'PRIVATE_HISTORY_PENDING'},
   {etfs:['WRONG']}])
   assert.throws(()=>f.read(changes),/THEME_CONFIG_STORED_SCORE_CONTRACT/);
+});
+
+test('registered confirmed theme runs three shared private stages once without publisher',async()=>{
+ const {R32,runThemeBatch}=await import('../scripts/pc-writer/theme-platform.mjs');
+ const {OPERATIONAL_METHODS}=await import('../scripts/pc-writer/theme-platform-operational.mjs');
+ const t={id,label:'등록테마',enabled:true,public:false,
+  methodologyVersion:R32,etfs:['AAA'],benchmark:'SPY',
+  approvalSha256:hash,inputs:{
+   confirmed:{adapter:'saved-gmh',priceMode:'RAW'},
+   provisional:{adapter:'saved-gmh',priceMode:'RAW'}
+  },publication:{confirmed:'logical:'+id+':confirmed',
+   provisional:'logical:'+id+':provisional'},
+  operational:{family:'configured',owner:'configured-existing'}};
+ const registry={schema:'ZGMINI_THEME_PLATFORM_V1',themes:[t]};
+ let called=0,stored;
+ const configured=createConfiguredStoredPrivateAdapters({
+  dataRoot:'fixture',calculator:()=>{called++;return {
+   artifactSha256:hash,rows:[{label:t.label,etfs:t.etfs,
+    methodologyVersion:R32,observationDate:'2026-10-28',
+    score:50,sourceVersion:'GMH_MANIFEST_'+hash,
+    history:Array.from({length:252},(_,i)=>({
+     date:i===251?'2026-10-28':
+      new Date(Date.UTC(2025,0,1+i)).toISOString().slice(0,10),
+     score:50
+    }))}]
+  };}});
+ const store={load:async()=>structuredClone(stored??null),
+  save:async(_,value,revision)=>{
+   assert.equal(revision,stored?.revision??0);
+   stored=structuredClone(value);
+  }};
+ const a=await runThemeBatch({registry,adapters:configured,store,runKey:'configured-only',
+  formulas:OPERATIONAL_METHODS});
+ assert.equal(called,1,'confirmed replay must be shared across all three stages');
+ assert.equal(a.status,'PARTIAL','unimplemented provisional must fail closed');
+ assert.equal(a.results[0].status,'COMPLETE');
+ assert.equal(a.results[1].code,'THEME_CONFIG_STORED_PROVISIONAL_NOT_CONNECTED');
+ assert.equal(stored.tasks[id+':confirmed'].completed.validate.publicationAuthorized,false);
+ const b=await runThemeBatch({registry,adapters:configured,store,runKey:'configured-only',
+  formulas:OPERATIONAL_METHODS});
+ assert.equal(b.executed,1,'only blocked provisional should retry');
+ assert.equal(called,1);
 });
