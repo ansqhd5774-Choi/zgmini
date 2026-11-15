@@ -13,6 +13,7 @@ type ApiHealth={
  checkedAt?:string;status:'healthy'|'partial'|'stale'|'unknown';
  normal:number|null;total:number|null;failed:number|null;unknown:number|null;
  unverifiedSingles?:number;items?:ProviderItem[];reason?:string|null;
+ endpointEvidence?:{coverage:'PARTIAL';observedFingerprintCount:number|null;observedHostCount:number;endpointIncompleteEvents:number;independentCollectorsCovered:false}|null;
 };
 const labelOf=(state:ProviderItem['state'])=>
  state==='normal'?'HTTP 응답 확인':state==='failed'?'최근 요청 오류':
@@ -75,6 +76,9 @@ export default function CollectionHealthIndicator(){
    <strong>{headline}</strong>
    <span>최근 14일 반복 호출이 관측된 외부 공급자 호스트 기준</span>
    <span>전체 API 개수는 아직 미확정 · 미관측 수집기는 정상으로 계산하지 않음</span>
+   <span>{health?.endpointEvidence?.observedFingerprintCount!=null
+    ?'HTTP 메서드·경로 지문 '+health.endpointEvidence.observedFingerprintCount+'개 관측 (부분 증거)'
+    :'개별 API 경로 계측 자료 미확보'}</span>
    {records.length>0&&<ul className="zg-api-connection-list">
     {records.slice(0,16).map(item=><li key={item.host}>
      <span>{item.host}</span>
