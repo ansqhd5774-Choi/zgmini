@@ -69,7 +69,7 @@ export async function calculateStoredConfiguredProvisional({
    record.approvalSha256===confirmed.approvalSha256&&
    record.candidateSha256===confirmed.candidateSha256&&
    record.publicationAuthorized===true&&
-   record.sourceVersion?.startsWith('R32_PROVISIONAL_SHA256_')&&
+   /^R32_PROVISIONAL_SHA256_[a-f0-9]{64}$/.test(record.sourceVersion??'')&&
    validR32History(record)&&validConfiguredProvisional(record),
    'THEME_CONFIG_PROVISIONAL_CONTRACT_INVALID');
   candidates.push({record,bytes,artifactSha256:sha(bytes)});
@@ -88,6 +88,10 @@ export async function calculateStoredConfiguredProvisional({
  need(saved?.rows instanceof Map&&saved.hashes instanceof Map&&
   record.sourceFiles.every(f=>saved.hashes.get(f.date)===f.sha256),
   'THEME_CONFIG_PROVISIONAL_RAW_SHA_MISMATCH');
+ // Source timestamps are part of the existing saved-data provenance contract.
+ // A different file observation time cannot impersonate the original candidate.
+ need(saved.sourceStoredAt===record.sourceStoredAt,
+  'THEME_CONFIG_PROVISIONAL_SOURCE_TIME_MISMATCH');
  const sessions=sessionReader({dataRoot,registration}).sessions;
  const aum=evidenceReader(dataRoot,definition.aumEvidence);
  const recomputed=calculate({definition,sessions,aum,confirmed,
