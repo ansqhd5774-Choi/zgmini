@@ -20,7 +20,7 @@ export function summarizeApiConnectionHealth(snapshot,now=Date.now()){
  const seen=new Set(),items=[];
  for(const raw of snapshot.items){
   if(typeof raw?.host!=='string'||!PUBLIC_HOST(raw.host)||seen.has(raw.host)||
-    !nonnegative(raw.requests)||!nonnegative(raw.observedDays)||raw.observedDays>14||
+    !nonnegative(raw.requests)||!nonnegative(raw.observedDays)||raw.observedDays>15||
     !['success','failure','mixed','unknown'].includes(raw.lastOutcome)||
     (raw.lastAttemptAt!==null&&!time(raw.lastAttemptAt,now))||
     (raw.lastSuccessAt!==null&&!time(raw.lastSuccessAt,now))||
