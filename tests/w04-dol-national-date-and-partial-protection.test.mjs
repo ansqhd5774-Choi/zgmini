@@ -137,3 +137,37 @@ test('W04 failed national HTTP 200 classified without persisting provider error 
  assert.equal(fetched.nationalResponseEvidence.bodyCharLength,bad.length);
  assert.ok(!JSON.stringify(fetched.nationalResponseEvidence).includes('private-response-must-not-leak'));
 });
+
+test('W04 national mixed-week release retains latest availableAt per separate series',()=>{
+  const retrievedAt='2026-11-15T00:00:00.000Z';
+  const releaseAt='2026-11-12T13:30:00.000Z';
+  // Synthetic official weekly release shape: initial claims refers to a newer
+  // week, while continued claims and IUR refer to the prior reporting week.
+  const newer='<week><weekEnded>11/07/2026</weekEnded>'+
+    '<InitialClaims><SA>200000</SA><SA4WK>195250</SA4WK></InitialClaims></week>';
+  const rows=parseDolNationalClaimsXml(nationalWeek('10/31/2026')+newer,{
+    retrievedAt,releaseAt,
+  });
+  assert.equal(rows.length,6,'two weeks of initial/4W, one of continued/IUR');
+  const expected=new Map([
+    ['INITIAL_CLAIMS','2026-11-07'],
+    ['INITIAL_CLAIMS_4W','2026-11-07'],
+    ['CONTINUED_CLAIMS','2026-10-31'],
+    ['INSURED_UNEMPLOYMENT_RATE','2026-10-31'],
+  ]);
+  for(const [seriesId,expectedDate] of expected){
+    const group=rows.filter(row=>row.logicalSeriesId===seriesId);
+    const newest=group.filter(row=>row.availableAt===retrievedAt);
+    assert.equal(newest.length,1,seriesId+' latest source availability');
+    assert.equal(newest[0].observationDate,expectedDate);
+    assert.equal(newest[0].releaseDate,releaseAt);
+    assert.equal(newest[0].qualityStatus,'READY_FORWARD');
+    for(const historical of group.filter(row=>row.observationDate!==expectedDate)){
+      assert.equal(historical.availableAt,null);
+      assert.equal(historical.releaseDate,null);
+      assert.equal(historical.qualityStatus,'READY_CURRENT_OR_REVISED');
+    }
+  }
+  assert.equal(rows.filter(row=>row.availableAt===retrievedAt).length,4,
+    'all four newest distinct series must be available as of same release');
+});
