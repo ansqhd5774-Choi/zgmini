@@ -6,6 +6,7 @@ import {createHash} from 'node:crypto';
 import {readRegistered,safeDirectory} from './theme-config-registry.mjs';
 import {scoreRegistered} from './theme-config-score.mjs';
 import {identity} from './theme-platform.mjs';
+import {calculateStoredConfiguredProvisional} from './theme-platform-provisional-configured.mjs';
 
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const need=(condition,code)=>{
@@ -58,35 +59,62 @@ export function calculateStoredConfiguredConfirmed({
  }]};
 }
 
-// Use the shared batch/checkpoint runner. No legacy collector or D1 import.
-// The exact stored result is reused across all three private stages.
+// Use the shared batch/checkpoint runner. No legacy collector, D1 token
+// or publication action is invoked. Both phases replay already saved input.
 export function createConfiguredStoredPrivateAdapters({dataRoot,
- calculator=calculateStoredConfiguredConfirmed}={}){
+ calculator=calculateStoredConfiguredConfirmed,
+ provisionalCalculator=calculateStoredConfiguredProvisional,
+ now=new Date(),decoder=null}={}){
  need(typeof dataRoot==='string'&&dataRoot,'THEME_CONFIG_STORED_DATA_ROOT');
+ need(now instanceof Date&&!Number.isNaN(now.getTime()),'THEME_CONFIG_STORED_CLOCK');
  const cache=new Map();
+ const saved=(theme,kind)=>{
+  const key=kind+':'+theme.id;
+  if(!cache.has(key))cache.set(key,Promise.resolve().then(async()=>{
+   if(kind==='confirmed')return calculator({dataRoot,id:theme.id});
+   if(kind==='provisional')return provisionalCalculator({
+    dataRoot,theme,confirmedResult:await saved(theme,'confirmed'),now,decoder
+   });
+   need(false,'THEME_CONFIG_STORED_KIND_UNSUPPORTED');
+  }));
+  return cache.get(key);
+ };
  const stage=async({theme,kind,stage,completed}={})=>{
   need(theme?.operational?.family==='configured'&&
    typeof theme.id==='string','THEME_CONFIG_STORED_FAMILY');
-  need(kind==='confirmed','THEME_CONFIG_STORED_PROVISIONAL_NOT_CONNECTED');
-  if(!cache.has(theme.id))
-   cache.set(theme.id,Promise.resolve().then(()=>calculator({dataRoot,id:theme.id})));
-  const batch=await cache.get(theme.id);
+  const batch=await saved(theme,kind);
   const row=batch?.rows?.find(x=>x.label===theme.label);
-  need(/^[a-f0-9]{64}$/.test(batch?.artifactSha256??'')&&
-   row?.methodologyVersion===theme.methodologyVersion&&
+  const consistent=Array.isArray(row?.etfs)&&
+   row.methodologyVersion===theme.methodologyVersion&&
    JSON.stringify(row.etfs)===JSON.stringify(theme.etfs)&&
-   typeof row.sourceVersion==='string'&&row.sourceVersion&&
-   Array.isArray(row.history)&&row.history.length===252&&
+   typeof row.sourceVersion==='string'&&!!row.sourceVersion&&
+   /^\\d{4}-\\d{2}-\\d{2}$/.test(row.observationDate??'')&&
+   validScore(row.score);
+  const confirmed=kind==='confirmed'&&
+   Array.isArray(row?.history)&&row.history.length===252&&
    row.history.at(-1)?.date===row.observationDate&&
-   row.history.at(-1)?.score===row.score&&validScore(row.score),
+   row.history.at(-1)?.score===row.score;
+  const provisional=kind==='provisional'&&
+   batch?.historicalReaderContract==='LOCAL_SAVED_R32_REPLAY_VERIFIED'&&
+   batch?.currentVisibility==='UNKNOWN_D1_STORED_AT_NOT_READ'&&
+   /^\\d{4}-\\d{2}-\\d{2}$/.test(row?.confirmedObservationDate??'')&&
+   row.confirmedObservationDate<row.observationDate&&
+   Array.isArray(row.points)&&row.points.length>0&&
+   row.points.at(-1)?.date===row.observationDate&&
+   row.points.at(-1)?.score===row.score;
+  need(/^[a-f0-9]{64}$/.test(batch?.artifactSha256??'')&&
+   consistent&&(confirmed||provisional),
    'THEME_CONFIG_STORED_PROJECTION_MISMATCH');
   return {
    status:'VERIFIED',artifactSha256:batch.artifactSha256,
    methodologyVersion:theme.methodologyVersion,
    definitionSha256:identity(theme),
    calculationSha256:completed?.calculate?.artifactSha256,
-   observationDate:row.observationDate,
-   sourceVersion:row.sourceVersion,
+   observationDate:row.observationDate,sourceVersion:row.sourceVersion,
+   ...(provisional?{
+    historicalReaderContract:batch.historicalReaderContract,
+    currentVisibility:batch.currentVisibility
+   }:{}),
    stage,existingOwner:true,publicationAuthorized:false
   };
  };
