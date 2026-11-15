@@ -69,7 +69,18 @@ async function collectPair({dataRoot,themeId,start,end,maxRequests=4,fetchImpl=f
     const rows=body.split(/\r?\n/).filter(Boolean).map(JSON.parse);
     if(configured&&!rows.length){delete state.failedAt;delete state.reason;state.lastEmptyAt=requestedAt;atomic(stateFile,state);report.status='WAIT_SOURCE_EMPTY';return report;}
     if(!rows.length||rows.length>5000)throw Error('ROW_COUNT');
-    // Reject provider rows outside the requested UTC range or marked as gaps.,    // Validate the entire response before raw persistence and cursor advance.,    let previous='';,    for(const row of rows){,     const millis=typeof row.timestamp==='string'?Date.parse(row.timestamp):NaN;,     const utcDay=Number.isFinite(millis)?new Date(millis).toISOString().slice(0,10):null;,     if(row.symbol!==symbol||!utcDay||utcDay<start||utcDay>end||,       row.is_gap!==false||typeof row.close!=='number'||,       !Number.isFinite(row.close)||row.close<=0||,       (previous&&row.timestamp<=previous))throw Error('BAR_INVALID');,     previous=row.timestamp;,    }
+    // Reject provider rows outside the requested UTC range or marked as gaps.
+    // Validate the entire response before raw persistence and cursor advance.
+    let previous='';
+    for(const row of rows){
+     const millis=typeof row.timestamp==='string'?Date.parse(row.timestamp):NaN;
+     const utcDay=Number.isFinite(millis)?new Date(millis).toISOString().slice(0,10):null;
+     if(row.symbol!==symbol||!utcDay||utcDay<start||utcDay>end||
+       row.is_gap!==false||typeof row.close!=='number'||
+       !Number.isFinite(row.close)||row.close<=0||
+       (previous&&row.timestamp<=previous))throw Error('BAR_INVALID');
+     previous=row.timestamp;
+    }
     const digest=hash(body),relative='raw/'+symbol+'_'+digest+'.jsonl',dest=path.join(raw,symbol+'_'+digest+'.jsonl');
     if(!fs.existsSync(dest))fs.writeFileSync(dest,body,{flag:'wx'});if(hash(fs.readFileSync(dest))!==digest)throw Error('RAW_READBACK');
     const dates=rows.map(r=>nyDate.format(new Date(r.timestamp))).sort();
