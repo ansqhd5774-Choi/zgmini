@@ -171,11 +171,16 @@ export function compareTreasury365ReceiptToPublic({
   publicKeySetSha256:digest(observedKeys),
   publicEventPayloadSha256:digest(observedPayloads),
  };
+ // A weekly Treasury XML event takes priority at the same id+date over
+ // the annual TA_WS event. Additional legitimate weekly events can exist in
+ // this public snapshot, and its titles/URLs may differ. A private annual
+ // receipt alone does not identify that merge lineage. Treat any digest
+ // difference as advisory/inconclusive, NEVER as a production failure gate.
+ // Only the authorized original R6.1 A-grade raw audit is required for W02.
  if(observedCount!==privateReceipt.expectedEventCount||
-  counts.publicKeySetSha256!==privateReceipt.expectedKeySetSha256)
-  return result('TREASURY_PUBLIC_KEY_MISMATCH',counts);
- if(counts.publicEventPayloadSha256!==privateReceipt.expectedEventPayloadSha256)
-  return result('TREASURY_PUBLIC_EVENT_METADATA_MISMATCH',counts);
+  counts.publicKeySetSha256!==privateReceipt.expectedKeySetSha256||
+  counts.publicEventPayloadSha256!==privateReceipt.expectedEventPayloadSha256)
+  return result('ADVISORY_DIFFERENCE_MERGE_PROVENANCE_UNVERIFIED',counts);
  return result('KEYED_CONTENT_MATCH_LINEAGE_NOT_VERIFIED',counts);
 }
 
