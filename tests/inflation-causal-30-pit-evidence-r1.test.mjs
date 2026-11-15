@@ -82,7 +82,9 @@ test('missing data is not zero and release/store ordering remains protected',()=
 });
 
 test('historical observations dated after the decision cutoff stay unavailable',()=>{
- const out=evaluate({'2':[row({observationDate:'2026-05-01'})]});
+ const out=evaluate({'2':[row({observationDate:'2026-05-01',
+  availableAt:'2026-05-02T00:00:00.000Z',
+  sourceStoredAt:'2026-05-02T01:00:00.000Z'})]});
  assert.equal(candidate(out,'2').status,'PIT_UNVERIFIED');
  assert.equal(candidate(out,'2').firstFail.reason,'NOT_YET_AVAILABLE_AT_CUTOFF');
 });
