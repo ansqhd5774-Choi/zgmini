@@ -16,6 +16,8 @@ import {collectConsumptionR5} from './consumption-r5.mjs';
 import {overdueRateJob} from './rate-refresh-priority.mjs';
 import {collectSectorFearGreedR3EtfIncremental} from './sector-fear-greed-r3-etf-incremental.mjs';
 import {collectReleaseCalendar} from './release-calendar.mjs';
+import {collectPinnedDeltaOnce} from './market-calendar-deltascreener-input.mjs';
+import {publicFeedStore} from '../../worker/public-feed-store.mjs';
 
 export async function collectLocal(base,{lane='core',importOnly=false,job=null}={}){
  const core=localDatabase(path.join(base,'storage','core.sqlite'));
@@ -39,6 +41,7 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   const {Rev7D1Store}=await import('../../worker/korea-rev7-d1.mjs');
   if(importOnly)return {status:'LOCAL_IMPORT_PASS'};
   let result,releaseCalendar={status:'SKIPPED_KOREA_LANE',providerRequests:0},sectorFearGreedEtf={status:'SKIPPED_KOREA_LANE',providerRequests:0};
+  let deltaScreener={status:'SKIPPED_KOREA_LANE',providerRequests:0};
   let employmentR6Collection={status:'DISABLED',providerRequests:0};
   if(lane==='korea')result=await refreshKoreaRev7({env:{...env,DB:history},store:new Rev7D1Store(history,{leaseMs:600000}),now:new Date(),maxDates:1,deferCalculation:true});
   else{
@@ -65,6 +68,10 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
    }
    // Independent calendar failures cannot block market collection/publication.
    try{releaseCalendar=await collectReleaseCalendar(core,{fetchImpl:globalThis.fetch});}catch{releaseCalendar={status:'FAILED_PRESERVE_EXISTING',providerRequests:0};}
+   // Immutable dated market-cap source: one request ever, private input only.
+   // Its absence or invalidity must not stop the existing Core collection.
+   try{deltaScreener=await collectPinnedDeltaOnce({store:publicFeedStore(core),fetchImpl:globalThis.fetch,now:Date.now()});}
+   catch{deltaScreener={status:'FAILED_PREVIOUS_INPUT_PRESERVED',providerRequests:0};}
    try{
     sectorFearGreedEtf=await collectSectorFearGreedR3EtfIncremental(base,{fetchImpl:globalThis.fetch,fetchAlreadyQuotaProtected:true,now:Date.now()});
    }catch(error){
@@ -85,6 +92,7 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   report.employmentR6Collection=employmentR6Collection;
   for(const key of ['phase','reason','sourceStatus'])if(typeof result?.[key]==='string'&&/^[A-Za-z0-9_.:-]{1,120}$/.test(result[key]))report[key]=result[key];
   report.releaseCalendar=releaseCalendar;
+  report.deltaScreener=deltaScreener;
   if(result.failureDiagnostic)report.failureDiagnostic=result.failureDiagnostic;
   if(result?.sourceDiagnostic?.provider==='BLS')report.sourceDiagnostic=result.sourceDiagnostic;
   if(result?.sourceDiagnostic?.provider==='FRED')report.sourceDiagnostic=safeMacroDiagnostic(result.sourceDiagnostic);
