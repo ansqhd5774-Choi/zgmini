@@ -367,3 +367,17 @@ Test 실행환경은 **비운영 격리 컨테이너**이고 GitHub Actions/운�
 5. **다음 실제 W02 과제:** Treasury 원문 447/436과 게시 436/436의 날짜·개별 이벤트 키가 **승인된 동일 시점 실제 원문/D1 자료**에서 연계되는지 확인하고, 불일치가 실증되면 그 첫 원인만 수정. 이미 입증된 11월 ER1·FOMC를 다시 조사하지 않는다. 신규 읽기 전용 PC 요청·공유 Controller 설치·raw 출력은 독립 승인/기존 A 계약 검토 없이 생성하지 않는다. 2027 공식 CFTC 비공표를 장애로 만들어 강제 수집하지 않는다.
 
 **진행률 기록:** ER1 11월 복구 단계 100%, W02 통합 전체 95% 잠정(전체 산정 재검토 전), ZGMINI 통합 기존 57.4% 유지. W02 전역 완료/사용자 홈페이지 최종 육안 합격은 남은 실제 기능 종료 후만 결정. 미완료 예약 검증 항목/새 예약 생성 금지.
+
+
+<!-- w02-r80-treasury-a-scope-acceptance-20261115 -->
+## 80차 — Treasury 감사 승인 기준 재판정: 강화 검사 ≠ 필수 게이트
+
+**원래 승인된 Treasury R6.1의 여섯 번째 5점 작업**은 `source-inventory-runtime-readonly` A를 이용해 기존 비공개 `market_input_batches_v1`의 실제 365일 TA_WS 저장 원문의 `core.sqliteOpened`, `core.treasuryTawsInput.status=OBSERVED`, 365일 범위, `rawRowCount`, `storedAwardedCount`, `eligibleAwardedRows`, `eligibleCountMatchesStored`, `textSha256`, 원격 결과 JSON/TXT를 확인하는 것이다. 전체 데이터 본문을 노출하거나 개별 CUSIP+date 해시를 새로 출력하는 것을 요구하지 않았다.
+
+- **이 승인된 원자료 감사 항목은 충족:** PC [#1401](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1401#issuecomment-6885175399) / Run 43648101352, 운영 Control 8e2736a, `core.status=PASS`, `core.sqliteOpened=true`, `treasuryTawsInput.status=OBSERVED`, 2025-11-15~2026-11-14(양끝 포함 365일), raw 447 / awarded 436 / eligible 436, count match, text SHA256 c70216a051dd9a24a6b9189193535da23fc136f22e1e0219455d896545bf74de, JSON+TXT 2/2. 동일 작업 전체 `STATE_UNKNOWN`은 **독립 history DB의 `WAL_SIDECARS_ABSENT_UNVERIFIED`**이며 `core`의 승인 범위 Treasury 감사 실패로 확대하지 않는다.
+- **공개 정량 확인:** [#835 6889231892](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/835#issuecomment-6889231892)에서 같은 기간 Treasury auction 436/announcement 436 및 `id+date` 중복 0, 전체 `READY`. 이 자료와 A의 관측·게시 시각이 완전히 같은 게시 버전이라는 독립 계보 증거는 아니므로 그 이상의 주장은 금지한다.
+- **추가 Draft #1091 판정:** [정식 비필수 인계](https://github.com/ansqhd5774-Choi/zgmini/pull/1091#issuecomment-6890528058). `parseTreasuryDirectAuctionRows`에서 만든 단독 365일 이벤트가 실제 공개의 주간+365일 병합된 이벤트와 내용·건수까지 반드시 같아야 한다는 신규 검사는 기존 수용 조건이 아니며, 주간 원본 우선 규칙에서 정상 자료를 오류로 판정할 여지가 있다. 코드 Draft/NO MERGE·선택적 심화 감사로 유지. 실제 계보 불일치가 발견되지 않았는데 새로운 원본/CUSIP 추출 PC 작업·강제 재수집·D1 독립 SELECT를 필수로 생성하지 않는다.
+- **완료 표현:** Treasury 365일 단독 **승인 원자료 메타 감사 항목: PASS**, 기존 정규 수집·D1·UI 실측의 개별 시점 성공 증거 유효. 전체 W02 프로젝트의 가변 콘텐츠 권리·다른 발표 공급원·UI 전체 인수까지 자동 100%로 확장하지 않는다. W02 기존 95%는 정밀 재산정 전 **잠정 표시**로만 유지하되, 해당 5점을 같은 내용의 추가 검사 때문에 무기한 미완료로 보류하지 않는다.
+- **다음 W02 유효 작업:** 2026-10-27 승인된 최종 콘텐츠 범위(경제 발표·기업 실적·주요 시장 이벤트) 중 운영에 연결되지 않은 **권리가 확인된 구체적 공급원/실제 기능 결함**을 하나씩 구현. `2026-12 ER1 SAVED_MONTH_INCOMPLETE`(미래 자료)와 `2027 CFTC 공식 연도표 미발표`를 오류로 간주하거나 가상값 게시 금지. `2027 Census READY_WITH_FALLBACK`는 공식 annual 시도 실패 후 공식 list fallback으로 성공한 기록이므로 다른 증거 없이 시스템 실패·새 파서 결함으로 판정하지 않는다. 새로운 기능 결함이 확인되지 않는 한 중복 A/PR/문서 대기열 생성 금지.
+
+**이번 변경은 승인 기준 해석·원담당 계획 한 항목만 갱신.** 운영 PC·SQLite·D1·배포·공급자 GET·예약·W02 원장 외 담당 브랜치 무변경.
