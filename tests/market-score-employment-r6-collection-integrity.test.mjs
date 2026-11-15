@@ -177,15 +177,24 @@ test("DOL ETA-539 failure preserves valid national claims as a partial group", a
   assert.equal(savedRows.length, 4);
 });
 
-test("DOL national fetch failure remains FAIL without a state-only success", async () => {
+test("DOL National and ETA539 both failing never create state-only success or raw", async () => {
   let requested = 0;
   const provider = createEmploymentR6Provider({
     fetchImpl: async () => { requested++; return new Response("", { status: 503 }); },
     now: () => new Date("2026-11-09T00:00:00.000Z"),
   });
-  await assert.rejects(() => provider.fetchDolClaims({ mode: "BACKFILL", currentYear: 2026 }),
-    error => error.message.includes("HTTP_503") && error.requestCount === 1);
-  assert.equal(requested, 1);
+  const fetched=await provider.fetchDolClaims({ mode: "BACKFILL", currentYear: 2026 });
+  // Both independent sources are attempted once; neither is treated as success.
+  assert.equal(requested,2);
+  assert.equal(fetched.requestCount,2);
+  assert.equal(fetched.partialFailureCode,"DOL_NATIONAL_HTTP_FAILED");
+  assert.equal(fetched.nationalResponseEvidence.httpStatus,503);
+  assert.deepEqual(fetched.rows,[]);
+  assert.deepEqual(fetched.snapshots,[]);
+  assert.deepEqual(fetched.missingSeries,[
+    "INITIAL_CLAIMS","INITIAL_CLAIMS_4W","CONTINUED_CLAIMS",
+    "INSURED_UNEMPLOYMENT_RATE","STATE_INITIAL_CLAIMS",
+  ]);
 });
 
 test("a syntactically successful provider response with zero rows is PARTIAL, never a completed release", async () => {
