@@ -134,3 +134,12 @@ test('configured replay rejects nonidentical replay and same-date ambiguous cand
   /THEME_CONFIG_PROVISIONAL_SAME_DAY_AMBIGUOUS/);
 });
 
+
+test('MarketParquet private provisional must never publish under GMH-only rights',async()=>{
+ const {publishConfiguredProvisional}=await import('../scripts/pc-writer/theme-config-provisional.mjs');
+ let d1Queries=0;
+ await assert.rejects(publishConfiguredProvisional({dataRoot:'fixture',id,
+  query:async()=>{d1Queries++;throw Error('UNEXPECTED_D1_WRITE');}}),
+  /CONFIG_PROVISIONAL_MARKETPARQUET_PUBLIC_RIGHTS_NOT_VERIFIED/);
+ assert.equal(d1Queries,0);
+});
