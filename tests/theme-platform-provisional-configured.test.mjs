@@ -35,7 +35,8 @@ function fixture(t){
    profile:R32,aumEvidence:{path:'approval/test.json',sha256:suffix('f')}}};
  const confirmed={status:'READY',version:CONFIGURED_V2,themeId:id,
   definitionSha256:registration.sha256,approvalSha256:suffix('e'),
-  candidateSha256:suffix('c'),sourceVersion:'GMH_MANIFEST_SHA256_'+suffix('1'),
+  candidateSha256:suffix('c'),publicationAuthorized:true,
+  sourceVersion:'GMH_MANIFEST_SHA256_'+suffix('1'),
   score:49,observationDate:'2026-11-07',history};
  const prior={rows:[{label,etfs:['AAA'],methodologyVersion:R32,
   observationDate:confirmed.observationDate,score:confirmed.score,
