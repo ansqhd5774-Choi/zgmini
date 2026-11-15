@@ -33,3 +33,21 @@ test('not-yet-stored rolling output is optional, not a base read blocker',async(
  const b=seed(),db={prepare(){return{bind(){return{first:async()=>null}}}}};
  assert.equal(await readRollingPublic(db,b,{now}),null);
 });
+
+test('optional rolling overlay is fail-closed for missing seed or corrupt nested score records',async()=>{
+ const goodSeed=seed(),goodRolling=rolling(goodSeed);
+ const cases=[
+  {label:'missing confirmed seed',base:null,payload:goodRolling},
+  {label:'malformed confirmed seed',base:{},payload:goodRolling},
+  {label:'missing seed theme entry',base:{...goodSeed,themes:[null]},payload:goodRolling},
+  {label:'corrupt rolling theme entry',base:goodSeed,
+   payload:{...goodRolling,themes:[null,...goodRolling.themes.slice(1)]}},
+ ];
+ for(const c of cases){
+  const db={prepare(sql){assert.match(sql,/^SELECT /);return{bind(key){
+   assert.equal(key,THEME_ETF_ROLLING_KEY);
+   return{first:async()=>({body:JSON.stringify(c.payload),stored_at:now-500})};
+  }}}};
+  assert.equal(await readRollingPublic(db,c.base,{now}),null,c.label);
+ }
+});
