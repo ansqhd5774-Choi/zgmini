@@ -5,6 +5,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {readRegistered,safeDirectory} from './theme-config-registry.mjs';
 import {scoreRegistered} from './theme-config-score.mjs';
+import {identity} from './theme-platform.mjs';
 
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const need=(condition,code)=>{
@@ -55,4 +56,39 @@ export function calculateStoredConfiguredConfirmed({
   observationDate:result.observationDate,score:result.score,
   history:result.history,sourceVersion:result.sourceVersion
  }]};
+}
+
+// Use the shared batch/checkpoint runner. No legacy collector or D1 import.
+// The exact stored result is reused across all three private stages.
+export function createConfiguredStoredPrivateAdapters({dataRoot,
+ calculator=calculateStoredConfiguredConfirmed}={}){
+ need(typeof dataRoot==='string'&&dataRoot,'THEME_CONFIG_STORED_DATA_ROOT');
+ const cache=new Map();
+ const stage=async({theme,kind,stage,completed}={})=>{
+  need(theme?.operational?.family==='configured'&&
+   typeof theme.id==='string','THEME_CONFIG_STORED_FAMILY');
+  need(kind==='confirmed','THEME_CONFIG_STORED_PROVISIONAL_NOT_CONNECTED');
+  if(!cache.has(theme.id))
+   cache.set(theme.id,Promise.resolve().then(()=>calculator({dataRoot,id:theme.id})));
+  const batch=await cache.get(theme.id);
+  const row=batch?.rows?.find(x=>x.label===theme.label);
+  need(/^[a-f0-9]{64}$/.test(batch?.artifactSha256??'')&&
+   row?.methodologyVersion===theme.methodologyVersion&&
+   JSON.stringify(row.etfs)===JSON.stringify(theme.etfs)&&
+   typeof row.sourceVersion==='string'&&row.sourceVersion&&
+   Array.isArray(row.history)&&row.history.length===252&&
+   row.history.at(-1)?.date===row.observationDate&&
+   row.history.at(-1)?.score===row.score&&validScore(row.score),
+   'THEME_CONFIG_STORED_PROJECTION_MISMATCH');
+  return {
+   status:'VERIFIED',artifactSha256:batch.artifactSha256,
+   methodologyVersion:theme.methodologyVersion,
+   definitionSha256:identity(theme),
+   calculationSha256:completed?.calculate?.artifactSha256,
+   observationDate:row.observationDate,
+   sourceVersion:row.sourceVersion,
+   stage,existingOwner:true,publicationAuthorized:false
+  };
+ };
+ return {source:stage,calculate:stage,validate:stage};
 }
