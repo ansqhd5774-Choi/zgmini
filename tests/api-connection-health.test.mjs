@@ -99,3 +99,16 @@ test('unavailable D1 fails closed and does not substitute old collection-health 
  const res=await readApiConnectionHealth({prepare(){throw Error('DB_UNAVAILABLE')}},now);
  assert.equal(res.status,503);const x=await res.json();assert.equal(x.total,null);assert.equal(x.reason,'SOURCE_UNAVAILABLE');
 });
+
+test('14x24h rolling window can span 15 distinct KST calendar days',()=>{
+ const day=24*3600000;
+ const snapshot=fixture(({base,write})=>{
+  write(Array.from({length:15},(_,i)=>event(now-(14-i)*day,'api.bls.gov','200')));
+  return buildApiConnectionHealthFromLog(base,now);
+ });
+ assert.equal(snapshot.items[0].observedDays,15);
+ const result=summarizeApiConnectionHealth(snapshot,now);
+ assert.equal(result.total,1);
+ assert.equal(result.reason,null);
+ assert.equal(result.items[0].state,'normal');
+});
