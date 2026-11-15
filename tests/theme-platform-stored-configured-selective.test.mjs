@@ -71,7 +71,10 @@ test('registered confirmed theme runs three shared private stages once without p
  const registry={schema:'ZGMINI_THEME_PLATFORM_V1',themes:[t]};
  let called=0,stored;
  const configured=createConfiguredStoredPrivateAdapters({
-  dataRoot:'fixture',calculator:()=>{called++;return {
+  dataRoot:'fixture',provisionalCalculator:async()=>{
+   throw Object.assign(new Error('APPROVAL_MISSING'),
+    {code:'THEME_CONFIG_PROVISIONAL_APPROVAL_OR_SOURCE_MISSING'});
+  },calculator:()=>{called++;return {
    artifactSha256:hash,rows:[{label:t.label,etfs:t.etfs,
     methodologyVersion:R32,observationDate:'2026-10-28',
     score:50,sourceVersion:'GMH_MANIFEST_'+hash,
@@ -89,12 +92,97 @@ test('registered confirmed theme runs three shared private stages once without p
  const a=await runThemeBatch({registry,adapters:configured,store,runKey:'configured-only',
   formulas:OPERATIONAL_METHODS});
  assert.equal(called,1,'confirmed replay must be shared across all three stages');
- assert.equal(a.status,'PARTIAL','unimplemented provisional must fail closed');
+ assert.equal(a.status,'PARTIAL','missing publication rights must fail closed');
  assert.equal(a.results[0].status,'COMPLETE');
- assert.equal(a.results[1].code,'THEME_CONFIG_STORED_PROVISIONAL_NOT_CONNECTED');
+ assert.equal(a.results[1].code,'THEME_CONFIG_PROVISIONAL_APPROVAL_OR_SOURCE_MISSING');
  assert.equal(stored.tasks[id+':confirmed'].completed.validate.publicationAuthorized,false);
  const b=await runThemeBatch({registry,adapters:configured,store,runKey:'configured-only',
   formulas:OPERATIONAL_METHODS});
  assert.equal(b.executed,1,'only blocked provisional should retry');
  assert.equal(called,1);
+});
+
+test('stored confirmed and provisional replay each once via common checkpoint with no D1',async()=>{
+ const {R32,runThemeBatch}=await import('../scripts/pc-writer/theme-platform.mjs');
+ const {OPERATIONAL_METHODS}=await import('../scripts/pc-writer/theme-platform-operational.mjs');
+ const theme={id,label:'등록테마',enabled:true,public:false,
+  methodologyVersion:R32,etfs:['AAA'],benchmark:'SPY',
+  approvalSha256:hash,inputs:{
+   confirmed:{adapter:'saved-gmh',priceMode:'RAW'},
+   provisional:{adapter:'saved-parquet',priceMode:'SPLIT_ADJUSTED'}
+  },publication:{confirmed:'logical:'+id+':confirmed',
+   provisional:'logical:'+id+':provisional'},
+  operational:{family:'configured',owner:'configured-existing'}};
+ const confirmedHistory=Array.from({length:252},(_,i)=>({
+  date:i===251?'2026-10-28':
+   new Date(Date.UTC(2025,0,1+i)).toISOString().slice(0,10),
+  score:50
+ }));
+ const savedConfirmed={artifactSha256:hash,rows:[{
+  label:theme.label,etfs:theme.etfs,methodologyVersion:R32,
+  observationDate:'2026-10-28',score:50,
+  sourceVersion:'GMH_MANIFEST_'+hash,history:confirmedHistory
+ }]};
+ const savedProvisional={artifactSha256:'b'.repeat(64),
+  historicalReaderContract:'LOCAL_SAVED_R32_REPLAY_VERIFIED',
+  currentVisibility:'UNKNOWN_D1_STORED_AT_NOT_READ',rows:[{
+   label:theme.label,etfs:theme.etfs,methodologyVersion:R32,
+   observationDate:'2026-10-29',confirmedObservationDate:'2026-10-28',
+   score:51,sourceVersion:'R32_PROVISIONAL_SHA256_'+'c'.repeat(64),
+   points:[{date:'2026-10-29',score:51}]
+  }]};
+ let confirmedCalls=0,provisionalCalls=0,state;
+ const adapters=createConfiguredStoredPrivateAdapters({dataRoot:'fixture',
+  calculator:()=>{confirmedCalls++;return savedConfirmed;},
+  provisionalCalculator:({confirmedResult,theme:t})=>{
+   provisionalCalls++;
+   assert.equal(t,theme);
+   assert.equal(confirmedResult,savedConfirmed);
+   return savedProvisional;
+  }});
+ const store={load:async()=>structuredClone(state??null),
+  save:async(_,value,revision)=>{
+   assert.equal(revision,state?.revision??0);
+   state=structuredClone(value);
+  }};
+ const args={registry:{schema:'ZGMINI_THEME_PLATFORM_V1',themes:[theme]},
+  adapters,store,runKey:'registered-stored-provisional',
+  formulas:OPERATIONAL_METHODS};
+ const first=await runThemeBatch(args);
+ assert.equal(first.status,'COMPLETE');
+ assert.equal(first.executed,6);
+ assert.equal(confirmedCalls,1);
+ assert.equal(provisionalCalls,1);
+ assert.equal(state.tasks[id+':provisional'].completed.validate.publicationAuthorized,false);
+ assert.equal(state.tasks[id+':provisional'].completed.validate.currentVisibility,
+  'UNKNOWN_D1_STORED_AT_NOT_READ');
+ const resumed=await runThemeBatch(args);
+ assert.equal(resumed.executed,0);
+ assert.equal(confirmedCalls,1);
+ assert.equal(provisionalCalls,1);
+});
+
+test('provisional cannot claim VERIFIED without saved private replay and unknown D1 visibility',async()=>{
+ const {R32}=await import('../scripts/pc-writer/theme-platform.mjs');
+ const theme={id,label:'등록테마',etfs:['AAA'],methodologyVersion:R32,
+  operational:{family:'configured'}};
+ const prior={artifactSha256:hash,rows:[{label:theme.label,etfs:theme.etfs,
+  methodologyVersion:R32,observationDate:'2026-10-28',score:50,
+  sourceVersion:'GMH_MANIFEST_'+hash,
+  history:Array.from({length:252},(_,i)=>({
+   date:i===251?'2026-10-28':
+    new Date(Date.UTC(2025,0,1+i)).toISOString().slice(0,10),
+   score:50
+  }))}]};
+ const a=createConfiguredStoredPrivateAdapters({dataRoot:'fixture',
+  calculator:()=>prior,provisionalCalculator:()=>({
+   artifactSha256:'b'.repeat(64),currentVisibility:'READY',
+   historicalReaderContract:'LOCAL_SAVED_R32_REPLAY_VERIFIED',
+   rows:[{label:theme.label,etfs:theme.etfs,methodologyVersion:R32,
+    observationDate:'2026-10-29',confirmedObservationDate:'2026-10-28',
+    score:51,sourceVersion:'R32_PROVISIONAL_SHA256_'+'c'.repeat(64),
+    points:[{date:'2026-10-29',score:51}]}]
+  })});
+ await assert.rejects(a.source({theme,kind:'provisional',stage:'source',completed:{}}),
+  /THEME_CONFIG_STORED_PROJECTION_MISMATCH/);
 });
