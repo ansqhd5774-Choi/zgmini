@@ -149,3 +149,18 @@ test('W03 R32 exact saved handoff continues to existing CAS Writer without extra
  assert.equal(result.d1Writes,1);
  assert.equal(result.providerCalls,0);
 });
+
+
+test('R32 capability is checked per methodology even when probe is shared',async t=>{
+ const home=root(t);approval(home,'first','second');let probes=0,auth=0;
+ const registrations=entries('first','second').map((r,i)=>({definition:{...r.definition,
+  schema:'ZGMINI_THEME_CONFIG_V2',profile:i===0?'R32':'R32_UNSUPPORTED'}}));
+ const result=await runConfiguredAutoPublish({dataRoot:home,now,registrations,
+  preflight:passed,
+  readCapabilities:async()=>{probes++;return {supportedMethodologies:['R32'],supportsSeparateR32Provisional:true};},
+  prepareHandoff:()=>({status:'BLOCKED',reason:'SAVED_INPUT_UNAVAILABLE'}),
+  queryFactory:()=>{auth++;throw Error('must not open D1');}});
+ assert.equal(probes,1);assert.equal(auth,0);
+ assert.equal(result.results[0].reason,'SAVED_INPUT_UNAVAILABLE');
+ assert.equal(result.results[1].reason,'CONFIG_PUBLIC_R32_READER_NOT_DEPLOYED');
+});
