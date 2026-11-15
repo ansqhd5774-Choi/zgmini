@@ -44,7 +44,7 @@ test('configured reader reopens exact stored GMH bars and refuses SHA drift befo
 
 test('registered R32 reuses existing saved-session score without inventing missing values',()=>{
  const dates=[];
- for(let t=Date.UTC(2024,0,2);dates.length<330;t+=86400000){
+ for(let t=Date.UTC(2024,0,2);dates.length<720;t+=86400000){
   const d=new Date(t),weekday=d.getUTCDay();
   if(weekday!==0&&weekday!==6)dates.push(d.toISOString().slice(0,10));
  }
