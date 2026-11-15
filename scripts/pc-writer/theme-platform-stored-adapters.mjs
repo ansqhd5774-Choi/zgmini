@@ -15,6 +15,7 @@ import {R32,identity} from './theme-platform.mjs';
 import {PAIR50,SPACE_R32} from './theme-platform-operational.mjs';
 import {calculateStoredR88} from './theme-platform-provisional-r88.mjs';
 import {createVerifiedOptionalProvisionalCalculator} from './theme-platform-provisional-optional.mjs';
+import {calculateStoredConfiguredProvisional} from './theme-platform-provisional-configured.mjs';
 
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const need=(ok,code)=>{if(!ok)throw Object.assign(new Error(code),{code});};
@@ -100,7 +101,8 @@ export function calculateStoredConfigured({dataRoot,id}={}){
 export function createVerifiedStoredProvisionalCalculator({readFeed,readPublicBase,
  now=new Date(),
  decoder=null,calculateR88=calculateStoredR88,
- optionalFactory=createVerifiedOptionalProvisionalCalculator}={}){
+ optionalFactory=createVerifiedOptionalProvisionalCalculator,
+ configuredCalculator=calculateStoredConfiguredProvisional}={}){
  need(typeof readFeed==='function','THEME_STORED_PUBLIC_READBACK_REQUIRED');
  need(now instanceof Date&&!Number.isNaN(now.getTime()),'THEME_STORED_CLOCK');
  const optional=optionalFactory({readFeed,now,decoder});
@@ -118,7 +120,9 @@ export function createVerifiedStoredProvisionalCalculator({readFeed,readPublicBa
   }
   if(group==='data-center'||group==='space')
    return optional({dataRoot,theme,group,confirmedResult});
-  need(false,'THEME_STORED_CONFIGURED_PROVISIONAL_PUBLIC_BASE_REQUIRED');
+  if(group==='configured:'+theme.id)
+   return configuredCalculator({dataRoot,theme,confirmedResult,now,decoder});
+  need(false,'THEME_STORED_PROVISIONAL_FAMILY_UNSUPPORTED');
  };
 }
 
