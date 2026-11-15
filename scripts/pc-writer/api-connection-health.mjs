@@ -10,6 +10,7 @@ const MAX_LOG_BYTES=8*1024*1024;
 const MAX_ROWS=16000;
 const MAX_HOSTS=128;
 const HOST=/^(?=.{4,180}$)[a-z0-9-]+(?:\.[a-z0-9-]+)+$/;
+const PUBLIC_HOST=host=>HOST.test(host)&&!/(?:^|\.)(?:localhost|local|internal|test|invalid)$/.test(host)&&!/^\d+(?:\.\d+){3}$/.test(host);
 const STATUSES=/^[1-5][0-9]{2}$/;
 const DAY_MS=24*3600_000;
 const kstDay=ms=>new Date(ms+9*3600_000).toISOString().slice(0,10);
@@ -57,7 +58,7 @@ export function buildApiConnectionHealthFromLog(base,now=Date.now(),{fileSystem=
   }
   if(now-at>WINDOW_MS)continue;
   for(const [host,request] of Object.entries(obj.providers)){
-   if(!HOST.test(host)||!request||!integer(request.requests)||request.requests<=0||
+   if(!PUBLIC_HOST(host)||!request||!integer(request.requests)||request.requests<=0||
      !request.statuses||typeof request.statuses!=='object'||Array.isArray(request.statuses)){
     invalidEvents++;continue;
    }
