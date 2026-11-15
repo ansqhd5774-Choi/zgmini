@@ -44,6 +44,13 @@ export function configuredProvisionalCandidate({definition,sessions,aum,confirme
   sourcePriceMode:CONFIGURED_PROVISIONAL_MODE,sourcePriceReconciled:false,overlapPriceDifferences:overlaps};
 }
 export async function publishConfiguredProvisional({dataRoot,id,query,now=Date.now(),decoder=null}={}){
+ // Only the unlicensed/private MarketParquet R45 input is available to this
+ // adapter. The GMH confirmed source approval cannot grant rights to another
+ // provider's daily sample. This public path cannot be enabled by a forged
+ // D1 query or an unrelated GMH operator attestation.
+ // A future independently licensed MarketParquet source requires its own
+ // approved rights evidence and a separate change; private replay is intact.
+ ensure(false,'CONFIG_PROVISIONAL_MARKETPARQUET_PUBLIC_RIGHTS_NOT_VERIFIED');
  const r=readRegistered(dataRoot,id);if(r.definition.schema!=='ZGMINI_THEME_CONFIG_V2')return {status:'LEGACY_V1_UNCHANGED',written:0};
  const prepared=preflightConfiguredPublication({dataRoot,id,now});ensure(prepared.status==='PREFLIGHT_PASS_NO_REMOTE_ACCESS',prepared.reason??'CONFIG_PROVISIONAL_PREFLIGHT');
  const confirmedKey='theme-configured:'+id,select="SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'";
