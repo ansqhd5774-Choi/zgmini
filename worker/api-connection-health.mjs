@@ -31,7 +31,8 @@ export function summarizeApiConnectionHealth(snapshot,now=Date.now()){
   const age=raw.lastAttemptAt===null?Infinity:now-raw.lastAttemptAt;
   const overdue=repeated&&raw.expectedIntervalMs!==null&&age>Math.max(30*60_000,Math.round(raw.expectedIntervalMs*2.5));
   const lastFailure=raw.lastOutcome==='failure'||raw.lastOutcome==='mixed';
-  const state=!repeated?'unknown':overdue?'stale':lastFailure?'failed':raw.lastOutcome==='success'?'normal':'unknown';
+  const tooOldWithoutCadence=repeated&&raw.expectedIntervalMs===null&&age>36*3600_000;
+  const state=!repeated?'unknown':overdue?'stale':tooOldWithoutCadence?'unknown':lastFailure?'failed':raw.lastOutcome==='success'?'normal':'unknown';
   items.push({host:raw.host,requests:raw.requests,observedDays:raw.observedDays,
     repeated,lastAttemptAt:raw.lastAttemptAt,lastSuccessAt:raw.lastSuccessAt,
     lastOutcome:raw.lastOutcome,expectedIntervalMs:raw.expectedIntervalMs,state});
