@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {publicFeedStore} from '../../worker/public-feed-store.mjs';
 import {API_CONNECTION_HEALTH_KEY} from '../../worker/api-connection-health.mjs';
+import {readProviderEndpointEvents} from './provider-endpoint-fingerprint.mjs';
 
 const WINDOW_MS=14*24*3600_000;
 const MAX_LOG_BYTES=8*1024*1024;
@@ -46,8 +47,8 @@ export function buildApiConnectionHealthFromLog(base,now=Date.now(),{fileSystem=
  lines.pop(); // incomplete last append, or final empty element
  const rowsTruncated=lines.length>MAX_ROWS;
  if(rowsTruncated)lines=lines.slice(-MAX_ROWS);
- const hosts=new Map();const seen=new Set();
- let invalidEvents=0,duplicateEvents=0,endpointEvidenceEvents=0,endpointIncompleteEvents=0;
+ const hosts=new Map();const seen=new Set(),hostEventRequests=new Map();
+ let invalidEvents=0,duplicateEvents=0;
  for(const line of lines){
   if(!line)continue;
   if(seen.has(line)){duplicateEvents++;continue;}seen.add(line);
@@ -72,30 +73,52 @@ export function buildApiConnectionHealthFromLog(base,now=Date.now(),{fileSystem=
    let h=hosts.get(host);
    if(!h){h={host,requests:0,days:new Set(),events:[],last:null,lastSuccessAt:null,endpointIds:new Set(),endpointDays:new Set()};hosts.set(host,h);}
    h.requests+=request.requests;h.days.add(kstDay(at));h.events.push(at);
-   // Legacy records and child-process collectors lack this optional evidence.
-   // They never contribute fabricated method/path endpoint counts.
-   const routes=obj.endpointPaths?.[host];
-   let routeRequests=0,validRoutes=0,invalidRoutes=0;
-   if(routes&&typeof routes==='object'&&!Array.isArray(routes)){
-    const entries=Object.entries(routes);
-    for(const [id,route] of entries.slice(0,128)){
-     if(!/^[a-f0-9]{32}$/.test(id)||!route||!integer(route.requests)||route.requests<1||
-       !route.statuses||typeof route.statuses!=='object'||Array.isArray(route.statuses)){
-      invalidRoutes++;continue;
-     }
-     const statusRows=Object.entries(route.statuses);
-     if(statusRows.some(([k,n])=>!(STATUSES.test(k)||k==='NETWORK_ERROR'||k==='PROVIDER_QUOTA_GUARD')||!integer(n))||
-        statusRows.reduce((sum,[,n])=>sum+n,0)!==route.requests){invalidRoutes++;continue;}
-     routeRequests+=route.requests;h.endpointIds.add(id);validRoutes++;
-    }
-    if(entries.length>128)invalidRoutes+=entries.length-128;
-   }
-   if(validRoutes){h.endpointDays.add(kstDay(at));endpointEvidenceEvents++;}
-   if(!validRoutes||invalidRoutes||routeRequests!==request.requests||obj.endpointTrackingOmitted>0)endpointIncompleteEvents++;
+   hostEventRequests.set(obj.at+'|'+host,request.requests);
    if(success)h.lastSuccessAt=Math.max(h.lastSuccessAt??0,at);
    if(!h.last||h.last.at<=at)h.last={at,outcome:success&&!failures?'success':failures&&!success?'failure':'mixed'};
   }
  }
+ // A separate fixed-path append-only receipt avoids changing the existing
+ // collection-events schema and preserves prior Collector R44 source overlays.
+ const routeLog=readProviderEndpointEvents(baseDir,{fileSystem});
+ const matched=new Set(),complete=new Set(),seenRouteLines=new Set();
+ let endpointEvidenceEvents=0,invalidEndpointEvents=0;
+ if(routeLog.status==='OBSERVED'){
+  for(const line of routeLog.lines){
+   if(!line||seenRouteLines.has(line))continue;
+   seenRouteLines.add(line);
+   let record;try{record=JSON.parse(line);}catch{invalidEndpointEvents++;continue;}
+   const at=Date.parse(record?.at??'');
+   if(!Number.isFinite(at)||at>now+60_000||!record?.endpointPaths||
+      typeof record.endpointPaths!=='object'||Array.isArray(record.endpointPaths)){
+    invalidEndpointEvents++;continue;
+   }
+   if(now-at>WINDOW_MS)continue;
+   for(const [host,routes] of Object.entries(record.endpointPaths).slice(0,128)){
+    const key=record.at+'|'+host;
+    if(!hostEventRequests.has(key)||matched.has(key)||!routes||
+       typeof routes!=='object'||Array.isArray(routes)){invalidEndpointEvents++;continue;}
+    const ids=[],entries=Object.entries(routes);
+    let accounted=0,invalid=entries.length>128;
+    for(const [id,row] of entries.slice(0,128)){
+     if(!/^[0-9a-f]{32}$/.test(id)||!row||!integer(row.requests)||row.requests<1||
+       !row.statuses||typeof row.statuses!=='object'||Array.isArray(row.statuses)){
+      invalid=true;continue;
+     }
+     const stats=Object.entries(row.statuses);
+     if(stats.some(([k,n])=>!(STATUSES.test(k)||k==='NETWORK_ERROR'||k==='PROVIDER_QUOTA_GUARD')||!integer(n))||
+        stats.reduce((sum,[,n])=>sum+n,0)!==row.requests){invalid=true;continue;}
+     accounted+=row.requests;ids.push(id);
+    }
+    if(!ids.length||accounted>hostEventRequests.get(key)){invalidEndpointEvents++;continue;}
+    const h=hosts.get(host);if(!h){invalidEndpointEvents++;continue;}
+    for(const id of ids)h.endpointIds.add(id);
+    h.endpointDays.add(kstDay(at));matched.add(key);endpointEvidenceEvents++;
+    if(!invalid&&accounted===hostEventRequests.get(key)&&record.endpointTrackingOmitted===0)complete.add(key);
+   }
+  }
+ }
+ const endpointIncompleteEvents=hostEventRequests.size-complete.size+invalidEndpointEvents;
  const items=[...hosts.values()].sort((a,b)=>(b.last?.at??0)-(a.last?.at??0)||a.host.localeCompare(b.host))
   .slice(0,MAX_HOSTS).map(h=>{
    const times=[...new Set(h.events)].sort((a,b)=>a-b);
@@ -116,7 +139,8 @@ export function buildApiConnectionHealthFromLog(base,now=Date.now(),{fileSystem=
    observedHostCount:items.filter(item=>item.endpointFingerprints>0).length,
    endpointEvidenceEvents,endpointIncompleteEvents,
    independentCollectorsCovered:false},
-  diagnostics:{reason:tailTruncated||rowsTruncated||invalidEvents||duplicateEvents||hosts.size>MAX_HOSTS?
+  diagnostics:{endpointLogStatus:routeLog.status,endpointLogTruncated:routeLog.tailTruncated||routeLog.rowsTruncated,
+   invalidEndpointEvents,reason:tailTruncated||rowsTruncated||invalidEvents||duplicateEvents||hosts.size>MAX_HOSTS?
     'LOG_PARTIAL':'WRAPPER_ONLY',tailTruncated,rowsTruncated,invalidEvents,duplicateEvents,
     unverifiedCollectors:true},
   items};
