@@ -168,7 +168,7 @@ test('unknown metrics, ambiguous strings and negative revenue fail closed with v
   const body=row('INVALID',{[key]:value});
   assert.throws(()=>forecastRowsFromSaved({asOf,savedDays:[
    data('2026-11-20','pre',[body])
-  ]}),new RegExp('^'+expected+'$'));
+  ]}),error=>error?.message===expected);
   assert.ok(('MONTH_SOURCE_INVALID_ADAPTER_'+expected).length<=80);
  }
 });
