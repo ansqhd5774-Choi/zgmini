@@ -310,3 +310,23 @@ Test 실행환경은 **비운영 격리 컨테이너**이고 GitHub Actions/운�
 6. **다음 정확한 미완료 한 건:** 설치 **이후** 발생한 자연 Core Writer checkpoint에서 `2026-11`의 `READY_OUTPUT/UNCHANGED` 또는 정확한 잔여 `METRIC_<FIELD>_<TYPE>`을 기존 A `writer-publication-evidence-readonly`로 회수. `READY_OUTPUT`라면 새 storedAt/SHA→D1 per-key MATCHED→public ER1 asOf/개별 별점까지 연결, 이때도 W02 전체 100% 자동 주장 금지. `METRIC_...` 잔류 시 실제 field/type만 대상으로 다음 최소 수정; 무단 DB/D1/원자료 변경, Core 강제 재실행, 새 예약 검증 생성 금지.
 7. **진척률:** W02 100% 오판 철회, 95% 임시 기준 유지·증거 기반 재산정 필요. ZGMINI 전체 57.4% 임의 갱신 금지. 마지막 전체 사용자 홈페이지 육안 검증은 모든 기능 완료 후만 요청.
 
+
+
+<!-- w02-er1-nov-complete-pc-d1-api-20261115 -->
+## 2026-11-15 — ER1 11월 신규 자동 계산→SQLite→D1→공개 API 전 구간 실증 완료
+
+**사용자 W02 완료 오판 재발 방지:** 2027 FOMC 단일 오류 복구와 W02 전체 완료를 동일시하지 않는다. 이번 기록은 새로운 ER1 기능 장애 해결 1건의 전체 종단 증거로, W02의 무한 확장 공급원·권리 범위를 무조건 100%로 선언하는 근거는 아니다.
+
+### 실제 새 기능 종단 PASS
+- `zgmini` PR #1090(사용권·점수 산식·PIT·raw 기존 저장 불변) `main@84b889687a1d23f81a182a6d5b62100027386a9f`, 전체 [Node CI #43678572950](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43678572950) SUCCESS.
+- Control 정확 한 파일 승인 manifest PR #1416 main, Writer B [#1417](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1417#issuecomment-6889466826) / Run `43678815888` `WRITER_B_INSTALLED_VERIFIED`, JSON/TXT result 2/2, 보호 FOMC/ER1 계산기 변동 없음, 재실행 금지.
+- 기존 allowlist A [#1419](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1419#issuecomment-6889531205)/Run `43679540741` 정상 Core Writer `at=2026-11-15T05:00:30.238Z`(KST 14:00:30), source `e94e7f677147dbd11e3d8bb17012ade91c41a02d`, mode `PUBLISH`, Writer `VERIFIED`.
+- `er1Future.status=UPDATED`, `months[2026-11]={status:READY_OUTPUT,sqliteDays:28,privateDays:2,scoreableIssuers:352}`. 기존 11월 `MONTH_SOURCE_INVALID_ADAPTER_ER1_FORECAST_SAVED_METRIC_INVALID`은 해소. `months[2026-12]=SAVED_MONTH_INCOMPLETE`는 현 시각 미래 31일 전체 저장이 아직 이뤄지지 않은 일정 범위로 **현재 실제 11월 정상 처리의 실패가 아님**; 미공개 미래 날짜를 임의 보강하지 않는다.
+- 신규 저장 key `market-calendar:earnings-er1-score-2026-11-public`: `storedAt=1794718830678`(2026-11-15T05:00:30.678Z), `bodySha256=11acd6d8eede7f659fc0d898ceb0a2cdd892520385e03e3092dd21d6dbe6bfa6`. **D1 per-key `VERIFIED`, `matchedToLocal=true`, D1 `storedAt`/본문 SHA 정확 일치, `localOutputVerified=true`, `globalLedgerVerified=true`, 보호 상태 unchanged.** 원문 EPS/매출 또는 벤더 row가 D1에 노출된다는 뜻 아님.
+- 실제 공개 사이트 `https://zgmini.kr/api/earnings-calendar-display?start=2026-11-16&end=2026-11-22` HTTP200 HTML: ER1 점수 `asOf=2026-11-13`에서 **`asOf=2026-11-15`**로 진전, `기업 실적 점수` aria-label **378개 표시**. 378은 7일 표시 행 수이며 352 scoreable issuers와 동일한 모집단이 아니므로 일치해야 한다고 주장하지 않는다. 기존 기업명·종목·별점 필터의 과거 PC·모바일 확인 결과 재사용, 사용자에게 중간 육안 검증 요구 금지.
+- 앞선 A #1418의 `writer.at=2026-11-15T04:55:17.914Z` + 새 로컬 output `05:00:30.678Z`의 시차는 `scripts/pc-writer/run-local.mjs`가 ER1 output을 먼저 저장하고 D1 publish를 수행한 뒤 `finally`에서 writer-last-run을 저장한다는 순서로 설명됨. 구형 report를 새 출판 실패로 오인 금지.
+
+### W02 완료 판단에 남겨야 하는 정확한 구분
+- 완료된 장애: 2027 FOMC 정정·footless 파서 운영, Treasury 365일 PC eligible436=같은 기간 공개 auction436와 중복0, 283 경제 모델 등록·2027 입력별 발표 링크, 11월 ER1 실제 자동 계산/SQLite/D1/공개 표시.
+- 확정하지 않은 주장: D1과 Treasury **비공개 raw gz**의 바이트 SHA가 같다는 주장(서로 다른 표현 계약), 2027 미발표 연간 일정까지 완전 수집됐다는 주장, 라이선스 미확인 한국 일정의 무단 연결, 전체 ZGMINI의 사용자 육안 최종 합격.
+- W02 전체 95% 이전 추정은 분모·권리 범위로 재평가할 필요가 있으므로 본 11월 오류 복구만으로 100% 종결하지 않는다. 사용자 확정 지시대로 **예약 검증을 새 미완료 업무로 만들지 않는다**. 전체 프로그램 기능 구현·적용을 먼저 끝내고 그 뒤에만 사용자가 홈페이지에서 최종 육안 확인한다.
