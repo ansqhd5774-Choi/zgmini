@@ -167,9 +167,10 @@ export async function runStoredOperationalPrivate({dataRoot,
  const measuredRead=readFeed===null?null:async key=>{d1Reads++;return readFeed(key);};
  const measuredPublic=readPublicBase===null?null:async()=>{
   publicApiReads++;return readPublicBase();};
- const provisionalCalculator=measuredRead===null?null:
-  createVerifiedStoredProvisionalCalculator({readFeed:measuredRead,
-   readPublicBase:measuredPublic,now,decoder});
+ // Configured V2 can replay saved candidate data without an optional D1 reader.
+ // Each public legacy/optional family still enforces its own external proof.
+ const provisionalCalculator=createVerifiedStoredProvisionalCalculator({
+  readFeed:measuredRead,readPublicBase:measuredPublic,now,decoder});
  const actualAdapters=adapters??createStoredOperationalAdapters({dataRoot,now,
   provisionalCalculator});
  const actualStore=store??createThemeCheckpointStore({dataRoot});
