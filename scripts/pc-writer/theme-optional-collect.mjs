@@ -39,7 +39,20 @@ export async function collectOptional({dataRoot,themeId,start,end,maxRequests=4,
     const chunks=[];let size=0;for await(const chunk of res.body){size+=chunk.byteLength;if(size>6_000_000)throw Error('BODY_LIMIT');chunks.push(Buffer.from(chunk));}
     const body=Buffer.concat(chunks).toString('utf8');
     const rows=body.split(/\r?\n/).filter(Boolean).map(JSON.parse);if(!rows.length||rows.length>5000)throw Error('ROW_COUNT');
-    let previous='';for(const row of rows){if(row.symbol!==symbol||!Number.isFinite(Date.parse(row.timestamp))||typeof row.close!=='number'||!Number.isFinite(row.close)||row.close<=0||previous&&row.timestamp<=previous)throw Error('BAR_INVALID');previous=row.timestamp;}
+    // A provider 200 is not sufficient provenance: only complete, non-gap
+    // hourly bars inside the explicitly requested UTC date window are raw.
+    // Otherwise reject the entire page before writing a content-addressed
+    // file, manifest, or advancing its cursor/checkpoint.
+    let previous='';
+    for(const row of rows){
+     const millis=typeof row.timestamp==='string'?Date.parse(row.timestamp):NaN;
+     const utcDay=Number.isFinite(millis)?new Date(millis).toISOString().slice(0,10):null;
+     if(row.symbol!==symbol||!utcDay||utcDay<start||utcDay>end||
+       row.is_gap!==false||typeof row.close!=='number'||
+       !Number.isFinite(row.close)||row.close<=0||
+       (previous&&row.timestamp<=previous))throw Error('BAR_INVALID');
+     previous=row.timestamp;
+    }
     const digest=hash(body),relative='raw/'+symbol+'_'+digest+'.jsonl',dest=path.join(raw,symbol+'_'+digest+'.jsonl');
     if(!fs.existsSync(dest))fs.writeFileSync(dest,body,{flag:'wx'});if(hash(fs.readFileSync(dest))!==digest)throw Error('RAW_READBACK');
     const dates=rows.map(r=>nyDate.format(new Date(r.timestamp))).sort();
