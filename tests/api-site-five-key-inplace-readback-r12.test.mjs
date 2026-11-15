@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {collectFiveKeyInPlace,W05_FIXED_READS,W05_INPLACE_SCHEMA} from '../scripts/api-site/five-key-inplace-readback-prework-r12.mjs';
+import {buildEmploymentR6OneYearReadModel} from '../lib/market-score/employment-r6-one-year-read-model.mjs';
 const keyOrder=['inflation19','inflation7','calendar','theme','employment'];
 const stamp=Date.parse('2026-11-15T00:00:00.000Z');
 const clock=()=>stamp;
@@ -27,10 +28,8 @@ const themeSeed={version:'THEME_ETF_ONLY_R144_252_PUBLIC_V1',status:'READY',
  sourceVersion:'seed-fixture',sourceStoredAt:new Date(storedAt-1000).toISOString(),
  publishedAt:new Date(storedAt-500).toISOString(),observationDate:'2026-11-14',
  themes:themeEtfs};
-const employment={kind:'EMPLOYMENT_R6_ONE_YEAR_STORED_DISPLAY_R1',
- asOfDate:'2026-11-14',sourceStoredAt:storedAt-1000,formulaHash:'sha256:fixture',
- methodologyVersion:'EMP-R6-FORMULA-R2',
- indicators:Array.from({length:29},(_,i)=>({id:i+1}))};
+const employment=buildEmploymentR6OneYearReadModel([],
+ {asOfDate:'2026-11-14',sourceStoredAt:storedAt-1000});
 const calendar={status:'READY',events:[],token:'PRIVATE_SHOULD_NEVER_LEAK'};
 const storedBodies={inflation19:inflationEnvelope,inflation7:inflationEnvelope,
  calendar,theme:themeSeed,employment};
@@ -169,4 +168,20 @@ test('W05 protected adapter treats 200-with-UNAVAILABLE as public readiness fail
  const result=await run(f,{clock,readApi});
  assert.equal(result.results[3].status,'API_NOT_READY');
  assert.equal(result.runtimeVerified,false);
+});
+
+test('in-place two-pass W05 rejects a matching bogus 29-ID employment response',async()=>{
+ const broken=structuredClone(employment);
+ broken.indicators[0].id='NOT_AN_APPROVED_SERIES';
+ const f=fixture({mutate:(slot,row)=>{
+  if(slot==='employment')row.body=JSON.stringify(broken);
+ }});
+ const res=await run(f,{clock,readApi:async slot=>({
+  statusCode:200,body:slot==='employment'?broken:apiBodies[slot],
+ })});
+ assert.equal(f.counts.employment,2,'both protected D1 reads must still occur');
+ assert.equal(res.results[4].status,'INVALID_EMPLOYMENT_METADATA');
+ assert.equal(res.runtimeVerified,false);
+ assert.equal(res.status,'PARTIAL_OR_UNVERIFIED');
+ assert.doesNotMatch(JSON.stringify(res),/NOT_AN_APPROVED_SERIES|indicators|formulaHash/);
 });
