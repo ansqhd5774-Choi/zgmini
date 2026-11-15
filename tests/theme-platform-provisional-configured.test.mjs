@@ -71,7 +71,8 @@ function fixture(t){
   savedReader:async({dates})=>{
    calls.saved++;assert.deepEqual(dates,sourceFiles.map(f=>f.date));
    return {rows:new Map(dates.map(d=>[d,[]])),
-    hashes:new Map(sourceFiles.map(f=>[f.date,f.sha256]))};
+    hashes:new Map(sourceFiles.map(f=>[f.date,f.sha256])),
+    sourceStoredAt:record.sourceStoredAt};
   },
   calculate:({definition,confirmed:input,prior:old,sourceStoredAt})=>{
    calls.calculated++;
@@ -112,6 +113,16 @@ test('configured replay rejects a changed raw SHA and never accepts cached score
  f.fake.savedReader=async()=>({rows:new Map(),hashes:new Map()});
  await assert.rejects(calculateStoredConfiguredProvisional(f.fake),
   /THEME_CONFIG_PROVISIONAL_RAW_SHA_MISMATCH/);
+ assert.equal(f.calls.calculated,0);
+});
+
+test('configured replay rejects changed source observation time',async t=>{
+ const f=fixture(t);
+ f.fake.savedReader=async()=>({rows:new Map(),hashes:new Map(
+  sourceFiles.map(x=>[x.date,x.sha256])),
+  sourceStoredAt:'2026-11-11T10:00:00.000Z'});
+ await assert.rejects(calculateStoredConfiguredProvisional(f.fake),
+  /THEME_CONFIG_PROVISIONAL_SOURCE_TIME_MISMATCH/);
  assert.equal(f.calls.calculated,0);
 });
 
