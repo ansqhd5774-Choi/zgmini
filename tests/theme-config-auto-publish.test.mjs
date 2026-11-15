@@ -93,3 +93,56 @@ test('undeployed R32 reader blocks only R32 writes before credentials; capabilit
  assert.equal(probes,1);assert.equal(auth,0);assert.equal(result.d1Writes,0);
  assert.ok(result.results.every(r=>r.reason==='CONFIG_PUBLIC_R32_READER_NOT_DEPLOYED'));
 });
+
+const approvedR32=(candidateSha256='a'.repeat(64))=>({
+ status:'PREFLIGHT_PASS_NO_REMOTE_ACCESS',candidateSha256,
+ feedKey:'theme-configured:first',
+ candidate:{observationDate:'2026-10-28',sourceVersion:'GMH_MANIFEST_SHA256_'+'b'.repeat(64)}
+});
+const confirmedHandoff=(proof=approvedR32())=>({
+ status:'LOCAL_HANDOFF_MATCH_NOT_PUBLISHED',
+ feedKey:'theme-configured:first',
+ scoreArtifactSha256:proof.candidateSha256,
+ observationDate:proof.candidate.observationDate,
+ sourceVersion:proof.candidate.sourceVersion,
+ publicationExecuted:false,d1Writes:0
+});
+const v2Entry=[{definition:{id:'first',schema:'ZGMINI_THEME_CONFIG_V2',profile:'R32'}}];
+const deployedR32=async()=>({
+ supportedMethodologies:['R32'],supportsSeparateR32Provisional:true
+});
+
+test('W03 R32 stored handoff mismatch blocks before PC D1 credentials and write',async t=>{
+ const home=root(t);approval(home,'first');let credentials=0,published=0;
+ const proof=approvedR32(),result=await runConfiguredAutoPublish({
+  dataRoot:home,now,registrations:v2Entry,preflight:()=>proof,
+  prepareHandoff:()=>({...confirmedHandoff(proof),scoreArtifactSha256:'f'.repeat(64)}),
+  readCapabilities:deployedR32,
+  queryFactory:()=>{credentials++;return async()=>({results:[]});},
+  publish:async()=>{published++;return {status:'UNCHANGED',written:0};}
+ });
+ assert.equal(result.status,'PUBLICATION_PARTIAL_REVIEW_REQUIRED');
+ assert.equal(result.results[0].reason,'CONFIG_PUBLIC_STORED_HANDOFF_MISMATCH');
+ assert.equal(result.d1Queries,0);assert.equal(result.d1Writes,0);
+ assert.equal(credentials,0);assert.equal(published,0);
+});
+
+test('W03 R32 exact saved handoff continues to existing CAS Writer without extra source GET',async t=>{
+ const home=root(t);approval(home,'first');
+ const proof=approvedR32();let verified=0,opened=0,published=0;
+ const result=await runConfiguredAutoPublish({
+  dataRoot:home,now,registrations:v2Entry,preflight:()=>proof,
+  prepareHandoff:()=>{verified++;return confirmedHandoff(proof);},
+  readCapabilities:deployedR32,
+  queryFactory:()=>{opened++;return async()=>({results:[]});},
+  publish:async({id,expectedStoredAt})=>{
+   published++;assert.equal(id,'first');assert.equal(expectedStoredAt,null);
+   return {status:'WRITTEN_AND_READBACK_VERIFIED',written:1,
+    observationDate:proof.candidate.observationDate,storedAt:now};
+  }
+ });
+ assert.equal(verified,1);assert.equal(opened,1);assert.equal(published,1);
+ assert.equal(result.results[0].status,'WRITTEN_AND_READBACK_VERIFIED');
+ assert.equal(result.d1Writes,1);
+ assert.equal(result.providerCalls,0);
+});
