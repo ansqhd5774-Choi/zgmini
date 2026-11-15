@@ -2,6 +2,7 @@
 // The approved D1 reader and the HTTP reader must independently supply their own evidence.
 import {createHash} from 'node:crypto';
 import {isDeepStrictEqual} from 'node:util';
+import {validEmploymentR6PublicDisplay} from '../../worker/employment-r6-public-display.mjs';
 
 export const PUBLIC_READBACK_SLOTS=Object.freeze({
  inflation19:Object.freeze({table:'market_public_snapshots_v1',snapshot_key:'detail:inflation-causal-public-19:r1',mode:'ENVELOPE'}),
@@ -128,10 +129,12 @@ export function comparePublicReadback(slot,{d1,api,now=Date.now()}={}){
    rollingAndSidecarsVerified:false});
  }
  if(slot==='employment'){
-  if(typeof saved.formulaHash!=='string'||typeof saved.methodologyVersion!=='string'||
-     !safeMs(saved.sourceStoredAt)||saved.sourceStoredAt>d1.stored_at||
-     !Array.isArray(saved.indicators)||saved.indicators.length!==29||
-     typeof saved.asOfDate!=='string')
+  // Do not certify two matching 29-element arrays if the public Worker would
+  // reject that row (wrong ID order, formula, window, provenance or summary).
+  // Reuse the *real* read-only Reader contract, including approved R1 legacy
+  // snapshots; never build a second weaker W05-only 29-feature validator.
+  if(!validEmploymentR6PublicDisplay(saved,{allowLegacy:true})||
+     saved.sourceStoredAt>d1.stored_at)
    return result(slot,'INVALID_EMPLOYMENT_METADATA',evidence);
  }
  // The calendar and employment Readers return the stored JSON body itself.
