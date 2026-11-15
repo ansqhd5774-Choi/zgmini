@@ -61,9 +61,19 @@ test('archival revisions only appear after their actual stored timestamp',()=>{
  assert.equal(candidate(newResult,'2').lastStoredAt,revision.sourceStoredAt);
 });
 
-test('release metadata or raw zero missing is not invented',()=>{
- const unknown=evaluate({'2':[row({availableAt:null})]});
- assert.equal(candidate(unknown,'2').firstFail.reason,'PIT_RELEASE_OR_STORE_TIME_UNVERIFIED');
+test('no publication timestamp: use storage-limited evidence, never claim release time',()=>{
+ const stored=evaluate({'2':[row({availableAt:null})]});
+ assert.equal(candidate(stored,'2').availableCutoffs,2);
+ assert.equal(candidate(stored,'2').releaseVerifiedCutoffs,0);
+ assert.equal(candidate(stored,'2').storageOnlyCutoffs,2);
+ assert.equal(stored.releaseTimeUnknownDoesNotImplyOriginalRelease,'STORED_SNAPSHOT_ONLY');
+ const early=evaluate({'2':[row({availableAt:null,sourceStoredAt:t2})]},[t1,t2]);
+ assert.equal(candidate(early,'2').availableCutoffs,1);
+ assert.equal(candidate(early,'2').firstFail.reason,'NOT_YET_AVAILABLE_AT_CUTOFF');
+ const noStore=evaluate({'2':[row({availableAt:null,sourceStoredAt:null})]});
+ assert.equal(candidate(noStore,'2').firstFail.reason,'PIT_STORE_TIME_UNVERIFIED');
+});
+test('missing data is not zero and release/store ordering remains protected',()=>{
  const nullValue=evaluate({'2':[row({value:null})]});
  assert.equal(candidate(nullValue,'2').firstFail.reason,'MISSING_VALUE_NOT_ZERO');
  const badOrder=row({sourceStoredAt:'2026-02-14T00:00:00.000Z'});
@@ -121,4 +131,24 @@ test('zero evidence for three unresolved definitions and #27 duplicate',()=>{
  }
  assert.equal(candidate(out,'27').status,'MERGED_NO_NEW_RAW_SOURCE');
  assert.equal(candidate(out,'27').availableCutoffs,0);
+});
+
+test('old 1972 Fed observations are historically valid without retroactive release',()=>{
+ const vintage=row({observationDate:'1972-01-01',availableAt:null});
+ const out=evaluate({'29':[vintage]});
+ assert.equal(candidate(out,'29').availableCutoffs,2);
+ assert.equal(candidate(out,'29').releaseVerifiedCutoffs,0);
+ assert.equal(candidate(out,'29').storageOnlyCutoffs,2);
+});
+
+test('a raw document cannot claim an observation stored before observation period',()=>{
+ const future=row({observationDate:'2026-05-01',availableAt:null});
+ assert.throws(()=>evaluate({'29':[future]}),
+  e=>e.code==='W01_PIT_FUTURE_OBSERVATION_STOP');
+});
+
+test('known release metadata is counted separately from storage-only proof',()=>{
+ const out=evaluate({'24':[row()]});
+ assert.equal(candidate(out,'24').releaseVerifiedCutoffs,2);
+ assert.equal(candidate(out,'24').storageOnlyCutoffs,0);
 });
