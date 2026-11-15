@@ -132,3 +132,43 @@ test('a third same-instant duplicate cannot restore a conflicted estimate',()=>{
   assert.equal(input.coverage.sameTimeConflicts,1);
   assert.equal(input.issuerRows[0].releases[0].epsEstimate,null);
 });
+
+test('lossless decimal text and explicit missing markers preserve EPS ranking and missing-not-zero',()=>{
+ const input=forecastRowsFromSaved({asOf,savedDays:[
+  data('2026-11-20','pre',[
+   row('NEG',{epsEstimate:' -1.25 ',revenueEstimate:'1e3',eps:'0',revenue:'100.00'}),
+   row('MISS',{epsEstimate:'N/A',revenueEstimate:''}),
+   row('ZERO',{epsEstimate:'0',revenueEstimate:'-'})
+  ])
+ ]});
+ const rows=Object.fromEntries(input.issuerRows.map(x=>[x.issuerId,x.releases[0]]));
+ assert.equal(rows.NEG.epsEstimate,-1.25);
+ assert.equal(rows.NEG.revenueEstimate,1000);
+ assert.equal(rows.NEG.eps,0);
+ assert.equal(rows.NEG.revenue,100);
+ assert.equal(rows.MISS.epsEstimate,null);
+ assert.equal(rows.MISS.revenueEstimate,null);
+ assert.equal(rows.ZERO.epsEstimate,0);
+ assert.equal(rows.ZERO.revenueEstimate,null);
+ const scored=scoreER1ForecastIssuers(input.issuerRows,{asOf});
+ assert.equal(scored.coverage.scoreableIssuers,2);
+ assert.equal(scored.coverage.unscoreableReasons.ER1_FORECAST_EPS_MISSING,1);
+});
+
+test('unknown metrics, ambiguous strings and negative revenue fail closed with value-free field codes',()=>{
+ const cases=[
+  ['epsEstimate','1,234','ER1_FORECAST_SAVED_METRIC_EPS_ESTIMATE_STRING'],
+  ['epsEstimate','Infinity','ER1_FORECAST_SAVED_METRIC_EPS_ESTIMATE_STRING'],
+  ['epsEstimate',true,'ER1_FORECAST_SAVED_METRIC_EPS_ESTIMATE_BOOLEAN'],
+  ['epsEstimate',{raw:'1'},'ER1_FORECAST_SAVED_METRIC_EPS_ESTIMATE_OBJECT'],
+  ['revenueEstimate',-2,'ER1_FORECAST_SAVED_METRIC_REVENUE_ESTIMATE_NEGATIVE'],
+  ['revenueEstimate','1e999','ER1_FORECAST_SAVED_METRIC_REVENUE_ESTIMATE_NONFIN']
+ ];
+ for(const [key,value,expected] of cases){
+  const body=row('INVALID',{[key]:value});
+  assert.throws(()=>forecastRowsFromSaved({asOf,savedDays:[
+   data('2026-11-20','pre',[body])
+  ]}),new RegExp('^'+expected+'$'));
+  assert.ok(('MONTH_SOURCE_INVALID_ADAPTER_'+expected).length<=80);
+ }
+});
