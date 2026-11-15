@@ -45,15 +45,15 @@ test('mixed 2xx and network error must not be labelled normal',()=>{
 });
 
 test('scheduled silence is stale only when repeated cadence has evidence',()=>{
- const stamps=[-5,-4,-3,-2,-1].map(n=>now+n*86400000);
+ const stamps=[-8,-7,-6,-5,-4].map(n=>now+n*86400000);
  const x=summarize(stamps.map(t=>event(t,'api.earningsapi.com','200')));
  assert.equal(x.items[0].state,'stale');assert.equal(x.failed,1);
  assert.equal(x.items[0].expectedIntervalMs,86400000);
 });
 
-test('two observations do not invent a schedule or a healthy current connection',()=>{
+test('two old observations do not invent a schedule or a healthy current connection',()=>{
  const x=summarize([event(now-10*86400000,'api.bls.gov','200'),event(now-9*86400000,'api.bls.gov','200')]);
- assert.equal(x.items[0].expectedIntervalMs,null);assert.equal(x.items[0].state,'normal');
+ assert.equal(x.items[0].expectedIntervalMs,null);assert.equal(x.items[0].state,'unknown');
  assert.equal(x.coverage,'PARTIAL');
 });
 
