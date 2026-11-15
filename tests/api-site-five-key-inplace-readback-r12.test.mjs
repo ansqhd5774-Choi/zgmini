@@ -2,15 +2,27 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {collectFiveKeyInPlace,W05_FIXED_READS,W05_INPLACE_SCHEMA} from '../scripts/api-site/five-key-inplace-readback-prework-r12.mjs';
 import {buildEmploymentR6OneYearReadModel} from '../lib/market-score/employment-r6-one-year-read-model.mjs';
+import {INFLATION_CAUSAL_19} from '../lib/inflation-causal-public-catalog.mjs';
+import {INFLATION_CANDIDATES_7} from '../lib/inflation-causal-candidates-public-7-catalog.mjs';
 const keyOrder=['inflation19','inflation7','calendar','theme','employment'];
 const stamp=Date.parse('2026-11-15T00:00:00.000Z');
 const clock=()=>stamp;
 const storedAt=stamp-2000;
-const inflationPayload={status:'PARTIAL',score:null,sourceVersion:'fixture-v1',
- sourceStoredAt:storedAt-1000,indicators:[]};
-const inflationEnvelope={payload:inflationPayload,projection:{status:'READY',
- builtAt:storedAt,sourceVersion:inflationPayload.sourceVersion,
- sourceStoredAt:inflationPayload.sourceStoredAt}};
+const inflationPending=meta=>({id:meta.id,series:meta.series,unit:meta.unit,
+ status:'PENDING',value:null,previousValue:null,observationDate:null,
+ previousObservationDate:null,availableAt:null,sourceStoredAt:null,history:[]});
+const inflation19Payload={schemaVersion:'inflation-causal-public-19-r1-v1',
+ status:'PARTIAL',score:null,sourceVersion:'fixture-v1',
+ sourceStoredAt:storedAt-1000,indicators:INFLATION_CAUSAL_19.map(inflationPending)};
+const inflation7Payload={schemaVersion:'inflation-causal-candidates-7-r1-v1',
+ status:'PARTIAL',score:null,sourceVersion:'fixture-v1',
+ sourceStoredAt:storedAt-1000,indicators:INFLATION_CANDIDATES_7.map((meta,i)=>
+  i===0?{...inflationPending(meta),status:'READY',value:2.5,
+   observationDate:'2026-11-14',sourceStoredAt:'2026-11-14T20:00:00.000Z',
+   history:[{date:'2026-11-14',value:2.5}]}:inflationPending(meta))};
+const inflationEnvelope=payload=>({payload,projection:{status:'READY',
+ builtAt:storedAt,sourceVersion:payload.sourceVersion,
+ sourceStoredAt:payload.sourceStoredAt}});
 const themeEtfs=[
  {theme:'로봇·자동화',etfs:['BOTZ','ROBO']},
  {theme:'클라우드·SaaS',etfs:['SKYY','CLOU']},
@@ -31,9 +43,10 @@ const themeSeed={version:'THEME_ETF_ONLY_R144_252_PUBLIC_V1',status:'READY',
 const employment=buildEmploymentR6OneYearReadModel([],
  {asOfDate:'2026-11-14',sourceStoredAt:storedAt-1000});
 const calendar={status:'READY',events:[],token:'PRIVATE_SHOULD_NEVER_LEAK'};
-const storedBodies={inflation19:inflationEnvelope,inflation7:inflationEnvelope,
+const storedBodies={inflation19:inflationEnvelope(inflation19Payload),
+ inflation7:inflationEnvelope(inflation7Payload),
  calendar,theme:themeSeed,employment};
-const apiBodies={inflation19:inflationPayload,inflation7:inflationPayload,
+const apiBodies={inflation19:inflation19Payload,inflation7:inflation7Payload,
  calendar,theme:{...themeSeed,sourceVersion:'rolling-v2',
  themes:[...themeEtfs,{theme:'AI 반도체',etfs:['SMH','SOXX']}]},
  employment};
@@ -184,4 +197,22 @@ test('in-place two-pass W05 rejects a matching bogus 29-ID employment response',
  assert.equal(res.runtimeVerified,false);
  assert.equal(res.status,'PARTIAL_OR_UNVERIFIED');
  assert.doesNotMatch(JSON.stringify(res),/NOT_AN_APPROVED_SERIES|indicators|formulaHash/);
+});
+
+test('W05 protected 5-key adapter must not certify matching invalid inflation Reader rows',async()=>{
+ for(const slot of ['inflation19','inflation7']){
+  const bad=structuredClone(storedBodies[slot]);
+  bad.payload.indicators[0].id='INVALID_SERIES_IN_SAVED_ROW';
+  const f=fixture({mutate:(name,row)=>{
+   if(name===slot)row.body=JSON.stringify(bad);
+  }});
+  const res=await run(f,{clock,readApi:async name=>({
+   statusCode:200,body:name===slot?bad.payload:apiBodies[name],
+  })});
+  const verdict=res.results.find(row=>row.slot===slot);
+  assert.equal(f.counts[slot],2,'two exact D1 reads without any write');
+  assert.equal(verdict.status,'INVALID_INFLATION_PUBLIC_METADATA');
+  assert.equal(res.runtimeVerified,false);
+  assert.doesNotMatch(JSON.stringify(res),/INVALID_SERIES_IN_SAVED_ROW|indicators|payload/);
+ }
 });

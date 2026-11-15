@@ -5,6 +5,10 @@ import {comparePublicReadback,PUBLIC_READBACK_SLOTS,MAX_PUBLIC_READBACK_SPAN_MS}
 import {THEME_ETF_ONLY_PUBLIC_VERSION,THEME_ETF_ONLY_METHOD,THEME_ETF_ONLY_PAIRS,validateThemeEtfOnlyPublic} from '../worker/theme-etf-only-public.mjs';
 import {buildEmploymentR6OneYearReadModel} from '../lib/market-score/employment-r6-one-year-read-model.mjs';
 import {validEmploymentR6PublicDisplay,employmentR6StoredDisplayResponse} from '../worker/employment-r6-public-display.mjs';
+import {validateInflationCausalPublic,readInflationCausalPublicResponse} from '../worker/inflation-causal-public-r1.mjs';
+import {validateInflationCandidates7Public,readInflationCandidates7PublicResponse} from '../worker/inflation-causal-candidates-public-7-r1.mjs';
+import {INFLATION_CAUSAL_19} from '../lib/inflation-causal-public-catalog.mjs';
+import {INFLATION_CANDIDATES_7} from '../lib/inflation-causal-candidates-public-7-catalog.mjs';
 const now=Date.parse('2026-11-14T00:00:00.000Z');
 const readAt='2026-11-14T00:00:00.000Z';
 const storedAt=now-60_000;
@@ -14,7 +18,18 @@ const d1=(slot,body,extras={})=>({ ...PUBLIC_READBACK_SLOTS[slot],readAt,exists:
   stored_at:storedAt,body:JSON.stringify(body),...extras});
 const api=body=>({observedAt:apiAt,statusCode:200,body});
 const check=(slot,db,pub)=>comparePublicReadback(slot,{d1:db,api:pub,now});
-const inflationPayload={schemaVersion:'synthetic-r1',status:'PARTIAL',score:null,sourceVersion:'fixture-source-v1',sourceStoredAt:storedAt-1000,indicators:[]};
+const inflationPending=meta=>({id:meta.id,series:meta.series,unit:meta.unit,
+ status:'PENDING',value:null,previousValue:null,observationDate:null,
+ previousObservationDate:null,availableAt:null,sourceStoredAt:null,history:[]});
+const inflation19Payload={schemaVersion:'inflation-causal-public-19-r1-v1',
+ status:'PARTIAL',score:null,sourceVersion:'fixture-source-v1',
+ sourceStoredAt:storedAt-1000,indicators:INFLATION_CAUSAL_19.map(inflationPending)};
+const inflation7Payload={schemaVersion:'inflation-causal-candidates-7-r1-v1',
+ status:'PARTIAL',score:null,sourceVersion:'fixture-source-v1',
+ sourceStoredAt:storedAt-1000,indicators:INFLATION_CANDIDATES_7.map((meta,i)=>
+  i===0?{...inflationPending(meta),status:'READY',value:2.5,
+   observationDate:'2026-11-13',sourceStoredAt:'2026-11-13T22:00:00.000Z',
+   history:[{date:'2026-11-13',value:2.5}]}:inflationPending(meta))};
 const inflationEnvelope=payload=>({payload,projection:{status:'READY',builtAt:storedAt,
   sourceVersion:payload.sourceVersion,sourceStoredAt:payload.sourceStoredAt}});
 const employment=buildEmploymentR6OneYearReadModel([],
@@ -44,36 +59,37 @@ const composedTheme=()=>({...theme,status:'READY',sourceVersion:'rolling-fixture
 test('five keys are fixed and enforce table, feed kind and compound key exactly',()=>{
  assert.equal(Object.keys(PUBLIC_READBACK_SLOTS).length,5);
  assert.equal(check('calendar',d1('calendar',{events:[]},{kind:'input'}),api({events:[]})).status,'WRONG_EXACT_KEY');
- assert.equal(check('inflation19',d1('inflation19',inflationEnvelope(inflationPayload),{snapshot_key:'wrong'}),api(inflationPayload)).status,'WRONG_EXACT_KEY');
+ assert.equal(check('inflation19',d1('inflation19',inflationEnvelope(inflation19Payload),{snapshot_key:'wrong'}),api(inflation19Payload)).status,'WRONG_EXACT_KEY');
  assert.throws(()=>comparePublicReadback('unknown',{}),/UNKNOWN_PUBLIC_READBACK_SLOT/);
 });
 test('missing independent receipt never becomes a PASS or a guessed zero',()=>{
- assert.equal(comparePublicReadback('inflation19',{api:api(inflationPayload)}).status,'UNVERIFIED_EVIDENCE_MISSING');
+ assert.equal(comparePublicReadback('inflation19',{api:api(inflation19Payload)}).status,'UNVERIFIED_EVIDENCE_MISSING');
  assert.equal(check('calendar',d1('calendar',{}, {exists:false}),api({})).status,'CONFIRMED_D1_ROW_MISSING');
  assert.equal(check('calendar',d1('calendar',{}, {readAt:null}),api({})).status,'UNVERIFIED_OBSERVATION_TIME');
 });
 test('raw D1 SHA is over serialized envelope, not API payload',()=>{
- const body=inflationEnvelope(inflationPayload),receipt=d1('inflation19',body);
- const r=check('inflation19',receipt,api(inflationPayload));
+ const body=inflationEnvelope(inflation19Payload),receipt=d1('inflation19',body);
+ const r=check('inflation19',receipt,api(inflation19Payload));
  assert.equal(r.status,'STRUCTURAL_MATCH_NOT_RUNTIME_PROOF');
  assert.equal(r.d1BodySha256,sha(receipt.body));
- assert.notEqual(r.d1BodySha256,sha(JSON.stringify(inflationPayload)));
+ assert.notEqual(r.d1BodySha256,sha(JSON.stringify(inflation19Payload)));
 });
 test('inflation 19 and candidates 7 use the identical verified payload envelope rule',()=>{
  for(const slot of ['inflation19','inflation7']){
-  const row=d1(slot,inflationEnvelope(inflationPayload));
-  assert.equal(check(slot,row,api(inflationPayload)).status,'STRUCTURAL_MATCH_NOT_RUNTIME_PROOF');
-  assert.equal(check(slot,row,api({...inflationPayload,sourceVersion:'other'})).status,'PUBLIC_PAYLOAD_MISMATCH');
+  const payload=slot==='inflation19'?inflation19Payload:inflation7Payload;
+  const row=d1(slot,inflationEnvelope(payload));
+  assert.equal(check(slot,row,api(payload)).status,'STRUCTURAL_MATCH_NOT_RUNTIME_PROOF');
+  assert.equal(check(slot,row,api({...payload,sourceVersion:'other'})).status,'PUBLIC_PAYLOAD_MISMATCH');
  }
 });
 test('sourceVersion, sourceStoredAt and builtAt conflicts reject envelope before equality',()=>{
- const base=inflationEnvelope(inflationPayload);
+ const base=inflationEnvelope(inflation19Payload);
  for(const mutation of [
    {...base,projection:{...base.projection,builtAt:storedAt-1}},
    {...base,projection:{...base.projection,sourceVersion:'wrong'}},
    {...base,projection:{...base.projection,sourceStoredAt:base.projection.sourceStoredAt+1}},
-   {...base,payload:{...inflationPayload,sourceStoredAt:storedAt+10}},
- ])assert.equal(check('inflation19',d1('inflation19',mutation),api(inflationPayload)).status,'CHECKPOINT_MISMATCH');
+   {...base,payload:{...inflation19Payload,sourceStoredAt:storedAt+10}},
+ ])assert.equal(check('inflation19',d1('inflation19',mutation),api(inflation19Payload)).status,'CHECKPOINT_MISMATCH');
 });
 test('direct calendar body match does not invent mandatory sourceVersion',()=>{
  const body={status:'READY',events:[{id:'fomc'}],sources:{fed_fomc:{status:'SOURCE_FAILED'}}};
@@ -271,4 +287,33 @@ test('W05 rejected employment row matches the real stored 29-series Reader HTTP 
   new Request('https://zgmini.kr/api/employment-r6/observations'),db,{now});
  assert.equal(response.status,503);
  assert.equal((await response.json()).reason,'STORED_PUBLICATION_STALE');
+});
+
+test('W05 19/7 exact comparison refuses equally invalid saved and HTTP payloads like actual Workers',async()=>{
+  const cases=[
+   {slot:'inflation19',payload:inflation19Payload,validator:validateInflationCausalPublic,
+    reader:readInflationCausalPublicResponse,url:'https://zgmini.kr/api/inflation-causal-inputs'},
+   {slot:'inflation7',payload:inflation7Payload,validator:validateInflationCandidates7Public,
+    reader:readInflationCandidates7PublicResponse,url:'https://zgmini.kr/api/inflation-candidate-inputs'},
+  ];
+  for(const {slot,payload,validator,reader,url} of cases){
+   assert.doesNotThrow(()=>validator(payload,{now}));
+   assert.equal(check(slot,d1(slot,inflationEnvelope(payload)),api(payload)).status,
+    'STRUCTURAL_MATCH_NOT_RUNTIME_PROOF');
+   const invalid=structuredClone(payload);
+   invalid.indicators[0].id='UNAPPROVED_SERIES_ID';
+   assert.throws(()=>validator(invalid,{now}));
+   assert.equal(check(slot,d1(slot,inflationEnvelope(invalid)),api(invalid)).status,
+    'INVALID_INFLATION_PUBLIC_METADATA');
+   const body=JSON.stringify(inflationEnvelope(invalid));
+   const db={prepare(){return{bind(){return{first:async()=>({body,stored_at:storedAt})};}};}};
+   const response=await reader(new Request(url),db,{now});
+   assert.equal(response.status,503,slot+' Worker must reject invalid saved D1 row');
+   assert.equal((await response.json()).reason,'STORED_PUBLIC_SUMMARY_INVALID');
+   // Bad coverage/row history is just as invalid even when HTTP200 repeats it.
+   const wrong=structuredClone(payload);
+   wrong.indicators[0].history=[{date:'2026-11-13',value:10}];
+   assert.equal(check(slot,d1(slot,inflationEnvelope(wrong)),api(wrong)).status,
+    'INVALID_INFLATION_PUBLIC_METADATA');
+  }
 });

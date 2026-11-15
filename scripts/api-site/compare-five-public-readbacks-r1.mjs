@@ -3,6 +3,8 @@
 import {createHash} from 'node:crypto';
 import {isDeepStrictEqual} from 'node:util';
 import {validEmploymentR6PublicDisplay} from '../../worker/employment-r6-public-display.mjs';
+import {validateInflationCausalPublic} from '../../worker/inflation-causal-public-r1.mjs';
+import {validateInflationCandidates7Public} from '../../worker/inflation-causal-candidates-public-7-r1.mjs';
 
 export const PUBLIC_READBACK_SLOTS=Object.freeze({
  inflation19:Object.freeze({table:'market_public_snapshots_v1',snapshot_key:'detail:inflation-causal-public-19:r1',mode:'ENVELOPE'}),
@@ -89,6 +91,15 @@ export function comparePublicReadback(slot,{d1,api,now=Date.now()}={}){
      typeof p.sourceVersion!=='string'||p.sourceVersion.length===0||
      projection.sourceVersion!==p.sourceVersion||projection.sourceStoredAt!==p.sourceStoredAt)
     return result(slot,'CHECKPOINT_MISMATCH',evidence);
+  // The public Workers validate each of the 19 and 7 series, including ID
+  // order, provenance, missing/STALE rows and the actual READY/PARTIAL rule.
+  // Identical D1/API bytes from an invalid saved row are not a valid readback.
+  // Reuse those exact validators instead of trusting envelope parity alone.
+  try{
+   if(d1.body.length>45000)throw Error('READER_BODY_TOO_LARGE');
+   if(slot==='inflation19')validateInflationCausalPublic(p,{now});
+   else if(slot==='inflation7')validateInflationCandidates7Public(p,{now});
+  }catch{return result(slot,'INVALID_INFLATION_PUBLIC_METADATA',evidence)}
   if(!isDeepStrictEqual(api.body,p))return result(slot,'PUBLIC_PAYLOAD_MISMATCH',evidence);
   return result(slot,'STRUCTURAL_MATCH_NOT_RUNTIME_PROOF',{...evidence,sourceVersion:p.sourceVersion,sourceStoredAt:p.sourceStoredAt});
  }
