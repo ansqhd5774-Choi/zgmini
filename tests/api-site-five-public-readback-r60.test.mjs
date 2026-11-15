@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {comparePublicReadback,PUBLIC_READBACK_SLOTS,MAX_PUBLIC_READBACK_SPAN_MS} from '../scripts/api-site/compare-five-public-readbacks-r1.mjs';
 import {THEME_ETF_ONLY_PUBLIC_VERSION,THEME_ETF_ONLY_METHOD,THEME_ETF_ONLY_PAIRS,validateThemeEtfOnlyPublic} from '../worker/theme-etf-only-public.mjs';
+import {buildEmploymentR6OneYearReadModel} from '../lib/market-score/employment-r6-one-year-read-model.mjs';
+import {validEmploymentR6PublicDisplay,employmentR6StoredDisplayResponse} from '../worker/employment-r6-public-display.mjs';
 const now=Date.parse('2026-11-14T00:00:00.000Z');
 const readAt='2026-11-14T00:00:00.000Z';
 const storedAt=now-60_000;
@@ -15,8 +17,8 @@ const check=(slot,db,pub)=>comparePublicReadback(slot,{d1:db,api:pub,now});
 const inflationPayload={schemaVersion:'synthetic-r1',status:'PARTIAL',score:null,sourceVersion:'fixture-source-v1',sourceStoredAt:storedAt-1000,indicators:[]};
 const inflationEnvelope=payload=>({payload,projection:{status:'READY',builtAt:storedAt,
   sourceVersion:payload.sourceVersion,sourceStoredAt:payload.sourceStoredAt}});
-const employment={kind:'EMPLOYMENT_R6_ONE_YEAR_STORED_DISPLAY_R1',asOfDate:'2026-11-13',sourceStoredAt:storedAt-1000,
-  formulaHash:'sha256:fixture',methodologyVersion:'EMP-R6-FORMULA-R2',indicators:Array.from({length:29},(_,i)=>({id:i+1}))};
+const employment=buildEmploymentR6OneYearReadModel([],
+ {asOfDate:'2026-11-13',sourceStoredAt:storedAt-1000});
 const themePairs=[
  {theme:'로봇·자동화',etfs:['BOTZ','ROBO']},
  {theme:'클라우드·SaaS',etfs:['SKYY','CLOU']},
@@ -232,4 +234,41 @@ test('W05 theme fixed seed policy is aligned with the real Worker public validat
  assert.equal(validateThemeEtfOnlyPublic(unlicensed),false);
  assert.equal(check('theme',d1('theme',unlicensed),api(composedTheme())).status,
   'THEME_SEED_POLICY_UNVERIFIED');
+});
+
+test('W05 employment exact readback uses the real 29-series Worker contract, not array length',()=>{
+ assert.equal(validEmploymentR6PublicDisplay(employment,{allowLegacy:true}),true);
+ const cases=[
+  ['numeric ids',p=>{p.indicators=p.indicators.map((x,i)=>({...x,id:i+1}));}],
+  ['swapped ids',p=>{[p.indicators[0],p.indicators[1]]=[p.indicators[1],p.indicators[0]];}],
+  ['wrong formula',p=>{p.formulaHash='sha256:synthetic';}],
+  ['incorrect quarter boundary',p=>{p.window.recentQuarterStart='2025-01-01';}],
+  ['invented summary count',p=>{p.summary.scoredFeatures=29;}],
+  ['future release',p=>{p.indicators[0].nextReleaseDate='2026-01-01';}],
+  ['calendar impossible as-of',p=>{p.asOfDate='2026-11-31';}],
+ ];
+ for(const [name,change] of cases){
+  const copy=structuredClone(employment);change(copy);
+  assert.equal(validEmploymentR6PublicDisplay(copy,{allowLegacy:true}),false,name);
+  assert.equal(check('employment',d1('employment',copy),api(copy)).status,
+   'INVALID_EMPLOYMENT_METADATA',name);
+ }
+ assert.equal(check('employment',d1('employment',employment),api(employment)).status,
+  'STRUCTURAL_MATCH_NOT_RUNTIME_PROOF');
+});
+
+test('W05 rejected employment row matches the real stored 29-series Reader HTTP 503',async()=>{
+ const invalid=structuredClone(employment);
+ invalid.indicators[0].id='INVALID_BUT_29_ROWS';
+ const d1row={body:JSON.stringify(invalid),stored_at:storedAt};
+ assert.equal(check('employment',{...PUBLIC_READBACK_SLOTS.employment,readAt,exists:true,
+  stored_at:storedAt,body:d1row.body},api(invalid)).status,'INVALID_EMPLOYMENT_METADATA');
+ const db={prepare(sql){
+  assert.match(sql,/^SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=\?/);
+  return{bind(){return{first:async()=>d1row};}};
+ }};
+ const response=await employmentR6StoredDisplayResponse(
+  new Request('https://zgmini.kr/api/employment-r6/observations'),db,{now});
+ assert.equal(response.status,503);
+ assert.equal((await response.json()).reason,'STORED_PUBLICATION_STALE');
 });
