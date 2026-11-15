@@ -88,7 +88,7 @@ export function createConfiguredStoredPrivateAdapters({dataRoot,
    row.methodologyVersion===theme.methodologyVersion&&
    JSON.stringify(row.etfs)===JSON.stringify(theme.etfs)&&
    typeof row.sourceVersion==='string'&&!!row.sourceVersion&&
-   /^\\d{4}-\\d{2}-\\d{2}$/.test(row.observationDate??'')&&
+   /^\d{4}-\d{2}-\d{2}$/.test(row.observationDate??'')&&
    validScore(row.score);
   const confirmed=kind==='confirmed'&&
    Array.isArray(row?.history)&&row.history.length===252&&
@@ -97,7 +97,7 @@ export function createConfiguredStoredPrivateAdapters({dataRoot,
   const provisional=kind==='provisional'&&
    batch?.historicalReaderContract==='LOCAL_SAVED_R32_REPLAY_VERIFIED'&&
    batch?.currentVisibility==='UNKNOWN_D1_STORED_AT_NOT_READ'&&
-   /^\\d{4}-\\d{2}-\\d{2}$/.test(row?.confirmedObservationDate??'')&&
+   /^\d{4}-\d{2}-\d{2}$/.test(row?.confirmedObservationDate??'')&&
    row.confirmedObservationDate<row.observationDate&&
    Array.isArray(row.points)&&row.points.length>0&&
    row.points.at(-1)?.date===row.observationDate&&
