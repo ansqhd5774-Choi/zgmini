@@ -188,6 +188,10 @@ try{
  const {storeLocalCollectionHealth}=await import('./collection-health.mjs');
  const health=await storeLocalCollectionHealth(core,history,now,base);
  report.collectionHealth={normal:health.normal,total:health.total,status:health.status};
+ await attemptOutput(report,'api-connection-health-snapshot',async()=>{
+  const {storeLocalApiConnectionHealth}=await import('./api-connection-health.mjs');
+  report.apiConnectionHealth=await storeLocalApiConnectionHealth(core,base,now);
+ });
  if(publish){
   // Each output below owns its validation and readback; marketReady never gates peers.
   const remote=client(config,()=>credential(root),{onDiagnostic:diagnostic=>appendD1Diagnostic(base,{runAt:report.at,source},diagnostic)});
