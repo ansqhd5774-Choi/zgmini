@@ -31,6 +31,8 @@ test('only explicitly printed official crop dates become stable five-field event
   assert.equal(event.sourceUrl,NASS_REPORT_SCHEDULE_URL);
  }
  assert.equal(NASS_SOURCE_SPEC.format,'nass-report-dates');
+ assert.equal(NASS_REPORT_SCHEDULE_URL,'https://www.nass.usda.gov/publications/reports-by-release-day');
+ assert.equal(NASS_SOURCE_SPEC.url,NASS_REPORT_SCHEDULE_URL);
 });
 test('published next-year dates are included; unpublished years are never projected',()=>{
  const data=page(report('Crop Production',2026,['2026-12-10']),
