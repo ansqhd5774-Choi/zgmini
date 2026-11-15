@@ -112,3 +112,19 @@ test('GMH-only candidate fails closed on rights, provenance, phase, coverage and
  await expectDenied(p=>p.baseHash='0'.repeat(64));
  await expectDenied(p=>p.asOf='2026-10-01T00:00:00Z');
 });
+
+test('R178 optional overlay exceptions never escape the legacy public reader',async()=>{
+ const good=seed(),payload=rolling(good);
+ const cases=[
+  {base:null,body:payload},
+  {base:{},body:payload},
+  {base:{...good,themes:[null]},body:payload},
+  {base:good,body:{...payload,themes:[null,...payload.themes.slice(1)]}},
+ ];
+ for(const c of cases){
+  const db={prepare(){return{bind(){return{first:async()=>({
+   body:JSON.stringify(c.body),stored_at:now-500
+  })}}}}};
+  assert.equal(await readRollingPublic(db,c.base,{now}),null);
+ }
+});
