@@ -115,7 +115,17 @@ export async function runConfiguredStoredPrivateBatch({
  const out=await runThemeBatch({registry,adapters,store:guarded,
   runKey:'configured-saved:'+fingerprint,mode:'private',maxStages,after,
   formulas:OPERATIONAL_METHODS});
+ // A caller-injected calculator or checkpoint implementation can perform
+ // external work; do not falsely report zero I/O for unknown dependencies.
+ const injectedCalculator=calculator!==undefined||provisionalCalculator!==undefined;
+ const unverified=injectedCalculator?'UNVERIFIED_INJECTED_CALCULATOR':0;
+ const storeUnverified=store!==null&&!store.persistence?
+  'UNVERIFIED_INJECTED_CHECKPOINT_STORE':0;
  return {...out,inputFingerprint:fingerprint,registeredThemes:registry.themes.length,
-  checkpointPersistence:guarded.persistence,sourceMode:'LOCAL_SAVED_ONLY',
-  providerCalls:0,d1Reads:0,d1Writes:0,schedulerWrites:0,publicConnection:'NOT_ACTIVATED'};
+  checkpointPersistence:guarded.persistence,
+  sourceMode:injectedCalculator?'INJECTED_CALCULATOR_UNVERIFIED':'LOCAL_SAVED_ONLY',
+  providerCalls:unverified,d1Reads:unverified,
+  d1Writes:unverified||storeUnverified,
+  schedulerWrites:unverified,
+  publicConnection:'NOT_ACTIVATED'};
 }
