@@ -30,7 +30,7 @@ export async function runConfiguredAutoPublish({dataRoot,now=Date.now(),
  const dir=secureDirectory(approvals);
  let query=null,queryAttempted=false,queryFailure=null;
  const results=[];let approvalFiles=0,eligible=0,d1Queries=0,d1Writes=0;
- let r32ReaderReady=null;
+ let r32Capabilities=null;
  for(const {definition} of entries){
   const id=definition.id,approvalFile=path.join(dir,id+'.json');
   if(!fs.existsSync(approvalFile))continue;
@@ -49,14 +49,14 @@ export async function runConfiguredAutoPublish({dataRoot,now=Date.now(),
   eligible++;
   let expectedHandoff=null;
   if(definition.schema==='ZGMINI_THEME_CONFIG_V2'){
-   if(r32ReaderReady===null){
+   if(r32Capabilities===null){
     try{
-     const capabilities=readCapabilities?await readCapabilities():await (async()=>{
+     r32Capabilities=readCapabilities?await readCapabilities():await (async()=>{
       const response=await fetch('https://zgmini.kr/api/theme-configured',{redirect:'error',signal:AbortSignal.timeout(20000)});
       ensure(response.ok,'CONFIG_PUBLIC_READER_HTTP');return response.json();})();
-     r32ReaderReady=capabilities.supportedMethodologies?.includes(definition.profile)===true&&capabilities.supportsSeparateR32Provisional===true;
-    }catch{r32ReaderReady=false;}
+    }catch{r32Capabilities={};}
    }
+   const r32ReaderReady=r32Capabilities.supportedMethodologies?.includes(definition.profile)===true&&r32Capabilities.supportsSeparateR32Provisional===true;
    if(!r32ReaderReady){results.push({id,status:'PUBLICATION_BLOCKED',reason:'CONFIG_PUBLIC_R32_READER_NOT_DEPLOYED'});continue;}
    // Only the existing Writer may publish. Recheck that its candidate is the
    // exact SHA-verified saved private result before opening D1 credentials.
