@@ -219,6 +219,13 @@ try{
   const {refreshSavedER1MonthlyOutputs}=await import('./market-calendar-er1-auto-output.mjs');
   report.er1Future=await refreshSavedER1MonthlyOutputs({store:publicFeedStore(core),now});
  });
+ // Derived R44 grades from the pinned private source + stored calendar days.
+ // No supplier GET during calculation and no change to ER1 calculation.
+ await attemptOutput(report,'market-calendar-r44-delta',async()=>{
+  const {publicFeedStore}=await import('../../worker/public-feed-store.mjs');
+  const {refreshSavedDeltaR44Output}=await import('./market-calendar-deltascreener-output.mjs');
+  report.deltaR44=await refreshSavedDeltaR44Output({store:publicFeedStore(core),now,pcHome:base});
+ });
  if(publish){
   // Each output below owns its validation and readback; marketReady never gates peers.
   const remote=client(config,()=>credential(root),{onDiagnostic:diagnostic=>appendD1Diagnostic(base,{runAt:report.at,source},diagnostic)});
