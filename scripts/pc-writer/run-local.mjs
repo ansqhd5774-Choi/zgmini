@@ -212,6 +212,10 @@ try{
  const {storeLocalCollectionHealth}=await import('./collection-health.mjs');
  const health=await storeLocalCollectionHealth(core,history,now,base);
  report.collectionHealth={normal:health.normal,total:health.total,status:health.status};
+ await attemptOutput(report,'api-connection-health-snapshot',async()=>{
+  const {storeLocalApiConnectionHealth}=await import('./api-connection-health.mjs');
+  report.apiConnectionHealth=await storeLocalApiConnectionHealth(core,base,now);
+ });
  // Score only complete future monthly cohorts from already-saved PC inputs.
  // This local calculation also runs without --publish; an unavailable D1
  // cannot prevent the derived score from being stored for a later publication.
