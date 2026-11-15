@@ -2,6 +2,7 @@
 // No provider GET, D1 client, writer, scheduled task, installation or public API.
 import fs from 'node:fs';
 import path from 'node:path';
+import {createHash} from 'node:crypto';
 import {listRegistered} from './theme-config-registry.mjs';
 import {identity,runThemeBatch} from './theme-platform.mjs';
 import {buildOperationalRegistry,OPERATIONAL_METHODS} from './theme-platform-operational.mjs';
@@ -33,7 +34,7 @@ function checkedSource(root,relative){
  need(fs.lstatSync(file).isFile()&&!fs.lstatSync(file).isSymbolicLink()&&
   fs.realpathSync(file)===file,'THEME_CONFIGURED_INPUT_REDIRECT');
  const bytes=fs.readFileSync(file);
- return {path:relative,sha256:identity([...bytes])};
+ return {path:relative,sha256:createHash('sha256').update(bytes).digest('hex')};
 }
 
 // Never confuse a registration or synthetic score with a verified PC input.
