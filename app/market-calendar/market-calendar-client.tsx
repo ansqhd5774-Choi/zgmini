@@ -129,7 +129,7 @@ function mergeOfficial(feed:CalendarFeed|null):CalendarRow[]{
   const sourceState=feed.sources?.[item.source];
   const checkedAt=sourceState?.checkedAt??null;
   const fresh=sourceState?.status==='READY'&&!!checkedAt&&Date.now()-Date.parse(checkedAt)>=0&&Date.now()-Date.parse(checkedAt)<=48*3600000;
-  const category=item.source==='nyfed'?(item.id==='nyfed-gscpi'?'공급망':'물가'):item.source==='eia_epm'?'에너지':item.source==='tic'?'국제자본':item.source==='treasury'?'국채':item.source==='cftc'?'시장':item.source==='usda_nass'?'원자재':item.source==='usda'?'원자재':item.source==='eia'?'에너지':item.id==='fed-calendar-fomc-minutes'?'금리':item.id==='fed-calendar-beige-book'?'경기':item.source==='bls'?'고용·노동':'경제';
+  const category=item.source==='nyfed'?(item.id==='nyfed-gscpi'?'공급망':'물가'):item.source==='eia_epm'?'에너지':item.source==='tic'?'국제자본':item.source==='treasury'?'국채':item.source==='cftc'?'시장':item.source==='usda'?'원자재':item.source==='usda_nass'?'원자재':item.source==='eia'?'에너지':item.id==='fed-calendar-fomc-minutes'?'금리':item.id==='fed-calendar-beige-book'?'경기':item.source==='bls'?'고용·노동':'경제';
   const meta=eventKinds[item.id]??{category,name:item.title,major:false};
   // Provider feed supplies dates only. Keep an exact clock time solely when
   // the already verified manual snapshot matches this event and day.

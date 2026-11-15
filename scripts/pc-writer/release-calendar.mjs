@@ -393,8 +393,6 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
      continue;
     }
     if(source==='usda_nass'){
-     // Official USDA-NASS date feed. The adapter owns private readback;
-     // normal Core owns the 6-hour guard, locking and D1 publication.
      const nass=await collectNassReportSchedule({store,key,now,fetchImpl,
       countRequest:()=>requests++,previous});
      sources.usda_nass=nass.state;
