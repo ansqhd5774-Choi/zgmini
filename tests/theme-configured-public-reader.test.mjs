@@ -87,3 +87,18 @@ test('nonadvancing page fails closed instead of infinite loop or partial success
  const db={prepare(){return {bind(){return {async all(){return {results:rows};}};}};}};
  const {response,body}=await load(db);assert.equal(response.status,503);assert.deepEqual(body.themes,[]);
 });
+
+test('malformed R32 confirmed record cannot hide a valid stored theme',async()=>{
+ const broken={...record,version:'ZGMINI_CONFIGURED_THEME_PUBLIC_V2',
+  themeId:'broken-r32',theme:'Broken R32',etfs:['AAA'],
+  methodologyVersion:'ETF_ONLY_T40_R20_V40_ADAPTIVE_R2_DATED_ISSUER_AUM_R32',
+  selectionEvidenceSha256:'e'.repeat(64),aumEvidenceSha256:'f'.repeat(64),
+  history:[{date:'2026-10-28',score:54,mode:'NORMALIZED_DATED_OFFICIAL_AUM',
+   contributingETFs:['AAA'],weightsPercent:{AAA:100},issuerAumAsOf:null,excluded:[]}]
+ };
+ const db=database([row(record),row(broken,'theme-configured:broken-r32')]);
+ const {response,body}=await load(db);
+ assert.equal(response.status,200);
+ assert.equal(body.status,'READY');
+ assert.deepEqual(body.themes.map(t=>t.id),['fixture-safe']);
+});
