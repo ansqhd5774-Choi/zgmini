@@ -1,6 +1,7 @@
 import {attemptOutput,isER1MonthlyFeedKey,er1MonthlyD1Readback,retainRecentER1Readback,assertER1ReadbackConsistent,canReuseER1VintageEvidence} from './independent-publication.mjs';
 import {publishER1MonthlyVintages} from './er1-monthly-vintage-publication.mjs';
 import {appendD1Diagnostic} from './d1-diagnostics.mjs';
+import {r44D1Readback} from './market-calendar-r44-d1-readback.mjs';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
@@ -315,6 +316,11 @@ try{
   });
   const outputs=(await core.prepare("SELECT * FROM public_feed_snapshots_v1 WHERE kind='output' AND snapshot_key='current'").all()).results;
   const er1FeedReadbacks=[];
+  const r44FeedReadbacks=[];
+  const recordR44Readback=(row,d1Row)=>{
+   const evidence=r44D1Readback(row,d1Row);
+   if(evidence)r44FeedReadbacks.push(evidence);
+  };
   const er1VintageReadbacks=[];
   const recordER1Readback=(row,d1Row)=>{
    if(!isER1MonthlyFeedKey(row.feed_key))return null;
@@ -342,17 +348,21 @@ try{
     if(vintage.status!=='VERIFIED')throw Error('ER1_VINTAGE_BACKLOG_PENDING');
    }
    if(existing?.stored_at>=row.stored_at){
-    assertER1ReadbackConsistent(recordER1Readback(row,existing));return;
+    assertER1ReadbackConsistent(recordER1Readback(row,existing));
+    recordR44Readback(row,existing);return;
    }
    if(existing&&!acceptsStoredUpdate(JSON.parse(existing.body),JSON.parse(row.body))){
-    recordER1Readback(row,existing);return;
+    recordER1Readback(row,existing);
+    recordR44Readback(row,existing);return;
    }
    await remote.request(config.core,[{sql:"INSERT INTO public_feed_snapshots_v1(kind,feed_key,snapshot_key,body,stored_at) VALUES('output',?,'current',?,?) ON CONFLICT(kind,feed_key,snapshot_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at WHERE excluded.stored_at>public_feed_snapshots_v1.stored_at",params:[row.feed_key,row.body,row.stored_at]}]);
    const check=(await remote.query(config.core,"SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'",[row.feed_key])).results[0];
    recordER1Readback(row,check);
+   recordR44Readback(row,check);
    if(check?.stored_at!==row.stored_at||check?.body!==row.body)throw Error('LOCAL_FEED_PUBLICATION_MISMATCH');
    });
   }
+  report.deltaR44D1=r44FeedReadbacks[0]??{status:'R44_OUTPUT_NOT_SEEN'};
   // Independent, bounded publication lane for PC-archived real CNN scores.
   // A missing archive is valid until a new verified observation is collected.
   await attemptOutput(report,'cnn-observed-archive',async()=>{
