@@ -77,9 +77,13 @@ const diffDays=(a:string,b:string)=>Math.round((parseDay(a).getTime()-parseDay(b
 const dateCaption=(key:string)=>`${Number(key.slice(5,7))}.${key.slice(8,10)}`;
 const weekTitle=(start:string)=>`${Number(start.slice(5,7))}월 ${Math.ceil(Number(start.slice(8,10))/7)}주차`;
 const officialName=(item:OfficialEvent,defaultName:string)=>{
+ // Fed's 2026-11-12 revision makes the 2027-10-27 meeting strategy-only:
+ // no interest-rate vote or policy decision. Preserve schedule and importance.
+ const name=item.source==='fed_fomc'&&item.id==='fomc'&&item.date==='2027-10-27'
+  ?'미국 FOMC 통화정책 전략 회의 · 금리 결정 없음':defaultName;
  if(item.id==='cftc-cot')return /Holiday-delayed/i.test(item.title)?`${defaultName} · 공휴일 지연`:defaultName;
- if(item.id==='fomc'&&/잠정|tentative/i.test(item.title))return `${defaultName} · 일정 잠정`;
- if(item.id!=='gdp')return defaultName;
+ if(item.id==='fomc'&&/잠정|tentative/i.test(item.title))return `${name} · 일정 잠정`;
+ if(item.id!=='gdp')return name;
  const stage=/\bAdvance Estimate\b/i.test(item.title)?'1차 추정':/\bSecond Estimate\b/i.test(item.title)?'2차 추정':/\bThird Estimate\b/i.test(item.title)?'3차 추정':/\bInitial Estimate\b/i.test(item.title)?'초기 추정':/\bUpdated Estimate\b/i.test(item.title)?'수정 추정':null;
  return stage?`${defaultName} · ${stage}`:defaultName;
 };
