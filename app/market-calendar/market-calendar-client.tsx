@@ -77,9 +77,13 @@ const diffDays=(a:string,b:string)=>Math.round((parseDay(a).getTime()-parseDay(b
 const dateCaption=(key:string)=>`${Number(key.slice(5,7))}.${key.slice(8,10)}`;
 const weekTitle=(start:string)=>`${Number(start.slice(5,7))}월 ${Math.ceil(Number(start.slice(8,10))/7)}주차`;
 const officialName=(item:OfficialEvent,defaultName:string)=>{
+ // Fed's 2026-11-12 revision makes the 2027-10-27 meeting strategy-only:
+ // no interest-rate vote or policy decision. Preserve schedule and importance.
+ const name=item.source==='fed_fomc'&&item.id==='fomc'&&item.date==='2027-10-27'
+  ?'미국 FOMC 통화정책 전략 회의 · 금리 결정 없음':defaultName;
  if(item.id==='cftc-cot')return /Holiday-delayed/i.test(item.title)?`${defaultName} · 공휴일 지연`:defaultName;
- if(item.id==='fomc'&&/잠정|tentative/i.test(item.title))return `${defaultName} · 일정 잠정`;
- if(item.id!=='gdp')return defaultName;
+ if(item.id==='fomc'&&/잠정|tentative/i.test(item.title))return `${name} · 일정 잠정`;
+ if(item.id!=='gdp')return name;
  const stage=/\bAdvance Estimate\b/i.test(item.title)?'1차 추정':/\bSecond Estimate\b/i.test(item.title)?'2차 추정':/\bThird Estimate\b/i.test(item.title)?'3차 추정':/\bInitial Estimate\b/i.test(item.title)?'초기 추정':/\bUpdated Estimate\b/i.test(item.title)?'수정 추정':null;
  return stage?`${defaultName} · ${stage}`:defaultName;
 };
@@ -245,7 +249,7 @@ export default function MarketCalendar(){
   </div>
   <div className="mc-head" aria-hidden="true"><span className="mc-importance-heading" title="경제지표: 예상 시장 영향도 / 기업 실적: 예상 EPS ER1 점수, ★★★ 97점 이상"><Star size={12} fill="currentColor" aria-hidden="true"/>별등급</span><span>날짜</span><span>시간</span><span>국가</span><span>구분</span><span>발표 일정</span><span>발표</span><span>예상</span><span>이전</span><span>남은 시간</span></div>
   <div className="mc-results" aria-live="polite">
-   {loadState==='ready'&&modelCoverage&&<p className="mc-data-state" title="개발 코드 모델 입력 기준입니다. 발표 주기 별도 관리 72개 · 시장 일별 자료 21개 · 비정기·파생 신호 4개. PC 원자료의 활성·저장 완료 수가 아닙니다. 연도별 연결 수는 모델 입력마다 그해 공식 발표일이 1건 이상 있는지를 세며, 연중 전체 발표 회차의 수집 완료율이 아닙니다.">경제 모델 입력 {modelCoverage.totalInputs}개(코드 기준) · 공식 발표 연결 {modelCoverage.officialStored}/{modelCoverage.officialEligible}개(전체 저장 이력) · {modelCoverage.nextYear}년 일정 연결 {modelCoverage.nextYearConfirmed}/{modelCoverage.officialEligible}개(입력별 1건 이상) · 개별 발표일 비대상 {modelCoverage.nonRelease}개</p>}
+   {loadState==='ready'&&modelCoverage&&<p className="mc-data-state" title="개발 코드 모델 입력 기준입니다. 발표 주기 별도 관리 72개 · 시장 일별 자료 21개 · 비정기·파생 신호 4개. PC 원자료의 활성·저장 완료 수가 아닙니다. 연도별 연결 수는 모델 입력마다 그해 공식 발표일이 1건 이상 있는지를 세며, 연중 전체 발표 회차의 수집 완료율이 아닙니다. 공급자 일부가 실패한 경우 숫자는 확인된 저장 일정으로 계산한 최소 연결 수이며, 미연결·전체 수집 완료를 확정하지 않습니다.">{modelCoverage.feedPartial?'공식 일정 일부 공급자 수집 실패 · 확인된 저장 일정만 기준 · ':''}경제 모델 입력 {modelCoverage.totalInputs}개(코드 기준) · 공식 발표 연결 {modelCoverage.officialStored}/{modelCoverage.officialEligible}개({modelCoverage.feedPartial?'확인된 저장 일정 기준·미수집 불확정':'전체 저장 이력'}) · {modelCoverage.nextYear}년 일정 연결 {modelCoverage.nextYearConfirmed}/{modelCoverage.officialEligible}개({modelCoverage.feedPartial?'확인된 일정 기준·추가 발표 미확정':'입력별 1건 이상'}) · 개별 발표일 비대상 {modelCoverage.nonRelease}개</p>}
    <EarningsDisplayClient start={range.start} end={range.end} activeDate={activeDate} query={query} importance={importance} enabled={(kind==='all'||kind==='earnings')&&country!=='KR'} onCounts={setVendorCounts}/>
    {loadState!=='ready'&&<p className="mc-data-state">{loadState==='loading'?'공식 일정 저장본 확인 중':'공식 일정 저장본 조회 실패'} · 수동 확인 자료와 분리하여 표시합니다.</p>}
    {loadState==='ready'&&feed?.status!=='READY'&&<p className="mc-data-state">공식 일정 저장본 미확정 · 기존 확인 자료는 확인일 기준으로 표시합니다.</p>}
