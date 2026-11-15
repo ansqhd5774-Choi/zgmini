@@ -56,10 +56,10 @@ test('configured-only private batch runs both saved phases for two registered th
  assert.equal(first.status,'COMPLETE');
  assert.equal(first.executed,12);
  assert.equal(first.registeredThemes,2);
- assert.equal(first.providerCalls,0);
- assert.equal(first.d1Reads,0);
- assert.equal(first.d1Writes,0);
- assert.equal(first.schedulerWrites,0);
+ assert.equal(first.providerCalls,'UNVERIFIED_INJECTED_CALCULATOR');
+ assert.equal(first.d1Reads,'UNVERIFIED_INJECTED_CALCULATOR');
+ assert.equal(first.d1Writes,'UNVERIFIED_INJECTED_CALCULATOR');
+ assert.equal(first.schedulerWrites,'UNVERIFIED_INJECTED_CALCULATOR');
  assert.equal(first.publicConnection,'NOT_ACTIVATED');
  assert.equal(first.checkpointPersistence,'TRANSIENT_MEMORY_ONLY');
  assert.deepEqual(f.counters,{confirmed:2,provisional:2});
@@ -100,4 +100,32 @@ test('without registrations, shadow returns no work and creates no files',async 
  assert.equal(result.checkpointPersistence,'NONE');
  assert.equal(result.providerCalls,0);
  assert.equal(result.d1Writes,0);
+});
+
+test('approved local revision checkpoint implementation persists and resumes without a new scheduler',async t=>{
+ const f=fixture(t);
+ const {createThemeCheckpointStore}=await import('../scripts/pc-writer/theme-platform-store.mjs');
+ const store=createThemeCheckpointStore({dataRoot:f.root});
+ const args={dataRoot:f.root,registrations:f.registrations,store,
+  calculator:f.calc,provisionalCalculator:f.provisional};
+ const first=await runConfiguredStoredPrivateBatch(args);
+ assert.equal(first.status,'COMPLETE');
+ assert.equal(first.executed,6);
+ assert.equal(first.publicConnection,'NOT_ACTIVATED');
+ const home=path.join(f.root,'theme-platform','checkpoints',first.fingerprint);
+ assert.ok(fs.existsSync(path.join(home,'revision-6.json')));
+ assert.equal(fs.readdirSync(home).length,6);
+ const next=await runConfiguredStoredPrivateBatch(args);
+ assert.equal(next.executed,0);
+ assert.equal(fs.readdirSync(home).length,6,'unchanged source must not write a revision');
+ const priorSha=first.inputFingerprint;
+ const raw=path.join(f.root,'themes',f.registrations[0].internalId,'raw-manifest.json');
+ fs.appendFileSync(raw,' ');
+ const changed=await runConfiguredStoredPrivateBatch(args);
+ assert.equal(changed.executed,6);
+ assert.notEqual(changed.inputFingerprint,priorSha);
+ assert.ok(fs.existsSync(path.join(f.root,'theme-platform','checkpoints',
+  changed.fingerprint,'revision-6.json')));
+ assert.ok(fs.existsSync(path.join(home,'revision-6.json')),
+  'original immutable history must not be overwritten');
 });
