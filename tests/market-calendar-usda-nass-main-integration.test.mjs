@@ -33,6 +33,7 @@ const mock=(calls,{nassStatus=200}={})=>async url=>{
 test('main Core collects USDA NASS in same approved source loop and persists official five-field events',async()=>{
  const db=localDatabase(':memory:');
  try{
+  await publicFeedStore(db).initialize();
   const calls=[];
   const report=await collectReleaseCalendar(db,{now,fetchImpl:mock(calls)});
   assert.equal(report.providerRequests>0,true);
@@ -42,7 +43,7 @@ test('main Core collects USDA NASS in same approved source loop and persists off
   assert.equal(stored.body.sources.usda_nass.status,'READY');
   assert.equal(stored.body.sources.usda_nass.sourceUrl,NASS_REPORT_SCHEDULE_URL);
   const nass=stored.body.events.filter(e=>e.source===NASS_OFFICIAL_SOURCE_KEY);
-  assert.equal(nass.length,6);
+  assert.equal(nass.length,7);
   assert.equal(new Set(nass.map(e=>e.id+':'+e.date)).size,nass.length);
   assert.equal(nass.some(e=>e.date==='2026-11-16'&&e.id==='usda-nass-crop-progress'),true);
   for(const event of nass){
@@ -59,6 +60,7 @@ test('main Core collects USDA NASS in same approved source loop and persists off
 test('one failed NASS request retains earlier published official events and reports source failure',async()=>{
  const db=localDatabase(':memory:');
  try{
+  await publicFeedStore(db).initialize();
   const calls=[];
   await collectReleaseCalendar(db,{now,fetchImpl:mock(calls)});
   const old=await publicFeedStore(db).readOutput(RELEASE_CALENDAR_KEY);
@@ -96,7 +98,7 @@ test('new NASS source bypasses the old 13-source six-hour cache exactly once, pr
   assert.equal(calls.length,1);
   const latest=await store.readOutput(RELEASE_CALENDAR_KEY);
   assert.equal(latest.body.events.some(e=>e.id==='usda-wasde'&&e.source==='usda'),true);
-  assert.equal(latest.body.events.filter(e=>e.source==='usda_nass').length,6);
+  assert.equal(latest.body.events.filter(e=>e.source==='usda_nass').length,7);
   assert.equal((await collectReleaseCalendar(db,{now:now+60000,
    fetchImpl:mock(calls)})).status,'CACHED');
   assert.equal(calls.length,1);
