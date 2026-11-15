@@ -25,7 +25,9 @@ export async function collectOptional({dataRoot,themeId,start,end,maxRequests=4,
   for(const symbol of pairs[themeId]){
    const checkpoint=state.symbols[symbol];
    while(!checkpoint.complete&&report.providerCalls<maxRequests){
-    const url=new URL('https://getmarkethistory.com/api/v1/bars/stocks/'+symbol+'/1h');
+    // GMH 2026-11 requires the {asset}/{region} dataset in path routes.
+    // The 1h unauthenticated preview still returns `row.symbol` unchanged.
+    const url=new URL('https://getmarkethistory.com/api/v1/bars/stocks/us/'+symbol+'/1h');
     for(const [k,v] of Object.entries({start,end,limit:'5000',format:'jsonl',columns:'timestamp,close,symbol,is_gap'}))url.searchParams.set(k,v);
     if(checkpoint.cursor)url.searchParams.set('cursor',checkpoint.cursor);
     const requestedAt=now();report.providerCalls++;
