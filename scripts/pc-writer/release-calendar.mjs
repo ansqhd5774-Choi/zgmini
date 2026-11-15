@@ -346,9 +346,13 @@ export async function collectReleaseCalendar(db,{now=Date.now(),fetchImpl=fetch}
  const previous=await store.readOutput(key);
  // New source definitions should be picked up by the next normal Core cycle,
  // even if the earlier, smaller source set is inside the six-hour cache.
+ // A corrected official NASS page URL invalidates only the old cached source
+ // snapshot. Do not change the six-hour TTL or retry unchanged failures.
+ const nassUrlCurrent=previous?.body?.sources?.usda_nass?.sourceUrl===
+  RELEASE_SOURCES.usda_nass.page;
  const sourceSetComplete=Object.keys(RELEASE_SOURCES)
   .every(source=>Object.hasOwn(previous?.body?.sources??{},source))&&
-  previous?.body?.sources?.bls?.annualCollectorVersion===1;
+  nassUrlCurrent&&previous?.body?.sources?.bls?.annualCollectorVersion===1;
  if(attempt&&sourceSetComplete&&now-attempt.storedAt>=0&&now-attempt.storedAt<6*3600000){
   // The next Core cycle overwrites the PC-local last-run report. Preserve only
   // a bounded failure code for the same private six-hour collection attempt.
