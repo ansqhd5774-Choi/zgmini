@@ -55,7 +55,7 @@ async function collectPair({dataRoot,themeId,start,end,maxRequests=4,fetchImpl=f
   for(const symbol of symbols){
    const checkpoint=state.symbols[symbol];
    while(!checkpoint.complete&&report.providerCalls<maxRequests){
-    const url=new URL('https://getmarkethistory.com/api/v1/bars/stocks/'+symbol+'/1h');
+    const url=new URL('https://getmarkethistory.com/api/v1/bars/stocks/us/'+symbol+'/1h');
     for(const [k,v] of Object.entries({start,end,limit:'5000',format:'jsonl',columns:'timestamp,close,symbol,is_gap'}))url.searchParams.set(k,v);
     if(checkpoint.cursor)url.searchParams.set('cursor',checkpoint.cursor);
     const requestedAt=now();report.providerCalls++;
@@ -69,7 +69,7 @@ async function collectPair({dataRoot,themeId,start,end,maxRequests=4,fetchImpl=f
     const rows=body.split(/\r?\n/).filter(Boolean).map(JSON.parse);
     if(configured&&!rows.length){delete state.failedAt;delete state.reason;state.lastEmptyAt=requestedAt;atomic(stateFile,state);report.status='WAIT_SOURCE_EMPTY';return report;}
     if(!rows.length||rows.length>5000)throw Error('ROW_COUNT');
-    let previous='';for(const row of rows){if(row.symbol!==symbol||!Number.isFinite(Date.parse(row.timestamp))||typeof row.close!=='number'||!Number.isFinite(row.close)||row.close<=0||previous&&row.timestamp<=previous)throw Error('BAR_INVALID');previous=row.timestamp;}
+    // Reject provider rows outside the requested UTC range or marked as gaps.,    // Validate the entire response before raw persistence and cursor advance.,    let previous='';,    for(const row of rows){,     const millis=typeof row.timestamp==='string'?Date.parse(row.timestamp):NaN;,     const utcDay=Number.isFinite(millis)?new Date(millis).toISOString().slice(0,10):null;,     if(row.symbol!==symbol||!utcDay||utcDay<start||utcDay>end||,       row.is_gap!==false||typeof row.close!=='number'||,       !Number.isFinite(row.close)||row.close<=0||,       (previous&&row.timestamp<=previous))throw Error('BAR_INVALID');,     previous=row.timestamp;,    }
     const digest=hash(body),relative='raw/'+symbol+'_'+digest+'.jsonl',dest=path.join(raw,symbol+'_'+digest+'.jsonl');
     if(!fs.existsSync(dest))fs.writeFileSync(dest,body,{flag:'wx'});if(hash(fs.readFileSync(dest))!==digest)throw Error('RAW_READBACK');
     const dates=rows.map(r=>nyDate.format(new Date(r.timestamp))).sort();
