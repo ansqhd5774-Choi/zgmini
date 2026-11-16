@@ -30,8 +30,8 @@ export function normalizeCensusM3Inventories(payload){
     !Array.isArray(payload[0]))throw fail('CENSUS_M3_SHAPE_INVALID');
   const headers=payload[0];
   const mandatory=['data_type_code','time_slot_id','seasonally_adj','category_code','cell_value','us'];
-  // EITS includes the canonical month as an implicit `time` output column.
-  // Some responses omit the optional time_slot_date even when it is requested.
+  // Request the canonical monthly time_slot_date explicitly; the time
+  // predicate may be an annual selection and must not override month data.
   if(!mandatory.every(x=>headers.includes(x))||
     (!headers.includes('time')&&!headers.includes('time_slot_date'))||
     new Set(headers).size!==headers.length)
@@ -44,8 +44,8 @@ export function normalizeCensusM3Inventories(payload){
       String(row.seasonally_adj).toLowerCase()!=='yes')continue;
     if(String(row.us)!=='1')throw fail('CENSUS_M3_NATIONAL_FACET_INVALID');
     // time_slot_id is a Census internal integer, NOT a YYYY-MM observation date.
-    // The required `time=YEAR` predicate returns a separate ISO month `time` field.
-    const date=monthDate(row.time??row.time_slot_date),raw=String(row.cell_value??'').replace(/,/g,'').trim();
+    // A year-level `time` predicate cannot override a month-level slot date.
+    const date=monthDate(row.time_slot_date??row.time),raw=String(row.cell_value??'').replace(/,/g,'').trim();
     if(!date||!/^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(raw)||!Number.isFinite(Number(raw))||
       Number(raw)<0||seen.has(date))throw fail('CENSUS_M3_INVENTORIES_VALUE_OR_DUPLICATE');
     seen.add(date);
@@ -102,9 +102,8 @@ export async function collectCensusM3Inventories({base,censusKey,quotaFetch,now=
   for(const y of [year-1,year]){
     const url=new URL(CENSUS_M3_ENDPOINT);
     for(const [k,v] of Object.entries({
-      // Match the existing Growth G016 MTM/TI request: EITS returns `time`
-      // implicitly, with the observation month as YYYY-MM.
-      get:'data_type_code,time_slot_id,seasonally_adj,category_code,cell_value,error_data',
+      // Request the documented observation date; `time=YEAR` is a filter.
+      get:'data_type_code,time_slot_id,time_slot_date,seasonally_adj,category_code,cell_value,error_data',
       time:String(y),category_code:'MTM',seasonally_adj:'yes',key:censusKey.trim(),'for':'us:*',
     }))url.searchParams.set(k,v);
     const res=await quotaFetch(url,{method:'GET',redirect:'manual',signal:AbortSignal.timeout(20_000)});

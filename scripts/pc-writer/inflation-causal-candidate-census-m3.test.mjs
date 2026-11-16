@@ -37,6 +37,14 @@ test('official Census M3 MTM/TI uses only U.S. total manufacturer SA inventory l
   const actualEitsShape=normalizeCensusM3Inventories(timePayload(
     timeRow(2026,'09','900000'),timeRow(2026,'08','850000')));
   assert.deepEqual(actualEitsShape.map(x=>[x.date,x.value]),[['2026-08-01',850000],['2026-09-01',900000]]);
+  // An annual `time` filter must not override the explicit monthly date.
+  const twoDates=[...HEADERS.slice(0,-1),'time','us'];
+  const twoDateRow=[...row(2026,'09','900000').slice(0,-1),'2026','1'];
+  assert.deepEqual(normalizeCensusM3Inventories([twoDates,twoDateRow])
+    .map(x=>[x.date,x.value]),[['2026-09-01',900000]]);
+  const yearOnly=timeRow(2026,'09');yearOnly[6]='2026';
+  assert.throws(()=>normalizeCensusM3Inventories(timePayload(yearOnly)),
+    /VALUE_OR_DUPLICATE/);
   // Census official EITS examples emit time_slot_date as a midnight timestamp.
   const stamped=row(2026,'07','800000');stamped[2]='2026-07-01 00:00:00.0';
   assert.deepEqual(normalizeCensusM3Inventories(payload(stamped)).map(x=>[x.date,x.value]),
@@ -60,13 +68,13 @@ test('collects two source years and archives private provider snapshots without 
     const params=new URL(url).searchParams;
     const year=Number(params.get('time'));calls.push(year);
     assert.equal(params.get('key'),'private-census-key');
-    assert.ok(!params.get('get').split(',').includes('time_slot_date'));
+    assert.ok(params.get('get').split(',').includes('time_slot_date'));
     assert.ok(!params.get('get').split(',').includes('time'));
     assert.equal(params.get('category_code'),'MTM');
     assert.equal(params.get('seasonally_adj'),'yes');
     assert.equal(params.get('for'),'us:*');
     assert.equal(options.redirect,'manual');
-    return response(timePayload(timeRow(year,'09',year===2025?'700000':'900000')));
+    return response(payload(row(year,'09',year===2025?'700000':'900000')));
   };
   const first=await collectCensusM3Inventories({base:fixture.writer,censusKey:'private-census-key',quotaFetch,now});
   assert.equal(first.status,'SAVED_READBACK');
