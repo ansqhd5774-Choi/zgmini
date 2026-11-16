@@ -76,7 +76,6 @@ export default function CollectionHealthIndicator(){
    <strong>API 연결 상태</strong>
    {known?<span>정상 {health!.normal} · 주의 {health!.failed} · 미확인 {health!.unknown}</span>
     :<span>상태 확인 중</span>}
-   <span>최근 관측된 외부 연결의 집계 상태입니다. 전체 API 개수나 저장·게시 성공을 의미하지 않습니다.</span>
    <time dateTime={health?.checkedAt??undefined}>{stamp(health?.checkedAt)}</time>
   </div>}
  </div>;
