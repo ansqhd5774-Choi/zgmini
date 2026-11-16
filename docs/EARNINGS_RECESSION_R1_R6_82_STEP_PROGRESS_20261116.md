@@ -32,10 +32,10 @@
 |---|---|
 | 최종 목표 | 82단계 R1~R6로 적격 실적 침체 정보성 지표의 PC 원자료 저장→계산→승인 D1 게시→Production API/UI를 완성. 기존 E1-R4 점수/산식·기타 12대 기업실적은 보호 |
 | 현재 관련 단계 | R4-02~04 및 R6-04: QFR exact-key B 게시 경로·원본 3핀 |
-| 마지막 검증 완료점 | **R1-02 매핑 DONE:** [운영 PC A #1794](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1794)/Run 43902155135 `sourceHead=config.source=checkpoint=2070ff53549e2f9f2cea57d5af7e1d83f9fd7388`, 원격 JSON/TXT 2/2; [Core 상태 A #1796](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1796)/Run 43903516218 Core/Korea Task XML 등록 SHA 불변, Collection/Writer checkpoint 상태 확인, JSON/TXT 2/2. 관련 A 실행의 provider/PC operational/D1 쓰기 0·protectedStateUnchanged=true. 기존 앱 QFR PR #1175·제어 B PR #1762 `main` 소스 CI PASS 재사용; B 실제 게시/Production 별도 미완료 |
+| 마지막 검증 완료점 | R1-03 기본 저장 원장 조사 DONE: QFR 저장 PC 1 snapshot+1 chunk/R3 stored calc PASS, BLS 3 snapshot+3 chunk/R3D stored calc PASS와 SQLite SHA/append-only/readback 방식 §8에 연결. R1-02 운영 PC source/Task/Runner #1794/#1796 PASS 유지. QFR B effect·D1 실제 게시 미완료 |
 | 재사용할 기존 근거 | QFR 원자료 ZIP의 PC SQLite 저장·계산 기존 유효 증거; 앱 QFR 3-pin [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175) 소스/CI 완료, `main` 미병합 |
-| 현재 최초 실제 미완료 조건 | **순차 첫 미완료 R1-03:** SQLite 원자료 테이블·원본 저장 경로·checkpoint/append-only 재조회 방식의 범위별 증거 매핑이 아직 미완성. **후행 독립 B 차단:** QFR 단일키 manifest·owner 승인 Issue/Windows 실제 B Run·D1 readback 없음. 운영 `config.source`/checkout 동일성은 R1-02에서 확인됐고 이전 `7afe6b0b…`는 현재 SHA가 아니다 |
-| 다음 필수 실행 하나 | **순차 3/82 R1-03:** 기존 운영 SQLite의 QFR/BLS/BEA 저장 스키마·테이블/append-only/checkpoint·readback을 승인된 기존 결과와 앱 source에서 확인하고, 미대조 항목만 보충한다. **R6-04 QFR B 게시**는 후행 미승인 효과로 별도 유지(정확키 manifest·owner 승인 필요). 다음 순번 R1-04는 R1-03 완료 근거 반영 후 실행 |
+| 현재 최초 실제 미완료 조건 | 순차 첫 미완료 **R1-04**: BLS 원본 3시계열 WPSFD4/WPSFD41/PRS85006111과 정보성 5행/기본 D1/GET 계보 연결이 미완성. 후행 QFR B exact-key 승인/실게시 R6-04는 별도 미완료 |
+| 다음 필수 실행 하나 | 순차 **4/82 R1-04** 기존 BLS 3시계열→5정보성 행 계산/단위/기본 D1 키/GET 연결 근거만 대조한다. 원자료 재수집·DB/D1 쓰기 금지. 다음 R1-05 BEA 원본 인벤토리 |
 | 현재 완료율 증거 | **순차 1/82 DONE (약 1.2%)**, 현재 R1-02(2/82). 뒤쪽 SOURCE/CI 성공 항목은 계속 추적하되 전체 DONE으로 승격하지 않음. 기존 14단계 종단 완료는 마지막 확인 0/14, R6-15는 DEFERRED |
 | 최종 갱신 식별 | 이 문서의 **최신 원격 브랜치 HEAD 및 Git blob SHA를 재조회**해 근거로 보고한다. 고정된 과거 SHA를 현행값으로 복사하지 않는다 |
 | **순차 포인터·완료율** | **현재 R1-02 = 2/82**, 완료 확정 R1-01 **1/82 (약 1.2%)**. 이전 71/82 현재 단계·11단계 잔여 주장은 정정·철회 |
@@ -53,25 +53,25 @@
 
 | 판정 항목 | 실제 상태 |
 |---|---|
-| **순차 완료 확정** | **2/82개 (약 2.4%)** — R1-01·R1-02의 완료 조건에 근거 매핑 확인 |
-| **현재 순차 진행 단계** | **3/82 = R1-03** (운영 SQLite 원자료 테이블·checkpoint·append-only 저장 경로/재조회 구조) |
-| **82개 중 개별 완료 확정** | **2개**; 다른 SOURCE/CI·기존 성공은 별도 ID 완료 조건과 검증 필요 |
+| **순차 완료 확정** | **3/82개(3.7%)** — R1-01~R1-03 완료 증거 매핑 |
+| **현재 순차 진행 단계** | **4/82 R1-04** — BLS 기본 3원천 → 공개 정보성 5행 계보 조사 |
+| **82개 중 개별 완료 확정** | **3개** — 나머지 증거는 각 단계 완료 조건에 대조 필요 |
 | **71번 R6-04** | **후행 소스 선행 작업·현재 운영 승인 미해결**, 순차 71단계에 도달한 것이 아님 |
-| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 현재 순차 완료는 2개이고 실제 잔여 완료 판정 대상 80개(재작업 80회 뜻 아님) |
-| **다음 실제 수행 하나** | R1-03: 기존 QFR/BLS/BEA SQLite 원자료 테이블·checkpoint·append-only 구조의 이전 유효 근거를 먼저 연결, 빠진 실제 readback만 확인 |
+| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 3개 확정 DONE, 남은 79개 완료 판정 대상; 재수집 79회 뜻 아님 |
+| **다음 실제 수행 하나** | R1-04 저장 BLS 3원천에서 기존 5행 지표 계산·D1 기본 키·공개 GET 계보 확인, 신규 API 요청 금지 |
 
 **순서 운용:** 다음 번호로 넘어가는 기준은 해당 단계의 **계획서 완료 조건 + 근거 링크**이며, 뒤 단계에서 미리 통과한 PR·CI는 계획 순번을 바꾸지 않는 선행 자산으로 유지한다. 사용자 승인 없이 순번이나 완료 기준을 수정하지 않는다. 조건부 HOLD·장기 DEFERRED는 계획서대로 처리하며 다른 독립 승인 작업의 수행을 중단하는 새로운 Gate가 아니다.
 
 
 ## 0. 82개 작업별 진행 상태 (실증·소스 분리)
 
-> **2026-11-17 KST 순차 진행 재판정.** 82개 ID는 정확히 한 번씩 등록. **R1-01·R1-02 두 단계(2/82) DONE**, 현재 순차 작업 **R1-03(3/82)**. `EVIDENCE_NOT_MAPPED`는 실패·미착수 확정이 아니며 기존 성공 증거를 해당 단계 완료 조건에 대조해야 한다. 소스/CI 성공을 PC/D1/Production 성공으로 자동 승격하지 않는다.
+ > **2026-11-17 KST 순차 진행 재판정.** R1-01~R1-03 3/82 DONE, 현재 순차 R1-04(4/82). SOURCE/CI만으로 PC/D1/Production DONE 자동 승격하지 않음.
 
 | 작업 ID | 실행계획 작업 | 현재 증거 기반 상태 | 마지막 확인 증거·남은 조건 |
 |---|---|---|---|
 | R1-01 | 앱·제어 `main`, W05 브랜치 및 개발·운영·배포 SHA 구분 | `DONE` | **순차 1번 완료:** 2026-11-17 KST GitHub 재조회 앱 `main=af2f963659f15e016a64be1132d4cdec9af0d9c6`, 제어 `main=40a0767ec48829360a0b47a2b37e499d59944a05`, W05 전담 브랜치 확인 시 `e6694ddbd4d01826d8802be355bc671b4e53cd8c` (이번 문서 커밋 후 HEAD 전진). PC 승인 체크아웃은 기존 #1709 A 관측(2026-11-16 12:23:09 UTC) `7afe6b0bcaa74d622ada9190fdc9fcc7fd4d5f10`; **LIVE Core 실행 SHA는 미검증**. Cloudflare Production exact Deployment SHA는 `NOT_VERIFIED`. 개발·PC 저장소·공개 배포를 동일 성공으로 간주하지 않는 서로 다른 상태로 구분·기록함. Production 실제 검증은 R6-14 별도 미완료 |
 | R1-02 | 실 PC 승인 `config.source`, 수집기·계산기·게시기·작업 등록·Runner 매핑 | `DONE` | **순차 2번 완료:** PC 승인 A [#1794](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1794)/Run 43902155135에서 `sourceHead=approvedConfigSource=checkpointSource=2070ff53549e2f9f2cea57d5af7e1d83f9fd7388`, 원격 TXT/JSON 2/2 확인. [#1796](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1796)/Run 43903516218에서 Core/Korea 등록 Task XML SHA, 실제 Core/Collection/Writer checkpoint 및 `pc-job` 실행 Runner(A급 seat 1/2)를 검증. 제어 `operations.json` A급 허용목록·`pc-job.yml` Windows Runner, B `pc-publication-b.yml` 미승인/별도 lane, Collector→Stored Calculator→Publisher/Worker 소스·현재 설치 미검증 구분은 **§7 상세표**. B effect·실제 Core 실행 SHA는 이번 R1-02 DONE 범위 밖으로 미실증 유지 |
-| R1-03 | 운영 SQLite 원자료 테이블·checkpoint·append-only 이력 파악 | `EXISTING_EVIDENCE` | 기존 QFR SQLite 저장/checkpoint 성공 이력 재사용. 전체 원자료 테이블 조사 완료는 미입증 |
+| R1-03 | 운영 SQLite 원자료 테이블·checkpoint·append-only 이력 파악 | `DONE` | 기존 실제 PC QFR/BLS 저장 성공과 현재 SQLite 소스 계약을 §8에 연결. 공통 core.sqlite 두 테이블 `api_history_chunks_v1`·`api_history_snapshots_v1`, PK/provider 분리·내용 SHA·개정 append-only·ON CONFLICT DO NOTHING·BEGIN IMMEDIATE/COMMIT/ROLLBACK, read-only requery와 first_seen_at/retrieved_at/sourceStoredAt 차이 정리. QFR 1/1 실제 SQLite 저장·R3 계산 PASS, BLS 3/3 저장·R3D 계산 PASS. BEA 제조업 전용 CSV/JSON 원본은 보고 저장 PASS지만 독립 SHA readback 미확인. 신규 PC/D1 쓰기 0 |
 | R1-04 | 기존 BLS 3개 원천과 공개 5개 정보성 행 계보 조사 | `EXISTING_EVIDENCE` | BLS 기본 3원천·5행 관련 과거 PC/GET 증거 존재, 최근 운영 상태는 미재검증 |
 | R1-05 | BEA 단위이익·제조업의 수집기, CSV/메타 및 실제 저장 여부 조사 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R1-06 | Census QFR·M3·MTIS 기존 수집 코드·ZIP·저장 위치 조사 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
@@ -152,7 +152,7 @@
 | R6-14 | 관련 PR·CI·main 통합→Cloudflare Git Integration→정확 배포 SHA→공개 확인 | `IN_PROGRESS_SOURCE` | 앱 QFR main SHA faa89cfbe8b2aeabcbd8b8e9747cc07620f9eff4, 제어 B main SHA 8c67a6c9e9e778278259593d0eb35b2b0e2a05ea 개발 통합, 관련 CI PASS. 실제 PC/D1/Cloudflare 정확 Deployment/API/UI 검증 미완료 |
 | R6-15 | 다음 공식 발표 이후 자연 수집·checkpoint·D1·UI 실제 전진 관찰 | `DEFERRED` | 다음 실제 공식 발표 후 자연 갱신 확인; 현재 구현 STOP Gate 아님 |
 
-**상태 집계(82개 정확히 1회씩):** `DONE` 2개 · `EXISTING_EVIDENCE` 8개 · `EVIDENCE_NOT_MAPPED` 36개 · `PARTIAL_SOURCE` 2개 · `SOURCE_REVIEWED` 1개 · `NOT_RUN` 13개 · `SOURCE_READY` 3개 · `SOURCE_CI_PASS` 3개 · `SOURCE_MAIN_CI_PASS` 3개 · `BLOCKED_PUBLISH_SCOPE` 2개 · `SOURCE_BRANCH_ONLY` 2개 · `PUBLISH_SCOPE_UNVERIFIED` 1개 · `SOURCE_MAIN_READY` 3개 · `TARGETED_CI_PASS` 1개 · `IN_PROGRESS_SOURCE` 1개 · `DEFERRED` 1개. 각각의 상태는 최종 운영 완료율이 아니다.
+**상태 집계(82개 정확히 1회씩):** `DONE` 3개 · `EXISTING_EVIDENCE` 7개 · `EVIDENCE_NOT_MAPPED` 36개 · `PARTIAL_SOURCE` 2개 · `SOURCE_REVIEWED` 1개 · `NOT_RUN` 13개 · `SOURCE_READY` 3개 · `SOURCE_CI_PASS` 3개 · `SOURCE_MAIN_CI_PASS` 3개 · `BLOCKED_PUBLISH_SCOPE` 2개 · `SOURCE_BRANCH_ONLY` 2개 · `PUBLISH_SCOPE_UNVERIFIED` 1개 · `SOURCE_MAIN_READY` 3개 · `TARGETED_CI_PASS` 1개 · `IN_PROGRESS_SOURCE` 1개 · `DEFERRED` 1개. 최종 종단 완료율과는 구별한다.
 
 ## 1. 현재 확정 가능한 진행 상태
 
@@ -190,9 +190,9 @@
 
 ## 3. 실제 첫 병목과 다음 실행
 
-**FIRST BLOCKER(현재 순서):** **R1-02는 §7의 PC source·현재 등록 Task/Runner/수집·계산·게시 Source 매핑으로 완료**했고, 이제 순차 첫 미완료는 **R1-03 SQLite 원자료 테이블·checkpoint·append-only 계보/실제 재조회 증거**다. 별도 후행 QFR B 게시 차단 R6-04는 manifest·owner 승인·실행/원격 D1 결과가 없는 것이며 R1-03 조사 완료의 추가 Gate로 삼지 않는다. 뒤쪽 소스/CI 작업을 순차 71단계 진행으로 보고하지 않는다.
+**FIRST UNFINISHED(현재 순서):** R1-01~03 DONE. 현재 R1-04의 BLS 저장 원본 3개→공개 정보성 5행 계보 및 공개 기본 키 검증이 남았다. 후행 R6-04 B 승인·게시 문제를 현재 순차 번호 71이라고 표시하지 않는다.
 
-**다음 필수 실행:** **R1-03(3/82)** 기존 저장 QFR/BLS/BEA 원자료의 SQLite 테이블/원본·checkpoint/append-only 구조와 readback 유효 증거를 확인해 R1-03 해당 ID에 기록한다. 과거 유효 성공을 다시 수집하지 않는다. QFR exact-key B 게시의 승인·실행은 R6-04 후행 BLOCKED로 유지한다.
+**다음 필수 실행:** **R1-04(4/82)** 과거 BLS 저장 성공과 현재 Worker/계산 소스를 연결해 3→5 계보·D1 키·공개 GET 확인. 기존 저장값을 무단 재수집하지 않는다.
 
 정규 예약의 다음 자연 발표 관찰(R6-15)은 **DEFERRED**이며 현재 기능 완성의 강제 완료 Gate가 아니다.
 
@@ -231,6 +231,8 @@
 | 2026-11-17 KST · 82단계 순차 규칙 최종 정합성 확인 | **계획을 순차 기준으로 복구하고 완료율 과장 정정:** R1-01 GitHub 소스 구분 DONE, 선행 첫 미완료 R1-02(2/82). 71/82·잔여 11개 표현 철회. 원래 82 ID·순서를 바꾸지 않음 | [실행계획서](EARNINGS_RECESSION_R1_R6_82_STEP_EXECUTION_PLAN_20261116.md) 규칙 변경 `89ce90046ee453cdc95bab16b8ed638b963ca3e1`, 최종 현재 작업 정합성 `5c618a2c19fe11a163edc083e80728a2be83e236`; [진행기록](EARNINGS_RECESSION_R1_R6_82_STEP_PROGRESS_20261116.md) 최초 진도 수정 `378af33507d7050ae5e2be2ca37e4e71f5883397` 및 요약 정정 `fdfc5ccab03f98d9462633c2a5c28f4b87b4789c` | **LAST PASS:** R1-01 원본 SHA 구분 기록. **FIRST UNFINISHED:** R1-02 source/Runner mapping. **NEXT:** R1-02의 빠진 등록·실행 증거만 수집, 이미 끝낸 QFR 소스/CI 반복 금지. 이번 운영 PC/원자료/D1/Cloudflare 쓰기 0 |
 
 | 2026-11-17 01:05 KST · **2/82 R1-02 완료** | 실 PC 공통 매핑 완료. #1790 A 소스 후보 inventory는 truncated였으므로 #1794 승인 scoped 조회로 운영 sourceHead/config/checkpoint 일치 `2070ff53549e2f9f2cea57d5af7e1d83f9fd7388` 증명. #1796 core-status A에서 Core·Korea Task XML 해시와 수집/Writer checkpoint, Runner seat 1 실측 확인. A operations allowlist·Runner Workflow 및 QFR/BLS/BEA/SEC/WPS 소스 역할·미설치 상태를 §7에 매핑 | [#1794](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1794) [Run #43902155135](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43902155135), [#1796](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1796) [Run #43903516218](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43903516218), #1790 Run 43901801863 (inconclusive inventory). 각 결과 JSON/TXT 원격 2/2 및 protected unchanged, PC/D1/provider writes=0. 제어 `main` operations+pc-job/B workflow, 등록 Task hashes Core dd81987c…·Korea 1797e5de… | **R1-02 DONE**; **연속 완료 2/82 ≈2.4%, 현재 3/82 R1-03**. LAST PASS 소스/Task/Runner mapping; FIRST UNFINISHED SQLite 원본 계보. 후행 QFR B effect 미승인 상태 보존. NEXT R1-03 기존 원자료 테이블·checkpoint·재조회 증거 매핑 |
+
+| 2026-11-17 KST · **R1-03 완료** | 기존 SQLite 원본 저장 표 2개, QFR/BLS provider별 원문 SHA·PK·append/개정·저장 시각·readback과 BEA 제조업 독립 archive의 미검증 한계까지 §8 인계 완료 | QFR [R2 저장](EARNINGS_CENSUS_QFR_RAW_SQLITE_R2_20261027.md) + [R3 계산](EARNINGS_CENSUS_QFR_R3_STORED_PREVIEW_20261027.md), BLS [R3C 저장](EARNINGS_COMPANION_R3C_BLS_MANUAL_STORE_IMPLEMENTATION_20261027.md) + [R3D 계산](EARNINGS_COMPANION_R3D_PC_RESULT_VERIFIED_20261027.md), BEA [제조업 archive](EARNINGS_BEA_MANUFACTURING_PROFITS_R1_READONLY_20261028.md), 관련 소스 SQL 검증. 신규 원자료/DB/D1 쓰기 0 | 연속 DONE 3/82(3.7%), 현재 4/82 R1-04. 다음 BLS 기본 3→공개 5행 계보 |
 
 ### 필수 기록 종료 규칙
 
@@ -281,3 +283,14 @@
 **실제 조회 결과 보존:** [#1790](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1790) Run 43901801863는 `candidateCount=0`, `inventoryTruncated=true`로 개별 checkout 연결 결론 불가. 이에 대한 scoped A [#1794](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1794) Run 43902155135가 `sourceHead=config.source=checkpointSource`를 검증했다. Core 조회 [#1796](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1796) Run 43903516218은 일반 checkpoint/등록 Task를 별도 확인했으며 당시 `lockPresent=true`는 임의 Core 중단·잠금 해제 사유가 아니다. 세 Run 모두 고유 requestId, 실제 Windows Actions PASS·원격 JSON/TXT 각각 2/2, `providerCalls=operationalWrites=d1Writes=0`·`protectedStateUnchanged=true`.
 
 **다음 필수 실행:** **R1-03(3/82)** 보존된 PC 원자료·SQLite schema/checkpoint/append-only/readback 경로의 기존 실증 증거를 연결하고 실제 미대조 범위만 추가 확인한다. 뒤쪽 R6-04 QFR B manifest 승인 및 게시 미완료는 별도 유지.
+
+## 8. R1-03 SQLite 원본·checkpoint·append-only 증거
+
+| 분류 | 저장·보존/조회 방식 | 기존 실제 PC 검증 및 경계 |
+|---|---|---|
+| **QFR** | `E:\ZGmini\data\pc-writer\storage\core.sqlite`의 `api_history_chunks_v1` 및 `api_history_snapshots_v1`. PK는 각각 `provider,dataset,chunk_sha256` 및 `provider,dataset,snapshot_sha256`. 동일 SHA `ON CONFLICT ... DO NOTHING`, 개정 내용은 신규 SHA 행, `BEGIN IMMEDIATE`→COMMIT/ROLLBACK. R3는 `readOnly:true`, `PRAGMA query_only=ON` + 원문 ZIP/청크/snapshot/provenance 해시 검증 | [실 PC R2 저장](EARNINGS_CENSUS_QFR_RAW_SQLITE_R2_20261027.md): `CHUNKS_INSERTED=1`, `SNAPSHOTS_INSERTED=1`, `PASS_QFR_SQLITE_APPEND_READBACK`, ZIP SHA `232f7757e654e787a9eab49792302feb3683e5280a66ff0cc9bd7f0cbc448654`. [PC R3 stored calc](EARNINGS_CENSUS_QFR_R3_STORED_PREVIEW_20261027.md) `STORED_SNAPSHOTS_VERIFIED=1`, `SOURCE_STORED_AT=1793112733108`, 저장 자료만 재검산 PASS |
+| **BLS 기본 3종** | 동일 DB·2테이블의 `provider='BLS'` 별도 namespace, 응답 내용 SHA 기반 청크/스냅샷 3개 atomic append, 수정본은 신규 SHA, FRED 원장 불변. R3D read-only DB·해시·기간 검증 | [실 PC R3C](EARNINGS_COMPANION_R3C_BLS_MANUAL_STORE_IMPLEMENTATION_20261027.md): `PASS_R3C_MANUAL_BLS_PERSISTED`, 청크/스냅샷 3/3, `SERIES_READBACK_VERIFIED=3`, COMMIT YES. [R3D](EARNINGS_COMPANION_R3D_PC_RESULT_VERIFIED_20261027.md): `PASS_R3D_STORED_ONLY_CALCULATION` |
+| **BEA 제조업** | `raw/earnings-recession/bea-manufacturing-profits-r5/<sourceVersion>.csv` + `.json` 별도 불변 원본. 기존 SQLite schema/원자료 불변. SQLite `market_input_batches_v1.body`의 `gzip:` 압축 가능성 고려 | [과거 PC inventory·보관](EARNINGS_BEA_MANUFACTURING_PROFITS_R1_READONLY_20261028.md): core/history 각 39/5테이블 제한 검사, `APPEND_ONLY_SOURCE_STORED` 파일 2개 저장 보고. **독립 원문 SHA readback 아직 미완료** |
+| **다른 후보** | BEA unit 불변 CSV archive, WPSFD42 신규 BLS dataset, Census M3/MTIS·SEC 적격성/저장 여부는 후속 단계 별도 판정 | 코드 존재/시뮬레이션은 실제 PC 저장·D1 게시 증거가 아님 |
+
+**시각 구분:** 원본 `first_seen_at`, snapshot `retrieved_at`, 파생 checkpoint `sourceStoredAt`, D1 게시 `stored_at` 및 공식 관측/발표일을 혼동하지 않는다. Core #1796 일반 Collection/Writer 체크포인트는 개별 QFR/BLS 신규 관측의 증명이 아니다. 이 R1-03은 **구조·경로·보존·기존 원장 판정 단계**이며, 원자료 재수집/재저장 실증을 반복하지 않는다.
