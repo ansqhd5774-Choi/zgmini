@@ -7,6 +7,7 @@ import {loadLocalProviders,installLocalRuntime} from './local-env.mjs';
 import {save} from './d1.mjs';
 import {read} from './d1.mjs';
 import {createQuotaFetch} from './quota-fetch.mjs';
+import {secGuardOptionsFromEnv} from './sec-guard-runtime-config.mjs';
 import {recordCollectionChecks} from './collection-checks.mjs';
 import {appendCollectionEvent,appendProviderFailure} from './collection-events.mjs';
 import {providerEndpointFingerprint,PROVIDER_ENDPOINTS_PER_HOST_MAX,appendProviderEndpointEvent} from './provider-endpoint-fingerprint.mjs';
@@ -21,6 +22,7 @@ import {collectPinnedDeltaOnce} from './market-calendar-deltascreener-input.mjs'
 import {publicFeedStore} from '../../worker/public-feed-store.mjs';
 
 export async function collectLocal(base,{lane='core',importOnly=false,job=null}={}){
+ const secGuardOptions=secGuardOptionsFromEnv(); // fail before opening SQLite
  const core=localDatabase(path.join(base,'storage','core.sqlite'));
  const history=localDatabase(path.join(base,'storage','history.sqlite'));
  const env={...loadLocalProviders(base),DB:core,DB_CORE:core,DB_HISTORY:history,ZGMINI_COMPUTE_TARGET:'pc'};
@@ -28,7 +30,7 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
  const originalFetch=globalThis.fetch,providers={};
  let providerDiagnosticWriteFailures=0;
  const recordProviderFailure=(input,event)=>{try{appendProviderFailure(base,input,event);}catch{providerDiagnosticWriteFailures++;}};
- const quota=createQuotaFetch({base,originalFetch});
+ const quota=createQuotaFetch({base,originalFetch,...secGuardOptions});
  globalThis.fetch=async(input,init)=>{
   const host=new URL(typeof input==='string'||input instanceof URL?input:input.url).hostname;
   const item=providers[host]??={requests:0,statuses:{}};item.requests++;
