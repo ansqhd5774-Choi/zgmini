@@ -26,7 +26,7 @@ function fixture(t,{delta=true,partial=false}={}){
    const digest=sha(contents),relative=`raw/${symbol}_${digest}.jsonl`;
    fs.writeFileSync(path.join(dir,'raw',`${symbol}_${digest}.jsonl`),contents);
    records.push({path:relative,sha256:digest,symbol,source:SOURCE,priceMode:MODE,
-    requestedUrl:`${SOURCE}/api/v1/bars/stocks/${symbol}/1h?start=2023-01-01&end=2026-11-05&format=jsonl&limit=5000`,
+    requestedUrl:`${SOURCE}/api/v1/bars/stocks/${symbol}/1h?start=${isDelta?'2026-11-02':'2023-01-01'}&end=${isDelta?'2026-11-05':'2026-11-03'}&format=jsonl&limit=5000`,
     schemaVersion:isDelta?'GMH_1H_OHLCV_NDJSON_R35':'GMH_1H_OHLCV_NDJSON_R23',
     firstTimestampUTC:date[1],lastTimestampUTC:date[1],
     ...(isDelta?{lastVerifiedNYDay:date[0]}:{}),rows:1,nonGapRows:1,gapRows:0});
@@ -153,4 +153,34 @@ test('missing observed-SPY NY day samples are bounded and never treated as offic
  assert.equal(item.absentObservedSPYSampleTruncated,false);
  assert.equal(r.currentnessVerified,false);
  assert.equal(r.publicationAuthorized,false);
+});
+
+test('R35 checkpoint requested URL outside its window is denied even when raw page SHA matches',t=>{
+ const f=fixture(t),folder='legacy-nine-r35-delta',cpFile=f.files[`${folder}-checkpoint`];
+ const cp=JSON.parse(fs.readFileSync(cpFile));
+ cp.symbols.BOTZ.files[0].requestedUrl=
+  `${SOURCE}/api/v1/bars/stocks/BOTZ/1h?start=2026-10-01&end=2026-10-06&format=jsonl&limit=5000`;
+ fs.writeFileSync(cpFile,JSON.stringify(cp)+'\n');
+ const r=audit(f);
+ assert.equal(r.status,'BLOCKED');
+ assert.equal(r.code,'R32_COVERAGE_CHECKPOINT_REQUEST_WINDOW');
+ assert.equal(r.providerCalls,0);
+ assert.equal(r.operationalWrites,0);
+});
+
+test('R35 checkpoint own request URL supersedes older manifest URL for a reused SHA page',t=>{
+ const f=fixture(t),folder='legacy-nine-r35-delta';
+ const manifestFile=f.files[`${folder}-manifest`],cpFile=f.files[`${folder}-checkpoint`];
+ const manifest=JSON.parse(fs.readFileSync(manifestFile));
+ const entry=manifest.files.find(x=>x.symbol==='BOTZ');
+ const requested=entry.requestedUrl;
+ entry.requestedUrl=`${SOURCE}/api/v1/bars/stocks/BOTZ/1h?start=2026-10-01&end=2026-10-06&format=jsonl&limit=5000`;
+ fs.writeFileSync(manifestFile,JSON.stringify(manifest)+'\n');
+ const cp=JSON.parse(fs.readFileSync(cpFile));
+ cp.symbols.BOTZ.files[0].requestedUrl=requested;
+ fs.writeFileSync(cpFile,JSON.stringify(cp)+'\n');
+ const r=audit(f);
+ assert.equal(r.status,'PASS');
+ assert.equal(r.latestVerifiedSPYDay,'2026-11-03');
+ assert.equal(r.currentnessVerified,false);
 });
