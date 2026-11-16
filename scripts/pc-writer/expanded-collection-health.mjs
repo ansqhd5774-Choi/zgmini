@@ -6,7 +6,7 @@ const stamp=x=>typeof x==='string'&&Number.isFinite(Date.parse(x))?Date.parse(x)
 const manifestSuccess=manifest=>manifest?.version===1&&Array.isArray(manifest.files)&&manifest.files.length&&manifest.files.every(x=>/^[a-f0-9]{64}$/.test(x.sha256??'')&&stamp(x.collectedAt)!==null)?Math.max(...manifest.files.map(x=>stamp(x.collectedAt))):null;
 export function expandedCollectionEntries({sector=null,primary=null,secondary=null,biotechManifest=null,powerManifest=null,spaceManifest=null}={}){
  const sectorAt=stamp(sector?.checkedAt),primaryAt=stamp(primary?.at);
- const primaryReady=['NO_NEW_COMPLETE_PRIMARY_DATE','PRIMARY_RAW_STORED'].includes(primary?.status)&&primary?.providerCalls>0&&Object.keys(primary?.coverage??{}).length===14&&Object.values(primary.coverage).every(x=>x.bars>0&&typeof x.latest15NY==='string');
+ const primaryReady=['NO_NEW_COMPLETE_PRIMARY_DATE','PRIMARY_RAW_STORED','LOCAL_PRIMARY_STORED'].includes(primary?.status)&&primary?.providerCalls>0&&Object.keys(primary?.coverage??{}).length===14&&Object.values(primary.coverage).every(x=>x.bars>0&&typeof x.latest15NY==='string');
  const failed=x=>/FAILED|ERROR|BLOCKED/.test(x?.status??'');
  return [
   {id:'job:sectorEtf',checkedAt:sector?.providerRequests>0?sectorAt:null,storedAt:sector?.storageVerified?sectorAt:null,outcome:failed(sector)?'failure':sector?.status==='COLLECTED'&&sector.storageVerified===true&&sector.providerRequests>0?'success':'unknown'},
