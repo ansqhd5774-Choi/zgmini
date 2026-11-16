@@ -41,3 +41,27 @@ test('existing GMH success stays intact and retired secondary lane is removed',(
  assert.equal(rows.length,5);
  assert.equal(rows.find(x=>x.id==='job:themeSecondary'),undefined);
 });
+
+test('fourteen incorrect keys cannot impersonate the mandatory R181 universe',()=>{
+ const wrong={...coverage};delete wrong.SPY;
+ wrong.FAKE={bars:701,latest15NY:'2026-11-13'};
+ assert.equal(Object.keys(wrong).length,14);
+ assert.equal(slot(primary({coverage:wrong})).outcome,'unknown');
+ assert.equal(slot(primary({coverage:wrong})).storedAt,null);
+});
+test('malformed per-symbol metadata cannot mark collection successful or throw',()=>{
+ for(const item of [null,{},[],{bars:1.5,latest15NY:'2026-11-13'},
+  {bars:Infinity,latest15NY:'2026-11-13'},
+  {bars:0,latest15NY:'2026-11-13'},
+  {bars:701,latest15NY:'2026-11-99'},
+  {bars:701,latest15NY:'not-a-date'},
+  {bars:701,latest15NY:'2026-02-30'}]){
+  const p=primary({coverage:{...coverage,SPY:item}});
+  assert.doesNotThrow(()=>slot(p));
+  assert.equal(slot(p).outcome,'unknown');
+  assert.equal(slot(p).storedAt,null);
+ }
+ for(const providerCalls of [0,1.25,'14',null,-1]){
+  assert.equal(slot(primary({providerCalls})).outcome,'unknown');
+ }
+});
