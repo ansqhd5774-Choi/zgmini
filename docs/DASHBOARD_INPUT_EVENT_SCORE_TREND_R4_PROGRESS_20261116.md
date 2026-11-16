@@ -1,6 +1,39 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
-> **현재 즉시 상태 (2026-11-17 00:13 KST): 10/75 (13.3%), #27 PARTIAL.** Draft #1189 CI 및 비식별 기간별 시험 PASS이나 **미병합/미배포**. 지정 브랜치의 기간창 테스트 6/6, Draft 코드의 13/13 시험을 추가 확인했다. 아래 '현재 인계 정본' 표의 다음 실행이 최우선이며 이전 시점의 텍스트는 역사 기록이다.
+> **현재 즉시 상태 (2026-11-17 00:29 KST): 11/75 (14.7%), 잔여 64개.** #27의 PR #1189가 `main`에 2파일로 병합됐고 check/verify/notify/Workers Builds SUCCESS. #28은 방법론 버전 이력의 메타데이터 부족을 확인해 **PARTIAL**. 아래 '현재 인계 정본'만 재개 기준으로 사용하며 과거 10/75·Draft 상태는 당시 기록으로 보존.
+
+## 현재 인계 정본 — 다음 담당자 첫 읽기 (2026-11-16 KST)
+
+> **이 절만 현재 진행 상태의 단일 정본이다.** 아래의 2/75·4/75·8/75·10/75 기록과 예전 '다음 작업'은 당시 수행 이력으로 보존한 것이며 **재개 지시가 아니다**. 다음 실행 후 반드시 이 절과 맨 아래 새 수행 기록을 **함께** 갱신한다. 기록 기준은 [R4 계획서의 '작업 실행·진행 기록·인계 의무 기준'](DASHBOARD_INPUT_EVENT_SCORE_TREND_EXECUTION_R4_20261116.md#r4-작업-실행진행-기록인계-의무-기준-본-계획의-필수-절차)을 적용한다.
+
+| 필드 | 현재 확정 값 |
+|---|---|
+| 저장소 / 원장 브랜치 | `ansqhd5774-Choi/zgmini` / `codex/ui-improvements` |
+| 계획 / **지정 진행 기록** | `docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_EXECUTION_R4_20261116.md` / **`docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_R4_PROGRESS_20261116.md`** |
+| 진행 (단계별 소스·fixture·설계 통과) | **11/75 (14.7%), 잔여 64개** |
+| DONE 단계 (중복 없음) | **#04, #05, #08, #10, #21, #22, #23, #24, #26, #27, #33** |
+| 단계 증거 범위 | #24는 **기존 저장 JSON 활용·Draft 설계/회귀 PASS**까지의 설계 DONE. 실제 15분 보존 정책 수정·PC 설치·D1 반영은 **미완료** |
+| PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #28, #34, #35. 각 상태의 증거·한계는 아래 기존 이력 및 2026-11-17 최신 수행기록 참조 |
+| 다음 단 하나의 실행 | **#28** 기존 저장 스냅샷의 실제 model/methodologyVersion 출처와 차트 이력의 구간 분리 가능성 확인. 버전 정보 없는 과거 이력은 추정·허위 보간 금지. 기존 데이터 계약 변경이 필요하면 정확한 최소 영향과 원담당 승인 범위를 분리 |
+| 다음 담당·대상·입력 | W06 + 필요한 경우 Writer/계산 원담당. `lib/composite-observed-history-r1.mjs` (현재 main 기준), `worker/composite-history.mjs`, `scripts/pc-writer/market-snapshot-comparisons.mjs`, `lib/market-score/composite-model-r1.mjs`; 지정 브랜치 `tests/r4-methodology-lineage-audit-28.test.mjs` 4건과 저장 스냅샷의 승인 버전 증거 |
+| #28 통과 조건 | 저장된 실제 점수 이력의 모델·방법론 버전 기준으로 비교 가능한 구간과 구분해야 할 구간을 식별. 버전 누락 자료에 모델을 추정해 부여하지 않으며, 기존 6M/1Y 이력·0점·기간 공백을 훼손하지 않는다. 필요한 계약 변경은 원담당 승인/기존 Writer 경로로 분리하고 테스트·PR·실운영 증거를 각각 기록 |
+| 이후 후보(이번 실행에 혼입 금지) | #29 같은 날 정정·재실행·중복 보호 → D01~D27별 실제 미연결 수정. 원담당 Draft #1181·#1185는 별도 승인 대기 |
+| 최근 R4 기능 병합 증거 | PR [#1177](https://github.com/ansqhd5774-Choi/zgmini/pull/1177), [#1180](https://github.com/ansqhd5774-Choi/zgmini/pull/1180), [#1182](https://github.com/ansqhd5774-Choi/zgmini/pull/1182), [#1184](https://github.com/ansqhd5774-Choi/zgmini/pull/1184), [#1187](https://github.com/ansqhd5774-Choi/zgmini/pull/1187), **[#1189](https://github.com/ansqhd5774-Choi/zgmini/pull/1189)** = `main` 병합. 최신 R4 기능 병합 SHA **`1c0dd6587d76ef1051196251a06beed58ce36d6f`** |
+| 미병합 원담당 검토 | [Draft #1181](https://github.com/ansqhd5774-Choi/zgmini/pull/1181) Collector의 관측일 역행 차단 (#11), [Draft #1185](https://github.com/ansqhd5774-Choi/zgmini/pull/1185) Writer의 15분 이내 변경점 영구 기록 (#24 설계 이후 구현). 두 건 모두 CI 성공이나 **원담당 적용 승인·main 병합·PC 설치 없음** |
+| PC Runtime·SQLite→D1 실제 게시 | **미확정**. #13 임시 SQLite 통합시험 및 source 연결 PASS만 보유. 기존 운영 PC A급 #1737은 당시 `STATE_UNKNOWN`; 해당 고유 요청 중복 실행 금지 |
+| Cloudflare/공개 화면 | PR #1189 병합 SHA `1c0dd658…`의 GitHub `check`·`verify`·`notify`·Workers Builds 모두 **SUCCESS**. **exact Production Deployment ID/SHA 및 사용자 화면 육안 확인은 여전히 미확정** |
+| 소유·보호 조건 | UI는 기존 전용 브랜치·선별 PR 원칙. 수집·계산·Writer/15분·100개 보존 정책·DB·TTL·스케줄은 별도 원담당/승인 없이 수정·병합·설치 금지. R13 이란 퇴역 예약 복원 금지 |
+| 전후 검증 원칙 | source/CI/로컬 fixture와 실PC/D1/Production을 분리. 사용자에게는 전체 기술 구현 이후 홈페이지 최종 육안 확인 요청 |
+
+**다음 작업자 필수 수행 순서:** 본 계획서 75개 → 위 정본 → #28 관련 기존 근거만 확인 → 실제 #28 실행/검증 → **이 표 상태 수정 및 최신 수행 기록 추가 → 지정 원장 커밋 → 원격 내용 재조회 PASS → 최종 보고**. 지난 대화를 요청하거나 과거 성공 작업을 모두 재실행하지 않는다.
+
+### 마지막 기록 갱신 — 기준 확립 작업 (기능 75단계 추가 완료 없음)
+
+- 작업: 반복적으로 누락된 인계/완료 보고 순서를 기존 **계획서·진행 기록**에 구체적 필수 계약으로 삽입. 기능 코드·산식·운영 PC·게시 변경 **0건**.
+- 검증: 계획서 단계 표 **01–75 연속 75행 유지**, 진행 기록 DONE 번호 **서로 다른 10개**, 잔여 **65개**. 최근 다섯 PR 병합 / 원담당 Draft 두 건 미병합을 기존 GitHub 증거와 구분함.
+- 작업 종료 기준: **두 파일이 `codex/ui-improvements` 원격에 실제 존재하며, 새 인계/기록 계약과 10/75·#27 다음 단계가 재조회로 일치**해야 `LEDGER_SYNCED`. 그전에는 `LEDGER_UNVERIFIED`.
+- **미완료 사항:** 15분 내 모든 중간 점수 영구 기록, 관측일 역행 수정의 원담당 승인·실제 설치, #13 운영 수집→계산→D1 게시, 전체 27개 기능 및 Production/사용자 검증.
+- **다음 필수 실행 1개:** 위 #27 (W06, 기존 차트 병합·기간별 원본 데이터 계약, 1W~1Y 회귀 PASS).
 
 ## 2026-11-17 00:08 KST — R4 #27 독립 UI 수정 (PARTIAL, 10/75 유지)
 
@@ -13,39 +46,6 @@
 - FIRST UNVERIFIED: #27 관련 Node/CI 및 실제 archived+daily+current 1W~1Y 전체 회귀; Draft PR 미병합.
 - 다음 필수 실행 1개: PR #1189의 Node/CI 결과를 확인하고 동일 기간의 실제 계산점·일별 확정점 병합/마지막점 테스트를 보완해 #27 완료 조건 판정. 승인 없는 main 병합·운영 설치 금지.
 - 기능 진행률: **10/75 (13.3%) → 10/75 (13.3%)**, 잔여 65. #27 PARTIAL.
-
-## 현재 인계 정본 — 다음 담당자 첫 읽기 (2026-11-16 KST)
-
-> **이 절만 현재 진행 상태의 단일 정본이다.** 아래의 2/75·4/75·8/75·10/75 기록과 예전 '다음 작업'은 당시 수행 이력으로 보존한 것이며 **재개 지시가 아니다**. 다음 실행 후 반드시 이 절과 맨 아래 새 수행 기록을 **함께** 갱신한다. 기록 기준은 [R4 계획서의 '작업 실행·진행 기록·인계 의무 기준'](DASHBOARD_INPUT_EVENT_SCORE_TREND_EXECUTION_R4_20261116.md#r4-작업-실행진행-기록인계-의무-기준-본-계획의-필수-절차)을 적용한다.
-
-| 필드 | 현재 확정 값 |
-|---|---|
-| 저장소 / 원장 브랜치 | `ansqhd5774-Choi/zgmini` / `codex/ui-improvements` |
-| 계획 / **지정 진행 기록** | `docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_EXECUTION_R4_20261116.md` / **`docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_R4_PROGRESS_20261116.md`** |
-| 진행 (단계별 소스·fixture·설계 통과) | **10/75 (13.3%), 잔여 65개** |
-| DONE 단계 (중복 없음) | **#04, #05, #08, #10, #21, #22, #23, #24, #26, #33** |
-| 단계 증거 범위 | #24는 **기존 저장 JSON 활용·Draft 설계/회귀 PASS**까지의 설계 DONE. 실제 15분 보존 정책 수정·PC 설치·D1 반영은 **미완료** |
-| PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #27, #34, #35. 각 상태의 증거·한계는 아래 기존 이력 참조 |
-| 다음 단 하나의 실행 | **#27** Draft [#1189](https://github.com/ansqhd5774-Choi/zgmini/pull/1189) CI PASS·기간별 소스 회귀 통과를 확인했으므로, **원담당의 지정 브랜치·선별 PR 준수 여부와 최종 승인 범위를 검토해 실제 반영/검증 여부 결정**. 미병합 상태에서는 PARTIAL 유지 |
-| 다음 담당·대상·입력 | W06 UI 원담당. `lib/market-score/composite-observed-display-r1.mjs`, `lib/market-score/published-domain-trend-r4.mjs`, `app/api/market-score/observations/route.ts`, 관련 테스트. 기존 확정점과 하루 여러 실제 계산점 fixture 재사용 |
-| #27 통과 조건 | 1W~3M은 실제 게시된 관측점을 시간순 표시; 6M/1Y는 승인된 일별 확정치 보존; 동일 시각 충돌·결측·관측 없는 날짜 보간·방법론 섞기 금지. 테스트/변경 파일/PR·CI 증거를 기록. **운영 PC 데이터/게시 결과까지 이미 성공한 것처럼 주장 금지** |
-| 이후 후보(이번 실행에 혼입 금지) | #28 방법론 구간 분리 → #29 같은날 정정·중복 보호 → D01~D27별 실제 미연결 수정 |
-| 최근 R4 기능 병합 증거 | PR [#1177](https://github.com/ansqhd5774-Choi/zgmini/pull/1177), [#1180](https://github.com/ansqhd5774-Choi/zgmini/pull/1180), [#1182](https://github.com/ansqhd5774-Choi/zgmini/pull/1182), [#1184](https://github.com/ansqhd5774-Choi/zgmini/pull/1184), [#1187](https://github.com/ansqhd5774-Choi/zgmini/pull/1187) = `main` 병합. 최신 R4 기능 병합 SHA `b2ef3a04b940d53fdec61d43ec4f4553bdc83610` |
-| 미병합 원담당 검토 | [Draft #1181](https://github.com/ansqhd5774-Choi/zgmini/pull/1181) Collector의 관측일 역행 차단 (#11), [Draft #1185](https://github.com/ansqhd5774-Choi/zgmini/pull/1185) Writer의 15분 이내 변경점 영구 기록 (#24 설계 이후 구현). 두 건 모두 CI 성공이나 **원담당 적용 승인·main 병합·PC 설치 없음** |
-| PC Runtime·SQLite→D1 실제 게시 | **미확정**. #13 임시 SQLite 통합시험 및 source 연결 PASS만 보유. 기존 운영 PC A급 #1737은 당시 `STATE_UNKNOWN`; 해당 고유 요청 중복 실행 금지 |
-| Cloudflare/공개 화면 | PR 관련 Git Integration 빌드와 일부 CI는 PASS; **exact Production Deployment 및 실제 화면 육안 확인은 미확정** |
-| 소유·보호 조건 | UI는 기존 전용 브랜치·선별 PR 원칙. 수집·계산·Writer/15분·100개 보존 정책·DB·TTL·스케줄은 별도 원담당/승인 없이 수정·병합·설치 금지. R13 이란 퇴역 예약 복원 금지 |
-| 전후 검증 원칙 | source/CI/로컬 fixture와 실PC/D1/Production을 분리. 사용자에게는 전체 기술 구현 이후 홈페이지 최종 육안 확인 요청 |
-
-**다음 작업자 필수 수행 순서:** 본 계획서 75개 → 위 정본 → #27 관련 기존 근거만 확인 → 실제 #27 실행/검증 → **이 표 상태 수정 및 최신 수행 기록 추가 → 지정 원장 커밋 → 원격 내용 재조회 PASS → 최종 보고**. 지난 대화를 요청하거나 과거 성공 작업을 모두 재실행하지 않는다.
-
-### 마지막 기록 갱신 — 기준 확립 작업 (기능 75단계 추가 완료 없음)
-
-- 작업: 반복적으로 누락된 인계/완료 보고 순서를 기존 **계획서·진행 기록**에 구체적 필수 계약으로 삽입. 기능 코드·산식·운영 PC·게시 변경 **0건**.
-- 검증: 계획서 단계 표 **01–75 연속 75행 유지**, 진행 기록 DONE 번호 **서로 다른 10개**, 잔여 **65개**. 최근 다섯 PR 병합 / 원담당 Draft 두 건 미병합을 기존 GitHub 증거와 구분함.
-- 작업 종료 기준: **두 파일이 `codex/ui-improvements` 원격에 실제 존재하며, 새 인계/기록 계약과 10/75·#27 다음 단계가 재조회로 일치**해야 `LEDGER_SYNCED`. 그전에는 `LEDGER_UNVERIFIED`.
-- **미완료 사항:** 15분 내 모든 중간 점수 영구 기록, 관측일 역행 수정의 원담당 승인·실제 설치, #13 운영 수집→계산→D1 게시, 전체 27개 기능 및 Production/사용자 검증.
-- **다음 필수 실행 1개:** 위 #27 (W06, 기존 차트 병합·기간별 원본 데이터 계약, 1W~1Y 회귀 PASS).
 
 ## 이전 기준 판정 — 2026-11-16 KST (보존 이력, 현재 인계 정본 아님)
 
@@ -163,3 +163,15 @@
 - **마지막 유효 단계/문제:** #26 저장된 관측 API 완료. #27은 **후보 코드+CI+소스 fixture까지만**, 실제 main 반영과 원본 승인 범위 확인이 남아 **PARTIAL**. FIRST UNVERIFIED = Draft #1189 최종 반영/병합 및 이후 Production/실제 데이터 확인. 부작용이나 PC/DB/D1 변경 증거 없음. 완료 번호 **#04,#05,#08,#10,#21,#22,#23,#24,#26,#33 (10개)**, **10/75 (13.3%), 잔여 65개** 유지.
 - **다음 필수 실행 단 하나:** **#27** 담당 W06 — PR #1189 변경 파일 2개와 원래 UI 전용 브랜치 정책·기존 CI 증거를 대조하여 원담당이 승인된 선별 PR/병합 방식을 확정하고, 허용된 실제 소스 반영·대상 검증을 마친 뒤 DONE 여부 결정. 이후 #28 방법론/모델 버전 구간 분리 실행. 다른 원담당 Collector Draft #1181, Writer Draft #1185, #13 실PC→D1 게시 미완료는 본 작업으로 해제되지 않음.
 - **진행 기록 반영:** 이 실행 기록과 상단 '현재 즉시 상태', 현 인계 정본의 '다음 단 하나의 실행'을 지정 `docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_R4_PROGRESS_20261116.md`에 함께 커밋하고 원격 재조회. **기록 저장·검증이 끝나기 전 DONE 보고 금지.**
+
+
+## [2026-11-17 00:29 KST] R4 #27 완료·#28 방법론 이력 계약 조사
+
+- **완료 판정 #27 DONE — source/CI 기준:** 선택 기간 밖의 일간 점수가 1W/1M/3M 무관측 archive fallback에 나타나는 결함을 기존 함수 `lib/market-score/composite-observed-display-r1.mjs`에서 제한하는 2파일 PR [#1189](https://github.com/ansqhd5774-Choi/zgmini/pull/1189) `main` 병합 `1c0dd6587d76ef1051196251a06beed58ce36d6f`. 변경 파일 2개(`lib/market-score/composite-observed-display-r1.mjs`, `tests/composite-current-chart-r4.test.mjs`), GitHub head `02b938093ab00eb9629987472ddaabc5e45bea87`. GitHub `check`, `verify`, `notify` 및 Cloudflare Git Integration Workers Builds 모두 SUCCESS. CI 이전/이후의 지정 브랜치 1W~1Y 기간창 source fixture 6/6 PASS, 실제 최신 main 함수 14/14 PASS, PR 후보 기능 함수 13/13 PASS를 재사용. 6M/1Y 확정 일간 이력·계산 산식·DB·수집주기·PC 운영 source 변경 0건. **PR 병합·빌드 성공을 exact Production Deployment와 사용자 화면 검증 완료로 주장하지 않음.**
+- **브랜치 이력/규정:** 실제 PR #1189 head `codex/ui-r4-period-window-20261117`는 기존 작성자의 임시 브랜치로 UI 전용 `codex/ui-improvements` 원칙과 불일치한 이력. 이번 응답은 **임시 브랜치를 새로 만들거나 오래된 W06 브랜치 전체를 main에 병합하지 않고** 기존 CI PASS PR의 **승인된 2파일 최소 범위만 병합**했다. 기존 두 브랜치의 소스·다른 작업자 변경·미병합 Draft는 삭제/초기화하지 않았다. 이후 UI 새 임시 브랜치 생성 금지.
+- **#28 PARTIAL — 재현된 방법론 추적성 부족:** 운영 코드 최신 `lib/market-score/composite-model-r1.mjs`는 aggregate `CM-R1` 고정(다른 집계 모델의 운영 전환은 미확인). `scripts/pc-writer/market-snapshot-comparisons.mjs::sameVerifiedLineage`는 도메인 비교 시 명시된 `methodologyVersion`이 다르면 올바르게 제외. 반면 `lib/composite-observed-history-r1.mjs::compositeSampleFromVerified` 저장 필드는 `calculatedAt,score,asOfDate,signature` 4개이며 **aggregate `modelVersion`·도메인의 `modelVersion`은 기록/서명에 포함되지 않음**. 비식별 `CM-R1/RATE_R3 → CM-R2/RATE_R4` (점수·asOfDate 동일) 변경을 주입하면 두 signature가 동일하여 다음 저장 이벤트가 `changed:false`. `worker/composite-history.mjs::mergeStoredCompositeTrend`는 모델 버전이 다른 확정 일별점도 기존 승인 이력 보존 정책으로 하나의 날짜곡선에 유지하며 각 점별 lineage 필드가 없어 **선의 구간 분리 불가능**. 이는 **미래 전환/공식 과거 데이터에 대한 구조적 공백**이며 실제 Production에 CM-R2가 도입됐다는 뜻이 아님.
+- **#28 신규 테스트·검증:** W06 지정 브랜치 `tests/r4-methodology-lineage-audit-28.test.mjs` 신규 검사 **4/4 PASS**(현재 계약 진단). 최초 미존재 `lib/composite-observed-history-r1.mjs`를 오래된 W06 브랜치에서 import하려는 테스트를 소스 확인 즉시 수정하여 **불필요한 Writer 코드 복사 없음**. 최종 테스트 파일 commit `054f089937b9a03737d2215fef60cef35f3073e8`; 브랜치에서 실제 함수 소스 격리 시험 4/4 통과, **별도 GitHub CI 미실행**. 최신 main 원본 archive signature 및 mixed-history 함수는 별도 비식별 호출로 재현. 사용자 승인 없는 산식, 보존 정책, 원자료, DB/D1 계약·게시/PC source 변경 없음.
+- **LAST PASS/FIRST FAIL:** #27 소스·CI 완료. #28은 이전 도메인별 방법론 비교 규칙 PASS, **현재 종합 이력에는 per-point method metadata 부재** — 실제 사업 운영에서 버전별 곡선 분리까지 완료했다고 주장할 수 없음. #11 Collector 날짜 역행 Draft #1181, #24 Writer 15분 점 저장 Draft #1185, #13 실PC SQLite→D1 검증은 계속 미완료·원담당 범위.
+- **진행률:** 서로 다른 DONE 번호 **#04,#05,#08,#10,#21,#22,#23,#24,#26,#27,#33 = 11개/75 (14.7%)**, 남은 **64개**. #28 PARTIAL은 완료 분자 제외. 기존 #24의 DONE은 *설계·fixture 단위만* 의미하며 실제 15분 정책 개선 설치 완료는 아님.
+- **다음 필수 실행 단 하나 #28:** W06+계산/Writer 소유자 — 현행 이미 공개된 복수 snapshot의 버전 메타데이터 존재 여부와 연속곡선 비교/분리 가능성을 계약별로 확인. 자료가 없는 과거 구간은 추정 방법론 부여·허위 선 연결 금지. 버전 없는 아카이브에 version 슬롯을 추가하려면 **저장/공개 데이터 계약 변경으로 분리해 정확한 승인 범위 및 최소 영향 회귀시험**을 정한 후 원담당 경로에서만 적용. 독립적으로 가능한 W06 UI 검증은 계속한다.
+- **인계 절차:** 이 기록과 현재 인계 정본을 함께 지정 `codex/ui-improvements` 브랜치 `docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_R4_PROGRESS_20261116.md`에 커밋 후 원격 본문·완료 번호·다음 실행을 직접 재조회해 PASS를 확인한 뒤 사용자에게 보고.
