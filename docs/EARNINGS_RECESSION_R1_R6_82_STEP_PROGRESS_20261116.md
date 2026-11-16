@@ -92,11 +92,11 @@
 | R3-15 | 적격 판정 시 SEC XBRL 원자료 저장·기간 정규화·중복 제거 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R3-16 | 저장자료 계산 결정성·SHA 계보·결측·0·개정·stale 검증 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R4-01 | C 전용 독립 D1 키·허용목록·공개 데이터 계약 확정 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
-| R4-02 | 기존 승인 공통 B 경로 확인 및 QFR·BEA 단위이익 exact-key 연결 | `SOURCE_CI_PASS` | 앱 QFR publisher는 PR #1175로 main 소스 통합 완료, 제어 게시 lane PR #1762는 미병합/비활성. 집중 Node CI 22/22 PASS; 승인된 QFR exact-key B manifest·제어 main source/운영 실행 미확인 |
-| R4-03 | 제어 실행기 key·MODE·원본·D1 결과 검증 결함 수정 및 BEA 회귀 | `SOURCE_CI_PASS` | 제어 Publisher 로그 키/MODE/핀/읽기 결과 및 요청별 TXT 위치 계약 최신 Node22 [Run #43892670904] 22/22 PASS. 기존 #43883643669 21/21 성공은 변경 이전 증거; 운영 본선 적용 미완료 |
-| R4-04 | QFR preflight의 sourceVersion·ZIP SHA·sourceStoredAt을 apply까지 고정 | `SOURCE_MAIN_CI_PASS` | 앱 QFR 3-pin + B 요청별 로그 파일 처리 [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175) **2026-11-17 main 병합** `faa89cfbe8b2aeabcbd8b8e9747cc07620f9eff4`, main 게시기 blob `f2b78e7d806ee9792e19a6a12636f547849026fd` 직접 재조회. Head CI Run #43892753705 4,483 PASS·0 FAIL. 운영 PC 실제 Publisher 설치·D1 쓰기는 별도 미실행 |
+| R4-02 | 기존 승인 공통 B 경로 확인 및 QFR·BEA 단위이익 exact-key 연결 | `SOURCE_MAIN_CI_PASS` | 제어 B 게시 실행기·승인 검증·비활성 workflow 8파일 [PR #1762](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1762) main 병합 SHA 8c67a6c9e9e778278259593d0eb35b2b0e2a05ea. Node CI #43892670904 22/22 PASS·C996 PASS. QFR 승인 manifest/별도 owner 승인·PC 실효과는 없음 |
+| R4-03 | 제어 실행기 key·MODE·원본·D1 결과 검증 결함 수정 및 BEA 회귀 | `SOURCE_MAIN_CI_PASS` | 제어 B 계약·QFR source pin·readback·요청별 결과 처리 코드 main 소스 병합. Executor blob 1cc9088a3d025b6b8185d13c932f3538c81b2954, Windows Node CI 22/22 PASS. 운영 실행은 별도 |
+| R4-04 | QFR preflight의 sourceVersion·ZIP SHA·sourceStoredAt을 apply까지 고정 | `SOURCE_MAIN_CI_PASS` | 앱 QFR 3-pin·per-request output [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175) main 병합 SHA faa89cfbe8b2aeabcbd8b8e9747cc07620f9eff4, publisher blob f2b78e7d806ee9792e19a6a12636f547849026fd, Node CI #43892753705 4483 PASS/0 FAIL. D1은 미게시 |
 | R4-05 | PC 저장 QFR 계산으로 경량 Snapshot 구축·스키마 검증 | `SOURCE_READY` | 기존 QFR one-shot Publisher와 Reader 소스 존재, 운영 적격 payload preflight 필요 |
-| R4-06 | 승인 QFR 단일키 D1 게시·실제 body/version/stored_at readback | `BLOCKED_PUBLISH_SCOPE` | 기존 main의 QFR 승인 파일은 APPROVED_A_READONLY(preimage 6파일 조회)일 뿐 D1 write 아님. 전용 B manifest·실제 정확키 D1 게시/독립 readback 없음; 미승인 쓰기 실행 금지 |
+| R4-06 | 승인 QFR 단일키 D1 게시·실제 body/version/stored_at readback | `BLOCKED_PUBLISH_SCOPE` | 제어 main에 게시 소스는 있으나 승인 manifest approvals/publications/<requestId>.json 부재, 별도 owner B 승인 Issue/PC 실제 효과·원격 D1 readback 없음. 실제 게시 NOT_RUN |
 | R4-07 | BEA 단위이익 게시 중 공급자 재호출 제거·원본 SHA 고정 | `SOURCE_CI_PASS` | 앱 PR #1183 stored-only BEA Publisher source+Node CI #43884699372 PASS; 운영 raw/D1 없음 |
 | R4-08 | 승인 BEA 단위이익 key D1 게시 및 실제 시각/버전 비교 | `NOT_RUN` | BEA 단위이익 실제 B D1 게시/readback 증거 없음 |
 | R4-09 | WPSFD42 독립 Publisher·Worker·테스트를 current main 기준 선별 통합 | `SOURCE_BRANCH_ONLY` | W05 브랜치의 WPSFD42 독립 2행 Publisher/Worker 소스는 main 미반영. 기존 결과 TXT의 checkout 내 저장 문제를 요청별 `ZGMINI_EARNINGS_C_LOG_DIR`·기존 수동 HERE fallback으로 보완. 순수 helper blob ff5e616593ec… 및 테스트 1eebf1152d82… exact Git SHA 확인; 격리 Node22 지역 fixture **4/4 PASS**(WPS 게시기 전체 파일은 경로 부분만 재현하여 end-to-end CI 미확인). R4-09의 main 선별 통합과 실제 D1 2행 쓰기는 미완료 |
@@ -122,7 +122,7 @@
 | R6-01 | 변경된 수집·계산·게시·Worker·UI의 관련 Node 테스트 실행 | `TARGETED_CI_PASS` | 기존 QFR 제어 Node 22/22, QFR 앱 4,483 PASS·0 FAIL 및 BEA CI 성공 유지. 별도 WPSFD42 결과 디렉터리 helper+테스트 원문 Git blob 일치, 로컬 격리 Node22 fixture 4/4 PASS(전체 게시기·전체 앱 CI는 이번 소스 변경 후 미실행). PC/D1/Production 종단 검증 제외 |
 | R6-02 | SHA 변경·중복·단위·기간·결측·개정본 회귀검증 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R6-03 | API 403/429/500·D1 timeout·결과 누락·잘못된 key/version 검증 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
-| R6-04 | 승인 B 작업의 실제 Windows Runner·manifest·SHA·Issue/Run 확인 | `BLOCKED_PUBLISH_SCOPE` | #1709 운영 PC A 조회 PASS, source `7afe6b0bcaa74d622ada9190fdc9fcc7fd4d5f10`; QFR 6파일 중 5개 absent은 독립 전용 Publisher의 직접 install 요건이 아님. 실제 원인: 승인된 QFR exact-key B manifest·통합된 전용 workflow·실행 증거 없음. Writer B 일반 overlay D1 쓰기 불가 |
+| R6-04 | 승인 B 작업의 실제 Windows Runner·manifest·SHA·Issue/Run 확인 | `BLOCKED_PUBLISH_SCOPE` | 제어 source main 통합 완료. 정확키 B 승인 manifest·별도 owner 승인 Issue 및 실제 Windows 두 checkout/config SHA·게시 실행 미입증. PC #1709은 A 읽기 전용, 일반 Writer B는 D1 쓰기 금지 |
 | R6-05 | QFR 실제 D1 body/version/sourceStoredAt/stored_at 검증 | `NOT_RUN` | QFR D1 실제 body/version/timestamp readback 없음 |
 | R6-06 | QFR 공개 GET·PC·모바일 화면 값·출처·분기 확인 | `NOT_RUN` | QFR 실제 배포 SHA·현재 Production API/UI 값 일치 미확인 |
 | R6-07 | BEA 단위이익 저장 원본·D1 중복·source SHA 검증 | `NOT_RUN` | BEA 저장 원본→D1 단일키 실게시/원문 비교 미완료 |
@@ -132,10 +132,10 @@
 | R6-11 | BEA 제조업 archive SHA와 D1 게시 원문·기간·시각 확인 | `NOT_RUN` | BEA 제조업 현장 archive SHA→D1 실게시 미실증 |
 | R6-12 | BEA 제조업 GET·YoY·분기 이력·UI 확인 | `NOT_RUN` | BEA 제조업 운영 API/UI 일치 미실증 |
 | R6-13 | 기존 E1-R4 4요소·가중치·이력·TTL·별도 12대 도메인 회귀 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
-| R6-14 | 관련 PR·CI·main 통합→Cloudflare Git Integration→정확 배포 SHA→공개 확인 | `IN_PROGRESS_SOURCE` | 앱 QFR PR #1175 main 소스 병합 `faa89cfbe8b2aeabcbd8b8e9747cc07620f9eff4`; CI #43892753705 통과. 기능의 실제 PC/D1/Cloudflare exact deployment/Production 지표 결과는 별도 미검증 |
+| R6-14 | 관련 PR·CI·main 통합→Cloudflare Git Integration→정확 배포 SHA→공개 확인 | `IN_PROGRESS_SOURCE` | 앱 QFR main SHA faa89cfbe8b2aeabcbd8b8e9747cc07620f9eff4, 제어 B main SHA 8c67a6c9e9e778278259593d0eb35b2b0e2a05ea 개발 통합, 관련 CI PASS. 실제 PC/D1/Cloudflare 정확 Deployment/API/UI 검증 미완료 |
 | R6-15 | 다음 공식 발표 이후 자연 수집·checkpoint·D1·UI 실제 전진 관찰 | `DEFERRED` | 다음 실제 공식 발표 후 자연 갱신 확인; 현재 구현 STOP Gate 아님 |
 
-**상태 집계(82개 정확히 1회씩):** `PARTIAL_SOURCE` 4개 · `EXISTING_EVIDENCE` 8개 · `EVIDENCE_NOT_MAPPED` 36개 · `SOURCE_REVIEWED` 1개 · `NOT_RUN` 13개 · `SOURCE_READY` 3개 · `SOURCE_CI_PASS` 5개 · `SOURCE_MAIN_CI_PASS` 1개 · `BLOCKED_PUBLISH_SCOPE` 2개 · `SOURCE_BRANCH_ONLY` 2개 · `PUBLISH_SCOPE_UNVERIFIED` 1개 · `SOURCE_MAIN_READY` 3개 · `TARGETED_CI_PASS` 1개 · `IN_PROGRESS_SOURCE` 1개 · `DEFERRED` 1개. 각각의 상태는 최종 운영 완료율이 아니다.
+**상태 집계(82개 정확히 1회씩):** `PARTIAL_SOURCE` 4개 · `EXISTING_EVIDENCE` 8개 · `EVIDENCE_NOT_MAPPED` 36개 · `SOURCE_REVIEWED` 1개 · `NOT_RUN` 13개 · `SOURCE_READY` 3개 · `SOURCE_CI_PASS` 3개 · `SOURCE_MAIN_CI_PASS` 3개 · `BLOCKED_PUBLISH_SCOPE` 2개 · `SOURCE_BRANCH_ONLY` 2개 · `PUBLISH_SCOPE_UNVERIFIED` 1개 · `SOURCE_MAIN_READY` 3개 · `TARGETED_CI_PASS` 1개 · `IN_PROGRESS_SOURCE` 1개 · `DEFERRED` 1개. 각각의 상태는 최종 운영 완료율이 아니다.
 
 ## 1. 현재 확정 가능한 진행 상태
 
