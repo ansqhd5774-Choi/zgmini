@@ -6,6 +6,8 @@ import {createHash} from 'node:crypto';
 
 const R20_SHA='e2ea97ce0ed0bf15cb083237d63d3cf520e090d8bd229a837bad393c3f8b0c6c';
 const SOURCE='https://getmarkethistory.com';
+// R23 fixed baseline window is an existing R34 source contract, not an inferred date.
+const R23_START='2023-01-01',R23_END='2026-10-26';
 const MODE='RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE';
 const HEX=/^[a-f0-9]{64}$/;
 const DAY=/^\d{4}-\d\d-\d\d$/;
@@ -82,6 +84,9 @@ function readManifest(root,folder,rosterSha,symbols){
   let u;try{u=new URL(e.requestedUrl);}catch{fail('PAGE_SOURCE_URL');}
   if(u.origin!==SOURCE||u.pathname!==`/api/v1/bars/stocks/${e.symbol}/1h`||u.searchParams.get('format')!=='jsonl')
    fail('PAGE_SOURCE_URL');
+  if(folder==='legacy-nine-r23'&&
+     (u.searchParams.get('start')!==R23_START||u.searchParams.get('end')!==R23_END))
+   fail('R23_BASELINE_REQUEST_WINDOW');
   unique.add(e.path);byPath.set(e.path,e);
   const bytes=readBounded(root,['themes',folder,'raw',`${e.symbol}_${e.sha256}.jsonl`],MAX_RAW);
   if(sha(bytes)!==e.sha256)fail('RAW_SHA_DRIFT');
@@ -99,6 +104,8 @@ function readStates(root,folder,rosterSha,symbols,byPath){
   const prefix=folder==='legacy-nine-r23'?'collection':'delta';
   if(record.version!==1||record.project!==folder||record.rosterSha256!==rosterSha||
    !validDay(record.start)||!validDay(record.end)||record.end<record.start||
+   (folder==='legacy-nine-r23'&&
+     (record.start!==R23_START||record.end!==R23_END))||
    name!==`${prefix}-${sha(JSON.stringify({roster:rosterSha,start:record.start,end:record.end})).slice(0,20)}.json`||
    !record.symbols||Object.keys(record.symbols).length!==symbols.length)fail('CHECKPOINT_IDENTITY');
   let complete=true;
