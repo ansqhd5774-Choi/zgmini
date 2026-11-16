@@ -49,6 +49,19 @@ export function prepareQfrD1Payload(preview,{generatedAt=new Date().toISOString(
   return {payload,projectionSha256:draft.previewSha256};
 }
 
+// The B preflight-selected immutable checkpoint must be the one sent to D1.
+// Missing pins fail closed; a newly appended QFR snapshot needs a new preflight.
+export function validatePinnedQfrSource(payload,{sourceVersion,rawZipSha256,sourceStoredAt}={}){
+  if(!SHA.test(sourceVersion??'')||!SHA.test(rawZipSha256??'')
+    ||typeof sourceStoredAt!=='string'||!/^[1-9][0-9]*$/.test(sourceStoredAt)
+    ||!Number.isSafeInteger(Number(sourceStoredAt)))
+    throw Error('QFR_PUBLISH_SOURCE_PIN_REQUIRED');
+  if(payload?.sourceVersion!==sourceVersion||payload?.sourceSha256!==rawZipSha256
+    ||payload?.sourceStoredAt!==Number(sourceStoredAt))
+    throw Error('QFR_PUBLISH_SOURCE_DRIFT');
+  return true;
+}
+
 async function main(){
   const now=new Date().toISOString();
   const stamp=now.replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z');
@@ -99,6 +112,13 @@ async function main(){
       lines.push('D1_QUERIES=0','D1_WRITES=0',
         'RESULT=PASS_QFR_D1_PREFLIGHT_NO_REMOTE_ACCESS');
     }else{
+      // No credentials, adapter or remote writes may be opened before this gate.
+      validatePinnedQfrSource(payload,{
+        sourceVersion:process.env.ZGMINI_EARNINGS_QFR_SOURCE_VERSION,
+        rawZipSha256:process.env.ZGMINI_EARNINGS_QFR_RAW_ZIP_SHA256,
+        sourceStoredAt:process.env.ZGMINI_EARNINGS_QFR_SOURCE_STORED_AT,
+      });
+      lines.push('PREFLIGHT_SOURCE_PIN=VERIFIED');
       const {client,credential}=await import('./d1.mjs');
       const remote=client(config,()=>credential(operationalRoot));
       const result=await qfrCompanionWriter(remote.adapter(config.core,{allowWrites:true}))
@@ -115,6 +135,8 @@ async function main(){
     }
   }catch(error){
     const message=String(error?.message??'');
+    if(['QFR_PUBLISH_SOURCE_PIN_REQUIRED','QFR_PUBLISH_SOURCE_DRIFT'].includes(message))
+      lines.push('D1_QUERIES=0','D1_WRITES=0');
     lines.push(`ERROR=${/^[A-Z0-9_]{1,100}$/.test(message)?message:'QFR_D1_PUBLISHER_FAILED'}`,
       'RESULT=FAIL_QFR_D1_NO_VERIFIED_PUBLICATION');
     exit=1;
