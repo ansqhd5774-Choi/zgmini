@@ -51,7 +51,6 @@ try{
   mappedImages:details.filter(row=>row.image).length,
   loadedImages:details.filter(row=>row.loaded).length,tickerFallbacks:details.filter(row=>row.fallback).length,
   missing,jsErrors:errors.length,domains:details.map(({ticker,domain})=>[ticker,domain])};
- const list=page.locator('.zg-schedule-list');
  await list.evaluate(el=>{el.scrollTop=0});
  await page.screenshot({path:dir+'/live-logos-1200.png',fullPage:true});
  writeFileSync(dir+'/result.json',JSON.stringify(report,null,2)+'\n');
