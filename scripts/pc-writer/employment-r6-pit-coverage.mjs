@@ -33,11 +33,15 @@ const isKnownAsOf=(row,asOfDate)=>{
   return Number.isFinite(knownAt(row))&&knownAt(row)<=end
     &&Number.isFinite(retrieved)&&retrieved<=end;
 };
-const sameObservation=(a,b)=>Boolean(a&&b&&a.source_hash===b.source_hash&&Number.isFinite(Number(a.value))
+// Do not coerce SQLite NULL/empty TEXT to zero when previewing PIT lineage.
+const numericObservation=value=>value!==null&&value!==undefined
+  &&!(typeof value==="string"&&!value.trim())&&Number.isFinite(Number(value));
+const sameObservation=(a,b)=>Boolean(a&&b&&a.source_hash===b.source_hash
+  &&numericObservation(a.value)&&numericObservation(b.value)
   &&Number(a.value)===Number(b.value)
   &&a.provider===b.provider&&a.provider_series_id===b.provider_series_id);
 const validSourceMetadata=row=>{
-  if(!row||!(/^[a-f\d]{64}$/i.test(String(row.source_hash??"")))
+  if(!row||!numericObservation(row.value)||!(/^[a-f\d]{64}$/i.test(String(row.source_hash??"")))
     ||!Number.isFinite(Date.parse(row.retrieved_at??""))
     ||!String(row.provider??"").trim()||!String(row.provider_series_id??"").trim()
     ||!String(row.quality_status??"").trim()
