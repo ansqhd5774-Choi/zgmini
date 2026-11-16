@@ -181,3 +181,37 @@ test('top banner company labels strip nested legal-name parentheses while retain
  for(const [ticker,,expected] of companies)assert.equal(names[ticker],expected);
  assert.equal(marketCalendarBannerRows(timestamp,null,filtered.html).filter(r=>r.kind==='실적').length,companies.length);
 });
+
+test('R44 top banner resolves official company logo domains for every observed November issuer',()=>{
+ const observed=[
+  ['DIS','thewaltdisneycompany.com'],['HD','homedepot.com'],['MDT','medtronic.com'],
+  ['NVDA','nvidia.com'],['LOW','lowes.com'],['TGT','target.com'],['TJX','tjx.com'],
+  ['PANW','paloaltonetworks.com'],['WMT','walmart.com'],['INTU','intuit.com'],
+  ['KEYS','keysight.com'],['ROST','rossstores.com'],['HPE','hpe.com'],
+  ['ADI','analog.com'],['ADSK','autodesk.com'],['DELL','dell.com'],['DE','deere.com'],
+ ];
+ const unknownTicker='ZZZZ';
+ const now=Date.parse('2026-11-16T04:00:00Z');
+ const start='2026-11-16',end='2026-11-29';
+ const coveredDays=Array.from({length:14},(_,i)=>new Date(Date.parse(start+'T00:00:00Z')+i*86400000).toISOString().slice(0,10));
+ const tickers=[...observed.map(row=>row[0]),unknownTicker];
+ const csv=['ticker,name,exchange,sector,industry,country,price,mktCap',
+  ...tickers.map(ticker=>[ticker,'Sample '+ticker,'NASDAQ','Technology','Software','US','200','100000000000'].join(','))].join('\n')+'\n';
+ const delta=makeDeltaR44Public(gradeCalendarTickersFromDelta(parseDeltaScreenerCsv(csv),tickers));
+ const events=[...tickers.map(ticker=>({ticker,date:'2026-11-18'})),{ticker:'MDT',date:'2026-11-20'}]
+  .map(({ticker,date})=>({ticker,date,company:'Sample '+ticker,marketSession:'after_market',
+   time:null,verification:'VENDOR_UNVERIFIED',source:'earnings-api'}));
+ const display=earningsDisplaySnapshot({status:'READY_PRIVATE',scope:'PC_PRIVATE',
+  publicDisplay:false,redistribution:false,publicationStatus:'HELD_UNCONFIRMED',
+  coveredDays,recordCount:events.length,priorityCount:0,checkedAt:new Date(now).toISOString(),events});
+ const filtered=earningsDisplayHtml(display,{start,end,importance:3},null,null,null,{},delta);
+ const rows=earningsBannerRows(filtered.html,now);
+ assert.equal(rows.length,observed.length+2);
+ const domains=new Map(rows.map(row=>[row.ticker,row.logoDomain]));
+ for(const [ticker,domain] of observed){
+  assert.equal(domains.get(ticker),domain,'Logo domain must map to '+ticker);
+  assert.match(domain,/^[a-z0-9.-]+\.[a-z]{2,}$/);
+ }
+ assert.equal(domains.get(unknownTicker),null,'Unknown issuer must retain ticker fallback');
+ assert.equal(rows.filter(row=>row.ticker==='MDT').length,2,'Repeated earnings retain same issuer logo');
+});
