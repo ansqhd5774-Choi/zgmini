@@ -68,7 +68,7 @@ export async function refreshStoredMarketScoreSnapshot({env,store,now=Date.now()
   const result=await calculateStoredMarketScore(env,store,now);
   return {status:'COMPLETE',providerRequests:0,...result};
  }catch(error){
-  const reason=['STORED_CALCULATION_FAILED','SCORE_CONTRACT_FAILED','MARKET_REQUIRED_SCORE_MISSING','MARKET_REQUIRED_TREND_MISSING'].includes(error?.message)?error.message:'STORED_PRECOMPUTE_FAILED';
+  const reason=['STORED_CALCULATION_FAILED','SCORE_CONTRACT_FAILED','MARKET_REQUIRED_SCORE_MISSING','MARKET_REQUIRED_TREND_MISSING','MACRO_CREDIT_OBSERVATION_REGRESSION'].includes(error?.message)?error.message:'STORED_PRECOMPUTE_FAILED';
   return {status:'ERROR',providerRequests:0,reason};
  }
 }
