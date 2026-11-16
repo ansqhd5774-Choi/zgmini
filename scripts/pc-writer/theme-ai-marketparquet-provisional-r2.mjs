@@ -1,3 +1,4 @@
+import {throwMarketParquetRemoved} from '../../lib/marketparquet-retirement.mjs';
 // AI-only private provisional calculator; consumes the seven-theme VERIFIED
 // daily archive and the AI SHA-verified GetMarketHistory confirmed price tables.
 // Does not fetch, write, or publish; no new scoring formula is defined here.
@@ -53,16 +54,4 @@ export function calculateAiProvisionalWithRealPrices({confirmedDate,privateGmh,v
  return {status:'PRIVATE_PROVISIONAL_SCORES_VERIFIED',points,lineage,providerCalls:0,d1Writes:0};
 }
 
-export async function buildAiProvisionalFromExistingSeven({dataRoot,checked,reference,now=Date.now(),parquetReader}={}){
- const confirmedDate=checked?.observationDate;
- requireTrue(checked?.status==='PRIVATE_CANDIDATE_PARITY_VERIFIED'&&checked.audit?.maxDifference===0&&
-  confirmedDate===reference?.observationDate,'AI_CONFIRMED_REFERENCE_NOT_ALIGNED');
- const pendingDates=(reference.phase==='PROVISIONAL'?reference.provisional?.points??[]:[]).map(p=>p.date);
- requireTrue(pendingDates.length>=1&&pendingDates.length<=2,'AI_REFERENCE_PENDING_DATES_MISSING');
- const archived=await inspectExistingSevenAiSource({dataRoot,overlapDate:confirmedDate,
-  pendingDates,targetDate:pendingDates.at(-1),includePrivatePrices:true,...(parquetReader?{reader:parquetReader}:{})});
- requireTrue(archived.status==='ACTUAL_TARGET_AND_OVERLAP_ROWS_VERIFIED',
-  'AI_SEVEN_SOURCE_'+archived.status);
- return calculateAiProvisionalWithRealPrices({confirmedDate,privateGmh:checked.privateVerifiedPrices,
-  verifiedParquet:archived,pendingDates,now});
-}
+export function buildAiProvisionalFromExistingSeven(){return throwMarketParquetRemoved();}

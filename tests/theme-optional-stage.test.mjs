@@ -19,7 +19,7 @@ const fixtureFetch=async url=>{
 test('snapshot pins one GitHub commit and includes every imported dependency',async()=>{
   const snapshot=await fetchSnapshot({fetchImpl:fixtureFetch});
   assert.equal(snapshot.sha,sha);
-  assert.equal(snapshot.assets.length,43);
+  assert.equal(snapshot.assets.length,42);
   assert.ok(snapshot.assets.some(x=>x.path==='lib/cnn-observed-archive-r1.mjs'));
   assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-nine-r88-provisional.mjs'));
   assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-space-satellite-provisional-r1.mjs'));
@@ -33,8 +33,8 @@ test('snapshot pins one GitHub commit and includes every imported dependency',as
   assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-etf-only-public.mjs'));
   assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-nine-r37-public.mjs'));
   assert.ok(snapshot.assets.some(x=>x.path==='scripts/pc-writer/theme-ai-task-mirror-r1.mjs'));
-  assert.ok(snapshot.assets.some(x=>x.path==='scripts/pc-writer/theme-ai-marketparquet-readonly-r1.mjs'));
-  assert.ok(snapshot.assets.some(x=>x.path==='scripts/pc-writer/theme-ai-marketparquet-provisional-r2.mjs'));
+  assert.ok(!snapshot.assets.some(x=>x.path.includes('theme-ai-marketparquet-')));
+  assert.ok(snapshot.assets.some(x=>x.path==='lib/marketparquet-retirement.mjs'));
   assert.ok(snapshot.assets.some(x=>x.path==='scripts/pc-writer/theme-data-center-power-r1.mjs'));
   assert.ok(snapshot.assets.some(x=>x.path==='scripts/pc-writer/theme-data-center-power-r1.cmd'));
   assert.ok(snapshot.assets.some(x=>x.path==='worker/theme-data-center-power-r1.mjs'));

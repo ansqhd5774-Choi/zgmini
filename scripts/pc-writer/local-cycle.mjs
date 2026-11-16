@@ -117,19 +117,8 @@ try{
   }
  }
  let breadthV9ShadowRun=null,breadthV9ShadowReport=null,breadthV9ShadowFresh=false;
- const breadthV9OptIn=lane==='core'&&process.env.ZGMINI_R10_V9_SHADOW_ENABLED==='1';
- if(breadthV9OptIn){
-  const startedAt=Date.now();
-  breadthV9ShadowRun=spawnSync(process.execPath,[path.join(here,'breadth-r10-v9-shadow-r1.mjs'),'--write-local'],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:2*60000});
-  const resultPath=path.join(base,'local-breadth-r10-v9-shadow-last-run.json');
-  if(fs.existsSync(resultPath)){
-   try{
-    const candidate=read(resultPath),timestamp=Date.parse(candidate?.at??'');
-    breadthV9ShadowFresh=breadthV9ShadowRun.status===0&&Number.isFinite(timestamp)&&timestamp>=startedAt-1000;
-    if(breadthV9ShadowFresh)breadthV9ShadowReport=candidate;
-   }catch{breadthV9ShadowFresh=false;}
-  }
- }
+ const breadthV9OptIn=false; // MarketParquet-derived automatic lane removed 2026-11-16.
+ // Removed MarketParquet-derived automatic shadow dispatch.
  const researchProspective=lane==='core'?{
   nonBlocking:true,
   exit:prospective?.status??null,

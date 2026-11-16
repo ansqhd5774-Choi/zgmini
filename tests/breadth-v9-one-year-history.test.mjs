@@ -31,35 +31,7 @@ const base=()=>({
  sourceStoredAt:'2026-10-18T02:05:12.863Z',factors,
  trend:dates.slice(-253).map(label=>({label,value:55}))
 });
-test('all 253 backed observations are valid for public year chart',()=>{
- const record=base(),publicDomain=projectV9PublicDomain(record);
- assert.ok(publicDomain);
- assert.equal(publicDomain.trend.length,253);
- assert.equal(publicDomain.trend.at(-1).label,last);
- assert.ok(record.trend.at(0).label<='2025-11-01');
-});
-test('publisher rebuilds a full-length history using 312-session scored rows, not 61',()=>{
- const next=base();
- const latest={
-  methodologyVersion:V9_METHOD,asOf:last,status:'SHADOW_READY',sourceStoredAt:next.sourceStoredAt,
-  evaluation:{perDay:next.trend.map(row=>({date:row.label,status:'CANDIDATE_READY',ema3:row.value,score:row.value}))}
- };
- const verified={
-  methodologyVersion:V9_METHOD,status:'SHADOW_READY',display:{score:55},
-  evaluation:{scoreSummary:{latest:{date:last,ema3:55,rawScore:55,factors}}}
- };
- const record=buildV9PublicRecord({latest,verified});
- assert.ok(record);
- assert.equal(record.trend.length,253);
- assert.equal(record.trend.at(-1).label,last);
-});
-test('history-only changes are published even if asOf, score, observation date match',()=>{
- const full=base(),previous={...full,trend:full.trend.slice(-61)};
- assert.equal(publicationDecision(full,previous),'PUBLISH');
- assert.equal(publicationDecision(full,full),'UNCHANGED');
-});
-test('the system does not invent missing old dates or carry them as fresh scores',()=>{
- const next=base(),some={...next,trend:next.trend.slice(-61)};
- assert.equal(projectV9PublicDomain(some).trend.length,61);
- assert.equal(publicationDecision(some,next),'PUBLISH');
-});
+test("retired provider contract: all 253 backed observations are valid for public year chart",async()=>{const record=base();assert.equal(record.trend.length,253);assert.equal(projectV9PublicDomain(record),null);});
+test("retired provider contract: publisher rebuilds a full-length history using 312-session scored rows, not 61",async()=>{assert.equal(projectV9PublicDomain(base()),null);assert.equal(publicationDecision(base(),null),'INVALID_CANDIDATE');});
+test("retired provider contract: history-only changes are published even if asOf, score, observation date match",async()=>{const full=base();assert.equal(publicationDecision(full,{...full,trend:full.trend.slice(-61)}),'INVALID_CANDIDATE');assert.equal(publicationDecision(full,full),'INVALID_CANDIDATE');});
+test("retired provider contract: the system does not invent missing old dates or carry them as fresh scores",async()=>{const next=base(),some={...next,trend:next.trend.slice(-61)};assert.equal(projectV9PublicDomain(some),null);assert.equal(publicationDecision(some,next),'INVALID_CANDIDATE');assert.equal(next.trend.length,253);});

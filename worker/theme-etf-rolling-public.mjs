@@ -32,7 +32,7 @@ export async function validRollingPublic(rolling,base,{now=Date.now(),expectedMe
  for(const p of points){if(!date(p?.date)||p.date<=prev||Date.parse(p.date+'T00:00:00Z')>now||!p.scores||typeof p.scores!=='object'||Array.isArray(p.scores))return false;
   const names=base.themes.map(t=>t.theme);if(Object.keys(p.scores).length!==names.length||names.some(name=>!Object.hasOwn(p.scores,name)||!score(p.scores[name])))return false;prev=p.date;}
  if(rolling.lineage?.latestCompletedSession!==prev||!Number.isInteger(rolling.lineage?.confirmedPrimaryCount)||!Number.isInteger(rolling.lineage?.secondaryPendingCount)||rolling.lineage?.secondaryPendingCount!==points.length)return false;
- if(rolling.lineage.primarySource!=='GETMARKETHISTORY_1H_CLOSE'||rolling.lineage.secondarySource!=='MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED')return false;
+ if(rolling.lineage.primarySource!=='GETMARKETHISTORY_1H_CLOSE'||rolling.lineage.secondarySource!==null||points.length!==0||rolling.lineage.secondaryPendingCount!==0)return false;
  return now-Date.parse(prev+'T23:59:59Z')<PUBLIC_DISPLAY_MAX_AGE_MS;
 }
 export async function readRollingPublic(db,base,{now=Date.now()}={}){
