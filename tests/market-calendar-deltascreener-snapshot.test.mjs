@@ -29,7 +29,7 @@ test('duplicated ticker is not arbitrarily resolved; missing values excluded, no
  assert.equal(a.coverage.duplicateTickerConflicts,1);
  assert.equal(a.coverage.invalidRows,1);
  assert.deepEqual(gradeCalendarTickersFromDelta(a,['DUP','BAD','NA']).grades,
-  {BAD:null,DUP:null,NA:2});
+  {BAD:null,DUP:null,NA:3});
 });
 test('linked share classes with divergent supplier market caps do not get false issuer grade',()=>{
  const a=parseDeltaScreenerCsv(csv([
@@ -38,6 +38,18 @@ test('linked share classes with divergent supplier market caps do not get false 
  const x=gradeCalendarTickersFromDelta(a,['GOOG','GOOGL']);
  assert.deepEqual(x.grades,{GOOG:null,GOOGL:null});
  assert.equal(x.counts.conflicting,2);
+});
+test('R44 50B cutoff grades exact boundary and preserves 20B lower tier',()=>{
+ const source=parseDeltaScreenerCsv(csv([
+  'A,One,NYSE,Tech,Apps,US,10,19999999999',
+  'B,Two,NYSE,Tech,Apps,US,10,20000000000',
+  'C,Two,NYSE,Tech,Apps,US,10,49999999999',
+  'D,Three,NYSE,Tech,Apps,US,10,50000000000',
+  'E,Three,NYSE,Tech,Apps,US,10,200000000000'
+ ]));
+ const g=gradeCalendarTickersFromDelta(source,['A','B','C','D','E','NOPE']);
+ assert.deepEqual(g.grades,{A:1,B:2,C:2,D:3,E:3,NOPE:null});
+ assert.deepEqual(g.counts,{one:1,two:2,three:2,missing:1,conflicting:0});
 });
 test('quoted commas roundtrip, malformed rows are not silently dropped',()=>{
  const a=parseDeltaScreenerCsv(csv(['ACME,"Acme, Inc.",NYSE,Technology,Software,US,10,15000000000']));
