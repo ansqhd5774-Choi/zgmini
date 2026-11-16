@@ -5,7 +5,7 @@
 - 착수 당시 전용 브랜치: `codex/ui-improvements` `43f943679b555387593d918088860ba5b882dcb6`
 - 인계받은 기존 근거: `DASHBOARD_SCORE_68_CONTENT_CONTRACT_INVENTORY_R1.md` (2026-11-10), `DASHBOARD_SCORE_RUNTIME_BASELINE_R1.md` (2026-11-10)
 - 당회 작업 범위: **현재 개발 소스의 UI 소비 구조 및 R1 계약 재사용**, 기능별 실제 갱신 계약 분류 착수. 원자료/DB/D1/Controller/예약/산식 변경 없음.
-- **진척 요약: 01,02,03,07,09–21 판정 완료 (17/34 = 50.0% 고정 작업 기준). 기능별 판정 14/27. 나머지 13개는 미완료.** 추가 결함군 N은 미확정이므로 전체 R3 최종 %는 아직 산정하지 않는다. 이 기록은 브랜치 문서 반영이지 배포/운영 적용 증거가 아니다.
+- **진척 요약: 01,02,03,07,09–30 판정 완료 (26/34 = 76.5% 고정 작업 기준). 기능별 판정 23/27. 04–06/08/31–34는 아직 미완료.** 추가 결함군 N은 미확정이므로 전체 R3 최종 %는 아직 산정하지 않는다. 이 기록은 브랜치 문서 반영이지 배포/운영 적용 증거가 아니다.
 
 ## 1. 공통 실행 01–03 — 완료 근거
 
@@ -49,15 +49,15 @@
 | 19 | D16 · 금리 · rates | 현행 RATE_R3: EFFR 정책 축 20% + 2Y 국채 25% + 실질 10Y 30% + 10Y−3M 곡선 25%. NY Fed EFFR + 연준 H.15 영업일 입력; 정책 상하한은 표시 계약 | /api/market-score domains.rates · /economic-indicators/rates/ | `lib/market-score/rate-r3.mjs / lib/market-score/rate-r2-provider.mjs / worker/market-score-r1.mjs` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 유효 4축/최소 과거 자료와 영업일 freshness Gate 확인. 실제 입력→저장→계산→게시 사건 확인 전. 모델 R2→R3 혼동 금지 |
 | 20 | D17 · 채권·신용 · credit | 현행 CREDIT_R2: HY CMDI 35%·IG CMDI 35%·NFCICREDIT 10%·국채 2Y/5Y/10Y/30Y 변동성 20%; 주간 CMDI/NFCI + 일별 금리 혼합 | /api/market-score domains.credit · /economic-indicators/credit/ | `lib/market-score/credit-r2.mjs / worker/market-score-r1.mjs / lib/market-score/domain-adapter-r1.mjs` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 4요인 모두 유효해야 READY, missing PARTIAL/null; soft-stale>14일 표시. 실제 새로운 유효 입력의 계산·공개 갱신 사건 미확인 |
 | 21 | D18 · 경기 · growth | 현행 Growth R2 G16 24개 필수 feature 및 각 발표/초기 저장시각 유효성, 2개월 stale Gate; 저장 24/24 충족 시 전용 공개 domain | /api/market-score domains.growth · /economic-indicators/growth/ | `lib/market-score/growth-r2-worker-domain-r1.mjs / lib/market-score/growth-r2-contract.mjs / lib/market-score/domain-adapter-r1.mjs` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 24개 미충족시 신규 G16 확정점 불가; 기존 진단 fallback 구분. 현재 PC/D1 원본의 24/24 충족 사건 미확인 |
-| 22 | D19 · 소비 · consumption | 현행 R5 D/Y/L/H/B 5축; 옛 C1-R3 95→7축 아님; 월간 중심 | /economic-indicators/consumption/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
-| 23 | D20 · 기업실적 · earnings | R4 4요인·R5 13요인 코드 병존; 현재 PC 활성버전 미확정; 분기 중심 | /economic-indicators/earnings/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
-| 24 | D21 · 유동성 · liquidity | 준비금·M2·TGA·ON RRP 표시 입력 4종; 일·주·월 혼합 | /economic-indicators/liquidity/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
-| 25 | D22 · 자금흐름 · fundFlows | 순유입·모멘텀·인덱스 동반·환매압력 4요인; 실제 공급자 공표주기 미확정 | /economic-indicators/fund-flows/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
-| 26 | D23 · 수급·폭 · breadth | 상승수·상승대금·5일EMA·20일EMA 4요인; 거래일 기반, 별도 오버레이 주의 | /economic-indicators/breadth/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
-| 27 | D24 · 달러·환율 · dollarFx | 달러지수 수준·20/60일 모멘텀·20일 변동성 4요인; 영업일 | /economic-indicators/dollar-fx/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
-| 28 | D25 · 유가·원자재 · commodities | WTI·Brent·구리·미국 휘발유 4요인; 시장/주/월 혼합 | /economic-indicators/commodities/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
-| 29 | D26 · 금리 심리 · public:rate-sentiment:v1 | DGS2·DGS3MO·DGS10, 일별 H.15 + 4요인 점수, 관측 7일 경과 STALE | /api/rate-sentiment · 별도 보조 콘텐츠 | `보조 콘텐츠 (원본 인벤토리 참조)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
-| 30 | D27 · 이란 위험 진행 · public:iran-progress:r13 | 뉴스/사건 비정기, observationAt/verified/calculated/published 구별; R13 기존 예약 승인 제거 | /api/iran-progress · 별도 보조 콘텐츠 | `보조 콘텐츠 (원본 인벤토리 참조)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
+| 22 | D19 소비 consumption | R5 5축 D/Y/L/H/B=30/25/15/20/10, 월간 13개 점수요인 + 정보용 2개 진단(가중 0), 10년 기준 비교, BEA/BLS·분기 가계지표 | /api/market-score domains.consumption | worker/consumption-r5-reader.mjs; lib/market-score/consumption-r5.mjs | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 마지막 저장 입력 ≤7일, 최신 관측 ≤120일, 전 점수 요인 완전성이 READY; 공개 신규 입력→재계산 사건 미확인 |
+| 23 | D20 기업실적 earnings | E1-R4 4요인 현재값 유지 또는 E1-R5 13요인 모두 READY/noReweight일 때 R5 선택. SEC 분기 공표·별도 forward 입력 | /api/market-score domains.earnings | scripts/pc-writer/market.mjs; lib/market-score/earnings-e1-r5-production-domain.mjs; lib/market-score/earnings-e1-r5.mjs | SOURCE_REVIEWED_RUNTIME_UNKNOWN | R5 PARTIAL 시 R4 보존(구형/신형 분리); R5 활성 실데이터/sourceVersion 미확인 |
+| 24 | D21 유동성 liquidity | ACTIVE D3 6요인 진단 점수를 경제 liquidity 공개 점수로 사용; 준비금/M2/TGA/ON RRP 4개 표시는 세부값, 채권변동성 등과 별개 | /api/market-score domains.liquidity | lib/market-score/liquidity-active-public-domain-r1.mjs; worker/market-score-r1.mjs | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 진단 READY면 active 상세 선택, 아니면 저장된 승인 상세 fallback; 현재 점수 vs 과거 재구성·실제 저장 추이 구별 |
+| 25 | D22 자금흐름 fundFlows | SEC 등록펀드 순유입 40%·MoM 모멘텀 25%·인덱스/비인덱스 동반 20%·환매압력 15%, 최소 12관측 | /api/market-score domains.fundFlows | lib/diagnostic-layer/open-resolution-r53-components.mjs; worker/market-score-r1.mjs | SOURCE_REVIEWED_RUNTIME_UNKNOWN | SEC 실제 공식발표 관측일 기준 다음 계산; PARTIAL/모멘텀 이력 부족/출시시간 미확인 |
+| 26 | D23 수급·시장폭 breadth | B1-R5 기존 D1 저장 R4 입력, 상승종목 30%·상승대금 20%·EMA5 30%·EMA20 20% 이후 최종 EMA3, 최소 커버리지 98%, 최근 ≤2 완료 거래일 | /api/market-score domains.breadth | lib/market-score/breadth-b1-r5-reader.mjs; lib/market-score/breadth-b1-r5-contract.mjs | SOURCE_REVIEWED_RIGHTS_RUNTIME_UNKNOWN | MarketParquet 제거 이후 저장 출처 권한·활성 새 입력 확인 필요; 재공급자 연결/과거 결과 최신 위장 금지 |
+| 27 | D24 달러·환율 dollarFx | Broad Dollar DTWEXBGS 일별 수준30%·20일 모멘텀30%·60일 모멘텀20%·20일 변동성20%, 최소 252일 참조 | /api/market-score domains.dollarFx | lib/diagnostic-layer/open-resolution-r53-components.mjs; worker/market-score-r1.mjs | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 단일 입력원 거래일 기준; 0점 유효·이력 부족 PARTIAL. 현재 업데이트 사건 미확인 |
+| 28 | D25 유가·원자재 commodities | K1-R2 독립 최신 WTI30%·Brent25%·구리25%·휘발유20%; 지표별 마지막 공표월 시차 ≤2개월, percentile 최소60 | /api/market-score domains.commodities | lib/market-score/public-domain-producers-r2.mjs; worker/market-score-r1.mjs | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 전 4요인 신선·완전할 때만 READY, 단일 월/주 발표시 허용 이월; 운영 신규 입력 사례 미확인 |
+| 29 | D26 금리 심리 rate-sentiment | H.15 DGS2/DGS3MO/DGS10 공통 거래일, 756거래일 기준, 4축 가중50/20/20/10; 7달력일 초과 관측 STALE | /api/rate-sentiment | lib/market-score/rate-sentiment-r1-research.mjs; worker/rate-sentiment-public.mjs; app/api/rate-sentiment/route.ts | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 연구용 점수와 CME FedWatch 확률 분리; 저장 공개 body READY/5개 주간점·관측일/저장시각 검증; PC 새 게시 미확인 |
+| 30 | D27 이란 위험 진행 iran-progress | 비정기 검증된 사건/승인된 저장 결과 R5→R3→R2→R1→R13 읽기 fallback, 관측/검증/게시일 구별 | /api/iran-progress | worker/iran-progress-public.mjs; app/api/iran-progress/route.ts; lib/iran-progress/r13.mjs | SOURCE_REVIEWED_RUNTIME_UNKNOWN | R13 예약 승인 제거 상태. 신규 정규 예약 금지. 저장 R5 최신 확인 후 공개; 기존 검증 결과 일자 미확인 |
 
 ## 3. 개별 실행 04–08에서 새로 확인한 범위
 
@@ -86,8 +86,8 @@
 ## 4. 다음 실제 실행 순서·작업량 보호
 
 - **현재 증거상 확정된 갱신 시점 불일치(결함군 N): 아직 0건 확정이 아니라 '미확정'.** D04는 NOT_CONNECTED이며 새 수정 대상 결함군에 자동 합산하지 않는다.
-- **다음 필수 실행:** 22/D19 소비 점수의 R5 5축 저장·계산·현재 점수 계약을 판정하고, Production 공개 API readback을 재확인한다. 04–06·08의 구체적 미확인 입력은 기존 유효 증거가 있을 때 이어서 판정하되 **27개 전원 운영 사건 확인을 단일 전역 Gate로 만들지 않는다**.
-- 실행 완료 집계: **17/34** (01,02,03,07,09–21), 04–06/08 및 22–34는 미완료. **구현: API 저장결과 읽기 라우트 7건·회귀 테스트 4건. main 병합 완료 / Cloudflare 후보 Worker build 성공 / Production 사이트 API readback 미확인.**
+- **다음 필수 실행:** 04–06/08 최신 source·권리 변경을 재대조하고 31–32 혼합주기/결측 시뮬레이션을 실행한다. Production 공개 API readback은 접근 제한으로 아직 UNKNOWN. 04–06·08의 구체적 미확인 입력은 기존 유효 증거가 있을 때 이어서 판정하되 **27개 전원 운영 사건 확인을 단일 전역 Gate로 만들지 않는다**.
+- 실행 완료 집계: **26/34** (01,02,03,07,09–30), 04–06/08 및 22–34는 미완료. **구현: API 저장결과 읽기 라우트 7건·회귀 테스트 4건. main 병합 완료 / Cloudflare 후보 Worker build 성공 / Production 사이트 API readback 미확인.**
 
 
 ## 5. 09/D06 인플레이션 위험 신규 실행 증거 — 2026-11-16
@@ -137,3 +137,19 @@
 - 20/D17: `lib/market-score/credit-r2.mjs`가 stored CMDI HY 35% + IG 35% + NFCI Credit 10% + 국채 네 만기 realized volatility 20% 산식을 사용, 4 요인 READY를 요구. 혼합 시계 주기, 260개 NFCI 최소 표본, 14일 초과 SOFT_STALE, missing PARTIAL/null, 허용 마지막 유효 입력 이월, old risk diagnostic(creditRiskDefense) 점수를 economic credit에 대입하지 않음. `tests/credit-r2.test.mjs`에서 활성 공통 공개 domain 우선 및 missing gate 확인.
 - 21/D18: `lib/market-score/growth-r2-worker-domain-r1.mjs` + G16 registry 총 24/24 개 필수. 수집·저장된 완료 관측, 각 feature PIT 유효성과 두 발표 간격 stale Gate 충족 시 G16 점수 READY. 부족 시 새 G16 확정 점수 게시 불가; `domain-adapter-r1.mjs`에서 기존 진단 fallback이 표시될 수 있으므로 현행 growth source/version 분리 관찰 필요. 기존 R1 가중치·Gate·fallback 조건 무변경.
 - 두 항목 모두 SOURCE_REVIEWED_RUNTIME_UNKNOWN: 실제 신규 관측→저장 checkpoint→계산과 게시버전→공개 응답을 동일 사건으로 맞추는 현재 운영 증거 미확보. 정상 발표/완성기간 기다림을 결함으로 오인하지 않음.
+
+
+## 11. 22–30/D19–D27 신규 판정 — 2026-11-16
+
+- **22/D19 소비 consumption:** R5 5축 D/Y/L/H/B=30/25/15/20/10, 월간 13개 점수요인 + 정보용 2개 진단(가중 0), 10년 기준 비교, BEA/BLS·분기 가계지표. Gate: 마지막 저장 입력 ≤7일, 최신 관측 ≤120일, 전 점수 요인 완전성이 READY; 공개 신규 입력→재계산 사건 미확인. API: `/api/market-score domains.consumption`; source: `worker/consumption-r5-reader.mjs; lib/market-score/consumption-r5.mjs`. **상태: SOURCE_REVIEWED_RUNTIME_UNKNOWN**.
+- **23/D20 기업실적 earnings:** E1-R4 4요인 현재값 유지 또는 E1-R5 13요인 모두 READY/noReweight일 때 R5 선택. SEC 분기 공표·별도 forward 입력. Gate: R5 PARTIAL 시 R4 보존(구형/신형 분리); R5 활성 실데이터/sourceVersion 미확인. API: `/api/market-score domains.earnings`; source: `scripts/pc-writer/market.mjs; lib/market-score/earnings-e1-r5-production-domain.mjs; lib/market-score/earnings-e1-r5.mjs`. **상태: SOURCE_REVIEWED_RUNTIME_UNKNOWN**.
+- **24/D21 유동성 liquidity:** ACTIVE D3 6요인 진단 점수를 경제 liquidity 공개 점수로 사용; 준비금/M2/TGA/ON RRP 4개 표시는 세부값, 채권변동성 등과 별개. Gate: 진단 READY면 active 상세 선택, 아니면 저장된 승인 상세 fallback; 현재 점수 vs 과거 재구성·실제 저장 추이 구별. API: `/api/market-score domains.liquidity`; source: `lib/market-score/liquidity-active-public-domain-r1.mjs; worker/market-score-r1.mjs`. **상태: SOURCE_REVIEWED_RUNTIME_UNKNOWN**.
+- **25/D22 자금흐름 fundFlows:** SEC 등록펀드 순유입 40%·MoM 모멘텀 25%·인덱스/비인덱스 동반 20%·환매압력 15%, 최소 12관측. Gate: SEC 실제 공식발표 관측일 기준 다음 계산; PARTIAL/모멘텀 이력 부족/출시시간 미확인. API: `/api/market-score domains.fundFlows`; source: `lib/diagnostic-layer/open-resolution-r53-components.mjs; worker/market-score-r1.mjs`. **상태: SOURCE_REVIEWED_RUNTIME_UNKNOWN**.
+- **26/D23 수급·시장폭 breadth:** B1-R5 기존 D1 저장 R4 입력, 상승종목 30%·상승대금 20%·EMA5 30%·EMA20 20% 이후 최종 EMA3, 최소 커버리지 98%, 최근 ≤2 완료 거래일. Gate: MarketParquet 제거 이후 저장 출처 권한·활성 새 입력 확인 필요; 재공급자 연결/과거 결과 최신 위장 금지. API: `/api/market-score domains.breadth`; source: `lib/market-score/breadth-b1-r5-reader.mjs; lib/market-score/breadth-b1-r5-contract.mjs`. **상태: SOURCE_REVIEWED_RIGHTS_RUNTIME_UNKNOWN**.
+- **27/D24 달러·환율 dollarFx:** Broad Dollar DTWEXBGS 일별 수준30%·20일 모멘텀30%·60일 모멘텀20%·20일 변동성20%, 최소 252일 참조. Gate: 단일 입력원 거래일 기준; 0점 유효·이력 부족 PARTIAL. 현재 업데이트 사건 미확인. API: `/api/market-score domains.dollarFx`; source: `lib/diagnostic-layer/open-resolution-r53-components.mjs; worker/market-score-r1.mjs`. **상태: SOURCE_REVIEWED_RUNTIME_UNKNOWN**.
+- **28/D25 유가·원자재 commodities:** K1-R2 독립 최신 WTI30%·Brent25%·구리25%·휘발유20%; 지표별 마지막 공표월 시차 ≤2개월, percentile 최소60. Gate: 전 4요인 신선·완전할 때만 READY, 단일 월/주 발표시 허용 이월; 운영 신규 입력 사례 미확인. API: `/api/market-score domains.commodities`; source: `lib/market-score/public-domain-producers-r2.mjs; worker/market-score-r1.mjs`. **상태: SOURCE_REVIEWED_RUNTIME_UNKNOWN**.
+- **29/D26 금리 심리 rate-sentiment:** H.15 DGS2/DGS3MO/DGS10 공통 거래일, 756거래일 기준, 4축 가중50/20/20/10; 7달력일 초과 관측 STALE. Gate: 연구용 점수와 CME FedWatch 확률 분리; 저장 공개 body READY/5개 주간점·관측일/저장시각 검증; PC 새 게시 미확인. API: `/api/rate-sentiment`; source: `lib/market-score/rate-sentiment-r1-research.mjs; worker/rate-sentiment-public.mjs; app/api/rate-sentiment/route.ts`. **상태: SOURCE_REVIEWED_RUNTIME_UNKNOWN**.
+- **30/D27 이란 위험 진행 iran-progress:** 비정기 검증된 사건/승인된 저장 결과 R5→R3→R2→R1→R13 읽기 fallback, 관측/검증/게시일 구별. Gate: R13 예약 승인 제거 상태. 신규 정규 예약 금지. 저장 R5 최신 확인 후 공개; 기존 검증 결과 일자 미확인. API: `/api/iran-progress`; source: `worker/iran-progress-public.mjs; app/api/iran-progress/route.ts; lib/iran-progress/r13.mjs`. **상태: SOURCE_REVIEWED_RUNTIME_UNKNOWN**.
+
+- 오늘 최신 main의 `docs/MARKETPARQUET_REMOVAL.md`로 공급자 이용 금지 확정. D23 저장 reader가 제공하는 sourceList가 MarketParquet 계열이면 별도 원담당 권리/수집 경계로 분리. W06은 새로운 라이선스·산식·공급자를 만들지 않는다.
+- API 직접 readback: 이 환경의 공개 HTTP 조회가 `zgmini.kr`에 접근하지 못해 소스와 현재 실제 공개 상태의 동치 미확인. 이를 단일 전역 blocker로 두지 않음.
