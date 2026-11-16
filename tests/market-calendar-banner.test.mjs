@@ -105,11 +105,11 @@ test('banner rejects old legacy or FHS ★★★; accepts verified ER1 label onl
 test('R44 November 50B three-star earnings appear in the top banner from existing reviewed HTML',()=>{
  const timestamp=Date.parse('2026-11-16T04:00:00Z'),start='2026-11-16';
  const coveredDays=Array.from({length:14},(_,i)=>new Date(Date.parse(start+'T00:00:00Z')+i*86400000).toISOString().slice(0,10));
- const csv='ticker,name,exchange,sector,industry,country,price,mktCap\\n'+
-  'AMZN,Amazon.com Inc.,NASDAQ,Technology,Internet Retail,US,200,150000000000\\n'+
-  'NVDA,Nvidia Corporation,NASDAQ,Technology,Semiconductors,US,200,4869646000000\\n'+
-  'MSFT,Microsoft Corporation,NASDAQ,Technology,Software,US,200,25000000000\\n'+
-  'DAC,Danaos Corporation,NYSE,Industrials,Marine Shipping,US,153.96,2802626256\\n';
+ const csv='ticker,name,exchange,sector,industry,country,price,mktCap\n'+
+  'AMZN,Amazon.com Inc.,NASDAQ,Technology,Internet Retail,US,200,150000000000\n'+
+  'NVDA,Nvidia Corporation,NASDAQ,Technology,Semiconductors,US,200,4869646000000\n'+
+  'MSFT,Microsoft Corporation,NASDAQ,Technology,Software,US,200,25000000000\n'+
+  'DAC,Danaos Corporation,NYSE,Industrials,Marine Shipping,US,153.96,2802626256\n';
  const parsed=parseDeltaScreenerCsv(csv);
  const r44=makeDeltaR44Public(gradeCalendarTickersFromDelta(parsed,['AMZN','NVDA','MSFT','DAC']));
  assert.deepEqual(r44.counts,{one:1,two:1,three:2,missing:0,conflicting:0});
