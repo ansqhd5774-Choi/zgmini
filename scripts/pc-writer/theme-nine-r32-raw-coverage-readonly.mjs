@@ -109,6 +109,19 @@ function readStates(root,folder,rosterSha,symbols,byPath){
    if(s.complete&&!s.files.length&&!s.noBars)fail('CHECKPOINT_EMPTY_COMPLETE');
    for(const ref of s.files){const e=byPath.get(ref.path);
     if(!e||e.sha256!==ref.sha256||e.symbol!==symbol)fail('CHECKPOINT_PAGE_REFERENCE');
+    // R35 checkpoints must bind each SHA-verified page to its own requested
+    // window. Prefer the checkpoint URL: identical page bytes can be reused
+    // across windows, and the manifest retains the earliest request URL.
+    if(folder==='legacy-nine-r35-delta'){
+     let requested;try{requested=new URL(ref.requestedUrl??e.requestedUrl);}
+     catch{fail('CHECKPOINT_REQUEST_WINDOW');}
+     if(requested.origin!==SOURCE||
+        requested.pathname!==`/api/v1/bars/stocks/${symbol}/1h`||
+        requested.searchParams.get('start')!==record.start||
+        requested.searchParams.get('end')!==record.end||
+        requested.searchParams.get('format')!=='jsonl')
+       fail('CHECKPOINT_REQUEST_WINDOW');
+    }
     observed.add(ref.path);
    }
   }
