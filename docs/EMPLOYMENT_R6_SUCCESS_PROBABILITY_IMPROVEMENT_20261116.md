@@ -1,5 +1,18 @@
 # ZGMINI W04 고용 R6 — 성공 가능성 개선을 위한 소스·운영·게시 분리 실행계획
 
+
+<!-- W04_20261116_17CASE_RELIABILITY_MERGE_TTL_FIXTURE -->
+### 2026-11-16 W04 업데이트 — 격리 17시나리오, 병합·TTL·테스트 호환성
+
+- 최신 기능 main: 24b2f93ed391a7a1cd9af4f5c00d835d8c5f0213. 통합 PR #1083 HEAD 21b3930c091b37edbb152bb73920bdf46e1a9ebc: **Draft/9파일/mergeable=false**. 전용 PR #933도 **233파일/mergeable=false**. 기존 #1083 CI 성공과 현재 병합 가능성은 별개다. 현재 main 대비 충돌 파일 좁히기 후 필요한 소스만 선별 통합.
+- 2026-11-16 Node 22 격리: 이전 GitHub 원본 파서·Collector 분기의 검증된 전사본과 현재 Scheduler/D1 판정식을 **17개 새 조건으로 재실행하여 기존 동작 17/17 재현**. 원본 저장소 전체 실행/실Windows 실행·DOL 호출 아님. 코드·결과 파일: /mnt/data/zgmini_w04_recovery_targeted_sim_20261116.mjs , /mnt/data/zgmini_w04_recovery_targeted_results_20261116.json. 17/17은 안전성 PASS가 아니고 예상 문제 동작 재현도 포함.
+- 현 PR #1083의 기존 루트 XML 미검증, 각 National 계열 stale 판단 누락, 미래·음수·중복 수치 허용, National+ETA 모두 실패시 NO_OBSERVATIONS 원인 가림, Scheduler Initial-only RELEASE_ALREADY_STORED 재현. 이 합성 분기가 11월 15일 실PC 0/4을 발생시켰다는 증거는 아니다.
+- **추가 문제 ① D1 공개 만료 연쇄:** one-year-stage publisher는 동일 body hash면 UNCHANGED이므로 stored_at이 갱신되지 않음. public-display reader는 저장시각이 8일을 넘으면 STORED_PUBLICATION_EXPIRED를 반환. 9일 지나 동일 본문 재게시 모형은 UNCHANGED + EXPIRED, 검증된 신규 sourceStoredAt/body는 VERIFIED+READY. 승인된 TTL·stale 계약을 바꾸거나 원시각을 인위적으로 갱신하지 말고 진짜 갱신 데이터 수집·게시를 완성할 것.
+- **추가 문제 ② 테스트 입력 전환:** #1083 기존 test는 공식 National root 없는 week fragment를 유효하게 쓰고 retrieved 2026-11-15보다 미래인 2026-12-31 관측을 정상 파싱하도록 단언한다. 엄격한 root/future guard를 도입할 때 공식 XML fixture 및 기대값을 계약에 맞게 조정하고 정상 실측·발표 1주 lag 테스트는 보존해야 한다.
+- **예상 성공률**(실측 아님, 단계 독립 1회 성공확률 가정): 보수 7.74%, 기준 39.12%(source .95×B .85×DOL .60×PIT .85×D1 .95), 낙관 53.26%. 현재 PR 자체는 mergeable=false이므로 **현재 상태 무수정 직접 병합은 차단**. 숫자는 충돌 해결과 승인 적용 뒤의 가상 성공률로만 사용. 운영 성공확률에 대한 통계적 추정 자료 없음.
+- **NEXT:** W04 원담당이 현재 main 대비 #1083 Provider/Collector 및 Scheduler freshness 최소 통합·영향 회귀. 중앙 운영 단일 Owner는 승인 고용 파일 scope SHA/runtime linked와 이전 National POST 비민감 메타를 1회 읽기 전용 회수. 51지역×600주 재수집과 기존 CI 단순 반복 금지. 조사 기능 진행률 기존 중앙 기준 75%→75%, 운영 수정 0.
+---
+
 <!-- W04_R6_20261116_PINNED_PUBLIC_IMPLEMENTATION_TO_RUNTIME_ACTION_PLAN -->
 ## 2026-11-16 확정 실행안 — 공개 코드 5곳 직접 대조, LIVE 승인 Source와 코드 결함 분리
 
