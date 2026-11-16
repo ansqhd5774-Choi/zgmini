@@ -26,34 +26,63 @@ const monthDate=x=>{
 };
 
 export function normalizeCensusM3Inventories(payload){
-  if(!Array.isArray(payload)||payload.length<2||payload.length>20_000||
+  if(!Array.isArray(payload)||payload.length<1||payload.length>20_000||
     !Array.isArray(payload[0]))throw fail('CENSUS_M3_SHAPE_INVALID');
-  const headers=payload[0];
-  const mandatory=['data_type_code','time_slot_id','seasonally_adj','category_code','cell_value','us'];
-  // Request the canonical monthly time_slot_date explicitly; the time
-  // predicate may be an annual selection and must not override month data.
-  if(!mandatory.every(x=>headers.includes(x))||
-    (!headers.includes('time')&&!headers.includes('time_slot_date'))||
-    new Set(headers).size!==headers.length)
+  // EITS can return uppercase/trimmed header names. Treat the supplier's
+  // column labels as case-insensitive, not as a fixed ZGMINI column order.
+  const headers=payload[0].map(x=>typeof x==='string'?x.trim().toLowerCase():null);
+  const mandatory=['data_type_code','seasonally_adj','category_code','cell_value','us'];
+  if(headers.some(x=>!x)||new Set(headers).size!==headers.length||
+    !mandatory.every(x=>headers.includes(x))||
+    (!headers.includes('time_slot_date')&&!headers.includes('time')))
     throw fail('CENSUS_M3_HEADERS_INVALID');
-  const observations=[],seen=new Set();
+  const byDate=new Map(),conflicts=new Set();
+  const diagnostics={missing:0,invalid:0,duplicate:0,conflict:0,ignored:0,available:0};
   for(const values of payload.slice(1)){
-    if(!Array.isArray(values)||values.length!==headers.length)throw fail('CENSUS_M3_ROW_SHAPE_INVALID');
+    if(!Array.isArray(values)||values.length!==headers.length){
+      diagnostics.invalid++;continue;
+    }
     const row=Object.fromEntries(headers.map((key,i)=>[key,values[i]]));
-    if(row.data_type_code!=='TI'||row.category_code!=='MTM'||
-      String(row.seasonally_adj).toLowerCase()!=='yes')continue;
-    if(String(row.us)!=='1')throw fail('CENSUS_M3_NATIONAL_FACET_INVALID');
-    // time_slot_id is a Census internal integer, NOT a YYYY-MM observation date.
-    // A year-level `time` predicate cannot override a month-level slot date.
-    const date=monthDate(row.time_slot_date??row.time),raw=String(row.cell_value??'').replace(/,/g,'').trim();
-    if(!date||!/^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(raw)||!Number.isFinite(Number(raw))||
-      Number(raw)<0||seen.has(date))throw fail('CENSUS_M3_INVENTORIES_VALUE_OR_DUPLICATE');
-    seen.add(date);
-    observations.push({date,value:Number(raw),unit:'USD_MILLION_SA_NOMINAL',
+    if(String(row.data_type_code??'').trim().toUpperCase()!=='TI'||
+       String(row.category_code??'').trim().toUpperCase()!=='MTM'||
+       String(row.seasonally_adj??'').trim().toLowerCase()!=='yes'){
+      diagnostics.ignored++;continue;
+    }
+    if(String(row.us??'').trim()!=='1'){
+      diagnostics.invalid++;continue;
+    }
+    // time_slot_date can be empty although `time` carries the actual
+    // year-month. Neither is required to supersede a contradictory date.
+    const slotDate=monthDate(row.time_slot_date);
+    const timeDate=monthDate(row.time);
+    const date=slotDate??timeDate;
+    const raw=String(row.cell_value??'').replace(/,/g,'').trim();
+    if(!date||(slotDate&&timeDate&&slotDate!==timeDate)){
+      diagnostics.invalid++;continue;
+    }
+    if(raw===''||raw==='-'||raw.toUpperCase()==='NA'||raw.toUpperCase()==='N'){
+      diagnostics.missing++;continue;
+    }
+    if(!/^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(raw)||
+       !Number.isFinite(Number(raw))||Number(raw)<0){
+      diagnostics.invalid++;continue;
+    }
+    if(conflicts.has(date))continue;
+    const value=Number(raw),old=byDate.get(date);
+    if(old){
+      if(old.value===value)diagnostics.duplicate++;
+      else{
+        // Do not select an arbitrary value; quarantine this month's conflict.
+        byDate.delete(date);conflicts.add(date);diagnostics.conflict++;
+      }
+      continue;
+    }
+    byDate.set(date,{date,value,unit:'USD_MILLION_SA_NOMINAL',
       selector:'MTM/TI',seasonallyAdjusted:true});
   }
-  if(!observations.length)throw fail('CENSUS_M3_INVENTORIES_NOT_FOUND');
-  return observations.sort((a,b)=>a.date.localeCompare(b.date));
+  const observations=[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date));
+  diagnostics.available=observations.length;
+  return Object.defineProperty(observations,'diagnostics',{value:diagnostics,enumerable:false});
 }
 
 function child(parent,name){
@@ -98,49 +127,79 @@ export async function collectCensusM3Inventories({base,censusKey,quotaFetch,now=
   if(typeof quotaFetch!=='function')throw fail('CENSUS_M3_QUOTA_FETCH_REQUIRED');
   const moment=now instanceof Date?now:new Date(now);
   if(!Number.isFinite(moment.getTime()))throw fail('CENSUS_M3_NOW_INVALID');
-  const year=moment.getUTCFullYear(),archives=[],incoming=[];
+  const year=moment.getUTCFullYear(),archives=[],incoming=[],diagnostics=[];
+  const dir=child(base,'inflation-causal-candidates-r1');
+  // Each API response belongs to Census. Archive its exact bytes regardless
+  // of whether a year includes nulls or zero usable monthly observations.
+  const rawDir=child(dir,'raw');
   for(const y of [year-1,year]){
     const url=new URL(CENSUS_M3_ENDPOINT);
     for(const [k,v] of Object.entries({
-      // Request the documented observation date; `time=YEAR` is a filter.
       get:'data_type_code,time_slot_id,time_slot_date,seasonally_adj,category_code,cell_value,error_data',
       time:String(y),category_code:'MTM',seasonally_adj:'yes',key:censusKey.trim(),'for':'us:*',
     }))url.searchParams.set(k,v);
     const res=await quotaFetch(url,{method:'GET',redirect:'manual',signal:AbortSignal.timeout(20_000)});
     const {payload,bytes}=await readBody(res);
-    const observations=normalizeCensusM3Inventories(payload);
-    if(observations.some(x=>Number(x.date.slice(0,4))!==y))throw fail('CENSUS_M3_YEAR_MISMATCH');
-    incoming.push(...observations);archives.push({year:y,bytes});
+    const sourceSha256=sha(bytes),name='census-m3-mtm-'+y+'-'+sourceSha256+'.json';
+    const archiveFile=path.join(rawDir,name);
+    if(!fs.existsSync(archiveFile)){
+      try{fs.writeFileSync(archiveFile,bytes,{flag:'wx'});}
+      catch(e){if(e.code!=='EEXIST')throw e;}
+    }
+    if(!safeFile(archiveFile)||sha(fs.readFileSync(archiveFile))!==sourceSha256)
+      throw fail('CENSUS_M3_ARCHIVE_READBACK_FAILED');
+    archives.push({year:y,sourceSha256,archive:'raw/'+name});
+    // Treat years independently. An unavailable schema in one year cannot
+    // erase valid monthly observations from the other response.
+    let rows;
+    try{rows=normalizeCensusM3Inventories(payload);}
+    catch(e){
+      if(!['CENSUS_M3_HEADERS_INVALID','CENSUS_M3_SHAPE_INVALID'].includes(e?.code))throw e;
+      diagnostics.push({year:y,available:0,sourceShape:e.code});
+      continue;
+    }
+    const matched=rows.filter(x=>Number(x.date.slice(0,4))===y);
+    incoming.push(...matched);
+    diagnostics.push({year:y,...rows.diagnostics,available:matched.length});
   }
-  const dir=child(base,'inflation-causal-candidates-r1'),file=path.join(dir,'census-m3-manufacturing-inventories.json');
+  const file=path.join(dir,'census-m3-manufacturing-inventories.json');
   let prior=null;
   if(fs.existsSync(file)){
     if(!safeFile(file))throw fail('CENSUS_M3_EXISTING_FILE_UNSAFE');
-    try{prior=JSON.parse(fs.readFileSync(file,'utf8'));}catch{throw fail('CENSUS_M3_EXISTING_JSON_INVALID');}
+    try{prior=JSON.parse(fs.readFileSync(file,'utf8'));}
+    catch{throw fail('CENSUS_M3_EXISTING_JSON_INVALID');}
     if(!validPrior(prior))throw fail('CENSUS_M3_EXISTING_CONTRACT_INVALID');
   }
   const byDate=new Map([...(prior?.observations??[]),...incoming].map(x=>[x.date,x]));
   const observations=[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date));
-  if(prior&&JSON.stringify(prior.observations)===JSON.stringify(observations))return {
-    status:'UNCHANGED',stored:false,providerRequests:2,count:observations.length,
-    latest:observations.at(-1).date};
-  const raw=child(dir,'raw'),provenance=[];
-  for(const snapshot of archives){
-    const sourceSha256=sha(snapshot.bytes),name=`census-m3-mtm-${snapshot.year}-${sourceSha256}.json`;
-    const archiveFile=path.join(raw,name);
-    if(!fs.existsSync(archiveFile)){
-      try{fs.writeFileSync(archiveFile,snapshot.bytes,{flag:'wx'});}catch(e){if(e.code!=='EEXIST')throw e;}
+  const latest=observations.at(-1)?.date??null;
+  const unavailable=diagnostics.filter(x=>x.sourceShape);
+  const coverage=unavailable.length?'PARTIAL_SCHEMA_UNAVAILABLE':
+    incoming.length?'OBSERVATIONS_AVAILABLE':'NO_USABLE_OBSERVATIONS';
+  // An all-invalid supplier response is a parser compatibility failure, not
+  // a provider transport failure. Keep both raw responses for diagnosis.
+  if(unavailable.length===2&&!observations.length)
+    throw fail(unavailable[0].sourceShape);
+  if(JSON.stringify(prior?.observations??[])===JSON.stringify(observations)||!observations.length)
+    return {status:'UNCHANGED',stored:false,providerRequests:2,count:observations.length,
+      latest,coverage,diagnostics,provenance:archives};
+  const backups=child(dir,'backups');
+  if(prior){
+    const before=fs.readFileSync(file),priorSha=sha(before);
+    const backup=path.join(backups,'census-m3-'+priorSha+'.json');
+    if(!fs.existsSync(backup)){
+      try{fs.writeFileSync(backup,before,{flag:'wx'});}
+      catch(e){if(e.code!=='EEXIST')throw e;}
     }
-    if(!safeFile(archiveFile)||sha(fs.readFileSync(archiveFile))!==sourceSha256)
-      throw fail('CENSUS_M3_ARCHIVE_READBACK_FAILED');
-    provenance.push({year:snapshot.year,sourceSha256,archive:`raw/${name}`});
+    if(!safeFile(backup)||sha(fs.readFileSync(backup))!==priorSha)
+      throw fail('CENSUS_M3_BACKUP_READBACK_FAILED');
   }
   const doc={schemaVersion:1,provider:'US_CENSUS_M3',sourceVersion:CENSUS_M3_INVENTORIES_VERSION,
     sourceStoredAt:moment.toISOString(),selector:'MTM/TI',frequency:'MONTHLY',
-    unit:'USD_MILLION_SA_NOMINAL',observations,provenance};
+    unit:'USD_MILLION_SA_NOMINAL',observations,provenance:archives};
   const fileSha256=atomic(file,doc);
   return {status:'SAVED_READBACK',stored:true,providerRequests:2,count:observations.length,
-    latest:observations.at(-1).date,sourceStoredAt:doc.sourceStoredAt,fileSha256,
-    sourceHashes:provenance.map(x=>x.sourceSha256)};
+    latest,coverage,diagnostics,sourceStoredAt:doc.sourceStoredAt,fileSha256,
+    sourceHashes:archives.map(x=>x.sourceSha256)};
 }
 
