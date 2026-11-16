@@ -8,6 +8,7 @@ import {
   createEmploymentR6Provider,parseDolNationalClaimsXml,
 } from '../lib/market-score/employment-r6-provider.mjs';
 import {runEmploymentR6CollectionStep} from '../lib/market-score/employment-r6-collector.mjs';
+import {releasePlanForGroup,dolNationalSeriesFreshAtRelease} from '../lib/market-score/employment-r6-scheduler.mjs';
 
 const now=()=>new Date('2026-11-15T00:00:00.000Z');
 const nationalWeek=(date,{iur=true}={})=>
@@ -238,4 +239,153 @@ test('W04 National network failure still performs independent ETA539 read once',
   assert.equal(fetched.nationalResponseEvidence.httpStatus,null);
   assert.equal(fetched.nationalResponseEvidence.requestFailureCode,'DOL_NATIONAL_REQUEST_FAILED');
   assert.ok(!JSON.stringify(fetched).includes('PRIVATE_PROVIDER_TOKEN_NETWORK_MESSAGE'));
+});
+
+
+test('W04 bounded National transport short-circuits a stalled HTTP 503 body and preserves ETA539',async()=>{
+  let calls=0;
+  const stuckBody=new ReadableStream({start(){}});
+  const provider=createEmploymentR6Provider({
+    now, dolResponseTimeoutMs:150,
+    fetchImpl:async url=>{
+      calls++;
+      return String(url)===DOL_ETA539_URL
+        ?new Response(stateCsv,{status:200})
+        :new Response(stuckBody,{status:503});
+    },
+  });
+  const data=await provider.fetchDolClaims({mode:'BACKFILL',currentYear:2026});
+  assert.equal(calls,2);
+  assert.equal(data.partialFailureCode,'DOL_NATIONAL_HTTP_FAILED');
+  assert.equal(data.nationalResponseEvidence.httpStatus,503);
+  assert.equal(data.rows.length,51);
+  assert.equal(data.snapshots.length,1);
+});
+
+test('W04 stalled National transport cannot block the independent ETA539 request',async()=>{
+  let calls=0;
+  const provider=createEmploymentR6Provider({
+    now,dolResponseTimeoutMs:60,
+    fetchImpl:async (url,options)=>{
+      calls++;
+      if(String(url)===DOL_ETA539_URL)return new Response(stateCsv,{status:200});
+      return new Promise((_,reject)=>{
+        options.signal.addEventListener('abort',()=>reject(new Error('PRIVATE_TRANSPORT_ABORT')),{once:true});
+      });
+    },
+  });
+  const data=await provider.fetchDolClaims({mode:'BACKFILL',currentYear:2026});
+  assert.equal(calls,2);
+  assert.equal(data.partialFailureCode,'DOL_NATIONAL_REQUEST_FAILED');
+  assert.equal(data.rows.length,51);
+  assert.equal(data.snapshots.length,1);
+  assert.ok(!JSON.stringify(data).includes('PRIVATE_TRANSPORT_ABORT'));
+});
+
+test('W04 bounded National body aborts when a 200 response never completes',async()=>{
+  let calls=0;
+  const stalled={
+    ok:true,status:200,headers:{get:()=>null},
+    body:{getReader:()=>({read:()=>new Promise(()=>{}),cancel:async()=>{}})},
+  };
+  const provider=createEmploymentR6Provider({
+    now,dolResponseTimeoutMs:60,
+    fetchImpl:async url=>{
+      calls++;
+      return String(url)===DOL_ETA539_URL
+        ?new Response(stateCsv,{status:200}) :stalled;
+    },
+  });
+  const data=await provider.fetchDolClaims({mode:'BACKFILL',currentYear:2026});
+  assert.equal(calls,2);
+  assert.equal(data.partialFailureCode,'DOL_NATIONAL_REQUEST_FAILED');
+  assert.equal(data.rows.length,51);
+});
+
+test('W04 oversized National body is quarantined without rejecting a valid 51-state response',async()=>{
+  let calls=0;
+  const provider=createEmploymentR6Provider({
+    now,dolResponseMaxBytes:3500,
+    fetchImpl:async url=>{
+      calls++;
+      return String(url)===DOL_ETA539_URL
+        ?new Response(stateCsv,{status:200})
+        :new Response('x'.repeat(6000),{status:200});
+    },
+  });
+  const data=await provider.fetchDolClaims({mode:'BACKFILL',currentYear:2026});
+  assert.equal(calls,2);
+  assert.equal(data.partialFailureCode,'DOL_NATIONAL_REQUEST_FAILED');
+  assert.equal(data.rows.length,51);
+  assert.equal(data.snapshots.length,1);
+});
+
+test('W04 nonofficial National root and invalid official values cannot enter National raw',async()=>{
+  const invalid=[
+    {xml:'<error>'+nationalWeek('10/31/2026')+'</error>',code:'DOL_NATIONAL_NO_VALID_ROWS'},
+    {xml:officialNationalXml(nationalWeek('11/21/2026')),code:'DOL_NATIONAL_INVALID_DATA'},
+    {xml:officialNationalXml(nationalWeek('10/31/2026').replace('<SA>189000</SA>','<SA>-5</SA>')),code:'DOL_NATIONAL_INVALID_DATA'},
+    {xml:officialNationalXml(nationalWeek('10/31/2026')
+      +nationalWeek('10/31/2026').replace('<SA>189000</SA>','<SA>189001</SA>')),code:'DOL_NATIONAL_INVALID_DATA'},
+  ];
+  for(const scenario of invalid){
+    let calls=0;
+    const provider=createEmploymentR6Provider({
+      now,fetchImpl:async url=>{
+        calls++;
+        return String(url)===DOL_ETA539_URL
+          ?new Response(stateCsv,{status:200})
+          :new Response(scenario.xml,{status:200});
+      },
+    });
+    const data=await provider.fetchDolClaims({mode:'BACKFILL',currentYear:2026});
+    assert.equal(calls,2);
+    assert.equal(data.partialFailureCode,scenario.code);
+    assert.equal(data.rows.filter(x=>x.geographyType==='NATIONAL').length,0);
+    assert.equal(data.snapshots.length,1);
+    assert.equal(data.rows.length,51);
+  }
+});
+
+test('W04 National freshness agrees for Collector and Scheduler across all four weekly series',()=>{
+  const releaseAt='2026-11-12T13:30:00.000Z';
+  const normal={
+    INITIAL_CLAIMS:'2026-11-07',INITIAL_CLAIMS_4W:'2026-11-07',
+    CONTINUED_CLAIMS:'2026-10-31',INSURED_UNEMPLOYMENT_RATE:'2026-10-31',
+  };
+  assert.equal(dolNationalSeriesFreshAtRelease(normal,releaseAt),true);
+  assert.equal(dolNationalSeriesFreshAtRelease({...normal,CONTINUED_CLAIMS:'2026-09-05'},releaseAt),false);
+  assert.equal(dolNationalSeriesFreshAtRelease({...normal,INSURED_UNEMPLOYMENT_RATE:null},releaseAt),false);
+  const row=values=>({
+    status:'SUCCESS',completed_at:'2026-11-12T19:30:00.000Z',
+    detail_json:JSON.stringify({releaseAt,latestNationalSeriesObservationDates:values}),
+  });
+  const duePlan=latestRun=>releasePlanForGroup('DOL_UI_WEEKLY_CLAIMS',{
+    now:new Date('2026-11-13T20:00:00.000Z'),latestRun,
+  });
+  assert.equal(duePlan(row(normal)).status,'RELEASE_ALREADY_STORED');
+  assert.equal(duePlan(row({...normal,CONTINUED_CLAIMS:'2026-09-05'})).status,'DUE');
+  assert.equal(duePlan({status:'SUCCESS',completed_at:'2026-11-12T19:30:00.000Z',
+    detail_json:JSON.stringify({releaseAt,latestInitialClaimsObservationDate:'2026-11-07'})}).status,'DUE');
+});
+
+test('W04 simultaneous National and ETA failures report the original HTTP failure code',async()=>{
+  const provider=createEmploymentR6Provider({now,fetchImpl:async()=>new Response('',{status:503})});
+  const data=await provider.fetchDolClaims({mode:'BACKFILL',currentYear:2026});
+  const runs=[];
+  const store={
+    async initialize(){},async getLatestRunInMode(){return null;},
+    async acquire(){return {acquired:true};},async release(){},
+    async writeRawSnapshot(){throw Error('NO_RAW_EXPECTED');},
+    async upsertObservationRows({rows}){assert.deepEqual(rows,[]);return {inserted:0,revised:0,noop:0,rejected:0};},
+    async recordRun(run){runs.push(run);return 1;},
+  };
+  const result=await runEmploymentR6CollectionStep({
+    db:{prepare(){return {};}},mode:'BACKFILL',now,
+    groups:['DOL_UI_WEEKLY_CLAIMS'],storeFactory:()=>store,
+    providerFactory:()=>({async fetchGroup(){return data;}}),
+  });
+  assert.equal(result.status,'PARTIAL');
+  assert.equal(result.groupResults[0].failureCode,'DOL_NATIONAL_HTTP_FAILED');
+  assert.equal(runs[0].failureCode,'DOL_NATIONAL_HTTP_FAILED');
 });
