@@ -230,3 +230,12 @@
 BEA #1183 최신 App CI [Run #43884699372](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43884699372) 최초 조회 기준 `pending/in_progress`로 확인돼, 이 문서 작성 시에는 PASS를 주장하지 않는다. 앱 QFR 3-pin 관련 기존 [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175)의 과거 Node CI [#43863499821](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43863499821)는 `success`이지만 `main` 병합·실PC 설치·D1 write는 별도다.
 
 **NEXT:** BEA CI와 QFR 실증 증거의 마지막 유효 상태를 회수하고, 정확 승인 B 단일키 Scope를 정규 Owner에서 확정→선별 source main 반영·실제 Windows 설치와 승인 QFR 한 키 게시·D1 본문 readback. BEA 원자료가 실제 PC에 없다면 기존 승인 Collector 경로로만 최초 저장하고, 공급자/권리 확인 전 수집을 임의 실시하지 않는다.
+
+### 2026-11-16 BEA 실제 Node CI 완료 증거
+
+- 앱 저장형 BEA 단위이익 source-only [Draft PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183), head `fa59e002e27c8936537b2e2eff8b9ecc1ec46cd8`, **4개 파일만 변경**. 실운영 Publisher 파일 교체 아님.
+- 실제 앱 Node 24 GitHub Actions [Run #43884699372](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43884699372): `completed / success`. `npm run build`, `npm run typecheck` 성공. `node --test tests/*.test.mjs` **4,471 total / 4,461 pass / 0 fail / 10 skipped**, 그중 신규 BEA immutable archive 5개 테스트 **5/5 PASS**. 게시 복구 추가 11/11, 후보 Worker D1 읽기 계약 추가 69/69 PASS.
+- 의미: **R3-09·R3-10 및 R4-07의 소스/테스트 완료 확인**. 아직 유효 공식 원천 권리·운영 PC 원본 보관 실물·B exact-key 승인·게시·D1 readback은 별개 **NOT_RUN/UNVERIFIED**. R6-01 중 해당 영향 범위의 CI만 완료.
+- 실운영 E:\\ZGmini 원자료·DB·D1·Cloudflare·Task·config·scheduler 쓰기 **0건**. 전담 브랜치·기존 main 원본 데이터 보존.
+
+**다음 실행:** 이미 완료한 Native Node CI를 다시 돌리지 않고, 승인된 QFR 정확키 B 실행 경로/운영 설치·source SHA/manifest를 확인하여 필요한 선별 main 통합 후 기존 QFR 저장 원본으로 단일키 D1 게시→직접 재조회. BEA는 별도 승인된 저장 원본 확보 후에만 실제 게시.
