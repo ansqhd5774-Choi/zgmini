@@ -142,10 +142,12 @@ export function auditR32StoredRawWithSpec({dataRoot,rosterSha,symbols}={}){
   const spyDays=[...days.get('SPY')].sort(),spy252=new Set(spyDays.slice(-252));
   const shared=spyDays.filter(day=>symbols.every(s=>days.get(s).has(day)));
   const perSymbol=symbols.map(symbol=>{const x=[...days.get(symbol)].sort();const earliest=x[0]??null;
-   const candidateDates=spyDays.filter(d=>earliest!==null&&d>=earliest&&!days.get(symbol).has(d));
-   return {symbol,firstNYDay:earliest,lastNYDay:x.at(-1)??null,verifiedNYDays:x.length,
+   const candidateDates=earliest===null?null:
+    spyDays.filter(d=>d>=earliest&&!days.get(symbol).has(d));
+   return {symbol,coverageStatus:earliest===null?'NO_VERIFIED_BARS':'VERIFIED_BARS',
+    firstNYDay:earliest,lastNYDay:x.at(-1)??null,verifiedNYDays:x.length,
     verifiedSpyWindowDays:x.filter(d=>spy252.has(d)).length,
-    absentOnObservedSPYDaysAfterFirst:candidateDates.length};
+    absentOnObservedSPYDaysAfterFirst:candidateDates?.length??null};
   });
   const partial=cp23.incomplete||cp23.failed||cp35?.incomplete||cp35?.failed;
   return {...result,status:partial?'PARTIAL':'PASS',code:partial?'R32_CHECKPOINT_INCOMPLETE_OR_FAILED':'R32_SAVED_RAW_SHA_CHECKPOINT_VERIFIED_NOT_CURRENT',
@@ -153,7 +155,9 @@ export function auditR32StoredRawWithSpec({dataRoot,rosterSha,symbols}={}){
     r35:r35?{sha256:r35.hash,pageCount:r35.pages}:null},
    checkpoints:{r23:cp23,r35:cp35},verifiedRawPages:r23.pages+(r35?.pages??0),
    latestVerifiedSPYDay:spyDays.at(-1)??null,common63EtfSpyDays:shared.length,
-   latestCommonNYDay:shared.at(-1)??null,symbols:perSymbol};
+   latestCommonNYDay:shared.at(-1)??null,
+   symbolsWithoutValidBars:perSymbol.filter(x=>x.coverageStatus==='NO_VERIFIED_BARS').length,
+   symbols:perSymbol};
  }catch(error){return {...base,code:/^R32_COVERAGE_[A-Z0-9_]+$/.test(error?.code??'')?error.code:'R32_COVERAGE_UNEXPECTED',lastPass,firstFail:'SAVED_RAW_COVERAGE_AUDIT'};}
 }
 // Production adapter uses the fixed, approved R20 roster. Job payload never
