@@ -387,7 +387,7 @@ test('W04 oversized National body is quarantined without rejecting a valid 51-st
 test('W04 invalid official values isolate only the affected series; invalid root remains quarantined',async()=>{
  const baseline=nationalWeek('10/31/2026');
  const invalid=[
-  {xml:'<error>'+baseline+'</error>',code:'DOL_NATIONAL_NO_VALID_ROWS',valid:0,raw:0},
+  {xml:'<error>'+baseline+'</error>',code:'DOL_NATIONAL_RESPONSE_FORMAT_UNSUPPORTED',valid:0,raw:0},
   {xml:officialNationalXml(nationalWeek('11/21/2026')),code:'DOL_NATIONAL_INVALID_DATA',valid:0,raw:0},
   {xml:officialNationalXml(baseline.replace('<SA>189000</SA>','<SA>-5</SA>')),
    code:'DOL_NATIONAL_INVALID_DATA',valid:3,raw:1},
