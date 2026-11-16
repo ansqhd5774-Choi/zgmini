@@ -163,7 +163,7 @@ test('top banner company labels strip nested legal-name parentheses while retain
   ['XYZ','Fictional Holdings (The)','Fictional Holdings (The)'],
  ];
  const csv=['ticker,name,exchange,sector,industry,country,price,mktCap',
-  ...companies.map(([ticker,name])=>[ticker,name,'NASDAQ','Technology','Software','US','200','100000000000'].join(','))].join('\\n')+'\\n';
+  ...companies.map(([ticker,name])=>[ticker,'"'+name.replaceAll('"','""')+'"','NASDAQ','Technology','Software','US','200','100000000000'].join(','))].join('\n')+'\n';
  const delta=makeDeltaR44Public(gradeCalendarTickersFromDelta(parseDeltaScreenerCsv(csv),companies.map(c=>c[0])));
  const events=companies.map(([ticker,company])=>({date:'2026-11-18',ticker,company,
   marketSession:'after_market',time:null,verification:'VENDOR_UNVERIFIED',source:'earnings-api'}));
@@ -173,8 +173,8 @@ test('top banner company labels strip nested legal-name parentheses while retain
  const filtered=earningsDisplayHtml(display,{start,end:coveredDays.at(-1),importance:3},
   null,null,null,{},delta);
  assert.equal(filtered.count,companies.length);
- assert.match(filtered.html,/월트 디즈니 \\(Walt Disney Company \\(The\\) · DIS\\)/);
- assert.match(filtered.html,/홈디포 \\(Home Depot, Inc. \\(The\\) · HD\\)/);
+ assert.match(filtered.html,/월트 디즈니 \(Walt Disney Company \(The\) · DIS\)/);
+ assert.match(filtered.html,/홈디포 \(Home Depot, Inc. \(The\) · HD\)/);
  const result=earningsBannerRows(filtered.html,timestamp);
  assert.equal(result.length,companies.length);
  const names=Object.fromEntries(result.map(({ticker,name})=>[ticker,name]));
