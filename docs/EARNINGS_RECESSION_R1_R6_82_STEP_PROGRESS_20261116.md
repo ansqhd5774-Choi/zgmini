@@ -32,10 +32,10 @@
 |---|---|
 | 최종 목표 | 82단계 R1~R6로 적격 실적 침체 정보성 지표의 PC 원자료 저장→계산→승인 D1 게시→Production API/UI를 완성. 기존 E1-R4 점수/산식·기타 12대 기업실적은 보호 |
 | 현재 관련 단계 | R4-02~04 및 R6-04: QFR exact-key B 게시 경로·원본 3핀 |
-| 마지막 검증 완료점 | QFR 제어 [Draft PR #1762](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1762) 최신 [Run #43892670904](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43892670904) **22/22 PASS**; 앱 QFR [Draft PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175) [Run #43892753705](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43892753705) 회귀 **4,483 PASS/0 FAIL**. BEA [PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183) [Run #43884699372](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43884699372) 별도 성공. 모두 Source/CI이며 PC 설치·D1 실게시·Production 성공 아님. WPSFD42 결과경로 helper의 Git blob 동일성·격리 Node22 fixture 4/4 PASS는 별도 참고(전체 게시기 CI 아님) |
+| 마지막 검증 완료점 | **앱 QFR PR #1175 main 병합** `faa89cfbe8b2aeabcbd8b8e9747cc07620f9eff4`·main 게시기 blob `f2b78e7d806ee9792e19a6a12636f547849026fd` 확인, 기존 앱 Node CI [#43892753705](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43892753705) 4,483 PASS·0 FAIL. 제어 B PR #1762 [CI #43892670904](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43892670904) 22/22 PASS, **제어 main 미반영**. BEA PR #1183 CI 통과. PC·D1·Production 실효과 없음 |
 | 재사용할 기존 근거 | QFR 원자료 ZIP의 PC SQLite 저장·계산 기존 유효 증거; 앱 QFR 3-pin [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175) 소스/CI 완료, `main` 미병합 |
 | 현재 최초 실제 미완료 조건 | 제어 `main`에 **QFR 정확키 승인 B 게시 workflow/executor 및 `approvals/publications` manifest가 없음**; Draft #1762는 비활성 제안. 앱 `main`에 승인된 3-pin 게시 코드 미통합. 운영 `config.source` SHA는 기존 A #1709 시점 확인됐으나 현재 적용 상태·실제 B 실행 미증명. **운영 체크아웃 QFR 5/6 파일 ABSENT는 전용 독립 Publisher 방식의 필수 설치 실패로 단정 금지**(제어 `validatePcSources`가 운영 쪽에서 확인하는 것은 Git SHA/config source·clean·remote·checkout 분리) |
-| 다음 필수 실행 하나 | **R4-02/R6-04:** 제어 Draft #1762와 앱 QFR 3-pin #1175를 현행 승인 source 범위로 검토·선별 `main` 통합하고, **QFR 단일 D1 키로 한정한 명시적 B 승인 manifest 및 정확한 PC source/checkout SHA·전용 workflow 활성**을 확인한다. 이후 저장된 QFR만으로 승인 B 단회 실행→D1 body/version/stored_at 직접 readback→Production GET/UI. 운영 checkout에 없는 QFR 5파일은 전용 Publisher 코드가 요구하는지 먼저 구분하고 불필요한 Writer B 설치를 강제하지 않는다 |
+| 다음 필수 실행 하나 | **R4-02/R6-04:** 앱 QFR 3-pin main 병합은 재실행하지 않는다. 제어 PR #1762의 실제 승인 효과·repo feature flag·manifest 존재와 source-only main 병합 위험을 평가하고 안전 조건 충족 시 최소 통합. 정확한 D1 1키 B 승인 Issue·운영 source 확인 후에만 PC 승인 단회 게시·D1 body/version/time readback → API/UI |
 | 현재 완료율 증거 | 82개 전체 DONE 분모·분자는 아직 단계별 실제 종단 검증 미확정. 기존 14단계 종단 완료는 마지막 확인 0/14. 미래 발표 관찰 R6-15는 DEFERRED |
 | 최종 갱신 식별 | 이 문서의 **최신 원격 브랜치 HEAD 및 Git blob SHA를 재조회**해 근거로 보고한다. 고정된 과거 SHA를 현행값으로 복사하지 않는다 |
 
@@ -92,9 +92,9 @@
 | R3-15 | 적격 판정 시 SEC XBRL 원자료 저장·기간 정규화·중복 제거 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R3-16 | 저장자료 계산 결정성·SHA 계보·결측·0·개정·stale 검증 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R4-01 | C 전용 독립 D1 키·허용목록·공개 데이터 계약 확정 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
-| R4-02 | 기존 승인 공통 B 경로 확인 및 QFR·BEA 단위이익 exact-key 연결 | `SOURCE_CI_PASS` | Draft #1762 CI Run #43892670904 22/22 PASS; 독립 `main` Publisher와 별도 clean operational checkout/config SHA 게이트를 사용. **운영 QFR 5파일 미설치는 그 자체로 필수 실행 차단 근거가 아니다.** 제어 `main`에는 전용 workflow/executor·manifest 부재, 승인 exact D1 키 효과·옵트인 미충족 |
+| R4-02 | 기존 승인 공통 B 경로 확인 및 QFR·BEA 단위이익 exact-key 연결 | `SOURCE_CI_PASS` | 앱 QFR publisher는 PR #1175로 main 소스 통합 완료, 제어 게시 lane PR #1762는 미병합/비활성. 집중 Node CI 22/22 PASS; 승인된 QFR exact-key B manifest·제어 main source/운영 실행 미확인 |
 | R4-03 | 제어 실행기 key·MODE·원본·D1 결과 검증 결함 수정 및 BEA 회귀 | `SOURCE_CI_PASS` | 제어 Publisher 로그 키/MODE/핀/읽기 결과 및 요청별 TXT 위치 계약 최신 Node22 [Run #43892670904] 22/22 PASS. 기존 #43883643669 21/21 성공은 변경 이전 증거; 운영 본선 적용 미완료 |
-| R4-04 | QFR preflight의 sourceVersion·ZIP SHA·sourceStoredAt을 apply까지 고정 | `SOURCE_CI_PASS` | W05 + 앱 PR #1175 최신 head f4e158a87ea89a936e09160ff568ce79954e7de8: QFR 3-pin 및 요청별 결과 폴더 선택, 수동 HERE fallback. 앱 Node CI Run #43892753705 PASS: 회귀 4,483 PASS / 0 FAIL. main 미병합/운영 미적용 |
+| R4-04 | QFR preflight의 sourceVersion·ZIP SHA·sourceStoredAt을 apply까지 고정 | `SOURCE_MAIN_CI_PASS` | 앱 QFR 3-pin + B 요청별 로그 파일 처리 [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175) **2026-11-17 main 병합** `faa89cfbe8b2aeabcbd8b8e9747cc07620f9eff4`, main 게시기 blob `f2b78e7d806ee9792e19a6a12636f547849026fd` 직접 재조회. Head CI Run #43892753705 4,483 PASS·0 FAIL. 운영 PC 실제 Publisher 설치·D1 쓰기는 별도 미실행 |
 | R4-05 | PC 저장 QFR 계산으로 경량 Snapshot 구축·스키마 검증 | `SOURCE_READY` | 기존 QFR one-shot Publisher와 Reader 소스 존재, 운영 적격 payload preflight 필요 |
 | R4-06 | 승인 QFR 단일키 D1 게시·실제 body/version/stored_at readback | `BLOCKED_PUBLISH_SCOPE` | 기존 main의 QFR 승인 파일은 APPROVED_A_READONLY(preimage 6파일 조회)일 뿐 D1 write 아님. 전용 B manifest·실제 정확키 D1 게시/독립 readback 없음; 미승인 쓰기 실행 금지 |
 | R4-07 | BEA 단위이익 게시 중 공급자 재호출 제거·원본 SHA 고정 | `SOURCE_CI_PASS` | 앱 PR #1183 stored-only BEA Publisher source+Node CI #43884699372 PASS; 운영 raw/D1 없음 |
@@ -132,10 +132,10 @@
 | R6-11 | BEA 제조업 archive SHA와 D1 게시 원문·기간·시각 확인 | `NOT_RUN` | BEA 제조업 현장 archive SHA→D1 실게시 미실증 |
 | R6-12 | BEA 제조업 GET·YoY·분기 이력·UI 확인 | `NOT_RUN` | BEA 제조업 운영 API/UI 일치 미실증 |
 | R6-13 | 기존 E1-R4 4요소·가중치·이력·TTL·별도 12대 도메인 회귀 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
-| R6-14 | 관련 PR·CI·main 통합→Cloudflare Git Integration→정확 배포 SHA→공개 확인 | `IN_PROGRESS_SOURCE` | 관련 소스 PR·CI 있음, Production exact Deployment·전체 4종 실데이터 미검증 |
+| R6-14 | 관련 PR·CI·main 통합→Cloudflare Git Integration→정확 배포 SHA→공개 확인 | `IN_PROGRESS_SOURCE` | 앱 QFR PR #1175 main 소스 병합 `faa89cfbe8b2aeabcbd8b8e9747cc07620f9eff4`; CI #43892753705 통과. 기능의 실제 PC/D1/Cloudflare exact deployment/Production 지표 결과는 별도 미검증 |
 | R6-15 | 다음 공식 발표 이후 자연 수집·checkpoint·D1·UI 실제 전진 관찰 | `DEFERRED` | 다음 실제 공식 발표 후 자연 갱신 확인; 현재 구현 STOP Gate 아님 |
 
-**상태 집계(82개 정확히 1회씩):** `PARTIAL_SOURCE` 4개 · `EXISTING_EVIDENCE` 8개 · `EVIDENCE_NOT_MAPPED` 36개 · `SOURCE_REVIEWED` 1개 · `NOT_RUN` 13개 · `SOURCE_READY` 3개 · `SOURCE_CI_PASS` 6개 · `BLOCKED_PUBLISH_SCOPE` 2개 · `SOURCE_BRANCH_ONLY` 2개 · `PUBLISH_SCOPE_UNVERIFIED` 1개 · `SOURCE_MAIN_READY` 3개 · `TARGETED_CI_PASS` 1개 · `IN_PROGRESS_SOURCE` 1개 · `DEFERRED` 1개. 각각의 상태는 최종 운영 완료율이 아니다.
+**상태 집계(82개 정확히 1회씩):** `PARTIAL_SOURCE` 4개 · `EXISTING_EVIDENCE` 8개 · `EVIDENCE_NOT_MAPPED` 36개 · `SOURCE_REVIEWED` 1개 · `NOT_RUN` 13개 · `SOURCE_READY` 3개 · `SOURCE_CI_PASS` 5개 · `SOURCE_MAIN_CI_PASS` 1개 · `BLOCKED_PUBLISH_SCOPE` 2개 · `SOURCE_BRANCH_ONLY` 2개 · `PUBLISH_SCOPE_UNVERIFIED` 1개 · `SOURCE_MAIN_READY` 3개 · `TARGETED_CI_PASS` 1개 · `IN_PROGRESS_SOURCE` 1개 · `DEFERRED` 1개. 각각의 상태는 최종 운영 완료율이 아니다.
 
 ## 1. 현재 확정 가능한 진행 상태
 
@@ -200,6 +200,8 @@
 | 2026-11-17 KST · W05 후속 작업 | **R4-02/R6-04 승인·실제 설치 범위 확정 조사**: control 최신 main에는 `pc-publication-b.yml`·`approvals/publications`·QFR B 게시 Executor가 없고, 기존 QFR #1709은 A급 읽기 전용(운영 6파일 중 5파일 ABSENT). 승인 없는 D1 게시 요청 0건. 병렬로 **R4-09 WPSFD42 게시기 로그 경로 소스 수정**: W05 브랜치에 helper·테스트 신규, Publisher 변경 | 승인 검사: [control main](https://github.com/ansqhd5774-Choi/zgmini-pc-control/tree/main), [운영 A #1709](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1709). WPS 소스 커밋: `b72589c8d538fb455691d23f8aa5833c3c96f7db`, `cc79b4bc80178de07ff76220afc778`, `401dd40057aef41e19a4d05422cb75938541a77d`; helper blob `ff5e616593ec946aca3c963b770f3fd9a778f0de`, test blob `1eebf1152d822c28efd08fae82e0747697d8dabf`, publisher blob `609008dabd0ba04c827ec8df1573dc34949f70da`; 격리 Node22 local fixture **4/4 PASS**, 두 Git blob SHA 동치. 이번 Node 검증의 publisher는 경로 코드만 재현한 부분 fixture여서 **W05 전체 CI PASS 주장 금지** | **첫 차단 R4-02/R6-04:** QFR 정확키 B 승인 manifest·독립 workflow/main 통합·운영 설치 SHA 부재. 다음 필수 실행: 정규 Owner의 정확키 B 승인 효과·main 선별 통합·설치 조건 결속 후 기존 저장 QFR 원본 단일키 게시·D1 재조회. 독립 WPS는 main 선별 통합/실수집/게시 후속, 신규 스케줄·운영 쓰기 0 |
 
 | 2026-11-17 KST · W05 정확한 B 경로 소스 재판정 | **R4-02/R6-04 원인 정정:** 기존 운영 PC #1709에서 QFR 6파일 중 5파일 없음은 사실이나 독립 B 게시기 `validatePcSources`는 그 5파일의 운영 설치를 요구하지 않음. 승인된 운영 source/checkout 무결성과 별도 `main` publisher/정확키 B manifest가 핵심 조건임을 확인. 불필요한 운영 PC Writer 파일 설치를 강제 Gate에서 제외 | [제어 executor source](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/fix/w05-qfr-b-publication-selective-20261116/tools/publication-executor.mjs) · [앱 dual-source gate](https://github.com/ansqhd5774-Choi/zgmini/blob/main/scripts/pc-writer/EARNINGS_R4_C_D1_DUAL_SOURCE_GATES.mjs) · [PC A #1709](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1709) · 제어 `main` 승인 dir/workflow 목록 | 소스 검증 확정. 다음 필수: 승인된 단일키 B source/`main`/manifest 통합·활성 조건 이행 후 QFR 기존 저장분 1키 실제 게시·D1 readback. 이번 PC·D1 운영 쓰기 0 |
+
+| 2026-11-17 KST · W05 연속 실행 | **R4-04 앱 QFR 3-pin 게시기 소스 main 병합**: Draft #1175를 CI·변경 3파일·병합 가능 확인 후 ready 전환, exact head `f4e158a87ea89a936e09160ff568ce79954e7de8`으로 squash merge. `main` 게시기 blob 재조회 PASS. | [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175), 병합 `faa89cfbe8b2aeabcbd8b8e9747cc07620f9eff4`; 사전 Node [Run #43892753705](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43892753705) 4,483 PASS/0 FAIL. 개발 main source만 변경. | 앱 R4-04 **SOURCE_MAIN_CI_PASS**; PC 설치·실 D1·Prod 검증 미실행. 다음: 제어 PR #1762 실제 승인/disabled flag/manifest 점검 후 안전한 source-only main 통합 여부 결정 |
 
 ### 필수 기록 종료 규칙
 
