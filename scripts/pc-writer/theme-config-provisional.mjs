@@ -45,6 +45,15 @@ export function configuredProvisionalCandidate({definition,sessions,aum,confirme
 }
 export async function publishConfiguredProvisional({dataRoot,id,query,now=Date.now(),decoder=null}={}){
  const r=readRegistered(dataRoot,id);if(r.definition.schema!=='ZGMINI_THEME_CONFIG_V2')return {status:'LEGACY_V1_UNCHANGED',written:0};
+ // The confirmed score's public approval references GMH terms only. This
+ // provisional candidate consumes a separate MarketParquet EOD source and
+ // must not inherit GMH publication rights. No independently verified
+ // MarketParquet derived-publication authorization is present in the current
+ // registered V2 contract. Stop before D1/price/file access; a future
+ // approved rights contract must explicitly authorize this source.
+ ensure(r.definition.provisionalPolicy!==
+  'GMH_CONFIRMED_MARKETPARQUET_PROVISIONAL_R8_OVERLAP_GUARD',
+  'CONFIG_PROVISIONAL_INDEPENDENT_EOD_PUBLIC_RIGHTS_REQUIRED');
  const prepared=preflightConfiguredPublication({dataRoot,id,now});ensure(prepared.status==='PREFLIGHT_PASS_NO_REMOTE_ACCESS',prepared.reason??'CONFIG_PROVISIONAL_PREFLIGHT');
  const confirmedKey='theme-configured:'+id,select="SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'";
  const current=(await query(select,[confirmedKey],{write:false}))?.results?.[0];
