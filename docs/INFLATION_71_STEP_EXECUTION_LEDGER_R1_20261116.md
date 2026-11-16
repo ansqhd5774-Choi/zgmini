@@ -31,6 +31,15 @@
 - **실제 운영 효과:** 신규 PC Issue/requestId/Run, 공급자 GET, SQLite 저장, D1/API/UI 게시 모두 **0**. 기존 CPI #22/#23 237개월, Census #28 MISSING, 기존 19 projection 19/19 및 4/7 과거 공개 증거 유지. 이 소스 변경을 A3/A4 운영 DONE으로 승격하지 않음.
 - **다음 한 작업:** PR #1792의 이번 workflow 변경을 포함한 격리 Windows CI 및 승인 조상 preflight 집중 검증 → 정규 리뷰/별도 B 효과 승인·현재 PC preimage 확보 후에만 Census #28 2GET 단회 실행. C급 Event129 설정·#1745 유지보수 원장은 별도 소유자 보호 유지.
 
+
+## 2026-11-17 05:21 KST — Census B checkout 수정 후 Actions 결과 회수 (source-only)
+
+- **시작/종료:** 21/71(29.6%) → 21/71(29.6%). 본 회차 새 기능 소스·운영 변경 0; 기존 제어 commit `3e91a2c82ed8d687491ee1c7e3d8cc2c12995a6a`의 GitHub Actions 원격 결과만 회수했다.
+- **새로 확인한 실제 CI 증거:** 제어 저장소 commit `3e91a2c...`에 연결된 PR-triggered workflow 3건이 모두 `completed/success`: Controller Maintenance Source Tests [Run 43938641742](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43938641742), C996 R5 Readonly Source Checks [Run 43938641782](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43938641782), W04 DOL Manual Source Tests [Run 43938641757](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43938641757). **Census B 전용 집중 테스트가 이 세 실행에 포함됐는지는 미확인**; workflow 전체 success를 Census-only preflight 회귀 PASS로 대체하지 않는다. 기존 전용 19/19 PASS는 수정 이전 Run 43905250473 증거로만 재사용한다.
+- **LAST PASS:** checkout 수정 commit 연결 Actions 3건 success 및 이전 Census B 전용 19/19 source CI. **FIRST UNVERIFIED:** checkout 변경 후 승인 조상 preflight 집중 검사, Draft PR #1792의 정규 승인·운영 manifest, 실PC 현재 preimage/lease 및 Census #28 2GET/SQLite 저장.
+- **운영 영향:** PC Issue/requestId/Run 신규 0, provider GET 0, SQLite/D1/배포 0. CPI 237개월 2개, Census MISSING, 19 projection READY 및 과거 4/7 공개 증거만 유지. C급 Event129·#1745 원장은 변경하지 않음.
+- **NEXT 단일 실행:** PR #1792의 현재 변경 SHA에서 승인 조상 `git merge-base --is-ancestor` preflight가 full-history checkout으로 통과하고 비승인 조상은 STOP하는지 **집중 CI를 확인/실행**한다. 통과 시에만 별도 B 승인 담당이 현재 PC 4파일 SHA·Core/Writer lease를 읽기 전용으로 확인하여 정확한 Census-only manifest GO/NO-GO를 결정한다.
+
 ## 직전 기능 작업 종료 기록 — 2026-11-16 (인계 보존)
 
 - **대상·단계:** W01 A1-08 / A2-05 관련 Event129 빈 응답·XML 형식 식별 보강. 이 두 세부 항목은 **실제 최초 실패 규명·운영 검증 미완료**이므로 DONE 처리하지 않는다.
