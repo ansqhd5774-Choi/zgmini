@@ -95,7 +95,7 @@ function readStates(root,folder,rosterSha,symbols,byPath){
  if(names.length<1||names.length>128)fail('CHECKPOINT_COUNT');
  let incomplete=0,failed=0;const observed=new Set(),report=[];
  for(const name of names.sort()){
-  const record=loadJson(root,['themes',folder,'state',name],MAX_STATE).parsed;
+  const stored=loadJson(root,['themes',folder,'state',name],MAX_STATE),record=stored.parsed;
   const prefix=folder==='legacy-nine-r23'?'collection':'delta';
   if(record.version!==1||record.project!==folder||record.rosterSha256!==rosterSha||
    !validDay(record.start)||!validDay(record.end)||record.end<record.start||
@@ -113,10 +113,10 @@ function readStates(root,folder,rosterSha,symbols,byPath){
    }
   }
   if(!complete)incomplete++;if(record.failedAt)failed++;
-  report.push({start:record.start,end:record.end,complete,failed:Boolean(record.failedAt)});
+  report.push({start:record.start,end:record.end,complete,failed:Boolean(record.failedAt),sha256:sha(stored.bytes)});
  }
  if([...byPath.keys()].some(p=>!observed.has(p)))fail('UNREFERENCED_PAGE');
- return {count:names.length,incomplete,failed,windows:report};
+ return {count:names.length,incomplete,failed,windows:report.slice(-16),windowsTruncated:report.length>16};
 }
 export function auditR32StoredRawWithSpec({dataRoot,rosterSha,symbols}={}){
  const base={schema:'ZGMINI_THEME_R32_RAW_COVERAGE_READONLY_V1',status:'BLOCKED',
