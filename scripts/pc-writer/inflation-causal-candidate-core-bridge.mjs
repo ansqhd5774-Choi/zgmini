@@ -9,6 +9,9 @@ import {INFLATION_CANDIDATE_GROUPS,runInflationCandidateOnce} from './inflation-
 export const CANDIDATE_CORE_SCHEMA='ZGMINI_INFLATION_CANDIDATE_CORE_R1';
 export const CANDIDATE_CORE_CHECKPOINT='inflation-causal-candidates-r1/core-attempts-r1.json';
 const GROUPS=['cpi','ppi','fed','census','treasury','eia'];
+// User-approved W01 scope reduction: stop retrying CPI #22/#23 and Census #28.
+// PPI #24 shares BLS but remains active; retain legacy checkpoint entries.
+export const W01_EXCLUDED_CORE_GROUPS=Object.freeze(['cpi','census']);
 const CALENDAR_MATCH=Object.freeze({
  cpi:e=>e.source==='bls'&&e.id==='cpi',
  ppi:e=>e.source==='bls'&&e.id==='ppi',
@@ -70,13 +73,18 @@ function matchingEvent(group,events,sources,now){
 }
 
 export function planInflationCandidateCoreDue({approved=false,bootstrapApproved=false,
- events=[],sources={},checkpoint=cleanCheckpoint(),providerEnv={},now=new Date()}={}){
+ events=[],sources={},checkpoint=cleanCheckpoint(),providerEnv={},now=new Date(),
+ excludedGroups=[]}={}){
  if(!approved)return {status:'DISABLED',due:[],skipped:[...GROUPS]};
  const moment=now instanceof Date?now:new Date(now);
  if(!Number.isFinite(moment.getTime()))throw fail('INFL_CANDIDATE_CORE_NOW_INVALID');
  validateCheckpoint(checkpoint);
+ if(!Array.isArray(excludedGroups)||excludedGroups.some(group=>!GROUPS.includes(group)))
+  throw fail('INFL_CANDIDATE_CORE_EXCLUDED_SCOPE_INVALID');
+ const excluded=new Set(excludedGroups);
  const due=[],skipped=[];
  for(const group of GROUPS){
+  if(excluded.has(group)){skipped.push(group);continue;}
   // Treasury CUSIP is an auction calendar, and EIA WPSR is not retail gasoline.
   // Both may make one explicitly approved bootstrap request, never recurring
   // from the unrelated existing release-calendar events.
@@ -166,14 +174,15 @@ const factoryCollectors=async()=>{
 
 export async function collectInflationCandidatesIfDue({base,approved=false,
  bootstrapApproved=false,officialEvents=[],officialSources={},providerEnv={},
- now=new Date(),quotaFetch,collectors,checkpointIO,latestIO}={}){
+ now=new Date(),quotaFetch,collectors,checkpointIO,latestIO,excludedGroups=[]}={}){
  if(!approved)return {status:'DISABLED',providerRequests:0,due:[],completed:[],failed:[]};
  const moment=now instanceof Date?now:new Date(now);
  if(!Number.isFinite(moment.getTime()))throw fail('INFL_CANDIDATE_CORE_NOW_INVALID');
  const file=checkpointIO?.file??checkpointLocation(base);
  const checkpoint=checkpointIO?.load?checkpointIO.load():loadCheckpoint(file);
  const plan=planInflationCandidateCoreDue({approved:true,bootstrapApproved,
-  events:officialEvents,sources:officialSources,checkpoint,providerEnv,now:moment});
+  events:officialEvents,sources:officialSources,checkpoint,providerEnv,now:moment,
+  excludedGroups});
  if(!plan.due.length)return {...plan,providerRequests:0,completed:[],failed:[]};
  if(typeof quotaFetch!=='function')throw fail('INFL_CANDIDATE_CORE_QUOTA_REQUIRED');
  const save=checkpointIO?.save??(doc=>saveCheckpoint(file,doc));
@@ -260,5 +269,6 @@ export async function runInflationCandidatesFromCore(base,{now=new Date(),
   bootstrapApproved:env.ZGMINI_INFLATION_CANDIDATE_BOOTSTRAP_APPROVED==='1',
   officialEvents:Array.isArray(calendar?.events)?calendar.events:[],
   officialSources:calendar?.sources??{},providerEnv:env,quotaFetch:fetch,
-  collectors,checkpointIO,latestIO,now});
+  collectors,checkpointIO,latestIO,now,
+  excludedGroups:W01_EXCLUDED_CORE_GROUPS});
 }
