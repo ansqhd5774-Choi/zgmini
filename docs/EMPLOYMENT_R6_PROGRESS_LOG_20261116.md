@@ -115,3 +115,17 @@
 - **실제 결함 및 책임:** 이전 보조 작업자는 기존 기준을 적용하지 않고 진행 기록 존재 확인만 수행한 다음 `VERIFIED`라고 보고하였다. 이는 새 규칙 부재가 아니라 **기존 기록 절차의 누락 및 완료 판정 오류**이다.
 - **이번 검증 범위:** 원격 문서 확인과 해당 원장 기록. PC 수집·SQLite·D1·API·UI 변경 및 신규 공급자 호출 0건. 기능 진행률 **14/72** 유지, 마지막 `STATE_CLAIMS_BREADTH` 미완료 유지.
 - **다음 필수 실행:** 기존 승인된 PIT A 분석 경로의 메모리 안전 조건 충족 확인 후 단회 최신 Current/History 결손을 조회한다(`PIT-03-03 → PIT-03-04`). 과거 요청 `#1764/#1765` 재사용 금지.
+
+
+## 10. W04-DOC-20261117-01 — 기존 진행 기록 의무를 전담 실행 기준에 명시
+
+- **작업일:** 2026-11-17 KST · **범위:** 문서 1파일 / 기능 Runtime 변경 없음
+- **저장소·기준 브랜치:** `ansqhd5774-Choi/zgmini` / `codex/employment-1y-reader-r1`. 변경 전 브랜치 HEAD `6fc74c15e643491319d5e0191becfc33f18fa8a4`.
+- **작업 목적:** 고용 작업자가 중간에 바뀌어도 대화 기록 없이 72개 세부 계획·마지막 실제 결과·증거·STOP·다음 실행을 복원하도록 **기존 지정 기록 파일에 매 작업 후 누락 없이 저장하는 순서**를 명확히 한다.
+- **수행 결과:** 기존 [작업계획서](EMPLOYMENT_R6_CURRENT_EXECUTION_PLAN_20261116.md) 시작 부분에 `§0 W04 실행·진행 기록·인계 필수 계약`을 반영했다. 기존 제어 `main/AGENTS.md`·`main/docs/PC_AUTOMATION_STANDARD.md` 및 앱 `main/AGENTS.md`를 따르는 전담 파일 경로·상태 기록 방식·GitHub readback·인계 완료 조건을 지정했다. 새 `AGENTS.md`나 중복 기록 파일·Controller/Runner/예약은 생성하지 않았다.
+- **실제 코드/문서 변경:** `docs/EMPLOYMENT_R6_CURRENT_EXECUTION_PLAN_20261116.md` 1파일, 반영 커밋 `f3556bb1ac8852562c406d3bea86e75a7de176e6`; 실행 원장에는 이 항목을 추가함.
+- **LAST PASS:** 계획서 변경 commit 완료·전용 브랜치 원격 파일 재조회에서 `## 0.` 계약 존재 확인. **FIRST FAIL:** 없음(문서 단계). PC Issue/Run 없음; 공급자 호출·SQLite·D1·Production 변경 모두 0건.
+- **정규 기록 절차:** `실행 → 필요한 증거 회수 → 지정 진행 기록 .md 작성/commit → 해당 새 항목 실제 원격 readback → 사용자 보고`. 기록·확인 실패는 `업무 결과와 별개로 인계 미완료` 판정. 이 절차는 W04 기존 종료·보고 기준의 구체화이며 새 운영/진단 Gate가 아니다.
+- **상태·진행률:** `W04-DOC-20261117-01=DOCUMENTATION_DONE`; PIT 72개 실운영 세부 ID의 진행률 `14/72(19.4%)` 유지, 58개 잔여. 고용 점수 `28/29`, `STATE_CLAIMS_BREADTH=PARTIAL_HISTORY` 유지.
+- **현재 장애:** 최근 PC #1765 `RESOURCE_WAIT_MEMORY`로 SQLite 미열림. 과거 #1764 `R6_BUNDLE_NOT_APPROVED`와 구분. 동일 요청 ID 재사용 금지.
+- **다음 필수 작업:** `PIT-03-03 → PIT-03-04`: 이미 승인된 R6 분석 번들에 대해 안전한 RAM admission 확인 후, 자원 조건 충족 시 새 고유 요청으로 읽기 전용 Current/History 분포 회수. 성공 판정은 sqliteOpened, 실제 결손/상충 건수·날짜, source SHA, GitHub Issue/Run·JSON/TXT 2/2 확보.
