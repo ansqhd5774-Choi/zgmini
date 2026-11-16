@@ -5,7 +5,7 @@
 - 착수 당시 전용 브랜치: `codex/ui-improvements` `43f943679b555387593d918088860ba5b882dcb6`
 - 인계받은 기존 근거: `DASHBOARD_SCORE_68_CONTENT_CONTRACT_INVENTORY_R1.md` (2026-11-10), `DASHBOARD_SCORE_RUNTIME_BASELINE_R1.md` (2026-11-10)
 - 당회 작업 범위: **현재 개발 소스의 UI 소비 구조 및 R1 계약 재사용**, 기능별 실제 갱신 계약 분류 착수. 원자료/DB/D1/Controller/예약/산식 변경 없음.
-- **진척 요약: 01,02,03,07,09–17 판정 완료 (13/34 = 38.2% 고정 작업 기준). 기능별 판정 10/27. 나머지 17개는 미완료.** 추가 결함군 N은 미확정이므로 전체 R3 최종 %는 아직 산정하지 않는다. 이 기록은 브랜치 문서 반영이지 배포/운영 적용 증거가 아니다.
+- **진척 요약: 01,02,03,07,09–18 판정 완료 (14/34 = 41.2% 고정 작업 기준). 기능별 판정 11/27. 나머지 16개는 미완료.** 추가 결함군 N은 미확정이므로 전체 R3 최종 %는 아직 산정하지 않는다. 이 기록은 브랜치 문서 반영이지 배포/운영 적용 증거가 아니다.
 
 ## 1. 공통 실행 01–03 — 완료 근거
 
@@ -45,7 +45,7 @@
 | 15 | D12 · 부채 위험 · debtRiskSafety | BIS DSR·부채/GDP 등 5요인; 저빈도 혼합 | /api/debt-risk-detail | `app/dashboard-ui.tsx (risk detail / stored projection)` | SOURCE_ROUTE_GAP_FIXED_IN_PR_NOT_DEPLOYED | D12 부채: 저빈도·5요인 저장 projection detail:debt-risk:v1, GET 라우트 소스 누락 → PR #1165 수정, 운영 재조회 미확인 |
 | 16 | D13 · 공급 충격 · supplyShockSafety | GSCPI·WTI·휘발유·구리·IP·CPI괴리 6요인; 혼합 | /api/supply-shock-detail | `app/dashboard-ui.tsx (risk detail / stored projection)` | SOURCE_ROUTE_GAP_FIXED_IN_PR_NOT_DEPLOYED | D13 공급충격: 혼합주기·6요인 저장 projection detail:supply-shock:v1, GET 라우트 소스 누락 → PR #1165 수정, 운영 재조회 미확인 |
 | 17 | D14 · 물가 · inflation | 현행 CM-R1 4요인 35/25/15/25, 4요인 전부 READY·진단 집계점수 일치 Gate | /api/market-score domains.inflation · STORED_DIAGNOSTIC_R7 | `worker/market-score-r1.mjs / lib/market-score/inflation-legacy-public-domain.mjs / app/dashboard-ui.tsx` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 현행 코드 정상 분리. 실제 유효 입력 변경→Core 계산→게시 사건 1건은 운영 증거 미확인(UNKNOWN) |
-| 18 | D15 · 고용 · employment | 4개 점수요인; BLS 월간 + DOL 주간; 29개 R6 상세지표와 구분 | /economic-indicators/employment/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
+| 18 | D15 · 고용 · employment | R54 저장 4요인: 실업률 30%·3M 비농업고용 30%·4W 주별 청구합계 20%·51개 이상 지역 개선율 20%; 월간 BLS + 주간 DOL 539, 부족 요인 시 PARTIAL/null | /api/market-score domains.employment · /economic-indicators/employment/ | `worker/market-score-r1.mjs / lib/market-score/employment-r54-candidate.mjs / app/dashboard-ui.tsx` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 실제 새 BLS/DOL 유효 입력 1건→R54 저장 계산·D1 current·API/UI 동일 시각의 사건 미확인, 기능 Owner W04 |
 | 19 | D16 · 금리 · rates | 정책·2년·10년 실질·10Y–3M 4요인; 일별+정책 비정기 | /economic-indicators/rates/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
 | 20 | D17 · 채권·신용 · credit | HY/IG CMDI·NFCI 신용·채권변동성 4요인; 주기 혼합 | /economic-indicators/credit/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
 | 21 | D18 · 경기 · growth | G16 필수24요인; 월간 중심/혼합; 세부 발표일 대조 미완 | /economic-indicators/growth/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
@@ -86,8 +86,8 @@
 ## 4. 다음 실제 실행 순서·작업량 보호
 
 - **현재 증거상 확정된 갱신 시점 불일치(결함군 N): 아직 0건 확정이 아니라 '미확정'.** D04는 NOT_CONNECTED이며 새 수정 대상 결함군에 자동 합산하지 않는다.
-- **다음 필수 실행:** 18/D15 고용의 저장 입력·계산 Gate·API/화면을 판정하면서, Production API 새 저장 결과 readback 증거를 별도로 확보한다. 04–06·08의 구체적 미확인 입력은 기존 유효 증거가 있을 때 이어서 판정하되 **27개 전원 운영 사건 확인을 단일 전역 Gate로 만들지 않는다**.
-- 실행 완료 집계: **13/34** (01,02,03,07,09–17), 04–06/08 및 18–34는 미완료. **구현: API 저장결과 읽기 라우트 7건·회귀 테스트 4건. main 병합 완료 / Cloudflare 후보 Worker build 성공 / Production 사이트 API readback 미확인.**
+- **다음 필수 실행:** 19/D16 금리 점수의 일별 금리와 비정기 연준 정책 입력 Gate를 판정하면서, Production 공개 API readback을 확보한다. 04–06·08의 구체적 미확인 입력은 기존 유효 증거가 있을 때 이어서 판정하되 **27개 전원 운영 사건 확인을 단일 전역 Gate로 만들지 않는다**.
+- 실행 완료 집계: **14/34** (01,02,03,07,09–18), 04–06/08 및 19–34는 미완료. **구현: API 저장결과 읽기 라우트 7건·회귀 테스트 4건. main 병합 완료 / Cloudflare 후보 Worker build 성공 / Production 사이트 API readback 미확인.**
 
 
 ## 5. 09/D06 인플레이션 위험 신규 실행 증거 — 2026-11-16
@@ -116,3 +116,10 @@
 - 위험 D06은 lib/diagnostic-layer/inflation-r2-stored.mjs의 16개 입력·7개 축으로 독립. D14의 과거 R2 추이를 동일 4요인 공식 이력으로 위장하지 않음. tests/economic12-inflation-original4-r35.test.mjs에 정상·0점·결측·진단 불일치 회귀 근거 존재.
 - D14 판정: SOURCE_CONTRACT_CONFIRMED / RUNTIME_UNKNOWN. 필요한 단일 운영 근거는 실제 4요인 유효 변경 1건의 계산 후 /api/market-score domains.inflation 출처판본·score·asOfDate 대응. 기존 정상 코드 무변경.
 - PR #1165은 7개 공개 상세 GET 라우트·공통 타입 JSDoc·회귀 테스트 총 9파일을 최신 main 기반 별도 브랜치에서 생성해 전체 CI #43854770123 PASS. squash merge SHA 5bdaec2afd90a80cdc0a1d1e83f757cfe8b02974, main에 반영 확인. 이후 타 담당의 비충돌 main 2커밋 후 102b248a7c0cfa1506c0605092f667e47f5bd4ad Cloudflare 후보 Worker Git Integration build SUCCESS(버전 ID 1298b2df-7d27-484f-851d-1d5279137774). **zgmini.kr Production exact Deployment 및 API/D1/UI readback 미확인**: build PASS를 서비스 PASS로 보고하지 않음.
+
+
+## 8. 18/D15 고용 점수 판정 — 2026-11-16
+
+- 현재 `worker/market-score-r1.mjs`는 `lib/market-score/employment-r54-candidate.mjs`의 `loadEmploymentR54CandidateFromStored`를 사용. BLS UNRATE/PAYEMS + DOL ETA 539 주별 state claims 보관 데이터에서 실업률(30%), 비농업고용 3개월 모멘텀(30%), 실업수당 4주 평균(20%), 51개 이상 지역의 청구 개선 비율(20%)을 계산. R6 상세화면 29개 지표를 점수 필수요인으로 오인하지 않음.
+- 4요인 값과 과거 최소 데이터 범위 모두 유효해야 READY. 결측/요인 불충분시 PARTIAL/score:null; 결측 가중치 재배분 없음. 시간 주기 자체를 통일하지 않음. `tests/market-score-employment-r54-wiring.test.mjs`에서 API domain 연동, PARTIAL 유효성, 상세 4개 안정 ID 확인.
+- 현재 코드의 출력 계약 판정은 `SOURCE_REVIEWED_RUNTIME_UNKNOWN`, 신규 입력 시 재계산/게시 사건을 정확히 증명할 저장·D1 readback 1건이 부족. 현재 W04 고용 원담당이 수집/계산 수정 중이므로 W06이 공유 Collector·가중치·Writer를 임의 덮어쓰지 않음. 잘못된 기다림이라는 결함 확정은 아님.
