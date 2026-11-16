@@ -40,7 +40,8 @@ test('R42 earnings importance filter requires a validated ER1 score',()=>{
 });
 test('R42 official header and rows label indicator',()=>{
  const s=fs.readFileSync(new URL('../app/market-calendar/market-calendar-client.tsx',import.meta.url),'utf8');
- assert.match(s,/<span>국가<\/span><span>구분<\/span><span>발표 일정<\/span>/);
+ assert.match(s,/<span>국가<\/span><span>구분<\/span><span>기업명·지표명<\/span>/);
+ assert.match(s,/taxonomyOptions\s*\?\s*<>\s*<span>섹터<\/span><span>산업<\/span>/);
  assert.match(s,/<span className="mc-kind mc-kind-indicator">지표<\/span>/);
 });
 test('R42 distinct badge colors and mobile position',()=>{
