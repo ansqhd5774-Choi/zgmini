@@ -149,7 +149,7 @@
 .mc-taxonomy-reset{padding:6px 4px;border:0;background:transparent;color:#8dc8e1;font-weight:800;font-size:10px;white-space:nowrap}
 .mc-taxonomy-reset:disabled{opacity:.4}
 .mc-filter-toggle{display:none;padding:7px 10px;border:1px solid #476a7b;background:#102d40;border-radius:4px;color:#ffd166;font-weight:800;white-space:nowrap}
-.mc-nine-column .mc-head,.mc-nine-column .mc-nine-column .mc-row{grid-template-columns:56px 76px 66px 44px 47px minmax(200px,2fr) minmax(104px,1fr) minmax(135px,1.2fr) 100px;column-gap:8px}
+.mc-nine-column .mc-head,.mc-nine-column .mc-row{grid-template-columns:56px 76px 66px 44px 47px minmax(200px,2fr) minmax(104px,1fr) minmax(135px,1.2fr) 100px;column-gap:8px}
 .mc-nine-column .mc-head>span:nth-last-child(-n+4){text-align:left}
 .mc-nine-column .mc-head>span:last-child{text-align:right}
 .mc-nine-column .mc-head>span:nth-child(5),.mc-nine-column .mc-head>span:nth-child(7),.mc-nine-column .mc-head>span:nth-child(8){text-align:center}
@@ -186,10 +186,10 @@
  .mc-controls.filters-open>*:not(.mc-search):not(.mc-filter-toggle){display:flex}
  .mc-controls.filters-open>.mc-search{flex:1 0 60%}
  .mc-controls.filters-open>.mc-range{flex:0 0 auto}
- .mc-nine-column .mc-head,.mc-nine-column .mc-nine-column .mc-row{grid-template-columns:48px 62px 55px 37px 40px minmax(132px,1.7fr) minmax(90px,1fr) minmax(120px,1.1fr) 82px;column-gap:5px;padding-left:9px;padding-right:9px}
+ .mc-nine-column .mc-head,.mc-nine-column .mc-row{grid-template-columns:48px 62px 55px 37px 40px minmax(132px,1.7fr) minmax(90px,1fr) minmax(120px,1.1fr) 82px;column-gap:5px;padding-left:9px;padding-right:9px}
 }
 @media(min-width:701px) and (max-width:800px){
- .mc-nine-column .mc-head,.mc-nine-column .mc-nine-column .mc-row{grid-template-columns:43px 52px 48px 30px 34px minmax(115px,2fr) minmax(72px,1fr) minmax(95px,1fr) 73px;column-gap:4px}
+ .mc-nine-column .mc-head,.mc-nine-column .mc-row{grid-template-columns:43px 52px 48px 30px 34px minmax(115px,2fr) minmax(72px,1fr) minmax(95px,1fr) 73px;column-gap:4px}
  .mc-sector,.mc-industry{padding:4px 5px;font-size:10px}
 }
 @media(max-width:700px){
