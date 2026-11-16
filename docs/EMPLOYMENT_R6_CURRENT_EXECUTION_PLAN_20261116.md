@@ -237,3 +237,13 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 - 요청 [#1780](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1780) / [Run 43893673097](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43893673097): `employment-r6-wal-memory-preflight`가 `PREVALIDATION/PROTECTED_STATE_SNAPSHOT`에서 `RETIRED_IRAN_INVENTORY_UNAVAILABLE`로 차단. 실제 CPU/RAM/WAL·SQLite 조회에 진입하지 않았으며 공급자·DB·D1 쓰기 0. 과거 #1765 메모리 부족 결과가 오늘에도 유효하다고 추정 금지.
 - 원인 경계: 제어 `main/controller/operations.mjs::attestRetiredIranAbsence`의 inventory 실행 상태 또는 인용 CSV 파싱이 검증되지 않음. 제거 승인 R13 재생성·보호 검증 삭제 불가. 중앙 #68 [인계 기록](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6920425471)은 다른 담당자 실제 수신/복구 증거 아님.
 - `PIT-03-01`, `PIT-03-02`, `PIT-03-08`은 기존/신규 정본 조회에 근거해 DONE. `PIT-03-03`은 BLOCKED; `PIT-03-04`~`07`은 미실행. **전체 17/72 DONE, 55/72 잔여**. 다음 실PC 요청은 보호 목록의 정상 상태·메모리 안전조건이 실제 충족된 뒤 실행.
+
+
+### 2026-11-17 W04 격리된 PIT 유효숫자 감사 수정 — 개발 main 반영, 운영 적용 별도
+
+- **독립 소스 개선 결과:** `scripts/pc-writer/employment-r6-pit-coverage.mjs`의 후보 Current/History matching 과정에서 SQLite `REAL NOT NULL` 열에 저장될 수 있는 빈 TEXT 관측값이 `Number('')===0`으로 정상 0과 오인될 가능성을 제거. 숫자 0은 정상 입력으로 유지. `tests/pc-writer-employment-r6-pit-coverage.test.mjs`에 빈 후보·Core 0/후보 공백 충돌 **2개 신규 fixture** 추가. Core/candidate 원본 SHA 불변 및 `HOLD_*` 상태를 보존한다.
+- **전담 브랜치 작업:** `codex/employment-1y-reader-r1` source `1318133ba62450ced9a12825dd3b0fd459300945`, tests `fe6acf4d44db9b547e4eccf70cce34677a6b1c7b`.
+- **선별 main 통합:** 역사적 전담 브랜치를 통째로 merge하지 않음. 오직 두 파일만 최신 main 기반 `fix/w04-r6-pit-readonly-empty-value-20261117`에서 [PR #1190](https://github.com/ansqhd5774-Choi/zgmini/pull/1190)으로 반영; [Node.js CI #43896607559](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43896607559) `SUCCESS`, `main` squash SHA `17ea61707eb0b48e6c01517d46188fb48e57c509`. 파일 두 개 외 수정 없음.
+- **검증 범위:** 격리 Node 숫자 가드 12 assertion PASS, SQLite `REAL NOT NULL` blank TEXT 허용 실증, 전체 저장소 Node.js CI PASS, main 실제 두 파일 blob readback PASS.
+- **상태 경계:** 이 수정은 기존 읽기 전용 PIT 감사의 **안전성 보강**이지 실제 PC R6 bundle/Controller 설치·PIT HISTORY 증분·점수/산식·D1/사이트 상태 변경이 아니다. `PIT-03-03`은 #1780의 `RETIRED_IRAN_INVENTORY_UNAVAILABLE`로 여전히 BLOCKED. `PIT-06` 전체 fixture·B 승인·운영 과정은 아직 미완료. **세부 진행률 17/72 유지(23.6%)**.
+- **다음 필수 동작:** 기존 [제어 중앙 #68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6920425471)에 인계한 공통 보호 Task 조회 오류의 안전한 수정·운영 정상화 증거를 받아 `PIT-03-03` 메모리/WAL 상태를 확인, 이후 승인 A `PIT-03-04` 한 차례만 요청. 무의미한 #1780 재실행·R13 재등록·임의 SQL 사용 금지.
