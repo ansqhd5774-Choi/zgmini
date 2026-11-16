@@ -24,7 +24,7 @@
 
 **인계 확인 기준:** 다른 작업자는 이전 대화 없이 지정된 두 파일만으로 `마지막 완료 세부 ID·실제 증거/해시·현재 STOP 사유·실제 다음 세부 ID·해제 조건`을 특정할 수 있어야 한다. 그 중 하나라도 기록에 빠지면 인계는 `INCOMPLETE`이다. 무관한 추가 진단·전체 재검사로 이를 대체하지 않는다.
 
-**현재 기준선:** `14/72 DONE`, `58/72 미완료`. `PIT-03-03`의 메모리 안전조건과 `PIT-03-04`의 승인 A 이력 조회가 다음 실행. 이 기록 의무는 기능 진행률을 추가로 올리는 작업 ID가 아니며, 새로운 완료 Gate를 운영 PC 실행 앞에 설치하는 의미도 아니다.
+**현재 기준선:** `17/72 DONE`, `55/72 미완료`. `PIT-03-03`은 공통 Controller의 승인 제거 R13 inventory 사전조회에서 BLOCKED; 보호 조회 정상화 후 메모리 안전조건을 검증해야 `PIT-03-04`로 진행 가능. 이 기록 의무는 기능 진행률을 추가로 올리는 작업 ID가 아니며, 새로운 완료 Gate를 운영 PC 실행 앞에 설치하는 의미도 아니다.
 
 ## 1. 완료 목표와 운영 계약
 
@@ -68,13 +68,13 @@
 
 - 최신 진단 [#1764](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1764)는 잘못 지정된 최신 `main` bundle로 `R6_BUNDLE_NOT_APPROVED`, SQLite 미열림. 원본 요청 재실행하지 않음.
 - 고정 번들을 지정한 다음 [#1765](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1765)는 `RESOURCE_WAIT_MEMORY`, SQLite 미열림, 공급자·DB·D1 쓰기 0. 메모리 안전 거부를 다른 비승인 실행/SQL/PC 경로로 우회하지 않음.
-- **다음 필수 실행 하나:** PC 메모리 자원이 정상인 시점에 기존 승인 A 고정 번들/새 고유 ID를 사용해 한 차례만 PIT 분포를 회수하고, 실제 누락/개정충돌·PIT 가용성과 10년 산식 참조 창을 매칭. 이후에만 최소 B 범위를 정한다. 반복 예약 확인과 정규 수집은 완료 조건이 아니다.
+- **다음 필수 실행 하나:** #1780의 R13 보호 목록 사전조회 거부를 정규 공통 owner에게 정확히 인계하고 정상화 증거를 확보한 다음, PC 메모리 자원이 정상인 시점에 기존 승인 A 고정 번들/새 고유 ID를 사용해 한 차례만 PIT 분포를 회수하고, 실제 누락/개정충돌·PIT 가용성과 10년 산식 참조 창을 매칭. 이후에만 최소 B 범위를 정한다. 반복 예약 확인과 정규 수집은 완료 조건이 아니다.
 
 ## 5. 진행률 산정
 
 - **수집 → PC 원자료 저장 → 계산 → D1 공개 → API/UI 전달:** `5/5` 완료(해당 전달 경로에 한정).
 - **29개별 점수:** `28/29` (96.6%), 최근 유효 `22/29`, 1Y 차트 READY `22/29` — 각각 다른 지표.
-- **잔여 PIT 10개 상위 범주 / 72개 세부 작업:** `14/72` DONE(19.4%), `58/72` 미완료. `PIT-03`은 메모리 안전 조건으로 BLOCKED. 이를 기존 5단계 운영 진행률의 분모에 합산하지 않는다.
+- **잔여 PIT 10개 상위 범주 / 72개 세부 작업:** `17/72` DONE(23.6%), `55/72` 미완료. `PIT-03`은 공통 보호 Task 목록 확인 단계에서 BLOCKED, 이후 메모리 조건은 미확인. 이를 기존 5단계 운영 진행률의 분모에 합산하지 않는다.
 - 이번 문서 작성/관리만으로 PIT 단계·운영 사이트 수치를 진척 처리하지 않는다.
 
 ## 6. 역할·공유 자원
@@ -84,13 +84,13 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 
 ## 7. 72개 세부 실행 항목 — 실제 작업 단위별 확장 (2026-11-16)
 
-> **계수 정정:** 위 PIT-01~10은 상위 범주 10개일 뿐이다. 각 범주를 실행 입력·행동·검증 가능한 산출물 단위로 세분화한 **총 72개 세부 작업**이 실제 계획의 분모다. `PIT-01`과 `PIT-02` 각 7개는 기존 완료 증거를 항목별로 연결해 `DONE`; 나머지 **58개는 아직 운영 실행 완료로 집계하지 않는다**. 문서 작성·CI만으로 DB 복구 완료를 주장하지 않는다.
+> **계수 정정:** 위 PIT-01~10은 상위 범주 10개일 뿐이다. 각 범주를 실행 입력·행동·검증 가능한 산출물 단위로 세분화한 **총 72개 세부 작업**이 실제 계획의 분모다. `PIT-01`과 `PIT-02` 각 7개는 기존 완료 증거를 항목별로 연결해 `DONE`; `PIT-03` 기존 증거/등록 경로·조회 적합성 3개 추가 완료, 나머지 **55개는 아직 운영 실행 완료로 집계하지 않는다**. 문서 작성·CI만으로 DB 복구 완료를 주장하지 않는다.
 
 | 상위 범주 | 세부 작업 수 | 완료 | 미완료 | 현재 상태 |
 |---|---:|---:|---:|---|
 | PIT-01 기존 운영 완료 증거 확정·재사용 | 7 | 7 | 0 | DONE |
 | PIT-02 소스 계보 판정기·격리 회귀 완료 | 7 | 7 | 0 | DONE |
-| PIT-03 현재 운영 PC의 실제 PIT 결손 확보 | 8 | 0 | 8 | BLOCKED (RAM 안전 진단) |
+| PIT-03 현재 운영 PC의 실제 PIT 결손 확보 | 8 | 3 | 5 | BLOCKED (공통 보호 목록 사전조회) |
 | PIT-04 지역별·주별 원자료와 PIT 정합성 분류 | 8 | 0 | 8 | DEFERRED (선행 근거 필요) |
 | PIT-05 복구 가능성 판정·최소 운영 승인 설계 | 8 | 0 | 8 | DEFERRED (선행 근거 필요) |
 | PIT-06 선별 복구 코드·fixture 회귀·시뮬레이션 | 8 | 0 | 8 | DEFERRED (선행 근거 필요) |
@@ -98,7 +98,7 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 | PIT-08 저장 자료 기반 계산·로컬 결과 재검증 | 6 | 0 | 6 | DEFERRED (선행 근거 필요) |
 | PIT-09 기존 D1 게시기와 읽기 결과 일치 | 6 | 0 | 6 | DEFERRED (선행 근거 필요) |
 | PIT-10 Production API/UI 검증·종결 판정 | 6 | 0 | 6 | DEFERRED (선행 근거 필요) |
-| **합계** | **72** | **14** | **58** | **19.4% · 세부 작업 기준** |
+| **합계** | **72** | **17** | **55** | **23.6% · 세부 작업 기준** |
 
 **완료 판정 원칙:** 모든 행에서 입력/실행과 합격 조건을 확인해야 한다. 시뮬레이션과 실제 PC 설치/SQLite 수정/D1 게시를 하나의 완료 증거로 합치지 않는다. 조건 불충족은 STOP/DEFERRED로 유지하며, 예약 자연 검증·임의 데이터 보간·신규 공급자 호출은 잔여 단계에 추가하지 않는다.
 
@@ -126,18 +126,18 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 | PIT-02-06 | 600주·51지역·결손·중복 회귀시험 완비 | tests/employment-r6-claims-pit-recovery.test.mjs | 정상/결손/불일치의 계산 입력 차이 재현 | DONE |
 | PIT-02-07 | 관련 CI와 source main 병합 확정 | PR #1186 / CI 43886125560 | SUCCESS, merge f3ddab1f…; PC 이력 수정 주장 금지 | DONE |
 
-### PIT-03 — 현재 운영 PC의 실제 PIT 결손 확보 (8개, 현재 BLOCKED)
+### PIT-03 — 현재 운영 PC의 실제 PIT 결손 확보 (8개, 3 DONE · 5 미완료, 보호 목록 BLOCKED)
 
 | 세부 ID | 실제 실행·분석 작업 | 입력·근거 | 완료 판정 / 결과 | 상태 |
 |---|---|---|---|---|
-| PIT-03-01 | 읽기 전용 분석에 사용할 고정 승인 번들 식별 | 등록 A `employment-r6-candidate-stage-readonly` | 분석 전용 SHA afdd8fab…와 일반 main 구분 | TODO |
-| PIT-03-02 | 기존 차단 요청의 원인과 소비된 ID 보존 | #1764 / #1765 JSON·TXT | R6_BUNDLE_NOT_APPROVED와 RESOURCE_WAIT_MEMORY 구분·재사용 금지 | TODO |
-| PIT-03-03 | 중량 A 진단의 현 메모리 admission 점검 | 해당 operation 최소 1536MiB와 실제 가용량 | 안전 자원 조건을 충족한 경우에만 요청 | BLOCKED |
+| PIT-03-01 | 읽기 전용 분석에 사용할 고정 승인 번들 식별 | 등록 A `employment-r6-candidate-stage-readonly` | 분석 전용 SHA `afdd8fab1c03b321e4b8b0853bb236c0800a0a14`, 운영 승인 SHA 별도·기존 #1765 확인 | DONE |
+| PIT-03-02 | 기존 차단 요청의 원인과 소비된 ID 보존 | #1764 / #1765 및 신규 #1780 JSON·TXT | R6_BUNDLE_NOT_APPROVED / RESOURCE_WAIT_MEMORY / RETIRED_IRAN_INVENTORY_UNAVAILABLE 구분, 요청 ID 재사용 금지 | DONE |
+| PIT-03-03 | 중량 A 진단의 현 메모리 admission 점검 | 1536MiB 기준; 단회 A/light #1780 / Run 43893673097 | 공통 Controller PROTECTED_STATE_SNAPSHOT에서 RETIRED_IRAN_INVENTORY_UNAVAILABLE 발생, 실제 메모리 미측정·재시도 금지 | BLOCKED |
 | PIT-03-04 | 승인된 A operation을 새 고유 requestId로 단회 접수 | 동일 host·고정 번들·정상 메모리 | 고유 Issue/Run 생성; 우회 셸·DB 쓰기 0 | TODO |
 | PIT-03-05 | 실제 Runner/Host·결과 JSON/TXT 2/2 회수 | 해당 고유 Issue·Run·attempt | PASS/WAIT/UNKNOWN, 대상·시간·실행 SHA 확인 | TODO |
 | PIT-03-06 | SQLite 실제 열림 및 일관된 PIT 관측 범위 확인 | 실PC 결과 sqliteOpened·snapshot 경계 | WAL/메모리 안전 거부는 DB 실패로 오인하지 않음 | TODO |
 | PIT-03-07 | Current·History·후보 누락/충돌 총계 획득 | 당시 asOf와 51개 지역·저장 이력 | 오늘 결손 수치를 11/07 2880건과 구분 | TODO |
-| PIT-03-08 | 자료가 부족하면 승인된 기존 A의 최소 메타 조회 적합성 평가 | 기존 A 보고 필드/원장에 한정 | 무근거 B 복구로 전진하지 않고 정확 부족 필드만 기록 | TODO |
+| PIT-03-08 | 자료가 부족하면 승인된 기존 A의 최소 메타 조회 적합성 평가 | `controller/employment-r6-candidate-readonly.mjs`·`employment-r6-collection-evidence-readonly.mjs` | stage A는 PIT aggregate, evidence A는 Current/raw snapshot만 제공; 주차별 History-asOf 전체 검증 대체 불가·무근거 B 금지 | DONE |
 
 ### PIT-04 — 지역별·주별 원자료와 PIT 정합성 분류 (8개, 미실행)
 
@@ -226,7 +226,14 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 
 ### 다음 하나의 필수 실행
 
-- **대상:** `PIT-03-03 → PIT-03-04`. 기존 A급 고정 분석 번들만 사용한다. 메모리 admission이 충족된 안전한 실행 시점을 선택하며, 기존 #1764/#1765 requestId 재사용을 금지한다.
+- **대상:** `PIT-03-03 → PIT-03-04`. [#1780](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1780)의 공통 보호 목록 차단을 [중앙 #68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6920425471)에 인계했다. 보호 목록 확인 정상화 및 메모리 admission 안전조건이 확인된 경우만 기존 A 고정 분석 번들로 단회 요청한다. #1764/#1765/#1780 requestId 재사용 금지.
 - **실제 성공 판정:** SQLite가 열린 동일 시점의 Current/History 총계, 51개 지역·주차와 revision 충돌, 정확한 Issue/Run/TXT/JSON 및 대상 source SHA 확보.
-- **안전 대기:** RAM 부족·WAL snapshot 불가이면 해당 A 작업만 `BLOCKED`로 두고 독립 source/fixture 작업을 계속한다. Core 잠금/원장·예약·DB를 임의 수정하지 않는다.
+- **안전 대기:** R13 inventory 조회 실패·RAM 부족·WAL snapshot 불가이면 해당 A 작업만 `BLOCKED`로 두고 독립 source/fixture 작업을 계속한다. Core 잠금/원장·예약·DB를 임의 수정하지 않는다.
 - **복구 전제:** `PIT-05`에서 진짜 과거 PIT가 입증되지 않은 값은 이력 승격하지 않는다. 자료를 정직한 `PARTIAL_HISTORY`로 유지하는 것이 최종적으로 올바를 수 있다.
+
+
+### 2026-11-17 단회 A/light #1780 실증 및 진행률 정정
+
+- 요청 [#1780](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1780) / [Run 43893673097](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43893673097): `employment-r6-wal-memory-preflight`가 `PREVALIDATION/PROTECTED_STATE_SNAPSHOT`에서 `RETIRED_IRAN_INVENTORY_UNAVAILABLE`로 차단. 실제 CPU/RAM/WAL·SQLite 조회에 진입하지 않았으며 공급자·DB·D1 쓰기 0. 과거 #1765 메모리 부족 결과가 오늘에도 유효하다고 추정 금지.
+- 원인 경계: 제어 `main/controller/operations.mjs::attestRetiredIranAbsence`의 inventory 실행 상태 또는 인용 CSV 파싱이 검증되지 않음. 제거 승인 R13 재생성·보호 검증 삭제 불가. 중앙 #68 [인계 기록](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6920425471)은 다른 담당자 실제 수신/복구 증거 아님.
+- `PIT-03-01`, `PIT-03-02`, `PIT-03-08`은 기존/신규 정본 조회에 근거해 DONE. `PIT-03-03`은 BLOCKED; `PIT-03-04`~`07`은 미실행. **전체 17/72 DONE, 55/72 잔여**. 다음 실PC 요청은 보호 목록의 정상 상태·메모리 안전조건이 실제 충족된 뒤 실행.
