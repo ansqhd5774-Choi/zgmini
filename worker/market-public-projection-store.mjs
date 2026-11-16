@@ -38,6 +38,10 @@ export function publicProjectionStore(db,{onRead}={}){
   });
 }
 
+/**
+ * @param {Request} request
+ * @param {{store?: ReturnType<typeof publicProjectionStore>, key?: string, maxAgeMs?: number, now?: number}} [options]
+ */
 export async function storedProjectionResponse(request,{store,key,maxAgeMs=PUBLIC_DISPLAY_MAX_AGE_MS,now=Date.now()}={}){
   const headers={'cache-control':'no-store','x-robots-tag':'noindex','x-content-type-options':'nosniff','x-public-projection':'STORED'};
   if(request.method!=='GET')return Response.json({status:'FAILED',reason:'METHOD_NOT_ALLOWED'},{status:405,headers});
