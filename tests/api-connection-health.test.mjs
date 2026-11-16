@@ -270,6 +270,51 @@ test('HTTP host failure changes ratio, never prints fabricated 32/32',()=>{
  assert.deepEqual(body.http,{normal:31,failed:1,unknown:0,total:32});
  assert.equal(body.status,'partial');
 });
+
+test('HTTP host connectivity remains green for same-batch SEC frame 200+optional 404',()=>{
+ const snapshot=buildMonitoredSourceHealth(monitoredCalendar(),recentReceipts(),evidenceNow);
+ snapshot.httpHosts=allHttpHosts(evidenceNow);
+ const sec=snapshot.httpHosts.items[10];
+ sec.lastOutcome='mixed';sec.lastEventStatuses={'200':7,'404':2};
+ sec.requests=9;
+ const raw=summarizeApiConnectionHealth(snapshot.httpHosts,evidenceNow);
+ assert.equal(raw.items[10].state,'failed'); // source-level HTTP errors remain observable
+ const body=publicApiConnectionSummary(summarizeApiConnectionHealth(snapshot,evidenceNow));
+ assert.deepEqual(body.http,{normal:32,failed:0,unknown:0,total:32});
+ assert.equal(body.status,'healthy');
+});
+test('HTTP 404-only does not become a green connection',()=>{
+ const snapshot=buildMonitoredSourceHealth(monitoredCalendar(),recentReceipts(),evidenceNow);
+ snapshot.httpHosts=allHttpHosts(evidenceNow,{10:'failure'});
+ snapshot.httpHosts.items[10].lastEventStatuses={'404':2};
+ const body=publicApiConnectionSummary(summarizeApiConnectionHealth(snapshot,evidenceNow));
+ assert.deepEqual(body.http,{normal:31,failed:0,unknown:1,total:32});
+ assert.equal(body.status,'unknown');
+});
+test('HTTP mixed 2xx with authorization, request, server or network failure remains warning',()=>{
+ for(const error of ['400','401','403','410','500','503','NETWORK_ERROR']){
+  const snapshot=buildMonitoredSourceHealth(monitoredCalendar(),recentReceipts(),evidenceNow);
+  snapshot.httpHosts=allHttpHosts(evidenceNow);
+  const h=snapshot.httpHosts.items[10];h.lastOutcome='mixed';h.lastEventStatuses={'200':1,[error]:1};
+  const body=publicApiConnectionSummary(summarizeApiConnectionHealth(snapshot,evidenceNow));
+  assert.deepEqual(body.http,{normal:31,failed:1,unknown:0,total:32},error);
+ }
+});
+test('HTTP 429 plus 2xx is reachable, quota guard alone is unknown',()=>{
+ const snapshot=buildMonitoredSourceHealth(monitoredCalendar(),recentReceipts(),evidenceNow);
+ snapshot.httpHosts=allHttpHosts(evidenceNow);
+ const h=snapshot.httpHosts.items[10];h.lastOutcome='mixed';h.lastEventStatuses={'200':1,'429':1};
+ const body=publicApiConnectionSummary(summarizeApiConnectionHealth(snapshot,evidenceNow));
+ assert.equal(body.http.normal,32);
+});
+test('HTTP cannot call a fabricated success green without a 2xx receipt',()=>{
+ const snapshot=buildMonitoredSourceHealth(monitoredCalendar(),recentReceipts(),evidenceNow);
+ snapshot.httpHosts=allHttpHosts(evidenceNow);
+ const h=snapshot.httpHosts.items[10];h.lastOutcome='success';h.lastEventStatuses={'404':2};
+ const body=publicApiConnectionSummary(summarizeApiConnectionHealth(snapshot,evidenceNow));
+ assert.deepEqual(body.http,{normal:31,failed:0,unknown:1,total:32});
+});
+
 test('HTTP stale cadence is unknown rather than orange failure',()=>{
  const snapshot=buildMonitoredSourceHealth(monitoredCalendar(),recentReceipts(),evidenceNow);
  snapshot.httpHosts=allHttpHosts(evidenceNow);

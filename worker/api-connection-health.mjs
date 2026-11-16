@@ -64,14 +64,22 @@ function summarizeMonitoredSourceSnapshot(snapshot,now){
   if(observed.coverage==='PARTIAL'&&observed.reason===null&&
     Number.isSafeInteger(observed.total)&&observed.total>0){
    const repeated=observed.items.filter(item=>item.repeated);
-   const normalHosts=repeated.filter(item=>item.state==='normal').length;
-   // HTTP 429 / local quota guard are rate-limit deferrals, not connection
-   // outages. A true last-event transport failure or authorization/server
-   // error alone can produce a warning.
-   const realFailure=item=>item.state==='failed'&&Object.entries(item.lastEventStatuses??{})
-    .some(([status,count])=>count>0&&(status==='NETWORK_ERROR'||
-     (/^[45][0-9]{2}$/.test(status)&&status!=='429')));
-   const failedHosts=repeated.filter(realFailure).length;
+   // HTTP measures host connectivity, not the availability of every resource.
+   // A 2xx in the last batch proves reachability despite another optional
+   // path's 404. A missing required resource remains a collector/source error.
+   // 404-only, 429-only and local quota deferrals cannot establish health.
+   const codes=item=>Object.entries(item.lastEventStatuses??{})
+    .filter(([,count])=>count>0).map(([status])=>status);
+   const hardFailure=status=>status==='NETWORK_ERROR'||
+    (/^[45][0-9]{2}$/.test(status)&&status!=='404'&&status!=='429');
+   const provenConnected=item=>(
+    item.state==='normal'||(item.state==='failed'&&
+     item.reasonCode==='LAST_EVENT_HAS_FAILURE'))&&
+    codes(item).some(status=>/^2[0-9]{2}$/.test(status))&&
+    !codes(item).some(hardFailure);
+   const normalHosts=repeated.filter(provenConnected).length;
+   const failedHosts=repeated.filter(item=>item.state==='failed'&&
+    codes(item).some(hardFailure)).length;
    http={normal:normalHosts,failed:failedHosts,
     unknown:repeated.length-normalHosts-failedHosts,total:repeated.length};
   }
