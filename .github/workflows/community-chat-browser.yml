@@ -36,6 +36,7 @@ on:
       - 'lib/dashboard-chart-startup.mjs'
       - 'lib/market-score/market-trend-window-r1.mjs'
       - 'tests/dashboard-history-browser-r5.mjs'
+      - 'tests/market-calendar-production-browser-r44.mjs'
       - 'app/globals.css'
       - 'public/styles/fear-greed-education-r1.css'
       - 'app/fear-greed/usa/page.tsx'
@@ -93,6 +94,8 @@ jobs:
           done
           tail -n 120 /tmp/zgmini-chat-vite.log
           exit 1
+      - name: Verify W02 R44 50B live production hydration (read-only, one-time browser evidence)
+        run: node tests/market-calendar-production-browser-r44.mjs
       - name: Validate inflation criterion, previous/current values, dates and sources at 1440/390
         run: node tests/inflation-criterion-browser-r1.mjs
       - name: Validate employment R6 stored 29-row presentation at 1440/390
@@ -126,6 +129,7 @@ jobs:
             artifacts/about-intro-bootstrap/
             artifacts/inflation-criterion-review/
             artifacts/employment-r6-browser/
+            artifacts/market-calendar-production/
           if-no-files-found: warn
       - name: Show local dev errors on failure
         if: failure()
