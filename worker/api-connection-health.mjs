@@ -79,9 +79,17 @@ function summarizeMonitoredSourceSnapshot(snapshot,now){
     const at=item.lastAttemptAt;
     const freshObserved=Number.isSafeInteger(at)&&at<=now&&
      now-at>=0&&now-at<=24*3600_000;
+    // The Census BFS CSV is a monthly, on-demand chart-history resource.
+    // Its proven 2xx in the existing 14-day observed-host cohort should
+    // not be marked unverified by the generic 36-hour daily-source rule.
+    // This is connectivity only, NOT proof of a refreshed D1 chart.
+    const monthlyBfsEvidence=item.host==='cdn.www.census.gov'&&
+     Number.isSafeInteger(at)&&at<=now&&now-at>=0&&
+     now-at<=15*86400_000&&item.lastOutcome==='success';
     const eligible=item.state==='normal'||
      (item.state==='failed'&&item.reasonCode==='LAST_EVENT_HAS_FAILURE')||
-     (item.state==='stale'&&item.reasonCode==='CADENCE_OVERDUE'&&freshObserved);
+     (item.state==='stale'&&item.reasonCode==='CADENCE_OVERDUE'&&freshObserved)||
+     monthlyBfsEvidence;
     return eligible&&codes(item).some(s=>/^2[0-9]{2}$/.test(s))&&
      !codes(item).some(hardFailure);
    };
@@ -92,8 +100,13 @@ function summarizeMonitoredSourceSnapshot(snapshot,now){
      now-at>=0&&now-at<=24*3600_000;
     // A verified fresh 503/network error outranks inferred cadence too;
     // an ancient failed last contact remains unverified, not current red.
-    return (item.state==='failed'||(item.state==='stale'&&lastFresh))&&
-     codes(item).some(hardFailure);
+    const monthlyBfsWindow=item.host==='cdn.www.census.gov'&&
+     Number.isSafeInteger(at)&&at<=now&&now-at>=0&&
+     now-at<=15*86400_000;
+    // A latest real 503/network failure remains red for the same monthly
+    // observation window; do not use schedule inference to hide an error.
+    return (item.state==='failed'||(item.state==='stale'&&lastFresh)||
+     monthlyBfsWindow)&&codes(item).some(hardFailure);
    }).length;
    http={normal:normalHosts,failed:failedHosts,
     unknown:repeated.length-normalHosts-failedHosts,total:repeated.length};
