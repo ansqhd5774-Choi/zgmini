@@ -1,5 +1,7 @@
 # ZGMINI 대시보드 점수 갱신·출력 기준 통일 — 실행계획 R2
 
+> **2026-11-16 실행계획 재수립:** 사용자의 '3단계는 총 작업 수가 아니다' 지적에 따라 본 R2의 과도한 입력 계보·Writer 원장 Gate를 별도 과제로 분리했다. 실제 활성 실행 순서는 [DASHBOARD_SCORE_UPDATE_UNIFICATION_EXECUTION_R3.md](DASHBOARD_SCORE_UPDATE_UNIFICATION_EXECUTION_R3.md)의 **고정 34개 작업 + 실제 결함군별 4개 작업**을 따른다. 승인 정책·이전 조사·R2 이력은 보존한다.
+
 - 작성일: 2026-11-16 KST
 - 실행 기준 브랜치: `ansqhd5774-Choi/zgmini` / `codex/ui-improvements`
 - **승인된 정책 정본:** `docs/DASHBOARD_SCORE_DAILY_UPDATE_STANDARD_R1.md` (본 R2는 정책·산식 변경이 아닌 실행 순서·책임·완료 판정 개정)
