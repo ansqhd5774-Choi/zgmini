@@ -45,8 +45,10 @@ try{
  }
  // Candidate research inputs share the existing Core lock and run before
  // the early Writer pass; their own approved provider gate is default-off.
+ // CPI candidates are independent of other provider collection exits;
+ // retain the existing Core lock, approved provider flags and quota gates.
  let inflationCandidates={status:lane==='core'?'DISABLED':'SKIPPED_KOREA_LANE',providerRequests:0};
- if(lane==='core'&&collection.status===0){
+ if(lane==='core'){
   try{
    const {runInflationCandidatesFromCore}=await import('./inflation-causal-candidate-core-bridge.mjs');
    inflationCandidates=await runInflationCandidatesFromCore(base);
