@@ -1,5 +1,35 @@
 # ZGMINI W04 고용 R6 — 성공 가능성 개선을 위한 소스·운영·게시 분리 실행계획
 
+<!-- W04_R6_20261116_PINNED_PUBLIC_IMPLEMENTATION_TO_RUNTIME_ACTION_PLAN -->
+## 2026-11-16 확정 실행안 — 공개 코드 5곳 직접 대조, LIVE 승인 Source와 코드 결함 분리
+
+**현재 보전:** 기능 `zgmini/main@27c76e799f07d54b1a9cd2c41243fb12360c59a0`; 제어 `zgmini-pc-control/main@e79c2cea6d4a1b32e66cc914fd1b6a06c8211d16`. 전담 PR #933 **233파일 / mergeable=false / main 대비 behind 146, ahead 87**(문서 변경 포함). 통합 [PR #1083](https://github.com/ansqhd5774-Choi/zgmini/pull/1083) **9파일 / mergeable=true / Draft**, HEAD `21b3930c091b37edbb152bb73920bdf46e1a9ebc`, 과거 CI 성공; 실제 운영 미설치. **전담 PR 전체 병합·main reset/rebase 금지.**
+
+**공개 소스 파일 실제 확인 및 코드에 반영할 최소 원칙**
+1. [JerBouma/FinanceToolkit DOL](https://github.com/JerBouma/FinanceToolkit/blob/245c303efcca5c317c8dcc2fff00d393e1c9ba98/financetoolkit/economics/sources/dol_model.py#L51-L101) 같은 `report.asp` 양식 `level=us,final_yr,strtdate,enddate,filetype=xml` 요청. `Unable to connect` HTML을 일시적 공급자 DB 오류로 판정, **마지막 유효 캐시 보존**. 저자 코드는 6회/3초 제한 재시도를 사용하지만 ZGMINI의 승인된 공급자 호출 계약 밖이므로 **횟수·주기 복제 금지**. 저자 `final_yr=currentYear+1`과 ZGMINI currentYear 차이는 이미 성공한 ZGMINI 11/09 원장 있으므로 **원인 증거 없음, 임의 변경 금지**.
+2. [zsh-a/bcr TS](https://github.com/zsh-a/bcr/blob/1cf643aa2ec4fce4d3ddee843bce821669197c1f/packages/market-data/src/cycle/fred.ts#L158-L177): XML `r539cyNational` 문서 식별, `weekEnded` 토요일·실제값·미래 빈 관측 검증; [bounded response 15sec/3MB](https://github.com/zsh-a/bcr/blob/1cf643aa2ec4fce4d3ddee843bce821669197c1f/packages/market-data/src/cycle/fred.ts#L279-L292), 출처 FRED→DOL→mirror 순환도 구현. ZGMINI에는 **정상 XML/숫자·날짜/응답 크기 검증만 필요 범위 검토**, 무승인 공급자/미러 failover·timeout 교체 금지.
+3. [valorumdata/cmdc-tools Python](https://github.com/valorumdata/cmdc-tools/blob/d9f964b580a6efa2446a45b30e5134ef1ae74f74/src/cmdc_tools/datasets/dol/unemploymentclaims.py#L45-L64): `requests.Session.post`, `ET.fromstring`, `rundate` 기록. `rundate`는 보고서 생성 일자이지 해당 수치 `availableAt` 자체가 아님. State-only 처리 경로는 전국 4계열 대체 아님.
+4. [ciciiiyaoyf/la_housing_database](https://github.com/ciciiiyaoyf/la_housing_database/blob/2ec0329e64cbb5969a1f17f8ce085b48374b83a2/src/ingestion/macro_claims.py#L20-L88) `ar539.csv` 공식 State bulk CSV·`Last-Modified`·필수 스키마/날짜 검증. 이미 수집 완료된 51지역×600주에 재백필 요구하지 않음; **국가 SA/SA4WK/IUR 네 계열 대체 불가**.
+5. [mortada/fredapi](https://github.com/mortada/fredapi/blob/c6c7cb3b95df12dbdc8aa11447eebc94305cebbe/fredapi/fred.py#L180-L275): `get_series_first_release` vs `get_series_as_of_date` vs `get_series_all_releases` 구별. 조건부 사용자 승인시 기존 공통 FRED transport/키/쿼터를 재사용, 주간 `ICSA/IC4WSA/CCSA/IURSA` 고정 프로필·ETA via FRED provenance·ALFRED vintage/PIT 정의 승인, 원본 DOL XML로 위장 금지.
+
+**확정한 FIRST FAIL / 확인되지 않은 것**
+- Windows [#1403](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1403#issuecomment-6887419784) **51지역×600주 current raw PASS**, National 11/09 ONE_YEAR 4/4 성공 → BACKFILL 0/4 → 11/15 RELEASE 0/4. 최초 실패 경계는 **전국 POST 응답 → 유효 4계열 생성**. 당시 status/body/content-type/first parse invalid **없음**; 공급자 비XML(DB 장애) vs XML 구조 vs network는 미확정.
+- Windows [#1551](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1551#issuecomment-6908880978) R6 두 설정 `ENABLED/ENABLED`, 고정 checkout/승인 config/checkpoint SHA `f59e999082fd3b21893f0f74fc1913441ec80bba` 일치. 하지만 `runtimeSourceVerified=false`/`coreTaskSourceLinked=false`는 **historical checkout read-only 증거 등급**(실제 Runner/Core 중단 증거 아님). 기존 R6 대상 19개 파일 `NOT_OBSERVED`는 **SEC 등 다른 승인 scope만 조회해 놓은 범위 제외**; 미설치 증거가 아님. 고용 스코프 승인 manifest를 사용한 현재 설치파일 exact sha 조회가 필요.
+- 11/08 후보 stage #782 PIT current key 7695 중 2880 no-history, candidate source overlap conflicting 2 (당시). 최신 29개 계산·Core data와 별도 증거. 원래 R6 완료는 정직한 29개 raw/score/chart 및 1Y 공개이며 **종합 precompute `readyGate` 29/29 READY를 전역 완료 조건으로 두지 않음**.
+- 현재 web `https://zgmini.kr/economic-indicators/employment/` SSR 29행 기본 '—'/로딩만 확인. Production `/api/employment-r6/observations` 외부 조회는 이 도구에서 접근 불가, 직접 HTTP/D1 값 확인 없으므로 29개 전부 결손 단정 금지. 현재 main API route 소스 존재≠Production 실제 배포/GET 200. 공식 DOL `claims.asp` 웹 form은 현재 XML 제공 선택 UI를 노출하나 National POST 무결성 증거가 아님.
+
+**실행 우선순위 및 정확한 완료 조건**
+1. **W04 독립 코드 작업(필수 하나):** 최신 main을 보존한 독립 전용 worktree/브랜치에서 #1083의 `employment-r4-shadow-provider.mjs`, `employment-r6-provider.mjs`, `employment-r6-collector.mjs` 및 영향 최소 tests를 선별 통합. 이어 `employment-r6-scheduler.mjs`의 Initial-only `RELEASE_ALREADY_STORED` 판정과 Collector Initial-only STALE를 **4계열 각 해당 주간/공식 lag 기준**으로 같은 helper 계약에서 정정, 동시 National+ETA 오류 `NO_OBSERVATIONS` 우선순위 개선. 공식 root/실측 주간/비XML/partial/음수·미래 실값/중복 충돌 차단을 공식 fixture로 검사. **Initial 주차 11/07 vs Continued/IUR 10/31 정상 1주 시차 유지**, 2026년 실제 parser 형식 실증 없이 연도·산식/가중치·TTL 변경 금지. 기존 CI 성공 증거 재사용하되 **새 변경 영향 회귀만 재검증**.
+2. **중앙 승인 단일 Owner와 독립 병렬:** 기존 `writer-install-preimage-readonly`에 *정확 고용 R6 19파일만* 고정 승인 scope/manifest를 붙여 current SHA + source/config/checkpoint + 실제 Task 계보 **각각 증거 등급을 구분**해 1회 회수. 별도 11/09 성공 vs 11/15 실패 National 저장 snapshot의 `status/content-type/format/bodySha/parsed4`만 비민감 read-only 1회; 실패 raw 미저장이면 `NOT_STORED` 처리하고 과거 회수 반복 중단.
+3. **승인된 실제 B 설치:** 변경 영향 정확 file 단위 preimage/afterSha + 보호 manifest + approved source의 설치 및 안전한 operation 1회. 공유 #1501 Controller/lease는 실제 충돌한 동일 자원에만 직렬화. 새 예약/CMD/리모트 데스크톱 플러그인·미승인 SQL/D1·새 API 계정·백업 삭제 금지.
+4. **실제 원자료→게시:** 승인된 기존 Core 발표 주기의 valid National4 수집 **또는** 오류 `PARTIAL`/기존 good raw 보존, 로컬 SQLite 29개 관측·PIT as-of 및 last missing/zero base 구분, 로컬 1Y display 29행·실제 status 계산/저장, D1 `detail:employment-r6:one-year:v1` body/hash/storedAt/sourceStoredAt exact readback, Production GET/API/UI 29행 동치 확인. 공개 GET 공급자 호출 금지, 오래된 결과 재타임스탬프·원자료 600주 재백필 금지.
+5. **공급자 장애 지속 시만:** DOL 공식 정상화 기다리면서 승인된 Scheduler/circuit 유지하고, 별도 명시 공급자 변경 승인 후 기존 FRED 공통 transport를 제한적 보조 경로로 검토. 현재 FRED profiles에 4개 weekly ID는 없음.
+
+**진행률:** 조사 범위 100%(GitHub/공식/공개 소스의 현재 확인 가능 영역), 실제 기능 기존 중앙 기준 약 75%→75%(객관적인 종단 완료율 아님). 지난 39.12%/52.16%는 실제 통계가 없는 임의 입력 성공확률 곱; 확률 근거로 사용하지 않음. **이번 변경은 문서 계획 1파일, 실제 기능 코드·운영/PC/DB/D1/웹 0건**.
+
+---
+
+
 <!-- W04_20261116_VERIFIED_FULL_ROOT_CAUSE_CORRECTION -->
 ## 2026-11-16 W04 — 실Windows 최신 영수증 포함 전수 원인 정정
 
