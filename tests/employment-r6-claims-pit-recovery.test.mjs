@@ -54,6 +54,17 @@ test("W04 source revision disagreement never becomes a silent missing-key repair
  assert.equal(p.missingHistoryKeys,0);
  assert.equal(p.metadataEligibleMissingKeys,0);
 });
+test("W04 older matching HISTORY revision cannot hide newer conflicting revision",()=>{
+ const current=row(0,"AL"),old={...current,retrieved_at:"2026-11-09T10:02:32.682Z"},
+  newer={...current,source_hash:"b".repeat(64),value:1234,
+    retrieved_at:"2026-11-10T10:02:32.682Z"};
+ const result=inspectStateClaimsPitReconciliation({
+  currentRows:[current],historyRows:[old,newer],asOfIso:at});
+ assert.equal(result.status,"HOLD_REVISION_CONFLICTS");
+ assert.equal(result.historyMatchedKeys,0);
+ assert.equal(result.revisionDisagreements,1);
+ assert.equal(result.repairAuthorized,false);
+});
 test("W04 malformed or unproven source is not eligible for future History insertion",()=>{
  const original=row(0,"AL");
  for(const change of [
