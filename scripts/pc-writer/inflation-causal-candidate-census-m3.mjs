@@ -51,10 +51,15 @@ export function normalizeCensusM3Inventories(payload){
     if(String(row.us??'').trim()!=='1'){
       diagnostics.invalid++;continue;
     }
-    // time_slot_id is internal; time=YEAR is a filter rather than a month.
-    const date=monthDate(row.time_slot_date??row.time);
+    // time_slot_date can be empty although `time` carries the actual
+    // year-month. Neither is required to supersede a contradictory date.
+    const slotDate=monthDate(row.time_slot_date);
+    const timeDate=monthDate(row.time);
+    const date=slotDate??timeDate;
     const raw=String(row.cell_value??'').replace(/,/g,'').trim();
-    if(!date){diagnostics.invalid++;continue;}
+    if(!date||(slotDate&&timeDate&&slotDate!==timeDate)){
+      diagnostics.invalid++;continue;
+    }
     if(raw===''||raw==='-'||raw.toUpperCase()==='NA'||raw.toUpperCase()==='N'){
       diagnostics.missing++;continue;
     }
@@ -144,7 +149,15 @@ export async function collectCensusM3Inventories({base,censusKey,quotaFetch,now=
     if(!safeFile(archiveFile)||sha(fs.readFileSync(archiveFile))!==sourceSha256)
       throw fail('CENSUS_M3_ARCHIVE_READBACK_FAILED');
     archives.push({year:y,sourceSha256,archive:'raw/'+name});
-    const rows=normalizeCensusM3Inventories(payload);
+    // Treat years independently. An unavailable schema in one year cannot
+    // erase valid monthly observations from the other response.
+    let rows;
+    try{rows=normalizeCensusM3Inventories(payload);}
+    catch(e){
+      if(!['CENSUS_M3_HEADERS_INVALID','CENSUS_M3_SHAPE_INVALID'].includes(e?.code))throw e;
+      diagnostics.push({year:y,available:0,sourceShape:e.code});
+      continue;
+    }
     const matched=rows.filter(x=>Number(x.date.slice(0,4))===y);
     incoming.push(...matched);
     diagnostics.push({year:y,...rows.diagnostics,available:matched.length});
@@ -160,9 +173,16 @@ export async function collectCensusM3Inventories({base,censusKey,quotaFetch,now=
   const byDate=new Map([...(prior?.observations??[]),...incoming].map(x=>[x.date,x]));
   const observations=[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date));
   const latest=observations.at(-1)?.date??null;
+  const unavailable=diagnostics.filter(x=>x.sourceShape);
+  const coverage=unavailable.length?'PARTIAL_SCHEMA_UNAVAILABLE':
+    incoming.length?'OBSERVATIONS_AVAILABLE':'NO_USABLE_OBSERVATIONS';
+  // An all-invalid supplier response is a parser compatibility failure, not
+  // a provider transport failure. Keep both raw responses for diagnosis.
+  if(unavailable.length===2&&!observations.length)
+    throw fail(unavailable[0].sourceShape);
   if(JSON.stringify(prior?.observations??[])===JSON.stringify(observations)||!observations.length)
     return {status:'UNCHANGED',stored:false,providerRequests:2,count:observations.length,
-      latest,diagnostics,provenance:archives};
+      latest,coverage,diagnostics,provenance:archives};
   const backups=child(dir,'backups');
   if(prior){
     const before=fs.readFileSync(file),priorSha=sha(before);
@@ -179,7 +199,7 @@ export async function collectCensusM3Inventories({base,censusKey,quotaFetch,now=
     unit:'USD_MILLION_SA_NOMINAL',observations,provenance:archives};
   const fileSha256=atomic(file,doc);
   return {status:'SAVED_READBACK',stored:true,providerRequests:2,count:observations.length,
-    latest,diagnostics,sourceStoredAt:doc.sourceStoredAt,fileSha256,
+    latest,coverage,diagnostics,sourceStoredAt:doc.sourceStoredAt,fileSha256,
     sourceHashes:archives.map(x=>x.sourceSha256)};
 }
 
