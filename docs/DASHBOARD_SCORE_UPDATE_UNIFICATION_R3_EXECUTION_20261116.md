@@ -5,7 +5,7 @@
 - 착수 당시 전용 브랜치: `codex/ui-improvements` `43f943679b555387593d918088860ba5b882dcb6`
 - 인계받은 기존 근거: `DASHBOARD_SCORE_68_CONTENT_CONTRACT_INVENTORY_R1.md` (2026-11-10), `DASHBOARD_SCORE_RUNTIME_BASELINE_R1.md` (2026-11-10)
 - 당회 작업 범위: **현재 개발 소스의 UI 소비 구조 및 R1 계약 재사용**, 기능별 실제 갱신 계약 분류 착수. 원자료/DB/D1/Controller/예약/산식 변경 없음.
-- **진척 요약: 01–33 완료 (33/34 = 97.1% 고정 작업). D01–D27 소스 판정 27/27. 결함 원인군 N=2 확정으로 전체 42작업, 현재 추가 F1–F4 증거 6/8, 통합 39/42(92.9%).** 34/F4(A·B) 미완료. 이 소스 진행률은 Production 운영 완료율이 아니다.
+- **최신 재판정 진척: 고정 01–33 완료 (33/34 = 97.1%), 27개 소스 분류 완료. 운영에 실제 영향을 준 독립 결함군 N=1(D03 MarketParquet UI); 추가 F1–F3 PASS 3/4. 합계 36/38 = 94.7%, 남은 F4-B·34.** 이전 N=2/39÷42 기록은 당시 원장으로 보존하되, 2026-11-16 재검토에서 A군 운영 인과가 부정확했으므로 현재 진행률에는 포함하지 않는다. 전체 운영 종단 PASS와 구분.
 
 ## 1. 공통 실행 01–03 — 완료 근거
 
@@ -231,3 +231,21 @@
 - **새 결함 확정 0건:** 7개 READY 본문과 누락 예상 잠정 503은 정상적인 결과. 자산 버블 R10은 별도 허용 후보판본이며 D11 기록이 R9로 고정된 부분은 판본 구분이 필요한 문서 불일치로 기록하되 운영 산식·D1·API를 임의 수정하지 않는다.
 - **F4-A 상태:** 공개 7/7 READABLE/READY 확인, exact Production Deployment SHA·7개 D1 key/version/body readback 미완료. **F4-B 상태:** main UI source/CI와 잠정 API 503 확인, 공개 페이지 PC/모바일 수치·퇴역 UI 제거의 런타임 DOM 증거 미완료. **34:** F4-A/B 미완료에 따라 종결 보류. 전체 진행률은 **39/42 = 92.9% 유지**.
 - **다음 단일 실행:** Cloudflare 연결 권한 있는 승인된 읽기 경로에서 exact Production Deployment SHA(빌드와 별도)를 확인하고, 7개 D1 key/version/sourceStoredAt 및 PC/모바일 browser DOM readback을 검증한 뒤 34번 종결. 운영 권한이 없는 상태에서 Wrangler 직배포·DNS·DB 수정·새 예약·과금 서비스를 사용하지 않는다.
+
+
+## 18. F4·34 종료 Gate 필요성 재심사 — 2026-11-16
+
+**요구:** 웹디버그는 GPT 제품 변경으로 삭제된 기능이므로 작업 필요조건으로 설정하지 않는다. 기존 브라우저 대체 도구의 연결 실패를 근거로 웹디버그 복구·권한 조정·새 예약을 요구하지 않는다.
+
+**재판정 근거:** 당일 최신 main `2ab848ded4a02e34e5a9b2b2a8a1ab28d1bf11ac`에서 `worker/candidate-r52.ts`의 `PROJECTION_ROUTES[path]`가 `readProjectionResponse(request, env.DB_CORE,id)`로 App Router 이전에 상세 7경로를 직접 처리함을 원문 확인. `worker/projection-runtime-r52.mjs`에도 7개 라우트 키가 이미 존재. 실공개 GET 7개 모두 유효 READY payload로 응답한 기록(§17)을 재사용. PR #1165의 App Route 7파일 추가가 실제 화면 404를 고쳤다고 주장할 수 없으며, R3의 **'실제 잘못된 갱신/표시를 일으키는 독립 root cause'** 기준을 충족하지 못한다. 이력/커밋은 그대로 보존하고 불필요한 revert 및 재배포 금지.
+
+**현행 결함군 정정:** A (App Route 7개 누락) = `NON_BLOCKING_SOURCE_CLEANUP / RUNTIME_DEFECT_NOT_ESTABLISHED` → 결함군 N 산정에서 제외. D06/D07/D09–D13 7항목은 `RUNTIME_ROUTE_EXISTED / PUBLIC_READY` (source 판정 7개는 유지). B (D03 MarketParquet 확정/이력 UI 계속 활성) = 실제 표시 소스·공급자 금지 계약 불일치 1개 유지. D04 한국 등락 `NOT_CONNECTED`는 별도 소유 기능으로 미승격. 나머지 18개 `SOURCE_REVIEWED_RUNTIME_UNKNOWN`, 새로운 운영 결함 0건. 합계 7+1+1+18=27.
+
+**필수·불필요 판정:**
+- `F4-A` **해제(NON_REQUIRED)**: W06은 PC 수집기·원자료·D1 Writer·Queue의 데이터 계약을 수정하지 않았다. 동일 기능 공용 Worker Reader가 이미 정상 7/7 READY API를 제공한다. 내부 D1 key마다 원자료 해시/체크포인트를 일괄 감사해야만 UI 수정이 종료된다고 요구하는 것은 소유자 경계 이탈과 중복 검증이다. 개별 payload가 실제 오류를 반환하거나 변경한 게시 기능이 발견될 때만 해당 Owner의 한정된 readback을 요청한다.
+- `F4-B` **유지, 범위 축소**: 유일한 실제 UI 코드 변경 `app/market-breadth-strip.tsx`의 PR #1174/main 병합/CI PASS는 재사용한다. 다음 남은 객관적 증거는 **해당 수정이 실제 운영 정적 JS/Worker 버전에 적용됐는지** 확인하는 1건. Cloudflare exact deployment read 또는 현재 공개 번들에 퇴역 R2 참조가 없다는 asset readback 중 현실적으로 가능한 최소 방법을 선택하되 build success만으로 actual deployment 확정하지 않는다. 미국 provisional 503 `PROVISIONAL_NOT_CURRENT`는 정상 결측이며 새 PC 수집·가짜 점수·신규 공급자 요구 금지. 라이브 DOM 웹디버그·PC/모바일 화면 자동제어는 필수 Gate에서 제외하고 모든 기술 작업 이후 사용자 홈페이지 육안 최종 확인을 독립적으로 둔다.
+- `34` **필요, 경량화**: 27/27 분류, 실제 결함군 N=1, UI 소스·CI 및 운영 반영 상태를 1회 정리해 PASS/DEFERRED를 명시한다. F4가 확정 불가하면 34를 성공 완료라 오기하지 않고 `STATE_UNKNOWN/AUTOMATION_BLOCKED`를 기재하며 작업 전체를 재시작하지 않는다. 기록/인계만을 위한 추가 Controller·D1·원자료 전수 감사 금지.
+
+**진척률 정정:** 고정 33/34 + 유효 결함군 B의 F1,F2,F3 3/4 = **36/38 (94.7%)**. 남은 2건은 F4-B 최소 운영 적용 확인, 34 1회 종결. 과거 A군 F1–F3 코딩/CI 실적은 유지하나 실제 결함 추가 4작업으로 중복 계산하지 않는다. 이는 범위 재판정에 따른 분모/분자 정정이지 새 기능 구현 또는 실제 Production 검증 증거가 아니다.
+
+**다음 필수 행동 하나:** 웹디버그를 제외한 기존 승인 GitHub↔Cloudflare read-only/현재 공개 JS asset 증거로 PR #1174의 운영 반영 여부만 확인. 이 증거가 불가능하면 차단 사유와 미확인 범위를 정확히 남기고 34의 결론만 작성한다. 다른 원담당의 Core/Writer/D1/산식 소스 변경은 하지 않는다.
