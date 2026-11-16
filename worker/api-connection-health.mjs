@@ -50,14 +50,33 @@ export function summarizeApiConnectionHealth(snapshot,now=Date.now()){
   (e.observedFingerprintCount===null||nonnegative(e.observedFingerprintCount))&&
   nonnegative(e.observedHostCount)&&e.observedHostCount<=items.length&&
   nonnegative(e.endpointEvidenceEvents)&&nonnegative(e.endpointIncompleteEvents)&&
+  (e.independentObservedFingerprintCount===undefined||e.independentObservedFingerprintCount===null||nonnegative(e.independentObservedFingerprintCount))&&
+  (e.combinedObservedFingerprintCount===undefined||e.combinedObservedFingerprintCount===null||nonnegative(e.combinedObservedFingerprintCount))&&
+  (e.independentObservedHostCount===undefined||(nonnegative(e.independentObservedHostCount)&&e.independentObservedHostCount<=128))&&
+  (e.independentObservedCollectorCount===undefined||(nonnegative(e.independentObservedCollectorCount)&&e.independentObservedCollectorCount<=2))&&
+  (e.independentEvidenceEvents===undefined&&e.independentObservedCollectorCount===undefined||nonnegative(e.independentEvidenceEvents))&&
   items.every(item=>item.endpointFingerprints!==null)
   ?{coverage:'PARTIAL',observedFingerprintCount:e.observedFingerprintCount,
     observedHostCount:e.observedHostCount,endpointIncompleteEvents:e.endpointIncompleteEvents,
+    independentObservedFingerprintCount:e.independentObservedFingerprintCount??null,
+    independentObservedHostCount:e.independentObservedHostCount??0,
+    independentObservedCollectorCount:e.independentObservedCollectorCount??0,
+    independentEvidenceEvents:e.independentEvidenceEvents??0,
+    combinedObservedFingerprintCount:e.combinedObservedFingerprintCount??e.observedFingerprintCount,
     independentCollectorsCovered:false}:null;
  if(e&&!endpointEvidence)return {...UNKNOWN,checkedAt:snapshot.observedAt,reason:'INVALID_ENDPOINT_EVIDENCE'};
  if(endpointEvidence&&
     (endpointEvidence.observedFingerprintCount??0)!==items.reduce((sum,item)=>sum+item.endpointFingerprints,0))
   return {...UNKNOWN,checkedAt:snapshot.observedAt,reason:'ENDPOINT_EVIDENCE_MISMATCH'};
+ if(endpointEvidence){
+  const base=endpointEvidence.observedFingerprintCount??0,additional=endpointEvidence.independentObservedFingerprintCount??0;
+  const combined=endpointEvidence.combinedObservedFingerprintCount??0;
+  if(combined<base||combined<additional||combined>base+additional||
+     (additional===0&&endpointEvidence.independentObservedHostCount>0)||
+     (additional===0&&endpointEvidence.independentObservedCollectorCount>0)||
+     (additional>0&&(!endpointEvidence.independentObservedHostCount||!endpointEvidence.independentObservedCollectorCount)))
+   return {...UNKNOWN,checkedAt:snapshot.observedAt,reason:'ENDPOINT_EVIDENCE_MISMATCH'};
+ }
  const monitored=items.filter(x=>x.repeated);
  const normal=monitored.filter(x=>x.state==='normal').length;
  const failed=monitored.filter(x=>x.state==='failed'||x.state==='stale').length;

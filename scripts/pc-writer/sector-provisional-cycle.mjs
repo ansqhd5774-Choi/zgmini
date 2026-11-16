@@ -1,6 +1,7 @@
 import fs from 'node:fs';import path from 'node:path';import os from 'node:os';import {fileURLToPath} from 'node:url';
 import {loadLocalProviders} from './local-env.mjs';
 import {createQuotaFetch} from './quota-fetch.mjs';
+import {observeIndependentProviderFetch} from './provider-endpoint-fingerprint.mjs';
 import {localDatabase} from './local-db.mjs';
 import {publicFeedStore} from '../../worker/public-feed-store.mjs';
 import {loadSectorFearGreedR3RollingInputs} from './sector-fear-greed-r3-rolling-local.mjs';
@@ -47,7 +48,7 @@ export async function runSectorProvisional(base,{now=Date.now(),fetchImpl=fetch,
    url.search=new URLSearchParams({symbols:symbols.join(','),timeframe:'1Day',start:anchorDate+'T00:00:00Z',end:asOf,feed:'iex',adjustment:'split',limit:'10000'});
    // This CLI runs in its own Node process, outside collect-local's wrapped fetch.
    // Reserve against the same PC data root as R10 before every Alpaca request.
-   const sharedFetch=createQuotaFetch({base,originalFetch:fetchImpl,mode:'enforce'}).fetch;
+   const sharedFetch=observeIndependentProviderFetch(base,'SECTOR_PROVISIONAL',createQuotaFetch({base,originalFetch:fetchImpl,mode:'enforce'}).fetch);
    report.providerCalls=1;
    const r=await sharedFetch(url,{headers:{'APCA-API-KEY-ID':env.APCA_API_KEY_ID,'APCA-API-SECRET-KEY':env.APCA_API_SECRET_KEY},signal:AbortSignal.timeout(20000)});
    if(r.status===429){const error=Error('SECTOR_PROVISIONAL_HTTP_429');error.code='SECTOR_PROVISIONAL_QUOTA_DEFER';throw error;}

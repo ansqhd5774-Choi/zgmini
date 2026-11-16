@@ -82,6 +82,8 @@ export function buildApiConnectionHealthFromLog(base,now=Date.now(),{fileSystem=
  // collection-events schema and preserves prior Collector R44 source overlays.
  const routeLog=readProviderEndpointEvents(baseDir,{fileSystem});
  const matched=new Set(),complete=new Set(),seenRouteLines=new Set();
+ const independentIds=new Map(),independentCollectors=new Set();
+ let independentEvidenceEvents=0;
  let endpointEvidenceEvents=0,invalidEndpointEvents=0;
  if(routeLog.status==='OBSERVED'){
   for(const line of routeLog.lines){
@@ -94,6 +96,43 @@ export function buildApiConnectionHealthFromLog(base,now=Date.now(),{fileSystem=
     invalidEndpointEvents++;continue;
    }
    if(now-at>WINDOW_MS)continue;
+   if(record.collector!==undefined){
+    if(!['ALPACA_INCREMENTAL','SECTOR_PROVISIONAL'].includes(record.collector)){
+     invalidEndpointEvents++;continue;
+    }
+    for(const [host,routes] of Object.entries(record.endpointPaths).slice(0,128)){
+     if(!PUBLIC_HOST(host)||!routes||typeof routes!=='object'||Array.isArray(routes)){
+      invalidEndpointEvents++;continue;
+     }
+     const entries=Object.entries(routes);
+     if(entries.length>128){invalidEndpointEvents++;continue;}
+     const accepted=[];
+     for(const [id,entry] of entries){
+      if(!/^[a-f0-9]{32}$/.test(id)||!entry||!integer(entry.requests)||entry.requests<1||
+       !entry.statuses||typeof entry.statuses!=='object'||Array.isArray(entry.statuses)){
+       invalidEndpointEvents++;continue;
+      }
+      const statuses=Object.entries(entry.statuses);
+      if(statuses.some(([code,count])=>!(STATUSES.test(code)||code==='NETWORK_ERROR'||code==='PROVIDER_QUOTA_GUARD')||!integer(count))||
+       statuses.reduce((sum,[,n])=>sum+n,0)!==entry.requests){
+       invalidEndpointEvents++;continue;
+      }
+      // A quota guard can reject before any HTTP send: not evidence of a contacted endpoint.
+      if(statuses.every(([code])=>code==='PROVIDER_QUOTA_GUARD'))continue;
+      accepted.push(id);
+     }
+     if(!accepted.length)continue;
+     let set=independentIds.get(host);
+     if(!set){
+      if(independentIds.size>=128){invalidEndpointEvents++;continue;}
+      set=new Set();independentIds.set(host,set);
+     }
+     for(const id of accepted)set.add(id);
+     independentEvidenceEvents++;
+     independentCollectors.add(record.collector);
+    }
+    continue;
+   }
    for(const [host,routes] of Object.entries(record.endpointPaths).slice(0,128)){
     const key=record.at+'|'+host;
     if(!hostEventRequests.has(key)||matched.has(key)||!routes||
@@ -133,12 +172,25 @@ export function buildApiConnectionHealthFromLog(base,now=Date.now(),{fileSystem=
     lastOutcome:h.last?.outcome??'unknown',expectedIntervalMs:cadence};
   });
  const observedEndpointFingerprints=items.reduce((sum,item)=>sum+item.endpointFingerprints,0);
+ const independentObservedFingerprintCount=[...independentIds.values()].reduce((n,ids)=>n+ids.size,0);
+ const combined=new Map(items.map(item=>[item.host,new Set(hosts.get(item.host)?.endpointIds??[])]));
+ for(const [host,ids] of independentIds){
+  let saved=combined.get(host);
+  if(!saved){if(combined.size>=256)continue;saved=new Set();combined.set(host,saved);}
+  for(const id of ids)saved.add(id);
+ }
+ const combinedObservedFingerprintCount=[...combined.values()].reduce((n,ids)=>n+ids.size,0);
  return {version:1,scope:'external-provider-hosts',source:'PC_COLLECTION_EVENTS_FETCH_WRAPPER',
   coverage:'PARTIAL',observedAt:new Date(now).toISOString(),windowHours:336,
   endpointObservation:{type:'HTTP_METHOD_PATH_SHA256_PREFIX',coverage:'PARTIAL',
    observedFingerprintCount:observedEndpointFingerprints||null,
    observedHostCount:items.filter(item=>item.endpointFingerprints>0).length,
    endpointEvidenceEvents,endpointIncompleteEvents,
+   independentObservedFingerprintCount:independentObservedFingerprintCount||null,
+   independentObservedHostCount:independentIds.size,
+   independentObservedCollectorCount:independentCollectors.size,
+   independentEvidenceEvents,
+   combinedObservedFingerprintCount:combinedObservedFingerprintCount||null,
    independentCollectorsCovered:false},
   diagnostics:{endpointLogStatus:routeLog.status,endpointLogTruncated:routeLog.tailTruncated||routeLog.rowsTruncated,
    invalidEndpointEvents,reason:tailTruncated||rowsTruncated||invalidEvents||duplicateEvents||hosts.size>MAX_HOSTS?
