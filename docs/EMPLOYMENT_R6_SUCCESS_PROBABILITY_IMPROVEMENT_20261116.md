@@ -1,5 +1,29 @@
 # ZGMINI W04 고용 R6 — 성공 가능성 개선을 위한 소스·운영·게시 분리 실행계획
 
+<!-- W04_20261116_SUCCESS_IMPROVEMENT_SYNTHETIC_PIT_SCHEDULER_RECEIPT -->
+## 추가 오프라인 직접 실행 증거 — 재수집보다 PIT·Scheduler·게시 병목 구분이 우선
+
+2026-11-16 격리 Node.js 22.16.0에서 **원본 기능 main `employment-r6-feature-engine.mjs::stateClaimsBreadth`, `observation-reader.mjs::selectAsOfRevisions`의 PIT 자격조건, `scheduler.mjs::releasePlanForGroup`의 최신성 분기와 공개 API 8일 TTL**을 해당 GitHub 소스에서 전사한 독립 합성 모형으로 실행. 실제 저장소 전체 모듈 직접 실행/PC 실수집·DB는 아니며, 공적 공급자 GET/POST 요청 0.
+
+| 합성 경계 조건 | 격리 검증 결과 | 실제 필수 조치 |
+|---|---|---|
+| `STATE_INITIAL_CLAIMS` 51×600주 / **30,600행** 전부 정상 | 55주 선행구간 이후 **545개 주간 파생값**, 약 **1.33초** (격리 컨테이너·단일 실행) | 성능 최적화 우선 아님. 실PC SQLite/Reader 선택이 산식 전단에서 무엇을 잃는지 확인 |
+| 동일 30,600행, `scoreAsOf`가 해당 `retrievedAt` 이전 | PIT 선택 **0행** | 실제 결손이라면 연도 백필·0값 보간이 아니라 `availableAt/retrievedAt` provenance/기준시각부터 수정 판단 |
+| current raw 30,600행은 완전, PIT observationHistory의 **최신 주 1개 지역 한 행만** 없는 합성 상황 | 최근 파생 일자가 **2026-10-24 → 2026-10-17**로 뒤로 이동 | raw count PASS를 score READY로 착각하지 말 것. Reader `selectedPITRows/firstMissingExpectedDate` 메타 1회 필요 |
+| 52주 전 특정 지역의 4주 평균이 0 | 해당 주 파생값 산출 안 함(`pa===0` 공식 산식 보호) | 나누기 0을 임의 값으로 대체하면 승인 산식 변경. 결손의 종류만 기록 |
+| 초기 신규 청구만 최신, 계속 청구/IUR 오래됨 | **현 Scheduler `RELEASE_ALREADY_STORED`** / 계열별-신선도 후보는 DUE | Collector의 4계열 상태와 Scheduler 동일 계약을 유지해야 false 성공·수집 억제 방지 |
+| 신규/계속 청구 정상 1주차 | 계열별 후보가 `RELEASE_ALREADY_STORED`로 정상 판정 | 임의 uniform same-week 지연 기준은 부적격, 각 계열 공식 시차 확인 필요 |
+| 공개 저장물이 9일 경과 | 8일 TTL 조건에서 응답 만료 | 데이터 갱신 없이 저장시간만 새로 적거나 TTL 늘리지 말 것 |
+
+**운영 사이트 관측의 한계:** 현재 공개 `https://zgmini.kr/economic-indicators/employment/` 서버 HTML은 29행 모두 로딩 기본 대시 `—`·`R6 공개 저장값 확인 중`이며, **클라이언트 hydration/API 읽기 결과를 직접 확인하지 못했으므로 D1 29행 모두 비어 있다고 확정할 수 없다**. 이 경로는 이미 승인된 1년 공개 Writer의 실제 D1 exact readback와 API/UI 같은 원본 여부를 확인할 것.
+
+**예상 작업 성공률의 취급:** 지난 23.28%·29.85%·39.12%·52.16%는 특정 단계의 근거 없는 숫자를 바꿔 곱한 민감도 값에 불과하고, 원자료·승인 B 설치·공급자·PIT·게시의 실제 이력에서 추정한 확률이 아니다. 이번 새 합성 시험으로 **실제 운영 성공률을 상향하지 않음**. 유용한 지표는 `National 4/4, Writer installed_sha, selected PIT rows, score firstMissingExpectedDate, D1/public sameHash`의 다섯 개 PASS 영수증.
+
+**즉시 반영할 한 가지 작업 우선순위:** 이미 있는 통합 PR #1083을 현재 main 대비 최소 Provider/Collector/scheduler 변경과 회귀로 묶을 때 **계열별 최신성(Collector+Scheduler 일치)** 및 국가 원본 fail-closed를 동일 source change로 처리. PIT 과거 유효기간과 실제 29개 화면의 독립 게시 검증은 다른 작업자/공유 Writer 충돌 없이 병렬 진행. 51×600주 재백필·강제 재예약/승인 없는 자동 폴백은 실행하지 않는다.
+
+---
+
+
 **조사 기준** 2026-11-16 KST / 전용 `codex/employment-1y-reader-r1` / 공식 source 최신 main `0bc55c0d70306e660e054dee3095cd7aa2d9e0b8` / 제어 main `8cc5f1544e8b0d067c27fd8441193078bde4f341`. 현재 전용 브랜치 HEAD 조사 시작 `491e6185cc883325933c9899e60c437ed58be4ac`. **이번 작업은 READ_ONLY 조사·문서 작성만 수행**, Provider/Collector/Controller·운영 PC·SQLite·D1·배포·Scheduler 변경 0. 기능 중앙 마지막 유효 진행률 **75%→75%**.
 
 ## 0. 핵심 — 지난 '23.28%'를 예측치로 사용하지 말 것
