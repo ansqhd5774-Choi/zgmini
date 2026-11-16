@@ -30,7 +30,14 @@ export async function GET(request:Request){
      ||typeof point?.score!=='number'||!Number.isFinite(point.score)||point.score<0||point.score>100)
     return Response.json({status:'INVALID_STORED_SCORE'},{status:503});
    const observedAt=new Date(t).toISOString();
-   all.set(observedAt,{observedAt,score:point.score,asOfDate:typeof point?.asOfDate==='string'?point.asOfDate:null});
+   const asOfDate=typeof point?.asOfDate==='string'?point.asOfDate:null;
+   const earlier=all.get(observedAt);
+   // A replay of the same calculation time is idempotent. Conflicting
+   // values at one timestamp mean the stored history is inconsistent: never
+   // silently choose whichever row happened to come last.
+   if(earlier&&(earlier.score!==point.score||earlier.asOfDate!==asOfDate))
+    return Response.json({status:'INVALID_STORED_SCORE'},{status:503});
+   if(!earlier)all.set(observedAt,{observedAt,score:point.score,asOfDate});
   }
  }
  let points=[...all.values()].sort((a,b)=>a.observedAt.localeCompare(b.observedAt));
