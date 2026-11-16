@@ -61,5 +61,6 @@ export function createQuotaFetch({
   }
   return recordedFetch(input,init,provider);
  };
+ if(secGate)Object.defineProperty(fetch,Symbol.for('zgmini.sec.permit.fetch.v1'),{value:true});
  return {fetch,ledger,summary:()=>ledger.summary()};
 }
