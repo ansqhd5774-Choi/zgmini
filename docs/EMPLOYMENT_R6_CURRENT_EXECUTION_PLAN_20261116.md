@@ -24,7 +24,7 @@
 
 **인계 확인 기준:** 다른 작업자는 이전 대화 없이 지정된 두 파일만으로 `마지막 완료 세부 ID·실제 증거/해시·현재 STOP 사유·실제 다음 세부 ID·해제 조건`을 특정할 수 있어야 한다. 그 중 하나라도 기록에 빠지면 인계는 `INCOMPLETE`이다. 무관한 추가 진단·전체 재검사로 이를 대체하지 않는다.
 
-**현재 기준선(2026-11-17):** `23/72 DONE`, `49/72 미완료`(31.9%). PIT-03 8/8 완료 및 신규 승인 A [#1799](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1799)의 저장 Current 600주×51 공식 지역 연속성 PASS로 `PIT-04-01` 완료. 51지역 각 최신 Current 관측일은 2026-10-24이며 실제 최근 원자료/PIT History의 가용 시각은 별도 미검증. 다음 하나는 `PIT-04-02` 최신 History revision 분리다. 문서 반영 자체를 추가 단계로 계산하지 않는다.
+**현재 기준선(2026-11-17):** **24/72 DONE(33.3%)**, 48/72 미완료. PIT-03 8/8과 신규 승인 A [#1799](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1799)의 저장 Current 600주×51지역 최신 관측일(PIT-04-01) 및 545개 엄격 52주·4주 날짜 참조창(PIT-04-06) 실측 완료. 두 작업은 **Current 원자료 범위**이며 과거 History TRUE_PIT, 분모 null·zero 품질·최근 발표 반영 완료가 아니다. 다음 필수 작업은 여전히 `PIT-04-02` History 최신·이전 개정 분리다.
 
 ## 1. 완료 목표와 운영 계약
 
@@ -75,7 +75,7 @@
 
 - **수집 → PC 원자료 저장 → 계산 → D1 공개 → API/UI 전달:** `5/5` 완료(해당 전달 경로에 한정).
 - **29개별 점수:** `28/29` (96.6%), 최근 유효 `22/29`, 1Y 차트 READY `22/29` — 각각 다른 지표.
-- **잔여 PIT 10개 상위 범주 / 72개 세부 작업:** `23/72` DONE(31.9%), `49/72` 미완료. `PIT-03` 8/8, `PIT-04` 1/8 완료; 다음 `PIT-04-02`는 History revision·PIT 시각 근거로 판단한다. 기존 전달 경로 5/5와 분모를 합산하지 않는다.
+- **잔여 PIT 10개 상위 범주 / 72개 세부 작업:** `24/72` DONE(33.3%), `48/72` 미완료. `PIT-03` 8/8, `PIT-04` 2/8 완료(01·06). `PIT-04-02`와 분모 null 검사는 실제 History/값 증거로 별도 진행한다. 기존 전달 경로 5/5와 분모를 합산하지 않는다.
 - 이번 문서 작성/관리만으로 PIT 단계·운영 사이트 수치를 진척 처리하지 않는다.
 
 ## 6. 역할·공유 자원
@@ -85,21 +85,21 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 
 ## 7. 72개 세부 실행 항목 — 실제 작업 단위별 확장 (2026-11-16)
 
-> **계수 정정 및 최신 상태:** PIT-01~10은 상위 10개, 총 72개 세부 작업이 실제 분모. PIT-01 7 + PIT-02 7 + PIT-03 8 + PIT-04-01 1 = **23/72 DONE, 49개 미완료(31.9%)**. `PIT-04-01` 완료는 #1799의 공식 51지역 최신 관측일·600주 저장 Current 근거이며, DB History 복구/PIT-as-of·29번째 점수/게시 성공을 뜻하지 않는다.
+> **계수 정정 및 최신 상태:** PIT-01~10은 상위 10개, 총 72개 세부 작업이 실제 분모. PIT-01 7 + PIT-02 7 + PIT-03 8 + PIT-04-01/06 2 = **24/72 DONE, 48개 미완료(33.3%)**. #1799 Current 관측일 51지역·545개 52주/4주 참조창의 실제 원자료 시간 범위만 인정한다. DB History 복구/PIT-as-of·개별 값/분모 숫자 유효성·29번째 점수/게시 성공은 미완료다.
 
 | 상위 범주 | 세부 작업 수 | 완료 | 미완료 | 현재 상태 |
 |---|---:|---:|---:|---|
 | PIT-01 기존 운영 완료 증거 확정·재사용 | 7 | 7 | 0 | DONE |
 | PIT-02 소스 계보 판정기·격리 회귀 완료 | 7 | 7 | 0 | DONE |
 | PIT-03 현재 운영 PC의 실제 PIT 결손 확보 | 8 | 8 | 0 | DONE (PC #1786/#1787 읽기 전용 PASS) |
-| PIT-04 지역별·주별 원자료와 PIT 정합성 분류 | 8 | 1 | 7 | IN_PROGRESS — PIT-04-02 History revision |
+| PIT-04 지역별·주별 원자료와 PIT 정합성 분류 | 8 | 2 | 6 | IN_PROGRESS — PIT-04-02 History revision |
 | PIT-05 복구 가능성 판정·최소 운영 승인 설계 | 8 | 0 | 8 | DEFERRED (선행 근거 필요) |
 | PIT-06 선별 복구 코드·fixture 회귀·시뮬레이션 | 8 | 0 | 8 | DEFERRED (선행 근거 필요) |
 | PIT-07 승인된 PC의 최소 History 복구·원장 | 8 | 0 | 8 | DEFERRED (선행 근거 필요) |
 | PIT-08 저장 자료 기반 계산·로컬 결과 재검증 | 6 | 0 | 6 | DEFERRED (선행 근거 필요) |
 | PIT-09 기존 D1 게시기와 읽기 결과 일치 | 6 | 0 | 6 | DEFERRED (선행 근거 필요) |
 | PIT-10 Production API/UI 검증·종결 판정 | 6 | 0 | 6 | DEFERRED (선행 근거 필요) |
-| **합계** | **72** | **23** | **49** | **31.9% · 세부 작업 기준** |
+| **합계** | **72** | **24** | **48** | **33.3% · 세부 작업 기준** |
 
 **완료 판정 원칙:** 모든 행에서 입력/실행과 합격 조건을 확인해야 한다. 시뮬레이션과 실제 PC 설치/SQLite 수정/D1 게시를 하나의 완료 증거로 합치지 않는다. 조건 불충족은 STOP/DEFERRED로 유지하며, 예약 자연 검증·임의 데이터 보간·신규 공급자 호출은 잔여 단계에 추가하지 않는다.
 
@@ -140,7 +140,7 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 | PIT-03-07 | Current·History·후보 누락/충돌 총계 획득 | #1787 실제 Core+candidate PIT aggregate | Current 40,726, History 38,753, missing 2,880, matching/meta 2,625, unsupported 255, candidate conflicting 14; 11/07 과거 결과와 날짜 구별 | DONE |
 | PIT-03-08 | 자료가 부족하면 승인된 기존 A의 최소 메타 조회 적합성 평가 | `controller/employment-r6-candidate-readonly.mjs`·`employment-r6-collection-evidence-readonly.mjs` | stage A는 PIT aggregate, evidence A는 Current/raw snapshot만 제공; 주차별 History-asOf 전체 검증 대체 불가·무근거 B 금지 | DONE |
 
-### PIT-04 — 지역별·주별 원자료와 PIT 정합성 분류 (8개, 1 DONE · 7 TODO)
+### PIT-04 — 지역별·주별 원자료와 PIT 정합성 분류 (8개, 2 DONE · 6 미완료)
 
 | 세부 ID | 실제 실행·분석 작업 | 입력·근거 | 완료 판정 / 결과 | 상태 |
 |---|---|---|---|---|
@@ -149,7 +149,7 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 | PIT-04-03 | Current와 최신 History의 값·sourceHash 정확 대조 | 관측키·원본 해시 | 정확 일치/누락/상충을 독립 버킷으로 분리 | TODO |
 | PIT-04-04 | availableAt·retrievedAt·기록 시각의 PIT 적격성 검산 | 공식 관측 시각·DB 메타 | 미래 가용 데이터를 과거 TRUE_PIT로 승인하지 않음 | TODO |
 | PIT-04-05 | 저장 raw snapshot 및 요청 원장에 원본 해시 귀속 확인 | 원자료 raw_snapshot·수집 Run | 동일 응답 출처와 기록시각 확인·불명 출처 HOLD | TODO |
-| PIT-04-06 | 52주 참조 및 4주 계산에 필요한 주차 실측 | 기존 산식/관측일 일정 | 첫 부족 비교주차·필요 선행 구간 규명 | TODO |
+| PIT-04-06 | 52주 참조 및 4주 계산에 필요한 주차 실측 | 실PC #1799 저장 Current 600/600주×51지역 완전, strict52 545주 / firstWindowBreak=null / 10y 577주 필요 | 55주 선행 참조(2015-05-02~2016-05-14), 첫 계산 가능 날짜 2016-05-21~최근 저장 관측일 2026-10-24의 545주 **날짜/지역 창 완전성** 확인; History as-of·분모 값 품질은 PIT-04-02/04/07 별도 | DONE |
 | PIT-04-07 | 지역별 분모 0·null·missing 원칙 확인 | 실제 관측 수·데이터 계약 | 0을 임의 보간하거나 결측으로 둔갑시키지 않음 | TODO |
 | PIT-04-08 | 재현 가능한 키·충돌 키·출처 불명 키 분리표 확정 | PIT-04 앞 7개 결과 | 원자료 유효 주차·충돌 건수·복구 제외 키 증거화 | TODO |
 
@@ -283,3 +283,10 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 - 고정 51개 공식 지역의 최신 600 관측주를 DESC 조회한 실제 SQLite 집계 `complete51Weeks=600`, `incompleteWeeks=0`, 최신 `2026-10-24` 주차 51행·고유 51지역·미등록 0의 완전주. 이는 모든 공식 지역의 최대 **Current 관측일**이 2026-10-24임을 집합 논리로 입증한다. `fullTenYearRawCoverage=RAW_PRECONDITIONS_COMPLETE`는 577주×51지역 원자료 충족만 의미하고 과거 실제 `History` PIT 진실성은 미입증. 최신 저장 이후 발표 여부·2026-11 현재 최신성을 자동 승인하지 않는다.
 - 이 실측이 기존 Draft #1791 `regionLatest` 출력의 추가 운영 설치 없이도 `PIT-04-01`의 목표를 충족하므로 **그 Draft를 본 단계 필수 조건에서 제외**한다. #1791은 아직 미병합/미설치, 공통 Controller 변경은 수행하지 않는다.
 - **변경 상태: PIT-04-01 DONE, 전체 23/72(31.9%), 49개 미완료.** 다음 `PIT-04-02` 관측일×지역 최신 `History` revision 분리. 상세 원본 [진행 기록 §17](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md). 공급자/DB/D1/웹 운영 변경 0.
+
+
+### 2026-11-17 후속 PIT-04-06 52주·4주 저장 Current 참조창 확인
+
+- 독립 작업 `PIT-04-06`은 기존 승인 A [#1799](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1799) Run 43904242672의 같은 읽기 전용 SQLite 결과로 완결: `sampledWeeks=600`, `complete51Weeks=600`, `strict52WeekCandidateCount=545`, `firstWindowBreak=null`, `latestWindowBreak=null`; 55주 선행 참조 후 2016-05-21~2026-10-24 날짜/지역 완전주. `fullTenYearRawCoverage=RAW_PRECONDITIONS_COMPLETE`는 필요 577주×51지역 저장 Current 전제만 가리킴.
+- `PIT-04-06` **DONE**, `PIT-04` 2/8, 전체 **24/72 DONE(33.3%), 잔여 48**. PIT-04-02 History 최신 revision과 04-07 0/null/blank 값/분모는 이번 완료 범위 밖이다. 자세한 실행 증거·별도 source CI 실패 및 수정은 [진행 원장 §18](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md)에 보존.
+- 앱 격리 코드 검증: [Draft PR #1195](https://github.com/ansqhd5774-Choi/zgmini/pull/1195) 소스 동일시각 변경된 hash는 암호해시 정렬로 최신본 단정 금지. 최초 Node CI #43906302719의 공백값 2 실패 후 코드를 수정한 최신 `48c5e61d` CI #43906987544 상태를 실제 재조회 후 PASS/FAIL 별도 기록. **앱 main/실PC 반영 없음**.
