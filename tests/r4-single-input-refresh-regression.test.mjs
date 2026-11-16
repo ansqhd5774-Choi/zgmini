@@ -138,3 +138,34 @@ test('R4: actual temporary SQLite input storage keeps nine valid last-good recor
 });
 
 function awaitedPrevious(value){return value}
+
+test('R4: late/truncated credit response cannot replace a newer verified observation date',()=>{
+ const prior=previous();
+ prior.body.series.NFCICREDIT=row('2026-11-12',42);
+ assert.throws(()=>mergeSuccessfulMacroCredit(prior,credit('2026-11-05',48),now),
+  /MACRO_CREDIT_OBSERVATION_REGRESSION/);
+ assert.deepEqual(prior.body.series.NFCICREDIT,row('2026-11-12',42));
+});
+
+test('R4: same-date official correction remains accepted, older history rows do not invalidate a newer endpoint',()=>{
+ const prior=previous();
+ prior.body.series.NFCICREDIT=[
+  {observationDate:'2026-11-01',value:41},
+  {observationDate:'2026-11-12',value:42},
+ ];
+ const response={status:'READY_CURRENT_VINTAGE',series:{NFCICREDIT:[
+  {observationDate:'2026-11-01',value:43},
+  {observationDate:'2026-11-12',value:43.5},
+ ]}};
+ const merged=mergeSuccessfulMacroCredit(prior,response,now);
+ assert.deepEqual(merged.series.NFCICREDIT,response.series.NFCICREDIT);
+ assert.equal(merged.seriesStoredAt.NFCICREDIT,now);
+});
+
+test('R4: later published observation advances normally with preserved old series clocks',()=>{
+ const prior=previous();
+ prior.body.series.NFCICREDIT=row('2026-11-12',42);
+ const merged=mergeSuccessfulMacroCredit(prior,credit('2026-11-13',44),now);
+ assert.equal(merged.series.NFCICREDIT[0].value,44);
+ assert.equal(merged.seriesStoredAt.PAYEMS,now-hour);
+});
