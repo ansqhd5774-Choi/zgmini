@@ -208,3 +208,26 @@
 - **모의시험 통과 26/27(96.3%)**은 운영 성공률이 아님: F4 A 7 정상+9 안전변형=16 PASS, PARTIAL body에 HTTP200으로 전송되는 사전정의된 엄격 READY 기대 1건은 `CAUTION`; F4 B 10/10 PASS. 화면에서 PARTIAL 본문까지 READY로 오인하는지는 실제 UI 소비 검증 필요.
 - **예상 무수정 1차 실운영 종결 성공률: 67%(주관적 가정, 통계적 실측 아님).** 구성 가정: exact Deployment/실제 동기화 90%, 공개 D1 7개 유효·신선/허용 부분상태 증명 80%, UI/모바일·퇴역 화면 제거 95%, 최종 보고 98%. 공통 배포 리스크는 A/B에 중복 곱하지 않음; 0.90×0.80×0.95×0.98=0.67032. 명목 범위 60–80%. 실제 D1 readback을 확보하면 갱신 필요. 조건부(Deployment+D1 증명 이후) 종결은 약 93%(0.95×0.98).
 - **미완료 실제 3개:** `F4-A` 운영 7 API/D1/sourceVersion 동치, `F4-B` exact Deployment 및 미·한 UI 육안/DOM 자동 검증, `34` 실제 증거 대조 종결. 현재 **39/42(92.9%)**이며 상기 시뮬레이션은 F4 실운영 완료로 집계하지 않음. 공개 API를 도구에서 열지 못한 것은 HTTP 실패의 증거가 아니라 도구 접근 제한으로 기록. PC 수집/Writer/DB/스케줄러 및 TTL/산식 수정 없음.
+
+
+## 17. W06 운영 공개 조회 — 2026-11-16 21:11~21:15 KST (부분 실증)
+
+- 기준 원격 `main`: `2ab848ded4a02e34e5a9b2b2a8a1ab28d1bf11ac` (GitHub 직접 재확인). UI PR #1174 merged; GitHub CI check/verify/notify = SUCCESS, Cloudflare Git Integration candidate Worker build = SUCCESS (ID `5d1da6ad-ea63-4b87-964a-144d3756dbb5`, version `56d96b47-6dd9-43a6-b9db-572fda63b6b8`). Worker 후보 build는 `zgmini.kr` 실시간 Production Deployment ID와 다르므로 exact 배포 성공으로 확정하지 않는다.
+- **실제 공개 GET 7/7 점수 본문 READY (연결 증거, F4-A 완결 아님):**
+
+| 공개 URL | 관측된 status | score | asOfDate | 근거/한계 |
+|---|---|---:|---|---|
+| /api/inflation-detail | HTTP 200, payload READY | 57.5188 | 본문 전체는 재조회하지 않음 | Browser Use public GET; `x-public-projection: STORED`, `x-projection-source-at: 2026-11-16T12:05:24.124Z` |
+| /api/recession-detail | HTTP 200, payload READY | 43.8261 | 2026-10-01 | 같은 Browser Use GET·저장 source-at 헤더 |
+| /api/credit-risk-detail | payload READY (JSON 본문) | 68.36376193103824 | 2026-11-16 | Firecrawl uncached public scrape, HTTP 헤더 별도 미회수 |
+| /api/earnings-recession-detail | payload READY (JSON 본문) | 84.6875 | 2026-11-16 | 동일 공개 JSON |
+| /api/asset-bubble-detail | payload READY (JSON 본문) | 22.57324252737245 | 2026-11-12 | `ASSET_BUBBLE_R10_CANDIDATE` (현재 운영 후보), 이전 R9 소스 계약과 분리 |
+| /api/debt-risk-detail | payload READY (JSON 본문) | 72.33404015925221 | 2026-11-16 | 동일 공개 JSON |
+| /api/supply-shock-detail | payload READY (JSON 본문) | 35.66743835256716 | 2026-11-16 | 동일 공개 JSON |
+
+- `x-projection-source-at`는 저장 원본 기준 시각이지 Cloudflare 배포시각·게시시각이 아니다. 임의로 비교/치환하지 않음. 공식 API 응답은 공급자 재수집·로컬 SQLite/D1 직접 SELECT가 아니다. 7개 엔드포인트에서 점수 본문이 읽힌다는 사실은 확인하되 개별 D1 sourceVersion/checkpoint와 raw-payload hash의 직접 동치는 **미확인**.
+- **미국 잠정 GET:** `/api/market-breadth?market=usa&phase=provisional`는 HTTP 503, `reason=PROVISIONAL_NOT_CURRENT`. 승인 유효 슬롯을 표시하지 않는 의도된 결측 처리이며 'HTTP 장애'로 집계하지 않는다. MarketParquet 확정/이력 복구는 금지.
+- **UI 실측 접근:** `https://zgmini.kr/` 공개 정적 HTML은 200. Browser Use 실제 JavaScript 페이지 로딩은 `ERR_SOCKS_CONNECTION_FAILED`로 실패하여 UI 카드의 현재 DOM 검증 미확인. 별도 uncached HTML은 받았으나 `data-market=usa/korea`의 hydration 후 DOM이 포함되지 않음; Firecrawl interactive 시도도 timeout. 네트워크/브라우저 자동화 접근 제약 `AUTOMATION_BLOCKED`와 사이트 런타임 장애 `RUNTIME_FAILED`를 혼동하지 않는다.
+- **새 결함 확정 0건:** 7개 READY 본문과 누락 예상 잠정 503은 정상적인 결과. 자산 버블 R10은 별도 허용 후보판본이며 D11 기록이 R9로 고정된 부분은 판본 구분이 필요한 문서 불일치로 기록하되 운영 산식·D1·API를 임의 수정하지 않는다.
+- **F4-A 상태:** 공개 7/7 READABLE/READY 확인, exact Production Deployment SHA·7개 D1 key/version/body readback 미완료. **F4-B 상태:** main UI source/CI와 잠정 API 503 확인, 공개 페이지 PC/모바일 수치·퇴역 UI 제거의 런타임 DOM 증거 미완료. **34:** F4-A/B 미완료에 따라 종결 보류. 전체 진행률은 **39/42 = 92.9% 유지**.
+- **다음 단일 실행:** Cloudflare 연결 권한 있는 승인된 읽기 경로에서 exact Production Deployment SHA(빌드와 별도)를 확인하고, 7개 D1 key/version/sourceStoredAt 및 PC/모바일 browser DOM readback을 검증한 뒤 34번 종결. 운영 권한이 없는 상태에서 Wrangler 직배포·DNS·DB 수정·새 예약·과금 서비스를 사용하지 않는다.
