@@ -1,5 +1,27 @@
 # ZGMINI W04 고용 R6 — 성공 가능성 개선을 위한 소스·운영·게시 분리 실행계획
 
+<!-- W04_20261116_PR1083_MERGE_FALSE_BLOCKER_CORRECTION -->
+## 2026-11-16 W04 성공률 보완 재조사 — **PR #1083 직접 병합 장애 오판 정정**
+
+**직접 3점 대조 실증:** PR #1083 HEAD `21b3930c091b37edbb152bb73920bdf46e1a9ebc`, PR base snapshot `643b7c7c4372ffad552443fc312c6cb1b944e2fc`, 최신 main `7bf75fd77123e012bffd3538d472ac5910e64dd3`. [PR #1083 GitHub REST metadata](https://api.github.com/repos/ansqhd5774-Choi/zgmini/pulls/1083)는 `mergeable=true`, `mergeable_state=clean`, `rebaseable=true`로 직접 조회됐다. 별도 `get_pr_info`가 `mergeable=false`를 반환하여 양 경로 간 메타가 불일치한다. **PR 변경파일 9개 전체를 base→main blob으로 실측한 결과 기존 4파일의 blob은 동일, PR이 추가하는 5파일은 base/main 양쪽에 모두 없음**. 또한 `main`이 PR base 이후 57 commits 전진한 변경 파일 99개에 #1083 변경 경로 9개 중 **겹침 0개**. 따라서 **실제 해당 9파일 병합 충돌이라고 단정했던 이전 장애 보고는 철회**한다. GitHub 리뷰/승인·보호 조건 및 실제 작성 소스 변경은 별개이고, PR이 Draft이므로 무승인 main 병합 금지.
+
+| 구분 | 검증한 사실 | 실질적인 보완 |
+|---|---|---|
+| PR conflict | main vs PR base 9/9 해당 경로 불변, REST `clean` | 충돌 진단 무한 반복 중단. 기존 검증된 3 source+1 수정test+5 신규tests를 최소 영향만 통합. 설치 전 exact source commit 확인 |
+| Source CI | PR #1083 CI 완료/성공이지만 `tests/w04-eta539-official-51state-once.test.mjs`는 `GITHUB_HEAD_REF=support/w04-eta539-live-51state-prework-20261115`에서만 실행되도록 조건화 | PR #1083의 CI 성공을 **실제 DOL GET 안정성 검증으로 오인 금지**. 이미 확인된 실PC 51×600주 증거 재사용 |
+| 공식 DOL 공급자 | 2026-11-16 `https://oui.doleta.gov/unemploy/claims.asp` 웹 GET에서 `Unable to connect / SQLSTATE=HY000 / Informix Invalid ASF assoc_id` 실제 확인(웹 조회). **실PC 11/15 POST와 동일 원인 확정은 아님** | #1083 National 200 HTML/nonXML/부분 XML 보호 + 마지막 유효 snapshot 보존. 새 safe HTTP/format/hash 메타는 실제 운영 코드 적용 후 수집 원장에서만 회수. 무단 6회 재시도 금지 |
+| PR 미완성 가드 | parser는 `<week>` fragment 수용/4계열 시계열 전체 존재 판단, 4계열별 최신성 분리 안 됨, Collector·Scheduler Initial-only, 동시실패 상위 원인 은닉 | **공식 문서 루트, 날짜, count/IUR 숫자, 상충중복, 계열별 정상 발표 시차**를 필요한 최소 provider/collector/scheduler 회귀에 추가. 과도한 인위적 date gate 금지 |
+| 운영 PC | #1551 설정 2개 ENABLED/approved checkout 일치이지만 실행 중 Core source 미증명; #1403 51지역×600주 raw 완료 | 고용 파일 정확 범위의 현재 preimage/source SHA와 Core 실행 계보만 A read-only 증거 1회 회수. 신규 600주 backfill 금지 |
+| PIT/게시 | 종합 score 29/29 READY는 개별지표 1Y 공개의 무조건적인 선행조건 아님. 기존 public 8일 TTL·same body UNCHANGED 보호 있음 | **29개 개별지표 부분 상태 게시와 종합점수 최종 승격을 분리**, 실데이터 원본 시각·D1 hash·Production API/UI 재조회. 무근거 time bump 금지 |
+| 보조 FRED | 기존 FRED transport/키/쿼터 있지만 4 weekly IDs는 승인된 profiles 외 | DOL 장기 장애 시 사용자의 공급자/PIT/권리 명시 승인 뒤만 검토 |
+
+**성공률 수치의 근거:** 9/9 blob 일치와 REST clean은 **이 변경 집합의 병합 충돌 위험이 낮다는 검증 증거**일 뿐 전체 설치·수집·계산·공개 성공확률이 아님. 이전 **39.12%**는 단계마다 미측정 가정확률(.95×.85×.60×.85×.95)로 만든 설명용 민감도다. **이번 조사로 실측 예상 성공률이 39%에서 다른 숫자로 상승했다고 주장하지 않는다.** 공급자 정상 응답률/운영 설치 success 표본 부족으로 종단 성공확률 측정 불가능.
+
+**NEXT 1**: W04 원담당의 최신 main 기준 기존 #1083 필요 소스/관련 tests **수정범위만 반영**, Collector↔Scheduler 계열별 freshness·root/현장 실패 메타·dual-failure 최소 회귀/CI. 중앙 PC Owner는 독립 병렬로 정확 고용 파일 preimage·현재 sourceSHA/활성 Task 계보·기존 National 실패 원장 **안전한 메타만 읽기**. source/CI 완료≠실PC B 설치·D1게시 완료. **이번 작업은 계획 문서 변경만 했고 기능 코드/운영 자원 변경 0**.
+
+---
+
+
 
 <!-- W04_20261116_17CASE_RELIABILITY_MERGE_TTL_FIXTURE -->
 ### 2026-11-16 W04 업데이트 — 격리 17시나리오, 병합·TTL·테스트 호환성
