@@ -35,7 +35,7 @@
 | 마지막 검증 완료점 | 앱 QFR [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175) main 병합 faa89cfbe8b2aeabcbd8b8e9747cc07620f9eff4; 제어 B [PR #1762](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1762) main 병합 8c67a6c9e9e778278259593d0eb35b2b0e2a05ea. 앱 CI #43892753705 4483 PASS/0 FAIL, 제어 CI #43892670904 22/22 PASS 및 C996 PASS. BEA #1183 CI 별도 PASS/미병합. 운영 B 승인·PC 실행·D1 원격 게시·UI 실증은 미완료 |
 | 재사용할 기존 근거 | QFR 원자료 ZIP의 PC SQLite 저장·계산 기존 유효 증거; 앱 QFR 3-pin [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175) 소스/CI 완료, `main` 미병합 |
 | 현재 최초 실제 미완료 조건 | QFR 게시기 소스는 양쪽 main에 병합 완료. 하지만 제어 main의 approvals/publications/<requestId>.json manifest 디렉터리는 NOT_FOUND; 별도 B 승인 Issue·owner 승인 댓글·운영 Windows 두 checkout/config SHA 일치·D1 효과 미입증. Workflow flag의 실값은 조회 불가로 UNKNOWN, 게이트 조건 자체는 확인. 기존 일반 Writer B D1 금지 유지 |
-| 다음 필수 실행 하나 | R6-04: QFR 단일키 B 승인 manifest/별도 owner 승인 Issue·feature flag·PC publisher/main 및 승인 operational source SHA를 정규 경로로 결속. B 효과 승인 전 PC/D1 쓰기 금지. 승인 이후 기존 저장 QFR 1키 게시→D1 body/sourceVersion/stored_at 실제 readback→GET/UI. 이미 끝난 앱/제어 source main 병합 재실행 금지 |
+| 다음 필수 실행 하나 | R6-04: §6의 앱 10파일 고정 source hash 재사용. QFR 단일키 B 승인 manifest/별도 owner 승인 Issue·feature flag·PC publisher/main 및 승인 operational source SHA를 정규 경로로 결속. B 효과 승인 전 PC/D1 쓰기 금지. 승인 이후 기존 저장 QFR 1키 게시→D1 body/sourceVersion/stored_at 실제 readback→GET/UI. 이미 끝난 앱/제어 source main 병합 재실행 금지 |
 | 현재 완료율 증거 | 82개 전체 DONE 분모·분자는 아직 단계별 실제 종단 검증 미확정. 기존 14단계 종단 완료는 마지막 확인 0/14. 미래 발표 관찰 R6-15는 DEFERRED |
 | 최종 갱신 식별 | 이 문서의 **최신 원격 브랜치 HEAD 및 Git blob SHA를 재조회**해 근거로 보고한다. 고정된 과거 SHA를 현행값으로 복사하지 않는다 |
 
@@ -92,7 +92,7 @@
 | R3-15 | 적격 판정 시 SEC XBRL 원자료 저장·기간 정규화·중복 제거 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R3-16 | 저장자료 계산 결정성·SHA 계보·결측·0·개정·stale 검증 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R4-01 | C 전용 독립 D1 키·허용목록·공개 데이터 계약 확정 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
-| R4-02 | 기존 승인 공통 B 경로 확인 및 QFR·BEA 단위이익 exact-key 연결 | `SOURCE_MAIN_CI_PASS` | 제어 B 게시 실행기·승인 검증·비활성 workflow 8파일 [PR #1762](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1762) main 병합 SHA 8c67a6c9e9e778278259593d0eb35b2b0e2a05ea. Node CI #43892670904 22/22 PASS·C996 PASS. QFR 승인 manifest/별도 owner 승인·PC 실효과는 없음 |
+| R4-02 | 기존 승인 공통 B 경로 확인 및 QFR·BEA 단위이익 exact-key 연결 | `SOURCE_MAIN_CI_PASS` | 제어 B 게시 실행기·승인 검증·비활성 workflow 8파일 [PR #1762](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1762) main 병합 SHA 8c67a6c9e9e778278259593d0eb35b2b0e2a05ea. Node CI #43892670904 22/22 PASS·C996 PASS. QFR 10파일 SHA-256 source evidence 고정 app commit 0a786bd69c7dc815d296143021473d8f6bf7a118 (§6); 승인 manifest/별도 owner 승인·PC 실효과는 없음 |
 | R4-03 | 제어 실행기 key·MODE·원본·D1 결과 검증 결함 수정 및 BEA 회귀 | `SOURCE_MAIN_CI_PASS` | 제어 B 계약·QFR source pin·readback·요청별 결과 처리 코드 main 소스 병합. Executor blob 1cc9088a3d025b6b8185d13c932f3538c81b2954, Windows Node CI 22/22 PASS. 운영 실행은 별도 |
 | R4-04 | QFR preflight의 sourceVersion·ZIP SHA·sourceStoredAt을 apply까지 고정 | `SOURCE_MAIN_CI_PASS` | 앱 QFR 3-pin·per-request output [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175) main 병합 SHA faa89cfbe8b2aeabcbd8b8e9747cc07620f9eff4, publisher blob f2b78e7d806ee9792e19a6a12636f547849026fd, Node CI #43892753705 4483 PASS/0 FAIL. D1은 미게시 |
 | R4-05 | PC 저장 QFR 계산으로 경량 Snapshot 구축·스키마 검증 | `SOURCE_READY` | 기존 QFR one-shot Publisher와 Reader 소스 존재, 운영 적격 payload preflight 필요 |
@@ -205,9 +205,34 @@
 
 | 2026-11-17 KST · W05 소스 통합 완료 | **R4-02~04/R6-14:** 앱 QFR pin PR #1175를 main에 squash 병합 faa89cfbe8b2aeabcbd8b8e9747cc07620f9eff4, 제어 승인 검증 및 기본 gated B workflow PR #1762를 제어 main에 squash 병합 8c67a6c9e9e778278259593d0eb35b2b0e2a05ea. 사전 CI 앱 4483 PASS, 제어 22/22 PASS·C996 PASS | [앱 PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175) / [제어 PR #1762](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1762). 앱 main Publisher blob f2b78e7d806ee9792e19a6a12636f547849026fd; 제어 main Executor blob 1cc9088a3d025b6b8185d13c932f3538c81b2954. Workflow gate vars.ZGMINI_B_PUBLICATION_APPLY_ENABLED 이며 스케줄 0, approvals/publications 디렉터리 부재. repo 변수 실값은 조회 불가 | **SOURCE_MAIN_CI_PASS / D1 NOT_RUN**. 실제 B급 승인 manifest/별도 owner Issue·PC 이중 source 증거가 다음 필수 조건; 운영 원자료·DB·D1 쓰기 0건 |
 
+| 2026-11-17 KST · QFR 게시기 10파일 원본 고정 준비 | **R4-02/R6-04**: 제어 B contract가 요구하는 앱 `main` 10파일의 raw UTF-8 SHA-256을 고정 commit `0a786bd69c7dc815d296143021473d8f6bf7a118` 기준 수집·검산. 해시 알고리즘은 알려진 벡터 2개와 과거 PC #1709 승인 파일 원문 해시 교차검증 PASS | 동일 파일 §6 목록, 제어 허용 목록 `tools/publication-contract.mjs`, GitHub 앱 SHA `0a786bd69c7dc815d296143021473d8f6bf7a118`. 실물 PC 운영 checkout 최근 재조회는 하지 않음 | **SOURCE_HASH_EVIDENCE_READY / B APPROVAL_MISSING**, D1 writes 0. NEXT: 운영 `config.source` 실시간 값과 manifest/owner 승인·feature flag 확인; 정확키 승인 후 단회 게시·remote readback |
+
 ### 필수 기록 종료 규칙
 
 1. 작업을 수행했다면 **보고 전에 이 진행 기록에 수행 ID·커밋/PR/Issue/Run·실제 PASS/FAIL·당시 상태·남은 필수 실행을 먼저 반영**한다. 로그 반영 불가능하면 `기록 미완료`로 보고한다.
 2. 새 작업 결과는 바로 위 최신 작업 원장에 추가하고, 해당 **82개 ID 상태와 근거를 같은 커밋에서 갱신**한다. 기존 DONE·영수증을 삭제하거나 소스/CI를 운영 DONE으로 승격시키지 않는다.
 3. 새 테스트·PR·선별 main 반영은 설치/게시 완료가 아니다. QFR 관련 먼저 해야 할 실행은 B 승인 exact-key effect/실설치 확인→기존 저장 원본 기반 QFR D1 1키 게시→독립 D1 readback→Production API/UI 확인이다.
 4. 종료 보고에는 **W05 전담 브랜치의 실제 최신 HEAD와 이 파일 GitHub 재조회 여부**를 명시한다. 자동화나 다른 채팅이 문서 변경을 알아서 받아간다고 가정하지 않는다.
+
+## 6. QFR 정확키 B 원본 의존성 해시 — 읽기 전용 증거
+
+**성격:** 제어 `tools/publication-contract.mjs`의 `census-qfr-margin-once` 10파일 허용목록을 앱 `main`의 고정 SHA에서 재조회해 계산한 raw UTF-8 **SHA-256 자료**. **승인 manifest·게시 requestId·owner 승인 댓글을 생성한 것이 아니며, D1 쓰기 권한은 0이다.**
+
+- 출처: `ansqhd5774-Choi/zgmini` / 고정 Git commit `0a786bd69c7dc815d296143021473d8f6bf7a118` (이 시점 `main`으로 확인). 향후 `main`이 이동하면 현재 HEAD로 다시 승인 고정해야 한다.
+- 독립 해시 검증: SHA-256 자체 알려진 빈 문자열/`abc` 기준 통과; 제어 GitHub `approvals/writer-preimage/w05-qfr-publisher-6-readonly-20261116.json` 실제 바이트 해시 결과 `842a337a41f28eb08fd40d97154a7a0045ebf2142ba44e2c9a94754c8839d85c`가 PC #1709에서 사용한 승인 원문 해시와 일치.
+- 정확 공개 키: `detail:earnings-recession-indicators:census-qfr-mfg-margin:v1`; 승인 operation: `census-qfr-margin-once`; 저장 원본만 사용(`STORED_SQLITE_ONLY`), 허용 D1 key 최대 1개, 자동 재시도 0회.
+
+| 승인 필요 게시기 파일(고정 앱 commit) | SHA-256 |
+|---|---|
+| `scripts/pc-writer/EARNINGS_CENSUS_QFR_R1_READONLY.mjs` | `5286287be8773dd8d2d4bdc943e7ee40131d88669c1ec981f4be68a34025879a` |
+| `scripts/pc-writer/EARNINGS_CENSUS_QFR_R2_SQLITE_APPEND.mjs` | `9d3cd0296d41baa9d6deb12897b164fe13115eada4df17ed14196d89ed9273d0` |
+| `scripts/pc-writer/EARNINGS_CENSUS_QFR_R3_STORED_PREVIEW_READONLY.mjs` | `4119bba808819a71f58b6d76ccb3872b5151c7c80df666b483f4f871bc075933` |
+| `scripts/pc-writer/EARNINGS_CENSUS_QFR_R4_PROJECTION_DRAFT_READONLY.mjs` | `59e4303e2135bfad20b9e51c6e48763be655fad5d2f00eb1e9d50b5cb0e3c002` |
+| `scripts/pc-writer/EARNINGS_CENSUS_QFR_R4_D1_ONCE.mjs` | `7b08d799dfce2c5ab720dd69791d727834c2c5c83ed365c39fd89cd3c7853005` |
+| `scripts/pc-writer/EARNINGS_R4_C_D1_DUAL_SOURCE_GATES.mjs` | `db4c14f28c7eb196136e431cc51680542f8846e6b183e0aa7d5b3307b27fcb5b` |
+| `scripts/pc-writer/d1.mjs` | `267fb175386fa007bd74b255d922fba9ee6fe71ffe953f94970beb8ba9d9ff87` |
+| `scripts/pc-writer/d1-transient.mjs` | `f912c335675481f8646380feaebb6241ec0d877b78dbd6fa165e208fdc6d457e` |
+| `scripts/pc-writer/d1-diagnostics.mjs` | `2e9ea54661c51d86798800e532edb10c6796694d3049844ef8b283b7ad6dfe5f` |
+| `worker/earnings-companion-c-qfr-r1.mjs` | `a66b60a751b9ec9a0a6379027c2b4785c20a4c4a693be72a9398dbc0da32dbd7` |
+
+**실행 전 남은 인증:** `publisherSha`는 위 Git SHA로 후보 고정만 가능하다. `operationalSha`는 별도 **현재 PC config.source/operational checkout clean HEAD 실측** 후 확정(마지막 확인 #1709의 `7afe6b0b...`를 현재라고 간주 금지). `requestId`·승인용 Issue/owner 정확 댓글·`approvals/publications/<requestId>.json`·활성 변수의 실제 값은 미확정. 부재 시 `AUTOMATION_BLOCKED`로 보존하고 미승인 게시를 시도하지 않는다.
