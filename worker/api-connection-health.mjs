@@ -117,16 +117,20 @@ export async function readApiConnectionHealth(db,now=Date.now()){
 // provider names, endpoint fingerprints, schedules, errors or request-level times.
 export function publicApiConnectionSummary(internal){
  const integerOrNull=value=>Number.isSafeInteger(value)&&value>=0&&value<=128?value:null;
- const status=['partial','unknown','healthy','stale'].includes(internal?.status)?internal.status:'unknown';
+ // Historical HTTP host observations are not a verified roster of active API connections.
+ // Do not show their warning/unknown counts as current API connection failures.
+ const trusted=internal?.scope==='active-api-endpoints'&&
+  internal?.activeInventoryVerified===true&&internal?.limitedCoverage===false;
+ const status=trusted&&['partial','unknown','healthy','stale'].includes(internal?.status)?internal.status:'unknown';
  const checked=typeof internal?.checkedAt==='string'?Date.parse(internal.checkedAt):NaN;
  return {
   version:1,
   status,
-  coverage:internal?.coverage==='PARTIAL'?'PARTIAL':'UNVERIFIED',
-  normal:integerOrNull(internal?.normal),
-  failed:integerOrNull(internal?.failed),
-  unknown:integerOrNull(internal?.unknown),
-  total:integerOrNull(internal?.total),
+  coverage:trusted&&internal?.coverage==='PARTIAL'?'PARTIAL':'UNVERIFIED',
+  normal:trusted?integerOrNull(internal?.normal):null,
+  failed:trusted?integerOrNull(internal?.failed):null,
+  unknown:trusted?integerOrNull(internal?.unknown):null,
+  total:trusted?integerOrNull(internal?.total):null,
   checkedAt:Number.isFinite(checked)?new Date(checked).toISOString():null,
  };
 }
