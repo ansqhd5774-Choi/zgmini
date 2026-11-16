@@ -7,6 +7,15 @@ import {listRegistered} from './theme-config-registry.mjs';
 
 const READ="SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'";
 const errorCode=e=>typeof e?.code==='string'?e.code:'CONFIGURED_PUBLICATION_UNEXPECTED';
+// A failed acknowledgement or mismatched D1 CAS/readback may have committed.
+// Never proceed to another configured theme until the existing write is
+// reconciled. Retrying or continuing would produce unverifiable partial state.
+const uncertainD1=new Set([
+ 'THEME_CONFIG_PUBLIC_D1_WRITE_OUTCOME_UNKNOWN',
+ 'THEME_CONFIG_PUBLIC_D1_READBACK_MISMATCH',
+ 'THEME_CONFIG_PUBLIC_D1_CAS_NOT_APPLIED',
+ 'D1_WRITE_OUTCOME_UNKNOWN'
+]);
 const ensure=(ok,code)=>{if(!ok)throw Object.assign(new Error(code),{code});};
 const secureDirectory=dir=>{
  const st=fs.lstatSync(dir);
@@ -29,8 +38,8 @@ export async function runConfiguredAutoPublish({dataRoot,now=Date.now(),
  secureDirectory(path.join(root,'theme-config'));
  const dir=secureDirectory(approvals);
  let query=null,queryAttempted=false,queryFailure=null;
- const results=[];let approvalFiles=0,eligible=0,d1Queries=0,d1Writes=0;
- let r32ReaderReady=null;
+ const results=[];let approvalFiles=0,eligible=0,d1Queries=0,d1Writes=0,writeOutcomeUnknown=false;
+ let r32Capabilities=null;
  for(const {definition} of entries){
   const id=definition.id,approvalFile=path.join(dir,id+'.json');
   if(!fs.existsSync(approvalFile))continue;
@@ -49,14 +58,14 @@ export async function runConfiguredAutoPublish({dataRoot,now=Date.now(),
   eligible++;
   let expectedHandoff=null;
   if(definition.schema==='ZGMINI_THEME_CONFIG_V2'){
-   if(r32ReaderReady===null){
+   if(r32Capabilities===null){
     try{
-     const capabilities=readCapabilities?await readCapabilities():await (async()=>{
+     r32Capabilities=readCapabilities?await readCapabilities():await (async()=>{
       const response=await fetch('https://zgmini.kr/api/theme-configured',{redirect:'error',signal:AbortSignal.timeout(20000)});
       ensure(response.ok,'CONFIG_PUBLIC_READER_HTTP');return response.json();})();
-     r32ReaderReady=capabilities.supportedMethodologies?.includes(definition.profile)===true&&capabilities.supportsSeparateR32Provisional===true;
-    }catch{r32ReaderReady=false;}
+    }catch{r32Capabilities={};}
    }
+   const r32ReaderReady=r32Capabilities.supportedMethodologies?.includes(definition.profile)===true&&r32Capabilities.supportsSeparateR32Provisional===true;
    if(!r32ReaderReady){results.push({id,status:'PUBLICATION_BLOCKED',reason:'CONFIG_PUBLIC_R32_READER_NOT_DEPLOYED'});continue;}
    // Only the existing Writer may publish. Recheck that its candidate is the
    // exact SHA-verified saved private result before opening D1 credentials.
@@ -122,15 +131,25 @@ export async function runConfiguredAutoPublish({dataRoot,now=Date.now(),
      results.push({id,phase:'PROVISIONAL',status:provisional.status,observationDate:provisional.observationDate});
     }catch(e){
      const reason=errorCode(e),waiting=['CONFIG_PROVISIONAL_SCORE_PENDING','CONFIG_PROVISIONAL_SPY_MISSING'].includes(reason);
+     if(uncertainD1.has(reason)){
+      results.push({id,phase:'PROVISIONAL',status:'STATE_UNKNOWN',reason});
+      writeOutcomeUnknown=true;break;
+     }
      results.push({id,phase:'PROVISIONAL',status:waiting?'WAIT_PROVISIONAL_INPUT':'PUBLICATION_BLOCKED',reason});
     }
    }
   }catch(e){
-   results.push({id,status:'PUBLICATION_BLOCKED',reason:errorCode(e)});
+   const reason=errorCode(e);
+   if(uncertainD1.has(reason)){
+    results.push({id,status:'STATE_UNKNOWN',reason});
+    writeOutcomeUnknown=true;break;
+   }
+   results.push({id,status:'PUBLICATION_BLOCKED',reason});
   }
  }
  const blocked=results.some(r=>r.status==='PUBLICATION_BLOCKED');
- return {status:blocked?'PUBLICATION_PARTIAL_REVIEW_REQUIRED':
+ return {status:writeOutcomeUnknown?'PUBLICATION_STATE_UNKNOWN_STOPPED':
+  blocked?'PUBLICATION_PARTIAL_REVIEW_REQUIRED':
   eligible?'PUBLICATION_SCHEDULE_COMPLETED':'NO_ELIGIBLE_PUBLICATION',
   registered:entries.length,approvalFiles,eligible,d1Queries,
   // Counts D1 writes successfully verified; uncertain writes remain unknown.
