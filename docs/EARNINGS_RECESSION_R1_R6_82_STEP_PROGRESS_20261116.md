@@ -31,14 +31,14 @@
 | 필드 | 마지막 확인 상태 |
 |---|---|
 | 최종 목표 | 82단계 R1~R6로 적격 실적 침체 정보성 지표의 PC 원자료 저장→계산→승인 D1 게시→Production API/UI를 완성. 기존 E1-R4 점수/산식·기타 12대 기업실적은 보호 |
-| 현재 관련 단계 | **순차 R2-06(16/82)**: Census M3 제조업 신규주문·출하 공식 EITS 변수·단위·조정 정의/적격성 검증. 후행 QFR B 게시 R4-06은 미완료 |
-| 마지막 검증 완료점 | **R2-05 QFR 동일 표본·5분기 재계산 DONE (§20)**. Census MFG/US NSA·et_idx=0, 매출 dt_code=101·세후이익 dt_code=115(백만 USD)를 저장자료와 교차 계산. 2026Q2 15.599418144173285%, Q1 14.03708175763798%, 변화 +1.5623363865353053%p. 기존 PC R3 stored-only PASS 및 공식 QFR 통계와 대조. SHA/SQLite 성공 증거 재사용, D1/Production 미검증 |
+| 현재 관련 단계 | **순차 R2-07(17/82)**: Census MTIS 재고/매출 비율 공식 월간 변수·단위·개정 확인. 후행 QFR B 게시 R4-06은 미완료 |
+| 마지막 검증 완료점 | **R2-06 Census M3 공식 변수·단위·월간 조정 정의 DONE (§21)**. EITS /data/timeseries/eits/m3, category=MTM 전체제조업, data_type=NO 신규주문·VS 출하, TI 재고(기존 물가 담당만), seasonally_adj yes/no, USD million nominal/monthly. 공식 최신 API 예시 key 필수; 실제 C 신규주문·출하 Collector/PC 원자료 미확인/HOLD, 2020 안내의 무키 예외를 현재 권리로 추정 금지 |
 | 재사용할 기존 근거 | QFR 원자료 ZIP PC SQLite 저장·계산 기존 유효 증거; 앱 QFR 3-pin [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175)는 앱 main 병합, 운영 PC 설치·B 게시 별개. R1-09 소스 blob 근거는 §14 |
-| 현재 최초 실제 미완료 조건 | **순차 R2-06:** Census EITS M3 신규주문·출하의 공식 변수·단위·계절조정·발표 시차와 원자료 적격성 미판정. 물가 전용 MTM/TI 재고 Collector와 C 신규주문/출하는 별도. QFR D1 R4-06 미실행, FRED 권리 HOLD 별도 |
-| 다음 필수 실행 하나 | **순차 16/82 R2-06:** Census EITS M3 공식 변수·단위·조정/시계열 정의와 기존 코드를 검증해 신규주문·출하 후보 각각 FOUND/HOLD 판정. 승인 없는 PC 수집 금지 |
-| 현재 완료율 증거 | **15/82 DONE(약 18.3%)**, 현재 R2-06(16/82). 기존 14단계 종단 게시 완료 마지막 확인 0/14, R6-15 자연 갱신 관찰 DEFERRED |
+| 현재 최초 실제 미완료 조건 | **순차 R2-07:** Census MTIS inventory/sales ratio 공식 자료·관측월·발표/개정 이력의 변수 적격성 미판정. M3 NO/VS 원천 운영 수집·저장/GET은 HOLD, QFR D1 게시와 FRED 권리 문제는 후행 미완료 |
+| 다음 필수 실행 하나 | **순차 17/82 R2-07:** Census MTIS 공식 Inventory/Sales ratio·월별 시계열과 EITS endpoint/변수·개정 기준을 확인하고 Collector·원자료 미확인 항목은 HOLD로 구분한다 |
+| 현재 완료율 증거 | **16/82 DONE(약 19.5%)**, 현재 R2-07(17/82). 기존 14단계 종단 게시 완료 마지막 확인 0/14, R6-15 자연 갱신 관찰 DEFERRED |
 | 최종 갱신 식별 | 이 문서의 **최신 원격 브랜치 HEAD 및 Git blob SHA를 재조회**해 근거로 보고한다. 고정된 과거 SHA를 현행값으로 복사하지 않는다 |
-| **순차 포인터·완료율** | **현재 16/82 R2-06**; R1-01~R2-05 연속 DONE **15/82(약 18.3%)**. 후행 저장·D1 미실증은 해당 단계에서 미완료 |
+| **순차 포인터·완료율** | **현재 17/82 R2-07**; R1-01~R2-06 연속 DONE **16/82(약 19.5%)**. 후행 저장·D1 미실증은 해당 단계에서 미완료 |
 | R1-09 이번 실행 | 2026-11-17 08시 KST: B 경제지표 `/economic-indicators/earnings/`→`EconomicDetailPanel`→`/api/market-score` `domains[id=earnings]`와 A 8대 위험 4요소·C 보조 GET의 별도 계약 소스 검증. `DONE`, 완료 9/82. 경계 상세·blob §14; 운영 GET·D1 미검증. 다음 R1-10 |
 
 ### D. 다음 작업자 재개 순서 및 변경 충돌
@@ -54,19 +54,19 @@
 
 | 판정 항목 | 실제 상태 |
 |---|---|
-| **순차 완료 확정** | **15/82 (약 18.3%)** — R1-01~R2-05 ZIP/실PC 저장자료 계산 증거 기준 충족. 실제 D1/Production 미실증은 후행 분리 |
-| **현재 순차 진행 단계** | **16/82 = R2-06** (Census EITS M3 신규주문·출하 변수·단위·조정/조건부 적격성 검증) |
-| **82개 중 개별 완료 확정** | **15개** (R1-01~R2-05), 그 밖의 소스/CI와 운영 진행은 해당 완료 기준마다 별도 |
+| **순차 완료 확정** | **16/82 (약 19.5%)** — R1-01~R2-06 공식 원천 변수/정의·HOLD 판정 완료. 실제 C 수집/D1/Production 미실증은 후행 분리 |
+| **현재 순차 진행 단계** | **17/82 = R2-07** (Census MTIS 재고/매출 비율 정의·시계열·개정 검증) |
+| **82개 중 개별 완료 확정** | **16개** (R1-01~R2-06), 그 밖의 소스/CI와 운영 진행은 해당 완료 기준마다 별도 |
 | **71번 R6-04** | **후행 소스 선행 작업·현재 운영 승인 미해결**, 순차 71단계에 도달한 것이 아님 |
-| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 15개 확정 DONE, 남은 67개 완료 판정 대상; 재수집 67회 뜻 아님 |
-| **다음 실제 수행 하나** | **R2-06(16/82):** Census EITS M3 신규주문·출하 공식 series/단위/계절조정 확인 또는 HOLD |
+| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 16개 확정 DONE, 남은 66개 완료 판정 대상; 재수집 66회 뜻 아님 |
+| **다음 실제 수행 하나** | **R2-07(17/82):** Census MTIS inventory/sales ratio 월별 코드·공식 개정사항 확인/HOLD |
 
 **순서 운용:** 다음 번호로 넘어가는 기준은 해당 단계의 **계획서 완료 조건 + 근거 링크**이며, 뒤 단계에서 미리 통과한 PR·CI는 계획 순번을 바꾸지 않는 선행 자산으로 유지한다. 사용자 승인 없이 순번이나 완료 기준을 수정하지 않는다. 조건부 HOLD·장기 DEFERRED는 계획서대로 처리하며 다른 독립 승인 작업의 수행을 중단하는 새로운 Gate가 아니다.
 
 
 ## 0. 82개 작업별 진행 상태 (실증·소스 분리)
 
- > **2026-11-17 KST 최신 판정.** R1-01~R2-05 15/82 DONE, 현재 순차 R2-06(16/82). SOURCE/CI만으로 PC/D1/Production DONE 자동 승격하지 않음.
+ > **2026-11-17 KST 최신 판정.** R1-01~R2-06 16/82 DONE, 현재 순차 R2-07(17/82). SOURCE/CI만으로 PC/D1/Production DONE 자동 승격하지 않음.
 
 | 작업 ID | 실행계획 작업 | 현재 증거 기반 상태 | 마지막 확인 증거·남은 조건 |
 |---|---|---|---|
@@ -85,7 +85,7 @@
 | R2-03 | BEA 제조업 기업이익 산업 분류·명목/실질·분기·YoY 기준 확인 | `DONE` | **§18** BEA NIPA Table 6.16D N400RC → FRED N400RC1Q027SBEA는 미국 국내 비금융 제조업의 IVA 기업이익, 명목 십억 달러 SAAR/분기. BEA는 CCAdj를 제조업 단위에 배분하지 않음. W05 source 4fcd41887151f8aefe16cb9d47ab5949bca8ed8d와 Reader 5afd165dbe6cdd31bf9e78f169ae263655d2a088는 5개 연속분기, 전년동기 양수, YoY=(Q/Q-4-1)*100, CURRENT_VINTAGE_NOT_PIT를 검사. 2026Q2=1053.304 vs 2025Q2=681.285 → 약 54.6055%; 기존 2026-10-28 PC 보고와 일치. 현장 독립 SHA·D1 게시 미검증, FRED 이용권 HOLD 별도 |
 | R2-04 | Census QFR 공식 ZIP/API 경로와 제공 데이터 구조 확인 | `DONE` | **§19** Census 공식 datasets 목록의 QFR-mf.zip(2026-09-08, 2026Q2)과 code programCode=QFR→QFR-mf.csv/CATEGORIES/DATA TYPES/GEO LEVELS/TIME PERIODS/DATA 계약 대조. MFG/US/et_idx=0/is_adj=0, 매출 101·세후이익 115 백만달러 입력. 기존 PC 2026-10-27 ZIP SHA 232f7757.../1746726 bytes, R2 1chunk+1snapshot SQLite 저장·readback PASS 재사용. 공식 별도 revision id 없음(SHA version pin). 신규 수집·쓰기 없음; R2-05 정밀 계산 검사 후행 |
 | R2-05 | QFR 세후이익/매출 분자·분모·산업 표본·비교 분기 정합성 검사 | `DONE` | **§20** Census QFR 공식 비계절조정 US/MFG/et_idx=0/is_adj=0, dt_code=101 Net Sales, 115 Income After Taxes (백만 달러)와 2025Q2~2026Q2 원본 5분기 수치 독립 산술 검증. 2026Q2 370082/2372409*100=15.599418144173285%, Q1 287262/2046451*100=14.03708175763798%, 변화 +1.5623363865353053%p. 기존 PC R3 stored-only 1snapshot SHA PASS, source HTTP/D1 writes 0; 공식 Census 2026Q2 2026-09-08 발표 비계절조정 통계와 일치. 이는 자체 파생마진이며 QFR 표본추정 통계, 신선/Production 및 D1 게시 미검증 |
-| R2-06 | Census M3 신규주문·출하 공식 변수·단위·조정 정의 확인 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
+| R2-06 | Census M3 신규주문·출하 공식 변수·단위·조정 정의 확인 | `DONE` | **§21** Census EITS /data/timeseries/eits/m3 공식 variables: category_code/data_type_code/seasonally_adj/cell_value/time_slot_date/time 및 US 필터; 역사적 Census NAICS M3 code MTM=Total Manufacturing, NO=New Orders, VS=Value of Shipments, TI=Total Inventories, U(미조정)/A(SA), 금액 USD million nominal/monthly. M3 공식 설명 신규주문 취소차감·출하 판매액, 비확률표본/반도체 신규주문 제외 주의. api examples 현재 API key 필수. 앱 main 물가 collector MTM/TI만, 실적 침체 MTM/NO·MTM/VS Collector/PC raw/SHAs NOT_VERIFIED→HOLD 조건부. 공식 변수 판정 DONE이지 수집/게시 DONE 아님 |
 | R2-07 | Census MTIS 재고/매출 비율 변수·관측월·개정 내역 확인 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R2-08 | BLS 기본 3원천 `WPSFD4`, `WPSFD41`, `PRS85006111` 정의 확인 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R2-09 | BLS 서비스 PPI `WPSFD42` 정의·관측월·YoY 계산 검증 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
@@ -507,3 +507,22 @@ R2-03에 요구한 산업범위·명목/실질·IVA와 CCAdj의 차이·SAAR/분
 - **독립 JS 산술 검산:** 5개 매출 분모 모두 `>0`이고 유한. 2026Q2 `370082/2372409*100=15.599418144173285`, 전분기 `287262/2046451*100=14.03708175763798`, 차이는 `+1.5623363865353053 percentage points`. 기존 저장자료 전용 PC R3의 세 수치와 오차 `0`. Census 원본 매출/이익은 같은 단위여서 단위 변환 없이 비율만 계산; `15.5994%`는 Census가 원시 `dt_code` 한 칸에 제공한 지표가 아니라 두 원시값의 **독립 파생 정보행**.
 - **확인된 한계:** Census QFR 공개 통계는 표본 추정치·개정/공표 지연을 포함한다. 현재 온라인 ZIP SHA를 새로 다운로드한 것이 아니며 2026Q2 이후 신규 발표 실측, 독립 현행 PC 데이터 확인, D1 body/stored_at·Production SHA/GET·UI는 미실행. R3 PC 기존 성공을 재활용했고, 추가 운영 효과 `providerCalls=0, sqliteWrites=0, d1Writes=0, deployments=0`.
 - **완료 판정:** R2-05가 요구한 동일 산업·지역·분기·원시단위/보정·분자/분모·결측/양수·5분기/전분기 변화 검증 **DONE**. 기존 E1-R4 4요소와 12대 기업실적 B 산식 불변. **LAST PASS:** 2026Q2 NSA 제조업 QFR 자체 산출 15.599418% 저장자료 계산 0오차. **FIRST UNFINISHED:** R2-06 M3 신규주문·출하 공식 변수/권리 적격성. **NEXT:** W05가 Census EITS M3의 주문/출하 series/단위·계절조정 코드를 공식 자료로 판정, 물가 MTM/TI 재고와 구분하고 새로운 수집/게시 효과는 발생시키지 않는다.
+
+## 21. R2-06 (2026-11-17 KST) Census M3 신규주문·출하 변수·단위·계절조정 적격성 — 조사 DONE, C 원본/운영 HOLD
+
+**공식 공급자 구조:** [Census EITS M3 API 설명](https://api.census.gov/data/timeseries/eits/m3.html), [변수 스키마](https://api.census.gov/data/timeseries/eits/m3/variables.html), [호출 예시](https://api.census.gov/data/timeseries/eits/m3/examples.html), [M3 원천 범위](https://www.census.gov/manufacturing/m3/about_the_surveys/index.html)와 [제조업 정의](https://www.census.gov/manufacturing/m3/definitions/index.html) 교차 확인. 미국 제조업 월별 value of shipments, new orders (취소차감), inventories 등 **서로 다른 통계항목**으로 분리한다.
+
+| 지표 후보(비공개 임시 ID) | 공식 범주/데이터 타입 | 빈도/단위·조정 | 현재 ZGMINI 구현·저장 판정 |
+|---|---|---|---|
+| `CENSUS_M3_NEW_ORDERS_CANDIDATE` | `category_code=MTM` Total Manufacturing / `data_type_code=NO` New Orders | 미국 전체 `for=us:*`; 월간 명목 금액 `MLN$`, `seasonally_adj=yes`의 계절조정 값 또는 별도 `no` (구분 필수) | **공식 변수 FOUND**, W05 C 전용 NO Collector/운영 PC source SHA/원본 저장 **NOT_VERIFIED**, 원자료 수집·공개는 `HOLD` |
+| `CENSUS_M3_SHIPMENTS_CANDIDATE` | `MTM` Total Manufacturing / `VS` Value of Shipments | 동일 월간 명목 백만 USD. 출하 실적/판매액, 신규주문과 별도 개념 | **공식 변수 FOUND**, W05 C 전용 VS Collector/운영 PC 원문 **NOT_VERIFIED/HOLD** |
+| **기존 물가 별도 업무** | `MTM/TI` Total Inventories | **월말 재고**, 생산 출하/신규주문이 아닌 stock | 앱 main `inflation-causal-candidate-census-m3.mjs` blob `c5649283bbe071fdf153d4238b233b65c8aa39b4`: `MTM/TI` 필터, `seasonally_adj=yes`, `inflation-causal-candidates-r1/census-m3-manufacturing-inventories.json`에만 기록하도록 구현. 실 PC 실저장도 이 조사로 단정하지 않음 |
+
+**공식 코드 사전:** [Census M3 Historical Time Series Documentation](https://www.census.gov/manufacturing/m3/historical_data/naicshist.pdf) 1~2쪽의 식별자 `A/U`(계절조정/미조정), `MTM`(Total Manufacturing), `NO`(New Orders), `VS`(Value of Shipments), `TI`(Total Inventories). 금액 자료는 **현행 달러 백만(USD millions current market)**, `IS/US`는 예외적인 ratio. 이 역사 사전의 코드와 EITS API 변수 이름을 연결한 **후보 selector 계약**이며 2026 특정 월 `MTM/NO`·`MTM/VS` 실응답 값까지 새로 수신하거나 승인되지 않은 코드를 유효한 운영 원본으로 간주하지 않음.
+**계열 특성·비교 주의:** 제조업 현장 경제활동의 명목 월간 지표이며 real GDP·물가조정 수치 아님. 신규주문은 취소 반영, 출하는 납품·판매액이므로 두 지표를 무분별하게 합산하거나 재고와 동일 단위의 성장점수로 치환하지 않음. 역사 사전은 신규주문 및 미이행 주문 추정에서 반도체 산업 제외를 별도 각주로 명시. 월간 `time`/선택적으로 `time_slot_date`, `error_data`를 함께 검증해야 하며 `seasonally_adj=yes`/no 혼합 금지. Advance(내구재 조기 추정)와 Full M3(전제조업) 발표 시각은 다르며, 공식 [M3 프로그램](https://www.census.gov/manufacturing/m3/index.html)은 2026년 잔여 기간에 M3 과거 자료와 계절조정 모델을 변경하지 않는다고 별도 공지함.
+
+**API 운영 적격성:** 공식 현재 [EITS M3 examples](https://api.census.gov/data/timeseries/eits/m3/examples.html) 및 [Census 개발자 안내](https://www.census.gov/data/developers/data-sets/economic-indicators.html)는 API query에 **API key 필수**라고 안내. 2020년 작성 EITS 오래된 PDF의 500회/일 무키 예외는 현행 공식 안내와 충돌하므로 과거 예외를 현재 적용 승인으로 사용 금지. 앱 main Growth 공통 GET wrapper는 EITS endpoint만 허용한 네트워크 재사용 모듈로서 W05 Collector 등록·C 저장을 증명하지 않음.
+
+**완료/보류 분리:** R2-06 완료 기준인 공식 변수 코드·단위·조정/주기 확보 및 근거에 따른 `HOLD` 기록 충족 → **조사 DONE**. 제조업 신규주문·출하의 현장 API 실제 응답, 합법·승인 credentials, 원자료 저장 및 GET/공개 게시 D1은 **NOT_VERIFIED/NOT_RUN**, 후행 R2-13·R3-13·R4-13 조건부. 기존 물가 수집기를 임의 개조·복제하지 않고 A/B/C 점수/공개값 및 원자료 불변. `providerCalls=0`, `sqliteWrites=0`, `d1Writes=0`, `deployments=0`.
+
+**LAST PASS:** Census M3 공식 NO/VS/TI 정의와 API 필드/단위, 코드의 기존 MTM/TI와 후보 MTM/NO·MTM/VS 구분. **FIRST UNFINISHED:** R2-07 MTIS 재고/매출비율 원문·변수·월간 개정. **NEXT:** W05가 공식 MTIS API/산업·월간 재고-매출 ratio 정의와 release 수정사항을 확인하고, C 전용 Collector·원본 미확인은 HOLD로 판정한다.
