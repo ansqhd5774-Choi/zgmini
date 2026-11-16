@@ -22,6 +22,7 @@ export function providerEndpointFingerprint(input,init){
 }
 
 export const PROVIDER_ENDPOINT_LOG='provider-endpoint-events.jsonl';
+export const INDEPENDENT_COLLECTORS=new Set(['ALPACA_INCREMENTAL','SECTOR_PROVISIONAL']);
 const HOST_SAFE=/^(?=.{4,180}$)[a-z0-9-]+(?:\.[a-z0-9-]+)+$/;
 const CODE=/^[1-5][0-9]{2}$/;
 const numeric=n=>Number.isSafeInteger(n)&&n>=0;
@@ -44,7 +45,8 @@ export function appendProviderEndpointEvent(base,report,{fileSystem=fs}={}){
   if(Object.keys(safe).length)endpoints[host]=safe;
  }
  const omitted=numeric(report.endpointTrackingOmitted)?report.endpointTrackingOmitted:0;
- const record={at,endpointPaths:endpoints,endpointTrackingOmitted:omitted};
+ const collector=INDEPENDENT_COLLECTORS.has(report.collector)?report.collector:null;
+ const record={at,...(collector?{collector}:{}),endpointPaths:endpoints,endpointTrackingOmitted:omitted};
  fileSystem.appendFileSync(path.join(base,PROVIDER_ENDPOINT_LOG),JSON.stringify(record)+'\n');
  return {observedHosts:Object.keys(endpoints).length,omitted};
 }
@@ -72,4 +74,34 @@ export function readProviderEndpointEvents(base,{fileSystem=fs}={}){
  const rowsTruncated=lines.length>16000;
  if(rowsTruncated)lines=lines.slice(-16000);
  return {status:'OBSERVED',lines,tailTruncated,rowsTruncated};
+}
+
+// Passive observer for independently executing collectors outside collect-local.
+// The original fetch (including provider quota guards) always determines success
+// and failure; the optional receipt must never change collector behavior.
+export function observeIndependentProviderFetch(base,collector,originalFetch,{
+ append=appendProviderEndpointEvent,now=Date.now
+}={}){
+ if(!INDEPENDENT_COLLECTORS.has(collector)||typeof originalFetch!=='function')
+  throw Error('UNAPPROVED_INDEPENDENT_COLLECTOR');
+ return async(input,init)=>{
+  const identity=providerEndpointFingerprint(input,init);
+  const record=status=>{
+   if(!identity)return;
+   try{
+    append(base,{at:new Date(now()).toISOString(),collector,
+     endpointPaths:{[identity.host]:{[identity.id]:{
+      requests:1,statuses:{[String(status)]:1}
+     }}},endpointTrackingOmitted:0});
+   }catch{/* Telemetry must never interrupt approved raw collection. */}
+  };
+  try{
+   const response=await originalFetch(input,init);
+   record(response.status);
+   return response;
+  }catch(error){
+   record(error?.code==='PROVIDER_QUOTA_GUARD'?'PROVIDER_QUOTA_GUARD':'NETWORK_ERROR');
+   throw error;
+  }
+ };
 }
