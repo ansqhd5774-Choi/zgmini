@@ -1,0 +1,38 @@
+name: W06 Production 8-view Live Read-only Evidence
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/w06-production-live-capture-r1.mjs'
+      - '.github/workflows/w06-production-live-capture-r1.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  live-production-evidence:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    env:
+      CI: 'true'
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install locked repository dependencies
+        run: npm ci
+      - name: Install test-only Playwright
+        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Capture real Production 8 views and read six public API contracts
+        run: node tests/w06-production-live-capture-r1.mjs
+      - name: Upload Production screenshot and JSON evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: w06-production-live-r1
+          path: artifacts/w06-production-live-r1/
+          if-no-files-found: warn
