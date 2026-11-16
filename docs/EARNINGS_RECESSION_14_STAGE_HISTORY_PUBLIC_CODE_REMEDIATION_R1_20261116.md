@@ -130,3 +130,61 @@
 - **LAST PASS:** 기존 QFR 저장·계산/PR #958 main 병합, WPS 2행 분리 source, BEA MFG R5 raw archive 보고, B Fixture 16/16, 본 오픈소스 코드 패턴 비교 완료.
 - **FIRST BLOCKER:** #1 QFR 승인된 단일키 B 게시자 실PC 설치·현재 source/manifest 적격 여부 미확정. **현재 실운영 신규 에러 자체는 확인 0.**
 - **NEXT:** 실제 승인 B 재사용 조건을 중앙 Owner가 1회 결속 → QFR 단일키 실제 게시·D1 readback. 연속된 14단계의 무단 일괄 실행 금지.
+
+
+---
+
+## 7. 2026-11-16 R1.1 — 두 차례 소스 수정 이후 재조사: 게시의 실제 차단 3개와 해결 순서
+
+> **이 절은 R1 기존 계획을 대체하지 않고, 신규 GitHub 원본/공식 Census 2026-11-16 근거를 추가한 정정이다.** 14개 단계의 개수·원래 E1-R4 점수·승인 데이터 계약은 변경하지 않았다. 이번 조회는 실제 PC/D1 쓰기가 아니다.
+
+### 7-1. GitHub 현재 사실과 과거 인계 차이
+
+| 항목 | 최신 근거(조사 시점) | 올바른 판정 |
+|---|---|---|
+| 기능 원담당 `zgmini` main | `89f5bda5c291feeb16b1904443e69f51745c819f` | 개발 소스 SHA, 실제 Production 배포/PC 설치 아님 |
+| W05 전용 앱 브랜치 | `24aee636aad3d713277820ecc8acac26b8fbd545` | BEA 저장 원본 기반 publisher·raw helper·test **3개 소스 변경 완료**, main에는 helper 없음 |
+| control 최신 main | `96b8d456462d5250f84cfee8cbc4ee2de712f4c7` | `pc-publication-b.yml`/ `tools/publication-contract.mjs` **없음 (GitHub 404)**. control `config/operations.json` A 목록에도 QFR 전용 apply operation 없음 |
+| B 제안 PR #112 | `draft=true`, `merged=false`, head `c5c00e6f663e20e24231aebadc7a7e6235972aad` | 실제 승인/설치/실행 증거 없음. **원본 GitHub PR 응답은 `mergeable=null, mergeable_state=unknown`**. 이전 단순 `mergeable=false` 판정을 *확정 충돌*이라고 말하면 안 됨 |
+| 현재 control main vs B 제안 branch | `compare_commits` 결과 **ahead=2, behind=2947, status=diverged** | 7개 신규 파일의 **현재 main 기준 선택적 통합**이 적합; 오래된 브랜치 전체 merge/rebase/force push 금지 |
+| control `r6-registered-data-b/operation.mjs` | `operation=employment-r6-registered-data-once`, scope `EMPLOYMENT_R6_REGISTERED_DATA_SQLITE_D1_ONCE`만 고정 | 이미 설치된 범용 QFR B 게시기가 아님. 고용 전용 승인/manifest를 재활용해 QFR D1 쓰기 금지 |
+| 실제 PC QFR 게시 영수증 | 신규 고유 requestId/Run/JSON/TXT/D1 key readback 확인 못함 | `FIRST UNVERIFIED`, 실제 QFR Runtime 실패/403 단정 불가 |
+
+과거 [#77 PR 이력](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/77#issuecomment-6600399624)에서 **실운영 source 진단**은 최초 디렉터리 64개 초과 시 검증 대상 스킵, 다른 #91 결과는 `sourceResolved=false`였다는 한계가 기록돼 있다. 이 결과로 'QFR PC 저장 원본이 없다'거나 'B PC 접근이 불가능하다'고 추정하지 않는다. 현재 installed B 실소스는 중앙 기존 승인 Owner의 고유 실행 원장/확인 결과로만 확정.
+
+### 7-2. 중요한 신규 확인: Census 원자료는 *현재* 신규 발표 대기 불필요
+
+- 미국 Census 공식 [QFR 발표 일정](https://www.census.gov/econ/qfr/release_schedule.html): **2026Q2 발표 2026-09-08**, **2026Q3 발표 예정 2026-12-07**. 2026-11-16 현재 공개 가능한 최신 정규 회차는 2026Q2(공식 현재판). 기존 PC QFR는 2026Q2 원자료 저장·계산 PASS.
+- 현행 `worker/earnings-companion-c-qfr-r1.mjs`는 **`FRESHNESS_DAYS=165`**, 관측 분기 말일/원본 수집 시각 둘 다 검사. 2026-06-30→2026-11-16 약 **139일**로 이중 `observation` 창을 아직 넘지 않는다. 다만 실 PC 원본의 실제 `sourceStoredAt`는 기존 R3 원장으로 확인하고, 조회 날짜·발표 주기/공식 개정 내용을 혼동하지 않는다. **이 165일 정책은 기존 승인된 코드이며 무단 연장/축소 금지.** 다음 2026Q3 실제 발표 12/7 이후는 기존 정규 원담당 수집·저장으로 반영하고 현재 2분기 게시를 그때까지 미루지 않는다.
+- 초기에 예상한 'QFR 현재 값이 이미 3분기라서 저장 원본 2분기가 공급자 최신과 불일치' 시나리오는 **공식 발표 일정과 맞지 않는다**. 단, 개정된 2분기 원본이 나왔는지는 현재 Runtime 증거 범위 밖.
+
+### 7-3. 공개 전문가 코드에서 실물 확인한 방법·불필요한 변경 구분
+
+1. [Cloudflare 공식 Prepared Statements 실코드](https://github.com/cloudflare/cloudflare-docs/blob/production/src/content/docs/d1/worker-api/prepared-statements.mdx): `prepare('SELECT ... WHERE snapshot_key=?').bind(key).first()`로 **쓰기 후 정확키 결과**를 확인한다. 현재 QFR `qfrCompanionWriter`는 이미 이 접근 및 `stored_at`/body 해시·checkpoint 검증과 1키 CAS를 구현. 이것을 다시 개발하거나 별도 새 D1 테이블을 만들 필요가 없음.
+2. [Cloudflare 공식 D1 Sessions API 예제](https://github.com/cloudflare/templates/blob/main/d1-starter-sessions-api-template/src/index.ts): primary write→same-session select read-after-write. QFR 기존 단일 key Writer가 실제 일관성을 위반한 **증거 없음**. 세션 API/Cloudflare Cron/Writer 구조 교체는 개선의 선행조건이 아니다.
+3. [actions/checkout 공식 실코드](https://github.com/actions/checkout/blob/main/README.md): `persist-credentials: false`와 immutable SHA pin 및 최소 workflow scope. 제어 B `.github/workflows/pc-publication-b.yml`은 checkout 2곳 `persist-credentials:false`, `clean:false`를 이미 지정. 보안 조치를 그대로 유지하고 새 임의 실행기를 만들지 않는다.
+4. B 제안 workflow는 `on: issues: types:[opened]`이고 `pc-publication` 라벨을 **open 이벤트 시** 검사한다. 따라서 Issue를 라벨 없이 먼저 생성하고 나중에 라벨만 추가하는 방식은 해당 workflow를 실행시키지 않는다. 정규 승인 Owner가 기존 UI/프로세스에서 **처음부터 정확 라벨로 issue 발행**하는 것으로 해결하고 중복 issue를 자동 생성하지 않는다. 필요하다면 기존 정규 트리거 계약을 소유자가 조정하는 것이지 W05가 직접 우회하지 않는다.
+
+### 7-4. 지금 적용할 최소 경로 — 성공 기준까지 한 번 연결
+
+- **선행 source 준비 (W05·중앙 승인 책임 분리):** 이미 수정한 W05 BEA publisher+raw helper+tests **3개** 및 control B Draft에서 수정된 **7개 경로 중 현재 main에 없는/변경 필요한 최소 바이트**를 각각 최신 main 기준 **선별** CI로 통합. 서로 다른 두 repo의 SHA를 섞지 않는다. 전체 W05/B 브랜치 merge 금지. BEA source를 붙일 때 원래 승인 E1-R4 점수·QFR 기존 Reader/SQLite와 다른 작업자의 변경 보존. BEA 수집은 기존 승인 Collector 경로만 사용한다.
+- **QFR 단독 B 연결(중앙 Owner):** 현재 installed 공용 Writer B에 QFR exact-key 허용 scope가 있는지 기존 운영 증거로 1회 확인; 없다면 **필요한 7개 소스/프로그램의 정확 B 승인·manifest·설치**를 기존 공통 정규 경로로 수행. `control/main` 소스 통합만으로 실PC 설치 PASS가 되지 않으며, Draft PR을 승인 manifest처럼 사용하지 않는다. 새로운 기능별 CMD/예약/범용 SQL/무권한 remote script 금지.
+- **먼저 단일 QFR 키 실제 게시:** `snapshot_key='detail:earnings-recession-indicators:census-qfr-mfg-margin:v1'`; 기보존 PC QFR ZIP readback→`EARNINGS_CENSUS_QFR_R4_D1_ONCE.mjs` 고정 원본 계산→B exact B Issue/actor 승인→1회 D1 게시→D1 동일키 `body/stored_at/sourceVersion/sourceStoredAt` 재조회→공개 API→페이지 확인. 승인 B scope에는 QFR 한 키만. 성공 기록은 실제 고유 Issue/Run/Job/TXT/JSON/D1/Production SHA로 수집.
+- **BEA pin 별도:** BEA unit은 신설 `sourceSha256`를 승인 manifest/자식 환경에 전달하는 제어 Draft 소스 완료. **기존 운영 PC에 보관된 CSV+meta SHA의 실제 증거 없음**. 저장과 게시가 분리되어야 하며 최초 수집과 보관은 기존 승인 Collector가 수행. preflight/apply 2회 모두 providerCalls=0; 실제 저장 sha pin·file hash·날짜가 모두 같아야 함. `captureBeaUnitSourceOnce`가 CSV와 JSON을 서로 다른 exclusive file 쓰기로 생성하므로, **중간 실패 시 반쪽 archive가 남을 가능성(설계상)**은 개발단계에서 대상 파일만 점검; 기존 raw/meta는 무단 삭제·자동 치유 금지. 소스 통합 전에 실패 복구 지원을 최소 단위로 검사.
+- **QFR 정상 이후 후속:** BEA unit, WPSFD42 5+2 선별 통합, BEA 제조업 CSV readback/전용 키 게시, 마지막 Production PC/mobile 검증 순. 정규 자연 발표 검증은 사용자 방침대로 현재 구현 완료를 막는 Gate로 만들지 않음.
+
+### 7-5. 성공/실패 시뮬레이션 체크포인트 (아직 실제 실행 아님)
+
+| 조건 | 예상 판정 | 대응 |
+|---|---|---|
+| control main에 B workflow 없음 | `NOT_INSTALLED`/제어 Draft 만 존재 | 기존 승인 B 재사용→없으면 필요한 최소 B 선별 소스/정규 승인 |
+| publisher main code SHA와 manifest가 다름 | `SOURCE_DRIFT` 안전 거부 | 실제 현행 main/기존 원본으로 승인 manifest SHA 재결속. 사용자가 승인하지 않은 운영 root 교체 금지 |
+| approved PC config.source와 operational checkout 다름 | `OPERATIONAL_SOURCE_MISMATCH` | 기존 적법 등록 상태부터 확인. 무단 config 변경 금지 |
+| QFR raw ZIP 저장 증거 R2/R3 PASS | `READY_SOURCE` | 재수집·검산 반복 대신 B 정확키 공개 게시 수행 |
+| 2026-11-16 2026Q2 원본 | 정적 코드 신선도 조건에서 유효(관측일 139/165일) | 신규 발표 대기 없이 D1 공개 작업 추진; 원본 시각은 실 PC 재확인 |
+| D1 쓰기 후 응답 수신 실패 | `STATE_UNKNOWN` | 기존 D1 row/게시 ledger readback 먼저, 동일 Issue 재생성·중복 게시 금지 |
+| API/사이트 HTTP 200 | 필요조건이지만 비충분 | 정확한 QFR 원문 수치·단위·관측일/부재 상태·Cloudflare Deployment SHA 확인 |
+
+**LAST PASS:** QFR PC 원자료 저장/계산의 과거 실제 증거, QFR Source/Reader/UI 본선 코드, BEA stored-only 소스 `24aee636`, B pin 제안 `c5c00e6`, control B Draft 7파일/공개 공식 저장소 3개 패턴/공식 Census 발표 일정 분석.
+**FIRST BLOCKER:** 현재 설치·승인된 QFR 단일키 실제 게시 B 경로를 아직 확인하지 못함. 실제 Windows 실행 실패·D1 403 오류를 본 turn에서 관측한 것은 아님.
+**바로 다음 필수 실행 하나:** 중앙 기존 B 게시 소유자가 **실제 QFR single-key B 허용·설치 source/manifest+기존 승인 요청 유무를 확정**한 뒤 존재하는 정규 경로로 QFR 게시·독립 D1 readback. W05는 BEA 소스·WPS 선별 통합처럼 독립 승인된 개발을 병렬로 계속한다.
