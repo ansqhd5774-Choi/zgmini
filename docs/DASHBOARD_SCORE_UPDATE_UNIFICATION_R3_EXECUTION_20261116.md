@@ -5,7 +5,7 @@
 - 착수 당시 전용 브랜치: `codex/ui-improvements` `43f943679b555387593d918088860ba5b882dcb6`
 - 인계받은 기존 근거: `DASHBOARD_SCORE_68_CONTENT_CONTRACT_INVENTORY_R1.md` (2026-11-10), `DASHBOARD_SCORE_RUNTIME_BASELINE_R1.md` (2026-11-10)
 - 당회 작업 범위: **현재 개발 소스의 UI 소비 구조 및 R1 계약 재사용**, 기능별 실제 갱신 계약 분류 착수. 원자료/DB/D1/Controller/예약/산식 변경 없음.
-- **진척 요약: 01,02,03,07,09 판정 완료 (5/34 = 14.7% 고정 작업 기준). 기능별 판정 2/27. 나머지 25개는 아직 미완료.** 추가 결함군 N은 미확정이므로 전체 R3 최종 %는 아직 산정하지 않는다. 이 기록은 브랜치 문서 반영이지 배포/운영 적용 증거가 아니다.
+- **진척 요약: 01,02,03,07,09–16 판정 완료 (12/34 = 35.3% 고정 작업 기준). 기능별 판정 9/27. 나머지 18개는 미완료.** 추가 결함군 N은 미확정이므로 전체 R3 최종 %는 아직 산정하지 않는다. 이 기록은 브랜치 문서 반영이지 배포/운영 적용 증거가 아니다.
 
 ## 1. 공통 실행 01–03 — 완료 근거
 
@@ -37,13 +37,13 @@
 | 07 | D04 · 한국 등락 · 공개 독립 ID 미확인 | 한국 카드 counts 입력 미연결; 0~100 점수 아님 | app/korea-composite-view.tsx → market-breadth-strip.tsx | `app/korea-composite-view.tsx / app/market-breadth-strip.tsx` | NOT_CONNECTED | **NOT_CONNECTED · 판정 완료 (수정은 별도 기능 연결 담당)** |
 | 08 | D05 · 미국 종합 · CM-R1 overall | 경제 12/12 READY, 가중치 100%; 과거 CURRENT_VINTAGE_ONLY 일부 재구성; 화면변환 3.5 | /api/market-score · market_public_snapshots_v1:current | `app/dashboard-ui.tsx / scripts/pc-writer/run-local.mjs` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 진행 중 · 로컬 계산→현재 공개 버전과 신규 유효 입력의 동시 사건 미확인 |
 | 09 | D06 · 인플레이션 위험 · inflationStability | 현행 R2: 저장 초기발표/PCE PC1 입력 16개·축 7개 전부 충족 시 READY (월·분기 혼합) | /api/inflation-detail · detail:inflation:v1 | `app/dashboard-ui.tsx / app/inflation/inflation-panel.tsx` | SOURCE_ROUTE_GAP_FIXED_PR_UNDEPLOYED | 개발 경로 누락 수정 PR #1165. 실제 API/D1 readback 미완료 |
-| 10 | D07 · 경기침체 위험 · recessionDefense | NFP·GDP·IP·실질PCE·Sahm·소매·가처분소득 7요인; 월·분기 혼합 | /api/recession-detail | `app/dashboard-ui.tsx (risk detail / stored projection)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
-| 11 | D08 · 스태그플레이션 위험 · stagflationSafety | 별도 S21: 공통 13개월 확정/최신 잠정 구분; 기본 diagnostics8의 제3항 아님 | /api/stagflation-risk-detail · detail:stagflation-risk:s21 | `app/dashboard-ui.tsx (risk detail / stored projection)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
-| 12 | D09 · 신용 위험 · creditRiskDefense | HY·IG·종합 CMDI·채권변동성 4요인; 시장/신용 혼합 | /api/credit-risk-detail | `app/dashboard-ui.tsx (risk detail / stored projection)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
-| 13 | D10 · 실적 침체 · earningsRecessionDefense | EPS·마진·매출·확산 4요인; 완료분기/재구성 구분 | /api/earnings-recession-detail | `app/dashboard-ui.tsx (risk detail / stored projection)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
-| 14 | D11 · 자산 버블 · assetBubbleSafety | 6요인 V/P/H/F/B/L; 30/20/15/10/15/10; 완료분기만 확정 | /api/asset-bubble-detail | `app/dashboard-ui.tsx (risk detail / stored projection)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
-| 15 | D12 · 부채 위험 · debtRiskSafety | BIS DSR·부채/GDP 등 5요인; 저빈도 혼합 | /api/debt-risk-detail | `app/dashboard-ui.tsx (risk detail / stored projection)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
-| 16 | D13 · 공급 충격 · supplyShockSafety | GSCPI·WTI·휘발유·구리·IP·CPI괴리 6요인; 혼합 | /api/supply-shock-detail | `app/dashboard-ui.tsx (risk detail / stored projection)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
+| 10 | D07 · 경기침체 위험 · recessionDefense | NFP·GDP·IP·실질PCE·Sahm·소매·가처분소득 7요인; 월·분기 혼합 | /api/recession-detail | `app/dashboard-ui.tsx (risk detail / stored projection)` | SOURCE_ROUTE_GAP_FIXED_IN_PR_NOT_DEPLOYED | D07 경기침체: 7요인 저장 projection detail:recession:v1, GET 라우트 소스 누락 → PR #1165 수정, 운영 재조회 미확인 |
+| 11 | D08 · 스태그플레이션 위험 · stagflationSafety | 별도 S21: 공통 13개월 확정/최신 잠정 구분; 기본 diagnostics8의 제3항 아님 | /api/stagflation-risk-detail · detail:stagflation-risk:s21 | `app/dashboard-ui.tsx (risk detail / stored projection)` | SOURCE_ROUTE_PRESENT_RUNTIME_UNKNOWN | S21 기존 전용 API 라우트 존재; 13개월 완성월 확정 Gate 보존. 운영 게시·응답 미확인 |
+| 12 | D09 · 신용 위험 · creditRiskDefense | HY·IG·종합 CMDI·채권변동성 4요인; 시장/신용 혼합 | /api/credit-risk-detail | `app/dashboard-ui.tsx (risk detail / stored projection)` | SOURCE_ROUTE_GAP_FIXED_IN_PR_NOT_DEPLOYED | D09 신용위험: 4요인 저장 projection detail:credit-risk:v1, GET 라우트 소스 누락 → PR #1165 수정, 운영 재조회 미확인 |
+| 13 | D10 · 실적 침체 · earningsRecessionDefense | EPS·마진·매출·확산 4요인; 완료분기/재구성 구분 | /api/earnings-recession-detail | `app/dashboard-ui.tsx (risk detail / stored projection)` | SOURCE_ROUTE_GAP_FIXED_IN_PR_NOT_DEPLOYED | D10 실적침체: 4요인 저장 projection detail:earnings-recession:v1, GET 라우트 소스 누락 → PR #1165 수정, 운영 재조회 미확인 |
+| 14 | D11 · 자산 버블 · assetBubbleSafety | 6요인 V/P/H/F/B/L; 30/20/15/10/15/10; 완료분기만 확정 | /api/asset-bubble-detail | `app/dashboard-ui.tsx (risk detail / stored projection)` | SOURCE_ROUTE_GAP_FIXED_IN_PR_NOT_DEPLOYED | D11 자산버블: 완료분기·6요인 저장 projection detail:asset-bubble:v1, GET 라우트 소스 누락 → PR #1165 수정, 운영 재조회 미확인 |
+| 15 | D12 · 부채 위험 · debtRiskSafety | BIS DSR·부채/GDP 등 5요인; 저빈도 혼합 | /api/debt-risk-detail | `app/dashboard-ui.tsx (risk detail / stored projection)` | SOURCE_ROUTE_GAP_FIXED_IN_PR_NOT_DEPLOYED | D12 부채: 저빈도·5요인 저장 projection detail:debt-risk:v1, GET 라우트 소스 누락 → PR #1165 수정, 운영 재조회 미확인 |
+| 16 | D13 · 공급 충격 · supplyShockSafety | GSCPI·WTI·휘발유·구리·IP·CPI괴리 6요인; 혼합 | /api/supply-shock-detail | `app/dashboard-ui.tsx (risk detail / stored projection)` | SOURCE_ROUTE_GAP_FIXED_IN_PR_NOT_DEPLOYED | D13 공급충격: 혼합주기·6요인 저장 projection detail:supply-shock:v1, GET 라우트 소스 누락 → PR #1165 수정, 운영 재조회 미확인 |
 | 17 | D14 · 물가 · inflation | 과거 R2 축수/현행 입력 판본 혼재; 월간 중심, 기대물가 별도; 활성 원천 수 미확정 | /economic-indicators/inflation/ · /api/market-score domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
 | 18 | D15 · 고용 · employment | 4개 점수요인; BLS 월간 + DOL 주간; 29개 R6 상세지표와 구분 | /economic-indicators/employment/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
 | 19 | D16 · 금리 · rates | 정책·2년·10년 실질·10Y–3M 4요인; 일별+정책 비정기 | /economic-indicators/rates/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
@@ -86,8 +86,8 @@
 ## 4. 다음 실제 실행 순서·작업량 보호
 
 - **현재 증거상 확정된 갱신 시점 불일치(결함군 N): 아직 0건 확정이 아니라 '미확정'.** D04는 NOT_CONNECTED이며 새 수정 대상 결함군에 자동 합산하지 않는다.
-- **다음 필수 실행:** PR #1165 CI와 승인된 운영 반영·API 확인을 수행하고, 다음 독립 실행 10/D07 경기침체 7요인과 저장 경로를 판정한다. 04–06·08의 구체적 미확인 입력은 기존 유효 증거가 있을 때 이어서 판정하되 **27개 전원 운영 사건 확인을 단일 전역 Gate로 만들지 않는다**.
-- 실행 완료 집계: **5/34** (01,02,03,07,09), 04–06/08은 부분 조사, 10–34는 미완료. **구현: API 읽기 라우트 1건·회귀 테스트 3건 / 운영 배포: 0건.**
+- **다음 필수 실행:** 확장 PR #1165 CI·승인 배포/공개 API 검증과 독립 17/D14 경제 물가 점수의 실제 활성 모델 분리 판정을 수행한다. 04–06·08의 구체적 미확인 입력은 기존 유효 증거가 있을 때 이어서 판정하되 **27개 전원 운영 사건 확인을 단일 전역 Gate로 만들지 않는다**.
+- 실행 완료 집계: **12/34** (01,02,03,07,09–16), 04–06/08 및 17–34는 미완료. **구현: API 저장결과 읽기 라우트 7건·회귀 테스트 4건 / 운영 배포: 0건.**
 
 
 ## 5. 09/D06 인플레이션 위험 신규 실행 증거 — 2026-11-16
@@ -98,3 +98,13 @@
 - 최소 수정: W06 전용 브랜치에 GET 라우트·회귀 테스트 추가. 구 브랜치와 최신 main의 큰 분기(356 ahead, 586 behind) 때문에 2개 파일만 최신 main 기반 격리 브랜치로 이전하여 Draft PR #1165 생성: https://github.com/ansqhd5774-Choi/zgmini/pull/1165 (HEAD 30a6f6df308cb61609f5e98ec06e55916a6a3212).
 - 격리 Node 22에서 동일한 저장 조회 함수·라우트·테스트를 복원해 3/3 PASS: 유효 0점, 조회 한 번·저장 JSON 원형 유지, stale 503. GitHub CI/Cloudflare/D1/API/UI 종단 결과는 미확정. 공급자·DB/TTL/산식/예약 변경 없음.
 - 판정: 개발 소스의 ROUTE_GAP 확정(라우트 추가 완료). 운영 반영은 미완료. F1-F4 추가 결함군 반영 여부는 33번 원인 통합 판정에서 확정.
+
+
+## 6. 10–16/D07–D13 위험 상세 경로 신규 실행 증거 — 2026-11-16
+
+- 검증 기준: 2026-11-16 main 06f73bcf29a0af8fe2a7341b60ab6da8305a03e6. 8개 위험 중 스태그플레이션은 기존 S21 전용 상세 GET이 있으나, 나머지 7개 상세 GET 라우트(09번 인플레이션 포함)는 소스에 누락. 기존 market-public-projection-store.mjs는 7개 각각의 승인 공개 키를 이미 허용함.
+- 10/D07: recessionDefense 기존 7요인·저장 projection detail:recession:v1. 11/D08: 완성월 13개월 S21, 기존 app/api/stagflation-risk-detail/route.ts 및 worker/stagflation-public.mjs 정상 연결(운영 현재값은 별도 확인). 12/D09: creditRiskDefense 기존 4요인. 13/D10: earningsRecessionDefense 기존 4요인. 14/D11: assetBubbleSafety 기존 6요인·완료분기 Gate. 15/D12: debtRiskSafety 기존 5요인. 16/D13: supplyShockSafety 기존 6요인.
+- 10/12/13/14/15/16 소스 결함: UI 소비와 D1 키는 있으나 상세 GET 라우트가 누락. 해당 여섯 개를 09와 동일한 기존 저장 리더로 연결. 기존 수집기·계산기·DB/D1 키/TTL 변경 0건. 11은 소스 정상, 기존 계산 Gate 보존.
+- 변경 리포지토리 브랜치: codex/ui-improvements. 무관한 다수 source divergence를 Production PR에 넣지 않으려고 최신 main 기반 격리 PR #1165에 읽기 라우트 7개 + 공통 JS 함수 타입 JSDoc + 회귀 테스트를 분리: https://github.com/ansqhd5774-Choi/zgmini/pull/1165.
+- 격리 Node 22 동일 소스 테스트 4/4 PASS; 초기 범위(09) CI #43854024396 PASS. 7개 전체 확장 CI는 별도 확인 필요. 배포 SHA/D1 readback/API/UI 런타임은 확인 전이므로 실제 운영 성공으로 미집계.
+- 개별 항목 분류는 소스 근거와 운영미확인 조건이 모두 명시된 상태로 완료 집계. 33번에서 동일 원인의 라우트 결함들을 한 군으로 합산할지 결정하며 중복 F1–F4 생성을 막는다.
