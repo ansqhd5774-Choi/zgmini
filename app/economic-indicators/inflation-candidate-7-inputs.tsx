@@ -2,7 +2,7 @@
 
 import {useMemo} from "react";
 import {useStoredIndex} from "../../components/use-stored-index";
-import {INFLATION_CANDIDATES_7} from "../../lib/inflation-causal-candidates-public-7-catalog.mjs";
+import {W01_ACTIVE_CANDIDATES} from "../../lib/inflation-causal-candidates-public-7-catalog.mjs";
 import {InflationMiniChart,type InflationMiniTrendPoint} from "../inflation/inflation-mini-chart";
 import {ContentHelp} from "../content-help";
 import {EconomicFavoriteButton} from "./economic-favorite-button";
@@ -48,8 +48,8 @@ export default function InflationCandidate7Inputs(){
   finite(row.value)&&dated(row.observationDate);
  return <section className="inflation-indicator-section inflation-r2-indicators economic-indicators" aria-labelledby="economic-inflation-candidate-7">
   <header><div><p className="cnn-eyebrow">ADDITIONAL RESEARCH INPUTS · STORED DATA</p>
-   <h2 id="economic-inflation-candidate-7">추가 물가 관련 연구 원자료 (7개)</h2></div>
-   <p>기존 19개 원자료 및 4개 물가 평가점수와 별도로 표시합니다. <b>7개 항목은 점수·상승/하락 판단에 반영되지 않는 미평가 원자료</b>입니다.</p>
+   <h2 id="economic-inflation-candidate-7">추가 물가 관련 연구 원자료 (4개)</h2></div>
+   <p>기존 19개 원자료 및 4개 물가 평가점수와 별도로 표시합니다. <b>4개 항목은 점수·상승/하락 판단에 반영되지 않는 미평가 원자료</b>입니다.</p>
   </header>
   {(loading||error||!verified)&&<p className="economic-data-notice" role="status">
    {loading?"추가 원자료의 공개 저장본 확인 중":
@@ -60,7 +60,7 @@ export default function InflationCandidate7Inputs(){
     <colgroup>{Array.from({length:10},(_,index)=><col key={index}/>)}</colgroup>
     <thead><tr><th>☆</th><th>지표</th><th>출처</th><th>연구 상태</th><th>이전 원값</th>
      <th>최근 원값</th><th>발표 주기</th><th>판단</th><th>최근 관측</th><th>ⓘ</th></tr></thead>
-    <tbody>{INFLATION_CANDIDATES_7.map(meta=>{
+    <tbody>{W01_ACTIVE_CANDIDATES.map(meta=>{
      const row=rows.get(meta.id),ready=available(row,meta),stale=ready&&row?.status==="STALE",trend=points(row,ready);
      return <tr key={meta.id} data-research-candidate={meta.id}>
       <td><EconomicFavoriteButton domainId="inflation" indicatorId={"candidate-"+meta.id} label={meta.name}/></td>
@@ -83,7 +83,7 @@ export default function InflationCandidate7Inputs(){
     })}</tbody>
    </table>
   </div>
-  <div className="inflation-r2-mobile-list">{INFLATION_CANDIDATES_7.map(meta=>{
+  <div className="inflation-r2-mobile-list">{W01_ACTIVE_CANDIDATES.map(meta=>{
    const row=rows.get(meta.id),ready=available(row,meta),stale=ready&&row?.status==="STALE",trend=points(row,ready);
    return <article className="inflation-r2-mobile-card" key={meta.id} data-research-candidate={meta.id}>
     <div className="inflation-r2-mobile-head"><div className="economic-mobile-name">
@@ -104,6 +104,6 @@ export default function InflationCandidate7Inputs(){
      <div><span>발표 주기</span><strong>{meta.cadence}</strong><small>다음 발표일 —</small></div></div>
    </article>;
   })}</div>
-  <p className="economic-data-notice">자료 출처: 미국 노동통계국(BLS), 미국 인구조사국(Census Bureau), EIA, 미국 재무부(MTS), 연방준비제도(G.17). 이 화면의 연구용 가공 결과는 해당 기관의 공식 평가나 승인을 의미하지 않습니다. BLS는 재가공 자료의 정확성을 보증하지 않습니다. 이 서비스는 Census Bureau Data API를 사용하지만 미국 인구조사국의 승인·인증을 받지 않았습니다.</p>
+  <p className="economic-data-notice">자료 출처: 미국 노동통계국(BLS), EIA, 미국 재무부(MTS), 연방준비제도(G.17). 이 화면의 연구용 가공 결과는 해당 기관의 공식 평가나 승인을 의미하지 않습니다. BLS는 재가공 자료의 정확성을 보증하지 않습니다.</p>
  </section>;
 }
