@@ -50,11 +50,14 @@ test('server filters sector and industry with original labels and correct day to
  assert.equal(empty.status,200);
  assert.equal(empty.headers.get('x-display-count'),'0');
 });
-test('invalid/no classification yields an explicit missing badge rather than fabricated fields',()=>{
- const output=earningsDisplayHtml(snapshot,{start,end},null,null,null,{},grades,null);
+test('missing company classification stays missing, while unpublished taxonomy preserves legacy rows',()=>{
+ const output=earningsDisplayHtml(snapshot,{start,end},null,null,null,{},grades,taxonomy);
  assert.equal(output.count,3);
  assert.match(output.html,/is-empty" title="미분류">미분류/);
  assert.doesNotMatch(output.html,/class=mc-number/);
+ const legacy=earningsDisplayHtml(snapshot,{start,end},null,null,null,{},grades,null);
+ assert.match(legacy.html,/class=mc-number/);
+ assert.doesNotMatch(legacy.html,/class="mc-sector/);
 });
 test('unvalidated sector parameters reject the HTML request',()=>{
  const url='https://zgmini.kr/api/earnings-calendar-display?start='+start+'&end='+end+
