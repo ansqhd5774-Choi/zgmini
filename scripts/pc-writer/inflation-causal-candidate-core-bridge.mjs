@@ -88,13 +88,24 @@ export function planInflationCandidateCoreDue({approved=false,bootstrapApproved=
   const initial=['treasury','eia'].includes(group);
   const event=initial?(bootstrapApproved?{eventKey:`bootstrap:${group}`}:null):
     matchingEvent(group,events,sources,moment);
-  const eventKey=event&&(initial?event.eventKey:`release:${event.source}:${event.id}:${event.date}`);
+  // The old strict CPI/Census parsers rejected real provider responses.
+  // Allow one recovery attempt only for those exact recorded legacy failures,
+  // within the already-approved candidate bootstrap + quota/Core lock.
+  // Other failures, previously processed groups, and normal release cadence
+  // never gain a new bootstrap path.
+  const legacyFailure=checkpoint.attempted[group]?.failureCode;
+  const recoverable=bootstrapApproved&&!checkpoint.processed[group]&&
+    ((group==='cpi'&&legacyFailure==='BLS_CANDIDATE_VALUE_OR_DUPLICATE')||
+     (group==='census'&&legacyFailure==='CENSUS_M3_HEADERS_INVALID'));
+  const eventKey=event?(initial?event.eventKey:
+    `release:${event.source}:${event.id}:${event.date}`):
+    recoverable?`legacy-parser-recovery:${group}`:null;
   const attempt=checkpoint.attempted[group];
   const recently=attempt?.eventKey===eventKey&&isIso(attempt.at)&&
     moment.getTime()>=Date.parse(attempt.at)&&moment.getTime()-Date.parse(attempt.at)<86_400_000;
   if(!eventKey||checkpoint.processed[group]?.eventKey===eventKey||recently||
      !validKey(providerEnv,group)){skipped.push(group);continue;}
-  due.push({group,eventKey,releaseDate:initial?null:event.date});
+  due.push({group,eventKey,releaseDate:initial||!event?null:event.date});
  }
  return {status:due.length?'DUE':'NO_VERIFIED_RELEASE_DUE',due,skipped};
 }
