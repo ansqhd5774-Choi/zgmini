@@ -75,7 +75,8 @@ test('removed regional feeds have no polling or public routes while CNN and Kore
  assert.match(wiring,/'fear-greed':cnn/);
  assert.doesNotMatch(wiring,/ftse-fear-greed|nikkei-fear-greed|kospi-fear-greed|kospi-history/);
  const ui=readFileSync(new URL('../app/country-fear-greed.tsx',import.meta.url),'utf8');
- assert.match(ui,/<CnnPanel\s+showBreadth\s*\/>/);
- assert.match(ui,/<KoreanCountryCard\s+showBreadth\s*\/>/);
+ assert.match(ui,/<CnnPanel\s*\/>/);
+ assert.match(ui,/<KoreanCountryCard\s*\/>/);
+ assert.doesNotMatch(ui,/showBreadth/,'retired breadth widgets must not mount or poll unavailable APIs');
  assert.doesNotMatch(ui,/ftse-fear-greed|nikkei-fear-greed|kospi-fear-greed|kospi-history/);
 });

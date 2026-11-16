@@ -30,9 +30,9 @@ function CountryFearGreed() {
       </div>
       <div className="zg-country-panel-grid">
         <MarketChartAnimationContext.Provider value={false}>
-        <CnnPanel showBreadth/>
+        <CnnPanel/>
         <div className="zg-country-grid">
-          <KoreanCountryCard showBreadth/>
+          <KoreanCountryCard/>
         </div>
         </MarketChartAnimationContext.Provider>
       </div>
