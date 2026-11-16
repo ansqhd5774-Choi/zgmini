@@ -49,10 +49,39 @@ function summarizeMonitoredSourceSnapshot(snapshot,now){
   else unknown++;
  }
  if(ids.size!==MONITORED_SOURCE_IDS.length)return unavailable('MONITORED_INVENTORY_INCOMPLETE');
+ // API counts the 14 official calendar source groups; HTTP counts recurring
+ // hosts in observed PC requests. A failed response is not a missing record.
+ const calendar=snapshot.items.filter(item=>MONITORED_CALENDAR_SOURCES.includes(item.id));
+ const api={
+  normal:calendar.filter(item=>item.state==='normal').length,
+  failed:calendar.filter(item=>item.state==='failed').length,
+  unknown:calendar.filter(item=>item.state==='unknown').length,
+  total:calendar.length
+ };
+ let http=null;
+ if(snapshot.httpHosts?.scope==='external-provider-hosts'){
+  const observed=summarizeApiConnectionHealth(snapshot.httpHosts,now);
+  if(observed.coverage==='PARTIAL'&&observed.reason===null&&
+    Number.isSafeInteger(observed.total)&&observed.total>0){
+   const repeated=observed.items.filter(item=>item.repeated);
+   const normalHosts=repeated.filter(item=>item.state==='normal').length;
+   // HTTP 429 / local quota guard are rate-limit deferrals, not connection
+   // outages. A true last-event transport failure or authorization/server
+   // error alone can produce a warning.
+   const realFailure=item=>item.state==='failed'&&Object.entries(item.lastEventStatuses??{})
+    .some(([status,count])=>count>0&&(status==='NETWORK_ERROR'||
+     (/^[45][0-9]{2}$/.test(status)&&status!=='429')));
+   const failedHosts=repeated.filter(realFailure).length;
+   http={normal:normalHosts,failed:failedHosts,
+    unknown:repeated.length-normalHosts-failedHosts,total:repeated.length};
+  }
+ }
+ const hasFailure=failed>0||api.failed>0||(http?.failed??0)>0;
+ const hasUnknown=api.unknown>0||!http||http.unknown>0;
  return {version:1,scope:'monitored-source-endpoints',source:snapshot.source,
   activeInventoryVerified:true,limitedCoverage:false,coverage:'PARTIAL',
-  checkedAt:snapshot.observedAt,status:failed?'partial':unknown?'unknown':'healthy',
-  normal,failed,unknown,total:MONITORED_SOURCE_IDS.length,items:[]};
+  checkedAt:snapshot.observedAt,status:hasFailure?'partial':hasUnknown?'unknown':'healthy',
+  normal,failed,unknown,total:MONITORED_SOURCE_IDS.length,api,http,items:[]};
 }
 
 const UNKNOWN={status:'unknown',scope:'external-provider-hosts',coverage:'UNVERIFIED',normal:null,failed:null,unknown:null,total:null,items:[]};
@@ -165,6 +194,14 @@ export function publicApiConnectionSummary(internal){
  const trusted=['active-api-endpoints','monitored-source-endpoints'].includes(internal?.scope)&&
   internal?.activeInventoryVerified===true&&internal?.limitedCoverage===false;
  const status=trusted&&['partial','unknown','healthy','stale'].includes(internal?.status)?internal.status:'unknown';
+ const safeCounts=value=>{
+  const n=integerOrNull(value?.normal),f=integerOrNull(value?.failed);
+  const u=integerOrNull(value?.unknown),t=integerOrNull(value?.total);
+  return n!==null&&f!==null&&u!==null&&t!==null&&t>0&&n+f+u===t
+   ?{normal:n,failed:f,unknown:u,total:t}:null;
+ };
+ const api=trusted&&internal?.scope==='monitored-source-endpoints'?safeCounts(internal.api):null;
+ const http=trusted&&internal?.scope==='monitored-source-endpoints'?safeCounts(internal.http):null;
  const checked=typeof internal?.checkedAt==='string'?Date.parse(internal.checkedAt):NaN;
  return {
   version:1,
@@ -174,6 +211,7 @@ export function publicApiConnectionSummary(internal){
   failed:trusted?integerOrNull(internal?.failed):null,
   unknown:trusted?integerOrNull(internal?.unknown):null,
   total:trusted?integerOrNull(internal?.total):null,
+  api,http,
   checkedAt:Number.isFinite(checked)?new Date(checked).toISOString():null,
  };
 }

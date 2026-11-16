@@ -267,6 +267,9 @@ export async function storeLocalApiConnectionHealth(core,base,now=Date.now()){
  const calendar=(await publicFeedStore(core).readOutput('release-calendar'))?.body??null;
  const endpointLog=readProviderEndpointEvents(path.basename(base)==='pc-writer'?base:path.join(base,'pc-writer'));
  const snapshot=buildMonitoredSourceHealth(calendar,endpointLog,now);
+ // Preserve HTTP host diagnostics only inside the private D1 snapshot.
+ // The public projection releases aggregate counters only, never hostnames.
+ snapshot.httpHosts=buildApiConnectionHealthFromLog(base,now);
  await publicFeedStore(core).writeOutput(API_CONNECTION_HEALTH_KEY,snapshot,now);
  const check=await publicFeedStore(core).readOutput(API_CONNECTION_HEALTH_KEY);
  if(JSON.stringify(check?.body)!==JSON.stringify(snapshot))throw Error('API_CONNECTION_HEALTH_READBACK_FAILED');
