@@ -2,6 +2,7 @@ import fs from 'node:fs';import path from 'node:path';
 import {createHash,randomUUID} from 'node:crypto';
 import {loadLocalProviders} from './local-env.mjs';
 import {createQuotaFetch} from './quota-fetch.mjs';
+import {observeIndependentProviderFetch} from './provider-endpoint-fingerprint.mjs';
 export async function collectAlpacaIncremental(base,{fetchImpl=fetch,now=Date.now(),wait=ms=>new Promise(r=>setTimeout(r,ms))}={}){
  const file=path.join(base,'local-asset-bubble-r10-alpaca-collection.json'),dir=path.join(base,'asset-r10-alpaca');
  const read=f=>fs.existsSync(f)?JSON.parse(fs.readFileSync(f,'utf8')):null;
@@ -18,7 +19,7 @@ export async function collectAlpacaIncremental(base,{fetchImpl=fetch,now=Date.no
   if(!groups.length)throw Error('ALPACA_UNIVERSE_MISSING');report.totalGroups=groups.length;
   const start=storedThrough??read(path.join(dir,'checkpoint.json')).end;
   if(start>end)return {status:'NO_NEW_WINDOW',runRequests:0};
-  const sharedFetch=createQuotaFetch({base,originalFetch:fetchImpl,mode:'enforce'}).fetch;
+  const sharedFetch=observeIndependentProviderFetch(base,'ALPACA_INCREMENTAL',createQuotaFetch({base,originalFetch:fetchImpl,mode:'enforce'}).fetch);
   const output=path.join(dir,'incremental');fs.mkdirSync(output,{recursive:true});
   // A restartable LOCAL transport cursor, never an approved scoring input.
   // A page is remembered only after complete validation and atomic readback.
