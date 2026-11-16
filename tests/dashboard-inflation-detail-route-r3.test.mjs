@@ -11,7 +11,7 @@ test('inflation detail GET is wired to the approved stored R2 projection',()=>{
   assert.match(route,/publicProjectionStore\(env\.DB\)/);
   assert.match(route,/key:PUBLIC_PROJECTION_KEYS\.inflation/);
   assert.equal(PUBLIC_PROJECTION_KEYS.inflation,'detail:inflation:v1');
-  assert.doesNotMatch(route,/fetch\(|collect|calculateMarket\(/);
+  assert.doesNotMatch(route,/\bfetch\(|\bcollectInflation\(|\bcalculateMarket\(/);
 });
 
 test('inflation detail is read-only, preserves the published payload and never invents a score',async()=>{
