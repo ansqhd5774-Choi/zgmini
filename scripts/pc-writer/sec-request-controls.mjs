@@ -100,7 +100,7 @@ export function createSecSharedLimiter({base,minIntervalMs=MIN_INTERVAL_MS,maxWa
    return withLock(base,()=>{
     const at=now();const state=readLedger(ledgerPath(base),at);
     // Do not equate every 429 with a verified 10-minute fair-access block.
-    const waitDefault=status===429?30_000:status===403?60_000:1000;
+    const waitDefault=status===429?5000:status===403?60_000:1000;
     let wait=confirmedFairAccessBlock===true&&status===403?600_000:waitDefault;
     if(typeof retryAfter==='string'){
      const value=retryAfter.trim();
