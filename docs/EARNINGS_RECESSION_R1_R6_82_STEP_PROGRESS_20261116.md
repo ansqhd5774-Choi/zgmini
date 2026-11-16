@@ -31,14 +31,14 @@
 | 필드 | 마지막 확인 상태 |
 |---|---|
 | 최종 목표 | 82단계 R1~R6로 적격 실적 침체 정보성 지표의 PC 원자료 저장→계산→승인 D1 게시→Production API/UI를 완성. 기존 E1-R4 점수/산식·기타 12대 기업실적은 보호 |
-| 현재 관련 단계 | **순차 R2-05(15/82)**: QFR 제조업 세후이익/매출 분자·분모·표본·비교 분기 정합성 검사. 후행 QFR B 게시 R4-06은 미완료 |
-| 마지막 검증 완료점 | **R2-04 QFR 공식 ZIP/프로그램·CSV 구성·버전/원장 증거 조사 DONE (§19)**. Census 공식 econ_datasets QFR-mf.zip 2026-09-08/2026Q2, R1 parser QFR-mf.csv의 MFG/US, 101 매출·115 세후이익·NSA 계약 확인. 실PC 2026-10-27 ZIP SHA 232f7757...·SQLite chunk/snapshot 1/1 readback PASS 재사용. 신규 수집 없음 |
+| 현재 관련 단계 | **순차 R2-06(16/82)**: Census M3 제조업 신규주문·출하 공식 EITS 변수·단위·조정 정의/적격성 검증. 후행 QFR B 게시 R4-06은 미완료 |
+| 마지막 검증 완료점 | **R2-05 QFR 동일 표본·5분기 재계산 DONE (§20)**. Census MFG/US NSA·et_idx=0, 매출 dt_code=101·세후이익 dt_code=115(백만 USD)를 저장자료와 교차 계산. 2026Q2 15.599418144173285%, Q1 14.03708175763798%, 변화 +1.5623363865353053%p. 기존 PC R3 stored-only PASS 및 공식 QFR 통계와 대조. SHA/SQLite 성공 증거 재사용, D1/Production 미검증 |
 | 재사용할 기존 근거 | QFR 원자료 ZIP PC SQLite 저장·계산 기존 유효 증거; 앱 QFR 3-pin [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175)는 앱 main 병합, 운영 PC 설치·B 게시 별개. R1-09 소스 blob 근거는 §14 |
-| 현재 최초 실제 미완료 조건 | **순차 R2-05:** QFR 마진 분자·분모의 동일 분기/산업표본·누락/0 처리·비교기준 실제 저장자료 검증 미완료. QFR B D1 게시 R4-06과 FRED 권리 HOLD는 별도 |
-| 다음 필수 실행 하나 | **순차 15/82 R2-05:** 저장 QFR 동일분기 제조업 총매출(101)/세후이익(115)·NSA/US·분모>0 및 5연속 분기의 이익률 계산을 기존 R3 stored-only 검산과 대조한다. 신규 다운로드 금지 |
-| 현재 완료율 증거 | **14/82 DONE(약 17.1%)**, 현재 R2-05(15/82). 기존 14단계 종단 게시 완료 마지막 확인 0/14, R6-15 자연 갱신 관찰 DEFERRED |
+| 현재 최초 실제 미완료 조건 | **순차 R2-06:** Census EITS M3 신규주문·출하의 공식 변수·단위·계절조정·발표 시차와 원자료 적격성 미판정. 물가 전용 MTM/TI 재고 Collector와 C 신규주문/출하는 별도. QFR D1 R4-06 미실행, FRED 권리 HOLD 별도 |
+| 다음 필수 실행 하나 | **순차 16/82 R2-06:** Census EITS M3 공식 변수·단위·조정/시계열 정의와 기존 코드를 검증해 신규주문·출하 후보 각각 FOUND/HOLD 판정. 승인 없는 PC 수집 금지 |
+| 현재 완료율 증거 | **15/82 DONE(약 18.3%)**, 현재 R2-06(16/82). 기존 14단계 종단 게시 완료 마지막 확인 0/14, R6-15 자연 갱신 관찰 DEFERRED |
 | 최종 갱신 식별 | 이 문서의 **최신 원격 브랜치 HEAD 및 Git blob SHA를 재조회**해 근거로 보고한다. 고정된 과거 SHA를 현행값으로 복사하지 않는다 |
-| **순차 포인터·완료율** | **현재 15/82 R2-05**; R1-01~R2-04 연속 DONE **14/82(약 17.1%)**. 후행 저장·D1 미실증은 해당 단계에서 미완료 |
+| **순차 포인터·완료율** | **현재 16/82 R2-06**; R1-01~R2-05 연속 DONE **15/82(약 18.3%)**. 후행 저장·D1 미실증은 해당 단계에서 미완료 |
 | R1-09 이번 실행 | 2026-11-17 08시 KST: B 경제지표 `/economic-indicators/earnings/`→`EconomicDetailPanel`→`/api/market-score` `domains[id=earnings]`와 A 8대 위험 4요소·C 보조 GET의 별도 계약 소스 검증. `DONE`, 완료 9/82. 경계 상세·blob §14; 운영 GET·D1 미검증. 다음 R1-10 |
 
 ### D. 다음 작업자 재개 순서 및 변경 충돌
@@ -54,19 +54,19 @@
 
 | 판정 항목 | 실제 상태 |
 |---|---|
-| **순차 완료 확정** | **14/82 (약 17.1%)** — R1-01~R2-04 ZIP/원본 조사 기준 충족. 실제 D1/Production 미실증은 후행 분리 |
-| **현재 순차 진행 단계** | **15/82 = R2-05** (QFR 동일분기 세후이익/매출·표본·마진 계산 정합성 검증) |
-| **82개 중 개별 완료 확정** | **14개** (R1-01~R2-04), 그 밖의 소스/CI와 운영 진행은 해당 완료 기준마다 별도 |
+| **순차 완료 확정** | **15/82 (약 18.3%)** — R1-01~R2-05 ZIP/실PC 저장자료 계산 증거 기준 충족. 실제 D1/Production 미실증은 후행 분리 |
+| **현재 순차 진행 단계** | **16/82 = R2-06** (Census EITS M3 신규주문·출하 변수·단위·조정/조건부 적격성 검증) |
+| **82개 중 개별 완료 확정** | **15개** (R1-01~R2-05), 그 밖의 소스/CI와 운영 진행은 해당 완료 기준마다 별도 |
 | **71번 R6-04** | **후행 소스 선행 작업·현재 운영 승인 미해결**, 순차 71단계에 도달한 것이 아님 |
-| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 14개 확정 DONE, 남은 68개 완료 판정 대상; 재수집 68회 뜻 아님 |
-| **다음 실제 수행 하나** | **R2-05(15/82):** Census QFR 분자·분모·제조업 표본·동분기/5분기 정합성 재대조 |
+| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 15개 확정 DONE, 남은 67개 완료 판정 대상; 재수집 67회 뜻 아님 |
+| **다음 실제 수행 하나** | **R2-06(16/82):** Census EITS M3 신규주문·출하 공식 series/단위/계절조정 확인 또는 HOLD |
 
 **순서 운용:** 다음 번호로 넘어가는 기준은 해당 단계의 **계획서 완료 조건 + 근거 링크**이며, 뒤 단계에서 미리 통과한 PR·CI는 계획 순번을 바꾸지 않는 선행 자산으로 유지한다. 사용자 승인 없이 순번이나 완료 기준을 수정하지 않는다. 조건부 HOLD·장기 DEFERRED는 계획서대로 처리하며 다른 독립 승인 작업의 수행을 중단하는 새로운 Gate가 아니다.
 
 
 ## 0. 82개 작업별 진행 상태 (실증·소스 분리)
 
- > **2026-11-17 KST 최신 판정.** R1-01~R2-04 14/82 DONE, 현재 순차 R2-05(15/82). SOURCE/CI만으로 PC/D1/Production DONE 자동 승격하지 않음.
+ > **2026-11-17 KST 최신 판정.** R1-01~R2-05 15/82 DONE, 현재 순차 R2-06(16/82). SOURCE/CI만으로 PC/D1/Production DONE 자동 승격하지 않음.
 
 | 작업 ID | 실행계획 작업 | 현재 증거 기반 상태 | 마지막 확인 증거·남은 조건 |
 |---|---|---|---|
@@ -84,7 +84,7 @@
 | R2-02 | FRED 배포 BEA 단위이익 CSV와 공식 BEA 원본의 정의·권리·개정 비교 | `DONE` | **§17** BEA NIPA 1.15 A463RD → FRED A463RD3Q052SBEA USD/SA/Q 공개 계보 확인. W05 그래프 CSV URL과 코드 요구 헤더/분기 기간 변환·SHA archive 구분. FRED 공식 API는 별도 키·ZIP CSV·realtime/vintage 계약. FRED series Public Domain: Citation Requested, 그러나 FRED Services archive·공개 범위 HOLD_RIGHTS_SCOPE; BEA 공식 자료 public domain. 실제 CSV 원본/BEA 바이트 대조 NOT_VERIFIED 및 PC/D1/Production 변경 0건 |
 | R2-03 | BEA 제조업 기업이익 산업 분류·명목/실질·분기·YoY 기준 확인 | `DONE` | **§18** BEA NIPA Table 6.16D N400RC → FRED N400RC1Q027SBEA는 미국 국내 비금융 제조업의 IVA 기업이익, 명목 십억 달러 SAAR/분기. BEA는 CCAdj를 제조업 단위에 배분하지 않음. W05 source 4fcd41887151f8aefe16cb9d47ab5949bca8ed8d와 Reader 5afd165dbe6cdd31bf9e78f169ae263655d2a088는 5개 연속분기, 전년동기 양수, YoY=(Q/Q-4-1)*100, CURRENT_VINTAGE_NOT_PIT를 검사. 2026Q2=1053.304 vs 2025Q2=681.285 → 약 54.6055%; 기존 2026-10-28 PC 보고와 일치. 현장 독립 SHA·D1 게시 미검증, FRED 이용권 HOLD 별도 |
 | R2-04 | Census QFR 공식 ZIP/API 경로와 제공 데이터 구조 확인 | `DONE` | **§19** Census 공식 datasets 목록의 QFR-mf.zip(2026-09-08, 2026Q2)과 code programCode=QFR→QFR-mf.csv/CATEGORIES/DATA TYPES/GEO LEVELS/TIME PERIODS/DATA 계약 대조. MFG/US/et_idx=0/is_adj=0, 매출 101·세후이익 115 백만달러 입력. 기존 PC 2026-10-27 ZIP SHA 232f7757.../1746726 bytes, R2 1chunk+1snapshot SQLite 저장·readback PASS 재사용. 공식 별도 revision id 없음(SHA version pin). 신규 수집·쓰기 없음; R2-05 정밀 계산 검사 후행 |
-| R2-05 | QFR 세후이익/매출 분자·분모·산업 표본·비교 분기 정합성 검사 | `EXISTING_EVIDENCE` | 기존 QFR 저장자료 기반 세후이익률 계산 검증 증거; 현재 개정판 재대조 필요시 별도 |
+| R2-05 | QFR 세후이익/매출 분자·분모·산업 표본·비교 분기 정합성 검사 | `DONE` | **§20** Census QFR 공식 비계절조정 US/MFG/et_idx=0/is_adj=0, dt_code=101 Net Sales, 115 Income After Taxes (백만 달러)와 2025Q2~2026Q2 원본 5분기 수치 독립 산술 검증. 2026Q2 370082/2372409*100=15.599418144173285%, Q1 287262/2046451*100=14.03708175763798%, 변화 +1.5623363865353053%p. 기존 PC R3 stored-only 1snapshot SHA PASS, source HTTP/D1 writes 0; 공식 Census 2026Q2 2026-09-08 발표 비계절조정 통계와 일치. 이는 자체 파생마진이며 QFR 표본추정 통계, 신선/Production 및 D1 게시 미검증 |
 | R2-06 | Census M3 신규주문·출하 공식 변수·단위·조정 정의 확인 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R2-07 | Census MTIS 재고/매출 비율 변수·관측월·개정 내역 확인 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R2-08 | BLS 기본 3원천 `WPSFD4`, `WPSFD41`, `PRS85006111` 정의 확인 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
@@ -489,3 +489,21 @@ R2-03에 요구한 산업범위·명목/실질·IVA와 CCAdj의 차이·SAAR/분
 - R2-04 조사 DONE, 실제 원자료 저장 증거는 2026-10-27 실PC R2에 한정됨. D1 게시 R4-06 승인 미완료, 운영 방문자 GET/Production 현재값 미검증. R2-05 세후이익률 계산 표본·분기 정합성 검증과 R3 저장 자료 계산·게시를 분리한다.
 
 **LAST PASS:** Census 공식 ZIP QFR-mf.zip, parser QFR-mf.csv 필드/계층/단위, 이전 PC ZIP 원문 SHA/append-only 원장 확인. **FIRST UNFINISHED:** R2-05 제조업 같은 표본의 세후이익 115·매출 101 분자·분모·비계절조정 및 5분기 검산. **NEXT:** W05가 기존 R3 stored-only 계산 PASS와 현재 Reader의 이익률 정의를 대조하며 신규 공급자 API 호출·SQLite/D1 쓰기 없이 근거 기록.
+
+## 20. R2-05 (2026-11-17 KST) QFR 제조업 세후이익률 분자·분모·5분기 정합성 — DONE
+
+- **대상:** 저장 원본 Census ZIP SHA `232f7757e654e787a9eab49792302feb3683e5280a66ff0cc9bd7f0cbc448654`, PC 저장·검산 원장 [QFR R3](EARNINGS_CENSUS_QFR_R3_STORED_PREVIEW_20261027.md) (실PC UTC 2026-10-27 15:06:35, `RESULT=PASS_QFR_STORED_READONLY_PREVIEW`, snapshot `0cf9d0e4bced96b300810a448bf67be3b663252178f15853f103561d876ddeb3`, `STORED_SNAPSHOTS_VERIFIED=1`). 새 HTTP·재수집 없이 이전 PC 원본과 지정 브랜치 소스 계약을 대조.
+- **동일 표본·단위 검증:** `scripts/pc-writer/EARNINGS_CENSUS_QFR_R1_READONLY.mjs` blob `81172219972e71f505813180ca6ac036ae1dab71`의 `CATEGORIES cat_code=MFG(All Manufacturing)`, `GEO LEVELS geo_code=US`, `DATA TYPES dt_code=101` Net Sales/Receipts/Operating Revenues와 `dt_code=115` Income (Loss) After Income Taxes, 각 `MLN$`, `et_idx=0`, `is_adj=0`(NSA) 조합. `per_idx`의 동일 분기끼리 양쪽 값을 매칭, 중복 계열·분기·결측·0 이하 매출 거절, 끝 5개 연속분기만 사용. `QFR-mf.csv`의 표본 집계와 개별 법인 실적을 혼동하지 않음.
+- **공식 범위:** [Census QFR 소개](https://www.census.gov/econ/qfr/about.html)는 제조업 미국 국내 자산 **500만 달러 이상** 표본법인에 한정하고 산업 분류를 NAICS 제조업으로 정의. [2026Q2 발표](https://www.census.gov/econ/qfr/mmws/current/index.html)는 2026-09-08 공식 통계·계절조정/비계절조정 구분. 본 정보행의 원시 값은 **비계절조정**, 고정 2026Q2 빈티지/2026-10-27 저장 소스이며 모든 미국 제조업체를 직접 전수조사한 실적이 아님.
+
+| 동일 원문 관측 분기 | 매출 101 (백만 USD) | 세후이익 115 (백만 USD) | 자체 산출 `100*profit/sales` |
+|---|---:|---:|---:|
+| 2025-Q2 | 2021570 | 225829 | 11.170971076935253% |
+| 2025-Q3 | 2046770 | 250525 | 12.240017197828774% |
+| 2025-Q4 | 2078865 | 236644 | 11.383326959663085% |
+| 2026-Q1 | 2046451 | 287262 | 14.03708175763798% |
+| 2026-Q2 | 2372409 | 370082 | 15.599418144173285% |
+
+- **독립 JS 산술 검산:** 5개 매출 분모 모두 `>0`이고 유한. 2026Q2 `370082/2372409*100=15.599418144173285`, 전분기 `287262/2046451*100=14.03708175763798`, 차이는 `+1.5623363865353053 percentage points`. 기존 저장자료 전용 PC R3의 세 수치와 오차 `0`. Census 원본 매출/이익은 같은 단위여서 단위 변환 없이 비율만 계산; `15.5994%`는 Census가 원시 `dt_code` 한 칸에 제공한 지표가 아니라 두 원시값의 **독립 파생 정보행**.
+- **확인된 한계:** Census QFR 공개 통계는 표본 추정치·개정/공표 지연을 포함한다. 현재 온라인 ZIP SHA를 새로 다운로드한 것이 아니며 2026Q2 이후 신규 발표 실측, 독립 현행 PC 데이터 확인, D1 body/stored_at·Production SHA/GET·UI는 미실행. R3 PC 기존 성공을 재활용했고, 추가 운영 효과 `providerCalls=0, sqliteWrites=0, d1Writes=0, deployments=0`.
+- **완료 판정:** R2-05가 요구한 동일 산업·지역·분기·원시단위/보정·분자/분모·결측/양수·5분기/전분기 변화 검증 **DONE**. 기존 E1-R4 4요소와 12대 기업실적 B 산식 불변. **LAST PASS:** 2026Q2 NSA 제조업 QFR 자체 산출 15.599418% 저장자료 계산 0오차. **FIRST UNFINISHED:** R2-06 M3 신규주문·출하 공식 변수/권리 적격성. **NEXT:** W05가 Census EITS M3의 주문/출하 series/단위·계절조정 코드를 공식 자료로 판정, 물가 MTM/TI 재고와 구분하고 새로운 수집/게시 효과는 발생시키지 않는다.
