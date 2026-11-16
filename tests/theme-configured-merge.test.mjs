@@ -15,3 +15,50 @@ test('healthy configured feed is still visible if legacy reader is unavailable',
  const result=mergeConfiguredThemeFeed({status:'UNAVAILABLE'},{status:'READY',themes:[{id:'safe',theme:'새 테마',score:33,history:[{date:'2026-10-28',score:33}]}]});
  assert.equal(result.status,'READY');assert.equal(result.themes.length,1);
 });
+
+
+test('W03 stale legacy provisional cannot be relabelled READY by a valid configured theme',()=>{
+ const stale={
+  status:'UNAVAILABLE',phase:'PROVISIONAL',
+  themes:[{theme:'만료 기존',score:84,history:[{date:'2026-11-14',score:84}]}],
+  provisional:{points:[{date:'2026-11-15',scores:{'신규':97,'만료 기존':84}}]},
+ };
+ const configured={status:'READY',themes:[{
+  id:'safe',theme:'신규',score:33,
+  history:[{date:'2026-11-14',score:33}],
+ }]};
+ const result=mergeConfiguredThemeFeed(stale,configured);
+ assert.equal(result.status,'READY');
+ assert.equal(result.phase,'CONFIRMED');
+ assert.deepEqual(result.themes.map(t=>t.theme),['신규']);
+ assert.deepEqual(result.provisional.points,[]);
+ assert.equal(result.observationDate,'2026-11-14');
+});
+
+test('W03 fresh configured provisional is retained but stale legacy points are excluded',()=>{
+ const stale={status:'UNAVAILABLE',phase:'PROVISIONAL',themes:[],
+  provisional:{points:[{date:'2026-11-15',scores:{'신규':97,'만료 기존':84}}]}};
+ const configured={status:'READY',themes:[{
+  id:'safe',theme:'신규',score:33,
+  observationDate:'2026-11-14',history:[{date:'2026-11-14',score:33}],
+  provisionalStatus:'READY',provisional:{date:'2026-11-15',score:36},
+ }]};
+ const result=mergeConfiguredThemeFeed(stale,configured);
+ assert.equal(result.status,'READY');assert.equal(result.phase,'PROVISIONAL');
+ assert.deepEqual(result.provisional.points,
+  [{date:'2026-11-15',scores:{'신규':36}}]);
+});
+
+test('W03 genuinely READY legacy provisional continues alongside configured score',()=>{
+ const base={status:'READY',phase:'PROVISIONAL',
+  themes:[{theme:'기존',score:40,history:[{date:'2026-11-14',score:40}]}],
+  provisional:{points:[{date:'2026-11-15',scores:{'기존':43}}]}};
+ const result=mergeConfiguredThemeFeed(base,{status:'READY',themes:[{
+  id:'fresh',theme:'신규',score:33,
+  observationDate:'2026-11-14',history:[{date:'2026-11-14',score:33}],
+  provisionalStatus:'READY',provisional:{date:'2026-11-15',score:36},
+ }]});
+ assert.equal(result.themes.length,2);
+ assert.deepEqual(result.provisional.points,
+  [{date:'2026-11-15',scores:{'기존':43,'신규':36}}]);
+});
