@@ -1,6 +1,6 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
-> **현재 즉시 상태 (2026-11-17 KST): 13/75 (17.3%), 잔여 62개.** #36 CNN 공개 GET PR #1196는 main 병합·CI/Cloudflare Git Build 성공, 그러나 운영 PC #1806 실제 원본 CNN 아카이브 108점(마지막 11/06 UTC), 검증 108점(11/07 UTC)이 10일 이상 정체되어 원담당 복구·D1 readback 대기. **#37 D02 한국 Rev7 거래일·7요인/게시 게이트 소스 시험 12/12 PASS, 운영 KRX 완료거래일/D1 실제 일치 미확정으로 PARTIAL**. 다음 독립 업무는 **#38 D03 미국 등락 3개 비율**. 전체 운영·Production 종단 완료 주장은 하지 않음.
+> **현재 즉시 상태 (2026-11-17 08:36 KST): 13/75 (17.3%), 잔여 62개. #36 CNN Reader PR #1196 main 병합/CI 및 PC #1806·#1807 조회 PASS, 그러나 원본 CNN archive 11/06·PC 검증 archive 11/07 이후 정체, Sidecar BLOCKED(원인 미확정), 실제 D1/Production 게시 미확정으로 PARTIAL. **#37 D02 한국 공포탐욕은 저장→Rev7 계산→공개 GET→UI source 경로 확인**, 신규 완료 거래일의 실운영 저장/D1/화면 검증은 미확정이므로 PARTIAL. 다음 실행은 #37 실제 저장 일자 1건 선택적 D1/API/차트 끝점 대조. 완료 번호 13개 유지.
 
 ## 현재 인계 정본 — 다음 담당자 첫 읽기 (2026-11-16 KST)
 
@@ -15,8 +15,8 @@
 | #34 60초 화면 갱신·역행 차단 | **DONE (현재 main source/fixture)**. `live-refresh.mjs` 60초 주기, `dashboard-ui.tsx`·`use-stored-index.ts` 수용/역행 보호 경로 확인. 신규 유효값·0·PARTIAL 및 낡은 관측·게시 응답 판정 7/7, UI 연결 소스 4/4 PASS. Production 유저 육안 검수는 최종 단계 |
 | 단계 증거 범위 | #24는 **기존 저장 JSON 활용·Draft 설계/회귀 PASS**까지의 설계 DONE. 실제 15분 보존 정책 수정·PC 설치·D1 반영은 **미완료** |
 | PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #28, #29, #36, **#37**. #36 CNN archive 원담당 복구·D1 readback, #37 KRX 완료 거래일/Rev7 실제 저장·공개 점수 관측 확인은 아직 미완료. 독립 source/fixture는 각 단계 완료의 운영 대체물이 아님 |
-| 다음 단 하나의 실행 | **#38 (W06 D03 미국 등락)** IEX 승인 임시 데이터의 미국 상승·보합·하락 **3개 비율만** 제공하는 계약과 실제 저장/공개 API/UI 연결을 확인. 폐기된 MarketParquet 관측·누락 비율을 다른 API 숫자로 대체하거나 0–100 신규 점수 산식을 만들지 않음. CNN #36·Korea #37 원담당 실행은 별도 잔여 작업 |
-| 다음 담당·대상·입력 | W06 #38 IEX 승인 미국 등락 집계·3비율 공개 경로/기존 소스·UI. Korea #37 원담당의 KRX 완료일 저장/게시 실증과 CNN #36 Sidecar source SHA 원인/운영 복구는 별도 Owner 경로, 기존 승인·소유권 보존 |
+| 다음 단 하나의 실행 | **#37 (W06 D02 한국 공포탐욕, PARTIAL 계속)** 실제 저장된 KRX 완료 거래일 1건의 `kfg_rev7_snapshots` date/score/calculated_at → 공개 GET `/api/indicators/korea-funds`의 composite/date/history 최신점 → UI 카드·차트 끝점의 원점수 일치 대조. 기존 계약/소스 조사는 수행됨. 실PC/D1 readback 불가 시 `STATE_UNKNOWN`, 추정 DONE 금지. **#36 별도 CNN 원담당:** #1806/#1807 중복 실행 없이 Sidecar 승인 source/manifest 원인 대조·합법적 복구 후 신규 원본관측 D1/GET 확인 |
+| 다음 담당·대상·입력 | W06 #37: 기존 `worker/korea-rev7-refresh.mjs`, `worker/korea-rev7-d1.mjs`, `worker/korea-funds.mjs`, `app/korea-funds-store.ts`, `app/korea-composite-view.tsx`, `tests/korea-rev7-refresh.test.mjs` 및 공개 저장 증거. 독립 source 추적 실행 기록 08:36 KST 참조. KRX/BOK Collector·운영 DB/Writer는 원담당 승인 범위. CNN #36 아카이브/Sidecar는 원래 CNN 담당자, Issue #1806을 재사용; #1807 중복 판정 |
 | #36 남은 통과 조건 | 공개 GET 소스/CI는 PR #1196 통과. 운영 CNN 현재 원본은 최신이나 원본 observation archive 108점/마지막 11/06 UTC, PC 검증 archive 108점/마지막 11/07 UTC로 10일 이상 정체. 운영 원담당 정상 저장 및 D1 각 날짜 readback과 공개 GET 원본 시각 일치 없이는 #36 DONE 아님 |
 | 이후 후보(이번 실행에 혼입 금지) | #28 모델/방법론 계보 공개 이력의 원담당 변경 범위(현행 일별 snapshot에 modelVersion 저장됨, 평면 chart/observed archive에는 없음); #29 기준일 이후 미래 snapshot 표시 결함/동일시각 정정 (Writer 원담당). D01~D27 실제 미연결 작업, Draft #1181·#1185 승인 대기. 비차단 작업은 계속 |
 | 최근 R4 기능 병합 증거 | #1177·#1180·#1182·#1184·#1187·#1189·#1193 및 **[#1196](https://github.com/ansqhd5774-Choi/zgmini/pull/1196)** 병합. #1196 main merge SHA **`40d6156a1144350c3a23a02cb0db26e56bf3adde`**, 4파일만 변경, 실제 공개 GET D1 stub 12건 + 단위시험 6건, PR head CI SUCCESS. 운영 PC archive 복구와 별개 |
