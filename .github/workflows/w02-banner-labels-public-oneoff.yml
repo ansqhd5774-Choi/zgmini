@@ -1,0 +1,37 @@
+name: W02 banner company names live (one-time read-only)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/w02-banner-labels-public-oneoff.mjs'
+      - '.github/workflows/w02-banner-labels-public-oneoff.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Install Playwright without lockfile changes
+        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Verify public banner company name consistency
+        run: node tests/w02-banner-labels-public-oneoff.mjs
+      - name: Preserve one-time browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: w02-banner-labels-live
+          path: artifacts/w02-banner-label-live/
+          if-no-files-found: warn
