@@ -372,7 +372,7 @@ test('HTTP 32 projection counts recent proven Alpaca 200 despite a speculative h
  assert.deepEqual(x.api,{normal:14,failed:0,unknown:0,total:14});
  assert.deepEqual(x.http,{normal:1,failed:0,unknown:0,total:1});
 }));
-test('HTTP 32 projection still rejects a real fresh Alpaca 503 and stale Census CDN',()=>fixture(({base,write})=>{
+test('HTTP 32 projection rejects Alpaca 503 while monthly Census CDN remains connected',()=>fixture(({base,write})=>{
  const rows=[];
  for(let i=0;i<7;i++){
   const day=Date.parse('2026-11-09T00:00:00Z')+i*86400000;
@@ -390,5 +390,26 @@ test('HTTP 32 projection still rejects a real fresh Alpaca 503 and stale Census 
   inventoryVerified:true,limitedCoverage:false,observedAt:new Date(now).toISOString(),
   items,httpHosts:buildApiConnectionHealthFromLog(base,now)};
  const x=summarizeApiConnectionHealth(snapshot,now);
- assert.deepEqual(x.http,{normal:0,failed:1,unknown:1,total:2});
+ assert.deepEqual(x.http,{normal:1,failed:1,unknown:0,total:2});
 }));
+
+test('monthly Census CDN is not healthy after an old 2xx outside the observed window',()=>{
+ const snapshot=buildMonitoredSourceHealth(monitoredCalendar(),recentReceipts(),evidenceNow);
+ snapshot.httpHosts=allHttpHosts(evidenceNow);
+ const h=snapshot.httpHosts.items[10];
+ h.host='cdn.www.census.gov';
+ h.lastAttemptAt=evidenceNow-20*86400_000;
+ h.lastSuccessAt=h.lastAttemptAt;
+ h.lastOutcome='success';h.lastEventStatuses={'200':1};
+ const out=publicApiConnectionSummary(summarizeApiConnectionHealth(snapshot,evidenceNow));
+ assert.deepEqual(out.http,{normal:31,failed:0,unknown:1,total:32});
+});
+test('monthly Census CDN latest 503 cannot be green even inside monthly window',()=>{
+ const snapshot=buildMonitoredSourceHealth(monitoredCalendar(),recentReceipts(),evidenceNow);
+ snapshot.httpHosts=allHttpHosts(evidenceNow);
+ const h=snapshot.httpHosts.items[10];
+ h.host='cdn.www.census.gov';h.lastAttemptAt=evidenceNow-10*86400_000;
+ h.lastSuccessAt=h.lastAttemptAt;h.lastOutcome='failure';h.lastEventStatuses={'503':1};
+ const out=publicApiConnectionSummary(summarizeApiConnectionHealth(snapshot,evidenceNow));
+ assert.deepEqual(out.http,{normal:31,failed:1,unknown:0,total:32});
+});
