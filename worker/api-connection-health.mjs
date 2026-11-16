@@ -86,8 +86,15 @@ function summarizeMonitoredSourceSnapshot(snapshot,now){
      !codes(item).some(hardFailure);
    };
    const normalHosts=repeated.filter(provenConnected).length;
-   const failedHosts=repeated.filter(item=>item.state==='failed'&&
-    codes(item).some(hardFailure)).length;
+   const failedHosts=repeated.filter(item=>{
+    const at=item.lastAttemptAt;
+    const lastFresh=Number.isSafeInteger(at)&&at<=now&&
+     now-at>=0&&now-at<=24*3600_000;
+    // A verified fresh 503/network error outranks inferred cadence too;
+    // an ancient failed last contact remains unverified, not current red.
+    return (item.state==='failed'||(item.state==='stale'&&lastFresh))&&
+     codes(item).some(hardFailure);
+   }).length;
    http={normal:normalHosts,failed:failedHosts,
     unknown:repeated.length-normalHosts-failedHosts,total:repeated.length};
   }
