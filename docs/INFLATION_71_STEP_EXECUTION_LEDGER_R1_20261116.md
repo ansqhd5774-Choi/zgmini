@@ -2,9 +2,26 @@
 
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
+## 최신 작업 종료 기록 — 2026-11-16 (가장 최근 실행 결과)
+
+- **대상·단계:** W01 A1-08 / A2-05 관련 Event129 빈 응답·XML 형식 식별 보강. 이 두 세부 항목은 **실제 최초 실패 규명·운영 검증 미완료**이므로 DONE 처리하지 않는다.
+- **실제 수행:** 제어 저장소 `ansqhd5774-Choi/zgmini-pc-control`의 [PR #1772](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1772)에서 Event129 stdout 0·빈 Events·prefix·불완전 XML·non-XML·BOM 없는 UTF16을 고정 비식별 enum으로 구별하도록 A급 진단과 fixture 8건 개선. 기존 B 수집기/승인 판단·보호 설정·공급자 호출 계약 불변.
+- **소스 종료 증거:** PR #1772 **main 병합 완료**, squash SHA `f59e723aa43e59520d760f5da17a07f7f09a04b2`; [Windows 소스 CI #43885847244](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43885847244) **90/90 PASS, fail 0**; C996 R5 CI #43885847344 **success**.
+- **운영 적용/상태:** 이번 변경의 PC 설치 **미실행**, 신규 Event129 A **미실행**, 수동 B/공급자 호출/DB/D1 쓰기 **0건**. 기존 설치 Controller `e3a495c97d6b40d6d4eea2ff4f586bef46216eb7` (#1745)와 이번 코드 SHA는 서로 다르다. #1745의 원본 유지보수 종료는 `UNKNOWN/BACKLOG_OR_RECOVERY_NOT_VERIFIED`이며, #1747 core-status PASS 및 #1748 Event129 STATE_UNKNOWN은 별도의 이전 실측이다. **CI/병합을 실제 PC 기능 완료로 간주하지 않는다.**
+- **진행률:** 확정 완료 **8/71(11.3%)**, 나머지 **63개 미완료**. 원자료 마지막 확인치 **23/26**, 신규 저장·공개 각각 **4/7**(과거 증거이며 이번 실행의 신규 갱신 아님).
+- **현재 문제:** #1748에서 Event129 reader OK이나 파싱 0건의 실제 형태는 미확인. 현재 배포 대상 누적 차이에는 W01 외 다른 담당의 Controller 파일도 존재하므로 W01 승인으로 묶어 설치 불가. 정규 설치의 필수 postOperation과 이전 '설치 후 자동 진단 미실행' 제한도 승인 범위를 명확히 해야 한다.
+- **다음 필수 행동:** #1745 기존 설치/후속 사후검사 증거 재사용 → 현재 설치 SHA 대비 W01 변경·타 담당 변경을 분리한 정규 유지보수 승인/manifest 확인 → 허용 범위에서 W01 모듈 실제 설치·설치 해시 readback → 별도 승인된 새 A 단회 결과로 Event129 원인 분리 → 수동 B 원자료 저장 및 7/7 게시. #1745/#1747/#1748 기존 ID 자동 재실행 금지.
+- **기록 판정:** 여기서 완료된 것은 **이번 소스 개선·회귀검사·GitHub 병합 및 그 증거의 진행 기록 반영**뿐이다. W01 물가지표 전체 또는 A1·A2 단계 완료가 아니다.
+
+## 기록 정합성 규칙
+
+- 매 작업 결과를 해당 단계와 연결해 이 파일의 **최신 작업 종료 기록(실제 수행/검증/문제/다음 행동)**에 먼저 반영하고 GitHub 반영 커밋·파일 재조회로 확인한다. 기록을 반영하기 전에는 '진행 기록 반영 완료'라고 보고하지 않는다.
+- 기존 증거는 원본 시각·실제 Runtime 범위만 재사용한다. 소스 CI / 운영 설치 / A 진단 / 수동 B 수집 / SQLite 저장 / D1·API / UI를 한 가지 DONE으로 합치지 않는다. 최신 결과를 갱신할 때 과거 첨부 기록과 모든 71개 체크박스는 보존한다.
+- 기록 정합성은 보고 품질 기준이며 독립 기능 개발을 중단하는 새로운 전역 Gate·예약·추가 운영 검사 요구가 아니다.
+
 ## 정본, 상태 구분 및 현재 결론
 
-- 제어 저장소: `ansqhd5774-Choi/zgmini-pc-control`; W01 신규 A operation `inflation-event129-evidence-readonly` 소스 PR #1724 병합(Controller 실PC 미설치).
+- 제어 저장소: `ansqhd5774-Choi/zgmini-pc-control`; W01 A operation `inflation-event129-evidence-readonly`는 #1745의 실제 Controller `e3a495c97d6b40d6d4eea2ff4f586bef46216eb7`에 등록·실행 확인(#1748). 단, PR #1760/#1772의 **후속 진단 코드**는 운영 PC 미적용이며 #1745 유지보수 전체 상태는 UNKNOWN.
 - 기존 수동 B Run `43861853573`은 `INFL_MANUAL_B_CORE_OWNER_EVENT129_UNVERIFIED_STOP`; 원인 미확정. A #1693 Run `43862593587`은 `STATE_UNKNOWN/INFL_CORE_LOCK_PRESENT_TASK_ENGINE_GAP`; 인과관계 미입증.
 - Controller 유지보수 #1501은 **2026-11-16T13:20:20.947Z 회복 완료**(`INTAKE_RECOVERED_EXISTING_CONTROLLER_PRESERVED`), 기존 Controller `b2ff49dd14a09ebeba482e2ae9a84530e00f094f` 보존. 복구는 새 진단 설치 완료가 아니다.
 - 신규 A 진단의 최초 실패 보존 수정 [PR #1752](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1752)은 `main`에 squash SHA `ca0e2bcc65bab96caffc185c641122656be50510`으로 병합되었다. 격리 Windows CI Run `43879295002`에서 관련 테스트 72/72 PASS(신규 5 포함). **이것은 실제 PC 설치·Event129 재진단 성공이 아님.**
