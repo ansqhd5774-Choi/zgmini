@@ -20,5 +20,12 @@ jobs:
       - run: npm ci
       - run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
       - run: npx playwright install --with-deps chromium
-      - name: Read-only public displayed ticker/logo inventory
+      - name: Verify all current published issuer logos render and decode
         run: node tests/w02-banner-logo-inventory-oneoff.mjs
+      - name: Preserve read-only browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: w02-banner-company-logo-live
+          path: artifacts/w02-banner-logos-live/
+          if-no-files-found: warn
