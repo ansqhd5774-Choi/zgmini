@@ -268,3 +268,10 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 - 기존 제어 `main@40a0767ec48829360a0b47a2b37e499d59944a05`에서 고용 전담 기능의 2파일만 분리한 [Draft PR #1791](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1791), head `999c144c45c14667b32b42b8db324e0d1a7b7aca`. 기존 A를 교체하지 않고 `stateClaims.regionLatest`에 51 고정 공식 지역별 날짜 `CURRENT_ONLY_NOT_PIT` projection 준비. WAL 모두 부재/부분 부재를 fail-closed로 분류해 운영 DB 손상/복구로 오인하지 않음.
 - Windows [W04 Node source CI 43901867724](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43901867724) 해당 21/21 및 기존 경로 47/47 PASS; [C996 43901867639](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43901867639) SUCCESS. 두 파일만 수정. 공통 #68 [인계](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6921555673) 등록. 이는 **SOURCE_READY/CI_PASS**이지 실제 설치나 PIT-04-01 운영 DONE 아님.
 - **현재 기능 진행률 22/72 = 30.6%, 잔여 50 유지.** 단계 `PIT-04-01=BLOCKED/SOURCE_READY`, 원자료·History·DB·D1/점수 28/29 변화 없음. 다음 필수 실제 동작은 공통 owner의 기존 승인 정규 Controller 적용 경로와 검증된 최신 WAL-safe snapshot 조건을 분리 점검하여 최소 두 파일의 적용 필요성을 결정하는 것. source main SHA, 실제 설치 SHA, 승인 manifest, lease와 출처 적합성 확인 전 운영 설치/새 A 요청은 하지 않는다. 실제 regionLatest 51지역 결과가 반환되고 기존 단계별 저장 이력 근거가 맞을 때만 PIT-04-01 DONE으로 전환. 상세 실행 결과는 [진행 기록 §15](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md).
+
+### 2026-11-17 PIT-04-01 WAL sidecar 정상 종료·immutable 신선도 격리 시뮬레이션
+
+- 임시 SQLite fixture에서 WAL/SHM (둘 다 존재) → 마지막 정상 연결 종료 뒤 둘 다 부재, SQLite header WAL [2,2] 유지가 재현됨. sidecar 부재는 DB 손상이나 안전한 데이터 스냅샷이라고 단정하지 않는다.
+- 다른 임시 fixture에서는 활성 writer가 commit한 최신 1행을 일반 SELECT에서 읽었지만 `immutable=1` reader에서는 **0행**이 관측됨. 정확한 as-of 데이터가 중요한 고용 R6에 `immutable=1`을 임의 fallback으로 넣지 않는다.
+- 결과는 [진행 기록 §16](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md)에 보존. [Draft #1791](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1791)의 기존 fail-closed WAL 보호와 Current-only 51지역 날짜 출력 제안만 유지. 실제 PC `#1789` 원인 확정/Controller 운영 설치/52주·10년 PIT 복구는 미완료.
+- 다음 필수 실행은 공통 owner의 정규 안전 snapshot·설치 범위 확인 후 실제 최신 source와 51개 지역 날짜 조회를 **한 번 새 A**로 증명하는 것. `PIT-04-01` **BLOCKED/SOURCE_READY**; 전체 **22/72 DONE(30.6%), 50/72 미완료** 불변.
