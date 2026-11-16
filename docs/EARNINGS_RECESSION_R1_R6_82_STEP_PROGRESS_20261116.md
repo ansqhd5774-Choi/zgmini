@@ -31,14 +31,14 @@
 | 필드 | 마지막 확인 상태 |
 |---|---|
 | 최종 목표 | 82단계 R1~R6로 적격 실적 침체 정보성 지표의 PC 원자료 저장→계산→승인 D1 게시→Production API/UI를 완성. 기존 E1-R4 점수/산식·기타 12대 기업실적은 보호 |
-| 현재 관련 단계 | **순차 R2-10(20/82)**: SEC CompanyFacts/XBRL 공식 endpoint·User-Agent·요청 한도·권리 적격성 조사. QFR B 게시 R4-06 별도 미완료 |
-| 마지막 검증 완료점 | **R2-09 BLS 서비스 WPSFD42 단일원천·2정보행·독립 저장키 계약 조사 DONE (§24)**. 2026-10-27 BLS HTTP 당시 2026-09 SA 지수 157.666, 2025-09 150.273 → 자체 4.919712789389985% YoY. BLS 공식 2026-09 전월 대비 +0.8%와 다른 지표. 기존 C 5행과 서비스 C 2행은 별도 source/version/key. 실제 PC WPSFD42 저장 및 D1 서비스키 게시 미확인 유지 |
+| 현재 관련 단계 | **순차 R2-11(21/82)**: SEC 기업별 회계항목·fiscal period·중복/개정·표본 커버리지 판정. SEC Fair Access 요청 식별자/전체 속도 범위 HOLD. QFR B 게시 R4-06 별도 미완료 |
+| 마지막 검증 완료점 | **R2-10 SEC 공식 XBRL CompanyFacts/Frames/API·bulk·접근정책 조사 DONE (§25)**. data.sec.gov 무료 공개 API/CIK 10자리, CompanyFacts JSON·Frames aggregate, www.sec.gov nightly companyfacts.zip 구분. SEC 10 requests/sec *전체 호출 합산*, 식별된 User-Agent 업체+담당 연락처 권고. E1-R4 Frames UA에 연락처 없음, E1-R5 bulk refresh 연구-only/기본 dry-run. 실제 운영 권한·대량 호출·저장/제3자 공개 효과 별도 HOLD |
 | 재사용할 기존 근거 | QFR 원자료 ZIP PC SQLite 저장·계산 기존 유효 증거; 앱 QFR 3-pin [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175)는 앱 main 병합, 운영 PC 설치·B 게시 별개. R1-09 소스 blob 근거는 §14 |
-| 현재 최초 실제 미완료 조건 | **순차 R2-10:** SEC CompanyFacts/XBRL official bulk/API endpoint·User-Agent/공정이용 요청 정책·권리/무료 공개 적격성 미검증. WPSFD42 PC 서비스 저장·D1 게시, M3/MTIS Collector, FRED archive 이용권 HOLD, QFR B effect는 후행 미완료 |
-| 다음 필수 실행 하나 | **순차 20/82 R2-10:** SEC 공식 data.sec.gov companyfacts·frames·bulk ZIP·User-Agent/공정이용 한도와 기존 W05 staging를 대조해 수집 적격성/운영 HOLD 여부를 기록한다 |
-| 현재 완료율 증거 | **19/82 DONE(약 23.2%)**, 현재 R2-10(20/82). 기존 14단계 종단 게시 완료 마지막 확인 0/14, R6-15 자연 갱신 관찰 DEFERRED |
+| 현재 최초 실제 미완료 조건 | **순차 R2-11:** SEC 재무지표 태그/회계연도·누적/분기·통화·중복/개정·universe cover 검증 미완료. 기존 SEC UA의 식별 연락처 및 10req/sec aggregate limiter 현장 적격성 HOLD, E1-R5 bulk 실제 운영 저장/승인 source 미검증. C D1·Production 별도 |
+| 다음 필수 실행 하나 | **순차 21/82 R2-11:** SEC CompanyFacts us-gaap 항목의 fiscal start/end·form·filed·accn·fy/fp·frame·unit 및 issuer CIK 중복/개정/coverage를 코드·공식 문서에 대조한다. 신규 API/원문 재수집하지 않는다 |
+| 현재 완료율 증거 | **20/82 DONE(약 24.4%)**, 현재 R2-11(21/82). 14단계 종단 게시 최종 확인 0/14, R6-15 자연 갱신 관찰 DEFERRED |
 | 최종 갱신 식별 | 이 문서의 **최신 원격 브랜치 HEAD 및 Git blob SHA를 재조회**해 근거로 보고한다. 고정된 과거 SHA를 현행값으로 복사하지 않는다 |
-| **순차 포인터·완료율** | **현재 20/82 R2-10**; R1-01~R2-09 연속 DONE **19/82(약 23.2%)**. 운영 저장·D1·Production 후행 실증은 별도 |
+| **순차 포인터·완료율** | **현재 21/82 R2-11**; R1-01~R2-10 연속 DONE **20/82(약 24.4%)**. 운영 source/SQLite·D1/Production 후행 실증과 분리 |
 | R1-09 이번 실행 | 2026-11-17 08시 KST: B 경제지표 `/economic-indicators/earnings/`→`EconomicDetailPanel`→`/api/market-score` `domains[id=earnings]`와 A 8대 위험 4요소·C 보조 GET의 별도 계약 소스 검증. `DONE`, 완료 9/82. 경계 상세·blob §14; 운영 GET·D1 미검증. 다음 R1-10 |
 
 ### D. 다음 작업자 재개 순서 및 변경 충돌
@@ -54,19 +54,19 @@
 
 | 판정 항목 | 실제 상태 |
 |---|---|
-| **순차 완료 확정** | **19/82 (약 23.2%)** — R1-01~R2-09 공급자 시계열/계산/분리키 계약 조사 완료. PC 서비스 저장·게시 별도 |
-| **현재 순차 진행 단계** | **20/82 = R2-10** (SEC CompanyFacts/XBRL endpoint·User-Agent·quota/rights 조사) |
-| **82개 중 개별 완료 확정** | **19개** (R1-01~R2-09); 나머지 소스/운영·CI는 각 단계 별도 |
+| **순차 완료 확정** | **20/82 (약 24.4%)** — R1-01~R2-10 공급자 공식 엔드포인트·사용정책/소스 조사 완료. 실제 PC/D1/Production은 별도 |
+| **현재 순차 진행 단계** | **21/82 = R2-11** (SEC 회계태그·기간·개정·issuer coverage 검사) |
+| **82개 중 개별 완료 확정** | **20개** (R1-01~R2-10); 실제 운영/소스/CI 근거 별도 |
 | **71번 R6-04** | **후행 소스 선행 작업·현재 운영 승인 미해결**, 순차 71단계에 도달한 것이 아님 |
-| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 19개 DONE, 남은 63개 완료 판정 대상. 재수집 63회 뜻 아님 |
-| **다음 실제 수행 하나** | **R2-10(20/82):** SEC CompanyFacts 공식 API·bulk/frames·헤더·요청제한·저장/공개 이용권 판정 |
+| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 20개 DONE, 남은 62개 완료 판정 대상. 재수집 62회 의미 아님 |
+| **다음 실제 수행 하나** | **R2-11(21/82):** SEC CompanyFacts fiscal/company universe·XBRL 태그/기간·중복/개정 판정 |
 
 **순서 운용:** 다음 번호로 넘어가는 기준은 해당 단계의 **계획서 완료 조건 + 근거 링크**이며, 뒤 단계에서 미리 통과한 PR·CI는 계획 순번을 바꾸지 않는 선행 자산으로 유지한다. 사용자 승인 없이 순번이나 완료 기준을 수정하지 않는다. 조건부 HOLD·장기 DEFERRED는 계획서대로 처리하며 다른 독립 승인 작업의 수행을 중단하는 새로운 Gate가 아니다.
 
 
 ## 0. 82개 작업별 진행 상태 (실증·소스 분리)
 
- > **2026-11-17 KST 최신 판정.** R1-01~R2-09 19/82 DONE, 현재 순차 R2-10(20/82). 소스/CI는 PC/D1/Production 완료의 증거가 아님.
+ > **2026-11-17 KST 최신 판정.** R1-01~R2-10 20/82 DONE, 현재 순차 R2-11(21/82). 코드/CI/공식 문서는 현장 게시·운영 완료 증거 아님.
 
 | 작업 ID | 실행계획 작업 | 현재 증거 기반 상태 | 마지막 확인 증거·남은 조건 |
 |---|---|---|---|
@@ -89,7 +89,7 @@
 | R2-07 | Census MTIS 재고/매출 비율 변수·관측월·개정 내역 확인 | `DONE` | **§22** Census MTIS 공식 월간 총사업 재고/매출 비율은 월말 inventory / 당월 sales, 무차원(월간 판매 대비 재고보유 수준), SA/NSA 구분. 2026-10-15 발표(2026-08 SA 총사업 1.33 vs 2025-08 1.40) 확인. EITS /data/timeseries/eits/mtis variables/US/seasonally_adj/time, 공식 API key 필요. 2026-09 MTIS는 2026-11-17 10AM ET 공개 예정(현재 시점 미확정), 도매·소매 AIES 연차개정 영향. exact category_code/data_type_code의 API 실응답, C Collector, PC raw/SHA/게시 미검증으로 HOLD. 공식 정의·보류 근거 기록 DONE이지 운영 수집/게시 아님 |
 | R2-08 | BLS 기본 3원천 `WPSFD4`, `WPSFD41`, `PRS85006111` 정의 확인 | `DONE` | **§23** BLS 공식 PPI WPSFD4 Final demand·WPSFD41 Final demand goods 계절조정 월간 지수와 PRS85006111 nonfarm business unit labor costs 분기 계절조정 전년동분기 YoY 정의 검증. 실제 PC 기존 3 snapshot/hash 및 21개월·6분기 R3D 검증 PASS 재사용. 두 PPI 원지수와 자체 t-12 YoY 4행+ULC raw YoY 1행=5행, 외부 BLS NSA 보도자료 YoY와 계절조정 파생값 직접 동치 주장 금지. 신규 API/PC/D1 쓰기 0 |
 | R2-09 | BLS 서비스 PPI `WPSFD42` 정의·관측월·YoY 계산 검증 | `DONE` | **§24** BLS Final Demand Services SA monthly WPSFD42 공식·기존 2026-10-27 BLS HTTP 2026-09 157.666/2025-09 150.273, t-12 자체 YoY 4.919712789389985% 확인; BLS 9월 발표의 전월대비 0.8%와 구분. BLS service 1원천→RAW INDEX+DERIVED YoY 2행 별도 snapshot key `detail:earnings-recession-indicators:bls-wpsfd42:v1`, 기본 3원천 5행 key 불변. 코드·구원장 증거 조사 DONE이며 서비스 PC SQLite 저장·D1 본문 실제 readback NOT_VERIFIED |
-| R2-10 | SEC CompanyFacts/XBRL 엔드포인트·User-Agent·쿼터 확인 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
+| R2-10 | SEC CompanyFacts/XBRL 엔드포인트·User-Agent·쿼터 확인 | `DONE` | **§25** SEC data.sec.gov/api/xbrl/companyfacts/CIK##########.json·frames/us-gaap/tag/unit/CY...json 인증/키 없이 공개, www.sec.gov/Archives/edgar/daily-index/xbrl/companyfacts.zip 매일 약 03 ET bulk. SEC Fair Access 총 10req/sec·업체+연락처 UA 공개 권고, data.sec.gov CORS 미지원. 실제 E1-R4 frames UA ZGMINI/1.0 (+https://zgmini.kr)에는 담당 이메일 누락, 공식 rate-limit 전역 준수 미검증 → 운영 UA/전체 쿼터 HOLD. 연구 E1-R5 bulk source 기본 dry-run·CIK universe 검증 확인, 실제 PC 다운로드·게시 효과 미실증. API/HTTP/권리/프로덕션 별도 |
 | R2-11 | SEC 기업별 회계항목·회계기간·중복·표본 커버리지 검사 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R2-12 | 공급자별 발표일·관측일·수집일·수정본·계절조정·지연 구별 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R2-13 | 공급자별 재사용권·무료 한도·저장·파생·공개 허용/보류 판정 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
@@ -579,3 +579,26 @@ R2-03에 요구한 산업범위·명목/실질·IVA와 CCAdj의 차이·SAAR/분
 **결론:** R2-09 공식 의미·관측월·t-12 YoY·지표별 공개키/체크포인트 구분 조사 DONE. 이 조사는 운영 PC 수집·D1 게시·API/UI 반영 성공을 의미하지 않음. 기존 저장 5행, E1-R4 위험 A, E1-R5 경제 B·점수/가중치 변경 없음. 신규 Provider calls/SQLite writes/D1 writes/deployment 모두 0.
 
 **LAST PASS:** R2-09 BLS 서비스 의미·계산·C 분리 체크포인트 소스 정합성. **FIRST UNFINISHED:** R2-10 SEC CompanyFacts/XBRL endpoint·rate limit·User-Agent·권리·실수집 경로 조사. **NEXT W05:** 공식 SEC data API/zip·polite request 정책과 기존 원자료/staging 후보의 소유·적격성을 판정, 새 SEC 수집기를 임의 배포하지 않는다.
+
+## 25. R2-10 (2026-11-17 KST) SEC CompanyFacts/Frames/Bulk·Fair Access·User-Agent — 조사 DONE, 운영 호출 요건 HOLD
+
+### SEC 공식 서비스/출처 (과거 E1-R4와 후보 E1-R5 분리)
+
+| 항목 | SEC 공식 문서·현재 계약 | 소스/운영 구분 |
+|---|---|---|
+| CompanyFacts REST | [SEC EDGAR APIs](https://www.sec.gov/search-filings/edgar-application-programming-interfaces): `https://data.sec.gov/api/xbrl/companyfacts/CIK##########.json`, **CIK 정확히 10자리 zero padding**, 인증·API key 불필요. 회사 단위 us-gaap/ifrs-full 재무 태그의 facts 집합 | 실제 W05 정보성 C 후보용 자동 원문 수집 경로는 현장 승인/PC source SHA 및 저장 readback NOT_VERIFIED |
+| Frames REST | 동일 SEC 문서: `https://data.sec.gov/api/xbrl/frames/us-gaap/{tag}/{unit}/{CY####Q# 또는 ...I}.json`는 해당 역월 프레임과 가까운 각 회사의 1개 최근 공시값을 집계. 회사 fiscal quarter와 불일치 가능 | E1-R4 `lib/market-score/sec-earnings-e1-r4-provider.mjs` blob 03538cbbd84011b78a48d6d9a94f053034a8098d는 **Frames**에 4동시 fetch. 위험 A 기존 계산 경로이며 별도 C CompanyFacts 후보와 대체/합산 금지 |
+| Bulk | `https://www.sec.gov/Archives/edgar/daily-index/xbrl/companyfacts.zip`는 CompanyFacts 및 Frames API data의 bulk ZIP, **통상 매일 약 03:00 ET 재작성**; 실시간 CompanyFacts REST와 갱신 시각이 다름 | `scripts/pc-writer/earnings-r5-official-refresh-r1.mjs` blob bbe9f5e5500e77b2263b3a13baf5fea87c44774b: archive 다운로드·sha/CIK matching 및 연구 `manual-input/e1-r5/incoming/companyfacts` staging 후보, **기본 DRY_RUN_NO_NETWORK/researchOnly=true/productionActivation=false**. 코드 존재와 실제 PC 운영 성공은 다름 |
+| 제출 이력 | `https://data.sec.gov/submissions/CIK##########.json`는 개별 회사 공시 이력, CompanyFacts 수치 JSON과 다른 API | 두 API를 동일 raw dataset/관측일로 오인 금지 |
+
+### Fair Access·권리·운영 격차
+
+1. [SEC Developer/Privacy Policy](https://www.sec.gov/about/privacy-information), [웹마스터 FAQ](https://www.sec.gov/about/webmaster-frequently-asked-questions), [Accessing EDGAR Data](https://www.sec.gov/search-filings/edgar-search-assistance/accessing-edgar-data)는 **전체 호출원을 합쳐 10 requests/sec 이하**(여러 머신/호스트·도구 합산), 필요한 만큼만 효율적으로 내려받고 요청을 정체 가능한 **회사/담당 연락처 User-Agent** 표기를 요청. BLS/FRED와는 별도의 SEC Fair Access 적용. 응답 429/403을 임의 우회·무한 재시도하지 않음.
+2. `lib/market-score/sec-earnings-e1-r4-provider.mjs`의 현행 상수 `SEC_UA='ZGMINI/1.0 (+https://zgmini.kr)'`는 프로젝트명/사이트는 있으나 SEC 공식 예시의 **담당 이메일/연락처 식별자가 명시되지 않음**. UA 식별 요건의 실제 운용 수용 여부는 `HOLD_USER_AGENT_CONTACT`; 이미 제출된 합법 요청까지 위반했다고 판정하지 않음. 운영 비밀/이메일 주소를 문서·로그에 임의 공개하지 않음.
+3. 같은 소스의 `mapLimit(specs,4)`는 **동시 요청 수** 제한이지 전체 경로의 **10req/sec rate limiter** 증명이 아님. R2-10에서는 이 수집기가 실제 운영 소스인지, 다른 SEC 작업과 합산 속도를 지켰는지 `NOT_VERIFIED`. 소스 교체·토큰 재입력 없이 운영 전체 SEC 공통 quota와 source owner 책임으로 후행 판정.
+4. SEC 공공 API는 인증·키 없이 무료 열람 가능, 2021 SEC 공식 발표에서도 외부 개발자가 투자자 웹앱에 활용할 수 있다고 명시([SEC 발표](https://www.sec.gov/newsroom/press-releases/2021-159)). 그러나 제출자가 보유한 개별 공시/첨부자료 권리까지 무제한 복제·원문 재게시를 보장한다고 해석하지 않음. ZGMINI 승인 공개 D1은 기존 원칙대로 비민감 집계/파생/최소 checkpoint만, raw facts/대량 회사별 시계열은 PC 원본 보관.
+5. `data.sec.gov`는 **브라우저 CORS 미지원**이며 방문자 GET로 직접 SEC 호출 금지. 로컬 승인 source 수집 → SQLite/원본 → 저장 계산 → 승인 결과만 D1 게시 → Worker/API/UI 읽기.
+
+**R2-10 판정:** 공식 CompanyFacts/Frames/bulk 정확 URL·익명 접근·갱신 일정·User-Agent/10req/sec·수집/공개 경계와 소스 차이를 확정해 **조사 DONE**. SEC E1-R5 C 실PC 수집, header/combined rate 준수, raw archive SHA·컴퓨팅/게시 ledger, Production 동치는 후행 R2-11/13·R3-15·R4~R6에서 별도 확인. `HOLD_USER_AGENT_CONTACT`와 `HOLD_GLOBAL_SEC_RATE_LIMIT`은 승인 없는 SEC 운영 수집 확대를 막는 범위 한정 요건이고, BLS/QFR 독립 완료 작업을 차단하지 않음.
+
+**LAST PASS:** SEC 공식 무료 JSON/bulk와 Fair Access/연락처 UA 기준 및 기존 E1-R4 Frames/E1-R5 연구 source 분리. **FIRST UNFINISHED:** R2-11 각 issuer CompanyFacts 회계 태그/period/중복·개정/coverage 정합성. **NEXT W05:** SEC 공식 facts 필드 `start/end/val/unit/fy/fp/form/accn/filed/frame` 및 사후수정/발행기간, 해당 CIK 표본 coverage를 기존 code·증거와 대조. 신규 대량 SEC 요청·PC/D1/배포 변경 없음.
