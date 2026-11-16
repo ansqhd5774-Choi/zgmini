@@ -17,6 +17,7 @@ import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
 import {breadthNotice} from '../lib/market-score/breadth-notice.mjs';
 import {breadthB1R4PreviousSessionDelta as breadthPreviousSessionDelta} from '../lib/market-score/breadth-b1-r4-ui-delta.mjs';
 import {marketTrendWindowR1} from '../lib/market-score/market-trend-window-r1.mjs';
+import {appendPublishedDomainCurrent} from '../lib/market-score/published-domain-trend-r4.mjs';
 import {miniTrendGeometry} from '../lib/market-score/mini-trend-geometry.mjs';
 import {amplifyCompositeDisplayScore,amplifyCompositeDisplayTrend} from '../lib/market-score/composite-display-sensitivity-r1.mjs';
 import {mergeCompositeObservedDisplay} from '../lib/market-score/composite-observed-display-r1.mjs';
@@ -226,16 +227,22 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
    const display=amplifyCompositeDisplayScore(point.score);
    return display===null||!Number.isFinite(Date.parse(point.observedAt))?[]:[{label:point.observedAt,value:display}];
   }):[];
-  return mergeCompositeObservedDisplay(daily,archived,periodDays);
- },[market?.overall?.trend,compositeArchive,periodDays]);
+  // Actual published current can advance before the bounded PC archive.
+  // Both card and chart use the same verified computation and sensitivity.
+  const current=overallScore===null||!market?.updatedAt?null:{label:market.updatedAt,value:overallScore};
+  return mergeCompositeObservedDisplay(daily,archived,periodDays,current);
+ },[market?.overall?.trend,market?.updatedAt,overallScore,compositeArchive,periodDays]);
  const hasDatedHistory=useMemo(()=>overallTrend.length>1||
   [market?.overall?.trend,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPoints(data),365).length>1),
   [market?.overall?.trend,market?.domains,overallTrend]);
  // Independent diagnostic responses and arrow expiry do not change these histories.
  const domainChartTrends=useMemo(()=>r55DomainIds.map(id=>{
   const domain=market?.domains?.find(d=>d.id===id);
-  return marketTrendWindow(normalizeMarketTrendPoints(domain?.trend),periodDays);
- }),[market?.domains,periodDays]);
+  const daily=marketTrendWindow(normalizeMarketTrendPoints(domain?.trend),periodDays);
+  const score=domain?.status==='READY'&&validPublicScore(domain.score)?domain.score:null;
+  const current=score===null||!market?.updatedAt?null:{label:market.updatedAt,value:score};
+  return appendPublishedDomainCurrent(daily,current,periodDays);
+ }),[market?.domains,market?.updatedAt,periodDays]);
  const riskHeading=<h2><a href="/risk-indicators/"><ShieldCheck aria-hidden="true"/>8대 위험 지표<ArrowUpRight aria-hidden="true"/></a></h2>;
 
  return <section id="market" className="zg-section zg-r55-market">
