@@ -3,12 +3,14 @@ export const CONFIGURED_R32='ETF_ONLY_T40_R20_V40_ADAPTIVE_R2_DATED_ISSUER_AUM_R
 export const CONFIGURED_V2='ZGMINI_CONFIGURED_THEME_PUBLIC_V2';
 export const CONFIGURED_PROVISIONAL_MODE='GMH_RAW_PLUS_MARKETPARQUET_SPLIT_ADJUSTED_PROVISIONAL';
 export function validConfiguredProvisional(record){
- return record.phase==='PROVISIONAL'&&isDate(record.confirmedObservationDate)&&record.confirmedObservationDate<record.observationDate&&
+ return record?.phase==='PROVISIONAL'&&isDate(record.confirmedObservationDate)&&record.confirmedObservationDate<record.observationDate&&
   record.sourcePriceMode===CONFIGURED_PROVISIONAL_MODE&&record.sourcePriceReconciled===false&&
   Array.isArray(record.sourceFiles)&&record.sourceFiles.length===2&&
+  record.sourceFiles.every(f=>f&&typeof f==='object'&&!Array.isArray(f)&&
+   /^[a-f0-9]{64}$/.test(f.sha256))&&
   record.sourceFiles[0].date===record.confirmedObservationDate&&record.sourceFiles[1].date===record.observationDate&&
-  record.sourceFiles.every(f=>/^[a-f0-9]{64}$/.test(f.sha256))&&
   record.overlapPriceDifferences&&Number.isFinite(record.overlapPriceDifferences.SPY)&&
+  Array.isArray(record.history)&&Array.isArray(record.history.at(-1)?.contributingETFs)&&
   record.history.at(-1).contributingETFs.every(s=>Number.isFinite(record.overlapPriceDifferences[s]))&&
   Object.values(record.overlapPriceDifferences).every(v=>Number.isFinite(v)&&v>=0&&v<=0.05);
 }
@@ -20,7 +22,8 @@ export function validR32History(record){
  for(const p of record.history){
   if(!p||Object.keys(p).some(k=>!['date','score','mode','contributingETFs','weightsPercent','issuerAumAsOf','datedOfficialAumUsed','excluded'].includes(k)))return false;
   if(!isDate(p.date)||p.date<=previous||typeof p.mode!=='string'||!Array.isArray(p.contributingETFs)||new Set(p.contributingETFs).size!==p.contributingETFs.length||
-   p.contributingETFs.some(s=>!record.etfs.includes(s))||!Array.isArray(p.excluded)||p.excluded.some(r=>Object.keys(r).length!==2||!record.etfs.includes(r.ticker)||typeof r.reason!=='string'))return false;
+   p.contributingETFs.some(s=>!record.etfs.includes(s))||!Array.isArray(p.excluded)||p.excluded.some(r=>!r||typeof r!=='object'||Array.isArray(r)||
+    Object.keys(r).length!==2||!record.etfs.includes(r.ticker)||typeof r.reason!=='string'))return false;
   previous=p.date;
   if(p.score===null){if(p.mode!=='NO_REAL_SCORED_ETF'||p.contributingETFs.length||p.weightsPercent!==null) return false;continue;}
   if(typeof p.score!=='number'||!Number.isFinite(p.score)||p.score<0||p.score>100||!p.contributingETFs.length||!p.weightsPercent||!p.issuerAumAsOf)return false;
