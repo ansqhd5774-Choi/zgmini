@@ -81,3 +81,46 @@ test('preserves fixed collector error codes but redacts unknown errors',async()=
   ]);
   assert.equal(result.providerRequests,0);
 });
+
+
+test('approved Census-only manual candidate admits exactly two metered GETs',async()=>{
+  const urls=[];let collectorCount=0;
+  const result=await runInflationCandidateOnce({
+    approved:true,base:'/tmp/pc-writer',groups:['census'],
+    providerEnv:{CENSUS_API_KEY:'fixture-census-key'},
+    quotaFetch:async url=>{urls.push(url);return {ok:true};},
+    collectors:{census:async ({censusKey,quotaFetch})=>{
+      collectorCount++;assert.equal(censusKey,'fixture-census-key');
+      await quotaFetch('fixture-year-1');
+      await quotaFetch('fixture-year');
+      return {status:'SAVED_READBACK',providerRequests:2};
+    }},
+  });
+  assert.equal(collectorCount,1);
+  assert.deepEqual(urls,['fixture-year-1','fixture-year']);
+  assert.equal(result.status,'COMPLETE');
+  assert.equal(result.providerRequests,2);
+  assert.deepEqual(result.completed,[{group:'census',ids:[28],
+    status:'SAVED_READBACK',providerRequests:2}]);
+  assert.deepEqual(result.failed,[]);
+  assert.deepEqual(result.skipped,[]);
+});
+
+test('Census-only third supplier GET is rejected before quota fetch; no other group runs',async()=>{
+  const urls=[];
+  const result=await runInflationCandidateOnce({
+    approved:true,groups:['census'],providerEnv:{CENSUS_API_KEY:'fixture-census-key'},
+    quotaFetch:async url=>{urls.push(url);return {ok:true};},
+    collectors:{census:async ({quotaFetch})=>{
+      await quotaFetch('fixture-year-1');
+      await quotaFetch('fixture-year');
+      await quotaFetch('forbidden-third-year');
+      return {status:'SAVED_READBACK',providerRequests:3};
+    }},
+  });
+  assert.deepEqual(urls,['fixture-year-1','fixture-year']);
+  assert.equal(result.status,'PARTIAL_PREVIOUS_INPUTS_PRESERVED');
+  assert.equal(result.providerRequests,2);
+  assert.deepEqual(result.completed,[]);
+  assert.deepEqual(result.failed,[{group:'census',code:'INFL_CANDIDATE_REQUEST_BOUND'}]);
+});
