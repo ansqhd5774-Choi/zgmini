@@ -222,6 +222,35 @@ test("consistent candidate-only row is a preview, never automatic Core publicati
   assert.equal(report.promotionApproved,false);
 });
 
+test("blank SQLite TEXT values are never accepted as PIT lineage evidence",()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-blank-"));
+  const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+  const hash="f".repeat(64),blank=observation("AL","",hash);
+  fixture(core,{});
+  fixture(candidate,{current:[blank],history:[blank]});
+  const before=[digest(core),digest(candidate)];
+  const report=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-02"});
+  assert.equal(report.candidateNewKeys,1);
+  assert.equal(report.candidateNewKeysWithConsistentPITMetadata,0);
+  assert.equal(report.candidateNewKeysWithIncompletePITMetadata,1);
+  assert.equal(report.candidateReconciliationPreviewStatus,"HOLD_UNVERIFIED_SOURCE_LINEAGE");
+  assert.deepEqual([digest(core),digest(candidate)],before);
+});
+
+test("zero-valued Core claims do not match a blank candidate claim",()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-blank-overlap-"));
+  const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+  const hash="e".repeat(64),zero=observation("AL",0,hash),blank=observation("AL","",hash);
+  fixture(core,{current:[zero],history:[zero]});
+  fixture(candidate,{current:[blank],history:[blank]});
+  const before=[digest(core),digest(candidate)];
+  const report=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-02"});
+  assert.equal(report.candidateOverlapMatchingKeys,0);
+  assert.equal(report.candidateOverlapConflictingKeys,1);
+  assert.equal(report.candidateReconciliationPreviewStatus,"HOLD_CONFLICTING_REVISIONS");
+  assert.deepEqual([digest(core),digest(candidate)],before);
+});
+
 test("same raw value and hash with a different provider is a conflict",()=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-provider-"));
   const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
