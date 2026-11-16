@@ -31,14 +31,14 @@
 | 필드 | 마지막 확인 상태 |
 |---|---|
 | 최종 목표 | 82단계 R1~R6로 적격 실적 침체 정보성 지표의 PC 원자료 저장→계산→승인 D1 게시→Production API/UI를 완성. 기존 E1-R4 점수/산식·기타 12대 기업실적은 보호 |
-| 현재 관련 단계 | **순차 R2-02(12/82)**: FRED 배포 BEA 단위이익 CSV와 BEA 공식 원본·재사용권·개정(vintage) 비교. QFR B 승인·게시 R4-06은 후행 별도 미완료 |
-| 마지막 검증 완료점 | **R2-01 BEA NIPA Table/Line/Series·단위/개정 조사 DONE (§16)**: Table 1.15 line 7 A463RD/FRED A463RD3Q052SBEA는 USD/실질 부가가치 단위, Table 6.16D line 15 N400RC/FRED N400RC1Q027SBEA는 제조업 IVA 기업이익 십억 USD SAAR. 2026-09-30 출처 관측·수정 근거 분리. 후행 저장·권리·D1 검증 별도 |
+| 현재 관련 단계 | **순차 R2-03(13/82)**: BEA 제조업 N400RC 산업·명목/실질·분기·YoY 정의 확인. QFR B 게시 R4-06은 후행 미완료 |
+| 마지막 검증 완료점 | **R2-02 FRED CSV·API·BEA 원천·빈티지·이용권리 조사 DONE (§17)**. BEA 공식 자료는 일반 공개 도메인, FRED series는 Public Domain: Citation Requested. FRED 그래프 CSV의 ZGMINI 운영 archive/공개 적격성 HOLD_RIGHTS_SCOPE. 실 CSV/BEA 바이트 동치 NOT_VERIFIED. R2-01 출처 정의 보존 |
 | 재사용할 기존 근거 | QFR 원자료 ZIP PC SQLite 저장·계산 기존 유효 증거; 앱 QFR 3-pin [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175)는 앱 main 병합, 운영 PC 설치·B 게시 별개. R1-09 소스 blob 근거는 §14 |
-| 현재 최초 실제 미완료 조건 | **순차 R2-02:** FRED CSV 배포 내용과 BEA 공식 표/개정 계보·공개 이용 조건의 독립 동치 확인 미실행. BEA unit 운영 PC raw archive·BEA mfg 2파일 SHA readback·C 게시·D1/Production은 후행 미완료 |
-| 다음 필수 실행 하나 | **순차 12/82 R2-02:** FRED A463RD3Q052SBEA CSV 배포 컬럼·버전·BEA 원본과의 개정·이용/재배포 조건을 공식 문서로 비교. 승인 없는 실PC 수집·게시·산식 변경 금지 |
-| 현재 완료율 증거 | **11/82 DONE(약 13.4%)**, 현재 R2-02(12/82). 기존 14단계 종단 게시 완료 마지막 확인 0/14, R6-15 자연 갱신 관찰 DEFERRED |
+| 현재 최초 실제 미완료 조건 | **순차 R2-03:** 제조업 N400RC 공식 산업·IVA/CCAdj·명목/실질·분기·YoY 계약의 소스 대조 미완료. FRED 그래프 CSV 운영 archive/공개 사용권 HOLD_RIGHTS_SCOPE, BEA PC raw/D1/Production은 후행 미완료 |
+| 다음 필수 실행 하나 | **순차 13/82 R2-03:** BEA NIPA 6.16D 제조업 N400RC 산업·IVA/명목 SAAR·전년 동분기 비교와 기존 Reader를 대조한다. 사용권 보류 중 FRED 운영 재수집·공개 금지 |
+| 현재 완료율 증거 | **12/82 DONE(약 14.6%)**, 현재 R2-03(13/82). 기존 14단계 종단 게시 완료 마지막 확인 0/14, R6-15 자연 갱신 관찰 DEFERRED |
 | 최종 갱신 식별 | 이 문서의 **최신 원격 브랜치 HEAD 및 Git blob SHA를 재조회**해 근거로 보고한다. 고정된 과거 SHA를 현행값으로 복사하지 않는다 |
-| **순차 포인터·완료율** | **현재 12/82 R2-02**; R1-01~R2-01 연속 DONE **11/82(약 13.4%)**. 후행 저장·D1 미실증은 해당 단계에서 미완료 |
+| **순차 포인터·완료율** | **현재 13/82 R2-03**; R1-01~R2-02 연속 DONE **12/82(약 14.6%)**. 후행 저장·D1 미실증은 해당 단계에서 미완료 |
 | R1-09 이번 실행 | 2026-11-17 08시 KST: B 경제지표 `/economic-indicators/earnings/`→`EconomicDetailPanel`→`/api/market-score` `domains[id=earnings]`와 A 8대 위험 4요소·C 보조 GET의 별도 계약 소스 검증. `DONE`, 완료 9/82. 경계 상세·blob §14; 운영 GET·D1 미검증. 다음 R1-10 |
 
 ### D. 다음 작업자 재개 순서 및 변경 충돌
@@ -54,19 +54,19 @@
 
 | 판정 항목 | 실제 상태 |
 |---|---|
-| **순차 완료 확정** | **11/82 (약 13.4%)** — R1-01~R2-01 조사·원본 계보 기준 충족. 실제 자료·D1 미실증은 후행 분리 |
-| **현재 순차 진행 단계** | **12/82 = R2-02** (FRED 배포 BEA 단위이익 CSV·공식 원본·권리·개정 비교) |
-| **82개 중 개별 완료 확정** | **11개** (R1-01~R2-01), 그 밖의 소스/CI와 운영 진행은 해당 완료 기준마다 별도 |
+| **순차 완료 확정** | **12/82 (약 14.6%)** — R1-01~R2-02 조사·권리 판정 기준 충족. 실제 자료·D1 미실증은 후행 분리 |
+| **현재 순차 진행 단계** | **13/82 = R2-03** (BEA 제조업 기업이익 명목·산업범위·계절조정·YoY 검증) |
+| **82개 중 개별 완료 확정** | **12개** (R1-01~R2-02), 그 밖의 소스/CI와 운영 진행은 해당 완료 기준마다 별도 |
 | **71번 R6-04** | **후행 소스 선행 작업·현재 운영 승인 미해결**, 순차 71단계에 도달한 것이 아님 |
-| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 11개 확정 DONE, 남은 71개 완료 판정 대상; 재수집 71회 뜻 아님 |
-| **다음 실제 수행 하나** | **R2-02(12/82):** FRED 단위이익 CSV·BEA 공식 원본·권리·개정 비교 |
+| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 12개 확정 DONE, 남은 70개 완료 판정 대상; 재수집 70회 뜻 아님 |
+| **다음 실제 수행 하나** | **R2-03(13/82):** BEA 제조업 N400RC 계절조정·단위·범위·YoY 검증 |
 
 **순서 운용:** 다음 번호로 넘어가는 기준은 해당 단계의 **계획서 완료 조건 + 근거 링크**이며, 뒤 단계에서 미리 통과한 PR·CI는 계획 순번을 바꾸지 않는 선행 자산으로 유지한다. 사용자 승인 없이 순번이나 완료 기준을 수정하지 않는다. 조건부 HOLD·장기 DEFERRED는 계획서대로 처리하며 다른 독립 승인 작업의 수행을 중단하는 새로운 Gate가 아니다.
 
 
 ## 0. 82개 작업별 진행 상태 (실증·소스 분리)
 
- > **2026-11-17 KST 최신 판정.** R1-01~R2-01 11/82 DONE, 현재 순차 R2-02(12/82). SOURCE/CI만으로 PC/D1/Production DONE 자동 승격하지 않음.
+ > **2026-11-17 KST 최신 판정.** R1-01~R2-02 12/82 DONE, 현재 순차 R2-03(13/82). SOURCE/CI만으로 PC/D1/Production DONE 자동 승격하지 않음.
 
 | 작업 ID | 실행계획 작업 | 현재 증거 기반 상태 | 마지막 확인 증거·남은 조건 |
 |---|---|---|---|
@@ -81,7 +81,7 @@
 | R1-09 | 기존 점수 A·기업실적 B·정보성 C API/UI 계약 분리 | `DONE` | **§14** 소스 조사 완료: A 위험 `/earnings-recession/`→4요소 `/api/earnings-recession-detail`와 C 보조 GET/별도 5키; B 12대 경제지표 중 `earnings` 도메인 `/economic-indicators/earnings/`→`EconomicDetailPanel`→`/api/market-score` `domains[id=earnings]`→`publicDomainScores.earnings`. A 4요소/가중치, B E1-R5 도메인 및 C 정보행 혼합·변경 금지. 운영 PC/D1/Production 동치 미검증이며 R4~R6 별도 |
 | R1-10 | 지표별 수집 중복·마지막 유효 완료점·첫 미완료 항목을 통합 인벤토리화 | `DONE` | **§15** 원천별 indicator_id, provider→Collector→PC archive/SQLite→Reader/D1 키/GET, 최종 유효 관측 시각과 `NOT_VERIFIED` 범위 전수 표기. 4개 BLS 기본+1 노동비용/QFR 재수집 금지, WPSFD42/BEA/SEC·M3·MTIS 신규 적격성·실저장은 후행. 동일 원천 다중 파생행은 재수집 대상이 아님; A/B/C 별도 유지. 신규 수집/쓰기 0 |
 | R2-01 | BEA 공식 NIPA 기업이익·단위이익 시계열 및 단위 확인 | `DONE` | **§16** BEA Interactive Table 1.15 line 7 `A463RD`/FRED `A463RD3Q052SBEA` (USD·quarterly SA) 및 Table 6.16D line 15 `N400RC`/FRED `N400RC1Q027SBEA` (십억 USD·quarterly SAAR) 공식/배포 자료 교차 확인. 2026-09-30 개정·Q2 2026 관측 버전 분리. 2026 연차개정 보존; FRED CSV 계약·권리 판단은 R2-02, 현장 원문 보관 R3 |
-| R2-02 | FRED 배포 BEA 단위이익 CSV와 공식 BEA 원본의 정의·권리·개정 비교 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
+| R2-02 | FRED 배포 BEA 단위이익 CSV와 공식 BEA 원본의 정의·권리·개정 비교 | `DONE` | **§17** BEA NIPA 1.15 A463RD → FRED A463RD3Q052SBEA USD/SA/Q 공개 계보 확인. W05 그래프 CSV URL과 코드 요구 헤더/분기 기간 변환·SHA archive 구분. FRED 공식 API는 별도 키·ZIP CSV·realtime/vintage 계약. FRED series Public Domain: Citation Requested, 그러나 FRED Services archive·공개 범위 HOLD_RIGHTS_SCOPE; BEA 공식 자료 public domain. 실제 CSV 원본/BEA 바이트 대조 NOT_VERIFIED 및 PC/D1/Production 변경 0건 |
 | R2-03 | BEA 제조업 기업이익 산업 분류·명목/실질·분기·YoY 기준 확인 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R2-04 | Census QFR 공식 ZIP/API 경로와 제공 데이터 구조 확인 | `EXISTING_EVIDENCE` | 기존 Census QFR 2026Q2 원본 ZIP 저장·구조 검증 이력 |
 | R2-05 | QFR 세후이익/매출 분자·분모·산업 표본·비교 분기 정합성 검사 | `EXISTING_EVIDENCE` | 기존 QFR 저장자료 기반 세후이익률 계산 검증 증거; 현재 개정판 재대조 필요시 별도 |
@@ -440,3 +440,22 @@
 **결과·한계:** Table/Line/Series/분기·단위·산업범위·수정시각 경계 확인으로 **R2-01 조사 DONE**. NIPA 산업별 IVA에 CCAdj를 일률적으로 덧붙이지 않으며, 원천 단위(USD 대 십억 USD SAAR)를 %나 동일 scale로 치환하지 않는다. BEA 공급자의 현재 표 내용은 **공개 출처**로 조사했을 뿐 운영 PC CSV/메타/SQLite를 새로 수집·재조회하지 않았고, FRED CSV 전송 데이터의 BEA 원본 동일성·저장/파생/재게시 권리는 별도 **R2-02** 검토에 남긴다. 앱 산식·수치·기존 게시 키/DB/TTL/Production 변경 없음.
 
 **LAST PASS:** 공식 BEA 표 1.15/6.16D와 배포 series의 정의·라인·단위·개정 관측을 구별. **FIRST UNFINISHED:** R2-02 FRED CSV transport·BEA 빈티지 동치 및 재사용권·공개 적격성 판정. **NEXT:** W05가 BEA/FRED 계열·CSV 공식 문서·권리조항/개정 비교만 수행하고 후행 R3 source archive 및 R4 B 게시 승인은 별도 유지. 운영 쓰기/공급자 수집 0건.
+
+## 17. R2-02 (2026-11-17 KST) FRED graph CSV/API·BEA 원천·개정·이용권리 — 조사 DONE, FRED archive/public HOLD
+
+| 항목 | 근거 | 판정 |
+|---|---|---|
+| 원천 정의 | BEA NIPA Table 1.15 A463RD와 FRED series A463RD3Q052SBEA(미국 비금융 법인 단위이익, 달러, 분기 SA). 2026-09-30 FRED 갱신의 2026Q2=0.250 / Q1=0.231 / 2025Q2=0.216 | SOURCE_LINEAGE_CONFIRMED, 이는 BEA 파일과 FRED 다운로드 바이트 동치 증명이 아님 |
+| 실제 W05 graph CSV 코드 | lib/market-score/earnings-bea-unit-profit-source-r1.mjs blob 7a5ce977b8c929b11e52c35a03f9e2fb17ace505: URL https://fred.stlouisfed.org/graph/fredgraph.csv?id=A463RD3Q052SBEA, parser 기대 헤더 observation_date,A463RD3Q052SBEA, 분기 시작일→종료일, 5개 이상 연속분기 확인 | GRAPH_CSV_IMPLEMENTED; 실제 응답 헤더·바이트는 이번에 다운로드/검증 안 했으므로 NOT_VERIFIED |
+| 보관 Helper | scripts/pc-writer/EARNINGS_BEA_UNIT_STORED_RAW_R1.mjs blob 812266af97836edf9e06bae679e363e6546168fb: 승인 Collector가 호출해야만 fetch 후 CSV SHA-256, PC raw/earnings-bea-unit-profit-r1/<sourceSha>.csv/.json 불변 저장, metadata/sourceStoredAt 재조회 | 구현 존재; 현재 PC 아카이브 현물·원본 SHA NOT_VERIFIED, 신규 실행 없음 |
+| FRED 공식 observations API | https://fred.stlouisfed.org/docs/api/fred/series_observations.html: API 키 필수, file_type=csv는 ZIP(CSV+README), realtime_start/end와 vintage_dates 지원. 그래프 CSV와 API의 URL, 응답형, 계약은 다름 | GRAPH_DOWNLOAD_IS_NOT_OBSERVATIONS_API |
+| 수정치 | https://fred.stlouisfed.org/docs/api/fred/series_vintagedates.html 와 https://alfred.stlouisfed.org/series?seid=A463RD3Q052SBEA 는 발표/수정 날짜 비교 기준 제공 | FILE_SHA는 downloaded bytes version이며 공식 발표일/PIT vintage ID와 같지 않음; 실제 vintage별 값 대조 후행 |
+| BEA 저작권 | https://www.bea.gov/help/faq/147: 별도 예외가 없는 BEA 웹 자료는 public domain이고 출처표기 권고 | BEA_OFFICIAL_PUBLIC_DOMAIN. 원천을 직접 얻는 경로의 별도 적격성 평가 가능, 기존 공급자 임의 교체는 하지 않음 |
+| FRED Series 라벨 | https://fred.stlouisfed.org/series/A463RD3Q052SBEA: Public Domain: Citation Requested / 원출처 BEA | SERIES_LABEL_PERMITS_USE_SUBJECT_TO_FRED_TERMS; 원출처 BEA·중계 FRED 양쪽 출처표기 |
+| FRED 서비스/공식 API 사용 약관 | https://fred.stlouisfed.org/legal/terms/ 및 https://fred.stlouisfed.org/legal/: 용도 제한, 서비스 대체/대량복제 제한, 공식 API의 저장·캐싱·아카이빙·제삼자 제공 제한 명시 | GRAPH_CSV_ARCHIVE_AND_PUBLICATION=HOLD_RIGHTS_SCOPE. 공식 API의 보관 제한을 graph CSV와 동일 조항인 것처럼 오인하지 않으나 일반 FRED Services 약관은 적용 |
+
+**중요 판정:** FRED 시계열의 Public Domain 라벨은 graph CSV 기반 영구 PC 보관·D1 파생치 공개의 blanket 권한이 아니다. 반대로 FRED API의 특별 제한을 현재 graph CSV에 이미 위반한 사실로 단정할 수도 없다. 해당 FRED 경로의 ZGMINI 사용 범위를 법적/계약적 근거 없이 READY로 판정하지 않으며 R2-13 및 R3-08/R4-08의 출처 적격성·운영 사용을 HOLD로 유지한다. BEA 공식 배포 직접 소스는 대안 후보일 뿐 현재 승인 Collector 변경/새 제공자 사용 승인 아님.
+
+**검증 수준:** R2-02의 목적은 FRED API/CSV 구분, 원천 series 정의, 보관·공개 사용권 적격/보류 판정이다. 이 범위의 공식 문서와 소스 조사를 완료해 R2-02 DONE. 실제 FRED graph.csv 현재 응답/BEA 원본 바이트·현장 CSV sourceStoredAt·SHA 및 현재 D1 게시 값은 NOT_VERIFIED이며 후행 단계로 분리. 공급자/운영 PC/SQLite/D1/Production 신규 요청·쓰기 0건, 앱 코드 변경 0건.
+
+**LAST PASS:** FRED/BEA 계보·변환 코드·두 전송 방식·권리 사용 범위 판정. **FIRST UNFINISHED:** R2-03 제조업 N400RC의 명목 IVA/SAAR/YoY와 산업 범위. **NEXT:** W05가 BEA NIPA Table 6.16D 공식 정의와 기존 W05 제조업 Reader를 대조하고 결과를 동일 진행 기록에 반영한다.
