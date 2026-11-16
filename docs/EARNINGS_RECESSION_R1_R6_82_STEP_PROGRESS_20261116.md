@@ -31,14 +31,14 @@
 | 필드 | 마지막 확인 상태 |
 |---|---|
 | 최종 목표 | 82단계 R1~R6로 적격 실적 침체 정보성 지표의 PC 원자료 저장→계산→승인 D1 게시→Production API/UI를 완성. 기존 E1-R4 점수/산식·기타 12대 기업실적은 보호 |
-| 현재 관련 단계 | **순차 R2-08(18/82)**: BLS 기본 3원천 WPSFD4/WPSFD41/PRS85006111 정의와 정보성 5행 파생 규칙 검증. 후행 QFR B 게시 R4-06은 미완료 |
-| 마지막 검증 완료점 | **R2-07 Census MTIS 비율·월간/개정 정의 조사 DONE (§22)**. MTIS 3원천(M3·소매·도매) 합성, end-of-month inventory / monthly sales 무차원 비율·month-of-sales 수준, SA/NSA 구분. 공식 2026-10-15 발표의 2026-08 SA Total Business I/S=1.33, 2025-08=1.40; 2026-11-17 10:00 ET 2026-09 발표 예정, 이미 공개됐다고 간주 금지. EITS MTIS API 필드·key 확인, exact category/data_type 코드/PC Collector·SHA는 NOT_VERIFIED/HOLD |
+| 현재 관련 단계 | **순차 R2-09(19/82)**: BLS 서비스 WPSFD42 공식 정의·관측월·전년 동월 YoY 판정. QFR B 게시 R4-06 별도 미완료 |
+| 마지막 검증 완료점 | **R2-08 BLS 기본 3원천·5행 계약 확인 DONE (§23)**. WPSFD4/41 계절조정 월간 지수 2개→원지수·자체 t-12 YoY 각 2행, PRS85006111 분기 SA 전년동분기 YoY 원시 1행. 기존 실PC R3D 세 snapshot/hash 검증 PASS 재사용, 2026-09 PPI YoY 6.346301%/9.772194%, 2026Q2 ULC 1.4%는 당시 저장본이며 현재 최신값은 아님 |
 | 재사용할 기존 근거 | QFR 원자료 ZIP PC SQLite 저장·계산 기존 유효 증거; 앱 QFR 3-pin [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175)는 앱 main 병합, 운영 PC 설치·B 게시 별개. R1-09 소스 blob 근거는 §14 |
-| 현재 최초 실제 미완료 조건 | **순차 R2-08:** BLS 기본 WPSFD4/WPSFD41/PRS85006111의 공급자 정의·원본 정규화/파생 5행의 일치 대조 미완료. MTIS exact API 코드와 저장 권한은 HOLD, QFR D1·FRED 사용권은 후행 미해결 |
-| 다음 필수 실행 하나 | **순차 18/82 R2-08:** BLS WPSFD4/WPSFD41/PRS85006111 공식 시계열·단위·계절조정과 기존 실PC 원본/5행 산출 근거 대조. 기존 저장 PASS 재사용, 재수집하지 않는다 |
-| 현재 완료율 증거 | **17/82 DONE(약 20.7%)**, 현재 R2-08(18/82). 기존 14단계 종단 게시 완료 마지막 확인 0/14, R6-15 자연 갱신 관찰 DEFERRED |
+| 현재 최초 실제 미완료 조건 | **순차 R2-09:** WPSFD42 서비스 PPI의 공급자 정의·원지수/SA t-12 YoY 및 기존 5행과 별도 출처/체크포인트 검증 미완료. 신규 서비스 PC 저장·D1 실제 게시 미확인, M3/MTIS HOLD·FRED 권리 HOLD·QFR B 게시 미완료 유지 |
+| 다음 필수 실행 하나 | **순차 19/82 R2-09:** BLS WPSFD42 공식 Final demand services 지수와 2026-09 원본/2025-09 비교·YoY 2행 및 별도 서비스 key 연결을 재검증. PC 재수집·D1 쓰기 없음 |
+| 현재 완료율 증거 | **18/82 DONE(약 22.0%)**, 현재 R2-09(19/82). 기존 14단계 종단 게시 완료 마지막 확인 0/14, R6-15 자연 갱신 관찰 DEFERRED |
 | 최종 갱신 식별 | 이 문서의 **최신 원격 브랜치 HEAD 및 Git blob SHA를 재조회**해 근거로 보고한다. 고정된 과거 SHA를 현행값으로 복사하지 않는다 |
-| **순차 포인터·완료율** | **현재 18/82 R2-08**; R1-01~R2-07 연속 DONE **17/82(약 20.7%)**. 후행 저장·D1 미실증은 해당 단계에서 미완료 |
+| **순차 포인터·완료율** | **현재 19/82 R2-09**; R1-01~R2-08 연속 DONE **18/82(약 22.0%)**. 저장·D1·Production 후행 실증은 별도 |
 | R1-09 이번 실행 | 2026-11-17 08시 KST: B 경제지표 `/economic-indicators/earnings/`→`EconomicDetailPanel`→`/api/market-score` `domains[id=earnings]`와 A 8대 위험 4요소·C 보조 GET의 별도 계약 소스 검증. `DONE`, 완료 9/82. 경계 상세·blob §14; 운영 GET·D1 미검증. 다음 R1-10 |
 
 ### D. 다음 작업자 재개 순서 및 변경 충돌
@@ -54,19 +54,19 @@
 
 | 판정 항목 | 실제 상태 |
 |---|---|
-| **순차 완료 확정** | **17/82 (약 20.7%)** — R1-01~R2-07 공식 원천·비율·정의/HOLD 조사 완료. 실 PC/D1/Production 미실증은 후행 분리 |
-| **현재 순차 진행 단계** | **18/82 = R2-08** (BLS 기본 3원천 정의·5개 정보행 파생 검증) |
-| **82개 중 개별 완료 확정** | **17개** (R1-01~R2-07), 그 밖의 소스/CI와 운영 진행은 해당 완료 기준마다 별도 |
+| **순차 완료 확정** | **18/82 (약 22.0%)** — R1-01~R2-08 공식 원천·계산/저장자료 조사 완료, 실운영 최신 게시와 분리 |
+| **현재 순차 진행 단계** | **19/82 = R2-09** (BLS 서비스 WPSFD42 계절조정 지수·YoY·저장 checkpoint 검증) |
+| **82개 중 개별 완료 확정** | **18개** (R1-01~R2-08), 나머지 운영·소스·CI 별도 판정 |
 | **71번 R6-04** | **후행 소스 선행 작업·현재 운영 승인 미해결**, 순차 71단계에 도달한 것이 아님 |
-| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 17개 확정 DONE, 남은 65개 완료 판정 대상; 재수집 65회 뜻 아님 |
-| **다음 실제 수행 하나** | **R2-08(18/82):** BLS 기본 3원천 공식 정의·5행 파생 규칙 비교 |
+| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 18개 DONE, 남은 64개 완료 판정 대상. 재수집 64회 의미 아님 |
+| **다음 실제 수행 하나** | **R2-09(19/82):** BLS 서비스 WPSFD42 원본 지수/12개월 YoY와 독립 C checkpoint 조사 |
 
 **순서 운용:** 다음 번호로 넘어가는 기준은 해당 단계의 **계획서 완료 조건 + 근거 링크**이며, 뒤 단계에서 미리 통과한 PR·CI는 계획 순번을 바꾸지 않는 선행 자산으로 유지한다. 사용자 승인 없이 순번이나 완료 기준을 수정하지 않는다. 조건부 HOLD·장기 DEFERRED는 계획서대로 처리하며 다른 독립 승인 작업의 수행을 중단하는 새로운 Gate가 아니다.
 
 
 ## 0. 82개 작업별 진행 상태 (실증·소스 분리)
 
- > **2026-11-17 KST 최신 판정.** R1-01~R2-07 17/82 DONE, 현재 순차 R2-08(18/82). SOURCE/CI만으로 PC/D1/Production DONE 자동 승격하지 않음.
+ > **2026-11-17 KST 최신 판정.** R1-01~R2-08 18/82 DONE, 현재 순차 R2-09(19/82). SOURCE/CI만으로 PC/D1/Production DONE 자동 승격하지 않음.
 
 | 작업 ID | 실행계획 작업 | 현재 증거 기반 상태 | 마지막 확인 증거·남은 조건 |
 |---|---|---|---|
@@ -87,7 +87,7 @@
 | R2-05 | QFR 세후이익/매출 분자·분모·산업 표본·비교 분기 정합성 검사 | `DONE` | **§20** Census QFR 공식 비계절조정 US/MFG/et_idx=0/is_adj=0, dt_code=101 Net Sales, 115 Income After Taxes (백만 달러)와 2025Q2~2026Q2 원본 5분기 수치 독립 산술 검증. 2026Q2 370082/2372409*100=15.599418144173285%, Q1 287262/2046451*100=14.03708175763798%, 변화 +1.5623363865353053%p. 기존 PC R3 stored-only 1snapshot SHA PASS, source HTTP/D1 writes 0; 공식 Census 2026Q2 2026-09-08 발표 비계절조정 통계와 일치. 이는 자체 파생마진이며 QFR 표본추정 통계, 신선/Production 및 D1 게시 미검증 |
 | R2-06 | Census M3 신규주문·출하 공식 변수·단위·조정 정의 확인 | `DONE` | **§21** Census EITS /data/timeseries/eits/m3 공식 variables: category_code/data_type_code/seasonally_adj/cell_value/time_slot_date/time 및 US 필터; 역사적 Census NAICS M3 code MTM=Total Manufacturing, NO=New Orders, VS=Value of Shipments, TI=Total Inventories, U(미조정)/A(SA), 금액 USD million nominal/monthly. M3 공식 설명 신규주문 취소차감·출하 판매액, 비확률표본/반도체 신규주문 제외 주의. api examples 현재 API key 필수. 앱 main 물가 collector MTM/TI만, 실적 침체 MTM/NO·MTM/VS Collector/PC raw/SHAs NOT_VERIFIED→HOLD 조건부. 공식 변수 판정 DONE이지 수집/게시 DONE 아님 |
 | R2-07 | Census MTIS 재고/매출 비율 변수·관측월·개정 내역 확인 | `DONE` | **§22** Census MTIS 공식 월간 총사업 재고/매출 비율은 월말 inventory / 당월 sales, 무차원(월간 판매 대비 재고보유 수준), SA/NSA 구분. 2026-10-15 발표(2026-08 SA 총사업 1.33 vs 2025-08 1.40) 확인. EITS /data/timeseries/eits/mtis variables/US/seasonally_adj/time, 공식 API key 필요. 2026-09 MTIS는 2026-11-17 10AM ET 공개 예정(현재 시점 미확정), 도매·소매 AIES 연차개정 영향. exact category_code/data_type_code의 API 실응답, C Collector, PC raw/SHA/게시 미검증으로 HOLD. 공식 정의·보류 근거 기록 DONE이지 운영 수집/게시 아님 |
-| R2-08 | BLS 기본 3원천 `WPSFD4`, `WPSFD41`, `PRS85006111` 정의 확인 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
+| R2-08 | BLS 기본 3원천 `WPSFD4`, `WPSFD41`, `PRS85006111` 정의 확인 | `DONE` | **§23** BLS 공식 PPI WPSFD4 Final demand·WPSFD41 Final demand goods 계절조정 월간 지수와 PRS85006111 nonfarm business unit labor costs 분기 계절조정 전년동분기 YoY 정의 검증. 실제 PC 기존 3 snapshot/hash 및 21개월·6분기 R3D 검증 PASS 재사용. 두 PPI 원지수와 자체 t-12 YoY 4행+ULC raw YoY 1행=5행, 외부 BLS NSA 보도자료 YoY와 계절조정 파생값 직접 동치 주장 금지. 신규 API/PC/D1 쓰기 0 |
 | R2-09 | BLS 서비스 PPI `WPSFD42` 정의·관측월·YoY 계산 검증 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R2-10 | SEC CompanyFacts/XBRL 엔드포인트·User-Agent·쿼터 확인 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R2-11 | SEC 기업별 회계항목·회계기간·중복·표본 커버리지 검사 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
@@ -543,3 +543,21 @@ R2-03에 요구한 산업범위·명목/실질·IVA와 CCAdj의 차이·SAAR/분
 **R2-07 판정:** 공식 프로그램·월간 관측/비율 산식·과거 공개 예시/계절조정·개정 일정과 정확코드 미확인 범위를 구분하여 **조사 DONE**. 정확한 MTIS API code·실제 PC source/API 연결·원문 SHA는 `HOLD`; 이 조사로 C 정보성 게시가 준비됐다는 뜻 아님. `providerCalls=0`, `sqliteWrites=0`, `d1Writes=0`, `deployments=0`, 앱 코드 변경 0.
 
 **LAST PASS:** MTIS 공식 월말 재고/월간 매출 ratio, 2026-08 공표 1.33, 2026 개정 및 EITS 변수 스키마; **FIRST UNFINISHED:** R2-08 기존 BLS 3계열 정밀 정의·5개 정보성 파생 검증. **NEXT:** W05가 WPSFD4/WPSFD41/PRS85006111 공식 BLS 정의와 기존 원본 저장·YoY 계산을 대조하고 기존 PC PASS 증거를 재사용한다.
+
+## 23. R2-08 (2026-11-17 KST) BLS 기본 3원천→정보성 C 5행 정의·원자료 계산 계약 — DONE
+
+**공식 근거:** BLS [FD-ID 계절조정 코드 WPSFD4/41](https://www.bls.gov/ppi/tables/final-demand-intermediate-demand-aggregation-index-seasonal-factors-2020-2024.htm), BLS [2026-10 PPI 공식 보도자료](https://www.bls.gov/news.release/archives/ppi_11132026.htm), BLS [비농업 단위노동비용 정의 및 추이](https://www.bls.gov/charts/productivity-and-costs/nonfarm-business-sector-labor-costs-percent-change.htm), BLS [Unit Labor Costs 공식 정의](https://www.bls.gov/opub/hom/opt/calculation.htm), FRED BLS 중계 [PRS85006111](https://fred.stlouisfed.org/series/PRS85006111)로 코드/정의/원단위만 대조 (본 W05 실제 수집 공급자는 BLS direct API이며 FRED 아님).
+
+| 원천 series | 공식 의미·원시 단위 | 공개 정보성 C indicatorId 및 변환 | 관측/저장 마지막 증거 |
+|---|---|---|---|
+| WPSFD4 | Final Demand, seasonally adjusted PPI monthly INDEX | bls_ppi_final_demand_index (RAW/SOURCE_INDEX); bls_ppi_final_demand_yoy_sa (DERIVED/YOY_SA_T_MINUS_12), 정확히 12개월 이전 지수>0일 때 100*(current/base-1) | 2026-10-27 PC R3D: 2025-01~2026-09 21건, latest index=159.780, derived YoY +6.346301%; 당시 저장된 vintage |
+| WPSFD41 | Final Demand Goods, seasonally adjusted PPI monthly INDEX | bls_ppi_goods_index (RAW/SOURCE_INDEX); bls_ppi_goods_yoy_sa (DERIVED/YOY_SA_T_MINUS_12), 동일 기간 같은 계열 | 2026-10-27 PC R3D: 2025-01~2026-09 21건, latest index=162.341, derived YoY +9.772194%; 당시 저장 vintage |
+| PRS85006111 | Nonfarm Business Unit Labor Costs (All Workers), quarterly seasonally adjusted **Percent Change from Quarter One Year Ago** | bls_unit_labor_cost_yoy (RAW/SOURCE_YOY), 공급자가 이미 계산한 전년동분기 YoY 1.4%; 전분기 연율화·지수 YoY 중복 계산 금지 | 2026-10-27 PC R3D: 2025Q1~2026Q2 6건, 2026Q2 +1.4% (당시 값) |
+
+**계보 소스:** scripts/pc-writer/EARNINGS_R3C_BLS_STORE_ONCE.mjs blob add5445108361b49c839fcb7eb4ffe2cc08e4ec4는 공식 BLS v2 API `https://api.bls.gov/publicAPI/v2/timeseries/data/` 3-series 직접 수집, M13/Q05 연간 평균 항목 제거, 원시 응답 sourceStoredAt/해시 append-only 보존. scripts/pc-writer/EARNINGS_R3D_STORED_BLS_CALC_READONLY.mjs blob 196f6262b34b4f6df21f284810629e29e95c6d22는 세 계열 raw value와 저장 SHA·cohort·연속기간/t-12 분모·결측 거부를 읽기 전용으로 검사. Worker earnings-companion-c-r4.mjs blob d8df9f1cbbed67c5a508da5bd9767fa85987149f는 RAW INDEX / DERIVED t-12 YoY / RAW SOURCE_YOY와 MONTHLY/QUARTERLY를 엄격 검증. UI 메타 app/earnings-recession/earnings-cost-indicator-list.mjs blob 4c1be1e0322606d7ca7b996e1b70904ed1f8a125와 5개 ID 일치.
+
+**실 PC 기존 완료증거 재사용:** [EARNINGS_COMPANION_R3D_PC_RESULT_VERIFIED_20261027.md](EARNINGS_COMPANION_R3D_PC_RESULT_VERIFIED_20261027.md)의 사용자 PC TXT `EARNINGS_R3D_STORED_BLS_CALC_RESULT_20261026-182033Z.txt`, `RESULT=PASS_R3D_STORED_ONLY_CALCULATION`, `SNAPSHOTS_HASH_VERIFIED=3`, `DATA_COHORT_CONSISTENT=YES`, `API_REQUESTS=0`, `SQLITE_WRITES=0`, `D1_WRITES=0`. 9월 BLS 원 발표의 **비계절조정** 공식 YoY 6.3%/9.8%와 파생 SA 6.346301%/9.772194%는 개념이 다르므로 수치 근접만으로 동일 series 재현 증거가 되지 않음.
+
+**시점 제한:** 2026년 11월 13일자 BLS 최신 10월 발표와 이전 PC 2026-09 저장 계열은 관측월·revision이 다르다. 과거 PASS를 현재 최신 수집/현재 D1 READY로 오인하지 않음. 이 단계는 source/저장값 계산 계약 대조 `DONE`, 정보성 C 5개 행의 실제 현행 D1 readback/Production 검증은 R4~R6 별도. 기존 점수 A와 경제 12도메인 B, PC source/DB/TTL·scheduler 모두 불변. 신규 API/PC SQLite/D1/배포 쓰기 0.
+
+**LAST PASS:** R2-08 공급자 3종 단위·계산 기준과 5행 mapping. **FIRST UNFINISHED:** R2-09 WPSFD42 Final Demand Services 분리 원천/YoY·별도 D1 checkpoint 대조. **NEXT (W05):** R2-09 공식 BLS 서비스 지수 t-12 원본·2026-09 표본 및 소스 분리 구조를 소스/공식자료로 확인하고 운영 WPSFD42 수집·게시 상태를 별도 판정.
