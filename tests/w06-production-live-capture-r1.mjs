@@ -43,6 +43,16 @@ try{
    await page.waitForLoadState("networkidle",{timeout:20000}).catch(()=>null);
    await page.evaluate(()=>document.fonts?.ready).catch(()=>null);
    await page.waitForTimeout(750);
+   // Same first-party dismissal control already covered by about-intro-bootstrap-browser-r6.
+   const intro=page.locator("#zg-about-intro-dialog");
+   if(await intro.count()){
+    const isOpen=await intro.evaluate(el=>el.open).catch(()=>false);
+    if(isOpen){
+     await intro.getByRole("button",{name:"닫기",exact:true}).click({timeout:12000});
+     await intro.waitFor({state:"hidden",timeout:10000});
+    }
+   }
+
    v.ui=await page.evaluate(domain=>{
     const text=q=>document.querySelector(q)?.textContent?.trim()??null;
     const hero=domain?document.querySelector('[data-testid="economic-'+domain+'-hero"]'):null;
@@ -61,6 +71,7 @@ try{
    v.checks.html200=v.status===200;
    v.checks.heading=Boolean(v.heading?.includes(heading));
    v.checks.noHorizontalOverflow=!v.overflow;
+   v.checks.introDismissed=await page.locator("#zg-about-intro-dialog").evaluate(el=>!el.open).catch(()=>false);
    if(domain){
     const stored=market?.domains?.find(x=>x.id===domain);
     v.apiDomain=stored??null;
