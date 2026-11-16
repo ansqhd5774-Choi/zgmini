@@ -5,7 +5,7 @@
 - 착수 당시 전용 브랜치: `codex/ui-improvements` `43f943679b555387593d918088860ba5b882dcb6`
 - 인계받은 기존 근거: `DASHBOARD_SCORE_68_CONTENT_CONTRACT_INVENTORY_R1.md` (2026-11-10), `DASHBOARD_SCORE_RUNTIME_BASELINE_R1.md` (2026-11-10)
 - 당회 작업 범위: **현재 개발 소스의 UI 소비 구조 및 R1 계약 재사용**, 기능별 실제 갱신 계약 분류 착수. 원자료/DB/D1/Controller/예약/산식 변경 없음.
-- **진척 요약: 01,02,03,07,09–18 판정 완료 (14/34 = 41.2% 고정 작업 기준). 기능별 판정 11/27. 나머지 16개는 미완료.** 추가 결함군 N은 미확정이므로 전체 R3 최종 %는 아직 산정하지 않는다. 이 기록은 브랜치 문서 반영이지 배포/운영 적용 증거가 아니다.
+- **진척 요약: 01,02,03,07,09–19 판정 완료 (15/34 = 44.1% 고정 작업 기준). 기능별 판정 12/27. 나머지 15개는 미완료.** 추가 결함군 N은 미확정이므로 전체 R3 최종 %는 아직 산정하지 않는다. 이 기록은 브랜치 문서 반영이지 배포/운영 적용 증거가 아니다.
 
 ## 1. 공통 실행 01–03 — 완료 근거
 
@@ -46,7 +46,7 @@
 | 16 | D13 · 공급 충격 · supplyShockSafety | GSCPI·WTI·휘발유·구리·IP·CPI괴리 6요인; 혼합 | /api/supply-shock-detail | `app/dashboard-ui.tsx (risk detail / stored projection)` | SOURCE_ROUTE_GAP_FIXED_IN_PR_NOT_DEPLOYED | D13 공급충격: 혼합주기·6요인 저장 projection detail:supply-shock:v1, GET 라우트 소스 누락 → PR #1165 수정, 운영 재조회 미확인 |
 | 17 | D14 · 물가 · inflation | 현행 CM-R1 4요인 35/25/15/25, 4요인 전부 READY·진단 집계점수 일치 Gate | /api/market-score domains.inflation · STORED_DIAGNOSTIC_R7 | `worker/market-score-r1.mjs / lib/market-score/inflation-legacy-public-domain.mjs / app/dashboard-ui.tsx` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 현행 코드 정상 분리. 실제 유효 입력 변경→Core 계산→게시 사건 1건은 운영 증거 미확인(UNKNOWN) |
 | 18 | D15 · 고용 · employment | R54 저장 4요인: 실업률 30%·3M 비농업고용 30%·4W 주별 청구합계 20%·51개 이상 지역 개선율 20%; 월간 BLS + 주간 DOL 539, 부족 요인 시 PARTIAL/null | /api/market-score domains.employment · /economic-indicators/employment/ | `worker/market-score-r1.mjs / lib/market-score/employment-r54-candidate.mjs / app/dashboard-ui.tsx` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 실제 새 BLS/DOL 유효 입력 1건→R54 저장 계산·D1 current·API/UI 동일 시각의 사건 미확인, 기능 Owner W04 |
-| 19 | D16 · 금리 · rates | 정책·2년·10년 실질·10Y–3M 4요인; 일별+정책 비정기 | /economic-indicators/rates/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
+| 19 | D16 · 금리 · rates | 현행 RATE_R3: EFFR 정책 축 20% + 2Y 국채 25% + 실질 10Y 30% + 10Y−3M 곡선 25%. NY Fed EFFR + 연준 H.15 영업일 입력; 정책 상하한은 표시 계약 | /api/market-score domains.rates · /economic-indicators/rates/ | `lib/market-score/rate-r3.mjs / lib/market-score/rate-r2-provider.mjs / worker/market-score-r1.mjs` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 유효 4축/최소 과거 자료와 영업일 freshness Gate 확인. 실제 입력→저장→계산→게시 사건 확인 전. 모델 R2→R3 혼동 금지 |
 | 20 | D17 · 채권·신용 · credit | HY/IG CMDI·NFCI 신용·채권변동성 4요인; 주기 혼합 | /economic-indicators/credit/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
 | 21 | D18 · 경기 · growth | G16 필수24요인; 월간 중심/혼합; 세부 발표일 대조 미완 | /economic-indicators/growth/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
 | 22 | D19 · 소비 · consumption | 현행 R5 D/Y/L/H/B 5축; 옛 C1-R3 95→7축 아님; 월간 중심 | /economic-indicators/consumption/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
@@ -86,8 +86,8 @@
 ## 4. 다음 실제 실행 순서·작업량 보호
 
 - **현재 증거상 확정된 갱신 시점 불일치(결함군 N): 아직 0건 확정이 아니라 '미확정'.** D04는 NOT_CONNECTED이며 새 수정 대상 결함군에 자동 합산하지 않는다.
-- **다음 필수 실행:** 19/D16 금리 점수의 일별 금리와 비정기 연준 정책 입력 Gate를 판정하면서, Production 공개 API readback을 확보한다. 04–06·08의 구체적 미확인 입력은 기존 유효 증거가 있을 때 이어서 판정하되 **27개 전원 운영 사건 확인을 단일 전역 Gate로 만들지 않는다**.
-- 실행 완료 집계: **14/34** (01,02,03,07,09–18), 04–06/08 및 19–34는 미완료. **구현: API 저장결과 읽기 라우트 7건·회귀 테스트 4건. main 병합 완료 / Cloudflare 후보 Worker build 성공 / Production 사이트 API readback 미확인.**
+- **다음 필수 실행:** 20/D17 채권·신용 점수의 혼합주기 4요인 저장·계산 Gate를 판정하고, Production 공개 API readback을 재확인한다. 04–06·08의 구체적 미확인 입력은 기존 유효 증거가 있을 때 이어서 판정하되 **27개 전원 운영 사건 확인을 단일 전역 Gate로 만들지 않는다**.
+- 실행 완료 집계: **15/34** (01,02,03,07,09–19), 04–06/08 및 20–34는 미완료. **구현: API 저장결과 읽기 라우트 7건·회귀 테스트 4건. main 병합 완료 / Cloudflare 후보 Worker build 성공 / Production 사이트 API readback 미확인.**
 
 
 ## 5. 09/D06 인플레이션 위험 신규 실행 증거 — 2026-11-16
@@ -123,3 +123,10 @@
 - 현재 `worker/market-score-r1.mjs`는 `lib/market-score/employment-r54-candidate.mjs`의 `loadEmploymentR54CandidateFromStored`를 사용. BLS UNRATE/PAYEMS + DOL ETA 539 주별 state claims 보관 데이터에서 실업률(30%), 비농업고용 3개월 모멘텀(30%), 실업수당 4주 평균(20%), 51개 이상 지역의 청구 개선 비율(20%)을 계산. R6 상세화면 29개 지표를 점수 필수요인으로 오인하지 않음.
 - 4요인 값과 과거 최소 데이터 범위 모두 유효해야 READY. 결측/요인 불충분시 PARTIAL/score:null; 결측 가중치 재배분 없음. 시간 주기 자체를 통일하지 않음. `tests/market-score-employment-r54-wiring.test.mjs`에서 API domain 연동, PARTIAL 유효성, 상세 4개 안정 ID 확인.
 - 현재 코드의 출력 계약 판정은 `SOURCE_REVIEWED_RUNTIME_UNKNOWN`, 신규 입력 시 재계산/게시 사건을 정확히 증명할 저장·D1 readback 1건이 부족. 현재 W04 고용 원담당이 수집/계산 수정 중이므로 W06이 공유 Collector·가중치·Writer를 임의 덮어쓰지 않음. 잘못된 기다림이라는 결함 확정은 아님.
+
+
+## 9. 19/D16 금리 점수 판정 — 2026-11-16
+
+- 활성 계산은 worker/market-score-r1.mjs에서 buildRateR3. 금리 score 4축 가중: EFFR 기준 정책 0.20, 2년 국채 0.25, 실질 10년 0.30, 장단기 10Y-3M 곡선 0.25. Fed 정책 상·하한(DFEDTARL/U)은 카드 표시 계약이며 과거 RATE_R2 균등가중 산식을 현행으로 오인하지 않음.
+- 소스 수집 계약: lib/market-score/rate-r2-provider.mjs에서 NY Fed EFFR와 Federal Reserve H.15에 정규 관측. 현재 계산 R3에는 추세 최소 이력 warmup과 거래일 기준 freshness 적용. 누락·hard-stale면 UNAVAILABLE/null, 0 유효값 보호, 결측 가중 재분배 없음. tests/rate-r2.test.mjs에서 active R3가 별도임을 확인하는 기존 회귀 케이스.
+- 판정: SOURCE_REVIEWED_RUNTIME_UNKNOWN; 현재 저장/게시 API의 신규 금리 원관측 반영 사건 1건과 score/기준일이 필요. 정상 영업일·휴장 대기를 이유로 산식을 임의 완화하지 않음.
