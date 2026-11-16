@@ -106,10 +106,10 @@ test("DOL: successful 600-week snapshot records request-window version, not data
 
 
 test("DOL 600w ETA539 HTTP failure retains national claims and records a partial result", async () => {
-  const NATIONAL = "<week><weekEnded>10/31/2026</weekEnded>"
+  const NATIONAL = "<r539cyNational><week><weekEnded>10/31/2026</weekEnded>"
     + "<InitialClaims><SA>189000</SA><SA4WK>195000</SA4WK></InitialClaims>"
     + "<ContinuedClaims><SA>1900000</SA></ContinuedClaims>"
-    + "<IUR><SA>1.2</SA></IUR></week>";
+    + "<IUR><SA>1.2</SA></IUR></week></r539cyNational>";
   let fetches = 0;
   const provider = createEmploymentR6Provider({
     fetchImpl: async () => {
