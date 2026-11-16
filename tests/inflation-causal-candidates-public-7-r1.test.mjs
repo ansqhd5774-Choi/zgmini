@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {INFLATION_CANDIDATES_7,INFLATION_CANDIDATES_7_IDS,W01_ACTIVE_CANDIDATES}
+import {INFLATION_CANDIDATES_7,INFLATION_CANDIDATES_7_IDS}
   from '../lib/inflation-causal-candidates-public-7-catalog.mjs';
 import {INFLATION_CANDIDATES_7_PUBLIC_KEY,INFLATION_CANDIDATES_7_PUBLIC_ROUTE,
   INFLATION_CANDIDATES_7_PUBLIC_SCHEMA,validateInflationCandidates7Public,
@@ -80,17 +80,16 @@ const makeHome=(t,selected=docs())=>{
 
 test('seven and only seven original candidate numbers and independent public key/route',()=>{
   assert.deepEqual(INFLATION_CANDIDATES_7_IDS,['2','16','22','23','24','28','29']);
-  assert.deepEqual(W01_ACTIVE_CANDIDATES.map(x=>x.id),['2','16','24','29']);
   assert.equal(INFLATION_CANDIDATES_7_PUBLIC_KEY,'detail:inflation-causal-candidates-7:r1');
   assert.equal(INFLATION_CANDIDATES_7_PUBLIC_ROUTE,'/api/inflation-candidate-inputs');
   assert.notEqual(INFLATION_CANDIDATES_7_PUBLIC_KEY,'detail:inflation-causal-public-19:r1');
 });
 
-test('active four-row preview preserves the legacy seven-row envelope and is strictly read-only',t=>{
+test('full seven-row preview is ready and strictly read-only',t=>{
   const {home}=makeHome(t);
   const result=previewInflationCandidates7(home,{now:NOW});
   assert.equal(result.status,'PASS_READONLY');
-  assert.equal(result.ready,4);
+  assert.equal(result.ready,7);
   assert.equal(result.payload.status,'READY');
   assert.equal(result.payload.score,null);
   assert.equal(result.payload.schemaVersion,INFLATION_CANDIDATES_7_PUBLIC_SCHEMA);
@@ -106,15 +105,15 @@ test('active four-row preview preserves the legacy seven-row envelope and is str
   assert.ok(result.payload.indicators.every(row=>row.availableAt===null));
 });
 
-test('excluded CPI and Census do not become missing even if historical sources are absent',t=>{
+test('four ready, three pending: no 0-as-missing or CPI/stock fabricated values',t=>{
   const selected=docs();
   selected['bls-cpi-ppi3.json'].series={WPSFD4:rows()};
   delete selected['census-m3-manufacturing-inventories.json'];
   const {home}=makeHome(t,selected),result=previewInflationCandidates7(home,{now:NOW});
   assert.equal(result.status,'PASS_READONLY');
   assert.equal(result.ready,4);
-  assert.equal(result.payload.status,'READY');
-  assert.deepEqual(Object.keys(result.missing),[]);
+  assert.equal(result.payload.status,'PARTIAL');
+  assert.deepEqual(Object.keys(result.missing),['22','23','28']);
   assert.deepEqual(result.payload.indicators.filter(row=>row.status==='PENDING').map(row=>row.id),
     ['22','23','28']);
   assert.equal(result.payload.indicators[1].value,0);
@@ -151,14 +150,13 @@ test('old 1972 Fed history remains a valid observation, not a false future date'
   assert.equal(item.previousObservationDate,'1972-01-01');
 });
 
-test('invalid active source never becomes a scored or READY row',t=>{
+test('invalid source never turns into a scored or READY row',t=>{
   const selected=docs();
-  selected['eia-us-regular-gasoline-weekly.json'].observations[0].unit='INVALID';
+  selected['census-m3-manufacturing-inventories.json'].observations[0].seasonallyAdjusted=false;
   const {home}=makeHome(t,selected),result=previewInflationCandidates7(home,{now:NOW});
-  assert.equal(result.ready,3);
-  assert.equal(result.missing['2'],'INFL7_EIA_ROW_INVALID');
-  assert.equal(result.payload.indicators[0].status,'PENDING');
-  assert.equal(result.payload.status,'PARTIAL');
+  assert.equal(result.ready,6);
+  assert.equal(result.missing['28'],'INFL7_CENSUS_ROW_INVALID');
+  assert.equal(result.payload.indicators[5].status,'PENDING');
   assert.equal(result.payload.score,null);
 });
 
@@ -167,7 +165,7 @@ test('all source files absent returns PENDING without any synthetic payload',t=>
   assert.equal(result.status,'PENDING');
   assert.equal(result.ready,0);
   assert.equal(result.payload,null);
-  assert.equal(Object.keys(result.missing).length,4);
+  assert.equal(Object.keys(result.missing).length,7);
 });
 
 test('symlink source file and wrong home are denied',t=>{
