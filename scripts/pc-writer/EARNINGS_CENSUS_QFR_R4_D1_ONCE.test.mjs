@@ -1,7 +1,7 @@
 // Tests the verified R3 -> R4 draft -> QFR D1 schema bridge without D1 or PC writes.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parseQfrD1Mode,prepareQfrD1Payload,validatePinnedQfrSource} from './EARNINGS_CENSUS_QFR_R4_D1_ONCE.mjs';
+import {parseQfrD1Mode,prepareQfrD1Payload,validatePinnedQfrSource,resolveQfrResultDirectory} from './EARNINGS_CENSUS_QFR_R4_D1_ONCE.mjs';
 import {QFR_SNAPSHOT_KEY,QFR_SCHEMA} from '../../worker/earnings-companion-c-qfr-r1.mjs';
 
 const SOURCE='2026-10-27T14:52:13.108Z';
@@ -81,4 +81,13 @@ test('QFR B apply pins all three preflight fields before D1 access',()=>{
     /QFR_PUBLISH_SOURCE_PIN_REQUIRED/);
   assert.throws(()=>validatePinnedQfrSource(payload,{...pins,sourceStoredAt:'9007199254740993'}),
     /QFR_PUBLISH_SOURCE_PIN_REQUIRED/);
+});
+
+test('approved B result directory is per-request; manual default is unchanged',()=>{
+  assert.equal(resolveQfrResultDirectory({fallback:'MANUAL_NEXT_TO_CMD'}),'MANUAL_NEXT_TO_CMD');
+  assert.equal(resolveQfrResultDirectory({requested:process.cwd()}),process.cwd());
+  assert.throws(()=>resolveQfrResultDirectory({requested:'relative-path'}),
+    /QFR_D1_RESULT_DIRECTORY_INVALID/);
+  assert.throws(()=>resolveQfrResultDirectory({requested:process.cwd()+'-not-a-directory'}),
+    /QFR_D1_RESULT_DIRECTORY_INVALID/);
 });
