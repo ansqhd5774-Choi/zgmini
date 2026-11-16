@@ -1,6 +1,7 @@
 import {env} from 'cloudflare:workers';
 import {CNN_OBSERVED_ARCHIVE_KEY,CNN_OBSERVED_ARCHIVE_VERSION} from '../../../../lib/cnn-observed-archive-r1.mjs';
 import {sampleCnnObservedPoints} from '../../../../lib/cnn-observed-sampling-r1.mjs';
+import {addStoredCnnObservation} from '../../../../lib/cnn-observed-reader-integrity-r1.mjs';
 
 // Public stored-score reader only; never calls CNN or starts collection.
 const DAYS={ '1D':2,'1W':9,'1M':33,'3M':96,'6M':188,'1Y':370 } as const;
@@ -33,7 +34,8 @@ export async function GET(request:Request){
    if(!Number.isFinite(ms)||ms>now+300000||!Number.isFinite(point?.score)||point.score<0||point.score>100||new Date(ms).toISOString().slice(0,10)!==row.snapshot_key)
     return Response.json({status:'STORED_ARCHIVE_INVALID'},{status:503});
    const key=new Date(ms).toISOString();
-   byTime.set(key,{observedAt:key,score:point.score});
+   if(!addStoredCnnObservation(byTime,key,point.score))
+    return Response.json({status:'STORED_ARCHIVE_INVALID'},{status:503});
   }
  }
 
