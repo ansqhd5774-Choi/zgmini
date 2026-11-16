@@ -28,3 +28,13 @@
 - 출처/산식/기존 24개 Growth 차트 경로: 이 커밋에서 변경 없음. 변경 파일: D1 SELECT-only Reader, BFS-only CSV Collector, `ensureGrowthR2ChartHistoryR1` 분기, 신규 시험, 이 계획과 진행 기록.
 - **절대 완료로 쓰지 말 것:** 실제 원격 D1 chart 저장월 조회, 운영 PC용 신규 소스 설치, 공급자 요청을 동반한 수동 B, D1 readback, `cdn.www.census.gov` PC 실제 HTTP 200, 사이트 HTTP 32/32.
 - 소스 병합 여부는 PR #1191 / `main` SHA로 추가 확인. CI=PASS는 운영=PASS가 아님.
+
+## 병합/클라우드 빌드 최종 영수증
+- PR #1191: https://github.com/ansqhd5774-Choi/zgmini/pull/1191 — **MERGED**.
+- 병합 `main` SHA: `0a786bd69c7dc815d296143021473d8f6bf7a118`.
+- PR 원본 Node.js CI #43898408752: SUCCESS; 진행 기록까지 포함한 HEAD CI #43898968489: SUCCESS.
+- Git 연동 `Workers Builds: zgmini-migration-candidate-r5`: SUCCESS. **이것만으로 운영 PC의 새 소스 설치나 신규 CSV 수집, 원격 D1 저장을 입증하지 않는다.**
+- 기존 공개 연결 상태 최종 증거: API 14/14, HTTP 31/32, 마지막 CDN PC 2xx 2026-11-03T21:00:36Z. 자동으로 32/32로 올리지 않음.
+- **잔여 작업:** 실제 D1 `pit_eligible=0` chart G060-G062 latest월 SELECT-only; 변경된 PC 소스/승인 수동 B 실행/최대 1회 CSV 통신/저장/원격 D1 재조회, 정규 스케줄 생성 금지. 본 기록을 기준으로 다음 담당자가 계속 실행할 것.
+- 근거 저장 기준: 작업계획 `docs/GROWTH_R2_BFS_RELEASE_EXECUTION_PLAN_R1_20261117.md`; 구현 `lib/market-score/growth-r2-{d1-store-r1,chart-history-r1,worker-domain-r1}.mjs`; 테스트 `tests/growth-r2-bfs-release-aware.test.mjs`.
+- 최종 단계 집계: 12개 중 ①·③~⑪ = **10개 소스/검증/병합 단위 완료**, ② 원격 D1 실측 및 ⑫ 운영 수동 B 종단 검증 **미완료**. 성공률 예측치가 아닌 실증 완료 항목 기준.
