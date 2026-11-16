@@ -1,6 +1,6 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
-> **현재 즉시 상태 (2026-11-17 KST): 12/75 (16.0%), 잔여 63개.** #34의 60초 자동 갱신·늦은 응답 차단은 기존 공통 구현의 소스/모의시험으로 DONE. #28 저장자료의 방법론/모델 버전은 일별 snapshot 원본에 남지만 차트/계산점 평면 이력에서는 추적 불가해 PARTIAL, #29 미래 날짜 혼입 source 결함을 재현해 Writer 원담당 보완 필요. **다음 독립 실행은 W06 #35**. 운영 PC/Production 종단 완료 주장은 하지 않는다.
+> **현재 즉시 상태 (2026-11-17 KST): 13/75 (17.3%), 잔여 62개.** W06 #35 카드/차트 게시시각 정합성 문제를 재현·수정해 선택 PR #1193으로 `main@e5dc26582c94dacc1cb41ef39675b812014ce42f` 병합, 코드 CI·모의 UI SUCCESS. 기존 저장 우선 회귀를 존중하는 명시적 카드-바운드 UI 모드 도입. **다음 필수 실행은 #36 (미국 CNN 실제 observedAt/score 이력)**. 실PC/D1/exact Cloudflare Production 확인은 여전히 별도 미확정.
 
 ## 현재 인계 정본 — 다음 담당자 첫 읽기 (2026-11-16 KST)
 
@@ -10,23 +10,23 @@
 |---|---|
 | 저장소 / 원장 브랜치 | `ansqhd5774-Choi/zgmini` / `codex/ui-improvements` |
 | 계획 / **지정 진행 기록** | `docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_EXECUTION_R4_20261116.md` / **`docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_R4_PROGRESS_20261116.md`** |
-| 진행 (단계별 소스·fixture·설계 통과) | **12/75 (16.0%), 잔여 63개** |
-| DONE 단계 (중복 없음) | **#04, #05, #08, #10, #21, #22, #23, #24, #26, #27, #33, #34** |
+| 진행 (단계별 소스·fixture·설계 통과) | **13/75 (17.3%), 잔여 62개** |
+| DONE 단계 (중복 없음) | **#04, #05, #08, #10, #21, #22, #23, #24, #26, #27, #33, #34, #35** |
 | #34 60초 화면 갱신·역행 차단 | **DONE (현재 main source/fixture)**. `live-refresh.mjs` 60초 주기, `dashboard-ui.tsx`·`use-stored-index.ts` 수용/역행 보호 경로 확인. 신규 유효값·0·PARTIAL 및 낡은 관측·게시 응답 판정 7/7, UI 연결 소스 4/4 PASS. Production 유저 육안 검수는 최종 단계 |
 | 단계 증거 범위 | #24는 **기존 저장 JSON 활용·Draft 설계/회귀 PASS**까지의 설계 DONE. 실제 15분 보존 정책 수정·PC 설치·D1 반영은 **미완료** |
-| PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #28, #29, #35. #28 방법론 공개 이력 구간 분리, #29 Writer 현재 날짜 안전성은 원담당 범위의 실제 보완 미완료 |
-| 다음 단 하나의 실행 | **#35 (W06 독립 작업)** 기존 PR #1177·#1182·#1189가 연결한 현재 카드 점수와 1D~1Y 차트 끝점을 실제 공개 source 계보·시각·단위·표현변환별로 대조. 진짜 불일치만 최소 수정하고 신규 저장 계약·가짜 점을 만들지 않는다. 원담당 #28·#29 보완은 독립 진행을 막는 Gate가 아님 |
-| 다음 담당·대상·입력 | W06 UI 원담당, 최신 `main`의 `app/dashboard-ui.tsx`, `lib/market-score/composite-observed-display-r1.mjs`, `lib/market-score/published-domain-trend-r4.mjs`, `lib/market-score/live-refresh.mjs`, `components/use-stored-index.ts` 및 기존 1D~1Y fixture. 타 담당자 source 병합/PC 설치 없이 검증 가능한 화면 점수 연결부터 수행 |
-| #35 통과 조건 | 카드와 실제 확정/실계산 차트 마지막점의 시각·원점수와 표시 점수(기존 3.5 표시 민감도 포함)를 구분해 일치 여부 확인. 1D~3M 실제 게시점·6M/1Y 확정 일간 이력·결측/0/시간 역행 보호. 근거 없는 모든 화면 완료 주장 금지; 실제 Production/user 육안 검수는 기술 작업 종료 후 별도 |
+| PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #28, #29. #28 모델 계보, #29 미래 스냅샷/Writer 변경점, #13 실PC→D1 실제 게시 증거가 아직 미완료. #35는 소스·CI 완료이지 Production 화면 판정이 아님 |
+| 다음 단 하나의 실행 | **#36 (W06, D01 미국 공포탐욕)** CNN의 실제 `observedAt`·`score` 변동이 승인된 로컬 `fear-greed-observed` 저장→D1 공개 `/api/fear-greed/observations`에 별도 원장으로 반영되는지 실제 수집·게시 이력과 현재 source 계약을 대조. 동일 timestamp 재조회/PC 검증 체크를 새 관측으로 중복 계산하지 않으며 운영 근거가 없는 성공은 주장 금지 |
+| 다음 담당·대상·입력 | W06 UI 원담당(수집·게시 실PC 실증은 원담당 승인 경로). `lib/cnn-observed-archive-r1.mjs`, `worker/public-feed-store.mjs`, `scripts/pc-writer/cnn-observed-archive-publication-r1.mjs`, `app/api/fear-greed/observations/route.ts`, `tests/usa-fear-greed-change-only-r10.test.mjs` 및 기존 저장/checkpoint 증거. D01만 선택적으로 확인 |
+| #36 통과 조건 | CNN 신규 `observedAt`·`score`와 같은 timestamp 재조회/공식 정정을 구분. 실제 유효 신규 관측만 저장·조회, 별도 PC 확인 시각을 CNN 출처 관측과 혼동하지 않음; 로컬 저장·D1 게시·공개 GET의 선택적 근거 확보, 해당 범위 실제 문제만 수정. 기존 Raw·TTL·공용 수집/Writer·수집 주기 무단 변경 금지 |
 | 이후 후보(이번 실행에 혼입 금지) | #28 모델/방법론 계보 공개 이력의 원담당 변경 범위(현행 일별 snapshot에 modelVersion 저장됨, 평면 chart/observed archive에는 없음); #29 기준일 이후 미래 snapshot 표시 결함/동일시각 정정 (Writer 원담당). D01~D27 실제 미연결 작업, Draft #1181·#1185 승인 대기. 비차단 작업은 계속 |
-| 최근 R4 기능 병합 증거 | PR [#1177](https://github.com/ansqhd5774-Choi/zgmini/pull/1177), [#1180](https://github.com/ansqhd5774-Choi/zgmini/pull/1180), [#1182](https://github.com/ansqhd5774-Choi/zgmini/pull/1182), [#1184](https://github.com/ansqhd5774-Choi/zgmini/pull/1184), [#1187](https://github.com/ansqhd5774-Choi/zgmini/pull/1187), **[#1189](https://github.com/ansqhd5774-Choi/zgmini/pull/1189)** = `main` 병합. 최신 R4 기능 병합 SHA **`1c0dd6587d76ef1051196251a06beed58ce36d6f`** |
+| 최근 R4 기능 병합 증거 | PR #1177, #1180, #1182, #1184, #1187, #1189, **[#1193](https://github.com/ansqhd5774-Choi/zgmini/pull/1193)** = `main` 병합. 최신 R4 기능 병합 SHA **`e5dc26582c94dacc1cb41ef39675b812014ce42f`**; #1193 변경파일 정확히 3개, GitHub 코드 CI 및 모의 브라우저 UI 각각 SUCCESS |
 | 미병합 원담당 검토 | [Draft #1181](https://github.com/ansqhd5774-Choi/zgmini/pull/1181) Collector의 관측일 역행 차단 (#11), [Draft #1185](https://github.com/ansqhd5774-Choi/zgmini/pull/1185) Writer의 15분 이내 변경점 영구 기록 (#24 설계 이후 구현). 두 건 모두 CI 성공이나 **원담당 적용 승인·main 병합·PC 설치 없음** |
 | PC Runtime·SQLite→D1 실제 게시 | **미확정**. #13 임시 SQLite 통합시험 및 source 연결 PASS만 보유. 기존 운영 PC A급 #1737은 당시 `STATE_UNKNOWN`; 해당 고유 요청 중복 실행 금지 |
-| Cloudflare/공개 화면 | PR #1189 병합 SHA `1c0dd658…`의 GitHub `check`·`verify`·`notify`·Workers Builds 모두 **SUCCESS**. **exact Production Deployment ID/SHA 및 사용자 화면 육안 확인은 여전히 미확정** |
+| Cloudflare/공개 화면 | #1193 **PR head** 코드 CI·모의 브라우저 UI SUCCESS, 병합 `main@e5dc26582c94dacc1cb41ef39675b812014ce42f`. Cloudflare Git Integration의 새 빌드·exact Production Deployment ID/SHA 및 실제 사용자 브라우저 확인은 **아직 별도 미확정**. PR CI/merge를 Production 배포 성공으로 해석 금지 |
 | 소유·보호 조건 | UI는 기존 전용 브랜치·선별 PR 원칙. 수집·계산·Writer/15분·100개 보존 정책·DB·TTL·스케줄은 별도 원담당/승인 없이 수정·병합·설치 금지. R13 이란 퇴역 예약 복원 금지 |
 | 전후 검증 원칙 | source/CI/로컬 fixture와 실PC/D1/Production을 분리. 사용자에게는 전체 기술 구현 이후 홈페이지 최종 육안 확인 요청 |
 
-**다음 작업자 필수 수행 순서:** 본 계획서 75개 → 위 정본 → #35 관련 기존 근거만 확인 → 실제 #35 실행/검증 → **이 표 상태 수정 및 최신 수행 기록 추가 → 지정 원장 커밋 → 원격 내용 재조회 PASS → 최종 보고**. 지난 대화를 요청하거나 과거 성공 작업을 모두 재실행하지 않는다.
+**다음 작업자 필수 수행 순서:** 본 계획서 75개 → 위 정본 → #36 관련 기존 근거만 확인 → 실제 #36 실행/검증 → **이 표 상태 수정 및 최신 수행 기록 추가 → 지정 원장 커밋 → 원격 내용 재조회 PASS → 최종 보고**. 지난 대화를 요청하거나 과거 성공 작업을 모두 재실행하지 않는다.
 
 ### 마지막 기록 갱신 — 기준 확립 작업 (기능 75단계 추가 완료 없음)
 
@@ -191,3 +191,16 @@
 - **완료 번호/진도:** #04,#05,#08,#10,#21,#22,#23,#24,#26,#27,#33,#34 = **12개**, **12/75 (16.0%)**, 잔여 **63개**. #28/#29는 원담당 공개/Writer 계약 판단과 코드 수정·실검증 전 **PARTIAL**, 분자 제외. 다른 R4 완료 증거는 재검사하지 않음.
 - **다음 필수 실행 단 하나:** **#35, W06**. 현재 `main` 카드 표시점 vs 1D·1W·1M·3M·6M·1Y 차트 끝점의 실제 score/calculatedAt/daily-date, 공개 계보, 표시변환(종합 3.5 민감도) 정밀 검증. 불일치가 *확인된 UI 부분만* 기존 전용 브랜치/선별 PR 규칙으로 최소 수정. **기존 코드/PR 성공 재확인만 반복 금지**, 실제 남은 연결 문제 해결 우선. #28 방법론 파생 메타데이터 및 #29 Writer 미래 시각 문제는 각 원담당 범위로 별도 처리; 독립 UI 개발의 전역 차단 조건이 아님.
 - **원장 반영 조건:** 위 인계 정본과 이번 실행기록을 `codex/ui-improvements`에 지정 파일 단위 커밋 → 파일 재조회로 완료번호 **12개**·다음 **#35**·불명확한 CI/운영 구분·남은 실제 문제 확인 후 최종 보고.
+
+
+## [2026-11-17 KST] R4 #35 — 카드/차트 단기 끝점 실수정 및 PR #1193 병합
+
+- **작업·원본 브랜치:** `ansqhd5774-Choi/zgmini@codex/ui-improvements`. 75단계 전체 계획 `docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_EXECUTION_R4_20261116.md` 변경 없음. 이전 유효 진행 12/75, 다음 #35. 기존 브랜치가 `main` 대비 **412 ahead/624 behind·294파일 차이**였으므로 전체 PR/강제 reset/rebase 금지. 기존 `codex/ui-r4-period-window-20261117` 주체 브랜치의 관련 소스 SHA가 main과 일치한 것을 확인하고, 새로운 브랜치를 생성하지 않은 채 **3파일만 선별 반영**.
+- **재현 실결함:** 독립 `/api/market-score`와 `/api/market-score/observations` 읽기 순서가 다르면 현재 승인 시장 카드 `updatedAt=12:10, raw=53`(화면 60.5점)인데 archive `12:20, raw=56`가 먼저 도착해 차트 마지막점이 71점으로 표시될 수 있음. 같은 timestamp 서로 다른 score도 비교가 안 됐음. source-level 실행으로 두 불일치를 재현.
+- **최소 구현:** 지정 브랜치에서 `app/dashboard-ui.tsx`의 종합 현재점에 `boundToPublishedCard:true` 명시, `lib/market-score/composite-observed-display-r1.mjs`은 **명시된 카드 렌더링 모드에서만** 현재 카드 계산시각 이후의 이력과 같은 시각 상충 이력을 UI 배열에서 제외. 이력/원자료 미수정. 일반 `mergeCompositeObservedDisplay` 호출의 **기존 최신 archive 우선 규칙은 유지**. `published-domain-trend-r4.mjs`, `cnn-observed-sampling-r1.mjs`은 이미 main 승인된 코드 SHA 그대로 지정 브랜치에 보완하고, 경제 12카드 점수·시각 연결을 복구. `tests/r4-score-card-chart-consistency-35.test.mjs`에 정상/미래·동시각 충돌/0/null/6M·1Y/3.5 표시감도/12 도메인/원본 불변 관련 최종 **14개 시험**.
+- **FIRST FAIL, 원인, 수정:** 최초 [PR #1193](https://github.com/ansqhd5774-Choi/zgmini/pull/1193) head `7a42ea0d2d3990cc0b372c36bfe06a36824549fa`의 GitHub `check` [Run 43903875197](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43903875197)는 회귀 1건 FAIL (`tests/composite-current-chart-r4.test.mjs: older current response cannot overtake newer saved observation`). 당초 수정을 모든 호출에 적용해 **기존 계약을 파괴한 것**이 원인. 이 회귀검사를 삭제·완화하지 않고 카드 UI만 opt-in하는 `boundToPublishedCard` 속성을 추가해 해결. 기존 함수의 보관점 우선이 필요한 일반 호출도 그대로 유지.
+- **최종 검증:** 지정 W06 브랜치 실제 소스 함수를 실행한 최초 13/13 PASS, 일반 archive 우선 경우를 추가한 최종 14개 fixture 및 기존 회귀 소스 보호. PR #1193 최종 head `089f9e82463de02842d3c229491977ac16b8122f`, 변경 **`app/dashboard-ui.tsx` / `lib/market-score/composite-observed-display-r1.mjs` / `tests/r4-score-card-chart-consistency-35.test.mjs` 3파일뿐. GitHub **`check` SUCCESS [Run 43905120726](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43905120726)**, **mock-browser `ui` SUCCESS [Run 43905120406](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43905120406)**. PR `merged=true`, `main` 병합 SHA `e5dc26582c94dacc1cb41ef39675b812014ce42f`. 실제 설치된 PC Writer SHA·D1 readback·exact Cloudflare Production 배포·사용자의 실제 화면은 이번 시험에서 확인하지 않았으므로 완료 주장 금지.
+- **#35 판정:** **DONE(코드 구현·회귀/모의 UI 검증 기준)**. 1D/1W/1M/3M의 실제 현재 게시점 기준 표시, 6M/1Y 기존 일별 확정 이력 유지, 카드는 종합 3.5배 표현변환·경제 12개는 원점수, 숫자 0 합법/결측 그대로, 소스 이력 DB·산식·TTL·수집주기·15분 저장 정책 변경 0건. 복수 API의 배포 환경별 최신 판정은 전체 운영 검증에서 재확인.
+- **전체 75단계 진행:** 고유 DONE 단계 `#04,#05,#08,#10,#21,#22,#23,#24,#26,#27,#33,#34,#35` = **13/75 (17.3%)**, 잔여 **62개**. #28 방법론 이력 분리, #29 Writer 미래 관측 스냅샷, #13 실제 PC 원자료→D1 게시, #11 Collector 날짜 역행 및 Writer Draft #1185는 각 원담당 승인·실제 운영 적용 미완료/부분 완료를 보존.
+- **다음 단 하나의 필수 실행:** **#36 (W06 D01 미국 공포탐욕)** 실제 CNN 변경 관측 `observedAt` 및 점수가 `lib/cnn-observed-archive-r1.mjs` → `worker/public-feed-store.mjs` 기존 저장 → `scripts/pc-writer/cnn-observed-archive-publication-r1.mjs` 승인 게시 → `/api/fear-greed/observations`로 수렴하는지 로컬 저장·D1 readback/검증 원장으로 확인. `fear-greed-verified-checks`의 PC 점검 시각은 CNN 새 관측 시각과 구분. 신규 실제관측 부재 시 허위값·가짜 점 생성 금지. 타 담당 수집기·DB·스케줄 임의 변경 금지.
+- **진행 기록 종료 조건:** 이 절과 상단 현재 인계 정본을 지정 `codex/ui-improvements/docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_R4_PROGRESS_20261116.md`에 **커밋 → 원격 재조회 PASS**한 뒤 단계 완료 보고. 인계 누락 시 LEDGER_UNVERIFIED.
