@@ -53,7 +53,7 @@ export function summarizeApiConnectionHealth(snapshot,now=Date.now()){
   (e.independentObservedFingerprintCount===undefined||e.independentObservedFingerprintCount===null||nonnegative(e.independentObservedFingerprintCount))&&
   (e.combinedObservedFingerprintCount===undefined||e.combinedObservedFingerprintCount===null||nonnegative(e.combinedObservedFingerprintCount))&&
   (e.independentObservedHostCount===undefined||(nonnegative(e.independentObservedHostCount)&&e.independentObservedHostCount<=128))&&
-  (e.independentObservedCollectorCount===undefined||(nonnegative(e.independentObservedCollectorCount)&&e.independentObservedCollectorCount<=2))&&
+  (e.independentObservedCollectorCount===undefined||(nonnegative(e.independentObservedCollectorCount)&&e.independentObservedCollectorCount<=3))&&
   (e.independentEvidenceEvents===undefined&&e.independentObservedCollectorCount===undefined||nonnegative(e.independentEvidenceEvents))&&
   items.every(item=>item.endpointFingerprints!==null)
   ?{coverage:'PARTIAL',observedFingerprintCount:e.observedFingerprintCount,
