@@ -230,7 +230,7 @@ export default function MarketCalendar(){
   return {label:`D-${daysLeft} · 시각 미정`,style:''};
  };
 
- return <section className="mc-panel" aria-label="시장 발표 일정">
+ return <section className={`mc-panel ${taxonomyOptions?"mc-nine-column":""}`} aria-label="시장 발표 일정">
   <div className={`mc-controls ${filterOpen?"filters-open":""}`}>
    <label className="mc-search"><Search size={15} aria-hidden="true"/><input value={query} onChange={event=>setQuery(event.target.value)} type="search" placeholder="지표·기업명 검색" aria-label="지표 또는 기업명 검색"/></label>
    <button type="button" className="mc-filter-toggle" aria-expanded={filterOpen}
@@ -250,7 +250,7 @@ export default function MarketCalendar(){
      }} aria-pressed={active} aria-label={key==='all'?'모든 별등급':`별등급 ${key}개 (경제지표 영향도·기업 실적 게시 등급)`}>{label}</button>;
     })}
    </div></div>
-   <label className="mc-filter mc-taxonomy-filter"><span className="mc-filter-label">섹터</span>
+   {taxonomyOptions&&<><label className="mc-filter mc-taxonomy-filter"><span className="mc-filter-label">섹터</span>
     <select aria-label="섹터" value={sector} disabled={!taxonomyOptions}
      onChange={e=>{setSector(e.target.value);setIndustry('');if(e.target.value)setKind('earnings');}}>
      <option value="">전체 섹터</option>
@@ -265,7 +265,7 @@ export default function MarketCalendar(){
     </select>
    </label>
    <button type="button" className="mc-taxonomy-reset" onClick={()=>{setSector('');setIndustry('');}}
-    disabled={!sector&&!industry}>초기화</button>
+    disabled={!sector&&!industry}>초기화</button></>}
    <div className="mc-range" role="group" aria-label="기간 선택과 이동">
     <button type="button" className={view==='week'?'active':''} aria-pressed={view==='week'} onClick={()=>{setView('week');setActiveDate(null);}}>주간</button>
     <button type="button" className={view==='month'?'active':''} aria-pressed={view==='month'} onClick={()=>{setView('month');setActiveDate(null);}}>월간</button>
@@ -284,7 +284,9 @@ export default function MarketCalendar(){
     {days.map(key=><button type="button" key={key} aria-label={`${key.slice(0,4)}년 ${Number(key.slice(5,7))}월 ${Number(key.slice(8))}일`} aria-pressed={activeDate===key} className={`mc-day ${activeDate===key?'selected':''} ${today===key?'today':''} ${shownDates.has(key)?'has-event':''}`} onClick={()=>{setSelected(key);setActiveDate(current=>current===key?null:key);}}><strong>{Number(key.slice(8,10))}</strong><small>{dayLabels[parseDay(key).getUTCDay()]}</small></button>)}
    </div>
   </div>
-  <div className="mc-head" aria-hidden="true"><span className="mc-importance-heading" title="경제지표: 예상 시장 영향도 / 기업 실적: 시총 중요도 또는 실적 점수(행별 적용 기준)"><Star size={12} fill="currentColor" aria-hidden="true"/>별등급</span><span>날짜</span><span>시간</span><span>국가</span><span>구분</span><span>기업명·지표명</span><span>섹터</span><span>산업</span><span>남은 시간</span></div>
+  <div className="mc-head" aria-hidden="true"><span className="mc-importance-heading" title="경제지표: 예상 시장 영향도 / 기업 실적: 시총 중요도 또는 실적 점수(행별 적용 기준)"><Star size={12} fill="currentColor" aria-hidden="true"/>별등급</span><span>날짜</span><span>시간</span><span>국가</span><span>구분</span><span>기업명·지표명</span>{taxonomyOptions
+   ? <><span>섹터</span><span>산업</span></>
+   : <><span>발표</span><span>예상</span><span>이전</span></>}<span>남은 시간</span></div>
   <div className="mc-results" aria-live="polite">
    {loadState==='ready'&&modelCoverage&&<p className="mc-data-state" title="개발 코드 모델 입력 기준입니다. 발표 주기 별도 관리 72개 · 시장 일별 자료 21개 · 비정기·파생 신호 4개. PC 원자료의 활성·저장 완료 수가 아닙니다. 연도별 연결 수는 모델 입력마다 그해 공식 발표일이 1건 이상 있는지를 세며, 연중 전체 발표 회차의 수집 완료율이 아닙니다. 공급자 일부가 실패한 경우 숫자는 확인된 저장 일정으로 계산한 최소 연결 수이며, 미연결·전체 수집 완료를 확정하지 않습니다.">{modelCoverage.feedPartial?'공식 일정 일부 공급자 수집 실패 · 확인된 저장 일정만 기준 · ':''}경제 모델 입력 {modelCoverage.totalInputs}개(코드 기준) · 공식 발표 연결 {modelCoverage.officialStored}/{modelCoverage.officialEligible}개({modelCoverage.feedPartial?'확인된 저장 일정 기준·미수집 불확정':'전체 저장 이력'}) · {modelCoverage.nextYear}년 일정 연결 {modelCoverage.nextYearConfirmed}/{modelCoverage.officialEligible}개({modelCoverage.feedPartial?'확인된 일정 기준·추가 발표 미확정':'입력별 1건 이상'}) · 개별 발표일 비대상 {modelCoverage.nonRelease}개</p>}
    <EarningsDisplayClient start={range.start} end={range.end} activeDate={activeDate} query={query} importance={importance} sector={sector} industry={industry} enabled={(kind==='all'||kind==='earnings')&&country!=='KR'} onCounts={setVendorCounts}/>
@@ -300,12 +302,16 @@ export default function MarketCalendar(){
      <span className="mc-country">{row.country==='US'?'미국':'한국'}</span>
       <span className="mc-kind mc-kind-indicator">지표</span>
      <div className="mc-event"><a href={row.sourceUrl} target="_blank" rel="noopener noreferrer" title="공식 발표 일정 출처로 이동">{row.name}</a><span className={`mc-tag-status ${row.status==='released'?'released':''}`}>{row.status==='released'?'확인된 발표값':row.fresh?'공식 저장':'확인일 기준'}</span><small className="mc-source">{row.category} · {row.source} · {row.checkedAt?`확인 ${row.checkedAt.slice(0,10)}`:'확인일 미제공'}{row.modelInputCount?` · 관련 모델 입력 ${row.modelInputCount}개(코드 기준)`:''}</small>
-     {(row.actual!==null||row.forecast!==null||row.previous!==null)&&
+     {taxonomyOptions&&(row.actual!==null||row.forecast!==null||row.previous!==null)&&
       <details className="mc-actual-detail"><summary>발표값 상세</summary>
        <span>발표 {row.actual??'—'} · 예상 {row.forecast??'—'} · 이전 {row.previous??'—'}</span>
       </details>}</div>
-     <span className="mc-sector is-empty">—</span>
-     <span className="mc-industry is-empty">—</span>
+     {taxonomyOptions
+      ? <><span className="mc-sector is-empty">—</span>
+          <span className="mc-industry is-empty">—</span></>
+      : <><div className="mc-number" data-kind="actual"><span className="mc-mobile-label">발표</span>{row.actual??'—'}</div>
+          <div className="mc-number muted" data-kind="forecast"><span className="mc-mobile-label">예상</span>{row.forecast??'—'}</div>
+          <div className="mc-number muted" data-kind="previous"><span className="mc-mobile-label">이전</span>{row.previous??'—'}</div></>}
      <div className={`mc-remaining ${remain.style}`} aria-label={`남은 시간: ${remain.label}`}>{remain.label}</div>
     </article>;})}
    </div>)}
