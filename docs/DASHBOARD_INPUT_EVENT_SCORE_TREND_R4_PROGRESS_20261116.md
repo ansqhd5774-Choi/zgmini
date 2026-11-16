@@ -1,6 +1,6 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
-- **최신 고정 단계 수행 판정 8/75 (10.7%, source/fixture/설계 기준)**: #04, #05, #08, #10, #21, #22, #23, #24. #13은 실제 승인 PC Runtime 재계산·D1 게시 미확인으로 PARTIAL이며 완료 분자에 포함하지 않음. #24는 최소 설계+Draft 검증 완료이지 계약 변경 승인/운영 설치 완료가 아님. Production 실서비스 종단 완료는 별도 미확정. 과거 2/75·4/75 수치는 각 시점 이력으로 유지.
+- **최신 고정 단계 수행 판정 10/75 (13.3%, source/fixture/설계 기준)**: #04, #05, #08, #10, #21, #22, #23, #24. #13은 실제 승인 PC Runtime 재계산·D1 게시 미확인으로 PARTIAL이며 완료 분자에 포함하지 않음. #24는 최소 설계+Draft 검증 완료이지 계약 변경 승인/운영 설치 완료가 아님. Production 실서비스 종단 완료는 별도 미확정. 과거 2/75·4/75 수치는 각 시점 이력으로 유지.
 
 - 기준 계획: [75단계 R4](DASHBOARD_INPUT_EVENT_SCORE_TREND_EXECUTION_R4_20261116.md).
 - 기록 브랜치: `codex/ui-improvements` (이력/계획 전용). 기능 수정은 `codex/ui-improvements-r4-score-last-point-20261116`에서 최신 `main`을 분기하여 최소 파일만 PR #1177로 병합.
@@ -69,7 +69,7 @@
 
 ## R4 #13·#21–24 추가 결과 — 2026-11-16
 
-- **최신 고정 단계 수행 판정 8/75 (10.7%, source/fixture/설계 기준)**: #04, #05, #08, #10, #21, #22, #23, #24. #13은 실제 승인 PC Runtime 재계산·D1 게시 미확인으로 PARTIAL이며 완료 분자에 포함하지 않음. #24는 최소 설계+Draft 검증 완료이지 계약 변경 승인/운영 설치 완료가 아님. Production 실서비스 종단 완료는 별도 미확정. 과거 2/75·4/75 수치는 각 시점 이력으로 유지.
+- **최신 고정 단계 수행 판정 10/75 (13.3%, source/fixture/설계 기준)**: #04, #05, #08, #10, #21, #22, #23, #24. #13은 실제 승인 PC Runtime 재계산·D1 게시 미확인으로 PARTIAL이며 완료 분자에 포함하지 않음. #24는 최소 설계+Draft 검증 완료이지 계약 변경 승인/운영 설치 완료가 아님. Production 실서비스 종단 완료는 별도 미확정. 과거 2/75·4/75 수치는 각 시점 이력으로 유지.
 
 1. **#13 저장→계산→이력 로컬 통합 실증 부분 완료**: [PR #1184](https://github.com/ansqhd5774-Choi/zgmini/pull/1184) 병합 `main fef26ea2e508226c146f68cb30d430c9ddd59011`. 소스 기반 실제 `runMarketOperationalRefresh` 공유 수집 lane, 승인 저장기 `marketOperationalStore`, `readStoredMarketInputs`, 진짜 `buildCompositeMarketScore` 가중합, `appendCompositeObservedFromCurrent`와 임시 SQLite 저장·재조회 연결. 비식별 관측 `NFCICREDIT` 1개 새 값 50→60, 다른 승인 저장 시리즈 값·시각 이월; fixture의 credit-domain test adapter는 **실제 신용 산식을 대체하지 않는 테스트 전용**. 12개 도메인 실제 CM-R1 종합 결과 50→51, 16분 뒤 실제 계산 이력점 [50,51] 저장. 공급자 호출 0. PR CI PASS; 병합된 main의 check/verify/notify/Cloudflare Git Integration Worker Build 모두 PASS. 이는 운영 PC source SHA/실제 수집/실D1 게시의 성공 증거가 아니므로 #13 상태 PARTIAL 유지.
 
@@ -83,3 +83,13 @@
 - 독립 W06: 1D 조회 `app/api/market-score/observations/route.ts`가 Draft 이벤트 3점을 시간순 반환하고 잘못된 시각을 거부하는지 기존 source/API 계약에 맞춰 최소 회귀. 그다음 현재 1W/1M/3M 시점 및 방법론 이력 분리(#26~29).
 - Writer/Collector 원담당: 실제 설치 source 확인과 기존 승인 수동 검증 경로로 1개 신규 원자료→계산·이력→D1 게시를 실증. 별도 일반챗 #1737의 `STATE_UNKNOWN`만으로 운영 실패라 판정하거나 동일 request 재발행하지 않음.
 - 사용자가 기술 작업 완료 후 https://zgmini.kr/에서 육안 확인. GPT에서 제거된 웹디버그를 종료 Gate로 복원하지 않음.
+
+
+## R4 #26·#33 공개 이력 GET 무결성 — 2026-11-16
+
+- **진도 10/75 (13.3%)**: 기존 #04,#05,#08,#10,#21,#22,#23,#24(8개) + #26(1D 저장 이력 시간순 제공·모순 데이터 보호) + #33(저장 GET source-only 수집/계산/쓰기 금지) 완료. 이 비율은 `SOURCE/TEST/DESIGN` 작업 완료이며 75개 종단 실운영 완료율 아님. #13은 실제 PC 실행과 공개 D1 재조회 미완료로 PARTIAL 유지. #24는 Owner 승인 대기 Draft 설계 PASS만 인정.
+- **[PR #1187](https://github.com/ansqhd5774-Choi/zgmini/pull/1187) merged** `main b2ef3a04b940d53fdec61d43ec4f4553bdc83610`. 파일 2개: `app/api/market-score/observations/route.ts` 저장 경로가 동일 계산시각에 상충하는 score/asOfDate가 있는 경우 마지막 행을 무조건 채택하는 기존 동작을 503 `INVALID_STORED_SCORE`로 변경. 동일 timestamp·동일 값의 무해한 재전달은 idempotent하게 1개만 인정. 실제 저장된 원본을 수정하지 않음. `tests/r4-composite-observed-route.test.mjs` 9개 테스트 추가: Cloudflare 실제 GET 구현 소스를 TypeScript transpilation으로 실행, read-only D1 stub에 저장된 50→53→56 (12:00,12:05,12:10)을 시간순 반환, 동일 기록 중복, 충돌, 기준일 충돌, 허용 clock-skew 밖 미래, 불법 점수, empty, invalid period, 1W cross-date 검증. PR `check` PASS(run `43887372204`). 기존 5분 skew 허용·만료·권한·제공 TTL/DB 스키마/원자료/계산/예약 변경 없음.
+- **#33 public GET source/fixture PASS**: `/api/market-score`는 기존 Worker `storedMarketResponse`와 `market-operational.test.mjs`의 저장값만 읽는 계약 재사용; `/api/market-score/observations` 실제 GET은 read-only `SELECT` 1건, provider/fetch/쓰기가 없는 것을 PR #1187 fixture로 검증. 운영 사이트 실조회 여부는 별도 사용자 최종 확인 경로.
+- **#24 실행과 분리**: 기존 시간별 계산점 3개가 로컬 archive에 실제 보존돼야 API #1187에서 3개를 반환할 수 있음. 아직 owner 검토용 [Draft #1185](https://github.com/ansqhd5774-Choi/zgmini/pull/1185)의 이벤트 저장 후보가 운영 main에 병합되지 않았으므로 운영 50→53→56 보존·표시 완료를 주장하지 않는다.
+- **보존 사항**: [Draft #1181](https://github.com/ansqhd5774-Choi/zgmini/pull/1181) Collector 관측일 역행 방지는 별도 owner 검토 대기. 어느 Draft도 승인 없이 main/PC 운영에 적용하지 않음.
+- **다음 필수 실행**: 독립 W06 #27~29 및 D01–D27 세부 영역별 현재점/이력점의 날짜·방법론 매핑에서 실제 문제만 수정. Writer #24는 승인된 정확한 15분 보존 계약 범위 확인 후 원담당이 선택 적용; PC 소스 설치·게시 readback은 승인된 경로로 완료. 사용자의 사이트 육안 검수는 그 뒤.
