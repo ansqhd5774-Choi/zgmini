@@ -36,7 +36,7 @@
 | 06 | D03 · 미국 등락 · public:market-breadth-r1:usa | IEX 약15분 잠정/MarketParquet 거래일 확정 R2 별도; 확정 커버리지 확인 | /api/market-breadth, /api/market-breadth-r2-history | `app/market-breadth-strip.tsx` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 진행 중 · 잠정/확정 API 현재 상태 확인 필요 |
 | 07 | D04 · 한국 등락 · 공개 독립 ID 미확인 | 한국 카드 counts 입력 미연결; 0~100 점수 아님 | app/korea-composite-view.tsx → market-breadth-strip.tsx | `app/korea-composite-view.tsx / app/market-breadth-strip.tsx` | NOT_CONNECTED | **NOT_CONNECTED · 판정 완료 (수정은 별도 기능 연결 담당)** |
 | 08 | D05 · 미국 종합 · CM-R1 overall | 경제 12/12 READY, 가중치 100%; 과거 CURRENT_VINTAGE_ONLY 일부 재구성; 화면변환 3.5 | /api/market-score · market_public_snapshots_v1:current | `app/dashboard-ui.tsx / scripts/pc-writer/run-local.mjs` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 진행 중 · 로컬 계산→현재 공개 버전과 신규 유효 입력의 동시 사건 미확인 |
-| 09 | D06 · 인플레이션 위험 · inflationStability | 근원PCE·근원CPI·전체CPI·기대물가 4요인, 월간 중심 | /api/inflation-detail · 진단/별도 detail | `app/dashboard-ui.tsx (risk detail / stored projection)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
+| 09 | D06 · 인플레이션 위험 · inflationStability | 현행 R2: 저장 초기발표/PCE PC1 입력 16개·축 7개 전부 충족 시 READY (월·분기 혼합) | /api/inflation-detail · detail:inflation:v1 | `app/dashboard-ui.tsx / app/inflation/inflation-panel.tsx` | SOURCE_ROUTE_GAP_FIXED_PR_UNDEPLOYED | 개발 경로 누락 수정 PR #1165. 실제 API/D1 readback 미완료 |
 | 10 | D07 · 경기침체 위험 · recessionDefense | NFP·GDP·IP·실질PCE·Sahm·소매·가처분소득 7요인; 월·분기 혼합 | /api/recession-detail | `app/dashboard-ui.tsx (risk detail / stored projection)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
 | 11 | D08 · 스태그플레이션 위험 · stagflationSafety | 별도 S21: 공통 13개월 확정/최신 잠정 구분; 기본 diagnostics8의 제3항 아님 | /api/stagflation-risk-detail · detail:stagflation-risk:s21 | `app/dashboard-ui.tsx (risk detail / stored projection)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
 | 12 | D09 · 신용 위험 · creditRiskDefense | HY·IG·종합 CMDI·채권변동성 4요인; 시장/신용 혼합 | /api/credit-risk-detail | `app/dashboard-ui.tsx (risk detail / stored projection)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
@@ -86,5 +86,15 @@
 ## 4. 다음 실제 실행 순서·작업량 보호
 
 - **현재 증거상 확정된 갱신 시점 불일치(결함군 N): 아직 0건 확정이 아니라 '미확정'.** D04는 NOT_CONNECTED이며 새 수정 대상 결함군에 자동 합산하지 않는다.
-- **다음 필수 실행:** `09/D06 인플레이션 위험`부터 이미 확인된 R1 gate와 최신 `/api/inflation-detail`의 실제 화면 소비·계산 연결을 비교. 발견되는 실제 차이만 수정 대상으로 삼는다. 04–06·08의 구체적 미확인 입력은 기존 유효 증거가 있을 때 이어서 판정하되 **27개 전원 운영 사건 확인을 단일 전역 Gate로 만들지 않는다**.
-- 실행 완료 집계: **4/34** (01,02,03,07), 04–06/08은 부분 조사, 09–34는 미완료. **실제 구현·배포 변경: 0건.**
+- **다음 필수 실행:** PR #1165 CI와 승인된 운영 반영·API 확인을 수행하고, 다음 독립 실행 10/D07 경기침체 7요인과 저장 경로를 판정한다. 04–06·08의 구체적 미확인 입력은 기존 유효 증거가 있을 때 이어서 판정하되 **27개 전원 운영 사건 확인을 단일 전역 Gate로 만들지 않는다**.
+- 실행 완료 집계: **5/34** (01,02,03,07,09), 04–06/08은 부분 조사, 10–34는 미완료. **구현: API 읽기 라우트 1건·회귀 테스트 3건 / 운영 배포: 0건.**
+
+
+## 5. 09/D06 인플레이션 위험 신규 실행 증거 — 2026-11-16
+
+- 현재 main 계산 계약: lib/diagnostic-layer/inflation-r2-stored.mjs = 저장 초기발표/PCE PC1 입력 16개 및 평가축 7개(1/7씩); 7개 축이 유효해야 READY. 경제12 물가의 구형 4요인과 별도.
+- worker/inflation-r2-reader.mjs는 저장 이력만 읽고 공급자 호출 0회. 대시보드 및 상세 화면은 /api/inflation-detail의 저장 점수를 소비함.
+- 소스 누락: main에 app/api/inflation-detail/route.ts가 없으나 worker/market-public-projection-store.mjs에 허용 공개 키 detail:inflation:v1와 공통 storedProjectionResponse가 있음. 운영 URL 상태는 직접 응답 미확보이므로 UNKNOWN.
+- 최소 수정: W06 전용 브랜치에 GET 라우트·회귀 테스트 추가. 구 브랜치와 최신 main의 큰 분기(356 ahead, 586 behind) 때문에 2개 파일만 최신 main 기반 격리 브랜치로 이전하여 Draft PR #1165 생성: https://github.com/ansqhd5774-Choi/zgmini/pull/1165 (HEAD 30a6f6df308cb61609f5e98ec06e55916a6a3212).
+- 격리 Node 22에서 동일한 저장 조회 함수·라우트·테스트를 복원해 3/3 PASS: 유효 0점, 조회 한 번·저장 JSON 원형 유지, stale 503. GitHub CI/Cloudflare/D1/API/UI 종단 결과는 미확정. 공급자·DB/TTL/산식/예약 변경 없음.
+- 판정: 개발 소스의 ROUTE_GAP 확정(라우트 추가 완료). 운영 반영은 미완료. F1-F4 추가 결함군 반영 여부는 33번 원인 통합 판정에서 확정.
