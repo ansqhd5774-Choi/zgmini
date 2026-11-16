@@ -44,7 +44,7 @@
 |---|---|---|---|---|
 | 04 | D01 · 미국 공포·탐욕 | CNN 관측 변경 후 검증·게시 값 | observedAt vs checkedAt, 당일 표시/추이 마지막점 | `/api/fear-greed` |
 | 05 | D02 · 한국 공포·탐욕 | KRX 완료 거래일과 7요인 READY | 관측 거래일·당일 유효성, 재구성 이력 | `/api/indicators/korea-funds` |
-| 06 | D03 · 미국 등락 비율 | 잠정 약15분과 거래일 확정 R2 | 상승·보합·하락 비율의 phase, 표시 기준일 | `/api/market-breadth` |
+| 06 | D03 · 미국 등락 비율 | 승인된 독립 IEX 장중 잠정 슬롯만 사용; MarketParquet R2 확정 및 이력은 2026-11-16 금지·503 | 잠정 관측일·슬롯 최신성 확인. 퇴역 확정/과거값 이월·표시·재시도 금지 | `/api/market-breadth?market=usa&phase=provisional` |
 | 07 | D04 · 한국 등락 비율 | counts 미연결 여부와 정상 대기 | 미연결을 신규 갱신 결함으로 오판 금지 | `korea-composite-view / market-breadth-strip` |
 | 08 | D05 · 미국 종합점수 | 경제 12/12 READY+신규 입력 반영 | raw↔화면 3.5배 변환·API 현재값·차트일 | `/api/market-score` |
 | 09 | D06 · 인플레이션 위험 | R2 저장 이력 16개 입력지표(월·분기 혼합)·7개 평가축의 신규 발표 갱신 | 축 7/7 READY 충족; 경제12 물가 4요인과 구별 | `/api/inflation-detail` |
