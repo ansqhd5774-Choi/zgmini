@@ -75,6 +75,53 @@ test("BACKFILL planner skips completed groups despite later RELEASE runs and bou
   assert.equal(retryPlan[0].due, true);
 });
 
+test("ONE_YEAR manual DOL claim remains consumed after a later RELEASE run on the same UTC date",async()=>{
+ const calls=[];
+ const oneYear={
+  status:"PARTIAL",completed_at:"2026-11-16T10:14:15.554Z",
+  detail_json:JSON.stringify({mode:"ONE_YEAR",missingSeries:[
+   "INITIAL_CLAIMS","INITIAL_CLAIMS_4W","CONTINUED_CLAIMS","INSURED_UNEMPLOYMENT_RATE",
+  ]}),
+ };
+ const laterRelease={
+  status:"PARTIAL",completed_at:"2026-11-16T11:10:17.560Z",
+  detail_json:JSON.stringify({mode:"RELEASE"}),
+ };
+ const store={
+  async initialize(){},
+  async getLatestRun(provider){calls.push(["latest",provider]);return laterRelease;},
+  async getLatestRunInMode(provider,mode){
+   calls.push(["mode",provider,mode]);
+   return mode==="ONE_YEAR"?oneYear:null;
+  },
+ };
+ const db={prepare(){return {};}};
+ const now=()=>new Date("2026-11-16T11:27:28.927Z");
+ const plan=await planEmploymentR6Collection({
+  db,now,mode:"ONE_YEAR",groups:["DOL_UI_WEEKLY_CLAIMS"],storeFactory:()=>store,
+ });
+ assert.deepEqual(plan.map(x=>({due:x.due,status:x.status})),[
+  {due:false,status:"ONE_YEAR_ALREADY_ATTEMPTED"},
+ ]);
+ assert.deepEqual(calls,[["mode","EMPLOYMENT_R6_DOL_UI_WEEKLY_CLAIMS","ONE_YEAR"]]);
+ let providerCalls=0;
+ const result=await runEmploymentR6CollectionStep({
+  db,now,mode:"ONE_YEAR",groups:["DOL_UI_WEEKLY_CLAIMS"],storeFactory:()=>store,
+  providerFactory:()=>({async fetchGroup(){providerCalls++;throw Error("DUPLICATE_PROVIDER_CALL");}}),
+ });
+ assert.equal(result.status,"NOOP");
+ assert.equal(result.providerRequests,0);
+ assert.equal(providerCalls,0);
+ assert.equal(calls.filter(x=>x[0]==="latest").length,0,"RELEASE must never mask 1Y");
+ const nextDay=await planEmploymentR6Collection({
+  db,now:()=>new Date("2026-11-17T00:00:00.000Z"),
+  mode:"ONE_YEAR",groups:["DOL_UI_WEEKLY_CLAIMS"],storeFactory:()=>store,
+ });
+ assert.deepEqual(nextDay.map(x=>({due:x.due,status:x.status})),[
+  {due:true,status:"ONE_YEAR_DUE"},
+ ]);
+});
+
 test("BACKFILL does not call BLS provider when remaining R6 quota is insufficient", async () => {
   let providerCalls = 0;
   const store = {
