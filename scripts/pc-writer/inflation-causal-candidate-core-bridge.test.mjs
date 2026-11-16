@@ -35,6 +35,60 @@ test('default disabled makes no release or credential-dependent due',()=>{
  assert.deepEqual(planned.due,[]);
 });
 
+test('exact recorded legacy CPI/Census parser failures admit initial recovery without calendar dates',()=>{
+ const doc=checkpoint();
+ doc.attempted.cpi={eventKey:'release:bls:cpi:2026-11-08',
+  at:'2026-11-08T22:45:02.525Z',failureCode:'BLS_CANDIDATE_VALUE_OR_DUPLICATE'};
+ doc.attempted.census={eventKey:'release:census:m3:2026-11-08',
+  at:'2026-11-08T22:45:02.525Z',failureCode:'CENSUS_M3_HEADERS_INVALID'};
+ const input={approved:true,bootstrapApproved:true,events:[],sources:{},
+  checkpoint:doc,providerEnv:keys,now:NOW};
+ const planned=planInflationCandidateCoreDue(input);
+ assert.deepEqual(planned.due.map(x=>x.group),['cpi','census']);
+ assert.deepEqual(planned.due.map(x=>x.eventKey),
+  ['legacy-parser-recovery:cpi','legacy-parser-recovery:census']);
+ assert.ok(planned.due.every(x=>x.releaseDate===null));
+ assert.deepEqual(planInflationCandidateCoreDue({...input,bootstrapApproved:false}).due,[]);
+ doc.processed.census={eventKey:'release:census:m3:2026-11-08',
+  observationDate:'2026-09-01'};
+ assert.deepEqual(planInflationCandidateCoreDue(input).due.map(x=>x.group),['cpi']);
+ delete doc.processed.census;
+ doc.attempted.census.failureCode='CENSUS_M3_HTTP_429';
+ assert.deepEqual(planInflationCandidateCoreDue(input).due.map(x=>x.group),['cpi']);
+ doc.attempted.cpi={eventKey:'legacy-parser-recovery:cpi',at:NOW.toISOString(),
+  failureCode:'BLS_CANDIDATE_VALUE_OR_DUPLICATE'};
+ assert.deepEqual(planInflationCandidateCoreDue(input).due,[]);
+});
+
+test('one-shot recovery executes only failed groups and advances checkpoint on saved readback',async()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-recovery-'));
+ const base=path.join(root,'pc-writer');fs.mkdirSync(base);
+ try{
+  const doc=checkpoint(),latest={},calls=[];
+  doc.attempted.cpi={eventKey:'legacy:bls',
+   at:'2026-11-08T22:45:02.525Z',failureCode:'BLS_CANDIDATE_VALUE_OR_DUPLICATE'};
+  doc.attempted.census={eventKey:'legacy:census',
+   at:'2026-11-08T22:45:02.525Z',failureCode:'CENSUS_M3_HEADERS_INVALID'};
+  const collectors={
+   cpi:async()=>{calls.push('cpi');latest.cpi='2026-10-01';
+    return {status:'SAVED_READBACK',providerRequests:1};},
+   census:async()=>{calls.push('census');latest.census='2026-09-01';
+    return {status:'SAVED_READBACK',providerRequests:2};}
+  };
+  const result=await collectInflationCandidatesIfDue({base,approved:true,
+   bootstrapApproved:true,officialEvents:[],officialSources:{},providerEnv:keys,
+   now:NOW,quotaFetch:async()=>({ok:true}),collectors,
+   checkpointIO:{load:()=>doc,save:()=>{}},latestIO:g=>latest[g]??null});
+  assert.deepEqual(calls,['cpi','census']);
+  assert.deepEqual(result.completed.map(x=>x.status),
+   ['OBSERVATION_ADVANCED','OBSERVATION_ADVANCED']);
+  assert.equal(doc.processed.cpi.observationDate,'2026-10-01');
+  assert.equal(doc.processed.census.observationDate,'2026-09-01');
+  assert.equal(planInflationCandidateCoreDue({approved:true,bootstrapApproved:true,
+   events:[],checkpoint:doc,providerEnv:keys,now:new Date('2026-11-23T23:00Z')}).due.length,0);
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
 test('exact BLS CPI/PPI, Fed G17 and Census M3 full-release mapping only',()=>{
  const planned=planInflationCandidateCoreDue({approved:true,events:EVENTS,sources,
   checkpoint:checkpoint(),now:NOW,providerEnv:keys});
