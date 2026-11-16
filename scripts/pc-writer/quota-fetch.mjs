@@ -1,7 +1,10 @@
 import {QuotaLedger} from './quota-ledger.mjs';
 import {providerForUrl} from './quota-policy.mjs';
+import {observeIndependentProviderFetch} from './provider-endpoint-fingerprint.mjs';
 
 export function createQuotaFetch({base,originalFetch,mode=process.env.ZGMINI_QUOTA_MODE??'observe'}={}){
+ // Observe only actually transmitted Alpaca requests. Quota guards still execute first.
+ if(typeof originalFetch==='function')originalFetch=observeIndependentProviderFetch(base,'ALPACA_QUOTA',originalFetch);
  const ledger=new QuotaLedger(base,{mode});
  const fetch=async(input,init)=>{
   const provider=providerForUrl(typeof input==='string'||input instanceof URL?input:input.url);
