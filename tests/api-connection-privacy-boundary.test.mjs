@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {publicApiConnectionSummary,readPublicApiConnectionHealth} from '../worker/api-connection-health.mjs';
 
 const source=relative=>readFileSync(new URL(relative,import.meta.url),'utf8');
-const KEYS=['checkedAt','coverage','failed','normal','status','total','unknown','version'].sort();
+const KEYS=['api','http','checkedAt','coverage','failed','normal','status','total','unknown','version'].sort();
 
 test('both public routes use only the sanitized allowlist projection, never the raw internal response',()=>{
  const route=source('../app/api/api-connection-health/route.ts');
@@ -18,7 +18,8 @@ test('public icon and popup are restored without provider roster or diagnostic p
  const ui=source('../components/collection-health-indicator.tsx');
  assert.match(ui,/Wifi size=\{18\}/);
  assert.match(ui,/zg-collection-health-popup/);
- assert.match(ui,/정상 \{health!\.normal\}/);
+ assert.match(ui,/API : \{countLine\(health!\.api\)\}/);
+ assert.match(ui,/HTTP : \{countLine\(health!\.http\)\}/);
  assert.doesNotMatch(ui,/\.host\b|endpointEvidence|lastEventStatuses|requests\b|\.map\(item|<ul/);
 });
 test('public response allowlist cannot accidentally leak nested upstream information',()=>{
@@ -30,6 +31,8 @@ test('public response allowlist cannot accidentally leak nested upstream informa
  const published=publicApiConnectionSummary(raw);
  assert.deepEqual(Object.keys(published).sort(),KEYS);
  assert.equal(published.total,6);
+ assert.equal(published.api,null);
+ assert.equal(published.http,null);
  assert.ok(!JSON.stringify(published).includes('SECRET'));
 });
 test('public live D1 read never returns private host or endpoint information',async()=>{
@@ -59,6 +62,8 @@ test('public live D1 read never returns private host or endpoint information',as
  assert.equal(body.failed,null);
  assert.equal(body.unknown,null);
  assert.equal(body.total,null);
+ assert.equal(body.api,null);
+ assert.equal(body.http,null);
  assert.equal(body.status,'unknown');
  assert.equal(body.coverage,'UNVERIFIED');
  assert.ok(!text.includes('private-upstream'));
@@ -75,6 +80,8 @@ test('partial historical host totals never appear as verified API connection err
  assert.equal(published.status,'unknown');
  assert.equal(published.coverage,'UNVERIFIED');
  for(const key of ['normal','failed','unknown','total'])assert.equal(published[key],null);
+ assert.equal(published.api,null);
+ assert.equal(published.http,null);
  assert.equal(published.checkedAt,historical.checkedAt);
 });
 
@@ -83,6 +90,8 @@ test('only explicitly verified active API inventory may publish count aggregates
   limitedCoverage:false,coverage:'PARTIAL',status:'healthy',normal:16,failed:0,unknown:0,total:16,
   checkedAt:'2026-11-16T07:35:35.602Z'};
  assert.equal(publicApiConnectionSummary(verified).total,16);
+ assert.equal(publicApiConnectionSummary(verified).api,null);
+ assert.equal(publicApiConnectionSummary(verified).http,null);
  for(const key of ['activeInventoryVerified','limitedCoverage','scope']){
   assert.equal(Object.hasOwn(publicApiConnectionSummary(verified),key),false);
  }
