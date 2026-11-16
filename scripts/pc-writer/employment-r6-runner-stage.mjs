@@ -18,6 +18,13 @@ const SCORE=new Set(["READY","PARTIAL_HISTORY","PARTIAL_MISSING"]);
 const INPUT_FLAGS=new Set(["--db","--candidate-db-external","--output-dir","--as-of"]);
 const PIT_COUNTS=[
   "coreCurrentRows","coreHistoryRevisions","coreCurrentKeys",
+  // Fixed non-sensitive counts also permitted by the existing Controller A.
+  // Nothing here may return raw source hashes, rows or availability times.
+  "coreHistoryAsOfUniqueKeys","coreHistoryPriorRevisionKeys",
+  "coreHistoryPriorRevisionRows","coreHistoryAmbiguousLatestKeys",
+  "coreHistorySameInstantAdditionalRows","candidateHistoryAsOfUniqueKeys",
+  "candidateHistoryPriorRevisionKeys","candidateHistoryPriorRevisionRows",
+  "candidateHistoryAmbiguousLatestKeys","candidateHistorySameInstantAdditionalRows",
   "coreCurrentKeysMissingHistory","missingKeysWithCandidateHistory",
   "missingKeysWithMatchingCandidateValueAndHash","candidateCurrentKeys",
   "candidateNewKeys","candidateOverlapMatchingKeys",
@@ -29,6 +36,7 @@ const PIT_COUNTS=[
 ];
 const PIT_STATUSES=new Set([
   "NO_RUNTIME_EVIDENCE","HOLD_CONFLICTING_REVISIONS",
+  "HOLD_AMBIGUOUS_LATEST_REVISIONS",
   "HOLD_UNVERIFIED_SOURCE_LINEAGE","HOLD_CORE_HISTORY_GAPS_WITHOUT_MATCHING_CANDIDATE",
   "READ_ONLY_PREVIEW_NO_PUBLICATION_APPROVAL",
 ]);
