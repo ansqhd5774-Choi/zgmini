@@ -91,7 +91,7 @@ function readManifest(root,folder,rosterSha,symbols){
 }
 function readStates(root,folder,rosterSha,symbols,byPath){
  const directory=safePath(root,['themes',folder,'state'],{directory:true});
- const names=fs.readdirSync(directory).filter(n=>new RegExp(`^${folder==='legacy-nine-r23'?'collection':'delta'}-[a-f0-9]{20}\.json$`).test(n));
+ const names=fs.readdirSync(directory).filter(n=>new RegExp(`^${folder==='legacy-nine-r23'?'collection':'delta'}-[a-f0-9]{20}\\.json$`).test(n));
  if(names.length<1||names.length>128)fail('CHECKPOINT_COUNT');
  let incomplete=0,failed=0;const observed=new Set(),report=[];
  for(const name of names.sort()){
