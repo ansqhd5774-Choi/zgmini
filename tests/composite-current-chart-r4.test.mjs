@@ -54,3 +54,19 @@ test('dashboard passes stored publication score and timestamp, without changing 
  const archive=readFileSync(new URL('../lib/composite-observed-history-r1.mjs',import.meta.url),'utf8');
  assert.match(archive,/COMPOSITE_OBSERVED_INTERVAL_MS=15\*60000/);
 });
+
+test('1W/1M/3M without intraday observations respect the selected window',()=>{
+ const history=[
+  {label:'2026-01-01',value:41},
+  {label:'2026-08-01',value:43},
+  {label:'2026-10-01',value:45},
+  {label:'2026-11-10',value:47},
+  {label:'2026-11-16',value:50},
+ ];
+ assert.deepEqual(mergeCompositeObservedDisplay(history,[],7).map(p=>p.value),[47,50]);
+ assert.deepEqual(mergeCompositeObservedDisplay(history,[],30).map(p=>p.value),[47,50]);
+ assert.deepEqual(mergeCompositeObservedDisplay(history,[],90).map(p=>p.value),[45,47,50]);
+ assert.deepEqual(mergeCompositeObservedDisplay(history,[],180),history);
+ assert.deepEqual(mergeCompositeObservedDisplay([],[],7),[]);
+ assert.deepEqual(mergeCompositeObservedDisplay([...history].reverse(),[],7).map(p=>p.value),[47,50]);
+});
