@@ -1,6 +1,6 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
-> **현재 즉시 상태 (2026-11-17 KST): 13/75 (17.3%), 잔여 62개.** W06 #35 카드/차트 게시시각 정합성 문제를 재현·수정해 선택 PR #1193으로 `main@e5dc26582c94dacc1cb41ef39675b812014ce42f` 병합, 코드 CI·모의 UI SUCCESS. 기존 저장 우선 회귀를 존중하는 명시적 카드-바운드 UI 모드 도입. **다음 필수 실행은 #36 (미국 CNN 실제 observedAt/score 이력)**. 실PC/D1/exact Cloudflare Production 확인은 여전히 별도 미확정.
+> **현재 즉시 상태 (2026-11-17 KST): 13/75 (17.3%), 잔여 62개. #36 CNN 공개 Reader 동일 observedAt 상충 score 덮어쓰기 위험 확인(source-only); 실제 운영 오류 및 PC→D1 실증 미확정.** W06 #35 카드/차트 게시시각 정합성 문제를 재현·수정해 선택 PR #1193으로 `main@e5dc26582c94dacc1cb41ef39675b812014ce42f` 병합, 코드 CI·모의 UI SUCCESS. 기존 저장 우선 회귀를 존중하는 명시적 카드-바운드 UI 모드 도입. **다음 필수 실행은 #36 (미국 CNN 실제 observedAt/score 이력)**. 실PC/D1/exact Cloudflare Production 확인은 여전히 별도 미확정.
 
 ## 현재 인계 정본 — 다음 담당자 첫 읽기 (2026-11-16 KST)
 
@@ -215,3 +215,15 @@
 - 검증 수준: source read-only PASS; 신규 Node/CI 0, PC/SQLite/D1/Production 신규 실증 0, 코드 수정·배포 0. #36 DONE 아님. 중앙 #68의 최근 댓글은 타 담당 결과가 대부분으로 본 작업의 신규 승인으로 해석하지 않음.
 - 다음 필수 실행 1개: W06가 현재 main 공개 GET의 상충 timestamp fixture를 기존 route 테스트에 최소 추가해 503 기대조건을 재현하고, 재현될 때만 저장값을 덮지 않는 Reader 최소 수정 및 관련 회귀를 수행. 운영 PC/D1 증거는 별도 승인 Owner 경로로 확보하며 임의 A/B/C 실행 금지.
 - 전체: DONE #04,#05,#08,#10,#21,#22,#23,#24,#26,#27,#33,#34,#35 = 13/75(17.3%), 잔여 62. 이번 실행 기능 신규 DONE 0.
+
+
+## 2026-11-17 05:03 KST — R4 #36 공개 CNN Reader 충돌 경로 정밀 조사 (PARTIAL)
+
+- 담당/범위: W06, D01 CNN 공개 저장 이력 GET만. 시작/종료 단계: **13/75 (17.3%) → 13/75 (17.3%)**. 신규 기능 커밋·운영 실적 0건.
+- 실제 확인: `main`의 `app/api/fear-greed/observations/route.ts` blob `67abf4bd27b16437355ad8d3d6bc22ea2edda1f4` 및 `tests/usa-fear-greed-change-only-r10.test.mjs` blob `44bd6df840e9db6dfbcd071f5af36334e84d53e8` 조회. 저장 archive는 관측시각·점수 범위·일자 일치를 검사하지만 `byTime.set(key,...)`는 동일 정규화 관측시각에 상충하는 score가 두 번 등장해도 마지막 값을 채택함. verified checks 역시 `checkedByTime.set` 중복 timestamp 상충 값 검사가 없음. 이는 소스에서 확인한 무결성 위험이며 실제 운영 데이터 손상 발생 증거는 없음.
+- 기존 테스트는 같은 원천 timestamp·동일 score의 재검증 건너뛰기와 달라진 점수의 check 추가, composite signature만 다룸. **동일 observedAt에 서로 다른 score가 저장된 공개 archive Reader의 503 기대 회귀는 없음**. 정상 공식 정정은 저장기에서 동일 관측시각의 최신 점수로 정리하는 계약을 보존해야 하므로, 공개 Reader에서 이미 상충한 두 점수가 동시에 존재할 때만 INVALID를 반환하는 방어를 제안.
+- 실행 제약: 지정 기록 브랜치 `codex/ui-improvements`에서 해당 두 소스 경로는 404(존재하지 않음); 현재 main의 파일을 오래된 브랜치에 임의 덮어쓰거나 브랜치 전체 병합/리베이스하지 않음. 이 회차 신규 Node fixture 실행·CI·PC SQLite·D1·API 동치·Production 확인 없음. `main` 직접 변경 금지.
+- LAST PASS: 최신 main Reader의 상충 timestamp overwrite 최초 위치 및 기존 테스트 공백 특정.
+- FIRST UNVERIFIED: 저장 archive 중복 timestamp/상충 score에 대한 실패 fixture 재현, 최소 Reader 보호 코드와 관련 CI, 실PC→D1→공개 API 일치.
+- 다음 필수 실행 하나: **#36 W06 — 최신 main과 동일한 선별 소스 변경 경로에서 공개 Reader 상충 timestamp fixture를 실행해 FIRST FAIL을 재현하고, 실제 결함이면 정상 동일점 재전달·공식 정정 보존 조건으로 최소 보호 및 Node CI 수행**. 지정 원장 브랜치는 기록 전용으로 유지; 코드 PR은 전체 브랜치 병합 없이 정확한 파일만 통합.
+- 소유/운영: W06 공개 Reader·UI; CNN 저장/게시·운영 PC/D1은 기존 원담당 승인 경계. Draft #1181/#1185, 운영 배포 및 예약 설정 변경 없음.
