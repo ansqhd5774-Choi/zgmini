@@ -1,0 +1,37 @@
+name: W02 R44 banner live production (one-time read-only)
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/w02-market-calendar-banner-live-r44.mjs'
+      - '.github/workflows/w02-r44-banner-live-oneoff.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install locked dependencies
+        run: npm ci
+      - name: Install test-only browser dependency
+        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+      - name: Install Chromium
+        run: npx playwright install --with-deps chromium
+      - name: Read-only live top banner three-star R44 check
+        run: node tests/w02-market-calendar-banner-live-r44.mjs
+      - name: Save public browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: w02-r44-banner-live-oneoff
+          path: artifacts/w02-banner-live/
+          if-no-files-found: warn
