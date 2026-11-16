@@ -199,3 +199,18 @@
 ### 최소 다음 행동
 
 **QFR 정확키 게시를 담당하는 기존 승인 B 실행 경로의 운영 등록·manifest·실소스 SHA 확인과 제어 Draft #1698 관련 Node CI → 필요한 범위의 source 통합/승인 → QFR D1 단일키 게시 및 실재조회.** 기존 QFR 수집·계산 성공 증거 재사용. 새로운 지표 수집이나 자연 예약 검증을 QFR 완료의 임의 선행조건으로 만들지 않는다.
+
+## 9. 82단계 실행 원장 — 2026-11-16 최초 실행
+
+> 이번 작업은 **소스 선택적 통합**이며, PC/D1/Production 운영 효과 **0건**. 아래 단계의 `SOURCE_READY`는 `DONE`이 아니다.
+
+| 작업 | 상태 | 확인된 원본 증거 | 실제 남은 종료 조건 |
+|---|---|---|---|
+| R4-02 | **SOURCE_READY** | 제어 최신 `main`에서 7개 파일을 선택적 이식한 [Draft PR #1762](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1762), head `b3293b02d4eed527d120a7dd76a2e816a1d8d609`; 기존 #112 브랜치 전체 병합/리베이스 없음 | 본선 CI·승인 소스 통합, 운영 PC 정확키 B scope·설치 SHA·승인 manifest 실제 확인 및 인가 |
+| R4-03 | **SOURCE_READY / TEST_PENDING** | 기존 #1698의 수정된 `tools/publication-executor.mjs`·`tests/publication-executor.test.mjs` blob SHA 일치 상태로 #1762에 포함, 기존 V8 모의 10/10 + QFR 반례 12/12 | **실제 Node 집중 테스트/CI** 통과. 현 #1762 PR CI [run 43882681762](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43882681762)는 최초 조회 때 `queued`, PASS 아님 |
+| R4-04 | **SOURCE_READY / MAIN_PENDING** | W05 브랜치 QFR Publisher·Test blob `fc406ee9b22aba86549e2140910f9d54db41262a`, `7d524176cf3323bee49948767f224ee94c6d178a`; 앱 [Draft #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175)와 동일 | 앱 최신 `main`으로 필요한 세 파일 선별 반영, 승인된 운영 원본·SHA preflight/apply 실증 |
+| R6-01 | **SOURCE_TEST_PENDING** | 제어 #1762 테스트 2파일 포함; V8 실행과 실제 Node/CI 별도 | 정확한 GitHub Actions 단계의 실제 Node test 결과 확인 |
+| R6-04 | **NOT_RUN** | 제어 일반 Writer B의 파일 overlay 허용은 `allowD1Writes=false`; 별도 QFR 게시 인가 manifest/설치 영수증 없음 | 정확한 단일키 승인 B 운영 경로와 Windows 실제 실행 ID/원장 |
+| R4-06 / R6-05~06 | **NOT_RUN** | QFR 기존 PC 원자료 수집·계산 성공은 재사용 가능. 이번에 실 D1·공개 UI 결과 없음 | 승인된 단일키 실제 D1 게시·body/version/time 재조회·Production GET/UI |
+
+**다음 필수 실행:** #1762 실제 Node 집중 CI 회수 → 승인된 B 정확키 effect 결속과 앱 3-pin 선별 통합 → 기존 저장 QFR의 D1 1키 게시·원격 재조회. 무단 게시나 추가 예약 검증을 미완료 단계로 만들지 않는다.
