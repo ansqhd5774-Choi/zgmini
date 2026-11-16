@@ -38,34 +38,53 @@ function validateGroup(group){
 }
 
 export function normalizeInflationCandidateBls(payload,{group}={}){
-  const ids=validateGroup(group),found={};
+  const ids=validateGroup(group),found=Object.fromEntries(ids.map(id=>[id,[]]));
   if(payload?.status!=='REQUEST_SUCCEEDED')throw error('BLS_CANDIDATE_STATUS_FAILED');
-  if(!Array.isArray(payload?.Results?.series)||payload.Results.series.length!==ids.length)
+  // A BLS series may have unavailable observations without an API outage.
+  if(!Array.isArray(payload?.Results?.series))
     throw error('BLS_CANDIDATE_SERIES_COUNT');
+  const seenSeries=new Set(),diagnostics={};
+  for(const id of ids)diagnostics[id]={available:0,missing:0,invalid:0,duplicate:0,conflict:0};
   for(const item of payload.Results.series){
     const id=item?.seriesID;
-    if(!ids.includes(id)||Object.hasOwn(found,id)||!Array.isArray(item?.data))
+    if(!ids.includes(id)||seenSeries.has(id)||!Array.isArray(item?.data))
       throw error('BLS_CANDIDATE_ID_OR_ROWS_INVALID');
-    const rows=[],seen=new Set();
+    seenSeries.add(id);
+    const byDate=new Map(),conflicted=new Set(),counts=diagnostics[id];
     for(const row of item.data){
-      if(row?.period==='M13')continue;
-      if(!/^\d{4}$/.test(String(row?.year??''))||!/^M(0[1-9]|1[0-2])$/.test(row?.period??''))
-        throw error('BLS_CANDIDATE_MONTH_INVALID');
-      const date=`${row.year}-${row.period.slice(1)}-01`;
-      // The BLS publishes 2025-10 shelter CPI as "-" with footnote X
-      // (unavailable during the lapse in appropriations). It is not a zero.
-      if(row?.value==='-'&&Array.isArray(row.footnotes)&&
-        row.footnotes.some(note=>note?.code==='X'))continue;
-      const value=Number(row?.value);
-      if(seen.has(date)||typeof row?.value!=='string'||!row.value.trim()||
-        !Number.isFinite(value)||value<0)throw error('BLS_CANDIDATE_VALUE_OR_DUPLICATE');
-      seen.add(date);rows.push({date,value,footnotes:Array.isArray(row.footnotes)?row.footnotes:[]});
+      if(row?.period==='M13')continue; // Annual average, not a month.
+      if(!/^\d{4}$/.test(String(row?.year??''))||
+         !/^M(0[1-9]|1[0-2])$/.test(row?.period??'')){
+        counts.invalid++;continue;
+      }
+      const date=String(row.year)+'-'+row.period.slice(1)+'-01';
+      // BLS represents missing data with '-' independently of footnote code.
+      const raw=row?.value;
+      if(typeof raw==='string'&&raw.trim()==='-'){
+        counts.missing++;continue;
+      }
+      if(typeof raw!=='string'||!/^\+?(?:\d+(?:\.\d+)?|\.\d+)$/.test(raw.trim())){
+        counts.invalid++;continue;
+      }
+      const value=Number(raw.trim());
+      if(!Number.isFinite(value)||value<0){counts.invalid++;continue;}
+      if(conflicted.has(date))continue;
+      const previous=byDate.get(date);
+      if(previous){
+        if(previous.value===value)counts.duplicate++;
+        else{
+          // Never guess which value is authoritative. Quarantine only this
+          // month's conflicting observation and preserve existing last-good.
+          byDate.delete(date);conflicted.add(date);counts.conflict++;
+        }
+        continue;
+      }
+      byDate.set(date,{date,value,footnotes:Array.isArray(row.footnotes)?row.footnotes:[]});
     }
-    if(!rows.length)throw error('BLS_CANDIDATE_SERIES_EMPTY');
-    found[id]=rows.sort((a,b)=>a.date.localeCompare(b.date));
+    found[id]=[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date));
+    counts.available=found[id].length;
   }
-  for(const id of ids)if(!Object.hasOwn(found,id))throw error('BLS_CANDIDATE_SERIES_MISSING');
-  return found;
+  return Object.defineProperty(found,'diagnostics',{value:diagnostics,enumerable:false});
 }
 
 function validPrior(doc){
