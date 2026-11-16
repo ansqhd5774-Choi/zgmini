@@ -8,7 +8,7 @@ const LOCK_TIMEOUT_MS=1500;
 const STALE_LOCK_MS=5*60_000;
 const MAX_LEDGER_BYTES=4096;
 const MAX_FUTURE_MS=60_000;
-const MIN_INTERVAL_MS=110; // safer than 100ms due clock granularity
+const MIN_INTERVAL_MS=126; // <=8 permits in any rolling 1000ms, given one verified global gate
 const MAX_WAIT_MS=30_000;
 const TERMINAL=new Set([400,401,403,404,405,410,422]);
 const RETRYABLE=new Set([429,500,502,503,504]);
@@ -27,7 +27,7 @@ function readLedger(file,now){
  if(raw?.version!==1||!Number.isSafeInteger(raw.cooldownUntil)||raw.cooldownUntil<0||
   (raw.lastReservedAt!==null&&(!Number.isSafeInteger(raw.lastReservedAt)||raw.lastReservedAt<=0))||
   Object.keys(raw).some(k=>!['version','lastReservedAt','cooldownUntil'].includes(k)))stop('SEC_LEDGER_INVALID');
- if((raw.lastReservedAt??0)>now+MAX_FUTURE_MS||raw.cooldownUntil>now+120_000)stop('SEC_CLOCK_OR_COOLDOWN_INVALID');
+ if((raw.lastReservedAt??0)>now+MAX_FUTURE_MS||raw.cooldownUntil>now+660_000)stop('SEC_CLOCK_OR_COOLDOWN_INVALID');
  return raw;
 }
 function writeLedger(file,value){
@@ -73,7 +73,7 @@ function withLock(base,action,{now=Date.now,waitMs=LOCK_TIMEOUT_MS}={}){
 }
 export function createSecSharedLimiter({base,minIntervalMs=MIN_INTERVAL_MS,maxWaitMs=MAX_WAIT_MS,
   now=Date.now,pause=sleep}={}){
- if(typeof base!=='string'||!path.isAbsolute(base)||!Number.isSafeInteger(minIntervalMs)||minIntervalMs<100||
+ if(typeof base!=='string'||!path.isAbsolute(base)||!Number.isSafeInteger(minIntervalMs)||minIntervalMs<126||
   !Number.isSafeInteger(maxWaitMs)||maxWaitMs<0||maxWaitMs>120_000)stop('SEC_GATE_CONFIG_INVALID');
  return {
   async reserve(){
@@ -95,11 +95,13 @@ export function createSecSharedLimiter({base,minIntervalMs=MIN_INTERVAL_MS,maxWa
    }
   },
   // Global cooldown on 429 (plus Retry-After) and 503 avoids retry storms.
-  noteResponse({status,retryAfter=null}={}){
-   if(status!==429&&status!==503)return {cooldownUpdated:false};
+  noteResponse({status,retryAfter=null,confirmedFairAccessBlock=false}={}){
+   if(status!==403&&status!==429&&status!==503)return {cooldownUpdated:false};
    return withLock(base,()=>{
     const at=now();const state=readLedger(ledgerPath(base),at);
-    let wait=status===429?2000:1000;
+    // Do not equate every 429 with a verified 10-minute fair-access block.
+    const waitDefault=status===429?30_000:status===403?60_000:1000;
+    let wait=confirmedFairAccessBlock===true&&status===403?600_000:waitDefault;
     if(typeof retryAfter==='string'){
      const value=retryAfter.trim();
      let seconds=null;
@@ -108,7 +110,7 @@ export function createSecSharedLimiter({base,minIntervalMs=MIN_INTERVAL_MS,maxWa
       const date=Date.parse(value);
       if(Number.isFinite(date)&&date>at)seconds=Math.ceil((date-at)/1000);
      }
-     if(seconds!==null)wait=Math.min(60_000,Math.max(wait,seconds*1000));
+     if(seconds!==null)wait=Math.min(600_000,Math.max(wait,seconds*1000));
     }
     state.cooldownUntil=Math.max(state.cooldownUntil,at+wait);
     writeLedger(ledgerPath(base),state);
@@ -149,26 +151,86 @@ export function classifySecEndpointSet({endpoints,sourceFresh=false,requiredCont
 // Opt-in helper for SEC GET/HEAD only. An existing caller must explicitly
 // replace its SEC fetch path: adding this module alone changes no runtime path.
 // Every retry consumes a fresh globally reserved slot. No 404 or 403 retry.
-export async function fetchSecControlled({gate,fetchImpl,url,init={},maxAttempts=3,pause=sleep}={}){
+
+const SEC_HOSTS=new Set(['data.sec.gov','www.sec.gov','sec.gov']);
+const SEC_TRANSIENT_NETWORK_ERRORS=new Set([
+ 'ETIMEDOUT','ECONNRESET','EAI_AGAIN','UND_ERR_CONNECT_TIMEOUT',
+ 'UND_ERR_HEADERS_TIMEOUT','UND_ERR_SOCKET','ECONNABORTED'
+]);
+const SEC_REDIRECT_CODES=new Set([301,302,303,307,308]);
+
+function approvedSecTarget(value,expectedOrigin=null){
+ let target;try{target=new URL(value);}catch{stop('SEC_URL_INVALID');}
+ if(target.protocol!=='https:'||!SEC_HOSTS.has(target.hostname)||
+    target.username||target.password||(target.port&&target.port!=='443'))stop('SEC_HOST_NOT_ALLOWED');
+ // No credential or cookie forwarding across different SEC hosts.
+ if(expectedOrigin!==null&&target.origin!==expectedOrigin)stop('SEC_REDIRECT_HOST_DENIED');
+ return target;
+}
+
+function isTransientNetworkError(error,signal){
+ if(signal?.aborted===true)return false;
+ const codes=[error?.code,error?.cause?.code];
+ return codes.some(code=>SEC_TRANSIENT_NETWORK_ERRORS.has(code));
+}
+
+// A redirect is an additional HTTP request, not a free extension of one permit.
+// The underlying fetch must honor redirect:'manual'; do not pass automatic
+// redirects into any transport adapter.
+export async function fetchSecControlled({
+ gate,fetchImpl,url,init={},maxAttempts=3,maxRedirects=3,pause=sleep
+}={}){
  if(!gate?.reserve||!gate?.noteResponse||typeof fetchImpl!=='function')stop('SEC_FETCH_CONFIG_INVALID');
- const target=new URL(url);
- if(target.protocol!=='https:'||!['data.sec.gov','www.sec.gov','sec.gov'].includes(target.hostname))stop('SEC_HOST_NOT_ALLOWED');
+ if(!Number.isSafeInteger(maxAttempts)||maxAttempts<1||maxAttempts>5||
+    !Number.isSafeInteger(maxRedirects)||maxRedirects<0||maxRedirects>5)stop('SEC_RETRY_CONFIG_INVALID');
+ const initial=approvedSecTarget(url);
  const method=String(init?.method??'GET').toUpperCase();
  if(!['GET','HEAD'].includes(method))stop('SEC_FETCH_METHOD_NOT_ALLOWED');
- if(!Number.isInteger(maxAttempts)||maxAttempts<1||maxAttempts>5)stop('SEC_RETRY_CONFIG_INVALID');
  const statuses=[];
+ let requests=0;
  for(let attempt=1;attempt<=maxAttempts;attempt++){
-  await gate.reserve();
-  const response=await fetchImpl(url,init); // Network errors propagate, never treated as success.
-  const status=response?.status;
-  if(!Number.isSafeInteger(status))stop('SEC_HTTP_STATUS_INVALID');
-  statuses.push(status);
-  if(status===429||status===503){
-   gate.noteResponse({status,retryAfter:response.headers?.get?.('retry-after')??null});
+  let current=initial;
+  let redirects=0;
+  const seen=new Set([initial.href]);
+  let mustRetry=false;
+  for(;;){
+   await gate.reserve(); // Every attempt and every redirect consumes one permit.
+   requests++;
+   let response;
+   try{
+    response=await fetchImpl(current.href,{...init,method,redirect:'manual'});
+   }catch(error){
+    if(attempt<maxAttempts&&isTransientNetworkError(error,init?.signal)){
+     mustRetry=true;
+     break;
+    }
+    throw error;
+   }
+   const status=response?.status;
+   if(!Number.isSafeInteger(status)||status<100||status>599)stop('SEC_HTTP_STATUS_INVALID');
+   statuses.push(status);
+   if(SEC_REDIRECT_CODES.has(status)){
+    const location=response.headers?.get?.('location');
+    if(!location)stop('SEC_REDIRECT_LOCATION_MISSING');
+    if(redirects>=maxRedirects)stop('SEC_REDIRECT_LIMIT');
+    const next=approvedSecTarget(new URL(location,current).href,initial.origin);
+    if(seen.has(next.href))stop('SEC_REDIRECT_LOOP');
+    seen.add(next.href);
+    redirects++;
+    // Release the redirect response before issuing the next request.
+    try{await response.body?.cancel?.();}catch{}
+    current=next;
+    continue;
+   }
+   if(status===403||status===429||status===503){
+    gate.noteResponse({status,retryAfter:response.headers?.get?.('retry-after')??null});
+   }
+   const decision=secRetryDecision({status,attempt,maxAttempts,method});
+   if(!decision.retry)return {response,attempts:attempt,statuses,requests};
+   mustRetry=true;
+   break;
   }
-  const decision=secRetryDecision({status,attempt,maxAttempts,method});
-  if(!decision.retry)return {response,attempts:attempt,statuses};
-  await pause(Math.min(4000,200*Math.pow(2,attempt-1)));
+  if(mustRetry)await pause(Math.min(4000,200*Math.pow(2,attempt-1)));
  }
  stop('SEC_RETRY_LOOP_INVALID');
 }
