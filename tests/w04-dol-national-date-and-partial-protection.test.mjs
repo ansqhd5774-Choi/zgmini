@@ -172,7 +172,7 @@ test('W04 DOL HTTP-200 Informix outage is a supplier error, not an XML parsing r
  assert.ok(!JSON.stringify(fetched.nationalResponseEvidence).includes('PRIVATE_PROVIDER_ERROR'));
  const runs=[];
  const store={
-  async initialize(){},async getLatestRunInMode(){return null;},
+  async initialize(){},async getLatestRunInMode(){return null;},async getLatestRun(){return null;},
   async acquire(){return {acquired:true};},async release(){return true;},
   async writeRawSnapshot(){return {snapshotId:1,bodySha256:'mock',chunkCount:1,noop:false};},
   async upsertObservationRows({rows}){return {inserted:rows.length,revised:0,noop:0,rejected:0};},
