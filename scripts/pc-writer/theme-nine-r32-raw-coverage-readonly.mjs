@@ -147,7 +147,11 @@ export function auditR32StoredRawWithSpec({dataRoot,rosterSha,symbols}={}){
    return {symbol,coverageStatus:earliest===null?'NO_VERIFIED_BARS':'VERIFIED_BARS',
     firstNYDay:earliest,lastNYDay:x.at(-1)??null,verifiedNYDays:x.length,
     verifiedSpyWindowDays:x.filter(d=>spy252.has(d)).length,
-    absentOnObservedSPYDaysAfterFirst:candidateDates?.length??null};
+    absentOnObservedSPYDaysAfterFirst:candidateDates?.length??null,
+    firstAbsentObservedSPYNYDay:candidateDates?.[0]??null,
+    lastAbsentObservedSPYNYDay:candidateDates?.at(-1)??null,
+    recentAbsentObservedSPYNYDays:candidateDates?.slice(-4)??null,
+    absentObservedSPYSampleTruncated:candidateDates===null?null:candidateDates.length>4};
   });
   const partial=cp23.incomplete||cp23.failed||cp35?.incomplete||cp35?.failed;
   return {...result,status:partial?'PARTIAL':'PASS',code:partial?'R32_CHECKPOINT_INCOMPLETE_OR_FAILED':'R32_SAVED_RAW_SHA_CHECKPOINT_VERIFIED_NOT_CURRENT',
