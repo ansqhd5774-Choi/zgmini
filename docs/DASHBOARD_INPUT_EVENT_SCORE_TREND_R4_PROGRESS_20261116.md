@@ -1,6 +1,6 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
-> **현재 즉시 상태 (2026-11-17 08:38 KST): 13/75 (17.3%), 잔여 62개. #36 CNN Reader 코드/CI PASS, 원본 archive Sidecar BLOCKED 및 D1 실증 미완료. #37 한국 Rev7 source 함수 fixture 12/12 PASS, 실제 KRX/D1 미확정. #38 미국 IEX 잠정 등락 3비율 저장 Reader/API/UI source 계보 확인, 실제 게시·Production 실증 미확정. #36/#37/#38 모두 PARTIAL이며 고유 DONE 추가 0. 다음 필수 실행 #38 실 게시 비율 선택적 확인.
+> **현재 즉시 상태 (2026-11-17 KST): 14/75 (18.7%), 잔여 61개. #39(D04 한국 등락)은 실제 한국 counts 소스/거래일 부재 확인 후 현재 UI 미연결·임의 비율 노출 차단·원담당 새 계약 경계를 구분하는 소스 감사/설계 단계 DONE. #38(D03 미국 IEX 잠정 3비율)은 승인 D1 실제 게시/공개 GET 검증이 아직 불가하므로 PARTIAL로 보존. #36 CNN Sidecar·#37 KRX 운영 동치도 별도 미완료. 다음 독립 실행 #40(D05 종합점수) 신규 1개 유효 입력→현재점·실점수 아카이브 검증.
 
 ## 현재 인계 정본 — 다음 담당자 첫 읽기 (2026-11-16 KST)
 
@@ -10,15 +10,15 @@
 |---|---|
 | 저장소 / 원장 브랜치 | `ansqhd5774-Choi/zgmini` / `codex/ui-improvements` |
 | 계획 / **지정 진행 기록** | `docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_EXECUTION_R4_20261116.md` / **`docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_R4_PROGRESS_20261116.md`** |
-| 진행 (단계별 소스·fixture·설계 통과) | **13/75 (17.3%), 잔여 62개** |
-| DONE 단계 (중복 없음) | **#04, #05, #08, #10, #21, #22, #23, #24, #26, #27, #33, #34, #35** |
+| 진행 (단계별 소스·fixture·설계 통과) | **14/75 (18.7%), 잔여 61개** |
+| DONE 단계 (중복 없음) | **#04, #05, #08, #10, #21, #22, #23, #24, #26, #27, #33, #34, #35, #39** (14개) |
 | #34 60초 화면 갱신·역행 차단 | **DONE (현재 main source/fixture)**. `live-refresh.mjs` 60초 주기, `dashboard-ui.tsx`·`use-stored-index.ts` 수용/역행 보호 경로 확인. 신규 유효값·0·PARTIAL 및 낡은 관측·게시 응답 판정 7/7, UI 연결 소스 4/4 PASS. Production 유저 육안 검수는 최종 단계 |
 | 단계 증거 범위 | #24는 **기존 저장 JSON 활용·Draft 설계/회귀 PASS**까지의 설계 DONE. 실제 15분 보존 정책 수정·PC 설치·D1 반영은 **미완료** |
-| PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #28, #29, #36, #37, **#38**. #36 CNN Sidecar 아카이브 정체, #37 한국 Rev7 완료 거래일 실PC/D1 동치, #38 IEX 잠정 새 게시 D1/GET/UI 동치 모두 미완료 |
-| 다음 단 하나의 실행 | **#38 (W06 D03 미국 등락, PARTIAL)** 승인된 IEX 장중 관측의 D1 key public:market-breadth-provisional-r1:usa의 날짜/slotEndUtc/상승·보합·하락·미관측 비율/body/stored_at을 공개 GET /api/market-breadth?market=usa&phase=provisional 및 카드 3개 수치에 선택적 대조. NY 정규장 밖/유효 점 없음은 미제공이 정상. MarketParquet 사용 금지, 0–100 새 점수·과거 이력 허위 복원 금지. #36 CNN·#37 KRX 운영은 각 원담당의 별도 미완료 |
-| 다음 담당·대상·입력 | W06 #38: lib/market-breadth/us-provisional-r1.mjs, app/api/market-breadth/route.ts, app/market-breadth-strip.tsx, tests/us-breadth-ui-provisional-r22.test.mjs; 기존 D1 저장/공개 API 증거가 있으면 저장 시각/관측 기준일/3비율 일치 확인. 수집·Writer·DB·주기 변경 금지 |
+| PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #28, #29, **#36, #37, #38**. #39는 현행 UI 미연결/원담당 입력 계약 감사 범위만 DONE이며 신규 counts 수집·공개가 완료됐다는 의미가 아님. #38 새 IEX 실D1 GET 미확정 유지 |
+| 다음 단 하나의 실행 | **#40 (W06 D05 미국 종합점수)** 기존 12도메인 입력 중 1개가 신규 유효 관측으로 저장된 뒤 CM-R1 재계산 current 및 동일 계산시각 실점수 아카이브에 반영되는지 선택적 원본/fixture로 검증. 기존 #35 UI 카드/차트 일치 회귀와 #13 PC Writer 게시 미완료 증거를 재사용하고, 실제 새 입력·원본 이력 없는 곳에 값/점 생성 금지. #38 IEX 게시·#36 CNN Sidecar·#37 KRX 게시 Owner 미완료는 독립 후속으로 유지 |
+| 다음 담당·대상·입력 | W06 #40: `scripts/pc-writer/run-local.mjs` → `scripts/pc-writer/market.mjs` → `lib/composite-observed-history-r1.mjs`/`scripts/pc-writer/composite-observed-archive-r1.mjs` → `app/api/market-score/observations/route.ts` 및 `app/dashboard-ui.tsx`, 기존 #14~16·#35 회귀증거. 운영 PC source/Writer/산식·DB/TTL·15분 보존·수집 주기는 원담당 승인 없이 수정 불가. #38 D1 선택적 readback은 추후 실제 IEX 관측 available 시 재검증 |
 | #36 남은 통과 조건 | 공개 GET 소스/CI는 PR #1196 통과. 운영 CNN 현재 원본은 최신이나 원본 observation archive 108점/마지막 11/06 UTC, PC 검증 archive 108점/마지막 11/07 UTC로 10일 이상 정체. 운영 원담당 정상 저장 및 D1 각 날짜 readback과 공개 GET 원본 시각 일치 없이는 #36 DONE 아님 |
-| 이후 후보(이번 실행에 혼입 금지) | #28 모델/방법론 계보 공개 이력의 원담당 변경 범위(현행 일별 snapshot에 modelVersion 저장됨, 평면 chart/observed archive에는 없음); #29 기준일 이후 미래 snapshot 표시 결함/동일시각 정정 (Writer 원담당). D01~D27 실제 미연결 작업, Draft #1181·#1185 승인 대기. 비차단 작업은 계속 |
+| 이후 후보(이번 실행에 혼입 금지) | #28 모델/방법론 계보 공개 이력의 원담당 변경 범위(현행 일별 snapshot에 modelVersion 저장됨, 평면 chart/observed archive에는 없음); #29 기준일 이후 미래 snapshot 표시 결함/동일시각 정정 (Writer 원담당). D01~D27 원담당 미연결 항목, Draft #1181·#1185 승인 대기. 비차단 작업은 계속 |
 | 최근 R4 기능 병합 증거 | #1177·#1180·#1182·#1184·#1187·#1189·#1193 및 **[#1196](https://github.com/ansqhd5774-Choi/zgmini/pull/1196)** 병합. #1196 main merge SHA **`40d6156a1144350c3a23a02cb0db26e56bf3adde`**, 4파일만 변경, 실제 공개 GET D1 stub 12건 + 단위시험 6건, PR head CI SUCCESS. 운영 PC archive 복구와 별개 |
 | 미병합 원담당 검토 | [Draft #1181](https://github.com/ansqhd5774-Choi/zgmini/pull/1181) Collector의 관측일 역행 차단 (#11), [Draft #1185](https://github.com/ansqhd5774-Choi/zgmini/pull/1185) Writer의 15분 이내 변경점 영구 기록 (#24 설계 이후 구현). 두 건 모두 CI 성공이나 **원담당 적용 승인·main 병합·PC 설치 없음** |
 | PC Runtime·SQLite→D1 실제 게시 | **운영 PC A급 #1806 PASS**, Run `43979172460`, JSON/TXT 2/2 재조회, SQLite opened, writes/provider calls/D1 writes=0. CNN current `31.0190476` / `observedAt=2026-11-16T22:59:30Z`, 원본 archive **108점·lastAt 2026-11-06T23:59:54Z**, PC checked archive **108점·lastAt 2026-11-07T00:30:02.951Z**; 이전 #1337(11/12)과 108·108/마지막 시각 동일. 종합 archive 48→70점 전진. Sidecar source gate `archive-run.mjs CHANGED`, 비인증 Block reason 범주 SOURCE/SHA(확정 원인 아님). CNN archive 새 관측의 D1 게시·공개 GET 실측 **미확인**. 별도 #13 운영 게시 종단 실증 미확정 |
@@ -284,3 +284,12 @@
 - LAST PASS: 저장된 IEX 잠정 key→공개 read-only GET→미국 등락 카드 3비율 계보 확인. FIRST UNVERIFIED: 동일 관측의 D1 body/stored_at과 GET header+payload, 카드 UI 실제 값 일치 여부. 마찬가지로 승인된 PC 게시 관측 미확정. #38 PARTIAL.
 - 다음 필수 실행 1개: W06 #38의 승인된 기존 잠정 게시 영수증/공개 GET에서 기준일·slotEndUtc·상승/보합/하락/미관측 비율을 선택적 비교. 실측 접근 제한 시 해당 운영 조건만 STATE_UNKNOWN; 원담당 수정·DB/주기/예약 변경 0.
 - 종료 진행: 13/75 (17.3%), 잔여 62개. DONE 추가 0; 소스 경로 확인을 운영 완료로 확대 금지.
+
+## [2026-11-17 KST] R4 #39 — 한국 등락 counts 미연결 및 향후 완료 거래일 표시 경계 감사 (DONE: UI/설계)
+
+- 담당·범위: W06의 한국 D04 UI 미연결 상태 감사 및 한국 원담당에게 필요한 안전 입력계약 정의. 운영 Collector·Writer/DB·산식 변경하지 않음. 시작 13/75(17.3%).
+- LAST PASS(현행 UI 직접 소스 증거): `app/country-fear-greed.tsx` blob `1a7448f627a2c445f1939055dbea7caecbecf477`는 `<KoreanCountryCard/>`로 렌더링, `app/korea-composite-view.tsx` blob `4705fa8b0355e9cdae41b34096adf9ed60dd5e48`는 `showBreadth=false` 기본·`showBreadth && !detail`에만 한국 breadth 스트립을 마운트. 따라서 현재 대시보드에서 한국 등락 별도 3비율을 실제 보유하지 않은 채 표시하지 않음. `tests/public-feed-storage.test.mjs` blob `37e62b8d1df4b407382f62e21944e0b9d1fe352a`는 showBreadth 부재를 명시적으로 보호하고 있으며 main CI 회귀 단계 SUCCESS 기존 증거 재사용.
+- 추가 boundary: `app/market-breadth-strip.tsx` blob `ede282d5e875ad8b4f7ba4c65d92b8801aaf0fcc`의 한국 경로는 USA IEX와 분리되어 선택적 `counts`만 `normalizedCounts`로 검증; 총 0건/음수/정수 아닌 값은 미제공이며 연결할 counts 없는 경우 `연결 예정` 문구. 이 컴포넌트의 현재 counts 타입에는 `observationDate`/완료 거래일·sourceVersion·stored_at가 없음. 따라서 **현재 counts-only props를 무조건 연결하면 신규 KRX 완료 거래일 적격성·이전 유효 거래일 이월을 증명할 수 없으므로 그대로 노출하면 안 됨**. 안전 연결을 위해 한국 원담당이 별도 승인 저장 결과에 완료 거래일·건수·저장시각/원천 계보를 포함하고 READY/결측/휴장/STALE을 판정한 후 UI props를 전달하도록 인계. 새 API/점수/중복 Collector를 임의 설계·설치하지 않음.
+- 완료 판정: #39는 '현행 미연결 정직한 표시 + 후속 신규 거래일 연결 조건 명시/소유 분리'라는 **감사·경계 설계** 요건 DONE. 실제 신규 한국 등락 counts 수집·D1 게시·공개 표시 DONE이 아니며 그 구현은 한국 원담당의 별도 미완료. 이번 신규 Node 실행·PC 운영/D1 쓰기·Cloudflare Production 확인 없음. 소스·이전 CI 재사용 범위와 운영 적용을 구분함.
+- FIRST UNVERIFIED/남은 조건: 한국 원담당이 승인된 COMPLETE 거래일 counts/원천·저장시각 및 독립 표출 계약을 제공하기 전에는 새 UI 비율 표시 불가. 임의 IEX 값 한국 재사용·합성 0~100 점수 생성·가짜 보합 0 불허.
+- 다음 단 하나의 실행: W06 #40 미국 종합점수 12도메인 중 유효 입력 1개 변경이 실제 재계산→current→composite-observed 점과 차트에 연결되는지 기존 소스·선택적 유효 자료·fixture 확인. 13/75→14/75 (18.7%), 잔여 61; #36/#37/#38 PARTIAL 계속, 원담당 운영 미완료 차단 확대 금지.
