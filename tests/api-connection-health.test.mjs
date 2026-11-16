@@ -293,3 +293,13 @@ test('untrusted standalone HTTP host snapshot never exposes host names as public
  assert.equal(body.http,null);
  assert.equal(body.total,null);
 });
+
+test('HTTP quota guard and 429 are unknown, never a false orange connection failure',()=>{
+ const snapshot=buildMonitoredSourceHealth(monitoredCalendar(),recentReceipts(),evidenceNow);
+ snapshot.httpHosts=allHttpHosts(evidenceNow,{3:'failure',4:'failure'});
+ snapshot.httpHosts.items[3].lastEventStatuses={'429':2};
+ snapshot.httpHosts.items[4].lastEventStatuses={PROVIDER_QUOTA_GUARD:2};
+ const status=publicApiConnectionSummary(summarizeApiConnectionHealth(snapshot,evidenceNow));
+ assert.deepEqual(status.http,{normal:30,failed:0,unknown:2,total:32});
+ assert.equal(status.status,'unknown');
+});
