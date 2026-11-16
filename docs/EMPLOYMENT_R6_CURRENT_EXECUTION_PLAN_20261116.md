@@ -68,7 +68,8 @@
 
 - **신규 실PC 성공:** [#1786](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1786) / Run 43898278381 `R6_WAL_MEMORY_PREFLIGHT_READY` (free RAM 2275MiB, Core WAL 양쪽 sidecar 존재). 이어서 단회 [#1787](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1787) / Run 43898451571 `EMPLOYMENT_R6_READONLY_STAGE_COMPLETED`, 실제 sqliteOpened, 결과 JSON/TXT 2/2 재조회. 이 결과로 PIT-03 8/8 완료. 이전 #1780 R13 inventory 차단은 해당 요청의 당시 결과로 보존하며 공통 조회 오류 원인 수정 완료라고 주장하지 않음.
 - **실제 남은 문제:** Core Current 중 History 누락 키 2,880; 후보 matching·메타 일치 2,625; 후보 증빙 불충분 255; 후보 Current 충돌 14. 이 숫자만으로 10년 역사적 TRUE_PIT 가용성, 과거 주별 as-of, 복구 승인 범위를 결론 낼 수 없음. `STATE_CLAIMS_BREADTH` 최종 점수는 여전히 `PARTIAL_HISTORY`.
-- **다음 실행 하나:** `PIT-04-01`로 실제 51지역×주차 Current의 관측일·최신 시각을 공식 저장 근거에서 확인. 현 A는 주차별 원자료를 공개하지 않는 aggregate이므로 기존 등록 `employment-r6-collection-evidence-readonly`가 제공하는 안전 projection을 먼저 코드 계약으로 확인하고, 필요한 경우만 최소 비민감 주차별 read-only 출력을 정규 승인 경로로 준비. DB 수정/후보 자동 승격/정규 수집/임의 공급자 호출 금지.
+- **현재 새 안전 거부:** [#1789](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1789) / Run 43899712917 등록 A evidence 조회는 `STATE_UNKNOWN/R6_EVIDENCE_WAL_SIDECARS_ABSENT`, `sqliteOpened=false`, JSON/TXT 2/2 회수. #1786 시점 WAL 보조 파일 존재와 이후 #1789 시점 부재는 다른 시각의 결과다. 수명주기 원인 미확정. 새 PIT-04 실측으로 계산하지 않음.
+- **다음 실행 하나:** `PIT-04-01`의 안전한 source 경로를 구체화한다. 현 등록 A는 주차별 aggregate만 출력해 51지역별 최대 관측일이 노출되지 않으며, 때로 WAL sidecar 부재로 SQLite 접근 이전에 종료된다. 승인된 기존 조회와 fixture·공용 Controller owner 경로에서 불필요한 상태 변화 없이 정당한 snapshot·고정 비민감 per-region/date projection의 최소 수정 가능성을 검증한다. 무승인 DB/Task 수정·sidecar 강제 생성·동일 requestId 재요청 금지.
 
 ## 5. 진행률 산정
 
@@ -91,7 +92,7 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 | PIT-01 기존 운영 완료 증거 확정·재사용 | 7 | 7 | 0 | DONE |
 | PIT-02 소스 계보 판정기·격리 회귀 완료 | 7 | 7 | 0 | DONE |
 | PIT-03 현재 운영 PC의 실제 PIT 결손 확보 | 8 | 8 | 0 | DONE (PC #1786/#1787 읽기 전용 PASS) |
-| PIT-04 지역별·주별 원자료와 PIT 정합성 분류 | 8 | 0 | 8 | READY — PIT-04-01 |
+| PIT-04 지역별·주별 원자료와 PIT 정합성 분류 | 8 | 0 | 8 | BLOCKED — PIT-04-01 A WAL sidecar·projection |
 | PIT-05 복구 가능성 판정·최소 운영 승인 설계 | 8 | 0 | 8 | DEFERRED (선행 근거 필요) |
 | PIT-06 선별 복구 코드·fixture 회귀·시뮬레이션 | 8 | 0 | 8 | DEFERRED (선행 근거 필요) |
 | PIT-07 승인된 PC의 최소 History 복구·원장 | 8 | 0 | 8 | DEFERRED (선행 근거 필요) |
@@ -143,7 +144,7 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 
 | 세부 ID | 실제 실행·분석 작업 | 입력·근거 | 완료 판정 / 결과 | 상태 |
 |---|---|---|---|---|
-| PIT-04-01 | Current 관측일·지역별 최신 시각 정렬 | PIT-03 실측 Current metadata | 지역별 최대 관측일 및 51개 완전 주차 도출 | TODO |
+| PIT-04-01 | Current 관측일·지역별 최신 시각 정렬 | #1787 실제 aggregate 및 #1789 WAL 상태 거부·현 A 안전 projection 계약 | 지역별 최대 관측일·51개 완전 주차 실증 미충족; 단회 A #1789 STATE_UNKNOWN, 무한 재요청/DB 우회 금지 | BLOCKED |
 | PIT-04-02 | History를 관측일·지역·최신 개정 단위로 정렬 | PIT-03 History revision | latest revision과 이전 revision을 별도로 식별 | TODO |
 | PIT-04-03 | Current와 최신 History의 값·sourceHash 정확 대조 | 관측키·원본 해시 | 정확 일치/누락/상충을 독립 버킷으로 분리 | TODO |
 | PIT-04-04 | availableAt·retrievedAt·기록 시각의 PIT 적격성 검산 | 공식 관측 시각·DB 메타 | 미래 가용 데이터를 과거 TRUE_PIT로 승인하지 않음 | TODO |
@@ -253,3 +254,10 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 - A/light [#1786](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1786) Run 43898278381 `PASS/R6_WAL_MEMORY_PREFLIGHT_READY`, free 2275MiB, Core WAL/sidecars·candidate ROLLBACK 정상.
 - A/heavy [#1787](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1787) Run 43898451571 `PASS/EMPLOYMENT_R6_READONLY_STAGE_COMPLETED`, `sqliteOpened=true`, 2/2 원격 artifact 재조회. `Current=40726`, `History revisions=38753`, `missing=2880`, `matching candidate=2625`, `unverified=255`, `conflicting candidate overlap=14`. 공급자/DB/D1 쓰기 0.
 - 현재 상세 완료 **22/72 (30.6%)**, 미완료 **50/72**. `PIT-03-03~07` 5개 신규 완료; `PIT-04-01` 다음. 과거 #1780 R13 오류의 구조적 근본 원인 수정·메모리 영구 정상·PIT 정합성 복구·웹 점수 29/29는 주장하지 않는다. 전체 증거는 [진행 원장 §13](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md)에 누적 보존.
+
+
+### 2026-11-17 PIT-04-01 현재 A 데이터 근거 조회 안전거부 — 신규 진행 기록
+
+- [#1789](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1789) Run 43899712917 `STATE_UNKNOWN/R6_EVIDENCE_WAL_SIDECARS_ABSENT`; 실제 Core SQLite 오픈 0, `stateClaims=null`, 공급자/DB/D1 쓰기 0; JSON/TXT 원격 재조회 2/2. Actions conclusion SUCCESS를 기능 PASS로 해석하지 않는다.
+- 같은 인가된 A는 주차별 aggregate만 반출하고 **지역별 최대 관측일/History revision as-of가 없으므로**, sidecar가 있더라도 `PIT-04-01` 완전 판정은 추가 정규 읽기 안전 경로 없이는 불가. 기존 #1787 2,880 결손/14 후보 충돌은 보존하고 TRUE_PIT 승격 근거로 사용하지 않는다.
+- `PIT-04-01` BLOCKED, 전체 **22/72 DONE / 50 미완료** 불변. 다음은 공통 검증 보호를 유지한 최소 비민감 저장 이력 조회 구현·fixture 적합성 확인. 상세 원본 [진행 기록 §14](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md) 참조.
