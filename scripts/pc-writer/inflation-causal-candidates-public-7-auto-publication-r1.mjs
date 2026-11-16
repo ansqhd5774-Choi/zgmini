@@ -5,8 +5,6 @@
 import {isDeepStrictEqual} from 'node:util';
 import {createHash} from 'node:crypto';
 import {INFLATION_CANDIDATES_7_PUBLIC_KEY} from '../../worker/inflation-causal-candidates-public-7-r1.mjs';
-import {W01_ACTIVE_CANDIDATES} from '../../lib/inflation-causal-candidates-public-7-catalog.mjs';
-const W01_ACTIVE_IDS=new Set(W01_ACTIVE_CANDIDATES.map(item=>item.id));
 
 const fail=code=>{throw Error(code);};
 const noWrites=(status,ready)=>({status,ready,providerCalls:0,dbWrites:0,
@@ -37,8 +35,7 @@ export function preserveCandidates7RowEvidence(previous,preview){
     return row;
   });
   if(isDeepStrictEqual(payload.indicators,preview.indicators))return preview;
-  payload.status=payload.indicators.filter(row=>W01_ACTIVE_IDS.has(row.id))
-    .every(row=>row.status==='READY')?'READY':'PARTIAL';
+  payload.status=payload.indicators.every(row=>row.status==='READY')?'READY':'PARTIAL';
   payload.sourceStoredAt=Math.max(...payload.indicators.filter(row=>
     row.status==='READY'||row.status==='STALE').map(row=>Date.parse(row.sourceStoredAt)));
   payload.sourceVersion='INFL7_PRESENTATION_'+createHash('sha256')
