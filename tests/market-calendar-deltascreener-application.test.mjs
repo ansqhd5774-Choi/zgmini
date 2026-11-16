@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
+import {readFileSync} from 'node:fs';
 import {parseDeltaScreenerCsv,gradeCalendarTickersFromDelta} from '../lib/market-calendar-deltascreener-snapshot.mjs';
 import {makeDeltaR44Public,validateDeltaR44Public,
  DELTA_R44_METHOD,DELTA_R44_LEGACY_METHOD} from '../lib/market-calendar-deltascreener-public.mjs';
@@ -73,4 +74,12 @@ test('private CSV acquisition does not refetch cached data and rejects unsigned 
  const again=await collectPinnedDeltaOnce({store,now:1794700000000,fetchImpl:async()=>{calls++;throw Error('NO')}});
  assert.equal(again.status,'EXISTING_INPUT_INVALID_PRESERVED');
  assert.equal(calls,1);
+});
+
+test('mixed-vintage market calendar filter labels do not misstate ER1 97 as universal',()=>{
+ const client=readFileSync(new URL('../app/market-calendar/market-calendar-client.tsx',import.meta.url),'utf8');
+ assert.match(client,/기업 실적: 게시된 시총 중요도 또는 실적 점수/);
+ assert.match(client,/기업 실적: 시총 중요도 또는 실적 점수\(행별 적용 기준\)/);
+ assert.match(client,/기업 실적 게시 등급/);
+ assert.doesNotMatch(client,/기업 실적[^\n]*97점 이상/);
 });
