@@ -72,10 +72,11 @@ function summarizeMonitoredSourceSnapshot(snapshot,now){
     .filter(([,count])=>count>0).map(([status])=>status);
    const hardFailure=status=>status==='NETWORK_ERROR'||
     (/^[45][0-9]{2}$/.test(status)&&status!=='404'&&status!=='429');
-   const provenConnected=item=>item.state==='normal'||(
-    item.state==='failed'&&item.reasonCode==='LAST_EVENT_HAS_FAILURE'&&
+   const provenConnected=item=>(
+    item.state==='normal'||(item.state==='failed'&&
+     item.reasonCode==='LAST_EVENT_HAS_FAILURE'))&&
     codes(item).some(status=>/^2[0-9]{2}$/.test(status))&&
-    !codes(item).some(hardFailure));
+    !codes(item).some(hardFailure);
    const normalHosts=repeated.filter(provenConnected).length;
    const failedHosts=repeated.filter(item=>item.state==='failed'&&
     codes(item).some(hardFailure)).length;
