@@ -9,7 +9,7 @@ import {DOMAIN_WEIGHTS} from '../lib/market-score/composite-model-r1.mjs';
 
 const iso=(time,value)=>({label:'2026-11-16T'+time+'Z',value});
 const daily=[{label:'2026-11-15',value:48},{label:'2026-11-16',value:50}];
-const verified=(raw,clock='12:10:00')=>iso(clock,amplifyCompositeDisplayScore(raw));
+const verified=(raw,clock='12:10:00')=>({...iso(clock,amplifyCompositeDisplayScore(raw)),boundToPublishedCard:true});
 const summary=(raw,clock,archive=[],days=1)=>mergeCompositeObservedDisplay(
  marketTrendWindowR1(amplifyCompositeDisplayTrend(daily),days),
  archive.map(p=>({...p,value:amplifyCompositeDisplayScore(p.value)})),
@@ -119,4 +119,10 @@ test('R4 #35 UI uses exactly the same publication for both current cards and cha
  assert.match(page,/mergeCompositeObservedDisplay\(daily,archived,periodDays,current\)/);
  assert.match(page,/domain\?\.status==='READY'&&validPublicScore\(domain\.score\)/);
  assert.match(page,/appendPublishedDomainCurrent\(daily,current,periodDays\)/);
+});
+
+test('R4 #35 generic unbound display keeps newer actual archive as existing contract requires',()=>{
+ const archived=[iso('12:00:00',50)];
+ const current=iso('11:50:00',56);
+ assert.deepEqual(mergeCompositeObservedDisplay(daily,archived,1,current).map(p=>p.value),[50]);
 });
