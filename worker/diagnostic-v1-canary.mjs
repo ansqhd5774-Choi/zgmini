@@ -246,7 +246,7 @@ export async function collectDiagnosticLiveInputs({
     tracked('externalResults',()=>impl.fetchBis('WS_DSR', {fetchImpl: bounded.fetchImpl}),5),
     tracked('externalResults',()=>impl.fetchBis('WS_TC', {fetchImpl: bounded.fetchImpl}),6),
   ]),
-  tracked('fundFlows',()=>impl.fetchFundFlows({fetchImpl: bounded.fetchImpl})),
+  tracked('fundFlows',()=>impl.fetchFundFlows({fetchImpl: bounded.fetchImpl,env})),
   tracked('breadth',()=>collectBreadthB1R1Runtime({env, fetchImpl})),
   tracked('earnings',()=>impl.fetchEarnings({asOf, db:env?.DB})),
   ]);

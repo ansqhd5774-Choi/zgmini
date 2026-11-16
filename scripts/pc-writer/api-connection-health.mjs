@@ -75,7 +75,7 @@ export function buildApiConnectionHealthFromLog(base,now=Date.now(),{fileSystem=
    h.requests+=request.requests;h.days.add(kstDay(at));h.events.push(at);
    hostEventRequests.set(obj.at+'|'+host,request.requests);
    if(success)h.lastSuccessAt=Math.max(h.lastSuccessAt??0,at);
-   if(!h.last||h.last.at<=at)h.last={at,outcome:success&&!failures?'success':failures&&!success?'failure':'mixed'};
+   if(!h.last||h.last.at<=at)h.last={at,outcome:success&&!failures?'success':failures&&!success?'failure':'mixed',statuses:Object.fromEntries(codes)};
   }
  }
  // A separate fixed-path append-only receipt avoids changing the existing
@@ -169,7 +169,9 @@ export function buildApiConnectionHealthFromLog(base,now=Date.now(),{fileSystem=
    return {host:h.host,requests:h.requests,observedDays:h.days.size,
     endpointFingerprints:h.endpointIds.size,endpointEvidenceDays:h.endpointDays.size,
     lastAttemptAt:h.last?.at??null,lastSuccessAt:h.lastSuccessAt,
-    lastOutcome:h.last?.outcome??'unknown',expectedIntervalMs:cadence};
+    lastOutcome:h.last?.outcome??'unknown',expectedIntervalMs:cadence,
+    // Previously scrubbed HTTP status counts from append-only PC event log.
+    lastEventStatuses:h.last?.statuses??null};
   });
  const observedEndpointFingerprints=items.reduce((sum,item)=>sum+item.endpointFingerprints,0);
  const independentObservedFingerprintCount=[...independentIds.values()].reduce((n,ids)=>n+ids.size,0);

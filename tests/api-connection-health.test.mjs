@@ -42,12 +42,16 @@ test('latest HTTP503 overrides older HTTP200, without pretending collection jobs
 test('mixed 2xx and network error must not be labelled normal',()=>{
  const x=summarize([event(now-86400000,'api.bls.gov','200'),mk(now-60000,{'api.bls.gov':{requests:2,statuses:{'200':1,NETWORK_ERROR:1}}})]);
  assert.equal(x.failed,1);assert.equal(x.items[0].lastOutcome,'mixed');
+ assert.equal(x.items[0].reasonCode,'LAST_EVENT_HAS_FAILURE');
+ assert.deepEqual(x.items[0].lastEventStatuses,{'200':1,NETWORK_ERROR:1});
 });
 
 test('scheduled silence is stale only when repeated cadence has evidence',()=>{
  const stamps=[-10,-9,-8,-7,-6,-5,-4].map(n=>now+n*86400000);
  const x=summarize(stamps.map(t=>event(t,'api.earningsapi.com','200')));
  assert.equal(x.items[0].state,'stale');assert.equal(x.failed,1);
+ assert.equal(x.items[0].reasonCode,'CADENCE_OVERDUE');
+ assert.equal(x.items[0].cadenceSupported,true);
  assert.equal(x.items[0].expectedIntervalMs,86400000);
 });
 
@@ -119,6 +123,31 @@ test('three burst-only collection days do not imply hourly source stoppage',()=>
  const result=summarize(ev);
  assert.equal(result.items[0].observedDays,3);
  assert.equal(result.items[0].state,'unknown');
+ assert.equal(result.items[0].reasonCode,'NONPERIODIC_CADENCE_UNVERIFIED');
+ assert.equal(result.items[0].cadenceSupported,false);
  assert.equal(result.failed,0);
  assert.equal(result.unknown,1);
+});
+
+test('invalid or secret-bearing published status counters fail closed',()=>{
+ const snap=fixture(({base,write})=>{
+  write([event(now-86400000,'data.sec.gov','200'),
+   event(now-60000,'data.sec.gov','503')]);
+  return buildApiConnectionHealthFromLog(base,now);
+ });
+ snap.items[0].lastEventStatuses={'503':1,SECRET_TOKEN:1};
+ const out=summarizeApiConnectionHealth(snap,now);
+ assert.equal(out.reason,'INVALID_OBSERVATION');
+ assert.equal(out.total,null);
+ assert.equal(JSON.stringify(out).includes('SECRET_TOKEN'),false);
+});
+test('explicit whitelisted SEC HTTP statuses are extracted from the latest existing event only',()=>{
+ const result=summarize([
+  event(now-86400000,'data.sec.gov','200',5),
+  mk(now-20000,{'data.sec.gov':{requests:4,statuses:{'200':2,'403':1,'429':1}}})
+ ]);
+ assert.equal(result.items[0].requests,9);
+ assert.equal(result.items[0].state,'failed');
+ assert.deepEqual(result.items[0].lastEventStatuses,{'200':2,'403':1,'429':1});
+ assert.equal(result.items[0].reasonCode,'LAST_EVENT_HAS_FAILURE');
 });

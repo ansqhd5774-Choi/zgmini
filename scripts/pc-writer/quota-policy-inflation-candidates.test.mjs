@@ -15,6 +15,13 @@ test('Treasury FiscalData and Federal Reserve Board official hosts use common qu
  }
 });
 
+test('KRX official data-dbg host resolves exactly without spoofed suffix hosts',()=>{
+ assert.equal(providerForUrl('https://data-dbg.krx.co.kr/svc/apis/idx/kospi_dd_trd?basDd=20261113'),'KRX');
+ assert.equal(providerForUrl('https://data-dbg.krx.co.kr.evil.example/svc/apis/idx/kospi_dd_trd'),null);
+ assert.equal(providerForUrl('https://evil-data-dbg.krx.co.kr.evil.example/'),null);
+ assert.equal(policyForProvider('KRX').perDay,10_000);
+});
+
 test('existing source host mappings remain unchanged',()=>{
  const expected={
   'https://api.bls.gov/publicAPI/v2/timeseries/data/':'BLS',

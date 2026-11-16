@@ -32,7 +32,7 @@ const HOSTS=[
  ['api.bls.gov','BLS'],['apps.bea.gov','BEA'],
  ['api.census.gov','CENSUS'],['api.eia.gov','EIA'],
  ['data.sec.gov','SEC'],['www.sec.gov','SEC'],['sec.gov','SEC'],
- ['openapi.krx.co.kr','KRX'],['data.krx.co.kr','KRX'],
+ ['openapi.krx.co.kr','KRX'],['data.krx.co.kr','KRX'],['data-dbg.krx.co.kr','KRX'],
  ['kosis.kr','KOSIS'],['ecos.bok.or.kr','BOK'],
  ['financialresearch.gov','OFR'],['data.financialresearch.gov','OFR'],
  ['data.bis.org','BIS'],['api.worldbank.org','WORLDBANK'],['thedocs.worldbank.org','WORLDBANK'],
