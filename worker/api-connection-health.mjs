@@ -151,7 +151,7 @@ export async function readApiConnectionHealth(db,now=Date.now()){
   const row=await db.prepare("SELECT body FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'")
     .bind(API_CONNECTION_HEALTH_KEY).first();
   const summary=summarizeApiConnectionHealth(row?JSON.parse(row.body):null,now);
-  return Response.json(summary,{status:['SOURCE_UNAVAILABLE','INVALID_OBSERVATION','INVALID_ENDPOINT_EVIDENCE','ENDPOINT_EVIDENCE_MISMATCH'].includes(summary.reason)?503:200,headers});
+  return Response.json(summary,{status:['SOURCE_UNAVAILABLE','INVALID_OBSERVATION','INVALID_ENDPOINT_EVIDENCE','ENDPOINT_EVIDENCE_MISMATCH','MONITORED_INVENTORY_UNVERIFIED','INVALID_MONITORED_EVIDENCE','MONITORED_INVENTORY_INCOMPLETE'].includes(summary.reason)?503:200,headers});
  }catch{return Response.json({...UNKNOWN,reason:'SOURCE_UNAVAILABLE'},{status:503,headers});}
 }
 
