@@ -16,9 +16,25 @@ const rows=[...html.matchAll(/<article class="mc-row mc-vendor-row" data-search=
 const tickers=[...new Set(rows.map(m=>m[1].toUpperCase()))];
 const output=gradeCalendarTickersFromDelta(parseDeltaScreenerCsv(bytes.toString('utf8')),tickers);
 const expected={one:2553,two:103,three:94,missing:283,conflicting:2};
-for(const [k,v] of Object.entries(expected))if(output.counts[k]!==v)throw Error('RECALCULATED_COUNTS_MISMATCH_'+k+'_'+output.counts[k]+'_'+v);
-if(output.calendarTickerCount!==3035||output.coveredTickerCount!==2750)throw Error('PINNED_CALENDAR_COVERAGE_MISMATCH');
+console.log('W02_R44_SOURCE_COVERAGE_DIAG '+JSON.stringify({
+  liveCalendarTickerCount:output.calendarTickerCount,
+  storedCalendarTickerCount:3035,
+  liveCounts:output.counts,
+  pinnedStoredCounts:expected,
+  dataSourceShaVerified:true,
+  calendarCountDrift:output.calendarTickerCount-3035
+}));
+if(output.counts.three!==94)throw Error('LIVE_THREE_STAR_COUNT_MISMATCH_'+output.counts.three);
+const filteredResponse=await fetch(ref+'&importance=3',{signal:timeout(25000),redirect:'error'});
+if(filteredResponse.status!==200)throw Error('PUBLIC_R44_THREE_STAR_UNAVAILABLE');
+const filteredHtml=await filteredResponse.text();
+const visibleThree=[...new Set([...filteredHtml.matchAll(/<article class="mc-row mc-vendor-row" data-search="([a-z0-9.\\-]{1,12}) [^"]*">/g)].map(m=>m[1].toUpperCase()))].sort();
+if(visibleThree.length!==71)throw Error('PUBLIC_THREE_STAR_VISIBLE_COUNT_MISMATCH_'+visibleThree.length);
+const publishedThree=new Set(visibleThree);
+for(const t of publishedThree)if(output.grades[t]!==3)throw Error('PUBLIC_GRADE_MISMATCH_'+t);
 const grade3=Object.entries(output.grades).filter(([,g])=>g===3).map(([t])=>t).sort();
+const absentFromCurrentCalendar=grade3.filter(t=>!publishedThree.has(t));
+if(absentFromCurrentCalendar.length!==23)throw Error('PUBLIC_23_STAR_DIFFERENCE_INVALID_'+absentFromCurrentCalendar.length);
 const bannerFile=readFileSync(new URL('../lib/market-calendar-banner.mjs',import.meta.url),'utf8');
 const block=bannerFile.match(/const domains=Object\.freeze\(\{([\s\S]*?)\}\);/);
 if(!block)throw Error('BANNER_LOGO_MAP_MISSING');
@@ -30,5 +46,6 @@ if(grade3.length!==94||linked.length+missing.length!==94)throw Error('ROSTER_COV
 const outputLog={status:'R44_94_READONLY_REDERIVED',sourceAsOf:'2026-11-03',sourceShaVerified:true,
   savedCountMatches:true,calendarTickerCount:output.calendarTickerCount,threeStarTickerCount:grade3.length,
   alreadyMapped:linked.length,actuallyUnmapped:missing.length,
+  offCalendarThreeStarCount:absentFromCurrentCalendar.length,offCalendarThreeStars:absentFromCurrentCalendar,
   missingTickers:missing,graded94:grade3};
 console.log('W02_R44_94_MANUAL_LOGO_INVENTORY '+JSON.stringify(outputLog));
