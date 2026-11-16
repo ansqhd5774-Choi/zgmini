@@ -134,3 +134,23 @@ test('zero-bars symbol has null missing count, not a false zero',t=>{
  assert.equal(robo.verifiedNYDays,0);
  assert.equal(robo.absentOnObservedSPYDaysAfterFirst,null);
 });
+
+test('missing observed-SPY NY day samples are bounded and never treated as official calendar',t=>{
+ const v=fixture(t),folder='legacy-nine-r35-delta';
+ const mFile=v.files[`${folder}-manifest`],cpFile=v.files[`${folder}-checkpoint`];
+ const m=JSON.parse(fs.readFileSync(mFile)),cp=JSON.parse(fs.readFileSync(cpFile));
+ m.files=m.files.filter(x=>x.symbol!=='ROBO');
+ cp.symbols.ROBO.files=[];cp.symbols.ROBO.noBars=true;
+ fs.writeFileSync(mFile,JSON.stringify(m)+'\n');
+ fs.writeFileSync(cpFile,JSON.stringify(cp)+'\n');
+ const r=audit(v),item=r.symbols.find(x=>x.symbol==='ROBO');
+ assert.equal(r.status,'PASS');
+ assert.equal(item.coverageStatus,'VERIFIED_BARS');
+ assert.equal(item.absentOnObservedSPYDaysAfterFirst,1);
+ assert.equal(item.firstAbsentObservedSPYNYDay,'2026-11-03');
+ assert.equal(item.lastAbsentObservedSPYNYDay,'2026-11-03');
+ assert.deepEqual(item.recentAbsentObservedSPYNYDays,['2026-11-03']);
+ assert.equal(item.absentObservedSPYSampleTruncated,false);
+ assert.equal(r.currentnessVerified,false);
+ assert.equal(r.publicationAuthorized,false);
+});
