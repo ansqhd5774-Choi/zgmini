@@ -93,14 +93,24 @@ export function planInflationCandidateCoreDue({approved=false,bootstrapApproved=
   // within the already-approved candidate bootstrap + quota/Core lock.
   // Other failures, previously processed groups, and normal release cadence
   // never gain a new bootstrap path.
-  const legacyFailure=checkpoint.attempted[group]?.failureCode;
+  const attempt=checkpoint.attempted[group];
+  const legacyFailure=attempt?.failureCode;
+  // Census's first legacy recovery exposed a second old-contract header
+  // problem. One extra recovery is permitted only after the updated Census
+  // parser is installed; never alternate recovery keys or loop indefinitely.
+  const secondCensusRecovery=group==='census'&&
+    attempt?.eventKey==='legacy-parser-recovery:census';
+  const recoveryCompleted=attempt?.eventKey==='legacy-parser-recovery:cpi'||
+    attempt?.eventKey==='legacy-parser-recovery:census-r2';
   const recoverable=bootstrapApproved&&!checkpoint.processed[group]&&
+    !recoveryCompleted&&
     ((group==='cpi'&&legacyFailure==='BLS_CANDIDATE_VALUE_OR_DUPLICATE')||
      (group==='census'&&legacyFailure==='CENSUS_M3_HEADERS_INVALID'));
+  const recoveryKey=secondCensusRecovery?'legacy-parser-recovery:census-r2':
+    'legacy-parser-recovery:'+group;
   const eventKey=event?(initial?event.eventKey:
     `release:${event.source}:${event.id}:${event.date}`):
-    recoverable?`legacy-parser-recovery:${group}`:null;
-  const attempt=checkpoint.attempted[group];
+    recoverable?recoveryKey:null;
   const recently=attempt?.eventKey===eventKey&&isIso(attempt.at)&&
     moment.getTime()>=Date.parse(attempt.at)&&moment.getTime()-Date.parse(attempt.at)<86_400_000;
   if(!eventKey||checkpoint.processed[group]?.eventKey===eventKey||recently||
