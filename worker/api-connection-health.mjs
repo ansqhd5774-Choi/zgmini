@@ -21,6 +21,8 @@ export function summarizeApiConnectionHealth(snapshot,now=Date.now()){
  for(const raw of snapshot.items){
   if(typeof raw?.host!=='string'||!PUBLIC_HOST(raw.host)||seen.has(raw.host)||
     !nonnegative(raw.requests)||!nonnegative(raw.observedDays)||raw.observedDays>15||
+    (raw.endpointFingerprints!==undefined&&(!nonnegative(raw.endpointFingerprints)||raw.endpointFingerprints>128))||
+    (raw.endpointEvidenceDays!==undefined&&(!nonnegative(raw.endpointEvidenceDays)||raw.endpointEvidenceDays>15))||
     !['success','failure','mixed','unknown'].includes(raw.lastOutcome)||
     (raw.lastAttemptAt!==null&&!time(raw.lastAttemptAt,now))||
     (raw.lastSuccessAt!==null&&!time(raw.lastSuccessAt,now))||
@@ -39,8 +41,23 @@ export function summarizeApiConnectionHealth(snapshot,now=Date.now()){
   const state=!repeated?'unknown':overdue?'stale':tooOldWithoutCadence?'unknown':lastFailure?'failed':raw.lastOutcome==='success'?'normal':'unknown';
   items.push({host:raw.host,requests:raw.requests,observedDays:raw.observedDays,
     repeated,lastAttemptAt:raw.lastAttemptAt,lastSuccessAt:raw.lastSuccessAt,
-    lastOutcome:raw.lastOutcome,expectedIntervalMs:raw.expectedIntervalMs,state});
+    lastOutcome:raw.lastOutcome,expectedIntervalMs:raw.expectedIntervalMs,
+    endpointFingerprints:raw.endpointFingerprints??null,endpointEvidenceDays:raw.endpointEvidenceDays??null,state});
  }
+ const e=snapshot.endpointObservation;
+ const endpointEvidence=e&&e.type==='HTTP_METHOD_PATH_SHA256_PREFIX'&&e.coverage==='PARTIAL'&&
+  e.independentCollectorsCovered===false&&
+  (e.observedFingerprintCount===null||nonnegative(e.observedFingerprintCount))&&
+  nonnegative(e.observedHostCount)&&e.observedHostCount<=items.length&&
+  nonnegative(e.endpointEvidenceEvents)&&nonnegative(e.endpointIncompleteEvents)&&
+  items.every(item=>item.endpointFingerprints!==null)
+  ?{coverage:'PARTIAL',observedFingerprintCount:e.observedFingerprintCount,
+    observedHostCount:e.observedHostCount,endpointIncompleteEvents:e.endpointIncompleteEvents,
+    independentCollectorsCovered:false}:null;
+ if(e&&!endpointEvidence)return {...UNKNOWN,checkedAt:snapshot.observedAt,reason:'INVALID_ENDPOINT_EVIDENCE'};
+ if(endpointEvidence&&
+    (endpointEvidence.observedFingerprintCount??0)!==items.reduce((sum,item)=>sum+item.endpointFingerprints,0))
+  return {...UNKNOWN,checkedAt:snapshot.observedAt,reason:'ENDPOINT_EVIDENCE_MISMATCH'};
  const monitored=items.filter(x=>x.repeated);
  const normal=monitored.filter(x=>x.state==='normal').length;
  const failed=monitored.filter(x=>x.state==='failed'||x.state==='stale').length;
@@ -48,7 +65,7 @@ export function summarizeApiConnectionHealth(snapshot,now=Date.now()){
  return {version:1,scope:'external-provider-hosts',coverage:'PARTIAL',checkedAt:snapshot.observedAt,
   status:!monitored.length?'unknown':failed?'partial':unknown?'unknown':'partial',
   normal,failed,unknown,total:monitored.length,unverifiedSingles:items.length-monitored.length,
-  limitedCoverage:true,reason:!monitored.length?'NO_REPEATED_REQUESTS':null,
+  limitedCoverage:true,endpointEvidence,reason:!monitored.length?'NO_REPEATED_REQUESTS':null,
   items:items.slice(0,128)};
 }
 
@@ -59,6 +76,6 @@ export async function readApiConnectionHealth(db,now=Date.now()){
   const row=await db.prepare("SELECT body FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'")
     .bind(API_CONNECTION_HEALTH_KEY).first();
   const summary=summarizeApiConnectionHealth(row?JSON.parse(row.body):null,now);
-  return Response.json(summary,{status:summary.reason==='SOURCE_UNAVAILABLE'||summary.reason==='INVALID_OBSERVATION'?503:200,headers});
+  return Response.json(summary,{status:['SOURCE_UNAVAILABLE','INVALID_OBSERVATION','INVALID_ENDPOINT_EVIDENCE','ENDPOINT_EVIDENCE_MISMATCH'].includes(summary.reason)?503:200,headers});
  }catch{return Response.json({...UNKNOWN,reason:'SOURCE_UNAVAILABLE'},{status:503,headers});}
 }

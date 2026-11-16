@@ -9,6 +9,7 @@ import {read} from './d1.mjs';
 import {createQuotaFetch} from './quota-fetch.mjs';
 import {recordCollectionChecks} from './collection-checks.mjs';
 import {appendCollectionEvent,appendProviderFailure} from './collection-events.mjs';
+import {providerEndpointFingerprint,PROVIDER_ENDPOINTS_PER_HOST_MAX,appendProviderEndpointEvent} from './provider-endpoint-fingerprint.mjs';
 import {safeMacroDiagnostic} from '../../worker/macro-result-contract-r61.mjs';
 import {safeCollectionFailure} from '../../worker/collection-failure-diagnostic.mjs';
 import {alertCollectionReport,dueCollectionRecovery} from './local-data-alert.mjs';
@@ -35,6 +36,20 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   catch(error){recordProviderFailure(input,{phase:'FETCH',error});const status=error?.code==='PROVIDER_QUOTA_GUARD'?'PROVIDER_QUOTA_GUARD':'NETWORK_ERROR';item.statuses[status]=(item.statuses[status]??0)+1;if(error?.code==='PROVIDER_QUOTA_GUARD')throw error;const failure=Error('LOCAL_PROVIDER_NETWORK_ERROR');failure.code='LOCAL_PROVIDER_NETWORK_ERROR';throw failure;}
  };
  try{
+  // Observe the real HTTP fetch wrapper without changing its quota/response behavior.
+  // The single-child collector log remains append-only and never stores URLs.
+  const endpointPaths={};let endpointTrackingOmitted=0;
+  const previousCollectorFetch=globalThis.fetch;
+  globalThis.fetch=async(input,init)=>{
+   const route=providerEndpointFingerprint(input,init);
+   const bucket=route?(endpointPaths[route.host]??={}):null;
+   const entry=bucket&&(bucket[route.id]??(Object.keys(bucket).length<PROVIDER_ENDPOINTS_PER_HOST_MAX?
+    (bucket[route.id]={requests:0,statuses:{}}):null));
+   if(!entry)endpointTrackingOmitted++;
+   const count=status=>{if(entry){entry.requests++;entry.statuses[status]=(entry.statuses[status]??0)+1;}};
+   try{const response=await previousCollectorFetch(input,init);count(response.status);return response;}
+   catch(error){count(error?.code==='PROVIDER_QUOTA_GUARD'?'PROVIDER_QUOTA_GUARD':'NETWORK_ERROR');throw error;}
+  };
   const {runPublicFeeds}=await import('../../worker/public-feed-collectors.ts');
   const {runMarketOperationalRefresh}=await import('../../worker/market-operational-refresh.mjs');
   const {refreshKoreaRev7}=await import('../../worker/korea-rev7-refresh.mjs');
@@ -99,6 +114,8 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   if(result.job==='earnings'&&result?.sourceDiagnostic?.provider==='WIKIPEDIA'&&result.sourceDiagnostic.stage==='UNIVERSE_REQUEST'&&Number.isInteger(result.sourceDiagnostic.httpStatus))
    report.sourceDiagnostic={provider:'WIKIPEDIA',stage:'UNIVERSE_REQUEST',httpStatus:result.sourceDiagnostic.httpStatus};
   report.providerDiagnosticWriteFailures=providerDiagnosticWriteFailures;
+  report.endpointPaths=endpointPaths;report.endpointTrackingOmitted=endpointTrackingOmitted;
+  try{appendProviderEndpointEvent(base,report);}catch{report.endpointDiagnosticWriteFailures=1;}
   appendCollectionEvent(base,report);
   save(path.join(base,'local-collection-last-run.json'),report);
   recordCollectionChecks(base,report);

@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {publicFeedStore} from '../../worker/public-feed-store.mjs';
 import {API_CONNECTION_HEALTH_KEY} from '../../worker/api-connection-health.mjs';
+import {readProviderEndpointEvents} from './provider-endpoint-fingerprint.mjs';
 
 const WINDOW_MS=14*24*3600_000;
 const MAX_LOG_BYTES=8*1024*1024;
@@ -46,7 +47,7 @@ export function buildApiConnectionHealthFromLog(base,now=Date.now(),{fileSystem=
  lines.pop(); // incomplete last append, or final empty element
  const rowsTruncated=lines.length>MAX_ROWS;
  if(rowsTruncated)lines=lines.slice(-MAX_ROWS);
- const hosts=new Map();const seen=new Set();
+ const hosts=new Map();const seen=new Set(),hostEventRequests=new Map();
  let invalidEvents=0,duplicateEvents=0;
  for(const line of lines){
   if(!line)continue;
@@ -70,12 +71,55 @@ export function buildApiConnectionHealthFromLog(base,now=Date.now(),{fileSystem=
    const success=codes.reduce((sum,[key,count])=>sum+(key.startsWith('2')?count:0),0);
    const failures=request.requests-success;
    let h=hosts.get(host);
-   if(!h){h={host,requests:0,days:new Set(),events:[],last:null,lastSuccessAt:null};hosts.set(host,h);}
+   if(!h){h={host,requests:0,days:new Set(),events:[],last:null,lastSuccessAt:null,endpointIds:new Set(),endpointDays:new Set()};hosts.set(host,h);}
    h.requests+=request.requests;h.days.add(kstDay(at));h.events.push(at);
+   hostEventRequests.set(obj.at+'|'+host,request.requests);
    if(success)h.lastSuccessAt=Math.max(h.lastSuccessAt??0,at);
    if(!h.last||h.last.at<=at)h.last={at,outcome:success&&!failures?'success':failures&&!success?'failure':'mixed'};
   }
  }
+ // A separate fixed-path append-only receipt avoids changing the existing
+ // collection-events schema and preserves prior Collector R44 source overlays.
+ const routeLog=readProviderEndpointEvents(baseDir,{fileSystem});
+ const matched=new Set(),complete=new Set(),seenRouteLines=new Set();
+ let endpointEvidenceEvents=0,invalidEndpointEvents=0;
+ if(routeLog.status==='OBSERVED'){
+  for(const line of routeLog.lines){
+   if(!line||seenRouteLines.has(line))continue;
+   seenRouteLines.add(line);
+   let record;try{record=JSON.parse(line);}catch{invalidEndpointEvents++;continue;}
+   const at=Date.parse(record?.at??'');
+   if(!Number.isFinite(at)||at>now+60_000||!record?.endpointPaths||
+      typeof record.endpointPaths!=='object'||Array.isArray(record.endpointPaths)){
+    invalidEndpointEvents++;continue;
+   }
+   if(now-at>WINDOW_MS)continue;
+   for(const [host,routes] of Object.entries(record.endpointPaths).slice(0,128)){
+    const key=record.at+'|'+host;
+    if(!hostEventRequests.has(key)||matched.has(key)||!routes||
+       typeof routes!=='object'||Array.isArray(routes)){invalidEndpointEvents++;continue;}
+    const ids=[],entries=Object.entries(routes);
+    let accounted=0,invalid=entries.length>128;
+    for(const [id,row] of entries.slice(0,128)){
+     if(!/^[0-9a-f]{32}$/.test(id)||!row||!integer(row.requests)||row.requests<1||
+       !row.statuses||typeof row.statuses!=='object'||Array.isArray(row.statuses)){
+      invalid=true;continue;
+     }
+     const stats=Object.entries(row.statuses);
+     if(stats.some(([k,n])=>!(STATUSES.test(k)||k==='NETWORK_ERROR'||k==='PROVIDER_QUOTA_GUARD')||!integer(n))||
+        stats.reduce((sum,[,n])=>sum+n,0)!==row.requests){invalid=true;continue;}
+     accounted+=row.requests;ids.push(id);
+    }
+    if(!ids.length||accounted>hostEventRequests.get(key)){invalidEndpointEvents++;continue;}
+    const h=hosts.get(host);if(!h){invalidEndpointEvents++;continue;}
+    for(const id of ids)h.endpointIds.add(id);
+    h.endpointDays.add(kstDay(at));matched.add(key);endpointEvidenceEvents++;
+    if(!invalid&&accounted===hostEventRequests.get(key)&&record.endpointTrackingOmitted===0)complete.add(key);
+   }
+  }
+ }
+ // An invalid route is already counted in the incomplete host event; avoid double count.
+ const endpointIncompleteEvents=hostEventRequests.size-complete.size;
  const items=[...hosts.values()].sort((a,b)=>(b.last?.at??0)-(a.last?.at??0)||a.host.localeCompare(b.host))
   .slice(0,MAX_HOSTS).map(h=>{
    const times=[...new Set(h.events)].sort((a,b)=>a-b);
@@ -84,12 +128,20 @@ export function buildApiConnectionHealthFromLog(base,now=Date.now(),{fileSystem=
    const cadence=times.length>=5&&h.days.size>=3&&gaps.length>=4?
     Math.min(48*3600_000,Math.max(5*60000,median(gaps))):null;
    return {host:h.host,requests:h.requests,observedDays:h.days.size,
+    endpointFingerprints:h.endpointIds.size,endpointEvidenceDays:h.endpointDays.size,
     lastAttemptAt:h.last?.at??null,lastSuccessAt:h.lastSuccessAt,
     lastOutcome:h.last?.outcome??'unknown',expectedIntervalMs:cadence};
   });
+ const observedEndpointFingerprints=items.reduce((sum,item)=>sum+item.endpointFingerprints,0);
  return {version:1,scope:'external-provider-hosts',source:'PC_COLLECTION_EVENTS_FETCH_WRAPPER',
   coverage:'PARTIAL',observedAt:new Date(now).toISOString(),windowHours:336,
-  diagnostics:{reason:tailTruncated||rowsTruncated||invalidEvents||duplicateEvents||hosts.size>MAX_HOSTS?
+  endpointObservation:{type:'HTTP_METHOD_PATH_SHA256_PREFIX',coverage:'PARTIAL',
+   observedFingerprintCount:observedEndpointFingerprints||null,
+   observedHostCount:items.filter(item=>item.endpointFingerprints>0).length,
+   endpointEvidenceEvents,endpointIncompleteEvents,
+   independentCollectorsCovered:false},
+  diagnostics:{endpointLogStatus:routeLog.status,endpointLogTruncated:routeLog.tailTruncated||routeLog.rowsTruncated,
+   invalidEndpointEvents,reason:tailTruncated||rowsTruncated||invalidEvents||duplicateEvents||hosts.size>MAX_HOSTS?
     'LOG_PARTIAL':'WRAPPER_ONLY',tailTruncated,rowsTruncated,invalidEvents,duplicateEvents,
     unverifiedCollectors:true},
   items};
