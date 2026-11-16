@@ -2,7 +2,8 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {parseDeltaScreenerCsv,gradeCalendarTickersFromDelta} from '../lib/market-calendar-deltascreener-snapshot.mjs';
-import {makeDeltaR44Public,validateDeltaR44Public} from '../lib/market-calendar-deltascreener-public.mjs';
+import {makeDeltaR44Public,validateDeltaR44Public,
+ DELTA_R44_METHOD,DELTA_R44_LEGACY_METHOD} from '../lib/market-calendar-deltascreener-public.mjs';
 import {earningsDisplaySnapshot,earningsDisplayHtml} from '../lib/earnings-api-display.mjs';
 import {collectPinnedDeltaOnce} from '../scripts/pc-writer/market-calendar-deltascreener-input.mjs';
 
@@ -37,6 +38,20 @@ test('R44 overrides EPS stars only after source as-of; a dated credit link is vi
  assert.match(html,/시총 기준 중요도 별 1개/);
  assert.match(html,/DeltaScreener<\/a> \(2026-11-03\)/);
  assert.match(html,/deltascreener\.com\/data/);
+});
+test('new R44 50B method carries exact threshold into display without hiding legacy 200B rows',()=>{
+ const current=r44();
+ assert.equal(current.method,DELTA_R44_METHOD);
+ assert.match(current.method,/50B_20B/);
+ const display=earningsDisplaySnapshot(projection('2026-11-16'));
+ const params={start:'2026-11-16',end:'2026-11-16'};
+ const shown=earningsDisplayHtml(display,params,null,null,null,{},current).html;
+ assert.match(shown,/★★★ 50B USD 이상 · ★★ 20B USD 이상/);
+ const previous={...current,method:DELTA_R44_LEGACY_METHOD};
+ assert.ok(validateDeltaR44Public(previous));
+ const legacy=earningsDisplayHtml(display,params,null,null,null,{},previous).html;
+ assert.match(legacy,/★★★ 200B USD 이상 · ★★ 20B USD 이상/);
+ assert.doesNotMatch(legacy,/★★★ 50B USD 이상/);
 });
 test('missing public R44 data does not invent star or attribution',()=>{
  const display=earningsDisplaySnapshot(projection('2026-11-16'));

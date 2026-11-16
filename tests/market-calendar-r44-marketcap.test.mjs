@@ -7,10 +7,11 @@ const sample={status:'READY_DISPLAY',mode:'OWN_SITE_HTML_ONLY',rawVendorJsonExpo
  recordCount:4,checkedAt:'2026-10-29T00:00:00Z',coveredDays:days,
  byDay:Object.fromEntries(days.map((d,i)=>[d,i===0?[row('ABBV'),row('AAPL'),row('GOOG')]:i===1?[row('ABBV')]:[]]))};
 const verified=(ticker,marketCapUsd,issuerId=ticker)=>({ticker,marketCapUsd,issuerId,currency:'USD',source:'VERIFIED_FIXTURE',validated:true,issuerLevel:true,observationDate:'2026-10-28'});
-test('R44 strict 200B/20B USD thresholds and unknown handling',()=>{
- assert.equal(marketCapImportanceUsd(200e9),3);assert.equal(marketCapImportanceUsd(200e9-1),2);
+test('R44 strict 50B/20B USD thresholds and unknown handling',()=>{
+ assert.equal(marketCapImportanceUsd(50e9),3);assert.equal(marketCapImportanceUsd(50e9-1),2);
+ assert.equal(marketCapImportanceUsd(200e9),3);
  assert.equal(marketCapImportanceUsd(20e9),2);assert.equal(marketCapImportanceUsd(20e9-1),1);
- for(const n of [null,undefined,NaN,0,-1,'200000000000',Infinity])assert.equal(marketCapImportanceUsd(n),null);
+ for(const n of [null,undefined,NaN,0,-1,'50000000000',Infinity])assert.equal(marketCapImportanceUsd(n),null);
 });
 test('R44 different count for events and unique tickers, ABBV three stars',()=>{
  const a=inspectEarningsDisplay(sample);assert.equal(a.eventCount,4);assert.equal(a.uniqueTickerCount,3);
@@ -26,7 +27,7 @@ test('R44 refuses invalid and conflicting market capitalization',()=>{
 });
 test('R44 all verified classes receive deterministic importance',()=>{
  const r=inspectMarketCapCoverage(sample,[verified('ABBV',300e9),verified('AAPL',100e9),verified('GOOG',10e9)]);
- assert.equal(r.status,'READY_FOR_CONTRACT_REVIEW');assert.deepEqual([r.gradeByTicker.ABBV.importance,r.gradeByTicker.AAPL.importance,r.gradeByTicker.GOOG.importance],[3,2,1]);
+ assert.equal(r.status,'READY_FOR_CONTRACT_REVIEW');assert.deepEqual([r.gradeByTicker.ABBV.importance,r.gradeByTicker.AAPL.importance,r.gradeByTicker.GOOG.importance],[3,3,1]);
 });
 test('R44 read-only output does not infer market cap coverage from display HTML',()=>{
  const r=analyzeEarningsStorageBody(JSON.stringify(sample));
