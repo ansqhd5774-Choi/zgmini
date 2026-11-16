@@ -233,6 +233,7 @@ test("blank SQLite TEXT values are never accepted as PIT lineage evidence",()=>{
   assert.equal(report.candidateNewKeys,1);
   assert.equal(report.candidateNewKeysWithConsistentPITMetadata,0);
   assert.equal(report.candidateNewKeysWithIncompletePITMetadata,1);
+  assert.equal(report.candidateHistoryAmbiguousLatestKeys,0);
   assert.equal(report.candidateReconciliationPreviewStatus,"HOLD_UNVERIFIED_SOURCE_LINEAGE");
   assert.deepEqual([digest(core),digest(candidate)],before);
 });
@@ -247,6 +248,7 @@ test("zero-valued Core claims do not match a blank candidate claim",()=>{
   const report=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-02"});
   assert.equal(report.candidateOverlapMatchingKeys,0);
   assert.equal(report.candidateOverlapConflictingKeys,1);
+  assert.equal(report.candidateHistoryAmbiguousLatestKeys,0);
   assert.equal(report.candidateReconciliationPreviewStatus,"HOLD_CONFLICTING_REVISIONS");
   assert.deepEqual([digest(core),digest(candidate)],before);
 });
