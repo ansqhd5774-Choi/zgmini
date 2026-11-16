@@ -1,0 +1,25 @@
+{
+  "schema": "ZGMINI_R6_SOURCE_BUNDLE_DRAFT_V1",
+  "sourceRepository": "ansqhd5774-Choi/zgmini",
+  "sourceSha": "2b5255147b16d595196a8f006cf1d95c840a4926",
+  "sourceBranch": "fix/w04-r6-pit-history-bundle-minimal-20261117",
+  "entrypoint": "scripts/pc-writer/employment-r6-runner-stage.mjs",
+  "files": {
+    "lib/market-score/employment-r4-shadow-contract.mjs": "60488f5010bfdeda3f75102b5d2be373da19be540787b43cccf405a766791aa6",
+    "lib/market-score/employment-r6-contract.mjs": "bb140adbf45bc445bcd84d16aa2893fda943d4b3f2b388927d9f8268ca1d7076",
+    "lib/market-score/employment-r6-feature-engine.mjs": "8bf2f799c540fbaa23e14aafe99e1842c6865975170960b1fa3a61d5e95109d5",
+    "lib/market-score/employment-r6-formula.mjs": "dc23545f9f3512c260468d1c3afd6cc5185c5a0a1a60785050428f945d1c0dbb",
+    "lib/market-score/employment-r6-observation-reader.mjs": "81d9341a625d75bb96816657dbb26cc906a6afaaa49482d1c8cef8eb72291b88",
+    "lib/market-score/employment-r6-one-year-read-model.mjs": "aa6a9f429f64802251b88a839f56154f43d73864f8d11df569ef56210fee69a4",
+    "lib/market-score/employment-r6-scheduler.mjs": "b128a2aed096cd7a87140152999317c0a28e14f9341ebd2aa3bdca169c94c3bf",
+    "lib/market-score/employment-r6-window.mjs": "dc41a6780f05d28c31ee52b77b2f688df27216d109ae4c7dc1aa17a9da07decd",
+    "scripts/pc-writer/d1-diagnostics.mjs": "2e9ea54661c51d86798800e532edb10c6796694d3049844ef8b283b7ad6dfe5f",
+    "scripts/pc-writer/d1-transient.mjs": "f912c335675481f8646380feaebb6241ec0d877b78dbd6fa165e208fdc6d457e",
+    "scripts/pc-writer/d1.mjs": "267fb175386fa007bd74b255d922fba9ee6fe71ffe953f94970beb8ba9d9ff87",
+    "scripts/pc-writer/employment-r6-candidate-locator.mjs": "e4b78dbd756743316beba0655a3fe89f45d7c93fb8036572bff5d5431d8e4a07",
+    "scripts/pc-writer/employment-r6-one-year-stage.mjs": "1b12d0bfc00ae5bae4b3d91c0f3552abce5d93bf5c01337784fe464d2d30b741",
+    "scripts/pc-writer/employment-r6-pit-coverage.mjs": "7f590286b00bee52c4d355e10a44d8662ea94724b8ad6d29bcd9749e9035bec7",
+    "scripts/pc-writer/employment-r6-runner-stage.mjs": "02e399b26cbc5f4333f3993bd16f1cff6bc41ae85d5e41b9896dcf849cedac66",
+    "worker/employment-r6-public-display.mjs": "0a6ed587ae2427bb6650765eac30a7b2e8d9b2f301f73bcdb398dcb863aecf26"
+  }
+}
