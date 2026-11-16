@@ -8,10 +8,10 @@ import {DOL_ETA539_URL} from '../lib/market-score/employment-r4-shadow-provider.
 // Synthetic official-layout rows only. The genuine 51-region/600-week provider
 // proof already passed once in #1077, and must not be fetched again.
 const now=()=>new Date('2026-11-14T08:00:00.000Z');
-const national='<week><weekEnded>10/31/2026</weekEnded>'
+const national='<r539cyNational><week><weekEnded>10/31/2026</weekEnded>'
  +'<InitialClaims><SA>189000</SA><SA4WK>195000</SA4WK></InitialClaims>'
  +'<ContinuedClaims><SA>1900000</SA></ContinuedClaims>'
- +'<IUR><SA>1.2</SA></IUR></week>';
+ +'<IUR><SA>1.2</SA></IUR></week></r539cyNational>';
 const states=['st,rptdate,c2,c3',
  ...EMPLOYMENT_R4_CORE_STATES.map(st=>st+',11/13/2026,10/24/2026,120'),
  // Newer reflected week is incomplete because reported DC c3 is blank.
