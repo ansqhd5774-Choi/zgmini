@@ -2,7 +2,7 @@
 
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
-## 최신 인계 스냅샷 — W01 2026-11-17 (Writer/D1 증거 접근과 A2 소스 안전 검증)
+## 최신 인계 스냅샷 — W01 2026-11-17 (CPI 2개 실PC 저장 확인·Census #28 미수집)
 
 > **다음 작업자는 이 스냅샷부터 시작한다.** 진행 기록 파일 자체가 지정된 정본이고, 상위 계획은 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)이다. 과거 이력의 오래된 설치 SHA·대기 문구가 이 스냅샷을 덮어쓰지 않는다.
 
@@ -11,14 +11,14 @@
 | 담당·저장소·브랜치 | W01 물가지표 / `ansqhd5774-Choi/zgmini` / `fix/economic12-inflation-legacy4-r35-20261021` |
 | 작업·기록 정본 | 계획: `docs/INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md`; 기록: **이 파일** `docs/INFLATION_71_STEP_EXECUTION_LEDGER_R1_20261116.md` |
 | 전체 목표 | 승인 공식 BLS/Census 원자료 저장·재조회로 26/26 확보 → 기존 저장 기반 계산 → 기존 Writer 게시 → D1/API/PC·모바일 UI 연구지표 7/7 확인. 기존 19개 및 4축 산식·PPI·last-good·운영 설정 보호 |
-| 확정 단계 | **19/71 완료(26.8%), 52개 미완료**: A1-01·07·09(3), A2-01·02·04·05(4), B1-01~06(6), B2-01~04·07·08(6). 이번 추가 A2-04·05는 CI/소스 범위의 완료이며 실PC B owner 증명 완료가 아님. B2-05/06의 직접 런타임 증거는 연결된 도구에서 현재 미획득; 과거 4/7 성공 관측과 구분 |
-| 마지막 실제 운영 수치 | #1334 당시 **23/26 원자료**, **4/7 연구자료 저장·공개**(당시 관측). 이후 26/26 또는 7/7 달성은 확인되지 않음; 실제 전체 기능 추정 진행 42%는 옛 기준이고 71단계와 별도 |
+| 확정 단계 | **21/71 완료(29.6%), 50개 미완료**: A1 3, A2 4, A4 CPI 실제 저장 확인 2, B1 6, B2 과거 공개 증거 6. A4-02/03 각각 237개월·동일 원본 BLS3 파일 SHA 직접 확인. Census #28 새 파서 설치 후 실제 수집 재검증은 미실행. B2-05/06 Writer/D1 admin 직접 조회는 접근 제한 |
+| 마지막 실제 운영 수치 | 2026-11-16 실PC [A #43847038904](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43847038904): **기존 19개 공개용 저장 projection 19/19 READY**(개별 원자료 SQLite 직접 조회 아님). [A #43860489236](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43860489236): **신규 7개 원자료 6/7 PRESENT_VALID**(CPI #22/#23 각각 237개월), Census #28 MISSING. 합계 **25/26에 해당하는 저장·projection 범위**, 26개 원자료 전체 raw 파일 직접 증명은 아직 아님. 공개 7행 마지막 확정은 2026-11-10 4 READY/3 PENDING이며 최신 D1/Writer readback 없음 |
 | 최신 제어 소스 (운영 미반영) | `ansqhd5774-Choi/zgmini-pc-control` [PR #1772](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1772), merge SHA `f59e723aa43e59520d760f5da17a07f7f09a04b2`; [source CI #43885847244](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43885847244) 90/90 PASS, C996 #43885847344 PASS. 현재 control main HEAD는 다음 실제 작업 시 재조회 |
 | 실제 설치 Controller | #1745 당시 `e3a495c97d6b40d6d4eea2ff4f586bef46216eb7` 파일 전환, 유지보수 결과 `UNKNOWN/BACKLOG_OR_RECOVERY_NOT_VERIFIED`; 이후 최신 코드 설치 검증 없음 |
 | 기존 PC 재사용 결과 | [#1747](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1747) core-status PASS / Run 43876398674. [#1748](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1748) Event129 A `STATE_UNKNOWN/INFL_E129_NOT_OBSERVED_WITHIN_LIMIT` / Run 43876539574, reader OK·Event 인식 0·lock same=true·protectedStateUnchanged=true |
 | 정확한 미해결 조건 | **실PC Event Log 설정 조회에서 TaskScheduler/Operational enabled=false(2026-11-16 22:32 KST)** 확인. #1748 Event129 0개 및 WMI Task GetInstances EMPTY와 정합. 그러나 #1690 B 실행 당시 로그 설정은 소급 증명 불가. Event Log 활성화는 C급 사용자 직접 작업; #1745 maintenance UNKNOWN 및 최신 Controller 미설치 문제는 별도 미해결 |
 | 기존 요청 재실행 금지 | #1745 유지보수, #1747 core-status, #1748 Event129 A, 소비된 기존 B Run 43861853573. 원본 Issue/requestId와 JSON/TXT 재사용; 증거 없는 복구·잠금 삭제·수집 B 재실행 금지 |
-| 이번 작업의 실제 효과 | 기존 W01 PR #1772 변경 정확 2개 A 진단·fixture만, CI #43885847244 90/90 PASS. B 공식 보호 코드 `inflation-manual-b/windows-adapter.mjs` 현재 control main과 운영 설치 SHA e3a495c9에서 Git blob `739f77f7ec2e94b62af13cde377cee4f5bf0582a` 동일함을 재확인하여 A2-04·A2-05 소스 범위 완료 처리. B2 Writer 진단: 정상 Writer는 고정 `local-writer-last-run.json`에 `inflation7` 결과 기록하지만 현재 allowlisted A는 상세 반환 안 함; D1 관리자 조회 연결 없음. 새 A/B·공급자/D1/운영 쓰기 0건 |
+| 이번 작업의 실제 효과 | 기존 승인 A #43860489236 실PC JSON에서 BLS CPI #22/#23 유효 237개월/각 관측 2026-10-01/저장 2026-11-16T10:30:02.905Z/동일 SHA 확보, A4-02/03 DONE. 별도 A #43847038904 기존 19개 공개용 저장 projection 19 READY 확인, 원자료 전수 직접조회는 구분. #1663 Census 파서 1파일 PC 적용 완료 증거 재사용. Census #28은 업데이트 전 2026-11-16T10:30Z 마지막 실패를 표시한 채 미저장; 업데이트 후 API 재호출은 미관측. 이번 새 PC/B/Provider/D1/운영 쓰기 0 |
 
 **다음 필수 실행 하나 — 사용자 C급 시스템 설정:** 운영 PC에서 Windows **작업 스케줄러 → 오른쪽 ‘모든 작업 기록 사용’** 또는 **이벤트 뷰어 → 응용 프로그램 및 서비스 로그 → Microsoft → Windows → TaskScheduler → Operational → ‘로그 사용’**을 직접 선택해 TaskScheduler Operational 기록을 활성화한다. **Core/Korea Task·예약·파일·잠금·DB·Controller는 변경하지 않는다.** 이후 자연 Core 실행이 새 이벤트를 만들면 기존 설치 A의 새 고유 Issue를 승인 범위에서 1회 실행해 event record/Task·WMI/lock 동일 PID와 시각을 재조회한다(기존 #1748 재실행 금지). 이후 B 단회 GET·파싱·저장으로 이어간다. **Controller PR #1772 신규 적용은 독립 정규 승인·manifest 및 postOperation 문제가 해결될 때 별도 처리**하며, 이번 로그 비활성이라는 직접 원인을 보완하는 선행조건으로 무조건 삼지 않는다. 사용자가 C 작업을 하기 전에는 이 범위만 BLOCKED, 독립 B1/B2 저장/게시 readback 검토는 계속 가능.
 
@@ -80,7 +80,7 @@ B4 10 | Production·화면 최종 검증
 합계 71
 ```
 
-현재 71개 세부 체크 완료: **19/71 (26.8%)**. A1 운영 실증 3개, A2 원인·안전/fixture 4개, B1 source/UI/회귀 6개, B2 역사 실제 공개 증거 6개. **남은 52개** 중 A2-06 운영 경로·A3 실제 B 수집, B2-05 Writer ledger/B2-06 D1 관리자 조회가 미완료. 코드 검사만으로 수집·게시 완료 주장 금지.
+현재 71개 세부 체크 완료: **21/71 (29.6%)**. A1 3, A2 4, A4 실PC CPI 2, B1 6, B2 기존 운영 공개 증거 6개. **남은 50개** 중 Census #28 실PC 수집 검증, B2-05 Writer ledger/B2-06 D1 관리자 조회, 최신 7/7 게시가 미완료. 과거 23/26은 2026-11-13 이력; 2026-11-16 증거상 신규 7개 6/7이며 기존19 공개 projection READY 19/19는 별도 계층.
 
 ## A1 — 운영 입력·소유권 증명 (9개)
 
@@ -122,10 +122,10 @@ B4 10 | Production·화면 최종 검증
 
 ## A4 — 26개 원자료 완전성 (8개)
 
-- [ ] **A4-01** 기존 23개 원자료 존재·유효성 확인 — PENDING | 새로운 실제 증거 없음
-- [ ] **A4-02** 신규 CPI 임대료 원자료 확인 — PENDING | 새로운 실제 증거 없음
-- [ ] **A4-03** 신규 CPI OER 원자료 확인 — PENDING | 새로운 실제 증거 없음
-- [ ] **A4-04** 신규 Census M3 총재고 원자료 확인 — PENDING | 새로운 실제 증거 없음
+- [ ] **A4-01** 기존 23개 원자료 존재·유효성 확인 — PARTIAL | #43847038904 PC에서 기존 19개 공개용 로컬 projection 19/19 READY, #43860489236 신규 원자료 6/7 유효. 서로 다른 저장 타입이며 19개 개별 private raw 파일을 직접 재조회하지 않아 23개 전량 raw 입증 완료로 과대 평가 금지
+- [x] **A4-02** 신규 CPI 임대료 원자료 확인 — DONE | 운영 PC A #43860489236 (Run 43860489236/seat4) ID22 CUSR0000SEHA PRESENT_VALID, 237개월·관측 2026-10-01·sourceStoredAt 2026-11-16T10:30:02.905Z·BLS3 raw file SHA256 db31e003600a776e0fd6ac8dd6392da91bc51cbac56e6d97b918f1ea718ddff9; A는 providerCalls/d1Writes/operationalWrites 0
+- [x] **A4-03** 신규 CPI OER 원자료 확인 — DONE | 운영 PC A #43860489236 ID23 CUSR0000SEHC01 PRESENT_VALID, 237개월·관측 2026-10-01·sourceStoredAt 2026-11-16T10:30:02.905Z·ID22와 동일 BLS3 raw file SHA256 db31e003600a776e0fd6ac8dd6392da91bc51cbac56e6d97b918f1ea718ddff9; 원격 JSON 검증(개별 재수집 없음)
+- [ ] **A4-04** 신규 Census M3 총재고 원자료 확인 — BLOCKED | 운영 PC A #43860489236 ID28 MISSING/0건. Census checkpoint attempted 2026-11-16T10:30:02.905Z 실패 CENSUS_M3_HEADERS_INVALID, 이후 #1663 Run 43855741146에서 수정 collector 1파일 정규 설치. 설치 이후 공식 Census API 새 GET 결과가 없어서 새 파서 실패로 단정 불가; 현재 설치된 A급 조회는 providerCalls=0, 정규 승인된 API Census-only 단회 B 실행 경로 미확인
 - [ ] **A4-05** 관측월·단위·값·결측 검증 — PENDING | 새로운 실제 증거 없음
 - [ ] **A4-06** 수집일·sourceStoredAt·source SHA 검증 — PENDING | 새로운 실제 증거 없음
 - [ ] **A4-07** 원자료 SHA·checkpoint·재조회 검증 — PENDING | 새로운 실제 증거 없음
@@ -245,3 +245,13 @@ B4 10 | Production·화면 최종 검증
 - **현재 장애 분류:** B2-05/06의 실측 확보는 `AUTOMATION_BLOCKED/READBACK_PERMISSION_UNAVAILABLE` (실제 Writer RUNTIME_FAILED나 D1 장애 아님). 임의 PC 명령·D1 SQL·새 Controller 단독 등록·재게시·새 유료 서비스 요청 안 함. 독립 A2 완료 증거는 가산하되 D1/Writer 재검증 완료로 오인하지 않음.
 - **NEXT 1 (독립 업무):** 기존 승인 범위의 Writer/Cloudflare D1 읽기 전용 담당을 통해 고정 7행 key와 로컬 Writer 마지막 원장 readback을 회수하고 `sourceVersion/sourceStoredAt/builtAt/stored_at`을 동시 비교. 승인된 기존 접근을 확보할 수 없는 동안 이 두 단계만 BLOCKED. 별도로 Event129 Windows 로그 활성화는 사용자 C급 직접 작업이고 수동 B 재실행은 금지. 신규 유효 원자료 3개 수집·7/7 게시 목표는 변함없음.
 - **운영 효과 0:** 신규 PC A/B 요청·공급자 호출·PC DB/D1 쓰기·Controller 설치·예약·웹 배포·설정 변경 모두 0. 실제 완료는 source/fixture 기반 A2 2단계에 한정.
+
+
+## 2026-11-17 — 최신 유효 PC 저장 증거 회수: CPI 237개월 2개, Census #28만 미저장
+
+- **중복 PC 요청 없이 원격 원본 재조회:** [A #43860489236](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43860489236) 결과 `results/43860489236-1-seat-4.json`: `finishedAt=2026-11-16T11:45:24.087Z`, `PASS/INFLATION_CANDIDATES_RUNTIME_READONLY_EVIDENCE`, `presentValidCount=6/7`, `protectedStateUnchanged=true`, `providerCalls=0,d1Writes=0,operationalWrites=0`. #22 CUSR0000SEHA와 #23 CUSR0000SEHC01은 각각 237개월·2026-10 관측·sourceStoredAt `2026-11-16T10:30:02.905Z`, 파일 SHA256 `db31e003600a776e0fd6ac8dd6392da91bc51cbac56e6d97b918f1ea718ddff9`, version `INFLATION_CAUSAL_CANDIDATE_BLS3_R1`.
+- **기존 19개 저장의 정확한 범위:** [A #43847038904](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43847038904) `finishedAt=2026-11-16T10:14:39.404Z`, 로컬 공개용 요약 `public-19-summary-projection-r1.json` 19/19 READY. `controller/inflation19-runtime-readonly.mjs`는 의도적으로 SQLite/개별 원자료 파일을 열지 않고 `stagingOnly=true`를 반환. 따라서 19개 **개별 private raw 데이터 전수 직접 조회 완료로 오인 금지**. 이번 증거 조합은 19개 projection READY + 6개 후보 원자료 정상=25/26 수준이며, 최종 26개 raw/게시 7/7 성공은 아니다.
+- **Census 실제 최초 실패 및 최신 설치 계보:** A #43860489236의 #28 `MISSING`, `checkpoint.attempted=true`, `lastAttemptedAt=2026-11-16T10:30:02.905Z`, 실패 `CENSUS_M3_HEADERS_INVALID`. 이는 [#1663](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1663) Census 1파일 Writer B 설치 Run `43855741146` 이전 수집 시각. 설치된 새 `scripts/pc-writer/inflation-causal-candidate-census-m3.mjs`가 당시 반환한 오류라는 증거 없음. 설치에 공급자 호출 없음. 수정된 main collector는 공식 `get: time_slot_date` 요청·월별 파싱·정식 결측 분리·응답 원문 비공개 아카이브 SHA·기존 유효본 보호를 구현함. **추가 코드 재설치보다 정규 승인된 Census API MTM/TI 단회 수집 후 원자료 재조회를 우선**.
+- **기존 B 계약 불일치 분리:** `pc-inflation-official-manual-b-once`는 BLS flatfile+Census XLSX 고정 **정적 2GET** 경로로 기존 M3 API collector의 실제 동작 증명이 아님. 설치된 A `inflation-candidates-runtime-readonly`는 조회 전용/0 providerCalls이므로 Census #28 API 단회 수집 대체 불가. 제어 `main`의 .github/workflows에서 W01 공식 단회 정적 B는 존재하나 **Census M3 API-only 기존 승인 B/operation은 확인되지 않음**. 기존 수동 B Run 43861853573 등 재생 금지.
+- **이번 상태 변화:** `A4-02`·`A4-03`만 **DONE**(19→21/71, 29.6%). `A4-01`은 19 projection만 입증되므로 PARTIAL, `A4-04`는 실제 API 단회 수집 경로/새 실측 미확보로 BLOCKED. 나머지 계산·게시·D1/UI는 변동 없음. 운영 실행 0, source/산식/config·TTL/Task 변경 0.
+- **NEXT 단일 실제 실행:** W01 승인 경로 내 Census #28 전용 **수동 M3 MTM/TI API** 호출을 기존 quota·원본 저장·checkpoint 계약으로 1회 수행할 수 있는 정규 B 경로/승인 범위를 확인한다. 해당 경로가 마련되어 있고 공유 Core/Writer lease·source pin 안전 조건이 충족될 때만 **신규 고유 Issue로 한 번 실행**, 2개 연도 response hash/archive와 #28 월별 저장 재조회 → 26/26 실측. 현재 제어 A allowlist를 수집 명령으로 우회하거나 정규 예약/동일 Core Task를 임의 강제하지 않는다. 추가 승인 없으면 이 효과만 BLOCKED이고 다른 독립 B2 D1/Writer 검증은 계속한다.
