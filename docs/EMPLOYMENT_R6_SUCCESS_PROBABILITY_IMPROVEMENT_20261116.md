@@ -1,5 +1,38 @@
 # ZGMINI W04 고용 R6 — 성공 가능성 개선을 위한 소스·운영·게시 분리 실행계획
 
+<!-- W04_20261116_VERIFIED_FULL_ROOT_CAUSE_CORRECTION -->
+## 2026-11-16 W04 — 실Windows 최신 영수증 포함 전수 원인 정정
+
+> **원인 판정은 출처·증거 시각에 한정한다.** 이전 39.12%/52.16%는 자의적 단계 확률을 곱한 **가정값**으로 실제 예측 성공률로 사용할 수 없다. W04 75% 역시 이전 중앙 단계기준 보고이지 실운영 완성 비율 실측값이 아니다.
+
+### 목표를 바로잡음
+- [원래 기능 완료 계약](docs/EMPLOYMENT_R6_DELIVERY_PLAN.md)은 BLS24+DOL5 **29개 지표의 원값/관측일/출처/상태·1년 차트와 승인 점수의 공개**이다. 유효값 부재 시 `PARTIAL/STALE/UNAVAILABLE` 허용, 29/29 READY 강제 금지. `precomputeEmploymentR6ReadModel.readyGate`의 29/29+7 family+4 projections all READY는 **별도 종합점수 후보 승격 조건**. 이를 개별 공개의 전역 blocker로 적용하지 말 것.
+- 현재 기능 `main@27c76e799f07d54b1a9cd2c41243fb12360c59a0`에는 `app/api/employment-r6/observations/route.ts` 및 D1 GET reader **소스가 존재**. Production 배포 SHA/실제 D1 body·stored_at·API JSON 미검증. 공개 SSR 29행 `—`는 브라우저 hydration/진짜 D1 결손을 입증하지 못한다.
+
+### 운영 원본 — 마지막 실제 PASS와 FIRST FAIL 구별
+1. [#1403/43663990960](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1403#issuecomment-6887419784) 2026-11-15 READ_ONLY `PASS`, PC SQLite 실제 open: DOL 지역 51개 지역×600주, 600 complete weeks, 577 weeks required, firstFailureWeek=null. **이것은 10년 current raw 수량 증거**이지 historical PIT/29점수 READY 아님. 전국 DOL `ONE_YEAR SUCCESS (2026-11-09 09:50Z)` 4/4, 마지막 IC 2026-10-10, 같은 날 BACKFILL 0/4, `RELEASE 2026-11-15 01:30Z PARTIAL` 0/4·총 3060 rows=지역51×60. 당시 National POST HTTP/content-type/body·파서 첫 실패 미관측. 현재 `DOL_RELEASE_OBSERVATION_STALE`은 result label이지 원인 확정값 아님.
+2. [#782/42416928270](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/782#issuecomment-6713366675) 2026-11-08 연구후보 read-only stage: raw sourceFeatures 29/29, recentlyObserved 23, chart READY 21, scoredFeatures **2/29**, Core current keys 7695 중 history 없는 **2880**; 후보와 Core 중복값 개정 상충 2개 => 후보 자동 승격 금지. **이 자료는 11/08 스냅샷이며 현재 모든 29개 데이터 부족을 증명하지 않음**; #1403의 600주 보완이 모든 다른 PIT gap을 자동 해결하지 않음.
+3. [#1402/43660583265](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1402#issuecomment-6886941535)와 더 최신 [#1551/43815040281](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1551#issuecomment-6908880978)의 실제 운영 `writer-install-preimage-readonly`: `employmentR6AutoCollection=ENABLED`, `employmentR6OneYearAutoPublication=ENABLED`, `sourceHead==approvedConfigSource==checkpointSource`(고정 checkout PASS). #1551의 `sourceHead=f59e999082fd3b21893f0f74fc1913441ec80bba`; 이전 #1402 `05d7ae49...`이므로 **운영 approved source는 이후 변경됨**. **`runtimeSourceVerified=false`, `coreTaskSourceLinked=false`는 실제 Task 고장 확인이 아님**: `controller/writer-install-preimage-readonly.mjs`에서 정적 Task `trace.sourceResolved` 실패 후 **HISTORICAL_CHECKOUT** 선택이면 `coreTaskSourceLinked=false`이고 `FIXED_CHECKOUT_NOT_LIVE_CORE_PROCESS` 증거 등급을 의도적으로 유지. 즉 실행 출처 미확정. 두 receipt의 `employmentR6` **19개 `NOT_OBSERVED`는 미설치 확정이 아닌, 다른 승인 manifest의 `scopedPreimage`만 조회한 범위 제한**이다. 기존 운영 PC 고용 19개 파일의 current SHA는 미실측.
+4. Writer B [#1040](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1040) Provider 1파일 과거 `WRITER_B_INSTALLED_VERIFIED` vs [#1063](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1063) Collector 1파일 `WRITER_B_RECOVERY_REQUIRED/SOURCE_PAIR_STOP`. #1040 설치 성공을 전체 19파일·고용 opt-in 실제 실행 검증으로 오인 금지. 2026-11-16 공유 Controller [#1501](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1501) `UNKNOWN/FIRST_FAIL=RECONNECTED` 별도 경합 가능, 그러나 [#1551] A급 실제 PASS로 전체 A 경로 중단 아님.
+
+### 소스 고정 확인 및 본질적 후행 위험
+- source: 최신 `zgmini/main@27c76e79...`; `codex/employment-1y-reader-r1@f3c4c62d...`, GitHub **behind 146/ahead 86, status diverged**, Draft PR #933 **233 changed files, mergeable=false**. 직접 전부 병합 금지, 최신 main에 필요한 R6 변경만 통합. 단일 통합 [#1083](https://github.com/ansqhd5774-Choi/zgmini/pull/1083) 9파일/HEAD `21b3930c...`, **behind 53/ahead 17, mergeable=true**, CI #43677601781 SUCCESS, Draft/운영 미반영.
+- 현재 main Provider는 HTTP200 비XML/0 National observations도 raw snapshot 저장 경로로 넘길 수 있음. Store는 content-hash `INSERT OR IGNORE`로 직전 good snapshot을 직접 overwrite 하지는 않음. `#1083` 후보는 National 4/4 validation/fail-closed/ETA539 독립 정상 유지·safe evidence, HTTP503/transport fail 보완 완료(소스 CI). **DOL 공식 서버 자체 정상화를 보장하지 않음**.
+- 현재 main Collector `staleDolRelease`는 initial-claims 하나만 점검, National 0/4 실제 실패를 최상위 `DOL_RELEASE_OBSERVATION_STALE`로 둔갑. Scheduler `RELEASE_ALREADY_STORED`도 initial-claims 한 개만 확인해 다른 3계열 stale 때 미래 release를 suppress할 수 있음. #1083에서도 동시 National+ETA 0row이면 `NO_OBSERVATIONS`이 안전 detailed code를 가리는 우선순위 위험. root/미래값/negative/상충 중복 guard는 **코드 잠재 결함**, 운영 11/15 직접 원인으로 단정 금지. 정확 공식 XML + 정상 1주 reporting lag 회귀 보존.
+- 종합 `STATE_CLAIMS_BREADTH`: `employment-r6-feature-engine.mjs::stateClaimsBreadth`는 지역 51×연속주 + 52주 이전 4주 비교 + `pa!==0`; `observationHistory`의 as-of/retrievedAt 제한과 분리. `#1403` current raw count PASS로 최종 점수 READY 입증 불가. BED BACKFILL 1계열 `BDS0000000000000000110008RQ5` missing(11/09)이지만 BED RELEASE SUCCESS이며 R6 전역 blocker로 단정 금지.
+- PC auto 수집/게시도 파일·runtime source exact approval, dirty diff, enabled flag 모두 요구함(`collect-local.mjs`, `run-local.mjs`). opt-in 활성은 **실제 런타임 6그룹 실행/게시 증거가 아님**. D1 Reader는 8일 publishedAt TTL을 적용해 오래된 결과를 거부, 이전 발표 결과를 다시 timestamp 조작해 갱신하는 해결책은 불가.
+
+### 개선 순서 — 실제 한 번만
+- **W04 원담당 개발(다른 자원과 병렬)**: 최신 main의 고용 3 소스·Scheduler와 #1083의 이미 성공한 변경만 최소 선별 통합, **National 4/4 fail-closed·XML 정상 구조·per-series freshness의 Collector↔Scheduler 일치·dual failure 코드 우선순위** 관련 회귀 집중 실행. 정상 주간 실업수당 공식 series lag 보존, #1083 원본 CI 반복/원자료 600주 재백필 금지.
+- **중앙 단일 Owner**: 기존 승인 read-only A 방식으로 **정확 고용 R6 대상 파일만** `scopedPreimage` manifest에 담아 실제 source SHA와 Core Task static/runtime linkage를 구별 확인. 그리고 이미 저장된 ONE_YEAR 성공과 11/15 RELEASE 실패 National raw의 `httpStatus/contentType/format/bodySHA/parsedNational4` 최소 메타만 회수. 과거 실패 snapshot 미저장이면 `NOT_STORED`로 종결 후 신규 승인 Collector의 safe evidence로 최초 실패 분류. 작업 중 활성 Core/Controller lease 무단 손대지 않음.
+- **Writer B 승인 적용 후 원담당**: 실제 설치 source SHA, 6group official release run + 저장 변화량, 29개 실제 data status/PIT 누락 요약, Core-only 승인 STAGE, 검증된 로컬 29개 public display 결과, D1 body/hash/stored_at readback, Cloudflare exact deployed SHA, Production API/UI 일치. **29/29 READY는 필수 조건이 아니며 결측은 정직하게 게시**.
+- DOL HTTP200 오류가 지속되면 기존 정상 원본/score 보존, `STALE/PARTIAL` 공개. FRED/ALFRED 보조 `ICSA,IC4WSA,CCSA,IURSA`는 기존 key/쿼터 전송기 재사용 가능하지만 **승인된 주간 fixed profile/PIT/출처 계약 추가 전 자동 전환 금지**.
+
+**종료 상태:** 원인 감사/문서 갱신 완료; W04 기능 실제 진행 상태·%는 마지막 중앙 단계기준 **75% 유지**로만 보고, 실측 종단 완료율 아님. 새 운영 호출·Runner/DB/D1·배포·승인 source 수정 0. LAST PASS: #1403 600×51, #1551 opt-in enabled + checkout consistent, #1083 CI. FIRST FAIL: 실제 11/15 National POST 최초 오류 분류, 고용 Writer current fileSHA/runtime checkout 및 최신 API/D1 readback 미관측.
+
+---
+
+
 <!-- W04_20261116_SUCCESS_IMPROVEMENT_SYNTHETIC_PIT_SCHEDULER_RECEIPT -->
 ## 추가 오프라인 직접 실행 증거 — 재수집보다 PIT·Scheduler·게시 병목 구분이 우선
 
