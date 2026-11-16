@@ -1,8 +1,13 @@
 import test from 'node:test';
+import {mkdtempSync,rmSync} from 'node:fs';
+import {tmpdir} from 'node:os';
+import {join} from 'node:path';
+import {localDatabase} from '../scripts/pc-writer/local-db.mjs';
+import {marketOperationalStore} from '../worker/market-operational-store.mjs';
 import assert from 'node:assert/strict';
 import {DIAGNOSTIC_FRED_SERIES} from '../lib/diagnostic-layer/input-registry.mjs';
 import {macroCollectionReadiness,mergeSuccessfulMacroCredit} from '../worker/macro-result-contract-r61.mjs';
-import {readStoredMarketInputs,mergeStoredMacro} from '../worker/candidate-market-operational-store.mjs';
+import {readStoredMarketInputs} from '../worker/candidate-market-operational-store.mjs';
 import {buildCompositeMarketScore,DOMAIN_WEIGHTS} from '../lib/market-score/composite-model-r1.mjs';
 
 // Synthetic observations only: never copy private PC records into fixtures.
@@ -103,3 +108,33 @@ test('R4: missing mandatory domain remains PARTIAL, not fabricated using an unre
  assert.equal(incomplete.overall.score,null);
  assert.equal(incomplete.dataQuality.reweighted,false);
 });
+
+test('R4: actual temporary SQLite input storage keeps nine valid last-good records after one changed release',async t=>{
+ const dir=mkdtempSync(join(tmpdir(),'zg-r4-one-input-'));
+ t.after(()=>rmSync(dir,{recursive:true,force:true}));
+ const db=localDatabase(join(dir,'core.sqlite'));
+ t.after(()=>db.close());
+ const store=marketOperationalStore(db);
+ const initial={
+  series:Object.fromEntries(Object.keys(DIAGNOSTIC_FRED_SERIES).map((id,i)=>[id,row('2026-10-01',i+1)])),
+  providerSummary:{fred:{failed:[]}},
+ };
+ await store.writeInput('macro',initial,now-hour);
+ const last=await store.readInput('macro');
+ assert.equal(last.storedAt,now-hour);
+ const changed=mergeSuccessfulMacroCredit(last,credit('2026-11-12',42),now);
+ await store.writeInput('macro',changed,now);
+ const result=await readStoredMarketInputs(store,now);
+ assert.equal(result.series.NFCICREDIT[0].value,42);
+ assert.deepEqual(result.series.PAYEMS,initial.series.PAYEMS);
+ assert.equal(changed.seriesStoredAt.PAYEMS,now-hour);
+ assert.equal(changed.seriesStoredAt.NFCICREDIT,now);
+ const rowAt=await db.prepare("SELECT stored_at FROM market_input_batches_v1 WHERE batch_key='macro:2026-11-16'").first();
+ assert.equal(rowAt.stored_at,now);
+ // A failed provider result must leave the installed SQLite last-good untouched.
+ assert.throws(()=>mergeSuccessfulMacroCredit(awaitedPrevious(last),{...credit(),status:'ERROR'},now+1000),/MACRO_CREDIT_NOT_READY/);
+ const again=await store.readInput('macro');
+ assert.equal(again.body.series.NFCICREDIT[0].value,42);
+});
+
+function awaitedPrevious(value){return value}
