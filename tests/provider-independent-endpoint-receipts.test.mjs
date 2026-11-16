@@ -123,3 +123,17 @@ test('Unstructured stale collector result does not appear as successful new HTTP
  const snapshot=buildApiConnectionHealthFromLog(base,now);
  assert.equal(snapshot.endpointObservation.independentObservedFingerprintCount,null);
 }));
+
+test('Quota-guard-only independent attempt does not count as a contacted endpoint',()=>withHome(base=>{
+ const host='api.bls.gov';
+ appendCollectionEvent(base,event(now-120000,host));
+ const pathUrl='https://data.alpaca.markets/v2/stocks/bars';
+ appendProviderEndpointEvent(base,{at:new Date(now-1000).toISOString(),
+  collector:'ALPACA_INCREMENTAL',
+  endpointPaths:{'data.alpaca.markets':{[digest(pathUrl)]:{requests:1,statuses:{PROVIDER_QUOTA_GUARD:1}}}},
+  endpointTrackingOmitted:0});
+ const snap=buildApiConnectionHealthFromLog(base,now);
+ assert.equal(snap.endpointObservation.independentObservedFingerprintCount,null);
+ assert.equal(snap.endpointObservation.independentObservedCollectorCount,0);
+ assert.equal(snap.endpointObservation.combinedObservedFingerprintCount,null);
+}));
