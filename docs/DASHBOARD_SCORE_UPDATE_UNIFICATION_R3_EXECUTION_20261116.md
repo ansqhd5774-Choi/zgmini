@@ -5,7 +5,7 @@
 - 착수 당시 전용 브랜치: `codex/ui-improvements` `43f943679b555387593d918088860ba5b882dcb6`
 - 인계받은 기존 근거: `DASHBOARD_SCORE_68_CONTENT_CONTRACT_INVENTORY_R1.md` (2026-11-10), `DASHBOARD_SCORE_RUNTIME_BASELINE_R1.md` (2026-11-10)
 - 당회 작업 범위: **현재 개발 소스의 UI 소비 구조 및 R1 계약 재사용**, 기능별 실제 갱신 계약 분류 착수. 원자료/DB/D1/Controller/예약/산식 변경 없음.
-- **진척 요약: 01,02,03,07,09–19 판정 완료 (15/34 = 44.1% 고정 작업 기준). 기능별 판정 12/27. 나머지 15개는 미완료.** 추가 결함군 N은 미확정이므로 전체 R3 최종 %는 아직 산정하지 않는다. 이 기록은 브랜치 문서 반영이지 배포/운영 적용 증거가 아니다.
+- **진척 요약: 01,02,03,07,09–21 판정 완료 (17/34 = 50.0% 고정 작업 기준). 기능별 판정 14/27. 나머지 13개는 미완료.** 추가 결함군 N은 미확정이므로 전체 R3 최종 %는 아직 산정하지 않는다. 이 기록은 브랜치 문서 반영이지 배포/운영 적용 증거가 아니다.
 
 ## 1. 공통 실행 01–03 — 완료 근거
 
@@ -47,8 +47,8 @@
 | 17 | D14 · 물가 · inflation | 현행 CM-R1 4요인 35/25/15/25, 4요인 전부 READY·진단 집계점수 일치 Gate | /api/market-score domains.inflation · STORED_DIAGNOSTIC_R7 | `worker/market-score-r1.mjs / lib/market-score/inflation-legacy-public-domain.mjs / app/dashboard-ui.tsx` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 현행 코드 정상 분리. 실제 유효 입력 변경→Core 계산→게시 사건 1건은 운영 증거 미확인(UNKNOWN) |
 | 18 | D15 · 고용 · employment | R54 저장 4요인: 실업률 30%·3M 비농업고용 30%·4W 주별 청구합계 20%·51개 이상 지역 개선율 20%; 월간 BLS + 주간 DOL 539, 부족 요인 시 PARTIAL/null | /api/market-score domains.employment · /economic-indicators/employment/ | `worker/market-score-r1.mjs / lib/market-score/employment-r54-candidate.mjs / app/dashboard-ui.tsx` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 실제 새 BLS/DOL 유효 입력 1건→R54 저장 계산·D1 current·API/UI 동일 시각의 사건 미확인, 기능 Owner W04 |
 | 19 | D16 · 금리 · rates | 현행 RATE_R3: EFFR 정책 축 20% + 2Y 국채 25% + 실질 10Y 30% + 10Y−3M 곡선 25%. NY Fed EFFR + 연준 H.15 영업일 입력; 정책 상하한은 표시 계약 | /api/market-score domains.rates · /economic-indicators/rates/ | `lib/market-score/rate-r3.mjs / lib/market-score/rate-r2-provider.mjs / worker/market-score-r1.mjs` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 유효 4축/최소 과거 자료와 영업일 freshness Gate 확인. 실제 입력→저장→계산→게시 사건 확인 전. 모델 R2→R3 혼동 금지 |
-| 20 | D17 · 채권·신용 · credit | HY/IG CMDI·NFCI 신용·채권변동성 4요인; 주기 혼합 | /economic-indicators/credit/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
-| 21 | D18 · 경기 · growth | G16 필수24요인; 월간 중심/혼합; 세부 발표일 대조 미완 | /economic-indicators/growth/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
+| 20 | D17 · 채권·신용 · credit | 현행 CREDIT_R2: HY CMDI 35%·IG CMDI 35%·NFCICREDIT 10%·국채 2Y/5Y/10Y/30Y 변동성 20%; 주간 CMDI/NFCI + 일별 금리 혼합 | /api/market-score domains.credit · /economic-indicators/credit/ | `lib/market-score/credit-r2.mjs / worker/market-score-r1.mjs / lib/market-score/domain-adapter-r1.mjs` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 4요인 모두 유효해야 READY, missing PARTIAL/null; soft-stale>14일 표시. 실제 새로운 유효 입력의 계산·공개 갱신 사건 미확인 |
+| 21 | D18 · 경기 · growth | 현행 Growth R2 G16 24개 필수 feature 및 각 발표/초기 저장시각 유효성, 2개월 stale Gate; 저장 24/24 충족 시 전용 공개 domain | /api/market-score domains.growth · /economic-indicators/growth/ | `lib/market-score/growth-r2-worker-domain-r1.mjs / lib/market-score/growth-r2-contract.mjs / lib/market-score/domain-adapter-r1.mjs` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 24개 미충족시 신규 G16 확정점 불가; 기존 진단 fallback 구분. 현재 PC/D1 원본의 24/24 충족 사건 미확인 |
 | 22 | D19 · 소비 · consumption | 현행 R5 D/Y/L/H/B 5축; 옛 C1-R3 95→7축 아님; 월간 중심 | /economic-indicators/consumption/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
 | 23 | D20 · 기업실적 · earnings | R4 4요인·R5 13요인 코드 병존; 현재 PC 활성버전 미확정; 분기 중심 | /economic-indicators/earnings/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
 | 24 | D21 · 유동성 · liquidity | 준비금·M2·TGA·ON RRP 표시 입력 4종; 일·주·월 혼합 | /economic-indicators/liquidity/ · domains | `app/dashboard-ui.tsx (domains / economic details)` | R1_INVENTORY_REUSED_NOT_VERIFIED | R1 계약만 확보 · 활성 Gate/실제 게시 확인 대기 |
@@ -86,8 +86,8 @@
 ## 4. 다음 실제 실행 순서·작업량 보호
 
 - **현재 증거상 확정된 갱신 시점 불일치(결함군 N): 아직 0건 확정이 아니라 '미확정'.** D04는 NOT_CONNECTED이며 새 수정 대상 결함군에 자동 합산하지 않는다.
-- **다음 필수 실행:** 20/D17 채권·신용 점수의 혼합주기 4요인 저장·계산 Gate를 판정하고, Production 공개 API readback을 재확인한다. 04–06·08의 구체적 미확인 입력은 기존 유효 증거가 있을 때 이어서 판정하되 **27개 전원 운영 사건 확인을 단일 전역 Gate로 만들지 않는다**.
-- 실행 완료 집계: **15/34** (01,02,03,07,09–19), 04–06/08 및 20–34는 미완료. **구현: API 저장결과 읽기 라우트 7건·회귀 테스트 4건. main 병합 완료 / Cloudflare 후보 Worker build 성공 / Production 사이트 API readback 미확인.**
+- **다음 필수 실행:** 22/D19 소비 점수의 R5 5축 저장·계산·현재 점수 계약을 판정하고, Production 공개 API readback을 재확인한다. 04–06·08의 구체적 미확인 입력은 기존 유효 증거가 있을 때 이어서 판정하되 **27개 전원 운영 사건 확인을 단일 전역 Gate로 만들지 않는다**.
+- 실행 완료 집계: **17/34** (01,02,03,07,09–21), 04–06/08 및 22–34는 미완료. **구현: API 저장결과 읽기 라우트 7건·회귀 테스트 4건. main 병합 완료 / Cloudflare 후보 Worker build 성공 / Production 사이트 API readback 미확인.**
 
 
 ## 5. 09/D06 인플레이션 위험 신규 실행 증거 — 2026-11-16
@@ -130,3 +130,10 @@
 - 활성 계산은 worker/market-score-r1.mjs에서 buildRateR3. 금리 score 4축 가중: EFFR 기준 정책 0.20, 2년 국채 0.25, 실질 10년 0.30, 장단기 10Y-3M 곡선 0.25. Fed 정책 상·하한(DFEDTARL/U)은 카드 표시 계약이며 과거 RATE_R2 균등가중 산식을 현행으로 오인하지 않음.
 - 소스 수집 계약: lib/market-score/rate-r2-provider.mjs에서 NY Fed EFFR와 Federal Reserve H.15에 정규 관측. 현재 계산 R3에는 추세 최소 이력 warmup과 거래일 기준 freshness 적용. 누락·hard-stale면 UNAVAILABLE/null, 0 유효값 보호, 결측 가중 재분배 없음. tests/rate-r2.test.mjs에서 active R3가 별도임을 확인하는 기존 회귀 케이스.
 - 판정: SOURCE_REVIEWED_RUNTIME_UNKNOWN; 현재 저장/게시 API의 신규 금리 원관측 반영 사건 1건과 score/기준일이 필요. 정상 영업일·휴장 대기를 이유로 산식을 임의 완화하지 않음.
+
+
+## 10. 20–21/D17–D18 채권·경기 계약 판정 — 2026-11-16
+
+- 20/D17: `lib/market-score/credit-r2.mjs`가 stored CMDI HY 35% + IG 35% + NFCI Credit 10% + 국채 네 만기 realized volatility 20% 산식을 사용, 4 요인 READY를 요구. 혼합 시계 주기, 260개 NFCI 최소 표본, 14일 초과 SOFT_STALE, missing PARTIAL/null, 허용 마지막 유효 입력 이월, old risk diagnostic(creditRiskDefense) 점수를 economic credit에 대입하지 않음. `tests/credit-r2.test.mjs`에서 활성 공통 공개 domain 우선 및 missing gate 확인.
+- 21/D18: `lib/market-score/growth-r2-worker-domain-r1.mjs` + G16 registry 총 24/24 개 필수. 수집·저장된 완료 관측, 각 feature PIT 유효성과 두 발표 간격 stale Gate 충족 시 G16 점수 READY. 부족 시 새 G16 확정 점수 게시 불가; `domain-adapter-r1.mjs`에서 기존 진단 fallback이 표시될 수 있으므로 현행 growth source/version 분리 관찰 필요. 기존 R1 가중치·Gate·fallback 조건 무변경.
+- 두 항목 모두 SOURCE_REVIEWED_RUNTIME_UNKNOWN: 실제 신규 관측→저장 checkpoint→계산과 게시버전→공개 응답을 동일 사건으로 맞추는 현재 운영 증거 미확보. 정상 발표/완성기간 기다림을 결함으로 오인하지 않음.
