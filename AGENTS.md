@@ -43,6 +43,14 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - 기존 BLS 실측·원장 검증, API/Worker/D1 경로, BEA preflight 실패·성공 근거를 재사용한다. **소스 구현 / PC 저장·계산 / D1 게시·readback / GET / 실제 화면 / Production / 자동 갱신**을 분리 보고한다.
 - 이 과제 관련 불필요한 브랜치 삭제는 **사용자가 직접 수행**한다. 삭제·기존 이력 변경·무단 main 병합·Production 배포 금지.
 
+## 1.3 W05 진행 기록·대화 간 인계 — 기존 절차 구체화 (2026-11-16)
+
+- **W05 기록의 단일 정본:** `docs/EARNINGS_RECESSION_R1_R6_82_STEP_PROGRESS_20261116.md` (전담 브랜치 `codex/api-site-integration-r1-20261026`). 82단계의 범위와 완료 기준은 `docs/EARNINGS_RECESSION_R1_R6_82_STEP_EXECUTION_PLAN_20261116.md`를 따른다. 두 문서의 역할을 구분한다.
+- **매 의미 있는 W05 작업(조사·시뮬레이션·소스·PR·CI·PC·D1·API/UI·차단) 이후** 같은 진행 파일의 (1) 해당 작업 ID 상태·근거, (2) 누적 실행 이력, (3) 인계 스냅샷의 마지막 확인 지점·다음 필수 행동을 갱신한다. 사용자에게 **완료/부분완료 보고 전 원격 GitHub 커밋·진행 파일 재조회**를 먼저 수행한다.
+- PR·테스트·중앙 #68 댓글·계획서 갱신만으로 W05 진행 기록 반영 완료를 주장하지 않는다. 기록 반영이 불가능하면 **실행 결과와 별도로 `진행 기록 미완료`**라고 보고한다. 실행/CI PASS를 운영 PC 설치·D1 readback·Production PASS로 승격하지 않는다.
+- 다음 담당자는 위 진행 기록을 **먼저 읽고 마지막 유효 결과와 다음 필수 실행 하나를 바로 재개**한다. 과거 전체 작업·82단계를 매회 재검사하지 않고, source drift·모순 근거가 있을 때만 영향 범위를 재확인한다. 다른 담당자의 동시 기록은 파일 SHA 비교·정확한 항목별 갱신으로 보존한다. 무승인 보호 상태 변경이나 새 예약·승인 Gate를 추가하지 않는다.
+- 상세 필수 필드·인계 표·실행 종료 규칙은 **진행 기록 .md 내부 'W05 진행 기록 계약 — 단일 인계 정본'**만 참조한다. 동일 규칙을 여러 문서에 복제·변형하지 않는다.
+
 ## 2. Cloudflare — DEPLOYMENT CONTROL PLANE — ACTIVE
 - 기본 경로:
   `GitHub latest main -> Cloudflare Git integration -> Build -> exact Deployment -> Production 검증`
