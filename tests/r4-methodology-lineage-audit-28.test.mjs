@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {sameVerifiedLineage} from '../scripts/pc-writer/market-snapshot-comparisons.mjs';
-import {compositeSampleFromVerified,mergeCompositeObservedDay} from '../lib/composite-observed-history-r1.mjs';
 import {mergeStoredCompositeTrend} from '../worker/composite-history.mjs';
 import {COMPOSITE_MODEL_VERSION} from '../lib/market-score/composite-model-r1.mjs';
 
@@ -34,24 +33,9 @@ test('R4 #28 existing domain comparison policy requires matching explicit method
  assert.equal(sameVerifiedLineage(old,{source:'OTHER',methodologyVersion:'RATE_R3'}),false);
 });
 
-test('R4 #28 current calculated archive record has no explicit method field: owner contract decision pending',()=>{
- const a=compositeSampleFromVerified(score('CM-R1'),now);
- assert.deepEqual(Object.keys(a).sort(),['asOfDate','calculatedAt','score','signature'].sort());
- assert.equal(a.calculatedAt,'2026-11-16T12:00:00.000Z');
- assert.equal(a.score,52);
-});
-
-test('R4 #28 CURRENT GAP: aggregate and submodel-only vintage transition cannot be recovered from stored signature',()=>{
- const prior=compositeSampleFromVerified(score('CM-R1','RATE_R3'),now);
- const later=compositeSampleFromVerified(score('CM-R2','RATE_R4'),now+15*60000);
- // Diagnostic baseline, NOT a new desired contract: the current archive
- // signature covers score/domain methodVersion but not aggregate modelVersion
- // or a domain modelVersion distinct from methodologyVersion.
- assert.equal(prior.signature,later.signature);
- const day=mergeCompositeObservedDay(null,'2026-11-16',prior);
- assert.equal(mergeCompositeObservedDay(day.body,'2026-11-16',later).changed,false);
-});
-
+// The current archive sample helper is not yet present on this pre-main UI
+// branch. Verify that helper against current main independently; do not copy a
+// new operational module into the old UI branch just to make a test pass.
 test('R4 #28 CURRENT GAP: retained previous-model daily points have no segment boundary in merged display history',()=>{
  const out=mergeStoredCompositeTrend({
   storedSnapshots:[
