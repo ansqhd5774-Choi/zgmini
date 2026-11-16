@@ -1,7 +1,7 @@
 // Tests the verified R3 -> R4 draft -> QFR D1 schema bridge without D1 or PC writes.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {parseQfrD1Mode,prepareQfrD1Payload} from './EARNINGS_CENSUS_QFR_R4_D1_ONCE.mjs';
+import {parseQfrD1Mode,prepareQfrD1Payload,validatePinnedQfrSource} from './EARNINGS_CENSUS_QFR_R4_D1_ONCE.mjs';
 import {QFR_SNAPSHOT_KEY,QFR_SCHEMA} from '../../worker/earnings-companion-c-qfr-r1.mjs';
 
 const SOURCE='2026-10-27T14:52:13.108Z';
@@ -61,4 +61,24 @@ test('source lineage edits and a stale source fail before any DB adapter',()=>{
   const correct=preview();
   assert.throws(()=>prepareQfrD1Payload(correct,{generatedAt:'2026-10-27T15:05:00.000Z',
     now:Date.parse('2027-07-01T00:00:00.000Z')}),/QFR_D1_SOURCE_STALE/);
+});
+
+test('QFR B apply pins all three preflight fields before D1 access',()=>{
+  const payload=prepareQfrD1Payload(preview(),{
+    generatedAt:'2026-10-27T15:05:00.000Z',now:AT,
+  }).payload;
+  const pins={sourceVersion:payload.sourceVersion,rawZipSha256:payload.sourceSha256,
+    sourceStoredAt:String(payload.sourceStoredAt)};
+  assert.equal(validatePinnedQfrSource(payload,pins),true);
+  for(const field of Object.keys(pins)){
+    const altered={...pins,[field]:field==='sourceStoredAt'
+      ?String(Number(pins.sourceStoredAt)+1000):'f'.repeat(64)};
+    assert.throws(()=>validatePinnedQfrSource(payload,altered),/QFR_PUBLISH_SOURCE_DRIFT/);
+    assert.throws(()=>validatePinnedQfrSource(payload,{...pins,[field]:undefined}),
+      /QFR_PUBLISH_SOURCE_PIN_REQUIRED/);
+  }
+  assert.throws(()=>validatePinnedQfrSource(payload,{...pins,sourceStoredAt:'1e5'}),
+    /QFR_PUBLISH_SOURCE_PIN_REQUIRED/);
+  assert.throws(()=>validatePinnedQfrSource(payload,{...pins,sourceStoredAt:'9007199254740993'}),
+    /QFR_PUBLISH_SOURCE_PIN_REQUIRED/);
 });
