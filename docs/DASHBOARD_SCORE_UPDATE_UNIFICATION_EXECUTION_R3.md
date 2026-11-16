@@ -47,7 +47,7 @@
 | 06 | D03 · 미국 등락 비율 | 잠정 약15분과 거래일 확정 R2 | 상승·보합·하락 비율의 phase, 표시 기준일 | `/api/market-breadth` |
 | 07 | D04 · 한국 등락 비율 | counts 미연결 여부와 정상 대기 | 미연결을 신규 갱신 결함으로 오판 금지 | `korea-composite-view / market-breadth-strip` |
 | 08 | D05 · 미국 종합점수 | 경제 12/12 READY+신규 입력 반영 | raw↔화면 3.5배 변환·API 현재값·차트일 | `/api/market-score` |
-| 09 | D06 · 인플레이션 위험 | 월간 4요인 유효 자료의 갱신 | 지표 미발표 vs 승인된 4요인 READY | `/api/inflation-detail` |
+| 09 | D06 · 인플레이션 위험 | R2 저장 이력 16개 입력지표(월·분기 혼합)·7개 평가축의 신규 발표 갱신 | 축 7/7 READY 충족; 경제12 물가 4요인과 구별 | `/api/inflation-detail` |
 | 10 | D07 · 경기침체 위험 | 월·분기 혼합 7요인 유효 자료 | 미완료 원지표의 허용 이월과 공개 점수 | `/api/recession-detail` |
 | 11 | D08 · 스태그플레이션 위험 | 공통 13개월 완성월과 잠정 경로 | 확정 S21과 별도 잠정 혼동 방지 | `/api/stagflation-risk-detail` |
 | 12 | D09 · 신용 위험 | 신용시장·4요인 자료별 최신 입력 | 새 HY·IG·CMDI·변동성 반영 요건 | `/api/credit-risk-detail` |
