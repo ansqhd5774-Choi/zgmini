@@ -1,6 +1,6 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
-> **현재 즉시 상태 (2026-11-17 KST): **14/75 (18.7%), 잔여 61개**. #39 한국 등락 UI 미연결 감사/원담당 연결 경계 DONE. #40 D05 실PC 계산원장 전진 25→32건·현재 승인 source 사건 0→7건 A급 #1813 PASS, 특정 입력 1개→D1 인과 미확정으로 PARTIAL. **#41 인플레이션 R2** 저장 Reader/대시보드·상세 점수 동일 API 및 16입력→7축 ALL READY 보호를 source 검증; 새 유효 자료의 실제 W01 저장·D1 공개/차트 끝점은 미확정이라 PARTIAL. #36 CNN Sidecar/#37 KRX/#38 IEX 별도 운영 미완료. **다음 독립 실행 #42 D07 경기침체 위험**, 원담당 Writer/계산 경계 유지.
+> **현재 즉시 상태 (2026-11-17 KST): **14/75 (18.7%), 잔여 61개**. #39 한국 등락 UI 미연결 감사/원담당 연결 경계 DONE. #40 D05 실PC 계산원장 전진 25→32건·현재 승인 source 사건 0→7건 A급 #1813 PASS, 특정 입력 1개→D1 인과 미확정으로 PARTIAL. **#41 인플레이션 R2** 저장 Reader/대시보드·상세 점수 동일 API 및 16입력→7축 ALL READY 보호를 source 검증; 새 유효 자료의 실제 W01 저장·D1 공개/차트 끝점은 미확정이라 PARTIAL. #36 CNN Sidecar/#37 KRX/#38 IEX 별도 운영 미완료. **현재 실행 #42 D07 경기침체 위험 PARTIAL**, 원담당 Writer/계산 경계 유지.
 
 ## 현재 인계 정본 — 다음 담당자 첫 읽기 (2026-11-16 KST)
 
@@ -14,7 +14,7 @@
 | DONE 단계 (중복 없음) | **#04, #05, #08, #10, #21, #22, #23, #24, #26, #27, #33, #34, #35, #39** (14개) |
 | #34 60초 화면 갱신·역행 차단 | **DONE (현재 main source/fixture)**. `live-refresh.mjs` 60초 주기, `dashboard-ui.tsx`·`use-stored-index.ts` 수용/역행 보호 경로 확인. 신규 유효값·0·PARTIAL 및 낡은 관측·게시 응답 판정 7/7, UI 연결 소스 4/4 PASS. Production 유저 육안 검수는 최종 단계 |
 | 단계 증거 범위 | #24는 **기존 저장 JSON 활용·Draft 설계/회귀 PASS**까지의 설계 DONE. 실제 15분 보존 정책 수정·PC 설치·D1 반영은 **미완료** |
-| PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #28, #29, #36, #37, #38, #40, **#41**. #41 R2 16입력/7축 저장 계산·공개 Reader 계보는 source 확인, 신규 1입력 실제 변경의 READY/6-of-7 허용 이월·D1 게시/차트 끝점 동치 증거 미확정 |
+| PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #28, #29, #36, #37, #38, #40, **#41, #42**. #41 R2 16입력/7축 저장 계산·공개 Reader 계보는 source 확인, 신규 1입력 실제 변경의 READY/6-of-7 허용 이월·D1 게시/차트 끝점 동치 증거 미확정 |
 | 다음 단 하나의 실행 | **#42 (W06 D07 경기침체 위험 UI·공개 이력 계약)** 기존 7요인 월/분기 관측의 READY/유효 이전값·모델 vintage 분리를 점검하고 실제 저장된 새 관측이 current·차트에 반영된 증거 확인. W06는 공개 Reader/UI 소유 범위만; 실PC Collector/Calculator/Writer는 경기침체 원담당. #40 D05 PC/D1 인과 확인 및 #41 물가 W01 16입력/7축 갱신 실증은 원담당 별도 미완료 유지 |
 | 다음 담당·대상·입력 | W06 #42: 경기침체 위험 기존 공개 endpoint, 저장 projection/월·분기 7요인 Gate, 현재 카드/차트·관측일/방법론 표시; 실제 W05/위험 원담당 자료가 있으면 재사용, 임의 재계산 금지. #41 관련 원본 `worker/projection-builders/inflation.mjs`, `lib/diagnostic-layer/inflation-r2-stored.mjs`, `app/inflation/inflation-panel.tsx`, `app/dashboard-ui.tsx`, `app/api/inflation-detail/route.ts`와 main CI는 source 계약 증거로 재사용 |
 | #36 남은 통과 조건 | 공개 GET 소스/CI는 PR #1196 통과. 운영 CNN 현재 원본은 최신이나 원본 observation archive 108점/마지막 11/06 UTC, PC 검증 archive 108점/마지막 11/07 UTC로 10일 이상 정체. 운영 원담당 정상 저장 및 D1 각 날짜 readback과 공개 GET 원본 시각 일치 없이는 #36 DONE 아님 |
@@ -313,3 +313,13 @@
 - 공개/화면: `app/api/inflation-detail/route.ts` blob `3dc2ccb71d852aff83e1b1bd9916db01199d6780`은 저장 projection GET만. `app/dashboard-ui.tsx` blob `5ebaf7d0dd932ee5543f6f312b9f1fa4324863ce`의 risk inflation 카드는 `/api/inflation-detail`만 이용하고 `status==='READY'`·유효 numeric score로 표시, 12경제 물가 4요인 카드와 혼합하지 않음. `app/inflation/inflation-panel.tsx` blob `fd2fb09d70d6a8a2e0e18cd413e0c1b525f081fe`도 같은 GET, 7축 배치·이력/기간별 비교 시점 표시. `tests/dashboard-risk-inflation-r2-parity-r42.test.mjs` blob `926698d57b762c87144f5b69324c751d32c03a67`는 동일 endpoint 및 경제12 4요인으로의 잘못된 fallback 금지 단언. main CI 기존 PASS를 재사용(이번 새 Node 테스트 실행 없음).
 - LAST PASS: 16 입력/7축 산식 source · 저장 PIT/부분 결측 방어/대시보드-상세 공개 API 일치 경로 확인. FIRST UNVERIFIED: **실제 W01 유효 1개 신규 입력/정정의 식별자·PIT 사용 적격성→각 축 값·7축 READY→D1 원문/stored_at→공개 GET/차트 마지막점 동치**는 이번 W06 Source 조회로 증명 불가. 원담당이 검증한 최신 실제 게시 결과를 사용해야 하며 W06가 기존 Gate를 무단 해제하거나 없는 값 보간하지 않음.
 - 상태: 계획 #41 **PARTIAL**; source 일관성만 확인, 실제 운영 PC/D1/exact Production 추가 확인 없음. 전역 BLOCKER 없음; 다음 독립 필수 실행 #42 W06 D07 경기침체 위험 UI/Reader, 원담당 계산·운영은 별도. 진도 14/75(18.7%), 잔여 61.
+
+## 2026-11-17 08:56 KST — R4 #42 D07 경기침체 위험 저장 Reader/UI 소스 추적 (PARTIAL)
+
+- 시작 기준: 원장 14/75 (18.7%), #42 다음 실행. 기존 #36 PR #1196의 GitHub Actions Run 43974966196 check job 완료 SUCCESS(빌드·타입검사·회귀시험 포함). 이는 운영 CNN archive 복구 증거가 아니며 #36 PARTIAL 유지.
+- 실제 조회: 현재 기본 브랜치 `worker/projection-builders/recession.ts`, `app/api/recession-detail/route.ts`, `app/recession/recession-panel.tsx`; 원장 브랜치 계획서 #42 완료 조건 확인. 새 기능 코드·PC·DB·D1·배포 변경 0.
+- 확인: 7요인 PAYEMS/GDPC1/INDPRO/DPCERA3M086SBEA/UNRATE/RRSFS/DSPIC96을 R13 계산기에 전달. `snapshot()`은 요인별 `observationDate<=asOf` 중 최신 유효 숫자를 개별 선택하며 7개 점수의 승인 계산기를 호출. 월별 이력은 `snapshot(rows,date)` READY·유효 점수만 공개하고 `methodologyVersion=RECESSION_R13_CURRENT_VINTAGE`, `historyMode=STORED_INPUTS_CURRENT_VINTAGE`, `lookAheadSafe=false`를 별도 명시. 공개 GET은 기존 D1 projection 저장값만 읽고 재계산하지 않음. UI는 현재 점수와 trend를 같은 `/api/recession-detail`에서 읽고 7개 요인의 관측일/현재값/이전값을 별도로 표시.
+- LAST PASS: 기존 R13 7요인 선택→저장 projection→공개 Reader→상세 카드/차트의 소스 연결 및 current-vintage 구분 확인. FIRST UNVERIFIED: 실제 신규 유효 월/분기 입력 1건이 이전 6개 유효값과 결합되어 운영 PC 재계산·저장·D1 GET·UI 마지막점까지 전진하는 동일 시점 증거. 이력은 lookAheadSafe=false이므로 최초 발표 당시 vintage로 해석 금지.
+- 단계 판정: #42 PARTIAL, DONE 추가 0, **14/75 (18.7%) → 14/75 (18.7%)**, 잔여 61. 소스 조회만으로 운영 완료 주장 금지.
+- 다음 필수 실행 1개: #42 위험 원담당의 기존 승인 PC R13 저장/게시 영수증에서 신규 유효 관측일·점수 1건을 특정하고, 동일 D1 `/api/recession-detail`의 현재 점수·7개 components·trend 마지막점과 대조. 원본/게시 차이가 실제 확인될 때만 담당 범위 최소 수정. 승인 없는 Writer/산식 변경 금지.
+- 원격 인계: 본 파일 갱신 커밋 후 재조회로 확정; Production PC/모바일 신규 실화면 검증 0건, API/UI 동치 미확정.
