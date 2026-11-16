@@ -5,7 +5,7 @@
 - 착수 당시 전용 브랜치: `codex/ui-improvements` `43f943679b555387593d918088860ba5b882dcb6`
 - 인계받은 기존 근거: `DASHBOARD_SCORE_68_CONTENT_CONTRACT_INVENTORY_R1.md` (2026-11-10), `DASHBOARD_SCORE_RUNTIME_BASELINE_R1.md` (2026-11-10)
 - 당회 작업 범위: **현재 개발 소스의 UI 소비 구조 및 R1 계약 재사용**, 기능별 실제 갱신 계약 분류 착수. 원자료/DB/D1/Controller/예약/산식 변경 없음.
-- **진척 요약: 01–33 완료 (33/34 = 97.1% 고정 작업). D01–D27 소스 판정 27/27. 결함 원인군 N=2 확정으로 전체 42작업, 현재 추가 F1–F4 증거 5/8, 통합 38/42(90.5%).** 34/F3(둘째 군)/F4(각 군) 미완료. 이 소스 진행률은 Production 운영 완료율이 아니다.
+- **진척 요약: 01–33 완료 (33/34 = 97.1% 고정 작업). D01–D27 소스 판정 27/27. 결함 원인군 N=2 확정으로 전체 42작업, 현재 추가 F1–F4 증거 6/8, 통합 39/42(92.9%).** 34/F4(A·B) 미완료. 이 소스 진행률은 Production 운영 완료율이 아니다.
 
 ## 1. 공통 실행 01–03 — 완료 근거
 
@@ -196,3 +196,15 @@
 - PR #1174는 새 브랜치 생성/강제 push/rebase 없이 **이미 있던** `codex/ui-improvements-r3-inflation-route-20261116` 브랜치에 최신 main을 두 부모 merge commit `b4394a82445794abf80da0175ca6e8631c2213ac`으로 추가한 것. 이전 PR #1165의 9파일 blob이 main과 일치함을 직접 확인하고 main tree + 변경 4파일만 선택해 정상 fast-forward 하였으며, 실제 main 대비 diff 4파일만. Git 이력·타 작업 소스 보존.
 - 해당 9개 회귀 단언을 원본 source 문자열에 대해 V8 isolate로 실행: **9/9 PASS**. GitHub 실제 Node CI 결과는 별도.
 - **단계 33 결론:** 두 확정 root cause만 F1–F4 집계. F1/F2 A/B 각각 완료, F3 A PASS·B CI 미완료, F4 A/B 모두 운영 증거 미확인. 고정 34는 F4 후 최종 수치 정리에만 사용한다.
+
+
+## 16. 2026-11-16 F4 A/B 및 34 종결 사전 시뮬레이션 (운영 변경 없음)
+
+- **기준 HEAD:** `main` `2ab848ded4a02e34e5a9b2b2a8a1ab28d1bf11ac`, PR #1174 병합 완료. GitHub `check`/`verify`/`notify` 및 Cloudflare `Workers Builds: zgmini-migration-candidate-r5`는 SUCCESS. Git 연동 build version `56d96b47-6dd9-43a6-b9db-572fda63b6b8`; 실사용 exact Deployment/호스트 API readback은 확인되지 않음. wrangler 후보 설정에서 `zgmini.kr` custom domain 연결 선언 확인.
+- **중요: F4 A의 실제 런타임은 App Route GET이 아님.** `worker/candidate-r52.ts`의 `PROJECTION_ROUTES[path]`가 `readProjectionResponse(request,env.DB_CORE,id)`로 **7개 경로를 우선 가로챔**. 따라서 PR #1165의 App Router 신규 7개 GET 소스는 운영 성공·운영 404 복구의 직접 증거가 아니다. 기존 Worker 경로가 이미 존재했다는 점에서 원인군 A의 원래 '404=App Route 누락' 인과는 실제 운영 결함으로 검증되지 않았으며 상태는 `SOURCE_DEFECT_FIXED / RUNTIME_CAUSE_UNPROVEN`으로 구분. 재발명된 블로커로 만들지 않는다.
+- 실제 함수 `readProjectionResponse` + `publicProjectionStore` 및 7개 `PROJECTION_ROUTES` 맵을 원문 그대로 V8에서 모의 D1로 실행: **7/7** 최신 READY envelope + 0점 body → HTTP 200·정확한 payload·SQL SELECT 1회·쓰기 0. 저장 없음·8일 초과·체크포인트 버전/시각 불일치·payload 없음·D1 미바인딩/읽기 오류·asOf mismatch 등 **9/9** 안전 상태 판정(503). 실제 D1 값은 읽지 않음.
+- **경계 주의 1건:** Queue 원본 `createProjectionQueueConsumer`+`projectionWriter`는 `{status:'PARTIAL',score:null}` builder body도 객체이면 ACK하고 `projection.status:'READY'` envelope 저장 가능. Reader는 envelope READY/신선시 **HTTP 200으로 PARTIAL/null payload를 그대로 반환**(실함수 재현). 따라서 200·envelope READY만으로 화면 점수 갱신 PASS라고 하면 거짓 양성이 발생한다. F4는 `payload.status`·`score`·sourceVersion/sourceStoredAt·원자료 관측일도 함께 확인하고, 실제 부분 입력이 합법적이면 503을 억지 요구하거나 fake score로 변경하지 않는다. 이 조건은 운영 신규 배포 없이 읽기 검증만 요구.
+- **F4 B 화면:** 현재 main `app/market-breadth-strip.tsx`의 실제 `currentIexProvisional` 함수를 UTC 2026-11-16T15:00 기준 고정시각 fixture로 실행: 유효·0점·일부 페이지 미수집 **3/3 허용**, 30분 초과·미래·전 거래일·퇴역 MarketParquet·잘못된 phase·null·비율합 오류 **7/7 거부**. 한국 counts path·미제공 표시는 소스 비교로 보존. 퇴역 확정/이력 API GET 시도 없음. 실제 브라우저·모바일 hydration은 미관측.
+- **모의시험 통과 26/27(96.3%)**은 운영 성공률이 아님: F4 A 7 정상+9 안전변형=16 PASS, PARTIAL body에 HTTP200으로 전송되는 사전정의된 엄격 READY 기대 1건은 `CAUTION`; F4 B 10/10 PASS. 화면에서 PARTIAL 본문까지 READY로 오인하는지는 실제 UI 소비 검증 필요.
+- **예상 무수정 1차 실운영 종결 성공률: 67%(주관적 가정, 통계적 실측 아님).** 구성 가정: exact Deployment/실제 동기화 90%, 공개 D1 7개 유효·신선/허용 부분상태 증명 80%, UI/모바일·퇴역 화면 제거 95%, 최종 보고 98%. 공통 배포 리스크는 A/B에 중복 곱하지 않음; 0.90×0.80×0.95×0.98=0.67032. 명목 범위 60–80%. 실제 D1 readback을 확보하면 갱신 필요. 조건부(Deployment+D1 증명 이후) 종결은 약 93%(0.95×0.98).
+- **미완료 실제 3개:** `F4-A` 운영 7 API/D1/sourceVersion 동치, `F4-B` exact Deployment 및 미·한 UI 육안/DOM 자동 검증, `34` 실제 증거 대조 종결. 현재 **39/42(92.9%)**이며 상기 시뮬레이션은 F4 실운영 완료로 집계하지 않음. 공개 API를 도구에서 열지 못한 것은 HTTP 실패의 증거가 아니라 도구 접근 제한으로 기록. PC 수집/Writer/DB/스케줄러 및 TTL/산식 수정 없음.
