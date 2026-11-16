@@ -43,23 +43,58 @@ test('official Census M3 MTM/TI uses only U.S. total manufacturer SA inventory l
   assert.deepEqual(normalizeCensusM3Inventories([twoDates,twoDateRow])
     .map(x=>[x.date,x.value]),[['2026-09-01',900000]]);
   const yearOnly=timeRow(2026,'09');yearOnly[6]='2026';
-  assert.throws(()=>normalizeCensusM3Inventories(timePayload(yearOnly)),
-    /VALUE_OR_DUPLICATE/);
+  assert.deepEqual(normalizeCensusM3Inventories(timePayload(yearOnly)),[]);
   // Census official EITS examples emit time_slot_date as a midnight timestamp.
   const stamped=row(2026,'07','800000');stamped[2]='2026-07-01 00:00:00.0';
   assert.deepEqual(normalizeCensusM3Inventories(payload(stamped)).map(x=>[x.date,x.value]),
     [['2026-07-01',800000]]);
   const nonMidnight=row(2026,'07');nonMidnight[2]='2026-07-01 12:00:00.0';
-  assert.throws(()=>normalizeCensusM3Inventories(payload(nonMidnight)),/VALUE_OR_DUPLICATE/);
+  assert.deepEqual(normalizeCensusM3Inventories(payload(nonMidnight)),[]);
   const invalidStamped=row(2026,'02');invalidStamped[2]='2026-02-30 00:00:00.0';
-  assert.throws(()=>normalizeCensusM3Inventories(payload(invalidStamped)),/VALUE_OR_DUPLICATE/);
-  assert.throws(()=>normalizeCensusM3Inventories(payload(row(2026,'09'),row(2026,'09'))),/VALUE_OR_DUPLICATE/);
-  assert.throws(()=>normalizeCensusM3Inventories(payload(row(2026,'09','NA'))),/VALUE_OR_DUPLICATE/);
+  assert.deepEqual(normalizeCensusM3Inventories(payload(invalidStamped)),[]);
+  assert.equal(normalizeCensusM3Inventories(payload(row(2026,'09'),row(2026,'09'))).length,1);
+  assert.deepEqual(normalizeCensusM3Inventories(payload(row(2026,'09','NA'))),[]);
   const invalidDate=row(2026,'02','500000');invalidDate[2]='2026-02-30';
-  assert.throws(()=>normalizeCensusM3Inventories(payload(invalidDate)),/VALUE_OR_DUPLICATE/);
+  assert.deepEqual(normalizeCensusM3Inventories(payload(invalidDate)),[]);
   const missingDate=HEADERS.filter(x=>x!=='time_slot_date');
   assert.throws(()=>normalizeCensusM3Inventories([missingDate]),/SHAPE_INVALID|HEADERS_INVALID/);
-  assert.throws(()=>normalizeCensusM3Inventories(payload(['NO','1329','2026-09-01','yes','MTM','5','','1'])),/NOT_FOUND/);
+  assert.deepEqual(normalizeCensusM3Inventories(payload(['NO','1329','2026-09-01','yes','MTM','5','','1'])),[]);
+});
+
+
+test('Census EITS supplier uppercase headers, official missing and conflicting months are isolated',()=>{
+  const caps=HEADERS.map(h=>h.toUpperCase());
+  const items=normalizeCensusM3Inventories([caps,
+    row(2026,'07','800000'),
+    row(2026,'08','NA'),
+    row(2026,'09','900000'),
+    row(2026,'09','900000.0'),
+    row(2026,'10','910000'),
+    row(2026,'10','920000'),
+  ]);
+  assert.deepEqual(items.map(x=>x.date),['2026-07-01','2026-09-01']);
+  assert.equal(items.diagnostics.missing,1);
+  assert.equal(items.diagnostics.duplicate,1);
+  assert.equal(items.diagnostics.conflict,1);
+  assert.equal(items.diagnostics.available,2);
+});
+
+test('Census partial official year preserves usable month and archives all response years',async t=>{
+  const fixture=base();t.after(fixture.clear);
+  const quotaFetch=async url=>{
+    const year=Number(new URL(url).searchParams.get('time'));
+    return response(payload(row(year,'07',year===2025?'NA':'800000'),
+      row(year,'09',year===2025?'NA':'900000')));
+  };
+  const result=await collectCensusM3Inventories({base:fixture.writer,censusKey:'k',quotaFetch,now});
+  assert.equal(result.status,'SAVED_READBACK');
+  assert.equal(result.count,2);
+  assert.equal(result.providerRequests,2);
+  assert.equal(result.diagnostics[0].missing,2);
+  assert.equal(result.diagnostics[1].available,2);
+  const doc=JSON.parse(fs.readFileSync(path.join(fixture.writer,CENSUS_M3_INVENTORIES_FILE),'utf8'));
+  assert.deepEqual(doc.observations.map(x=>x.value),[800000,900000]);
+  for(const item of result.sourceHashes)assert.match(item,/^[0-9a-f]{64}$/);
 });
 
 test('collects two source years and archives private provider snapshots without key leakage',async t=>{
@@ -117,7 +152,9 @@ test('invalid provider row cannot overwrite stored data and missing key blocks n
   await collectCensusM3Inventories({base:fixture.writer,censusKey:'k',quotaFetch,now});
   const file=path.join(fixture.writer,CENSUS_M3_INVENTORIES_FILE),before=fs.readFileSync(file);
   invalid=true;
-  await assert.rejects(()=>collectCensusM3Inventories({base:fixture.writer,censusKey:'k',quotaFetch,now}),/VALUE_OR_DUPLICATE/);
+  const absent=await collectCensusM3Inventories({base:fixture.writer,censusKey:'k',quotaFetch,now});
+  assert.equal(absent.status,'UNCHANGED');
+  assert.equal(absent.diagnostics.every(x=>x.missing===1),true);
   assert.deepEqual(before,fs.readFileSync(file));
   const earlier=calls;
   await assert.rejects(()=>collectCensusM3Inventories({base:fixture.writer,censusKey:'',quotaFetch,now}),/KEY_MISSING/);
