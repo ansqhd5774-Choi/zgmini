@@ -11,14 +11,14 @@
 | 담당·저장소·브랜치 | W01 물가지표 / `ansqhd5774-Choi/zgmini` / `fix/economic12-inflation-legacy4-r35-20261021` |
 | 작업·기록 정본 | 계획: `docs/INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md`; 기록: **이 파일** `docs/INFLATION_71_STEP_EXECUTION_LEDGER_R1_20261116.md` |
 | 전체 목표 | 승인 공식 BLS/Census 원자료 저장·재조회로 26/26 확보 → 기존 저장 기반 계산 → 기존 Writer 게시 → D1/API/PC·모바일 UI 연구지표 7/7 확인. 기존 19개 및 4축 산식·PPI·last-good·운영 설정 보호 |
-| 확정 단계 | **10/71 완료(14.1%), 61개 미완료**: 기존 A1-01·07·09, B1-01~05 및 이번 A2-01·02 분석 완료. A1-08, A1-05, 실제 B 수집·D1/API/UI는 미완료 |
+| 확정 단계 | **17/71 완료(23.9%), 54개 미완료**: A1-01·07·09(3), A2-01·02(2), B1-01~06(6), B2-01~04·07·08(6). B2의 6개는 2026-11-10~13의 과거 실측을 재사용한 완료이며 2026-11-17 최신 D1/API/UI 재검증이 아님. A1-05·08, B2-05·06, 공식 B 수집과 신규 7/7은 미완료 |
 | 마지막 실제 운영 수치 | #1334 당시 **23/26 원자료**, **4/7 연구자료 저장·공개**(당시 관측). 이후 26/26 또는 7/7 달성은 확인되지 않음; 실제 전체 기능 추정 진행 42%는 옛 기준이고 71단계와 별도 |
 | 최신 제어 소스 (운영 미반영) | `ansqhd5774-Choi/zgmini-pc-control` [PR #1772](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1772), merge SHA `f59e723aa43e59520d760f5da17a07f7f09a04b2`; [source CI #43885847244](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43885847244) 90/90 PASS, C996 #43885847344 PASS. 현재 control main HEAD는 다음 실제 작업 시 재조회 |
 | 실제 설치 Controller | #1745 당시 `e3a495c97d6b40d6d4eea2ff4f586bef46216eb7` 파일 전환, 유지보수 결과 `UNKNOWN/BACKLOG_OR_RECOVERY_NOT_VERIFIED`; 이후 최신 코드 설치 검증 없음 |
 | 기존 PC 재사용 결과 | [#1747](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1747) core-status PASS / Run 43876398674. [#1748](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1748) Event129 A `STATE_UNKNOWN/INFL_E129_NOT_OBSERVED_WITHIN_LIMIT` / Run 43876539574, reader OK·Event 인식 0·lock same=true·protectedStateUnchanged=true |
 | 정확한 미해결 조건 | **실PC Event Log 설정 조회에서 TaskScheduler/Operational enabled=false(2026-11-16 22:32 KST)** 확인. #1748 Event129 0개 및 WMI Task GetInstances EMPTY와 정합. 그러나 #1690 B 실행 당시 로그 설정은 소급 증명 불가. Event Log 활성화는 C급 사용자 직접 작업; #1745 maintenance UNKNOWN 및 최신 Controller 미설치 문제는 별도 미해결 |
 | 기존 요청 재실행 금지 | #1745 유지보수, #1747 core-status, #1748 Event129 A, 소비된 기존 B Run 43861853573. 원본 Issue/requestId와 JSON/TXT 재사용; 증거 없는 복구·잠금 삭제·수집 B 재실행 금지 |
-| 이번 작업의 실제 효과 | 기존 PC 결과 `results/w01-task-log-config-readonly-20261116.json` 및 제어 #68 소유자 인계 확인, 기존 B 검증 경로/정확한 오류와 대조하여 A2-01·A2-02 분석 2개 완료. 현재 운영 설정 변경 0, 새 A/B 실행 0, 수집·DB/D1·Controller 설치 0 |
+| 이번 작업의 실제 효과 | 최신 main f22bfb1df7ff70bf4997117fbc187844a52f5c5c의 Node.js CI #43888083156 통과(원래 4축·19개 별도 유지 포함), 이미 계획서 §6에 확정된 2026-11-10 부분 공개 API/UI 4/7과 2026-11-13 PC 조회 결과를 재활용해 B1-06 및 B2 6개 완료 표시. 이번에 새 PC/공급자/D1 쓰기 0건. 현재 Production API JSON은 조회 환경에서 접근 실패(서비스 장애 여부 미확정) |
 
 **다음 필수 실행 하나 — 사용자 C급 시스템 설정:** 운영 PC에서 Windows **작업 스케줄러 → 오른쪽 ‘모든 작업 기록 사용’** 또는 **이벤트 뷰어 → 응용 프로그램 및 서비스 로그 → Microsoft → Windows → TaskScheduler → Operational → ‘로그 사용’**을 직접 선택해 TaskScheduler Operational 기록을 활성화한다. **Core/Korea Task·예약·파일·잠금·DB·Controller는 변경하지 않는다.** 이후 자연 Core 실행이 새 이벤트를 만들면 기존 설치 A의 새 고유 Issue를 승인 범위에서 1회 실행해 event record/Task·WMI/lock 동일 PID와 시각을 재조회한다(기존 #1748 재실행 금지). 이후 B 단회 GET·파싱·저장으로 이어간다. **Controller PR #1772 신규 적용은 독립 정규 승인·manifest 및 postOperation 문제가 해결될 때 별도 처리**하며, 이번 로그 비활성이라는 직접 원인을 보완하는 선행조건으로 무조건 삼지 않는다. 사용자가 C 작업을 하기 전에는 이 범위만 BLOCKED, 독립 B1/B2 저장/게시 readback 검토는 계속 가능.
 
@@ -80,7 +80,7 @@ B4 10 | Production·화면 최종 검증
 합계 71
 ```
 
-현재 71개 세부 체크 완료: **10/71 (14.1%)**. A1 실증 3개, A2 원인 분석/조회 시점 한계 구분 2개, B1 기존 소스 연결 5개가 완료. **남은 61개** 중 TaskScheduler 기록 비활성으로 Event129 단회 증명이 제한되며 원자료 수집·저장·게시 7/7은 여전히 미완료. 역사 증거·소스 CI를 운영 완료로 혼합하지 않는다.
+현재 71개 세부 체크 완료: **17/71 (23.9%)**. A1 실증 3개, A2 원인 분석 2개, B1 소스/19·4축 회귀 6개, B2 과거 실제 4/7 부분공개·상태·UI 6개. **남은 54개** 중 Event129 C급 로그 설정 활성화, B2-05 Writer ledger·B2-06 D1 직접 readback, 신규 3개 수집·7/7 공개가 미완료. 금일 실제 수집·게시 전진 없음.
 
 ## A1 — 운영 입력·소유권 증명 (9개)
 
@@ -138,19 +138,19 @@ B4 10 | Production·화면 최종 검증
 - [x] **B1-03** 기존 공통 Writer 연결 확인 — DONE | auto-publication-r1.mjs에서 저장 preview→기존 Writer→D1 readback 경로 확인, blob 2c71f345b36fcebe9f003e26aaf874a792550354
 - [x] **B1-04** candidate-r52.ts API 라우트 확인 — DONE | candidate-r52.ts D1 공개 reader 라우트 연결 확인, blob d2af33c6afff090fbe8dbc39b418c12972aa39af
 - [x] **B1-05** 물가지표 상세 UI 컴포넌트 연결 확인 — DONE | economic-detail-panel.tsx→inflation-candidate-7-inputs.tsx 연결 확인, blobs 2322e0ed8a4f2ded2c53a9be98e207d65fb9adab / 5e621cb7638b5cfa7201ef41b0170a24eeee3b54
-- [ ] **B1-06** 기존 19개·4축 점수 불변 검사 — HISTORICAL_SOURCE | 기존 19행·4축 비변경 원칙; 현재 배포까지 새 검증 아님
+- [x] **B1-06** 기존 19개·4축 점수 불변 검사 — DONE | 현재 zgmini/main f22bfb1df7ff70bf4997117fbc187844a52f5c5c의 4축 원본 산식·19개 독립 표 유지 회귀검사 PASS: Node.js CI Run 43888083156, 실패 0건. 테스트 tests/economic12-inflation-original4-r35.test.mjs의 4요소·일련 번호·가중치·결측/0 처리·1Y history 불변, 기존 19행 source UI 분리 테스트. 이는 source/CI 검증 및 2026-11-10 별도 Production 19행 관측에 한정; 금일 D1 최신값 동일성은 미검증
 - [ ] **B1-07** GitHub 개발 source와 실제 배포 source 구분 — PARTIAL | 개발 main과 당시 Production 응답 구분, exact Deployment SHA 미조회
 
 ## B2 — 유효 원자료 우선 부분 게시 (8개)
 
-- [ ] **B2-01** 저장된 7개 입력 상태 조회 — HISTORICAL | 2026-11-13 PC #1334 유효 4/7 저장 확인
-- [ ] **B2-02** 유효 4개 READY/STALE 판정 — HISTORICAL | 2026-11-10 공개 API READY 4행
-- [ ] **B2-03** 누락 3개 PENDING/last-good STALE 판정 — HISTORICAL | 2026-11-10 PENDING 3행, zero 대체 없음
-- [ ] **B2-04** score:null 연구자료 projection 생성 — HISTORICAL_SOURCE | score:null projection 정본
+- [x] **B2-01** 저장된 7개 입력 상태 조회 — DONE | [역사적 실PC 조회] 2026-11-13 #1334/Run 43277201713 7개 후보 중 4개 유효·#22/#23 INVALID·#28 MISSING. Production API 2026-11-10 7행과 별개 시점. 최신 PC 원자료 상태는 재확인되지 않음
+- [x] **B2-02** 유효 4개 READY/STALE 판정 — DONE | [역사적 Production] 계획서 §6 2026-11-10 GET API status=PARTIAL·READY 4개(#2 EIA, #16 Treasury, #24 BLS PPI, #29 Fed G17) 실측. 개별 관측일·값·sourceVersion 기록; 현재 2026-11-17 live 동일성은 미검증
+- [x] **B2-03** 누락 3개 PENDING/last-good STALE 판정 — DONE | [역사적 Production] 계획서 §6 2026-11-10 API #22·#23·#28 3행 PENDING/value:null/history:[]/관측일 null 확인. 숫자 0 위조·STALE 오표시 없음. 후속 last-good이 생긴 경우 STALE 보존은 별도 source 단위 회귀 테스트 PASS
+- [x] **B2-04** score:null 연구자료 projection 생성 — DONE | [역사적 실제 공개+현행 코드] 계획서 §6 2026-11-10 API 7행 status=PARTIAL·score=null·schemaVersion=inflation-causal-candidates-7-r1-v1·sourceVersion INFL7_PRESENTATION_c891b9b21dc39a33c88acd08692bbdc2d9278e32881ec4759b09ec42cbd10231 반환. tests/inflation-causal-candidates-public-7-r1.test.mjs의 7행 생성·4 READY 3 PENDING score:null·결측 계약 회귀검사 보유. 현행 D1 직접 readback은 B2-06 미완료
 - [ ] **B2-05** 기존 Writer를 통한 D1 부분 게시 — HISTORICAL_OUTPUT | 2026-11-10 4/7 Production 공개 관측, Writer ledger 직접 검증 미완료
 - [ ] **B2-06** D1 key·값·시각·원본 버전 직접 확인 — PENDING | 새로운 실제 증거 없음
-- [ ] **B2-07** Production API 7행 결과 대조 — HISTORICAL_OUTPUT | 원본 계획 §6 API 7행 출력, 최신 재조회 아님
-- [ ] **B2-08** 홈페이지 4/7 부분 공개 확인 — HISTORICAL_OUTPUT | 원본 계획 §6 데스크톱 4/7 표, 모바일 미확인
+- [x] **B2-07** Production API 7행 결과 대조 — DONE | [역사적 Production] 계획서 §6 2026-11-10 /api/inflation-candidate-inputs GET 7행·4 READY 3 PENDING·score:null 검증, sourceVersion 저장. 2026-11-17 재조회는 접근 실패이므로 현재 Production 정상/오류 단정 금지; 최종 현재 7/7은 B4 별도 미완료
+- [x] **B2-08** 홈페이지 4/7 부분 공개 확인 — DONE | [역사적 Production UI] 계획서 §6 2026-11-10 /economic-indicators/inflation/ 데스크톱 연구 원자료 7행(4값+3 대시)·기존 19행·4축 54.3점 별도 표시 실측. 모바일 최종 검증은 B4-08 별도 미완료. 이번 페이지 SSR 로딩 문구는 hydration 이후 데이터 판정 근거가 아님
 
 ## B3 — 전체 7개 저장 기반 계산·게시 (9개)
 
@@ -222,3 +222,14 @@ B4 10 | Production·화면 최종 검증
 - **해결 방향:** Windows 관리자 Event Log/TaskScheduler 기록 사용은 사용자 **C급 직접 변경**. 소스 보호 검사·Assertion 삭제·로그 활성화 원격 우회·Core/Korea 강제 실행·잠금 정리 금지. 승인된 새 A는 기록 활성화와 자연 Core 이벤트 후 단회 요청만 허용. PR #1772 미설치가 당장 Event 생성의 원인은 아니므로 반복 Controller 재설치보다 실제 로그 기록 활성화가 우선.
 - **이번 실행:** GitHub 원본 증거 readback·현재 B/Controller 소스 비교, [ZGMINI 공개 물가 페이지](https://zgmini.kr/economic-indicators/inflation/) 서버 HTML 읽기 시 19행/7행의 로딩 표식만 관측(클라이언트 수치 7/7, D1 actual readback 아님). 공급자 호출·PC 설치/진단/수집·운영 DB·D1 쓰기 **0건**. 이 파일의 두 분석 세부단계만 DONE 처리(8→10/71). 기능 수집/게시 진행률이 26/26·7/7로 바뀐 것은 아님.
 - **NEXT 담당/통과:** 사용자: C급 TaskScheduler/Operational 로그 활성화 1회(시스템 설정 변경). 다음 W01 원담당: 기존 자동 Core 자연 이벤트 기록 확인 후 승인된 `inflation-event129-evidence-readonly` 신규 고유 A 1회, 실제 `readerShape`는 설치 SHA에 따라 분리 판정. 소유권/Task·VBS/lock PID/시간 적합 증명이 통과할 때만 공식 B 단회 수집; 불명확하면 관련 A/B만 BLOCKED. #1745/#1747/#1748/#1690 동일 ID 재실행 금지.
+
+## 2026-11-17 — B1-06 및 B2 기존 완료 증거 재사용·현재 공개 검증 한계
+
+- **실행 경로:** W01 `fix/economic12-inflation-legacy4-r35-20261021` 진행 원장과 원래 계획서 §6 대조. 현재 `zgmini/main=f22bfb1df7ff70bf4997117fbc187844a52f5c5c`의 `tests/economic12-inflation-original4-r35.test.mjs` 및 7행 후보 public/Writer 테스트 소스 조회.
+- **실제 테스트 증거:** [Node.js CI #43888083156](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43888083156) head=f22bfb1d…, completed/success. Node 테스트 4488 중 **4478 PASS·0 FAIL·7 SKIP**(그 외 결과는 CI 표현 그대로 유지), PC recovery 11/11, Cloudflare contract 69/69. CI 원문에서 'the approved four diagnostic parts exactly reconstruct', 'market domain preserves four-factor', 'inflation research 19 replace the legacy four in table/mobile' 등 관련 테스트 PASS를 직접 확인.
+- **재사용한 당시 운영 증거:** 계획서 §6 `2026-11-10` Production GET `/api/inflation-candidate-inputs`, 정확 7행·READY #2/#16/#24/#29 4개·PENDING #22/#23/#28 3개, `score:null`; 데스크톱 별도 표 4값·3개 미제공·기존 19행·4축 score 54.3 독립 표시. 계획서 §9.4 `2026-11-13` 운영 A #1334 당시 4/7 유효. **현재 Production 값을 새로 검증했다는 뜻이 아님.**
+- **검증되지 않은 범위:** 2026-11-17 공개 API JSON 직접 조회는 web 도구에서 URL 접근 불가, 서버 응답 코드/실제 상태 미확인. 공개 HTML SSR은 hydration 전 '확인 중'으로 렌더되어 실제 7개 수치·D1 최신값의 증거가 아님. 관리자 D1 key/값/stored_at·실제 Writer ledger·현행 Cloudflare exact SHA·모바일 최종 화면 미확인. 기존 정상 데이터 재게시·추정값 채우기 없음.
+- **71단계 진행 정정:** **B1-06과 B2-01/02/03/04/07/08 DONE**(7개 과거 완료 증거 회수), **10→17/71 (23.9%)**. B2-05와 B2-06은 직접 ledger/D1 증거가 없어 계속 미완료. 역사적 42% 추산치와 혼합하지 않음.
+- **현재 문제와 NEXT:** Event Log TaskScheduler/Operational disabled 실PC 증거(2026-11-16 22:32 KST)와 수동 B 소유권 차단은 현재 C급 사용자 직접 활성화 단계에서만 BLOCKED. 독립 작업의 다음 실행은 기존 승인 경로로 **저장 D1 key `detail:inflation-causal-candidates-7:r1`의 관리자 원본 `body,stored_at,sourceVersion` 및 Writer ledger를 실제 readback하여 B2-05/06을 판단**하는 것. 해당 D1 권한·접속이 없으면 접근 불가로 남기고 새 DB/임의 SQL/게시 재실행 금지.
+- **운영 영향:** 소스 산식·DB/TTL·수집 주기·Controller·DNS·Publisher·예약 변경 없음. 공급자 호출·PC 쓰기·D1 writes 0. 기존 요청·사용자 C급 작업을 우회하지 않음.
+
