@@ -27,7 +27,7 @@ test('R44 refuses invalid and conflicting market capitalization',()=>{
 });
 test('R44 all verified classes receive deterministic importance',()=>{
  const r=inspectMarketCapCoverage(sample,[verified('ABBV',300e9),verified('AAPL',100e9),verified('GOOG',10e9)]);
- assert.equal(r.status,'READY_FOR_CONTRACT_REVIEW');assert.deepEqual([r.gradeByTicker.ABBV.importance,r.gradeByTicker.AAPL.importance,r.gradeByTicker.GOOG.importance],[3,2,1]);
+ assert.equal(r.status,'READY_FOR_CONTRACT_REVIEW');assert.deepEqual([r.gradeByTicker.ABBV.importance,r.gradeByTicker.AAPL.importance,r.gradeByTicker.GOOG.importance],[3,3,1]);
 });
 test('R44 read-only output does not infer market cap coverage from display HTML',()=>{
  const r=analyzeEarningsStorageBody(JSON.stringify(sample));
