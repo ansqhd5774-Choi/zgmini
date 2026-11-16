@@ -43,13 +43,13 @@ export async function retrieveGmhHourlyPages({
  for(let index=0;index<maxPages;index++){
   const url=buildUrl(symbol,start,end,cursor);
   let response;
+  attempts++;
   try{response=await fetcher(url,{method:'GET',redirect:'error'});}
   catch{
    return {status:'PROVIDER_REQUEST_FAILED',symbol,attempts,pages,
     providerCalls:attempts,complete:false,source:'GETMARKETHISTORY_STOCKS_US_1H',
     dataThrough:lastDataThrough,rawUnmodified:true,d1Writes:0,pcWrites:0};
   }
-  attempts++;
   if(!response||response.status!==200){
    return {status:'PROVIDER_HTTP_RESPONSE',symbol,
     providerHttpStatus:Number.isInteger(response?.status)?response.status:null,
