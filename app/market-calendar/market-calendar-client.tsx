@@ -187,7 +187,7 @@ export default function MarketCalendar(){
  useEffect(()=>{
   const controller=new AbortController();
   fetch('/api/earnings-calendar-taxonomy',{signal:controller.signal,cache:'no-store'})
-   .then(async r=>r.status===204?null:r.ok?await r.json():null)
+   .then(async r=>r.status===204?null:r.ok?await r.json() as {status?:string;sectors?:Record<string,string[]>}:null)
    .then(data=>{
     if(!controller.signal.aborted&&data?.status==='READY_TAXONOMY_OPTIONS'&&
      data.sectors&&typeof data.sectors==='object')setTaxonomyOptions(data.sectors);
