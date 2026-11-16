@@ -117,6 +117,8 @@ export function buildApiConnectionHealthFromLog(base,now=Date.now(),{fileSystem=
        statuses.reduce((sum,[,n])=>sum+n,0)!==entry.requests){
        invalidEndpointEvents++;continue;
       }
+      // A quota guard can reject before any HTTP send: not evidence of a contacted endpoint.
+      if(statuses.every(([code])=>code==='PROVIDER_QUOTA_GUARD'))continue;
       accepted.push(id);
      }
      if(!accepted.length)continue;
