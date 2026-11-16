@@ -101,22 +101,22 @@ const parsePage=(buffer,symbol,start,end)=>{
  need(buffer.length<=6_000_000,'PAGE_SIZE');
  const lines=buffer.toString('utf8').split(/\r?\n/).filter(x=>x.trim());
  need(lines.length<=5000,'PROVIDER_PAGE_BOUND');
- const seen=new Set();let prev='';
+ const seen=new Set();let prev=-Infinity;
  for(const line of lines){
   let row;try{row=JSON.parse(line);}catch{fail('PROVIDER_JSON');}
   const t=row?.timestamp,d=typeof t==='string'?Date.parse(t):NaN;
+  const utcDay=Number.isFinite(d)?new Date(d).toISOString().slice(0,10):null;
   need(row?.symbol===symbol&&Number.isFinite(d)&&
-   new Date(d).toISOString()===t&&
-   new Date(d).toISOString().slice(0,10)>=start&&
-   new Date(d).toISOString().slice(0,10)<=end&&
-   (!prev||t>prev)&&!seen.has(t),'PROVIDER_IDENTITY_OR_ORDER');
+   typeof t==='string'&&/^\d{4}-\d\d-\d\dT/.test(t)&&
+   utcDay>=start&&utcDay<=end&&
+   d>prev&&!seen.has(d),'PROVIDER_IDENTITY_OR_ORDER');
   // Provider gap/late/missing data are retained verbatim, not rejected
   // because they do not fit a locally invented scoring contract.
-  prev=t;seen.add(t);
+  prev=d;seen.add(d);
  }
  return {rows:lines.length,
-  earliestUtc:lines.length?JSON.parse(lines[0]).timestamp.slice(0,10):null,
-  latestUtc:lines.length?JSON.parse(lines.at(-1)).timestamp.slice(0,10):null};
+  earliestUtc:lines.length?new Date(Date.parse(JSON.parse(lines[0]).timestamp)).toISOString().slice(0,10):null,
+  latestUtc:lines.length?new Date(Date.parse(JSON.parse(lines.at(-1)).timestamp)).toISOString().slice(0,10):null};
 };
 export async function collectSevenGmh({
  dataRoot,start,end,maxRequests=4,fetchImpl=fetch,clock=()=>new Date().toISOString()
