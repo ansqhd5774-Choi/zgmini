@@ -49,6 +49,29 @@ export function prepareQfrD1Payload(preview,{generatedAt=new Date().toISOString(
   return {payload,projectionSha256:draft.previewSha256};
 }
 
+// The B preflight-selected immutable checkpoint must be the one sent to D1.
+// Missing pins fail closed; a newly appended QFR snapshot needs a new preflight.
+export function validatePinnedQfrSource(payload,{sourceVersion,rawZipSha256,sourceStoredAt}={}){
+  if(!SHA.test(sourceVersion??'')||!SHA.test(rawZipSha256??'')
+    ||typeof sourceStoredAt!=='string'||!/^[1-9][0-9]*$/.test(sourceStoredAt)
+    ||!Number.isSafeInteger(Number(sourceStoredAt)))
+    throw Error('QFR_PUBLISH_SOURCE_PIN_REQUIRED');
+  if(payload?.sourceVersion!==sourceVersion||payload?.sourceSha256!==rawZipSha256
+    ||payload?.sourceStoredAt!==Number(sourceStoredAt))
+    throw Error('QFR_PUBLISH_SOURCE_DRIFT');
+  return true;
+}
+
+// The approved B executor supplies its per-request evidence directory.
+// Manual/CMD calls keep the historical next-to-script result path.
+export function resolveQfrResultDirectory({requested,fallback=HERE}={}){
+  if(requested===undefined||requested===null||requested==='')return fallback;
+  if(typeof requested!=='string'||!path.isAbsolute(requested)
+    ||!fs.existsSync(requested)||!fs.statSync(requested).isDirectory())
+    throw Error('QFR_D1_RESULT_DIRECTORY_INVALID');
+  return requested;
+}
+
 async function main(){
   const now=new Date().toISOString();
   const stamp=now.replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z');
@@ -60,7 +83,10 @@ async function main(){
     'PUBLIC_GET_VERIFIED=NO'];
   let db,exit=0;
   let apply=false;
+  let resultDirectory=HERE;
   try{
+    // Validate the supplied B evidence directory before any D1 adapter opens.
+    resultDirectory=resolveQfrResultDirectory({requested:process.env.ZGMINI_EARNINGS_C_LOG_DIR});
     ({apply}=parseQfrD1Mode(process.argv.slice(2)));
     lines.push(`MODE=${apply?'APPLY_EXPLICIT':'READ_ONLY_PREFLIGHT'}`);
     const operationalRoot=process.env.ZGMINI_EARNINGS_C_OPERATIONAL_ROOT;
@@ -99,6 +125,13 @@ async function main(){
       lines.push('D1_QUERIES=0','D1_WRITES=0',
         'RESULT=PASS_QFR_D1_PREFLIGHT_NO_REMOTE_ACCESS');
     }else{
+      // No credentials, adapter or remote writes may be opened before this gate.
+      validatePinnedQfrSource(payload,{
+        sourceVersion:process.env.ZGMINI_EARNINGS_QFR_SOURCE_VERSION,
+        rawZipSha256:process.env.ZGMINI_EARNINGS_QFR_RAW_ZIP_SHA256,
+        sourceStoredAt:process.env.ZGMINI_EARNINGS_QFR_SOURCE_STORED_AT,
+      });
+      lines.push('PREFLIGHT_SOURCE_PIN=VERIFIED');
       const {client,credential}=await import('./d1.mjs');
       const remote=client(config,()=>credential(operationalRoot));
       const result=await qfrCompanionWriter(remote.adapter(config.core,{allowWrites:true}))
@@ -115,12 +148,14 @@ async function main(){
     }
   }catch(error){
     const message=String(error?.message??'');
+    if(['QFR_PUBLISH_SOURCE_PIN_REQUIRED','QFR_PUBLISH_SOURCE_DRIFT'].includes(message))
+      lines.push('D1_QUERIES=0','D1_WRITES=0');
     lines.push(`ERROR=${/^[A-Z0-9_]{1,100}$/.test(message)?message:'QFR_D1_PUBLISHER_FAILED'}`,
       'RESULT=FAIL_QFR_D1_NO_VERIFIED_PUBLICATION');
     exit=1;
   }finally{
     try{db?.close();}catch{}
-    const file=path.join(HERE,`EARNINGS_CENSUS_QFR_R4_D1_RESULT_${stamp}.txt`);
+    const file=path.join(resultDirectory,`EARNINGS_CENSUS_QFR_R4_D1_RESULT_${stamp}.txt`);
     try{
       fs.writeFileSync(file,lines.join('\r\n')+'\r\n',{encoding:'utf8',flag:'wx'});
       console.log(`TXT_CREATED=${path.basename(file)}`);
