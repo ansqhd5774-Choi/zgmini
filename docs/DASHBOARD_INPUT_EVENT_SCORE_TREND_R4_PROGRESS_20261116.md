@@ -20,3 +20,10 @@
 2. D군 #21~#29: 15분 기록 제한 안에 연속 계산점이 있을 때의 손실을 원담당과 최소 저장 계약으로 해결. 기존 아카이브·계산기·게시기 재사용, raw input 공개 금지.
 3. 27개 D01~D27은 현행 승인 조건별 `정상 갱신/기간대기/표시 불일치/미연결`을 구분해 실제 결함만 고침. 정상인 기능을 반복 검증하지 않음.
 4. 기술 작업·승인된 PC 적용·공개 게시를 끝낸 뒤 사용자에게 홈페이지 직접 최종 확인 요청. 웹디버그 복구 및 정규 예약 자연 검증을 단계에 추가하지 않음.
+
+## 추가 원자료 선택 함수 모의시험 — source-only
+
+- 실제 `worker/macro-result-contract-r61.mjs::mergeSuccessfulMacroCredit`와 `worker/candidate-market-operational-store.mjs::mergeStoredMacro`의 운영 원본 함수를 격리 실행함. `PAYEMS,UNRATE,GDPC1,INDPRO,RRSFS,PCEPILFE,M2SL,DGS2,DGS10,NFCICREDIT` 10개 시리즈 중 2026-11-16 `NFCICREDIT` 한 건만 변경한 경우 9개 값은 이전 저장값과 정확 일치, 이전 `seriesStoredAt` 9건 보존, 신규 `NFCICREDIT`는 새 `storedAt`으로 전진. 사용한 기존 `INPUT_TTL=36h`를 변경하지 않음. 결과: 10/10 최신/유효 시리즈 적격, 신규 변경 1개만 식별, 허용 이월 9개 확인.
+- 이 PASS는 **macroCredit 특수 경로의 저장자료 병합 동작**에 한정하며, 월간/분기별 독립 27개 모델 전체, 실제 PC Runtime, 새 공급자 수집 성공을 뜻하지 않는다. 기존 저장 시각이 36h를 넘으면 기존 안전 Gate에 따라 이전 시리즈를 사용하지 않는 것이 정상.
+- `worker/macro-result-contract-r61.mjs::macroCollectionReadiness`는 전체 필수 입력 complete 및 공급자 실패 0건일 때만 정상 macro 배치를 교체하도록 보호한다. `tests/macro-result-contract-r61.test.mjs`에서 해당 기존 완전성/부분실패·이월/TTL 동작을 이미 검증하므로 중복 검사를 신규 필수 Gate로 추가하지 않음. **별도 수집기의 1개 신규 관측 + 9개 유효 과거값**의 직접 결합은 Owner별 정확한 소스와 승인 Gate로 후속 분류.
+- 최초 PR #1177의 TypeScript `TS2345`는 `currentPublishedPoint`의 JSDoc 인자 타입 명시 후 원격 `check`/`ui` 모두 PASS. 병합 `71ea0b66f67e1b099415ebd814be4b67730af08b`, Cloudflare Git Integration Workers Build PASS. 운영 화면 자체는 사용자 최종 확인 경로, 내부 브라우저 검증 Gate 재설정 금지.
