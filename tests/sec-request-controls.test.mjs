@@ -121,3 +121,42 @@ test('SEC stale lock is recovered only when owner PID is provably gone',async()=
  const result=await gate.reserve();assert.ok(result.at>0);
  assert.equal(fs.existsSync(lock),false);
 }));
+
+
+test('new SEC policy allows at most 8 reservations in every rolling 1000ms',async()=>temp(async base=>{
+ const gate=createSecSharedLimiter({base});
+ const attempts=await Promise.all(Array.from({length:18},()=>gate.reserve()));
+ const at=attempts.map(x=>x.at).sort((a,b)=>a-b);
+ const peak=Math.max(...at.map(t=>at.filter(u=>u>=t&&u<t+1000).length));
+ assert.ok(peak<=8, 'peak '+peak);
+}));
+
+test('unsafe 100ms SEC interval override is rejected before any request',async()=>temp(async base=>{
+ assert.throws(()=>createSecSharedLimiter({base,minIntervalMs:100}),e=>e?.code==='SEC_GATE_CONFIG_INVALID');
+}));
+
+test('403 can record confirmed Fair Access stop for 10 minutes without sending again',async()=>temp(async base=>{
+ const gate=createSecSharedLimiter({base,maxWaitMs:5});
+ const now=Date.now();gate.noteResponse({status:403,confirmedFairAccessBlock:true});
+ const state=JSON.parse(fs.readFileSync(path.join(base,'sec-shared-reservations.json'),'utf8'));
+ assert.ok(state.cooldownUntil>=now+599000);
+ await assert.rejects(gate.reserve(),e=>e?.code==='SEC_QUEUE_DEADLINE');
+}));
+
+test('HTTP redirect to another SEC origin is blocked before second network request',async()=>temp(async base=>{
+ const gate=createSecSharedLimiter({base});
+ let calls=0;
+ await assert.rejects(fetchSecControlled({gate,url:'https://data.sec.gov/api/xbrl/start',
+  fetchImpl:async()=>{calls++;return {status:302,headers:new Headers({location:'https://www.sec.gov/Archives/redirect'})};}}),
+  e=>e?.code==='SEC_REDIRECT_HOST_DENIED');
+ assert.equal(calls,1);
+}));
+
+test('redirect loop stops rather than consuming unlimited SEC quota',async()=>temp(async base=>{
+ const gate=createSecSharedLimiter({base});
+ let calls=0;
+ await assert.rejects(fetchSecControlled({gate,url:'https://data.sec.gov/a',
+  fetchImpl:async()=>{calls++;return {status:302,headers:new Headers({location:'/a'})};}}),
+  e=>e?.code==='SEC_REDIRECT_LOOP');
+ assert.equal(calls,1);
+}));

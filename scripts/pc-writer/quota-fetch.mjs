@@ -2,12 +2,29 @@ import {QuotaLedger} from './quota-ledger.mjs';
 import {providerForUrl} from './quota-policy.mjs';
 import {createSecSharedLimiter,fetchSecControlled} from './sec-request-controls.mjs';
 
-// SEC is opt-in until every independent SEC collector uses the same reservation
-// root and its PC source/approval has been verified. Default behavior unchanged.
-export function createQuotaFetch({base,originalFetch,mode=process.env.ZGMINI_QUOTA_MODE??'observe',
-  secSharedGuard=false}={}){
+function guardError(code){const e=new Error(code);e.code=code;throw e;}
+
+// opt-in only. A verified *shared* root or globally atomic coordinator must be
+// provided: a caller-specific base cannot establish a global SEC rate limit.
+// Do not enable production until every active SEC caller shares this permit.
+export function createQuotaFetch({
+ base,originalFetch,mode=process.env.ZGMINI_QUOTA_MODE??'observe',
+ secSharedGuard=false,secSharedBase=null,secCoordinator=null
+}={}){
+ if(typeof originalFetch!=='function')guardError('QUOTA_FETCH_UNAVAILABLE');
  const ledger=new QuotaLedger(base,{mode});
- const secGate=secSharedGuard?createSecSharedLimiter({base}):null;
+ let secGate=null;
+ if(secSharedGuard){
+  if(secCoordinator!==null){
+   if(typeof secCoordinator.reserve!=='function'||typeof secCoordinator.noteResponse!=='function')
+    guardError('SEC_GLOBAL_COORDINATOR_INVALID');
+   secGate=secCoordinator;
+  }else{
+   if(typeof secSharedBase!=='string'||!secSharedBase)
+    guardError('SEC_GLOBAL_PERMIT_SCOPE_REQUIRED');
+   secGate=createSecSharedLimiter({base:secSharedBase});
+  }
+ }
  const recordedFetch=async(input,init,provider)=>{
   ledger.beforeRequest(provider,Date.now());
   try{
@@ -16,7 +33,6 @@ export function createQuotaFetch({base,originalFetch,mode=process.env.ZGMINI_QUO
     headers:provider==='ALPACA'?response.headers:null});
    return response;
   }catch(error){
-   // Reservation may have succeeded even if the response or logging failed.
    if(provider==='ALPACA'&&error&&typeof error==='object')error.requestReserved=true;
    if(error?.code==='PROVIDER_QUOTA_GUARD')throw error;
    ledger.afterResponse(provider,{status:null,ok:false,error,at:Date.now()});
@@ -24,14 +40,22 @@ export function createQuotaFetch({base,originalFetch,mode=process.env.ZGMINI_QUO
   }
  };
  const fetch=async(input,init)=>{
-  const url=typeof input==='string'||input instanceof URL?input:input.url;
+  const isRequest=typeof Request==='function'&&input instanceof Request;
+  const url=typeof input==='string'||input instanceof URL?input:isRequest?input.url:input?.url;
   const provider=providerForUrl(url);
   if(!provider)return originalFetch(input,init);
   if(provider==='SEC'&&secGate){
-   // Every network attempt, including retries, consumes a global reservation.
-   // The existing quota ledger continues recording calls for diagnostics.
+   const method=String(init?.method??(isRequest?input.method:'GET')).toUpperCase();
+   const headers=init?.headers??(isRequest?input.headers:undefined);
+   const signal=init?.signal??(isRequest?input.signal:undefined);
+   // Init method overrides Request.method, exactly as Fetch does.
+   const options={...init,method,headers,signal,redirect:'manual'};
    const {response}=await fetchSecControlled({
-    gate:secGate,url,init,fetchImpl:()=>recordedFetch(input,init,provider),maxAttempts:3,
+    gate:secGate,url:String(url),init:options,maxAttempts:3,
+    fetchImpl:(target,attemptInit)=>{
+     const nextInput=isRequest?new Request(target,{method,headers,signal,redirect:'manual'}):target;
+     return recordedFetch(nextInput,{...options,...attemptInit,redirect:'manual'},provider);
+    },
    });
    return response;
   }
