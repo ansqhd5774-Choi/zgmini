@@ -76,7 +76,7 @@ function summarizeMonitoredSourceSnapshot(snapshot,now){
     unknown:repeated.length-normalHosts-failedHosts,total:repeated.length};
   }
  }
- const hasFailure=api.failed>0||(http?.failed??0)>0;
+ const hasFailure=failed>0||api.failed>0||(http?.failed??0)>0;
  const hasUnknown=api.unknown>0||!http||http.unknown>0;
  return {version:1,scope:'monitored-source-endpoints',source:snapshot.source,
   activeInventoryVerified:true,limitedCoverage:false,coverage:'PARTIAL',
