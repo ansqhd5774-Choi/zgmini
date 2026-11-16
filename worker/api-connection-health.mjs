@@ -100,8 +100,13 @@ function summarizeMonitoredSourceSnapshot(snapshot,now){
      now-at>=0&&now-at<=24*3600_000;
     // A verified fresh 503/network error outranks inferred cadence too;
     // an ancient failed last contact remains unverified, not current red.
-    return (item.state==='failed'||(item.state==='stale'&&lastFresh))&&
-     codes(item).some(hardFailure);
+    const monthlyBfsWindow=item.host==='cdn.www.census.gov'&&
+     Number.isSafeInteger(at)&&at<=now&&now-at>=0&&
+     now-at<=15*86400_000;
+    // A latest real 503/network failure remains red for the same monthly
+    // observation window; do not use schedule inference to hide an error.
+    return (item.state==='failed'||(item.state==='stale'&&lastFresh)||
+     monthlyBfsWindow)&&codes(item).some(hardFailure);
    }).length;
    http={normal:normalHosts,failed:failedHosts,
     unknown:repeated.length-normalHosts-failedHosts,total:repeated.length};
