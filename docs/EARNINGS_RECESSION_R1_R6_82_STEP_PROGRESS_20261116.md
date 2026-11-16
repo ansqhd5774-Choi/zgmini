@@ -39,6 +39,7 @@
 | 현재 완료율 증거 | **8/82 DONE(약 9.8%)**, 현재 R1-09(9/82). 기존 14단계 종단 게시 완료 마지막 확인 0/14, R6-15 자연 갱신 관찰 DEFERRED |
 | 최종 갱신 식별 | 이 문서의 **최신 원격 브랜치 HEAD 및 Git blob SHA를 재조회**해 근거로 보고한다. 고정된 과거 SHA를 현행값으로 복사하지 않는다 |
 | **순차 포인터·완료율** | **현재 9/82 R1-09**; R1-01~R1-08 연속 DONE **8/82(약 9.8%)**. 후행 저장·D1 미실증은 해당 단계에서 미완료 |
+| R1-09 이번 실행 | 2026-11-17 08시 KST: A/C UI 소스 API 분리 확인, B 독립 경계 미완료. `PARTIAL_SOURCE`, 완료 8/82 유지. 다음: B 12대 기업실적 UI·API 소유 경로를 정확히 찾아 A/C와 충돌 여부 판정 |
 
 ### D. 다음 작업자 재개 순서 및 변경 충돌
 
@@ -77,7 +78,7 @@
 | R1-06 | Census QFR·M3·MTIS 기존 수집 코드·ZIP·저장 위치 조사 | `DONE` | **R1-06 조사 종료(2026-11-17):** QFR 공식 ZIP→PC SQLite 기존 저장·SHA 근거 PASS. M3 `MTM/TI`는 물가 전용 재고 Collector로 확인, C 신규주문·출하 저장 경로·SHA `NOT_VERIFIED`/조건부 `HOLD`. MTIS 전용 Collector·저장 경로·SHA `NOT_VERIFIED`/조건부 `HOLD`. 제어 `main` `config/operations.json` blob `0197f4814d9cc0ff051559b9848a2df9fd0d86b2`에서 M3/MTIS 전용 승인 operation 없음(범용 승인 가능성까지 부정하지 않음). 신규 수집 불필요: QFR; M3/MTIS는 적격성·권한 확정 전 재수집 금지. R2-06/07·R3-13/14에서 적격성/운영 저장 별도 판정. 조사 DONE은 저장·게시 DONE이 아님 |
 | R1-07 | SEC CompanyFacts/XBRL 수집 코드·종목 매핑·저장 경로 조사 | `DONE` | **2026-11-17 R1-07 소스·저장경로 인벤토리 완료(§12)**: E1-R4 SEC XBRL `/api/xbrl/frames`+Wikipedia 종목/CIK 매핑→D1 `market_score_earnings_e1_r3_*` current/history/universe/runs; E1-R5 CompanyFacts ZIP→`manual-input/e1-r5/incoming/companyfacts/CIK##########.json` 연구용 경로 별도. E1-R5 연구 경로 productionActivation=false. 실제 PC CompanyFacts 파일·SHA·승인 운영 Collector 설치 `NOT_VERIFIED`, R2-10/11·R3-15 조건부 HOLD. 새 수집·D1 쓰기 0 |
 | R1-08 | 기존 D1 키·Worker GET·Writer·게시 원장 조사 | `DONE` | 5개 C 정확키·Writer·Reader 및 공개 경로 소스 매핑; D1 실게시·stored_at·배포 SHA는 `UNVERIFIED`로 분리 (§13). 실제 게시·readback은 후행 R4/R6 |
-| R1-09 | 기존 점수 A·기업실적 B·정보성 C API/UI 계약 분리 | `SOURCE_REVIEWED` | 원래 점수 4요소/정보성 지표 분리 계약 문서 확인; UI 실제 동치 검증 별도 |
+| R1-09 | 기존 점수 A·기업실적 B·정보성 C API/UI 계약 분리 | `PARTIAL_SOURCE` | 2026-11-17 08시 KST 전담 브랜치 소스 재조회: `app/earnings-recession/page.tsx`는 `EarningsRiskOnlyPanel`을 렌더링하며, 해당 패널은 위험 A `/api/earnings-recession-detail`과 정보성 C `/api/earnings-recession-indicators`, `/api/earnings-recession-bea-unit-profit`, `/api/earnings-recession-census-qfr-margin`을 별도 `useStoredIndex`로 조회. A의 4요소 ID `epsGrowth/margin/revenueGrowth/earningsGrowthBreadth`, C는 보조 읽기 전용으로 분리. B(12대 기업실적)의 독립 API·UI 실제 소유 파일과 A/B/C 회귀 보호 경계는 추가 연결 필요. 운영 UI 동치 미검증 |
 | R1-10 | 지표별 수집 중복·마지막 유효 완료점·첫 미완료 항목을 통합 인벤토리화 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R2-01 | BEA 공식 NIPA 기업이익·단위이익 시계열 및 단위 확인 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R2-02 | FRED 배포 BEA 단위이익 CSV와 공식 BEA 원본의 정의·권리·개정 비교 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
@@ -381,3 +382,5 @@
 **R1-08 조사 완료 기준:** 5개 공개 정확키, 해당 Writer 소스, Reader 경로와 현재 미검증 게시/Production 상태를 **각각 분리 기록**했다. `READBACK_VERIFIED` 문자열은 코드 분기이며 실제 D1 인증 영수증이 아니다. 운영 승인 manifest·requestId·D1 저장 행·stored_at·실제 Production 배포 SHA·현행 HTTP/UI는 모두 `NOT_VERIFIED`; 승인 없는 D1 조회/게시 실행 0. 이는 **조사 DONE**이지 R4 게시 또는 R6 종단 DONE이 아니다. 기존 별도 5키 D1 인증 동치 0/5 UNVERIFIED는 유지한다.
 
 **LAST PASS:** R1-08 지정 브랜치의 5개 Writer/Reader 정확키 계약 매핑. **FIRST UNFINISHED:** R1-09 A/B/C API/UI 계약 경계 정밀 조사. **다음 단일 실행:** R1-09에서 E1-R4 점수 4요소·기업실적 12대 도메인·정보성 C의 라우트/데이터/화면 소유권을 실제 코드에 대조하고 변경 금지 범위를 확정한다. 신규 소스 수정·PC/DB/D1/배포 실행 0.
+
+| 2026-11-17 08시 KST · W05 | **R1-09 부분 진전:** `page.tsx`→`earnings-risk-only-panel.tsx`의 A 점수·C 정보성 API 조회를 소스상 분리 확인. A 4요소 계산 변경 없음. B 12대 기업실적 별도 UI/API 경계는 미완료, Production 미검증 | 전담 브랜치 `app/earnings-recession/page.tsx` blob `f24ff87cd35c25f98f5e85445ae60da6829a74df`, `app/earnings-recession/earnings-risk-only-panel.tsx` blob `05a4d7766cb1468af90ed60450129a956511cfd1`; 신규 기능 코드·PC·D1·배포 0 | 다음 R1-09: B 12대 기업실적 API/UI 소유 파일 및 분리 계약 확정, 이후 R1-10 |
