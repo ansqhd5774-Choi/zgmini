@@ -229,7 +229,7 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
   }):[];
   // Current is already a verified, published score; the 15-minute archive
   // may not yet contain its calculation time. Never synthesize earlier points.
-  const current=overallScore===null||!market?.updatedAt?null:{label:market.updatedAt,value:overallScore};
+  const current=overallScore===null||!market?.updatedAt?null:{label:market.updatedAt,value:overallScore,boundToPublishedCard:true};
   return mergeCompositeObservedDisplay(daily,archived,periodDays,current);
  },[market?.overall?.trend,market?.updatedAt,overallScore,compositeArchive,periodDays]);
  const hasDatedHistory=useMemo(()=>overallTrend.length>1||
