@@ -233,6 +233,7 @@ test("blank SQLite TEXT values are never accepted as PIT lineage evidence",()=>{
   assert.equal(report.candidateNewKeys,1);
   assert.equal(report.candidateNewKeysWithConsistentPITMetadata,0);
   assert.equal(report.candidateNewKeysWithIncompletePITMetadata,1);
+  assert.equal(report.candidateHistoryAmbiguousLatestKeys,0);
   assert.equal(report.candidateReconciliationPreviewStatus,"HOLD_UNVERIFIED_SOURCE_LINEAGE");
   assert.deepEqual([digest(core),digest(candidate)],before);
 });
@@ -247,6 +248,7 @@ test("zero-valued Core claims do not match a blank candidate claim",()=>{
   const report=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-02"});
   assert.equal(report.candidateOverlapMatchingKeys,0);
   assert.equal(report.candidateOverlapConflictingKeys,1);
+  assert.equal(report.candidateHistoryAmbiguousLatestKeys,0);
   assert.equal(report.candidateReconciliationPreviewStatus,"HOLD_CONFLICTING_REVISIONS");
   assert.deepEqual([digest(core),digest(candidate)],before);
 });
@@ -314,4 +316,79 @@ test("newer retrieval wins over an older provider release timestamp",()=>{
   const report=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-02"});
   assert.equal(report.candidateNewKeysWithIncompletePITMetadata,1);
   assert.equal(report.candidateReconciliationPreviewStatus,"HOLD_UNVERIFIED_SOURCE_LINEAGE");
+});
+
+test("PIT-04-02 equal-time conflicting candidate revisions must HOLD instead of hash-order selection",()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-same-time-"));
+  const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+  const incoming=observation("AL",100,"f".repeat(64));
+  const competing=observation("AL",101,"a".repeat(64));
+  fixture(core,{});
+  fixture(candidate,{current:[incoming],history:[incoming,competing]});
+  const before=[digest(core),digest(candidate)];
+  const report=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-02"});
+  assert.equal(report.candidateHistoryAsOfUniqueKeys,1);
+  assert.equal(report.candidateHistoryAmbiguousLatestKeys,1);
+  assert.equal(report.candidateHistoryPriorRevisionKeys,0);
+  assert.equal(report.candidateHistoryPriorRevisionRows,0);
+  assert.equal(report.candidateHistorySameInstantAdditionalRows,1);
+  assert.equal(report.candidateNewKeysWithConsistentPITMetadata,0);
+  assert.equal(report.candidateNewKeysWithIncompletePITMetadata,1);
+  assert.equal(report.candidateReconciliationPreviewStatus,"HOLD_AMBIGUOUS_LATEST_REVISIONS");
+  assert.equal(report.promotionApproved,false);
+  assert.equal(report.coreWrites,0);
+  assert.deepEqual([digest(core),digest(candidate)],before);
+});
+
+test("PIT-04-02 earlier retrieved revision stays distinct from the latest retrieval",()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-prior-revision-"));
+  const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+  const old={...observation("AL",100,"a".repeat(64)),retrieved:"2026-10-20T00:00:00.000Z"};
+  const latest={...observation("AL",101,"b".repeat(64)),retrieved:"2026-10-26T00:00:00.000Z"};
+  fixture(core,{});
+  fixture(candidate,{current:[old],history:[old,latest]});
+  const early=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,asOfDate:"2026-10-25"});
+  assert.equal(early.candidateHistoryPriorRevisionKeys,0);
+  assert.equal(early.candidateHistoryPriorRevisionRows,0);
+  const report=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-02"});
+  assert.equal(report.candidateHistoryAsOfUniqueKeys,1);
+  assert.equal(report.candidateHistoryPriorRevisionKeys,1);
+  assert.equal(report.candidateHistoryPriorRevisionRows,1);
+  assert.equal(report.candidateHistoryAmbiguousLatestKeys,0);
+  assert.equal(report.candidateHistorySameInstantAdditionalRows,0);
+  assert.equal(report.candidateNewKeysWithConsistentPITMetadata,0);
+  assert.equal(report.candidateReconciliationPreviewStatus,"HOLD_UNVERIFIED_SOURCE_LINEAGE");
+});
+
+test("PIT-04-02 identical same-time duplicate rows do not create a false latest conflict",()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-duplicate-revision-"));
+  const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+  const same=observation("AL",100,"c".repeat(64));
+  fixture(core,{});
+  fixture(candidate,{current:[same],history:[same,same]});
+  const report=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-02"});
+  assert.equal(report.candidateHistoryAsOfUniqueKeys,1);
+  assert.equal(report.candidateHistoryPriorRevisionKeys,0);
+  assert.equal(report.candidateHistoryPriorRevisionRows,0);
+  assert.equal(report.candidateHistoryAmbiguousLatestKeys,0);
+  assert.equal(report.candidateHistorySameInstantAdditionalRows,1);
+  assert.equal(report.candidateNewKeysWithConsistentPITMetadata,1);
+  assert.equal(report.candidateReconciliationPreviewStatus,"READ_ONLY_PREVIEW_NO_PUBLICATION_APPROVAL");
+  assert.equal(report.promotionApproved,false);
+});
+
+test("PIT-04-02 Core history same-time conflicting payload cannot imply a valid reconciliation preview",()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-core-ambiguous-"));
+  const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+  const one=observation("AL",100,"d".repeat(64)),other=observation("AL",101,"e".repeat(64));
+  fixture(core,{current:[one],history:[one,other]});
+  fixture(candidate,{});
+  const report=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-02"});
+  assert.equal(report.coreHistoryAsOfUniqueKeys,1);
+  assert.equal(report.coreHistoryAmbiguousLatestKeys,1);
+  assert.equal(report.coreHistorySameInstantAdditionalRows,1);
+  assert.equal(report.coreHistoryPriorRevisionKeys,0);
+  assert.equal(report.candidateHistoryAmbiguousLatestKeys,0);
+  assert.equal(report.candidateReconciliationPreviewStatus,"HOLD_AMBIGUOUS_LATEST_REVISIONS");
+  assert.equal(report.coreWrites,0);
 });
