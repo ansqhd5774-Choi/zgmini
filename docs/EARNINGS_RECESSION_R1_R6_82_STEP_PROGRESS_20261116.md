@@ -32,10 +32,10 @@
 |---|---|
 | 최종 목표 | 82단계 R1~R6로 적격 실적 침체 정보성 지표의 PC 원자료 저장→계산→승인 D1 게시→Production API/UI를 완성. 기존 E1-R4 점수/산식·기타 12대 기업실적은 보호 |
 | 현재 관련 단계 | R4-02~04 및 R6-04: QFR exact-key B 게시 경로·원본 3핀 |
-| 마지막 검증 완료점 | 앱 QFR [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175) main 병합 faa89cfbe8b2aeabcbd8b8e9747cc07620f9eff4; 제어 B [PR #1762](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1762) main 병합 8c67a6c9e9e778278259593d0eb35b2b0e2a05ea. 앱 CI #43892753705 4483 PASS/0 FAIL, 제어 CI #43892670904 22/22 PASS 및 C996 PASS. BEA #1183 CI 별도 PASS/미병합. 운영 B 승인·PC 실행·D1 원격 게시·UI 실증은 미완료 |
+| 마지막 검증 완료점 | **R1-02 매핑 DONE:** [운영 PC A #1794](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1794)/Run 43902155135 `sourceHead=config.source=checkpoint=2070ff53549e2f9f2cea57d5af7e1d83f9fd7388`, 원격 JSON/TXT 2/2; [Core 상태 A #1796](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1796)/Run 43903516218 Core/Korea Task XML 등록 SHA 불변, Collection/Writer checkpoint 상태 확인, JSON/TXT 2/2. 관련 A 실행의 provider/PC operational/D1 쓰기 0·protectedStateUnchanged=true. 기존 앱 QFR PR #1175·제어 B PR #1762 `main` 소스 CI PASS 재사용; B 실제 게시/Production 별도 미완료 |
 | 재사용할 기존 근거 | QFR 원자료 ZIP의 PC SQLite 저장·계산 기존 유효 증거; 앱 QFR 3-pin [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175) 소스/CI 완료, `main` 미병합 |
-| 현재 최초 실제 미완료 조건 | **순차 최초 미완료 R1-02:** PC 승인 source와 수집기·계산기·게시기·작업 등록·Runner의 완전한 관계 표가 미입증. **후행 별도 병목 R6-04:** QFR B exact-key 승인 manifest/owner 승인/실제 PC B 원장·D1 readback 미확보. QFR 앱/제어 `main` 소스는 병합 완료. 두 상태를 구분한다 |
-| 다음 필수 실행 하나 | **순차 2/82 R1-02:** 과거 PC #1709 `config.source`·운영 checkout SHA는 재사용하고, 승인된 Controller operations/실제 Task·Runner·수집/계산/게시 경로 매핑의 **누락분만** 확인해 R1-02 완료 증거를 남긴다. 이후 첫 미완료 순번 순으로 이어간다. 뒤쪽 R6-04 QFR 정확키 B manifest/PC 승인은 독립 후행 병목으로 보존하되 현재 순차 번호로 보고하지 않는다 |
+| 현재 최초 실제 미완료 조건 | **순차 첫 미완료 R1-03:** SQLite 원자료 테이블·원본 저장 경로·checkpoint/append-only 재조회 방식의 범위별 증거 매핑이 아직 미완성. **후행 독립 B 차단:** QFR 단일키 manifest·owner 승인 Issue/Windows 실제 B Run·D1 readback 없음. 운영 `config.source`/checkout 동일성은 R1-02에서 확인됐고 이전 `7afe6b0b…`는 현재 SHA가 아니다 |
+| 다음 필수 실행 하나 | **순차 3/82 R1-03:** 기존 운영 SQLite의 QFR/BLS/BEA 저장 스키마·테이블/append-only/checkpoint·readback을 승인된 기존 결과와 앱 source에서 확인하고, 미대조 항목만 보충한다. **R6-04 QFR B 게시**는 후행 미승인 효과로 별도 유지(정확키 manifest·owner 승인 필요). 다음 순번 R1-04는 R1-03 완료 근거 반영 후 실행 |
 | 현재 완료율 증거 | **순차 1/82 DONE (약 1.2%)**, 현재 R1-02(2/82). 뒤쪽 SOURCE/CI 성공 항목은 계속 추적하되 전체 DONE으로 승격하지 않음. 기존 14단계 종단 완료는 마지막 확인 0/14, R6-15는 DEFERRED |
 | 최종 갱신 식별 | 이 문서의 **최신 원격 브랜치 HEAD 및 Git blob SHA를 재조회**해 근거로 보고한다. 고정된 과거 SHA를 현행값으로 복사하지 않는다 |
 | **순차 포인터·완료율** | **현재 R1-02 = 2/82**, 완료 확정 R1-01 **1/82 (약 1.2%)**. 이전 71/82 현재 단계·11단계 잔여 주장은 정정·철회 |
@@ -53,24 +53,24 @@
 
 | 판정 항목 | 실제 상태 |
 |---|---|
-| **순차 완료 확정** | **1/82개 (약 1.2%)** — R1-01만 본 계획 완료 조건을 증거로 기록함 |
-| **현재 순차 진행 단계** | **2/82 = R1-02** (실 PC source·수집/계산/게시/작업·Runner 매핑) |
-| **82개 중 개별 완료 확정** | **1개**; 그 외 SOURCE/CI·기존 성공 증거는 해당 단계 기준과 대조 전이므로 자동 완료 처리하지 않음 |
+| **순차 완료 확정** | **2/82개 (약 2.4%)** — R1-01·R1-02의 완료 조건에 근거 매핑 확인 |
+| **현재 순차 진행 단계** | **3/82 = R1-03** (운영 SQLite 원자료 테이블·checkpoint·append-only 저장 경로/재조회 구조) |
+| **82개 중 개별 완료 확정** | **2개**; 다른 SOURCE/CI·기존 성공은 별도 ID 완료 조건과 검증 필요 |
 | **71번 R6-04** | **후행 소스 선행 작업·현재 운영 승인 미해결**, 순차 71단계에 도달한 것이 아님 |
-| **72~82단계 11개 남았다는 이전 보고** | **철회** — 실제 전체 잔여 완료 단계는 81개(기존 유효 소스·운영 증거는 재사용)이며 신규 실행 81회라는 뜻은 아님 |
-| **다음 실제 수행 하나** | R1-02의 기존 GitHub/PC 승인 원장·운영 source·Controller/Runner 등록 정보를 **필요 범위만** 대조해 누락된 매핑을 완성; 지난 유효 #1709 source 조회 재실행 금지 |
+| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 현재 순차 완료는 2개이고 실제 잔여 완료 판정 대상 80개(재작업 80회 뜻 아님) |
+| **다음 실제 수행 하나** | R1-03: 기존 QFR/BLS/BEA SQLite 원자료 테이블·checkpoint·append-only 구조의 이전 유효 근거를 먼저 연결, 빠진 실제 readback만 확인 |
 
 **순서 운용:** 다음 번호로 넘어가는 기준은 해당 단계의 **계획서 완료 조건 + 근거 링크**이며, 뒤 단계에서 미리 통과한 PR·CI는 계획 순번을 바꾸지 않는 선행 자산으로 유지한다. 사용자 승인 없이 순번이나 완료 기준을 수정하지 않는다. 조건부 HOLD·장기 DEFERRED는 계획서대로 처리하며 다른 독립 승인 작업의 수행을 중단하는 새로운 Gate가 아니다.
 
 
 ## 0. 82개 작업별 진행 상태 (실증·소스 분리)
 
-> **2026-11-17 KST 상태 재판정 기준.** 아래 82개 ID는 각각 한 번씩 등록되어 있다. `DONE`은 현재 **R1-01 하나(1/82)**만 증거 확정했으며, 현재 순차 작업은 **R1-02(2/82)**다. `EVIDENCE_NOT_MAPPED`는 미착수/실패가 아니라 유효 과거 실증 대조 전 상태다. 소스·CI 통과만으로 PC/D1/Production 종단 DONE을 주장하지 않는다.
+> **2026-11-17 KST 순차 진행 재판정.** 82개 ID는 정확히 한 번씩 등록. **R1-01·R1-02 두 단계(2/82) DONE**, 현재 순차 작업 **R1-03(3/82)**. `EVIDENCE_NOT_MAPPED`는 실패·미착수 확정이 아니며 기존 성공 증거를 해당 단계 완료 조건에 대조해야 한다. 소스/CI 성공을 PC/D1/Production 성공으로 자동 승격하지 않는다.
 
 | 작업 ID | 실행계획 작업 | 현재 증거 기반 상태 | 마지막 확인 증거·남은 조건 |
 |---|---|---|---|
 | R1-01 | 앱·제어 `main`, W05 브랜치 및 개발·운영·배포 SHA 구분 | `DONE` | **순차 1번 완료:** 2026-11-17 KST GitHub 재조회 앱 `main=af2f963659f15e016a64be1132d4cdec9af0d9c6`, 제어 `main=40a0767ec48829360a0b47a2b37e499d59944a05`, W05 전담 브랜치 확인 시 `e6694ddbd4d01826d8802be355bc671b4e53cd8c` (이번 문서 커밋 후 HEAD 전진). PC 승인 체크아웃은 기존 #1709 A 관측(2026-11-16 12:23:09 UTC) `7afe6b0bcaa74d622ada9190fdc9fcc7fd4d5f10`; **LIVE Core 실행 SHA는 미검증**. Cloudflare Production exact Deployment SHA는 `NOT_VERIFIED`. 개발·PC 저장소·공개 배포를 동일 성공으로 간주하지 않는 서로 다른 상태로 구분·기록함. Production 실제 검증은 R6-14 별도 미완료 |
-| R1-02 | 실 PC 승인 `config.source`, 수집기·계산기·게시기·작업 등록·Runner 매핑 | `PARTIAL_SOURCE` | 기존 PC 승인 A #1709 / Run 43866041104 PASS: config.source=7afe6b0bcaa74d622ada9190fdc9fcc7fd4d5f10, QFR 6파일 중 5 ABSENT·d1.mjs PRESENT. 제어 `main` [PC 운영 정본](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/docs/PC_OPERATING_SYSTEMS_CANONICAL.md)에서 운영 `PC`의 `zgmini-pc-01~06`/label `zgmini-pc-control`, A `pc-job.yml→controller/entry.mjs→upload.mjs`, B 별도 승인 Writer, 정기 기능 Windows Task 15개(2026-11-12 관측) 구조 확인. **아직 각 earnings collector/calculator/publisher별 실제 등록 Task·operation·source/checkout SHA의 1:1 실측 대응표가 없어 DONE 아님.** |
+| R1-02 | 실 PC 승인 `config.source`, 수집기·계산기·게시기·작업 등록·Runner 매핑 | `DONE` | **순차 2번 완료:** PC 승인 A [#1794](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1794)/Run 43902155135에서 `sourceHead=approvedConfigSource=checkpointSource=2070ff53549e2f9f2cea57d5af7e1d83f9fd7388`, 원격 TXT/JSON 2/2 확인. [#1796](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1796)/Run 43903516218에서 Core/Korea 등록 Task XML SHA, 실제 Core/Collection/Writer checkpoint 및 `pc-job` 실행 Runner(A급 seat 1/2)를 검증. 제어 `operations.json` A급 허용목록·`pc-job.yml` Windows Runner, B `pc-publication-b.yml` 미승인/별도 lane, Collector→Stored Calculator→Publisher/Worker 소스·현재 설치 미검증 구분은 **§7 상세표**. B effect·실제 Core 실행 SHA는 이번 R1-02 DONE 범위 밖으로 미실증 유지 |
 | R1-03 | 운영 SQLite 원자료 테이블·checkpoint·append-only 이력 파악 | `EXISTING_EVIDENCE` | 기존 QFR SQLite 저장/checkpoint 성공 이력 재사용. 전체 원자료 테이블 조사 완료는 미입증 |
 | R1-04 | 기존 BLS 3개 원천과 공개 5개 정보성 행 계보 조사 | `EXISTING_EVIDENCE` | BLS 기본 3원천·5행 관련 과거 PC/GET 증거 존재, 최근 운영 상태는 미재검증 |
 | R1-05 | BEA 단위이익·제조업의 수집기, CSV/메타 및 실제 저장 여부 조사 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
@@ -139,7 +139,7 @@
 | R6-01 | 변경된 수집·계산·게시·Worker·UI의 관련 Node 테스트 실행 | `TARGETED_CI_PASS` | 기존 QFR 제어 Node 22/22, QFR 앱 4,483 PASS·0 FAIL 및 BEA CI 성공 유지. 별도 WPSFD42 결과 디렉터리 helper+테스트 원문 Git blob 일치, 로컬 격리 Node22 fixture 4/4 PASS(전체 게시기·전체 앱 CI는 이번 소스 변경 후 미실행). PC/D1/Production 종단 검증 제외 |
 | R6-02 | SHA 변경·중복·단위·기간·결측·개정본 회귀검증 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R6-03 | API 403/429/500·D1 timeout·결과 누락·잘못된 key/version 검증 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
-| R6-04 | 승인 B 작업의 실제 Windows Runner·manifest·SHA·Issue/Run 확인 | `BLOCKED_PUBLISH_SCOPE` | 제어 source main 통합 완료. 정확키 B 승인 manifest·별도 owner 승인 Issue 및 실제 Windows 두 checkout/config SHA·게시 실행 미입증. PC #1709은 A 읽기 전용, 일반 Writer B는 D1 쓰기 금지 |
+| R6-04 | 승인 B 작업의 실제 Windows Runner·manifest·SHA·Issue/Run 확인 | `BLOCKED_PUBLISH_SCOPE` | PC #1794 실제 checkout HEAD=config SHA `2070ff53549e2f9f2cea57d5af7e1d83f9fd7388` 확인, 원격 TXT/JSON 2/2, Core 등록 #1796 정상. 하지만 QFR 정확키 B 승인 manifest/별도 owner approval Issue/comment·활성 변수/실제 Windows B Run·D1 게시 결과는 없으므로 71번 후행 단계는 여전히 미완료 |
 | R6-05 | QFR 실제 D1 body/version/sourceStoredAt/stored_at 검증 | `NOT_RUN` | QFR D1 실제 body/version/timestamp readback 없음 |
 | R6-06 | QFR 공개 GET·PC·모바일 화면 값·출처·분기 확인 | `NOT_RUN` | QFR 실제 배포 SHA·현재 Production API/UI 값 일치 미확인 |
 | R6-07 | BEA 단위이익 저장 원본·D1 중복·source SHA 검증 | `NOT_RUN` | BEA 저장 원본→D1 단일키 실게시/원문 비교 미완료 |
@@ -152,7 +152,7 @@
 | R6-14 | 관련 PR·CI·main 통합→Cloudflare Git Integration→정확 배포 SHA→공개 확인 | `IN_PROGRESS_SOURCE` | 앱 QFR main SHA faa89cfbe8b2aeabcbd8b8e9747cc07620f9eff4, 제어 B main SHA 8c67a6c9e9e778278259593d0eb35b2b0e2a05ea 개발 통합, 관련 CI PASS. 실제 PC/D1/Cloudflare 정확 Deployment/API/UI 검증 미완료 |
 | R6-15 | 다음 공식 발표 이후 자연 수집·checkpoint·D1·UI 실제 전진 관찰 | `DEFERRED` | 다음 실제 공식 발표 후 자연 갱신 확인; 현재 구현 STOP Gate 아님 |
 
-**상태 집계(82개 정확히 1회씩):** `DONE` 1개 · `PARTIAL_SOURCE` 3개 · `EXISTING_EVIDENCE` 8개 · `EVIDENCE_NOT_MAPPED` 36개 · `SOURCE_REVIEWED` 1개 · `NOT_RUN` 13개 · `SOURCE_READY` 3개 · `SOURCE_CI_PASS` 3개 · `SOURCE_MAIN_CI_PASS` 3개 · `BLOCKED_PUBLISH_SCOPE` 2개 · `SOURCE_BRANCH_ONLY` 2개 · `PUBLISH_SCOPE_UNVERIFIED` 1개 · `SOURCE_MAIN_READY` 3개 · `TARGETED_CI_PASS` 1개 · `IN_PROGRESS_SOURCE` 1개 · `DEFERRED` 1개. 각각의 상태는 최종 운영 완료율이 아니다.
+**상태 집계(82개 정확히 1회씩):** `DONE` 2개 · `EXISTING_EVIDENCE` 8개 · `EVIDENCE_NOT_MAPPED` 36개 · `PARTIAL_SOURCE` 2개 · `SOURCE_REVIEWED` 1개 · `NOT_RUN` 13개 · `SOURCE_READY` 3개 · `SOURCE_CI_PASS` 3개 · `SOURCE_MAIN_CI_PASS` 3개 · `BLOCKED_PUBLISH_SCOPE` 2개 · `SOURCE_BRANCH_ONLY` 2개 · `PUBLISH_SCOPE_UNVERIFIED` 1개 · `SOURCE_MAIN_READY` 3개 · `TARGETED_CI_PASS` 1개 · `IN_PROGRESS_SOURCE` 1개 · `DEFERRED` 1개. 각각의 상태는 최종 운영 완료율이 아니다.
 
 ## 1. 현재 확정 가능한 진행 상태
 
@@ -190,9 +190,9 @@
 
 ## 3. 실제 첫 병목과 다음 실행
 
-**FIRST BLOCKER(현재 순서):** R1-02의 PC 승인 source 및 공통 수집기·계산기·게시기·등록 Task·Runner 전체 매핑 증거 미완료. **후행 QFR B 게시 차단(R6-04/R4-06)**은 main 소스 통합과 별개로 정확키 승인 manifest·owner 별도 승인·운영 runtime pin 미확보이며 임의 우회하지 않는다. 후행 소스·CI 성공을 현재 순차 단계 71 진입으로 보고하지 않는다.
+**FIRST BLOCKER(현재 순서):** **R1-02는 §7의 PC source·현재 등록 Task/Runner/수집·계산·게시 Source 매핑으로 완료**했고, 이제 순차 첫 미완료는 **R1-03 SQLite 원자료 테이블·checkpoint·append-only 계보/실제 재조회 증거**다. 별도 후행 QFR B 게시 차단 R6-04는 manifest·owner 승인·실행/원격 D1 결과가 없는 것이며 R1-03 조사 완료의 추가 Gate로 삼지 않는다. 뒤쪽 소스/CI 작업을 순차 71단계 진행으로 보고하지 않는다.
 
-**다음 필수 실행:** **R1-02(계획 2/82)** 기존 승인 PC/Controller 원장·등록 Runner·실제 작업 source 증거에서 수집기·계산기·게시기 매핑을 정확히 정리한다. 필요하지 않은 PC 재진단·새 예약·미승인 D1 게시를 하지 않는다. 이 단계 완료 증거를 지정 파일에 반영한 다음 R1-03으로 이동한다.
+**다음 필수 실행:** **R1-03(3/82)** 기존 저장 QFR/BLS/BEA 원자료의 SQLite 테이블/원본·checkpoint/append-only 구조와 readback 유효 증거를 확인해 R1-03 해당 ID에 기록한다. 과거 유효 성공을 다시 수집하지 않는다. QFR exact-key B 게시의 승인·실행은 R6-04 후행 BLOCKED로 유지한다.
 
 정규 예약의 다음 자연 발표 관찰(R6-15)은 **DEFERRED**이며 현재 기능 완성의 강제 완료 Gate가 아니다.
 
@@ -230,6 +230,8 @@
 
 | 2026-11-17 KST · 82단계 순차 규칙 최종 정합성 확인 | **계획을 순차 기준으로 복구하고 완료율 과장 정정:** R1-01 GitHub 소스 구분 DONE, 선행 첫 미완료 R1-02(2/82). 71/82·잔여 11개 표현 철회. 원래 82 ID·순서를 바꾸지 않음 | [실행계획서](EARNINGS_RECESSION_R1_R6_82_STEP_EXECUTION_PLAN_20261116.md) 규칙 변경 `89ce90046ee453cdc95bab16b8ed638b963ca3e1`, 최종 현재 작업 정합성 `5c618a2c19fe11a163edc083e80728a2be83e236`; [진행기록](EARNINGS_RECESSION_R1_R6_82_STEP_PROGRESS_20261116.md) 최초 진도 수정 `378af33507d7050ae5e2be2ca37e4e71f5883397` 및 요약 정정 `fdfc5ccab03f98d9462633c2a5c28f4b87b4789c` | **LAST PASS:** R1-01 원본 SHA 구분 기록. **FIRST UNFINISHED:** R1-02 source/Runner mapping. **NEXT:** R1-02의 빠진 등록·실행 증거만 수집, 이미 끝낸 QFR 소스/CI 반복 금지. 이번 운영 PC/원자료/D1/Cloudflare 쓰기 0 |
 
+| 2026-11-17 01:05 KST · **2/82 R1-02 완료** | 실 PC 공통 매핑 완료. #1790 A 소스 후보 inventory는 truncated였으므로 #1794 승인 scoped 조회로 운영 sourceHead/config/checkpoint 일치 `2070ff53549e2f9f2cea57d5af7e1d83f9fd7388` 증명. #1796 core-status A에서 Core·Korea Task XML 해시와 수집/Writer checkpoint, Runner seat 1 실측 확인. A operations allowlist·Runner Workflow 및 QFR/BLS/BEA/SEC/WPS 소스 역할·미설치 상태를 §7에 매핑 | [#1794](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1794) [Run #43902155135](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43902155135), [#1796](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1796) [Run #43903516218](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43903516218), #1790 Run 43901801863 (inconclusive inventory). 각 결과 JSON/TXT 원격 2/2 및 protected unchanged, PC/D1/provider writes=0. 제어 `main` operations+pc-job/B workflow, 등록 Task hashes Core dd81987c…·Korea 1797e5de… | **R1-02 DONE**; **연속 완료 2/82 ≈2.4%, 현재 3/82 R1-03**. LAST PASS 소스/Task/Runner mapping; FIRST UNFINISHED SQLite 원본 계보. 후행 QFR B effect 미승인 상태 보존. NEXT R1-03 기존 원자료 테이블·checkpoint·재조회 증거 매핑 |
+
 ### 필수 기록 종료 규칙
 
 1. 작업을 수행했다면 **보고 전에 이 진행 기록에 수행 ID·커밋/PR/Issue/Run·실제 PASS/FAIL·당시 상태·남은 필수 실행을 먼저 반영**한다. 로그 반영 불가능하면 `기록 미완료`로 보고한다.
@@ -259,3 +261,23 @@
 | `worker/earnings-companion-c-qfr-r1.mjs` | `a66b60a751b9ec9a0a6379027c2b4785c20a4c4a693be72a9398dbc0da32dbd7` |
 
 **실행 전 남은 인증:** `publisherSha`는 위 Git SHA로 후보 고정만 가능하다. `operationalSha`는 별도 **현재 PC config.source/operational checkout clean HEAD 실측** 후 확정(마지막 확인 #1709의 `7afe6b0b...`를 현재라고 간주 금지). `requestId`·승인용 Issue/owner 정확 댓글·`approvals/publications/<requestId>.json`·활성 변수의 실제 값은 미확정. 부재 시 `AUTOMATION_BLOCKED`로 보존하고 미승인 게시를 시도하지 않는다.
+
+## 7. R1-02 운영 Source·작업·Runner 매핑 (2026-11-17 01:05 KST)
+
+**R1-02 완료 판정의 범위:** 실제 등록된 공통 A 작업·Task·Runner/승인 PC 체크아웃, W05 수집·저장·계산·게시 코드의 **소스 역할과 운영 미설치 여부**를 구분한다. 이 표는 원자료 수집 성공·모든 Publisher 설치·B 효과 승인·Core 실행 중 PID 증명 또는 Production 완료를 선언하지 않는다(각각 R3/R4/R6 후속 단계).
+
+| 대상 | Source·운영 경로/책임 | 확인 근거와 실제 상태 |
+|---|---|---|
+| PC 승인 소스와 체크아웃 | `E:\ZGmini\projects\zgmini-earnings-history-pc-release`; PC `E:\ZGmini\data\pc-writer\config.json`의 `source` | [#1794](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1794) / Run 43902155135: `sourceHead=approvedConfigSource=checkpointSource=2070ff53549e2f9f2cea57d5af7e1d83f9fd7388`, `sourceIdentityConsistent=true`; 운영 Core PID의 실행 SHA는 별도 `NOT_VERIFIED` |
+| Windows 실제 PC Core·Korea Task | `ZGMINI-PC-Local-Core` · `ZGMINI-PC-Local-Korea` | [#1796](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1796) / Run 43903516218: 작업 XML 해시 각각 `dd81987c7efa4b1e343af30329a580613bb920dec89c1aa7a436ef935f0bb028` · `1797e5def9fc92551132ca69f60bb5320bb346c687988be3e4ff3eb76ef5fdc1`. 이란 R13은 `APPROVED_RETIRED_ABSENT`, 복원 금지 |
+| 공통 Core 저장·계산·Writer | 운영 저장 원장 `local-collection-last-run.json`, `local-cycle-last-run.json`, `local-writer-last-run.json` | #1796 관측 시각 UTC 2026-11-16 15:57:45 / 16:02:25 / 16:00:58 각각 `COMPLETE` / `COMPLETE` / `VERIFIED`. *Core 일반 원장*이며 개별 QFR/BEA/BLS 원본 저장·D1 게시는 별도 검증 필요 |
+| 공통 A PC 작업·Runner | 제어 `config/operations.json` (`seats=6`, `mutationsEnabled=false`) → `.github/workflows/pc-job.yml` `[self-hosted,Windows,X64,zgmini-pc-control]` → 설치 Controller | 승인된 `pc-source-origin-readonly` #1790 seat 1, `writer-install-preimage-readonly` #1794 seat 2, `core-status` #1796 seat 1 모두 실제 Windows PASS. **6명 전원 유휴/Online은 필요 Gate 아님**, A는 D1 쓰기 금지 |
+| B 독립 게시 lane | 제어 `.github/workflows/pc-publication-b.yml` → `tools/publication-preflight.mjs`·`publication-executor.mjs` → 앱 `main` 게시기 + 별도 운영 checkout | 제어 PR #1762 소스 `main` 병합·Node CI 22/22 PASS. `vars.ZGMINI_B_PUBLICATION_APPLY_ENABLED=='true'`·`approvals/publications/<requestId>.json` 및 owner 승인 Issue 댓글 필수. **현재 승인 manifest 부재/활성 변수 UNKNOWN/실제 B 실행 없음**, 공통 Core 정규 Task에 추가 등록하지 않음 |
+| Census QFR | 공식 ZIP read `EARNINGS_CENSUS_QFR_R1_READONLY.mjs` → SQLite append `...R2_SQLITE_APPEND.mjs` → stored calc `...R3_STORED_PREVIEW_READONLY.mjs` → pinned D1 `...R4_D1_ONCE.mjs` → `worker/earnings-companion-c-qfr-r1.mjs` | 앱 `main` QFR 코드 준비, PR #1175 3-pin main 병합. 운영 checkout #1794 범위 6파일 중 QFR 게시 관련 5개 ABSENT/d1.mjs만 PRESENT, **main Publisher와 운영 checkout은 별도**; 실제 QFR D1 게시·설치 아님 |
+| BLS 기본 3종/서비스 1종 | W05 `EARNINGS_R3C_BLS_STORE_ONCE.mjs`(Collector 개발), 앱 `main` `EARNINGS_R3D_STORED_BLS_CALC_READONLY.mjs`·`EARNINGS_R4_C_D1_DUAL_SOURCE_ONCE.mjs`(계산/게시), `worker/earnings-companion-c-r4.mjs`(Reader). WPSFD42 분리 Writer는 W05 브랜치에만 존재 | 수집기 `R3C`는 앱 `main` 미등록, 운영 자동 실행·Collector 설치 추정 금지; 기본 5행 기존 근거는 R1-04/R3-03에서 재사용. WPSFD42 새 2행 저장·실제 게시 R3-04/R6-09 미완료 |
+| BEA 단위이익/제조업 | 앱 `main` 기존 `EARNINGS_BEA_UNIT_PROFIT_R1_ONCE.mjs`, W05 저장형 보강 `EARNINGS_BEA_UNIT_STORED_RAW_R1.mjs`·분리 PR #1183; 제조업 W05 `EARNINGS_BEA_MFG_PROFIT_R5_APPEND_ONLY_CAPTURE.mjs`, `...R6_D1_ONE_SHOT.mjs` 및 Worker | 저장 원본 실제 capture·적격성·Publisher 최신 `main` 배포는 각각 별도 미검증. BEA 단위이익 PR #1183은 소스/CI만 준비, main/PC/D1 완료 아님 |
+| SEC/M3/MTIS 조건부 | SEC 기존 `lib/market-score/sec-earnings-e1-r4-provider.mjs` 및 E1/R5 전용 Reader; Census M3/MTIS는 W05 기준 **정확한 C 정보성 Collector/게시 실등록 증거 없음** | 승인 공급자·데이터/권리 조건을 선확인하는 R1-06/R1-07/R2 후속 후보. **코드가 있을 수 있다는 사실을 실제 등록 자동 수집으로 추정 금지**, 조건부 HOLD 가능 |
+
+**실제 조회 결과 보존:** [#1790](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1790) Run 43901801863는 `candidateCount=0`, `inventoryTruncated=true`로 개별 checkout 연결 결론 불가. 이에 대한 scoped A [#1794](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1794) Run 43902155135가 `sourceHead=config.source=checkpointSource`를 검증했다. Core 조회 [#1796](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1796) Run 43903516218은 일반 checkpoint/등록 Task를 별도 확인했으며 당시 `lockPresent=true`는 임의 Core 중단·잠금 해제 사유가 아니다. 세 Run 모두 고유 requestId, 실제 Windows Actions PASS·원격 JSON/TXT 각각 2/2, `providerCalls=operationalWrites=d1Writes=0`·`protectedStateUnchanged=true`.
+
+**다음 필수 실행:** **R1-03(3/82)** 보존된 PC 원자료·SQLite schema/checkpoint/append-only/readback 경로의 기존 실증 증거를 연결하고 실제 미대조 범위만 추가 확인한다. 뒤쪽 R6-04 QFR B manifest 승인 및 게시 미완료는 별도 유지.
