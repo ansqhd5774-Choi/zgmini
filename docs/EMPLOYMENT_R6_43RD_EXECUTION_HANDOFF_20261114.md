@@ -1,3 +1,35 @@
+<!-- employment-r6-w04-20261116-scenario-simulation-12-case -->
+## 2026-11-16 W04 고용 R6 — DOL 장애 복구 방안 오프라인 시뮬레이션 12시나리오
+
+**시뮬레이션 기준:** 기존 통합 Draft [#1083](https://github.com/ansqhd5774-Choi/zgmini/pull/1083) 정확 `21b3930c091b37edbb152bb73920bdf46e1a9ebc` 소스 분기 및 기존 Node CI 성공 증거 재사용. ChatGPT 격리 컨테이너 **Node.js v22.16.0에서 작성한 독립 JS 동작모델 12시나리오/14개 assertions PASS**, 0 assertions failure. **공식 원본/운영 코드의 직접 실행은 아님**. 실제 PC/공급자 호출/운영 DB·D1 쓰기/배포·Runner 요청 모두 0. 소스 계약 자체 수정 0.
+
+**시나리오 결과:**
+
+| 입력 | 전국 새 관측 | ETA539 보존 | 결과 |
+|---|---|---|---|
+| 정상 National XML 4/4 | 4 | 3,060 | SUCCESS |
+| HTTP200 HTML DB 연결 오류 | 0, 기존 정상 national raw 보존 | 3,060 | PARTIAL / DOL_NATIONAL_NO_VALID_ROWS |
+| HTTP200 일반 텍스트 오류 | 0, 기존 정상 national raw 보존 | 3,060 | PARTIAL / DOL_NATIONAL_NO_VALID_ROWS |
+| XML 3/4 일부 | 0, 기존 정상 national raw 보존 | 3,060 | PARTIAL / DOL_NATIONAL_SERIES_INCOMPLETE |
+| National HTTP503 | 0, 기존 정상 national raw 보존 | 3,060 | PARTIAL / DOL_NATIONAL_HTTP_FAILED |
+| National network error | 0, 기존 정상 national raw 보존 | 3,060 | PARTIAL / DOL_NATIONAL_REQUEST_FAILED |
+| 정상 National + ETA539 실패 | 4 | 0 | PARTIAL / DOL_ETA539_SOURCE_FAILED |
+| **National HTTP503 + ETA539 동시 실패** | 0 | 0 | **PARTIAL / NO_OBSERVATIONS** |
+| National 4/4지만 오래된 관측 | 4, 별도 STALE | 3,060 | PARTIAL / DOL_RELEASE_OBSERVATION_STALE |
+| FRED 경유 미승인 | 0 | 3,060 | **FRED 호출 0 / BLOCKED_NOT_APPROVED** |
+| FRED 승인 가정이나 PIT 증거 부족 | 0 | 3,060 | **FRED 호출 0 / BLOCKED_PIT_PROVENANCE** |
+| FRED 4개 승인+PIT 검증 모두 충족 가정 | 운영 변경 0 | 3,060 | **SIMULATED_APPROVAL_CONDITIONS_MET_NOT_INSTALLED**; 현재 R6에는 FRED 주간 연결 코드가 없으므로 실제 데이터 복구 아님 |
+
+**신규 잔존 결함 발견(동시 장애):** #1083 Collector의 `failureCode` 최상위 조건은 `noObservations ? "NO_OBSERVATIONS"`가 `fetched.partialFailureCode`의 `DOL_NATIONAL_HTTP_FAILED/REQUEST_FAILED`보다 앞서 있음. National+ETA 둘 다 실패하면 상위 failureCode는 `NO_OBSERVATIONS`가 되고 실제 National HTTP 원인은 `detail.nationalResponseEvidence.requestFailureCode`에만 남음. 이 상태로 최상위 failureCode 전용 감시장치는 정확한 공급자 실패를 놓칠 수 있음. 원인 기술 분류 개선은 **원래 결과를 숨기는 통과 요령이 아니라**, 기존 테스트에 동시 장애 한 건을 추가하고 최소 code priority 분기를 별도 검토해야 할 사항임. 운영 코드 임의 수정 금지.
+
+**외부 실관측 분리:** 2026-11-16 DOL `https://oui.doleta.gov/unemploy/claims.asp` GET에 `Unable to connect! SQLSTATE=HY000 ... Invalid ASF assoc_id` 표시 확인. `report.asp`의 GET은 폼 입력 필요 경고. **11/15 PC POST 실응답을 검증한 것이 아니므로 동일 장애 확정 금지**. FRED ICSA/IC4WSA/CCSA/IURSA은 공급자 ETA의 별도 공식 제공 시계열이지만 현재 ZGMINI 기존 `FRED_PROFILES`에 미등록·고용 R6 경유 승인이 없음.
+
+**별개의 29번째 score:** #1403 `stateClaims.fullTenYearRawCoverage=RAW_PRECONDITIONS_COMPLETE` 600×51은 행수 선행조건 통과일 뿐 `observationHistory`의 `availableAt/retrievedAt`, 52주 비교, PIT score, D1 API/UI READY와 다른 Gate임. National4 정상화로 29/29 자동 달성 주장하지 않음. 기능 실측 종단 진행률 중앙 기준 **75%→75%**.
+
+**LAST PASS:** 정상/비XML/3of4/HTTP/네트워크/양쪽 실패/시차 및 FRED 승인 차단 12모델 assertions 14/14. **FIRST FAIL:** 모델 동시 장애 시 상위 failureCode 정보 손실; 운영 11/15 National POST 첫 오류 형식 아직 UNKNOWN. **NEXT 실제 한 단계:** 중앙 승인된 기존 읽기 전용 계약에서 11/09 성공 vs 11/15 실패 National raw `http_status/content_type/bodySha/parserSeriesCount`만 1회 대조 → 1차 원인 확정. 그 뒤 #1083의 필요한 최소 source+동시실패 회귀만 정확 SHA 승인 후 정규 Writer 설치, 실제 4/4 수집→PIT→D1/API/UI 확인. 600주 backfill·기존 Node CI 반복 금지.
+
+---
+
 <!-- employment-r6-20261116-dol-official-db-outage-and-approved-safe-recovery-plan -->
 ## 2026-11-16 W04 고용 R6 실제 해결 경로 조사 — 공식 조회 DB 오류, 승인 기존 Collector 회복 우선
 
