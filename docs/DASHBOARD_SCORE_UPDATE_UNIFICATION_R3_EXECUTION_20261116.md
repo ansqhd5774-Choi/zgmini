@@ -5,7 +5,7 @@
 - 착수 당시 전용 브랜치: `codex/ui-improvements` `43f943679b555387593d918088860ba5b882dcb6`
 - 인계받은 기존 근거: `DASHBOARD_SCORE_68_CONTENT_CONTRACT_INVENTORY_R1.md` (2026-11-10), `DASHBOARD_SCORE_RUNTIME_BASELINE_R1.md` (2026-11-10)
 - 당회 작업 범위: **현재 개발 소스의 UI 소비 구조 및 R1 계약 재사용**, 기능별 실제 갱신 계약 분류 착수. 원자료/DB/D1/Controller/예약/산식 변경 없음.
-- **진척 요약: 01,02,03,07,09–30 판정 완료 (26/34 = 76.5% 고정 작업 기준). 기능별 판정 23/27. 04–06/08/31–34는 아직 미완료.** 추가 결함군 N은 미확정이므로 전체 R3 최종 %는 아직 산정하지 않는다. 이 기록은 브랜치 문서 반영이지 배포/운영 적용 증거가 아니다.
+- **진척 요약: 01–30 판정 완료 (30/34 = 88.2% 고정 작업 기준). 기능별 판정 27/27. 31–34 및 F1–F4 운영·코드 검증은 미완료.** 추가 결함군 N은 미확정이므로 전체 R3 최종 %는 아직 산정하지 않는다. 이 기록은 브랜치 문서 반영이지 배포/운영 적용 증거가 아니다.
 
 ## 1. 공통 실행 01–03 — 완료 근거
 
@@ -31,11 +31,11 @@
 
 | 번호 | 대상 | R1 입력 주기·승인 Gate (현재 설치 검증 아님) | 계약상 API/조회 | UI 소비 구조(개발 소스) | 결과 단계 | 현재 판정 |
 |---|---|---|---|---|---|---|
-| 04 | D01 · 미국 공포탐욕 · CNN 관측점수 | CNN 관측발표 기준; PC checkedAt와 observedAt 구별 | /api/fear-greed, /api/fear-greed/observations · cnn-observed-archive-r1 | `app/fear-greed/usa/cnn-panel.tsx` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 진행 중 · 공개값 재조회/PC 갱신 사건 미확인 |
-| 05 | D02 · 한국 공포탐욕 · ZGMINI_KR_FG_CNN_R7 | KRX 거래일; 7개 동일가중 요인; 과거는 RECONSTRUCTED_CURRENT_VINTAGE, PIT 검증 아님 | /api/indicators/korea-funds · kfg_rev7_* | `app/korea-composite-view.tsx / app/korea-funds-store.ts` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 진행 중 · 완료 거래일 Gate의 실제 최신 게시 미확인 |
-| 06 | D03 · 미국 등락 · public:market-breadth-r1:usa | IEX 약15분 잠정/MarketParquet 거래일 확정 R2 별도; 확정 커버리지 확인 | /api/market-breadth, /api/market-breadth-r2-history | `app/market-breadth-strip.tsx` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 진행 중 · 잠정/확정 API 현재 상태 확인 필요 |
+| 04 | D01 · 미국 공포탐욕 · CNN | 신규 CNN 관측 `observedAt` vs 재조회 `checkedAt` 독립; valid observed feed와 신규 점수 history만 반영 | /api/fear-greed · observations | `app/fear-greed/usa/cnn-panel.tsx / app/api/fear-greed/route.ts` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 공급자 실제 관측 변경→PC 게시→API/UI 1건은 미확인. 방문자 API는 저장 결과만 읽음 |
+| 05 | D02 · 한국 공포탐욕 · KRX | 7요인 READY 및 KRX 완료 거래일, 관측일 `observationDate`, 공개 score와 이력 구분 | /api/indicators/korea-funds | `app/korea-composite-view.tsx / app/korea-funds-store.ts` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 카드/차트는 저장한 거래일의 실제 점수; 신규 완료거래일 전은 EXPECTED_WAIT, PC 계산·D1 동시 사건 미확인 |
+| 06 | D03 · 미국 등락 비율 · USA | MarketParquet 금지 결정으로 confirmed-r2/history API 503 RETIRED; 독립 기존 IEX 잠정만 유효 observationDate+slotEndUtc에 표시 | /api/market-breadth?market=usa&phase=provisional | `app/market-breadth-strip.tsx / app/api/market-breadth/route.ts / docs/MARKETPARQUET_REMOVAL.md` | DEFECT_DISPLAY_SOURCE_FIXED_UNDEPLOYED | main 화면이 폐기된 R2 이력을 현재 후보로 사용+확장 UI 노출; W06 브랜치 UI 소스 수정. Production/CI 및 권리 확인 전. 승인 없는 새 공급자/legacy SP500 대체 금지 |
 | 07 | D04 · 한국 등락 · 공개 독립 ID 미확인 | 한국 카드 counts 입력 미연결; 0~100 점수 아님 | app/korea-composite-view.tsx → market-breadth-strip.tsx | `app/korea-composite-view.tsx / app/market-breadth-strip.tsx` | NOT_CONNECTED | **NOT_CONNECTED · 판정 완료 (수정은 별도 기능 연결 담당)** |
-| 08 | D05 · 미국 종합 · CM-R1 overall | 경제 12/12 READY, 가중치 100%; 과거 CURRENT_VINTAGE_ONLY 일부 재구성; 화면변환 3.5 | /api/market-score · market_public_snapshots_v1:current | `app/dashboard-ui.tsx / scripts/pc-writer/run-local.mjs` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | 진행 중 · 로컬 계산→현재 공개 버전과 신규 유효 입력의 동시 사건 미확인 |
+| 08 | D05 · 미국 종합점수 · overall | 경제12 전부 READY 및 저장 새 입력→승인된 다음 Core 계산/게시; raw score→UI 3.5× 민감도 변환 | /api/market-score current/observations | `app/dashboard-ui.tsx / scripts/pc-writer/market.mjs` | SOURCE_REVIEWED_RUNTIME_UNKNOWN | API 60초 조회는 계산/게시 트리거 아님; 이전 25개 자체 원장은 LIVE 증거가 아님, 새 event 1건 미확인 |
 | 09 | D06 · 인플레이션 위험 · inflationStability | 현행 R2: 저장 초기발표/PCE PC1 입력 16개·축 7개 전부 충족 시 READY (월·분기 혼합) | /api/inflation-detail · detail:inflation:v1 | `app/dashboard-ui.tsx / app/inflation/inflation-panel.tsx` | SOURCE_ROUTE_GAP_FIXED_PR_UNDEPLOYED | 개발 경로 누락 수정 PR #1165. 실제 API/D1 readback 미완료 |
 | 10 | D07 · 경기침체 위험 · recessionDefense | NFP·GDP·IP·실질PCE·Sahm·소매·가처분소득 7요인; 월·분기 혼합 | /api/recession-detail | `app/dashboard-ui.tsx (risk detail / stored projection)` | SOURCE_ROUTE_GAP_FIXED_IN_PR_NOT_DEPLOYED | D07 경기침체: 7요인 저장 projection detail:recession:v1, GET 라우트 소스 누락 → PR #1165 수정, 운영 재조회 미확인 |
 | 11 | D08 · 스태그플레이션 위험 · stagflationSafety | 별도 S21: 공통 13개월 확정/최신 잠정 구분; 기본 diagnostics8의 제3항 아님 | /api/stagflation-risk-detail · detail:stagflation-risk:s21 | `app/dashboard-ui.tsx (risk detail / stored projection)` | SOURCE_ROUTE_PRESENT_RUNTIME_UNKNOWN | S21 기존 전용 API 라우트 존재; 13개월 완성월 확정 Gate 보존. 운영 게시·응답 미확인 |
@@ -86,8 +86,8 @@
 ## 4. 다음 실제 실행 순서·작업량 보호
 
 - **현재 증거상 확정된 갱신 시점 불일치(결함군 N): 아직 0건 확정이 아니라 '미확정'.** D04는 NOT_CONNECTED이며 새 수정 대상 결함군에 자동 합산하지 않는다.
-- **다음 필수 실행:** 04–06/08 최신 source·권리 변경을 재대조하고 31–32 혼합주기/결측 시뮬레이션을 실행한다. Production 공개 API readback은 접근 제한으로 아직 UNKNOWN. 04–06·08의 구체적 미확인 입력은 기존 유효 증거가 있을 때 이어서 판정하되 **27개 전원 운영 사건 확인을 단일 전역 Gate로 만들지 않는다**.
-- 실행 완료 집계: **26/34** (01,02,03,07,09–30), 04–06/08 및 22–34는 미완료. **구현: API 저장결과 읽기 라우트 7건·회귀 테스트 4건. main 병합 완료 / Cloudflare 후보 Worker build 성공 / Production 사이트 API readback 미확인.**
+- **다음 필수 실행:** 31–32 혼합주기/결측·기간 시뮬레이션을 실제 승인 모듈의 최소 fixture로 수행하고 33 결함군 원인을 확정한다. Production 공개 API readback은 네트워크 접근 제한으로 UNKNOWN. 04–06·08의 구체적 미확인 입력은 기존 유효 증거가 있을 때 이어서 판정하되 **27개 전원 운영 사건 확인을 단일 전역 Gate로 만들지 않는다**.
+- 실행 완료 집계: **30/34** (01–30), 04–06/08 및 22–34는 미완료. **구현: API 저장결과 읽기 라우트 7건·회귀 테스트 4건. main 병합 완료 / Cloudflare 후보 Worker build 성공 / Production 사이트 API readback 미확인.**
 
 
 ## 5. 09/D06 인플레이션 위험 신규 실행 증거 — 2026-11-16
@@ -153,3 +153,12 @@
 
 - 오늘 최신 main의 `docs/MARKETPARQUET_REMOVAL.md`로 공급자 이용 금지 확정. D23 저장 reader가 제공하는 sourceList가 MarketParquet 계열이면 별도 원담당 권리/수집 경계로 분리. W06은 새로운 라이선스·산식·공급자를 만들지 않는다.
 - API 직접 readback: 이 환경의 공개 HTTP 조회가 `zgmini.kr`에 접근하지 못해 소스와 현재 실제 공개 상태의 동치 미확인. 이를 단일 전역 blocker로 두지 않음.
+
+
+## 12. 04–06/08 최종 소스 판정 및 D03 권리 경계 — 2026-11-16
+
+- 04/D01 CNN: `app/fear-greed/usa/cnn-panel.tsx`는 관측시각 observedAt와 점검 checkedAt 별도 이력/차트로 소비, `/api/fear-greed`은 저장 피드 read. 실제 신규 점수 사건은 원장 미확인(UNKNOWN). 단순 재조회 성공은 점수 갱신 아님.
+- 05/D02 KRX: `app/korea-composite-view.tsx`는 observationDate·displayScore·실제 저장 history만 표시, 아직 완료되지 않은 거래일은 EXPECTED_WAIT. 오늘 PC 신규 정상 게시 실증 미확인(UNKNOWN). 한국 등락 D04는 여전히 NOT_CONNECTED 별도 소유.
+- 06/D03 USA breadth: 2026-11-16 MarketParquet 사용 금지 main 소스 `docs/MARKETPARQUET_REMOVAL.md`. main `/api/market-breadth?market=usa&phase=confirmed-r2` 및 `/api/market-breadth-r2-history`는 즉시 503; 하지만 현행 main UI의 `app/market-breadth-strip.tsx`는 폐기된 R2 확정/current/history를 숫자 fallback 및 확장 패널로 계속 표시. 새 권리 결정과 충돌하는 **DEFECT_DISPLAY**로 분류. W06 브랜치 소스에서 MarketParquet 확정/current/history UI 사용과 GET을 제거하고 독립 잠정 데이터가 유효한 경우만 표시, 한국 counts/색상/41px 유지. 아직 CI/main/Production 반영 미확인. 과거 시장폭 원자료 삭제·새 데이터 공급자 제안 없음.
+- 08/D05 USA composite: `/api/market-score` 저장 12개 READY score만 실제 점수, `app/dashboard-ui.tsx`의 기존 3.5배 표시 민감도는 유지. Core→D1→GET 실제 신규 데이터 변경 사건은 전용 별도 인과 원장에서도 미검증, 이번 작업에서 무한 반복 조사하지 않음.
+- D01–D27 source/Gate/API/UI 계약 분류 27/27. 이 수치는 운영 성공 27건 의미가 아니며, R3 원래 최종 종료에는 결함 F1–F4 전부 및 배포/UI 증거가 필요함.
