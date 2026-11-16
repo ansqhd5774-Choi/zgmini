@@ -135,7 +135,7 @@
 | R6-14 | 관련 PR·CI·main 통합→Cloudflare Git Integration→정확 배포 SHA→공개 확인 | `IN_PROGRESS_SOURCE` | 관련 소스 PR·CI 있음, Production exact Deployment·전체 4종 실데이터 미검증 |
 | R6-15 | 다음 공식 발표 이후 자연 수집·checkpoint·D1·UI 실제 전진 관찰 | `DEFERRED` | 다음 실제 공식 발표 후 자연 갱신 확인; 현재 구현 STOP Gate 아님 |
 
-**상태 집계(82개 정확히 1회씩):** `PARTIAL_SOURCE` 4개 · `EXISTING_EVIDENCE` 8개 · `EVIDENCE_NOT_MAPPED` 36개 · `SOURCE_REVIEWED` 1개 · `NOT_RUN` 13개 · `SOURCE_READY` 4개 · `SOURCE_CI_PASS` 5개 · `BLOCKED_PUBLISH_SCOPE` 2개 · `SOURCE_BRANCH_ONLY` 2개 · `PUBLISH_SCOPE_UNVERIFIED` 1개 · `SOURCE_MAIN_READY` 3개 · `TARGETED_CI_PASS` 1개 · `IN_PROGRESS_SOURCE` 1개 · `DEFERRED` 1개. 각각의 상태는 최종 운영 완료율이 아니다.
+**상태 집계(82개 정확히 1회씩):** `PARTIAL_SOURCE` 4개 · `EXISTING_EVIDENCE` 8개 · `EVIDENCE_NOT_MAPPED` 36개 · `SOURCE_REVIEWED` 1개 · `NOT_RUN` 13개 · `SOURCE_READY` 3개 · `SOURCE_CI_PASS` 6개 · `BLOCKED_PUBLISH_SCOPE` 2개 · `SOURCE_BRANCH_ONLY` 2개 · `PUBLISH_SCOPE_UNVERIFIED` 1개 · `SOURCE_MAIN_READY` 3개 · `TARGETED_CI_PASS` 1개 · `IN_PROGRESS_SOURCE` 1개 · `DEFERRED` 1개. 각각의 상태는 최종 운영 완료율이 아니다.
 
 ## 1. 현재 확정 가능한 진행 상태
 
@@ -146,8 +146,8 @@
 | 기존 14단계 실제 종단 완료 | 마지막 확인 기준 **0/14** — 소스·테스트 PASS는 별도 |
 | QFR 원자료·계산 | 2026-10-27 운영 PC의 기존 유효 저장·계산 성공 증거 재사용 |
 | QFR B 게시기 코드 | 최신 제어 main 기반 [Draft PR #1762](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1762), 운영 main 미병합·설치 미증명 |
-| QFR B 게시기 실제 Node CI | [Run #43883643669](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43883643669) **21/21 PASS, 0 FAIL** |
-| QFR 원자료 3핀 | W05 전담 브랜치 및 [앱 PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175) 준비; 앱 main에 미반영 |
+| QFR B 게시기 실제 Node CI | 최신 [Run #43892670904](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43892670904) **22/22 PASS, 0 FAIL**. 변경 전 [#43883643669](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43883643669) 21/21 PASS는 이력으로 유지 |
+| QFR 원자료 3핀 | W05 전담 브랜치·[앱 PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175) 변경 후 [Run #43892753705](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43892753705) 회귀 **4,483 PASS/0 FAIL**. 원본 3핀·B 요청별 로그 경로 검사 통과. 앱 main 미반영 |
 | BEA 단위이익 저장형 게시기 | [앱 Draft PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183)에서 소스 준비. 임시 원본 아카이브 단위시험 5/5 PASS |
 | BEA 단위이익 앱 Node CI | [Run #43884699372](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43884699372) **성공**: 빌드/타입체크 PASS, 회귀 총 4471건 중 4461 PASS·0 FAIL·10 SKIP, 게시 복구 11/11, 후보 공개계약 69/69 |
 | B 실제 QFR 단일키 승인·PC 설치 | **UNVERIFIED / NOT_RUN**. 기존 Writer B 파일 overlay 권한은 D1 쓰기 금지 |
@@ -161,10 +161,10 @@
 
 | 작업 ID | 소스/시험 상태 | 남은 완료 조건 |
 |---|---|---|
-| R4-02 | **SOURCE_READY** — 제어 Draft PR #1762의 B 게시기 7파일+전용 집중 CI 1파일 | 실제 승인된 B 단일키 사용권·manifest·기등록 Runner 및 운영 PC 설치 SHA 확정 후 올바른 경로 연결 |
-| R4-03 | **SOURCE_CI_PASS** — 제어 게시기·계약 실제 Windows 격리 Node 21/21 통과 | 승인 소스 통합 및 필요한 실제 설치 영향 검증 |
-| R4-04 | **SOURCE_READY / MAIN_PENDING** — QFR sourceVersion·ZIP SHA·sourceStoredAt 3항목 pin 코드 준비 | 승인된 앱 main 선별 통합 및 운영 원본 preflight/apply 확인 |
-| R6-01 (제어 게시 관련) | **TARGETED_CI_PASS** — 제어 Node 21/21, 앱 BEA CI 통과 | 다른 변경 범위에 대한 전체 회귀 여부는 해당 기능 실제 변경 시 평가 |
+| R4-02 | **SOURCE_CI_PASS** — 제어 Draft PR #1762의 B 게시 7파일+전용 CI 1파일, 요청별 결과 폴더 연계 및 [Run #43892670904](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43892670904) 22/22 PASS | 정확한 QFR B 승인 manifest·실제 설치·main 소스 통합 미확정; D1 effect 없음 |
+| R4-03 | **SOURCE_CI_PASS** — 변경된 제어 게시기·계약·로그 경로 실제 Windows 격리 Node [Run #43892670904](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43892670904) **22/22 PASS** | 승인 소스 main 통합·운영 설치 미완료 |
+| R4-04 | **SOURCE_CI_PASS / MAIN_PENDING** — QFR 3핀 및 요청별 B 결과 저장·수동 기본 경로 보존 [앱 Run #43892753705](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43892753705) 4,483 PASS/0 FAIL | 앱 main 선별 통합 및 승인 운영 원본 preflight/apply 실측 필요 |
+| R6-01 (제어 게시 관련) | **TARGETED_CI_PASS** — 제어 B Node 22/22, 앱 QFR 4,483 PASS·0 FAIL, 기존 BEA CI PASS | 다른 운영 범위 실증·PC/D1/Production은 별도 |
 | R3-09~10 | **SOURCE_CI_PASS / PC SOURCE UNVERIFIED** — BEA CSV+메타 불변 저장 라이브러리·시험 PASS | 공식 공급자 원본/권리 확인, 승인된 PC Collector의 실제 저장·SHA 재조회 |
 | R4-07 | **SOURCE_CI_PASS / D1 NOT_RUN** — BEA 저장형 게시기는 수집과 분리되고 공급자 재호출 없음 | 실제 BEA 저장 원본 확보, 승인 B 효과, 원격 게시·재조회 |
 | R6-04 | **NOT_RUN** | 실제 승인 manifest·운영 설치·고유 Issue/Run/JSON/TXT |
