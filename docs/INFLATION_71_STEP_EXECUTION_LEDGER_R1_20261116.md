@@ -2,7 +2,7 @@
 
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
-## 최신 인계 스냅샷 — W01 2026-11-17 (Census B source main 병합·승인 미발급·21/71 유지)
+## 최신 인계 스냅샷 — W01 2026-11-17 (Census 신규 저장 시각 검증 main 반영·B 승인 대기·21/71 유지)
 
 > **다음 작업자는 이 스냅샷부터 시작한다.** 진행 기록 파일 자체가 지정된 정본이고, 상위 계획은 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)이다. 과거 이력의 오래된 설치 SHA·대기 문구가 이 스냅샷을 덮어쓰지 않는다.
 
@@ -342,3 +342,14 @@ B4 10 | Production·화면 최종 검증
 - **개별 Source SHA/승인 상태**: 런타임 코드 revision `8531d63eb03a78ca343048bc2650d973bd3a64e5`, 회귀 코드 `eacc89781543fb43d3be4dbd7842296f2b66b2e1`, 제안서 `controlSourceSha` 조상 고정 commit `edaf422e75147b3d0587a280e3ce9144b7ffc637`; 제안서 `status=PENDING_B_APPROVAL` **불변**. 원래 PC 승인 source `2070ff53549e2f9f2cea57d5af7e1d83f9fd7388` 불변. 새 B 실행 Issue 0·공급자 GET 0·운영 쓰기 0.
 - **검증 경계**: PR #1810 정확한 변경 파일 **3개**, 병합 충돌 없음. C996 R5 source CI [Run #43982490385](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43982490385) PASS; Census 자체 Node 테스트가 들어있는 `ZGMINI Controller Maintenance Source Tests` [#43982490310](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43982490310)은 최초 관찰 시 **QUEUED**이므로 통과를 확정해 적지 않는다. 공용 Runner 유휴를 기다리기 위해 타 업무를 막거나 CI를 중복 발행하지 않음.
 - **다음 필수 행동**: PR #1810 Census 자체 CI가 완료되는 대로 통과/최초 실패 확인 → 해당 소스 범위만 수정하고 필요하면 CI 재검증 → 정규 main 소스 병합 → B 승인 제안서 `PENDING_B_APPROVAL`·운영 Source A 사전 증거를 유지한 채 **명시적 B 허가 확보 시** Census #28 2GET 단회 수집/원자료 SHA readback. 현 단계는 21/71 DONE·50 미완료.
+
+## 2026-11-17 — W01 Census B per-attempt 저장시각 검증 완료, Controller main 병합
+
+- **LAST PASS / FIRST FAIL:** 제어 [PR #1810](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1810) 첫 Controller CI [Run #43982490310](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43982490310) **25개 중 24 PASS/1 FAIL**. 최초 실패는 실제 기능 오류가 아닌 기존 테스트 정규식 `/runInflationCandidateOnce\\(\\{approved:true/`이 여러 줄 배치된 승인 호출을 인식하지 못한 것. 구현 assertion/권한 거부를 제거하지 않고 테스트 호출 형식만 `/runInflationCandidateOnce\\(\\{\\s*approved:true/`로 수정한 commit `557606f55aaeaec8771c93bfde7c245bd98b5296`; 오류를 숨기지 않음.
+- **재검증 완료:** 수정 후 Windows Controller 소스 [Run #43982927102](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43982927102) Job #133703691573 **25/25 PASS·0 FAIL**, `node --check` Windows adapter/report PASS. 신규 `SAVED_READBACK` 범위 검사 + `UNCHANGED` 마지막 유효 저장 시각 보존 2개가 포함되었고 관련 Node 소스가 직접 실행되었다. 이전 C996 source Run #43982490385 역시 PASS(별도 계약).
+- **정규 제어 source 반영:** [PR #1810](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1810) 3파일만 변경하여 `main`으로 merge `f1efd502a6f60b43f32bc779ccddd83bc79aa022`. 병합 후 `inflation-census-api-b/windows-adapter.mjs`의 `verifyCensusBReadbackWindow`/실행 `collectStartedAt` 타임스탬프 및 `main` 제안서 상태 원격 재조회 완료. `controlSourceSha=8531d63eb03a78ca343048bc2650d973bd3a64e5`는 현재 main의 Git 조상으로 유지, 새 쓰기 효과는 여전히 `PENDING_B_APPROVAL`.
+- **실제 결함과 수정 효과:** 원래 B 어댑터는 Census 자료 파일의 기존 SHA/원문이 올바르면 지난번 결과를 이번 `SAVED_READBACK`으로 오인할 가능성이 있었다. 수정 후 `SAVED_READBACK`는 공급자 단회 호출 시작~종료 범위에 포함된 정확한 `doc.sourceStoredAt`만 허용하며, `UNCHANGED`는 기존 valid-stored 시각을 유지하고 신규 저장을 가장하지 않는다. PC collector/원문 SHA/상세 점수·계산 산식·원자료 DB/D1/Task/예약·운영 SHA 변경 없음.
+- **BLOCKER 및 실제 운영 효과:** Census 전용 B급 `APPROVED_B` 승인 manifest 여전히 미발급. 제어 `main` source 병합은 운영 PC 설치/실행이 아니다. 기존 2026-11-17 PC A [Run #43978483562](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43978483562)의 4개 파일 SHA는 재사용하되 현재 Core live task/owner/lease 증거가 아니므로 단정하지 않는다. 신규 수집 GET 0, PC 원자료/DB/D1 쓰기 0, 신규 B Issue 0.
+- **정확한 다음 필수 행동:** 제어 Source는 병합 완료로 재검증하지 않는다. 승인된 `Census #28 MTM/TI/SA/US` 최대 2 GET·raw archive 2·월별 JSON 1·prior backup 1·quota ledger·기존 잠금/단회 journal **B급 효과의 명시 승인**이 정본에 등록되면 현재 PC preimage와 최종 code SHA/manifest를 대조한 뒤 새 고유 Issue로 단회 수집하고 저장 JSON·raw 원문 SHA·stored_at을 A 재조회하여 Census 26/26 확인. 이후 승인된 기존 로컬 계산→Writer D1→API/UI 7/7 검증. 승인 전 임의 원격 실행/수집·별도 Task/예약 설치 없음.
+- **수량:** 시작 **21 DONE / 50 open (29.6%)** → 종료 **21 DONE / 50 open (29.6%)**. 이 단계는 소스·회귀·제어 main 병합 완료로, 운영 Census #28 저장 `DONE`으로 승격하지 않는다.
+
