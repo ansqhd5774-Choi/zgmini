@@ -24,7 +24,7 @@ console.log('W02_R44_SOURCE_COVERAGE_DIAG '+JSON.stringify({
   dataSourceShaVerified:true,
   calendarCountDrift:output.calendarTickerCount-3035
 }));
-if(output.counts.three!==94)throw Error('LIVE_THREE_STAR_COUNT_MISMATCH_'+output.counts.three);
+if(output.counts.three!==96)throw Error('LIVE_THREE_STAR_COUNT_CHANGED_'+output.counts.three);
 const filteredResponse=await fetch(ref+'&importance=3',{signal:timeout(25000),redirect:'error'});
 if(filteredResponse.status!==200)throw Error('PUBLIC_R44_THREE_STAR_UNAVAILABLE');
 const filteredHtml=await filteredResponse.text();
@@ -34,7 +34,7 @@ const publishedThree=new Set(visibleThree);
 for(const t of publishedThree)if(output.grades[t]!==3)throw Error('PUBLIC_GRADE_MISMATCH_'+t);
 const grade3=Object.entries(output.grades).filter(([,g])=>g===3).map(([t])=>t).sort();
 const absentFromCurrentCalendar=grade3.filter(t=>!publishedThree.has(t));
-if(absentFromCurrentCalendar.length!==23)throw Error('PUBLIC_23_STAR_DIFFERENCE_INVALID_'+absentFromCurrentCalendar.length);
+if(absentFromCurrentCalendar.length!==25)throw Error('PUBLIC_25_STAR_DIFFERENCE_INVALID_'+absentFromCurrentCalendar.length);
 const bannerFile=readFileSync(new URL('../lib/market-calendar-banner.mjs',import.meta.url),'utf8');
 const block=bannerFile.match(/const domains=Object\.freeze\(\{([\s\S]*?)\}\);/);
 if(!block)throw Error('BANNER_LOGO_MAP_MISSING');
@@ -42,10 +42,10 @@ const known=[...block[1].matchAll(/\b([A-Z][A-Z0-9.\-]*):'([^']+)'/g)].map(m=>m[
 const knownSet=new Set(known);
 const linked=grade3.filter(t=>knownSet.has(t));
 const missing=grade3.filter(t=>!knownSet.has(t));
-if(grade3.length!==94||linked.length+missing.length!==94)throw Error('ROSTER_COVERAGE_MISMATCH');
-const outputLog={status:'R44_94_READONLY_REDERIVED',sourceAsOf:'2026-11-03',sourceShaVerified:true,
-  savedCountMatches:true,calendarTickerCount:output.calendarTickerCount,threeStarTickerCount:grade3.length,
+if(grade3.length!==96||linked.length+missing.length!==96)throw Error('ROSTER_COVERAGE_MISMATCH');
+const outputLog={status:'R44_LIVE96_READONLY_REDERIVED',sourceAsOf:'2026-11-03',sourceShaVerified:true,
+  savedCountMatches:false,calendarTickerCount:output.calendarTickerCount,threeStarTickerCount:grade3.length,
   alreadyMapped:linked.length,actuallyUnmapped:missing.length,
   offCalendarThreeStarCount:absentFromCurrentCalendar.length,offCalendarThreeStars:absentFromCurrentCalendar,
-  missingTickers:missing,graded94:grade3};
+  missingTickers:missing,gradedCurrent96:grade3};
 console.log('W02_R44_94_MANUAL_LOGO_INVENTORY '+JSON.stringify(outputLog));
