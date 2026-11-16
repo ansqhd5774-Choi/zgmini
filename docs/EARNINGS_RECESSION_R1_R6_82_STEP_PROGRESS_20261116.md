@@ -74,7 +74,7 @@
 | R1-03 | 운영 SQLite 원자료 테이블·checkpoint·append-only 이력 파악 | `DONE` | 기존 실제 PC QFR/BLS 저장 성공과 현재 SQLite 소스 계약을 §8에 연결. 공통 core.sqlite 두 테이블 `api_history_chunks_v1`·`api_history_snapshots_v1`, PK/provider 분리·내용 SHA·개정 append-only·ON CONFLICT DO NOTHING·BEGIN IMMEDIATE/COMMIT/ROLLBACK, read-only requery와 first_seen_at/retrieved_at/sourceStoredAt 차이 정리. QFR 1/1 실제 SQLite 저장·R3 계산 PASS, BLS 3/3 저장·R3D 계산 PASS. BEA 제조업 전용 CSV/JSON 원본은 보고 저장 PASS지만 독립 SHA readback 미확인. 신규 PC/D1 쓰기 0 |
 | R1-04 | 기존 BLS 3개 원천과 공개 5개 정보성 행 계보 조사 | `DONE` | 기본 BLS WPSFD4/WPSFD41/PRS85006111 3원천의 실제 PC append 원본 21/21/6행·hash verified 3건과 저장자료 계산 5행(2+2+1)의 단위·원시/파생 정의를 §9에 연결. 과거 공개 `/api/earnings-recession-indicators` 2026-10-27 HTTP 200/5 READY 및 정확 D1 key `detail:earnings-recession-indicators:v1` 검증. 2026-11-17 최신 Production/자동 재수집은 별도 미검증. WPSFD42는 독립 추가 2행, 본 단계 범위 밖 |
 | R1-05 | BEA 단위이익·제조업의 수집기, CSV/메타 및 실제 저장 여부 조사 | `DONE` | **인벤토리·검증 경계 조사 완료(§10), 신규 수집 완료 주장 아님.** BEA 단위이익 FRED 배포 `A463RD3Q052SBEA`는 앱 `main` 구형 게시기에서 직접 공급자 fetch 1건 호출 가능, 저장형 보완 PR #1183 미병합·운영 CSV/메타 archive 현물 `NOT_VERIFIED`; 별도 `raw/earnings-bea-unit-profit-r1/` source-only 캡처 helper만 W05에 존재. BEA 제조업 `N400RC1Q027SBEA`는 사용자 PC 제출 R5 결과 `APPEND_ONLY_SOURCE_STORED/sourceWrites=2`, `sourceVersion=ebaf93f7…` 및 `raw/earnings-recession/bea-manufacturing-profits-r5/` CSV/JSON 경로 확인, 실제 파일 2건 SHA readback은 후행 R3-11 `NOT_RUN`. dry-run/저장/실제 게시를 각각 구분 |
-| R1-06 | Census QFR·M3·MTIS 기존 수집 코드·ZIP·저장 위치 조사 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
+| R1-06 | Census QFR·M3·MTIS 기존 수집 코드·ZIP·저장 위치 조사 | `PARTIAL_SOURCE` | QFR 공식 ZIP→PC SQLite 기존 저장·SHA 근거 재사용. 앱 `main`의 `inflation-causal-candidate-census-m3.mjs`는 M3 `MTM/TI` **재고** 전용 물가 후보 소스이며 실적 침체의 신규주문·출하 Collector/저장 실증으로 전용 불가. MTIS 전용 코드/저장 실증 미확인. §11 참고; 세 원천 개별 판정 완료 전 DONE 아님 |
 | R1-07 | SEC CompanyFacts/XBRL 수집 코드·종목 매핑·저장 경로 조사 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R1-08 | 기존 D1 키·Worker GET·Writer·게시 원장 조사 | `PARTIAL_SOURCE` | 기존 QFR/BEA Writer·Worker/D1 키 소스 확인; 실 D1 게시 키 상태는 미확정 |
 | R1-09 | 기존 점수 A·기업실적 B·정보성 C API/UI 계약 분리 | `SOURCE_REVIEWED` | 원래 점수 4요소/정보성 지표 분리 계약 문서 확인; UI 실제 동치 검증 별도 |
@@ -330,3 +330,11 @@
 
 **R1-05 조사 완료 판정:** 기존 BEA 2원천의 Collector·원본 후보·실제 PC 보고·미확인 범위를 구분해 **인벤토리 DONE**. Unit의 실제 PC 원본 수집·저장 및 제조업 archive SHA 재조회는 **후행 R3-08/R3-11 미완료**, 실제 D1/Production 미완료. 다음 순차 R1-06(6/82).
 
+
+## 11. R1-06 부분 조사 — 2026-11-17 KST
+
+- **QFR (기존 PASS 재사용):** `scripts/pc-writer/EARNINGS_CENSUS_QFR_R1_READONLY.mjs`의 공식 `https://www.census.gov/econ_getzippedfile/?programCode=QFR` ZIP·`QFR-mf.csv` 파서, `EARNINGS_CENSUS_QFR_R2_SQLITE_APPEND.mjs`의 `api_history_chunks_v1`/`api_history_snapshots_v1` 원문 ZIP base64 및 SHA 보존 확인. 기존 운영 원장 ZIP SHA `232f7757e654e787a9eab49792302feb3683e5280a66ff0cc9bd7f0cbc448654`, R2 저장·R3 저장자료 계산 PASS (§8). 신규 공급자 호출 0.
+- **M3 (소스 구분):** 앱 `main`의 [`scripts/pc-writer/inflation-causal-candidate-census-m3.mjs`](https://github.com/ansqhd5774-Choi/zgmini/blob/main/scripts/pc-writer/inflation-causal-candidate-census-m3.mjs) Git blob `c5649283bbe071fdf153d4238b233b65c8aa39b4`는 공식 Census EITS `/data/timeseries/eits/m3`를 사용하지만 `MTM/TI` **제조업 총재고**를 `inflation-causal-candidates-r1/census-m3-manufacturing-inventories.json`에 보존하는 **물가 담당 후보**이다. 실적 침체용 신규주문·출하 코드/원자료 저장을 증명하지 않으며 다른 담당의 Collector를 임의 재사용/변경하지 않는다. W05 전용 브랜치 동일 경로는 NOT_FOUND, 앱 main의 별도 소스만 확인.
+- **MTIS:** 이번 GitHub 저장소 코드 검색 `MTIS`는 0건. 이는 검색 인덱스 범위의 결과일 뿐 운영 PC·다른 저장소·별칭에 해당 Collector/원자료가 없다는 증명은 아니다. 승인된 실적 침체 전용 코드·저장 경로·SHA는 `NOT_VERIFIED`.
+- **판정:** R1-06 `PARTIAL_SOURCE`, 연속 `5/82 DONE(6.1%)` 유지, 현재 `6/82`. PC/SQLite/D1/Production 신규 실행 0. LAST PASS=QFR 기존 ZIP/SQLite 저장 검증; FIRST UNFINISHED=M3 신규주문·출하 및 MTIS 전용 Collector/저장 계보 미확인.
+- **다음 단일 실행:** 기존 제어/기능 저장소에서 M3 신규주문·출하 및 MTIS의 별칭·공식 데이터 계약·기등록 승인 Collector 경로를 좁게 조사해 각각 `FOUND/HOLD/NOT_VERIFIED`와 저장 위치·원본 SHA·재수집 필요 여부를 확정한다. 별도 승인 없는 신규 수집·게시 금지.
