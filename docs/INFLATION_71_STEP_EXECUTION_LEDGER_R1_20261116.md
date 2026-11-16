@@ -34,7 +34,7 @@ B4 10 | Production·화면 최종 검증
 합계 71
 ```
 
-현재 상태 분류 현황(작업 완료 집계가 아님): PARTIAL 8, HISTORICAL 5, PENDING 42, SOURCE_ONLY 3, ANALYSIS 1, CURRENT_SOURCE_VERIFIED 5, HISTORICAL_SOURCE 2, HISTORICAL_OUTPUT 5.
+현재 71개 세부 체크 완료: **5/71 (7.0%)**. 완료된 것은 B1 소스 연결 5개뿐이며, W01 A1의 소스 CI는 별도 증거로 남겨 실PC 소유권 증명 완료로 산정하지 않는다. 미완료 **66개**. 나머지 상태: PARTIAL 8, HISTORICAL 5, PENDING 42, SOURCE_ONLY 3, ANALYSIS 1, HISTORICAL_SOURCE 2, HISTORICAL_OUTPUT 5.
 
 ## A1 — 운영 입력·소유권 증명 (9개)
 
@@ -87,11 +87,11 @@ B4 10 | Production·화면 최종 검증
 
 ## B1 — 기존 공개 코드 연결 (7개)
 
-- [ ] **B1-01** 현재 zgmini/main 기준 source 확인 — CURRENT_SOURCE_VERIFIED | zgmini/main 71ea0b66f67e1b099415ebd814be4b67730af08b 기준 관련 파일 조회
-- [ ] **B1-02** run-local.mjs의 신규 7행 계산·게시 연결 확인 — CURRENT_SOURCE_VERIFIED | run-local.mjs:310~311 publishInflationCandidates7Auto() 연결 확인
-- [ ] **B1-03** 기존 공통 Writer 연결 확인 — CURRENT_SOURCE_VERIFIED | auto-publication-r1.mjs:82~142 저장 preview→기존 Writer→readback 연결
-- [ ] **B1-04** candidate-r52.ts API 라우트 확인 — CURRENT_SOURCE_VERIFIED | candidate-r52.ts:11,34 D1 공개 reader route 연결 확인
-- [ ] **B1-05** 물가지표 상세 UI 컴포넌트 연결 확인 — CURRENT_SOURCE_VERIFIED | economic-detail-panel.tsx:286에서 inflation-candidate-7-inputs.tsx:40 호출 확인
+- [x] **B1-01** 현재 zgmini/main 기준 source 확인 — DONE | zgmini/main 73d1b7eeeef23dd69de90c047d8bfdab4c6cb1b2, 5개 관련 소스 blob 현재 main 1:1 불변 확인
+- [x] **B1-02** run-local.mjs의 신규 7행 계산·게시 연결 확인 — DONE | run-local.mjs의 publishInflationCandidates7Auto 연결, Git blob 18a1bbb7f73e8523b5faf0f5c6d12f829e67be3d 확인
+- [x] **B1-03** 기존 공통 Writer 연결 확인 — DONE | auto-publication-r1.mjs에서 저장 preview→기존 Writer→D1 readback 경로 확인, blob 2c71f345b36fcebe9f003e26aaf874a792550354
+- [x] **B1-04** candidate-r52.ts API 라우트 확인 — DONE | candidate-r52.ts D1 공개 reader 라우트 연결 확인, blob d2af33c6afff090fbe8dbc39b418c12972aa39af
+- [x] **B1-05** 물가지표 상세 UI 컴포넌트 연결 확인 — DONE | economic-detail-panel.tsx→inflation-candidate-7-inputs.tsx 연결 확인, blobs 2322e0ed8a4f2ded2c53a9be98e207d65fb9adab / 5e621cb7638b5cfa7201ef41b0170a24eeee3b54
 - [ ] **B1-06** 기존 19개·4축 점수 불변 검사 — HISTORICAL_SOURCE | 기존 19행·4축 비변경 원칙; 현재 배포까지 새 검증 아님
 - [ ] **B1-07** GitHub 개발 source와 실제 배포 source 구분 — PARTIAL | 개발 main과 당시 Production 응답 구분, exact Deployment SHA 미조회
 
