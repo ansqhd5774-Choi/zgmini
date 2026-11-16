@@ -34,11 +34,11 @@
 | 현재 관련 단계 | R4-02~04 및 R6-04: QFR exact-key B 게시 경로·원본 3핀 |
 | 마지막 검증 완료점 | R1-03 기본 저장 원장 조사 DONE: QFR 저장 PC 1 snapshot+1 chunk/R3 stored calc PASS, BLS 3 snapshot+3 chunk/R3D stored calc PASS와 SQLite SHA/append-only/readback 방식 §8에 연결. R1-02 운영 PC source/Task/Runner #1794/#1796 PASS 유지. QFR B effect·D1 실제 게시 미완료 |
 | 재사용할 기존 근거 | QFR 원자료 ZIP의 PC SQLite 저장·계산 기존 유효 증거; 앱 QFR 3-pin [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175) 소스/CI 완료, `main` 미병합 |
-| 현재 최초 실제 미완료 조건 | **현재 순차 R1-05:** BEA unit/mfg 공식 CSV·메타 및 PC 실제 stored 상태 구분이 아직 미완료. 기본 BLS 3→5행 lineage/기존 D1 GET 이력은 §9 완료. 후행 QFR 정확키 B 승인 및 D1 실게시 미완료 유지 |
-| 다음 필수 실행 하나 | **순차 5/82 R1-05:** BEA 두 원천의 수집기·CSV/메타·저장 archive 위치와 실제 PC 저장 여부를 구분해 현행 증거로 기록. 원자료가 아직 없으면 NOT_STORED/UNVERIFIED로 보존하고 임의 수집·D1 게시 금지 |
-| 현재 완료율 증거 | **4/82 DONE(약 4.9%)**, 현재 5/82 R1-05. 기존 14단계 종단 실제 게시 마지막 확인 0/14, R6-15 자연 발표 관찰 DEFERRED |
+| 현재 최초 실제 미완료 조건 | **현재 순차 R1-06:** QFR/M3/MTIS 원천 코드·ZIP·저장 계보 별도 조사. R1-05 BEA unit/mfg 인벤토리 조사 §10 종료(원본 저장 확인과 해시 readback은 후행 R3 단계). 별도 QFR B 단일키 승인·D1 게시 미완료 유지 |
+| 다음 필수 실행 하나 | **순차 6/82 R1-06:** QFR 이미 유효한 원본 저장 경로·ZIP SHA를 재사용하고, Census M3/MTIS 제공 계약·기존 Collector·SQLite 저장 위치를 확인해 무관한 재수집 없이 미확인을 구분한다 |
+| 현재 완료율 증거 | **5/82 DONE(약 6.1%)**, 현재 R1-06(6/82). 기존 14단계 종단 게시 완료 마지막 확인 0/14, R6-15 자연 갱신 관찰 DEFERRED |
 | 최종 갱신 식별 | 이 문서의 **최신 원격 브랜치 HEAD 및 Git blob SHA를 재조회**해 근거로 보고한다. 고정된 과거 SHA를 현행값으로 복사하지 않는다 |
-| **순차 포인터·완료율** | **현재 5/82 R1-05**, 연속 DONE R1-01~R1-04 **4/82 (약 4.9%)**. 후행 소스·CI 작업을 임의 가산하지 않음 |
+| **순차 포인터·완료율** | **현재 6/82 R1-06**; R1-01~R1-05 연속 DONE **5/82(약 6.1%)**. 후행 저장·D1 미실증은 해당 단계에서 미완료 |
 
 ### D. 다음 작업자 재개 순서 및 변경 충돌
 
@@ -53,12 +53,12 @@
 
 | 판정 항목 | 실제 상태 |
 |---|---|
-| **순차 완료 확정** | **4/82 (약 4.9%)** — R1-01~R1-04 각 단계의 완료 기준과 근거 정리 |
-| **현재 순차 진행 단계** | **5/82 = R1-05** (BEA 단위이익·제조업 Collector/CSV/메타 및 실제 저장 여부 조사) |
-| **82개 중 개별 완료 확정** | **4개** (R1-01~R1-04). 다른 실증·소스/CI는 해당 ID 완료 조건에서 따로 판정 |
+| **순차 완료 확정** | **5/82 (약 6.1%)** — R1-01~R1-05 조사·계보 기준 충족. 실제 자료·D1 미실증은 후행 분리 |
+| **현재 순차 진행 단계** | **6/82 = R1-06** (Census QFR·M3·MTIS 코드/ZIP/저장 위치 조사) |
+| **82개 중 개별 완료 확정** | **5개** (R1-01~R1-05), 그 밖의 소스/CI와 운영 진행은 해당 완료 기준마다 별도 |
 | **71번 R6-04** | **후행 소스 선행 작업·현재 운영 승인 미해결**, 순차 71단계에 도달한 것이 아님 |
 | **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 3개 확정 DONE, 남은 79개 완료 판정 대상; 재수집 79회 뜻 아님 |
-| **다음 실제 수행 하나** | **R1-05(5/82):** BEA unit/mfg 수집기·공식 CSV·메타 archive·실제 PC 저장 여부와 검증되지 않은 구간을 기존 코드/실PC 이력으로 분리 |
+| **다음 실제 수행 하나** | **R1-06(6/82):** QFR 기존 수집·ZIP·저장 실증과 M3/MTIS 조건부 원천·Collector·저장 부재/미확인을 각각 원본 링크와 함께 대조 |
 
 **순서 운용:** 다음 번호로 넘어가는 기준은 해당 단계의 **계획서 완료 조건 + 근거 링크**이며, 뒤 단계에서 미리 통과한 PR·CI는 계획 순번을 바꾸지 않는 선행 자산으로 유지한다. 사용자 승인 없이 순번이나 완료 기준을 수정하지 않는다. 조건부 HOLD·장기 DEFERRED는 계획서대로 처리하며 다른 독립 승인 작업의 수행을 중단하는 새로운 Gate가 아니다.
 
@@ -73,7 +73,7 @@
 | R1-02 | 실 PC 승인 `config.source`, 수집기·계산기·게시기·작업 등록·Runner 매핑 | `DONE` | **순차 2번 완료:** PC 승인 A [#1794](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1794)/Run 43902155135에서 `sourceHead=approvedConfigSource=checkpointSource=2070ff53549e2f9f2cea57d5af7e1d83f9fd7388`, 원격 TXT/JSON 2/2 확인. [#1796](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1796)/Run 43903516218에서 Core/Korea 등록 Task XML SHA, 실제 Core/Collection/Writer checkpoint 및 `pc-job` 실행 Runner(A급 seat 1/2)를 검증. 제어 `operations.json` A급 허용목록·`pc-job.yml` Windows Runner, B `pc-publication-b.yml` 미승인/별도 lane, Collector→Stored Calculator→Publisher/Worker 소스·현재 설치 미검증 구분은 **§7 상세표**. B effect·실제 Core 실행 SHA는 이번 R1-02 DONE 범위 밖으로 미실증 유지 |
 | R1-03 | 운영 SQLite 원자료 테이블·checkpoint·append-only 이력 파악 | `DONE` | 기존 실제 PC QFR/BLS 저장 성공과 현재 SQLite 소스 계약을 §8에 연결. 공통 core.sqlite 두 테이블 `api_history_chunks_v1`·`api_history_snapshots_v1`, PK/provider 분리·내용 SHA·개정 append-only·ON CONFLICT DO NOTHING·BEGIN IMMEDIATE/COMMIT/ROLLBACK, read-only requery와 first_seen_at/retrieved_at/sourceStoredAt 차이 정리. QFR 1/1 실제 SQLite 저장·R3 계산 PASS, BLS 3/3 저장·R3D 계산 PASS. BEA 제조업 전용 CSV/JSON 원본은 보고 저장 PASS지만 독립 SHA readback 미확인. 신규 PC/D1 쓰기 0 |
 | R1-04 | 기존 BLS 3개 원천과 공개 5개 정보성 행 계보 조사 | `DONE` | 기본 BLS WPSFD4/WPSFD41/PRS85006111 3원천의 실제 PC append 원본 21/21/6행·hash verified 3건과 저장자료 계산 5행(2+2+1)의 단위·원시/파생 정의를 §9에 연결. 과거 공개 `/api/earnings-recession-indicators` 2026-10-27 HTTP 200/5 READY 및 정확 D1 key `detail:earnings-recession-indicators:v1` 검증. 2026-11-17 최신 Production/자동 재수집은 별도 미검증. WPSFD42는 독립 추가 2행, 본 단계 범위 밖 |
-| R1-05 | BEA 단위이익·제조업의 수집기, CSV/메타 및 실제 저장 여부 조사 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
+| R1-05 | BEA 단위이익·제조업의 수집기, CSV/메타 및 실제 저장 여부 조사 | `DONE` | **인벤토리·검증 경계 조사 완료(§10), 신규 수집 완료 주장 아님.** BEA 단위이익 FRED 배포 `A463RD3Q052SBEA`는 앱 `main` 구형 게시기에서 직접 공급자 fetch 1건 호출 가능, 저장형 보완 PR #1183 미병합·운영 CSV/메타 archive 현물 `NOT_VERIFIED`; 별도 `raw/earnings-bea-unit-profit-r1/` source-only 캡처 helper만 W05에 존재. BEA 제조업 `N400RC1Q027SBEA`는 사용자 PC 제출 R5 결과 `APPEND_ONLY_SOURCE_STORED/sourceWrites=2`, `sourceVersion=ebaf93f7…` 및 `raw/earnings-recession/bea-manufacturing-profits-r5/` CSV/JSON 경로 확인, 실제 파일 2건 SHA readback은 후행 R3-11 `NOT_RUN`. dry-run/저장/실제 게시를 각각 구분 |
 | R1-06 | Census QFR·M3·MTIS 기존 수집 코드·ZIP·저장 위치 조사 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R1-07 | SEC CompanyFacts/XBRL 수집 코드·종목 매핑·저장 경로 조사 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R1-08 | 기존 D1 키·Worker GET·Writer·게시 원장 조사 | `PARTIAL_SOURCE` | 기존 QFR/BEA Writer·Worker/D1 키 소스 확인; 실 D1 게시 키 상태는 미확정 |
@@ -152,14 +152,14 @@
 | R6-14 | 관련 PR·CI·main 통합→Cloudflare Git Integration→정확 배포 SHA→공개 확인 | `IN_PROGRESS_SOURCE` | 앱 QFR main SHA faa89cfbe8b2aeabcbd8b8e9747cc07620f9eff4, 제어 B main SHA 8c67a6c9e9e778278259593d0eb35b2b0e2a05ea 개발 통합, 관련 CI PASS. 실제 PC/D1/Cloudflare 정확 Deployment/API/UI 검증 미완료 |
 | R6-15 | 다음 공식 발표 이후 자연 수집·checkpoint·D1·UI 실제 전진 관찰 | `DEFERRED` | 다음 실제 공식 발표 후 자연 갱신 확인; 현재 구현 STOP Gate 아님 |
 
-**상태 집계(82개 정확히 1회씩):** `DONE` 4개 · `EVIDENCE_NOT_MAPPED` 36개 · `PARTIAL_SOURCE` 2개 · `SOURCE_REVIEWED` 1개 · `EXISTING_EVIDENCE` 6개 · `NOT_RUN` 13개 · `SOURCE_READY` 3개 · `SOURCE_CI_PASS` 3개 · `SOURCE_MAIN_CI_PASS` 3개 · `BLOCKED_PUBLISH_SCOPE` 2개 · `SOURCE_BRANCH_ONLY` 2개 · `PUBLISH_SCOPE_UNVERIFIED` 1개 · `SOURCE_MAIN_READY` 3개 · `TARGETED_CI_PASS` 1개 · `IN_PROGRESS_SOURCE` 1개 · `DEFERRED` 1개. 각각의 상태는 최종 운영 완료율이 아니다.
+**상태 집계(82개 정확히 1회씩):** `DONE` 5개 · `EVIDENCE_NOT_MAPPED` 35개 · `PARTIAL_SOURCE` 2개 · `SOURCE_REVIEWED` 1개 · `EXISTING_EVIDENCE` 6개 · `NOT_RUN` 13개 · `SOURCE_READY` 3개 · `SOURCE_CI_PASS` 3개 · `SOURCE_MAIN_CI_PASS` 3개 · `BLOCKED_PUBLISH_SCOPE` 2개 · `SOURCE_BRANCH_ONLY` 2개 · `PUBLISH_SCOPE_UNVERIFIED` 1개 · `SOURCE_MAIN_READY` 3개 · `TARGETED_CI_PASS` 1개 · `IN_PROGRESS_SOURCE` 1개 · `DEFERRED` 1개. 각각의 상태는 최종 운영 완료율이 아니다.
 
 ## 1. 현재 확정 가능한 진행 상태
 
 | 기준 | 실제 상태 |
 |---|---|
 | 전체 계획 | **R1 10 + R2 13 + R3 16 + R4 16 + R5 12 + R6 15 = 총 82단계** |
-| 82단계 실제 완료 수 | **4/82 확정 DONE (R1-01~R1-04)**, 78개 단계는 완료 기준 미확정(78회 재실행 의미 아님), 현재 5/82 R1-05 |
+| 82단계 실제 완료 수 | **5/82 확정 DONE (R1-01~R1-05)**, 현재 R1-06(6/82). 77개는 완료 기준 미확정으로 신규 수집 77회 의미하지 않음 |
 | 기존 14단계 실제 종단 완료 | 마지막 확인 기준 **0/14** — 소스·테스트 PASS는 별도 |
 | QFR 원자료·계산 | 2026-10-27 운영 PC의 기존 유효 저장·계산 성공 증거 재사용 |
 | QFR B 게시기 코드 | 제어 [PR #1762](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1762) 8파일 main 소스 병합 8c67a6c9e9e778278259593d0eb35b2b0e2a05ea. 독립 B Workflow는 vars/manifest/owner 댓글 필요, 실제 승인·게시 없음 |
@@ -192,7 +192,7 @@
 
 **FIRST UNFINISHED(현재 순서):** R1-01~03 DONE. 현재 R1-04의 BLS 저장 원본 3개→공개 정보성 5행 계보 및 공개 기본 키 검증이 남았다. 후행 R6-04 B 승인·게시 문제를 현재 순차 번호 71이라고 표시하지 않는다.
 
-**다음 필수 실행:** R1-05(계획 5/82) BEA 단위이익/제조업의 Collector와 원본 CSV/메타 archive, 실제 PC 저장·재조회 결과를 구분한다. QFR B 게시 권한 미부여 상태는 그대로 유지한다.
+**다음 필수 실행:** R1-06(6/82) Census QFR/M3/MTIS 공식 수집코드·기존 ZIP/원본저장 지점 조사. QFR 재수집 금지, M3/MTIS 적격·승인되지 않은 공급자 호출 금지.
 
 정규 예약의 다음 자연 발표 관찰(R6-15)은 **DEFERRED**이며 현재 기능 완성의 강제 완료 Gate가 아니다.
 
@@ -237,6 +237,8 @@
 | 2026-11-17 KST · 순차 현행 기록 일원화 | 계획서에 고정된 이전 현재 단계 `R1-02(2/82)`가 다음 작업자에게 최신 단계처럼 보이던 문서 정합성 문제를 수정. 82개 세부 계획·완료 기준/번호는 변경하지 않고 **현행 완료율·현재 단계·다음 실행은 이 지정 진행 기록 `0-A`만 정본**으로 명시 | [82단계 실행계획서](EARNINGS_RECESSION_R1_R6_82_STEP_EXECUTION_PLAN_20261116.md) 변경 커밋 `46b0fc7efe8c5c74d2d2914e1a6debacb952d586` | 진행 기록 현행 **3/82 DONE·4/82 R1-04**, 작업 ID 82개/완료 기준 불변, PC/D1/Cloudflare 변경 없음. 다음: R1-04 BLS 3→5 계보 검증 |
 
 | 2026-11-17 KST · **순차 R1-04(4/82) 종료** | BLS 3원천 WPSFD4/WPSFD41/PRS85006111 → 원시 지수·파생 YoY·공식 단위노동비용 YoY 정보성 총 5개 행 연결. 저장 PC 3 snapshot hash readback과 2026-10-27 공개 GET 5/5 READY를 현재 Worker D1 키/GET 소스와 §9에서 대조 | [BLS 저장 R3C](EARNINGS_COMPANION_R3C_BLS_MANUAL_STORE_IMPLEMENTATION_20261027.md), [저장 계산 R3D](EARNINGS_COMPANION_R3D_PC_RESULT_VERIFIED_20261027.md), [과거 공개 GET 확인](EARNINGS_BLS_SERVICE_PPI_WPSFD42_INTEGRATION_R1_20261027.md), `worker/earnings-companion-c-r4.mjs` main source. 이번 공급자·운영 SQLite/D1 쓰기 0 | **R1-04 DONE, 순차 누적 4/82(약 4.9%), 현재 R1-05(5/82)**. 과거 GET을 현재 READY로 표현하지 않고 WPSFD42 2행 미게시 유지 |
+
+| 2026-11-17 KST · **순차 R1-05(5/82) 조사 종료** | BEA unit `A463RD3Q052SBEA`와 제조업 `N400RC1Q027SBEA`의 별도 Collector·CSV/meta 불변 원본 경로와 실제 PC 저장/미검증 경계를 §10에 구분. **앱 main BEA unit 구형 Publisher에 직접 fetch 1건 가능**·저장형 소스 PR #1183 미병합 확인, 제조업 PC 2026-10-28 capture 2파일 보고만 실증, 독립 archive SHA readback은 미완료 | [BEA 제조업 실제 PC 이력](EARNINGS_BEA_MANUFACTURING_PROFITS_R1_READONLY_20261028.md), [단위이익 저장형 PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183)와 W05 `EARNINGS_BEA_UNIT_STORED_RAW_R1.mjs`. 운영 PC/SQLite/D1/provider 신규 쓰기 0 | **R1-05 인벤토리 DONE, 연속 5/82(약 6.1%), 다음 R1-06(6/82)**. BEA unit PC 실제 archive 확인 R3-08, 제조업 파일 SHA R3-11, 저장형 Publisher B R4-07 후행 미완료 |
 
 ### 필수 기록 종료 규칙
 
@@ -312,4 +314,19 @@
 **게시·API 계보:** [기본 C Worker \`main\`](https://github.com/ansqhd5774-Choi/zgmini/blob/main/worker/earnings-companion-c-r4.mjs)는 D1 \`market_public_snapshots_v1\` 중 \`snapshot_key='detail:earnings-recession-indicators:v1'\`만 GET/HEAD로 읽고, 경로는 \`/api/earnings-recession-indicators\`. [2026-10-27 기존 서비스 5행 GET 검증](EARNINGS_BLS_SERVICE_PPI_WPSFD42_INTEGRATION_R1_20261027.md)에서 **HTTP 200·5/5 READY**, 당시 \`sourceStoredAt=1793034173996\` 기록. 현재 GET·생산 배포 SHA·방문 화면은 이 단계에서 새로 실측하지 않았으므로 **현재도 READY라고 추정하지 않는다**. 별도 \`WPSFD42\` 서비스 키/2행은 후행 R2-09/R3-04/R4-09~10/R5-05에 남긴다.
 
 **R1-04 판정:** 3개 공급 원본→5개 정보행의 산식/단위/공개 exact key/GET 근거를 연결해 \`DONE\`. 새로운 공급자 호출·PC DB/D1 쓰기 0. 다음 순차 R1-05(5/82): BEA 단위이익·제조업 raw CSV/메타 저장 여부.
+
+
+## 10. R1-05 BEA 단위이익·제조업 저장·Collector 인벤토리 (2026-11-17)
+
+**R1-05는 수집기·원본 위치·실제 관측 증거와 빈 곳을 구별하는 조사 단계다.** R3-08/R3-11에 명시된 PC 원본 실재·SHA 재조회 성공을 이 조사만으로 대체하지 않는다.
+
+| 대상 | 공급자·원본/소스 계약 | PC 관측·현재 상태 |
+|---|---|---|
+| BEA **단위이익** | 원천 BEA NIPA unit profit, FRED CSV 배포 \`A463RD3Q052SBEA\`. W05 브랜치 \`EARNINGS_BEA_UNIT_STORED_RAW_R1.mjs\`의 \`captureBeaUnitSourceOnce\`는 **승인된 Collector가 호출할 때만** \`E:\ZGmini\data\pc-writer\raw\earnings-bea-unit-profit-r1\<sourceSha>.csv/.json\`에 원문/메타를 단회 생성·SHA 재조회. 호출 전에는 네트워크/쓰기 없음 | PC 실제 해당 원문 보관 증거 **NOT_VERIFIED**. 과거 [제조업 비교 문서](EARNINGS_BEA_MANUFACTURING_PROFITS_R1_READONLY_20261028.md)의 2026-10-28 공개 BEA unit API는 \`STORED_PROJECTION_PENDING\`. 이 오래된 상태를 오늘의 절대 미존재 증명으로 간주하지 않음 |
+| BEA unit **구형 Publisher** | 앱 \`main\`의 \`scripts/pc-writer/EARNINGS_BEA_UNIT_PROFIT_R1_ONCE.mjs\`는 **직접 공급자 fetch 호출 가능**. W05 전담 브랜치는 \`readBeaUnitArchivedSource\`로만 읽는 분리판과 hash-safe archive helper 보유; [Draft PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183) 소스/Node CI 완료 | **main 구형/전담 소스 새판/실 PC 설치**를 반드시 구분. 이번 R1-05가 새판을 운영 설치·D1 게시했다고 주장하지 않음. 후행 R3-08~10/R4-07에서 소스·PC 실제 archive 및 계산 중 providerCalls=0 검증 |
+| BEA **제조업 기업이익** | BEA NIPA Table 6.16D \`N400RC\` / FRED CSV \`N400RC1Q027SBEA\`, 십억 USD SAAR·분기, 기존 점수 S6와 별도 원본. W05 \`EARNINGS_BEA_MFG_PROFIT_R5_APPEND_ONLY_CAPTURE.mjs\`는 \`--dry-run\`에서 \`DRY_RUN_NO_NETWORK/sourceWrites=0\`, \`--execute\`에서 \`raw/earnings-recession/bea-manufacturing-profits-r5/<sourceVersion>.csv/.json\`에 불변 저장 | [2026-10-28 실PC 사용자 제공 보고](EARNINGS_BEA_MANUFACTURING_PROFITS_R1_READONLY_20261028.md) \`APPEND_ONLY_SOURCE_STORED\`, \`sourceWrites=2/sqliteWrites=0/d1Writes=0\`, \`sourceVersion=ebaf93f7a1e526cabae22388ed96d280d94eb58fdd4ddf484325bf651c59bf9b\`. **실제 저장된 2파일을 별도 SHA readback 하지는 않았음**. R3-11의 실제 PC 불변 아카이브 reader 검증 필수 |
+
+**출처 적격성 차이:** BEA 제조업 N400RC는 세후 마진이 아니라 IVA 보정 기업이익이다. BEA unit A463RD3Q052SBEA도 본 제조업 지표와 서로 다른 계열이며, 과거 기존 E1-R5 점수·S6·QFR·BLS 기본 5행에 합산하지 않는다. \`SOURCE_STORED\`·\`DRY_RUN\`·\`SOURCE_READBACK_NOT_RUN\`·\`D1_NOT_RUN\`은 각각 다른 판정이다.
+
+**R1-05 조사 완료 판정:** 기존 BEA 2원천의 Collector·원본 후보·실제 PC 보고·미확인 범위를 구분해 **인벤토리 DONE**. Unit의 실제 PC 원본 수집·저장 및 제조업 archive SHA 재조회는 **후행 R3-08/R3-11 미완료**, 실제 D1/Production 미완료. 다음 순차 R1-06(6/82).
 
