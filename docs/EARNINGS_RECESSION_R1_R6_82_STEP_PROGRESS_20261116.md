@@ -70,7 +70,7 @@
 | 작업 ID | 실행계획 작업 | 현재 증거 기반 상태 | 마지막 확인 증거·남은 조건 |
 |---|---|---|---|
 | R1-01 | 앱·제어 `main`, W05 브랜치 및 개발·운영·배포 SHA 구분 | `DONE` | **순차 1번 완료:** 2026-11-17 KST GitHub 재조회 앱 `main=af2f963659f15e016a64be1132d4cdec9af0d9c6`, 제어 `main=40a0767ec48829360a0b47a2b37e499d59944a05`, W05 전담 브랜치 확인 시 `e6694ddbd4d01826d8802be355bc671b4e53cd8c` (이번 문서 커밋 후 HEAD 전진). PC 승인 체크아웃은 기존 #1709 A 관측(2026-11-16 12:23:09 UTC) `7afe6b0bcaa74d622ada9190fdc9fcc7fd4d5f10`; **LIVE Core 실행 SHA는 미검증**. Cloudflare Production exact Deployment SHA는 `NOT_VERIFIED`. 개발·PC 저장소·공개 배포를 동일 성공으로 간주하지 않는 서로 다른 상태로 구분·기록함. Production 실제 검증은 R6-14 별도 미완료 |
-| R1-02 | 실 PC 승인 `config.source`, 수집기·계산기·게시기·작업 등록·Runner 매핑 | `PARTIAL_SOURCE` | 기존 PC 승인 A 조회 #1709 / Run 43866041104 PASS: PC config.source=7afe6b0bcaa74d622ada9190fdc9fcc7fd4d5f10, QFR 게시기 관련 6개 대상 파일 중 5개 ABSENT·d1.mjs만 PRESENT. A 해시 조회는 파일 설치/B effect 승인이 아님 |
+| R1-02 | 실 PC 승인 `config.source`, 수집기·계산기·게시기·작업 등록·Runner 매핑 | `PARTIAL_SOURCE` | 기존 PC 승인 A #1709 / Run 43866041104 PASS: config.source=7afe6b0bcaa74d622ada9190fdc9fcc7fd4d5f10, QFR 6파일 중 5 ABSENT·d1.mjs PRESENT. 제어 `main` [PC 운영 정본](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/docs/PC_OPERATING_SYSTEMS_CANONICAL.md)에서 운영 `PC`의 `zgmini-pc-01~06`/label `zgmini-pc-control`, A `pc-job.yml→controller/entry.mjs→upload.mjs`, B 별도 승인 Writer, 정기 기능 Windows Task 15개(2026-11-12 관측) 구조 확인. **아직 각 earnings collector/calculator/publisher별 실제 등록 Task·operation·source/checkout SHA의 1:1 실측 대응표가 없어 DONE 아님.** |
 | R1-03 | 운영 SQLite 원자료 테이블·checkpoint·append-only 이력 파악 | `EXISTING_EVIDENCE` | 기존 QFR SQLite 저장/checkpoint 성공 이력 재사용. 전체 원자료 테이블 조사 완료는 미입증 |
 | R1-04 | 기존 BLS 3개 원천과 공개 5개 정보성 행 계보 조사 | `EXISTING_EVIDENCE` | BLS 기본 3원천·5행 관련 과거 PC/GET 증거 존재, 최근 운영 상태는 미재검증 |
 | R1-05 | BEA 단위이익·제조업의 수집기, CSV/메타 및 실제 저장 여부 조사 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
@@ -199,6 +199,8 @@
 ## 4. 다음 업데이트 기록 규칙
 
 각 실행마다 `관측시각(KST) / 작업 ID / LAST PASS / FIRST FAIL / requestId·Issue·Run / 실행 PC·실제 source SHA / 저장·D1·UI 증거 / 새 상태 / 다음 필수 행동`을 누적한다. 이전 성공을 근거 없이 재실행하지 않고, Source/CI 준비 상태만으로 운영 DONE을 주장하지 않는다.
+
+| 2026-11-17 01:06 KST · 예약 W05 | **R1-02 부분 매핑 진전**: 제어 최신 `main` 운영 정본과 기존 #1709 원장을 대조하여 운영 Runner 6개, A pc-job 실행 경로, B 승인 Writer 분리, 정기 Windows Task 15개(11/12 당시)의 범위를 구분. 신규 PC 작업/공급자 호출/D1 쓰기 0. | [운영 정본](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/docs/PC_OPERATING_SYSTEMS_CANONICAL.md), [PC #1709](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1709), Run 43866041104. GitHub 문서 증거만 추가, 운영 설치·활성 상태 신규 실증 아님 | R1-02 `PARTIAL_SOURCE` 유지; 다음 단일 실행: 기존 승인된 operation/Task 원장에서 earnings 각 collector·calculator·publisher별 Task명·Runner·실제 checkout SHA를 연결하고 빈 항목을 UNKNOWN으로 기록. 완료 1/82 유지 |
 
 ## 5. 최신 작업 결과 원장 — 후속 채팅 종료 전 반드시 기록
 
