@@ -1,6 +1,6 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
-> **현재 즉시 상태 (2026-11-17 08:52 KST): **14/75 (18.7%), 잔여 61단계**. #39 한국 등락 UI 미연결/신규 데이터 계약 분석 DONE. #40 D05 실제 운영 PC A급 [#1813](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1813) PASS, D05 자체 계산 사건 원장 25→32건 및 승인 source 사건 0→7건 전진, 최신 계산 2026-11-16T22:45:17.257Z는 독립 PC composite archive 최신시각과 일치. 다만 A는 로컬 원장 SELF_CONSISTENT 전용으로 1개 특정 신규 입력/SQLite current/D1/공개 GET 동치 미확정이므로 #40 PARTIAL. #36 CNN Sidecar·#37 KRX·#38 IEX 게시 운영 조건도 각각 미완료. **다음 독립 실행은 #41(D06 물가 위험)**, W01 계산/운영 변경을 대체하지 않음.
+> **현재 즉시 상태 (2026-11-17 KST): **14/75 (18.7%), 잔여 61개**. #39 한국 등락 UI 미연결 감사/원담당 연결 경계 DONE. #40 D05 실PC 계산원장 전진 25→32건·현재 승인 source 사건 0→7건 A급 #1813 PASS, 특정 입력 1개→D1 인과 미확정으로 PARTIAL. **#41 인플레이션 R2** 저장 Reader/대시보드·상세 점수 동일 API 및 16입력→7축 ALL READY 보호를 source 검증; 새 유효 자료의 실제 W01 저장·D1 공개/차트 끝점은 미확정이라 PARTIAL. #36 CNN Sidecar/#37 KRX/#38 IEX 별도 운영 미완료. **다음 독립 실행 #42 D07 경기침체 위험**, 원담당 Writer/계산 경계 유지.
 
 ## 현재 인계 정본 — 다음 담당자 첫 읽기 (2026-11-16 KST)
 
@@ -14,9 +14,9 @@
 | DONE 단계 (중복 없음) | **#04, #05, #08, #10, #21, #22, #23, #24, #26, #27, #33, #34, #35, #39** (14개) |
 | #34 60초 화면 갱신·역행 차단 | **DONE (현재 main source/fixture)**. `live-refresh.mjs` 60초 주기, `dashboard-ui.tsx`·`use-stored-index.ts` 수용/역행 보호 경로 확인. 신규 유효값·0·PARTIAL 및 낡은 관측·게시 응답 판정 7/7, UI 연결 소스 4/4 PASS. Production 유저 육안 검수는 최종 단계 |
 | 단계 증거 범위 | #24는 **기존 저장 JSON 활용·Draft 설계/회귀 PASS**까지의 설계 DONE. 실제 15분 보존 정책 수정·PC 설치·D1 반영은 **미완료** |
-| PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #28, #29, #36, #37, #38, **#40**. #40은 계산 사건 원장 전진은 실PC PASS, 1개 신규 유효 원자료→current·아카이브·D1 공개 본문 선택적 연결 증거 없음. #36 CNN Sidecar / #37 KRX / #38 IEX 공개 실증 미완료 유지 |
-| 다음 단 하나의 실행 | **#41 (W06 D06 인플레이션 위험 UI 계약 조사)** 기존 R2 16입력/7축·6/7 유효 이월·필수 READY/만료 조건에 따라 원담당 W01이 갱신한 실제 게시 점수와 위험 카드·차트의 결측/관측일/모델버전·끝점 표시를 검토. W06는 기존 공개 Reader/UI만 변경 가능. W01 Collector/Calculator/Writer·실PC/DB/TTL 변경은 소유자 승인 범위. #40 신규 입력 1개 인과→D1 종단은 Writer 원담당 독립 미완료(이제 #1813 추가 증거 재사용) |
-| 다음 담당·대상·입력 | W06 #41: D06 위험 카드 공개 projection 및 `dashboard-ui.tsx` 위험 표시, 인플레이션 R2 버전/관측일·7축 READY/stale/6-of-7 계약. W01 원담당의 승인 source·실제 D1 게시·API 증거를 그대로 재사용하고 미확정은 구분. #40 실PC 계보 #1813 Run 43982823247 JSON/TXT 2/2, 기존 #1807 composite archive 시각 참고; A 검사는 로컬 원장 자체 일관성만 PASS |
+| PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #28, #29, #36, #37, #38, #40, **#41**. #41 R2 16입력/7축 저장 계산·공개 Reader 계보는 source 확인, 신규 1입력 실제 변경의 READY/6-of-7 허용 이월·D1 게시/차트 끝점 동치 증거 미확정 |
+| 다음 단 하나의 실행 | **#42 (W06 D07 경기침체 위험 UI·공개 이력 계약)** 기존 7요인 월/분기 관측의 READY/유효 이전값·모델 vintage 분리를 점검하고 실제 저장된 새 관측이 current·차트에 반영된 증거 확인. W06는 공개 Reader/UI 소유 범위만; 실PC Collector/Calculator/Writer는 경기침체 원담당. #40 D05 PC/D1 인과 확인 및 #41 물가 W01 16입력/7축 갱신 실증은 원담당 별도 미완료 유지 |
+| 다음 담당·대상·입력 | W06 #42: 경기침체 위험 기존 공개 endpoint, 저장 projection/월·분기 7요인 Gate, 현재 카드/차트·관측일/방법론 표시; 실제 W05/위험 원담당 자료가 있으면 재사용, 임의 재계산 금지. #41 관련 원본 `worker/projection-builders/inflation.mjs`, `lib/diagnostic-layer/inflation-r2-stored.mjs`, `app/inflation/inflation-panel.tsx`, `app/dashboard-ui.tsx`, `app/api/inflation-detail/route.ts`와 main CI는 source 계약 증거로 재사용 |
 | #36 남은 통과 조건 | 공개 GET 소스/CI는 PR #1196 통과. 운영 CNN 현재 원본은 최신이나 원본 observation archive 108점/마지막 11/06 UTC, PC 검증 archive 108점/마지막 11/07 UTC로 10일 이상 정체. 운영 원담당 정상 저장 및 D1 각 날짜 readback과 공개 GET 원본 시각 일치 없이는 #36 DONE 아님 |
 | 이후 후보(이번 실행에 혼입 금지) | #28 모델/방법론 계보 공개 이력의 원담당 변경 범위(현행 일별 snapshot에 modelVersion 저장됨, 평면 chart/observed archive에는 없음); #29 기준일 이후 미래 snapshot 표시 결함/동일시각 정정 (Writer 원담당). D01~D27 원담당 미연결 항목, Draft #1181·#1185 승인 대기. 비차단 작업은 계속 |
 | 최근 R4 기능 병합 증거 | #1177·#1180·#1182·#1184·#1187·#1189·#1193 및 **[#1196](https://github.com/ansqhd5774-Choi/zgmini/pull/1196)** 병합. #1196 main merge SHA **`40d6156a1144350c3a23a02cb0db26e56bf3adde`**, 4파일만 변경, 실제 공개 GET D1 stub 12건 + 단위시험 6건, PR head CI SUCCESS. 운영 PC archive 복구와 별개 |
@@ -304,3 +304,12 @@
 - **FIRST UNVERIFIED:** 신규 입력의 정확한 ID/observedAt/sourceStoredAt→승인 CM-R1 계산 signature/current→composite-observed 점수·calculatedAt→D1 current·observations 공개 API body/stored_at의 선택적 종단 일치. #24의 15분 이내 두 사건 손실·Draft #1185 Writer 정책도 원담당 미완료로 유지; W06가 미승인 보존 정책/산식을 수정하지 않음.
 - **#40 판정:** source 경로·실PC 원장/아카이브 전진 유효 증거를 얻었으나 계획 완료 조건까지 증명되지 않아 PARTIAL, DONE 증가 없음. Writer/D05 운영 원담당은 기존 승인 경로의 단일 유효 변경 사건이 있는 경우에만 정확한 저장 checkpoint/score/date 및 D1 readback을 비교. 중복 A 조회·새 예약/추정 자료 생성 금지.
 - **다음 필수 실행 하나:** W06 #41 인플레이션 위험 R2 16입력/7축 및 6/7 유효 이월·READY/STALE 조건을 화면·실제 공개 Reader에서 조사, 변경 필요한 UI만 최소 수정. 물가 W01 운영 수집/계산/게시 판단은 원담당 범위. 진도 시작/종료 14/75 (18.7%), 잔여 61.
+
+## [2026-11-17 KST] R4 #41 — 인플레이션 R2 16입력·7축/화면 공개 계약 확인 (PARTIAL)
+
+- 담당·기준: W06, source/UI reader만 조회; 14/75(18.7%) 시작 및 종료, 잔여 61단계. 최신 확인 main SHA `40d6156a1144350c3a23a02cb0db26e56bf3adde`, 코드 수정·DB/TTL/Writer/공급자 호출·예약 변경 없음.
+- 소스 진단: `lib/diagnostic-layer/inflation-r2-stored.mjs` blob `d819410f68543ec6cf177311b4d840277c85bae4`는 16 feature의 `availableAt<=asOfDate` 유효 저장값을 선택, 7개 axis 산출의 missing을 검증. **7축 score 합성은 7/7 유효해야 READY**, 단 한 축이라도 missing이면 `status=PARTIAL,score=null`로 fail closed. 일부 입력의 기존 유효값 이월과 7축 READY 조건을 혼동해 6/7 축을 강제로 READY로 만들지 않음.
+- `worker/projection-builders/inflation.mjs` blob `aeea00b0bc8d52cbb6d117115186b63946dbcea0`는 저장된 PIT/PC1 status·결측/문제에 따라 별도 PARTIAL 점수 null 응답, 정상 7축 계산/완료시 `score=current.score,status=READY`와 실제 계산 가능한 12개월 월말 trend·비교시각을 생성하며 방문 시 API 재수집 없음. 통상 텍스트의 6/7 이월은 이미 적격 저장값 사용 조건일 뿐 7축 missing을 무시하는 가중치 변경이 아님.
+- 공개/화면: `app/api/inflation-detail/route.ts` blob `3dc2ccb71d852aff83e1b1bd9916db01199d6780`은 저장 projection GET만. `app/dashboard-ui.tsx` blob `5ebaf7d0dd932ee5543f6f312b9f1fa4324863ce`의 risk inflation 카드는 `/api/inflation-detail`만 이용하고 `status==='READY'`·유효 numeric score로 표시, 12경제 물가 4요인 카드와 혼합하지 않음. `app/inflation/inflation-panel.tsx` blob `fd2fb09d70d6a8a2e0e18cd413e0c1b525f081fe`도 같은 GET, 7축 배치·이력/기간별 비교 시점 표시. `tests/dashboard-risk-inflation-r2-parity-r42.test.mjs` blob `926698d57b762c87144f5b69324c751d32c03a67`는 동일 endpoint 및 경제12 4요인으로의 잘못된 fallback 금지 단언. main CI 기존 PASS를 재사용(이번 새 Node 테스트 실행 없음).
+- LAST PASS: 16 입력/7축 산식 source · 저장 PIT/부분 결측 방어/대시보드-상세 공개 API 일치 경로 확인. FIRST UNVERIFIED: **실제 W01 유효 1개 신규 입력/정정의 식별자·PIT 사용 적격성→각 축 값·7축 READY→D1 원문/stored_at→공개 GET/차트 마지막점 동치**는 이번 W06 Source 조회로 증명 불가. 원담당이 검증한 최신 실제 게시 결과를 사용해야 하며 W06가 기존 Gate를 무단 해제하거나 없는 값 보간하지 않음.
+- 상태: 계획 #41 **PARTIAL**; source 일관성만 확인, 실제 운영 PC/D1/exact Production 추가 확인 없음. 전역 BLOCKER 없음; 다음 독립 필수 실행 #42 W06 D07 경기침체 위험 UI/Reader, 원담당 계산·운영은 별도. 진도 14/75(18.7%), 잔여 61.
