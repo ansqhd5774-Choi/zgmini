@@ -24,7 +24,7 @@
 
 **인계 확인 기준:** 다른 작업자는 이전 대화 없이 지정된 두 파일만으로 `마지막 완료 세부 ID·실제 증거/해시·현재 STOP 사유·실제 다음 세부 ID·해제 조건`을 특정할 수 있어야 한다. 그 중 하나라도 기록에 빠지면 인계는 `INCOMPLETE`이다. 무관한 추가 진단·전체 재검사로 이를 대체하지 않는다.
 
-**현재 기준선(2026-11-17):** `22/72 DONE`, `50/72 미완료`. `PIT-03-03~07`은 [#1786](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1786) 사전점검 및 [#1787](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1787) 실SQLite PIT 집계 PASS로 완료. `PIT-04-01`부터 51지역·주별 Current/History 계보 분류가 다음 필수 실행이다. 기록 의무는 별도 기능 단계가 아니며 새로운 PC Gate를 만들지 않는다.
+**현재 기준선(2026-11-17):** `23/72 DONE`, `49/72 미완료`(31.9%). PIT-03 8/8 완료 및 신규 승인 A [#1799](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1799)의 저장 Current 600주×51 공식 지역 연속성 PASS로 `PIT-04-01` 완료. 51지역 각 최신 Current 관측일은 2026-10-24이며 실제 최근 원자료/PIT History의 가용 시각은 별도 미검증. 다음 하나는 `PIT-04-02` 최신 History revision 분리다. 문서 반영 자체를 추가 단계로 계산하지 않는다.
 
 ## 1. 완료 목표와 운영 계약
 
@@ -54,7 +54,7 @@
 | W04-PIT-01 | 마지막 성공 증거 보존 | #1755 National+state 수집, #1758 공개 갱신, #1186 소스·CI 재사용. 이미 완료된 수집/설치/전체 CI를 새 실행으로 반복하지 않음 | 이전 성공 ID, SHA 및 증거 유효성 보존 | DONE |
 | W04-PIT-02 | PIT 누락 판정 함수 구현 | `employment-r6-claims-pit-recovery.mjs`: 지역 51개 고정, 현재/이력·최신 개정·해시/출처/가용 시각 구분 | 읽기 전용·결측/충돌·메타 미확인 분리, 600주 fixture PASS | DONE — PR #1186 |
 | W04-PIT-03 | 최신 운영 PIT 분포 회수 | 고정 번들 `afdd8fab1c03b321e4b8b0853bb236c0800a0a14`; A/light #1786 및 A/heavy #1787 | sqliteOpened=true; Current 40,726, History revisions 38,753, missing 2,880, matching candidate 2,625, candidate overlaps conflicts 14; JSON/TXT 2/2, 공급자/DB/D1 쓰기 0 | DONE — Run 43898451571 |
-| W04-PIT-04 | Core 원본 계보 분류 | 주별 완전 51지역·53주 비교·제로 분모·sourceHash, `retrieved_at`, `available_at`, 원본 snapshot·latest revision 분리 | 신규 시점에 검증 가능한 키/불가능한 키/후보 상충 14건을 별도 판정; 집계만으로 TRUE_PIT 승격 금지 | READY — PIT-04-01 |
+| W04-PIT-04 | Core 원본 계보 분류 | [#1799](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1799) Current 600주×51 실제 증거 확보. 이후 region/week History 최신 revision, raw snapshot, sourceHash, retrieved_at, available_at 분리 | PIT-04-01 완료·PIT-04-02~08 미완료; 후보 상충 14 별도 보류, TRUE_PIT 승격 금지 | IN_PROGRESS — PIT-04-02 |
 | W04-PIT-05 | 복구 가능한 최소 범위 및 승인 확인 | 기존 공식 B 경로에 정확한 DB 대상·테이블·원본 보호·동일 자원 lease·manifest SHA·롤백 근거를 명시. `CURRENT`를 `TRUE_PIT`로 소급 승격하지 않음 | 승인된 정확 파일/키/효과와 실패 시 STOP 정의; 미승인 Core SQL 쓰기 0 | WAITING PIT-04 |
 | W04-PIT-06 | 격리 회귀·시뮬레이션 | 신규 유효 관측/중복/개정충돌/미래시각/History 누락/저장 원장/계산/차트 조건 | 수정 영향 테스트 PASS; 과거 2건 상충 행은 자동 승격 금지 | WAITING PIT-05 |
 | W04-PIT-07 | PC 최소 이력 복구 | 승인된 기존 B 유지보수 경로 한 번, 기존 DB/잠금/작업 보호. PIT 출처 검증 없는 행은 제외 | 실제 `CURRENT`/`HISTORY` 비교 건수·원장 전진/보호 상태 재조회 | WAITING APPROVAL |
@@ -68,14 +68,14 @@
 
 - **신규 실PC 성공:** [#1786](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1786) / Run 43898278381 `R6_WAL_MEMORY_PREFLIGHT_READY` (free RAM 2275MiB, Core WAL 양쪽 sidecar 존재). 이어서 단회 [#1787](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1787) / Run 43898451571 `EMPLOYMENT_R6_READONLY_STAGE_COMPLETED`, 실제 sqliteOpened, 결과 JSON/TXT 2/2 재조회. 이 결과로 PIT-03 8/8 완료. 이전 #1780 R13 inventory 차단은 해당 요청의 당시 결과로 보존하며 공통 조회 오류 원인 수정 완료라고 주장하지 않음.
 - **실제 남은 문제:** Core Current 중 History 누락 키 2,880; 후보 matching·메타 일치 2,625; 후보 증빙 불충분 255; 후보 Current 충돌 14. 이 숫자만으로 10년 역사적 TRUE_PIT 가용성, 과거 주별 as-of, 복구 승인 범위를 결론 낼 수 없음. `STATE_CLAIMS_BREADTH` 최종 점수는 여전히 `PARTIAL_HISTORY`.
-- **현재 새 안전 거부:** [#1789](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1789) / Run 43899712917 등록 A evidence 조회는 `STATE_UNKNOWN/R6_EVIDENCE_WAL_SIDECARS_ABSENT`, `sqliteOpened=false`, JSON/TXT 2/2 회수. #1786 시점 WAL 보조 파일 존재와 이후 #1789 시점 부재는 다른 시각의 결과다. 수명주기 원인 미확정. 새 PIT-04 실측으로 계산하지 않음.
-- **다음 실행 하나:** `PIT-04-01`의 안전한 source 경로를 구체화한다. 현 등록 A는 주차별 aggregate만 출력해 51지역별 최대 관측일이 노출되지 않으며, 때로 WAL sidecar 부재로 SQLite 접근 이전에 종료된다. 승인된 기존 조회와 fixture·공용 Controller owner 경로에서 불필요한 상태 변화 없이 정당한 snapshot·고정 비민감 per-region/date projection의 최소 수정 가능성을 검증한다. 무승인 DB/Task 수정·sidecar 강제 생성·동일 requestId 재요청 금지.
+- **최신 실PC 성공:** 이전 [#1789](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1789) WAL sidecar 부재는 그 시점 한정. 신규 기존 A/light [#1798](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1798) / Run 43904004344 **PASS**, Core -wal/-shm BOTH_PRESENT, RAM free 1799MiB (min 1536). 후속 기존 A [#1799](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1799) / Run 43904242672 **PASS/SQLite opened**, 최신 Current 2026-10-24, 600/600주×51지역 완전, 577주 원자료 선행조건 충족. JSON/TXT 2/2 원격 회수, 공급자/DB/D1 운영 쓰기 0. 2026-10-24 이후 수집 최신성/History-as-of는 별도 확인 필요.
+- **다음 실행 하나:** `PIT-04-02`에서 기존 저장 History의 관측키별 최신 개정과 이전 개정 분리·출처 메타 검증. Current 600×51 완전성으로 `History` 10년 TRUE_PIT나 후보 2,625 자동 승격을 주장하지 않는다. [Draft 제어 PR #1791](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1791)은 이번 PIT-04-01 완료를 위해 **추가 설치할 필요가 없음**. 운영 동작·사이드카·원자료/스케줄 변경 금지.
 
 ## 5. 진행률 산정
 
 - **수집 → PC 원자료 저장 → 계산 → D1 공개 → API/UI 전달:** `5/5` 완료(해당 전달 경로에 한정).
 - **29개별 점수:** `28/29` (96.6%), 최근 유효 `22/29`, 1Y 차트 READY `22/29` — 각각 다른 지표.
-- **잔여 PIT 10개 상위 범주 / 72개 세부 작업:** `22/72` DONE(30.6%), `50/72` 미완료. `PIT-03` 8/8 완료; `PIT-04` 0/8으로 원본 주차·PIT 계보 분류가 다음 단계다. 기존 전달 경로 5/5와 분모를 합산하지 않는다.
+- **잔여 PIT 10개 상위 범주 / 72개 세부 작업:** `23/72` DONE(31.9%), `49/72` 미완료. `PIT-03` 8/8, `PIT-04` 1/8 완료; 다음 `PIT-04-02`는 History revision·PIT 시각 근거로 판단한다. 기존 전달 경로 5/5와 분모를 합산하지 않는다.
 - 이번 문서 작성/관리만으로 PIT 단계·운영 사이트 수치를 진척 처리하지 않는다.
 
 ## 6. 역할·공유 자원
@@ -85,21 +85,21 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 
 ## 7. 72개 세부 실행 항목 — 실제 작업 단위별 확장 (2026-11-16)
 
-> **계수 정정 및 최신 상태:** PIT-01~10은 상위 범주 10개이고 전체 72개 세부 작업이 실제 분모다. `PIT-01` 7개·`PIT-02` 7개 기존 완료 + `PIT-03` 8개(새 실PC 조회 5단계 포함) 완료로 **22/72 DONE, 50개 미완료**. 메모리/WAL·History 읽기 전용 조회 성공과 DB 이력 복구/게시 성공을 혼동하지 않는다.
+> **계수 정정 및 최신 상태:** PIT-01~10은 상위 10개, 총 72개 세부 작업이 실제 분모. PIT-01 7 + PIT-02 7 + PIT-03 8 + PIT-04-01 1 = **23/72 DONE, 49개 미완료(31.9%)**. `PIT-04-01` 완료는 #1799의 공식 51지역 최신 관측일·600주 저장 Current 근거이며, DB History 복구/PIT-as-of·29번째 점수/게시 성공을 뜻하지 않는다.
 
 | 상위 범주 | 세부 작업 수 | 완료 | 미완료 | 현재 상태 |
 |---|---:|---:|---:|---|
 | PIT-01 기존 운영 완료 증거 확정·재사용 | 7 | 7 | 0 | DONE |
 | PIT-02 소스 계보 판정기·격리 회귀 완료 | 7 | 7 | 0 | DONE |
 | PIT-03 현재 운영 PC의 실제 PIT 결손 확보 | 8 | 8 | 0 | DONE (PC #1786/#1787 읽기 전용 PASS) |
-| PIT-04 지역별·주별 원자료와 PIT 정합성 분류 | 8 | 0 | 8 | BLOCKED — PIT-04-01 A WAL sidecar·projection |
+| PIT-04 지역별·주별 원자료와 PIT 정합성 분류 | 8 | 1 | 7 | IN_PROGRESS — PIT-04-02 History revision |
 | PIT-05 복구 가능성 판정·최소 운영 승인 설계 | 8 | 0 | 8 | DEFERRED (선행 근거 필요) |
 | PIT-06 선별 복구 코드·fixture 회귀·시뮬레이션 | 8 | 0 | 8 | DEFERRED (선행 근거 필요) |
 | PIT-07 승인된 PC의 최소 History 복구·원장 | 8 | 0 | 8 | DEFERRED (선행 근거 필요) |
 | PIT-08 저장 자료 기반 계산·로컬 결과 재검증 | 6 | 0 | 6 | DEFERRED (선행 근거 필요) |
 | PIT-09 기존 D1 게시기와 읽기 결과 일치 | 6 | 0 | 6 | DEFERRED (선행 근거 필요) |
 | PIT-10 Production API/UI 검증·종결 판정 | 6 | 0 | 6 | DEFERRED (선행 근거 필요) |
-| **합계** | **72** | **22** | **50** | **30.6% · 세부 작업 기준** |
+| **합계** | **72** | **23** | **49** | **31.9% · 세부 작업 기준** |
 
 **완료 판정 원칙:** 모든 행에서 입력/실행과 합격 조건을 확인해야 한다. 시뮬레이션과 실제 PC 설치/SQLite 수정/D1 게시를 하나의 완료 증거로 합치지 않는다. 조건 불충족은 STOP/DEFERRED로 유지하며, 예약 자연 검증·임의 데이터 보간·신규 공급자 호출은 잔여 단계에 추가하지 않는다.
 
@@ -140,11 +140,11 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 | PIT-03-07 | Current·History·후보 누락/충돌 총계 획득 | #1787 실제 Core+candidate PIT aggregate | Current 40,726, History 38,753, missing 2,880, matching/meta 2,625, unsupported 255, candidate conflicting 14; 11/07 과거 결과와 날짜 구별 | DONE |
 | PIT-03-08 | 자료가 부족하면 승인된 기존 A의 최소 메타 조회 적합성 평가 | `controller/employment-r6-candidate-readonly.mjs`·`employment-r6-collection-evidence-readonly.mjs` | stage A는 PIT aggregate, evidence A는 Current/raw snapshot만 제공; 주차별 History-asOf 전체 검증 대체 불가·무근거 B 금지 | DONE |
 
-### PIT-04 — 지역별·주별 원자료와 PIT 정합성 분류 (8개, 미실행)
+### PIT-04 — 지역별·주별 원자료와 PIT 정합성 분류 (8개, 1 DONE · 7 TODO)
 
 | 세부 ID | 실제 실행·분석 작업 | 입력·근거 | 완료 판정 / 결과 | 상태 |
 |---|---|---|---|---|
-| PIT-04-01 | Current 관측일·지역별 최신 시각 정렬 | #1787 PIT aggregate, #1789 WAL STATE_UNKNOWN; 제어 Draft PR #1791 2파일 Current regionLatest source+fixture 21/21 PASS | 지역별 최대 관측일의 실제 운영 51지역 수신/완전주 실증은 아직 없음; WAL 안전 snapshot 및 정규 B 적용·새 A readback 전에는 DONE 불가 | BLOCKED — SOURCE_READY |
+| PIT-04-01 | Current 관측일·지역별 최신 시각 정렬 | [#1798](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1798) WAL·RAM PASS → [#1799](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1799) 실 SQLite Current 600×51, 2015-05-02~2026-10-24 | 최신 2026-10-24 주차 `51 rows/51 distinct/unknown=0`+최신 600주 검증으로 51지역 각각의 최대 **관측일** 2026-10-24, 600/600 완전주 논리 도출; per-region retrievedAt/PIT 시각은 후속 단계 | DONE |
 | PIT-04-02 | History를 관측일·지역·최신 개정 단위로 정렬 | PIT-03 History revision | latest revision과 이전 revision을 별도로 식별 | TODO |
 | PIT-04-03 | Current와 최신 History의 값·sourceHash 정확 대조 | 관측키·원본 해시 | 정확 일치/누락/상충을 독립 버킷으로 분리 | TODO |
 | PIT-04-04 | availableAt·retrievedAt·기록 시각의 PIT 적격성 검산 | 공식 관측 시각·DB 메타 | 미래 가용 데이터를 과거 TRUE_PIT로 승인하지 않음 | TODO |
@@ -275,3 +275,11 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 - 다른 임시 fixture에서는 활성 writer가 commit한 최신 1행을 일반 SELECT에서 읽었지만 `immutable=1` reader에서는 **0행**이 관측됨. 정확한 as-of 데이터가 중요한 고용 R6에 `immutable=1`을 임의 fallback으로 넣지 않는다.
 - 결과는 [진행 기록 §16](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md)에 보존. [Draft #1791](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1791)의 기존 fail-closed WAL 보호와 Current-only 51지역 날짜 출력 제안만 유지. 실제 PC `#1789` 원인 확정/Controller 운영 설치/52주·10년 PIT 복구는 미완료.
 - 다음 필수 실행은 공통 owner의 정규 안전 snapshot·설치 범위 확인 후 실제 최신 source와 51개 지역 날짜 조회를 **한 번 새 A**로 증명하는 것. `PIT-04-01` **BLOCKED/SOURCE_READY**; 전체 **22/72 DONE(30.6%), 50/72 미완료** 불변.
+
+
+### 2026-11-17 신규 실PC #1798/#1799 — Current 51지역 최신일 PASS, PIT-04-01 DONE
+
+- 실제 A/light [#1798](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1798) Run 43904004344 WAL 양쪽 존재·RAM 1799MiB/PASS. 실제 기존 A [#1799](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1799) Run 43904242672 `PASS/R6_DOL_BED_STORED_EVIDENCE_READONLY`, sqliteOpened=true, artifact JSON/TXT 2/2.
+- 고정 51개 공식 지역의 최신 600 관측주를 DESC 조회한 실제 SQLite 집계 `complete51Weeks=600`, `incompleteWeeks=0`, 최신 `2026-10-24` 주차 51행·고유 51지역·미등록 0의 완전주. 이는 모든 공식 지역의 최대 **Current 관측일**이 2026-10-24임을 집합 논리로 입증한다. `fullTenYearRawCoverage=RAW_PRECONDITIONS_COMPLETE`는 577주×51지역 원자료 충족만 의미하고 과거 실제 `History` PIT 진실성은 미입증. 최신 저장 이후 발표 여부·2026-11 현재 최신성을 자동 승인하지 않는다.
+- 이 실측이 기존 Draft #1791 `regionLatest` 출력의 추가 운영 설치 없이도 `PIT-04-01`의 목표를 충족하므로 **그 Draft를 본 단계 필수 조건에서 제외**한다. #1791은 아직 미병합/미설치, 공통 Controller 변경은 수행하지 않는다.
+- **변경 상태: PIT-04-01 DONE, 전체 23/72(31.9%), 49개 미완료.** 다음 `PIT-04-02` 관측일×지역 최신 `History` revision 분리. 상세 원본 [진행 기록 §17](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md). 공급자/DB/D1/웹 운영 변경 0.
