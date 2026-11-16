@@ -10,10 +10,14 @@ import {
 } from './inflation-causal-candidate-census-m3.mjs';
 
 const HEADERS=['data_type_code','time_slot_id','time_slot_date','seasonally_adj','category_code','cell_value','error_data','us'];
-// Official Census metadata marks `time` as predicate-only; request the explicit
-// `time_slot_date` output column. `time_slot_id` is an internal integer.
+// Census EITS returns a `time` result column for its year predicate even
+// though the metadata marks it predicate-only; Growth G016 uses this contract.
+// `time_slot_id` is an internal integer, never the observation month.
 const row=(year,month,value='900000')=>['TI','1329',`${year}-${month}-01`,'yes','MTM',value,'','1'];
 const payload=(...rows)=>[HEADERS,...rows];
+const TIME_HEADERS=['data_type_code','time_slot_id','seasonally_adj','category_code','cell_value','error_data','time','us'];
+const timeRow=(year,month,value='900000')=>['TI','1329','yes','MTM',value,'',`${year}-${month}`,'1'];
+const timePayload=(...rows)=>[TIME_HEADERS,...rows];
 const response=x=>new Response(JSON.stringify(x),{status:200});
 const base=()=>{
   const temp=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-census-m3-'));
@@ -30,6 +34,17 @@ test('official Census M3 MTM/TI uses only U.S. total manufacturer SA inventory l
   ));
   assert.deepEqual(items.map(x=>[x.date,x.value]),[['2026-08-01',850000],['2026-09-01',900000]]);
   assert.equal(items[1].unit,'USD_MILLION_SA_NOMINAL');
+  const actualEitsShape=normalizeCensusM3Inventories(timePayload(
+    timeRow(2026,'09','900000'),timeRow(2026,'08','850000')));
+  assert.deepEqual(actualEitsShape.map(x=>[x.date,x.value]),[['2026-08-01',850000],['2026-09-01',900000]]);
+  // An annual `time` filter must not override the explicit monthly date.
+  const twoDates=[...HEADERS.slice(0,-1),'time','us'];
+  const twoDateRow=[...row(2026,'09','900000').slice(0,-1),'2026','1'];
+  assert.deepEqual(normalizeCensusM3Inventories([twoDates,twoDateRow])
+    .map(x=>[x.date,x.value]),[['2026-09-01',900000]]);
+  const yearOnly=timeRow(2026,'09');yearOnly[6]='2026';
+  assert.throws(()=>normalizeCensusM3Inventories(timePayload(yearOnly)),
+    /VALUE_OR_DUPLICATE/);
   // Census official EITS examples emit time_slot_date as a midnight timestamp.
   const stamped=row(2026,'07','800000');stamped[2]='2026-07-01 00:00:00.0';
   assert.deepEqual(normalizeCensusM3Inventories(payload(stamped)).map(x=>[x.date,x.value]),
@@ -108,3 +123,4 @@ test('invalid provider row cannot overwrite stored data and missing key blocks n
   await assert.rejects(()=>collectCensusM3Inventories({base:fixture.writer,censusKey:'',quotaFetch,now}),/KEY_MISSING/);
   assert.equal(calls,earlier);
 });
+
