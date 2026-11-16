@@ -1,3 +1,24 @@
+<!-- employment-r6-20261116-dol-official-db-outage-and-approved-safe-recovery-plan -->
+## 2026-11-16 W04 고용 R6 실제 해결 경로 조사 — 공식 조회 DB 오류, 승인 기존 Collector 회복 우선
+
+**실제 최신 정본:** `zgmini/main@b56dfe9f54637c96654f82758dd15a173c4c2630`, 제어 `zgmini-pc-control/main@2d7dfb6b0f3c0cc4f0f74eb7e08566ea13bb1407`; 본 브랜치 65차 완료점 재사용. 조사 범위의 작업 완료, **운영 W04 중앙 최근 진행률 75%→75%**. 이번 소스/산식/승인/PC/SQLite/D1/Cloudflare 변경 없음.
+
+**지난 실증 재사용:** #1403 / Run `43663990960` `RAW_PRECONDITIONS_COMPLETE` 지역 51×600주/577주 요구 PASS. DOL National ONE_YEAR 2026-11-09 `SUCCESS`/missing0/latest IC `2026-10-10`; BACKFILL `PARTIAL`/missing4; RELEASE 2026-11-15 `PARTIAL/DOL_RELEASE_OBSERVATION_STALE`/missing4/latest IC null. 초기 전국4계열 `INITIAL_CLAIMS,INITIAL_CLAIMS_4W,CONTINUED_CLAIMS,INSURED_UNEMPLOYMENT_RATE`; 11/15 RELEASE rows 3,060은 ETA539 상태 51×60주만. **마지막 점수 `STATE_CLAIMS_BREADTH`는 전국4가 아닌 지역 `STATE_INITIAL_CLAIMS` + PIT history에서 계산하므로 자동 READY 주장 금지**.
+
+**새 외부 직접 확인:** DOL ETA 공식 조회 페이지 `https://oui.doleta.gov/unemploy/claims.asp`의 실제 HTML 본문은 `Unable to connect! SQLSTATE=HY000 [Informix ODBC Driver] Invalid ASF assoc_id`를 출력(2026-11-16 페이지 조회); 전국 form `https://oui.doleta.gov/unemploy/wkclaims/report.asp` **GET**은 폼 입력이 필요하다는 오류만 반환. 그러므로 공식 서버 조회 DB 장애는 **실존하는 유력 원인**이나, 2026-11-15 **운영 PC 국가 POST**의 실제 status/body와 같다는 증명은 아직 없음. 국가 포털과 별도로 매주 발표 자료도 존재함. 11/15 과거 POST 최초 실패를 공급자 오류라고 확정하는 표현 금지.
+
+**소스 해결안 검증 재사용:** 단일 기존 통합 [Draft #1083](https://github.com/ansqhd5774-Choi/zgmini/pull/1083) `21b3930c091b37edbb152bb73920bdf46e1a9ebc`, 9파일, [Node CI 43677601781](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43677601781) SUCCESS. 구형 메인 Provider는 HTTP200 비XML/0개 National을 raw 스냅샷 저장대상으로 제공하고, Collector는 4개 모두 없는 것을 STALE 코드로 가림. 저장기 `snapshotId`는 body/content-addressed + `INSERT OR IGNORE`여서 과거 정상 스냅샷은 직접 덮어쓰지 않는다. #1083은 **국가 4/4 유효 XML일 때만 국가 원자료/4행 동시 저장**, 부분·비XML·HTTP 4/5xx·연결 실패 시 **원본 보존 + 정확한 `DOL_NATIONAL_*` 실패코드 + 비식별 국가 응답 메타 기록**, 독립 ETA539 수집 보존 및 전국 4계열별 PIT 최신성 구분. Source CI가 11/15 운영 복구 증거는 아님.
+
+**공식 원출처를 유지하는 승인 필요 없는 운영 보호 전략:** (1) 이미 저장된 성공·실패 시점 National raw의 `http_status/content_type/body_sha256` 및 parser 유효 0~4(원문은 로컬에만) 읽기 전용 진단으로 정확 첫 실패 분류, (2) 중앙 Source Owner가 기존 PR #1083 중 현재 승인 원본과 다른 provider/collector 및 실제 필요한 최소 tests만 선별해 B exact before/afterSHA/manifest 승인 후 단일 PC Owner 기존 설치·실행 경로 이용, (3) 기존 정상 관측값/보존 이력은 유지하되 새 공식 값 없으면 `STALE/PARTIAL`로 정직하게 표시(READY 강제·0 채우기 금지), (4) 공급자 정상 응답 시 기존 승인 Scheduler의 **다음 정규 발표 주기**에서만 신규 유효 4계열 원자료 수집→SQLite→PIT/계산→로컬 출력→D1 readback→Production API/UI로 종단 검증. 기존 E: 600주 raw를 재백필하지 않음.
+
+**대체 경로는 별도 명시 승인에만:** FRED(연준 세인트루이스) 출처 표기 US ETA, 동등한 공식 발표 시계열 `ICSA,IC4WSA,CCSA,IURSA` 각각 2026-11-12 갱신 검증. 최신 국가지표는 FRED에 존재하여 DOL 웹 조회 오류=통계 자체 미발표가 아님. 그러나 FRED는 **새로운 공급자/조회 계약**, 출처·관측일(Initial 11/07, Continued/Rate 10/31)·단위·SA·availableAt·수정 이력·PIT·공개권리/비용·승인 검증 없이 자동 폴백 또는 공식 DOL snapshot으로 위장하는 것은 금지. 공식 데이터 포털 historical 자료는 last update 2025-09-30으로 최신 대체에 부적격.
+
+**공유 운영 현재 위험:** #1501 `UNKNOWN/BACKLOG_OR_RECOVERY_NOT_VERIFIED`/`FIRST_FAIL=RECONNECTED` 실PC 복구 영수증 아직 없음. #1505/#1506 소스 보호 CI 성공, 실제 설치/복구 완료 아님. 중앙 단일 Owner가 기존 승인 보호 상태 확인하여 범위 내 설치·실행 조정. 별도 pc-job·Runner 강제재시작·RDC·CMD·SQL·DB/D1·Cloudflare 무단 쓰기 금지.
+
+**NEXT 하나:** 운영 PC에 **이미 저장된** National ONE_YEAR 성공 raw와 RELEASE 실패 raw 스냅샷을 승인된 고정 READ_ONLY 계약으로 **민감하지 않은 HTTP/status/format/hash/파서별 4계열 개수만 1회 비교** → `FIRST_FAIL=HTTP_NON2XX | HTTP200_NONXML | XML_SCHEMA_MISMATCH | NATIONAL_SERIES_INCOMPLETE | STALE_OBSERVATION` 중 정확 하나로 좁힘. 진행 중 공유 Controller #1501 복구 절차를 무조건 선행 Gate로 삼지 않고 독립 Source 통합 준비는 지속. 완료 실증은 원자료·PIT·실제 게시 동치가 확인된 후에만.
+
+---
+
 <!-- employment-r6-65th-certified-runtime-receipt-condition-20261114 -->
 ## 고용 R6 65차 — 신규 현장 영수증 부재 조건 확인 및 완료 증거 보존
 
