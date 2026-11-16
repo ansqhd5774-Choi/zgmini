@@ -55,7 +55,7 @@
 | 14 | D11 · 자산 버블 위험 | 완성분기 확정 Gate 6요인 | 신규 분기 미완료 시 마지막 확정분기 유지 | `/api/asset-bubble-detail` |
 | 15 | D12 · 부채 위험 | BIS·부채/GDP 등 저빈도 5요인 | 업데이트 주기 차이를 전체 갱신 지연으로 오분류 금지 | `/api/debt-risk-detail` |
 | 16 | D13 · 공급 충격 위험 | 공급·유가·물가 6요인 혼합 발표 | 공통 관측월 완결 및 원자료 Gate | `/api/supply-shock-detail` |
-| 17 | D14 · 물가 점수 | 월간 입력과 실제 사용 중인 산식 판본 | 구형 R2/현행 계약 차이 확인 후 READY 판단 | `/api/market-score domains.inflation` |
+| 17 | D14 · 물가 점수 | 현행 CM-R1 4요인(corePCE 35%, coreCPI 25%, CPI 15%, 기대물가 25%) 저장 점수 변경 | 4요인 전부 READY 및 진단 총점 일치; 별도 인플레이션 위험 R2 16입력·7축과 혼합 금지 | `/api/market-score domains.inflation` |
 | 18 | D15 · 고용 점수 | BLS 월간 + DOL 주간 실제 4요인 | R6 상세 29개와 점수 입력 4개 분리 | `/api/market-score domains.employment` |
 | 19 | D16 · 금리 점수 | 일별 금리 + 비정기 정책 입력 | 정책 발표일 미도래를 일별 점수 보류로 오인 금지 | `/api/market-score domains.rates` |
 | 20 | D17 · 채권·신용 점수 | 금리·신용 혼합 4요인 | 주기별 마지막 유효값과 계산 조건 비교 | `/api/market-score domains.credit` |
