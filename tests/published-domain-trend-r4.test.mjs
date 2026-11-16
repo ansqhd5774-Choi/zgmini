@@ -47,8 +47,7 @@ test('one verified real current score can be a single point; no past values are 
 test('mini card geometry uses the real published score as its last Y point',()=>{
  const points=appendPublishedDomainCurrent(daily,current(57),7);
  const geometry=miniTrendGeometry(points,7);
- assert.equal(geometry.last.y,Number((57-57*.54).toFixed(0))===geometry.last.y
-  ?57-57*.54:57-57*.54);
+ assert.ok(Math.abs(geometry.last.y-(57-57*.54))<1e-9);
  assert.equal(Number(geometry.last.x.toFixed(3))>0,true);
 });
 
