@@ -27,3 +27,20 @@
 - 이 PASS는 **macroCredit 특수 경로의 저장자료 병합 동작**에 한정하며, 월간/분기별 독립 27개 모델 전체, 실제 PC Runtime, 새 공급자 수집 성공을 뜻하지 않는다. 기존 저장 시각이 36h를 넘으면 기존 안전 Gate에 따라 이전 시리즈를 사용하지 않는 것이 정상.
 - `worker/macro-result-contract-r61.mjs::macroCollectionReadiness`는 전체 필수 입력 complete 및 공급자 실패 0건일 때만 정상 macro 배치를 교체하도록 보호한다. `tests/macro-result-contract-r61.test.mjs`에서 해당 기존 완전성/부분실패·이월/TTL 동작을 이미 검증하므로 중복 검사를 신규 필수 Gate로 추가하지 않음. **별도 수집기의 1개 신규 관측 + 9개 유효 과거값**의 직접 결합은 Owner별 정확한 소스와 승인 Gate로 후속 분류.
 - 최초 PR #1177의 TypeScript `TS2345`는 `currentPublishedPoint`의 JSDoc 인자 타입 명시 후 원격 `check`/`ui` 모두 PASS. 병합 `71ea0b66f67e1b099415ebd814be4b67730af08b`, Cloudflare Git Integration Workers Build PASS. 운영 화면 자체는 사용자 최종 확인 경로, 내부 브라우저 검증 Gate 재설정 금지.
+
+
+## 후속 실행 — R4 #07~#13 (2026-11-16 KST)
+
+- **현재 보수적 전체 집계 4/75(5.3%).** 기존 #04·#05에 더해 #08 비식별 10개 입력 재현 fixture와 #10 기존 `macroCredit` 단일 입력 변경·9개 유효값 재사용 선택 경로를 소스·실제 로컬 SQLite fixture 기준 PASS로 추가. #10의 이 PASS는 **공통 병합기 macroCredit 범위만** 의미하며, 27개 독립 산식 운영 완료는 F군 #36~#62로 구분.
+- **PR [#1180](https://github.com/ansqhd5774-Choi/zgmini/pull/1180) merged** to `main@245b9bea8f3f1773dd12f933ec64e09a6fa5f934`. 변경 1개 `tests/r4-single-input-refresh-regression.test.mjs`, 총 10건 실제 Node 회귀. GitHub `check` PASS(run `43880665155`). 테스트는 공식 등록된 macro series 기반 full-batch READY 유지, 10개 중 `NFCICREDIT` 1개 신규 수집·9개 기존 유효 입력 그대로 이월, 같은날 공식 정정, 0값, 36시간 TTL 초과값 거부, 부분 실패 시 기존값 보호, CM-R1 12도메인 한 개 변경 시 기존 가중치대로 재산출, **실제 임시 PC SQLite 저장→재조회**를 커버. 운영 PC 파일·D1·공급자 호출·예약/가중치 변경 0건.
+- **#07 부분:** `seriesId`, `observationDate`, `seriesStoredAt`/그룹 `storedAt`, 공개 `sourceVersion` 식별. 현재 전체 27개별 매핑 미완료. `worker/market-input-validation.mjs`의 per-group validated reader/last-good fallback 계약을 유지.
+- **#09 부분:** `local-cycle.mjs`는 Core 수집 뒤 early `run-local.mjs`를 통해 기존 저장값을 계산; 그 뒤 auxiliary 수집에 대해서만 `auxiliaryInputCheckpoint`의 output/supply/alpaca/shadowSp500 변경분이 final 계산을 결정. 기존 `tests/progressive-publication.test.mjs`에서 checkpoint 누락/변경 시 정상 재실행 경로 PASS 이력. 지표별 전 범위 event 감지용 전역 신규 checkpoint를 만들지 않음.
+- **#11 재현된 source 결함:** 현재 `mergeSuccessfulMacroCredit`는 저장된 NFCICREDIT 최신 관측일 2026-11-12보다 신규 입력의 마지막 관측일이 2026-11-05로 과거로 돌아가도 수락함. 재현 fixture에서 역행 수락 `true`. 이는 유효값 이월과 별개이며 늦은/잘린 공급자 응답의 자료 역행 가능성이 있음.
+- **#11 Owner 검토용 Draft PR [#1181](https://github.com/ansqhd5774-Choi/zgmini/pull/1181)**: 최신 유효 관측일이 명시적으로 후퇴할 때만 `MACRO_CREDIT_OBSERVATION_REGRESSION` 거부, 같은 날짜 공식 정정과 미래 관측은 그대로 허용. 기존 안전 진단 reason allowlist 1종 보강, 추가 3개 회귀(해당 테스트 총 13건), GitHub `check` PASS(run `43881923455`). 변경 후보 `worker/macro-result-contract-r61.mjs`, `worker/market-operational-refresh.mjs`, 회귀시험 1개. **Core 수집기·입력 검증 계약 변경이므로 W06이 직접 병합/PC 설치하지 않고 원담당 확인 범위로 분리함.** 이 Draft는 actual deployed fix가 아님. 다른 W06 독립 영역은 중단하지 않는다.
+- **#12 부분:** TTL 초과 9개값 거부/숫자 0 구분/필수 입력 누락·공급자 실패 시 last-good 보존은 fixture PASS. 27개 전체 결측/동일시각 중복 승인판정은 F군에서 별도 점검.
+- **#13 부분:** 새 유효 입력 1개를 기존 `marketOperationalStore(db)`가 임시 SQLite에 저장하고 `readStoredMarketInputs`로 조회하는 종단 fixture PASS. 기존 `run-local.mjs`가 저장자료만으로 계산하는 호출 경로는 소스 확인됐으나 **실제 운영 Writer 재계산/게시 성공은 아직 미확정**. 실제 새 Input→PC 실행→D1 readback을 이 결과로 대체하지 않음.
+
+### 재계산·이력 연결의 다음 독립 최소 작업
+1. W06 담당 UI에서 D05 외 각 경제 12개 도메인의 카드 현재 점수와 저장된 trend 마지막점을 비교. 불일치가 확인된 항목만 동일 산식·원본 이력 보존 조건으로 표시 보완.
+2. 기존 15분 `composite-observed` 간격 안에 바뀐 복수 계산점(예: 12:00 50점, 12:05 53점, 12:10 56점)이 영구 보존되지 않는 #21~#29는 PC Writer 원담당 영역이다. 신규 DB를 일단 도입하거나 15분/100점 제한을 무단 해제하지 않고 기존 운영자료 저장 정책 내 최소 개선·승인 범위를 분리.
+3. #11 원담당이 Draft 검토할 때까지 Core 원자료·DB·수집기 운영 변경을 하지 않음. 원담당이 검토 후 승인/적용한 증거가 생기면 해당 단계 상태를 정정.
