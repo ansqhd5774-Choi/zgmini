@@ -34,19 +34,19 @@ B4 10 | Production·화면 최종 검증
 합계 71
 ```
 
-현재 71개 세부 체크 완료: **5/71 (7.0%)**. 완료된 것은 B1 소스 연결 5개뿐이며, W01 A1의 소스 CI는 별도 증거로 남겨 실PC 소유권 증명 완료로 산정하지 않는다. 미완료 **66개**. 나머지 상태: PARTIAL 8, HISTORICAL 5, PENDING 42, SOURCE_ONLY 3, ANALYSIS 1, HISTORICAL_SOURCE 2, HISTORICAL_OUTPUT 5.
+현재 71개 세부 체크 완료: **8/71 (11.3%)**. 완료된 항목은 A1 정규 등록·관측 시점의 잠금 비교·결과 회수 3개와 B1 소스 연결 5개. 실제 B Event129 소유권 증명과 수집·저장·게시 종단 완료는 별도 미완료 **63개**. 나머지 기존 HISTORICAL/PARTIAL/SOURCE_ONLY 등 분류는 체크 완료로 계산하지 않는다.
 
 ## A1 — 운영 입력·소유권 증명 (9개)
 
-- [ ] **A1-01** 현재 PC Controller 설치 SHA 및 허용된 진단 operation 확인 — PARTIAL | #1745 Controller e3a495c97d6b40d6d4eea2ff4f586bef46216eb7 파일 전환·10파일 manifest 해시 불일치 0 영수증. 단, 업데이트 UNKNOWN/RECONNECTED·자동 postcheck 미완료이며 실제 새 operation 결과 미관측
+- [x] **A1-01** 현재 PC Controller 설치 SHA 및 허용된 진단 operation 확인 — DONE | 운영 #1747 core-status Run 43876398674와 #1748 W01 A Run 43876539574의 실제 Controller SHA e3a495c97d6b40d6d4eea2ff4f586bef46216eb7 일치; A operation 실제 allowlist dispatch 확인(개별 결과 STATE_UNKNOWN, 설치 terminal PASS와 구분)
 - [ ] **A1-02** 실제 Core·Korea Task 등록·상태·실행 파일 확인 — HISTORICAL | 2026-11-13 #1330·#1331 시점 Task Running/Ready 관측, 동시 시점 동일성 미검증
 - [ ] **A1-03** Task Engine과 VBS launcher 연결 확인 — HISTORICAL | #1326 고정 action의 중첩 VBS 경로 관측, live lock owner 미증명
 - [ ] **A1-04** WMI 프로세스 계보 및 승인 Core script 검증 — PENDING | 새로운 실제 증거 없음
 - [ ] **A1-05** Event129의 PID·실행 시각·프로세스 생성 시각 확인 — PENDING | 새로운 실제 증거 없음
 - [ ] **A1-06** 공유 local-cycle.lock 실제 소유자 확인 — PENDING | 새로운 실제 증거 없음
-- [ ] **A1-07** 잠금 전후 해시·관측 경쟁 여부 확인 — PARTIAL | #1693 protectedStateUnchanged만 확인, 잠금 직접 전후 소유자 증명 미완료
+- [x] **A1-07** 잠금 전후 해시·관측 경쟁 여부 확인 — DONE | #1748 단회 시점 lock before/after PRESENT, same=true, protectedBefore/After SHA-256 동일 및 protectedStateUnchanged=true; 관측 시점 이후 Core 지속 운전이나 B owner 증명은 미포함
 - [ ] **A1-08** 최초 증명 실패 조건 특정 — SOURCE_ONLY | PR #1724·#1752·#1760 소스 병합, 격리 Windows fixture 82/82 PASS; 실제 B Run 43861853573 최초 실패 불명
-- [ ] **A1-09** 원격 진단 JSON/TXT 회수 및 보호 상태 확인 — PENDING | 새로운 실제 증거 없음
+- [x] **A1-09** 원격 진단 JSON/TXT 회수 및 보호 상태 확인 — DONE | #1748 43876539574-1-seat-1 JSON/TXT 2/2 직접 재조회, 상태 STATE_UNKNOWN/INFL_E129_NOT_OBSERVED_WITHIN_LIMIT, operationalWrites/providerCalls/d1Writes=0, protectedStateUnchanged=true
 
 ## A2 — 증명된 결함 최소 수정 (8개)
 
@@ -154,3 +154,9 @@ B4 10 | Production·화면 최종 검증
 - **최소 다음 배포 차이 (조회 당시 기준):** 설치 SHA `e3a495c97d6b40d6d4eea2ff4f586bef46216eb7` → 제어 소스 `a1f1bbfa309bb2a1ad9a8322a5dc214a6e8c1c27` 사이 설치 대상 `controller/config` 파일 **1개만 변경**: `controller/inflation-event129-evidence-readonly.mjs` Git blob `626ce8d3296e425cd3a95375ebf868b2d9eaabca` → `ee6b1bcdc825811711c4dee62b0ed488c96f614c`, 신규 소스 SHA-256 `33a7588cf0a5a4b0f44db5baaa6620e09c051b290a50202dcd8cdd06d7535872`. 수정 fixture .test.mjs는 배포 대상 아님. **설치 manifest 승인·실행·해시 실PC 확인은 별도 미완료**.
 - 기존 설치 계약은 정확한 B급 승인 manifest·source/manifest/diff·보호 상태·자동 사후 `postOperation`을 필수로 요구한다. 사용자의 **설치 후 자동 진단 불실행** 조건을 무시해 재설치하지 않는다. #1745의 정규 복구·사후검사 상태와 승인 범위가 확정될 때까지 그 공유 설치 작업만 STOP.
 - **다음 필수 실행:** 중복 설치가 아니라 #1745 기존 결과·승인된 단일 복구 owner의 완료 기록이 있으면 재사용 → 신규 W01 한 파일 manifest/검증 후 정규 적용. 단회 Event129 읽기 A 및 수동 B 수집은 별도 승인까지 미실행. B1/B2의 기존 부분공개 및 정상 자료는 보존.
+
+## 2026-11-16 #1747·#1748 실PC 관측 재사용 (중복 진단 0회)
+
+- [#1747](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1747) 실PC A `core-status`, Run 43876398674: PASS/CORE_READONLY_DIAGNOSIS, `actualExecutionSha=e3a495c97d6b40d6d4eea2ff4f586bef46216eb7`, protectedStateUnchanged=true, 원격 JSON/TXT 2/2 확인. **이는 유지보수 #1745의 RECONNECTED/RECOVERY_REQUIRED를 공식 terminal SUCCEEDED로 변환하지 않는다.**
+- [#1748](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1748) 실PC A `inflation-event129-evidence-readonly`, Run 43876539574: `STATE_UNKNOWN/INFL_E129_NOT_OBSERVED_WITHIN_LIMIT`, reader OK, `UTF-8/BOM NONE`, 구형 파서 Event 총 0, Task 정의 OK, GetInstances EMPTY, WMI OK/ownerFound=true/coreMatched=true, 직접 B 증명 `INFL_MANUAL_B_EVENT129_INPUT_UNVERIFIED`, VBS 후보 0. 잠금 PRESENT→PRESENT same=true, protectedStateUnchanged=true, providerCalls/operationalWrites/d1Writes=0; JSON/TXT 재조회. **독립 WMI Core script 일치는 Event129나 Task 소유권 직접 증명이 아니며, 실제 Event129 기록 부재인지 구형 파서 미인식인지는 분리되지 않았다.**
+- A1-01/A1-07/A1-09는 각각 정확한 증거 범위에서만 DONE 처리. A1-04/A1-05/A1-06/A1-08 및 B 원자료 수집은 여전히 미완료. 기존 Run·requestId 재실행 금지.
