@@ -229,7 +229,7 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
   }):[];
   // Actual published current can advance before the bounded PC archive.
   // Both card and chart use the same verified computation and sensitivity.
-  const current=overallScore===null||!market?.updatedAt?null:{label:market.updatedAt,value:overallScore};
+  const current=overallScore===null||!market?.updatedAt?null:{label:market.updatedAt,value:overallScore,boundToPublishedCard:true};
   return mergeCompositeObservedDisplay(daily,archived,periodDays,current);
  },[market?.overall?.trend,market?.updatedAt,overallScore,compositeArchive,periodDays]);
  const hasDatedHistory=useMemo(()=>overallTrend.length>1||
