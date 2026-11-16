@@ -59,3 +59,11 @@
 - 현재 14일 rolling 관측 원장에 반복 포함됐고 마지막 응답이 실제 2xx인 **이 공식 월간 CSV 단일 호스트에 한해** 36시간 미호출을 통신 실패/미확인 근거로 삼지 않는다. 최대 15일 경계에서는 실제 마지막 2xx/혼재 여부를 검증하고, 4xx·5xx·NETWORK_ERROR, 쿼터, 미관측은 정상 승격하지 않는다.
 - 이는 **HTTP 호스트 연결 상태 판정**에만 해당하며 16개월 차트 D1 최신월, 공식 발표 동기화, 정규 수집 주기의 건강도는 별개로 유지한다. 계정 인증/D1 전수 감사/신규 cron 불필요.
 - 공개 API와 PC 관측 결과에서 실제 32/32 재검증 전에는 최종 성공으로 표기하지 않는다.
+
+## 2026-11-17 연결 상태 정상화 최종 영수증
+
+- Census CDN 운영 PC 고정 GET: https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43903908465 — HTTP 200, CSV, 공급자 호출 1회, 재시도 0, 운영 쓰기 0.
+- 최종 PC A: https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/pc-process-inventory-43906701802-1-operating.json — `32/32`, 실패 0, 미확인 0, rosterComplete.
+- 최종 사이트: https://zgmini.kr/api/api-connection-health?http32_verify=fe8a27b1e0e80fbc — `status=healthy`, `API 14/14`, `HTTP 32/32`, HTTP 200, checkedAt `2026-11-16T16:17:31.335Z`.
+- 공개 사이트 변경 PR #1194, 병합 `fe8a27b1e0e80fbcf5655321d40459ef3a67c857`; PC 변경 PR #1800, 병합 `a50590d8db253993b89caf12b3fe5ab2f8faee19`. 해당 공식 월간 CSV만 14일 관측 코호트의 실측 2xx를 유지하며, 실제 503/NETWORK_ERROR는 정상 판정하지 않음.
+- 원시 수집/저장 데이터·승인 정규 Task/PC 운영 로그 수정 0건. **동적 14일 관측 호스트 수는 실제 활성 공급자·수집기 수를 뜻하지 않음**.
