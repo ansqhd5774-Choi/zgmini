@@ -1,6 +1,6 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
-> **현재 즉시 상태 (2026-11-17 00:29 KST): 11/75 (14.7%), 잔여 64개.** #27의 PR #1189가 `main`에 2파일로 병합됐고 check/verify/notify/Workers Builds SUCCESS. #28은 방법론 버전 이력의 메타데이터 부족을 확인해 **PARTIAL**. 아래 '현재 인계 정본'만 재개 기준으로 사용하며 과거 10/75·Draft 상태는 당시 기록으로 보존.
+> **현재 즉시 상태 (2026-11-17 KST): 12/75 (16.0%), 잔여 63개.** #34의 60초 자동 갱신·늦은 응답 차단은 기존 공통 구현의 소스/모의시험으로 DONE. #28 저장자료의 방법론/모델 버전은 일별 snapshot 원본에 남지만 차트/계산점 평면 이력에서는 추적 불가해 PARTIAL, #29 미래 날짜 혼입 source 결함을 재현해 Writer 원담당 보완 필요. **다음 독립 실행은 W06 #35**. 운영 PC/Production 종단 완료 주장은 하지 않는다.
 
 ## 현재 인계 정본 — 다음 담당자 첫 읽기 (2026-11-16 KST)
 
@@ -10,14 +10,15 @@
 |---|---|
 | 저장소 / 원장 브랜치 | `ansqhd5774-Choi/zgmini` / `codex/ui-improvements` |
 | 계획 / **지정 진행 기록** | `docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_EXECUTION_R4_20261116.md` / **`docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_R4_PROGRESS_20261116.md`** |
-| 진행 (단계별 소스·fixture·설계 통과) | **11/75 (14.7%), 잔여 64개** |
-| DONE 단계 (중복 없음) | **#04, #05, #08, #10, #21, #22, #23, #24, #26, #27, #33** |
+| 진행 (단계별 소스·fixture·설계 통과) | **12/75 (16.0%), 잔여 63개** |
+| DONE 단계 (중복 없음) | **#04, #05, #08, #10, #21, #22, #23, #24, #26, #27, #33, #34** |
+| #34 60초 화면 갱신·역행 차단 | **DONE (현재 main source/fixture)**. `live-refresh.mjs` 60초 주기, `dashboard-ui.tsx`·`use-stored-index.ts` 수용/역행 보호 경로 확인. 신규 유효값·0·PARTIAL 및 낡은 관측·게시 응답 판정 7/7, UI 연결 소스 4/4 PASS. Production 유저 육안 검수는 최종 단계 |
 | 단계 증거 범위 | #24는 **기존 저장 JSON 활용·Draft 설계/회귀 PASS**까지의 설계 DONE. 실제 15분 보존 정책 수정·PC 설치·D1 반영은 **미완료** |
-| PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #28, #34, #35. 각 상태의 증거·한계는 아래 기존 이력 및 2026-11-17 최신 수행기록 참조 |
-| 다음 단 하나의 실행 | **#28** 기존 저장 스냅샷의 실제 model/methodologyVersion 출처와 차트 이력의 구간 분리 가능성 확인. 버전 정보 없는 과거 이력은 추정·허위 보간 금지. 기존 데이터 계약 변경이 필요하면 정확한 최소 영향과 원담당 승인 범위를 분리 |
-| 다음 담당·대상·입력 | W06 + 필요한 경우 Writer/계산 원담당. `lib/composite-observed-history-r1.mjs` (현재 main 기준), `worker/composite-history.mjs`, `scripts/pc-writer/market-snapshot-comparisons.mjs`, `lib/market-score/composite-model-r1.mjs`; 지정 브랜치 `tests/r4-methodology-lineage-audit-28.test.mjs` 4건과 저장 스냅샷의 승인 버전 증거 |
-| #28 통과 조건 | 저장된 실제 점수 이력의 모델·방법론 버전 기준으로 비교 가능한 구간과 구분해야 할 구간을 식별. 버전 누락 자료에 모델을 추정해 부여하지 않으며, 기존 6M/1Y 이력·0점·기간 공백을 훼손하지 않는다. 필요한 계약 변경은 원담당 승인/기존 Writer 경로로 분리하고 테스트·PR·실운영 증거를 각각 기록 |
-| 이후 후보(이번 실행에 혼입 금지) | #29 같은 날 정정·재실행·중복 보호 → D01~D27별 실제 미연결 수정. 원담당 Draft #1181·#1185는 별도 승인 대기 |
+| PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #28, #29, #35. #28 방법론 공개 이력 구간 분리, #29 Writer 현재 날짜 안전성은 원담당 범위의 실제 보완 미완료 |
+| 다음 단 하나의 실행 | **#35 (W06 독립 작업)** 기존 PR #1177·#1182·#1189가 연결한 현재 카드 점수와 1D~1Y 차트 끝점을 실제 공개 source 계보·시각·단위·표현변환별로 대조. 진짜 불일치만 최소 수정하고 신규 저장 계약·가짜 점을 만들지 않는다. 원담당 #28·#29 보완은 독립 진행을 막는 Gate가 아님 |
+| 다음 담당·대상·입력 | W06 UI 원담당, 최신 `main`의 `app/dashboard-ui.tsx`, `lib/market-score/composite-observed-display-r1.mjs`, `lib/market-score/published-domain-trend-r4.mjs`, `lib/market-score/live-refresh.mjs`, `components/use-stored-index.ts` 및 기존 1D~1Y fixture. 타 담당자 source 병합/PC 설치 없이 검증 가능한 화면 점수 연결부터 수행 |
+| #35 통과 조건 | 카드와 실제 확정/실계산 차트 마지막점의 시각·원점수와 표시 점수(기존 3.5 표시 민감도 포함)를 구분해 일치 여부 확인. 1D~3M 실제 게시점·6M/1Y 확정 일간 이력·결측/0/시간 역행 보호. 근거 없는 모든 화면 완료 주장 금지; 실제 Production/user 육안 검수는 기술 작업 종료 후 별도 |
+| 이후 후보(이번 실행에 혼입 금지) | #28 모델/방법론 계보 공개 이력의 원담당 변경 범위(현행 일별 snapshot에 modelVersion 저장됨, 평면 chart/observed archive에는 없음); #29 기준일 이후 미래 snapshot 표시 결함/동일시각 정정 (Writer 원담당). D01~D27 실제 미연결 작업, Draft #1181·#1185 승인 대기. 비차단 작업은 계속 |
 | 최근 R4 기능 병합 증거 | PR [#1177](https://github.com/ansqhd5774-Choi/zgmini/pull/1177), [#1180](https://github.com/ansqhd5774-Choi/zgmini/pull/1180), [#1182](https://github.com/ansqhd5774-Choi/zgmini/pull/1182), [#1184](https://github.com/ansqhd5774-Choi/zgmini/pull/1184), [#1187](https://github.com/ansqhd5774-Choi/zgmini/pull/1187), **[#1189](https://github.com/ansqhd5774-Choi/zgmini/pull/1189)** = `main` 병합. 최신 R4 기능 병합 SHA **`1c0dd6587d76ef1051196251a06beed58ce36d6f`** |
 | 미병합 원담당 검토 | [Draft #1181](https://github.com/ansqhd5774-Choi/zgmini/pull/1181) Collector의 관측일 역행 차단 (#11), [Draft #1185](https://github.com/ansqhd5774-Choi/zgmini/pull/1185) Writer의 15분 이내 변경점 영구 기록 (#24 설계 이후 구현). 두 건 모두 CI 성공이나 **원담당 적용 승인·main 병합·PC 설치 없음** |
 | PC Runtime·SQLite→D1 실제 게시 | **미확정**. #13 임시 SQLite 통합시험 및 source 연결 PASS만 보유. 기존 운영 PC A급 #1737은 당시 `STATE_UNKNOWN`; 해당 고유 요청 중복 실행 금지 |
@@ -25,7 +26,7 @@
 | 소유·보호 조건 | UI는 기존 전용 브랜치·선별 PR 원칙. 수집·계산·Writer/15분·100개 보존 정책·DB·TTL·스케줄은 별도 원담당/승인 없이 수정·병합·설치 금지. R13 이란 퇴역 예약 복원 금지 |
 | 전후 검증 원칙 | source/CI/로컬 fixture와 실PC/D1/Production을 분리. 사용자에게는 전체 기술 구현 이후 홈페이지 최종 육안 확인 요청 |
 
-**다음 작업자 필수 수행 순서:** 본 계획서 75개 → 위 정본 → #28 관련 기존 근거만 확인 → 실제 #28 실행/검증 → **이 표 상태 수정 및 최신 수행 기록 추가 → 지정 원장 커밋 → 원격 내용 재조회 PASS → 최종 보고**. 지난 대화를 요청하거나 과거 성공 작업을 모두 재실행하지 않는다.
+**다음 작업자 필수 수행 순서:** 본 계획서 75개 → 위 정본 → #35 관련 기존 근거만 확인 → 실제 #35 실행/검증 → **이 표 상태 수정 및 최신 수행 기록 추가 → 지정 원장 커밋 → 원격 내용 재조회 PASS → 최종 보고**. 지난 대화를 요청하거나 과거 성공 작업을 모두 재실행하지 않는다.
 
 ### 마지막 기록 갱신 — 기준 확립 작업 (기능 75단계 추가 완료 없음)
 
@@ -175,3 +176,18 @@
 - **진행률:** 서로 다른 DONE 번호 **#04,#05,#08,#10,#21,#22,#23,#24,#26,#27,#33 = 11개/75 (14.7%)**, 남은 **64개**. #28 PARTIAL은 완료 분자 제외. 기존 #24의 DONE은 *설계·fixture 단위만* 의미하며 실제 15분 정책 개선 설치 완료는 아님.
 - **다음 필수 실행 단 하나 #28:** W06+계산/Writer 소유자 — 현행 이미 공개된 복수 snapshot의 버전 메타데이터 존재 여부와 연속곡선 비교/분리 가능성을 계약별로 확인. 자료가 없는 과거 구간은 추정 방법론 부여·허위 선 연결 금지. 버전 없는 아카이브에 version 슬롯을 추가하려면 **저장/공개 데이터 계약 변경으로 분리해 정확한 승인 범위 및 최소 영향 회귀시험**을 정한 후 원담당 경로에서만 적용. 독립적으로 가능한 W06 UI 검증은 계속한다.
 - **인계 절차:** 이 기록과 현재 인계 정본을 함께 지정 `codex/ui-improvements` 브랜치 `docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_R4_PROGRESS_20261116.md`에 커밋 후 원격 본문·완료 번호·다음 실행을 직접 재조회해 PASS를 확인한 뒤 사용자에게 보고.
+
+
+
+## [2026-11-17 KST] R4 #28 방법론 저장계보 심화·#29 보존 위험·#34 소스검증 완료
+
+- **브랜치/기준:** 기록/테스트 `ansqhd5774-Choi/zgmini@codex/ui-improvements`, 현재 기능 코드 기준 최근 `main@0a786bd69c7dc815d296143021473d8f6bf7a118`. 본 절 작성 도중 다른 담당자가 main을 갱신하더라도 이미 확인한 정확한 blob 범위로 증거를 판정. 본 실행의 변경 파일은 `tests/r4-methodology-lineage-audit-28.test.mjs`와 **이 지정 기록**뿐. Writer/Calculator/PC 수집·D1 게시/산식/DB/TTL/수집 주기 원본 변경 **0건**.
+- **#28 실제 저장 계약 확정(부분):** `worker/market-operational-store.mjs`의 `writeScore`는 전체 public 계산 body를 JSON으로 기존 `market_public_snapshots_v1` `current`/일자에 저장. `readScoreHistory`는 일별 `body.modelVersion`와 `domains[].methodologyVersion/modelVersion`을 **이미 보존해 반환**. `worker/composite-history.mjs::mergeStoredCompositeTrend`는 이를 단순 `{label,value}` 평면 배열로 바꾸므로 각 점별 provenance가 소실된다. `lib/composite-observed-history-r1.mjs`의 기존 `compositeSampleFromVerified`는 `calculatedAt,score,asOfDate,signature` 네 필드로만 저장하며 aggregate modelVersion/별도 domain modelVersion은 서명에도 포함하지 않음. 공개 `/api/market-score/observations`도 계산점의 버전을 제공하지 않음. **DB 전체 스키마를 바꾸는 것이 필수는 아니며, 기존 원본 일별 버전 데이터는 사용 가능**하나, 공개된 차트/계산시각별 구간 분리를 완료하려면 원담당의 저장/공개 파생 메타데이터 범위 결정이 필요.
+- **#28 재현/비교:** `sameVerifiedLineage`는 같은 도메인의 explicit methodology/source 불일치를 올바르게 배제. 반면 같은 inflation method를 유지하되 aggregate modelVersion이 다른 일별 스냅샷은 Writer `run-local.mjs`의 inflation-only 필터를 통과할 수 있음. 메타데이터 없는 legacy/trend의 과거 모델 버전을 현재 버전으로 *추정*해서는 안 됨. `CM-R2`는 순수 fixture이고 실제 생산 운영 변경을 뜻하지 않음.
+- **#28 코드/검증:** 지정 브랜치 `tests/r4-methodology-lineage-audit-28.test.mjs`에 기존 4개 진단 외 2개 **임시 SQLite 저장기/원본 버전 유지 테스트**를 추가. 커밋 `fd3dc99284d77686cf41c97e7613724d219bce5c`. 기존 순수 source fixture **4/4 PASS** (이전 근거 재사용). Node v22 `node:sqlite` 실제 임시 메모리 SQL로 `CM-R1`/시험용 `CM-R2` 두 날짜 스냅샷의 `body.modelVersion`·도메인 `modelVersion` **원본 유지 PASS**, 평면 `label/value`에는 버전 없음 확인. 이는 **SQLite 스키마 수준의 비식별 fixture**이며 새로 작성한 `marketOperationalStore` 통합 테스트 2개를 GitHub CI로 실행했다는 주장은 아님. 본 브랜치 workflow/check-runs 자동 실행은 미확인. `#28 PARTIAL` 유지.
+- **#29 독립 source 진단(Writer 원담당 PARTIAL):** `lib/composite-observed-history-r1.mjs::mergeCompositeObservedDay`에 실제 비식별 계산점 12:00=50 기준으로 (i) 동일 서명 12:15=50은 변경 없음, (ii) 동일 시각 12:00=53 정정은 보존 이력 추가 없음, (iii) 12:05=53은 기존 15분 정책으로 보존 안 됨, (iv) 12:16=53은 저장, (v) 11:59:59 역행은 `COMPOSITE_ARCHIVE_CLOCK_REGRESSION` 오류. 기존 15분 정책 변경은 별도 [Draft #1185](https://github.com/ansqhd5774-Choi/zgmini/pull/1185) 승인 검토를 유지.
+- **#29 새로 재현한 미래 일자 혼입:** 최신 `worker/composite-history.mjs::mergeStoredCompositeTrend`에 `currentDate='2026-11-17'`, 저장 snapshot `date='2026-11-18', score=70`, current=52를 주면 **미래 11-18 점수까지 출력**. 반면 동일 날짜 중복 저장은 늦은 `storedAt`이 우선하고 currentDate의 currentScore=52가 당일점에 우선하는 정상 동작도 확인. 원인은 일별 snapshot 삽입 반복문의 `if(date&&value!==null)`에 `date<=currentDate` 제한이 없는 것. **최소 코드 변경 후보:** 해당 기존 반복문에 `(!validDate(currentDate)||date<=currentDate)` 추가하고 future-date/동일일 정정/중복/역행 fixture 회귀. `marketOperationalStore.writeScore` 로컬 current/day upsert에는 `stored_at` 조건이 없어 **상위 lease/checkpoint**로 역행 쓰기가 불가능한지도 원담당이 확인해야 함. 이 부분은 **실제 운영 사고 증거가 아니라 source-level 재현/영향 후보**. Writer 코드는 W06 권한에서 임의 변경/병합하지 않음.
+- **#34 DONE(기존 구현 재사용):** `lib/market-score/live-refresh.mjs`의 `REFRESH_INTERVAL_MS=60000`/단일 inflight/Abort 및 `acceptsStoredUpdate`의 관측일·게시시각 역행 거부, `app/dashboard-ui.tsx`의 `setMarket`·`components/use-stored-index.ts`의 응답 header 최신값 guard·`setPayload` 연결 확인. 같은 관측일 50→51 신규 게시, 뒤늦게 도착한 오래된 게시/관측, 실제 0, 합법적 PARTIAL/null, 동일시각, 유효하지 않은 본문 **순수 source 함수 7/7 PASS**, 관련 UI 호출/60초/기존 회귀 소스 4/4 PASS. 기존 `tests/live-refresh.test.mjs`가 갱신 직렬화·cleanup 보호를 이미 검사하므로 단순 중복 테스트를 새로운 Gate로 만들지 않음. #34 **소스/fixture 범위 DONE** (실제 Production 배포/사용자 육안 검수는 미확정).
+- **완료 번호/진도:** #04,#05,#08,#10,#21,#22,#23,#24,#26,#27,#33,#34 = **12개**, **12/75 (16.0%)**, 잔여 **63개**. #28/#29는 원담당 공개/Writer 계약 판단과 코드 수정·실검증 전 **PARTIAL**, 분자 제외. 다른 R4 완료 증거는 재검사하지 않음.
+- **다음 필수 실행 단 하나:** **#35, W06**. 현재 `main` 카드 표시점 vs 1D·1W·1M·3M·6M·1Y 차트 끝점의 실제 score/calculatedAt/daily-date, 공개 계보, 표시변환(종합 3.5 민감도) 정밀 검증. 불일치가 *확인된 UI 부분만* 기존 전용 브랜치/선별 PR 규칙으로 최소 수정. **기존 코드/PR 성공 재확인만 반복 금지**, 실제 남은 연결 문제 해결 우선. #28 방법론 파생 메타데이터 및 #29 Writer 미래 시각 문제는 각 원담당 범위로 별도 처리; 독립 UI 개발의 전역 차단 조건이 아님.
+- **원장 반영 조건:** 위 인계 정본과 이번 실행기록을 `codex/ui-improvements`에 지정 파일 단위 커밋 → 파일 재조회로 완료번호 **12개**·다음 **#35**·불명확한 CI/운영 구분·남은 실제 문제 확인 후 최종 보고.
