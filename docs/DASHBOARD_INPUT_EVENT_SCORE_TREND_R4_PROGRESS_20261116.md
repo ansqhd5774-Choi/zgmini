@@ -1,5 +1,7 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
+- **최신 고정 단계 수행 판정 8/75 (10.7%, source/fixture/설계 기준)**: #04, #05, #08, #10, #21, #22, #23, #24. #13은 실제 승인 PC Runtime 재계산·D1 게시 미확인으로 PARTIAL이며 완료 분자에 포함하지 않음. #24는 최소 설계+Draft 검증 완료이지 계약 변경 승인/운영 설치 완료가 아님. Production 실서비스 종단 완료는 별도 미확정. 과거 2/75·4/75 수치는 각 시점 이력으로 유지.
+
 - 기준 계획: [75단계 R4](DASHBOARD_INPUT_EVENT_SCORE_TREND_EXECUTION_R4_20261116.md).
 - 기록 브랜치: `codex/ui-improvements` (이력/계획 전용). 기능 수정은 `codex/ui-improvements-r4-score-last-point-20261116`에서 최신 `main`을 분기하여 최소 파일만 PR #1177로 병합.
 - 기준 Git: 2026-11-16 착수시 `main 455ec124af17e98a6754a9ccadb2df7b8617a7c8`; PR #1177 병합 `main 71ea0b66f67e1b099415ebd814be4b67730af08b`. W06 공용 브랜치는 main 대비 288개 파일/다수 커밋 차이가 있어 전체 브랜치 병합 금지.
@@ -63,3 +65,21 @@
 
 - `main@73d1b7eeeef23dd69de90c047d8bfdab4c6cb1b2`의 GitHub Workers Builds `zgmini-migration-candidate-r5`: SUCCESS, build `c22b0bcb-6e00-40cd-9088-ae2c882846e9`; 연결 `verify`/ `notify`: SUCCESS. 별도 `check`는 조회 시 진행 중; PR head 단계의 `check`와 `ui`는 이미 SUCCESS.
 - Git Integration build SUCCESS는 정확한 Cloudflare Production Deployment SHA의 직접 조회나 사용자의 실제 화면 검수와 동치가 아님. 프로젝트에서 삭제된 웹디버그 기능 복구/대체를 종료 Gate로 요구하지 않음.
+
+
+## R4 #13·#21–24 추가 결과 — 2026-11-16
+
+- **최신 고정 단계 수행 판정 8/75 (10.7%, source/fixture/설계 기준)**: #04, #05, #08, #10, #21, #22, #23, #24. #13은 실제 승인 PC Runtime 재계산·D1 게시 미확인으로 PARTIAL이며 완료 분자에 포함하지 않음. #24는 최소 설계+Draft 검증 완료이지 계약 변경 승인/운영 설치 완료가 아님. Production 실서비스 종단 완료는 별도 미확정. 과거 2/75·4/75 수치는 각 시점 이력으로 유지.
+
+1. **#13 저장→계산→이력 로컬 통합 실증 부분 완료**: [PR #1184](https://github.com/ansqhd5774-Choi/zgmini/pull/1184) 병합 `main fef26ea2e508226c146f68cb30d430c9ddd59011`. 소스 기반 실제 `runMarketOperationalRefresh` 공유 수집 lane, 승인 저장기 `marketOperationalStore`, `readStoredMarketInputs`, 진짜 `buildCompositeMarketScore` 가중합, `appendCompositeObservedFromCurrent`와 임시 SQLite 저장·재조회 연결. 비식별 관측 `NFCICREDIT` 1개 새 값 50→60, 다른 승인 저장 시리즈 값·시각 이월; fixture의 credit-domain test adapter는 **실제 신용 산식을 대체하지 않는 테스트 전용**. 12개 도메인 실제 CM-R1 종합 결과 50→51, 16분 뒤 실제 계산 이력점 [50,51] 저장. 공급자 호출 0. PR CI PASS; 병합된 main의 check/verify/notify/Cloudflare Git Integration Worker Build 모두 PASS. 이는 운영 PC source SHA/실제 수집/실D1 게시의 성공 증거가 아니므로 #13 상태 PARTIAL 유지.
+
+2. **#21 구분 완료(source contract PASS)**: 기존 단일 `market_public_snapshots_v1` 내 `current`와 `YYYY-MM-DD` 일별 점수, 그리고 `composite-observed:YYYY-MM-DD` 같은 날 계산시각별 기록 키가 분리됨. 기존 PC 저장기·공개 D1 경로와 실제 비교했으며 새 DB를 만들지 않음.
+3. **#22 연결 완료(source/fixture PASS)**: `run-local.mjs`는 계산·현재점 저장 성공 직후 `appendCompositeObservedFromCurrent`를 호출; PR #1184의 신규 변경 입력에서 실제 다음 계산·저장과 해당 이력점이 이어지는 임시 SQLite 통합 테스트 PASS. 운영 PC/Cloudflare 실증은 별도.
+4. **#23 손실 재현 완료(source/fixture PASS)**: 현재 15분 제한이 있으면 12:00 50→12:05 53→12:10 56 중 두 중간 사건은 건너뜀. 1D 화면의 마지막점 overlay #1177은 56을 보여주지만 이전 53점은 복원하지 못함. 저장과 표시에 독립적 결함으로 분류.
+5. **#24 최소 설계·검증 완료(승인/적용 미완)**: [Draft PR #1185](https://github.com/ansqhd5774-Choi/zgmini/pull/1185) head `9d7ff5d2cbcba86bf43e1bf9a6d0020bbeee11a4`, `check` PASS(run `43885789199`). `lib/composite-observed-history-r1.mjs` 기존 15분 동일점수/서명 중복 방지는 유지하면서 **실제로 변경된 계산 점수만** 5분 간격으로 보존하는 이벤트 예외 제안. 기존 하루 100점 제한·스토리지 크기 한도·동일 시간 중복 차단·PC/D1 테이블/키/버전 보존. 50→53→56 임시 SQLite 이력 검사, 동일점수 반복, 100점 상한 회귀 통과. 수정은 **15분 표본 간격 승인 계약의 변경**이므로 Writer 원담당 검토·정확한 범위 승인 전까지 Draft로 유지하며 main 병합/운영 설치 금지. 100회 초과/일은 현재 상한으로 막히므로 모든 이벤트 무제한 보존을 보장하지 않음.
+6. **원담당 소유 분리**: [Draft #1181](https://github.com/ansqhd5774-Choi/zgmini/pull/1181) 관측일 역행 방지(#11)는 CI PASS지만 여전히 별도 Collector 소유·승인 대상. W06 UI 완료 PR #1177/#1182는 main에 이미 병합됨. 두 Draft는 배포·운영 성공으로 집계하지 않음.
+
+### 다음 작업과 실제 남은 제약
+- 독립 W06: 1D 조회 `app/api/market-score/observations/route.ts`가 Draft 이벤트 3점을 시간순 반환하고 잘못된 시각을 거부하는지 기존 source/API 계약에 맞춰 최소 회귀. 그다음 현재 1W/1M/3M 시점 및 방법론 이력 분리(#26~29).
+- Writer/Collector 원담당: 실제 설치 source 확인과 기존 승인 수동 검증 경로로 1개 신규 원자료→계산·이력→D1 게시를 실증. 별도 일반챗 #1737의 `STATE_UNKNOWN`만으로 운영 실패라 판정하거나 동일 request 재발행하지 않음.
+- 사용자가 기술 작업 완료 후 https://zgmini.kr/에서 육안 확인. GPT에서 제거된 웹디버그를 종료 Gate로 복원하지 않음.
