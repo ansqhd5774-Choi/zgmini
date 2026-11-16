@@ -65,7 +65,13 @@ function summarizeMonitoredSourceSnapshot(snapshot,now){
     Number.isSafeInteger(observed.total)&&observed.total>0){
    const repeated=observed.items.filter(item=>item.repeated);
    const normalHosts=repeated.filter(item=>item.state==='normal').length;
-   const failedHosts=repeated.filter(item=>item.state==='failed').length;
+   // HTTP 429 / local quota guard are rate-limit deferrals, not connection
+   // outages. A true last-event transport failure or authorization/server
+   // error alone can produce a warning.
+   const realFailure=item=>item.state==='failed'&&Object.entries(item.lastEventStatuses??{})
+    .some(([status,count])=>count>0&&(status==='NETWORK_ERROR'||
+     (/^[45][0-9]{2}$/.test(status)&&status!=='429')));
+   const failedHosts=repeated.filter(realFailure).length;
    http={normal:normalHosts,failed:failedHosts,
     unknown:repeated.length-normalHosts-failedHosts,total:repeated.length};
   }
