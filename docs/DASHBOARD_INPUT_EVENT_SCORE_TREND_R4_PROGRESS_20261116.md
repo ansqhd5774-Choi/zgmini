@@ -1,5 +1,17 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
+## 2026-11-17 00:08 KST — R4 #27 독립 UI 수정 (PARTIAL, 10/75 유지)
+
+- 시작 정본: 10/75 (13.3%), 다음 #27. W06 기록 브랜치 `codex/ui-improvements`는 오래된 UI 구현이므로 전체 병합/리베이스하지 않음.
+- 실제 발견 결함: `mergeCompositeObservedDisplay`의 1W/1M/3M에서 intraday `detail=[]`이면 `return base`로 기간 밖의 일간 확정 이력까지 전부 반환. 실제 데이터가 없는 날짜를 보간하지는 않지만 기간 선택 의미를 위반.
+- 독립 최소 변경: 최신 main `f22bfb1df7ff70bf4997117fbc187844a52f5c5c` 기반 `codex/ui-r4-period-window-20261117`, `lib/market-score/composite-observed-display-r1.mjs`와 `tests/composite-current-chart-r4.test.mjs` 2개 파일. 커밋 `5af6fce9be1fe6dc1aedd133f9c3d1f799de2f92`, `02b938093ab00eb9629987472ddaabc5e45bea87`; Draft PR [#1189](https://github.com/ansqhd5774-Choi/zgmini/pull/1189).
+- 수정 효과: 관측점 없는 단기 구간의 fallback을 마지막 실제 daily 기준 기간 내의 유효 확정점으로 제한하고 시간순 정렬. 6M/1Y 기존 확정 이력은 변경하지 않음. 테스트에 1W/1M/3M/6M/빈 입력/역순 입력 fixture 추가.
+- 검증 상태: 원격 GitHub 파일 2개 커밋·Draft PR 생성 확인. 신규 Node/CI 결과는 **미확정**; 운영 PC/SQLite/D1/Cloudflare/Production 변경 **0건**. #27 전체 DONE 판정 금지.
+- LAST PASS: 기존 #26 observed GET 검증 및 #27 단기 무관측 fallback 결함의 최소 수정 커밋.
+- FIRST UNVERIFIED: #27 관련 Node/CI 및 실제 archived+daily+current 1W~1Y 전체 회귀; Draft PR 미병합.
+- 다음 필수 실행 1개: PR #1189의 Node/CI 결과를 확인하고 동일 기간의 실제 계산점·일별 확정점 병합/마지막점 테스트를 보완해 #27 완료 조건 판정. 승인 없는 main 병합·운영 설치 금지.
+- 기능 진행률: **10/75 (13.3%) → 10/75 (13.3%)**, 잔여 65. #27 PARTIAL.
+
 ## 현재 인계 정본 — 다음 담당자 첫 읽기 (2026-11-16 KST)
 
 > **이 절만 현재 진행 상태의 단일 정본이다.** 아래의 2/75·4/75·8/75·10/75 기록과 예전 '다음 작업'은 당시 수행 이력으로 보존한 것이며 **재개 지시가 아니다**. 다음 실행 후 반드시 이 절과 맨 아래 새 수행 기록을 **함께** 갱신한다. 기록 기준은 [R4 계획서의 '작업 실행·진행 기록·인계 의무 기준'](DASHBOARD_INPUT_EVENT_SCORE_TREND_EXECUTION_R4_20261116.md#r4-작업-실행진행-기록인계-의무-기준-본-계획의-필수-절차)을 적용한다.
