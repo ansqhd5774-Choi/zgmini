@@ -2,10 +2,10 @@
 
 import {useEffect,useState} from 'react';
 
-type Props={start:string;end:string;activeDate:string|null;query:string;importance:number[]|null;enabled:boolean;
+type Props={start:string;end:string;activeDate:string|null;query:string;importance:number[]|null;sector:string;industry:string;enabled:boolean;
  onCounts:(counts:Record<string,number>)=>void};
 
-export default function EarningsDisplayClient({start,end,activeDate,query,importance,enabled,onCounts}:Props){
+export default function EarningsDisplayClient({start,end,activeDate,query,importance,sector,industry,enabled,onCounts}:Props){
  const [state,setState]=useState<'pending'|'ready'|'unavailable'|'failed'>('pending');
  const [html,setHtml]=useState('');
  useEffect(()=>{
@@ -13,6 +13,8 @@ export default function EarningsDisplayClient({start,end,activeDate,query,import
   const controller=new AbortController();
   const params=new URLSearchParams({start,end,q:query.slice(0,80)});
   if(activeDate)params.set('day',activeDate);
+  if(sector)params.set('sector',sector);
+  if(industry)params.set('industry',industry);
   if(importance!==null)params.set('importance',importance.join(','));
   setState('pending');
   fetch(`/api/earnings-calendar-display?${params}`,{signal:controller.signal,cache:'no-store'})
@@ -28,7 +30,7 @@ export default function EarningsDisplayClient({start,end,activeDate,query,import
    }).then(result=>{if(!controller.signal.aborted){setHtml(result.html);setState(result.status);onCounts(result.counts);}})
    .catch(()=>{if(!controller.signal.aborted){setHtml('');setState('failed');onCounts({});}});
   return()=>controller.abort();
- },[start,end,activeDate,query,importance,enabled,onCounts]);
+ },[start,end,activeDate,query,importance,sector,industry,enabled,onCounts]);
  if(!enabled||state==='unavailable')return null;
  return <div className="mc-earnings-display" aria-label="EarningsAPI 기업 실적 발표 예정일">
   {state==='pending'&&<p className="mc-data-state">기업 실적 저장본을 불러오는 중입니다.</p>}
