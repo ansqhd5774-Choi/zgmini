@@ -231,6 +231,14 @@ try{
   const {refreshSavedDeltaR44Output}=await import('./market-calendar-deltascreener-output.mjs');
   report.deltaR44=await refreshSavedDeltaR44Output({store:publicFeedStore(core),now,pcHome:base});
  });
+ // Separate taxonomy only; R44 grades remain exactly as published and validated.
+ await attemptOutput(report,'market-calendar-taxonomy',async()=>{
+  const {publicFeedStore}=await import('../../worker/public-feed-store.mjs');
+  const {refreshSavedMarketCalendarTaxonomy}=await import('./market-calendar-taxonomy-output.mjs');
+  report.marketCalendarTaxonomy=await refreshSavedMarketCalendarTaxonomy({
+   store:publicFeedStore(core),now,
+  });
+ });
  if(publish){
   // Each output below owns its validation and readback; marketReady never gates peers.
   const remote=client(config,()=>credential(root),{onDiagnostic:diagnostic=>appendD1Diagnostic(base,{runAt:report.at,source},diagnostic)});
