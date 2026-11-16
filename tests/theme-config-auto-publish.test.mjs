@@ -65,12 +65,12 @@ test('one blocked theme does not prevent publishing another approved theme',asyn
   queryFactory:()=>async()=>({results:[]}),
   publish:async({id})=>{
    called.push(id);
-   if(id==='first')throw Object.assign(Error('failed'),{code:'D1_WRITE_OUTCOME_UNKNOWN'});
+   if(id==='first')throw Object.assign(Error('not approved'),{code:'PUBLIC_APPROVAL_SCOPE'});
    return {status:'UNCHANGED',written:0,observationDate:'2026-10-28',storedAt:now};
   }});
  assert.deepEqual(called,['first','second']);
  assert.equal(result.status,'PUBLICATION_PARTIAL_REVIEW_REQUIRED');
- assert.equal(result.results[0].reason,'D1_WRITE_OUTCOME_UNKNOWN');
+ assert.equal(result.results[0].reason,'PUBLIC_APPROVAL_SCOPE');
  assert.equal(result.results[1].status,'UNCHANGED');
  assert.equal(result.d1Writes,0);
 });
@@ -163,4 +163,51 @@ test('R32 capability is checked per methodology even when probe is shared',async
  assert.equal(probes,1);assert.equal(auth,0);
  assert.equal(result.results[0].reason,'SAVED_INPUT_UNAVAILABLE');
  assert.equal(result.results[1].reason,'CONFIG_PUBLIC_R32_READER_NOT_DEPLOYED');
+});
+
+test('W03 unknown committed D1 outcome stops the cycle before another configured theme writes',async t=>{
+ const home=root(t);approval(home,'first','second');
+ for(const failure of [
+  'THEME_CONFIG_PUBLIC_D1_WRITE_OUTCOME_UNKNOWN',
+  'THEME_CONFIG_PUBLIC_D1_READBACK_MISMATCH',
+  'THEME_CONFIG_PUBLIC_D1_CAS_NOT_APPLIED'
+ ]){
+  const called=[];
+  const result=await runConfiguredAutoPublish({
+   dataRoot:home,now,registrations:entries('first','second'),
+   preflight:passed,
+   queryFactory:()=>async()=>({results:[]}),
+   publish:async({id})=>{
+    called.push(id);
+    if(id==='first')throw Object.assign(Error('ambiguous'),{code:failure});
+    return {status:'WRITTEN_AND_READBACK_VERIFIED',written:1};
+   }
+  });
+  assert.deepEqual(called,['first'],'unknown write must not continue to second feed');
+  assert.equal(result.status,'PUBLICATION_STATE_UNKNOWN_STOPPED');
+  assert.equal(result.results.length,1);
+  assert.equal(result.results[0].status,'STATE_UNKNOWN');
+  assert.equal(result.results[0].reason,failure);
+  assert.equal(result.d1Writes,0,'0 represents verified writes only');
+  assert.equal(result.providerCalls,0);
+ }
+});
+
+test('W03 a known pre-write error still permits independent themes to continue',async t=>{
+ const home=root(t);approval(home,'first','second');
+ const called=[];
+ const result=await runConfiguredAutoPublish({
+  dataRoot:home,now,registrations:entries('first','second'),
+  preflight:passed,queryFactory:()=>async()=>({results:[]}),
+  publish:async({id})=>{
+   called.push(id);
+   if(id==='first')throw Object.assign(Error('invalid preflight'),{
+    code:'THEME_CONFIG_PUBLIC_CANDIDATE_CONTRACT'});
+   return {status:'WRITTEN_AND_READBACK_VERIFIED',written:1,
+    observationDate:'2026-10-28',storedAt:now};
+  }
+ });
+ assert.deepEqual(called,['first','second']);
+ assert.equal(result.status,'PUBLICATION_PARTIAL_REVIEW_REQUIRED');
+ assert.equal(result.d1Writes,1);
 });
