@@ -37,6 +37,21 @@ test('official Census M3 MTM/TI uses only U.S. total manufacturer SA inventory l
   const actualEitsShape=normalizeCensusM3Inventories(timePayload(
     timeRow(2026,'09','900000'),timeRow(2026,'08','850000')));
   assert.deepEqual(actualEitsShape.map(x=>[x.date,x.value]),[['2026-08-01',850000],['2026-09-01',900000]]);
+  // The official EITS example and Growth G016 may return a time column
+  // without the optional us and time_slot_date columns.
+  const official=['DATA_TYPE_CODE','TIME_SLOT_ID','SEASONALLY_ADJ',
+    'CATEGORY_CODE','CELL_VALUE','ERROR_DATA','TIME'];
+  const officialRows=normalizeCensusM3Inventories([official,
+    ['TI','1329','yes','MTM','900000','no','2026-09'],
+    ['TI','1329','yes','MTM','850000','no','2026-08']]);
+  assert.deepEqual(officialRows.map(x=>[x.date,x.value]),
+    [['2026-08-01',850000],['2026-09-01',900000]]);
+  const partial=normalizeCensusM3Inventories(payload(
+    row(2026,'09','900000'),row(2026,'08','NA'),row(2026,'07','800000')));
+  assert.deepEqual(partial.map(x=>x.date),['2026-07-01','2026-09-01']);
+  const conflicting=normalizeCensusM3Inventories(payload(
+    row(2026,'09','900000'),row(2026,'09','910000'),row(2026,'08','800000')));
+  assert.deepEqual(conflicting.map(x=>[x.date,x.value]),[['2026-08-01',800000]]);
   // An annual `time` filter must not override the explicit monthly date.
   const twoDates=[...HEADERS.slice(0,-1),'time','us'];
   const twoDateRow=[...row(2026,'09','900000').slice(0,-1),'2026','1'];
@@ -44,19 +59,19 @@ test('official Census M3 MTM/TI uses only U.S. total manufacturer SA inventory l
     .map(x=>[x.date,x.value]),[['2026-09-01',900000]]);
   const yearOnly=timeRow(2026,'09');yearOnly[6]='2026';
   assert.throws(()=>normalizeCensusM3Inventories(timePayload(yearOnly)),
-    /VALUE_OR_DUPLICATE/);
+    /NOT_FOUND/);
   // Census official EITS examples emit time_slot_date as a midnight timestamp.
   const stamped=row(2026,'07','800000');stamped[2]='2026-07-01 00:00:00.0';
   assert.deepEqual(normalizeCensusM3Inventories(payload(stamped)).map(x=>[x.date,x.value]),
     [['2026-07-01',800000]]);
   const nonMidnight=row(2026,'07');nonMidnight[2]='2026-07-01 12:00:00.0';
-  assert.throws(()=>normalizeCensusM3Inventories(payload(nonMidnight)),/VALUE_OR_DUPLICATE/);
+  assert.throws(()=>normalizeCensusM3Inventories(payload(nonMidnight)),/NOT_FOUND/);
   const invalidStamped=row(2026,'02');invalidStamped[2]='2026-02-30 00:00:00.0';
-  assert.throws(()=>normalizeCensusM3Inventories(payload(invalidStamped)),/VALUE_OR_DUPLICATE/);
-  assert.throws(()=>normalizeCensusM3Inventories(payload(row(2026,'09'),row(2026,'09'))),/VALUE_OR_DUPLICATE/);
-  assert.throws(()=>normalizeCensusM3Inventories(payload(row(2026,'09','NA'))),/VALUE_OR_DUPLICATE/);
+  assert.throws(()=>normalizeCensusM3Inventories(payload(invalidStamped)),/NOT_FOUND/);
+  assert.equal(normalizeCensusM3Inventories(payload(row(2026,'09'),row(2026,'09'))).length,1);
+  assert.throws(()=>normalizeCensusM3Inventories(payload(row(2026,'09','NA'))),/NOT_FOUND/);
   const invalidDate=row(2026,'02','500000');invalidDate[2]='2026-02-30';
-  assert.throws(()=>normalizeCensusM3Inventories(payload(invalidDate)),/VALUE_OR_DUPLICATE/);
+  assert.throws(()=>normalizeCensusM3Inventories(payload(invalidDate)),/NOT_FOUND/);
   const missingDate=HEADERS.filter(x=>x!=='time_slot_date');
   assert.throws(()=>normalizeCensusM3Inventories([missingDate]),/SHAPE_INVALID|HEADERS_INVALID/);
   assert.throws(()=>normalizeCensusM3Inventories(payload(['NO','1329','2026-09-01','yes','MTM','5','','1'])),/NOT_FOUND/);
@@ -68,7 +83,7 @@ test('collects two source years and archives private provider snapshots without 
     const params=new URL(url).searchParams;
     const year=Number(params.get('time'));calls.push(year);
     assert.equal(params.get('key'),'private-census-key');
-    assert.ok(params.get('get').split(',').includes('time_slot_date'));
+    assert.ok(!params.get('get').split(',').includes('time_slot_date'));
     assert.ok(!params.get('get').split(',').includes('time'));
     assert.equal(params.get('category_code'),'MTM');
     assert.equal(params.get('seasonally_adj'),'yes');
@@ -89,6 +104,19 @@ test('collects two source years and archives private provider snapshots without 
   }
   const unchanged=await collectCensusM3Inventories({base:fixture.writer,censusKey:'private-census-key',quotaFetch,now});
   assert.equal(unchanged.status,'UNCHANGED');
+});
+
+test('Census API data is archived before a header-contract failure without modifying last-good',async t=>{
+  const fixture=base();t.after(fixture.clear);
+  const quotaFetch=async()=>response([['data_type_code','cell_value'],
+    ['TI','900000']]);
+  await assert.rejects(()=>collectCensusM3Inventories({base:fixture.writer,
+    censusKey:'k',quotaFetch,now}),/CENSUS_M3_HEADERS_INVALID/);
+  assert.equal(fs.existsSync(path.join(fixture.writer,CENSUS_M3_INVENTORIES_FILE)),false);
+  const directory=path.join(fixture.writer,'inflation-causal-candidates-r1','raw');
+  const archives=fs.readdirSync(directory);
+  assert.equal(archives.length,1);
+  assert.match(fs.readFileSync(path.join(directory,archives[0]),'utf8'),/cell_value/);
 });
 
 test('revised year data supersedes exact month without losing prior year history',async t=>{
@@ -117,7 +145,7 @@ test('invalid provider row cannot overwrite stored data and missing key blocks n
   await collectCensusM3Inventories({base:fixture.writer,censusKey:'k',quotaFetch,now});
   const file=path.join(fixture.writer,CENSUS_M3_INVENTORIES_FILE),before=fs.readFileSync(file);
   invalid=true;
-  await assert.rejects(()=>collectCensusM3Inventories({base:fixture.writer,censusKey:'k',quotaFetch,now}),/VALUE_OR_DUPLICATE/);
+  await assert.rejects(()=>collectCensusM3Inventories({base:fixture.writer,censusKey:'k',quotaFetch,now}),/NOT_FOUND/);
   assert.deepEqual(before,fs.readFileSync(file));
   const earlier=calls;
   await assert.rejects(()=>collectCensusM3Inventories({base:fixture.writer,censusKey:'',quotaFetch,now}),/KEY_MISSING/);
