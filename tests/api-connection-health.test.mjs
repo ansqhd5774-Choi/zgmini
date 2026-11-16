@@ -183,7 +183,7 @@ test('all 16 monitored source groups aggregate only from 14 parsed calendar sour
  assert.equal(publicApiConnectionSummary(summary).normal,16);
  assert.equal(publicApiConnectionSummary(summary).total,16);
  assert.deepEqual(Object.keys(publicApiConnectionSummary(summary)).sort(),
-  ['version','status','coverage','normal','failed','unknown','total','checkedAt'].sort());
+  ['version','status','coverage','normal','failed','unknown','total','checkedAt','api','http'].sort());
 });
 
 test('unobserved direct endpoint paths are unknown, not proved by unrelated successful host calls',()=>{
@@ -235,4 +235,61 @@ test('incomplete or forged monitored registry never publishes a green count',()=
  assert.equal(publicApiConnectionSummary(out).total,null);
  const old=summarizeApiConnectionHealth(snapshot,evidenceNow+API_CONNECTION_SNAPSHOT_MAX_AGE_MS+1);
  assert.equal(old.total,null);
+});
+
+
+const allHttpHosts=(at,outcomes={})=>({
+ version:1,scope:'external-provider-hosts',source:'PC_COLLECTION_EVENTS_FETCH_WRAPPER',
+ coverage:'PARTIAL',observedAt:new Date(at).toISOString(),
+ items:Array.from({length:32},(_,i)=>{
+  const outcome=outcomes[i]??'success';
+  const attempted=at-12000;
+  return {host:'host'+i+'.provider.example.org',requests:2,observedDays:2,
+   lastOutcome:outcome,lastAttemptAt:attempted,
+   lastSuccessAt:outcome==='failure'?at-86400000:attempted,
+   expectedIntervalMs:null,endpointFingerprints:0,endpointEvidenceDays:0,
+   lastEventStatuses:outcome==='failure'?{'503':2}:{'200':2}};
+ })
+});
+test('separate API 14/14 and HTTP 32/32 when both evidence sets are valid',()=>{
+ const snapshot=buildMonitoredSourceHealth(monitoredCalendar(),recentReceipts(),evidenceNow);
+ snapshot.httpHosts=allHttpHosts(evidenceNow);
+ const summary=summarizeApiConnectionHealth(snapshot,evidenceNow);
+ const body=publicApiConnectionSummary(summary);
+ assert.deepEqual(body.api,{normal:14,failed:0,unknown:0,total:14});
+ assert.deepEqual(body.http,{normal:32,failed:0,unknown:0,total:32});
+ assert.equal(body.status,'healthy');
+ assert.equal(body.normal,16); // legacy monitored sources unchanged
+ assert.ok(!JSON.stringify(body).includes('host0.provider'));
+});
+test('HTTP host failure changes ratio, never prints fabricated 32/32',()=>{
+ const snapshot=buildMonitoredSourceHealth(monitoredCalendar(),recentReceipts(),evidenceNow);
+ snapshot.httpHosts=allHttpHosts(evidenceNow,{7:'failure'});
+ const body=publicApiConnectionSummary(summarizeApiConnectionHealth(snapshot,evidenceNow));
+ assert.deepEqual(body.api,{normal:14,failed:0,unknown:0,total:14});
+ assert.deepEqual(body.http,{normal:31,failed:1,unknown:0,total:32});
+ assert.equal(body.status,'partial');
+});
+test('HTTP stale cadence is unknown rather than orange failure',()=>{
+ const snapshot=buildMonitoredSourceHealth(monitoredCalendar(),recentReceipts(),evidenceNow);
+ snapshot.httpHosts=allHttpHosts(evidenceNow);
+ const h=snapshot.httpHosts.items[10];
+ h.lastAttemptAt=evidenceNow-10*86400000;
+ h.lastSuccessAt=h.lastAttemptAt;
+ const body=publicApiConnectionSummary(summarizeApiConnectionHealth(snapshot,evidenceNow));
+ assert.deepEqual(body.http,{normal:31,failed:0,unknown:1,total:32});
+ assert.equal(body.status,'unknown');
+});
+test('legacy-only monitored snapshot retains API 14 but does not assert HTTP 32',()=>{
+ const snapshot=buildMonitoredSourceHealth(monitoredCalendar(),recentReceipts(),evidenceNow);
+ const body=publicApiConnectionSummary(summarizeApiConnectionHealth(snapshot,evidenceNow));
+ assert.deepEqual(body.api,{normal:14,failed:0,unknown:0,total:14});
+ assert.equal(body.http,null);
+ assert.equal(body.status,'unknown');
+});
+test('untrusted standalone HTTP host snapshot never exposes host names as public status',()=>{
+ const body=publicApiConnectionSummary(summarizeApiConnectionHealth(allHttpHosts(evidenceNow),evidenceNow));
+ assert.equal(body.api,null);
+ assert.equal(body.http,null);
+ assert.equal(body.total,null);
 });
