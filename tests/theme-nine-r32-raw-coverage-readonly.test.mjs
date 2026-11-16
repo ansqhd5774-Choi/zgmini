@@ -10,7 +10,7 @@ const sha=b=>createHash('sha256').update(b).digest('hex');
 const rosterSha='a'.repeat(64),symbols=['SPY','BOTZ','ROBO'];
 const SOURCE='https://getmarkethistory.com';
 const MODE='RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE';
-const dateRows=[['2026-11-02','2026-11-02T20:00:00Z'],['2026-11-03','2026-11-03T20:00:00Z']];
+const dateRows=[['2026-10-23','2026-10-23T20:00:00Z'],['2026-11-03','2026-11-03T20:00:00Z']];
 function fixture(t,{delta=true,partial=false}={}){
  const home=fs.mkdtempSync(path.join(os.tmpdir(),'w03-r32-readonly-'));
  t.after(()=>fs.rmSync(home,{recursive:true,force:true}));
@@ -26,7 +26,7 @@ function fixture(t,{delta=true,partial=false}={}){
    const digest=sha(contents),relative=`raw/${symbol}_${digest}.jsonl`;
    fs.writeFileSync(path.join(dir,'raw',`${symbol}_${digest}.jsonl`),contents);
    records.push({path:relative,sha256:digest,symbol,source:SOURCE,priceMode:MODE,
-    requestedUrl:`${SOURCE}/api/v1/bars/stocks/${symbol}/1h?start=${isDelta?'2026-11-02':'2023-01-01'}&end=${isDelta?'2026-11-05':'2026-11-03'}&format=jsonl&limit=5000`,
+    requestedUrl:`${SOURCE}/api/v1/bars/stocks/${symbol}/1h?start=${isDelta?'2026-11-02':'2023-01-01'}&end=${isDelta?'2026-11-05':'2026-10-26'}&format=jsonl&limit=5000`,
     schemaVersion:isDelta?'GMH_1H_OHLCV_NDJSON_R35':'GMH_1H_OHLCV_NDJSON_R23',
     firstTimestampUTC:date[1],lastTimestampUTC:date[1],
     ...(isDelta?{lastVerifiedNYDay:date[0]}:{}),rows:1,nonGapRows:1,gapRows:0});
@@ -37,7 +37,7 @@ function fixture(t,{delta=true,partial=false}={}){
   const manifest={version:1,project:folder,rosterSha256:rosterSha,source:SOURCE,
    licenseStatus:'PRIVATE_RESEARCH_ONLY_PUBLICATION_NOT_APPROVED',files:records};
   fs.writeFileSync(path.join(dir,'raw-manifest.json'),JSON.stringify(manifest,null,2)+'\n');
-  const start=isDelta?'2026-11-02':'2023-01-01',end=isDelta?'2026-11-05':'2026-11-03';
+  const start=isDelta?'2026-11-02':'2023-01-01',end=isDelta?'2026-11-05':'2026-10-26';
   const state={version:1,project:folder,rosterSha256:rosterSha,start,end,symbols:states};
   const key=sha(JSON.stringify({roster:rosterSha,start,end})).slice(0,20);
   const stateFile=path.join(dir,'state',`${isDelta?'delta':'collection'}-${key}.json`);
@@ -62,7 +62,7 @@ test('real on-disk GMH R23+R35 manifests/checkpoints/raw SHA produce per-symbol 
 
 test('R23 only is internally verified but no currentness or publication inferred',t=>{
  const f=fixture(t,{delta:false}),r=audit(f);
- assert.equal(r.status,'PASS');assert.equal(r.latestVerifiedSPYDay,'2026-11-02');
+ assert.equal(r.status,'PASS');assert.equal(r.latestVerifiedSPYDay,'2026-10-23');
  assert.equal(r.manifests.r35,null);assert.equal(r.currentnessVerified,false);
 });
 
@@ -183,4 +183,29 @@ test('R35 checkpoint own request URL supersedes older manifest URL for a reused 
  assert.equal(r.status,'PASS');
  assert.equal(r.latestVerifiedSPYDay,'2026-11-03');
  assert.equal(r.currentnessVerified,false);
+});
+
+test('R23 baseline source URL must retain the approved fixed 2023-01-01 to 2026-10-26 window',t=>{
+ const f=fixture(t,{delta:false}),file=f.files['legacy-nine-r23-manifest'];
+ const m=JSON.parse(fs.readFileSync(file,'utf8'));
+ m.files[0].requestedUrl=
+  `${SOURCE}/api/v1/bars/stocks/${m.files[0].symbol}/1h?start=2023-01-01&end=2026-11-03&format=jsonl&limit=5000`;
+ fs.writeFileSync(file,JSON.stringify(m)+'\n');
+ const result=audit(f);
+ assert.equal(result.status,'BLOCKED');
+ assert.equal(result.code,'R32_COVERAGE_R23_BASELINE_REQUEST_WINDOW');
+ assert.equal(result.providerCalls,0);
+ assert.equal(result.operationalWrites,0);
+});
+
+test('R23 baseline checkpoint must retain approved fixed dates even with rekeyed filename',t=>{
+ const f=fixture(t,{delta:false}),original=f.files['legacy-nine-r23-checkpoint'];
+ const state=JSON.parse(fs.readFileSync(original,'utf8'));
+ state.end='2026-11-03';
+ const key=sha(JSON.stringify({roster:rosterSha,start:state.start,end:state.end})).slice(0,20);
+ fs.rmSync(original);
+ fs.writeFileSync(path.join(path.dirname(original),`collection-${key}.json`),JSON.stringify(state)+'\n');
+ const result=audit(f);
+ assert.equal(result.status,'BLOCKED');
+ assert.equal(result.code,'R32_COVERAGE_CHECKPOINT_IDENTITY');
 });
