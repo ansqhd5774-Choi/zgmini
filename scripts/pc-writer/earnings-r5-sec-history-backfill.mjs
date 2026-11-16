@@ -3,7 +3,7 @@ import os from "node:os";
 import path from "node:path";
 import {createHash} from "node:crypto";
 import {fileURLToPath} from "node:url";
-import {createQuotaFetch} from "./quota-fetch.mjs";
+import {createCompatibleSecQuotaFetch} from "./sec-legacy-quota-bridge.mjs";
 import {secGuardOptionsFromEnv} from "./sec-guard-runtime-config.mjs";
 
 export const E1_R5_SEC_HISTORY_BACKFILL_VERSION="E1-R5-SEC-HISTORY-BACKFILL-R1";
@@ -173,7 +173,7 @@ function formatText(report){
 
 export async function collectEarningsR5SecHistory({base=DEFAULT_BASE,lookbackDays=550,priorPerIssuer=2,maxRequests=100,fetchImpl=globalThis.fetch,sleepImpl=sleep}={}){
   const secGuardOptions=secGuardOptionsFromEnv();
-  const guardedFetch=secGuardOptions.secSharedGuard?createQuotaFetch({base,originalFetch:fetchImpl,mode:"observe",...secGuardOptions}).fetch:fetchImpl;
+  const guardedFetch=secGuardOptions.secSharedGuard?createCompatibleSecQuotaFetch({base,originalFetch:fetchImpl,mode:"observe",...secGuardOptions}).fetch:fetchImpl;
   if(!Number.isInteger(maxRequests)||maxRequests<1||maxRequests>E1_R5_SEC_HISTORY_BACKFILL_CONTRACT.maxRequestsPerRun)throw Object.assign(new Error("HISTORY_MAX_REQUESTS_INVALID"),{code:"HISTORY_MAX_REQUESTS_INVALID"});
   if(!Number.isInteger(lookbackDays)||lookbackDays<1||!Number.isInteger(priorPerIssuer)||priorPerIssuer<1||priorPerIssuer>4)throw Object.assign(new Error("HISTORY_ARGUMENT_INVALID"),{code:"HISTORY_ARGUMENT_INVALID"});
   const root=path.join(base,"manual-input","e1-r5","sec-guidance-r17"),documentsRoot=path.join(root,"documents"),checkpointFile=path.join(root,"checkpoint.json"),ledgerFile=path.join(root,"historical-backfill-r1.json"),incoming=path.join(base,"manual-input","e1-r5","incoming"),reportsDir=path.join(base,"manual-input","e1-r5","reports");

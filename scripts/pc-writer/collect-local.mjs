@@ -6,7 +6,7 @@ import {localDatabase} from './local-db.mjs';
 import {loadLocalProviders,installLocalRuntime} from './local-env.mjs';
 import {save} from './d1.mjs';
 import {read} from './d1.mjs';
-import {createQuotaFetch} from './quota-fetch.mjs';
+import {createCompatibleSecQuotaFetch} from './sec-legacy-quota-bridge.mjs';
 import {secGuardOptionsFromEnv} from './sec-guard-runtime-config.mjs';
 import {recordCollectionChecks} from './collection-checks.mjs';
 import {appendCollectionEvent,appendProviderFailure} from './collection-events.mjs';
@@ -30,7 +30,7 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
  const originalFetch=globalThis.fetch,providers={};
  let providerDiagnosticWriteFailures=0;
  const recordProviderFailure=(input,event)=>{try{appendProviderFailure(base,input,event);}catch{providerDiagnosticWriteFailures++;}};
- const quota=createQuotaFetch({base,originalFetch,...secGuardOptions});
+ const quota=createCompatibleSecQuotaFetch({base,originalFetch,...secGuardOptions});
  globalThis.fetch=async(input,init)=>{
   const host=new URL(typeof input==='string'||input instanceof URL?input:input.url).hostname;
   const item=providers[host]??={requests:0,statuses:{}};item.requests++;
