@@ -135,11 +135,23 @@ test('configured replay rejects nonidentical replay and same-date ambiguous cand
 });
 
 
-test('MarketParquet private provisional must never publish under GMH-only rights',async()=>{
+test('MarketParquet private provisional must never publish under GMH-only rights',async t=>{
+ const f=fixture(t);
+ const dir=path.join(f.root,'theme-config','definitions');
+ fs.mkdirSync(dir,{recursive:true});
+ // Use an actually valid registration: missing files must not be mistaken
+ // for proof that provider-specific EOD public rights were checked.
+ const definition={schema:'ZGMINI_THEME_CONFIG_V2',id,label,
+  provider:'getmarkethistory',profile:R32,etfs:['AAA'],benchmark:'SPY',
+  startDate:'2026-10-01',
+  selectionEvidence:{path:'proof/selection.json',sha256:suffix('a')},
+  aumEvidence:{path:'proof/aum.json',sha256:suffix('b')},
+  provisionalPolicy:'GMH_CONFIRMED_MARKETPARQUET_PROVISIONAL_R8_OVERLAP_GUARD'};
+ fs.writeFileSync(path.join(dir,id+'.json'),JSON.stringify(definition)+'\n');
  const {publishConfiguredProvisional}=await import('../scripts/pc-writer/theme-config-provisional.mjs');
  let d1Queries=0;
- await assert.rejects(publishConfiguredProvisional({dataRoot:'fixture',id,
+ await assert.rejects(publishConfiguredProvisional({dataRoot:f.root,id,
   query:async()=>{d1Queries++;throw Error('UNEXPECTED_D1_WRITE');}}),
-  /CONFIG_PROVISIONAL_MARKETPARQUET_PUBLIC_RIGHTS_NOT_VERIFIED/);
+  /CONFIG_PROVISIONAL_INDEPENDENT_EOD_PUBLIC_RIGHTS_REQUIRED/);
  assert.equal(d1Queries,0);
 });
