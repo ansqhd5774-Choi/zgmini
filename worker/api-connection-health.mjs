@@ -13,9 +13,52 @@ const validStatusCounts=(value,requests)=>value===undefined||value===null||
   Object.keys(value).length<=16&&
   Object.entries(value).every(([k,n])=>SAFE_STATUS.test(k)&&nonnegative(n))&&
   Object.values(value).reduce((n,x)=>n+x,0)<=requests);
+// The fixed monitored source registry is distinct from historical HTTP hosts.
+// Calendar source groups include official downloads; this is a monitored-source
+// count, not an assertion about all configured API keys or URLs.
+export const MONITORED_CALENDAR_SOURCES=Object.freeze([
+ 'bls','bea','fed','fed_calendar','fed_fomc','census','eia','usda',
+ 'usda_nass','cftc','treasury','tic','eia_epm','nyfed'
+]);
+export const MONITORED_DIRECT_ENDPOINTS=Object.freeze(['earnings_api','dol_eta539']);
+export const MONITORED_SOURCE_IDS=Object.freeze([...MONITORED_CALENDAR_SOURCES,...MONITORED_DIRECT_ENDPOINTS]);
+
+function summarizeMonitoredSourceSnapshot(snapshot,now){
+ const unavailable=reason=>({...UNKNOWN,checkedAt:snapshot?.observedAt??null,reason});
+ const observed=Date.parse(snapshot?.observedAt??'');
+ if(snapshot?.version!==1||snapshot?.source!=='PC_MONITORED_SOURCE_EVIDENCE_V1'||
+   snapshot?.coverage!=='PARTIAL'||snapshot?.scope!=='monitored-source-endpoints'||
+   snapshot?.inventoryVerified!==true||snapshot?.limitedCoverage!==false||
+   !Number.isFinite(observed)||observed>now+60_000||now-observed>API_CONNECTION_SNAPSHOT_MAX_AGE_MS||
+   !Array.isArray(snapshot?.items)||snapshot.items.length!==MONITORED_SOURCE_IDS.length)
+  return unavailable('MONITORED_INVENTORY_UNVERIFIED');
+ const allowed=new Set(MONITORED_SOURCE_IDS),ids=new Set();let normal=0,failed=0,unknown=0;
+ for(const item of snapshot.items){
+  const seenAt=item?.checkedAt===null?null:Date.parse(item?.checkedAt??'');
+  if(!allowed.has(item?.id)||ids.has(item.id)||
+    !['normal','failed','unknown'].includes(item?.state)||
+    (seenAt!==null&&(!Number.isFinite(seenAt)||seenAt>now+60_000||now-seenAt>72*3600_000))||
+    (item.state!=='unknown'&&seenAt===null)||
+    !['CALENDAR_PARSED','EXACT_HTTP_RESPONSE','NO_CURRENT_EVIDENCE'].includes(item?.evidence)||
+    (item.state==='normal'&&item.evidence==='NO_CURRENT_EVIDENCE')||
+    (item.state==='failed'&&item.evidence==='NO_CURRENT_EVIDENCE'))
+   return unavailable('INVALID_MONITORED_EVIDENCE');
+  ids.add(item.id);
+  if(item.state==='normal')normal++;
+  else if(item.state==='failed')failed++;
+  else unknown++;
+ }
+ if(ids.size!==MONITORED_SOURCE_IDS.length)return unavailable('MONITORED_INVENTORY_INCOMPLETE');
+ return {version:1,scope:'monitored-source-endpoints',source:snapshot.source,
+  activeInventoryVerified:true,limitedCoverage:false,coverage:'PARTIAL',
+  checkedAt:snapshot.observedAt,status:failed?'partial':unknown?'unknown':'healthy',
+  normal,failed,unknown,total:MONITORED_SOURCE_IDS.length,items:[]};
+}
+
 const UNKNOWN={status:'unknown',scope:'external-provider-hosts',coverage:'UNVERIFIED',normal:null,failed:null,unknown:null,total:null,items:[]};
 
 export function summarizeApiConnectionHealth(snapshot,now=Date.now()){
+ if(snapshot?.scope==='monitored-source-endpoints')return summarizeMonitoredSourceSnapshot(snapshot,now);
  if(!Number.isFinite(now)||snapshot?.version!==1||snapshot.scope!=='external-provider-hosts'||
    snapshot.source!=='PC_COLLECTION_EVENTS_FETCH_WRAPPER'||snapshot.coverage!=='PARTIAL'||
    !Array.isArray(snapshot.items)||snapshot.items.length>128||
@@ -119,7 +162,7 @@ export function publicApiConnectionSummary(internal){
  const integerOrNull=value=>Number.isSafeInteger(value)&&value>=0&&value<=128?value:null;
  // Historical HTTP host observations are not a verified roster of active API connections.
  // Do not show their warning/unknown counts as current API connection failures.
- const trusted=internal?.scope==='active-api-endpoints'&&
+ const trusted=['active-api-endpoints','monitored-source-endpoints'].includes(internal?.scope)&&
   internal?.activeInventoryVerified===true&&internal?.limitedCoverage===false;
  const status=trusted&&['partial','unknown','healthy','stale'].includes(internal?.status)?internal.status:'unknown';
  const checked=typeof internal?.checkedAt==='string'?Date.parse(internal.checkedAt):NaN;
