@@ -1,7 +1,6 @@
 // Read-only public *research summary* contract. Not wired to a production route.
 // Existing 19 public series and four R2 scores are independent and unchanged.
-import {INFLATION_CANDIDATES_7,W01_ACTIVE_CANDIDATES} from '../lib/inflation-causal-candidates-public-7-catalog.mjs';
-const ACTIVE_IDS=new Set(W01_ACTIVE_CANDIDATES.map(item=>item.id));
+import {INFLATION_CANDIDATES_7} from '../lib/inflation-causal-candidates-public-7-catalog.mjs';
 
 export const INFLATION_CANDIDATES_7_PUBLIC_KEY='detail:inflation-causal-candidates-7:r1';
 export const INFLATION_CANDIDATES_7_PUBLIC_ROUTE='/api/inflation-candidate-inputs';
@@ -35,7 +34,7 @@ export function validateInflationCandidates7Public(payload,{now=Date.now()}={}){
     !Array.isArray(payload.indicators)||payload.indicators.length!==7)
     throw Error('INFL7_PUBLIC_ENVELOPE_INVALID');
 
-  let ready=0,stale=0,activeReady=0;
+  let ready=0,stale=0;
   for(let i=0;i<INFLATION_CANDIDATES_7.length;i++){
     const meta=INFLATION_CANDIDATES_7[i],row=payload.indicators[i];
     if(!object(row)||!allowed(row,rowFields)||row.id!==meta.id||
@@ -57,19 +56,14 @@ export function validateInflationCandidates7Public(payload,{now=Date.now()}={}){
         row.history.at(-1).value!==row.value||
         row.history.some(point=>point.date>row.observationDate))
         throw Error('INFL7_PUBLIC_READY_INVALID');
-      if(row.status==='READY'){
-        ready++;
-        if(ACTIVE_IDS.has(meta.id))activeReady++;
-      }else stale++;
+      if(row.status==='READY')ready++;
+      else stale++;
     }else if(row.value!==null||row.previousValue!==null||row.observationDate!==null||
       row.previousObservationDate!==null||row.sourceStoredAt!==null||
       row.availableAt!==null||row.history.length!==0)
       throw Error('INFL7_PUBLIC_NONREADY_LEAK');
   }
-  // Accept historical seven-row PARTIAL snapshots, but new READY snapshots
-  // need only all four W01 active rows; excluded rows are never prerequisites.
-  if((payload.status==='READY'&&activeReady!==W01_ACTIVE_CANDIDATES.length)||
-    (payload.status==='PARTIAL'&&ready===7)||ready+stale===0)
+  if((ready===7)!==(payload.status==='READY')||ready+stale===0)
     throw Error('INFL7_PUBLIC_COVERAGE_INVALID');
   return payload;
 }
