@@ -1,7 +1,7 @@
 import {env} from 'cloudflare:workers';
 import {CNN_OBSERVED_ARCHIVE_KEY,CNN_OBSERVED_ARCHIVE_VERSION} from '../../../../lib/cnn-observed-archive-r1.mjs';
 import {sampleCnnObservedPoints} from '../../../../lib/cnn-observed-sampling-r1.mjs';
-import {addStoredCnnObservation} from '../../../../lib/cnn-observed-reader-integrity-r1.mjs';
+import {addStoredCnnObservation,addStoredCnnVerifiedCheck} from '../../../../lib/cnn-observed-reader-integrity-r1.mjs';
 
 // Public stored-score reader only; never calls CNN or starts collection.
 const DAYS={ '1D':2,'1W':9,'1M':33,'3M':96,'6M':188,'1Y':370 } as const;
@@ -55,7 +55,8 @@ export async function GET(request:Request){
       new Date(at).toISOString().slice(0,10)!==row.snapshot_key||original>at+300000||
       !Number.isFinite(item.score)||item.score<0||item.score>100||item.sourceStoredAt!==at)
     return Response.json({status:'STORED_CHECKS_INVALID'},{status:503});
-   checkedByTime.set(item.checkedAt,{checkedAt:item.checkedAt,sourceObservedAt:item.sourceObservedAt,score:item.score});
+   if(!addStoredCnnVerifiedCheck(checkedByTime,item.checkedAt,item.sourceObservedAt,item.score))
+    return Response.json({status:'STORED_CHECKS_INVALID'},{status:503});
   }
  }
  const allChecks=[...checkedByTime.values()].sort((a,b)=>a.checkedAt.localeCompare(b.checkedAt));
