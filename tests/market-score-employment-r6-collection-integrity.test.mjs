@@ -5,10 +5,10 @@ import { planEmploymentR6Collection, runEmploymentR6CollectionStep } from "../li
 import { createEmploymentR6Provider } from "../lib/market-score/employment-r6-provider.mjs";
 import { createEmploymentR6Store } from "../lib/market-score/employment-r6-store.mjs";
 
-const NATIONAL_CLAIMS_XML = "<week><weekEnded>10/31/2026</weekEnded>"
+const NATIONAL_CLAIMS_XML = "<r539cyNational><week><weekEnded>10/31/2026</weekEnded>"
   + "<InitialClaims><SA>189000</SA><SA4WK>195000</SA4WK></InitialClaims>"
   + "<ContinuedClaims><SA>1900000</SA></ContinuedClaims>"
-  + "<IUR><SA>1.2</SA></IUR></week>";
+  + "<IUR><SA>1.2</SA></IUR></week></r539cyNational>";
 
 test("BACKFILL run history lookup uses persisted mode, not the latest RELEASE run", async () => {
   let select = null;
