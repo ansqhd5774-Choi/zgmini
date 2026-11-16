@@ -143,6 +143,22 @@ function archiveRaw(parent,group,bytes){
   return {sourceSha256,archive:`raw/bls-${group}-${sourceSha256}.json`};
 }
 
+function backupExistingCandidate(directory,file){
+  if(!fs.existsSync(file))return null;
+  if(!safeFile(file))throw error('BLS_CANDIDATE_EXISTING_FILE_UNSAFE');
+  const bytes=fs.readFileSync(file),sourceSha256=hash(bytes);
+  const backups=ensureSafeChild(directory,'backups');
+  const filename='bls-cpi-ppi3-'+sourceSha256+'.json';
+  const backup=path.join(backups,filename);
+  if(!fs.existsSync(backup)){
+    try{fs.writeFileSync(backup,bytes,{flag:'wx'});}
+    catch(e){if(e.code!=='EEXIST')throw e;}
+  }
+  if(!safeFile(backup)||hash(fs.readFileSync(backup))!==sourceSha256)
+    throw error('BLS_CANDIDATE_BACKUP_READBACK_FAILED');
+  return {sourceSha256,archive:'backups/'+filename};
+}
+
 function atomicWrite(file,doc){
   const bytes=Buffer.from(JSON.stringify(doc)),temp=`${file}.next-${randomUUID()}`;
   fs.writeFileSync(temp,bytes,{flag:'wx'});
@@ -172,9 +188,11 @@ export async function collectInflationCandidateBls({base,group,blsKey,quotaFetch
   const response=await quotaFetch(INFLATION_CANDIDATE_BLS_ENDPOINT,{method:'POST',
     redirect:'manual',headers:{'content-type':'application/json'},body,signal:AbortSignal.timeout(20_000)});
   const {payload,bytes}=await readResponse(response);
-  const incoming=normalizeInflationCandidateBls(payload,{group});
-  // Validate all data before touching persistent storage.
+  // Preserve exact BLS response before row-level parsing, including
+  // unavailable months and rejected observations.
   const directory=ensureSafeChild(base,'inflation-causal-candidates-r1');
+  const provenance=archiveRaw(directory,group,bytes);
+  const incoming=normalizeInflationCandidateBls(payload,{group});
   const file=path.join(directory,'bls-cpi-ppi3.json');
   let prior=null;
   if(fs.existsSync(file)){
@@ -184,17 +202,22 @@ export async function collectInflationCandidateBls({base,group,blsKey,quotaFetch
     if(!validPrior(prior))throw error('BLS_CANDIDATE_EXISTING_CONTRACT_INVALID');
   }
   const series=mergeInflationCandidateBls(prior,incoming);
-  if(prior&&JSON.stringify(prior.series)===JSON.stringify(series))return {
-    status:'UNCHANGED',group,stored:false,providerRequests:1,
-    latest:Object.fromEntries(ids.map(id=>[id,series[id].at(-1).date])),
-  };
-  const provenance=archiveRaw(directory,group,bytes);
+  const latest=Object.fromEntries(ids.map(id=>[id,series[id]?.at(-1)?.date??null]));
+  const diagnostics=incoming.diagnostics;
+  // A fully missing release is not a failed provider call or a numeric zero.
+  if(JSON.stringify(prior?.series??{})===JSON.stringify(series)||
+     !ids.some(id=>series[id]?.length)){
+    return {status:'UNCHANGED',group,stored:false,providerRequests:1,
+      latest,diagnostics,...provenance};
+  }
+  const backup=backupExistingCandidate(directory,file);
   const document={schemaVersion:1,provider:'BLS',sourceVersion:INFLATION_CANDIDATE_BLS_VERSION,
     sourceStoredAt:moment.toISOString(),frequency:'MONTHLY',groupUpdated:group,
-    series,provenanceByGroup:{...(prior?.provenanceByGroup??{}),[group]:provenance}};
+    series,provenanceByGroup:{...(prior?.provenanceByGroup??{}),
+      [group]:{...provenance,diagnostics,backup}}};
   const fileSha256=atomicWrite(file,document);
   return {status:'SAVED_READBACK',group,stored:true,providerRequests:1,
-    latest:Object.fromEntries(ids.map(id=>[id,series[id].at(-1).date])),
-    counts:Object.fromEntries(ids.map(id=>[id,series[id].length])),
+    latest,diagnostics,
+    counts:Object.fromEntries(ids.map(id=>[id,series[id]?.length??0])),
     sourceStoredAt:document.sourceStoredAt,fileSha256,...provenance};
 }
