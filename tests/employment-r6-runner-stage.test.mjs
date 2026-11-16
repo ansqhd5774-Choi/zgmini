@@ -136,9 +136,12 @@ test("PIT-04-02 Runner exposes only fixed History counts and an approved ambigui
   assert.ok(Buffer.byteLength(JSON.stringify(report))<12000);
 });
 
-test("PIT-04-02 Runner refuses unbounded or negative History counts without leaking values",()=>{
+test("PIT-04-02 Runner refuses unbounded or negative History counts without leaking values",async t=>{
+  const env=environment(t);
+  fixture(env.core);fixture(env.candidate,{row:true});
+  const body=await stageEmploymentR6OneYear(runnerOptionsFrom(argv(env)));
   const secret="DO_NOT_LEAK_PRIVATE_REVISION";
-  const report=projectEmploymentR6RunnerResult({pitCoverage:{
+  const report=projectEmploymentR6RunnerResult({body,pitCoverage:{
     coreHistoryPriorRevisionRows:-1,
     coreHistoryAsOfUniqueKeys:2.4,
     candidateHistoryAmbiguousLatestKeys:secret,
