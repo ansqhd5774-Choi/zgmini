@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {earningsDisplayHtml,earningsDisplaySnapshot} from '../lib/earnings-api-display.mjs';
 import {bannerCalendarRange,earningsBannerRows,marketCalendarBannerRows} from '../lib/market-calendar-banner.mjs';
 import {ER1_METHOD} from '../lib/market-calendar-er1-earnings-score.mjs';
+import {parseDeltaScreenerCsv,gradeCalendarTickersFromDelta} from '../lib/market-calendar-deltascreener-snapshot.mjs';
+import {makeDeltaR44Public,DELTA_R44_LEGACY_METHOD} from '../lib/market-calendar-deltascreener-public.mjs';
 const now=Date.parse('2026-10-29T13:30:00Z');
 const er1Rows=[['AMZN',99],['AAPL',98],['KO',90],['MSFT',97.5],['ADEA',99],['NVDA',92],['ZM',90],['ALPHABET',99]];
 const er1={status:'READY_ER1_PUBLIC',method:ER1_METHOD,asOf:'2026-10-29',
@@ -98,4 +100,54 @@ test('banner rejects old legacy or FHS ★★★; accepts verified ER1 label onl
  assert.deepEqual(earningsBannerRows(hdr+oldFhs,time),[]);
  assert.equal(earningsBannerRows(hdr+scored('97.00'),time).length,1);
  assert.deepEqual(earningsBannerRows(hdr+scored('96.99'),time),[]);
+});
+
+test('R44 November 50B three-star earnings appear in the top banner from existing reviewed HTML',()=>{
+ const timestamp=Date.parse('2026-11-16T04:00:00Z'),start='2026-11-16';
+ const coveredDays=Array.from({length:14},(_,i)=>new Date(Date.parse(start+'T00:00:00Z')+i*86400000).toISOString().slice(0,10));
+ const csv='ticker,name,exchange,sector,industry,country,price,mktCap\\n'+
+  'AMZN,Amazon.com Inc.,NASDAQ,Technology,Internet Retail,US,200,150000000000\\n'+
+  'NVDA,Nvidia Corporation,NASDAQ,Technology,Semiconductors,US,200,4869646000000\\n'+
+  'MSFT,Microsoft Corporation,NASDAQ,Technology,Software,US,200,25000000000\\n'+
+  'DAC,Danaos Corporation,NYSE,Industrials,Marine Shipping,US,153.96,2802626256\\n';
+ const parsed=parseDeltaScreenerCsv(csv);
+ const r44=makeDeltaR44Public(gradeCalendarTickersFromDelta(parsed,['AMZN','NVDA','MSFT','DAC']));
+ assert.deepEqual(r44.counts,{one:1,two:1,three:2,missing:0,conflicting:0});
+ const projection={status:'READY_PRIVATE',scope:'PC_PRIVATE',publicDisplay:false,redistribution:false,
+  publicationStatus:'HELD_UNCONFIRMED',coveredDays,recordCount:4,priorityCount:0,
+  checkedAt:new Date(timestamp).toISOString(),events:['AMZN','NVDA','MSFT','DAC'].map(ticker=>({
+   date:'2026-11-18',ticker,company:ticker+' Corporation',marketSession:'after_market',
+   time:null,verification:'VENDOR_UNVERIFIED',source:'earnings-api'}))};
+ const display=earningsDisplaySnapshot(projection);
+ const filtered=earningsDisplayHtml(display,{start,end:coveredDays.at(-1),importance:3},
+  null,null,null,{},r44);
+ assert.equal(filtered.count,2);
+ assert.match(filtered.html,/시총 기준 중요도 별 3개/);
+ assert.match(filtered.html,/★★★ 50B USD 이상 · ★★ 20B USD 이상/);
+ assert.deepEqual(earningsBannerRows(filtered.html,timestamp).map(row=>row.ticker),['AMZN','NVDA']);
+ const banner=marketCalendarBannerRows(timestamp,null,filtered.html);
+ assert.deepEqual(banner.map(row=>row.ticker),['AMZN','NVDA']);
+ assert.ok(banner.every(row=>row.importance===3&&row.kind==='실적'));
+ assert.ok(!banner.some(row=>['MSFT','DAC'].includes(row.ticker)));
+ const previous={...r44,method:DELTA_R44_LEGACY_METHOD};
+ const legacy=earningsDisplayHtml(display,{start,end:coveredDays.at(-1),importance:3},
+  null,null,null,{},previous);
+ assert.match(legacy.html,/★★★ 200B USD 이상/);
+ assert.equal(earningsBannerRows(legacy.html,timestamp).length,2,
+  'The previously published R44 200B format remains readable');
+});
+test('banner rejects unvalidated R44-like stars, FHS, ungraded and two-star rows',()=>{
+ const timestamp=Date.parse('2026-11-16T04:00:00Z');
+ const hdr='<div class="mc-week mc-vendor-week"><strong>2026-11-18 · 기업 실적</strong></div>';
+ const article=markup=>'<article class="mc-row mc-vendor-row" data-search="nvda nvidia">'+markup+
+  '<div class=mc-event><span>NVIDIA (NVDA)</span></div><time class=mc-time>장후</time></article>';
+ const r44='<div class=mc-importance aria-label="시총 기준 중요도 별 3개" title="시총 중요도 · 2026-11-03 기준 · ★★★ 50B USD 이상 · ★★ 20B USD 이상">★★★</div>';
+ assert.equal(earningsBannerRows(hdr+article(r44),timestamp).length,1);
+ for(const invalid of [
+  '<div class=mc-importance aria-label="중요도 3">★★★</div>',
+  '<div class=mc-importance aria-label="시총 기준 중요도 별 2개" title="시총 중요도 · 2026-11-03 기준 · ★★★ 50B USD 이상 · ★★ 20B USD 이상">★★</div>',
+  '<div class=mc-importance aria-label="시총 기준 중요도 미확인">-</div>',
+  '<div class=mc-importance aria-label="시총 기준 중요도 별 3개">★★★</div>',
+  '<div class=mc-importance aria-label="시총 기준 중요도 별 3개" title="다른 기준">★★★</div>',
+ ])assert.deepEqual(earningsBannerRows(hdr+article(invalid),timestamp),[]);
 });
