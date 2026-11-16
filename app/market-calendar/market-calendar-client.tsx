@@ -222,13 +222,13 @@ export default function MarketCalendar(){
    <div className="mc-filter"><span className="mc-filter-label">국가</span><div className="mc-pills" role="group" aria-label="국가 선택">
     {([['all','전체'],['US','미국'],['KR','한국']] as const).map(([key,label])=><button key={key} type="button" className={country===key?'active':''} onClick={()=>setCountry(key)} aria-pressed={country===key}>{label}</button>)}
    </div></div>
-   <div className="mc-filter"><span className="mc-filter-label" title="경제지표: 시장 영향도 / 기업 실적: 예상 EPS ER1 점수">별등급</span><div className="mc-pills" role="group" aria-label="별등급 필터: 경제지표 시장 영향도, 기업 실적 ER1 점수 97점 이상">
+   <div className="mc-filter"><span className="mc-filter-label" title="경제지표: 시장 영향도 / 기업 실적: 게시된 시총 중요도 또는 실적 점수">별등급</span><div className="mc-pills" role="group" aria-label="별등급 필터: 경제지표 시장 영향도 및 기업 실적 게시 등급">
     {([['all','전체'],[3,'★★★'],[2,'★★'],[1,'★']] as const).map(([key,label])=>{
      const active=key==='all'?importance===null:importance?.includes(key)??false;
      return <button key={key} type="button" className={active?'active':''} onClick={()=>{
       if(key==='all'){setImportance(null);return;}
       setImportance(current=>toggleStarImportance(current,key));
-     }} aria-pressed={active} aria-label={key==='all'?'모든 별등급':`별등급 ${key}개 (경제지표 영향도·기업 실적 ER1 점수)`}>{label}</button>;
+     }} aria-pressed={active} aria-label={key==='all'?'모든 별등급':`별등급 ${key}개 (경제지표 영향도·기업 실적 게시 등급)`}>{label}</button>;
     })}
    </div></div>
    <div className="mc-range" role="group" aria-label="기간 선택과 이동">
@@ -249,7 +249,7 @@ export default function MarketCalendar(){
     {days.map(key=><button type="button" key={key} aria-label={`${key.slice(0,4)}년 ${Number(key.slice(5,7))}월 ${Number(key.slice(8))}일`} aria-pressed={activeDate===key} className={`mc-day ${activeDate===key?'selected':''} ${today===key?'today':''} ${shownDates.has(key)?'has-event':''}`} onClick={()=>{setSelected(key);setActiveDate(current=>current===key?null:key);}}><strong>{Number(key.slice(8,10))}</strong><small>{dayLabels[parseDay(key).getUTCDay()]}</small></button>)}
    </div>
   </div>
-  <div className="mc-head" aria-hidden="true"><span className="mc-importance-heading" title="경제지표: 예상 시장 영향도 / 기업 실적: 예상 EPS ER1 점수, ★★★ 97점 이상"><Star size={12} fill="currentColor" aria-hidden="true"/>별등급</span><span>날짜</span><span>시간</span><span>국가</span><span>구분</span><span>발표 일정</span><span>발표</span><span>예상</span><span>이전</span><span>남은 시간</span></div>
+  <div className="mc-head" aria-hidden="true"><span className="mc-importance-heading" title="경제지표: 예상 시장 영향도 / 기업 실적: 시총 중요도 또는 실적 점수(행별 적용 기준)"><Star size={12} fill="currentColor" aria-hidden="true"/>별등급</span><span>날짜</span><span>시간</span><span>국가</span><span>구분</span><span>발표 일정</span><span>발표</span><span>예상</span><span>이전</span><span>남은 시간</span></div>
   <div className="mc-results" aria-live="polite">
    {loadState==='ready'&&modelCoverage&&<p className="mc-data-state" title="개발 코드 모델 입력 기준입니다. 발표 주기 별도 관리 72개 · 시장 일별 자료 21개 · 비정기·파생 신호 4개. PC 원자료의 활성·저장 완료 수가 아닙니다. 연도별 연결 수는 모델 입력마다 그해 공식 발표일이 1건 이상 있는지를 세며, 연중 전체 발표 회차의 수집 완료율이 아닙니다. 공급자 일부가 실패한 경우 숫자는 확인된 저장 일정으로 계산한 최소 연결 수이며, 미연결·전체 수집 완료를 확정하지 않습니다.">{modelCoverage.feedPartial?'공식 일정 일부 공급자 수집 실패 · 확인된 저장 일정만 기준 · ':''}경제 모델 입력 {modelCoverage.totalInputs}개(코드 기준) · 공식 발표 연결 {modelCoverage.officialStored}/{modelCoverage.officialEligible}개({modelCoverage.feedPartial?'확인된 저장 일정 기준·미수집 불확정':'전체 저장 이력'}) · {modelCoverage.nextYear}년 일정 연결 {modelCoverage.nextYearConfirmed}/{modelCoverage.officialEligible}개({modelCoverage.feedPartial?'확인된 일정 기준·추가 발표 미확정':'입력별 1건 이상'}) · 개별 발표일 비대상 {modelCoverage.nonRelease}개</p>}
    <EarningsDisplayClient start={range.start} end={range.end} activeDate={activeDate} query={query} importance={importance} enabled={(kind==='all'||kind==='earnings')&&country!=='KR'} onCounts={setVendorCounts}/>
