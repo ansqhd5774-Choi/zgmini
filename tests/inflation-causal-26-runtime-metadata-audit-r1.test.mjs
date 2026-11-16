@@ -75,6 +75,41 @@ test('a single changed source status changes counts without manufacturing data',
  assert.equal(r.localReadyCount,22);
  assert.deepEqual(r.localMissingIds,['22','23','24','28']);
 });
+test('approved A-grade seven-candidate numeric receipt IDs normalize to catalog strings',()=>{
+ const f=fixture();
+ f.sevenRuntime.indicators=f.sevenRuntime.indicators.map(row=>({
+  ...row,id:Number(row.id),
+ }));
+ const report=auditInflation26RuntimeMetadata(f);
+ assert.equal(report.localReadyCount,23);
+ assert.equal(report.new7Ready,4);
+ assert.equal(report.localMissingCount,3);
+ assert.deepEqual(report.localMissingIds,['22','23','28']);
+ assert.equal(report.cutoffResults[0].knownStoredByCutoff,15);
+ assert.equal(report.cutoffResults[1].knownStoredByCutoff,23);
+ assert.ok(report.sources.every(row=>typeof row.id==='string'));
+ assert.ok(report.sources.some(row=>row.id==='24'&&
+  row.historicalRowCount===203));
+});
+test('numeric A receipt ID normalization still fails closed for invalid or duplicate IDs',()=>{
+ const patches=[
+  f=>f.sevenRuntime.indicators[0].id=22.5,
+  f=>f.sevenRuntime.indicators[0].id=0,
+  f=>f.sevenRuntime.indicators[0].id=99,
+  f=>f.sevenRuntime.indicators[0].id=24, // duplicate of existing #24
+  f=>f.nineteenProjection.perId[0].id=1, // old 19 remains string-only
+ ];
+ for(const patch of patches){
+  const f=fixture();
+  f.sevenRuntime.indicators=f.sevenRuntime.indicators.map(row=>({
+   ...row,id:Number(row.id),
+  }));
+  patch(f);
+  assert.throws(()=>auditInflation26RuntimeMetadata(f),
+   e=>e.code==='W01_METADATA_ID_STOP');
+ }
+});
+
 test('duplicate, missing, unknown and changed ID fail closed',()=>{
  for(const patch of [
   f=>f.nineteenProjection.perId.pop(),
