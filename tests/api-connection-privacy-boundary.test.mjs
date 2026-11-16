@@ -47,7 +47,7 @@ test('public live D1 read never returns private host or endpoint information',as
   return{bind(key){assert.equal(key,'api-connection-health');return{
     first:async()=>({body:JSON.stringify(internal)})};
   }}}
- }};
+ };
  const res=await readPublicApiConnectionHealth(db,now);
  assert.equal(res.status,200);
  assert.match(res.headers.get('cache-control'),/no-store/);
