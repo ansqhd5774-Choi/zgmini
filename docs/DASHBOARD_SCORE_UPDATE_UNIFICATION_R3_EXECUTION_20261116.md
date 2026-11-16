@@ -5,7 +5,7 @@
 - 착수 당시 전용 브랜치: `codex/ui-improvements` `43f943679b555387593d918088860ba5b882dcb6`
 - 인계받은 기존 근거: `DASHBOARD_SCORE_68_CONTENT_CONTRACT_INVENTORY_R1.md` (2026-11-10), `DASHBOARD_SCORE_RUNTIME_BASELINE_R1.md` (2026-11-10)
 - 당회 작업 범위: **현재 개발 소스의 UI 소비 구조 및 R1 계약 재사용**, 기능별 실제 갱신 계약 분류 착수. 원자료/DB/D1/Controller/예약/산식 변경 없음.
-- **진척 요약: 01–30 판정 완료 (30/34 = 88.2% 고정 작업 기준). 기능별 판정 27/27. 31–34 및 F1–F4 운영·코드 검증은 미완료.** 추가 결함군 N은 미확정이므로 전체 R3 최종 %는 아직 산정하지 않는다. 이 기록은 브랜치 문서 반영이지 배포/운영 적용 증거가 아니다.
+- **진척 요약: 01–32 완료 (32/34 = 94.1% 고정 작업 기준). 27개 분류 완료. 33 결함군 통합과 34 운영 종결 및 F1–F4는 남음.** 추가 결함군 N은 미확정이므로 전체 R3 최종 %는 아직 산정하지 않는다. 이 기록은 브랜치 문서 반영이지 배포/운영 적용 증거가 아니다.
 
 ## 1. 공통 실행 01–03 — 완료 근거
 
@@ -86,8 +86,8 @@
 ## 4. 다음 실제 실행 순서·작업량 보호
 
 - **현재 증거상 확정된 갱신 시점 불일치(결함군 N): 아직 0건 확정이 아니라 '미확정'.** D04는 NOT_CONNECTED이며 새 수정 대상 결함군에 자동 합산하지 않는다.
-- **다음 필수 실행:** 31–32 혼합주기/결측·기간 시뮬레이션을 실제 승인 모듈의 최소 fixture로 수행하고 33 결함군 원인을 확정한다. Production 공개 API readback은 네트워크 접근 제한으로 UNKNOWN. 04–06·08의 구체적 미확인 입력은 기존 유효 증거가 있을 때 이어서 판정하되 **27개 전원 운영 사건 확인을 단일 전역 Gate로 만들지 않는다**.
-- 실행 완료 집계: **30/34** (01–30), 04–06/08 및 22–34는 미완료. **구현: API 저장결과 읽기 라우트 7건·회귀 테스트 4건. main 병합 완료 / Cloudflare 후보 Worker build 성공 / Production 사이트 API readback 미확인.**
+- **다음 필수 실행:** 33에서 소스 결함군을 root cause별 통합하고 34·F1–F4의 필수 운영 증거 범위를 확정한다. Production 공개 API readback은 현 접근에서 UNKNOWN. 04–06·08의 구체적 미확인 입력은 기존 유효 증거가 있을 때 이어서 판정하되 **27개 전원 운영 사건 확인을 단일 전역 Gate로 만들지 않는다**.
+- 실행 완료 집계: **32/34** (01–32), 04–06/08 및 22–34는 미완료. **구현: API 저장결과 읽기 라우트 7건·회귀 테스트 4건. main 병합 완료 / Cloudflare 후보 Worker build 성공 / Production 사이트 API readback 미확인.**
 
 
 ## 5. 09/D06 인플레이션 위험 신규 실행 증거 — 2026-11-16
@@ -162,3 +162,20 @@
 - 06/D03 USA breadth: 2026-11-16 MarketParquet 사용 금지 main 소스 `docs/MARKETPARQUET_REMOVAL.md`. main `/api/market-breadth?market=usa&phase=confirmed-r2` 및 `/api/market-breadth-r2-history`는 즉시 503; 하지만 현행 main UI의 `app/market-breadth-strip.tsx`는 폐기된 R2 확정/current/history를 숫자 fallback 및 확장 패널로 계속 표시. 새 권리 결정과 충돌하는 **DEFECT_DISPLAY**로 분류. W06 브랜치 소스에서 MarketParquet 확정/current/history UI 사용과 GET을 제거하고 독립 잠정 데이터가 유효한 경우만 표시, 한국 counts/색상/41px 유지. 아직 CI/main/Production 반영 미확인. 과거 시장폭 원자료 삭제·새 데이터 공급자 제안 없음.
 - 08/D05 USA composite: `/api/market-score` 저장 12개 READY score만 실제 점수, `app/dashboard-ui.tsx`의 기존 3.5배 표시 민감도는 유지. Core→D1→GET 실제 신규 데이터 변경 사건은 전용 별도 인과 원장에서도 미검증, 이번 작업에서 무한 반복 조사하지 않음.
 - D01–D27 source/Gate/API/UI 계약 분류 27/27. 이 수치는 운영 성공 27건 의미가 아니며, R3 원래 최종 종료에는 결함 F1–F4 전부 및 배포/UI 증거가 필요함.
+
+
+## 13. 31 혼합 입력 주기 실함수 시뮬레이션 — 완료
+
+- 실행: GitHub 최신 main에서 `lib/market-score/composite-model-r1.mjs`, `lib/market-score/consumption-r5.mjs` 원문을 읽어 V8 isolate에서 실제 함수(`buildCompositeMarketScore`, `calculateConsumptionR5`)를 원본 그대로 실행. 외부 API/PC/D1 호출·쓰기 0건.
+- CM-R1 12개 domain `월간5/분기2/T+1 3/기타2` 정상 기본 50.000점. 분기2의 이전 유효점 그대로 유지하며 T+1 1축(breadth) 50→60 변경 시 50→50.8점 즉시 갱신, 이후 월간 소비 50→59.4667까지 추가 변경 시 51.4627점. 분기 earnings 신규 입력이 결측/PARTIAL이면 전체는 PARTIAL/null, 임의 재가중 없음. 0점은 READY 유효 처리.
+- 실제 R5 저장 이력 fixture(2005–2026 월별+분기별)의 2026-10-30 월간 신규 공표 이벤트: 계산 전 2026-09-01 55.845833점 READY → 새 실제 이용 가능일 입력 후 2026-10-01 59.466667점 READY; 분기 가계 채무 지표 관측일은 둘 다 2026-07-01 유지. 완료월을 무조건 기다리지 않으며 마지막 허용 유효 분기 관측은 그대로 사용.
+- **31 판정: SIMULATION_PASS**. 운영 실제 동일 사건의 D1 readback은 시험 대상이 아니며 별도 F4.
+
+## 14. 32 완료월/완료분기/거래일/0/null/잠정 시뮬레이션 — 완료
+
+- `lib/diagnostic-layer/stagflation-s21.mjs` 실함수: 8개 시계열/13개월 이력 fixture에서 2026-10 완성월 READY/78.048781점. 필수 PCEPI 신규월 누락은 PARTIAL/null, `OBSERVATION_MONTH_UNAVAILABLE`.
+- `lib/diagnostic-layer/asset-bubble-r9-components.mjs` + `model.mjs` 실제 함수: 6요인 2026-Q2 READY/54점(0 요인도 유효), Q3 완성 READY/62.4점. Q3 시장폭 요인 누락 시 Q3 PARTIAL/null, Q2 당시 READY는 보존, Q3 확정 오표시 없음.
+- `worker/korea-rev7-refresh.mjs` 실함수+메모리 store/fetch fixture: 2026-11-16 한국 20:22 KST `NO_TRADING_OBSERVATION`은 `WAITING_PUBLICATION`, 신규 저장 0·계산 false·기존 scoreDate 20261115 보존; 같은 요청일 공급자 SUCCESS 및 정상 계산 0점은 `COMPLETE`, 신규 1건 저장·scoreDate 20261116. 완성 거래일과 발표 지연 구분.
+- `lib/market-score/earnings-e1-r5.mjs` + `earnings-e1-r5-production-domain.mjs` 실함수: 13요인 전부 0이면 READY/0, S13 결측은 PARTIAL/null, R5 자격 부족 시 기존 R4 score 유지. `rate-sentiment-freshness.mjs` 7일 허용·8일 지연 확인.
+- `app/market-breadth-strip.tsx` 화면 source 신규 W06 수정: 금지 MarketParquet 확정/과거 그래프 fallback 제거, 기존 유효 IEX/SIP 잠정만 표시, 0/null 차트 위장 금지. 신규 source-level test 3종 수정했으나 **GitHub 전체 CI/Production UI 검증 미확인**, 시뮬레이션 PASS만 운영 배포로 보고하지 않음.
+- **32 판정: SIMULATION_PASS**. 수정 이력·승인 구조 밖 원자료 변경 0건.
