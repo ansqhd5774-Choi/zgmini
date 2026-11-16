@@ -33,7 +33,11 @@ test('nine cells and centered classification badges preserve original name/ticke
  assert.match(output.html,/class="mc-sector" title="경기소비재">경기소비재/);
  assert.doesNotMatch(output.html,/class=mc-number/);
  assert.match(output.html,/https:\/\/deltascreener.com\/data/);
- assert.equal(earningsBannerRows(output.html,Date.parse('2026-11-16T04:00:00Z')).length,2);
+ const banner=earningsBannerRows(output.html,Date.parse('2026-11-16T04:00:00Z'));
+ assert.equal(banner.length,2);
+ assert.deepEqual(Object.fromEntries(banner.map(row=>[row.ticker,[row.sector,row.sectorLabel,row.sectorTone]])),{
+  NVDA:['정보기술','기술','technology'],HD:['경기소비재','경기소비재','cyclical']
+ });
 });
 test('server filters sector and industry with original labels and correct day totals',async()=>{
  const url='https://zgmini.kr/api/earnings-calendar-display?start='+start+'&end='+end+
@@ -54,10 +58,16 @@ test('missing company classification stays missing, while unpublished taxonomy p
  const output=earningsDisplayHtml(snapshot,{start,end},null,null,null,{},grades,taxonomy);
  assert.equal(output.count,3);
  assert.match(output.html,/is-empty" title="미분류">미분류/);
+ const banner=earningsBannerRows(output.html,Date.parse('2026-11-16T04:00:00Z'));
+ assert.equal(banner.find(row=>row.ticker==='MISS'),undefined,'ungraded issuers stay excluded from three-star top banner');
+ assert.equal(banner.find(row=>row.ticker==='NVDA')?.sectorLabel,'기술');
  assert.doesNotMatch(output.html,/class=mc-number/);
  const legacy=earningsDisplayHtml(snapshot,{start,end},null,null,null,{},grades,null);
  assert.match(legacy.html,/class=mc-number/);
  assert.doesNotMatch(legacy.html,/class="mc-sector/);
+ const rawBanner=earningsBannerRows(legacy.html,Date.parse('2026-11-16T04:00:00Z'));
+ assert.ok(rawBanner.every(row=>row.sector===null&&row.sectorLabel===null),
+  'unpublished taxonomy must not be replaced by guessed company classifications');
 });
 test('unvalidated sector parameters reject the HTML request',()=>{
  const url='https://zgmini.kr/api/earnings-calendar-display?start='+start+'&end='+end+
