@@ -1,5 +1,7 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
+> **현재 즉시 상태 (2026-11-17 00:13 KST): 10/75 (13.3%), #27 PARTIAL.** Draft #1189 CI 및 비식별 기간별 시험 PASS이나 **미병합/미배포**. 지정 브랜치의 기간창 테스트 6/6, Draft 코드의 13/13 시험을 추가 확인했다. 아래 '현재 인계 정본' 표의 다음 실행이 최우선이며 이전 시점의 텍스트는 역사 기록이다.
+
 ## 2026-11-17 00:08 KST — R4 #27 독립 UI 수정 (PARTIAL, 10/75 유지)
 
 - 시작 정본: 10/75 (13.3%), 다음 #27. W06 기록 브랜치 `codex/ui-improvements`는 오래된 UI 구현이므로 전체 병합/리베이스하지 않음.
@@ -24,7 +26,7 @@
 | DONE 단계 (중복 없음) | **#04, #05, #08, #10, #21, #22, #23, #24, #26, #33** |
 | 단계 증거 범위 | #24는 **기존 저장 JSON 활용·Draft 설계/회귀 PASS**까지의 설계 DONE. 실제 15분 보존 정책 수정·PC 설치·D1 반영은 **미완료** |
 | PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #27, #34, #35. 각 상태의 증거·한계는 아래 기존 이력 참조 |
-| 다음 단 하나의 실행 | **#27** Draft PR #1189 Node/CI 확인 후 `1W·1M·3M·6M·1Y` 계산점·일별 확정점 병합/마지막점 회귀 보완; 미병합·PARTIAL 유지 |
+| 다음 단 하나의 실행 | **#27** Draft [#1189](https://github.com/ansqhd5774-Choi/zgmini/pull/1189) CI PASS·기간별 소스 회귀 통과를 확인했으므로, **원담당의 지정 브랜치·선별 PR 준수 여부와 최종 승인 범위를 검토해 실제 반영/검증 여부 결정**. 미병합 상태에서는 PARTIAL 유지 |
 | 다음 담당·대상·입력 | W06 UI 원담당. `lib/market-score/composite-observed-display-r1.mjs`, `lib/market-score/published-domain-trend-r4.mjs`, `app/api/market-score/observations/route.ts`, 관련 테스트. 기존 확정점과 하루 여러 실제 계산점 fixture 재사용 |
 | #27 통과 조건 | 1W~3M은 실제 게시된 관측점을 시간순 표시; 6M/1Y는 승인된 일별 확정치 보존; 동일 시각 충돌·결측·관측 없는 날짜 보간·방법론 섞기 금지. 테스트/변경 파일/PR·CI 증거를 기록. **운영 PC 데이터/게시 결과까지 이미 성공한 것처럼 주장 금지** |
 | 이후 후보(이번 실행에 혼입 금지) | #28 방법론 구간 분리 → #29 같은날 정정·중복 보호 → D01~D27별 실제 미연결 수정 |
@@ -148,3 +150,16 @@
 - **#24 실행과 분리**: 기존 시간별 계산점 3개가 로컬 archive에 실제 보존돼야 API #1187에서 3개를 반환할 수 있음. 아직 owner 검토용 [Draft #1185](https://github.com/ansqhd5774-Choi/zgmini/pull/1185)의 이벤트 저장 후보가 운영 main에 병합되지 않았으므로 운영 50→53→56 보존·표시 완료를 주장하지 않는다.
 - **보존 사항**: [Draft #1181](https://github.com/ansqhd5774-Choi/zgmini/pull/1181) Collector 관측일 역행 방지는 별도 owner 검토 대기. 어느 Draft도 승인 없이 main/PC 운영에 적용하지 않음.
 - **다음 필수 실행**: 독립 W06 #27~29 및 D01–D27 세부 영역별 현재점/이력점의 날짜·방법론 매핑에서 실제 문제만 수정. Writer #24는 승인된 정확한 15분 보존 계약 범위 확인 후 원담당이 선택 적용; PC 소스 설치·게시 readback은 승인된 경로로 완료. 사용자의 사이트 육안 검수는 그 뒤.
+
+
+## [2026-11-17 00:13 KST] R4 #27 — 동시 작업 통합 검증·기록 (PARTIAL, 10/75 유지)
+
+- **담당·범위:** W06 기간별 점수 이력 검증. 기준 `ansqhd5774-Choi/zgmini`, 지정 브랜치 `codex/ui-improvements`; 실제 개발 기준 `main@f22bfb1df7ff70bf4997117fbc187844a52f5c5c`. PC 승인 설치·Cloudflare exact Deployment SHA는 이번 실행 미관측.
+- **우리 작업 실제 변경:** 지정 브랜치 `tests/r4-period-window-handover-27.test.mjs` 1파일 추가 및 source fixture 기간 부족 예외 수정. 커밋 `dec6aacfabac8dda050ff5e7a8a0fcae4577022f` → `f1c7564008d126f0d5df0c6e2b034178c4adfff4`. 원격 파일 재조회. 기존 `market-trend-window-r1.mjs`는 main/기록 브랜치 blob `f14330390e5e707fee469338917308dc71d1199c` 일치. 계산/수집/DB/D1/Writer 변경 0.
+- **검증 A:** 실제 기록 브랜치의 `marketTrendWindowR1` 소스를 실행한 6개 시험 **6/6 PASS**: 1W~1Y 마지막 실제 날짜·오름차순, 기간 전체보다 짧은 정상 저장 기간, 화면 경계 carry-forward와 실제 관측 구분, 내부 무관측 날짜 미생성, 0/null 처리, 빈 시리즈, 입력 불변. 초기 3M 이상 자료가 기간을 모두 채운다는 잘못된 **fixture 기대조건**만 수정한 뒤 6/6 재검증. **GitHub check-runs = 0**이므로 이 신규 브랜치 테스트의 GitHub CI PASS 주장은 하지 않음.
+- **검증 B:** active `main`의 실제 `composite-observed-display-r1.mjs`(`040177c4d1941f87c4b65c08a7b83da03b8fde4c`), `published-domain-trend-r4.mjs`(`f3b8e0143d9d8bcb4d4055b37537a7c6a5046985`), `market-trend-window-r1.mjs`, `cnn-observed-sampling-r1.mjs` 소스를 격리 실행해 **14/14 PASS**. 비식별 [11-08=41, 11-12=44, 11-15=48, 11-16=50] 일간 확정 + [11-16 12:00=50, 12:05=53, 12:10=56] 실계산 이력 + 최신 게시 56점 fixture. 1W·1M·3M 내 실제 계산점 시간순·최종점 일치, 6M·1Y 승인 일간 시리즈 보존, 신규 실제 현재점/오래된 현재점·동일값·null/0·빈 이력 판정 정상. **과거 중간 계산점 3개는 테스트 데이터로 제공된 것**이며 실제 PC Writer가 15분 이내 3개를 저장했음을 의미하지 않음(Draft #1185 보호).
+- **동시 작업 접합:** 다른 W06 실행자가 2026-11-17 00:08 KST에 `main` 기반 `codex/ui-r4-period-window-20261117`에서 관측 이력이 아예 없을 때 1W/1M/3M에 선택 기간 밖의 daily가 넘어가는 **실제 결함**을 수정하고 [Draft PR #1189](https://github.com/ansqhd5774-Choi/zgmini/pull/1189)를 생성, 지정 브랜치 원장에 PARTIAL로 기록했다. 그 원본 작업·커밋·문서는 삭제/초기화/덮어쓰기하지 않음.
+- **검증 C (다른 작업자의 Draft 후보):** PR #1189 head `02b938093ab00eb9629987472ddaabc5e45bea87`, 변경 2파일(`lib/market-score/composite-observed-display-r1.mjs` 및 `tests/composite-current-chart-r4.test.mjs`). GitHub **`check` SUCCESS** ([Run 43893176250](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43893176250)), 후보의 실제 병합 함수에 비식별 1W/1M/3M 무관측 daily fallback, 역순, 빈 기록, 중복, 유효 현재점, 6M/1Y 불변 등을 입력한 **13/13 소스 함수 시험 PASS**. **Draft/미병합/미배포**. UI 전용 브랜치 `codex/ui-improvements`와 별도 branch로 작성돼 있으므로 프로젝트 상시 브랜치 계약과 선택적 PR 적용 범위를 원담당이 정합성 검토해야 함. 오래된 지정 브랜치를 통째로 병합하거나 강제 이동하지 않음.
+- **마지막 유효 단계/문제:** #26 저장된 관측 API 완료. #27은 **후보 코드+CI+소스 fixture까지만**, 실제 main 반영과 원본 승인 범위 확인이 남아 **PARTIAL**. FIRST UNVERIFIED = Draft #1189 최종 반영/병합 및 이후 Production/실제 데이터 확인. 부작용이나 PC/DB/D1 변경 증거 없음. 완료 번호 **#04,#05,#08,#10,#21,#22,#23,#24,#26,#33 (10개)**, **10/75 (13.3%), 잔여 65개** 유지.
+- **다음 필수 실행 단 하나:** **#27** 담당 W06 — PR #1189 변경 파일 2개와 원래 UI 전용 브랜치 정책·기존 CI 증거를 대조하여 원담당이 승인된 선별 PR/병합 방식을 확정하고, 허용된 실제 소스 반영·대상 검증을 마친 뒤 DONE 여부 결정. 이후 #28 방법론/모델 버전 구간 분리 실행. 다른 원담당 Collector Draft #1181, Writer Draft #1185, #13 실PC→D1 게시 미완료는 본 작업으로 해제되지 않음.
+- **진행 기록 반영:** 이 실행 기록과 상단 '현재 즉시 상태', 현 인계 정본의 '다음 단 하나의 실행'을 지정 `docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_R4_PROGRESS_20261116.md`에 함께 커밋하고 원격 재조회. **기록 저장·검증이 끝나기 전 DONE 보고 금지.**
