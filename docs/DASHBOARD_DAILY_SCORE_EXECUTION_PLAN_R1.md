@@ -1,5 +1,6 @@
 # ZGMINI 대시보드 최신 지표 반영·일별 점수 이력 구축 실행계획 R1
 
+> **2026-11-16 실행계획 개정:** 본 R1은 원형 이력으로 보존한다. 실무 작업 순서·진척·책임·증거 기준은 [DASHBOARD_DAILY_SCORE_EXECUTION_PLAN_R2.md](DASHBOARD_DAILY_SCORE_EXECUTION_PLAN_R2.md)를 우선 참조한다. 승인된 정책 정본 `DASHBOARD_SCORE_DAILY_UPDATE_STANDARD_R1.md`와 기존 산식/운영 계약은 변경하지 않는다.
 - 작성: 2026-11-10 KST
 - 저장소/브랜치: ansqhd5774-Choi/zgmini / codex/ui-improvements
 - 상위 확정 기준: docs/DASHBOARD_SCORE_DAILY_UPDATE_STANDARD_R1.md
