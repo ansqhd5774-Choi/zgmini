@@ -146,3 +146,48 @@ test('R32 public contract marks stored confirmed score separately from READY pro
  assert.deepEqual({date:theme.provisional.date,score:theme.provisional.score,
   phase:theme.provisional.phase},{date:'2026-10-29',score:61,phase:'PROVISIONAL'});
 });
+
+
+test('W03 malformed R32 excluded item is rejected without hiding another valid theme',async()=>{
+ const valid={...record,version:'ZGMINI_CONFIGURED_THEME_PUBLIC_V2',
+  themeId:'r32-valid',theme:'유효 R32',etfs:['WISE'],
+  methodologyVersion:'ETF_ONLY_T40_R20_V40_ADAPTIVE_R2_DATED_ISSUER_AUM_R32',
+  selectionEvidenceSha256:'e'.repeat(64),aumEvidenceSha256:'f'.repeat(64),
+  history:[{date:'2026-10-28',score:54,mode:'NORMALIZED_DATED_OFFICIAL_AUM_THREE_PLUS',
+   contributingETFs:['WISE'],weightsPercent:{WISE:100},
+   issuerAumAsOf:{WISE:'2026-10-27'},datedOfficialAumUsed:true,excluded:[]}]};
+ const broken={...valid,themeId:'r32-bad',theme:'손상 R32',
+  history:[{...valid.history[0],excluded:[null]}]};
+ assert.equal(eligibleConfiguredPublic(valid,'theme-configured:r32-valid',now-1000,now),true);
+ assert.equal(eligibleConfiguredPublic(broken,'theme-configured:r32-bad',now-1000,now),false);
+ const {response,body}=await load(database([
+  row(valid,'theme-configured:r32-valid'),row(broken,'theme-configured:r32-bad')]));
+ assert.equal(response.status,200);
+ assert.equal(body.status,'READY');
+ assert.deepEqual(body.themes.map(t=>t.id),['r32-valid']);
+});
+
+test('W03 R32 provisional null source-file entry fails closed, never throws',()=>{
+ const clock=Date.parse('2026-10-30T04:00:00Z'),h='a'.repeat(64);
+ const source={version:'ZGMINI_CONFIGURED_THEME_PUBLIC_V2',status:'READY',
+  themeId:'r32-sidecar',theme:'사이드카',etfs:['WISE'],benchmark:'SPY',
+  methodologyVersion:'ETF_ONLY_T40_R20_V40_ADAPTIVE_R2_DATED_ISSUER_AUM_R32',
+  definitionSha256:h,candidateSha256:h,approvalSha256:h,
+  selectionEvidenceSha256:h,aumEvidenceSha256:h,
+  sourceVersion:'R32_PROVISIONAL_SHA256_'+h,sourceStoredAt:'2026-10-30T02:00:00Z',
+  publishedAt:'2026-10-30T03:00:00Z',observationDate:'2026-10-29',score:54,
+  derivedOnlyNoRaw:true,publicationAuthorized:true,
+  publicationAuthorizationBasis:'LOCAL_OPERATOR_ATTESTATION_NOT_INDEPENDENT_LEGAL_VERIFICATION',
+  phase:'PROVISIONAL',confirmedObservationDate:'2026-10-28',
+  sourcePriceMode:'GMH_RAW_PLUS_MARKETPARQUET_SPLIT_ADJUSTED_PROVISIONAL',
+  sourcePriceReconciled:false,
+  sourceFiles:[{date:'2026-10-28',sha256:h},{date:'2026-10-29',sha256:h}],
+  overlapPriceDifferences:{SPY:0,WISE:0.002},
+  history:[{date:'2026-10-29',score:54,mode:'PROVISIONAL',
+   contributingETFs:['WISE'],weightsPercent:{WISE:100},
+   issuerAumAsOf:{WISE:'2026-10-27'},datedOfficialAumUsed:false,excluded:[]}]};
+ const key='theme-configured-provisional:r32-sidecar';
+ assert.equal(eligibleConfiguredPublic(source,key,clock-1000,clock),true);
+ assert.equal(eligibleConfiguredPublic({...source,sourceFiles:[null,source.sourceFiles[1]]},
+  key,clock-1000,clock),false);
+});
