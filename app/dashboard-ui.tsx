@@ -226,8 +226,11 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
    const display=amplifyCompositeDisplayScore(point.score);
    return display===null||!Number.isFinite(Date.parse(point.observedAt))?[]:[{label:point.observedAt,value:display}];
   }):[];
-  return mergeCompositeObservedDisplay(daily,archived,periodDays);
- },[market?.overall?.trend,compositeArchive,periodDays]);
+  // Current is already a verified, published score; the 15-minute archive
+  // may not yet contain its calculation time. Never synthesize earlier points.
+  const current=overallScore===null||!market?.updatedAt?null:{label:market.updatedAt,value:overallScore};
+  return mergeCompositeObservedDisplay(daily,archived,periodDays,current);
+ },[market?.overall?.trend,market?.updatedAt,overallScore,compositeArchive,periodDays]);
  const hasDatedHistory=useMemo(()=>overallTrend.length>1||
   [market?.overall?.trend,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPoints(data),365).length>1),
   [market?.overall?.trend,market?.domains,overallTrend]);
