@@ -204,3 +204,14 @@
 - **전체 75단계 진행:** 고유 DONE 단계 `#04,#05,#08,#10,#21,#22,#23,#24,#26,#27,#33,#34,#35` = **13/75 (17.3%)**, 잔여 **62개**. #28 방법론 이력 분리, #29 Writer 미래 관측 스냅샷, #13 실제 PC 원자료→D1 게시, #11 Collector 날짜 역행 및 Writer Draft #1185는 각 원담당 승인·실제 운영 적용 미완료/부분 완료를 보존.
 - **다음 단 하나의 필수 실행:** **#36 (W06 D01 미국 공포탐욕)** 실제 CNN 변경 관측 `observedAt` 및 점수가 `lib/cnn-observed-archive-r1.mjs` → `worker/public-feed-store.mjs` 기존 저장 → `scripts/pc-writer/cnn-observed-archive-publication-r1.mjs` 승인 게시 → `/api/fear-greed/observations`로 수렴하는지 로컬 저장·D1 readback/검증 원장으로 확인. `fear-greed-verified-checks`의 PC 점검 시각은 CNN 새 관측 시각과 구분. 신규 실제관측 부재 시 허위값·가짜 점 생성 금지. 타 담당 수집기·DB·스케줄 임의 변경 금지.
 - **진행 기록 종료 조건:** 이 절과 상단 현재 인계 정본을 지정 `codex/ui-improvements/docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_R4_PROGRESS_20261116.md`에 **커밋 → 원격 재조회 PASS**한 뒤 단계 완료 보고. 인계 누락 시 LEDGER_UNVERIFIED.
+
+
+## [2026-11-17 04:04 KST] R4 #36 — CNN 공개 관측 Reader 정합성 소스 조사 (PARTIAL, 13/75 유지)
+
+- 담당·범위: W06 D01 미국 CNN 공포탐욕; 기존 13/75(17.3%) 및 #36 다음 실행을 재사용. 지정 원장 브랜치 `codex/ui-improvements`; main 원격 최신 HEAD는 이번 회차 직접 확정하지 못했으며 기존 병합 `e5dc26582c94dacc1cb41ef39675b812014ce42f`는 과거 증거로만 유지.
+- 실제 확인: main의 `lib/cnn-observed-archive-r1.mjs` blob `90bc85af57fde21b2a618b9e1150bdebcf8a96f4`, `app/api/fear-greed/observations/route.ts` blob `67abf4bd27b16437355ad8d3d6bc22ea2edda1f4`, `scripts/pc-writer/cnn-observed-archive-publication-r1.mjs` blob `6a240e7a0d95b9e5dffef56ece0cc1c98b1b490b`, 기존 테스트 `tests/usa-fear-greed-change-only-r10.test.mjs` blob `44bd6df840e9db6dfbcd071f5af36334e84d53e8`.
+- 소스 관측: 저장 병합은 timestamp 기준 Map dedupe/공식 정정 overwrite 및 UTC 날짜 유효성 검사를 수행. 게시기는 로컬·D1 stored_at 비교 후 정확한 body/stored_at readback. 공개 GET은 CNN 관측 `points`와 별도 PC 확인 `checkedPoints`를 구분, 원천 수집 호출 없음. 다만 GET의 `byTime.set(key,...)`은 저장된 같은 timestamp에 서로 다른 score가 중복되면 마지막 값을 채택하므로 **상충하는 기존 저장행이 있을 경우 503 무결성 차단 없이 한 값을 노출할 수 있는 소스 위험 후보**. 실제 운영 중복/상충 발생은 미확인. 기존 archive 병합은 정상 입력에서 timestamp별 단일점 생성하므로 현재 장애로 단정 금지.
+- LAST PASS: 소스상 저장·게시·공개 GET의 별도 경로와 관측/확인시각 구분 확인. FIRST UNVERIFIED: 실PC 고유 신규 observedAt/score 저장 영수증 및 D1 readback·공개 GET의 동일 timestamp 비교. 소스 위험 후보의 실제 재현 테스트도 미수행.
+- 검증 수준: source read-only PASS; 신규 Node/CI 0, PC/SQLite/D1/Production 신규 실증 0, 코드 수정·배포 0. #36 DONE 아님. 중앙 #68의 최근 댓글은 타 담당 결과가 대부분으로 본 작업의 신규 승인으로 해석하지 않음.
+- 다음 필수 실행 1개: W06가 현재 main 공개 GET의 상충 timestamp fixture를 기존 route 테스트에 최소 추가해 503 기대조건을 재현하고, 재현될 때만 저장값을 덮지 않는 Reader 최소 수정 및 관련 회귀를 수행. 운영 PC/D1 증거는 별도 승인 Owner 경로로 확보하며 임의 A/B/C 실행 금지.
+- 전체: DONE #04,#05,#08,#10,#21,#22,#23,#24,#26,#27,#33,#34,#35 = 13/75(17.3%), 잔여 62. 이번 실행 기능 신규 DONE 0.
