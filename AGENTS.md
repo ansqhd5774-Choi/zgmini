@@ -1,8 +1,12 @@
 ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 
+## MarketParquet 사용 제거 — 최신 사용자 지시
+- [사용 제거 정본](docs/MARKETPARQUET_REMOVAL.md)을 따른다. 무료 파생 공개 불허·무료 예외 거절이 이유다. 문제가 생기면 MarketParquet 연결을 제거하고 사용 가능한 입력으로 가능한 범위를 설계한다. 과거 설계나 승인 플래그로 사용을 재개하지 않는다.
+- 이 브랜치에 과거 MarketParquet 코드·fixture·경로명이 남아 있더라도 운영 설치·재실행 근거가 아니다. 최신 main의 제거된 실행 경로를 보존하며 새 작업에서 삭제된 공급처를 다시 설치하지 않는다. 기존 GMH 원자료와 과거 증거는 보존한다.
+
 ## 테마 갱신 장애 작업 시작 기준
 - [전체 공개 테마 인식과 갱신 완료 조건](docs/THEME_SCALE_AND_METHODOLOGY_WORKFLOW.md#전체-공개-테마-인식과-갱신-완료-조건)을 적용한다. 기존·신규 공개 테마를 동일 등록 목록에서 발견하고, 실행 결과·공개 API의 ID와 테마별 확정/잠정 관측일을 대조한다.
-- [현재 운영 공급처와 복구 범위](docs/THEME_NINE_LIVE_ARCHITECTURE.md#현재-운영-공급처와-복구-범위)를 먼저 확인한다. R32, GetMarketHistory 확정치 48시간, MarketParquet 잠정치 24시간을 유지한다. Alpaca 재조사·추가·교체·fallback은 별도 사용자 지시가 있을 때만 시작한다.
+- [현재 운영 공급처와 복구 범위](docs/THEME_NINE_LIVE_ARCHITECTURE.md#현재-운영-공급처와-복구-범위)를 먼저 확인한다. 승인된 산식·ETF 구성과 GMH 확정 경로는 유지한다. MarketParquet 사용은 2026-11-16 사용자 지시로 삭제하며, 24시간 잠정치 의무는 폐기한다. 미제공 잠정치 때문에 독립 확정 갱신을 중단하지 않는다. Alpaca 재조사·추가·교체·fallback은 별도 사용자 지시가 있을 때만 시작한다.
 
 ## 테마 확장·산식 일괄 관리 — 2026-11-03
 - docs/THEME_SCALE_AND_METHODOLOGY_WORKFLOW.md를 따른다. 목적은 향후 모든 테마의 설정 기반 추가와 공통 버전별 산식 일괄 관리다. 특정 테마 복구로 목적을 축소하지 않는다. 테마·ETF 후보 수 상한을 두지 않고 자원 정책은 cursor/resume으로 처리한다.
