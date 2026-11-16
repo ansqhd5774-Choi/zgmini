@@ -1,0 +1,20 @@
+name: W02 R44 94 existing-source logo audit (one-time)
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/w02-r44-logo-remainder-oneoff.mjs'
+      - '.github/workflows/w02-r44-logo-remainder-oneoff.yml'
+permissions:
+  contents: read
+jobs:
+  roster:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 4
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Read pinned public dated CSV and own-site reviewed HTML; emit derived tickers only
+        run: node tests/w02-r44-logo-remainder-oneoff.mjs
