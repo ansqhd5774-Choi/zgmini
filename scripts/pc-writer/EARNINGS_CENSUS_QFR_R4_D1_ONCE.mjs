@@ -62,6 +62,16 @@ export function validatePinnedQfrSource(payload,{sourceVersion,rawZipSha256,sour
   return true;
 }
 
+// The approved B executor supplies its per-request evidence directory.
+// Manual/CMD calls keep the historical next-to-script result path.
+export function resolveQfrResultDirectory({requested,fallback=HERE}={}){
+  if(requested===undefined||requested===null||requested==='')return fallback;
+  if(typeof requested!=='string'||!path.isAbsolute(requested)
+    ||!fs.existsSync(requested)||!fs.statSync(requested).isDirectory())
+    throw Error('QFR_D1_RESULT_DIRECTORY_INVALID');
+  return requested;
+}
+
 async function main(){
   const now=new Date().toISOString();
   const stamp=now.replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z');
@@ -73,7 +83,10 @@ async function main(){
     'PUBLIC_GET_VERIFIED=NO'];
   let db,exit=0;
   let apply=false;
+  let resultDirectory=HERE;
   try{
+    // Validate the supplied B evidence directory before any D1 adapter opens.
+    resultDirectory=resolveQfrResultDirectory({requested:process.env.ZGMINI_EARNINGS_C_LOG_DIR});
     ({apply}=parseQfrD1Mode(process.argv.slice(2)));
     lines.push(`MODE=${apply?'APPLY_EXPLICIT':'READ_ONLY_PREFLIGHT'}`);
     const operationalRoot=process.env.ZGMINI_EARNINGS_C_OPERATIONAL_ROOT;
@@ -142,7 +155,7 @@ async function main(){
     exit=1;
   }finally{
     try{db?.close();}catch{}
-    const file=path.join(HERE,`EARNINGS_CENSUS_QFR_R4_D1_RESULT_${stamp}.txt`);
+    const file=path.join(resultDirectory,`EARNINGS_CENSUS_QFR_R4_D1_RESULT_${stamp}.txt`);
     try{
       fs.writeFileSync(file,lines.join('\r\n')+'\r\n',{encoding:'utf8',flag:'wx'});
       console.log(`TXT_CREATED=${path.basename(file)}`);
