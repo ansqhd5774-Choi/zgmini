@@ -356,3 +356,13 @@
 - **E1-R5 연구용 CompanyFacts 후보:** `scripts/pc-writer/earnings-r5-official-refresh-r1.mjs` (blob `bbe9f5e5500e77b2263b3a13baf5fea87c44774b`)는 SEC 공식 `companyfacts.zip`을 입력으로 `storage/core.sqlite`의 기존 universe CIK를 read-only 조회하여 `manual-input/e1-r5/incoming/companyfacts/CIK##########.json`으로 선별 staging하는 코드. `researchOnly=true`, `productionActivation=false`, 기본 `DRY_RUN_NO_NETWORK`; `--execute`는 실제 다운로드/로컬 파일 변경 가능하므로 승인 없는 실행 금지. `scripts/pc-writer/earnings-r5-g4-pit-ledger-r1.mjs` (blob `282cc354b8f79eddf1f0c5939df120e84412dbd1`)는 같은 디렉터리의 CompanyFacts를 읽어 연구용 PIT 기록에 사용한다. `lib/market-score/earnings-e1-r5-input-contract.mjs` (blob `98dc56527c3522fcbc34317f0af1696f99d1e1a2`)는 CIK 및 SEC CompanyFacts 문서 검증 계약을 제공한다.
 - **판정:** R1-07은 기존 구현·CIK 매핑·저장 경로와 연구/Production 구분을 조사하는 단계이므로 `DONE`. 그러나 CompanyFacts 실 PC ZIP/JSON 존재·SHA readback, 승인 Collector 설치·운영 source SHA 및 SEC C 정보성 지표 적격성은 `NOT_VERIFIED/HOLD`; R2-10/11, R3-15에 이관. GitHub 소스 발견만으로 자동 수집·D1 게시·운영 완료를 주장하지 않는다. **신규 기능 코드·PC 수집·D1/Production 0건.**
 - **LAST PASS:** R1-07 소스·CIK·저장 경로 인벤토리. **FIRST UNFINISHED:** R1-08 D1 키·Reader·Writer 게시 계보. **NEXT:** 기존 C 정확키와 A/B 분리 및 저장·GET·게시 증거를 키별 매핑; 신규 D1 조회 권한 우회 금지.
+
+### 2026-11-17 06:03 KST — R1-08 Worker GET·D1 정확키 소스 매핑 (부분 완료)
+
+- **실제 확인한 W05 브랜치 파일:** `worker/earnings-companion-c-r4.mjs` (blob `d8df9f1c`), `worker/earnings-companion-c-qfr-r1.mjs` (`c9d8679e`), `worker/earnings-bea-unit-profit-r1.mjs` (`3cf1b317`), `worker/earnings-bea-manufacturing-profit-r1.mjs` (`5afd165d`), `worker/candidate-r52.ts` (`a3d78a30`). 소스 검색 결과가 아니라 **지정 브랜치 파일 본문**에서 export와 GET 분기를 확인.
+- 기본 BLS: `detail:earnings-recession-indicators:v1` → `/api/earnings-recession-indicators` → `readEarningsCompanionResponse`; 서비스 PPI는 동일 Reader의 별도 `EARNINGS_C_SERVICE_SNAPSHOT_KEY`를 조회하는 합성 경로. 정확한 서비스 키 문자열 및 Writer/게시 영수증은 후속 확인 필요.
+- QFR: `detail:earnings-recession-indicators:census-qfr-mfg-margin:v1` → `/api/earnings-recession-census-qfr-margin` → `readQfrCompanionResponse`; 코드에 `READBACK_VERIFIED` 반환 분기 존재하나 **운영 D1 실행 증거 아님**.
+- BEA 단위이익: `detail:earnings-bea-unit-profit:v1` → `/api/earnings-recession-bea-unit-profit` → `readBeaUnitResponse`.
+- BEA 제조업: `detail:earnings-bea-manufacturing-profit:r1` → `/api/earnings-recession-bea-manufacturing-profit` → `readBeaMfgResponse`.
+- `worker/candidate-r52.ts`에서 위 네 GET route의 Reader 분기 확인. **LAST PASS:** 지정 브랜치 정확키/GET 정적 계약 4군 매핑. **FIRST UNVERIFIED:** 서비스 PPI exact key·각 Writer 승인 manifest/실제 운영 D1 row·stored_at·Production 배포 SHA 및 현재 GET 응답. 소스 연결을 게시 완료로 계산하지 않음.
+- 신규 운영 PC/D1/Production 실행 **0건**. R1-08은 `PARTIAL_SOURCE` 유지, 7/82(8.5%) 불변. **다음 한 작업:** 서비스 PPI 정확키 및 네 군 Writer 파일/승인 게시 영수증의 실제 키별 대응을 완료해 R1-08 완료 기준을 판정한다. 운영 권한 없는 SELECT/쓰기 수행 금지.
