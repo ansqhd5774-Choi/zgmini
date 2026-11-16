@@ -104,3 +104,14 @@
 5. **진행률 근거 보호:** 기록·검증 자체는 72개 PIT 구현 단계의 실제 완료 개수를 늘리지 않는다. 14/72개 유지, 58개 잔여. 29개 중 마지막 `STATE_CLAIMS_BREADTH` 점수 복구는 여전히 미완료다.
 
 **현재 다음 필수 실행:** `PIT-03-03`의 정상 PC 메모리 조건을 확인한 다음, 기존 승인된 A급 분석 번들로 `PIT-03-04` 현재 Current/History 분포를 단회 확보한다. 기존 #1764/#1765 requestId 재사용 및 메모리 안전 거부 우회는 금지한다.
+
+
+## 9. 기존 main 규칙·전담 지정 진행 기록 재대조 — 2026-11-16
+
+- **요청:** 고용 전담 브랜치의 매 작업 후 지정 기록 의무와 GitHub `main` 공통 기준 존재 여부 확인.
+- **공통 정본 재조회:** [제어 main / AGENTS.md](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/AGENTS.md)는 21행에서 완료 단계의 증거·다음 필수 실행 기록을 요구한다. [제어 main / PC_AUTOMATION_STANDARD.md](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/docs/PC_AUTOMATION_STANDARD.md)의 '단계 종료와 다음 실행'은 `DONE/READY/RUNNING/STATE_UNKNOWN/BLOCKED/DEFERRED`, 근거 링크·적용 범위·다음 실행 기록을 규정하며 '완료·보고·문서 유지'에서 이번 실행/검증/미해결/다음 행동을 구분하도록 한다. [앱 main / AGENTS.md](https://github.com/ansqhd5774-Choi/zgmini/blob/main/AGENTS.md)의 '1.1 작업 결과 보고'는 모든 개발·조사·점검·수정의 정확한 작업 브랜치·실제 커밋/검증/문제 보고를 상시 의무화한다.
+- **전담 기록 파일:** [`docs/EMPLOYMENT_R6_PROGRESS_LOG_20261116.md`](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md) 자체가 72개 세부 단계 진행·최종 상태 및 원장 반영을 지정한 W04 실제 경로이다. 전담 브랜치에 경로가 이미 정해져 있으므로 임의의 새 로그 파일이나 중복 지침을 만들지 않는다.
+- **표현상 구분:** 공통 main에서 확인한 것은 **단계별 증거·결과 기록 및 문서 유지 의무**이고, 특정 고용 전용 파일명은 **전담 브랜치가 지정**한 것이다. 공통 main에 W04 파일명까지 문자 그대로 지정돼 있다고 주장하지 않는다.
+- **실제 결함 및 책임:** 이전 보조 작업자는 기존 기준을 적용하지 않고 진행 기록 존재 확인만 수행한 다음 `VERIFIED`라고 보고하였다. 이는 새 규칙 부재가 아니라 **기존 기록 절차의 누락 및 완료 판정 오류**이다.
+- **이번 검증 범위:** 원격 문서 확인과 해당 원장 기록. PC 수집·SQLite·D1·API·UI 변경 및 신규 공급자 호출 0건. 기능 진행률 **14/72** 유지, 마지막 `STATE_CLAIMS_BREADTH` 미완료 유지.
+- **다음 필수 실행:** 기존 승인된 PIT A 분석 경로의 메모리 안전 조건 충족 확인 후 단회 최신 Current/History 결손을 조회한다(`PIT-03-03 → PIT-03-04`). 과거 요청 `#1764/#1765` 재사용 금지.
