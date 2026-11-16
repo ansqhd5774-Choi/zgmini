@@ -96,6 +96,7 @@ export default function FomcCountdown(){
       <div className="zg-schedule-list" role="region" aria-label="예정된 주요 발표 목록">
         {upcoming.length===0?<p className="zg-schedule-empty">확인된 주요 발표 일정이 없습니다.</p>:upcoming.map(item=><div className="zg-schedule-item" key={item.key}>
           <span className={'zg-schedule-kind '+(item.kind==='실적'?'is-earnings':item.kind==='연준'?'is-fed':'')}>{item.kind}</span>
+          {'sectorLabel' in item&&item.sectorLabel?<span className={'zg-schedule-sector is-'+item.sectorTone} title={'섹터: '+item.sector} aria-label={'섹터 '+item.sector}>{item.sectorLabel}</span>:<span className="zg-schedule-sector-slot" aria-hidden="true"/>}
           <span className="zg-schedule-name" title={item.name}><CompanyLogo logo={item.logo} ticker={item.ticker} domain={item.logoDomain}/><span className="zg-schedule-name-text">{item.name}</span></span>
           <ScheduleDate at={item.at} date={item.date} estimated={item.estimated} session={item.session}/>
           {now!==null&&<ScheduleTimer at={item.at} now={now} estimated={item.estimated}/>}
