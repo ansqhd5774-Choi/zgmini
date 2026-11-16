@@ -21,7 +21,11 @@ test('R4 #27 period windows end at the last actual publication day and are chron
   assert.equal(points.at(-1).label,'2026-11-16',label);
   assert.equal(points.at(-1).value,50,label);
   assert.ok(points.every((point,i)=>i===0||point.label>=points[i-1].label),label);
-  assert.equal(Date.parse(points.at(-1).label)-Date.parse(points[0].label),days*86400000,label);
+  const intendedStart=new Date(Date.parse(points.at(-1).label)-days*86400000).toISOString().slice(0,10);
+  if(daily.some(point=>point.label<intendedStart))
+   assert.equal(points[0].label,intendedStart,label+' carried boundary');
+  else
+   assert.equal(points[0].label,daily[0].label,label+' available observations shorter than range');
  }
 });
 
