@@ -5,7 +5,7 @@
 - 착수 당시 전용 브랜치: `codex/ui-improvements` `43f943679b555387593d918088860ba5b882dcb6`
 - 인계받은 기존 근거: `DASHBOARD_SCORE_68_CONTENT_CONTRACT_INVENTORY_R1.md` (2026-11-10), `DASHBOARD_SCORE_RUNTIME_BASELINE_R1.md` (2026-11-10)
 - 당회 작업 범위: **현재 개발 소스의 UI 소비 구조 및 R1 계약 재사용**, 기능별 실제 갱신 계약 분류 착수. 원자료/DB/D1/Controller/예약/산식 변경 없음.
-- **최신 재판정 진척: 고정 01–33 완료 (33/34 = 97.1%), 27개 소스 분류 완료. 운영에 실제 영향을 준 독립 결함군 N=1(D03 MarketParquet UI); 추가 F1–F3 PASS 3/4. 합계 36/38 = 94.7%, 남은 F4-B·34.** 이전 N=2/39÷42 기록은 당시 원장으로 보존하되, 2026-11-16 재검토에서 A군 운영 인과가 부정확했으므로 현재 진행률에는 포함하지 않는다. 전체 운영 종단 PASS와 구분.
+- **최종 인계 상태: 수정 코드·테스트·GitHub main 병합·연결된 Cloudflare 후보 빌드 및 작업 종결 인계 완료 (W06 담당 작업 38/38). 정확한 Production Deployment ID/SHA와 실제 UI 반영은 사용자 검수 전 UNVERIFIED이며 운영 종단 PASS를 주장하지 않는다.** 고정 34/34(27개 계약 분류와 34번 인계 포함), 유효 결함군 N=1(D03 MarketParquet UI)의 F1–F3 통과, F4-B는 사용자 검수 인계 준비 HANDOFF_READY. 이전 36/38(94.7%)은 당시 검증 기준의 이력으로 보존.
 
 ## 1. 공통 실행 01–03 — 완료 근거
 
@@ -249,3 +249,13 @@
 **진척률 정정:** 고정 33/34 + 유효 결함군 B의 F1,F2,F3 3/4 = **36/38 (94.7%)**. 남은 2건은 F4-B 최소 운영 적용 확인, 34 1회 종결. 과거 A군 F1–F3 코딩/CI 실적은 유지하나 실제 결함 추가 4작업으로 중복 계산하지 않는다. 이는 범위 재판정에 따른 분모/분자 정정이지 새 기능 구현 또는 실제 Production 검증 증거가 아니다.
 
 **다음 필수 행동 하나:** 웹디버그를 제외한 기존 승인 GitHub↔Cloudflare read-only/현재 공개 JS asset 증거로 PR #1174의 운영 반영 여부만 확인. 이 증거가 불가능하면 차단 사유와 미확인 범위를 정확히 남기고 34의 결론만 작성한다. 다른 원담당의 Core/Writer/D1/산식 소스 변경은 하지 않는다.
+
+
+## 19. 사용자 수락 경로로 최종 인계 — 2026-11-16
+
+- **사용자 최신 완료 기준:** 어시스턴트가 홈페이지 화면을 직접 재검증하거나 보고할 필요 없음. W06은 기능 수정·관련 테스트·main 병합·기존 자동배포 트리거까지 끝내고 사용자에게 확인할 화면과 정상 기대 상태만 전달한다. 화면의 실제 최종 검수/승인은 사용자가 직접 수행한다. 웹디버그 복구, 다른 브라우저 서비스 반복 시도, 새 배포 도구, D1 전수 재감사는 하지 않는다.
+- **확인된 개발/배포 준비:** W06 UI 수정 PR #1174(변경 4개 파일) merged main 2ab848ded4a02e34e5a9b2b2a8a1ab28d1bf11ac; GitHub CI check/verify/notify 모두 SUCCESS; Cloudflare Git Integration Workers Builds zgmini-migration-candidate-r5 SUCCESS(build 5d1da6ad-ea63-4b87-964a-144d3756dbb5, version 56d96b47-6dd9-43a6-b9db-572fda63b6b8). app/market-breadth-strip.tsx 최신 main에서 퇴역 MarketParquet confirmed-r2/history 요청·과거 확정치 이월 제거를 직접 확인. 관련 source-level 9/9, Node CI PASS.
+- **7개 상세 API:** 공개 API inflation/recession/credit-risk/earnings-recession/asset-bubble/debt-risk/supply-shock 7개 READY 응답 확보. 실제 Worker가 이미 PROJECTION_ROUTES를 처리하므로 App Router 파일 누락은 확인된 운영 결함군에서 제외. 관련 소스 추가 PR #1165 및 CI 이력 보존, 추가 D1 감사 불필요.
+- **F4-B 상태:** 코드·CI·GitHub 자동빌드까지 기술적 인계 준비 HANDOFF_READY. Cloudflare 실제 Production Deployment ID/SHA, 정적 JS의 라이브 배포 판본, 브라우저 화면 결과는 별도 검증하지 않았으므로 PRODUCTION_UNVERIFIED / USER_ACCEPTANCE_PENDING. GitHub build 성공을 Production 배포 성공으로 바꾸지 않는다. 사용자가 홈페이지에서 확인하면 실제 화면 최종 승인; 불일치가 있으면 해당 화면의 표시만 좁혀 수정한다.
+- **34번 결과:** 27/27 영역 판정, 실제 결함 원인군 N=1, R3 총 34+4=38개 중 코드·테스트·인계 작업 정리 완료. W06 담당 작업은 여기서 종료하고 사이트 자동 검증을 필수 종료 조건으로 복원하지 않는다. W06 담당 업무 38/38 (100%, 사용자가 정한 인계 기준)와 실제 운영 검수 USER_ACCEPTANCE_PENDING을 별도 상태로 구분한다.
+- **사용자 확인 위치:** https://zgmini.kr/ 의 '미국 등락 지수'. 퇴역 R2 확정/이력 펼침 메뉴가 없어야 하고, 장중 최신 유효 IEX 잠정치가 있을 때만 세 비율 표시; 없으면 미제공 및 —. '한국 등락 지수' 기존 미연결 표시는 별도 소유 기능으로 변경 없음. 새로고침·육안 확인만 필요. 추가 과금·배포·DB/PC 운영 변경 0건.
