@@ -14,10 +14,10 @@ test('candidate collection reuses Core lock and precedes early Writer publicatio
  assert.match(source,/const \{runInflationCandidatesFromCore\}=await import\('\.\/inflation-causal-candidate-core-bridge\.mjs'\)/);
 });
 
-test('candidate collection is bounded to a successful Core collection and reports nonblocking failure',()=>{
+test('candidate collection is independent of unrelated collection exit and reports nonblocking failure',()=>{
  const source=cycle();
  assert.match(source,/let inflationCandidates=\{status:lane==='core'\?'DISABLED':'SKIPPED_KOREA_LANE',providerRequests:0\}/);
- assert.match(source,/if\(lane==='core'&&collection\.status===0\)\{\s*try\{\s*const \{runInflationCandidatesFromCore\}=await import\('\.\/inflation-causal-candidate-core-bridge\.mjs'\);\s*inflationCandidates=await runInflationCandidatesFromCore\(base\);\s*\}catch\{\s*inflationCandidates=\{status:'FAILED_PREVIOUS_INPUTS_PRESERVED',providerRequests:null\}/);
+ assert.match(source,/if\(lane==='core'\)\{\s*try\{\s*const \{runInflationCandidatesFromCore\}=await import\('\.\/inflation-causal-candidate-core-bridge\.mjs'\);\s*inflationCandidates=await runInflationCandidatesFromCore\(base\);\s*\}catch\{\s*inflationCandidates=\{status:'FAILED_PREVIOUS_INPUTS_PRESERVED',providerRequests:null\}/);
  assert.match(source,/collectionStatus:collectionReport\?\.status\?\?null,inflationRecurring,inflationCandidates,supplyR10/);
  const bridge=fs.readFileSync('scripts/pc-writer/inflation-causal-candidate-core-bridge.mjs','utf8');
  assert.match(bridge,/if\(env\?\.ZGMINI_INFLATION_CANDIDATE_CORE_APPROVED!=='1'\)/);
