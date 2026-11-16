@@ -118,7 +118,8 @@ export function buildApiConnectionHealthFromLog(base,now=Date.now(),{fileSystem=
    }
   }
  }
- const endpointIncompleteEvents=hostEventRequests.size-complete.size+invalidEndpointEvents;
+ // An invalid route is already counted in the incomplete host event; avoid double count.
+ const endpointIncompleteEvents=hostEventRequests.size-complete.size;
  const items=[...hosts.values()].sort((a,b)=>(b.last?.at??0)-(a.last?.at??0)||a.host.localeCompare(b.host))
   .slice(0,MAX_HOSTS).map(h=>{
    const times=[...new Set(h.events)].sort((a,b)=>a-b);
