@@ -145,7 +145,7 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 | 세부 ID | 실제 실행·분석 작업 | 입력·근거 | 완료 판정 / 결과 | 상태 |
 |---|---|---|---|---|
 | PIT-04-01 | Current 관측일·지역별 최신 시각 정렬 | [#1798](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1798) WAL·RAM PASS → [#1799](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1799) 실 SQLite Current 600×51, 2015-05-02~2026-10-24 | 최신 2026-10-24 주차 `51 rows/51 distinct/unknown=0`+최신 600주 검증으로 51지역 각각의 최대 **관측일** 2026-10-24, 600/600 완전주 논리 도출; per-region retrievedAt/PIT 시각은 후속 단계 | DONE |
-| PIT-04-02 | History를 관측일·지역·최신 개정 단위로 정렬 | PIT-03 History revision | latest revision과 이전 revision을 별도로 식별 | TODO |
+| PIT-04-02 | History를 관측일·지역·최신 개정 단위로 정렬 | 기존 #1787 History 38,753 revisions aggregate, 앱 [Draft PR #1195](https://github.com/ansqhd5774-Choi/zgmini/pull/1195) latest/prior/ambiguous 안전 분류 source + CI #43906987544 SUCCESS | 동일시각 hash 변경을 HOLD, 과거/최신 개정 키를 분리하는 회귀 4/4 PASS; **실PC asOf 키별 최신/이전 개정 수치·원장 재조회 전 DONE 금지** | SOURCE_READY — OPERATING_A_UNVERIFIED |
 | PIT-04-03 | Current와 최신 History의 값·sourceHash 정확 대조 | 관측키·원본 해시 | 정확 일치/누락/상충을 독립 버킷으로 분리 | TODO |
 | PIT-04-04 | availableAt·retrievedAt·기록 시각의 PIT 적격성 검산 | 공식 관측 시각·DB 메타 | 미래 가용 데이터를 과거 TRUE_PIT로 승인하지 않음 | TODO |
 | PIT-04-05 | 저장 raw snapshot 및 요청 원장에 원본 해시 귀속 확인 | 원자료 raw_snapshot·수집 Run | 동일 응답 출처와 기록시각 확인·불명 출처 HOLD | TODO |
@@ -289,4 +289,4 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 
 - 독립 작업 `PIT-04-06`은 기존 승인 A [#1799](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1799) Run 43904242672의 같은 읽기 전용 SQLite 결과로 완결: `sampledWeeks=600`, `complete51Weeks=600`, `strict52WeekCandidateCount=545`, `firstWindowBreak=null`, `latestWindowBreak=null`; 55주 선행 참조 후 2016-05-21~2026-10-24 날짜/지역 완전주. `fullTenYearRawCoverage=RAW_PRECONDITIONS_COMPLETE`는 필요 577주×51지역 저장 Current 전제만 가리킴.
 - `PIT-04-06` **DONE**, `PIT-04` 2/8, 전체 **24/72 DONE(33.3%), 잔여 48**. PIT-04-02 History 최신 revision과 04-07 0/null/blank 값/분모는 이번 완료 범위 밖이다. 자세한 실행 증거·별도 source CI 실패 및 수정은 [진행 원장 §18](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md)에 보존.
-- 앱 격리 코드 검증: [Draft PR #1195](https://github.com/ansqhd5774-Choi/zgmini/pull/1195) 소스 동일시각 변경된 hash는 암호해시 정렬로 최신본 단정 금지. 최초 Node CI #43906302719의 공백값 2 실패 후 코드를 수정한 최신 `48c5e61d` CI #43906987544 상태를 실제 재조회 후 PASS/FAIL 별도 기록. **앱 main/실PC 반영 없음**.
+- 앱 격리 소스 검증: [Draft PR #1195](https://github.com/ansqhd5774-Choi/zgmini/pull/1195) 정확 2파일. 최초 [Node CI 43906302719](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43906302719) 공백값 오분류 2 FAIL을 기존 assertion 보존 최소 수정으로 해결. 최신 HEAD `48c5e61d7a5b28a6ee2d9f8a47f4742326cc2f9d`의 [Node CI 43906987544](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43906987544) **4523 tests / 4513 PASS / 0 FAIL / 7 SKIP / 3 TODO**, 04-02 신규 4/4 및 기존 공백 2건 PASS, Build/typecheck/11개 게시복구/69개 CF read 계약 PASS. **source CI=실PC History revision 검증/설치/운영 게시 완료 아님**. 구체적 시점별 변경은 [진행 기록 §19](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md).
