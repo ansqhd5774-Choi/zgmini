@@ -32,7 +32,66 @@ test('distinct CPI and PPI series and periods are strict; M13 is not a month',()
   assert.throws(()=>normalizeInflationCandidateBls(payload(makeSeries('WPSFD42',270)),{group:'ppi'}),/ID_OR_ROWS_INVALID/);
   assert.throws(()=>normalizeInflationCandidateBls(payload(makeSeries('CUSR0000SEHC',410),makeSeries(rent,350)),{group:'cpi'}),/ID_OR_ROWS_INVALID/);
   assert.throws(()=>normalizeInflationCandidateBls(payload(makeSeries(rent,350),makeSeries(rent,350)),{group:'cpi'}),/ID_OR_ROWS_INVALID/);
-  assert.throws(()=>normalizeInflationCandidateBls(payload(makeSeries(finalDemandPpi,'.')),{group:'ppi'}),/VALUE_OR_DUPLICATE/);
+  const unusable=normalizeInflationCandidateBls(payload(makeSeries(finalDemandPpi,'.')),{group:'ppi'});
+  assert.deepEqual(unusable[finalDemandPpi],[]);
+  assert.equal(unusable.diagnostics[finalDemandPpi].invalid,1);
+});
+
+test('official BLS 2025-10 shelter CPI missing marker stays absent without dropping valid months',()=>{
+  const asSeries=id=>({seriesID:id,data:[
+    {year:'2026',period:'M09',value:'450.429',footnotes:[{}]},
+    {year:'2025',period:'M10',value:'-',footnotes:[{code:'X',text:'Data unavailable due to the 2025 lapse in appropriations'}]},
+    {year:'2025',period:'M09',value:'438.237',footnotes:[{}]},
+  ]});
+  const output=normalizeInflationCandidateBls(payload(asSeries(rent),asSeries(ownerEquivalentRent)),{group:'cpi'});
+  for(const id of [rent,ownerEquivalentRent]){
+    assert.deepEqual(output[id].map(x=>x.date),['2025-09-01','2026-09-01']);
+    assert.equal(output[id].some(x=>x.date==='2025-10-01'),false);
+  }
+  const noFootnote=asSeries(rent);
+  noFootnote.data[1].footnotes=[{code:'P'}];
+  const absent=normalizeInflationCandidateBls(payload(noFootnote,asSeries(ownerEquivalentRent)),{group:'cpi'});
+  assert.equal(absent.diagnostics[rent].missing,1);
+  assert.equal(absent[rent].length,2);
+  noFootnote.data.push({year:'2026',period:'M09',value:'452.000',footnotes:[]});
+  const conflicting=normalizeInflationCandidateBls(payload(noFootnote,asSeries(ownerEquivalentRent)),{group:'cpi'});
+  assert.deepEqual(conflicting[rent].map(x=>x.date),['2025-09-01']);
+  assert.equal(conflicting.diagnostics[rent].conflict,1);
+  assert.equal(conflicting[ownerEquivalentRent].length,2);
+});
+
+test('a duplicate identical BLS value is deduplicated, malformed months do not discard valid data',()=>{
+  const withDuplicates={seriesID:rent,data:[
+    {year:'2026',period:'M09',value:'350.000',footnotes:[]},
+    {year:'2026',period:'M09',value:'350',footnotes:[{code:'P'}]},
+    {year:'2026',period:'M14',value:'100',footnotes:[]},
+    {year:'2025',period:'M10',value:'-',footnotes:[]},
+    {year:'2026',period:'M08',value:'349',footnotes:[]},
+  ]};
+  const output=normalizeInflationCandidateBls(payload(withDuplicates),{group:'cpi'});
+  assert.deepEqual(output[rent].map(x=>x.value),[349,350]);
+  assert.equal(output.diagnostics[rent].duplicate,1);
+  assert.equal(output.diagnostics[rent].invalid,1);
+  assert.equal(output.diagnostics[rent].missing,1);
+  assert.deepEqual(output[ownerEquivalentRent],[]); // partial supplier response
+});
+
+test('all officially missing CPI rows archive raw response without inventing zero',async t=>{
+  const ctx=fixtureBase();t.after(ctx.clear);
+  const missing=id=>({seriesID:id,data:[
+    {year:'2025',period:'M10',value:'-',footnotes:[]},
+  ]});
+  const result=await collectInflationCandidateBls({base:ctx.base,group:'cpi',
+    blsKey:'k',quotaFetch:async()=>response(payload(missing(rent),missing(ownerEquivalentRent))),now});
+  assert.equal(result.status,'UNCHANGED');
+  assert.equal(result.providerRequests,1);
+  assert.equal(result.latest[rent],null);
+  assert.equal(result.latest[ownerEquivalentRent],null);
+  assert.equal(result.diagnostics[rent].missing,1);
+  assert.equal(fs.existsSync(path.join(ctx.base,INFLATION_CANDIDATE_BLS_FILE)),false);
+  const archive=path.join(ctx.base,'inflation-causal-candidates-r1',result.archive);
+  assert.equal(fs.existsSync(archive),true);
+  assert.match(fs.readFileSync(archive,'utf8'),/"value":"-"/);
 });
 
 test('CPI and PPI provider events save independently and preserve all three series',async t=>{
@@ -81,6 +140,10 @@ test('revised month overwrites only its own series while older observations rema
   const saved=JSON.parse(fs.readFileSync(path.join(ctx.base,INFLATION_CANDIDATE_BLS_FILE),'utf8'));
   assert.deepEqual(saved.series[rent].map(x=>x.value),[300,351]);
   assert.deepEqual(saved.series[ownerEquivalentRent].map(x=>x.value),[300,410]);
+  const backups=path.join(ctx.base,'inflation-causal-candidates-r1','backups');
+  assert.equal(fs.readdirSync(backups).length,1);
+  const backup=JSON.parse(fs.readFileSync(path.join(backups,fs.readdirSync(backups)[0]),'utf8'));
+  assert.deepEqual(backup.series[rent].map(x=>x.value),[300,350]);
 });
 
 test('provider shape failure cannot replace a last known good snapshot',async t=>{
@@ -106,42 +169,4 @@ test('no approved key/quota, invalid group and unsafe PC base stop before networ
   await assert.rejects(()=>collectInflationCandidateBls({...common,group:'all',blsKey:'k'}),/GROUP_NOT_APPROVED/);
   await assert.rejects(()=>collectInflationCandidateBls({...common,base:ctx.temp,blsKey:'k'}),/PC_BASE_DENIED/);
   assert.equal(calls,0);
-});
-
-
-test('official BLS 2025-10 X gap is not fabricated as numeric CPI (both series)',()=>{
-  // Official flatfile cu.data.12.USHousing: 2025 M10 "-" X for #22 and #23.
-  // API-shaped fixture; not a claim that this exact API payload was saved on PC.
-  const x={year:'2025',period:'M10',value:'-',footnotes:[{code:'X',text:'Data unavailable due to the 2025 lapse in appropriations.'}]};
-  const sample=(id,sep,oct)=>({
-    seriesID:id,data:[
-      {year:'2026',period:'M10',value:oct,footnotes:[]},
-      x,
-      {year:'2025',period:'M09',value:sep,footnotes:[]},
-    ],
-  });
-  const valid=normalizeInflationCandidateBls(payload(
-    sample(rent,'438.237','451.337'),
-    sample(ownerEquivalentRent,'431.134','446.588'),
-  ),{group:'cpi'});
-  assert.deepEqual(valid[rent].map(r=>r.date),['2025-09-01','2026-10-01']);
-  assert.deepEqual(valid[ownerEquivalentRent].map(r=>r.date),['2025-09-01','2026-10-01']);
-  assert.equal(valid[rent][1].value,451.337);
-  assert.equal(valid[ownerEquivalentRent][1].value,446.588);
-  // A lone '-' or an unrelated footnote is still an invalid provider value.
-  for(const footnotes of [[],[{code:'P',text:'Preliminary'}]]){
-    const bad=sample(rent,'438.237','451.337');
-    bad.data[1]={...x,footnotes};
-    assert.throws(()=>normalizeInflationCandidateBls(payload(bad,sample(ownerEquivalentRent,'431.134','446.588')),{group:'cpi'}),/VALUE_OR_DUPLICATE/);
-  }
-  // Even a missing-value row counts as the observed month for duplicate detection.
-  const duplicate=sample(rent,'438.237','451.337');
-  duplicate.data.push({year:'2025',period:'M10',value:'438.7',footnotes:[]});
-  assert.throws(()=>normalizeInflationCandidateBls(payload(duplicate,sample(ownerEquivalentRent,'431.134','446.588')),{group:'cpi'}),/VALUE_OR_DUPLICATE/);
-  const malformed=sample(rent,'438.237','451.337');
-  malformed.data.push(null);
-  assert.throws(()=>normalizeInflationCandidateBls(payload(malformed,sample(ownerEquivalentRent,'431.134','446.588')),{group:'cpi'}),/MONTH_INVALID/);
-  const allMissing=sample(rent,'438.237','451.337');
-  allMissing.data=[x];
-  assert.throws(()=>normalizeInflationCandidateBls(payload(allMissing,sample(ownerEquivalentRent,'431.134','446.588')),{group:'cpi'}),/SERIES_EMPTY/);
 });
