@@ -34,10 +34,11 @@
 | 현재 관련 단계 | R4-02~04 및 R6-04: QFR exact-key B 게시 경로·원본 3핀 |
 | 마지막 검증 완료점 | 앱 QFR [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175) main 병합 faa89cfbe8b2aeabcbd8b8e9747cc07620f9eff4; 제어 B [PR #1762](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1762) main 병합 8c67a6c9e9e778278259593d0eb35b2b0e2a05ea. 앱 CI #43892753705 4483 PASS/0 FAIL, 제어 CI #43892670904 22/22 PASS 및 C996 PASS. BEA #1183 CI 별도 PASS/미병합. 운영 B 승인·PC 실행·D1 원격 게시·UI 실증은 미완료 |
 | 재사용할 기존 근거 | QFR 원자료 ZIP의 PC SQLite 저장·계산 기존 유효 증거; 앱 QFR 3-pin [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175) 소스/CI 완료, `main` 미병합 |
-| 현재 최초 실제 미완료 조건 | QFR 게시기 소스는 양쪽 main에 병합 완료. 하지만 제어 main의 approvals/publications/<requestId>.json manifest 디렉터리는 NOT_FOUND; 별도 B 승인 Issue·owner 승인 댓글·운영 Windows 두 checkout/config SHA 일치·D1 효과 미입증. Workflow flag의 실값은 조회 불가로 UNKNOWN, 게이트 조건 자체는 확인. 기존 일반 Writer B D1 금지 유지 |
-| 다음 필수 실행 하나 | R6-04: §6의 앱 10파일 고정 source hash 재사용. QFR 단일키 B 승인 manifest/별도 owner 승인 Issue·feature flag·PC publisher/main 및 승인 operational source SHA를 정규 경로로 결속. B 효과 승인 전 PC/D1 쓰기 금지. 승인 이후 기존 저장 QFR 1키 게시→D1 body/sourceVersion/stored_at 실제 readback→GET/UI. 이미 끝난 앱/제어 source main 병합 재실행 금지 |
+| 현재 최초 실제 미완료 조건 | **순차 최초 미완료 R1-02:** PC 승인 source와 수집기·계산기·게시기·작업 등록·Runner의 완전한 관계 표가 미입증. **후행 별도 병목 R6-04:** QFR B exact-key 승인 manifest/owner 승인/실제 PC B 원장·D1 readback 미확보. QFR 앱/제어 `main` 소스는 병합 완료. 두 상태를 구분한다 |
+| 다음 필수 실행 하나 | **순차 2/82 R1-02:** 과거 PC #1709 `config.source`·운영 checkout SHA는 재사용하고, 승인된 Controller operations/실제 Task·Runner·수집/계산/게시 경로 매핑의 **누락분만** 확인해 R1-02 완료 증거를 남긴다. 이후 첫 미완료 순번 순으로 이어간다. 뒤쪽 R6-04 QFR 정확키 B manifest/PC 승인은 독립 후행 병목으로 보존하되 현재 순차 번호로 보고하지 않는다 |
 | 현재 완료율 증거 | 82개 전체 DONE 분모·분자는 아직 단계별 실제 종단 검증 미확정. 기존 14단계 종단 완료는 마지막 확인 0/14. 미래 발표 관찰 R6-15는 DEFERRED |
 | 최종 갱신 식별 | 이 문서의 **최신 원격 브랜치 HEAD 및 Git blob SHA를 재조회**해 근거로 보고한다. 고정된 과거 SHA를 현행값으로 복사하지 않는다 |
+| **순차 포인터·완료율** | **현재 R1-02 = 2/82**, 완료 확정 R1-01 **1/82 (약 1.2%)**. 이전 71/82 현재 단계·11단계 잔여 주장은 정정·철회 |
 
 ### D. 다음 작업자 재개 순서 및 변경 충돌
 
@@ -46,13 +47,29 @@
 - 보고 시 최소 **작업계획 파일/진행 기록 파일/브랜치 HEAD/이번 반영 커밋/실제 검증/첫 미완료/다음 실행**을 표기한다. 기록이 안 됐으면 기록 성공을 주장하지 않는다.
 - 이 계약은 **보고 누락 방지·업무 인계 품질 기준**이지 매 작업 전 82개 전수재검사, 신규 Controller, 예약 검증, 별도 승인·새 기능 Gate를 추가하는 근거가 아니다.
 
+## 0-A. 고정 순번·실제 진행률 (2026-11-17 KST 바로잡음)
+
+**82단계 실행계획의 순번을 고정한다.** 이전 `71/82` 보고는 R6-04(목록의 71번째) 관련 소스·권한을 *먼저 조사한 순번*이었고, R1~R6 선행 70개를 통과한 진행 단계가 아니다. 이를 완료율·현재 실행 위치로 사용하지 않는다.
+
+| 판정 항목 | 실제 상태 |
+|---|---|
+| **순차 완료 확정** | **1/82개 (약 1.2%)** — R1-01만 본 계획 완료 조건을 증거로 기록함 |
+| **현재 순차 진행 단계** | **2/82 = R1-02** (실 PC source·수집/계산/게시/작업·Runner 매핑) |
+| **82개 중 개별 완료 확정** | **1개**; 그 외 SOURCE/CI·기존 성공 증거는 해당 단계 기준과 대조 전이므로 자동 완료 처리하지 않음 |
+| **71번 R6-04** | **후행 소스 선행 작업·현재 운영 승인 미해결**, 순차 71단계에 도달한 것이 아님 |
+| **72~82단계 11개 남았다는 이전 보고** | **철회** — 실제 전체 잔여 완료 단계는 81개(기존 유효 소스·운영 증거는 재사용)이며 신규 실행 81회라는 뜻은 아님 |
+| **다음 실제 수행 하나** | R1-02의 기존 GitHub/PC 승인 원장·운영 source·Controller/Runner 등록 정보를 **필요 범위만** 대조해 누락된 매핑을 완성; 지난 유효 #1709 source 조회 재실행 금지 |
+
+**순서 운용:** 다음 번호로 넘어가는 기준은 해당 단계의 **계획서 완료 조건 + 근거 링크**이며, 뒤 단계에서 미리 통과한 PR·CI는 계획 순번을 바꾸지 않는 선행 자산으로 유지한다. 사용자 승인 없이 순번이나 완료 기준을 수정하지 않는다. 조건부 HOLD·장기 DEFERRED는 계획서대로 처리하며 다른 독립 승인 작업의 수행을 중단하는 새로운 Gate가 아니다.
+
+
 ## 0. 82개 작업별 진행 상태 (실증·소스 분리)
 
 > **2026-11-16 KST GitHub 재조회 기준.** 아래 82개 모두 개별 ID를 기재했다. `EVIDENCE_NOT_MAPPED`는 미착수/실패가 아니며 유효 과거 실증을 추가로 연결해야 한다는 뜻이다. 소스·CI 통과 역시 PC/D1/Production 종단 DONE이 아니다. **전체 DONE 비율은 현 근거로 확정하지 않음.**
 
 | 작업 ID | 실행계획 작업 | 현재 증거 기반 상태 | 마지막 확인 증거·남은 조건 |
 |---|---|---|---|
-| R1-01 | 앱·제어 `main`, W05 브랜치 및 개발·운영·배포 SHA 구분 | `PARTIAL_SOURCE` | 앱/제어 GitHub main·브랜치 SHA는 확인. 실제 PC/Production SHA와 동치 확정 전 |
+| R1-01 | 앱·제어 `main`, W05 브랜치 및 개발·운영·배포 SHA 구분 | `DONE` | **순차 1번 완료:** 2026-11-17 KST GitHub 재조회 앱 `main=af2f963659f15e016a64be1132d4cdec9af0d9c6`, 제어 `main=40a0767ec48829360a0b47a2b37e499d59944a05`, W05 전담 브랜치 확인 시 `e6694ddbd4d01826d8802be355bc671b4e53cd8c` (이번 문서 커밋 후 HEAD 전진). PC 승인 체크아웃은 기존 #1709 A 관측(2026-11-16 12:23:09 UTC) `7afe6b0bcaa74d622ada9190fdc9fcc7fd4d5f10`; **LIVE Core 실행 SHA는 미검증**. Cloudflare Production exact Deployment SHA는 `NOT_VERIFIED`. 개발·PC 저장소·공개 배포를 동일 성공으로 간주하지 않는 서로 다른 상태로 구분·기록함. Production 실제 검증은 R6-14 별도 미완료 |
 | R1-02 | 실 PC 승인 `config.source`, 수집기·계산기·게시기·작업 등록·Runner 매핑 | `PARTIAL_SOURCE` | 기존 PC 승인 A 조회 #1709 / Run 43866041104 PASS: PC config.source=7afe6b0bcaa74d622ada9190fdc9fcc7fd4d5f10, QFR 게시기 관련 6개 대상 파일 중 5개 ABSENT·d1.mjs만 PRESENT. A 해시 조회는 파일 설치/B effect 승인이 아님 |
 | R1-03 | 운영 SQLite 원자료 테이블·checkpoint·append-only 이력 파악 | `EXISTING_EVIDENCE` | 기존 QFR SQLite 저장/checkpoint 성공 이력 재사용. 전체 원자료 테이블 조사 완료는 미입증 |
 | R1-04 | 기존 BLS 3개 원천과 공개 5개 정보성 행 계보 조사 | `EXISTING_EVIDENCE` | BLS 기본 3원천·5행 관련 과거 PC/GET 증거 존재, 최근 운영 상태는 미재검증 |
@@ -135,7 +152,7 @@
 | R6-14 | 관련 PR·CI·main 통합→Cloudflare Git Integration→정확 배포 SHA→공개 확인 | `IN_PROGRESS_SOURCE` | 앱 QFR main SHA faa89cfbe8b2aeabcbd8b8e9747cc07620f9eff4, 제어 B main SHA 8c67a6c9e9e778278259593d0eb35b2b0e2a05ea 개발 통합, 관련 CI PASS. 실제 PC/D1/Cloudflare 정확 Deployment/API/UI 검증 미완료 |
 | R6-15 | 다음 공식 발표 이후 자연 수집·checkpoint·D1·UI 실제 전진 관찰 | `DEFERRED` | 다음 실제 공식 발표 후 자연 갱신 확인; 현재 구현 STOP Gate 아님 |
 
-**상태 집계(82개 정확히 1회씩):** `PARTIAL_SOURCE` 4개 · `EXISTING_EVIDENCE` 8개 · `EVIDENCE_NOT_MAPPED` 36개 · `SOURCE_REVIEWED` 1개 · `NOT_RUN` 13개 · `SOURCE_READY` 3개 · `SOURCE_CI_PASS` 3개 · `SOURCE_MAIN_CI_PASS` 3개 · `BLOCKED_PUBLISH_SCOPE` 2개 · `SOURCE_BRANCH_ONLY` 2개 · `PUBLISH_SCOPE_UNVERIFIED` 1개 · `SOURCE_MAIN_READY` 3개 · `TARGETED_CI_PASS` 1개 · `IN_PROGRESS_SOURCE` 1개 · `DEFERRED` 1개. 각각의 상태는 최종 운영 완료율이 아니다.
+**상태 집계(82개 정확히 1회씩):** `DONE` 1개 · `PARTIAL_SOURCE` 3개 · `EXISTING_EVIDENCE` 8개 · `EVIDENCE_NOT_MAPPED` 36개 · `SOURCE_REVIEWED` 1개 · `NOT_RUN` 13개 · `SOURCE_READY` 3개 · `SOURCE_CI_PASS` 3개 · `SOURCE_MAIN_CI_PASS` 3개 · `BLOCKED_PUBLISH_SCOPE` 2개 · `SOURCE_BRANCH_ONLY` 2개 · `PUBLISH_SCOPE_UNVERIFIED` 1개 · `SOURCE_MAIN_READY` 3개 · `TARGETED_CI_PASS` 1개 · `IN_PROGRESS_SOURCE` 1개 · `DEFERRED` 1개. 각각의 상태는 최종 운영 완료율이 아니다.
 
 ## 1. 현재 확정 가능한 진행 상태
 
@@ -173,9 +190,9 @@
 
 ## 3. 실제 첫 병목과 다음 실행
 
-**FIRST BLOCKER:** QFR 앱 3-pin과 제어 전용 B 게시기 **소스는 양쪽 main에 병합 완료**. 현재 운영 효과 차단은 정확한 단일 D1 키에 대한 별도 owner B 승인 manifest/Issue 댓글/확인된 PC 이중 source SHA·활성화 조건 미확보이다. 제어 main의 approvals/publications 경로는 NOT_FOUND, Workflow의 변수 실값은 조회하지 못해 UNKNOWN. 기존 PC #1709 A 조회·운영 QFR 5파일 부재를 새 Core 파일 설치의 필수 Gate로 삼지 않는다. 일반 Writer B의 D1 쓰기 금지는 보존한다.
+**FIRST BLOCKER(현재 순서):** R1-02의 PC 승인 source 및 공통 수집기·계산기·게시기·등록 Task·Runner 전체 매핑 증거 미완료. **후행 QFR B 게시 차단(R6-04/R4-06)**은 main 소스 통합과 별개로 정확키 승인 manifest·owner 별도 승인·운영 runtime pin 미확보이며 임의 우회하지 않는다. 후행 소스·CI 성공을 현재 순차 단계 71 진입으로 보고하지 않는다.
 
-**다음 필수 실행:** QFR 정확키 B급 effect의 별도 승인 manifest/owner Issue 댓글/PC source pin·게이트를 정규 승인 경로로 충족한 후, 이미 저장한 QFR로 승인된 단일키 D1 게시 1회→실제 D1 body/version/stored_at readback→Production GET/UI 검증. 소스 main 병합은 완료돼 재작업 금지.
+**다음 필수 실행:** **R1-02(계획 2/82)** 기존 승인 PC/Controller 원장·등록 Runner·실제 작업 source 증거에서 수집기·계산기·게시기 매핑을 정확히 정리한다. 필요하지 않은 PC 재진단·새 예약·미승인 D1 게시를 하지 않는다. 이 단계 완료 증거를 지정 파일에 반영한 다음 R1-03으로 이동한다.
 
 정규 예약의 다음 자연 발표 관찰(R6-15)은 **DEFERRED**이며 현재 기능 완성의 강제 완료 Gate가 아니다.
 
@@ -206,6 +223,8 @@
 | 2026-11-17 KST · W05 소스 통합 완료 | **R4-02~04/R6-14:** 앱 QFR pin PR #1175를 main에 squash 병합 faa89cfbe8b2aeabcbd8b8e9747cc07620f9eff4, 제어 승인 검증 및 기본 gated B workflow PR #1762를 제어 main에 squash 병합 8c67a6c9e9e778278259593d0eb35b2b0e2a05ea. 사전 CI 앱 4483 PASS, 제어 22/22 PASS·C996 PASS | [앱 PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175) / [제어 PR #1762](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1762). 앱 main Publisher blob f2b78e7d806ee9792e19a6a12636f547849026fd; 제어 main Executor blob 1cc9088a3d025b6b8185d13c932f3538c81b2954. Workflow gate vars.ZGMINI_B_PUBLICATION_APPLY_ENABLED 이며 스케줄 0, approvals/publications 디렉터리 부재. repo 변수 실값은 조회 불가 | **SOURCE_MAIN_CI_PASS / D1 NOT_RUN**. 실제 B급 승인 manifest/별도 owner Issue·PC 이중 source 증거가 다음 필수 조건; 운영 원자료·DB·D1 쓰기 0건 |
 
 | 2026-11-17 KST · QFR 게시기 10파일 원본 고정 준비 | **R4-02/R6-04**: 제어 B contract가 요구하는 앱 `main` 10파일의 raw UTF-8 SHA-256을 고정 commit `0a786bd69c7dc815d296143021473d8f6bf7a118` 기준 수집·검산. 해시 알고리즘은 알려진 벡터 2개와 과거 PC #1709 승인 파일 원문 해시 교차검증 PASS | 동일 파일 §6 목록, 제어 허용 목록 `tools/publication-contract.mjs`, GitHub 앱 SHA `0a786bd69c7dc815d296143021473d8f6bf7a118`. 실물 PC 운영 checkout 최근 재조회는 하지 않음 | **SOURCE_HASH_EVIDENCE_READY / B APPROVAL_MISSING**, D1 writes 0. NEXT: 운영 `config.source` 실시간 값과 manifest/owner 승인·feature flag 확인; 정확키 승인 후 단회 게시·remote readback |
+
+| 2026-11-17 KST · 사용자 순서 변경 지적에 따른 82단계 진행률 정정 | **R1-01 자료 구분 단계 완료**, 계획의 단계 순서 유지. 이전 `71/82 현재 작업`·`11단계 남음` 보고는 무효화. R6-04 후행 소스·승인 조사와 실제 현재 순차 단계 분리. 82단계 계획서에 순차 승인·진행률 기준 추가 | 앱 `main=af2f963659f15e016a64be1132d4cdec9af0d9c6`, 제어 `main=40a0767ec48829360a0b47a2b37e499d59944a05`, W05 관측 HEAD `e6694ddbd4d01826d8802be355bc671b4e53cd8c`; 운영 PC 과거 [#1709](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1709) 체크아웃 `7afe6b0bcaa74d622ada9190fdc9fcc7fd4d5f10` (live runtime source NOT_VERIFIED), Production exact SHA NOT_VERIFIED. 계획 규칙 커밋 `89ce90046ee453cdc95bab16b8ed638b963ca3e1` | **연속 확정 완료 1/82, 현재 2/82 R1-02**. 다음: 기존 운영 source·등록 작업·Runner 매핑 누락만 채워 R1-02 완료 증거 작성. 후행 미승인 QFR D1 변경 0건 |
 
 ### 필수 기록 종료 규칙
 
