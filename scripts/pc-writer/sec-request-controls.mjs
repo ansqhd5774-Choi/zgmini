@@ -100,7 +100,16 @@ export function createSecSharedLimiter({base,minIntervalMs=MIN_INTERVAL_MS,maxWa
    return withLock(base,()=>{
     const at=now();const state=readLedger(ledgerPath(base),at);
     let wait=status===429?2000:1000;
-    if(typeof retryAfter==='string'&&/^\d{1,3}$/.test(retryAfter.trim()))wait=Math.min(60_000,Math.max(wait,Number(retryAfter.trim())*1000));
+    if(typeof retryAfter==='string'){
+     const value=retryAfter.trim();
+     let seconds=null;
+     if(/^\d{1,3}$/.test(value))seconds=Number(value);
+     else if(value.length<=64){
+      const date=Date.parse(value);
+      if(Number.isFinite(date)&&date>at)seconds=Math.ceil((date-at)/1000);
+     }
+     if(seconds!==null)wait=Math.min(60_000,Math.max(wait,seconds*1000));
+    }
     state.cooldownUntil=Math.max(state.cooldownUntil,at+wait);
     writeLedger(ledgerPath(base),state);
     return {cooldownUpdated:true,until:state.cooldownUntil};
