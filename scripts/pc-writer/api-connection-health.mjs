@@ -97,7 +97,7 @@ export function buildApiConnectionHealthFromLog(base,now=Date.now(),{fileSystem=
    }
    if(now-at>WINDOW_MS)continue;
    if(record.collector!==undefined){
-    if(!['ALPACA_INCREMENTAL','SECTOR_PROVISIONAL'].includes(record.collector)){
+    if(!['ALPACA_INCREMENTAL','SECTOR_PROVISIONAL','ALPACA_QUOTA'].includes(record.collector)){
      invalidEndpointEvents++;continue;
     }
     for(const [host,routes] of Object.entries(record.endpointPaths).slice(0,128)){
