@@ -8,6 +8,20 @@
 - 저장소 `delete_branch_on_merge=false` 확인(2026-10-25). 병합 완료 후에도 작업 브랜치를 **보존**한다.
 - 본 문서는 읽기 전용 감사에 근거한 인수인계다. 설치·PC 데이터 변경·D1 게시·main 병합의 증거가 아니다.
 
+## 2026-11-16 W03 8/68 — R32 원자료 증분 실PC 검증·진행 기록 누락 보완
+
+- **기준·범위:** W03 실제 완료 목표는 승인된 GMH 원본의 PC 수집→불변 저장/SHA→승인된 기존 R25/R32 계산→로컬 결과→권리 확인→기존 Writer D1 CAS/readback→API/UI 및 163개 테마 순차 운영이다. 이번 기록은 68개 세부 단계 중 **7/68 소스 단계 완료(10.3%), 8단계 진행 중**, 운영 종단 완료 **0/68**의 상태를 변경하지 않는다. 기존 완료 작업·실행 원장을 다시 완료로 세지 않는다.
+- **R32 계산 계약 보존:** `worker/theme-nine-r37-public.mjs`의 9개 테마/64개 ETF 편입 자리/고유 ETF **63종**과 SPY benchmark를 재확인했다. 기존 R181 14종은 ETF 13종 + SPY이며 R32와 중복 ETF 13종, R181에 **없는 ETF 50종**이다. 50종이 **PC 저장소에 누락됐다는 뜻은 아니다**. R32의 `ETF_ONLY_T40_R20_V40_ADAPTIVE_R2_DATED_ISSUER_AUM_R32`를 R181 7테마의 PAIR50 산식으로 대체하거나 날짜를 소급하지 않는다.
+- **재사용한 기존 증거:** 제어 [#1761](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1761)은 독립 R32 D1 2026-10-30 기준 9테마×252, 63종 ETF의 과거 결과를 확인했다. R181 기존 14종 수집 원장 최신 공통 관측 거래일은 2026-11-13이다. 이 둘은 **2026-11-13 R32 최신 63종 산출 완료**를 증명하지 않는다.
+- **신규 실PC 증거 1 — 자원 안전 중단:** [#1766](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1766) R54 고정 승인 조회가 `R54_ONCE_RESOURCE_WAIT_MEMORY`로 안전 중단했다. 공급자·원자료·DB·D1 쓰기 0. 이를 수집 API 장애나 원자료 손상으로 분류하지 않는다.
+- **신규 실PC 증거 2 — 독립 메모리 확인:** [#1767](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1767) 기존 A `runner-smoke` Run 43885275214 `PASS / RUNNER_COMMAND_EXECUTED`, 운영 PC 총 16122 MiB·당시 가용 2128 MiB, 보호 상태 변경 없음. 안전 중단 원 요청은 반복하지 않고 별도 고유 조회를 사용했다.
+- **신규 실PC 증거 3 — R54 불변 원본 접두 검증:** [#1769](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1769#issuecomment-6919170181) `PASS / R54_ONCE_EVIDENCE_RETRIEVED_NOT_PUBLISH_APPROVED`. R23 baseline manifest **121페이지**, 현재 R35 delta manifest **427페이지** (과거 검증된 305페이지에서 **+122 manifest 항목**). 2026-10-28, 29, 30 R48 후보의 원본 접두 파일과 SHA는 **baseline 121 + delta 184/245/305** 범위 `RAW_VERIFIED`. **추가 122페이지의 개별 SHA/63종 ETF·거래일 전체를 검증했다는 뜻이 아니다.** 공개 게시 승인도 아니다.
+- **신규 실PC 증거 4 — R47/R35의 최신 날짜:** [#1773](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1773#issuecomment-6919236323) `PASS / R54_READINESS_OBSERVED_NOT_PUBLISHED`. R35 현재 manifest SHA `eeaa4118e31f79dd4cda54b207049beedf725a7efa568157a9f16da05099b218`, 파일 수정 `2026-11-06T02:47:29.852Z`, 마지막 검증된 SPY 뉴욕 거래일 **2026-11-03**, R47 작업 등록 존재. 2026-11-02 SPY raw 31행·11-03 15행 관측. 예약 **등록=실제 최신 수집 성공**이 아니다. R181 다른 저장 계보의 2026-11-13와 구분한다.
+- **정확한 판정:** 마지막 유효 PASS는 R54 로컬 원본 접두 SHA 및 R35의 SPY 최신일 읽기 성공. **첫 미충족 증거는 R32 63종 각각의 2026-11-13까지 일별 범위·원본 SHA·checkpoint 완전성**, 그다음 승인 R32 9×252 최신 저장 계산·권리·Writer D1 CAS/readback이다. 과거 R32 공개 결과와 최근 R181의 날짜를 혼합하거나 과거 결손을 0/직전값으로 채우지 않는다. MarketParquet 제거 승인 보존; 무료 원가격·파생 데이터 재도입/게시 금지.
+- **이번 실제 부작용:** 원본 수집 호출 0, 운영 원자료/SQLite 변경 0, D1/Cloudflare/Task 변경 0, Controller·수집기·Writer 설치 0. 중앙 [#68 진행 증거 인계](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6919263904)도 완료했으나, **중앙 Issue 댓글은 이 전담 브랜치 진행 기록의 대체물이 아니다**.
+- **다음 필수 실행:** 기존 승인된 공통 읽기 경로 우선으로 고정 **R32 ETF 63종 + SPY**의 manifest별 티커·마지막 NY 거래일·보유 거래일·원본 SHA·checkpoint를 원가격 노출 없이 실제 PC에서 판독할 최소 기능 확보 → 현재 저장된 50종의 부족 거래일만 확정 → 정규 권한 범위 내 GMH 증분 수집 및 저장 SHA 검증 → 승인 R25/R32 산식으로 비공개 9×252 재계산 → 계보·비복원성/공개권·D1 CAS/readback 검증 후 공개. 정규 예약 실행을 별도 미완료 Gate로 추가하지 않는다.
+- **완료 처리 개선:** 각 실행 결과는 (1) 실측 PASS/STOP 확인 (2) 이 파일에 날짜·requestId/Issue·Last PASS/First Fail·변경 범위·현재 미완료·다음 작업 기록 (3) 해당 전담 브랜치 커밋 SHA 및 원격 재조회까지 완료한 뒤 **해당 실행의 기록 종료**로 판정한다. 문서 기록 자체를 기능 운영 완료나 새로운 68단계 완료로 승격하지 않는다.
+
 ## 목적과 작업 지속성
 
 기존 9개 테마, 10번째 데이터센터·전력, 신규 우주·위성 후보를 동일한 **테마 공탐 작업 원장**에서 관리한다. 채팅이 바뀌어도 기준/완료 SHA/검증 증거/남은 작업을 추적한다. 운영 중인 기존 9개 테마의 계산·원자료·게시·스케줄러를 변경하지 않는다.
