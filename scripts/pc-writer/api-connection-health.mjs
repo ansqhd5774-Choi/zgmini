@@ -230,7 +230,7 @@ export function buildMonitoredSourceHealth(calendar,endpointLog,now=Date.now()){
   return [id,fp];
  }));
  const last=new Map();
- if(endpointLog?.status==='OBSERVED'&&!endpointLog.tailTruncated&&!endpointLog.rowsTruncated){
+ if(endpointLog?.status==='OBSERVED'){
   for(const line of endpointLog.lines){
    let record;try{record=JSON.parse(line);}catch{continue;}
    const at=recent(record?.at,now);
