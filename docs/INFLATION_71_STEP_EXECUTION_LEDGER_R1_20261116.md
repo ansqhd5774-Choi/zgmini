@@ -2,7 +2,7 @@
 
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
-## 최신 인계 스냅샷 — W01 2026-11-16 (문서 정합성 정비 후)
+## 최신 인계 스냅샷 — W01 운영 Event129 원인 증거 반영 (2026-11-16/17 KST)
 
 > **다음 작업자는 이 스냅샷부터 시작한다.** 진행 기록 파일 자체가 지정된 정본이고, 상위 계획은 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)이다. 과거 이력의 오래된 설치 SHA·대기 문구가 이 스냅샷을 덮어쓰지 않는다.
 
@@ -11,16 +11,16 @@
 | 담당·저장소·브랜치 | W01 물가지표 / `ansqhd5774-Choi/zgmini` / `fix/economic12-inflation-legacy4-r35-20261021` |
 | 작업·기록 정본 | 계획: `docs/INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md`; 기록: **이 파일** `docs/INFLATION_71_STEP_EXECUTION_LEDGER_R1_20261116.md` |
 | 전체 목표 | 승인 공식 BLS/Census 원자료 저장·재조회로 26/26 확보 → 기존 저장 기반 계산 → 기존 Writer 게시 → D1/API/PC·모바일 UI 연구지표 7/7 확인. 기존 19개 및 4축 산식·PPI·last-good·운영 설정 보호 |
-| 확정 단계 | **8/71 완료(11.3%), 63개 미완료**: A1-01, A1-07, A1-09, B1-01~B1-05만 [x]. 소스 개선 CI는 실제 W01 운영 완료로 가산하지 않음 |
+| 확정 단계 | **10/71 완료(14.1%), 61개 미완료**: 기존 A1-01·07·09, B1-01~05 및 이번 A2-01·02 분석 완료. A1-08, A1-05, 실제 B 수집·D1/API/UI는 미완료 |
 | 마지막 실제 운영 수치 | #1334 당시 **23/26 원자료**, **4/7 연구자료 저장·공개**(당시 관측). 이후 26/26 또는 7/7 달성은 확인되지 않음; 실제 전체 기능 추정 진행 42%는 옛 기준이고 71단계와 별도 |
 | 최신 제어 소스 (운영 미반영) | `ansqhd5774-Choi/zgmini-pc-control` [PR #1772](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1772), merge SHA `f59e723aa43e59520d760f5da17a07f7f09a04b2`; [source CI #43885847244](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43885847244) 90/90 PASS, C996 #43885847344 PASS. 현재 control main HEAD는 다음 실제 작업 시 재조회 |
 | 실제 설치 Controller | #1745 당시 `e3a495c97d6b40d6d4eea2ff4f586bef46216eb7` 파일 전환, 유지보수 결과 `UNKNOWN/BACKLOG_OR_RECOVERY_NOT_VERIFIED`; 이후 최신 코드 설치 검증 없음 |
 | 기존 PC 재사용 결과 | [#1747](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1747) core-status PASS / Run 43876398674. [#1748](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1748) Event129 A `STATE_UNKNOWN/INFL_E129_NOT_OBSERVED_WITHIN_LIMIT` / Run 43876539574, reader OK·Event 인식 0·lock same=true·protectedStateUnchanged=true |
-| 정확한 미해결 조건 | Event129의 실제 빈 출력·형식 불일치 미구분(새 A 코드 운영 미설치); 기존 #1745 종료 상태 UNKNOWN; 현행 설치→최신 main 차이에 타 담당 파일 포함 가능; 정규 유지보수의 자동 postOperation과 해당 사용자 승인 범위 충돌 해결 필요 |
+| 정확한 미해결 조건 | **실PC Event Log 설정 조회에서 TaskScheduler/Operational enabled=false(2026-11-16 22:32 KST)** 확인. #1748 Event129 0개 및 WMI Task GetInstances EMPTY와 정합. 그러나 #1690 B 실행 당시 로그 설정은 소급 증명 불가. Event Log 활성화는 C급 사용자 직접 작업; #1745 maintenance UNKNOWN 및 최신 Controller 미설치 문제는 별도 미해결 |
 | 기존 요청 재실행 금지 | #1745 유지보수, #1747 core-status, #1748 Event129 A, 소비된 기존 B Run 43861853573. 원본 Issue/requestId와 JSON/TXT 재사용; 증거 없는 복구·잠금 삭제·수집 B 재실행 금지 |
-| 이번 기록 정비의 효과 | **문서·인계 기준만 변경**. 새 PC 명령 0, 새 수집·계산·D1 게시 0, 설치·배포 0, 71개 완료 수 변동 0 |
+| 이번 작업의 실제 효과 | 기존 PC 결과 `results/w01-task-log-config-readonly-20261116.json` 및 제어 #68 소유자 인계 확인, 기존 B 검증 경로/정확한 오류와 대조하여 A2-01·A2-02 분석 2개 완료. 현재 운영 설정 변경 0, 새 A/B 실행 0, 수집·DB/D1·Controller 설치 0 |
 
-**다음 필수 실행 하나 — A1/A2 운영 적용 준비:** 정확한 현재 설치 SHA 및 제어 `main`의 변경 파일 목록, #1745 복구·사후검사 결과와 정규 B급 승인 manifest/자동 `postOperation` 범위를 기존 증거에서 대조한다. W01 변경만 승인 범위에 맞게 적용할 수 있는지 판정하며 **다른 담당 파일·기존 원자료는 변경하지 않는다**. 통과 조건은 승인된 정확한 파일·해시·기존 보호 상태를 확인해 정규 적용 경로를 사용할 수 있다는 근거이다. 설치 작업은 실제 승인 범위에 포함될 때만 수행하고, 설치 후 실제 파일·실행 SHA를 재조회해 별도 단계로 기록한다. 이 단계에 한정된 승인 충돌·공유 설치 lease가 실제 막히면 `BLOCKED`로 남기되 독립 저장 기반 검증·소스 작업은 계속한다.
+**다음 필수 실행 하나 — 사용자 C급 시스템 설정:** 운영 PC에서 Windows **작업 스케줄러 → 오른쪽 ‘모든 작업 기록 사용’** 또는 **이벤트 뷰어 → 응용 프로그램 및 서비스 로그 → Microsoft → Windows → TaskScheduler → Operational → ‘로그 사용’**을 직접 선택해 TaskScheduler Operational 기록을 활성화한다. **Core/Korea Task·예약·파일·잠금·DB·Controller는 변경하지 않는다.** 이후 자연 Core 실행이 새 이벤트를 만들면 기존 설치 A의 새 고유 Issue를 승인 범위에서 1회 실행해 event record/Task·WMI/lock 동일 PID와 시각을 재조회한다(기존 #1748 재실행 금지). 이후 B 단회 GET·파싱·저장으로 이어간다. **Controller PR #1772 신규 적용은 독립 정규 승인·manifest 및 postOperation 문제가 해결될 때 별도 처리**하며, 이번 로그 비활성이라는 직접 원인을 보완하는 선행조건으로 무조건 삼지 않는다. 사용자가 C 작업을 하기 전에는 이 범위만 BLOCKED, 독립 B1/B2 저장/게시 readback 검토는 계속 가능.
 
 **최근 기록 변경(이번 요청):** 기존 `main` 공통 기준을 W01 **계획서와 이 지정 원장에 명시적으로 연결**했다. 지침 누락 재발 방지를 위한 인계 규칙 정비로, 기능 코드/Controller/공급자/D1/예약에 변화는 없다. 계획서 갱신 커밋 `246542e552f5be1fe547b222e91a2c68af32a00c`; 이 원장의 최종 반영 커밋은 GitHub 기록에서 확인하며 커밋 후 실제 원문을 재조회한다.
 
@@ -80,7 +80,7 @@ B4 10 | Production·화면 최종 검증
 합계 71
 ```
 
-현재 71개 세부 체크 완료: **8/71 (11.3%)**. 완료된 항목은 A1 정규 등록·관측 시점의 잠금 비교·결과 회수 3개와 B1 소스 연결 5개. 실제 B Event129 소유권 증명과 수집·저장·게시 종단 완료는 별도 미완료 **63개**. 나머지 기존 HISTORICAL/PARTIAL/SOURCE_ONLY 등 분류는 체크 완료로 계산하지 않는다.
+현재 71개 세부 체크 완료: **10/71 (14.1%)**. A1 실증 3개, A2 원인 분석/조회 시점 한계 구분 2개, B1 기존 소스 연결 5개가 완료. **남은 61개** 중 TaskScheduler 기록 비활성으로 Event129 단회 증명이 제한되며 원자료 수집·저장·게시 7/7은 여전히 미완료. 역사 증거·소스 CI를 운영 완료로 혼합하지 않는다.
 
 ## A1 — 운영 입력·소유권 증명 (9개)
 
@@ -88,16 +88,16 @@ B4 10 | Production·화면 최종 검증
 - [ ] **A1-02** 실제 Core·Korea Task 등록·상태·실행 파일 확인 — HISTORICAL | 2026-11-13 #1330·#1331 시점 Task Running/Ready 관측, 동시 시점 동일성 미검증
 - [ ] **A1-03** Task Engine과 VBS launcher 연결 확인 — HISTORICAL | #1326 고정 action의 중첩 VBS 경로 관측, live lock owner 미증명
 - [ ] **A1-04** WMI 프로세스 계보 및 승인 Core script 검증 — PENDING | 새로운 실제 증거 없음
-- [ ] **A1-05** Event129의 PID·실행 시각·프로세스 생성 시각 확인 — PENDING | 새로운 실제 증거 없음
+- [ ] **A1-05** Event129의 PID·실행 시각·프로세스 생성 시각 확인 — BLOCKED | 2026-11-16 22:32 KST 실PC 조회 TaskScheduler/Operational enabled=false. 이 상태에서 신규 Event129은 발생 보장 불가; 사용자 C급 기록 활성화와 자연 Core 실행 후 증거 필요. 기존 이벤트/Task/lock 강제 실행 금지
 - [ ] **A1-06** 공유 local-cycle.lock 실제 소유자 확인 — PENDING | 새로운 실제 증거 없음
 - [x] **A1-07** 잠금 전후 해시·관측 경쟁 여부 확인 — DONE | #1748 단회 시점 lock before/after PRESENT, same=true, protectedBefore/After SHA-256 동일 및 protectedStateUnchanged=true; 관측 시점 이후 Core 지속 운전이나 B owner 증명은 미포함
-- [ ] **A1-08** 최초 증명 실패 조건 특정 — SOURCE_ONLY | PR #1724·#1752·#1760·#1772 소스 병합, 격리 Windows fixture 90/90 PASS; 기존 운영 #1748 reader OK/XML 0개 원인 미확정, B Run 43861853573 최초 실패 원인 불명
+- [ ] **A1-08** 최초 증명 실패 조건 특정 — PARTIAL | #1748 당시 Event129 관측 0개와 2026-11-16 22:32 실PC Operational enabled=false의 직접 정합성 확인. B #1690/Run 43861853573 당시 설정에 대한 동시 시점 기록은 없어 역사적 원인 전체 소급 확정 금지; 추가 직접 owner PID/time 증거 미완료
 - [x] **A1-09** 원격 진단 JSON/TXT 회수 및 보호 상태 확인 — DONE | #1748 43876539574-1-seat-1 JSON/TXT 2/2 직접 재조회, 상태 STATE_UNKNOWN/INFL_E129_NOT_OBSERVED_WITHIN_LIMIT, operationalWrites/providerCalls/d1Writes=0, protectedStateUnchanged=true
 
 ## A2 — 증명된 결함 최소 수정 (8개)
 
-- [ ] **A2-01** A1에서 확보한 최초 실패 코드 분석 — PENDING | 새로운 실제 증거 없음
-- [ ] **A2-02** 실제 검증 오류와 조회 시점 한계 구분 — ANALYSIS | A GetInstances gap과 B Event129 미증명은 별개; 동일 원인 미입증
+- [x] **A2-01** A1에서 확보한 최초 실패 코드 분석 — DONE | #1690 B `INFL_MANUAL_B_CORE_OWNER_EVENT129_UNVERIFIED_STOP`, #1748 A `INFL_E129_NOT_OBSERVED_WITHIN_LIMIT` 및 Task instance EMPTY/reader OK를 B windows-adapter.mjs의 EnginePID 직접 증명 또는 Event129 대체 경로와 대조. 22:32 KST PC Operational enabled=false가 해당 시점 대체 경로 증거 부재를 설명함. 역사적 B 실행 당시 설정 동일성은 미입증
+- [x] **A2-02** 실제 검증 오류와 조회 시점 한계 구분 — DONE | WMI ownerFound/coreMatched=true와 GetInstances EMPTY는 실제 Core 미실행 증거가 아님. Event129 기록 비활성은 #1748 이후 2026-11-16T13:32:12Z의 정확한 상태로 관측됐으며 11:56Z B 실행으로 소급 단정 금지. B 검증 안전거부 유지하고 C 시스템 설정을 별개 제한 범위로 분리
 - [ ] **A2-03** 잘못된 검증 조건이 입증된 경우 해당 조건만 최소 수정 — PENDING | 새로운 실제 증거 없음
 - [ ] **A2-04** 기존 안전거부·허용 오차·잠금 보호 유지 — SOURCE_ONLY | 기존 B 증명 안전 조건 변경 금지; A fixture 별도 판정
 - [ ] **A2-05** 관련 코드 회귀검사 — SOURCE_ONLY | PR #1772 Windows source CI #43885847244 90/90 PASS, 원문 비노출 및 B 안전 증명 로직 불변; 운영 B 검사 미실행
@@ -111,7 +111,7 @@ B4 10 | Production·화면 최종 검증
 - [ ] **A3-02** 기존 Writer·Core 공유 자원 경합 확인 — PENDING | 새로운 실제 증거 없음
 - [ ] **A3-03** 새 고유 Issue/requestId 등록 — PENDING | 새로운 실제 증거 없음
 - [ ] **A3-04** 승인된 공식 수동 B 정확히 1회 실행 — PENDING | 새로운 실제 증거 없음
-- [ ] **A3-05** B 내부 Core 소유권 검증 — PENDING | 새로운 실제 증거 없음
+- [ ] **A3-05** B 내부 Core 소유권 검증 — BLOCKED | 기존 B V2는 Task-linked WMI 직접 증명 시 Event129 우회 가능하지만 #1748 Task instance EMPTY로 그 경로 미확인. Operational enabled=false 시 Event129 대체 경로 증명 불가; 해당 조건 해소 전에는 무증명 수동 수집 B 재요청 금지
 - [ ] **A3-06** BLS 공식 flatfile 1회 다운로드 — PENDING | 새로운 실제 증거 없음
 - [ ] **A3-07** Census 공식 XLSX 1회 다운로드 — PENDING | 새로운 실제 증거 없음
 - [ ] **A3-08** CPI 임대료·OER 파싱 — PENDING | 새로운 실제 증거 없음
@@ -214,3 +214,11 @@ B4 10 | Production·화면 최종 검증
 - 설치 보류 시점의 **누적 Controller diff 3파일** (설치 실측 SHA `e3a495c97d6b40d6d4eea2ff4f586bef46216eb7` → 이번 PR 병합 `f59e723aa43e59520d760f5da17a07f7f09a04b2`): W01 `controller/inflation-event129-evidence-readonly.mjs` old Git blob `626ce8d3296e425cd3a95375ebf868b2d9eaabca`→new `95fedad09bc9004d9a25711493d8b4c2c66be972`; **다른 작업의 두 파일** `controller/provider-activity-runtime-readonly.mjs` 및 `controller/http32-two-host-checkpoints-readonly.mjs`도 변경. 이전 1파일 diff 기록은 그 시점의 사실이지만 현행 적용 manifest 근거로 재사용 금지.
 - W01 승인만으로 다른 두 파일을 합산·교체할 수 없다. 현재 실PC W01 신규 코드 설치 미확인, #1745 유지보수 `UNKNOWN/RECONNECTED` 원본 기록 보존, 이미 실행한 #1747/#1748 재실행 금지. 정규 유지보수 자동 `postOperation`과 사용자 제한은 우회하지 않는다.
 - 완료 분모는 **8/71 (11.3%)** 유지. A1-08(최초 B 실패 근거)·A2-05(실운영 검증)가 완료된 것으로 간주하지 않는다. 허용되는 다음 실행은 정규 승인된 변경 범위/설치·사후검사 계약 확정이며, 이후 **별도로 허용된** A 단회 증명 결과에서 새 enum으로 실패 원인을 구분한다.
+
+## 2026-11-16/17 — W01 Event129 실제 시스템 설정 원인 분석 및 인계
+
+- **증거 확보:** 제어 저장소 `ansqhd5774-Choi/zgmini-pc-control` `main`의 [실PC TaskScheduler 로그 설정 결과](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/w01-task-log-config-readonly-20261116.json), blob `ed06708707e261673ef9df0269331ee41c903b45`, 결과 저장 commit `fe32538e4522e34a8df72ca5ff809edc7124ed7b`. 관측 `2026-11-16T13:32:12.427Z`: `log=Microsoft-Windows-TaskScheduler/Operational`, `enabled=false`, configurationReads=1, eventQueries=0, configurationWrites=0, providerCalls=0. 제어 [#68 기존 W01 인계](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68)에서 실제 PC `wevtutil gl` 1회 읽기라고 명시; 이번 대화에서 PC 재조회는 **0건**.
+- **정확한 원인/범위:** 이전 #1748 reader OK/UTF-8/BOM 없음/이벤트 총 0, GetInstances EMPTY, WMI Core command matched, lock unchanged. 기존 B `inflation-manual-b/windows-adapter.mjs`는 `linked===true`인 현재 Task EnginePID 직접 경로에서 Event129 없이 통과할 수 있지만, #1748 관측 때 Task-linked 조건 미확인; V2 Event129 대체 경로가 비활성 채널의 영향권. **이것은 당시 A 관측 부재의 직접 환경 원인이며, 2026-11-16T11:56Z의 과거 #1690 B 시점까지 소급 확정하지 않는다.** Core 수집기·BLS/Census 공급자 장애 판정도 아니다.
+- **해결 방향:** Windows 관리자 Event Log/TaskScheduler 기록 사용은 사용자 **C급 직접 변경**. 소스 보호 검사·Assertion 삭제·로그 활성화 원격 우회·Core/Korea 강제 실행·잠금 정리 금지. 승인된 새 A는 기록 활성화와 자연 Core 이벤트 후 단회 요청만 허용. PR #1772 미설치가 당장 Event 생성의 원인은 아니므로 반복 Controller 재설치보다 실제 로그 기록 활성화가 우선.
+- **이번 실행:** GitHub 원본 증거 readback·현재 B/Controller 소스 비교, [ZGMINI 공개 물가 페이지](https://zgmini.kr/economic-indicators/inflation/) 서버 HTML 읽기 시 19행/7행의 로딩 표식만 관측(클라이언트 수치 7/7, D1 actual readback 아님). 공급자 호출·PC 설치/진단/수집·운영 DB·D1 쓰기 **0건**. 이 파일의 두 분석 세부단계만 DONE 처리(8→10/71). 기능 수집/게시 진행률이 26/26·7/7로 바뀐 것은 아님.
+- **NEXT 담당/통과:** 사용자: C급 TaskScheduler/Operational 로그 활성화 1회(시스템 설정 변경). 다음 W01 원담당: 기존 자동 Core 자연 이벤트 기록 확인 후 승인된 `inflation-event129-evidence-readonly` 신규 고유 A 1회, 실제 `readerShape`는 설치 SHA에 따라 분리 판정. 소유권/Task·VBS/lock PID/시간 적합 증명이 통과할 때만 공식 B 단회 수집; 불명확하면 관련 A/B만 BLOCKED. #1745/#1747/#1748/#1690 동일 ID 재실행 금지.
