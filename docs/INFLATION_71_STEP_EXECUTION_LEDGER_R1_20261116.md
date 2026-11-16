@@ -24,6 +24,13 @@
 
 **최근 기록 변경(이번 요청):** 제어 실PC A #43860489236(#22/#23 CPI 각각 237개월·SHA 일치; #28 MISSING) 및 A #43847038904(기존 19 projection 19 READY)를 직접 회수해 A4-02/03 완료 처리, 21/71로 갱신했다. Census 구형 실패 이력은 설치 전 시점으로 판별했고 API-only 수동 B 경로 미확인 사실과 다음 필수 행동을 인계했다. 신규 PC/공급자/D1/Controller 실행·수정 0건. 직전 기록 커밋 `35eee188ae2af2779c8620bfc57c63c7279c41c2`; 이번 최종 커밋은 GitHub 원장 재조회에서 확인한다.
 
+## 2026-11-17 — Census-only B 소스 preflight 차단 수정 (운영 미실행)
+
+- **시작/종료:** 21/71 → **21/71**. 직전 LAST PASS: 제어 Draft PR #1792 Windows source CI 19/19 PASS. FIRST FAIL(소스 경로): W01 신규 B는 `git merge-base --is-ancestor`로 승인 `controlSourceSha`의 조상 여부를 검증하지만, Workflow `actions/checkout`이 W01 제목에서 `fetch-depth:1`을 선택하여 승인 조상 커밋을 기본적으로 가져오지 않음. 승인 manifest가 마련되어도 이 상태에서는 정상 조상 검증이 STOP될 수 있음. 실제 운영에서 발생한 실패는 아님.
+- **최소 수정:** 제어 전용 브랜치 `codex/w01-census-m3-api-only-b-20261117`의 `.github/workflows/pc-writer-b-source-once.yml`에서 **W01 Census 제목만** 기존 R181과 동일한 full-history checkout(`fetch-depth:0`) 분기에 포함. 제어 commit `3e91a2c82ed8d687491ee1c7e3d8cc2c12995a6a`, PR #1792는 여전히 Draft/source-only. 다른 제목의 checkout 깊이·승인 검증·Core/Writer 보호·수집기·quota·D1 설정 불변. 신규 CI/운영 실증은 아직 미확인.
+- **실제 운영 효과:** 신규 PC Issue/requestId/Run, 공급자 GET, SQLite 저장, D1/API/UI 게시 모두 **0**. 기존 CPI #22/#23 237개월, Census #28 MISSING, 기존 19 projection 19/19 및 4/7 과거 공개 증거 유지. 이 소스 변경을 A3/A4 운영 DONE으로 승격하지 않음.
+- **다음 한 작업:** PR #1792의 이번 workflow 변경을 포함한 격리 Windows CI 및 승인 조상 preflight 집중 검증 → 정규 리뷰/별도 B 효과 승인·현재 PC preimage 확보 후에만 Census #28 2GET 단회 실행. C급 Event129 설정·#1745 유지보수 원장은 별도 소유자 보호 유지.
+
 ## 직전 기능 작업 종료 기록 — 2026-11-16 (인계 보존)
 
 - **대상·단계:** W01 A1-08 / A2-05 관련 Event129 빈 응답·XML 형식 식별 보강. 이 두 세부 항목은 **실제 최초 실패 규명·운영 검증 미완료**이므로 DONE 처리하지 않는다.
