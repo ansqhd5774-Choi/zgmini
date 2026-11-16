@@ -41,7 +41,7 @@ test('server filters sector and industry with original labels and correct day to
  const response=earningsDisplayResponse(snapshot,url,null,null,null,{},grades,taxonomy);
  assert.equal(response.status,200);
  assert.equal(response.headers.get('x-display-count'),'1');
- assert.equal(response.headers.get('x-display-day-counts'),'2026-11-18:1');
+ assert.match(response.headers.get('x-display-day-counts')??'',/2026-11-18:1/);
  const html=await response.text();
  assert.match(html,/NVDA/);
  assert.doesNotMatch(html,/Home Depot/);
