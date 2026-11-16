@@ -50,9 +50,9 @@ test('countdown advances each second without day leading zero',()=>{
  assert.equal(b.seconds,57);
  assert.match(file,/\{parts.days\}/);
 });
-test('310px wraps centered four-column names with unchanged 37px height',()=>{
+test('310px keeps five columns and centered names with unchanged 37px height',()=>{
  assert.match(css,/@media\(max-width:359px\)/);
- assert.match(css,/grid-template-columns:28px minmax\(0,1fr\) 94px 86px/);
+ assert.match(css,/grid-template-columns:28px 52px minmax\(0,1fr\) 78px 72px/);
  assert.match(css,/\.zg-schedule-name-text\{white-space:normal;word-break:keep-all/);
  assert.match(css,/text-align:center/);
  assert.match(css,/\.zg-schedule-item\{height:37px;min-height:37px;max-height:37px/);
@@ -94,8 +94,20 @@ test('KST date weekday uses local day, even across UTC date boundary',()=>{
  const colors=[['일','#ff6a7a'],['월','#83c9ff'],['화','#ffa85e'],['수','#73dcb4'],['목','#f3d46a'],['금','#c3a3ff'],['토','#61d7e1']];
  assert.equal(new Set(colors.map(([,color])=>color)).size,7);
  for(const [weekday,color] of colors)assert.ok(css.includes('.zg-schedule-weekday[data-day="'+weekday+'"]{color:'+color+'}'));
- assert.match(css,/grid-template-columns:30px minmax\(0,1fr\) 94px 86px/);
- assert.match(css,/grid-template-columns:28px minmax\(0,1fr\) 94px 86px/);
+ assert.match(css,/grid-template-columns:30px 60px minmax\(0,1fr\) 91px 83px/);
+ assert.match(css,/grid-template-columns:28px 52px minmax\(0,1fr\) 78px 72px/);
+});
+
+test('approved compact sector badges follow earnings kind without changing timer or date',()=>{
+ assert.match(file,/className=\{'zg-schedule-sector is-'\+item\.sectorTone\}/);
+ assert.match(file,/aria-label=\{'섹터 '\+item\.sector\}/);
+ assert.match(css,/\.zg-schedule-sector\{display:inline-flex/);
+ assert.match(css,/grid-template-columns:48px 70px 151px 112px 126px/);
+ for(const tone of ['communication','cyclical','healthcare','technology','industrials','defensive']){
+  assert.ok(css.includes('.zg-schedule-sector.is-'+tone+'{'));
+ }
+ assert.match(file,/className="zg-schedule-sector-slot" aria-hidden="true"/);
+ assert.match(css,/\.zg-schedule-item\{height:37px;min-height:37px;max-height:37px/);
 });
 
 test('two chevrons show expand/collapse without shifting the existing bar',()=>{
