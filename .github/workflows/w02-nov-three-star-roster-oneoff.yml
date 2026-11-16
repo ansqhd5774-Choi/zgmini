@@ -1,0 +1,18 @@
+name: W02 November three-star public ticker inventory (one-time)
+on:
+  pull_request:
+    paths:
+      - 'tests/w02-nov-three-star-roster-oneoff.mjs'
+      - '.github/workflows/w02-nov-three-star-roster-oneoff.yml'
+permissions:
+  contents: read
+jobs:
+  inventory:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - run: node tests/w02-nov-three-star-roster-oneoff.mjs
