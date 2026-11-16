@@ -17,7 +17,7 @@ test('one-year backfill is local-only, quota guarded and keeps approved formulas
  assert.match(src,/EARNINGS_QUARTERS=5/);
  assert.match(src,/collectClaimsHistoricalCurrent/);
  assert.match(src,/persistConsumptionC1R3AcceptedSeed/);
- assert.match(src,/createQuotaFetch\(\{base,originalFetch,mode:'enforce'\}\)/);
+ assert.match(src,/createQuotaFetch\(\{base,originalFetch,mode:'enforce',blsUnregistered\}\)/);
  assert.match(src,/noPublish:true/);
  assert.doesNotMatch(src,/publishMarket|--publish|remote\.request|remote\.query/);
 });
