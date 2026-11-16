@@ -7,14 +7,7 @@ const base=process.env.CHAT_PREVIEW_URL??'http://127.0.0.1:5173';
 mkdirSync('artifacts/dashboard-deferred-ui',{recursive:true});
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 const sampleHistory=Array.from({length:90},(_,i)=>({date:new Date(Date.UTC(2026,7,1)+i*86400000).toISOString().slice(0,10),score:45+Math.sin(i/8)*12}));
-// Match the stored R2 public percentage contract, not the retired R1 count endpoint.
-const breadthDays=Array.from({length:366},(_,i)=>new Date(Date.UTC(2025,9,30)+i*86400000).toISOString().slice(0,10))
- .filter(day=>![0,6].includes(new Date(day+'T00:00:00Z').getUTCDay())).slice(-250);
-const breadthHistory={version:2,market:'usa',phase:'CONFIRMED',status:'READY',publicationStage:'PUBLIC_FINAL',
- source:'MARKETPARQUET_STOCK_DAILY',universe:'US_MARKETPARQUET_ACTIVE_STOCKS',
- firstDate:breadthDays[0],lastDate:breadthDays.at(-1),
- points:breadthDays.map((date,i)=>({date,risingPct:(240+(i%12<5?45:-45))/5,
-  unchangedPct:4,fallingPct:(240-(i%12<5?45:-45))/5}))};
+// Removed breadth widget: no retired supplier fixtures or score-history calls needed.
 try{
  for(const width of [390,1440])for(const signedIn of [false,true]){
   const page=await browser.newPage({viewport:{width,height:900},hasTouch:width===390});
@@ -30,7 +23,7 @@ try{
     :path==='/api/favorites'?{favorites:[]}
     :path==='/api/market-data'?{status:'fallback',updatedAt:'',indicators:{},summary:[]}
     :path==='/api/fear-greed'?{status:'verified',score:34.5,rating:'공포',observedAt:'2026-10-30T12:00:00Z',history:sampleHistory}
-    :path==='/api/market-breadth-r2-history'?(breadthHistoryRequests++,breadthHistory)
+    :path.startsWith('/api/market-breadth')?(breadthHistoryRequests++,{status:'UNAVAILABLE'})
     :{status:'UNAVAILABLE'};
    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(payload)});
   });
@@ -51,16 +44,18 @@ try{
    if(!card)return {market,missing:true};
    const score=card.querySelector('.fg-score-slot')?.getBoundingClientRect();
    const chart=card.querySelector('.fg-chart-slot')?.getBoundingClientRect();
-   const breadth=card.querySelector('.fg-breadth-slot')?.getBoundingClientRect();
+   const breadth=card.querySelector('.fg-breadth-slot');
+   const footer=card.querySelector('.fg-footer-slot')?.getBoundingClientRect();
    const rows=getComputedStyle(card).gridTemplateRows.trim().split(/\s+/).map(Number.parseFloat);
    return {market,missing:false,inlineGridRows:card.style.gridTemplateRows,
     rows,scoreHeight:score?.height??0,chartHeight:chart?.height??0,
-    breadthGap:breadth&&chart?breadth.top-chart.bottom:null};
+    breadthPresent:Boolean(breadth),footerHeight:footer?.height??0};
   }));
   for(const m of marketLayout){
    assert.equal(m.missing,false,m.market+' market card exists');
    assert.equal(m.inlineGridRows,'',m.market+' no obsolete breadth inline row override');
-   assert.ok(m.breadthGap!==null&&Math.abs(m.breadthGap)<3,m.market+' breadth touches chart with no empty grid gap');
+   assert.equal(m.breadthPresent,false,m.market+' retired breadth strip is absent');
+   assert.ok(m.footerHeight>0,m.market+' existing footer remains visible');
    if(width===390){
     assert.ok(Math.abs(m.rows[1]-112)<1,m.market+' mobile grid preserves pre-breadth 112px row');
     assert.ok(Math.abs(m.scoreHeight-112)<1,m.market+' mobile score remains 112px');
@@ -90,59 +85,12 @@ try{
    await tip.waitFor({state:'hidden',timeout:3000});
    console.log('PASS mobile chart tooltip disappears on touch release');
 
-   const breadth=page.locator('.usa-target-card .fg-breadth-slot');
-   await breadth.locator('button[aria-expanded="false"]').click();
-   const detail=breadth.locator('[role="region"]');
-   const breadthSvg=detail.locator('svg[role="img"]');
-   await breadthSvg.waitFor({state:'visible',timeout:5000});
-   const netBars=detail.locator('rect[class*="historyNetPositiveBar"],rect[class*="historyNetNegativeBar"]');
-   assert.ok(await detail.locator('rect[class*="historyNetPositiveBar"]').count()>0,'Green bars show rising dominance');
-   assert.ok(await detail.locator('rect[class*="historyNetNegativeBar"]').count()>0,'Red bars show falling dominance');
-   assert.match(await detail.locator('[class*="historyNetHeading"]').innerText(),/하락 우세 -18\.0%p/,'Latest net dominance is immediately readable above the chart');
-   assert.equal(await detail.locator('line[class*="historyMidline"]').count(),1,'One visible zero baseline separates positive and negative dominance');
-   assert.match(await detail.locator('[class*="historyTrendLegend"]').innerText(),/5거래일 평균 · 후행 SMA/,'Five-session trailing SMA is identified');
-   assert.ok(await detail.locator('path[class*="historyTrendLine"]').count()>0,'Market breadth bars have a moving-average overlay');
-   assert.equal(await detail.locator('path[class*="historyRisingLine"],path[class*="historyFallingLine"]').count(),0,'Old opposing percentage lines are removed');
-   const windows=[['3M',93,'3개월'],['1M',31,'1개월'],['1W',7,'1주'],['1D',1,'1일'],['6M',186,'6개월'],['1Y',366,'1년'],['3M',93,'3개월']];
-   for(const [period,days,label] of windows){
-    await page.locator(`.usa-target-card .cnn-period-button[data-period-short="${period}"]`).click();
-    const from=period==='1Y'?breadthHistory.firstDate:new Date(Date.UTC(2026,9,30)-(days-1)*86400000).toISOString().slice(0,10);
-    const expected=from.replaceAll('-','.');
-    await page.waitForFunction(value=>document.querySelector('.usa-target-card .fg-breadth-slot [role="region"] time')?.textContent===value,
-     expected,{timeout:5000});
-    const dates=await detail.locator('time').allTextContents();
-    assert.deepEqual(dates,[expected,breadthHistory.lastDate.replaceAll('-','.')],period+' breadth dates follow CNN selection');
-    const aria=await breadthSvg.getAttribute('aria-label');
-    const expectedPoints=breadthHistory.points.filter(point=>point.date>=from&&point.date<=breadthHistory.lastDate).length;
-    assert.ok(aria?.includes('MarketParquet R2')&&aria.includes('상승·하락 우세도')&&aria.includes(`${label} 확정 비율 이력`),period+' net breadth chart window and verified source');
-    assert.equal(await netBars.count(),expectedPoints,period+' renders one signed net bar per stored trading session');
-    if(expectedPoints>2){
-     const positions=await netBars.evaluateAll(bars=>bars.map(bar=>Number(bar.getAttribute('x'))));
-     const gaps=positions.slice(1).map((x,i)=>x-positions[i]);
-     assert.ok(gaps.every(gap=>gap>0)&&Math.max(...gaps)-Math.min(...gaps)<0.001,period+' X axis removes weekend gaps');
-     const trendPath=await detail.locator('path[class*="historyTrendLine"]').first().getAttribute('d');
-     const trendXs=Array.from(trendPath?.matchAll(/[ML]([\d.]+),[\d.]+/g)??[],match=>Number(match[1]));
-     const widths=await netBars.evaluateAll(bars=>bars.map(bar=>Number(bar.getAttribute('width'))));
-     assert.ok(trendXs.length>0&&trendXs.every(x=>positions.some((barX,i)=>Math.abs(x-barX-widths[i]/2)<0.02)),period+' trend overlay aligns with trading sessions');
-    }
-    if(period==='1D'){
-     assert.equal(await detail.locator('rect[class*="historyNetNegativeBar"]').count(),1,'Latest day is negative even with unchanged issues present');
-     assert.equal(await detail.locator('circle[class*="historyTrendDot"]').count(),1,'One-day period shows its five-session average as a dot');
-     await breadthSvg.focus();
-     const latestFive=breadthHistory.points.slice(-5);
-     const expectedMean=latestFive.reduce((sum,point)=>sum+point.risingPct-point.fallingPct,0)/5;
-     assert.ok((await detail.locator('[class*="historyTooltip"] div').filter({hasText:'5거래일 평균'}).innerText()).includes(`${expectedMean>0?'+':''}${expectedMean.toFixed(1)}%p`),'One-day mean uses five previous sessions');
-    }
-   }
-   assert.equal(breadthHistoryRequests,1,'Period switching filters fetched 1Y history without new API calls');
-   await breadthSvg.hover({position:{x:140,y:65}});
-   const netTooltip=detail.locator('[role="status"]');
-   await netTooltip.waitFor({state:'visible',timeout:4000});
-   assert.match(await netTooltip.innerText(),/우세/,'Pointer tooltip announces dominance');
-   assert.match(await netTooltip.innerText(),/[+-]?18\.0%p/,'Tooltip calculates net from raw counts with unchanged issues in denominator');
-   assert.match(await netTooltip.innerText(),/보합.*4\.0%/s,'Tooltip retains unchanged percent from the published projection');
-   assert.match(await netTooltip.innerText(),/5거래일 평균/,'Pointer tooltip retains the five-session trend');
-   console.log('PASS net breadth zero-baseline bars, pointer tooltip and 1D/1W/1M/3M/6M/1Y periods with one history request');
+   assert.equal(await page.locator('.usa-target-card .fg-breadth-slot, .korea-target-card .fg-breadth-slot').count(),0,
+    'Retired US and Korea breadth widgets must not be mounted');
+   assert.equal(breadthHistoryRequests,0,'No old breadth endpoint request');
+   assert.equal(modules.filter(path=>path.startsWith('/api/market-breadth')).length,0,
+    'Anonymous dashboard must not request retired breadth APIs');
+   console.log('PASS retired breadth UI absent; no legacy API requests');
   }
 
   if(signedIn){
