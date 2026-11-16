@@ -43,6 +43,21 @@ test('exact BLS CPI/PPI, Fed G17 and Census M3 full-release mapping only',()=>{
  assert.deepEqual(planned.skipped,['treasury','eia']);
 });
 
+test('stored official BLS CPI release remains due if calendar refresh fails',()=>{
+ const official={...EVENTS[0],sourceUrl:'https://www.bls.gov/schedule/news_release/cpi.htm'};
+ const changed={...sources,bls:{status:'SOURCE_FAILED',checkedAt:at}};
+ const outcome=planInflationCandidateCoreDue({approved:true,events:[official,EVENTS[1]],
+  sources:changed,checkpoint:checkpoint(),now:NOW,providerEnv:keys});
+ assert.deepEqual(outcome.due.map(x=>x.group),['cpi']);
+ const unverified=planInflationCandidateCoreDue({approved:true,events:[EVENTS[0]],
+  sources:changed,checkpoint:checkpoint(),now:NOW,providerEnv:keys});
+ assert.equal(unverified.due.length,0);
+ const before=planInflationCandidateCoreDue({approved:true,events:[
+  {...official,date:'2026-11-20'}],sources:changed,checkpoint:checkpoint(),
+  now:new Date('2026-11-20T21:59:00Z'),providerEnv:keys});
+ assert.equal(before.due.length,0);
+});
+
 test('Treasury auctions and EIA WPSR never trigger; bootstrap is explicitly one-shot',()=>{
  const planned=planInflationCandidateCoreDue({approved:true,events:EVENTS,sources,
   checkpoint:checkpoint(),now:NOW,providerEnv:keys,bootstrapApproved:true});

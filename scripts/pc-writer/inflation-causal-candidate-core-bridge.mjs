@@ -64,8 +64,13 @@ function matchingEvent(group,events,sources,now){
   (e.date<today||(e.date===today&&hour>=22))&&
   typeof e.id==='string'&&e.id.length<=160&&
   typeof e.sourceUrl==='string'&&e.sourceUrl.startsWith('https://')&&
-  sources?.[e.source]?.status==='READY'&&
-  isIso(sources[e.source].checkedAt)&&Date.parse(sources[e.source].checkedAt)<=now.getTime());
+  // A validated BLS release event remains a real announced date even if
+  // a later *calendar* refresh fails. Do not let that unrelated calendar
+  // status suppress fetching CPI from the provider's data API.
+  ((group==='cpi'&&/^https:\/\/(?:www\.)?bls\.gov\//i.test(e.sourceUrl))||
+   (sources?.[e.source]?.status==='READY'&&
+    isIso(sources[e.source].checkedAt)&&
+    Date.parse(sources[e.source].checkedAt)<=now.getTime())));
  return found.sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id)).at(-1)??null;
 }
 
