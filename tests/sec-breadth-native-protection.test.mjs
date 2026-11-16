@@ -15,6 +15,7 @@ test('SEC native HTTPS path refuses to bypass the enabled global gate',async()=>
 });
 test('SEC guarded adapter preserves bytes/status and requires injected fetch',async()=>{
  assert.throws(()=>createProtectedSecJsonRequest({}),/SEC_PERMIT_FETCH_REQUIRED/);
+ assert.throws(()=>createProtectedSecJsonRequest({secPermitFetch:async()=>new Response('{}')}),/SEC_PERMIT_FETCH_UNATTESTED/);
  let calls=0;
  const marked=async(url,init)=>{
   calls++;assert.equal(new URL(url).hostname,'data.sec.gov');
