@@ -99,6 +99,61 @@ test("Runner projection ignores injected source paths, raw values and unbounded 
   assert.ok(Buffer.byteLength(text)<12000);
 });
 
+test("PIT-04-02 Runner exposes only fixed History counts and an approved ambiguity HOLD",async t=>{
+  const env=environment(t);fixture(env.core);fixture(env.candidate,{row:true});
+  const options=runnerOptionsFrom(argv(env));
+  const body=await stageEmploymentR6OneYear(options);
+  const secret="DO_NOT_LEAK_PRIVATE_HASH_OR_ROW";
+  const report=projectEmploymentR6RunnerResult({body,pitCoverage:{
+    coreHistoryAsOfUniqueKeys:120,coreHistoryPriorRevisionKeys:4,
+    coreHistoryPriorRevisionRows:7,coreHistoryAmbiguousLatestKeys:1,
+    coreHistorySameInstantAdditionalRows:2,candidateHistoryAsOfUniqueKeys:41,
+    candidateHistoryPriorRevisionKeys:3,candidateHistoryPriorRevisionRows:5,
+    candidateHistoryAmbiguousLatestKeys:2,candidateHistorySameInstantAdditionalRows:1,
+    candidateReconciliationPreviewStatus:"HOLD_AMBIGUOUS_LATEST_REVISIONS",
+    source_hash:secret,history:[{rawValue:secret,sourceHash:secret}],
+  }});
+  assert.equal(report.status,"PASS");
+  assert.deepEqual({
+    coreUnique:report.pit.coreHistoryAsOfUniqueKeys,
+    corePriorKeys:report.pit.coreHistoryPriorRevisionKeys,
+    corePriorRows:report.pit.coreHistoryPriorRevisionRows,
+    coreAmbiguous:report.pit.coreHistoryAmbiguousLatestKeys,
+    coreSameInstant:report.pit.coreHistorySameInstantAdditionalRows,
+    candidateUnique:report.pit.candidateHistoryAsOfUniqueKeys,
+    candidatePriorKeys:report.pit.candidateHistoryPriorRevisionKeys,
+    candidatePriorRows:report.pit.candidateHistoryPriorRevisionRows,
+    candidateAmbiguous:report.pit.candidateHistoryAmbiguousLatestKeys,
+    candidateSameInstant:report.pit.candidateHistorySameInstantAdditionalRows,
+  },{coreUnique:120,corePriorKeys:4,corePriorRows:7,coreAmbiguous:1,
+    coreSameInstant:2,candidateUnique:41,candidatePriorKeys:3,
+    candidatePriorRows:5,candidateAmbiguous:2,candidateSameInstant:1});
+  assert.equal(report.pit.candidateReconciliationPreviewStatus,"HOLD_AMBIGUOUS_LATEST_REVISIONS");
+  assert.equal(report.providerCalls,0);
+  assert.equal(report.d1Writes,0);
+  assert.equal(report.promotionApproved,false);
+  assert.doesNotMatch(JSON.stringify(report),/DO_NOT_LEAK_PRIVATE_HASH_OR_ROW|source_hash|rawValue|sourceHash/);
+  assert.ok(Buffer.byteLength(JSON.stringify(report))<12000);
+});
+
+test("PIT-04-02 Runner refuses unbounded or negative History counts without leaking values",()=>{
+  const secret="DO_NOT_LEAK_PRIVATE_REVISION";
+  const report=projectEmploymentR6RunnerResult({pitCoverage:{
+    coreHistoryPriorRevisionRows:-1,
+    coreHistoryAsOfUniqueKeys:2.4,
+    candidateHistoryAmbiguousLatestKeys:secret,
+    candidateHistoryPriorRevisionKeys:0,
+    candidateReconciliationPreviewStatus:secret,
+    rawHistoryBody:secret,
+  }});
+  assert.equal(report.pit.coreHistoryPriorRevisionRows,null);
+  assert.equal(report.pit.coreHistoryAsOfUniqueKeys,null);
+  assert.equal(report.pit.candidateHistoryAmbiguousLatestKeys,null);
+  assert.equal(report.pit.candidateHistoryPriorRevisionKeys,0);
+  assert.equal(report.pit.candidateReconciliationPreviewStatus,"NO_RUNTIME_EVIDENCE");
+  assert.doesNotMatch(JSON.stringify(report),/DO_NOT_LEAK_PRIVATE_REVISION|rawHistoryBody/);
+});
+
 test("Runner requires a single explicit candidate and rejects publish, discovery and unknown args",t=>{
   const env=environment(t);fixture(env.core);fixture(env.candidate,{row:true});
   for(const added of [
