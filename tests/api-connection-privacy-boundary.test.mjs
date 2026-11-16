@@ -23,6 +23,7 @@ test('public icon and popup are restored without provider roster or diagnostic p
 });
 test('public response allowlist cannot accidentally leak nested upstream information',()=>{
  const raw={version:1,status:'partial',coverage:'PARTIAL',normal:1,failed:2,unknown:3,total:6,
+  scope:'active-api-endpoints',activeInventoryVerified:true,limitedCoverage:false,
   checkedAt:'2026-11-16T02:00:00Z',items:[{host:'SECRET_SOURCE_HOST'}],
   endpointEvidence:{token:'SECRET_PATH'},secret:'SECRET_VALUE',
   reason:'SECRET_ROOT_CAUSE',lastEventStatuses:{'403':2}};
@@ -54,12 +55,42 @@ test('public live D1 read never returns private host or endpoint information',as
  const text=await res.text();
  const body=JSON.parse(text);
  assert.deepEqual(Object.keys(body).sort(),KEYS);
- assert.equal(body.normal,1);
+ assert.equal(body.normal,null);
+ assert.equal(body.failed,null);
+ assert.equal(body.unknown,null);
+ assert.equal(body.total,null);
+ assert.equal(body.status,'unknown');
+ assert.equal(body.coverage,'UNVERIFIED');
  assert.ok(!text.includes('private-upstream'));
  assert.ok(!text.includes('lastEventStatuses'));
  assert.ok(!text.includes('endpoint'));
  assert.ok(!text.includes('200'));
 });
+test('partial historical host totals never appear as verified API connection errors',()=>{
+ const historical={version:1,scope:'external-provider-hosts',status:'partial',coverage:'PARTIAL',
+  normal:29,failed:2,unknown:1,total:32,limitedCoverage:true,
+  checkedAt:'2026-11-16T07:35:35.602Z'};
+ const published=publicApiConnectionSummary(historical);
+ assert.deepEqual(Object.keys(published).sort(),KEYS);
+ assert.equal(published.status,'unknown');
+ assert.equal(published.coverage,'UNVERIFIED');
+ for(const key of ['normal','failed','unknown','total'])assert.equal(published[key],null);
+ assert.equal(published.checkedAt,historical.checkedAt);
+});
+
+test('only explicitly verified active API inventory may publish count aggregates',()=>{
+ const verified={version:1,scope:'active-api-endpoints',activeInventoryVerified:true,
+  limitedCoverage:false,coverage:'PARTIAL',status:'healthy',normal:16,failed:0,unknown:0,total:16,
+  checkedAt:'2026-11-16T07:35:35.602Z'};
+ assert.equal(publicApiConnectionSummary(verified).total,16);
+ for(const key of ['activeInventoryVerified','limitedCoverage','scope']){
+  assert.equal(Object.hasOwn(publicApiConnectionSummary(verified),key),false);
+ }
+ assert.equal(publicApiConnectionSummary({...verified,limitedCoverage:true}).total,null);
+ assert.equal(publicApiConnectionSummary({...verified,activeInventoryVerified:false}).total,null);
+ assert.equal(publicApiConnectionSummary({...verified,scope:'external-provider-hosts'}).total,null);
+});
+
 test('unavailable D1 returns only neutral aggregate without internal diagnostics',async()=>{
  const res=await readPublicApiConnectionHealth({prepare(){throw Error('TOP_SECRET_DB_ERROR');}});
  assert.equal(res.status,503);
