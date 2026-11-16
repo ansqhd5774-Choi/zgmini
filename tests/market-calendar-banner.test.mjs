@@ -215,3 +215,28 @@ test('R44 top banner resolves official company logo domains for every observed N
  assert.equal(domains.get(unknownTicker),null,'Unknown issuer must retain ticker fallback');
  assert.equal(rows.filter(row=>row.ticker==='MDT').length,2,'Repeated earnings retain same issuer logo');
 });
+
+test('all 71 public November R44 three-star issuer logos have a curated official-domain mapping',()=>{
+ const novThreeStar=`ABNB AFL ALL AMAT APD APP B BAM BDX BN CAH CEG CI CMI CNQ COP COR CSCO CVE CVS DDOG DUK DVN EMR ENB EOG EW GWW KKR MCD MCK MELI MET MFC MNST MRNA MSI MUFG NET NTRA NU NVO OXY PH QCOM SO SPG SRE TDG TM TRGP TRP UBER WPM`.split(' ');
+ const alreadyCovered=`ADI ADSK DE DELL DIS HD HPE INTU KEYS LOW MDT NVDA PANW ROST TGT TJX WMT`.split(' ');
+ const all=[...novThreeStar,...alreadyCovered].sort();
+ assert.equal(new Set(all).size,71);
+ const when=Date.parse('2026-11-16T04:00:00Z');
+ const coveredDays=Array.from({length:14},(_,i)=>new Date(Date.parse('2026-11-16T00:00:00Z')+i*86400000).toISOString().slice(0,10));
+ const csv=['ticker,name,exchange,sector,industry,country,price,mktCap',
+  ...all.map(ticker=>[ticker,'Sample '+ticker,'NASDAQ','Technology','Software','US','100','100000000000'].join(','))].join('\n')+'\n';
+ const delta=makeDeltaR44Public(gradeCalendarTickersFromDelta(parseDeltaScreenerCsv(csv),all));
+ const events=all.map(ticker=>({date:'2026-11-18',ticker,company:'Sample '+ticker,
+  marketSession:'after_market',time:null,verification:'VENDOR_UNVERIFIED',source:'earnings-api'}));
+ const display=earningsDisplaySnapshot({status:'READY_PRIVATE',scope:'PC_PRIVATE',publicDisplay:false,
+  redistribution:false,publicationStatus:'HELD_UNCONFIRMED',
+  coveredDays,recordCount:events.length,priorityCount:0,checkedAt:new Date(when).toISOString(),events});
+ const rendered=earningsDisplayHtml(display,{start:coveredDays[0],end:coveredDays.at(-1),importance:3},
+  null,null,null,{},delta);
+ assert.equal(rendered.count,all.length);
+ const rows=earningsBannerRows(rendered.html,when);
+ assert.equal(rows.length,all.length);
+ assert.ok(rows.every(row=>typeof row.logoDomain==='string'&&/^[a-z0-9.-]+\.[a-z]{2,}$/.test(row.logoDomain)));
+ assert.equal(new Set(rows.map(r=>r.ticker)).size,all.length);
+ assert.equal(marketCalendarBannerRows(when,null,rendered.html).length,20,'banner limit unchanged');
+});
