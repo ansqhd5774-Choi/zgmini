@@ -97,6 +97,48 @@ test('Census partial official year preserves usable month and archives all respo
   for(const item of result.sourceHashes)assert.match(item,/^[0-9a-f]{64}$/);
 });
 
+test('Census month criterion accepts official time if time_slot_date is blank',()=>{
+  const headers=['data_type_code','seasonally_adj','category_code','cell_value','time_slot_date','time','us'];
+  const rows=normalizeCensusM3Inventories([headers,
+    ['TI','yes','MTM','900000','','2026-09','1'],
+    ['TI','yes','MTM','901000','2026-10-01','2026-09','1'],
+    ['TI','yes','MTM','902000','2026-11-01','2026','1'],
+  ]);
+  assert.deepEqual(rows.map(x=>x.date),['2026-09-01','2026-11-01']);
+  assert.equal(rows.diagnostics.invalid,1); // Conflicting official dates are quarantined.
+});
+
+test('Census bad schema in one year does not discard valid observations from other year',async t=>{
+  const fixture=base();t.after(fixture.clear);
+  const fetchYear=async url=>{
+    const year=Number(new URL(url).searchParams.get('time'));
+    return response(year===2025?
+      [['field_not_in_our_contract'],['x']]:
+      payload(row(2026,'09','900000')));
+  };
+  const result=await collectCensusM3Inventories({base:fixture.writer,censusKey:'k',quotaFetch:fetchYear,now});
+  assert.equal(result.status,'SAVED_READBACK');
+  assert.equal(result.coverage,'PARTIAL_SCHEMA_UNAVAILABLE');
+  assert.equal(result.count,1);
+  assert.equal(result.diagnostics[0].sourceShape,'CENSUS_M3_HEADERS_INVALID');
+  assert.equal(result.diagnostics[1].available,1);
+  const saved=JSON.parse(fs.readFileSync(path.join(fixture.writer,CENSUS_M3_INVENTORIES_FILE),'utf8'));
+  assert.deepEqual(saved.observations.map(x=>x.date),['2026-09-01']);
+  assert.equal(saved.provenance.length,2);
+});
+
+test('Census no usable monthly values remains explicitly unavailable, without numeric fallback',async t=>{
+  const fixture=base();t.after(fixture.clear);
+  const result=await collectCensusM3Inventories({base:fixture.writer,censusKey:'k',
+    quotaFetch:async url=>response(payload(row(Number(new URL(url).searchParams.get('time')),'09','NA'))),now});
+  assert.equal(result.status,'UNCHANGED');
+  assert.equal(result.coverage,'NO_USABLE_OBSERVATIONS');
+  assert.equal(result.count,0);
+  assert.equal(fs.existsSync(path.join(fixture.writer,CENSUS_M3_INVENTORIES_FILE)),false);
+  for(const p of result.provenance)
+    assert.equal(fs.existsSync(path.join(fixture.writer,'inflation-causal-candidates-r1',p.archive)),true);
+});
+
 test('collects two source years and archives private provider snapshots without key leakage',async t=>{
   const fixture=base();t.after(fixture.clear);
   const calls=[],quotaFetch=async (url,options)=>{
