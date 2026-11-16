@@ -70,7 +70,11 @@ const historyIndex=(rows,asOfDate)=>{
 // whichever hash happens to sort later lexically.
 const revisionOrder=(a,b)=>Date.parse(b.retrieved_at??"")-Date.parse(a.retrieved_at??"")
   ||knownAt(b)-knownAt(a);
-const sameRevisionPayload=(a,b)=>sameObservation(a,b)
+// Compare equal-time row identity without treating a single invalid value
+// as a conflict with itself. Numeric validity remains a separate PIT gate.
+const sameRevisionPayload=(a,b)=>a.source_hash===b.source_hash
+  &&Object.is(a.value,b.value)
+  &&a.provider===b.provider&&a.provider_series_id===b.provider_series_id
   &&a.quality_status===b.quality_status&&a.pit_class===b.pit_class
   &&a.provenance_json===b.provenance_json;
 const revisionAtSameInstant=(a,b)=>Date.parse(a.retrieved_at??"")===Date.parse(b.retrieved_at??"")
@@ -78,8 +82,10 @@ const revisionAtSameInstant=(a,b)=>Date.parse(a.retrieved_at??"")===Date.parse(b
 const latestRevision=rows=>{
   if(!rows?.length)return null;
   const ordered=[...rows].sort(revisionOrder),best=ordered[0];
-  return ordered.some(row=>revisionAtSameInstant(row,best)&&!sameRevisionPayload(row,best))
-    ?null:best;
+  // A single row has no competing revision, even when its value is invalid.
+  // Invalid rows are rejected downstream by validSourceMetadata/sameObservation.
+  return ordered.slice(1).some(row=>revisionAtSameInstant(row,best)
+    &&!sameRevisionPayload(row,best))?null:best;
 };
 const revisionEvidence=index=>{
   let priorRevisionKeys=0,priorRevisionRows=0,ambiguousLatestKeys=0,sameInstantAdditionalRows=0;
