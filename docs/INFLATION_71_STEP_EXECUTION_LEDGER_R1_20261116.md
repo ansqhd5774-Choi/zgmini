@@ -7,7 +7,7 @@
 - 제어 저장소: `ansqhd5774-Choi/zgmini-pc-control`; W01 신규 A operation `inflation-event129-evidence-readonly` 소스 PR #1724 병합(Controller 실PC 미설치).
 - 기존 수동 B Run `43861853573`은 `INFL_MANUAL_B_CORE_OWNER_EVENT129_UNVERIFIED_STOP`; 원인 미확정. A #1693 Run `43862593587`은 `STATE_UNKNOWN/INFL_CORE_LOCK_PRESENT_TASK_ENGINE_GAP`; 인과관계 미입증.
 - Controller 유지보수 #1501은 **2026-11-16T13:20:20.947Z 회복 완료**(`INTAKE_RECOVERED_EXISTING_CONTROLLER_PRESERVED`), 기존 Controller `b2ff49dd14a09ebeba482e2ae9a84530e00f094f` 보존. 복구는 새 진단 설치 완료가 아니다.
-- 신규 A 진단 소스 분류 수정 PR #1752: 초기 잠금 부재와 사후 변경·읽기 실패 구별, 첫 실패 보존. 코드/CI 상태는 PR 증거 우선.
+- 신규 A 진단의 최초 실패 보존 수정 [PR #1752](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1752)은 `main`에 squash SHA `ca0e2bcc65bab96caffc185c641122656be50510`으로 병합되었다. 격리 Windows CI Run `43879295002`에서 관련 테스트 72/72 PASS(신규 5 포함). **이것은 실제 PC 설치·Event129 재진단 성공이 아님.**
 - 실제 저장 현황의 마지막 유효 원본: 23/26, 신규 4/7, Production 4/7; **원본 문서에 기록된 42%는 2026-11-14 당시 추정치로 현행 71개 완료비율이 아니다.** 최근 실행으로 재증명하지 않음.
 - `HISTORICAL*`는 이미 입증된 **당시 범위만 재사용**한 기록이며 현행 Runtime 전체 DONE으로 올리지 않는다. `PARTIAL`/`SOURCE_ONLY`/`ANALYSIS`/`SOURCE_IN_PROGRESS`는 현장 기능 완료가 아니다. `PENDING`은 미완료, `DONE`은 실제 완료·날짜·SHA·원격 readback이 있는 경우만 사용한다.
 - 관련 작업을 완료하지 않고 checkboxes를 체크하지 않는다. 코드 CI 성공, PC 실제 설치, 원자료 저장, 게시·D1/API/UI는 구분하여 판정한다.
@@ -34,7 +34,7 @@ B4 10 | Production·화면 최종 검증
 합계 71
 ```
 
-현재 상태 분류 현황(작업 완료 집계가 아님): PARTIAL 7, HISTORICAL 5, PENDING 43, SOURCE_IN_PROGRESS 1, ANALYSIS 1, SOURCE_ONLY 2, HISTORICAL_SOURCE 7, HISTORICAL_OUTPUT 5.
+현재 상태 분류 현황(작업 완료 집계가 아님): PARTIAL 8, HISTORICAL 5, PENDING 42, SOURCE_ONLY 3, ANALYSIS 1, CURRENT_SOURCE_VERIFIED 5, HISTORICAL_SOURCE 2, HISTORICAL_OUTPUT 5.
 
 ## A1 — 운영 입력·소유권 증명 (9개)
 
@@ -45,7 +45,7 @@ B4 10 | Production·화면 최종 검증
 - [ ] **A1-05** Event129의 PID·실행 시각·프로세스 생성 시각 확인 — PENDING | 새로운 실제 증거 없음
 - [ ] **A1-06** 공유 local-cycle.lock 실제 소유자 확인 — PENDING | 새로운 실제 증거 없음
 - [ ] **A1-07** 잠금 전후 해시·관측 경쟁 여부 확인 — PARTIAL | #1693 protectedStateUnchanged만 확인, 잠금 직접 전후 소유자 증명 미완료
-- [ ] **A1-08** 최초 증명 실패 조건 특정 — SOURCE_IN_PROGRESS | PR #1724 진단 소스 병합, PR #1752 최초 실패 분류 수정/CI 진행; B 실제 최초 실패 불명
+- [ ] **A1-08** 최초 증명 실패 조건 특정 — SOURCE_ONLY | PR #1724 및 PR #1752 병합, source fixture 72/72 PASS; B 실제 최초 실패 불명
 - [ ] **A1-09** 원격 진단 JSON/TXT 회수 및 보호 상태 확인 — PENDING | 새로운 실제 증거 없음
 
 ## A2 — 증명된 결함 최소 수정 (8개)
@@ -54,14 +54,14 @@ B4 10 | Production·화면 최종 검증
 - [ ] **A2-02** 실제 검증 오류와 조회 시점 한계 구분 — ANALYSIS | A GetInstances gap과 B Event129 미증명은 별개; 동일 원인 미입증
 - [ ] **A2-03** 잘못된 검증 조건이 입증된 경우 해당 조건만 최소 수정 — PENDING | 새로운 실제 증거 없음
 - [ ] **A2-04** 기존 안전거부·허용 오차·잠금 보호 유지 — SOURCE_ONLY | 기존 B 증명 안전 조건 변경 금지; A fixture 별도 판정
-- [ ] **A2-05** 관련 코드 회귀검사 — SOURCE_ONLY | PR #1724 기존 fixture 67/67 성공; #1752 추가 테스트 CI 판정 후 갱신
+- [ ] **A2-05** 관련 코드 회귀검사 — SOURCE_ONLY | PR #1724 fixture 67/67 및 PR #1752 fixture 72/72, 변경된 소스 단계에서 PASS; B 운영 경로 검증 미실행
 - [ ] **A2-06** Windows 동일 경로 검증 — PENDING | 새로운 실제 증거 없음
 - [ ] **A2-07** 수정 파일·source SHA 확정 — PENDING | 새로운 실제 증거 없음
 - [ ] **A2-08** 필요한 정규 운영 적용 및 적용 파일 재조회 — PENDING | 새로운 실제 증거 없음
 
 ## A3 — 공식 BLS·Census 수동 단회 수집 (12개)
 
-- [ ] **A3-01** 승인된 최신 운영 source·manifest 확인 — PENDING | 새로운 실제 증거 없음
+- [ ] **A3-01** 승인된 최신 운영 source·manifest 확인 — PARTIAL | W01 V2 APPROVED_B 단회 manifest 소스 존재·조회 완료. 소비된 B Run 43861853573의 Event129 증명 중단을 재실행하지 않음; 향후 source pin·실제 효과 추가 확인 필요
 - [ ] **A3-02** 기존 Writer·Core 공유 자원 경합 확인 — PENDING | 새로운 실제 증거 없음
 - [ ] **A3-03** 새 고유 Issue/requestId 등록 — PENDING | 새로운 실제 증거 없음
 - [ ] **A3-04** 승인된 공식 수동 B 정확히 1회 실행 — PENDING | 새로운 실제 증거 없음
@@ -87,11 +87,11 @@ B4 10 | Production·화면 최종 검증
 
 ## B1 — 기존 공개 코드 연결 (7개)
 
-- [ ] **B1-01** 현재 zgmini/main 기준 source 확인 — HISTORICAL_SOURCE | 2026-11-14 원본 계획 source 연결 확인; main SHA가 이후 변경
-- [ ] **B1-02** run-local.mjs의 신규 7행 계산·게시 연결 확인 — HISTORICAL_SOURCE | 원본 계획 §1/§6의 run-local 연결
-- [ ] **B1-03** 기존 공통 Writer 연결 확인 — HISTORICAL_SOURCE | 원본 계획 §3 B1 공통 Writer 연결
-- [ ] **B1-04** candidate-r52.ts API 라우트 확인 — HISTORICAL_SOURCE | 원본 계획 §1 candidate-r52 GET/HEAD
-- [ ] **B1-05** 물가지표 상세 UI 컴포넌트 연결 확인 — HISTORICAL_SOURCE | 원본 계획 §6 물가 상세 UI
+- [ ] **B1-01** 현재 zgmini/main 기준 source 확인 — CURRENT_SOURCE_VERIFIED | zgmini/main 71ea0b66f67e1b099415ebd814be4b67730af08b 기준 관련 파일 조회
+- [ ] **B1-02** run-local.mjs의 신규 7행 계산·게시 연결 확인 — CURRENT_SOURCE_VERIFIED | run-local.mjs:310~311 publishInflationCandidates7Auto() 연결 확인
+- [ ] **B1-03** 기존 공통 Writer 연결 확인 — CURRENT_SOURCE_VERIFIED | auto-publication-r1.mjs:82~142 저장 preview→기존 Writer→readback 연결
+- [ ] **B1-04** candidate-r52.ts API 라우트 확인 — CURRENT_SOURCE_VERIFIED | candidate-r52.ts:11,34 D1 공개 reader route 연결 확인
+- [ ] **B1-05** 물가지표 상세 UI 컴포넌트 연결 확인 — CURRENT_SOURCE_VERIFIED | economic-detail-panel.tsx:286에서 inflation-candidate-7-inputs.tsx:40 호출 확인
 - [ ] **B1-06** 기존 19개·4축 점수 불변 검사 — HISTORICAL_SOURCE | 기존 19행·4축 비변경 원칙; 현재 배포까지 새 검증 아님
 - [ ] **B1-07** GitHub 개발 source와 실제 배포 source 구분 — PARTIAL | 개발 main과 당시 Production 응답 구분, exact Deployment SHA 미조회
 
@@ -138,3 +138,10 @@ B4 10 | Production·화면 최종 검증
 - 실PC 실행 미승인 시 구분 가능한 소스 개발·fixture·GitHub 검증·공개 정보 조회만 계속한다. 임의 shell/Task/프로세스/lock/DB/D1 조작 금지.
 - 공개 증거에 PID/전체 명령행/원문 Event XML/원자료/인증정보를 포함하지 않는다.
 - 자연 예약 검증·외부 인계 장기 E2E는 본 71개 완료의 선행 조건이 아니다.
+
+## 2026-11-16 최신 소스 설치 사전분리 (비실행)
+
+- 기존 Controller SHA `b2ff49dd14a09ebeba482e2ae9a84530e00f094f` (#1501 복구 보존)→현재 제어 main 사이 **controller/config 총 11 blob 차이**: deployable 10파일 + fixture 1파일. 여기에는 W01 이외의 고용·시장 캘린더·테마·Provider activity 관련 변경이 섞여 있다. 단순 전체 main Controller 설치는 W01 최소 파일만 적용하는 것이 아니다.
+- Controller 유지보수기 `tools/update.mjs`의 target은 `origin/main` 조상·installed SHA 후손이어야 하고 실제 diff를 정규 manifest에 정확히 선언해야 한다. **W01-only 승인으로 다른 담당 파일을 덮어쓰지 않는다.**
+- 별도의 현재 유지보수기 결과 #1738에서 권한 있는 Runner Inventory API `HTTP_403_FORBIDDEN`을 확인했다. 이는 Runner Offline 증거가 아니며 정규 설치 입력 증거로 처리한다. 유지보수기는 기존 `postOperation`을 필수로 실행하므로 이전 사용자의 '설치 후 자동 진단 실행 금지'와 충돌하는 범위는 우회하거나 새 설치 요청으로 시험하지 않는다.
+- A1이 막혀도 B1 현재 공개 source 연결 확인과 B2의 기존 게시 증거 정리는 독립 진행한다. 현재 Production API 7/7 값 또는 D1 직접 readback은 이번 source 조사만으로 입증되지 않았다.
