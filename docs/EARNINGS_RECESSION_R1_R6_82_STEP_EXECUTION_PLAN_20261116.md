@@ -214,3 +214,19 @@
 | R4-06 / R6-05~06 | **NOT_RUN** | QFR 기존 PC 원자료 수집·계산 성공은 재사용 가능. 이번에 실 D1·공개 UI 결과 없음 | 승인된 단일키 실제 D1 게시·body/version/time 재조회·Production GET/UI |
 
 **다음 필수 실행:** #1762 실제 Node 집중 CI 회수 → 승인된 B 정확키 effect 결속과 앱 3-pin 선별 통합 → 기존 저장 QFR의 D1 1키 게시·원격 재조회. 무단 게시나 추가 예약 검증을 미완료 단계로 만들지 않는다.
+
+## 10. 82단계 실행 원장 — 집중 Node CI 및 BEA 저장형 소스
+
+> 운영 PC/D1/Production 작업 0건. 실운영 데이터 없이 CI·소스 완료를 운영 DONE으로 집계하지 않는다.
+
+| ID | 이번 실제 완료 증거 | 현재 판정 | 남은 운영 조건 |
+|---|---|---|---|
+| R4-03 | 제어 [PR #1762](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1762) 소스에서 실제 격리 Windows Node 22 테스트 [Run #43883643669](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43883643669) **21/21 PASS, 0 FAIL**. 정확키·QFR 3핀·D1 결과·BEA 회귀 검사 | **SOURCE_CI_PASS** | 제어 `main` 소스 승인 통합·실제 B 설치는 별도 |
+| R6-01 (게시기 관련) | 위 제어 focused CI는 실제 Node 명령의 통과 증거. 동일 PR의 기본 C996 read-only 소스 검사 [#43883643183](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43883643183) PASS | **TARGETED_CI_PASS** | 전체 W05 기능의 모든 회귀가 완료된 뜻은 아님 |
+| R4-02 | 제어 #1762는 기존 B 제안 7파일+별도 격리 CI 1파일의 **Draft 8파일**, disabled feature flag 유지, `mergeable=true` | **SOURCE_READY** | 승인된 공통 B exact-key 권한·실제 PC 설치·manifest/운영 SHA 검증 |
+| R3-10, R4-07 | W05 저장형 BEA publisher `ca9a6e9754456925dd5578d00fb4a0ab5dbbfe42` 및 immutable raw helper `812266af97836edf9e06bae679e363e6546168fb`를 앱 최신 main 기반 [Draft PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183)로 **4파일 선별 반영**. 저장 원본 SHA의 reader 및 공급자 재호출 없는 D1 게시 코드 | **SOURCE_READY / APP_CI_PENDING** | 앱 Node CI·승인 원본 아카이브 capture/readback·실제 B D1 게시 |
+| R3-09 | 새 archive 단위시험 5개를 기존 `node --test tests/*.test.mjs` CI glob에 연결하는 source-only 테스트 파일을 W05 브랜치와 #1183에 반영 | **TEST_SOURCE_READY** | 실제 GitHub Node CI 및 PC 저장 원본 readback |
+
+BEA #1183 최신 App CI [Run #43884699372](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43884699372) 최초 조회 기준 `pending/in_progress`로 확인돼, 이 문서 작성 시에는 PASS를 주장하지 않는다. 앱 QFR 3-pin 관련 기존 [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175)의 과거 Node CI [#43863499821](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43863499821)는 `success`이지만 `main` 병합·실PC 설치·D1 write는 별도다.
+
+**NEXT:** BEA CI와 QFR 실증 증거의 마지막 유효 상태를 회수하고, 정확 승인 B 단일키 Scope를 정규 Owner에서 확정→선별 source main 반영·실제 Windows 설치와 승인 QFR 한 키 게시·D1 본문 readback. BEA 원자료가 실제 PC에 없다면 기존 승인 Collector 경로로만 최초 저장하고, 공급자/권리 확인 전 수집을 임의 실시하지 않는다.
