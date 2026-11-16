@@ -18,7 +18,6 @@ export const PROVIDER_QUOTA_POLICY=Object.freeze({
  OFR:Object.freeze({label:'OFR',hard:false,perDay:null,minIntervalMs:1_000,limitSource:'unknown',note:'data release frequency is usually daily'}),
  BIS:Object.freeze({label:'BIS',hard:false,perDay:null,minIntervalMs:1_000,limitSource:'unknown'}),
  WORLDBANK:Object.freeze({label:'World Bank',hard:false,perDay:null,minIntervalMs:1_000,limitSource:'unknown'}),
- MARKETPARQUET:Object.freeze({label:'MarketParquet',hard:false,perMinute:60,minIntervalMs:1_000,limitSource:'provider-report',note:'free tier; paid tier may differ'}),
  NYFED:Object.freeze({label:'NY Fed',hard:false,perDay:null,minIntervalMs:1_000,limitSource:'release-frequency'}),
  TREASURY:Object.freeze({label:'US Treasury FiscalData',hard:false,perDay:null,minIntervalMs:1_000,limitSource:'unknown',note:'MTS monthly official feed; no published hard quota assumed'}),
  FEDBOARD:Object.freeze({label:'Federal Reserve Board data',hard:false,perDay:null,minIntervalMs:1_000,limitSource:'unknown',note:'G.17 monthly official text; no published hard quota assumed'}),

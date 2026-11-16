@@ -1,19 +1,8 @@
 // Shared Worker/PC validation; no Node imports or runtime side effects.
 export const CONFIGURED_R32='ETF_ONLY_T40_R20_V40_ADAPTIVE_R2_DATED_ISSUER_AUM_R32';
 export const CONFIGURED_V2='ZGMINI_CONFIGURED_THEME_PUBLIC_V2';
-export const CONFIGURED_PROVISIONAL_MODE='GMH_RAW_PLUS_MARKETPARQUET_SPLIT_ADJUSTED_PROVISIONAL';
-export function validConfiguredProvisional(record){
- return record?.phase==='PROVISIONAL'&&isDate(record.confirmedObservationDate)&&record.confirmedObservationDate<record.observationDate&&
-  record.sourcePriceMode===CONFIGURED_PROVISIONAL_MODE&&record.sourcePriceReconciled===false&&
-  Array.isArray(record.sourceFiles)&&record.sourceFiles.length===2&&
-  record.sourceFiles.every(f=>f&&typeof f==='object'&&!Array.isArray(f)&&
-   /^[a-f0-9]{64}$/.test(f.sha256))&&
-  record.sourceFiles[0].date===record.confirmedObservationDate&&record.sourceFiles[1].date===record.observationDate&&
-  record.overlapPriceDifferences&&Number.isFinite(record.overlapPriceDifferences.SPY)&&
-  Array.isArray(record.history)&&Array.isArray(record.history.at(-1)?.contributingETFs)&&
-  record.history.at(-1).contributingETFs.every(s=>Number.isFinite(record.overlapPriceDifferences[s]))&&
-  Object.values(record.overlapPriceDifferences).every(v=>Number.isFinite(v)&&v>=0&&v<=0.05);
-}
+export const CONFIGURED_PROVISIONAL_MODE='PROVISIONAL_UNAVAILABLE_PROVIDER_REMOVED';
+export function validConfiguredProvisional(){return false;}
 export const isDate=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)&&Number.isFinite(Date.parse(s+'T00:00:00Z'))&&new Date(s+'T00:00:00Z').toISOString().slice(0,10)===s;
 export function validR32History(record){
  if(!Array.isArray(record.history)||!record.history.length||record.history.length>252||

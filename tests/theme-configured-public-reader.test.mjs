@@ -133,7 +133,7 @@ test('R32 public contract marks stored confirmed score separately from READY pro
   }
  };
  assert.equal(eligibleConfiguredPublic(r32,'theme-configured:ai-software',clock-1000,clock),true);
- assert.equal(eligibleConfiguredPublic(provisional,'theme-configured-provisional:ai-software',clock-1000,clock),true);
+ assert.equal(eligibleConfiguredPublic(provisional,'theme-configured-provisional:ai-software',clock-1000,clock),false);
  const response=await readConfiguredThemes(db,{now:clock});
  assert.equal(response.status,200);
  const body=await response.json();
@@ -142,9 +142,8 @@ test('R32 public contract marks stored confirmed score separately from READY pro
  assert.equal(theme.score,60);
  assert.equal(theme.history[0].status,'NORMALIZED_DATED_OFFICIAL_AUM_THREE_PLUS');
  assert.equal(theme.history[0].phase,'CONFIRMED');
- assert.equal(theme.provisionalStatus,'READY');
- assert.deepEqual({date:theme.provisional.date,score:theme.provisional.score,
-  phase:theme.provisional.phase},{date:'2026-10-29',score:61,phase:'PROVISIONAL'});
+ assert.equal(theme.provisionalStatus,'PENDING');
+ assert.equal(theme.provisional,undefined);
 });
 
 
@@ -187,7 +186,7 @@ test('W03 R32 provisional null source-file entry fails closed, never throws',()=
    contributingETFs:['WISE'],weightsPercent:{WISE:100},
    issuerAumAsOf:{WISE:'2026-10-27'},datedOfficialAumUsed:false,excluded:[]}]};
  const key='theme-configured-provisional:r32-sidecar';
- assert.equal(eligibleConfiguredPublic(source,key,clock-1000,clock),true);
+ assert.equal(eligibleConfiguredPublic(source,key,clock-1000,clock),false);
  assert.equal(eligibleConfiguredPublic({...source,sourceFiles:[null,source.sourceFiles[1]]},
   key,clock-1000,clock),false);
 });

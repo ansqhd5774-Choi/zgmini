@@ -1,3 +1,4 @@
+import {throwMarketParquetRemoved} from '../../lib/marketparquet-retirement.mjs';
 // Additive R8 Space provisional computation, reading ONLY previously persisted,
 // SHA-audited GMH hourly source and seven-theme MarketParquet daily archive.
 // Uses the approved R32 basket, adaptive timeline and dated issuer AUM as-is.
@@ -50,51 +51,7 @@ async function existingHyparquet({dataRoot,location}){
  check(false,'SPACE_R8_APPROVED_EXISTING_PARQUET_DECODER_MISSING');
 }
 
-export async function readSpaceParquetR8(dataRoot,{confirmedDate,decoder}={}){
- check(date(confirmedDate),'SPACE_R8_CONFIRMED_DATE_INVALID');
- const parent=path.join(dataRoot,'theme-market-history-r131');
- const archive=path.join(parent,'marketparquet-r165');
- const audits=path.join(parent,'marketparquet-r167');
- check(fs.existsSync(archive)&&fs.existsSync(audits),'SPACE_R8_SAVED_SEVEN_ARCHIVE_MISSING');
- const files=fs.readdirSync(archive).filter(n=>/^etf_daily_\d{4}-\d{2}-\d{2}\.parquet$/.test(n))
-  .map(name=>({name,date:name.slice(10,20)})).filter(x=>x.date>=confirmedDate)
-  .sort((a,b)=>a.date.localeCompare(b.date));
- if(files[0]?.date!==confirmedDate)return {status:'NO_VERIFIED_BASE_OVERLAP',dates:[]};
- if(files.length>3)return {status:'CONFIRMED_REFRESH_NEEDED_FOR_BACKLOG',dates:[]};
- const target=files.slice(0,3);
- const columns=['date','symbol','asset_type','close'];
- const symbols=['SPY','UFO','NASA','WARP','ROKT'];
- const results=[];
- for(const {name,date:day} of target){
-  const location=path.join(archive,name),bytes=fs.readFileSync(location);
-  check(bytes.length>=12&&bytes.toString('ascii',0,4)==='PAR1'&&
-   bytes.toString('ascii',bytes.length-4)==='PAR1'&&
-   bytes.readUInt32LE(bytes.length-8)>0&&bytes.readUInt32LE(bytes.length-8)<=bytes.length-12,
-   'SPACE_R8_PARQUET_CONTAINER_INVALID');
-  const digest=sha(bytes),auditFile=path.join(audits,name.replace('.parquet','.audit.json'));
-  check(fs.existsSync(auditFile),'SPACE_R8_PARQUET_AUDIT_MISSING');
-  const audit=JSON.parse(fs.readFileSync(auditFile,'utf8'));
-  check(audit.date===day&&audit.sha256===digest&&audit.complete===true&&
-   audit.source===parquetMode,'SPACE_R8_PARQUET_AUDIT_MISMATCH');
-  const m=decoder??await existingHyparquet({dataRoot,location});
-  check(typeof m?.parquetReadObjects==='function','SPACE_R8_PARQUET_DECODER_INVALID');
-  const buffer=bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength);
-  const rows=await m.parquetReadObjects({file:buffer,columns});
-  check(Array.isArray(rows),'SPACE_R8_PARQUET_ROWS_INVALID');
-  const prices={};
-  for(const row of rows){
-   const sym=typeof row?.symbol==='string'?row.symbol.toUpperCase():'';
-   if(!symbols.includes(sym))continue;
-   check(dateOnly(row.date)===day&&positive(row.close)&&
-    (!row.asset_type||String(row.asset_type).toLowerCase()==='etf')&&
-    !Object.hasOwn(prices,sym),'SPACE_R8_PARQUET_TARGET_ROW_INVALID_'+sym);
-   prices[sym]=row.close;
-  }
-  results.push({date:day,prices,fileSha256:digest,
-   sourceStoredAt:new Date(fs.statSync(location).mtimeMs).toISOString()});
- }
- return {status:'VERIFIED',dates:results};
-}
+export function readSpaceParquetR8(){return throwMarketParquetRemoved();}
 
 export function calculateSpaceProvisionalR8({confirmed,roster,evidence,original,spy,
  parquet,now=Date.now()}={}){
@@ -193,12 +150,4 @@ export function calculateSpaceProvisionalR8({confirmed,roster,evidence,original,
  return {status:'PRIVATE_PROVISIONAL_CANDIDATE',record:result,points:outputs};
 }
 
-export async function buildSpaceProvisionalFromStorageR8({dataRoot,confirmed,now=Date.now(),decoder}={}){
- const roster=JSON.parse(fs.readFileSync(rosterPath,'utf8'));
- const evidence=JSON.parse(fs.readFileSync(aumPath,'utf8'));
- const original=readApprovedSpacePrices({dataRoot,symbols:roster.approvedCurrentSymbols});
- const spy=readVerifiedSharedSpy({dataRoot,sourceTheme:'data-center-power'});
- const parquet=await readSpaceParquetR8(dataRoot,{confirmedDate:confirmed.observationDate,decoder});
- if(parquet.status!=='VERIFIED')return parquet;
- return calculateSpaceProvisionalR8({confirmed,roster,evidence,original,spy,parquet,now});
-}
+export function buildSpaceProvisionalFromStorageR8(){return throwMarketParquetRemoved();}

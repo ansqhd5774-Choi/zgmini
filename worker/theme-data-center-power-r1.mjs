@@ -1,3 +1,4 @@
+import {hasMarketParquetProvenance} from '../lib/marketparquet-retirement.mjs';
 // Isolated tenth ETF-only theme sidecar. Reads only a separately approved D1
 // derived-score row; never changes seven core themes or AI/biotech histories.
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
@@ -14,6 +15,7 @@ const score=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=100;
 const time=v=>typeof v==='string'&&Number.isFinite(Date.parse(v));
 
 export function eligibleDcPower(record,base,{now=Date.now(),storedAt=now}={}){
+ if(hasMarketParquetProvenance(record))return false;
  if(base?.status!=='READY'||!Array.isArray(base.themes)||base.themes.length<7||!validDate(base.observationDate))return false;
  if(!record||record.status!=='READY'||record.version!==DC_POWER_PUBLIC_VERSION||record.theme!=='데이터센터·전력'||
   record.etfs?.join(',')!=='DTCR,GRID'||record.referenceSymbol!=='SPY'||record.methodologyVersion!==METHOD||

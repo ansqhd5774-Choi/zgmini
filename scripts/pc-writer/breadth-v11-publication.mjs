@@ -1,3 +1,4 @@
+import {throwMarketParquetRemoved} from '../../lib/marketparquet-retirement.mjs';
 /** V11 public-score-only PC publisher. D1: one NEW bounded public output key.
  * No provider calls, local SQLite writes, B1-R5 writes or schedule changes.
  * Existing V9 D1 output is preserved for verified fallback.
@@ -32,23 +33,7 @@ export function publicationDecisionV11(next,previous){
  return comparable(next,previous)?'UNCHANGED':'PUBLISH';
 }
 const selectSql='SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?';
-export async function publishV11({remote,db,record,now=Date.now()}){
- const first=(await remote.query(db,selectSql,[V11_PUBLIC_KEY])).results?.[0]??null;
- const decision=publicationDecisionV11(record,first?parse(first.body):null);
- if(decision!=='PUBLISH')return {status:decision,observationDate:record.observationDate};
- if(first&&!projectV11PublicDomain(parse(first.body)))throw Error('V11_REMOTE_BODY_NOT_VERIFIED');
- if(first?.stored_at>now)throw Error('V11_REMOTE_STORED_AT_NEWER');
- const encoded=JSON.stringify(record);
- const sql="INSERT INTO market_public_snapshots_v1(snapshot_key,body,stored_at) SELECT ?,?,? WHERE NOT EXISTS(SELECT 1 FROM market_public_snapshots_v1 WHERE snapshot_key=?) OR EXISTS(SELECT 1 FROM market_public_snapshots_v1 WHERE snapshot_key=? AND body=?) ON CONFLICT(snapshot_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at WHERE market_public_snapshots_v1.body=?";
- let err=null;
- try{await remote.request(db,[{sql,params:[V11_PUBLIC_KEY,encoded,now,V11_PUBLIC_KEY,V11_PUBLIC_KEY,first?.body??'',first?.body??'']}]);}
- catch(e){err=e}
- let row;
- try{row=(await remote.query(db,selectSql,[V11_PUBLIC_KEY])).results?.[0]??null;}
- catch{throw Error('V11_PUBLICATION_STATE_UNKNOWN')}
- if(row?.body!==encoded||Number(row.stored_at)!==now)throw Error(err?'V11_PUBLICATION_STATE_UNKNOWN':'V11_PUBLICATION_CAS_OR_READBACK_FAILED');
- return {status:'VERIFIED',asOfDate:record.asOfDate,observationDate:record.observationDate,score:record.score,phase:record.phase};
-}
+export async function publishV11(){return throwMarketParquetRemoved();}
 export async function main(args=process.argv.slice(2),now=new Date()){
  if(args.some(a=>a!=='--publish')||args.filter(a=>a==='--publish').length>1)throw Error('V11_UNKNOWN_ARGUMENT');
  const publish=args.includes('--publish'),started=Date.now();

@@ -1,3 +1,4 @@
+import {throwMarketParquetRemoved} from '../../lib/marketparquet-retirement.mjs';
 import {QuotaLedger} from './quota-ledger.mjs';
 import {providerForUrl} from './quota-policy.mjs';
 import {createSecSharedLimiter,fetchSecControlled} from './sec-request-controls.mjs';
@@ -43,6 +44,7 @@ export function createQuotaFetch({
   const isRequest=typeof Request==='function'&&input instanceof Request;
   const url=typeof input==='string'||input instanceof URL?input:isRequest?input.url:input?.url;
   const provider=providerForUrl(url);
+  if(provider==='MARKETPARQUET')throwMarketParquetRemoved();
   if(!provider)return originalFetch(input,init);
   if(provider==='SEC'&&secGate){
    const method=String(init?.method??(isRequest?input.method:'GET')).toUpperCase();

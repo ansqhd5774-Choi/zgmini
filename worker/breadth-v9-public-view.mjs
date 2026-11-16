@@ -15,50 +15,5 @@ const factors=Object.freeze([
  ['F4','중기 수급 흐름','점'],
  ['F5','20회 관측 수급폭','%'],
 ]);
-export function projectV9PublicDomain(record){
- if(!record||record.version!==1||record.methodologyVersion!==V9_METHOD||record.source!=='PC_LOCAL_B1_R3_STORED_TIME_LABELED_NOT_OFFICIAL_PIT_ATTESTED')return null;
- if(!date(record.asOfDate)||!date(record.observationDate)||record.observationDate>record.asOfDate||!score(record.score))return null;
- if(!['OBSERVED','CARRY_FORWARD'].includes(record.phase)||(record.phase==='OBSERVED')!==(record.asOfDate===record.observationDate))return null;
- if(!Array.isArray(record.trend)||record.trend.length<2||record.trend.length>370)return null;
- let previous='';
- const trend=[];
- for(const row of record.trend){
-  if(!date(row?.label)||row.label<=previous||row.label>record.observationDate||!score(row.value))return null;
-  trend.push({label:row.label,value:row.value});
-  previous=row.label;
- }
- const latest=trend.at(-1);
- if(latest.label!==record.observationDate||Math.abs(latest.value-record.score)>0.000001)return null;
- const f=record.factors;
- if(!f||factors.some(([key])=>!score(f[key])))return null;
- const prior=trend.at(-2);
- const delta=prior?round(record.score-prior.value):null;
- const indicators=factors.map(([id,name,unit])=>({
-  id:'breadth-v9-'+id.toLowerCase(),name,label:name,status:'READY',value:f[id],score:f[id],unit,
-  asOfDate:record.observationDate,observationDate:record.observationDate,
-  source:'STORED_V9_FACTOR',sourceKey:id,freshness:record.phase==='OBSERVED'?'CURRENT':'LAST_VERIFIED',
-  criterionLabel:'저장 평가점수',missing:[],
- }));
- return {
-  id:'breadth',name:'수급·폭',source:'PC_LOCAL_STORED_V9',
-  methodologyVersion:V9_METHOD,
-  status:'READY',score:record.score,state:null,interpretation:null,
-  trend,indicators,
-  asOfDate:record.asOfDate,observationDate:record.observationDate,
-  updatedAt:record.sourceStoredAt??null,
-  sourceStoredAt:record.sourceStoredAt??null,
-  freshness:record.phase==='OBSERVED'?'CURRENT':'LAST_VERIFIED',
-  dataPhase:record.phase,
-  scoreChange:delta,
-  previousScore:prior?.value??null,
-  previousObservationDate:prior?.label??null,
-  missingFactors:[],
- };
-}
-export function overlayV9PublicScore(snapshot,projection){
- const candidate=projectV9PublicDomain(projection);
- if(!candidate||!snapshot||snapshot.status!=='SUCCESS'||!Array.isArray(snapshot.domains))return snapshot;
- const matches=snapshot.domains.filter(item=>item?.id==='breadth');
- if(matches.length!==1)return snapshot;
- return {...snapshot,domains:snapshot.domains.map(d=>d?.id==='breadth'?candidate:d)};
-}
+export function projectV9PublicDomain(){return null;}
+export function overlayV9PublicScore(snapshot){return snapshot;}

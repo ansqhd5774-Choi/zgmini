@@ -33,11 +33,11 @@ test('never mistake status text alone or failed ledger for actual successful col
  assert.equal(slot(primary({status:'SOURCE_FAILED'})).outcome,'failure');
  assert.equal(slot(primary({status:'R181_HTTP_ERROR'})).outcome,'failure');
 });
-test('existing legacy success and missing secondary-lane statuses stay intact',()=>{
+test('existing GMH success stays intact and retired secondary lane is removed',()=>{
  for(const status of ['PRIMARY_RAW_STORED','NO_NEW_COMPLETE_PRIMARY_DATE']){
   assert.equal(slot(primary({status})).outcome,'success');
  }
  const rows=expandedCollectionEntries({primary:primary()});
- assert.equal(rows.length,6);
- assert.equal(rows.find(x=>x.id==='job:themeSecondary').outcome,'unknown');
+ assert.equal(rows.length,5);
+ assert.equal(rows.find(x=>x.id==='job:themeSecondary'),undefined);
 });

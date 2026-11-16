@@ -6,7 +6,7 @@ import {createHash} from 'node:crypto';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {collectOptional} from './theme-optional-collect.mjs';
 import {auditOptionalPrices} from './theme-optional-audit.mjs';
-import {buildAiProvisionalFromExistingSeven} from './theme-ai-marketparquet-provisional-r2.mjs';
+import {throwMarketParquetRemoved} from '../../lib/marketparquet-retirement.mjs';
 import {containedFile,inspectManifest} from './theme-data-inventory.mjs';
 import {eligibleAiTheme,AI_THEME_PUBLIC_KEY,AI_THEME_PUBLIC_VERSION} from '../../worker/theme-ai-semiconductor-optional.mjs';
 import {themeHistoryReference} from '../../worker/theme-history-reference.mjs';
@@ -123,19 +123,7 @@ export function buildAiCandidate({audit,prior,reference,manifest,manifestBytes,n
 // Do not transfer GMH rights flags to the second provider. Require the exact
 // existing seven-theme rolling publisher's source/rights attestation for the
 // same confirmed and provisional dates, even though no raw is published.
-export function verifySevenProvisionalAuthority(rolling,reference){
- const expected=(reference?.phase==='PROVISIONAL'?reference.provisional?.points??[]:[]).map(p=>p.date);
- ensure(rolling?.status==='READY'&&rolling.version===THEME_ETF_ROLLING_VERSION&&
-  rolling.publicationAuthorized===true&&rolling.upstreamCommercialRightsVerified===true&&
-  rolling.derivedLicenseVerified===true&&rolling.sourcePriceReconciled===true&&
-  rolling.lineage?.primarySource==='GETMARKETHISTORY_1H_CLOSE'&&
-  rolling.lineage?.secondarySource==='MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED'&&
-  rolling.lineage?.secondaryPendingCount===expected.length&&
-  rolling.observationDate===reference.observationDate&&
-  equal((rolling.provisional?.points??[]).map(p=>p.date),expected)&&
-  rolling.lineage?.latestCompletedSession===expected.at(-1),'AI_SEVEN_SECONDARY_RIGHTS_OR_LINEAGE_UNVERIFIED');
- return true;
-}
+export function verifySevenProvisionalAuthority(){return throwMarketParquetRemoved();}
 
 // The public API is a UNION of theme-specific provisional dates: biotech can
 // add 22 Oct even when the original seven have confirmed 22 Oct and only a 23
@@ -186,7 +174,7 @@ export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPu
    derivedLicenseVerified:r?.derivedLicenseVerified===true,
    sourcePriceReconciled:r?.sourcePriceReconciled===true,
    primarySource:r?.lineage?.primarySource==='GETMARKETHISTORY_1H_CLOSE',
-   secondarySource:r?.lineage?.secondarySource==='MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED',
+   secondarySource:r?.lineage?.secondarySource===null&&r?.lineage?.secondaryPendingCount===0,
    pendingCount:r?.lineage?.secondaryPendingCount===pending.length,
    confirmedDate:r?.observationDate===reference.observationDate,
    pendingDates:equal((r?.provisional?.points??[]).map(p=>p.date),pending),
@@ -312,7 +300,7 @@ const api=async(fetchImpl=fetch)=>{
  ensure(res.ok,'PUBLIC_API_NOT_READY');const value=await res.json();ensure(value.status==='READY','PUBLIC_API_NOT_READY');return value;
 };
 export async function runOptionalTheme({themeId,dataRoot,readPublic=api,storage=null,collect=collectOptional,
- audit=auditOptionalPrices,secondary=buildAiProvisionalFromExistingSeven,allowPublish=false,now=Date.now}={}){
+ audit=auditOptionalPrices,secondary=throwMarketParquetRemoved,allowPublish=false,now=Date.now}={}){
  const result={themeId,status:'STARTED',providerCalls:0,d1Writes:0,publicVerified:false,reason:null};
  try{
   ensure(TARGETS.includes(themeId),'UNREGISTERED_THEME');
