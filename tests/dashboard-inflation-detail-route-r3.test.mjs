@@ -35,3 +35,24 @@ test('inflation detail does not show a stale stored score as current',async()=>{
   assert.equal(body.reason,'STORED_PROJECTION_STALE');
   assert.equal(body.score,undefined);
 });
+
+test('all supported dashboard risk detail GET routes use the existing approved D1 keys',()=>{
+ const routes=[
+  ['inflation-detail','inflation'],
+  ['recession-detail','recession'],
+  ['credit-risk-detail','creditRisk'],
+  ['earnings-recession-detail','earningsRecession'],
+  ['asset-bubble-detail','assetBubble'],
+  ['debt-risk-detail','debtRisk'],
+  ['supply-shock-detail','supplyShock'],
+ ];
+ for(const [slug,key] of routes){
+  const source=readFileSync('app/api/'+slug+'/route.ts','utf8');
+  assert.ok(source.includes('export async function GET(request:Request)'),slug);
+  assert.ok(source.includes('storedProjectionResponse(request,'),slug);
+  assert.ok(source.includes('publicProjectionStore(env.DB)'),slug);
+  assert.ok(source.includes('key:PUBLIC_PROJECTION_KEYS.'+key),slug);
+  assert.equal(typeof PUBLIC_PROJECTION_KEYS[key],'string',key);
+  assert.doesNotMatch(source,/\bfetch\(|\bcollect[A-Z]\w*\(|\bcalculateMarket\(/);
+ }
+});
