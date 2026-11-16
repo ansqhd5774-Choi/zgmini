@@ -5,7 +5,7 @@
 - 착수 당시 전용 브랜치: `codex/ui-improvements` `43f943679b555387593d918088860ba5b882dcb6`
 - 인계받은 기존 근거: `DASHBOARD_SCORE_68_CONTENT_CONTRACT_INVENTORY_R1.md` (2026-11-10), `DASHBOARD_SCORE_RUNTIME_BASELINE_R1.md` (2026-11-10)
 - 당회 작업 범위: **현재 개발 소스의 UI 소비 구조 및 R1 계약 재사용**, 기능별 실제 갱신 계약 분류 착수. 원자료/DB/D1/Controller/예약/산식 변경 없음.
-- **진척 요약: 01–32 완료 (32/34 = 94.1% 고정 작업 기준). 27개 분류 완료. 33 결함군 통합과 34 운영 종결 및 F1–F4는 남음.** 추가 결함군 N은 미확정이므로 전체 R3 최종 %는 아직 산정하지 않는다. 이 기록은 브랜치 문서 반영이지 배포/운영 적용 증거가 아니다.
+- **진척 요약: 01–33 완료 (33/34 = 97.1% 고정 작업). D01–D27 소스 판정 27/27. 결함 원인군 N=2 확정으로 전체 42작업, 현재 추가 F1–F4 증거 5/8, 통합 38/42(90.5%).** 34/F3(둘째 군)/F4(각 군) 미완료. 이 소스 진행률은 Production 운영 완료율이 아니다.
 
 ## 1. 공통 실행 01–03 — 완료 근거
 
@@ -86,8 +86,8 @@
 ## 4. 다음 실제 실행 순서·작업량 보호
 
 - **현재 증거상 확정된 갱신 시점 불일치(결함군 N): 아직 0건 확정이 아니라 '미확정'.** D04는 NOT_CONNECTED이며 새 수정 대상 결함군에 자동 합산하지 않는다.
-- **다음 필수 실행:** 33에서 소스 결함군을 root cause별 통합하고 34·F1–F4의 필수 운영 증거 범위를 확정한다. Production 공개 API readback은 현 접근에서 UNKNOWN. 04–06·08의 구체적 미확인 입력은 기존 유효 증거가 있을 때 이어서 판정하되 **27개 전원 운영 사건 확인을 단일 전역 Gate로 만들지 않는다**.
-- 실행 완료 집계: **32/34** (01–32), 04–06/08 및 22–34는 미완료. **구현: API 저장결과 읽기 라우트 7건·회귀 테스트 4건. main 병합 완료 / Cloudflare 후보 Worker build 성공 / Production 사이트 API readback 미확인.**
+- **다음 필수 실행:** D03 소스 수정 PR #1174의 GitHub CI를 확인한 뒤 승인된 Git 연동으로 운영 반영하고, F4의 exact Deployment/API/UI readback을 진행한다. Production 공개 API 직접 조회는 현재 접근에서 UNKNOWN. 04–06·08의 구체적 미확인 입력은 기존 유효 증거가 있을 때 이어서 판정하되 **27개 전원 운영 사건 확인을 단일 전역 Gate로 만들지 않는다**.
+- 실행 완료 집계: **33/34** (01–33), 34 미완료. **결함군 2개 × F1–F4 추가 8개; 5/8 완료, 3/8 미완료. 통합 38/42(90.5%).** GET 라우트군 7건 main CI/병합 성공, 실제 Production API/D1 readback 미확인. D03 화면 금지 공급자 제거 코드는 W06 브랜치·격리 PR #1174만 반영, main/Production 미완료.
 
 
 ## 5. 09/D06 인플레이션 위험 신규 실행 증거 — 2026-11-16
@@ -179,3 +179,20 @@
 - `lib/market-score/earnings-e1-r5.mjs` + `earnings-e1-r5-production-domain.mjs` 실함수: 13요인 전부 0이면 READY/0, S13 결측은 PARTIAL/null, R5 자격 부족 시 기존 R4 score 유지. `rate-sentiment-freshness.mjs` 7일 허용·8일 지연 확인.
 - `app/market-breadth-strip.tsx` 화면 source 신규 W06 수정: 금지 MarketParquet 확정/과거 그래프 fallback 제거, 기존 유효 IEX/SIP 잠정만 표시, 0/null 차트 위장 금지. 신규 source-level test 3종 수정했으나 **GitHub 전체 CI/Production UI 검증 미확인**, 시뮬레이션 PASS만 운영 배포로 보고하지 않음.
 - **32 판정: SIMULATION_PASS**. 수정 이력·승인 구조 밖 원자료 변경 0건.
+
+
+## 15. 33 실제 독립 결함군 통합 — 완료 (2026-11-16)
+
+**집계 대상 27개 합계:** `DEFECT_SOURCE_ROUTE` **7개(D06/D07/D09/D10/D11/D12/D13)**, `DEFECT_DISPLAY_RETIRED_SOURCE` **1개(D03)**, `NOT_CONNECTED` **1개(D04 한국 등락 counts)**, `SOURCE_REVIEWED_RUNTIME_UNKNOWN` **18개** = 총 **27개**. 연결 미확인 18건을 성공 또는 실패로 가정하지 않음. D04는 갱신시점 결함이 아니라 기능 원담당 신규 연결 범위이므로 새 F군으로 만들지 않는다.
+
+**확정 원인군 N=2, 총 34 + 4×2 = 42개 작업.** 기존 원인에 대한 기능별 중복 F군 금지.
+
+| 원인군 | 영향 | 재현 F1 | 최소수정 F2 | 회귀 F3 | 운영 F4 |
+|---|---|---|---|---|---|
+| A · 기존 공개 projection 7개 detail GET 라우트 누락 | D06/D07/D09–D13 | PASS: 저장 D1 허용 키와 UI 소비 URL 존재·라우트 부재 | PASS: 기존 공용 storedProjectionResponse 7개 라우트 + TypeScript JSDoc 최소 연결, PR #1165 squash main `5bdaec2a…` | PASS: PR #1165 GitHub CI #43854770123 build/typecheck/regression | **UNKNOWN**: exact zgmini.kr Production SHA, D1 readback, 공개 7 API/UI 결과 미확인 |
+| B · 퇴역 MarketParquet R2 값을 미국 등락 current/history로 계속 연결 | D03 | PASS: 금지 계약·confirmed-r2/history 503 대비 UI 과거값 fallback 및 R2 펼침 패널 재현 | PASS: `codex/ui-improvements`의 `app/market-breadth-strip.tsx` 수정 4268a679…; 기존 격리 브랜치 내 main 기반 최소 수정 | **9/9 source-level PASS, GitHub 전체 CI 아직 미완료**; 테스트 3종 수정, PR #1174 | **미완료**: PR main 병합·Cloudflare exact Production 배포·실제 미국/한국 카드 확인 필요 |
+
+- B UI 소스는 기존 독립 IEX 현재 잠정만 사용하고, 아직 유효하지 않을 때 미국 미제공/—로 표시. 한국 counts/색상/높이 유지. 기존 전용 W06 브랜치에 있던 SIP 장전 잠정 코드는 보존하고, 최신 main 선택적 릴리스에는 미반영.
+- PR #1174는 새 브랜치 생성/강제 push/rebase 없이 **이미 있던** `codex/ui-improvements-r3-inflation-route-20261116` 브랜치에 최신 main을 두 부모 merge commit `b4394a82445794abf80da0175ca6e8631c2213ac`으로 추가한 것. 이전 PR #1165의 9파일 blob이 main과 일치함을 직접 확인하고 main tree + 변경 4파일만 선택해 정상 fast-forward 하였으며, 실제 main 대비 diff 4파일만. Git 이력·타 작업 소스 보존.
+- 해당 9개 회귀 단언을 원본 source 문자열에 대해 V8 isolate로 실행: **9/9 PASS**. GitHub 실제 Node CI 결과는 별도.
+- **단계 33 결론:** 두 확정 root cause만 F1–F4 집계. F1/F2 A/B 각각 완료, F3 A PASS·B CI 미완료, F4 A/B 모두 운영 증거 미확인. 고정 34는 F4 후 최종 수치 정리에만 사용한다.
