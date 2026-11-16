@@ -45,7 +45,7 @@ B4 10 | Production·화면 최종 검증
 - [ ] **A1-05** Event129의 PID·실행 시각·프로세스 생성 시각 확인 — PENDING | 새로운 실제 증거 없음
 - [ ] **A1-06** 공유 local-cycle.lock 실제 소유자 확인 — PENDING | 새로운 실제 증거 없음
 - [x] **A1-07** 잠금 전후 해시·관측 경쟁 여부 확인 — DONE | #1748 단회 시점 lock before/after PRESENT, same=true, protectedBefore/After SHA-256 동일 및 protectedStateUnchanged=true; 관측 시점 이후 Core 지속 운전이나 B owner 증명은 미포함
-- [ ] **A1-08** 최초 증명 실패 조건 특정 — SOURCE_ONLY | PR #1724·#1752·#1760 소스 병합, 격리 Windows fixture 82/82 PASS; 실제 B Run 43861853573 최초 실패 불명
+- [ ] **A1-08** 최초 증명 실패 조건 특정 — SOURCE_ONLY | PR #1724·#1752·#1760·#1772 소스 병합, 격리 Windows fixture 90/90 PASS; 기존 운영 #1748 reader OK/XML 0개 원인 미확정, B Run 43861853573 최초 실패 원인 불명
 - [x] **A1-09** 원격 진단 JSON/TXT 회수 및 보호 상태 확인 — DONE | #1748 43876539574-1-seat-1 JSON/TXT 2/2 직접 재조회, 상태 STATE_UNKNOWN/INFL_E129_NOT_OBSERVED_WITHIN_LIMIT, operationalWrites/providerCalls/d1Writes=0, protectedStateUnchanged=true
 
 ## A2 — 증명된 결함 최소 수정 (8개)
@@ -54,7 +54,7 @@ B4 10 | Production·화면 최종 검증
 - [ ] **A2-02** 실제 검증 오류와 조회 시점 한계 구분 — ANALYSIS | A GetInstances gap과 B Event129 미증명은 별개; 동일 원인 미입증
 - [ ] **A2-03** 잘못된 검증 조건이 입증된 경우 해당 조건만 최소 수정 — PENDING | 새로운 실제 증거 없음
 - [ ] **A2-04** 기존 안전거부·허용 오차·잠금 보호 유지 — SOURCE_ONLY | 기존 B 증명 안전 조건 변경 금지; A fixture 별도 판정
-- [ ] **A2-05** 관련 코드 회귀검사 — SOURCE_ONLY | PR #1760 격리 Windows CI #43883329062 82/82 PASS, 기존 B 수집기·승인 검사 불변; 운영 B 검사 미실행
+- [ ] **A2-05** 관련 코드 회귀검사 — SOURCE_ONLY | PR #1772 Windows source CI #43885847244 90/90 PASS, 원문 비노출 및 B 안전 증명 로직 불변; 운영 B 검사 미실행
 - [ ] **A2-06** Windows 동일 경로 검증 — PENDING | 새로운 실제 증거 없음
 - [ ] **A2-07** 수정 파일·source SHA 확정 — PENDING | 새로운 실제 증거 없음
 - [ ] **A2-08** 필요한 정규 운영 적용 및 적용 파일 재조회 — PENDING | 새로운 실제 증거 없음
@@ -160,3 +160,11 @@ B4 10 | Production·화면 최종 검증
 - [#1747](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1747) 실PC A `core-status`, Run 43876398674: PASS/CORE_READONLY_DIAGNOSIS, `actualExecutionSha=e3a495c97d6b40d6d4eea2ff4f586bef46216eb7`, protectedStateUnchanged=true, 원격 JSON/TXT 2/2 확인. **이는 유지보수 #1745의 RECONNECTED/RECOVERY_REQUIRED를 공식 terminal SUCCEEDED로 변환하지 않는다.**
 - [#1748](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1748) 실PC A `inflation-event129-evidence-readonly`, Run 43876539574: `STATE_UNKNOWN/INFL_E129_NOT_OBSERVED_WITHIN_LIMIT`, reader OK, `UTF-8/BOM NONE`, 구형 파서 Event 총 0, Task 정의 OK, GetInstances EMPTY, WMI OK/ownerFound=true/coreMatched=true, 직접 B 증명 `INFL_MANUAL_B_EVENT129_INPUT_UNVERIFIED`, VBS 후보 0. 잠금 PRESENT→PRESENT same=true, protectedStateUnchanged=true, providerCalls/operationalWrites/d1Writes=0; JSON/TXT 재조회. **독립 WMI Core script 일치는 Event129나 Task 소유권 직접 증명이 아니며, 실제 Event129 기록 부재인지 구형 파서 미인식인지는 분리되지 않았다.**
 - A1-01/A1-07/A1-09는 각각 정확한 증거 범위에서만 DONE 처리. A1-04/A1-05/A1-06/A1-08 및 B 원자료 수집은 여전히 미완료. 기존 Run·requestId 재실행 금지.
+
+## 2026-11-16 Event129 empty-XML 분리 및 운영 설치 최소 범위 최신화
+
+- 실PC #1748은 reader OK/UTF-8/BOM NONE, **구형 A에서 Event129 파싱 0건**. 이전 자료에는 stdout 바이트 길이·XML envelope 형태가 없어 원인(진짜 이벤트 없음 vs XML 루트 인식 실패)을 판별하지 못한다. Event129 원문을 새로 유출하지 않고, 읽기 전용 출력 enum/byte band/원래 B 인식 이벤트 수/보조 XML 인식 이벤트 수로 구분해야 한다.
+- [제어 PR #1772](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1772) main 병합 SHA `f59e723aa43e59520d760f5da17a07f7f09a04b2`. 격리 Windows [source CI #43885847244](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43885847244) **90/90 PASS, 실패 0**. 8개 신규 fixture: stdout 0 / 빈 Events / Event prefix / 불완전 XML / non-XML / BOM 없는 UTF16LE / event 0 / reader 실패. **구 B 순수 증명·수집기는 미수정**, 실제 PC 진단/수집 요청 0건.
+- 설치 보류 시점의 **누적 Controller diff 3파일** (설치 실측 SHA `e3a495c97d6b40d6d4eea2ff4f586bef46216eb7` → 이번 PR 병합 `f59e723aa43e59520d760f5da17a07f7f09a04b2`): W01 `controller/inflation-event129-evidence-readonly.mjs` old Git blob `626ce8d3296e425cd3a95375ebf868b2d9eaabca`→new `95fedad09bc9004d9a25711493d8b4c2c66be972`; **다른 작업의 두 파일** `controller/provider-activity-runtime-readonly.mjs` 및 `controller/http32-two-host-checkpoints-readonly.mjs`도 변경. 이전 1파일 diff 기록은 그 시점의 사실이지만 현행 적용 manifest 근거로 재사용 금지.
+- W01 승인만으로 다른 두 파일을 합산·교체할 수 없다. 현재 실PC W01 신규 코드 설치 미확인, #1745 유지보수 `UNKNOWN/RECONNECTED` 원본 기록 보존, 이미 실행한 #1747/#1748 재실행 금지. 정규 유지보수 자동 `postOperation`과 사용자 제한은 우회하지 않는다.
+- 완료 분모는 **8/71 (11.3%)** 유지. A1-08(최초 B 실패 근거)·A2-05(실운영 검증)가 완료된 것으로 간주하지 않는다. 허용되는 다음 실행은 정규 승인된 변경 범위/설치·사후검사 계약 확정이며, 이후 **별도로 허용된** A 단회 증명 결과에서 새 enum으로 실패 원인을 구분한다.
