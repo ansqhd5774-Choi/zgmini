@@ -4,12 +4,13 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
-import {INFLATION_CANDIDATES_7} from '../../lib/inflation-causal-candidates-public-7-catalog.mjs';
+import {INFLATION_CANDIDATES_7,W01_ACTIVE_CANDIDATES} from '../../lib/inflation-causal-candidates-public-7-catalog.mjs';
 import {INFLATION_CANDIDATES_7_PUBLIC_SCHEMA,validateInflationCandidates7Public}
   from '../../worker/inflation-causal-candidates-public-7-r1.mjs';
 
 const PC_HOME=String.raw`E:\ZGmini\data\pc-writer`;
 const FOLDER='inflation-causal-candidates-r1';
+const W01_ACTIVE_IDS=new Set(W01_ACTIVE_CANDIDATES.map(item=>item.id));
 const SOURCES=Object.freeze({
   '2':{file:'eia-us-regular-gasoline-weekly.json',provider:'EIA',
     version:'INFLATION_CAUSAL_CANDIDATE_EIA_REGULAR_R1'},
@@ -149,6 +150,9 @@ export function previewInflationCandidates7(home,{now=Date.now()}={}){
   const directory=path.join(approvedHome(home),FOLDER),cached=new Map();
   const missing={},rows=[];
   for(const meta of INFLATION_CANDIDATES_7){
+    // Archived identifiers remain in the legacy seven-row envelope, but are
+    // neither loaded nor treated as missing/failed sources in the active scope.
+    if(!W01_ACTIVE_IDS.has(meta.id)){rows.push(pending(meta));continue;}
     const name=SOURCES[meta.id].file;
     try{
       if(!cached.has(name))cached.set(name,readSource(directory,name));
@@ -165,8 +169,9 @@ export function previewInflationCandidates7(home,{now=Date.now()}={}){
   if(ready.length===0)return {status:'PENDING',code:'INFL7_PUBLIC_INPUTS_UNAVAILABLE',
     ...common,payload:null};
   const at=Math.max(...ready.map(row=>Date.parse(row.sourceStoredAt)));
+  const activeReady=ready.filter(row=>W01_ACTIVE_IDS.has(row.id)).length;
   const payload={schemaVersion:INFLATION_CANDIDATES_7_PUBLIC_SCHEMA,
-    status:ready.length===7?'READY':'PARTIAL',score:null,
+    status:activeReady===W01_ACTIVE_CANDIDATES.length?'READY':'PARTIAL',score:null,
     sourceVersion:'INFL7_PRESENTATION_'+digest(JSON.stringify(rows)),
     sourceStoredAt:at,indicators:rows};
   validateInflationCandidates7Public(payload,{now});
