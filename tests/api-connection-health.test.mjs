@@ -3,8 +3,10 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {buildApiConnectionHealthFromLog} from '../scripts/pc-writer/api-connection-health.mjs';
-import {summarizeApiConnectionHealth,readApiConnectionHealth,API_CONNECTION_HEALTH_KEY,API_CONNECTION_SNAPSHOT_MAX_AGE_MS} from '../worker/api-connection-health.mjs';
+import {buildApiConnectionHealthFromLog,buildMonitoredSourceHealth} from '../scripts/pc-writer/api-connection-health.mjs';
+import {providerEndpointFingerprint} from '../scripts/pc-writer/provider-endpoint-fingerprint.mjs';
+import {summarizeApiConnectionHealth,readApiConnectionHealth,publicApiConnectionSummary,
+ MONITORED_CALENDAR_SOURCES,API_CONNECTION_HEALTH_KEY,API_CONNECTION_SNAPSHOT_MAX_AGE_MS} from '../worker/api-connection-health.mjs';
 
 const now=Date.parse('2026-11-15T13:00:00.000Z');
 const mk=(at,providers,extra={})=>({at:new Date(at).toISOString(),lane:'core',status:'COMPLETE',providers,...extra});
@@ -150,4 +152,87 @@ test('explicit whitelisted SEC HTTP statuses are extracted from the latest exist
  assert.equal(result.items[0].state,'failed');
  assert.deepEqual(result.items[0].lastEventStatuses,{'200':2,'403':1,'429':1});
  assert.equal(result.items[0].reasonCode,'LAST_EVENT_HAS_FAILURE');
+});
+
+
+const evidenceNow=Date.parse('2026-11-16T08:40:00Z');
+const today='2026-11-16T06:40:00.000Z';
+const monitoredCalendar=()=>({sources:Object.fromEntries(MONITORED_CALENDAR_SOURCES.map(id=>[id,{
+ status:'READY',checkedAt:today,sourceUrl:'https://official.example.org/valid'
+}]))});
+const receipt=(id,url,at,status='200')=>{
+ const fingerprint=providerEndpointFingerprint(url);
+ return JSON.stringify({at,endpointPaths:{[fingerprint.host]:{[fingerprint.id]:{
+  requests:1,statuses:{[status]:1}
+ }}}});
+};
+const recentReceipts=()=>({status:'OBSERVED',tailTruncated:false,rowsTruncated:false,lines:[
+ receipt('earnings_api','https://api.earningsapi.com/v1/calendar/earnings',today),
+ receipt('dol_eta539','https://oui.doleta.gov/unemploy/csv/ar539.csv',today)
+]});
+
+test('all 16 monitored source groups aggregate only from 14 parsed calendar sources and two exact HTTP path receipts',()=>{
+ const snapshot=buildMonitoredSourceHealth(monitoredCalendar(),recentReceipts(),evidenceNow);
+ const summary=summarizeApiConnectionHealth(snapshot,evidenceNow);
+ assert.equal(snapshot.items.length,16);
+ assert.equal(summary.normal,16);
+ assert.equal(summary.failed,0);
+ assert.equal(summary.unknown,0);
+ assert.equal(summary.total,16);
+ assert.equal(summary.status,'healthy');
+ assert.equal(publicApiConnectionSummary(summary).normal,16);
+ assert.equal(publicApiConnectionSummary(summary).total,16);
+ assert.deepEqual(Object.keys(publicApiConnectionSummary(summary)).sort(),
+  ['version','status','coverage','normal','failed','unknown','total','checkedAt'].sort());
+});
+
+test('unobserved direct endpoint paths are unknown, not proved by unrelated successful host calls',()=>{
+ const unrelated='https://oui.doleta.gov/unemploy/wkclaims/report.asp';
+ const log={status:'OBSERVED',tailTruncated:false,rowsTruncated:false,
+  lines:[receipt('unrelated',unrelated,today)]};
+ const summary=summarizeApiConnectionHealth(buildMonitoredSourceHealth(monitoredCalendar(),log,evidenceNow),evidenceNow);
+ assert.equal(summary.normal,14);
+ assert.equal(summary.unknown,2);
+ assert.equal(summary.failed,0);
+ assert.equal(summary.total,16);
+ assert.equal(summary.status,'unknown');
+});
+
+test('exact latest direct-path 503 is warning even if yesterday was 200',()=>{
+ const url='https://oui.doleta.gov/unemploy/csv/ar539.csv';
+ const log={status:'OBSERVED',lines:[
+  receipt('dol_eta539',url,'2026-11-15T06:40:00.000Z'),
+  receipt('dol_eta539',url,today,'503'),
+  receipt('earnings_api','https://api.earningsapi.com/v1/calendar/earnings',today)
+ ]};
+ const summary=summarizeApiConnectionHealth(buildMonitoredSourceHealth(monitoredCalendar(),log,evidenceNow),evidenceNow);
+ assert.equal(summary.failed,1);
+ assert.equal(summary.normal,15);
+ assert.equal(summary.unknown,0);
+ assert.equal(summary.status,'partial');
+});
+
+test('stale 200, missing calendar parse and quota guard do not become false connection alarms',()=>{
+ const stale='2026-11-09T06:40:00.000Z';
+ const sources=monitoredCalendar();
+ sources.sources.bls={status:'READY',checkedAt:stale};
+ const log={status:'OBSERVED',lines:[
+  receipt('earnings_api','https://api.earningsapi.com/v1/calendar/earnings',today,'PROVIDER_QUOTA_GUARD'),
+  receipt('dol_eta539','https://oui.doleta.gov/unemploy/csv/ar539.csv',stale)
+ ]};
+ const snapshot=buildMonitoredSourceHealth(sources,log,evidenceNow);
+ const summary=summarizeApiConnectionHealth(snapshot,evidenceNow);
+ assert.equal(summary.normal,13);
+ assert.equal(summary.failed,0);
+ assert.equal(summary.unknown,3);
+});
+
+test('incomplete or forged monitored registry never publishes a green count',()=>{
+ const snapshot=buildMonitoredSourceHealth(monitoredCalendar(),recentReceipts(),evidenceNow);
+ const forged={...snapshot,items:snapshot.items.slice(0,15)};
+ const out=summarizeApiConnectionHealth(forged,evidenceNow);
+ assert.equal(out.total,null);
+ assert.equal(publicApiConnectionSummary(out).total,null);
+ const old=summarizeApiConnectionHealth(snapshot,evidenceNow+API_CONNECTION_SNAPSHOT_MAX_AGE_MS+1);
+ assert.equal(old.total,null);
 });
