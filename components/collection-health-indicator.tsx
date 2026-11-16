@@ -82,7 +82,7 @@ export default function CollectionHealthIndicator(){
      ?'HTTP 메서드·경로 지문 '+health.endpointEvidence.observedFingerprintCount+'개 관측 (부분 증거)'
      :'개별 API 경로 계측 자료 미확보'}</span>
    {(health?.endpointEvidence?.independentObservedCollectorCount??0)>0&&
-    <span>독립 수집기 호출 관측 '+health!.endpointEvidence!.independentObservedCollectorCount+'종 · 부분 계측</span>}
+    <span>독립 수집기 호출 관측 {health!.endpointEvidence!.independentObservedCollectorCount}종 · 부분 계측</span>}
    {records.length>0&&<ul className="zg-api-connection-list">
     {records.slice(0,16).map(item=><li key={item.host}>
      <span>{item.host}</span>
