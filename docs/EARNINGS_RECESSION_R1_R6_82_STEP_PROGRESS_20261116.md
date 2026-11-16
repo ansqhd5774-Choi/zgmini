@@ -226,6 +226,8 @@
 
 | 2026-11-17 KST · 사용자 순서 변경 지적에 따른 82단계 진행률 정정 | **R1-01 자료 구분 단계 완료**, 계획의 단계 순서 유지. 이전 `71/82 현재 작업`·`11단계 남음` 보고는 무효화. R6-04 후행 소스·승인 조사와 실제 현재 순차 단계 분리. 82단계 계획서에 순차 승인·진행률 기준 추가 | 앱 `main=af2f963659f15e016a64be1132d4cdec9af0d9c6`, 제어 `main=40a0767ec48829360a0b47a2b37e499d59944a05`, W05 관측 HEAD `e6694ddbd4d01826d8802be355bc671b4e53cd8c`; 운영 PC 과거 [#1709](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1709) 체크아웃 `7afe6b0bcaa74d622ada9190fdc9fcc7fd4d5f10` (live runtime source NOT_VERIFIED), Production exact SHA NOT_VERIFIED. 계획 규칙 커밋 `89ce90046ee453cdc95bab16b8ed638b963ca3e1` | **연속 확정 완료 1/82, 현재 2/82 R1-02**. 다음: 기존 운영 source·등록 작업·Runner 매핑 누락만 채워 R1-02 완료 증거 작성. 후행 미승인 QFR D1 변경 0건 |
 
+| 2026-11-17 KST · 82단계 순차 규칙 최종 정합성 확인 | **계획을 순차 기준으로 복구하고 완료율 과장 정정:** R1-01 GitHub 소스 구분 DONE, 선행 첫 미완료 R1-02(2/82). 71/82·잔여 11개 표현 철회. 원래 82 ID·순서를 바꾸지 않음 | [실행계획서](EARNINGS_RECESSION_R1_R6_82_STEP_EXECUTION_PLAN_20261116.md) 규칙 변경 `89ce90046ee453cdc95bab16b8ed638b963ca3e1`, 최종 현재 작업 정합성 `5c618a2c19fe11a163edc083e80728a2be83e236`; [진행기록](EARNINGS_RECESSION_R1_R6_82_STEP_PROGRESS_20261116.md) 최초 진도 수정 `378af33507d7050ae5e2be2ca37e4e71f5883397` 및 요약 정정 `fdfc5ccab03f98d9462633c2a5c28f4b87b4789c` | **LAST PASS:** R1-01 원본 SHA 구분 기록. **FIRST UNFINISHED:** R1-02 source/Runner mapping. **NEXT:** R1-02의 빠진 등록·실행 증거만 수집, 이미 끝낸 QFR 소스/CI 반복 금지. 이번 운영 PC/원자료/D1/Cloudflare 쓰기 0 |
+
 ### 필수 기록 종료 규칙
 
 1. 작업을 수행했다면 **보고 전에 이 진행 기록에 수행 ID·커밋/PR/Issue/Run·실제 PASS/FAIL·당시 상태·남은 필수 실행을 먼저 반영**한다. 로그 반영 불가능하면 `기록 미완료`로 보고한다.
