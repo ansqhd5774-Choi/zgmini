@@ -1,6 +1,6 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
-> **현재 즉시 상태 (2026-11-17 08:25 KST): **13/75 (17.3%), 잔여 62개**. #36 CNN 공개 GET 중복/상충 무결성 PR #1196 4파일 `main` 병합·CI/Cloudflare Build PASS. 다만 실제 PC #1806에서 CNN 현재 점수·관측은 갱신되나 원본 108점(11/06), 확인 108점(11/07) archive는 10일 이상 정체. Sidecar source SHA 범주 차단은 원인 미확정. #36 PARTIAL, #37 독립 W06 실행으로 이동. 실제 D1/Production 게시 검증 없음.
+> **현재 즉시 상태 (2026-11-17 KST): 13/75 (17.3%), 잔여 62개.** #36 CNN 공개 GET PR #1196는 main 병합·CI/Cloudflare Git Build 성공, 그러나 운영 PC #1806 실제 원본 CNN 아카이브 108점(마지막 11/06 UTC), 검증 108점(11/07 UTC)이 10일 이상 정체되어 원담당 복구·D1 readback 대기. **#37 D02 한국 Rev7 거래일·7요인/게시 게이트 소스 시험 12/12 PASS, 운영 KRX 완료거래일/D1 실제 일치 미확정으로 PARTIAL**. 다음 독립 업무는 **#38 D03 미국 등락 3개 비율**. 전체 운영·Production 종단 완료 주장은 하지 않음.
 
 ## 현재 인계 정본 — 다음 담당자 첫 읽기 (2026-11-16 KST)
 
@@ -14,9 +14,9 @@
 | DONE 단계 (중복 없음) | **#04, #05, #08, #10, #21, #22, #23, #24, #26, #27, #33, #34, #35** |
 | #34 60초 화면 갱신·역행 차단 | **DONE (현재 main source/fixture)**. `live-refresh.mjs` 60초 주기, `dashboard-ui.tsx`·`use-stored-index.ts` 수용/역행 보호 경로 확인. 신규 유효값·0·PARTIAL 및 낡은 관측·게시 응답 판정 7/7, UI 연결 소스 4/4 PASS. Production 유저 육안 검수는 최종 단계 |
 | 단계 증거 범위 | #24는 **기존 저장 JSON 활용·Draft 설계/회귀 PASS**까지의 설계 DONE. 실제 15분 보존 정책 수정·PC 설치·D1 반영은 **미완료** |
-| PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #28, #29, **#36**. #36 원본 CNN archive가 11/06·PC 검증 archive 11/07 이후 정체, 신규 원본 저장·D1 게시 실증 미완료. #28/29/13 기존 미완료 유지 |
-| 다음 단 하나의 실행 | **#37 (W06 독립 D02 한국 공포탐욕)** 승인 KRX 완료 거래일/Rev7 7요인·기존 저장·게시·차트 원점수/관측일 검증. **#36 별도 CNN 원담당 조치:** 기존 A급 진단 #1806을 기반으로 Sidecar archive-run source SHA/승인 manifest·운영 config를 원담당이 대조하고 정규 승인 경로로 archive/checkpoint를 복구·실제 D1 일별 readback 검증. 허위 신규점·수동 우회/재시도 금지 |
-| 다음 담당·대상·입력 | W06는 #37 KRX Rev7 7요인·거래일 관측 및 저장/차트 연결에 집중. CNN #36 아카이브 source/Sidecar·Writer 설치는 원래 CNN 담당자(운영 PC #1806/#1337 로컬 증거, 구동 소스 Gate·승인 source 대조) |
+| PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #28, #29, #36, **#37**. #36 CNN archive 원담당 복구·D1 readback, #37 KRX 완료 거래일/Rev7 실제 저장·공개 점수 관측 확인은 아직 미완료. 독립 source/fixture는 각 단계 완료의 운영 대체물이 아님 |
+| 다음 단 하나의 실행 | **#38 (W06 D03 미국 등락)** IEX 승인 임시 데이터의 미국 상승·보합·하락 **3개 비율만** 제공하는 계약과 실제 저장/공개 API/UI 연결을 확인. 폐기된 MarketParquet 관측·누락 비율을 다른 API 숫자로 대체하거나 0–100 신규 점수 산식을 만들지 않음. CNN #36·Korea #37 원담당 실행은 별도 잔여 작업 |
+| 다음 담당·대상·입력 | W06 #38 IEX 승인 미국 등락 집계·3비율 공개 경로/기존 소스·UI. Korea #37 원담당의 KRX 완료일 저장/게시 실증과 CNN #36 Sidecar source SHA 원인/운영 복구는 별도 Owner 경로, 기존 승인·소유권 보존 |
 | #36 남은 통과 조건 | 공개 GET 소스/CI는 PR #1196 통과. 운영 CNN 현재 원본은 최신이나 원본 observation archive 108점/마지막 11/06 UTC, PC 검증 archive 108점/마지막 11/07 UTC로 10일 이상 정체. 운영 원담당 정상 저장 및 D1 각 날짜 readback과 공개 GET 원본 시각 일치 없이는 #36 DONE 아님 |
 | 이후 후보(이번 실행에 혼입 금지) | #28 모델/방법론 계보 공개 이력의 원담당 변경 범위(현행 일별 snapshot에 modelVersion 저장됨, 평면 chart/observed archive에는 없음); #29 기준일 이후 미래 snapshot 표시 결함/동일시각 정정 (Writer 원담당). D01~D27 실제 미연결 작업, Draft #1181·#1185 승인 대기. 비차단 작업은 계속 |
 | 최근 R4 기능 병합 증거 | #1177·#1180·#1182·#1184·#1187·#1189·#1193 및 **[#1196](https://github.com/ansqhd5774-Choi/zgmini/pull/1196)** 병합. #1196 main merge SHA **`40d6156a1144350c3a23a02cb0db26e56bf3adde`**, 4파일만 변경, 실제 공개 GET D1 stub 12건 + 단위시험 6건, PR head CI SUCCESS. 운영 PC archive 복구와 별개 |
@@ -26,7 +26,7 @@
 | 소유·보호 조건 | UI는 기존 전용 브랜치·선별 PR 원칙. 수집·계산·Writer/15분·100개 보존 정책·DB·TTL·스케줄은 별도 원담당/승인 없이 수정·병합·설치 금지. R13 이란 퇴역 예약 복원 금지 |
 | 전후 검증 원칙 | source/CI/로컬 fixture와 실PC/D1/Production을 분리. 사용자에게는 전체 기술 구현 이후 홈페이지 최종 육안 확인 요청 |
 
-**다음 작업자 필수 수행 순서:** 본 계획서 75개 → 위 정본 → #37 관련 기존 근거만 확인 → 실제 #37 실행/검증 → **이 표 상태 수정 및 최신 수행 기록 추가 → 지정 원장 커밋 → 원격 내용 재조회 PASS → 최종 보고**. 지난 대화를 요청하거나 과거 성공 작업을 모두 재실행하지 않는다.
+**다음 작업자 필수 수행 순서:** 본 계획서 75개 → 위 정본 → #38 관련 기존 근거만 확인 → 실제 #38 실행/검증 → **이 표 상태 수정 및 최신 수행 기록 추가 → 지정 원장 커밋 → 원격 내용 재조회 PASS → 최종 보고**. 지난 대화를 요청하거나 과거 성공 작업을 모두 재실행하지 않는다.
 
 ### 마지막 기록 갱신 — 기준 확립 작업 (기능 75단계 추가 완료 없음)
 
@@ -262,3 +262,14 @@
 - **FIRST UNVERIFIED:** 실제 운영 승인 KRX/BOK 일자별 저장·Rev7 계산 `kfg_rev7_snapshots` 최신 신규 완료일의 source/score, 승인 D1 게시 row/date/storedAt와 공개 GET·카드/차트 끝점 동치, exact Cloudflare Production. 이번 실행 새 수집·D1 쓰기·운영 설치/예약 변경 0건, 신규 코드 수정 0건. **#37 PARTIAL**; source 경로 존재만으로 새 KRX 완료 거래일 게시 성공 주장 금지.
 - **다음 필수 실행 한 개:** W06 #37의 **실제 저장 완료 거래일 선택적 검증**. 기존 소스/테스트 재실행만 반복하지 말고 승인된 운영/공개 증거에서 Rev7 최신 완료 거래일 한 날짜를 골라 `kfg_rev7_snapshots`의 date/score/calculated_at → 공개 GET `composite.observationDate/score/history[-1]` → 카드와 차트 끝점 원점수를 대조; 공개 자료 접근이 제한되면 해당 단계만 `STATE_UNKNOWN`, 독립 후속 UI 검증은 계속. 미승인 Collector/DB/TTL/수집 주기 변경 금지.
 - **진도:** 13/75 (17.3%) → **13/75 (17.3%)**; 잔여 62단계. #36·#37 PARTIAL. 단계 상태와 소스·CI/운영/Production 증거 범위 혼동 금지.
+
+
+## [2026-11-17 KST] R4 #37 — KRX 완료 거래일·한국 Rev7 7요인/공개 이력 소스 검증 (PARTIAL)
+
+- **시작/종료:** 이전 지정 원장 `codex/ui-improvements` **13/75 (17.3%)**, 다음 #37. 이번 변경은 `tests/r4-korea-rev7-completed-date-37.test.mjs` 1파일 및 이 지정 진행 기록만. **산식·가중치·DB·D1/PC 운영 source·스케줄·Provider 호출 변경 0건.** 실제 개발 main의 확인된 각 source blob: `worker/korea-rev7-engine.mjs@89c9aac25f752b4fc50e32c06afd858382254fde`, `worker/korea-funds.mjs@4f284339f9fd87e4207642f12815bcd2a694d997`, `worker/korea-rev7-d1.mjs@11a39694fa5ea97bce2bd58945652814e34b95d0`, `scripts/pc-writer/korea-publication.mjs@8a14452834097df1a3214e963e1b8f68118b3c56`; 해당 모듈 blob은 지정 브랜치와 main에서 동일.
+- **계약 확인:** `REV7_VERSION=kr-fg-cnn-r7-1.0.0`; 정확히 **7요인(momentum,strength,breadth,putCall,volatility,safeHaven,junkBond)**, 평균 가중 `1/7`, 504개 유효 관측창, 미완료/결측 재가중 금지. `kfg_rev7_market_dates.status=COMPLETE`인 KRX 날짜·일치하는 version/checkpoint만 `scripts/pc-writer/korea-publication.mjs::koreaPublicationPlan`의 기존 2개 제한된 D1 INSERT 후보 생성, `NO_TRADING_OBSERVATION`, 날짜 불일치, source 관측일 필드 누락은 거절. `worker/korea-funds.mjs::publicSnapshot`의 성공 거래일 `>=1030` 검증 및 동일 method version의 마지막 유효 READY 일자를 현재 카드·이력에 사용. 후속 미완성 거래일의 null은 최신 계산값이 아님. 통계 과거 이력은 `RECONSTRUCTED_CURRENT_VINTAGE`, `pointInTimeVerified=false`, `researchOnly=true`, `productionEligible=false`로 **공식 PIT/운영 적격 확정이라고 표현 금지**. 이 정책/메타데이터는 변경하지 않음.
+- **실제 신규 시험:** 지정 브랜치 `tests/r4-korea-rev7-completed-date-37.test.mjs` 신규 커밋 `ac745f2de70fcf9149a3d2ad943afef82d437cb9`, **12개 시험**, 실제 원본 `publicSnapshot,stageForDisplayScore,koreaPublicationPlan` 함수와 Rev7 상수 source를 비식별 기존 저장 fixture에 주입하여 **12/12 PASS**(7요인, 완료일 최신점·변환, WARMUP 다음 날짜, version 분리, 1030 Gate, 실제 없는 중간 날짜 보간 금지, 0점, STALE, PIT 비검증 표시, 완료일 2개 INSERT, NO_TRADING/버전/날짜/필수 관측일 거부). 초기 순수 소스 시뮬레이션 **9/9 + 5/5 PASS**도 확인; 별개 실행이며 같은 원본 기능을 반복 성과로 이중 계산하지 않음. **GitHub 해당 W06 브랜치 CI 미실행**, 모의 함수 실행은 실D1/실PC/Production 증거 아님.
+- **상태/문제:** SOURCE/FIXTURE PASS. **현재 운영 KRX 실제 마지막 COMPLETE 거래일·7요인 score·D1 저장 `kfg_rev7_snapshots` 최신 `date,source_observed_at,calculated_at,methodology_version` 및 공개 `/api/indicators/korea-funds` 점수/차트 일치**는 이 실행에서 실측하지 못함. 전용 A급 `korea`/Rev7 operation은 현재 승인 config의 허용목록에 없음. 미승인 PC shell/DB 조회·원자료 수동 생성·공용 Writer/B 설치로 우회하지 않음. #37 **PARTIAL**, 전체 **13/75 (17.3%), 남은 62단계**.
+- **#37 정확한 Owner 후속:** 한국 KRX/Rev7 원담당이 기존 승인 PC/D1 Reader 또는 공개 안전 GET의 실제 관측·이력 근거를 확보해 **마지막 완료 KRX 거래일, 7개 요인 모두 유효/0/null 분리, D1 sourceObservedAt vs calculatedAt, 신규 완료일 게시와 이전 유효점 보존**을 재조회·증명. 그 증거가 확보되기 전 운영 완료로 판정 금지. 추가 서빙 정책 변경·과거 PIT 임의 복원 금지.
+- **W06 다음 독립 실행:** **#38 D03 미국 등락** — IEX 승인 임시 phase·상승/보합/하락 3비율, 기존 저장/공개/UI 경계 검사. 폐기 MarketParquet·기타 데이터 무단 대체 및 0–100 새 점수 계산 금지. #36 CNN 원담당 복구와 #37 한국 원담당 관측은 별도 비차단 후속.
+- **종료 기록 기준:** 상단 정본 + 본 실행 내역을 `codex/ui-improvements/docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_R4_PROGRESS_20261116.md`에 커밋, 원격 재조회로 **#37 PARTIAL·13/75·다음 #38·12/12 source PASS** 확인 후 사용자 보고.
