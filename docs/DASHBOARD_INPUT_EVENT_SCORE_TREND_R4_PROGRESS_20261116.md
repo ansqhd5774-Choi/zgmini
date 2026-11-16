@@ -58,3 +58,8 @@
 1. #13: 기존 승인 Writer의 저장 원자료 1건→실제 재계산 결과 및 같은 입력 9개 이월을 운영 source/checkpoint의 기존 증거와 연결. 가짜 숫자/개별 새 예약 금지. 승인 수동 실행·readback 가능한 경우 실제 저장·게시 결과로 검증.
 2. #21~#29: 15분 간격 안의 50→53→56 같은 중간 실계산점 보존 누락. 승인된 원담당 경로로 15분/일 100점 계약 변경 여부를 확인하며, 이미 구현한 실게시 마지막점 UI overlay를 실제 중간 이력 보존 완료라고 오기하지 않음.
 3. D01~D27: 콘텐츠별 실제 점수와 차트 계약 차이를 좁혀 원담당 계산기/Reader, W06 UI로 수정 주체를 나눔. 사용자는 모든 기술 작업 완료 후 사이트에서 육안 최종 확인.
+
+## PR #1182 병합 이후 Git Integration 빌드 판정
+
+- `main@73d1b7eeeef23dd69de90c047d8bfdab4c6cb1b2`의 GitHub Workers Builds `zgmini-migration-candidate-r5`: SUCCESS, build `c22b0bcb-6e00-40cd-9088-ae2c882846e9`; 연결 `verify`/ `notify`: SUCCESS. 별도 `check`는 조회 시 진행 중; PR head 단계의 `check`와 `ui`는 이미 SUCCESS.
+- Git Integration build SUCCESS는 정확한 Cloudflare Production Deployment SHA의 직접 조회나 사용자의 실제 화면 검수와 동치가 아님. 프로젝트에서 삭제된 웹디버그 기능 복구/대체를 종료 Gate로 요구하지 않음.
