@@ -31,15 +31,15 @@
 | 필드 | 마지막 확인 상태 |
 |---|---|
 | 최종 목표 | 82단계 R1~R6로 적격 실적 침체 정보성 지표의 PC 원자료 저장→계산→승인 D1 게시→Production API/UI를 완성. 기존 E1-R4 점수/산식·기타 12대 기업실적은 보호 |
-| 현재 관련 단계 | R4-02~04 및 R6-04: QFR exact-key B 게시 경로·원본 3핀 |
-| 마지막 검증 완료점 | R1-03 기본 저장 원장 조사 DONE: QFR 저장 PC 1 snapshot+1 chunk/R3 stored calc PASS, BLS 3 snapshot+3 chunk/R3D stored calc PASS와 SQLite SHA/append-only/readback 방식 §8에 연결. R1-02 운영 PC source/Task/Runner #1794/#1796 PASS 유지. QFR B effect·D1 실제 게시 미완료 |
-| 재사용할 기존 근거 | QFR 원자료 ZIP의 PC SQLite 저장·계산 기존 유효 증거; 앱 QFR 3-pin [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175) 소스/CI 완료, `main` 미병합 |
-| 현재 최초 실제 미완료 조건 | **현재 순차 R1-09:** 점수 A·기업실적 B·정보성 C API/UI 계약 분리 조사. R1-08은 5개 정확키·Writer/Reader 매핑 및 실게시 미확인 분리로 조사 DONE. R1-05 BEA unit/mfg 인벤토리 조사 §10 종료(원본 저장 확인과 해시 readback은 후행 R3 단계). 별도 QFR B 단일키 승인·D1 게시 미완료 유지 |
-| 다음 필수 실행 하나 | **순차 9/82 R1-09:** E1-R4 점수 A·기존 기업실적 B·정보성 C API/UI 경계와 보호 계약을 소스별로 확정한다 |
-| 현재 완료율 증거 | **8/82 DONE(약 9.8%)**, 현재 R1-09(9/82). 기존 14단계 종단 게시 완료 마지막 확인 0/14, R6-15 자연 갱신 관찰 DEFERRED |
+| 현재 관련 단계 | **순차 R1-10(10/82)**: 지표별 전체 계보·수집 중복·마지막 유효점·첫 미완료 통합 인벤토리. 후행 QFR B 승인·게시 R4-06은 별도 미완료 |
+| 마지막 검증 완료점 | **R1-09 A/B/C 계약 분리 조사 DONE (§14)**. A 8대 위험 실적 침체 4요소는 별도 `/api/earnings-recession-detail`; B 12대 경제지표의 기업실적 도메인은 `/api/market-score`의 `domains[id=earnings]`; C 정보성은 승인 전용 snapshot key·GET 보조 경로. 기존 R1-01~08 실증 증거 재사용. 실제 B 게시·D1/Production 실증은 후행 미완료 |
+| 재사용할 기존 근거 | QFR 원자료 ZIP PC SQLite 저장·계산 기존 유효 증거; 앱 QFR 3-pin [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175)는 앱 main 병합, 운영 PC 설치·B 게시 별개. R1-09 소스 blob 근거는 §14 |
+| 현재 최초 실제 미완료 조건 | **순차 R1-10:** indicator_id별 source·collector·storage·latest·public·gap 통합 인벤토리 미작성. R1-09는 소스 계약 조사 DONE, B 도메인 실제 생산 스냅샷·C 다섯 키 D1 게시 검증은 후행 R4~R6 미완료. QFR B 승인·단일키 게시 미완료 유지 |
+| 다음 필수 실행 하나 | **순차 10/82 R1-10:** R1-01~09 저장·Collector·공개 증거를 소스별 한 행으로 통합하여 중복/마지막 유효점/첫 누락을 판정한다. 실제 PC/D1 재수집·게시하지 않는다 |
+| 현재 완료율 증거 | **9/82 DONE(약 11.0%)**, 현재 R1-10(10/82). 기존 14단계 종단 게시 완료 마지막 확인 0/14, R6-15 자연 갱신 관찰 DEFERRED |
 | 최종 갱신 식별 | 이 문서의 **최신 원격 브랜치 HEAD 및 Git blob SHA를 재조회**해 근거로 보고한다. 고정된 과거 SHA를 현행값으로 복사하지 않는다 |
-| **순차 포인터·완료율** | **현재 9/82 R1-09**; R1-01~R1-08 연속 DONE **8/82(약 9.8%)**. 후행 저장·D1 미실증은 해당 단계에서 미완료 |
-| R1-09 이번 실행 | 2026-11-17 08시 KST: A/C UI 소스 API 분리 확인, B 독립 경계 미완료. `PARTIAL_SOURCE`, 완료 8/82 유지. 다음: B 12대 기업실적 UI·API 소유 경로를 정확히 찾아 A/C와 충돌 여부 판정 |
+| **순차 포인터·완료율** | **현재 10/82 R1-10**; R1-01~R1-09 연속 DONE **9/82(약 11.0%)**. 후행 저장·D1 미실증은 해당 단계에서 미완료 |
+| R1-09 이번 실행 | 2026-11-17 08시 KST: B 경제지표 `/economic-indicators/earnings/`→`EconomicDetailPanel`→`/api/market-score` `domains[id=earnings]`와 A 8대 위험 4요소·C 보조 GET의 별도 계약 소스 검증. `DONE`, 완료 9/82. 경계 상세·blob §14; 운영 GET·D1 미검증. 다음 R1-10 |
 
 ### D. 다음 작업자 재개 순서 및 변경 충돌
 
@@ -54,19 +54,19 @@
 
 | 판정 항목 | 실제 상태 |
 |---|---|
-| **순차 완료 확정** | **8/82 (약 9.8%)** — R1-01~R1-08 조사·계보 기준 충족. 실제 자료·D1 미실증은 후행 분리 |
-| **현재 순차 진행 단계** | **9/82 = R1-09** (점수 A·기업실적 B·정보성 C API/UI 경계 조사) |
-| **82개 중 개별 완료 확정** | **8개** (R1-01~R1-08), 그 밖의 소스/CI와 운영 진행은 해당 완료 기준마다 별도 |
+| **순차 완료 확정** | **9/82 (약 11.0%)** — R1-01~R1-09 조사·계보 기준 충족. 실제 자료·D1 미실증은 후행 분리 |
+| **현재 순차 진행 단계** | **10/82 = R1-10** (source·collector·storage·latest·public·gap 통합 인벤토리) |
+| **82개 중 개별 완료 확정** | **9개** (R1-01~R1-09), 그 밖의 소스/CI와 운영 진행은 해당 완료 기준마다 별도 |
 | **71번 R6-04** | **후행 소스 선행 작업·현재 운영 승인 미해결**, 순차 71단계에 도달한 것이 아님 |
-| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 7개 확정 DONE, 남은 75개 완료 판정 대상; 재수집 79회 뜻 아님 |
-| **다음 실제 수행 하나** | **R1-09(9/82):** 점수 A·기업실적 B·정보성 C API/UI 계약 분리 |
+| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 9개 확정 DONE, 남은 73개 완료 판정 대상; 재수집 73회 뜻 아님 |
+| **다음 실제 수행 하나** | **R1-10(10/82):** 지표별 수집 중복·마지막 유효점·최초 미완료 통합 인벤토리 |
 
 **순서 운용:** 다음 번호로 넘어가는 기준은 해당 단계의 **계획서 완료 조건 + 근거 링크**이며, 뒤 단계에서 미리 통과한 PR·CI는 계획 순번을 바꾸지 않는 선행 자산으로 유지한다. 사용자 승인 없이 순번이나 완료 기준을 수정하지 않는다. 조건부 HOLD·장기 DEFERRED는 계획서대로 처리하며 다른 독립 승인 작업의 수행을 중단하는 새로운 Gate가 아니다.
 
 
 ## 0. 82개 작업별 진행 상태 (실증·소스 분리)
 
- > **2026-11-17 KST 순차 진행 재판정.** R1-01~R1-07 7/82 DONE, 현재 순차 R1-08(8/82). SOURCE/CI만으로 PC/D1/Production DONE 자동 승격하지 않음.
+ > **2026-11-17 KST 최신 판정.** R1-01~R1-09 9/82 DONE, 현재 순차 R1-10(10/82). SOURCE/CI만으로 PC/D1/Production DONE 자동 승격하지 않음.
 
 | 작업 ID | 실행계획 작업 | 현재 증거 기반 상태 | 마지막 확인 증거·남은 조건 |
 |---|---|---|---|
@@ -78,7 +78,7 @@
 | R1-06 | Census QFR·M3·MTIS 기존 수집 코드·ZIP·저장 위치 조사 | `DONE` | **R1-06 조사 종료(2026-11-17):** QFR 공식 ZIP→PC SQLite 기존 저장·SHA 근거 PASS. M3 `MTM/TI`는 물가 전용 재고 Collector로 확인, C 신규주문·출하 저장 경로·SHA `NOT_VERIFIED`/조건부 `HOLD`. MTIS 전용 Collector·저장 경로·SHA `NOT_VERIFIED`/조건부 `HOLD`. 제어 `main` `config/operations.json` blob `0197f4814d9cc0ff051559b9848a2df9fd0d86b2`에서 M3/MTIS 전용 승인 operation 없음(범용 승인 가능성까지 부정하지 않음). 신규 수집 불필요: QFR; M3/MTIS는 적격성·권한 확정 전 재수집 금지. R2-06/07·R3-13/14에서 적격성/운영 저장 별도 판정. 조사 DONE은 저장·게시 DONE이 아님 |
 | R1-07 | SEC CompanyFacts/XBRL 수집 코드·종목 매핑·저장 경로 조사 | `DONE` | **2026-11-17 R1-07 소스·저장경로 인벤토리 완료(§12)**: E1-R4 SEC XBRL `/api/xbrl/frames`+Wikipedia 종목/CIK 매핑→D1 `market_score_earnings_e1_r3_*` current/history/universe/runs; E1-R5 CompanyFacts ZIP→`manual-input/e1-r5/incoming/companyfacts/CIK##########.json` 연구용 경로 별도. E1-R5 연구 경로 productionActivation=false. 실제 PC CompanyFacts 파일·SHA·승인 운영 Collector 설치 `NOT_VERIFIED`, R2-10/11·R3-15 조건부 HOLD. 새 수집·D1 쓰기 0 |
 | R1-08 | 기존 D1 키·Worker GET·Writer·게시 원장 조사 | `DONE` | 5개 C 정확키·Writer·Reader 및 공개 경로 소스 매핑; D1 실게시·stored_at·배포 SHA는 `UNVERIFIED`로 분리 (§13). 실제 게시·readback은 후행 R4/R6 |
-| R1-09 | 기존 점수 A·기업실적 B·정보성 C API/UI 계약 분리 | `PARTIAL_SOURCE` | 2026-11-17 08시 KST 전담 브랜치 소스 재조회: `app/earnings-recession/page.tsx`는 `EarningsRiskOnlyPanel`을 렌더링하며, 해당 패널은 위험 A `/api/earnings-recession-detail`과 정보성 C `/api/earnings-recession-indicators`, `/api/earnings-recession-bea-unit-profit`, `/api/earnings-recession-census-qfr-margin`을 별도 `useStoredIndex`로 조회. A의 4요소 ID `epsGrowth/margin/revenueGrowth/earningsGrowthBreadth`, C는 보조 읽기 전용으로 분리. B(12대 기업실적)의 독립 API·UI 실제 소유 파일과 A/B/C 회귀 보호 경계는 추가 연결 필요. 운영 UI 동치 미검증 |
+| R1-09 | 기존 점수 A·기업실적 B·정보성 C API/UI 계약 분리 | `DONE` | **§14** 소스 조사 완료: A 위험 `/earnings-recession/`→4요소 `/api/earnings-recession-detail`와 C 보조 GET/별도 5키; B 12대 경제지표 중 `earnings` 도메인 `/economic-indicators/earnings/`→`EconomicDetailPanel`→`/api/market-score` `domains[id=earnings]`→`publicDomainScores.earnings`. A 4요소/가중치, B E1-R5 도메인 및 C 정보행 혼합·변경 금지. 운영 PC/D1/Production 동치 미검증이며 R4~R6 별도 |
 | R1-10 | 지표별 수집 중복·마지막 유효 완료점·첫 미완료 항목을 통합 인벤토리화 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R2-01 | BEA 공식 NIPA 기업이익·단위이익 시계열 및 단위 확인 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R2-02 | FRED 배포 BEA 단위이익 CSV와 공식 BEA 원본의 정의·권리·개정 비교 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
@@ -384,3 +384,17 @@
 **LAST PASS:** R1-08 지정 브랜치의 5개 Writer/Reader 정확키 계약 매핑. **FIRST UNFINISHED:** R1-09 A/B/C API/UI 계약 경계 정밀 조사. **다음 단일 실행:** R1-09에서 E1-R4 점수 4요소·기업실적 12대 도메인·정보성 C의 라우트/데이터/화면 소유권을 실제 코드에 대조하고 변경 금지 범위를 확정한다. 신규 소스 수정·PC/DB/D1/배포 실행 0.
 
 | 2026-11-17 08시 KST · W05 | **R1-09 부분 진전:** `page.tsx`→`earnings-risk-only-panel.tsx`의 A 점수·C 정보성 API 조회를 소스상 분리 확인. A 4요소 계산 변경 없음. B 12대 기업실적 별도 UI/API 경계는 미완료, Production 미검증 | 전담 브랜치 `app/earnings-recession/page.tsx` blob `f24ff87cd35c25f98f5e85445ae60da6829a74df`, `app/earnings-recession/earnings-risk-only-panel.tsx` blob `05a4d7766cb1468af90ed60450129a956511cfd1`; 신규 기능 코드·PC·D1·배포 0 | 다음 R1-09: B 12대 기업실적 API/UI 소유 파일 및 분리 계약 확정, 이후 R1-10 |
+
+## 14. 2026-11-17 R1-09 A/B/C 계약 분리 종료 — 소스 정밀 대조
+
+**대상:** `ansqhd5774-Choi/zgmini`, `codex/api-site-integration-r1-20261026`, 조사 시작 브랜치 HEAD `f4aa2d3ab31ec920e2caf3e4272b81b9f25a82d6`. 아래 blob는 지정 브랜치의 직접 파일 readback 근거이며, 현재 PC 설치·Cloudflare Production SHA와 동일하다고 주장하지 않는다.
+
+| 유형(보호 소유권) | UI 진입·컴포넌트 | GET/API·데이터 계약 | 소스 증거·변경 금지 |
+|---|---|---|---|
+| **A / 8대 위험 실적 침체 진단** | `/earnings-recession/` → `app/earnings-recession/page.tsx` (blob `f24ff87c...`) → `earnings-risk-only-panel.tsx` (blob `05a4d776...`) | `/api/earnings-recession-detail`, `diagnostics8.earningsRecessionDefense`; `epsGrowth`, `margin`, `revenueGrowth`, `earningsGrowthBreadth` 4요소 | `worker/market-score-r1.mjs` blob `5ecb3643d3c98991bedc1aa87dbfe3750e7a91ee`의 risk 분리 및 `lib/diagnostic-layer/model.mjs`. 기존 4요소·가중치·위험 차트·점수 변경/재가중 금지 |
+| **B / 12대 경제지표 중 기업실적 도메인** | `/economic-indicators/earnings/` → `app/economic-indicators/earnings/page.tsx` blob `36daa31cc72e123fa8adbe30576bb8f2cfbf90c6` → `EconomicDetailPage` blob `fc910927d1fb3790962fdad574da0503c568ffc3` → `EconomicDetailPanel` blob `70fe1d114a2f19be6259e226bae7532972e71526` | `/api/market-score`의 `domains.find(id==='earnings')`; `lib/economic-detail-catalog.ts` `id='earnings'` (blob `6e465a5aedf98eabe2e3c173c1ae686c85e87d7e`); `worker/market-score-r1.mjs`의 `collected.external.publicDomainScores.earnings`를 `buildCmR1DomainResults`로 분리; `lib/market-score/domain-adapter-r1.mjs` blob `e63a7e9ad0046670689e7bc60dbe7427192d6b37` | 12대는 **경제지표 도메인 수**이지 12개 기업이 아님. E1-R5 최대 13개 구성 항목의 종합 기업실적 도메인을 A 4요소와 혼합 금지. 동일 `/api/market-score` payload 내부 `domains` 계약이며 독립 URL API가 아님 |
+| **C / 실적 침체 정보성 지표** | A 페이지에서 `earnings-risk-only-panel.tsx`가 `useStoredIndex`로 보조 조회·표시 | `/api/earnings-recession-indicators`, `/api/earnings-recession-census-qfr-margin`, `/api/earnings-recession-bea-unit-profit` 및 별도 BEA 제조업 GET; D1 5개 정확키·Writer/Reader는 §13 | BLS/QFR/BEA 정보행은 A 진단 산식 또는 B 도메인 점수에 자동 합산하지 않음. D1 exact key, 저장시각, 결측·stale·권리, 원본/계산/게시 승인 분리 유지 |
+
+**교차검사:** B `EconomicDetailPanel`은 `useStoredIndex('/api/market-score')` 뒤 `payload.domains.find(item=>item.id===id)`로 B `earnings`만 선택한다. A `EarningsRiskOnlyPanel`은 위험 GET과 정보성 GET을 분리해 호출한다. `worker/market-score-r1.mjs`는 `publicDomainScores.earnings`와 `earningsRiskEvidence` 기반 진단 4요소를 별도 변수로 만든다. `worker/projection-source-r52.mjs` blob `6f1800ab769acf9a9e3022cdb4663b23a574531b`도 E1-R5 `domains.earnings`와 `diagnostics8.earningsRecessionDefense`를 구분한다. 따라서 **R1-09 소스 계약 조사 DONE**; 신규 코드는 변경하지 않음.
+
+**한계:** 운영 PC의 live 승인 소스·개별 D1 row, 실제 Publisher ledger, 현재 Production 배포 SHA·HTTP 응답·브라우저 UI 동일성은 이 소스 조사로 검증되지 않는다. C 5개 정확키 실게시 검증은 §13과 후행 R4~R6를 따른다. 실제 PC/SQLite/D1/Production 쓰기·공급자 호출 **0건**. **LAST PASS:** 지정 브랜치 A/B/C UI→API→데이터 계약 소스 구분. **FIRST UNFINISHED:** R1-10 지표별 통합 인벤토리(중복·source/collector/storage/latest/public/gap). **NEXT:** W05가 R1-01~09의 기존 증거를 행별로 통합하고 미확인 효과를 명시, 이후 R2-01 착수 판정.
