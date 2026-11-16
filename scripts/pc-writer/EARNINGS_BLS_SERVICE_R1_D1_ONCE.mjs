@@ -4,6 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
+import {resolvePublicationResultDirectory} from './earnings-publication-result-directory.mjs';
 import {DatabaseSync} from 'node:sqlite';
 import {buildServiceSourcePreview} from './EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs';
 import {inspectD1Source,validateD1DualSource} from './EARNINGS_R4_C_D1_DUAL_SOURCE_GATES.mjs';
@@ -25,7 +26,12 @@ const lines=['EARNINGS_BLS_SERVICE_R1_D1_ONCE',`UTC=${now}`,
   'BASE_SNAPSHOT_KEY_WRITES=0','SCORE_WRITES=0'];
 let db;
 let exitCode=0;
+let resultDirectory=HERE;
 try {
+  // A B executor passes its request-specific log directory. The legacy manual
+  // CMD remains next-to-script; invalid B directories fail before remote D1.
+  resultDirectory=resolvePublicationResultDirectory({
+    requested:process.env.ZGMINI_EARNINGS_C_LOG_DIR,fallback:HERE});
   if(args.some(arg=>!['--dry-run','--apply','--confirm-earnings-c-service-d1-write'].includes(arg))
     ||args.includes('--apply')&&args.includes('--dry-run'))
     throw Error('EARNINGS_C_SERVICE_INVALID_ARGUMENT');
@@ -91,7 +97,7 @@ try {
   lines.push('PC_SQLITE_WRITES=0','EXISTING_C_CHECKPOINT_WRITES=0',
     'SCHEDULER_CHANGED=NO','WORKER_DEPLOYED=NO');
   try{
-    const file=path.join(HERE,`EARNINGS_BLS_SERVICE_R1_D1_RESULT_${stamp}.txt`);
+    const file=path.join(resultDirectory,`EARNINGS_BLS_SERVICE_R1_D1_RESULT_${stamp}.txt`);
     fs.writeFileSync(file,lines.join('\r\n')+'\r\n',{encoding:'utf8',flag:'wx'});
     console.log(`LOG=${file}`);
   }catch{
