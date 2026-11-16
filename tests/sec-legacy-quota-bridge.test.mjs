@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';
-import {createCompatibleSecQuotaFetch} from '../scripts/pc-writer/sec-legacy-quota-bridge.mjs';
+import {createCompatibleSecQuotaFetch,attachSecSharedPermitToQuota} from '../scripts/pc-writer/sec-legacy-quota-bridge.mjs';
+import {createQuotaFetch} from '../scripts/pc-writer/quota-fetch.mjs';
 import {secGuardOptionsFromEnv} from '../scripts/pc-writer/sec-guard-runtime-config.mjs';
 
 const SEC='https://data.sec.gov/api/xbrl/frames/us-gaap/Assets/USD/CY2025Q1I.json';
@@ -84,4 +85,33 @@ test('non-SEC requests retain existing original provider behavior',()=>fixture(a
  const r=await q.fetch('https://api.stlouisfed.org/fred/series/observations');
  assert.equal(r.status,200);assert.equal(calls,1);
  assert.equal(fs.existsSync(path.join(shared,'sec-shared-reservations.json')),false);
+}));
+
+test('insert-only extension attaches to an existing legacy quota object without replacing its ledger',()=>fixture(async({a,shared})=>{
+ let calls=0;
+ const legacy=createQuotaFetch({base:a,originalFetch:async()=>{calls++;return success();}});
+ const oldLedger=legacy.ledger,oldSummary=legacy.summary;
+ const result=attachSecSharedPermitToQuota(legacy,{secSharedGuard:true,secSharedBase:shared});
+ assert.equal(result,legacy);
+ assert.equal(result.ledger,oldLedger);assert.equal(result.summary,oldSummary);
+ assert.equal(result.fetch[MARK],true);
+ const out=await result.fetch(SEC);
+ assert.equal(out.status,200);assert.equal(calls,1);
+ assert.ok(fs.existsSync(path.join(shared,'sec-shared-reservations.json')));
+ assert.throws(()=>attachSecSharedPermitToQuota(legacy,{secSharedGuard:true,secSharedBase:shared}),
+  {code:'SEC_QUOTA_ALREADY_PROTECTED'});
+}));
+
+test('insert-only legacy adapter leaves existing quota object exactly intact when disabled',()=>fixture(async({a})=>{
+ const legacy=createQuotaFetch({base:a,originalFetch:async()=>success()});
+ const previous=legacy.fetch;
+ assert.equal(attachSecSharedPermitToQuota(legacy,{secSharedGuard:false}),legacy);
+ assert.equal(legacy.fetch,previous);
+}));
+
+test('failed attach never mutates existing fetch or ledger',()=>fixture(async({a})=>{
+ const legacy=createQuotaFetch({base:a,originalFetch:async()=>success()});
+ const previous=legacy.fetch, ledger=legacy.ledger;
+ assert.throws(()=>attachSecSharedPermitToQuota(legacy,{secSharedGuard:true}),{code:'SEC_GLOBAL_PERMIT_SCOPE_REQUIRED'});
+ assert.equal(legacy.fetch,previous);assert.equal(legacy.ledger,ledger);
 }));
