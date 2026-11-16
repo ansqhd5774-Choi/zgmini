@@ -9,6 +9,8 @@
 - 현행 후속: [기존 14단계 원인·실행계획](EARNINGS_RECESSION_14_STAGE_HISTORY_PUBLIC_CODE_REMEDIATION_R1_20261116.md) · [14단계 선행조건](EARNINGS_RECESSION_14_STAGE_CONTRACT_SIMULATION_20261116.md)
 - 마지막 관련 수정: 제어 Draft [#1698](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1698) (결과 검증 두 파일), 앱 Draft [#1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175) (QFR source 3-pin), 제어 Draft [#112](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/112) (B 게시 실행 제안)
 
+- **독립 진행 원장:** [W05 실적 침체 82단계 진행 기록](EARNINGS_RECESSION_R1_R6_82_STEP_PROGRESS_20261116.md). 계획 단계와 실제 Source/CI/PC/D1/Production 증거를 분리해 기록한다.
+
 ## 0. 작업 수·범위·판정
 
 | 상위 단계 | 실행 항목 수 | 범위 |
