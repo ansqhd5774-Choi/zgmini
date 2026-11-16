@@ -1,28 +1,70 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import {publicApiConnectionSummary,readPublicApiConnectionHealth} from '../worker/api-connection-health.mjs';
 
 const source=relative=>readFileSync(new URL(relative,import.meta.url),'utf8');
+const KEYS=['checkedAt','coverage','failed','normal','status','total','unknown','version'].sort();
 
-test('public Next.js API route is permanently deny-by-default and never touches D1',()=>{
+test('both public routes use only the sanitized allowlist projection, never the raw internal response',()=>{
  const route=source('../app/api/api-connection-health/route.ts');
- assert.match(route,/status:404/);
- assert.doesNotMatch(route,/readApiConnectionHealth|\.DB\b|SELECT |public_feed_snapshots|cloudflare:workers/);
- assert.match(route,/no-store/);
-});
-test('Cloudflare candidate branch cannot serve internal provider telemetry',()=>{
  const worker=source('../worker/candidate-r52.ts');
- assert.match(worker,/if\(path==='\/api\/api-connection-health'\)return new Response\(null,\{status:404/);
- assert.doesNotMatch(worker,/readApiConnectionHealth/);
+ assert.match(route,/readPublicApiConnectionHealth\(env.DB\)/);
+ assert.match(worker,/readPublicApiConnectionHealth\(env.DB_CORE\)/);
+ assert.doesNotMatch(route,/readApiConnectionHealth\(|readPublicApiConnectionHealth\(\)\.?items/);
+ assert.doesNotMatch(worker,/readApiConnectionHealth\(/);
 });
-test('public site does not render upstream hostname listing or fetch telemetry',()=>{
+test('public icon and popup are restored without provider roster or diagnostic paths',()=>{
  const ui=source('../components/collection-health-indicator.tsx');
- assert.match(ui,/return null/);
- assert.doesNotMatch(ui,/\/api\/api-connection-health|\.host\b|endpointEvidence|fetch\(/);
+ assert.match(ui,/Wifi size=\{18\}/);
+ assert.match(ui,/zg-collection-health-popup/);
+ assert.match(ui,/정상 \{health!\.normal\}/);
+ assert.doesNotMatch(ui,/\.host\b|endpointEvidence|lastEventStatuses|requests\b|\.map\(item|<ul/);
 });
-test('private local writer monitoring remains separate from public responses',()=>{
- const pc=source('../scripts/pc-writer/api-connection-health.mjs');
- assert.match(pc,/buildApiConnectionHealthFromLog/);
- const internal=source('../worker/api-connection-health.mjs');
- assert.match(internal,/readApiConnectionHealth/);
+test('public response allowlist cannot accidentally leak nested upstream information',()=>{
+ const raw={version:1,status:'partial',coverage:'PARTIAL',normal:1,failed:2,unknown:3,total:6,
+  checkedAt:'2026-11-16T02:00:00Z',items:[{host:'SECRET_SOURCE_HOST'}],
+  endpointEvidence:{token:'SECRET_PATH'},secret:'SECRET_VALUE',
+  reason:'SECRET_ROOT_CAUSE',lastEventStatuses:{'403':2}};
+ const published=publicApiConnectionSummary(raw);
+ assert.deepEqual(Object.keys(published).sort(),KEYS);
+ assert.equal(published.total,6);
+ assert.ok(!JSON.stringify(published).includes('SECRET'));
+});
+test('public live D1 read never returns private host or endpoint information',async()=>{
+ const now=Date.parse('2026-11-16T02:00:00Z');
+ const internal={
+  version:1,scope:'external-provider-hosts',
+  source:'PC_COLLECTION_EVENTS_FETCH_WRAPPER',coverage:'PARTIAL',
+  observedAt:new Date(now-1000).toISOString(),
+  items:[{host:'private-upstream.example.com',requests:2,observedDays:2,
+   lastOutcome:'success',lastAttemptAt:now-1000,lastSuccessAt:now-1000,
+   expectedIntervalMs:null,endpointFingerprints:0,endpointEvidenceDays:0,
+   lastEventStatuses:{'200':2}}],
+ };
+ const db={prepare(sql){
+  assert.match(sql,/public_feed_snapshots_v1/);
+  return{bind(key){assert.equal(key,'api-connection-health');return{
+    first:async()=>({body:JSON.stringify(internal)})};
+  }}}
+ };
+ const res=await readPublicApiConnectionHealth(db,now);
+ assert.equal(res.status,200);
+ assert.match(res.headers.get('cache-control'),/no-store/);
+ const text=await res.text();
+ const body=JSON.parse(text);
+ assert.deepEqual(Object.keys(body).sort(),KEYS);
+ assert.equal(body.normal,1);
+ assert.ok(!text.includes('private-upstream'));
+ assert.ok(!text.includes('lastEventStatuses'));
+ assert.ok(!text.includes('endpoint'));
+ assert.ok(!text.includes('200'));
+});
+test('unavailable D1 returns only neutral aggregate without internal diagnostics',async()=>{
+ const res=await readPublicApiConnectionHealth({prepare(){throw Error('TOP_SECRET_DB_ERROR');}});
+ assert.equal(res.status,503);
+ const txt=await res.text();
+ assert.deepEqual(Object.keys(JSON.parse(txt)).sort(),KEYS);
+ assert.ok(!txt.includes('TOP_SECRET'));
+ assert.equal(JSON.parse(txt).total,null);
 });

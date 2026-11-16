@@ -111,3 +111,33 @@ export async function readApiConnectionHealth(db,now=Date.now()){
   return Response.json(summary,{status:['SOURCE_UNAVAILABLE','INVALID_OBSERVATION','INVALID_ENDPOINT_EVIDENCE','ENDPOINT_EVIDENCE_MISMATCH'].includes(summary.reason)?503:200,headers});
  }catch{return Response.json({...UNKNOWN,reason:'SOURCE_UNAVAILABLE'},{status:503,headers});}
 }
+
+
+// Public projection: explicit allowlist ONLY. Never serialize raw collector items,
+// provider names, endpoint fingerprints, schedules, errors or request-level times.
+export function publicApiConnectionSummary(internal){
+ const integerOrNull=value=>Number.isSafeInteger(value)&&value>=0&&value<=128?value:null;
+ const status=['partial','unknown','healthy','stale'].includes(internal?.status)?internal.status:'unknown';
+ const checked=typeof internal?.checkedAt==='string'?Date.parse(internal.checkedAt):NaN;
+ return {
+  version:1,
+  status,
+  coverage:internal?.coverage==='PARTIAL'?'PARTIAL':'UNVERIFIED',
+  normal:integerOrNull(internal?.normal),
+  failed:integerOrNull(internal?.failed),
+  unknown:integerOrNull(internal?.unknown),
+  total:integerOrNull(internal?.total),
+  checkedAt:Number.isFinite(checked)?new Date(checked).toISOString():null,
+ };
+}
+
+export async function readPublicApiConnectionHealth(db,now=Date.now()){
+ const headers={'cache-control':'no-store, private','x-content-type-options':'nosniff','x-robots-tag':'noindex'};
+ try{
+  const internal=await readApiConnectionHealth(db,now);
+  const value=await internal.json();
+  return Response.json(publicApiConnectionSummary(value),{status:internal.status,headers});
+ }catch{
+  return Response.json(publicApiConnectionSummary(null),{status:503,headers});
+ }
+}
