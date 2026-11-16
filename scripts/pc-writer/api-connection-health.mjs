@@ -3,8 +3,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import {publicFeedStore} from '../../worker/public-feed-store.mjs';
-import {API_CONNECTION_HEALTH_KEY} from '../../worker/api-connection-health.mjs';
-import {readProviderEndpointEvents} from './provider-endpoint-fingerprint.mjs';
+import {API_CONNECTION_HEALTH_KEY,MONITORED_CALENDAR_SOURCES,MONITORED_DIRECT_ENDPOINTS} from '../../worker/api-connection-health.mjs';
+import {readProviderEndpointEvents,providerEndpointFingerprint} from './provider-endpoint-fingerprint.mjs';
 
 const WINDOW_MS=14*24*3600_000;
 const MAX_LOG_BYTES=8*1024*1024;
@@ -201,10 +201,77 @@ export function buildApiConnectionHealthFromLog(base,now=Date.now(),{fileSystem=
   items};
 }
 
+// Only the explicitly monitored 14 calendar source groups + two exact HTTP paths.
+// A calendar READY requires a recently parsed/stored official response.  The direct
+// paths require exact METHOD/HOST/PATH receipts; other host traffic is never proof.
+const MONITORED_URLS=Object.freeze({
+ earnings_api:'https://api.earningsapi.com/v1/calendar/earnings',
+ dol_eta539:'https://oui.doleta.gov/unemploy/csv/ar539.csv',
+});
+const MONITORED_AGE_MS=72*3600_000;
+const recent=(iso,now)=>{
+ if(typeof iso!=='string')return null;
+ const t=Date.parse(iso);return Number.isFinite(t)&&t<=now+60_000&&now-t<=MONITORED_AGE_MS?new Date(t).toISOString():null;
+};
+
+export function buildMonitoredSourceHealth(calendar,endpointLog,now=Date.now()){
+ const items=MONITORED_CALENDAR_SOURCES.map(id=>{
+  const source=calendar?.sources?.[id];
+  const successAt=recent(source?.checkedAt,now);
+  const attemptedAt=recent(source?.attemptedAt,now);
+  const success=source?.status==='READY'&&successAt!==null;
+  const failed=source?.status==='SOURCE_FAILED'&&attemptedAt!==null;
+  return {id,state:success?'normal':failed?'failed':'unknown',
+   evidence:success||failed?'CALENDAR_PARSED':'NO_CURRENT_EVIDENCE',
+   checkedAt:success?successAt:failed?attemptedAt:null};
+ });
+ const targets=new Map(MONITORED_DIRECT_ENDPOINTS.map(id=>{
+  const fp=providerEndpointFingerprint(MONITORED_URLS[id]);
+  return [id,fp];
+ }));
+ const last=new Map();
+ if(endpointLog?.status==='OBSERVED'&&!endpointLog.tailTruncated&&!endpointLog.rowsTruncated){
+  for(const line of endpointLog.lines){
+   let record;try{record=JSON.parse(line);}catch{continue;}
+   const at=recent(record?.at,now);
+   if(!at||!record?.endpointPaths||typeof record.endpointPaths!=='object')continue;
+   for(const [id,fp] of targets){
+    const row=record.endpointPaths?.[fp.host]?.[fp.id];
+    if(!row||!Number.isSafeInteger(row.requests)||row.requests<1||
+     !row.statuses||typeof row.statuses!=='object'||Array.isArray(row.statuses))continue;
+    const entries=Object.entries(row.statuses);
+    if(!entries.length||entries.some(([code,n])=>!(STATUSES.test(code)||
+      code==='NETWORK_ERROR'||code==='PROVIDER_QUOTA_GUARD')||
+      !integer(n))||entries.reduce((sum,[,n])=>sum+n,0)!==row.requests)continue;
+    const old=last.get(id);if(!old||at>old.at)last.set(id,{at,statuses:row.statuses});
+   }
+  }
+ }
+ for(const id of MONITORED_DIRECT_ENDPOINTS){
+  const hit=last.get(id);
+  const codes=Object.entries(hit?.statuses??{}).filter(([,n])=>n>0);
+  const ok=codes.length>0&&codes.every(([s])=>s.startsWith('2'));
+  const error=codes.some(([s])=>s==='NETWORK_ERROR'||(
+   STATUSES.test(s)&&(!s.startsWith('2')&&s!=='429')));
+  const state=ok?'normal':error?'failed':'unknown';
+  items.push({id,state,evidence:state==='unknown'?'NO_CURRENT_EVIDENCE':'EXACT_HTTP_RESPONSE',
+   checkedAt:state==='unknown'?null:hit.at});
+ }
+ return {version:1,scope:'monitored-source-endpoints',
+  source:'PC_MONITORED_SOURCE_EVIDENCE_V1',coverage:'PARTIAL',
+  inventoryVerified:true,limitedCoverage:false,observedAt:new Date(now).toISOString(),
+  items};
+}
+
 export async function storeLocalApiConnectionHealth(core,base,now=Date.now()){
- const snapshot=buildApiConnectionHealthFromLog(base,now);
+ const calendar=(await publicFeedStore(core).readOutput('release-calendar'))?.body??null;
+ const endpointLog=readProviderEndpointEvents(path.basename(base)==='pc-writer'?base:path.join(base,'pc-writer'));
+ const snapshot=buildMonitoredSourceHealth(calendar,endpointLog,now);
  await publicFeedStore(core).writeOutput(API_CONNECTION_HEALTH_KEY,snapshot,now);
  const check=await publicFeedStore(core).readOutput(API_CONNECTION_HEALTH_KEY);
  if(JSON.stringify(check?.body)!==JSON.stringify(snapshot))throw Error('API_CONNECTION_HEALTH_READBACK_FAILED');
- return {coverage:snapshot.coverage,observedHosts:snapshot.items.length};
+ return {coverage:snapshot.coverage,monitoredSources:snapshot.items.length,
+  normal:snapshot.items.filter(item=>item.state==='normal').length,
+  failed:snapshot.items.filter(item=>item.state==='failed').length,
+  unknown:snapshot.items.filter(item=>item.state==='unknown').length};
 }
