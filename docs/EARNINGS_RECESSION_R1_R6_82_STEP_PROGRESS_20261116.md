@@ -31,14 +31,14 @@
 | 필드 | 마지막 확인 상태 |
 |---|---|
 | 최종 목표 | 82단계 R1~R6로 적격 실적 침체 정보성 지표의 PC 원자료 저장→계산→승인 D1 게시→Production API/UI를 완성. 기존 E1-R4 점수/산식·기타 12대 기업실적은 보호 |
-| 현재 관련 단계 | **순차 R2-09(19/82)**: BLS 서비스 WPSFD42 공식 정의·관측월·전년 동월 YoY 판정. QFR B 게시 R4-06 별도 미완료 |
-| 마지막 검증 완료점 | **R2-08 BLS 기본 3원천·5행 계약 확인 DONE (§23)**. WPSFD4/41 계절조정 월간 지수 2개→원지수·자체 t-12 YoY 각 2행, PRS85006111 분기 SA 전년동분기 YoY 원시 1행. 기존 실PC R3D 세 snapshot/hash 검증 PASS 재사용, 2026-09 PPI YoY 6.346301%/9.772194%, 2026Q2 ULC 1.4%는 당시 저장본이며 현재 최신값은 아님 |
+| 현재 관련 단계 | **순차 R2-10(20/82)**: SEC CompanyFacts/XBRL 공식 endpoint·User-Agent·요청 한도·권리 적격성 조사. QFR B 게시 R4-06 별도 미완료 |
+| 마지막 검증 완료점 | **R2-09 BLS 서비스 WPSFD42 단일원천·2정보행·독립 저장키 계약 조사 DONE (§24)**. 2026-10-27 BLS HTTP 당시 2026-09 SA 지수 157.666, 2025-09 150.273 → 자체 4.919712789389985% YoY. BLS 공식 2026-09 전월 대비 +0.8%와 다른 지표. 기존 C 5행과 서비스 C 2행은 별도 source/version/key. 실제 PC WPSFD42 저장 및 D1 서비스키 게시 미확인 유지 |
 | 재사용할 기존 근거 | QFR 원자료 ZIP PC SQLite 저장·계산 기존 유효 증거; 앱 QFR 3-pin [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175)는 앱 main 병합, 운영 PC 설치·B 게시 별개. R1-09 소스 blob 근거는 §14 |
-| 현재 최초 실제 미완료 조건 | **순차 R2-09:** WPSFD42 서비스 PPI의 공급자 정의·원지수/SA t-12 YoY 및 기존 5행과 별도 출처/체크포인트 검증 미완료. 신규 서비스 PC 저장·D1 실제 게시 미확인, M3/MTIS HOLD·FRED 권리 HOLD·QFR B 게시 미완료 유지 |
-| 다음 필수 실행 하나 | **순차 19/82 R2-09:** BLS WPSFD42 공식 Final demand services 지수와 2026-09 원본/2025-09 비교·YoY 2행 및 별도 서비스 key 연결을 재검증. PC 재수집·D1 쓰기 없음 |
-| 현재 완료율 증거 | **18/82 DONE(약 22.0%)**, 현재 R2-09(19/82). 기존 14단계 종단 게시 완료 마지막 확인 0/14, R6-15 자연 갱신 관찰 DEFERRED |
+| 현재 최초 실제 미완료 조건 | **순차 R2-10:** SEC CompanyFacts/XBRL official bulk/API endpoint·User-Agent/공정이용 요청 정책·권리/무료 공개 적격성 미검증. WPSFD42 PC 서비스 저장·D1 게시, M3/MTIS Collector, FRED archive 이용권 HOLD, QFR B effect는 후행 미완료 |
+| 다음 필수 실행 하나 | **순차 20/82 R2-10:** SEC 공식 data.sec.gov companyfacts·frames·bulk ZIP·User-Agent/공정이용 한도와 기존 W05 staging를 대조해 수집 적격성/운영 HOLD 여부를 기록한다 |
+| 현재 완료율 증거 | **19/82 DONE(약 23.2%)**, 현재 R2-10(20/82). 기존 14단계 종단 게시 완료 마지막 확인 0/14, R6-15 자연 갱신 관찰 DEFERRED |
 | 최종 갱신 식별 | 이 문서의 **최신 원격 브랜치 HEAD 및 Git blob SHA를 재조회**해 근거로 보고한다. 고정된 과거 SHA를 현행값으로 복사하지 않는다 |
-| **순차 포인터·완료율** | **현재 19/82 R2-09**; R1-01~R2-08 연속 DONE **18/82(약 22.0%)**. 저장·D1·Production 후행 실증은 별도 |
+| **순차 포인터·완료율** | **현재 20/82 R2-10**; R1-01~R2-09 연속 DONE **19/82(약 23.2%)**. 운영 저장·D1·Production 후행 실증은 별도 |
 | R1-09 이번 실행 | 2026-11-17 08시 KST: B 경제지표 `/economic-indicators/earnings/`→`EconomicDetailPanel`→`/api/market-score` `domains[id=earnings]`와 A 8대 위험 4요소·C 보조 GET의 별도 계약 소스 검증. `DONE`, 완료 9/82. 경계 상세·blob §14; 운영 GET·D1 미검증. 다음 R1-10 |
 
 ### D. 다음 작업자 재개 순서 및 변경 충돌
@@ -54,19 +54,19 @@
 
 | 판정 항목 | 실제 상태 |
 |---|---|
-| **순차 완료 확정** | **18/82 (약 22.0%)** — R1-01~R2-08 공식 원천·계산/저장자료 조사 완료, 실운영 최신 게시와 분리 |
-| **현재 순차 진행 단계** | **19/82 = R2-09** (BLS 서비스 WPSFD42 계절조정 지수·YoY·저장 checkpoint 검증) |
-| **82개 중 개별 완료 확정** | **18개** (R1-01~R2-08), 나머지 운영·소스·CI 별도 판정 |
+| **순차 완료 확정** | **19/82 (약 23.2%)** — R1-01~R2-09 공급자 시계열/계산/분리키 계약 조사 완료. PC 서비스 저장·게시 별도 |
+| **현재 순차 진행 단계** | **20/82 = R2-10** (SEC CompanyFacts/XBRL endpoint·User-Agent·quota/rights 조사) |
+| **82개 중 개별 완료 확정** | **19개** (R1-01~R2-09); 나머지 소스/운영·CI는 각 단계 별도 |
 | **71번 R6-04** | **후행 소스 선행 작업·현재 운영 승인 미해결**, 순차 71단계에 도달한 것이 아님 |
-| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 18개 DONE, 남은 64개 완료 판정 대상. 재수집 64회 의미 아님 |
-| **다음 실제 수행 하나** | **R2-09(19/82):** BLS 서비스 WPSFD42 원본 지수/12개월 YoY와 독립 C checkpoint 조사 |
+| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 19개 DONE, 남은 63개 완료 판정 대상. 재수집 63회 뜻 아님 |
+| **다음 실제 수행 하나** | **R2-10(20/82):** SEC CompanyFacts 공식 API·bulk/frames·헤더·요청제한·저장/공개 이용권 판정 |
 
 **순서 운용:** 다음 번호로 넘어가는 기준은 해당 단계의 **계획서 완료 조건 + 근거 링크**이며, 뒤 단계에서 미리 통과한 PR·CI는 계획 순번을 바꾸지 않는 선행 자산으로 유지한다. 사용자 승인 없이 순번이나 완료 기준을 수정하지 않는다. 조건부 HOLD·장기 DEFERRED는 계획서대로 처리하며 다른 독립 승인 작업의 수행을 중단하는 새로운 Gate가 아니다.
 
 
 ## 0. 82개 작업별 진행 상태 (실증·소스 분리)
 
- > **2026-11-17 KST 최신 판정.** R1-01~R2-08 18/82 DONE, 현재 순차 R2-09(19/82). SOURCE/CI만으로 PC/D1/Production DONE 자동 승격하지 않음.
+ > **2026-11-17 KST 최신 판정.** R1-01~R2-09 19/82 DONE, 현재 순차 R2-10(20/82). 소스/CI는 PC/D1/Production 완료의 증거가 아님.
 
 | 작업 ID | 실행계획 작업 | 현재 증거 기반 상태 | 마지막 확인 증거·남은 조건 |
 |---|---|---|---|
@@ -88,7 +88,7 @@
 | R2-06 | Census M3 신규주문·출하 공식 변수·단위·조정 정의 확인 | `DONE` | **§21** Census EITS /data/timeseries/eits/m3 공식 variables: category_code/data_type_code/seasonally_adj/cell_value/time_slot_date/time 및 US 필터; 역사적 Census NAICS M3 code MTM=Total Manufacturing, NO=New Orders, VS=Value of Shipments, TI=Total Inventories, U(미조정)/A(SA), 금액 USD million nominal/monthly. M3 공식 설명 신규주문 취소차감·출하 판매액, 비확률표본/반도체 신규주문 제외 주의. api examples 현재 API key 필수. 앱 main 물가 collector MTM/TI만, 실적 침체 MTM/NO·MTM/VS Collector/PC raw/SHAs NOT_VERIFIED→HOLD 조건부. 공식 변수 판정 DONE이지 수집/게시 DONE 아님 |
 | R2-07 | Census MTIS 재고/매출 비율 변수·관측월·개정 내역 확인 | `DONE` | **§22** Census MTIS 공식 월간 총사업 재고/매출 비율은 월말 inventory / 당월 sales, 무차원(월간 판매 대비 재고보유 수준), SA/NSA 구분. 2026-10-15 발표(2026-08 SA 총사업 1.33 vs 2025-08 1.40) 확인. EITS /data/timeseries/eits/mtis variables/US/seasonally_adj/time, 공식 API key 필요. 2026-09 MTIS는 2026-11-17 10AM ET 공개 예정(현재 시점 미확정), 도매·소매 AIES 연차개정 영향. exact category_code/data_type_code의 API 실응답, C Collector, PC raw/SHA/게시 미검증으로 HOLD. 공식 정의·보류 근거 기록 DONE이지 운영 수집/게시 아님 |
 | R2-08 | BLS 기본 3원천 `WPSFD4`, `WPSFD41`, `PRS85006111` 정의 확인 | `DONE` | **§23** BLS 공식 PPI WPSFD4 Final demand·WPSFD41 Final demand goods 계절조정 월간 지수와 PRS85006111 nonfarm business unit labor costs 분기 계절조정 전년동분기 YoY 정의 검증. 실제 PC 기존 3 snapshot/hash 및 21개월·6분기 R3D 검증 PASS 재사용. 두 PPI 원지수와 자체 t-12 YoY 4행+ULC raw YoY 1행=5행, 외부 BLS NSA 보도자료 YoY와 계절조정 파생값 직접 동치 주장 금지. 신규 API/PC/D1 쓰기 0 |
-| R2-09 | BLS 서비스 PPI `WPSFD42` 정의·관측월·YoY 계산 검증 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
+| R2-09 | BLS 서비스 PPI `WPSFD42` 정의·관측월·YoY 계산 검증 | `DONE` | **§24** BLS Final Demand Services SA monthly WPSFD42 공식·기존 2026-10-27 BLS HTTP 2026-09 157.666/2025-09 150.273, t-12 자체 YoY 4.919712789389985% 확인; BLS 9월 발표의 전월대비 0.8%와 구분. BLS service 1원천→RAW INDEX+DERIVED YoY 2행 별도 snapshot key `detail:earnings-recession-indicators:bls-wpsfd42:v1`, 기본 3원천 5행 key 불변. 코드·구원장 증거 조사 DONE이며 서비스 PC SQLite 저장·D1 본문 실제 readback NOT_VERIFIED |
 | R2-10 | SEC CompanyFacts/XBRL 엔드포인트·User-Agent·쿼터 확인 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R2-11 | SEC 기업별 회계항목·회계기간·중복·표본 커버리지 검사 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R2-12 | 공급자별 발표일·관측일·수집일·수정본·계절조정·지연 구별 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
@@ -561,3 +561,21 @@ R2-03에 요구한 산업범위·명목/실질·IVA와 CCAdj의 차이·SAAR/분
 **시점 제한:** 2026년 11월 13일자 BLS 최신 10월 발표와 이전 PC 2026-09 저장 계열은 관측월·revision이 다르다. 과거 PASS를 현재 최신 수집/현재 D1 READY로 오인하지 않음. 이 단계는 source/저장값 계산 계약 대조 `DONE`, 정보성 C 5개 행의 실제 현행 D1 readback/Production 검증은 R4~R6 별도. 기존 점수 A와 경제 12도메인 B, PC source/DB/TTL·scheduler 모두 불변. 신규 API/PC SQLite/D1/배포 쓰기 0.
 
 **LAST PASS:** R2-08 공급자 3종 단위·계산 기준과 5행 mapping. **FIRST UNFINISHED:** R2-09 WPSFD42 Final Demand Services 분리 원천/YoY·별도 D1 checkpoint 대조. **NEXT (W05):** R2-09 공식 BLS 서비스 지수 t-12 원본·2026-09 표본 및 소스 분리 구조를 소스/공식자료로 확인하고 운영 WPSFD42 수집·게시 상태를 별도 판정.
+
+## 24. R2-09 (2026-11-17 KST) BLS 서비스 PPI WPSFD42 별도 원천·2행·독립 checkpoint — DONE
+
+**공식 시계열:** BLS `WPSFD42` = Final demand services **계절조정 월간 생산자물가지수**, BLS [직접 series](https://data.bls.gov/timeseries/WPSFD42), BLS [2026-09 발표(2026-10-15)](https://www.bls.gov/news.release/archives/ppi_10152026.htm). BLS 공식 발표의 **서비스 PPI 전월 대비 +0.8%**는 동일 계열의 **전년 동월 대비 YoY**와 별개이고, 보도자료의 전체 최종수요 NSA YoY와도 같은 의미가 아님. 2026-11 현재 공개된 10월 최신 개정본(2026-11-13 보도)이 있으나 이하 값은 2026-10-27 연구/실수신 당시 snapshot.
+
+| 구분 | 2026-10-27 기존 연구 HTTP 근거 | 변환·표시 계약 |
+|---|---|---|
+| 서비스 PPI 2026-09 (SA) | WPSFD42 index 157.666, BLS API에 preliminary 주석 | `bls_ppi_services_index`: `RAW/SOURCE_INDEX`, 단위 INDEX |
+| 같은 series 2025-09 (SA) | WPSFD42 index 150.273 | 정확한 12개월 기준점, `>0` 조건·두 시점 존재 필수 |
+| WPSFD42 자체 파생 YoY | `100*(157.666/150.273-1) = 4.919712789389985%` | `bls_ppi_services_yoy_sa`: `DERIVED/YOY_SA_T_MINUS_12`, 단위 PERCENT, 9월의 MoM +0.8%와 혼동 금지 |
+
+**기존 소스 실제 대조:** [BLS 서비스 통합 이력](EARNINGS_BLS_SERVICE_PPI_WPSFD42_INTEGRATION_R1_20261027.md)에서 2026-10-27 BLS v1 무키 HTTP `REQUEST_SUCCEEDED`는 당시 **조회 성공**이고 실제 PC 운영 스냅샷 저장 성공이 아니다. 전담 브랜치 `EARNINGS_R3C_BLS_STORE_ONCE.mjs` blob add5445108361b49c839fcb7eb4ffe2cc08e4ec4는 기본 series WPSFD4/WPSFD41/PRS85006111와 서비스 WPSFD42를 분리한 `--services-only --dry-run`/명시 apply 구분. `EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs` blob 08aa9aaebdca21e1eeab7a403b41bc7d4c01e5c1는 검증된 WPSFD42 스냅샷이 실제 있을 때만 추가 2행 생성, 13개월 history/동일월 12개월 전 값 없으면 YoY=null. `worker/earnings-companion-c-r4.mjs` blob d8df9f1cbbed67c5a508da5bd9767fa85987149f는 서비스 1계열·2행/월간 SA/메서드·출처 검증.
+
+**저장/게시 보호:** 기본 C 5행 `detail:earnings-recession-indicators:v1` 유지. 서비스 2행만 별도 `detail:earnings-recession-indicators:bls-wpsfd42:v1`. Worker GET `/api/earnings-recession-indicators`는 두 저장 본문을 각각 checkpoint/sourceVersion/sourceStoredAt 검증 후 서비스 유효 시 5+2 합성. 서비스 row 부재·위조·손상 시 기존 기본 5행 유지; 기본 저장키를 임의 7행으로 치환하지 않음. 서비스 GET 현재 PRODUCTION 7행, 별도 D1 row/stored_at·PC 원장 성공은 확인되지 않았으므로 **NOT_VERIFIED** (당시 통합 문서에는 WPSFD42 운영 저장 NOT_RUN).
+
+**결론:** R2-09 공식 의미·관측월·t-12 YoY·지표별 공개키/체크포인트 구분 조사 DONE. 이 조사는 운영 PC 수집·D1 게시·API/UI 반영 성공을 의미하지 않음. 기존 저장 5행, E1-R4 위험 A, E1-R5 경제 B·점수/가중치 변경 없음. 신규 Provider calls/SQLite writes/D1 writes/deployment 모두 0.
+
+**LAST PASS:** R2-09 BLS 서비스 의미·계산·C 분리 체크포인트 소스 정합성. **FIRST UNFINISHED:** R2-10 SEC CompanyFacts/XBRL endpoint·rate limit·User-Agent·권리·실수집 경로 조사. **NEXT W05:** 공식 SEC data API/zip·polite request 정책과 기존 원자료/staging 후보의 소유·적격성을 판정, 새 SEC 수집기를 임의 배포하지 않는다.
