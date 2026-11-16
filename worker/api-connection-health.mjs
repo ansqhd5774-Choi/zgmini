@@ -72,14 +72,29 @@ function summarizeMonitoredSourceSnapshot(snapshot,now){
     .filter(([,count])=>count>0).map(([status])=>status);
    const hardFailure=status=>status==='NETWORK_ERROR'||
     (/^[45][0-9]{2}$/.test(status)&&status!=='404'&&status!=='429');
-   const provenConnected=item=>(
-    item.state==='normal'||(item.state==='failed'&&
-     item.reasonCode==='LAST_EVENT_HAS_FAILURE'))&&
-    codes(item).some(status=>/^2[0-9]{2}$/.test(status))&&
-    !codes(item).some(hardFailure);
+   // Inferred inter-request gaps are not a verified provider schedule.
+   // Only a real 2xx in the last 24 hours can neutralize an inferred
+   // cadence-overdue flag; all actual hard transport errors still fail.
+   const provenConnected=item=>{
+    const at=item.lastAttemptAt;
+    const freshObserved=Number.isSafeInteger(at)&&at<=now&&
+     now-at>=0&&now-at<=24*3600_000;
+    const eligible=item.state==='normal'||
+     (item.state==='failed'&&item.reasonCode==='LAST_EVENT_HAS_FAILURE')||
+     (item.state==='stale'&&item.reasonCode==='CADENCE_OVERDUE'&&freshObserved);
+    return eligible&&codes(item).some(s=>/^2[0-9]{2}$/.test(s))&&
+     !codes(item).some(hardFailure);
+   };
    const normalHosts=repeated.filter(provenConnected).length;
-   const failedHosts=repeated.filter(item=>item.state==='failed'&&
-    codes(item).some(hardFailure)).length;
+   const failedHosts=repeated.filter(item=>{
+    const at=item.lastAttemptAt;
+    const lastFresh=Number.isSafeInteger(at)&&at<=now&&
+     now-at>=0&&now-at<=24*3600_000;
+    // A verified fresh 503/network error outranks inferred cadence too;
+    // an ancient failed last contact remains unverified, not current red.
+    return (item.state==='failed'||(item.state==='stale'&&lastFresh))&&
+     codes(item).some(hardFailure);
+   }).length;
    http={normal:normalHosts,failed:failedHosts,
     unknown:repeated.length-normalHosts-failedHosts,total:repeated.length};
   }

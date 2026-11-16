@@ -348,3 +348,47 @@ test('HTTP quota guard and 429 are unknown, never a false orange connection fail
  assert.deepEqual(status.http,{normal:30,failed:0,unknown:2,total:32});
  assert.equal(status.status,'unknown');
 });
+
+test('HTTP 32 projection counts recent proven Alpaca 200 despite a speculative hourly gap',()=>fixture(({base,write})=>{
+ const rows=[];
+ for(let i=0;i<7;i++){
+  const day=Date.parse('2026-11-09T00:00:00Z')+i*86400000;
+  rows.push(event(day,'data.alpaca.markets','200'));
+  rows.push(event(day+30*60000,'data.alpaca.markets','200'));
+ }
+ write(rows);
+ const httpHosts=buildApiConnectionHealthFromLog(base,now);
+ const raw=summarizeApiConnectionHealth(httpHosts,now);
+ assert.equal(raw.items[0].state,'stale');
+ assert.equal(raw.items[0].reasonCode,'CADENCE_OVERDUE');
+ const items=MONITORED_CALENDAR_SOURCES.concat(['earnings_api','dol_eta539']).map(id=>({
+  id,state:'normal',evidence:'CALENDAR_PARSED',checkedAt:new Date(now-60000).toISOString()
+ }));
+ const snapshot={version:1,scope:'monitored-source-endpoints',
+  source:'PC_MONITORED_SOURCE_EVIDENCE_V1',coverage:'PARTIAL',
+  inventoryVerified:true,limitedCoverage:false,observedAt:new Date(now).toISOString(),
+  items,httpHosts};
+ const x=summarizeApiConnectionHealth(snapshot,now);
+ assert.deepEqual(x.api,{normal:14,failed:0,unknown:0,total:14});
+ assert.deepEqual(x.http,{normal:1,failed:0,unknown:0,total:1});
+}));
+test('HTTP 32 projection still rejects a real fresh Alpaca 503 and stale Census CDN',()=>fixture(({base,write})=>{
+ const rows=[];
+ for(let i=0;i<7;i++){
+  const day=Date.parse('2026-11-09T00:00:00Z')+i*86400000;
+  rows.push(event(day,'data.alpaca.markets','200'));
+  rows.push(event(day+30*60000,'data.alpaca.markets',i===6?'503':'200'));
+ }
+ rows.push(event(Date.parse('2026-11-02T21:00:00Z'),'cdn.www.census.gov','200'));
+ rows.push(event(Date.parse('2026-11-03T21:00:00Z'),'cdn.www.census.gov','200'));
+ write(rows);
+ const items=MONITORED_CALENDAR_SOURCES.concat(['earnings_api','dol_eta539']).map(id=>({
+  id,state:'normal',evidence:'CALENDAR_PARSED',checkedAt:new Date(now-60000).toISOString()
+ }));
+ const snapshot={version:1,scope:'monitored-source-endpoints',
+  source:'PC_MONITORED_SOURCE_EVIDENCE_V1',coverage:'PARTIAL',
+  inventoryVerified:true,limitedCoverage:false,observedAt:new Date(now).toISOString(),
+  items,httpHosts:buildApiConnectionHealthFromLog(base,now)};
+ const x=summarizeApiConnectionHealth(snapshot,now);
+ assert.deepEqual(x.http,{normal:0,failed:1,unknown:1,total:2});
+}));
