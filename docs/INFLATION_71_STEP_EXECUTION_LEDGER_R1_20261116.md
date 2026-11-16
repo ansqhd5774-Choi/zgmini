@@ -38,14 +38,14 @@ B4 10 | Production·화면 최종 검증
 
 ## A1 — 운영 입력·소유권 증명 (9개)
 
-- [ ] **A1-01** 현재 PC Controller 설치 SHA 및 허용된 진단 operation 확인 — PARTIAL | #1501 종료 시 Controller b2ff49dd… 실측, 신규 진단 operation 운영 설치는 미검증
+- [ ] **A1-01** 현재 PC Controller 설치 SHA 및 허용된 진단 operation 확인 — PARTIAL | #1745 Controller e3a495c97d6b40d6d4eea2ff4f586bef46216eb7 파일 전환·10파일 manifest 해시 불일치 0 영수증. 단, 업데이트 UNKNOWN/RECONNECTED·자동 postcheck 미완료이며 실제 새 operation 결과 미관측
 - [ ] **A1-02** 실제 Core·Korea Task 등록·상태·실행 파일 확인 — HISTORICAL | 2026-11-13 #1330·#1331 시점 Task Running/Ready 관측, 동시 시점 동일성 미검증
 - [ ] **A1-03** Task Engine과 VBS launcher 연결 확인 — HISTORICAL | #1326 고정 action의 중첩 VBS 경로 관측, live lock owner 미증명
 - [ ] **A1-04** WMI 프로세스 계보 및 승인 Core script 검증 — PENDING | 새로운 실제 증거 없음
 - [ ] **A1-05** Event129의 PID·실행 시각·프로세스 생성 시각 확인 — PENDING | 새로운 실제 증거 없음
 - [ ] **A1-06** 공유 local-cycle.lock 실제 소유자 확인 — PENDING | 새로운 실제 증거 없음
 - [ ] **A1-07** 잠금 전후 해시·관측 경쟁 여부 확인 — PARTIAL | #1693 protectedStateUnchanged만 확인, 잠금 직접 전후 소유자 증명 미완료
-- [ ] **A1-08** 최초 증명 실패 조건 특정 — SOURCE_ONLY | PR #1724 및 PR #1752 병합, source fixture 72/72 PASS; B 실제 최초 실패 불명
+- [ ] **A1-08** 최초 증명 실패 조건 특정 — SOURCE_ONLY | PR #1724·#1752·#1760 소스 병합, 격리 Windows fixture 82/82 PASS; 실제 B Run 43861853573 최초 실패 불명
 - [ ] **A1-09** 원격 진단 JSON/TXT 회수 및 보호 상태 확인 — PENDING | 새로운 실제 증거 없음
 
 ## A2 — 증명된 결함 최소 수정 (8개)
@@ -54,7 +54,7 @@ B4 10 | Production·화면 최종 검증
 - [ ] **A2-02** 실제 검증 오류와 조회 시점 한계 구분 — ANALYSIS | A GetInstances gap과 B Event129 미증명은 별개; 동일 원인 미입증
 - [ ] **A2-03** 잘못된 검증 조건이 입증된 경우 해당 조건만 최소 수정 — PENDING | 새로운 실제 증거 없음
 - [ ] **A2-04** 기존 안전거부·허용 오차·잠금 보호 유지 — SOURCE_ONLY | 기존 B 증명 안전 조건 변경 금지; A fixture 별도 판정
-- [ ] **A2-05** 관련 코드 회귀검사 — SOURCE_ONLY | PR #1724 fixture 67/67 및 PR #1752 fixture 72/72, 변경된 소스 단계에서 PASS; B 운영 경로 검증 미실행
+- [ ] **A2-05** 관련 코드 회귀검사 — SOURCE_ONLY | PR #1760 격리 Windows CI #43883329062 82/82 PASS, 기존 B 수집기·승인 검사 불변; 운영 B 검사 미실행
 - [ ] **A2-06** Windows 동일 경로 검증 — PENDING | 새로운 실제 증거 없음
 - [ ] **A2-07** 수정 파일·source SHA 확정 — PENDING | 새로운 실제 증거 없음
 - [ ] **A2-08** 필요한 정규 운영 적용 및 적용 파일 재조회 — PENDING | 새로운 실제 증거 없음
@@ -145,3 +145,12 @@ B4 10 | Production·화면 최종 검증
 - Controller 유지보수기 `tools/update.mjs`의 target은 `origin/main` 조상·installed SHA 후손이어야 하고 실제 diff를 정규 manifest에 정확히 선언해야 한다. **W01-only 승인으로 다른 담당 파일을 덮어쓰지 않는다.**
 - 별도의 현재 유지보수기 결과 #1738에서 권한 있는 Runner Inventory API `HTTP_403_FORBIDDEN`을 확인했다. 이는 Runner Offline 증거가 아니며 정규 설치 입력 증거로 처리한다. 유지보수기는 기존 `postOperation`을 필수로 실행하므로 이전 사용자의 '설치 후 자동 진단 실행 금지'와 충돌하는 범위는 우회하거나 새 설치 요청으로 시험하지 않는다.
 - A1이 막혀도 B1 현재 공개 source 연결 확인과 B2의 기존 게시 증거 정리는 독립 진행한다. 현재 Production API 7/7 값 또는 D1 직접 readback은 이번 source 조사만으로 입증되지 않았다.
+
+## 2026-11-16 W01 A1 진단 개선 및 설치 경계 추가 (실증 구분)
+
+- **소스·CI 완료:** [제어 PR #1760](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1760) squash `a1f1bbfa309bb2a1ad9a8322a5dc214a6e8c1c27`. [Windows 소스 CI #43883329062](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43883329062): **82/82 PASS, fail 0**. 기존 B는 수정하지 않았음.
+- **진단 내용:** 원래 B의 잠금 나이 0~1시간·자기 PID 거부, WMI에 의해 현재 Core 직접 증명되면 Event129 불필요, Korea 공유 잠금 또는 Task 비실행은 단회 시점 UNKNOWN, 소유권 확인 불가 상태에서도 Event129 reader/인코딩/BOM/필드만 **1회 독립 관측**. B 증명 결과와 보조 XML 파싱은 구분, 수집·운영 쓰기 경로 없음.
+- **실제 설치 최신 증거:** 별도 정규 [#1745](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1745)는 Controller `e3a495c97d6b40d6d4eea2ff4f586bef46216eb7`로 실파일 전환·6 Runner 재연결 및 10-file hash mismatch 0을 후속 댓글에 기록. 그러나 유지보수 원본 결과는 `UNKNOWN/BACKLOG_OR_RECOVERY_NOT_VERIFIED`, firstFail `RECONNECTED`, protectedStateUnchanged=false, workflowEnabled=false(원본 응답 당시 값). 후속 댓글의 workflow active 진술은 별도 시점. **전체 정규 설치 PASS / W01 진단 실PC PASS로 올리지 않음.** 원본 요청 재실행·복구 우회 없음.
+- **최소 다음 배포 차이 (조회 당시 기준):** 설치 SHA `e3a495c97d6b40d6d4eea2ff4f586bef46216eb7` → 제어 소스 `a1f1bbfa309bb2a1ad9a8322a5dc214a6e8c1c27` 사이 설치 대상 `controller/config` 파일 **1개만 변경**: `controller/inflation-event129-evidence-readonly.mjs` Git blob `626ce8d3296e425cd3a95375ebf868b2d9eaabca` → `ee6b1bcdc825811711c4dee62b0ed488c96f614c`, 신규 소스 SHA-256 `33a7588cf0a5a4b0f44db5baaa6620e09c051b290a50202dcd8cdd06d7535872`. 수정 fixture .test.mjs는 배포 대상 아님. **설치 manifest 승인·실행·해시 실PC 확인은 별도 미완료**.
+- 기존 설치 계약은 정확한 B급 승인 manifest·source/manifest/diff·보호 상태·자동 사후 `postOperation`을 필수로 요구한다. 사용자의 **설치 후 자동 진단 불실행** 조건을 무시해 재설치하지 않는다. #1745의 정규 복구·사후검사 상태와 승인 범위가 확정될 때까지 그 공유 설치 작업만 STOP.
+- **다음 필수 실행:** 중복 설치가 아니라 #1745 기존 결과·승인된 단일 복구 owner의 완료 기록이 있으면 재사용 → 신규 W01 한 파일 manifest/검증 후 정규 적용. 단회 Event129 읽기 A 및 수동 B 수집은 별도 승인까지 미실행. B1/B2의 기존 부분공개 및 정상 자료는 보존.
