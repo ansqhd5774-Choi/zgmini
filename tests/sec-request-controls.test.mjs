@@ -105,3 +105,19 @@ test('SEC network errors propagate rather than invent HTTP200',async()=>temp(asy
 test('SEC POST is rejected to prevent unsafe automatic retry',async()=>temp(async base=>{
  await assert.rejects(fetchSecControlled({gate:createSecSharedLimiter({base}),url:'https://data.sec.gov/test',init:{method:'POST'},fetchImpl:async()=>({status:200})}),x=>x.code==='SEC_FETCH_METHOD_NOT_ALLOWED');
 }));
+
+test('SEC Retry-After accepts HTTP-date format and clamps shared cooldown',async()=>temp(async base=>{
+ const at=Date.now();const gate=createSecSharedLimiter({base,now:()=>at});
+ const date=new Date(at+45_000).toUTCString();
+ const result=gate.noteResponse({status:429,retryAfter:date});
+ assert.equal(result.cooldownUpdated,true);
+ assert.ok(result.until>=at+43_000);
+}));
+test('SEC stale lock is recovered only when owner PID is provably gone',async()=>temp(async base=>{
+ const lock=path.join(base,'sec-shared-reservation.lock');
+ fs.mkdirSync(lock);fs.writeFileSync(path.join(lock,'owner.json'),JSON.stringify({pid:2147483647,startedAt:Date.now()-600_000}));
+ const old=new Date(Date.now()-600_000);fs.utimesSync(lock,old,old);
+ const gate=createSecSharedLimiter({base,maxWaitMs:3000});
+ const result=await gate.reserve();assert.ok(result.at>0);
+ assert.equal(fs.existsSync(lock),false);
+}));
