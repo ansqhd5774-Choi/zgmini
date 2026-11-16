@@ -118,3 +118,19 @@ test('missing or mismatched data root does not cause a write or synthetic result
  const r=auditR32StoredRawWithSpec({dataRoot:'/no/such/source',rosterSha,symbols});
  assert.equal(r.status,'BLOCKED');assert.equal(r.providerCalls,0);assert.equal(r.d1Writes,0);
 });
+
+test('zero-bars symbol has null missing count, not a false zero',t=>{
+ const f=fixture(t,{delta:false}),prefix='legacy-nine-r23';
+ const manifestFile=f.files[`${prefix}-manifest`],checkpointFile=f.files[`${prefix}-checkpoint`];
+ const m=JSON.parse(fs.readFileSync(manifestFile));
+ m.files=m.files.filter(entry=>entry.symbol!=='ROBO');
+ fs.writeFileSync(manifestFile,JSON.stringify(m)+'\n');
+ const cp=JSON.parse(fs.readFileSync(checkpointFile));
+ cp.symbols.ROBO.files=[];cp.symbols.ROBO.noBars=true;
+ fs.writeFileSync(checkpointFile,JSON.stringify(cp)+'\n');
+ const r=audit(f),robo=r.symbols.find(x=>x.symbol==='ROBO');
+ assert.equal(r.status,'PASS');assert.equal(r.symbolsWithoutValidBars,1);
+ assert.equal(robo.coverageStatus,'NO_VERIFIED_BARS');
+ assert.equal(robo.verifiedNYDays,0);
+ assert.equal(robo.absentOnObservedSPYDaysAfterFirst,null);
+});
