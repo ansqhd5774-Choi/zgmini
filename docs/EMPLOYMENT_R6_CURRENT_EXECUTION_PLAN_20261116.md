@@ -144,7 +144,7 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 
 | 세부 ID | 실제 실행·분석 작업 | 입력·근거 | 완료 판정 / 결과 | 상태 |
 |---|---|---|---|---|
-| PIT-04-01 | Current 관측일·지역별 최신 시각 정렬 | #1787 실제 aggregate 및 #1789 WAL 상태 거부·현 A 안전 projection 계약 | 지역별 최대 관측일·51개 완전 주차 실증 미충족; 단회 A #1789 STATE_UNKNOWN, 무한 재요청/DB 우회 금지 | BLOCKED |
+| PIT-04-01 | Current 관측일·지역별 최신 시각 정렬 | #1787 PIT aggregate, #1789 WAL STATE_UNKNOWN; 제어 Draft PR #1791 2파일 Current regionLatest source+fixture 21/21 PASS | 지역별 최대 관측일의 실제 운영 51지역 수신/완전주 실증은 아직 없음; WAL 안전 snapshot 및 정규 B 적용·새 A readback 전에는 DONE 불가 | BLOCKED — SOURCE_READY |
 | PIT-04-02 | History를 관측일·지역·최신 개정 단위로 정렬 | PIT-03 History revision | latest revision과 이전 revision을 별도로 식별 | TODO |
 | PIT-04-03 | Current와 최신 History의 값·sourceHash 정확 대조 | 관측키·원본 해시 | 정확 일치/누락/상충을 독립 버킷으로 분리 | TODO |
 | PIT-04-04 | availableAt·retrievedAt·기록 시각의 PIT 적격성 검산 | 공식 관측 시각·DB 메타 | 미래 가용 데이터를 과거 TRUE_PIT로 승인하지 않음 | TODO |
@@ -261,3 +261,10 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 - [#1789](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1789) Run 43899712917 `STATE_UNKNOWN/R6_EVIDENCE_WAL_SIDECARS_ABSENT`; 실제 Core SQLite 오픈 0, `stateClaims=null`, 공급자/DB/D1 쓰기 0; JSON/TXT 원격 재조회 2/2. Actions conclusion SUCCESS를 기능 PASS로 해석하지 않는다.
 - 같은 인가된 A는 주차별 aggregate만 반출하고 **지역별 최대 관측일/History revision as-of가 없으므로**, sidecar가 있더라도 `PIT-04-01` 완전 판정은 추가 정규 읽기 안전 경로 없이는 불가. 기존 #1787 2,880 결손/14 후보 충돌은 보존하고 TRUE_PIT 승격 근거로 사용하지 않는다.
 - `PIT-04-01` BLOCKED, 전체 **22/72 DONE / 50 미완료** 불변. 다음은 공통 검증 보호를 유지한 최소 비민감 저장 이력 조회 구현·fixture 적합성 확인. 상세 원본 [진행 기록 §14](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md) 참조.
+
+
+### 2026-11-17 W04 PIT-04-01 소스 개선 및 검증: 개발 완료·실PC 미설치
+
+- 기존 제어 `main@40a0767ec48829360a0b47a2b37e499d59944a05`에서 고용 전담 기능의 2파일만 분리한 [Draft PR #1791](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1791), head `999c144c45c14667b32b42b8db324e0d1a7b7aca`. 기존 A를 교체하지 않고 `stateClaims.regionLatest`에 51 고정 공식 지역별 날짜 `CURRENT_ONLY_NOT_PIT` projection 준비. WAL 모두 부재/부분 부재를 fail-closed로 분류해 운영 DB 손상/복구로 오인하지 않음.
+- Windows [W04 Node source CI 43901867724](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43901867724) 해당 21/21 및 기존 경로 47/47 PASS; [C996 43901867639](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43901867639) SUCCESS. 두 파일만 수정. 공통 #68 [인계](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6921555673) 등록. 이는 **SOURCE_READY/CI_PASS**이지 실제 설치나 PIT-04-01 운영 DONE 아님.
+- **현재 기능 진행률 22/72 = 30.6%, 잔여 50 유지.** 단계 `PIT-04-01=BLOCKED/SOURCE_READY`, 원자료·History·DB·D1/점수 28/29 변화 없음. 다음 필수 실제 동작은 공통 owner의 기존 승인 정규 Controller 적용 경로와 검증된 최신 WAL-safe snapshot 조건을 분리 점검하여 최소 두 파일의 적용 필요성을 결정하는 것. source main SHA, 실제 설치 SHA, 승인 manifest, lease와 출처 적합성 확인 전 운영 설치/새 A 요청은 하지 않는다. 실제 regionLatest 51지역 결과가 반환되고 기존 단계별 저장 이력 근거가 맞을 때만 PIT-04-01 DONE으로 전환. 상세 실행 결과는 [진행 기록 §15](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md).
