@@ -1,6 +1,6 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
-> **현재 즉시 상태 (2026-11-17 KST): 13/75 (17.3%), 잔여 62개. #36 CNN 공개 Reader 동일 observedAt 상충 score 덮어쓰기 위험 확인(source-only); 실제 운영 오류 및 PC→D1 실증 미확정. #36 공개 Reader 상충 점수 방어 3파일 Draft PR #1196 source 커밋 완료, Node CI/운영 실증 대기.** W06 #35 카드/차트 게시시각 정합성 문제를 재현·수정해 선택 PR #1193으로 `main@e5dc26582c94dacc1cb41ef39675b812014ce42f` 병합, 코드 CI·모의 UI SUCCESS. 기존 저장 우선 회귀를 존중하는 명시적 카드-바운드 UI 모드 도입. **다음 필수 실행은 #36 (미국 CNN 실제 observedAt/score 이력)**. 실PC/D1/exact Cloudflare Production 확인은 여전히 별도 미확정.
+> **현재 즉시 상태 (2026-11-17 08:25 KST): **13/75 (17.3%), 잔여 62개**. #36 CNN 공개 GET 중복/상충 무결성 PR #1196 4파일 `main` 병합·CI/Cloudflare Build PASS. 다만 실제 PC #1806에서 CNN 현재 점수·관측은 갱신되나 원본 108점(11/06), 확인 108점(11/07) archive는 10일 이상 정체. Sidecar source SHA 범주 차단은 원인 미확정. #36 PARTIAL, #37 독립 W06 실행으로 이동. 실제 D1/Production 게시 검증 없음.
 
 ## 현재 인계 정본 — 다음 담당자 첫 읽기 (2026-11-16 KST)
 
@@ -14,19 +14,19 @@
 | DONE 단계 (중복 없음) | **#04, #05, #08, #10, #21, #22, #23, #24, #26, #27, #33, #34, #35** |
 | #34 60초 화면 갱신·역행 차단 | **DONE (현재 main source/fixture)**. `live-refresh.mjs` 60초 주기, `dashboard-ui.tsx`·`use-stored-index.ts` 수용/역행 보호 경로 확인. 신규 유효값·0·PARTIAL 및 낡은 관측·게시 응답 판정 7/7, UI 연결 소스 4/4 PASS. Production 유저 육안 검수는 최종 단계 |
 | 단계 증거 범위 | #24는 **기존 저장 JSON 활용·Draft 설계/회귀 PASS**까지의 설계 DONE. 실제 15분 보존 정책 수정·PC 설치·D1 반영은 **미완료** |
-| PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #28, #29. #28 모델 계보, #29 미래 스냅샷/Writer 변경점, #13 실PC→D1 실제 게시 증거가 아직 미완료. #35는 소스·CI 완료이지 Production 화면 판정이 아님 |
-| 다음 단 하나의 실행 | **#36 (W06, D01 미국 공포탐욕)** CNN의 실제 `observedAt`·`score` 변동이 승인된 로컬 `fear-greed-observed` 저장→D1 공개 `/api/fear-greed/observations`에 별도 원장으로 반영되는지 실제 수집·게시 이력과 현재 source 계약을 대조. 동일 timestamp 재조회/PC 검증 체크를 새 관측으로 중복 계산하지 않으며 운영 근거가 없는 성공은 주장 금지 |
-| 다음 담당·대상·입력 | W06 UI 원담당(수집·게시 실PC 실증은 원담당 승인 경로). `lib/cnn-observed-archive-r1.mjs`, `worker/public-feed-store.mjs`, `scripts/pc-writer/cnn-observed-archive-publication-r1.mjs`, `app/api/fear-greed/observations/route.ts`, `tests/usa-fear-greed-change-only-r10.test.mjs` 및 기존 저장/checkpoint 증거. D01만 선택적으로 확인 |
-| #36 통과 조건 | CNN 신규 `observedAt`·`score`와 같은 timestamp 재조회/공식 정정을 구분. 실제 유효 신규 관측만 저장·조회, 별도 PC 확인 시각을 CNN 출처 관측과 혼동하지 않음; 로컬 저장·D1 게시·공개 GET의 선택적 근거 확보, 해당 범위 실제 문제만 수정. 기존 Raw·TTL·공용 수집/Writer·수집 주기 무단 변경 금지 |
+| PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #28, #29, **#36**. #36 원본 CNN archive가 11/06·PC 검증 archive 11/07 이후 정체, 신규 원본 저장·D1 게시 실증 미완료. #28/29/13 기존 미완료 유지 |
+| 다음 단 하나의 실행 | **#37 (W06 독립 D02 한국 공포탐욕)** 승인 KRX 완료 거래일/Rev7 7요인·기존 저장·게시·차트 원점수/관측일 검증. **#36 별도 CNN 원담당 조치:** 기존 A급 진단 #1806을 기반으로 Sidecar archive-run source SHA/승인 manifest·운영 config를 원담당이 대조하고 정규 승인 경로로 archive/checkpoint를 복구·실제 D1 일별 readback 검증. 허위 신규점·수동 우회/재시도 금지 |
+| 다음 담당·대상·입력 | W06는 #37 KRX Rev7 7요인·거래일 관측 및 저장/차트 연결에 집중. CNN #36 아카이브 source/Sidecar·Writer 설치는 원래 CNN 담당자(운영 PC #1806/#1337 로컬 증거, 구동 소스 Gate·승인 source 대조) |
+| #36 남은 통과 조건 | 공개 GET 소스/CI는 PR #1196 통과. 운영 CNN 현재 원본은 최신이나 원본 observation archive 108점/마지막 11/06 UTC, PC 검증 archive 108점/마지막 11/07 UTC로 10일 이상 정체. 운영 원담당 정상 저장 및 D1 각 날짜 readback과 공개 GET 원본 시각 일치 없이는 #36 DONE 아님 |
 | 이후 후보(이번 실행에 혼입 금지) | #28 모델/방법론 계보 공개 이력의 원담당 변경 범위(현행 일별 snapshot에 modelVersion 저장됨, 평면 chart/observed archive에는 없음); #29 기준일 이후 미래 snapshot 표시 결함/동일시각 정정 (Writer 원담당). D01~D27 실제 미연결 작업, Draft #1181·#1185 승인 대기. 비차단 작업은 계속 |
-| 최근 R4 기능 병합 증거 | PR #1177, #1180, #1182, #1184, #1187, #1189, **[#1193](https://github.com/ansqhd5774-Choi/zgmini/pull/1193)** = `main` 병합. 최신 R4 기능 병합 SHA **`e5dc26582c94dacc1cb41ef39675b812014ce42f`**; #1193 변경파일 정확히 3개, GitHub 코드 CI 및 모의 브라우저 UI 각각 SUCCESS |
+| 최근 R4 기능 병합 증거 | #1177·#1180·#1182·#1184·#1187·#1189·#1193 및 **[#1196](https://github.com/ansqhd5774-Choi/zgmini/pull/1196)** 병합. #1196 main merge SHA **`40d6156a1144350c3a23a02cb0db26e56bf3adde`**, 4파일만 변경, 실제 공개 GET D1 stub 12건 + 단위시험 6건, PR head CI SUCCESS. 운영 PC archive 복구와 별개 |
 | 미병합 원담당 검토 | [Draft #1181](https://github.com/ansqhd5774-Choi/zgmini/pull/1181) Collector의 관측일 역행 차단 (#11), [Draft #1185](https://github.com/ansqhd5774-Choi/zgmini/pull/1185) Writer의 15분 이내 변경점 영구 기록 (#24 설계 이후 구현). 두 건 모두 CI 성공이나 **원담당 적용 승인·main 병합·PC 설치 없음** |
-| PC Runtime·SQLite→D1 실제 게시 | **미확정**. #13 임시 SQLite 통합시험 및 source 연결 PASS만 보유. 기존 운영 PC A급 #1737은 당시 `STATE_UNKNOWN`; 해당 고유 요청 중복 실행 금지 |
-| Cloudflare/공개 화면 | #1193 PR head 코드 CI·모의 브라우저 UI SUCCESS, 병합 `main@e5dc26582c94dacc1cb41ef39675b812014ce42f`의 **Workers Builds·verify·notify SUCCESS**. 해당 병합 SHA의 일반 `check`는 이후 공동 `main` 갱신 과정에서 **CANCELLED**(PR head `check` 성공 증거를 대체/번복하지 않음). **exact Production Deployment ID/SHA 및 실제 사용자 브라우저 확인은 미확정**. 빌드/PR 병합을 Production 검증으로 오기하지 않음 |
+| PC Runtime·SQLite→D1 실제 게시 | **운영 PC A급 #1806 PASS**, Run `43979172460`, JSON/TXT 2/2 재조회, SQLite opened, writes/provider calls/D1 writes=0. CNN current `31.0190476` / `observedAt=2026-11-16T22:59:30Z`, 원본 archive **108점·lastAt 2026-11-06T23:59:54Z**, PC checked archive **108점·lastAt 2026-11-07T00:30:02.951Z**; 이전 #1337(11/12)과 108·108/마지막 시각 동일. 종합 archive 48→70점 전진. Sidecar source gate `archive-run.mjs CHANGED`, 비인증 Block reason 범주 SOURCE/SHA(확정 원인 아님). CNN archive 새 관측의 D1 게시·공개 GET 실측 **미확인**. 별도 #13 운영 게시 종단 실증 미확정 |
+| Cloudflare/공개 화면 | #1196 merge SHA `40d6156a…`의 **Workers Builds/verify/notify SUCCESS**, PR head `check` SUCCESS. **exact Production Deployment ID/SHA·실제 GET 원본 이력 전진·사용자 브라우저 검증 미확정**. 빌드나 PR 성공만으로 실운영 데이터 게시 성공을 주장하지 않음 |
 | 소유·보호 조건 | UI는 기존 전용 브랜치·선별 PR 원칙. 수집·계산·Writer/15분·100개 보존 정책·DB·TTL·스케줄은 별도 원담당/승인 없이 수정·병합·설치 금지. R13 이란 퇴역 예약 복원 금지 |
 | 전후 검증 원칙 | source/CI/로컬 fixture와 실PC/D1/Production을 분리. 사용자에게는 전체 기술 구현 이후 홈페이지 최종 육안 확인 요청 |
 
-**다음 작업자 필수 수행 순서:** 본 계획서 75개 → 위 정본 → #36 관련 기존 근거만 확인 → 실제 #36 실행/검증 → **이 표 상태 수정 및 최신 수행 기록 추가 → 지정 원장 커밋 → 원격 내용 재조회 PASS → 최종 보고**. 지난 대화를 요청하거나 과거 성공 작업을 모두 재실행하지 않는다.
+**다음 작업자 필수 수행 순서:** 본 계획서 75개 → 위 정본 → #37 관련 기존 근거만 확인 → 실제 #37 실행/검증 → **이 표 상태 수정 및 최신 수행 기록 추가 → 지정 원장 커밋 → 원격 내용 재조회 PASS → 최종 보고**. 지난 대화를 요청하거나 과거 성공 작업을 모두 재실행하지 않는다.
 
 ### 마지막 기록 갱신 — 기준 확립 작업 (기능 75단계 추가 완료 없음)
 
@@ -238,3 +238,16 @@
 - FIRST UNVERIFIED: PR #1196 Node CI 결과 및 실제 CNN 신규 observedAt/score 로컬 저장→D1→GET 동치.
 - 다음 필수 실행: PR #1196의 실제 Node CI·검증 결과를 확인하고 실패 시 정확한 3파일만 수정; 운영 실증은 원담당 승인된 기존 A급 경로에서 별도 확인.
 - 기능 진행률 **13/75 (17.3%) → 13/75 (17.3%)**, 잔여 62. main 병합·Cloudflare 배포 없음.
+
+
+## [2026-11-17 08:25 KST] R4 #36 — 공개 CNN 점수/PC 점검 충돌 보호와 실제 PC 이력 정체 확인
+
+- **이번 실제 결과:** 앞선 W06 Draft #1196을 이어받아 `lib/cnn-observed-reader-integrity-r1.mjs`에 PC `checkedAt` 중복 충돌 보호를 추가하고 `app/api/fear-greed/observations/route.ts`에 적용. 같은 `observedAt`의 상충 CNN 점수는 503 `STORED_ARCHIVE_INVALID`, 같은 PC `checkedAt`의 상충 `sourceObservedAt/score`는 503 `STORED_CHECKS_INVALID`. 동일점 재전달 허용·공식 정정은 기존 Writer 권한. **D1 GET은 저장값 SELECT만**, 방문 수집/계산/쓰기 없음.
+- **소스/테스트:** 기존 `codex/ui-r4-cnn-reader-conflict-20261117`의 3파일 후보를 4파일 선별 PR [#1196](https://github.com/ansqhd5774-Choi/zgmini/pull/1196)로 확장(함수·route·unit test·실제 route GET source 12 fixture). 단위시험 **6건**, 실제 TypeScript GET 컴파일/readonly D1 stub **12건**, 최종 PR head `8fa4ed62015eaeeb1fa7b4bc9d66833e99f1ffbf`의 GitHub `check` [Run 43978399160](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43978399160) **SUCCESS**. `main` 병합 SHA `40d6156a1144350c3a23a02cb0db26e56bf3adde`, Workers Builds/verify/notify 성공. 정확한 Cloudflare Production Deployment·실제 D1 공개 GET 실측은 **미확인**. 새 임시 브랜치 생성/지정 UI 브랜치 전체 병합 0건. PC 운영/DB·TTL·Cron/공급자 호출·Writer 설치 0건.
+- **PC 신규 A-grade 실제 증거:** 기존 설치된 허용 operation `fear-greed-archive-status` 1회만 고유 Issue [#1806](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1806), requestId `pc-a9bdfb0e-4357-42c4-89be-b952e5c5c036`로 요청. 실제 Windows Run `43979172460`, seat 5, `PASS/FEAR_GREED_ARCHIVE_READONLY_DIAGNOSIS`, JSON/TXT 결과 `results/43979172460-1-seat-5.json/.txt` 직접 2/2 readback. `sqliteOpened=true`, `protectedStateUnchanged=true`, provider/operational/D1 writes 0. Source requested `main@40d6156a1144350c3a23a02cb0db26e56bf3adde`; 실제 PC 승인 source `2070ff53549e2f9f2cea57d5af7e1d83f9fd7388`. A급은 설치 소스 SHA 동일성 입증 아님.
+- **이전 #1337과 비교:** #1337(11/12 UTC)에서 CNN 현재 `observedAt=2026-11-12T19:26:08Z`, 원본 archive **108점 마지막 11/06 23:59:54Z**, PC checks **108점 마지막 11/07 00:30:02.951Z**, 종합 archive 48점. 신규 #1806(11/16 23:25 UTC)에서 CNN 현재 `status=verified,score=31.0190476190,observedAt=2026-11-16T22:59:30Z`, 원본 archive **108점, lastAt=2026-11-06T23:59:54Z**, PC checks **108점, lastAt=2026-11-07T00:30:02.951Z**, 종합 archive **70점, latest=2026-11-16T22:45:17Z**. 즉 **실제 CNN 최신 현재값은 전진하나 신규 관측 이력/PC 확인 이력은 10일 이상 저장되지 않음**.
+- **FIRST FAIL / 원인 후보:** A급 결과 `archiveTrace.alignment=HISTORY_DIVERGENCE`, `cause=UNKNOWN`; `archive-run.mjs` source gate `CHANGED`, wrapper `MATCH`, Sidecar 비인증 원장 `reportedStatus=BLOCKED` 및 `reasonConcepts=[SOURCE,SHA]`, `matchingErrorSite=NOT_CHECKED`. **승인 source/실제 파일 불일치 또는 Sidecar 게이트가 가능한 원인**이나 해당 ledger는 비인증이므로 실제 중단의 단독 인과관계 단정 금지. 공통 publicationLedger `VERIFIED`는 CNN 일별 D1 게시 영수증 아님.
+- **판정:** #36 공개 Reader 구현/CI DONE, **실PC 원본 이력 최신화 및 D1 readback 미완료로 전체 #36 PARTIAL**. 전체 완료 고유번호 기존 **13/75 (17.3%), 잔여 62개** 유지. 실제 운영에서 중복/상충 기록이 있었는지도 미확인. 0/null/동일관측 check 구분 유지.
+- **원담당 복구 절차:** CNN Collector/Sidecar 담당자가 #1806 실제 승인 source/Sidecar 원본 해시, 설치 manifest, active schedule/current config를 읽기전용 대조 → 정확한 승인 범위의 정규 B 수정 또는 정상 운영 source 확인 → 실제 `fear-greed-observed` 원본 관측일/건수/checkpoint 전진 → D1 날짜별 body/stored_at readback 및 공개 GET `observedAt/score` 동치 확인. 기존 Issue 재시도·우회 실행·임의 새 예약/정규 수집 재실행 지시 금지.
+- **W06 다음 독립 실행 1개:** **#37 D02 한국 공포탐욕** KRX 완료 거래일·Rev7 7요인·승인 저장/게시·사이트 차트 끝점의 날짜와 점수를 검사. 위 CNN 운영 복구는 **다른 담당자 소유**, 독립 기능 전체 차단 조건 아님. 기존 #28/#29/#13 미완료 유지.
+- **인계 종료 기준:** 이 절 + 상단 정본을 `codex/ui-improvements/docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_R4_PROGRESS_20261116.md`에 커밋하고 13/75·#36 PARTIAL·다음 #37 및 #1196/#1806 링크 원격 재조회 PASS 이후 보고.
