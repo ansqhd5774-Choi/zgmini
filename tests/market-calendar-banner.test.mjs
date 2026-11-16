@@ -151,3 +151,33 @@ test('banner rejects unvalidated R44-like stars, FHS, ungraded and two-star rows
   '<div class=mc-importance aria-label="시총 기준 중요도 별 3개" title="다른 기준">★★★</div>',
  ])assert.deepEqual(earningsBannerRows(hdr+article(invalid),timestamp),[]);
 });
+
+test('top banner company labels strip nested legal-name parentheses while retaining genuine company names',()=>{
+ const timestamp=Date.parse('2026-11-16T04:00:00Z'),start='2026-11-16';
+ const coveredDays=Array.from({length:14},(_,i)=>new Date(Date.parse(start+'T00:00:00Z')+i*86400000).toISOString().slice(0,10));
+ const companies=[
+  ['DIS','Walt Disney Company (The)','월트 디즈니'],
+  ['HD','Home Depot, Inc. (The)','홈디포'],
+  ['TJX','TJX Companies, Inc. (The)','TJX 컴퍼니스'],
+  ['MDT','Medtronic plc','메드트로닉'],
+  ['XYZ','Fictional Holdings (The)','Fictional Holdings (The)'],
+ ];
+ const csv=['ticker,name,exchange,sector,industry,country,price,mktCap',
+  ...companies.map(([ticker,name])=>[ticker,name,'NASDAQ','Technology','Software','US','200','100000000000'].join(','))].join('\\n')+'\\n';
+ const delta=makeDeltaR44Public(gradeCalendarTickersFromDelta(parseDeltaScreenerCsv(csv),companies.map(c=>c[0])));
+ const events=companies.map(([ticker,company])=>({date:'2026-11-18',ticker,company,
+  marketSession:'after_market',time:null,verification:'VENDOR_UNVERIFIED',source:'earnings-api'}));
+ const display=earningsDisplaySnapshot({status:'READY_PRIVATE',scope:'PC_PRIVATE',
+  publicDisplay:false,redistribution:false,publicationStatus:'HELD_UNCONFIRMED',
+  coveredDays,recordCount:events.length,priorityCount:0,checkedAt:new Date(timestamp).toISOString(),events});
+ const filtered=earningsDisplayHtml(display,{start,end:coveredDays.at(-1),importance:3},
+  null,null,null,{},delta);
+ assert.equal(filtered.count,companies.length);
+ assert.match(filtered.html,/월트 디즈니 \\(Walt Disney Company \\(The\\) · DIS\\)/);
+ assert.match(filtered.html,/홈디포 \\(Home Depot, Inc. \\(The\\) · HD\\)/);
+ const result=earningsBannerRows(filtered.html,timestamp);
+ assert.equal(result.length,companies.length);
+ const names=Object.fromEntries(result.map(({ticker,name})=>[ticker,name]));
+ for(const [ticker,,expected] of companies)assert.equal(names[ticker],expected);
+ assert.equal(marketCalendarBannerRows(timestamp,null,filtered.html).filter(r=>r.kind==='실적').length,companies.length);
+});
