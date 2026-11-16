@@ -1,8 +1,8 @@
 // SEC permit compatibility adapter for installed PC quota-fetch variants.
 //
-// Deliberately does not modify or replace an existing PC quota-fetch.mjs.
-// The legacy quota ledger remains responsible for recording HTTP diagnostics;
-// only SEC calls are admitted through the additional shared permit.
+// Keep the installed PC's existing quota-fetch/QuotaLedger unchanged. This
+// adapter can wrap an already constructed quota object with ONE insertion,
+// or construct that object for newer collectors that opt into the bridge.
 import path from 'node:path';
 import {createQuotaFetch} from './quota-fetch.mjs';
 import {providerForUrl} from './quota-policy.mjs';
@@ -11,22 +11,17 @@ import {createSecSharedLimiter,fetchSecControlled} from './sec-request-controls.
 const fail=code=>{throw Object.assign(new Error(code),{code});};
 const MARK=Symbol.for('zgmini.sec.permit.fetch.v1');
 
-export function createCompatibleSecQuotaFetch({
- base,originalFetch,mode=process.env.ZGMINI_QUOTA_MODE??'observe',
+export function attachSecSharedPermitToQuota(quota,{
  secSharedGuard=false,secSharedBase=null
 }={}){
  if(secSharedGuard!==true&&secSharedGuard!==false)fail('SEC_GUARD_ENABLE_FLAG_INVALID');
- if(secSharedGuard&&(typeof secSharedBase!=='string'||
-     !path.isAbsolute(secSharedBase)))fail('SEC_GLOBAL_PERMIT_SCOPE_REQUIRED');
-
- // SEC protection in this file is independent of newer quota-fetch internals.
- // Explicit false avoids double reservations on a newer source, while a legacy
- // source that ignores this option continues operating unchanged.
- const quota=createQuotaFetch({base,originalFetch,mode,secSharedGuard:false});
- if(!secSharedGuard)return quota;
- const gate=createSecSharedLimiter({base:path.resolve(secSharedBase)});
+ if(!quota||typeof quota.fetch!=='function')fail('SEC_LEGACY_QUOTA_FETCH_UNAVAILABLE');
+ if(!secSharedGuard)return quota; // exact legacy behavior, including events
+ if(typeof secSharedBase!=='string'||!path.isAbsolute(secSharedBase))
+  fail('SEC_GLOBAL_PERMIT_SCOPE_REQUIRED');
  const underlying=quota.fetch;
- if(typeof underlying!=='function')fail('SEC_LEGACY_QUOTA_FETCH_UNAVAILABLE');
+ if(underlying[MARK]===true)fail('SEC_QUOTA_ALREADY_PROTECTED');
+ const gate=createSecSharedLimiter({base:path.resolve(secSharedBase)});
  const fetch=async(input,init)=>{
   const request=typeof Request==='function'&&input instanceof Request;
   const url=typeof input==='string'||input instanceof URL?input:request?input.url:input?.url;
@@ -47,5 +42,21 @@ export function createCompatibleSecQuotaFetch({
   return response;
  };
  Object.defineProperty(fetch,MARK,{value:true});
- return {...quota,fetch};
+ // Change only the fetch property. Existing ledgers, events and summary methods
+ // remain the same object and retain their original behavior.
+ quota.fetch=fetch;
+ return quota;
+}
+
+export function createCompatibleSecQuotaFetch({
+ base,originalFetch,mode=process.env.ZGMINI_QUOTA_MODE??'observe',
+ secSharedGuard=false,secSharedBase=null
+}={}){
+ if(secSharedGuard!==true&&secSharedGuard!==false)fail('SEC_GUARD_ENABLE_FLAG_INVALID');
+ if(secSharedGuard&&(typeof secSharedBase!=='string'||
+     !path.isAbsolute(secSharedBase)))fail('SEC_GLOBAL_PERMIT_SCOPE_REQUIRED');
+ // Explicit false avoids double-reservation in newer quota-fetch versions;
+ // installed legacy versions may simply ignore this optional argument.
+ const quota=createQuotaFetch({base,originalFetch,mode,secSharedGuard:false});
+ return attachSecSharedPermitToQuota(quota,{secSharedGuard,secSharedBase});
 }
