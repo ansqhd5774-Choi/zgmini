@@ -1,6 +1,6 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
-> **현재 즉시 상태 (2026-11-17 08:37 KST): 13/75 (17.3%), 잔여 62개. #36 CNN Reader PR #1196 병합·CI PASS, 실제 운영 PC #1806/#1807는 CNN 현재값과 원본 관측 이력 간 정체 및 Sidecar BLOCKED 확인. #36 PARTIAL(원본/개별 D1/GET 미완료). #37 한국 Rev7 완료 거래일→공개 카드·이력 기존 함수의 비식별 시험 **12/12 PASS**(테스트 커밋 ac745f2de70f...), 실제 PC/KRX·D1/웹 관측 미확정으로 **#37 PARTIAL**. 원담당 운영 확인은 별도 미완료. **W06 다음 독립 실행 #38(D03 미국 등락 3비율)**; MarketParquet 사용 금지. 새 완료 단계 0.
+> **현재 즉시 상태 (2026-11-17 08:38 KST): 13/75 (17.3%), 잔여 62개. #36 CNN Reader 코드/CI PASS, 원본 archive Sidecar BLOCKED 및 D1 실증 미완료. #37 한국 Rev7 source 함수 fixture 12/12 PASS, 실제 KRX/D1 미확정. #38 미국 IEX 잠정 등락 3비율 저장 Reader/API/UI source 계보 확인, 실제 게시·Production 실증 미확정. #36/#37/#38 모두 PARTIAL이며 고유 DONE 추가 0. 다음 필수 실행 #38 실 게시 비율 선택적 확인.
 
 ## 현재 인계 정본 — 다음 담당자 첫 읽기 (2026-11-16 KST)
 
@@ -14,9 +14,9 @@
 | DONE 단계 (중복 없음) | **#04, #05, #08, #10, #21, #22, #23, #24, #26, #27, #33, #34, #35** |
 | #34 60초 화면 갱신·역행 차단 | **DONE (현재 main source/fixture)**. `live-refresh.mjs` 60초 주기, `dashboard-ui.tsx`·`use-stored-index.ts` 수용/역행 보호 경로 확인. 신규 유효값·0·PARTIAL 및 낡은 관측·게시 응답 판정 7/7, UI 연결 소스 4/4 PASS. Production 유저 육안 검수는 최종 단계 |
 | 단계 증거 범위 | #24는 **기존 저장 JSON 활용·Draft 설계/회귀 PASS**까지의 설계 DONE. 실제 15분 보존 정책 수정·PC 설치·D1 반영은 **미완료** |
-| PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #28, #29, #36, **#37**. #36 CNN archive 원담당 복구·D1 readback, #37 KRX 완료 거래일/Rev7 실제 저장·공개 점수 관측 확인은 아직 미완료. 독립 source/fixture는 각 단계 완료의 운영 대체물이 아님 |
-| 다음 단 하나의 실행 | **#38 (W06 D03 미국 등락)** 기존 IEX 승인 입력의 상승/보합/하락 **3비율** 저장→공개 GET→홈페이지 UI 값·기준 거래일·결측 검증. 점수 0–100 새 산식 생성 금지, 퇴역 MarketParquet 의존 금지. #37 한국 운영 KRX 마지막 COMPLETE date/7요인/D1/GET 동치 미확정은 한국 원담당의 **독립 후속**; #36 CNN Sidecar BLOCKED는 CNN 원담당 독립 후속. 두 건을 W06 #38의 전역 Gate로 사용하지 않음 |
-| 다음 담당·대상·입력 | W06 #38: 계획서 D03의 IEX phase/3비율 소스·기존 공개 API 및 UI 매핑, 저장된 최신 유효 거래일/0·null 증거. 사용자 승인 없는 새 공급자·새 산식·원자료/DB/TTL/수집 주기 변경 금지. #37 소스 테스트 `tests/r4-korea-rev7-completed-date-37.test.mjs` 커밋 `ac745f2de70fcf9149a3d2ad943afef82d437cb9` 12/12 PASS 재사용, 실제 실PC/D1 증거는 한국 원담당이 확보. #36 CNN 기존 Issue #1806의 동일 내용 #1807은 중복, 추가 자동 재실행 금지 |
+| PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #28, #29, #36, #37, **#38**. #36 CNN Sidecar 아카이브 정체, #37 한국 Rev7 완료 거래일 실PC/D1 동치, #38 IEX 잠정 새 게시 D1/GET/UI 동치 모두 미완료 |
+| 다음 단 하나의 실행 | **#38 (W06 D03 미국 등락, PARTIAL)** 승인된 IEX 장중 관측의 D1 key public:market-breadth-provisional-r1:usa의 날짜/slotEndUtc/상승·보합·하락·미관측 비율/body/stored_at을 공개 GET /api/market-breadth?market=usa&phase=provisional 및 카드 3개 수치에 선택적 대조. NY 정규장 밖/유효 점 없음은 미제공이 정상. MarketParquet 사용 금지, 0–100 새 점수·과거 이력 허위 복원 금지. #36 CNN·#37 KRX 운영은 각 원담당의 별도 미완료 |
+| 다음 담당·대상·입력 | W06 #38: lib/market-breadth/us-provisional-r1.mjs, app/api/market-breadth/route.ts, app/market-breadth-strip.tsx, tests/us-breadth-ui-provisional-r22.test.mjs; 기존 D1 저장/공개 API 증거가 있으면 저장 시각/관측 기준일/3비율 일치 확인. 수집·Writer·DB·주기 변경 금지 |
 | #36 남은 통과 조건 | 공개 GET 소스/CI는 PR #1196 통과. 운영 CNN 현재 원본은 최신이나 원본 observation archive 108점/마지막 11/06 UTC, PC 검증 archive 108점/마지막 11/07 UTC로 10일 이상 정체. 운영 원담당 정상 저장 및 D1 각 날짜 readback과 공개 GET 원본 시각 일치 없이는 #36 DONE 아님 |
 | 이후 후보(이번 실행에 혼입 금지) | #28 모델/방법론 계보 공개 이력의 원담당 변경 범위(현행 일별 snapshot에 modelVersion 저장됨, 평면 chart/observed archive에는 없음); #29 기준일 이후 미래 snapshot 표시 결함/동일시각 정정 (Writer 원담당). D01~D27 실제 미연결 작업, Draft #1181·#1185 승인 대기. 비차단 작업은 계속 |
 | 최근 R4 기능 병합 증거 | #1177·#1180·#1182·#1184·#1187·#1189·#1193 및 **[#1196](https://github.com/ansqhd5774-Choi/zgmini/pull/1196)** 병합. #1196 main merge SHA **`40d6156a1144350c3a23a02cb0db26e56bf3adde`**, 4파일만 변경, 실제 공개 GET D1 stub 12건 + 단위시험 6건, PR head CI SUCCESS. 운영 PC archive 복구와 별개 |
@@ -273,3 +273,14 @@
 - **#37 정확한 Owner 후속:** 한국 KRX/Rev7 원담당이 기존 승인 PC/D1 Reader 또는 공개 안전 GET의 실제 관측·이력 근거를 확보해 **마지막 완료 KRX 거래일, 7개 요인 모두 유효/0/null 분리, D1 sourceObservedAt vs calculatedAt, 신규 완료일 게시와 이전 유효점 보존**을 재조회·증명. 그 증거가 확보되기 전 운영 완료로 판정 금지. 추가 서빙 정책 변경·과거 PIT 임의 복원 금지.
 - **W06 다음 독립 실행:** **#38 D03 미국 등락** — IEX 승인 임시 phase·상승/보합/하락 3비율, 기존 저장/공개/UI 경계 검사. 폐기 MarketParquet·기타 데이터 무단 대체 및 0–100 새 점수 계산 금지. #36 CNN 원담당 복구와 #37 한국 원담당 관측은 별도 비차단 후속.
 - **종료 기록 기준:** 상단 정본 + 본 실행 내역을 `codex/ui-improvements/docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_R4_PROGRESS_20261116.md`에 커밋, 원격 재조회로 **#37 PARTIAL·13/75·다음 #38·12/12 source PASS** 확인 후 사용자 보고.
+
+## [2026-11-17 08:38 KST] R4 #38 — 미국 IEX 잠정 등락 3비율 공개·UI source 연결 조사 (PARTIAL)
+
+- 담당/시작: W06, 지정 원장 codex/ui-improvements. 기존 #36/#37 운영 미완료와 별개의 D03 업무. 진행률 13/75 (17.3%) 시작.
+- 소스 실제 확인: main@40d6156a1144350c3a23a02cb0db26e56bf3adde에서 lib/market-breadth/us-provisional-r1.mjs blob 5c46f67cdd941b297f6b68b425de26bfcb13808d, app/api/market-breadth/route.ts blob d070d03824090b9b54779f05f24c46d2ff6f5186, app/market-breadth-strip.tsx blob ede282d5e875ad8b4f7ba4c65d92b8801aaf0fcc, tests/us-breadth-ui-provisional-r22.test.mjs blob 1b39a214720de064fcc557f2911a619e41cf0f7a 확인.
+- 현재 구조: 승인 Alpaca IEX 15분 잠정 관측은 이전 장 기준 종목 상승/보합/하락 3건수와 관측 불가 누락 건수를 분리. 공개 파생 비율 risingPct/unchangedPct/fallingPct/unobservedPct는 동일 eligible expectedCount 분모 사용. 방문 API GET phase=provisional은 D1 public:market-breadth-provisional-r1:usa의 저장된 body/stored_at만 SELECT, 스키마·NY 세션/30분 신선도·게시시각 검증 후 숫자/기준일/관측시간 반환. 사용자 카드 컴포넌트는 해당 GET을 정기 읽고 3비율만 표시, 미관측%는 별도 안내, 실수치 없으면 미제공. 0 정상, null/누락 구분, 새 0–100 점수 계산 없음.
+- MarketParquet: phase=confirmed-r2는 공급자 제거 코드로 503; 카드에서 과거 확정 이력 fallback 없음. 기존 기본 confirmed R1은 별도 승인 경로. 퇴역 공급자 사용/복구/유료 재구매 금지.
+- 검증: 관련 source·기존 테스트 계약 조회 PASS. 이번 회차 새 Node 실행/CI/실D1/실PC/Cloudflare exact Deployment/브라우저 실증 0. 기존 main CI가 PASS라도 실제 신규 비율 게시 성공이 아님. 실제 데이터 없는 시간대에 잠정 점수를 생성하지 않음.
+- LAST PASS: 저장된 IEX 잠정 key→공개 read-only GET→미국 등락 카드 3비율 계보 확인. FIRST UNVERIFIED: 동일 관측의 D1 body/stored_at과 GET header+payload, 카드 UI 실제 값 일치 여부. 마찬가지로 승인된 PC 게시 관측 미확정. #38 PARTIAL.
+- 다음 필수 실행 1개: W06 #38의 승인된 기존 잠정 게시 영수증/공개 GET에서 기준일·slotEndUtc·상승/보합/하락/미관측 비율을 선택적 비교. 실측 접근 제한 시 해당 운영 조건만 STATE_UNKNOWN; 원담당 수정·DB/주기/예약 변경 0.
+- 종료 진행: 13/75 (17.3%), 잔여 62개. DONE 추가 0; 소스 경로 확인을 운영 완료로 확대 금지.
