@@ -7,6 +7,12 @@ const HOST=/^(?=.{4,180}$)[a-z0-9-]+(?:\.[a-z0-9-]+)+$/;
 const PUBLIC_HOST=host=>HOST.test(host)&&!/(?:^|\.)(?:localhost|local|internal|test|invalid)$/.test(host)&&!/^\d+(?:\.\d+){3}$/.test(host);
 const time=(x,now)=>Number.isSafeInteger(x)&&x>0&&x<=now+60_000?x:null;
 const nonnegative=x=>Number.isSafeInteger(x)&&x>=0;
+const SAFE_STATUS=/^(?:[1-5][0-9]{2}|NETWORK_ERROR|PROVIDER_QUOTA_GUARD)$/;
+const validStatusCounts=(value,requests)=>value===undefined||value===null||
+ (typeof value==='object'&&!Array.isArray(value)&&
+  Object.keys(value).length<=16&&
+  Object.entries(value).every(([k,n])=>SAFE_STATUS.test(k)&&nonnegative(n))&&
+  Object.values(value).reduce((n,x)=>n+x,0)<=requests);
 const UNKNOWN={status:'unknown',scope:'external-provider-hosts',coverage:'UNVERIFIED',normal:null,failed:null,unknown:null,total:null,items:[]};
 
 export function summarizeApiConnectionHealth(snapshot,now=Date.now()){
@@ -24,6 +30,7 @@ export function summarizeApiConnectionHealth(snapshot,now=Date.now()){
     (raw.endpointFingerprints!==undefined&&(!nonnegative(raw.endpointFingerprints)||raw.endpointFingerprints>128))||
     (raw.endpointEvidenceDays!==undefined&&(!nonnegative(raw.endpointEvidenceDays)||raw.endpointEvidenceDays>15))||
     !['success','failure','mixed','unknown'].includes(raw.lastOutcome)||
+     !validStatusCounts(raw.lastEventStatuses,raw.requests)||
     (raw.lastAttemptAt!==null&&!time(raw.lastAttemptAt,now))||
     (raw.lastSuccessAt!==null&&!time(raw.lastSuccessAt,now))||
     (raw.expectedIntervalMs!==null&&(!nonnegative(raw.expectedIntervalMs)||raw.expectedIntervalMs<5*60_000||raw.expectedIntervalMs>48*3600_000))){
@@ -39,10 +46,16 @@ export function summarizeApiConnectionHealth(snapshot,now=Date.now()){
   const lastFailure=raw.lastOutcome==='failure'||raw.lastOutcome==='mixed';
   const tooOldWithoutCadence=repeated&&!cadenceSupported&&age>36*3600_000;
   const state=!repeated?'unknown':overdue?'stale':tooOldWithoutCadence?'unknown':lastFailure?'failed':raw.lastOutcome==='success'?'normal':'unknown';
+  const reasonCode=!repeated?'INSUFFICIENT_REPEATED_REQUESTS':
+   overdue?'CADENCE_OVERDUE':
+   tooOldWithoutCadence?'NONPERIODIC_CADENCE_UNVERIFIED':
+   lastFailure?'LAST_EVENT_HAS_FAILURE':
+   state==='unknown'?'OUTCOME_UNVERIFIED':null;
   items.push({host:raw.host,requests:raw.requests,observedDays:raw.observedDays,
     repeated,lastAttemptAt:raw.lastAttemptAt,lastSuccessAt:raw.lastSuccessAt,
     lastOutcome:raw.lastOutcome,expectedIntervalMs:raw.expectedIntervalMs,
-    endpointFingerprints:raw.endpointFingerprints??null,endpointEvidenceDays:raw.endpointEvidenceDays??null,state});
+    endpointFingerprints:raw.endpointFingerprints??null,endpointEvidenceDays:raw.endpointEvidenceDays??null,
+     lastEventStatuses:raw.lastEventStatuses??null,cadenceSupported,reasonCode,state});
  }
  const e=snapshot.endpointObservation;
  const endpointEvidence=e&&e.type==='HTTP_METHOD_PATH_SHA256_PREFIX'&&e.coverage==='PARTIAL'&&
