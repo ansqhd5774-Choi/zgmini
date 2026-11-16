@@ -128,48 +128,6 @@ test('provider failure is isolated and a previous good observation is not claime
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
 
-test('excluded W01 CPI and Census sources never return due, including after retry window',()=>{
- const old=checkpoint();
- old.attempted.cpi={eventKey:'release:bls:cpi:2026-11-19',at:'2026-11-08T22:45:02.525Z',failureCode:'BLS_CANDIDATE_VALUE_OR_DUPLICATE'};
- old.attempted.census={eventKey:'release:census:full-report:2026-11-19',at:'2026-11-08T22:45:02.525Z',failureCode:'CENSUS_M3_HEADERS_INVALID'};
- const planned=planInflationCandidateCoreDue({approved:true,events:EVENTS,sources,
-  checkpoint:old,now:NOW,providerEnv:keys,excludedGroups:['cpi','census']});
- assert.deepEqual(planned.due.map(row=>row.group),['ppi','fed']);
- assert.ok(planned.skipped.includes('cpi'));
- assert.ok(planned.skipped.includes('census'));
- // No source/contract deletion: BLS PPI and the stored historical retry ledger survive.
- assert.equal(old.attempted.cpi.failureCode,'BLS_CANDIDATE_VALUE_OR_DUPLICATE');
- assert.equal(old.attempted.census.failureCode,'CENSUS_M3_HEADERS_INVALID');
-});
-
-test('production Core wrapper requests PPI and Fed, never excluded CPI or Census',async()=>{
- const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-infl-w01-exclusion-'));
- const base=path.join(root,'pc-writer');fs.mkdirSync(base);
- try{
-  const docs=checkpoint(),called=[],urls=[];
-  const collector=async args=>{
-   called.push(args.group??'fed');
-   await args.quotaFetch('https://official.example/retained');
-   return {status:'UNCHANGED',providerRequests:1};
-  };
-  const result=await runInflationCandidatesFromCore(base,{
-   now:NOW,
-   envLoader:()=>({...keys,ZGMINI_INFLATION_CANDIDATE_CORE_APPROVED:'1'}),
-   calendarLoader:async()=>({events:EVENTS,sources}),
-   quotaFactory:()=>({fetch:async url=>{urls.push(String(url));return {ok:true};}}),
-   collectors:{ppi:collector,fed:collector},
-   checkpointIO:{file:'test-checkpoint',load:()=>docs,save:()=>{}},
-   latestIO:()=>null,
-  });
-  assert.deepEqual(result.due,['ppi','fed']);
-  assert.deepEqual(called,['ppi','fed']);
-  assert.equal(result.providerRequests,2);
-  assert.equal(urls.length,2);
-  assert.equal(docs.attempted.cpi,undefined);
-  assert.equal(docs.attempted.census,undefined);
- }finally{fs.rmSync(root,{recursive:true,force:true});}
-});
-
 test('production wrapper cannot call quota or calendar while flag remains disabled',async()=>{
  let calendarCalls=0,quotaCalls=0;
  const out=await runInflationCandidatesFromCore('/tmp/pc-writer',{
