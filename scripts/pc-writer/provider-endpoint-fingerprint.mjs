@@ -22,7 +22,7 @@ export function providerEndpointFingerprint(input,init){
 }
 
 export const PROVIDER_ENDPOINT_LOG='provider-endpoint-events.jsonl';
-export const INDEPENDENT_COLLECTORS=new Set(['ALPACA_INCREMENTAL','SECTOR_PROVISIONAL']);
+export const INDEPENDENT_COLLECTORS=new Set(['ALPACA_INCREMENTAL','SECTOR_PROVISIONAL','ALPACA_QUOTA']);
 const HOST_SAFE=/^(?=.{4,180}$)[a-z0-9-]+(?:\.[a-z0-9-]+)+$/;
 const CODE=/^[1-5][0-9]{2}$/;
 const numeric=n=>Number.isSafeInteger(n)&&n>=0;
@@ -86,6 +86,9 @@ export function observeIndependentProviderFetch(base,collector,originalFetch,{
   throw Error('UNAPPROVED_INDEPENDENT_COLLECTOR');
  return async(input,init)=>{
   const identity=providerEndpointFingerprint(input,init);
+  // This transport-wide adapter must never attribute other providers to Alpaca.
+  if(collector==='ALPACA_QUOTA'&&identity?.host!=='data.alpaca.markets'&&
+     identity?.host!=='data.sandbox.alpaca.markets')return originalFetch(input,init);
   const record=status=>{
    if(!identity)return;
    try{
