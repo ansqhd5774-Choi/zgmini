@@ -289,7 +289,7 @@ test("DOL national HTTP200 non-XML never overwrites valid raw, state 51 is prese
  assert.deepEqual(result.missingSeries,[
   "INITIAL_CLAIMS","INITIAL_CLAIMS_4W","CONTINUED_CLAIMS","INSURED_UNEMPLOYMENT_RATE",
  ]);
- assert.equal(result.partialFailureCode,"DOL_NATIONAL_NO_VALID_ROWS");
+ assert.equal(result.partialFailureCode,"DOL_NATIONAL_RESPONSE_FORMAT_UNSUPPORTED");
  assert.equal(result.rows.length,51,"valid ETA539 rows must survive national failure");
  assert.equal(result.snapshots.length,1,"HTTP200 HTML must not replace good national raw");
  assert.match(result.snapshots[0].requestKey,/^DOL_ETA539:/);
@@ -313,8 +313,8 @@ test("DOL national HTTP200 non-XML never overwrites valid raw, state 51 is prese
   providerFactory:()=>({async fetchGroup(){return result}}),
  });
  assert.equal(output.status,"PARTIAL");
- assert.equal(output.groupResults[0].failureCode,"DOL_NATIONAL_NO_VALID_ROWS");
- assert.equal(runs[0].failureCode,"DOL_NATIONAL_NO_VALID_ROWS");
+ assert.equal(output.groupResults[0].failureCode,"DOL_NATIONAL_RESPONSE_FORMAT_UNSUPPORTED");
+ assert.equal(runs[0].failureCode,"DOL_NATIONAL_RESPONSE_FORMAT_UNSUPPORTED");
  assert.equal(savedSnapshots.length,1);
  assert.equal(savedRows.length,51);
  assert.equal(savedRows.some(row=>row.logicalSeriesId==="INITIAL_CLAIMS"),false);
