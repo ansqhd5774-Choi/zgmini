@@ -18,17 +18,23 @@ try{
  const rows=page.locator('.zg-schedule-item').filter({has:page.locator('.zg-schedule-kind.is-earnings')});
  const rowCount=await rows.count();
  assert.ok(rowCount>=12&&rowCount<=20,'Expected public earnings cohort (max 20 total banner items)');
- // Trigger lazy-loaded images across the scrollable schedule list.
- for(let i=0;i<rowCount;i++){
-  await rows.nth(i).scrollIntoViewIfNeeded();
+ // Directly scroll the bounded dropdown to trigger native lazy images.
+ // Some scroll containers are CSS-clipped; Playwright's visibility-only
+ // scrollIntoViewIfNeeded() can time out despite valid DOM rows.
+ const list=page.locator('.zg-schedule-list');
+ const max=await list.evaluate(el=>Math.max(0,el.scrollHeight-el.clientHeight));
+ for(let offset=0;offset<=max+120;offset+=120){
+  await list.evaluate((el,offset)=>{el.scrollTop=offset},offset);
+  await page.waitForTimeout(100);
  }
  await page.waitForFunction(()=>{
   const rows=[...document.querySelectorAll('.zg-schedule-item')].filter(el=>el.querySelector('.zg-schedule-kind.is-earnings'));
-  return rows.length>=12 && rows.every(el=>{
-   const image=el.querySelector('img.zg-schedule-company-logo');
-   return !!image&&image.complete;
+  return rows.length>=12&&rows.every(el=>{
+   const img=el.querySelector('img.zg-schedule-company-logo');
+   const fallback=el.querySelector('.zg-schedule-ticker-fallback');
+   return !!fallback||(!!img&&img.complete);
   });
- },null,{timeout:30000}).catch(()=>{});
+ },null,{timeout:20000}).catch(()=>{});
  const details=await rows.evaluateAll(els=>els.map(el=>{
   const img=el.querySelector('img.zg-schedule-company-logo');
   const fallback=el.querySelector('.zg-schedule-ticker-fallback');
