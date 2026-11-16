@@ -2,7 +2,10 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import { planEmploymentR6Collection, runEmploymentR6CollectionStep } from "../lib/market-score/employment-r6-collector.mjs";
-import { createEmploymentR6Provider } from "../lib/market-score/employment-r6-provider.mjs";
+import { createEmploymentR6Provider, expectedBlsCallsForGroup, parseBlsR6Rows, planBlsYearWindows, BLS_R6_REGISTERED_API_URL } from "../lib/market-score/employment-r6-provider.mjs";
+import { EMPLOYMENT_R6_GROUPS } from "../lib/market-score/employment-r6-contract.mjs";
+import { EMPLOYMENT_R4_CORE_STATES } from "../lib/market-score/employment-r4-shadow-contract.mjs";
+import { runEmploymentR6AutoCollection } from "../scripts/pc-writer/employment-r6-auto-collection.mjs";
 import { createEmploymentR6Store } from "../lib/market-score/employment-r6-store.mjs";
 
 const NATIONAL_CLAIMS_XML = "<week><weekEnded>10/31/2026</weekEnded>"
@@ -34,7 +37,7 @@ test("BACKFILL run history lookup uses persisted mode, not the latest RELEASE ru
   assert.deepEqual(select.values, ["EMPLOYMENT_R6_BLS_JOLTS", "BACKFILL"]);
 });
 
-test("BACKFILL planner skips completed groups despite later RELEASE runs and bounds retries", async () => {
+test("BACKFILL planner refreshes successful groups after a provider-window change and bounds retries", async () => {
   const previous = {
     BLS_EMPLOYMENT_SITUATION: {
       status: "SUCCESS", completed_at: "2026-11-08T01:00:00.000Z",
@@ -60,7 +63,7 @@ test("BACKFILL planner skips completed groups despite later RELEASE runs and bou
     storeFactory: () => store,
   });
   assert.deepEqual(plan.map(x => [x.groupName, x.due, x.status]), [
-    ["BLS_EMPLOYMENT_SITUATION", false, "BACKFILL_ALREADY_COMPLETE"],
+    ["BLS_EMPLOYMENT_SITUATION", true, "BACKFILL_WINDOW_REFRESH_DUE"],
     ["BLS_JOLTS", false, "BACKFILL_ALREADY_ATTEMPTED_TODAY"],
     ["BLS_ECI", true, "BACKFILL_DUE"],
   ]);
@@ -73,6 +76,176 @@ test("BACKFILL planner skips completed groups despite later RELEASE runs and bou
   });
   assert.equal(retryPlan[0].status, "BACKFILL_RETRY_DUE");
   assert.equal(retryPlan[0].due, true);
+});
+
+test("BACKFILL window refresh preserves today's attempt guard and other completed groups", async () => {
+  const previous = {
+    BLS_EMPLOYMENT_SITUATION: {
+      status: "SUCCESS", completed_at: "2026-11-09T01:00:00.000Z",
+      detail_json: JSON.stringify({ mode: "BACKFILL", backfillYear: 2026 }),
+    },
+    DOL_UI_WEEKLY_CLAIMS: {
+      status: "SUCCESS", completed_at: "2026-11-08T01:00:00.000Z",
+      detail_json: JSON.stringify({ mode: "BACKFILL", backfillYear: 2026 }),
+    },
+    BLS_JOLTS: {
+      status: "SUCCESS", completed_at: "2026-11-08T01:00:00.000Z",
+      detail_json: JSON.stringify({ mode: "BACKFILL", backfillYear: 2026 }),
+    },
+  };
+  const store = {
+    async initialize() {},
+    async getLatestRunInMode(provider) {
+      return previous[provider.replace("EMPLOYMENT_R6_", "")] ?? null;
+    },
+  };
+  const planAt = date => planEmploymentR6Collection({
+    db: { prepare() { return {}; } }, now: () => new Date(date), mode: "BACKFILL",
+    groups: ["BLS_EMPLOYMENT_SITUATION", "DOL_UI_WEEKLY_CLAIMS", "BLS_JOLTS"],
+    storeFactory: () => store,
+  });
+  const today = await planAt("2026-11-09T12:00:00.000Z");
+  assert.deepEqual(today.map(x => [x.groupName, x.due, x.status]), [
+    ["BLS_EMPLOYMENT_SITUATION", false, "BACKFILL_ALREADY_ATTEMPTED_TODAY"],
+    ["DOL_UI_WEEKLY_CLAIMS", true, "BACKFILL_WINDOW_REFRESH_DUE"],
+    ["BLS_JOLTS", false, "BACKFILL_ALREADY_COMPLETE"],
+  ]);
+  const tomorrow = await planAt("2026-11-10T12:00:00.000Z");
+  assert.equal(tomorrow[0].due, true);
+  assert.equal(tomorrow[0].status, "BACKFILL_WINDOW_REFRESH_DUE");
+
+  previous.BLS_EMPLOYMENT_SITUATION.detail_json = JSON.stringify({
+    mode: "BACKFILL", backfillYear: 2026, backfillWindowVersion: "BLS_2015_LEAD_IN_V1",
+  });
+  previous.DOL_UI_WEEKLY_CLAIMS.detail_json = JSON.stringify({
+    mode: "BACKFILL", backfillYear: 2026, backfillWindowVersion: "DOL_ETA539_600_WEEKS_V1",
+  });
+  const complete = await planAt("2026-11-10T12:00:00.000Z");
+  assert.deepEqual(complete.map(x => [x.groupName, x.due, x.status]), [
+    ["BLS_EMPLOYMENT_SITUATION", false, "BACKFILL_ALREADY_COMPLETE"],
+    ["DOL_UI_WEEKLY_CLAIMS", false, "BACKFILL_ALREADY_COMPLETE"],
+    ["BLS_JOLTS", false, "BACKFILL_ALREADY_COMPLETE"],
+  ]);
+});
+
+test("a separately approved manual BACKFILL request may retry a same-day partial without redoing complete groups", async () => {
+  const store = {
+    async initialize() {},
+    async getLatestRunInMode(provider) {
+      if (provider.endsWith("BLS_JOLTS")) return {
+        status: "PARTIAL", completed_at: "2026-11-10T00:30:00.000Z",
+        detail_json: '{"mode":"BACKFILL","backfillYear":2026}',
+      };
+      return {
+        status: "SUCCESS", completed_at: "2026-11-10T00:30:00.000Z",
+        detail_json: JSON.stringify({
+          mode: "BACKFILL", backfillYear: 2026, backfillWindowVersion: "BLS_2015_LEAD_IN_V1",
+        }),
+      };
+    },
+  };
+  const args = {
+    db: {prepare() {return {};}},
+    now: () => new Date("2026-11-10T01:00:00.000Z"),
+    mode: "BACKFILL",
+    groups: ["BLS_EMPLOYMENT_SITUATION", "BLS_JOLTS"],
+    storeFactory: () => store,
+  };
+  const automatic = await planEmploymentR6Collection(args);
+  assert.deepEqual(automatic.map(x => [x.due,x.status]), [
+    [false,"BACKFILL_ALREADY_COMPLETE"],[false,"BACKFILL_ALREADY_ATTEMPTED_TODAY"],
+  ]);
+  const manual = await planEmploymentR6Collection({
+    ...args,approvedManualRequestId:"12f859ac-a464-4ddb-b6c4-96c5bdd44d22",
+  });
+  assert.deepEqual(manual.map(x => [x.due,x.status]), [
+    [false,"BACKFILL_ALREADY_COMPLETE"],[true,"BACKFILL_RETRY_DUE"],
+  ]);
+  await assert.rejects(() => planEmploymentR6Collection({
+    ...args, approvedManualRequestId:"unverified",
+  }), /R6_MANUAL_REQUEST_ID_INVALID/);
+});
+
+test("approved manual ONE_YEAR permits same-day retry; ordinary scheduled planner retains day guard", async () => {
+  const store = {
+    async initialize() {},
+    async getLatestRun() {
+      return {status:"PARTIAL",completed_at:"2026-11-10T00:30:00.000Z",
+        detail_json:'{"mode":"ONE_YEAR"}'};
+    },
+  };
+  const args = {
+    db:{prepare() {return {};}},
+    now:() => new Date("2026-11-10T01:00:00.000Z"),
+    mode:"ONE_YEAR",groups:["BLS_JOLTS"],storeFactory:() => store,
+  };
+  const ordinary=await planEmploymentR6Collection(args);
+  assert.deepEqual(ordinary.map(x=>[x.due,x.status]), [[false,"ONE_YEAR_ALREADY_ATTEMPTED"]]);
+  const manual=await planEmploymentR6Collection({
+    ...args,approvedManualRequestId:"b938f56d-96f0-4840-8888-94e3ff108d29",
+  });
+  assert.deepEqual(manual.map(x=>[x.due,x.status]), [[true,"ONE_YEAR_DUE"]]);
+  store.getLatestRun=async()=>({status:"SUCCESS",completed_at:"2026-11-10T00:30:00.000Z",
+    detail_json:'{"mode":"ONE_YEAR"}'});
+  const completed=await planEmploymentR6Collection({
+    ...args,approvedManualRequestId:"b938f56d-96f0-4840-8888-94e3ff108d29",
+  });
+  assert.deepEqual(completed.map(x=>[x.due,x.status]),[[false,"ONE_YEAR_ALREADY_ATTEMPTED"]]);
+});
+
+test("BACKFILL records the expanded window only when raw snapshot metadata verifies it", async () => {
+  const savedRuns = [];
+  const store = {
+    async initialize() {},
+    async getLatestRunInMode() { return null; },
+    async acquire() { return { acquired: true }; },
+    async release() { return true; },
+    async getProviderRequestsSince() { return 0; },
+    async writeRawSnapshot() { return { snapshotId: 1, bodySha256: "fixture", chunkCount: 1, noop: false }; },
+    async upsertObservationRows({ rows }) {
+      return { inserted: rows.length, revised: 0, noop: 0, rejected: 0 };
+    },
+    async recordRun(run) { savedRuns.push(run); return savedRuns.length; },
+  };
+  let expanded = true;
+  const provider = {
+    async fetchGroup(groupName) {
+      if (groupName === "BLS_EMPLOYMENT_SITUATION") {
+        const windows = [
+          { startyear: expanded ? "2015" : "2016", endyear: "2025" },
+          { startyear: "2026", endyear: "2026" },
+        ];
+        return {
+          rows: [{ logicalSeriesId: "AHE", observationDate: "2026-10-31" }],
+          snapshots: windows.map(window => ({
+            releaseGroup: groupName, provider: "BLS", detail: { window },
+          })),
+          requestCount: 2,
+        };
+      }
+      return {
+        rows: [{ logicalSeriesId: "INITIAL_CLAIMS", observationDate: "2026-10-31" }],
+        snapshots: [{
+          requestKey: expanded ? "DOL_ETA539:600w" : "DOL_ETA539:530w",
+          detail: { historyWeeks: expanded ? 600 : 530 },
+        }],
+        requestCount: 2,
+      };
+    },
+  };
+  const run = () => runEmploymentR6CollectionStep({
+    env: { BLS_API_KEY: "test-only-fake" }, db: { prepare() { return {}; } },
+    mode: "BACKFILL", groups: ["BLS_EMPLOYMENT_SITUATION", "DOL_UI_WEEKLY_CLAIMS"],
+    now: () => new Date("2026-11-10T12:00:00.000Z"),
+    storeFactory: () => store, providerFactory: () => provider,
+  });
+  assert.equal((await run()).status, "SUCCESS");
+  assert.equal(savedRuns[0].detail.backfillWindowVersion, "BLS_2015_LEAD_IN_V1");
+  assert.equal(savedRuns[1].detail.backfillWindowVersion, "DOL_ETA539_600_WEEKS_V1");
+  expanded = false;
+  assert.equal((await run()).status, "SUCCESS");
+  assert.equal(Object.hasOwn(savedRuns[2].detail, "backfillWindowVersion"), false);
+  assert.equal(Object.hasOwn(savedRuns[3].detail, "backfillWindowVersion"), false);
 });
 
 test("BACKFILL does not call BLS provider when remaining R6 quota is insufficient", async () => {
@@ -177,6 +350,30 @@ test("DOL ETA-539 failure preserves valid national claims as a partial group", a
   assert.equal(savedRows.length, 4);
 });
 
+test("DOL BACKFILL retains a 600-week window for strict ten-year state breadth", async () => {
+  const eta539Csv = [
+    "ST,RPTDATE,C2,C3",
+    ...EMPLOYMENT_R4_CORE_STATES.flatMap(st => [
+      `${st},11/08/2026,10/31/2026,100`,
+      `${st},11/01/2026,10/24/2026,101`,
+    ]),
+  ].join("\n");
+  let requestCount = 0;
+  const provider = createEmploymentR6Provider({
+    fetchImpl: async () => new Response(++requestCount === 1 ? NATIONAL_CLAIMS_XML : eta539Csv, { status: 200 }),
+    now: () => new Date("2026-11-09T00:00:00.000Z"),
+  });
+  const fetched = await provider.fetchDolClaims({ mode: "BACKFILL", currentYear: 2026 });
+  assert.equal(requestCount, 2);
+  assert.equal(fetched.requestCount, 2);
+  const stateSnapshot = fetched.snapshots.find(x => x.requestKey === "DOL_ETA539:600w");
+  assert.ok(stateSnapshot);
+  assert.equal(stateSnapshot.detail.historyWeeks, 600);
+  assert.deepEqual(stateSnapshot.detail.parserMeta.selectedWeeks, ["2026-10-24", "2026-10-31"]);
+  assert.equal(fetched.rows.filter(row => row.logicalSeriesId === "STATE_INITIAL_CLAIMS").length, 102);
+  assert.deepEqual(fetched.missingSeries, []);
+});
+
 test("DOL national fetch failure remains FAIL without a state-only success", async () => {
   let requested = 0;
   const provider = createEmploymentR6Provider({
@@ -254,4 +451,220 @@ test("DOL release never records stale initial-claims observations as SUCCESS", a
   assert.equal(current.result.groupResults[0].status, "SUCCESS");
   assert.equal(current.run.detail.latestInitialClaimsObservationDate, "2026-10-31");
   assert.equal(current.run.detail.releaseAt, "2026-11-05T13:30:00.000Z");
+});
+
+
+test("registered R6 BLS v2 budgets are 7 release and 14 two-window backfill calls for 131 series", () => {
+  const groups = Object.keys(EMPLOYMENT_R6_GROUPS).filter(name => name.startsWith("BLS_"));
+  assert.equal(groups.length, 5);
+  const release = groups.reduce((sum, group) => sum + expectedBlsCallsForGroup(group, { registered: true }), 0);
+  const backfill = groups.reduce((sum, group) => sum + expectedBlsCallsForGroup(group, { mode: "BACKFILL", registered: true }), 0);
+  assert.equal(release, 7);
+  assert.equal(backfill, 14);
+  assert.equal(groups.reduce((sum, group) => sum + (EMPLOYMENT_R6_GROUPS[group].seriesIds?.length ?? 114), 0), 131);
+  assert.deepEqual(planBlsYearWindows({ mode: "BACKFILL", currentYear: 2026 }),
+    [{ startyear: "2015", endyear: "2025" }, { startyear: "2026", endyear: "2026" }]);
+  assert.equal(groups.reduce((sum, group) => sum + expectedBlsCallsForGroup(group, { mode: "BACKFILL" }), 0), 18);
+});
+
+test("registered R6 BLS parser accepts official Results array and legacy object without PIT regression", () => {
+  const series = [{ seriesID: "LNS14000000", data: [{ year: "2026", period: "M09", value: "4.2", footnotes: [] }] }];
+  const options = { releaseGroup: "BLS_EMPLOYMENT_SITUATION", retrievedAt: "2026-11-09T12:00:00.000Z" };
+  const object = parseBlsR6Rows({ Results: { series } }, options);
+  const array = parseBlsR6Rows({ Results: [{ series }] }, options);
+  assert.deepEqual(array.rows, object.rows);
+  assert.deepEqual(array.missingSeries, object.missingSeries);
+  assert.equal(array.rows[0].observationDate, "2026-09-30");
+  assert.equal(array.rows[0].availableAt, "2026-11-09T12:00:00.000Z");
+});
+
+test("registered R6 BED uses 50-series BLS v2 batches across existing two backfill windows", async () => {
+  const calls = [];
+  const key = "fixture-only-not-a-real-credential";
+  const provider = createEmploymentR6Provider({
+    env: { BLS_REGISTRATION_KEY: key },
+    now: () => new Date("2026-11-09T12:00:00.000Z"),
+    fetchImpl: async (url, options) => {
+      assert.equal(url, BLS_R6_REGISTERED_API_URL);
+      assert.equal(options.method, "POST");
+      const body = JSON.parse(options.body);
+      assert.equal(body.registrationkey, key);
+      assert.ok(body.seriesid.length > 0 && body.seriesid.length <= 50);
+      calls.push(body);
+      const series = body.seriesid.map(seriesID => ({
+        seriesID, data: [{ year: "2025", period: "Q01", value: "1", footnotes: [] }],
+      }));
+      return Response.json({ status: "REQUEST_SUCCEEDED", Results: calls.length % 2 ? [{ series }] : { series } });
+    },
+  });
+  const result = await provider.fetchBed({ mode: "BACKFILL", currentYear: 2026 });
+  assert.equal(result.requestCount, 6);
+  assert.equal(result.snapshots.length, 6);
+  assert.equal(result.rows.length, 228);
+  assert.equal(result.rows[0].provenance.sourceUrl, BLS_R6_REGISTERED_API_URL);
+  assert.deepEqual([...new Set(calls.map(call => call.startyear))], ["2015", "2026"]);
+  assert.equal(calls.filter(call => call.startyear === "2015").flatMap(call => call.seriesid).length, 114);
+  assert.equal(calls.filter(call => call.startyear === "2026").flatMap(call => call.seriesid).length, 114);
+  assert.ok(!JSON.stringify(result.snapshots.map(x => x.detail)).includes(key));
+});
+
+test("R6 provider with no registered key fails closed before any BLS network request", async () => {
+  let requests = 0;
+  const provider = createEmploymentR6Provider({
+    fetchImpl: async () => { requests++; throw Error("SHOULD_NOT_REACH_NETWORK"); },
+    now: () => new Date("2026-11-09T12:00:00.000Z"),
+  });
+  await assert.rejects(() => provider.fetchBlsGroup("BLS_JOLTS"), { code: "BLS_REGISTRATION_KEY_MISSING" });
+  await assert.rejects(() => provider.fetchBed(), { code: "BLS_REGISTRATION_KEY_MISSING" });
+  assert.equal(requests, 0);
+});
+
+test("R6 registered local 500/day gate retains quota accounting and blocks overflow", async () => {
+  let providerCalls = 0;
+  const store = {
+    async initialize() {},
+    async getLatestRunInMode() { return null; },
+    async getProviderRequestsSince() { return 499; },
+  };
+  const run = await runEmploymentR6CollectionStep({
+    env: { BLS_API_KEY: "fixture-registered-key" },
+    db: { prepare() { return {}; } },
+    mode: "BACKFILL", groups: ["BLS_JOLTS"],
+    now: () => new Date("2026-11-09T12:00:00.000Z"),
+    storeFactory: () => store,
+    providerFactory: () => ({ async fetchGroup() { providerCalls++; throw Error("MUST_NOT_FETCH"); } }),
+  });
+  assert.equal(run.providerRequests, 0);
+  assert.equal(providerCalls, 0);
+  assert.equal(run.groupResults[0].status, "SKIPPED_BLS_BUDGET");
+  assert.equal(run.groupResults[0].dailyLimit, 500);
+  assert.equal(run.groupResults[0].expectedRequests, 2);
+});
+
+test("PC R6 auto collection forwards only BLS keys and keeps diagnostics secret-free", async () => {
+  let received;
+  const result = await runEmploymentR6AutoCollection({
+    enabled: true, approvedSource: "source-sha", runningSource: "source-sha",
+    db: { prepare() {} }, fetchImpl: async () => {},
+    env: { BLS_API_KEY: "fixture-private-key", FRED_API_KEY: "other-private-key" },
+    collect: async args => {
+      received = args;
+      return { status: "NOOP", providerRequests: 0, groupResults: [], plannedGroups: [] };
+    },
+  });
+  assert.equal(received.env.BLS_API_KEY, "fixture-private-key");
+  assert.ok(!Object.hasOwn(received.env, "FRED_API_KEY"));
+  assert.equal(received.env.DB, received.db);
+  assert.ok(!JSON.stringify(result).includes("fixture-private-key"));
+  assert.ok(!JSON.stringify(result).includes("other-private-key"));
+});
+
+test("R6 rejects malformed nested BLS Results but accepts genuinely empty series arrays", () => {
+  const options = { releaseGroup: "BLS_EMPLOYMENT_SITUATION", retrievedAt: "2026-11-09T12:00:00.000Z" };
+  const malformed = [
+    { status: "REQUEST_SUCCEEDED", Results: null },
+    { status: "REQUEST_SUCCEEDED", Results: [{}] },
+    { status: "REQUEST_SUCCEEDED", Results: [{ series: "bad" }] },
+    { status: "REQUEST_SUCCEEDED", Results: { series: null } },
+    { status: "REQUEST_SUCCEEDED", Results: [] },
+    { status: "REQUEST_SUCCEEDED", Results: [{ series: [{ seriesID: "LNS14000000", data: null }] }] },
+  ];
+  for (const payload of malformed) {
+    assert.throws(() => parseBlsR6Rows(payload, options), { code: "BLS_RESULTS_INVALID" });
+  }
+  for (const Results of [{ series: [] }, [{ series: [] }]]) {
+    const parsed = parseBlsR6Rows({ status: "REQUEST_SUCCEEDED", Results }, options);
+    assert.equal(parsed.rows.length, 0);
+    assert.equal(parsed.missingSeries.length, 9);
+  }
+});
+
+test("R6 malformed BLS BED batch fails before returning any raw snapshot as a valid group", async () => {
+  let calls = 0;
+  const provider = createEmploymentR6Provider({
+    env: { BLS_API_KEY: "fixture-secret" },
+    now: () => new Date("2026-11-09T12:00:00.000Z"),
+    fetchImpl: async () => {
+      calls++;
+      // First valid but empty bucket is not malformed. Second malformed
+      // bucket must reject the whole group, not return a partial success.
+      const Results = calls === 1 ? [{ series: [] }] : [{ series: "bad" }];
+      return Response.json({ status: "REQUEST_SUCCEEDED", Results });
+    },
+  });
+  await assert.rejects(() => provider.fetchBed({ mode: "BACKFILL", currentYear: 2026 }),
+    error => error.code === "BLS_RESULTS_INVALID" && error.requestCount === 2);
+  assert.equal(calls, 2);
+});
+
+test("R6 shared BLS quota refusal preserves only safe group and persisted failure codes", async () => {
+  const verify = async (reason, provider = "BLS") => {
+    const runs = [];
+    const store = {
+      async initialize() {},
+      async getLatestRunInMode() { return null; },
+      async getProviderRequestsSince() { return 0; },
+      async acquire() { return { acquired: true }; },
+      async release() { return true; },
+      async recordRun(run) { runs.push(run); return 1; },
+    };
+    const result = await runEmploymentR6CollectionStep({
+      env: { BLS_API_KEY: "fixture-registered-v2" },
+      db: { prepare() { return {}; } }, mode: "BACKFILL", groups: ["BLS_JOLTS"],
+      now: () => new Date("2026-11-09T12:00:00.000Z"),
+      storeFactory: () => store,
+      providerFactory: () => ({
+        async fetchGroup() {
+          throw Object.assign(Error("PROVIDER_QUOTA_GUARD"), {
+            code: "PROVIDER_QUOTA_GUARD", provider, reason,
+          });
+        },
+      }),
+    });
+    assert.equal(result.providerRequests, 0);
+    assert.equal(result.status, "FAIL");
+    return { result, runs };
+  };
+  const safe = await verify("BLS_UNREG_25_PER_24H_STOP");
+  assert.equal(safe.result.groupResults[0].failureCode, "BLS_UNREG_25_PER_24H_STOP");
+  assert.equal(safe.runs[0].failureCode, "BLS_UNREG_25_PER_24H_STOP");
+  for (const [reason, provider] of [["BLS_UNREG_UNSAFE/secret", "BLS"], ["BLS_UNREG_25_PER_24H_STOP", "OTHER"]]) {
+    const { result, runs } = await verify(reason, provider);
+    assert.equal(result.groupResults[0].failureCode, "PROVIDER_QUOTA_GUARD");
+    assert.equal(runs[0].failureCode, "PROVIDER_QUOTA_GUARD");
+  }
+});
+
+test("registered R6 v2 BLS and BED count pre-network quota refusal as zero requests", async () => {
+  const now = () => new Date("2026-11-09T12:00:00.000Z");
+  const refused = () => Object.assign(Error("PROVIDER_QUOTA_GUARD"), {
+    code: "PROVIDER_QUOTA_GUARD", provider: "BLS", reason: "BLS_UNREG_25_PER_24H_STOP",
+  });
+  const blocked = createEmploymentR6Provider({
+    env: { BLS_API_KEY: "fixture-registered-v2" }, now,
+    fetchImpl: async () => { throw refused(); },
+  });
+  await assert.rejects(() => blocked.fetchBlsGroup("BLS_JOLTS", { mode: "BACKFILL", currentYear: 2026 }),
+    error => error.code === "PROVIDER_QUOTA_GUARD" && error.requestCount === 0);
+  await assert.rejects(() => blocked.fetchBed({ mode: "BACKFILL", currentYear: 2026 }),
+    error => error.code === "PROVIDER_QUOTA_GUARD" && error.requestCount === 0);
+  let calls = 0;
+  const partlySent = createEmploymentR6Provider({
+    env: { BLS_API_KEY: "fixture-registered-v2" }, now,
+    fetchImpl: async () => {
+      calls++;
+      if (calls === 1) return Response.json({ status: "REQUEST_SUCCEEDED", Results: { series: [] } });
+      throw refused();
+    },
+  });
+  await assert.rejects(() => partlySent.fetchBlsGroup("BLS_JOLTS", { mode: "BACKFILL", currentYear: 2026 }),
+    error => error.requestCount === 1);
+  assert.equal(calls, 2);
+  const uncertain = createEmploymentR6Provider({
+    env: { BLS_API_KEY: "fixture-registered-v2" }, now,
+    fetchImpl: async () => {
+      const error = refused(); error.requestReserved = true; throw error;
+    },
+  });
+  await assert.rejects(() => uncertain.fetchBlsGroup("BLS_JOLTS"), error => error.requestCount === 1);
 });
