@@ -240,3 +240,30 @@ test('all 71 public November R44 three-star issuer logos have a curated official
  assert.equal(new Set(rows.map(r=>r.ticker)).size,all.length);
  assert.equal(marketCalendarBannerRows(when,null,rendered.html).length,20,'banner limit unchanged');
 });
+
+test('manual logos cover remaining live 50B-grade issuers, including dotted Berkshire ticker',()=>{
+ const missing=Object.entries({
+  AMD:'amd.com',AME:'ametek.com',AMGN:'amgen.com',ANET:'arista.com',
+  APO:'apollo.com',BKNG:'bookingholdings.com','BRK.A':'berkshirehathaway.com',
+  ETN:'eaton.com',ETR:'entergy.com',FANG:'diamondbackenergy.com',
+  IDXX:'idexx.com',KDP:'keurigdrpepper.com',LITE:'lumentum.com',
+  MAR:'marriott.com',MPC:'marathonpetroleum.com',O:'realtyincome.com',
+  PFE:'pfizer.com',PLTR:'palantir.com',RACE:'ferrari.com',
+  SHOP:'shopify.com',SU:'suncor.com',TRI:'thomsonreuters.com',
+  VRTX:'vrtx.com',WMB:'williams.com'
+ });
+ const now=Date.parse('2026-11-16T04:00:00Z');
+ const marker='<div class=mc-importance aria-label="시총 기준 중요도 별 3개" title="시총 중요도 · 2026-11-03 기준 · ★★★ 50B USD 이상 · ★★ 20B USD 이상">★★★</div>';
+ const header='<div class="mc-week mc-vendor-week"><strong>2026-11-18 · 기업 실적</strong></div>';
+ const html=header+missing.map(([ticker])=>'<article class="mc-row mc-vendor-row" data-search="'+ticker.toLowerCase()+' sample">'+
+  marker+'<div class=mc-event><span>Sample ('+ticker+')</span></div>'+
+  '<time class=mc-time>장후</time></article>').join('');
+ const rows=earningsBannerRows(html,now);
+ assert.equal(rows.length,24);
+ for(const [ticker,domain] of missing){
+  const found=rows.find(row=>row.ticker===ticker);
+  assert.ok(found,'Missing ticker '+ticker);
+  assert.equal(found.logoDomain,domain);
+ }
+ assert.equal(marketCalendarBannerRows(now,null,html).length,20,'existing top-banner display limit unchanged');
+});
