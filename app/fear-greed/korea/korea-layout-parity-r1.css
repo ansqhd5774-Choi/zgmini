@@ -99,7 +99,6 @@
     outline: 2px solid currentColor;
     outline-offset: 2px;
   }
-  .zg-fg-korea .zg-fg-intro:not(.zg-fg-intro--expanded) { display: none; }
 
   .zg-fg-korea .zg-fg-eyebrow { font-size: 9px; }
   .zg-fg-korea .zg-fg-page-header h1 { margin: 0; font-size: 20px; }
