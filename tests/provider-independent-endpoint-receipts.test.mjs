@@ -8,6 +8,7 @@ import {
  appendProviderEndpointEvent,PROVIDER_ENDPOINT_LOG
 } from '../scripts/pc-writer/provider-endpoint-fingerprint.mjs';
 import {appendCollectionEvent} from '../scripts/pc-writer/collection-events.mjs';
+import {createQuotaFetch} from '../scripts/pc-writer/quota-fetch.mjs';
 import {buildApiConnectionHealthFromLog} from '../scripts/pc-writer/api-connection-health.mjs';
 import {summarizeApiConnectionHealth} from '../worker/api-connection-health.mjs';
 
@@ -136,4 +137,31 @@ test('Quota-guard-only independent attempt does not count as a contacted endpoin
  assert.equal(snap.endpointObservation.independentObservedFingerprintCount,null);
  assert.equal(snap.endpointObservation.independentObservedCollectorCount,0);
  assert.equal(snap.endpointObservation.combinedObservedFingerprintCount,null);
+}));
+
+test('Shared Alpaca quota wrapper records real HTTP response without touching unrelated BLS URLs',()=>withHomeAsync(async base=>{
+ let sent=0;
+ const quota=createQuotaFetch({base,mode:'observe',originalFetch:async()=>{sent++;return new Response('ok',{status:200});}});
+ await quota.fetch('https://data.alpaca.markets/v2/stocks/bars?secret=HIDDEN&symbols=AAPL');
+ await quota.fetch('https://api.bls.gov/publicAPI/v2/timeseries/data/');
+ assert.equal(sent,2);
+ const text=fs.readFileSync(path.join(base,PROVIDER_ENDPOINT_LOG),'utf8');
+ assert.equal(text.trim().split('\n').length,1);
+ const record=JSON.parse(text);
+ assert.equal(record.collector,'ALPACA_QUOTA');
+ assert.equal(record.endpointPaths['data.alpaca.markets'][digest('https://data.alpaca.markets/v2/stocks/bars')].statuses['200'],1);
+ assert.ok(!text.includes('HIDDEN'));
+ assert.ok(!text.includes('/v2/stocks/bars'));
+ assert.ok(!text.includes('api.bls.gov'));
+}));
+test('Shared Alpaca quota admission blocks before any HTTP receipt is written',()=>withHomeAsync(async base=>{
+ fs.writeFileSync(path.join(base,'alpaca-quota-ledger.json'),JSON.stringify({
+  version:1,requestTimes:[],lastRemoteLimit:200,lastRemoteRemaining:0,
+  lastRemoteResetAt:Date.now()+60000,lastStatus:null,quotaState:'COOLDOWN'
+ }));
+ let requests=0;
+ const quota=createQuotaFetch({base,mode:'enforce',originalFetch:async()=>{requests++;return new Response('ok',{status:200});}});
+ await assert.rejects(quota.fetch('https://data.alpaca.markets/v2/stocks/bars'),error=>error?.code==='PROVIDER_QUOTA_GUARD');
+ assert.equal(requests,0);
+ assert.equal(fs.existsSync(path.join(base,PROVIDER_ENDPOINT_LOG)),false);
 }));
