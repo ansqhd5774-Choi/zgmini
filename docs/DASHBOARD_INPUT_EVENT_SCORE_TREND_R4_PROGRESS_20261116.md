@@ -22,7 +22,7 @@
 | 최근 R4 기능 병합 증거 | PR #1177, #1180, #1182, #1184, #1187, #1189, **[#1193](https://github.com/ansqhd5774-Choi/zgmini/pull/1193)** = `main` 병합. 최신 R4 기능 병합 SHA **`e5dc26582c94dacc1cb41ef39675b812014ce42f`**; #1193 변경파일 정확히 3개, GitHub 코드 CI 및 모의 브라우저 UI 각각 SUCCESS |
 | 미병합 원담당 검토 | [Draft #1181](https://github.com/ansqhd5774-Choi/zgmini/pull/1181) Collector의 관측일 역행 차단 (#11), [Draft #1185](https://github.com/ansqhd5774-Choi/zgmini/pull/1185) Writer의 15분 이내 변경점 영구 기록 (#24 설계 이후 구현). 두 건 모두 CI 성공이나 **원담당 적용 승인·main 병합·PC 설치 없음** |
 | PC Runtime·SQLite→D1 실제 게시 | **미확정**. #13 임시 SQLite 통합시험 및 source 연결 PASS만 보유. 기존 운영 PC A급 #1737은 당시 `STATE_UNKNOWN`; 해당 고유 요청 중복 실행 금지 |
-| Cloudflare/공개 화면 | #1193 **PR head** 코드 CI·모의 브라우저 UI SUCCESS, 병합 `main@e5dc26582c94dacc1cb41ef39675b812014ce42f`. Cloudflare Git Integration의 새 빌드·exact Production Deployment ID/SHA 및 실제 사용자 브라우저 확인은 **아직 별도 미확정**. PR CI/merge를 Production 배포 성공으로 해석 금지 |
+| Cloudflare/공개 화면 | #1193 PR head 코드 CI·모의 브라우저 UI SUCCESS, 병합 `main@e5dc26582c94dacc1cb41ef39675b812014ce42f`의 **Workers Builds·verify·notify SUCCESS**. 해당 병합 SHA의 일반 `check`는 이후 공동 `main` 갱신 과정에서 **CANCELLED**(PR head `check` 성공 증거를 대체/번복하지 않음). **exact Production Deployment ID/SHA 및 실제 사용자 브라우저 확인은 미확정**. 빌드/PR 병합을 Production 검증으로 오기하지 않음 |
 | 소유·보호 조건 | UI는 기존 전용 브랜치·선별 PR 원칙. 수집·계산·Writer/15분·100개 보존 정책·DB·TTL·스케줄은 별도 원담당/승인 없이 수정·병합·설치 금지. R13 이란 퇴역 예약 복원 금지 |
 | 전후 검증 원칙 | source/CI/로컬 fixture와 실PC/D1/Production을 분리. 사용자에게는 전체 기술 구현 이후 홈페이지 최종 육안 확인 요청 |
 
