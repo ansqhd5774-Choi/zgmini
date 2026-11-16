@@ -15,6 +15,7 @@ const nationalWeek=(date,{iur=true}={})=>
   '<InitialClaims><SA>189000</SA><SA4WK>195000</SA4WK></InitialClaims>'+
   '<ContinuedClaims><SA>1900000</SA></ContinuedClaims>'+
   (iur?'<IUR><SA>1.2</SA></IUR>':'')+'</week>';
+const officialNationalXml=weeks=>'<r539cyNational>'+weeks+'</r539cyNational>';
 const stateCsv=['st,rptdate,c2,c3',...EMPLOYMENT_R4_CORE_STATES.map(
   st=>st+',11/13/2026,10/24/2026,300',
 )].join('\n');
@@ -43,7 +44,7 @@ test('W04 3/4 national series cannot write unarchived national observations; 600
    fetchedCount++;
    return String(url)===DOL_ETA539_URL
     ?new Response(stateCsv,{status:200})
-    :new Response(nationalWeek('10/31/2026',{iur:false}),{status:200});
+    :new Response(officialNationalXml(nationalWeek('10/31/2026',{iur:false})),{status:200});
   },
  });
  const fetched=await provider.fetchDolClaims({mode:'BACKFILL',currentYear:2026});
@@ -58,7 +59,7 @@ test('W04 3/4 national series cannot write unarchived national observations; 600
  assert.equal(nationalRows.length,0,'unarchived national rows must not enter the ledger');
  assert.equal(fetched.rows.filter(r=>r.geographyType==='STATE').length,51);
  assert.equal(fetched.snapshots.length,1,'partial national raw cannot replace complete archive');
- assert.equal(fetched.nationalResponseEvidence.responseFormat,'WEEK_FRAGMENT');
+ assert.equal(fetched.nationalResponseEvidence.responseFormat,'NATIONAL_XML');
  assert.equal(fetched.nationalResponseEvidence.parsedNationalSeriesCount,3);
  assert.equal(fetched.nationalResponseEvidence.latestNationalObservationDate,'2026-10-31');
  assert.match(fetched.nationalResponseEvidence.bodySha256,/^[a-f0-9]{64}$/);
@@ -97,7 +98,7 @@ test('W04 complete national 4-series retains raw archive and 51-region 600w path
  const provider=createEmploymentR6Provider({now,fetchImpl:async(url)=>{
   count++;return String(url)===DOL_ETA539_URL
    ?new Response(stateCsv,{status:200})
-   :new Response(nationalWeek('10/31/2026'),{status:200});
+   :new Response(officialNationalXml(nationalWeek('10/31/2026')),{status:200});
  }});
  const x=await provider.fetchDolClaims({mode:'BACKFILL',currentYear:2026});
  assert.equal(count,2);
@@ -106,7 +107,7 @@ test('W04 complete national 4-series retains raw archive and 51-region 600w path
  assert.equal(x.partialFailureCode,undefined);
  assert.equal(x.snapshots.length,2);
  assert.equal(x.nationalResponseEvidence.parsedNationalSeriesCount,4);
- assert.equal(x.nationalResponseEvidence.responseFormat,'WEEK_FRAGMENT');
+ assert.equal(x.nationalResponseEvidence.responseFormat,'NATIONAL_XML');
  assert.match(x.snapshots[0].requestKey,/^DOL_NATIONAL:/);
  assert.equal(x.snapshots[1].requestKey,'DOL_ETA539:600w');
  const values=x.rows.filter(r=>r.geographyType==='NATIONAL');
