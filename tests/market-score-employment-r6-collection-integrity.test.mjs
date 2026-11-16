@@ -5,10 +5,10 @@ import { planEmploymentR6Collection, runEmploymentR6CollectionStep } from "../li
 import { createEmploymentR6Provider } from "../lib/market-score/employment-r6-provider.mjs";
 import { createEmploymentR6Store } from "../lib/market-score/employment-r6-store.mjs";
 
-const NATIONAL_CLAIMS_XML = "<week><weekEnded>10/31/2026</weekEnded>"
+const NATIONAL_CLAIMS_XML = "<r539cyNational><week><weekEnded>10/31/2026</weekEnded>"
   + "<InitialClaims><SA>189000</SA><SA4WK>195000</SA4WK></InitialClaims>"
   + "<ContinuedClaims><SA>1900000</SA></ContinuedClaims>"
-  + "<IUR><SA>1.2</SA></IUR></week>";
+  + "<IUR><SA>1.2</SA></IUR></week></r539cyNational>";
 
 test("BACKFILL run history lookup uses persisted mode, not the latest RELEASE run", async () => {
   let select = null;
@@ -177,15 +177,24 @@ test("DOL ETA-539 failure preserves valid national claims as a partial group", a
   assert.equal(savedRows.length, 4);
 });
 
-test("DOL national fetch failure remains FAIL without a state-only success", async () => {
+test("DOL National and ETA539 both failing never create state-only success or raw", async () => {
   let requested = 0;
   const provider = createEmploymentR6Provider({
     fetchImpl: async () => { requested++; return new Response("", { status: 503 }); },
     now: () => new Date("2026-11-09T00:00:00.000Z"),
   });
-  await assert.rejects(() => provider.fetchDolClaims({ mode: "BACKFILL", currentYear: 2026 }),
-    error => error.message.includes("HTTP_503") && error.requestCount === 1);
-  assert.equal(requested, 1);
+  const fetched=await provider.fetchDolClaims({ mode: "BACKFILL", currentYear: 2026 });
+  // Both independent sources are attempted once; neither is treated as success.
+  assert.equal(requested,2);
+  assert.equal(fetched.requestCount,2);
+  assert.equal(fetched.partialFailureCode,"DOL_NATIONAL_HTTP_FAILED");
+  assert.equal(fetched.nationalResponseEvidence.httpStatus,503);
+  assert.deepEqual(fetched.rows,[]);
+  assert.deepEqual(fetched.snapshots,[]);
+  assert.deepEqual(fetched.missingSeries,[
+    "INITIAL_CLAIMS","INITIAL_CLAIMS_4W","CONTINUED_CLAIMS",
+    "INSURED_UNEMPLOYMENT_RATE","STATE_INITIAL_CLAIMS",
+  ]);
 });
 
 test("a syntactically successful provider response with zero rows is PARTIAL, never a completed release", async () => {
@@ -254,4 +263,83 @@ test("DOL release never records stale initial-claims observations as SUCCESS", a
   assert.equal(current.result.groupResults[0].status, "SUCCESS");
   assert.equal(current.run.detail.latestInitialClaimsObservationDate, "2026-10-31");
   assert.equal(current.run.detail.releaseAt, "2026-11-05T13:30:00.000Z");
+});
+
+test("DOL national HTTP200 non-XML never overwrites valid raw, state 51 is preserved",async()=>{
+ const states=[
+  "AL","AK","AZ","AR","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL",
+  "IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE",
+  "NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC",
+  "SD","TN","TX","UT","VT","VA","WA","WV","WI","WY",
+ ];
+ assert.equal(states.length,51);
+ const csv=["st,rptdate,c1,c2,c3,c8",
+  ...states.map(st=>st+",10/31/2026,1,10/24/2026,300,2000")].join("\n");
+ let calls=0;
+ const provider=createEmploymentR6Provider({
+  fetchImpl:async()=>{
+   calls++;
+   return new Response(calls===1?"<html>Unable to connect! Database temporarily unavailable</html>":csv,{status:200});
+  },
+  now:()=>new Date("2026-11-15T00:00:00.000Z"),
+ });
+ const result=await provider.fetchDolClaims({mode:"BACKFILL",currentYear:2026});
+ assert.equal(calls,2,"no unapproved retry");
+ assert.equal(result.requestCount,2);
+ assert.deepEqual(result.missingSeries,[
+  "INITIAL_CLAIMS","INITIAL_CLAIMS_4W","CONTINUED_CLAIMS","INSURED_UNEMPLOYMENT_RATE",
+ ]);
+ assert.equal(result.partialFailureCode,"DOL_NATIONAL_NO_VALID_ROWS");
+ assert.equal(result.rows.length,51,"valid ETA539 rows must survive national failure");
+ assert.equal(result.snapshots.length,1,"HTTP200 HTML must not replace good national raw");
+ assert.match(result.snapshots[0].requestKey,/^DOL_ETA539:/);
+ assert.ok(result.snapshots.every(item=>!item.body.includes("Unable to connect")));
+ const savedRows=[],savedSnapshots=[],runs=[];
+ const store={
+  async initialize(){},async acquire(){return {acquired:true}},async release(){},
+  async writeRawSnapshot(s){
+   savedSnapshots.push(s);
+   return {snapshotId:1,bodySha256:"safe",chunkCount:1,noop:false};
+  },
+  async upsertObservationRows({rows}){
+   savedRows.push(...rows);
+   return {inserted:rows.length,revised:0,noop:0,rejected:0};
+  },
+  async recordRun(run){runs.push(run);return 12},
+ };
+ const output=await runEmploymentR6CollectionStep({
+  db:{prepare(){return {}}},mode:"BACKFILL",groups:["DOL_UI_WEEKLY_CLAIMS"],
+  now:()=>new Date("2026-11-15T00:00:00.000Z"),storeFactory:()=>store,
+  providerFactory:()=>({async fetchGroup(){return result}}),
+ });
+ assert.equal(output.status,"PARTIAL");
+ assert.equal(output.groupResults[0].failureCode,"DOL_NATIONAL_NO_VALID_ROWS");
+ assert.equal(runs[0].failureCode,"DOL_NATIONAL_NO_VALID_ROWS");
+ assert.equal(savedSnapshots.length,1);
+ assert.equal(savedRows.length,51);
+ assert.equal(savedRows.some(row=>row.logicalSeriesId==="INITIAL_CLAIMS"),false);
+ assert.equal(output.publicOutput,false);
+});
+
+test("DOL national empty XML cannot overwrite old valid snapshot; valid XML unchanged",async()=>{
+ const fetchFrom=national=>{
+  let calls=0;
+  const provider=createEmploymentR6Provider({
+   fetchImpl:async()=>{
+    calls++;
+    if(calls===1)return new Response(national,{status:200});
+    throw Error("ETA_TEMPORARY_UNAVAILABLE");
+   },
+   now:()=>new Date("2026-11-15T00:00:00.000Z"),
+  });
+  return provider.fetchDolClaims({mode:"RELEASE",currentYear:2026});
+ };
+ const bad=await fetchFrom("<r539cyNational></r539cyNational>");
+ assert.equal(bad.snapshots.length,0);
+ assert.equal(bad.partialFailureCode,"DOL_NATIONAL_NO_VALID_ROWS");
+ assert.equal(bad.requestCount,2);
+ const good=await fetchFrom(NATIONAL_CLAIMS_XML);
+ assert.equal(good.snapshots.length,1);
+ assert.equal(good.partialFailureCode,"DOL_ETA539_SOURCE_FAILED");
+ assert.equal(good.rows.length,4);
 });
