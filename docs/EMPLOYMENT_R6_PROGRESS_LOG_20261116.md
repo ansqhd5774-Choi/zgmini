@@ -574,3 +574,13 @@
 - **조치:** 기존 승인요청 댓글 **같은 ID #6940614396**의 실행 책임 문구를 수정하고 전체 본문 원격 재조회 PASS; §51 책임·다음 실행 문구 동일 수정. 공통 소스 GO #6939006722, W04 위임 #6940072011, W04 원담당 수신 #1878/6940343310 **완료 증거 재사용**. 신규 재인계·공유 승인 Gate 생성하지 않음.
 - **책임·다음 행동:** W04가 설치 2파일 정확 승인 자료/정식 B approval PR·manifest 작성 및 **사용자/정식 승인권자의 B 운영 효과 명시 GO/NO-GO**를 직접 추진. 승인 이후 W04 설치 주관·기능 A 실측. 같은 Controller에 실제 lease 경합 발생한 경우에 한해 프로세스 총괄은 공통 자원 조정만 수행한다.
 - **완료 기준 불변:** 25/72(34.7%) 유지, #1906/#1911/#1912는 기존 시점 스냅샷; 정식 B 승인·전환 preflight·실제 PC 설치·Current/History 4계수 PASS 전 26/72로 올리지 않음. 이번 변경은 GitHub 댓글·원장만, PC/Task/DB/D1/원자료·공급자 호출·B 요청 0.
+
+## 53. W04 PIT-04-03 — 공통 승인권자 누적 Controller 2파일 운영 B 효과 GO 확인 (2026-11-17 KST)
+
+<!-- W04-PIT0403-SCOPED-B-GO-6941007769-20261117 -->
+
+- **진행률:** 시작 25/72 DONE(34.7%) → 종료 25/72 DONE(34.7%), 잔여 47. PIT-04-03 실제 4버킷 미실측으로 DONE 아님.
+- **이번 신규 원격 증거:** 공통 #68의 [명시 범위 GO #6941007769](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6941007769) 원문 직접 조회. 기존 [W04 승인요청 #6940614396](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6940614396)에 대한 답변으로, 설치본 `384ffd09e80ad769e31596483dfe73e9ee8b6c6a` → 불변 target `fbe943a069c9b2366f8e295d2c63b7895c639ef2`, W03 `controller/theme-nine-r32-raw-coverage-readonly.mjs` afterSHA256 `33c0b896ac3b941c13cde703afcbdb8c63bc7bf7f20bcb045af2fd8fd8356fd4` + W04 `controller/employment-r6-candidate-readonly.mjs` afterSHA256 `e156d22989210b2599d9393a15f8206fecd325d14f3d72af04d658bd60ee9409` **정확 두 파일** B급 효과 GO. allowFiles fingerprint `2748317833789f004b34eb56134fa4801dcc59030fe7b9b1b884da1266060585`는 raw manifest SHA가 아님. 단일 실행자 W04, postOperation core-status, 다른 Task/DB/D1/provider/배포 변경 금지.
+- **상태 변화:** 기존 `B_EFFECT_APPROVAL_PENDING`은 `B_EFFECT_SCOPED_GO_CONFIRMED`으로 해제. 그러나 이 댓글은 **서명·정규 APPROVED_B raw manifest·설치 전 CAS/lease·backup/rollback·운영 적용 결과가 아님**. 현재 제어 [Draft #1878](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1878) open/draft 상태를 확인. 과거 `approvals/controller-updates/384ffd09e80ad769e31596483dfe73e9ee8b6c6a.json`은 이전 단일 파일 설치용으로 재사용 불가.
+- **LAST PASS / FIRST HOLD:** `EXACT_TWO_FILE_B_EFFECT_GO_CONFIRMED` / `FORMAL_SIGNED_MANIFEST_AND_PREINSTALL_PROOF_PENDING`. 이번에는 GitHub 원장만 갱신하며 운영 A/B 신규 요청, 설치, Task, Core/SQLite/D1, 공급자, 게시 쓰기 0. 운영 4버킷 수치 임의 산정 금지.
+- **다음 단일 작업:** W04 원담당이 기존 제어 `approvals/controller-updates/` 정규 형식으로 정확 2파일 **신규 승인 manifest/원시 SHA·승인 ref**를 생성·검증하고 승인 PR/main 정본을 확인한다. 그 뒤 기존 `pc-controller-update` 신규 고유 B 1회에 앞서 실제 설치본·before bytes·전체 diff·lease/Core 자연 idle·Task 보호·버전 백업/rollback preflight가 모두 일치할 때만 적용. 사후 `core-status`/JSON+TXT 2/2와 승인된 W04 읽기 A 단회 4버킷 합계/asOf 검증 후 PIT-04-03 DONE 판정. 불일치 시 STOP/NO_WRITE; 중복 승인 요청 및 자동 재실행 금지.
