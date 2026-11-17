@@ -2,7 +2,7 @@
 
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
-## 최신 인계 스냅샷 — W01 2026-11-17 (Core A #1864 유휴 UNKNOWN·#1854/#1866 4파일 통합 Draft PR #1871 검증 대기·30/71)
+## 최신 인계 스냅샷 — W01 2026-11-17 (Core A #1864 유휴 UNKNOWN·4파일 통합 Draft #1871 CI 2/2 PASS·공유 재리뷰/운영 적용 미완료·30/71)
 
 > **다음 작업자는 이 스냅샷부터 시작한다.** 진행 기록 파일 자체가 지정된 정본이고, 상위 계획은 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)이다. 과거 이력의 오래된 설치 SHA·대기 문구가 이 스냅샷을 덮어쓰지 않는다.
 
@@ -554,3 +554,10 @@ B4 10 | Production·화면 최종 검증
 - **독립 조회 범위:** 기존 A writer-publication-evidence-readonly는 ER1 key/er1FeedReadbacks 전용임을 소스에서 확인. W01 detail:inflation-causal-candidates-7:r1 per-key Writer/D1 조회를 증명하지 않으므로 신규 불필요한 PC 요청을 생성하지 않음. B2-05/B2-06 미완료 유지.
 - **공유 인계:** [제어 #68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6936265842)에 실제 대상과 누적 4파일, 71파일 소스-설치 차이, 비승인 상태 전달. GitHub 댓글은 총괄 실제 ChatGPT 대화 수신의 증거가 아님.
 - **다음 한 필수 행동:** 공유 담당의 #1854 독립 재리뷰 및 PR #1871 CI 종료 확인 → 해당 설치 시점 정확한 source/승인 범위·공용 자원 경합 GO/NO-GO → 승인된 정규 Controller 설치/실제 SHA 검증 → W01 기존 A 신규 단회 logConfig.enabled 실측 → 자연 Core Task/WMI/E-lock/Event129 소유권 증명 → 신규 고유 승인 Census B 최대 2 GET, 저장 SHA/storedAt, Writer/D1/API/PC·모바일 7/7. 관리자 C급 Event129 활성화는 사용자 직접 경로로만 수행하며 #1818 B replay 금지.
+
+### 2026-11-17 KST — PR #1871 통합 CI 종료 확인 (앞선 QUEUED 상태의 후속 관측)
+
+- [통합 후보](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1871) source HEAD eb94326c23887bf6bf48cdf7f0a06a0a75c43b0b, Draft/OPEN, 4개 파일. **통합 Windows 격리 CI 완료 2/2 success**: [C996 R5 #44004015069](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44004015069) completed/success, [Controller Source #44004015090](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44004015090) completed/success.
+- Controller Source job 133774794003에서 Event129 소스 단위 suite **92 tests/92 pass/0 fail**, 신규 log enabled false/권한 실패 구분 두 테스트 PASS, isolated source-only 검사 확인. Engine POSTCHECK source pair 58/58 PASS는 [이전 Windows #44002921385](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44002921385)의 동일 Git blob 증거이며 통합 CI가 engine.test 전체를 다시 실행했다고 혼합 계산하지 않음.
+- [중앙 #68 새 CI 회신](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6936301816) 작성. 기존 #1854 SOURCE_REVIEW_HOLD 독립 해제/공유 Controller GO·B 승인/실설치·현재 Windows TaskScheduler log enabled/Core owner 실증은 없음. 마지막 설치 SHA 384ffd09...에서 target까지 71파일 비교 범위를 그대로 유지하고 전체 설치 금지. 새 Census B 요청/공급자 GET/운영 데이터 쓰기 0.
+- **진도:** 30/71(42.3%) 그대로, 41 OPEN. 다음 행동은 공통 Owner의 정확한 #1854 독립 리뷰와 4파일 누적 source 대 실제 허용 physical files/manifest/lease 설치 GO/NO-GO. W01 원담당은 설치 실제 readback 이후만 기존 A 단회 Event129 logConfig.enabled → 자연 Core 소유권 → 승인 Census 수집으로 진행.
