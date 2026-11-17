@@ -100,5 +100,5 @@ test('R47 new CMD candidate remains SHA-pinned independently of frozen R49',()=>
   assert.equal(sha(bytes),
     'a08fdec82b484c41ba3ac562908f31d96fee09c75cc3ff1b32386e9dd625ba45');
   assert.notEqual(sha(bytes),originalR49BundleSha.R47);
-  assert.equal(/(?<!\\r)\\n/.test(bytes.toString('ascii')),false);
+  assert.equal(/(?<!\r)\n/.test(bytes.toString('ascii')),false);
 });
