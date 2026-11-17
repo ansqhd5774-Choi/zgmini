@@ -25,5 +25,5 @@ test("API missing period fields and UI computed periods remain distinct concepts
  for(const key of ["week","month","threeMonth","sixMonth","year"])assert.ok(s.includes(key+":producer?."+key+"??computed."+key),"published override / verified stored history fallback for "+key);
  assert.ok(s.includes("const computed=liquidityStoredScoreComparisons"));
  assert.ok(s.includes('history=useMemo(()=>normalizeTrend(id==="inflation"?inflationChart:id==="employment"?employmentChart:domain?.trend)'));
- assert.ok(s.includes('id==="inflation"?inflationChart:economicOneYearChart(domain?.trend)'));
+ assert.ok(s.includes('id==="inflation"?inflationChart:id==="employment"?employmentChart:economicOneYearChart(domain?.trend)'));
 });
