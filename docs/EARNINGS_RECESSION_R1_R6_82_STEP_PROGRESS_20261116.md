@@ -848,3 +848,16 @@ R2-03에 요구한 산업범위·명목/실질·IVA와 CCAdj의 차이·SAAR/분
 **다음 한 실행(담당/성공 조건):** 공유 Controller/프로세스 총괄 Owner가 기존 #1841의 설치 phase·ledger/owner/marker/lease·백업/보호 SHA·Supervisor/6 Runner·실제 Workflow 활성/접수 backlog 및 #1849 열린 이벤트/라벨 게이트를 **공식 비파괴 경로로 판정**하고 같은 원본 사건에 정확한 복구/재개 증거와 #1849 미실행 여부를 회신. 그다음 W05가 새 고유 A 검사 1회의 필요성을 평가하며, 설치 원본 SHA 수거 후 정확한 B 승인 범위 안에서만 수동 WPSFD42 수집/저장·SHA readback을 진행한다. 소모된 원래 requestId 재생, 라벨 재부착으로 우회, 전체 Controller 임의 설치·lease 강제 해제 금지.
 
 **개발 범위:** 진행 기록 `docs/EARNINGS_RECESSION_R1_R6_82_STEP_PROGRESS_20261116.md` 1파일만 수정. 앱 전담 브랜치 적용 전 HEAD `cd8037f85fdb8ab60925e84d5760e365ee05f66c`, 제어 main 관측 HEAD `83beb545566ed1a2a9ecf61e7dc39cc263d89318`; 실제 PC 설치 Controller는 #1841 보고시 `384ffd...`로 확인됐을 뿐 현재 새 검증 SHA는 미확정.
+
+
+## 45. R3-04 (2026-11-17 11:04 KST) #1849 정규 replay #1860 실제 PC preimage 회수 — READONLY_PASS / FOUR_FILES_ABSENT
+
+**유효 시작점:** 순차 DONE 26/82(31.7%), 개별 DONE 28/82(34.1%), 첫 미완료 R3-04. 기존 §43~44의 #1849/manifest/요청 ID를 재사용했으며 중복 요청 없음.
+
+- **공통 접수 복구:** 제어 #1841은 2026-11-17T01:56:05Z `ROLLED_BACK / INTERRUPTED_ROLLBACK_VERIFIED`, 기존 Controller SHA `384ffd09e80ad769e31596483dfe73e9ee8b6c6a` 유지, 보호 상태 불변·lease 보관·Workflow 활성으로 복구되었다는 원본 댓글/결과를 확인. 신규 Controller 설치 성공으로 오인하지 않는다. [#1841 결과](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1841#issuecomment-6935496556).
+- **#1849 정규 replay 실제 완료:** 원본 #1849는 backlog 상태에서 정규 #1860으로 연결됨. [#1860 실행 결과](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1860#issuecomment-6935505298) `Run 43999256156`, `seat=4`, `status=PASS`, `code=WRITER_APPROVED_PREIMAGE_READONLY`, `exitCode=0`, `finishedAt=2026-11-17T01:56:28.060Z`, `requestId=pc-d0880e2e-7edd-420a-9641-1f16bf246388`. 실제 실행 Controller `384ffd09e80ad769e31596483dfe73e9ee8b6c6a`; `protectedStateUnchanged=true`, `providerCalls=0`, `operationalWrites=0`, `d1Writes=0`, `sqliteOpened=false`.
+- **핵심 실측:** 지정 preimage manifest의 4개 대상 `scripts/pc-writer/EARNINGS_R3C_BLS_STORE_ONCE.mjs`, `EARNINGS_R3D_STORED_BLS_CALC_READONLY.mjs`, `EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs`, `EARNINGS_BLS_SERVICE_R1_D1_ONCE.mjs` 모두 **`exists=false / state=ABSENT / sha256=null`**. 이는 조회된 **운영 PC sourceRoot에 네 파일이 없다는 실측**이며 전체 PC 모든 checkout 부재나 SQLite 원본 부재를 뜻하지 않는다. 기존 소스 설치/승인 완료라고 주장할 수 없음.
+- **LAST PASS:** 원본 #1849의 안전한 A preimage 조회는 실제 PC PASS, 결과 JSON/TXT가 #1860 댓글에 기록. **FIRST UNFINISHED:** 운영 지정 sourceRoot 4파일 ABSENT → 승인된 소스 설치 경로 및 B 효과(서비스 provider POST·SQLite append) 승인/실행·원본 SHA·13개월 t-12 readback 부재. R3-04는 `PARTIAL_SOURCE / INSTALL_NOT_READY`, R3-05는 `SOURCE_CI_PASS`; **연속 DONE 26/82, 개별 DONE 28/82 유지**.
+- **다음 필수 실행:** #1860 preimage 결과를 설치 Owner의 승인된 Writer B 설치 계약과 대조해 **정확히 4개 파일의 승인 source/해시·기존 파일 보호·설치 operation/lease**를 결정한다. 설치가 허용될 때만 기존 정규 경로로 파일을 설치하고 A preimage/readback로 재확인한다. 그 뒤 별도 B 효과 승인이 확인될 때만 WPSFD42 단회 원자료 수집→SQLite SHA/period/checkpoint readback→저장자료 t-12 계산을 수행한다. #1849/#1860 재요청, 임의 shell/Controller 설치, 무승인 D1 게시·공급자 호출 금지.
+
+**이번 회차 변경:** 본 진행 기록 1파일만 갱신. 신규 기능 코드·운영 쓰기·공급자 호출·D1 게시·Production 배포 0건.
