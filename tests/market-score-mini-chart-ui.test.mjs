@@ -79,7 +79,9 @@ test('static mini charts preserve true date spacing, missing breaks and latest z
 test("composite uses sentiment area styling without the removed captions",()=>{
   const summary=sourceBetween("function SummaryTrend(","// Stage 12");
   assert.match(summary,/<AreaChart/);
-  assert.match(summary,/<Area type="monotone" dataKey="value" stroke=\{color\}/);
+  assert.match(summary,/<Area type="monotone" dataKey="reconstructedValue" stroke=\{color\}/);
+  assert.match(summary,/<Area type="monotone" dataKey="calculatedValue" stroke=\{color\}/);
+  assert.doesNotMatch(summary,/<Area type="monotone" dataKey="value"/);
   assert.match(summary,/<linearGradient/);
   assert.doesNotMatch(src,/className="zg-r55-main-period"|<span>종합 점수<\/span>|<span>\/ 100<\/span>/);
   assert.match(src,/ArrowUpRight size=\{18\}/);
