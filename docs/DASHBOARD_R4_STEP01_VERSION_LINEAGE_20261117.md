@@ -37,3 +37,8 @@
 - `zgmini/main@87d8cff5a5653413b116d45592133fa6359de475` **직접 remote ref 확인**. 이는 W06 [PR #1248](https://github.com/ansqhd5774-Choi/zgmini/pull/1248) 4파일 squash Merge의 새 **개발** source SHA이며, 이전 표에 적힌 `2aa9cd28`/후속 `0bef187a`의 과거 관측 시점도 보존한다.
 - 이 main SHA의 GitHub Cloudflare Git Integration Workers Builds 상세 Build ID는 `f4e474f3-e8da-4fb8-aabf-6846082f9a24`. **처음 관측 시 status=in_progress**. GitHub Actions CI 수행/Cloudflare Build 성공/active Production Deployment의 각 층위는 별도. 실서빙 SHA가 변경됐다고 추정하지 않는다.
 - PC 운영 승인 A `pcOperationalApprovedSha=2070ff53549e...`는 11/17 이전 실행 원장 증거로만 보존. 위 새 main SHA를 PC 실설치 SHA로 대체하지 않음. 정확 Writer 파일 설치 SHA **UNKNOWN**, Production Deployment **UNKNOWN** → #01 PARTIAL 유지.
+
+## W06 #28 merged source Cloudflare Build result (2026-11-17 19:42 KST)
+
+- `zgmini/main@87d8cff5a5653413b116d45592133fa6359de475`의 Workers Builds 체크 `completed/success`(2026-11-17T10:41:37Z), exact Build `f4e474f3-e8da-4fb8-aabf-6846082f9a24` 재조회 PASS. **Git Integration Build 성공은 active Production Deployment ID/SHA·실서빙 검증과 같지 않음**.
+- #01 완료조건인 PC Writer 실설치 파일별 SHA와 active Cloudflare exact Deployment SHA는 계속 UNKNOWN. 승인한 PC A 결과 `2070ff53...`를 실설치 SHA로 보정하거나 GitHub main SHA를 PC 자동 설치 완료라고 기록하지 않는다. #01 PARTIAL/22/75 유지.
