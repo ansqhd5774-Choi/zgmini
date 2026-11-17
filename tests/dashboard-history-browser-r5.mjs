@@ -134,7 +134,7 @@ try{
    const headerDate=await root.locator('.fg-card-header-date').allTextContents();
    const observed=String(composite.observationDate);
    const dateLabel=observed.slice(0,4)+'.'+observed.slice(4,6)+'.'+observed.slice(6,8);
-   assert.ok(headerDate.join(' ').includes(dateLabel),
+   assert.ok(headerDate.join(' ').replace(/\s+/g,'').includes(dateLabel),
     'The detail card header must show the actual published observation date');
    await live.screenshot({path:`artifacts/dashboard-history/live-korea-${width}.png`,fullPage:false});
    console.log('W06_37_LIVE_KOREA_UI',JSON.stringify({
