@@ -49,8 +49,8 @@ function privateTaskActionKind(command,args,xml){
      (execs[0].match(/<Arguments>/gi)??[]).length>1||
      (execs[0].match(/<WorkingDirectory>/gi)??[]).length>1)return null;
   const current=String(command).trim().replaceAll('/','\\').toLowerCase();
-  const argumentsText=String(args).trim().replace(/&quot;/gi,'"')
-    .replaceAll('/','\\').toLowerCase();
+  // Keep cmd.exe /d /c switches intact; normalize only the Command path.
+  const argumentsText=String(args).trim().replace(/&quot;/gi,'"').toLowerCase();
   for(const [name,kind] of Object.entries(PRIVATE_ACTIONS)){
     const expected=PRIVATE_ROOT+privateName(name).toLowerCase();
     if(current===expected&&argumentsText==='')return kind;
