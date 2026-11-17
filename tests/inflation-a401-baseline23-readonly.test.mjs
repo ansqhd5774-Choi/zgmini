@@ -77,6 +77,9 @@ test('A4-01: zero is a valid observed value but invalid date or missing stored t
  args.original.payload.indicators[0].value=0;
  args.original.payload.indicators[0].observationDate='UNVERIFIED';
  assert.equal(evaluateA401Baseline23(args).status,'PARTIAL');
+ args.original.payload.indicators[0].observationDate='2026-02-30';
+ assert.equal(evaluateA401Baseline23(args).status,'PARTIAL',
+  'invalid February date must not normalize into a real observation');
 });
 
 test('A4-01: existing SQLite WAL+SHM required before readOnly open',()=>{
