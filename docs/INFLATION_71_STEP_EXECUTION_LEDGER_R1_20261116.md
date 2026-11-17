@@ -1,5 +1,16 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-A407-CORRECTED-HOST-2052-20261117 -->
+## 2026-11-17 22:25 KST — A4-07 교정본 Host B 실제 등록 영수증 확인 (운영 감사 미실행)
+
+- **진행률:** 33/71(46.5%) → **33/71(46.5%)**, 잔여 38. A4-07 PARTIAL 유지.
+- **새 교정본 source:** 앱 PR #1269 병합 source `0a674eac32418d0c1bd23a9a050b2202e8951f1a`, 제어 PR #2046의 immutable 8파일 source inventory, 승인 검토 PR #2051 CLOSED. 이전 source `a511d7be...`와 혼동하지 않는다.
+- **실제 Host B 결과:** 제어 Issue [#2052](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2052#issuecomment-6949328651) 새 requestId `pc-update-a407e6e2-0b9d-4f2e-a407-6c1b08f2b52c`, receiver `SUCCEEDED/BUNDLE_REGISTERED`, `LAST_PASS=HOST_CAS_READBACK`, `FIRST_FAIL=NONE`, actual Controller `f7f1559bc0ef15bb9b375982d048369c474c490f` 일치, JSON/TXT 보고 경로 공개. `PROTECTED_STATE_UNCHANGED=false`는 승인 Host CAS 변경을 포함하므로 무변경 증명이 아니며 `WORKFLOW_ENABLED=UNVERIFIED`를 임의 PASS로 간주하지 않는다. 이 등록은 Controller 신규 A407 entrypoint 설치나 PC raw19/checkpoint2 검증이 아니다.
+- **현행 공통 Controller config:** main `config/operations.json` blob `90cf96a8a7e263ee366d185b4f43d4caa0b7c687`에 `inflation-a407-integrity-readonly` operation 미등록. 공통 진입점 source-only 요청은 중앙 #68 댓글 #6948367597에 이미 존재하므로 동일 요청 중복 발행하지 않는다.
+- **NEXT:** 프로세스 총괄의 고정 A407 Controller entrypoint source PR/CI·실제 target SHA가 나오면 W01 원담당이 설치된 `f7f155...`와 정확 diff/manifest·lease를 검증하고 정규 승인된 B 단회 설치를 수행한다. 이후 고유 A 1회로 private 19+6 raw SHA, checkpoint 2개 및 동일 스냅샷 double-read·보호 상태를 재조회한다. 원본 A4-07 완료 조건이 실증될 때만 DONE 체크한다. Census #28 MISSING, 자연 수집 헤더 오류, 수동 B Core owner 실패는 별도 미완료.
+- **이번 회차:** GitHub 상태 확인과 원장 갱신만. 새 PC 요청·공급자 GET·SQLite/D1/Task 변경 0.
+
+
 <!-- W01-A407-READBACK-GAP-AUDIT-20261117-2124 -->
 ## 2026-11-17 21:24 KST — A4-07 원본 SHA·checkpoint 읽기 경로 소스 계약 조사 (운영 미변경)
 
