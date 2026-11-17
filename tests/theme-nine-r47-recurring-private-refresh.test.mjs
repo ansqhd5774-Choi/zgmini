@@ -56,6 +56,7 @@ function fixture(t){
   let calls=[];
   const fetchImpl=async url=>{
     const symbol=url.pathname.split('/').at(-2),start=url.searchParams.get('start');
+    assert.equal(url.pathname,`/api/v1/bars/stocks/us/${symbol}/1h`);
     const end=url.searchParams.get('end');
     calls.push({symbol,start,end});
     const dates=start==='2026-10-23'?['2026-10-23','2026-10-26']:
@@ -288,3 +289,21 @@ for(const failure of ['502','timeout','empty']){
     assert.equal(calls,1);
   });
 }
+
+
+test('R47 accepts archived old R35 checkpoint URL alongside current stocks/us pages',async t=>{
+  const f=fixture(t);
+  const first=await runNineR47Recurring({...f,now:f.firstTime,sleep:async()=>{}});
+  assert.equal(first.status,'R35_DELTA_PRIVATE_COLLECTION_COMPLETE');
+  const stateDir=path.join(f.deltaHome,'state');
+  const cpPath=fs.readdirSync(stateDir).filter(x=>/^delta-[a-f0-9]{20}\.json$/.test(x))
+    .map(x=>path.join(stateDir,x))[0];
+  const checkpoint=JSON.parse(fs.readFileSync(cpPath,'utf8'));
+  const previous=checkpoint.symbols.SPY.files[0].requestedUrl;
+  assert.match(previous,/\/api\/v1\/bars\/stocks\/us\/SPY\/1h/);
+  checkpoint.symbols.SPY.files[0].requestedUrl=
+    previous.replace('/api/v1/bars/stocks/us/','/api/v1/bars/stocks/');
+  fs.writeFileSync(cpPath,JSON.stringify(checkpoint));
+  const next=planNineR47Recurring({...f,now:f.secondTime});
+  assert.equal(next.status,'READY_NEW_WINDOW');
+});
