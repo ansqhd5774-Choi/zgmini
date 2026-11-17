@@ -210,7 +210,7 @@ test('economic detail wires D3-only score, stored chart, date, comparisons and r
   'id==="liquidity"?liquidityChart',
   'id!=="liquidity"||(score!==null&&liquidityChartCurrent)',
   'id==="liquidity"&&(score===null||!liquidityChartCurrent)',
-  '||id==="earnings"||id==="liquidity"||id==="fundFlows")&&score===null',
+  '||id==="earnings"||id==="liquidity"||id==="fundFlows"||id==="breadth")&&score===null',
  ])assert.ok(ui.includes(term),term);
  assert.ok(composite.includes('spec.id==="liquidity"?{'));
  for(const [name,weight] of Object.entries(weights)){
