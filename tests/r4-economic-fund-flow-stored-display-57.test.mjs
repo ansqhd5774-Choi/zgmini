@@ -182,11 +182,13 @@ test('future, malformed dates and partial points are not fabricated as zero',()=
  const injected={...domain,trend:[...domain.trend,
   {label:'2026-12-01',value:50},{label:'2026-02-30',value:20},
   {label:'2026-05-01',value:null,status:'PARTIAL'}]};
- const result=chart(injected);
+ // An invalid contradictory duplicate month is rejected, never substituted with zero.
+ assert.deepEqual(chart(injected),[]);
+ const futureOnly={...domain,trend:[...domain.trend,
+  {label:'2026-12-01',value:50},{label:'2026-02-30',value:20}]};
+ const result=chart(futureOnly);
  assert.equal(result.at(-1).date,current);
  assert.equal(result.some(x=>x.date==='2026-12-01'||x.date==='2026-02-30'),false);
- // An invalid contradictory duplicate month is rejected, never substituted with zero.
- assert.deepEqual(result,[]);
  const gap={...domain,trend:domain.trend.filter(x=>x.label!=='2026-05-01').concat({label:'2026-05-01',value:null,status:'PARTIAL'})};
  assert.equal(chart(gap).find(x=>x.date==='2026-05-01')?.score,null);
 });
