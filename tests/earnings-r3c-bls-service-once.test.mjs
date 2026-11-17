@@ -176,6 +176,38 @@ test('service-only append isolates its source from existing BLS three-series sna
   }finally{db.close();}
 });
 
+test('service-only preflight/append survives damaged base BLS metadata without weakening base checks',()=>{
+  const db=newDb();
+  try{
+    assert.equal(insertPlans(db,plans()).verified,3);
+    const service=buildPlans(normalizeSeries(serviceResponse(),SERVICE_SERIES),
+      '2026-10-27T03:00:00.000Z','b'.repeat(64));
+    db.prepare(`UPDATE api_history_snapshots_v1 SET provenance_json=?
+      WHERE provider='BLS' AND dataset='WPSFD4'`).run('{"contract":"OTHER"}');
+    // Default and explicitly mixed checks must still reject the bad base source.
+    assert.throws(()=>checkSchema(db),/PRIOR_BLS_NAMESPACE_CONFLICT_NO_WRITE/);
+    assert.throws(()=>checkSchema(db,{includeServices:true}),
+      /PRIOR_BLS_NAMESPACE_CONFLICT_NO_WRITE/);
+    const badBase=db.prepare(`SELECT provenance_json FROM api_history_snapshots_v1
+      WHERE provider='BLS' AND dataset='WPSFD4'`).get().provenance_json;
+    assert.deepEqual(checkSchema(db,{includeServices:true,serviceOnly:true}),
+      {existingSnapshots:0,existingChunks:0});
+    assert.deepEqual(insertPlans(db,service),
+      {insertedChunks:1,insertedSnapshots:1,verified:1});
+    assert.equal(db.prepare(`SELECT provenance_json FROM api_history_snapshots_v1
+      WHERE provider='BLS' AND dataset='WPSFD4'`).get().provenance_json,badBase);
+    assert.throws(()=>insertPlans(db,plans()),/PRIOR_BLS_NAMESPACE_CONFLICT_NO_WRITE/);
+    // Corruption inside WPSFD42 remains a hard stop even in isolated mode.
+    db.prepare(`UPDATE api_history_snapshots_v1 SET provenance_json=?
+      WHERE provider='BLS' AND dataset='WPSFD42'`).run('{"contract":"OTHER"}');
+    assert.throws(()=>checkSchema(db,{serviceOnly:true}),
+      /PRIOR_BLS_NAMESPACE_CONFLICT_NO_WRITE/);
+    assert.throws(()=>insertPlans(db,service),/PRIOR_BLS_NAMESPACE_CONFLICT_NO_WRITE/);
+    assert.equal(db.prepare(`SELECT COUNT(*) AS n FROM api_history_snapshots_v1
+      WHERE provider='BLS' AND dataset='WPSFD42'`).get().n,1);
+  }finally{db.close();}
+});
+
 test('service-only source rejects unrelated series and conflicting repeated month',()=>{
   assert.throws(()=>normalizeSeries(fakeResponse(),SERVICE_SERIES),/BLS_SERIES_COUNT_MISMATCH_NO_WRITE/);
   const unexpected=serviceResponse();
