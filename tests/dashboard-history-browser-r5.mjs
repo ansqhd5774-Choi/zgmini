@@ -127,10 +127,28 @@ try{
     assert.equal(await cards.count(),12,'Live production must show twelve domain cards');
     const periods=live.getByRole('group',{name:'종합 시장 점수 추이 기간'});
     await periods.waitFor({state:'visible',timeout:25000});
-    const accessible=live.getByRole('img',{name:/종합 시장 점수/}).first();
-    await accessible.waitFor({state:'visible',timeout:25000});
-    const summary=await accessible.getAttribute('aria-label');
+    // Target the *actual* composite score card; another earlier summary
+    // image has an unrelated accessible name while its chart is empty.
+    const scorePanel=live.locator('.zg-r55-summary-top[role="img"]');
+    await scorePanel.waitFor({state:'visible',timeout:25000});
+    const currentResponse=await live.request.get('https://zgmini.kr/api/market-score',{
+     timeout:15000,headers:{accept:'application/json','cache-control':'no-cache'},
+    });
+    const currentBody=await currentResponse.json();
+    const currentReady=currentResponse.status()===200&&currentBody?.status==='SUCCESS'
+     &&currentBody?.overall?.status==='READY'
+     &&typeof currentBody?.overall?.score==='number'&&Number.isFinite(currentBody.overall.score);
+    if(currentReady){
+     await live.waitForFunction(()=>{
+      const label=document.querySelector('.zg-r55-summary-top[role="img"]')
+       ?.getAttribute('aria-label')??'';
+      return /종합 시장 점수 [0-9]+\\.[0-9]점$/.test(label);
+     },null,{timeout:25000});
+    }
+    const summary=await scorePanel.getAttribute('aria-label');
     assert.match(summary??'',/종합 시장 점수/);
+    if(currentReady)assert.match(summary??'',/종합 시장 점수 [0-9]+\\.[0-9]점$/,
+     'Public READY score must render as a number in the exact main card');
     for(const period of ['1D','1W','1M','3M','6M','1Y']){
      const button=periods.getByRole('button',{name:period,exact:true});
      await button.click();
@@ -142,6 +160,9 @@ try{
     console.log('W06_75_LIVE_PRODUCTION',JSON.stringify({
      viewport:width,htmlStatus:result?.status(),domainCards:await cards.count(),
      summaryAria:summary?.slice(0,140),periodsTested:6,
+     publicScoreResponse:{httpStatus:currentResponse.status(),
+      status:currentBody?.status??null,overallStatus:currentBody?.overall?.status??null,
+      score:typeof currentBody?.overall?.score==='number'?currentBody.overall.score:null},
      apiRequests:requests.slice(0,22),pageErrors:errors
     }));
     assert.deepEqual(errors,[],'Live production browser must not have JS page errors');
