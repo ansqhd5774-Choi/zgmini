@@ -99,3 +99,71 @@ test('R4 #26: 1W returns ordered actual observations across two distinct days',a
  assert.deepEqual(data.points.map(x=>x.score),[50,56]);
  assert.equal(data.availableDays,2);
 });
+
+test('R4 #26: stored source day must be a real, canonical UTC calendar date',async()=>{
+ const invalid=['2026-02-30','2026-11-31','2026-13-01','2026-00-01',
+  '20261116','2026-11-16T00:00:00Z',' 2026-11-16','2026-11-16 '];
+ for(const asOfDate of invalid){
+  const response=await harness([archive('2026-11-16',[point('12:00:00',50,asOfDate)])]).GET(req('1D'));
+  assert.equal(response.status,503,asOfDate);
+  assert.equal((await response.json()).status,'INVALID_STORED_SCORE',asOfDate);
+ }
+});
+
+test('R4 #26: untrusted asOfDate types cannot be silently replaced by null',async()=>{
+ for(const asOfDate of [20261116,0,true,[],{},['2026-11-16']]){
+  const response=await harness([archive('2026-11-16',[point('12:00:00',50,asOfDate)])]).GET(req('1D'));
+  assert.equal(response.status,503,JSON.stringify(asOfDate));
+  assert.equal((await response.json()).status,'INVALID_STORED_SCORE');
+ }
+});
+
+test('R4 #26: future asOfDate beyond possible local timezone is rejected',async()=>{
+ for(const asOfDate of ['2026-11-18','2026-12-01','2099-01-01']){
+  const response=await harness([archive('2026-11-16',[point('12:55:00',50,asOfDate)])]).GET(req('1D'));
+  assert.equal(response.status,503,asOfDate);
+ }
+});
+
+test('R4 #26: valid source dates include past revisions and possible local next day',async()=>{
+ const rows=[archive('2026-11-16',[
+  point('12:00:00',0,'2026-10-31'),
+  point('12:15:00',51,'2026-11-16'),
+  point('12:55:00',52,'2026-11-17'),
+ ])];
+ const response=await harness(rows).GET(req('1D'));
+ assert.equal(response.status,200);
+ const data=await response.json();
+ assert.equal(data.status,'READY');
+ assert.deepEqual(data.points.map(p=>p.score),[0,51,52]);
+ assert.deepEqual(data.points.map(p=>p.asOfDate),['2026-10-31','2026-11-16','2026-11-17']);
+});
+
+test('R4 #26: missing and null source dates remain explicit null without inventing one',async()=>{
+ const rows=[archive('2026-11-16',[
+  {...point('12:00:00',0),asOfDate:null},
+  {...point('12:15:00',50),asOfDate:undefined},
+ ])];
+ const response=await harness(rows).GET(req('1D'));
+ assert.equal(response.status,200);
+ const data=await response.json();
+ assert.equal(data.status,'READY');
+ assert.deepEqual(data.points.map(p=>p.asOfDate),[null,null]);
+});
+
+test('R4 #26: one corrupt date rejects the entire stored range, not partial points',async()=>{
+ const response=await harness([archive('2026-11-16',[
+  point('12:00:00',0,'2026-11-16'),
+  point('12:15:00',50,'2026-02-31'),
+ ])]).GET(req('1D'));
+ assert.equal(response.status,503);
+ assert.deepEqual(await response.json(),{status:'INVALID_STORED_SCORE'});
+});
+
+test('R4 #26: identical score replay with conflicting valid source days still fails closed',async()=>{
+ const response=await harness([archive('2026-11-16',[
+  point('12:00:00',50,'2026-11-15'),
+  point('12:00:00',50,'2026-11-16'),
+ ])]).GET(req('1D'));
+ assert.equal(response.status,503);
+});
