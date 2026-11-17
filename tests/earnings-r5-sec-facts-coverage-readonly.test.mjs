@@ -32,7 +32,7 @@ test('stored-only audit derives per-metric coverage over the provided CIK univer
   assert.equal(result.sourceFilesFound,2);
   assert.equal(result.sourceFilesMissing,1);
   assert.equal(result.sourceFilesRejected,0);
-  assert.equal(result.externalSourceSha256Matched,2);
+  assert.equal(result.providedSha256Matched,2);
   assert.equal(result.metrics.revenue.currentIssuerCount,2);
   assert.equal(result.metrics.revenue.comparableIssuerCount,1);
   assert.equal(result.metrics.revenue.currentCoverage,2/3);
@@ -53,7 +53,7 @@ test('computed SHA is not treated as independently pinned or official archive vi
   });
   assert.equal(result.sourceFilesFound,1);
   assert.equal(result.contentSha256Computed,1);
-  assert.equal(result.externalSourceSha256Matched,0);
+  assert.equal(result.providedSha256Matched,0);
   assert.equal(result.status,'PARTIAL_FILES_OR_PROVENANCE_UNVERIFIED');
   assert.equal(result.sourceArchiveShaVerified,false);
 });
@@ -68,6 +68,7 @@ test('mismatching pinned SHA and invalid JSON fail closed without fictitious cov
   });
   assert.equal(result.sourceFilesFound,0);
   assert.equal(result.sourceFilesRejected,2);
+  assert.equal(result.aggregateContentSha256,null);
   assert.equal(result.metrics.revenue.currentIssuerCount,0);
   assert.equal(result.metrics.revenue.comparableCoverage,0);
 });
@@ -88,4 +89,35 @@ test('duplicate issuer keys, invalid input and nonexistent date are rejected',()
   assert.throws(()=>auditStoredSecFactsCoverage({...base,issuerCiks:['1','0000000001']}),/DUPLICATE/);
   assert.throws(()=>auditStoredSecFactsCoverage({...base,issuerCiks:['abc']}),/CIK_INVALID/);
   assert.throws(()=>auditStoredSecFactsCoverage({...base,issuerCiks:['1'],asOf:'bad'}),/ARGUMENT_INVALID/);
+  assert.throws(()=>auditStoredSecFactsCoverage({...base,issuerCiks:['1'],asOf:'2026-02-30'}),/ARGUMENT_INVALID/);
+});
+
+test('older Q2 comparison cannot inflate coverage of latest Q3 unpaired issuer',()=>{
+  const current=fact('2026-07-01','2026-09-30','2026-11-01',300);
+  const older=fact('2026-04-01','2026-06-30','2026-08-01',200);
+  const olderPrior=fact('2025-04-01','2025-06-30','2025-08-01',100);
+  const source=sample(1);
+  source.facts['us-gaap'].Revenues.units.USD=[current,older,olderPrior];
+  const report=auditStoredSecFactsCoverage({
+    issuerCiks:['1'],asOf:'2026-11-17',
+    readSource:()=>pinned(source),
+  });
+  assert.equal(report.metrics.revenue.currentIssuerCount,1);
+  assert.equal(report.metrics.revenue.comparableIssuerCount,0);
+  assert.equal(report.metrics.revenue.currentWithoutAlignedPriorIssuerCount,1);
+  assert.equal(report.metrics.revenue.olderPairExcludedIssuerCount,1);
+  assert.equal(report.metrics.revenue.currentCoverage,1);
+  assert.equal(report.metrics.revenue.comparableCoverage,0);
+});
+
+test('latest quarter with an exact prior remains comparable',()=>{
+  const report=auditStoredSecFactsCoverage({
+    issuerCiks:['1'],asOf:'2026-11-17',readSource:()=>pinned(sample(1)),
+  });
+  assert.equal(report.metrics.revenue.currentIssuerCount,1);
+  assert.equal(report.metrics.revenue.comparableIssuerCount,1);
+  assert.equal(report.metrics.revenue.olderPairExcludedIssuerCount,0);
+  assert.equal(report.providedSha256Matched,1);
+  assert.equal(report.status,'ALL_FILES_PROVIDED_SHA_MATCH_ARCHIVE_UNVERIFIED');
+  assert.equal(report.sourceArchiveShaVerified,false);
 });
