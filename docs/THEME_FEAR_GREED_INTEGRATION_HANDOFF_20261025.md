@@ -1,3 +1,11 @@
+## 2026-11-17 W03 9/68 — R32 저장 원자료 9테마 점수 가능 범위 구분
+
+- **독립 데이터 검증:** 신규 PC 재수집·추가 A 조회 없이 기존 2026-11-17T00:29:21.575Z 승인 A [#1827/6933792678](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1827#issuecomment-6933792678)의 실제 PC 원격 [JSON 결과](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/43987998143-1-seat-4.json) `ZGMINI_THEME_R32_RAW_COVERAGE_READONLY_V1`와 현재 W03 기능 config `theme-nine-r20-approved-candidates.json`을 직접 교차 분류. 원격 result Git blob `2e05fb7c90779830b20aab84597aee7f1e30cbda`, roster Git blob `add5136969262157b377fb3034cbc49199ac61ae` 기준. 이번 신규 PC/Provider/SQLite/D1 쓰기 0.
+- **실측 SOURCE_ONLY:** required 64종(ETF63+SPY), SHA 검증 원본 548페이지(R23 121 + R35 427), 완료된 R35 windows 7/7, 최신 SPY 확인 거래일 `2026-11-03`, `currentnessVerified=false`. ETF 63종 중 SPY 기준 최근 252거래일에 252일 확인 **47종**, 1~251일 **16종**, 40일 미만 **LLMA 22일/RBTX 10일**. SPY 날짜보다 마지막 자료가 이전인 4종: CBOT 11/02, KYC 10/15, LATR 10/27, WR 10/28. 64종 전원 공통일 `common63EtfSpyDays=0`, `latestCommonNYDay=null`. 이 결과는 11/17 현재 최신 시세를 증명하지 않음.
+- **9테마 252거래일 종목 수(가격 이력 기준이며 계산 점수 적격 판정 아님):** 로봇·자동화 5/7, 클라우드·SaaS 4/5, 자율주행 4/6, 원전·SMR 6/6, 방산 5/6, 핀테크 3/6, 사이버보안 5/8, AI·반도체 8/11, 바이오·신약 8/9. 전원 공통일 0이라는 이유로 **모든 테마의 독립 점수 산출 불가능**을 단정할 수 없음. 기존 승인 R25/R32의 실제 40세션·상태·AUM·권리 조건은 각 대상 거래일별 별도 유지, 결측을 0점으로 채우지 않음.
+- **운영 실행 분리:** [기존 W03 CMD 설치 #1928](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1928) `TASK_CMD_B_TASK_PROBE_PARSE_STOP`는 신규 공통 probe 결함으로 **해당 단회 설치만** BLOCKED. 새로운 공통 응답·수정 main 증거 아직 미확인; #1928 requestId 재실행 금지. [기존 총괄 #1894 새 Runtime 오류 결과](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1894#issuecomment-6941746650) 재사용.
+- **진행률·다음 실행:** 완료 8/68(11.8%) 유지, 9단계 실제 R47 운영 업데이트·저장 이력·점수·게시 미완료. 공유 Windows Task probe 원인 수정 및 정규 manifest 신규 식별자 계약이 검증되면 W03가 운영 설치 1회 직접 수행. 이후 기존 R32/R47 9테마의 **실제 점수 적격/출처날짜**를 저장자료에서 판정해 합법 공개 대상만 게시·API/UI 별도 실측. 중복 총괄 승인 요청/불필요한 A 재진단 없음.
+
 ## 2026-11-17 W03 9/68 — #1914 정규 B 병합 인수·실제 PC 설치 #1928 신규 Task probe STOP
 
 - **시작/종료 진행률:** 8/68 DONE(11.8%) → **8/68 DONE(11.8%)**, 9단계 진행 중. 이번 회차는 W03 원담당이 총괄의 설치 경로 인계 후 **실제 B 설치 1회를 직접 실행**했지만 안전 STOP으로 운영 설치 미완료. 총괄 기존 #1894를 동일 사안 재접수하지 않음.
