@@ -185,7 +185,10 @@ export async function collectCensusM3Inventories({base,censusKey,quotaFetch,now=
     incoming.length?'OBSERVATIONS_AVAILABLE':'NO_USABLE_OBSERVATIONS';
   // An all-invalid supplier response is a parser compatibility failure, not
   // a provider transport failure. Keep both raw responses for diagnosis.
-  if(unavailable.length===2&&!observations.length)
+  // If both official yearly schemas are unusable, the current collection
+  // failed even when a valid prior file is available. Preserve that file as
+  // last-good, but never misreport a broken two-GET attempt as UNCHANGED.
+  if(unavailable.length===2)
     throw fail(unavailable[0].sourceShape);
   if(JSON.stringify(prior?.observations??[])===JSON.stringify(observations)||!observations.length)
     return {status:'UNCHANGED',stored:false,providerRequests:2,count:observations.length,
