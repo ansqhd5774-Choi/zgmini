@@ -4,6 +4,8 @@
 
 ## 최신 인계 스냅샷 — W01 2026-11-17 (Census 단회 B는 Writer hook과 독립·#1854 반례 소스 검토 완료·#1871 공동 Owner 승인 HOLD·30/71)
 
+> **11/17 인계 #6940588871 직접 수신·PC 4파일 실측 보정:** 승인 A [Run #43978483562](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43978483562)의 08:21 KST 관측값은 Census 승인 manifest 4개 SHA256 **4/4 일치**. 단 당시 `coreTaskSourceLinked=false`이며 자연 Task→PID/lock proof는 여전히 미증명. 총괄 `RUNTIME_OWNER_EVIDENCE_MISSING` 판정 유지, #1818 재실행 금지. 상세는 하단 `W01-20261117-1818-OWNER-HANDOFF-FOURFILE-PREIMAGE-READBACK`.
+
 > **2026-11-17 우선순위 보정:** 제어 `pc-writer-b-source-once.yml`의 Census #28 단회 B는 Controller `engine.mjs`/PR #1854·#1871에 의존하지 않는다. #1854 병합·공통 Controller 통합 설치를 **수집의 일률적인 선행 Gate에서 제외**한다. 직접 BLOCKER는 #1818 Core Task-linked PID/E-lock 소유권 인증 실패이며, 현재 증명·신규 B 효과 승인은 미확인이다. W03/W04 2파일 Source GO(운영 B 승인 아님)는 별도. 기존 30/71 유지; 상세 증거는 말미 `W01-20261117-CENSUS-CONTROLLER-DECOUPLE` 참조.
 
 > **2026-11-17 후속 확인:** #1854 OPEN/Owner SOURCE_REVIEW_HOLD, #1871 DRAFT/CONTROLLER_B_NO_GO_AS_IS 재확인. Census 단회 승인 manifest는 구 파서 SHA-256을 pin한 반면 PR #1215 병합으로 앱 main 파서 내용은 변경됨. 운영 PC 현행 파서 SHA는 추가 확인이 필요하며 승인 범위 자동 확대 불가. 상세한 source pin/공식 스키마 교차확인과 다음 행동은 이 파일 말미의 `W01-20261117-POST1215-PARSER-PIN-CHECK` 항목 참조. **30/71(42.3%), Census #28 미수집·#1818 재실행 금지 유지.**
@@ -687,3 +689,14 @@ B4 10 | Production·화면 최종 검증
 - **중요 계약 교정:** 이 승인 B의 직접 결과는 `inflation-causal-candidates-r1/census-m3-manufacturing-inventories.json` 파일 저장 및 readback까지다. **SQLite 원자료 쓰기와 D1 게시는 이 manifest에서 명시적으로 금지**되므로 B 단독으로 SQLite 저장 성공이나 공개 7/7을 주장하지 않는다. 이후 DB 반영이 실제 필요하다면 별도 명시 승인·증거를 먼저 확인한다. 기존 Writer D1 게시는 별도 승인된 경로로 검증한다.
 - **현행 FIRST UNVERIFIED:** 운영 PC 4파일 SHA256 및 source pin의 현재 일치, 자연 Core Task/WMI/PID/E-lock owner/Event129 증명, 신규 고유 B 실행 효과 승인. 기존 #1818 consumed 및 #1864 STATE_UNKNOWN 재사용; 같은 조건에서 B 반복 발행 금지. 공통 Controller #1854/#1871 설치는 이 B의 소스상 필수 import 의존이 아님.
 - **다음 실행:** 기존 운영 증거로 owner proof/manifest 일치를 우선 판정하고, 증거가 없으면 공통 Owner #68/#1866에 해당 관측만 인계. 승인 후 신규 고유 Census B 2GET → 승인된 JSON raw SHA/storedAt readback → 별도 Writer 게시 권한·D1/API/UI 7/7 확인. 실제 운영 상태 변화 없이 완료 단계 증가 없음.
+
+
+<!-- W01-20261117-1818-OWNER-HANDOFF-FOURFILE-PREIMAGE-READBACK -->
+## 2026-11-17 — Census #28 인계 수신 및 승인 4파일 과거 PC 실측 증거 재사용
+
+- **프로세스 총괄 인계 직접 수신:** [#1818 댓글 6940588871](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1818#issuecomment-6940588871), 판정 `RUNTIME_OWNER_EVIDENCE_MISSING`. 기존 B #1818은 `INFL_MANUAL_B_CORE_OWNER_EVENT129_UNVERIFIED_STOP`, 공급자 0/2, 저장 미확인. 소비된 동일 requestId 재실행 금지.
+- **최초 승인 B의 파일 preimage 실측 확인:** 기존 승인 A `writer-install-preimage-readonly` [Run 43978483562](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43978483562)의 [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/43978483562-1-seat-1.json) 직접 재조회. 2026-11-16T23:21Z(한국 11/17 08:21) `PASS/WRITER_APPROVED_PREIMAGE_READONLY`, `sourceHead=approvedConfigSource=checkpointSource=2070ff53549e2f9f2cea57d5af7e1d83f9fd7388`, `sourceIdentityConsistent=true`, `coreTaskSourceLinked=false`, `protectedStateUnchanged=true`.
+- **승인 manifest 4/4 exact SHA-256 일치(위 스냅샷에 한함):** [Census approved manifest](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/approvals/inflation-census-api-b/w01-census-m3-api-once-approved-20261117.json)와 A 출력 대조. `inflation-causal-candidate-once.mjs`= `68c6a8736d2bd4bfc8278bacda8f002760679501de308f8fcd6e988e8015b71d`; `inflation-causal-candidate-census-m3.mjs`=`650c9ac80c534a3dc00026951911d0574c5c6421b0096caf902e5467ee4a960b`; `local-env.mjs`=`8b5a4f388ebbc94c37d6d50478344e4666140f1bee5d70c9315dfde1e584029c`; `quota-fetch.mjs`=`5ff750e1abf607e4a207bed16c20394406ca2ba8fe4ca42e2c514a155c87818b`. 전부 `exists=true`, `trackedDirty=false`. 4/4 역사적 일치로 이전 미확인 범위를 정정하되 **현재 실PC의 최신 SHA**와 자연 Task→PID→lock 증명은 별개 미확인.
+- **남은 실제 차단:** [#1748](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1748) WMI Core 소유자·E-lock 관측에도 Event129 0건/Task instance EMPTY, [#1835](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1835) 잠금 ABSENT; 최근 [#1906](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1906) Core checkpoint PASS도 idle 상태로 신원 인증 증거는 아님. #1634의 local-cycle hook/Controller #1871 설치는 독립 Census 단회 B 필수 선행조건이 아님. Event129 보호·Task 강제 실행·lock 삭제/우회 금지.
+- **다음 필수 행동:** 총괄이 기존 공통 경로에서 정확한 자연 실행 Task/WMI/PID/E-lock identity 증거 또는 승인된 대안의 실제 가능 여부를 판정하고 W01에 원본 반환. W01은 조건 충족 시 현장 4파일 preimage와 새 유효 승인 효과를 재검증한 후에만 새 고유 Census B 2GET→raw JSON SHA/sourceStoredAt→별도 Writer 게시·D1/API/UI 7/7. 기존 Census B는 DB/D1 쓰기 권한이 없으므로 해당 B 하나로 SQLite/D1 완료 주장 금지.
+- **이번 변경:** W01 GitHub 진행 기록·인계 회신만. 신규 PC A/B, 공급자 호출, 운영 SQLite/D1/Task/source 변경 0. W01 30/71(42.3%) 유지.
