@@ -236,7 +236,9 @@ export async function collectNineR35Delta({dataRoot,rosterPath,start,end,previou
 }
 
 async function requestPage({symbol,start,end,cursor,after,fetchImpl,timeoutMs}){
-  const url=new URL(`/api/v1/bars/stocks/${symbol}/1h`,SOURCE);
+  // Since the official 2026-11-07 dataset-id migration, US equities use stocks/us.
+  // Do not rewrite the pre-migration R23/R35 request URLs retained in manifests.
+  const url=new URL(`/api/v1/bars/stocks/us/${symbol}/1h`,SOURCE);
   const params={start,end,limit:String(PAGE_LIMIT),format:'jsonl',
     columns:'timestamp,symbol,open,high,low,close,volume,is_gap'};
   for(const [k,v] of Object.entries(params))url.searchParams.set(k,v);
