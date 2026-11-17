@@ -44,21 +44,26 @@ try{
   await page.screenshot({path:`artifacts/dashboard-history/introduction-${width}.png`,caret:'initial'});
   await intro.getByRole('button',{name:'닫기',exact:true}).click();
   await intro.waitFor({state:'hidden'});
-  const curve=page.locator('.zg-r55-summary-chart path.recharts-area-curve');
+  // Composite uses two independent reconstructed/calculated Area paths.
+  // Check actual geometry, not an obsolete one-path renderer contract.
+  const curveSelector='.zg-r55-summary-chart path.recharts-area-curve';
+  const curve=page.locator(curveSelector+'[d^="M"]').first();
+  const curveSignature=()=>page.locator(curveSelector)
+   .evaluateAll(paths=>paths.map(path=>path.getAttribute('d')??'').join('|'));
   await curve.waitFor({state:'visible'});
   await page.locator('.usa-target-card path.recharts-area-curve').waitFor({state:'visible'});
   await page.reload({waitUntil:'networkidle'});
   await intro.waitFor({state:'hidden'});
   await curve.waitFor({state:'visible'});
-  const year=await curve.getAttribute('d');
+  const year=await curveSignature();
   const periods=page.getByRole('group',{name:'종합 시장 점수 추이 기간'});
   await periods.getByRole('button',{name:'1M',exact:true}).click();
-  await page.waitForFunction(old=>document.querySelector('.zg-r55-summary-chart path.recharts-area-curve')?.getAttribute('d')!==old,year);
-  const month=await curve.getAttribute('d');
+  await page.waitForFunction(({selector,old})=>[...document.querySelectorAll(selector)].map(p=>p.getAttribute('d')??'').join('|')!==old,{selector:curveSelector,old:year});
+  const month=await curveSignature();
   revision=2;
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   await page.getByRole('img',{name:'종합 시장 점수 60.5점',exact:true}).waitFor({state:'visible'});
-  await page.waitForFunction(old=>document.querySelector('.zg-r55-summary-chart path.recharts-area-curve')?.getAttribute('d')!==old,month);
+  await page.waitForFunction(({selector,old})=>[...document.querySelectorAll(selector)].map(p=>p.getAttribute('d')??'').join('|')!==old,{selector:curveSelector,old:month});
   assert.equal(await periods.getByRole('button',{name:'1M',exact:true}).getAttribute('aria-pressed'),'true');
   assert.equal(await page.locator('.zg-r55-card-grid article').count(),12);
   // W06 #69: exercise every selectable period with real Recharts in mocked
@@ -78,9 +83,11 @@ try{
    assert.equal(await button.getAttribute('aria-pressed'),'true',
     width+'px '+label+' selected period');
    await curve.waitFor({state:'visible',timeout:15000});
-   const path=await curve.getAttribute('d');
-   assert.ok(path?.startsWith('M')&&!/NaN|Infinity/.test(path),
-    width+'px '+label+' chart has finite geometry');
+   const paths=await page.locator(curveSelector).evaluateAll(curves=>curves
+    .map(curve=>curve.getAttribute('d')??'').filter(Boolean));
+   assert.ok(paths.length>=1&&paths.length<=2
+    &&paths.every(path=>path.startsWith('M')&&!/NaN|Infinity/.test(path)),
+    width+'px '+label+' provenance curves have finite independent geometry');
    assert.equal(await page.locator('.zg-r55-card-grid article').count(),12);
   }
   // A real zero score remains visible, not a null/missing placeholder, on
