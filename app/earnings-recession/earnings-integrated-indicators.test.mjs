@@ -63,7 +63,7 @@ const storedCostRow=(meta,{value=0,...override}={})=>({
  changeUnit:meta.unit==="INDEX"?"INDEX_POINTS":"PERCENTAGE_POINTS",
  provider:"BLS",seriesId:meta.series,
  sourceURL:"https://data.bls.gov/timeseries/"+meta.series,
- status:"READY",...override,
+ status:"READY",freshness:{status:"FRESH",reason:null},...override,
 });
 const costFixture=rows=>({
  schemaVersion:EARNINGS_C_COST_SCHEMA,
@@ -106,4 +106,27 @@ test("W05 UI rejects unapproved, duplicate and malformed service display rows",(
   .indicators.length,5);
  assert.equal(buildEarningsCostIndicatorView({schemaVersion:"unapproved",rows:[...base,yoy,index]})
   .indicators.length,5);
+});
+
+test("WPSFD42 optional UI rows require BOTH READY and FRESH; base five remain",()=>{
+ const base=KNOWN_EARNINGS_COST_INDICATORS.map(meta=>storedCostRow(meta));
+ const [yoy,index]=OPTIONAL_EARNINGS_COST_INDICATORS.map(meta=>storedCostRow(meta));
+ const cases=[
+  {label:"partial service index",row:{...index,status:"PARTIAL",value:null}},
+  {label:"stale status",row:{...index,status:"STALE",value:null,freshness:{status:"STALE",reason:"OBSERVATION_EXPIRED"}}},
+  {label:"stale freshness on nominal ready",row:{...index,freshness:{status:"STALE",reason:"SOURCE_RETRIEVAL_EXPIRED"}}},
+  {label:"unavailable",row:{...index,status:"UNAVAILABLE",value:null}},
+  {label:"no freshness proof",row:{...index,freshness:undefined}},
+  {label:"invalid missing value",row:{...index,value:null}},
+ ];
+ for(const {label,row} of cases){
+  const view=buildEarningsCostIndicatorView(costFixture([...base,yoy,row]));
+  assert.deepEqual(view.indicators.map(meta=>meta.id),base.map(meta=>meta.indicatorId),label);
+  assert.equal(view.rows.length,5,label);
+  assert.equal(view.rows[0].value,0,label);
+ }
+ const published=buildEarningsCostIndicatorView(costFixture([...base,yoy,index]));
+ assert.equal(published.indicators.length,7);
+ assert.equal(published.rows.length,7);
+ assert.equal(published.rows[5].value,0);
 });
