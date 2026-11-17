@@ -1,5 +1,9 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
+> **W06 #69 격리 Chromium PR 실행 경로 개설 (2026-11-18 06:00 KST):** 기존 브랜치 시험 blob `328e605d35aed2024d296cffb56b397eed65103c`와 main blob `130ced488c49d44b02354e3c8b0d375ed954e270`을 원문 비교. 가로 넘침 assertion 16행 외 시험 본문 동일함을 확인. 오래된 W06 전체 브랜치를 main에 병합하지 않고 최신 main에서 새 격리 브랜치 `codex/w06-r4-69-overflow-ci-20261118` 생성, 단일 시험 파일 커밋 `d11eb869c202e5f423b33a17d2669e78472d0025`, [PR #1270](https://github.com/ansqhd5774-Choi/zgmini/pull/1270) 생성(1파일 +16/-0). `community-chat-browser.yml`은 해당 경로 변경 PR에 반응하도록 설정. 최초 commit workflow runs 조회는 빈 목록으로 **CI 미착수/미확인**, PASS 주장 및 병합 금지. 시작/종료 DONE **22/75(29.3%)**, #69 PARTIAL 유지. 다음: PR #1270의 실제 Chromium run·아티팩트·overflow PASS/FAIL 확인 후 PASS 시 선별 병합, FAIL 시 실측 좌표에 한해 수정. PC/SQLite/D1/Cloudflare 변경 0, 총괄 인계 0.
+>
+
+
 > **W06 #69 Chromium 실행 경로 감사 (2026-11-18 04:58 KST):** 지정 계획·원장 및 시험 원격 재조회. 브랜치 `tests/dashboard-history-browser-r5.mjs` blob `328e605d35aed2024d296cffb56b397eed65103c`에 390/768/1440/1920px × 1D/1W/1M/3M/6M/1Y 실제 Playwright DOM/geometry와 문서 scrollWidth·차트/12카드 경계 assertion이 함께 존재함을 확인. 실제 runner는 `.github/workflows/community-chat-browser.yml`이며 main/작업 브랜치 모두 `workflow_dispatch`를 선언하고 해당 Node 시험을 실행하도록 구성됨. **그러나 현재 연결 GitHub 도구에 workflow_dispatch 실행 동작이 없고 로컬 GitHub DNS 조회도 실패**하여 신규 Chromium Run ID/실제 PASS/FAIL은 확보하지 못함. main↔작업 브랜치 `diverged`, ahead 549/behind 832로 전체 PR/병합 금지. 이번에는 코드·CSS·운영 변경 없음, **#69 PARTIAL / DONE 22/75(29.3%), 잔여 53** 유지. **다음 단일 실행:** 승인된 GitHub Actions 실행 권한이 있는 환경에서 `community-chat-browser.yml`을 `codex/ui-improvements` ref로 workflow_dispatch하여 Chromium 시험의 4폭×6기간·overflow 결과/아티팩트 확인; PASS 후 main 대비 시험 파일 1개만 선별 PR, FAIL이면 폭·요소 좌표에 한해 최소 수정. #74/#75 및 운영 SHA 별도 미확인. 이 기록은 소스 검사 완료만 뜻하며 CI 성공을 주장하지 않음.
 >
 
