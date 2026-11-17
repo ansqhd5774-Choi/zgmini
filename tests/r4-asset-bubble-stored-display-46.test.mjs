@@ -70,7 +70,7 @@ test('different factor count, weights, status or total never passes the approved
 });
 test('future, fabricated or mismatched quarter cannot replace the saved last complete R10 quarter',()=>{
  for(const mutation of [
-  {scoreObservationQuarter:'2026-Q4'},{scoreObservationQuarter:'2026-Q3'},
+  {scoreObservationQuarter:'2026-Q4'},
   {diagnosticQuarter:'2026-Q1'},{asOfDate:'2026-02-30'},
   {asOfDate:'2026-04-21'},
  ]){
@@ -78,6 +78,9 @@ test('future, fabricated or mismatched quarter cannot replace the saved last com
  }
  const p=base();p.trend.push({label:'2026-09-30',quarter:'2026-Q3',value:70});
  assert.deepEqual(assetBubbleVerifiedDisplayTrend(p,40),[]);
+ const lagged=base();lagged.scoreObservationQuarter='2026-Q3';
+ assert.equal(assetBubbleVerifiedDisplayScore(lagged),40,'verified scored projection may advance before its chart history');
+ assert.deepEqual(assetBubbleVerifiedDisplayTrend(lagged,40),[],'an older R10 quarter must not be relabelled as the newer scored quarter');
 });
 test('same-date conflicting score or missing latest quarter clears the graph, not the approved headline',()=>{
  const conflict=base();conflict.trend.push({label:'2026-06-30',quarter:'2026-Q2',value:50});
