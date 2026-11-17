@@ -1033,3 +1033,13 @@
 - **main 후속 검증:** [Node #44091261707](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44091261707) **4911 total /4901 PASS/0 FAIL/7 skipped/3 todo**, Writer11 PASS, CF 69 PASS, Build/TS PASS. 동일 sha `check`·`verify`([#44091261767](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44091261767))·`notify`([#44091261780](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44091261780))·`Workers Builds: zgmini-migration-candidate-r5` **4/4 SUCCESS** (Build `be9122dd-8dd2-4fea-811e-e4220aa978f0`, completed 2026-11-17T13:19:20Z). 지난 W06 #37 main의 SEC 요청량 `peak=9` 회귀 실패는 **별도 run 44088471372의 사실**이며 이번 main run에는 fail 0, SEC 소스/시험 수정 0.
 - **완료와 미증명 분리:** W06 #28 **현재 게시의 검증 가능한 방법론 표시/UI 수정 완료**, 과거 저장점별 methodologyVersion 식별 불가로 #28 계획 전체 **PARTIAL**. 정확 활성 Cloudflare Production Deployment SHA/현재 도메인 hydrated chart/version 불명(#75 PARTIAL), 새 PC→SQLite→D1 실자료 계보는 각 원담당의 실제 게시 증거가 필요(#74 PARTIAL). Cloudflare Build 성공을 실제 활성 Production 성공으로 둔갑하지 않음. 별도 수동 배포/브라우저 권한 우회/PC/Controller/Writer/DB/D1/수집 주기·DNS 운영 변경 0, 총괄 신규 인계 0.
 - **다음 필수 실행:** W06 독립 #69의 현재 차트·점수 6기간, 무효/미래 날짜, 모바일 렌더링 계약을 실제 검증 함수와 현재 main으로 선별 점검하고 유효 신규 결함만 수정. 방법론별 과거 점수 계보 신규 추가는 Writer/계산 원담당의 승인 계약·실행 증거가 생길 때만 이어서 재검증; #75 active deployment 확인 및 최종 수동 검수는 모든 실제 기능 완료 이후 별도.
+
+
+### [2026-11-18 01:02 KST] R4 #69 — 실제 공개 브라우저 4해상도 검증 재시도, 네트워크 단계 차단
+- **시작/종료:** 고유 DONE 22/75(29.3%), 잔여 53; #69 PARTIAL 유지. W06 기록 브랜치 기존 원장 blob `7e9253a650328a96c91dc0af7d6e817e6bc7288d`에서 계획/현재 인계 확인. 운영 설치/배포 SHA 미확인.
+- **실제 수행:** GitHub `main`의 `tests/r4-six-period-responsive-chart-69.test.mjs` blob `c09e48d06bcdc4dc723b43d1797c9e6ded508e8a` 원문 재조회. 6기간 점수·0점·결측·시각 충돌 검사와 390/768/1440/1920 CSS **정적** 검사임을 구분. 기존 CI 성공은 재사용, 새 CI 실행 없음.
+- **실제 공개 브라우저 검증:** 읽기 전용 브라우저 실행 ID `e3b17952-98fb-47c9-a8ba-a02b52d305d0`; `https://zgmini.kr/`, `http://zgmini.kr/`, `https://www.zgmini.kr/` 모두 `ERR_SOCKS_CONNECTION_FAILED`. 390/768/1440/1920 네 뷰포트 모두 대시보드 DOM 자체를 로드하지 못해 1D/1W/1M/3M/6M/1Y 실제 차트·가로 넘침 **검증 불가**. 이는 검사 환경 연결 실패이며 사이트 자체 장애나 UI 실패 증거가 아님. 이전 동일 오류와 비교해 신규 앱 결함 없음.
+- **운영 경계:** 운영 PC/SQLite/D1/API/Cloudflare 활성 배포 직접 변경 0. 활성 Production exact version, 실제 hydration UNKNOWN. 신규 기능 코드/PR/CI 없음; 기존 main CI PASS를 브라우저 실측으로 대체하지 않음.
+- **LAST PASS/FIRST FAIL:** 정적 테스트 소스 존재 PASS; 공개 브라우저 네트워크 진입 FIRST FAIL `ERR_SOCKS_CONNECTION_FAILED`. 앱 렌더링에 대한 PASS/FAIL은 UNKNOWN.
+- **다음 필수 실행 하나:** W06 #69는 동일 SOCKS 경로 재시도를 중단하고, GitHub에 이미 존재하는 Chromium UI CI의 **실제 뷰포트별 DOM/overflow assertion** 유무를 조회한다. 4폭×6기간 실검증이 없다면 승인된 격리 CI fixture에 추가해 검증한다. 실제 Production 활성 SHA 확인은 #75 별도, 원담당 Writer #74 증거 별도.
+- **원격 인계 검증:** 본 기록 커밋 후 원격 파일 재조회로 확인; 신규 DONE 증가 없음.
