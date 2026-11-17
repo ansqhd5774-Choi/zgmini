@@ -203,7 +203,7 @@ test('economic detail page gates R54 headline, chart, comparisons, 4 factors and
   'id!=="fundFlows"||(score!==null&&fundFlowChartCurrent)',
   'id==="fundFlows"&&(score===null||!fundFlowChartCurrent)',
   'economicFundFlowSourceDate(domain,payload?.asOfDate)',
-  '||id==="liquidity"||id==="fundFlows"||id==="breadth"||id==="dollarFx")&&score===null',
+  '||id==="liquidity"||id==="fundFlows"||id==="breadth"||id==="dollarFx"||id==="commodities")&&score===null',
  ])assert.ok(panel.includes(term),term);
  const adapter=readFileSync(new URL('../lib/market-score/domain-adapter-r1.mjs',import.meta.url),'utf8');
  const composite=readFileSync(new URL('../lib/market-score/composite-model-r1.mjs',import.meta.url),'utf8');
