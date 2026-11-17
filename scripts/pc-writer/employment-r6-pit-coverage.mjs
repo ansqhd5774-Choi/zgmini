@@ -4,7 +4,7 @@
 import fs from "node:fs";
 import {createHash} from "node:crypto";
 import {DatabaseSync} from "node:sqlite";
-import {EMPLOYMENT_R6_TABLES} from "../../lib/market-score/employment-r6-contract.mjs";
+import {EMPLOYMENT_R6_TABLES,EMPLOYMENT_R6_GROUPS,EMPLOYMENT_R6_BLS_SERIES} from "../../lib/market-score/employment-r6-contract.mjs";
 import {EMPLOYMENT_R6_REQUIRED_LOGICAL_SERIES} from "../../lib/market-score/employment-r6-formula.mjs";
 import {EMPLOYMENT_R4_PIT_CLASSES} from "../../lib/market-score/employment-r4-shadow-contract.mjs";
 
@@ -234,6 +234,14 @@ const readRawLineageEvidence=(db,asOfDate)=>{
   return {byResponse,byStoredResponse,byClaimedResponse,rawSnapshotMetadataKeys:groups.size,
     rawSnapshotCertifiedKeys:certified.size};
 };
+// A BLS HTTP response belongs to the top-level BLS source while each extracted
+// observation names its approved CPS/CES/JOLTS/ECI subgroup. Derive only exact
+// release-group/provider matches from the frozen R6 contract; never broadly
+// accept arbitrary BLS_* records as proof of the stored response.
+const BLS_ROW_PROVIDER_BY_GROUP=new Map(Object.entries(EMPLOYMENT_R6_GROUPS)
+  .filter(([,group])=>group.kind==="BLS")
+  .map(([name,group])=>[name,new Set((group.seriesIds??[])
+    .map(id=>EMPLOYMENT_R6_BLS_SERIES[id]?.provider).filter(Boolean))]));
 const classifyRawLineage=(rows,evidence)=>{
   if(!evidence||rows===null)return null;
   const out={verified:0,missingSnapshot:0,conflicting:0,unverified:0};
@@ -247,7 +255,17 @@ const classifyRawLineage=(rows,evidence)=>{
       out.unverified++;continue;
     }
     if(p.rawRecordHash!==row.source_hash){out.conflicting++;continue;}
-    const key=row.provider+"\u001f"+p.responseHash;
+    // The raw BLS snapshot uses provider="BLS"; an observation uses its
+    // series-specific provider. Require the stored provenance release group to
+    // authorize that mapping, otherwise leave its lineage unverified.
+    let responseProvider=row.provider;
+    if(responseProvider.startsWith("BLS_")&&responseProvider!=="BLS_BED"){
+      if(!BLS_ROW_PROVIDER_BY_GROUP.get(p.releaseGroup)?.has(responseProvider)){
+        out.unverified++;continue;
+      }
+      responseProvider="BLS";
+    }
+    const key=responseProvider+"\u001f"+p.responseHash;
     const candidates=evidence.byResponse.get(key)??[];
     if(!candidates.length){
       if(evidence.byStoredResponse.has(key))out.unverified++;
