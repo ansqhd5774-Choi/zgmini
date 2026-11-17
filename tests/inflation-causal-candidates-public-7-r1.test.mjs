@@ -1,3 +1,4 @@
+import '../scripts/pc-writer/inflation-causal-candidate-census-m3.test.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
