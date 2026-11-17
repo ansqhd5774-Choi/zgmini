@@ -667,3 +667,13 @@ B4 10 | Production·화면 최종 검증
 - **유지할 사전조건:** 기존 `APPROVED_B` manifest의 exact `installedSourceSha=2070ff53549e2f9f2cea57d5af7e1d83f9fd7388`, 4개 file SHA256/실PC preimage, 새 고유 요청 효과 승인, 자연 Core Task-linked owner proof, Writer/Core lease·한도·재조회 보호는 그대로 필요. #1818 STOP 이후 상태 변화 없이 반복 B로 실패를 재현하지 않는다. Event129 채널 비활성/미확인은 관리자 C 우회 없이 기존 승인 진단/정규 소유자 경로에서 판정. 앱 `main` Census 파서 PR #1215 변경은 현재 실PC parser SHA 확인 없이 설치되었다고 가정하지 않음.
 - **다음 W01 필수 실행:** **이미 승인·등록된 A와 결과에서 확인 가능한 현재 Event129/Core owner evidence가 신규 Census B를 안전하게 허용하는지**를 기존 #1818·#1864·#1838 증거와 실제 승인 PC 상태로 판정한다. 증거가 부족하면 이미 열린 #1854/#1866 공통 진단 개선을 별도 추적하며, W01 업무에 정확히 필요한 *추가 소유권 증명 수단·승인 source*만 공통 Owner에 요청한다. 확인된 허용 범위에서만 새 고유 B를 발행하여 2GET→raw SHA/storedAt→26/26→Writer D1/API/UI 7/7을 수행한다.
 - **결과와 보호:** source-dependency 오류를 교정하고 기존 원장에 고유 증거만 추가. 실제 신규 A/B 접수, provider GET, 운영 source·DB/D1·Task·DNS·배포 변경 **0**. 30/71(42.3%) 유지, 41개 미완료. 과거 #1818/#1633 재실행 금지.
+
+
+<!-- W01-20261117-CORE-SNAPSHOT-EVIDENCE -->
+## 2026-11-17 KST — Core 소유권 관측 원본 회수 및 Census B 재실행 조건 정밀화
+
+- **진행률:** 시작·종료 30/71(42.3%), 미완료 41. 기존 #1818 소비 요청 재사용 금지; 새 운영 요청·공급자 GET·SQLite/D1 쓰기 0.
+- **실제 A #1864 원본 댓글 재조회:** [#1864 결과](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1864#issuecomment-6935608064), Run `43999942842`, `status=STATE_UNKNOWN`, `code=CORE_TASK_NOT_RUNNING_AT_SNAPSHOT`, `visibleRunningInstances=0`, `stoppedProven=false`, `securityContextMayLimitVisibility=true`, E-lock `ABSENT/CORE_LOCK_ABSENT`, 보호 상태 SHA 전후 일치. 이것은 **관측 순간 자연 Core 실행 및 소유권을 증명하지 못한 결과**이며 Core가 영구 중지됐다는 증거가 아니다.
+- **A #1838 결과 재사용:** [#1838](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1838#issuecomment-6934519895) `BLOCKED/RETIRED_IRAN_INVENTORY_UNAVAILABLE` 후검증으로 결과가 가려졌으므로 Core owner PASS 증거로 채택하지 않는다. 기존 B [#1818](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1818#issuecomment-6933486946) `INFL_MANUAL_B_CORE_OWNER_EVENT129_UNVERIFIED_STOP`, provider 0/2.
+- **실행 의존성:** `inflation-census-api-b`는 Controller `engine.mjs`의 #1854/#1871 소스 설치에 직접 의존하지 않으므로 공통 Controller B 전체 설치를 무조건 선행 Gate로 삼지 않는다. 그러나 **현 시점 실제 Core Task/WMI/PID/E-lock/Event129 승인 증거는 없음**. 단순 시간 대기 또는 동일 A 재실행만으로 B 성공을 예고하지 않는다.
+- **다음 실제 작업:** 기존 승인된 소유권 증명 경로의 Event129 활성 상태 및 Task-linked 자연 Core 실행의 신뢰 가능한 동시 증거를 Owner가 확보하도록 기존 #1866/공유 #68에 연결한다. 증명 PASS와 기존 manifest 4파일 SHA256·installed source pin·lease·새 B 효과 승인 모두 충족한 경우에만 새 고유 Census B 2GET→raw SHA/storedAt→26/26→Writer D1/API/UI 7/7. #1633 자동 hook은 이 단회 B의 선행 Gate가 아님.
