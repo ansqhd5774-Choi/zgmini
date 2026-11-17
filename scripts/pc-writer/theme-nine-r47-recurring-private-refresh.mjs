@@ -66,7 +66,9 @@ function verifyDeltaState(home, name, rosterSha, symbols, manifest) {
       let requested;
       try{requested=new URL(f.requestedUrl??entry.requestedUrl);}catch{fail('PAGE_REQUEST_IDENTITY');}
       if(requested.origin!=='https://getmarkethistory.com'||
-         requested.pathname!==`/api/v1/bars/stocks/${symbol}/1h`||
+         // Archived R35 pages keep their original URL; new free 1h requests use stocks/us.
+         ![`/api/v1/bars/stocks/${symbol}/1h`,
+           `/api/v1/bars/stocks/us/${symbol}/1h`].includes(requested.pathname)||
          requested.searchParams.get('start')!==state.start||
          requested.searchParams.get('end')!==state.end||
          requested.searchParams.get('format')!=='jsonl'||
