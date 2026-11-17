@@ -124,14 +124,17 @@ export function inspectA407(home=HOME){
   }};
   for(const {ids,file,archive} of SOURCE_FILES){
     const f=secureDigest(root,file);
-    if(archive)secureDigest(root,archive);
-    add(ids,{sha256:f.digest,proof:archive?
-      'PARSED_FILE_HASH_AND_ARCHIVE_PRESENT':'SOURCE_FILE_DOUBLE_READ_FINGERPRINT'});
+    const archiveDigest=archive?secureDigest(root,archive).digest:null;
+    add(ids,{sha256:f.digest,...(archiveDigest?{archiveSha256:archiveDigest}:{}),
+      proof:archive?'PARSED_AND_ARCHIVE_DOUBLE_READ_FINGERPRINT':
+        'SOURCE_FILE_DOUBLE_READ_FINGERPRINT'});
   }
-  const meta=secureDigest(root,'inflation-causal/sce31/latest.json',65536).json;
+  const sceMeta=secureDigest(root,'inflation-causal/sce31/latest.json',65536);
+  const meta=sceMeta.json;
   if(!SHA64.test(meta?.downloadSha256??''))throw failure('A407_SCE_REFERENCE_INVALID');
   const sce=secureDigest(root,'inflation-causal/sce31/'+meta.downloadSha256+'.json');
-  add(['31'],{sha256:sce.digest,proof:'SCE_PARSED_FILE_WITH_REFERENCE'});
+  add(['31'],{sha256:sce.digest,metadataSha256:sceMeta.digest,
+    archiveRefSha256:meta.downloadSha256,proof:'SCE_PARSED_WITH_REFERENCE_FINGERPRINT'});
   const dbFile=path.join(root,'storage','core.sqlite');
   requireExistingWalSidecars(root,dbFile);
   db=new DatabaseSync(dbFile,{readOnly:true,timeout:1000});
