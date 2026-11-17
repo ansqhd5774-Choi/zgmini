@@ -160,7 +160,7 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 | PIT-04-04 | availableAt·retrievedAt·기록 시각의 PIT 적격성 검산 | 공식 관측 시각·DB 메타 | 미래 가용 데이터를 과거 TRUE_PIT로 승인하지 않음 | TODO |
 | PIT-04-05 | 저장 raw snapshot 및 요청 원장에 원본 해시 귀속 확인 | 원자료 raw_snapshot·수집 Run | 동일 응답 출처와 기록시각 확인·불명 출처 HOLD | TODO |
 | PIT-04-06 | 52주 참조 및 4주 계산에 필요한 주차 실측 | 실PC #1799 저장 Current 600/600주×51지역 완전, strict52 545주 / firstWindowBreak=null / 10y 577주 필요 | 55주 선행 참조(2015-05-02~2016-05-14), 첫 계산 가능 날짜 2016-05-21~최근 저장 관측일 2026-10-24의 545주 **날짜/지역 창 완전성** 확인; History as-of·분모 값 품질은 PIT-04-02/04/07 별도 | DONE |
-| PIT-04-07 | 지역별 분모 0·null·missing 원칙 확인 | 실제 관측 수·데이터 계약; [결측값 0 오인 방지 PR #1219](https://github.com/ansqhd5774-Choi/zgmini/pull/1219) main 병합·Node CI PASS | 0을 임의 보간하거나 결측으로 둔갑시키지 않음; 실PC 관측값·분모 재검증은 별개 | IN_PROGRESS — SOURCE_GUARD_MERGED/PC_EVIDENCE_PENDING |
+| PIT-04-07 | 지역별 분모 0·null·missing 원칙 확인 | 실제 관측 수·데이터 계약; [계보 검증 #1219](https://github.com/ansqhd5774-Choi/zgmini/pull/1219) 및 [계산 입력 검증 #1222](https://github.com/ansqhd5774-Choi/zgmini/pull/1222) main 병합·Node CI PASS | null·blank·boolean 원자료/결측 점수를 0으로 허위 인정하지 않음; 정상 숫자 0 보존, 실PC 51지역 값·분모 검증 별개 | IN_PROGRESS — TWO_SOURCE_GUARDS_MERGED/PC_EVIDENCE_PENDING |
 | PIT-04-08 | 재현 가능한 키·충돌 키·출처 불명 키 분리표 확정 | PIT-04 앞 7개 결과 | 원자료 유효 주차·충돌 건수·복구 제외 키 증거화 | TODO |
 
 ### PIT-05 — 복구 가능성 판정·최소 운영 승인 설계 (8개, 미실행)
