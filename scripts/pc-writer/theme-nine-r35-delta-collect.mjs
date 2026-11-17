@@ -20,6 +20,12 @@ const MAX_BODY_BYTES = 8_000_000;
 
 const dateOK = x => typeof x==='string' && /^\d{4}-\d{2}-\d{2}$/.test(x) &&
   !Number.isNaN(Date.parse(x+'T00:00:00Z')) && new Date(x+'T00:00:00Z').toISOString().slice(0,10)===x;
+// Date.parse normalizes impossible calendar days on Node (e.g. Feb 30 -> Mar 2).
+// Reject those responses before the R35 SPY freshness gate or raw checkpoint write.
+const validHourTimestampUTC = ts => typeof ts==='string' &&
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(ts) &&
+  !Number.isNaN(Date.parse(ts)) &&
+  new Date(ts).toISOString().slice(0,19)===ts.slice(0,19);
 const ny = new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',
   year:'numeric',month:'2-digit',day:'2-digit'});
 const nyDay = timestamp => {
@@ -100,9 +106,8 @@ function validatePage(bytes,symbol,after) {
   for(const line of lines){
     let row;try{row=JSON.parse(line);}catch{fail('PAGE_NOT_JSONL');}
     const ts=row?.timestamp;
-    if(row.symbol!==symbol||typeof ts!=='string'||
-       !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(ts)||
-       Number.isNaN(Date.parse(ts))||(prev&&ts<=prev))fail('PAGE_BAR_IDENTITY');
+    if(row.symbol!==symbol||!validHourTimestampUTC(ts)||
+       (prev&&ts<=prev))fail('PAGE_BAR_IDENTITY');
     prev=ts;
     if(row.is_gap===true){gaps++;continue;}
     if(['open','high','low','close'].some(k=>!Number.isFinite(row[k])||row[k]<=0)||
