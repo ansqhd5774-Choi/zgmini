@@ -345,3 +345,57 @@ test("PIT-04-03 same value/hash but different provider is a Core lineage conflic
   assert.equal(report.coreCurrentHistoryUnverifiedKeys,0);
   assert.equal(report.coreCurrentHistoryMissingKeys,0);
 });
+
+test("PIT-04-04 recorded_at and first_seen_at cannot backdate a read-only as-of report",t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-recorded-"));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"candidate.sqlite");
+  const al=observation("AL",100,"a".repeat(64));
+  fixture(core,{current:[al],history:[al]});
+  fixture(candidate,{current:[al],history:[al]});
+  for(const file of [core,candidate]){
+    const db=new DatabaseSync(file);
+    try{
+      db.exec(`ALTER TABLE ${T.observationHistory} ADD COLUMN recorded_at TEXT`);
+      db.prepare(`UPDATE ${T.observationHistory} SET recorded_at=?`)
+        .run("2026-11-03T01:00:00.000Z");
+    }finally{db.close();}
+  }
+  const cdb=new DatabaseSync(candidate);
+  try{
+    cdb.exec(`ALTER TABLE ${T.observationCurrent} ADD COLUMN first_seen_at TEXT`);
+    cdb.prepare(`UPDATE ${T.observationCurrent} SET first_seen_at=?`)
+      .run("2026-11-03T01:00:00.000Z");
+  }finally{cdb.close();}
+  const before=[digest(core),digest(candidate)];
+  const old=auditEmploymentR6PitCoverage({
+    dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-02",
+  });
+  assert.equal(old.coreCurrentKeys,1);
+  assert.equal(old.coreHistoryAsOfUniqueKeys,0);
+  assert.equal(old.coreCurrentKeysMissingHistory,1);
+  assert.equal(old.coreCurrentHistoryMatchingKeys,0);
+  assert.equal(old.coreCurrentHistoryMissingKeys,1);
+  assert.equal(old.candidateHistoryAsOfUniqueKeys,0);
+  assert.equal(old.candidateCurrentKeys,0);
+  assert.equal(old.missingKeysWithCandidateHistory,0);
+  const newDate=auditEmploymentR6PitCoverage({
+    dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-03",
+  });
+  assert.equal(newDate.coreHistoryAsOfUniqueKeys,1);
+  assert.equal(newDate.coreCurrentKeysMissingHistory,0);
+  assert.equal(newDate.coreCurrentHistoryMatchingKeys,1);
+  assert.equal(newDate.coreCurrentHistoryMissingKeys,0);
+  assert.equal(newDate.candidateHistoryAsOfUniqueKeys,1);
+  assert.equal(newDate.candidateCurrentKeys,1);
+  assert.equal(newDate.candidateOverlapMatchingKeys,1);
+  assert.equal(newDate.promotionApproved,false);
+  assert.deepEqual([digest(core),digest(candidate)],before);
+  // The timestamp column exists: malformed evidence fails closed, not as null/zero.
+  const hdb=new DatabaseSync(core);
+  try{hdb.prepare(`UPDATE ${T.observationHistory} SET recorded_at=?`).run("invalid");}
+  finally{hdb.close();}
+  const invalid=auditEmploymentR6PitCoverage({dbPath:core,asOfDate:"2026-11-03"});
+  assert.equal(invalid.coreHistoryAsOfUniqueKeys,0);
+  assert.equal(invalid.coreCurrentKeysMissingHistory,1);
+});
