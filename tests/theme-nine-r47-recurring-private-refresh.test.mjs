@@ -304,6 +304,8 @@ test('R47 accepts archived old R35 checkpoint URL alongside current stocks/us pa
   checkpoint.symbols.SPY.files[0].requestedUrl=
     previous.replace('/api/v1/bars/stocks/us/','/api/v1/bars/stocks/');
   fs.writeFileSync(cpPath,JSON.stringify(checkpoint));
+  // Test-time timestamps must agree with the simulated collection clock.
+  setFixtureCollectedAt(f,f.firstTime);
   const next=planNineR47Recurring({...f,now:f.secondTime});
   assert.equal(next.status,'READY_NEW_WINDOW');
 });
