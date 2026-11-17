@@ -373,3 +373,22 @@ test('older service revision corruption invalidates the selected newer stored pr
       /CHUNK_SHA256_MISMATCH/);
   });
 });
+
+test('older service snapshot provenance tampering rejects a newer valid stored source',()=>{
+  withServiceDb({},db=>{
+    const original=db.prepare(`SELECT snapshot_sha256,provenance_json
+      FROM api_history_snapshots_v1 WHERE provider='BLS' AND dataset='WPSFD42'`).get();
+    const amended=response({services:true}).Results.series.at(-1);
+    amended.data=amended.data.map(item=>item.year==='2026'&&item.period==='M09'
+      ?{...item,value:'157.669'}:item);
+    insertPlans(db,buildPlans(
+      normalizeSeries({Results:{series:[amended]}},['WPSFD42']),
+      '2026-10-27T00:00:00.000Z','e'.repeat(64)));
+    const forged={...JSON.parse(original.provenance_json),seriesID:'WPSFD4'};
+    db.prepare(`UPDATE api_history_snapshots_v1 SET provenance_json=?
+      WHERE provider='BLS' AND dataset='WPSFD42' AND snapshot_sha256=?`)
+      .run(JSON.stringify(forged),original.snapshot_sha256);
+    assert.throws(()=>buildServiceSourcePreview(db,{generatedAt:GENERATED}),
+      /BLS_SOURCE_PROVENANCE_INVALID/);
+  });
+});
