@@ -1307,3 +1307,16 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 **LAST PASS:** W05 운영 승인/단회 실패와 실PC 기존 A/사후 checkpoint, 공통 Core lock·Writer B 자연 유휴/Task guard 소스, 기존 검토 PR 상태를 대조해 새로운 공통 효과만 분리 요청·원격 기록. **FIRST UNFINISHED:** 현재 Core lock PID/Task instance 소유 증명, 충분한 idle-window 관측 및 현재 PC Writer lease release, 총괄의 정확한 유지보수 효과 GO/HOLD/NO-GO, W05 운영 3파일 실제 설치/원자료 저장·D1/API/UI 완료.
 
 **NEXT 필수 행동:** 사용자 통해 실제 총괄 대화에 위 4개 링크 전달 후, 총괄이 기존 증거·읽기 A로 owner/idle을 검증하고 **정상 idle 존재 시** W05가 기존 승인으로 새 고유 B 1회 설치; **정상 idle 구조적 불가 확인 시** 총괄의 별도 정확 공통 source/승인/복원 경로 기술 검토·GO/HOLD를 받고 적용 범위 충족에만 실행. 운영 source/Task/DB 등 미승인 변경 0, 소비 #1919 재실행 0.
+
+
+## 71. R3-04 (2026-11-17 KST) 프로세스 총괄 조건부 유지보수 승인 결정 실제 수신 — OWNER_EVIDENCE_UNKNOWN / NEW_EFFECT_HOLD
+
+**진행률:** 개별 `28/82(34.1%) → 28/82(34.1%)`, 순차 `26/82(31.7%) → 26/82(31.7%)`, 첫 미완료 R3-04 불변. §70의 조건부 운영 효과 요청은 [공통 총괄 공식 결정 #68/6942953021](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6942953021)에서 `OWNER_EVIDENCE_UNKNOWN` 및 신규 유지보수 효과 `HOLD/NOT_APPROVED`로 회신. 이번 W05 대화에서 해당 댓글을 원문 직접 조회해 수신·판정 완료.
+
+**실제 Windows 최신 증거:** 원본 [#1951](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1951#issuecomment-6942882251) / Run [44046727060](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44046727060), `inflation-core-lock-observation-readonly` seat02: A execution 210.018초, Core lock 26/26 표본 존재, `CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE` 26/26, `activeTaskSamples=0`, `linkedNodeSamples=0`, `ownerVerifiedSamples=0`; 보고서 상태 `STATE_UNKNOWN / INFL_CORE_LOCK_PRESENT_TASK_ENGINE_GAP`, workflow success가 owner PASS로 상태 승격시키지 않음. 결과 JSON+TXT 2/2 원격 확인은 총괄 및 W05 조회에서 재사용; `protectedStateUnchanged=true`, Task XML/Writer approved source 보존, provider/SQLite/D1/운영 writes 0. 이는 **210초 해당 구간 lock 관찰**이며 Writer B에 필요한 360초 최초 대기 내 연속 2표본 자연 idle 부재의 영구 증명, 소유 PID 검증, lease release 권한이 아님. 이전 #1835 lock absent와 #1933/#1948 checkpoint 전진 증거 보존.
+
+**정확 승인 경계:** 기존 W05 source-only B 정확 3파일 GO [#1885/6941008513](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1885#issuecomment-6941008513) 및 control main manifest/고정 source `2a9a38a452b5ba95a3e370c5b56445bb75fa05bb`는 계속 유효. **신규 Core/Korea Task 시작 억제, disabled→Writer B guard 예외, 자연 drain/새 복원 프로세스, 소유자 불명 lock 해제는 승인되지 않음.** 기존 B #1919 1회 소비·재실행 금지, 신규 무조건 B 금지. `enabled=true/READY + no linked process + no Core lock` 두 차례 연속 검증 전 `NOT_READY`, `OWNER_EVIDENCE_UNKNOWN` 유지. 새로운 공통 B 변경의 최소 PR·정확 after SHA/manifest/Task XML/lease/rollback·workflow 상한은 원인 입증 뒤에만 총괄 검토. 기존 A 권한으로 조회 가능한 것은 총괄이 소유권/Task Engine 보안 컨텍스트 차이 증거로 처리하며, 신규 allowlist/Controller install/권한 확대가 필요하면 해당 범위 새 승인 전 STOP.
+
+**원본 W05 실행 인수 영수증:** [제어 원본 #1919/6943030213](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1919#issuecomment-6943030213)에 이번 W05 담당 명의로 결정·실측·실행 경계·다음 책임을 댓글로 등록. 해당 댓글을 이 세션 GitHub API로 생성했으며 별도 총괄 대화의 자동 인수/운영 재개 증거로 오인하지 않음.
+
+**FIRST UNFINISHED / NEXT:** 총괄의 현장 Task/Owner 가시성 원인 분리/실제 현재 자연 idle 및 공유 lease 입증이 있어야 기존 정상 Writer B를 W05가 **새 고유 승인 단회**로 실행 가능. W05 원담당은 소스 후속 Draft #1231 계산·원자료 분리/회귀를 계속하고 고정 승인 source Draft #1207의 3파일 SHA·manifest를 변경하지 않음. 실제 PC source 설치, BLS POST, SQLite append, D1/Cloudflare/API/UI 업데이트 증거는 현재 0. 신규 운영 source/Task/DB/Runner 변경 0.
