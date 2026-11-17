@@ -1,3 +1,12 @@
+## 2026-11-17 W03 9/68 — 총괄 재인계 없이 R47 checkpoint 원담당 독립 회귀 보강
+
+- **실행 경계:** 프로세스 총괄 #1894/6940589587의 코드 검토·인계는 이미 처리된 결과로 재사용. #1894 재접수, 중복 승인 요청, 총괄에게 기능 재배정 0건. 사용자 지시에 따라 W03 자체 checkpoint/증분 source 검증 진행.
+- **진행률:** 8/68 완료(11.8%) → **8/68 완료(11.8%)**, 9단계 진행 중. 정확 R47 CMD 운영 설치·신규 PC 수집/계산/게시 증거가 없어 단계 완료 숫자를 올리지 않음.
+- **실제 소스 작업:** `tests/theme-nine-r47-recurring-private-refresh.test.mjs`에 기존 64-symbol fixture를 재사용하는 2개 regression test 추가. (1) 완료 checkpoint의 SPY page requestedUrl 종료일이 원래 수집 window와 다르면 `THEME_NINE_R47_PAGE_REQUEST_IDENTITY`로 거부하고 GET 64회에서 추가 호출 없음, immutable R23 manifest SHA 보존. (2) state filename이 동일한 채 checkpoint.end가 변조되면 `THEME_NINE_R47_CHECKPOINT_IDENTITY`로 거부하고 신규 GET/원자료 쓰기 없음. 두 테스트 모두 부정 조건 검증만 수행하며 정상 산식/계약 수정 없음.
+- **원격 저장·검증:** [기능 commit `fa97759d`](https://github.com/ansqhd5774-Choi/zgmini/commit/fa97759de002e22ff5637764f1b5406f4a3132ac)는 기존 브랜치 부모 `d5a995b7`에서 test 파일 **1개만 +41줄** 변경. GitHub 원격 blob 변경 재조회 완료. 변경 없는 실제 `theme-nine-r47-recurring-private-refresh.mjs` blob `a8f943f5a0031030c792609ef09b660e0c8aac75` 확인. 간이 Node 단편 구문검사 PASS; **전체 신규 Node module regression/CI PASS는 아직 확인되지 않음**. 기존 R47/R49 소스 5/5 CI 증거는 그대로 유효(이번 추가 테스트 통과를 의미하지 않음).
+- **운영 영향:** R35/R47 실행 파일, pinned SHA256 `a08fdec8...`, Task/주기, Controller, 원본/SQLite/checkpoint/D1/Cloudflare/공급자 호출 **변경 0**. PR #714 Draft 유지, main 병합 없음. 공통 어댑터 #1914 및 정확 운영 효과 승인 상태는 이전과 동일, 독립 기능 개발의 전역 차단 아님.
+- **다음 W03 원담당 한 단계:** 추가한 2개 R47 회귀를 실제 Node CI에서 확인하고, 실패 시 시험/관련 기능 계약 내에서 최소 수정. 별도 승인 없는 운영 CMD 교체 금지. #1894 총괄 재인계는 하지 않음.
+
 ## 2026-11-17 W03 9/68 — 프로세스 총괄 R47 CMD 전수감사·승인요청 #1894/6940708127
 
 - **시작/종료 진행률:** 8/68 완료(11.8%) → **8/68 완료(11.8%)**, 9/68 진행 중, 별도 T1 20% 유지. 이번 업무는 효과 승인 요청과 공통 소스 검토이며 새로운 PC 수집/저장/배포 완료가 아님.
