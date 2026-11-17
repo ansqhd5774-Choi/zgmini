@@ -2,7 +2,7 @@
 
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
-## 최신 인계 스냅샷 — W01 2026-11-17 (실PC #1814 Census 6/7 확인·#28 MISSING·B 승인 대기·21/71)
+## 최신 인계 스냅샷 — W01 2026-11-17 (Census-only 수집기 로드 범위 수정 PR #1815·B 승인 대기·21/71)
 
 > **다음 작업자는 이 스냅샷부터 시작한다.** 진행 기록 파일 자체가 지정된 정본이고, 상위 계획은 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)이다. 과거 이력의 오래된 설치 SHA·대기 문구가 이 스냅샷을 덮어쓰지 않는다.
 
@@ -18,7 +18,7 @@
 | 기존 PC 재사용 결과 | [#1747](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1747) core-status PASS / Run 43876398674. [#1748](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1748) Event129 A `STATE_UNKNOWN/INFL_E129_NOT_OBSERVED_WITHIN_LIMIT` / Run 43876539574, reader OK·Event 인식 0·lock same=true·protectedStateUnchanged=true |
 | 정확한 미해결 조건 | **Census #28 원자료 MISSING** (2026-11-17 08:58 KST A 실증). 과거 `CENSUS_M3_HEADERS_INVALID` checkpoint는 수정 parser 설치 이전 시도이며 설치 후 공급자 호출·저장 실증 없음. 단회 API B 수신기/검증은 제어 main 구현 완료이지만 **명시적 B 운영 효과 승인 `PENDING_B_APPROVAL`**, live Core owner/lease는 B 실제 실행 시 검증 필요. 기존 TaskScheduler/Operational enabled=false 진단·Writer/D1 admin 실증 부재는 별도 역사적 문제로 구별 |
 | 기존 요청 재실행 금지 | #1745 유지보수, #1747 core-status, #1748 Event129 A, 소비된 기존 B Run 43861853573. 원본 Issue/requestId와 JSON/TXT 재사용; 증거 없는 복구·잠금 삭제·수집 B 재실행 금지 |
-| 이번 작업의 실제 효과 | **A급 신규 1회 완료**: [Issue #1814](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1814), [Run #43983711934](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43983711934), `results/43983711934-1-seat-4.json/.txt` 원격 **2/2 readback PASS**. `protectedStateUnchanged=true`, `operationalWrites=providerCalls=d1Writes=0`, SQLite 미열기. 후보 6/7 유지·#28 MISSING, checkpoint 오류 미전진. 신규 B Issue·수집·게시 0건, **21/71 그대로** |
+| 이번 작업의 실제 효과 | 설치된 Census 단독 B 실행기에서 `groups:['census']`만 지정해도 공통 dispatcher가 BLS·Fed·Treasury·EIA 등 **6개 provider collector 모듈을 일괄 import**함을 source 대조로 확인. 기존 공통 수집기나 다른 원자료를 수정하지 않고 제어 [PR #1815](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1815)에서 Census module만 명시 주입하여 타 공급자 모듈 로딩을 제거(3파일: adapter·fixture·PENDING approval code ancestor). 신규 격리 CI [#43984793986](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43984793986)는 최초 관찰 QUEUED, 합격은 확인 전 승격 금지. 직전 실제 운영 PC [A #1814](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1814) / Run 43983711934 6/7·Census #28 MISSING은 재사용. 이번 공급자 GET·PC 운영 쓰기·B Issue 발행 0, 승인 `PENDING_B_APPROVAL`, **21/71 유지** |
 
 **다음 필수 실행 하나 — Census #28 B급 실제 단회 수집의 정확한 효과 승인:** 소스 구현·CI·main 병합은 완료했고 최신 A #1814에서 #28 MISSING 확인. 신규 Census API `MTM/TI/SA/US` 현 연도/전년 최대 2 GET, 원문 SHA 아카이브 최대 2개·월별 결과 최대 1개·기존 유효본 백업 최대 1개·quota ledger·기존 Core/Writer 잠금·고유 단회 원장에 한정한 **명시적 B 승인**을 확정한다. `APPROVED_B` manifest 정규 등록 후 현재 설치 PC source/4파일 SHA·Core owner/lease 검증을 통과하면 새 고유 B Issue 1회 실행 → #28 원문/월별 저장 A 재조회 → 원자료 26/26과 기존 Writer D1/API/UI 7/7 검증. 승인 전 B 요청·우회·원자료/DB/Task 변경 금지; #1814 A·이전 소비 B 재요청 금지.
 
@@ -362,3 +362,14 @@ B4 10 | Production·화면 최종 검증
 - **FIRST BLOCKER:** Census API-only B 정확한 운영 효과의 manifest `PENDING_B_APPROVAL`가 실제 필수 권한 차단이며 신규 B 요청을 만들지 않는다. `AUTOMATION_BLOCKED/APPROVED_CENSUS_API_B_EFFECT_NOT_GRANTED`, 실제 `RUNTIME_FAILED` 아님. Core owner/lease 확인은 승인된 B 실행 시 기존 보호 구조에서 판단. 기존 #1814 A 및 이전 소비된 B Run 재실행 금지.
 - **NEXT 정확한 1개:** 명시된 Census #28 M3 API 최대 2 GET·원문 2·결과 1·백업 1·quota ledger·기존 Core/Writer lock 효과의 B 승인 및 SHA-pinned `APPROVED_B` manifest 확정 → 고유 Issue 1회 → raw SHA/월별 stored_at A readback으로 A4-04 실완료 확인, 그다음 기존 계산/Writer/D1/API/UI 7/7.
 - **진행:** 시작·종료 21/71 DONE(29.6%)/50 미완료. 이번 A PASS는 원자료 저장 완료로 가산하지 않음.
+
+## 2026-11-17 — W01 Census-only B 불필요한 5개 공급자 모듈 import 제거 (PR #1815)
+
+- **LAST PASS:** 2026-11-17 08:58 KST PC A #1814/Run #43983711934, JSON/TXT 2/2, 원자료 후보 6/7 `PRESENT_VALID`, Census #28 `MISSING`; 제어 기존 main 25/25 source CI #43982927102, B 승인안 `PENDING_B_APPROVAL`은 재사용. 신규 PC 조회·같은 requestId 재요청 없음.
+- **확인한 실제 소스 불일치:** 기존 고정 B 어댑터 `windows-adapter.mjs`는 `groups:['census']`로 단일 그룹을 요청하지만, PC 공통 `runInflationCandidateOnce`의 `collectors` 미지정 시 **CPI/PPI/Treasury/Census/Fed/EIA 6모듈을 eager 동적 import**한다. 그룹 처리 전에 다른 5개 공급자 모듈의 import 오류가 발생할 수 있고, Census-only 승인 의도와 달리 실행 의존성을 불필요하게 확장한다. 정본 공통 dispatcher의 `collectors` override가 이미 지원되는 것을 확인.
+- **최소 수정:** 제어 저장소 단일 목적 브랜치 `codex/w01-census-b-only-collector-20261117`, [PR #1815](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1815). `inflation-census-api-b/windows-adapter.mjs`에서 기존 PC 승인 4파일 중 Census M3 module을 직접 import하여 `collectors:{census:census.collectCensusM3Inventories}` 전달. 공통 dispatcher와 collector/수집 URL·쿼터 정책·DB·산식·D1·PC Task를 변경하지 않음.
+- **고정 재검증:** `coordinator.test.mjs` source fixture 추가: B 진입점에서 quota + Census + dispatcher **정확히 3 import**, `groups:['census']`, Census 전용 key, 다른 5개 module 명시 import 없음 확인. 어댑터 commit `88b69ea17375050eddcda66a6026853bc03067b3`, fixture commit `363088a405f261cafe74b2329971f392c080f785`. 제안서 `controlSourceSha=88b69ea17375050eddcda66a6026853bc03067b3` 조상으로 정합, commit `84b64e1bf830aa20fd980fa4b8b5b08789aff2fb`, `status=PENDING_B_APPROVAL` 불변. 변경 파일 정확히 3개, main과 PR 충돌 없음.
+- **검증 경계:** [Controller source CI #43984793986](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43984793986) 최초 관찰 `QUEUED`; [C996 source CI #43984792642](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43984792642) `IN_PROGRESS`. **현재는 source-only 수정, Windows PASS/실PC 기능 성공 주장 금지**. 본 작업의 운영 API GET=0·SQLite/D1/Task/운영 source 변경=0.
+- **FIRST BLOCKER 및 다음 정확한 실행:** source CI 26/26 예상이 아니라 **실제 최종 테스트 개수를 로그에서 재조회**한 뒤 단일 PR 관련 최초 실패만 조치/성공이면 main 병합. 이어지는 실제 수집의 필수 실행은 기존 지정된 Census-only B 수동 효과에 대한 별도 명시 승인 및 `APPROVED_B` manifest를 정규 경로로 pin하고, 현재 PC source/config SHA·Core owner/Writer lease 안전 계약 확인 후 단회 2 GET이다. 승인 없이 B Issue를 만들거나 기존 소비 Run을 재시도하지 않음.
+- **전체 진행:** 21/71 DONE (29.6%), 50 미완료. B source 준비는 A3-04·A4-04 실PC 수집/저장 단계로 승격하지 않음.
+
