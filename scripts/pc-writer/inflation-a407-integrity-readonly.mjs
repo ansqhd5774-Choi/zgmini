@@ -6,6 +6,8 @@ import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {DatabaseSync} from 'node:sqlite';
 import {runA401Baseline23,requireExistingWalSidecars} from './inflation-a401-baseline23-readonly.mjs';
+import {INFLATION_CANDIDATES_7} from '../../lib/inflation-causal-candidates-public-7-catalog.mjs';
+import {projectInflationCandidate7Row} from './inflation-causal-candidates-public-7-preview-r1.mjs';
 
 const HOME='E:\\ZGmini\\data\\pc-writer';
 const SHA64=/^[a-f0-9]{64}$/;
@@ -149,10 +151,20 @@ export function inspectA407(home=HOME){
   result.original=IDS.map(id=>byId.get(id));
   if(result.original.some(x=>!x))throw failure('A407_INVENTORY_INCOMPLETE');
   result.originalVerified=19;
+  // A shared file hash does not prove every expected indicator exists inside it.
+  // Validate the exact bytes we hashed with the existing official-source parser.
+  const candidateMeta=new Map(INFLATION_CANDIDATES_7.map(x=>[x.id,x]));
   for(const {ids,file} of CANDIDATE_FILES){
     const f=secureDigest(root,file);
-    for(const id of ids)result.candidate.push({id,sha256:f.digest,
-      proof:'CANDIDATE_FILE_DOUBLE_READ_FINGERPRINT'});
+    for(const id of ids){
+      try{
+        const meta=candidateMeta.get(id);
+        if(!meta||projectInflationCandidate7Row(meta,f.json).status!=='READY')
+          throw failure('A407_CANDIDATE_CONTENT_UNVERIFIED');
+      }catch{throw failure('A407_CANDIDATE_CONTENT_UNVERIFIED');}
+      result.candidate.push({id,sha256:f.digest,
+        proof:'CANDIDATE_PARSED_AND_DOUBLE_READ_FINGERPRINT'});
+    }
   }
   result.candidateVerified=result.candidate.length;
   result.checkpoints={
