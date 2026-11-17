@@ -3,6 +3,16 @@
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
 
+<!-- W01-20261117-A401-PR1247-GUARD-CI-SYNC-RECORDED -->
+## 최신 작업 스냅샷 — W01 A4-01 기존 23개 원자료 직접 검증기의 canonical DB 경로 보호 반영
+
+- **계획 행:** 30번째 `A4-01` 기존 원자료 23개 실물 존재·유효성 확인. 시작/종료 30/71(42.3%)·41 미완료. **실PC 19개 원본 직접 조회는 아직 0/19**, A4-01 `PARTIAL`; 이번 소스 개선을 원자료 기능 완료로 산입하지 않음.
+- **W01 원담당 기능 소스 완료:** [앱 PR #1247](https://github.com/ansqhd5774-Choi/zgmini/pull/1247) 정확 2파일 수정 / [squash merge `0bef187a1e7ce632ecc15a4724fd24600650859f`](https://github.com/ansqhd5774-Choi/zgmini/commit/0bef187a1e7ce632ecc15a4724fd24600650859f). 기존 readOnly SQLite `core.sqlite`와 `-wal`/`-shm`의 canonical realpath가 승인된 `pc-writer` 내부인지 검사. `storage` 상위 폴더 symlink/junction이 외부를 가리키는 경우 `W01_A401_DB_SIDECAR_UNVERIFIED` STOP, 임의 경로 읽기 금지. 승인 원자료/쿼리/수집주기/산식 변경 0.
+- **소스 범위 검증:** [CI #44064186103](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44064186103) `SUCCESS`, 전체 4,854개 중 4,844 PASS, 실패 0, skipped 7, todo 3. 신규 symlink 이탈 회귀 PASS 및 DB 원본 유지. 외부 저장 경로 사용을 허가하지 않고 기존 안전 실패 조건 유지.
+- **전담 브랜치 원본 동기화(독립 W01 작업):** 전담 `fix/economic12-inflation-legacy4-r35-20261021`의 동일 두 파일을 변경 이전 blob이 main #1246 초기 소스와 일치하는지 확인하고 딱 두 파일을 W01 이름으로 순차 갱신. [소스 커밋 `e8358aa9`](https://github.com/ansqhd5774-Choi/zgmini/commit/e8358aa9cc53baf8de7ebc5886eae155305d9375) 및 [테스트 커밋 `26d0355b`](https://github.com/ansqhd5774-Choi/zgmini/commit/26d0355b7335e1a728e451bd2bae40b2b19a7710). 전담/main 동형 blob source `7027e335783ec5a8dc71d189c4b248162933377b`, test `9efd9c674597c21ff4e6259ff089f7c9bde4eb30`, **2/2 재조회 일치**. 타 파일/작업자 변경·reset/rebase/force push 없음. 이미 main의 동형 소스 CI PASS를 재사용, 전담 소스 재배포/PC 설치는 미실행.
+- **필요한 기존 인계 1건만 유지:** [공통 #68/6945119078](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6945119078) = 공통 Controller의 고정 A-grade 원본 reader 진입점·신뢰/보호 계약만. 기능 파서·PC A 접수/원본 23개 실물 JSON/TXT 결과 회수·승인된 W01 파일 설치명세·게시 검증은 **W01 직접 수행**. **이번 대화 신규 인계/승인 요청 0건**, 총괄 재의뢰 금지.
+- **실제 차단 및 다음 단일 필수 실행:** 현재 공유 allowlist에 `inflation-a401-private23-readonly` 미등록, #1979 공유 maintenance 원장/lease/Workflow 복구 HOLD 범위. 기존 A 인벤토리 중 19개 projection READY를 private raw PASS로 승격시키지 않음. 공통 진입점 source·운영 GO와 승인된 PC app source pin을 얻으면 **W01이 직접** 기존 등록기로 새 고유 A 1회→고정 23/23 저장 원자료/관측·저장시각/실행 SHA/보호 전후 JSON/TXT 재조회 → 조건 충족 시에만 A4-01 `[x]`. 원본·DB·Task·공급자·D1·Cloudflare 운영 쓰기 이번 0.
+
 <!-- W01-20261117-1923-A401-BRANCH-SYNC -->
 ## 최신 작업 스냅샷 — 2026-11-17 19:23 KST · A4-01 병합 소스 전담 브랜치 동기화
 
