@@ -108,6 +108,22 @@ test('Census month criterion accepts official time if time_slot_date is blank',(
   assert.equal(rows.diagnostics.invalid,1); // Conflicting official dates are quarantined.
 });
 
+test('explicit invalid Census time_slot_date cannot be replaced by alternate time month',()=>{
+  const headers=['data_type_code','seasonally_adj','category_code','cell_value',
+    'time_slot_date','time','us'];
+  const items=normalizeCensusM3Inventories([headers,
+    ['TI','yes','MTM','900000','','2026-09','1'],
+    ['TI','yes','MTM','901000','2026-02-30','2026-02','1'],
+    ['TI','yes','MTM','902000','2026-10-01 12:00:00.0','2026-10','1'],
+    ['TI','yes','MTM','903000','2026-11-01','2026-11','1'],
+  ]);
+  assert.deepEqual(items.map(x=>[x.date,x.value]),[
+    ['2026-09-01',900000],['2026-11-01',903000],
+  ]);
+  assert.equal(items.diagnostics.invalid,2);
+  assert.equal(items.diagnostics.available,2);
+});
+
 test('Census bad schema in one year does not discard valid observations from other year',async t=>{
   const fixture=base();t.after(fixture.clear);
   const fetchYear=async url=>{
