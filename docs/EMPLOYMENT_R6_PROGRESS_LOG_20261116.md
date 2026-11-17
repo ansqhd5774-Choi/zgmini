@@ -901,3 +901,15 @@
 - **판정:** W04 신규 16파일은 source manifest [PR #2050](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2050) 병합까지만 입증. 정확 B 승인/실PC Host CAS 영수증은 미확보. BED 정확 1파일 [PR #2038](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2038) 또한 운영 Writer B 설치 미확인. W04 A #2027의 Current verified 29,031/missing 10,889/unverified 857; History verified 29,016/missing 8,873/unverified 915; raw 인증 59/86 및 후보 충돌 14/메타 미입증 255는 **마지막 실제 W04 계측값**으로만 유지하며 신규 실측이라고 주장하지 않는다.
 - **다음 한 작업:** 기존 승인 A로 W04 운영 `HEAD/config.source`·BED 파일 preimage SHA·보호 Task/lease를 **새 고유 요청으로** 사전검증하고, 일치 시 W04 원담당이 #2038의 정확 1파일 B 승인 조건·설치 영수증을 확인한다. 이후 별도 W04 16파일 Host B 승인·등록, Controller 출력 B, 원자료 계보 A 검증 순서. 기존 실패/완료 요청 재실행 금지. 운영 PC 설치·공급자 호출·SQLite/D1/Task/후보 승격 0건.
 - **종료:** 27/72 DONE(37.5%), 잔여 45; `PIT-04-05=IN_PROGRESS/HOLD_INCOMPLETE_SOURCE_LINEAGE`. 이번 작업은 **타 담당 Host 영수증 오귀속 차단**이며 실제 W04 운영 단계 완료가 아니다.
+
+
+## 79. PIT-04-05 — BED Writer B 승인 원문 계약 재검산 및 실행 차단 조건 확정 (2026-11-18 KST)
+
+<!-- W04-PIT0405-BED-APPROVAL-CONTRACT-RECHECK-20261118 -->
+
+- **시작/원본:** 27/72 DONE(37.5%), 잔여 45, 진행 원장 §78(blob ac5704c41954845d9fd14f0fb89967d049a34077); 앱 기능 PR #1266과 제어 PR #2038/#2043/#2050, 중앙 #68의 최신 공유 인계를 재조회. 공통 #2041의 보호 A PASS는 당시 스냅샷이며 현재 Writer 설치 CAS 보증이 아니다.
+- **승인 원문 직접 재조회:** 제어 main `approvals/writer-updates/w04-r6-bed-http-body-hash-onefile-20261117.json` (Git blob `d105175ccfbde1269c52bea00598b3bd06d9abf0`)의 `APPROVED_B`, `PC_WRITER_APPROVED_FILE_OVERLAY_ONLY`, `runCount=1`, source `c3f60a3ce2eb1015f91545cbe94745d23c8aef18`, `baseHead=baseConfigSourceSha=2070ff53549e2f9f2cea57d5af7e1d83f9fd7388` 확인. 허용 변경은 `lib/market-score/employment-r6-provider.mjs` 정확 1개 M, SHA256 `9a41a73e8cca84ae6ced6998f88c5dadc6fd5f12e6d09b7542748a5b187ddb12` → `b94cd97208bc5ea19be4068a170e3c45b051639c5ee3d1ec2156c1ed18c587d6`. Collector `848c8320...`, Store `a6c2938b...`는 보호 대상. 공급자/DB/D1/Task/기타 source 변경 허용 모두 false. `runtimeDependencies.taskXmlSha256=null`은 Task 변경 승인이라는 의미가 아니다.
+- **실행 판정:** 원문 승인 파일의 존재는 실제 PC preimage·lease·Task 보호 조회의 최신 PASS나 Writer B 설치 영수증을 대체하지 못한다. 현재 이 턴에서 신규 PC A/B 고유 요청·결과 영수증은 생성하지 않았으며, #2038 B 운영 설치 및 신규 16파일 Host B를 DONE으로 승격하지 않는다. 앱 PR #1266은 기능 source 보존 상태로 운영 미적용.
+- **LAST PASS/FIRST FAIL:** LAST PASS 공통 #2041 읽기 전용 보호 조회; FIRST FAIL 과거 #2032/#2036 PREVALIDATION 조회 실패(원본 소비, 재실행 금지). W04 PIT 최신 유효 A #2027의 Current 29,031 verified/10,889 missing/857 unverified, History 29,016 verified/8,873 missing/915 unverified, snapshot 59/86 인증을 유지. 새 실측 아님.
+- **다음 한 작업:** W04가 기존 승인 A 진입점/새 고유 요청으로 현재 운영 `HEAD/config.source`, BED provider/보호 2파일 SHA, Task XML/lease를 읽기 전용 확인. 승인 manifest와 실제 값이 모두 일치할 때만 W04 본인 BED 정확 1파일 Writer B 단회 설치 및 JSON/TXT 독립 재조회. 불일치 시 승인 재검토 없이 fail-closed하고 실제 mismatch만 기록. 이후 신규 16파일 Host B 별도 정확 승인/등록 → Controller 출력 B → 공급자·수집월·사유별 raw 미인증 27건 A 실측. 운영 PC/SQLite/D1/공급자/Task 변경 이번 턴 0건, 총괄 신규 인계 0건.
+- **종료:** 27/72 DONE(37.5%), 잔여 45, `PIT-04-05=IN_PROGRESS/HOLD_INCOMPLETE_SOURCE_LINEAGE`, `promotionApproved=false`. 이 항목은 승인 원문 재검산 완료이며 PC 운영 단계 완료가 아니다.
