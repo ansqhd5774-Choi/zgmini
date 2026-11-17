@@ -31,11 +31,11 @@
 | 필드 | 마지막 확인 상태 |
 |---|---|
 | 최종 목표 | 82단계 R1~R6로 적격 실적 침체 정보성 지표의 PC 원자료 저장→계산→승인 D1 게시→Production API/UI를 완성. 기존 E1-R4 점수/산식·기타 12대 기업실적은 보호 |
-| 현재 관련 단계 | **첫 미완료 R3-04(27/82), `PARTIAL_SOURCE / INSTALL_NOT_READY`**. #1860 PC A 4파일 ABSENT, 3파일 Writer B source-only 승인/설치 미완료. §49 R3C USER_TEMP CI #44005617374 PASS 재사용. **독립 R4-09 §51** WPSFD42 D1 Publisher/helper/test를 PR #1207 source에 추가, 새 exact HEAD `f1cfeb91c18bf6324bb7b7d04ac253f64d0442b5` Node CI #44006959055 `completed/success`. main 병합·PC/D1 게시 아님. **개별 DONE 28/82(34.1%), 순차 26/82(31.7%) 유지** |
-| 마지막 검증 완료점 | 기존 #1860 PC A PASS(4파일 ABSENT) 및 §49 R3C CI #44005617374 PASS. **§51 source PR #1207** HEAD `f1cfeb91c18bf6324bb7b7d04ac253f64d0442b5`, Publisher blob `1b5c7a40729f68f6e30cf001dc7d4848e03c30fc`, helper blob `934c6ecc0fb555602c2757b5830291c4ed8df337`, test blob `2f84a31f65808962c7336bfbcfbe84b6b8295b96` 원격 재조회; Node CI #44006959055 **completed/success**. 3파일 비승인 B 제안 exact 후보 SHA 재핀 commit `658fd4c3f70a1d8edb17cd775e63544d52ddaa5c`(`PROPOSED_NOT_APPROVED`), 운영 효과 0 |
+| 현재 관련 단계 | **첫 미완료 R3-04(27/82), `PARTIAL_SOURCE / INSTALL_NOT_READY`**: 이전 #1860 PC A 4파일 ABSENT, 3파일 Source Writer B 승인/설치 없음. **독립 R4-09 §52** PR #1207에 결과 경로의 source checkout/symlink 우회 방지·실제 TEMP 위치 표기·회귀시험 수정. 새 HEAD `8428729d53571af63a6dbd58bd602c7f68061244`, Node CI #44008513869 `completed/success`. 비승인 3파일 B proposal 최신 HEAD 재핀. **개별 DONE 28/82(34.1%), 순차 DONE 26/82(31.7%) 유지** |
+| 마지막 검증 완료점 | #1860 PC A PASS(4파일 ABSENT)·§49 R3C source CI PASS. **R4-09 §52** Draft PR #1207 exact HEAD `8428729d53571af63a6dbd58bd602c7f68061244`, result helper blob `43f3797ac2030d9f82e307ce1b72c79a11f17b89`, Publisher blob `6a3aa681e7e47ecca2b10cae23e888ada2fa333a`, test blob `51a4ed0a995ae0618893470de8d4207c6013cebf`, [Node CI #44008513869](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44008513869) **completed/success**. 제안 JSON updated commit [400b43a3](https://github.com/ansqhd5774-Choi/zgmini/commit/400b43a360f10b576758b2d76090f2533ca3ed30) `PROPOSED_NOT_APPROVED` 유지, 운영 효과 0 |
 | 재사용할 기존 근거 | QFR 원자료 ZIP PC SQLite 저장·계산 기존 유효 증거; 앱 QFR 3-pin [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175)는 앱 main 병합, 운영 PC 설치·B 게시 별개. R1-09 소스 blob 근거는 §14 |
-| 현재 최초 실제 미완료 조건 | **R3-04 3파일 운영 Source Writer B 승인·설치 및 WPSFD42 provider/SQLite 효과 승인 미완료**. R4-09 Publisher는 별개 Draft PR에 source CI PASS, main/Production 아직 미병합/미배포. 제어 approved Writer B manifest 없음, 운영 source HASH/D1 게시 결과 없음 |
-| 다음 필수 실행 하나 | **R3-04:** 최신 PR #1207 head의 3파일 source-only 범위에 대해 공유 Writer B Owner exact 승인 manifest·보호/lease 확정→기존 정규 Writer B 단회 설치→PC 파일 SHA/원격 JSON·TXT readback; 이후 WPSFD42 provider+SQLite B 효과 별도 승인 단회 수집. **독립 R4-09:** exact source CI #44006959055 PASS 증거 보존, 승인 없는 Draft PR main 병합/Cloudflare 자동 배포 금지. 기존 #1849/#1860 재실행 금지 |
+| 현재 최초 실제 미완료 조건 | **R3-04 3파일 Writer B 정확 source-only 승인 및 운영 PC 설치/원자료 저장 미완료**, 별도 공급자 POST+SQLite append B 효과 승인도 없음. R4-09 D1 Publisher 소스 통합·경로 보호/Node CI 완료, 그러나 PR #1207 Draft/unmerged, Cloudflare Production·D1 배포/readback 아직 없음 |
+| 다음 필수 실행 하나 | **순차 R3-04:** 정확 HEAD `8428729d...`와 R3C/R3D/Preview 3파일 after SHA의 Source Writer B 승인/공유 checkout 보호·lease 확인→기존 Writer B 단회 설치→PC 파일 SHA+JSON/TXT readback→별도 WPSFD42 공급자/SQLite 효과 승인 수동 수집. **독립 R4-09:** 최신 Node CI PASS 증거 재사용, 승인 없는 Draft PR main merge/Cloudflare Production 배포 금지 |
 | 현재 완료율 증거 | **총 개별 DONE 28/82(약 34.1%), 순차 연속 DONE 26/82(약 31.7%)**. 독립 QFR R3-06·R3-07 기존 실제 PC 검증 확정, R3-04/05 WPSFD42는 미완료. R4/D1/API/UI 후속 실증 아님 |
 | 최종 갱신 식별 | 이 문서의 **최신 원격 브랜치 HEAD 및 Git blob SHA를 재조회**해 근거로 보고한다. 고정된 과거 SHA를 현행값으로 복사하지 않는다 |
 | **순차 포인터·완료율** | **첫 미완료 R3-04 = 27/82**, 연속 26/82(31.7%). 원담당 독립 Census QFR R3-06/07을 기존 PC 유효 증거로 완료, **개별 DONE 28/82(34.1%)**. 계획 조건부 HOLD가 독립 업무를 막지 않는 예외 사용, 순서 허위 변경 없음 |
@@ -117,7 +117,7 @@
 | R4-06 | 승인 QFR 단일키 D1 게시·실제 body/version/stored_at readback | `BLOCKED_PUBLISH_SCOPE` | 제어 main에 게시 소스는 있으나 승인 manifest approvals/publications/<requestId>.json 부재, 별도 owner B 승인 Issue/PC 실제 효과·원격 D1 readback 없음. 실제 게시 NOT_RUN |
 | R4-07 | BEA 단위이익 게시 중 공급자 재호출 제거·원본 SHA 고정 | `SOURCE_CI_PASS` | 앱 PR #1183 stored-only BEA Publisher source+Node CI #43884699372 PASS; 운영 raw/D1 없음 |
 | R4-08 | 승인 BEA 단위이익 key D1 게시 및 실제 시각/버전 비교 | `NOT_RUN` | BEA 단위이익 실제 B D1 게시/readback 증거 없음 |
-| R4-09 | WPSFD42 독립 Publisher·Worker·테스트를 current main 기준 선별 통합 | `SOURCE_PR_CI_PASS / MAIN_NOT_MERGED` | **§51** 기존 Draft [PR #1207](https://github.com/ansqhd5774-Choi/zgmini/pull/1207)의 Worker 서비스 key에 Publisher·결과 경로 helper·회귀시험 정확 3파일 신규 반영. HEAD `f1cfeb91c18bf6324bb7b7d04ac253f64d0442b5`, [Node CI #44006959055](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44006959055) `completed/success`. 게시기 기본 결과로그 USER_TEMP/요청별 검증된 폴더, 불필요한 기능 CMD 의존성 제거, 기존 D1 dual-source guards/별도 key 유지. **Draft/unmerged**, Production/운영 PC/D1 쓰기 0. R4-09 아직 DONE 아님 |
+| R4-09 | WPSFD42 독립 Publisher·Worker·테스트를 current main 기준 선별 통합 | `SOURCE_CI_PASS / MAIN_NOT_MERGED` | **§52** 기존 PR #1207의 Publisher result helper가 승인 B request 지정 폴더를 source checkout이나 symlink alias로 허용하던 결함 수정. realpath containment로 안전 거부, 실제 기록 결과 위치 기준 `LOG_LOCATION` 결정, 경계 테스트 추가. exact HEAD `8428729d...`, [Node CI #44008513869](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44008513869) `completed/success`. 운영 source·D1/Cloudflare 미게시, R4-09 DONE 아님 |
 | R4-10 | WPSFD42 전용 D1 키에 2행 게시·기존 BLS 5행 key 보호 | `NOT_RUN` | WPS 서비스 전용 D1 2행 실게시·기존 5행 원장 불변 미실증 |
 | R4-11 | BEA 제조업 별도 게시 키·승인 효과·archive SHA 결속 | `PUBLISH_SCOPE_UNVERIFIED` | BEA 제조업 전용 B 게시 effect/manifest 미확정 |
 | R4-12 | BEA 제조업 독립 D1 게시 후 body/version/time readback | `NOT_RUN` | BEA 제조업 D1 단일키 실제 게시·재조회 미실증 |
@@ -968,3 +968,22 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 **LAST PASS:** PR source 3파일 신규 생성·원격 readback, 정확 HEAD Node CI completed/success, 기존 W05 3파일 source-only proposal 최신 HEAD 재핀. **FIRST UNFINISHED:** R3-04 정확 B source-only 승인 및 실제 PC source 설치/WPSFD42 원자료 저장; 별도로 R4-09 Draft PR main 선별 병합, 후속 승인 D1 게시·readback/API/UI 미진행.
 
 **NEXT:** R3-04 W05 기능 원담당 + 공유 Writer B Source Owner가 이미 확보한 정확 3파일 SHA·보호/lease·승인 source 범위로 정규 B manifest를 확정한 뒤, 기존 Writer B 단회 설치/실제 PC readback. WPSFD42 provider/SQLite B 효과는 별도 승인 전 실행 금지. R4-09는 main 병합 시 Cloudflare Git Integration의 실제 Production 영향이 있으므로 별도 승인 전 Draft/unmerged 유지. 공급자·SQLite·D1·Task·DNS·배포 운영 쓰기 0.
+
+## 52. R4-09 (2026-11-17 KST) D1 게시기 결과 폴더의 소스 내부·symlink 오염 경계 실수정 및 CI PASS — SOURCE_CI_PASS
+
+**진도:** 순차 DONE 26/82(31.7%), 개별 DONE 28/82(34.1%), 첫 미완료 R3-04. 이전 §51 게시기/helper/test 소스 준비 및 CI #44006959055 PASS 증거는 재사용. 신규 운영 PC·공급자·SQLite·D1·Task·Production 실행 0.
+
+**실제 결함 2건:** (1) `ZGMINI_EARNINGS_C_LOG_DIR`이 이미 존재하는 absolute directory라면 Publisher의 소스 root·하위 폴더·그 안을 가리키는 symlink/junction도 결과 TXT 대상으로 통과하여 source checkout을 오염시킬 수 있었다. (2) 잘못된 요청 폴더가 거부되어 실제 TEMP에 오류 기록을 쓴 경우에도 단순 환경변수 존재만으로 `LOG_LOCATION=B_REQUEST_DIR`이라고 잘못 표기할 수 있었다. 이는 운영 PC 발생 실증이 아닌 코드 안전 경계 결함 재현/개선이다.
+
+**정확 수정 소스(기존 PR #1207 source branch `codex/w05-bls-service-r3-05-lineage-ci-20261117`):**
+- `scripts/pc-writer/earnings-publication-result-directory.mjs` blob `43f3797ac2030d9f82e307ce1b72c79a11f17b89`: 실제 `realpath`와 `path.relative`로 source root/descendant/symlink alias 경로 출력 차단. 유효한 사용자 TEMP 및 source checkout 밖 기존 B request 폴더는 허용; 불명확한 source root는 fail-closed. 기능별 새 CMD/Task·DB 접근 없음.
+- `scripts/pc-writer/EARNINGS_BLS_SERVICE_R1_D1_ONCE.mjs` blob `6a3aa681e7e47ecca2b10cae23e888ada2fa333a`: 위 helper에 `excludedSourceRoot:stageRoot` 전달. 로그 위치를 env 존재 여부가 아니라 실제 기록될 `resultDirectory`와 `os.tmpdir()` 비교로 표기. 승인 D1 dual-source 검사, 서비스 별도 key, `--apply` 명시 승인 gate/기존 base 5행 보호는 그대로.
+- `tests/earnings-publication-result-directory.test.mjs` blob `51a4ed0a995ae0618893470de8d4207c6013cebf`: source root/child, symlink·junction 우회, 정상 sibling B 결과 폴더 및 user TEMP fallback, 잘못된 source root 경계, Publisher 실제 위치 보고 정적 확인 추가. 공급자/운영 DB/D1 없음.
+
+**검증 완료:** [PR #1207](https://github.com/ansqhd5774-Choi/zgmini/pull/1207) 정확 HEAD `8428729d53571af63a6dbd58bd602c7f68061244`; [Node.js CI #44008513869](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44008513869) `completed/success` (GitHub 원격 재조회, 업데이트 `2026-11-17T03:14:48Z`). 해당 코드 3개 Git blob/readback 확인. 이전 CI #44006959055는 이전 HEAD만 검증한 것이라 새 HEAD 검증 근거로 중복 사용하지 않음.
+
+**기능 승인 범위 유지:** W05 원담당 브랜치의 비실행 `docs/EARNINGS_R304_WPSFD42_SOURCE_ONLY_B_PROPOSAL_20261117.json`은 후보 source HEAD만 `8428729d...`로 최신화(commit [400b43a3](https://github.com/ansqhd5774-Choi/zgmini/commit/400b43a360f10b576758b2d76090f2533ca3ed30)). 설치 대상 R3C/R3D/Preview 3파일 및 정확 after SHA256·source-only 5개 effects=false·`PROPOSED_NOT_APPROVED`는 그대로. R4 Publisher/helper를 이 3파일 설치에 포함하지 않음.
+
+**LAST PASS:** 코드 3파일 GitHub source 실제 변경, exact head CI PASS·진행기록 원격 반영. **FIRST UNFINISHED:** R3-04 source-only Writer B 승인+실 PC 설치, 별도 WPSFD42 supplier POST/SQLite B 효과 승인+원자료 읽기 검증, 후행 R4-09 main/Cloudflare 게시+정확 D1 key/API/UI 실증. 소스 PR Draft/CI만으로 운영 완료로 승격하지 않음.
+
+**NEXT(우선 한 건):** 기존 공유 Writer B Source Owner는 현재 3파일 정확 source-only 설치 manifest와 공유 source 보호/lease만 승인 계약으로 확인하여 단회 설치→실 PC file SHA와 JSON/TXT를 readback. 승인되지 않은 source/DB/D1 쓰기는 하지 않으며 #1860 A 재실행·새 Controller 진단·기존 QFR 반복 불필요.
