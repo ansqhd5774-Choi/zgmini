@@ -677,3 +677,13 @@ B4 10 | Production·화면 최종 검증
 - **A #1838 결과 재사용:** [#1838](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1838#issuecomment-6934519895) `BLOCKED/RETIRED_IRAN_INVENTORY_UNAVAILABLE` 후검증으로 결과가 가려졌으므로 Core owner PASS 증거로 채택하지 않는다. 기존 B [#1818](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1818#issuecomment-6933486946) `INFL_MANUAL_B_CORE_OWNER_EVENT129_UNVERIFIED_STOP`, provider 0/2.
 - **실행 의존성:** `inflation-census-api-b`는 Controller `engine.mjs`의 #1854/#1871 소스 설치에 직접 의존하지 않으므로 공통 Controller B 전체 설치를 무조건 선행 Gate로 삼지 않는다. 그러나 **현 시점 실제 Core Task/WMI/PID/E-lock/Event129 승인 증거는 없음**. 단순 시간 대기 또는 동일 A 재실행만으로 B 성공을 예고하지 않는다.
 - **다음 실제 작업:** 기존 승인된 소유권 증명 경로의 Event129 활성 상태 및 Task-linked 자연 Core 실행의 신뢰 가능한 동시 증거를 Owner가 확보하도록 기존 #1866/공유 #68에 연결한다. 증명 PASS와 기존 manifest 4파일 SHA256·installed source pin·lease·새 B 효과 승인 모두 충족한 경우에만 새 고유 Census B 2GET→raw SHA/storedAt→26/26→Writer D1/API/UI 7/7. #1633 자동 hook은 이 단회 B의 선행 Gate가 아님.
+
+
+<!-- W01-20261117-CENSUS-MANIFEST-WRITE-BOUNDARY -->
+## 2026-11-17 KST — Census #28 승인 manifest 쓰기 경계 재검증
+
+- **시작/종료:** 30/71(42.3%) → 30/71(42.3%), OPEN 41. 실PC 신규 요청·공급자 GET·운영 파일·DB·D1 변경 0.
+- **승인 원본 직접 확인:** 제어 main `approvals/inflation-census-api-b/w01-census-m3-api-once-approved-20261117.json` Git blob `6709750db93f1778bc9e1dbb3da2fd5deec186a4`, `APPROVED_B`, `operation=w01-census-m3-api-once`, `installedSourceSha=2070ff53549e2f9f2cea57d5af7e1d83f9fd7388`, 4개 `sourceFilesSha256` pin. 최대 provider GET 2, raw archive 2, output 1, backup 1. `allowProviderCalls=true`, `allowQuotaLedgerWrites=true`, `allowDatabaseWrites=false`, `allowD1Writes=false`, `allowSourceChanges=false`, `allowTaskChanges=false`, `allowScheduleChanges=false`.
+- **중요 계약 교정:** 이 승인 B의 직접 결과는 `inflation-causal-candidates-r1/census-m3-manufacturing-inventories.json` 파일 저장 및 readback까지다. **SQLite 원자료 쓰기와 D1 게시는 이 manifest에서 명시적으로 금지**되므로 B 단독으로 SQLite 저장 성공이나 공개 7/7을 주장하지 않는다. 이후 DB 반영이 실제 필요하다면 별도 명시 승인·증거를 먼저 확인한다. 기존 Writer D1 게시는 별도 승인된 경로로 검증한다.
+- **현행 FIRST UNVERIFIED:** 운영 PC 4파일 SHA256 및 source pin의 현재 일치, 자연 Core Task/WMI/PID/E-lock owner/Event129 증명, 신규 고유 B 실행 효과 승인. 기존 #1818 consumed 및 #1864 STATE_UNKNOWN 재사용; 같은 조건에서 B 반복 발행 금지. 공통 Controller #1854/#1871 설치는 이 B의 소스상 필수 import 의존이 아님.
+- **다음 실행:** 기존 운영 증거로 owner proof/manifest 일치를 우선 판정하고, 증거가 없으면 공통 Owner #68/#1866에 해당 관측만 인계. 승인 후 신규 고유 Census B 2GET → 승인된 JSON raw SHA/storedAt readback → 별도 Writer 게시 권한·D1/API/UI 7/7 확인. 실제 운영 상태 변화 없이 완료 단계 증가 없음.
