@@ -33,10 +33,42 @@ test('WPSFD42 publisher uses B request-scoped logs and safe TEMP fallback, witho
   assert.match(file,/ZGMINI_EARNINGS_C_LOG_DIR/);
   assert.match(file,/fallback:os\.tmpdir\(\)/);
   assert.match(file,/let resultDirectory=os\.tmpdir\(\)/);
+  assert.match(file,/excludedSourceRoot:stageRoot/);
+  assert.match(file,/LOG_LOCATION=\$\{path\.resolve\(resultDirectory\)===path\.resolve\(os\.tmpdir\(\)\)/);
+  assert.doesNotMatch(file,/LOG_LOCATION=\$\{process\.env\.ZGMINI_EARNINGS_C_LOG_DIR/);
   assert.doesNotMatch(file,/D1_PREFLIGHT\.cmd|D1_APPLY\.cmd/);
   assert.match(file,/LOG_FILE=\$\{path\.basename\(file\)\}/);
   assert.doesNotMatch(file,/console\.log\(`LOG=\$\{file\}`\)/);
   assert.match(file,/resolvePublicationResultDirectory/);
   assert.match(file,/path\.join\(resultDirectory,\s*`EARNINGS_BLS_SERVICE_R1_D1_RESULT_/);
   assert.doesNotMatch(file,/path\.join\(HERE,\s*`EARNINGS_BLS_SERVICE_R1_D1_RESULT_/);
+});
+
+test('request evidence path cannot enter the publisher checkout or an aliased child',t=>{
+  const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-w05-output-'));
+  try{
+    const source=path.join(root,'source');
+    const child=path.join(source,'scripts','pc-writer');
+    const allowed=path.join(root,'request-output');
+    const alias=path.join(root,'source-alias');
+    fs.mkdirSync(child,{recursive:true});
+    fs.mkdirSync(allowed);
+    const choose=requested=>resolvePublicationResultDirectory({
+      requested,excludedSourceRoot:source});
+    assert.throws(()=>choose(source),/EARNINGS_PUBLICATION_RESULT_WITHIN_SOURCE_STOP/);
+    assert.throws(()=>choose(child),/EARNINGS_PUBLICATION_RESULT_WITHIN_SOURCE_STOP/);
+    assert.equal(choose(allowed),allowed);
+    assert.equal(resolvePublicationResultDirectory({
+      excludedSourceRoot:source}),os.tmpdir());
+    try{fs.symlinkSync(child,alias,process.platform==='win32'?'junction':'dir');}
+    catch(e){if(['EPERM','EACCES','ENOTSUP'].includes(e?.code)){t.diagnostic('symlink unavailable on test host');return;}throw e;}
+    assert.throws(()=>choose(alias),/EARNINGS_PUBLICATION_RESULT_WITHIN_SOURCE_STOP/);
+  }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+test('invalid excluded source root fails without writing evidence',()=>{
+  assert.throws(()=>resolvePublicationResultDirectory({
+    excludedSourceRoot:'relative'}),/EARNINGS_PUBLICATION_SOURCE_ROOT_INVALID/);
+  assert.throws(()=>resolvePublicationResultDirectory({
+    excludedSourceRoot:path.join(os.tmpdir(),'zgmini-w05-nonexistent-checkout')}),
+  /EARNINGS_PUBLICATION_SOURCE_ROOT_UNAVAILABLE/);
 });
