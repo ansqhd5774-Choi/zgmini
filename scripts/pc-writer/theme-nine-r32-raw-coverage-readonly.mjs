@@ -127,7 +127,8 @@ function readStates(root,folder,rosterSha,symbols,byPath){
      let requested;try{requested=new URL(ref.requestedUrl??e.requestedUrl);}
      catch{fail('CHECKPOINT_REQUEST_WINDOW');}
      if(requested.origin!==SOURCE||
-        requested.pathname!==`/api/v1/bars/stocks/${symbol}/1h`||
+        ![`/api/v1/bars/stocks/${symbol}/1h`,
+          `/api/v1/bars/stocks/us/${symbol}/1h`].includes(requested.pathname)||
         requested.searchParams.get('start')!==record.start||
         requested.searchParams.get('end')!==record.end||
         requested.searchParams.get('format')!=='jsonl')
