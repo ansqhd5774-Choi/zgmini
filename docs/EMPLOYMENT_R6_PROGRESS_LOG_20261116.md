@@ -654,3 +654,13 @@
 - **원인 범위 확인:** 실제 설치된 제어 SHA `fbe943a069c9b2366f8e295d2c63b7895c639ef2` 소스 `controller/engine.mjs`는 Worker 시작 전 `waitForMemoryAdmission`(첫 검사), `controller/operations.mjs`의 `employment-r6-candidate-stage-readonly` 분기는 Worker 내부에서 `os.freemem()`을 재측정해 `<1536MiB`일 때 같은 `RESOURCE_WAIT_MEMORY`로 BLOCKED 반환. Worker 내부의 두 번째 순간 가용 RAM은 기존 결과에 숫자로 기록되지 않아 특정 사용량이나 원인 프로세스 단정 불가. 이번 재시도는 처음부터 미달이 아니라 **입장 PASS 후 Worker 시점 재측정 차단**.
 - **LAST PASS / FIRST FAIL:** 첫 RAM admission PASS / `FIRST_FAIL=ALLOWLISTED_OPERATION`, `RESOURCE_WAIT_MEMORY` (Worker 내부 두 번째 검사). 운영 데이터·Core·Task·Scheduler/DB/D1 수정 없음. 임계값 완화, Core 강제 중지, 기존 requestId 재발행 없음.
 - **NEXT:** 사용량 회복이 확인된 시점에만 정규 고유 A 재시도(이전 #1939 소모), 또는 승인된 무변경 진단으로 실제 동시 메모리 경쟁을 확인. 메모리 검증은 Reader가 실제 수행될 여유량을 보존해야 하며 최초 1536MiB 통과만으로 최종 PASS 단정 금지. 기능별 독립 작업은 계속, 중복 진단이나 신규 규제/Gate 임의 신설 없음.
+
+## 58. W04 PIT-04-03 — A/heavy 고유 R13 1회 재시도 등록 (2026-11-17 KST)
+
+<!-- W04-PIT0403-R13-1943-SINGLE-A-REQUEST-20261117 -->
+
+- **완료점 재사용:** Controller 2파일 B #1932 SUCCEEDED/보호 PASS; Host R6 등록 #1874 PASS; 이전 R12 #1939 `BLOCKED/RESOURCE_WAIT_MEMORY`, Controller 입장 1754MiB(최소 1536MiB) 통과하나 Worker 내부 별도 free RAM 재검사에서 차단. 이전 #1935/#1939 또는 설치 B 재발행 금지.
+- **이번 독립 실행:** 신규 [pc-job Issue #1943](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1943), `requestId=pc-w04-pit0403-fourbucket-retry-20261117-r13-01`, `operation=employment-r6-candidate-stage-readonly`, `sourceRepository=ansqhd5774-Choi/zgmini`, `sourceBranch=fix/w04-r6-pit0403-source-counts-20261117`, `sourceSha=650d41fa83b7e5ed6fb2f0887aaeff0559fc1b60`, `pc-job` label 직접 원문 조회 일치. 단회 읽기 전용 A/heavy이며 Controller/DB/Task/TTL/D1 운영 변경 요청 없음.
+- **현재 원격 결과:** #1943 결과 댓글 아직 0건(마지막 조회 시점). 실제 Run/JSON/TXT 미회수로 `STATE_UNKNOWN/SUBMITTED`; 접수 완료를 실행 PASS 또는 4분류 완료로 표기하지 않음. 중복 요청 금지.
+- **진척:** 시작/종료 25/72(34.7%). PIT-04-03 실제 matching/conflicting/unverified/missing/asOf 검증 전 26단계 승격 금지. Candidate 14키 충돌 승격 HOLD 유지.
+- **다음 필수:** 동일 #1943의 PC 결과 댓글·Run 및 JSON/TXT 2/2 조회. PASS라면 4개 분류 합계=coreCurrentKeys, missing=coreCurrentKeysMissingHistory, asOf 및 source/protected 상태 검증 후 PIT-04-03 완료 판정. BLOCKED면 정확 자원·입장/Worker 단계만 기록하며 source/임계치 임의 변경·무한 재시도 금지.
