@@ -1,5 +1,16 @@
 # 테마 공포·탐욕 통합 개발 브랜치 — 작업 원장 / 인수인계
 
+## 2026-11-17 W03 9/68 — 공개 정책 격리 Node.js 22 실측 11/11 PASS
+
+- **이번 한 가지 실행:** 앞서 실제 테스트 **NOT_RUN**이던 신규 P4 MarketParquet 제거 정책 Reader/R88 게시 차단 회귀를 운영 PC·D1과 격리된 Node.js **v22.16.0** 환경에서 실행. 최종 명령 `node --test tests/theme-marketparquet-public-retirement-w03.test.mjs tests/theme-nine-r88-publish.test.mjs`. 2개 entrypoint + imported R88 provisional fixture 4개 테스트로 **총 11개 PASS, 0 FAIL, 0 SKIP** (TAP 출력 SHA256 `e962be56003e89b0150a578bfb2e8f2a4f8d5d3e807cec06f4a9b7a894a0e2a7`). 기존 3-entrypoint 합계 15건은 import 재실행 4건 중복이므로 최종 **11/11만** 보고. 최초 새 정책 단독 entrypoint도 **3/3 PASS**.
+- **검증 대상 source SHA 재현성:** GitHub W03 전용 브랜치의 **실제 Git blob SHA와 로컬 `git hash-object` 11/11 일치**: `lib/marketparquet-retirement.mjs`=`08054572...`, `worker/theme-nine-r88-provisional.mjs`=`3aa61186...`, `worker/theme-data-center-power-provisional-r1.mjs`=`3671435b...`, `worker/theme-space-satellite-provisional-r1.mjs`=`e0fe9ca7...`, `worker/theme-biotech-provisional-r1.mjs`=`18a2ecc7...`, `worker/theme-configured-r32-contract.mjs`=`8baf815c...`, `lib/market-score/theme-etf-provisional.mjs`=`c89ab563...`, `scripts/pc-writer/theme-nine-r88-publish.mjs`=`fb011bde...`, 새 정책 테스트 `df19b4c1...`, R88 Reader 테스트 `13ac9bc1...`, R88 게시 테스트 `12a8029e...`. 기준 원격 **시작 HEAD `9386e0af5c3d56412d4fddf8db7901c00e3d28a5`**. 제어 main 읽기 기준 `50d79818d5720133fa1cf3a60a19b01ea8112f66`. 다른 W03 대화가 앞서 원장 1파일을 갱신했으므로 최신 원문을 보존하여 이 검증을 맨 위에 추가.
+- **정확한 한계:** 이 실행은 전체 GitHub checkout이 아니라 **원본 SHA 일치 11파일**을 반입한 격리 복제다. `worker/theme-nine-r37-public.mjs`는 실제 원본의 **9테마 roster·버전·method·roster SHA 값**만 제공한 축소 대체 모듈이며, `scripts/pc-writer/theme-nine-r54-public-connect.mjs`는 `expectedNineR54WithProvisional`의 사용 중단 R88 overlay 위임만 제공한 격리 대체 모듈이다. **그러므로 R54 실제 생산 연결/전체 저장소 의존성 및 Windows/GitHub Actions CI는 NOT_RUN**. 정상 완전 GitHub CI PASS나 PC 설치를 절대 주장하지 않음. 기존 추가 예정 R47/R49 CMD 전체 Node 시험도 NOT_RUN.
+- **보호된 실측 계약:** 과거 publisher consent/Marketplace provenance 거부, 잠정치 8테마 제거와 기존 confirmed/옵션 2테마 보존, 바이오/DC/우주 3 sidecar D1 읽기 0, R88 public Writer 권한검사에서 D1 GET/CAS/write 이전 `R88_PUBLIC_RECORD_REJECTED`, 저장 row 충돌에서도 DB 조회·쓰기 0. 자료의 실제 공개 게시가 아니라 *차단 코드에 대한 테스트*. 운영 PC 공급자 호출·실 DB/D1 쓰기·Task/Runner/Controller·Cloudflare 배포 **0**.
+- **진행률:** W03 **8/68(11.8%)→8/68(11.8%)**, **9/68 IN_PROGRESS**. 독립 기술 T1 **20%→20%**. 기존 10개 공개 정확한 최신 API/UI 상태 이번 실행 **미검증**, 163개 실제 완료 **미산정**. 이 11/11 Node 결과는 소스 검증 공백 일부만 해소하며 9단계 CMD 실제 설치 완료가 아님.
+- **LAST PASS:** 고정 Git blob 11/11 대조 + 격리 Node 22 `11/11 PASS`. **FIRST MISSING (범위 내 나머지 시험):** 전체 repo CI/R54 실제 import/R47·R49 테스트 정규 실행 증거 미확인. **현재 운영 필수 blocker:** `W03_R47_CMD_APPROVED_ONEFILE_B_ROUTE_NOT_CONFIRMED` (실제 Runtime FAIL 아님).
+- **다음 필수 실행 하나:** 사용자 승인 범위 내 **R47 기존 Task CMD 구 SHA `2e0fc3e3...` → 전용 브랜치 목표 `a08fdec8...` 정확 한 파일의 정규 B 적용 GO/NO-GO**를 공유 승인 단일 Owner에게 최신 PC preimage/lease/원본백업/CAS·post-readback 증거로 확정받는다. 권한 미확정이면 설치/새 A pc-job 생성·임의 원격 shell 금지. P4 완전 CI는 독립된 기존 Node CI 워크플로가 **해당 정확 SHA에 대해 승인 실행 가능할 때** 수행한다.
+
+
 ## 2026-11-17 W03 9/68 — 12시 후속 원격 검증: 신규 공개 정책 회귀 실행 증거 점검
 
 - **시작/종료:** 8/68 DONE(11.8%), 9/68 IN_PROGRESS → 동일. 이번 회차는 원격 GitHub 진행 원장·마스터 계획서·브랜치 HEAD 및 Actions 실행 이력을 직접 확인했다. 기능 브랜치 확인 HEAD `1fa07a9bf25784b76cfdfb4d23636854996cc685` (02:55:39Z); 계획서 blob `7d6b54a1bc91340f64a3cd8b82000f8f1dfa75e1`.
