@@ -260,7 +260,12 @@ const classifyRawLineage=(rows,evidence)=>{
     // authorize that mapping, otherwise leave its lineage unverified.
     let responseProvider=row.provider;
     if(responseProvider.startsWith("BLS_")&&responseProvider!=="BLS_BED"){
-      if(!BLS_ROW_PROVIDER_BY_GROUP.get(p.releaseGroup)?.has(responseProvider)){
+      const series=EMPLOYMENT_R6_BLS_SERIES[row.provider_series_id];
+      if(!BLS_ROW_PROVIDER_BY_GROUP.get(p.releaseGroup)?.has(responseProvider)
+        ||series?.provider!==responseProvider
+        ||series?.logicalSeriesId!==row.logical_series_id
+        ||p.seriesID!==row.provider_series_id
+        ||!EMPLOYMENT_R6_GROUPS[p.releaseGroup]?.seriesIds?.includes(row.provider_series_id)){
         out.unverified++;continue;
       }
       responseProvider="BLS";
