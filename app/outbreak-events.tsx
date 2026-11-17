@@ -13,6 +13,7 @@ import './outbreak-density-r57.css';
 import {OutbreakChange} from './outbreak-change';
 import OutbreakNewsUI from './outbreak-news-r57';
 import OutbreakBeginnerFed,{rateBand} from './outbreak-beginner-fed-r53';
+import {verifiedRateSentimentStoredView} from '../lib/rate-sentiment-stored-display-r4.mjs';
 import {ContentHelp} from './content-help';
 import {HELP,HelpText} from './help-copy';
 import {useIranProgress,IranSummaryCard} from './iran-progress';
@@ -29,7 +30,7 @@ type RateSentimentPoint={label:string;value:number};
 type RateSentimentSnapshot={status:'READY';score:number;observationDate:string;version:string;sourceStoredAt:number;week:RateSentimentPoint[];oneMonth:RateSentimentPoint[]};
 function useRateSentiment(){
  const {payload}=useStoredIndex<RateSentimentSnapshot>('/api/rate-sentiment');
- return payload?.status==='READY'&&Number.isFinite(payload.score)&&Array.isArray(payload.week)&&payload.week.length===5&&payload.week.every(point=>Number.isFinite(point.value))?payload:null;
+ return verifiedRateSentimentStoredView(payload,Date.now()) as RateSentimentSnapshot|null;
 }
 
 function SummaryTitle({title,war}:{title:string;war:boolean}){
