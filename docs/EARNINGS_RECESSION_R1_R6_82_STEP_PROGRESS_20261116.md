@@ -1361,3 +1361,18 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 **FIRST UNFINISHED:** #1980 shared resource A가 두 표본 Core/Writer lock 부재 후보를 확인했지만 `releaseVerified=false/ownerReplanAuthorized=false`, Task owner/1.5초 지속 idle/lease와 정규 Git tree A/M preflight 미확인. 기존 #1919 요청 소모·새 Core 유지보수 효과 HOLD 준수, 설치·BLS WPSFD42 POST·SQLite append/원문 SHA readback 0. PR #1231 후속 source 검증은 운영 설치 완료 증거가 아님.
 
 **NEXT 하나 — W05 원담당:** 공유 Task 소유권 및 유효 자연 idle/lease 해제의 현재 증거를 직접 판정하고, 정규 Writer B 조건이 모두 충족될 때만 승인된 source-only 3파일 새 고유 단회 설치 및 PC afterSHA/JSON/TXT 2/2 회수. 공유 조회기 구조 결함은 총괄의 기존 현안만 재사용하고 기능 작업 인계 0. 이후 WPSFD42 공식 원자료 저장은 별도 승인 효과로 진행. 사용자 승인 없는 Task 중지/lock 삭제/공급자·DB·D1 쓰기 0.
+
+
+## 75. R3-04 (2026-11-17 19:02 KST) W05 사전검사 완료 증거 재검증 및 공유 Controller 복구 경계 반영 — PREIMAGE_PASS / USER_HOLD_ACTIVE / SHARED_RECOVERY_REQUIRED
+
+**진행률 시작→종료:** 순차 DONE **26/82(31.7%) → 26/82(31.7%)**, 개별 DONE **28/82(34.1%) → 28/82(34.1%)**. 첫 미완료 R3-04 불변. 계획 순서/완료 조건 변경 없음.
+
+**LAST PASS:** 기존 [W05 A #1983](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1983#issuecomment-6944706041) 원본 댓글과 PC JSON 결과를 다시 대조. `PASS/WRITER_APPROVED_PREIMAGE_READONLY`, 정확 4파일 ABSENT, source HEAD/config/checkpoint `2070ff53549e2f9f2cea57d5af7e1d83f9fd7388` 일치, 기존 파일 충돌 없음. 이는 **읽기 전용 preimage 검사 성공**이지 W05 정규 B 설치 허가나 Task 소유권/lease 증명이 아님. 기존 W05 [#1919/6943640912](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1919#issuecomment-6943640912)에 명시된 사용자 HOLD는 여전히 유효: 실제 Task 실행 소유권과 정규 1.5초 간격 2연속 자연 유휴가 동시에 확인되기 전에는 새 Writer B 요청 금지.
+
+**신규 공통 경계 — 기존 원격 증거 재사용:** [공통 Controller B #1979/6944530384](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1979#issuecomment-6944530384)는 `UNKNOWN/BACKLOG_ORIGINAL_REQUEST_INVALID`, `FIRST_FAIL=INTAKE_RESUMED`, 목표 SHA `5492726bb5b0505b7ff7db73a3c673dabdf724ce`가 실제 설치 SHA로 보고됐으나 보호/Workflow/접수 복구는 검증되지 않음. [총괄 원인·복구 원장 #1979/6944822650](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1979#issuecomment-6944822650)에 따르면 backlog 원본 형식 검증에서 fail-closed. W05 과거 #1981의 잘못된 A preimage 경로가 형식 불일치 후보이지만 실제 실패 원본 Issue 번호는 미확정; 인과관계 단정 금지. 공통 보고기 false/null 결함은 PR #1984 병합·CI PASS로 source 수정됐지만 운영 복구 완료가 아님. **공통 Controller 복구·backlog·lease는 프로세스 총괄 소유**, W05는 임의 조작하지 않음.
+
+**FIRST UNFINISHED:** W05 Task 실행 소유권/자연 idle 2표본/Writer lease 및 정규 Git index preflight 미입증. 공통 #1979 공유 설치 복구도 미확정. R3-04 실제 WPSFD42 승인 3파일 설치, 공식 BLS 수동 POST, SQLite 원본/checkpoint·SHA, D1/API/UI 실증 모두 미완료.
+
+**이번 실행:** 최신 지정 계획·진행 기록 및 제어 #1983/#1919/#1979/#68 원본 댓글 재조회; 기존 증거 중복 실행 없이 진행 기록만 갱신. 신규 W05 A/B PC Job·기능 source·Task·Core lock·운영 SQLite·공급자·D1·Production 변경 0.
+
+**NEXT:** (1) 총괄이 #1979의 독립 복구 원장/실제 접수·보호·lease를 정상화하고 Task 소유권 증거를 제공할 때까지 W05 운영 설치 HOLD. (2) W05는 기존 A #1983 preimage를 재사용하고, 실제 현재 Task owner + 자연 idle 연속 2표본 + 정규 Writer B source/index/lease가 모두 증명될 때에만 기존 승인 정확 3파일의 새 고유 B 단회 요청을 판단. (3) 별도 Provider/SQLite 승인 후 R3-04 수동 원본 저장·checkpoint 재조회. 공유 총괄 업무를 W05가 대신 수행하지 않음.
