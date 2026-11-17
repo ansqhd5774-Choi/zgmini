@@ -533,28 +533,36 @@ test('R3D and R4 direct-run diagnostic outputs stay under user TEMP, never Write
 });
 
 test('service-only append rejects forged prior WPSFD42 provenance before SQLite commit',()=>{
-  withServiceDb({},db=>{
-    const previous=db.prepare(`SELECT snapshot_sha256,provenance_json
-      FROM api_history_snapshots_v1
-      WHERE provider='BLS' AND dataset='WPSFD42'`).get();
-    const forged={...JSON.parse(previous.provenance_json),seriesID:'WPSFD4'};
-    db.prepare(`UPDATE api_history_snapshots_v1 SET provenance_json=?
-      WHERE provider='BLS' AND dataset='WPSFD42' AND snapshot_sha256=?`)
-      .run(JSON.stringify(forged),previous.snapshot_sha256);
-    const count=()=>db.prepare(`SELECT COUNT(*) AS n FROM api_history_snapshots_v1`).get().n;
-    const beforeCount=count();
-    const service=response({services:true}).Results.series.at(-1);
-    service.data=service.data.map(item=>item.year==='2026'&&item.period==='M09'
-      ?{...item,value:'158.900'}:item);
-    const newPlans=buildPlans(
-      normalizeSeries({Results:{series:[service]}},['WPSFD42']),
-      '2026-10-28T00:00:00.000Z','d'.repeat(64));
-    assert.throws(()=>insertPlans(db,newPlans),/PRIOR_BLS_NAMESPACE_CONFLICT_NO_WRITE/);
-    assert.equal(count(),beforeCount);
-    assert.deepEqual(JSON.parse(db.prepare(`SELECT provenance_json
-      FROM api_history_snapshots_v1
-      WHERE provider='BLS' AND dataset='WPSFD42' AND snapshot_sha256=?`)
-      .get(previous.snapshot_sha256).provenance_json),forged);
-  });
+  for(const [field,value] of [
+    ['seriesID','WPSFD4'],
+    ['authority','UNKNOWN_AUTHORITY'],
+    ['transportProvider','UNKNOWN_TRANSPORT'],
+  ]) {
+    withServiceDb({},db=>{
+      const previous=db.prepare(`SELECT snapshot_sha256,provenance_json
+        FROM api_history_snapshots_v1
+        WHERE provider='BLS' AND dataset='WPSFD42'`).get();
+      const forged={...JSON.parse(previous.provenance_json),[field]:value};
+      db.prepare(`UPDATE api_history_snapshots_v1 SET provenance_json=?
+        WHERE provider='BLS' AND dataset='WPSFD42' AND snapshot_sha256=?`)
+        .run(JSON.stringify(forged),previous.snapshot_sha256);
+      const counts=()=>[
+        db.prepare(`SELECT COUNT(*) AS n FROM api_history_chunks_v1`).get().n,
+        db.prepare(`SELECT COUNT(*) AS n FROM api_history_snapshots_v1`).get().n,
+      ];
+      const before=counts();
+      const service=response({services:true}).Results.series.at(-1);
+      service.data=service.data.map(item=>item.year==='2026'&&item.period==='M09'
+        ?{...item,value:'158.900'}:item);
+      const newPlans=buildPlans(
+        normalizeSeries({Results:{series:[service]}},['WPSFD42']),
+        '2026-10-28T00:00:00.000Z','d'.repeat(64));
+      assert.throws(()=>insertPlans(db,newPlans),/PRIOR_BLS_NAMESPACE_CONFLICT_NO_WRITE/,field);
+      assert.deepEqual(counts(),before,field);
+      assert.deepEqual(JSON.parse(db.prepare(`SELECT provenance_json
+        FROM api_history_snapshots_v1
+        WHERE provider='BLS' AND dataset='WPSFD42' AND snapshot_sha256=?`)
+        .get(previous.snapshot_sha256).provenance_json),forged,field);
+    });
+  }
 });
-
