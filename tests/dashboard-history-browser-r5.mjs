@@ -142,12 +142,12 @@ try{
      await live.waitForFunction(()=>{
       const label=document.querySelector('.zg-r55-summary-top[role="img"]')
        ?.getAttribute('aria-label')??'';
-      return /종합 시장 점수 [0-9]+\\.[0-9]점$/.test(label);
+      return /종합 시장 점수 [0-9]+[.][0-9]점$/.test(label);
      },null,{timeout:25000});
     }
     const summary=await scorePanel.getAttribute('aria-label');
     assert.match(summary??'',/종합 시장 점수/);
-    if(currentReady)assert.match(summary??'',/종합 시장 점수 [0-9]+\\.[0-9]점$/,
+    if(currentReady)assert.match(summary??'',/종합 시장 점수 [0-9]+[.][0-9]점$/,
      'Public READY score must render as a number in the exact main card');
     for(const period of ['1D','1W','1M','3M','6M','1Y']){
      const button=periods.getByRole('button',{name:period,exact:true});
