@@ -31,14 +31,14 @@
 | 필드 | 마지막 확인 상태 |
 |---|---|
 | 최종 목표 | 82단계 R1~R6로 적격 실적 침체 정보성 지표의 PC 원자료 저장→계산→승인 D1 게시→Production API/UI를 완성. 기존 E1-R4 점수/산식·기타 12대 기업실적은 보호 |
-| 현재 관련 단계 | **순차 R2-12(22/82)**: BEA/Census/BLS/SEC 공급자별 관측·발표·공식 개정·수집/vintage 계보 계약 조사. SEC CompanyFacts R2-11은 조사·적격성 **HOLD 판정 완료**; R3-15 실제 저장/커버리지 미검증 별도 |
-| 마지막 검증 완료점 | **R2-11 적격성 판정 DONE / `SEC_COVERAGE=HOLD` (§31)**. 공급자별 회계태그·fiscal start/end·filing 시각·중복·Q3→Q2 과거쌍 혼입 등 9/9 실제 Node CI PASS([PR #1200](https://github.com/ansqhd5774-Choi/zgmini/pull/1200), Run #43986522255). 실제 운영 #1401은 2026Q2 500 발행사 분모만 입증하고 SEC CompanyFacts 분자·archive SHA 미확인 → SEC 이 후보의 원본 수집·게시 활성화 금지, R3-15 조건부 HOLD. R2 단계는 수집 성공이 아닌 **적격/보류 판정**이고 R3가 운영 검증 단계여서 순차 진행 |
+| 현재 관련 단계 | **순차 R2-13(23/82)**: BEA·Census·BLS·SEC·FRED의 재사용권·무료 한도·원자료 저장·파생·공개 사용 적격성 항목별 READY/HOLD 영수증. SEC R2-11은 COVERAGE=HOLD, 실제 R3-15 조건부 |
+| 마지막 검증 완료점 | **R2-12 공급자별 발표/관측/수집/개정/vintage/SA·시차 구분 DONE (§32)**. BEA 2026Q3 profits 11/25 ET(미발표), QFR 2026Q3 12/07 ET(미발표), M3 2026-09 Full 11/03 ET(발표), MTIS 2026-09 11/17 10 ET(2026-11-17 09 KST 기준 미래), BLS ULC 2026Q3 최초 11/05 ET/개정 12/08, BLS PPI 월간 4개월 개정, SEC CompanyFacts 실시간 vs nightly ZIP ~03 ET. 본 시계열별 로컬 fetched/retrievedAt·SHA/firstSeenAt·releasedAt 구별 및 PIT 빈티지 허위 생성 금지. 운영 PC/D1/GET 최신 실측은 별도 |
 | 재사용할 기존 근거 | QFR 원자료 ZIP PC SQLite 저장·계산 기존 유효 증거; 앱 QFR 3-pin [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175)는 앱 main 병합, 운영 PC 설치·B 게시 별개. R1-09 소스 blob 근거는 §14 |
-| 현재 최초 실제 미완료 조건 | **순차 R2-12:** 공급자별 observation/release/stored/revision timestamps·계절조정 및 발표 지연 구분의 소스 근거 종합 미완료. SEC CompanyFacts 500 issuer tag별 비교가능 수는 `HOLD_COVERAGE_NOT_VERIFIED`, B 운영 실제 SEC 수집·게시 미확인 → R3-15 조건부 HOLD로 이관. `source-inventory` A를 같은 목적 재실행하거나 R2의 조사 판정 선행조건으로 설정하지 않음 |
-| 다음 필수 실행 하나 | **22/82 R2-12:** BEA Q3 corporate profits, Census QFR/M3/MTIS, BLS PPI/ULC, SEC CompanyFacts의 release date·reference period·seasonal/vintage/lag를 공식 달력과 기존 원장 스키마에 대조하고 날짜 필드 계약을 기록. PC 신규 수집·배포는 실행하지 않는다 |
-| 현재 완료율 증거 | **21/82 DONE(약 25.6%)**, 현재 R2-12(22/82). R2-11은 SEC 적격성 `HOLD` 판정 완료이며 실제 SEC CompanyFacts PC/SQLite/D1 저장·공개는 미완료. 14단계 종단 게시 마지막 확인 0/14, R6-15 미래 자연 관찰 DEFERRED |
+| 현재 최초 실제 미완료 조건 | **순차 R2-13:** BEA/Census/BLS/SEC/FRED 각 라이선스·API 한도·저장 및 공개 허용/HOLD를 독립 판정한 receipt 미작성. FRED 기업이익 원본 재배포 권리 HOLD, SEC companyfacts issuer coverage/UA/throttle HOLD 유지. R2-12 일정 조사 완료만으로 정규 수집·스케줄·D1 게시 승인 아님 |
+| 다음 필수 실행 하나 | **23/82 R2-13:** BEA 공식 공개 통계, Census 통계/API, BLS 1/2 API, SEC XBRL Fair Access, FRED 제3자 라이선스/Graph CSV 저장·재배포 제한을 공급자 원문과 대조해 LICENSE/API/HTTP/SERIES/COVERAGE 별도 READY/HOLD 표를 작성. 원문·D1 배포 금지 |
+| 현재 완료율 증거 | **22/82 DONE(약 26.8%)**, 현재 R2-13(23/82). R2-11은 SEC eligible candidate `COVERAGE=HOLD` 판정 완료; 운영 저장/게시 별도 |
 | 최종 갱신 식별 | 이 문서의 **최신 원격 브랜치 HEAD 및 Git blob SHA를 재조회**해 근거로 보고한다. 고정된 과거 SHA를 현행값으로 복사하지 않는다 |
-| **순차 포인터·완료율** | **현재 22/82 R2-12**; R1-01~R2-11 연속 조사/적격성 판정 DONE **21/82(약 25.6%)**. SEC 원본 coverage HOLD는 실제 운영 원본 적용 READY 아님 |
+| **순차 포인터·완료율** | **현재 23/82 R2-13**; R1-01~R2-12 연속 조사/결정 DONE **22/82(약 26.8%)**. PC/D1/Production 완료와 분리 |
 | R1-09 이번 실행 | 2026-11-17 08시 KST: B 경제지표 `/economic-indicators/earnings/`→`EconomicDetailPanel`→`/api/market-score` `domains[id=earnings]`와 A 8대 위험 4요소·C 보조 GET의 별도 계약 소스 검증. `DONE`, 완료 9/82. 경계 상세·blob §14; 운영 GET·D1 미검증. 다음 R1-10 |
 
 ### D. 다음 작업자 재개 순서 및 변경 충돌
@@ -54,12 +54,12 @@
 
 | 판정 항목 | 실제 상태 |
 |---|---|
-| **순차 완료 확정** | **21/82 (약 25.6%)** — R1-01~R2-11 조사·계약/조건부 적격성 판정 완료. SEC R2-11의 결과는 HOLD, R3-15 저장/운영 검증 성공 증거 아님 |
-| **현재 순차 진행 단계** | **22/82 = R2-12** (발표/관측/수집/개정/vintage/시차 구분) |
-| **82개 중 개별 완료 확정** | **21개** (R1-01~R2-11), SEC R2-11 적격성 HOLD 포함, 운영 실증 별도 |
+| **순차 완료 확정** | **22/82 (약 26.8%)** — R1-01~R2-12 source·날짜/vintage 계약 조사 완료, 미확인 PC 데이터는 HOLD |
+| **현재 순차 진행 단계** | **23/82 = R2-13** (공급자 권리·무료 한도·원자료 저장/파생/공개 판정) |
+| **82개 중 개별 완료 확정** | **22개** (R1-01~R2-12), SEC 후보 R2-11 HOLD 연구 판정 포함 |
 | **71번 R6-04** | **후행 소스 선행 작업·현재 운영 승인 미해결**, 순차 71단계에 도달한 것이 아님 |
-| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 21개 조사/판정 DONE, 남은 61개 완료 판정 대상(재수집 횟수 뜻 아님) |
-| **다음 실제 수행 하나** | **R2-12(22/82):** 공급자별 관측·공표·수정치·수집시각·계절조정·지연의 공식 출처 및 저장 계약 검증 |
+| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 완료 22개, 남은 60개 단계 판정 대상 |
+| **다음 실제 수행 하나** | **R2-13(23/82):** BEA/Census/BLS/SEC/FRED LICENSE/API/HTTP/SERIES/COVERAGE 항목별 READY/HOLD receipt 작성 |
 
 **순서 운용:** 다음 번호로 넘어가는 기준은 해당 단계의 **계획서 완료 조건 + 근거 링크**이며, 뒤 단계에서 미리 통과한 PR·CI는 계획 순번을 바꾸지 않는 선행 자산으로 유지한다. 사용자 승인 없이 순번이나 완료 기준을 수정하지 않는다. 조건부 HOLD·장기 DEFERRED는 계획서대로 처리하며 다른 독립 승인 작업의 수행을 중단하는 새로운 Gate가 아니다.
 
@@ -91,7 +91,7 @@
 | R2-09 | BLS 서비스 PPI `WPSFD42` 정의·관측월·YoY 계산 검증 | `DONE` | **§24** BLS Final Demand Services SA monthly WPSFD42 공식·기존 2026-10-27 BLS HTTP 2026-09 157.666/2025-09 150.273, t-12 자체 YoY 4.919712789389985% 확인; BLS 9월 발표의 전월대비 0.8%와 구분. BLS service 1원천→RAW INDEX+DERIVED YoY 2행 별도 snapshot key `detail:earnings-recession-indicators:bls-wpsfd42:v1`, 기본 3원천 5행 key 불변. 코드·구원장 증거 조사 DONE이며 서비스 PC SQLite 저장·D1 본문 실제 readback NOT_VERIFIED |
 | R2-10 | SEC CompanyFacts/XBRL 엔드포인트·User-Agent·쿼터 확인 | `DONE` | **§25** SEC data.sec.gov/api/xbrl/companyfacts/CIK##########.json·frames/us-gaap/tag/unit/CY...json 인증/키 없이 공개, www.sec.gov/Archives/edgar/daily-index/xbrl/companyfacts.zip 매일 약 03 ET bulk. SEC Fair Access 총 10req/sec·업체+연락처 UA 공개 권고, data.sec.gov CORS 미지원. 실제 E1-R4 frames UA ZGMINI/1.0 (+https://zgmini.kr)에는 담당 이메일 누락, 공식 rate-limit 전역 준수 미검증 → 운영 UA/전체 쿼터 HOLD. 연구 E1-R5 bulk source 기본 dry-run·CIK universe 검증 확인, 실제 PC 다운로드·게시 효과 미실증. API/HTTP/권리/프로덕션 별도 |
 | R2-11 | SEC 기업별 회계항목·회계기간·중복·표본 커버리지 검사 | `DONE` | **§26~§31** R2 공급자 연구/적격성 평가 결과 **`COVERAGE=HOLD`**. 기존 E1-R5 SEC CompanyFacts fiscal/tag/unit/filing/revision 계보 및 최근분기 Q3/과거 Q2 비교쌍 오인 방지 감사코드 정식 Node24 CI 9/9 PASS(선별 2-file Draft PR #1200/Run #43986522255). 2026Q2 실PC issuer 분모 500건(#1401)과 CompanyFacts 태그별 실제 수치/보존 ZIP SHA를 구분; 실제 분자 미확인=0% 아님. SEC UA/전체 throttle 미검증, live raw source/권한 미확인 → R3-15 조건부 HOLD, SEC 수집·D1·UI 활성화 금지. **조사·적격성 HOLD 판정만 DONE**; 실제 운영값·저장·게시 `NOT_VERIFIED` |
-| R2-12 | 공급자별 발표일·관측일·수집일·수정본·계절조정·지연 구별 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
+| R2-12 | 공급자별 발표일·관측일·수집일·수정본·계절조정·지연 구별 | `DONE` | **§32** BEA 2026Q3 corporate profits 11/25 ET 미발표, QFR 2026Q3 12/07 ET 미발표, Census M3 2026-09 11/03 ET Full 기발표, MTIS 2026-09 11/17 10ET 아직 미래(2026-11-17 09KST 기준), BLS PPI 월간 4개월까지 개정, ULC Q3 초보도 11/05·개정 12/08 ET, SEC CompanyFacts real-time vs nightly bulk ~03ET. 각 observationPeriod/releaseAt/retrievedAt/sourceStoredAt/updated-vintage SHA·SA·publishAt 분리, 제공되지 않은 releaseAt/vintage null·시차 구분 명시. 공식 자료+원 소스 코드 대조 완료; 새 운영 수집·D1 갱신은 없음 |
 | R2-13 | 공급자별 재사용권·무료 한도·저장·파생·공개 허용/보류 판정 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R3-01 | 공통 원자료 저장 계약의 provider·series·period·vintage·SHA 확인 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R3-02 | SQLite append-only·개정본·중복·checkpoint 구조 재사용/최소 보완 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
