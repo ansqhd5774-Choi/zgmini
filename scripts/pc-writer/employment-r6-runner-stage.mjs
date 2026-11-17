@@ -17,6 +17,12 @@ const CHART=new Set(["READY","PARTIAL","UNAVAILABLE"]);
 const SCORE=new Set(["READY","PARTIAL_HISTORY","PARTIAL_MISSING"]);
 const INPUT_FLAGS=new Set(["--db","--candidate-db-external","--output-dir","--as-of"]);
 const PIT_COUNTS=[
+  "rawSnapshotMetadataKeys","rawSnapshotCertifiedKeys",
+  "coreCurrentRawLineageVerifiedKeys","coreCurrentRawLineageMissingSnapshotKeys",
+  "coreCurrentRawLineageConflictingKeys","coreCurrentRawLineageUnverifiedKeys",
+  "coreHistoryRawLineageTotalRows","coreHistoryRawLineageVerifiedRows",
+  "coreHistoryRawLineageMissingSnapshotRows","coreHistoryRawLineageConflictingRows",
+  "coreHistoryRawLineageUnverifiedRows",
   "coreCurrentRows","coreHistoryRevisions","coreCurrentKeys",
   // Fixed non-sensitive counts also permitted by the existing Controller A.
   // Nothing here may return raw source hashes, rows or availability times.
@@ -156,6 +162,11 @@ export function assertWalSidecarSeal(dbPath,expected){
 function projectPit(pitCoverage){
   const pit={};
   for(const field of PIT_COUNTS)pit[field]=safeCount(pitCoverage?.[field]);
+  pit.rawLineageEvidenceStatus=[
+    "NO_RUNTIME_EVIDENCE","HOLD_INCOMPLETE_SOURCE_LINEAGE",
+    "READONLY_SOURCE_LINKS_NOT_PIT_APPROVAL",
+  ].includes(pitCoverage?.rawLineageEvidenceStatus)
+    ?pitCoverage.rawLineageEvidenceStatus:"NO_RUNTIME_EVIDENCE";
   pit.candidateReconciliationPreviewStatus=PIT_STATUSES.has(pitCoverage?.candidateReconciliationPreviewStatus)
     ?pitCoverage.candidateReconciliationPreviewStatus:"NO_RUNTIME_EVIDENCE";
   return pit;
