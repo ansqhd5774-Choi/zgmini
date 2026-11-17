@@ -59,14 +59,14 @@
 | **82개 중 개별 완료 확정** | **28개**, 연속 R1-01~R3-03 26개 + 독립 QFR R3-06, R3-07 2개 |
 | **71번 R6-04** | **후행 소스 선행 작업·현재 운영 승인 미해결**, 순차 71단계에 도달한 것이 아님 |
 | **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 개별 DONE 28개, 미완료 54개, 첫 순차 미완료 R3-04 |
-| **다음 실제 수행 하나** | **3파일 source-only B 승인·설치 작업**, 새 source PR Node CI #44005617374 PASS 재사용; 현재 운영 소스 설치 0건, 개별 28/82 유지 |
+| **다음 실제 수행 하나** | [#1885](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1885)에서 source-only 3파일 정확 GO/NO-GO/정식 승인 여부 확인 후, 승인 시에만 기존 Writer B 1회 설치·PC JSON/TXT·SHA readback. 별도 source PR CI #44012092722 PASS는 설치 승인이 아니며 운영 설치 0건·개별 28/82 유지 |
 
 **순서 운용:** 다음 번호로 넘어가는 기준은 해당 단계의 **계획서 완료 조건 + 근거 링크**이며, 뒤 단계에서 미리 통과한 PR·CI는 계획 순번을 바꾸지 않는 선행 자산으로 유지한다. 사용자 승인 없이 순번이나 완료 기준을 수정하지 않는다. 조건부 HOLD·장기 DEFERRED는 계획서대로 처리하며 다른 독립 승인 작업의 수행을 중단하는 새로운 Gate가 아니다.
 
 
 ## 0. 82개 작업별 진행 상태 (실증·소스 분리)
 
- > **2026-11-17 KST 최신 판정.** R1-01~R2-10 20/82 DONE, 현재 순차 R2-11(21/82). 코드/CI/공식 문서는 현장 게시·운영 완료 증거 아님.
+ > **2026-11-17 12:45 KST 최신 판정.** 연속 R1-01~R3-03 26/82 DONE, 독립 R3-06·R3-07 포함 개별 28/82 DONE; 첫 순차 미완료 R3-04(27/82). 코드/CI/공식 문서는 현장 게시·운영 완료 증거 아님.
 
 | 작업 ID | 실행계획 작업 | 현재 증거 기반 상태 | 마지막 확인 증거·남은 조건 |
 |---|---|---|---|
@@ -1021,6 +1021,7 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 **LAST PASS:** 현재 source PR #1207 정확 HEAD `274f8a8e925daf0456bd4dd1c6643faa27eb5d62` Node #44009961071 PASS, Source-only proposal `PROPOSED_NOT_APPROVED` SHA 일치, 최초 승인 목록 실조회에 W05 정확 3파일 승인 미등록. 지금 #1885 승인 검토 내용을 실제 control issue로 저장. **FIRST UNFINISHED:** 승인 Source Owner의 실제 GO/NO-GO·제어 `APPROVED_B` manifest 미확보, 운영 PC source 실제 설치와 원격 결과 0. Source-only 승인 이후 별도 WPSFD42 provider POST/SQLite append B 효과 승인도 미완료.
 
 **NEXT 필수 실행 하나:** #1885의 책임 Owner가 정확 3파일의 기존 B급 승인 계약 내 GO/NO-GO를 확정. GO+정식 승인 manifest·원본 SHA 등록 시에만 원담당이 기존 정규 Writer B 고유 요청을 한 번 발행하고 `results/writer-b-source-install-<requestId>.json`·`.txt`/PC 실제 hash readback. NO-GO면 정확한 승인 부재/현행 base·Git tree·lease·consumer 증거로 최소 수정하고 별도 기능 개발/조회는 계속. 운영 source·공급자·SQLite·D1·Task·Production 변경 0.
+
 ## 55. R4-09 (2026-11-17 12:45 KST) 기존 서비스 D1 checkpoint 오염의 허위 ALREADY_STORED 방지 — SOURCE_CI_PASS
 
 **진행률:** 순차 DONE 26/82(31.7%), 개별 DONE 28/82(34.1%) 불변. 첫 미완료 R3-04. [승인검토 #1885](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1885) OPEN·댓글 0·assignee 0·label 0을 GitHub API로 확인했으며 Source Owner GO/NO-GO 및 정규 `APPROVED_B` manifest는 여전히 미확인. 승인·수신·PC 설치를 추정하지 않음.
