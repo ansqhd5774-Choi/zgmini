@@ -80,7 +80,8 @@ test("composite uses sentiment area styling without the removed captions",()=>{
   const summary=sourceBetween("function SummaryTrend(","// Stage 12");
   assert.match(summary,/<AreaChart/);
   assert.match(summary,/<Area type="monotone" dataKey="reconstructedValue" stroke=\{color\}/);
-  assert.match(summary,/<Area type="monotone" dataKey="calculatedValue" stroke=\{color\}/);
+  assert.match(summary,/<Area type="monotone" dataKey="calculatedValue" stroke="none" fill="none" strokeWidth=\{0\} dot=\{\{r:2\.4,fill:color,strokeWidth:0\}\}/);
+  assert.match(summary,/Historical calculated points have no per-point methodology version/);
   assert.doesNotMatch(summary,/<Area type="monotone" dataKey="value"/);
   assert.match(summary,/<linearGradient/);
   assert.doesNotMatch(src,/className="zg-r55-main-period"|<span>종합 점수<\/span>|<span>\/ 100<\/span>/);
