@@ -1060,3 +1060,11 @@
 - **운영 영향:** PC/SQLite/D1/API/Cloudflare/Production 변경 0, 공급자 호출 0. 기능 코드는 시험 assertion만 수정. 기존 DONE 목록 22개 불변.
 - **다음 필수 실행 하나:** W06가 최신 main의 4폭×6기간 시험과 이 assertion을 충돌 없이 통합할 수 있는지 diff 확인한 후 승인된 격리 Chromium CI를 실제 실행. 통과 시 PR/main 반영 여부 결정, 실패 시 해당 폭·요소의 실제 geometry와 최소 CSS 수정. #75 active Production은 별도 UNKNOWN.
 - **원격 인계 검증:** 본 진행 기록 업데이트 커밋 후 동일 파일 재조회로 확인.
+
+### [2026-11-18 03:57 KST] R4 #69 — main 4폭×6기간 Chromium fixture와 가로 넘침 assertion 통합
+- **상태/진행률:** #69 PARTIAL, 고유 DONE **22/75(29.3%)**, 잔여53. W06 단독 시험 파일만 수정.
+- **기준 증거:** main `tests/dashboard-history-browser-r5.mjs` blob `130ced488c49d44b02354e3c8b0d375ed954e270`, 작업 브랜치 이전 blob `a9a36890d98c1a1fc70441589542dd3f056b02fd`. main 대비 전용 브랜치 547 ahead/832 behind로 전체 병합 금지.
+- **실제 수행:** 최신 main의 Chromium [390,768,1440,1920]×[1D,1W,1M,3M,6M,1Y] 실제 DOM·기간 선택·Recharts geometry·0점 검증을 **시험 파일 하나**에 선별 반영하고 기존 브랜치의 document scrollWidth·차트·12개 카드 bounding-box 넘침 assertion을 보존. 브랜치 커밋 [21b20426](https://github.com/ansqhd5774-Choi/zgmini/commit/21b20426f16a6eaa30f7ccc9041b2478fc3140e7). 변경 대상 `tests/dashboard-history-browser-r5.mjs` 하나, 앱·CSS·Collector/Writer/SQLite/D1/Cloudflare 변경 0.
+- **검증/한계:** 원격 GitHub 파일 쓰기 성공. **신규 Chromium CI 실행, PR, main 병합, Production 브라우저 검증은 아직 없음**. LAST PASS 기존 main의 4폭×6기간 CI 증거; FIRST FAIL 새 overflow assertion 실행 결과 미확인(실패로 간주하지 않음). 정확 PC 설치 SHA·활성 Production Deployment SHA 미확인. 원격 시험 파일과 본 기록의 재조회 별도 확인 필요.
+- **다음 필수 실행 하나:** W06가 통합된 `tests/dashboard-history-browser-r5.mjs`를 격리 Chromium runner에서 실제 실행하고 24개 기간 조합/가로 넘침 PASS 여부 판정. PASS면 최소 시험 변경만 main에 PR/CI 통합; FAIL이면 해당 폭과 요소의 실제 좌표를 확보해 UI 범위에서 수정. 총괄 신규 인계 없음.
+- **원격 인계 검증:** 기록 갱신 후 재조회 결과로 확정.
