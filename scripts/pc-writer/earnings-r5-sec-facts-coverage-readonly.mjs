@@ -17,9 +17,11 @@ const MAX_ISSUERS = 600;
 const MAX_DOC_BYTES = 32_000_000;
 const METRICS = Object.freeze(Object.keys(E1_R5_SEC_CONTRACT.tags));
 const HASH = /^[0-9a-f]{64}$/;
-const isoDay = value => typeof value === 'string' &&
-  /^\d{4}-\d{2}-\d{2}$/.test(value) &&
-  new Date(value+'T00:00:00Z').toISOString().slice(0,10) === value;
+const isoDay = value => {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const ms=Date.parse(value+'T00:00:00Z');
+  return Number.isFinite(ms) && new Date(ms).toISOString().slice(0,10)===value;
+};
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 
 // The passed-in reader is the only boundary to operating PC data.
@@ -41,13 +43,15 @@ export function auditStoredSecFactsCoverage({issuerCiks,asOf,readSource}={}) {
   }
 
   const metricCounts = Object.fromEntries(METRICS.map(metric =>
-    [metric,{currentIssuerCount:0,comparableIssuerCount:0,conflictedIssuerCount:0}]));
+    [metric,{currentIssuerCount:0,comparableIssuerCount:0,
+      currentWithoutAlignedPriorIssuerCount:0,olderPairExcludedIssuerCount:0,
+      conflictedIssuerCount:0}]));
   const summary = {
     schemaVersion:SEC_FACTS_COVERAGE_SCHEMA,
     status:'SOURCE_COVERAGE_NOT_VERIFIED',
     asOf,universeIssuerCount:universe.length,
     sourceFilesFound:0,sourceFilesMissing:0,sourceFilesRejected:0,
-    contentSha256Computed:0,externalSourceSha256Matched:0,
+    contentSha256Computed:0,providedSha256Matched:0,
     aggregateContentSha256:null,
     metrics:metricCounts,
     providerCalls:0,sqliteWrites:0,d1Writes:0,
@@ -74,7 +78,9 @@ export function auditStoredSecFactsCoverage({issuerCiks,asOf,readSource}={}) {
         (!HASH.test(entry.expectedSha256) || entry.expectedSha256 !== contentSha)) {
       summary.sourceFilesRejected++; continue;
     }
-    if (entry.expectedSha256 === contentSha) summary.externalSourceSha256Matched++;
+    // A matching SHA supplied by the reader proves byte equality only; it is
+    // not independent verification of the original SEC bulk vintage.
+    if (entry.expectedSha256 === contentSha) summary.providedSha256Matched++;
 
     let document;
     try { document=JSON.parse(bytes.toString('utf8')); }
@@ -90,8 +96,17 @@ export function auditStoredSecFactsCoverage({issuerCiks,asOf,readSource}={}) {
         const current=selectFiscalCurrentQuarter(document,{metric,asOf});
         const pair=selectFiscalComparablePair(document,{metric,asOf});
         if (current?.fact) metricCounts[metric].currentIssuerCount++;
-        if (pair?.current && pair?.prior) metricCounts[metric].comparableIssuerCount++;
-        if (Number.isSafeInteger(pair?.conflicts) && pair.conflicts > 0)
+        // Never count a prior quarter's valid pair as coverage of the
+        // latest accepted current quarter. Compare exact source geometry.
+        const aligned=Boolean(current?.fact && pair?.current && pair?.prior &&
+          ['tag','unit','start','end'].every(key=>current.fact[key]===pair.current[key]));
+        if (aligned) metricCounts[metric].comparableIssuerCount++;
+        else if (current?.fact) {
+          metricCounts[metric].currentWithoutAlignedPriorIssuerCount++;
+          if (pair?.current && pair?.prior) metricCounts[metric].olderPairExcludedIssuerCount++;
+        }
+        if ((Number.isSafeInteger(current?.conflicts)&&current.conflicts>0) ||
+            (Number.isSafeInteger(pair?.conflicts)&&pair.conflicts>0))
           metricCounts[metric].conflictedIssuerCount++;
       } catch {
         metricCounts[metric].conflictedIssuerCount++;
@@ -99,7 +114,8 @@ export function auditStoredSecFactsCoverage({issuerCiks,asOf,readSource}={}) {
     }
   }
 
-  summary.aggregateContentSha256=digest(Buffer.from(manifest.join('\n'),'utf8'));
+  summary.aggregateContentSha256=manifest.length
+    ? digest(Buffer.from(manifest.join('\n'),'utf8')):null;
   for (const values of Object.values(metricCounts)) {
     values.currentCoverage=values.currentIssuerCount / universe.length;
     values.comparableCoverage=values.comparableIssuerCount / universe.length;
@@ -107,8 +123,8 @@ export function auditStoredSecFactsCoverage({issuerCiks,asOf,readSource}={}) {
   // Hashes computed from local bytes do not attest that the underlying SEC
   // bulk archive or vendor vintage was captured and verified at the PC.
   summary.status=summary.sourceFilesFound===universe.length &&
-    summary.externalSourceSha256Matched===universe.length
-    ? 'ALL_FILES_INDEPENDENTLY_PINNED_ARCHIVE_UNVERIFIED'
+    summary.providedSha256Matched===universe.length
+    ? 'ALL_FILES_PROVIDED_SHA_MATCH_ARCHIVE_UNVERIFIED'
     : 'PARTIAL_FILES_OR_PROVENANCE_UNVERIFIED';
   return summary;
 }
