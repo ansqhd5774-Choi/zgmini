@@ -1,5 +1,15 @@
 # 테마 공포·탐욕 통합 개발 브랜치 — 작업 원장 / 인수인계
 
+## 2026-11-17 W03 9/68 — 12시 후속 원격 검증: 신규 공개 정책 회귀 실행 증거 점검
+
+- **시작/종료:** 8/68 DONE(11.8%), 9/68 IN_PROGRESS → 동일. 이번 회차는 원격 GitHub 진행 원장·마스터 계획서·브랜치 HEAD 및 Actions 실행 이력을 직접 확인했다. 기능 브랜치 확인 HEAD `1fa07a9bf25784b76cfdfb4d23636854996cc685` (02:55:39Z); 계획서 blob `7d6b54a1bc91340f64a3cd8b82000f8f1dfa75e1`.
+- **새로 확인한 검증 공백:** 브랜치 Actions 목록의 최근 노출 실행은 2026-10-27에 머물러 있고 2026-11-17의 공개 정책 변경 `35332279` 및 R47 회귀 `47cb8d75`에 대한 실행 결과를 확인하지 못했다. 기존 소스 blob 10/10 동등성 검증은 Node 테스트 PASS가 아니다. 기존 마지막 확인 CI 결과를 최신 수정의 PASS로 승격하지 않는다.
+- **공유 운영 복구는 완료:** #1841 공식 2026-11-17T01:56:05Z `ROLLED_BACK/INTERRUPTED_ROLLBACK_VERIFIED`, Controller 기존 `384ffd09...` 유지, workflow active·Runner 6대 정상; #1862 실제 접수 PASS. W03 CMD 설치 성공과 구별한다.
+- **기능 FIRST MISSING:** (1) 신규 공개 정책 및 R47/R49 테스트의 실제 Node 실행/CI 결과, (2) R47 기존 Task CMD SHA `2e0fc3e3...` → 목표 `a08fdec8...` 1파일 정규 B 적용 GO/NO-GO와 최신 PC preimage/lease/backup/post-readback. 이 두 게이트는 별도이며 어느 것도 이번 회차에서 통과하지 않았다.
+- **다음 단일 실행:** 운영 PC와 분리된 승인된 Node 테스트 환경에서 `tests/theme-marketparquet-public-retirement-w03.test.mjs`, `tests/theme-nine-r88-publish.test.mjs`, `tests/theme-nine-r47-recurring-bundle.test.mjs`, `tests/theme-nine-r49-one-click-installer.test.mjs`를 실제 실행해 각 PASS/FAIL과 실행 SHA를 기록한다. 실패가 나오면 해당 소스만 최소 수정한다. 별도로 공유 단일 Owner가 CMD 정규 승인 경로를 확정하기 전 운영 설치/수집 금지.
+- **실제 변경:** 이 인계 원장 1파일만 기록. 신규 운영 PC 요청·공급자 호출·DB/D1·배포·예약 변경 0. 163개 실제 운영 완료 수 미산정.
+
+
 ## 2026-11-17 W03 9/68 — P4 공개 잠정치 MarketParquet 사용 제거 정본 복구 (이번 신규 실행)
 
 - **업무 단계:** 사용자 최종 목표 163개 실제 ETF/SPY 운영, 우선순위 P1→P4→P2→P3. 기존 W03 **8/68 DONE(11.8%), 9/68 IN_PROGRESS**에서 시작. 이 작업은 R47 CMD 정규 B 설치와 독립적인 **P4 공개 Reader 소스 보호**. 공통 마일스톤 T1 20%→20%, 163개 실제 운영 완료 미산정.
