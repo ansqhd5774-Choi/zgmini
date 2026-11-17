@@ -37,3 +37,9 @@
 - **Production 별도:** 해당 `main@87d8...`의 Cloudflare Git Integration check `Workers Builds: zgmini-migration-candidate-r5`는 [Build ID f4e474f3-e8da-4fb8-aabf-6846082f9a24](https://dash.cloudflare.com/6e9b57e718b247330a6efa42a9516e95/workers/services/view/zgmini-migration-candidate-r5/production/builds/f4e474f3-e8da-4fb8-aabf-6846082f9a24)로 최초 **in_progress** 확인; build SUCCESS도 active Production Deployment SHA도 후속 재조회 이전에는 주장하지 않음.
 - **#28 최종 경계:** 차트 기간의 허위 시작 날짜 제거는 main 병합됐지만, 과거 실계산점 per-point methodology 식별자가 GET에 없으므로 서로 다른 방법론 버전 시대 분리 완료가 아니다. #28 여전히 **PARTIAL**. #01 실제 PC 설치/active Production SHA도 PARTIAL. 고유 완료 단계 수 **22/75(29.3%)** 유지.
 - **프로세스 총괄 신규 인계 0건**: 진단/수정/CI/병합/remote 확인은 W06 직접. 공통 Controller·설치기·보호 승인 변경 없음.
+
+## Git Integration build 재조회 (2026-11-17 19:42 KST)
+
+- GitHub `main@87d8cff5a5653413b116d45592133fa6359de475` commit check **Workers Builds: zgmini-migration-candidate-r5 `completed/success`** (2026-11-17T10:41:37Z), [exact Build f4e474f3-e8da-4fb8-aabf-6846082f9a24](https://dash.cloudflare.com/6e9b57e718b247330a6efa42a9516e95/workers/services/view/zgmini-migration-candidate-r5/production/builds/f4e474f3-e8da-4fb8-aabf-6846082f9a24). GitHub verify/notify도 PASS. 이 결과는 `Build SHA` 증거이지 Cloudflare 현재 active Deployment ID/served SHA 증거가 아니다.
+- 공개 홈페이지 GET `https://zgmini.kr/`의 HTML 렌더 전 shell 페이지는 확인했지만 hydrated 390/1440px 차트가 새로운 `87d8cff5`를 서빙한다는 검증은 이번 HTTP 조회로 확인할 수 없다. 기존 별도 Chromium Run #44042680379은 더 이전 버전 검증. 신규 W06 PR의 GitHub 격리/UI CI만 완료, exact Production 및 최종 사용자 육안은 **#75 PARTIAL** 유지.
+- 이번 #28의 신규 **소스 수정 4파일/main 병합/Cloudflare Build 성공은 확인**. 현행 archive 점수별 method-version 메타가 없는 문제는 그대로이며, 전체 단계 **#28 PARTIAL**. 총괄 인계 0.
