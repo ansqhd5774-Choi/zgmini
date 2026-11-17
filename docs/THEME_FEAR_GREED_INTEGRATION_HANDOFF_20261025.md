@@ -1,5 +1,17 @@
 # 테마 공포·탐욕 통합 개발 브랜치 — 작업 원장 / 인수인계
 
+## 2026-11-17 W03 9/68 — 공용 설치 SHA 변경 확인
+
+- 시작/종료: 8/68 완료(11.8%), 9/68 진행 중 → 동일. 이번 회차 읽기 전용 최신 증거 확인 및 사전조건 정정. 신규 운영 완료 0.
+- #1745 공유 복구 완료: https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1745#issuecomment-6933354538 — INTAKE_RECOVERED_EXISTING_CONTROLLER_PRESERVED; held=false; 11/11 독립 검사 PASS. 과거 RECOVERY_REQUIRED를 현 차단으로 보고 금지.
+- W03 기존 #1827 A: https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1827#issuecomment-6933792678 — PASS/R32_SAVED_RAW_SHA_CHECKPOINT_VERIFIED_NOT_CURRENT, 실행 Controller a21b928f0c058ff6e7daf8a33dcfb613c9adc4df, 공급자/운영/D1 쓰기 0. 63 ETF+SPY 저장 검증 PASS, 최신 거래일 확보는 미확인.
+- 신규 공유 설치 drift: W04 정규 B #1832 https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1832#issuecomment-6934260402 — SUCCEEDED/APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED; 실제 설치 SHA 384ffd09e80ad769e31596483dfe73e9ee8b6c6a, 보호 상태 불변, Workflow enabled. W03 이전 a21b928f 기반 설치 manifest는 현재 preimage로 재사용 금지. W04 설치는 W03 신규 R35 호환 코드 설치 증거가 아님.
+- LAST PASS: W03 #1833 source main merge 2f569c18e09a55e54e81052985a80f6a8765d680, W03 #1827 raw 감사, 공유 #1832 설치 PASS.
+- FIRST MISSING: R47 운영 Task action/CMD와 파일별 SHA, 승인 Host source bundle, 설치 직전 Controller SHA/lease, R35 stocks/us 최소 변경 파일·정규 B 승인 manifest, 신규 원자료 수동 증분 검증.
+- 다음 9/68: 기존 읽기 전용 경로로 R47 Task/CMD·Host source preimage 확보 → 공유 Controller 설치 SHA/lease 재확인 → 최소 변경·승인 manifest 확정 → 공용 owner 정규 B 백업·설치·postcheck → 승인된 수동 R47 단회 원자료/SHA/checkpoint 검증. 새 공급자 자료 부재 시 WAIT_SOURCE로 판정; 반복 재시도·임의 보간·D1 게시 금지.
+- 이번 회차 진행 원장 이외 운영 PC/Controller/Host/Task/DB/D1/API/UI 변경 0, 신규 A/B 요청 0. 163개 운영 완료 수 미산정.
+
+
 - 작성일: 2026-10-25
 - 저장소: `ansqhd5774-Choi/zgmini`
 - 통합 브랜치: `codex/theme-fear-greed-integration-20261025`
