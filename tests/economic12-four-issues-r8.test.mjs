@@ -20,7 +20,7 @@ test("five displayed comparison slots fallback only to validated same-lineage sa
  assert.ok(panel.includes("periodSourceMismatch"));
 });
 test("economic detail shows all stored indicators, Growth 24/24, and no invented raw values",()=>{
- assert.ok(panel.includes('const storedObservations=((id==="inflation"||id==="employment"||id==="rates"||id==="credit"||id==="growth"||id==="consumption"||id==="earnings"||id==="liquidity")&&score===null?[]:(domain?.indicators??[]))'));
+ assert.ok(panel.includes('const storedObservations=((id==="inflation"||id==="employment"||id==="rates"||id==="credit"||id==="growth"||id==="consumption"||id==="earnings"||id==="liquidity"||id==="fundFlows")&&score===null?[]:(domain?.indicators??[]))'));
  assert.ok(panel.includes('id==="rates"?verifiedEconomicRateScore(domain,payload?.asOfDate)'));
  assert.ok(panel.includes('id==="inflation"?verifiedEconomicInflationScore(domain,payload?.asOfDate)'));
  assert.ok(panel.includes('const observations=storedObservations;'));
