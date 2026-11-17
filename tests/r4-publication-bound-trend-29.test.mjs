@@ -99,7 +99,7 @@ test('#29 dashboard binds the same accepted publication timestamp to history, co
  assert.match(ui,/normalizeMarketTrendPointsR4\(market\?\.overall\?\.trend,market\?\.updatedAt\)/);
  assert.match(ui,/compositeDayDelta\(verifiedOverallHistory,overallRawScore\)/);
  assert.match(ui,/compositePeriodDelta\(verifiedOverallHistory,overallRawScore,periodDays\)/);
- assert.match(ui,/marketTrendWindow\(amplifyCompositeDisplayTrend\(verifiedOverallHistory\),periodDays\)/);
+ assert.match(ui,/marketTrendWindowR1\(amplifyCompositeDisplayTrend\(verifiedOverallHistory\),periodDays,\{includeBoundaryCarry:false\}\)/);
  assert.match(ui,/normalizeMarketTrendPointsR4\(domain\?\.trend,market\?\.updatedAt\)/);
  assert.match(ui,/normalizeMarketTrendPointsR4\(data,market\?\.updatedAt\)/);
 });
