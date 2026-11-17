@@ -2,6 +2,7 @@
 import {useStoredIndex} from '../../components/use-stored-index';
 import {mergeAssetR10RawForUi,mergeAssetR10LatestForUi} from './asset-r10-raw-ui-r1.mjs';
 import {mergeAssetR10HistoryForUi} from './asset-r10-history-ui-r1.mjs';
+import {assetBubbleVerifiedDisplayScore,assetBubbleVerifiedDisplayTrend} from '../../lib/asset-bubble-stored-display-r4.mjs';
 import {ContentHelp} from '../content-help';
 import {HelpText} from '../help-copy';
 
@@ -66,9 +67,9 @@ export default function AssetBubblePanel({initialPayload}:{initialPayload?:Paylo
  const displayPayload=useMemo(()=>mergeAssetR10HistoryForUi(mergeAssetR10RawForUi(payload,raw),history) as Payload|null,[payload,raw,history]);
  const displayedObservations=useMemo(()=>mergeAssetR10LatestForUi(displayPayload,raw) as Payload|null,[displayPayload,raw]);
  const candidate=payload?.methodologyVersion==='ASSET_BUBBLE_R10_CANDIDATE';
- const publishedCurrentVintage=payload?.publicationPolicy==='USER_APPROVED_CURRENT_VINTAGE_UNVERIFIED_SOURCES';
- const score=(!candidate||payload?.status==='READY')&&typeof payload?.score==="number"&&Number.isFinite(payload.score)?payload.score:null;
- const trend=useMemo(()=>(payload?.trend??[]).filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[payload?.trend]);
+ const score=assetBubbleVerifiedDisplayScore(payload);
+ const publishedCurrentVintage=payload?.publicationPolicy==='USER_APPROVED_CURRENT_VINTAGE_UNVERIFIED_SOURCES'&&score!==null;
+ const trend=useMemo(()=>assetBubbleVerifiedDisplayTrend(payload,score).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[payload,score]);
  const latest=trend.at(-1),latestPoint:MarketFearGreedChartValidPoint|null=latest?{date:latest.date,score:latest.score as number}:null;
  const axisTicks=trend.map(p=>p.date),axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(2,7).replace("-","/")]));
  // The public saved comparison object takes precedence, including intentional nulls.
@@ -81,7 +82,7 @@ export default function AssetBubblePanel({initialPayload}:{initialPayload?:Paylo
   {label:"3개월",value:storedComparison?.threeMonth??null},
   {label:"6개월",value:storedComparison?.sixMonth??null},
   {label:"1년",value:storedComparison?.year??null},
- ];
+ ].map(item=>score===null||(candidate&&trend.length===0)?{...item,value:null}:item);
  const rows=new Map((displayedObservations?.indicators??[]).map(x=>[x.id,x]));
  const fullYearFactors=order.filter(id=>rows.get(id)?.historyStatus==='READY_1Y').length;
  const partialHistoryFactors=order.filter(id=>rows.get(id)?.historyStatus==='PARTIAL_1Y').length;
