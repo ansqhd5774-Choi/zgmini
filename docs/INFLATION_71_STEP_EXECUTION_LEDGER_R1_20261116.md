@@ -2,6 +2,15 @@
 
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
+<!-- W01-20261117-C-TECH-SCOPE-GO-USER-APPROVAL-PENDING-6943893556 -->
+## 최신 인계 스냅샷 — 2026-11-17 18:21 KST · 총괄 C급 기술범위 GO 수신, 사용자 승인·실행 대기
+
+- **시작/종료:** 30/71(42.3%) → 30/71(42.3%); 잔여 41. 계획서·71단계 원장과 공통 #68 최신 댓글을 직접 재조회.
+- **새로 수신한 확정 결정:** [총괄 #68/6943893556](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6943893556) = `SCOPE_REVIEW_GO_FOR_USER_DIRECT_C_ONLY`. PC의 `Microsoft-Windows-TaskScheduler/Operational` 비활성 로그를 사용자가 관리자 Event Viewer에서 **로그 사용 1회**로 활성화하는 정확한 범위만 기술 적합. **사용자의 명시적 C급 승인·실행·사후 Event129 enabled=true 증거는 없음** (`C_USER_APPROVAL_PENDING/NOT_EXECUTED`). 총괄/원담당/Runner가 대리 변경하지 않음. #68 승인 요청 [#6943704187](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6943704187)과 #1818 원본 인계 [#6943680866](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1818#issuecomment-6943680866) 연결.
+- **현장 근거 불변:** [#1955](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1955) `logConfig.enabled=false`; [#1951](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1951) 26/26 직접 Task Engine owner 증명 실패; [#1818](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1818) B preflight STOP/GET 0/2/replay 금지. Event129 활성화 자체는 owner PASS나 B 승인 아님. W03 설치 [#1962](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1962) actual Controller `39521f40...` SUCCEEDED는 별도 기능 작업이며 Census B 직접 Gate 아님.
+- **정확한 다음 한 작업:** 사용자 직접 C 설정 완료가 입증되면 W01 원담당은 기존 승인 Event129 A를 **새 고유 단회**로 자연 Core 실행 시 관측해 `enabled=true` 및 Task/VBS/Node PID·시작시각↔E: lock 동일성을 실증한다. 그전에는 같은 A/B 중복 실행 없이 독립 Census 파서·공개 Reader/계산 계약 검증을 수행. 소유권 PASS + 기존 승인 PC 4파일 SHA/lease/manifest 최신 일치 후에만 새 Census B 2GET, raw SHA/storedAt readback, 별도 Writer 승인 D1/API/UI 7/7.
+- **이번 실제 변경:** 지정 W01 진행 원장 문서만 갱신. 운영 PC·Windows 설정·Task·source/Collector·공급자·SQLite·D1 쓰기 0; 체크 완료 추가 없음.
+
 <!-- W01-20261117-C-APPROVAL-HANDOFF-6943704187 -->
 ## 최신 인계 스냅샷 — W01 2026-11-17 (C급 Event129 활성화 범위 승인 요청·원본 #1818 인계 완료·30/71)
 
