@@ -620,3 +620,15 @@
 - **지정 원인 확인용 A/light 신규 1회:** 기존 성공 #1798와 같은 고정 employment-r6-wal-memory-preflight (source afdd8fab1c03b321e4b8b0853bb236c0800a0a14, codex/employment-1y-reader-r1)로 신규 [Issue #1937](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1937), requestId pc-w04-pit0403-resource-check-20261117-1646-01 발행. 첫 조회 시 runtime 결과 0건/미회수; 경량 검사 상태는 아직 STATE_UNKNOWN.
 - **LAST PASS / FIRST FAIL:** B 설치/JSON+TXT PASS, A/heavy #1935 결과 회수 PASS(실행 효과 자체 BLOCKED); FIRST_FAIL=RESOURCE_WAIT_MEMORY. 작업을 통과한 것으로 보정하거나 메모리 기준을 낮추지 않음. 후보 14개 상충 및 승격 HOLD 유지.
 - **다음 필수 실행:** 기존 #1937의 결과 댓글·Run·JSON/TXT 직접 회수해 WAL 상태와 메모리 기준 충족 여부를 확인. 안전 조건이 실제 충족된 경우에만 기존 승인 경로로 신규 고유 A/heavy를 계획하고 각 requestId 중복 실행 금지. four-bucket matching/conflicting/unverified/missing 합계와 Core CURRENT 총계, missing과 coreCurrentKeysMissingHistory, asOf를 실제 결과로 검산. 실패면 정확 resource gate 분리, 운영 DB/원자료/Provider/D1/Task/예약 임의 수정 금지.
+
+
+## 56. W04 PIT-04-03 — #1937 경량 WAL·메모리 A 결과 회수 및 단일 병목 확정 (2026-11-17 16:48 KST)
+
+<!-- W04-PIT0403-LIGHT-1937-RESULT-20261117-R1 -->
+
+- **작업 ID/기준:** PIT-04-03, 전담 `codex/employment-1y-reader-r1`, 기존 §55의 신규 경량 A #1937을 **재실행 없이** 회수. 시작 25/72 DONE(34.7%) → 종료 **25/72 DONE(34.7%)**, 잔여 47.
+- **실제 원격 증거:** [Issue #1937](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1937) 댓글 1건, [Run 44041321047](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44041321047), [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44041321047-1-seat-6.json) / [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44041321047-1-seat-6.txt) **2/2 직접 원격 조회**. requestId `pc-w04-pit0403-resource-check-20261117-1646-01`, 실제 Controller `fbe943a069c9b2366f8e295d2c63b7895c639ef2`, 2026-11-17 07:48:00Z 완료.
+- **LAST PASS:** Core SQLite WAL 헤더 2/2, WAL·SHM BOTH_PRESENT, ready=true; Candidate SQLite ROLLBACK 헤더 1/1, sidecar NOT_REQUIRED, ready=true. `protectedStateUnchanged=true`, 전후 SHA256 `591c8e7efc555f926d3d14d70cbb92b680b100066b224e026bc9ca4c212591ae`; providerCalls/operationalWrites/d1Writes=0, sqliteOpened=false.
+- **FIRST FAIL:** `status=BLOCKED`, `code=RESOURCE_WAIT_MEMORY`, free **463 MiB** < minimum **1536 MiB** (부족 **1073 MiB**), total 16122 MiB. `firstFail=ALLOWLISTED_OPERATION`, `candidateExecuted=false`. #1935 heavy 실패의 유일한 재현 병목은 현재 **메모리 admission**이며 WAL/sidecar 오류로 분류하지 않는다. 두 시점의 메모리 수치는 변동 관측이지 영구 자원 상태가 아니다.
+- **안전 판정:** 현재 A/heavy 반복 요청 **NO-GO**. RAM 임계치 임의 하향, Core/Task 강제 종료, WAL 조작, 수집/DB/D1/게시 변경 금지. 새 4버킷/asOf는 미관측; Candidate 14 상충 승격 HOLD 유지. 이번 회차 신규 PC 요청/설치/운영 쓰기 0.
+- **다음 필수 한 작업:** 기존 공용 PC 운영의 **승인된 비파괴 메모리 회복 경로** 및 사용량 원인(상위 메모리 점유 프로세스·Core 자연 idle·기존 동시 실행)을 확인하고 안전한 유휴 상태에서 **경량 A만** 새 고유 요청으로 1회 재측정할지 판단한다. `freeMiB >= 1536` 및 Core/Candidate ready, lease/보호 조건이 동시에 성립한다는 **새 실측** 없이는 heavy 재시도 금지. 충족 시에만 승인된 기존 `employment-r6-candidate-stage-readonly` A 고유 1회로 matching/conflicting/unverified/missing 4버킷·asOf 및 분모/History missing 검산, JSON/TXT 2/2 후 PIT-04-03 완료 여부 판정.
