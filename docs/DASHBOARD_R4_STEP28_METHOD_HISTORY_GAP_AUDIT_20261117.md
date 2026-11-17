@@ -29,3 +29,11 @@
 - **판정:** 계획 #28 **PARTIAL**, 가중치·계산·실저장/게시·API 계약 변경 0. #01 PARTIAL과 함께 누적 **22/75 (29.3%)** 불변. PR CI PASS여도 경계일 개선 범위만 PASS이며 #28 DONE 아님.
 - **담당 분리:** W06 담당 UI gap/세그먼트·차트 검증 및 PR/회귀, Writer/계산 원담당은 필요하면 기존 승인된 version-key 이력 원자료/계약 문제만 별도 처리. **프로세스 총괄 신규 인계 0**: 공통 Controller·정규 설치기/공용 권한 결함 발견 없음. 검증되지 않은 writer schema 변경을 총괄에게 떠넘기지 않음.
 - **다음 독립 W06 실행:** PR #1248 CI 결과+3파일 변경 범위 확인. 그 뒤 per-point version 없는 계산점은 UI에서 방법론 확정구간으로 표현하지 않도록 하는 표시/테스트를 W06 범위에서 별도 보완 검토. 필요할 경우에만 Calculator/Writer 원담당에 정확 데이터 계약 변경 범위와 사용자 승인을 구분해 요청한다.
+
+## 추가 실행 — PR #1248 main 병합 및 CI 검증 (2026-11-17 19:40 KST)
+
+- `codex/w06-r4-28-strict-boundary-20261117@d16eafaf80d0ed5f703f85b510eb415627a366ac` 정확 4파일 변경. [PR #1248](https://github.com/ansqhd5774-Choi/zgmini/pull/1248) Draft 해제 후 **squash MERGED**, `main@87d8cff5a5653413b116d45592133fa6359de475` 원격 ref 직접 재조회 **PASS**, commit changed files 4/4 원문 일치.
+- **격리 PR Node CI** [Run 44065978125](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44065978125) **Build/Type PASS, 회귀 4859개 중 4849 PASS / 0 FAIL / 7 SKIP / 3 TODO, 신규 R4 #28 5/5 PASS, PC 복구 11/11 및 CF Reader 69/69 PASS**. [UI Chromium Run 44065978302](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44065978302) completed/success, Mock Chromium 390/768/1440/1920px 등 기존 앱 화면 계약 PASS. 신규 PC/DB/Provider/실D1 쓰기 0.
+- **Production 별도:** 해당 `main@87d8...`의 Cloudflare Git Integration check `Workers Builds: zgmini-migration-candidate-r5`는 [Build ID f4e474f3-e8da-4fb8-aabf-6846082f9a24](https://dash.cloudflare.com/6e9b57e718b247330a6efa42a9516e95/workers/services/view/zgmini-migration-candidate-r5/production/builds/f4e474f3-e8da-4fb8-aabf-6846082f9a24)로 최초 **in_progress** 확인; build SUCCESS도 active Production Deployment SHA도 후속 재조회 이전에는 주장하지 않음.
+- **#28 최종 경계:** 차트 기간의 허위 시작 날짜 제거는 main 병합됐지만, 과거 실계산점 per-point methodology 식별자가 GET에 없으므로 서로 다른 방법론 버전 시대 분리 완료가 아니다. #28 여전히 **PARTIAL**. #01 실제 PC 설치/active Production SHA도 PARTIAL. 고유 완료 단계 수 **22/75(29.3%)** 유지.
+- **프로세스 총괄 신규 인계 0건**: 진단/수정/CI/병합/remote 확인은 W06 직접. 공통 Controller·설치기·보호 승인 변경 없음.
