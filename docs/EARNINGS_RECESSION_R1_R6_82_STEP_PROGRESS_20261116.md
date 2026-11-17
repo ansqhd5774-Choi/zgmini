@@ -31,14 +31,14 @@
 | 필드 | 마지막 확인 상태 |
 |---|---|
 | 최종 목표 | 82단계 R1~R6로 적격 실적 침체 정보성 지표의 PC 원자료 저장→계산→승인 D1 게시→Production API/UI를 완성. 기존 E1-R4 점수/산식·기타 12대 기업실적은 보호 |
-| 현재 관련 단계 | **순차 R3-01(24/82)**: 공통 원자료 저장계약의 provider/series/observationPeriod/vintage/SHA/sourceStoredAt 실제 source·운영 증거와 매핑. R2 공급자별 LICENSE/API/HTTP/SERIES/COVERAGE 판정 완료, 항목별 HOLD는 조건부 R3-13~15로 승계 |
-| 마지막 검증 완료점 | **R2-13 라이선스·API 한도·원본 저장/파생/공개 판정 DONE (§33)**. BEA 직접 공개통계 원칙적으로 사용 가능/BEA API 등록 ID·100req/min/100MB/min/30errors/min; BLS 공개자료 재사용 출처표시, v1 무등록 25/day·v2 등록 500/day/50 series; Census 공개 통계 파생·출처표시, Census API 무키 500/day/IP; SEC 공개 XBRL 접근 가능하나 기관/연락처 UA 및 전체 10req/sec 준수·실PC coverage 미확인으로 실제 활성화 HOLD; FRED Graph CSV는 제3자 기초시계열 이용권·저장/재배포 제약으로 PUBLIC/ARCHIVE HOLD. 단순 무료 HTTP ≠ 무제한 원문 재게시. 운영 PC/D1 배포 실측 없음 |
+| 현재 관련 단계 | **순차 R3-02(25/82)**: 실제 운영 SQLite append-only/개정본·중복·checkpoint 계약 및 기존 2-table reader 보호 검증. R3-01 공통 raw lineage 6필드 증명; 신규 DB 저장·실제 R3-13~15 후보 수집 별개 |
+| 마지막 검증 완료점 | **R3-01 공통 원자료 출처→기간/수정본→SHA→저장시각→공개 checkpoint 계보 DONE (§34)**. BLS 3 series source snapshot/chunk 2table 계약(기존 실 PC R3D 3/3 hash PASS), Census QFR `CENSUS/QFR_MFG_US_NSA_AFTER_TAX_MARGIN` stored ZIP SHA 232f7757…·snapshot/chunk append PC R2 PASS. BEA unit/mfg CSV+meta 동일 raw SHA sourceVersion·sourceStoredAt 필수 계약은 source 검증, 실제 BEA archive PC 전체 readback 별도 R3-08~11; SEC/M3/MTIS 원본 HOLD. `vintageId=null`·`CURRENT_RETRIEVAL_NOT_PIT`를 PIT 공식 빈티지로 둔갑 금지 |
 | 재사용할 기존 근거 | QFR 원자료 ZIP PC SQLite 저장·계산 기존 유효 증거; 앱 QFR 3-pin [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175)는 앱 main 병합, 운영 PC 설치·B 게시 별개. R1-09 소스 blob 근거는 §14 |
-| 현재 최초 실제 미완료 조건 | **순차 R3-01:** 원자료 저장계약 provider/series/period/vintage/raw SHA·retrievedAt/sourceStoredAt의 실제 운영 소스/SQLite 체크포인트 교차대조 미완료. 기존 BLS/QFR 유효 PC 저장 증거 재사용하되 BEA 제조업/단위이익 새 archive readback 및 M3/MTIS/SEC 조건부는 별도 HOLD. FRED 원시 CSV 재배포·저장 금지 유지 |
-| 다음 필수 실행 하나 | **24/82 R3-01:** 기존 저장기/reader 원문·BLS 3개 PC PASS·QFR 기존 ZIP SHA 증거를 이용해 공통 raw provider/dataset/period/SA/vintage/sha/retrievedAt/sourceStoredAt/checkpoint 필드 맵 검증. 운영 승인 소스 읽기·새 수집/쓰기 없이 소스 계약 우선. 조건부 HOLD 자료를 숫자로 채우지 않는다 |
-| 현재 완료율 증거 | **23/82 DONE(약 28.0%)**, 현재 R3-01(24/82). R2-11 SEC source eligibility COVERAGE HOLD, R2-13 FRED rights HOLD·SEC HTTP/COVERAGE HOLD·M3/MTIS LIVE-COVERAGE HOLD, 운영 게시/실측 별도 |
+| 현재 최초 실제 미완료 조건 | **순차 R3-02:** 공용 2-table append-only·동일 source hash 중복 0·수정원본별 별도 불변 snapshot·원장 checkpoint 보호 구조의 실제 source·기존 PC PASS 교차대조 미완료. R3-01은 원문 컬럼·출처·관측월·빈티지 결측 계약 판정 완료일 뿐 현재 모든 공급자의 최신 PC 원본 확보나 D1 게시 입증 아님 |
+| 다음 필수 실행 하나 | **25/82 R3-02:** BLS/QFR 기존 api_history_chunks_v1 / api_history_snapshots_v1 append-only SQL/unique PK·raw ZIP SHA·같은 시각 상충 거절·중복/revision/rollback 보호·firstSeenAt와 sourceStoredAt 매핑 및 실제 PC 기존 PASS를 교차 검증. 무승인 운영 DB schema 변경·동일 ZIP 재수집 금지 |
+| 현재 완료율 증거 | **24/82 DONE(약 29.3%)**, 현재 R3-02(25/82). R3-01은 기저 raw lineage 계약 DONE, BLS/QFR 과거 PC PASS 재사용, BEA archive 및 조건부 SEC/M3/MTIS 운영 적용 미확인 |
 | 최종 갱신 식별 | 이 문서의 **최신 원격 브랜치 HEAD 및 Git blob SHA를 재조회**해 근거로 보고한다. 고정된 과거 SHA를 현행값으로 복사하지 않는다 |
-| **순차 포인터·완료율** | **현재 24/82 R3-01**; R1-01~R2-13 연속 조사/적격성 결정 DONE **23/82(약 28.0%)**. PC/D1/Production 실물 증거와 구분 |
+| **순차 포인터·완료율** | **현재 25/82 R3-02**; R1-01~R3-01 연속 단계 DONE **24/82(약 29.3%)**. 운영 저장/게시 후행 실증과 분리 |
 | R1-09 이번 실행 | 2026-11-17 08시 KST: B 경제지표 `/economic-indicators/earnings/`→`EconomicDetailPanel`→`/api/market-score` `domains[id=earnings]`와 A 8대 위험 4요소·C 보조 GET의 별도 계약 소스 검증. `DONE`, 완료 9/82. 경계 상세·blob §14; 운영 GET·D1 미검증. 다음 R1-10 |
 
 ### D. 다음 작업자 재개 순서 및 변경 충돌
@@ -54,12 +54,12 @@
 
 | 판정 항목 | 실제 상태 |
 |---|---|
-| **순차 완료 확정** | **23/82 (약 28.0%)** — R1 10단계·R2 13단계 source/공식/권리 판정 완료(HOLD는 활성화 아님) |
-| **현재 순차 진행 단계** | **24/82 = R3-01** (공통 원자료 provider/dataset/period/vintage/SHA 저장계약 재검증) |
-| **82개 중 개별 완료 확정** | **23개** (R1-01~R2-13); R2-HOLD 후보는 실제 수집·공개 미완료 |
+| **순차 완료 확정** | **24/82 (약 29.3%)** — R2 LICENSE/권리 결정+R3-01 원시 데이터 저장 필드 계보 조사 완료 |
+| **현재 순차 진행 단계** | **25/82 = R3-02** (SQLite append-only·revision·중복·checkpoint 계약 재검증) |
+| **82개 중 개별 완료 확정** | **24개** (R1-01~R3-01); 저장 실제 PASS와 source-only 증거 구별 |
 | **71번 R6-04** | **후행 소스 선행 작업·현재 운영 승인 미해결**, 순차 71단계에 도달한 것이 아님 |
-| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 완료 23개, 남은 59개 단계 판정 대상 |
-| **다음 실제 수행 하나** | **R3-01(24/82):** 기존 PC 저장 원자료 provider/series/period/vintage/SHA/sourceStoredAt 계약 검증 |
+| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 완료 24개, 남은 58개 단계 판정 대상 |
+| **다음 실제 수행 하나** | **R3-02(25/82):** 기존 SQLite append-only·개정본/중복/체크포인트·rollback 보존 검증 |
 
 **순서 운용:** 다음 번호로 넘어가는 기준은 해당 단계의 **계획서 완료 조건 + 근거 링크**이며, 뒤 단계에서 미리 통과한 PR·CI는 계획 순번을 바꾸지 않는 선행 자산으로 유지한다. 사용자 승인 없이 순번이나 완료 기준을 수정하지 않는다. 조건부 HOLD·장기 DEFERRED는 계획서대로 처리하며 다른 독립 승인 작업의 수행을 중단하는 새로운 Gate가 아니다.
 
@@ -93,7 +93,7 @@
 | R2-11 | SEC 기업별 회계항목·회계기간·중복·표본 커버리지 검사 | `DONE` | **§26~§31** R2 공급자 연구/적격성 평가 결과 **`COVERAGE=HOLD`**. 기존 E1-R5 SEC CompanyFacts fiscal/tag/unit/filing/revision 계보 및 최근분기 Q3/과거 Q2 비교쌍 오인 방지 감사코드 정식 Node24 CI 9/9 PASS(선별 2-file Draft PR #1200/Run #43986522255). 2026Q2 실PC issuer 분모 500건(#1401)과 CompanyFacts 태그별 실제 수치/보존 ZIP SHA를 구분; 실제 분자 미확인=0% 아님. SEC UA/전체 throttle 미검증, live raw source/권한 미확인 → R3-15 조건부 HOLD, SEC 수집·D1·UI 활성화 금지. **조사·적격성 HOLD 판정만 DONE**; 실제 운영값·저장·게시 `NOT_VERIFIED` |
 | R2-12 | 공급자별 발표일·관측일·수집일·수정본·계절조정·지연 구별 | `DONE` | **§32** BEA 2026Q3 corporate profits 11/25 ET 미발표, QFR 2026Q3 12/07 ET 미발표, Census M3 2026-09 11/03 ET Full 기발표, MTIS 2026-09 11/17 10ET 아직 미래(2026-11-17 09KST 기준), BLS PPI 월간 4개월까지 개정, ULC Q3 초보도 11/05·개정 12/08 ET, SEC CompanyFacts real-time vs nightly bulk ~03ET. 각 observationPeriod/releaseAt/retrievedAt/sourceStoredAt/updated-vintage SHA·SA·publishAt 분리, 제공되지 않은 releaseAt/vintage null·시차 구분 명시. 공식 자료+원 소스 코드 대조 완료; 새 운영 수집·D1 갱신은 없음 |
 | R2-13 | 공급자별 재사용권·무료 한도·저장·파생·공개 허용/보류 판정 | `DONE` | **§33** LICENSE/API/HTTP/SERIES/COVERAGE 5축 판정: BEA direct public stats READY(등록 API key·100req/min 등 조건) / Census 통계 자료 파생·출처표시 READY, 무키 API ≤500/day/IP(QFR stored PC PASS, M3/MTIS 현행 collector HOLD) / BLS public domain+출처표시 READY, v1 25/day, registered v2 500/day(BLS base 3 raw PASS, WPSFD42 PC HOLD) / SEC public EDGAR 분석 가능하지만 UA 회사+연락처/전체 10req/sec/issuer coverage 미검증으로 실제 수집·공개 HOLD / FRED 재배포·archive·제3자 권리 Graph CSV HOLD, BEA official direct 전환만 조건부. provider HTTP 통신·원시파일 LIVE readback·D1 게시 별도 NOT_VERIFIED |
-| R3-01 | 공통 원자료 저장 계약의 provider·series·period·vintage·SHA 확인 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
+| R3-01 | 공통 원자료 저장 계약의 provider·series·period·vintage·SHA 확인 | `DONE` | **§34** BLS `api_history_chunks_v1`/`api_history_snapshots_v1` provider/dataset/series, observationDate, SA/NSA, chunk_sha256·snapshot_sha256, first_seen_at vs retrieved_at/as_of, official `vintageId=null` 3계열 기존 R3D 실PC 3SHA PASS. Census QFR 같은 2table `provider=CENSUS`,`dataset=QFR_MFG_US_NSA_AFTER_TAX_MARGIN`, original ZIP sha=232f7757…+payload hash+snapshot hash, `CURRENT_RETRIEVAL_NOT_PIT`, 기존 실제 PC append/readback PASS. BEA unit/mfg CSV·meta SHA/sourceVersion/sourceStoredAt 계약 source 확인(PC 전체 archive readback은 R3-08~11 HOLD); SEC/M3/MTIS 조건부 raw 미확인. 필드/시점 매핑 판정 DONE, 운영 전체 최신 저장·D1 성공 주장 없음 |
 | R3-02 | SQLite append-only·개정본·중복·checkpoint 구조 재사용/최소 보완 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R3-03 | 기존 BLS 3원천 저장·계산 PC 실측 증거 재사용 | `EXISTING_EVIDENCE` | 기존 BLS 3원천·공개 5행 유효 증거 재사용, 재수집 금지 |
 | R3-04 | WPSFD42 승인 수동 수집 후 SQLite 원본·SHA·시각 재조회 | `NOT_RUN` | WPSFD42 실제 운영 PC 저장·SQLite readback 증거 없음 |
@@ -687,5 +687,25 @@ R2-03에 요구한 산업범위·명목/실질·IVA와 CCAdj의 차이·SAAR/분
 
 **R3 조건부 인계:** R3-15 SEC XBRL 실제 저장은 공식 이용 정책/Source Owner 승인, CIK universe와 CompanyFacts 저장 raw SHA/vintage 및 최신/전년 동분기 유효 기업별 ratio 증거, 공개 대상 데이터 계약이 READY일 때만 수행. 아니면 `HOLD/NOT_APPLICABLE`와 이유를 적고 M3·MTIS 및 다른 독립 조건부 후보/확정된 BEA·QFR·BLS 진행을 막지 않음. R2-11 **DONE은 적격성 판정을 완료했다는 뜻이지 실제 PC/D1/API/UI "DONE"이 아니다**. 신규 작업/PC/SQLite/D1 쓰기 0.
 
-**LAST PASS:** SEC CompanyFacts source·계약·소스 회귀시험/적격성 `HOLD` 확정. **FIRST UNFINISHED (순차):** R2-12 공급자 발표/관측/수집/vintage/delay 계약. **NEXT:** R2-12 출처 기반 날짜/재발표 시계열 비교. 
+**LAST PASS:** SEC CompanyFacts source·계약·소스 회귀시험/적격성 `HOLD` 확정. **FIRST UNFINISHED (순차):** R2-12 공급자 발표/관측/수집/vintage/delay 계약. **NEXT:** R2-12 출처 기반 날짜/재발표 시계열 비교.
 
+## 34. R3-01 (2026-11-17 KST) 공통 원본 저장계약/시계열·수정·SHA 계보 실소스 검증 — DONE(CONTRACT_ONLY)
+
+**목표/범위:** `provider/dataset/series`, 정확한 **관측기간**, 조회기준/공식빈티지 구분, 원본 **SHA-256/스냅샷 해시**, **최초 저장시각/조회시각**을 체인으로 매핑한다. 각 공급자를 같은 테이블/동일 구조에 임의 끼워맞추거나 모든 후보가 이미 운영 PC에 저장됐다고 추정하지 않는다.
+
+| 공급자 | 실제 소스·계약 값 | 증거 범위/지속성 판정 |
+|---|---|---|
+| **BLS 3 기본/조건부 서비스** | [`EARNINGS_R3C_BLS_STORE_ONCE.mjs`](../scripts/pc-writer/EARNINGS_R3C_BLS_STORE_ONCE.mjs) blob `add5445108361b49c839fcb7eb4ffe2cc08e4ec4`: provider `BLS`; series `WPSFD4`,`WPSFD41`,`PRS85006111`(서비스 `WPSFD42` 별도), `api_history_chunks_v1` 의 `(provider,dataset,chunk_sha256,first_observation_date,last_observation_date,row_count,payload_json,first_seen_at)`; `api_history_snapshots_v1` 의 `(provider,dataset,snapshot_sha256,as_of,retrieved_at,status,history_mode,row_count,latest_observation_date,chunk_hashes_json,provenance_json)`. 독립 chunk hash와 snapshot hash, `as_of`(조회 날짜)와 관측 날짜 분리; BLS API `latest`는 revision ID 아님 → `vintageId:null` | [R3D PC 실제 검증](EARNINGS_COMPANION_R3D_PC_RESULT_VERIFIED_20261027.md)의 3 snapshot/hash PASS 재사용. 2026-10 저장본=2026-11 현재 최신 raw를 보장하는 증거 아님. 서비스 원본 별도 PC 미저장/HOLD |
+| **Census QFR** | [`EARNINGS_CENSUS_QFR_R2_SQLITE_APPEND.mjs`](../scripts/pc-writer/EARNINGS_CENSUS_QFR_R2_SQLITE_APPEND.mjs) blob `95059aae7122b8442deba14aefe528b9cdc55050`: `provider='CENSUS'`, `dataset='QFR_MFG_US_NSA_AFTER_TAX_MARGIN'`; official ZIP **bytes SHA `232f7757e654e787a9eab49792302feb3683e5280a66ff0cc9bd7f0cbc448654`** 별도 검증; ZIP base64·원자료 대상/기간·계산내역 포함 JSON chunk의 추가 sha, `snapshotHash=SHA(contract/provider/dataset/chunk)`, UTC `retrieved_at`, `history_mode='CURRENT_RETRIEVAL_NOT_PIT'`, officialVintageId null | [QFR R2 원시 저장 실 PC](EARNINGS_CENSUS_QFR_RAW_SQLITE_R2_20261027.md) 2026-10-27 14:52 UTC `CHUNKS_INSERTED=1`, `SNAPSHOTS_INSERTED=1`, `SQLITE_COMMITTED=YES`, `PASS_QFR_SQLITE_APPEND_READBACK`; 실행된 실제 PC readback은 이 원장 제출 증거 재사용, D1/현재 2026Q3 원본 미확인 |
+| **BEA 단위이익** | [`EARNINGS_BEA_UNIT_STORED_RAW_R1.mjs`](../scripts/pc-writer/EARNINGS_BEA_UNIT_STORED_RAW_R1.mjs) blob `812266af97836edf9e06bae679e363e6546168fb`: 원본 CSV bytes SHA == 파일명 `<sha>.csv`; metadata JSON `sourceVersion=sha`, `sourceStoredAt` 숫자 UTC epoch millisecond, `sourceRetrievedAt` ISO UTC 정확 일치; reader 원자료 SHA·meta+unit/parsing 검증 후에만 payload | **source-only contract DONE**, 실제 운영 archive 파일 입증은 R3-08/09 유지; FRED Graph CSV 라이선스 HOLD 시 공식 BEA 원본 적격성 경로 구분 |
+| **BEA 제조업 기업이익** | [`EARNINGS_BEA_MFG_PROFIT_R5_APPEND_ONLY_CAPTURE.mjs`](../scripts/pc-writer/EARNINGS_BEA_MFG_PROFIT_R5_APPEND_ONLY_CAPTURE.mjs) blob `1ab5c59f39f9e45ec3f20f1c208e2c7186289f00`: 원본 CSV SHA `sourceVersion`, 대응 `.csv/.json` metadata `seriesId,sourceUrl,sourceStoredAt,sourceRetrievedAt,latestPeriod,rowCount,unit='BILLIONS_USD_SAAR',historicalMode='CURRENT_VINTAGE_NOT_PIT'`. 새 버전은 종전 파일을 보존하는 append-only | **source-only metadata/sha contract DONE**, 과거 SOURCE/PC 운영 archive readback은 R3-11 완료 기준으로 미이관 |
+| **SEC E1-R5 / M3 / MTIS** | 저장 준비/허용 source 미확인. SEC raw companyfacts.zip manifest + issuer CIK·unit/fiscal/filing 독립, M3·MTIS month/revision 각각 별도 provider dataset | R2-11/13 (SEC) 및 R2-06/07/13 (M3,MTIS) `HOLD`; **임의 provider/dataset/시점/SHA 생성 금지**, 실제 API/PC 원자료 업로드 성공이라고 표기 불가 |
+| **E1-R4 기존 위험 A** | [`earnings-recession-stored-r4-pc-r1.mjs`](../lib/market-score/earnings-recession-stored-r4-pc-r1.mjs) blob `999ea7da2a62891fa514e184da4fe1d9c2b40db7`: `period_end`, `retrieved_at`, completed_at, `sourceStoredAt`, `historyMode='CURRENT_VINTAGE_NOT_PIT'` 구분 | 점수 A와 정보성 C의 원자료 날짜·sourceVersion / score revision을 혼합 금지, R1-09 분리 계약 재사용 |
+
+**검증 및 주의:**
+1. **출처/원문** `provider+dataset+originalSha256`, **저장 청크** `chunk_sha256`, **내용 버전** `snapshot_sha256/sourceVersion`, **관측일** `observationPeriod`, **조회/저장시각** `retrievedAt/firstSeenAt/sourceStoredAt`, **공개** `publishedAt`는 서로 별도. `first_seen_at`이 곧 공급자 공식 `releaseAt`이나 `vintageId`는 아님.
+2. BLS와 QFR 공용 `api_history_` 테이블에 서로 다른 provider/dataset namespace로 충돌 방지; BEA CSV는 자체 raw archive+meta reader로 관리하며 같은 SQLite 2-table에 이미 적재됐다고 허위 보고하지 않음.
+3. 동일 원본을 저장해서 계산할 때 공급자 재호출 금지. 새 ZIP/공식 CSV와 기존 저장본의 sourceVersion/sha가 다르면 별개 revision 후보로 보관하되 원본/메타 timestamp 불일치 거절. missing/null/0/재수집 실패를 같은 값으로 채우지 않음.
+4. 실제 PC 원본은 기검증 BLS 3계열, Census QFR ZIP 저장 증거 재사용. 승인되지 않은 BEA archive 실측/SEC·M3·MTIS 신규 raw 검증은 이 단계 **NOT_VERIFIED/HOLD** 이며 R3-08~R3-15의 실제 조건부 작업을 취소·완료 처리하지 않는다.
+
+**판정:** R3-01 **공통 원본 필드 계약과 시점·출처 계보 증거 대조 DONE**. 공급자 요청/SQLite/D1/Production 실제 쓰기 0, 기존 승인 산식/TTL 변경 0. **NEXT R3-02:** 이미 검증된 BLS/QFR SQLite 2-table의 append-only/수정본·rollback·readback 무결성을 소스·실PC 기존 증거로 재대조한다.
