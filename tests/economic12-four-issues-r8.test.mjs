@@ -20,7 +20,8 @@ test("five displayed comparison slots fallback only to validated same-lineage sa
  assert.ok(panel.includes("periodSourceMismatch"));
 });
 test("economic detail shows all stored indicators, Growth 24/24, and no invented raw values",()=>{
- assert.ok(panel.includes("const storedObservations=(domain?.indicators??[])"));
+ assert.ok(panel.includes('const storedObservations=(id==="inflation"&&score===null?[]:(domain?.indicators??[]))'));
+ assert.ok(panel.includes('id==="inflation"?verifiedEconomicInflationScore(domain,payload?.asOfDate)'));
  assert.ok(panel.includes('const observations=storedObservations;'));
  assert.ok(panel.includes('useStoredIndex<EmploymentR6Display>("/api/employment-r6/observations",null,id==="employment")'),"R6 reads its own published D1 result");
  assert.ok(panel.includes('id==="employment"?employmentListRows(employmentData?.indicators??[]):observations'),"employment fallback preserves 29 approved IDs");
