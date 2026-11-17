@@ -235,3 +235,47 @@ test("PIT-04-03 Runner exposes only bounded Core match/conflict/unknown/missing 
     invalid.pit.coreCurrentHistoryMissingKeys,
   ],[null,null,null,null]);
 });
+
+test("PIT-04-05 Runner returns only bounded lineage counts, never source IDs, rows or raw body",async t=>{
+  const env=environment(t);fixture(env.core);fixture(env.candidate,{row:true});
+  const body=await stageEmploymentR6OneYear(runnerOptionsFrom(argv(env)));
+  const secret="NEVER_EMIT_PRIVATE_RAW_RESPONSE_ABC";
+  const report=projectEmploymentR6RunnerResult({body,pitCoverage:{
+    rawSnapshotMetadataKeys:14,rawSnapshotCertifiedKeys:12,
+    coreCurrentRawLineageVerifiedKeys:30,
+    coreCurrentRawLineageMissingSnapshotKeys:2,
+    coreCurrentRawLineageConflictingKeys:1,
+    coreCurrentRawLineageUnverifiedKeys:3,
+    coreHistoryRawLineageTotalRows:27,
+    coreHistoryRawLineageVerifiedRows:23,
+    coreHistoryRawLineageMissingSnapshotRows:2,
+    coreHistoryRawLineageConflictingRows:1,
+    coreHistoryRawLineageUnverifiedRows:1,
+    rawLineageEvidenceStatus:"HOLD_INCOMPLETE_SOURCE_LINEAGE",
+    rawBody:secret,rawSnapshotId:secret,rawResponseHash:secret,
+  }});
+  assert.deepEqual([
+    report.pit.rawSnapshotMetadataKeys,report.pit.rawSnapshotCertifiedKeys,
+    report.pit.coreCurrentRawLineageVerifiedKeys,
+    report.pit.coreCurrentRawLineageMissingSnapshotKeys,
+    report.pit.coreCurrentRawLineageConflictingKeys,
+    report.pit.coreCurrentRawLineageUnverifiedKeys,
+    report.pit.coreHistoryRawLineageTotalRows,
+    report.pit.coreHistoryRawLineageVerifiedRows,
+    report.pit.coreHistoryRawLineageMissingSnapshotRows,
+    report.pit.coreHistoryRawLineageConflictingRows,
+    report.pit.coreHistoryRawLineageUnverifiedRows,
+  ],[14,12,30,2,1,3,27,23,2,1,1]);
+  assert.equal(report.pit.rawLineageEvidenceStatus,"HOLD_INCOMPLETE_SOURCE_LINEAGE");
+  assert.equal(report.promotionApproved,false);
+  assert.doesNotMatch(JSON.stringify(report),/NEVER_EMIT_PRIVATE_RAW_RESPONSE_ABC|rawSnapshotId|rawResponseHash|rawBody/);
+  assert.ok(Buffer.byteLength(JSON.stringify(report))<12000);
+  const unsafe=projectEmploymentR6RunnerResult({body,pitCoverage:{
+    rawSnapshotMetadataKeys:-1,rawSnapshotCertifiedKeys:1.5,
+    coreHistoryRawLineageTotalRows:secret,rawLineageEvidenceStatus:secret,
+  }});
+  assert.equal(unsafe.pit.rawSnapshotMetadataKeys,null);
+  assert.equal(unsafe.pit.rawSnapshotCertifiedKeys,null);
+  assert.equal(unsafe.pit.coreHistoryRawLineageTotalRows,null);
+  assert.equal(unsafe.pit.rawLineageEvidenceStatus,"NO_RUNTIME_EVIDENCE");
+});
