@@ -57,7 +57,11 @@ export function normalizeCensusM3Inventories(payload){
     const timeDate=monthDate(row.time);
     const date=slotDate??timeDate;
     const raw=String(row.cell_value??'').replace(/,/g,'').trim();
-    if(!date||(slotDate&&timeDate&&slotDate!==timeDate)){
+    // A present but malformed official monthly date is not missing data.
+    // Never silently replace it with the alternate `time` month.
+    const invalidExplicitDate=row.time_slot_date!=null&&
+      String(row.time_slot_date).trim()!==''&&!slotDate;
+    if(invalidExplicitDate||!date||(slotDate&&timeDate&&slotDate!==timeDate)){
       diagnostics.invalid++;continue;
     }
     if(raw===''||raw==='-'||raw.toUpperCase()==='NA'||raw.toUpperCase()==='N'){
