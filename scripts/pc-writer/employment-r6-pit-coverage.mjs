@@ -18,8 +18,7 @@ const sourceRows=(db,table,asOfDate)=>{
   if(!exists)return null;
   const fields=new Set(db.prepare(`PRAGMA table_info(${table})`).all().map(col=>col.name));
   const available=fields.has("available_at")?"available_at":"NULL AS available_at";
-  // The actual R4 store has first_seen_at on CURRENT and recorded_at on HISTORY.
-  // Older diagnostic fixtures omit them; mark column presence explicitly.
+  // Preserve stored timing proof. Legacy fixtures may omit these columns.
   const firstSeen=fields.has("first_seen_at")?"first_seen_at":"NULL AS first_seen_at";
   const recorded=fields.has("recorded_at")?"recorded_at":"NULL AS recorded_at";
   const presence=`${fields.has("first_seen_at")?1:0} AS _has_first_seen_at,${fields.has("recorded_at")?1:0} AS _has_recorded_at`;
@@ -32,11 +31,11 @@ const sourceRows=(db,table,asOfDate)=>{
     .all(...ids,asOfDate);
 };
 const knownAt=row=>Date.parse(row.available_at??row.retrieved_at??"");
-// A later SQLite write cannot establish that an observation existed at a prior
-// audit as-of, even when the provider released or retrieved it earlier.
+// A later SQLite record cannot prove the same observation was stored at an earlier as-of.
+// When an evidence column exists, NULL/malformed/future timestamps fail closed.
 const storedAsOf=(row,end)=>["_has_first_seen_at","_has_recorded_at"]
   .every(flag=>{
-    if(row[flag]!==1)return true; // Optional legacy fixture column absent.
+    if(row[flag]!==1)return true;
     const column=flag==="_has_recorded_at"?"recorded_at":"first_seen_at";
     const ms=Date.parse(row[column]??"");
     return Number.isFinite(ms)&&ms<=end;
@@ -79,16 +78,65 @@ const historyIndex=(rows,asOfDate)=>{
   }
   return out;
 };
-const latestRevision=rows=>(rows??[]).reduce((best,row)=>{
-  if(!best)return row;
-  const ar=Date.parse(best.retrieved_at??""),br=Date.parse(row.retrieved_at??"");
-  if(br>ar)return row;
-  if(br<ar)return best;
-  const a=knownAt(best),b=knownAt(row);
-  if(b>a)return row;
-  if(b<a)return best;
-  return String(row.source_hash??"")>String(best.source_hash??"")?row:best;
-},null);
+// A hash is an identity, NOT evidence of which same-time revision came later.
+// The PIT reader must hold ambiguous equal-time revisions instead of selecting
+// whichever hash happens to sort later lexically.
+const revisionOrder=(a,b)=>Date.parse(b.retrieved_at??"")-Date.parse(a.retrieved_at??"")
+  ||knownAt(b)-knownAt(a);
+// Compare equal-time row identity without treating a single invalid value
+// as a conflict with itself. Numeric validity remains a separate PIT gate.
+const sameRevisionPayload=(a,b)=>a.source_hash===b.source_hash
+  &&Object.is(a.value,b.value)
+  &&a.provider===b.provider&&a.provider_series_id===b.provider_series_id
+  &&a.quality_status===b.quality_status&&a.pit_class===b.pit_class
+  &&a.provenance_json===b.provenance_json;
+const revisionAtSameInstant=(a,b)=>Date.parse(a.retrieved_at??"")===Date.parse(b.retrieved_at??"")
+  &&knownAt(a)===knownAt(b);
+const latestRevision=rows=>{
+  if(!rows?.length)return null;
+  const ordered=[...rows].sort(revisionOrder),best=ordered[0];
+  // A single row has no competing revision, even when its value is invalid.
+  // Invalid rows are rejected downstream by validSourceMetadata/sameObservation.
+  return ordered.slice(1).some(row=>revisionAtSameInstant(row,best)
+    &&!sameRevisionPayload(row,best))?null:best;
+};
+const revisionEvidence=index=>{
+  let priorRevisionKeys=0,priorRevisionRows=0,ambiguousLatestKeys=0,sameInstantAdditionalRows=0;
+  for(const rows of index.values()){
+    const best=[...rows].sort(revisionOrder)[0];
+    const latestRows=rows.filter(row=>revisionAtSameInstant(row,best)).length;
+    const prior=rows.length-latestRows;
+    if(prior>0){priorRevisionKeys++;priorRevisionRows+=prior;}
+    sameInstantAdditionalRows+=Math.max(0,latestRows-1);
+    if(latestRevision(rows)===null)ambiguousLatestKeys++;
+  }
+  return {priorRevisionKeys,priorRevisionRows,ambiguousLatestKeys,sameInstantAdditionalRows};
+};
+// PIT-04-03: compare only the as-of latest Core HISTORY revision to CURRENT.
+// Missing, conflicting, and unverified keys are disjoint; these aggregates
+// never authorize historical PIT backdating or candidate promotion.
+const comparableCoreObservation=row=>Boolean(row&&numericObservation(row.value)
+  &&/^[a-f\d]{64}$/i.test(String(row.source_hash??""))
+  &&String(row.provider??"").trim()&&String(row.provider_series_id??"").trim());
+const classifyCoreCurrentHistory=(currentKeys,historyKeys)=>{
+  let matching=0,conflicting=0,unverified=0,missing=0;
+  for(const [key,current] of currentKeys){
+    if(!historyKeys.has(key)){missing++;continue;}
+    const latest=latestRevision(historyKeys.get(key));
+    // A same-time ambiguous latest revision or invalid source must remain HOLD.
+    if(!comparableCoreObservation(current)||!comparableCoreObservation(latest)){
+      unverified++;continue;
+    }
+    if(sameObservation(current,latest))matching++;
+    else conflicting++;
+  }
+  return {
+    coreCurrentHistoryMatchingKeys:matching,
+    coreCurrentHistoryConflictingKeys:conflicting,
+    coreCurrentHistoryUnverifiedKeys:unverified,
+    coreCurrentHistoryMissingKeys:missing,
+  };
+};
 const endReadSnapshot=(db,active)=>{
   if(!db)return;
   try{if(active)db.exec("ROLLBACK");}finally{db.close();}
@@ -135,6 +183,10 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
       .map(row=>[identity(row),row]));
     const historyKeys=historyIndex(history,asOfDate);
     const candidateKeys=historyIndex(candidates,asOfDate);
+    const coreRevisionEvidence=history===null?null:revisionEvidence(historyKeys);
+    const candidateRevisionEvidence=candidates===null?null:revisionEvidence(candidateKeys);
+    const coreHistoryComparison=current!==null&&history!==null
+      ?classifyCoreCurrentHistory(currentKeys,historyKeys):null;
     const candidateCurrentKeys=new Map((candidateCurrent??[]).filter(row=>isKnownAsOf(row,asOfDate))
       .map(row=>[identity(row),row]));
     const missingBySeries=new Map();
@@ -179,6 +231,8 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
       }
     }
     const previewStatus=!planHasEvidence?"NO_RUNTIME_EVIDENCE"
+      :coreRevisionEvidence?.ambiguousLatestKeys>0||candidateRevisionEvidence?.ambiguousLatestKeys>0
+        ?"HOLD_AMBIGUOUS_LATEST_REVISIONS"
       :candidateOverlapConflicts>0?"HOLD_CONFLICTING_REVISIONS"
       :candidateUnverifiedKeys>0||candidateOverlapUnverified>0?"HOLD_UNVERIFIED_SOURCE_LINEAGE"
       :missing>missingHistoryWithVerifiedLineage?"HOLD_CORE_HISTORY_GAPS_WITHOUT_MATCHING_CANDIDATE"
@@ -189,12 +243,24 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
       candidateHistoryTableExists:candidate?candidates!==null:null,
       coreCurrentRows:current?.length??null,coreHistoryRevisions:history?.length??null,
       coreHistoryAsOfUniqueKeys:history===null?null:historyKeys.size,
+      coreHistoryPriorRevisionKeys:coreRevisionEvidence?.priorRevisionKeys??null,
+      coreHistoryPriorRevisionRows:coreRevisionEvidence?.priorRevisionRows??null,
+      coreHistoryAmbiguousLatestKeys:coreRevisionEvidence?.ambiguousLatestKeys??null,
+      coreHistorySameInstantAdditionalRows:coreRevisionEvidence?.sameInstantAdditionalRows??null,
       coreCurrentKeys:current===null?null:currentKeys.size,
       coreCurrentKeysMissingHistory:current===null||history===null?null:missing,
+      coreCurrentHistoryMatchingKeys:coreHistoryComparison?.coreCurrentHistoryMatchingKeys??null,
+      coreCurrentHistoryConflictingKeys:coreHistoryComparison?.coreCurrentHistoryConflictingKeys??null,
+      coreCurrentHistoryUnverifiedKeys:coreHistoryComparison?.coreCurrentHistoryUnverifiedKeys??null,
+      coreCurrentHistoryMissingKeys:coreHistoryComparison?.coreCurrentHistoryMissingKeys??null,
       missingKeysWithCandidateHistory:candidate&&current!==null&&history!==null&&candidates!==null?candidateCovered:null,
       missingKeysWithMatchingCandidateValueAndHash:candidate&&current!==null&&history!==null&&candidates!==null?candidateSameValueAndHash:null,
       missingKeysWithDifferentCandidateRevision:candidate&&current!==null&&history!==null&&candidates!==null?candidateDifferent:null,
       candidateHistoryAsOfUniqueKeys:candidate&&candidates!==null?candidateKeys.size:null,
+      candidateHistoryPriorRevisionKeys:candidateRevisionEvidence?.priorRevisionKeys??null,
+      candidateHistoryPriorRevisionRows:candidateRevisionEvidence?.priorRevisionRows??null,
+      candidateHistoryAmbiguousLatestKeys:candidateRevisionEvidence?.ambiguousLatestKeys??null,
+      candidateHistorySameInstantAdditionalRows:candidateRevisionEvidence?.sameInstantAdditionalRows??null,
       candidateCurrentTableExists:candidate?candidateCurrent!==null:null,
       candidateCurrentKeys:planHasEvidence?candidateCurrentKeys.size:null,
       candidateNewKeys:planHasEvidence?candidateNewKeys:null,
