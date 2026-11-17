@@ -217,7 +217,7 @@ test('official missing release dates are never filled by new retrieval or holida
 });
 
 test('gapped source series keeps only actual stored points, missing date stays null not zero',()=>{
- const f=fixture(),dt=f.domain.trend.find(p=>p.label<f.domain.observationDate)?.label;
+ const f=fixture(),dt=f.domain.trend.find(p=>p.label>'2026-01-01'&&p.label<f.domain.observationDate)?.label;
  assert.ok(dt);
  const gap={...f.domain,trend:f.domain.trend.filter(p=>p.label!==dt).concat({label:dt,value:null,status:'PARTIAL'})};
  const checked=chart(gap);
