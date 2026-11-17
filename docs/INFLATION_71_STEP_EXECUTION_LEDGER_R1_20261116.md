@@ -2,7 +2,7 @@
 
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
-## 최신 인계 스냅샷 — W01 2026-11-17 (PR #1871 통합 CI 2/2 PASS·설치 계약상 W01 2파일만 NO-GO/W03 런타임 1개 협의 필요·30/71)
+## 최신 인계 스냅샷 — W01 2026-11-17 (PR #1871 CI PASS·설치 3런타임 승인/독립 재리뷰 미완료·Event129 enabled 현행 미실측·30/71)
 
 > **다음 작업자는 이 스냅샷부터 시작한다.** 진행 기록 파일 자체가 지정된 정본이고, 상위 계획은 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)이다. 과거 이력의 오래된 설치 SHA·대기 문구가 이 스냅샷을 덮어쓰지 않는다.
 
@@ -571,3 +571,13 @@ B4 10 | Production·화면 최종 검증
 - **보호·담당 분리:** W03의 목적 변경을 W01 승인으로 설치하는 것은 허용 안 됨. 승인 PR이 main에 병합되고 승인 commit이 target의 조상인지, 현재 설치 SHA와 해시/물리 범위/lease를 공유 Controller 담당이 별도로 확인해야 한다. 원본 B Census #1818 consumed/replay FORBIDDEN. 채널 enabled 상태/실시간 Core owner 미검증 유지.
 - **공유 소유자에 기록:** [#1871 정확한 사전 실패/원인](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1871#issuecomment-6936379771), [#68 공통 승인 경계](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6936385848). 댓글은 총괄 ChatGPT 대화 실제 수신 또는 별도 승인 증거 아님.
 - **다음 단일 필요 작업:** **공유 Controller owner**가 W03 실제 승인 범위와 #1854 독립 재리뷰를 정리하여 정확 3개 허용 범위의 정규 B GO/NO-GO 또는 계약을 온전히 충족하는 타깃을 판정해야 한다. 승인 적용·실제 설치 해시 readback이 확인되면 **W01 원담당**이 Event129 `enabled` 상태→자연 Core owner→Census B 새 고유 요청 순서로 진행한다.
+
+## 2026-11-17 KST — 공식 읽기 전용 대체 경로 및 공유 런타임 상태 정밀 확인
+
+- **진행:** 30/71(42.3%) → **30/71(42.3%)**; 미완료 41. #28 Census M3 raw MISSING/공개 1건 PENDING. 신규 PC A/B/Controller 설치·Task/DB/D1 수정·공급자 GET 0건.
+- **공용 최신 상태:** 제어 PR #1854(head `6648859846f59a454f63c0c72cb244be2ffc620e`), #1866(head `a9895bf92d183594c91a553b76c1146b138bf984`) 모두 OPEN/미병합, 통합 Draft #1871(head `eb94326c23887bf6bf48cdf7f0a06a0a75c43b0b`) OPEN/미병합. #1854 독립 재리뷰 승인 0건, #1871 리뷰 0건. 제어 최신 main 조회 `19a1b959f01acdd7100587c079e9298063174cbe` (이 시점 상태)와 이전 후보 base `5b49b900...` 간 추가 4커밋은 공용 인계·Source Bundle 승인/결과·테스트 등이며 Controller 운영 파일 변경 없음. 설치 본 `384ffd09...`에서 현재 main까지 운영 Controller runtime diff는 W03 `controller/theme-nine-r32-raw-coverage-readonly.mjs` 1개(W01 수정은 미병합). source-only 통합 후보로 설치 시에는 W01 2+W03 1=3개 런타임 allowFiles 승인 필요가 여전히 유효.
+- **신규 공용 실제 PC 효과 분리:** [#1874 pc-source-bundle-register](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1874)의 [공식 결과](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/maintenance-pc-update-acacbb20-f95d-4863-a08a-0fe11cd99f5b.json)는 `SUCCEEDED/BUNDLE_REGISTERED`이고 `actualControllerSha=384ffd09e80ad769e31596483dfe73e9ee8b6c6a`로 Controller 본체 **변경 없음**. 원장 내 `protectedStateUnchanged:false`, `workflowEnabled:false`는 Source Bundle 등록 결과의 필드이며 별도 Core/TaskScheduler/Workflow 실시간 진단이 아니므로 현재 Controller 장애 또는 W01 승인 성공으로 해석하지 않음.
+- **독립 읽기 경로 확인:** 현재 `config/operations.json`의 43 A/B operation 중 Core/Event129 관련 `core-status`, `core-runtime-source-readonly`, `inflation-core-lock-observation-readonly`, `inflation-event129-evidence-readonly`는 있으나, **설치된 Event129 A는 `wevtutil qe` 이벤트 조회만 수행**, TaskScheduler Operational 채널 활성 설정 `wevtutil gl`을 직접 반환하지 않는다. 최신 읽기 전용 설정 결과 [w01-task-log-config-readonly-20261116.json](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/w01-task-log-config-readonly-20261116.json)은 `2026-11-16T13:32:12.427Z`, `enabled:false`의 **과거 관측**, 2026-11-17 현재 enabled는 미확인. 승인되지 않은 임의 self-hosted CI/원격 명령으로 PC C급 경로를 우회하지 않음. 별도 A 재스냅샷은 과잉이므로 요청하지 않음.
+- **실행 가능한 독립 대안(사용자 직접 1회 C급):** 현장 채널 상태가 설치 대기로 계속 미확인일 때 사용자 PC 관리자 GUI `eventvwr.msc` → Applications and Services Logs/Microsoft/Windows/TaskScheduler/Operational의 현재 Enable/Disable 메뉴로 직접 확인 가능. 실제 `disabled`일 경우만 사용자 관리자 권한으로 `Enable Log` 실행을 선택할 수 있으나, 승인 없이는 작업자가 시행하지 않음. 로그를 켠 경우도 Event129 자체가 과거 소유권 증거가 되지는 않음; 자연 Core 실행에 연결되는 PID/WMI/lock 증명이 추가로 필요. 활성인데 로그 내용이 없는 것은 Core 미실행의 증거 아님.
+- **LAST PASS / FIRST OPEN:** 공유 #1841 복구 이전 DONE, #1871 source CI 2/2 PASS·#1854 엔진 exact Windows 58/58 PASS. **실제 신규 Controller 배포/현재 Event129 channel enabled/Task-linked Core 소유권은 미확인**, Census #1818(0GET) consumed/replay FORBIDDEN, 최초 실제 Census 저장/게시 미완료. 배포 우회·산식/DB 계약 변경·무관한 Gate 추가 없음.
+- **다음 필수 조치:** 공용 Controller owner가 #1854 독립 리뷰와 W03 한 파일을 포함한 정규 allowFiles/타깃/manifest/lease를 승인·설치한 뒤 설치 SHA/JSON·TXT를 조회하거나, 사용자가 1회 관리자 GUI에서 Operational 현행 활성 여부를 직접 확인(필요시 관리자 활성화). 그 후 W01은 자연 Core PID·WMI·lock 링크를 확보해 승인된 새 고유 Census M3 B(최대 2GET) → 저장 SHA/storedAt → 26/26 → Writer/D1/API·UI 7/7 완료 순서로 진행. 공유 Issue 기록만으로 타 ChatGPT 담당 실제 인수로 간주하지 않는다.
