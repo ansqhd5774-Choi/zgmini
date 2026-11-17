@@ -209,3 +209,38 @@ test('R23 baseline checkpoint must retain approved fixed dates even with rekeyed
  assert.equal(result.status,'BLOCKED');
  assert.equal(result.code,'R32_COVERAGE_CHECKPOINT_IDENTITY');
 });
+
+
+test('R35 mixed old and official stocks/us URLs retain SHA/checkpoint lineage',t=>{
+ const f=fixture(t),folder='legacy-nine-r35-delta';
+ const pathName=f.files[`${folder}-manifest`];
+ const manifest=JSON.parse(fs.readFileSync(pathName,'utf8'));
+ const entry=manifest.files.find(x=>x.symbol==='BOTZ');
+ entry.requestedUrl=entry.requestedUrl.replace('/bars/stocks/BOTZ/','/bars/stocks/us/BOTZ/');
+ fs.writeFileSync(pathName,JSON.stringify(manifest)+'\n');
+ const result=audit(f);
+ assert.equal(result.status,'PASS');
+ assert.equal(result.verifiedRawPages,6);
+ assert.equal(result.currentnessVerified,false);
+});
+test('R35 wrong-region URL cannot be accepted even with exact raw SHA',t=>{
+ const f=fixture(t),folder='legacy-nine-r35-delta';
+ const pathName=f.files[`${folder}-manifest`];
+ const manifest=JSON.parse(fs.readFileSync(pathName,'utf8'));
+ manifest.files[0].requestedUrl=manifest.files[0].requestedUrl
+  .replace('/bars/stocks/SPY/','/bars/stocks/ca/SPY/');
+ fs.writeFileSync(pathName,JSON.stringify(manifest)+'\n');
+ const result=audit(f);
+ assert.equal(result.status,'BLOCKED');
+ assert.equal(result.code,'R32_COVERAGE_PAGE_SOURCE_URL');
+});
+test('immutable R23 baseline may not be relabeled as a 2026-11 route',t=>{
+ const f=fixture(t,{delta:false}),pathName=f.files['legacy-nine-r23-manifest'];
+ const manifest=JSON.parse(fs.readFileSync(pathName,'utf8'));
+ manifest.files[0].requestedUrl=manifest.files[0].requestedUrl
+  .replace('/bars/stocks/SPY/','/bars/stocks/us/SPY/');
+ fs.writeFileSync(pathName,JSON.stringify(manifest)+'\n');
+ const result=audit(f);
+ assert.equal(result.status,'BLOCKED');
+ assert.equal(result.code,'R32_COVERAGE_PAGE_SOURCE_URL');
+});
