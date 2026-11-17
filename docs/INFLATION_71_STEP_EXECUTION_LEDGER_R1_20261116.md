@@ -3,6 +3,16 @@
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
 
+<!-- W01-A405-25VALID-1MISSING-20261117-READONLY -->
+## W01 A4-05 관측월·단위·숫자값·결측 검증 완료 — 원자료 수집 결측은 별도 유지
+
+- **진행률:** 31/71(43.7%) → **32/71(45.1%)**, 미완료 39, 이번 신규 DONE 정확 A4-05 1건. 단계의 '검증 완료'는 26개 모두 수집 완료가 아니라 **26개 상태를 정확히 분류하고 결측을 누락으로 보존했다는 의미**.
+- **실제 PC 원본(재사용):** [W01 A4-01 #2009](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2009) / [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44077269668-1-seat-1.json) `PASS`, 원래 19개+보조 4개 private raw **23/23 PRESENT_VALID**. SQLite readOnly, provider/operational/SQLite/D1 writes 0, 보호 해시 전후 동일. 저장 source를 새로 수집/계산하지 않음.
+- **실제 PC 후보 A 신규 단회:** [Issue #2012](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2012), 고유 `pc-3e20c16a-d145-4d42-ae61-a405c269945e`, [Run #44078380837](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44078380837) `completed/success`, [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44078380837-1-seat-5.json) 및 [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44078380837-1-seat-5.txt) 재조회 `PASS/INFLATION_CANDIDATES_RUNTIME_READONLY_EVIDENCE`. 후보 7종 6개 `PRESENT_VALID`, ID28 Census `MISSING`·count 0·observationDate/sourceStoredAt/fileSHA=null; 후보 6개 모두 관측일 엄격 달력 유효, 원본 행수>0, 저장시각 ISO, 원본 파일 64자리 SHA 존재. CPI #22/#23 각각 237개월·마지막 2026-10-01, PPI #24 203개월·2026-09-01, Treasury #16 139건·2026-09-30, G17 #29 657건·2026-09-01, EIA #2 520건·2026-11-02. 후보 실측 단위 분류는 승인 catalog `lib/inflation-causal-candidates-public-7-catalog.mjs`와 해당 sourceSeriesId 기준, 미공개 개별 값을 조작하거나 임의 추정하지 않음.
+- **교차분류:** 원래 19 ID + 후보 7 ID 합집합 **26/26 유일**, 실제 PRESENT_VALID **25/26**, MISSING **1/26 (#28)**. 후보 기존 4개 ID #2/#16/#24/#29를 두 번 집계하지 않음. 서로 다른 PC 실행 시점의 두 결과를 단일 원자료 snapshot으로 위장하지 않음. A 출력에서 원본 모든 관측값·원문 unit이 비공개이므로 '공급자 전량 행별 재계산 완료'는 미입증.
+- **W01 원담당 테스트 직접 수행:** [PR #1254](https://github.com/ansqhd5774-Choi/zgmini/pull/1254) `tests/inflation-causal-candidates-public-7-r1.test.mjs` 1파일 +3 test, 승인 original 19 + candidate 7 ID 및 단위계약, CPI 비정상 달력일/월말/NaN/중복 거부, EIA/Treasury/Census/G17 물리 source 단위 불일치 거부, ID28 결측 null 보존·유효 Treasury 0 구분. [CI #44079014578](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44079014578) `SUCCESS`, 신규 3/3 PASS, 전체 failure 0; [merge 05f4b1aa](https://github.com/ansqhd5774-Choi/zgmini/commit/05f4b1aa3530ef40acb6eeed4bb4ff5c9cbbb59b), main/PR test blob 일치.
+- **남은 문제:** ID28 Census raw는 여전히 물리 미저장·C급 Event129/Core owner 증명 첫 실패로 기존 B #1818 안전 중단; 본 검증에서 이를 수집/대체하지 않음. A4-04 미완료, A4-06 source timing/provenance, A4-07 checkpoint/SHA·A4-08 마지막 정상본 보존은 별도 검증 필요. 신규 총괄 인계 0. 수집·Writer/D1·Task/Cron·DB·TTL·원자료 수치 변경 0.
+
 <!-- W01-A401-RUNTIME23-VERIFIED-20261117 -->
 ## 최신 W01 A4-01 단회 실PC private 원자료 23/23 검증 완료 (이전 PARTIAL 보고 대체)
 
@@ -263,7 +273,7 @@ B4 10 | Production·화면 최종 검증
 - [x] **A4-02** 신규 CPI 임대료 원자료 확인 — DONE | 운영 PC A #43860489236 (Run 43860489236/seat4) ID22 CUSR0000SEHA PRESENT_VALID, 237개월·관측 2026-10-01·sourceStoredAt 2026-11-16T10:30:02.905Z·BLS3 raw file SHA256 db31e003600a776e0fd6ac8dd6392da91bc51cbac56e6d97b918f1ea718ddff9; A는 providerCalls/d1Writes/operationalWrites 0
 - [x] **A4-03** 신규 CPI OER 원자료 확인 — DONE | 운영 PC A #43860489236 ID23 CUSR0000SEHC01 PRESENT_VALID, 237개월·관측 2026-10-01·sourceStoredAt 2026-11-16T10:30:02.905Z·ID22와 동일 BLS3 raw file SHA256 db31e003600a776e0fd6ac8dd6392da91bc51cbac56e6d97b918f1ea718ddff9; 원격 JSON 검증(개별 재수집 없음)
 - [ ] **A4-04** 신규 Census M3 총재고 원자료 확인 — BLOCKED | 마지막 저장 검증 A #1814/Run 43983711934는 ID28 `MISSING`·0개월·storedAt=null. 독립 B API 2GET 실행 Issue #1818/Run #43985786219는 **Core owner Event129 증명 FAIL**로 supplierCalls=0·stored=null 안전 STOP. 동일 requestId 재실행 금지, Core 이벤트 소유권 C급 관리자 증명 전 우회 실행 금지
-- [ ] **A4-05** 관측월·단위·값·결측 검증 — PENDING | 새로운 실제 증거 없음
+- [x] **A4-05** 관측월·단위·값·결측 검증 — DONE (26/26 상태 검증, 25개 유효·ID28 1개 결측 유지) | 실제 PC 기존 원본 [A #2009 / Run 44077269668](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2009) 개별 원본 19+기존 4=23/23 `PRESENT_VALID` (기존 W01 파서 관측일/유효 숫자/승인 단위 카탈로그 계약 적용), 후보 [A #2012 / Run 44078380837](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2012) 7종 6/7 `PRESENT_VALID`, ID28 `MISSING`(0개월·date/storedAt/SHA=null). 두 집합 고정 ID 합집합 26, 중복 0, 실제 유효 25·결측 1. 후보 유효 6개 관측일 달력 유효·관측수 양수·sourceStoredAt ISO·파일 SHA256 64자리 확인. 단위는 승인 카탈로그·원본 파서의 계약 기준이며 A 결과에서 공개되지 않은 원본 값/전체 237개월의 독립 공급자 단위 검증을 주장하지 않음. [W01 회귀 PR #1254](https://github.com/ansqhd5774-Choi/zgmini/pull/1254) 신규 3시험 CI [#44079014578](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44079014578) PASS, `main` 병합 `05f4b1aa3530ef40acb6eeed4bb4ff5c9cbbb59b`. 허용된 결측 상태 검증 완료이지 Census 수집(A4-04)·26/26 유효/게시 완료가 아님; 공급자/원자료/DB/D1/Task 쓰기 0.
 - [ ] **A4-06** 수집일·sourceStoredAt·source SHA 검증 — PENDING | 새로운 실제 증거 없음
 - [ ] **A4-07** 원자료 SHA·checkpoint·재조회 검증 — PENDING | 새로운 실제 증거 없음
 - [ ] **A4-08** 기존 정상본 및 마지막 유효 결과 보존 확인 — PENDING | 새로운 실제 증거 없음
