@@ -10,6 +10,7 @@ import {ContentHelp} from "../content-help";
 import {EarningsFavoriteButton,EarningsFavoriteHeaderIcon} from "./earnings-favorite-button";
 import {EARNINGS_RISK_HISTORY_KIND} from "../../lib/market-score/earnings-recession-history-r1.mjs";
 import {readBeaStoredS6,type BeaIndicator} from "./earnings-bea-s6-source";
+import {buildEarningsCostIndicatorView} from "./earnings-cost-indicator-list.mjs";
 import "./earnings-indicator-r2.css";
 import "./earnings-inflation-layout.css";
 
@@ -90,14 +91,6 @@ type BeaMfgPayload={
 };
 const MFG_SCHEMA="earnings-bea-manufacturing-profits-r1-v1";
 const MFG_SERIES="N400RC1Q027SBEA";
-const COST_SCHEMA="earnings-companion-c-r4-v1";
-const costIndicators=[
- {id:"bls_ppi_final_demand_yoy_sa",name:"최종수요 생산자물가 상승률",description:"최종수요 생산자물가의 전년 대비 변화",series:"WPSFD4"},
- {id:"bls_ppi_final_demand_index",name:"최종수요 생산자물가 지수",description:"최종수요 생산자물가의 지수 수준",series:"WPSFD4"},
- {id:"bls_ppi_goods_yoy_sa",name:"재화 생산자물가 상승률",description:"재화 생산자물가의 전년 대비 변화",series:"WPSFD41"},
- {id:"bls_ppi_goods_index",name:"재화 생산자물가 지수",description:"재화 생산자물가의 지수 수준",series:"WPSFD41"},
- {id:"bls_unit_labor_cost_yoy",name:"비농업 단위노동비용 증가율",description:"비농업 단위노동비용의 전년 대비 변화",series:"PRS85006111"},
-] as const;
 const finiteCost=(value:unknown):value is number=>typeof value==="number"&&Number.isFinite(value);
 const riskRawUsable=(raw:RiskFourRawPayload|null|undefined,risk:RiskPayload|null|undefined)=>Boolean(
  raw?.schemaVersion==="earnings-recession-risk-four-raw-r1-v1"&&raw.status==="READY"&&
@@ -241,12 +234,11 @@ export default function EarningsRiskOnlyPanel(){
   const mfgReady=mfgUsable(mfgPayload);
   const mfgRow=mfgReady?mfgPayload?.indicator:null;
   const mfgHistory=mfgRow?.history.map(point=>({value:point.profitsBillionsUsdAnnualRate}))??[];
- const costValid=costPayload?.schemaVersion===COST_SCHEMA&&
-  costPayload?.historicalMode==="CURRENT_RETRIEVAL_NOT_PIT"&&Array.isArray(costPayload.rows);
+ const costView=buildEarningsCostIndicatorView(costPayload);
+ const costValid=costView.valid;
+ const costIndicators=costView.indicators;
  const costRows=new Map<string,CostRow>(
-  (costValid&&costPayload?costPayload.rows:[])
-   .filter(row=>costIndicators.some(meta=>meta.id===row.indicatorId))
-   .map(row=>[row.indicatorId,row])
+  (costView.rows as CostRow[]).map(row=>[row.indicatorId,row])
  );
  const costReady=costIndicators.filter(meta=>costUsable(costRows.get(meta.id))).length;
  const costStatus=costLoading?"연결 확인 중":costValid?
