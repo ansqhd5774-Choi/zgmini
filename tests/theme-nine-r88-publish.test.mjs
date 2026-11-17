@@ -15,10 +15,15 @@ function store({race=false,badReadback=false}={}){
   row={body:params[3],stored_at:params[4]};return {meta:{changes:1}};
  }};
 }
-test('R88 uses only separate provisional key, exact readback and duplicate protection',async()=>{
- const {base,record}=fixture();base.r32ProvisionalReaderVersion=R88_VERSION;const db=store();
- assert.equal((await publishNineR88({query:db.query,record,base,now})).d1Writes,1);
- assert.equal((await publishNineR88({query:db.query,record,base,now:now+1})).d1Writes,0);assert.equal(db.writes,1);
+test('retired R88 public writer blocks old approved flags before any D1 read or write',async()=>{
+ const {base,record}=fixture();base.r32ProvisionalReaderVersion=R88_VERSION;
+ let queries=0;
+ const deny=async()=>{queries++;throw Error('RETIRED_PROVIDER_DB_EFFECT');};
+ await assert.rejects(publishNineR88({query:deny,record,base,now}),
+  /R88_PUBLIC_RECORD_REJECTED/);
+ await assert.rejects(publishNineR88({query:deny,record,base,now:now+1}),
+  /R88_PUBLIC_RECORD_REJECTED/);
+ assert.equal(queries,0);
 });
 test('R88 refuses publication before deployed reader or with invalid inputs',async()=>{
  const {base,record}=fixture();const db=store();
@@ -26,19 +31,23 @@ test('R88 refuses publication before deployed reader or with invalid inputs',asy
  base.r32ProvisionalReaderVersion=R88_VERSION;record.themes[0].confirmedScore=99;
  await assert.rejects(publishNineR88({query:db.query,record,base,now}),/PUBLIC_RECORD/);assert.equal(db.writes,0);
 });
-test('R88 detects CAS race and write-readback mismatch without blind retry',async()=>{
+test('retired R88 cannot enter CAS or readback regardless of stored-row race',async()=>{
  for(const option of [{race:true},{badReadback:true}]){
   const {base,record}=fixture();base.r32ProvisionalReaderVersion=R88_VERSION;const db=store(option);
-  await assert.rejects(publishNineR88({query:db.query,record,base,now}),/CAS_NOT_APPLIED|READBACK_MISMATCH/);assert.equal(db.writes,1);
+  await assert.rejects(publishNineR88({query:db.query,record,base,now}),
+   /R88_PUBLIC_RECORD_REJECTED/);
+  assert.equal(db.writes,0);
  }
 });
-test('R54 readback compares the real R32 provisional sidecar, not legacy pair values',async()=>{
- const {base,record}=fixture();let reads=0;
- const expected=await expectedNineR54WithProvisional({base,now,query:async(sql,params,opts)=>{
-  reads++;assert.deepEqual(params,[R88_KEY]);assert.equal(opts.write,false);
-  return {results:[{body:JSON.stringify(record),stored_at:now-1000}]};
+test('R54 readback preserves confirmed and optional scores without retired R88 D1 reads',async()=>{
+ const {base}=fixture();let reads=0;
+ const expected=await expectedNineR54WithProvisional({base,now,query:async()=>{
+  reads++;throw Error('RETIRED_PROVIDER_DB_READ');
  }});
- assert.equal(reads,1);assert.equal(expected.provisional.points[0].scores['핀테크'],60);
+ assert.equal(reads,0);
+ assert.equal(Object.hasOwn(expected.provisional.points[0].scores,'핀테크'),false);
+ assert.equal(expected.provisional.points[0].scores['우주·위성'],12);
+ assert.equal(expected.provisional.points[0].scores['데이터센터·전력'],12);
  assert.equal(base.provisional.points[0].scores['핀테크'],12);
  assert.strictEqual(expected.themes,base.themes);
 });
