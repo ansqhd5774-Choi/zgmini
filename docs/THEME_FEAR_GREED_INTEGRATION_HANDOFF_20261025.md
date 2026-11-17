@@ -1,3 +1,10 @@
+## 2026-11-18 07:00 KST W03 10/68 — 공통 operation 전수 목록과 Host allowlist 조회 경계 판정
+
+- **진행률:** 시작 9/68(13.2%) → 종료 9/68(13.2%). 10단계의 새 거래일 원자료·checkpoint·R25/R32 비공개 계산 실증 미완료. 자연 예약 검증은 전 기능 완료 이후 후속.
+- **직접 원격 소스 확인:** pc-control `config/operations.json` Git blob `90cf96a8a7e263ee366d185b4f43d4caa0b7c687`의 전체 operation 키를 열람. 기존 `source-inventory-runtime-readonly`, `pc-source-origin-readonly`, `pc-source-preflight`, `source-audit`, `core-status`, `r47-task-action-readonly` 및 두 theme shadow operation은 있으나, `pc-source-bundle-register` 및 전용 `approvedSources` 조회 operation은 없다. 같은 제어 저장소 `controller/operations.mjs` 원문에서 `source-audit`는 GitHub commit 조회, `core-status`는 `readCore` 반환, `pc-source-preflight`는 `inspectPcSource`, `r47-task-action-readonly`는 Task action 조사로 배선됨을 직접 확인. **기존 A operation 이름만으로 Host approvedSources의 정확한 목록을 제공한다고 주장할 수 없다.** `core-status` 내부 `readCore`의 승인 SHA와 Host bundle allowlist는 별개이며, 실제 운영 Host 목록은 UNKNOWN.
+- **기능 차단 판정:** #2053 `SHADOW_SOURCE_NOT_APPROVED`와 candidateExecuted=false 유지. #2049 R47 CMD 설치 PASS 보존. GitHub main의 operation 목록 부재는 운영 Host에 모든 대체 수단이 없음을 증명하지 않으므로 단정 금지. 새로운 A/B 요청, 임의 Host 수정, 기존 #2053 재실행 0. 운영 PC/Provider/SQLite/D1/Task/배포 변경 0.
+- **다음 한 가지 필수 실행:** W03 자체 source bundle의 **정확 immutable source closure, entrypoint `scripts/pc-writer/theme-config-tool.mjs`, manifest SHA256, source commit pin**을 기존 승인 검증 계약에 맞춰 산출·검증한다. 공통 Controller의 B operation 배선 및 비밀 없는 Host W03 등록 상태 조회만 공통 소유자 범위로 분리한다. 등록이 실제 승인·적용된 뒤에만 신규 고유 Shadow A 1회, 이어서 63 ETF+SPY/R25-R32 실측. 권리 승인 없는 D1 공개 금지.
+
 ## 2026-11-18 06:00 KST W03 10/68 — 기존 A 조회 2종의 Host 승인 SHA 조회 적합성 판정 (원격 소스 읽기 전용)
 
 - **진행률:** 시작 9/68(13.2%) → 종료 9/68(13.2%). 10단계의 신규 원자료·checkpoint·R25/R32 비공개 계산 실증은 미완료.
