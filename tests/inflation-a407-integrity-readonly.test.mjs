@@ -54,6 +54,31 @@ test('A4-07: stored PIT snapshot and every chunk SHA must match original writer'
  assert.throws(()=>verifyPitSnapshot(mock,dataset,stored),/A407_PIT_SNAPSHOT_HASH_MISMATCH/);
 });
 
+test('A4-07: PIT hash verification accepts actual api-history-store writer plan',async()=>{
+  const {buildInflationHistoryPlan}=await import('../worker/api-history-store.mjs');
+  const stored='2026-11-17T11:05:00.000Z';
+  const plans=await buildInflationHistoryPlan([{seriesId:'CES0500000003',
+    status:'READY_INITIAL_RELEASE_HISTORY',historyMode:'INITIAL_RELEASE_ONLY',
+    authority:'FRED',transport:'API',rows:[
+      {observationDate:'2026-07-01',value:34.5,availableAt:'2026-08-01T00:00:00.000Z'},
+      {observationDate:'2026-08-01',value:34.8,availableAt:'2026-09-01T00:00:00.000Z'}]
+  }],{asOf:'2026-11-17',retrievedAt:stored});
+  assert.equal(plans.length,1);
+  const plan=plans[0];
+  assert.equal(plan.chunks.length,1);
+  const s={snapshot_sha256:plan.snapshotSha256,retrieved_at:plan.retrievedAt,
+    history_mode:plan.historyMode,row_count:plan.rowCount,
+    chunk_hashes_json:plan.chunkHashesJson,provenance_json:plan.provenanceJson};
+  const find=plan.chunks.map(c=>[c.chunkSha256,{payload_json:c.payloadJson,row_count:c.rowCount}]);
+  const byHash=new Map(find);
+  const db={prepare(sql){return {get(...args){return sql.includes('api_history_snapshots_v1')?
+    s:byHash.get(args[1]);}}}};
+  assert.equal(verifyPitSnapshot(db,'CES0500000003',stored).sha256,plan.snapshotSha256);
+  byHash.get(plan.chunks[0].chunkSha256).payload_json+=' ';
+  assert.throws(()=>verifyPitSnapshot(db,'CES0500000003',stored),
+    /A407_PIT_CHUNK_HASH_MISMATCH/);
+});
+
 test('A4-07: no private raw cannot be counted as audited; zero operational writes',()=>{
  const home=fs.mkdtempSync(path.join(os.tmpdir(),'a407-empty-'));
  try{
