@@ -315,6 +315,14 @@ function insertPlans(db, plans) {
 
 export {CONTRACT, SERIES, SERVICE_SERIES, checkSchema, normalizeSeries, buildPlans, insertPlans};
 
+export function resultLogPath(stamp,{includeServices=false,tempDirectory=os.tmpdir()}={}) {
+  if (typeof stamp!=='string' || !/^\\d{8}-\\d{6}Z$/.test(stamp))
+    err('INVALID_RESULT_STAMP');
+  return path.join(tempDirectory,
+    `${includeServices?'EARNINGS_BLS_SERVICE_R1':'EARNINGS_R3C_BLS_STORE_ONCE'}_RESULT_${stamp}.txt`);
+}
+
+
 async function main() {
   const flags=process.argv.slice(2);
   const includeServices=flags.length>0;
@@ -328,10 +336,8 @@ async function main() {
   const selectedSeries=includeServices?SERVICE_SERIES:SERIES;
   const utc = new Date().toISOString();
   const stamp = utc.replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z').replace('T','-');
-  // One-shot diagnostics belong in the runner's ephemeral user TEMP, not in
-  // the versioned operational source checkout.
-  const logfile = path.join(os.tmpdir(),
-    `${includeServices?'EARNINGS_BLS_SERVICE_R1':'EARNINGS_R3C_BLS_STORE_ONCE'}_RESULT_${stamp}.txt`);
+  // One-shot diagnostics belong in the runner's user TEMP, not in checkout.
+  const logfile = resultLogPath(stamp,{includeServices});
   const notes = [
     'EARNINGS_COMPANION_R3C_BLS_DIRECT_STORE_ONCE_V1',
     `UTC=${utc}`,
