@@ -141,8 +141,15 @@ export function buildPreview(db,{generatedAt=new Date().toISOString(),includeSer
     WHERE provider='BLS' AND dataset='WPSFD42'
     ORDER BY retrieved_at DESC LIMIT 501`).all();
   if(services.length>500)fail('R4_SERVICE_SNAPSHOT_SCAN_LIMIT');
-  if(services.length) {
-    const source=validateSnapshot(db,services[0]);
+  // The original source is append-only: validate every retained service
+  // version, not just the newest snapshot selected for public projection.
+  const verifiedServices=services.map(item=>validateSnapshot(db,item));
+  if(verifiedServices.length>1
+    && verifiedServices[0].retrievedAt===verifiedServices[1].retrievedAt
+    && verifiedServices[0].snapshotSha256!==verifiedServices[1].snapshotSha256)
+    fail('R4_SERVICE_REVISION_ORDER_AMBIGUOUS');
+  if(verifiedServices.length) {
+    const source=verifiedServices[0];
     const hashList=JSON.parse(services[0].chunk_hashes_json);
     const chunk=db.prepare(`SELECT payload_json,first_seen_at FROM api_history_chunks_v1
       WHERE provider='BLS' AND dataset='WPSFD42' AND chunk_sha256=? LIMIT 1`)
@@ -182,7 +189,8 @@ export function buildPreview(db,{generatedAt=new Date().toISOString(),includeSer
       observedThroughBySeries:Object.fromEntries(activeSources.map(x=>[
         x.id,x.quarterly?x.last:x.last.slice(0,7)])),
       coverage,rows},
-    diagnostics:{r3dStatus:prior.status,snapshotsChecked:prior.snapshotsChecked+(services.length?1:0),
+    diagnostics:{r3dStatus:prior.status,snapshotsChecked:prior.snapshotsChecked+verifiedServices.length,
+       serviceSnapshotVersions:verifiedServices.length,
       newerIncomplete:prior.newerIncomplete,cohortRetrievedAt:prior.cohortRetrievedAt,
       sourceStoredAtPolicy:'OLDEST_FIRST_SEEN_AT',
       serviceRetrievalIndependent:services.length>0,
@@ -218,7 +226,7 @@ export function buildServiceSourcePreview(db,{generatedAt=new Date().toISOString
     rows,
   };
   return {payload,diagnostics:{
-    ...full.diagnostics,snapshotsChecked:1,bySeries:[source],
+    ...full.diagnostics,snapshotsChecked:full.diagnostics.serviceSnapshotVersions,bySeries:[source],
     sourceStoredAtPolicy:'WPSFD42_FIRST_SEEN_AT',
     sourcePartition:'WPSFD42_ONLY_NO_BASE_REWRITE',
   }};
