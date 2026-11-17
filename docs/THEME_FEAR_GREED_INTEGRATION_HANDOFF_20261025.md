@@ -1,3 +1,13 @@
+## 2026-11-17 W03 9/68 — 최신 R47 원본 회귀 CI 실제 PASS, proof PR #1234 종료
+
+- **진행률:** 시작 8/68 DONE(11.8%) → 종료 8/68 DONE(11.8%); 9단계 진행 중. 새 PC 설치·최신 원자료/checkpoint·D1 게시 완료를 주장하지 않음.
+- **실제 실행 목표:** 전용 W03 최근 추가한 R47 checkpoint 변조 검증 2건이 **원본 Node module 전체**에서 성공하는지 확인. main에는 실행 경로의 4개 파일이 없으므로 기존 #1226과 동일한 **main 기반 CI 시험 증거 전용 방식** 사용. 다른 담당/프로세스 총괄 재인계 없음.
+- **격리 proof branch:** `codex/w03-r47-checkpoint-ci-proof-20261117`, 증거 커밋 `0beb140883da85b20f5eecdde0868128680949c5` (base main `d4c8f0b7b65e7824d271fc10078981f68e10aa04`). 4개 파일 Git blob을 본 기능 브랜치와 동일하게 직접 연결해 **4/4 원격 readback 일치**: R34 `791206d203e13bb19dbfd31a0492ca99c19995cd`; R35 `59a0895e6e2bf46a1881eb14440596a18ba76083`; R47 `a8f943f5a0031030c792609ef09b660e0c8aac75`; 테스트 `8740dd848061b179d79668089682ee8c0ba02d23`.
+- **실제 CI 원본:** [Node Run #44037280110](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44037280110) `completed/success`, check job `133883081595`, exact proof HEAD `0beb1408...`; Build/Type check/Regression tests/PC publication/Cloudflare candidate read contracts 전부 success. GitHub job 로그 신규 `R47 rejects checkpoint page URL end-date drift without a new provider GET` **PASS**, `R47 rejects checkpoint identity drift before collection or raw writes` **PASS**. Node `4854 total / 4844 PASS / 0 FAIL / 7 skipped / 3 todo`; PC publication `11/11 PASS`; candidate read contracts `69/69 PASS`.
+- **시험 자산 종료:** [proof PR #1234](https://github.com/ansqhd5774-Choi/zgmini/pull/1234)는 `CLOSED/UNMERGED`, PR #714 전용 개발 브랜치와 main은 이 증거로 병합/배포되지 않음. Provider GET, 운영 PC/Task/CMD/Controller, SQLite/원자료/checkpoint, D1/Cloudflare 실제 변경 0.
+- **공통 운영 경계:** [기존 R47 1파일 효과 GO #1894/6941303392](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1894#issuecomment-6941303392)는 재요청하지 않음. [공통 Draft PR #1914](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1914)의 현재 실제 운영 receiver 등록/정확 APPROVED_B raw manifest/PC Task Exec action·fresh preimage·lease/readback은 검증 미완료. 따라서 **설치는 NOT_READY**이며 총괄이 담당하는 공통 코드와 W03의 기능 설치 책임은 계속 분리.
+- **다음 필수 W03 실행:** 정규 B 경로가 실제 승인 manifest와 Windows receiver/Task action 증거까지 갖춰지면 W03 원담당이 이미 GO인 정확 R47 CMD 1파일에 한해 단회 CAS 설치·사후 SHA 재조회. 이후 같은 공급자 승인 범위에서 ETF63+SPY 원자료/checkpoint 증분→R32 계산→별도 승인 공개 저장·GET/UI 실증. 중복 CI·중복 총괄 인계는 하지 않음.
+
 ## 2026-11-17 W03 9/68 — 실제 R47 planner 원본 함수 격리 10/10 및 운영 효과 GO 분리
 
 - **원담당 직접 진행:** PR #714 전용 브랜치 실제 R47 source blob `a8f943f5a0031030c792609ef09b660e0c8aac75`에서 `verifyDeltaState`, `planNineR47Recurring`, NY cutoff/attempt gate까지 포함하는 **14,018자 실제 planner 부분**을 읽고 V8 함수 실행 격리 재현. 64 symbol(ETF 63+SPY) 원자료 metadata fixture 및 메모리 파일시스템, 가상 SHA/URL 주입. 신규 외부 Provider GET 0.
