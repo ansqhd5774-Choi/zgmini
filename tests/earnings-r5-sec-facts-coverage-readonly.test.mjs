@@ -35,7 +35,10 @@ test('stored-only audit derives per-metric coverage over the provided CIK univer
   assert.equal(result.providedSha256Matched,2);
   assert.equal(result.metrics.revenue.currentIssuerCount,2);
   assert.equal(result.metrics.revenue.comparableIssuerCount,1);
-  assert.equal(result.metrics.revenue.currentCoverage,2/3);
+  assert.equal(result.sourceCoverageComplete,false);
+  assert.equal(result.metrics.revenue.currentCoverage,null);
+  assert.equal(result.metrics.revenue.currentCoverageLowerBound,2/3);
+  assert.equal(result.metrics.revenue.comparableCoverageLowerBound,1/3);
   assert.equal(result.metrics.eps.comparableIssuerCount,1);
   assert.equal(result.metrics.netIncome.comparableIssuerCount,0);
   assert.equal(result.sourceArchiveShaVerified,false);
@@ -70,7 +73,8 @@ test('mismatching pinned SHA and invalid JSON fail closed without fictitious cov
   assert.equal(result.sourceFilesRejected,2);
   assert.equal(result.aggregateContentSha256,null);
   assert.equal(result.metrics.revenue.currentIssuerCount,0);
-  assert.equal(result.metrics.revenue.comparableCoverage,0);
+  assert.equal(result.metrics.revenue.comparableCoverage,null);
+  assert.equal(result.metrics.revenue.comparableCoverageLowerBound,0);
 });
 
 test('same-filed conflicting SEC facts are missing rather than arbitrarily chosen',()=>{
@@ -120,4 +124,26 @@ test('latest quarter with an exact prior remains comparable',()=>{
   assert.equal(report.providedSha256Matched,1);
   assert.equal(report.status,'ALL_FILES_PROVIDED_SHA_MATCH_ARCHIVE_UNVERIFIED');
   assert.equal(report.sourceArchiveShaVerified,false);
+});
+
+test('zero eligible facts is a measured zero only when every issuer source exists',()=>{
+  const source={cik:1,facts:{'us-gaap':{}}};
+  const report=auditStoredSecFactsCoverage({
+    issuerCiks:['1'],asOf:'2026-11-17',readSource:()=>pinned(source),
+  });
+  assert.equal(report.sourceFilesFound,1);
+  assert.equal(report.sourceCoverageComplete,true);
+  assert.equal(report.metrics.revenue.currentCoverage,0);
+  assert.equal(report.metrics.revenue.comparableCoverage,0);
+});
+
+test('partial sources retain observed counts but never report confirmed coverage zero',()=>{
+  const report=auditStoredSecFactsCoverage({
+    issuerCiks:['1','2'],asOf:'2026-11-17',readSource:()=>null,
+  });
+  assert.equal(report.sourceFilesMissing,2);
+  assert.equal(report.sourceCoverageComplete,false);
+  assert.equal(report.metrics.revenue.currentIssuerCount,0);
+  assert.equal(report.metrics.revenue.currentCoverage,null);
+  assert.equal(report.metrics.revenue.currentCoverageLowerBound,0);
 });
