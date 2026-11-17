@@ -76,9 +76,14 @@ test('four displayed indicators do not get reweighted to fabricate six-factor D3
  assert.equal(check(divergent),null);
 });
 
-test('legacy explicit liquidity READY without active version cannot masquerade as D3',()=>{
+test('previously stored D3 without projected metadata remains visible only with independently verified six-factor parity',()=>{
  const f=fixture();
- for(const method of [null,'LIQUIDITY_R1','LIQUIDITY_D3_ACTIVE_PUBLIC_R1']){
+ const legacy={...f.domain,methodologyVersion:null,asOfDate:null};
+ assert.equal(verifiedEconomicLiquidityScore(legacy,asOf,f.diag),f.domain.score);
+ assert.equal(verifiedEconomicLiquidityScore(legacy,asOf,null),null);
+ assert.equal(verifiedEconomicLiquidityScore(legacy,asOf,{...f.diag,score:54}),null);
+ assert.equal(verifiedEconomicLiquidityScore({...legacy,asOfDate:asOf},asOf,f.diag),null);
+ for(const method of ['LIQUIDITY_R1','LIQUIDITY_D3_ACTIVE_PUBLIC_R1']){
   assert.equal(verifiedEconomicLiquidityScore({...f.domain,methodologyVersion:method},asOf,f.diag),null);
  }
 });
