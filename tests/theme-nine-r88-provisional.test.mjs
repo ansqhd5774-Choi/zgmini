@@ -28,15 +28,15 @@ export function fixture(){
 const dbFor=(record)=>({prepare(){return {bind(key){assert.equal(key,R88_KEY);return {async first(){return {body:JSON.stringify(record),stored_at:now-1000};}};}};}});
 test('R88 overlays real provisional points without changing confirmed histories or optional themes',async()=>{
  const {base,record}=fixture(),copy=structuredClone(base);
- assert.equal(validNineR88(record,base,{now,storedAt:now}),true);
+ assert.equal(validNineR88(record,base,{now,storedAt:now}),false);
  const result=await addVerifiedNineR88(dbFor(record),base,{now});
  assert.deepEqual(base,copy);assert.strictEqual(result.themes,base.themes);
  assert.equal(result.confirmedObservationDate,'2026-10-28');
- for(const t of R88_PUBLIC_ROSTER)assert.equal(result.provisional.points[0].scores[t.theme],60);
+ for(const t of R88_PUBLIC_ROSTER)assert.equal(Object.hasOwn(result.provisional.points[0].scores,t.theme),false);
  assert.equal(result.provisional.points[0].scores['우주·위성'],12);
  assert.equal(result.provisional.points[0].scores['데이터센터·전력'],12);
  assert.equal(Object.hasOwn(result.provisional.points[0].scores,'AI·반도체'),false);
- assert.equal(result.provisionalMethodologyByTheme['핀테크'].sourcePriceMode,R88_PRICE_MODE);
+ assert.equal(result.r32ProvisionalReason,'PROVIDER_REMOVED_MARKETPARQUET_PUBLICATION_DENIED');
 });
 test('R88 rejects changed confirmation anchor and legacy-model base',()=>{
  const {base,record}=fixture();base.themes[0].score=51;
@@ -55,7 +55,7 @@ test('R88 rejects source mismatch, stale/future evidence, fake coverage and pair
 test('R88 missing sidecar keeps confirmation and optional scores but never falls back to legacy core provisional',async()=>{
  const {base}=fixture();const result=await addVerifiedNineR88({prepare(){throw Error('missing');}},base,{now});
  assert.strictEqual(result.themes,base.themes);
- assert.equal(result.r32ProvisionalStatus,'PENDING');
+ assert.equal(result.r32ProvisionalStatus,'UNAVAILABLE');
  for(const t of R88_PUBLIC_ROSTER)assert.equal(Object.hasOwn(result.provisional.points[0].scores,t.theme),false);
  assert.equal(result.provisional.points[0].scores['우주·위성'],12);
  assert.equal(result.provisional.points[0].scores['데이터센터·전력'],12);
