@@ -1,3 +1,21 @@
+## 2026-11-17 W03 9/68 — R32 9테마 원자료×공식 AUM 날짜 이중 적격성 독립 판정
+
+- **기준/효과:** W03 8/68(11.8%) 유지, 9단계 진행. 기존 PC A [#1827](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1827) SHA 검증 가격 원자료 메타(`results/43987998143-1-seat-4.json`, Git blob `2e05fb7c90779830b20aab84597aee7f1e30cbda`)와 W03 GitHub 비공개 승인 후보 로스터 `config/theme-nine-r20-approved-candidates.json` blob `add5136969262157b377fb3034cbc49199ac61ae`, 공식 AUM 연구 증거 `config/theme-nine-r26-official-aum-evidence.json` blob `a9422375ecc8a86583c393ad795c6ca6333e34fe`, R32 dated AUM 승인 `config/theme-nine-r32-dated-aum-approval.json` blob `f08821af8d92995e0335d1fbae1e1291f2481be7`를 **원격 직접 재조회·교차계산**. 승인 로스터 digest 3방향(실PC result/AUM/R32 승인) 일치, 63 고유 ETF+SPY 64종 완전 매칭. 추가 provider/PC/SQLite/D1/공개 쓰기 0.
+- **출처 날짜 별도 표기:** 실측 SPY 마지막 원자료일 `2026-11-03`, `currentnessVerified=false`; 기존 R32 비공개 승인 R25 계산 기준일 `2026-10-23`. 공식 issuer AUM 63종 중 **10/23 기준일 42종, 더 이전 21종, 이후 0종**, 전부 양수·공식 출처 계약; 승인 범위는 `PRIVATE_STAGE5_AND_STAGE6_SHADOW_ONLY`이며 `publicationAuthorized=false`. 날짜가 다른 두 자료를 단일 최신 계산 결과라고 표시하지 않음.
+- **테마별 독립 상태** (순서: ETF 수 / 최근 SPY 기준 가격 252일 확보 / 가격 40일 이상 / AUM 10/23 일치 / AUM 10/23 이전 / 가격252일+AUM10/23 모두 갖춘 후보). **R25 실제 점수 적격 판정은 전부 UNKNOWN**:
+  - 로봇·자동화 **7 / 5 / 6 / 4 / 3 / 2** (RBTX 가격 10일, CBOT 11/02까지)
+  - 클라우드·SaaS **5 / 4 / 5 / 3 / 2 / 3**
+  - 자율주행 **6 / 4 / 6 / 5 / 1 / 4**
+  - 원전·SMR **6 / 6 / 6 / 4 / 2 / 4**
+  - 방산 **6 / 5 / 6 / 3 / 3 / 3** (WR 10/28까지)
+  - 핀테크 **6 / 3 / 6 / 4 / 2 / 2** (KYC 10/15, LATR 10/27까지)
+  - 사이버보안 **8 / 5 / 8 / 7 / 1 / 5**
+  - AI·반도체 **11 / 8 / 10 / 6 / 5 / 4** (LLMA 가격 22일)
+  - 바이오·신약 **9 / 8 / 9 / 7 / 2 / 6**
+- **현재 실제 계산 전 필수 계약:** `theme-nine-r32-readonly-preflight.mjs`가 R25의 원본 raw manifest **121페이지**, `latestSpySessionDate=2026-10-23`, 252일 history, 63 ETF individual `score/status/realSessionCount>=40`, source/roster SHA를 고정 검증함. 현재 실측 R23+R35 **548페이지/11-03** 메타는 새로운 R25 실제 252일 점수 결과가 아니며 그대로 승인 R32 preflight 입력으로 대체하지 않음. `theme-nine-r32-private-aggregate.mjs`는 승인된 날짜 AUM을 비공개에서만 허용하고 기존 승인 기준일과 입력 일자 불일치 시 `AUM_APPROVAL_CONTRACT_INVALID`로 정지. 정책·가중치·날짜·TTL 임의 변경 또는 가짜 최신 점수 게시 금지.
+- **공통 차단 분리:** 총괄의 [#1976](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1976) B 결과 `BLOCKED/WORKFLOW_DISABLE_NOT_CONFIRMED`에 대해 독립 [#1977](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1977) A `PASS/CORE_READONLY_DIAGNOSIS`에서 `protectedStateUnchanged=true`, installed Controller old `39521f40...`, Workflow 활성 정상 재확인. **안전 보호 PASS는 목표 새 Controller 설치 PASS가 아님**. #1976 B 고유 ID 재사용·운영 우회·추가 총괄 요청 0.
+- **W03 다음 직접 행동:** 실제 저장형 R25 점수/기준일/출처/40-session 63종 적격의 **승인된 기존 읽기 전용 증거가 있는지** 확인해 9테마별 AUM 허용 범위와 결합하되, 현재 증거 없음은 `UNKNOWN`으로 유지. 정확 승인 계산 입력이 확인된 경우에만 기존 비공개 R32 계산 재사용. 별개 공통 Controller 안전 설치/Task wrapper A 실증 완료 후 R47 CMD 정규 1파일 B→저장→재계산→별도 권리 확인된 게시 검증. 단계 9 DONE 아님.
+
 ## 2026-11-17 W03 9/68 — 소유권 회수 후 기능 독립 검증 및 #1976 공통 차단 구분
 
 - **시작/종료:** 8/68(11.8%) → 8/68(11.8%); 9단계 R47 운영 CMD B 설치는 미완료. 기존 1파일 GO·소모된 #1928/#1941·성공한 #1962/#1966 결과를 재사용. 신규 PC 요청/운영 변경 0.
