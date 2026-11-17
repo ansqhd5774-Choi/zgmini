@@ -195,3 +195,39 @@ test("Core hardlink candidate, missing file and malformed SQLite cannot trigger 
   const data=fs.readFileSync(path.join(env.output,result.reportFile+".json"),"utf8");
   assert.doesNotMatch(data,/PRIVATE-CONTENT|ORIGINAL-CANDIDATE-PATH-MUST-NOT-APPEAR/);
 });
+
+test("PIT-04-03 Runner exposes only bounded Core match/conflict/unknown/missing counts",async t=>{
+  const env=environment(t);fixture(env.core);fixture(env.candidate,{row:true});
+  const body=await stageEmploymentR6OneYear(runnerOptionsFrom(argv(env)));
+  const secret="PRIVATE_SOURCE_HASH_MUST_NOT_LEAK";
+  const report=projectEmploymentR6RunnerResult({body,pitCoverage:{
+    coreCurrentHistoryMatchingKeys:37000,
+    coreCurrentHistoryConflictingKeys:100,
+    coreCurrentHistoryUnverifiedKeys:777,
+    coreCurrentHistoryMissingKeys:2880,
+    rawSourceHash:secret,rows:[{value:secret,sourceHash:secret}],
+  }});
+  assert.deepEqual([
+    report.pit.coreCurrentHistoryMatchingKeys,
+    report.pit.coreCurrentHistoryConflictingKeys,
+    report.pit.coreCurrentHistoryUnverifiedKeys,
+    report.pit.coreCurrentHistoryMissingKeys,
+  ],[37000,100,777,2880]);
+  assert.equal(report.promotionApproved,false);
+  assert.equal(report.providerCalls,0);
+  assert.equal(report.d1Writes,0);
+  assert.doesNotMatch(JSON.stringify(report),/PRIVATE_SOURCE_HASH_MUST_NOT_LEAK|rawSourceHash|sourceHash/);
+  assert.ok(Buffer.byteLength(JSON.stringify(report))<12000);
+  const invalid=projectEmploymentR6RunnerResult({body,pitCoverage:{
+    coreCurrentHistoryMatchingKeys:-1,
+    coreCurrentHistoryConflictingKeys:1.5,
+    coreCurrentHistoryUnverifiedKeys:secret,
+    coreCurrentHistoryMissingKeys:Number.MAX_SAFE_INTEGER+1,
+  }});
+  assert.deepEqual([
+    invalid.pit.coreCurrentHistoryMatchingKeys,
+    invalid.pit.coreCurrentHistoryConflictingKeys,
+    invalid.pit.coreCurrentHistoryUnverifiedKeys,
+    invalid.pit.coreCurrentHistoryMissingKeys,
+  ],[null,null,null,null]);
+});
