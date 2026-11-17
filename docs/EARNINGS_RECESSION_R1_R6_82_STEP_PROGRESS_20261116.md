@@ -1286,3 +1286,24 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 **LAST PASS:** 새 승인 후검 2건의 Core/checkpoint 전진 및 Task XML 불변·Writer 운영 source 동일성을 실제 근거로 대조; 경합 원인에서 '진행 없는 Core' 추정 배제, 공유 원인 판단의 정확한 조사 범위 기존 #68 한 댓글로 등록·readback. **FIRST UNFINISHED:** 지금 시점의 Core 유휴 2표본/lock 소유자·Writer lane release 증명 부재, 신규 단회 B 실행 조건 미충족, WPSFD42 실제 source/SQLite 저장/D1/API/UI 완료 아님.
 
 **NEXT:** 공용 임계 조건이 실제 증명될 때만 W05 담당이 기존 `APPROVED_B` 원본·현재 Writer source/preimage·lease를 확인한 새 고유 설치 요청 1회 및 3파일 PC afterSHA+JSON/TXT 2/2 검증. 공통 원인 확인 중에도 [Draft PR #1231](https://github.com/ansqhd5774-Choi/zgmini/pull/1231)의 독립 계산/수집 회귀를 보존하고 다음 기능 필요 작업을 지속; Core 종료·lock 삭제·#1919 재실행·미승인 BLS POST/SQLite/D1 효과 0.
+
+
+## 70. R3-04 (2026-11-17 KST) 프로세스 총괄 대상 Core/Writer 설치 경합 전수조사·조건부 공통 유지보수 효과 승인 요청 — APPROVAL_REVIEW_REQUEST_POSTED / NO_OPERATIONAL_CHANGE
+
+**진행률 시작→종료:** 개별 DONE **28/82(34.1%) → 28/82(34.1%)**, 순차 DONE **26/82(31.7%) → 26/82(31.7%)**. 실제 첫 미완료 R3-04는 그대로. 새 기능 source/Controller/Writer 설치, SQLite/Provider/D1, Task 변경 0.
+
+**새 증거 중심의 조사 결과:**
+- 승인된 source-only W05 3파일 GO [#1885/6941008513](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1885#issuecomment-6941008513) 및 고정 manifest raw SHA256 `4397597f7424146c81218c0d3e1eaf12d25afa26a3b62f89bfde1074e8d95f16` 유지. 소모 #1919/Run 44034883567 `WRITER_B_PREFLIGHT_STOP/WRITER_B_CORE_ACTIVE_WINDOW_DEFERRED`, claim 이전 무변경·원격 JSON/TXT 2/2. 기존 source SHA `2a9a38a452b5ba95a3e370c5b56445bb75fa05bb` 승인 후보를 #1231 신규 바이트로 바꾸지 않음.
+- Core lock absent의 실제 과거 짧은 표본 [#1835/Run 43991323649](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1835) 2026-11-17 09:54 KST를 확인. 전체 결과는 `STATE_UNKNOWN`이며 계속 유휴/현재 해제 증거는 아님. 당시와 달리 이후 #1911·#1924 공유 자원 A에서 Core lock true/Writer lock false 관측 및 `releaseVerified=false`. #1933(16:40 KST) → #1948(17:09 KST) Core cycle/collection/Writer checkpoint mtime 전진, 두 시점 Core lock true/Task XML 안정, Writer 운영 source `2070ff...` 유지. 고아 lock이나 하루 전체 무해제 단정하지 않음.
+- 소스상 Core 기본 5분은 **시작 주기**, `zgmini/main:scripts/pc-writer/local-cycle.mjs`은 Core/Korea 공통 local-cycle.lock을 사용하고 하위 Node 5/10/30분 timeout 경로를 가짐; 현재 운영 승인 source와 main 내용 동일을 가정하지 않음. 기존 공통 Writer B는 최초 6분 / 1.5초 / 연속 2회 자연 idle + Task `enabled=true, READY(3)`·모든 Core 관련 process/lock absent, 마지막 race 재검증을 요구. **Core Task를 먼저 별도로 disable한 뒤 기존 설치기를 호출하면 현재 idle guard에서 STOP**; 무단 유지보수 우회는 해법 아님. 제어 기존 [PR #650](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/650), [#708](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/708) 모두 merged인 안전 계약 재사용.
+- 현재 유지보수 신규 구현 PR은 없음. 공유 Core 소유권 증거 생산자-소비자 계약의 관련 기존 [제어 Draft PR #1362](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1362)는 open/source-only이며 이번 새 운영 효과 승인이나 Writer B 설치 완료가 아님. W05 기능 소스 검토 PR #1207·#1231은 둘 다 Draft/open.
+
+**실제 인계·승인요청 등록/재조회 성공:**
+- **공통 원장:** [제어 #68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68).
+- **인계(원인 진단):** [#68/6942571602](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6942571602) — 공유 자원 소유/자연 유휴 원인 조사에만 총괄 지원, W05 기능 책임 유지.
+- **별도 정확 효과 승인 결정 요청:** [#68/6942803479](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6942803479) — 기존 A 범위 read-only 원인 판정과, *정상 Core인데 6분 idle 확보 불가능*이 실증된 경우에만 검증된 새 start 억제/자연 drain/원본 복원 공통 B 효과에 대해 총괄이 `GO/HOLD/NO-GO`·대상/실제 권한/최소 PR·manifest를 결정하도록 구체화. 이 댓글 자체는 신규 B 승인 아님. `Core timeout`을 무턱대고 상향하거나 pre-idle Task disable 뒤 기존 Writer B에 전달하는 무효 방식 금지. Actions 12분 시간 상한, Core/Korea 동일 lock, 기존 owner/lease, 실행 중 Core 보호를 명시.
+- 두 댓글은 실제 원격 재조회해 각각 고유 ID·본문 확인. **프로세스 총괄 별도 ChatGPT 대화의 자동 수신/실행 증거는 아님.**
+
+**LAST PASS:** W05 운영 승인/단회 실패와 실PC 기존 A/사후 checkpoint, 공통 Core lock·Writer B 자연 유휴/Task guard 소스, 기존 검토 PR 상태를 대조해 새로운 공통 효과만 분리 요청·원격 기록. **FIRST UNFINISHED:** 현재 Core lock PID/Task instance 소유 증명, 충분한 idle-window 관측 및 현재 PC Writer lease release, 총괄의 정확한 유지보수 효과 GO/HOLD/NO-GO, W05 운영 3파일 실제 설치/원자료 저장·D1/API/UI 완료.
+
+**NEXT 필수 행동:** 사용자 통해 실제 총괄 대화에 위 4개 링크 전달 후, 총괄이 기존 증거·읽기 A로 owner/idle을 검증하고 **정상 idle 존재 시** W05가 기존 승인으로 새 고유 B 1회 설치; **정상 idle 구조적 불가 확인 시** 총괄의 별도 정확 공통 source/승인/복원 경로 기술 검토·GO/HOLD를 받고 적용 범위 충족에만 실행. 운영 source/Task/DB 등 미승인 변경 0, 소비 #1919 재실행 0.
