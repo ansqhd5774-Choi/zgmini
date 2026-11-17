@@ -1,5 +1,6 @@
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
 import {rateSentimentCalendarLag,RATE_SENTIMENT_MAX_OBSERVATION_DAYS} from '../lib/market-score/rate-sentiment-freshness.mjs';
+import {verifiedRateSentimentStoredView} from '../lib/rate-sentiment-stored-display-r4.mjs';
 
 export const RATE_SENTIMENT_PUBLIC_KEY='public:rate-sentiment:v1';
 /** @param {Request} request @param {{db?:D1Database,now?:number}} [options] */
@@ -17,7 +18,7 @@ export async function storedRateSentimentResponse(request,{db,now=Date.now()}={}
  let body;
  try{body=JSON.parse(row.body);}catch{return Response.json({status:'unavailable',reason:'STORED_SCORE_INVALID'},{status:503,headers});}
  const lag=rateSentimentCalendarLag(body?.observationDate,new Date(now).toISOString().slice(0,10));
- if(body?.status!=='READY'||body?.version!=='RATE_SENTIMENT_R1_RESEARCH'||!Number.isFinite(body.score)||body.score<0||body.score>100||!Array.isArray(body.week)||body.week.length!==5||body.week.at(-1)?.label!==body.observationDate||lag===null||lag>RATE_SENTIMENT_MAX_OBSERVATION_DAYS){
+ if(lag===null||lag>RATE_SENTIMENT_MAX_OBSERVATION_DAYS||!verifiedRateSentimentStoredView(body,now)){
   return Response.json({status:'unavailable',reason:lag>RATE_SENTIMENT_MAX_OBSERVATION_DAYS?'STORED_OBSERVATION_STALE':'STORED_SCORE_INVALID'},{status:503,headers});
  }
  return Response.json(body,{headers:{...headers,'cache-control':'public, max-age=60, must-revalidate','x-rate-sentiment-observation-at':body.observationDate}});
