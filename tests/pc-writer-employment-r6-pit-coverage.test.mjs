@@ -399,3 +399,131 @@ test("PIT-04-04 recorded_at and first_seen_at cannot backdate a read-only as-of 
   assert.equal(invalid.coreHistoryAsOfUniqueKeys,0);
   assert.equal(invalid.coreCurrentKeysMissingHistory,1);
 });
+
+
+function rawLineageFixture(file){
+  const sha=text=>createHash("sha256").update(text).digest("hex");
+  const body="PROVIDER_RESPONSE_PRIVATE_FIXTURE_ONLY",responseHash=sha(body);
+  const hash=sha("CANONICAL_RECORD_AL"),group="DOL_UI_WEEKLY_CLAIMS";
+  const requestKey="DOL_NATIONAL:2025-2026",provider="DOL_ETA";
+  const snapshotId=sha([group,provider,requestKey,responseHash].join("|"));
+  const provenance=(recordHash,hashOfResponse=responseHash)=>JSON.stringify({
+    responseHash:hashOfResponse,rawRecordHash:recordHash,releaseGroup:group,
+  });
+  const al={...observation("AL",100,hash),provenanceJson:provenance(hash)};
+  const ak={...observation("AK",101,sha("AK")),provenanceJson:provenance(sha("AK"),sha("MISSING"))};
+  const az={...observation("AZ",102,sha("AZ")),provenanceJson:provenance(sha("OTHER"))};
+  const ca={...observation("CA",103,sha("CA")),provenanceJson:"{invalid-json"};
+  fixture(file,{current:[al,ak,az,ca],history:[al,ak,az,ca]});
+  const db=new DatabaseSync(file);
+  try{
+    db.exec(`CREATE TABLE ${T.rawSnapshot} (
+      snapshot_id TEXT,chunk_index INTEGER,chunk_count INTEGER,
+      release_group TEXT,provider TEXT,request_key TEXT,
+      retrieved_at TEXT,created_at TEXT,body_sha256 TEXT,
+      detail_json TEXT,body_chunk TEXT
+    )`);
+    db.exec(`CREATE TABLE ${T.runs} (
+      provider TEXT,status TEXT,completed_at TEXT,detail_json TEXT
+    )`);
+    const insert=db.prepare(`INSERT INTO ${T.rawSnapshot} VALUES(?,?,?,?,?,?,?,?,?,?,?)`);
+    const rt="2026-10-25T09:00:00.000Z",created="2026-10-25T09:00:00.010Z";
+    const details=JSON.stringify({responseHash});
+    const chunks=[body.slice(0,12),body.slice(12)];
+    for(let i=0;i<chunks.length;i++){
+      insert.run(snapshotId,i,chunks.length,group,provider,requestKey,rt,created,responseHash,details,chunks[i]);
+    }
+    db.prepare(`INSERT INTO ${T.runs} VALUES(?,?,?,?)`).run(
+      "EMPLOYMENT_R6_"+group,"SUCCESS","2026-10-25T09:00:02.000Z",
+      JSON.stringify({rawSnapshots:[{snapshotId,bodySha256:responseHash,chunkCount:2}]}),
+    );
+  }finally{db.close();}
+  return {body,responseHash,hash,snapshotId,sha};
+}
+
+test("PIT-04-05 Core response hash, stored body, collector run and record provenance remain disjoint",t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-w04-pit0405-evidence-"));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const file=path.join(dir,"core.sqlite");
+  rawLineageFixture(file);
+  const before=digest(file);
+  const report=auditEmploymentR6PitCoverage({dbPath:file,asOfDate:"2026-11-02"});
+  assert.equal(report.rawSnapshotMetadataKeys,1);
+  assert.equal(report.rawSnapshotCertifiedKeys,1);
+  assert.deepEqual([
+    report.coreCurrentRawLineageVerifiedKeys,
+    report.coreCurrentRawLineageMissingSnapshotKeys,
+    report.coreCurrentRawLineageConflictingKeys,
+    report.coreCurrentRawLineageUnverifiedKeys,
+  ],[1,1,1,1]);
+  assert.deepEqual([
+    report.coreHistoryRawLineageVerifiedRows,
+    report.coreHistoryRawLineageMissingSnapshotRows,
+    report.coreHistoryRawLineageConflictingRows,
+    report.coreHistoryRawLineageUnverifiedRows,
+  ],[1,1,1,1]);
+  assert.equal(report.coreHistoryRawLineageTotalRows,4);
+  assert.equal(report.rawLineageEvidenceStatus,"HOLD_INCOMPLETE_SOURCE_LINEAGE");
+  assert.equal(report.coreCurrentHistoryMatchingKeys,4);
+  assert.equal(report.coreCurrentKeys,4);
+  assert.equal(report.providerCalls,0);
+  assert.equal(report.coreWrites,0);
+  assert.equal(report.promotionApproved,false);
+  assert.equal(digest(file),before);
+  assert.doesNotMatch(JSON.stringify(report),/PROVIDER_RESPONSE_PRIVATE_FIXTURE_ONLY|CANONICAL_RECORD_AL|responseHash|snapshotId/);
+});
+
+test("PIT-04-05 missing run cannot certify otherwise valid raw snapshot; later run cannot backdate as-of",t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-w04-pit0405-run-"));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const file=path.join(dir,"core.sqlite");
+  rawLineageFixture(file);
+  const db=new DatabaseSync(file);
+  try{db.prepare(`UPDATE ${T.runs} SET completed_at=?`).run("2026-11-03T09:00:00.000Z");}
+  finally{db.close();}
+  const before=digest(file);
+  const report=auditEmploymentR6PitCoverage({dbPath:file,asOfDate:"2026-11-02"});
+  assert.equal(report.rawSnapshotCertifiedKeys,0);
+  assert.equal(report.coreCurrentRawLineageVerifiedKeys,0);
+  assert.equal(report.coreCurrentRawLineageUnverifiedKeys,2);
+  assert.equal(report.coreCurrentRawLineageMissingSnapshotKeys,1);
+  assert.equal(report.coreCurrentRawLineageConflictingKeys,1);
+  assert.equal(digest(file),before);
+  const later=auditEmploymentR6PitCoverage({dbPath:file,asOfDate:"2026-11-03"});
+  assert.equal(later.rawSnapshotCertifiedKeys,1);
+  assert.equal(later.coreCurrentRawLineageVerifiedKeys,1);
+});
+
+test("PIT-04-05 tampered private raw body fails SHA-256 without leaking or modifying its bytes",t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-w04-pit0405-tamper-"));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const file=path.join(dir,"core.sqlite");
+  const {snapshotId}=rawLineageFixture(file);
+  const db=new DatabaseSync(file);
+  try{db.prepare(`UPDATE ${T.rawSnapshot} SET body_chunk=? WHERE snapshot_id=? AND chunk_index=1`)
+    .run("CORRUPTED_RESPONSE_DO_NOT_PUBLISH",snapshotId);}
+  finally{db.close();}
+  const before=digest(file);
+  const report=auditEmploymentR6PitCoverage({dbPath:file,asOfDate:"2026-11-02"});
+  assert.equal(report.rawSnapshotMetadataKeys,1);
+  assert.equal(report.rawSnapshotCertifiedKeys,0);
+  assert.equal(report.coreCurrentRawLineageConflictingKeys,2);
+  assert.equal(report.coreCurrentRawLineageMissingSnapshotKeys,1);
+  assert.equal(report.coreCurrentRawLineageUnverifiedKeys,1);
+  assert.equal(report.promotionApproved,false);
+  assert.equal(digest(file),before);
+  assert.doesNotMatch(JSON.stringify(report),/CORRUPTED_RESPONSE|PROVIDER_RESPONSE_PRIVATE_FIXTURE_ONLY/);
+});
+
+test("PIT-04-05 absent raw snapshot/run tables yield NO_RUNTIME_EVIDENCE, never a false zero",t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-w04-pit0405-legacy-"));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const file=path.join(dir,"core.sqlite");
+  fixture(file,{current:[observation("AL",100,"a".repeat(64))]});
+  const report=auditEmploymentR6PitCoverage({dbPath:file,asOfDate:"2026-11-02"});
+  assert.equal(report.rawSnapshotMetadataKeys,null);
+  assert.equal(report.rawSnapshotCertifiedKeys,null);
+  assert.equal(report.coreCurrentRawLineageVerifiedKeys,null);
+  assert.equal(report.coreHistoryRawLineageTotalRows,null);
+  assert.equal(report.rawLineageEvidenceStatus,"NO_RUNTIME_EVIDENCE");
+});
