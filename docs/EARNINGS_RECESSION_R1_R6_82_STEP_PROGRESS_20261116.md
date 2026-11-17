@@ -31,14 +31,14 @@
 | 필드 | 마지막 확인 상태 |
 |---|---|
 | 최종 목표 | 82단계 R1~R6로 적격 실적 침체 정보성 지표의 PC 원자료 저장→계산→승인 D1 게시→Production API/UI를 완성. 기존 E1-R4 점수/산식·기타 12대 기업실적은 보호 |
-| 현재 관련 단계 | **순차 R3-04(27/82)**: BLS 서비스 WPSFD42 승인된 수동 PC 수집 후 원본·SHA·관측기간·checkpoint 실제 재조회. 기본 3개 원천 R3-03 이전 저장/계산 PASS 증거 재사용 완료; 서비스 원본은 분리 |
-| 마지막 검증 완료점 | **R3-03 기존 BLS 3원천의 실제 PC 2026-10-26 저장/계산 PASS (§36)** 재사용. **R3-04 source-only 진행 (§37)**: WPSFD42 서비스 수집기/수동 CMD 2개·기존 9시험+서비스 전용 3시험을 main 기준 선별 4파일 Draft [PR #1203](https://github.com/ansqhd5774-Choi/zgmini/pull/1203)으로 분리, exact HEAD `15ca748e6d75460823728629aead67423d6fffc5`. [Node.js CI #43988919125](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43988919125) Node24 빌드·타입·전체 회귀·PC 게시 복구·Cloudflare 조회계약 PASS, BLS 12/12 테스트 로그 성공. source/CI는 WPSFD42 PC 실저장·D1 게시 성공의 증거가 아님. 누적 DONE 26/82 유지 |
+| 현재 관련 단계 | **첫 순차 미완료 R3-04(27/82), 연속 26/82 DONE**. WPSFD42 PC 저장·승인 범위 미검증으로 PARTIAL_SOURCE 유지. **독립 R3-06/07(29·30번째) 기존 Census QFR 실제 PC ZIP 저장·stored-only 계산 PASS 재사용으로 DONE** → 전체 개별 28/82, 순차 포인터는 R3-04 유지 |
+| 마지막 검증 완료점 | **R3-03 연속 DONE (§36)**; R3-04 source CI 12/12 PASS이나 PC B 승인·WPSFD42 SQLite 저장 미확인 (§37). **독립 R3-06/07 DONE (§38~39):** 기존 2026-10-27 실제 PC QFR ZIP 원본 sha 232f7757…/snapshot sha 0cf9d0e4… readback 1/1 + 저장자료 계산 2026Q2 15.599418%/Q1 14.037082%/변화 1.562336%p PASS. 새 공급자 호출/DB/D1/배포 0 |
 | 재사용할 기존 근거 | QFR 원자료 ZIP PC SQLite 저장·계산 기존 유효 증거; 앱 QFR 3-pin [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175)는 앱 main 병합, 운영 PC 설치·B 게시 별개. R1-09 소스 blob 근거는 §14 |
-| 현재 최초 실제 미완료 조건 | **순차 R3-04(27/82) `PARTIAL_SOURCE / BLOCKED_OPERATING_APPROVAL`:** WPSFD42 수집 MJS와 서비스 PREFLIGHT/APPLY CMD는 전담 브랜치·Draft PR #1203에 있으나 확인한 최신 `main`에는 없음(404). pc-control `config/operations.json`에 BLS 서비스 A 작업 미등록, 실제 PC 승인 source/설치 SHA·B급 사용 허가·기존 SQLite WPSFD42 source SHA/시각/원장 readback 미확인. `--services-only --dry-run`도 BLS API 네트워크 1회를 호출하며 단순 로컬 소스 테스트 아님. 정확한 승인 B 경로 확인 전 수집·설치 금지; R3-03 기본 3원천은 영향을 받지 않음 |
-| 다음 필수 실행 하나 | **27/82 R3-04:** 현행 PC 서비스 수집 모듈/운영 source SHA·기존 서비스 등록/승인 B manifest를 기존 Source Owner의 정규 유지보수 경로로 확인. 본 승인 범위가 실제 유효할 때만 기존 `--services-only --dry-run` BLS 공급자 1회 조회 프리플라이트 결과 TXT 회수→동일 승인 범위의 명시적 append apply→기존 SQLite WPSFD42 `chunk_sha256`/`snapshot_sha256`/`retrieved_at`/13개월 원본 readback. 범위 미충족 시 `BLOCKED_OPERATING_APPROVAL` 유지, 무단 실행/새 Controller·예약 불가 |
-| 현재 완료율 증거 | **26/82 DONE(약 31.7%)**, 현재 R3-04(27/82). R3-03 BLS 3계열 2026-10 저장/계산 read-only 실제 PC 근거 DONE 재사용, WPSFD42 신규 PC 수집/서비스 D1 별도 |
+| 현재 최초 실제 미완료 조건 | **R3-04:** WPSFD42 전용 B 설치·수집/DB 효과 승인 및 실 PC 파일 SHA 미확인. 제어 main A 43개에 서비스 수집 op 없음. 기존 writer-updates BLS 관련 승인 2개는 고용 등 공유 소스 수정이며 allowProviderCalls=false, allowDbChanges=false, 서비스 신규 원본 append 효과 미포함. 우회 실행 금지. R3-05는 SOURCE_READY나 PC 저장자료 없음. 독립 QFR R3-06/07은 기존 실 PC PASS로 별도 완료 |
+| 다음 필수 실행 하나 | **첫 미완료 R3-04(27/82):** 현 PC 서비스 수집기 source/설치 해시와 승인된 B 범위를 원담당 정규 PC Source Owner 경로로 확인. 승인 범위 성립하면 WPSFD42 수동 preflight(실제 BLS API 1회) 및 ZIP이 아닌 서비스 13개월 이상 SQLite source SHA/기간/원장 readback, 승인 없으면 HOLD. QFR R3-06/07은 재수집/재시험하지 않는다 |
+| 현재 완료율 증거 | **총 개별 DONE 28/82(약 34.1%), 순차 연속 DONE 26/82(약 31.7%)**. 독립 QFR R3-06·R3-07 기존 실제 PC 검증 확정, R3-04/05 WPSFD42는 미완료. R4/D1/API/UI 후속 실증 아님 |
 | 최종 갱신 식별 | 이 문서의 **최신 원격 브랜치 HEAD 및 Git blob SHA를 재조회**해 근거로 보고한다. 고정된 과거 SHA를 현행값으로 복사하지 않는다 |
-| **순차 포인터·완료율** | **현재 27/82 R3-04**; R1-01~R3-03 연속 DONE **26/82(약 31.7%)**. 서비스 PC 실제 저장 및 사이트 게시 진행 아님 |
+| **순차 포인터·완료율** | **첫 미완료 R3-04 = 27/82**, 연속 26/82(31.7%). 원담당 독립 Census QFR R3-06/07을 기존 PC 유효 증거로 완료, **개별 DONE 28/82(34.1%)**. 계획 조건부 HOLD가 독립 업무를 막지 않는 예외 사용, 순서 허위 변경 없음 |
 | R1-09 이번 실행 | 2026-11-17 08시 KST: B 경제지표 `/economic-indicators/earnings/`→`EconomicDetailPanel`→`/api/market-score` `domains[id=earnings]`와 A 8대 위험 4요소·C 보조 GET의 별도 계약 소스 검증. `DONE`, 완료 9/82. 경계 상세·blob §14; 운영 GET·D1 미검증. 다음 R1-10 |
 
 ### D. 다음 작업자 재개 순서 및 변경 충돌
@@ -54,12 +54,12 @@
 
 | 판정 항목 | 실제 상태 |
 |---|---|
-| **순차 완료 확정** | **26/82 (약 31.7%)** — R3-03 기검증 BLS 3계열 stored-only PC 계산 근거 재사용 |
-| **현재 순차 진행 단계** | **27/82 = R3-04** (BLS WPSFD42 승인 수동 PC 수집·SQLite SHA 재조회 조건 확인) |
-| **82개 중 개별 완료 확정** | **26개** (R1-01~R3-03), 서비스 수집/게시 미검증 |
+| **순차 완료 확정** | **연속 26/82(31.7%)**, 비연속 독립 QFR 2개 포함 **개별 28/82(34.1%)** |
+| **현재 순차 진행 단계** | **27/82 = R3-04**, R3-05 SOURCE_READY 미완료, R3-06/07 PC 과거 실증 재사용 DONE |
+| **82개 중 개별 완료 확정** | **28개**, 연속 R1-01~R3-03 26개 + 독립 QFR R3-06, R3-07 2개 |
 | **71번 R6-04** | **후행 소스 선행 작업·현재 운영 승인 미해결**, 순차 71단계에 도달한 것이 아님 |
-| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 완료 26개, 남은 56개 단계 판정 대상 |
-| **다음 실제 수행 하나** | **R3-04(27/82):** WPSFD42 서비스 기존 수동 수집 승인·운영 source·실제 원문 저장/SHA readback 단일 실행 점검 |
+| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 개별 DONE 28개, 미완료 54개, 첫 순차 미완료 R3-04 |
+| **다음 실제 수행 하나** | **R3-04 WPSFD42** 기존 승인 B 설치·실제 PC source/SQLite 재조회, 승인 없으면 효과 제한 HOLD. 완료된 QFR R3-06/07 재실행 금지 |
 
 **순서 운용:** 다음 번호로 넘어가는 기준은 해당 단계의 **계획서 완료 조건 + 근거 링크**이며, 뒤 단계에서 미리 통과한 PR·CI는 계획 순번을 바꾸지 않는 선행 자산으로 유지한다. 사용자 승인 없이 순번이나 완료 기준을 수정하지 않는다. 조건부 HOLD·장기 DEFERRED는 계획서대로 처리하며 다른 독립 승인 작업의 수행을 중단하는 새로운 Gate가 아니다.
 
@@ -98,8 +98,8 @@
 | R3-03 | 기존 BLS 3원천 저장·계산 PC 실측 증거 재사용 | `DONE` | **§36** R3-D 2026-10-26 18:20:33Z 실제 PC TXT `PASS_R3D_STORED_ONLY_CALCULATION`; WPSFD4/41 2025-01~2026-09 각21월/9쌍/0결측, PRS85006111 2025Q1~2026Q2 6분기/0결측, snapshot SHA 3/3·청크/코호트 fetchedAt+response hash PASS. 원시 저장자료로 계산 PPI own SA YoY 6.346301%/9.772194%, ULC raw YoY 1.4%, API/SQLite/D1 writes 0, score & scheduler unchanged. 기존 PC 증거/실제 R3-D 검증 reader source 대조·재사용, 공급자 추가 호출 0, 2026-11 최신 관측으로 위장하지 않음 |
 | R3-04 | WPSFD42 승인 수동 수집 후 SQLite 원본·SHA·시각 재조회 | `PARTIAL_SOURCE` | **§37** W05 수집기·WPSFD42 기존 수동 PREFLIGHT/APPLY CMD 2개+테스트 12건을 main 기준 별도 Draft PR #1203(정확히 4파일, head `15ca748e`)으로 분리. Node24 CI #43988919125 completed/success, base9+서비스3=12/12 로그 PASS, 빌드·타입·전체 회귀/PC 게시/Cloudflare 계약 PASS. 전담 source 파일 main에 없음(404), pc-control A allowlist 전용 WPSFD42 op 없음; 실제 운영 PC 설치/기승인 B source 경로·WPSFD42 저장·SHA/기간/원장 미확인. `dry-run`은 provider API 호출. **운영 효과 BLOCKED_OPERATING_APPROVAL/NOT_VERIFIED, R3-04 DONE 아님**, 신규 수집·DB·D1·Production 쓰기 0 |
 | R3-05 | WPSFD42 저장자료로 서비스 PPI·YoY 정보성 2행 계산 | `SOURCE_READY` | WPSFD42 2행 계산 브랜치 구현 존재, 실제 운영 저장원본 입력 증거 미확정 |
-| R3-06 | Census QFR 기존 ZIP 저장 경로·SHA·분기·원장 재조회 | `EXISTING_EVIDENCE` | QFR R2 PC SQLite ZIP 저장·SHA/checkpoint PASS 이력 재사용 |
-| R3-07 | 저장 QFR로 제조업 세후이익률 현재·직전·변화폭 계산 | `EXISTING_EVIDENCE` | QFR R3 stored-only 계산 PASS 이력 재사용 |
+| R3-06 | Census QFR 기존 ZIP 저장 경로·SHA·분기·원장 재조회 | `DONE` | **§38** 2026-10-27 승인 PC SQLite ZIP append 결과 PASS_QFR_SQLITE_APPEND_READBACK, chunk/snapshot 1/1, 원본 ZIP sha256=232f7757e654e787a9eab49792302feb3683e5280a66ff0cc9bd7f0cbc448654, observedThrough=2026Q2. 2026-10-27 R3 read-only 실 PC STORED_SNAPSHOTS_VERIFIED=1 및 snapshotSha256=0cf9d0e4bced96b300810a448bf67be3b663252178f15853f103561d876ddeb3, retrievedAt=2026-10-27T14:52:13.108Z, sourceStoredAt=1793112733108. R2/R3 source/원격 승인 당시 보고 대조; 신규 공급자/PC 호출 없음, 현재 Q3 데이터·D1/웹 미검증 |
+| R3-07 | 저장 QFR로 제조업 세후이익률 현재·직전·변화폭 계산 | `DONE` | **§39** 기존 운영 PC read-only R3 결과 PASS_QFR_STORED_READONLY_PREVIEW: 2026Q2 15.599418144173285%, 2026Q1 14.03708175763798%, 변화 +1.5623363865353053%p; 2025Q2~2026Q2 5연속 분기, 동일 QFR ZIP sha와 snapshot sha verified. 원료 afterTaxProfit/sales 직접 재계산 후 stored margin strict match, API/SQLite/D1/score/배포 쓰기 0. 2026-10 당시 실증 재사용, 현재 신규 Q3 수집/사이트 게시 아님 |
 | R3-08 | BEA 단위이익의 기존 저장 원본 탐색, 필요 시 승인 1회 수집 | `SOURCE_READY` | BEA 저장 원본 capture helper 구현·CI PASS, 실제 PC 저장본 확인 안 됨 |
 | R3-09 | BEA 단위이익 CSV·메타·SHA를 하나의 고정 버전에 결속 | `SOURCE_CI_PASS` | 앱 PR #1183 저장 CSV+meta SHA 보관 5/5 Node fixture PASS, 실PC 아카이브 검증 미완료 |
 | R3-10 | BEA 단위이익 계산기에서 공급자 호출 분리 | `SOURCE_CI_PASS` | 앱 PR #1183 provider-fetch-free 게시/계산 준비 및 Node CI 성공, 운영 원본 미검증 |
@@ -756,3 +756,19 @@ R2-03에 요구한 산업범위·명목/실질·IVA와 CCAdj의 차이·SAAR/분
 **LAST PASS:** WPSFD42 서비스 수집기와 2개 수동 CMD의 소스+12 Node24 회귀, CI 전체 PASS. **FIRST UNFINISHED / STATUS:** `BLOCKED_OPERATING_APPROVAL` (정확한 B급 유지보수 승인·실제 source PC 설치·WPSFD42 수집 유효 범위 미검증), PC raw state `NOT_VERIFIED`, 즉 R3-04 `PARTIAL_SOURCE`, **DONE=26/82 (31.7%) 유지**. 추상적 Controller 재설치나 새로운 예약을 설치 Gate로 두지 않는다.
 
 **다음 필수 실행 — W05 / 실제 PC Source Owner:** 기존 승인 정본의 B grade manifest/운영 PC source SHA/기설치 모듈 존재·원자료 경로를 먼저 확인한다. 승인된 동일 범위라면 **한 번만** 공식 WPSFD42 preflight(공급자 1회 API POST) 및 TXT/JSON 결과 회수, 이어 승인 범위·원본 보호·SQLite 자원 lock 확인 후 명시적 수동 append apply 1회, 기존 `api_history_chunks_v1`/`api_history_snapshots_v1` 의 `BLS/WPSFD42` SHA/period/retrievedAt/sourceVersion 실제 readback으로 종료. B 승인/설치가 확인되지 않으면 다른 도구/임의 pc-job으로 우회하지 않고 단계 한정 BLOCKED, 다음 R3-05 서비스 계산을 source-only 상태에서 실제 완료로 승격하지 않는다.
+
+## 38. R3-06 (2026-11-17 KST) 독립 QFR 불변 원문 저장과 SHA PC 기존 증거 재사용 — DONE(PAST_PC)
+
+**예외:** 첫 미완료 R3-04 WPSFD42 승인/저장은 계속 BLOCKED. QFR은 해당 수집기와 무관하며 계획의 조건부 HOLD 독립 작업 계속 원칙에 따라 기검증 PC 결과를 재사용했다. 순차 포인터는 R3-04로 유지한다.
+
+- 기존 운영 PC R2 결과: docs/EARNINGS_CENSUS_QFR_RAW_SQLITE_R2_20261027.md (blob 064d47ca0b5ba54aa1909e153678aebf93fd296d), 2026-10-27T14:52:11Z, PASS_QFR_SQLITE_APPEND_READBACK, CHUNKS_INSERTED=1, SNAPSHOTS_INSERTED=1, SQLITE_COMMITTED=YES, 승인 ZIP sha256=232f7757e654e787a9eab49792302feb3683e5280a66ff0cc9bd7f0cbc448654, observedThrough 2026Q2, provider=CENSUS/dataset=QFR_MFG_US_NSA_AFTER_TAX_MARGIN.
+- 기존 운영 PC R3 저장 source readback: docs/EARNINGS_CENSUS_QFR_R3_STORED_PREVIEW_20261027.md (blob 420256cc0a965dd7cd609e2c08d05f723e3ae0c7), 2026-10-27T15:06:35Z, PASS_QFR_STORED_READONLY_PREVIEW, STORED_SNAPSHOTS_VERIFIED=1, 같은 original sha, snapshotSha256=0cf9d0e4bced96b300810a448bf67be3b663252178f15853f103561d876ddeb3, SOURCE_RETRIEVED_AT=2026-10-27T14:52:13.108Z, SOURCE_STORED_AT=1793112733108, observedThrough=2026Q2.
+- reader 소스 scripts/pc-writer/EARNINGS_CENSUS_QFR_R3_STORED_PREVIEW_READONLY.mjs blob e52d26366daf57102983a4c4d55e2491e85d8e78: readOnly SQLite + query_only; 전체 ZIP/chunk/snapshot SHA·시점/provenance·동시각 상충 검사 후 period/retrieval 순으로 최신 불변본 선택. 제공자 호출 0. 기존 R2 메타/SQLite 원본 1/1 readback과 동일 source chain 검증 재사용.
+- 결론: R3-06 DONE은 **2026-10-27 당시의 실제 PC 저장·SHA readback**. 2026Q3 원본·현재 최신 수정치, 정규 수집/대시보드/API/D1 배포 성공은 NOT_VERIFIED. 이번 신규 PC/공급자 호출/SQLite/D1 쓰기 0.
+
+## 39. R3-07 (2026-11-17 KST) 독립 QFR 저장자료 기반 현재/직전/변화폭 실 PC 이전 PASS 재사용 — DONE(PAST_PC)
+
+- 계산 계약: 같은 MFG/US/NSA/et_idx=0, 동일 raw Census ZIP의 분기별 after_tax_profit_millions_usd와 sales_millions_usd를 직접 사용해 100 * numerator / denominator, 전분기 차이는 %p. 다른 표본/공식 seasonally adjusted 값과 섞지 않는다.
+- 실제 PC 저장자료 결과 TXT EARNINGS_CENSUS_QFR_R3_STORED_RESULT_20261027T150635Z.txt, RESULT=PASS_QFR_STORED_READONLY_PREVIEW: 2026Q2 15.599418144173285%, 2026Q1 14.03708175763798%, CHANGE_PERCENTAGE_POINTS=+1.5623363865353053, 2025Q2~2026Q2 5분기 이력. SOURCE_SHA256=232f7757e654e787a9eab49792302feb3683e5280a66ff0cc9bd7f0cbc448654, SNAPSHOT_SHA256=0cf9d0e4bced96b300810a448bf67be3b663252178f15853f103561d876ddeb3.
+- 기존 PC reader source buildStoredQfrPreview에서 저장된 원료를 **다시 계산**하여 저장된 파생 margin과 불일치하면 QFR_STORED_DERIVED_VALUE_MISMATCH로 fail closed. R3_STORED_PREVIEW_READONLY.test.mjs 과거 6 fixture cases 중 개정 원본 선택·변조·provider 혼선 방어를 구현. 2026-10 PC 유효 증거를 재사용하며 이번 새 CI/PC 테스트 수행으로 허위 보고하지 않는다.
+- 결론: R3-07 DONE(PAST_PC). SOURCE_HTTP_REQUESTS/PC_SQLITE_WRITES/D1_WRITES/SCORE_WRITES/WEB_DEPLOYMENTS=0. 향후 2026Q3 신규 raw·신규 D1 게시/GET/모바일 UI는 별도 단계. 순차 포인터 R3-04 유지.
