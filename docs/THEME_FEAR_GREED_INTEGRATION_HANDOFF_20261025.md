@@ -1,5 +1,15 @@
 # 테마 공포·탐욕 통합 개발 브랜치 — 작업 원장 / 인수인계
 
+## 2026-11-17 W03 9/68 — #1841 복구 read-only source 보완 PR #1853
+
+- **기준 단계 및 진행률:** 시작/종료 W03 8/68 DONE(11.8%), 9/68 IN_PROGRESS. #1841 Controller 복구 및 R47 CMD 운영 교체·수집·계산·게시 별도 미완료.
+- **원본 증거:** 실제 [#1851 운영 PC read-only](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1851#issuecomment-6935201575) PASS, 실제 Controller 384ffd09… (정상 동작 중), Supervisor 생존·신원·최신성 PASS, 공유 installLockHeld=true/recoveryRequired=true, GitHub pc-job Workflow disabled_manually, Runner 6개 상태 조회 HTTP403=UNVERIFIED. 기존 #1841는 UNKNOWN/BACKLOG_OR_RECOVERY_NOT_VERIFIED, firstFail SWITCHED. 현재 lease를 #1841 소유라고 확정할 원장·owner marker 상관 검증 없음.
+- **공용 정식 접수:** 기존 #1841 요청을 다시 실행하지 않고 [#1852](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1852#issuecomment-6935218624) `ZGMINI_AGENT_HANDOFF_V1` 단일 incident로 연결; 봇 HANDOFF_ROUTED, COMMON_PROCESS_OWNER, 상태 AWAITING_AGENT_CONFIGURATION = 실제 AI/다른 ChatGPT 대화 자동 인계 **미설정**. [#1852 운영 PC 증거 설명](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1852#issuecomment-6935236575) 기록 및 원본 #1841·중앙 #68 인계.
+- **기존 공용 도구의 정확한 미지원 범위:** 고정 `tools/pc-process-inventory-readonly.mjs`에서는 #996/#1501 original lease correlation만 구현됐음. #1841 ledger+현재 owner/marker 상관이 불가하여 공유 lease를 특정 B 요청에 귀속할 수 없음. 기존 Windows 정규 `maintenance-recovery.mjs`는 out-of-band 승인/해시 고정이고 임의 GitHub pc-job/원격 shell로 사용 불가.
+- **이번 회차 추가 신규 Source PR:** [#1853](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1853) 정확 2파일 `tools/pc-process-inventory-readonly.mjs`, `tests/pc-process-inventory-readonly.test.mjs` 소스 브랜치 `fix/w03-1841-recovery-preimage-readonly-20261117`, HEAD `0352e4ffc1db36bfb75a0e225a2d13996978e16b`. 새로운 Runner·Workflow·고정 작업 종류 없음. 현행 승인된 독립 운영 PC readonly 작업에 #1841 정확 ID/issue/target을 코드로만 pin하고, owner/marker/ledger 2회 읽기·SHA/시각/원본 승인 계약 검사 후 안전한 `CORRELATED` 또는 `STATE_UNKNOWN`으로 분리. 기존 검증된 원본 `phase/firstFail/failureOperation`, backup/backlog **존재 여부**만 비민감 projection으로 제한. 실제 파일·nonce·로그·명령/비밀·운영 데이터·DB/D1/Task 읽기 추가 범위 없음. `eligibleForAutomaticRelease=false` 고정, owner 불명·원장 시각 상충 시 피드백 제공하되 lock 해제/rollback/재설치 금지.
+- **검증 상태:** 새 읽기 전용 회귀시험 3건 포함, 기존 외부 PC CI 두 건 [Run 43998134113](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43998134113) (process-source-tests), [Run 43998134145](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43998134145) (C996) 마지막 확인 `queued`, 아직 **PASS 아님**, PR open/unmerged, 실PC 신규 조회 **실행하지 않음**. 별도 운영 효과/공급자 호출/DB/Writer/D1/예약/Controller 설치 0.
+- **다음 한 작업:** PR #1853 실제 Windows source-only CI 결과 대조 → 통과한 경우에만 소스 리뷰/정규 main 병합 → 기존 `pc-process-inventory-readonly`의 **새 고유 단회 read-only Issue**로 #1841 원장과 현재 잠금 owner 결속 여부·상태를 회수 → 공유 복구 단일 owner가 고정 승인 명세 기반으로 후속 결정. CI 미완료/실패일 경우 실제 PC 요청·병합 금지, 정확 FIRST FAIL만 수정. W03 기능 source 개발은 별도 계속.
+
 ## 2026-11-17 W03 9/68 — 공식 공용 복구 인계 및 PC 설치 잠금 읽기 전용 실측
 
 - **진행률:** 시작/종료 **8/68 DONE (11.8%), 9/68 IN_PROGRESS**. 독립 공용 PC 상태 조회/정식 사건 접수 완료, 새로운 R47 CMD 설치·수동 증분 수집·점수·D1/API/UI 게시 완료 증거 **0**.
