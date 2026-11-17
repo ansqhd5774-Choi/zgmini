@@ -55,3 +55,8 @@
 - **LAST PASS:** 화면에서 **재구성 현재 빈티지 vs 계산시각**이라는 *알려진 두 출처*의 선 연결 차단, 값/시각·0점·카드·장기 6M/1Y 보존. Node/Chromium PASS, main 병합, 소스 재조회. Writer/archive/GET/DB/D1/모델/가중치/TTL/예약/Controller/수동 배포 영향 0.
 - **FIRST UNVERIFIED:** 저장 실제 계산점 내부에서도 서로 다른 **모델/도메인 방법론**이 사용됐는지 판단할 `modelVersion/methodologyVersion`이 기존 archive GET `points`에 없음. 동일 출처 실제 계산점의 모델 변경 경계까지 자동 단절한 것으로 주장 금지. 저장 `signature`는 점수 등도 포함하므로 버전 ID로 역추정할 수 없음. 기존 원본 계약을 사용자 승인 없이 바꾸거나 구버전 이력에 가짜 method ID를 채우지 않는다.
 - **판정:** #28 **PARTIAL** 유지. 화면 차트 두 종류의 선분 구분은 코드/CI/main에 적용, but per-point historical methodology/version contract는 해당 계산·Writer **기능 원담당**의 정확 승인/기록 범위. 공통 Controller에 기능 계약 수정 전가 금지, **프로세스 총괄 신규 인계 0건**. 기존 고유 DONE **22/75(29.3%)**, 유효 미완료 증거 독립 유지.
+
+## Git Integration exact Build 결과 (2026-11-17 20:07 KST)
+
+- `main@29b5e7296ee780a312a36c12ec3fe958a5c13ab3` 체크 `Workers Builds: zgmini-migration-candidate-r5` 정확 Build `38b07fae-8649-459b-8232-5530d5fd0f67` **completed/success** (GitHub commit check 직접 재조회), `verify/check/notify` 모두 completed/success. 상기 섹션의 RUNNING은 최초 관측 이력이며 최신 상태는 SUCCESS.
+- 결과 범위: **개발 source→Git Integration Build**. Cloudflare exact active Deployment ID/served SHA·사용자 최종 웹화면은 미확정이므로 #75 PARTIAL. PC Writer 실제 설치 SHA도 #01 PARTIAL. #28 화면 2종 provenance 선분 분리 소스/CI/main PASS이나 per-point methodVersion 불명으로 #28 PARTIAL, 고유 22/75 불변.
