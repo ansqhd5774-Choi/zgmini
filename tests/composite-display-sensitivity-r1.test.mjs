@@ -29,6 +29,7 @@ test("dashboard applies sensitivity only to Overall presentation",()=>{
   const src=fs.readFileSync(new URL("../app/dashboard-ui.tsx",import.meta.url),"utf8");
   assert.match(src,/overallRawScore/);
   assert.match(src,/amplifyCompositeDisplayScore\(overallRawScore\)/);
-  assert.match(src,/amplifyCompositeDisplayTrend\(normalizeMarketTrendPoints\(market\?\.overall\?\.trend\)\)/);
+  assert.match(src,/amplifyCompositeDisplayTrend\(normalizeMarketTrendPointsR4\(market\?\.overall\?\.trend\)\)/);
+  assert.match(src,/import \{normalizeMarketTrendPointsR4\} from/);
   assert.doesNotMatch(src,/amplifyCompositeDisplayScore\(score\)/);
 });
