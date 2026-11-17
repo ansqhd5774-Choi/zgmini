@@ -26,7 +26,7 @@ const knownById=new Map([...KNOWN_EARNINGS_COST_INDICATORS,
 
 function safeBlsRow(row){
   const known=knownById.get(row?.indicatorId);
-  return row!==null&&typeof row==='object'&&!Array.isArray(row)
+  return Boolean(known)&&row!==null&&typeof row==='object'&&!Array.isArray(row)
     &&typeof row.indicatorId==='string'&&/^bls_[a-z0-9_]{3,100}$/.test(row.indicatorId)
     &&row.provider==='BLS'
     &&typeof row.seriesId==='string'&&/^[A-Z0-9]{4,25}$/.test(row.seriesId)
@@ -40,7 +40,7 @@ function safeBlsRow(row){
     &&row.adjustment==='SA'
     &&['READY','PARTIAL','PENDING','SOURCE_FAILED','UNAVAILABLE','STALE'].includes(row.status)
     &&(row.status!=='READY'||Number.isFinite(row.value))
-    &&(!known||(known.series===row.seriesId&&known.kind===row.kind&&known.unit===row.unit));
+    &&known.series===row.seriesId&&known.kind===row.kind&&known.unit===row.unit;
 }
 
 export function buildEarningsCostIndicatorView(payload){
@@ -50,9 +50,14 @@ export function buildEarningsCostIndicatorView(payload){
   const rows=[];
   const indicators=[...KNOWN_EARNINGS_COST_INDICATORS];
   if(valid){
+    // Publish only the approved service pair. A partial/invalid extension
+    // must not create a misleading sixth table row on either viewport.
+    const hasServicePair=OPTIONAL_EARNINGS_COST_INDICATORS.every(meta=>
+      payload.rows.some(row=>row?.indicatorId===meta.id&&safeBlsRow(row)));
     const seen=new Set();
     for(const row of payload.rows){
-      if(!safeBlsRow(row)||seen.has(row.indicatorId))continue;
+      if(!safeBlsRow(row)||seen.has(row.indicatorId)
+        ||(!knownIds.has(row.indicatorId)&&!hasServicePair))continue;
       seen.add(row.indicatorId);
       rows.push(row);
       if(!knownIds.has(row.indicatorId)){
