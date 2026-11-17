@@ -4,7 +4,12 @@ import {fileURLToPath} from 'node:url';
 import {read} from './d1.mjs';
 import {client,credential} from './d1.mjs';
 import {PUBLIC_PROJECTION_KEYS} from '../../worker/market-public-projection-store.mjs';
-import {summarizeThemePublicReadback} from './theme-public-readback-presence.mjs';
+import {summarizeThemePublicReadback,themeSevenMetadataOnly} from './theme-public-readback-presence.mjs';
+
+const mode=process.argv.length===2?'full':
+ process.argv.length===3&&process.argv[2]==='--theme-seven-metadata-only'?'theme-seven':null;
+if(mode===null)throw Object.assign(new Error('PUBLICATION_READBACK_ARGUMENTS_INVALID'),
+ {code:'PUBLICATION_READBACK_ARGUMENTS_INVALID'});
 
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
 const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
@@ -15,4 +20,8 @@ for(const item of projectionStatements){const row=(await remote.query(cfg.core,i
 const market=(await remote.query(cfg.core,"SELECT stored_at FROM market_public_snapshots_v1 WHERE snapshot_key='current'")).results[0]??null;
 const feeds=(await remote.query(cfg.core,"SELECT feed_key,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND snapshot_key='current' ORDER BY feed_key")).results;
 const observedAt=new Date().toISOString();
-console.log(JSON.stringify({at:observedAt,market:{storedAt:market?.stored_at??null},projections:projectionRows,feeds:feeds.map(row=>({feedKey:row.feed_key,storedAt:row.stored_at})),themePublicReadback:summarizeThemePublicReadback(feeds,{observedAt}),stats:remote.stats}));
+if(mode==='theme-seven'){
+ console.log(JSON.stringify(themeSevenMetadataOnly(feeds,{observedAt})));
+}else{
+ console.log(JSON.stringify({at:observedAt,market:{storedAt:market?.stored_at??null},projections:projectionRows,feeds:feeds.map(row=>({feedKey:row.feed_key,storedAt:row.stored_at})),themePublicReadback:summarizeThemePublicReadback(feeds,{observedAt}),stats:remote.stats}));
+}
