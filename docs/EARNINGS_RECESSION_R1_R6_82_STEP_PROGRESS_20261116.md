@@ -1161,3 +1161,17 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 
 **NEXT 필수 행동 하나:** W05 원담당이 #1885 정식 승인 여부·정확 manifest를 확인, 정식 승인 이후에만 기존 공통 Writer B source-only 단회 설치→실PC 해시·JSON/TXT·Task 보호 확인. 프로세스 총괄 재인계 금지. 후속 PR #1231은 승인된 R3-04 고정 후보를 방해하지 않고 별도 CI/향후 source 개선 경로에 보존.
 
+
+
+## 63. R3-04 (2026-11-17 15:58 KST) 정식 source-only B 승인 등록 및 설치 실행 접수 확인 — APPROVED_B / INSTALL_RUNNING
+
+**시작→종료 진행률:** 순차 DONE 26/82(31.7%), 개별 DONE 28/82(34.1%) 유지. 첫 미완료 R3-04. 이번 회차는 기존 실행을 중복 접수하지 않고 최신 승인/실행을 원격 재조회.
+
+- [공통 Owner 정확 효과 GO #1885/6941008513](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1885#issuecomment-6941008513)에서 기존 후보 `2a9a38a452b5ba95a3e370c5b56445bb75fa05bb`의 R3C/R3D/Preview 3파일 source-only 설치 1회 GO 확정. Provider POST, SQLite, D1, Task 정의 변경, 파일 직접 실행은 승인 제외.
+- 제어 main 정규 [승인 manifest](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/approvals/writer-updates/w05-r304-wpsfd42-threefile-source-20261117.json) 실제 존재: `status=APPROVED_B`, Git blob `09d11ed051e0d5a76b7a3892836a50fc6eb9b52a`, after SHA256 3개는 기존 §61 고정 값과 일치. 이전 `PROPOSED_NOT_APPROVED`와 구별.
+- 기존 단회 [설치 Issue #1919](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1919) OPEN, `pc-writer-b-install` 라벨, requestId `d851f33e-621c-4d20-baf9-eaa10ae29d1d`, manifest raw SHA256 `4397597f7424146c81218c0d3e1eaf12d25afa26a3b62f89bfde1074e8d95f16` 참조. 신규 중복 Issue 생성 금지.
+- 기존 [Windows Writer B Run 44034883567](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44034883567) `ZGMINI Approved Writer B Source Overlay Once`: 2026-11-17 15:58 KST 재조회 기준 `in_progress`, 결론 없음. 설치 성공/실패·실제 PC afterSHA·원격 JSON/TXT 결과는 아직 미확인. 실행 중 중복 트리거/lock 삭제 금지.
+
+**LAST PASS:** 정식 효과 GO와 제어 main `APPROVED_B` manifest 및 고유 설치 Issue/실행 중 Run 확인. **FIRST UNFINISHED:** 기존 Run 44034883567 종료 결과·JSON/TXT 2/2·PC 3파일 afterSHA 및 protected/source/Task/lease 검증. 별도 WPSFD42 BLS POST+SQLite append 기능 승인·원자료 저장은 여전히 미완료.
+
+**NEXT:** 기존 Run 44034883567 완료를 확인한 후 해당 고유 Issue와 원격 JSON/TXT·PC 해시를 재조회해 설치 PASS/STOP을 판정한다. 성공 시 별도 기능 B 승인·수동 1회 수집으로 진행; 실패 시 정확 STOP 코드만 보고하고 무승인 재시도 금지.
