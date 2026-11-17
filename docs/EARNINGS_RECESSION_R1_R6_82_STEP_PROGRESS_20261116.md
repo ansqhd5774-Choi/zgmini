@@ -1086,3 +1086,16 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 **LAST PASS:** 변경 R3C/test exact HEAD GitHub CI 5/5 PASS, before/after SHA 검증·비승인 proposal/비실행 Issue 갱신. **FIRST UNFINISHED:** Owner가 최신 source 후보로 정확 GO/NO-GO와 승인 manifest 등록, 실제 PC current Git tree A/index·lease/preimage/보호 consumer 사전검증 및 정규 Writer B 설치 JSON/TXT 2/2·PC 3파일 after SHA; 이후 별도 WPSFD42 BLS API POST/SQLite append B 승인 후 raw/checkpoint→R3-05 계산→서비스 D1/API/UI. 실제 PC/공급자/SQLite/D1/Task/배포 이번 변경 **0건**.
 
 **NEXT 필수 행동 하나 / 담당:** 공통 Writer Owner·승인권자가 최신 #1885 source-only 3파일 범위·R3C `87e811b608ea7358c48aceebfe458e24e5887f2f31207481783abcad516a1af3` + R3D/Preview 불변 해시·현재 PC preimage/lease/Task 영향의 승인 여부를 명시해 제어 `APPROVED_B` manifest로 등록(또는 NO-GO 최소 수정 범위 회신). 원담당 W05는 유효 승인 시 기존 공통 B 단회 설치만 진행하고 운영 원자료 수집은 별도 B 효과 승인 후 수행.
+
+
+## 59. R3-04 (2026-11-17 14:58 KST) 공유 Writer Owner 신규 후보 계약 재검토 수신 — CONDITIONALLY_ADMISSIBLE / APPROVAL_NOT_GRANTED
+
+**시작→종료 진행률:** 순차 DONE **26/82(31.7%)**, 개별 DONE **28/82(34.1%)** 불변. 첫 미완료 R3-04. 이번에는 새 수집/설치/승인 없이 기존 증거와 신규 Owner 검토 회신을 대조함.
+
+- [공통 Owner 회신 #1885 댓글 6939786360](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1885#issuecomment-6939786360): 신규 source candidate `2a9a38a452b5ba95a3e370c5b56445bb75fa05bb`의 **정확 3개 .mjs 파일**을 기존 Writer B 경로 계약상 조건부 수용 가능으로 재판정. 구 후보 대비 R3C 1개만 변경, R3D/Preview 불변. 다른 CMD 2개/테스트 2개/Worker 1개는 설치 allowFiles 범위 밖. 정확 CI #44021987724 PASS 증거 재사용.
+- **판정은 `UPDATED_SOURCE_SCOPE_CONDITIONALLY_ADMISSIBLE / APPROVED_B_NOT_GRANTED / PC_INSTALL_NO_GO`**. `PROPOSED_NOT_APPROVED` JSON은 정규 승인 manifest가 아님. 현재 PC HEAD/config.source, local Git index의 `change:A`, lease, protected consumers, launcher/Task XML 의존성은 설치 전 preflight에서 검증해야 함. 과거 #1860의 3파일 ABSENT/HEAD 관측을 현행으로 승격하지 않음.
+- 설치 3파일 after SHA-256: R3C `87e811b608ea7358c48aceebfe458e24e5887f2f31207481783abcad516a1af3`; R3D `b441a52551a015ab9522280ee7c3f620fc8efd967c8dd0e6e04865bb72c97b31`; Preview `f3f6e41b3b61039580db7ab7f6bed3133eb305ffef35e4b4b7ea919e0220ea77`. Source-only 범위에서 R3C `--dry-run`도 BLS POST가 가능하므로 실행 금지. Provider POST/SQLite append는 별도 B 효과 승인 필요.
+
+**LAST PASS:** 신규 후보 3파일의 공통 계약 기술 적합성 재검토 회신 수신; 기존 exact source CI PASS 재사용. **FIRST UNFINISHED:** 승인권자 GO/NO-GO 및 정식 `APPROVED_B` manifest 원문 SHA, 현재 PC 로컬 preflight, Writer B 1회 설치 결과 JSON/TXT 2/2 및 파일 SHA, 별도 BLS POST/SQLite 저장 승인. **이번 운영 효과:** 0건.
+
+**NEXT 하나 / 담당 / 성공 조건:** 공유 Writer Source Owner·실제 승인권자가 #1885의 신규 후보 3파일 해시와 현재 PC source/index/lease/Task/protected 영향에 대해 정확 GO/NO-GO 및 승인 manifest를 확정. 유효한 GO와 정식 manifest 등록 후에만 W05가 기존 Writer B 단회 설치 및 PC readback 수행. 승인 없이 트리거/수집/SQLite/D1 쓰기 금지.
