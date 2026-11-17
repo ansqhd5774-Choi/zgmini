@@ -4,7 +4,7 @@
   "scope": "PC_WRITER_APPROVED_FILE_OVERLAY_ONLY",
   "sourceRepository": "ansqhd5774-Choi/zgmini",
   "sourceBranch": "codex/w05-bls-service-r3-05-lineage-ci-20261117",
-  "candidateSourceSha": "372c641ee2c8b6cb0c326e06b60b889bb38b05f0",
+  "candidateSourceSha": "d0e2ae07fcf7ff658b65930284e5f4e6a0b80b2a",
   "baseHead": "2070ff53549e2f9f2cea57d5af7e1d83f9fd7388",
   "baseConfigSourceSha": "2070ff53549e2f9f2cea57d5af7e1d83f9fd7388",
   "sourceRoot": "E:\\ZGmini\\projects\\zgmini-earnings-history-pc-release",
@@ -15,7 +15,7 @@
       "path": "scripts/pc-writer/EARNINGS_R3C_BLS_STORE_ONCE.mjs",
       "change": "A",
       "beforeSha256": null,
-      "afterSha256": "31eb8f2c0514644fe32f86aa9ef5ae9dde742cc3c4c9090cd919ef00410cb5f6"
+      "afterSha256": "a2ed6e1b6b5b9295b4632ac978f058a032665b1041c24d73334c62c42719dca1"
     },
     {
       "path": "scripts/pc-writer/EARNINGS_R3D_STORED_BLS_CALC_READONLY.mjs",
