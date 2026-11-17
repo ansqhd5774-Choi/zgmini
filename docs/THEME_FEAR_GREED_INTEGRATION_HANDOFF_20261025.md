@@ -1,3 +1,10 @@
+## 2026-11-17 W03 10/68 — 설치 후 shadow A #2053 안전 차단 확인 및 후속 경로 분리
+
+- **진행률:** 시작 9/68(13.2%) → 종료 9/68(13.2%), 10단계 미완료. #2049 R47 CMD 한 파일 운영 설치 PASS는 유효하며 원자료 수집·checkpoint 전진·R25/R32 신규 비공개 계산 완료를 뜻하지 않는다.
+- **신규 확인:** [기능 원장 #1009 최신 회신](https://github.com/ansqhd5774-Choi/zgmini/issues/1009#issuecomment-6949438176)의 실제 승인 A [#2053](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2053), [Run #44092762415](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44092762415)는 Actions SUCCESS지만 결과는 **BLOCKED / SHADOW_SOURCE_NOT_APPROVED**. lastPass=ALLOWLISTED_WORKER_STARTED, firstFail=ALLOWLISTED_OPERATION, sourceSha=`cf1f7c84622fb76b7ffe803f23b3d4dcb0766092`, candidateExecuted=false. 실행 성공과 작업 효과를 구분한다.
+- **원인·보호:** 현재 A shadow 등록 승인 bundle에 요청 source SHA가 없어 차단. source allowlist 우회/기존 #2053 재실행/중복 A 요청 금지. 공급자 호출·운영 원자료·SQLite·D1·Task 쓰기 0. 공통 설치 성공 #2049 취소 사유 아님.
+- **다음 실행:** (1) 기존 승인된 A의 정확한 source pin 및 현재 운영 R47/원자료/checkpoint/비공개 결과를 읽기 전용으로 비교하여 **재사용 가능한 동일 SHA 승인 경로**를 찾는다. (2) 새 source가 필수일 때만 정확 범위의 A 등록 승인·CI를 선행하고 새로운 고유 1회 검사로 source/readback 증거를 확보한다. (3) 승인된 R47 기능 경로에서 신규 SPY·63 ETF 거래일, checkpoint 및 R25/R32 비공개 결과를 동일 실행 원장으로 검증한다. (4) R181/R179 공개 문제와 권리·D1/API/UI는 독립 처리. 자연 예약 검증은 기능 완료 뒤 후속.
+
 ## 2026-11-17 W03 10/68 — R47 안전 날짜 검증 CMD 실제 PC 1파일 설치 성공 (데이터·점수는 미완료)
 
 - **진행률:** 시작·종료 9/68(13.2%), 10단계 진행 중. 사용자 목표는 승인된 PC 공급자 수집→원자료/checkpoint 저장·재조회→R25/R32 비공개 점수·결과 저장→공개 권리 확인→D1/API/UI 복구→163테마 확장. **자연 예약 실행 검증은 기능 완료 뒤 추가 후속작업**이며 현 단계의 Gate 아님.
