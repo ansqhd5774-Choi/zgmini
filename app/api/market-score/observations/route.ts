@@ -5,18 +5,16 @@ import {sampleCnnObservedPoints} from '../../../../lib/cnn-observed-sampling-r1.
 // Derived published composite scores only. Visitor GET does no calculation,
 // provider I/O, or remote write. Dates without samples are not interpolated.
 const periods={'1D':2,'1W':9,'1M':33,'3M':96,'6M':188,'1Y':370} as const;
-// Calendar dates are source-observation dates, not PC calculation timestamps.
-// UTC+14 is the maximum possible local date ahead of a UTC instant; accepting
-// that boundary avoids rejecting a legitimate local next-day date. This does
-// not authorize source collection or change publication freshness/TTL.
-const MAX_LOCAL_DATE_AHEAD_MS=14*60*60*1000;
+// The approved composite producer derives asOfDate from its UTC calculation
+// day; a genuine older source date is allowed, a future date is not.
+// This is a stored-read contract check, not a source/TTL/schedule change.
 function validStoredAsOfDate(value:unknown,calculatedAtMs:number){
  if(value===null||value===undefined)return true;
  if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;
  const date=new Date(value+'T00:00:00.000Z');
  return Number.isFinite(date.getTime())
    &&date.toISOString().slice(0,10)===value
-   &&value<=new Date(calculatedAtMs+MAX_LOCAL_DATE_AHEAD_MS).toISOString().slice(0,10);
+   &&value<=new Date(calculatedAtMs).toISOString().slice(0,10);
 }
 export async function GET(request:Request){
  const params=new URL(request.url).searchParams;
