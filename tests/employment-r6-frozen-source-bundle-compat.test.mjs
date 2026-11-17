@@ -43,6 +43,7 @@ test('W04 PIT-04-02: frozen 16-file exact source + latest isolated two-test runt
   const checkout=path.join(temporary,'approved-r6');
   let worktreeAdded=false;
   try{
+    checkFetch(BASE,BASE); // Compare against the immutable pre-change file bytes.
     checkFetch(CANDIDATE_REF,CANDIDATE);
     checkFetch(APP_TESTS_REF,APP_TESTS);
     checkFetch(MANIFEST_BRANCH_REF,MANIFEST_REF);
