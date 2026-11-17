@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {DatabaseSync} from 'node:sqlite';
 import os from 'node:os';
+import fs from 'node:fs';
 import path from 'node:path';
 import {
   checkSchema,normalizeSeries,buildPlans,insertPlans,SERVICE_SERIES,resultLogPath,
@@ -194,4 +195,17 @@ test('R3C manual diagnostic TXT is emitted under user TEMP rather than source ch
   assert.notEqual(path.dirname(resultLogPath(stamp)),path.resolve('scripts/pc-writer'));
   assert.throws(()=>resultLogPath('../foo'),/INVALID_RESULT_STAMP/);
   assert.throws(()=>resultLogPath('2026-11-17T11:45:00Z'),/INVALID_RESULT_STAMP/);
+});
+
+test('manual WPSFD42 CMD guidance matches TEMP evidence and BLS POST preflight effects',()=>{
+  const read=name=>fs.readFileSync(new URL(`../scripts/pc-writer/${name}`,import.meta.url),'utf8');
+  const preflight=read('EARNINGS_BLS_SERVICE_R1_PREFLIGHT.cmd');
+  const apply=read('EARNINGS_BLS_SERVICE_R1_APPLY.cmd');
+  for(const text of [preflight,apply]){
+    assert.match(text,/current user's TEMP directory/);
+    assert.doesNotMatch(text,/next to this CMD/i);
+  }
+  assert.match(preflight,/BLS API via POST/);
+  assert.match(preflight,/No PC SQLite or D1 write was requested/);
+  assert.match(apply,/D1 and Production were not touched by this source append/);
 });
