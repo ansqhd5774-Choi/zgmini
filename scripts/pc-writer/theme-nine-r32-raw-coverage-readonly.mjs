@@ -82,7 +82,11 @@ function readManifest(root,folder,rosterSha,symbols){
      e.schemaVersion!==(folder==='legacy-nine-r23'?'GMH_1H_OHLCV_NDJSON_R23':'GMH_1H_OHLCV_NDJSON_R35')||
      e.path!==`raw/${e.symbol}_${e.sha256}.jsonl`||unique.has(e.path))fail('PAGE_IDENTITY');
   let u;try{u=new URL(e.requestedUrl);}catch{fail('PAGE_SOURCE_URL');}
-  if(u.origin!==SOURCE||u.pathname!==`/api/v1/bars/stocks/${e.symbol}/1h`||u.searchParams.get('format')!=='jsonl')
+  if(u.origin!==SOURCE||(folder==='legacy-nine-r23'
+    ? u.pathname!==`/api/v1/bars/stocks/${e.symbol}/1h`
+    : ![`/api/v1/bars/stocks/${e.symbol}/1h`,
+        `/api/v1/bars/stocks/us/${e.symbol}/1h`].includes(u.pathname))||
+   u.searchParams.get('format')!=='jsonl')
    fail('PAGE_SOURCE_URL');
   if(folder==='legacy-nine-r23'&&
      (u.searchParams.get('start')!==R23_START||u.searchParams.get('end')!==R23_END))
