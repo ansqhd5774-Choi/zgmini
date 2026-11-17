@@ -3,6 +3,16 @@
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
 
+<!-- W01-A401-RUNTIME23-VERIFIED-20261117 -->
+## 최신 W01 A4-01 단회 실PC private 원자료 23/23 검증 완료 (이전 PARTIAL 보고 대체)
+
+- **시작 → 종료:** 30/71(42.3%) → **31/71(43.7%)**, 미완료 40. 30번째 계획 행 A4-01 만 신규 완료. 26개 원자료 전량 수집·원자료 공개 결과 게시 완료를 뜻하지 않음.
+- **Controller 설치 실측 재조회:** [B #2004](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2004) `SUCCEEDED/APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED`, actual `f7f1559bc0ef15bb9b375982d048369c474c490f`, `protectedStateUnchanged=true`, Workflow enabled. [사후 A #2006](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2006) / [Run 44075649819](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44075649819) `PASS/CORE_READONLY_DIAGNOSIS` 및 보호 전후 SHA256 `591c8e7efc555f926d3d14d70cbb92b680b100066b224e026bc9ca4c212591ae` 동일. 기존 #2002 고정 승인 host source bundle B 성공 재사용.
+- **W01 직접 A급 조회:** 기존 pc-job/6 Runner 허용목록 operation `inflation-a401-private23-readonly`로 신규 고유 [Issue #2009](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2009) `requestId=pc-294cbbe1-c658-4fa4-9b7e-fbe801e0a401` **1회**. [Run 44077269668](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44077269668) attempt1 seat1 `completed/success`. 고정 결과 [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44077269668-1-seat-1.json) 및 [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44077269668-1-seat-1.txt) 원격 재조회, `PASS/A401_PRIVATE23_SOURCE_READBACK_VERIFIED`, `expected=23,verified=23,originalReady=19,additionalReady=4`. ID 고정 집합 중 `PRESENT_VALID` 23/23, `UNVERIFIED` 0, 중복 0.
+- **보호·수집 쓰기 범위:** `evidenceScope=APPROVED_PRIVATE_SOURCE_READBACK`, `sqliteOpened=true/sqliteReadOnly=true/sqliteWrites=0`, 공급자 호출·D1·운영 데이터 쓰기 0. 사전/사후 동일 보호 SHA256 위 값. `actualExecutionSha=f7f155...`, `requestedSourceSha=29b5e7296ee780a312a36c12ec3fe958a5c13ab3`. 별도 Task·승인 산식·원자료·D1/Cloudflare 변경 0. 본 공개 결과는 원문 수치·저장 파일 경로·각 관측일 비공개로 원자료 전체 최신성/게시 상태의 별도 증거 아님.
+- **기존 총괄 인계 처리:** source-only 지원 [#6946189465](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6946189465), 신규 실제 공통 입구 결함 1건 [#6946522786](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6946522786)→[PR #2000](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2000) 병합·실제 Controller #2004 설치 확인. 총괄에 추가 기능 실행·원자료·결과 검증 인계 없음.
+- **다음 단계:** 71단계 체크리스트에서 A4-01 다음 미완료 항목을 최신 원장·유효 증거로 정하고, 실제 승인 공급자/PC 저장·계산·게시 남은 작업을 W01 원담당이 수행. 이 A 결과를 Census #28 수집 또는 26/26 원자료 확보·D1/API/UI 최신 게시 PASS로 확장 금지.
+
 <!-- W01-A401-HOSTB2002-CONTROLLERB2004-20261117 -->
 ## 최신 W01 A4-01 운영 후속 — 총괄 공통 지원 수신 → 원담당 소스 번들 등록 성공 · Controller 정규 B 결과 대기
 
@@ -249,7 +259,7 @@ B4 10 | Production·화면 최종 검증
 
 ## A4 — 26개 원자료 완전성 (8개)
 
-- [ ] **A4-01** 기존 23개 원자료 존재·유효성 확인 — PARTIAL | #43847038904 PC에서 기존 19개 공개용 로컬 projection 19/19 READY, #43860489236 신규 원자료 6/7 유효. 서로 다른 저장 타입이며 19개 개별 private raw 파일을 직접 재조회하지 않아 23개 전량 raw 입증 완료로 과대 평가 금지
+- [x] **A4-01** 기존 23개 원자료 존재·유효성 확인 — DONE | 실제 PC 단회 고정 A [Issue #2009](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2009) / [Run 44077269668](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44077269668), 원격 JSON/TXT `results/44077269668-1-seat-1`: `PASS/A401_PRIVATE23_SOURCE_READBACK_VERIFIED`, 기존 개별 private raw `19/19 PRESENT_VALID`, 보조 private raw ID2/16/24/29 `4/4 PRESENT_VALID`, 23/23 중복·미확인 0, `evidenceScope=APPROVED_PRIVATE_SOURCE_READBACK`, `sqliteOpened=true`, `sqliteReadOnly=true`, 원본·공급자·D1·SQLite 운영 쓰기 0, 보호 전후 SHA256 `591c8e7efc555f926d3d14d70cbb92b680b100066b224e026bc9ca4c212591ae` 동일. 실제 Controller `f7f1559bc0ef15bb9b375982d048369c474c490f` / approved app bundle `29b5e7296ee780a312a36c12ec3fe958a5c13ab3`. 예전 19/19 공개 projection만으로 완료하지 않았고 실PC private-source 23/23 단일 증거로 완료 판정. 개별 원자료 수치·경로·관측시각은 A 공개 프로젝션에서 의도적으로 제외, 게시·26/26 완료와 혼동 금지.
 - [x] **A4-02** 신규 CPI 임대료 원자료 확인 — DONE | 운영 PC A #43860489236 (Run 43860489236/seat4) ID22 CUSR0000SEHA PRESENT_VALID, 237개월·관측 2026-10-01·sourceStoredAt 2026-11-16T10:30:02.905Z·BLS3 raw file SHA256 db31e003600a776e0fd6ac8dd6392da91bc51cbac56e6d97b918f1ea718ddff9; A는 providerCalls/d1Writes/operationalWrites 0
 - [x] **A4-03** 신규 CPI OER 원자료 확인 — DONE | 운영 PC A #43860489236 ID23 CUSR0000SEHC01 PRESENT_VALID, 237개월·관측 2026-10-01·sourceStoredAt 2026-11-16T10:30:02.905Z·ID22와 동일 BLS3 raw file SHA256 db31e003600a776e0fd6ac8dd6392da91bc51cbac56e6d97b918f1ea718ddff9; 원격 JSON 검증(개별 재수집 없음)
 - [ ] **A4-04** 신규 Census M3 총재고 원자료 확인 — BLOCKED | 마지막 저장 검증 A #1814/Run 43983711934는 ID28 `MISSING`·0개월·storedAt=null. 독립 B API 2GET 실행 Issue #1818/Run #43985786219는 **Core owner Event129 증명 FAIL**로 supplierCalls=0·stored=null 안전 STOP. 동일 requestId 재실행 금지, Core 이벤트 소유권 C급 관리자 증명 전 우회 실행 금지
