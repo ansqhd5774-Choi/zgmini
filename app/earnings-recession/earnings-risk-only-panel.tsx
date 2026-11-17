@@ -10,7 +10,7 @@ import {ContentHelp} from "../content-help";
 import {EarningsFavoriteButton,EarningsFavoriteHeaderIcon} from "./earnings-favorite-button";
 import {EARNINGS_RISK_HISTORY_KIND} from "../../lib/market-score/earnings-recession-history-r1.mjs";
 import {readBeaStoredS6,type BeaIndicator} from "./earnings-bea-s6-source";
-import {buildEarningsCostIndicatorView} from "./earnings-cost-indicator-list.mjs";
+import {buildEarningsCostIndicatorView,earningsCostRetrievalDay} from "./earnings-cost-indicator-list.mjs";
 import "./earnings-indicator-r2.css";
 import "./earnings-inflation-layout.css";
 
@@ -54,6 +54,7 @@ type CostRow={
  observationPeriod:string;previousPeriod:string|null;previousValue:number|null;change:number|null;
  frequency:"MONTHLY"|"QUARTERLY";history:CostHistoryPoint[];
  freshness?:{status:string;reason:string|null};seriesId:string;sourceURL:string;
+ retrievedAt?:string;
 };
 type CostPayload={
  schemaVersion:string;status:string;historicalMode:string;rows:CostRow[];
@@ -122,6 +123,7 @@ const costFormat=(value:number|null|undefined,unit:"PERCENT"|"INDEX")=>
 const costChange=(value:number|null|undefined,unit:"PERCENT"|"INDEX")=>
  finiteCost(value)?(value>0?"+":"")+value.toFixed(2)+(unit==="PERCENT"?"%p":"p"):"—";
 const costUsable=(row:CostRow|undefined)=>Boolean(row&&row.status==="READY"&&row.freshness?.status==="FRESH"&&finiteCost(row.value));
+const costStale=(row:CostRow|undefined)=>Boolean(row&&(row.status==="STALE"||row.freshness?.status==="STALE"));
 const unitUsable=(payload:BeaUnitPayload|null|undefined)=>Boolean(
  payload?.schemaVersion==="earnings-bea-unit-profit-r1-v1"&&payload.status==="READY"&&
  payload.historyMode==="CURRENT_VINTAGE_SOURCE_PERIOD_END"&&payload.freshness?.status==="FRESH"&&
@@ -358,8 +360,9 @@ export default function EarningsRiskOnlyPanel(){
      <td className="earnings-r2-value"><strong>{ok&&row?costFormat(row.value,row.unit):"—"}</strong>
       <small>변동 {ok&&row?costChange(row.change,row.unit):"—"}</small></td>
      <td className="earnings-r2-release"><strong>—</strong>
-      <small>관측 {row?.observationPeriod??"—"}</small></td>
-     <td>{ok?"참고":row?.status==="STALE"?"갱신 지연":"확인 대기"}</td>
+      <small>관측 {row?.observationPeriod??"—"}</small>
+      <small>수집 {earningsCostRetrievalDay(row?.retrievedAt)}</small></td>
+     <td>{ok?"참고":costStale(row)?"갱신 지연":"확인 대기"}</td>
      <td className="earnings-r2-spark">{ok&&row?<CostSpark history={row.history}/>:"—"}</td>
      <td><ContentHelp label={meta.name+" 도움말"}><p>{meta.description}. BLS 관측값이며 실적 침체 방어 점수에는 합산하지 않습니다. 수집 시점 기준 자료로, 발표일이 확인되지 않으면 —로 표시합니다.</p>
       <a href={"https://data.bls.gov/timeseries/"+meta.series} target="_blank" rel="noopener noreferrer">BLS 원자료</a></ContentHelp></td>
@@ -452,7 +455,7 @@ export default function EarningsRiskOnlyPanel(){
     {costIndicators.map(meta=>{const row=costRows.get(meta.id),ok=costUsable(row);return <article className="earnings-r2-mobile-card earnings-r2-cost-mobile-card" key={meta.id}>
      <div className="earnings-r2-mobile-head"><div className="earnings-r2-mobile-title">
       <EarningsFavoriteButton id={meta.id} label={meta.name}/><div>
-       <strong>{meta.name}</strong><small>비용 압력 참고 · 점수 미반영</small>
+       <strong>{meta.name}</strong><small>비용 압력 참고 · 점수 미반영{costStale(row)?" · 갱신 지연":""}</small>
       </div></div><ContentHelp label={meta.name+" 도움말"}><p>{meta.description}. BLS 관측값으로 실적 침체 방어 점수에 합산하지 않습니다.</p>
        <a href={"https://data.bls.gov/timeseries/"+meta.series} target="_blank" rel="noopener noreferrer">BLS 원자료</a>
       </ContentHelp></div>
@@ -462,7 +465,7 @@ export default function EarningsRiskOnlyPanel(){
       <div><span>현재</span><strong>{ok&&row?costFormat(row.value,row.unit):"—"}</strong>
        <small>변동 {ok&&row?costChange(row.change,row.unit):"—"}</small></div>
       <div><span>관측 기간</span><strong>{row?.observationPeriod??"—"}</strong>
-       <small>{row?.frequency==="MONTHLY"?"월간":row?.frequency==="QUARTERLY"?"분기":""}</small></div>
+       <small>{row?.frequency==="MONTHLY"?"월간":row?.frequency==="QUARTERLY"?"분기":""} · 수집 {earningsCostRetrievalDay(row?.retrievedAt)}</small></div>
      </div>
      <div className="earnings-r2-mobile-spark">
       <span>최근 이력</span>{ok&&row?<CostSpark history={row.history}/>:<span className="earnings-r2-cost-chart-empty">이력 확인 필요</span>}
