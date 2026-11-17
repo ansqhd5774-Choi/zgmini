@@ -208,7 +208,7 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
  const totalDomains=market?.dataQuality?.totalDomains??12;
  const coverageWeight=market?.dataQuality?.coverageWeight??0;
  const overallTrend=useMemo(()=>{
-  const daily=marketTrendWindow(amplifyCompositeDisplayTrend(verifiedOverallHistory),periodDays);
+  const daily=marketTrendWindowR1(amplifyCompositeDisplayTrend(verifiedOverallHistory),periodDays,{includeBoundaryCarry:false});
   const archived=compositeArchive?.days===periodDays?compositeArchive.points.flatMap(point=>{
    const display=amplifyCompositeDisplayScore(point.score);
    return display===null||!Number.isFinite(Date.parse(point.observedAt))?[]:[{label:point.observedAt,value:display}];
