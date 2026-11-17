@@ -12,6 +12,7 @@ import {verifiedEconomicGrowthScore,verifiedEconomicGrowthChart,isEconomicGrowth
 import {verifiedEconomicConsumptionScore,verifiedEconomicConsumptionChart,isEconomicConsumptionChartCurrent} from '../../lib/economic-consumption-stored-display-r4.mjs';
 import {verifiedEconomicEarningsScore,verifiedEconomicEarningsChart,isEconomicEarningsChartCurrent,economicEarningsSourceDate} from '../../lib/economic-earnings-stored-display-r4.mjs';
 import {verifiedEconomicLiquidityScore,verifiedEconomicLiquidityChart,isEconomicLiquidityChartCurrent} from '../../lib/economic-liquidity-stored-display-r4.mjs';
+import {verifiedEconomicFundFlowScore,verifiedEconomicFundFlowChart,isEconomicFundFlowChartCurrent,economicFundFlowSourceDate} from '../../lib/economic-fund-flow-stored-display-r4.mjs';
 import {MarketCardHeader} from "../market-card-header";
 import {MarketScoreOrb} from "../market-score-orb";
 import {MarketTrendFrame} from "../market-trend-frame";
@@ -158,7 +159,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  const {payload:employmentData,loading:employmentLoading,error:employmentError}=useStoredIndex<EmploymentR6Display>("/api/employment-r6/observations",null,id==="employment");
  const domain=payload?.domains?.find(item=>item.id===id);
  const liquidityDiagnostic=payload?.diagnostics8?.liquidityCrisisDefense;
- const score=id==="inflation"?verifiedEconomicInflationScore(domain,payload?.asOfDate):id==="employment"?verifiedEconomicEmploymentScore(domain,payload?.asOfDate):id==="rates"?verifiedEconomicRateScore(domain,payload?.asOfDate):id==="credit"?verifiedEconomicCreditScore(domain,payload?.asOfDate):id==="growth"?verifiedEconomicGrowthScore(domain,payload?.asOfDate):id==="consumption"?verifiedEconomicConsumptionScore(domain,payload?.asOfDate):id==="earnings"?verifiedEconomicEarningsScore(domain,payload?.asOfDate):id==="liquidity"?verifiedEconomicLiquidityScore(domain,payload?.asOfDate,liquidityDiagnostic):domain?.status==="READY"&&validScore(domain.score)?domain.score:null;
+ const score=id==="inflation"?verifiedEconomicInflationScore(domain,payload?.asOfDate):id==="employment"?verifiedEconomicEmploymentScore(domain,payload?.asOfDate):id==="rates"?verifiedEconomicRateScore(domain,payload?.asOfDate):id==="credit"?verifiedEconomicCreditScore(domain,payload?.asOfDate):id==="growth"?verifiedEconomicGrowthScore(domain,payload?.asOfDate):id==="consumption"?verifiedEconomicConsumptionScore(domain,payload?.asOfDate):id==="earnings"?verifiedEconomicEarningsScore(domain,payload?.asOfDate):id==="liquidity"?verifiedEconomicLiquidityScore(domain,payload?.asOfDate,liquidityDiagnostic):id==="fundFlows"?verifiedEconomicFundFlowScore(domain,payload?.asOfDate):domain?.status==="READY"&&validScore(domain.score)?domain.score:null;
  const employmentChart=useMemo(()=>verifiedEconomicEmploymentChart(domain,payload?.asOfDate,score),[domain,payload?.asOfDate,score]);
  const employmentChartCurrent=isEconomicEmploymentChartCurrent(employmentChart,payload?.asOfDate,score);
  const rateChart=useMemo(()=>verifiedEconomicRateChart(domain,payload?.asOfDate,score),[domain,payload?.asOfDate,score]);
@@ -173,8 +174,10 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  const earningsChartCurrent=isEconomicEarningsChartCurrent(earningsChart,domain,payload?.asOfDate,score);
  const liquidityChart=useMemo(()=>verifiedEconomicLiquidityChart(domain,payload?.asOfDate,score,liquidityDiagnostic),[domain,payload?.asOfDate,score,liquidityDiagnostic]);
  const liquidityChartCurrent=isEconomicLiquidityChartCurrent(liquidityChart,domain,payload?.asOfDate,score,liquidityDiagnostic);
+ const fundFlowChart=useMemo(()=>verifiedEconomicFundFlowChart(domain,payload?.asOfDate,score),[domain,payload?.asOfDate,score]);
+ const fundFlowChartCurrent=isEconomicFundFlowChartCurrent(fundFlowChart,domain,payload?.asOfDate,score);
  const inflationChart=useMemo(()=>verifiedEconomicInflationChart(domain,payload?.asOfDate,score),[domain,payload?.asOfDate,score]);
- const history=useMemo(()=>normalizeTrend(id==="inflation"?inflationChart:id==="employment"?employmentChart:id==="rates"?rateChart:id==="credit"?creditChart:id==="growth"?growthChart:id==="consumption"?consumptionChart:id==="earnings"?earningsChart:id==="liquidity"?liquidityChart:domain?.trend),[id,inflationChart,employmentChart,rateChart,creditChart,growthChart,consumptionChart,earningsChart,liquidityChart,domain?.trend]);
+ const history=useMemo(()=>normalizeTrend(id==="inflation"?inflationChart:id==="employment"?employmentChart:id==="rates"?rateChart:id==="credit"?creditChart:id==="growth"?growthChart:id==="consumption"?consumptionChart:id==="earnings"?earningsChart:id==="liquidity"?liquidityChart:id==="fundFlows"?fundFlowChart:domain?.trend),[id,inflationChart,employmentChart,rateChart,creditChart,growthChart,consumptionChart,earningsChart,liquidityChart,fundFlowChart,domain?.trend]);
  const oneYear=useMemo(()=>{
   const latest=history.at(-1)?.label;
   if(!latest)return [];
@@ -183,7 +186,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  },[history]);
  // Keep published null dates only in the visual series; saved-value history
  // remains unchanged for approved period-score comparisons.
- const chart:MarketFearGreedChartPoint[]=useMemo(()=>id==="inflation"?inflationChart:id==="employment"?employmentChart:id==="rates"?rateChart:id==="credit"?creditChart:id==="growth"?growthChart:id==="consumption"?consumptionChart:id==="earnings"?earningsChart:id==="liquidity"?liquidityChart:economicOneYearChart(domain?.trend),[id,inflationChart,employmentChart,rateChart,creditChart,growthChart,consumptionChart,earningsChart,liquidityChart,domain?.trend]);
+ const chart:MarketFearGreedChartPoint[]=useMemo(()=>id==="inflation"?inflationChart:id==="employment"?employmentChart:id==="rates"?rateChart:id==="credit"?creditChart:id==="growth"?growthChart:id==="consumption"?consumptionChart:id==="earnings"?earningsChart:id==="liquidity"?liquidityChart:id==="fundFlows"?fundFlowChart:economicOneYearChart(domain?.trend),[id,inflationChart,employmentChart,rateChart,creditChart,growthChart,consumptionChart,earningsChart,liquidityChart,fundFlowChart,domain?.trend]);
  const last=chart.findLast(point=>validScore(point.score));
  const latestPoint:MarketFearGreedChartValidPoint|null=last&&validScore(last.score)?{date:last.date,score:last.score}:null;
  const axisLabels=new Map(chart.map(p=>[p.date,p.date.slice(5,7)]));
@@ -201,10 +204,10 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
   sixMonth:producer?.sixMonth??computed.sixMonth,
   year:producer?.year??computed.year,
  };
- const hasVerifiedPeriodComparisons=(id!=="inflation"||(score!==null&&inflationChart.length>0))&&(id!=="rates"||(score!==null&&rateChartCurrent))&&(id!=="credit"||(score!==null&&creditChartCurrent))&&(id!=="growth"||(score!==null&&growthChartCurrent))&&(id!=="consumption"||(score!==null&&consumptionChartCurrent))&&(id!=="earnings"||(score!==null&&earningsChartCurrent))&&(id!=="liquidity"||(score!==null&&liquidityChartCurrent))&&Object.values(periods).some(value=>typeof value==="number"&&Number.isFinite(value));
+ const hasVerifiedPeriodComparisons=(id!=="inflation"||(score!==null&&inflationChart.length>0))&&(id!=="rates"||(score!==null&&rateChartCurrent))&&(id!=="credit"||(score!==null&&creditChartCurrent))&&(id!=="growth"||(score!==null&&growthChartCurrent))&&(id!=="consumption"||(score!==null&&consumptionChartCurrent))&&(id!=="earnings"||(score!==null&&earningsChartCurrent))&&(id!=="liquidity"||(score!==null&&liquidityChartCurrent))&&(id!=="fundFlows"||(score!==null&&fundFlowChartCurrent))&&Object.values(periods).some(value=>typeof value==="number"&&Number.isFinite(value));
  const comparisons=[{label:"1주",value:periods.week??null},{label:"1개월",value:periods.month??null},{label:"3개월",value:periods.threeMonth??null},{label:"6개월",value:periods.sixMonth??null},{label:"1년",value:periods.year??null}]
-  .map(item=>(id==="inflation"&&(score===null||inflationChart.length===0))||(id==="employment"&&(score===null||!employmentChartCurrent))||(id==="rates"&&(score===null||!rateChartCurrent))||(id==="credit"&&(score===null||!creditChartCurrent))||(id==="growth"&&(score===null||!growthChartCurrent))||(id==="consumption"&&(score===null||!consumptionChartCurrent))||(id==="earnings"&&(score===null||!earningsChartCurrent))||(id==="liquidity"&&(score===null||!liquidityChartCurrent))?{...item,value:null}:item);
- const storedObservations=((id==="inflation"||id==="employment"||id==="rates"||id==="credit"||id==="growth"||id==="consumption"||id==="earnings"||id==="liquidity")&&score===null?[]:(domain?.indicators??[])).filter((row):row is Indicator=>Boolean(row&&typeof row==="object"));
+  .map(item=>(id==="inflation"&&(score===null||inflationChart.length===0))||(id==="employment"&&(score===null||!employmentChartCurrent))||(id==="rates"&&(score===null||!rateChartCurrent))||(id==="credit"&&(score===null||!creditChartCurrent))||(id==="growth"&&(score===null||!growthChartCurrent))||(id==="consumption"&&(score===null||!consumptionChartCurrent))||(id==="earnings"&&(score===null||!earningsChartCurrent))||(id==="liquidity"&&(score===null||!liquidityChartCurrent))||(id==="fundFlows"&&(score===null||!fundFlowChartCurrent))?{...item,value:null}:item);
+ const storedObservations=((id==="inflation"||id==="employment"||id==="rates"||id==="credit"||id==="growth"||id==="consumption"||id==="earnings"||id==="liquidity"||id==="fundFlows")&&score===null?[]:(domain?.indicators??[])).filter((row):row is Indicator=>Boolean(row&&typeof row==="object"));
  const observations=storedObservations;
  const easternParts=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
  const easternToday=["year","month","day"].map(part=>easternParts.find(item=>item.type===part)?.value??"").join("-");
@@ -219,7 +222,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  const highCount=Math.min(3,Math.ceil(ranked.length/2)),lowCount=Math.min(3,Math.floor(ranked.length/2));
  const strongest=ranked.slice(0,highCount);
  const weakest=ranked.slice(ranked.length-lowCount).reverse();
- const date=id==="earnings"&&score!==null?economicEarningsSourceDate(domain,payload?.asOfDate):dated(domain?.asOfDate)?domain.asOfDate:dated(payload?.asOfDate)?payload.asOfDate:null;
+ const date=id==="earnings"&&score!==null?economicEarningsSourceDate(domain,payload?.asOfDate):id==="fundFlows"?score!==null?economicFundFlowSourceDate(domain,payload?.asOfDate):null:dated(domain?.asOfDate)?domain.asOfDate:dated(payload?.asOfDate)?payload.asOfDate:null;
  const v11=id==="breadth"&&domain?.methodologyVersion==="BREADTH_V11_FIXED_5F_OBSERVED_EMA3_CONTINUITY";
  const v9=v11||(id==="breadth"&&domain?.methodologyVersion==="BREADTH_R10_V9_FIXED_5F_VALID_OBSERVATION_SHADOW");
  const v9Pending=v9&&domain?.dataPhase==="CARRY_FORWARD";
