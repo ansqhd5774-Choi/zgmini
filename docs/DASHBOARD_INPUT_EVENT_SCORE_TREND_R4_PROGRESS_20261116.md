@@ -1,6 +1,6 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
-> **현재 즉시 상태 (2026-11-17 KST): **14/75 (18.7%), 잔여 61개**. #39 한국 등락 UI 미연결 감사/원담당 연결 경계 DONE. #40 D05 실PC 계산원장 전진 25→32건·현재 승인 source 사건 0→7건 A급 #1813 PASS, 특정 입력 1개→D1 인과 미확정으로 PARTIAL. **#41 인플레이션 R2** 저장 Reader/대시보드·상세 점수 동일 API 및 16입력→7축 ALL READY 보호를 source 검증; 새 유효 자료의 실제 W01 저장·D1 공개/차트 끝점은 미확정이라 PARTIAL. #36 CNN Sidecar/#37 KRX/#38 IEX 별도 운영 미완료. **현재 실행 #42 D07 경기침체 위험 PARTIAL**, 원담당 Writer/계산 경계 유지.
+> **현재 즉시 상태 (2026-11-17 09:05 KST): 14/75 (18.7%), 잔여 61. #42 D07 경기침체 위험 상세화면에서 PARTIAL/STALE 숫자를 READY로 표시하고 미래·충돌 이력점이 차트에 남는 표시 결함 확인. 기존 PR #1196의 안전한 선별 반영 브랜치에 **3파일만** 수정·테스트 추가, [PR #1197](https://github.com/ansqhd5774-Choi/zgmini/pull/1197) Open, 변경 3파일 확인, Build/Typecheck PASS·전 회귀 CI RUNNING. #42 완료 아닌 PARTIAL; 신규 main 병합/Production/실D1 동치 미확정. #36/#37/#38/#40/#41는 각각 기존 미완료 유지. 다음 실행 #42 PR #1197 회귀 완료 확인→안전 병합→지정 진행 기록 재조회, 실운영 결과는 별도 미완료.
 
 ## 현재 인계 정본 — 다음 담당자 첫 읽기 (2026-11-16 KST)
 
@@ -14,9 +14,9 @@
 | DONE 단계 (중복 없음) | **#04, #05, #08, #10, #21, #22, #23, #24, #26, #27, #33, #34, #35, #39** (14개) |
 | #34 60초 화면 갱신·역행 차단 | **DONE (현재 main source/fixture)**. `live-refresh.mjs` 60초 주기, `dashboard-ui.tsx`·`use-stored-index.ts` 수용/역행 보호 경로 확인. 신규 유효값·0·PARTIAL 및 낡은 관측·게시 응답 판정 7/7, UI 연결 소스 4/4 PASS. Production 유저 육안 검수는 최종 단계 |
 | 단계 증거 범위 | #24는 **기존 저장 JSON 활용·Draft 설계/회귀 PASS**까지의 설계 DONE. 실제 15분 보존 정책 수정·PC 설치·D1 반영은 **미완료** |
-| PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #28, #29, #36, #37, #38, #40, **#41, #42**. #41 R2 16입력/7축 저장 계산·공개 Reader 계보는 source 확인, 신규 1입력 실제 변경의 READY/6-of-7 허용 이월·D1 게시/차트 끝점 동치 증거 미확정 |
-| 다음 단 하나의 실행 | **#42 (W06 D07 경기침체 위험 UI·공개 이력 계약)** 기존 7요인 월/분기 관측의 READY/유효 이전값·모델 vintage 분리를 점검하고 실제 저장된 새 관측이 current·차트에 반영된 증거 확인. W06는 공개 Reader/UI 소유 범위만; 실PC Collector/Calculator/Writer는 경기침체 원담당. #40 D05 PC/D1 인과 확인 및 #41 물가 W01 16입력/7축 갱신 실증은 원담당 별도 미완료 유지 |
-| 다음 담당·대상·입력 | W06 #42: 경기침체 위험 기존 공개 endpoint, 저장 projection/월·분기 7요인 Gate, 현재 카드/차트·관측일/방법론 표시; 실제 W05/위험 원담당 자료가 있으면 재사용, 임의 재계산 금지. #41 관련 원본 `worker/projection-builders/inflation.mjs`, `lib/diagnostic-layer/inflation-r2-stored.mjs`, `app/inflation/inflation-panel.tsx`, `app/dashboard-ui.tsx`, `app/api/inflation-detail/route.ts`와 main CI는 source 계약 증거로 재사용 |
+| PARTIAL — 실제 작업 이력 존재, 계획 완료 조건 미충족; #42 Reader/UI 방어 최소수정 PR #1197 Open·CI 진행 중, 운영 D1/GET 실증 미완료 | #01, #03, #07, #09, #11, #12, #13, #14, #15, #16, #28, #29, #36, #37, #38, #40, **#41, #42**. #41 R2 16입력/7축 저장 계산·공개 Reader 계보는 source 확인, 신규 1입력 실제 변경의 READY/6-of-7 허용 이월·D1 게시/차트 끝점 동치 증거 미확정 |
+| 다음 단 하나의 실행 | **#42 W06 D07 경기침체 위험**: [PR #1197](https://github.com/ansqhd5774-Choi/zgmini/pull/1197) 변경 정확 3파일·R13 READY/method/vintage/미래·충돌 차트 fixture, GitHub check Run 43984153369의 **Regression tests/Recovery/Read Contracts** 결과 확인. CI PASS 시 head SHA 정확 검증해 main 병합, 실패 시 재현·최소 보수. 이후 실제 신규 월/분기 input→승인 D1 current/공개 GET/차트 종단은 경기침체 원담당 실측 미완료로 유지; 다음 독립 단계 #43는 그 뒤 |
+| 다음 담당·대상·입력 | W06 #42: PR #1197 head `0f3f4c33de526981b14f971f99a140ef7b45bcb4`, 기존 main `40d6156a1144350c3a23a02cb0db26e56bf3adde`, `app/recession/recession-panel.tsx`, 신규 `lib/recession-stored-display-r4.mjs` 및 `tests/r4-recession-stored-display-42.test.mjs`. Github CI Run 43984153369; 계산/SQLite/D1/Writer/정규 수집 변경 금지. 원담당 추후 1개 실제 신규 요인 D1/readback 대조 |
 | #36 남은 통과 조건 | 공개 GET 소스/CI는 PR #1196 통과. 운영 CNN 현재 원본은 최신이나 원본 observation archive 108점/마지막 11/06 UTC, PC 검증 archive 108점/마지막 11/07 UTC로 10일 이상 정체. 운영 원담당 정상 저장 및 D1 각 날짜 readback과 공개 GET 원본 시각 일치 없이는 #36 DONE 아님 |
 | 이후 후보(이번 실행에 혼입 금지) | #28 모델/방법론 계보 공개 이력의 원담당 변경 범위(현행 일별 snapshot에 modelVersion 저장됨, 평면 chart/observed archive에는 없음); #29 기준일 이후 미래 snapshot 표시 결함/동일시각 정정 (Writer 원담당). D01~D27 원담당 미연결 항목, Draft #1181·#1185 승인 대기. 비차단 작업은 계속 |
 | 최근 R4 기능 병합 증거 | #1177·#1180·#1182·#1184·#1187·#1189·#1193 및 **[#1196](https://github.com/ansqhd5774-Choi/zgmini/pull/1196)** 병합. #1196 main merge SHA **`40d6156a1144350c3a23a02cb0db26e56bf3adde`**, 4파일만 변경, 실제 공개 GET D1 stub 12건 + 단위시험 6건, PR head CI SUCCESS. 운영 PC archive 복구와 별개 |
@@ -323,3 +323,14 @@
 - 단계 판정: #42 PARTIAL, DONE 추가 0, **14/75 (18.7%) → 14/75 (18.7%)**, 잔여 61. 소스 조회만으로 운영 완료 주장 금지.
 - 다음 필수 실행 1개: #42 위험 원담당의 기존 승인 PC R13 저장/게시 영수증에서 신규 유효 관측일·점수 1건을 특정하고, 동일 D1 `/api/recession-detail`의 현재 점수·7개 components·trend 마지막점과 대조. 원본/게시 차이가 실제 확인될 때만 담당 범위 최소 수정. 승인 없는 Writer/산식 변경 금지.
 - 원격 인계: 본 파일 갱신 커밋 후 재조회로 확정; Production PC/모바일 신규 실화면 검증 0건, API/UI 동치 미확정.
+
+## [2026-11-17 09:05 KST] R4 #42 — 경기침체 R13 화면 표시 방어 결함 수정, PR #1197 CI 진행 중 (PARTIAL)
+
+- 기준: main `40d6156a1144350c3a23a02cb0db26e56bf3adde`, 기록 전용 브랜치 `codex/ui-improvements`, selective branch는 기존 #1196의 `codex/ui-r4-cnn-reader-conflict-20261117` 재사용(새 브랜치·리베이스·강제 push 없음). 목표는 D07 월/분기 7요인 Current Vintage 공개 점수·일간 차트 충돌 방어. 시작/종료 현재 14/75(18.7%), 잔여 61.
+- 확인 소스: `worker/projection-builders/recession.ts@3c2e616b512d01af461f548e1bfc7c8ae0a7107c`의 7요인(고용 25%, GDP 15%, 산업생산 15%, 실질소비 15%, Sahm 10%, 소매판매 10%, 가처분소득 10%), 월/분기 최신 적격값 사용, `RECESSION_R13_CURRENT_VINTAGE`/`STORED_INPUTS_CURRENT_VINTAGE`/`lookAheadSafe=false` 및 재구성 이력으로 명시. `worker/projection-builders/recession-stored-history.mjs@648ea98db5fe4a86db078d0fe4342e9ffc484a4e`의 GDP 분기 레이블·점수 비교는 원본 함수 유지. `app/api/recession-detail/route.ts@e700155b77b56bfa0d8136c8006d3417afce91ec`은 저장 D1 projection GET만. 공개 API 직접 web fetch는 접근 실패, `/recession/` SSR 페이지 반환은 관측됐으나 client 저장 API 정상 수치 증거로 사용 금지.
+- **실제 결함:** `app/recession/recession-panel.tsx` 원본에서 `status`가 `PARTIAL`/`STALE`여도 payload.score numeric만으로 카드에 READY 점수 출력; history는 출처/방법론·미래기준일·동일날짜 상충을 제한하지 않고 마지막 이력점을 사용. 새 저장값이 오거나 불일치 응답 순서일 때 카드/차트 기준 불일치 위험.
+- **최소 실제 수정:** 신규 pure display gate `lib/recession-stored-display-r4.mjs`와 실제 `app/recession/recession-panel.tsx`만 수정. R13 정확 버전/Current Vintage 표기/READY/status/계산 asOfDate/유효 0~100/미래·동일날짜 충돌/0·결측 구분 강제, 유효 0은 유지하고 불일치 차트점 숨김. 1주/월/분기 기간 비교는 검증 안 된 score면 null만 표시. 기존 7요인, 월/분기 산식, 수집·계산·저장·공개 schema·TTL/주기/15분/100개 보존 변경 0.
+- **9개 실제 함수 기반 회귀:** `tests/r4-recession-stored-display-42.test.mjs` 추가; READY 0·100, PARTIAL/STALE 숫자 차단, 버전/빈티지/PIT 혼동, 날짜 유효성, 미래/NULL 이력, 현재 기준일 충돌, 동일날짜 서로 다른 이력, 기존 정상 기록 정렬 및 실제 컴포넌트 연결 assert. 기존 tests/recession-stored-history-r3 등 직접 수정 없음.
+- **PR:** [#1197](https://github.com/ansqhd5774-Choi/zgmini/pull/1197) Open, base main, head `0f3f4c33de526981b14f971f99a140ef7b45bcb4`, GitHub REST PR files **정확 3개** 확인(화면 1, helper 1, 테스트 1). [CI run 43984153369](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43984153369)에서 Build/Typecheck SUCCESS, Regression RUNNING (이 기록 당시), 아직 전체 PASS·merge·Production 미판정.
+- **LAST PASS/FIRST UNVERIFIED:** 세 파일 원격 재조회, PR diff 범위/Build/Typecheck PASS. 회귀 전체/PC recovery/Cloudflare contracts CHECKING. 운영 신규 7요인 input 선택적 sourceStoredAt/score→local/개별 D1/공개 GET/화면 동치, exact Production Deployment ID 및 사용자 확인 불가. Plan #42 PARTIAL 유지.
+- **정확한 다음 단 하나의 실행:** W06 #42 PR #1197 CI 결과 회수 → 실패 없으면 선별 병합 → merge SHA/기능 diff 및 원격 진행기록 readback → #42 source 수정 DONE 범위 판단, 실운영 신규 요인→D1 게시 미완료는 원담당으로 분리. #43 D08 독립 소스 진행을 그 다음 시작.
