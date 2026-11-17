@@ -8,6 +8,14 @@
 - 저장소 `delete_branch_on_merge=false` 확인(2026-10-25). 병합 완료 후에도 작업 브랜치를 **보존**한다.
 - 본 문서는 읽기 전용 감사에 근거한 인수인계다. 설치·PC 데이터 변경·D1 게시·main 병합의 증거가 아니다.
 
+## 2026-11-17 W03 9/68 후속 — R32 검사기 stocks/us 호환성 main 반영
+
+- **이번 회차 신규 완료:** 제어 저장소 PR [#1833](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1833) 소스 변경 2개 파일을 정확 HEAD `ebd85030276192c518dc6dbd3d5eae5650faebeb`에서 squash **main 병합 완료**. Merge SHA `2f569c18e09a55e54e81052985a80f6a8765d680`; GitHub 병합 상태 및 main의 R32 검증 코드 원격 재조회 PASS. 기존 CI Run [43990690565](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43990690565) source-only 성공; 관련 테스트 19개 중 18 PASS/1 SKIP/0 FAIL, 4개 신규 경로 회귀 PASS. 기존 R23 manifest 경로는 `/stocks/{symbol}` 고정, R35만 과거 `/stocks/{symbol}`와 새 `/stocks/us/{symbol}` 동시 허용.
+- **원담당 기존 소스 증거 재사용:** 앱 전담 브랜치 `scripts/pc-writer/theme-nine-r35-delta-collect.mjs`의 신규 요청 경로 `/api/v1/bars/stocks/us/{symbol}/1h`를 원격 재조회했고, R47 recurring source의 R35 checkpoint 신·구 URL 호환도 확인. 해당 소스가 **실제 운영 PC R47 예약 CMD에 설치되었는지, CMD 파일별 원본 SHA/승인 source bundle이 무엇인지는 아직 미확정**. 별도 설치 증거 없이 R47 복구라고 판단하지 않는다.
+- **운영·공급자 경계:** 기존 Controller B 설치 #1821 실제 SHA `a21b928f…`의 이전 성공, #1827 64종목 raw 감사 PASS는 재사용. 이번 PR #1833은 소스 main 반영일 뿐 새 Controller B 적용은 **미실행**, R47 운영 CMD·예약·SQLite·공급자 GET·D1·게시 **변경 0건**. GMH 공식 2026-11-16T21:48:42Z 상태에는 `stocks/us` 지연(red, last successful 2026-11-16T04:33Z) 표시. 따라서 URL 정합 완료와 최신 거래일 복구는 별도 검증.
+- **단계 판정:** W03 **8/68 완료(11.8%)**, 9/68 **진행 중**(운영 수집/저장 미확인). 프로세스 총괄의 별도 완료율과 혼동 금지.
+- **다음 필수 실행(W03 원담당 + 공용 B 설치 Owner):** 기존 승인된 PC 읽기 전용 경로에서 R47 실제 Task action/CMD 원본 SHA와 설치 source bundle·현재 lease를 한 번 확인한다 → 정확한 변경 파일·승인 manifest를 고정하고 기존 정규 B 경로로 R35/R47 수정 소스를 적용한다 → 수동 증분 수집 1회에서 SPY와 ETF 63종 저장일, SHA/checkpoint, 계산·게시 영향 범위를 검증한다. 과거 requestId 재사용·자동 재실행/무단 예약 수정 금지.
+
 ## 2026-11-17 W03 9/68 진행 중 — GetMarketHistory 신규 URL 정합 수정 및 설치 전 검증
 
 - **현재 진행률:** 시작 **8/68 완료(11.8%)**, 이 회차 끝에도 **8/68 완료(11.8%)**, **9/68 진행 중**. 신규 원자료 저장/실제 Windows R47 실행/계산·게시 증거를 아직 확보하지 않았으므로 단계 완료를 올리지 않는다. 이전 [#1827](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1827) 실제 PC raw 64종 548페이지 SHA/checkpoint 감사 결과를 재실행 없이 재사용한다.
