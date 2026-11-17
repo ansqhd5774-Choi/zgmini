@@ -50,7 +50,7 @@ function setup(t){
   const before=sha(fs.readFileSync(baseManifestFile));
   const api=async (url)=>{
     const name=url.pathname.split('/').at(-2);
-    assert.equal(url.pathname,`/api/v1/bars/stocks/${name}/1h`);
+    assert.equal(url.pathname,`/api/v1/bars/stocks/us/${name}/1h`);
     assert.equal(url.searchParams.get('start'),'2026-10-23');
     assert.equal(url.searchParams.get('end'),'2026-10-27');
     assert.equal(url.searchParams.get('limit'),'5000');
@@ -83,8 +83,8 @@ test('four GETs maximum then resume without repeating completed pages',async t=>
   const b=await collectNineR35Delta({...f,fetchImpl,maxRequests:4});
   assert.equal(b.providerCalls,4);
   assert.equal(b.completedSymbols,8);
-  assert.equal(calls[0],'/api/v1/bars/stocks/SPY/1h');
-  assert.notEqual(calls[4],'/api/v1/bars/stocks/SPY/1h');
+  assert.equal(calls[0],'/api/v1/bars/stocks/us/SPY/1h');
+  assert.notEqual(calls[4],'/api/v1/bars/stocks/us/SPY/1h');
   assert.equal(sha(fs.readFileSync(f.baseManifestFile)),f.before);
 });
 
