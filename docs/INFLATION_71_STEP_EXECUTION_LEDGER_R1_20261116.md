@@ -2,7 +2,7 @@
 
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
-## 최신 인계 스냅샷 — W01 2026-11-17 (Census M3 월중 날짜 보정 추가 차단 PR #1215·Node24 신규 격리 CI 검증 중·운영 Census 수집 별도 차단·30/71)
+## 최신 인계 스냅샷 — W01 2026-11-17 (Census M3 월중 날짜 무결성 PR #1215 정확 CI 4707 PASS/0 FAIL·운영 Census 수집 별도 차단·30/71)
 
 > **다음 작업자는 이 스냅샷부터 시작한다.** 진행 기록 파일 자체가 지정된 정본이고, 상위 계획은 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)이다. 과거 이력의 오래된 설치 SHA·대기 문구가 이 스냅샷을 덮어쓰지 않는다.
 
@@ -609,3 +609,11 @@ B4 10 | Production·화면 최종 검증
 - **검증 적용 중:** 기본 앱 CI가 `scripts/pc-writer/*.test.mjs`를 자동 포함하지 않으므로 source/test exact blob 2개 + 임시 루트 test import 한 줄만 추가한 비배포 [Proof Draft PR #1218](https://github.com/ansqhd5774-Choi/zgmini/pull/1218), HEAD `f5432c31aad2b3443c541d95bcdcb723a2943c09`. 실제 [Node CI #44011123307](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44011123307) 최초 조회 **IN_PROGRESS**; 결과 확인 전 PASS 선언 금지. 이전 [Node CI #44009658547](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44009658547)의 4,707 PASS는 **이번 월중 날짜 패치 이전 소스**이므로 새 패치의 CI를 대신하지 않음.
 - **운영 차단 유지:** 제어 PR #1854 독립 SOURCE_REVIEW_HOLD, #1866/#1871 미설치 및 W03 누적 runtime 승인 미완료. 마지막 실PC Controller SHA `384ffd09...`는 그 시점 관측 증거. Event129 enabled 현재 상태/Task-linked Core 소유권 미확인, 기존 B #1818 consumed/replay FORBIDDEN.
 - **다음 단일 행동:** 정확 2파일 새 CI 완료·원격 결과/로그 검증→Proof PR #1218 미병합 종료→W01 원장 최종 CI evidence readback. 본 소스 수정은 A3-09/A4-04·B3/B4 실제 저장/게시 완료로 산입하지 않음. 실제 기능 다음 실행은 공유 Controller 정규 승인/적용 및 Core owner 자연 증명 뒤 새 고유 Census B.
+
+### 2026-11-17 KST — 월초 날짜 출처 보완 exact CI 최종 PASS 및 임시 proof 종료
+
+- **실제 CI 최종:** [Node.js 24 CI #44011123307](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44011123307), job `133798105223`, `completed/success`. 전체 `Regression tests` **4,717 total / 4,707 PASS / 0 FAIL / 7 SKIP / 3 TODO**. 이어 `PC publication recovery` **11/11 PASS** 및 `Cloudflare candidate read contracts` **69/69 PASS**. 실제 job 로그의 신규 `explicit invalid Census time_slot_date cannot be replaced by alternate time month`, 과거 `Census month criterion accepts official time if time_slot_date is blank`, `Census bad schema in one year...` 모두 직접 PASS. 신규 월중 3종 fixture는 첫 테스트 내 추가되어 전체 실패 0으로 검증됨.
+- **검증 Git blob 2/2 일치:** 동일 2개 파일 `source=c058704b22e0745c7be8eecc84082dc80ca02413`, `test=650711a91afbef2dc0e4f90679deecc8eaab4de6`가 [기존 소스 PR #1215](https://github.com/ansqhd5774-Choi/zgmini/pull/1215) HEAD `98aca9d7bf97ab485a6c44245a9b2a91015ed56c` 및 [CI Proof Draft #1218](https://github.com/ansqhd5774-Choi/zgmini/pull/1218) HEAD `f5432c31aad2b3443c541d95bcdcb723a2943c09`에 정확 동일. Proof는 root 테스트 엔트리 import 한 줄만 별도로 더해 기본 Node CI 포함, **CI 증거 회수 후 CLOSED/UNMERGED**; 원본 PR #1215는 **2파일 OPEN/미병합**. [원본 PR 회신](https://github.com/ansqhd5774-Choi/zgmini/pull/1215#issuecomment-6937430159)과 [공통 #68 인계](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6937440440).
+- **공식 계약 교차확인:** Census EITS [M3 변수 목록](https://api.census.gov/data/timeseries/eits/m3/variables.html)과 [Economic Indicators Time Series API User Guide (2020, p.22)](https://www2.census.gov/api-documentation/EITS_API_User_Guide_Dec2020.pdf)는 월간 time `YYYY-MM`, `time_slot_date=YYYY-MM-01 00:00:00.0` 예시를 사용(가이드 예시는 EITS FTD 자료, 당일 M3 실데이터 GET 아님). 월중 날짜를 무조건 월초로 보정하지 않는 본 source 검증에 일치하며 provider 호출 0.
+- **실제 영향 분리:** 이 코드는 source-only; W01 단계 **30/71(42.3%)** 유지, 미완료 41. Census #28 실PC 이전 MISSING 및 API 1 PENDING 그대로; 이번 실제 PC 저장/Writer/D1 게시/현재 Event129/자연 Core owner 확인은 0. 이전 단회 B #1818 consumed/replay 금지, 공통 #1854 리뷰 HOLD/#1866·#1871 승인·실제 적용 미완료.
+- **다음 필수 실행 한 가지:** 공통 Controller owner의 #1854 정확 소스 리뷰 해제/유지 판정·W03 runtime 누적 allowFiles 승인/정규 manifest→실PC Controller 설치 SHA 재조회. 그 뒤 W01 existing A Event129 채널 현행 상태 + 자연 Core Task/WMI/PID/E-lock owner 확보 → 새로운 승인 Census B 단회 API 2GET·raw/storedAt/SHA 검증 → 26/26→Writer/D1/API/PC·모바일 연구 7/7. 독립 #1215 Source PR은 별도 정규 코드 리뷰·선별 main 반영 대상으로 유지하되 이를 실제 원자료 저장 성공으로 취급하지 않음.
