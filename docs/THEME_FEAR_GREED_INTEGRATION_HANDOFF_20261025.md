@@ -1,3 +1,12 @@
+## 2026-11-17 W03 9/68 — 실제 R47 planner 원본 함수 격리 10/10 및 운영 효과 GO 분리
+
+- **원담당 직접 진행:** PR #714 전용 브랜치 실제 R47 source blob `a8f943f5a0031030c792609ef09b660e0c8aac75`에서 `verifyDeltaState`, `planNineR47Recurring`, NY cutoff/attempt gate까지 포함하는 **14,018자 실제 planner 부분**을 읽고 V8 함수 실행 격리 재현. 64 symbol(ETF 63+SPY) 원자료 metadata fixture 및 메모리 파일시스템, 가상 SHA/URL 주입. 신규 외부 Provider GET 0.
+- **격리 시험 10/10 PASS:** baseline 신규 window, 기존 64종 checkpoint의 다음 window 생성, 과거 stocks URL 호환, page requestedUrl end drift 거부, checkpoint/end filename drift 거부, 저장 원본 해시 drift 거부, orphan state 신원 거부, SPY 확인 거래일 정체 거부, NY 19:00 이전 진행 금지 및 19:00 이후 장 마감일 수용. 예외코드는 기존 R47 소스 그대로 확인. 이 테스트는 가상 FS/hash/URL을 사용했으므로 **실제 PC, 정식 Node module CI, R47 Provider·SQLite 경로 PASS의 대체가 아님**.
+- **공통 인계는 재요청하지 않음:** R47 고정 CMD 경로의 이중 `pc-writer` 수정은 기존 총괄 [#1894/6940841998](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1894#issuecomment-6940841998)에서 수행 확인. 이후 **정확 1파일 운영 효과 GO**가 같은 고유 Issue에 [#1894/6941303392](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1894#issuecomment-6941303392)로 기록됨. 즉 `EFFECT_APPROVAL_HOLD`를 반복 승인 요청하지 않음. 단 GO는 실제 운영 설치 증거도 아니고 `APPROVED_B` raw manifest를 대체하지 않음.
+- **실제 다음 설치 조건:** PR #1914는 현재 Draft, 공통 Windows adapter/receipt source는 작성됐으나 **정규 main 설치 수신기/Node·Windows 회귀 PASS/승인 raw manifest/현장 Task Action·원본 SHA/lease·백업/사후 해시 실증 미확인**. `config/operations.json`에는 신규 R47 operation 없음. W03 원담당은 총괄 공통 source를 수정·재접수하지 않고, 경로 등록·manifest 증거가 실제 준비되면 승인 효과 범위에서 정확 1파일 단회 B 설치를 수행해야 함.
+- **GitHub 진척도:** 시작 8/68(11.8%) → **8/68(11.8%)**, 9단계 진행 중. 이번 회차 새 기능 runtime/DB/D1/API/UI 완료 0건. 별도 source/CMD/Task/주기/Controller·Runner/공급자/운영 PC 변경 0. 기존 R47/R49 원본 5/5 CI 증거와 이번 V8 10/10은 서로 별도. 신규 전체 Node CI는 `NOT_VERIFIED`.
+- **W03 다음 필수 동작:** 정규 B source/manifest/PC 사전조건이 준비되면 **총괄 재인계 없이** W03 직접 승인 설치→R47 공급자/원본·checkpoint 저장 재조회→R32 저장자료 계산·게시·API/UI 범위별 실측. 그전에는 승인 소스의 독립 검증을 계속하고 미설치 상태를 전체 개발 차단으로 확대하지 않음.
+
 ## 2026-11-17 W03 9/68 — 공통 CAS 경로 정정 수신 및 정확 브랜치 CI 증거 감사 (16시)
 
 - **진행률:** 8/68(11.8%) → 8/68(11.8%), 9단계 진행 중. 전용 브랜치 시작 HEAD `fcaff6cb50b9f191777dc741e9afbc376928ed1a`; 계획서 blob `7d6b54a1bc91340f64a3cd8b82000f8f1dfa75e1`. 이번 감사에서 운영 완료 증가 없음.
