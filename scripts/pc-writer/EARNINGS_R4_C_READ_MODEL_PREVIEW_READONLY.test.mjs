@@ -9,7 +9,7 @@ import {resultLogPath as r3dResultLogPath} from './EARNINGS_R3D_STORED_BLS_CALC_
 import {buildPreview,buildServiceSourcePreview,reportLines,SCHEMA_VERSION,resultPaths}
   from './EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs';
 import {validateEarningsCompanionPayload,earningsCompanionWriter,readEarningsCompanionResponse,
-  EARNINGS_C_SNAPSHOT_KEY,EARNINGS_C_SERVICE_SNAPSHOT_KEY,EARNINGS_C_ROUTE}
+  earningsCompanionFreshness,EARNINGS_C_SNAPSHOT_KEY,EARNINGS_C_SERVICE_SNAPSHOT_KEY,EARNINGS_C_ROUTE}
   from '../../worker/earnings-companion-c-r4.mjs';
 import {buildEarningsCostIndicatorView} from '../../app/earnings-recession/earnings-cost-indicator-list.mjs';
 
@@ -244,7 +244,16 @@ test('end-to-end offline seven rows validate through C worker schema and existin
   withServiceDb({},db=>{
     const {payload}=buildPreview(db,{generatedAt:GENERATED});
     assert.equal(validateEarningsCompanionPayload(payload,{now:Date.parse(GENERATED)}),payload);
-    const view=buildEarningsCostIndicatorView(payload);
+    // buildPreview is pre-publication data and has no freshness field.
+    // The public Worker GET derives that field from each stored observation.
+    const now=Date.parse(GENERATED);
+    const publicPayload={...payload,rows:payload.rows.map(row=>{
+      const freshness=earningsCompanionFreshness(row,{now});
+      return {...row,status:freshness.status==='STALE'?'STALE':row.status,freshness};
+    })};
+    assert.ok(publicPayload.rows.every(row=>row.status==='READY'
+      &&row.freshness.status==='FRESH'));
+    const view=buildEarningsCostIndicatorView(publicPayload);
     assert.equal(view.valid,true);
     assert.equal(view.rows.length,7);
     assert.equal(view.indicators.length,7);
