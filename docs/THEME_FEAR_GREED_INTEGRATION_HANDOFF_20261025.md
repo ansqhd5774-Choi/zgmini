@@ -1,5 +1,14 @@
 # 테마 공포·탐욕 통합 개발 브랜치 — 작업 원장 / 인수인계
 
+## 2026-11-17 W03 9/68 — #1841 복구 완료 재확인 및 R47 설치 선행조건 갱신 (11시 KST)
+
+- **진행률 시작/종료:** 8/68 DONE(11.8%), 9/68 IN_PROGRESS → 동일. 신규 W03 기능 운영 설치·수동 수집·계산·D1/API/UI 검증 0건. 이전 #1857(01:51:31Z) 및 실패 rollback(01:52:13Z)보다 **후행하는** 공유 단일 Owner 공식 복구 결과를 확인하여 차단 상태를 갱신함.
+- **공유 복구 최신 LAST PASS:** [#1841 최종 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1841#issuecomment-6935608375) 및 [중앙 #68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6935615589). 실제 복구 시각 2026-11-17T01:56:05.079Z, `ROLLED_BACK/INTERRUPTED_ROLLBACK_VERIFIED`, 이전 Controller `384ffd09e80ad769e31596483dfe73e9ee8b6c6a` 보존, protectedStateUnchanged=true, 원본 ledger 보존, lease 보관. 사후 Workflow active, no active install lease, Supervisor/Controller/maintainer healthy, Runner 6대 online/idle. 복구 PR #1856 main merge `112e99805c7ba91d3e9824d207453a4e23133ec3`, Windows 회귀 104/104 및 CI 2건 PASS. #1862 신규 실제 History A 실행 PASS는 공유 접수 재개 증거이며 W03 원자료 성공 증거가 아님.
+- **정정:** #1841의 `RECOVERY_REQUIRED`를 현재 W03의 활성 차단으로 반복 보고하지 않는다. 다만 목표 Controller `2f569c18e09a55e54e81052985a80f6a8765d680`은 설치되지 않았으며, 최신 설치 전 SHA·lease·승인 manifest는 **새로 조회**해야 한다. 공유 복구 성공은 W03 R47 CMD 교체/수집 성공이 아님.
+- **W03 FIRST MISSING:** R47 운영 CMD는 기존 #1846 실측 OLD SHA256 `2e0fc3e358feff70103d1e9025ce0944132b7b10a2159900f9479b9860550888`, 브랜치 TARGET `a08fdec82b484c41ba3ac562908f31d96fee09c75cc3ff1b32386e9dd625ba45`. 기존 일반 Writer B는 .mjs 전용이므로 CMD를 우회 설치하지 않는다. 현재 공용 복구는 종료됐으므로 **기능 담당의 다음 단일 실행**은 fresh Controller SHA/lease, R47 Task/CMD preimage, 정확 1파일 CMD B 지원·승인 경로를 확인해 안전한 설치 명세를 확정하는 것. 이어 승인된 정규 설치/해시 사후검사 후 **수동** ETF63+SPY 증분 수집→원자료/checkpoint 검증→비공개 계산→권리·게시 별도 게이트 순서. 데이터가 없으면 WAIT_SOURCE, 임의 보간·반복 GET 금지.
+- **이번 실행 범위:** GitHub 진행 원장만 갱신. 공유 Controller/Workflow/Runner/Task/운영 PC/공급자/DB/D1/Production 변경 0. #1841/#1839 원본 재실행 0. 이전 163개 전체 운영 완료 수 미산정 유지.
+
+
 ## 2026-11-17 W03 9/68 — #1857 실측 CORRELATED · 공용 #1841 별도 Owner 복구 오류
 
 - **기존 W03 단계 유지:** 전체 **8/68 DONE(11.8%)**, **9/68 IN_PROGRESS**. 이번 회차는 공용 복구 원인 판정용 기존 read-only 검사기 소스 검증/실측을 완료했으나 W03 기능의 R47 신규 CMD 운영 설치, 11/03 이후 raw/checkpoint, R25/R32 계산·로컬 결과·D1/API/UI 게시 **미완료**. 복구 관련 설치/복구/공유 lease 상태를 직접 변경하지 않음.
