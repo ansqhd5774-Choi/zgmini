@@ -53,3 +53,8 @@
 - **이미 확인된 역사적 설치:** 기존 [Writer B #1234](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1234) / [Run 42926880769](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42926880769)은 2026-11-10T23:54Z 12개 경로의 `WRITER_B_INSTALLED_VERIFIED`를 입증했으나, 당시 로컬 overlay SHA `d560eb857c0f8a9a53dffbfd899e60ee29c697ab`를 **오늘 운영 source** 또는 현재 `run-local.mjs`·`market.mjs` 개별 SHA와 동일시하지 않음.
 - **영향·상태:** #01 제품 PC 승인 checkout 2개 핵심 Writer 해시 증거는 새로 확보, 그러나 `publish.mjs`/실행 중 Core 코드 버전/활성 Cloudflare Deployment exact SHA는 여전히 미증명 → **#01 PARTIAL**, 고유 DONE **22/75(29.3%) 유지**. 공통 Controller/Runner 신규 FIRST FAIL 없고 총괄 신규 인계 **0건**.
 - **다음 최소 확인:** 추가 승인 없는 임의 파일 조회·설치/재실행으로 우회하지 않음. 기존 Writer 기능 원담당의 승인된 현재 실행기/파일 무결성 영수증이 확보되면 `publish.mjs` 및 Core 실제 로딩 SHA만 읽어 #01 PC 잔여를 닫는다. W06은 별도 #75 Cloudflare active Production Version/Deployment read-only 대조와 공개 화면까지 직접 책임.
+
+
+### 기존 A 조회 manifest 전체에서 publish.mjs 범위 탐색 (2026-11-17 KST)
+- control `main`의 `approvals/writer-preimage/` **31개 승인 JSON**을 원문으로 직접 열어 `files[].path === 'scripts/pc-writer/publish.mjs'` 일치 여부 검사: **31/31 점검, 0개 포함**. 해당 파일은 개발 `zgmini/main`에 존재하지만 현재 승인된 선택적 A file-preimage 목록에는 등록되어 있지 않음. 기존 D05 12파일 A 결과를 `publish.mjs` 실제 조회라고 확장할 수 없음.
+- **판정:** 설치된 공통 A operation 자체 결함 없음(이번 승인 범위 Windows PASS). 새 Controller/Runner 설치나 프로세스 총괄 이관 금지. 필요시 Writer 기능 원담당이 기존 승인 범위의 실제 file integrity 증거를 제공하거나, 정확 **1파일 읽기 전용 A scope**를 정규 검토·승인받은 후 운영 보호를 보존하며 조회. 그 전까지 `publish.mjs` PC 해시/실행 Core 로딩 SHA **UNKNOWN**, #01 **PARTIAL**, 전체 **22/75(29.3%)** 유지.
