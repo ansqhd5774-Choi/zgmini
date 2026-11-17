@@ -785,3 +785,13 @@
 - **실제 단회 접수:** W04 원담당 신규 [B Issue #1992](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1992) / requestId `pc-update-7f6b2ee0-1a4e-4a62-a3bc-040500011991`, 정확 target SHA 및 위 raw approval SHA256로 `pc-controller-update` 한 번 접수. 이 기록 작성 시점 result comment/원격 JSON·TXT 아직 없음. 운영 설치 `SUCCEEDED`나 전체 보호 완료로 선언하지 않음; 재접수·재실행 금지.
 - **계속 진행할 단계:** #1992 원본 결과 STATUS/lastPass/firstFail/actual controller/backup/rollback/보호·workflow/Runner 유지 및 JSON/TXT 재조회 → `SUCCEEDED`일 때만 기존 `employment-r6-candidate-stage-readonly` A 1회 → 정확 app source `39484f8b8194ca682c55bd500180459984d0cff9`에서 원자료 계보 11개 수치와 상태 검증. `NO_RUNTIME_EVIDENCE`/HOLD이면 PIT-04-05 완료 처리 금지. 후보 14상충·255미입증 자동 승격 없음.
 - **진행률:** **27/72 DONE(37.5%), 잔여 45**, B 실PC 완료 미확정 / A 신규 미실행. 총괄 추가 인계 0건.
+
+## 69. PIT-04-05 — 정확 Controller B 실PC 설치 완료 및 A 단회 검산 접수 (2026-11-17 KST)
+
+<!-- W04-PIT0405-B1992-SUCCEEDED-A1999-RUNNING-20261117 -->
+
+- **총괄 완료 증거 재사용:** [#1979 복구 #6946043807](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1979#issuecomment-6946043807), [재발 방지 receiver 설치 #6946217290](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1979#issuecomment-6946217290), [W04 운영 B 정확 1파일 GO #6946188691](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6946188691). 추가 승인 인계 없음.
+- **W04 직접 완료:** [manifest PR #1991](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1991) 정확 1파일 승인 JSON, C996 PASS 및 원본 raw SHA256 `84fa50137a1aa4a1ed8c352ffc7c2225e4e6c7881188dca475ad47b8f87ca9c6`. 단회 [B #1992](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1992#issuecomment-6946531398) 원격 댓글·JSON·TXT 각각 조회: `SUCCEEDED/APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED`, `LAST_PASS=PASS`, `FIRST_FAIL=NONE`, 실제 `451f53ae3831d369dfbcd4474b2c641736634a34` = 목표, `protectedStateUnchanged=true`, `workflowEnabled=true`. #1992는 PC 설치까지 완료, 단순 PR/CI가 아님.
+- **W04 새 실PC A 1회 접수:** 정확 app source `zgmini@39484f8b8194ca682c55bd500180459984d0cff9`, 기존 operation `employment-r6-candidate-stage-readonly`, 고유 requestId `pc-w04-pit0405-raw-lineage-20261117-r2-01`, [Issue #1999](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1999), [Run 44073203105](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44073203105). 현재 고정 Host allowlist entry 실행 중, 최종 JSON/TXT 미회수. **A PASS/원자료 계보 11계수 입증/TRUE_PIT 성공 주장 금지.**
+- **다음 필수 행동:** #1999 **같은 고유 ID의 결과**를 직접 회수·검산, raw aggregate 11개와 상태 enum/Current·History bucket 합계·원본 보존/승격 보류 확인. 데이터 누락·미입증 수치는 0/READY로 간주하지 않는다. A 장기 실행 중 같은 요청 재발행·B 재설치·Controller 운영 변경 금지.
+- **진행률:** `27/72(37.5%) DONE` 유지. B 설치 완료는 PIT-04-05 전체 증명 아님. W04 책임 범위 수행, 총괄 새 인계 없음.
