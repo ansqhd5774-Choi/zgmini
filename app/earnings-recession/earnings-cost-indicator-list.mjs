@@ -43,6 +43,16 @@ function safeBlsRow(row){
     &&known.series===row.seriesId&&known.kind===row.kind&&known.unit===row.unit;
 }
 
+// Source retrieval is not the source observation date or the D1 publication date.
+// Do not present malformed or unverified timestamps as confirmed collection dates.
+export function earningsCostRetrievalDay(value){
+  if(typeof value!=='string'
+    ||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z$/.test(value))
+    return '—';
+  const at=Date.parse(value);
+  return Number.isFinite(at)&&new Date(at).toISOString()===value?value.slice(0,10):'—';
+}
+
 export function buildEarningsCostIndicatorView(payload){
   const valid=payload?.schemaVersion===EARNINGS_C_COST_SCHEMA
     &&payload?.historicalMode==='CURRENT_RETRIEVAL_NOT_PIT'
