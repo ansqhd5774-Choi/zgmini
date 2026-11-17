@@ -137,11 +137,11 @@ test('saved BLS base and WPSFD42 source reach separate mock D1 checkpoints and s
     assert.deepEqual([...d1.records.keys()],
       [EARNINGS_C_SNAPSHOT_KEY,EARNINGS_C_SERVICE_SNAPSHOT_KEY]);
     const writesBeforeGET=d1.actions.filter(x=>x.type==='WRITE').length;
-    const response=await readEarningsCompanionResponse(
+    const reply=await readEarningsCompanionResponse(
       new Request(`https://zgmini.kr${EARNINGS_C_ROUTE}`),d1,{now});
-    assert.equal(response.status,200);
-    assert.equal(response.headers.get('x-earnings-c-service'),'READY');
-    const body=await response.json();
+    assert.equal(reply.status,200);
+    assert.equal(reply.headers.get('x-earnings-c-service'),'READY');
+    const body=await reply.json();
     assert.equal(body.rows.length,7);
     assert.deepEqual(body.rows.slice(0,5).map(x=>x.indicatorId),
       base.rows.map(x=>x.indicatorId));
