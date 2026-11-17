@@ -62,7 +62,7 @@ test('stored-only score selection and raw chart values preserve null and zero',(
  const source=panel();
  assert.match(source,/useStoredIndex<Snapshot>\("\/api\/market-score"\)/);
  assert.match(source,/domain\?\.status==="READY"&&validScore\(domain\.score\)/);
- assert.match(source,/const chart:MarketFearGreedChartPoint\[\]=useMemo\(\(\)=>id==="inflation"\?inflationChart:id==="employment"\?employmentChart:id==="rates"\?rateChart:id==="credit"\?creditChart:id==="growth"\?growthChart:id==="consumption"\?consumptionChart:economicOneYearChart\(domain\?\.trend\)/);
+ assert.match(source,/const chart:MarketFearGreedChartPoint\[\]=useMemo\(\(\)=>id==="inflation"\?inflationChart:id==="employment"\?employmentChart:id==="rates"\?rateChart:id==="credit"\?creditChart:id==="growth"\?growthChart:id==="consumption"\?consumptionChart:id==="earnings"\?earningsChart:economicOneYearChart\(domain\?\.trend\)/);
  assert.match(source,/verifiedEconomicRateChart\(domain,payload\?\.asOfDate,score\)/);
  assert.match(source,/verifiedEconomicInflationChart\(domain,payload\?\.asOfDate,score\)/);
  assert.match(source,/<MarketFearGreedChart data=\{chart\}/);
