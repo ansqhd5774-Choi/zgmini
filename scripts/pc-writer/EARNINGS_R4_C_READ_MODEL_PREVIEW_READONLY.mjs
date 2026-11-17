@@ -2,12 +2,12 @@
 // No network calls, SQLite writes, D1 operations, scheduling or score changes.
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {DatabaseSync} from 'node:sqlite';
 import {analyze,validateSnapshot} from './EARNINGS_R3D_STORED_BLS_CALC_READONLY.mjs';
 
-const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PC_ROOT = path.resolve(process.env.ZGMINI_PC_HOME || 'E:\\ZGmini\\data\\pc-writer');
 const DB_PATH = path.join(PC_ROOT, 'storage', 'core.sqlite');
 export const SCHEMA_VERSION = 'earnings-companion-c-r4-v1';
@@ -272,12 +272,18 @@ export function reportLines(result,now) {
   return lines;
 }
 
+export function resultPaths(stamp,{tempDirectory=os.tmpdir()}={}) {
+  if (typeof stamp!=='string' || !/^\d{8}-\d{6}Z$/.test(stamp))
+    fail('INVALID_RESULT_STAMP');
+  const stem=`EARNINGS_R4_C_READ_MODEL_PREVIEW_RESULT_${stamp}`;
+  return {txtFile:path.join(tempDirectory,stem+'.txt'),
+    jsonFile:path.join(tempDirectory,stem+'.json')};
+}
+
 async function main() {
   const now=new Date().toISOString();
   const stamp=now.replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z').replace('T','-');
-  const stem=`EARNINGS_R4_C_READ_MODEL_PREVIEW_RESULT_${stamp}`;
-  const txtFile=path.join(HERE,stem+'.txt');
-  const jsonFile=path.join(HERE,stem+'.json');
+  const {txtFile,jsonFile}=resultPaths(stamp);
   let db,lines=[];
   try {
     if (!fs.existsSync(DB_PATH)) fail('PC_SQLITE_FILE_MISSING');
