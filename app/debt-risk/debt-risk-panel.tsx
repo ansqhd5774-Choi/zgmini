@@ -11,12 +11,13 @@ import {MarketTrendFrame} from "../market-trend-frame";
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from "../market-fear-greed-chart";
 import {InflationMiniChart} from "../inflation/inflation-mini-chart";
 import {DebtFavoriteButton,DebtFavoriteHeaderIcon} from "./debt-favorite-button";
+import {debtVerifiedDisplayScore,debtVerifiedDisplayTrend} from '../../lib/debt-risk-stored-display-r4.mjs';
 import "./debt-indicator-r2.css";
 import "../risk-last3-hero-parity-r2.css";
 import "../shared-risk-indicator-width-r1.css";
 
 type Row={id:string;name:string;status:string;score:number|null;value:number|null;unit:string;observationDate:string|null;source:string;weight:number;previousValue?:number|null;previousObservationDate?:string|null;trend?:Array<{date:string;value:number}>;nextReleaseDate?:string|null};
-type Payload={status:string;score:number|null;asOfDate?:string|null;methodologyVersion?:string;missingFactors?:string[];indicators?:Row[];trend?:Array<{label:string;value:number}>;scoreComparisons?:{week?:number|null;month?:number|null;threeMonth?:number|null;sixMonth?:number|null;year?:number|null}};
+type Payload={status:string;score:number|null;asOfDate?:string|null;methodologyVersion?:string;historyMode?:string;historyPolicy?:string;lookAheadSafe?:boolean;scoreMatch?:boolean;recalculatedScore?:number|null;missingFactors?:string[];indicators?:Row[];trend?:Array<{label:string;value:number}>;scoreComparisons?:{week?:number|null;month?:number|null;threeMonth?:number|null;sixMonth?:number|null;year?:number|null}};
 const meta:Record<string,{label:string;content:string;criterion:string;help:string}>={
  dsr:{label:"Debt Service Ratio",content:"가계·기업이 소득에서 원리금 상환에 쓰는 부담",criterion:"낮을수록 양호",help:"DSR이 높아지면 소득 대비 부채 상환 부담이 커집니다. BIS 장기분포에서 낮을수록 안전점수가 높습니다."},
  debtGdp:{label:"민간부채/GDP",content:"민간 비금융부문 부채의 경제 규모 대비 수준",criterion:"장기분포 대비 낮을수록 양호",help:"부채가 GDP보다 빠르게 누적될수록 경기 충격과 금리 상승에 취약해질 수 있습니다."},
@@ -42,8 +43,8 @@ function HelpTip({label,text}:{label:string;text:string}){return <ContentHelp la
 
 export default function DebtRiskPanel(){
  const {payload,loading}=useStoredIndex<Payload>('/api/debt-risk-detail');
- const score=typeof payload?.score==="number"&&Number.isFinite(payload.score)?payload.score:null;
- const trend=useMemo(()=>(payload?.trend??[]).filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[payload?.trend]);
+ const score=debtVerifiedDisplayScore(payload);
+ const trend=useMemo(()=>debtVerifiedDisplayTrend(payload,score).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[payload,score]);
  const latest=trend.at(-1),latestPoint:MarketFearGreedChartValidPoint|null=latest?{date:latest.date,score:latest.score as number}:null;
  const monthDates=[...new Map(trend.map(p=>[p.date.slice(0,7),p.date])).values()];
  const axisTicks=monthDates.filter((_,i)=>i===0||i===monthDates.length-1||i%Math.max(1,Math.ceil((monthDates.length-1)/4))===0),axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(2,7).replace("-","/")]));
@@ -53,7 +54,7 @@ export default function DebtRiskPanel(){
   {label:"3개월",value:payload?.scoreComparisons?.threeMonth??null},
   {label:"6개월",value:payload?.scoreComparisons?.sixMonth??null},
   {label:"1년",value:payload?.scoreComparisons?.year??null},
- ];
+ ].map(item=>score===null||trend.length===0?{...item,value:null}:item);
  const rows=new Map((payload?.indicators??[]).map(x=>[x.id,x]));
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell debt-risk-target-card" data-testid="debt-risk-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
