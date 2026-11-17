@@ -1,3 +1,11 @@
+## 2026-11-18 01:00 KST W03 10/68 — #2053 shadow 승인 차단 코드 경계 확인 (읽기 전용)
+
+- **진행률:** 시작 9/68(13.2%) → 종료 9/68(13.2%); 10단계 신규 실데이터·checkpoint·R25/R32 비공개 계산 미완료. 예약 자연 검증은 전 기능 완료 뒤 후속 유지.
+- **직접 조사:** W03 마스터 계획·전용 진행 기록 및 공통 `controller/operations.mjs`의 `verifyApprovedShadowBundle`를 GitHub 원격 재조회. #2053 [실제 결과](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2053#issuecomment-6949392912) `BLOCKED/SHADOW_SOURCE_NOT_APPROVED`, lastPass=`ALLOWLISTED_WORKER_STARTED`, firstFail=`ALLOWLISTED_OPERATION`, candidateExecuted=false 재확인.
+- **정확 코드 판정:** 공통 Controller는 `host.approvedSources[request.sourceSha]` 항목의 `branch===codex/theme-fear-greed-integration-20261025` 및 `entrypoint===scripts/pc-writer/theme-config-tool.mjs`를 먼저 검사한다. 통과 후에만 절대 경로·manifest SHA256·파일별 SHA256·미등록 파일 부재를 검사한다. 따라서 **GitHub 브랜치의 commit 존재/CI 성공/기존 R47 CMD B 설치는 shadow source의 Host 승인 등록을 대신하지 못함**. #2053 요청 SHA `cf1f7c84622fb76b7ffe803f23b3d4dcb0766092`의 실제 Host 등록 없음이 오류 코드로 확인되지만, 승인된 다른 source SHA의 정확한 목록은 이번 GitHub 조회로 확인 불가(UNKNOWN).
+- **보호/변경:** 승인 우회·기존 #2053 replay·새 A 요청 없음. 운영 PC·Task·Provider·SQLite·D1·Cloudflare·예약·공개 권리 변경 0. #2049 설치 PASS 유지. 새 기능/실PC 수집·계산 실행은 하지 않음. 새로운 총괄 인계 0.
+- **다음 단일 실행:** 기존 승인된 Host shadow source SHA/manifest와 저장된 R47 원자료·checkpoint·private 결과의 승인된 **읽기 전용 조회 가능 범위**를 확인한다. 현재 SHA가 Host 등록에 없다면 원담당이 정규 B 등록 승인·manifest 검증을 준비한 뒤 **새 고유 A 1회**만 요청한다. source SHA 등록을 추측해 재시도하지 않는다.
+
 ## 2026-11-17 W03 10/68 — 설치 후 shadow A #2053 안전 차단 확인 및 후속 경로 분리
 
 - **진행률:** 시작 9/68(13.2%) → 종료 9/68(13.2%), 10단계 미완료. #2049 R47 CMD 한 파일 운영 설치 PASS는 유효하며 원자료 수집·checkpoint 전진·R25/R32 신규 비공개 계산 완료를 뜻하지 않는다.
