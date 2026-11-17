@@ -19,6 +19,8 @@ test("BLS observations are rendered inside the existing risk indicator table",()
  assert.ok(risk.includes('useStoredIndex<CostPayload>("/api/earnings-recession-indicators")'));
  assert.equal(EARNINGS_C_COST_SCHEMA,"earnings-companion-c-r4-v1");
  assert.ok(risk.includes('buildEarningsCostIndicatorView(costPayload)'));
+ assert.ok(risk.includes("추가 {costIndicators.length}개는 BLS 비용 압력 원자료"));
+ assert.ok(!risk.includes("추가 5개는 BLS 비용 압력 원자료"));
  assert.equal((risk.match(/costIndicators\.map\(meta/g)??[]).length,2);
  assert.deepEqual(KNOWN_EARNINGS_COST_INDICATORS.map(row=>row.id),[
   "bls_ppi_final_demand_yoy_sa","bls_ppi_final_demand_index",
