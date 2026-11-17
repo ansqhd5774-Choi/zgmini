@@ -77,3 +77,5 @@
 - 같은 SHA [GitHub SEO Production Verify #44074243546](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44074243546), Job `134008036075`: Git Integration Build 성공 확인 이후 **2026-11-17T11:29:10Z** `SEO_HEALTH_CLOUDFLARE_PASS`, `https://zgmini.kr/` 포함 36개 공개 페이지 HTML 메타·canonical/리디렉션 PASS. SEO URL fetch는 **실제 공개 사이트의 HTTP/SSR 확인**, JavaScript hydration/모의 브라우저가 아닌 실제 Production 차트 동작이나 active Deployment source SHA 증거 아님.
 - 별도 접근: 공개 홈페이지 HTML 확인. 웹 도구의 JSON API 직접 열기 미지원, 연결 브라우저의 `zgmini.kr` 탭은 extension host permission 거부, 격리 container 네트워크 DNS 접근 불가. Cloudflare 계정 네이티브 앱은 현재 Plugin Directory 검색에서 없음. 우회·임의 인증/배포 없이 **active Production Deployment ID/SHA=UNKNOWN**, #75 PARTIAL.
 - #28 W06 화면 fail-closed 소스는 완료(모델 불명 계산점끼리 선 연결 방지)했지만 과거 archive metadata 부재는 변함없음. #28 전체 PARTIAL, #75 PARTIAL, 누적 DONE 22/75 유지. 총괄 신규 인계0.
+
+- **Build Version ID(제품 런타임 활성 증거 아님):** GitHub Cloudflare check-run `134008640308`의 공식 출력 `Version ID: 9b278260-aa23-4eea-92c1-dce57f5fd910`. 이는 `Build cc4a5a26-7ca5-4782-bbfa-2990c4a1ad82`가 만든 배포 가능 버전 식별자이며, **현재 Traffic/Deployment active version을 검증한 것이 아니다**. #75는 ACTIVE_UNKNOWN.
