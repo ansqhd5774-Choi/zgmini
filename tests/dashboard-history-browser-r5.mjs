@@ -110,7 +110,7 @@ try{
    live.on('pageerror',error=>errors.push(error.message.slice(0,250)));
    live.on('response',response=>{
     const u=new URL(response.url());
-    if(u.hostname==='zgmini.kr'&&/^\\/api\\/(market-score|market-score\\/observations)$/.test(u.pathname)){
+    if(u.hostname==='zgmini.kr'&&['/api/market-score','/api/market-score/observations'].includes(u.pathname)){
      requests.push({path:u.pathname,status:response.status()});
     }
    });
