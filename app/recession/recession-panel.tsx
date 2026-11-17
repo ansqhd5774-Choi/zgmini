@@ -14,6 +14,7 @@ import "../shared-risk-indicator-width-r1.css";
 import {RecessionFavoriteButton,RecessionFavoriteHeaderIcon} from "./recession-favorite-button";
 import {InflationMiniChart,type InflationMiniTrendPoint} from "../inflation/inflation-mini-chart";
 import {recessionReleaseInfo} from '../../lib/release-calendar.mjs';
+import {recessionVerifiedDisplayScore,recessionVerifiedDisplayTrend} from '../../lib/recession-stored-display-r4.mjs';
 
 type ComponentRow={id:string;value:number|null;score:number|null;observationDate:string|null;weight:number;previousValue?:number|null;previousObservationDate?:string|null;trend?:InflationMiniTrendPoint[];nextReleaseDate?:string|null};
 type SupplementalRow={id:string;name:string|null;status:string;score:number|null;value:number|null;displayValue:string|null;unit:string|null;observationDate:string|null;source:string|null;previousValue?:number|null;previousObservationDate?:string|null;trend?:InflationMiniTrendPoint[];nextReleaseDate?:string|null;historyStatus?:string};
@@ -91,8 +92,8 @@ export default function RecessionPanel(){
  const {payload,loading}=useStoredIndex<Payload>('/api/recession-detail');
  const {payload:calendar}=useStoredIndex<any>('/api/release-calendar');
  const today=new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
- const score=typeof payload?.score==="number"&&Number.isFinite(payload.score)?payload.score:null;
- const trend=useMemo(()=>(payload?.trend??[]).filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)).slice(-13).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[payload?.trend]);
+ const score=recessionVerifiedDisplayScore(payload);
+ const trend=useMemo(()=>recessionVerifiedDisplayTrend(payload,score).slice(-13).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[payload,score]);
  const latest=trend.at(-1),latestPoint:MarketFearGreedChartValidPoint|null=latest?{date:latest.date,score:latest.score as number}:null;
  const axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(5,7)])),axisTicks=trend.filter((_,i)=>i===0||i===trend.length-1||i%2===0).map(p=>p.date);
  // Server-published, saved R13 comparisons only; no display-time recomputation.
@@ -102,7 +103,7 @@ export default function RecessionPanel(){
   {label:"3개월",value:payload?.scoreComparisons?.threeMonth??null},
   {label:"6개월",value:payload?.scoreComparisons?.sixMonth??null},
   {label:"1년",value:payload?.scoreComparisons?.year??null},
- ] as const;
+ ].map(item=>score===null?{...item,value:null}:item);
  const components=new Map((payload?.components??[]).map(x=>[x.id,x]));
  const supplementals=payload?.supplementals??[];
 
