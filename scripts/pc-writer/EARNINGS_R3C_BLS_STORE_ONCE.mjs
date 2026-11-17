@@ -90,7 +90,11 @@ function checkSchema(db,{includeServices=false,serviceOnly=false}={}) {
       meta = JSON.parse(row.provenance_json);
       hashes = JSON.parse(row.chunk_hashes_json);
     } catch { err('PRIOR_BLS_PROVENANCE_INVALID_NO_WRITE'); }
-    if (meta?.contract !== CONTRACT || !Array.isArray(hashes)
+    if (meta?.contract !== CONTRACT
+      || meta?.seriesID !== row.dataset
+      || meta?.authority !== 'US_BLS'
+      || meta?.transportProvider !== 'BLS_DIRECT_API'
+      || !Array.isArray(hashes)
       || hashes.length < 1 || hashes.some(h => !/^[a-f0-9]{64}$/.test(h))) {
       err('PRIOR_BLS_NAMESPACE_CONFLICT_NO_WRITE');
     }
