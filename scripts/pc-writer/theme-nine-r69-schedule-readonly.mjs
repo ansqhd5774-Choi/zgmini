@@ -31,6 +31,35 @@ export function decodeR69Windows(bytes){
   return bytes.toString('utf8');
 }
 
+// Existing private schedule may call R48 directly or the approved R73 retry
+// wrapper; both reach R47 only through the existing private cycle. Return a
+// bounded label, never the command line. Reject suffixes and extra actions.
+const PRIVATE_ACTIONS=Object.freeze({
+  THEME_NINE_R48_PRIVATE_CYCLE_CMD:'R48_PRIVATE_CYCLE',
+  THEME_NINE_R73_SCHEDULED_PRIVATE_CMD:'R73_SCHEDULED_PRIVATE',
+});
+const PRIVATE_ROOT='e:\\zgmini\\data\\pc-writer\\theme-nine-r48\\';
+const privateName=kind=>kind.replaceAll('_CMD','.cmd');
+function privateTaskActionKind(command,args,xml){
+  const section=element(xml,'Actions')??'';
+  const execs=section.match(/<Exec(?:\s[^>]*)?>[\s\S]*?<\/Exec>/gi)??[];
+  if((String(xml).match(/<Actions(?:\s|>)/gi)??[]).length!==1||
+     execs.length!==1||section.replace(execs[0],'').trim()!==''||
+     (execs[0].match(/<Command>/gi)??[]).length!==1||
+     (execs[0].match(/<Arguments>/gi)??[]).length>1||
+     (execs[0].match(/<WorkingDirectory>/gi)??[]).length>1)return null;
+  const current=String(command).trim().replaceAll('/','\\').toLowerCase();
+  const argumentsText=String(args).trim().replace(/&quot;/gi,'"')
+    .replaceAll('/','\\').toLowerCase();
+  for(const [name,kind] of Object.entries(PRIVATE_ACTIONS)){
+    const expected=PRIVATE_ROOT+privateName(name).toLowerCase();
+    if(current===expected&&argumentsText==='')return kind;
+    if((current==='cmd.exe'||current==='c:\\windows\\system32\\cmd.exe')&&
+       argumentsText==='/d /c ""'+expected+'""')return kind;
+  }
+  return null;
+}
+
 const element=(xml,name)=>{
   const m=String(xml).match(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${name}>`,'i'));
   return m?m[1].trim():null;
@@ -52,8 +81,11 @@ export function summarizeR69TaskXml(xml,{action,time}={}){
     actionNormalized.endsWith('\\'+actionName);
   const cmdAction=(actionNormalized==='cmd.exe'||actionNormalized.endsWith('\\cmd.exe'))&&
     /\/d\s+\/c\s+/i.test(args)&&argsNormalized.includes('\\'+actionName);
-  const actionMatches=directAction||cmdAction;
+  const privateTask=actionName==='theme_nine_r48_private_cycle.cmd';
+  const privateActionKind=privateTask?privateTaskActionKind(command,args,xml):null;
+  const actionMatches=privateTask?privateActionKind!==null:directAction||cmdAction;
   const info={
+    ...(privateTask?{privateActionKind}:{}),
     xmlReadable:true,
     expectedActionMatches:actionMatches,
     expectedLocalTimeMatches:!!start&&start.slice(11,16)===time,
