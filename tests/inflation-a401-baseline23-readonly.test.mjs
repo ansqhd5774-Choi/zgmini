@@ -99,6 +99,33 @@ test('A4-01: existing SQLite WAL+SHM required before readOnly open',()=>{
  } finally {fs.rmSync(dir,{recursive:true,force:true});}
 });
 
+
+test('A4-01: reject SQLite files reached through an escaping storage directory symlink',
+  {skip:process.platform==='win32'},()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'a401-root-'));
+ const outside=fs.mkdtempSync(path.join(os.tmpdir(),'a401-outside-'));
+ try{
+  const dir=path.join(outside,'storage');
+  fs.mkdirSync(dir);
+  const actual=path.join(dir,'core.sqlite');
+  const bytes=Buffer.concat([Buffer.from('SQLite format 3\0'),Buffer.alloc(180)]);
+  fs.writeFileSync(actual,bytes);
+  fs.writeFileSync(actual+'-wal',Buffer.alloc(1));
+  fs.writeFileSync(actual+'-shm',Buffer.alloc(1));
+  fs.symlinkSync(dir,path.join(root,'storage'),'dir');
+  const linked=path.join(root,'storage','core.sqlite');
+  assert.throws(()=>requireExistingWalSidecars(root,linked),
+    /W01_A401_DB_SIDECAR_UNVERIFIED/);
+  assert.deepEqual(fs.readFileSync(actual),bytes);
+  assert.equal(fs.existsSync(actual+'-wal'),true);
+  assert.equal(fs.existsSync(actual+'-shm'),true);
+ }finally{
+  fs.rmSync(root,{recursive:true,force:true});
+  fs.rmSync(outside,{recursive:true,force:true});
+ }
+});
+
+
 test('A4-01: no private PC data produces no false PASS, without opening a DB',()=>{
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'a401-no-raw-'));
  try {
