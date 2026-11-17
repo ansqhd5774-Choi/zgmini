@@ -97,4 +97,53 @@ try{
   console.log(`PASS ${width}px: 6 chart periods, newer snapshot and true zero in mocked Chromium`);
   await page.close();
  }
+ // One-off W06 #37 public Korea detail UI vs same live GET, NOT a permanent CI gate.
+ // The public payload is tagged researchOnly/productionEligible=false;
+ // a visible READY point cannot attest private SQLite/D1 provenance.
+ for(const width of [390,1440]){
+  const liveContext=await browser.newContext({
+   viewport:{width,height:900},locale:'ko-KR',reducedMotion:'reduce',
+  });
+  const live=await liveContext.newPage(),errors=[];
+  live.on('pageerror',error=>errors.push(error.message.slice(0,180)));
+  try{
+   const html=await live.goto('https://zgmini.kr/fear-greed/korea/',{
+    waitUntil:'domcontentloaded',timeout:45000,
+   });
+   assert.equal(html?.status(),200,'Korea detail public HTML must be reachable');
+   const payloadResponse=await live.request.get('https://zgmini.kr/api/indicators/korea-funds',{
+    timeout:20000,headers:{accept:'application/json','cache-control':'no-cache'},
+   });
+   assert.equal(payloadResponse.status(),200);
+   const payload=await payloadResponse.json(),composite=payload?.composite;
+   // The particular public snapshot is only asserted when it itself says READY.
+   // If the data turns unavailable, fail closed instead of inventing a score.
+   assert.equal(composite?.status,'READY','Recheck real publication state, no fallback data');
+   const root=live.getByTestId('kr-composite').first();
+   await root.waitFor({state:'visible',timeout:35000});
+   await live.waitForFunction(expected=>{
+    const root=document.querySelector('[data-testid="kr-composite"]');
+    const score=root?.querySelector('.cnn-score-value')?.textContent?.replace(/\\s+/g,'')??'';
+    return root?.getAttribute('data-market-state')==='ready'
+      && score.includes(expected);
+   },Number(composite.displayScore).toFixed(1),{timeout:35000});
+   const domValue=await root.locator('.cnn-score-value').first().textContent();
+   const domState=await root.getAttribute('data-market-state');
+   assert.equal(domState,'ready');
+   assert.ok((domValue??'').replace(/\\s+/g,'').includes(Number(composite.displayScore).toFixed(1)));
+   const headerDate=await root.locator('.fg-card-header-date').allTextContents();
+   const observed=String(composite.observationDate);
+   const dateLabel=observed.slice(0,4)+'.'+observed.slice(4,6)+'.'+observed.slice(6,8);
+   assert.ok(headerDate.join(' ').includes(dateLabel),
+    'The detail card header must show the actual published observation date');
+   await live.screenshot({path:`artifacts/dashboard-history/live-korea-${width}.png`,fullPage:false});
+   console.log('W06_37_LIVE_KOREA_UI',JSON.stringify({
+    width,htmlStatus:html?.status(),apiHttpStatus:payloadResponse.status(),
+    publishedStatus:composite.status,observedDate:composite.observationDate,
+    apiDisplayScore:composite.displayScore,domScore:(domValue??'').replace(/\\s+/g,''),
+    domState,headerDate:headerDate.join(' ').slice(0,120),pageErrors:errors
+   }));
+   assert.deepEqual(errors,[],'No unhandled page errors in real Korea detail');
+  }finally{await liveContext.close();}
+ }
 }finally{await browser.close();}
