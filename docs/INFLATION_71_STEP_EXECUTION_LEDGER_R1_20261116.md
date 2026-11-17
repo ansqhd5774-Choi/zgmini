@@ -2,7 +2,7 @@
 
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
-## 최신 인계 스냅샷 — W01 2026-11-17 (Census M3 명시 날짜 무결성 수정 PR #1215·Node24 격리 CI PASS·원본 미병합/운영 수집 차단 유지·30/71)
+## 최신 인계 스냅샷 — W01 2026-11-17 (Census M3 월중 날짜 보정 추가 차단 PR #1215·Node24 신규 격리 CI 검증 중·운영 Census 수집 별도 차단·30/71)
 
 > **다음 작업자는 이 스냅샷부터 시작한다.** 진행 기록 파일 자체가 지정된 정본이고, 상위 계획은 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)이다. 과거 이력의 오래된 설치 SHA·대기 문구가 이 스냅샷을 덮어쓰지 않는다.
 
@@ -599,3 +599,13 @@ B4 10 | Production·화면 최종 검증
 - **정확 소스 교차 확인:** 본 검증 PR과 [원본 2파일 PR #1215](https://github.com/ansqhd5774-Choi/zgmini/pull/1215) source Git blob `cf6cb4c227130326256fa8aa6787c64fbe8c90d1`, test blob `ef417b507d2223a8922f37b9bfdf0794aae6e2f1` **2/2 동일**. 원본과 proof 간 Git diff **오직 기존 `tests/inflation-causal-candidates-public-7-r1.test.mjs`의 1줄 import**. 임시 proof **CLOSED/UNMERGED**했고 원본 #1215는 **OPEN/미병합**. [원본 PR 댓글](https://github.com/ansqhd5774-Choi/zgmini/pull/1215#issuecomment-6937163930)·[공통 #68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6937175522) 완료 증거 기록.
 - **보호 경계:** 소스 결함 1개 수정만 완료, 실제 공급자 수집·PC 설치·운영 SQLite/D1/Task/Cloudflare 쓰기 및 현재 Event129/Task-linked Core owner 실증 **0**. 26/26 원자료/신규 7/7 공개를 완료한 것으로 표시하지 않음. 제어 #1854 독립 재리뷰·#1866/#1871 승인·정확 Controller manifest·W03 포함 설치 범위 조정은 별도 미완료. 과거 소비된 B #1818 replay 금지.
 - **진행률 종료:** **30/71(42.3%)**, 41개 OPEN. 다음 기능 필수 실행은 공용 Controller의 독립 리뷰/정확 승인·실제 설치 후 W01 A TaskScheduler enabled + 자연 Core Task/WMI/E-lock/PID proof → **신규 고유 Census B** 2GET·원자료 SHA/storedAt 검증. PR #1215는 정규 source 리뷰·선별 병합 판정 대상이며, PR/CI만으로 운영 배포 완료라 주장하지 않음.
+
+## 2026-11-17 KST — Census M3 월중 날짜가 월초로 변환되는 출처 무결성 결함 수정 (source-only)
+
+- **단계:** 시작 **30/71(42.3%) → 30/71(42.3%)**, 41 OPEN. 운영 Census #28 raw MISSING·게시 PENDING은 이전 유효 증거이며 이번에 새로운 실PC 관측/수집을 하지 않음. 공급자 GET·운영 PC 원자료/SQLite·D1·Task·Controller/Worker 배포 0.
+- **최소 결함:** `monthDate()`는 `2026-09-15` 또는 `2026-08-15 00:00:00.0`처럼 **실제로 존재하나 월초가 아닌 날짜**를 `2026-09-01` 또는 `2026-08-01`로 바꿀 수 있어 월간 관측월 첫날을 실측 날짜처럼 생성할 위험. 공식 Census M3 월간 슬롯은 월초 날짜 `YYYY-MM-01` 또는 첫날 midnight만 유효. 앞선 명시 불가능 날짜 `2026-02-30`와 비자정 타임스탬프 방지에 이어 월중 날짜도 격리.
+- **수정:** `monthDate()`의 날짜 일(day) 그룹이 있는 경우 `01` 아닌 값은 `null`로 거부. 정상 `YYYY-MM` fallback, `YYYY-MM-01` 및 `YYYY-MM-01 00:00:00.0`는 유지. `time_slot_date` 명시 비정상 값의 `time` 대체 금지, 공급자 `MTM/TI/SA/US`, USD million, 관측값·리비전·last-good·quota·API 경로 불변.
+- **회귀:** 기존 한 개 신규 `explicit invalid Census time_slot_date...` 테스트에 3개 경계 행 추가(명시 2026-12-15, midnight 2026-08-15, blank slot + fallback time=2026-07-15). 정확 정상 2개 월만 허용, invalid 5개 확인. W01 원담당 브랜치 source commit `80b3e132898dfeb53c93d8769f518d4975cba2f4`, test commit `30e22927399f009b1a0647003d640a5717ae8693`. Git source blob `c058704b22e0745c7be8eecc84082dc80ca02413`, test blob `650711a91afbef2dc0e4f90679deecc8eaab4de6`; [원본 소스 PR #1215](https://github.com/ansqhd5774-Choi/zgmini/pull/1215)는 **같은 두 blob**, OPEN·미병합. 기존 변경 파일 수 2 유지.
+- **검증 적용 중:** 기본 앱 CI가 `scripts/pc-writer/*.test.mjs`를 자동 포함하지 않으므로 source/test exact blob 2개 + 임시 루트 test import 한 줄만 추가한 비배포 [Proof Draft PR #1218](https://github.com/ansqhd5774-Choi/zgmini/pull/1218), HEAD `f5432c31aad2b3443c541d95bcdcb723a2943c09`. 실제 [Node CI #44011123307](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44011123307) 최초 조회 **IN_PROGRESS**; 결과 확인 전 PASS 선언 금지. 이전 [Node CI #44009658547](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44009658547)의 4,707 PASS는 **이번 월중 날짜 패치 이전 소스**이므로 새 패치의 CI를 대신하지 않음.
+- **운영 차단 유지:** 제어 PR #1854 독립 SOURCE_REVIEW_HOLD, #1866/#1871 미설치 및 W03 누적 runtime 승인 미완료. 마지막 실PC Controller SHA `384ffd09...`는 그 시점 관측 증거. Event129 enabled 현재 상태/Task-linked Core 소유권 미확인, 기존 B #1818 consumed/replay FORBIDDEN.
+- **다음 단일 행동:** 정확 2파일 새 CI 완료·원격 결과/로그 검증→Proof PR #1218 미병합 종료→W01 원장 최종 CI evidence readback. 본 소스 수정은 A3-09/A4-04·B3/B4 실제 저장/게시 완료로 산입하지 않음. 실제 기능 다음 실행은 공유 Controller 정규 승인/적용 및 Core owner 자연 증명 뒤 새 고유 Census B.
