@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {THEME_PUBLIC_READBACK_KEYS,summarizeThemePublicReadback} from
+import {THEME_PUBLIC_READBACK_KEYS,summarizeThemePublicReadback,themeSevenMetadataOnly} from
  '../scripts/pc-writer/theme-public-readback-presence.mjs';
 const AT='2026-11-14T01:00:00Z';
 const rows=()=>THEME_PUBLIC_READBACK_KEYS.map((feed_key,i)=>({feed_key,stored_at:1763070000000+i}));
@@ -67,4 +67,37 @@ test('existing Writer SQL contract stays unchanged; summary consumes previous fe
  assert.equal(source.includes('themePublicReadback:summarizeThemePublicReadback(feeds,{observedAt})'),true);
  assert.equal((source.match(/remote\.query\(/g)??[]).length,3);
  assert.equal(/\b(?:INSERT|UPDATE|DELETE|REPLACE|DROP|ALTER)\s+(?:INTO|TABLE|FROM)\b/i.test(source),false);
+});
+
+test('opt-in seven-key report suppresses unrelated D1 results and secrets',()=>{
+ const data=rows();
+ data.push({feed_key:'unrelated-private-output',stored_at:1763070000000,
+  body:'RAW_PRICE_SECRET',credential:'PRIVATE_CREDENTIAL'});
+ const restricted=themeSevenMetadataOnly(data,{observedAt:AT});
+ assert.deepEqual(Object.keys(restricted).sort(),['at','themePublicReadback']);
+ assert.equal(restricted.at,AT);
+ assert.equal(restricted.themePublicReadback.feeds.length,7);
+ assert.equal(restricted.themePublicReadback.status,'ALL_KEYS_PRESENT_METADATA_ONLY');
+ const output=JSON.stringify(restricted);
+ for(const secret of ['unrelated-private-output','RAW_PRICE_SECRET','PRIVATE_CREDENTIAL',
+   '"market"','"projections"','"stats"','"rightsVerified"','"publicationAuthorized"'])
+  assert.equal(output.includes(secret),false);
+});
+test('seven-key mode preserves NOT_READ and does not manufacture presence',()=>{
+ const restricted=themeSevenMetadataOnly(null,{observedAt:AT});
+ assert.equal(restricted.themePublicReadback.status,'NOT_READ');
+ assert.ok(restricted.themePublicReadback.feeds.every(r=>r.exists===null));
+});
+test('seven-key readback CLI is explicit and legacy mode keeps original SQL/output',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const {fileURLToPath}=await import('node:url');
+ const {resolve,dirname}=await import('node:path');
+ const source=readFileSync(resolve(dirname(fileURLToPath(import.meta.url)),
+  '../scripts/pc-writer/read-publication-readback.mjs'),'utf8');
+ assert.ok(source.includes("process.argv[2]==='--theme-seven-metadata-only'"));
+ assert.ok(source.includes("if(mode==='theme-seven')"));
+ assert.ok(source.includes('JSON.stringify(themeSevenMetadataOnly(feeds,{observedAt}))'));
+ assert.ok(source.includes('themePublicReadback:summarizeThemePublicReadback(feeds,{observedAt})'));
+ assert.equal((source.match(/remote\\.query\\(/g)??[]).length,3);
+ assert.equal(/\\b(?:INSERT|UPDATE|DELETE|REPLACE|DROP|ALTER)\\s+(?:INTO|TABLE|FROM)\\b/i.test(source),false);
 });
