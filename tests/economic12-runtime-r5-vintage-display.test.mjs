@@ -15,7 +15,7 @@ test("history mismatch explicitly shows last score and date, not a guessed chang
  assert.ok(s.includes("lastSavedHistory.value.toFixed(1)"));
  assert.ok(s.includes("dateLabel(lastSavedHistory.label)"));
  assert.ok(s.includes("기간별 비교 보류"));
- assert.ok(s.includes('hasVerifiedPeriodComparisons=(id!=="inflation"||(score!==null&&inflationChart.length>0))&&Object.values(periods).some'));
+ assert.ok(s.includes('hasVerifiedPeriodComparisons=(id!=="inflation"||(score!==null&&inflationChart.length>0))&&(id!=="rates"||(score!==null&&rateChartCurrent))&&Object.values(periods).some'));
  assert.ok(s.includes('기간 비교는 검증된 별도 저장 점수 기준'));
  assert.ok(s.includes('hasVerifiedPeriodComparisons?"기간 비교는 검증된 별도 저장 점수 기준":"서로 달라 기간별 비교 보류"'));
  assert.ok(s.includes('liquidityStoredScoreComparisons(history,lastSavedHistory?.label??"",score)'));
@@ -25,5 +25,5 @@ test("API missing period fields and UI computed periods remain distinct concepts
  for(const key of ["week","month","threeMonth","sixMonth","year"])assert.ok(s.includes(key+":producer?."+key+"??computed."+key),"published override / verified stored history fallback for "+key);
  assert.ok(s.includes("const computed=liquidityStoredScoreComparisons"));
  assert.ok(s.includes('history=useMemo(()=>normalizeTrend(id==="inflation"?inflationChart:id==="employment"?employmentChart:id==="rates"?rateChart:domain?.trend)'));
- assert.ok(s.includes('id==="inflation"?inflationChart:id==="employment"?employmentChart:economicOneYearChart(domain?.trend)'));
+ assert.ok(s.includes('id==="inflation"?inflationChart:id==="employment"?employmentChart:id==="rates"?rateChart:economicOneYearChart(domain?.trend)'));
 });
