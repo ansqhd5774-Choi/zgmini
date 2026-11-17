@@ -1248,3 +1248,22 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 
 **NEXT 하나:** 자연 Core 유휴와 writer-source lease/현재 PC source·원본 B 권한이 관련 정규 증거에서 확인될 때 W05 원담당이 **새 고유 승인 B 단회 요청**을 기존 공통 installer로 실행하여 PC SHA·JSON/TXT 2/2 검증; 기존 Issue #1919 재실행·총괄 재인계 금지. 설치까지 독립 Draft PR #1231 소스 검토는 병렬 가능하되, 최초 승인 source SHA 고정·무승인 BLS API/SQLite/D1/웹 배포 금지.
 
+
+## 68. R3-04 (2026-11-17 KST) WPSFD42 서비스 단독 수집기 namespace 분리·회귀·GitHub Node CI 5/5 — SOURCE_FIX_CI_PASS / CORE_RESOURCE_WAIT
+
+**시작→종료 진행률:** 개별 DONE **28/82(34.1%) → 28/82(34.1%)**, 순차 DONE **26/82(31.7%) → 26/82(31.7%)**. 첫 미완료 R3-04 실제 PC WPSFD42 원자료 수집/SQLite 저장과 설치 미완료. Source-only 후속 개발은 운영 완료 단계로 합산하지 않음.
+
+**출발 증거 재사용:** §67 원담당 직접 수신 [#1919/6941888879](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1919#issuecomment-6941888879); 정식 source-only B 승인 manifest SHA256 `4397597f7424146c81218c0d3e1eaf12d25afa26a3b62f89bfde1074e8d95f16`의 설치 후보 `2a9a38a452b5ba95a3e370c5b56445bb75fa05bb` 불변; 고유 #1919/Run 44034883567의 `WRITER_B_PREFLIGHT_STOP / WRITER_B_CORE_ACTIVE_WINDOW_DEFERRED` 및 원격 JSON/TXT 2/2 재사용; 이후 #1924 승인 A는 2026-11-17 16:13 KST에 Core busy/`releaseVerified=false` 관측. Core 재진단·중복 B Issue·실행·총괄 재인계 0.
+
+**새 결함 확인:** 기존 R3C `checkSchema(db,{includeServices:true})`가 `--services-only`에서도 기본 BLS WPSFD4/WPSFD41/PRS85006111 세 원천을 함께 검사함. 따라서 서비스 원본이 유효해도 무관한 기본 3원천 provenance 손상이 서비스 단독 수집 preflight 및 트랜잭션 append를 차단할 수 있었음. §66 Reader 계산 독립성 수정과 별개인 수집기 종속성 결함.
+
+**수정 소스 및 회귀 — 기존 3파일 운영 승인 후보 불변:**
+1. [후속 Draft PR #1231](https://github.com/ansqhd5774-Choi/zgmini/pull/1231)에서 R3C `checkSchema`에 `serviceOnly` 이름공간 선택 추가. `main()`의 `--services-only` 사전검사와 `insertPlans()`의 `WPSFD42` 단독 트랜잭션 검사는 WPSFD42만 대상으로 하며, 기본 BLS 3원천과 혼합 4원천 검사는 이전 그대로. 기존 데이터나 스키마 수정 없이 fail-closed 유지. [수정 commit `665c33c9`](https://github.com/ansqhd5774-Choi/zgmini/commit/665c33c922d582e2f44518cfc898e92256f3a5e5).
+2. 동일 PR의 [추가 회귀 commit `75745725`](https://github.com/ansqhd5774-Choi/zgmini/commit/7574572502ebb7e82ce6cea03b7c9c56c8faa042): 메모리 SQLite에서 기본 WPSFD4 provenance 손상 → 기본/혼합 검사 거부 유지 → WPSFD42 독립 저장/해시 재조회 성공 → WPSFD42 자체 손상은 단독 검사/append 모두 거부, 기본 원본 손상 바이트 불변을 검증.
+3. 정확 새 후속 HEAD `7574572502ebb7e82ce6cea03b7c9c56c8faa042`의 [GitHub Node.js CI #44042569374](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44042569374) **completed/success, Build·Type check·Regression tests·PC publication recovery tests·Cloudflare read contracts 5/5 PASS**. 기존 검증용 PR #1233은 새 HEAD CI 후 `closed/merged=false`로 정리. 검토 PR #1231은 Draft/open, 기존 승인 Source 후보 PR #1207은 불변.
+
+**검증 범위:** 이 성과는 실제 소스 2파일 수정(수집기·회귀시험) 및 새 CI뿐이다. 운영 PC source 설치 0, BLS API POST 0, 운영 SQLite/D1 쓰기 0, Task/Controller/Cloudflare Production 변경 0. 정규 source-only B 승인은 이 후속 HEAD를 포함하지 않으므로 승인 없이 새 바이트를 설치하지 않는다.
+
+**LAST PASS:** WPSFD42 서비스 전용 수집·사전검사의 기본 3원천 불필요 종속성을 해소하고 기본/혼합 엄격 검사 보존, exact CI 5/5 PASS, 후속 Draft 격리 및 원래 3파일 승인 후보 고정. **FIRST UNFINISHED:** Core 자연 유휴/Writer resource 원격 해제 증명과 새로운 정규 단회 B 유효권한 후 기존 정확 3파일 설치·PC SHA/JSON/TXT, 이후 별도 승인된 WPSFD42 공급자 POST·SQLite 저장 및 실제 D1/API/UI 확인.
+
+**NEXT 하나 / W05 원담당:** `writer-source`의 현행 자연 Core 유휴·소유권/lease/원본 PC source와 유효 단회 B 재승인 조건을 독립 증거로 확인할 수 있을 때만 **새 고유** Writer B source-only 실행으로 3파일 설치 및 원격 결과쌍/설치 SHA 확인. 소비된 #1919 재실행·기존 B 승인 후보에 #1231 후속 파일 혼합·Core 강제 중지·무승인 Provider/DB/D1 효과 금지. 기능 개발은 독립 병행 가능.
