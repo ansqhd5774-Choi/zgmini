@@ -170,7 +170,12 @@ test('one missing old component cannot be silently carried as numeric zero or ex
 
 test('out-of-bounds, nonnumeric and nonfinite new input never produces a READY overall',()=>{
  for(const bad of [null,undefined,NaN,Infinity,'70',-1,101]){
-  const changed=newObservation(baseline(),bad);
+  // Inject the malformed score explicitly: a default argument would
+  // silently turn undefined into the fixture's valid 70-point value.
+  const changed=newObservation(baseline(),70);
+  const malformed=changed.find(x=>x.id===updatedId);
+  malformed.score=bad;
+  malformed.trend.at(-1).value=bad;
   const result=calc(changed,nextDate+'T09:00:00Z');
   assert.equal(result.overall.status,'PARTIAL');
   assert.equal(result.overall.score,null);
