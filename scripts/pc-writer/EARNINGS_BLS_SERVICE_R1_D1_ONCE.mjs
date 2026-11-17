@@ -32,7 +32,8 @@ try {
   // Approved Writer B runs may supply a request-specific evidence directory.
   // Otherwise one-shot evidence stays in user TEMP, never source checkout.
   resultDirectory=resolvePublicationResultDirectory({
-    requested:process.env.ZGMINI_EARNINGS_C_LOG_DIR,fallback:os.tmpdir()});
+    requested:process.env.ZGMINI_EARNINGS_C_LOG_DIR,
+    fallback:os.tmpdir(),excludedSourceRoot:stageRoot});
   if(args.some(arg=>!['--dry-run','--apply','--confirm-earnings-c-service-d1-write'].includes(arg))
     ||args.includes('--apply')&&args.includes('--dry-run'))
     throw Error('EARNINGS_C_SERVICE_INVALID_ARGUMENT');
@@ -100,7 +101,7 @@ try {
     const file=path.join(resultDirectory,`EARNINGS_BLS_SERVICE_R1_D1_RESULT_${stamp}.txt`);
     fs.writeFileSync(file,lines.join('\r\n')+'\r\n',{encoding:'utf8',flag:'wx'});
     console.log(`LOG_FILE=${path.basename(file)}`);
-    console.log(`LOG_LOCATION=${process.env.ZGMINI_EARNINGS_C_LOG_DIR?'B_REQUEST_DIR':'USER_TEMP'}`);
+    console.log(`LOG_LOCATION=${path.resolve(resultDirectory)===path.resolve(os.tmpdir())?'USER_TEMP':'B_REQUEST_DIR'}`);
   }catch{
     console.error('ERROR=EARNINGS_C_SERVICE_RESULT_TXT_WRITE_FAILED');
     exitCode=1;
