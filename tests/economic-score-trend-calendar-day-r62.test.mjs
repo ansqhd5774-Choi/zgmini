@@ -62,7 +62,8 @@ test('stored-only score selection and raw chart values preserve null and zero',(
  const source=panel();
  assert.match(source,/useStoredIndex<Snapshot>\("\/api\/market-score"\)/);
  assert.match(source,/domain\?\.status==="READY"&&validScore\(domain\.score\)/);
- assert.match(source,/const chart:MarketFearGreedChartPoint\[\]=useMemo\(\(\)=>economicOneYearChart\(domain\?\.trend\)/);
+ assert.match(source,/const chart:MarketFearGreedChartPoint\[\]=useMemo\(\(\)=>id==="inflation"\?inflationChart:economicOneYearChart\(domain\?\.trend\)/);
+ assert.match(source,/verifiedEconomicInflationChart\(domain,payload\?\.asOfDate,score\)/);
  assert.match(source,/<MarketFearGreedChart data=\{chart\}/);
  const chart=economicOneYearChart([
   {date:'2026-10-01',value:27},
