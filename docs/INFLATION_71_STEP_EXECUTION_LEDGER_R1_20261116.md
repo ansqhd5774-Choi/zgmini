@@ -2,7 +2,7 @@
 
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
-## 최신 인계 스냅샷 — W01 2026-11-17 (Census M3 명시 날짜 fallback 무결성 수정 PR #1215·격리 CI 검증 중·운영 수집 차단 유지·30/71)
+## 최신 인계 스냅샷 — W01 2026-11-17 (Census M3 명시 날짜 무결성 수정 PR #1215·Node24 격리 CI PASS·원본 미병합/운영 수집 차단 유지·30/71)
 
 > **다음 작업자는 이 스냅샷부터 시작한다.** 진행 기록 파일 자체가 지정된 정본이고, 상위 계획은 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)이다. 과거 이력의 오래된 설치 SHA·대기 문구가 이 스냅샷을 덮어쓰지 않는다.
 
@@ -592,3 +592,10 @@ B4 10 | Production·화면 최종 검증
 - **CI 실행 계약:** 기본 app `node.js.yml`은 `node --test tests/*.test.mjs`만 실행하여 `scripts/pc-writer/...census-m3.test.mjs`를 직접 검증하지 못한다. 정확한 소스 두 blob에 **임시 기존 테스트 엔트리 import 1행만 추가**한 [격리 Draft proof PR #1216](https://github.com/ansqhd5774-Choi/zgmini/pull/1216) HEAD `c108878141abf68f22d0799dd2735aa6f5e679d4`, 실제 [Node.js CI Run #44009658547](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44009658547) 실행 중(초기 조회). CI 최종 PASS/FAIL을 조회하기 전에는 검증 완료로 주장하거나 원본 #1215를 병합하지 않는다. Proof PR은 검증 후 닫고 미병합 유지.
 - **마지막 보호 상태:** 제어 #1854 독립 SOURCE_REVIEW_HOLD·#1866 미병합·통합 Draft #1871 미설치, 실제 설치 Controller 마지막 `384ffd09...`, Event129 enabled 현행 미실측, 자연 Core Task-linked owner 증거 없음. 기존 승인 Census B #1818 0GET STOP은 소비됨/재실행 금지.
 - **다음 단일 행동:** 격리 Node CI에서 정확 Census 신규 회귀 포함 결과 확인→원본 2파일 PR 검증 기록·임시 Proof 종료→공유 승인 B 경로와 Core owner 별개 복구 후에만 신규 Census #28 단회 수집/저장·SHA/readback. 단독 source fix를 26/26 저장 완료로 승격하지 않음.
+
+### 2026-11-17 KST — 명시 날짜 회귀시험 정확 소스 CI 최종 검증 및 임시 PR 종료
+
+- **CI 실제 완료:** [격리 임시 proof PR #1216](https://github.com/ansqhd5774-Choi/zgmini/pull/1216) HEAD `c108878141abf68f22d0799dd2735aa6f5e679d4`, 실제 [Node.js 24 CI #44009658547](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44009658547) job `133793331950` **completed/success**. Node 전체 regression **4,717 tests/4,707 PASS/0 FAIL/10 SKIP**, PC publication recovery **11/11 PASS**, Cloudflare candidate contracts **69/69 PASS**. 실제 로그에서 신규 `explicit invalid Census time_slot_date cannot be replaced by alternate time month`와 이전 `Census month criterion accepts official time if time_slot_date is blank`, 기존 partial-schema fixture 각각 PASS 직접 검증.
+- **정확 소스 교차 확인:** 본 검증 PR과 [원본 2파일 PR #1215](https://github.com/ansqhd5774-Choi/zgmini/pull/1215) source Git blob `cf6cb4c227130326256fa8aa6787c64fbe8c90d1`, test blob `ef417b507d2223a8922f37b9bfdf0794aae6e2f1` **2/2 동일**. 원본과 proof 간 Git diff **오직 기존 `tests/inflation-causal-candidates-public-7-r1.test.mjs`의 1줄 import**. 임시 proof **CLOSED/UNMERGED**했고 원본 #1215는 **OPEN/미병합**. [원본 PR 댓글](https://github.com/ansqhd5774-Choi/zgmini/pull/1215#issuecomment-6937163930)·[공통 #68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6937175522) 완료 증거 기록.
+- **보호 경계:** 소스 결함 1개 수정만 완료, 실제 공급자 수집·PC 설치·운영 SQLite/D1/Task/Cloudflare 쓰기 및 현재 Event129/Task-linked Core owner 실증 **0**. 26/26 원자료/신규 7/7 공개를 완료한 것으로 표시하지 않음. 제어 #1854 독립 재리뷰·#1866/#1871 승인·정확 Controller manifest·W03 포함 설치 범위 조정은 별도 미완료. 과거 소비된 B #1818 replay 금지.
+- **진행률 종료:** **30/71(42.3%)**, 41개 OPEN. 다음 기능 필수 실행은 공용 Controller의 독립 리뷰/정확 승인·실제 설치 후 W01 A TaskScheduler enabled + 자연 Core Task/WMI/E-lock/PID proof → **신규 고유 Census B** 2GET·원자료 SHA/storedAt 검증. PR #1215는 정규 source 리뷰·선별 병합 판정 대상이며, PR/CI만으로 운영 배포 완료라 주장하지 않음.
