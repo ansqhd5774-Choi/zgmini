@@ -152,7 +152,7 @@ test("WAL read-only open is fail-closed before SQLite can create missing sidecar
 test("already-present WAL sidecars permit a bounded read without claiming zero directory I/O",async t=>{
   const env=environment(t);
   const writer=new DatabaseSync(env.core);
-  t.after(()=>writer.close());
+  try {
   writer.exec(`PRAGMA journal_mode=WAL; CREATE TABLE ${TABLE} (
     history_id INTEGER PRIMARY KEY AUTOINCREMENT,
     logical_series_id TEXT,geography_type TEXT,geography_code TEXT,
@@ -168,6 +168,10 @@ test("already-present WAL sidecars permit a bounded read without claiming zero d
   assert.equal(report.walPreflight.coreWalMode,true);
   assert.equal(report.walPreflight.coreWalSidecarsPreexisting,true);
   assert.equal(report.operationalDirectoryWrites,"NOT_ASSERTED");
+  } finally {
+    // The WAL writer must close before environment(t) removes this directory on Windows.
+    writer.close();
+  }
 });
 
 test("WAL seal catches sidecar disappearance/replacement before a second read",t=>{
