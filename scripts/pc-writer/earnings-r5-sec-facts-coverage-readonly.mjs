@@ -52,7 +52,7 @@ export function auditStoredSecFactsCoverage({issuerCiks,asOf,readSource}={}) {
     asOf,universeIssuerCount:universe.length,
     sourceFilesFound:0,sourceFilesMissing:0,sourceFilesRejected:0,
     contentSha256Computed:0,providedSha256Matched:0,
-    aggregateContentSha256:null,
+    aggregateContentSha256:null,sourceCoverageComplete:false,
     metrics:metricCounts,
     providerCalls:0,sqliteWrites:0,d1Writes:0,
     productionActivation:false,sourceArchiveShaVerified:false,
@@ -116,9 +116,16 @@ export function auditStoredSecFactsCoverage({issuerCiks,asOf,readSource}={}) {
 
   summary.aggregateContentSha256=manifest.length
     ? digest(Buffer.from(manifest.join('\n'),'utf8')):null;
+  // If a source file is missing, the observed counts are only lower bounds.
+  // Null must not be silently represented as 0% confirmed coverage.
+  summary.sourceCoverageComplete=summary.sourceFilesFound===universe.length;
   for (const values of Object.values(metricCounts)) {
-    values.currentCoverage=values.currentIssuerCount / universe.length;
-    values.comparableCoverage=values.comparableIssuerCount / universe.length;
+    values.currentCoverageLowerBound=values.currentIssuerCount / universe.length;
+    values.comparableCoverageLowerBound=values.comparableIssuerCount / universe.length;
+    values.currentCoverage=summary.sourceCoverageComplete
+      ? values.currentCoverageLowerBound:null;
+    values.comparableCoverage=summary.sourceCoverageComplete
+      ? values.comparableCoverageLowerBound:null;
   }
   // Hashes computed from local bytes do not attest that the underlying SEC
   // bulk archive or vendor vintage was captured and verified at the PC.
