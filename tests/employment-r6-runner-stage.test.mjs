@@ -96,6 +96,38 @@ test("Runner projection ignores injected source paths, raw values and unbounded 
   assert.ok(Buffer.byteLength(text)<12000);
 });
 
+test("PIT-04-05 Runner reports only bounded group/month source attestation counts",async t=>{
+  const env=environment(t);fixture(env.core);fixture(env.candidate,{row:true});
+  const body=await stageEmploymentR6OneYear(runnerOptionsFrom(argv(env)));
+  const pitCoverage={
+    rawSnapshotMetadataKeys:2,rawSnapshotCertifiedKeys:1,
+    rawSnapshotInvalidBodyKeys:1,rawSnapshotValidWithoutRunKeys:0,
+    rawSnapshotByGroup:[{releaseGroup:"BLS_BED",metadataKeys:2,
+      bodyVerifiedKeys:1,runCertifiedKeys:1}],
+    rawSnapshotByMonth:[{retrievalMonth:"2026-10",metadataKeys:2,
+      bodyVerifiedKeys:1,runCertifiedKeys:1}],
+  };
+  const report=projectEmploymentR6RunnerResult({body,pitCoverage});
+  assert.equal(report.pit.rawSnapshotInvalidBodyKeys,1);
+  assert.equal(report.pit.rawSnapshotValidWithoutRunKeys,0);
+  assert.equal(report.pit.rawSnapshotByGroup[0].releaseGroup,"BLS_BED");
+  assert.equal(report.pit.rawSnapshotByMonth[0].retrievalMonth,"2026-10");
+  assert.equal(report.promotionApproved,false);
+  assert.equal(report.providerCalls,0);
+  assert.doesNotMatch(JSON.stringify(report),/requestKey|snapshotId|sourceHash|rawBody/);
+  assert.throws(()=>projectEmploymentR6RunnerResult({body,pitCoverage:{
+    ...pitCoverage,rawSnapshotByGroup:[{...pitCoverage.rawSnapshotByGroup[0],
+      releaseGroup:"PRIVATE_RAW_PROVIDER_KEY"}],
+  }}),/RUNNER_R6_ATTESTATION_INVALID/);
+  assert.throws(()=>projectEmploymentR6RunnerResult({body,pitCoverage:{
+    ...pitCoverage,rawSnapshotValidWithoutRunKeys:2,
+  }}),/RUNNER_R6_ATTESTATION_INVALID/);
+  assert.throws(()=>projectEmploymentR6RunnerResult({body,pitCoverage:{
+    ...pitCoverage,rawSnapshotByMonth:[{...pitCoverage.rawSnapshotByMonth[0],
+      retrievalMonth:"2026-10-31T12:34:56.000Z"}],
+  }}),/RUNNER_R6_ATTESTATION_INVALID/);
+});
+
 test("Runner requires a single explicit candidate and rejects publish, discovery and unknown args",t=>{
   const env=environment(t);fixture(env.core);fixture(env.candidate,{row:true});
   for(const added of [

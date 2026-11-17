@@ -8,6 +8,7 @@ import crypto from "node:crypto";
 import {pathToFileURL} from "node:url";
 
 import {EMPLOYMENT_R6_FEATURES} from "../../lib/market-score/employment-r6-formula.mjs";
+import {EMPLOYMENT_R6_GROUPS} from "../../lib/market-score/employment-r6-contract.mjs";
 import {validEmploymentR6PublicDisplay} from "../../worker/employment-r6-public-display.mjs";
 import {optionsFrom,stageEmploymentR6OneYearWithPitAudit} from "./employment-r6-one-year-stage.mjs";
 
@@ -18,6 +19,7 @@ const SCORE=new Set(["READY","PARTIAL_HISTORY","PARTIAL_MISSING"]);
 const INPUT_FLAGS=new Set(["--db","--candidate-db-external","--output-dir","--as-of"]);
 const PIT_COUNTS=[
   "rawSnapshotMetadataKeys","rawSnapshotCertifiedKeys",
+  "rawSnapshotInvalidBodyKeys","rawSnapshotValidWithoutRunKeys",
   "coreCurrentRawLineageVerifiedKeys","coreCurrentRawLineageMissingSnapshotKeys",
   "coreCurrentRawLineageConflictingKeys","coreCurrentRawLineageUnverifiedKeys",
   "coreHistoryRawLineageTotalRows","coreHistoryRawLineageVerifiedRows",
@@ -53,7 +55,8 @@ const SAFE_ERRORS=new Set([
   "RUNNER_R6_ISOLATED_CANDIDATE_REQUIRED","RUNNER_R6_SQLITE_HEADER_INVALID",
   "RUNNER_R6_SQLITE_INSPECTION_FAILED","RUNNER_R6_PUBLIC_DISPLAY_INVALID",
   "RUNNER_R6_INDICATOR_COUNT_INVALID","RUNNER_R6_INDICATOR_STATUS_INVALID",
-  "RUNNER_R6_REPORT_TOO_LARGE","WAL_SIDECAR_NOT_READY","WAL_SIDECAR_CHANGED",
+  "RUNNER_R6_REPORT_TOO_LARGE","RUNNER_R6_ATTESTATION_INVALID",
+  "WAL_SIDECAR_NOT_READY","WAL_SIDECAR_CHANGED",
   "EXTERNAL_CANDIDATE_PATH_INVALID","EXTERNAL_CANDIDATE_FILE_INVALID",
   "EXTERNAL_CANDIDATE_FILE_UNAVAILABLE","EXTERNAL_CANDIDATE_FILE_CHANGED",
   "CANDIDATE_CORE_FILE_ALIAS_FORBIDDEN",
@@ -159,6 +162,31 @@ export function assertWalSidecarSeal(dbPath,expected){
   }
 }
 
+// The Runner may export only frozen provider groups, retrieval month buckets
+// and count triples. All body hashes, request keys and exact dates remain private.
+const R6_RELEASE_GROUPS=new Set([...Object.keys(EMPLOYMENT_R6_GROUPS),"UNKNOWN"]);
+const BUCKET_FIELDS=["metadataKeys","bodyVerifiedKeys","runCertifiedKeys"];
+const safeAttestationBuckets=(rows,field,allowed,maxRows)=>{
+  if(rows===null||rows===undefined)return null;
+  if(!Array.isArray(rows)||rows.length>maxRows)throw Error("RUNNER_R6_ATTESTATION_INVALID");
+  const seen=new Set();
+  return rows.map(row=>{
+    const name=row?.[field];
+    if(typeof name!=="string"||!allowed(name)||seen.has(name))
+      throw Error("RUNNER_R6_ATTESTATION_INVALID");
+    seen.add(name);
+    const values=Object.fromEntries(BUCKET_FIELDS.map(k=>[k,safeCount(row[k])]));
+    if(Object.values(values).some(v=>v===null)
+      ||values.bodyVerifiedKeys>values.metadataKeys
+      ||values.runCertifiedKeys>values.bodyVerifiedKeys)
+      throw Error("RUNNER_R6_ATTESTATION_INVALID");
+    return {[field]:name,...values};
+  });
+};
+const safeSourceMonth=value=>value==="OLDER"||value==="UNKNOWN"
+  ||/^\d{4}-(?:0[1-9]|1[0-2])$/.test(value);
+const sumBucket=(list,name)=>list.reduce((total,row)=>total+row[name],0);
+
 function projectPit(pitCoverage){
   const pit={};
   for(const field of PIT_COUNTS)pit[field]=safeCount(pitCoverage?.[field]);
@@ -169,6 +197,25 @@ function projectPit(pitCoverage){
     ?pitCoverage.rawLineageEvidenceStatus:"NO_RUNTIME_EVIDENCE";
   pit.candidateReconciliationPreviewStatus=PIT_STATUSES.has(pitCoverage?.candidateReconciliationPreviewStatus)
     ?pitCoverage.candidateReconciliationPreviewStatus:"NO_RUNTIME_EVIDENCE";
+  pit.rawSnapshotByGroup=safeAttestationBuckets(pitCoverage?.rawSnapshotByGroup,
+    "releaseGroup",group=>R6_RELEASE_GROUPS.has(group),R6_RELEASE_GROUPS.size);
+  pit.rawSnapshotByMonth=safeAttestationBuckets(pitCoverage?.rawSnapshotByMonth,
+    "retrievalMonth",safeSourceMonth,14);
+  if((pit.rawSnapshotByGroup===null)!==(pit.rawSnapshotByMonth===null))
+    throw Error("RUNNER_R6_ATTESTATION_INVALID");
+  if(pit.rawSnapshotByGroup!==null){
+    const groups=pit.rawSnapshotByGroup,months=pit.rawSnapshotByMonth;
+    if([pit.rawSnapshotMetadataKeys,pit.rawSnapshotCertifiedKeys,
+      pit.rawSnapshotInvalidBodyKeys,pit.rawSnapshotValidWithoutRunKeys].some(x=>x===null)
+      ||[groups,months].some(rows=>
+        sumBucket(rows,"metadataKeys")!==pit.rawSnapshotMetadataKeys
+        ||sumBucket(rows,"runCertifiedKeys")!==pit.rawSnapshotCertifiedKeys
+        ||sumBucket(rows,"bodyVerifiedKeys")!==
+          pit.rawSnapshotMetadataKeys-pit.rawSnapshotInvalidBodyKeys)
+      ||pit.rawSnapshotMetadataKeys-pit.rawSnapshotInvalidBodyKeys
+        !==pit.rawSnapshotCertifiedKeys+pit.rawSnapshotValidWithoutRunKeys)
+      throw Error("RUNNER_R6_ATTESTATION_INVALID");
+  }
   return pit;
 }
 

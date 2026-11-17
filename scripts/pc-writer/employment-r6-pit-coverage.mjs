@@ -231,8 +231,47 @@ const readRawLineageEvidence=(db,asOfDate)=>{
     const entries=byResponse.get(key)??[];
     entries.push(snap);byResponse.set(key,entries);
   }
-  return {byResponse,byStoredResponse,byClaimedResponse,rawSnapshotMetadataKeys:groups.size,
-    rawSnapshotCertifiedKeys:certified.size};
+  // Aggregate only frozen release-group names and retrieval months. Never
+  // export request keys, raw hashes, body bytes, individual timestamps or IDs.
+  const allowedGroups=new Set(Object.keys(EMPLOYMENT_R6_GROUPS));
+  const byGroup=new Map(),byMonth=new Map();
+  const monthOf=value=>typeof value==="string"
+    &&/^\d{4}-(?:0[1-9]|1[0-2])-\d{2}T/.test(value)
+    &&Number.isFinite(Date.parse(value))?value.slice(0,7):"UNKNOWN";
+  const add=(map,key,id)=>{
+    const row=map.get(key)??{metadataKeys:0,bodyVerifiedKeys:0,runCertifiedKeys:0};
+    row.metadataKeys++;
+    if(valid.has(id))row.bodyVerifiedKeys++;
+    if(certified.has(id))row.runCertifiedKeys++;
+    map.set(key,row);
+  };
+  for(const [id,parts] of groups){
+    const head=parts[0];
+    const group=allowedGroups.has(head?.release_group)?head.release_group:"UNKNOWN";
+    add(byGroup,group,id);
+    add(byMonth,monthOf(head?.retrieved_at),id);
+  }
+  const fields=(key,value,name)=>({[name]:key,...value});
+  const snapshotByGroup=[...byGroup].sort(([a],[b])=>a.localeCompare(b))
+    .map(([group,value])=>fields(group,value,"releaseGroup"));
+  // Bound month cardinality without dropping older evidence. UNKNOWN stays
+  // distinct from the OLDER (more than 12 distinct valid months) aggregate.
+  const monthly=[...byMonth].filter(([month])=>month!=="UNKNOWN")
+    .sort(([a],[b])=>b.localeCompare(a));
+  const recent=monthly.slice(0,12),older=monthly.slice(12);
+  const snapshotByMonth=recent.map(([month,value])=>fields(month,value,"retrievalMonth"));
+  if(older.length){
+    const totals={metadataKeys:0,bodyVerifiedKeys:0,runCertifiedKeys:0};
+    for(const [,row] of older)for(const key of Object.keys(totals))totals[key]+=row[key];
+    snapshotByMonth.push(fields("OLDER",totals,"retrievalMonth"));
+  }
+  if(byMonth.has("UNKNOWN"))snapshotByMonth.push(
+    fields("UNKNOWN",byMonth.get("UNKNOWN"),"retrievalMonth"));
+  return {byResponse,byStoredResponse,byClaimedResponse,
+    rawSnapshotMetadataKeys:groups.size,rawSnapshotCertifiedKeys:certified.size,
+    rawSnapshotInvalidBodyKeys:groups.size-valid.size,
+    rawSnapshotValidWithoutRunKeys:valid.size-certified.size,
+    rawSnapshotByGroup:snapshotByGroup,rawSnapshotByMonth:snapshotByMonth};
 };
 // A BLS HTTP response belongs to the top-level BLS source while each extracted
 // observation names its approved CPS/CES/JOLTS/ECI subgroup. Derive only exact
@@ -394,6 +433,10 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
       kind:"EMPLOYMENT_R6_PIT_READONLY_COVERAGE_R1",asOfDate,
       rawSnapshotMetadataKeys:rawLineage?.rawSnapshotMetadataKeys??null,
       rawSnapshotCertifiedKeys:rawLineage?.rawSnapshotCertifiedKeys??null,
+      rawSnapshotInvalidBodyKeys:rawLineage?.rawSnapshotInvalidBodyKeys??null,
+      rawSnapshotValidWithoutRunKeys:rawLineage?.rawSnapshotValidWithoutRunKeys??null,
+      rawSnapshotByGroup:rawLineage?.rawSnapshotByGroup??null,
+      rawSnapshotByMonth:rawLineage?.rawSnapshotByMonth??null,
       coreCurrentRawLineageVerifiedKeys:currentLineage?.verified??null,
       coreCurrentRawLineageMissingSnapshotKeys:currentLineage?.missingSnapshot??null,
       coreCurrentRawLineageConflictingKeys:currentLineage?.conflicting??null,
