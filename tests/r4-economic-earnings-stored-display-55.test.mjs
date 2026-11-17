@@ -142,3 +142,28 @@ test('economic detail page uses source guards for headline, history, comparisons
   'economicEarningsSourceDate(domain,payload?.asOfDate)',
  ])assert.ok(panel.includes(term),term);
 });
+
+test('R5 KST assessment one day after UTC snapshot remains valid only with matching timestamp',()=>{
+ const d=makeR5();
+ d.indicators=d.indicators.map(row=>({...row,asOfDate:'2026-11-17'}));
+ d.trend.at(-1).label='2026-11-17';
+ d.updatedAt='2026-11-16T17:30:00Z';
+ assert.equal(verifiedEconomicEarningsScore(d,'2026-11-16'),d.score);
+ const chart=verifiedEconomicEarningsChart(d,'2026-11-16',d.score);
+ assert.equal(chart.at(-1).date,'2026-11-17');
+ assert.equal(isEconomicEarningsChartCurrent(chart,d,'2026-11-16',d.score),true);
+ for(const updatedAt of [null,'2026-11-15T17:30:00Z','2026-11-16T03:00:00Z']){
+  assert.equal(verifiedEconomicEarningsScore({...d,updatedAt},'2026-11-16'),null);
+ }
+ const distant=makeR5();
+ distant.indicators=distant.indicators.map(row=>({...row,asOfDate:'2026-11-19'}));
+ distant.updatedAt='2026-11-16T17:30:00Z';
+ assert.equal(verifiedEconomicEarningsScore(distant,'2026-11-16'),null);
+});
+
+test('no saved factor array cannot throw or advertise an R4 READY score',()=>{
+ const d=makeR4();
+ for(const indicators of [null,undefined,{}]){
+  assert.equal(verifiedEconomicEarningsScore({...d,indicators},asOf),null);
+ }
+});
