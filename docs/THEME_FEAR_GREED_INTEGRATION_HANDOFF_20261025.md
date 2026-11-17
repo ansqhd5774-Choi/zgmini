@@ -1,3 +1,11 @@
+## 2026-11-17 W03 9/68 — R47 checkpoint 판정 함수 격리 Node 4/4 실제 실행
+
+- **원담당 단독 후속 실행:** 전회 기능 branch commit `fa97759de002e22ff5637764f1b5406f4a3132ac`가 추가한 R47 checkpoint 변조 방어 2건의 실제 동작을, GitHub R47 source blob `a8f943f5a0031030c792609ef09b660e0c8aac75`에서 확인한 `verifyDeltaState` 함수 본문을 별도 Node v22.16.0 시험 환경에 재현하여 확인. 원본 63 ETF+SPY checkpoint fixture를 흉내 낸 64개 key 격리 데이터만 사용하고 운영 PC에 접근하지 않음.
+- **실행 결과 (검증 범위를 엄격히 분리):** `node --test /tmp/zgmini_w03_r47/checkpoint-verify.test.mjs` = **4 tests / 4 pass / 0 fail**; 정상 64-symbol checkpoint, requestedUrl 종료일 변조 차단(`THEME_NINE_R47_PAGE_REQUEST_IDENTITY`), checkpoint.end/파일명 정합 불일치 차단(`THEME_NINE_R47_CHECKPOINT_IDENTITY`), archived stocks legacy URL 허용. fixture 파일의 부정사례 전후 바이트 불변 확인. 로컬 시험 스크립트 SHA256 `63d5569137fa227cec80c36a05cd91771c7450975b5cede103c37c77fc4fc627`. 이는 **추출 판정 함수의 격리 재현**이지 전용 브랜치 원본 모듈 전체의 테스트 실행이나 정식 GitHub CI/운영 PC 검증이 아님.
+- **GitHub/CI 경계:** branch HEAD 확인 `94b7e399c6cf3f3cfacb2905558442fcc3d68f45`, main `582f49d5d6e966b74ccafca747da92ffbf1c0214`, PR #714 Draft. 테스트 파일 remote blob `8740dd848061b179d79668089682ee8c0ba02d23`; 이번 회차 GitHub CI 실행/성공 증거는 **미확인**. 이전 R47/R49 5/5 CI는 이미 확인된 종전 source에 대한 증거로 별도 재사용.
+- **변경 효과:** PC 운영 CMD bytes/Task/주기·공통 Controller/Runner/DB/checkpoint/D1/Cloudflare 변경 없음, provider GET 0, 추가 승인/총괄 재인계 0. 전체 진행률 **8/68(11.8%) → 8/68(11.8%)**, 9단계 계속.
+- **다음 필수 W03 동작:** 현재 GitHub PR HEAD의 R47 module 회귀시험을 실행 가능한 정식 CI 경로에서 확인하고 결과별 수정/완료를 판정. 운영 1파일 설치는 기존 #1894의 명시적 효과 승인 + 정규 B 실제 사용 가능 + fresh Task/action/lease/backup 검증 전까지 그대로 HOLD. 총괄 기존 결과를 다시 접수하지 않음.
+
 ## 2026-11-17 W03 9/68 — 총괄 재인계 없이 R47 checkpoint 원담당 독립 회귀 보강
 
 - **실행 경계:** 프로세스 총괄 #1894/6940589587의 코드 검토·인계는 이미 처리된 결과로 재사용. #1894 재접수, 중복 승인 요청, 총괄에게 기능 재배정 0건. 사용자 지시에 따라 W03 자체 checkpoint/증분 source 검증 진행.
