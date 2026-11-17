@@ -50,3 +50,46 @@ test('R69 log summary excludes credential-looking payload, emits whitelisted sta
   assert.match(result,/"d1Writes":1/);
   assert.doesNotMatch(result,/SENSITIVE_SECRET|token/);
 });
+
+test('R69 recognizes only the approved R73 scheduled Task direct launcher',()=>{
+  const xml=`<Task><Triggers><StartBoundary>2026-11-17T11:30:00</StartBoundary></Triggers>
+  <Actions><Exec><Command>E:\ZGmini\data\pc-writer\theme-nine-r48\THEME_NINE_R73_SCHEDULED_PRIVATE.cmd</Command></Exec></Actions></Task>`;
+  const result=summarizeR69TaskXml(xml,{action:'THEME_NINE_R48_PRIVATE_CYCLE.cmd',time:'11:30'});
+  assert.equal(result.privateActionKind,'R73_SCHEDULED_PRIVATE');
+  assert.equal(result.expectedActionMatches,true);
+  assert.equal(result.riskCodes.includes('UNEXPECTED_ACTION'),false);
+  assert.equal(JSON.stringify(result).includes('E:\\ZGmini'),false);
+});
+
+test('R69 accepts exact R48 or R73 cmd.exe /d /c quoted private-chain wrappers',()=>{
+  for(const [name,expected] of [
+    ['THEME_NINE_R48_PRIVATE_CYCLE.cmd','R48_PRIVATE_CYCLE'],
+    ['THEME_NINE_R73_SCHEDULED_PRIVATE.cmd','R73_SCHEDULED_PRIVATE']
+  ]){
+    const xml=`<Task><Triggers><StartBoundary>2026-11-17T11:30:00</StartBoundary></Triggers>
+    <Actions><Exec><Command>cmd.exe</Command><Arguments>/d /c &quot;&quot;E:\ZGmini\data\pc-writer\theme-nine-r48\${name}&quot;&quot;</Arguments></Exec></Actions></Task>`;
+    const result=summarizeR69TaskXml(xml,{action:'THEME_NINE_R48_PRIVATE_CYCLE.cmd',time:'11:30'});
+    assert.equal(result.privateActionKind,expected);
+    assert.equal(result.expectedActionMatches,true);
+  }
+});
+
+test('R69 refuses unrelated R47 direct path, argument suffix, second Exec, and arbitrary cmd.exe',()=>{
+  const head='<Task><Triggers><StartBoundary>2026-11-17T11:30:00</StartBoundary></Triggers><Actions>';
+  const tail='</Actions></Task>';
+  const cmd='E:\\ZGmini\\data\\pc-writer\\theme-nine-r48\\THEME_NINE_R48_PRIVATE_CYCLE.cmd';
+  const cases=[
+    '<Exec><Command>'+cmd.replace('R48_PRIVATE_CYCLE','R47_RECURRING_PRIVATE_UPDATE')+'</Command></Exec>',
+    '<Exec><Command>cmd.exe</Command><Arguments>/d /c ""'+cmd+'"" &amp; echo BYPASS</Arguments></Exec>',
+    '<Exec><Command>E:\\Unapproved\\cmd.exe</Command><Arguments>/d /c ""'+cmd+'""</Arguments></Exec>',
+    '<Exec><Command>'+cmd+'</Command></Exec><Exec><Command>'+cmd+'</Command></Exec>',
+    '<Exec><Command>'+cmd+'</Command><Arguments>extra</Arguments></Exec>'
+  ];
+  for(const body of cases){
+    const result=summarizeR69TaskXml(head+body+tail,{action:'THEME_NINE_R48_PRIVATE_CYCLE.cmd',time:'11:30'});
+    assert.equal(result.privateActionKind,null);
+    assert.equal(result.expectedActionMatches,false);
+    assert.ok(result.riskCodes.includes('UNEXPECTED_ACTION'));
+    assert.equal(JSON.stringify(result).includes('BYPASS'),false);
+  }
+});
