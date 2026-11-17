@@ -18,20 +18,33 @@ const sourceRows=(db,table,asOfDate)=>{
   if(!exists)return null;
   const fields=new Set(db.prepare(`PRAGMA table_info(${table})`).all().map(col=>col.name));
   const available=fields.has("available_at")?"available_at":"NULL AS available_at";
+  // Preserve stored timing proof. Legacy fixtures may omit these columns.
+  const firstSeen=fields.has("first_seen_at")?"first_seen_at":"NULL AS first_seen_at";
+  const recorded=fields.has("recorded_at")?"recorded_at":"NULL AS recorded_at";
+  const presence=`${fields.has("first_seen_at")?1:0} AS _has_first_seen_at,${fields.has("recorded_at")?1:0} AS _has_recorded_at`;
   const extras=["provider","provider_series_id","quality_status","pit_class","provenance_json"]
     .map(name=>fields.has(name)?name:`NULL AS ${name}`).join(",");
   const list=ids.map(()=>"?").join(",");
   return db.prepare(`SELECT logical_series_id,geography_type,geography_code,
-    observation_date,source_hash,value,retrieved_at,${available},${extras}
+    observation_date,source_hash,value,retrieved_at,${available},${firstSeen},${recorded},${presence},${extras}
     FROM ${table} WHERE logical_series_id IN (${list}) AND observation_date<=?`)
     .all(...ids,asOfDate);
 };
 const knownAt=row=>Date.parse(row.available_at??row.retrieved_at??"");
+// A later SQLite record cannot prove the same observation was stored at an earlier as-of.
+// When an evidence column exists, NULL/malformed/future timestamps fail closed.
+const storedAsOf=(row,end)=>["_has_first_seen_at","_has_recorded_at"]
+  .every(flag=>{
+    if(row[flag]!==1)return true;
+    const column=flag==="_has_recorded_at"?"recorded_at":"first_seen_at";
+    const ms=Date.parse(row[column]??"");
+    return Number.isFinite(ms)&&ms<=end;
+  });
 const isKnownAsOf=(row,asOfDate)=>{
   const end=Date.parse(asOfDate+"T23:59:59.999Z");
   const retrieved=Date.parse(row.retrieved_at??"");
   return Number.isFinite(knownAt(row))&&knownAt(row)<=end
-    &&Number.isFinite(retrieved)&&retrieved<=end;
+    &&Number.isFinite(retrieved)&&retrieved<=end&&storedAsOf(row,end);
 };
 // Do not coerce SQLite NULL/empty TEXT to zero when previewing PIT lineage.
 const numericObservation=value=>value!==null&&value!==undefined
@@ -59,7 +72,7 @@ const historyIndex=(rows,asOfDate)=>{
     const retrieved=Date.parse(row.retrieved_at??"");
     // The stored provider release time must not make a later download appear
     // available to an earlier PIT snapshot during candidate promotion.
-    if(!Number.isFinite(known)||known>end||!Number.isFinite(retrieved)||retrieved>end)continue;
+    if(!Number.isFinite(known)||known>end||!Number.isFinite(retrieved)||retrieved>end||!storedAsOf(row,end))continue;
     const key=identity(row),set=out.get(key)??[];
     set.push(row);out.set(key,set);
   }
