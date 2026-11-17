@@ -97,8 +97,9 @@ test("W05 UI rejects unapproved, duplicate and malformed service display rows",(
  const unknown=storedCostRow({...yoy,id:"bls_unknown_series_indicator"});
  assert.equal(buildEarningsCostIndicatorView(costFixture([...base,yoy,index,unknown]))
   .indicators.length,7);
+ // A forged duplicate service ID cannot be treated as a legitimate pair.
  assert.equal(buildEarningsCostIndicatorView(costFixture([...base,yoy,yoy,index]))
-  .rows.length,7);
+  .rows.length,5);
  const wrongUnit={...index,unit:"PERCENT",changeUnit:"PERCENTAGE_POINTS"};
  assert.equal(buildEarningsCostIndicatorView(costFixture([...base,yoy,wrongUnit]))
   .indicators.length,5);
@@ -147,4 +148,39 @@ test("W05 R5-11 observation and retrieval are distinct in both viewports",()=>{
  assert.ok(risk.includes('costStale(row)?"갱신 지연"'));
  assert.ok(risk.includes('costStale(row)?" · 갱신 지연":""'));
  assert.ok(!risk.includes('row?.status==="STALE"?"갱신 지연"'));
+});
+
+test("WPSFD42 duplicate READY/STALE variants cannot pass the optional pair gate",()=>{
+ const base=KNOWN_EARNINGS_COST_INDICATORS.map(meta=>storedCostRow(meta));
+ const [yoy,index]=OPTIONAL_EARNINGS_COST_INDICATORS.map(meta=>storedCostRow(meta));
+ const stale={...yoy,status:"STALE",value:null,
+  freshness:{status:"STALE",reason:"OBSERVATION_EXPIRED"}};
+ const forged={...yoy,seriesId:"WPSFD41",
+  sourceURL:"https://data.bls.gov/timeseries/WPSFD41"};
+ const duplicateIndex={...index,value:200};
+ const cases=[
+  [stale,yoy,index],
+  [yoy,stale,index],
+  [forged,yoy,index],
+  [yoy,forged,index],
+  [yoy,index,duplicateIndex],
+  [yoy,duplicateIndex,index],
+ ];
+ for(const serviceRows of cases){
+  const result=buildEarningsCostIndicatorView(costFixture([...base,...serviceRows]));
+  assert.equal(result.valid,true);
+  assert.deepEqual(result.indicators.map(meta=>meta.id),base.map(meta=>meta.indicatorId));
+  assert.deepEqual(result.rows.map(row=>row.indicatorId),base.map(row=>row.indicatorId));
+ }
+ const accepted=buildEarningsCostIndicatorView(costFixture([...base,yoy,index]));
+ assert.equal(accepted.indicators.length,7);
+ assert.equal(accepted.rows[5].value,0);
+});
+
+test("W05 R5-12 BLS sparklines have distinct accessible names on desktop and mobile",()=>{
+ assert.equal((risk.match(/<CostSpark history=\{row\.history\} label=\{meta\.name\+/g)??[]).length,2);
+ assert.ok(risk.includes('label={meta.name+" BLS 저장 관측 이력. 결측 구간 미연결"}'));
+ assert.ok(risk.includes('aria-label={label}'));
+ assert.ok(risk.includes('role="img"'));
+ assert.ok(!risk.includes('<CostSpark history={row.history}/>'));
 });
