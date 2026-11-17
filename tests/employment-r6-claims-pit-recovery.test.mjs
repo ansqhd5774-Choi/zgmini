@@ -116,3 +116,39 @@ test("W04 600 raw weeks prove formula could score only after full verified PIT l
  assert.equal(complete.observationDate,week(599));
  assert.equal(report.repairAuthorized,false);
 });
+
+test("W04 PIT-04-07 distinguishes SQLite null/blank from genuine zero",()=>{
+ const validZero=row(0,"AL",{value:0});
+ for(const invalid of [null,undefined,"","  ","not-a-number",false]){
+  const current=row(0,"AL",{value:invalid});
+  const missing=inspectStateClaimsPitReconciliation({
+   currentRows:[current],historyRows:[],asOfIso:at,
+  });
+  assert.equal(missing.missingHistoryKeys,1);
+  assert.equal(missing.metadataEligibleMissingKeys,0);
+  assert.equal(missing.metadataUnverifiedMissingKeys,1);
+  assert.equal(missing.status,"HOLD_UNVERIFIED_SOURCE_METADATA");
+  assert.equal(missing.repairAuthorized,false);
+  // A bad current value cannot masquerade as the same numeric 0 in HISTORY.
+  const paired=inspectStateClaimsPitReconciliation({
+   currentRows:[current],historyRows:[validZero],asOfIso:at,
+  });
+  assert.equal(paired.historyMatchedKeys,0);
+  assert.equal(paired.revisionDisagreements,1);
+  assert.equal(paired.status,"HOLD_REVISION_CONFLICTS");
+ }
+ for(const valid of [0,"0"," 0 "]){
+  const current=row(0,"AL",{value:valid});
+  const missing=inspectStateClaimsPitReconciliation({
+   currentRows:[current],historyRows:[],asOfIso:at,
+  });
+  assert.equal(missing.metadataEligibleMissingKeys,1);
+  assert.equal(missing.metadataUnverifiedMissingKeys,0);
+  assert.equal(missing.status,"REVIEW_MISSING_HISTORY");
+  const paired=inspectStateClaimsPitReconciliation({
+   currentRows:[current],historyRows:[validZero],asOfIso:at,
+  });
+  assert.equal(paired.historyMatchedKeys,1);
+  assert.equal(paired.revisionDisagreements,0);
+ }
+});
