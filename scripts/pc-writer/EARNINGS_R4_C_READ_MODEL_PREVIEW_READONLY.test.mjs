@@ -1,9 +1,12 @@
 // R4 fixtures are entirely in-memory. No PC file, network, D1 or scheduler access.
 import assert from 'node:assert/strict';
+import os from 'node:os';
+import path from 'node:path';
 import {test} from 'node:test';
 import {DatabaseSync} from 'node:sqlite';
 import {normalizeSeries,buildPlans,insertPlans} from './EARNINGS_R3C_BLS_STORE_ONCE.mjs';
-import {buildPreview,buildServiceSourcePreview,reportLines,SCHEMA_VERSION}
+import {resultLogPath as r3dResultLogPath} from './EARNINGS_R3D_STORED_BLS_CALC_READONLY.mjs';
+import {buildPreview,buildServiceSourcePreview,reportLines,SCHEMA_VERSION,resultPaths}
   from './EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs';
 import {validateEarningsCompanionPayload} from '../../worker/earnings-companion-c-r4.mjs';
 import {buildEarningsCostIndicatorView} from '../../app/earnings-recession/earnings-cost-indicator-list.mjs';
@@ -391,4 +394,27 @@ test('older service snapshot provenance tampering rejects a newer valid stored s
     assert.throws(()=>buildServiceSourcePreview(db,{generatedAt:GENERATED}),
       /BLS_SOURCE_PROVENANCE_INVALID/);
   });
+});
+
+test('R3D and R4 direct-run diagnostic outputs stay under user TEMP, never Writer checkout',()=>{
+  const stamp='20261117-160000Z';
+  const r3d=r3dResultLogPath(stamp);
+  const r4=resultPaths(stamp);
+  assert.equal(r3d,path.join(os.tmpdir(),`EARNINGS_R3D_STORED_BLS_CALC_RESULT_${stamp}.txt`));
+  assert.deepEqual(r4,{
+    txtFile:path.join(os.tmpdir(),`EARNINGS_R4_C_READ_MODEL_PREVIEW_RESULT_${stamp}.txt`),
+    jsonFile:path.join(os.tmpdir(),`EARNINGS_R4_C_READ_MODEL_PREVIEW_RESULT_${stamp}.json`),
+  });
+  assert.equal(path.dirname(r3d),os.tmpdir());
+  assert.equal(path.dirname(r4.txtFile),os.tmpdir());
+  assert.equal(path.dirname(r4.jsonFile),os.tmpdir());
+  const other=path.join(os.tmpdir(),'isolated-fixture');
+  assert.equal(r3dResultLogPath(stamp,{tempDirectory:other}),
+    path.join(other,`EARNINGS_R3D_STORED_BLS_CALC_RESULT_${stamp}.txt`));
+  assert.equal(resultPaths(stamp,{tempDirectory:other}).jsonFile,
+    path.join(other,`EARNINGS_R4_C_READ_MODEL_PREVIEW_RESULT_${stamp}.json`));
+  for(const invalid of ['../foo','2026-11-17T16:00:00Z','20261117-160000Z/../x','']){
+    assert.throws(()=>r3dResultLogPath(invalid),/INVALID_RESULT_STAMP/);
+    assert.throws(()=>resultPaths(invalid),/INVALID_RESULT_STAMP/);
+  }
 });
