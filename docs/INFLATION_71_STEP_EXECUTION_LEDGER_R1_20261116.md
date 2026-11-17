@@ -2,6 +2,16 @@
 
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
+<!-- W01-20261117-C-APPROVAL-HANDOFF-6943704187 -->
+## 최신 인계 스냅샷 — W01 2026-11-17 (C급 Event129 활성화 범위 승인 요청·원본 #1818 인계 완료·30/71)
+
+> **기록 실적(2026-11-17):** Census #28 원래 소유권 FIRST FAIL 원장 [#1818/인계 댓글 #6943680866](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1818#issuecomment-6943680866) 원문으로 등록하고, 공용 [#68/정확 C급 사용자 직접 승인 요청 #6943704187](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6943704187) 별도 작성·GitHub 댓글 2/2 GET 재조회 완료. 대상 운영 PC `PC`의 `TaskScheduler/Operational` 로그 활성화만 범위로 한정하고 **프로세스 총괄은 보호·기술 범위 GO/HOLD 판단, 사용자만 C급 설정을 직접 실행**할 수 있도록 구분. 현재 사용자 C 승인·Windows 변경·사후 실PC Event129 PASS **없음**.
+>
+> **재사용 근거:** [#1818/Run 43985786219](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1818) 최초 수동 Census B 소유권 실패/GET 0·재실행 금지, [#1951](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1951) 26/26 Task Engine 연결 부재, [#1955](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1955) `Event129.enabled=false`, [#1945](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1945) Controller 설치 PASS. 제어 [PR #1866](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1866)는 Event129 읽기 A 이미 반영, 신규 C 설정용 코드 PR은 없음. 공용 [PR #1961](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1961) 4파일 GO는 W03 설치 별건으로 Census 단회 B의 추가 Gate 아님.
+>
+> **다음 필수 행동/STOP:** 사용자 직접 C급 설정 완료가 실제 증명되면 자연 Core cycle 이후 기존 허용 A 신규 고유 단회로 Event129 활성·Task/VBS/Node PID/생성시각/E-lock owner 증명; PASS 때에만 승인된 4파일 PC preimage·source pin·기존 Writer/Core lease 재조회 및 새 승인 Census B 2GET 검토. 사용자 미승인·증거 미확보면 소유권 차단 유지/중복 A·B 발행 금지; 독립 물가 기능 작업 지속. **완료 30/71(42.3%), 미완료 41.** 이번 조회·댓글·문서 변경을 운영 PC 수집·게시 완료로 계산하지 않음.
+
+## 과거 인계 스냅샷 표식
 <!-- W01-20261117-COORD-FOURFILE-GO-CENSUS-INDEPENDENT -->
 ## 최신 인계 스냅샷 — W01 2026-11-17 (W03 공동 Controller 4파일 GO·Census 단회 B와 분리·30/71)
 
