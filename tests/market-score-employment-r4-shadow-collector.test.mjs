@@ -28,6 +28,40 @@ test("provider parsers preserve 51-state core and mark only latest provider obse
   assert.equal(d.rows.filter(x=>x.availableAt===rt).length,8);
 });
 
+test("W04 PIT-04-07 rejects missing ETA539 C3 without inventing zero or a complete week",async()=>{
+  const retrievedAt="2026-11-01T00:00:00.000Z";
+  const csvFor=c3=>["st,rptdate,c1,c2,c3,c8",
+    ...EMPLOYMENT_R4_CORE_STATES.map(st=>
+      `${st},10/30/2026,2,10/24/2026,${st==="AL"?c3:"300"},9000`)].join("\n");
+  for(const missing of ["","  ","\t"]){
+    const parsed=await parseEta539ShadowRows(csvFor(missing),{retrievedAt});
+    assert.equal(parsed.rows.length,0,"missing state must block a false 51-state week");
+    assert.equal(parsed.meta.latestCompleteWeek,null);
+    assert.equal(parsed.rows.some(row=>row.geographyCode==="AL"&&row.value===0),false);
+  }
+  const valid=await parseEta539ShadowRows(csvFor("0"),{retrievedAt});
+  assert.equal(valid.rows.length,51,"genuine zero does not remove a state");
+  assert.equal(valid.meta.latestCompleteWeek,"2026-10-24");
+  assert.equal(valid.rows.find(row=>row.geographyCode==="AL")?.value,0);
+  assert.equal(valid.rows.every(row=>typeof row.value==="number"&&Number.isFinite(row.value)),true);
+});
+
+test("W04 PIT-04-07 latest missing state falls back only to an earlier complete 51-state week",async()=>{
+  const lines=["st,rptdate,c1,c2,c3,c8"];
+  for(const week of ["10/17/2026","10/24/2026"]){
+    for(const st of EMPLOYMENT_R4_CORE_STATES){
+      const amount=week==="10/24/2026"&&st==="AL"?" ":st==="AK"?"0":"300";
+      lines.push(`${st},10/30/2026,2,${week},${amount},9000`);
+    }
+  }
+  const parsed=await parseEta539ShadowRows(lines.join("\n"),{
+    retrievedAt:"2026-11-01T00:00:00.000Z",historyWeeks:2});
+  assert.equal(parsed.meta.latestCompleteWeek,"2026-10-17");
+  assert.equal(parsed.rows.length,51);
+  assert.equal(parsed.rows.some(row=>row.observationDate==="2026-10-24"),false);
+  assert.equal(parsed.rows.find(row=>row.geographyCode==="AK")?.value,0);
+});
+
 function sampleRow(logicalSeriesId,geo,value,hashChar="a"){return{logicalSeriesId,provider:"TEST",providerSeriesId:`TEST:${logicalSeriesId}`,geographyType:"STATE",geographyCode:geo,frequency:"WEEKLY",unit:"COUNT",seasonalAdjustment:"NA",populationCoverage:"TEST",observationDate:"2026-09-12",releaseDate:null,availableAt:"2026-09-20T00:00:00Z",retrievedAt:"2026-09-20T00:00:00Z",value,sourceRevision:null,sourceHash:hashChar.repeat(64),qualityStatus:"READY",pitClass:EMPLOYMENT_R4_PIT_CLASSES.forwardObserved,schemaVersion:1,provenance:{}}}
 function goodProvider(value=10){return{async fetchStateClaims(){return{requestCount:1,rows:[sampleRow("STATE_INITIAL_CLAIMS","AL",value,"a")],meta:{}}},async fetchGeographicDiffusion(){return{requestCount:1,rows:[sampleRow("STATE_EMP_DIFFUSION_3M","ALL_STATES",60,"b")],meta:{}}}}}
 
