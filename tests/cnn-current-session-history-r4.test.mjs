@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {cnnNyObservationDay,currentCnnSessionHistory} from '../lib/cnn-current-session-history-r4.mjs';
+import {cnnNyObservationDay,currentCnnSessionHistory,currentCnnSessionCheckedPoints} from '../lib/cnn-current-session-history-r4.mjs';
 
 const current='2026-11-16T22:59:30.000Z';
 const obs=(observedAt,score)=>({observedAt,score});
@@ -46,6 +46,28 @@ test('same New York source day survives UTC midnight but not next NY day',()=>{
  ]});
  assert.deepEqual(actual.map(p=>p.score),[45]);
 });
+test('next-day PC checks with yesterday CNN source never extend the prior session',()=>{
+ const checks=[
+  check('2026-11-17T05:02:00.000Z',current,41),
+  check('2026-11-17T05:17:00.000Z',current,43),
+ ];
+ assert.deepEqual(currentCnnSessionCheckedPoints(current,checks),[]);
+ assert.deepEqual(currentCnnSessionHistory(current,{checkedPoints:checks}),[]);
+});
+test('a genuine source check across UTC midnight survives within the same NY session',()=>{
+ const checks=[
+  check('2026-11-17T00:02:00.000Z','2026-11-16T23:58:00.000Z',23),
+  check('2026-11-17T00:32:00.000Z','2026-11-17T00:30:00.000Z',24),
+ ];
+ assert.deepEqual(currentCnnSessionCheckedPoints(current,checks).map(p=>p.score),[23,24]);
+ assert.deepEqual(currentCnnSessionHistory(current,{checkedPoints:checks}).map(p=>p.score),[23,24]);
+});
+test('PC checkedAt must not precede its claimed CNN source observation time',()=>{
+ const invalid=check('2026-11-16T21:00:00.000Z','2026-11-16T21:01:00.000Z',70);
+ assert.deepEqual(currentCnnSessionCheckedPoints(current,[invalid]),[]);
+ assert.deepEqual(currentCnnSessionHistory(current,{checkedPoints:[invalid]}),[]);
+});
+
 test('exact-timestamp sidecar is retained once, with valid 0 over archived duplicate',()=>{
  const actual=currentCnnSessionHistory(current,{
   observedPoints:[obs('2026-11-16T22:00:00.000Z',4),obs('2026-11-16T23:00:00.000Z',5)],
@@ -81,4 +103,6 @@ test('actual CNN card 1D path invokes current session guard; other periods are u
  assert.match(panel,/intradayObservations:observedSidecarReady/);
  assert.match(panel,/if \(selectedPeriod === "6M" \|\| selectedPeriod === "1Y"\)/);
  assert.match(panel,/periodBaseline[\s\S]*?selectedPeriod === "1D"\) return history.length>=2/);
+ assert.match(panel,/currentSessionPcDates\.has\(value\)/);
+ assert.match(panel,/cnnObservedTimes=new Set\(allIntraday\.map\(point=>point\.date\)\)/);
 });
