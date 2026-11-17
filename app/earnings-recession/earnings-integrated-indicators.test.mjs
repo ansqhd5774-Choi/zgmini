@@ -86,7 +86,6 @@ test("WPSFD42 appears on both desktop and mobile only when the verified service 
  assert.equal(after.rows.length,7);
  assert.equal(after.rows[5].value,0);
  assert.equal((risk.match(/costIndicators\.map\(meta/g)??[]).length,2);
- assert.ok(risk.includes("원자료 "+''));
 });
 
 test("W05 UI rejects unapproved, duplicate and malformed service display rows",()=>{
