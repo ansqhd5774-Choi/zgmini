@@ -81,10 +81,20 @@ function fixedSourceHome(home) {
 export function requireExistingWalSidecars(home,file) {
   const expected=path.resolve(home,'storage','core.sqlite');
   if(path.resolve(file)!==expected)throw failure('W01_A401_DB_PATH_DENIED');
+  // A regular file under a directory junction can resolve outside the
+  // approved home. Verify canonical containment for the DB and each sidecar.
+  let canonicalHome;
+  try{canonicalHome=fs.realpathSync.native(home);}
+  catch{throw failure('W01_A401_DB_SIDECAR_UNVERIFIED');}
   for(const name of [file,file+'-wal',file+'-shm']){
-    let stat;
-    try{stat=fs.lstatSync(name);}catch{throw failure('W01_A401_DB_SIDECAR_UNVERIFIED');}
-    if(!stat.isFile()||stat.isSymbolicLink()||
+    let stat,canonicalFile;
+    try{
+      stat=fs.lstatSync(name);
+      canonicalFile=fs.realpathSync.native(name);
+    }catch{throw failure('W01_A401_DB_SIDECAR_UNVERIFIED');}
+    const relative=path.relative(canonicalHome,canonicalFile);
+    if(!relative||relative==='..'||relative.startsWith('..'+path.sep)||
+      path.isAbsolute(relative)||!stat.isFile()||stat.isSymbolicLink()||
       (name===file&&(stat.size<100||stat.size>50_000_000_000))||
       (name!==file&&stat.size>50_000_000_000))
       throw failure('W01_A401_DB_SIDECAR_UNVERIFIED');
