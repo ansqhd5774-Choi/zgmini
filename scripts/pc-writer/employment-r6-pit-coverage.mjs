@@ -165,15 +165,19 @@ const readRawLineageEvidence=(db,asOfDate)=>{
   const meta=db.prepare(`SELECT snapshot_id,chunk_index,chunk_count,release_group,provider,
     request_key,retrieved_at,created_at,body_sha256,detail_json
     FROM ${T.rawSnapshot} WHERE retrieved_at<=?`).all(isoEnd);
-  const groups=new Map();
+  const groups=new Map(),byClaimedResponse=new Map();
   for(const row of meta){
     const bucket=groups.get(row.snapshot_id)??[];
     bucket.push(row);groups.set(row.snapshot_id,bucket);
+    const key=row.provider+"\u001f"+row.body_sha256;
+    if(SHA256.test(String(row.body_sha256??""))&&String(row.provider??"").trim())
+      byClaimedResponse.set(key,true);
   }
   const valid=new Map();
   const body=db.prepare(`SELECT chunk_index,body_chunk FROM ${T.rawSnapshot}
     WHERE snapshot_id=? ORDER BY chunk_index`);
   for(const [id,parts] of groups){
+    parts.sort((a,b)=>a.chunk_index-b.chunk_index);
     const head=parts[0],count=head?.chunk_count;
     if(!SHA256.test(String(id??""))||!SHA256.test(String(head?.body_sha256??""))
       ||!Number.isSafeInteger(count)||count<1||count>4096||parts.length!==count
@@ -218,13 +222,16 @@ const readRawLineageEvidence=(db,asOfDate)=>{
         &&Number.isFinite(retrieved)&&retrieved<=completed)certified.add(snap.snapshot_id);
     }
   }
-  const byResponse=new Map();
+  const byResponse=new Map(),byStoredResponse=new Map();
+  for(const snap of valid.values()){
+    byStoredResponse.set(snap.provider+"\u001f"+snap.body_sha256,true);
+  }
   for(const id of certified){
     const snap=valid.get(id),key=snap.provider+"\u001f"+snap.body_sha256;
     const entries=byResponse.get(key)??[];
     entries.push(snap);byResponse.set(key,entries);
   }
-  return {byResponse,rawSnapshotMetadataKeys:groups.size,
+  return {byResponse,byStoredResponse,byClaimedResponse,rawSnapshotMetadataKeys:groups.size,
     rawSnapshotCertifiedKeys:certified.size};
 };
 const classifyRawLineage=(rows,evidence)=>{
@@ -240,8 +247,14 @@ const classifyRawLineage=(rows,evidence)=>{
       out.unverified++;continue;
     }
     if(p.rawRecordHash!==row.source_hash){out.conflicting++;continue;}
-    const candidates=evidence.byResponse.get(row.provider+"\u001f"+p.responseHash)??[];
-    if(!candidates.length){out.missingSnapshot++;continue;}
+    const key=row.provider+"\u001f"+p.responseHash;
+    const candidates=evidence.byResponse.get(key)??[];
+    if(!candidates.length){
+      if(evidence.byStoredResponse.has(key))out.unverified++;
+      else if(evidence.byClaimedResponse.has(key))out.conflicting++;
+      else out.missingSnapshot++;
+      continue;
+    }
     const retrieved=Date.parse(row.retrieved_at);
     if(candidates.some(s=>Date.parse(s.retrieved_at)<=retrieved
       &&(!p.releaseGroup||p.releaseGroup===s.release_group)))out.verified++;
