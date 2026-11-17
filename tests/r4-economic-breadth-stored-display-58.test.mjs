@@ -218,7 +218,7 @@ test('B1-R5 stored domain exposes real observation day, 3-day EMA no fake evalua
   'id!=="breadth"||(score!==null&&breadthChartCurrent)',
   'id==="breadth"&&(score===null||!breadthChartCurrent)',
   'economicBreadthSourceDate(domain,payload?.asOfDate)',
-  '||id==="fundFlows"||id==="breadth"||id==="dollarFx")&&score===null',
+  '||id==="fundFlows"||id==="breadth"||id==="dollarFx"||id==="commodities")&&score===null',
  ])assert.ok(panel.includes(x),x);
  assert.match(worker,/observationDate,/);
  assert.ok(adapter.includes('observationDate:publicDomains.breadth?.observationDate??null'));

@@ -235,7 +235,7 @@ test('W06 D24 economics detail uses authenticated source date, saved score, char
   'id!=="dollarFx"||(score!==null&&dollarFxChartCurrent)',
   'id==="dollarFx"&&(score===null||!dollarFxChartCurrent)',
   'economicDollarFxSourceDate(domain,payload?.asOfDate)',
-  '||id==="breadth"||id==="dollarFx")&&score===null',
+  '||id==="breadth"||id==="dollarFx"||id==="commodities")&&score===null',
  ])assert.ok(ui.includes(term),term);
  const adapter=readFileSync(new URL('../lib/market-score/domain-adapter-r1.mjs',import.meta.url),'utf8');
  const cm=readFileSync(new URL('../lib/market-score/composite-model-r1.mjs',import.meta.url),'utf8');

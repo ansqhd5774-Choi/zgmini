@@ -135,7 +135,7 @@ test('page applies R3 guard and keeps inflation, employment and other ten domain
  assert.match(panel,/id==="rates"\?verifiedEconomicRateScore\(domain,payload\?\.asOfDate\)/);
  assert.match(panel,/verifiedEconomicRateChart\(domain,payload\?\.asOfDate,score\)/);
  assert.match(panel,/isEconomicRateChartCurrent\(rateChart,payload\?\.asOfDate,score\)/);
- assert.match(panel,/id==="rates"\?rateChart:id==="credit"\?creditChart:id==="growth"\?growthChart:id==="consumption"\?consumptionChart:id==="earnings"\?earningsChart:id==="liquidity"\?liquidityChart:id==="fundFlows"\?fundFlowChart:id==="breadth"\?breadthChart:id==="dollarFx"\?dollarFxChart:economicOneYearChart/);
+ assert.match(panel,/id==="rates"\?rateChart:id==="credit"\?creditChart:id==="growth"\?growthChart:id==="consumption"\?consumptionChart:id==="earnings"\?earningsChart:id==="liquidity"\?liquidityChart:id==="fundFlows"\?fundFlowChart:id==="breadth"\?breadthChart:id==="dollarFx"\?dollarFxChart:id==="commodities"\?commodityChart:economicOneYearChart/);
  assert.match(panel,/useStoredIndex<EmploymentR6Display>\("\/api\/employment-r6\/observations"/);
  assert.match(panel,/id==="inflation"\?inflationChart:id==="employment"\?employmentChart:id==="rates"\?rateChart/);
 });
