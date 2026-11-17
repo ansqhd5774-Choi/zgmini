@@ -1076,3 +1076,11 @@
 - **검증/한계:** 원격 GitHub 파일 쓰기 성공. **신규 Chromium CI 실행, PR, main 병합, Production 브라우저 검증은 아직 없음**. LAST PASS 기존 main의 4폭×6기간 CI 증거; FIRST FAIL 새 overflow assertion 실행 결과 미확인(실패로 간주하지 않음). 정확 PC 설치 SHA·활성 Production Deployment SHA 미확인. 원격 시험 파일과 본 기록의 재조회 별도 확인 필요.
 - **다음 필수 실행 하나:** W06가 통합된 `tests/dashboard-history-browser-r5.mjs`를 격리 Chromium runner에서 실제 실행하고 24개 기간 조합/가로 넘침 PASS 여부 판정. PASS면 최소 시험 변경만 main에 PR/CI 통합; FAIL이면 해당 폭과 요소의 실제 좌표를 확보해 UI 범위에서 수정. 총괄 신규 인계 없음.
 - **원격 인계 검증:** 기록 갱신 후 재조회 결과로 확정.
+
+
+### [2026-11-18 07:05 KST] R4 #69 — Chromium 24조합 overflow PASS, PR #1270 병합
+- 시작/종료 고유 DONE 22/75(29.3%), 잔여53. #69 격리 UI 검증 PASS; Production 실측은 미확인으로 전체 PARTIAL 유지.
+- [PR #1270](https://github.com/ansqhd5774-Choi/zgmini/pull/1270): tests/dashboard-history-browser-r5.mjs 한 파일 +16행. main squash merge eb2c062a0aa60616c3e1100562e6fa0021c33a3b.
+- [Chromium CI #44175286226](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44175286226) SUCCESS. Job 134364881933 로그에서 390/768/1440/1920px 각각 PASS, 각 폭 6기간·현재 snapshot·0점·document/chart/card overflow assertion 검증. [Node CI #44175286122](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44175286122) SUCCESS (Build/Type/Regression).
+- Mocked local Chromium 증거이며 실제 zgmini.kr 실서빙/활성 Cloudflare 배포 검증이 아님. 앱/CSS/PC/SQLite/D1/Writer/Cloudflare 직접 변경 0. #74 Writer 실자료, #75 Production 별도 미완료. SOCKS 오류 반복 없음.
+- 다음: main 병합 파일·후속 CI 확인 후 독립 UI 단계 진행. 원담당 소유 기능을 임의 수정하지 않음.
