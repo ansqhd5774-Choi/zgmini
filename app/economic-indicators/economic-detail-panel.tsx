@@ -4,6 +4,7 @@ import {useStoredIndex} from "../../components/use-stored-index";
 import {economicDetailById,type EconomicDomainId} from "../../lib/economic-detail-catalog";
 import {liquidityStoredScoreComparisons} from "../../worker/projection-builders/liquidity-stored-history.mjs";
 import {economicOneYearChart} from "../../lib/economic-trend-chart-r60.mjs";
+import {verifiedEconomicInflationScore,verifiedEconomicInflationChart} from '../../lib/economic-inflation-stored-display-r4.mjs';
 import {MarketCardHeader} from "../market-card-header";
 import {MarketScoreOrb} from "../market-score-orb";
 import {MarketTrendFrame} from "../market-trend-frame";
@@ -149,8 +150,9 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  const {payload:releaseCalendar}=useStoredIndex<ReleaseCalendar>("/api/release-calendar",null,id==="inflation");
  const {payload:employmentData,loading:employmentLoading,error:employmentError}=useStoredIndex<EmploymentR6Display>("/api/employment-r6/observations",null,id==="employment");
  const domain=payload?.domains?.find(item=>item.id===id);
- const score=domain?.status==="READY"&&validScore(domain.score)?domain.score:null;
- const history=useMemo(()=>normalizeTrend(domain?.trend),[domain?.trend]);
+ const score=id==="inflation"?verifiedEconomicInflationScore(domain,payload?.asOfDate):domain?.status==="READY"&&validScore(domain.score)?domain.score:null;
+ const inflationChart=useMemo(()=>verifiedEconomicInflationChart(domain,payload?.asOfDate,score),[domain,payload?.asOfDate,score]);
+ const history=useMemo(()=>normalizeTrend(id==="inflation"?inflationChart:domain?.trend),[id,inflationChart,domain?.trend]);
  const oneYear=useMemo(()=>{
   const latest=history.at(-1)?.label;
   if(!latest)return [];
@@ -159,7 +161,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  },[history]);
  // Keep published null dates only in the visual series; saved-value history
  // remains unchanged for approved period-score comparisons.
- const chart:MarketFearGreedChartPoint[]=useMemo(()=>economicOneYearChart(domain?.trend),[domain?.trend]);
+ const chart:MarketFearGreedChartPoint[]=useMemo(()=>id==="inflation"?inflationChart:economicOneYearChart(domain?.trend),[id,inflationChart,domain?.trend]);
  const last=chart.findLast(point=>validScore(point.score));
  const latestPoint:MarketFearGreedChartValidPoint|null=last&&validScore(last.score)?{date:last.date,score:last.score}:null;
  const axisLabels=new Map(chart.map(p=>[p.date,p.date.slice(5,7)]));
@@ -177,9 +179,10 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
   sixMonth:producer?.sixMonth??computed.sixMonth,
   year:producer?.year??computed.year,
  };
- const hasVerifiedPeriodComparisons=Object.values(periods).some(value=>typeof value==="number"&&Number.isFinite(value));
- const comparisons=[{label:"1주",value:periods.week??null},{label:"1개월",value:periods.month??null},{label:"3개월",value:periods.threeMonth??null},{label:"6개월",value:periods.sixMonth??null},{label:"1년",value:periods.year??null}];
- const storedObservations=(domain?.indicators??[]).filter((row):row is Indicator=>Boolean(row&&typeof row==="object"));
+ const hasVerifiedPeriodComparisons=(id!=="inflation"||(score!==null&&inflationChart.length>0))&&Object.values(periods).some(value=>typeof value==="number"&&Number.isFinite(value));
+ const comparisons=[{label:"1주",value:periods.week??null},{label:"1개월",value:periods.month??null},{label:"3개월",value:periods.threeMonth??null},{label:"6개월",value:periods.sixMonth??null},{label:"1년",value:periods.year??null}]
+  .map(item=>id==="inflation"&&(score===null||inflationChart.length===0)?{...item,value:null}:item);
+ const storedObservations=(id==="inflation"&&score===null?[]:(domain?.indicators??[])).filter((row):row is Indicator=>Boolean(row&&typeof row==="object"));
  const observations=storedObservations;
  const easternParts=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
  const easternToday=["year","month","day"].map(part=>easternParts.find(item=>item.type===part)?.value??"").join("-");
