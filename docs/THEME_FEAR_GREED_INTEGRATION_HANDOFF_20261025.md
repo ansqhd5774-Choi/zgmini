@@ -1,3 +1,10 @@
+## 2026-11-18 07:58 KST W03 10/68 — Shadow entrypoint 의존성 1차 정적 추적 (읽기 전용)
+
+- **진행률:** 시작 9/68(13.2%) → 종료 9/68(13.2%). 10단계의 실제 63 ETF+SPY 원자료·checkpoint 및 R25/R32 신규 비공개 계산 실증은 미완료. 목표 163개 유지.
+- **원격 원본 확인:** 지정 브랜치의 `scripts/pc-writer/theme-config-tool.mjs` Git blob `e1bee5e4e9186fc47e631a1cc3ba4e2b5eb45617` 직접 조회. Shadow 진입점은 `--platform-shadow`이고, 이 분기는 `./theme-platform-stored-run.mjs`를 **동적 import**한 후 `runStoredOperationalPrivate`, `createTransientThemeCheckpointStore`, `createStoredD1FeedReader`, `readStoredPublicR32Base`를 호출한다. `createBundledShadowDecoder`는 `vendor/hyparquet-1.31.2/src/index.js`를 실행 시 로드한다. 정적 상단 import에는 `theme-config-registry.mjs`, `theme-optional-collect.mjs`, `theme-config-score.mjs`, `theme-platform-operational.mjs`가 포함된다. 따라서 entrypoint 파일 1개만 등록하거나 정적 import만 스캔한 manifest는 충분한 **immutable closure 증거가 아니다**.
+- **안전 경계:** 위 조회는 의존성 발견일 뿐 전체 transitive closure, vendor 내부 import, 실제 파일별 SHA256, manifest SHA256, 승인 Host 등록 상태를 검증한 것이 아니다. #2053 `SHADOW_SOURCE_NOT_APPROVED` / candidateExecuted=false, #2049 R47 CMD 설치 PASS 유지. 신규 A/B 요청·공급자 호출·운영 PC/SQLite/D1/Task/배포 변경 0.
+- **다음 단일 실행:** `theme-config-tool.mjs --platform-shadow` 경로의 **정적+동적 import 및 vendor 재귀 의존성 전체**를 소스 바이트 기준으로 열거하고 정확한 파일별 SHA256/manifest를 생성·검증한다. 공통 Controller B adapter와 Host 등록 승인 문제는 별도 공통 소유자 게이트로 유지한다. 승인 없는 등록·재실행·공개 금지.
+
 ## 2026-11-18 07:00 KST W03 10/68 — 공통 operation 전수 목록과 Host allowlist 조회 경계 판정
 
 - **진행률:** 시작 9/68(13.2%) → 종료 9/68(13.2%). 10단계의 새 거래일 원자료·checkpoint·R25/R32 비공개 계산 실증 미완료. 자연 예약 검증은 전 기능 완료 이후 후속.
