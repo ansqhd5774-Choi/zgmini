@@ -25,3 +25,9 @@
 - **Owner 경계:** W06이 지금 확보 가능한 GitHub/승인 Runner 결과/기존 공개 UI를 직접 검증했다. Writer 실제 파일 설치 버전 확인은 Writer/승인 A 해당 소유 범위이지 공통 총괄의 새로운 기능 업무가 아니다. Cloudflare 활성 SHA 조회는 W06 통합·사이트 업무로 남는다.
 - **프로세스 총괄 신규 인계:** **0건**. 공통 Controller·공통 설치기의 FIRST FAIL 없음. 새로운 승인 요청·Issue·설치·SQL·재실행 없음.
 - **다음 W06 독립 작업:** #28 동일일 실제 계산점과 재구성 현재 vintage 역사 및 서로 다른 방법론 차트 연결 방지. #01/74/75의 미확인 사실을 독립 UI 검증의 Gate로 삼지 않는다.
+
+## 후속 source 전진 (2026-11-17 19:30 KST 조사)
+
+- 이번 조사 도중 `zgmini/main`이 `0bef187a1e7ce632ecc15a4724fd24600650859f`로 다시 이동. GitHub compare (`2aa9cd28...0bef187a`) **정확 1커밋**, W01 A4-01 SQLite 읽기 전용 진단 스크립트·그 테스트 **2파일만 수정**. W06 #01/28의 모델·UI source 경로 수정 0.
+- 상기 버전표의 `2aa9cd28`은 **당시 main HEAD 및 해당 SHA의 Cloudflare build 성공 증거**로 보존하며, 지금 시점 최신 개발 main은 `0bef187a...`임. 후행 source 변경이 설치나 활성 Production 갱신이라는 뜻은 아님.
+- 현재 main에 대한 별도 Cloudflare active Deployment ID/SHA·PC Writer 운영 설치 SHA는 여전히 UNKNOWN. 프로젝트 전체가 갱신될 때마다 근거 없는 PC/배포 자동 일치를 주장하지 않는다.
