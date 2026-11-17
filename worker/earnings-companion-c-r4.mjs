@@ -273,9 +273,31 @@ export function earningsCompanionWriter(core,{snapshotKey=EARNINGS_C_SNAPSHOT_KE
       if(old.sourceStoredAt===payload.sourceStoredAt){
         if(old.sourceVersion!==payload.sourceVersion)throw Error('EARNINGS_C_CONFLICTING_VERSION');
         let priorPayload;
-        try{priorPayload=JSON.parse(previous.body)?.payload;
-          validateEarningsCompanionPayload(priorPayload,{now:storedAt});}
-        catch{throw Error('EARNINGS_C_EXISTING_INVALID');}
+        try{
+          if(typeof previous.body!=='string'||previous.body.length>400_000)
+            throw Error('EARNINGS_C_INVALID_ENVELOPE');
+          const priorEnvelope=JSON.parse(previous.body);
+          keys(priorEnvelope,['payload','projection'],'EARNINGS_C_INVALID_ENVELOPE');
+          priorPayload=priorEnvelope.payload;
+          const priorProjection=priorEnvelope.projection;
+          validateEarningsCompanionPayload(priorPayload,{now:storedAt});
+          if(snapshotKey===EARNINGS_C_SERVICE_SNAPSHOT_KEY)
+            validateServicePayload(priorPayload,{now:storedAt});
+          keys(priorProjection,['status','sourceVersion','sourceStoredAt',
+            'expectedSourceVersion','expectedSourceStoredAt','builtAt'],
+            'EARNINGS_C_INVALID_ENVELOPE');
+          const previousStoredAt=Number(previous.stored_at);
+          if(priorProjection.status!=='READY'
+            ||priorProjection.sourceVersion!==priorPayload.sourceVersion
+            ||priorProjection.sourceStoredAt!==priorPayload.sourceStoredAt
+            ||priorProjection.expectedSourceVersion!==priorPayload.sourceVersion
+            ||priorProjection.expectedSourceStoredAt!==priorPayload.sourceStoredAt
+            ||!Number.isSafeInteger(previousStoredAt)
+            ||previousStoredAt<priorPayload.sourceStoredAt
+            ||previousStoredAt>storedAt
+            ||priorProjection.builtAt!==previousStoredAt)
+            throw Error('EARNINGS_C_INVALID_CHECKPOINT');
+        }catch{throw Error('EARNINGS_C_EXISTING_INVALID');}
         const modelIdentity=x=>JSON.stringify({schemaVersion:x.schemaVersion,
           historicalMode:x.historicalMode,observedThroughBySeries:x.observedThroughBySeries,
           coverage:x.coverage,rows:x.rows});
