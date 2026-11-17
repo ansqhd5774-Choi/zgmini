@@ -1,3 +1,11 @@
+## 2026-11-18 02:55 KST W03 10/68 — Shadow 승인 등록 경로 원본 조사 (실PC 승인 목록 미확인)
+
+- **진행률:** 시작 9/68(13.2%) → 종료 9/68(13.2%), 10단계 미완료. 목표 163개·자연 예약 검증 최종 후속 유지.
+- **신규 직접 조사:** 공통 저장소 GitHub 코드 검색에서 `tools/source-bundle-register.mjs`가 Host `approvedSources[manifest.sourceSha]`에 검증된 source bundle을 등록하는 정규 경로임을 확인. `tools/install.mjs`의 초기 Host 구성은 별도이며, 초기 설치 예시만으로 현재 실PC 목록이나 Shadow `entrypoint` 적합성을 확정할 수 없다. `controller/operations.mjs`의 Shadow gate는 SHA 외 branch/entrypoint까지 검증한다. 따라서 단순 GitHub SHA 존재 또는 R47 CMD B 설치로 Shadow 등록을 대체할 수 없다.
+- **증거:** [정규 등록 소스](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/tools/source-bundle-register.mjs), [Shadow 승인 검사](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/controller/operations.mjs), [#2053 원격 결과](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2053#issuecomment-6949392912). #2053는 `SHADOW_SOURCE_NOT_APPROVED`, `candidateExecuted=false`, 메모리 승인 2270MiB. 실제 Host 승인 목록 및 승인된 대체 source SHA는 UNKNOWN. 기존 #2049 설치 PASS 유지.
+- **LAST PASS/FIRST FAIL:** #2053 `ALLOWLISTED_WORKER_STARTED` / `ALLOWLISTED_OPERATION` (source 승인 불일치). 이번 회차 새 A/B 요청·PC 실행·원자료·Provider·SQLite·D1·Task·배포·예약 변경 0, 신규 총괄 인계 0. 진행률 중복 상승 없음.
+- **다음 단일 실행:** 기존 승인된 읽기 전용 Host 등록 상태 조회로 `approvedSources`의 W03 branch/entrypoint/manifest/SHA 일치 여부를 확인. 등록된 정확 source 재사용이 불가능한 경우 W03가 정규 source-bundle B 승인 manifest·의존 파일 해시를 직접 준비하고 등록한 뒤 새로운 고유 Shadow A 한 번만 수행. 권리 승인 없는 공개 금지.
+
 ## 2026-11-18 02:00 KST W03 10/68 — 공통 operation 허용과 Host source 승인 경계 분리 확인
 
 - **진행률:** 시작 9/68(13.2%) → 종료 9/68(13.2%), 10단계 미완료. 목표 163개 유지. 자연 예약 검증은 전체 기능 완료 뒤 후속.
