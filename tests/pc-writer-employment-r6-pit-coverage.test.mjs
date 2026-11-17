@@ -450,6 +450,15 @@ test("PIT-04-05 Core response hash, stored body, collector run and record proven
   const report=auditEmploymentR6PitCoverage({dbPath:file,asOfDate:"2026-11-02"});
   assert.equal(report.rawSnapshotMetadataKeys,1);
   assert.equal(report.rawSnapshotCertifiedKeys,1);
+  assert.equal(report.rawSnapshotInvalidBodyKeys,0);
+  assert.equal(report.rawSnapshotValidWithoutRunKeys,0);
+  assert.deepEqual(report.rawSnapshotByGroup,[{
+    releaseGroup:"DOL_UI_WEEKLY_CLAIMS",metadataKeys:1,bodyVerifiedKeys:1,runCertifiedKeys:1,
+  }]);
+  assert.deepEqual(report.rawSnapshotByMonth,[{
+    retrievalMonth:"2026-10",metadataKeys:1,bodyVerifiedKeys:1,runCertifiedKeys:1,
+  }]);
+
   assert.deepEqual([
     report.coreCurrentRawLineageVerifiedKeys,
     report.coreCurrentRawLineageMissingSnapshotKeys,
@@ -484,6 +493,11 @@ test("PIT-04-05 missing run cannot certify otherwise valid raw snapshot; later r
   const before=digest(file);
   const report=auditEmploymentR6PitCoverage({dbPath:file,asOfDate:"2026-11-02"});
   assert.equal(report.rawSnapshotCertifiedKeys,0);
+  assert.equal(report.rawSnapshotInvalidBodyKeys,0);
+  assert.equal(report.rawSnapshotValidWithoutRunKeys,1);
+  assert.equal(report.rawSnapshotByMonth[0].runCertifiedKeys,0);
+  assert.equal(report.rawSnapshotByMonth[0].bodyVerifiedKeys,1);
+
   assert.equal(report.coreCurrentRawLineageVerifiedKeys,0);
   assert.equal(report.coreCurrentRawLineageUnverifiedKeys,2);
   assert.equal(report.coreCurrentRawLineageMissingSnapshotKeys,1);
@@ -507,6 +521,11 @@ test("PIT-04-05 tampered private raw body fails SHA-256 without leaking or modif
   const report=auditEmploymentR6PitCoverage({dbPath:file,asOfDate:"2026-11-02"});
   assert.equal(report.rawSnapshotMetadataKeys,1);
   assert.equal(report.rawSnapshotCertifiedKeys,0);
+  assert.equal(report.rawSnapshotInvalidBodyKeys,1);
+  assert.equal(report.rawSnapshotValidWithoutRunKeys,0);
+  assert.equal(report.rawSnapshotByGroup[0].bodyVerifiedKeys,0);
+  assert.equal(report.rawSnapshotByGroup[0].runCertifiedKeys,0);
+
   assert.equal(report.coreCurrentRawLineageConflictingKeys,2);
   assert.equal(report.coreCurrentRawLineageMissingSnapshotKeys,1);
   assert.equal(report.coreCurrentRawLineageUnverifiedKeys,1);
@@ -523,6 +542,11 @@ test("PIT-04-05 absent raw snapshot/run tables yield NO_RUNTIME_EVIDENCE, never 
   const report=auditEmploymentR6PitCoverage({dbPath:file,asOfDate:"2026-11-02"});
   assert.equal(report.rawSnapshotMetadataKeys,null);
   assert.equal(report.rawSnapshotCertifiedKeys,null);
+  assert.equal(report.rawSnapshotInvalidBodyKeys,null);
+  assert.equal(report.rawSnapshotValidWithoutRunKeys,null);
+  assert.equal(report.rawSnapshotByGroup,null);
+  assert.equal(report.rawSnapshotByMonth,null);
+
   assert.equal(report.coreCurrentRawLineageVerifiedKeys,null);
   assert.equal(report.coreHistoryRawLineageTotalRows,null);
   assert.equal(report.rawLineageEvidenceStatus,"NO_RUNTIME_EVIDENCE");
@@ -583,6 +607,10 @@ test("PIT-04-05 BLS snapshot provider family aliases only exact R6 series and re
     assert.equal(result.coreHistoryRawLineageVerifiedRows,1,releaseGroup+":"+seriesId);
     assert.equal(result.coreCurrentRawLineageMissingSnapshotKeys,0);
     assert.equal(result.rawSnapshotCertifiedKeys,1);
+    assert.equal(result.rawSnapshotByGroup.length,1);
+    assert.equal(result.rawSnapshotByGroup[0].releaseGroup,releaseGroup);
+    assert.equal(result.rawSnapshotByGroup[0].runCertifiedKeys,1);
+
     assert.equal(result.promotionApproved,false);
     assert.equal(digest(file),before);
     assert.doesNotMatch(JSON.stringify(result),/PRIVATE_BLS_HTTP_RESPONSE|responseHash|snapshotId/);
