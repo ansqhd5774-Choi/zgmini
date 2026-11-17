@@ -29,7 +29,7 @@ test("BLS observations are rendered inside the existing risk indicator table",()
  ]);
  assert.ok(risk.includes('row.freshness?.status==="FRESH"'));
  assert.ok(risk.includes("costFormat(row.value,row.unit)"));
- assert.ok(risk.includes("<CostSpark history={row.history}/>"));
+ assert.equal((risk.match(/<CostSpark history=\{row\.history\} label=\{meta\.name\+/g)??[]).length,2);
  assert.ok(risk.includes("earnings-r2-cost-mobile-card"));
  assert.ok(styles.includes(".earnings-r2-cost-spark"));
 });
