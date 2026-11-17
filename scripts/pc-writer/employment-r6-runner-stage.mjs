@@ -184,7 +184,7 @@ const safeAttestationBuckets=(rows,field,allowed,maxRows)=>{
   });
 };
 const safeSourceMonth=value=>value==="OLDER"||value==="UNKNOWN"
-  ||/^\\d{4}-(?:0[1-9]|1[0-2])$/.test(value);
+  ||/^\d{4}-(?:0[1-9]|1[0-2])$/.test(value);
 const sumBucket=(list,name)=>list.reduce((total,row)=>total+row[name],0);
 
 function projectPit(pitCoverage){
