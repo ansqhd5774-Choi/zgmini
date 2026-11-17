@@ -2,8 +2,10 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {DatabaseSync} from 'node:sqlite';
+import os from 'node:os';
+import path from 'node:path';
 import {
-  checkSchema,normalizeSeries,buildPlans,insertPlans,SERVICE_SERIES,
+  checkSchema,normalizeSeries,buildPlans,insertPlans,SERVICE_SERIES,resultLogPath,
 } from '../scripts/pc-writer/EARNINGS_R3C_BLS_STORE_ONCE.mjs';
 
 function newDb() {
@@ -181,4 +183,15 @@ test('service-only source rejects unrelated series and conflicting repeated mont
   const conflict=serviceResponse();
   conflict.Results.series[0].data.push({...conflict.Results.series[0].data[0],value:'157.667'});
   assert.throws(()=>normalizeSeries(conflict,SERVICE_SERIES),/BLS_DUPLICATE_PERIOD_CONFLICT_NO_WRITE/);
+});
+
+test('R3C manual diagnostic TXT is emitted under user TEMP rather than source checkout',()=>{
+  const stamp='20261117-114500Z';
+  assert.equal(resultLogPath(stamp),
+    path.join(os.tmpdir(),'EARNINGS_R3C_BLS_STORE_ONCE_RESULT_'+stamp+'.txt'));
+  assert.equal(resultLogPath(stamp,{includeServices:true}),
+    path.join(os.tmpdir(),'EARNINGS_BLS_SERVICE_R1_RESULT_'+stamp+'.txt'));
+  assert.notEqual(path.dirname(resultLogPath(stamp)),path.resolve('scripts/pc-writer'));
+  assert.throws(()=>resultLogPath('../foo'),/INVALID_RESULT_STAMP/);
+  assert.throws(()=>resultLogPath('2026-11-17T11:45:00Z'),/INVALID_RESULT_STAMP/);
 });
