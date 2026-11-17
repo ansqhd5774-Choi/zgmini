@@ -4,6 +4,8 @@
 
 ## 최신 인계 스냅샷 — W01 2026-11-17 (Census 단회 B는 Writer hook과 독립·#1854 반례 소스 검토 완료·#1871 공동 Owner 승인 HOLD·30/71)
 
+> **2026-11-17 후속 확인:** #1854 OPEN/Owner SOURCE_REVIEW_HOLD, #1871 DRAFT/CONTROLLER_B_NO_GO_AS_IS 재확인. Census 단회 승인 manifest는 구 파서 SHA-256을 pin한 반면 PR #1215 병합으로 앱 main 파서 내용은 변경됨. 운영 PC 현행 파서 SHA는 추가 확인이 필요하며 승인 범위 자동 확대 불가. 상세한 source pin/공식 스키마 교차확인과 다음 행동은 이 파일 말미의 `W01-20261117-POST1215-PARSER-PIN-CHECK` 항목 참조. **30/71(42.3%), Census #28 미수집·#1818 재실행 금지 유지.**
+
 > **최신 실행 우선순위 정정(2026-11-17):** #1633 `local-cycle.mjs` 자동연결 미설치는 **별도 W01 자동운전 미완료**이나, 승인된 **공식 Census #28 단회 B→원자료 저장 경로의 필수 선행조건이 아니다.** 독립 `inflation-census-api-b/coordinator.mjs`는 `local-cycle.mjs`를 호출하지 않고 운영 Core owner만 먼저 증명한다. `run-local.mjs` source에는 독립 `inflation-7-publication` Writer 처리 경로가 존재한다(실PC 설치·D1 readback은 아직 별도 미검증). **다음 필수 실행은 공통 Owner의 #1854 독립 리뷰 결론 + W03/W04 누적 Controller exact manifest GO/NO-GO → 정규 설치 → 자연 Task-linked Core owner 증명 → 새 승인 Census 단회 B**. 과거 소비된 #1818 및 #1633 replay 금지. [W01 독립 source review #1854](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1854#issuecomment-6938374523), [기능 우선순위 정정 #1633](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1633#issuecomment-6938406974) 참고.
 
 > **다음 작업자는 이 스냅샷부터 시작한다.** 진행 기록 파일 자체가 지정된 정본이고, 상위 계획은 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)이다. 과거 이력의 오래된 설치 SHA·대기 문구가 이 스냅샷을 덮어쓰지 않는다.
