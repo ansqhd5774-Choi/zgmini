@@ -1267,3 +1267,22 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 **LAST PASS:** WPSFD42 서비스 전용 수집·사전검사의 기본 3원천 불필요 종속성을 해소하고 기본/혼합 엄격 검사 보존, exact CI 5/5 PASS, 후속 Draft 격리 및 원래 3파일 승인 후보 고정. **FIRST UNFINISHED:** Core 자연 유휴/Writer resource 원격 해제 증명과 새로운 정규 단회 B 유효권한 후 기존 정확 3파일 설치·PC SHA/JSON/TXT, 이후 별도 승인된 WPSFD42 공급자 POST·SQLite 저장 및 실제 D1/API/UI 확인.
 
 **NEXT 하나 / W05 원담당:** `writer-source`의 현행 자연 Core 유휴·소유권/lease/원본 PC source와 유효 단회 B 재승인 조건을 독립 증거로 확인할 수 있을 때만 **새 고유** Writer B source-only 실행으로 3파일 설치 및 원격 결과쌍/설치 SHA 확인. 소비된 #1919 재실행·기존 B 승인 후보에 #1231 후속 파일 혼합·Core 강제 중지·무승인 Provider/DB/D1 효과 금지. 기능 개발은 독립 병행 가능.
+
+
+## 69. R3-04 (2026-11-17 KST) 반복 Core busy 원인에 대한 실제 checkpoint 전진 판별·공통 경합 진단 범위 인계 — CORE_ACTIVE_PROVEN / IDLE_WINDOW_UNVERIFIED
+
+**진행률:** 순차 DONE **26/82(31.7%) → 26/82(31.7%)**, 개별 DONE **28/82(34.1%) → 28/82(34.1%)**, 첫 미완료 R3-04 유지. §68 source-only 후속 코드와 CI PASS 재사용, 신규 source 수정/PR/운영 B 요청/PC 변경 0.
+
+**새 실증 근거(이미 다른 승인 후검이 남긴 PC 증거 재사용, 신규 A 없음):**
+- 기존 [#1919](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1919) / [Run 44034883567](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44034883567) 최초 source-only B 요청: `WRITER_B_CORE_ACTIVE_WINDOW_DEFERRED`, claim 전 `UNCLAIMED_UNTOUCHED`, JSON/TXT 2/2. 소비한 요청을 재실행하지 않음.
+- [#1924](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1924) 16:13 KST 두 표본 `OBSERVED_BUSY`, `coreLockObserved=true`, `writerLockObserved=false`, `releaseVerified=false`. 이 A는 현행 lease 해제 권한이 아님.
+- 기존 별도 운영 PC postcheck [#1933/Run 44040540189](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1933) 16:40 KST: `core.lockPresent=true`, `local-cycle-last-run` COMPLETE/modifiedAt 2026-11-17T07:29:00.112Z, `local-collection-last-run` COMPLETE/modifiedAt 07:32:56.917Z, `local-writer-last-run` VERIFIED/modifiedAt 07:24:45.027Z.
+- 더 늦은 postcheck [#1948/Run 44044295908](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1948) 17:09 KST: `core.lockPresent=true`, cycle COMPLETE/modifiedAt 08:02:15.445Z, collection SKIPPED/modifiedAt 08:05:41.385Z, writer VERIFIED/modifiedAt 07:58:53.424Z. 두 관측의 Core/Korea Task XML SHA 동일, 운영 Writer `approvedSourceSha=2070ff53549e2f9f2cea57d5af7e1d83f9fd7388`; 제어 Controller 실행 SHA `fbe943a0...`→`c9a7cc6a...` 변화는 Writer 소스 설치 변화가 아님.
+
+**판정:** Core가 완전히 정지하고 checkpoint가 멈춘 상태는 **아니며** 자료 상태·수집 스케줄과 Writer 결과가 실제 전진함. 다만 표본들의 Core lock 존재가 서로 다른 정상 주기인지, 연속 고아 lock인지, Task/Scheduler/관련 프로세스가 자연 2-sample idle을 허용하는지는 알 수 없어 `IDLE_WINDOW_UNVERIFIED`; 고아 lock·장기 장애로 확정 금지. 기존 `writer-b/core-idle-window.mjs`는 `MAX_CORE_IDLE_WAIT_MS=6*60000`, 1500ms 간격 연속 2 idle 요구; `windows-guards.mjs`는 Task enabled+Ready(state=3), instances/relatedProcesses/unknownProcessLines=0, Core lock absent만 통과. #1919의 6분 bounded preclaim 실패는 정확 운영 제약이며, 보호 제거·임의 pause로 해결 금지.
+
+**중앙의 기존 채널에 공통 범위만 진단 요청 실제 등록:** [#68/6942571602](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6942571602) — 기존 source-only B 기술 GO·승인 반복 요청이 아닌, 실제 Core Task와 lock 소유 관계, 자연 idle 가능성, 필요한 경우 승인된 공통 유지보수 구간/최소 수정 방안에 대한 공유 자원만 진단/회신 요청. 원격 댓글 재조회 확인; **프로세스 총괄의 다른 ChatGPT 대화 자동 수신/작업 완료/승인 새로 발생했다는 주장은 하지 않음**. 기능 source·Provider·SQLite/D1·GET/UI는 W05 원담당이 계속 담당.
+
+**LAST PASS:** 새 승인 후검 2건의 Core/checkpoint 전진 및 Task XML 불변·Writer 운영 source 동일성을 실제 근거로 대조; 경합 원인에서 '진행 없는 Core' 추정 배제, 공유 원인 판단의 정확한 조사 범위 기존 #68 한 댓글로 등록·readback. **FIRST UNFINISHED:** 지금 시점의 Core 유휴 2표본/lock 소유자·Writer lane release 증명 부재, 신규 단회 B 실행 조건 미충족, WPSFD42 실제 source/SQLite 저장/D1/API/UI 완료 아님.
+
+**NEXT:** 공용 임계 조건이 실제 증명될 때만 W05 담당이 기존 `APPROVED_B` 원본·현재 Writer source/preimage·lease를 확인한 새 고유 설치 요청 1회 및 3파일 PC afterSHA+JSON/TXT 2/2 검증. 공통 원인 확인 중에도 [Draft PR #1231](https://github.com/ansqhd5774-Choi/zgmini/pull/1231)의 독립 계산/수집 회귀를 보존하고 다음 기능 필요 작업을 지속; Core 종료·lock 삭제·#1919 재실행·미승인 BLS POST/SQLite/D1 효과 0.
