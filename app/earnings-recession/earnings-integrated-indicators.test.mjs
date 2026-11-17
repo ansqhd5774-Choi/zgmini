@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import {readFileSync,existsSync} from "node:fs";
 import {buildEarningsCostIndicatorView,KNOWN_EARNINGS_COST_INDICATORS,
- OPTIONAL_EARNINGS_COST_INDICATORS,EARNINGS_C_COST_SCHEMA} from "./earnings-cost-indicator-list.mjs";
+ OPTIONAL_EARNINGS_COST_INDICATORS,EARNINGS_C_COST_SCHEMA,
+ earningsCostRetrievalDay} from "./earnings-cost-indicator-list.mjs";
 
 const page=readFileSync(new URL("./page.tsx",import.meta.url),"utf8");
 const risk=readFileSync(new URL("./earnings-risk-only-panel.tsx",import.meta.url),"utf8");
@@ -129,4 +130,21 @@ test("WPSFD42 optional UI rows require BOTH READY and FRESH; base five remain",(
  assert.equal(published.indicators.length,7);
  assert.equal(published.rows.length,7);
  assert.equal(published.rows[5].value,0);
+});
+
+test("W05 R5-11 observation and retrieval are distinct in both viewports",()=>{
+ assert.equal(earningsCostRetrievalDay("2026-10-26T17:02:53.996Z"),"2026-10-26");
+ for(const bad of [null,undefined,"","2026-02-30T17:02:53.996Z",
+   "2026-13-01T00:00:00.000Z","2026-10-26","2026-10-26T17:02:53Z",
+   "not-a-date",0]){
+  assert.equal(earningsCostRetrievalDay(bad),"—");
+ }
+ assert.ok(risk.includes("관측 {row?.observationPeriod??"));
+ assert.ok(risk.includes("수집 {earningsCostRetrievalDay(row?.retrievedAt)}"));
+ assert.equal((risk.match(/earningsCostRetrievalDay\(row\?\.retrievedAt\)/g)??[]).length,2);
+ assert.ok(risk.includes('const costStale=(row:CostRow|undefined)'));
+ assert.ok(risk.includes('row.freshness?.status==="STALE"'));
+ assert.ok(risk.includes('costStale(row)?"갱신 지연"'));
+ assert.ok(risk.includes('costStale(row)?" · 갱신 지연":""'));
+ assert.ok(!risk.includes('row?.status==="STALE"?"갱신 지연"'));
 });
