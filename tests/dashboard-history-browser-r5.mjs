@@ -97,4 +97,54 @@ try{
   console.log(`PASS ${width}px: 6 chart periods, newer snapshot and true zero in mocked Chromium`);
   await page.close();
  }
+  // W06 #75 isolated PRODUCTION smoke: public webpage only (zero app/API writes).
+  // This one-off draft will not be merged into the permanent mocked CI suite.
+  // The active Cloudflare deployment SHA and private D1 body/stored_at are
+  // intentionally outside this browser's verification scope.
+  for(const width of [390,1440]){
+   const liveContext=await browser.newContext({
+    viewport:{width,height:900},locale:'ko-KR',colorScheme:'light',
+   });
+   const live=await liveContext.newPage();
+   const errors=[],requests=[];
+   live.on('pageerror',error=>errors.push(error.message.slice(0,250)));
+   live.on('response',response=>{
+    const u=new URL(response.url());
+    if(u.hostname==='zgmini.kr'&&/^\\/api\\/(market-score|market-score\\/observations)$/.test(u.pathname)){
+     requests.push({path:u.pathname,status:response.status()});
+    }
+   });
+   try{
+    const result=await live.goto('https://zgmini.kr/',{waitUntil:'domcontentloaded',timeout:45000});
+    assert.equal(result?.status(),200,'Production homepage must return HTML 200');
+    const dialog=live.locator('#zg-about-intro-dialog');
+    if(await dialog.isVisible({timeout:2000}).catch(()=>false)){
+     await dialog.getByRole('button',{name:'닫기',exact:true}).click();
+     await dialog.waitFor({state:'hidden',timeout:12000});
+    }
+    const cards=live.locator('.zg-r55-card-grid article');
+    await cards.first().waitFor({state:'visible',timeout:40000});
+    assert.equal(await cards.count(),12,'Live production must show twelve domain cards');
+    const periods=live.getByRole('group',{name:'종합 시장 점수 추이 기간'});
+    await periods.waitFor({state:'visible',timeout:25000});
+    const accessible=live.getByRole('img',{name:/종합 시장 점수/}).first();
+    await accessible.waitFor({state:'visible',timeout:25000});
+    const summary=await accessible.getAttribute('aria-label');
+    assert.match(summary??'',/종합 시장 점수/);
+    for(const period of ['1D','1W','1M','3M','6M','1Y']){
+     const button=periods.getByRole('button',{name:period,exact:true});
+     await button.click();
+     assert.equal(await button.getAttribute('aria-pressed'),'true',
+      width+'px live '+period+' must be selected');
+     assert.equal(await cards.count(),12);
+    }
+    await live.screenshot({path:`artifacts/dashboard-history/live-production-${width}.png`,fullPage:false,timeout:20000});
+    console.log('W06_75_LIVE_PRODUCTION',JSON.stringify({
+     viewport:width,htmlStatus:result?.status(),domainCards:await cards.count(),
+     summaryAria:summary?.slice(0,140),periodsTested:6,
+     apiRequests:requests.slice(0,22),pageErrors:errors
+    }));
+    assert.deepEqual(errors,[],'Live production browser must not have JS page errors');
+   }finally{await liveContext.close();}
+  }
 }finally{await browser.close();}
