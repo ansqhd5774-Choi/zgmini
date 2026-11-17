@@ -47,8 +47,11 @@ const numeric = text => typeof text === 'string'
   && /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(text)
   && Number.isFinite(Number(text));
 
-function checkSchema(db,{includeServices=false}={}) {
-  const guardedSeries=includeServices?[...SERIES,...SERVICE_SERIES]:SERIES;
+function checkSchema(db,{includeServices=false,serviceOnly=false}={}) {
+  // A service-only capture must not depend on unrelated base BLS snapshots.
+  // Mixed and base-only captures retain their existing strict namespace checks.
+  const guardedSeries=serviceOnly?SERVICE_SERIES:
+    includeServices?[...SERIES,...SERVICE_SERIES]:SERIES;
   const names = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name IN (?,?)`)
     .all(CHUNKS, SNAPSHOTS).map(row => row.name);
   if (names.length !== 2) err('EXISTING_TABLE_MISSING_NO_WRITE');
@@ -260,12 +263,13 @@ function insertPlans(db, plans) {
     ||plans.some(p=>![...SERIES,...SERVICE_SERIES].includes(p?.id))
     ||new Set(plans.map(p=>p.id)).size!==plans.length)err('BLS_PLAN_SERIES_INVALID_NO_WRITE');
   const includeServices=plans.some(p=>p.id==='WPSFD42');
+  const serviceOnly=plans.length===1 && plans[0].id==='WPSFD42';
   let insertedChunks = 0, insertedSnapshots = 0;
   let begun = false;
   try {
     db.exec('BEGIN IMMEDIATE');
     begun = true;
-    checkSchema(db,{includeServices}); // Recheck all selected namespaces inside transaction.
+    checkSchema(db,{includeServices,serviceOnly}); // Recheck selected namespaces inside transaction.
     const putChunk = db.prepare(`INSERT INTO ${CHUNKS}(
       provider,dataset,chunk_sha256,first_observation_date,last_observation_date,
       row_count,payload_json,first_seen_at) VALUES(?,?,?,?,?,?,?,?)
@@ -384,7 +388,7 @@ async function main() {
     try {
       scan = new DatabaseSync(DB_PATH,{readOnly:true,timeout:3000});
       scan.exec('PRAGMA query_only=ON');
-      const previous = checkSchema(scan,{includeServices});
+      const previous = checkSchema(scan,{includeServices,serviceOnly:includeServices});
       notes.push('PC_EXISTING_SCHEMA_GUARD=PASS');
       notes.push(`PREVIOUS_BLS_SNAPSHOTS=${previous.existingSnapshots}`);
       notes.push(`PREVIOUS_BLS_CHUNKS=${previous.existingChunks}`);
