@@ -291,6 +291,47 @@ for(const failure of ['502','timeout','empty']){
 }
 
 
+test('R47 rejects checkpoint page URL end-date drift without a new provider GET',async t=>{
+  const f=fixture(t);
+  const first=await runNineR47Recurring({...f,now:f.firstTime,sleep:async()=>{}});
+  assert.equal(first.status,'R35_DELTA_PRIVATE_COLLECTION_COMPLETE');
+  const stateDir=path.join(f.deltaHome,'state');
+  const name=fs.readdirSync(stateDir).find(x=>/^delta-[a-f0-9]{20}\.json$/.test(x));
+  assert.ok(name);
+  const cpPath=path.join(stateDir,name);
+  const checkpoint=JSON.parse(fs.readFileSync(cpPath,'utf8'));
+  const spy=checkpoint.symbols.SPY.files[0];
+  const forged=new URL(spy.requestedUrl);
+  forged.searchParams.set('end','2026-10-28');
+  spy.requestedUrl=forged.toString();
+  fs.writeFileSync(cpPath,JSON.stringify(checkpoint));
+  const checkpointSha=sha(fs.readFileSync(cpPath));
+  assert.throws(()=>planNineR47Recurring({...f,now:f.secondTime}),
+    {code:'THEME_NINE_R47_PAGE_REQUEST_IDENTITY'});
+  assert.equal(sha(fs.readFileSync(cpPath)),checkpointSha);
+  assert.equal(sha(fs.readFileSync(f.manifestFile)),f.before);
+  assert.equal(f.getCalls().length,64);
+});
+
+test('R47 rejects checkpoint identity drift before collection or raw writes',async t=>{
+  const f=fixture(t);
+  const first=await runNineR47Recurring({...f,now:f.firstTime,sleep:async()=>{}});
+  assert.equal(first.status,'R35_DELTA_PRIVATE_COLLECTION_COMPLETE');
+  const stateDir=path.join(f.deltaHome,'state');
+  const name=fs.readdirSync(stateDir).find(x=>/^delta-[a-f0-9]{20}\.json$/.test(x));
+  assert.ok(name);
+  const cpPath=path.join(stateDir,name);
+  const checkpoint=JSON.parse(fs.readFileSync(cpPath,'utf8'));
+  checkpoint.end='2026-10-28'; // unchanged state filename must not authenticate a new window
+  fs.writeFileSync(cpPath,JSON.stringify(checkpoint));
+  const checkpointSha=sha(fs.readFileSync(cpPath));
+  assert.throws(()=>planNineR47Recurring({...f,now:f.secondTime}),
+    {code:'THEME_NINE_R47_CHECKPOINT_IDENTITY'});
+  assert.equal(sha(fs.readFileSync(cpPath)),checkpointSha);
+  assert.equal(sha(fs.readFileSync(f.manifestFile)),f.before);
+  assert.equal(f.getCalls().length,64);
+});
+
 test('R47 accepts archived old R35 checkpoint URL alongside current stocks/us pages',async t=>{
   const f=fixture(t);
   const first=await runNineR47Recurring({...f,now:f.firstTime,sleep:async()=>{}});
