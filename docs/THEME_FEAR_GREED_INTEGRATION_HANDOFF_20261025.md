@@ -1,3 +1,12 @@
+## 2026-11-17 W03 9/68 — 공통 총괄 업무 분리 회신 확인 (15시)
+
+- **진행률:** 시작 8/68 완료(11.8%), 9단계 진행 중 → 종료 8/68 완료(11.8%), 9단계 진행 중. 신규 운영 완료 0. R47/R49 CI 5/5 PASS 및 전체 4783 PASS는 기존 기록 재사용.
+- **신규 원격 근거:** [#1894 댓글 6940102808](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1894#issuecomment-6940102808)에서 프로세스 총괄은 기존 B 5경로 CMD 1파일 CAS 미지원(ROUTE_NO_GO)을 재확인하고 공통 최소 고정 CMD adapter/manifest 계약 보완·검증만 담당. W03는 독립 기능 개발·시험과 승인 후 설치·ETF63+SPY 수집·계산·게시·UI 검증 담당. [중앙 #68 분산 결정](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6940072011) 참조.
+- **승인 상태:** [#1894 댓글 6939314198](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1894#issuecomment-6939314198)의 정확 CMD 한 파일 효과 GO/NO-GO는 미확정(NO_EFFECT_APPROVED). 기술 검토·CI·총괄 인계 댓글은 운영 승인/설치 영수증이 아님. 기존 CMD OLD SHA256 2e0fc3e3… → 목표 a08fdec8…은 fresh PC preimage·Task XML·lease·backup·postreadback 없이 실행 금지.
+- **이번 실제 효과:** GitHub 원격 계획서·진행 기록·#1894 최신 댓글 재조회 및 이 진행 기록만 갱신. 운영 PC/Task/Controller/provider/SQLite/D1/Cloudflare 변경 0, 신규 기능 소스·CI·수집 0. 공개 10개 신규 검증 0, 163개 실제 운영 완료 수 미산정.
+- **LAST PASS / FIRST MISSING:** 기능 CI 5/5와 공통 역할 분담 확인 / 효과 GO·정규 B adapter/manifest·fresh PC 증거 미확보.
+- **다음 실행:** W03 독립 GMH R47 증분·checkpoint 및 R32 입력 계약을 격리 검증하고 실제 FAIL만 최소 수정. 공통 adapter는 프로세스 총괄 책임. 승인 전 운영 설치·수집 금지.
+
 ## 2026-11-17 W03 9/68 — R47/R49 실제 GitHub CI 5/5 PASS·전체 4783 PASS
 
 - **업무·기준:** 원담당 W03 전용 브랜치 `codex/theme-fear-greed-integration-20261025`의 9/68(P1 R47 실제 설치 전 단계), 8/68 DONE 11.8%, 기술 T1 20%. 설치·Task 수정 없이 이전 원장의 **정확 W03 CMD R47/R49 Node 시험 NOT_RUN**을 실제 GitHub Actions에서 검증. 시작 브랜치 SHA `be03f65226a270d85fae795b449a8950d04d845e`, 실제 신규 소스 변경은 **테스트 정규식 1줄**.
