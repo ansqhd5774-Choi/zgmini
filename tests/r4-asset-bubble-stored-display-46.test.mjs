@@ -110,7 +110,7 @@ test('null/NaN/future or out-of-range values never become scored 0',()=>{
 test('actual panel uses approved display gate; saved source raw/history join remains unchanged',()=>{
  assert.match(panel,/assetBubbleVerifiedDisplayScore\(payload\)/);
  assert.match(panel,/assetBubbleVerifiedDisplayTrend\(payload,score\)/);
- assert.match(panel,/score===null\?\{\.\.\.item,value:null\}:item/);
+ assert.match(panel,/score===null\\|\\|\\(candidate&&trend\\.length===0\\)\\?\\{\\.\\.\\.item,value:null\\}:item/);
  assert.match(panel,/mergeAssetR10HistoryForUi\(mergeAssetR10RawForUi\(payload,raw\),history\)/);
  assert.match(panel,/MarketFearGreedChart showExtrema data=\{trend\}/);
 });
