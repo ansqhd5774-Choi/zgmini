@@ -52,7 +52,7 @@ test('R69 log summary excludes credential-looking payload, emits whitelisted sta
 });
 
 test('R69 recognizes only the approved R73 scheduled Task direct launcher',()=>{
-  const xml=`<Task><Triggers><StartBoundary>2026-11-17T11:30:00</StartBoundary></Triggers>
+  const xml=String.raw`<Task><Triggers><StartBoundary>2026-11-17T11:30:00</StartBoundary></Triggers>
   <Actions><Exec><Command>E:\ZGmini\data\pc-writer\theme-nine-r48\THEME_NINE_R73_SCHEDULED_PRIVATE.cmd</Command></Exec></Actions></Task>`;
   const result=summarizeR69TaskXml(xml,{action:'THEME_NINE_R48_PRIVATE_CYCLE.cmd',time:'11:30'});
   assert.equal(result.privateActionKind,'R73_SCHEDULED_PRIVATE');
@@ -66,7 +66,7 @@ test('R69 accepts exact R48 or R73 cmd.exe /d /c quoted private-chain wrappers',
     ['THEME_NINE_R48_PRIVATE_CYCLE.cmd','R48_PRIVATE_CYCLE'],
     ['THEME_NINE_R73_SCHEDULED_PRIVATE.cmd','R73_SCHEDULED_PRIVATE']
   ]){
-    const xml=`<Task><Triggers><StartBoundary>2026-11-17T11:30:00</StartBoundary></Triggers>
+    const xml=String.raw`<Task><Triggers><StartBoundary>2026-11-17T11:30:00</StartBoundary></Triggers>
     <Actions><Exec><Command>cmd.exe</Command><Arguments>/d /c &quot;&quot;E:\ZGmini\data\pc-writer\theme-nine-r48\${name}&quot;&quot;</Arguments></Exec></Actions></Task>`;
     const result=summarizeR69TaskXml(xml,{action:'THEME_NINE_R48_PRIVATE_CYCLE.cmd',time:'11:30'});
     assert.equal(result.privateActionKind,expected);
