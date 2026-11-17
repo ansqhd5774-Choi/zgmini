@@ -687,3 +687,14 @@
 - **메모리/보호:** Admission 2,683MiB ≥ 1,536MiB, 계산 100ms 간격 230샘플 시스템 RAM baseline 2,050MiB / min 560MiB / 관측 증가 최대 1,490MiB, 정상 종료. 운영 writes/provider/D1 모두 0, 보호 전후 해시 동일 `591c8e7efc555f926d3d14d70cbb92b680b100066b224e026bc9ca4c212591ae`. RAM 지표는 시스템 전체 관측이며 특정 프로세스 원인 추정 금지.
 - **LAST PASS/FIRST FAIL:** PIT_FOUR_BUCKET_SUM_VERIFIED + MISSING_COUNT_EQUAL + CANDIDATE_HOLD + JSON_TXT_READBACK_2_OF_2 / FIRST_FAIL=NONE (PIT-04-03 한정). 메모리 장애 재시도 종료. 다른 PIT/29개 점수/웹 게시 전체 완료 주장 아님.
 - **다음 필수:** PIT-04-04 — availableAt/retrievedAt/recorded_at/first_seen_at as-of 적격성을 승인된 저장자료 경로에서 실측. 기존 앱 PR #1225 source guard main+CI 기완료 재사용; 실PC 시각 증거 미회수는 계속 TODO. PIT-04-05 원본 해시와 PIT-04-07 분모 검증 뒤에만 자동 복구/TRUE_PIT 가능 여부 별도 판정. 새 공유 Controller GO/설치 반복 없음.
+
+## 61. W04 PIT-04-04 — as-of 저장 시각 guard와 실PC 4버킷 Reader 소스 통합 검토 준비 (2026-11-17 KST)
+
+<!-- W04-PIT0404-PORT-PR1237-SOURCEONLY-20261117 -->
+
+- **완료점 재사용:** §60 [#1949](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1949) 실PC 4버킷 PASS와 진행률 26/72(36.1%) 유지. PIT-04-03 재실행·Controller 재설치 없음.
+- **기존 코드 차이 확인:** `main`의 `scripts/pc-writer/employment-r6-pit-coverage.mjs` blob `c47f7fd7045258409b9ce241123f2b62d2e6e71c`는 PR #1225 merged/기록시각 `storedAsOf` guard 있음, PIT-04-03 새 4버킷 없음. 반대로 실제 PC 승인 Host bundle source `650d41fa83b7e5ed6fb2f0887aaeff0559fc1b60`의 같은 파일 blob `ff94ee99ce076c9d62ba6b85cc7bbdbbf3db160d`에는 새 4버킷 있으나 기록시각 guard 없음. **#1949 PASS가 PIT-04-04 기록시각 검증 PASS라는 근거는 아님**.
+- **독립 소스 통합 작업:** 기존 승인 source SHA `650d41fa83b7e5ed6fb2f0887aaeff0559fc1b60`에서 신규 전담 격리 브랜치 `fix/w04-r6-pit0404-stored-asof-20261117` 생성(이전 승인 SHA 불변). `scripts/pc-writer/employment-r6-pit-coverage.mjs`에 main PR #1225의 저장시각 컬럼 presence 및 `recorded_at`/`first_seen_at` fail-closed as-of guard를 **4버킷 비교·동시각 개정 보호 보존**하며 포트. 회귀시험에 미래 날짜의 Current/History/Candidate 배제, 유효 날짜 허용, 잘못된 기록일 거부, Core 4버킷 matching/missing 불변, 읽기 전용 파일 해시 보존 포함.
+- **검토 PR:** [Draft #1237](https://github.com/ansqhd5774-Choi/zgmini/pull/1237) (base `fix/w04-r6-pit0403-source-counts-20261117`, head `fix/w04-r6-pit0404-stored-asof-20261117`, 정확 2파일, 2+1 patch hunks, +70/-3 lines). Source update commits `af9e02e3532a6db2d4737a51e54e3c5d677a9942`, `4b4c5fe35963cccbe1fcfa7d6803b6ec3cdc7a3b`. 기존 main 병합 PR #1225를 재구현하지 않고, 차이 있는 승인 Host 번들에서 빠진 부분만 정확 포트. 기존 Draft PR #1212의 main 대상 4버킷 작업은 보존.
+- **검증/효력 상태:** PR #1237 `draft/open/mergeable=true`, 파일 목록/patch 조회 PASS, 해당 HEAD의 GitHub workflow CI 실행 아직 0건. **소스 검토까지만 완료**, Node/SQLite 통합 CI·실제 운영 PC 실행·새 Host B source registration은 미실행. 이전 source SHA를 새 버전으로 오인하거나 승인 번들을 덮어쓰지 않음. 코드 리뷰/CI가 없는데 PIT-04-04를 DONE으로 올리지 않음.
+- **LAST PASS / NEXT:** 소스 2파일 최소 차이와 기본 fail-closed 설계 확인 / 다음은 격리 Node SQLite 회귀 CI 확보 및 최신 main과의 차이 확인, 그다음 정확한 source bundle manifest에 따른 정규 Host B 등록(새 승인 필요한 효과만 판단), 마지막에 새 A/heavy로 PC `recorded_at`·`first_seen_at` as-of 실제 검증. 26/72(36.1%) 유지, 후보 14키 충돌/255 미증빙 HOLD, DB/provider/D1 writes 0.
