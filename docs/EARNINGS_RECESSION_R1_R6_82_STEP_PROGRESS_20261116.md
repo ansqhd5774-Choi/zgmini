@@ -31,14 +31,14 @@
 | 필드 | 마지막 확인 상태 |
 |---|---|
 | 최종 목표 | 82단계 R1~R6로 적격 실적 침체 정보성 지표의 PC 원자료 저장→계산→승인 D1 게시→Production API/UI를 완성. 기존 E1-R4 점수/산식·기타 12대 기업실적은 보호 |
-| 현재 관련 단계 | **순차 R2-13(23/82)**: BEA·Census·BLS·SEC·FRED의 재사용권·무료 한도·원자료 저장·파생·공개 사용 적격성 항목별 READY/HOLD 영수증. SEC R2-11은 COVERAGE=HOLD, 실제 R3-15 조건부 |
-| 마지막 검증 완료점 | **R2-12 공급자별 발표/관측/수집/개정/vintage/SA·시차 구분 DONE (§32)**. BEA 2026Q3 profits 11/25 ET(미발표), QFR 2026Q3 12/07 ET(미발표), M3 2026-09 Full 11/03 ET(발표), MTIS 2026-09 11/17 10 ET(2026-11-17 09 KST 기준 미래), BLS ULC 2026Q3 최초 11/05 ET/개정 12/08, BLS PPI 월간 4개월 개정, SEC CompanyFacts 실시간 vs nightly ZIP ~03 ET. 본 시계열별 로컬 fetched/retrievedAt·SHA/firstSeenAt·releasedAt 구별 및 PIT 빈티지 허위 생성 금지. 운영 PC/D1/GET 최신 실측은 별도 |
+| 현재 관련 단계 | **순차 R3-01(24/82)**: 공통 원자료 저장계약의 provider/series/observationPeriod/vintage/SHA/sourceStoredAt 실제 source·운영 증거와 매핑. R2 공급자별 LICENSE/API/HTTP/SERIES/COVERAGE 판정 완료, 항목별 HOLD는 조건부 R3-13~15로 승계 |
+| 마지막 검증 완료점 | **R2-13 라이선스·API 한도·원본 저장/파생/공개 판정 DONE (§33)**. BEA 직접 공개통계 원칙적으로 사용 가능/BEA API 등록 ID·100req/min/100MB/min/30errors/min; BLS 공개자료 재사용 출처표시, v1 무등록 25/day·v2 등록 500/day/50 series; Census 공개 통계 파생·출처표시, Census API 무키 500/day/IP; SEC 공개 XBRL 접근 가능하나 기관/연락처 UA 및 전체 10req/sec 준수·실PC coverage 미확인으로 실제 활성화 HOLD; FRED Graph CSV는 제3자 기초시계열 이용권·저장/재배포 제약으로 PUBLIC/ARCHIVE HOLD. 단순 무료 HTTP ≠ 무제한 원문 재게시. 운영 PC/D1 배포 실측 없음 |
 | 재사용할 기존 근거 | QFR 원자료 ZIP PC SQLite 저장·계산 기존 유효 증거; 앱 QFR 3-pin [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175)는 앱 main 병합, 운영 PC 설치·B 게시 별개. R1-09 소스 blob 근거는 §14 |
-| 현재 최초 실제 미완료 조건 | **순차 R2-13:** BEA/Census/BLS/SEC/FRED 각 라이선스·API 한도·저장 및 공개 허용/HOLD를 독립 판정한 receipt 미작성. FRED 기업이익 원본 재배포 권리 HOLD, SEC companyfacts issuer coverage/UA/throttle HOLD 유지. R2-12 일정 조사 완료만으로 정규 수집·스케줄·D1 게시 승인 아님 |
-| 다음 필수 실행 하나 | **23/82 R2-13:** BEA 공식 공개 통계, Census 통계/API, BLS 1/2 API, SEC XBRL Fair Access, FRED 제3자 라이선스/Graph CSV 저장·재배포 제한을 공급자 원문과 대조해 LICENSE/API/HTTP/SERIES/COVERAGE 별도 READY/HOLD 표를 작성. 원문·D1 배포 금지 |
-| 현재 완료율 증거 | **22/82 DONE(약 26.8%)**, 현재 R2-13(23/82). R2-11은 SEC eligible candidate `COVERAGE=HOLD` 판정 완료; 운영 저장/게시 별도 |
+| 현재 최초 실제 미완료 조건 | **순차 R3-01:** 원자료 저장계약 provider/series/period/vintage/raw SHA·retrievedAt/sourceStoredAt의 실제 운영 소스/SQLite 체크포인트 교차대조 미완료. 기존 BLS/QFR 유효 PC 저장 증거 재사용하되 BEA 제조업/단위이익 새 archive readback 및 M3/MTIS/SEC 조건부는 별도 HOLD. FRED 원시 CSV 재배포·저장 금지 유지 |
+| 다음 필수 실행 하나 | **24/82 R3-01:** 기존 저장기/reader 원문·BLS 3개 PC PASS·QFR 기존 ZIP SHA 증거를 이용해 공통 raw provider/dataset/period/SA/vintage/sha/retrievedAt/sourceStoredAt/checkpoint 필드 맵 검증. 운영 승인 소스 읽기·새 수집/쓰기 없이 소스 계약 우선. 조건부 HOLD 자료를 숫자로 채우지 않는다 |
+| 현재 완료율 증거 | **23/82 DONE(약 28.0%)**, 현재 R3-01(24/82). R2-11 SEC source eligibility COVERAGE HOLD, R2-13 FRED rights HOLD·SEC HTTP/COVERAGE HOLD·M3/MTIS LIVE-COVERAGE HOLD, 운영 게시/실측 별도 |
 | 최종 갱신 식별 | 이 문서의 **최신 원격 브랜치 HEAD 및 Git blob SHA를 재조회**해 근거로 보고한다. 고정된 과거 SHA를 현행값으로 복사하지 않는다 |
-| **순차 포인터·완료율** | **현재 23/82 R2-13**; R1-01~R2-12 연속 조사/결정 DONE **22/82(약 26.8%)**. PC/D1/Production 완료와 분리 |
+| **순차 포인터·완료율** | **현재 24/82 R3-01**; R1-01~R2-13 연속 조사/적격성 결정 DONE **23/82(약 28.0%)**. PC/D1/Production 실물 증거와 구분 |
 | R1-09 이번 실행 | 2026-11-17 08시 KST: B 경제지표 `/economic-indicators/earnings/`→`EconomicDetailPanel`→`/api/market-score` `domains[id=earnings]`와 A 8대 위험 4요소·C 보조 GET의 별도 계약 소스 검증. `DONE`, 완료 9/82. 경계 상세·blob §14; 운영 GET·D1 미검증. 다음 R1-10 |
 
 ### D. 다음 작업자 재개 순서 및 변경 충돌
@@ -54,12 +54,12 @@
 
 | 판정 항목 | 실제 상태 |
 |---|---|
-| **순차 완료 확정** | **22/82 (약 26.8%)** — R1-01~R2-12 source·날짜/vintage 계약 조사 완료, 미확인 PC 데이터는 HOLD |
-| **현재 순차 진행 단계** | **23/82 = R2-13** (공급자 권리·무료 한도·원자료 저장/파생/공개 판정) |
-| **82개 중 개별 완료 확정** | **22개** (R1-01~R2-12), SEC 후보 R2-11 HOLD 연구 판정 포함 |
+| **순차 완료 확정** | **23/82 (약 28.0%)** — R1 10단계·R2 13단계 source/공식/권리 판정 완료(HOLD는 활성화 아님) |
+| **현재 순차 진행 단계** | **24/82 = R3-01** (공통 원자료 provider/dataset/period/vintage/SHA 저장계약 재검증) |
+| **82개 중 개별 완료 확정** | **23개** (R1-01~R2-13); R2-HOLD 후보는 실제 수집·공개 미완료 |
 | **71번 R6-04** | **후행 소스 선행 작업·현재 운영 승인 미해결**, 순차 71단계에 도달한 것이 아님 |
-| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 완료 22개, 남은 60개 단계 판정 대상 |
-| **다음 실제 수행 하나** | **R2-13(23/82):** BEA/Census/BLS/SEC/FRED LICENSE/API/HTTP/SERIES/COVERAGE 항목별 READY/HOLD receipt 작성 |
+| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 완료 23개, 남은 59개 단계 판정 대상 |
+| **다음 실제 수행 하나** | **R3-01(24/82):** 기존 PC 저장 원자료 provider/series/period/vintage/SHA/sourceStoredAt 계약 검증 |
 
 **순서 운용:** 다음 번호로 넘어가는 기준은 해당 단계의 **계획서 완료 조건 + 근거 링크**이며, 뒤 단계에서 미리 통과한 PR·CI는 계획 순번을 바꾸지 않는 선행 자산으로 유지한다. 사용자 승인 없이 순번이나 완료 기준을 수정하지 않는다. 조건부 HOLD·장기 DEFERRED는 계획서대로 처리하며 다른 독립 승인 작업의 수행을 중단하는 새로운 Gate가 아니다.
 
@@ -92,7 +92,7 @@
 | R2-10 | SEC CompanyFacts/XBRL 엔드포인트·User-Agent·쿼터 확인 | `DONE` | **§25** SEC data.sec.gov/api/xbrl/companyfacts/CIK##########.json·frames/us-gaap/tag/unit/CY...json 인증/키 없이 공개, www.sec.gov/Archives/edgar/daily-index/xbrl/companyfacts.zip 매일 약 03 ET bulk. SEC Fair Access 총 10req/sec·업체+연락처 UA 공개 권고, data.sec.gov CORS 미지원. 실제 E1-R4 frames UA ZGMINI/1.0 (+https://zgmini.kr)에는 담당 이메일 누락, 공식 rate-limit 전역 준수 미검증 → 운영 UA/전체 쿼터 HOLD. 연구 E1-R5 bulk source 기본 dry-run·CIK universe 검증 확인, 실제 PC 다운로드·게시 효과 미실증. API/HTTP/권리/프로덕션 별도 |
 | R2-11 | SEC 기업별 회계항목·회계기간·중복·표본 커버리지 검사 | `DONE` | **§26~§31** R2 공급자 연구/적격성 평가 결과 **`COVERAGE=HOLD`**. 기존 E1-R5 SEC CompanyFacts fiscal/tag/unit/filing/revision 계보 및 최근분기 Q3/과거 Q2 비교쌍 오인 방지 감사코드 정식 Node24 CI 9/9 PASS(선별 2-file Draft PR #1200/Run #43986522255). 2026Q2 실PC issuer 분모 500건(#1401)과 CompanyFacts 태그별 실제 수치/보존 ZIP SHA를 구분; 실제 분자 미확인=0% 아님. SEC UA/전체 throttle 미검증, live raw source/권한 미확인 → R3-15 조건부 HOLD, SEC 수집·D1·UI 활성화 금지. **조사·적격성 HOLD 판정만 DONE**; 실제 운영값·저장·게시 `NOT_VERIFIED` |
 | R2-12 | 공급자별 발표일·관측일·수집일·수정본·계절조정·지연 구별 | `DONE` | **§32** BEA 2026Q3 corporate profits 11/25 ET 미발표, QFR 2026Q3 12/07 ET 미발표, Census M3 2026-09 11/03 ET Full 기발표, MTIS 2026-09 11/17 10ET 아직 미래(2026-11-17 09KST 기준), BLS PPI 월간 4개월까지 개정, ULC Q3 초보도 11/05·개정 12/08 ET, SEC CompanyFacts real-time vs nightly bulk ~03ET. 각 observationPeriod/releaseAt/retrievedAt/sourceStoredAt/updated-vintage SHA·SA·publishAt 분리, 제공되지 않은 releaseAt/vintage null·시차 구분 명시. 공식 자료+원 소스 코드 대조 완료; 새 운영 수집·D1 갱신은 없음 |
-| R2-13 | 공급자별 재사용권·무료 한도·저장·파생·공개 허용/보류 판정 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
+| R2-13 | 공급자별 재사용권·무료 한도·저장·파생·공개 허용/보류 판정 | `DONE` | **§33** LICENSE/API/HTTP/SERIES/COVERAGE 5축 판정: BEA direct public stats READY(등록 API key·100req/min 등 조건) / Census 통계 자료 파생·출처표시 READY, 무키 API ≤500/day/IP(QFR stored PC PASS, M3/MTIS 현행 collector HOLD) / BLS public domain+출처표시 READY, v1 25/day, registered v2 500/day(BLS base 3 raw PASS, WPSFD42 PC HOLD) / SEC public EDGAR 분석 가능하지만 UA 회사+연락처/전체 10req/sec/issuer coverage 미검증으로 실제 수집·공개 HOLD / FRED 재배포·archive·제3자 권리 Graph CSV HOLD, BEA official direct 전환만 조건부. provider HTTP 통신·원시파일 LIVE readback·D1 게시 별도 NOT_VERIFIED |
 | R3-01 | 공통 원자료 저장 계약의 provider·series·period·vintage·SHA 확인 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R3-02 | SQLite append-only·개정본·중복·checkpoint 구조 재사용/최소 보완 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
 | R3-03 | 기존 BLS 3원천 저장·계산 PC 실측 증거 재사용 | `EXISTING_EVIDENCE` | 기존 BLS 3원천·공개 5행 유효 증거 재사용, 재수집 금지 |
