@@ -2,6 +2,7 @@
 
 - 검사일: 2026-11-17 KST. 공식 R4 75단계 계획서 **#03** ("10개 지표는 예시, 실제 각 산식의 지표 수·가중치·필수요건은 활성 소스 기준"). 
 - 기준 개발 `ansqhd5774-Choi/zgmini main@1f451fbd979af6b9a0a1a2a4b2f79db60f3ae22f`, 증거 브랜치 `codex/ui-improvements`. 실제 PC 운영 승인 source/Cloudflare Production SHA는 독립 확인 과제 #01/#75이며 본 파일이 그 검증을 대체하지 않는다.
+- **작업 중 main drift 검증:** 최신 `main@2aa9cd28053c03be8fb34cbc87794e59f566cbde`와 출발 `1f451fbd...` GitHub compare: 정확 1커밋, `scripts/pc-writer/inflation-a401-baseline23-readonly.mjs`·`tests/inflation-a401-baseline23-readonly.test.mjs` 2개 신규 W01 읽기 전용 파일. 본 #03 계산기/가중치·UI/저장 계약 파일 수정 **0개**, 소스 가중치 21/21 기존 증거 재사용. 새 main SHA는 배포·실PC 승인 SHA가 아니다.
 - #02 [27행 경로 확인](DASHBOARD_R4_STEP02_27_SOURCE_ROUTE_MATRIX_20261117.md) + #06 [READY/TTL/권리 게이트](DASHBOARD_R4_STEP06_INPUT_ACCEPTANCE_GATES_20261117.md) 증거를 재사용했고, 각 계산기 상수·함수의 명시 요인 수/가중치를 최신 main에서 별도로 읽었다.
 - **검사 분리:** D01은 외부 CNN 발행값, D03/04는 상승/하락 비율 콘텐츠(점수 가중 합산 아님), D08 S21은 비선형 위험모형, D27은 삭제 콘텐츠. 10개 예시를 도메인 계산 수로 승격하지 않는다.
 - **단위 주의:** 수치 weight 0.30은 30%, CM-R1/소비 축 상수는 30처럼 백분율로 쓰인다. 한 도메인의 0~100 점수와 전체 CM-R1의 12-domain 가중치를 혼합하지 않는다. D18 G16은 24개 차등 가중과 3축 구조, D19 소비는 13요인과 보조 2개(0점수), D20 경제 실적 R5는 13요인, D10 실적 침체 위험은 독립 4요인이다.
