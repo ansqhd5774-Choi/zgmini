@@ -28,6 +28,7 @@ if /I not "%ZG_SERVICE_APPROVAL%"=="APPLY" (
 "%ZG_NODE%" "%~dp0EARNINGS_R3C_BLS_STORE_ONCE.mjs" --services-only --apply --confirm-service-sqlite-append
 set "ZG_SERVICE_RC=%errorlevel%"
 echo.
-echo Result TXT is next to this CMD. D1 and Production were not touched.
+echo Result TXT, if created, is under the current user's TEMP directory (%%TEMP%%).
+echo D1 and Production were not touched by this source append.
 pause
 exit /b %ZG_SERVICE_RC%
