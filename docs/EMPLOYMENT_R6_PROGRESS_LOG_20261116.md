@@ -889,3 +889,15 @@
 - W04 남은 조건: 신규 Host 16파일은 [manifest PR #2050](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2050)만 병합됨. 별도 정확 B 승인/Host CAS 등록 및 [Controller PR #2043](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2043) 운영 설치 필요. BED 1파일 [Writer B manifest PR #2038](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2038)은 병합됐지만 W04 운영 preimage/lease/보호 상태 설치 직전 확인과 실제 B 영수증이 없다.
 - 다음 직접 실행: 기존 승인 A에서 W04 운영 HEAD/config.source·원본 SHA·lease를 중복 요청 없이 확인 → 정확 CAS/승인 일치 시 BED 1파일 Writer B 단회 → 신규 16파일 Host source 승인 JSON 정식 검증 및 보존형 B → Controller 출력 B → 실제 A로 미인증 27개 provider/수집월/사유 집계. W04 소관 소스·manifest·실행을 총괄에게 이관하지 않는다. 운영 설치/DB/D1/공급자 호출/후보 승격 이번 회차 0.
 - 종료: 27/72 DONE(37.5%), 잔여 45. PIT-04-05 SOURCE_DIAGNOSTIC_CI_PASS / TASK_READONLY_RECHECK_PASS / W04_B_NOT_APPLIED / HOLD_INCOMPLETE_SOURCE_LINEAGE.
+
+
+## 78. PIT-04-05 — 공유 Host B #2052 귀속 독립 검증 및 설치 게이트 유지 (2026-11-18 KST)
+
+<!-- W04-PIT0405-CROSSOWNER-2052-VERIFY-20261118 -->
+
+- **시작/기준:** 지정 72단계 계획과 진행 원장 §77 원격 재조회, 원장 blob `36797e6b0d252b7e9fa5e8a5c8ade1ab1db2d2c9`. 시작 27/72 DONE(37.5%), 잔여 45; PIT-04-05 `HOLD_INCOMPLETE_SOURCE_LINEAGE`.
+- **새 교차검증:** 중앙 #68의 W01 인계 댓글 [#6949383894](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6949383894)에서 공통 Host B [#2052](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2052#issuecomment-6949328651)의 승인 source는 **W01 물가** 앱 `0a674eac32418d0c1bd23a9a050b2202e8951f1a`, 8파일 manifest/승인 PR #2046/#2051임을 확인. 실제 #2052 `SUCCEEDED/BUNDLE_REGISTERED`는 W04 R6 신규 16파일 앱 source `0193056bdb47bcf6c911f17623b6c302c8199c4c` 등록 영수증이 **아니다**. 기존 §77의 보수적 미귀속 판정을 구체적으로 확정한다.
+- **추가 공통 자원 정보(운영 변경 없음):** 중앙 #68 [#6949296954](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6949296954)는 운영 PC 브라우저/WebView 25개 WS 6,062MiB를 주요 RAM 점유군으로 보고. 이 관측은 W04 B preflight 가용 RAM/lease/보호 Task의 **현재 정상 증명은 아니며**, 프로세스 임의 종료나 작업 이관 승인도 아니다.
+- **판정:** W04 신규 16파일은 source manifest [PR #2050](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2050) 병합까지만 입증. 정확 B 승인/실PC Host CAS 영수증은 미확보. BED 정확 1파일 [PR #2038](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2038) 또한 운영 Writer B 설치 미확인. W04 A #2027의 Current verified 29,031/missing 10,889/unverified 857; History verified 29,016/missing 8,873/unverified 915; raw 인증 59/86 및 후보 충돌 14/메타 미입증 255는 **마지막 실제 W04 계측값**으로만 유지하며 신규 실측이라고 주장하지 않는다.
+- **다음 한 작업:** 기존 승인 A로 W04 운영 `HEAD/config.source`·BED 파일 preimage SHA·보호 Task/lease를 **새 고유 요청으로** 사전검증하고, 일치 시 W04 원담당이 #2038의 정확 1파일 B 승인 조건·설치 영수증을 확인한다. 이후 별도 W04 16파일 Host B 승인·등록, Controller 출력 B, 원자료 계보 A 검증 순서. 기존 실패/완료 요청 재실행 금지. 운영 PC 설치·공급자 호출·SQLite/D1/Task/후보 승격 0건.
+- **종료:** 27/72 DONE(37.5%), 잔여 45; `PIT-04-05=IN_PROGRESS/HOLD_INCOMPLETE_SOURCE_LINEAGE`. 이번 작업은 **타 담당 Host 영수증 오귀속 차단**이며 실제 W04 운영 단계 완료가 아니다.
