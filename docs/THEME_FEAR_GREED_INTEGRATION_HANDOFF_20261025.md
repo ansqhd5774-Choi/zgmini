@@ -1,3 +1,13 @@
+## 2026-11-17 W03 9/68 — #1894 Owner ACK 및 R47 CMD 효과 승인 보류 (14시)
+
+- **진행률:** 시작 8/68 DONE(11.8%), 9 IN_PROGRESS → 종료 8/68 DONE(11.8%), 9 IN_PROGRESS. T1 20% 유지.
+- **실제 신규 증거:** [#1894 공식 ACK](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1894#issuecomment-6938596861) 및 [봇 영수증](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1894#issuecomment-6938604121)으로 GitHub Owner ACKNOWLEDGED 확인. 자동 AI 실행은 NOT_ATTESTED. 기존 OWNER_ACK_UNKNOWN을 GitHub 인수 확인으로 정정.
+- **기술 회신:** [#1894 Owner 결과](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1894#issuecomment-6938634979)에서 기존 B 경로 5종 검토, active R47 CMD 정확 1파일 in-place CAS는 ROUTE_NO_GO. [Draft #1892](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1892)는 비실행 검토 자료. 현재 TECHNICAL_ROUTE_REVIEW_RECORDED / EFFECT_APPROVAL_HOLD.
+- **정확 설치 범위:** 기존 Task ZGMINI-PC-Theme-Nine-R47-Private의 CMD 1파일 과거 SHA256 2e0fc3e358feff70103d1e9025ce0944132b7b10a2159900f9479b9860550888 → 목표 a08fdec82b484c41ba3ac562908f31d96fee09c75cc3ff1b32386e9dd625ba45. 과거 Task XML SHA bf3207ab2274d1248e7bd8c953cea2fd3bd277b8bd70bb1c2494339a06e0a4be는 최신 PC 재조회 전 현행 보증 아님.
+- **LAST PASS → FIRST MISSING:** 공통 Owner 인수/기술 NO-GO 판정 확보 → 정확 1파일 효과 승인 및 정규 B manifest, 현재 PC preimage/Task XML/lease, 설치 영수증 미확보. Node R47/R49 회귀 실제 실행 PASS도 미확인.
+- **다음 실행:** 승인권자의 정확 효과 GO/NO-GO를 #1894에서 회수. 별도로 W03 정확 브랜치 R47/R49 Node 회귀 실행 증거 확보. 승인 후에만 현재 SHA·Task·lease→원본 백업→단일 CMD CAS→사후 SHA/Task readback→수동 증분 수집→63 ETF+SPY checkpoint 검증. 승인 전 우회 설치/수집 금지.
+- **변경 효과:** 본 문서 기록 외 운영 PC/provider/SQLite/D1/Task/Controller/Production 변경 0.
+
 ## 2026-11-17 W03 9/68 — 9번 프로세스 총괄 R47 CMD 정식 인계 #1894
 
 - **시작:** 8/68 DONE(11.8%), 9/68 IN_PROGRESS, 별도 T1 20%. W03 기능 원장 [#1009](https://github.com/ansqhd5774-Choi/zgmini/issues/1009), 전용 브랜치 `codex/theme-fear-greed-integration-20261025`, 인계 당시 source HEAD `d959424f3218af892b186cb35c251736e95cbac5`. 기존 소스/PC·SQLite·D1·Task·배포 쓰기 0.
