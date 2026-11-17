@@ -1320,3 +1320,16 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 **원본 W05 실행 인수 영수증:** [제어 원본 #1919/6943030213](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1919#issuecomment-6943030213)에 이번 W05 담당 명의로 결정·실측·실행 경계·다음 책임을 댓글로 등록. 해당 댓글을 이 세션 GitHub API로 생성했으며 별도 총괄 대화의 자동 인수/운영 재개 증거로 오인하지 않음.
 
 **FIRST UNFINISHED / NEXT:** 총괄의 현장 Task/Owner 가시성 원인 분리/실제 현재 자연 idle 및 공유 lease 입증이 있어야 기존 정상 Writer B를 W05가 **새 고유 승인 단회**로 실행 가능. W05 원담당은 소스 후속 Draft #1231 계산·원자료 분리/회귀를 계속하고 고정 승인 source Draft #1207의 3파일 SHA·manifest를 변경하지 않음. 실제 PC source 설치, BLS POST, SQLite append, D1/Cloudflare/API/UI 업데이트 증거는 현재 0. 신규 운영 source/Task/DB/Runner 변경 0.
+
+
+## 72. R3-04 (2026-11-17 KST) Core 자연 lock 부재 신규 독립 실측 인수 — TRANSIENT_IDLE_OBSERVED / WRITER_GATE_UNVERIFIED
+
+**진행률 시작→종료:** 순차 DONE **26/82(31.7%) → 26/82(31.7%)**, 개별 DONE **28/82(34.1%) → 28/82(34.1%)**. 첫 미완료 R3-04 유지. 기존 §71의 OWNER_EVIDENCE_UNKNOWN/신규 유지보수 효과 HOLD 변경 없음.
+
+**새로 확인한 원격 원본:** [제어 #1919/6943273990](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1919#issuecomment-6943273990)에서 총괄이 W01 독립 승인 A [#1955/Run 44047789471](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1955#issuecomment-6942941522)의 JSON/TXT 2/2를 확인한 결과를 W05가 원문 재조회하여 인수. 2026-11-17T08:33:54.771Z 및 .772Z에 local-cycle.lock before/after ABSENT, 보호 상태 불변, 운영/공급자/D1 쓰기 0. W01 자체 Event129 판정은 STATE_UNKNOWN/INFL_E129_LOCK_NOT_VERIFIED이며 이를 W05 Writer PASS로 오인하지 않음.
+
+**원인 가설 업데이트:** 앞선 #1951의 210초 26/26 lock PRESENT와 달리 다른 시점에서 lock ABSENT가 관측됨. 따라서 'Core lock이 항상 존재하므로 구조적으로 자연 idle 불가'라는 가설은 배제. 다만 두 부재 관측은 약 1ms 간격이며 Writer B의 1.5초 간격 연속 2회, Task enabled/Ready, instances/관련 프로세스/unknown 0, source/lease/preimage 일치, 360초 창을 증명하지 못함. 소유 PID/Task Engine 가시성도 아직 미확인. 새 유지보수 B 효과 승인 없이 Task/lock/guard 조작 금지.
+
+**이번 실제 작업:** 원격 #68/#1919 최신 댓글 대조 및 지정 진행 기록만 업데이트. 기능 코드·신규 설치 요청·운영 PC/SQLite/D1/Cloudflare 변경·BLS 호출 0. 기존 승인 #1885/APPROVED_B 원본 source 2a9a38a452b5ba95a3e370c5b56445bb75fa05bb 및 #1231 후속 Draft 분리 유지.
+
+**LAST PASS:** 최소 순간적인 자연 lock 부재 실증 확보로 무조건 Core 유지보수 변경 필요 가설 기각. **FIRST UNFINISHED:** 실제 Writer B 정규 gate 통과/새 고유 단회 설치 및 PC SHA/JSON/TXT, 이어서 별도 승인 수동 WPSFD42 원본 저장/계산/게시/API/UI. **NEXT:** 기존 공통 Owner의 현재 유효 idle/Task/lease/승인 원본 증거가 정규 Writer B 사전검사에서 충족될 때에만 새로운 고유 승인 B 단회 설치를 결정; 소비 #1919 재사용 및 무조건 반복 시도 금지. 병행 기능 소스는 #1231에서 계속 검토.
