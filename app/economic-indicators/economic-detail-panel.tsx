@@ -7,6 +7,7 @@ import {economicOneYearChart} from "../../lib/economic-trend-chart-r60.mjs";
 import {verifiedEconomicInflationScore,verifiedEconomicInflationChart} from '../../lib/economic-inflation-stored-display-r4.mjs';
 import {verifiedEconomicEmploymentScore,verifiedEconomicEmploymentChart,isEconomicEmploymentChartCurrent} from '../../lib/economic-employment-stored-display-r4.mjs';
 import {verifiedEconomicRateScore,verifiedEconomicRateChart,isEconomicRateChartCurrent} from '../../lib/economic-rate-stored-display-r4.mjs';
+import {verifiedEconomicCreditScore,verifiedEconomicCreditChart,isEconomicCreditChartCurrent} from '../../lib/economic-credit-stored-display-r4.mjs';
 import {MarketCardHeader} from "../market-card-header";
 import {MarketScoreOrb} from "../market-score-orb";
 import {MarketTrendFrame} from "../market-trend-frame";
@@ -152,13 +153,15 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  const {payload:releaseCalendar}=useStoredIndex<ReleaseCalendar>("/api/release-calendar",null,id==="inflation");
  const {payload:employmentData,loading:employmentLoading,error:employmentError}=useStoredIndex<EmploymentR6Display>("/api/employment-r6/observations",null,id==="employment");
  const domain=payload?.domains?.find(item=>item.id===id);
- const score=id==="inflation"?verifiedEconomicInflationScore(domain,payload?.asOfDate):id==="employment"?verifiedEconomicEmploymentScore(domain,payload?.asOfDate):id==="rates"?verifiedEconomicRateScore(domain,payload?.asOfDate):domain?.status==="READY"&&validScore(domain.score)?domain.score:null;
+ const score=id==="inflation"?verifiedEconomicInflationScore(domain,payload?.asOfDate):id==="employment"?verifiedEconomicEmploymentScore(domain,payload?.asOfDate):id==="rates"?verifiedEconomicRateScore(domain,payload?.asOfDate):id==="credit"?verifiedEconomicCreditScore(domain,payload?.asOfDate):domain?.status==="READY"&&validScore(domain.score)?domain.score:null;
  const employmentChart=useMemo(()=>verifiedEconomicEmploymentChart(domain,payload?.asOfDate,score),[domain,payload?.asOfDate,score]);
  const employmentChartCurrent=isEconomicEmploymentChartCurrent(employmentChart,payload?.asOfDate,score);
  const rateChart=useMemo(()=>verifiedEconomicRateChart(domain,payload?.asOfDate,score),[domain,payload?.asOfDate,score]);
  const rateChartCurrent=isEconomicRateChartCurrent(rateChart,payload?.asOfDate,score);
+ const creditChart=useMemo(()=>verifiedEconomicCreditChart(domain,payload?.asOfDate,score),[domain,payload?.asOfDate,score]);
+ const creditChartCurrent=isEconomicCreditChartCurrent(creditChart,payload?.asOfDate,score);
  const inflationChart=useMemo(()=>verifiedEconomicInflationChart(domain,payload?.asOfDate,score),[domain,payload?.asOfDate,score]);
- const history=useMemo(()=>normalizeTrend(id==="inflation"?inflationChart:id==="employment"?employmentChart:id==="rates"?rateChart:domain?.trend),[id,inflationChart,employmentChart,rateChart,domain?.trend]);
+ const history=useMemo(()=>normalizeTrend(id==="inflation"?inflationChart:id==="employment"?employmentChart:id==="rates"?rateChart:id==="credit"?creditChart:domain?.trend),[id,inflationChart,employmentChart,rateChart,creditChart,domain?.trend]);
  const oneYear=useMemo(()=>{
   const latest=history.at(-1)?.label;
   if(!latest)return [];
@@ -167,7 +170,7 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
  },[history]);
  // Keep published null dates only in the visual series; saved-value history
  // remains unchanged for approved period-score comparisons.
- const chart:MarketFearGreedChartPoint[]=useMemo(()=>id==="inflation"?inflationChart:id==="employment"?employmentChart:id==="rates"?rateChart:economicOneYearChart(domain?.trend),[id,inflationChart,employmentChart,rateChart,domain?.trend]);
+ const chart:MarketFearGreedChartPoint[]=useMemo(()=>id==="inflation"?inflationChart:id==="employment"?employmentChart:id==="rates"?rateChart:id==="credit"?creditChart:economicOneYearChart(domain?.trend),[id,inflationChart,employmentChart,rateChart,creditChart,domain?.trend]);
  const last=chart.findLast(point=>validScore(point.score));
  const latestPoint:MarketFearGreedChartValidPoint|null=last&&validScore(last.score)?{date:last.date,score:last.score}:null;
  const axisLabels=new Map(chart.map(p=>[p.date,p.date.slice(5,7)]));
@@ -185,10 +188,10 @@ export default function EconomicDetailPanel({id}:{id:EconomicDomainId}){
   sixMonth:producer?.sixMonth??computed.sixMonth,
   year:producer?.year??computed.year,
  };
- const hasVerifiedPeriodComparisons=(id!=="inflation"||(score!==null&&inflationChart.length>0))&&(id!=="rates"||(score!==null&&rateChartCurrent))&&Object.values(periods).some(value=>typeof value==="number"&&Number.isFinite(value));
+ const hasVerifiedPeriodComparisons=(id!=="inflation"||(score!==null&&inflationChart.length>0))&&(id!=="rates"||(score!==null&&rateChartCurrent))&&(id!=="credit"||(score!==null&&creditChartCurrent))&&Object.values(periods).some(value=>typeof value==="number"&&Number.isFinite(value));
  const comparisons=[{label:"1주",value:periods.week??null},{label:"1개월",value:periods.month??null},{label:"3개월",value:periods.threeMonth??null},{label:"6개월",value:periods.sixMonth??null},{label:"1년",value:periods.year??null}]
-  .map(item=>(id==="inflation"&&(score===null||inflationChart.length===0))||(id==="employment"&&(score===null||!employmentChartCurrent))||(id==="rates"&&(score===null||!rateChartCurrent))?{...item,value:null}:item);
- const storedObservations=((id==="inflation"||id==="employment"||id==="rates")&&score===null?[]:(domain?.indicators??[])).filter((row):row is Indicator=>Boolean(row&&typeof row==="object"));
+  .map(item=>(id==="inflation"&&(score===null||inflationChart.length===0))||(id==="employment"&&(score===null||!employmentChartCurrent))||(id==="rates"&&(score===null||!rateChartCurrent))||(id==="credit"&&(score===null||!creditChartCurrent))?{...item,value:null}:item);
+ const storedObservations=((id==="inflation"||id==="employment"||id==="rates"||id==="credit")&&score===null?[]:(domain?.indicators??[])).filter((row):row is Indicator=>Boolean(row&&typeof row==="object"));
  const observations=storedObservations;
  const easternParts=new Intl.DateTimeFormat("en-US",{timeZone:"America/New_York",year:"numeric",month:"2-digit",day:"2-digit"}).formatToParts(new Date());
  const easternToday=["year","month","day"].map(part=>easternParts.find(item=>item.type===part)?.value??"").join("-");
