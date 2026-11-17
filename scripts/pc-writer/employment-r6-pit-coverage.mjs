@@ -236,7 +236,7 @@ const readRawLineageEvidence=(db,asOfDate)=>{
   const allowedGroups=new Set(Object.keys(EMPLOYMENT_R6_GROUPS));
   const byGroup=new Map(),byMonth=new Map();
   const monthOf=value=>typeof value==="string"
-    &&/^\\d{4}-(?:0[1-9]|1[0-2])-\\d{2}T/.test(value)
+    &&/^\d{4}-(?:0[1-9]|1[0-2])-\d{2}T/.test(value)
     &&Number.isFinite(Date.parse(value))?value.slice(0,7):"UNKNOWN";
   const add=(map,key,id)=>{
     const row=map.get(key)??{metadataKeys:0,bodyVerifiedKeys:0,runCertifiedKeys:0};
