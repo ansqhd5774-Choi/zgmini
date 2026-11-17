@@ -27,6 +27,17 @@ test('R47 overlap: exact duplicate accepted, changed close refused',()=>{
     incoming:[{...a,close:10.7}]}),{code:'THEME_NINE_R47_MERGED_OVERLAP_PRICE_CONFLICT'});
 });
 
+test('R47 scores reject normalized nonexistent UTC days and preserve valid leap days',()=>{
+  for(const stamp of ['2026-02-30T19:00:00Z','2026-11-31T19:00:00Z']){
+    assert.throws(()=>mergeNineR47HourlyRows({symbol:'AAA',
+      incoming:[price('AAA',stamp)]}),
+    {code:'THEME_NINE_R47_MERGED_BAR_IDENTITY'});
+  }
+  const valid='2024-02-29T20:00:00.1234Z';
+  assert.equal(mergeNineR47HourlyRows({symbol:'AAA',
+    incoming:[price('AAA',valid)]}).at(0).timestamp,valid);
+});
+
 test('R47 reuses R25 approved scoring on verified 9-theme baseline plus R35 window',async t=>{
   const dir=fs.mkdtempSync(path.join(os.tmpdir(),'theme-nine-r47-score-'));
   t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
