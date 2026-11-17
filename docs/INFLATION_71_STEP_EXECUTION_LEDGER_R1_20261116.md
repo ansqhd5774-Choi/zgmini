@@ -524,3 +524,11 @@ B4 10 | Production·화면 최종 검증
 - **공유 리소스 조정:** [제어 #68 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6935932715)에 PR #1866, 기존 #1854와 누적 Controller 승인 manifest 조정 범위, 정확한 후속 운영 판정을 의뢰함. 댓글은 총괄 ChatGPT의 자동 수신·실제 조치 증거가 아님.
 - **운영 실제 효과:** 신규 PC A/B/Controller 설치 0, providerCalls 0, SQLite·D1·Task·채널 설정·Core lock·Writer·Cloudflare 변경 0. **source/CI 완료 ≠ Event129 log enabled 현행 검증 ≠ Core owner 소유권 증명 ≠ Census #28 수집 성공.**
 - **다음 필수 행동/통과 조건:** 공유 Controller owner가 #1866의 source 및 현재 승인 누적 diff/설치 SHA/manifest를 검토해 정규 적용 GO/NO-GO 판정 → 실제 설치 결과 확인 뒤 새 고유 기존 A 요청에서 `logConfig.enabled` 최신값 회수. 설치 불가 시 사용자 직접 C급 경로의 1회 읽기 확인만 별도 고려; `false`이면 관리자 활성화, `true`이면 자연 Core Task→PID→잠금 증명. B 최초 증명 없이 Census B 재요청하거나 보호를 완화하지 않음.
+
+## 2026-11-17 11:23 KST — 중앙 공통 Controller 리뷰 반례 확인 및 W01 실행 경계 유지
+
+- **진행률:** 시작 30/71(42.3%) → 종료 30/71(42.3%), 미완료 41. Census #28 저장/게시 신규 증거 없음.
+- **원격 현행 재확인:** 제어 PR #1854 및 #1866 모두 OPEN/미병합. #1866은 Event129 채널 enabled 조회 source-only 92/92 PASS이지만 실제 PC 설치/현행 enabled 측정 아님.
+- **신규 중앙 검토 증거:** 제어 #68 최신 총괄 댓글 및 PR #1854 review 5931637916에서 `uncertainChild=true` + POSTCHECK `RETIRED_IRAN_INVENTORY_UNAVAILABLE`가 중첩되면 종료 미확정 `STATE_UNKNOWN/WORKER_TERMINATION_UNVERIFIED`가 일반 BLOCKED로 덮이는 반례 지적. lease/RECOVERY_REQUIRED는 보존되므로 결과 코드와 복구 상태 불일치. **SOURCE_REVIEW_HOLD**; timeout-proof/terminateTree 실패/terminationGraceMs 짧음/후검증 inventory 실패 회귀 및 정확 HEAD CI 필요. 기존 57/57은 이 경계의 PASS 증거가 아님. 리뷰: https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1854#pullrequestreview-5931637916
+- **영향 분리:** 이 반례는 공통 Controller POSTCHECK 결과 보존 수정의 검토 항목이며, W01 Census B의 `INFL_MANUAL_B_CORE_OWNER_EVENT129_UNVERIFIED_STOP`을 해결하지 않음. 기존 B #1818 재실행 금지. 기존 A #1864는 idle 순간 Task Ready/lock ABSENT로 active owner 증명 아님.
+- **다음 작업:** (1) 공통 Owner가 #1854 반례 수정·회귀/승인 및 #1866 현장 적용 여부를 결정; (2) W01은 실제 Event129 `logConfig.enabled` 읽기 및 자연 Core Task-linked owner 증명을 확보; (3) 보호 PASS 후 새 고유 승인 Census API-only 최대 2GET B → SQLite raw SHA/storedAt → Writer/D1/API/UI 7/7. 공유 설치/채널 변경은 별도 승인 경로. 원본 PC Task·Core·SQLite·D1·공급자 GET 변경 0.
