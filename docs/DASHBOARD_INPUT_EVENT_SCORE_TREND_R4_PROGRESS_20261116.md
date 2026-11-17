@@ -1,5 +1,8 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
+> **W06 #69 main 병합 후 파일 동일성 확인 (2026-11-18 08:04 KST):** 지정 R4 계획과 진행 기록을 다시 확인. [PR #1270](https://github.com/ansqhd5774-Choi/zgmini/pull/1270) GitHub metadata `merged=true`, merge SHA `eb2c062a0aa60616c3e1100562e6fa0021c33a3b`, 변경 파일 1개를 독립 재조회 PASS. `main:tests/dashboard-history-browser-r5.mjs` 및 `codex/ui-improvements` 동일 blob `328e605d35aed2024d296cffb56b397eed65103c` PASS; 두 파일 모두 390/768/1440/1920px, overflow assertion 포함. 이전 [Chromium CI #44175286226](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44175286226) 및 [Node CI #44175286122](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44175286122) 성공 기록은 기존 증거로 재사용(이번 신규 실행 아님). 최신 브랜치 비교는 main 대비 ahead 552 / behind 833, 전체 병합 금지. **#69 격리 fixture PASS, Production 실서빙/활성 배포 미확인으로 전체 PARTIAL, DONE 22/75(29.3%)·잔여53 유지**. 운영 PC/SQLite/D1/배포 변경 0. 다음 단일 실행: W06 독립 #69 비율형 D03/D04 출력·카드 마지막점 계약이 실제 Chromium 시험에서 검증되는지 확인하고 누락 시 UI fixture만 최소 보완; 실운영 #74/#75는 별도 담당/승인 증거 대기. 원장 커밋 후 원격 재조회 필수.
+>
+
 > **W06 #69 격리 Chromium PR 실행 경로 개설 (2026-11-18 06:00 KST):** 기존 브랜치 시험 blob `328e605d35aed2024d296cffb56b397eed65103c`와 main blob `130ced488c49d44b02354e3c8b0d375ed954e270`을 원문 비교. 가로 넘침 assertion 16행 외 시험 본문 동일함을 확인. 오래된 W06 전체 브랜치를 main에 병합하지 않고 최신 main에서 새 격리 브랜치 `codex/w06-r4-69-overflow-ci-20261118` 생성, 단일 시험 파일 커밋 `d11eb869c202e5f423b33a17d2669e78472d0025`, [PR #1270](https://github.com/ansqhd5774-Choi/zgmini/pull/1270) 생성(1파일 +16/-0). `community-chat-browser.yml`은 해당 경로 변경 PR에 반응하도록 설정. 최초 commit workflow runs 조회는 빈 목록으로 **CI 미착수/미확인**, PASS 주장 및 병합 금지. 시작/종료 DONE **22/75(29.3%)**, #69 PARTIAL 유지. 다음: PR #1270의 실제 Chromium run·아티팩트·overflow PASS/FAIL 확인 후 PASS 시 선별 병합, FAIL 시 실측 좌표에 한해 수정. PC/SQLite/D1/Cloudflare 변경 0, 총괄 인계 0.
 >
 
