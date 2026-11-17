@@ -31,14 +31,14 @@
 | 필드 | 마지막 확인 상태 |
 |---|---|
 | 최종 목표 | 82단계 R1~R6로 적격 실적 침체 정보성 지표의 PC 원자료 저장→계산→승인 D1 게시→Production API/UI를 완성. 기존 E1-R4 점수/산식·기타 12대 기업실적은 보호 |
-| 현재 관련 단계 | **순차 R3-02(25/82)**: 실제 운영 SQLite append-only/개정본·중복·checkpoint 계약 및 기존 2-table reader 보호 검증. R3-01 공통 raw lineage 6필드 증명; 신규 DB 저장·실제 R3-13~15 후보 수집 별개 |
-| 마지막 검증 완료점 | **R3-01 공통 원자료 출처→기간/수정본→SHA→저장시각→공개 checkpoint 계보 DONE (§34)**. BLS 3 series source snapshot/chunk 2table 계약(기존 실 PC R3D 3/3 hash PASS), Census QFR `CENSUS/QFR_MFG_US_NSA_AFTER_TAX_MARGIN` stored ZIP SHA 232f7757…·snapshot/chunk append PC R2 PASS. BEA unit/mfg CSV+meta 동일 raw SHA sourceVersion·sourceStoredAt 필수 계약은 source 검증, 실제 BEA archive PC 전체 readback 별도 R3-08~11; SEC/M3/MTIS 원본 HOLD. `vintageId=null`·`CURRENT_RETRIEVAL_NOT_PIT`를 PIT 공식 빈티지로 둔갑 금지 |
+| 현재 관련 단계 | **순차 R3-03(26/82)**: 기존 BLS 3원천 저장·계산 실제 PC 실측 증거 재사용, 필요 시 원격 결과 재대조만. 서비스 WPSFD42 별도 HOLD |
+| 마지막 검증 완료점 | **R3-02 SQLite append-only/개정/중복/rollback/checkpoint 보호 DONE (§35)**. 실제 BLS 3계열용 `api_history_chunks_v1`+`api_history_snapshots_v1` 엄격 PK와 provider/dataset namespace, `BEGIN IMMEDIATE`/`ON CONFLICT ... DO NOTHING`/일괄 저장 뒤 readback·불일치 ROLLBACK; QFR 원문 ZIP SHA와 청크/스냅샷 해시, 동일 ZIP 재실행 삽입0, 개정 별도 버전·다른 BLS 불변·부분 삽입 롤백 source tests. 기실행 실제 PC BLS R3D 3/3 hash PASS와 QFR 1 chunk+1 snapshot readback PASS 재사용. 현 운영 schema 실시간 재검증은 이번 미실행, 무단 DB schema 변경 0 |
 | 재사용할 기존 근거 | QFR 원자료 ZIP PC SQLite 저장·계산 기존 유효 증거; 앱 QFR 3-pin [PR #1175](https://github.com/ansqhd5774-Choi/zgmini/pull/1175)는 앱 main 병합, 운영 PC 설치·B 게시 별개. R1-09 소스 blob 근거는 §14 |
-| 현재 최초 실제 미완료 조건 | **순차 R3-02:** 공용 2-table append-only·동일 source hash 중복 0·수정원본별 별도 불변 snapshot·원장 checkpoint 보호 구조의 실제 source·기존 PC PASS 교차대조 미완료. R3-01은 원문 컬럼·출처·관측월·빈티지 결측 계약 판정 완료일 뿐 현재 모든 공급자의 최신 PC 원본 확보나 D1 게시 입증 아님 |
-| 다음 필수 실행 하나 | **25/82 R3-02:** BLS/QFR 기존 api_history_chunks_v1 / api_history_snapshots_v1 append-only SQL/unique PK·raw ZIP SHA·같은 시각 상충 거절·중복/revision/rollback 보호·firstSeenAt와 sourceStoredAt 매핑 및 실제 PC 기존 PASS를 교차 검증. 무승인 운영 DB schema 변경·동일 ZIP 재수집 금지 |
-| 현재 완료율 증거 | **24/82 DONE(약 29.3%)**, 현재 R3-02(25/82). R3-01은 기저 raw lineage 계약 DONE, BLS/QFR 과거 PC PASS 재사용, BEA archive 및 조건부 SEC/M3/MTIS 운영 적용 미확인 |
+| 현재 최초 실제 미완료 조건 | **순차 R3-03:** 기존 BLS 3종 저장·계산 실PC 결과 #R3D에서 snapshot hash·기간·0 missing·YoY 메서드·API calls 0·SQLite writes 0이 실제 PASS인지 개별 완료 증거 재인증 미완료. R3-02 source-only+기존 PC 이력 정상은 2026-11 최신 원본 갱신 증거 아님 |
+| 다음 필수 실행 하나 | **26/82 R3-03:** `EARNINGS_COMPANION_R3D_PC_RESULT_VERIFIED_20261027.md` 실제 PC TXT의 3계열 hash verified, 21/21/6 rows, 원자료 저장 시각·자체 YoY 계산 및 BLS providerCalls=0, source 불변 근거 대조 후 DONE 판정. 기존 PASS 동일 작업 재호출 금지 |
+| 현재 완료율 증거 | **25/82 DONE(약 30.5%)**, 현재 R3-03(26/82). R3-02 append-only/중복/개정/rollback 계약과 기존 PC BLS/QFR 증거 확인. 아직 R3-03 개별 완료 확정 전 |
 | 최종 갱신 식별 | 이 문서의 **최신 원격 브랜치 HEAD 및 Git blob SHA를 재조회**해 근거로 보고한다. 고정된 과거 SHA를 현행값으로 복사하지 않는다 |
-| **순차 포인터·완료율** | **현재 25/82 R3-02**; R1-01~R3-01 연속 단계 DONE **24/82(약 29.3%)**. 운영 저장/게시 후행 실증과 분리 |
+| **순차 포인터·완료율** | **현재 26/82 R3-03**; R1-01~R3-02 연속 DONE **25/82(약 30.5%)**, R3-03 이후 단계 별도 실증 |
 | R1-09 이번 실행 | 2026-11-17 08시 KST: B 경제지표 `/economic-indicators/earnings/`→`EconomicDetailPanel`→`/api/market-score` `domains[id=earnings]`와 A 8대 위험 4요소·C 보조 GET의 별도 계약 소스 검증. `DONE`, 완료 9/82. 경계 상세·blob §14; 운영 GET·D1 미검증. 다음 R1-10 |
 
 ### D. 다음 작업자 재개 순서 및 변경 충돌
@@ -54,12 +54,12 @@
 
 | 판정 항목 | 실제 상태 |
 |---|---|
-| **순차 완료 확정** | **24/82 (약 29.3%)** — R2 LICENSE/권리 결정+R3-01 원시 데이터 저장 필드 계보 조사 완료 |
-| **현재 순차 진행 단계** | **25/82 = R3-02** (SQLite append-only·revision·중복·checkpoint 계약 재검증) |
-| **82개 중 개별 완료 확정** | **24개** (R1-01~R3-01); 저장 실제 PASS와 source-only 증거 구별 |
+| **순차 완료 확정** | **25/82 (약 30.5%)** — R3-02 SQLite 공유 raw store 2-table 정상 원칙·기PC 증거/고립 source 테스트 검증 완료 |
+| **현재 순차 진행 단계** | **26/82 = R3-03** (기존 BLS 3 source snapshot 저장·계산 실측 결과 재사용) |
+| **82개 중 개별 완료 확정** | **25개** (R1-01~R3-02), 기존 운영 저장 이력과 향후 배포 별도 |
 | **71번 R6-04** | **후행 소스 선행 작업·현재 운영 승인 미해결**, 순차 71단계에 도달한 것이 아님 |
-| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 완료 24개, 남은 58개 단계 판정 대상 |
-| **다음 실제 수행 하나** | **R3-02(25/82):** 기존 SQLite append-only·개정본/중복/체크포인트·rollback 보존 검증 |
+| **72~82단계 11개 남았다는 이전 보고** | **철회 유지** — 완료 25개, 남은 57개 단계 판정 대상 |
+| **다음 실제 수행 하나** | **R3-03(26/82):** BLS 3계열 기존 PC 저장/계산 PASS·해시·시계열 기간·값 증거 재사용 |
 
 **순서 운용:** 다음 번호로 넘어가는 기준은 해당 단계의 **계획서 완료 조건 + 근거 링크**이며, 뒤 단계에서 미리 통과한 PR·CI는 계획 순번을 바꾸지 않는 선행 자산으로 유지한다. 사용자 승인 없이 순번이나 완료 기준을 수정하지 않는다. 조건부 HOLD·장기 DEFERRED는 계획서대로 처리하며 다른 독립 승인 작업의 수행을 중단하는 새로운 Gate가 아니다.
 
@@ -94,7 +94,7 @@
 | R2-12 | 공급자별 발표일·관측일·수집일·수정본·계절조정·지연 구별 | `DONE` | **§32** BEA 2026Q3 corporate profits 11/25 ET 미발표, QFR 2026Q3 12/07 ET 미발표, Census M3 2026-09 11/03 ET Full 기발표, MTIS 2026-09 11/17 10ET 아직 미래(2026-11-17 09KST 기준), BLS PPI 월간 4개월까지 개정, ULC Q3 초보도 11/05·개정 12/08 ET, SEC CompanyFacts real-time vs nightly bulk ~03ET. 각 observationPeriod/releaseAt/retrievedAt/sourceStoredAt/updated-vintage SHA·SA·publishAt 분리, 제공되지 않은 releaseAt/vintage null·시차 구분 명시. 공식 자료+원 소스 코드 대조 완료; 새 운영 수집·D1 갱신은 없음 |
 | R2-13 | 공급자별 재사용권·무료 한도·저장·파생·공개 허용/보류 판정 | `DONE` | **§33** LICENSE/API/HTTP/SERIES/COVERAGE 5축 판정: BEA direct public stats READY(등록 API key·100req/min 등 조건) / Census 통계 자료 파생·출처표시 READY, 무키 API ≤500/day/IP(QFR stored PC PASS, M3/MTIS 현행 collector HOLD) / BLS public domain+출처표시 READY, v1 25/day, registered v2 500/day(BLS base 3 raw PASS, WPSFD42 PC HOLD) / SEC public EDGAR 분석 가능하지만 UA 회사+연락처/전체 10req/sec/issuer coverage 미검증으로 실제 수집·공개 HOLD / FRED 재배포·archive·제3자 권리 Graph CSV HOLD, BEA official direct 전환만 조건부. provider HTTP 통신·원시파일 LIVE readback·D1 게시 별도 NOT_VERIFIED |
 | R3-01 | 공통 원자료 저장 계약의 provider·series·period·vintage·SHA 확인 | `DONE` | **§34** BLS `api_history_chunks_v1`/`api_history_snapshots_v1` provider/dataset/series, observationDate, SA/NSA, chunk_sha256·snapshot_sha256, first_seen_at vs retrieved_at/as_of, official `vintageId=null` 3계열 기존 R3D 실PC 3SHA PASS. Census QFR 같은 2table `provider=CENSUS`,`dataset=QFR_MFG_US_NSA_AFTER_TAX_MARGIN`, original ZIP sha=232f7757…+payload hash+snapshot hash, `CURRENT_RETRIEVAL_NOT_PIT`, 기존 실제 PC append/readback PASS. BEA unit/mfg CSV·meta SHA/sourceVersion/sourceStoredAt 계약 source 확인(PC 전체 archive readback은 R3-08~11 HOLD); SEC/M3/MTIS 조건부 raw 미확인. 필드/시점 매핑 판정 DONE, 운영 전체 최신 저장·D1 성공 주장 없음 |
-| R3-02 | SQLite append-only·개정본·중복·checkpoint 구조 재사용/최소 보완 | `EVIDENCE_NOT_MAPPED` | 개별 완료 증거 미대조. DONE/FAIL로 추정하지 않음 |
+| R3-02 | SQLite append-only·개정본·중복·checkpoint 구조 재사용/최소 보완 | `DONE` | **§35** BLS/QFR 공통 `api_history_chunks_v1` 및 `api_history_snapshots_v1` (provider,dataset,sha) PK, 2table exact column/trigger guard, `BEGIN IMMEDIATE`→schema 재검사→`INSERT ON CONFLICT DO NOTHING`→해시/참조/provenance readback→COMMIT; 실패 ROLLBACK. 동일 QFR zip 0중복, 변경 ZIP 2번째 불변 snapshot, BLS namespaces 불변, 잘못된 schema·외국 Census 네임스페이스·부분 SQL 실패 안전 중단 source regressions. 과거 실PC BLS 3 snapshot/hash verified + QFR 1 chunk/1 snapshot committed PASS 재사용, 이번 DB 쓰기/실시간 PC schema 검사 없음 |
 | R3-03 | 기존 BLS 3원천 저장·계산 PC 실측 증거 재사용 | `EXISTING_EVIDENCE` | 기존 BLS 3원천·공개 5행 유효 증거 재사용, 재수집 금지 |
 | R3-04 | WPSFD42 승인 수동 수집 후 SQLite 원본·SHA·시각 재조회 | `NOT_RUN` | WPSFD42 실제 운영 PC 저장·SQLite readback 증거 없음 |
 | R3-05 | WPSFD42 저장자료로 서비스 PPI·YoY 정보성 2행 계산 | `SOURCE_READY` | WPSFD42 2행 계산 브랜치 구현 존재, 실제 운영 저장원본 입력 증거 미확정 |
@@ -709,3 +709,15 @@ R2-03에 요구한 산업범위·명목/실질·IVA와 CCAdj의 차이·SAAR/분
 4. 실제 PC 원본은 기검증 BLS 3계열, Census QFR ZIP 저장 증거 재사용. 승인되지 않은 BEA archive 실측/SEC·M3·MTIS 신규 raw 검증은 이 단계 **NOT_VERIFIED/HOLD** 이며 R3-08~R3-15의 실제 조건부 작업을 취소·완료 처리하지 않는다.
 
 **판정:** R3-01 **공통 원본 필드 계약과 시점·출처 계보 증거 대조 DONE**. 공급자 요청/SQLite/D1/Production 실제 쓰기 0, 기존 승인 산식/TTL 변경 0. **NEXT R3-02:** 이미 검증된 BLS/QFR SQLite 2-table의 append-only/수정본·rollback·readback 무결성을 소스·실PC 기존 증거로 재대조한다.
+
+## 35. R3-02 (2026-11-17 KST) SQLite append-only·수정본/중복/rollback·source checkpoint — DONE(CONTRACT+PAST_PC)
+
+**검증 대상:** 운영 E:\\ZGmini\\data\\pc-writer\\storage\\core.sqlite에 기존 사용되는 *두 개* 원본 테이블. 독립 BEA CSV raw archive와 SQLite의 기존 E1-R4 위험 저장 스키마는 변경·교체하지 않음.
+
+- **BLS 저장기 소스:** [`EARNINGS_R3C_BLS_STORE_ONCE.mjs`](../scripts/pc-writer/EARNINGS_R3C_BLS_STORE_ONCE.mjs) blob `add54451...`, source `provider='BLS'`, dataset=seriesID(`WPSFD4`,`WPSFD41`,`PRS85006111`); 원본 chunks의 PK `(provider,dataset,chunk_sha256)`, snapshot PK `(provider,dataset,snapshot_sha256)`. 기존 두 테이블/필수 칼럼/트리거 유무 점검 후 **`BEGIN IMMEDIATE`→추가 전 schema 재검사→청크/snapshot `ON CONFLICT...DO NOTHING`→select readback·코호트 hash/provenance 검증→COMMIT; 오류 ROLLBACK**. 원자료 `first_seen_at`, source chunk→snapshot chain, 관측일, as_of/retrieved_at 원본 분리.
+- **Census QFR 저장기 소스:** [`EARNINGS_CENSUS_QFR_R2_SQLITE_APPEND.mjs`](../scripts/pc-writer/EARNINGS_CENSUS_QFR_R2_SQLITE_APPEND.mjs) blob `95059aae...`의 동일 두 테이블, `provider='CENSUS'`, `dataset='QFR_MFG_US_NSA_AFTER_TAX_MARGIN'`. CSV에서 계산하기 전 **공식 ZIP 바이트 SHA** 검증, 별도 JSON 청크 SHA + 결정적 `snapshotSha256=HASH(contract/provider/dataset/chunk)`가 동일 공급원 최신 버전이고, 수집 timestamp가 snapshot ID에 들어가지 않는다. 같은 ZIP 재요청 시 insert 0, 원본 개정 시 새 SHA의 새 청크+새 스냅샷을 추가. `CURRENT_RETRIEVAL_NOT_PIT` 보호.
+- **실제 코드 회귀시험 범위:** [`EARNINGS_CENSUS_QFR_R2_SQLITE_APPEND.test.mjs`](../scripts/pc-writer/EARNINGS_CENSUS_QFR_R2_SQLITE_APPEND.test.mjs) blob `de3f5c296878fed643a0dd5a556642d64b6e0f9c`: 원본 ZIP bytes와 SHA 일치, `same ZIP rerun idempotent and revision creates a new original + new snapshot`, 타 `CENSUS` namespace 침범 거부, 다른 `BLS` provider 불변, primary key/trigger 손상 거부, snapshot INSERT 실패 시 chunk 전부 롤백. 기존 고립 source 테스트를 완료 증거로 재사용하며 이번 대화에서 이를 새로운 PC 실제 테스트 결과로 둔갑시키지 않음.
+- **이미 입증된 실제 PC 과거 결과:** [2026-10-27 Census QFR R2 승인 저장](EARNINGS_CENSUS_QFR_RAW_SQLITE_R2_20261027.md)의 `PASS_QFR_SQLITE_APPEND_READBACK`, `CHUNKS_INSERTED=1`, `SNAPSHOTS_INSERTED=1`, `SQLITE_COMMITTED=YES`, 원본 ZIP SHA `232f7757e654e787a9eab49792302feb3683e5280a66ff0cc9bd7f0cbc448654` 전후 보존. [2026-10-27 BLS PC R3D](EARNINGS_COMPANION_R3D_PC_RESULT_VERIFIED_20261027.md) `SNAPSHOTS_HASH_VERIFIED=3`, `RAW_UNMODIFIED=YES`, `SQLITE_WRITES=0`의 기존 read-only 검증 재사용. 현재 운영 PC가 같은 SHA/source 상태로 실행 중이라는 증거까지 재추정하지 않음.
+- **충돌/권한 보호:** 이미 존재하는 table/PK/trigger와 타 제공자 데이터 외형을 임의 바꾸지 않음. 수정 데이터는 원본의 새 SHA와 수집일/관측일이 같이 일치할 때만 새로운 버전으로 간주; 같은 시각 상충 SHA 선택은 reader 차원 안전 거부. 동일 SQLite 대상 공유 쓰기를 임의로 병렬 실행하지 않음. 기존 백업·원장 삭제/초기화/lock 해제 없음.
+
+**R3-02 판정:** 기존 저장 계약/읽기 무결성·원장 재사용 확인 DONE. 운영 최근 시점에 새로운 실제 데이터를 수집했다는 결론이 아니라, **이미 검증된 BLS+QFR append-only 불변 저장 기제가 유지되는 설계·source 증거를 재사용**한 것이다. 신규 provider calls/operationalWrites/SQLite/D1/Cloudflare deploy=0. **NEXT R3-03:** BLS 3개 기존 PC 저장자료 계산 성공을 단위·YoY·해시 수준으로 마감.
