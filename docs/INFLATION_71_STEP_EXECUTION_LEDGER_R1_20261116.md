@@ -3,8 +3,18 @@
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
 
+<!-- W01-20261117-A401-INTEGRATION-CI-MAIN-MERGED-SHARED-A-SCOPE-6945119078 -->
+## 최신 작업 스냅샷 — 2026-11-17 W01 A4-01 원본 23개 검증 소스 통합시험·main 병합 및 PC 운영 진입점 미완료
+
+- **정확 대상·진행률:** 71계획의 30번째 A4-01(기존 23개 원자료 검증). 시작/종료 **30/71(42.3%)**, 잔여 41; A4-01 PARTIAL, 신규 DONE 0. 앱 source-only ≠ 운영 raw 23/23.
+- **W01 기능 직접 구현:** [앱 PR #1246](https://github.com/ansqhd5774-Choi/zgmini/pull/1246) 두 파일만 변경하여 main [merge 2aa9cd28053c03be8fb34cbc87794e59f566cbde](https://github.com/ansqhd5774-Choi/zgmini/commit/2aa9cd28053c03be8fb34cbc87794e59f566cbde) 완료. 메인/PR의 source 및 test blob 각각 a546df8804caa94780b8caa5c7c5ac3c66627b53 / 3435bd9e39e5c6ab6391ea0efb9c14aea6b2bc37, **2/2 일치**. 기존 private readers 재사용, 원래 19+기존 신규 후보 #2/#16/#24/#29만 검사, 2월30일·WAL/SHM 누락·중복 원본 fail-closed.
+- **실제 격리 통합 검증:** [GitHub CI #44061425168](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44061425168)에서 운영과 동형인 임시 19원본 파일·4보조 입력·SQLite WAL 테이블로 원래 PC reader 실함수 23/23 PASS, 기존 DB SHA 불변. [최종 CI #44062144802](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44062144802) SUCCESS, 4,853 tests 중 4,843 PASS, 실패 0, skipped 7, todo 3; W01 8/8 회귀 통과. 이 수치는 **테스트 fixture 기준**이며 실PC 원본 19개 PASS는 아님.
+- **LAST PASS/FIRST UNVERIFIED:** 기존 실PC A [#43847038904](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/43847038904-1-seat-4.json) 기존 19개 staging projection 19/19 READY/SQLite 미오픈, [#43983711934](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/43983711934-1-seat-4.json) 보조 4개 원본 PRESENT_VALID/SHA 확인. **19개 실제 private raw direct readback 0/19**, 최종 PC 23/23 검사 불가 상태.
+- **공통 지원의 최소 범위:** 공유 Controller 기존 allowlist에 해당 고정 private 23개 A 진입점이 없음. [중앙 #68의 정확 지원 댓글 #6945119078](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6945119078)에 **공통 고정 A 입구·보호 계약만** 요청. W01 파서·기능 판단·원본 검증기·유효 sourcePin/설치명세·고유 A 단회 실행 및 JSON/TXT 회수는 W01 책임. 타 담당에게 기능 구현/수집/게시 위임 0.
+- **현재 공유 쓰기 보호:** 기존 공통 유지보수기 [#1979](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1979#issuecomment-6944901101) 실제 Controller 실행 SHA 5492726bb5b0505b7ff7db73a3c673dabdf724ce 일부 readback PASS, **maintenance RECOVERY_REQUIRED**/backlog 정합 미완료, 신규 공통 Controller B 설치 HOLD. 이미 등록된 다른 A 동작까지 전역 차단 아님. 새 Controller 등록/운영 설치 성공 주장 또는 반복 발행 금지.
+- **다음 정확 실행:** 현재 #1979 기존 공유 복구와 안전한 고정 A 등록 가능 상태를 확인한 뒤, W01이 정규 승인 경로에서 PC 실제 원본 23개를 한 번 읽어 23/23 + JSON/TXT + source/protected-state 직접 재조회. 그때만 A4-01 DONE. 승인/실증 전에는 독립 원자료·출력 검증 계속. 운영 PC/Task/Controller/공급자/SQLite/D1/Cloudflare 쓰기 이번 0.
 <!-- W01-20261117-A401-23-RAW-SCOPE-SOURCE-ONLY-PR1246 -->
-## 최신 작업 스냅샷 — 2026-11-17 · A4-01 30번째 항목 실제 PC 증거 19+4 교차검증·기능 전용 검증기 구현 진행
+## 이전 작업 스냅샷 — 2026-11-17 · A4-01 30번째 항목 실제 PC 증거 19+4 교차검증·기능 전용 검증기 구현 진행
 
 - **이번 정확 단계:** **30번째 행 `A4-01 기존 23개 원자료 존재·유효성 확인`**. 시작/종료 W01 **30/71 (42.3%)**, 미완료 41, A4-01 `PARTIAL`. 이는 30개가 완료됐다는 뜻이지 A4-01이 DONE이라는 뜻이 아님.
 - **실PC 기존 원격 증거 직접 재분석:** [PC 결과 `43847038904-1-seat-4.json`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/43847038904-1-seat-4.json)의 `inflation19-runtime-readonly`는 원래 19개 ID `1,3,4,5,6,7,8,9,10,11,12,13,14,18,19,21,25,26,31` 19/19 READY, 원본 projection 고유 19개·관측일·storedAt 형식 유효하나 **`stagingOnly=true`, `sqliteOpened=false`, 원본 파일별 SHA 없음**. 개별 private raw 검증 성공으로 승격 금지.
