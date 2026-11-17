@@ -20,6 +20,16 @@
 - 저장소 `delete_branch_on_merge=false` 확인(2026-10-25). 병합 완료 후에도 작업 브랜치를 **보존**한다.
 - 본 문서는 읽기 전용 감사에 근거한 인수인계다. 설치·PC 데이터 변경·D1 게시·main 병합의 증거가 아니다.
 
+## 2026-11-17 W03 9/68 — R54 PC 조회 실패 복구와 실제 회귀시험 43/43
+
+- **실PC 신규 FIRST FAIL (정확한 원본):** 기존 승인 고정 R54 읽기 전용 #1844 ([Run 43993795115](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43993795115), [Issue 결과 #6934669864](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1844#issuecomment-6934669864)) `BLOCKED/R54_READINESS_UNEXPECTED_STOP`. LAST PASS = 원본 Issue 인증/고정 SHA source checkout/운영 PC 실행기 시작 및 실패 JSON 댓글 반환. FIRST FAIL = `projectR35Details`가 정의되지 않은 `status()`·`hash()` 헬퍼를 호출하는 신규 소스 결함(정밀 소스 대조). Provider GET·원자료·SQLite·D1·예약 쓰기 0건. 기존 ID 재실행하지 않음.
+- **소스 결함 정규 수정:** 기존 전용 R54 경로에서 이미 검사하는 `r47Cmd` 고정 파일의 `READ/DENIED/UNAVAILABLE` 상태를 명시적으로 보존하고, 기존 `SHA64` 정규식으로 유효 64-hex만 SHA로 공개. 정의되지 않은 두 호출 제거. 사전 승인된 Script SHA를 새로운 코드에 맞춰 `addc568d80eaaedcc003764ad3c2dcaee2002fb51e52544edd9b7e2a24dd423a`로 정확 고정, 원본 B 승인 범위·무변경 정책 유지. Windows 테스트 픽스처의 `%TEMP%` 경로는 `fs.realpathSync.native`로 실제 root 정규화하여 기존 보호 파일의 canonical 경로 비교를 약화하지 않음.
+- **검증 실패/복구 분리:** C996 최초 [#43994300254](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43994300254) `39 PASS/4 FAIL` (기존 R54 fixture의 Windows temp root 별칭) → 수정 후 [#43994531100](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43994531100) `42 PASS/1 FAIL` (파일 부재의 실제 `UNAVAILABLE` vs 시험 기대 `UNKNOWN` 불일치) → 정확 상태를 보존한 테스트 수정 뒤 [**#43994651071**](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43994651071) **43/43 PASS, 0 FAIL, 0 SKIP**, Windows 격리 Runner. 기존 C996 검사 명령에 실제 `r54-readiness-once/entry.test.mjs`를 포함하도록 CI 추가(이전 소스 PASS는 해당 테스트 미포함). 검증을 통과하기 위해 안전 assertion을 삭제하지 않음.
+- **GitHub 병합:** [PR #1845](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1845) HEAD `994f5fc316a4324bb7044446d911599af4b116d6` → `main` merge `b90bb8ff8c655bacc40f7a2fc32e2c46ccb3f37d`. #1842의 소스 결함은 이 PR로 수정되었지만 실PC 신규 readback은 별도 확인해야 함.
+- **새 고유 PC 조회:** [#1846](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1846) requestId `pc-theme-r54-readiness-5b1e41a0-942b-4cc9-8704-955cb59e8401`, 정확 source SHA `b90bb8ff...`. 기존 `ZGMINI Theme R54 Readiness Once` [Run 43994787188](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43994787188) 조회 시 **queued/conclusion=null**, 원본 결과 댓글 없음. 정확 단회 요청 접수 증거이지 원본 PC CMD preimage 획득 성공/실패가 아님. #1844 소비된 원본은 재실행 0.
+- **기존 Controller B 대기:** [#1841](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1841) requestId `pc-update-7acb05d3-2860-4d19-8e30-55fe78892b12`는 결과 댓글/원격 JSON·TXT **미회수 `RESULT_PENDING`**. 실제 설치 확인 최고 유효 증거는 앞선 #1832 `384ffd09...`이며 설치 목표 `2f569c18...`로 가정 금지. 기능 소스/CI 병합은 PC 원본·신규 데이터 저장과 별개.
+- **진행률 및 다음 필수 단계:** **8/68 DONE (11.8%), 9/68 IN_PROGRESS**. #1841의 Controller B ledger/JSON·TXT와 #1846의 PC 읽기 전용 실측 결과를 기존 ID로 직접 회수; 정확 R47 CMD 상태/해시와 설치 SHA 확인 후 사용자 승인된 기존 원담당 B 경로에만 안전하게 반영. 기존 범용 Writer B는 `.mjs` source overlay 전용이므로 `.cmd`를 임의 경로로 우회 설치하지 않는다. 이후 수동 증분 64종목 원본 저장/SHA/checkpoint/계산·게시 연결을 분리 검증. 새 예약·원본 수정·중복 요청 없음.
+
 ## 2026-11-17 W03 9/68 — R32 Controller B 명세·단회 요청 및 R47 CMD preimage 결과 회수
 
 - **현재 계획 단계:** 전체 68 중 **8/68 DONE (11.8%)**, **9/68 IN_PROGRESS**. W03 저장자료 최신성·실PC 11/03 이후 증분 저장·계산·게시 미완료. 프로세스 총괄의 별도 작업 단계를 이 숫자와 합산하지 않는다.
