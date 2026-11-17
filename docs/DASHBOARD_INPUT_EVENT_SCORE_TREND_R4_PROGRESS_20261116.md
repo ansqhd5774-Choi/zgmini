@@ -1,6 +1,6 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
-> **현재 즉시 상태 (2026-11-17 09:12 KST): **14/75 (18.7%)**, 잔여 61단계. #42 D07 경기침체 PR #1197 `main@04cbb286e3b94145bfac95bde927aa32847f1eea` 병합, PR CI 전 항목 SUCCESS, post-merge Cloudflare Workers Builds·verify·notify SUCCESS, main `check`의 각 작업 단계 PASS(최종 conclusion 최종 확정 미확인). **#43 D08 스태그플레이션 확정/잠정 별도 저장·공개 API·화면 원본 및 기존 회귀 확인**: 월별 완성모델과 신규 발표 기반 잠정이 섞이지 않도록 저장·검증/503 차단 로직 존재. 그러나 신규 월 실제 데이터→D1 출판/GET/UI 갱신 실측 없으므로 #43 PARTIAL. #36/#37/#38/#40/#41/#42의 운영 종단 미완료 유지. 다음 독립 실행 **#44 D09 신용 위험**.
+> **현재 즉시 상태 (2026-11-17 09:12 KST): **14/75 (18.7%)**, 잔여 61단계. #42 D07 경기침체 PR #1197 `main@04cbb286e3b94145bfac95bde927aa32847f1eea` 병합, PR CI 전 항목 SUCCESS, post-merge Cloudflare Workers Builds·verify·notify 및 main `check` **4/4 SUCCESS** (exact Production Deployment 확인 아님). **#43 D08 스태그플레이션 확정/잠정 별도 저장·공개 API·화면 원본 및 기존 회귀 확인**: 월별 완성모델과 신규 발표 기반 잠정이 섞이지 않도록 저장·검증/503 차단 로직 존재. 그러나 신규 월 실제 데이터→D1 출판/GET/UI 갱신 실측 없으므로 #43 PARTIAL. #36/#37/#38/#40/#41/#42의 운영 종단 미완료 유지. 다음 독립 실행 **#44 D09 신용 위험**.
 
 ## 현재 인계 정본 — 다음 담당자 첫 읽기 (2026-11-16 KST)
 
@@ -340,7 +340,7 @@
 - 이전 기록의 PR #1197 Open/CI RUNNING은 당시 상태이며 **현재는 PR CI 및 선별 main merge 성공**으로 상단 정본과 이 항목을 우선. 참조: [PR #1197](https://github.com/ansqhd5774-Choi/zgmini/pull/1197), [CI Run 43984153369](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43984153369) `conclusion=success`, Build·TypeCheck·Regression tests·PC publication recovery tests·Cloudflare candidate read contracts **모두 PASS**.
 - merged PR exact head `0f3f4c33de526981b14f971f99a140ef7b45bcb4`, base start `40d6156a1144350c3a23a02cb0db26e56bf3adde`, merge commit `04cbb286e3b94145bfac95bde927aa32847f1eea`. PR 변경 파일 오직 `app/recession/recession-panel.tsx`(7 변경), `lib/recession-stored-display-r4.mjs`(33줄), `tests/r4-recession-stored-display-42.test.mjs`(68줄). PR merge 직후 main branch SHA와 표시함수 호출/파일 blob 재조회 **PASS**.
 - **실제 수정 증거:** 기존 API `status=PARTIAL`인데 score numeric이 남아 표시되던 문제, R13 이외 방법론·lookAheadSafe 불일치, 미래 날짜/동일날짜 충돌을 정확한 UI Current Vintage 표출에서 걸러냄. 9개 기존 source 함수 기반 fixture 추가(READY의 0/100, PARTIAL/STALE, wrong method/vintage/PIT, null/malformed/future, 충돌·중복 정상점). 원천 7요인 계산·가중치·저장/원자료·PC source/TTL/스케줄·15분 기록 정책 **변경 없음**.
-- **현재 후속 검증 범위:** merge SHA 기준 GitHub `check`/`verify`/`notify` 및 Cloudflare Workers Builds 신규 실행은 이 시점 IN_PROGRESS; 빌드 완료도 exact Production 배포나 실제 API GET·화면 점수 변화 증거가 아님. 공개 `/api/recession-detail`는 웹 조회 도구에서 본문 확보 실패, `/recession/` SSR의 기본 로딩 상태만 읽힘. 실제 live API 실패로 단정 금지.
+- **현재 후속 검증 범위:** merge SHA 기준 GitHub `check`/`verify`/`notify` 및 Cloudflare Workers Builds 신규 실행은 이후 2026-11-17 KST에 **4/4 SUCCESS**로 직접 readback; 빌드 완료도 exact Production 배포나 실제 API GET·화면 점수 변화 증거가 아님. 공개 `/api/recession-detail`는 웹 조회 도구에서 본문 확보 실패, `/recession/` SSR의 기본 로딩 상태만 읽힘. 실제 live API 실패로 단정 금지.
 - **#42 판정:** display source/CI/merge DONE, R4 #42 전체는 여전히 **PARTIAL**(신규 7요인 하나→기존 적격 6요인 이월/점수→실PC SQLite→D1 선택적 readback→공개 GET/차트 일치 미확정). 실제 관측이 생긴 다음 정상 승인 경로를 원담당이 재조회해야 하며 W06 임의 재계산/운영 수정은 금지.
 - **다음 필수 실행:** W06는 비차단 **#43 스태그플레이션 확정/잠정 월**의 현재 UI/API 저장 계보 및 잘못된 혼합 표시부터 확인. #42 원담당의 실제 종단 조건은 별도 미완료. **14/75 (18.7%) → 14/75 (18.7%)**, 61개 잔여.
 
@@ -353,3 +353,5 @@
 - **회귀 기존 증거 재사용:** `tests/stagflation-publication.test.mjs` blob `2209c00f7a9b3db45837e86f84f6575094133d72`, `tests/stagflation-latest-publication.test.mjs` blob `d072ecffcd642b392d8ea4429c7a0aae7f8fe371`는 분리 key, 신규 발표 월 확인, 중복 score/오래된 저장·superseded 차단, D1 쓰기 readback을 검증. PR #1197의 main regression CI 단계 PASS(현재 재사용된 기존 테스트이며 이번 회차 새 테스트 작성/별도 실행 없음). #42 병합 SHA Cloudflare Workers Builds/verify/notify SUCCESS, exact Production Deployment/SHA 및 이번 단계의 사용자 API 본문은 미확인.
 - **LAST PASS/FIRST UNVERIFIED:** 승인 저장→확정 S21 vs 잠정 R21 별개 저장/API/UI 계약·원본 테스트 source PASS; 실제 신규 저장 이벤트의 관측월/점수·확정 latest 월과 D1 stored_at/readback·공개 각 GET 응답/화면 값 비교 **미검증**. 실제 신규 발표 전까지 기다리는 작업은 Gate 아님. 새 스태그플레이션 Collector/Writer/산식·게시 주기·DB 변경 0. #43 전체 **PARTIAL**, 전체 14/75 (18.7%) 유지.
 - **다음 필수 실행:** W06 #44 HY/IG/CMDI/변동성 신용 위험 공개 Reader·UI와 저장 새 입력 연계. 스태그플레이션 신규 월 실제 공개 증거는 원담당이 승인된 최소 D1/GET 계약으로 별도 검증.
+
+**#42 post-merge 최종 CI readback 추가 (2026-11-17 KST):** `main@04cbb286e3b94145bfac95bde927aa32847f1eea` GitHub Checks `check/verify/notify/Workers Builds: zgmini-migration-candidate-r5` **4/4 completed+success**. PR #1197의 별도 기존 head CI도 PASS. Git Integration 빌드 성공은 정확한 Cloudflare Production Deployment ID/SHA/공개 GET·UI 게시 검증과는 구별한다.
