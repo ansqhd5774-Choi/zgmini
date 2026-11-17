@@ -24,6 +24,8 @@
 
 **인계 확인 기준:** 다른 작업자는 이전 대화 없이 지정된 두 파일만으로 `마지막 완료 세부 ID·실제 증거/해시·현재 STOP 사유·실제 다음 세부 ID·해제 조건`을 특정할 수 있어야 한다. 그 중 하나라도 기록에 빠지면 인계는 `INCOMPLETE`이다. 무관한 추가 진단·전체 재검사로 이를 대체하지 않는다.
 
+**PIT-04-03 현재 source-only 개발 상태(2026-11-17):** Core Current↔History의 일치/상충/검증불가/누락 4버킷을 Reader·Runner 전담 브랜치에 구현하고, 승인된 기존 R6 번들 기준의 격리 [앱 Draft PR #1212](https://github.com/ansqhd5774-Choi/zgmini/pull/1212) (4파일) 및 main 기준 [Controller Draft PR #1867](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1867) (2파일)을 생성했다. 순수 소스 비교 모의 5키 PASS, 관련 SQLite/Node 타깃 CI·PC 운영 새 계수 **미검증**. PR/소스는 운영 승인·설치나 History 실제 검산이 아니므로 **25/72(34.7%) 불변**. 다음 필수: 타깃 회귀/CI → 정확 source/manifest와 설치 승인 범위 확인 → 승인된 기존 경로로 읽기 전용 A 실제 4버킷 회수. Candidate 14키 상충 및 승격 HOLD 유지.
+
 **현재 기준선(2026-11-17):** **25/72 DONE(34.7%)**, 47/72 미완료. 기존 24개 완료 증거는 그대로 재사용; 사용자 승인 신규 R6 Host #1829·Controller 1모듈 #1832 보존, 공유 Controller #1841 공식 ROLLED_BACK 복구, 신규 A #1862 실 SQLite History asOf=2026-11-17 / Core 37,897 고유키·877 과거 개정키·907 개정행·동시각 모호성 0으로 `PIT-04-02 DONE` 추가. **다음 실제 미완료는 `PIT-04-03`** Current/History 값·sourceHash의 일치·누락·상충 3버킷 검산이다. Candidate 14키 충돌/History 2,880 결손과 `promotionApproved=false`는 계속 HOLD, TRUE_PIT 소급 승격·DB/D1 쓰기·공급자 재수집 금지.
 
 ## 1. 완료 목표와 운영 계약
