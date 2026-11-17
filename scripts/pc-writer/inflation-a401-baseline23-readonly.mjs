@@ -13,12 +13,12 @@ import {previewInflationCandidates7} from './inflation-causal-candidates-public-
 export const A401_EXISTING_FOUR=Object.freeze(['2','16','24','29']);
 export const A401_EXPECTED_COUNT=23;
 const PC_HOME=String.raw`E:\ZGmini\data\pc-writer`;
-const HEX64=/^[a-f0-9]{64}$/;
 const failure=code=>Object.assign(new Error(code),{code});
 const iso=v=>typeof v==='string'&&Number.isFinite(Date.parse(v))&&
   new Date(v).toISOString()===v;
 const validDate=v=>typeof v==='string'&&/^(?:19|20)\d\d-(?:0[1-9]|1[0-2])(?:-(?:0[1-9]|[12]\d|3[01]))?$/.test(v)&&
-  Number.isFinite(Date.parse(v.length===7?v+'-01T00:00:00Z':v+'T00:00:00Z'));
+  Number.isFinite(Date.parse(v.length===7?v+'-01T00:00:00Z':v+'T00:00:00Z'))&&
+  new Date(v.length===7?v+'-01T00:00:00Z':v+'T00:00:00Z').toISOString().slice(0,v.length)===v;
 const unique=x=>new Set(x).size===x.length;
 
 function exactIds(rows,expected) {
