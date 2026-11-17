@@ -4,12 +4,29 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-export function resolvePublicationResultDirectory({requested,fallback=os.tmpdir()}={}){
+// Never write one-shot diagnostics into the publisher checkout, even through
+// a symlink/junction. This is a path guard, not permission to write D1.
+export function resolvePublicationResultDirectory({
+  requested,fallback=os.tmpdir(),excludedSourceRoot,
+}={}){
   if(typeof fallback!=='string'||!path.isAbsolute(fallback))
     throw Error('EARNINGS_PUBLICATION_FALLBACK_DIRECTORY_INVALID');
-  if(requested===undefined||requested===null||requested==='')return fallback;
-  if(typeof requested!=='string'||!path.isAbsolute(requested)
-    ||!fs.existsSync(requested)||!fs.statSync(requested).isDirectory())
+  const chosen=requested===undefined||requested===null||requested===''?fallback:requested;
+  if(typeof chosen!=='string'||!path.isAbsolute(chosen)
+    ||!fs.existsSync(chosen)||!fs.statSync(chosen).isDirectory())
     throw Error('EARNINGS_PUBLICATION_RESULT_DIRECTORY_INVALID');
-  return requested;
+  if(excludedSourceRoot!==undefined){
+    if(typeof excludedSourceRoot!=='string'||!path.isAbsolute(excludedSourceRoot))
+      throw Error('EARNINGS_PUBLICATION_SOURCE_ROOT_INVALID');
+    let root,dir;
+    try {
+      root=fs.realpathSync(excludedSourceRoot);
+      dir=fs.realpathSync(chosen);
+    }catch{throw Error('EARNINGS_PUBLICATION_SOURCE_ROOT_UNAVAILABLE');}
+    const relative=path.relative(root,dir);
+    if(relative===''||(relative!=='..'&&!relative.startsWith(`..${path.sep}`)
+      &&!path.isAbsolute(relative)))
+      throw Error('EARNINGS_PUBLICATION_RESULT_WITHIN_SOURCE_STOP');
+  }
+  return chosen;
 }
