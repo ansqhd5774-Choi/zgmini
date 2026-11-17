@@ -1,0 +1,303 @@
+// R47: recurring private 1h price refresh for the *existing* approved nine themes.
+// Resumes frozen R35 windows, then advances from the last real SPY day. No ETF,
+// formula, registry, task, D1 or public-site mutation; no licensed data export.
+import fs from 'node:fs';
+import path from 'node:path';
+import {createHash} from 'node:crypto';
+import {fileURLToPath} from 'node:url';
+import {auditNineR34RefreshPreflight} from './theme-nine-r34-refresh-preflight.mjs';
+import {collectNineR35Delta, collectNineR35Auto} from './theme-nine-r35-delta-collect.mjs';
+
+const fail = code => {throw Object.assign(new Error('THEME_NINE_R47_'+code),
+  {code:'THEME_NINE_R47_'+code});};
+const sha = data => createHash('sha256').update(data).digest('hex');
+const RECHECK_MIN_INTERVAL_MS=6*60*60*1000;
+const RECHECK_MAX_PER_NY_DAY=2;
+const recordedProbeOutcome=status=>
+  ['WAIT_SOURCE_NO_NEW_VERIFIED_SPY_SESSION','STOP_NETWORK_OR_TIMEOUT',
+    'STOP_RESPONSE_OR_INVALID_BARS'].includes(status)||/^STOP_HTTP_\d{3}$/.test(status);
+const goodDate = d => typeof d==='string' && /^\d{4}-\d{2}-\d{2}$/.test(d) &&
+  !Number.isNaN(Date.parse(d+'T00:00:00Z')) &&
+  new Date(d+'T00:00:00Z').toISOString().slice(0,10)===d;
+const addDays = (date, days) => new Date(Date.parse(date+'T00:00:00Z')+
+  days*86_400_000).toISOString().slice(0,10);
+const ny = new Intl.DateTimeFormat('en-US', {timeZone:'America/New_York',
+  year:'numeric',month:'2-digit',day:'2-digit'});
+function nyDate(instant) {
+  const parts=Object.fromEntries(ny.formatToParts(instant)
+    .filter(p=>p.type!=='literal').map(p=>[p.type,p.value]));
+  return `${parts.year}-${parts.month}-${parts.day}`;
+}
+const nyHour=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',
+  hour:'2-digit',hourCycle:'h23'});
+function latestClosedNYDate(now) {
+  // R47 runs at 11:30 KST, after the previous NY regular session has
+  // closed. Waiting until NY midnight leaves the R54 provisional feed one
+  // session ahead. Do not include an open NY session before 19:00 ET.
+  const hour=Number(nyHour.format(now));
+  const today=nyDate(now);
+  return hour>=19?today:addDays(today,-1);
+}
+const read = filename => JSON.parse(fs.readFileSync(filename,'utf8'));
+function inside(root,target) {
+  const rel=path.relative(root,target);
+  return Boolean(rel)&&rel!=='..'&&!rel.startsWith('..'+path.sep)&&
+    !path.isAbsolute(rel);
+}
+
+function verifyDeltaState(home, name, rosterSha, symbols, manifest) {
+  if(!/^delta-[a-f0-9]{20}\.json$/.test(name)) fail('CHECKPOINT_NAME_INVALID');
+  const state=read(path.join(home,'state',name));
+  if(state.version!==1||state.project!=='legacy-nine-r35-delta'||
+     state.rosterSha256!==rosterSha||!goodDate(state.start)||!goodDate(state.end)||
+     state.end<=state.start||
+     name!==`delta-${sha(JSON.stringify({roster:rosterSha,start:state.start,end:state.end})).slice(0,20)}.json`||
+     !state.symbols||Object.keys(state.symbols).length!==symbols.length||
+     symbols.some(s=>!Object.hasOwn(state.symbols,s)))fail('CHECKPOINT_IDENTITY');
+  const indexed=new Map(manifest.files.map(e=>[e.path,e]));
+  for(const symbol of symbols) {
+    const s=state.symbols[symbol];
+    if(!s||!Array.isArray(s.files)||typeof s.complete!=='boolean'||
+       s.files.some(f=>indexed.get(f.path)?.symbol!==symbol||
+         indexed.get(f.path)?.sha256!==f.sha256)||
+       (s.complete&&!s.files.length&&!s.noBars))fail('CHECKPOINT_PAGE_REFERENCES');
+    for(const f of s.files) {
+      const entry=indexed.get(f.path);
+      let requested;
+      try{requested=new URL(f.requestedUrl??entry.requestedUrl);}catch{fail('PAGE_REQUEST_IDENTITY');}
+      if(requested.origin!=='https://getmarkethistory.com'||
+         // Archived R35 pages keep their original URL; new free 1h requests use stocks/us.
+         ![`/api/v1/bars/stocks/${symbol}/1h`,
+           `/api/v1/bars/stocks/us/${symbol}/1h`].includes(requested.pathname)||
+         requested.searchParams.get('start')!==state.start||
+         requested.searchParams.get('end')!==state.end||
+         requested.searchParams.get('format')!=='jsonl'||
+         entry.priceMode!=='RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE'||
+         entry.schemaVersion!=='GMH_1H_OHLCV_NDJSON_R35')fail('PAGE_REQUEST_IDENTITY');
+    }
+  }
+  const spy=state.symbols.SPY;
+  const spyDay=spy.files.map(f=>indexed.get(f.path)?.lastVerifiedNYDay)
+    .filter(goodDate).at(-1)??null;
+  return {start:state.start,end:state.end,completed:symbols.every(s=>state.symbols[s].complete),
+    failure:state.failedAt?state.failure??'UNKNOWN_FAILED_REQUEST':null,
+    spyDay, name};
+}
+
+// Attempt ledger is intentionally separate from completed delta checkpoints.
+// A stale/failed probe must never advance a verified session or alter raw data.
+function attemptPath(dataRoot,rosterSha,window) {
+  const key=sha(JSON.stringify({rosterSha,start:window.start,end:window.end})).slice(0,20);
+  const root=fs.realpathSync(dataRoot);
+  const themes=path.join(root,'themes');
+  if(!fs.existsSync(themes)||!inside(root,fs.realpathSync(themes)))
+    fail('PROBE_THEME_ROOT_ESCAPE');
+  const home=path.join(root,'themes','legacy-nine-r47-probes');
+  if(fs.existsSync(home)&&!inside(root,fs.realpathSync(home)))fail('PROBE_ROOT_ESCAPE');
+  return path.join(home,`r47-source-probe-${key}.json`);
+}
+function probeGate(dataRoot,rosterSha,window,now,previousCheckedAt=null) {
+  const file=attemptPath(dataRoot,rosterSha,window);
+  if(fs.existsSync(file)&&(!fs.lstatSync(file).isFile()||fs.lstatSync(file).isSymbolicLink()))
+    fail('PROBE_LEDGER_NOT_REGULAR_FILE');
+  const prior=fs.existsSync(file)?read(file):null;
+  if(prior&&(prior.version!==1||prior.project!=='legacy-nine-r47-source-probe'||
+     prior.rosterSha256!==rosterSha||
+     prior.window?.start!==window.start||prior.window?.end!==window.end||
+     !Array.isArray(prior.attempts)||prior.attempts.length>14||
+     prior.attempts.some(a=>typeof a.at!=='string'||!Number.isFinite(Date.parse(a.at))||
+       !recordedProbeOutcome(a.status))))
+    fail('PROBE_LEDGER_INVALID');
+  const currentNYDay=nyDate(now);
+  const attempts=(prior?.attempts??[]).filter(a=>nyDate(new Date(a.at))===currentNYDay);
+  const mostRecent=[previousCheckedAt,...(prior?.attempts??[]).map(a=>a.at)]
+    .filter(x=>typeof x==='string'&&!Number.isNaN(Date.parse(x)))
+    .map(x=>Date.parse(x)).sort((a,b)=>b-a)[0];
+  if(mostRecent!==undefined&&mostRecent>now.getTime())return {
+    status:'WAIT_SOURCE_PROBE_COOLDOWN',lastCheckedAt:new Date(mostRecent).toISOString(),
+    nextRetryAt:new Date(mostRecent+RECHECK_MIN_INTERVAL_MS).toISOString(),file};
+  if(attempts.length>=RECHECK_MAX_PER_NY_DAY)return {status:'WAIT_SOURCE_PROBE_DAILY_CAP',
+    nextRetryAt:null,lastCheckedAt:new Date(mostRecent).toISOString(),file};
+  if(mostRecent!==undefined&&now.getTime()-mostRecent<RECHECK_MIN_INTERVAL_MS)
+    return {status:'WAIT_SOURCE_PROBE_COOLDOWN',
+      nextRetryAt:new Date(mostRecent+RECHECK_MIN_INTERVAL_MS).toISOString(),
+      lastCheckedAt:new Date(mostRecent).toISOString(),file};
+  return {status:'READY',lastCheckedAt:mostRecent===undefined?null:
+    new Date(mostRecent).toISOString(),file};
+}
+function recordProbe(dataRoot,rosterSha,window,now,collection) {
+  if(!recordedProbeOutcome(collection.status))return;
+  const file=attemptPath(dataRoot,rosterSha,window);
+  fs.mkdirSync(path.dirname(file),{recursive:true});
+  const real=fs.realpathSync(path.dirname(file));
+  if(!inside(fs.realpathSync(dataRoot),real))fail('PROBE_ROOT_ESCAPE');
+  if(fs.existsSync(file)&&(!fs.lstatSync(file).isFile()||fs.lstatSync(file).isSymbolicLink()))
+    fail('PROBE_LEDGER_NOT_REGULAR_FILE');
+  const previous=fs.existsSync(file)?read(file):null;
+  if(previous&&(previous.version!==1||previous.project!=='legacy-nine-r47-source-probe'||
+     previous.rosterSha256!==rosterSha||
+     previous.window?.start!==window.start||previous.window?.end!==window.end))
+    fail('PROBE_LEDGER_INVALID');
+  const record={version:1,project:'legacy-nine-r47-source-probe',
+    rosterSha256:rosterSha,window,
+    attempts:[...(previous?.attempts??[]).slice(-13),{
+      at:now.toISOString(),status:collection.status,
+      latestSeenSpyNYDay:collection.latestSeenSpyNYDay??null,
+      providerCalls:collection.totalProviderCalls??collection.providerCalls??0}]};
+  const tmp=file+'.'+process.pid+'.'+Math.random().toString(36).slice(2)+'.tmp';
+  fs.writeFileSync(tmp,JSON.stringify(record,null,2)+'\n',{flag:'wx'});
+  try{fs.renameSync(tmp,file);}finally{if(fs.existsSync(tmp))fs.unlinkSync(tmp);}
+}
+
+export function planNineR47Recurring({dataRoot,rosterPath,now=new Date(),
+  maximumWindowDays=7}={}) {
+  if(!(now instanceof Date)||Number.isNaN(now.getTime())||
+     !Number.isInteger(maximumWindowDays)||maximumWindowDays<2||
+     maximumWindowDays>14)fail('ARGUMENTS');
+  const baseline=auditNineR34RefreshPreflight({dataRoot,rosterPath});
+  const cutoff=latestClosedNYDate(now); // market closed plus 3h safety buffer
+  const roster=read(rosterPath);
+  const symbols=['SPY',...[...new Set(roster.groups.flatMap(g=>g.tickers.map(t=>t.ticker)))]
+    .filter(s=>s!=='SPY').sort()];
+  if(symbols.length!==64)fail('ROSTER_IDENTITY');
+  const result={contract:'THEME_NINE_R47_RECURRING_PRIVATE_PLAN_V1',
+    source:'GETMARKETHISTORY_1H_RAW_UNADJUSTED',latestBaselineSpyNYDay:baseline.latestSpyNYDay,
+    cutoffNYDay:cutoff,priceMode:'RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE',
+    approvedETFs:63,approvedPositions:64,themes:9,
+    existingFormulaUnchanged:true,publicationAuthorized:false,
+    providerCalls:0,baseRawWrites:0,d1Writes:0,schedulerWrites:0,publicationWrites:0};
+  if(cutoff<=baseline.latestSpyNYDay)return {...result,status:'WAIT_CLOSED_NY_DATE',window:null,
+    verifiedCompletedWindows:[]};
+  const root=fs.realpathSync(dataRoot);
+  const home=path.join(root,'themes','legacy-nine-r35-delta');
+  if(!fs.existsSync(home)){
+    const window={start:baseline.latestSpyNYDay,
+      end:[cutoff,addDays(baseline.latestSpyNYDay,maximumWindowDays)].sort()[0]};
+    const gate=probeGate(root,baseline.rosterSha256,window,now);
+    return {...result,status:gate.status==='READY'?'READY_NEW_WINDOW':gate.status,
+      verifiedCompletedWindows:[],window:gate.status==='READY'?window:null,
+      previousWindow:null,
+      recheck:{lastCheckedAt:gate.lastCheckedAt,nextRetryAt:gate.nextRetryAt??null}};
+  }
+  const actual=fs.realpathSync(home);
+  if(!inside(root,actual))fail('DELTA_ROOT_ESCAPE');
+  const manifest=read(path.join(actual,'raw-manifest.json'));
+  if(manifest.version!==1||manifest.project!=='legacy-nine-r35-delta'||
+     manifest.rosterSha256!==baseline.rosterSha256||
+     manifest.source!=='https://getmarkethistory.com'||
+     manifest.licenseStatus!=='PRIVATE_RESEARCH_ONLY_PUBLICATION_NOT_APPROVED'||
+     !Array.isArray(manifest.files))fail('DELTA_MANIFEST_IDENTITY');
+  const paths=new Set();
+  for(const entry of manifest.files) {
+    if(typeof entry.path!=='string'||
+       !/^raw\/[A-Z][A-Z0-9.]{0,11}_[a-f0-9]{64}\.jsonl$/.test(entry.path)||
+       paths.has(entry.path)||!symbols.includes(entry.symbol)||
+       entry.path!==`raw/${entry.symbol}_${entry.sha256}.jsonl`)fail('DELTA_PAGE_IDENTITY');
+    paths.add(entry.path);
+    const actualPage=fs.realpathSync(path.join(actual,entry.path));
+    if(!inside(actual,actualPage)||sha(fs.readFileSync(actualPage))!==entry.sha256)
+      fail('DELTA_PAGE_SHA');
+  }
+  const states=fs.readdirSync(path.join(actual,'state'))
+    .filter(n=>n.startsWith('delta-')&&n.endsWith('.json'))
+    .map(n=>verifyDeltaState(actual,n,baseline.rosterSha256,symbols,manifest));
+  if(!states.length)fail('DELTA_MANIFEST_WITHOUT_STATE');
+  let remaining=[...states],anchor=baseline.latestSpyNYDay,prior=null;
+  const verifiedCompletedWindows=[];
+  while(remaining.length) {
+    const choices=remaining.filter(s=>s.start===anchor);
+    if(choices.length!==1)fail('CHAIN_AMBIGUOUS_OR_ORPHANED');
+    const state=choices[0];
+    remaining=remaining.filter(s=>s!==state);
+    // A late-data repair may use the same end, but must advance the actual
+    // verified SPY session. The chain still has exactly one next state.
+    if(prior&&state.end<prior.end)fail('CHAIN_WINDOW_NOT_ADVANCING');
+    if(state.failure)fail('PRIOR_PROVIDER_FAILURE_REVIEW_REQUIRED');
+    if(!state.completed) {
+      if(remaining.length)fail('CHAIN_AFTER_INCOMPLETE_WINDOW');
+      return {...result,status:'RESUME_FROZEN_WINDOW',window:{start:state.start,end:state.end},
+        verifiedCompletedWindows,
+        previousWindow:prior&&{start:prior.start,end:prior.end}};
+    }
+    if(!goodDate(state.spyDay)||state.spyDay<=anchor||state.spyDay>state.end)
+      fail('CHAIN_SPY_DAY_NOT_ADVANCING');
+    anchor=state.spyDay;
+    verifiedCompletedWindows.push({start:state.start,end:state.end,
+      spyDay:state.spyDay,stateFile:state.name});
+    prior=state;
+  }
+  if(prior.end>=cutoff){
+    const summary={lastCompletedWindow:{start:prior.start,end:prior.end},
+      verifiedCompletedWindows,lastVerifiedSpyNYDay:anchor};
+    if(prior.end!==cutoff||anchor>=cutoff||[0,6].includes(
+      new Date(cutoff+'T00:00:00Z').getUTCDay()))return {...result,
+        status:'WAIT_WINDOW_ALREADY_CHECKED',window:null,...summary};
+    const window={start:anchor,end:prior.end};
+    if(fs.existsSync(path.join(actual,'state','delta.lock')))fail('DELTA_LOCK_EXISTS');
+    const indexed=new Map(manifest.files.map(e=>[e.path,e]));
+    const checked=prior.name&&read(path.join(actual,'state',prior.name))
+      .symbols.SPY.files.map(f=>indexed.get(f.path)?.collectedAt).filter(Boolean).at(-1);
+    const gate=probeGate(root,baseline.rosterSha256,window,now,checked);
+    return {...result,status:gate.status==='READY'?'READY_LATE_SOURCE_RECHECK':gate.status,
+      window:gate.status==='READY'?window:null,
+      previousWindow:{start:prior.start,end:prior.end},
+      recheck:{lastCheckedAt:gate.lastCheckedAt,nextRetryAt:gate.nextRetryAt??null,
+        minIntervalMinutes:RECHECK_MIN_INTERVAL_MS/60000,
+        maxAttemptsPerNYDay:RECHECK_MAX_PER_NY_DAY},...summary};
+  }
+  const nextEnd=[cutoff,addDays(prior.end,maximumWindowDays)].sort()[0];
+  if(nextEnd<=anchor)fail('CHAIN_NEXT_WINDOW_NOT_FORWARD');
+  const window={start:anchor,end:nextEnd};
+  const gate=probeGate(root,baseline.rosterSha256,window,now);
+  if(gate.status!=='READY')return {...result,status:gate.status,window:null,
+    lastVerifiedSpyNYDay:anchor,verifiedCompletedWindows,
+    recheck:{lastCheckedAt:gate.lastCheckedAt,nextRetryAt:gate.nextRetryAt??null}};
+  return {...result,status:'READY_NEW_WINDOW',verifiedCompletedWindows,
+    window,
+    previousWindow:{start:prior.start,end:prior.end},
+    lastVerifiedSpyNYDay:anchor};
+}
+
+export async function runNineR47Recurring({auto=true,fetchImpl=fetch,sleep,
+  maxBatches,maximumWindowDays,dataRoot,rosterPath,now}={}) {
+  const at=now??new Date();
+  const plan=planNineR47Recurring({dataRoot,rosterPath,now:at,maximumWindowDays});
+  if(!plan.window)return plan;
+  const args={dataRoot,rosterPath,...plan.window,previousWindow:plan.previousWindow,fetchImpl};
+  const collection=auto?await collectNineR35Auto({...args,
+    ...(sleep?{sleep}:{}),...(maxBatches?{maxBatches}:{})}):
+    await collectNineR35Delta(args);
+  if(collection.providerCalls||collection.totalProviderCalls){
+    const rosterSha=sha(fs.readFileSync(rosterPath));
+    recordProbe(dataRoot,rosterSha,plan.window,at,collection);
+  }
+  return {contract:'THEME_NINE_R47_RECURRING_PRIVATE_EXECUTION_V1',
+    status:collection.status,planned:plan.status,window:plan.window,
+    previousWindow:plan.previousWindow,
+    providerCalls:collection.totalProviderCalls??collection.providerCalls,
+    rawFilesStored:collection.totalRawFilesStored??collection.rawFilesStored,
+    latestSeenSpyNYDay:collection.latestSeenSpyNYDay??null,
+    cutoffNYDay:plan.cutoffNYDay,
+    lastVerifiedSpyNYDayBefore:plan.lastVerifiedSpyNYDay??null,
+    completedSymbols:collection.completedSymbols,
+    source:plan.source,priceMode:plan.priceMode,
+    immutableR23:true,existingFormulaUnchanged:true,publicationAuthorized:false,
+    d1Writes:0,schedulerWrites:0,publicationWrites:0};
+}
+
+if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
+  try{
+    if(process.argv.length!==3||!['--plan','--run-private','--batch-private'].includes(process.argv[2]))
+      fail('USAGE');
+    const dataRoot=process.env.ZGMINI_DATA_ROOT||'E:/ZGmini/data';
+    const rosterPath=process.env.ZGMINI_R47_ROSTER_PATH||path.join(path.dirname(
+      fileURLToPath(import.meta.url)),'theme-nine-r20-approved-candidates.json');
+    const mode=process.argv[2];
+    const result=mode==='--plan'?planNineR47Recurring({dataRoot,rosterPath}):
+      await runNineR47Recurring({dataRoot,rosterPath,auto:mode==='--run-private'});
+    process.stdout.write(JSON.stringify(result,null,2)+'\n');
+    if(result.status.startsWith('STOP'))process.exitCode=2;
+  }catch(error){process.stderr.write(JSON.stringify({status:'STOP_R47_PRIVATE_REFRESH',
+    error:error.code||'UNEXPECTED_ERROR',message:error.code?undefined:error.message})+'\n');
+    process.exitCode=1;}
+}
