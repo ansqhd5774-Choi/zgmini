@@ -1,3 +1,10 @@
+## 2026-11-18 02:00 KST W03 10/68 — 공통 operation 허용과 Host source 승인 경계 분리 확인
+
+- **진행률:** 시작 9/68(13.2%) → 종료 9/68(13.2%), 10단계 미완료. 목표 163개 유지. 자연 예약 검증은 전체 기능 완료 뒤 후속.
+- **직접 원격 조사:** 지정 계획/진행 기록, 제어 저장소 main `config/operations.json` 원본, #2053 실제 봇 JSON/TXT를 조회. 공통 operations에는 `theme-platform-shadow-readonly`(A, heavy, 240초, minimumFreeMiB 1536) 및 `theme-nine-r32-raw-coverage-readonly`(A, heavy, 240초, minimumFreeMiB 1536)가 **이미 operation으로 등록**돼 있다. 이는 **Host approvedSources에 해당 요청 SHA가 등록됐다는 의미가 아니다**. #2053는 메모리 2270MiB로 admitted=true, 실행 전 `SHADOW_SOURCE_NOT_APPROVED`, candidateExecuted=false. 따라서 원인은 operation 미등록·메모리 부족이 아니라 **Host source 승인 불일치**로 범위를 좁힌다. Host approvedSources 실제 목록은 이번 조회로 UNKNOWN.
+- **직접 증거:** [공통 operation 원본](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/config/operations.json), [#2053 실행 영수증](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2053#issuecomment-6949392912). #2049 CMD B 설치 PASS는 그대로 유효. 신규 승인 A 요청/Host 등록/실PC 수집·계산/Provider/SQLite/D1/Task/배포/예약 변경 0. LAST PASS=ALLOWLISTED_WORKER_STARTED, FIRST FAIL=ALLOWLISTED_OPERATION(세부 원인 SHADOW_SOURCE_NOT_APPROVED). 기존 #2053 replay 금지.
+- **다음 단일 실행:** Host에 실제 등록된 `approvedSources`의 정확한 SHA/branch/entrypoint/manifest를 **기존 승인된 읽기 전용 운영 조회**로 확인하여 동일 SHA 재사용 가능성을 판정한다. 불가능하면 W03 자체가 source 정확 바이트/manifest를 준비하고 정규 승인 등록 경로를 검토한다. 공통 총괄에 기능 실행을 위임하지 않으며 승인 없는 Host 변경·새 A 발행을 하지 않는다. 원자료/checkpoint/R25-R32 새 비공개 결과는 계속 NOT_VERIFIED.
+
 ## 2026-11-18 01:00 KST W03 10/68 — #2053 shadow 승인 차단 코드 경계 확인 (읽기 전용)
 
 - **진행률:** 시작 9/68(13.2%) → 종료 9/68(13.2%); 10단계 신규 실데이터·checkpoint·R25/R32 비공개 계산 미완료. 예약 자연 검증은 전 기능 완료 뒤 후속 유지.
