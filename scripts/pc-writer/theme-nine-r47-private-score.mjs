@@ -16,7 +16,10 @@ const sha=x=>createHash('sha256').update(x).digest('hex');
 const allowedPriceMode='RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE';
 const goodStamp=t=>typeof t==='string'&&
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(t)&&
-  !Number.isNaN(Date.parse(t));
+  !Number.isNaN(Date.parse(t))&&
+  // Date.parse can silently carry an impossible UTC day into the next month.
+  // Check the calendar and clock round-trip without modifying real bars.
+  new Date(t).toISOString().slice(0,19)===t.slice(0,19);
 const ny=new Intl.DateTimeFormat('en-US',{timeZone:'America/New_York',
   year:'numeric',month:'2-digit',day:'2-digit'});
 function nyDate(timestamp){
