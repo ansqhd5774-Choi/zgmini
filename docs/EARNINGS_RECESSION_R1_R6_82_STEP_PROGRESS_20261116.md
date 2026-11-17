@@ -1393,3 +1393,18 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 **FIRST UNFINISHED:** 실제 정규 B release/owner/Task source/Git index·lease proof 미확보, source-only 정확 3파일 운영 PC 설치/afterSHA 원장 0건, 별도 WPSFD42 BLS POST·SQLite raw 저장/원본 SHA/checkpoint 재조회 0건.
 
 **NEXT 하나 — W05:** 기존 승인 source·#1980/#1983 증거를 유지하면서 정확한 `writer-source` 유효 재계획 근거가 확인되는 경우에만 새로운 고유 Writer B 1회 실행·실제 설치 SHA/원격 결과 2/2 확인. 설치 이후 실제 공급자·DB 효과 승인을 별도로 대조해 WPSFD42 원자료 저장과 재조회. 공통 인증 경로의 지원 범위만 총괄 회신 기다리며 독립 source 작업은 중단하지 않음.
+
+
+## 76. R3-04 (2026-11-17 KST) 공통 #1979 접수 복구 완료 인수 및 writer-source 인증 결손 재확인 — SHARED_INTAKE_RECOVERED / W05_OWNER_GATE_HOLD
+
+**진행률 시작→종료:** 순차 DONE **26/82(31.7%) → 26/82(31.7%)**, 개별 DONE **28/82(34.1%) → 28/82(34.1%)**. 첫 미완료 R3-04 유지. 기존 §75 두 항목의 중복 번호는 과거 기록으로 보존하고 신규 항목은 §76으로 구분한다.
+
+**신규 원격 사실 — 공통 접수 장애 해소:** [공통 #1979/6946043807](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1979#issuecomment-6946043807)에서 총괄이 `INTAKE_RECOVERED_EXISTING_CONTROLLER_PRESERVED`를 보고. 실제 Controller SHA `5492726bb5b0505b7ff7db73a3c673dabdf724ce` 유지, 독립 재조회 13/13 PASS, install/recovery/reentry lease 없음, 6 Runner·유지보수기 HEALTHY, Workflow active, 보호 SHA 불변. 닫힌 pause window 원본 #1981 1건은 `REJECTED_INVALID_ORIGINAL`로 기록, 원본 보존·재생 금지. [PR #1989](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1989), 결과 `results/controller-1979-intake-recovery-20261117.json/.txt` 보고. 이는 공유 **접수 복구** 증거이며 W05 Writer B Task owner·release 인증과 다르다.
+
+**신규 원격 사실 — W05 정확 공통 응답:** [중앙 #68/6945292240](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6945292240)에서 `OWNER_EVIDENCE_UNKNOWN / VERIFIED_RELEASE_ADAPTER_NOT_AVAILABLE` 확인. A #1980의 두 표본 idle 후보는 인증된 `releaseVerified`가 아니며, A #1983의 4파일 preimage PASS는 현재 Task 실행 source/lease owner를 증명하지 않는다. `shared-resource-release-readonly` 및 lifecycle/recheck 소비자는 인증된 `READY_FOR_OWNER_REPLAN` 운영 adapter가 아니다. 기존 사용자 명시 [#1919/6943640912](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1919#issuecomment-6943640912)의 **Task 실행 소유권 + 1.5초 간격 연속 자연 유휴 확인 전 신규 B 금지** 유지. #1979 복구 완료를 이 HOLD 해제로 오인하지 않는다.
+
+**LAST PASS:** 공통 복구 결과와 인증 adapter 부재 판정을 지정 기록에 반영, 이미 승인된 W05 정확 3파일 `APPROVED_B` source 후보 `2a9a38a452b5ba95a3e370c5b56445bb75fa05bb` 보존. 과거 #1919 소모·재실행 금지. 이번 W05 공급자 POST/SQLite/D1/Cloudflare/Task/Writer B 운영 변경 0.
+
+**FIRST UNFINISHED:** 현행 Core Task 실행 소유권과 Writer-source lease/release·runtime source 및 같은 시점의 정규 idle 증거 결합 미확보. WPSFD42 승인 3파일 실제 PC 설치 SHA, 수동 원자료 저장/checkpoint, 저장자료 계산·D1/API/UI 미실증.
+
+**NEXT — W05 원담당:** 총괄의 공유 owner/lease 인증 경로에 대한 실제 승인·운영 적용 증거가 새로 나오면 현재 Task/source/manifest/lease 및 1.5초 2표본을 재검증해 정규 B 단회 실행 가능성을 판정. 그 전에는 설치 금지. 병행 가능한 독립 Draft #1231의 저장자료 계산·회귀 검토를 계속하며 승인 고정 #1207 3파일을 임의 교체하지 않는다. 별도 Provider/SQLite 효과 승인 없이 BLS POST·DB 쓰기 금지.
