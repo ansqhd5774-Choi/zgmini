@@ -316,7 +316,7 @@ function insertPlans(db, plans) {
 export {CONTRACT, SERIES, SERVICE_SERIES, checkSchema, normalizeSeries, buildPlans, insertPlans};
 
 export function resultLogPath(stamp,{includeServices=false,tempDirectory=os.tmpdir()}={}) {
-  if (typeof stamp!=='string' || !/^\\d{8}-\\d{6}Z$/.test(stamp))
+  if (typeof stamp!=='string' || !/^\d{8}-\d{6}Z$/.test(stamp))
     err('INVALID_RESULT_STAMP');
   return path.join(tempDirectory,
     `${includeServices?'EARNINGS_BLS_SERVICE_R1':'EARNINGS_R3C_BLS_STORE_ONCE'}_RESULT_${stamp}.txt`);
