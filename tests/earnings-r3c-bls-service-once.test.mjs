@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {DatabaseSync} from 'node:sqlite';
 import {
-  checkSchema,normalizeSeries,buildPlans,insertPlans,
+  checkSchema,normalizeSeries,buildPlans,insertPlans,SERVICE_SERIES,
 } from '../scripts/pc-writer/EARNINGS_R3C_BLS_STORE_ONCE.mjs';
 
 function newDb() {
@@ -128,4 +128,57 @@ test('preexisting write triggers are rejected',()=>{
     BEGIN SELECT RAISE(ABORT,'trigger'); END`);
   assert.throws(()=>checkSchema(db),/EXISTING_TRIGGER_PRESENT_NO_WRITE/);
   db.close();
+});
+
+function serviceResponse(value='157.666') {
+  return {status:'REQUEST_SUCCEEDED',Results:{series:[
+    {seriesID:'WPSFD42',data:[
+      {year:'2026',period:'M09',value,periodName:'September',
+       footnotes:[{code:'P'}],latest:'true'},
+      {year:'2025',period:'M09',value:'150.273',periodName:'September',
+       footnotes:[]},
+    ]},
+  ]}};
+}
+
+test('WPSFD42 service-only raw mode is one monthly SA index and no official vintage',()=>{
+  assert.deepEqual(SERVICE_SERIES,['WPSFD42']);
+  const normalized=normalizeSeries(serviceResponse(),SERVICE_SERIES);
+  const plans=buildPlans(normalized,'2026-10-27T02:00:00.000Z','b'.repeat(64));
+  assert.equal(plans.length,1);
+  assert.equal(plans[0].id,'WPSFD42');
+  assert.equal(plans[0].rows.length,2);
+  assert.equal(plans[0].rows[1].rawValue,'157.666');
+  assert.equal(plans[0].rows[1].rawUnit,'INDEX');
+  assert.equal(plans[0].rows[1].seasonalAdjustment,'SA');
+  assert.equal(plans[0].rows[1].vintageId,null);
+  assert.equal(JSON.parse(plans[0].provenanceJson).officialVintageId,null);
+});
+
+test('service-only append isolates its source from existing BLS three-series snapshots',()=>{
+  const db=newDb();
+  try{
+    assert.deepEqual(insertPlans(db,plans()),{insertedChunks:3,insertedSnapshots:3,verified:3});
+    const svc=buildPlans(normalizeSeries(serviceResponse(),SERVICE_SERIES),
+      '2026-10-27T03:00:00.000Z','b'.repeat(64));
+    const r1=insertPlans(db,svc);
+    assert.deepEqual(r1,{insertedChunks:1,insertedSnapshots:1,verified:1});
+    const r2=insertPlans(db,svc);
+    assert.deepEqual(r2,{insertedChunks:0,insertedSnapshots:0,verified:1});
+    const counts=db.prepare('SELECT dataset,COUNT(*) AS n FROM api_history_snapshots_v1 WHERE provider=? GROUP BY dataset').all('BLS');
+    assert.equal(counts.length,4);
+    assert(counts.every(x=>x.n===1));
+    assert.equal(counts.find(x=>x.dataset==='WPSFD42')?.n,1);
+    assert.deepEqual(checkSchema(db,{includeServices:true}),{existingSnapshots:4,existingChunks:4});
+  }finally{db.close();}
+});
+
+test('service-only source rejects unrelated series and conflicting repeated month',()=>{
+  assert.throws(()=>normalizeSeries(fakeResponse(),SERVICE_SERIES),/BLS_SERIES_COUNT_MISMATCH_NO_WRITE/);
+  const unexpected=serviceResponse();
+  unexpected.Results.series[0].seriesID='WPSFD4';
+  assert.throws(()=>normalizeSeries(unexpected,SERVICE_SERIES),/BLS_SERIES_ID_MISMATCH_NO_WRITE/);
+  const conflict=serviceResponse();
+  conflict.Results.series[0].data.push({...conflict.Results.series[0].data[0],value:'157.667'});
+  assert.throws(()=>normalizeSeries(conflict,SERVICE_SERIES),/BLS_DUPLICATE_PERIOD_CONFLICT_NO_WRITE/);
 });
