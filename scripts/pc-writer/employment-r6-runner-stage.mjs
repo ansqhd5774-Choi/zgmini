@@ -25,6 +25,8 @@ const PIT_COUNTS=[
   "coreHistorySameInstantAdditionalRows","candidateHistoryAsOfUniqueKeys",
   "candidateHistoryPriorRevisionKeys","candidateHistoryPriorRevisionRows",
   "candidateHistoryAmbiguousLatestKeys","candidateHistorySameInstantAdditionalRows",
+  "coreCurrentHistoryMatchingKeys","coreCurrentHistoryConflictingKeys",
+  "coreCurrentHistoryUnverifiedKeys","coreCurrentHistoryMissingKeys",
   "coreCurrentKeysMissingHistory","missingKeysWithCandidateHistory",
   "missingKeysWithMatchingCandidateValueAndHash","candidateCurrentKeys",
   "candidateNewKeys","candidateOverlapMatchingKeys",
