@@ -17,6 +17,7 @@ import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
 import {breadthNotice} from '../lib/market-score/breadth-notice.mjs';
 import {breadthB1R4PreviousSessionDelta as breadthPreviousSessionDelta} from '../lib/market-score/breadth-b1-r4-ui-delta.mjs';
 import {marketTrendWindowR1} from '../lib/market-score/market-trend-window-r1.mjs';
+import {normalizeMarketTrendPointsR4} from '../lib/market-score/market-trend-normalize-r4.mjs';
 import {appendPublishedDomainCurrent} from '../lib/market-score/published-domain-trend-r4.mjs';
 import {miniTrendGeometry} from '../lib/market-score/mini-trend-geometry.mjs';
 import {amplifyCompositeDisplayScore,amplifyCompositeDisplayTrend} from '../lib/market-score/composite-display-sensitivity-r1.mjs';
@@ -24,24 +25,6 @@ import {mergeCompositeObservedDisplay} from '../lib/market-score/composite-obser
 import {ContentHelp} from './content-help';
 import {HELP,HelpText} from './help-copy';
 export type DashboardPoint={label:string;value:number};
-type MarketTrendPoint={label?:string;date?:string;value?:number;score?:number};
-function normalizeMarketTrendPoints(data?:MarketTrendPoint[]):DashboardPoint[]{
- return (Array.isArray(data)?data:[]).flatMap(point=>{
-  const label=typeof point?.label==='string'&&point.label
-   ?point.label
-   :typeof point?.date==='string'&&point.date
-    ?point.date
-    :null;
-  const rawValue=typeof point?.value==='number'
-   ?point.value
-   :typeof point?.score==='number'
-    ?point.score
-    :null;
-  return label!==null&&rawValue!==null&&Number.isFinite(rawValue)
-   ?[{label,value:rawValue}]
-   :[];
- });
-}
 export type Summary={label:string;score:number;value:string;note:string;data:DashboardPoint[]};
 export function DashboardTip({label,children,trigger}:{label:string;children:ReactNode;trigger?:ReactNode}){return <ContentHelp label={label} trigger={trigger}>{children}</ContentHelp>;}
 export function ScoreScale({score,label,color}:{score:number|null;label:string;color:string}){const band=score===null?'unknown':score<25?'danger':score<40?'caution':score<60?'neutral':score<75?'positive':'strong';const style={'--zg-score':`${score??0}%`,'--zg-score-color':color} as CSSProperties;return <div className={`zg-scale zg-scale-${band}`} data-score-band={band} role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={score??undefined} style={style}/>} 
@@ -222,7 +205,7 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
  const totalDomains=market?.dataQuality?.totalDomains??12;
  const coverageWeight=market?.dataQuality?.coverageWeight??0;
  const overallTrend=useMemo(()=>{
-  const daily=marketTrendWindow(amplifyCompositeDisplayTrend(normalizeMarketTrendPoints(market?.overall?.trend)),periodDays);
+  const daily=marketTrendWindow(amplifyCompositeDisplayTrend(normalizeMarketTrendPointsR4(market?.overall?.trend)),periodDays);
   const archived=compositeArchive?.days===periodDays?compositeArchive.points.flatMap(point=>{
    const display=amplifyCompositeDisplayScore(point.score);
    return display===null||!Number.isFinite(Date.parse(point.observedAt))?[]:[{label:point.observedAt,value:display}];
@@ -233,12 +216,12 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
   return mergeCompositeObservedDisplay(daily,archived,periodDays,current);
  },[market?.overall?.trend,market?.updatedAt,overallScore,compositeArchive,periodDays]);
  const hasDatedHistory=useMemo(()=>overallTrend.length>1||
-  [market?.overall?.trend,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPoints(data),365).length>1),
+  [market?.overall?.trend,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPointsR4(data),365).length>1),
   [market?.overall?.trend,market?.domains,overallTrend]);
  // Independent diagnostic responses and arrow expiry do not change these histories.
  const domainChartTrends=useMemo(()=>r55DomainIds.map(id=>{
   const domain=market?.domains?.find(d=>d.id===id);
-  const daily=marketTrendWindow(normalizeMarketTrendPoints(domain?.trend),periodDays);
+  const daily=marketTrendWindow(normalizeMarketTrendPointsR4(domain?.trend),periodDays);
   const score=domain?.status==='READY'&&validPublicScore(domain.score)?domain.score:null;
   const current=score===null||!market?.updatedAt?null:{label:market.updatedAt,value:score};
   return appendPublishedDomainCurrent(daily,current,periodDays);
