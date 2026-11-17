@@ -94,9 +94,12 @@ test('partial, stale, missing score or incomplete six-factor diagnostic is not a
 
 test('all four UI evidence rows required, without inventing hidden six-factor input values',()=>{
  const f=fixture();
- for(const size of [0,1,3,5]){
+ for(const size of [0,1,3]){
   assert.equal(verifiedEconomicLiquidityScore({...f.domain,indicators:f.domain.indicators.slice(0,size)},asOf,f.diag),null);
  }
+ assert.equal(verifiedEconomicLiquidityScore({...f.domain,indicators:[
+  ...f.domain.indicators,{name:'UNAPPROVED',status:'READY',score:50,asOfDate:asOf}
+ ]},asOf,f.diag),null);
  assert.deepEqual(f.domain.indicators.map(x=>x.name),['은행 준비금','M2 증가율','TGA 변화','ON RRP 변화']);
 });
 
