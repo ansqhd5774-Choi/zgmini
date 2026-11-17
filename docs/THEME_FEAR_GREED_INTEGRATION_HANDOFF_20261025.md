@@ -1,3 +1,12 @@
+## 2026-11-17 W03 9/68 — R47/R49 회귀 계약 원격 점검 (13시)
+
+- **진도:** 시작 8/68 DONE(11.8%), 9/68 IN_PROGRESS → 종료 동일. 계획서 blob `7d6b54a1bc91340f64a3cd8b82000f8f1dfa75e1`; 전용 진행 원장 이전 blob `8f87da114a941a378a430381f8565e2837d32157`. P1 운영 R47 CMD 적용은 승인 전 미실행.
+- **이번 실제 확인:** 전용 브랜치의 `tests/theme-nine-r47-recurring-bundle.test.mjs` Git blob `9e29c999f1e8aa380d27e781fe4ed8dba992335e`, `tests/theme-nine-r49-one-click-installer.test.mjs` blob `fbf12fdd6deebe763588f8da4bf9ad269f367c09` 원격 원문 직접 읽기 완료. R47은 16개 embedded SHA, R35 신규 `/api/v1/bars/stocks/us/${symbol}/1h` 경로와 requestedUrl 보존을 검사. R49는 **과거 7파일 번들 SHA 동결**(`R47=2133e5d4...`)을 확인하며, 최신 R47 별도 후보 전체 SHA256 `a08fdec82b484c41ba3ac562908f31d96fee09c75cc3ff1b32386e9dd625ba45`와 **일치하지 않아야 한다는 독립 테스트**가 존재. R49의 오래된 R47을 최신 R47 설치 승인/증거로 대체하면 안 됨.
+- **검증 한계:** 이번은 GitHub 원격 **테스트 소스 정적 검토**이며 Node `--test` 실행, 실제 R47 CMD bytes SHA, R49 extractor 실행, 전체 CI/Windows 운영 검증은 **NOT_RUN**. 이전 격리 Node 공개 정책 11/11 PASS는 그대로 별도 보존. 신규 PASS/운영 성공으로 승격 금지.
+- **공유 중앙 최신 대조:** [#68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68)에서 W03+W04 누적 Controller [Draft #1878](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1878) GO/NO-GO 검토가 남아 있다는 최신 타담당 기록을 확인. 이는 **R47 기존 Task CMD 정확 1파일 승인과 동일하지 않음**. 공유 Controller #1841 복구 완료 및 기존 운영 SHA `384ffd09...` 증거 재사용, 추가 PC 접수 없음.
+- **LAST PASS:** 두 R47/R49 테스트 원격 원문 및 별도 SHA 확인. **FIRST MISSING:** 정확 브랜치 SHA에서 두 테스트 실제 Node 실행 증거와 R47 CMD 운영 1파일 승인/PC preimage/lease/backup/CAS readback. 신규 운영 PC·provider·SQLite·D1·Cloudflare·Task 변경 0.
+- **다음 실행 한 가지:** 정확 전용 브랜치 전체 checkout에서 `node --test tests/theme-nine-r47-recurring-bundle.test.mjs tests/theme-nine-r49-one-click-installer.test.mjs`를 실행하여 개별 PASS/FAIL 및 R47/R49 SHA를 기록. R49 동결 bundle과 R47 최신 후보를 혼합하지 않으며, 승인 전 PC 설치·수동 수집 금지.
+
 # 테마 공포·탐욕 통합 개발 브랜치 — 작업 원장 / 인수인계
 
 ## 2026-11-17 W03 9/68 — 바이오 R8 구형 잠정치 실행기 제거 및 Node 2/2 PASS
