@@ -1043,3 +1043,11 @@
 - **LAST PASS/FIRST FAIL:** 정적 테스트 소스 존재 PASS; 공개 브라우저 네트워크 진입 FIRST FAIL `ERR_SOCKS_CONNECTION_FAILED`. 앱 렌더링에 대한 PASS/FAIL은 UNKNOWN.
 - **다음 필수 실행 하나:** W06 #69는 동일 SOCKS 경로 재시도를 중단하고, GitHub에 이미 존재하는 Chromium UI CI의 **실제 뷰포트별 DOM/overflow assertion** 유무를 조회한다. 4폭×6기간 실검증이 없다면 승인된 격리 CI fixture에 추가해 검증한다. 실제 Production 활성 SHA 확인은 #75 별도, 원담당 Writer #74 증거 별도.
 - **원격 인계 검증:** 본 기록 커밋 후 원격 파일 재조회로 확인; 신규 DONE 증가 없음.
+
+### [2026-11-18 02:02 KST] R4 #69 — 기존 격리 Chromium 4폭×6기간 실제 DOM 검증 발견, overflow 별도 미확인
+- **시작/종료:** 고유 DONE 22/75(29.3%), 잔여 53; #69 PARTIAL 유지. 본 실행은 공개 사이트 SOCKS 접속 재시도 없이 GitHub 소스 직접 감사.
+- **확인된 기존 검증:** `main:tests/dashboard-history-browser-r5.mjs` blob `130ced488c49d44b02354e3c8b0d375ed954e270`은 Playwright Chromium에서 `[390,768,1440,1920]` 각각 새 페이지를 생성하고 `['1D','1W','1M','3M','6M','1Y']` 각 기간 버튼을 실제 클릭한다. 기간별 observations API mock 응답, aria-pressed, Recharts path/dot 유한 좌표, 12개 카드, 최신 snapshot, 진짜 0점, JS pageerror 부재를 검사하고 폭별 스크린샷을 남기는 코드가 존재한다. 즉 **4폭×6기간 DOM/차트 geometry assertion 부재라는 이전 가정은 틀림**. 이미 존재하는 테스트를 중복 추가하지 않는다.
+- **미확인 범위:** 해당 테스트는 `document.documentElement.scrollWidth <= innerWidth` 같은 **가로 넘침 직접 assertion이 없음**. 실행 중인 최신 CI의 개별 테스트 성공 여부를 이 소스 조회만으로 새로 증명한 것은 아니며, 공개 Production `zgmini.kr` DOM/실기기/활성 배포 검증과도 구별한다. `tests/r4-six-period-responsive-chart-69.test.mjs`는 정적 CSS 및 순수 함수 시험으로 유지. `.github/workflows/ui-browser.yml`이라는 추정 경로는 404이므로 실제 workflow 이름을 확인해야 한다.
+- **변경/영향:** 운영 PC·SQLite·D1·Cloudflare·공급자 호출 0. 기능 소스·브라우저 시험 변경 0; 기존 PASS를 재실행한 것으로 주장하지 않음. #69 전체 PARTIAL, #74/#75 별도 미완료.
+- **다음 필수 실행 하나:** 기존 `tests/dashboard-history-browser-r5.mjs`에 실제 4폭 각각의 **document 및 chart/card bounding-box overflow assertion**만 선별 추가하고 기존 Chromium CI의 실제 workflow/실행 결과를 확인한다. CSS 수정은 실패가 재현될 때만. 성공 시에도 Production 실서빙 PASS로 승격하지 않는다.
+- **원격 인계 검증:** 이 기록을 지정 브랜치에 커밋하고 동일 파일을 원격 재조회하여 확정한다.
