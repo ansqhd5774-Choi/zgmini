@@ -286,3 +286,62 @@ test("newer retrieval wins over an older provider release timestamp",()=>{
   assert.equal(report.candidateNewKeysWithIncompletePITMetadata,1);
   assert.equal(report.candidateReconciliationPreviewStatus,"HOLD_UNVERIFIED_SOURCE_LINEAGE");
 });
+
+test("PIT-04-03 partitions Core CURRENT against latest as-of HISTORY without source disclosure",t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-core-compare-"));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const core=path.join(dir,"core.sqlite");
+  const al=observation("AL",100,"a".repeat(64));
+  const ak=observation("AK",101,"b".repeat(64));
+  const older={...ak,retrieved:"2026-10-20T00:00:00.000Z"};
+  const newer={...ak,value:102,hash:"c".repeat(64),retrieved:"2026-10-26T00:00:00.000Z"};
+  const az=observation("AZ",103,"d".repeat(64));
+  const ca=observation("CA",104,"e".repeat(64));
+  const co=observation("CO",0,"f".repeat(64));
+  fixture(core,{current:[al,ak,az,ca,co],
+    history:[al,older,newer,{...ca,hash:"not-a-sha256"},{...co,value:""}]});
+  const before=digest(core);
+  const report=auditEmploymentR6PitCoverage({dbPath:core,asOfDate:"2026-11-02"});
+  assert.deepEqual([
+    report.coreCurrentHistoryMatchingKeys,
+    report.coreCurrentHistoryConflictingKeys,
+    report.coreCurrentHistoryUnverifiedKeys,
+    report.coreCurrentHistoryMissingKeys,
+  ],[1,1,2,1]);
+  assert.equal(report.coreCurrentHistoryMissingKeys,report.coreCurrentKeysMissingHistory);
+  assert.equal(report.coreCurrentHistoryMatchingKeys+report.coreCurrentHistoryConflictingKeys
+    +report.coreCurrentHistoryUnverifiedKeys+report.coreCurrentHistoryMissingKeys,report.coreCurrentKeys);
+  assert.equal(report.coreHistoryPriorRevisionKeys,1);
+  assert.equal(report.promotionApproved,false);
+  assert.equal(report.coreWrites,0);
+  assert.equal(digest(core),before);
+});
+
+test("PIT-04-03 ambiguous latest Core HISTORY stays unverified rather than matching",t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-core-latest-"));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const core=path.join(dir,"core.sqlite");
+  const current=observation("AL",100,"a".repeat(64));
+  fixture(core,{current:[current],
+    history:[current,{...current,value:101,hash:"b".repeat(64)}]});
+  const report=auditEmploymentR6PitCoverage({dbPath:core,asOfDate:"2026-11-02"});
+  assert.equal(report.coreHistoryAmbiguousLatestKeys,1);
+  assert.equal(report.coreCurrentHistoryMatchingKeys,0);
+  assert.equal(report.coreCurrentHistoryConflictingKeys,0);
+  assert.equal(report.coreCurrentHistoryUnverifiedKeys,1);
+  assert.equal(report.coreCurrentHistoryMissingKeys,0);
+  assert.equal(report.promotionApproved,false);
+});
+
+test("PIT-04-03 same value/hash but different provider is a Core lineage conflict",t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-core-provider-"));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const core=path.join(dir,"core.sqlite");
+  const current=observation("AL",100,"a".repeat(64));
+  fixture(core,{current:[current],history:[{...current,provider:"UNRELATED_PROVIDER"}]});
+  const report=auditEmploymentR6PitCoverage({dbPath:core,asOfDate:"2026-11-02"});
+  assert.equal(report.coreCurrentHistoryConflictingKeys,1);
+  assert.equal(report.coreCurrentHistoryMatchingKeys,0);
+  assert.equal(report.coreCurrentHistoryUnverifiedKeys,0);
+  assert.equal(report.coreCurrentHistoryMissingKeys,0);
+});
