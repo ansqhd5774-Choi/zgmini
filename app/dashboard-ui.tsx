@@ -25,6 +25,7 @@ import {mergeCompositeObservedDisplay} from '../lib/market-score/composite-obser
 import {ContentHelp} from './content-help';
 import {HELP,HelpText} from './help-copy';
 export type DashboardPoint={label:string;value:number};
+type MarketTrendPoint={label?:string;date?:string;value?:number;score?:number;status?:string};
 export type Summary={label:string;score:number;value:string;note:string;data:DashboardPoint[]};
 export function DashboardTip({label,children,trigger}:{label:string;children:ReactNode;trigger?:ReactNode}){return <ContentHelp label={label} trigger={trigger}>{children}</ContentHelp>;}
 export function ScoreScale({score,label,color}:{score:number|null;label:string;color:string}){const band=score===null?'unknown':score<25?'danger':score<40?'caution':score<60?'neutral':score<75?'positive':'strong';const style={'--zg-score':`${score??0}%`,'--zg-score-color':color} as CSSProperties;return <div className={`zg-scale zg-scale-${band}`} data-score-band={band} role="meter" aria-label={label} aria-valuemin={0} aria-valuemax={100} aria-valuenow={score??undefined} style={style}/>} 
