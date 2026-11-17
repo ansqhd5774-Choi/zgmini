@@ -75,7 +75,7 @@ test('opt-in seven-key report suppresses unrelated D1 results and secrets',()=>{
   body:'RAW_PRICE_SECRET',credential:'PRIVATE_CREDENTIAL'});
  const restricted=themeSevenMetadataOnly(data,{observedAt:AT});
  assert.deepEqual(Object.keys(restricted).sort(),['at','themePublicReadback']);
- assert.equal(restricted.at,AT);
+ assert.equal(restricted.at,new Date(AT).toISOString());
  assert.equal(restricted.themePublicReadback.feeds.length,7);
  assert.equal(restricted.themePublicReadback.status,'ALL_KEYS_PRESENT_METADATA_ONLY');
  const output=JSON.stringify(restricted);
@@ -98,6 +98,6 @@ test('seven-key readback CLI is explicit and legacy mode keeps original SQL/outp
  assert.ok(source.includes("if(mode==='theme-seven')"));
  assert.ok(source.includes('JSON.stringify(themeSevenMetadataOnly(feeds,{observedAt}))'));
  assert.ok(source.includes('themePublicReadback:summarizeThemePublicReadback(feeds,{observedAt})'));
- assert.equal((source.match(/remote\\.query\\(/g)??[]).length,3);
- assert.equal(/\\b(?:INSERT|UPDATE|DELETE|REPLACE|DROP|ALTER)\\s+(?:INTO|TABLE|FROM)\\b/i.test(source),false);
+ assert.equal((source.match(/remote\.query\(/g)??[]).length,3);
+ assert.equal(/\b(?:INSERT|UPDATE|DELETE|REPLACE|DROP|ALTER)\s+(?:INTO|TABLE|FROM)\b/i.test(source),false);
 });
