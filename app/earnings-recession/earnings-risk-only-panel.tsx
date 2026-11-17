@@ -363,7 +363,7 @@ export default function EarningsRiskOnlyPanel(){
       <small>관측 {row?.observationPeriod??"—"}</small>
       <small>수집 {earningsCostRetrievalDay(row?.retrievedAt)}</small></td>
      <td>{ok?"참고":costStale(row)?"갱신 지연":"확인 대기"}</td>
-     <td className="earnings-r2-spark">{ok&&row?<CostSpark history={row.history}/>:"—"}</td>
+     <td className="earnings-r2-spark">{ok&&row?<CostSpark history={row.history} label={meta.name+" BLS 저장 관측 이력. 결측 구간 미연결"}/>:"—"}</td>
      <td><ContentHelp label={meta.name+" 도움말"}><p>{meta.description}. BLS 관측값이며 실적 침체 방어 점수에는 합산하지 않습니다. 수집 시점 기준 자료로, 발표일이 확인되지 않으면 —로 표시합니다.</p>
       <a href={"https://data.bls.gov/timeseries/"+meta.series} target="_blank" rel="noopener noreferrer">BLS 원자료</a></ContentHelp></td>
     </tr>})}
@@ -468,7 +468,7 @@ export default function EarningsRiskOnlyPanel(){
        <small>{row?.frequency==="MONTHLY"?"월간":row?.frequency==="QUARTERLY"?"분기":""} · 수집 {earningsCostRetrievalDay(row?.retrievedAt)}</small></div>
      </div>
      <div className="earnings-r2-mobile-spark">
-      <span>최근 이력</span>{ok&&row?<CostSpark history={row.history}/>:<span className="earnings-r2-cost-chart-empty">이력 확인 필요</span>}
+      <span>최근 이력</span>{ok&&row?<CostSpark history={row.history} label={meta.name+" BLS 저장 관측 이력. 결측 구간 미연결"}/>:<span className="earnings-r2-cost-chart-empty">이력 확인 필요</span>}
      </div>
     </article>})}
     <article className="earnings-r2-mobile-card earnings-r2-cost-mobile-card" data-source="bea-s6">
