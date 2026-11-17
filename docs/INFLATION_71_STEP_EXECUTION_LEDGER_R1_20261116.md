@@ -2,6 +2,18 @@
 
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
+
+<!-- W01-20261117-A401-23-RAW-SCOPE-SOURCE-ONLY-PR1246 -->
+## 최신 작업 스냅샷 — 2026-11-17 · A4-01 30번째 항목 실제 PC 증거 19+4 교차검증·기능 전용 검증기 구현 진행
+
+- **이번 정확 단계:** **30번째 행 `A4-01 기존 23개 원자료 존재·유효성 확인`**. 시작/종료 W01 **30/71 (42.3%)**, 미완료 41, A4-01 `PARTIAL`. 이는 30개가 완료됐다는 뜻이지 A4-01이 DONE이라는 뜻이 아님.
+- **실PC 기존 원격 증거 직접 재분석:** [PC 결과 `43847038904-1-seat-4.json`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/43847038904-1-seat-4.json)의 `inflation19-runtime-readonly`는 원래 19개 ID `1,3,4,5,6,7,8,9,10,11,12,13,14,18,19,21,25,26,31` 19/19 READY, 원본 projection 고유 19개·관측일·storedAt 형식 유효하나 **`stagingOnly=true`, `sqliteOpened=false`, 원본 파일별 SHA 없음**. 개별 private raw 검증 성공으로 승격 금지.
+- [PC 결과 `43983711934-1-seat-4.json`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/43983711934-1-seat-4.json)의 `inflation-candidates-runtime-readonly`에서는 기존 보조 4개 **#2 EIA 휘발유(520건), #16 관세(139건), #24 PPI(203건), #29 G17(657건)**가 각각 `PRESENT_VALID`·원본 저장일·64자리 SHA256 존재·유효. 기존 19개와 보조 4개 ID 합집합 **23/23 중복 0**, but **19개 개별 원본 live readback 0/19**. #22/#23은 신규 보충 CPI이며 기존 23개를 중복 집계하지 않음. #28 Census 누락은 별도 A4-04.
+- **실행 가능 코드 준비(원담당 직접):** 기존 앱 `previewInflation19`가 `inflation-causal-r1` BLS8/가스/전력, SCE31, supply-r10, `storage/core.sqlite`의 FRED PIT·macro를 원본에서 검증하고 `previewInflationCandidates7`가 보조 원본을 읽는 계약 확인. 두 파서를 재사용하는 **신규 W01 source-only 2파일** [Draft PR #1246](https://github.com/ansqhd5774-Choi/zgmini/pull/1246) 생성; `codex/w01-a401-23-raw-readonly-20261117@df11406f29086acce1a3d89bb9b1cc7e2c98c2eb`. 고정 입력 23종, 메타데이터만 출력, SQLite readOnly 및 WAL/SHM 사전검사, 네트워크/운영 쓰기 없음. 기존 19 공개 projection만 읽는 Controller A로 원자료 완료를 가장하지 않음.
+- **CI 사실:** 최초 [Run #44059430262](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44059430262) 전체 4,852건 중 신규 unit test 1건 실패(`STOP` 출력 `providerCalls=0` 메타데이터 누락)하여 **해당 분기만 수정** [commit `df11406f`](https://github.com/ansqhd5774-Choi/zgmini/commit/df11406f29086acce1a3d89bb9b1cc7e2c98c2eb); 후속 [Run #44059849443](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44059849443) 신규 소스 CI 결과 조회 중, 완료 전 PASS 주장 금지. 테스트 삭제/완화 없음.
+- **정확한 FIRST UNVERIFIED/다음 실행:** 기존 PC A operation `inflation19-runtime-readonly`는 설계상 raw 파일/SQLite 원본을 열지 않으므로 A4-01 완료 불가. W01 소스-only PR CI 확인 뒤 **승인된 정규 PC 읽기 전용 실행 경로**(기존 공통 등록기 재사용, 임의 shell/명령/SQL 없음)를 통해 본 기능 검증기 실PC `23/23`·JSON/TXT·실행 SHA/보호 상태 실제 readback이 필요. 임의 Controller 설치/새 예약/공유 자원 변경·총괄에 기능 검증 전가 금지. 이 등록이 불가하면 해당 A4-01만 `PARTIAL`로 남기고 독립 작업 진행. **이번 운영 PC·SQLite/D1·Task·원본·provider 쓰기 0**.
+
+
 <!-- W01-20261117-C-TECH-SCOPE-GO-USER-APPROVAL-PENDING-6943893556 -->
 ## 최신 인계 스냅샷 — 2026-11-17 18:21 KST · 총괄 C급 기술범위 GO 수신, 사용자 승인·실행 대기
 
