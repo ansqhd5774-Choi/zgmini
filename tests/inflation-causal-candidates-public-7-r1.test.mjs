@@ -5,6 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import {INFLATION_CANDIDATES_7,INFLATION_CANDIDATES_7_IDS}
   from '../lib/inflation-causal-candidates-public-7-catalog.mjs';
+import {INFLATION_CAUSAL_19_IDS}
+  from '../lib/inflation-causal-public-catalog.mjs';
 import {INFLATION_CANDIDATES_7_PUBLIC_KEY,INFLATION_CANDIDATES_7_PUBLIC_ROUTE,
   INFLATION_CANDIDATES_7_PUBLIC_SCHEMA,validateInflationCandidates7Public,
   readInflationCandidates7PublicResponse}
@@ -186,6 +188,73 @@ test('unapproved stale/future sourceStoredAt is not relabeled as current',t=>{
   const {home}=makeHome(t,selected),result=previewInflationCandidates7(home,{now:NOW});
   assert.equal(result.missing['2'],'INFL7_SOURCE_PROVENANCE_INVALID');
   assert.equal(result.payload.indicators[0].status,'PENDING');
+});
+
+test('A4-05: exact 26 research IDs keep approved units and no overlapping inputs',()=>{
+  const from19=INFLATION_CAUSAL_19_IDS;
+  const from7=INFLATION_CANDIDATES_7_IDS;
+  assert.equal(from19.length,19);
+  assert.equal(from7.length,7);
+  assert.equal(new Set([...from19,...from7]).size,26);
+  for(const id of ['22','23','24','29'])
+    assert.equal(meta(id).unit,'지수');
+  assert.equal(meta('28').unit,'백만 USD');
+  assert.equal(meta('2').unit,'USD/갤런');
+  assert.equal(meta('16').unit,'USD');
+});
+
+test('A4-05: CPI monthly date, duplicate and numeric source observations fail closed',()=>{
+  for(const id of ['22','23']){
+    const sample=docs()['bls-cpi-ppi3.json'];
+    const series=sample.series[meta(id).series];
+    series[3].date='2026-02-30';
+    assert.throws(()=>projectInflationCandidate7Row(meta(id),sample,{now:NOW}),
+      /INFL7_SOURCE_ROW_INVALID/);
+    series[3].date='2025-04-30';
+    assert.throws(()=>projectInflationCandidate7Row(meta(id),sample,{now:NOW}),
+      /INFL7_SOURCE_MONTH_INVALID/);
+    series[3].date='2025-04-01';
+    series[3].value=Number.NaN;
+    assert.throws(()=>projectInflationCandidate7Row(meta(id),sample,{now:NOW}),
+      /INFL7_SOURCE_ROW_INVALID/);
+    series[3].value=4;
+    series[3].date=series[2].date;
+    assert.throws(()=>projectInflationCandidate7Row(meta(id),sample,{now:NOW}),
+      /INFL7_SOURCE_ROW_INVALID/);
+  }
+});
+
+test('A4-05: provider units and missing Census do not synthesize amounts',t=>{
+  const badEia=docs()['eia-us-regular-gasoline-weekly.json'];
+  badEia.unit='USD_PER_LITER';
+  assert.throws(()=>projectInflationCandidate7Row(meta('2'),badEia,{now:NOW}),
+    /INFL7_EIA_SELECTOR_INVALID/);
+  const badTreasury=docs()['treasury-mts-customs-duties.json'];
+  badTreasury.observations[0].unit='EUR';
+  assert.throws(()=>projectInflationCandidate7Row(meta('16'),badTreasury,{now:NOW}),
+    /INFL7_TREASURY_ROW_INVALID/);
+  const badCensus=docs()['census-m3-manufacturing-inventories.json'];
+  badCensus.unit='USD';
+  assert.throws(()=>projectInflationCandidate7Row(meta('28'),badCensus,{now:NOW}),
+    /INFL7_CENSUS_SELECTOR_INVALID/);
+  const badFed=docs()['fed-g17-manufacturing-ip.json'];
+  badFed.unit='CURRENT_G17_OTHER';
+  assert.throws(()=>projectInflationCandidate7Row(meta('29'),badFed,{now:NOW}),
+    /INFL7_FED_SELECTOR_INVALID/);
+
+  const selected=docs();
+  delete selected['census-m3-manufacturing-inventories.json'];
+  const {home}=makeHome(t,selected),result=previewInflationCandidates7(home,{now:NOW});
+  assert.equal(result.status,'PASS_READONLY');
+  assert.equal(result.ready,6);
+  const census=result.payload.indicators.find(r=>r.id==='28');
+  assert.equal(census.status,'PENDING');
+  for(const key of ['value','previousValue','observationDate',
+    'previousObservationDate','sourceStoredAt','availableAt'])
+    assert.equal(census[key],null);
+  assert.deepEqual(census.history,[]);
+  assert.equal(result.payload.indicators.find(r=>r.id==='16').value,0,
+    'actual zero Treasury receipts remain valid and distinct from missing');
 });
 
 test('public validator rejects private/raw keys, invalid 0/NaN, and leakage in pending',t=>{
