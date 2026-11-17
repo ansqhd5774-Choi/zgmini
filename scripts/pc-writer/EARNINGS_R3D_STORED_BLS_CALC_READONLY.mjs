@@ -74,9 +74,9 @@ function validateRows(rows, id) {
     latestYoy:quarterly?null:latestYoy,latestBase};
 }
 
-function validateSnapshot(db, snapshot) {
+export function validateSnapshot(db, snapshot) {
   const id=snapshot.dataset;
-  if (snapshot.provider!=='BLS' || !SERIES.includes(id) || snapshot.status!=='READY_DIRECT_BLS'
+  if (snapshot.provider!=='BLS' || ![...SERIES,'WPSFD42'].includes(id) || snapshot.status!=='READY_DIRECT_BLS'
     || snapshot.history_mode!==CONTRACT || !isIsoDate(snapshot.retrieved_at)
     || snapshot.as_of!==snapshot.retrieved_at.slice(0,10)) {
     fail('BLS_SNAPSHOT_CONTRACT_INVALID');
