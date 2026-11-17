@@ -1,3 +1,12 @@
+## 2026-11-17 W03 9/68 — 공통 CAS 경로 정정 수신 및 정확 브랜치 CI 증거 감사 (16시)
+
+- **진행률:** 8/68(11.8%) → 8/68(11.8%), 9단계 진행 중. 전용 브랜치 시작 HEAD `fcaff6cb50b9f191777dc741e9afbc376928ed1a`; 계획서 blob `7d6b54a1bc91340f64a3cd8b82000f8f1dfa75e1`. 이번 감사에서 운영 완료 증가 없음.
+- **신규 공통 결과 회수:** [#1894/6940841998](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1894#issuecomment-6940841998)에서 프로세스 총괄이 PR #1914의 이중 `pc-writer` 경로 결함을 수정하고 R54 관측 경로 정합 테스트를 추가함. 공통 source commit `64dc003f`, test commit `399bff76`; 원격 source/test blob `943c2684`/`4952dedf` 확인이라는 공통 회신을 접수. 단 **R54 관측 경로 ≠ 실제 Task Exec action 인증**, Node/Windows 신규 회귀 PASS 미확보, 정규 B receiver/manifest 및 효과 GO 미확보. 이 공통 변경은 W03 기능 단계 완료나 운영 설치가 아님.
+- **정확 W03 브랜치 CI 감사:** GitHub Actions `branch=codex/theme-fear-greed-integration-20261025` 최신 목록은 2026-10-27 구형 PR Node CI #40463379974 failure를 먼저 반환함. 현재 HEAD `fcaff6cb...`에 대응하는 신규 전체 모듈 CI PASS를 확인하지 못함. 기존 main 기반 별도 proof CI #44022399068의 R47/R49 5/5 PASS와 추출 함수 격리 Node 4/4 PASS는 유효하나, 신규 checkpoint test 2개가 포함된 **전용 브랜치 전체 module PASS를 증명하지 않음**. 실패로 단정하지 않고 `NOT_VERIFIED` 유지.
+- **LAST PASS / FIRST MISSING:** R47 checkpoint 판정 함수 격리 4/4 PASS 및 공통 CAS 경로 정정 source 확인 / 신규 전용 브랜치 모듈 CI, 공통 Windows adapter 실검증, 실제 Task Action/lease/preimage, 정식 효과 GO 및 설치 영수증 없음.
+- **운영 영향:** W03 기능 source·Task·CMD·Controller·Runner·공급자·원자료/SQLite/checkpoint·D1·Cloudflare·예약 변경 0. 다른 담당 공통 PR #1914를 W03가 직접 수정하지 않음. 중복 인계/승인 요청 0.
+- **다음 단일 실행:** 지정 브랜치의 `tests/theme-nine-r47-recurring-private-refresh.test.mjs` 신규 2건을 포함한 원본 모듈을 정식 Node CI 경로로 실제 실행하고 결과를 정확 HEAD/Run과 함께 판정. 공통 #1914는 프로세스 총괄 책임으로 유지. 효과 GO 및 fresh PC 증거 전 운영 CMD 설치 금지.
+
 ## 2026-11-17 W03 9/68 — R47 checkpoint 판정 함수 격리 Node 4/4 실제 실행
 
 - **원담당 단독 후속 실행:** 전회 기능 branch commit `fa97759de002e22ff5637764f1b5406f4a3132ac`가 추가한 R47 checkpoint 변조 방어 2건의 실제 동작을, GitHub R47 source blob `a8f943f5a0031030c792609ef09b660e0c8aac75`에서 확인한 `verifyDeltaState` 함수 본문을 별도 Node v22.16.0 시험 환경에 재현하여 확인. 원본 63 ETF+SPY checkpoint fixture를 흉내 낸 64개 key 격리 데이터만 사용하고 운영 PC에 접근하지 않음.
