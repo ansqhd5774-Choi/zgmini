@@ -80,3 +80,51 @@ test('publisher does not contain a provider fetch path in either mode',()=>{
   assert.match(source,/ZGMINI_EARNINGS_BEA_UNIT_SOURCE_SHA/);
   assert.match(source,/readBeaUnitArchivedSource/);
 });
+
+test('refuse archive directory symlink before creating immutable CSV',async()=>{
+  const pcBase=root(),outside=root();
+  try{
+    fs.symlinkSync(outside,path.join(pcBase,'raw'),'dir');
+    await assert.rejects(captureBeaUnitSourceOnce({pcBase,storedAt:AT,
+      fetchImpl:async()=>response()}),/BEA_UNIT_STORED_PATH_UNSAFE/);
+    assert.deepEqual(fs.readdirSync(outside),[]);
+  }finally{fs.rmSync(pcBase,{recursive:true,force:true});
+    fs.rmSync(outside,{recursive:true,force:true});}
+});
+
+test('refuse linked original CSV or metadata without altering either target',async()=>{
+  const pcBase=root(),outside=root();
+  try{
+    const x=await captureBeaUnitSourceOnce({pcBase,storedAt:AT,
+      fetchImpl:async()=>response()});
+    const files=beaUnitRawPaths({pcBase,sourceSha:x.sourceSha});
+    for(const file of [files.csv,files.meta]){
+      const target=path.join(outside,path.basename(file));
+      const original=fs.readFileSync(file);
+      fs.writeFileSync(target,original);
+      fs.rmSync(file);
+      fs.symlinkSync(target,file,'file');
+      assert.throws(()=>readBeaUnitArchivedSource({pcBase,sourceSha:x.sourceSha}),
+        /BEA_UNIT_STORED_PATH_UNSAFE/);
+      assert.deepEqual(fs.readFileSync(target),original);
+      fs.rmSync(file);
+      fs.writeFileSync(file,original,{flag:'wx'});
+    }
+  }finally{fs.rmSync(pcBase,{recursive:true,force:true});
+    fs.rmSync(outside,{recursive:true,force:true});}
+});
+
+test('half-written archive is preserved, not automatically healed or overwritten',async()=>{
+  const pcBase=root();
+  try{
+    const first=await captureBeaUnitSourceOnce({pcBase,storedAt:AT,
+      fetchImpl:async()=>response()});
+    const files=beaUnitRawPaths({pcBase,sourceSha:first.sourceSha});
+    fs.rmSync(files.meta);
+    const before=fs.readFileSync(files.csv);
+    await assert.rejects(captureBeaUnitSourceOnce({pcBase,storedAt:AT+1000,
+      fetchImpl:async()=>response()}),/BEA_UNIT_STORED_SOURCE_MISSING/);
+    assert.deepEqual(fs.readFileSync(files.csv),before);
+    assert.equal(fs.existsSync(files.meta),false);
+  }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
+});
