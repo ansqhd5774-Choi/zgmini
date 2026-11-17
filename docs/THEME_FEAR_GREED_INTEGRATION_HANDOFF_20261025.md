@@ -1,3 +1,14 @@
+## 2026-11-17 W03 9/68 — 공통 R73 간접 실행 지원 수령·새 R47 CMD 설치 접수
+
+- **진행률:** 8/68(11.8%) → 8/68(11.8%); 단계9 실PC CMD 교체 영수증 확인 전 IN_PROGRESS. 같은 소비된 Issue/Request 재시도 없음.
+- **공통 지원 반환 확인:** [#6946187545](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1894#issuecomment-6946187545), [PR #1989](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1989) main 병합. 실제 고정 R73/R71/R48 체인 Windows read-only PASS: results/r47-fixed-chain-readonly-20261117.json. 이 소스/검증은 CMD B 운영 교체 증거 아님. #1979 원래 원장 RECOVERY_REQUIRED 이력 보존하되 별도 복구 #6946043807과 수신기 인계 [PR #1990](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1990) PASS; 6 Runner/Workflow HEALTHY, lease 없음. 새 receiver는 기존 B workflow event SHA checkout, 별도 Controller 운영 재설치 불필요.
+- **W03 직접 신규 승인 manifest:** pc-control 전용 manifest branch w03/r47-cmd-onefile-b-20261117-2c156c4a; [PR #1993](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1993) C996 1/1 PASS, squash MERGED SHA 349ccaa00ac971ea36a8767f685a8603082318df. 정확 1파일 approvals/task-cmd-b/w03-r47-cmd-onefile-reissue-20261117-2c156c4a.json. 원격 main 재조회 946 bytes, Git blob eeed75b99d30c63f141931ce8731e152191eeaa7.
+- **원래 승인 효과와 동일:** [GO #6941303392](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1894#issuecomment-6941303392). Source 8970d2324e7a917dd0da0e7004e3fc8f8f2d1fae; old 2e0fc3e358feff70103d1e9025ce0944132b7b10a2159900f9479b9860550888; target a08fdec82b484c41ba3ac562908f31d96fee09c75cc3ff1b32386e9dd625ba45; Task XML bf3207ab2274d1248e7bd8c953cea2fd3bd277b8bd70bb1c2494339a06e0a4be; runCount=1; Task/Provider/SQLite/D1/otherFiles side effect allow flags false. Feature source/collection/calculation unchanged.
+- **W03 직접 신규 정규 단회 pc-job 접수:** [Issue #1994](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1994), owner ansqhd5774-Choi, pc-r47-cmd-onefile-install + pc-writer-b-install. 새 requestId 2c156c4a-9447-4862-8f6b-584adc44f2d1, chatId ceddc80a-1a1a-4bd5-8826-507e9425e2db, manifest raw sha256 c159ccbc5e8cffb8fb385aad5e09a988d9b50aceb0b19f2eed53efc97235dd60. 구 #1928/#1941는 소비되어 재사용 금지.
+- **마지막 확인:** 신규 #1994 실제 결과 댓글 0건 → SUBMITTED_AWAITING_REMOTE_RESULT. PC afterSHA, Task/DB/D1/보호, JSON/TXT 영수증 미검증. 발행/병합=실PC 설치 성공 아님; 단계 완료 처리 금지.
+- **책임 분리:** 이번 회차 신규 총괄 인계 0건. W03 명세, PR, 단회 접수, 실측·데이터 수집/계산/게시 자체 수행. 신규 공통 코드 결함이 실제 입증될 때만 정확 LAST_PASS/FIRST_FAIL 및 공통 파일 부분에 한정한 인계.
+- **다음 실행:** W03가 #1994 결과 JSON/TXT·run·before/after SHA·Task/보호·Provider/SQLite/D1 불변을 직접 재조회. PASS에만 9단계 완료 판정, BLOCKED면 소비된 ID replay 금지 및 기능/공통 결함 정확 분리.
+
 ## 2026-11-17 20:03 KST W03 9/68 — 공통 간접 체인 수신기 수정 및 #1979 복구 완료 증거 회수
 
 - **진행률:** 8/68(11.8%) → 8/68(11.8%), 9단계 운영 R47 CMD 1파일 설치는 아직 미실행. 이번 작업은 지정 진행 기록과 공통 #1894/#1979 최신 댓글 원본 재조회·기록. 운영 PC/Task/SQLite/D1/Provider/공개 변경 0.
