@@ -932,4 +932,4 @@
 - **계층별 판정:** 원격 GitHub 소스/CI PASS; Git Integration Build PASS(기존 증거); 공개 HTML 36페이지 기존 PASS; **Cloudflare exact active Production Deployment ID/SHA UNKNOWN**, 신규 PR #1250 코드의 **Production hydrated UI 상태 UNKNOWN**; 운영 PC 실제 Writer 설치 SHA UNKNOWN(#01), Writer 단일-key D1 readback UNKNOWN(#74), #28 과거 methodVersion 식별 UNKNOWN.
 - **변경·승인·인계:** 원장 1파일만 수정. UI·Calculator·Collector·Writer·DB·D1·Cloudflare 설정·배포·DNS·공통 Controller 변경 0. 공통 설치기/Runner 신규 FIRST FAIL 0, **프로세스 총괄 신규 인계 0**. 부적절한 역할 전가 없음.
 - **다음 필수 실행 1개:** W06 #75 Cloudflare `Workers & Pages → zgmini-migration-candidate-r5 → Production Deployments`에서 active Version ID와 linked domain `zgmini.kr`을 **read-only**로 대조해 `9b278260-aa23-4eea-92c1-dce57f5fd910` 및 현재 main source chain 확인 후 사용자 화면 육안 확인. 불일치면 수동 배포/롤백 금지, 원인만 조사. 읽기 접근 지속 차단 시 반복 재시도하지 않고 다른 미완료 W06-소유 단계로 이동, #75 PARTIAL 유지.
-- **원격 인계 검증:** 이번 기록 커밋 후 파일/브랜치 HEAD 재조회 결과로 확정.
+- **원격 인계 검증:** 첫 기록 커밋 `040a6a3a5d34710faea720dc4a4143f51fc4538b` / blob `093ad1480d85686fc6736e7e95a4ded3f60087b9`을 원격 브랜치에서 직접 재조회하여 heading/#75 사실/진도/오류/다음 실행 **PASS**. 확인 사실을 기록하는 본 문서 전용 후속 커밋은 별도 원격 조회 후 최종 보고.
