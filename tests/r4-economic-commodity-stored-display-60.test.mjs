@@ -248,7 +248,7 @@ test('future, non-month, impossible and conflicting period points never produce 
   {label:'2026-10-01',value:100},{label:'2026-02-30',value:80},
   {label:'2026-09-20',value:10}]};
  assert.equal(score(noise),f.domain.score);
- assert.equal(chart(noise.domain??noise).at(-1).date,'2026-09-01');
+ assert.equal(chart(noise).at(-1).date,'2026-09-01');
  assert.equal(chart(noise).some(x=>x.date==='2026-10-01'||x.date==='2026-02-30'||x.date==='2026-09-20'),false);
  assert.deepEqual(f.domain.trend,original);
 });
@@ -263,7 +263,7 @@ test('partial published historical point displays as null, never as zero or fabr
 
 test('producer interrupted by missing intermediate 4 months resets the historical plot before resuming',()=>{
  const data=sources();
- data.wtiRows=data.wtiRows.filter(x=>!['2026-03-01','2026-04-01','2026-05-01','2026-06-01'].includes(x.observationDate));
+ data.wtiRows=data.wtiRows.filter(x=>!['2026-01-01','2026-02-01','2026-03-01','2026-04-01'].includes(x.observationDate));
  const out=fixture(data);
  assert.equal(out.calc.status,'READY');
  assert.equal(score(out.domain),out.domain.score);
