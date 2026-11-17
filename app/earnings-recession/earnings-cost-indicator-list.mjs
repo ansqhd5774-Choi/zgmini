@@ -62,9 +62,13 @@ export function buildEarningsCostIndicatorView(payload){
   if(valid){
     // Show the optional service pair only when both published observations
     // are READY and fresh. PARTIAL or STALE service rows keep the base five.
-    const hasServicePair=OPTIONAL_EARNINGS_COST_INDICATORS.every(meta=>
-      payload.rows.some(row=>row?.indicatorId===meta.id&&safeBlsRow(row)
-        &&row.status==='READY'&&row.freshness?.status==='FRESH'));
+    const hasServicePair=OPTIONAL_EARNINGS_COST_INDICATORS.every(meta=>{
+      // The public Worker rejects duplicate IDs. Keep this UI read model
+      // fail-closed if an invalid/duplicated payload ever reaches the client.
+      const matches=payload.rows.filter(row=>row?.indicatorId===meta.id);
+      return matches.length===1&&safeBlsRow(matches[0])
+        &&matches[0].status==='READY'&&matches[0].freshness?.status==='FRESH';
+    });
     const seen=new Set();
     for(const row of payload.rows){
       if(!safeBlsRow(row)||seen.has(row.indicatorId)
