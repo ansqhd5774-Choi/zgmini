@@ -878,3 +878,14 @@
 - **실제 차단 분리:** [A #2032](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2032) `BLOCKED/RETIRED_IRAN_INVENTORY_UNAVAILABLE`, [A #2036](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2036) `BLOCKED/PROTECTED_TASK_XML_QUERY_FAILED` PREVALIDATION/쓰기 0. 공통 Task 보호 조회 최소 범위 인계 [중앙 #68/6948575710](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6948575710), 정상 회복 영수증 아직 없음. 이란 R13 재등록이나 조회 보호 우회 금지. 운영 Host B/Controller B 및 기존 BED 정확 Writer B #2038 설치 요청은 미발행. ETA539 운영 원본 정확 SHA 아직 미확정.
 - **다음 직접 실행:** 공통 Task 보호 조회의 정상 증거가 확인되는 즉시 W04가 실PC HEAD/config.source/원본 SHA를 기존 A급으로 정확 확인 → 조건에 맞는 BED 1파일 Writer B 단회 → 보존형 신규 16파일 Host source B 정확 CAS/승인 명세 → 기능 전용 Controller 출력 B 설치 검증 → 실제 A에서 raw 미인증 27개 원인/공급자/수집월 재조회. ETA539는 별도 원본 확인 후 최소 Writer B. 아무 때나 신규 수집/소급 원자료·Run 조작·DB/D1 게시·자동 후보 승격 불가. 예약 자연 검증은 전체 기능 후 후속.
 - **정확 진행률:** **27/72 DONE(37.5%), 잔여 45**. PIT-04-05 `SOURCE_DIAGNOSTIC_CI_PASS / RUNTIME_TASK_PROTECTION_BLOCKED / RAW_LINEAGE_HOLD`, PIT-04-07 `SOURCE_GUARD_MERGED / PC_UNVERIFIED`. 총괄 신규 기능 인계 0; 기존 공통 Task 보호 조회 1건만 별도 소관.
+
+## 77. PIT-04-05 — 공통 보호 조회 후속 실측 및 W04 적용 게이트 (2026-11-17 KST)
+
+<!-- W04-PIT0405-CORE-A2041-READBACK-20261117 -->
+
+- 시작: 27/72 DONE(37.5%), 잔여 45. 기존 #2032/#2036의 PREVALIDATION 실패 기록은 유지한다.
+- 신규 확인: [공통 core-status #2041](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2041) 원격 결과 JSON/TXT는 2026-11-17T13:02:22Z PASS/CORE_READONLY_DIAGNOSIS. Controller SHA f7f1559bc0ef15bb9b375982d048369c474c490f, Core 운영 승인 SHA 2070ff53549e2f9f2cea57d5af7e1d83f9fd7388, Core/Korea Task XML SHA 조회 성공, retired Iran R13 APPROVED_RETIRED_ABSENT, collection COMPLETE/Writer VERIFIED, 보호 SHA 전후 일치, provider/D1 호출 및 SQLite open 0. 이 시점 읽기 전용 보호 조회 성공 증거이나 공통 장애의 영구 복구 또는 W04 B 승인 자체는 아니다.
+- 별도 [공통 source B #2052](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2052)는 SUCCEEDED/BUNDLE_REGISTERED 및 HOST_CAS_READBACK이지만 W04 신규 0193056bdb47bcf6c911f17623b6c302c8199c4c source 등록이라고 입증되지 않았다. W04 승격 근거로 사용하지 않는다.
+- W04 남은 조건: 신규 Host 16파일은 [manifest PR #2050](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2050)만 병합됨. 별도 정확 B 승인/Host CAS 등록 및 [Controller PR #2043](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2043) 운영 설치 필요. BED 1파일 [Writer B manifest PR #2038](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2038)은 병합됐지만 W04 운영 preimage/lease/보호 상태 설치 직전 확인과 실제 B 영수증이 없다.
+- 다음 직접 실행: 기존 승인 A에서 W04 운영 HEAD/config.source·원본 SHA·lease를 중복 요청 없이 확인 → 정확 CAS/승인 일치 시 BED 1파일 Writer B 단회 → 신규 16파일 Host source 승인 JSON 정식 검증 및 보존형 B → Controller 출력 B → 실제 A로 미인증 27개 provider/수집월/사유 집계. W04 소관 소스·manifest·실행을 총괄에게 이관하지 않는다. 운영 설치/DB/D1/공급자 호출/후보 승격 이번 회차 0.
+- 종료: 27/72 DONE(37.5%), 잔여 45. PIT-04-05 SOURCE_DIAGNOSTIC_CI_PASS / TASK_READONLY_RECHECK_PASS / W04_B_NOT_APPLIED / HOLD_INCOMPLETE_SOURCE_LINEAGE.
