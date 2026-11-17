@@ -40,3 +40,11 @@ export function summarizeThemePublicReadback(rows,{observedAt=null}={}){
   'ALL_KEYS_PRESENT_METADATA_ONLY':'PARTIAL_OR_INVALID',observedAt:at,
   unreadFields:[...unreadFields],feeds};
 }
+
+// Explicitly bounded output for the seven approved theme output/current keys.
+// Unlike the legacy all-feeds report, this contains no unrelated feed rows,
+// market snapshot, projection values, D1 request statistics or credential data.
+export function themeSevenMetadataOnly(rows,{observedAt=null}={}){
+ const summary=summarizeThemePublicReadback(rows,{observedAt});
+ return {at:summary.observedAt,themePublicReadback:summary};
+}
