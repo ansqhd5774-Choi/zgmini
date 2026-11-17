@@ -11,9 +11,8 @@
 >
 > **다음 필수 행동/STOP:** 사용자 직접 C급 설정 완료가 실제 증명되면 자연 Core cycle 이후 기존 허용 A 신규 고유 단회로 Event129 활성·Task/VBS/Node PID/생성시각/E-lock owner 증명; PASS 때에만 승인된 4파일 PC preimage·source pin·기존 Writer/Core lease 재조회 및 새 승인 Census B 2GET 검토. 사용자 미승인·증거 미확보면 소유권 차단 유지/중복 A·B 발행 금지; 독립 물가 기능 작업 지속. **완료 30/71(42.3%), 미완료 41.** 이번 조회·댓글·문서 변경을 운영 PC 수집·게시 완료로 계산하지 않음.
 
-## 과거 인계 스냅샷 표식
 <!-- W01-20261117-COORD-FOURFILE-GO-CENSUS-INDEPENDENT -->
-## 최신 인계 스냅샷 — W01 2026-11-17 (W03 공동 Controller 4파일 GO·Census 단회 B와 분리·30/71)
+## 과거 인계 스냅샷 — W01 2026-11-17 (W03 공동 Controller 4파일 GO·Census 단회 B와 분리·30/71)
 
 > **새 정본 확인(2026-11-17 17:58 KST):** 프로세스 총괄 [중앙 #68/6943445244](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6943445244)에서 기존 W01 R13 엔진 안전 수정과 W03 R47 고정 읽기 전용 조회의 누적 Controller **정확 4파일 B 효과 GO**가 신규 결정됨. 설치 전 Controller `c9a7cc6a37dedf2a8ae46bd1171ad133ba4fb969` → 승인 대상 `39521f40c58a9f6bb79227e0f41d9cd379fc7903`이지만, 이는 **운영 PC 설치/사후검사 성공 증거가 아님**. 이번 4파일 설치 실행 소유자는 **W03 원담당**이며 W01이 해당 설치를 대신 요청하거나 Census 단회 B의 전역 Gate로 삼지 않음.
 >
