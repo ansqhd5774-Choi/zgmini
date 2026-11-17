@@ -1,3 +1,11 @@
+## 2026-11-18 05:03 KST W03 10/68 — 공통 B 등록 operation 배선 부재 확인 (소스 읽기 전용)
+
+- **진행률:** 시작 9/68(13.2%) → 종료 9/68(13.2%); 10단계 미완료. 예약 검증은 전체 기능 완료 후 후속.
+- **신규 원격 증거:** pc-control main commit `4a79ebf47939819c6683208e0981bcb67d0e50fe`의 `config/operations.json` 전체 operation 목록에는 `pc-source-bundle-register`가 **없다**. 같은 main의 `controller/operations.mjs`에도 해당 operation 문자열 및 `source-bundle-register` import가 **없다**. 반면 `tools/source-bundle-register.mjs`에는 `SOURCE_BUNDLE_OPERATION='pc-source-bundle-register'`라는 상수와 source-only CAS 계획기가 존재한다. 즉 **현재 GitHub main에서 등록 계획기는 있지만 실제 Controller operation 배선은 확인되지 않으며**, 이 파일만으로 Host approvedSources를 변경할 수 없다. 이는 실PC 설치 Controller 버전/Host의 모든 대체 경로 부재를 증명하지는 않는다.
+- **실행 판단:** #2053 `SHADOW_SOURCE_NOT_APPROVED`의 해결을 위해 source-only helper를 PC에서 직접 실행하거나 Host 파일을 임의 편집하지 않는다. W03 원담당은 정확 source manifest·의존성 closure·entrypoint/branch/sha·승인 PR을 준비할 책임이 있다. **공통 Controller operation 등록/배선 및 B급 보호 승인은 공통 소유자 범위**로만 좁혀 요청해야 하며, W03 기능 계산·수집은 넘기지 않는다. 기존 Host 승인 SHA 목록은 UNKNOWN, B 실행은 NOT_VERIFIED.
+- **영향:** 이번 회차 읽기 전용 소스 조사 및 진행기록 갱신만 수행. 신규 A/B 요청·운영 PC/Provider/SQLite/D1/Task/배포 변경 0. #2049 CMD 설치 PASS 유지; 63 ETF+SPY checkpoint 전진 및 R25/R32 신규 private 결과는 NOT_VERIFIED.
+- **다음 작업:** 기존 승인 읽기 전용 Host 조회 operation의 출력 범위로 실제 approvedSources W03 항목 재사용 가능 여부 확인. 없으면 W03 정확 source bundle/승인 manifest 작성과 공통 B adapter 배선의 좁은 범위만 별도 검토한 뒤 단회 등록→신규 Shadow A→원자료/계산 검증. 공개 권리 없는 D1 게시 금지.
+
 ## 2026-11-18 03:57 KST W03 10/68 — Source bundle 등록 도구의 실제 실행 경계 정밀 확인
 
 - **진행률:** 시작 9/68(13.2%) → 종료 9/68(13.2%), 10단계 미완료. 기존 #2049 CMD 설치 PASS 및 #2053 Shadow `SHADOW_SOURCE_NOT_APPROVED` 보존.
