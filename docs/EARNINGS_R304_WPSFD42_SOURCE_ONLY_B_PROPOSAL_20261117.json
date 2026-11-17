@@ -4,7 +4,7 @@
   "scope": "PC_WRITER_APPROVED_FILE_OVERLAY_ONLY",
   "sourceRepository": "ansqhd5774-Choi/zgmini",
   "sourceBranch": "codex/w05-bls-service-r3-05-lineage-ci-20261117",
-  "candidateSourceSha": "8428729d53571af63a6dbd58bd602c7f68061244",
+  "candidateSourceSha": "274f8a8e925daf0456bd4dd1c6643faa27eb5d62",
   "baseHead": "2070ff53549e2f9f2cea57d5af7e1d83f9fd7388",
   "baseConfigSourceSha": "2070ff53549e2f9f2cea57d5af7e1d83f9fd7388",
   "sourceRoot": "E:\\ZGmini\\projects\\zgmini-earnings-history-pc-release",
