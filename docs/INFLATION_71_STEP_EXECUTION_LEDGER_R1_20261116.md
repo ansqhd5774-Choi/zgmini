@@ -2,7 +2,7 @@
 
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
-## 최신 인계 스냅샷 — W01 2026-11-17 (PR #1871 CI PASS·설치 3런타임 승인/독립 재리뷰 미완료·Event129 enabled 현행 미실측·30/71)
+## 최신 인계 스냅샷 — W01 2026-11-17 (Census M3 명시 날짜 fallback 무결성 수정 PR #1215·격리 CI 검증 중·운영 수집 차단 유지·30/71)
 
 > **다음 작업자는 이 스냅샷부터 시작한다.** 진행 기록 파일 자체가 지정된 정본이고, 상위 계획은 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)이다. 과거 이력의 오래된 설치 SHA·대기 문구가 이 스냅샷을 덮어쓰지 않는다.
 
@@ -581,3 +581,14 @@ B4 10 | Production·화면 최종 검증
 - **실행 가능한 독립 대안(사용자 직접 1회 C급):** 현장 채널 상태가 설치 대기로 계속 미확인일 때 사용자 PC 관리자 GUI `eventvwr.msc` → Applications and Services Logs/Microsoft/Windows/TaskScheduler/Operational의 현재 Enable/Disable 메뉴로 직접 확인 가능. 실제 `disabled`일 경우만 사용자 관리자 권한으로 `Enable Log` 실행을 선택할 수 있으나, 승인 없이는 작업자가 시행하지 않음. 로그를 켠 경우도 Event129 자체가 과거 소유권 증거가 되지는 않음; 자연 Core 실행에 연결되는 PID/WMI/lock 증명이 추가로 필요. 활성인데 로그 내용이 없는 것은 Core 미실행의 증거 아님.
 - **LAST PASS / FIRST OPEN:** 공유 #1841 복구 이전 DONE, #1871 source CI 2/2 PASS·#1854 엔진 exact Windows 58/58 PASS. **실제 신규 Controller 배포/현재 Event129 channel enabled/Task-linked Core 소유권은 미확인**, Census #1818(0GET) consumed/replay FORBIDDEN, 최초 실제 Census 저장/게시 미완료. 배포 우회·산식/DB 계약 변경·무관한 Gate 추가 없음.
 - **다음 필수 조치:** 공용 Controller owner가 #1854 독립 리뷰와 W03 한 파일을 포함한 정규 allowFiles/타깃/manifest/lease를 승인·설치한 뒤 설치 SHA/JSON·TXT를 조회하거나, 사용자가 1회 관리자 GUI에서 Operational 현행 활성 여부를 직접 확인(필요시 관리자 활성화). 그 후 W01은 자연 Core PID·WMI·lock 링크를 확보해 승인된 새 고유 Census M3 B(최대 2GET) → 저장 SHA/storedAt → 26/26 → Writer/D1/API·UI 7/7 완료 순서로 진행. 공유 Issue 기록만으로 타 ChatGPT 담당 실제 인수로 간주하지 않는다.
+
+## 2026-11-17 KST — Census M3 #28 관측월 출처 검증 결함 최소 수정 (source-only)
+
+- **시작→종료 진행률:** **30/71(42.3%) → 30/71(42.3%)**. Census #28 실제 운영 원자료 MISSING, 기존 공개 6/7 READY·1 PENDING. 실제 PC/공급자 API/DB/D1/Task/Controller/Cloudflare 변경 0.
+- **독립 소스 결함 근거:** `scripts/pc-writer/inflation-causal-candidate-census-m3.mjs`의 `normalizeCensusM3Inventories`는 `time_slot_date`가 **명시적 비정상 날짜**인 경우 `monthDate()` 실패를 `null`로 취급하여 `time` 대체 월(예: 명시 2026-02-30, time=2026-02)을 정상 월로 채택할 수 있었다. 이 경우 실제 Census 관측월의 출처 신뢰성이 없는 행이 정상 수치처럼 저장될 위험. **기존 진짜 빈 날짜 fallback, 정상 명시·대체 날짜 일치 규칙은 유지**.
+- **최소 소스 변경:** W01 지정 브랜치 소스 commit `db9031259b40b853112213e71f5ab206ab23b2cc`, 파일 blob `cf6cb4c227130326256fa8aa6787c64fbe8c90d1`. `time_slot_date`가 실제로 non-empty인데 형식/실제 날짜가 잘못됐으면 다른 `time`으로 대체하지 않고 해당 행을 `invalid`로 격리한다. 기존 MTM/TI/SA/US 공급자 선택자, 2GET, USD million 단위, 0/null/결측, checkpoint, 승인 산식·가중치·TTL 변경 없음.
+- **회귀시험:** 같은 지정 브랜치 테스트 commit `c72d351acc2e044bcf42e0e2fcd8bbfcefa98a5a`, `scripts/pc-writer/inflation-causal-candidate-census-m3.test.mjs` blob `ef417b507d2223a8922f37b9bfdf0794aae6e2f1`. 두 명시적 비정상 날짜(불가능한 달력일/비자정 시각)는 격리, 명시 날짜 공백 + 유효한 `time` 및 정상 두 날짜 일치 행은 계속 허용하는 1 신규 테스트.
+- **main 적용 후보:** [2파일 소스 PR #1215](https://github.com/ansqhd5774-Choi/zgmini/pull/1215), exact head `af03eadd4f70cbfc67f74f9d882c94b338ba3824` (기준 main `1282357827664a35dc3ae42422fed86885d4b171`). 원본 W01 브랜치와 소스/테스트 Git blob 동일. 원본은 승인 전 미병합이며 실제 설치/배포 성공 아님.
+- **CI 실행 계약:** 기본 app `node.js.yml`은 `node --test tests/*.test.mjs`만 실행하여 `scripts/pc-writer/...census-m3.test.mjs`를 직접 검증하지 못한다. 정확한 소스 두 blob에 **임시 기존 테스트 엔트리 import 1행만 추가**한 [격리 Draft proof PR #1216](https://github.com/ansqhd5774-Choi/zgmini/pull/1216) HEAD `c108878141abf68f22d0799dd2735aa6f5e679d4`, 실제 [Node.js CI Run #44009658547](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44009658547) 실행 중(초기 조회). CI 최종 PASS/FAIL을 조회하기 전에는 검증 완료로 주장하거나 원본 #1215를 병합하지 않는다. Proof PR은 검증 후 닫고 미병합 유지.
+- **마지막 보호 상태:** 제어 #1854 독립 SOURCE_REVIEW_HOLD·#1866 미병합·통합 Draft #1871 미설치, 실제 설치 Controller 마지막 `384ffd09...`, Event129 enabled 현행 미실측, 자연 Core Task-linked owner 증거 없음. 기존 승인 Census B #1818 0GET STOP은 소비됨/재실행 금지.
+- **다음 단일 행동:** 격리 Node CI에서 정확 Census 신규 회귀 포함 결과 확인→원본 2파일 PR 검증 기록·임시 Proof 종료→공유 승인 B 경로와 Core owner 별개 복구 후에만 신규 Census #28 단회 수집/저장·SHA/readback. 단독 source fix를 26/26 저장 완료로 승격하지 않음.
