@@ -123,14 +123,14 @@ try{
    await root.waitFor({state:'visible',timeout:35000});
    await live.waitForFunction(expected=>{
     const root=document.querySelector('[data-testid="kr-composite"]');
-    const score=root?.querySelector('.cnn-score-value')?.textContent?.replace(/\\s+/g,'')??'';
+    const score=root?.querySelector('.cnn-score-value')?.textContent?.replace(/\s+/g,'')??'';
     return root?.getAttribute('data-market-state')==='ready'
       && score.includes(expected);
    },Number(composite.displayScore).toFixed(1),{timeout:35000});
    const domValue=await root.locator('.cnn-score-value').first().textContent();
    const domState=await root.getAttribute('data-market-state');
    assert.equal(domState,'ready');
-   assert.ok((domValue??'').replace(/\\s+/g,'').includes(Number(composite.displayScore).toFixed(1)));
+   assert.ok((domValue??'').replace(/\s+/g,'').includes(Number(composite.displayScore).toFixed(1)));
    const headerDate=await root.locator('.fg-card-header-date').allTextContents();
    const observed=String(composite.observationDate);
    const dateLabel=observed.slice(0,4)+'.'+observed.slice(4,6)+'.'+observed.slice(6,8);
@@ -140,7 +140,7 @@ try{
    console.log('W06_37_LIVE_KOREA_UI',JSON.stringify({
     width,htmlStatus:html?.status(),apiHttpStatus:payloadResponse.status(),
     publishedStatus:composite.status,observedDate:composite.observationDate,
-    apiDisplayScore:composite.displayScore,domScore:(domValue??'').replace(/\\s+/g,''),
+    apiDisplayScore:composite.displayScore,domScore:(domValue??'').replace(/\s+/g,''),
     domState,headerDate:headerDate.join(' ').slice(0,120),pageErrors:errors
    }));
    assert.deepEqual(errors,[],'No unhandled page errors in real Korea detail');
