@@ -2,7 +2,16 @@
 
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
-## 최신 인계 스냅샷 — W01 2026-11-17 (직접 Task Engine 경로 실PC 26/26 불능·Event129 disabled·Census source 양 브랜치 동기화·30/71)
+<!-- W01-20261117-COORD-FOURFILE-GO-CENSUS-INDEPENDENT -->
+## 최신 인계 스냅샷 — W01 2026-11-17 (W03 공동 Controller 4파일 GO·Census 단회 B와 분리·30/71)
+
+> **새 정본 확인(2026-11-17 17:58 KST):** 프로세스 총괄 [중앙 #68/6943445244](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6943445244)에서 기존 W01 R13 엔진 안전 수정과 W03 R47 고정 읽기 전용 조회의 누적 Controller **정확 4파일 B 효과 GO**가 신규 결정됨. 설치 전 Controller `c9a7cc6a37dedf2a8ae46bd1171ad133ba4fb969` → 승인 대상 `39521f40c58a9f6bb79227e0f41d9cd379fc7903`이지만, 이는 **운영 PC 설치/사후검사 성공 증거가 아님**. 이번 4파일 설치 실행 소유자는 **W03 원담당**이며 W01이 해당 설치를 대신 요청하거나 Census 단회 B의 전역 Gate로 삼지 않음.
+>
+> **W01 기능 직접 차단 불변:** [공유 A #1951](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1951) 210초 26/26 표본에서 Task Engine→PID/lock owner 검증 0회, [W01 A #1955](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1955) `TaskScheduler/Operational enabled=false` 실PC 실측. 기존 `inflation-census-api-b` 승인 B는 Controller R47/engine 변경과 독립이므로 이 공동 4파일 GO는 #1818 실패를 해소하지 않음. Event129 채널 관리자 C급 활성화는 사용자 직접 수행만 허용; 승인 없는 Task/lock/source/manifest 변경과 동일 목적 A/B 재시도 0.
+>
+> **다음 필수 행동:** C급 설정 변경을 사용자에게 한 번 안내하고 완료 증거를 기다리는 동안 독립 물가지표 source/readback만 진행한다. 채널 실제 활성화 후 자연 Core 실행의 Task→VBS→Node PID·생성시각·공유 잠금 일치, 기존 승인 4파일 PC preimage/lease를 새 고유 허용 A로 검증하고 **PASS에만** 신규 Census B 2 GET→원자료 SHA/storedAt→Writer D1/API/UI 7/7 진행. C 조치 미수행이면 `RUNTIME_OWNER_EVIDENCE_MISSING` 유지. **완료 30/71(42.3%), 미완료 41**, 이번 기록/검토만으로 체크 완료 증가·PC 설치/수집/게시 성공을 주장하지 않음.
+
+## 과거 인계 스냅샷 — W01 2026-11-17 (직접 Task Engine 경로 실PC 26/26 불능·Event129 disabled·Census source 양 브랜치 동기화·30/71)
 
 > **추가 확인(2026-11-17):** 기실행 승인 [PC #1951/Run 44046727060](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1951)는 정확 [PC #1951 댓글 #6942882251](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1951#issuecomment-6942882251) 참조. 210.018초 26개 표본에서 lock present 26/26, Task Engine visible 0/26, Task-linked Node 0/26, `CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE` 26건. Event129 [#1955](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1955) `logConfig.enabled=false` 별도 실PC 확정. 승인 B `observeLiveCoreLockOwner(APPROVAL_SCHEMA_V2)`의 Task Engine↔WMI direct 성공 경로는 코드상 존속하지만 현재 실PC 해당 증거 **없음**; Event129+정확 VBS/PID/lock 대체 경로는 채널 비활성 시 과거 이벤트를 생성할 수 없어 증명 불가. **동일 유형 A/B 소모성 재요청 NO**. Task/예약/lock과 공통 가드 변경 0. 개발 [PR #1238](https://github.com/ansqhd5774-Choi/zgmini/pull/1238) main merge 원문 두 파일을 W01 전담 브랜치에도 정확 Git blob 2/2 일치 동기화: source commit `dee1154e`, test commit `1afa090e`. PC 고정 approved source 및 B pin 변경 없음. 세부 맨 아래.
 ## 과거 인계 스냅샷 — W01 2026-11-17 (R13 스냅샷 PASS·Event129 enabled=false 실측·Census 무결성 PR #1238 main 완료·30/71)
