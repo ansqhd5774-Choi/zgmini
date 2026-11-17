@@ -74,9 +74,13 @@ test('each official original source and exact K1-R2 4 indicator identities are p
 });
 
 test('new eligible WTI observed month changes K1-R2, carries other three without inventing same-month prices',()=>{
- const old=fixture(),input=sources();
- input.wtiRows.push({observationDate:'2026-10-01',value:900});
- const newer=fixture(input);
+ const input=sources();
+ // K1 monthly shock requires both previous month and three-month reference.
+ // August -> October alone is NOT a scored October observation.
+ input.wtiRows.push({observationDate:'2026-09-01',value:167});
+ const old=fixture(input);
+ const newerInput={...input,wtiRows:[...input.wtiRows,{observationDate:'2026-10-01',value:900}]};
+ const newer=fixture(newerInput);
  assert.equal(newer.calc.status,'READY');
  assert.equal(newer.domain.observationDate,'2026-10-01');
  assert.deepEqual(newer.domain.indicators.map(x=>x.observationDate),
@@ -99,7 +103,14 @@ test('same-month API re-query does not fabricate an October observed price or ch
 
 test('valid carry for 2 calendar months and expiry on month 3 is approved',()=>{
  const data=sources();
- for(const key of Object.keys(data))data[key].push({observationDate:'2026-09-01',value:900+Object.keys(data).indexOf(key)*200});
+ for(const [i,key] of Object.keys(data).entries()){
+  const newRow={observationDate:'2026-09-01',value:900+i*200};
+  // An existing monthly observation must be corrected in place; the
+  // official normalizer rejects conflicting duplicate observations.
+  const existing=data[key].findIndex(r=>r.observationDate===newRow.observationDate);
+  if(existing>=0)data[key][existing]=newRow;
+  else data[key].push(newRow);
+ }
  const october=fixture(data,'2026-10-01');
  const november=fixture(data,'2026-11-01');
  const december=fixture(data,'2026-12-01');
