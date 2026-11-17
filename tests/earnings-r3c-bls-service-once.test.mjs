@@ -186,6 +186,44 @@ test('service-only source rejects unrelated series and conflicting repeated mont
   assert.throws(()=>normalizeSeries(conflict,SERVICE_SERIES),/BLS_DUPLICATE_PERIOD_CONFLICT_NO_WRITE/);
 });
 
+test('same-hash WPSFD42 snapshot with damaged stored lineage cannot pass idempotent readback',()=>{
+  const corruptions=[
+    db=>db.prepare(`UPDATE api_history_snapshots_v1 SET status=?
+      WHERE provider='BLS' AND dataset='WPSFD42'`).run('INVALID'),
+    db=>db.prepare(`UPDATE api_history_snapshots_v1 SET retrieved_at=?,as_of=?
+      WHERE provider='BLS' AND dataset='WPSFD42'`)
+      .run('2026-10-28T03:00:00.000Z','2026-10-28'),
+    db=>{
+      const original=db.prepare(`SELECT provenance_json FROM api_history_snapshots_v1
+        WHERE provider='BLS' AND dataset='WPSFD42'`).get();
+      const meta=JSON.parse(original.provenance_json);
+      meta.authority='OTHER';
+      db.prepare(`UPDATE api_history_snapshots_v1 SET provenance_json=?
+        WHERE provider='BLS' AND dataset='WPSFD42'`).run(JSON.stringify(meta));
+    },
+  ];
+  for(const corrupt of corruptions){
+    const db=newDb();
+    try{
+      const service=buildPlans(normalizeSeries(serviceResponse(),SERVICE_SERIES),
+        '2026-10-27T03:00:00.000Z','b'.repeat(64));
+      assert.equal(insertPlans(db,service).verified,1);
+      corrupt(db);
+      // This namespace-only guard does not validate full lineage; the
+      // transactional readback must reject a poisoned existing snapshot.
+      assert.deepEqual(checkSchema(db,{includeServices:true}),
+        {existingSnapshots:1,existingChunks:1});
+      assert.throws(()=>insertPlans(db,[...plans(),...service]),
+        /BLS_STORED_LINEAGE_MISMATCH_ROLLBACK/);
+      const preserved=db.prepare(`SELECT dataset FROM api_history_snapshots_v1
+        WHERE provider='BLS'`).all().map(x=>x.dataset);
+      assert.deepEqual(preserved,['WPSFD42']);
+      assert.equal(db.prepare(`SELECT COUNT(*) AS n FROM api_history_chunks_v1
+        WHERE provider='BLS'`).get().n,1);
+    }finally{db.close();}
+  }
+});
+
 test('R3C manual diagnostic TXT is emitted under user TEMP rather than source checkout',()=>{
   const stamp='20261117-114500Z';
   assert.equal(resultLogPath(stamp),
