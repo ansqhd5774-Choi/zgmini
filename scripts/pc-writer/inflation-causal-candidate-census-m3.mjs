@@ -21,6 +21,9 @@ const monthDate=x=>{
   const date=raw.replace(/^(20\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])) 00:00:00(?:\.0+)?$/, '$1');
   const match=date.match(/^(20\d{2})-(0[1-9]|1[0-2])(?:-(0[1-9]|[12]\d|3[01]))?$/);
   if(!match)return null;
+  // Monthly EITS observations must start on day 01. Never coerce an
+  // explicit intra-month date into a fabricated first-of-month observation.
+  if(match[3]&&match[3]!=='01')return null;
   if(match[3]&&new Date(`${date}T00:00:00Z`).toISOString().slice(0,10)!==date)return null;
   return `${match[1]}-${match[2]}-01`;
 };
@@ -57,7 +60,11 @@ export function normalizeCensusM3Inventories(payload){
     const timeDate=monthDate(row.time);
     const date=slotDate??timeDate;
     const raw=String(row.cell_value??'').replace(/,/g,'').trim();
-    if(!date||(slotDate&&timeDate&&slotDate!==timeDate)){
+    // A present but malformed official monthly date is not missing data.
+    // Never silently replace it with the alternate `time` month.
+    const invalidExplicitDate=row.time_slot_date!=null&&
+      String(row.time_slot_date).trim()!==''&&!slotDate;
+    if(invalidExplicitDate||!date||(slotDate&&timeDate&&slotDate!==timeDate)){
       diagnostics.invalid++;continue;
     }
     if(raw===''||raw==='-'||raw.toUpperCase()==='NA'||raw.toUpperCase()==='N'){
