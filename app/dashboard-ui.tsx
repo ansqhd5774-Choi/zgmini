@@ -197,8 +197,10 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
  const busy=marketLoading;
  const overallRawScore=market?.overall?.status==='READY'&&validPublicScore(market.overall.score)?market.overall.score:null;
  const overallScore=overallRawScore===null?null:amplifyCompositeDisplayScore(overallRawScore);
- const overallDayChange=compositeDayDelta(market?.overall?.trend,overallRawScore);
- const overallPeriodChange=compositePeriodDelta(market?.overall?.trend,overallRawScore,periodDays);
+ const verifiedOverallHistory=useMemo(()=>normalizeMarketTrendPointsR4(market?.overall?.trend,market?.updatedAt),
+  [market?.overall?.trend,market?.updatedAt]);
+ const overallDayChange=compositeDayDelta(verifiedOverallHistory,overallRawScore);
+ const overallPeriodChange=compositePeriodDelta(verifiedOverallHistory,overallRawScore,periodDays);
  const overallArrows=arrows('composite',overallScore);
  const overallComparisons=[{label:'전일',change:overallDayChange},{label:({'1':'1일','7':'1주','30':'1개월','90':'3개월','180':'6개월','365':'1년'} as Record<string,string>)[String(periodDays)]??`${periodDays}일`,change:overallPeriodChange}];
  const overallStatus=busy?'불러오는 중':marketError?'데이터 확인 중':publicStatusLabel(market?.overall?.status);
@@ -206,7 +208,7 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
  const totalDomains=market?.dataQuality?.totalDomains??12;
  const coverageWeight=market?.dataQuality?.coverageWeight??0;
  const overallTrend=useMemo(()=>{
-  const daily=marketTrendWindow(amplifyCompositeDisplayTrend(normalizeMarketTrendPointsR4(market?.overall?.trend)),periodDays);
+  const daily=marketTrendWindow(amplifyCompositeDisplayTrend(verifiedOverallHistory),periodDays);
   const archived=compositeArchive?.days===periodDays?compositeArchive.points.flatMap(point=>{
    const display=amplifyCompositeDisplayScore(point.score);
    return display===null||!Number.isFinite(Date.parse(point.observedAt))?[]:[{label:point.observedAt,value:display}];
@@ -215,14 +217,14 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
   // may not yet contain its calculation time. Never synthesize earlier points.
   const current=overallScore===null||!market?.updatedAt?null:{label:market.updatedAt,value:overallScore,boundToPublishedCard:true};
   return mergeCompositeObservedDisplay(daily,archived,periodDays,current);
- },[market?.overall?.trend,market?.updatedAt,overallScore,compositeArchive,periodDays]);
+ },[verifiedOverallHistory,market?.updatedAt,overallScore,compositeArchive,periodDays]);
  const hasDatedHistory=useMemo(()=>overallTrend.length>1||
-  [market?.overall?.trend,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPointsR4(data),365).length>1),
-  [market?.overall?.trend,market?.domains,overallTrend]);
+  [verifiedOverallHistory,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPointsR4(data,market?.updatedAt),365).length>1),
+  [verifiedOverallHistory,market?.domains,market?.updatedAt,overallTrend]);
  // Independent diagnostic responses and arrow expiry do not change these histories.
  const domainChartTrends=useMemo(()=>r55DomainIds.map(id=>{
   const domain=market?.domains?.find(d=>d.id===id);
-  const daily=marketTrendWindow(normalizeMarketTrendPointsR4(domain?.trend),periodDays);
+  const daily=marketTrendWindow(normalizeMarketTrendPointsR4(domain?.trend,market?.updatedAt),periodDays);
   const score=domain?.status==='READY'&&validPublicScore(domain.score)?domain.score:null;
   const current=score===null||!market?.updatedAt?null:{label:market.updatedAt,value:score};
   return appendPublishedDomainCurrent(daily,current,periodDays);
