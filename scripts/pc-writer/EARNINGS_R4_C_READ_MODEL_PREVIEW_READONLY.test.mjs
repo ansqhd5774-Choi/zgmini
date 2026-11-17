@@ -83,6 +83,49 @@ function withServiceDb(options,fn) {
   try{return fn(db);}finally{db.close();}
 }
 
+test('service-only stored WPSFD42 builds a verified two-row checkpoint without any base BLS snapshots',()=>{
+  const db=testDb();
+  try{
+    const service=response({services:true}).Results.series.at(-1);
+    const plans=buildPlans(normalizeSeries({Results:{series:[service]}},['WPSFD42']),
+      '2026-10-26T18:00:00.000Z','c'.repeat(64));
+    assert.deepEqual(insertPlans(db,plans),
+      {insertedChunks:1,insertedSnapshots:1,verified:1});
+    // Base projection remains strict: the three-source cohort is absent.
+    assert.throws(()=>buildPreview(db,{generatedAt:GENERATED}),
+      /BLS_DIRECT_SNAPSHOTS_MISSING/);
+    const {payload,diagnostics}=buildServiceSourcePreview(db,{generatedAt:GENERATED});
+    assert.deepEqual(payload.rows.map(row=>row.indicatorId),
+      ['bls_ppi_services_yoy_sa','bls_ppi_services_index']);
+    assert.equal(payload.status,'READY');
+    assert.equal(payload.rows[0].value,100*(157.666/150.273-1));
+    assert.equal(payload.rows[1].value,157.666);
+    assert.equal(payload.sourceStoredAt,Date.parse('2026-10-26T18:00:00.000Z'));
+    assert.deepEqual(payload.observedThroughBySeries,{WPSFD42:'2026-09'});
+    assert.equal(diagnostics.snapshotsChecked,1);
+    assert.equal(diagnostics.sourcePartition,'WPSFD42_ONLY_NO_BASE_REWRITE');
+    assert.equal(diagnostics.r3dStatus,'NOT_APPLICABLE_SERVICE_ONLY');
+    assert.equal(validateEarningsCompanionPayload(payload,{now:Date.parse(GENERATED)}),payload);
+    assert.equal(db.prepare(`SELECT count(*) AS n FROM api_history_snapshots_v1
+      WHERE dataset!='WPSFD42'`).get().n,0);
+  }finally{db.close();}
+});
+
+test('damaged base-only source blocks base preview but cannot mask independently verified service',()=>{
+  withServiceDb({},db=>{
+    const before=buildServiceSourcePreview(db,{generatedAt:GENERATED});
+    db.prepare(`UPDATE api_history_chunks_v1 SET payload_json='[]'
+      WHERE provider='BLS' AND dataset='WPSFD4'`).run();
+    assert.throws(()=>buildPreview(db,{generatedAt:GENERATED}),
+      /CHUNK_SHA256_MISMATCH/);
+    const after=buildServiceSourcePreview(db,{generatedAt:GENERATED});
+    assert.deepEqual(after.payload,before.payload);
+    assert.deepEqual(after.diagnostics,before.diagnostics);
+    assert.equal(validateEarningsCompanionPayload(after.payload,{now:Date.parse(GENERATED)}),
+      after.payload);
+  });
+});
+
 test('separate service D1 checkpoint uses service first_seen and never modifies baseline identity',()=>{
   const baseline=(()=>{const db=seeded();try{return buildPreview(db,{generatedAt:GENERATED}).payload;}finally{db.close();}})();
   withServiceDb({},db=>{
