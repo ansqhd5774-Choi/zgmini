@@ -170,6 +170,13 @@ test('A4-07: real parsers + SQLite WAL audit stored 19+6, 2 checkpoints, and det
   assert.equal(first.census,'MISSING');
   assert.equal(first.original.length,19);
   assert.equal(new Set(first.original.map(x=>x.id)).size,19);
+  for(const id of ['21','26']){
+    const source=first.original.find(x=>x.id===id);
+    assert.match(source.archiveSha256,/^[a-f0-9]{64}$/);
+    assert.match(source.sha256,/^[a-f0-9]{64}$/);
+  }
+  assert.match(first.original.find(x=>x.id==='31').metadataSha256,/^[a-f0-9]{64}$/);
+  assert.equal(first.original.find(x=>x.id==='31').archiveRefSha256,sce);
   assert.equal(first.checkpoints.inflation19.sha256.length,64);
   assert.equal(first.checkpoints.candidates7.sha256.length,64);
   for(const key of ['providerCalls','d1Writes','sqliteWrites','operationalWrites',
