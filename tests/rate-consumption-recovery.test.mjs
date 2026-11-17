@@ -9,7 +9,20 @@ test('calendar week includes weekends and rejects invalid/future observations',(
  assert.equal(rateSentimentCalendarLag('2026-02-30','2026-10-09'),null);
 });
 test('API accepts day 7 and rejects day 8 without fabricating data',async()=>{
- const body={status:'READY',version:'RATE_SENTIMENT_R1_RESEARCH',score:55.2,observationDate:'2026-10-02',week:Array.from({length:5},()=>({label:'2026-10-02',value:55.2}))};
+ // Use the actual public writer's 22 trading observations and matching last
+ // five points; the old five copies of one date were never a valid history.
+ const oneMonth=[];
+ const day=new Date('2026-10-02T00:00:00Z');
+ while(oneMonth.length<22){
+  if(![0,6].includes(day.getUTCDay()))oneMonth.unshift({label:day.toISOString().slice(0,10),value:55.2});
+  day.setUTCDate(day.getUTCDate()-1);
+ }
+ const body={
+  status:'READY',version:'RATE_SENTIMENT_R1_RESEARCH',
+  source:'FEDERAL_RESERVE_H15_STORED_RATES',historyMode:'CURRENT_VINTAGE_ONLY',
+  sourceStoredAt:Date.parse('2026-10-02T10:00:00Z'),
+  score:55.2,observationDate:'2026-10-02',week:oneMonth.slice(-5),oneMonth,
+ };
  for(const [date,status] of [['2026-10-09',200],['2026-10-10',503]]){
   const now=Date.parse(date+'T12:00:00Z');
   const db={prepare:()=>({bind(){return this},first:async()=>({body:JSON.stringify(body),stored_at:now-1000})})};
