@@ -3,6 +3,14 @@
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
 
+<!-- W01-20261117-1923-A401-BRANCH-SYNC -->
+## 최신 작업 스냅샷 — 2026-11-17 19:23 KST · A4-01 병합 소스 전담 브랜치 동기화
+
+- **시작/종료:** 30/71(42.3%) → 30/71(42.3%), 미완료 41. A4-01 PARTIAL 유지. 지정 계획·원장 최신 스냅샷, 앱 PR #1246 병합 및 공유 유지보수 #1979 상태 재조회.
+- **실제 변경:** 앱 main 병합 PR #1246의 W01 전용 원본 2파일이 전담 브랜치에 모두 없음을 확인하고, 원본 그대로 순차 생성. `scripts/pc-writer/inflation-a401-baseline23-readonly.mjs` commit [9f3341bc](https://github.com/ansqhd5774-Choi/zgmini/commit/9f3341bc354ff314f0cf7b7d4a55f928ba46f8d4), `tests/inflation-a401-baseline23-readonly.test.mjs` commit [c077e2b4](https://github.com/ansqhd5774-Choi/zgmini/commit/c077e2b42165e6cec9f5d09bb9b77b840870e80e). 원본 Git blob 각각 `a546df8804caa94780b8caa5c7c5ac3c66627b53` / `3435bd9e39e5c6ab6391ea0efb9c14aea6b2bc37`; 기존 main CI [#44062144802](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44062144802) SUCCESS 재사용, 전담 브랜치 새 CI 결과는 별도 미확인.
+- **LAST PASS / FIRST UNVERIFIED:** main의 임시 23종 원본 fixture·WAL 검증 성공은 실PC private raw 19종 직접 조회를 대체하지 않는다. 공유 Controller #1979는 기존 기록상 `RECOVERY_REQUIRED`이며 고정 A 입구 등록·실PC 실행 승인 증거가 없음. 신규 PC A/설치/Task/공급자/SQLite/D1/배포 쓰기 0. Census #28 미수집, Event129 disabled·C급 사용자 직접 설정 미확인.
+- **다음 정확 실행:** 전담 브랜치 원본 2/2 Git blob 재조회 → 공유 Controller 유지보수 복구/정확 고정 A 등록 승인 증거 확인 → 허용 시 W01 소유의 새 고유 읽기 전용 A 한 번으로 private raw 19 + 보조 4 실제 23/23·원본 SHA·JSON/TXT·보호 불변 검증. 그 전에는 A4-01 DONE 처리·PC 우회 실행 금지. 독립 소스/게시 계약 작업 계속.
+
 <!-- W01-20261117-A401-INTEGRATION-CI-MAIN-MERGED-SHARED-A-SCOPE-6945119078 -->
 ## 최신 작업 스냅샷 — 2026-11-17 W01 A4-01 원본 23개 검증 소스 통합시험·main 병합 및 PC 운영 진입점 미완료
 
