@@ -35,9 +35,11 @@ test('active commodity is K1-R2, not legacy 50/25/25 K1 or R3 shadow',()=>{
  const shadow=buildCommoditiesR3Shadow({...sources(),asOfDate:asOf});
  assert.notEqual(shadow.methodologyVersion,K1_R2_METHOD);
  assert.equal(shadow.mode,'SHADOW_ONLY');
- for(const version of ['COMMODITIES_K1','COMMODITIES_R3_SHADOW_R1',null]){
+ for(const version of ['COMMODITIES_K1','COMMODITIES_R3_SHADOW_R1']){
   assert.equal(score({...f.domain,methodologyVersion:version}),null);
  }
+ // Genuine pre-fix CM-R1 omitted the marker, but all four R2 inputs survive.
+ assert.equal(score({...f.domain,methodologyVersion:null}),f.domain.score);
 });
 
 test('approved WTI 30 / Brent 25 / copper 25 / gasoline 20, no reweight',()=>{
@@ -148,7 +150,7 @@ test('missing source cannot become another source or a fabricated carried zero',
 test('wrong method, stale producer, PARTIAL, missing or malformed score never displays as confirmed',()=>{
  const f=fixture();
  for(const patch of [
-  {methodologyVersion:null},{methodologyVersion:'COMMODITIES_K1'},
+  {methodologyVersion:'COMMODITIES_R3_SHADOW_R1'},{methodologyVersion:'COMMODITIES_K1'},
   {status:'PARTIAL'},{status:'UNAVAILABLE'},{freshness:'OUT_OF_DATE'},
   {score:null},{score:'50'},{missingFactors:['WTI_SCORE_STALE']},
  ]){
@@ -210,9 +212,12 @@ test('top source date must match maximum genuine source month, never evaluation/
 });
 
 test('metadata-lacking old correctly published CM-R1 still uses actual scored updatedAt',()=>{
- const f=fixture(),old={...f.domain,observationDate:null};
+ const f=fixture(),old={...f.domain,observationDate:null,methodologyVersion:null};
  assert.equal(economicCommoditySourceDate(old,asOf),f.domain.updatedAt);
  assert.equal(score(old),f.domain.score);
+ const forged={...old,indicators:old.indicators.map(x=>({...x}))};
+ forged.indicators[0].source='legacy substitute source';
+ assert.equal(score(forged),null);
  const broken={...old,updatedAt:asOf};
  assert.equal(score(broken),null);
 });
