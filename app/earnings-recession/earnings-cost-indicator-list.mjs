@@ -50,10 +50,11 @@ export function buildEarningsCostIndicatorView(payload){
   const rows=[];
   const indicators=[...KNOWN_EARNINGS_COST_INDICATORS];
   if(valid){
-    // Publish only the approved service pair. A partial/invalid extension
-    // must not create a misleading sixth table row on either viewport.
+    // Show the optional service pair only when both published observations
+    // are READY and fresh. PARTIAL or STALE service rows keep the base five.
     const hasServicePair=OPTIONAL_EARNINGS_COST_INDICATORS.every(meta=>
-      payload.rows.some(row=>row?.indicatorId===meta.id&&safeBlsRow(row)));
+      payload.rows.some(row=>row?.indicatorId===meta.id&&safeBlsRow(row)
+        &&row.status==='READY'&&row.freshness?.status==='FRESH'));
     const seen=new Set();
     for(const row of payload.rows){
       if(!safeBlsRow(row)||seen.has(row.indicatorId)
