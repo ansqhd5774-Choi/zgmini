@@ -710,3 +710,12 @@
 - **정규 B 단회 요청:** [pc-maintenance Issue #1958](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1958), `requestId=pc-update-4b4c5fe3-5963-4ccb-ae1f-ca7d6803b6ec`, operation `pc-source-bundle-register` 및 승인 raw manifest digest 정확 등록, 원문 GET 검산. **현재 결과 댓글/Run/JSON/TXT 미회수로 SUBMITTED/STATE_UNKNOWN**, B 실PC CAS 성공 주장 금지, 동일 requestId 재요청 금지.
 - **LAST PASS/FIRST FAIL:** app integrated CI PASS + control source manifest CI PASS + source SHA-256 16/16 확인 / FIRST_FAIL=NONE (소스 검증에 한정). B Runtime 및 PIT-04-04 PC as-of 실증 아직 PASS 아님. Candidate 14 상충과 255 메타 불충분·`promotionApproved=false` HOLD, SQLite/Provider/D1/Task 변경 없음.
 - **다음 실제 한 작업:** 같은 #1958의 정규 유지보수 Run·인증 결과 JSON/TXT 2/2를 직접 회수해 Host source registration CAS·설치 SHA·보호 상태를 판정. `SUCCEEDED/BUNDLE_REGISTERED` 및 source accepted 증거가 있을 때만 기등록된 `employment-r6-candidate-stage-readonly` A 새 고유 1회로 PIT-04-04 실제 as-of 저장시각 적격성 검증; B가 STOP되면 정확 LAST PASS/FIRST FAIL에서 멈추고 승인 우회·Controller/DB 변경 금지.
+
+
+## 63. W04 PIT-04-04 — #1958 Host B 결과 회수 및 독립 보호 검증 대기 (2026-11-17 KST)
+
+- **진척:** 26/72(36.1%) → 26/72(36.1%), 잔여 46. PIT-04-03 #1949 PASS 재사용; PIT-04-04 실PC as-of 미검증.
+- **#1958 원격 확인:** [Issue 결과](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1958#issuecomment-6943150489), requestId pc-update-4b4c5fe3-5963-4ccb-ae1f-ca7d6803b6ec, SUCCEEDED/BUNDLE_REGISTERED, lastPass HOST_CAS_READBACK, firstFail NONE. 실제 Controller c9a7cc6a37dedf2a8ae46bd1171ad133ba4fb969. [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/maintenance-pc-update-4b4c5fe3-5963-4ccb-ae1f-ca7d6803b6ec.json) 및 [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/maintenance-pc-update-4b4c5fe3-5963-4ccb-ae1f-ca7d6803b6ec.txt) 2/2 원격 확인, 핵심 requestId/status/code/SHA 일치. #1958 재실행 금지.
+- **별도 보호 검증 필요:** 원본 JSON/TXT에 protectedStateUnchanged=false, workflowEnabled=false가 명시됨. out-of-band B 결과 기본 외피일 가능성이 있어 실제 손상/비활성화로 단정하지 않지만 정상 증거로도 인정하지 않는다. 독립 승인된 read-only core-status/Host 검증으로 실제 보호 SHA, Workflow 활성화, 신규 approvedSources 키를 확인하기 전에는 후속 A를 실행하지 않는다.
+- **LAST PASS/FIRST FAIL:** HOST_CAS_READBACK, JSON/TXT 2/2 / FIRST_FAIL=INDEPENDENT_PROTECTION_AND_WORKFLOW_VERIFICATION_PENDING. 신규 운영 요청·DB/D1/Provider/Task 변경 0.
+- **NEXT:** 독립 읽기 전용 상태 확인에서 protectedStateUnchanged=true, workflowEnabled=true 및 Host 신규 source 키 보존 확인 후 신규 고유 employment-r6-candidate-stage-readonly A 1회로 PIT-04-04 recorded_at/first_seen_at/availableAt/retrievedAt as-of 적격성 실측. 후보 14 충돌·255 미증빙 HOLD 유지.
