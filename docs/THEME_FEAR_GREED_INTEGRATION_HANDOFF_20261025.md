@@ -1,3 +1,12 @@
+## 2026-11-18 03:57 KST W03 10/68 — Source bundle 등록 도구의 실제 실행 경계 정밀 확인
+
+- **진행률:** 시작 9/68(13.2%) → 종료 9/68(13.2%), 10단계 미완료. 기존 #2049 CMD 설치 PASS 및 #2053 Shadow `SHADOW_SOURCE_NOT_APPROVED` 보존.
+- **새로운 코드 직접 확인:** pc-control main `tools/source-bundle-register.mjs` Git blob `9ed5b5a8e0ca0688bce1ef65f6e534ab3d60ce81`의 헤더는 이 파일을 **source-only candidate**, **CLI/Controller hook/PC write 없음**으로 명시한다. `planSourceBundleRegistration`은 Host 원본 바이트와 manifest를 받아 `approvedSources[sourceSha]` 단일 키 CAS **제안 바이트만 반환**하며 실제 Host 등록을 수행하지 않는다. 이전 기록의 '정규 등록 경로 확인'은 **등록 계획·검증 로직 확인**으로 한정하며, 현재 실행 가능한 B 등록 operation이 이미 설치·승인됐다는 의미로 해석하지 않는다.
+- **승인 전제 추가:** `validateSourceBundleBApproval`은 별도 B 승인 manifest V2, 정확한 installed Controller SHA, immutable source manifest SHA256, entrypoint, stage/backup 경로, 승인 PR을 요구한다. `planSourceBundleRegistration`은 Host에 동일 sourceSha가 이미 있으면 `BUNDLE_HOST_PRECONDITION`으로 중단한다. 기존 SHA 재등록/Host 임의 변경 금지.
+- **Shadow A 코드 대조:** pc-control `controller/operations.mjs` Git blob `1069845e40e5c39516aa0540c659fb5cf6f642cf`의 `verifyApprovedShadowBundle`은 요청 SHA의 Host 승인 키뿐 아니라 정확한 branch `codex/theme-fear-greed-integration-20261025`, entrypoint `scripts/pc-writer/theme-config-tool.mjs`, manifest/file SHA256, 전체 inventory closure를 검사한다. #2053은 이 검사 전에 source 등록 미충족으로 중단됐으므로 실제 계산 실패가 아니다.
+- **이번 효과:** GitHub 소스 조사 및 진행 기록 1파일 갱신 외 신규 B 승인/Host 등록/A 요청/운영 PC/공급자/SQLite/D1/Task/배포 변경 0. Host approvedSources 현재 목록·실제 B 실행 가능 여부는 UNKNOWN.
+- **다음 단일 실행:** 제어 저장소의 현재 설치·승인된 `pc-source-bundle-register` B 접수·실행 어댑터 존재 여부와 Host source 목록을 **기존 승인된 읽기 전용 경로로** 확인. 실행 어댑터가 없으면 source-only helper를 운영 등록 완료로 오인하지 말고 공통 소유자 승인 범위에서 B 실행 경로를 정식 검증. 정확한 immutable source manifest·파일 closure·승인 PR·설치 Controller SHA 확보 후에만 단회 B 등록 및 새 Shadow A를 검토. 원자료/checkpoint/R25/R32 새 결과는 여전히 미검증.
+
 ## 2026-11-18 02:55 KST W03 10/68 — Shadow 승인 등록 경로 원본 조사 (실PC 승인 목록 미확인)
 
 - **진행률:** 시작 9/68(13.2%) → 종료 9/68(13.2%), 10단계 미완료. 목표 163개·자연 예약 검증 최종 후속 유지.
