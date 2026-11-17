@@ -1,3 +1,14 @@
+## 2026-11-17 W03 9/68 — 9번 프로세스 총괄 R47 CMD 정식 인계 #1894
+
+- **시작:** 8/68 DONE(11.8%), 9/68 IN_PROGRESS, 별도 T1 20%. W03 기능 원장 [#1009](https://github.com/ansqhd5774-Choi/zgmini/issues/1009), 전용 브랜치 `codex/theme-fear-greed-integration-20261025`, 인계 당시 source HEAD `d959424f3218af892b186cb35c251736e95cbac5`. 기존 소스/PC·SQLite·D1·Task·배포 쓰기 0.
+- **중복 확인:** 기존 agent-handoff Issue 18개의 원본과 실패코드를 실제 대조, R47 CMD 1파일 공통 수신기 문제의 고유 사건 미등록. 예전 #1852는 별개 #1841 Controller 복구 사건이며 재사용하지 않음.
+- **정식 Issue 생성:** [pc-control #1894](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1894), 생성 시 `ZGMINI_AGENT_HANDOFF_V1` JSON + `agent-handoff` 라벨. **incidentId**=`handoff-w03-r47-cmd-onefile-b-20261117`, **requestId**=`w03-r47-cmd-b-source-20261117`, 원본 #1009, `kind=COMMON_WRITER`, `checkpoint=INSTALL`, `code=R47_CMD_B_SOURCE_SCOPE_UNSUPPORTED`, 실제 #1846 원본 SHA evidence.
+- **자동 접수 증거:** [#1894 댓글 6938305966](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1894#issuecomment-6938305966) `HANDOFF_ROUTED`, role=`COMMON_PROCESS_OWNER`, fingerprint=`5128213fc540507d93cc1c71e087bcb93cf64de999f611b6e1a9585d924b9897`, state=`AWAITING_AGENT_CONFIGURATION`, 운영 writes 0, ChatGPT 대화 자동 전달 `NOT_CONFIGURED`. **실제 9번 총괄 대화 수신 미확인 / OWNER_ACK_UNKNOWN**. 인계 `chatId`는 과거 W03 실PC #1846 기재값을 원본 출처로 사용했으며 현재 대화의 인증된 채팅 주소가 아님.
+- **승인·지원 판정 요청:** [#1894 댓글 6938327214](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1894#issuecomment-6938327214)에 기존 R47 Task CMD 1파일 OLD SHA256 `2e0fc3e358feff70103d1e9025ce0944132b7b10a2159900f9479b9860550888` → TARGET SHA256 `a08fdec82b484c41ba3ac562908f31d96fee09c75cc3ff1b32386e9dd625ba45` 기존 승인/정규 B 지원 GO/NO-GO, 최신 PC preimage·Task XML·lease/원본 백업/CAS·post readback 판정 요구. 기존 Writer B `.mjs` 전용과 source bundle `.cmd` 금지를 우회하지 않음. 지원 없을 때만 9번 **프로세스 총괄**이 공통 도구 최소 변경·검토 PR/CI를 작성; W03는 기능 CMD 소스/설치·ETF63+SPY 수집·점수/게시 담당.
+- **원격 연결:** [중앙 #68 댓글 6938337250](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6938337250) 및 [기능 #1009 댓글 6938338600](https://github.com/ansqhd5774-Choi/zgmini/issues/1009#issuecomment-6938338600) 기록. **R47 전용 검토 PR 미생성**; 기존 W03 Draft #714는 본 설치 승인 검토 PR이 아님. 정식 접수 ≠ 운영 승인/설치 또는 실제 총괄 AI 실행.
+- **종료:** 8/68(11.8%)→8/68(11.8%), 9 IN_PROGRESS, T1 20% 유지. 공개 10개 새 Production 검증 없음, 최종 163개 실제 달성 미산정. **LAST PASS** 정식 고유 접수·bot route·중복 대조·중앙/기능 원장 연결. **FIRST MISSING** 프로세스 총괄의 실제 수신/공통 CMD B 지원 GO/NO-GO·검토 PR(필요한 경우)·PC 설치 후 원자료 저장/공개 검증. 다음 필수 실행은 9번 총괄이 실제 접수 후 공통 B 수신 판정을 회신하는 것; 독립 GMH 기능 개발은 계속.
+
+
 ## 2026-11-17 W03 9/68 — R47/R49 회귀 계약 원격 점검 (13시)
 
 - **진도:** 시작 8/68 DONE(11.8%), 9/68 IN_PROGRESS → 종료 동일. 계획서 blob `7d6b54a1bc91340f64a3cd8b82000f8f1dfa75e1`; 전용 진행 원장 이전 blob `8f87da114a941a378a430381f8565e2837d32157`. P1 운영 R47 CMD 적용은 승인 전 미실행.
