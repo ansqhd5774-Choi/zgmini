@@ -5,7 +5,7 @@ import os from "node:os";
 import path from "node:path";
 import {createHash} from "node:crypto";
 import {DatabaseSync} from "node:sqlite";
-import {EMPLOYMENT_R6_TABLES} from "../lib/market-score/employment-r6-contract.mjs";
+import {EMPLOYMENT_R6_TABLES,EMPLOYMENT_R6_BLS_SERIES} from "../lib/market-score/employment-r6-contract.mjs";
 import {auditEmploymentR6PitCoverage} from "../scripts/pc-writer/employment-r6-pit-coverage.mjs";
 
 const T=EMPLOYMENT_R6_TABLES;
@@ -526,4 +526,89 @@ test("PIT-04-05 absent raw snapshot/run tables yield NO_RUNTIME_EVIDENCE, never 
   assert.equal(report.coreCurrentRawLineageVerifiedKeys,null);
   assert.equal(report.coreHistoryRawLineageTotalRows,null);
   assert.equal(report.rawLineageEvidenceStatus,"NO_RUNTIME_EVIDENCE");
+});
+
+function blsFamilyLineageFixture(file,{releaseGroup,seriesId,provenanceGroup=releaseGroup,
+  provenanceSeriesId=seriesId,rowProvider=null,withRun=true}={}){
+  const sha=value=>createHash("sha256").update(value).digest("hex");
+  const descriptor=EMPLOYMENT_R6_BLS_SERIES[seriesId];
+  assert.ok(descriptor);
+  const hash=sha("BLS_RECORD_"+seriesId),body="PRIVATE_BLS_HTTP_RESPONSE_"+releaseGroup;
+  const responseHash=sha(body),requestKey="BLS:"+releaseGroup+":fixture",provider="BLS";
+  const snapshotId=sha([releaseGroup,provider,requestKey,responseHash].join("|"));
+  const obs={...observation("US",100,hash,{id:descriptor.logicalSeriesId}),
+    provider:rowProvider??descriptor.provider,providerSeriesId:seriesId,
+    provenanceJson:JSON.stringify({
+      rawRecordHash:hash,responseHash,releaseGroup:provenanceGroup,seriesID:provenanceSeriesId,
+    })};
+  fixture(file,{current:[obs],history:[obs]});
+  const db=new DatabaseSync(file);
+  try{
+    db.exec(`CREATE TABLE ${T.rawSnapshot} (
+      snapshot_id TEXT,chunk_index INTEGER,chunk_count INTEGER,
+      release_group TEXT,provider TEXT,request_key TEXT,
+      retrieved_at TEXT,created_at TEXT,body_sha256 TEXT,
+      detail_json TEXT,body_chunk TEXT
+    )`);
+    db.exec(`CREATE TABLE ${T.runs} (
+      provider TEXT,status TEXT,completed_at TEXT,detail_json TEXT
+    )`);
+    const storedAt="2026-10-25T09:00:00.000Z";
+    db.prepare(`INSERT INTO ${T.rawSnapshot} VALUES(?,?,?,?,?,?,?,?,?,?,?)`).run(
+      snapshotId,0,1,releaseGroup,provider,requestKey,storedAt,
+      "2026-10-25T09:00:00.010Z",responseHash,JSON.stringify({responseHash}),body);
+    if(withRun)db.prepare(`INSERT INTO ${T.runs} VALUES(?,?,?,?)`).run(
+      "EMPLOYMENT_R6_"+releaseGroup,"SUCCESS","2026-10-25T09:00:02.000Z",
+      JSON.stringify({rawSnapshots:[{snapshotId,bodySha256:responseHash,chunkCount:1}]}));
+  }finally{db.close();}
+  return {responseHash,snapshotId};
+}
+
+test("PIT-04-05 BLS snapshot provider family aliases only exact R6 series and release groups",t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-w04-bls-raw-family-"));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const valid=[
+    ["BLS_EMPLOYMENT_SITUATION","LNS14000000"],
+    ["BLS_EMPLOYMENT_SITUATION","CES0000000001"],
+    ["BLS_JOLTS","JTS000000000000000JOL"],
+    ["BLS_ECI","CIU1010000000000A"],
+    ["BLS_STATE_MSA","SMS00000000000000022"],
+  ];
+  for(const [releaseGroup,seriesId] of valid){
+    const file=path.join(dir,seriesId+".sqlite");
+    blsFamilyLineageFixture(file,{releaseGroup,seriesId});
+    const before=digest(file);
+    const result=auditEmploymentR6PitCoverage({dbPath:file,asOfDate:"2026-11-02"});
+    assert.equal(result.coreCurrentRawLineageVerifiedKeys,1,releaseGroup+":"+seriesId);
+    assert.equal(result.coreHistoryRawLineageVerifiedRows,1,releaseGroup+":"+seriesId);
+    assert.equal(result.coreCurrentRawLineageMissingSnapshotKeys,0);
+    assert.equal(result.rawSnapshotCertifiedKeys,1);
+    assert.equal(result.promotionApproved,false);
+    assert.equal(digest(file),before);
+    assert.doesNotMatch(JSON.stringify(result),/PRIVATE_BLS_HTTP_RESPONSE|responseHash|snapshotId/);
+  }
+});
+
+test("PIT-04-05 BLS alias cannot bridge unrelated group, series, forged provider or missing run",t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-w04-bls-raw-reject-"));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const invalid=[
+    {releaseGroup:"BLS_EMPLOYMENT_SITUATION",seriesId:"LNS14000000",
+      provenanceGroup:"BLS_JOLTS"},
+    {releaseGroup:"BLS_EMPLOYMENT_SITUATION",seriesId:"LNS14000000",
+      provenanceSeriesId:"CES0000000001"},
+    {releaseGroup:"BLS_EMPLOYMENT_SITUATION",seriesId:"LNS14000000",
+      rowProvider:"BLS_JOLTS"},
+    {releaseGroup:"BLS_EMPLOYMENT_SITUATION",seriesId:"LNS14000000",
+      withRun:false},
+  ];
+  for(let i=0;i<invalid.length;i++){
+    const file=path.join(dir,"invalid-"+i+".sqlite");
+    blsFamilyLineageFixture(file,invalid[i]);
+    const result=auditEmploymentR6PitCoverage({dbPath:file,asOfDate:"2026-11-02"});
+    assert.equal(result.coreCurrentRawLineageVerifiedKeys,0,i);
+    assert.equal(result.coreHistoryRawLineageVerifiedRows,0,i);
+    assert.equal(result.coreCurrentRawLineageUnverifiedKeys,1,i);
+    assert.equal(result.promotionApproved,false,i);
+  }
 });
