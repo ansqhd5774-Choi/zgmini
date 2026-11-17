@@ -1,3 +1,12 @@
+## 2026-11-17 W03 9/68 — 정규 재발행 B #1941 실제 STOP 및 총괄 원본 #1894 인계
+
+- **진행률:** 시작 8/68(11.8%) → 종료 8/68(11.8%); 9단계 미완료. 기존 #1928 replay 금지 준수, 신규 접수 중복 생성 0.
+- **새로 확인한 공통 준비:** 제어 main에 신규 승인 원문 `approvals/task-cmd-b/w03-r47-cmd-onefile-reissue-20261117.json` 존재, requestId `bd14ae89-139d-4722-9e2b-7f401102474f`, raw SHA256 `5ea21082660efcf6bbf1be373e79aeb65b12ecbe854b324de82da595a64566cd`. 총괄 #1934 병합 및 Windows CI 20/20 PASS는 기존 기록 재사용.
+- **이미 실행된 고유 B 결과 직접 재조회:** [Issue #1941](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1941) 및 [Run #44043003847](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44043003847). 원격 JSON `results/task-cmd-b-bd14ae89-139d-4722-9e2b-7f401102474f.json`: `status=STOP`, `code=TASK_CMD_B_TASK_ACTION_NOT_DIRECT_STOP`, `replay=FORBIDDEN`, `sourceEffectFiles=0`, `taskDefinitionChanges=0`, `providerCalls=0`, `sqliteWrites=0`, `d1Writes=0`. [#1941 receipt #6942293559](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1941#issuecomment-6942293559) JSON/TXT 2/2 검증. 이전 #1928의 Task probe parse 오류와 **다른 신규 FIRST FAIL**이며 운영 CMD 교체 성공 아님.
+- **공통 경계 인계 완료:** [기존 #1894 신규 댓글 #6942314691](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1894#issuecomment-6942314691)에 실제 Task action/direct-action 가정 대조 및 최소 안전 해결 요청. 기존 사용자 1파일 효과 GO 재요청 없음. 총괄 공통 adapter는 W03가 임의 수정하지 않음. #1941 동일 requestId 재실행 금지.
+- **LAST PASS / FIRST FAIL:** 새로운 정규 manifest·고유 B 접수·원격 영수증 / 실제 PC Task action이 direct-action 검증에 불합치. 운영 설치·원자료 최신 수집·R32 재계산·D1/API/UI 신규 정상화 0건. 이번 회차 운영 PC/Provider/SQLite/D1/Cloudflare 추가 변경 0.
+- **다음 필수 실행:** 총괄이 기존 Task action의 읽기 전용 증거를 통해 불일치 원인을 판정하고 Task 정의 변경 없이 허용 가능한 공통 CAS 경로를 CI+main으로 회신한 후에만, 새 고유 manifest/requestId로 W03 정규 B 단회 실행. 설치 후 실제 CMD SHA/Task action·lease 확인 → 63 ETF+SPY 저장 원자료/checkpoint → R32 비공개 계산 → 별도 승인된 게시/API/UI 검증.
+
 ## 2026-11-17 W03 9/68 — R47 probe PR #1934 CI PASS 및 main 병합 재확인
 
 - **동일 회차 최신 증거로 앞 기록 상태 갱신:** 총괄 [PR #1934](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/1934) `MERGED`, 병합 commit [`2bc2dfc4b064e66cd6101d4093834fcf6819566c`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/2bc2dfc4b064e66cd6101d4093834fcf6819566c), 공통 최신 main HEAD 재조회 일치. Task/WMI 올바른 WSH separator로 변경된 `task-cmd-b/r47-task-probe.js` main Git blob `cded030edc0ed7b39ca81dd22461caa4ea5031f4` 직접 확인. 최소 소스 변경은 이 1개 실행 스크립트, 1개 신규 test, 기존 C996 workflow 연결. 승인 효과/Task/파일/lock/주기 계약 변경 없음.
