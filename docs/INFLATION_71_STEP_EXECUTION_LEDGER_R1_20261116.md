@@ -1,5 +1,15 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-A407-READBACK-GAP-AUDIT-20261117-2124 -->
+## 2026-11-17 21:24 KST — A4-07 원본 SHA·checkpoint 읽기 경로 소스 계약 조사 (운영 미변경)
+
+- **진행률:** 시작 33/71(46.5%) → 종료 **33/71(46.5%)**, 잔여 38. A4-07은 PENDING 유지. 최신 A4-06 실PC #2016, A4-05 #2012, A4-01 #2009의 기존 증거를 재사용하고 중복 PC 요청 없음.
+- **확인된 실제 소스 한계:** 전담 브랜치 `scripts/pc-writer/inflation-a401-baseline23-readonly.mjs` blob `7027e335783ec5a8dc71d189c4b248162933377b`의 `evaluateA401Baseline23`는 19개 원본과 보조 4개를 `PRESENT_VALID`로 판정할 때 `id/status/observationDate/sourceStoredAt`만 출력한다. 원본 raw byte SHA256, SQLite chunk digest, 19개별 checkpoint SHA는 반환하지 않는다. `runA401Baseline23`는 기존 `previewInflation19`·`previewInflationCandidates7`를 호출하며 DB를 readOnly로 열고 기존 WAL/SHM 존재와 canonical 경로를 확인한다. 즉 #2009의 23/23 PASS는 **원본 개별 바이트 해시 23/23 대조 PASS가 아님**.
+- **현재 가능한 증거 범위:** 후보 7종 #2012에서 6개 원본 파일 SHA256 형식과 4개 물리 파일 구분·checkpoint SHA 1개를 확인했으나, 이것으로 원래 19개별 raw chunk SHA 및 checkpoint 연계를 대체하지 않는다. #2016은 19개 projection 저장 시각과 실행 reader source SHA pin 검증으로만 인정한다. 현재 GitHub로 공개된 승인 A 결과에서 A4-07 요구 범위를 충족하는 개별 digest+checkpoint+동일 원본 재조회 전체 증거를 확인하지 못함.
+- **다음 단일 작업:** 먼저 현행 Controller 허용목록과 기존 승인 read-only 원본 digest/checkpoint 출력 기능을 확인한다. 이미 있는 A로 19+4 개별 원본·checkpoint의 **실제 저장 바이트에 대한 digest 및 재조회 일치**가 확인되면 그 증거만 사용한다. 없으면 W01 기능 소유 범위에서 정확한 최소 A4-07 읽기 전용 진단기·회귀시험을 작성하고, 공통 Controller에는 최소 진입점만 별도 정규 승인 요청한다. 출력은 비밀·원본 행·경로 없이 ID별 digest/검증 상태, 동일 스냅샷 여부, checkpoint 연계만; source pin, SQLite readOnly, WAL/SHM, 보호 불변, 허용 경로 fail-closed 유지. 운영 설치·PC 실행·수집·DB/D1 쓰기는 승인 전 금지.
+- **이번 작업:** 소스/계약 조사 및 이 진행 원장 갱신만. 새로운 완료 단계 0, 공급자 호출·운영 설치·SQLite/D1/Task 변경 0. Census #28 MISSING 및 자연 수집 `CENSUS_M3_HEADERS_INVALID`와 수동 B owner 실패는 서로 다른 문제로 유지.
+
+
 > 사용자 확정 분모: 상위 8개(A1~A4, B1~B4) / 세부 71개. 이 파일은 기존 [26개 원자료 확보·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md)의 **추적용 세분화**다. 산식/승인/수집 주기/DB/TTL/계약을 변경하지 않는다.
 
 
