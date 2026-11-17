@@ -10,18 +10,51 @@ export const BEA_UNIT_RAW_SCHEMA='earnings-bea-unit-raw-r1-v1';
 const SHA=/^[a-f0-9]{64}$/;
 const digest=x=>createHash('sha256').update(x).digest('hex');
 
+// Bound all raw archive reads/writes to the approved PC data root.
+// A symlinked archive directory or CSV/meta file must not redirect the
+// immutable source lookup outside that root.
+function checkArchivePath(files,{create=false}={}){
+  const root=fs.realpathSync(files.pcBase);
+  if(!fs.statSync(root).isDirectory())throw Error('BEA_UNIT_STORED_PATH_UNSAFE');
+  let directory=files.pcBase;
+  for(const name of ['raw','earnings-bea-unit-profit-r1']){
+    directory=path.join(directory,name);
+    try{
+      const entry=fs.lstatSync(directory);
+      if(entry.isSymbolicLink()||!entry.isDirectory())
+        throw Error('BEA_UNIT_STORED_PATH_UNSAFE');
+    }catch(error){
+      if(error.code!=='ENOENT')throw error;
+      if(!create)throw Error('BEA_UNIT_STORED_SOURCE_MISSING');
+      fs.mkdirSync(directory);
+    }
+    const real=fs.realpathSync(directory);
+    const relative=path.relative(root,real);
+    if(relative==='..'||relative.startsWith('..'+path.sep)||path.isAbsolute(relative))
+      throw Error('BEA_UNIT_STORED_PATH_UNSAFE');
+  }
+}
+function checkExistingFile(file){
+  const entry=fs.lstatSync(file);
+  if(entry.isSymbolicLink()||!entry.isFile())
+    throw Error('BEA_UNIT_STORED_PATH_UNSAFE');
+}
+
 export function beaUnitRawPaths({pcBase,sourceSha}={}){
   if(typeof pcBase!=='string'||!path.isAbsolute(pcBase)||!SHA.test(sourceSha??''))
     throw Error('BEA_UNIT_STORED_SOURCE_PIN_INVALID');
   const archive=path.join(pcBase,'raw','earnings-bea-unit-profit-r1');
-  return {archive,csv:path.join(archive,sourceSha+'.csv'),
+  return {pcBase,archive,csv:path.join(archive,sourceSha+'.csv'),
     meta:path.join(archive,sourceSha+'.json')};
 }
 
 export function readBeaUnitArchivedSource({pcBase,sourceSha}={}){
   const files=beaUnitRawPaths({pcBase,sourceSha});
+  checkArchivePath(files);
   if(!fs.existsSync(files.csv)||!fs.existsSync(files.meta))
     throw Error('BEA_UNIT_STORED_SOURCE_MISSING');
+  checkExistingFile(files.csv);
+  checkExistingFile(files.meta);
   const bytes=fs.readFileSync(files.csv);
   if(bytes.length<20||bytes.length>100_000||digest(bytes)!==sourceSha)
     throw Error('BEA_UNIT_STORED_SOURCE_HASH_MISMATCH');
@@ -59,12 +92,14 @@ export async function captureBeaUnitSourceOnce({pcBase,fetchImpl,storedAt}={}){
   const files=beaUnitRawPaths({pcBase,sourceSha});
   // Reject incompatible provider changes before adding any local artifact.
   buildBeaUnitProfitSource(content,{sourceVersion:sourceSha,sourceStoredAt:storedAt});
+  // Check (or create) each archive directory without following unapproved
+  // filesystem links before the first source byte can be written.
+  checkArchivePath(files,{create:true});
   if(fs.existsSync(files.csv)||fs.existsSync(files.meta)){
     const previous=readBeaUnitArchivedSource({pcBase,sourceSha});
     return {status:'ALREADY_CAPTURED',sourceSha,
       sourceStoredAt:previous.sourceStoredAt};
   }
-  fs.mkdirSync(files.archive,{recursive:true});
   // Exclusive create: never overwrite or silently heal a half-written archive.
   fs.writeFileSync(files.csv,bytes,{flag:'wx'});
   const metadata={schemaVersion:BEA_UNIT_RAW_SCHEMA,sourceVersion:sourceSha,
