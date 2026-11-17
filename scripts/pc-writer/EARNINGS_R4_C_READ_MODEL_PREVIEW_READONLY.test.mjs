@@ -8,7 +8,9 @@ import {normalizeSeries,buildPlans,insertPlans} from './EARNINGS_R3C_BLS_STORE_O
 import {resultLogPath as r3dResultLogPath} from './EARNINGS_R3D_STORED_BLS_CALC_READONLY.mjs';
 import {buildPreview,buildServiceSourcePreview,reportLines,SCHEMA_VERSION,resultPaths}
   from './EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs';
-import {validateEarningsCompanionPayload} from '../../worker/earnings-companion-c-r4.mjs';
+import {validateEarningsCompanionPayload,earningsCompanionWriter,readEarningsCompanionResponse,
+  EARNINGS_C_SNAPSHOT_KEY,EARNINGS_C_SERVICE_SNAPSHOT_KEY,EARNINGS_C_ROUTE}
+  from '../../worker/earnings-companion-c-r4.mjs';
 import {buildEarningsCostIndicatorView} from '../../app/earnings-recession/earnings-cost-indicator-list.mjs';
 
 const RETRIEVED='2026-10-26T17:02:53.996Z';
@@ -82,6 +84,74 @@ function withServiceDb(options,fn) {
     '2026-10-26T18:00:00.000Z','c'.repeat(64)));
   try{return fn(db);}finally{db.close();}
 }
+
+
+function simulatedD1(){
+  const records=new Map(),actions=[];
+  return {
+    records,actions,prepare(sql){
+      return {bind(...params){return {
+        async first(){
+          actions.push({type:'READ',key:params[0]});
+          return records.get(params[0])??null;
+        },
+        async run(){
+          actions.push({type:'WRITE',key:params[0]});
+          assert.match(sql,/^INSERT INTO market_public_snapshots_v1/);
+          const [key,body,storedAt,newSource,maxStoredAt]=params;
+          const old=records.get(key);
+          if(old){
+            const oldSource=JSON.parse(old.body).projection.sourceStoredAt;
+            if(!(oldSource<newSource&&old.stored_at<=maxStoredAt))
+              return {meta:{changes:0}};
+          }
+          records.set(key,{body,stored_at:storedAt});
+          return {meta:{changes:1}};
+        },
+      };}};
+    },
+  };
+}
+
+test('saved BLS base and WPSFD42 source reach separate mock D1 checkpoints and stored GET 7 rows',async()=>{
+  const sqlite=seeded();
+  const now=Date.parse('2026-10-27T02:37:01.000Z');
+  try{
+    const d1=simulatedD1(),base=buildPreview(sqlite,{
+      generatedAt:GENERATED,includeServices:false}).payload;
+    const service=response({services:true}).Results.series.at(-1);
+    insertPlans(sqlite,buildPlans(normalizeSeries({Results:{series:[service]}},['WPSFD42']),
+      '2026-10-26T18:00:00.000Z','c'.repeat(64)));
+    const baseAfter=buildPreview(sqlite,{generatedAt:GENERATED,includeServices:false}).payload;
+    assert.deepEqual(baseAfter,base);
+    const servicePayload=buildServiceSourcePreview(sqlite,{generatedAt:GENERATED}).payload;
+    assert.equal(validateEarningsCompanionPayload(servicePayload,{now}),servicePayload);
+    assert.deepEqual(servicePayload.rows.map(x=>x.seriesId),['WPSFD42','WPSFD42']);
+    assert.equal((await earningsCompanionWriter(d1).write(base,{storedAt:now-1000})).status,
+      'READBACK_VERIFIED');
+    const baseBodyBefore=d1.records.get(EARNINGS_C_SNAPSHOT_KEY).body;
+    assert.equal((await earningsCompanionWriter(d1,{
+      snapshotKey:EARNINGS_C_SERVICE_SNAPSHOT_KEY,
+    }).write(servicePayload,{storedAt:now-500})).status,'READBACK_VERIFIED');
+    assert.equal(d1.records.get(EARNINGS_C_SNAPSHOT_KEY).body,baseBodyBefore);
+    assert.deepEqual([...d1.records.keys()],
+      [EARNINGS_C_SNAPSHOT_KEY,EARNINGS_C_SERVICE_SNAPSHOT_KEY]);
+    const writesBeforeGET=d1.actions.filter(x=>x.type==='WRITE').length;
+    const response=await readEarningsCompanionResponse(
+      new Request(`https://zgmini.kr${EARNINGS_C_ROUTE}`),d1,{now});
+    assert.equal(response.status,200);
+    assert.equal(response.headers.get('x-earnings-c-service'),'READY');
+    const body=await response.json();
+    assert.equal(body.rows.length,7);
+    assert.deepEqual(body.rows.slice(0,5).map(x=>x.indicatorId),
+      base.rows.map(x=>x.indicatorId));
+    assert.deepEqual(body.rows.slice(5).map(x=>x.indicatorId),
+      servicePayload.rows.map(x=>x.indicatorId));
+    assert.deepEqual(body.coverage,{configured:7,ready:7,partial:0,stale:0,unavailable:0});
+    assert.equal(d1.actions.filter(x=>x.type==='WRITE').length,writesBeforeGET);
+    assert.equal(d1.records.size,2);
+  }finally{sqlite.close();}
+});
 
 test('service-only stored WPSFD42 builds a verified two-row checkpoint without any base BLS snapshots',()=>{
   const db=testDb();
