@@ -170,3 +170,28 @@ test('invalid optional WPSFD42 checkpoint is ignored without exposing invalid se
   assert.equal(db.actions.filter(x=>x.kind==='WRITE').length,before);
   assert.deepEqual(body.rows.map(x=>x.seriesId),['WPSFD4','WPSFD4','WPSFD41','WPSFD41','PRS85006111']);
 });
+
+test('corrupt existing WPSFD42 checkpoint is not reported as ALREADY_STORED',async()=>{
+  const cases=[
+    envelope=>{envelope.projection.builtAt+=1;},
+    envelope=>{envelope.projection.expectedSourceVersion='c'.repeat(64);},
+  ];
+  for(const corrupt of cases){
+    const db=d1(),service=servicePayload();
+    const writer=earningsCompanionWriter(db,{
+      snapshotKey:EARNINGS_C_SERVICE_SNAPSHOT_KEY,
+    });
+    assert.equal((await writer.write(service,{storedAt:NOW-1000})).status,
+      'READBACK_VERIFIED');
+    const existing=db.records.get(EARNINGS_C_SERVICE_SNAPSHOT_KEY);
+    const envelope=JSON.parse(existing.body);
+    corrupt(envelope);
+    db.records.set(EARNINGS_C_SERVICE_SNAPSHOT_KEY,{
+      body:JSON.stringify(envelope),stored_at:existing.stored_at,
+    });
+    const writesBefore=db.actions.filter(x=>x.kind==='WRITE').length;
+    await assert.rejects(writer.write(service,{storedAt:NOW-100}),
+      /EARNINGS_C_EXISTING_INVALID/);
+    assert.equal(db.actions.filter(x=>x.kind==='WRITE').length,writesBefore);
+  }
+});
