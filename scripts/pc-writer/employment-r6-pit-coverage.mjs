@@ -99,6 +99,31 @@ const revisionEvidence=index=>{
   }
   return {priorRevisionKeys,priorRevisionRows,ambiguousLatestKeys,sameInstantAdditionalRows};
 };
+// PIT-04-03: compare only the as-of latest Core HISTORY revision to CURRENT.
+// Missing, conflicting, and unverified keys are disjoint; these aggregates
+// never authorize historical PIT backdating or candidate promotion.
+const comparableCoreObservation=row=>Boolean(row&&numericObservation(row.value)
+  &&/^[a-f\d]{64}$/i.test(String(row.source_hash??""))
+  &&String(row.provider??"").trim()&&String(row.provider_series_id??"").trim());
+const classifyCoreCurrentHistory=(currentKeys,historyKeys)=>{
+  let matching=0,conflicting=0,unverified=0,missing=0;
+  for(const [key,current] of currentKeys){
+    if(!historyKeys.has(key)){missing++;continue;}
+    const latest=latestRevision(historyKeys.get(key));
+    // A same-time ambiguous latest revision or invalid source must remain HOLD.
+    if(!comparableCoreObservation(current)||!comparableCoreObservation(latest)){
+      unverified++;continue;
+    }
+    if(sameObservation(current,latest))matching++;
+    else conflicting++;
+  }
+  return {
+    coreCurrentHistoryMatchingKeys:matching,
+    coreCurrentHistoryConflictingKeys:conflicting,
+    coreCurrentHistoryUnverifiedKeys:unverified,
+    coreCurrentHistoryMissingKeys:missing,
+  };
+};
 const endReadSnapshot=(db,active)=>{
   if(!db)return;
   try{if(active)db.exec("ROLLBACK");}finally{db.close();}
@@ -147,6 +172,8 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
     const candidateKeys=historyIndex(candidates,asOfDate);
     const coreRevisionEvidence=history===null?null:revisionEvidence(historyKeys);
     const candidateRevisionEvidence=candidates===null?null:revisionEvidence(candidateKeys);
+    const coreHistoryComparison=current!==null&&history!==null
+      ?classifyCoreCurrentHistory(currentKeys,historyKeys):null;
     const candidateCurrentKeys=new Map((candidateCurrent??[]).filter(row=>isKnownAsOf(row,asOfDate))
       .map(row=>[identity(row),row]));
     const missingBySeries=new Map();
@@ -209,6 +236,10 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
       coreHistorySameInstantAdditionalRows:coreRevisionEvidence?.sameInstantAdditionalRows??null,
       coreCurrentKeys:current===null?null:currentKeys.size,
       coreCurrentKeysMissingHistory:current===null||history===null?null:missing,
+      coreCurrentHistoryMatchingKeys:coreHistoryComparison?.coreCurrentHistoryMatchingKeys??null,
+      coreCurrentHistoryConflictingKeys:coreHistoryComparison?.coreCurrentHistoryConflictingKeys??null,
+      coreCurrentHistoryUnverifiedKeys:coreHistoryComparison?.coreCurrentHistoryUnverifiedKeys??null,
+      coreCurrentHistoryMissingKeys:coreHistoryComparison?.coreCurrentHistoryMissingKeys??null,
       missingKeysWithCandidateHistory:candidate&&current!==null&&history!==null&&candidates!==null?candidateCovered:null,
       missingKeysWithMatchingCandidateValueAndHash:candidate&&current!==null&&history!==null&&candidates!==null?candidateSameValueAndHash:null,
       missingKeysWithDifferentCandidateRevision:candidate&&current!==null&&history!==null&&candidates!==null?candidateDifferent:null,
