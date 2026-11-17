@@ -121,6 +121,22 @@ try{
    .waitFor({state:'visible',timeout:15000});
   await waitForGeometry();
   assert.equal(await periods.getByRole('button',{name:'1D',exact:true}).getAttribute('aria-pressed'),'true');
+  // W06 R4 #69: verify actual viewport overflow after all six period changes.
+  const overflow=await page.evaluate(()=>{
+   const viewport=document.documentElement.clientWidth;
+   const violations=[];
+   if(document.documentElement.scrollWidth>viewport+1)
+    violations.push('document scrollWidth='+document.documentElement.scrollWidth);
+   for(const selector of ['.zg-r55-summary-chart','.zg-r55-card-grid article']){
+    for(const element of document.querySelectorAll(selector)){
+     const rect=element.getBoundingClientRect();
+     if(rect.width>0&&(rect.left< -1||rect.right>viewport+1))
+      violations.push(selector+' left='+rect.left+' right='+rect.right);
+    }
+   }
+   return violations;
+  });
+  assert.deepEqual(overflow,[],width+'px horizontal overflow');
   await page.screenshot({path:`artifacts/dashboard-history/history-${width}.png`});
   assert.deepEqual(errors,[]);
   console.log(`PASS ${width}px: 6 chart periods, newer snapshot and true zero in mocked Chromium`);
