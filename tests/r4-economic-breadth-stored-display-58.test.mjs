@@ -56,7 +56,7 @@ test('approved Reader 30/20/30/20 four-factor raw and final 3-day EMA are preser
  assert.equal(f.result.score,47.5); // prior EMA3: Fri 75, Mon .5*20+.5*75
  close(f.domain.score,47.5);
  close(f.domain.trend.at(-1).value,f.domain.score);
- assert.equal(score(f.domain),50);
+ assert.equal(score(f.domain),47.5);
 });
 
 test('the actual completed trade date survives worker, CM-R1 and card source metadata',async()=>{
