@@ -938,3 +938,15 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 **LAST PASS:** W05 소스 branch 2파일 실제 GitHub 수정·blob 및 JS SHA256 조회, W05 docs branch의 비실행 제안 SHA 재핀, 새 exact HEAD Node CI #44005617374 `completed/success` PASS. **FIRST UNFINISHED:** 정확 source-only B 승인·운영 PC source 설치/원격 SHA, 신규 Node CI PASS는 완료. R3-04 실제 WPSFD42 수집/SQLite 원본은 이후 별도 B 효과 승인 없이는 실행하지 않는다.
 
 **NEXT:** 새 Node CI #44005617374 PASS 증거 재사용, 이 최신 exact SHA로 Source Owner 승인 B manifest/기존 Writer B 설치를 진행. 소스 회귀검사 반복 불필요; 기존 정상 공통 Controller 재설치/새 진단기/A #1860 반복 금지. 운영 PC/DB/D1/Task/DNS/Cloudflare/공급자 변경 0.
+
+
+## 50. R3-04 (2026-11-17 11:57 KST) 승인 원장 및 PR 최신 상태 대조 — APPROVAL_NOT_REGISTERED
+
+**시작/종료 진행률:** 순차 DONE 26/82(31.7%), 개별 DONE 28/82(34.1%). 첫 미완료 R3-04. §49의 소스 수정 및 Node CI #44005617374 PASS 재사용; 신규 공급자 호출/운영 쓰기 없음.
+
+- **승인 등록 실조회:** 제어 저장소 main `approvals/writer-updates/` GitHub Contents API를 직접 조회하여 현재 반환된 87개 manifest 파일명 전체를 검사. `earnings`, `wpsfd`, `r304` 이름의 W05 3파일 승인 manifest는 **0개**. BLS 관련 다른 승인 파일은 존재하나 이를 W05 설치 승인으로 대체하지 않음. 파일명 검색은 다른 디렉터리나 비표준 파일명 속 내부 승인까지 부정하는 전역 증거가 아님. 근거: https://github.com/ansqhd5774-Choi/zgmini-pc-control/tree/main/approvals/writer-updates
+- **소스 PR 실조회:** https://github.com/ansqhd5774-Choi/zgmini/pull/1207 는 조회 시 `state=open`, `merged_at=null`, head `d0e2ae07fcf7ff658b65930284e5f4e6a0b80b2a`. §49 최신 Node CI PASS 원본과 동일 소스 HEAD. PR 오픈은 설치 승인이나 운영 배포가 아님.
+- **LAST PASS:** PR 최신 소스 HEAD와 이전 PASS CI의 동일성, 제어 main 승인 폴더의 실제 파일명 목록 조회. **FIRST UNFINISHED:** W05 정확 3파일에 대한 승인된 source-only B manifest, 현재 운영 PC preimage/설치 readback, 이후 별도 WPSFD42 provider+SQLite B 효과 승인. R3-04 `PARTIAL_SOURCE/INSTALL_NOT_READY`, R3-05 `SOURCE_CI_PASS` 유지.
+- **NEXT/담당/성공 조건:** 공유 Writer B Source Owner가 §49의 고정 source SHA 및 3파일 after SHA를 기존 정식 계약으로 승인하고 실제 보호 영향·lease를 확인 → 정규 `pc-writer-source-install` 단회 실행 → JSON/TXT와 PC 실제 3파일 SHA readback. 수집은 별도 B 효과 승인 뒤에만 수행. 승인 manifest를 임의 생성하거나 `PROPOSED_NOT_APPROVED`를 변경하지 않음.
+
+**이번 변경:** 지정 진행 기록 1파일에 실제 조회 근거 추가. 운영 PC/SQLite/D1/Task/Production 변경 0.
