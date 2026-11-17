@@ -3,11 +3,12 @@ import {memo,useId} from 'react';
 import {useDashboardMobileAxis} from '../hooks/use-dashboard-mobile-axis';
 import ChartExtremumPoint from './chart-extremum-point';
 import {chartExtrema} from '../lib/chart-extrema.mjs';
+import {splitCompositeChartProvenance} from '../lib/market-score/composite-chart-provenance-r4.mjs';
 import type {DashboardPoint} from '../app/dashboard-ui';
 import {Area,AreaChart,ReferenceArea,ResponsiveContainer,XAxis,YAxis,ReferenceDot,ReferenceLine,Tooltip} from 'recharts';
 const scoreColor=(score:number)=>score<25?'#ef4444':score<40?'#f59e0b':score<60?'#94a3b8':score<75?'#22c55e':'#10b981';
 function timeScaledTrend(data:DashboardPoint[],periodDays:number){
- const points=data.flatMap(point=>{
+ const points=splitCompositeChartProvenance(data).flatMap(point=>{
   const ts=Date.parse(point.label);
   return Number.isFinite(ts)?[{...point,ts}]:[];
  });
@@ -100,7 +101,7 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays}:{dat
      cursor={{stroke:'var(--zg-chart-crosshair,#aab2bc)',strokeDasharray:'3 4'}}
      content={({active,payload,label:tooltipLabel})=>{
       if(!active||!payload?.length)return null;
-      const point=payload[0]?.payload as DashboardPoint&{ts:number};
+      const point=payload[0]?.payload as DashboardPoint&{ts:number;calculatedValue:number|null;reconstructedValue:number|null};
       const parts=summaryDateParts(Number(tooltipLabel));
       const value=point?.value;
       return <div className="cnn-history-tooltip">
@@ -108,10 +109,13 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays}:{dat
         ?new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(point.ts))+' (계산 시각)'
         :parts?`${parts.year}. ${parts.monthText}. ${parts.dayText}.`:point?.label??'—'}</span>
        <strong style={{color:typeof value==='number'&&Number.isFinite(value)?scoreColor(value):'#94a3b8'}}>{typeof value==='number'&&Number.isFinite(value)?value.toFixed(1):'—'}</strong>
+       <span>{point?.calculatedValue!==null?'실제 계산시각 점 · 당시 방법론 버전 미확인':'현행 산식 재구성 · 당시 실계산점 아님'}</span>
       </div>;
      }}
     />
-    <Area type="monotone" dataKey="value" stroke={color} fill={`url(#${gradientId})`} strokeWidth={2.2} dot={false} activeDot={{r:3.5,strokeWidth:0,fill:color}} connectNulls={false} isAnimationActive={false}/>
+    {/* Never draw one line across reconstructed current-vintage and actual calculated history. */}
+    <Area type="monotone" dataKey="reconstructedValue" stroke={color} strokeDasharray="4 4" fill="none" strokeWidth={1.8} dot={false} activeDot={{r:3.5,strokeWidth:0,fill:color}} connectNulls={false} isAnimationActive={false}/>
+    <Area type="monotone" dataKey="calculatedValue" stroke={color} fill={`url(#${gradientId})`} strokeWidth={2.2} dot={false} activeDot={{r:3.5,strokeWidth:0,fill:color}} connectNulls={false} isAnimationActive={false}/>
     {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={4.4} fill={color} stroke="#fff7f7" strokeWidth={2}/>}
     {extrema.map(point=><ReferenceDot key={'extreme-'+point.kind} x={scaled.points[point.index].ts} y={point.value} ifOverflow="visible" shape={<ChartExtremumPoint point={point} peerIndex={extrema.find(p=>p.kind!==point.kind)?.index} samples={scaled.points.map(p=>({x:p.ts,value:p.value}))} count={scaled.points.length} color={color}/>}/>)}
    </AreaChart>
