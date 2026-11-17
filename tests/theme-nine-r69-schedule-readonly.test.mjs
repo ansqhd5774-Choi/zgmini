@@ -67,8 +67,8 @@ test('R69 accepts exact R48 or R73 cmd.exe /d /c quoted private-chain wrappers',
     ['THEME_NINE_R73_SCHEDULED_PRIVATE.cmd','R73_SCHEDULED_PRIVATE']
   ]){
     const xml=String.raw`<Task><Triggers><StartBoundary>2026-11-17T11:30:00</StartBoundary></Triggers>
-    <Actions><Exec><Command>cmd.exe</Command><Arguments>/d /c &quot;&quot;E:\ZGmini\data\pc-writer\theme-nine-r48\${name}&quot;&quot;</Arguments></Exec></Actions></Task>`;
-    const result=summarizeR69TaskXml(xml,{action:'THEME_NINE_R48_PRIVATE_CYCLE.cmd',time:'11:30'});
+    <Actions><Exec><Command>cmd.exe</Command><Arguments>/d /c &quot;&quot;E:\ZGmini\data\pc-writer\theme-nine-r48\PRIVATE_ACTION_FILE&quot;&quot;</Arguments></Exec></Actions></Task>`;
+    const result=summarizeR69TaskXml(xml.replace('PRIVATE_ACTION_FILE',name),{action:'THEME_NINE_R48_PRIVATE_CYCLE.cmd',time:'11:30'});
     assert.equal(result.privateActionKind,expected);
     assert.equal(result.expectedActionMatches,true);
   }
