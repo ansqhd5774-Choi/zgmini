@@ -287,20 +287,48 @@ function insertPlans(db, plans) {
       insertedSnapshots += Number(snapshotResult.changes);
     }
     for (const p of plans) {
-      const chunk = db.prepare(`SELECT payload_json,row_count FROM ${CHUNKS}
+      const chunk = db.prepare(`SELECT payload_json,row_count,first_observation_date,
+        last_observation_date,first_seen_at FROM ${CHUNKS}
         WHERE provider=? AND dataset=? AND chunk_sha256=?`)
         .get('BLS',p.id,p.chunkHash);
-      const snap = db.prepare(`SELECT chunk_hashes_json,row_count,provenance_json
+      const snap = db.prepare(`SELECT chunk_hashes_json,row_count,provenance_json,
+        status,history_mode,as_of,retrieved_at,latest_observation_date
         FROM ${SNAPSHOTS} WHERE provider=? AND dataset=? AND snapshot_sha256=?`)
         .get('BLS',p.id,p.snapshotHash);
       if (!chunk || !snap || chunk.payload_json !== p.payloadJson
         || chunk.row_count !== p.rows.length
+        || chunk.first_observation_date !== p.rows[0].observationDate
+        || chunk.last_observation_date !== p.rows.at(-1).observationDate
         || snap.chunk_hashes_json !== JSON.stringify([p.chunkHash])
         || snap.row_count !== p.rows.length) err('BLS_READBACK_MISMATCH_ROLLBACK');
       let prov;
       try { prov = JSON.parse(snap.provenance_json); }
       catch { err('BLS_SNAPSHOT_PROVENANCE_INVALID_ROLLBACK'); }
-      if (prov.contract !== CONTRACT) err('BLS_SNAPSHOT_CONTRACT_MISMATCH_ROLLBACK');
+      if (prov?.contract !== CONTRACT) err('BLS_SNAPSHOT_CONTRACT_MISMATCH_ROLLBACK');
+      // A content-identical snapshot can predate this retrieval. Validate its
+      // own immutable lineage, not equality to this new attempt's timestamp.
+      const validStamp = value => typeof value === 'string'
+        && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value)
+        && Number.isFinite(Date.parse(value))
+        && new Date(value).toISOString() === value;
+      const quarterly = p.id === 'PRS85006111';
+      if (snap.status !== 'READY_DIRECT_BLS' || snap.history_mode !== CONTRACT
+        || !validStamp(snap.retrieved_at)
+        || snap.as_of !== snap.retrieved_at.slice(0,10)
+        || snap.latest_observation_date !== p.rows.at(-1).observationDate
+        || !validStamp(chunk.first_seen_at)
+        || Date.parse(chunk.first_seen_at) > Date.parse(snap.retrieved_at)
+        || prov.authority !== 'US_BLS' || prov.transportProvider !== 'BLS_DIRECT_API'
+        || prov.seriesID !== p.id || prov.retrievedAt !== snap.retrieved_at
+        || prov.periodStart !== p.rows[0].observationDate
+        || prov.periodEnd !== p.rows.at(-1).observationDate
+        || prov.frequency !== (quarterly?'QUARTERLY':'MONTHLY')
+        || prov.seasonalAdjustment !== 'SA'
+        || prov.rawUnit !== (quarterly?'PERCENT_YEAR_OVER_YEAR':'INDEX')
+        || prov.officialVintageId !== null
+        || !/^[a-f0-9]{64}$/.test(prov.responseSha256??'')) {
+        err('BLS_STORED_LINEAGE_MISMATCH_ROLLBACK');
+      }
     }
     db.exec('COMMIT');
     begun = false;
