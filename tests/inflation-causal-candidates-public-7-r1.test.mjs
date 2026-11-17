@@ -5,6 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import {INFLATION_CANDIDATES_7,INFLATION_CANDIDATES_7_IDS}
   from '../lib/inflation-causal-candidates-public-7-catalog.mjs';
+import {INFLATION_CAUSAL_19_IDS}
+  from '../lib/inflation-causal-public-catalog.mjs';
 import {INFLATION_CANDIDATES_7_PUBLIC_KEY,INFLATION_CANDIDATES_7_PUBLIC_ROUTE,
   INFLATION_CANDIDATES_7_PUBLIC_SCHEMA,validateInflationCandidates7Public,
   readInflationCandidates7PublicResponse}
@@ -189,8 +191,7 @@ test('unapproved stale/future sourceStoredAt is not relabeled as current',t=>{
 });
 
 test('A4-05: exact 26 research IDs keep approved units and no overlapping inputs',()=>{
-  const from19=['1','3','4','5','6','7','8','9','10','11','12','13',
-    '14','18','19','21','25','26','31'];
+  const from19=INFLATION_CAUSAL_19_IDS;
   const from7=INFLATION_CANDIDATES_7_IDS;
   assert.equal(from19.length,19);
   assert.equal(from7.length,7);
