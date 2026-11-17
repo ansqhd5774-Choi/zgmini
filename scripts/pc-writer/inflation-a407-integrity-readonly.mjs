@@ -137,9 +137,9 @@ export function inspectA407(home=HOME){
   db=new DatabaseSync(dbFile,{readOnly:true,timeout:1000});
   db.exec('PRAGMA query_only=ON');
   for(const id of ['1','12','13','14','19']){
-    let proof;
-    try{proof=verifyPitSnapshot(db,PIT[id],observed.get(id))}
-    catch(e){if(id!=='1')throw e;proof=macroDigest(db,observed.get(id));}
+    const pitPresent=db.prepare("SELECT 1 AS present FROM api_history_snapshots_v1 WHERE provider='FRED' AND dataset=? AND history_mode='INITIAL_RELEASE_ONLY' LIMIT 1").get(PIT[id]);
+    const proof=id==='1'&&!pitPresent?macroDigest(db,observed.get(id)):
+      verifyPitSnapshot(db,PIT[id],observed.get(id));
     add([id],proof);
   }
   add(['18'],macroDigest(db,observed.get('18')));
