@@ -54,6 +54,24 @@ try{
   await page.waitForFunction(old=>document.querySelector('.zg-r55-summary-chart path.recharts-area-curve')?.getAttribute('d')!==old,month);
   assert.equal(await periods.getByRole('button',{name:'1M',exact:true}).getAttribute('aria-pressed'),'true');
   assert.equal(await page.locator('.zg-r55-card-grid article').count(),12);
+  // R4 #69: assert real document and visible dashboard/chart/card geometry
+  // stays within each tested viewport; screenshots alone do not prove this.
+  const overflow=await page.evaluate(()=>{
+   const viewport=document.documentElement.clientWidth;
+   const selectors=['.zg-r55-summary-chart','.zg-r55-card-grid article'];
+   const violations=[];
+   if(document.documentElement.scrollWidth>viewport+1)
+    violations.push('document scrollWidth='+document.documentElement.scrollWidth);
+   for(const selector of selectors){
+    for(const element of document.querySelectorAll(selector)){
+     const rect=element.getBoundingClientRect();
+     if(rect.width>0&&(rect.left< -1||rect.right>viewport+1))
+      violations.push(selector+' left='+rect.left+' right='+rect.right);
+    }
+   }
+   return {viewport,violations};
+  });
+  assert.deepEqual(overflow.violations,[],width+'px horizontal overflow');
   await page.screenshot({path:`artifacts/dashboard-history/history-${width}.png`});
   assert.deepEqual(errors,[]);
   console.log(`PASS ${width}px: period change and newer stored snapshot update chart`);
