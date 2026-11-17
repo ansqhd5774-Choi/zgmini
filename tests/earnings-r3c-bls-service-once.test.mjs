@@ -176,6 +176,38 @@ test('service-only append isolates its source from existing BLS three-series sna
   }finally{db.close();}
 });
 
+test('service-only preflight/append survives damaged base BLS metadata without weakening base checks',()=>{
+  const db=newDb();
+  try{
+    assert.equal(insertPlans(db,plans()).verified,3);
+    const service=buildPlans(normalizeSeries(serviceResponse(),SERVICE_SERIES),
+      '2026-10-27T03:00:00.000Z','b'.repeat(64));
+    db.prepare(`UPDATE api_history_snapshots_v1 SET provenance_json=?
+      WHERE provider='BLS' AND dataset='WPSFD4'`).run('{"contract":"OTHER"}');
+    // Default and explicitly mixed checks must still reject the bad base source.
+    assert.throws(()=>checkSchema(db),/PRIOR_BLS_NAMESPACE_CONFLICT_NO_WRITE/);
+    assert.throws(()=>checkSchema(db,{includeServices:true}),
+      /PRIOR_BLS_NAMESPACE_CONFLICT_NO_WRITE/);
+    const badBase=db.prepare(`SELECT provenance_json FROM api_history_snapshots_v1
+      WHERE provider='BLS' AND dataset='WPSFD4'`).get().provenance_json;
+    assert.deepEqual(checkSchema(db,{includeServices:true,serviceOnly:true}),
+      {existingSnapshots:0,existingChunks:0});
+    assert.deepEqual(insertPlans(db,service),
+      {insertedChunks:1,insertedSnapshots:1,verified:1});
+    assert.equal(db.prepare(`SELECT provenance_json FROM api_history_snapshots_v1
+      WHERE provider='BLS' AND dataset='WPSFD4'`).get().provenance_json,badBase);
+    assert.throws(()=>insertPlans(db,plans()),/PRIOR_BLS_NAMESPACE_CONFLICT_NO_WRITE/);
+    // Corruption inside WPSFD42 remains a hard stop even in isolated mode.
+    db.prepare(`UPDATE api_history_snapshots_v1 SET provenance_json=?
+      WHERE provider='BLS' AND dataset='WPSFD42'`).run('{"contract":"OTHER"}');
+    assert.throws(()=>checkSchema(db,{serviceOnly:true}),
+      /PRIOR_BLS_NAMESPACE_CONFLICT_NO_WRITE/);
+    assert.throws(()=>insertPlans(db,service),/PRIOR_BLS_NAMESPACE_CONFLICT_NO_WRITE/);
+    assert.equal(db.prepare(`SELECT COUNT(*) AS n FROM api_history_snapshots_v1
+      WHERE provider='BLS' AND dataset='WPSFD42'`).get().n,1);
+  }finally{db.close();}
+});
+
 test('service-only source rejects unrelated series and conflicting repeated month',()=>{
   assert.throws(()=>normalizeSeries(fakeResponse(),SERVICE_SERIES),/BLS_SERIES_COUNT_MISMATCH_NO_WRITE/);
   const unexpected=serviceResponse();
@@ -188,38 +220,46 @@ test('service-only source rejects unrelated series and conflicting repeated mont
 
 test('same-hash WPSFD42 snapshot with damaged stored lineage cannot pass idempotent readback',()=>{
   const corruptions=[
-    db=>db.prepare(`UPDATE api_history_snapshots_v1 SET status=?
-      WHERE provider='BLS' AND dataset='WPSFD42'`).run('INVALID'),
-    db=>db.prepare(`UPDATE api_history_snapshots_v1 SET retrieved_at=?,as_of=?
+    {kind:'status',corrupt:db=>db.prepare(`UPDATE api_history_snapshots_v1 SET status=?
+      WHERE provider='BLS' AND dataset='WPSFD42'`).run('INVALID')},
+    {kind:'retrieved_at',corrupt:db=>db.prepare(`UPDATE api_history_snapshots_v1 SET retrieved_at=?,as_of=?
       WHERE provider='BLS' AND dataset='WPSFD42'`)
-      .run('2026-10-28T03:00:00.000Z','2026-10-28'),
-    db=>{
+      .run('2026-10-28T03:00:00.000Z','2026-10-28')},
+    {kind:'authority',corrupt:db=>{
       const original=db.prepare(`SELECT provenance_json FROM api_history_snapshots_v1
         WHERE provider='BLS' AND dataset='WPSFD42'`).get();
       const meta=JSON.parse(original.provenance_json);
       meta.authority='OTHER';
       db.prepare(`UPDATE api_history_snapshots_v1 SET provenance_json=?
         WHERE provider='BLS' AND dataset='WPSFD42'`).run(JSON.stringify(meta));
-    },
+    }},
   ];
-  for(const corrupt of corruptions){
+  for(const {kind,corrupt} of corruptions){
     const db=newDb();
     try{
       const service=buildPlans(normalizeSeries(serviceResponse(),SERVICE_SERIES),
         '2026-10-27T03:00:00.000Z','b'.repeat(64));
       assert.equal(insertPlans(db,service).verified,1);
       corrupt(db);
-      // This namespace-only guard does not validate full lineage; the
-      // transactional readback must reject a poisoned existing snapshot.
-      assert.deepEqual(checkSchema(db,{includeServices:true}),
-        {existingSnapshots:1,existingChunks:1});
-      assert.throws(()=>insertPlans(db,[...plans(),...service]),
-        /BLS_STORED_LINEAGE_MISMATCH_ROLLBACK/);
+      if(kind==='authority'){
+        // The strengthened namespace guard now rejects this before any SQL write.
+        assert.throws(()=>checkSchema(db,{includeServices:true}),
+          /PRIOR_BLS_NAMESPACE_CONFLICT_NO_WRITE/);
+        assert.throws(()=>insertPlans(db,[...plans(),...service]),
+          /PRIOR_BLS_NAMESPACE_CONFLICT_NO_WRITE/);
+      }else{
+        // Status and retrieved_at still pass the narrow namespace check, but
+        // must fail the existing transactional lineage readback and roll back.
+        assert.deepEqual(checkSchema(db,{includeServices:true}),
+          {existingSnapshots:1,existingChunks:1});
+        assert.throws(()=>insertPlans(db,[...plans(),...service]),
+          /BLS_STORED_LINEAGE_MISMATCH_ROLLBACK/);
+      }
       const preserved=db.prepare(`SELECT dataset FROM api_history_snapshots_v1
         WHERE provider='BLS'`).all().map(x=>x.dataset);
-      assert.deepEqual(preserved,['WPSFD42']);
+      assert.deepEqual(preserved,['WPSFD42'],kind);
       assert.equal(db.prepare(`SELECT COUNT(*) AS n FROM api_history_chunks_v1
-        WHERE provider='BLS'`).get().n,1);
+        WHERE provider='BLS'`).get().n,1,kind);
     }finally{db.close();}
   }
 });
