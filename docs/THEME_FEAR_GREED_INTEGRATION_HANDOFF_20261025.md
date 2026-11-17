@@ -1,3 +1,10 @@
+## 2026-11-18 06:00 KST W03 10/68 — 기존 A 조회 2종의 Host 승인 SHA 조회 적합성 판정 (원격 소스 읽기 전용)
+
+- **진행률:** 시작 9/68(13.2%) → 종료 9/68(13.2%). 10단계의 신규 원자료·checkpoint·R25/R32 비공개 계산 실증은 미완료.
+- **신규 원본 대조:** pc-control main `config/operations.json` blob `90cf96a8a7e263ee366d185b4f43d4caa0b7c687`에는 A급 `source-inventory-runtime-readonly`, `pc-source-origin-readonly`, `pc-source-preflight`가 있다. 하지만 `controller/source-inventory-runtime-readonly.mjs` blob `db9e9c8347277287cc6ef10bad310be125314d52`는 운영 저장자료/SQLite inventory 검사이며 Host `approvedSources` 목록 조회가 아니다. `controller/pc-source-origin-readonly.mjs` blob `75522f10f27f97c8453fa9ed7a4fa0b97e2a543b`는 PC Git origin 후보 검사로 `configApprovedSha`와 `runtimeSourceVerified:false`를 반환하나, 이 값은 **Host source bundle allowlist 등록 증명과 다르다**. 기존 A 이름만 보고 Host 승인 SHA 목록을 확보했다고 주장하거나 실행하지 않는다.
+- **판정:** #2053 `SHADOW_SOURCE_NOT_APPROVED`는 여전히 미해결. GitHub source-only B planner와 기존 A 2종은 Host approvedSources의 W03 등록을 증명하지 못한다. 새로운 A/B 작업 요청 0; 운영 PC·Provider·SQLite·D1·Task·배포 변경 0. #2049 R47 CMD 설치 PASS는 보존.
+- **다음 구체 실행:** (1) `controller/operations.mjs`의 나머지 A operation 반환 계약에서 **Host approvedSources의 W03 SHA/branch/entrypoint/manifest 존재 여부만 노출하는 승인된 경로**가 실제 있는지 확인; (2) 없으면 공통 소유자에게 비밀/전체 Host JSON을 반환하지 않는 최소 읽기 전용 승인 상태 조회 및 B 등록 adapter 연결만 정확히 분리; (3) W03는 immutable source closure/manifest를 준비, 정규 B 승인·등록 이후 신규 Shadow A 단회 실행; (4) R73/R48/R47 및 R25/R32 저장 실측. 공개 권리 승인 전 D1 게시 금지.
+
 ## 2026-11-18 05:03 KST W03 10/68 — 공통 B 등록 operation 배선 부재 확인 (소스 읽기 전용)
 
 - **진행률:** 시작 9/68(13.2%) → 종료 9/68(13.2%); 10단계 미완료. 예약 검증은 전체 기능 완료 후 후속.
