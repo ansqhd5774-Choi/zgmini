@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import {test} from "node:test";
 import {buildEmploymentR6OneYearReadModel} from "../lib/market-score/employment-r6-one-year-read-model.mjs";
+import {EMPLOYMENT_R6_FEATURES} from "../lib/market-score/employment-r6-formula.mjs";
+import {deriveEmploymentR6FeatureHistory,computeFamilyScores,computeEmploymentScore} from "../lib/market-score/employment-r6-feature-engine.mjs";
+
 import {normalizeStoredObservation,selectAsOfRevisions} from "../lib/market-score/employment-r6-observation-reader.mjs";
 
 const row=(id,date,value)=>({
@@ -196,4 +199,29 @@ test("ETA 539 breadth refuses 52-observed-week substitutions when a whole calend
   ).indicators.find(x=>x.id==="STATE_CLAIMS_BREADTH");
   assert.equal(gap.rawStatus,"UNAVAILABLE");
   assert.equal(gap.value,null);
+});
+
+test("W04 PIT-04-07 rejects null/blank at scoring boundary but preserves actual zero",()=>{
+  const feature=EMPLOYMENT_R6_FEATURES.find(x=>x.id==="U3_UNEMPLOYMENT");
+  assert(feature);
+  const observations=[
+    row("U3_UNEMPLOYMENT_RATE","2026-09-30",null),
+    row("U3_UNEMPLOYMENT_RATE","2026-10-31",""),
+    row("U3_UNEMPLOYMENT_RATE","2026-11-30","  "),
+    row("U3_UNEMPLOYMENT_RATE","2026-12-31",false),
+    row("U3_UNEMPLOYMENT_RATE","2027-01-31","0"),
+    row("U3_UNEMPLOYMENT_RATE","2027-02-28",0),
+  ];
+  const values=deriveEmploymentR6FeatureHistory(feature,observations);
+  assert.deepEqual(values.map(p=>p.date),["2027-01-31","2027-02-28"]);
+  assert.deepEqual(values.map(p=>p.value),[0,0]);
+  const features=EMPLOYMENT_R6_FEATURES.map(f=>({featureId:f.id,status:"READY",score:50}));
+  const family=EMPLOYMENT_R6_FEATURES[0].family;
+  features[0]={...features[0],score:null};
+  const families=computeFamilyScores(features);
+  assert.equal(families[family].status,"PARTIAL");
+  assert.equal(families[family].score,null);
+  const partialFamilies=Object.fromEntries([...new Set(EMPLOYMENT_R6_FEATURES.map(f=>f.family))]
+    .map(f=>[f,{status:"READY",score:f===family?null:50}]));
+  assert.deepEqual(computeEmploymentScore(features,partialFamilies),{status:"PARTIAL",score:null});
 });
