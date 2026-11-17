@@ -1,6 +1,6 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
-> **현재 즉시 상태 (2026-11-17 KST): **14/75 (18.7%), 잔여 61단계**. #44 D09 신용 위험 UI 세 파일 선택 수정·신규 10개 회귀·[#1199](https://github.com/ansqhd5774-Choi/zgmini/pull/1199) CI PASS, `main@e9d212660dfa9955fd3370de5cd68e856f84d093` 병합 완료, 실PC 신규 단일 입력→D1/GET 검증은 PARTIAL. **#45 D10 실적 침체 확정 4요인 R4·경제 13요인 E1-R5·별도 잠정 E1-R4/R30 공개 계약과 화면 분리 소스/기존 회귀 확인**, 실제 신규 완료분기 저장·점수/게시/차트 동치 미확정으로 PARTIAL. #36~38·#40~43 운영 종단도 별도. 다음 독립 실행 **#46 D11 자산 버블 R9/R10 모델 분리**. main SHA의 Cloudflare Build 및 exact Production ID·공개 신규 갱신은 확인 전까지 완료 주장 금지.
+> **현재 즉시 상태 (2026-11-17 KST): **14/75 (18.7%), 잔여 61단계**. #44 D09 신용 위험 UI 세 파일 선택 수정·신규 10개 회귀·[#1199](https://github.com/ansqhd5774-Choi/zgmini/pull/1199) CI PASS, `main@e9d212660dfa9955fd3370de5cd68e856f84d093` 병합 완료, 실PC 신규 단일 입력→D1/GET 검증은 PARTIAL. **#45 D10 실적 침체 확정 4요인 R4·경제 13요인 E1-R5·별도 잠정 E1-R4/R30 공개 계약과 화면 분리 소스/기존 회귀 확인**, 실제 신규 완료분기 저장·점수/게시/차트 동치 미확정으로 PARTIAL. #36~38·#40~43 운영 종단도 별도. 다음 독립 실행 **#46 D11 자산 버블 R9/R10 모델 분리**. main SHA의 GitHub `check`/`verify`/`notify`/Cloudflare Workers Builds **4/4 SUCCESS**까지 검증. exact Production Deployment ID/SHA·공개 신규 데이터 갱신은 별도 미확인.
 
 ## 현재 인계 정본 — 다음 담당자 첫 읽기 (2026-11-16 KST)
 
@@ -376,3 +376,5 @@
 - 기존 `tests/earnings-risk-production-contract-r3.test.mjs@bacc30001f7ae4c5ef6e7cb992e11d14a2125d33`, `tests/earnings-risk-provisional-public-r30.test.mjs@66830169f3b6d796063e8a0158fc1afaacc26249`, `tests/earnings-risk-provisional-panel-visibility-r41.test.mjs@945c352008498c48ba4847ddeadc6470be92db0d`는 method/분기 확인, 무단 이력 혼합/결측 차단, 분리 Reader/잠정 공개 검증을 포함. 앞선 PR #1199 GitHub CI Run `43985578596` 전체 Regression SUCCESS로 해당 최신 main 회귀를 함께 검증(이번 회차 새 테스트 파일·코드 수정 없음).
 - LAST PASS: 소스/기존 자동 회귀에서 4개 공식 위험 진단 요인·E1-R5 경제13요인·잠정 R30 공개를 분리하고 날짜/최신점/버전/결측을 보수적으로 다룸. **FIRST UNVERIFIED:** 원담당 W05가 확보한 신규 공식 EPS·마진·매출·확산 한 요인의 완료 결산분기/공시 저장→나머지 3개 승인 이월→R4 계산/current/관측이력→D1 `detail:earnings-recession:v1` readback→공개 GET 및 실제 위험 카드·차트 최신점 일치. 공유 Controller/PC Writer 변경·원자료 업로드·재예약하지 않음.
 - #45 판정 **PARTIAL**, 신규 DONE 추가 0. 무관한 W05 실적 침체 82단계 작업을 W06 대신 수행/중단시키지 않음. 다음 독립 실행 **#46 자산 버블 R9/R10 모델 분리**, 원담당의 실제 신규 공식 분기 실증은 별도 미완료.
+
+**#44 post-merge 4/4 CI 추가 확인 (2026-11-17 KST):** `main@e9d212660dfa9955fd3370de5cd68e856f84d093`의 GitHub Checks `check`, `verify`, `notify`, `Workers Builds: zgmini-migration-candidate-r5`가 모두 `completed / success`로 원격 재조회됨. 신규 PR #1199의 head CI Run `43985578596` SUCCESS와 별개. Cloudflare Workers Git Integration **빌드 성공은 exact Production Deployment와 D1 게시 성공 증명이 아님**. #44·#45 전체 PARTIAL/14/75 유지.
