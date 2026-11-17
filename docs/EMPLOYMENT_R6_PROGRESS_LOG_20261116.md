@@ -664,3 +664,14 @@
 - **현재 원격 결과:** #1943 결과 댓글 아직 0건(마지막 조회 시점). 실제 Run/JSON/TXT 미회수로 `STATE_UNKNOWN/SUBMITTED`; 접수 완료를 실행 PASS 또는 4분류 완료로 표기하지 않음. 중복 요청 금지.
 - **진척:** 시작/종료 25/72(34.7%). PIT-04-03 실제 matching/conflicting/unverified/missing/asOf 검증 전 26단계 승격 금지. Candidate 14키 충돌 승격 HOLD 유지.
 - **다음 필수:** 동일 #1943의 PC 결과 댓글·Run 및 JSON/TXT 2/2 조회. PASS라면 4개 분류 합계=coreCurrentKeys, missing=coreCurrentKeysMissingHistory, asOf 및 source/protected 상태 검증 후 PIT-04-03 완료 판정. BLOCKED면 정확 자원·입장/Worker 단계만 기록하며 source/임계치 임의 변경·무한 재시도 금지.
+
+## 59. W04 PIT-04-03 — R13 #1943 A/heavy 안전 차단 실측 및 원격 결과 2/2 회수 (2026-11-17 KST)
+
+<!-- W04-PIT0403-R13-1943-MEMORY-BLOCKED-READBACK-20261117 -->
+
+- **계승/진척:** 앞선 §58 고유 1회 접수를 동일 requestId로 결과 회수. 시작/종료 25/72 DONE(34.7%), 47 미완료. Controller 2파일 실PC #1932 SUCCEEDED와 Host 등록 #1874 완료 증거 재사용; 별도 설치/승인·공유 경합 조정 요청 없음.
+- **확정 결과:** [Issue #1943 댓글 #6942288884](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1943#issuecomment-6942288884), [Run 44043116806](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44043116806), Runner seat 5, `requestId=pc-w04-pit0403-fourbucket-retry-20261117-r13-01`. [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44043116806-1-seat-5.json) blob `4c2d2e46a43504545202a2a165dce51126459196` 및 [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44043116806-1-seat-5.txt) blob `4be88c1ec91882a3dd06bff22e5c1c38dc61e512` 각각 원격 GET, 동일 requestId/status/code/Controller source/requested source/보호상태/실행SHA 일치.
+- **메모리 판정:** `BLOCKED / RESOURCE_WAIT_MEMORY`, `lastPass=ALLOWLISTED_WORKER_STARTED`, `firstFail=ALLOWLISTED_OPERATION`. 첫 admission `admitted=true`: 최소 `1536MiB`, 첫 `725MiB`, 7샘플 최소 `431MiB`, 이후 `1592MiB` 확보로 약 18.05초 대기 후 진입. 그러나 Worker 시작 후 두 번째 `os.freemem()` 검사에서 메모리 부족으로 차단됐고 두 번째 순간 수치는 결과에 미기록. 이전 #1939도 동일한 Worker 단계 재검사 차단. 원인 프로세스 단정 불가.
+- **실제 영향:** `candidateExecuted=false`, `sqliteOpened=false`, `actualExecutionSha=null`, `operationalWrites=0`, `providerCalls=0`, `d1Writes=0`, `protectedStateUnchanged=true`. 네 버킷 수치/asOf 0건(미실측), 후보 14개 상충 자동 승격 HOLD. #1943 소비, 동일 요청 재실행 금지. Controller 설치나 WAL 상태 오류로 오분류하지 않음.
+- **LAST PASS/FIRST FAIL:** controllerBInstalled PASS + first RAM admission PASS + report JSON/TXT 2/2 VERIFIED / `RESOURCE_WAIT_MEMORY` at worker check. 수집·저장·D1·Task·설정 변경 없음.
+- **다음 필수 행동:** 승인된 자연 유휴/메모리 확보 조건에서만 *신규 고유* A/heavy로 실제 4버킷과 asOf 검산(일치+상충+검증불가+누락=Core Current keys, missing=History missing). 누적 3회 메모리 차단 원인을 별도 설치/총괄 GO 요구·무한 재시도로 확대하지 않음. 메모리 회복 전 다른 독립 기능 작업은 계속.
