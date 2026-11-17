@@ -79,15 +79,25 @@ test('W04 PIT-04-02: frozen 16-file exact source + latest isolated two-test runt
     }
     fs.symlinkSync(path.join(process.cwd(),'node_modules'),
       path.join(checkout,'node_modules'),'dir');
-    const run=spawnSync(process.execPath,['--test',
+    // Node's own test runner injects NODE_TEST_CONTEXT into its workers.
+    // Remove it so the nested isolated process actually runs its two suites
+    // and emits its OWN TAP summary, rather than forwarding events to a
+    // missing parent IPC channel.
+    const nestedEnv={...process.env,CI:'true'};
+    delete nestedEnv.NODE_TEST_CONTEXT;
+    delete nestedEnv.NODE_TEST_WORKER_ID;
+    const run=spawnSync(process.execPath,['--test','--test-reporter=tap',
       'tests/pc-writer-employment-r6-pit-coverage.test.mjs',
       'tests/employment-r6-runner-stage.test.mjs',
     ],{cwd:checkout,encoding:'utf8',timeout:155000,
-      maxBuffer:12*1024*1024,env:{...process.env,CI:'true'}});
+      maxBuffer:12*1024*1024,env:nestedEnv});
+    const output=(run.stdout||'')+'\n'+(run.stderr||'');
     assert.equal(run.error,undefined,`ISOLATED_NODE_ERROR ${run.error?.message}`);
-    assert.equal(run.status,0,
-      `FROZEN_BUNDLE_RUNTIME_FAILED\n${(run.stdout||'').slice(-10000)}\n${(run.stderr||'').slice(-4000)}`);
-    assert.match(run.stdout||'',/fail 0|# fail 0/);
+    assert.equal(run.status,0,`FROZEN_BUNDLE_RUNTIME_FAILED\n${output.slice(-14500)}`);
+    assert.match(output,/# tests [1-9][0-9]*/, 'NO_ISOLATED_TESTS_EXECUTED');
+    assert.match(output,/# fail 0\b/, 'ISOLATED_TEST_FAILURE_HIDDEN');
+    assert.match(output,/PIT-04-02 Runner exposes only fixed History counts/,
+      'HISTORY_RUNNER_SUITE_NOT_EXECUTED');
   }finally{
     if(worktreeAdded){
       try{git(['worktree','remove','--force',checkout],{timeout:25000});}catch{}
