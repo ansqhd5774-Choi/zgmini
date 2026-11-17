@@ -24,7 +24,7 @@ const r9=()=>({status:'READY',score:54,asOfDate:'2026-10-21',
 test('approved R10 with all six matched factors displays the completed quarter and actual trend',()=>{
  const p=base();
  assert.equal(assetBubbleVerifiedDisplayScore(p),40);
- assert.deepEqual(assetBubbleVerifiedDisplayTrend(p,40),p.trend);
+ assert.deepEqual(assetBubbleVerifiedDisplayTrend(p,40),p.trend.map(({label,value})=>({label,value})));
 });
 test('zero is a valid scored result, never converted into missing or synthetic average',()=>{
  const p=base();p.score=0;p.indicators.forEach(x=>x.score=0);p.trend.at(-1).value=0;
@@ -97,7 +97,7 @@ test('invalid/future/misdated prior points omitted, identical duplicates collaps
   ...p.trend.slice().reverse(),
   p.trend[1],
  ];
- assert.deepEqual(assetBubbleVerifiedDisplayTrend(p,40),base().trend);
+ assert.deepEqual(assetBubbleVerifiedDisplayTrend(p,40),base().trend.map(({label,value})=>({label,value})));
 });
 test('null/NaN/future or out-of-range values never become scored 0',()=>{
  for(const value of [null,undefined,'40',NaN,Infinity,-1,101]){
@@ -105,7 +105,7 @@ test('null/NaN/future or out-of-range values never become scored 0',()=>{
   assert.equal(assetBubbleVerifiedDisplayScore(p),null);
  }
  const p=base();p.trend[0].value=NaN;
- assert.deepEqual(assetBubbleVerifiedDisplayTrend(p,40),[base().trend[1]]);
+ assert.deepEqual(assetBubbleVerifiedDisplayTrend(p,40),[{label:'2026-06-30',value:40}]);
 });
 test('actual panel uses approved display gate; saved source raw/history join remains unchanged',()=>{
  assert.match(panel,/assetBubbleVerifiedDisplayScore\(payload\)/);
