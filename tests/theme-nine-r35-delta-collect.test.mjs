@@ -118,6 +118,19 @@ test('HTTP 429 stops without retries or new data root',async t=>{
   assert.equal(fs.existsSync(f.deltaHome),false);
 });
 
+test('R35 rejects nonexistent UTC calendar days before creating any raw delta',async t=>{
+  const f=setup(t);
+  // Node Date.parse normalizes both of these into another month.
+  for(const stamp of ['2026-02-30T19:00:00Z','2026-11-31T19:00:00Z']){
+    const r=await collectNineR35Delta({...f,fetchImpl:async()=>new Response(
+      bar('SPY',stamp)+'\n')});
+    assert.equal(r.status,'STOP_RESPONSE_OR_INVALID_BARS');
+    assert.equal(r.providerCalls,1);
+    assert.equal(fs.existsSync(f.deltaHome),false);
+    assert.equal(sha(fs.readFileSync(f.baseManifestFile)),f.before);
+  }
+});
+
 test('invalid raw bar halts before storing',async t=>{
   const f=setup(t);
   const r=await collectNineR35Delta({...f,fetchImpl:async()=>new Response(
