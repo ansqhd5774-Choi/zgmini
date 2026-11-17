@@ -9,6 +9,7 @@ import { MarketCardInsight } from "../../market-card-insight";
 import { MarketFearGreedChart } from "../../market-fear-greed-chart";
 import {fearGreedStateColor} from '../../../lib/fear-greed-state-color.mjs';
 import {CNN_OBSERVED_HISTORY_VERSION} from '../../../lib/cnn-observed-history-r1.mjs';
+import {currentCnnSessionHistory} from '../../../lib/cnn-current-session-history-r4.mjs';
 
 import {useStoredIndex} from '../../../components/use-stored-index';
 import FactorAnalysisR2,{type FactorR2} from '../factor-analysis-r2';
@@ -537,10 +538,13 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
   },[archiveHistory,allIntraday]);
   const history = useMemo(() => {
     if (selectedPeriod === "1D") {
-      const intraday=archiveHistory.length>=2?combinedObserved:allIntraday;
-      const lastDay=(archived?.checkedPoints?.length??0)>=2?archiveHistory.at(-1)?.date.slice(0,10)
-        : (allIntraday.at(-1)?.date.slice(0,10)??intraday.at(-1)?.date.slice(0,10));
-      return lastDay ? intraday.filter(point=>point.date.slice(0,10)===lastDay) : [];
+      // A verified CNN current score must not be compared with stale PC checks.
+      // Compare the CNN source's New York session, not a PC check's UTC day.
+      return currentCnnSessionHistory(payload?.observedAt,{
+        checkedPoints:archived?.period===selectedPeriod?archived.checkedPoints:[],
+        observedPoints:archived?.period===selectedPeriod?archived.points:[],
+        intradayObservations:observedSidecarReady?(payload?.intradayObservations??[]):[],
+      });
     }
     // Long ranges use the existing CNN daily closes only.
     if (selectedPeriod === "6M" || selectedPeriod === "1Y") {
@@ -561,7 +565,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
     const observedDays=new Set(actual.map(point=>point.date.slice(0,10)));
     return [...daily.filter(point=>!observedDays.has(point.date.slice(0,10))),...actual]
       .sort((a,b)=>a.time-b.time);
-  }, [allHistory, allIntraday, archiveHistory, combinedObserved, selectedPeriod]);
+  }, [allHistory, allIntraday, archiveHistory, combinedObserved, selectedPeriod, archived, observedSidecarReady, payload?.observedAt, payload?.intradayObservations]);
   const observedRanges = useMemo(() => {
     if (!observedSidecarReady || selectedPeriod === "1D") return [];
     const observedDays=new Set(archiveHistory.length>=2?combinedObserved.map(p=>p.date.slice(0,10)):[]);
