@@ -193,6 +193,18 @@ test('A4-07: real parsers + SQLite WAL audit stored 19+6, 2 checkpoints, and det
   assert.equal(first.originalVerified,19);
   assert.equal(first.candidateVerified,6);
   assert.equal(first.census,'MISSING');
+  // CPI #22 and OER #23 share the PPI #24 BLS file. A valid SHA of that
+  // file must not prove #22 exists if its series was removed after storage.
+  const sharedBls=path.join(home,'inflation-causal-candidates-r1','bls-cpi-ppi3.json');
+  const sharedBefore=fs.readFileSync(sharedBls);
+  const sharedDocument=JSON.parse(sharedBefore.toString('utf8'));
+  delete sharedDocument.series.CUSR0000SEHA;
+  fs.writeFileSync(sharedBls,JSON.stringify(sharedDocument));
+  const missingCpi=inspectA407(home);
+  assert.equal(missingCpi.status,'PARTIAL');
+  assert.equal(missingCpi.code,'A407_CANDIDATE_CONTENT_UNVERIFIED');
+  assert.equal(missingCpi.candidateVerified,0);
+  fs.writeFileSync(sharedBls,sharedBefore);
   assert.equal(first.original.length,19);
   assert.equal(new Set(first.original.map(x=>x.id)).size,19);
   for(const id of ['21','26']){
