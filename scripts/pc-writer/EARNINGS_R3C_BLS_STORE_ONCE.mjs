@@ -3,12 +3,12 @@
 // Runtime: Node >=22.13 with node:sqlite. Credentials are never logged or persisted.
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {parseEnv} from 'node:util';
 import {DatabaseSync} from 'node:sqlite';
 
-const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PC_ROOT = path.resolve(process.env.ZGMINI_PC_HOME || 'E:\\ZGmini\\data\\pc-writer');
 const DB_PATH = path.join(PC_ROOT, 'storage', 'core.sqlite');
 const API = 'https://api.bls.gov/publicAPI/v2/timeseries/data/';
@@ -328,7 +328,9 @@ async function main() {
   const selectedSeries=includeServices?SERVICE_SERIES:SERIES;
   const utc = new Date().toISOString();
   const stamp = utc.replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z').replace('T','-');
-  const logfile = path.join(HERE,
+  // One-shot diagnostics belong in the runner's ephemeral user TEMP, not in
+  // the versioned operational source checkout.
+  const logfile = path.join(os.tmpdir(),
     `${includeServices?'EARNINGS_BLS_SERVICE_R1':'EARNINGS_R3C_BLS_STORE_ONCE'}_RESULT_${stamp}.txt`);
   const notes = [
     'EARNINGS_COMPANION_R3C_BLS_DIRECT_STORE_ONCE_V1',
@@ -336,6 +338,7 @@ async function main() {
     `MODE=${dryRun?'SERVICE_PREFLIGHT_READ_ONLY':includeServices?
       'MANUAL_CONFIRMED_SERVICE_APPEND':'MANUAL_ONE_POST_EXISTING_SQLITE_APPEND_ONLY'}`,
     'PROVIDER=BLS',
+    'RESULT_LOG_LOCATION=USER_TEMP',
     `SERIES=${selectedSeries.join('|')}`,
     `YEAR_RANGE=${YEAR_START}-${YEAR_END}`,
   ];
