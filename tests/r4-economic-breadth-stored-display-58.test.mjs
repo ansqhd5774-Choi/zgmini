@@ -52,9 +52,9 @@ test('approved Reader 30/20/30/20 four-factor raw and final 3-day EMA are preser
  const f=await fixture();
  assert.equal(f.result.smoothing.rawScore,20);
  assert.equal(f.result.smoothing.finalPeriod,3);
- assert.equal(f.result.smoothing.finalEma,50);
- assert.equal(f.result.score,50); // prior EMA3: Fri 80, Mon .5*20+.5*80
- close(f.domain.score,50);
+ assert.equal(f.result.smoothing.finalEma,47.5);
+ assert.equal(f.result.score,47.5); // prior EMA3: Fri 75, Mon .5*20+.5*75
+ close(f.domain.score,47.5);
  close(f.domain.trend.at(-1).value,f.domain.score);
  assert.equal(score(f.domain),50);
 });
@@ -73,11 +73,11 @@ test('a new eligible market session recomputes server EMA3 and advances chart la
  const prior=await fixture({record:base('2026-10-02',100),asOf:'2026-10-02',time:'2026-10-02T21:00:00.000Z'});
  const next=await fixture();
  close(prior.domain.score,75);
- close(next.domain.score,50);
+ close(next.domain.score,47.5);
  assert.equal(prior.domain.observationDate,'2026-10-02');
  assert.equal(next.domain.observationDate,'2026-10-05');
  assert.equal(chart(next.domain).at(-1).date,'2026-10-05');
- assert.equal(isEconomicBreadthChartCurrent(chart(next.domain),next.domain,snap,50),true);
+ assert.equal(isEconomicBreadthChartCurrent(chart(next.domain),next.domain,snap,47.5),true);
 });
 
 test('query on next day with no new stored qualified session is carry-forward, not a phantom chart point',async()=>{
@@ -90,7 +90,7 @@ test('query on next day with no new stored qualified session is carry-forward, n
  assert.equal(q2.domain.freshness,'LAG_1_SESSIONS');
  assert.deepEqual(chart(q2.domain,'2026-10-06'),chart(q1.domain));
  assert.equal(chart(q2.domain,'2026-10-06').some(p=>p.date==='2026-10-06'),false);
- assert.equal(score(q2.domain,'2026-10-06'),50);
+ assert.equal(score(q2.domain,'2026-10-06'),47.5);
 });
 
 test('Friday to Monday counts as consecutive market sessions for EMA3',()=>{
@@ -118,7 +118,7 @@ test('NY trading session before 16:15 ET is not completed even if a stored point
  assert.equal(score(before.domain),null);
  const after=await fixture({time:'2026-10-05T20:16:00.000Z'});
  assert.equal(latestCompletedSession(new Date('2026-10-05T20:16:00.000Z')),snap);
- assert.equal(score(after.domain),50);
+ assert.equal(score(after.domain),47.5);
 });
 
 test('source asOf can be next day, but factor observations must be the genuine last stored session',async()=>{
@@ -135,7 +135,7 @@ test('source asOf can be next day, but factor observations must be the genuine l
 test('old CM-R1 B1-R5 has no top-level observation date; four matching stored rows supply it',async()=>{
  const f=await fixture(),old={...f.domain,observationDate:null};
  assert.equal(economicBreadthSourceDate(old,snap),snap);
- assert.equal(score(old),50);
+ assert.equal(score(old),47.5);
  const broken={...old,indicators:f.domain.indicators.map(x=>({...x}))};
  broken.indicators[3].observationDate='2026-10-02';
  assert.equal(score(broken),null);
@@ -199,7 +199,7 @@ test('the missing or contradictory latest stored EMA3 point fails closed and nev
 test('future, weekend and impossible dates are excluded, without changing actual stored input history',async()=>{
  const f=await fixture(),original=[...f.domain.trend];
  const future={...f.domain,trend:[...original,{label:'2026-10-06',value:88},{label:'2026-10-03',value:45},{label:'2026-02-30',value:70}]};
- assert.equal(score(future),50);
+ assert.equal(score(future),47.5);
  assert.equal(chart(future).at(-1).date,snap);
  assert.equal(chart(future).some(p=>['2026-10-06','2026-10-03','2026-02-30'].includes(p.date)),false);
  assert.deepEqual(f.domain.trend,original);
