@@ -118,25 +118,25 @@ test('R4 #26: untrusted asOfDate types cannot be silently replaced by null',asyn
  }
 });
 
-test('R4 #26: future asOfDate beyond possible local timezone is rejected',async()=>{
- for(const asOfDate of ['2026-11-18','2026-12-01','2099-01-01']){
+test('R4 #26: asOfDate after the actual UTC calculation day is rejected',async()=>{
+ for(const asOfDate of ['2026-11-17','2026-11-18','2026-12-01','2099-01-01']){
   const response=await harness([archive('2026-11-16',[point('12:55:00',50,asOfDate)])]).GET(req('1D'));
   assert.equal(response.status,503,asOfDate);
  }
 });
 
-test('R4 #26: valid source dates include past revisions and possible local next day',async()=>{
+test('R4 #26: valid source dates include past revisions, calculation day and zero',async()=>{
  const rows=[archive('2026-11-16',[
   point('12:00:00',0,'2026-10-31'),
-  point('12:15:00',51,'2026-11-16'),
-  point('12:55:00',52,'2026-11-17'),
+  point('12:15:00',51,'2026-11-15'),
+  point('12:55:00',52,'2026-11-16'),
  ])];
  const response=await harness(rows).GET(req('1D'));
  assert.equal(response.status,200);
  const data=await response.json();
  assert.equal(data.status,'READY');
  assert.deepEqual(data.points.map(p=>p.score),[0,51,52]);
- assert.deepEqual(data.points.map(p=>p.asOfDate),['2026-10-31','2026-11-16','2026-11-17']);
+ assert.deepEqual(data.points.map(p=>p.asOfDate),['2026-10-31','2026-11-15','2026-11-16']);
 });
 
 test('R4 #26: missing and null source dates remain explicit null without inventing one',async()=>{
