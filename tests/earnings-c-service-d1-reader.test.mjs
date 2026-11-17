@@ -46,8 +46,16 @@ function payload(rows,version){
 }
 function basePayload(){
   return payload([
+    row({id:'bls_ppi_final_demand_yoy_sa',seriesId:'WPSFD4',
+      periods:MONTHS,values:MONTHS.map((_,i)=>i/10),
+      method:'YOY_SA_T_MINUS_12',unit:'PERCENT'}),
     row({id:'bls_ppi_final_demand_index',seriesId:'WPSFD4',
       periods:MONTHS,values:MONTHS.map((_,i)=>100+i)}),
+    row({id:'bls_ppi_goods_yoy_sa',seriesId:'WPSFD41',
+      periods:MONTHS,values:MONTHS.map((_,i)=>i/20),
+      method:'YOY_SA_T_MINUS_12',unit:'PERCENT'}),
+    row({id:'bls_ppi_goods_index',seriesId:'WPSFD41',
+      periods:MONTHS,values:MONTHS.map((_,i)=>120+i)}),
     row({id:'bls_unit_labor_cost_yoy',seriesId:'PRS85006111',
       periods:QUARTERS,values:QUARTERS.map((_,i)=>i+1),method:'SOURCE_YOY',unit:'PERCENT'}),
   ],'a');
@@ -90,7 +98,7 @@ function d1(){
 }
 const request=()=>new Request(`https://zgmini.kr${EARNINGS_C_ROUTE}`);
 
-test('WPSFD42 D1 writer uses only service checkpoint and GET merges 2+2 without writes',async()=>{
+test('WPSFD42 D1 writer uses only service checkpoint and GET merges 5+2 without writes',async()=>{
   const db=d1(),base=basePayload(),service=servicePayload();
   assert.equal(validateEarningsCompanionPayload(service,{now:NOW}),service);
   const original=await earningsCompanionWriter(db).write(base,{storedAt:NOW-1000});
@@ -99,7 +107,7 @@ test('WPSFD42 D1 writer uses only service checkpoint and GET merges 2+2 without 
   let reply=await readEarningsCompanionResponse(request(),db,{now:NOW});
   assert.equal(reply.status,200);
   assert.equal(reply.headers.get('x-earnings-c-service'),'NOT_PUBLISHED');
-  assert.equal((await reply.json()).rows.length,2);
+  assert.equal((await reply.json()).rows.length,5);
 
   const published=await earningsCompanionWriter(db,{
     snapshotKey:EARNINGS_C_SERVICE_SNAPSHOT_KEY,
@@ -112,9 +120,9 @@ test('WPSFD42 D1 writer uses only service checkpoint and GET merges 2+2 without 
   assert.equal(reply.status,200);
   assert.equal(reply.headers.get('x-earnings-c-service'),'READY');
   const merged=await reply.json();
-  assert.equal(merged.rows.length,4);
-  assert.deepEqual(merged.rows.slice(2).map(x=>x.seriesId),['WPSFD42','WPSFD42']);
-  assert.deepEqual(merged.coverage,{configured:4,ready:4,partial:0,stale:0,unavailable:0});
+  assert.equal(merged.rows.length,7);
+  assert.deepEqual(merged.rows.slice(5).map(x=>x.seriesId),['WPSFD42','WPSFD42']);
+  assert.deepEqual(merged.coverage,{configured:7,ready:7,partial:0,stale:0,unavailable:0});
   assert.match(merged.sourceVersion,/^[0-9a-f]{64}$/);
   assert.notEqual(merged.sourceVersion,base.sourceVersion);
   assert.equal(db.records.size,2);
@@ -157,8 +165,8 @@ test('invalid optional WPSFD42 checkpoint is ignored without exposing invalid se
   assert.equal(reply.status,200);
   assert.equal(reply.headers.get('x-earnings-c-service'),'INVALID');
   const body=await reply.json();
-  assert.equal(body.rows.length,2);
-  assert.equal(body.coverage.configured,2);
+  assert.equal(body.rows.length,5);
+  assert.equal(body.coverage.configured,5);
   assert.equal(db.actions.filter(x=>x.kind==='WRITE').length,before);
-  assert.deepEqual(body.rows.map(x=>x.seriesId),['WPSFD4','PRS85006111']);
+  assert.deepEqual(body.rows.map(x=>x.seriesId),['WPSFD4','WPSFD4','WPSFD41','WPSFD41','PRS85006111']);
 });
