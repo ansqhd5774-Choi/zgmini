@@ -27,3 +27,27 @@ test('single R47 Windows CMD bundles 16 SHA-exact sources without scheduling or 
   assert.equal(prelude.includes('wrangler'),false);
   assert.ok(fs.statSync(file).size<500_000);
 });
+
+test('R47 embeds the reviewed R35 collector with the approved stocks/us route',()=>{
+  const here=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+  const cmd=fs.readFileSync(path.join(here,'scripts/pc-writer',
+    'THEME_NINE_R47_RECURRING_PRIVATE_UPDATE.cmd'),'ascii');
+  const begin='::R47_R35_BEGIN',end='::R47_R35_END';
+  const start=cmd.lastIndexOf(begin),finish=cmd.indexOf(end,start+begin.length);
+  assert.ok(start>=0&&finish>start,'R35 embedded payload missing');
+  const embedded=Buffer.from(cmd.slice(start+begin.length,finish)
+    .replace(/[^A-Za-z0-9+/=]/g,''),'base64');
+  const reviewed=fs.readFileSync(path.join(here,'scripts/pc-writer',
+    'theme-nine-r35-delta-collect.mjs'));
+  // A changed standalone source is not an installed R47 change until the
+  // embedded bytes are regenerated and separately approved.
+  const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
+  assert.equal(sha(embedded),sha(reviewed),'embedded R35 source drift');
+  const code=embedded.toString('utf8');
+  assert.ok(code.includes('/api/v1/bars/stocks/us/${symbol}/1h'),
+    'official US 1h collection route missing');
+  assert.equal(code.includes('/api/v1/bars/stock/${symbol}/1h'),false,
+    'retired collection route embedded');
+  assert.ok(code.includes('requestedUrl:url'),
+    'request-window provenance unexpectedly removed');
+});
