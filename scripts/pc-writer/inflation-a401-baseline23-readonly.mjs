@@ -36,7 +36,8 @@ export function evaluateA401Baseline23({original,additional}={}) {
     exactIds(extraRows,INFLATION_CANDIDATES_7_IDS)&&
     unique([...INFLATION_CAUSAL_19_IDS,...A401_EXISTING_FOUR]);
   if(!structure)return {status:'STOP',code:'W01_A401_SOURCE_CATALOG_MISMATCH',
-    originalReady:0,additionalReady:0,verified:0,expected:A401_EXPECTED_COUNT};
+    originalReady:0,additionalReady:0,verified:0,expected:A401_EXPECTED_COUNT,
+    providerCalls:0,sqliteWrites:0,d1Writes:0,sourceWrites:0,taskChanges:0};
   const first=originalRows.map(row=>({
     id:String(row.id),status:row.status==='READY'&&validDate(row.observationDate)&&
       iso(row.sourceStoredAt)&&typeof row.value==='number'&&Number.isFinite(row.value)
