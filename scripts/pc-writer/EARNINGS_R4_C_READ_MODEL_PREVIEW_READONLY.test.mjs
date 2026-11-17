@@ -333,3 +333,43 @@ test('a newer incomplete cohort is previewed as partial, not ready',()=>{
     assert.equal(diagnostics.cohortRetrievedAt,RETRIEVED);
   });
 });
+
+test('service conflicting revisions at equal retrieval time stop before choosing any score',()=>{
+  withServiceDb({},db=>{
+    const old=response({services:true}).Results.series.at(-1);
+    const amended={...old,data:old.data.map(item=>
+      item.year==='2026'&&item.period==='M09'
+        ?{...item,value:'157.667'}:item)};
+    const plans=buildPlans(
+      normalizeSeries({Results:{series:[amended]}},['WPSFD42']),
+      '2026-10-26T18:00:00.000Z','e'.repeat(64));
+    assert.deepEqual(insertPlans(db,plans),
+      {insertedChunks:1,insertedSnapshots:1,verified:1});
+    assert.throws(()=>buildServiceSourcePreview(db,{generatedAt:GENERATED}),
+      /R4_SERVICE_REVISION_ORDER_AMBIGUOUS/);
+  });
+});
+
+test('older service revision corruption invalidates the selected newer stored preview',()=>{
+  withServiceDb({},db=>{
+    const old=db.prepare(`SELECT chunk_hashes_json FROM api_history_snapshots_v1
+      WHERE provider='BLS' AND dataset='WPSFD42'`).get();
+    const olderChunk=JSON.parse(old.chunk_hashes_json)[0];
+    const amended=response({services:true}).Results.series.at(-1);
+    amended.data=amended.data.map(item=>
+      item.year==='2026'&&item.period==='M09'
+        ?{...item,value:'157.668'}:item);
+    const newer=buildPlans(
+      normalizeSeries({Results:{series:[amended]}},['WPSFD42']),
+      '2026-10-27T00:00:00.000Z','e'.repeat(64));
+    insertPlans(db,newer);
+    const before=buildServiceSourcePreview(db,{generatedAt:GENERATED});
+    assert.equal(before.payload.rows[1].value,157.668);
+    assert.equal(before.diagnostics.snapshotsChecked,2);
+    db.prepare(`UPDATE api_history_chunks_v1 SET payload_json='[]'
+      WHERE provider='BLS' AND dataset='WPSFD42' AND chunk_sha256=?`)
+      .run(olderChunk);
+    assert.throws(()=>buildServiceSourcePreview(db,{generatedAt:GENERATED}),
+      /CHUNK_SHA256_MISMATCH/);
+  });
+});
