@@ -5,6 +5,19 @@ import {sampleCnnObservedPoints} from '../../../../lib/cnn-observed-sampling-r1.
 // Derived published composite scores only. Visitor GET does no calculation,
 // provider I/O, or remote write. Dates without samples are not interpolated.
 const periods={'1D':2,'1W':9,'1M':33,'3M':96,'6M':188,'1Y':370} as const;
+// Calendar dates are source-observation dates, not PC calculation timestamps.
+// UTC+14 is the maximum possible local date ahead of a UTC instant; accepting
+// that boundary avoids rejecting a legitimate local next-day date. This does
+// not authorize source collection or change publication freshness/TTL.
+const MAX_LOCAL_DATE_AHEAD_MS=14*60*60*1000;
+function validStoredAsOfDate(value:unknown,calculatedAtMs:number){
+ if(value===null||value===undefined)return true;
+ if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(value))return false;
+ const date=new Date(value+'T00:00:00.000Z');
+ return Number.isFinite(date.getTime())
+   &&date.toISOString().slice(0,10)===value
+   &&value<=new Date(calculatedAtMs+MAX_LOCAL_DATE_AHEAD_MS).toISOString().slice(0,10);
+}
 export async function GET(request:Request){
  const params=new URL(request.url).searchParams;
  const period=params.get('period')??'1D';
@@ -28,6 +41,10 @@ export async function GET(request:Request){
    const t=Date.parse(point?.calculatedAt??'');
    if(!Number.isFinite(t)||t>now+300000||new Date(t).toISOString().slice(0,10)!==day
      ||typeof point?.score!=='number'||!Number.isFinite(point.score)||point.score<0||point.score>100)
+    return Response.json({status:'INVALID_STORED_SCORE'},{status:503});
+   // Fail closed on malformed, impossible or genuinely future source dates.
+   // Missing/null remains unavailable, never fabricated into a numeric date.
+   if(!validStoredAsOfDate(point?.asOfDate,t))
     return Response.json({status:'INVALID_STORED_SCORE'},{status:503});
    const observedAt=new Date(t).toISOString();
    const asOfDate=typeof point?.asOfDate==='string'?point.asOfDate:null;
