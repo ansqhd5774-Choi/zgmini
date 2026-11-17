@@ -1,5 +1,7 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
+> **신규 소유자 인계:** [중앙 #68 댓글 #6942223326](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6942223326)에 Writer/해당 기능 원담당의 승인된 단일-key 읽기 전용 비교 요청 등록. 댓글 등록은 실제 배정·수신·실행 증거가 아니며 #74 PARTIAL 유지. 
+>
 > **현재 즉시 상태 (2026-11-17 KST): 고유 DONE 19/75(25.3%), #74 PARTIAL.** W06 소스·격리 Chromium #69~#72 DONE(main `d4c8f0b7b65e7824d271fc10078981f68e10aa04`) 증거 유지. 이번 #74 운영 PC [#1927](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1927)/Run `44038139955` 실제 SQLite 종합 archive 71점/16일, 마지막 `2026-11-17T00:05:37.162Z`, JSON+TXT 2/2 PASS 재사용. **신규 실적:** [격리 GET 진단 PR #1235](https://github.com/ansqhd5774-Choi/zgmini/pull/1235) / [CI Run 44039522281](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44039522281) 원격 Node 4829 PASS/0 FAIL, public `/api/market-score` HTTP200 `status=SUCCESS`, `overall.status=READY`, 원점수 `46.500970651971905`, `modelVersion=CM-R1`, `updatedAt=2026-11-17T07:20:38.096Z`; `/api/market-score/observations?period=1D` HTTP200 `READY`, `x-data-source=STORED`, 기간 1D **공개 이력 1점** `observedAt=2026-11-17T00:05:37.162Z`로 PC 계산점과 **정확히 일치**. 진단 Draft는 LIVE 네트워크 영구 CI Gate로 병합하지 않고 증거 [댓글 #6941808522](https://github.com/ansqhd5774-Choi/zgmini/pull/1235#issuecomment-6941808522) 기록 후 **미병합 종료**. **미충족:** 실제 D1 `composite-observed:2026-11-17`의 `body/stored_at` 대 로컬 동일 키 직접 readback 및 D1 `current` 계산/버전 lineage 검증은 W06 GitHub/공개 GET만으로 불가. 현재 원점수는 07:20:38Z 새 게시로, 00:05:37Z 과거 이력과 동일 점수라고 단정 금지. #74 PARTIAL/실 D1 owner readback 필요, #75 Production exact Deployment/최종 실제 UI 별도. 기존 #64~66 PARTIAL, 삭제 #62 RETIRED, PC/Writer/DB/D1/TTL/운영 소스 변경0.
 
 ## 현재 인계 정본 — 다음 담당자 첫 읽기 (2026-11-17 KST)
@@ -711,3 +713,12 @@
 - **#74 남은 정확한 불확실성:** 실운영 SQLite `composite-observed:2026-11-17` 원본 본문/저장시각과 Production D1 동일 키 `body/stored_at`, D1 `current` 버전/score/시간 및 Writer 정상 게시 원장 정확한 동일성 재조회는 미완료. GitHub 연결에 해당 운영 D1 SELECT 계약 없음. 이 접근 한계를 실제 운영 실패로 오인하지 않음. #74 DONE/진행률 증가하지 않음.
 - **안전 종료:** 단회 공개 GET 진단 PR [#1235 원본 댓글 #6941808522](https://github.com/ansqhd5774-Choi/zgmini/pull/1235#issuecomment-6941808522) 기록 후 **미병합 closed**. 테스트는 main/상시 네트워크 CI Gate에 추가하지 않고 브랜치 증거만 보존. 운영 PC 재진단·DB D1 쓰기·TTL/산식/Collector/Writer/source 변경0.
 - **다음:** Writer/종합 기능 원담당이 기존 승인된 SQLite↔D1 단일 key readback을 실행 또는 이전 유효 증거 인용. W06은 이미 공개 GET 일치 증거를 제공하므로 중복 조회하지 않고 #74 최종 판정 및 후속 #75 exact Production 배포/UI로 넘어감.
+
+
+## [2026-11-17 16:58 KST] W06 R4 #74 — 원담당 단일-key readback 정식 인계 (PARTIAL)
+- **진행률:** 19/75(25.3%) → 19/75(25.3%), 잔여 56. #74 PARTIAL; #62 RETIRED 보존.
+- **실제 실행:** 지정 R4 계획/진행 기록 원격 재조회 후 중앙 공통 원장 [#68 인계 댓글 #6942223326](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6942223326) 등록. W06 자체 D1 SELECT 권한을 추정하거나 Controller 총괄에게 직접 설치·조회 수행을 요구하지 않고 기존 승인 Writer/해당 데이터 원담당에게 작업 전달·배정 요청. 기존 PC #1927/Run 44038139955 및 public GET CI 44039522281 증거를 재사용, 신규 중복 PC/GET 실행 0.
+- **LAST PASS:** 중앙 원장 댓글 생성 ID 6942223326 확인. 기존 PC 마지막 계산 2026-11-17T00:05:37.162Z와 public 1D STORED 동일 시각 공개 가시성은 이미 PASS.
+- **FIRST UNVERIFIED:** 중앙 댓글의 실제 담당자 수신·배정·승인 조회 Run 및 운영 SQLite↔D1 composite-observed:2026-11-17 body/stored_at, D1 current score/sourceVersion/게시원장 직접 비교 증거 없음. 등록=승인/완료가 아님.
+- **변경·안전:** 코드/계산/Writer/운영 PC/SQLite/D1/Production/예약/TTL 변경 0. #75 exact active Deployment/UI 후단 미검증.
+- **다음 필수 실행 1개:** W06은 #68에 원담당이 게시한 실제 승인 읽기 전용 결과(실행 Run·Issue·두 키 본문/저장시각 일치 판정)를 확인하여 #74 DONE 여부 판정; 미회신이면 해당 소유권 경계를 보존하고 다른 독립 W06 작업으로 진행. 동일 GET/PC 진단 반복 금지.
