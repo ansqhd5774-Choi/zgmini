@@ -12,7 +12,7 @@ test("R9/R10 source and candidate publication metadata remain isolated from disp
  assert.match(panel,/ASSET_BUBBLE_R10_CANDIDATE/);
  assert.match(panel,/USER_APPROVED_CURRENT_VINTAGE_UNVERIFIED_SOURCES/);
  for(const x of ["sourceStoredAt","historyMode","scoreObservationQuarter","diagnosticQuarter","rightsStatus","publicationPolicy"])assert.ok(panel.includes(x),x);
- assert.match(panel,/!candidate\|\|payload\?\.status==='READY'/);
+ assert.match(panel,/assetBubbleVerifiedDisplayScore\(payload\)/);
  assert.match(panel,/공개 전환 전 검증 중입니다/);
  assert.equal((panel.match(/메인 대시보드로 돌아가기/g)||[]).length,1);
 });
