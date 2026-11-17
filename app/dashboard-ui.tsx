@@ -44,7 +44,7 @@ const CardTrend=memo(function CardTrend({data,label,color,periodDays,missingDate
 });
 
 const LazySummaryTrend=lazy(()=>import('../components/dashboard-summary-chart'));
-const SummaryTrend=memo(function SummaryTrend(props:{data:DashboardPoint[];label:string;color:string;periodDays:number}){
+const SummaryTrend=memo(function SummaryTrend(props:{data:DashboardPoint[];label:string;color:string;periodDays:number;currentPublished?:{updatedAt:string;displayScore:number;modelVersion:string}|null}){
  const ready=useDashboardChartStartup();
  const placeholder=<div className="zg-spark zg-r55-mini-chart zg-r55-summary-mini-chart" style={{height:120,minHeight:120,maxHeight:120}} aria-label={`${props.label} 관측 추이`}/>;
  return ready?<Suspense fallback={placeholder}><LazySummaryTrend {...props}/></Suspense>:placeholder;
@@ -266,7 +266,9 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
 
      <div className="zg-r55-summary-chart">
       {overallTrend.length>1
-       ?<SummaryTrend data={overallTrend} label="종합 시장 점수" color={overallScore===null?'#94a3b8':scoreColor(overallScore)} periodDays={periodDays}/>
+       ?<SummaryTrend data={overallTrend} label="종합 시장 점수" color={overallScore===null?'#94a3b8':scoreColor(overallScore)} periodDays={periodDays}
+        currentPublished={overallScore!==null&&market?.updatedAt&&typeof market?.modelVersion==='string'
+         ?{updatedAt:market.updatedAt,displayScore:overallScore,modelVersion:market.modelVersion}:null}/>
        :<div className="zg-r55-empty-spark" aria-label="종합 추이 데이터 없음">추이 데이터 준비 중</div>}
      </div>
      </div>
