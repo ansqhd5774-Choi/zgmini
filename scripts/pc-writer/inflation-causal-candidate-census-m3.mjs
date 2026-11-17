@@ -21,6 +21,9 @@ const monthDate=x=>{
   const date=raw.replace(/^(20\d{2}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])) 00:00:00(?:\.0+)?$/, '$1');
   const match=date.match(/^(20\d{2})-(0[1-9]|1[0-2])(?:-(0[1-9]|[12]\d|3[01]))?$/);
   if(!match)return null;
+  // Monthly EITS observations must start on day 01. Never coerce an
+  // explicit intra-month date into a fabricated first-of-month observation.
+  if(match[3]&&match[3]!=='01')return null;
   if(match[3]&&new Date(`${date}T00:00:00Z`).toISOString().slice(0,10)!==date)return null;
   return `${match[1]}-${match[2]}-01`;
 };
