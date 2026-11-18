@@ -1,5 +1,8 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
+> **W06 #69 PR #1283 병합 후 본선 검증 완료 (2026-11-18 11:27 KST):** `main@a7385348e8d2d34757df14d0ae45e184517d6ae4`의 [Node CI #44223037765](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44223037765) **4919 total/4909 PASS/0 FAIL/7 skipped/3 todo**, Writer 11/11 및 Cloudflare GET 계약 69/69 PASS; GitHub check/verify/notify/Workers Builds **4/4 completed/success**(Cloudflare Git Integration Build `970fe858-06b9-491d-99e9-f54083ef1e6c`). PR #1283 정확 3파일의 source·모의 Chromium 검증·main/Build까지 완료. **Cloudflare 현재 활성 Production Deployment ID/서빙 SHA, 공개 API/D1 실제 게시점·홈페이지 hydration 검증은 계속 미확정**. W06 #69/#75 PARTIAL, 고유 DONE 22/75(29.3%)·잔여53. 다음 단일 실행은 W06가 현재 Production 활성 버전과 공개 GET·현재 카드·6기간 실제 마지막점 일치를 기존 승인된 조회 경로에서 확인하는 것. 총괄 인계0, 예약 검증 제외.
+>
+
 > **W06 #69 12개 도메인 허위 기간경계 관측점 제거 (2026-11-18 11:25 KST):** 실제 관측값을 연결하는 UI 계약을 유지하면서 12개 도메인 미니차트의 기존 `marketTrendWindow(...)` 기본 `includeBoundaryCarry=true`가 1W/1M/3M/6M/1Y에 실존하지 않는 기간 시작일 점을 복사하던 결함을 발견. 12개 도메인 UI 한 호출을 `marketTrendWindowR1(...,{includeBoundaryCarry:false})`로 변경해 **실제 기록된 날짜와 승인된 최신 게시 시각만** 표시. 인접한 실제 표본은 선으로 연결하고 0점/결측/1개 관측값 원칙 유지. [PR #1283](https://github.com/ansqhd5774-Choi/zgmini/pull/1283) 3파일 `main@a7385348e8d2d34757df14d0ae45e184517d6ae4` **MERGED**, branch [Node #44222428243](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44222428243) **4,904 PASS/0 FAIL**(4914 total, 7 skip/3 todo)·Writer11·Cloudflare read69 PASS, [Chromium #44222428239](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44222428239) 390/768/1440/1920px×6기간 및 1W 실제 SVG 두 계열·12카드 실선 PASS. 구형 #28 source assertion 1건 초기 FAIL을 삭제하지 않고 새 계약으로 갱신해 최종 PASS. PR #1282 선분 수정 병합 후 main@c38f9845의 Node **4903 PASS/0 FAIL**, check/verify/notify/Workers Builds 4/4 SUCCESS(정확 Build `52b3ff98-c660-42df-9e84-aaae6e6571e2`). #1283 병합 후 main CI/Cloudflare Build는 재조회 이전 **진행 중**, active Production Deployment/실제 API·D1·hydrated UI는 **UNKNOWN**. 삭제된 등락지수 제외, Writer·SQLite·D1·산식·TTL·Cloudflare 직접 수정0. **#69/#75 PARTIAL, 고유 DONE 22/75(29.3%), 잔여53 유지**. 다음 실행: main@a7385348의 후속 check/verify/notify/Workers Builds 판정 및 운영 활성 배포/공개 현재값·마지막점 조회 가능한 범위를 확인. 총괄 인계0.
 >
 
@@ -1155,3 +1158,10 @@
 - **운영·문제:** mock Chromium PASS를 실운영 API/화면 PASS로 오인 금지. 새 main GitHub Node/Workers Git Integration 후속 CI는 관측 당시 in_progress; exact Production active Deployment SHA·실제 D1/GET 현재값, 1D~1Y 마지막 관측 일치 및 최초 사용자 육안 검증 **UNKNOWN**. 실제 운영 FIRST FAIL 없음(미검증). 기능별 Writer #74는 원담당, 공통 Controller 장애 없음 → 프로세스 총괄 신규 인계0.
 - **다음 필수 실행 1개:** W06가 main `a7385348`의 4 check/Build 성공 여부를 원격 조회하고, 기존 승인된 공개 read 경로로 API/차트 마지막점·현재 게시시각/버전/결측 경계를 실증; 실제 결함 재현 시에만 UI 최소 수정. 예약·사용자 최종 검수는 전체 기능 이후.
 - **진행률·원격 인계:** 22/75(29.3%) 유지, 기록 커밋·동일 파일 원격 재조회 후 PASS 판정 예정.
+
+### [2026-11-18 11:27 KST] W06 #69 — main @a7385348 후속 Node·Cloudflare Build 최종 readback
+- [Node #44223037765](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44223037765) main exact SHA `a7385348e8d2d34757df14d0ae45e184517d6ae4`, 4919 tests / **4909 PASS / 0 FAIL / 7 skipped / 3 todo**, Writer11/11, Cloudflare reader69/69 PASS.
+- same SHA GitHub check·verify·notify·Workers Builds **4/4 SUCCESS**; Cloudflare Git Integration exact Build `970fe858-06b9-491d-99e9-f54083ef1e6c` (완료 2026-11-18 02:26:36Z). Build와 실제 활성 Deployment·서빙 소스를 동일하다고 간주하지 않음.
+- 계획 #69 모의 SVG 선분/12 도메인 실제 관측일 선택 개선의 source/main/CI 완료. Cloudflare active Production Deployment ID/served SHA·현재 공개 원자료 게시 이력 및 차트 hydration 6기간 대조 **UNKNOWN**; #69/#75 PARTIAL, **22/75(29.3%)** 유지. 운영 PC·Writer·DB/D1·예약·DNS 변경0, 총괄 인계0.
+- **다음 한 가지 실행:** W06가 승인된 기존 조회 방법으로 `zgmini.kr`의 공개 API 카드·관측 시각/점수와 1D~1Y 실제 마지막점을 Cloudflare 활성 SHA와 분리 대조해 경계/불일치만 수정. 모든 기능 완료 후 사용자 육안·예약 검증.
+- **인계 원격 재확인:** 이 커밋 후 바로 같은 파일을 원격 재조회하여 PASS 판정.
