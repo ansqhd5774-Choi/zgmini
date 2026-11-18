@@ -11,7 +11,7 @@ const cmdPath=path.join(repo,'scripts','pc-writer',
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const expected=Object.freeze([
   {section:'SCORER',filename:'theme-nine-r47-private-score.mjs',
-    sha256:'30ed98bbcb76039eb949b53b5492727ada90e1e68c8d9612831d668d1aa4399c'},
+    sha256:'4fa52031e2ac437fc638392a711eae3c76bfa22bfbb332893f78d43398f1e8be'},
   {section:'R35',filename:'theme-nine-r35-delta-collect.mjs',
     sha256:'1a7b8a40e449713978b51e5d2b909eb19ad03d846dfe44dc19b0d9831bb5dabe'},
 ]);
@@ -39,7 +39,7 @@ test('R47 immutable CMD candidate embeds exact R35 and scorer source bytes',()=>
   }
 });
 
-test('R47 candidate rejects normalized calendar days without changing other bundles',()=>{
+test('R47 candidate validates UTC windows and normalized calendar days with other bundles unchanged',()=>{
   const cmd=fs.readFileSync(cmdPath,'ascii');
   const sections=[...cmd.matchAll(/::R47_([A-Z0-9]+)_BEGIN/g)].map(x=>x[1]);
   assert.equal(sections.length,16);
