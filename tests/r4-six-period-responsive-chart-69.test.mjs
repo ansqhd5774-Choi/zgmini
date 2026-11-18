@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {normalizeMarketTrendPointsR4} from '../lib/market-score/market-trend-normalize-r4.mjs';
 import {marketTrendWindowR1} from '../lib/market-score/market-trend-window-r1.mjs';
 import {mergeCompositeObservedDisplay} from '../lib/market-score/composite-observed-display-r1.mjs';
-import {appendPublishedDomainCurrent} from '../lib/market-score/published-domain-trend-r4.mjs';
+import {appendPublishedDomainCurrent,verifiedPublishedDomainCurrentR4} from '../lib/market-score/published-domain-trend-r4.mjs';
 import {amplifyCompositeDisplayScore,amplifyCompositeDisplayTrend} from '../lib/market-score/composite-display-sensitivity-r1.mjs';
 import {miniTrendGeometry} from '../lib/market-score/mini-trend-geometry.mjs';
 
@@ -189,4 +189,58 @@ test('#69 geometry and UI preserve actual zero as bottom of fixed 0-100 scale, n
  const ui=readFileSync(new URL('../app/dashboard-ui.tsx',import.meta.url),'utf8');
  assert.match(ui,/overallScore===null\?'—'/);
  assert.match(ui,/domain\?\.status==='READY'&&validPublicScore\(domain\.score\)/);
+});
+
+
+test('#69 monthly publication must not create a November 1D/1W/1M/3M observation for September input',()=>{
+ const asOf='2026-11-18T10:45:39.700Z';
+ const monthly={id:'consumption',status:'READY',score:37.27359943977591,updatedAt:'2026-09-01'};
+ const saved=[{label:'2026-08-01',value:48},{label:'2026-09-01',value:35}];
+ const current=verifiedPublishedDomainCurrentR4(monthly,asOf);
+ assert.equal(current,null);
+ for(const period of [1,7,30,90,180,365]){
+  const daily=marketTrendWindowR1(saved,period,{includeBoundaryCarry:false});
+  const actual=appendPublishedDomainCurrent(daily,current,period);
+  assert.deepEqual(actual,daily,'no fake public snapshot timestamp at '+period+'D');
+  assert.equal(actual.some(point=>point.label.startsWith('2026-11-18')),false);
+ }
+ // Previous UI used the unrelated CM-R1 snapshot timestamp and created
+ // an unsaved 11/18 point even though the source was observed only in 9/01.
+ const wrong=appendPublishedDomainCurrent([{label:'2026-09-01',value:35}],
+  {label:asOf,value:monthly.score},7);
+ assert.equal(wrong.at(-1).label,asOf);
+});
+
+test('#69 genuine domain stored event uses its own time, never the later global snapshot time',()=>{
+ const snapshot='2026-11-18T10:45:39.700Z';
+ const domain={status:'READY',score:53,updatedAt:'2026-11-18T09:21:07.018Z'};
+ const current=verifiedPublishedDomainCurrentR4(domain,snapshot);
+ assert.deepEqual(current,{label:'2026-11-18T09:21:07.018Z',value:53});
+ const chart=appendPublishedDomainCurrent([{label:'2026-11-17',value:50}],current,7);
+ assert.equal(chart.at(-1).label,'2026-11-18T09:21:07.018Z');
+ assert.equal(chart.at(-1).value,53);
+ assert.equal(chart.some(p=>p.label===snapshot),false);
+});
+
+test('#69 domain overlay protects real zero, PARTIAL/null, impossible/future and date-only timestamps',()=>{
+ const at='2026-11-18T10:45:39.700Z';
+ const d={status:'READY',score:0,updatedAt:'2026-11-18T09:21:07.018Z'};
+ assert.equal(verifiedPublishedDomainCurrentR4(d,at).value,0);
+ for(const patch of [
+  {status:'PARTIAL'},{status:'UNAVAILABLE'},{score:null},{score:-1},{score:101},
+  {updatedAt:'2026-09-01'},{updatedAt:'2026-02-30'},
+  {updatedAt:'2026-11-19T09:21:07.018Z'},{updatedAt:'2026-11-18T25:00:00Z'},
+  {updatedAt:null},
+ ]){
+  assert.equal(verifiedPublishedDomainCurrentR4({...d,...patch},at),null,JSON.stringify(patch));
+ }
+ assert.equal(verifiedPublishedDomainCurrentR4(d,'2026-11-18'),null);
+});
+
+test('#69 dashboard wires only domain-verified update times into the shared chart-only overlay',()=>{
+ const src=readFileSync(new URL('../app/dashboard-ui.tsx',import.meta.url),'utf8');
+ assert.match(src,/import \{appendPublishedDomainCurrent,verifiedPublishedDomainCurrentR4\} from/);
+ assert.match(src,/const current=score===null\?null:verifiedPublishedDomainCurrentR4\(domain,market\?\.updatedAt\);/);
+ assert.doesNotMatch(src,/const current=score===null\|\|!market\?\.updatedAt\?null:\{label:market\.updatedAt,value:score\}/);
+ assert.match(src,/appendPublishedDomainCurrent\(daily,current,periodDays\)/);
 });

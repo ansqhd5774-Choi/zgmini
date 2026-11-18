@@ -18,7 +18,7 @@ import {breadthNotice} from '../lib/market-score/breadth-notice.mjs';
 import {breadthB1R4PreviousSessionDelta as breadthPreviousSessionDelta} from '../lib/market-score/breadth-b1-r4-ui-delta.mjs';
 import {marketTrendWindowR1} from '../lib/market-score/market-trend-window-r1.mjs';
 import {normalizeMarketTrendPointsR4} from '../lib/market-score/market-trend-normalize-r4.mjs';
-import {appendPublishedDomainCurrent} from '../lib/market-score/published-domain-trend-r4.mjs';
+import {appendPublishedDomainCurrent,verifiedPublishedDomainCurrentR4} from '../lib/market-score/published-domain-trend-r4.mjs';
 import {miniTrendGeometry} from '../lib/market-score/mini-trend-geometry.mjs';
 import {amplifyCompositeDisplayScore,amplifyCompositeDisplayTrend} from '../lib/market-score/composite-display-sensitivity-r1.mjs';
 import {mergeCompositeObservedDisplay} from '../lib/market-score/composite-observed-display-r1.mjs';
@@ -230,7 +230,8 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
   const domain=market?.domains?.find(d=>d.id===id);
   const daily=marketTrendWindowR1(normalizeMarketTrendPointsR4(domain?.trend,market?.updatedAt),periodDays,{includeBoundaryCarry:false});
   const score=domain?.status==='READY'&&validPublicScore(domain.score)?domain.score:null;
-  const current=score===null||!market?.updatedAt?null:{label:market.updatedAt,value:score};
+  // The global snapshot time is not the source event time for old monthly data.
+  const current=score===null?null:verifiedPublishedDomainCurrentR4(domain,market?.updatedAt);
   return appendPublishedDomainCurrent(daily,current,periodDays);
  }),[market?.domains,market?.updatedAt,periodDays]);
  const riskHeading=<h2><a href="/risk-indicators/"><ShieldCheck aria-hidden="true"/>8대 위험 지표<ArrowUpRight aria-hidden="true"/></a></h2>;
