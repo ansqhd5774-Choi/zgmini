@@ -109,3 +109,31 @@ test('supplier gap flag is retained as skipped for score, not fabricated',()=>{
  assert.equal(result.eligibleHours,1);
  assert.equal(result.skippedGaps,1);
 });
+
+test('non-gap unusable close is excluded, not promoted to a whole-series failure',()=>{
+ const baseline=calculateGmhSevenPrivate252(samples(),{asOf:'2024-06-01T00:00:00Z'});
+ const raw=JSON.parse(source('SPY',{dayCount:1}).bytes.toString().trim());
+ const bad={...raw,timestamp:'2022-01-03T22:00:00Z',close:null,is_gap:false};
+ const withBad=samples().map(s=>s.symbol==='SPY'?
+  source('SPY',{extra:[bad]}):s);
+ const candidate=calculateGmhSevenPrivate252(withBad,{asOf:'2024-06-01T00:00:00Z'});
+ assert.equal(candidate.commonSessions,628);
+ assert.equal(candidate.sourceEvidence.SPY.skippedUnusable,1);
+ assert.equal(candidate.sourceEvidence.SPY.inputRows,629);
+ assert.deepEqual(candidate.themes.map(t=>t.days),
+  baseline.themes.map(t=>t.days));
+ assert.equal(candidate.publicationAuthorized,false);
+ assert.equal(candidate.providerCalls,0);
+ assert.equal(candidate.d1Writes,0);
+});
+test('unusable regular-session price never generates a fabricated history point',()=>{
+ const s=source('SPY');
+ const bars=s.bytes.toString('utf8').trim().split('\n').map(JSON.parse);
+ bars[120].close=null;
+ const bytes=Buffer.from(bars.map(JSON.stringify).join('\n')+'\n');
+ const inputs=samples().map(x=>x.symbol==='SPY'?
+  {...s,bytes,sha256:sha(bytes)}:x);
+ assert.throws(()=>calculateGmhSevenPrivate252(inputs,{
+  asOf:'2024-06-01T00:00:00Z'}),
+  {code:'GMH_SEVEN_COMMON_628_GMH_SESSIONS_MISSING'});
+});
