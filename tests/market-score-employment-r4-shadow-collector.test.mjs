@@ -149,6 +149,53 @@ test("W04 PIT-04-07 BLS blank latest does not suppress fallback for missing diff
   assert.equal(calls.filter(x=>x.method==="GET").length,1);
 });
 
+
+test("W04 PIT-04-07 BLS diffusion rejects normalized years and out-of-range/non-decimal index values",async()=>{
+  const id=Object.keys(EMPLOYMENT_R4_DIFFUSION_SERIES)[0];
+  const row=(year,period,value)=>({year,period,value,footnotes:[]});
+  const data=[
+    row("2026","M04","100.0"),
+    row("2026","M05",0),
+    row("2026","M06",null),
+    row("2026","M07","101"),
+    row("2026","M08",-1),
+    row("2026","M09","0x10"),
+    row("2026","M10","1e2"),
+    row("2026","M11","+50"),
+    row("2026","M12","50%"),
+    row("0099","M07","60"),
+    row("2026.5","M07","60"),
+    row("invalid","M07","60"),
+    row("2026","M00","60"),
+    row("2026","M13","60"),
+  ];
+  const result=await parseBlsDiffusionShadowRows({
+    Results:{series:[{seriesID:id,data}]}
+  },{retrievedAt:"2026-12-01T00:00:00.000Z"});
+  assert.deepEqual(result.rows.map(r=>r.observationDate),["2026-04-30","2026-05-31"]);
+  assert.deepEqual(result.rows.map(r=>r.value),[100,0]);
+  assert.equal(result.rows.filter(r=>r.pitClass===EMPLOYMENT_R4_PIT_CLASSES.forwardObserved).length,1);
+  assert.equal(result.rows.at(-1).availableAt,"2026-12-01T00:00:00.000Z");
+  assert.deepEqual(result.meta.seriesReturned,[id]);
+});
+
+test("W04 PIT-04-07 BLS all-invalid year and numeric inputs remain missing",async()=>{
+  const id=Object.keys(EMPLOYMENT_R4_DIFFUSION_SERIES)[0];
+  const data=[
+    {year:"0099",period:"M01",value:"0"},
+    {year:"invalid",period:"M02",value:"1"},
+    {year:"2026",period:"M03",value:false},
+    {year:"2026",period:"M04",value:"-1"},
+    {year:"2026",period:"M05",value:"101"},
+    {year:"2026",period:"M06",value:""},
+  ];
+  const parsed=await parseBlsDiffusionShadowRows({
+    Results:{series:[{seriesID:id,data}]}
+  },{retrievedAt:"2026-12-01T00:00:00.000Z"});
+  assert.equal(parsed.rows.length,0);
+  assert.deepEqual(parsed.meta.seriesReturned,[]);
+});
+
 function sampleRow(logicalSeriesId,geo,value,hashChar="a"){return{logicalSeriesId,provider:"TEST",providerSeriesId:`TEST:${logicalSeriesId}`,geographyType:"STATE",geographyCode:geo,frequency:"WEEKLY",unit:"COUNT",seasonalAdjustment:"NA",populationCoverage:"TEST",observationDate:"2026-09-12",releaseDate:null,availableAt:"2026-09-20T00:00:00Z",retrievedAt:"2026-09-20T00:00:00Z",value,sourceRevision:null,sourceHash:hashChar.repeat(64),qualityStatus:"READY",pitClass:EMPLOYMENT_R4_PIT_CLASSES.forwardObserved,schemaVersion:1,provenance:{}}}
 function goodProvider(value=10){return{async fetchStateClaims(){return{requestCount:1,rows:[sampleRow("STATE_INITIAL_CLAIMS","AL",value,"a")],meta:{}}},async fetchGeographicDiffusion(){return{requestCount:1,rows:[sampleRow("STATE_EMP_DIFFUSION_3M","ALL_STATES",60,"b")],meta:{}}}}}
 
