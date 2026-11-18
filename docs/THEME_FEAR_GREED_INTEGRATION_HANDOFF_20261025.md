@@ -1,3 +1,18 @@
+## 2026-11-18 W03 여섯 구성요소 합리성 감사 — 과도한 입력 기준·실패 보고 개선 및 CI/main 반영
+
+- **착수/종료:** W03 12/68 DONE **17.6% → 17.6%**, 13/68 진행 중. 본 소스 개선이 추가된 독립 업무 1건이지 PC 게시까지 완료된 13단계는 아니다. 기존 PC V2 [#2166](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2166)의 14종·30 raw pages·679 공통일·1764점·비공개 SHA 저장 PASS를 그대로 재사용한다.
+- **수집기:** `theme-seven-gmh-history-r1.mjs`는 공급자 JSONL을 원형 저장, SHA와 checkpoint readback·요청 최대 4회 보존. `failedAt`는 미완료 호출의 상태 미상 보호이므로 이번 실PC 무결성 증거 없이 자동 해제·재시도하지 않는다. 수집 주기·횟수·원가격 저장 변경 0.
+- **검증기:** manifest/checkpoint/14개 종목·페이지별 SHA·원천 식별·완료 플래그의 상호검증은 데이터 신뢰 근거. 628 유효 공통일·7×252는 승인 R188 통계창의 필수 조건. 범위 완화 0, 결측 가격 생성 0.
+- **계산기 실제 결함 및 수정:** 기존 수집기와 레거시 `computeSevenGmh`는 null/0/무효 비갭 close를 원본에 남기되 계산에서 제외한다. 신규 `parseSavedGmhBarSource`만 **무효 close 1개로 전체 정상 이력까지 거부**하는 불필요한 거부가 있었다. [기능 PR #1360](https://github.com/ansqhd5774-Choi/zgmini/pull/1360) 3파일 최소 수정·main 병합 `e27075983b5fe1d626963e0010e3dfd7e8abce26`. `skippedUnusable` 비공개 사유 집계와 계산 대상에서만 제외. 628 유효일이 여전히 부족하면 STOP; 중복 가격 충돌·원본 SHA·MarketParquet 거부 유지.
+- **계산 시험:** [Node CI #44277729053](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44277729053) completed/success. 신규 반례 3/3(628일+무효 off-slot 1건은 원본/신규 1764점 동일, 필수 종가 1개 무효는 STOP, 실물형 14종 SHA JSONL·체크포인트 PC parity/immutable 저장/rights false) PASS. 전체 Build/Type/Regression/PC publication recovery/Cloudflare 계약 PASS. **소스/fixture CI로서 새 개발 SHA 실PC 설치·실계산 재실증은 아님.**
+- **인증기:** 기존 #2157/#2159 Issue-opened HEAD drift는 계산 이전 사전차단을 일으켰고 [#2164](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2164)의 조상 SHA + 실행 파일 동일성으로 조정 후 #2166 실PC PASS. 권한·고정 candidate SHA·일회성 요청 원장은 유지.
+- **보고기 실제 결함 및 수정:** 인증 실패 때 `report`가 동일 실행 승인 함수를 다시 호출해 오류 코드와 결과 TXT/JSON도 잃었다. [제어 PR #2168](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2168) 4파일·main 병합 `15ad4f05c662b9a057fdd238bf737745c49620c2`: 신원 확인과 실제 실행 허가 분리; V2 SHA mismatch에서 **계산은 STOP 유지**, 안전한 `CONTROL_PIN_DRIFT_STOP` 영수증만 JSON/TXT 2/2 출력. 임의 child PASS를 STOP으로 강제하며 V1 기존 인증 유지. 또한 검증된 628일을 넘어도 1500일 상한에 걸리는 V2 임의 한도 제거(legacy V1 불변, R188 입력은 마지막 628일만, 출력 1764개 고정, rawPages<=256/해시 계약 유지). [제어 CI #44278338848](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44278338848) SUCCESS, [C996 보호 CI #44278339163](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44278339163) SUCCESS; 보고기 신규 테스트 7/7 PASS.
+- **게시기:** 과거 D1 seed는 기존 [#2133](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2133) 1624점 일치·차이0 검증; 그러나 R178 secondarySource가 null 아님, R178/R32 오래된 관측일 및 검증되지 않은 권리·CAS는 실제 공개 차단 조건. 무료 MarketParquet 사용 중지와 불변 데이터 계약을 이유로 **게시 조건/TTL/권리 플래그를 느슨하게 하지 않음**. 기존 R179/R183 PC 운영 소스 전체는 현재 GitHub main에 없으므로 추정 변경 금지. D1/Production 쓰기·거짓 READY 0.
+- **브랜치 기록:** 기능 전용 `codex/theme-fear-greed-integration-20261025`에 수정된 세 파일을 main Git blob SHA 3/3 동일하게 반영. 개발/제어 main 두 PR 병합은 운영 PC 승인 source 재고정 또는 새 B 실행 허가가 아니다. 기존 실원자료 계산 #2166 유효, 새 소스는 다음 승인된 갱신 시 정확 신규 commit/blob 심사 후 설치해야 한다.
+- **다음 필수 13/68:** 기존 승인된 읽기 전용 R178/R179/R183 현재 소스·계보·실제 D1 seed/Reader와 새 GMH-only 비공개 이력의 sourceVersion·관측일·공개 권리/비복원성 계약을 대조하고 정확 필요한 게시 수정을 별도 승인받는다. 새 계산기를 굳이 재실행하거나 원자료를 재수집하는 것을 완료 조건으로 추가하지 않는다.
+
+---
+
 ## 2026-11-18 W03 13/68 착수 — 기존 D1 seed/공개 비교 증거 재사용, 게시 미승인
 
 - **단계:** 12/68 DONE (17.6%) 상태를 유지한 채 13/68 IN_PROGRESS. 신규 운영 조회·D1 쓰기·공급자 호출·게시 0. #2166 실제 V2 결과의 `inputManifestSha256=82f380e346e350c276c4b532353ddc3112dbfa5f90c8d1590c25e22ec064bc0a`, `privateArtifactSha256=9f5fa50f294224b273b0eee6e4d1ad96afc1b37a61774d1543ffa1f62a`는 기존 승인된 D1 seed 읽기 결과의 기대 값과 2/2 동일.
