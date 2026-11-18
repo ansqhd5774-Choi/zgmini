@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import {buildCreditR2,CREDIT_R2_CONTRACT} from '../lib/market-score/credit-r2.mjs';
 import {marketDetailRows} from '../lib/market-score/detail-catalog.mjs';
 import {createMarketScoreR1Handler} from '../worker/market-score-r1.mjs';
+import {buildCmR1DomainResults} from '../lib/market-score/domain-adapter-r1.mjs';
+import {buildCompositeMarketScore} from '../lib/market-score/composite-model-r1.mjs';
 
 const weekly=(start,n,fn)=>{const out=[],d=new Date(start+'T12:00:00Z');for(let i=0;i<n;i++){out.push({observationDate:d.toISOString().slice(0,10),value:fn(i)});d.setUTCDate(d.getUTCDate()+7)}return out};
 const daily=(start,n,fn)=>{const out=[],d=new Date(start+'T12:00:00Z');for(let i=0;i<n;i++){while(d.getUTCDay()===0||d.getUTCDay()===6)d.setUTCDate(d.getUTCDate()+1);out.push({observationDate:d.toISOString().slice(0,10),value:fn(i)});d.setUTCDate(d.getUTCDate()+1)}return out};
@@ -150,4 +152,61 @@ test('public runtime explicit CREDIT R2 overrides legacy diagnostic credit score
  assert.ok(credit.trend.length>50);
  assert.equal(credit.indicators.length,4);
  assert.notEqual(credit.score,99);
+});
+
+test('CREDIT R2 four factor mini histories are source-observation scored points, not raw series',()=>{
+ const result=buildCreditR2(inputs());
+ assert.equal(result.status,'READY');
+ assert.deepEqual(result.indicators.map(x=>x.id),['credit-41','credit-42','credit-43','credit-44']);
+ for(const item of result.indicators){
+  assert.ok(item.trend.length>1,item.id);
+  assert.equal(item.trend.at(-1).label,item.observationDate,item.id);
+  assert.equal(item.trend.at(-1).value,item.score,item.id);
+  assert.ok(item.trend.every(point=>point.label<=asOf));
+  assert.ok(item.trend.every(point=>Object.keys(point).every(key=>
+   ['label','value','status','breakBefore'].includes(key))));
+  assert.ok(item.trend.every(point=>point.value===null||
+   (Number.isFinite(point.value)&&point.value>=0&&point.value<=100)));
+ }
+ const domain=buildCompositeMarketScore(buildCmR1DomainResults({credit:result}),
+  {updatedAt:asOf+'T00:00:00Z'}).domains.find(x=>x.id==='credit');
+ assert.deepEqual(domain.indicators.map(x=>x.trend.at(-1).value),
+  result.indicators.map(x=>x.score));
+ assert.deepEqual(CREDIT_R2_CONTRACT.weights,{hy:.35,ig:.35,nfciCredit:.10,bondVolatility:.20});
+});
+
+test('CREDIT R2 retains weekly composite anchors, 0/null and nonfabricated mixed-cadence minis',()=>{
+ const source=[
+  {observationDate:'2026-10-23',hy:1,ig:0,privateRow:123},
+  {observationDate:'2026-10-30',hy:null,ig:.23},
+  {observationDate:'2026-11-13',hy:.15,ig:.24},
+  {observationDate:'2026-11-19',hy:0,ig:0},
+ ];
+ const result=buildCreditR2({...inputs(),cmdi:source,asOfDate:'2026-11-18'});
+ assert.equal(result.status,'READY');
+ assert.equal(result.trend.at(-1).label,'2026-11-13');
+ assert.equal(result.trend.some(point=>point.label==='2026-11-18'),false);
+ assert.deepEqual(result.indicators[0].trend,[
+  {label:'2026-10-23',value:0,status:'READY'},
+  {label:'2026-10-30',value:null,status:'PARTIAL'},
+  {label:'2026-11-13',value:85,status:'READY',breakBefore:true},
+ ]);
+ assert.equal(result.indicators[1].trend[0].value,100);
+ assert.ok(result.indicators.every(x=>x.trend.every(p=>p.label<='2026-11-18')));
+ assert.ok(result.indicators.every(x=>x.trend.every(p=>!Object.hasOwn(p,'privateRow'))));
+ assert.equal(result.indicators[0].score,85);
+});
+
+test('CREDIT R2 conflicting duplicate factor score fails closed for mini, not valid headline',()=>{
+ const input=inputs();
+ const source=[
+  {observationDate:'2026-10-23',hy:.2,ig:.2},
+  {observationDate:'2026-11-13',hy:.15,ig:.24},
+  {observationDate:'2026-11-13',hy:.30,ig:.24},
+ ];
+ const result=buildCreditR2({...input,cmdi:source,asOfDate:'2026-11-18'});
+ assert.equal(result.status,'READY');
+ assert.deepEqual(result.indicators[0].trend,[]);
+ assert.ok(result.indicators[1].trend.length>0);
+ assert.ok(Number.isFinite(result.score));
 });
