@@ -68,7 +68,10 @@ try{
   // first makes this test independent from the initial page fold.
   await chart.scrollIntoViewIfNeeded();
   const curve=chart.locator('path.recharts-area-curve');
-  await curve.waitFor({state:'visible',timeout:20000});
+  // A real flat 26.2-score SVG path has zero geometric height; Playwright
+  // calls that path "hidden" even while the stroked line is present on-screen.
+  // Check attachment plus its actual finite multi-point path instead.
+  await curve.waitFor({state:'attached',timeout:20000});
   await page.waitForFunction(()=>{
    const path=document.querySelector('.zg-fg-us .cnn-history-chart-hitbox path.recharts-area-curve');
    const d=path?.getAttribute('d')??'';
