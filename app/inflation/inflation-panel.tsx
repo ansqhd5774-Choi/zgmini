@@ -10,6 +10,7 @@ import {MarketTrendFrame} from "../market-trend-frame";
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from "../market-fear-greed-chart";
 import {InflationFavoriteButton,InflationFavoriteHeaderIcon} from "./inflation-favorite-button";
 import {InflationMiniChart,type InflationMiniTrendPoint} from "./inflation-mini-chart";
+import {inflationR2VisibleTrend} from './inflation-r2-trend-display-r1.mjs';
 import "./inflation-indicator-r2.css";
 import "./inflation-score-comparisons-r1.css";
 import "./inflation-hero-typography-r1.css";
@@ -192,8 +193,9 @@ export default function InflationPanel(){
  const {payload,loading}=useStoredIndex<InflationPayload>('/api/inflation-detail');
 
  const score=typeof payload?.score==="number"&&Number.isFinite(payload.score)?payload.score:null;
- const allTrend=useMemo(()=>Array.isArray(payload?.trend)?payload!.trend!.filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)):[],[payload?.trend]);
- const trend=allTrend.slice(-12).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint));
+ const trend:MarketFearGreedChartPoint[]=useMemo(()=>inflationR2VisibleTrend({
+  status:payload?.status,score:payload?.score,asOfDate:payload?.asOfDate,trend:payload?.trend,
+ }),[payload?.status,payload?.score,payload?.asOfDate,payload?.trend]);
  const latest=trend.at(-1);
  const latestPoint:MarketFearGreedChartValidPoint|null=latest&&typeof latest.score==="number"?{date:latest.date,score:latest.score}:null;
  const axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(5,7)]));
