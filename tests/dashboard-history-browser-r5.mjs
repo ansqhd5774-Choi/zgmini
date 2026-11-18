@@ -254,7 +254,9 @@ try{
     // Two or more real calculation-time observations require a connected
     // SOLID calculation series, not only the dashed daily reconstruction.
     // A single observed point has no valid connecting segment.
-    if(points.length>=2){
+    // 6M/1Y intentionally render the published daily trend, not intraday
+    // calculations. Only 1W/1M/3M require a solid calculated series.
+    if(points.length>=2&&['1W','1M','3M'].includes(period)){
      await live.waitForFunction(()=>{
       const root=document.querySelector('.zg-r55-summary-chart');
       return [...(root?.querySelectorAll('path.recharts-area-curve')??[])].some(p=>{
