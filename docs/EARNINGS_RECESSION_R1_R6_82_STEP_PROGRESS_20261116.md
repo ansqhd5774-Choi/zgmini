@@ -2348,3 +2348,16 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 **실제 Runtime/보호:** 실서비스 [공개 페이지](https://zgmini.kr/earnings-recession/) 서버 초기 HTML은 공개 경로만 확인했고 JavaScript hydration 뒤 실제 점수/차트가 확인된 것으로 계산하지 않음. 이번 직접 읽기 전용 공개 API 접속은 도구 내부 오류였으며 실서비스 503 근거로 사용하지 않음. PC·SQLite·원자료·D1·Task·Controller·Cloudflare/Git Integration 배포 변경 0. 기존 R3-04 사용자 Task Owner+natural idle HOLD [#1919](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1919#issuecomment-6943640912) 및 R5-04 #2094 STAGED/새 A 미설치 유지. `SOURCE_CI_PASS_PARTIAL / BROWSER_RUNNING / PRODUCTION_NOT_VERIFIED`.
 
 **단일 바로 다음 행동:** W05는 동일 browser run #44288776257 job의 종료/step/log·artifact를 확인하고 신규 시험이 실패하면 정확 실패 반례만 수정한다. 성공해도 모의 Chromium CI와 실제 Production PC/모바일/D1/원본 checkpoint를 분리하며, #1373 main 통합/자동배포 GO 확인 뒤에만 운영 반영한다. 진척 숫자는 실제 종단 조건 충족 전까지 불변.
+
+
+## 129. R5-11 — 기존 Chromium 4폭 브라우저 CI 실제 종료 PASS 확인 (2026-11-18 20:00 KST)
+
+<!-- W05-R129-R511-BROWSER-RESULT-20261118 -->
+
+**진행률:** 순차 26/82(31.7%)→26/82(31.7%), 개별 33/82(40.2%)→33/82(40.2%). 첫 미완료 R3-04 유지. R5-11 전체 DONE 아님.
+
+**실제 결과:** §128의 동일 PR [#1373](https://github.com/ansqhd5774-Choi/zgmini/pull/1373) HEAD `9a2910273bc2ebf84a4f529149e70b89c92040c0`에 대한 기존 [Chromium workflow #44288776257](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44288776257), job `134748228705`를 GitHub Actions API로 재조회. `completed/success`, updated_at `2026-11-18T10:58:44Z`. 단계 `Validate W05 R5-11 BLS stored observations and gap-safe charts at 390/768/1440/1920` = `completed/success`; `Upload browser UI evidence` = `completed/success`. §128 Node CI #44288776247 PASS도 재사용. 새 workflow 요청·재실행·소스 변경 없음.
+
+**판정:** mocked local dev Chromium의 4개 폭/결측 선분/현재·이전값/관측·수집일/stale·partial 검증은 PASS. 실제 Production hydrated 390/1440, 활성 배포 SHA, D1 `stored_at`, PC SQLite checkpoint 동치는 NOT_VERIFIED. PR #1373의 main 통합 승인·병합 여부도 이번 결과만으로 추정하지 않음. PC/SQLite/D1/Cloudflare 운영 쓰기 0. R3-04 #1919 사용자 HOLD 유지.
+
+**LAST PASS:** Chromium job 신규 W05 단계 및 artifact upload SUCCESS, 정확 source HEAD 일치. **FIRST UNFINISHED:** source-only #1373 main 통합/자동배포 GO 및 실제 Production hydrated 값·결측·시각 확인. **NEXT 한 작업:** #1373의 현재 PR 승인·병합·main HEAD 및 Git Integration 효과를 확인하고 허용된 source-only 범위에서만 통합 후 실제 Production 390/1440 read-only 비교. R5-04 원본 checkpoint와 R3-04 수집은 별도 승인 경로로 유지.
