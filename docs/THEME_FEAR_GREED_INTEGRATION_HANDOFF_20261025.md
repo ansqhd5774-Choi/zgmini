@@ -1,3 +1,12 @@
+## 2026-11-18 15:55 KST W03 12/68 — PR #1321 최신 CI 실패 확정, 원인 미확인
+
+- **진행률:** 시작 11/68(16.2%), 종료 11/68(16.2%), 12단계 IN_PROGRESS. 기준 작업 브랜치 `codex/theme-fear-greed-integration-20261025` HEAD `86c7d1d02471253aef2be4adb2a827400af21c34` (조회 시점); PR #1321 후보 HEAD `974b7774f6abb0508a4a16c5af66e39e0e965e83`.
+- **실제 신규 확인:** [Node CI #44254157044](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44254157044) `completed/failure` (2026-11-18 06:51:45 UTC 업데이트). jobs API에서 `check` 실패 원인은 **Regression tests 단계 failure**로 좁혀짐. `npm ci`, Build, Type check는 SUCCESS. PR [#1321](https://github.com/ansqhd5774-Choi/zgmini/pull/1321)은 여전히 OPEN/DRAFT/미병합, mergeable=true는 테스트 성공을 뜻하지 않음. GitHub API의 run logs 응답은 빈 본문이어서 정확한 실패 테스트/stack trace는 **UNKNOWN**; 실패 원인을 추측해 수정하지 않음.
+- **LAST PASS / FIRST FAIL:** LAST PASS=후보 HEAD의 의존성 설치·빌드·타입 검사 성공 및 기존 승인 GMH-only 11/13 private 증거와 D1 10/16 seed readback 재사용. FIRST FAIL=후보 전체 Regression tests 단계; 구체 테스트 식별은 미확인. PR Ready/병합/PC 적용/D1 게시 불가. 본 회차 GitHub 원장 갱신 외 providerCalls/PC·SQLite·D1·Task·Production 변경 0. 기존 공개 503 `STORED_DATA_STALE` 차단 및 권리/가격모드 보호 유지.
+- **다음 단일 실행:** CI #44254157044의 실패 테스트 이름과 assertion/stack을 Actions 원본 로그 또는 검증 가능한 동일 HEAD의 Node 회귀 재현으로 확보 → 원인에 해당하는 W03 2파일만 최소 수정 → 재검증 CI SUCCESS 후 PR #1321 검토/병합. 승인된 원본과 D1 seed의 실제 연결/권리·CAS/readback은 그 다음 단계. 자연 예약 검증은 전체 기능 완료 후.
+
+---
+
 ## 2026-11-18 W03 12/68 — GMH-only 7×252 비공개 seed 대조기 소스 구현 (게시 미승인)
 
 - **시작/종료 진행률:** 기존 완료 **11/68 (16.2%)** 유지, 12단계 **IN_PROGRESS**. 새 영구적인 완료·공개값 전진 0. 기존 실PC [#2124](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2124) R181 14/14 2026-11-16 `LOCAL_PRIMARY_STORED`는 **원장 수준** 증거이며 SQLite/실제 raw SHA 재검증 및 GMH-only 7테마 계산 투입 증거는 아님. R181 read-only source shape는 Node 내장 모듈/JSON 저장 신호이고 현재 SQLite 호출을 입증하지 않으므로, 특정 DB만 검증 필수 선행조건으로 정하지 않는다. 기존 승인 GMH-only private 2026-11-13 7×252 [#1700](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1700)와 D1 기존 seed 10/16, R178 10/28, R37 10/30 및 기존 1,624 overlap mismatch=0 [#2133](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2133) 재사용.
