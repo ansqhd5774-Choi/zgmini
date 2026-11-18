@@ -1,3 +1,11 @@
+## 2026-11-18 09:02 KST W03 10/68 — Shadow 동적 경로의 런타임 입력·외부 조회 경계 추가 확인
+
+- **진행률:** 시작 9/68(13.2%) → 종료 9/68(13.2%); 10단계 미완료, 목표 163 유지. 신규 실PC 실행/원자료/checkpoint/비공개 점수 실측 없음.
+- **직접 검증한 소스:** 지정 브랜치 `scripts/pc-writer/theme-config-tool.mjs` Git blob `e1bee5e4e9186fc47e631a1cc3ba4e2b5eb45617` 및 동적 진입 대상 `scripts/pc-writer/theme-platform-stored-run.mjs` Git blob `308c756afea311f75722df4e7587df5035e4710b` 원격 조회. 후자는 정적 import로 `theme-platform.mjs`, `theme-platform-store.mjs`, `theme-platform-stored-adapters.mjs`, `theme-nine-r54-d1-client.mjs`, `theme-biotech-auth-r7.mjs` 등을 사용한다. 따라서 이전 1차 entrypoint import만으로 전체 closure를 확정할 수 없다.
+- **새 실행 경계:** `storedInputFingerprint`는 `config/theme-nine-r20-approved-candidates.json`, `config/theme-nine-r26-official-aum-evidence.json`, `config/theme-nine-r32-dated-aum-approval.json`, `scripts/pc-writer/theme-space-satellite-r26-approved-roster.json`, `scripts/pc-writer/theme-space-satellite-r23-dated-aum-evidence.json`을 **런타임 파일 바이트**로 읽어 fingerprint에 포함한다. 이 JSON은 import 그래프만으로 발견되지 않으므로 manifest 입력 범위에서 별도 확인 필요. `readStoredPublicR32Base`는 공개 API에 읽기 GET, `createStoredD1FeedReader`는 허용된 기존 D1 키의 SELECT를 수행할 수 있다. 따라서 shadow를 **완전 오프라인/네트워크 0**이라고 주장하면 안 되며, 실제 operation의 허용 외부 읽기 계약을 승인 전에 확인해야 한다. 이것은 호출을 수행했다는 뜻이 아니다.
+- **안전 판정:** #2053 `SHADOW_SOURCE_NOT_APPROVED` 및 candidateExecuted=false 유지, #2049 R47 CMD 설치 PASS 유지. Host approvedSources와 완전 재귀 closure/파일별 SHA256/manifest SHA256은 UNKNOWN. 신규 A/B 발행·공급자 호출·PC/SQLite/D1/Task/배포 변경 0.
+- **다음 단일 실행:** 소스 tree를 기준으로 정적+동적 import, vendor 하위 모듈, 런타임 JSON 읽기 파일을 포함한 재귀 closure를 완성하고 각 실제 바이트 SHA256과 manifest SHA256을 검산한다. 승인된 shadow의 외부 GET/D1 SELECT 허용 범위도 공통 operation 계약과 대조한다. 공통 B 등록 adapter 및 Host 승인 목록 확인은 별도 공통 소유자 게이트이며 승인 전 등록/재실행 금지.
+
 ## 2026-11-18 07:58 KST W03 10/68 — Shadow entrypoint 의존성 1차 정적 추적 (읽기 전용)
 
 - **진행률:** 시작 9/68(13.2%) → 종료 9/68(13.2%). 10단계의 실제 63 ETF+SPY 원자료·checkpoint 및 R25/R32 신규 비공개 계산 실증은 미완료. 목표 163개 유지.
