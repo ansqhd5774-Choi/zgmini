@@ -115,3 +115,60 @@ test('same raw SHA with a newer stored-source observation advances the D1 checkp
   assert.equal((await writer.write(refreshed,{storedAt:now+4000})).status,'ALREADY_STORED');
  }finally{db.close();}
 });
+
+test('same archived SHA and retrieval checkpoint cannot overwrite an incompatible BEA indicator',async()=>{
+ const {db,adapter}=dbFixture();
+ try{
+  const writer=beaMfgWriter(adapter);
+  assert.equal((await writer.write(payload(),{storedAt:now+1000})).status,'READBACK_VERIFIED');
+  const before=db.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?')
+    .get(BEA_MFG_SNAPSHOT_KEY);
+  const altered=payload();
+  altered.indicator.history[4].profitsBillionsUsdAnnualRate+=10;
+  altered.indicator.currentProfitsBillionsUsdAnnualRate+=10;
+  altered.indicator.value=(altered.indicator.currentProfitsBillionsUsdAnnualRate/
+    altered.indicator.yearAgoProfitsBillionsUsdAnnualRate-1)*100;
+  validateBeaMfgProfit(altered,{now:now+3000}); // internally consistent but not tied to raw SHA
+  assert.notEqual(altered.indicator.value,payload().indicator.value);
+  await assert.rejects(writer.write(altered,{storedAt:now+3000}),
+    /BEA_MFG_CONFLICTING_SNAPSHOT/);
+  const after=db.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?')
+    .get(BEA_MFG_SNAPSHOT_KEY);
+  assert.deepEqual(after,before);
+  assert.equal((await writer.write(payload(),{storedAt:now+4000})).status,'ALREADY_STORED');
+  const get=await readBeaMfgResponse(new Request(url),adapter,{now:now+5000});
+  assert.equal(get.status,200);
+  assert.equal((await get.json()).indicator.value,payload().indicator.value);
+ }finally{db.close();}
+});
+
+test('stale prewrite view cannot race-overwrite a D1 row at the same stored-source checkpoint',async()=>{
+ const {db,adapter}=dbFixture();
+ try{
+  await beaMfgWriter(adapter).write(payload(),{storedAt:now+1000});
+  const before=db.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?')
+    .get(BEA_MFG_SNAPSHOT_KEY);
+  let staleFirst=true;
+  const staleAdapter={prepare(sql){
+   const q=adapter.prepare(sql);
+   return {bind(...args){
+    const v=q.bind(...args);
+    return {
+     first:async()=>staleFirst&&sql.startsWith('SELECT body,stored_at')?
+       (staleFirst=false,null):v.first(),
+     run:()=>v.run(),
+    };
+   }};
+  }};
+  const altered=payload();
+  altered.indicator.history[4].profitsBillionsUsdAnnualRate+=10;
+  altered.indicator.currentProfitsBillionsUsdAnnualRate+=10;
+  altered.indicator.value=(altered.indicator.currentProfitsBillionsUsdAnnualRate/
+    altered.indicator.yearAgoProfitsBillionsUsdAnnualRate-1)*100;
+  await assert.rejects(beaMfgWriter(staleAdapter).write(altered,{storedAt:now+3000}),
+    /BEA_MFG_SUPERSEDED/);
+  const after=db.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?')
+    .get(BEA_MFG_SNAPSHOT_KEY);
+  assert.deepEqual(after,before);
+ }finally{db.close();}
+});

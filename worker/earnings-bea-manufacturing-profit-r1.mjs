@@ -126,21 +126,23 @@ export function beaMfgWriter(db){
       try{old=verifiedBeaMfgEnvelope(previous,{now:storedAt});}
       catch{throw Error('BEA_MFG_EXISTING_INVALID');}
       if(old.payload.sourceStoredAt>payload.sourceStoredAt)throw Error('BEA_MFG_SUPERSEDED');
-      if(old.payload.sourceStoredAt===payload.sourceStoredAt
-        &&old.payload.sourceVersion!==payload.sourceVersion)
-        throw Error('BEA_MFG_CONFLICTING_VERSION');
-      // Reusing the raw SHA does not mean this retrieval/checkpoint was stored.
-      if(old.payload.sourceStoredAt===payload.sourceStoredAt
-        &&old.payload.sourceVersion===payload.sourceVersion
-        &&JSON.stringify(old.payload.indicator)===JSON.stringify(payload.indicator))
-        return {status:'ALREADY_STORED',key:BEA_MFG_SNAPSHOT_KEY,storedAt:Number(previous.stored_at)};
+      if(old.payload.sourceStoredAt===payload.sourceStoredAt){
+        if(old.payload.sourceVersion!==payload.sourceVersion)
+          throw Error('BEA_MFG_CONFLICTING_VERSION');
+        if(JSON.stringify(old.payload.indicator)!==JSON.stringify(payload.indicator))
+          throw Error('BEA_MFG_CONFLICTING_SNAPSHOT');
+        return {status:'ALREADY_STORED',key:BEA_MFG_SNAPSHOT_KEY,
+          storedAt:Number(previous.stored_at)};
+      }
+      // The same raw SHA with a genuinely newer sourceStoredAt is a new
+      // retrieval checkpoint, not a replay of the previous stored result.
     }
     const body=JSON.stringify({payload,projection:{status:'READY',builtAt:storedAt,
       sourceStoredAt:payload.sourceStoredAt,sourceVersion:payload.sourceVersion}});
     if(body.length>32_000)throw Error('BEA_MFG_PAYLOAD_TOO_LARGE');
     const result=await db.prepare(`INSERT INTO market_public_snapshots_v1(snapshot_key,body,stored_at)
       VALUES(?,?,?) ON CONFLICT(snapshot_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at
-      WHERE json_extract(market_public_snapshots_v1.body,'$.projection.sourceStoredAt') <= ?
+      WHERE json_extract(market_public_snapshots_v1.body,'$.projection.sourceStoredAt') < ?
       AND market_public_snapshots_v1.stored_at <= ?`)
       .bind(BEA_MFG_SNAPSHOT_KEY,body,storedAt,payload.sourceStoredAt,storedAt).run();
     if(result?.meta?.changes!==1)throw Error('BEA_MFG_SUPERSEDED');
