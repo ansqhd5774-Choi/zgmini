@@ -1,0 +1,116 @@
+{
+  "kind": "ZGMINI_W04_PIT0408_CONTROLLER_MAIN9_PREAPPROVAL_SOURCE_REVIEW_V1",
+  "status": "NON_EXECUTABLE_REVIEW_NO_GO",
+  "notAPcMaintenanceManifest": true,
+  "observedAt": "2026-11-18",
+  "controlRepository": "ansqhd5774-Choi/zgmini-pc-control",
+  "installedControllerSha": "f7f1559bc0ef15bb9b375982d048369c474c490f",
+  "targetSourceSha": "85b3902dec26e8d9cd7fd3e48befea306eb792fe",
+  "targetSourceBranch": "main",
+  "latestMainAtReview": "dc307f9475a0d1e01cdca0fe4aea7dc9944303ec",
+  "preflightLineage": {
+    "installedAncestorOfTarget": true,
+    "targetAncestorOfMain": true,
+    "targetToMainChangedControllerConfigFiles": 0,
+    "candidateMain9RuntimeDiffCount": 9,
+    "candidateMain7TargetRejected": "TARGET_NOT_ON_MAIN"
+  },
+  "sourceInspection": {
+    "targetObservedGitBlobPrefixesAll9Verified": true,
+    "targetFiles": [
+      {
+        "path": "config/operations.json",
+        "owner": "W01+W04+W05 공통",
+        "observedTargetBlobPrefix": "b7fc050148cb",
+        "sha256": "a12fb8fdbf3c575f34bddb33334e59c73616aa3b53a195917a492ece56fb4632"
+      },
+      {
+        "path": "controller/common.mjs",
+        "owner": "W04 PIT-04-08",
+        "observedTargetBlobPrefix": "607e8dcfe21d",
+        "sha256": "67d54cae62829e833a3ac547da621dbd1231ba4e40b7a54960a89610995b32e6"
+      },
+      {
+        "path": "controller/earnings-bea-mfg-archive-readonly.mjs",
+        "owner": "W05",
+        "observedTargetBlobPrefix": "03cbc144f35a",
+        "sha256": "0835fc60ebaa63ce0b0ead772a5dfa9d1834fa9bffb6f90e0d63cb24428495ad"
+      },
+      {
+        "path": "controller/employment-r6-candidate-readonly.mjs",
+        "owner": "W04 PIT-04",
+        "observedTargetBlobPrefix": "947bed58051b",
+        "sha256": "9a7411946b70c13837a68825aac4078a7c2044219bffe7cd3c4fda7a0a100b87"
+      },
+      {
+        "path": "controller/employment-r6-collection-evidence-readonly.mjs",
+        "owner": "W04 PIT-04-05",
+        "observedTargetBlobPrefix": "126a245272b0",
+        "sha256": "12bd06c9f6ff6ea2b3aabe49a12fc3020550d917e6f3a611ad0c754b32df47cd"
+      },
+      {
+        "path": "controller/inflation-a401-private23-readonly.mjs",
+        "owner": "W01",
+        "observedTargetBlobPrefix": "ff6c041a8278",
+        "sha256": "db62b0799731d48a9f04e0c8510c6fa273f70e2b07c2eda5411cc636743d27aa"
+      },
+      {
+        "path": "controller/inflation-a407-integrity-readonly.mjs",
+        "owner": "W01",
+        "observedTargetBlobPrefix": "f50e4af8ed26",
+        "sha256": "8d038527098d7527ee09575af11f53e81524476da85400eb46be5bf896bac88e"
+      },
+      {
+        "path": "controller/operations.mjs",
+        "owner": "W01+W04+W05 공통",
+        "observedTargetBlobPrefix": "7ba551fd8bc3",
+        "sha256": "51d785f781ed313b94a3fb234b09d892f6b144abdbcecafe15bf2f4a72575891"
+      },
+      {
+        "path": "controller/pc-source-origin-readonly.mjs",
+        "owner": "ER1",
+        "observedTargetBlobPrefix": "a9c9fff60da2",
+        "sha256": "ec7477be8b4fdb9101b84a91f09f1d07846b727d376742af13f2905815b66500"
+      }
+    ],
+    "targetFilePathsComparedWithInstalled": [
+      "config/operations.json",
+      "controller/common.mjs",
+      "controller/earnings-bea-mfg-archive-readonly.mjs",
+      "controller/employment-r6-candidate-readonly.mjs",
+      "controller/employment-r6-collection-evidence-readonly.mjs",
+      "controller/inflation-a401-private23-readonly.mjs",
+      "controller/inflation-a407-integrity-readonly.mjs",
+      "controller/operations.mjs",
+      "controller/pc-source-origin-readonly.mjs"
+    ],
+    "allowFilesFingerprintSha256": "8bbcc13e9b80bee393e530b31e51c4ee94d07f6c14a0f82f6da95e4b71d01f34",
+    "fingerprintAlgorithm": "sha256(JSON.stringify(allowFiles sorted by path using contract manifestFingerprint))",
+    "fingerprintIsApproval": false
+  },
+  "ownerScopes": {
+    "W04": "controller/common.mjs, employment-r6-candidate-readonly.mjs, employment-r6-collection-evidence-readonly.mjs",
+    "W01": "inflation-a401-private23-readonly.mjs, inflation-a407-integrity-readonly.mjs",
+    "W05": "earnings-bea-mfg-archive-readonly.mjs and shared config/operations.mjs dispatch",
+    "ER1": "pc-source-origin-readonly.mjs",
+    "shared": "config/operations.json and controller/operations.mjs"
+  },
+  "existingApprovalReference": "approvals/controller-updates/ead5d2d585ff2ce2a6df5f9b6cf720f65d90b49b.json",
+  "existingApprovalDoesNotCoverThisTarget": true,
+  "requiredBeforeOperationalEffect": [
+    "common owner must provide independent maintainer V2 actual Windows handoff and original #2094 safe STAGED restoration receipt",
+    "all affected W01/W04/W05/ER1 owners must verify exact effect and authorize combined nine-file scope",
+    "W04 to obtain fresh installed host SHA, owner CAS and install lease at execution time",
+    "W04 to create and obtain separate exact B approval manifest for this immutable target and run existing non-bypassed validation",
+    "W04 to submit one new unique authorized Controller B issue and verify installed Controller SHA and post-operation runtime readback",
+    "W04 to submit PIT04 offset=0 registered R2 readonly A and recover 8-key JSON+TXT with true PIT evidence"
+  ],
+  "safety": {
+    "PCControllerModified": false,
+    "SQLiteOrD1Modified": false,
+    "backlogOrMaintainerModified": false,
+    "replayOriginal2094": false,
+    "stageOrLeaseManualCleanup": false,
+    "HistoryInsertApprovedKeys": 0
+  }
+}
