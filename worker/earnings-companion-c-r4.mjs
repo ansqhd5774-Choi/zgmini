@@ -177,6 +177,12 @@ async function readOptionalService(core,{now}){
       ||Number(record.stored_at)>now
       ||projection.builtAt!==Number(record.stored_at))
       throw Error('EARNINGS_C_SERVICE_CHECKPOINT_INVALID');
+    // The service extension is an atomic two-indicator addition. Never expose
+    // seven API rows when only one WPSFD42 reading is ready or either is stale.
+    // Preserve the existing five-row base key and response in both cases.
+    if(payload.rows.some(row=>row.status!=='READY'))return {state:'PARTIAL'};
+    if(payload.rows.some(row=>earningsCompanionFreshness(row,{now}).status!=='FRESH'))
+      return {state:'STALE'};
     return {state:'READY',payload};
   }catch{return {state:'INVALID'};}
 }
