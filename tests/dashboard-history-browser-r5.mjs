@@ -172,4 +172,103 @@ try{
   console.log(`PASS ${width}px: 6 chart periods, newer snapshot and true zero in mocked Chromium`);
   await page.close();
  }
+
+ // One-off W06 #41 post-main-merge actual Production serving inspection.
+ // Collect evidence, not a standing deployment Gate. Cloudflare active
+ // exact Deployment ID/Version/SHA is unavailable through public GET.
+ for(const width of [390,1440]){
+  const context=await browser.newContext({viewport:{width,height:900},locale:'ko-KR',colorScheme:'light'});
+  const live=await context.newPage();
+  const errors=[],responses=[];
+  live.on('pageerror',e=>errors.push(e.message));
+  live.on('response',response=>{
+   const u=new URL(response.url());
+   if(u.hostname==='zgmini.kr'&&u.pathname==='/api/inflation-detail'
+     &&response.status()===200)
+     responses.push(response.json().catch(()=>null));
+  });
+  try{
+   const response=await live.goto('https://zgmini.kr/inflation/',{
+    waitUntil:'domcontentloaded',timeout:45000});
+   assert.equal(response?.status(),200,'post-merge public inflation page HTTP200');
+   const intro=live.locator('#zg-about-intro-dialog');
+   if(await intro.isVisible({timeout:1300}).catch(()=>false)){
+    await intro.getByRole('button',{name:'닫기',exact:true}).click();
+    await intro.waitFor({state:'hidden',timeout:15000});
+   }
+   const hero=live.locator('[data-testid="inflation-detail-hero"]');
+   await hero.waitFor({state:'visible',timeout:20000});
+   await live.waitForFunction(()=>document.querySelector('[data-testid="inflation-detail-hero"]')
+    ?.getAttribute('aria-busy')==='false',null,{timeout:30000});
+   const data=responses.length?await responses.at(-1):null;
+   const direct=await live.request.get('https://zgmini.kr/api/inflation-detail',
+    {timeout:20000,headers:{accept:'application/json','cache-control':'no-cache'}});
+   const directBody=await direct.json(),source=data?.status==='READY'?data:directBody;
+   const chart=hero.locator('.fg-chart-slot');
+   const latestDot=chart.locator('.cnn-latest-point').first();
+   if(source?.status==='READY'&&Array.isArray(source.trend)&&source.trend.length>=2)
+    await latestDot.waitFor({state:'visible',timeout:25000});
+   let tooltipLabel=null,hoverAttempted=false,hoverError=null;
+   if(await latestDot.count()>0){
+    hoverAttempted=true;
+    try{
+     await latestDot.hover({force:true,timeout:15000});
+     await live.waitForTimeout(230);
+     const t=hero.locator('.cnn-history-tooltip span').first();
+     if(await t.count()>0&&await t.isVisible())tooltipLabel=(await t.textContent())?.trim()??null;
+     if(!tooltipLabel){
+      const box=await latestDot.boundingBox();
+      if(box){
+       await live.mouse.move(box.x+box.width/2-15,box.y+box.height/2);
+       await live.mouse.move(box.x+box.width/2,box.y+box.height/2);
+       await live.waitForTimeout(350);
+       if(await t.count()>0&&await t.isVisible())tooltipLabel=(await t.textContent())?.trim()??null;
+      }
+     }
+    }catch(e){hoverError=String(e).slice(0,300);}
+   }
+   const sourceLast=source?.trend?.at(-1)??null;
+   const expectedPublicDate=typeof source?.asOfDate==='string'
+    ?new Intl.DateTimeFormat('ko-KR',{dateStyle:'medium',timeZone:'Asia/Seoul'})
+      .format(new Date(source.asOfDate+'T00:00:00Z')):null;
+   // Content marker in loaded public Next bundle, when exposed by its minifier.
+   const bundle=await live.evaluate(async()=>{
+    const candidates=[...new Set([
+     ...[...document.querySelectorAll('script[src]')].map(e=>e.src),
+     ...performance.getEntriesByType('resource').map(e=>e.name),
+    ])].filter(url=>url.includes('/_next/')&&/\.js(?:\?|$)/.test(url)).slice(0,45);
+    const hits=[];
+    for(const url of candidates){
+     try{
+      const res=await fetch(url,{cache:'force-cache'});
+      if(!res.ok)continue;
+      const text=await res.text();
+      if(text.includes('fromCurrentMonthEnd')||text.includes('inflationR2VisibleTrend'))
+       hits.push(url.split('/').at(-1));
+     }catch{}
+    }
+    return {scriptCandidates:candidates.length,markerHits:hits};
+   });
+   const status=await hero.getAttribute('data-market-state');
+   const resultLog={width,apiStatus:direct.status(),clientStatus:data?.status??null,
+    publicAsOf:source?.asOfDate??null,publicScore:source?.score??null,
+    publicTrendLast:sourceLast,sourceHadFutureDate:sourceLast?.label>source?.asOfDate,
+    currentScoreLabel:await hero.locator('.cnn-score-orb[role="group"]').getAttribute('aria-label'),
+    toolTipLastDate:tooltipLabel,expectedPublicDate,
+    tooltipShowsCurrent:tooltipLabel===expectedPublicDate,
+    tooltipShowsFuture:Boolean(tooltipLabel)&&tooltipLabel!==expectedPublicDate,
+    hoverAttempted,hoverError,publicBundle:bundle,
+    visibleScoreState:status,pageErrors:errors,
+    overflow:await live.evaluate(()=>({
+     width:document.documentElement.clientWidth,scroll:document.documentElement.scrollWidth
+    })),
+   };
+   console.log('W06_41_POST_MAIN_LIVE',JSON.stringify(resultLog));
+   assert.deepEqual(errors,[],'post-merge public Inflation page JS errors');
+   assert.ok(resultLog.overflow.scroll<=resultLog.overflow.width+1,'no overflow');
+   await live.screenshot({path:'artifacts/dashboard-history/inflation-41-post-merge-'+width+'.png',
+    fullPage:false,timeout:15000});
+  }finally{await context.close();}
+ }
+
 }finally{await browser.close();}
