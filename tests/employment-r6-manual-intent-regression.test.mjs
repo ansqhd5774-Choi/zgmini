@@ -26,6 +26,13 @@ function fixture() {
   const calls = { latest: 0, provider: 0, records: [], locks: 0 };
   const store = {
     async initialize() {},
+    // CI-only compatibility shim for the R3 base collector: main's same test
+    // fixture uses getLatestRunInMode, while R3 uses getLatestRun for ONE_YEAR.
+    async getLatestRun(provider) {
+      calls.latest++;
+      assert.equal(provider, "EMPLOYMENT_R6_DOL_UI_WEEKLY_CLAIMS");
+      return stored();
+    },
     async getLatestRunInMode(provider, mode) {
       calls.latest++;
       assert.equal(mode, "ONE_YEAR");
