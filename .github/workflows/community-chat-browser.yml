@@ -47,6 +47,8 @@ on:
       - 'tests/community-chat-browser-r1.mjs'
       - 'tests/dashboard-deferred-ui-browser-r1.mjs'
       - 'components/risk-detail-side-rails.*'
+      - 'app/earnings-recession/**'
+      - 'tests/earnings-r511-browser-r1.mjs'
       - 'tests/risk-detail-side-rails-browser-r44.mjs'
       - 'app/outbreak-events.tsx'
       - 'app/outbreak-beginner-fed-r53.tsx'
@@ -101,6 +103,8 @@ jobs:
           exit 1
       - name: Validate inflation criterion, previous/current values, dates and sources at 1440/390
         run: node tests/inflation-criterion-browser-r1.mjs
+      - name: Validate W05 R5-11 BLS stored observations and gap-safe charts at 390/768/1440/1920
+        run: node tests/earnings-r511-browser-r1.mjs
       - name: Validate employment R6 stored 29-row presentation at 1440/390
         run: node tests/employment-r6-public-browser-r1.mjs
       - name: Validate W06 latest visible theme date in mocked Chromium at 390/1440
@@ -133,6 +137,7 @@ jobs:
             artifacts/dashboard-history/
             artifacts/about-intro-bootstrap/
             artifacts/inflation-criterion-review/
+            artifacts/earnings-r511-browser/
             artifacts/employment-r6-browser/
             artifacts/theme-visible-asof/
             artifacts/production-assets-network/
