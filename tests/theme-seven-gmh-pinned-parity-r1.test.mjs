@@ -103,3 +103,18 @@ test('unattested or inconsistent timestamps and public-rights flags never pass',
  assert.throws(()=>reconcilePinnedGmhSeven(input(p)),
   {code:'W03_SEVEN_SEED_PRIVATE_GMH_CONTRACT'});
 });
+
+test('private GMH histories must contain derived date/score fields only',()=>{
+ const withClose=privateResult();
+ withClose.themes[0].history[0].close=123.45;
+ assert.throws(()=>reconcilePinnedGmhSeven(input(withClose)),
+  {code:'W03_PINNED_PARITY_PRIVATE_HISTORY_FIELD_SCOPE'});
+ const withVolume=privateResult();
+ withVolume.themes[1].history[17].volume=100000;
+ assert.throws(()=>reconcilePinnedGmhSeven(input(withVolume)),
+  {code:'W03_PINNED_PARITY_PRIVATE_HISTORY_FIELD_SCOPE'});
+ const withRawSeries=privateResult();
+ withRawSeries.themes[2].rawBars=[{close:1}];
+ assert.throws(()=>reconcilePinnedGmhSeven(input(withRawSeries)),
+  {code:'W03_PINNED_PARITY_PRIVATE_THEME_FIELD_SCOPE'});
+});
