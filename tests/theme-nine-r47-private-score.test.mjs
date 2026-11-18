@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
-import {mergeNineR47HourlyRows,calculateNineR47PrivateScores} from
+import {mergeNineR47HourlyRows,calculateNineR47PrivateScores,parsePage} from
   '../scripts/pc-writer/theme-nine-r47-private-score.mjs';
 import {runNineR47Recurring} from
   '../scripts/pc-writer/theme-nine-r47-recurring-private-refresh.mjs';
@@ -36,6 +36,27 @@ test('R47 scores reject normalized nonexistent UTC days and preserve valid leap 
   const valid='2024-02-29T20:00:00.1234Z';
   assert.equal(mergeNineR47HourlyRows({symbol:'AAA',
     incoming:[price('AAA',valid)]}).at(0).timestamp,valid);
+});
+
+test('R47 raw page accepts UTC boundary bars crossing NY date, rejects out-of-window data',()=>{
+  // Provider start/end and JSONL timestamps are UTC; 00:00Z Nov 12 is NY Nov 11.
+  const window={start:'2026-11-12',end:'2026-11-17'};
+  const rows=[
+    price('SPY','2026-11-12T00:00:00Z'),
+    price('SPY','2026-11-12T23:00:00Z'),
+    price('SPY','2026-11-17T23:00:00Z'),
+  ];
+  const page=values=>Buffer.from(values.map(row=>JSON.stringify(row)).join('\n')+'\n');
+  assert.deepEqual(parsePage(page(rows),'SPY',window),rows);
+  for(const timestamp of ['2026-11-11T23:00:00Z','2026-11-18T00:00:00Z',
+      '2026-02-30T19:00:00Z']){
+    assert.throws(()=>parsePage(page([price('SPY',timestamp)]),'SPY',window),
+      {code:'THEME_NINE_R47_MERGED_PAGE_TIMESTAMP'});
+  }
+  assert.throws(()=>parsePage(page([rows[1],rows[0]]),'SPY',window),
+    {code:'THEME_NINE_R47_MERGED_PAGE_TIMESTAMP'});
+  assert.throws(()=>parsePage(page([price('AAA','2026-11-12T00:00:00Z')]),'SPY',window),
+    {code:'THEME_NINE_R47_MERGED_PAGE_TIMESTAMP'});
 });
 
 test('R47 reuses R25 approved scoring on verified 9-theme baseline plus R35 window',async t=>{
@@ -93,7 +114,9 @@ test('R47 reuses R25 approved scoring on verified 9-theme baseline plus R35 wind
     fetchImpl:async url=>{
       calls++;
       const symbol=url.pathname.split('/').at(-2);
-      const text=[price(symbol,'2026-10-23T19:00:00Z',10.5+((251)%10)*0.01),
+      // Provider UTC midnight belongs to the prior NY date, but is valid raw input.
+      const text=[price(symbol,'2026-10-23T00:00:00Z',10.5),
+        price(symbol,'2026-10-23T19:00:00Z',10.5+((251)%10)*0.01),
         price(symbol,'2026-10-26T19:00:00Z',10.51)].map(v=>JSON.stringify(v)).join('\n')+'\n';
       return new Response(text);
     }});
