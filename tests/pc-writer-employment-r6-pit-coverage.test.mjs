@@ -451,3 +451,49 @@ test("PIT-04-03 same value/hash but different provider is a Core lineage conflic
   assert.equal(report.coreCurrentHistoryUnverifiedKeys,0);
   assert.equal(report.coreCurrentHistoryMissingKeys,0);
 });
+
+test("PIT-04-08 opt-in key review reuses read-only SQLite snapshot and does not leak raw body",()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit0408-snapshot-"));
+ try{
+  const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+  const al=observation("AL",100,"a".repeat(64)),ak=observation("AK",200,"b".repeat(64));
+  const az=observation("AZ",300,"c".repeat(64));
+  fixture(core,{current:[al,ak,az],history:[az]});
+  fixture(candidate,{current:[al,{...ak,value:201}],history:[al,{...ak,value:201}]});
+  const before=[digest(core),digest(candidate)];
+  const report=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,
+   asOfDate:"2026-11-18",keyReviewOffset:0});
+  const review=report.pit04KeyReview;
+  assert.equal(report.coreCurrentKeysMissingHistory,2);
+  assert.equal(review.counts.coreHistoryMissing,2);
+  assert.equal(review.counts.candidateOverlapConflicts,1);
+  assert.equal(review.counts.missingCandidateInternalMatch,1);
+  assert.equal(review.evidenceTotal,2);
+  assert.equal(review.evidence[0].geographyCode,"AK");
+  assert.equal(review.evidence[0].reason,"CANDIDATE_CURRENT_CONFLICT");
+  assert.equal(review.promotionApproved,false);
+  assert.equal(review.rawPitAttested,false);
+  assert.equal(review.nextOffset,null);
+  assert.doesNotMatch(JSON.stringify(review),/"source_hash"|"provenance_json"|"value"/);
+  assert.ok(Buffer.byteLength(JSON.stringify(review),"utf8")<12000);
+  const paged=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,
+   asOfDate:"2026-11-18",keyReviewOffset:1});
+  assert.equal(paged.pit04KeyReview.evidence.length,1);
+  assert.equal(paged.pit04KeyReview.evidenceTotal,2);
+  assert.deepEqual([digest(core),digest(candidate)],before);
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+
+test("PIT-04-08 remains disabled by default; invalid offset and missing candidate stop",()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit0408-gate-"));
+ try{
+  const core=path.join(dir,"core.sqlite");
+  fixture(core,{current:[observation("AL",100,"a".repeat(64))],history:[]});
+  const report=auditEmploymentR6PitCoverage({dbPath:core,asOfDate:"2026-11-18"});
+  assert.equal(Object.hasOwn(report,"pit04KeyReview"),false);
+  assert.throws(()=>auditEmploymentR6PitCoverage({
+   dbPath:core,asOfDate:"2026-11-18",keyReviewOffset:-1}),/PIT_AUDIT_KEY_OFFSET_INVALID/);
+  assert.throws(()=>auditEmploymentR6PitCoverage({
+   dbPath:core,asOfDate:"2026-11-18",keyReviewOffset:0}),/PIT_AUDIT_KEY_REVIEW_INPUT_MISSING/);
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
