@@ -49,3 +49,16 @@ test('detail-only styling keeps the actual publication history and honest score 
  assert.ok(css.includes('.zg-iran-published-chart:not(.is-compact) .zg-iran-chart-legend'));
  assert.ok(css.includes('.zg-iran-published-chart:not(.is-compact) .zg-iran-update-reading'));
 });
+
+test('detail chart exposes individual publication time selectors when SVG points overlap',()=>{
+ assert.ok(chart.includes('!compact&&visible.length>1&&<div className="zg-iran-publication-times"'));
+ assert.ok(chart.includes('role="group" aria-label="실제 갱신 시각 선택"'));
+ assert.ok(chart.includes('aria-pressed={p.at===current.at}'));
+ assert.ok(chart.includes('onClick={()=>setSelected(p.at)}'));
+ assert.ok(chart.includes('dateTime={new Date(p.at).toISOString()}'));
+ assert.ok(css.includes('.zg-iran-publication-time.is-selected'));
+ assert.ok(css.includes('.zg-iran-publication-time:focus-visible'));
+ assert.ok(css.includes('overflow-x:auto'));
+ assert.ok(css.includes('touch-action:manipulation'));
+ assert.doesNotMatch(css,/\.zg-iran-publication-time[^}]+#[0-9a-fA-F]{3,8}/);
+});
