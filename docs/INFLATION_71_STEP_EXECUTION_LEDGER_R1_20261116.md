@@ -1,5 +1,14 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-INDEPENDENT-CLOUDFLARE-BUILD-VERSION-IDENTITY -->
+## 2026-11-18 — Controller 비의존 B1-07/B4-01 배포 신원 실증
+
+- **신규 실제 결과:** GitHub `zgmini/main@24f80c4...`에 연결된 공식 Cloudflare `Workers Builds: zgmini-migration-candidate-r5` check-run #134596059684 **SUCCESS**, production build ID `511f7c16...`, 생성 Worker version ID `edc313d6...`를 공식 GitHub checks 1:1 readback. Cloudflare build와 Git source를 구분했으나 현재 활성 Production Deployment·도메인 매핑 조회 미확인. 따라서 B1-07/B4-01은 부분 전진만 반영, 단계 완료 수 불변.
+- **실제 접근 제한:** Cloudflare D1/Workers 관리자 읽기 전용 조회 기능이 연결되어 있지 않으며, 공개 웹 HTML은 JS hydration 전 초기 로딩 뷰를 제공하므로 현재 API/19개·4축 실제 값 일치 증명으로 치환하지 않음. 신규 배포/D1/Source/Task 변경 0.
+- **다음 독립 행동:** 승인된 Cloudflare Deployment read-only 관측 수단이 확보되면 production branch/repo/commit/build/version/deployment/도메인 route 신원을 한 번에 확인하여 B1-07/B4-01 실제 완료 여부 판정. 공유 Controller #2094/W04 설치 복구와 독립. 실제 실PC Census #28 헤더 A는 PR #2111 Draft/미설치.
+- **진행률:** 시작 33/71(46.5%) → 현재 33/71(46.5%); 신규 DONE 0, 38개 미완료.
+
+
 <!-- W01-20261118-CENSUS28-FIXED-A-PR2111-CI-GATE -->
 ## 2026-11-18 — Census #28 기보관 응답 헤더 고정 A급 진단기 shared Controller source 후보 준비
 
@@ -447,7 +456,7 @@ B4 10 | Production·화면 최종 검증
 - [x] **B1-04** candidate-r52.ts API 라우트 확인 — DONE | candidate-r52.ts D1 공개 reader 라우트 연결 확인, blob d2af33c6afff090fbe8dbc39b418c12972aa39af
 - [x] **B1-05** 물가지표 상세 UI 컴포넌트 연결 확인 — DONE | economic-detail-panel.tsx→inflation-candidate-7-inputs.tsx 연결 확인, blobs 2322e0ed8a4f2ded2c53a9be98e207d65fb9adab / 5e621cb7638b5cfa7201ef41b0170a24eeee3b54
 - [x] **B1-06** 기존 19개·4축 점수 불변 검사 — DONE | 현재 zgmini/main f22bfb1df7ff70bf4997117fbc187844a52f5c5c의 4축 원본 산식·19개 독립 표 유지 회귀검사 PASS: Node.js CI Run 43888083156, 실패 0건. 테스트 tests/economic12-inflation-original4-r35.test.mjs의 4요소·일련 번호·가중치·결측/0 처리·1Y history 불변, 기존 19행 source UI 분리 테스트. 이는 source/CI 검증 및 2026-11-10 별도 Production 19행 관측에 한정; 금일 D1 최신값 동일성은 미검증
-- [ ] **B1-07** GitHub 개발 source와 실제 배포 source 구분 — PARTIAL | 개발 main과 당시 Production 응답 구분, exact Deployment SHA 미조회
+- [ ] **B1-07** GitHub 개발 source와 실제 배포 source 구분 — PARTIAL / BUILD_PROVEN_PRODUCTION_SOURCE_UNKNOWN | **2026-11-18 05:18Z 독립 신규 증거:** app `zgmini/main@24f80c4cc096114537ceb5c5a7dab01591791c43` HEAD 직접 확인. 동일 Git SHA의 GitHub check-run [#134596059684](https://github.com/ansqhd5774-Choi/zgmini/runs/134596059684) `Cloudflare Workers and Pages` app `Workers Builds: zgmini-migration-candidate-r5` **completed/success**이며 production build ID `511f7c16-884a-42fa-80e1-1aef05542e79`, Worker version ID `edc313d6-0200-434e-85d0-115d43efad5d` 출력 확인. GitHub commit / Cloudflare **Build** / Cloudflare **현재 Production Deployment** / 공개 API/UI Runtime의 서로 다른 신원을 구분. 이 성공은 빌드 산출물 존재만 입증하며 실제 active Deployment SHA·build→site route 연결은 미인증. 정본 배포 확인은 B4-01 소관; 이 완료 기준 충족 전 B1-07 임의 DONE 금지.
 
 ## B2 — 유효 원자료 우선 부분 게시 (8개)
 
@@ -474,7 +483,7 @@ B4 10 | Production·화면 최종 검증
 
 ## B4 — Production·화면 최종 검증 (10개)
 
-- [ ] **B4-01** Cloudflare 연결 저장소·브랜치·배포 SHA 확인 — PENDING | 새로운 실제 증거 없음
+- [ ] **B4-01** Cloudflare 연결 저장소·브랜치·배포 SHA 확인 — PARTIAL / CLOUDFLARE_BUILD_SUCCESS_DEPLOYMENT_UNVERIFIED | GitHub app [main `24f80c4cc096114537ceb5c5a7dab01591791c43`](https://github.com/ansqhd5774-Choi/zgmini/commit/24f80c4cc096114537ceb5c5a7dab01591791c43)와 Cloudflare Worker `zgmini-migration-candidate-r5` [GitHub check-run #134596059684](https://github.com/ansqhd5774-Choi/zgmini/runs/134596059684) `completed/success`를 같은 커밋 대상으로 확인; Cloudflare dashboard build `511f7c16-884a-42fa-80e1-1aef05542e79`, produced version `edc313d6-0200-434e-85d0-115d43efad5d`. Cloudflare exact **active Deployment ID/SHA**, Git Integration production branch setting 및 zgmini.kr 도메인의 현재 Worker route는 관리자/read-only 실제 증거가 없어 불명. 2026-11-17 GET/API/UI 역사는 현재 source 배포 동일성 보장 아님. Build SUCCESS 또는 HTTP 200만으로 production 배포 성공·7/7 게시 완료 주장 금지. 별도 승인된 Cloudflare read-only 연결이 준비되면 exact Deployment 조회 및 API/UI와 맞대조, 무단 Wrangler 직배포 금지.
 - [x] **B4-02** Production API GET/HEAD 검증 — DONE | 2026-11-17 실제 공개 `https://zgmini.kr/api/inflation-candidate-inputs`에 직접 **HEAD 200 OK / GET 200 OK**(HTTP method 별도, 브라우저 JS `fetch`): 응답 `content-type=application/json; charset=utf-8`, `cache-control=no-store`, 리다이렉트 없이 동일 API, JSON `schemaVersion=inflation-causal-candidates-7-r1-v1`, `status=PARTIAL`, `score=null`, ID 2/16/22/23/24/28/29 정확 7, READY 6 / PENDING #28 1, `sourceVersion=INFL7_PRESENTATION_18a38bc27e850b0a83ad6528c0929746ae67ee26fff847197f54ca2f0ca3f644`, `sourceStoredAt=1794825002905`. **조회·HEAD 계약 검사만 DONE**, D1 관리자·Cloudflare exact Deployment SHA는 B2-06/B4-01 별도 미완료
 - [ ] **B4-03** D1 값과 API 응답 일치 확인 — PENDING | 새로운 실제 증거 없음
 - [ ] **B4-04** 신규 7개 실제 수치·단위 검증 — PARTIAL | 2026-11-17 공개 API GET 7행에서 6 READY: #2 4.153 USD/갤런(2026-11-02), #16 5,910,402,249.78 USD(2026-09-30), #22 451.337 지수(2026-10-01), #23 446.588 지수(2026-10-01), #24 159.78 지수(2026-09-01), #29 99.4361 지수(2026-09-01). **#28 Census M3 PENDING/value=null/observed=null/stored=null**; 7/7 실값 미충족. 지표 원문 단위/값을 승인 원자료와 독립 정합하는 최종 단계 미완료
