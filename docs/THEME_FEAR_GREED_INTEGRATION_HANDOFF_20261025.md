@@ -1,3 +1,13 @@
+## 2026-11-18 W03 13/68 착수 — 기존 D1 seed/공개 비교 증거 재사용, 게시 미승인
+
+- **단계:** 12/68 DONE (17.6%) 상태를 유지한 채 13/68 IN_PROGRESS. 신규 운영 조회·D1 쓰기·공급자 호출·게시 0. #2166 실제 V2 결과의 `inputManifestSha256=82f380e346e350c276c4b532353ddc3112dbfa5f90c8d1590c25e22ec064bc0a`, `privateArtifactSha256=9f5fa50f294224b273b0eee6e4d1ad96afc1b37a61774d1543ffa1f62a`는 기존 승인된 D1 seed 읽기 결과의 기대 값과 2/2 동일.
+- **기존 Windows D1 read-only 실증 재사용:** [제어 #2133](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2133), [Run #44251904069](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44251904069): `PASS/W03_GMH_D1_EXISTING_SEED_READONLY`, JSON/TXT 2/2 회수. D1 `seedPresent=true/seedSchemaValid=true`, seed 관측일 2026-10-16, **232일×7테마=1,624점 겹침, 불일치 0, maxDiff 0**. R178 관측 2026-10-28, R32 관측 2026-10-30(별도 산식 R32를 R188 점수 동일성으로 오인 금지). `rollingSecondaryNone=false`라 GMH-only 신규 게시와 동등한 권리/계보 확인이 아니다. 결과 자체 `publicationAuthorized=false,d1SeedCasVerified=false,r32NonRegressionVerified=false`.
+- **기존 공개 API read-only 재사용:** [제어 #1708](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1708), [Run #43865716113](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43865716113): base/public 모두 **HTTP 503 / STORED_DATA_STALE**, 공개 구조 불가·점수 비교 0, JSON/TXT 2/2. 2026-11-16 관측 결과를 2026-11-18 최신 HTTP 관측값으로 오인하지 않는다. 비공개 저장 완료가 곧 공개 Reader 갱신은 아님.
+- **권리 경계:** `docs/API_SOURCE_RIGHTS_REGISTRY.md` 2026-11-18 공식 GMH 이용약관 2026-11-17 발효 §5는 비복원성 파생 결과 조건부 배포 근거가 있으나, 공급자 개별 회신은 없고 실제 입력 모두 GMH/기초 거래소 권리·복원 불가 여부·운영 승인·D1 계약을 검증하기 전 `publicationAuthorized`를 true로 변경하지 않는다. MarketParquet 무료 출처의 공개 사용은 금지.
+- **다음 필수 실행:** 이미 검증된 1,624점 parity를 재검산·재요청하지 않고, R178 마지막 스냅샷에 남은 `secondarySource` 및 R179/R183 게시 계약이 현 GMH-only 정확 7테마/252일의 sourceVersion/observationDate·권리와 일치하는지 **기존 승인된 PC source/원장·공개 Reader**에서 검증한다. 승인된 비복원성·권리/데이터 계보가 불충분하면 게시만 HOLD, 미승인 D1 CAS/TTL 완화 금지.
+
+---
+
 ## 2026-11-18 W03 12/68 완료 — 저장 GMH 신규 V2 계산기 실PC 비공개 저장·원격 영수증 검증
 
 - **진행률:** 시작 11/68 DONE (16.2%), 단계 12 IN_PROGRESS → **12/68 DONE (17.6%)**, 다음 13/68 시작 가능. 이 완료는 GMH 7테마 비공개 저장 계산 단계에만 해당하며 공개 게시/163테마 완성은 아니다.
