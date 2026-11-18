@@ -233,6 +233,7 @@ test("blank SQLite TEXT values are never accepted as PIT lineage evidence",()=>{
   assert.equal(report.candidateNewKeys,1);
   assert.equal(report.candidateNewKeysWithConsistentPITMetadata,0);
   assert.equal(report.candidateNewKeysWithIncompletePITMetadata,1);
+  assert.equal(report.candidateHistoryAmbiguousLatestKeys,0);
   assert.equal(report.candidateReconciliationPreviewStatus,"HOLD_UNVERIFIED_SOURCE_LINEAGE");
   assert.deepEqual([digest(core),digest(candidate)],before);
 });
@@ -247,6 +248,7 @@ test("zero-valued Core claims do not match a blank candidate claim",()=>{
   const report=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-02"});
   assert.equal(report.candidateOverlapMatchingKeys,0);
   assert.equal(report.candidateOverlapConflictingKeys,1);
+  assert.equal(report.candidateHistoryAmbiguousLatestKeys,0);
   assert.equal(report.candidateReconciliationPreviewStatus,"HOLD_CONFLICTING_REVISIONS");
   assert.deepEqual([digest(core),digest(candidate)],before);
 });
@@ -316,52 +318,212 @@ test("newer retrieval wins over an older provider release timestamp",()=>{
   assert.equal(report.candidateReconciliationPreviewStatus,"HOLD_UNVERIFIED_SOURCE_LINEAGE");
 });
 
-test("PIT-04-04 recorded_at and first_seen_at cannot backdate a read-only as-of report",t=>{
-  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-recorded-"));
-  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
-  const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"candidate.sqlite");
-  const al=observation("AL",100,"a".repeat(64));
-  fixture(core,{current:[al],history:[al]});
-  fixture(candidate,{current:[al],history:[al]});
-  for(const file of [core,candidate]){
-    const db=new DatabaseSync(file);
-    try{
-      db.exec(`ALTER TABLE ${T.observationHistory} ADD COLUMN recorded_at TEXT`);
-      db.prepare(`UPDATE ${T.observationHistory} SET recorded_at=?`)
-        .run("2026-11-03T01:00:00.000Z");
-    }finally{db.close();}
-  }
-  const cdb=new DatabaseSync(candidate);
-  try{
-    cdb.exec(`ALTER TABLE ${T.observationCurrent} ADD COLUMN first_seen_at TEXT`);
-    cdb.prepare(`UPDATE ${T.observationCurrent} SET first_seen_at=?`)
-      .run("2026-11-03T01:00:00.000Z");
-  }finally{cdb.close();}
+test("PIT-04-02 equal-time conflicting candidate revisions must HOLD instead of hash-order selection",()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-same-time-"));
+  const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+  const incoming=observation("AL",100,"f".repeat(64));
+  const competing=observation("AL",101,"a".repeat(64));
+  fixture(core,{});
+  fixture(candidate,{current:[incoming],history:[incoming,competing]});
   const before=[digest(core),digest(candidate)];
-  const old=auditEmploymentR6PitCoverage({
-    dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-02",
-  });
-  assert.equal(old.coreCurrentKeys,1);
-  assert.equal(old.coreHistoryAsOfUniqueKeys,0);
-  assert.equal(old.coreCurrentKeysMissingHistory,1);
-  assert.equal(old.candidateHistoryAsOfUniqueKeys,0);
-  assert.equal(old.candidateCurrentKeys,0);
-  assert.equal(old.missingKeysWithCandidateHistory,0);
-  const newDate=auditEmploymentR6PitCoverage({
-    dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-03",
-  });
-  assert.equal(newDate.coreHistoryAsOfUniqueKeys,1);
-  assert.equal(newDate.coreCurrentKeysMissingHistory,0);
-  assert.equal(newDate.candidateHistoryAsOfUniqueKeys,1);
-  assert.equal(newDate.candidateCurrentKeys,1);
-  assert.equal(newDate.candidateOverlapMatchingKeys,1);
-  assert.equal(newDate.promotionApproved,false);
+  const report=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-02"});
+  assert.equal(report.candidateHistoryAsOfUniqueKeys,1);
+  assert.equal(report.candidateHistoryAmbiguousLatestKeys,1);
+  assert.equal(report.candidateHistoryPriorRevisionKeys,0);
+  assert.equal(report.candidateHistoryPriorRevisionRows,0);
+  assert.equal(report.candidateHistorySameInstantAdditionalRows,1);
+  assert.equal(report.candidateNewKeysWithConsistentPITMetadata,0);
+  assert.equal(report.candidateNewKeysWithIncompletePITMetadata,1);
+  assert.equal(report.candidateReconciliationPreviewStatus,"HOLD_AMBIGUOUS_LATEST_REVISIONS");
+  assert.equal(report.promotionApproved,false);
+  assert.equal(report.coreWrites,0);
   assert.deepEqual([digest(core),digest(candidate)],before);
-  // The timestamp column exists: malformed evidence fails closed, not as null/zero.
-  const hdb=new DatabaseSync(core);
-  try{hdb.prepare(`UPDATE ${T.observationHistory} SET recorded_at=?`).run("invalid");}
-  finally{hdb.close();}
-  const invalid=auditEmploymentR6PitCoverage({dbPath:core,asOfDate:"2026-11-03"});
-  assert.equal(invalid.coreHistoryAsOfUniqueKeys,0);
-  assert.equal(invalid.coreCurrentKeysMissingHistory,1);
+});
+
+test("PIT-04-02 earlier retrieved revision stays distinct from the latest retrieval",()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-prior-revision-"));
+  const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+  const old={...observation("AL",100,"a".repeat(64)),retrieved:"2026-10-20T00:00:00.000Z"};
+  const latest={...observation("AL",101,"b".repeat(64)),retrieved:"2026-10-26T00:00:00.000Z"};
+  fixture(core,{});
+  fixture(candidate,{current:[old],history:[old,latest]});
+  const early=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,asOfDate:"2026-10-25"});
+  assert.equal(early.candidateHistoryPriorRevisionKeys,0);
+  assert.equal(early.candidateHistoryPriorRevisionRows,0);
+  const report=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-02"});
+  assert.equal(report.candidateHistoryAsOfUniqueKeys,1);
+  assert.equal(report.candidateHistoryPriorRevisionKeys,1);
+  assert.equal(report.candidateHistoryPriorRevisionRows,1);
+  assert.equal(report.candidateHistoryAmbiguousLatestKeys,0);
+  assert.equal(report.candidateHistorySameInstantAdditionalRows,0);
+  assert.equal(report.candidateNewKeysWithConsistentPITMetadata,0);
+  assert.equal(report.candidateReconciliationPreviewStatus,"HOLD_UNVERIFIED_SOURCE_LINEAGE");
+});
+
+test("PIT-04-02 identical same-time duplicate rows do not create a false latest conflict",()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-duplicate-revision-"));
+  const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+  const same=observation("AL",100,"c".repeat(64));
+  fixture(core,{});
+  fixture(candidate,{current:[same],history:[same,same]});
+  const report=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-02"});
+  assert.equal(report.candidateHistoryAsOfUniqueKeys,1);
+  assert.equal(report.candidateHistoryPriorRevisionKeys,0);
+  assert.equal(report.candidateHistoryPriorRevisionRows,0);
+  assert.equal(report.candidateHistoryAmbiguousLatestKeys,0);
+  assert.equal(report.candidateHistorySameInstantAdditionalRows,1);
+  assert.equal(report.candidateNewKeysWithConsistentPITMetadata,1);
+  assert.equal(report.candidateReconciliationPreviewStatus,"READ_ONLY_PREVIEW_NO_PUBLICATION_APPROVAL");
+  assert.equal(report.promotionApproved,false);
+});
+
+test("PIT-04-02 Core history same-time conflicting payload cannot imply a valid reconciliation preview",()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-core-ambiguous-"));
+  const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+  const one=observation("AL",100,"d".repeat(64)),other=observation("AL",101,"e".repeat(64));
+  fixture(core,{current:[one],history:[one,other]});
+  fixture(candidate,{});
+  const report=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-02"});
+  assert.equal(report.coreHistoryAsOfUniqueKeys,1);
+  assert.equal(report.coreHistoryAmbiguousLatestKeys,1);
+  assert.equal(report.coreHistorySameInstantAdditionalRows,1);
+  assert.equal(report.coreHistoryPriorRevisionKeys,0);
+  assert.equal(report.candidateHistoryAmbiguousLatestKeys,0);
+  assert.equal(report.candidateReconciliationPreviewStatus,"HOLD_AMBIGUOUS_LATEST_REVISIONS");
+  assert.equal(report.coreWrites,0);
+});
+
+test("PIT-04-03 partitions Core CURRENT against latest as-of HISTORY without source disclosure",t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-core-compare-"));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const core=path.join(dir,"core.sqlite");
+  const al=observation("AL",100,"a".repeat(64));
+  const ak=observation("AK",101,"b".repeat(64));
+  const older={...ak,retrieved:"2026-10-20T00:00:00.000Z"};
+  const newer={...ak,value:102,hash:"c".repeat(64),retrieved:"2026-10-26T00:00:00.000Z"};
+  const az=observation("AZ",103,"d".repeat(64));
+  const ca=observation("CA",104,"e".repeat(64));
+  const co=observation("CO",0,"f".repeat(64));
+  fixture(core,{current:[al,ak,az,ca,co],
+    history:[al,older,newer,{...ca,hash:"not-a-sha256"},{...co,value:""}]});
+  const before=digest(core);
+  const report=auditEmploymentR6PitCoverage({dbPath:core,asOfDate:"2026-11-02"});
+  assert.deepEqual([
+    report.coreCurrentHistoryMatchingKeys,
+    report.coreCurrentHistoryConflictingKeys,
+    report.coreCurrentHistoryUnverifiedKeys,
+    report.coreCurrentHistoryMissingKeys,
+  ],[1,1,2,1]);
+  assert.equal(report.coreCurrentHistoryMissingKeys,report.coreCurrentKeysMissingHistory);
+  assert.equal(report.coreCurrentHistoryMatchingKeys+report.coreCurrentHistoryConflictingKeys
+    +report.coreCurrentHistoryUnverifiedKeys+report.coreCurrentHistoryMissingKeys,report.coreCurrentKeys);
+  assert.equal(report.coreHistoryPriorRevisionKeys,1);
+  assert.equal(report.promotionApproved,false);
+  assert.equal(report.coreWrites,0);
+  assert.equal(digest(core),before);
+});
+
+test("PIT-04-03 ambiguous latest Core HISTORY stays unverified rather than matching",t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-core-latest-"));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const core=path.join(dir,"core.sqlite");
+  const current=observation("AL",100,"a".repeat(64));
+  fixture(core,{current:[current],
+    history:[current,{...current,value:101,hash:"b".repeat(64)}]});
+  const report=auditEmploymentR6PitCoverage({dbPath:core,asOfDate:"2026-11-02"});
+  assert.equal(report.coreHistoryAmbiguousLatestKeys,1);
+  assert.equal(report.coreCurrentHistoryMatchingKeys,0);
+  assert.equal(report.coreCurrentHistoryConflictingKeys,0);
+  assert.equal(report.coreCurrentHistoryUnverifiedKeys,1);
+  assert.equal(report.coreCurrentHistoryMissingKeys,0);
+  assert.equal(report.promotionApproved,false);
+});
+
+test("PIT-04-03 same value/hash but different provider is a Core lineage conflict",t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-core-provider-"));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const core=path.join(dir,"core.sqlite");
+  const current=observation("AL",100,"a".repeat(64));
+  fixture(core,{current:[current],history:[{...current,provider:"UNRELATED_PROVIDER"}]});
+  const report=auditEmploymentR6PitCoverage({dbPath:core,asOfDate:"2026-11-02"});
+  assert.equal(report.coreCurrentHistoryConflictingKeys,1);
+  assert.equal(report.coreCurrentHistoryMatchingKeys,0);
+  assert.equal(report.coreCurrentHistoryUnverifiedKeys,0);
+  assert.equal(report.coreCurrentHistoryMissingKeys,0);
+});
+
+test("PIT-04-08 opt-in key review reuses read-only SQLite snapshot and does not leak raw body",()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit0408-snapshot-"));
+ try{
+  const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+  const al=observation("AL",100,"a".repeat(64)),ak=observation("AK",200,"b".repeat(64));
+  const az=observation("AZ",300,"c".repeat(64));
+  fixture(core,{current:[al,ak,az],history:[az]});
+  fixture(candidate,{current:[al,{...ak,value:201}],history:[al,{...ak,value:201}]});
+  const before=[digest(core),digest(candidate)];
+  const report=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,
+   asOfDate:"2026-11-18",keyReviewOffset:0});
+  const review=report.pit04KeyReview;
+  assert.equal(report.coreCurrentKeysMissingHistory,2);
+  assert.equal(review.counts.coreHistoryMissing,2);
+  assert.equal(review.counts.candidateOverlapConflicts,1);
+  assert.equal(review.counts.missingCandidateInternalMatch,1);
+  assert.equal(review.evidenceTotal,2);
+  assert.equal(review.evidence[0].geographyCode,"AK");
+  assert.equal(review.evidence[0].reason,"CANDIDATE_CURRENT_CONFLICT");
+  assert.equal(review.promotionApproved,false);
+  assert.equal(review.rawPitAttested,false);
+  assert.equal(review.nextOffset,null);
+  assert.doesNotMatch(JSON.stringify(review),/"source_hash"|"provenance_json"|"value"/);
+  assert.ok(Buffer.byteLength(JSON.stringify(review),"utf8")<12000);
+  const paged=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,
+   asOfDate:"2026-11-18",keyReviewOffset:1});
+  assert.equal(paged.pit04KeyReview.evidence.length,1);
+  assert.equal(paged.pit04KeyReview.evidenceTotal,2);
+  assert.deepEqual([digest(core),digest(candidate)],before);
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+
+test("PIT-04-08 remains disabled by default; invalid offset and missing candidate stop",()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit0408-gate-"));
+ try{
+  const core=path.join(dir,"core.sqlite");
+  fixture(core,{current:[observation("AL",100,"a".repeat(64))],history:[]});
+  const report=auditEmploymentR6PitCoverage({dbPath:core,asOfDate:"2026-11-18"});
+  assert.equal(Object.hasOwn(report,"pit04KeyReview"),false);
+  assert.throws(()=>auditEmploymentR6PitCoverage({
+   dbPath:core,asOfDate:"2026-11-18",keyReviewOffset:-1}),/PIT_AUDIT_KEY_OFFSET_INVALID/);
+  assert.throws(()=>auditEmploymentR6PitCoverage({
+   dbPath:core,asOfDate:"2026-11-18",keyReviewOffset:0}),/PIT_AUDIT_KEY_REVIEW_INPUT_MISSING/);
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
+
+test("PIT-04-08 optional NULL timestamp cannot erase an as-of Current key",()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit0408-null-time-"));
+ try{
+  const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+  const al=observation("AL",100,"a".repeat(64));
+  fixture(core,{current:[al],history:[]});
+  fixture(candidate,{current:[al],history:[al]});
+  const db=new DatabaseSync(core);
+  try{db.exec(`ALTER TABLE ${T.observationCurrent} ADD COLUMN recorded_at TEXT`);}
+  finally{db.close();}
+  const before=[digest(core),digest(candidate)];
+  const result=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,
+   asOfDate:"2026-11-18",keyReviewOffset:0});
+  assert.equal(result.coreCurrentKeysMissingHistory,1);
+  assert.equal(result.pit04KeyReview.counts.coreKeys,1);
+  assert.equal(result.pit04KeyReview.counts.coreHistoryMissing,1);
+  assert.equal(result.pit04KeyReview.counts.missingCandidateIncomplete,1);
+  assert.equal(result.pit04KeyReview.counts.missingCandidateInternalMatch,0);
+  assert.equal(result.pit04KeyReview.evidenceTotal,1);
+  assert.deepEqual([digest(core),digest(candidate)],before);
+  const update=new DatabaseSync(core);
+  try{
+   update.prepare(`UPDATE ${T.observationCurrent} SET recorded_at=?`)
+     .run("2026-11-19T00:00:00Z");
+  }finally{update.close();}
+  assert.throws(()=>auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,
+   asOfDate:"2026-11-18",keyReviewOffset:0}),/PIT_AUDIT_KEY_COVERAGE_MISMATCH/);
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
