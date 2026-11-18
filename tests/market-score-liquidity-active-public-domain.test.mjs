@@ -1,5 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import {readFileSync} from "node:fs";
 import {
   buildLiquidityActivePublicDomainR1,
   selectLiquidityPublicDomainR1,
@@ -118,9 +119,8 @@ test("D3 factor minis use only real dated score rows for four displayed componen
   assert.deepEqual(out.indicators.map(x=>x.trend.at(-1).value),[65,40,55,70]);
   assert.equal(out.indicators[3].source,"Federal Reserve / RRPONTSYD active transform");
   assert.equal(out.indicators[3].sourceUrl,"https://fred.stlouisfed.org/series/RRPONTSYD");
-  assert.match(out.indicators[3].licenseNotice,/© 2026 Federal Reserve Bank of New York/);
-  assert.match(out.indicators[3].licenseNotice,/승인·추천이 아닙니다/);
-  assert.equal(out.indicators[3].content,undefined); // no verbose legal copy in summary table
+  assert.equal(out.indicators[3].licenseNotice,undefined); // no new D1 contract field
+  assert.equal(out.indicators[3].content,undefined); // no legal notice in summary
   assert.equal(out.indicators[0].trend[0].value,0); // 0 is a real score
   for(const item of out.indicators){
     assert.ok(item.trend.length>=2);
@@ -161,4 +161,11 @@ test("D3 minis preserve null, prevent future/invalid months and break actual sou
   const duplicate=buildLiquidityActivePublicDomainR1({diagnostic,asOfDate:"2026-10-18"});
   assert.deepEqual(duplicate.indicators[0].trend,[]);
   assert.equal(duplicate.indicators[0].score,60);
+});
+
+test("NY Fed source license notice stays in help UI, not public D1 schema/table description",()=>{
+  const ui=readFileSync(new URL("../app/economic-indicators/economic-detail-panel.tsx",import.meta.url),"utf8");
+  assert.ok(ui.includes('item.source==="Federal Reserve / RRPONTSYD active transform"'));
+  assert.ok(ui.includes("© 2026 Federal Reserve Bank of New York."));
+  assert.ok(ui.includes("Terms of Use at newyorkfed.org"));
 });
