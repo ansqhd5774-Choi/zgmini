@@ -331,3 +331,55 @@ test("PIT-04-03 Runner exposes only bounded Core match/conflict/unknown/missing 
     invalid.pit.coreCurrentHistoryMissingKeys,
   ],[null,null,null,null]);
 });
+
+test("PIT-04-08 Runner allows exactly one bounded key page offset, never arbitrary arguments",t=>{
+ const env=environment(t);fixture(env.core);fixture(env.candidate,{row:true});
+ const options=runnerOptionsFrom([...argv(env),"--pit04-offset","24"]);
+ assert.equal(options.keyReviewOffset,24);
+ assert.equal(options.candidateDbExternal,true);
+ assert.equal(runnerOptionsFrom(argv(env)).keyReviewOffset,null);
+ for(const invalid of ["-1","50001","24.0"," 24","01","0x18","9999999999"]){
+  assert.throws(()=>runnerOptionsFrom([...argv(env),"--pit04-offset",invalid]),
+   /RUNNER_R6_ARGUMENT_NOT_ALLOWED/);
+ }
+ assert.throws(()=>runnerOptionsFrom([...argv(env),"--pit04-offset","0",
+   "--pit04-offset","24"]),/RUNNER_R6_ARGUMENT_NOT_ALLOWED/);
+});
+
+test("PIT-04-08 Runner rejects nonallowlisted key data and preserves bounded whitelist",async t=>{
+ const env=environment(t);fixture(env.core);fixture(env.candidate,{row:true});
+ const body=await stageEmploymentR6OneYear(runnerOptionsFrom(argv(env)));
+ const counts={coreKeys:1,coreHistoryMissing:1,coreHistoryConflict:0,
+  coreHistoryAmbiguous:0,candidateOverlapConflicts:0,
+  missingCandidateInternalMatch:0,missingCandidateIncomplete:0,
+  missingWithoutCandidate:1,duplicateCurrentKeys:0};
+ const review={kind:"EMPLOYMENT_R6_PIT0408_KEY_REVIEW_SOURCE_ONLY_V1",
+  status:"HOLD_KEY_CLASSIFICATION_NOT_RAW_PIT_ATTESTATION",
+  counts,evidenceTotal:1,offset:0,pageSize:24,evidenceTruncated:false,nextOffset:null,
+  evidence:[{logicalSeriesId:"STATE_INITIAL_CLAIMS",geographyCode:"AL",
+   observationDate:"2026-11-07",reason:"MISSING_HISTORY_NO_CANDIDATE",
+   coreHistoryMissing:true,candidateCurrentConflict:false,
+   rawPitAttested:false,repairAuthorized:false,
+   source_hash:"SECRET_RAW_HASH_SHOULD_NOT_SURFACE",value:1234}],
+  rawPitAttested:false,promotionApproved:false,repairAuthorized:false,
+  absolutePath:"PRIVATE_PATH_SHOULD_NOT_SURFACE"};
+ const report=projectEmploymentR6RunnerResult({body,pitCoverage:{pit04KeyReview:review}});
+ assert.equal(report.pit04KeyReview.evidenceTotal,1);
+ assert.equal(report.pit04KeyReview.evidence.length,1);
+ assert.equal(report.pit04KeyReview.nextOffset,null);
+ assert.equal(report.pit04KeyReview.evidence[0].geographyCode,"AL");
+ assert.equal(report.pit04KeyReview.promotionApproved,false);
+ assert.doesNotMatch(JSON.stringify(report),/SECRET_RAW_HASH|PRIVATE_PATH_SHOULD_NOT_SURFACE|source_hash/);
+ assert.ok(Buffer.byteLength(JSON.stringify(report))<12000);
+ assert.equal(Object.hasOwn(projectEmploymentR6RunnerResult({body,pitCoverage:{}}),"pit04KeyReview"),false);
+ for(const bad of [
+  {...review,nextOffset:24},
+  {...review,evidence:[{...review.evidence[0],reason:"FORGED"}]},
+  {...review,rawPitAttested:true},
+  {...review,evidence:[{...review.evidence[0],geographyCode:"ZZ"}]},
+  {...review,counts:{...counts,missingWithoutCandidate:0}},
+ ]){
+  assert.throws(()=>projectEmploymentR6RunnerResult({body,pitCoverage:{pit04KeyReview:bad}}),
+   /RUNNER_R6_PIT04_REVIEW_INVALID/);
+ }
+});
