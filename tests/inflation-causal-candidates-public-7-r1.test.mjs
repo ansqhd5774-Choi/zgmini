@@ -339,3 +339,40 @@ test('public seven-row history and previous values must describe the same stored
     /INFL7_PUBLIC_READY_INVALID/,'a single-point history cannot still claim a previous value');
   assert.equal(validateInflationCandidates7Public(complete,{now:NOW}),complete);
 });
+
+test('public seven-row sourceStoredAt equals newest actual ready source, never a fabricated timestamp',t=>{
+  const {home}=makeHome(t),payload=previewInflationCandidates7(home,{now:NOW}).payload;
+  const changed=structuredClone(payload);
+  changed.sourceStoredAt+=1;
+  assert.throws(()=>validateInflationCandidates7Public(changed,{now:NOW}),
+    /INFL7_PUBLIC_PROVENANCE_MISMATCH/);
+  const earlier=structuredClone(payload);
+  earlier.sourceStoredAt-=1;
+  assert.throws(()=>validateInflationCandidates7Public(earlier,{now:NOW}),
+    /INFL7_PUBLIC_PROVENANCE_MISMATCH/);
+  assert.equal(validateInflationCandidates7Public(payload,{now:NOW}),payload);
+  const reduced=docs();
+  delete reduced['census-m3-manufacturing-inventories.json'];
+  const partialHome=makeHome(t,reduced).home;
+  const partial=previewInflationCandidates7(partialHome,{now:NOW}).payload;
+  assert.equal(partial.status,'PARTIAL');
+  assert.equal(validateInflationCandidates7Public(partial,{now:NOW}),partial,
+    'a genuinely missing Census observation remains PENDING without a synthetic timestamp');
+});
+
+test('stored inflation GET and HEAD reject publication built before the source was saved',async t=>{
+  const {home}=makeHome(t),payload=previewInflationCandidates7(home,{now:NOW}).payload;
+  const url='https://zgmini.kr/api/inflation-candidate-inputs';
+  const saved=savedRecord(payload,payload.sourceStoredAt-1);
+  for(const method of ['GET','HEAD']){
+    const response=await readInflationCandidates7PublicResponse(
+      new Request(url,{method}),readDb(saved),{now:NOW});
+    assert.equal(response.status,503);
+    assert.equal(response.headers.get('x-public-projection'),'STORED');
+    if(method==='HEAD')assert.equal(await response.text(),'');
+    else assert.equal((await response.json()).reason,'STORED_PUBLIC_SUMMARY_INVALID');
+  }
+  const good=await readInflationCandidates7PublicResponse(
+    new Request(url),readDb(savedRecord(payload)),{now:NOW});
+  assert.equal(good.status,200);
+});
