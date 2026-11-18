@@ -10,7 +10,7 @@ import {ContentHelp} from "../content-help";
 import {EarningsFavoriteButton,EarningsFavoriteHeaderIcon} from "./earnings-favorite-button";
 import {EARNINGS_RISK_HISTORY_KIND} from "../../lib/market-score/earnings-recession-history-r1.mjs";
 import {readBeaStoredS6,type BeaIndicator} from "./earnings-bea-s6-source";
-import {earningsCostRetrievalDay,earningsCostDisplayStatus} from "./earnings-cost-observation-display-r1.mjs";
+import {earningsCostRetrievalDay,earningsCostDisplayStatus,earningsCostSparkGeometry} from "./earnings-cost-observation-display-r1.mjs";
 import "./earnings-indicator-r2.css";
 import "./earnings-inflation-layout.css";
 
@@ -202,27 +202,14 @@ const beaUsable=(row:BeaIndicator|undefined)=>Boolean(
 // Cost-series points are raw BLS observations, never inputs to the E1 risk score.
 function CostSpark({history,label="저장된 비용 압력 관측치 추이. 결측 구간은 연결하지 않음"}:
  {history:Array<{value:number|null}>;label?:string}){
- const points=Array.isArray(history)?history:[];
- const valid=points.map((point,index)=>({index,value:point?.value}))
-  .filter((point):point is {index:number;value:number}=>finiteCost(point.value));
- if(valid.length<2)return <span className="earnings-r2-cost-chart-empty">이력 부족</span>;
- const min=Math.min(...valid.map(point=>point.value));
- const max=Math.max(...valid.map(point=>point.value));
- const x=(index:number)=>5+index*110/Math.max(1,points.length-1);
- const y=(value:number)=>max===min?18:30-24*(value-min)/(max-min);
- let path="";let previous=-2;
- for(const point of valid){
-  path+=(previous===point.index-1?" L":" M")+x(point.index).toFixed(1)+" "+y(point.value).toFixed(1);
-  previous=point.index;
- }
- const latest=valid.at(-1)!;
+ const geometry=earningsCostSparkGeometry(history);
+ if(!geometry)return <span className="earnings-r2-cost-chart-empty">이력 부족</span>;
  return <svg className="earnings-r2-cost-spark" viewBox="0 0 120 36" role="img"
   aria-label={label}>
-  <path d={path.trim()} fill="none" stroke="#73c9d9" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-  <circle cx={x(latest.index)} cy={y(latest.value)} r="2.5" fill="#b0eef3"/>
+  <path d={geometry.path} fill="none" stroke="#73c9d9" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+  {geometry.marker&&<circle cx={geometry.marker.cx} cy={geometry.marker.cy} r="2.5" fill="#b0eef3"/>}
  </svg>;
 }
-
 export default function EarningsRiskOnlyPanel(){
  const {payload,loading}=useStoredIndex<RiskPayload>("/api/earnings-recession-detail");
  const {payload:riskRawPayload}=useStoredIndex<RiskFourRawPayload>("/api/earnings-recession-risk-four-raw");
