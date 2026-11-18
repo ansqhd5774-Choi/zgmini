@@ -53,6 +53,15 @@ test('W01: valid prior permits healthy siblings while malformed and missing seri
  assert.deepEqual(second.quarantinedSeries,['WPU102502','WPU029']);
  const saved=JSON.parse(fs.readFileSync(f.file,'utf8'));
  assert.equal(saved.ids.length,8);
+ assert.equal(saved.sourceStoredAt,'2026-11-18T01:00:00.000Z');
+ assert.equal(saved.seriesSourceStoredAt.WPU1017,'2026-11-18T01:00:00.000Z');
+ assert.equal(saved.seriesSourceStoredAt.WPU102502,initial.sourceStoredAt);
+ assert.equal(saved.seriesSourceStoredAt.WPU029,initial.sourceStoredAt);
+ const {readPpi}=await import('../scripts/pc-writer/inflation-causal-public-preview-r1.mjs');
+ const rows=readPpi(f.base);
+ assert.equal(rows['5'].sourceStoredAt,saved.sourceStoredAt);
+ assert.equal(rows['6'].sourceStoredAt,initial.sourceStoredAt);
+ assert.equal(rows['11'].sourceStoredAt,initial.sourceStoredAt);
  assert.equal(saved.series.WPU1017.at(-1).value,150);
  assert.deepEqual(saved.series.WPU102502,initial.series.WPU102502);
  assert.deepEqual(saved.series.WPU029,initial.series.WPU029);
