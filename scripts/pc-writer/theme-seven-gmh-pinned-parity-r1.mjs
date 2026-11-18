@@ -12,9 +12,24 @@ const digest=bytes=>createHash('sha256').update(bytes).digest('hex');
 // An immutable private seed is permitted to carry derived scores only.
 // Prevent accidentally attaching source bars/volumes to an otherwise valid
 // SHA-pinned artifact. A checksum is integrity, not a redistribution licence.
+const PRIVATE_TOP_FIELDS=new Set([
+ 'schema','status','observationDate','firstHistoryDate','methodologyVersion',
+ 'scoreMethod','priceMode','inputProvider','rawManifestSha256','scorerSha256',
+ 'sourceWindow','barRowsRead','gapRows','unusableRows','commonSessionCount',
+ 'themes','publicationAuthorized','upstreamCommercialRightsVerified',
+ 'derivedLicenseVerified','providerCalls','d1Writes','publicWrites',
+ 'schedulerWrites'
+]);
 const PRIVATE_THEME_FIELDS=new Set(['theme','etfs','history']);
 const HISTORY_POINT_FIELDS=new Set(['date','score']);
 function assertPrivateDerivedOnly(value){
+ need(value&&typeof value==='object'&&!Array.isArray(value)&&
+  Object.keys(value).every(k=>PRIVATE_TOP_FIELDS.has(k))&&
+  value.sourceWindow&&typeof value.sourceWindow==='object'&&
+  !Array.isArray(value.sourceWindow)&&
+  Object.keys(value.sourceWindow).length===2&&
+  Object.keys(value.sourceWindow).every(k=>k==='from'||k==='through'),
+  'PRIVATE_TOP_LEVEL_FIELD_SCOPE');
  need(Array.isArray(value?.themes)&&value.themes.length===7,
   'PRIVATE_THEME_FIELD_SCOPE');
  for(const theme of value.themes){
