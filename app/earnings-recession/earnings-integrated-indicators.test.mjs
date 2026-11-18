@@ -3,7 +3,8 @@ import assert from "node:assert/strict";
 import {readFileSync,existsSync} from "node:fs";
 import {buildEarningsCostIndicatorView,KNOWN_EARNINGS_COST_INDICATORS,
  OPTIONAL_EARNINGS_COST_INDICATORS,EARNINGS_C_COST_SCHEMA,
- earningsCostRetrievalDay,earningsExactCalendarDay} from "./earnings-cost-indicator-list.mjs";
+ earningsCostRetrievalDay,earningsExactCalendarDay,
+ earningsCostSparkGeometry} from "./earnings-cost-indicator-list.mjs";
 
 const page=readFileSync(new URL("./page.tsx",import.meta.url),"utf8");
 const risk=readFileSync(new URL("./earnings-risk-only-panel.tsx",import.meta.url),"utf8");
@@ -200,3 +201,25 @@ test("W05 R5-11 exact SEC and financial quarter dates reject calendar rollover",
  assert.ok(risk.includes('const score=payload?.status==="READY"&&validScore(payload?.score)?payload.score:null;'));
 });
 
+test("W05 R5-11 chart gaps do not create a false latest point",()=>{
+ const from=values=>earningsCostSparkGeometry(values.map(value=>({value})));
+ assert.equal(from([]),null);
+ assert.equal(from([null,0,null]),null);
+ assert.equal(earningsCostSparkGeometry(undefined),null);
+ const missingLast=from([0,null,2,3,null]);
+ assert.equal(missingLast.path,"M5.0 30.0 M60.0 14.0 L87.5 6.0");
+ assert.equal(missingLast.marker,null,"older valid point cannot masquerade as the current observation");
+ const lastZero=from([1,null,0]);
+ assert.equal(lastZero.path,"M5.0 6.0 M115.0 30.0");
+ assert.deepEqual(lastZero.marker,{cx:115,cy:30},"zero is an actual observation");
+ const allValid=from([-1,0,1]);
+ assert.equal(allValid.path,"M5.0 30.0 L60.0 18.0 L115.0 6.0");
+ assert.deepEqual(allValid.marker,{cx:115,cy:6});
+ assert.equal(from([1,2,NaN]).marker,null);
+ assert.equal(from([1,2,Infinity]).marker,null);
+ assert.deepEqual(from([5,5]).marker,{cx:115,cy:18});
+ assert.ok(risk.includes("const geometry=earningsCostSparkGeometry(history);"));
+ assert.ok(risk.includes("d={geometry.path}"));
+ assert.ok(risk.includes("geometry.marker&&<circle"));
+ assert.ok(!risk.includes("const latest=valid.at(-1)!;"));
+});
