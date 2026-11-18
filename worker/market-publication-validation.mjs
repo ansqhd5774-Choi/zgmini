@@ -6,6 +6,9 @@ const score=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0&&va
 const emptyList=value=>Array.isArray(value)&&value.length===0;
 const exactList=(value,wanted)=>Array.isArray(value)&&
  value.length===wanted.length&&value.every((item,index)=>item===wanted[index]);
+const retiredBreadthFields=new Set(['id','name','weight','score','status','state',
+ 'interpretation','trend','indicators','freshness','updatedAt','methodologyVersion',
+ 'asOfDate','observationDate','missingFactors']);
 
 // Do not require the retired breadth provider to return a score before updating
 // independently validated domains. This is *not* a general partial-publish gate:
@@ -25,7 +28,9 @@ export function isRetiredBreadthPartialMarket(body){
   if(spec.id==='breadth'){
    if(domain.status!=='UNAVAILABLE'||domain.score!==null||
     domain.state!==MARKETPARQUET_REMOVED_CODE||
-    !emptyList(domain.indicators)||!emptyList(domain.trend)||!emptyList(domain.missingFactors))return false;
+    !emptyList(domain.indicators)||!emptyList(domain.trend)||!emptyList(domain.missingFactors)||
+    domain.methodologyVersion!==null||domain.asOfDate!==null||domain.observationDate!==null||
+    Object.keys(domain).some(key=>!retiredBreadthFields.has(key)))return false;
   }else if(domain.status!=='READY'||!score(domain.score))return false;
  }
  const quality=body.dataQuality;
@@ -49,6 +54,9 @@ export function assertCompleteMarket(body){
  if(full){
   if(!Array.isArray(body.overall.trend)||
    !body.overall.trend.some(p=>score(p?.value??p?.score)))throw Error('MARKET_REQUIRED_TREND_MISSING');
+  // The full-READY path must also refuse previously stored retired-provider
+  // rows rather than relying solely on the visitor GET redaction.
+  if(maskRetiredMarketPublicSnapshot(body)!==body)throw Error('MARKET_REQUIRED_SCORE_MISSING');
   return;
  }
  if(isRetiredBreadthPartialMarket(body))return;
