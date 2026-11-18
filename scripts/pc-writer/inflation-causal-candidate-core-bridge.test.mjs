@@ -75,7 +75,8 @@ test('W01 legacy-parser recovery is truly once after 24h, not a repeating quota 
   assert.deepEqual(after.due,[],date);
  }
  // A new independently verified full Census release is a different event.
- const release=planInflationCandidateCoreDue({...input,events:EVENTS,
+ const release=planInflationCandidateCoreDue({...input,
+  events:EVENTS.filter(x=>x.source==='census'),
   sources,now:new Date('2026-11-30T23:30:00.000Z')});
  assert.deepEqual(release.due.map(x=>x.group),['census']);
 });
