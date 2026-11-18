@@ -22,7 +22,9 @@ test('retired MarketParquet is neither fetched nor treated as last valid current
 });
 
 test('empty or invalid live publication leaves US numeric cells missing, not replaced with last historic score',()=>{
- assert.match(source,/setProvisional\(current(?:Iex|Us)Provisional\(body\) \? body : null\)/);
+ assert.match(source,/const incoming = currentIexProvisional\(body\) \? body : null/);
+ assert.match(source,/setProvisional\(previous => newestUsIexPercentPublication\(/);
+ assert.match(source,/currentIexProvisional\(previous\) \? previous : null, incoming/);
  assert.match(source,/if \(response\.ok\) body = await response\.json\(\) as unknown;/);
  assert.match(source,/catch \{\s*body = null;/);
  assert.match(source,/pct === undefined \? "—"/);
