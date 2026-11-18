@@ -1,5 +1,7 @@
 # ZGMINI W04 고용지표 R6 — 최신 실행 계획 (2026-11-16)
 
+> **2026-11-19 W04 PIT-06-07 source-only 이력 선택→차트·계산 입력 일치 완료:** <!-- W04-PIT0607-SELECTED-HISTORY-CHART-SCORE-CI-20261119 --> [앱 PR #1408](https://github.com/ansqhd5774-Choi/zgmini/pull/1408) 1 test파일·신규 시뮬레이션 2건, [Node CI #44337075290](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44337075290) `completed/success`(회귀 5,146 PASS/0 FAIL, PC 27/27, CF 72/72), main squash `0e5ef2ef32c9a0ccf1e1c6ede115c44383958f6d` 및 test blob `30af0f0ccb0e0d1019af2f1e9e00c148e45e2b72` readback. **PIT-06-07 DONE**, 전체 **38/72(52.8%)**·PIT-06 **3/8**. History 534주 시 차트 마지막 week533·`PARTIAL_HISTORY`(score null), 600주 fixture 시 차트 마지막 week599·동일 입력/계산 READY. 이는 **모의 저장 원본 시험**이지 실제 PC 복구·B 승인·PIT 8키·D1 게시 입증이 아님. [진행 원장 §122](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md). 정확 R3 Host B [#2176](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2176) 여전히 OPEN/명시 운영 GO 미확인. PIT-06-01/03/05/06/08 및 PIT-04-05/07/08는 미완료.
+
 > **2026-11-19 최신 W04 PIT-06-04 동시각 상충 HISTORY false match 수정 완료:** <!-- W04-PIT0604-EQUAL-TIME-REVISION-FAIL-CLOSED-20261119 --> [앱 PR #1404](https://github.com/ansqhd5774-Choi/zgmini/pull/1404) 최소 2파일 `lib/market-score/employment-r6-claims-pit-recovery.mjs`·그 전용 test, [Node CI #44334337209](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44334337209) `completed/success`, 동일시각 충돌/동일 duplicate/provenance 충돌/기록시각 우선순위 4/4 PASS, Regression **5,125 PASS/0 FAIL**, 게시 27/27·Cloudflare 72/72. `main` squash `3110c33f3fa368012b3cde4fff61a6f67047500f` + 2파일 main readback 완료. **PIT-06-04 DONE**, 전체 **37/72 DONE(51.4%)**(PIT01 7/7, 02 7/7, 03 8/8, 04 5/8, 05 8/8, 06 2/8, 07~10 0/26); 실제 PC History/B/D1/게시 성공을 주장하지 않음. 현황 [진행 원장 §121](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md). R3 pinned Host B [제어 #2176](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2176) OPEN/운영 GO 미확정, 새 main SHA를 기존 B manifest에 자동 포함 금지. 과거 36/72 등 단계 수치는 시점별 기록으로 보존. 다음 필수는 R3 B 승인 후 실제 Host CAS→실PC raw/8키 PIT 검증, 미승인일 때 운영 쓰기 금지.
 
 
@@ -149,7 +151,7 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 
 ## 7. 72개 세부 실행 항목 — 실제 작업 단위별 확장 (2026-11-16)
 
-> **2026-11-18 최신 완료 계수:** 위 72행 현 상태 직접 집계 **35/72 DONE(48.6%) / 37 미완료**: PIT-01 7, PIT-02 7, PIT-03 8, PIT-04 5(01/02/03/04/06), PIT-05 8, PIT-06~10 0. PIT-04-05/07/08 미완료. PIT-05의 8개는 판정/보호 범위만 완료했으며 실제 복구/INSERT GO는 아니고 0키 승인. 후보 충돌14/출처 미확인255/내부 메타 정합2625는 자동 PIT 인증 아님. 최근 #2144 Core 40,777/History 누락 2,880 집계와 `TRUE_PIT` 검증·개별 키 8건을 구분한다. 과거 #1949 26/72 당시 수치는 이후 이력에 보존.
+> **2026-11-18 당시 완료 계수(보관 기록; 상단 최신 메모와 바로 아래 집계표 우선):** 위 72행 현 상태 직접 집계 **35/72 DONE(48.6%) / 37 미완료**: PIT-01 7, PIT-02 7, PIT-03 8, PIT-04 5(01/02/03/04/06), PIT-05 8, PIT-06~10 0. PIT-04-05/07/08 미완료. PIT-05의 8개는 판정/보호 범위만 완료했으며 실제 복구/INSERT GO는 아니고 0키 승인. 후보 충돌14/출처 미확인255/내부 메타 정합2625는 자동 PIT 인증 아님. 최근 #2144 Core 40,777/History 누락 2,880 집계와 `TRUE_PIT` 검증·개별 키 8건을 구분한다. 과거 #1949 26/72 당시 수치는 이후 이력에 보존.
 
 | 상위 범주 | 세부 작업 수 | 완료 | 미완료 | 현재 상태 |
 |---|---:|---:|---:|---|
@@ -158,12 +160,12 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 | PIT-03 현재 운영 PC의 실제 PIT 결손 확보 | 8 | 8 | 0 | DONE (PC #1786/#1787 읽기 전용 PASS) |
 | PIT-04 지역별·주별 원자료와 PIT 정합성 분류 | 8 | 5 | 3 | IN_PROGRESS — PIT-04-05 raw snapshot/source hash lineage |
 | PIT-05 복구 가능성 판정·최소 운영 승인 설계 | 8 | 8 | 0 | DONE — CURRENT_REPAIR_NO_GO, 실제 INSERT 승인 0 |
-| PIT-06 선별 복구 코드·fixture 회귀·시뮬레이션 | 8 | 0 | 8 | DEFERRED (선행 근거 필요) |
+| PIT-06 선별 복구 코드·fixture 회귀·시뮬레이션 | 8 | 3 | 5 | IN_PROGRESS — 06-02/04/07 source-only 검증 완료 |
 | PIT-07 승인된 PC의 최소 History 복구·원장 | 8 | 0 | 8 | DEFERRED (선행 근거 필요) |
 | PIT-08 저장 자료 기반 계산·로컬 결과 재검증 | 6 | 0 | 6 | DEFERRED (선행 근거 필요) |
 | PIT-09 기존 D1 게시기와 읽기 결과 일치 | 6 | 0 | 6 | DEFERRED (선행 근거 필요) |
 | PIT-10 Production API/UI 검증·종결 판정 | 6 | 0 | 6 | DEFERRED (선행 근거 필요) |
-| **합계** | **72** | **35** | **37** | **48.6% · 세부 작업 기준** |
+| **합계** | **72** | **38** | **34** | **52.8% · 세부 작업 기준** |
 
 **완료 판정 원칙:** 모든 행에서 입력/실행과 합격 조건을 확인해야 한다. 시뮬레이션과 실제 PC 설치/SQLite 수정/D1 게시를 하나의 완료 증거로 합치지 않는다. 조건 불충족은 STOP/DEFERRED로 유지하며, 예약 자연 검증·임의 데이터 보간·신규 공급자 호출은 잔여 단계에 추가하지 않는다.
 
@@ -230,7 +232,7 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 | PIT-05-07 | 동일 SQLite/Core 공유 쓰기 충돌·lease·백업 조건 정리 | [실PC #1798](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1798) SQLite Core WAL 및 후보 ROLLBACK 읽기 전용, [#2114](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2114) 공유 Controller install lease 없음(**DB writer lock 증거와 별개**), 기존 `r6-registered-data-b/operation.mjs`의 Core `local-cycle.lock` create-only·owner 확인/5분 bounded wait | 목표 운영 Core `E:\ZGmini\data\pc-writer\storage\core.sqlite`(WAL 및 -wal/-shm), 공유 Writer lane `E:\ZGmini\data\pc-writer\local-cycle.lock`과 Task/Core 실행 소유권. 실제 복구 시점의 기존 DB/sidecar 일관 스냅샷·원본 owner/CAS·잠금/lease 입장·rollback 계획·동일 DB writer 단독 사용·저장 재조회가 선행되어야 함. #1798 당시 WAL sidecar 존재와 #2114 현재 Controller install lease 부재만으로 **복구 실행 때 Core 잠금이 비어 있거나 안전 백업이 있다는 결론 금지**. Active owner/unknown→WAIT/STOP, 다른 작업 lock 삭제 금지; 현재 DB 복구 작업/백업/lease 적용 없음. [원장 §98](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md) | DONE — CORE_WAL_WRITER_LANE_CONDITIONS_DEFINED / REPAIR_PREIMAGE_NOT_VERIFIED |
 | PIT-05-08 | 적법하고 의미 있는 복구 후보에 대한 GO/NO-GO 결정 | PIT-05-01~07 및 [실PC #2088](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2088)·[#2117](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2117), #2094/#2114 | **현재 복구 실행 NO-GO**: 후보 충돌 14, History 미충족 255, 후보 메타만 맞는 2,625도 raw SHA/PIT 미인증, raw snapshot 27 미인증, ETA539 `c3`/4주 분모 실제 값 검증 미완료, National stored 관측 2026-10-17 정체, 직접 History INSERT 승인·DB 보호/lease 없음. 현재 승인된 적용 키셋 0, SQLite/D1 쓰기 0. 복구 불가 판정은 영구 확정이 아니라 증거/권한 보강 시 해당 키만 재평가. Controller 공유 설치는 공통 독립 maintainer stage 정리 증거 후 기존 승인 범위 내 별도 실행; #2094 재실행 금지. PIT-04-05/07/08의 실제 원자료/키 실증은 계속. [원장 §98](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md) | DONE — CURRENT_REPAIR_NO_GO / NO_OPERATIONAL_CHANGE |
 
-### PIT-06 — 선별 복구 코드·fixture 회귀·시뮬레이션 (8개, 2 DONE · 6 미완료)
+### PIT-06 — 선별 복구 코드·fixture 회귀·시뮬레이션 (8개, 3 DONE · 5 미완료)
 
 | 세부 ID | 실제 실행·분석 작업 | 입력·근거 | 완료 판정 / 결과 | 상태 |
 |---|---|---|---|---|
@@ -240,7 +242,7 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 | PIT-06-04 | 서로 다른 최신 개정값 동시 존재 검사 | [앱 PR #1404](https://github.com/ansqhd5774-Choi/zgmini/pull/1404) 정확 Reader·test 2파일, [Node CI #44334337209](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44334337209) | `retrieved_at`/`recorded_at` 동시각 값·해시 또는 PIT provenance 상충 시 행 순서에 관계없이 HOLD, 동일 중복은 일치, 기록시각 차이는 실제 최신 순서 유지. 신규 회귀 4/4 PASS, 전체 5125 PASS/0 FAIL, main 병합 `3110c33f...`; PC 실제 History 변경·PIT 복구 승인 0. [원장 §121](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md) | DONE — EQUAL_TIME_REVISIONS_FAIL_CLOSED_SOURCE_CI_MAIN |
 | PIT-06-05 | 원자료 해시·출처/가용일 무결성 검증 | 상응 raw snapshot·PIT metadata | 불명/미래시각/비공식 행 삽입 0 | TODO |
 | PIT-06-06 | 부분 실패·lease 거부·중단 상태 복구 시뮬레이션 | 기존 트랜잭션·결과 원장 계약 | 최종 PASS 없이 중간 쓰기를 성공으로 표시하지 않음 | TODO |
-| PIT-06-07 | 기존 산식 변경 없는 계산·차트 입력 일치 검사 | selected History as-of fixture | 유효 구간만 계산, 근거 부족은 PARTIAL 유지 | TODO |
+| PIT-06-07 | 기존 산식 변경 없는 계산·차트 입력 일치 검사 | 기존 51지역×600주 fixture / [앱 PR #1408](https://github.com/ansqhd5774-Choi/zgmini/pull/1408) / [Node CI #44337075290](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44337075290) | HISTORY 534주(66주×51키 누락)는 차트 479점·마지막 검증주 week533 및 계산 PARTIAL_HISTORY/score null, full 600주는 차트 545점·최종 week599·동일 rawValue/observationDate와 계산 READY. 신규 2/2 PASS, Node Regression 5146 PASS/0 FAIL, main squash `0e5ef2ef32c9a0ccf1e1c6ede115c44383958f6d`. 실제 History INSERT/승인·게시 0; [§122](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md) | DONE — SELECTED_HISTORY_CHART_SCORE_SOURCE_CI_MAIN |
 | PIT-06-08 | 변경 영향 테스트·CI 및 정확한 소스 범위 확정 | 완성된 최소 패치/PR/관련 tests | CI PASS; CI 성공=PC 적용 성공으로 간주하지 않음 | TODO |
 
 ### PIT-07 — 승인된 PC의 최소 History 복구·원장 (8개, 미실행)
