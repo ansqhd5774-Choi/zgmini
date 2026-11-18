@@ -8,6 +8,7 @@ import crypto from "node:crypto";
 import {pathToFileURL} from "node:url";
 
 import {EMPLOYMENT_R6_FEATURES} from "../../lib/market-score/employment-r6-formula.mjs";
+import {EMPLOYMENT_R4_CORE_STATES} from "../../lib/market-score/employment-r4-shadow-contract.mjs";
 import {validEmploymentR6PublicDisplay} from "../../worker/employment-r6-public-display.mjs";
 import {optionsFrom,stageEmploymentR6OneYearWithPitAudit} from "./employment-r6-one-year-stage.mjs";
 
@@ -15,7 +16,7 @@ const FEATURE_IDS=new Set(EMPLOYMENT_R6_FEATURES.map(x=>x.id));
 const RAW=new Set(["READY","STALE","UNAVAILABLE"]);
 const CHART=new Set(["READY","PARTIAL","UNAVAILABLE"]);
 const SCORE=new Set(["READY","PARTIAL_HISTORY","PARTIAL_MISSING"]);
-const INPUT_FLAGS=new Set(["--db","--candidate-db-external","--output-dir","--as-of"]);
+const INPUT_FLAGS=new Set(["--db","--candidate-db-external","--output-dir","--as-of","--pit04-offset"]);
 const PIT_COUNTS=[
   "coreCurrentRows","coreHistoryRevisions","coreCurrentKeys",
   // Fixed non-sensitive counts also permitted by the existing Controller A.
@@ -85,11 +86,21 @@ export function runnerOptionsFrom(argv){
   if(!seen.has("--db")||!seen.has("--candidate-db-external")||!seen.has("--output-dir")){
     throw Error("RUNNER_R6_REQUIRED_ARGUMENT_MISSING");
   }
-  const options=optionsFrom(argv);
+  const lower=[];
+  let keyReviewOffset=null;
+  for(let i=0;i<argv.length;i+=2){
+    if(argv[i]==="--pit04-offset"){
+      const value=argv[i+1];
+      if(!/^(0|[1-9][0-9]{0,4})$/.test(value)||Number(value)>50000)
+        throw Error("RUNNER_R6_ARGUMENT_NOT_ALLOWED");
+      keyReviewOffset=Number(value);
+    }else lower.push(argv[i],argv[i+1]);
+  }
+  const options=optionsFrom(lower);
   if(!options.candidateDbExternal||options.publish||options.discoverApprovedCandidate){
     throw Error("RUNNER_R6_ISOLATED_CANDIDATE_REQUIRED");
   }
-  return options;
+  return {...options,keyReviewOffset};
 }
 
 // SQLite can create -wal/-shm even for DatabaseSync(readOnly:true). Do not
@@ -161,6 +172,62 @@ function projectPit(pitCoverage){
   return pit;
 }
 
+
+const PIT04_STATES=new Set(EMPLOYMENT_R4_CORE_STATES);
+const PIT04_REASONS=new Set([
+  "CANDIDATE_CURRENT_CONFLICT","CORE_HISTORY_AMBIGUOUS","CORE_HISTORY_CONFLICT",
+  "CORE_CURRENT_DUPLICATE","MISSING_HISTORY_CANDIDATE_UNVERIFIED",
+  "MISSING_HISTORY_NO_CANDIDATE","MISSING_HISTORY_CANDIDATE_INTERNAL_MATCH_ONLY",
+]);
+const PIT04_COUNT_FIELDS=[
+  "coreKeys","coreHistoryMissing","coreHistoryConflict","coreHistoryAmbiguous",
+  "candidateOverlapConflicts","missingCandidateInternalMatch",
+  "missingCandidateIncomplete","missingWithoutCandidate","duplicateCurrentKeys",
+];
+function projectPit04KeyReview(input){
+  if(input===undefined||input===null)return null;
+  const count=n=>Number.isSafeInteger(n)&&n>=0?n:null;
+  const offset=count(input.offset),pageSize=count(input.pageSize);
+  const total=count(input.evidenceTotal),next=input.nextOffset===null?null:count(input.nextOffset);
+  const counts=Object.fromEntries(PIT04_COUNT_FIELDS.map(key=>[key,count(input.counts?.[key])]));
+  if(input.kind!=="EMPLOYMENT_R6_PIT0408_KEY_REVIEW_SOURCE_ONLY_V1"
+    ||input.status!=="HOLD_KEY_CLASSIFICATION_NOT_RAW_PIT_ATTESTATION"
+    ||input.rawPitAttested!==false||input.promotionApproved!==false||input.repairAuthorized!==false
+    ||[offset,pageSize,total,...Object.values(counts)].some(x=>x===null)
+    ||offset>50000||pageSize<1||pageSize>24||total>counts.coreKeys
+    ||counts.coreHistoryMissing!==counts.missingCandidateInternalMatch
+      +counts.missingCandidateIncomplete+counts.missingWithoutCandidate
+    ||!Array.isArray(input.evidence)||input.evidence.length>pageSize
+    ||input.evidence.length>Math.max(0,total-offset)
+    ||input.evidenceTruncated!==(next!==null)
+    ||(next!==null&&(next!==offset+pageSize||next>=total))
+    ||(next===null&&offset+pageSize<total))throw Error("RUNNER_R6_PIT04_REVIEW_INVALID");
+  const seen=new Set();
+  const evidence=input.evidence.map(item=>{
+    const d=item?.observationDate,geo=item?.geographyCode,reason=item?.reason;
+    const key=geo+"|"+d;
+    if(item?.logicalSeriesId!=="STATE_INITIAL_CLAIMS"
+      ||!PIT04_STATES.has(geo)
+      ||typeof d!=="string"||!/^20[0-9]{2}-[0-9]{2}-[0-9]{2}$/.test(d)
+      ||Number.isNaN(Date.parse(d+"T00:00:00Z"))
+      ||new Date(d+"T00:00:00Z").toISOString().slice(0,10)!==d
+      ||new Date(d+"T00:00:00Z").getUTCDay()!==6
+      ||!PIT04_REASONS.has(reason)||seen.has(key)
+      ||typeof item.coreHistoryMissing!=="boolean"
+      ||typeof item.candidateCurrentConflict!=="boolean"
+      ||item.rawPitAttested!==false||item.repairAuthorized!==false)
+      throw Error("RUNNER_R6_PIT04_REVIEW_INVALID");
+    seen.add(key);
+    return {logicalSeriesId:"STATE_INITIAL_CLAIMS",geographyCode:geo,
+      observationDate:d,reason,coreHistoryMissing:item.coreHistoryMissing,
+      candidateCurrentConflict:item.candidateCurrentConflict,
+      rawPitAttested:false,repairAuthorized:false};
+  });
+  return {kind:input.kind,status:input.status,counts,evidenceTotal:total,
+    offset,pageSize,evidenceTruncated:next!==null,nextOffset:next,evidence,
+    rawPitAttested:false,promotionApproved:false,repairAuthorized:false};
+}
+
 export function projectEmploymentR6RunnerResult({body=null,pitCoverage=null,pitCoverageError=null,
   error=null,wal=null,sqliteOpened=false,walFailure=null}={}){
   if(!error&&(!body||!validEmploymentR6PublicDisplay(body))){
@@ -178,6 +245,7 @@ export function projectEmploymentR6RunnerResult({body=null,pitCoverage=null,pitC
     candidateDiscoveryStatus:"EXPLICIT_CANDIDATE_READONLY",
     summary:{},
     pit:projectPit(pitCoverage),
+    ...(pitCoverage?.pit04KeyReview==null?{}:{pit04KeyReview:projectPit04KeyReview(pitCoverage.pit04KeyReview)}),
     pitAuditError:pitCoverageError?safeCode(pitCoverageError):null,
     indicators:[],
     promotionApproved:false,
