@@ -355,7 +355,7 @@ test("PIT-04-08 Runner rejects nonallowlisted key data and preserves bounded whi
   missingWithoutCandidate:1,duplicateCurrentKeys:0};
  const review={kind:"EMPLOYMENT_R6_PIT0408_KEY_REVIEW_SOURCE_ONLY_V1",
   status:"HOLD_KEY_CLASSIFICATION_NOT_RAW_PIT_ATTESTATION",
-  counts,evidenceTotal:1,offset:0,pageSize:24,evidenceTruncated:false,nextOffset:null,
+  counts,evidenceTotal:1,offset:0,pageSize:8,evidenceTruncated:false,nextOffset:null,
   evidence:[{logicalSeriesId:"STATE_INITIAL_CLAIMS",geographyCode:"AL",
    observationDate:"2026-11-07",reason:"MISSING_HISTORY_NO_CANDIDATE",
    coreHistoryMissing:true,candidateCurrentConflict:false,
