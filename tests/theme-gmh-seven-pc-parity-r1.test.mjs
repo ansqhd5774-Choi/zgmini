@@ -114,3 +114,36 @@ test('non-GMH provenance, wrong path and untrusted price fields are rejected',t=
  assert.throws(()=>compareSavedGmhSeven({dataRoot:root,asOf:stamp}),
   {code:'W03_PC_PARITY_MANIFEST_RAW_PATH'});
 });
+
+test('on-disk saved raw non-gap bad close is skipped by both calculators without changing scores or rights',t=>{
+ const {root,home,manifestFile,stateFile}=fixture(t);
+ const manifest=JSON.parse(fs.readFileSync(manifestFile,'utf8'));
+ const cp=JSON.parse(fs.readFileSync(stateFile,'utf8'));
+ const e=manifest.files.find(x=>x.symbol==='SPY');
+ const original=fs.readFileSync(path.join(home,...e.path.split('/')),'utf8');
+ const lines=original.trimEnd().split('\n');
+ lines.splice(1,0,JSON.stringify({
+  symbol:'SPY',timestamp:'2022-01-03T22:00:00Z',
+  close:null,is_gap:false}));
+ const bytes=Buffer.from(lines.join('\n')+'\n');
+ const nextSha=sha(bytes);
+ const filename='SPY_'+nextSha+'.jsonl';
+ e.path='raw/'+filename;e.sha256=nextSha;e.rowCount=lines.length;
+ cp.symbols.SPY.files=[{path:e.path,sha256:nextSha}];
+ fs.writeFileSync(path.join(home,'raw',filename),bytes);
+ fs.writeFileSync(manifestFile,JSON.stringify(manifest));
+ fs.writeFileSync(stateFile,JSON.stringify(cp));
+ const result=compareSavedGmhSeven({dataRoot:root,asOf:stamp,save:true});
+ assert.equal(result.status,'PRIVATE_GMH_7X252_PARITY_VERIFIED_NOT_PUBLISHED');
+ assert.equal(result.historyPoints,1764);
+ assert.equal(result.commonSessionCount,628);
+ assert.equal(result.rawPagesVerified,14);
+ assert.equal(result.providerCalls,0);
+ assert.equal(result.d1Writes,0);
+ const output=fs.readdirSync(path.join(home,'derived')).find(n=>n.endsWith('.json'));
+ const saved=JSON.parse(fs.readFileSync(path.join(home,'derived',output),'utf8'));
+ assert.equal(saved.unusableRows,1);
+ assert.equal(saved.publicationAuthorized,false);
+ assert.equal(saved.upstreamCommercialRightsVerified,false);
+ assert.equal(saved.derivedLicenseVerified,false);
+});
