@@ -4,7 +4,9 @@ import {chromium} from 'playwright';
 
 // Fixture values only. Browser interception isolates the real React chart from production/D1.
 const base=process.env.CHAT_PREVIEW_URL??'http://127.0.0.1:5173';
-const observedAt='2026-10-30T23:59:48.000Z';
+// The actual CNN source and its three PC checks must share a New York session.
+// A previous NY-day source must never be promoted into the current 1D chart.
+const observedAt='2026-10-31T13:30:00.000Z';
 const checkTimes=['2026-10-31T13:35:04.658Z','2026-10-31T13:55:04.777Z','2026-10-31T14:15:04.988Z'];
 const cnnPoints=[{observedAt,score:26.2}];
 const checkedPoints=checkTimes.map(checkedAt=>({checkedAt,sourceObservedAt:observedAt,score:26.2}));
