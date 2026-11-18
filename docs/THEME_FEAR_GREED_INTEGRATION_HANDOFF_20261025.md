@@ -1,3 +1,15 @@
+## 2026-11-18 W03 12/68 — 브랜치 계획 승계·Node 22 실제 SHA-256 격리 검증
+
+- **착수/완료 진척:** 11/68(16.2%) → 11/68(16.2%), **12단계 IN_PROGRESS**. 163테마 목표 및 기존 소스/승인 범위 유지. 기준 main 확인 `da89be7d03ca3cf9b0b2ce92ed7e2832f620c6a1`, 시작 전용 브랜치 HEAD `5d89d424e5967a1313d8314185e4d4d7e8f37521`. 지정 계획 `docs/THEME_FEAR_GREED_163_THEME_MASTER_PLAN_20261027.md` 및 W03 최신 진행 기록의 실행 순서 검토: 저장 원본 검증 → 승인 기본 7테마 D1 base 복구 → R54/10테마 공개 → R51 날짜 정렬. 자연 예약 재검증은 기능 완료 뒤 후속.
+- **이번 실제 실행 (운영 PC 외 격리 개발환경):** 기존 전용 브랜치의 `scripts/pc-writer/theme-seven-gmh-pinned-parity-r1.mjs`와 `tests/theme-seven-gmh-pinned-parity-r1.test.mjs` 내용을 비운영 Node.js **v22.16.0** 환경에 복원. `git hash-object`로 원격 blob `97328eef891fe90d139788888c426edf9ebd6d74`/`db79886703ba0a4689403ac72bfda709b006d6ba` **2/2 완전 일치** 확인. 네이티브 Node `crypto.createHash('sha256')`를 사용해 `node --test tests/theme-seven-gmh-pinned-parity-r1.test.mjs` **4 PASS / 0 FAIL / 0 SKIP**, 구문검사 2 PASS. 이전 V8 비암호학적 SHA shim 검증에서 실제 Node crypto 실행으로 검증 범위 확대.
+- **시험 제한 (정확히 구분):** 의존하는 `theme-seven-gmh-private-seed-r1.mjs`는 확인된 원격 알고리즘을 격리 환경에 재구성했으며 해당 로컬 Git blob이 원격 본문과 바이트 동일한 것은 아님. 공개 `worker/theme-etf-only-public.mjs`은 7쌍·상수 및 승인 여부만 반영한 stub 사용. 따라서 **원격 2파일의 Node 부분 통합시험이며 전체 GitHub CI/프로덕션 실제 모듈 테스트·Windows PC 실행 성공은 아님**. 합성 232일×7=1,624 일치는 기존 실PC readback #2133의 독립 증거를 신규 현장 파일에 적용한 결과가 아니다.
+- **자료·권리 재확인:** 기존 #1700 private 2026-11-13, #2124 R181 2026-11-16 ledger 14/14, #2133 D1 기본 2026-10-16 stale와 겹치는 1,624점 불일치 0을 재사용. 기존 `docs/THEME_W03_STORED_RECOVERY_20261116.md`에 11/13 저장 14종 SHA/701 공통 warmup/20거래일 실제 계산 검산 완료 별도 증거 존재하므로 반복하지 않음. GMH https://getmarkethistory.com/docs/terms 2026-11-17 발효 §5 및 https://getmarkethistory.com/docs/partners 재조회: 복원불가 파생 지표 공유는 조건부 가능하나 원시 가격/벌크 재배포와 원데이터 display는 별도 라이선스. 해당 출력 비복원성/계정·상용 권리/라이브 D1 승인 **미확인**이라 3개 권리 플래그 false 유지.
+- **LAST PASS / FIRST UNVERIFIED:** LAST PASS = 새 2파일 blob 직접 일치 및 Node22 native SHA 테스트 4/4, 이전 실PC D1 seed 1,624 history parity. FIRST UNVERIFIED = 실제 11/16 저장 원본 SHA/checkpoint/형식·11/13 immutable 파일/10/16 D1 body를 새 검증기에 **실제 승인된 Reader로 주입하는 단계**. 현재 고정 A `theme-l7-runtime-readonly`는 원장/파일 인벤토리만 확인해 새 raw/DB 검증 경로로 무단 확대 금지. 읽기 권한 범위 미확인인 해당 PC 실행만 `AUTOMATION_BLOCKED`; 외부 서비스·Controller 장애로 잘못 확장하지 않음. 현재 API `STORED_DATA_STALE` 보호 유지.
+- **운영 변경:** 원자료·provider GET·운영 PC·SQLite·checkpoint·D1·예약·TTL·산식·배포 **0건**, 금회 전용 브랜치 **기능 소스 변경 없음**, 누적 기록만 갱신.
+- **다음 필수 한 동작:** 기존 승인된 저장형 Reader/정규 B의 현재 실제 설치·허용 범위와 11/16 raw/checkpoint 파일 형식 대조 → 허용된 범위에서 private 원본 bytes/D1 body를 새 SHA-pin 검증기에 실입력 → 그 결과로 GMH 비복원성·권리/Writer CAS 허용 여부 판정. 별도 권한 효과가 필요한 경우 최소 정확 범위만 승인 경로로 분리하고 다른 기능 진전은 계속.
+
+---
+
 ## 2026-11-18 W03 12/68 — GMH 저장 바이트 SHA 고정 대조 어댑터 구현·권리 최신 약관 검토 (운영 게시 미실행)
 
 - **진행률:** 11/68 DONE(16.2%) → 11/68 DONE(16.2%), 단계 12 IN_PROGRESS. 프로그램 목표 163테마 유지. 정확 전용 브랜치 `codex/theme-fear-greed-integration-20261025`; 이번 실행 시작 HEAD `17935f5aed2d7db24d39e625c19ab8b5bcbe3771`, 조회된 `main` SHA `da89be7d03ca3cf9b0b2ce92ed7e2832f620c6a1`. 기존 PR #1321 / Node CI #44254670871은 완료 증거로 재사용했고 재실행하지 않음.
