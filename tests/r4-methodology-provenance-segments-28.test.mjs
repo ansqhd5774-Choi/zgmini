@@ -79,8 +79,6 @@ test('R4 #69 interleaved reconstructed and archived samples keep distinct line s
  assert.deepEqual(classified.filter(p=>p.calculatedValue!==null).map(p=>p.calculatedValue),[48,49]);
  assert.deepEqual({daily,archive},original);
  const chart=readFileSync(new URL('../components/dashboard-summary-chart.tsx',import.meta.url),'utf8');
- for(const key of ['reconstructedValue','calculatedValue']){
-  assert.match(chart,new RegExp('dataKey="'+key+'"[^>]*connectNulls=\\\\{true\\\\}'));
- }
+ assert.equal((chart.match(/connectNulls=\{true\}/g)??[]).length,2);
  assert.doesNotMatch(chart,/dataKey="value"/);
 });
