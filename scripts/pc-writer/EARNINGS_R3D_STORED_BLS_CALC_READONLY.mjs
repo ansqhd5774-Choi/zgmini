@@ -15,8 +15,14 @@ const sha = v => crypto.createHash('sha256').update(v,'utf8').digest('hex');
 const fail = code => { throw new Error(code); };
 const decimal = value => typeof value === 'string' && /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(value)
   && Number.isFinite(Number(value));
-const isIsoDate = value => /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/.test(String(value))
-  && Number.isFinite(Date.parse(value));
+const isIsoDate = value => {
+  // Date.parse may normalize impossible calendar dates (e.g. February 30).
+  // Collector emits canonical millisecond-precision UTC via toISOString().
+  if (typeof value !== 'string'
+    || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)) return false;
+  const parsed = new Date(value);
+  return Number.isFinite(parsed.getTime()) && parsed.toISOString() === value;
+};
 const format = value => value===null || !Number.isFinite(value)?'UNAVAILABLE':value.toFixed(6);
 
 function periodOrdinal(row, quarterly) {
