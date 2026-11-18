@@ -1,5 +1,15 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-CENSUS-NUMERIC-GROUPING-PR1318-MERGED -->
+## 2026-11-18 — Census #28 잘못된 천 단위 쉼표에 의한 원자료 값 변조 결함 최소 수정·CI·main 병합
+
+- **시작/종료:** W01 33/71(46.5%) → **33/71(46.5%)**, 신규 DONE 0, 잔여 38. 운영 수집·저장·공개 성공으로 계산하지 않는다.
+- **확정 기능 결함:** 최신 개발 `zgmini/main@05063671ccbbb070d1c7b7224ea8ccac62530140`의 `scripts/pc-writer/inflation-causal-candidate-census-m3.mjs`는 Census M3 `cell_value` 내부의 모든 쉼표를 검증 전에 삭제해 잘못된 숫자 `12,34`를 `1234`라는 서로 다른 수치로 받아들일 수 있었다. 이는 현재 실제 `CENSUS_M3_HEADERS_INVALID`의 원인이라는 증거가 **아니며 별개의 수치 무결성 결함**이다.
+- **실제 소스 수정:** [앱 PR #1318](https://github.com/ansqhd5774-Choi/zgmini/pull/1318) / 정확 **2파일** (Census 수집기 1, Census 단위시험 1). `OFFICIAL_NUMERIC`으로 쉼표 없는 유효 수치 및 정확히 세 자리마다 그룹화된 천 단위 숫자만 허용한 후 변환한다. `12,34`, `1,,234`, `1,234,56`, `01,234`는 거부; `1,234`, `12,345,678.50`, `12345678`는 정상 인식. 두 연도에 유효 관측이 하나도 없으면 `CENSUS_M3_NO_USABLE_OBSERVATIONS`로 안전 종료하고 성공 snapshot을 만들지 않으며, 연도별 기보관 응답 2개 SHA archive 보존을 회귀시험에 추가.
+- **검증/병합:** PR HEAD `056387c3397811cb123f6ebd2bd843d67ac7a5d2`, [Node.js CI Run #44251814145](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44251814145) **completed/success**, Build·Type check·Regression tests·PC publication recovery tests·Cloudflare candidate read contracts 전부 성공. `main` squash 병합 SHA [`6c7b132ffa104a465013266fa794a45c270370b8`](https://github.com/ansqhd5774-Choi/zgmini/commit/6c7b132ffa104a465013266fa794a45c270370b8). 변경 전/후 브랜치 전체 병합 금지, 검증된 2파일만 PR을 통해 main 반영했다.
+- **운영 경계:** 앱 개발 source/CI PASS ≠ PC 운영 설치/수집/계산/D1/Production 검증. 제어 [#2094](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2094)는 원본 `BLOCKED/FIRST_FAIL=STAGED` 및 설치 Controller `f7f1559...` 유지, W04 공유 Controller 정확 6파일 설치 아직 미확인. 기존 [W01 실PC A #2122](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2122) #28 `MISSING`·0개월·checkpoint `CENSUS_M3_HEADERS_INVALID` 불변. 기보관 실제 2025/26 header 원본 형태 미확정; W01 고정 A 제어 [Draft #2111](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2111) 운영 미설치. 원본 Census B [#1818](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1818) 재실행하지 않음; 공급자 GET/PC SQLite/Task/Core lock/Controller/D1/Workflow 변경 0.
+- **다음 필수 실행:** 프로세스 총괄의 공통 #2094 안전 복구 증거 → W04 단일 공유 Controller 실제 설치 영수증 확인 → W01 자신의 고정 A #2111 별도 정규 적용·실PC `2025/2026` 기존 response header-only 1회 readback → 실제 증거로 확인된 헤더 호환 결함만 최소 수정 → 승인 Census 수집·저장→D1/API/UI 확인. 현재 결측은 결측 그대로 보존.
+
 <!-- W01-20261118-CENSUS-FAIL-CLOSED-TEST-CI -->
 ## 2026-11-18 — Census #28 무관측 fail-closed 수집 계약 회귀시험과 CI 실검증 완료
 
