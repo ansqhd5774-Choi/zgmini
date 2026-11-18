@@ -1,3 +1,12 @@
+## 2026-11-19 KST W03 13/68 — 실제 승인 Writer D1 연결 소스 구현 (운영 실행 별도)
+
+- **실제 코드 반영:** 운영 호출이 없던 `runApprovedGmhSevenR178SavedOnce`를 기존 PC Writer의 `d1.mjs` `client.query`/`client.request` 계약에 연결하는 `scripts/pc-writer/theme-seven-gmh-r178-approved-writer-entry.mjs`을 신규 구현. `runApprovedGmhSevenR178FromPcWriter`는 이미 승인된 Writer가 자신이 인증한 client, GMH 출력 전용 approvedRecord, 독립 SHA 결합 `verifyApprovedEffect`를 전달할 때에만 실행하며, 없는 경우 E: 원자료/원격 D1 읽기 전에 차단한다. R144 seed + R178/R32 고정 키 읽기, R178 단일 `stored_at=?` CAS, 본문·시각 readback, R32 불변 검증, 결과 불명시 재시도 금지를 기존 핵심 모듈과 결합.
+- **GitHub 결과:** 기능 main에서 파생한 최소 2파일 [PR #1422](https://github.com/ansqhd5774-Choi/zgmini/pull/1422) (head `90e711bf358cfdf709ba894b6df7619f62b92dcc`) 등록. 테스트 `tests/theme-seven-gmh-r178-approved-writer-entry.test.mjs` 6개 사례 추가. 동일 2파일을 W03 전용 브랜치에도 신규 저장 `3397f8060c01914d344193fe7f71b9bdc9be235b`/`b4cbd3f080d3e53908ef6037fca38faa03cd9b5a`. PR CI 결과는 별도 확정 전이므로 PASS로 단정하지 않음.
+- **유지하는 차단:** 이 모듈은 import 실행 가능한 기존 Writer 연동점이며 자체 CLI·Task·credential/승인 발행 없음. 신뢰 검증 함수를 허위 true로 생성하지 않는다. 실제 승인된 외부 호출 바인딩, 현 PC 설치 원본/대상 SHA, GMH §5 익명 사용권·상위 권리·15시 proxy 가격 정책·운영자 게시 승인 없이는 B 설치와 실제 D1 게시 불가. MP R179 권리 파일을 사용하지 않음. 운영 데이터/Controller/스케줄/SQL 스키마/D1/Production 변경 0.
+- **진척도:** 기존 `12/68 DONE (17.6%) / 13 IN_PROGRESS` 유지. PR #1422 통과/병합을 확인한 뒤 신뢰된 승인 Writer 실제 호출 연결과 필요한 최소 PC 설치 범위만 별도 실증. 신규 이슈/총괄 요청 0.
+
+---
+
 ## 2026-11-19 KST W03 13/68 — 정규 Writer B 설치 계약 및 실제 게시 호출 경로 점검 (운영 효과 없음)
 
 - **이번 확인 범위:** GitHub read-only/공식 GMH 약관 직접 대조. 작업 전 W03 branch `4d3fd4b13bd3ad30190dbcfef314967eb53c0cf4`, 기능 main `c8ada9340f9f98481b2ca7f112160e83245166df`, 제어 main `847e2ba2ceb61280a8eea7b5a2edbc3d207c4369`. PR #1403 병합 `ef8624f34b5fd53a681520ca58e5c5e700f1300e`; 해당 source main blob `37f747709d78d4fcca323eee285c042160589445`, W03 branch 동일. #1009 OPEN, 통합 PR #714 OPEN. main과 W03 전체 브랜치가 크게 분기하므로 통합 PR 전체 병합 금지.
