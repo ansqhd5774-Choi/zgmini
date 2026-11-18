@@ -272,3 +272,31 @@ test('W01 recurring outage is recorded as sanitized category then cleared by suc
  assert.equal(cp.processed.bls8,'2026-11-07');
  assert.equal(calls,2);
 });
+
+
+test('W01 last verified calendar events survive refresh failure only with a trusted original host',async()=>{
+ const official={...releases[0],sourceUrl:'https://www.bls.gov/schedule/news_release/ppi.htm'};
+ const state={bls:{status:'SOURCE_FAILED',checkedAt:'2026-11-07T18:00:00.000Z'}};
+ let requests=0;
+ const cp={schema:INFL19_RECURRING_SCHEMA,processed:{},attempted:{}};
+ const run=(events,sources)=>runInflation19RecurringFromCore('/staged/pc-writer',{
+  now,envLoader:()=>({ZGMINI_INFL19_RECURRING_APPROVED:'1',BLS_API_KEY:'test'}),
+  calendarLoader:()=>({events,sources}),
+  quotaFactory:()=>({fetch:async()=>{requests++;return {ok:true};}}),
+  collectors:{bls8:async({quotaFetch})=>{
+   await quotaFetch('https://api.bls.gov');return {status:'SAVED_READBACK',providerCalls:1};
+  }},
+  checkpointIO:{file:'/fake',load:()=>cp,save:x=>{
+   cp.processed={...x.processed};cp.attempted={...x.attempted};
+  }}
+ });
+ const wrong=await run([{...official,sourceUrl:'https://www.bls.gov.evil.invalid/ppi'}],state);
+ assert.equal(wrong.status,'NO_VERIFIED_RELEASE_DUE');assert.equal(requests,0);
+ const unknown=await run([official],{bls:{status:'SOURCE_FAILED',checkedAt:null}});
+ assert.equal(unknown.status,'NO_VERIFIED_RELEASE_DUE');assert.equal(requests,0);
+ const valid=await run([official],state);
+ assert.equal(valid.status,'COMPLETE');
+ assert.equal(valid.updated[0].source,'bls8');
+ assert.equal(cp.processed.bls8,'2026-11-07');
+ assert.equal(requests,1);
+});
