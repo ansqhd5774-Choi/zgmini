@@ -1,6 +1,7 @@
 "use client";
 import {startTransition,useEffect,useState} from 'react';
 import {acceptsStoredUpdate,startStoredRefresh} from '../lib/market-score/live-refresh.mjs';
+import {nextStoredIndexPublicationOrder} from '../lib/market-score/stored-index-publication-order-r4.mjs';
 export function useStoredIndex<T>(url:string,initial:T|null=null,enabled=true){
  const [payload,setPayload]=useState<T|null>(initial);
  const [loading,setLoading]=useState(!initial);
@@ -10,7 +11,7 @@ export function useStoredIndex<T>(url:string,initial:T|null=null,enabled=true){
  const [publishedAt,setPublishedAt]=useState<string|null>(null);
  useEffect(()=>{
   if(!enabled)return;
-  let live=true,accepted=initial,lastPublication=0;
+  let live=true,accepted=initial,lastOrder:null|{publication:number|null;snapshot:number|null}=null;
   const stop=startStoredRefresh(async(signal:AbortSignal)=>{
    try{
     const response=await fetch(url,{cache:'no-store',signal});
@@ -21,9 +22,10 @@ export function useStoredIndex<T>(url:string,initial:T|null=null,enabled=true){
     const verifiedPublishedAt=publishedHeader&&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(publishedHeader)&&
      Number.isFinite(publishedTimestamp)&&new Date(publishedTimestamp).toISOString()===publishedHeader
       ?publishedHeader:null;
-    const published=Date.parse(response.headers.get('x-data-snapshot-at')??response.headers.get('x-projection-source-at')??response.headers.get('x-market-snapshot-at')??'');
-    if(live&&!signal.aborted&&(!Number.isFinite(published)||published>=lastPublication)&&acceptsStoredUpdate(accepted,body)){
-     accepted=body;if(Number.isFinite(published))lastPublication=published;
+    const sourceStamp=response.headers.get('x-data-snapshot-at')??response.headers.get('x-projection-source-at')??response.headers.get('x-market-snapshot-at');
+    const order=nextStoredIndexPublicationOrder(lastOrder,{publishedAt:verifiedPublishedAt,snapshotAt:sourceStamp});
+    if(live&&!signal.aborted&&order!==null&&acceptsStoredUpdate(accepted,body)){
+     accepted=body;lastOrder=order;
      startTransition(()=>{setPayload(body);setPublishedAt(verifiedPublishedAt);setError(null);});
     }
    }catch{if(live)setError('UPDATE_FAILED');}
