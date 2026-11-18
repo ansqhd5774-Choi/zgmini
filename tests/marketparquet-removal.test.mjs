@@ -161,3 +161,56 @@ test('clean market score is unchanged and unexpected retired source fails closed
  assert.equal(response.status,503);
  assert.equal((await response.json()).reason,code);
 });
+
+test('candidate production import boundary must mask retired breadth on JSON and NDJSON',async()=>{
+ const {candidate2dbImportBoundary}=await import('../scripts/candidate-2db-import-boundary.mjs');
+ const routePath=path.resolve('app/api/market-score/route.ts');
+ const appRoute=fs.readFileSync(routePath,'utf8');
+ const transformed=candidate2dbImportBoundary(process.cwd()).transform(appRoute,routePath);
+ assert.match(transformed?.code??'',/candidate-market-operational-store\.mjs/);
+ const ordinary=await import('../worker/market-operational-store.mjs');
+ const candidate=await import('../worker/candidate-market-operational-store.mjs');
+ const now=Date.parse('2026-11-18T06:00:00Z');
+ const kept={id:'rates',name:'Rates',weight:10,score:61,status:'READY',
+  trend:[{label:'2026-11-17',value:60}],indicators:[{id:'rates-1',source:'FRED'}]};
+ const removed={id:'breadth',name:'Breadth',weight:8,score:42,status:'READY',
+  trend:[{label:'2026-11-17',value:44}],
+  indicators:[{id:'breadth-41',source:'MarketParquet Free Sample',value:29}]};
+ const stored={status:'SUCCESS',domains:[kept,removed],
+  overall:{score:45,status:'READY',trend:[{label:'2026-11-17',value:45}]},
+  dataQuality:{readyDomains:2,totalDomains:2,coverageWeight:18,overallComputable:true,reweighted:false}};
+ const original=JSON.stringify(stored);
+ let reads=0;
+ const store={readScore:async()=>{reads++;return {body:stored,storedAt:now}}};
+ for(const reader of [ordinary,candidate]){
+  for(const accept of ['application/json','application/x-ndjson']){
+   const response=await reader.storedMarketResponse(
+    new Request('https://zgmini.kr/api/market-score',{headers:{accept}}),{store,now});
+   assert.equal(response.status,200);
+   const raw=await response.text();
+   assert.equal(raw.includes('MarketParquet'),false);
+   const json=JSON.parse(raw);
+   const body=accept==='application/x-ndjson'?json.body:json;
+   assert.equal(body.domains[0].score,61);
+   assert.equal(body.domains[1].score,null);
+   assert.equal(body.domains[1].status,'UNAVAILABLE');
+   assert.deepEqual(body.domains[1].trend,[]);
+   assert.deepEqual(body.domains[1].indicators,[]);
+   assert.equal(body.overall.score,null);
+   assert.equal(body.overall.status,'PARTIAL');
+   assert.deepEqual(body.overall.trend,[]);
+   assert.equal(body.dataQuality.coverageWeight,10);
+   assert.equal(body.dataQuality.overallComputable,false);
+  }
+  const other={...stored,source:'MarketParquet Free Sample'};
+  const fail=await reader.storedMarketResponse(
+   new Request('https://zgmini.kr/api/market-score'),
+   {store:{readScore:async()=>({body:other,storedAt:now})},now});
+  assert.equal(fail.status,503);
+  const error=await fail.json();
+  assert.equal(error.reason,code);
+  assert.equal(JSON.stringify(error).includes('MarketParquet Free Sample'),false);
+ }
+ assert.equal(reads,4);
+ assert.equal(JSON.stringify(stored),original,'no stored D1 body mutation');
+});
