@@ -46,10 +46,39 @@ test('R4 #28 zero score stays numeric, missing input stays missing, no mutation'
 test('R4 #28 Recharts uses two nullable provenance series with no bridge and honest tooltip',()=>{
  const chart=readFileSync(new URL('../components/dashboard-summary-chart.tsx',import.meta.url),'utf8');
  assert.match(chart,/splitCompositeChartProvenance\(data\)/);
- assert.match(chart,/<Area type="monotone" dataKey="reconstructedValue"[^>]*connectNulls=\{false\}/);
- assert.match(chart,/<Area type="monotone" dataKey="calculatedValue" stroke="none" fill="none" strokeWidth=\{0\} dot=\{\{r:2\.4,fill:color,strokeWidth:0\}\}[^>]*connectNulls=\{false\}/);
+ assert.match(chart,/<Area type="monotone" dataKey="reconstructedValue"[^>]*connectNulls=\{true\}/);
+ assert.match(chart,/<Area type="monotone" dataKey="calculatedValue" stroke=\{color\} fill="none" strokeWidth=\{2\.1\} dot=\{\{r:2\.4,fill:color,strokeWidth:0\}\}[^>]*connectNulls=\{true\}/);
  assert.match(chart,/<Area type="monotone" dataKey="reconstructedValue" stroke=\{color\} strokeDasharray="4 4"/);
  assert.doesNotMatch(chart,/<Area type="monotone" dataKey="value"/);
  assert.match(chart,/현행 산식 재구성 · 당시 실계산점 아님/);
  assert.match(chart,/실제 계산시각 점 · 당시 방법론 버전 미확인/);
+});
+
+// Interleaved provenance markers are not missing measurements inside either
+// separately sourced series. Each series has its own independent sample order.
+test('R4 #69 interleaved reconstructed and archived samples keep distinct line sequences',()=>{
+ const daily=[
+  {label:'2026-11-12',value:42},
+  {label:'2026-11-14',value:44},
+  {label:'2026-11-16',value:46},
+ ];
+ const archive=[
+  {label:'2026-11-13T12:00:00Z',value:48},
+  {label:'2026-11-15T12:00:00Z',value:49},
+ ];
+ const original=structuredClone({daily,archive});
+ const merged=mergeCompositeObservedDisplay(daily,archive,7);
+ const classified=splitCompositeChartProvenance(merged);
+ assert.deepEqual(classified.map(p=>p.label),[
+  '2026-11-12','2026-11-13T12:00:00.000Z','2026-11-14',
+  '2026-11-15T12:00:00.000Z','2026-11-16',
+ ]);
+ assert.deepEqual(classified.map(p=>p.reconstructedValue),[42,null,44,null,46]);
+ assert.deepEqual(classified.map(p=>p.calculatedValue),[null,48,null,49,null]);
+ assert.deepEqual(classified.filter(p=>p.reconstructedValue!==null).map(p=>p.reconstructedValue),[42,44,46]);
+ assert.deepEqual(classified.filter(p=>p.calculatedValue!==null).map(p=>p.calculatedValue),[48,49]);
+ assert.deepEqual({daily,archive},original);
+ const chart=readFileSync(new URL('../components/dashboard-summary-chart.tsx',import.meta.url),'utf8');
+ assert.equal((chart.match(/connectNulls=\{true\}/g)??[]).length,2);
+ assert.doesNotMatch(chart,/dataKey="value"/);
 });

@@ -9,6 +9,9 @@ export const CENSUS_M3_ENDPOINT='https://api.census.gov/data/timeseries/eits/m3'
 export const CENSUS_M3_INVENTORIES_FILE='inflation-causal-candidates-r1/census-m3-manufacturing-inventories.json';
 export const CENSUS_M3_INVENTORIES_VERSION='INFLATION_CAUSAL_CANDIDATE_CENSUS_M3_R1';
 const MAX_BODY=5_000_000;
+// Accept plain numbers or correctly grouped thousands; never turn malformed
+// punctuation such as 12,34 into a different numeric observation.
+const OFFICIAL_NUMERIC=/^(?:(?:0|[1-9]\d*)|(?:[1-9]\d{0,2}(?:,\d{3})+))(?:\.\d+)?$/;
 const fail=code=>Object.assign(new Error(code),{code});
 const sha=x=>createHash('sha256').update(x).digest('hex');
 const safeDir=dir=>{try{const s=fs.lstatSync(dir);return s.isDirectory()&&!s.isSymbolicLink();}catch{return false;}};
@@ -35,17 +38,22 @@ export function normalizeCensusM3Inventories(payload){
   // column labels as case-insensitive, not as a fixed ZGMINI column order.
   const headers=payload[0].map(x=>typeof x==='string'?x.trim().toLowerCase():null);
   const mandatory=['data_type_code','seasonally_adj','category_code','cell_value','us'];
-  if(headers.some(x=>!x)||new Set(headers).size!==headers.length||
-    !mandatory.every(x=>headers.includes(x))||
-    (!headers.includes('time_slot_date')&&!headers.includes('time')))
+  const dates=['time_slot_date','time'].filter(key=>headers.includes(key));
+  // Only columns consumed by this selector need an unambiguous header.
+  // Census may include irrelevant provider metadata; an empty or repeated
+  // *unused* label must not discard genuine MTM/TI observations for a year.
+  // Keep all selector, geography and date columns strict to prevent mixing.
+  const required=[...mandatory,...dates];
+  if(dates.length===0||required.some(key=>headers.filter(x=>x===key).length!==1))
     throw fail('CENSUS_M3_HEADERS_INVALID');
+  const columnIndices=required.map(key=>headers.indexOf(key));
   const byDate=new Map(),conflicts=new Set();
   const diagnostics={missing:0,invalid:0,duplicate:0,conflict:0,ignored:0,available:0};
   for(const values of payload.slice(1)){
     if(!Array.isArray(values)||values.length!==headers.length){
       diagnostics.invalid++;continue;
     }
-    const row=Object.fromEntries(headers.map((key,i)=>[key,values[i]]));
+    const row=Object.fromEntries(required.map((key,i)=>[key,values[columnIndices[i]]]));
     if(String(row.data_type_code??'').trim().toUpperCase()!=='TI'||
        String(row.category_code??'').trim().toUpperCase()!=='MTM'||
        String(row.seasonally_adj??'').trim().toLowerCase()!=='yes'){
@@ -59,7 +67,7 @@ export function normalizeCensusM3Inventories(payload){
     const slotDate=monthDate(row.time_slot_date);
     const timeDate=monthDate(row.time);
     const date=slotDate??timeDate;
-    const raw=String(row.cell_value??'').replace(/,/g,'').trim();
+    const raw=String(row.cell_value??'').trim();
     // A present but malformed official monthly date is not missing data.
     // Never silently replace it with the alternate `time` month.
     const invalidExplicitDate=row.time_slot_date!=null&&
@@ -70,12 +78,13 @@ export function normalizeCensusM3Inventories(payload){
     if(raw===''||raw==='-'||raw.toUpperCase()==='NA'||raw.toUpperCase()==='N'){
       diagnostics.missing++;continue;
     }
-    if(!/^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(raw)||
-       !Number.isFinite(Number(raw))||Number(raw)<0){
+    const numericValue=Number(raw.replace(/,/g,''));
+    if(!OFFICIAL_NUMERIC.test(raw)||
+       !Number.isFinite(numericValue)||numericValue<0){
       diagnostics.invalid++;continue;
     }
     if(conflicts.has(date))continue;
-    const value=Number(raw),old=byDate.get(date);
+    const value=numericValue,old=byDate.get(date);
     if(old){
       if(old.value===value)diagnostics.duplicate++;
       else{
@@ -102,9 +111,14 @@ function child(parent,name){
 function validPrior(doc){
   return doc?.schemaVersion===1&&doc?.provider==='US_CENSUS_M3'&&
     doc.sourceVersion===CENSUS_M3_INVENTORIES_VERSION&&validIso(doc.sourceStoredAt)&&
+    doc.selector==='MTM/TI'&&doc.frequency==='MONTHLY'&&
+    doc.unit==='USD_MILLION_SA_NOMINAL'&&
     Array.isArray(doc.observations)&&doc.observations.length>0&&
     doc.observations.every(x=>/^20\d{2}-(0[1-9]|1[0-2])-01$/.test(x?.date??'')&&
-      typeof x?.value==='number'&&Number.isFinite(x.value)&&x.value>=0);
+      typeof x?.value==='number'&&Number.isFinite(x.value)&&x.value>=0&&
+      x.unit==='USD_MILLION_SA_NOMINAL'&&x.selector==='MTM/TI'&&
+      x.seasonallyAdjusted===true)&&
+    new Set(doc.observations.map(x=>x.date)).size===doc.observations.length;
 }
 async function readBody(res){
   if(res?.status>=300&&res.status<400)throw fail('CENSUS_M3_REDIRECT_DENIED');
@@ -136,6 +150,16 @@ export async function collectCensusM3Inventories({base,censusKey,quotaFetch,now=
   if(!Number.isFinite(moment.getTime()))throw fail('CENSUS_M3_NOW_INVALID');
   const year=moment.getUTCFullYear(),archives=[],incoming=[],diagnostics=[];
   const dir=child(base,'inflation-causal-candidates-r1');
+  // An unsafe prior must fail before consuming the supplier's two-GET budget.
+  // Reject duplicate stored months rather than silently overwriting one via Map.
+  const file=path.join(dir,'census-m3-manufacturing-inventories.json');
+  let prior=null;
+  if(fs.existsSync(file)){
+    if(!safeFile(file))throw fail('CENSUS_M3_EXISTING_FILE_UNSAFE');
+    try{prior=JSON.parse(fs.readFileSync(file,'utf8'));}
+    catch{throw fail('CENSUS_M3_EXISTING_JSON_INVALID');}
+    if(!validPrior(prior))throw fail('CENSUS_M3_EXISTING_CONTRACT_INVALID');
+  }
   // Each API response belongs to Census. Archive its exact bytes regardless
   // of whether a year includes nulls or zero usable monthly observations.
   const rawDir=child(dir,'raw');
@@ -169,14 +193,6 @@ export async function collectCensusM3Inventories({base,censusKey,quotaFetch,now=
     incoming.push(...matched);
     diagnostics.push({year:y,...rows.diagnostics,available:matched.length});
   }
-  const file=path.join(dir,'census-m3-manufacturing-inventories.json');
-  let prior=null;
-  if(fs.existsSync(file)){
-    if(!safeFile(file))throw fail('CENSUS_M3_EXISTING_FILE_UNSAFE');
-    try{prior=JSON.parse(fs.readFileSync(file,'utf8'));}
-    catch{throw fail('CENSUS_M3_EXISTING_JSON_INVALID');}
-    if(!validPrior(prior))throw fail('CENSUS_M3_EXISTING_CONTRACT_INVALID');
-  }
   const byDate=new Map([...(prior?.observations??[]),...incoming].map(x=>[x.date,x]));
   const observations=[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date));
   const latest=observations.at(-1)?.date??null;
@@ -190,6 +206,11 @@ export async function collectCensusM3Inventories({base,censusKey,quotaFetch,now=
   // last-good, but never misreport a broken two-GET attempt as UNCHANGED.
   if(unavailable.length===2)
     throw fail(unavailable[0].sourceShape);
+  // No first successful snapshot exists: a two-GET response containing zero
+  // valid observations must not be reported as a successful UNCHANGED readback.
+  // The raw response archives remain available for private diagnosis.
+  if(!prior&&!observations.length)
+    throw fail('CENSUS_M3_NO_USABLE_OBSERVATIONS');
   if(JSON.stringify(prior?.observations??[])===JSON.stringify(observations)||!observations.length)
     return {status:'UNCHANGED',stored:false,providerRequests:2,count:observations.length,
       latest,coverage,diagnostics,provenance:archives};

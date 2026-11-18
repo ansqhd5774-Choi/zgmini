@@ -13,9 +13,11 @@ const CALENDAR_MATCH=Object.freeze({
  cpi:e=>e.source==='bls'&&e.id==='cpi',
  ppi:e=>e.source==='bls'&&e.id==='ppi',
  fed:e=>e.source==='fed'&&e.id==='industrial-production',
+ // The approved release-calendar parser already derives the canonical ID
+ // from the official Census title and period. Require that ID, not a second,
+ // punctuation-sensitive display-title match that can reject the same release.
  census:e=>e.source==='census'&&
-  /^census-full-report-manufacturers-shipments-inventories-and-orders(?:-|$)/.test(e.id??'')&&
-  /^Full Report\s*[-–—]\s*Manufacturers['’] Shipments, Inventories,? and Orders(?:\s*·.*)?$/i.test(e.title??''),
+  /^census-full-report-manufacturers-shipments-inventories-and-orders(?:-|$)/.test(e.id??''),
 });
 const SNAPSHOT=Object.freeze({
  cpi:'bls-cpi-ppi3.json',ppi:'bls-cpi-ppi3.json',fed:'fed-g17-manufacturing-ip.json',
@@ -38,6 +40,13 @@ const validKey=(env,group)=>{
   cred==='CENSUS'?env?.CENSUS_API_KEY:env?.EIA_API_KEY;
  return typeof value==='string'&&value.trim().length>0;
 };
+// The enforced quota remains authoritative. Only recognized provider outages
+// can retry at a later approved Core tick; schema/value failures retain 24h.
+const TEMPORARY_SOURCE_FAILURE=/^(?:BLS_CANDIDATE|CENSUS_M3|EIA_REGULAR|FED_G17|TREASURY_CUSTOMS)_HTTP_(?:408|500|502|503|504)$/;
+export function candidateAttemptCooldownMs(failureCode){
+ return failureCode==='INFL_CANDIDATE_QUOTA_GUARD'||
+  TEMPORARY_SOURCE_FAILURE.test(failureCode??'')?3_600_000:86_400_000;
+}
 const cleanCheckpoint=()=>({schema:CANDIDATE_CORE_SCHEMA,processed:{},attempted:{}});
 function validateCheckpoint(doc){
  if(doc?.schema!==CANDIDATE_CORE_SCHEMA||!doc.processed||!doc.attempted||
@@ -55,6 +64,23 @@ function validateCheckpoint(doc){
  return doc;
 }
 
+// Restore only release events retained by the approved calendar writer after
+// a refresh failure. The source must have succeeded before and the event URL
+// must belong to the exact official provider origin.
+const OFFICIAL_RELEASE_ORIGINS=Object.freeze({
+ ppi:'https://www.bls.gov',fed:'https://www.federalreserve.gov',
+ census:'https://www.census.gov',
+});
+function previousOfficialRelease(group,event,sources,now){
+ const state=sources?.[event.source];
+ if(state?.status!=='SOURCE_FAILED'||!isIso(state.checkedAt)||
+    Date.parse(state.checkedAt)>now.getTime())return false;
+ const expected=OFFICIAL_RELEASE_ORIGINS[group];
+ if(!expected)return false;
+ try{return new URL(event.sourceUrl).origin===expected;}
+ catch{return false;}
+}
+
 // Official release dates are date-only; avoid pre-release calls during the US day.
 function matchingEvent(group,events,sources,now){
  const predicate=CALENDAR_MATCH[group];if(!predicate)return null;
@@ -70,7 +96,8 @@ function matchingEvent(group,events,sources,now){
   ((group==='cpi'&&/^https:\/\/(?:www\.)?bls\.gov\//i.test(e.sourceUrl))||
    (sources?.[e.source]?.status==='READY'&&
     isIso(sources[e.source].checkedAt)&&
-    Date.parse(sources[e.source].checkedAt)<=now.getTime())));
+    Date.parse(sources[e.source].checkedAt)<=now.getTime())||
+   previousOfficialRelease(group,e,sources,now)));
  return found.sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id)).at(-1)??null;
 }
 
@@ -101,10 +128,17 @@ export function planInflationCandidateCoreDue({approved=false,bootstrapApproved=
     `release:${event.source}:${event.id}:${event.date}`):
     recoverable?`legacy-parser-recovery:${group}`:null;
   const attempt=checkpoint.attempted[group];
+  // Bootstrap and legacy-parser recovery authorize ONE provider attempt, not
+  // a fresh call every 24h if the first attempt yielded no new observation.
+  // Normal dated release events retain their existing transient retry policy.
+  const oneShotAlreadyAttempted=attempt?.eventKey===eventKey&&
+    (initial||eventKey===`legacy-parser-recovery:${group}`);
   const recently=attempt?.eventKey===eventKey&&isIso(attempt.at)&&
-    moment.getTime()>=Date.parse(attempt.at)&&moment.getTime()-Date.parse(attempt.at)<86_400_000;
-  if(!eventKey||checkpoint.processed[group]?.eventKey===eventKey||recently||
-     !validKey(providerEnv,group)){skipped.push(group);continue;}
+    moment.getTime()>=Date.parse(attempt.at)&&moment.getTime()-Date.parse(attempt.at)<candidateAttemptCooldownMs(attempt.failureCode);
+  if(!eventKey||checkpoint.processed[group]?.eventKey===eventKey||
+     oneShotAlreadyAttempted||recently||!validKey(providerEnv,group)){
+    skipped.push(group);continue;
+  }
   due.push({group,eventKey,releaseDate:initial||!event?null:event.date});
  }
  return {status:due.length?'DUE':'NO_VERIFIED_RELEASE_DUE',due,skipped};
@@ -226,7 +260,8 @@ export async function collectInflationCandidatesIfDue({base,approved=false,
  }
  failed.push(...report.failed);
  // Persist bounded diagnostic codes on the already-owned attempt checkpoint.
- // Existing 24h attempt timing and last-good processed pointers are untouched.
+ // Failure codes are persisted without changing the last-good processed pointer.
+ // Only known transient errors have a one-hour retry window.
  const failedAttempts=failed.filter(item=>admitted.some(x=>x.group===item.group)&&
    checkpoint.attempted[item.group]);
  if(failedAttempts.length){

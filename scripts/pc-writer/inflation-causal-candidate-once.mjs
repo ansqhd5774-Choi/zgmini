@@ -12,7 +12,8 @@ export const INFLATION_CANDIDATE_GROUPS=Object.freeze({
 const fail=code=>Object.assign(new Error(code),{code});
 // Preserve only our fixed, non-secret diagnostic codes. Never emit provider
 // bodies, request URLs, key values, or arbitrary exception messages.
-const safeErrorCode=e=>/^(?:INFL_CANDIDATE|BLS_CANDIDATE|TREASURY_CUSTOMS|CENSUS_M3|FED_G17|EIA_REGULAR)_[A-Z0-9_]+$/.test(e?.code??'')?
+const safeErrorCode=e=>e?.code==='PROVIDER_QUOTA_GUARD'?'INFL_CANDIDATE_QUOTA_GUARD':
+ /^(?:INFL_CANDIDATE|BLS_CANDIDATE|TREASURY_CUSTOMS|CENSUS_M3|FED_G17|EIA_REGULAR)_[A-Z0-9_]+$/.test(e?.code??'')?
   e.code:'INFL_CANDIDATE_SOURCE_FAILED';
 const credentials=(env,type)=>type==='BLS'?(env?.BLS_API_KEY??env?.BLS_REGISTRATION_KEY):
   type==='CENSUS'?env?.CENSUS_API_KEY:type==='EIA'?env?.EIA_API_KEY:null;

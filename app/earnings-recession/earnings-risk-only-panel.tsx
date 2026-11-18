@@ -10,6 +10,7 @@ import {ContentHelp} from "../content-help";
 import {EarningsFavoriteButton,EarningsFavoriteHeaderIcon} from "./earnings-favorite-button";
 import {EARNINGS_RISK_HISTORY_KIND} from "../../lib/market-score/earnings-recession-history-r1.mjs";
 import {readBeaStoredS6,type BeaIndicator} from "./earnings-bea-s6-source";
+import {earningsCostRetrievalDay,earningsCostDisplayStatus,earningsCostSparkGeometry,earningsCostPublicationKst} from "./earnings-cost-observation-display-r1.mjs";
 import "./earnings-indicator-r2.css";
 import "./earnings-inflation-layout.css";
 
@@ -41,7 +42,8 @@ const labels:Record<string,{name:string;description:string;direction:string}>={
  earningsGrowthBreadth:{name:"이익 성장 기업 비율",description:"이익 개선이 여러 기업으로 확산되는 정도",direction:"높을수록 방어력 양호"},
 };
 const validScore=(value:unknown):value is number=>typeof value==="number"&&Number.isFinite(value)&&value>=0&&value<=100;
-const validDate=(value:unknown):value is string=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value+"T00:00:00Z"));
+const validDate=(value:unknown):value is string=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&
+ !Number.isNaN(Date.parse(value+"T00:00:00Z"))&&new Date(value+"T00:00:00Z").toISOString().slice(0,10)===value;
 const dateLabel=(value:unknown)=>validDate(value)?value.replaceAll("-",". ")+".":"—";
 const stage=(score:number|null)=>score===null?"데이터 준비 중":score>=75?"매우 양호":score>=60?"양호":score>=45?"중립":score>=25?"실적 주의":"실적 침체 위험";
 const tone=(score:number|null)=>score===null?"#94a3b8":score>=60?"#45d99f":score>=45?"#94a3b8":"#ff7076";
@@ -53,6 +55,7 @@ type CostRow={
  observationPeriod:string;previousPeriod:string|null;previousValue:number|null;change:number|null;
  frequency:"MONTHLY"|"QUARTERLY";history:CostHistoryPoint[];
  freshness?:{status:string;reason:string|null};seriesId:string;sourceURL:string;
+ retrievedAt?:string|null;
 };
 type CostPayload={
  schemaVersion:string;status:string;historicalMode:string;rows:CostRow[];
@@ -199,33 +202,20 @@ const beaUsable=(row:BeaIndicator|undefined)=>Boolean(
 // Cost-series points are raw BLS observations, never inputs to the E1 risk score.
 function CostSpark({history,label="저장된 비용 압력 관측치 추이. 결측 구간은 연결하지 않음"}:
  {history:Array<{value:number|null}>;label?:string}){
- const points=Array.isArray(history)?history:[];
- const valid=points.map((point,index)=>({index,value:point?.value}))
-  .filter((point):point is {index:number;value:number}=>finiteCost(point.value));
- if(valid.length<2)return <span className="earnings-r2-cost-chart-empty">이력 부족</span>;
- const min=Math.min(...valid.map(point=>point.value));
- const max=Math.max(...valid.map(point=>point.value));
- const x=(index:number)=>5+index*110/Math.max(1,points.length-1);
- const y=(value:number)=>max===min?18:30-24*(value-min)/(max-min);
- let path="";let previous=-2;
- for(const point of valid){
-  path+=(previous===point.index-1?" L":" M")+x(point.index).toFixed(1)+" "+y(point.value).toFixed(1);
-  previous=point.index;
- }
- const latest=valid.at(-1)!;
+ const geometry=earningsCostSparkGeometry(history);
+ if(!geometry)return <span className="earnings-r2-cost-chart-empty">이력 부족</span>;
  return <svg className="earnings-r2-cost-spark" viewBox="0 0 120 36" role="img"
   aria-label={label}>
-  <path d={path.trim()} fill="none" stroke="#73c9d9" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-  <circle cx={x(latest.index)} cy={y(latest.value)} r="2.5" fill="#b0eef3"/>
+  <path d={geometry.path} fill="none" stroke="#73c9d9" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+  {geometry.marker&&<circle cx={geometry.marker.cx} cy={geometry.marker.cy} r="2.5" fill="#b0eef3"/>}
  </svg>;
 }
-
 export default function EarningsRiskOnlyPanel(){
  const {payload,loading}=useStoredIndex<RiskPayload>("/api/earnings-recession-detail");
  const {payload:riskRawPayload}=useStoredIndex<RiskFourRawPayload>("/api/earnings-recession-risk-four-raw");
  const riskRawReady=riskRawUsable(riskRawPayload,payload);
  const rawFactors=new Map<string,RiskRawFactor>(riskRawReady?riskRawPayload!.factors.map(row=>[row.id,row]):[]);
- const {payload:costPayload,loading:costLoading,error:costError}=
+ const {payload:costPayload,loading:costLoading,error:costError,publishedAt:costPublishedAt}=
   useStoredIndex<CostPayload>("/api/earnings-recession-indicators");
   const {payload:unitPayload,loading:unitLoading,error:unitError}=
    useStoredIndex<BeaUnitPayload>("/api/earnings-recession-bea-unit-profit");
@@ -339,7 +329,7 @@ export default function EarningsRiskOnlyPanel(){
   <section className="inflation-indicator-section earnings-r2-indicators" aria-labelledby="earnings-risk-factor-title">
    <header><div><p className="cnn-eyebrow">EARNINGS RECESSION RISK FACTORS</p>
     <h2 id="earnings-risk-factor-title">실적 침체 분석 지표</h2></div>
-     <p>기존 4개는 {riskRawReady?"저장된 SEC 재무 원자료 수치와 기존 진단 점수를 구분":"기존 실적 침체 방어 진단 점수"}하여 표시합니다. 추가 5개는 BLS 비용 압력 원자료, {mfgReady?"3개":"2개"}는 BEA 기업이익 원자료입니다. 추가 원자료와 Census QFR 제조업 세후이익률은 진단 점수에 합산하지 않습니다. <span className="earnings-r2-cost-status" role="status">SEC 원자료 {riskRawReady?"4/4 연결":"게시 확인 대기"} · {costStatus} · BEA 기업이익 {beaReady?"연결 완료":"자료 확인 대기"} · BEA 단위이익 {unitStatus} · Census QFR {qfrStatus}</span></p>
+     <p>기존 4개는 {riskRawReady?"저장된 SEC 재무 원자료 수치와 기존 진단 점수를 구분":"기존 실적 침체 방어 진단 점수"}하여 표시합니다. 추가 {costIndicators.length}개는 BLS 비용 압력 원자료, {mfgReady?"3개":"2개"}는 BEA 기업이익 원자료입니다. 추가 원자료와 Census QFR 제조업 세후이익률은 진단 점수에 합산하지 않습니다. <span className="earnings-r2-cost-status" role="status">SEC 원자료 {riskRawReady?"4/4 연결":"게시 확인 대기"} · {costStatus} · BEA 기업이익 {beaReady?"연결 완료":"자료 확인 대기"} · BEA 단위이익 {unitStatus} · Census QFR {qfrStatus}</span> <span className="earnings-r2-published-at">BLS 게시 {costValid?earningsCostPublicationKst(costPublishedAt):"—"}</span></p>
    </header>
    <div className="inflation-table-wrap earnings-r2-table-wrap"><table className="inflation-indicator-table earnings-r2-table">
     <colgroup><col className="earnings-col-favorite"/><col className="earnings-col-name"/><col className="earnings-col-content"/><col className="earnings-col-criterion"/><col className="earnings-col-prior"/><col className="earnings-col-current"/><col className="earnings-col-release"/><col className="earnings-col-judgement"/><col className="earnings-col-spark"/><col className="earnings-col-help"/></colgroup>
@@ -366,9 +356,9 @@ export default function EarningsRiskOnlyPanel(){
      <td className="earnings-r2-value"><strong>{ok&&row?costFormat(row.value,row.unit):"—"}</strong>
       <small>변동 {ok&&row?costChange(row.change,row.unit):"—"}</small></td>
      <td className="earnings-r2-release"><strong>—</strong>
-      <small>관측 {row?.observationPeriod??"—"}</small></td>
-     <td>{ok?"참고":row?.status==="STALE"?"갱신 지연":"확인 대기"}</td>
-     <td className="earnings-r2-spark">{ok&&row?<CostSpark history={row.history}/>:"—"}</td>
+      <small>관측 {row?.observationPeriod??"—"} · 수집 {earningsCostRetrievalDay(row?.retrievedAt)}</small></td>
+     <td>{earningsCostDisplayStatus(row,ok)}</td>
+     <td className="earnings-r2-spark">{ok&&row?<CostSpark history={row.history} label={meta.name+" 저장된 BLS 관측 추이, 결측 구간은 연결하지 않음"}/>:"—"}</td>
      <td><ContentHelp label={meta.name+" 도움말"}><p>{meta.description}. BLS 관측값이며 실적 침체 방어 점수에는 합산하지 않습니다. 수집 시점 기준 자료로, 발표일이 확인되지 않으면 —로 표시합니다.</p>
       <a href={"https://data.bls.gov/timeseries/"+meta.series} target="_blank" rel="noopener noreferrer">BLS 원자료</a></ContentHelp></td>
     </tr>})}
@@ -460,7 +450,7 @@ export default function EarningsRiskOnlyPanel(){
     {costIndicators.map(meta=>{const row=costRows.get(meta.id),ok=costUsable(row);return <article className="earnings-r2-mobile-card earnings-r2-cost-mobile-card" key={meta.id}>
      <div className="earnings-r2-mobile-head"><div className="earnings-r2-mobile-title">
       <EarningsFavoriteButton id={meta.id} label={meta.name}/><div>
-       <strong>{meta.name}</strong><small>비용 압력 참고 · 점수 미반영</small>
+       <strong>{meta.name}</strong><small>비용 압력 참고 · 점수 미반영 · {earningsCostDisplayStatus(row,ok)}</small>
       </div></div><ContentHelp label={meta.name+" 도움말"}><p>{meta.description}. BLS 관측값으로 실적 침체 방어 점수에 합산하지 않습니다.</p>
        <a href={"https://data.bls.gov/timeseries/"+meta.series} target="_blank" rel="noopener noreferrer">BLS 원자료</a>
       </ContentHelp></div>
@@ -470,10 +460,10 @@ export default function EarningsRiskOnlyPanel(){
       <div><span>현재</span><strong>{ok&&row?costFormat(row.value,row.unit):"—"}</strong>
        <small>변동 {ok&&row?costChange(row.change,row.unit):"—"}</small></div>
       <div><span>관측 기간</span><strong>{row?.observationPeriod??"—"}</strong>
-       <small>{row?.frequency==="MONTHLY"?"월간":row?.frequency==="QUARTERLY"?"분기":""}</small></div>
+       <small>{row?.frequency==="MONTHLY"?"월간":row?.frequency==="QUARTERLY"?"분기":""} · 수집 {earningsCostRetrievalDay(row?.retrievedAt)}</small></div>
      </div>
      <div className="earnings-r2-mobile-spark">
-      <span>최근 이력</span>{ok&&row?<CostSpark history={row.history}/>:<span className="earnings-r2-cost-chart-empty">이력 확인 필요</span>}
+      <span>최근 이력</span>{ok&&row?<CostSpark history={row.history} label={meta.name+" 저장된 BLS 관측 추이, 결측 구간은 연결하지 않음"}/>:<span className="earnings-r2-cost-chart-empty">이력 확인 필요</span>}
      </div>
     </article>})}
     <article className="earnings-r2-mobile-card earnings-r2-cost-mobile-card" data-source="bea-s6">

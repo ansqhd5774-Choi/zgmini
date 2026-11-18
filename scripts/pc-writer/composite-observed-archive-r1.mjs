@@ -32,6 +32,16 @@ export async function publishCompositeObservedArchive(local,remote,coreDb,{maxDa
  if(!Number.isSafeInteger(remoteCurrent?.stored_at))return {status:'PENDING_VERIFIED_MARKET',storedDays:rows.length,publishedDays:0,deferredDays:rows.length};
  const snapshots=(await remote.query(coreDb,"SELECT snapshot_key,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key LIKE 'composite-observed:%'")).results??[];
  const saved=new Map(snapshots.map(row=>[row.snapshot_key,row.stored_at]));
+ // A matching timestamp is not proof of a matching archived calculation.
+ // Verify the exact D1 body before treating the replay as already published.
+ // Fail before any new CAS writes if an equal-timestamp body differs; never
+ // overwrite a conflicting record or bypass the existing newer-remote guard.
+ for(const row of rows){
+  if(row.stored_at>remoteCurrent.stored_at||saved.get(row.snapshot_key)!==row.stored_at)continue;
+  const equal=(await remote.query(coreDb,"SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?",[row.snapshot_key])).results?.[0];
+  if(equal?.body!==row.body||equal?.stored_at!==row.stored_at)
+   throw Error('COMPOSITE_ARCHIVE_EQUAL_TIMESTAMP_BODY_MISMATCH');
+ }
  const pending=rows.filter(row=>row.stored_at<=remoteCurrent.stored_at&&(!saved.has(row.snapshot_key)||saved.get(row.snapshot_key)<row.stored_at));
  let published=0;
  for(const row of pending.slice(0,maxDaysPerRun)){

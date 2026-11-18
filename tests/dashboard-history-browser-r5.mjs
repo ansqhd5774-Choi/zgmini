@@ -25,6 +25,7 @@ try{
     :path==='/api/market-score/observations'?{
      status:'READY',period:new URL(route.request().url()).searchParams.get('period'),
      points:[
+      {observedAt:'2026-10-22T12:00:00Z',score:46},
       {observedAt:'2026-10-24T11:50:00Z',score:48},
       {observedAt:'2026-10-24T12:00:00Z',score:50},
      ],
@@ -44,8 +45,8 @@ try{
   await page.screenshot({path:`artifacts/dashboard-history/introduction-${width}.png`,caret:'initial'});
   await intro.getByRole('button',{name:'닫기',exact:true}).click();
   await intro.waitFor({state:'hidden'});
-  // Reconstructed history has a dashed line. Unversioned calculation-time
-  // observations are disconnected dots; both are real visible geometry.
+  // Reconstructed daily history is dashed; actual calculation-time samples
+  // form a separate solid line. Never bridge these different provenances.
   const chartSelector='.zg-r55-summary-chart';
   const chartSignature=()=>page.locator(chartSelector).evaluate(root=>[
    ...[...root.querySelectorAll('path.recharts-area-curve')].map(p=>p.getAttribute('d')??''),
@@ -111,6 +112,25 @@ try{
     &&geometry.dots.every(([x,y])=>Number.isFinite(Number(x))&&Number.isFinite(Number(y))),
     width+'px '+label+' provenance curves and discrete calculations have finite geometry');
    assert.equal(await page.locator('.zg-r55-card-grid article').count(),12);
+   if(label==='1W'){
+    // 10/22 and 10/24 are saved calculations; reconstructed daily 10/23
+    // is between them. Both provenance lines must remain connected within
+    // their own source, never joined into a single provenance-changing line.
+    const curves=await page.locator(chartSelector+' path.recharts-area-curve').evaluateAll(paths=>
+     paths.map(path=>({d:path.getAttribute('d')??'',dash:path.getAttribute('stroke-dasharray')})));
+    assert.equal(curves.length,2,width+'px reconstructed and calculated series are separate');
+    assert.ok(curves.some(p=>p.dash)&&curves.some(p=>!p.dash),width+'px dashed and solid series');
+    for(const curve of curves){
+     assert.ok(/^M/.test(curve.d)&&/[CLQ]/.test(curve.d.slice(1))
+      &&(curve.d.match(/M/g)??[]).length===1,
+      width+'px 1W provenance line is a single connected SVG subpath');
+    }
+    const domainLines=await page.locator('.zg-r55-card-grid article .zg-r55-mini-chart svg > path').evaluateAll(paths=>
+     paths.map(path=>path.getAttribute('d')??''));
+    assert.equal(domainLines.length,12,width+'px 12 domain observation paths');
+    assert.ok(domainLines.every(d=>/^M/.test(d)&&/L/.test(d)),
+     width+'px 12 domains connect their real 1W observations');
+   }
   }
   // A real zero score remains visible, not a null/missing placeholder, on
   // each responsive viewport and the 1D calc archive.
@@ -121,6 +141,32 @@ try{
    .waitFor({state:'visible',timeout:15000});
   await waitForGeometry();
   assert.equal(await periods.getByRole('button',{name:'1D',exact:true}).getAttribute('aria-pressed'),'true');
+  // The 1D archive contains two actual observations plus the changed current
+  // publication: their stroke must contain a real segment, not just dots.
+  // No reconstructed daily points are available in the 1D series.
+  const oneDayObservedLine=await page.locator(chartSelector+' path.recharts-area-curve').evaluateAll(paths=>paths.some(path=>{
+   const d=path.getAttribute('d')??'';
+   const stroke=path.getAttribute('stroke')??getComputedStyle(path).stroke;
+   return /^M/.test(d)&&/[CLQ]/.test(d.slice(1))&&!/NaN|Infinity/.test(d)
+    &&stroke!=='none'&&stroke!=='transparent'&&stroke!==''; 
+  }));
+  assert.equal(oneDayObservedLine,true,width+'px 1D actual calculated observations connect as a line');
+  // W06 R4 #69: verify actual viewport overflow after all six period changes.
+  const overflow=await page.evaluate(()=>{
+   const viewport=document.documentElement.clientWidth;
+   const violations=[];
+   if(document.documentElement.scrollWidth>viewport+1)
+    violations.push('document scrollWidth='+document.documentElement.scrollWidth);
+   for(const selector of ['.zg-r55-summary-chart','.zg-r55-card-grid article']){
+    for(const element of document.querySelectorAll(selector)){
+     const rect=element.getBoundingClientRect();
+     if(rect.width>0&&(rect.left< -1||rect.right>viewport+1))
+      violations.push(selector+' left='+rect.left+' right='+rect.right);
+    }
+   }
+   return violations;
+  });
+  assert.deepEqual(overflow,[],width+'px horizontal overflow');
   await page.screenshot({path:`artifacts/dashboard-history/history-${width}.png`});
   assert.deepEqual(errors,[]);
   console.log(`PASS ${width}px: 6 chart periods, newer snapshot and true zero in mocked Chromium`);

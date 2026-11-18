@@ -3,7 +3,7 @@ import {memo,useId} from 'react';
 import {useDashboardMobileAxis} from '../hooks/use-dashboard-mobile-axis';
 import ChartExtremumPoint from './chart-extremum-point';
 import {chartExtrema} from '../lib/chart-extrema.mjs';
-import {splitCompositeChartProvenance} from '../lib/market-score/composite-chart-provenance-r4.mjs';
+import {publishedCompositeMethodLabel,splitCompositeChartProvenance} from '../lib/market-score/composite-chart-provenance-r4.mjs';
 import type {DashboardPoint} from '../app/dashboard-ui';
 import {Area,AreaChart,ReferenceArea,ResponsiveContainer,XAxis,YAxis,ReferenceDot,ReferenceLine,Tooltip} from 'recharts';
 const scoreColor=(score:number)=>score<25?'#ef4444':score<40?'#f59e0b':score<60?'#94a3b8':score<75?'#22c55e':'#10b981';
@@ -76,7 +76,7 @@ function summaryAxisConfig(points:Array<DashboardPoint&{ts:number}>,periodDays:n
  return {ticks:[...labels.keys()],labels};
 }
 
-const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays}:{data:DashboardPoint[];label:string;color:string;periodDays:number}){
+const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays,currentPublished}:{data:DashboardPoint[];label:string;color:string;periodDays:number;currentPublished?:{updatedAt:string;displayScore:number;modelVersion:string}|null}){
  const mobileAxisRight=useDashboardMobileAxis();
  const scaled=timeScaledTrend(data,periodDays),latest=scaled.points.at(-1),axis=summaryAxisConfig(scaled.points,periodDays);
  const gradientId=`summary-${useId().replace(/:/g,'')}`;
@@ -104,18 +104,23 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays}:{dat
       const point=payload[0]?.payload as DashboardPoint&{ts:number;calculatedValue:number|null;reconstructedValue:number|null};
       const parts=summaryDateParts(Number(tooltipLabel));
       const value=point?.value;
+      const currentMethod=publishedCompositeMethodLabel(point,currentPublished??null);
       return <div className="cnn-history-tooltip">
        <span>{point?.label?.includes('T')
         ?new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(point.ts))+' (계산 시각)'
         :parts?`${parts.year}. ${parts.monthText}. ${parts.dayText}.`:point?.label??'—'}</span>
        <strong style={{color:typeof value==='number'&&Number.isFinite(value)?scoreColor(value):'#94a3b8'}}>{typeof value==='number'&&Number.isFinite(value)?value.toFixed(1):'—'}</strong>
-       <span>{point?.calculatedValue!==null?'실제 계산시각 점 · 당시 방법론 버전 미확인':'현행 산식 재구성 · 당시 실계산점 아님'}</span>
+       <span>{currentMethod?`현재 게시 계산점 · ${currentMethod}`:point?.calculatedValue!==null?'실제 계산시각 점 · 당시 방법론 버전 미확인':'현행 산식 재구성 · 당시 실계산점 아님'}</span>
       </div>;
      }}
     />
-    {/* Historical calculated points have no per-point methodology version. Keep them as discrete observations: never connect an unknown model-era boundary. */}
-    <Area type="monotone" dataKey="reconstructedValue" stroke={color} strokeDasharray="4 4" fill="none" strokeWidth={1.8} dot={false} activeDot={{r:3.5,strokeWidth:0,fill:color}} connectNulls={false} isAnimationActive={false}/>
-    <Area type="monotone" dataKey="calculatedValue" stroke="none" fill="none" strokeWidth={0} dot={{r:2.4,fill:color,strokeWidth:0}} activeDot={{r:3.5,strokeWidth:0,fill:color}} connectNulls={false} isAnimationActive={false}/>
+    {/* The dashed reconstructed daily trend and solid calculation-time trend are separate lines.
+        Each uses an independent nullable key. The merged timeline can interleave
+        their rows. Nulls in the other provenance
+        are not missing observations in this series: connect successive real samples
+        of each key without inventing values or connecting the two keys. */}
+    <Area type="monotone" dataKey="reconstructedValue" stroke={color} strokeDasharray="4 4" fill="none" strokeWidth={1.8} dot={false} activeDot={{r:3.5,strokeWidth:0,fill:color}} connectNulls={true} isAnimationActive={false}/>
+    <Area type="monotone" dataKey="calculatedValue" stroke={color} fill="none" strokeWidth={2.1} dot={{r:2.4,fill:color,strokeWidth:0}} activeDot={{r:3.5,strokeWidth:0,fill:color}} connectNulls={true} isAnimationActive={false}/>
     {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={4.4} fill={color} stroke="#fff7f7" strokeWidth={2}/>}
     {extrema.map(point=><ReferenceDot key={'extreme-'+point.kind} x={scaled.points[point.index].ts} y={point.value} ifOverflow="visible" shape={<ChartExtremumPoint point={point} peerIndex={extrema.find(p=>p.kind!==point.kind)?.index} samples={scaled.points.map(p=>({x:p.ts,value:p.value}))} count={scaled.points.length} color={color}/>}/>)}
    </AreaChart>

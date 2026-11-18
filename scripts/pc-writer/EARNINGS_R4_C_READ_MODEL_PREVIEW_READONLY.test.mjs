@@ -423,8 +423,9 @@ test('inconsistent first_seen_at fails; earliest verified first_seen_at is conse
   });
 });
 
-test('a newer incomplete cohort is previewed as partial, not ready',()=>{
+test('a newer incomplete capture keeps the last verified complete cohort publishable',()=>{
   withDb({},db=>{
+    const previous=buildPreview(db,{generatedAt:GENERATED});
     // Create a genuinely different single-series snapshot after the full cohort.
     const changed=response({sep2026:130});
     const single=buildPlans(normalizeSeries(changed),'2026-10-26T19:00:00.000Z','c'.repeat(64))[0];
@@ -444,9 +445,17 @@ test('a newer incomplete cohort is previewed as partial, not ready',()=>{
         'EARNINGS_COMPANION_R3C_BLS_DIRECT_V1',single.rows.length,
         single.rows.at(-1).observationDate,JSON.stringify([single.chunkHash]),single.provenanceJson);
     const {payload,diagnostics}=buildPreview(db,{generatedAt:GENERATED});
-    assert.equal(payload.status,'PARTIAL');
+    assert.equal(payload.status,'READY');
+    assert.equal(payload.coverage.configured,5);
+    assert.equal(payload.coverage.ready,5);
+    assert.deepEqual(validateEarningsCompanionPayload(payload,{now:Date.parse(GENERATED)}),payload,
+      'the validator must accept last-complete READY rows even if another capture is incomplete');
+    assert.equal(diagnostics.r3dStatus,'PARTIAL_NEWER_INCOMPLETE_COHORT');
     assert.equal(diagnostics.newerIncomplete,true);
     assert.equal(diagnostics.cohortRetrievedAt,RETRIEVED);
+    assert.equal(payload.sourceVersion,previous.payload.sourceVersion);
+    assert.equal(payload.sourceStoredAt,previous.payload.sourceStoredAt);
+    assert.deepEqual(payload.rows,previous.payload.rows,'do not mix the newer partial observation into the published cohort');
   });
 });
 

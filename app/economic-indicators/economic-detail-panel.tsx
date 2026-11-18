@@ -150,6 +150,7 @@ function IndicatorHelp({item,title}:{item:Indicator;title:string}){
  return <ContentHelp label={title+" 도움말"}><p>{indicatorDescription(item,title)}</p>
   <p>원자료와 0~100점은 서로 다른 값입니다. 결측은 0점이 아닙니다.</p>
   <p>관측일: {dateLabel(item.observationDate??item.asOfDate)} · 출처: {technicalSource(item.source)}</p>
+  {item.source==="Federal Reserve / RRPONTSYD active transform"&&<p>ZGMINI의 RRPONTSYD 자체 계산 파생 점수이며 New York Fed의 공식 점수나 승인·추천이 아닙니다. © 2026 Federal Reserve Bank of New York. Content from the New York Fed subject to the Terms of Use at newyorkfed.org.</p>}
   {item.retrievedAt&&<p>원천 최종 조회일: {dateLabel(item.retrievedAt)}</p>}
   {href&&<a href={href} target="_blank" rel="noopener noreferrer">공개 원문 열기 ↗</a>}
  </ContentHelp>;

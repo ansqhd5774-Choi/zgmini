@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {EMPLOYMENT_R4_CORE_STATES} from "../lib/market-score/employment-r4-shadow-contract.mjs";
 import {inspectStateClaimsPitReconciliation} from "../lib/market-score/employment-r6-claims-pit-recovery.mjs";
 import {EMPLOYMENT_R6_FEATURES} from "../lib/market-score/employment-r6-formula.mjs";
-import {computeFeaturePoint} from "../lib/market-score/employment-r6-feature-engine.mjs";
+import {computeFeaturePoint,deriveEmploymentR6FeatureHistory} from "../lib/market-score/employment-r6-feature-engine.mjs";
 
 const H="a".repeat(64);
 const at="2026-11-16T14:00:00.000Z";
@@ -151,4 +151,170 @@ test("W04 PIT-04-07 distinguishes SQLite null/blank from genuine zero",()=>{
   assert.equal(paired.historyMatchedKeys,1);
   assert.equal(paired.revisionDisagreements,0);
  }
+});
+
+test("PIT-06-04 equal-time conflicting HISTORY revisions HOLD regardless of input order",()=>{
+ const current=row(0,"AL");
+ const matching={...current,recorded_at:"2026-11-09T11:00:00.000Z"};
+ const conflicting={...matching,source_hash:"b".repeat(64),value:matching.value+1};
+ const before=structuredClone([current,matching,conflicting]);
+ for(const historyRows of [[matching,conflicting],[conflicting,matching]]){
+  const result=inspectStateClaimsPitReconciliation({
+   currentRows:[current],historyRows,asOfIso:at,
+  });
+  assert.equal(result.status,"HOLD_REVISION_CONFLICTS");
+  assert.equal(result.historyMatchedKeys,0);
+  assert.equal(result.revisionDisagreements,1);
+  assert.equal(result.historyMatchedComplete51Weeks,0);
+  assert.equal(result.promotionApproved,false);
+  assert.equal(result.repairAuthorized,false);
+  assert.equal(result.operationalWrites,0);
+ }
+ assert.deepEqual([current,matching,conflicting],before);
+});
+
+test("PIT-06-04 identical equal-time HISTORY duplicates do not falsely conflict",()=>{
+ const current=row(0,"AL");
+ const revision={...current,recorded_at:"2026-11-09T11:00:00.000Z"};
+ const report=inspectStateClaimsPitReconciliation({
+  currentRows:[current],historyRows:[revision,{...revision}],asOfIso:at,
+ });
+ assert.equal(report.historyMatchedKeys,1);
+ assert.equal(report.revisionDisagreements,0);
+ assert.equal(report.status,"CURRENT_HISTORY_MATCHED");
+ assert.equal(report.repairAuthorized,false);
+});
+
+test("PIT-06-04 equal-time conflicting PIT provenance must HOLD even for same value/hash",()=>{
+ const current=row(0,"AL");
+ const revision={...current,recorded_at:"2026-11-09T11:00:00.000Z"};
+ const changed={...revision,provenance_json:'{"parser":"ETA539","truePitAsserted":true}'};
+ for(const historyRows of [[revision,changed],[changed,revision]]){
+  const report=inspectStateClaimsPitReconciliation({
+   currentRows:[current],historyRows,asOfIso:at,
+  });
+  assert.equal(report.status,"HOLD_REVISION_CONFLICTS");
+  assert.equal(report.historyMatchedKeys,0);
+  assert.equal(report.revisionDisagreements,1);
+  assert.equal(report.repairAuthorized,false);
+ }
+});
+
+test("PIT-06-04 later recorded time wins over an older same-retrieval revision",()=>{
+ const current=row(0,"AL");
+ const earlier={...current,recorded_at:"2026-11-09T10:03:00.000Z",
+  source_hash:"b".repeat(64),value:1234};
+ const latest={...current,recorded_at:"2026-11-09T11:00:00.000Z"};
+ for(const historyRows of [[earlier,latest],[latest,earlier]]){
+  const report=inspectStateClaimsPitReconciliation({
+   currentRows:[current],historyRows,asOfIso:at,
+  });
+  assert.equal(report.historyMatchedKeys,1);
+  assert.equal(report.revisionDisagreements,0);
+  assert.equal(report.status,"CURRENT_HISTORY_MATCHED");
+ }
+});
+
+test("PIT-06-07 selected HISTORY keeps score PARTIAL and chart source at the last verified week",()=>{
+ const current=rows(600);
+ const history=current.filter(x=>x.observation_date<=week(533));
+ const before=structuredClone({current,history});
+ const feature=EMPLOYMENT_R6_FEATURES.find(x=>x.id==="STATE_CLAIMS_BREADTH");
+ const toInput=x=>({
+  logicalSeriesId:x.logical_series_id,geographyCode:x.geography_code,
+  observationDate:x.observation_date,value:x.value,sourceHash:x.source_hash,
+ });
+ const selected=history.map(toInput);
+ const points=deriveEmploymentR6FeatureHistory(feature,selected);
+ const computed=computeFeaturePoint(feature,selected);
+ const audit=inspectStateClaimsPitReconciliation({
+  currentRows:current,historyRows:history,asOfIso:at,
+ });
+ assert.equal(audit.missingHistoryKeys,66*51);
+ assert.equal(audit.historyMatchedComplete51Weeks,534);
+ assert.equal(audit.repairAuthorized,false);
+ assert.equal(points.length,479);
+ assert.equal(points.at(-1).date,week(533));
+ assert.equal(computed.status,"PARTIAL_HISTORY");
+ assert.equal(computed.score,null);
+ assert.equal(computed.observationDate,points.at(-1).date);
+ assert.equal(computed.rawValue,points.at(-1).value);
+ assert.equal(points.some(p=>p.date===week(599)),false);
+ assert.deepEqual({current,history},before);
+});
+
+test("PIT-06-07 complete in-memory reference uses identical chart/scoring transform without approving repair",()=>{
+ const current=rows(600);
+ const original=structuredClone(current);
+ const feature=EMPLOYMENT_R6_FEATURES.find(x=>x.id==="STATE_CLAIMS_BREADTH");
+ const selected=current.map(x=>({
+  logicalSeriesId:x.logical_series_id,geographyCode:x.geography_code,
+  observationDate:x.observation_date,value:x.value,sourceHash:x.source_hash,
+ }));
+ const points=deriveEmploymentR6FeatureHistory(feature,selected);
+ const computed=computeFeaturePoint(feature,selected);
+ const audit=inspectStateClaimsPitReconciliation({
+  currentRows:current,historyRows:current,asOfIso:at,
+ });
+ assert.equal(audit.historyMatchedComplete51Weeks,600);
+ assert.equal(audit.missingHistoryKeys,0);
+ assert.equal(audit.operationalWrites,0);
+ assert.equal(audit.repairAuthorized,false);
+ assert.equal(points.length,545);
+ assert.equal(points.at(-1).date,week(599));
+ assert.equal(computed.status,"READY");
+ assert.equal(Number.isFinite(computed.score),true);
+ assert.equal(computed.observationDate,points.at(-1).date);
+ assert.equal(computed.rawValue,points.at(-1).value);
+ assert.deepEqual(current,original);
+});
+
+test("PIT-06-05 invalid C3 counts and unproven/future storage times stay HOLD-only",()=>{
+ const original=row(0,"AL");
+ const untouched=structuredClone(original);
+ for(const change of [
+  {value:1.5},{value:Number.MAX_SAFE_INTEGER+1},
+  {value:"1.5"},{value:"1e3"},{value:"0x10"},{value:"01"},
+  {recorded_at:"2026-11-17T00:00:00Z"},
+  {first_seen_at:"2026-11-17T00:00:00Z"},
+  {recordedAt:"2026-11-17T00:00:00Z"},
+  {firstSeenAt:"2026-11-17T00:00:00Z"},
+  {recorded_at:"malformed"},
+  {first_seen_at:null},
+  {provider:"UNOFFICIAL_PROVIDER"},
+  {source_hash:"invalid"},
+ ]){
+  const report=inspectStateClaimsPitReconciliation({
+   currentRows:[{...original,...change}],historyRows:[],asOfIso:at,
+  });
+  assert.equal(report.currentKnownKeys,1,JSON.stringify(change));
+  assert.equal(report.missingHistoryKeys,1,JSON.stringify(change));
+  assert.equal(report.metadataEligibleMissingKeys,0,JSON.stringify(change));
+  assert.equal(report.metadataUnverifiedMissingKeys,1,JSON.stringify(change));
+  assert.equal(report.status,"HOLD_UNVERIFIED_SOURCE_METADATA");
+  assert.equal(report.repairAuthorized,false);
+  assert.equal(report.promotionApproved,false);
+  assert.equal(report.operationalWrites,0);
+ }
+ assert.deepEqual(original,untouched);
+});
+
+test("PIT-06-05 genuine zero and known non-future storage times remain review-only",()=>{
+ const current=row(0,"AL",{
+  value:0,recorded_at:"2026-11-09T11:00:00Z",
+  first_seen_at:"2026-11-09T09:00:00Z",
+ });
+ const before=structuredClone(current);
+ const report=inspectStateClaimsPitReconciliation({
+  currentRows:[current],historyRows:[],asOfIso:at,
+ });
+ assert.equal(report.currentKnownKeys,1);
+ assert.equal(report.missingHistoryKeys,1);
+ assert.equal(report.metadataEligibleMissingKeys,1);
+ assert.equal(report.metadataUnverifiedMissingKeys,0);
+ assert.equal(report.status,"REVIEW_MISSING_HISTORY");
+ assert.equal(report.repairAuthorized,false);
+ assert.equal(report.promotionApproved,false);
+ assert.equal(report.operationalWrites,0);
+ assert.deepEqual(current,before);
 });

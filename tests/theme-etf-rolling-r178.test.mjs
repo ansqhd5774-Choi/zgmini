@@ -58,3 +58,58 @@ test('optional rolling overlay is fail-closed for missing seed or corrupt nested
   assert.equal(await readRollingPublic(db,c.base,{now}),null,c.label);
  }
 });
+
+test('R178 confirmed session cannot be future or newer than its GMH source request',async()=>{
+ const base=seed(),r=rolling(base);
+ const later='2026-10-22',days=Array.from({length:252},(_,i)=>
+  new Date(Date.parse(later+'T00:00:00Z')-(251-i)*86400000).toISOString().slice(0,10));
+ r.phase='CONFIRMED';
+ r.provisional.points=[];
+ r.observationDate=later;
+ r.confirmedObservationDate=later;
+ r.themes=r.themes.map(t=>({...t,history:days.map(date=>({date,score:42}))}));
+ r.lineage={confirmedPrimaryCount:252,secondaryPendingCount:0,
+  latestCompletedSession:later,primarySource:'GETMARKETHISTORY_1H_CLOSE',
+  secondarySource:null};
+ // A fresh D1 row and all rights flags cannot manufacture tomorrow's price.
+ assert.equal(await validRollingPublic(r,base,{now}),false);
+ let reads=0;
+ const db={prepare(sql){assert.match(sql,/^SELECT /);return{bind(key){
+  assert.equal(key,THEME_ETF_ROLLING_KEY);return{first:async()=>{
+   reads++;return {body:JSON.stringify(r),stored_at:now-500};}};
+ }}}};
+ assert.equal(await readRollingPublic(db,base,{now}),null);
+ assert.equal(reads,1);
+ // Clock now catches up, but the *old GMH request* still predates the session.
+ const followingDay=Date.parse('2026-10-23T12:00:00Z');
+ assert.equal(await validRollingPublic(r,base,{now:followingDay}),false);
+ // A genuinely later source receipt permits the same immutable scores/contract.
+ r.sourceStoredAt='2026-10-22T20:30:00Z';
+ r.asOf=r.sourceStoredAt;
+ assert.equal(await validRollingPublic(r,base,{now:followingDay}),true);
+});
+
+test('fresh publishedAt and D1 storedAt cannot disguise a stale GMH source request',async()=>{
+ const b=seed(),p=rolling(b);
+ p.phase='CONFIRMED';
+ p.provisional.points=[];
+ p.lineage={confirmedPrimaryCount:252,secondaryPendingCount:0,
+  latestCompletedSession:p.observationDate,
+  primarySource:'GETMARKETHISTORY_1H_CLOSE',secondarySource:null};
+ const later=Date.parse('2026-10-24T12:00:00Z');
+ // Same confirmed observation date Oct 16 is still just within the
+ // eight-day end-of-session window at noon Oct 24. Source collected
+ // at the *start* of Oct 16 is already more than eight days old.
+ p.sourceStoredAt='2026-10-16T01:00:00Z';
+ p.asOf='2026-10-24T11:00:00Z';
+ assert.equal(await validRollingPublic(p,b,{now:later}),false);
+ const db={prepare(sql){assert.match(sql,/^SELECT /);return{
+  bind(key){assert.equal(key,THEME_ETF_ROLLING_KEY);return{
+   first:async()=>({body:JSON.stringify(p),stored_at:later-500})
+  }}}}};
+ assert.equal(await readRollingPublic(db,b,{now:later}),null);
+ // A genuinely recent source request after the same observation begins
+ // passes the EXISTING freshness period without new approval gates.
+ p.sourceStoredAt='2026-10-16T13:00:00Z';
+ assert.equal(await validRollingPublic(p,b,{now:later}),true);
+});

@@ -32,10 +32,12 @@ test("stored precompute is provider-free and precedes potentially slow collectio
 });
 
 
-test("breadth partial batches stay on backlog until coverage completes",()=>{
+test("retired breadth is absent from the collection registry and cannot be selected explicitly",()=>{
+ const registry=fs.readFileSync("worker/market-collection-jobs.mjs","utf8");
  const source=fs.readFileSync("worker/market-operational-refresh.mjs","utf8");
- assert.match(source,/selected==='breadth'&&sourceStatus==='PARTIAL_BATCH'/);
- assert.match(source,/backlog\?'BACKLOG':'COMPLETE'/);
+ assert.doesNotMatch(registry,/'breadth'/);
+ assert.doesNotMatch(source,/breadth:\(\)=>collectBreadthB1R3StoreOnlyR1/);
+ assert.match(source,/if\(job&&!MARKET_COLLECTION_JOBS.includes\(job\)\)return \{status:'INVALID_JOB'\}/);
 });
 
 test("backlog jobs are selected before normal round-robin jobs",()=>{
@@ -46,10 +48,10 @@ test("backlog jobs are selected before normal round-robin jobs",()=>{
 });
 
 
-test("breadth source failure is retried ahead of normal round-robin jobs",()=>{
+test("retired-source failures cannot jump ahead of healthy collection jobs",()=>{
  const source=fs.readFileSync("worker/market-operational-store.mjs","utf8");
- assert.match(source,/x\.job==='breadth'&&x\.status==='SOURCE_FAILED'/);
- assert.match(source,/const priority=x=>/);
+ assert.doesNotMatch(source,/x\.job==='breadth'&&x\.status==='SOURCE_FAILED'/);
+ assert.match(source,/const priority=x=>x\.status==='BACKLOG'\?0:1/);
 });
 
 

@@ -16,7 +16,7 @@
 | **Twelve Data Free Basic/individual** | 무료 1h ETF 시세로 공개 파생 점수·차트 | **사람 담당자 직접 거절 확정**. 10/21 무료 공개·무상 예외 불허 | **무료 공개 불허 확정**. Venture 이상 사업자 계약 별도 검토 |
 | **Alpaca 무료 Basic IEX** | ETF 시세로 공개 파생 점수·차트 | **AI 자동 생성 지원 답변**(10/23 티켓 #380205): 무료 공개 불허, 별도 계약 필요 | **현 무료 플랜 공개권 확보 안 됨**. 답변의 증거 수준은 AI 안내이며 사람의 명시적 허가가 아님 |
 | **AxionQuant Free / Earnings Trend API** | S&P 500 EPS 추세를 계산해 공개 파생 지표 | **사람 담당자 조건부 긍정 답변**(10/14): Free 데이터로 파생 결과를 공개하는 행위 자체는 허용, 원자료 재배포 금지. 그러나 **Earnings Trend는 유료 Starter에만 제공** | **파생 게시 원칙의 조건부 허용과 문의 대상 데이터의 무료 미제공을 구분**. Starter 구매·데이터 권리 확인 없이 Earnings Trend를 무료 기능으로 구현 불가 |
-| **GetMarketHistory 무료 익명 1h 샘플** | ETF 1h bar를 내부 계산하여 공개 점수·차트 | 10/22 발신 메일의 10/25 최종 배달 실패는 그대로. **별개 증거:** [2026-10-29 시행 공식 약관 §5·§6](https://getmarkethistory.com/docs/terms)는 무료 샘플에도 동일 조건을 적용하며 원시 시간봉을 대량 복원할 수 없는 파생 지표·분석물의 제작·배포를 명시 허용 | **조건부 파생 배포 가능**(실제 입력 GMH-only 계보, 비복원성, 정상 이용 조건에 한함). 원시 OHLCV·가격/시간봉 표시·재배포는 [별도 Display/Redistribution 계약](https://getmarkethistory.com/docs/partners/) 확인. 개별 메일 회신 또는 실운영 게시 완료로 오인 금지 |
+| **GetMarketHistory 무료 익명 1h 샘플** | ETF 1h bar를 내부 계산하여 공개 점수·차트 | 10/22 발신 메일의 10/25 최종 배달 실패는 그대로. **최신 근거:** [2026-11-17 시행 공식 약관 §5·§6](https://getmarkethistory.com/docs/terms)는 무료 샘플에도 동일 조건을 적용하며 원시 시간봉을 대량 복원할 수 없는 파생 지표·분석물의 제작·배포를 명시 허용 | **조건부 파생 배포 조항 존재**(GMH-only 계보, 비복원성, 정상 이용 조건 및 §5 계정 정상 상태 요건에 한함). **익명 API 이용자의 §5 적용·게시 권리는 별도 미확인**. 원시 OHLCV·가격/시간봉 표시·재배포는 [별도 Display/Redistribution 계약](https://getmarkethistory.com/docs/partners/) 확인. 개별 메일 회신 또는 실운영 게시 완료로 오인 금지 |
 | **Nasdaq Trader 무료 Daily Market Files** | Advances/Declines/Unchanged 집계로 공개 breadth 점수·차트 | **2026-11-08 문의 발신 확인, 회신 없음** | **공개 파생권 미확인**. 기존 문의를 대기 추적하며 중복 발신 금지 |
 | **Finskills 무료 market breadth API** | 무료 breadth/advance-decline 집계를 사용한 공개 파생 지수 | **2026-11-08 문의 발신 확인, 회신 없음** | **공개 파생권 미확인**. 원천 공급자·거래소 권리도 답변 대기, 중복 발신 금지 |
 | **Alpha Vantage 무료 API/MCP** | 로컬 Ollama 기반 비상업적 내부 투자 연구·모의투자 | **2026-10-23 문의 발신 확인, 회신 없음** | **내부 자동화·MCP 사용 범위 미확인**. 공개 파생 점수 허가를 문의한 것으로 확대 해석 금지 |
@@ -52,19 +52,26 @@
 - `epsTrend.30daysAgo`는 API에서 제공하는 30일 전 값이나 특정 회계 목표 기간에 대해 별도 복원한 PIT consensus snapshot 보증은 아님. S&P 500 전 종목 100% 커버리지 약속도 확인되지 않았고 다종목 단일 batch endpoint는 없다고 답변. 공식 [요금제](https://axionquant.com/pricing/).
 - 구매하지 않은 Starter 데이터 접근·상업 공개 라이선스가 자동 확보됐다고 표현하지 않는다.
 
-### GetMarketHistory — 2026-10-29 공식 라이선스와 실제 사이트 게시 조건 (2026-11-16 재확인)
+### GetMarketHistory — 2026-11-17 현행 라이선스와 실제 사이트 게시 조건 (2026-11-18 재확인)
 
-- [GetMarketHistory 공식 이용약관 §5 Data License](https://getmarkethistory.com/docs/terms): 정상 이용 조건 아래 **원시 시간봉(또는 L2/L3)을 대량 복원할 수 없는 파생 신호·지표·분석·차트의 제작·배포**를 허용한다. §6은 **무료 샘플에도 동일 약관**이 적용된다고 명시한다. 사람 담당자의 개별 회신을 받았다는 뜻은 아니다. 과거 10/22 발신 메일은 10/25 최종 반송이므로 이력 그대로 유지한다.
+- [GetMarketHistory 공식 이용약관 §5 Data License](https://getmarkethistory.com/docs/terms) (현행 2026-11-17 시행): 명시된 *계정 정상 상태* 등 이용 조건 아래 **원시 시간봉(또는 L2/L3)을 대량 복원할 수 없는 파생 신호·지표·분석·차트의 제작·배포**를 허용한다. §6은 **무료 샘플도 동일 데이터이고 같은 약관**을 적용한다고 명시한다. 다만 §5의 라이선스 부여 문구는 *계정 정상 상태*에 조건부이므로 익명·무계정 GET에 그대로 적용된다고 단정할 수 없다. 사람 담당자의 개별 회신을 받았다는 뜻은 아니다. 과거 10/22 발신 메일은 10/25 최종 반송이므로 이력 그대로 유지한다.
 - [Partners & redistribution](https://getmarkethistory.com/docs/partners/): 원시 바/가격을 방문자에게 **원자료 형태로 표시하거나 배포**하는 행위는 Display 또는 Redistribution 계약이 따로 필요하다. 일반 데이터 라이선스를 raw API/가격 차트 공개권으로 확장하지 않는다.
 - **W03 조건부 공개 범위:** 자체 계산한 비복원성 0~100점과 충분히 집계된 기간별 추이는 실제 입력이 **GMH만**이고, 원시 1h 종가/거래량/원본 행을 역추정·대량 복원할 수 없도록 산식·기간·API 출력 내용을 확인한 경우에만 개별 출력 후보로 검토한다. 기존 252거래일 점수/확정 seed가 **MarketParquet 무료 원가격**에서 왔다면 GMH 약관으로 권리가 소급되지 않는다. MarketParquet 무료 기반 신규 게시·우회 권한 변경은 금지다.
 - **원자료와 완성된 게시를 구분:** 2026-11-16 PC R181은 14/14 필수 ETF/SPY 원장 저장 메타(`LOCAL_PRIMARY_STORED`) 확인이지만, 원장 보고 시간봉 합계 1,509건만으로 **252거래일 점수 이력**이 재구성됐다는 증거는 아니다. R179/R178의 모델·날짜·이력 길이·seed 해시·원자료 SHA·D1 기존 키와 별도 CAS/readback, R32 최신 교집합의 **비퇴행**을 검증해야 한다.
 - **실행 원칙:** 공식 약관의 조건부 허용을 `publicationAuthorized=true`·`derivedLicenseVerified=true` 등의 자동 승격 근거로 단독 사용하지 않는다. 해당 게시물의 공급자 계보·무료/유료 플랜 조건·원가격 미노출·비복원성·다른 공급자 권리를 실제 검증한 뒤 승인된 Writer에서만 필요한 최소 D1 쓰기를 한다. 무료 MarketParquet/Twelve Data/Alpaca의 거절·미확인 상태는 그대로 유지한다.
 
+### 2026-11-18 현행 약관 검증과 W03 실PC 증거의 분리
+
+- **약관 버전:** 공개 [Terms §5·§6](https://getmarkethistory.com/docs/terms)는 2026-11-17 시행이다. 이전 대장의 2026-10-29 시행 표기는 과거 버전 근거로만 남기고 현행 권리 판단을 대체하지 않는다. 현행 §5는 정상 상태 계정에 데이터를 사용할 라이선스를 부여하면서 원자료를 대량 복원할 수 없는 파생물 배포를 허용한다. §6은 무료 샘플도 같은 데이터를 포함하고 같은 약관을 적용한다고 설명한다. [Partners](https://getmarkethistory.com/docs/partners/)는 파생물 공유와 원시 가격·시세 차트 표시/원자료 재배포를 구분한다. **익명·무계정 1h GET이 §5의 계정 정상 상태 요건을 충족하는지, 상위 거래소·공급자별 사용 제한을 포괄하는지는 이 조항만으로 확인되지 않는다.**
+- **이번에 확보한 실제 계보:** 기존 [운영 PC #2166](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2166)의 GMH-only 14종·30 raw 페이지·679 거래일·7×252(1,764) 비공개 점수 SHA 결과 및 [PC #2185](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2185)의 실제 수집 요청시각 `2026-11-16T11:47:59.532Z`·14종/30페이지 원본 SHA 재검증·원격 JSON/TXT 2/2 PASS를 각각 재사용한다. 2026-11-13의 **관측일**, 2026-11-16의 **수집 요청시각** 및 미래 **게시 시각**을 구분한다. 이 증거는 **소스 계보·계산/원자료 무결성** 증거이며 운영자 라이선스 수락·계정 정상 상태·비복원성의 독립 증명·배포 승인·D1 CAS는 아니다.
+- **현재 R178 공개 대상:** 신규 7테마×252 거래일의 비공개 projection은 개별 1h OHLCV/원가격·rawRows·volume을 표시하지 않고 0~100점/날짜·테마 ETF 명칭만 후보로 작성한다. 공개 Worker 역시 `theme`, `etfs`, `score`, `history.date/score`만 전송하도록 projection을 제한한다. **출력 필드 감사는 라이선스 전체·원가격의 대량 역추정 불가를 수학적으로 인증한 것이 아니다.** 기존 D1 R178 행에는 사용 중지된 MarketParquet 보조 계보가 남아 있으므로 해당 행의 권리가 GMH로 소급되지 않는다.
+- **보호·다음 실제 조건:** `publicationAuthorized=false`, `upstreamCommercialRightsVerified=false`, `derivedLicenseVerified=false`, `sourcePriceReconciled=false` 유지. 실제 게시 전 GMH 라이선스 적용 범위와 비복원성/상위 공급자 권리의 운영자 승인, 기존 R178 D1 정확한 CAS·readback 및 독립 R32 비퇴행 확인이 필요하다. 승인되지 않은 유료 구매·추가 GET·TTL 완화·MarketParquet 재도입은 하지 않는다.
+
 ## 3. 회신 미확보 문의의 기술적 상태 및 용도
 
 | 공급자 | 발신/확인 시각(KST) | 미해결 항목 | 재문의 판단 |
 |---|---|---|---|
-| GetMarketHistory | 10/22 발신, 10/25 최종 배달 실패 | 개별 회신 미확보. 다만 10/29 공개 약관 §5·§6에 무료 1h 샘플의 비복원성 파생 작품 배포가 조건부 명시 허용 | 기존 메일 배송 실패는 유지하되 **표준 라이선스 자체는 확인됨**. 실제 GMH-only 원자료 계보·252일 이력·비복원성·가격 비표시를 출력별 검증. raw display/재배포는 별도 계약 필요 |
+| GetMarketHistory | 10/22 발신, 10/25 최종 배달 실패 | 개별 회신 미확보. 현행 11/17 공개 약관 §5·§6에 비복원성 파생 작품 배포 조항 및 무료 샘플 적용이 존재. 단 §5 계정 정상 상태 문구와 무계정·익명 GET의 법적 적용은 별도 미확인 | 기존 메일 배송 실패는 유지하되 **표준 라이선스 조항은 확인됨**. 실제 GMH-only 계보·252일 이력·비복원성·가격 비표시와 별개로 §5의 무계정 익명 API 이용 범위는 미확인이므로 권리 플래그 자동 승인 금지. raw display/재배포는 별도 계약 필요 |
 | Alpha Vantage | 10/23 발신 | 무료 `OVERVIEW`, 재무제표, `NEWS_SENTIMENT`, MCP의 무료 범위; 로컬 Ollama 분석·로컬 노트·모의투자 허용 여부 | 동일 질문 발신 이력 존재. 현재 회신 없음 |
 | MarketBeat | 10/23 인증 요청 자동 응답 | 사적 AI의 제한적 자동 페이지 접근, 기록 보존, 공식 API/무료 조건 | 실제 상담 접수 전 **검증 필요**, 인증 링크는 공개 저장하지 않음 |
 | Stock Analysis | 10/22 발신 | AI crawler 예외 범위, robots 정책, 자동 접근/내부 노트 허용 | 회신 없음 |

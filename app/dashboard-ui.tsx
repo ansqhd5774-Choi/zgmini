@@ -18,8 +18,8 @@ import {breadthNotice} from '../lib/market-score/breadth-notice.mjs';
 import {breadthB1R4PreviousSessionDelta as breadthPreviousSessionDelta} from '../lib/market-score/breadth-b1-r4-ui-delta.mjs';
 import {marketTrendWindowR1} from '../lib/market-score/market-trend-window-r1.mjs';
 import {normalizeMarketTrendPointsR4} from '../lib/market-score/market-trend-normalize-r4.mjs';
-import {appendPublishedDomainCurrent} from '../lib/market-score/published-domain-trend-r4.mjs';
-import {miniTrendGeometry} from '../lib/market-score/mini-trend-geometry.mjs';
+import {appendPublishedDomainCurrent,verifiedPublishedDomainCurrentR4} from '../lib/market-score/published-domain-trend-r4.mjs';
+import {miniTrendGeometry,miniTrendLastPointMetadata} from '../lib/market-score/mini-trend-geometry.mjs';
 import {amplifyCompositeDisplayScore,amplifyCompositeDisplayTrend} from '../lib/market-score/composite-display-sensitivity-r1.mjs';
 import {mergeCompositeObservedDisplay} from '../lib/market-score/composite-observed-display-r1.mjs';
 import {ContentHelp} from './content-help';
@@ -32,9 +32,19 @@ export function ScoreScale({score,label,color}:{score:number|null;label:string;c
 const scoreColor=(score:number)=>score<25?'#ef4444':score<40?'#f59e0b':score<60?'#94a3b8':score<75?'#22c55e':'#10b981';
 const CardTrend=memo(function CardTrend({data,label,color,periodDays,missingDates=[]}:{data:DashboardPoint[];label:string;color:string;periodDays:number;missingDates?:string[]}){
  const geometry=miniTrendGeometry(data,periodDays,missingDates);
- return <div className="zg-spark zg-r55-mini-chart" aria-label={`${label} 관측 추이${missingDates.length?' · 점선은 결측 구간 연결이며 관측값이 아닙니다':''}`} title={missingDates.length?'점선: 미발표 자료가 있는 구간의 시각적 연결. 해당 월 점수는 결측입니다.':undefined} onPointerDown={event=>event.preventDefault()}>
+ // Use the actual final plotted label, not the global refresh timestamp.
+ // Some monthly domain charts intentionally end months before today's card.
+ const lastPoint=miniTrendLastPointMetadata(data);
+ const lastText=lastPoint?` · 마지막 차트점 ${lastPoint.label}, ${Number(lastPoint.score.toFixed(2))}점`:'';
+ const missingText=missingDates.length?' · 점선은 결측 구간 연결이며 관측값이 아닙니다':'';
+ const chartLabel=`${label} 관측 추이${lastText}${missingText}`;
+ const chartTitle=lastPoint?`마지막 차트점: ${lastPoint.label}, ${Number(lastPoint.score.toFixed(2))}점${missingDates.length?' · 점선은 미발표 구간 연결':''}`:
+  missingDates.length?'점선: 미발표 자료가 있는 구간의 시각적 연결. 해당 월 점수는 결측입니다.':undefined;
+ return <div className="zg-spark zg-r55-mini-chart" aria-label={chartLabel} title={chartTitle}
+  data-last-chart-point-at={lastPoint?.label} data-last-chart-point-score={lastPoint?.score}
+  onPointerDown={event=>event.preventDefault()}>
   <div className="zg-r55-mini-y-labels" aria-hidden="true"><span>100</span><span>50</span><span>0</span></div>
-   <svg width="100%" height="100%" viewBox="0 0 220 60" preserveAspectRatio="none" role="img" aria-label={`${label} 관측 추이`} style={{display:'block',pointerEvents:'none'}}>
+   <svg width="100%" height="100%" viewBox="0 0 220 60" preserveAspectRatio="none" role="img" aria-label={chartLabel} style={{display:'block',pointerEvents:'none'}}>
     {[0,25,50,75,100].map(value=><line key={value} x1={13} x2={217} y1={57-value*.54} y2={57-value*.54} stroke={value===0||value===100?'rgba(168,188,208,.4)':value===50?'rgba(170,197,220,.9)':'rgba(157,184,208,.8)'} strokeDasharray={value===0||value===100?undefined:'4 4'} strokeWidth={value===0||value===100?1:1.2} vectorEffect="non-scaling-stroke"/>)}
     {missingDates.length>0&&<path d={geometry.bridge} fill="none" stroke={color} strokeOpacity={.65} strokeDasharray="2 3" strokeWidth={1.2} vectorEffect="non-scaling-stroke"/>}
     <path d={geometry.path} fill="none" stroke={color} strokeWidth={1.8} vectorEffect="non-scaling-stroke"/>
@@ -44,7 +54,7 @@ const CardTrend=memo(function CardTrend({data,label,color,periodDays,missingDate
 });
 
 const LazySummaryTrend=lazy(()=>import('../components/dashboard-summary-chart'));
-const SummaryTrend=memo(function SummaryTrend(props:{data:DashboardPoint[];label:string;color:string;periodDays:number}){
+const SummaryTrend=memo(function SummaryTrend(props:{data:DashboardPoint[];label:string;color:string;periodDays:number;currentPublished?:{updatedAt:string;displayScore:number;modelVersion:string}|null}){
  const ready=useDashboardChartStartup();
  const placeholder=<div className="zg-spark zg-r55-mini-chart zg-r55-summary-mini-chart" style={{height:120,minHeight:120,maxHeight:120}} aria-label={`${props.label} 관측 추이`}/>;
  return ready?<Suspense fallback={placeholder}><LazySummaryTrend {...props}/></Suspense>:placeholder;
@@ -207,7 +217,11 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
  const readyDomains=market?.dataQuality?.readyDomains??0;
  const totalDomains=market?.dataQuality?.totalDomains??12;
  const coverageWeight=market?.dataQuality?.coverageWeight??0;
+ // A retired source is not a valid historical chart license. The saved
+ // archive is preserved privately; this display must not graph its scores.
+ const retiredCompositeHistory=market?.overall?.state==='PROVIDER_REMOVED_MARKETPARQUET_PUBLICATION_DENIED';
  const overallTrend=useMemo(()=>{
+  if(retiredCompositeHistory)return [];
   const daily=marketTrendWindowR1(amplifyCompositeDisplayTrend(verifiedOverallHistory),periodDays,{includeBoundaryCarry:false});
   const archived=compositeArchive?.days===periodDays?compositeArchive.points.flatMap(point=>{
    const display=amplifyCompositeDisplayScore(point.score);
@@ -217,16 +231,17 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
   // may not yet contain its calculation time. Never synthesize earlier points.
   const current=overallScore===null||!market?.updatedAt?null:{label:market.updatedAt,value:overallScore,boundToPublishedCard:true};
   return mergeCompositeObservedDisplay(daily,archived,periodDays,current);
- },[verifiedOverallHistory,market?.updatedAt,overallScore,compositeArchive,periodDays]);
+ },[verifiedOverallHistory,market?.updatedAt,overallScore,compositeArchive,periodDays,retiredCompositeHistory]);
  const hasDatedHistory=useMemo(()=>overallTrend.length>1||
   [verifiedOverallHistory,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPointsR4(data,market?.updatedAt),365).length>1),
   [verifiedOverallHistory,market?.domains,market?.updatedAt,overallTrend]);
  // Independent diagnostic responses and arrow expiry do not change these histories.
  const domainChartTrends=useMemo(()=>r55DomainIds.map(id=>{
   const domain=market?.domains?.find(d=>d.id===id);
-  const daily=marketTrendWindow(normalizeMarketTrendPointsR4(domain?.trend,market?.updatedAt),periodDays);
+  const daily=marketTrendWindowR1(normalizeMarketTrendPointsR4(domain?.trend,market?.updatedAt),periodDays,{includeBoundaryCarry:false});
   const score=domain?.status==='READY'&&validPublicScore(domain.score)?domain.score:null;
-  const current=score===null||!market?.updatedAt?null:{label:market.updatedAt,value:score};
+  // The global snapshot time is not the source event time for old monthly data.
+  const current=score===null?null:verifiedPublishedDomainCurrentR4(domain,market?.updatedAt);
   return appendPublishedDomainCurrent(daily,current,periodDays);
  }),[market?.domains,market?.updatedAt,periodDays]);
  const riskHeading=<h2><a href="/risk-indicators/"><ShieldCheck aria-hidden="true"/>8대 위험 지표<ArrowUpRight aria-hidden="true"/></a></h2>;
@@ -266,7 +281,9 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
 
      <div className="zg-r55-summary-chart">
       {overallTrend.length>1
-       ?<SummaryTrend data={overallTrend} label="종합 시장 점수" color={overallScore===null?'#94a3b8':scoreColor(overallScore)} periodDays={periodDays}/>
+       ?<SummaryTrend data={overallTrend} label="종합 시장 점수" color={overallScore===null?'#94a3b8':scoreColor(overallScore)} periodDays={periodDays}
+        currentPublished={overallScore!==null&&market?.updatedAt&&typeof market?.modelVersion==='string'
+         ?{updatedAt:market.updatedAt,displayScore:overallScore,modelVersion:market.modelVersion}:null}/>
        :<div className="zg-r55-empty-spark" aria-label="종합 추이 데이터 없음">추이 데이터 준비 중</div>}
      </div>
      </div>

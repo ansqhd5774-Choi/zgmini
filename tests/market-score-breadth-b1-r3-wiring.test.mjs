@@ -49,13 +49,13 @@ test("R3 public projection preserves four breadth detail ids",()=>{
   assert.deepEqual(d.indicators.map(x=>x.score),[62.5,59.375,99,98]);
 });
 
-test("scheduled collector uses R3 and public requests only read the snapshot",()=>{
+test("retired R3 collector is not scheduled; public requests read only the snapshot",()=>{
   const route=fs.readFileSync(new URL("../app/api/market-score/route.ts",import.meta.url),"utf8");
   const scheduled=fs.readFileSync(new URL("../worker/market-operational-refresh.mjs",import.meta.url),"utf8");
   assert.match(route,/storedMarketResponse/);
   assert.doesNotMatch(route,/collectBreadth|waitUntil/);
-  assert.match(scheduled,/breadth:.*collectBreadthB1R3StoreOnlyR1/);
-  assert.match(scheduled,/collectBreadthDomain:readBreadthB1R5StoredPublicDomainR1/);
+  assert.doesNotMatch(scheduled,/breadth:.*collectBreadthB1R3StoreOnlyR1/);
+  assert.match(scheduled,/collectBreadthDomain:retiredBreadthPublicDomain/);
   assert.doesNotMatch(scheduled,/collectBreadthR2StoreOnlyR2/);
 });
 

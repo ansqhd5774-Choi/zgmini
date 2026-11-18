@@ -9,6 +9,10 @@ import {liquidityHistoryRow} from './market-score-response-store.mjs';
 import {LIQUIDITY_ACTIVE_HISTORY_METHOD} from './liquidity-active-history-reader.mjs';
 import {mergeStoredMacro} from './candidate-market-operational-store.mjs';
 import {BIS_INPUT_TTL} from './bis-input-policy.mjs';
+import {recordStoredEmploymentR54Event} from '../lib/market-score/employment-r54-calculation-event.mjs';
+import {MARKETPARQUET_REMOVED_CODE} from '../lib/marketparquet-retirement.mjs';
+import {maskRetiredMarketPublicSnapshot} from './market-retired-public-snapshot-mask.mjs';
+export {maskRetiredMarketPublicSnapshot};
 const decodeInput=text=>JSON.parse(text.startsWith('gzip:')?gunzipSync(Buffer.from(text.slice(5),'base64'),{maxOutputLength:32000000}).toString('utf8'):text);
 export function marketOperationalStore(db){
  if(!db)throw Error('STORAGE_UNAVAILABLE');
@@ -38,6 +42,9 @@ export function marketOperationalStore(db){
   },
   async writeInput(key,body,now){assertMarketInput(key,body);await init();const json=JSON.stringify(body);if(Buffer.byteLength(json)>32000000)throw Error('INPUT_STORAGE_LIMIT');const encoded='gzip:'+gzipSync(json).toString('base64');if(encoded.length>1800000)throw Error('INPUT_STORAGE_LIMIT');await db.prepare('INSERT INTO market_input_batches_v1 VALUES(?,?,?) ON CONFLICT(batch_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at').bind(key+':'+new Date(now).toISOString().slice(0,10),encoded,now).run()},
   async writeScore(body,now){
+   // This exact calculated event is stored atomically with the public score body.
+   // Visitor GETs never create history points; R6 independent observations excluded.
+   recordStoredEmploymentR54Event(body,now);
    assertCompleteMarket(body);await init();const encoded=JSON.stringify(body);const statements=[];
    const liquidity=liquidityHistoryRow(encoded,now);
    if(liquidity)statements.push(db.prepare('INSERT INTO market_liquidity_active_history_v1 VALUES(?,?,?,?) ON CONFLICT(as_of_date,methodology_version) DO UPDATE SET score=excluded.score,stored_at=excluded.stored_at').bind(liquidity.asOfDate,LIQUIDITY_ACTIVE_HISTORY_METHOD,liquidity.score,liquidity.storedAt));
@@ -50,7 +57,7 @@ export function marketOperationalStore(db){
    await db.prepare('UPDATE market_collection_jobs_v1 SET lease_id=?,lease_until=?,finished_at=?,status=? WHERE job=? AND lease_until<=?').bind(id,now+180000,now,'RUNNING',job,now).run();
    const row=await db.prepare('SELECT lease_id FROM market_collection_jobs_v1 WHERE job=?').bind(job).first();return row?.lease_id===id?id:null;
   },
-  async next(jobs){await init();const rows=[];for(const job of jobs){const row=await db.prepare('SELECT finished_at,status FROM market_collection_jobs_v1 WHERE job=?').bind(job).first();rows.push({job,time:row?.finished_at??0,status:row?.status??null})}const priority=x=>x.status==='BACKLOG'||(x.job==='breadth'&&x.status==='SOURCE_FAILED')?0:1;return rows.sort((a,b)=>priority(a)-priority(b)||a.time-b.time)[0].job},
+  async next(jobs){await init();const rows=[];for(const job of jobs){const row=await db.prepare('SELECT finished_at,status FROM market_collection_jobs_v1 WHERE job=?').bind(job).first();rows.push({job,time:row?.finished_at??0,status:row?.status??null})}const priority=x=>x.status==='BACKLOG'?0:1;return rows.sort((a,b)=>priority(a)-priority(b)||a.time-b.time)[0].job},
   async finish(job,id,now,status){await db.prepare('UPDATE market_collection_jobs_v1 SET lease_id=NULL,lease_until=0,finished_at=?,status=? WHERE job=? AND lease_id=?').bind(now,status,job,id).run()},
  };
 }
@@ -61,6 +68,7 @@ export async function readStoredMarketInputs(store,now=Date.now()){
  return batches.map(fresh).reduce((all,part)=>({...all,...part,series:{...all.series,...part.series},external:{...all.external,...part.external},providerSummary:{...all.providerSummary,...part.providerSummary}}),{series:{},external:{},providerSummary:{}});
 }
 
+
 /** @param {Request} request @param {{store?:ReturnType<typeof marketOperationalStore>,now?:number}} [options] */
 export async function storedMarketResponse(request,{store,now=Date.now()}={}){
  const headers={'cache-control':'no-store','x-robots-tag':'noindex','x-market-cache':'STORED','vary':'Accept','x-content-type-options':'nosniff'};
@@ -69,6 +77,8 @@ export async function storedMarketResponse(request,{store,now=Date.now()}={}){
  if(!snapshot||now<snapshot.storedAt||now-snapshot.storedAt>=PUBLIC_DISPLAY_MAX_AGE_MS)return Response.json({status:'FAILED',reason:snapshot?'STORED_SCORE_STALE':'STORED_SCORE_PENDING',overall:{score:null,status:'UNAVAILABLE',trend:[]},domains:[],dataQuality:{overallComputable:false,reweighted:false}},{status:503,headers});
  headers['cache-control']='public, max-age=60, must-revalidate';
  headers['x-market-snapshot-at']=new Date(snapshot.storedAt).toISOString();
- if(request.headers.get('accept')?.includes('application/x-ndjson'))return new Response(JSON.stringify({type:'complete',body:snapshot.body,cacheControl:headers['cache-control']})+'\n',{headers:{...headers,'content-type':'application/x-ndjson; charset=utf-8','vary':'Accept'}});
- return Response.json(snapshot.body,{headers});
+ const publicBody=maskRetiredMarketPublicSnapshot(snapshot.body);
+ if(!publicBody)return Response.json({status:'UNAVAILABLE',reason:MARKETPARQUET_REMOVED_CODE,overall:{score:null,status:'UNAVAILABLE',trend:[]},domains:[]},{status:503,headers:{...headers,'cache-control':'no-store'}});
+ if(request.headers.get('accept')?.includes('application/x-ndjson'))return new Response(JSON.stringify({type:'complete',body:publicBody,cacheControl:headers['cache-control']})+'\n',{headers:{...headers,'content-type':'application/x-ndjson; charset=utf-8','vary':'Accept'}});
+ return Response.json(publicBody,{headers});
 }

@@ -1,6 +1,7 @@
 import test from 'node:test';import assert from 'node:assert/strict';
 import {candidateWorker} from '../worker/candidate-guard.mjs';
 import {shellRoutes,staticShell} from '../worker/candidate-shell-r7.mjs';
+import {omitMissingCssOnlyPreloads} from './candidate-css-only-preload-r1.mjs';
 test('all26 shell GET/HEAD/RSC bypass framework with exact MIME; identity not forwarded',async()=>{
  assert.equal(shellRoutes.length,26);
  assert.ok(shellRoutes.includes('/sector-fear-greed/'));
@@ -42,4 +43,35 @@ test('missing shell fails closed without SSR; API outside allowlist',async()=>{
  assert.equal((await staticShell(new Request('https://candidate.workers.dev/'),{ASSETS:{fetch:async()=>new Response('',{status:404})}})).status,503);
  assert.equal(await staticShell(new Request('https://candidate.workers.dev/api/market-score'),{}),null);
  assert.equal((await staticShell(new Request('https://candidate.workers.dev/inflation'),{})).status,308);
+});
+
+test('missing CSS-only virtual JS preloads are omitted but real scripts, styles and RSC content stay untouched',()=>{
+ const a='risk-last3-hero-parity-r2-CDVIG9AY.js';
+ const b='shared-risk-indicator-width-r1-BPME5l_j.js';
+ const live='framework-CXnKph_e.js';
+ const missingReal='app-real-missing-12345.js';
+ const html=[
+  '<html><head>',
+  '<link rel="modulepreload" href="https://zgmini.kr/assets/'+a+'" crossorigin="">',
+  '<link href="/assets/'+b+'" crossorigin="" rel="modulepreload">',
+  '<link rel="modulepreload" href="/assets/'+live+'">',
+  '<link rel="modulepreload" href="/assets/'+missingReal+'">',
+  '<link rel="stylesheet" href="/assets/debt-risk-styles-111.css">',
+  '</head><body><script type="module" src="/assets/'+live+'"></script>',
+  '<script src="/assets/'+a+'"></script><p>preserved RSC payload</p></body></html>',
+ ].join('');
+ const emitted=new Set([live,'debt-risk-styles-111.css']);
+ const processed=omitMissingCssOnlyPreloads(html,emitted);
+ assert.deepEqual(processed.removed,[a,b]);
+ assert.equal(processed.html.includes('rel="modulepreload" href="https://zgmini.kr/assets/'+a+'"'),false);
+ assert.equal(processed.html.includes('href="/assets/'+b+'"'),false);
+ assert.match(processed.html,/framework-CXnKph_e\.js/);
+ assert.match(processed.html,/app-real-missing-12345\.js/);
+ assert.match(processed.html,/rel="stylesheet"/);
+ assert.match(processed.html,/preserved RSC payload/);
+ assert.match(processed.html,/<script src="\/assets\/risk-last3-hero-parity-r2-CDVIG9AY\.js"><\/script>/);
+ assert.deepEqual(omitMissingCssOnlyPreloads(html,new Set([a,b,live])).removed,[]);
+ const unrelated='<link rel="modulepreload" href="https://other.example/assets/'+a+'">';
+ assert.equal(omitMissingCssOnlyPreloads(unrelated,new Set()).html,unrelated);
+ assert.throws(()=>omitMissingCssOnlyPreloads(null,new Set()),/CANDIDATE_PRELOAD_INPUT_INVALID/);
 });

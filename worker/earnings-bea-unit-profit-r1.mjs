@@ -80,7 +80,8 @@ export async function readBeaUnitResponse(request,db,{now=Date.now()}={}){
   const payload=validateBeaUnitProfit(envelope.payload,{now}),p=envelope.projection;
   if(p.status!=='READY'||p.sourceStoredAt!==payload.sourceStoredAt
    ||p.sourceVersion!==payload.sourceVersion||!Number.isSafeInteger(p.builtAt)
-   ||p.builtAt>now||Number(raw.stored_at)!==p.builtAt)
+   ||p.builtAt<payload.sourceStoredAt||p.builtAt>now
+   ||Number(raw.stored_at)!==p.builtAt)
    throw Error('BEA_UNIT_CHECKPOINT_MISMATCH');
   const freshness=beaUnitFreshness(payload,{now});
   if(freshness.status==='STALE')return reply({status:'unavailable',reason:freshness.reason},503);
