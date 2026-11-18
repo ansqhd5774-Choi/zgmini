@@ -106,9 +106,13 @@ function child(parent,name){
 function validPrior(doc){
   return doc?.schemaVersion===1&&doc?.provider==='US_CENSUS_M3'&&
     doc.sourceVersion===CENSUS_M3_INVENTORIES_VERSION&&validIso(doc.sourceStoredAt)&&
+    doc.selector==='MTM/TI'&&doc.frequency==='MONTHLY'&&
+    doc.unit==='USD_MILLION_SA_NOMINAL'&&
     Array.isArray(doc.observations)&&doc.observations.length>0&&
     doc.observations.every(x=>/^20\d{2}-(0[1-9]|1[0-2])-01$/.test(x?.date??'')&&
-      typeof x?.value==='number'&&Number.isFinite(x.value)&&x.value>=0)&&
+      typeof x?.value==='number'&&Number.isFinite(x.value)&&x.value>=0&&
+      x.unit==='USD_MILLION_SA_NOMINAL'&&x.selector==='MTM/TI'&&
+      x.seasonallyAdjusted===true)&&
     new Set(doc.observations.map(x=>x.date)).size===doc.observations.length;
 }
 async function readBody(res){
