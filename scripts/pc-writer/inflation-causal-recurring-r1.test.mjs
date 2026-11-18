@@ -300,3 +300,31 @@ test('W01 last verified calendar events survive refresh failure only with a trus
  assert.equal(cp.processed.bls8,'2026-11-07');
  assert.equal(requests,1);
 });
+
+
+test('W01 partial BLS8 storage preserves last-good and does not mark release fully processed',async()=>{
+ const cp={schema:INFL19_RECURRING_SCHEMA,processed:{},attempted:{}};
+ let when=now,called=0;
+ const collect=()=>collectInflation19IfDue({approved:true,base:'/staged/pc-writer',
+  now:when,officialEvents:[releases[0]],providerEnv:{BLS_API_KEY:'key'},
+  quotaFetch:async()=>({ok:true}),collectors:{bls8:async({quotaFetch})=>{
+   await quotaFetch('https://api.bls.gov');called++;
+   return {status:called===1?'PARTIAL_SAVED_LAST_GOOD':'SAVED_READBACK',providerCalls:1};
+  }},
+  checkpointIO:{file:'/none',load:()=>cp,save:x=>{
+   cp.processed={...x.processed};cp.attempted={...x.attempted};
+  }}});
+ const first=await collect();
+ assert.equal(first.status,'PARTIAL_LAST_GOOD_AWAITING_NEXT_DUE');
+ assert.deepEqual(first.partial,[{source:'bls8',status:'PARTIAL_SAVED_LAST_GOOD',providerRequests:1}]);
+ assert.equal(first.updated.length,0);
+ assert.equal(cp.processed.bls8,undefined);
+ const immediate=await collect();
+ assert.equal(immediate.status,'NO_VERIFIED_RELEASE_DUE');
+ assert.equal(called,1);
+ when=new Date(now.getTime()+86_400_001);
+ const recovered=await collect();
+ assert.equal(recovered.status,'COMPLETE');
+ assert.equal(cp.processed.bls8,'2026-11-07');
+ assert.equal(called,2);
+});
