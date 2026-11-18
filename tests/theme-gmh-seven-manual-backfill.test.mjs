@@ -95,8 +95,12 @@ test('manual 14-source batch never runs a schedule or retries failed source',asy
   }});
  assert.equal(output.status,'PARTIAL_SOURCE_NOT_READY');
  assert.equal(output.providerCalls,calls);
- assert.equal(output.fetched,6); // SPY, BOTZ, ROBO, SKYY, CLOU: verify order below
+ assert.equal(output.fetched,5); // SPY, BOTZ, ROBO, SKYY, CLOU
+ assert.deepEqual(output.results.map(x=>x.symbol),GMH_SEVEN_SYMBOLS.slice(0,5));
+ assert.equal(calls,5); // Stop after first failed symbol; no retry.
+ assert.equal(output.results.at(-1).symbol,'CLOU');
  assert.equal(output.results.at(-1).status,'PROVIDER_HTTP_RESPONSE');
+ assert.equal(output.results.at(-1).providerHttpStatus,500);
  assert.equal(output.d1Writes,0);
  assert.equal(output.schedulerChanges,0);
 });
