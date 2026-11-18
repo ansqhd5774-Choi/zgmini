@@ -1,6 +1,7 @@
 import test from "node:test";
 import assert from "node:assert/strict";
 import {classifyEmploymentR6Pit04KeyEvidence as audit} from "../lib/market-score/employment-r6-pit04-key-evidence.mjs";
+import {EMPLOYMENT_R4_CORE_STATES} from "../lib/market-score/employment-r4-shadow-contract.mjs";
 const base={logical_series_id:"STATE_INITIAL_CLAIMS",geography_type:"STATE",
  geography_code:"AL",observation_date:"2026-11-07",value:0,
  source_hash:"a".repeat(64),provider:"DOL_ETA",provider_series_id:"ETA539:C3",
@@ -127,4 +128,43 @@ test("malformed optional time remains in HOLD; known future time excludes its re
   assert.equal(go([future],[],[],[]).counts.coreKeys,0,field);
  }
  assert.equal(go([base],[],[base],[base]).counts.missingCandidateInternalMatch,1);
+});
+
+test("PIT04_FULL_CORE_SCAN_ORDER_INVARIANT: 40777 keys keep priority, counts, stable 8-row pages and 12KiB ceiling",()=>{
+ assert.equal(EMPLOYMENT_R4_CORE_STATES.length,51);
+ const rows=[];
+ const start=Date.UTC(2011,6,9),week=7*86400000;
+ for(let w=0;w<800&&rows.length<40777;w++){
+  const date=new Date(start+w*week).toISOString().slice(0,10);
+  for(const geo of EMPLOYMENT_R4_CORE_STATES){
+   if(rows.length===40777)break;
+   rows.push({...base,geography_code:geo,observation_date:date});
+  }
+ }
+ assert.equal(rows.length,40777);
+ const conflict=[{...rows[0],value:9}];
+ const first=go(rows,[],conflict);
+ assert.equal(first.counts.coreKeys,40777);
+ assert.equal(first.counts.coreHistoryMissing,40777);
+ assert.equal(first.counts.candidateOverlapConflicts,1);
+ assert.equal(first.counts.missingCandidateIncomplete,1);
+ assert.equal(first.counts.missingWithoutCandidate,40776);
+ assert.equal(first.evidenceTotal,40777);
+ assert.equal(first.evidence.length,8);
+ assert.equal(first.evidence[0].reason,"CANDIDATE_CURRENT_CONFLICT");
+ assert.equal(first.nextOffset,8);
+ assert.equal(first.rawPitAttested,false);
+ assert.equal(first.promotionApproved,false);
+ assert.equal(first.repairAuthorized,false);
+ assert.ok(Buffer.byteLength(JSON.stringify(first),"utf8")<12000);
+ const shuffled=go([...rows].reverse(),[],conflict);
+ assert.deepEqual(shuffled,first,"final reason/date/state output must not depend on Core row insertion order");
+ const second=go(rows,[],conflict,[],{offset:8});
+ assert.equal(second.evidenceTotal,first.evidenceTotal);
+ assert.deepEqual(second.counts,first.counts);
+ assert.equal(second.evidence.length,8);
+ assert.equal(second.offset,8);
+ assert.ok(second.evidence.every(item=>!first.evidence.some(prev=>
+   item.observationDate===prev.observationDate&&item.geographyCode===prev.geographyCode)));
+ assert.ok(Buffer.byteLength(JSON.stringify(second),"utf8")<12000);
 });
