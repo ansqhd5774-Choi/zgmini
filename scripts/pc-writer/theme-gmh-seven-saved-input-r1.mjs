@@ -94,6 +94,66 @@ function combinePages(entries,pages){
  }
  return result;
 }
+// Bind source time to the immutable collector's actual request-time receipts.
+// The same manifest, completed checkpoint and all page SHA bytes accepted by
+// the existing saved-score input are verified before a timestamp is trusted.
+// collectedAt is the provider GET request start, not the later file commit.
+export function attestSavedGmhSevenCollectionTime({
+ manifestBytes,manifestSha256,checkpointBytes,checkpointSha256,
+ rawPages,observationDate,now=Date.now()
+}={}){
+ need(day(observationDate)&&Number.isSafeInteger(now),
+  'COLLECTION_OBSERVATION_OR_CLOCK');
+ const manifest=decode(manifestBytes,manifestSha256,4_000_000,
+  'MANIFEST_SHA_OR_BYTES');
+ const checkpoint=decode(checkpointBytes,checkpointSha256,2_000_000,
+  'CHECKPOINT_SHA_OR_BYTES');
+ const entries=checkedManifest(manifest);
+ checkedState(checkpoint,manifest,entries);
+ // This reuses the existing SHA+page-row verifier; the function does not
+ // recalculate 1764 scores or call a provider.
+ combinePages(entries,rawPages);
+ need(observationDate>=manifest.start&&observationDate<=manifest.end,
+  'COLLECTION_WINDOW_MISMATCH');
+ const perSymbol=[];
+ let latestSessionPages=0;
+ for(const symbol of GMH_SEVEN_SYMBOLS){
+  const covering=manifest.files.filter(e=>e.symbol===symbol&&
+   e.observationFrom<=observationDate&&e.observationThrough>=observationDate);
+  need(covering.length>0,'LATEST_OBSERVATION_NOT_COVERED');
+  const requestTimes=covering.map(e=>{
+   const t=Date.parse(e.collectedAt);
+   need(typeof e.collectedAt==='string'&&Number.isFinite(t)&&
+    e.collectedAt===new Date(t).toISOString()&&t<=now&&
+    t>=Date.parse(observationDate+'T00:00:00Z'),
+    'COLLECTION_REQUEST_TIME_INVALID');
+   return t;
+  });
+  // Latest SHA-verified covering receipt per symbol, then oldest receipt
+  // across all 14 symbols: conservative time at which all were requested.
+  perSymbol.push(Math.max(...requestTimes));
+  latestSessionPages+=covering.length;
+ }
+ const timestamp=Math.min(...perSymbol);
+ need(Number.isSafeInteger(timestamp)&&timestamp<=now,
+  'COLLECTION_REQUEST_TIME_INVALID');
+ return Object.freeze({
+  status:'GMH_SEVEN_SOURCE_REQUEST_TIME_ATTESTED_READONLY',
+  observationDate,
+  sourceStoredAt:new Date(timestamp).toISOString(),
+  sourceTimestampBasis:'MANIFEST_GET_REQUEST_AT',
+  sourceTimestampIsFileCommitTime:false,
+  rawManifestSha256:manifestSha256,checkpointSha256,
+  checkedRawPages:entries.size,verifiedSymbols:GMH_SEVEN_SYMBOLS.length,
+  coveringPages:latestSessionPages,
+  rawFilesRehashedInMemory:true,
+  providerCalls:0,sqliteOpened:false,sqliteWrites:0,d1Writes:0,
+  publicWrites:0,schedulerWrites:0,
+  publicationAuthorized:false,upstreamCommercialRightsVerified:false,
+  derivedLicenseVerified:false
+ });
+}
+
 // This is not a PC execution entrypoint. The approved reader owns all I/O and
 // independently attests the expected manifest and checkpoint hashes.
 export function calculateFromSavedGmhSeven({
