@@ -913,3 +913,14 @@
 - **LAST PASS/FIRST FAIL:** LAST PASS 공통 #2041 읽기 전용 보호 조회; FIRST FAIL 과거 #2032/#2036 PREVALIDATION 조회 실패(원본 소비, 재실행 금지). W04 PIT 최신 유효 A #2027의 Current 29,031 verified/10,889 missing/857 unverified, History 29,016 verified/8,873 missing/915 unverified, snapshot 59/86 인증을 유지. 새 실측 아님.
 - **다음 한 작업:** W04가 기존 승인 A 진입점/새 고유 요청으로 현재 운영 `HEAD/config.source`, BED provider/보호 2파일 SHA, Task XML/lease를 읽기 전용 확인. 승인 manifest와 실제 값이 모두 일치할 때만 W04 본인 BED 정확 1파일 Writer B 단회 설치 및 JSON/TXT 독립 재조회. 불일치 시 승인 재검토 없이 fail-closed하고 실제 mismatch만 기록. 이후 신규 16파일 Host B 별도 정확 승인/등록 → Controller 출력 B → 공급자·수집월·사유별 raw 미인증 27건 A 실측. 운영 PC/SQLite/D1/공급자/Task 변경 이번 턴 0건, 총괄 신규 인계 0건.
 - **종료:** 27/72 DONE(37.5%), 잔여 45, `PIT-04-05=IN_PROGRESS/HOLD_INCOMPLETE_SOURCE_LINEAGE`, `promotionApproved=false`. 이 항목은 승인 원문 재검산 완료이며 PC 운영 단계 완료가 아니다.
+
+
+## 80. PIT-04-05 — #2054 사전조회 PASS 및 실가동 Core 증거 구분 (2026-11-18 KST)
+
+<!-- W04-PIT0405-2054-FIXED-CHECKOUT-NOT-LIVE-20261118 -->
+
+- 시작/종료: 27/72 DONE(37.5%), 잔여 45.
+- [W04 #2054 결과](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2054#issuecomment-6964455243), [실행 44202609250](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44202609250): PASS / WRITER_FIXED_PREIMAGE_READONLY. HEAD/config/checkpoint 2070ff53549e2f9f2cea57d5af7e1d83f9fd7388 일치. BED 원본 SHA256 9a41a73e8cca84ae6ced6998f88c5dadc6fd5f12e6d09b7542748a5b187ddb12, Collector 848c83202b2b63944629655850542ef2a90fefdeed48ffbfdc1774ad487a0bc5, Store a6c2938bae56147ab4bf3fcb9ba3046355360a538e58f6d34de021ea1d586851로 [승인 #2038](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2038)의 사전 원본과 일치. 보호 상태 전후 동일, 운영/공급자/D1 쓰기 0, SQLite 열기 0.
+- 핵심 제한: evidenceLevel=FIXED_CHECKOUT_NOT_LIVE_CORE_PROCESS, runtimeSourceVerified=false, coreTaskSourceLinked=false. 이 결과는 고정 체크아웃의 preimage 증거이지 실제 가동 Core/Task source 또는 설치 직전 lease를 검증한 증거가 아니다. 따라서 Writer B 실행 GO로 승격 금지. #2054 재실행 금지.
+- 다음: 기존 승인 W04 A 도구/결과에서 실제 Core Task/실행 source, lease, 보호 상태의 연결 가능 여부 확인; 조건이 검증될 때만 BED 정확 1파일 B 단회 실행 및 JSON/TXT 독립 확인. 불가능하면 W04 소관 도구의 정확한 결손부터 수정·승인한다. 이후 신규 16파일 Host B, Controller 출력 B, 미인증 27개 원자료의 원인별 검산. 총괄에 W04 기능 이관 없음.
+- PIT-04-05 HOLD_INCOMPLETE_SOURCE_LINEAGE, promotionApproved=false 유지. 신규 운영 설치/DB/D1/Task 변경 없음.
