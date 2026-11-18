@@ -1,5 +1,15 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-LEGACY-APPROVED-XLSX-REAL-417-OF-417-NODECI44330963144 -->
+## 2026-11-18 23:59 KST — 기존 PC 승인 **구형 XLSX parser 정확 SHA** 실물 공식 417개월 PASS → 불필요한 Writer source 교체 해소
+
+- **신규 실제 증거:** 기존 W01 [실PC A #2099/#2100](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2099) 승인 소스 4/4 체크의 `lib/diagnostic-layer/xlsx-lite.mjs` SHA256 `44d4c230a0620faea0d8bb2575e6f13c9ab7cfb5700aa11d752017db747f619a`는 **구형 히스토리 GitHub ref `643b7c7c4372ffad552443fc312c6cb1b944e2fc`의 실제 old xlsx-lite** LF(raw) sha256 `4b3f65527a564da3531d289a32ed4da312ba9e7c1d37b846881db71317176ea4`를 Windows CRLF로 바이트 변환한 SHA256와 **정확 일치**. 추정 소스가 아닌 승인된 파일 bytes를 Node에서 로드한 실물 시험.
+- **별도 1회 공식 원본 실증:** [Draft 격리 PR #1401](https://github.com/ansqhd5774-Choi/zgmini/pull/1401) exact HEAD `b8e8b0d097cdda77c1923f421748c62cb590d486`, 신규 단일 테스트 `tests/w01-installed-legacy-xlsx-real-parser-proof.test.mjs`, [Node.js CI #44330963144](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44330963144) `completed/success`, Build/Type/Regression(실물 파서 test 포함)/PC publication/Cloudflare read PASS. Official Census `naicsinvp.xlsx` 974835 bytes SHA `8ec724a4c0bc3781b6dbc2617d2bfacead8d931b4d37e92bca0d06a7fbabaf06`를 **구형 승인 readXlsxWorkbook과 최신 main readXlsxWorkbook에 각각 주입**해 `parseOfficialCensusInventoryWorkbook`으로 417개월·latest 2026-09/976044·전 기간 값 **완전 일치**. 실제 GitHub job 로그 `W01_LEGACY_SOURCE_EXACT_SHA_REAL_CENSUS_DIAGNOSTIC {verdict:LEGACY_APPROVED_SOURCE_REAL_XLSX_PASS,legacyRows:417,modernRows:417,legacyErrorCode:null,pcWrites:0,sqliteWrites:0,d1Writes:0,installedPcRuntimeExecuted:false}` 직접 재조회.
+- **불필요 source change 제거:** 과거 #1061/#1089의 xlsx-lite 속성 순서 수정은 일반 OOXML 호환성 개선이지만 **당시 공식 Census 974835-byte workbook에 구형 파서가 실패하는 이유가 아님**을 재현. 실PC 고정 4파일이 V2 `APPROVED_B` manifest 4/4와 일치하고 구형 파서도 현재 공식 XLSX 실물 417/417 PASS이므로, 현재 정적 B Census 저장을 위해 별도 xlsx-lite 교체/새 manifest/Parser 재승인 선행조건 **추가하지 않음**. 공식 XLSX 데이터·파서 문제는 SOURCE_COMPATIBILITY_PROVEN. 검증 PR #1401은 source-only 1파일 isolation, CI 성공 증거 남기고 **closed/unmerged**, 개발/실PC source·정규 CI 외부 호출 변경 0.
+- **유지된 단일 실제 STOP:** PC의 정확 자연 Core Task→Node pid/WMI→E: lock 소유자 증명은 현존 읽기 증거에서 FAIL/UNKNOWN, 2026-11-17 Event129 channel disabled 이력은 오늘 직접 재확인 아님. B Workflow opt-in `vars.ZGMINI_INFLATION_MANUAL_B_ENABLED` 현재 값은 연결 권한 밖/UNKNOWN; 기존 B #1177/#1818 이미 소비됨, 재실행 금지. **새 B 발행은 소유권/opt-in 실제 PASS 전 금지.** PC 실제 설치 source bytes로 온-PC 실행·수집·원자료 저장·D1/API/UI 7/7까지 확인하지 않았으므로 기능 진행률 **33/71(46.5%) 유지 / 38 OPEN**.
+- **정확 다음 실행:** Windows 관리자 C급 TaskScheduler/Operational 상태 현재 확인(비활성일 때만 사용자 직접 Enable Log) → 자연 Core Task 실행 중 기존 승인 A에서 live Task-linked WMI 또는 Event129/VBS/owner PID/lock 동일성 1회 PASS → 기존 V2 `APPROVED_B`, 4-file hash 및 B workflow exact opt-in GO에서 신규 고유 1회 공식 BLS+Census XLSX 수집·두 JSON SHA readback → 승인 계산·저장·D1 exact key/API/UI. 동일 소스/공급자 테스트를 더 반복하지 않음.
+
+
 <!-- W01-20261118-EXISTING-APPROVED-V2-FOURFILE-GO-VS-CORE-OWNER-BLOCK -->
 ## 2026-11-18 — Census 공식 XLSX PC 수집 정규 B 범위 재검산: V2 재승인 불필요 / Core owner가 단일 기능 차단
 
