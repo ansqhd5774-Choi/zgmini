@@ -98,7 +98,7 @@ test('R47 new CMD candidate remains SHA-pinned independently of frozen R49',()=>
     'THEME_NINE_R47_RECURRING_PRIVATE_UPDATE.cmd');
   const bytes=fs.readFileSync(r47);
   assert.equal(sha(bytes),
-    'a08fdec82b484c41ba3ac562908f31d96fee09c75cc3ff1b32386e9dd625ba45');
+    'b75f7e2cb253b6abb327096e19c49d676c8c75b25bb816ca82756815aec91639');
   assert.notEqual(sha(bytes),originalR49BundleSha.R47);
   assert.equal(/(?<!\r)\n/.test(bytes.toString('ascii')),false);
 });
