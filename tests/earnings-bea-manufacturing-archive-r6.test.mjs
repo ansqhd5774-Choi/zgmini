@@ -170,3 +170,17 @@ test('B result contract publishes source checkpoint and exact D1 stored timestam
  assert.match(source,/--confirm-bea-manufacturing-d1-write/);
  assert.match(source,/--source-sha/);
 });
+
+
+test('shared B preflight pins SHA, retrieval time and observed period before manufacturing D1 access',()=>{
+ const source=fs.readFileSync(new URL('../scripts/pc-writer/EARNINGS_BEA_MFG_PROFIT_R6_D1_ONE_SHOT.mjs',import.meta.url),'utf8');
+ const gate=source.indexOf("ZGMINI_EARNINGS_BEA_MFG_B_PIN_REQUIRED==='1'");
+ const firstD1=source.indexOf("await import('./d1.mjs')");
+ assert.ok(gate>0&&firstD1>gate);
+ for(const field of ['ZGMINI_EARNINGS_BEA_MFG_SOURCE_VERSION',
+   'ZGMINI_EARNINGS_BEA_MFG_SOURCE_STORED_AT',
+   'ZGMINI_EARNINGS_BEA_MFG_OBSERVED_THROUGH'])
+   assert.ok(source.includes(field));
+ assert.match(source,/BEA_MFG_APPLY_SOURCE_DRIFT_NO_WRITE/);
+ assert.match(source,/String\(payload\.sourceStoredAt\)/);
+});
