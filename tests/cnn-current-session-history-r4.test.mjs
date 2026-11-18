@@ -106,3 +106,49 @@ test('actual CNN card 1D path invokes current session guard; other periods are u
  assert.match(panel,/currentSessionPcDates\.has\(value\)/);
  assert.match(panel,/cnnObservedTimes=new Set\(allIntraday\.map\(point=>point\.date\)\)/);
 });
+
+
+test('W06 #36 genuine later CNN observation is never hidden behind two older same-session PC checks',()=>{
+ const result=currentCnnSessionHistory(current,{
+  observedPoints:[
+   obs('2026-11-16T21:30:00.000Z',40),
+   obs(current,55),
+  ],
+  checkedPoints:[
+   check('2026-11-16T22:00:00.000Z','2026-11-16T21:30:00.000Z',40),
+   check('2026-11-16T22:15:00.000Z','2026-11-16T21:30:00.000Z',40),
+  ],
+  intradayObservations:[],
+ });
+ assert.deepEqual(result.map(p=>p.score),[40,40,40,55]);
+ assert.equal(result.at(-1).date,current,'the last plotted time is the real CNN publication');
+ assert.equal(result.at(-1).score,55,'the card can agree with its actual saved CNN observation');
+});
+
+test('W06 #36 one original archive point and one real sidecar point preserve both authentic times',()=>{
+ const result=currentCnnSessionHistory(current,{
+  observedPoints:[obs('2026-11-16T21:30:00.000Z',40)],
+  intradayObservations:[obs(current,55)],
+ });
+ assert.deepEqual(result.map(p=>p.score),[40,55]);
+ assert.deepEqual(result.map(p=>p.date),['2026-11-16T21:30:00.000Z',current]);
+});
+
+test('W06 #36 PC checks need two eligible records and cannot override an exact-time genuine source point',()=>{
+ const original='2026-11-16T22:00:00.000Z';
+ const one=currentCnnSessionHistory(current,{
+  checkedPoints:[check(original,'2026-11-16T21:30:00.000Z',10)],
+  observedPoints:[obs(original,0)],
+ });
+ assert.deepEqual(one.map(p=>p.score),[0],'single check does not create chart data');
+ const two=currentCnnSessionHistory(current,{
+  checkedPoints:[
+   check(original,'2026-11-16T21:30:00.000Z',10),
+   check('2026-11-16T22:30:00.000Z','2026-11-16T21:30:00.000Z',10),
+  ],
+  observedPoints:[obs(original,0),obs(current,55)],
+  intradayObservations:[obs(original,0)],
+ });
+ assert.deepEqual(two.map(p=>p.score),[0,10,55],'authentic source overrides a same-time check');
+ assert.equal(two.at(-1).date,current);
+});
