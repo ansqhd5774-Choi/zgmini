@@ -509,3 +509,13 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 - **소스 CI/병합 증거:** [Node CI #44239103881](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44239103881) completed SUCCESS: build/typecheck/regression/PC publication recovery/Cloudflare candidate read contracts 모두 PASS. 앱 PR #1305 main squash SHA `88ecff9b09d69d65470acf9916e7d0f010ae980e`; main 파서 파일 재조회 PASS. 실제 Provider 수집·PC Writer source B 설치·SQLite/D1/Task·운영 원자료·게시 변경 **0건**. 소스 CI를 운영 입력의 실증으로 승격하지 않음.
 - **검증 잔여:** 기존 A `employment-r6-collection-evidence-readonly`의 600/600 완전주×51지역·strict52 545주는 **행/연속성/일부 zero prior window 집계**이며 각 ETA539 CSV 원본의 `c3` null/0/missing·분모 값 완전성 검증은 아님. PIT-04-07 `IN_PROGRESS / PC_DATA_VALIDITY_PENDING`. PIT-04-05 raw 미인증 27·후보 충돌 14/메타 부족 255 자동 승격 금지. 원본 B #2094 stage/backlog/install lease의 정규 읽기 전용 실증·복구 영수증을 먼저 수신하여 공유 Controller 적용을 재판정한 뒤, W04가 직접 National A/light와 미인증 원인 분류 수행.
 - **전체 단계:** 27/72 DONE(37.5%), 잔여 45; 예약 자연 검증은 전체 기능 완료 뒤 별도 후속.
+
+### W04 — 2026-11-18 PIT-04-07 최신 ETA539 무효 개정 재사용 차단 (source-only DONE)
+
+<!-- W04-PLAN-PIT0407-ETA539-LATEST-REVISION-PR1306-20261118 -->
+
+- **새 소스 완료:** [앱 PR #1306](https://github.com/ansqhd5774-Choi/zgmini/pull/1306) 정확 2파일. 기존 ETA539 c3의 blank/음수/소수/비십진 검증만으로는 같은 지역·주차의 **무효 최신 개정**이 먼저 버려지고 이전 유효값을 사용해 거짓 51지역 완전주로 계산되는 결함이 남아 있었음. 최신 보고 `rptdate` 선정 후 `c3` 유효성 검사로 수정. 정상 최신 0, 이전 무효 후 정상 수정값 보존; 동일 보고일 무효 행·최신 무효 7유형 회귀.
+- **CI/main 근거:** [Node CI #44240475669](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44240475669) SUCCESS, source main squash merge `da642cc18457a767b71286a646402f99274f2ef4`. 앱 파서만 수정, 운영 PC Writer/DB/D1/수집/Controller/Task 무변경.
+- **공통 최신 상태:** 원본 공유 Controller [#2094](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2094) STAGED BLOCKED. 공통 source-only [#2098](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2098) + STAGED artifact read-only [#2102](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2102) main 병합 및 CI PASS. 그러나 독립 운영 maintainer 설치, #2094 원장/stage/backup/backlog/lease 실측·복구 완료 증거 부재 ([중앙 #68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6969384221)). 기존 #2094 재접수나 stage 삭제/Workflow 수동 조작 금지.
+- **다음 필수:** 공통 복구의 정확 운영 영수증 확인 후에만 W04가 직접 공유 6파일 Controller B 고유 재판정/승인 범위 CAS/설치 실측. 이후 National 저장 XML/Run 주차 A/light, 미인증 27개 원인별 원문·해시 분류. 독립 PIT-04-07의 실제 저장 `c3` 0/null/missing 및 분모 유효성 read-only 검증은 별도, 아직 완료 주장 금지. 후보 14상충/255 미입증 자동 승격 보류, 예약 자연 검증은 기능 완료 뒤.
+- **정량 단계:** 시작/종료 `27/72 DONE (37.5%)`, 잔여 45. PIT-04-05 `HOLD_INCOMPLETE_SOURCE_LINEAGE` / PIT-04-07 `IN_PROGRESS / PC_DATA_VALIDITY_PENDING`. [진행 원장 §91](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md).
