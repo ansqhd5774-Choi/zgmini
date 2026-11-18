@@ -1,5 +1,14 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-INFL7-STORED-TIME-PR1329-MERGED -->
+## 2026-11-18 — 저장형 물가 7행 GET/HEAD 원자료·게시 시각 계보 검증 보완 (source-only)
+
+- **진행률:** 시작 33/71(46.5%) → 종료 **33/71(46.5%)**, 신규 DONE 0, 미완료 38. 실제 Census 원자료 저장·D1 게시·Production 활성 배포가 아닌 공개 저장값 판정의 구체 계약 오류 수리.
+- **확정 소스 결함:** 공개 Worker validator는 payload.sourceStoredAt이 READY/STALE 각 원자료의 sourceStoredAt 최신값과 다른 입력을 허용했고, 저장형 projection.builtAt이 실제 원본 sourceStoredAt보다 과거여도 stored_at과 동일하면 GET/HEAD 200을 반환할 수 있었다. 실제 운영 D1이 그런 데이터를 포함한다는 증거는 없다.
+- **정확 2파일 최소 수정:** [앱 PR #1329](https://github.com/ansqhd5774-Choi/zgmini/pull/1329) worker/inflation-causal-candidates-public-7-r1.mjs + tests/inflation-causal-candidates-public-7-r1.test.mjs. 전체 sourceStoredAt은 개별 READY/STALE 최대 원본 저장시각과 일치, D1 builtAt은 그 원본 저장 이후여야 유효. 두 방향 잘못된 집계시각/이전 게시시각(HEAD·GET 503)을 fixture로 검증하고 정상 7/7·Census #28 PENDING 6/7 계약은 수용. 원본 숫자·산식·TTL·score:null·기존 19개·4축 변경 0.
+- **CI/병합:** PR HEAD 2d0879f2b1d992ffce3a0644b35c8645c189fec6, [Node.js CI #44258265545](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44258265545) completed/success — Build, Type check, Regression tests, PC publication recovery tests, Cloudflare candidate read contracts 전부 PASS. app main squash [b106584fa54d1e656675434d2a9a93a5ac142834](https://github.com/ansqhd5774-Choi/zgmini/commit/b106584fa54d1e656675434d2a9a93a5ac142834). 기존 전담 브랜치 전체 병합/실PC 운영 적용 0.
+- **실제 운영 경계 및 다음 필수 실행:** 공개 API는 외부 도구 및 sandbox DNS/접근 차단으로 실시간 HTTP 결과 미관측. Active Cloudflare Deployment SHA 및 D1 per-key admin readback도 없음. 기존 PC [A #2122](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2122) Census #28 MISSING/CENSUS_M3_HEADERS_INVALID, 공유 #2094 STAGED/FIRST_FAIL 복구 미증명, W04 공유 설치 미완료, W01 fixed header-only #2111 미설치. 원본 B #1818 재실행·Provider·SQLite·D1·Task·사이트 변경 0. 공통 안전복구 및 W04 실제 Controller 설치 후 W01 기보관 2025/26 Census 헤더-only A 단회 실행→실측 파서 수리→정규 수집/저장/공개 D1/API/UI 검증.
+
 <!-- W01-20261118-INFL19-A2135-WRITER-READBACK -->
 ## 2026-11-18 — 실PC 19개 로컬 공개 준비본·Writer 상태 직접 조회
 
