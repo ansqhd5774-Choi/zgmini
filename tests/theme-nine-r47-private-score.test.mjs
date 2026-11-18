@@ -6,7 +6,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {mergeNineR47HourlyRows,calculateNineR47PrivateScores,parsePage} from
   '../scripts/pc-writer/theme-nine-r47-private-score.mjs';
-import {runNineR47Recurring} from
+import {runNineR47Recurring,planNineR47Recurring} from
   '../scripts/pc-writer/theme-nine-r47-recurring-private-refresh.mjs';
 import {calculateNineR47PrivateThemes} from
   '../scripts/pc-writer/theme-nine-r47-private-theme-aggregate.mjs';
