@@ -9,8 +9,8 @@ import {MARKETPARQUET_REMOVED_CODE} from '../lib/marketparquet-retirement.mjs';
 
 const now=Date.parse('2026-11-16T13:00:00.000Z');
 const source=readFileSync(new URL('../app/api/market-score/observations/route.ts',import.meta.url),'utf8');
-// Compile the actual Cloudflare route with only its three imports dependency-
-// injected: this tests the production GET implementation without touching D1.
+// Compile the actual Cloudflare route with its static imports dependency-injected.
+// Test the production GET logic against read-only mocked D1.
 const compiled=ts.transpileModule(source.replace(/^import [^\n]*\n/gm,''),{
  compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022},
 }).outputText;
@@ -28,20 +28,32 @@ const approvedCurrent={
 };
 function harness(rows=[],current=approvedCurrent){
  const reads=[];
- const env={DB:{prepare(sql){
-  if(sql==="SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key='current'"){
-   return {async first(){
-    reads.push({current:true});
-    return current===null?null:{body:typeof current==='string'?current:JSON.stringify(current)};
-   }};
-  }
-  assert.match(sql,/^SELECT snapshot_key,body FROM market_public_snapshots_v1 WHERE snapshot_key BETWEEN/);
-  assert.doesNotMatch(sql,/INSERT|UPDATE|DELETE/);
-  return {bind(from,to){return {async all(){
-   reads.push({from,to});
-   return {results:rows.filter(row=>row.snapshot_key>=from&&row.snapshot_key<=to).slice(0,371)};
-  }};}};
- }}}};
+ const env={
+  DB:{
+   prepare(sql){
+    if(sql==="SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key='current'"){
+     return {
+      async first(){
+       reads.push({current:true});
+       return current===null?null:{body:typeof current==='string'?current:JSON.stringify(current)};
+      },
+     };
+    }
+    assert.match(sql,/^SELECT snapshot_key,body FROM market_public_snapshots_v1 WHERE snapshot_key BETWEEN/);
+    assert.doesNotMatch(sql,/INSERT|UPDATE|DELETE/);
+    return {
+     bind(from,to){
+      return {
+       async all(){
+        reads.push({from,to});
+        return {results:rows.filter(row=>row.snapshot_key>=from&&row.snapshot_key<=to).slice(0,371)};
+       },
+      };
+     },
+    };
+   },
+  },
+ };
  const exports={};
  const GET=new Function('exports','env','COMPOSITE_OBSERVED_PREFIX','COMPOSITE_OBSERVED_VERSION',
   'sampleCnnObservedPoints','maskRetiredMarketPublicSnapshot','MARKETPARQUET_REMOVED_CODE',
