@@ -137,7 +137,12 @@ test('verified older BLS 5 rows survive newer incomplete capture through D1 read
     const get=await readEarningsCompanionResponse(
       new Request('https://zgmini.kr/api/earnings-recession-indicators'),remote,{now:NOW});
     assert.equal(get.status,200);
+    // Publication is the verified D1 stored_at, not source retrieval time.
+    assert.equal(get.headers.get('x-projection-published-at'),new Date(NOW).toISOString());
+    assert.equal(get.headers.get('x-projection-source-at'),new Date(payload.sourceStoredAt).toISOString());
+    assert.notEqual(get.headers.get('x-projection-published-at'),get.headers.get('x-projection-source-at'));
     const publicBody=await get.json();
+    assert.equal(Object.hasOwn(publicBody,'publishedAt'),false,'D1 payload contract unchanged');
     assert.equal(publicBody.status,'READY');
     assert.equal(publicBody.coverage.configured,5);
     assert.equal(publicBody.coverage.ready,5);
@@ -158,9 +163,21 @@ test('verified older BLS 5 rows survive newer incomplete capture through D1 read
       assert.equal(shown.status,'READY');
       assert.equal(shown.freshness.status,'FRESH');
     }
-    assert.equal((await readEarningsCompanionResponse(
+    const head=await readEarningsCompanionResponse(
       new Request('https://zgmini.kr/api/earnings-recession-indicators',{method:'HEAD'}),
-      remote,{now:NOW})).status,200);
+      remote,{now:NOW});
+    assert.equal(head.status,200);
+    assert.equal(head.headers.get('x-projection-published-at'),new Date(NOW).toISOString());
+    assert.equal(await head.text(),'','HEAD body remains empty');
+    // A mismatched D1 checkpoint must not leak an invented publication time.
+    const original=remote.records.get(EARNINGS_C_SNAPSHOT_KEY);
+    remote.records.set(EARNINGS_C_SNAPSHOT_KEY,{...original,stored_at:NOW+1000});
+    const mismatched=await readEarningsCompanionResponse(
+      new Request('https://zgmini.kr/api/earnings-recession-indicators'),
+      remote,{now:NOW+1000});
+    assert.equal(mismatched.status,503);
+    assert.equal(mismatched.headers.get('x-projection-published-at'),null);
+    remote.records.set(EARNINGS_C_SNAPSHOT_KEY,original);
     assert.equal(remote.calls.filter(x=>x.kind==='WRITE').length,1);
     assert.ok(remote.calls.every(x=>x.key===EARNINGS_C_SNAPSHOT_KEY));
   }finally{db.close();}
@@ -182,6 +199,7 @@ test('corrupt selected BLS chunk never reaches D1 publication; expired source is
       new Request('https://zgmini.kr/api/earnings-recession-indicators'),published,
       {now:Date.parse('2027-03-01T00:00:00.000Z')});
     assert.equal(stale.status,503);
+    assert.equal(stale.headers.get('x-projection-published-at'),null);
     assert.equal((await stale.json()).reason,'STORED_PROJECTION_STALE');
   }finally{good.close();}
 });

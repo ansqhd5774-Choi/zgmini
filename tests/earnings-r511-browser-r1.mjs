@@ -45,12 +45,16 @@ try{
    const url=new URL(route.request().url());
    const isBls=url.pathname==='/api/earnings-recession-indicators';
    return route.fulfill({status:isBls?200:503,contentType:'application/json',
+     headers:isBls?{'x-projection-published-at':'2026-10-27T03:00:00.000Z',
+       'x-projection-source-at':retrievedAt}:{},
      body:JSON.stringify(isBls?mock:{status:'unavailable',reason:'STORED_PROJECTION_PENDING'})});
   });
   await page.goto(base+'/earnings-recession/',{waitUntil:'domcontentloaded',timeout:60000});
   await page.waitForFunction(()=>
     document.querySelector('.earnings-r2-table tbody tr.earnings-r2-cost-row')?.textContent?.includes('6.34%'),
     null,{timeout:30000});
+  assert.equal((await page.locator('.earnings-r2-published-at').innerText()).trim(),
+    'BLS 게시 2026-10-27 12:00:00 KST',width+'px: D1 publication is not retrieval');
   const table=page.locator('.earnings-r2-table tbody tr.earnings-r2-cost-row');
   const cards=page.locator('.earnings-r2-mobile-list article.earnings-r2-cost-mobile-card');
   assert((await table.count())>=5,width+'px: five BLS desktop rows');

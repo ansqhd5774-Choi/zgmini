@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {earningsCostRetrievalDay,earningsCostDisplayStatus,earningsCostSparkGeometry} from '../app/earnings-recession/earnings-cost-observation-display-r1.mjs';
+import {earningsCostRetrievalDay,earningsCostDisplayStatus,earningsCostSparkGeometry,earningsCostPublicationKst} from '../app/earnings-recession/earnings-cost-observation-display-r1.mjs';
 const read=p=>readFileSync(p,'utf8');
 const risk=read('app/earnings-recession/earnings-risk-only-panel.tsx');
 const legacy=read('app/earnings-recession/earnings-recession-panel.tsx');
@@ -68,4 +68,20 @@ test('R5-11 BLS, BEA and SEC chart gaps do not create a false latest marker',()=
  assert.match(risk,/d=\{geometry\.path\}/);
  assert.match(risk,/geometry\.marker&&<circle/);
  assert.doesNotMatch(risk,/const latest=valid\.at\(-1\)!;/);
+});
+
+test('R5-11 D1 publication time is strictly sourced and distinct from BLS retrieval',()=>{
+ assert.equal(earningsCostPublicationKst('2026-10-27T03:00:00.000Z'),'2026-10-27 12:00:00 KST');
+ assert.equal(earningsCostPublicationKst('2026-12-31T16:01:02.000Z'),'2027-01-01 01:01:02 KST');
+ for(const missing of [null,undefined,'','2026-10-27','2026-02-30T00:00:00.000Z',
+  '2026-10-27T24:00:00.000Z','2026-10-27T03:00:00+09:00',NaN]){
+  assert.equal(earningsCostPublicationKst(missing),'—');
+ }
+ assert.match(risk,/publishedAt:costPublishedAt/);
+ assert.match(risk,/BLS 게시 \{costValid\?earningsCostPublicationKst\(costPublishedAt\):"—"\}/);
+ const hook=read('components/use-stored-index.ts');
+ assert.match(hook,/response\.headers\.get\('x-projection-published-at'\)/);
+ assert.match(hook,/setPublishedAt\(verifiedPublishedAt\)/);
+ assert.doesNotMatch(hook,/setPublishedAt\(.*sourceStoredAt/);
+ assert.doesNotMatch(risk,/BLS 게시 \{.*retrievedAt/);
 });
