@@ -21,6 +21,7 @@ test("FRED app terms explicitly state that users accept FRED API terms",()=>{
  const terms=read("../app/terms/page.tsx");
  assert.ok(terms.includes(required));
  assert.ok(terms.includes(link));
+ assert.ok(terms.includes("ZGMINI 서비스를 이용하면 이용자는 "));
  assert.ok(terms.includes("약관을 준수하는 데 동의합니다"));
  assert.ok(terms.includes("원자료 소유자의 정책"));
  assert.ok(terms.includes("공식 점수나 승인·추천을 뜻하지 않습니다"));
