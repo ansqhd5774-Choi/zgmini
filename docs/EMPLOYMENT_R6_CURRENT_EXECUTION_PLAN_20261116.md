@@ -519,3 +519,13 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 - **공통 최신 상태:** 원본 공유 Controller [#2094](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2094) STAGED BLOCKED. 공통 source-only [#2098](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2098) + STAGED artifact read-only [#2102](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2102) main 병합 및 CI PASS. 그러나 독립 운영 maintainer 설치, #2094 원장/stage/backup/backlog/lease 실측·복구 완료 증거 부재 ([중앙 #68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6969384221)). 기존 #2094 재접수나 stage 삭제/Workflow 수동 조작 금지.
 - **다음 필수:** 공통 복구의 정확 운영 영수증 확인 후에만 W04가 직접 공유 6파일 Controller B 고유 재판정/승인 범위 CAS/설치 실측. 이후 National 저장 XML/Run 주차 A/light, 미인증 27개 원인별 원문·해시 분류. 독립 PIT-04-07의 실제 저장 `c3` 0/null/missing 및 분모 유효성 read-only 검증은 별도, 아직 완료 주장 금지. 후보 14상충/255 미입증 자동 승격 보류, 예약 자연 검증은 기능 완료 뒤.
 - **정량 단계:** 시작/종료 `27/72 DONE (37.5%)`, 잔여 45. PIT-04-05 `HOLD_INCOMPLETE_SOURCE_LINEAGE` / PIT-04-07 `IN_PROGRESS / PC_DATA_VALIDITY_PENDING`. [진행 원장 §91](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md).
+
+### W04 — 2026-11-18 PIT-04-07 51지역·이전 4주 분모의 NULL/무효 입력 회귀 보강
+
+<!-- W04-PLAN-PIT0407-NULL-PRIOR-WINDOW-PR2110-20261118 -->
+
+- **완료된 W04 독립 소스:** [제어 PR #2110](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2110) read-only `controller/employment-r6-collection-evidence-readonly.mjs` + test 정확 2파일. 기존 SQLite `SUM(c.value)`는 `NULL`을 무시하여 51개 행만 존재하면 일부 값의 NULL/음수/소수/문자열과 4주 분모 결손을 거짓 정상으로 볼 수 있었음. 주차별 `invalid_value_count`, 이전창 `invalid_prior_region_count`, 10년 원자료 오류 분류를 추가. 단일 정상 0을 거짓 결측으로 취급하지 않음.
+- **소스/CI 증거:** [W04 CI #44241685260](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44241685260) + [C996 #44241685472](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44241685472) 2/2 SUCCESS; source main squash `928def9d4c666cc91cb3ff6757568e0b5b338fe0`. 운영 PC/Task/DB/D1/Writer/Provider/Workflow/실수집 변경 0.
+- **설치 승인 분리:** #2094 기존 정확 6파일 B `STAGED/BLOCKED`, 설치 `f7f1559...` 유지. 공통 #2098/#2102 main source-only 완료이나 독립 maintainer 설치·원본 stage/backlog/lease 복구 증거 없음. 기존 승인 target `ead5d2d...`는 신규 PR #2110 이전 source이므로 변경된 read-only 진단을 자동 설치됐다고 주장하거나 고정 manifest 변경 불가. 복구 증거 수신 후 W04가 정확 target CAS/새 승인 범위·중복 W01 5파일 방지에 대한 재판정 책임.
+- **필수 후속:** W04 소관 실제 원자료 ETA539 c3 0/null/missing 및 이전 4주 분모 유효성, National 저장 XML↔Run 주차 대조, 미인증 raw 27개 원인/후보 14충돌·255 미입증 HOLD 판정. 실제 A/light 결과 없이 PIT-04-07 완료로 승격하지 않음. 예약 자연 검증은 기능 완료 이후에만 실행.
+- **단계:** 시작/종료 27/72 DONE(37.5%), 잔여 45. PIT-04-07 `IN_PROGRESS / PC_DATA_VALIDITY_PENDING`. [진행 원장 §92](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md).
