@@ -34,7 +34,7 @@ export function validateInflationCandidates7Public(payload,{now=Date.now()}={}){
     !Array.isArray(payload.indicators)||payload.indicators.length!==7)
     throw Error('INFL7_PUBLIC_ENVELOPE_INVALID');
 
-  let ready=0,stale=0;
+  let ready=0,stale=0,maxSourceStoredAt=0;
   for(let i=0;i<INFLATION_CANDIDATES_7.length;i++){
     const meta=INFLATION_CANDIDATES_7[i],row=payload.indicators[i];
     if(!object(row)||!allowed(row,rowFields)||row.id!==meta.id||
@@ -62,6 +62,7 @@ export function validateInflationCandidates7Public(payload,{now=Date.now()}={}){
           row.previousObservationDate!==row.history.at(-2).date||
           row.previousValue!==row.history.at(-2).value)))
         throw Error('INFL7_PUBLIC_READY_INVALID');
+      maxSourceStoredAt=Math.max(maxSourceStoredAt,Date.parse(row.sourceStoredAt));
       if(row.status==='READY')ready++;
       else stale++;
     }else if(row.value!==null||row.previousValue!==null||row.observationDate!==null||
@@ -71,6 +72,10 @@ export function validateInflationCandidates7Public(payload,{now=Date.now()}={}){
   }
   if((ready===7)!==(payload.status==='READY')||ready+stale===0)
     throw Error('INFL7_PUBLIC_COVERAGE_INVALID');
+  // A public summary cannot claim a source timestamp later than its
+  // newest approved stored observation or conceal a newer saved row.
+  if(payload.sourceStoredAt!==maxSourceStoredAt)
+    throw Error('INFL7_PUBLIC_PROVENANCE_MISMATCH');
   return payload;
 }
 
@@ -94,7 +99,8 @@ export async function readInflationCandidates7PublicResponse(request,db,{now=Dat
     if(typeof record.body!=='string'||record.body.length>45000)throw Error('INVALID_BODY');
     const saved=JSON.parse(record.body),payload=validateInflationCandidates7Public(saved?.payload,{now});
     if(!object(saved.projection)||saved.projection.status!=='READY'||
-      !Number.isSafeInteger(saved.projection.builtAt)||saved.projection.builtAt>now||
+      !Number.isSafeInteger(saved.projection.builtAt)||
+      saved.projection.builtAt>now||saved.projection.builtAt<payload.sourceStoredAt||
       Number(record.stored_at)!==saved.projection.builtAt||
       saved.projection.sourceVersion!==payload.sourceVersion||
       saved.projection.sourceStoredAt!==payload.sourceStoredAt)
