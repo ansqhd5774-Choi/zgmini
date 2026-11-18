@@ -197,3 +197,30 @@ export async function addVerifiedNineR37(db,base,{now=Date.now()}={}){
     provisionalSourceStoredAt:base.sourceStoredAt??null}:{}),
   }:{}),modelRevision:record.version};
 }
+
+export async function readIndependentNineR37Confirmed(db,{now=Date.now()}={}){
+ let row;
+ try{row=await db.prepare("SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'")
+  .bind(THEME_NINE_R37_KEY).first();}catch{return null;}
+ if(!row)return null;
+ let record;try{record=JSON.parse(row.body);}catch{return null;}
+ // Only a genuinely confirmed and already-observed R37 may bypass an expired L7.
+ if(record?.phase!=='CONFIRMED'||typeof record.observationDate!=='string'||
+  Date.parse(record.observationDate+'T00:00:00Z')>now)return null;
+ const publicRoster=THEME_NINE_R37_ROSTER.filter(item=>item.theme!=='AI·반도체');
+ const approved=publicRoster.map(required=>record?.themes?.find(t=>t.theme===required.theme));
+ if(approved.some(item=>!item))return null;
+ const independentBase={status:'READY',phase:record.phase,
+  observationDate:record.observationDate,
+  confirmedObservationDate:record.observationDate,themes:approved};
+ if(!eligibleNineR37(record,independentBase,{now,
+  storedAt:Number(row.stored_at),independentAnchor:true}))return null;
+ return {status:'READY',version:record.version,
+  modelRevision:record.version,methodologyVersion:record.methodologyVersion,
+  observationDate:record.observationDate,
+  confirmedObservationDate:record.observationDate,phase:'CONFIRMED',
+  sourceVersion:record.sourceVersion??record.version,
+  sourceStoredAt:record.sourceStoredAt,
+  themes:approved.map(t=>({theme:t.theme,etfs:[...t.etfs],score:t.score,
+   history:t.history.map(p=>({date:p.date,score:p.score}))}))};
+}
