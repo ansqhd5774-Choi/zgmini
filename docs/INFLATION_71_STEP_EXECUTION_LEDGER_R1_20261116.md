@@ -1,5 +1,15 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-CENSUS-A-2111-MAIN-MERGE-CONFLICT-RESOLVED -->
+## 2026-11-18 — Census archive A Draft #2111 main 충돌 해결 (미설치)
+
+- **LAST PASS:** PR #2111 old HEAD 0ed8ae36의 사용 컬럼 기반 진단/신규 회귀 2건 source-only; 기존 변경 5파일. latest control main 15ad4f05에 공용 operations/config/workflow 동시 수정이 있어 PR 기존 `mergeable_state=dirty`, base와 head 80 commits 분기.
+- **이번 실제 변경:** [merge commit 5cb15a95](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/5cb15a95ab9e37faf0f94a760d1bd7bbf89686e8)를 Draft 브랜치의 fast-forward로 반영. head 0ed8ae36 + main 15ad4f05 2부모, reset/rebase/force 0. 최신 main 전체 트리 위에 정확 5개 PR 파일만 덮어 변경: Controller W01 읽기 A 모듈/테스트 2개와 shared operations.mjs, config/operations.json, maintenance-source-tests.yml의 해당 W01 항목만. 타 담당 기존 main 변경 전부 보존.
+- **원격 확인:** 동일 HEAD에서 `mergeable=true`·`mergeable_state=unstable`(CI 대기), main 대비 `behind=0`·PR 차이 정확 5파일 확인. 신규 CI workflow 3건 `queued` (Controller Maintenance #44284541359, C996 #44284541364, D05 #44284541368); 완료/성공은 아직 미확인. Draft/HOLD·운영 Controller 설치 금지 유지.
+- **FIRST UNFINISHED:** 새 HEAD의 실제 Windows CI 성공 확인, 공통 #2094 STAGED 안전 복구/정규 유지보수기 V2 실PC 적용 및 W04 공유 정확 6파일 설치. Census 2025/2026 보관 raw 헤더 A 직접 조회·Census #28 실제 수집/Writer D1/API/UI 모두 미완료. 운영 쓰기/Provider/SQLite/D1/Task·예약 변경 0. 원본 Census B #1818 재실행 0.
+- **다음 실행:** 위 고유 CI 3건의 실행/결과 확인 후 source PASS만 인정. 공유 복구/설치 증거가 도착하면 W01은 현행 승인 pin과 독립 A 최소 diff 비교 후 정규 설치·header-only 읽기 1회 수행. 계속 33/71(46.5%), 잔여 38.
+
+
 <!-- W01-20261118-CENSUS-ARCHIVED-HEADERS-READER-CONSUMED-COLUMNS-PR2111 -->
 ## 2026-11-18 — #2111 보관 헤더 A 진단·실제 Census 수집기 기준 불일치 수정 (Draft / Source-only)
 
