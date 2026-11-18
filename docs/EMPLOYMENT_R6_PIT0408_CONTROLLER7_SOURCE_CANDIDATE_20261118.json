@@ -70,6 +70,7 @@
     "historyRepairApprovedKeys": 0
   },
   "requiredBeforeUse": [
+    "NON_DEPLOYABLE_TARGET_DO_NOT_USE_AS_B_MANIFEST",
     "common-owner original #2094 stage and independent maintainer V2 actual Windows recovery receipt",
     "confirm latest installed Controller SHA/preimage/lease and W01/W04 scope",
     "new exact B approval manifest pinned to final target SHA and seven file bytes",
@@ -82,5 +83,18 @@
     "do not bypass pinned maintainer V2",
     "do not install W05/ER1 unapproved effects",
     "do not modify live SQLite/D1/Task"
-  ]
+  ],
+  "preflightSourceCheck": {
+    "checkedAt": "2026-11-18",
+    "code": "TARGET_NOT_ON_MAIN",
+    "status": "FAIL_FOR_REGULAR_B_INSTALL",
+    "contract": "zgmini-pc-control/tools/update.mjs requires git merge-base --is-ancestor targetSha refs/remotes/origin/main and installedSha ancestor targetSha",
+    "candidateSha": "6eb398858f72bf18f16bc57df9773e13efa7d0e8",
+    "candidateComparedToLatestMain": "DIVERGED",
+    "candidateIsDescendantOfInstalled": true,
+    "candidateIsAncestorOfMain": false,
+    "originalSevenFileCI": "PASS_ONLY_DOES_NOT_WAIVE_MAIN_ANCESTRY",
+    "decision": "REJECT_AS_REGULAR_B_TARGET",
+    "remediation": "No bypass/force/rebase/rollback. Use an immutable main-ancestor commit and revalidate exact cumulative Controller/config diff with W05/ER1 owner approvals, or a separately authorized general change to installation procedure. Do not assume 7-file source-only candidate itself is installable."
+  }
 }
