@@ -49,6 +49,7 @@ on:
       - 'components/risk-detail-side-rails.*'
       - 'app/earnings-recession/**'
       - 'tests/earnings-r511-browser-r1.mjs'
+      - 'tests/earnings-r511-production-published-readonly-r1.mjs'
       - 'tests/risk-detail-side-rails-browser-r44.mjs'
       - 'app/outbreak-events.tsx'
       - 'app/outbreak-beginner-fed-r53.tsx'
@@ -88,6 +89,8 @@ jobs:
         run: npx playwright install --with-deps chromium
       - name: Verify Production first-party JavaScript assets with read-only Chromium
         run: node tests/production-assets-network-r1.mjs
+      - name: Verify W05 R5-11 actual D1 publication header and hydrated Production UI at 390/1440
+        run: node tests/earnings-r511-production-published-readonly-r1.mjs
       - name: Start local dev UI (no remote bindings and no deployment)
         run: |
           npm run dev > /tmp/zgmini-chat-vite.log 2>&1 &
@@ -138,6 +141,7 @@ jobs:
             artifacts/about-intro-bootstrap/
             artifacts/inflation-criterion-review/
             artifacts/earnings-r511-browser/
+            artifacts/earnings-r511-published-live/
             artifacts/employment-r6-browser/
             artifacts/theme-visible-asof/
             artifacts/production-assets-network/
