@@ -740,3 +740,68 @@ test("PIT-04-04 recorded_at and first_seen_at cannot backdate a read-only as-of 
   assert.equal(invalid.coreHistoryAsOfUniqueKeys,0);
   assert.equal(invalid.coreCurrentKeysMissingHistory,1);
 });
+
+
+test("PIT-04-08 malformed optional CURRENT time remains a HOLD key in both reports",t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit0408-malformed-"));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"candidate.sqlite");
+  const al=observation("AL",100,"a".repeat(64));
+  fixture(core,{current:[al],history:[]});
+  fixture(candidate,{current:[al],history:[al]});
+  for(const [file,table] of [[core,T.observationCurrent],[candidate,T.observationCurrent]]){
+    const db=new DatabaseSync(file);
+    try{
+      db.exec(`ALTER TABLE ${table} ADD COLUMN recorded_at TEXT`);
+      db.prepare(`UPDATE ${table} SET recorded_at=?`).run(
+        file===core?"not-a-time":"2026-11-16T10:00:00.000Z");
+    }finally{db.close();}
+  }
+  const before=[digest(core),digest(candidate)];
+  const run=()=>auditEmploymentR6PitCoverage({
+    dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-18",keyReviewOffset:0,
+  });
+  const malformedCore=run();
+  // Unknown CURRENT storage time is not evidence of a future observation:
+  // retain the identity, classify its metadata as HOLD, and do not upgrade
+  // a matching candidate to an approved history repair.
+  assert.equal(malformedCore.coreCurrentKeys,1);
+  assert.equal(malformedCore.coreCurrentKeysMissingHistory,1);
+  assert.equal(malformedCore.coreMissingHistoryKeysWithConsistentCandidateMetadata,0);
+  assert.equal(malformedCore.coreMissingHistoryKeysWithoutConsistentCandidateMetadata,1);
+  assert.equal(malformedCore.pit04KeyReview.counts.coreKeys,1);
+  assert.equal(malformedCore.pit04KeyReview.counts.coreHistoryMissing,1);
+  assert.equal(malformedCore.pit04KeyReview.counts.missingCandidateIncomplete,1);
+  assert.equal(malformedCore.pit04KeyReview.rawPitAttested,false);
+  assert.equal(malformedCore.promotionApproved,false);
+  assert.equal(malformedCore.candidateReconciliationPreviewStatus,
+    "HOLD_CORE_HISTORY_GAPS_WITHOUT_MATCHING_CANDIDATE");
+  assert.deepEqual([digest(core),digest(candidate)],before);
+
+  const coreDb=new DatabaseSync(core),candidateDb=new DatabaseSync(candidate);
+  try{
+    coreDb.prepare(`UPDATE ${T.observationCurrent} SET recorded_at=?`)
+      .run("2026-11-16T10:00:00.000Z");
+    candidateDb.prepare(`UPDATE ${T.observationCurrent} SET recorded_at=?`)
+      .run("invalid-recorded");
+  }finally{coreDb.close();candidateDb.close();}
+  const malformedCandidate=run();
+  assert.equal(malformedCandidate.coreCurrentKeys,1);
+  assert.equal(malformedCandidate.candidateCurrentKeys,1);
+  assert.equal(malformedCandidate.coreMissingHistoryKeysWithConsistentCandidateMetadata,0);
+  assert.equal(malformedCandidate.pit04KeyReview.counts.coreKeys,1);
+  assert.equal(malformedCandidate.pit04KeyReview.counts.missingCandidateIncomplete,1);
+  assert.equal(malformedCandidate.candidateReconciliationPreviewStatus,"HOLD_UNVERIFIED_SOURCE_LINEAGE");
+  assert.equal(malformedCandidate.promotionApproved,false);
+
+  // A genuinely future storage time remains excluded consistently.
+  const futureDb=new DatabaseSync(core);
+  try{futureDb.prepare(`UPDATE ${T.observationCurrent} SET recorded_at=?`)
+    .run("2026-11-19T00:00:00.000Z");}
+  finally{futureDb.close();}
+  const future=run();
+  assert.equal(future.coreCurrentKeys,0);
+  assert.equal(future.pit04KeyReview.counts.coreKeys,0);
+  assert.equal(future.coreCurrentKeysMissingHistory,0);
+  assert.equal(future.promotionApproved,false);
+});
