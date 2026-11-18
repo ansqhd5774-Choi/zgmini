@@ -255,7 +255,7 @@ try{
       period+' checked points increasing');
     assert.ok(archive.totalObservedPoints>=points.length,period+' source count contains sampled');
     assert.ok(archive.verifiedCheckCount>=checks.length,period+' verified checks count contains sampled');
-    const button=periodGroup.getByRole('button',{name:period,exact:true});
+    const button=periodGroup.locator('button[data-period-short="'+period+'"]');
     await Promise.all([
      live.waitForResponse(response=>{
       const u=new URL(response.url());
