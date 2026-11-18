@@ -6,7 +6,7 @@ import {assertCompleteMarket} from './market-publication-validation.mjs';
 import {collectionDisposition} from './collection-result-contract.mjs';
 import {fetchDiagnosticFredSeries} from '../lib/diagnostic-layer/official-macro-adapters.mjs';
 import {collectRateR2Inputs,RATE_R2_PROVIDER_CONTRACT} from '../lib/market-score/rate-r2-provider.mjs';
-import {readBreadthB1R5StoredPublicDomainR1} from '../lib/market-score/breadth-b1-r5-worker-domain.mjs';
+import {retiredBreadthPublicDomain} from './market-retired-breadth-domain.mjs';
 import {collectInflationR2StoreOnly} from './inflation-r2-collector.mjs';
 import {collectEarningsE1R4ToStore} from '../lib/market-score/sec-earnings-e1-r4-provider.mjs';
 import {runEmploymentR4ShadowRuntimeStep} from '../lib/market-score/employment-r4-runtime-trigger.mjs';
@@ -41,7 +41,7 @@ const unavailableFetch=async()=>{throw Error('SCORE_CALCULATION_NETWORK_FORBIDDE
 export async function calculateStoredMarketScore(env,store,now){
  const handler=createMarketScoreR1Handler({env,fetchImpl:unavailableFetch,
   collectInputs:()=>readStoredMarketInputs(store,now),orchestrate:buildStoredDiagnostic,
-  collectBreadthDomain:readBreadthB1R5StoredPublicDomainR1,now:()=>new Date(now)});
+  collectBreadthDomain:retiredBreadthPublicDomain,now:()=>new Date(now)});
  const response=await handler(new Request('https://zgmini.kr/api/market-score'));
  if(!response.ok)throw Error('STORED_CALCULATION_FAILED');
  const body=await response.json();

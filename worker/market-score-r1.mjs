@@ -1,5 +1,6 @@
 import {createProgressiveComputationCache} from './market-score-computation-cache.mjs';
 import {buildCompositeMarketScore} from "../lib/market-score/composite-model-r1.mjs";
+import {MARKETPARQUET_REMOVED_CODE} from "../lib/marketparquet-retirement.mjs";
 import {buildLegacyMarketInflationDomain} from "../lib/market-score/inflation-legacy-public-domain.mjs";
 import {buildCmR1DomainResults} from "../lib/market-score/domain-adapter-r1.mjs";
 import {buildConsumptionC1} from "../lib/market-score/public-domain-producers-r1.mjs";
@@ -285,15 +286,18 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
           ? {...domain,methodologyVersion:growthDomain?.methodologyVersion??"GROWTH_R2_G16_CANDIDATE_R1"}
           : domain)}
         : growthR2CompositeBase;
-      const publicCompositeDomains=projectInflationMethodologyVersion(composite.domains,domains).map(domain=>domain.id==='consumption'
-        ? {...domain,methodologyVersion:consumptionDomain?.methodologyVersion??'CONSUMPTION_R5',asOfDate:asOf,historyMode:'CURRENT_VINTAGE_ONLY',lookAheadSafe:false}
-        : domain);
+      const rightsRetiredBreadth=breadthDomain?.state===MARKETPARQUET_REMOVED_CODE;
+      const publicCompositeDomains=projectInflationMethodologyVersion(composite.domains,domains).map(domain=>domain.id==='breadth'&&rightsRetiredBreadth
+        ? {...domain,status:'UNAVAILABLE',score:null,state:MARKETPARQUET_REMOVED_CODE,trend:[],indicators:[],missingFactors:[],methodologyVersion:null,observationDate:null,asOfDate:null}
+        : domain.id==='consumption'
+          ? {...domain,methodologyVersion:consumptionDomain?.methodologyVersion??'CONSUMPTION_R5',asOfDate:asOf,historyMode:'CURRENT_VINTAGE_ONLY',lookAheadSafe:false}
+          : domain);
 
       const publicResult={
         status:"SUCCESS",
         modelVersion:composite.modelVersion,
         asOfDate:asOf,
-        overall:composite.overall,
+        overall:rightsRetiredBreadth?{...composite.overall,state:MARKETPARQUET_REMOVED_CODE,trend:[]}:composite.overall,
         domains:publicCompositeDomains,
         diagnostics8:diagnostics8(diagnostic?.snapshot),
         updatedAt:composite.updatedAt,
