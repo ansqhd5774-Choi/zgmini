@@ -1195,3 +1195,11 @@
 - **LAST PASS/FIRST FAIL:** 실제 카드/관측점/선분·Node·모바일/PC PASS; W06 운영 UI FIRST FAIL 없음. 공개 관측일 명시 null 및 오래된 일부 원천 표본은 새로운 검증 필요 사실이며 원인/실제 운영 실패 판정은 아직 UNKNOWN. UI/Collector/Writer/SQLite/D1/산식/TTL/Cloudflare 직접배포/예약/DNS 변경0, 총괄 신규 인계0.
 - **다음 단 한 가지:** W06가 제품 source 계약과 기존 Writer #01/#74 증거를 대조해 live `observationDate:null`의 실제 누락 위치를 규명하고, 기능 원담당 필요한 범위만 구분. 새 정책/운영 변경·사용자 수동 확인은 요청 기능 완료 이전 Gate로 삼지 않음. 정확 활성 Cloudflare Deployment ID/Version/SHA·개별 D1 body/stored_at는 독립 미검증 유지.
 - **원격 재확인:** 지정 진행 기록 동일 브랜치에 커밋한 뒤 제목·현재 인계·이력·22/75·다음 행동·HEAD 직접 재조회 PASS/미확정 판정.
+
+### [2026-11-18 13:00 KST] W06 #40 — 관측일 누락 원인 소스 경계 정밀 감사
+- 상태: PARTIAL; 시작/종료 22/75(29.3%), 잔여53. W06 읽기 전용 소스 감사. 운영 PC/SQLite/D1/Cloudflare 변경0.
+- 소스: `lib/market-score/domain-adapter-r1.mjs` fundFlows/dollarFx observationDate 전달 및 `lib/market-score/composite-model-r1.mjs` 조건부 projection 확인. `worker/market-score-r1.mjs`는 composite.domains를 publicResult에 포함. `app/api/market-score/route.ts`는 별도 재계산 없이 저장된 current를 읽는 경로. 이 감사는 live null의 단일 원인을 확정하지 못함; 명시적 전달 4개까지 null이므로 소스 누락만으로 단정 금지.
+- LAST PASS: 이전 PR #1295 실제 카드/차트 144/144 PASS, 이번 정적 소스 경로 확인 PASS. FIRST FAIL: 운영 메타데이터 원인 미확정; 신규 UI 실패 미관측.
+- 남은 작업: Writer #74 승인 PC source SHA, 동일 시각 private SQLite→D1 current body 및 관측일 필드 대조; Cloudflare 활성 서빙 SHA 별도 미확인. 임의 메타데이터 생성/산식·TTL·Writer 변경 금지.
+- 다음 필수 실행 하나: W06가 승인 공개 current와 실제 운영 source projection을 대조하여 `observationDate:null` 최초 유실 계층을 판별. 필요 시 Writer 원담당에게 정확한 필드·키 증거만 전달.
+- 원격 인계: 이 기록 커밋 후 재조회 판정.
