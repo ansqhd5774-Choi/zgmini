@@ -441,3 +441,12 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 - **새 저장자료 유효 결과:** DOL ETA539 51개 지역 주별 600/600 complete, 마지막 2026-10-31, 10년 원자료 선행조건 PASS(요구 577주·29,427행). DOL 전국 2026-11-18 RELEASE PARTIAL/DOL_RELEASE_OBSERVATION_STALE(HTTP200 XML 전국4/4 parsed, 최신 관측일 2026-10-17). DOL 공식 대시보드 최신 11/07 발표 대비 지연, 원인(원시 응답 시간차·캐시·파서) 아직 미확정. BED 2026-11-09 RELEASE SUCCESS(2026-10-28 계약상 최종 발표), BED HTTP provenance B #2056 아직 미설치. DOL/BED score/publication DONE 아님.
 - **실행 우선순위:** (1) 승인된 다른 A 경로를 활용해 DOL National 저장 원문과 파서별 최신 주차 차이의 원인을 W04에서 검증. **공식 공개 웹의 신규 수치를 임의 저장하거나 공급자/URL·산식 변경하지 않음.** (2) 운영 PC RAM이 승인 최소 1,536MiB 이상으로 안정됐다는 실제 증거 후에만 새로운 고유 heavy A로 raw snapshot metadata 86 중 미인증 27건의 body/run/group/month 원인을 계측. 원 요청 #2064 재실행 금지. (3) Core 자연 유휴 확인 후 기존 승인 BED 정확 1파일 Writer B 신규 단회, 공유 Controller W01 A407+W04 1파일 누적 5파일 B는 정확 승인 범위·보호 GO 이후 진행. 장기 예약 정상 검증은 모든 기능 작업 종료 후.
 - **진행률:** 27/72 DONE(37.5%) 그대로, 잔여 45. 원자료 10년 주별 완전성 통과는 계보/계산/게시의 완료를 뜻하지 않음. 실제 근거는 [진행 기록 §83](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md).
+
+
+### W04 — 2026-11-18 DOL National raw/run 대조 A/light 소스 반영 완료
+
+<!-- W04-PLAN-NATIONAL-RAW-PARSER-PR2078-20261118 -->
+
+- **소스 완료, 운영 미실행:** [PC 제어 PR #2078](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2078) 정확 2파일 W04 전용 모듈/테스트, W04 CI [#44224139250](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44224139250) SUCCESS, C996 CI [#44224139231](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44224139231) SUCCESS. 제어 `main` source-only squash merge `04823cd1decf79349551f91a9be1321aec462224`; PC 현재 설치 Controller와 동일하다는 증거 없음.
+- **검증 기능:** 기존 A/light `employment-r6-collection-evidence-readonly`가 저장 수집 run의 원본 `bodySha256`에 일치하는 National XML 청크만 bounded readOnly/원문 SHA 재조회한 후, 실제 XML week/4개 계열별 관측주와 동일 run 파서 기록을 비교. 결과에 원문·수치·원본 해시 노출 없음. 새 공급자 호출·DB 쓰기/산식/임계값 변경 없음.
+- **직접 다음 실행:** 운영 PC 공통 Controller B 설치가 실제 정확 승인된 통합 변경분/자원 보호/lease/전후 SHA를 충족하는지 확인한 뒤, 적용 성공 시 W04가 **새 고유 A/light**를 직접 실행하여 National raw 최신 4계열의 출처/파서 차이를 확정. 현재 #2072는 신규 raw 대조 결과가 없으며 과거 고유 요청 재사용 금지. Controller 운영 설치 GO는 공통 설치 권한 영역으로만 제한하고 W04 본연 Reader/원자료 조사와 Heavy A·BED 후속은 전가하지 않는다. `27/72`(37.5%), PIT-04-05 HOLD, raw 미인증 27과 승인 RAM 1,536 MiB 제한 유지. [§84 원장](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md).
