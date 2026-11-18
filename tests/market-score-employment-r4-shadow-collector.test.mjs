@@ -100,6 +100,55 @@ test("W04 PIT-04-07 accepts exact zero and grouped integer counts, rejects other
   }
 });
 
+
+test("W04 PIT-04-07 BLS diffusion preserves real zero but rejects null/blank observations",async()=>{
+  const id=Object.keys(EMPLOYMENT_R4_DIFFUSION_SERIES)[0];
+  const mk=(month,value)=>({year:"2026",period:`M${month}`,value,footnotes:[]});
+  const data=[mk("09",null),mk("08",""),mk("07","  "),mk("06",0),mk("05","0.0"),mk("04","61.2")];
+  const parsed=await parseBlsDiffusionShadowRows({Results:{series:[{seriesID:id,data}]}},{
+    retrievedAt:"2026-10-01T00:00:00.000Z"
+  });
+  assert.deepEqual(parsed.rows.map(row=>row.observationDate),[
+    "2026-04-30","2026-05-31","2026-06-30"
+  ]);
+  assert.deepEqual(parsed.rows.map(row=>row.value),[61.2,0,0]);
+  assert.equal(parsed.rows.filter(row=>row.pitClass===EMPLOYMENT_R4_PIT_CLASSES.forwardObserved).length,1);
+  assert.equal(parsed.rows.at(-1).availableAt,"2026-10-01T00:00:00.000Z");
+  assert.deepEqual(parsed.meta.seriesReturned,[id]);
+  const missing=await parseBlsDiffusionShadowRows({
+    Results:{series:[{seriesID:id,data:[mk("09",null),mk("08",""),mk("07","  "),mk("06",undefined)]}]}
+  },{retrievedAt:"2026-10-01T00:00:00.000Z"});
+  assert.equal(missing.rows.length,0);
+  assert.deepEqual(missing.meta.seriesReturned,[]);
+});
+
+test("W04 PIT-04-07 BLS blank latest does not suppress fallback for missing diffusion series",async()=>{
+  const ids=Object.keys(EMPLOYMENT_R4_DIFFUSION_SERIES);
+  const missingId=ids[0], calls=[];
+  const fetchImpl=async(url,opts={})=>{
+    const method=opts.method??"GET";
+    calls.push({url:String(url),method});
+    if(method==="POST"){
+      const payload=blsPayload();
+      const bad=payload.Results.series.find(s=>s.seriesID===missingId);
+      bad.data=[{year:"2026",period:"M09",value:null},{year:"2026",period:"M08",value:"  "}];
+      return {ok:true,status:200,async json(){return payload}};
+    }
+    assert.equal(decodeURIComponent(String(url).split("/").at(-1)),missingId);
+    return {ok:true,status:200,async json(){
+      return {Results:{series:[{seriesID:missingId,data:[{year:"2026",period:"M09",value:"0"}]}]}};
+    }};
+  };
+  const provider=createEmploymentR4ShadowProvider({fetchImpl,now:()=>new Date("2026-10-01T00:00:00.000Z")});
+  const out=await provider.fetchGeographicDiffusion();
+  assert.equal(out.requestCount,2);
+  assert.equal(out.transport.primaryReturned,7);
+  assert.equal(out.transport.fallbackRequests,1);
+  assert.equal(out.meta.seriesReturned.length,8);
+  assert.equal(out.rows.find(row=>row.providerSeriesId===missingId)?.value,0);
+  assert.equal(calls.filter(x=>x.method==="GET").length,1);
+});
+
 function sampleRow(logicalSeriesId,geo,value,hashChar="a"){return{logicalSeriesId,provider:"TEST",providerSeriesId:`TEST:${logicalSeriesId}`,geographyType:"STATE",geographyCode:geo,frequency:"WEEKLY",unit:"COUNT",seasonalAdjustment:"NA",populationCoverage:"TEST",observationDate:"2026-09-12",releaseDate:null,availableAt:"2026-09-20T00:00:00Z",retrievedAt:"2026-09-20T00:00:00Z",value,sourceRevision:null,sourceHash:hashChar.repeat(64),qualityStatus:"READY",pitClass:EMPLOYMENT_R4_PIT_CLASSES.forwardObserved,schemaVersion:1,provenance:{}}}
 function goodProvider(value=10){return{async fetchStateClaims(){return{requestCount:1,rows:[sampleRow("STATE_INITIAL_CLAIMS","AL",value,"a")],meta:{}}},async fetchGeographicDiffusion(){return{requestCount:1,rows:[sampleRow("STATE_EMP_DIFFUSION_3M","ALL_STATES",60,"b")],meta:{}}}}}
 
