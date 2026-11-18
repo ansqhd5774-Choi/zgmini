@@ -1,5 +1,15 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-A407-CONTROLLER-ENTRYPOINT-SOURCE-CONFIRMED -->
+## 2026-11-18 — A4-07 공통 Controller 고정 진입점 신규 source 등록 확인
+
+- **진행률:** 33/71(46.5%) → 33/71(46.5%), 잔여 38. A4-07 PARTIAL 유지. 이전 최상단 2026-11-17의 “공통 진입점 미등록” 판정은 **현재 main 소스에 대해서는 해소**되었으므로 이 최신 판정이 우선한다.
+- **신규 실제 소스 확인:** 제어 저장소 `zgmini-pc-control/main`의 `config/operations.json` Git blob `cdaf30d19dab8321e4bbd200476d5ce35a0c2b35`에 `inflation-a407-integrity-readonly` (`grade=A`, `timeoutSeconds=60`, `resource=light`) 등록. `controller/operations.mjs` blob `1aec4aaa8e589c7d829251cb9b586064c70cf0ff`에 `inspectA407IntegrityReadonly` import 및 operation 명칭 존재 확인. 이전 blobs `90cf96a8...`/`1069845e...`는 구버전 증거.
+- **증거 경계:** 이는 GitHub **source 등록 확인**이지 Controller 운영 PC 실제 설치, 정규 B 승인, 설치 source SHA, A 실행/JSON·TXT 결과 확인이 아니다. 기존 Host B #2052의 `f7f1559...`는 그 시점 실제 설치 SHA로 유지하며 새 main을 자동 설치된 것으로 간주하지 않는다. 19+6 raw digest·checkpoint 2개 실제 감사 미완료, Census #28 MISSING 별도.
+- **다음 단일 필수 행동:** W01 원담당은 신규 Controller 진입점 구현 파일·실제 dispatch·CI 및 운영 PC 설치 target SHA와 최소 누적 manifest/승인·lease를 확인한다. 정규 B 설치 승인 GO인 경우에만 설치 요청 1회, 설치 readback 후 신규 고유 A 단회로 19+6+checkpoint2·double-read·보호 상태 JSON/TXT 검증. 프로세스 총괄의 기존 중앙 #68 인계는 중복 발행하지 않는다.
+- **이번 작업:** GitHub 소스 재조회·지정 원장 갱신만. 신규 PC 요청/공급자 호출/SQLite·D1·Task·Controller 변경 없음.
+
+
 <!-- W01-A407-CORRECTED-HOST-2052-20261117 -->
 ## 2026-11-17 22:25 KST — A4-07 교정본 Host B 실제 등록 영수증 확인 (운영 감사 미실행)
 
