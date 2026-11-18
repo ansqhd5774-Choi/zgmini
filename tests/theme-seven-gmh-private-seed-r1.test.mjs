@@ -100,7 +100,7 @@ test('rejects contamination, absence of complete data and identity/date drifts',
   {...options(),sourceStoredAt:'2026-11-19T00:00:00Z'}),/SOURCE_PROVENANCE_UNVERIFIED/);
 });
 test('rejects an older snapshot whose reference histories are inconsistent',()=>{
- const old=seed();old.themes[3].history[17].score=42;
+ const old=seed();old.themes[3].history.find(p=>p.date==='2026-10-05').score=42;
  assert.throws(()=>prepareGmhSevenPrivateSeed(privateGmh(),
   {...options(),legacySeed:old}),/HISTORICAL_SCORE_RECONCILIATION_FAILED/);
  const oldCalendar=seed();oldCalendar.themes[5].history[50].date='2026-06-01';
