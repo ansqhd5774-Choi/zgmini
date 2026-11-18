@@ -1,4 +1,14 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
+<!-- W01-20261119-CORE-STATUS-A2205-CURRENT-F7-A407-NOT-INSTALLED -->
+## 2026-11-19 02:35 KST — 실PC A #2205 현재 Controller 확인: A4-07 미설치, 독립 작업 경계 유지
+
+- **고유 승인 A 실제 실행:** 제어 [pc-job #2205](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2205), requestId `pc-w01-a407-installed-source-check-20261119-0226-r1`, [Run #44360283459](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44360283459), 실제 Runner `zgmini-pc-01` / Windows seat1. `core-status`는 `PASS / CORE_READONLY_DIAGNOSIS`, finishedAt `2026-11-18T17:35:54.299Z`. 원격 [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44360283459-1-seat-1.json)·[TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44360283459-1-seat-1.txt) **각각 직접 재조회 2/2**, requestId, PASS, 실제 SHA 일치.
+- **현재 Runtime vs 개발 source 분리:** 운영 Controller `actualExecutionSha=f7f1559bc0ef15bb9b375982d048369c474c490f`; PC 승인 앱 source `2070ff53549e2f9f2cea57d5af7e1d83f9fd7388`; 요청한 개발 앱 main `c05ef223a967302a261098fb5f4cf8762386fbc6`; 별개 제어 개발 main `ef0e78edad741393855978f5f233464589fe1874`. A4-07 고정 진입점은 [제어 PR #2061](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2061) 이후 개발 `main`에 있으나, **실설치 `f7f1559...`에는 없음**. 따라서 A4-07 조회 Issue 생성·실행 0, `AUTOMATION_BLOCKED_INSTALLATION` 유지. 다른 기능의 공유 Controller 설치를 W01 대화에서 중복 지시·덮어쓰기 하지 않음.
+- **실제 운영 상태:** 기존 Core cycle `COMPLETE` 2026-11-19 02:24:58 KST, 수집 checkpoint `COMPLETE` 02:32:43 KST, Writer checkpoint `VERIFIED` 02:18:04 KST. `lockPresent=true`는 lock owner/lease GO 인증이 아님. `operationalWrites=0`, `providerCalls=0`, `d1Writes=0`, `sqliteOpened=false`; 보호 SHA `591c8e7e...` 전후 동일. 전체 PC 고장이 아니며 해당 A 미설치만 차단으로 분리.
+- **독립 범위:** R2 날짜 보정 제어 [Draft #2167](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2167)은 `REVIEW_REQUIRED_B`, 이미 통과한 2-anchor A [#2198](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2198)은 재실행하지 않음. 운영 B 효과 승인/manifest, 현재 PC preimage/Task 첫-hop/공유 Writer lease 확인 전 무단 설치·D1 쓰기 금지. Census #28 C급 Event129/Task 소유권은 [#2196](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2196)의 기존 `STATE_UNKNOWN` 증거와 구분. 공개 정확 두 GET은 이 실행 환경 DNS 접속 실패해 이번 관측에서 현재 서비스 값 미확인; 과거 공개 상태를 최신값으로 승격하지 않음.
+- **다음 W01 필수 행동:** 공유 Controller 단일 적용 소유자가 기존 정상 승인 경로에서 A4-07 설치 SHA/readback을 반환하면, 기존 Host pin과 일치하는 고유 A4-07 읽기 전용 1회 실행으로 **유효 원본 25개 및 원본·checkpoint 무결성 지문**을 JSON/TXT로 직접 대조한다. 독립 R2 B 정확 승인 여부/기존 Writer 설치와 D1 exact key 읽기 권한은 별도 판단하여 미승인만 보류한다. #2205 신규 요청을 중복 생성·재실행하지 않는다.
+- **진척:** 실제 DONE **33/71(46.5%)**, OPEN **38** 유지. 이번에 신규 실PC 진단 PASS 1건, 운영 원자료·저장·게시·UI 실제 DONE 0.
+
 <!-- W01-20261119-71-STEP-PLAN-RECONCILIATION-OWNER-BOUNDARY -->
 ## 2026-11-19 — 71단계 원장 직접 재대조·W01 독립 실행 선택 (진행률 불변)
 
