@@ -129,7 +129,7 @@ test('R5 ambiguous months, future months, wrong versions and mismatched latest s
   assert.ok(p.indicators.every(factor=>factor.trend.length===0));
  }
  const incompatible=structuredClone(original);
- incompatible.rows.at(-1).indicators[0].score+=10;
+ incompatible.rows.at(-1).indicators[0]={...incompatible.rows.at(-1).indicators[0],score:incompatible.rows.at(-1).indicators[0].score+10};
  const projected=projectConsumptionR5Public(incompatible,input);
  assert.equal(projected.indicators[0].trend.length,0);
  assert.equal(projected.indicators[1].trend.length,13);
