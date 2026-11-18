@@ -11,6 +11,8 @@ import {EarningsFavoriteButton,EarningsFavoriteHeaderIcon} from "./earnings-favo
 import {EARNINGS_RISK_HISTORY_KIND} from "../../lib/market-score/earnings-recession-history-r1.mjs";
 import {readBeaStoredS6,type BeaIndicator} from "./earnings-bea-s6-source";
 import {buildEarningsCostIndicatorView,earningsCostRetrievalDay,earningsExactCalendarDay,earningsCostSparkGeometry} from "./earnings-cost-indicator-list.mjs";
+import {earningsQfrQuarterHistoryMatches,earningsBeaUnitQuarterHistoryMatches,
+ earningsBeaManufacturingQuarterHistoryMatches} from "./earnings-sidecar-quarter-read-model.mjs";
 import "./earnings-indicator-r2.css";
 import "./earnings-inflation-layout.css";
 
@@ -133,7 +135,8 @@ const unitUsable=(payload:BeaUnitPayload|null|undefined)=>Boolean(
  finiteCost(payload.indicator.value)&&finiteCost(payload.indicator.previousValue)&&
  finiteCost(payload.indicator.change)&&Array.isArray(payload.indicator.history)&&
  payload.indicator.history.length===5&&payload.indicator.history.every(point=>
-  quarterEnd(point.date)&&finiteCost(point.value))
+  quarterEnd(point.date)&&finiteCost(point.value))&&
+ earningsBeaUnitQuarterHistoryMatches(payload.indicator)
 );
 const unitFormat=(value:number|null|undefined)=>finiteCost(value)?"$"+value.toFixed(3):"—";
 const unitChange=(value:number|null|undefined)=>finiteCost(value)?(value>0?"+":"")+value.toFixed(3)+"달러":"—";
@@ -147,7 +150,8 @@ const qfrUsable=(payload:QfrPayload|null|undefined)=>Boolean(
  finiteCost(payload.rows[0].value)&&finiteCost(payload.rows[0].previousValue)&&
  finiteCost(payload.rows[0].change)&&Array.isArray(payload.rows[0].history)&&
  payload.rows[0].history.length===5&&payload.rows[0].history.every(point=>
-  /^\d{4}-Q[1-4]$/.test(point.period)&&finiteCost(point.value))
+  /^\d{4}-Q[1-4]$/.test(point.period)&&finiteCost(point.value))&&
+ earningsQfrQuarterHistoryMatches(payload.rows[0])
 );
 const mfgProfitFormat=(value:number|null|undefined)=>finiteCost(value)?
  value.toLocaleString("ko-KR",{minimumFractionDigits:2,maximumFractionDigits:2})+" 십억 달러":"—";
@@ -168,7 +172,8 @@ const mfgUsable=(payload:BeaMfgPayload|null|undefined)=>Boolean(
  Array.isArray(payload.indicator.history)&&payload.indicator.history.length===5&&
  payload.indicator.history.every(point=>quarterEnd(point.periodEnd)&&finiteCost(point.profitsBillionsUsdAnnualRate))&&
  payload.indicator.history[0].periodEnd===payload.indicator.yearAgoPeriodEnd&&
- payload.indicator.history[4].periodEnd===payload.indicator.observationPeriodEnd
+ payload.indicator.history[4].periodEnd===payload.indicator.observationPeriodEnd&&
+ earningsBeaManufacturingQuarterHistoryMatches(payload.indicator)
 );
 const BEA_SOURCE="BEA NIPA A051RC";
 const quarterEnd=(value:unknown):value is string=>{
