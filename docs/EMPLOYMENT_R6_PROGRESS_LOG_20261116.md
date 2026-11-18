@@ -1088,3 +1088,15 @@
 - **결정 규칙 확정:** (A) 보관된 원문 SHA+공식 최초 발표일/당시 판본이 함께 입증되면 역사 vintage 후보로 분류할 수 있으나 현재 자료로 당시 TRUE_PIT 자체를 증명하진 않음; (B) 원본 수집시각/first_seen/recorded_at 등 실증 가능한 forward 관측만 실재 관측시각 기준 PIT 평가 후보; (C) 사후 확보·raw 미인증·현재 수정본만 존재·시간 메타 불명확·후보값 충돌은 `HISTORICAL_CURRENT_OR_REVISED/UNVERIFIED` 또는 HOLD로 유지, 점수/게시/복구 자동 승격 0. 이는 기존 데이터 계약 해석이며 산식·가중치·주기·TTL·원자료 변경 아님.
 - **실제 변경:** 이 구분을 전담 [계획서 PIT-05-01](EMPLOYMENT_R6_CURRENT_EXECUTION_PLAN_20261116.md) 1단계 완료 판정과 본 원장에 반영. PC 운영/SQLite/D1/수집/Controller/Workflow/Task 변경 0. #2094 원본 stage 보존·V2 유지보수기 설치 미완료·기존 source 승인 #2116의 PC 적용 미입증 유지. 승인 없고 소스/원문 미검증인 복구 작업은 진행하지 않음.
 - **다음 W04:** PIT-05-02의 복구 불가 구간 판정은 승인된 현재 source/실PC/raw 실제 검증 범위 내에서 독립 평가 가능하지만 PIT-04-05/07/08의 정확 원문 SHA/NULL/충돌 분류는 계속 수행해야 함. 공통 운영 V2 실제 설치 후 정확 6파일 Controller 단일 B 설치를 W04가 담당; National 원본 XML-vs-run 날짜 / ETA539 원문 c3와 이전 4주 분모 검증 후 실제 복구 키 GO/NO-GO. 예약 자연 검증은 전체 기능 완료 후만.
+
+
+## 95. PIT-05-02 — 10년 복구 불가/미입증 구간 PARTIAL fail-closed 판정 조건 확정 (2026-11-18 KST)
+
+<!-- W04-PIT0502-PARTIAL-FAIL-CLOSED-20261118 -->
+
+- **시작/종료:** 28/72 DONE(38.9%) → **29/72 DONE(40.3%)**, 잔여 43. 계획서 PIT-05-02 `DONE — PARTIAL_FAIL_CLOSED_CRITERIA_DEFINED / REPAIR_GO_NOT_GRANTED`; PIT-04-05·07 미완료와 구분.
+- **확정한 판정:** 참조기간·관측주별로 공식 발표일/당시 vintage, raw body SHA·run·first_seen/recorded_at, 개별 지역/계열의 유효 `c3`와 이전 4주 분모, 충돌 개정 해소를 입증하지 못하면 해당 구간 `PARTIAL/UNVERIFIED` 유지. 단순 10년 주차 개수 600/600, 현재 수정 판본이나 소스 CI만으로 `READY`, `TRUE_PIT`, 자동 후보 승격/복구/게시 금지. 과거 당시 판본 자체를 회수할 수 없다는 증거가 별도로 있어야 `UNRECOVERABLE_AS_TRUE_PIT`로 구분하며 단순 미확인과 혼동하지 않는다.
+- **실측 근거 재사용:** [PC #2088](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2088) raw metadata 86/미인증 27, Current missing 10,889/unverified 857, History missing 8,873/unverified 915, 후보 충돌 14/메타 미입증 255. [PC #2117](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2117) 지역 600/600주 최신 2026-10-31(개수), National 2026-10-17 stale. 이는 개별 결손 날짜·`c3` 품질·과거 vintage를 확정하지 못한다. 새로운 실PC 실측이나 특정 날짜의 영구 복구 불가 판정 없음.
+- **공통 상태:** 원본 [B #2094](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2094) 종료 상태만으로 STAGED 복구를 증명하지 않음. 공통 maintainer 운영 설치·lease/backlog/원본 stage 안전복구 영수증 확인 전 W04 Controller 신규 B/원본 재실행 금지. 독립 PIT-05-03 검토는 계속.
+- **LAST PASS/FIRST FAIL:** LAST PASS = PIT-05-02 정책·기존 실측에 근거한 문서 확정; FIRST FAIL = 미인증 27/충돌 14/메타 255 및 Controller 운영 복구 증거 부재. `PIT-04-05=HOLD_INCOMPLETE_SOURCE_LINEAGE`, `PIT-04-07=PC_DATA_VALIDITY_PENDING`, `promotionApproved=false` 유지. 운영 PC·공급자·SQLite·D1·Task·Workflow 쓰기 0.
+- **다음 단계:** PIT-05-03에서 후보 DB 충돌 14건과 메타 미입증 255건을 개별 키·개정별로 분리, 원본 일치 증거가 없는 후보 제외 규칙을 검산. 운영 원문 조회는 기존 승인 A 계약/Controller 설치 SHA 확인 후 신규 고유 요청으로만 수행. 전체 기능 종료 전 예약 자연 검증 선행 금지.
