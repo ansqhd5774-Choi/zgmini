@@ -95,5 +95,5 @@ test('R4 #28 production UI only passes current published modelVersion; historica
  assert.match(chart,/현재 게시 계산점 · \$\{currentMethod\}/);
  assert.match(chart,/실제 계산시각 점 · 당시 방법론 버전 미확인/);
  assert.match(chart,/현행 산식 재구성 · 당시 실계산점 아님/);
- assert.match(chart,/connectNulls=\{false\}/);
+ assert.match(chart,/connectNulls=\{true\}/);
 });

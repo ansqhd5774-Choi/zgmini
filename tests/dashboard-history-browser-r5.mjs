@@ -25,6 +25,7 @@ try{
     :path==='/api/market-score/observations'?{
      status:'READY',period:new URL(route.request().url()).searchParams.get('period'),
      points:[
+      {observedAt:'2026-10-22T12:00:00Z',score:46},
       {observedAt:'2026-10-24T11:50:00Z',score:48},
       {observedAt:'2026-10-24T12:00:00Z',score:50},
      ],
@@ -111,6 +112,25 @@ try{
     &&geometry.dots.every(([x,y])=>Number.isFinite(Number(x))&&Number.isFinite(Number(y))),
     width+'px '+label+' provenance curves and discrete calculations have finite geometry');
    assert.equal(await page.locator('.zg-r55-card-grid article').count(),12);
+   if(label==='1W'){
+    // 10/22 and 10/24 are saved calculations; reconstructed daily 10/23
+    // is between them. Both provenance lines must remain connected within
+    // their own source, never joined into a single provenance-changing line.
+    const curves=await page.locator(chartSelector+' path.recharts-area-curve').evaluateAll(paths=>
+     paths.map(path=>({d:path.getAttribute('d')??'',dash:path.getAttribute('stroke-dasharray')})));
+    assert.equal(curves.length,2,width+'px reconstructed and calculated series are separate');
+    assert.ok(curves.some(p=>p.dash)&&curves.some(p=>!p.dash),width+'px dashed and solid series');
+    for(const curve of curves){
+     assert.ok(/^M/.test(curve.d)&&/[CLQ]/.test(curve.d.slice(1))
+      &&(curve.d.match(/M/g)??[]).length===1,
+      width+'px 1W provenance line is a single connected SVG subpath');
+    }
+    const domainLines=await page.locator('.zg-r55-card-grid article .zg-r55-mini-chart svg > path').evaluateAll(paths=>
+     paths.map(path=>path.getAttribute('d')??''));
+    assert.equal(domainLines.length,12,width+'px 12 domain observation paths');
+    assert.ok(domainLines.every(d=>/^M/.test(d)&&/L/.test(d)),
+     width+'px 12 domains connect their real 1W observations');
+   }
   }
   // A real zero score remains visible, not a null/missing placeholder, on
   // each responsive viewport and the 1D calc archive.
