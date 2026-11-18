@@ -55,7 +55,7 @@ test("retired R3 collector is not scheduled; public requests read only the snaps
   assert.match(route,/storedMarketResponse/);
   assert.doesNotMatch(route,/collectBreadth|waitUntil/);
   assert.doesNotMatch(scheduled,/breadth:.*collectBreadthB1R3StoreOnlyR1/);
-  assert.match(scheduled,/collectBreadthDomain:readBreadthB1R5StoredPublicDomainR1/);
+  assert.match(scheduled,/collectBreadthDomain:retiredBreadthPublicDomain/);
   assert.doesNotMatch(scheduled,/collectBreadthR2StoreOnlyR2/);
 });
 
