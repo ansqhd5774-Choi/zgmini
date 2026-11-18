@@ -43,6 +43,6 @@ test('BLS stale or partial never masks independent ready entries on desktop and 
  assert.equal((risk.match(/earningsCostDisplayStatus\(row,ok\)/g)||[]).length,2);
  assert.match(risk,/추가 \{costIndicators\.length\}개는 BLS 비용 압력 원자료/);
  assert.doesNotMatch(risk,/추가 5개는 BLS 비용 압력 원자료/);
- assert.equal((risk.match(/결측 구간은 연결하지 않음"/g)||[]).length,2);
+ assert.equal((risk.match(/label=\{meta\.name\+" 저장된 BLS 관측 추이, 결측 구간은 연결하지 않음"\}/g)||[]).length,2);
  assert.match(risk,/const score=payload\?\.status==="READY"&&validScore\(payload\?\.score\)\?payload\.score:null;/);
 });
