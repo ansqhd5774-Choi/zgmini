@@ -1,5 +1,8 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
+> **현재 인계 — W06 #36 CNN 일별 range 중복 조건 확정 (2026-11-19 05:00 KST):** 시작/종료 고유 DONE **22/75(29.3%)**, 잔여53. 지정 계획/원장과 `main`의 `app/fear-greed/usa/cnn-panel.tsx` 490–610행 재조회. 조건식을 실제 코드 기준으로 대조: archive 1점+sidecar 1점이면 `combinedObserved.length===2`, 1W/1M/3M `history`는 해당 날짜의 daily close를 제거하고 실제 관측점을 채택하나 `observedRanges`는 `archiveHistory.length>=2`가 false여서 `observedDays`가 비며, 동일 날짜의 `dailyObservedRanges`가 남아 중복 표시 후보가 확정된다. 이는 코드 분기상 확정된 조건 불일치이며 브라우저 시각 재현/운영 장애를 입증한 것은 아님. #1428의 별도 해결 결함은 재개방하지 않음. 이번에는 코드 수정/CI/PC/DB/Cloudflare 쓰기0. **다음 단일 실행:** W06가 이 1+1 시나리오의 deterministic 회귀를 작성하고 `observedRanges` 제외 조건을 실제 `history`에 채택된 관측일 기준으로 최소 수정, Node/Chromium CI·최신 main 대상 최소 PR 병합 검증. 신규 DONE0; 활성 배포 SHA 미확인.
+>
+
 > **현재 인계 — W06 #36 CNN observedRanges 경계 소스 점검 (2026-11-19 04:15 KST):** 시작/종료 고유 DONE **22/75(29.3%)**, 잔여53. 최신 계획·원장 읽고 main의 `app/fear-greed/usa/cnn-panel.tsx` blob `1f1c62617ce8a3a0e917e1e29abb852a3a0b1077` 525–595행 점검. #1428 병합 후 `combinedObserved`는 archive 1점+sidecar intraday 1점의 실제 2점을 합칠 수 있고 `history`는 `combinedObserved.length>=2`이면 실제 점을 채택한다. 그러나 `observedRanges`는 `archiveHistory.length>=2`일 때만 해당 날짜의 daily range를 제외하므로 **archive 1점+sidecar 1점** 시 실제 관측점과 일별 range 중복 표현 가능성이 있는 조건 불일치를 발견. 이는 **소스 기반 의심**, 실제 UI 재현/운영 장애 증거 아님. #1428 완료 증거를 취소하지 않으며 중복 수정/새 DONE 없음. 코드/CI/PC/SQLite/D1/Cloudflare 변경0. **다음 단일 실행:** W06가 해당 1+1 fixture에서 `history`·`observedRanges`를 실제 함수로 실행해 FIRST FAIL을 확정하고, 재현되면 W06 UI 최소 패치+회귀+CI+PR/병합. #38 PR #1430의 기존 성공은 재시험하지 않음. 운영 활성 배포 SHA 미확인. 원장 원격 재조회 대기.
 >
 
