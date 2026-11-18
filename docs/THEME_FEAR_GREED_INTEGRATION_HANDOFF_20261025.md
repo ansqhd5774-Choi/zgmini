@@ -1,3 +1,15 @@
+## 2026-11-18 W03 12/68 완료 — 저장 GMH 신규 V2 계산기 실PC 비공개 저장·원격 영수증 검증
+
+- **진행률:** 시작 11/68 DONE (16.2%), 단계 12 IN_PROGRESS → **12/68 DONE (17.6%)**, 다음 13/68 시작 가능. 이 완료는 GMH 7테마 비공개 저장 계산 단계에만 해당하며 공개 게시/163테마 완성은 아니다.
+- **기존 구현 재사용:** 기능 `zgmini/main@0dcc572ca27f311e60baec826d0e75557e0185a8`, 원자료 manifest/checkpoint SHA·14종 JSONL 페이지 각각의 SHA 확인→기존 R188 7×252 점수 1,764개 검산→`saveSevenPrivateCandidate`의 immutable local derived 저장·SHA readback. 기능 PR #1348/Node CI #44269986176 기존 PASS를 재실행하지 않았다.
+- **원인·보안 최소 수정:** 제어 저장소 기존 #2157/#2159 Issue-opened B가 요청 SHA와 GitHub 이벤트 HEAD 경합으로 사전 차단된 사실을 보존. 2커밋의 무관한 파일 변경 확인 후 제어 [PR #2164](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2164)로 기존 한 번 실행 W03 V2의 조상 커밋·고정 인증/실행/Workflow 파일 bytes 동일·checkout HEAD·변경 파일 무결성 조건부 승인만 구현. V1 엄격 SHA 및 기존 승인·후속 호출 구조 불변. 제어 source CI [#44274985119](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44274985119) SUCCESS (관련 V2 회귀 5/5), C996 [#44274985107](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44274985107) SUCCESS; main 병합 SHA `0801052627b3f8274ca32bbc0eb4c6d11192830b`.
+- **실제 Windows PC 계산 PASS:** 새 고유 B 요청 [#2166](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2166), requestId `e70883f5-b41e-4675-bb8c-77185d0fe7df`, [Run #44275475749](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44275475749)/Job `134702369050` completed/success. 인증·고정 소스 checkout·7×252 계산·비공개 결과 저장·민감값 제외 결과 보고 모두 성공. [원본 bot 영수증](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2166#issuecomment-6974392253) 및 `results/w03-gmh-seven-private-score-e70883f5-b41e-4675-bb8c-77185d0fe7df.json`/`.txt` 원격 재조회 **2/2 MATCH**, `status=PASS`, `code=W03_GMH_SCORE_SAVED_7X252_VERIFIED`, `localSaved=true`.
+- **실원자료/결과:** 원시 페이지 **30개** SHA 확인, 14종 GMH·**679 공통 거래일**, 관측일 `2026-11-13`, 비공개 7×252 **1,764개 점수**. manifest SHA256 `82f380e346e350c276c4b532353ddc3112dbfa5f90c8d1590c25e22ec064bc0a`; checkpoint SHA256 `3ddc25440fe93a8301f0f6f9d6d82dc34867fc6852198f4ac90a03828eba0336`; private result SHA256 `9f5fa50f294224b273b0eee6e4d1ad96afc1b37a61774d8bf74d1543ffa1f62a`. 이전 V1 실PC #1700의 manifest/private SHA256와 **2/2 동일**(재수집·산식 재가중 없는 비공개 재현성).
+- **효과 경계:** 실제 `providerCalls=0, d1Writes=0, publicWrites=0, taskChanges=0, rawBarExposure=false`. MarketParquet·권리 플래그·운영 source·산식·수집주기·TTL·Controller·DB 원자료 변경 없음. 이 결과는 R178/R179 D1 CAS, 공개 API READY, 상용 권리 확인, 163테마 완료를 증명하지 않는다. 기존 #2157/#2159는 실패 영수증으로 보존·재실행 금지.
+- **다음 필수 실행 13/68:** 새 저장 private 결과의 정확한 계보·관측일을 기존 승인 **읽기 전용** 공개 baseline/R32/R178 및 D1 seed와 대조하고, GMH 공개 파생·상용 권리 증거와 실제 게시 경계부터 확인한다. 승인되지 않은 권리 승격·D1 게시·API READY 가공 금지. 기존 `w03-gmh-seven-public-compat-readonly`/D1 seed read-only 계약의 설치 SHA·허용 scope를 확인하여 적격 경로만 단회 사용하고 JSON/TXT readback으로 검증한다.
+
+---
+
 ## 2026-11-18 W03 12/68 — 실제 PC 저장형 GMH 1,764점 대조 코드/CI/main 완료, 운영 B 2회 HEAD 경쟁 사전차단
 
 - **시작/종료:** 시작 11/68 DONE(16.2%) → 종료 11/68 DONE(16.2%), 단계12 IN_PROGRESS. 실제 PC newest source 계산·저장까지 아직 완료 아님. 기능 전용 브랜치 codex/theme-fear-greed-integration-20261025 유지; 신규 기능 브랜치 생성 0.
