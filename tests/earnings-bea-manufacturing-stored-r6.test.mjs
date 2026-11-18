@@ -68,3 +68,50 @@ test('GET-only route rejects mutation and queries without touching D1',async()=>
   assert.equal(query.status,400);
  }finally{db.close();}
 });
+
+test('damaged existing BEA checkpoint never returns ALREADY_STORED',async()=>{
+ const {db,adapter}=dbFixture();
+ try{
+  const writer=beaMfgWriter(adapter);
+  await writer.write(payload(),{storedAt:now+1000});
+  const original=db.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?')
+    .get(BEA_MFG_SNAPSHOT_KEY);
+  const corruptions=[
+    envelope=>{delete envelope.projection;},
+    envelope=>{envelope.projection.sourceVersion='f'.repeat(64);},
+    envelope=>{envelope.projection.sourceStoredAt+=1;},
+    envelope=>{envelope.projection.builtAt+=1;},
+    envelope=>{envelope.projection.builtAt=now-1;},
+  ];
+  for(const corrupt of corruptions){
+    const envelope=JSON.parse(original.body);corrupt(envelope);
+    db.prepare('UPDATE market_public_snapshots_v1 SET body=? WHERE snapshot_key=?')
+      .run(JSON.stringify(envelope),BEA_MFG_SNAPSHOT_KEY);
+    await assert.rejects(writer.write(payload(),{storedAt:now+3000}),
+      /BEA_MFG_EXISTING_INVALID/);
+    const response=await readBeaMfgResponse(new Request(url),adapter,{now:now+3000});
+    assert.equal(response.status,503);
+    assert.equal((await response.json()).reason,'STORED_PROJECTION_INVALID');
+    assert.equal(db.prepare('SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key=?')
+      .get(BEA_MFG_SNAPSHOT_KEY).body,JSON.stringify(envelope));
+  }
+ }finally{db.close();}
+});
+
+test('same raw SHA with a newer stored-source observation advances the D1 checkpoint',async()=>{
+ const {db,adapter}=dbFixture();
+ try{
+  const writer=beaMfgWriter(adapter);
+  const first=await writer.write(payload(),{storedAt:now+1000});
+  assert.equal(first.status,'READBACK_VERIFIED');
+  const refreshed=buildBeaManufacturingProfitPreview(csv,
+    {sourceVersion,sourceStoredAt:now+2000});
+  const second=await writer.write(refreshed,{storedAt:now+3000});
+  assert.equal(second.status,'READBACK_VERIFIED');
+  const row=db.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?')
+    .get(BEA_MFG_SNAPSHOT_KEY);
+  assert.equal(JSON.parse(row.body).projection.sourceStoredAt,now+2000);
+  assert.equal(row.stored_at,now+3000);
+  assert.equal((await writer.write(refreshed,{storedAt:now+4000})).status,'ALREADY_STORED');
+ }finally{db.close();}
+});
