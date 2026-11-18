@@ -1,5 +1,9 @@
 # ZGMINI W04 고용지표 R6 — 최신 실행 계획 (2026-11-16)
 
+
+> **2026-11-18 PIT-04-05 같은 기준일 원자료 집계 분리 검증:** <!-- W04-PIT0405-SAME-DATE-A2188-20261118 --> 기존 실PC [R1 #1999](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1999)(as-of 11/17)와 [R2 #2144](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2144)(as-of 11/18) 원본 JSON 직접 대조: 공통 `result.pit` 42필드 중 **30 동일, 12는 R2의 raw 계보만 null/NO_RUNTIME_EVIDENCE**. 양쪽 Core CURRENT `40,777`, History 누락 `2,880`, 후보 내부일치 `2,625`, 충돌 `14`은 동일; R1 raw 스냅샷 metadata `86`, 인증 `59`, CURRENT 계보 verified `27,145`, 스냅샷 미입증 `13,632`; R2 raw null은 원자료 삭제나 0을 의미하지 않음. **같은 11/18 기준일 read-only 원본을 새 고유 기존 A [#2188](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2188) 단회 요청**, 결과 대기·중복 요청 금지. [원장 §116](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md). R3 Host [PR #2176](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2176) `Ready/unmerged/review0` B GO 미확정; R3 Host B/8키 PIT A/History·D1 쓰기 없음. 전체 `35/72 DONE(48.6%)` 유지.
+
+
 > **2026-11-18 W04 PIT-04-08 R3 Host 단일 CAS B 승인 준비 완료/검토 대기:** <!-- W04-PIT0408-R3-REVIEW-READY-20261118 --> [PR #2176](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2176) `Ready for Review(draft=false)` / `open/unmerged`; 정확 1파일 24줄, 임시 seed 없음, [C996 #44288693477](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44288693477) PASS. 실제 PC [#2175](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2175) A `PASS/R6_HOST_ALREADY_REGISTERED`, Host 관측 SHA256 `1359c419...`·Controller `f7f1559...`·원격 JSON/TXT 2/2 보존. R3 진단기/테스트 Git blob은 앱 main과 동일하고 앱 [CI #44283326887](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44283326887) PASS. 신규 B 단일 Host 등록에 대한 **명시적 정확 운영 승인 미확보**, B Issue 미발행·실제 PC 쓰기0. 승인 이후 live preimage/독점 CAS 검사→기존 `pc-source-bundle-register` Host 1엔트리→R3 raw 계보 A. Controller #2094·W05 main8 효과 GO 이후에만 8키 PIT A. 상세 [원장 §115](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md). 전체 35/72(48.6%) 유지.
 
 
