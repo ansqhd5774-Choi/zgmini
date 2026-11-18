@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {DatabaseSync} from 'node:sqlite';
 import {normalizeSeries,buildPlans,insertPlans} from './EARNINGS_R3C_BLS_STORE_ONCE.mjs';
-import {analyze} from './EARNINGS_R3D_STORED_BLS_CALC_READONLY.mjs';
+import {analyze,validateSnapshot} from './EARNINGS_R3D_STORED_BLS_CALC_READONLY.mjs';
 
 function testDb() {
   const db=new DatabaseSync(':memory:');
@@ -52,6 +52,40 @@ function populatedDb(response=fakeResponse()) {
     'a'.repeat(64)));
   return db;
 }
+
+test('stored BLS retrievedAt rejects impossible or noncanonical calendar timestamps',()=>{
+  const db=populatedDb();
+  try {
+    const stored=db.prepare(`SELECT * FROM api_history_snapshots_v1
+      WHERE provider=? AND dataset=?`).get('BLS','WPSFD4');
+    assert.equal(validateSnapshot(db,stored).id,'WPSFD4');
+
+    const withTimestamp=stamp=>({
+      ...stored,
+      retrieved_at:stamp,
+      as_of:stamp.slice(0,10),
+      provenance_json:JSON.stringify({
+        ...JSON.parse(stored.provenance_json),
+        retrievedAt:stamp,
+      }),
+    });
+    for(const invalid of [
+      '2026-02-30T02:00:00.000Z',
+      '2026-04-31T02:00:00.000Z',
+      '2025-02-29T02:00:00.000Z',
+      '2026-13-01T02:00:00.000Z',
+      '2026-10-27T25:00:00.000Z',
+      '2026-10-27T02:00:00Z',
+      '2026-10-27T02:00:00.000+00:00',
+      '2026-10-27T02:00:00.000Zextra',
+    ]) {
+      assert.throws(()=>validateSnapshot(db,withTimestamp(invalid)),
+        /BLS_SNAPSHOT_CONTRACT_INVALID/,invalid);
+    }
+    assert.equal(validateSnapshot(db,withTimestamp('2024-02-29T02:00:00.000Z'))
+      .id,'WPSFD4');
+  }finally{db.close();}
+});
 
 test('three historical sources: SHA, cohort, gaps, YoY 9 pairs, ULC unchanged',()=>{
   const db=populatedDb();
