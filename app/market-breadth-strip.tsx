@@ -45,6 +45,9 @@ function currentIexProvisional(value: unknown): value is UsaIexProvisionalRecord
     ![record.risingPct, record.fallingPct, record.unchangedPct, record.unobservedPct].every(validPercent) ||
     !near100(record.risingPct, record.fallingPct, record.unchangedPct, record.unobservedPct) ||
     !["COMPLETE", "INCOMPLETE_PAGINATION"].includes(record.collectionStatus)) return false;
+  // A stored row with 100% unobserved members is not a genuine 0% breadth reading.
+  // Preserve real 0% categories only when at least one member was observed.
+  if (record.risingPct + record.fallingPct + record.unchangedPct <= 0) return false;
   const stamp = Date.parse(record.slotEndUtc);
   const collected = Date.parse(record.collectedAt);
   const age = Date.now() - stamp;
