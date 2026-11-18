@@ -225,13 +225,13 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
     }
     // PIT-04-08 is strictly opt-in. Existing PIT count-only jobs are unchanged.
     // The Reader already loaded both SQLite snapshots and released their
-    // locks. Only the bounded, safe 24-key projection leaves this function.
+    // locks. Only the bounded, safe 8-key projection leaves this function.
     if(keyReviewOffset!==null&&!planHasEvidence)
       throw Error("PIT_AUDIT_KEY_REVIEW_INPUT_MISSING");
     const pit04KeyReview=keyReviewOffset===null?null:classifyEmploymentR6Pit04KeyEvidence({
       coreCurrentRows:current,coreHistoryRows:history,
       candidateCurrentRows:candidateCurrent,candidateHistoryRows:candidates,
-      asOfIso:asOfDate+"T23:59:59.999Z",offset:keyReviewOffset,maxEvidenceRows:24,
+      asOfIso:asOfDate+"T23:59:59.999Z",offset:keyReviewOffset,maxEvidenceRows:8,
     });
     const previewStatus=!planHasEvidence?"NO_RUNTIME_EVIDENCE"
       :coreRevisionEvidence?.ambiguousLatestKeys>0||candidateRevisionEvidence?.ambiguousLatestKeys>0
