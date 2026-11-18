@@ -1,4 +1,14 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
+<!-- W01-20261119-71-STEP-PLAN-RECONCILIATION-OWNER-BOUNDARY -->
+## 2026-11-19 — 71단계 원장 직접 재대조·W01 독립 실행 선택 (진행률 불변)
+
+- **계획/원장 정본 직접 읽기:** W01 전담 브랜치 `fix/economic12-inflation-legacy4-r35-20261021` @ `3b13f676307b9b416cb23d3de8e49fdc8ef0fd1c`의 `docs/INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md`와 본 71개 체크박스 원본을 비교. 실제 DONE **33/71(46.5%)**, OPEN **38**. 목표는 기존 19개·4축 보존 및 신규 연구 원자료 포함 **26/26 유효 원자료 / 연구 7/7 저장·D1/API/PC·모바일 게시**이다. BLS #22/#23은 기존 2026-11-17 실PC/공개 증거상 유효이며 현재 원자료 단일 결손은 Census **#28**. 예전 계획서의 `23/26`·`4/7`은 최초 시점의 역사적 값으로 취급한다.
+- **실행 구분:** A1~A2 Core Task→VBS/Node/lock 안전 owner 인증은 Census 수집 A3~A4의 직접 선행조건만이며, 독립 B1/B2/B4를 정지시키지 않는다. 기존 PC #2196/Run44337757016의 Event129 Operational `enabled=false`, WMI `linked=false`, `authorizesB=false`를 재사용; 동일 A/B 요청 재실행·Task/lock/로그 임의 변경 없음. 정적 XLSX 417개월 파서 검증·현행 V2 정적 B `APPROVED_B`는 기존 성공 증거 재사용, 새 소스 수정/재승인 Gate 금지.
+- **A4-07 독립 원자료 무결성 범위:** 정확 감사기 소스와 host 등록 완료(B #2037/#2052). 현행 control main의 `inflation-a407-integrity-readonly` 고정 A dispatch/허용목록은 확인되지만 **실운영 Controller**의 마지막 직접 증거(PC #2196)는 `f7f1559bc0ef15bb9b375982d048369c474c490f`; 기존 #2081에서 A4-07 미등록이므로 실제 Runner 실행 PASS 주장 금지. A4-07 설치는 공유 Controller 담당/승인 경로에서만 처리하고 W01은 설치 결과 이후 고유 A/JSON·TXT를 직접 검증한다. 현 시점 A4-07은 `AUTOMATION_BLOCKED_INSTALLATION` 한 항목이지 물가지표 전체 중단 사유가 아니다.
+- **게시 별도 실행:** B2-05 Writer 7행 per-key 원장은 W01 자체 Draft #2139에서 기존 `inflation19-runtime-readonly` 출력만 보완, 소스 CI PASS이나 공유 운영 Controller 미설치로 직접 영수증은 `UNKNOWN`. B2-06의 정확 D1 `detail:inflation-causal-candidates-7:r1` 관리자 `body,stored_at`와 B4-01 exact Production Deployment도 아직 미확인. 이번 공개 API `/api/inflation-candidate-inputs`·`/api/inflation-detail` 두 직접 GET은 접근 환경에서 DNS/접근 실패해 **현재 값 확인 불가**; 과거 6/7/API 200을 현재 확인으로 갱신하지 않는다.
+- **R2/공유 Owner 범위 분리:** 제어 Draft PR #2167은 GitHub PR 내용상 W01 R2 *2파일 소스 검토 후보*이며 `REVIEW_REQUIRED_B`·운영 미설치. 다만 공유 Writer 실제 승인·설치 효과는 담당 간 조정/정규 설치 경로 소관이다. **이 PR 승인이나 W04 공통 설치 완료를 W01 71단계의 전체 선행조건으로 지정하지 않는다.** 기존 읽기 전용 프리뷰 #2198 PASS를 중복 수행하지 않는다.
+- **이번 작업 범위/다음 한 실행:** 이번에는 GitHub 계획·현행 source/원장·A4-07 허용목록, 공개 GET 접근 실패를 확인하고 **본 W01 원장만** 갱신. 새 운영 기능 DONE=0, PC/Provider/SQLite/D1/Task/Cloudflare 변경=0. 다음 W01 실행은 **현재 운영 Controller의 A4-07 실제 배포/허용 상태가 정규 설치 결과로 확인된 때 고유 읽기 전용 A 한 번을 실행·25개 원본/2 checkpoint fingerprint를 JSON+TXT로 회수**하는 것이다. 해당 설치에 의존하지 않는 B2 게시 영수증/D1 판정은 승인된 읽기 권한이 확보되는 즉시 독립 재개하며, Census B의 Event129 C 설정을 전체 Gate로 삼지 않는다.
+
 
 <!-- W01-20261119-R2-MAIN-SOURCE-COMPAT-PR2167 -->
 ## 2026-11-19 — R2 2파일 Writer B 검토 후보와 최신 app main 변경 분리 확인 (source-only)
