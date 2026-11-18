@@ -86,9 +86,17 @@ export function normalizeBls8WithLastGood(payload,previous){
  return Object.defineProperty(out,'quarantinedSeries',{value:quarantined});
 }
 
+// Stored last-good is authoritative only if each saved month/value is intact.
+// Reject damage before fetching a new BLS batch; do not silently drop history.
+const validExistingBlsRows=rows=>Array.isArray(rows)&&rows.length>0&&rows.every((row,i)=>
+ row!==null&&typeof row==='object'&&!Array.isArray(row)&&
+ typeof row.date==='string'&&/^\\d{4}-(0[1-9]|1[0-2])-01$/.test(row.date)&&
+ typeof row.value==='number'&&Number.isFinite(row.value)&&row.value>=0&&
+ (i===0||rows[i-1].date<row.date));
+
 const isExistingDocument=x=>x?.schemaVersion===1&&x?.provider==='BLS'
  &&Array.isArray(x?.ids)&&x.ids.join('|')===BLS8_IDS.join('|')
- &&x?.series&&BLS8_IDS.every(id=>Array.isArray(x.series[id])&&x.series[id].length)
+ &&x?.series&&BLS8_IDS.every(id=>validExistingBlsRows(x.series[id]))
  &&(x.seriesSourceStoredAt===undefined||
   (x.seriesSourceStoredAt&&typeof x.seriesSourceStoredAt==='object'&&
    !Array.isArray(x.seriesSourceStoredAt)&&
@@ -145,6 +153,16 @@ export async function collectInflationCausalBls8({base,blsKey,quotaFetch,now=new
  const year=moment.getUTCFullYear();
  const begin=startYear??year-19;
  if(!Number.isInteger(begin)||begin>year||begin<year-19)throw failure('BLS_20_YEAR_RANGE_EXCEEDED');
+ // A damaged saved document must not consume the approved one-request quota.
+ // Preserve its exact bytes for recovery; this is a local-only preflight.
+ const file=path.join(path.resolve(base),BLS8_OUTPUT_RELATIVE);
+ let old=null;
+ if(fs.existsSync(file)){
+  try{old=JSON.parse(fs.readFileSync(file,'utf8'));}
+  catch{throw failure('EXISTING_BLS_INPUT_INVALID_PRESERVED');}
+  if(!isExistingDocument(old)||!validIso(old.sourceStoredAt))
+   throw failure('EXISTING_BLS_INPUT_INVALID_PRESERVED');
+ }
  const body=JSON.stringify({seriesid:BLS8_IDS,startyear:String(begin),endyear:String(year),registrationkey:blsKey.trim()});
  const response=await quotaFetch(BLS8_ENDPOINT,{method:'POST',redirect:'manual',
   headers:{'content-type':'application/json'},body,signal:AbortSignal.timeout(20_000)});
@@ -165,13 +183,6 @@ export async function collectInflationCausalBls8({base,blsKey,quotaFetch,now=new
  }catch(error){if(error?.code==='BLS_RESPONSE_TOO_LARGE')throw error;throw failure('BLS_RESPONSE_READ_FAILED');}
  let payload;
  try{payload=JSON.parse(responseText);}catch{throw failure('BLS_JSON_INVALID');}
- const file=path.join(path.resolve(base),BLS8_OUTPUT_RELATIVE);
- let old=null;
- if(fs.existsSync(file)){
-  try{old=JSON.parse(fs.readFileSync(file,'utf8'));}catch{throw failure('EXISTING_BLS_INPUT_INVALID_PRESERVED');}
-  if(!isExistingDocument(old)||!validIso(old.sourceStoredAt))
-   throw failure('EXISTING_BLS_INPUT_INVALID_PRESERVED');
- }
  // Initial source creation remains strict; subsequent reads may preserve a
  // valid prior series while independently updating other healthy series.
  const incoming=old?normalizeBls8WithLastGood(payload,old):normalizeBls8Response(payload);

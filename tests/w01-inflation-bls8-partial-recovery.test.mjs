@@ -110,3 +110,41 @@ test('W01: initial corrupt response does not write any BLS8 file',async t=>{
  assert.equal(calls,1);
  assert.equal(fs.existsSync(f.file),false);
 });
+
+test('W01: corrupted stored BLS8 months stop before API quota use and preserve exact prior bytes',async t=>{
+ const f=fixture();t.after(f.close);
+ fs.mkdirSync(path.dirname(f.file),{recursive:true});
+ const valid={schemaVersion:1,provider:'BLS',ids:[...BLS8_IDS],
+  sourceStoredAt:'2026-11-17T00:00:00.000Z',
+  series:Object.fromEntries(BLS8_IDS.map(id=>[id,[
+   {date:'2026-01-01',value:0},
+   {date:'2026-02-01',value:100},
+  ]]))};
+ const mutations=[
+  doc=>{doc.series.WPU1017[1].value=-1;},
+  doc=>{doc.series.WPU1017[1].value='100';},
+  doc=>{doc.series.WPU1017[1].date='2026-13-01';},
+  doc=>{doc.series.WPU1017[1].date='2026-01-01';},
+  doc=>{doc.series.WPU1017.reverse();},
+ ];
+ for(const mutate of mutations){
+  const prior=structuredClone(valid);mutate(prior);
+  const bytes=Buffer.from(JSON.stringify(prior));
+  fs.writeFileSync(f.file,bytes);
+  let providerCalls=0;
+  await assert.rejects(()=>collectInflationCausalBls8({
+   base:f.base,blsKey:'fixture-private-key',now:new Date('2026-11-18T00:00:00.000Z'),
+   quotaFetch:async()=>{providerCalls++;return send(payload());},
+  }),/EXISTING_BLS_INPUT_INVALID_PRESERVED/);
+  assert.equal(providerCalls,0);
+  assert.deepEqual(fs.readFileSync(f.file),bytes);
+ }
+ // A genuine numeric zero and ordered months remain valid last-good history.
+ fs.writeFileSync(f.file,JSON.stringify(valid));
+ const normal=await collectInflationCausalBls8({
+  base:f.base,blsKey:'fixture-private-key',now:new Date('2026-11-18T01:00:00.000Z'),
+  quotaFetch:async()=>send(payload()),
+ });
+ assert.equal(normal.status,'SAVED_READBACK');
+ assert.equal(JSON.parse(fs.readFileSync(f.file,'utf8')).series.WPU1017[0].value,90);
+});
