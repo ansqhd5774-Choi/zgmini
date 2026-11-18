@@ -4,6 +4,8 @@ import {readFileSync} from 'node:fs';
 import ts from 'typescript';
 import {sampleCnnObservedPoints} from '../lib/cnn-observed-sampling-r1.mjs';
 import {COMPOSITE_OBSERVED_PREFIX,COMPOSITE_OBSERVED_VERSION} from '../lib/composite-observed-history-r1.mjs';
+import {maskRetiredMarketPublicSnapshot} from '../worker/market-retired-public-snapshot-mask.mjs';
+import {MARKETPARQUET_REMOVED_CODE} from '../lib/marketparquet-retirement.mjs';
 
 const now=Date.parse('2026-11-16T13:00:00.000Z');
 const source=readFileSync(new URL('../app/api/market-score/observations/route.ts',import.meta.url),'utf8');
@@ -18,21 +20,38 @@ const point=(clock,score,asOfDate='2026-11-16')=>({calculatedAt:'2026-11-16T'+cl
 const archive=(date,points)=>({snapshot_key:COMPOSITE_OBSERVED_PREFIX+date,body:JSON.stringify({
  version:COMPOSITE_OBSERVED_VERSION,date,points,
 })});
-function harness(rows=[]){
+const approvedCurrent={
+ status:'SUCCESS',overall:{status:'READY',score:50},domains:[
+  {id:'breadth',status:'READY',score:50,source:'APPROVED_PUBLIC_SOURCE'},
+  {id:'rates',status:'READY',score:50,source:'APPROVED_PUBLIC_SOURCE'},
+ ],
+};
+function harness(rows=[],current=approvedCurrent){
  const reads=[];
  const env={DB:{prepare(sql){
+  if(sql==="SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key='current'"){
+   return {async first(){
+    reads.push({current:true});
+    return current===null?null:{body:typeof current==='string'?current:JSON.stringify(current)};
+   }};
+  }
   assert.match(sql,/^SELECT snapshot_key,body FROM market_public_snapshots_v1 WHERE snapshot_key BETWEEN/);
   assert.doesNotMatch(sql,/INSERT|UPDATE|DELETE/);
   return {bind(from,to){return {async all(){
    reads.push({from,to});
    return {results:rows.filter(row=>row.snapshot_key>=from&&row.snapshot_key<=to).slice(0,371)};
   }};}};
- }}};
+ }}}};
  const exports={};
- const GET=new Function('exports','env','COMPOSITE_OBSERVED_PREFIX','COMPOSITE_OBSERVED_VERSION','sampleCnnObservedPoints','Date','Response','URL',
-  compiled+'\nreturn exports.GET;')(exports,env,COMPOSITE_OBSERVED_PREFIX,COMPOSITE_OBSERVED_VERSION,sampleCnnObservedPoints,Clock,Response,URL);
+ const GET=new Function('exports','env','COMPOSITE_OBSERVED_PREFIX','COMPOSITE_OBSERVED_VERSION',
+  'sampleCnnObservedPoints','maskRetiredMarketPublicSnapshot','MARKETPARQUET_REMOVED_CODE',
+  'Date','Response','URL',compiled+'\nreturn exports.GET;')
+  (exports,env,COMPOSITE_OBSERVED_PREFIX,COMPOSITE_OBSERVED_VERSION,
+   sampleCnnObservedPoints,maskRetiredMarketPublicSnapshot,MARKETPARQUET_REMOVED_CODE,
+   Clock,Response,URL);
  return {GET,reads};
 }
+
 const req=period=>new Request('https://zgmini.kr/api/market-score/observations?period='+period);
 
 test('R4 #26: 1D GET returns genuine 50→53→56 calculation points in timestamp order',async()=>{
@@ -48,7 +67,7 @@ test('R4 #26: 1D GET returns genuine 50→53→56 calculation points in timestam
  assert.equal(data.timeMeaning,'PC_CALCULATED_AT');
  assert.deepEqual(data.points.map(x=>x.score),[50,53,56]);
  assert.deepEqual(data.points.map(x=>x.observedAt),['2026-11-16T12:00:00.000Z','2026-11-16T12:05:00.000Z','2026-11-16T12:10:00.000Z']);
- assert.equal(reads.length,1);
+ assert.equal(reads.filter(row=>!row.current).length,1);
 });
 test('R4 #26: identical replay at same calculation instant is idempotent',async()=>{
  const stored=archive('2026-11-16',[point('12:00:00',50),point('12:00:00',50)]);
@@ -83,7 +102,7 @@ test('R4 #33: missing archive is PENDING and never triggers calculation/provider
  const response=await GET(req('1D'));
  assert.equal(response.status,200);
  assert.equal((await response.json()).status,'PENDING');
- assert.equal(reads.length,1);
+ assert.equal(reads.filter(row=>!row.current).length,1);
 });
 test('R4 #26: invalid period is rejected before any storage read',async()=>{
  const {GET,reads}=harness([]);
@@ -166,4 +185,65 @@ test('R4 #26: identical score replay with conflicting valid source days still fa
   point('12:00:00',50,'2026-11-16'),
  ])]).GET(req('1D'));
  assert.equal(response.status,503);
+});
+
+test('W06 rights regression: retired MarketParquet current blocks all six computed history periods without reading or deleting archive',async()=>{
+ const stored=archive('2026-11-16',[point('12:00:00',45.47265033907002)]);
+ const retired={
+  status:'SUCCESS',overall:{status:'READY',score:45.47265033907002},
+  domains:[
+   {id:'breadth',status:'READY',score:61.2,source:'MarketParquet Free Sample',trend:[]},
+   {id:'rates',status:'READY',score:50,source:'FRED'},
+  ],dataQuality:{readyDomains:12,totalDomains:12,coverageWeight:100},
+ };
+ for(const period of ['1D','1W','1M','3M','6M','1Y']){
+  const {GET,reads}=harness([stored],retired);
+  const response=await GET(req(period));
+  assert.equal(response.status,503,period);
+  assert.equal(response.headers.get('cache-control'),'no-store');
+  const data=await response.json();
+  assert.equal(data.status,'UNAVAILABLE');
+  assert.equal(data.reason,MARKETPARQUET_REMOVED_CODE);
+  assert.deepEqual(data.points,[]);
+  assert.equal(JSON.stringify(data).includes('45.47265033907002'),false);
+  assert.equal(reads.length,1,'no archived scores read or returned');
+  assert.equal(reads[0].current,true);
+ }
+});
+
+test('W06 rights regression: already masked current also refuses residual observations',async()=>{
+ const retired={...approvedCurrent,
+  overall:{status:'PARTIAL',score:null,state:MARKETPARQUET_REMOVED_CODE,trend:[]},
+  domains:[{id:'breadth',status:'UNAVAILABLE',score:null,state:MARKETPARQUET_REMOVED_CODE}],
+ };
+ const response=await harness([archive('2026-11-16',[point('12:00:00',52)])],retired).GET(req('1D'));
+ assert.equal(response.status,503);
+ assert.equal((await response.json()).reason,MARKETPARQUET_REMOVED_CODE);
+});
+
+test('W06 rights regression: missing/malformed current cannot authorize scores',async()=>{
+ const stored=[archive('2026-11-16',[point('12:00:00',50)])];
+ for(const current of [null,'{not-json']){
+  const response=await harness(stored,current).GET(req('1D'));
+  assert.equal(response.status,503);
+  const data=await response.json();
+  assert.equal(data.status,'UNAVAILABLE');
+  assert.equal(data.reason,'COMPOSITE_CURRENT_UNVERIFIED');
+  assert.deepEqual(data.points,[]);
+ }
+});
+
+test('W06 rights regression: lawful independent history remains available even with a nonrights PARTIAL current',async()=>{
+ const partial={...approvedCurrent,overall:{status:'PARTIAL',score:null,state:'OTHER_SOURCE_STALE'}};
+ const response=await harness([archive('2026-11-16',[point('12:00:00',50)])],partial).GET(req('1D'));
+ assert.equal(response.status,200);
+ assert.deepEqual((await response.json()).points.map(p=>p.score),[50]);
+});
+
+test('W06 rights regression: dashboard never plots preserved private legacy history while retirement is active',()=>{
+ const ui=readFileSync(new URL('../app/dashboard-ui.tsx',import.meta.url),'utf8');
+ assert.match(ui,/retiredCompositeHistory=market\?\.overall\?\.state==='PROVIDER_REMOVED_MARKETPARQUET_PUBLICATION_DENIED'/);
+ assert.match(ui,/if\(retiredCompositeHistory\)return \[\];/);
+ assert.match(source,/maskRetiredMarketPublicSnapshot\(JSON\.parse\(row\?\.body\?\?'null'\)\)/);
+ assert.doesNotMatch(source,/INSERT INTO|UPDATE market_public_snapshots_v1|DELETE FROM/);
 });
