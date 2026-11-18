@@ -42,3 +42,26 @@ test('metadata conflicts and stale observation fail closed',()=>fixture(({root,f
   fs.writeFileSync(path.join(folder,hash+'.json'),JSON.stringify(meta));
   assert.throws(()=>readArchivedBeaMfgR6({root,sourceSha:hash,now:now+170*86_400_000}),/ARCHIVE_STALE/);
 }));
+
+test('archive CSV and metadata symlinks fail before digest or parsing',
+  {skip:process.platform==='win32'},()=>fixture(({root,folder})=>{
+  for(const suffix of ['csv','json']){
+    const source=path.join(folder,hash+'.'+suffix);
+    const outside=path.join(root,'unapproved-'+suffix);
+    fs.renameSync(source,outside);
+    fs.symlinkSync(outside,source);
+    assert.throws(()=>readArchivedBeaMfgR6({root,sourceSha:hash,now}),
+      /BEA_MFG_ARCHIVE_UNSAFE_PATH/);
+    fs.unlinkSync(source);
+    fs.renameSync(outside,source);
+  }
+}));
+
+test('linked ancestor directory cannot redirect BEA archive outside its raw family',
+  {skip:process.platform==='win32'},()=>fixture(({root,folder})=>{
+  const diverted=path.join(root,'unapproved-archive');
+  fs.renameSync(folder,diverted);
+  fs.symlinkSync(diverted,folder,'dir');
+  assert.throws(()=>readArchivedBeaMfgR6({root,sourceSha:hash,now}),
+    /BEA_MFG_ARCHIVE_UNSAFE_PATH/);
+}));
