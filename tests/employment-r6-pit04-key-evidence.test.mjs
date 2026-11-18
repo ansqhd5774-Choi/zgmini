@@ -100,3 +100,31 @@ test("max default page is smaller than registered 12 KiB A-grade report limit",(
  assert.ok(Buffer.byteLength(JSON.stringify(r),"utf8")<9000);
  assert.equal(r.rawPitAttested,false);
 });
+
+test("nullable recorded_at must retain CURRENT identity, but cannot authenticate candidate PIT",()=>{
+ const current={...base,recorded_at:null,first_seen_at:null};
+ const r=go([current],[],[],[]);
+ assert.equal(r.counts.coreKeys,1);
+ assert.equal(r.counts.coreHistoryMissing,1);
+ assert.equal(r.evidenceTotal,1);
+ assert.equal(r.evidence[0].reason,"MISSING_HISTORY_NO_CANDIDATE");
+ const candidate=go([current],[],[current],[current]);
+ assert.equal(candidate.counts.coreHistoryMissing,1);
+ assert.equal(candidate.counts.missingCandidateIncomplete,1);
+ assert.equal(candidate.counts.missingCandidateInternalMatch,0);
+ assert.equal(candidate.promotionApproved,false);
+});
+
+test("malformed optional time remains in HOLD; known future time excludes its revision",()=>{
+ for(const field of ["first_seen_at","recorded_at"]){
+  const bad={...base,[field]:"not-a-date"};
+  const r=go([bad],[],[bad],[bad]);
+  assert.equal(r.counts.coreKeys,1,field);
+  assert.equal(r.counts.coreHistoryMissing,1,field);
+  assert.equal(r.counts.missingCandidateInternalMatch,0,field);
+  assert.equal(r.counts.missingCandidateIncomplete,1,field);
+  const future={...base,[field]:"2026-11-19T00:00:00Z"};
+  assert.equal(go([future],[],[],[]).counts.coreKeys,0,field);
+ }
+ assert.equal(go([base],[],[base],[base]).counts.missingCandidateInternalMatch,1);
+});
