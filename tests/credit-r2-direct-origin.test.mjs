@@ -51,6 +51,10 @@ test('parity detects drift and insufficient overlap before switch',()=>{
  const changed=prior.map(x=>({...x}));changed[260].value+=.01;
  assert.equal(compareCreditOriginRows(prior,changed).status,'NOT_PROVEN');
  assert.equal(compareCreditOriginRows(prior.slice(0,10),prior).status,'NOT_PROVEN');
+ const repeated=Array.from({length:300},()=>prior[0]);
+ const repeatedResult=compareCreditOriginRows(prior,repeated);
+ assert.equal(repeatedResult.status,'NOT_PROVEN');
+ assert.equal(repeatedResult.overlap,1);
 });
 test('Treasury official read makes one bounded request with no FRED key',async()=>{
  let calls=0;const body=feed([entry('2026-11-17',[3,3.1,3.2,3.3])]);
