@@ -46,7 +46,7 @@ function safeBlsRow(row){
 // Score/SEC/BEA observation days must be exact calendar dates. Date.parse
 // normalizes dates like February 30, which would mislabel the risk/quarter chart.
 export function earningsExactCalendarDay(value){
-  if(typeof value!=='string'||!/^\\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\\d|3[01])$/.test(value))
+  if(typeof value!=='string'||!/^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(value))
     return false;
   const time=Date.parse(value+'T00:00:00.000Z');
   return Number.isFinite(time)&&new Date(time).toISOString().slice(0,10)===value;
