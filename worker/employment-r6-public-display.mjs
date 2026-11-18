@@ -1,10 +1,15 @@
 import {
   EMPLOYMENT_R6_FEATURES,
   EMPLOYMENT_R6_FORMULA_HASH,
+  EMPLOYMENT_R6_FORMULA_REVISION,
 } from "../lib/market-score/employment-r6-formula.mjs";
 import {employmentR6OneYearStart,employmentR6RecentQuarterStart} from "../lib/market-score/employment-r6-window.mjs";
 
 export const EMPLOYMENT_R6_PUBLIC_DISPLAY_KEY="detail:employment-r6:one-year:v1";
+// Read-only migration compatibility: preserve the last verified R1 result until
+// R2 is published. Writers still validate R2 only (default allowLegacy=false).
+const LEGACY_R1_HASH="sha256:18e18d1025d8c5b1ea9e4aa1bdd33596cfb8b5d5df7e59a6c2629f230be5480d";
+const LEGACY_R1_REVISION="EMP-R6-FORMULA-R1";
 const validDate=s=>typeof s==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(s)
   &&Number.isFinite(Date.parse(s+"T00:00:00Z"))
   &&new Date(s+"T00:00:00Z").toISOString().slice(0,10)===s;
@@ -15,9 +20,13 @@ const validPoint=(point,start,end)=>point&&validDate(point.date)
   &&point.date>=start&&point.date<=end&&finite(point.value);
 
 /** A public result is accepted only if it retains the approved 29 IDs and provenance. */
-export function validEmploymentR6PublicDisplay(body){
+export function validEmploymentR6PublicDisplay(body,{allowLegacy=false}={}){
+  const current=body?.formulaHash===EMPLOYMENT_R6_FORMULA_HASH
+    &&body?.methodologyVersion===EMPLOYMENT_R6_FORMULA_REVISION;
+  const legacy=allowLegacy&&body?.formulaHash===LEGACY_R1_HASH
+    &&body?.methodologyVersion===LEGACY_R1_REVISION;
   if(!body||body.kind!=="EMPLOYMENT_R6_ONE_YEAR_STORED_DISPLAY_R1"
-    ||body.formulaHash!==EMPLOYMENT_R6_FORMULA_HASH
+    ||(!current&&!legacy)
     ||!validDate(body.asOfDate)
     ||!validDate(body.window?.start)
     ||!validDate(body.window?.recentQuarterStart)
@@ -78,7 +87,7 @@ export async function employmentR6StoredDisplayResponse(request,db,{now=Date.now
     return Response.json({status:"UNAVAILABLE",reason:"INVALID_STORED_BODY_STALE"},{status:503,headers});
   }
   const publishedAt=Number(row.stored_at);
-  if(!validEmploymentR6PublicDisplay(body)||!Number.isSafeInteger(publishedAt)
+  if(!validEmploymentR6PublicDisplay(body,{allowLegacy:true})||!Number.isSafeInteger(publishedAt)
     ||publishedAt>now||body.sourceStoredAt>publishedAt
     ||Date.parse(body.asOfDate+"T00:00:00Z")>now){
     return Response.json({status:"UNAVAILABLE",reason:"STORED_PUBLICATION_STALE"},{status:503,headers});
