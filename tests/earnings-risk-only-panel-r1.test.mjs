@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {earningsCostRetrievalDay,earningsCostDisplayStatus} from '../app/earnings-recession/earnings-cost-observation-display-r1.mjs';
+import {earningsCostRetrievalDay,earningsCostDisplayStatus,earningsCostSparkGeometry} from '../app/earnings-recession/earnings-cost-observation-display-r1.mjs';
 const read=p=>readFileSync(p,'utf8');
 const risk=read('app/earnings-recession/earnings-risk-only-panel.tsx');
 const legacy=read('app/earnings-recession/earnings-recession-panel.tsx');
@@ -45,4 +45,27 @@ test('BLS stale or partial never masks independent ready entries on desktop and 
  assert.doesNotMatch(risk,/추가 5개는 BLS 비용 압력 원자료/);
  assert.equal((risk.match(/label=\{meta\.name\+" 저장된 BLS 관측 추이, 결측 구간은 연결하지 않음"\}/g)||[]).length,2);
  assert.match(risk,/const score=payload\?\.status==="READY"&&validScore\(payload\?\.score\)\?payload\.score:null;/);
+});
+
+test('R5-11 BLS, BEA and SEC chart gaps do not create a false latest marker',()=>{
+ const from=values=>earningsCostSparkGeometry(values.map(value=>({value})));
+ assert.equal(from([]),null);
+ assert.equal(from([null,0,null]),null);
+ assert.equal(earningsCostSparkGeometry(undefined),null);
+ const missingLast=from([0,null,2,3,null]);
+ assert.equal(missingLast.path,'M5.0 30.0 M60.0 14.0 L87.5 6.0');
+ assert.equal(missingLast.marker,null);
+ const zero=from([1,null,0]);
+ assert.equal(zero.path,'M5.0 6.0 M115.0 30.0');
+ assert.deepEqual(zero.marker,{cx:115,cy:30});
+ const negative=from([-1,0,1]);
+ assert.equal(negative.path,'M5.0 30.0 L60.0 18.0 L115.0 6.0');
+ assert.deepEqual(negative.marker,{cx:115,cy:6});
+ assert.equal(from([1,2,NaN]).marker,null);
+ assert.equal(from([1,2,Infinity]).marker,null);
+ assert.deepEqual(from([5,5]).marker,{cx:115,cy:18});
+ assert.match(risk,/const geometry=earningsCostSparkGeometry\(history\);/);
+ assert.match(risk,/d=\{geometry\.path\}/);
+ assert.match(risk,/geometry\.marker&&<circle/);
+ assert.doesNotMatch(risk,/const latest=valid\.at\(-1\)!;/);
 });
