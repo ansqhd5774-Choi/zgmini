@@ -1,5 +1,15 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-CENSUS-A-2111-EXACT-HEAD-CI-3PASS -->
+## 2026-11-18 — W01 #2111 정확 HEAD Windows CI 3/3 PASS, 소스 검증 완료 / 운영 HOLD
+
+- **대상:** 제어 Draft [PR #2111](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2111), 충돌 해결한 exact HEAD `5cb15a95ab9e37faf0f94a760d1bd7bbf89686e8` (2-parent 안전 merge, 5파일). 과거 0ed8ae36 수정의 optional Census metadata를 필수 조건에서 배제하고 consumed selector/date 유일성 유지한 Reader를 포함.
+- **신규 완료 증거:** [Controller Maintenance Run 44284541359](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44284541359) `completed/success`·`source-only` 성공, 내부 `Verify W01 Census M3 archived-header A scope and redaction` 단계 SUCCESS; [C996 Run 44284541364](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44284541364) `completed/success`; [D05 Run 44284541368](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44284541368) `completed/success`. 3건 모두 동일 HEAD 재조회. 제어 PR GitHub `mergeable=true`/Draft 유지 (소스 병합/설치 허가 아님).
+- **변경 효과:** 2025/2026 Census archived header-only 고정 A **소스·회귀 확인 완료**. 현재 운영 Controller `f7f1559...`에는 설치되지 않았으며 archived bytes/head 값은 직접 관측한 것이 아님. W04 공유 6파일 Controller 설치 / #2094 STAGED 복구·독립 maintainer 적용 영수증 미확인. Census #28 `MISSING/CENSUS_M3_HEADERS_INVALID` 지속(마지막 유효 PC 실측 범위), B #1818 `CORE_OWNER_EVENT129_UNVERIFIED_STOP`·provider 0/2 재실행 금지. Writer7 D1 per-key·exact Deployment 미확인. 신규 PC/Provider/SQLite/D1/Task/예약/공개 쓰기 0.
+- **작업 판정:** #2111 개발 충돌·테스트 → `SOURCE_VERIFIED`로 종료, W01 기능 완료 **33/71(46.5%) 그대로**. 실제 공유 설치 대기 외 독립 검증은 계속하며 설치 자체를 임의 호출하지 않는다.
+- **다음 필수 실행:** 공통 총괄은 #2094 stage 안전 복구·정규 independent maintainer 증명, W04 원담당은 정확 6파일 공유 설치·현재 active SHA readback. 이후 W01 원담당은 누적 diff/manifest 승인·installed preimage를 검산하고 #2111의 런타임 3파일 고정 A 설치·고유 `pc-job` 1회 실행으로 2025·2026 archive header metadata/JSON·TXT 2/2 readback → 원인 특정·승인 수집·저장·Writer/D1/API/UI 판정.
+
+
 <!-- W01-20261118-CENSUS-A-2111-MAIN-MERGE-CONFLICT-RESOLVED -->
 ## 2026-11-18 — Census archive A Draft #2111 main 충돌 해결 (미설치)
 
