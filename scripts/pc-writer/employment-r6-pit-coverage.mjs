@@ -6,6 +6,7 @@ import {DatabaseSync} from "node:sqlite";
 import {EMPLOYMENT_R6_TABLES} from "../../lib/market-score/employment-r6-contract.mjs";
 import {EMPLOYMENT_R6_REQUIRED_LOGICAL_SERIES} from "../../lib/market-score/employment-r6-formula.mjs";
 import {EMPLOYMENT_R4_PIT_CLASSES} from "../../lib/market-score/employment-r4-shadow-contract.mjs";
+import {classifyEmploymentR6Pit04KeyEvidence} from "../../lib/market-score/employment-r6-pit04-key-evidence.mjs";
 
 const T=EMPLOYMENT_R6_TABLES;
 const ids=[...EMPLOYMENT_R6_REQUIRED_LOGICAL_SERIES];
@@ -19,10 +20,13 @@ const sourceRows=(db,table,asOfDate)=>{
   const fields=new Set(db.prepare(`PRAGMA table_info(${table})`).all().map(col=>col.name));
   const available=fields.has("available_at")?"available_at":"NULL AS available_at";
   const extras=["provider","provider_series_id","quality_status","pit_class","provenance_json"]
-    .map(name=>fields.has(name)?name:`NULL AS ${name}`).join(",");
+    .map(name=>fields.has(name)?name:`NULL AS ${name}`);
+  // Read optional time columns only when present. Absence in legacy fixture
+  // must remain distinguishable from a real NULL in the operational schema.
+  const timeExtras=["first_seen_at","recorded_at"].filter(name=>fields.has(name));
   const list=ids.map(()=>"?").join(",");
   return db.prepare(`SELECT logical_series_id,geography_type,geography_code,
-    observation_date,source_hash,value,retrieved_at,${available},${extras}
+    observation_date,source_hash,value,retrieved_at,${available},${[...extras,...timeExtras].join(",")}
     FROM ${table} WHERE logical_series_id IN (${list}) AND observation_date<=?`)
     .all(...ids,asOfDate);
 };
@@ -130,8 +134,10 @@ const endReadSnapshot=(db,active)=>{
 };
 
 export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDate,
-  beforeReadOnlyOpen=null,afterReadOnlyOpen=null,onSqliteOpened=null}={}){
+  keyReviewOffset=null,beforeReadOnlyOpen=null,afterReadOnlyOpen=null,onSqliteOpened=null}={}){
   if(!validAsOf(asOfDate))throw Error("PIT_AUDIT_AS_OF_INVALID");
+  if(keyReviewOffset!==null&&(!Number.isSafeInteger(keyReviewOffset)
+    ||keyReviewOffset<0||keyReviewOffset>50000))throw Error("PIT_AUDIT_KEY_OFFSET_INVALID");
   if(typeof dbPath!=="string"||!fs.existsSync(dbPath))throw Error("PIT_AUDIT_CORE_NOT_FOUND");
   if(candidateDbPath&&(typeof candidateDbPath!=="string"||!fs.existsSync(candidateDbPath)))
     throw Error("PIT_AUDIT_CANDIDATE_NOT_FOUND");
@@ -217,6 +223,16 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
         }
       }
     }
+    // PIT-04-08 is strictly opt-in. Existing PIT count-only jobs are unchanged.
+    // The Reader already loaded both SQLite snapshots and released their
+    // locks. Only the bounded, safe 24-key projection leaves this function.
+    if(keyReviewOffset!==null&&!planHasEvidence)
+      throw Error("PIT_AUDIT_KEY_REVIEW_INPUT_MISSING");
+    const pit04KeyReview=keyReviewOffset===null?null:classifyEmploymentR6Pit04KeyEvidence({
+      coreCurrentRows:current,coreHistoryRows:history,
+      candidateCurrentRows:candidateCurrent,candidateHistoryRows:candidates,
+      asOfIso:asOfDate+"T23:59:59.999Z",offset:keyReviewOffset,maxEvidenceRows:24,
+    });
     const previewStatus=!planHasEvidence?"NO_RUNTIME_EVIDENCE"
       :coreRevisionEvidence?.ambiguousLatestKeys>0||candidateRevisionEvidence?.ambiguousLatestKeys>0
         ?"HOLD_AMBIGUOUS_LATEST_REVISIONS"
@@ -259,6 +275,7 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
       coreMissingHistoryKeysWithConsistentCandidateMetadata:planHasEvidence?missingHistoryWithVerifiedLineage:null,
       coreMissingHistoryKeysWithoutConsistentCandidateMetadata:planHasEvidence?missing-missingHistoryWithVerifiedLineage:null,
       candidateReconciliationPreviewStatus:previewStatus,
+      ...(pit04KeyReview===null?{}:{pit04KeyReview}),
       missingBySeries:current!==null&&history!==null?[...missingBySeries.values()].sort((a,b)=>a.id.localeCompare(b.id)):null,
       promotionApproved:false,coreWrites:0,providerCalls:0,
     };
