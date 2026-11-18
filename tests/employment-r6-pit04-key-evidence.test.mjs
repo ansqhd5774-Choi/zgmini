@@ -48,12 +48,22 @@ test("future retrieved-at blocks retrospective candidate metadata",()=>{
 });
 test("output caps evidence without losing counts",()=>{
  const geo=["AL","AK","AZ","CA"];
- const r=go(geo.map(geography_code=>({...base,geography_code})),[],[],[],{maxEvidenceRows:2});
+ const current=geo.map(geography_code=>({...base,geography_code}));
+ const r=go(current,[],[],[],{maxEvidenceRows:2});
  assert.equal(r.counts.coreHistoryMissing,4);
  assert.equal(r.evidenceTotal,4);
  assert.equal(r.evidence.length,2);
  assert.equal(r.evidenceTruncated,true);
- assert.throws(()=>go([base],[],[],[],{maxEvidenceRows:513}),/PIT0408_ARGUMENT_INVALID/);
+ assert.equal(r.nextOffset,2);
+ const second=go(current,[],[],[],{maxEvidenceRows:2,offset:r.nextOffset});
+ assert.deepEqual(second.counts,r.counts);
+ assert.equal(second.evidenceTotal,4);
+ assert.equal(second.evidence.length,2);
+ assert.equal(second.evidenceTruncated,false);
+ assert.equal(second.nextOffset,null);
+ assert.ok(second.evidence.every(x=>!r.evidence.some(y=>x.geographyCode===y.geographyCode)));
+ assert.throws(()=>go([base],[],[],[],{maxEvidenceRows:25}),/PIT0408_ARGUMENT_INVALID/);
+ assert.throws(()=>go([base],[],[],[],{offset:-1}),/PIT0408_ARGUMENT_INVALID/);
 });
 
 test("forged PIT class and ambiguous equal-time revisions cannot be an internal match",()=>{
@@ -74,4 +84,19 @@ test("non-decimal and unsafe numeric counts never qualify as candidate evidence"
   assert.equal(r.repairAuthorized,false);
  }
  assert.equal(go([base],[],[base],[base]).counts.missingCandidateInternalMatch,1);
+});
+
+test("max default page is smaller than registered 12 KiB A-grade report limit",()=>{
+ const original={...base};
+ const rows=[];
+ for(let i=0;i<55;i++)for(const region of ["AL","AK","AZ","CA","CO","CT","DE","DC","FL","GA","HI","ID","IL","IN","IA","KS","KY","LA","ME","MD","MA","MI","MN","MS","MO","MT","NE","NV","NH","NJ","NM","NY","NC","ND","OH","OK","OR","PA","RI","SC","SD","TN","TX","UT","VT","VA","WA","WV","WI","WY"]){
+  const date=new Date(Date.UTC(2025,0,4)+i*7*86400000).toISOString().slice(0,10);
+  if(date<="2026-11-18")rows.push({...original,geography_code:region,observation_date:date});
+ }
+ const r=go(rows,[],[],[]);
+ assert.equal(r.counts.coreHistoryMissing,rows.length);
+ assert.equal(r.evidence.length,24);
+ assert.equal(r.nextOffset,24);
+ assert.ok(Buffer.byteLength(JSON.stringify(r),"utf8")<9000);
+ assert.equal(r.rawPitAttested,false);
 });
