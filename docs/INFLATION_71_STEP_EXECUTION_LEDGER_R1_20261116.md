@@ -1,5 +1,18 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-BLS8-LASTGOOD-PREFLIGHT-PR1374-MAIN-CI -->
+## 2026-11-18 — BLS8 기존 last-good 손상본 API 호출 전 차단·행 검증 (소스 main 완료, PC 미적용)
+
+- **LAST PASS 재사용:** #2111 Census archive A Draft HEAD `5cb15a95` Windows Maintenance/C996/D05 3/3 PASS; #2139 물가7 Writer receipt 기존 A Draft HEAD `b09b925f` Maintenance/C996 2/2 PASS. 두 PR 모두 공유 #2094 STAGED 및 W04 단일 설치 전 운영 적용 금지. 실PC [#2122](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2122) 당시 6/7 저장 valid, Census #28 MISSING/CENSUS_M3_HEADERS_INVALID 유지.
+- **새로 발견한 독립 결함:** 개발 main의 `scripts/pc-writer/inflation-causal-bls8.mjs`는 `collectInflationCausalBls8`에서 기존 local `bls-ppi8.json` 파싱/last-good 검증을 승인된 BLS POST **이후** 실행. 로컬 저장본이 이미 손상돼 있어도 요청 1회를 소비하며 `isExistingDocument`는 8계열 각각 배열 존재만 확인하고 날짜/값·중복/순서가 손상된 기존 월을 조용히 병합에서 생략할 수 있었음. 기존 실제 운영 손상/불필요한 GET 발생은 미입증 — SOURCE_DEFECT_CONFIRMED.
+- **최소 소스 수정:** [app PR #1374](https://github.com/ansqhd5774-Choi/zgmini/pull/1374) 정확 2파일. 기존 last-good를 공급자 호출 **전** 파싱·검증, 8개 계열별 저장 월 YYYY-MM-01·유한 0 이상 숫자(0 허용)·strict 오름차순·중복 없음 보장. 손상 시 기존 실패 코드 `EXISTING_BLS_INPUT_INVALID_PRESERVED`로 공급자 호출 0, 저장 원본 불변. 건강한 기존 시계열의 정상 API→merge/readback·부분 계열 last-good 격리·1회 quota/20년 상한/기존 원자료·산식·승인/Writer/TTL/주기는 변경 0.
+- **격리 회귀 신규 1건:** 기존 저장본 월별 수치 -1·문자열·13월·중복 월·역순 5패턴에서 quotaFetch 0회·원본 바이트 그대로 유지, 정상 저장 0값과 날짜가 있으면 신규 합법적 BLS 월 정정 저장 성공. 이 테스트는 기존 `tests/*.test.mjs` Node CI에 포함.
+- **검증/반영:** HEAD `ea260f4370c8bae3737ae973f9ab968266784ee9`, [Node CI #44288826771](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44288826771) **completed/success**(Build·Type check·Regression·PC publication·Cloudflare 포함). 앱 개발 [main squash SHA `661d35db563a36dfd70ea99477ff7c0b0d549da8`](https://github.com/ansqhd5774-Choi/zgmini/commit/661d35db563a36dfd70ea99477ff7c0b0d549da8) 병합. 원격 main 소스 blob `cf28c092df472260d150d4ed334d2df2d22f4a88`, 시험 blob `6b0e33778750819195d13107103ab539a0fa3957` 재조회 PASS. Source main 병합 ≠ 승인 운영 PC 실제 적용.
+- **공개 연결 점검(한계 구분):** 앱 main `app/economic-indicators/inflation-candidate-7-inputs.tsx`는 `/api/inflation-candidate-inputs`만 읽고 missing→0으로 대체하지 않음. Worker main `worker/candidate-r52.ts`의 해당 route는 저장형 `readInflationCandidates7PublicResponse`로만 연결. 웹 직접 API의 현재 HTTP body는 접근 경로에서 실패해 실측하지 못함. 기존 실제 브라우저 GET 증거(원장 6 READY/1 PENDING)만 재사용, 7/7이나 2026-11-18 API 갱신 주장 금지.
+- **운영/잔여:** 이번 BLS8 source fix PC 설치/Provider 요청/Task/Core lock/SQLite·checkpoint/D1/Cloudflare 직접 쓰기 0. 공유 #2094 STAGED 복구·W04 설치 및 W01 #2111/#2139 실제 A는 미인증. Census #28 raw header 직접 판정/정규 B 수집·R2 #1330 Writer 정확 B·D1 key readback 미완료. W01 기능 **33/71(46.5%)** 유지(신규 운영 완료 0), 미완료 38.
+- **다음 필수 실행:** 공통 총괄 #2094 안전복구/independent maintainer 운영 적용 증거 → W04 단일 공유 Controller 설치·SHA 원격 회수 → W01 신규 header A 기존 2025/26 Census raw 정확 1회 조회→parser 결함 실증·승인 수집/저장. 별도 Writer per-key B2-05 A·D1 B2-06은 승인·설치 출처 확인 후 고유 요청으로 진행. 정상 BLS8 자체 변경은 현재 운영 source SHA/승인 preimage·원본 보호에 포함한 경우에만 운영 적용, main 병합으로 자동 교체 금지.
+
+
 <!-- W01-20261118-INFL7-WRITER-RECEIPT-PR2139-MAIN-SYNC -->
 ## 2026-11-18 — B2-05 물가7 Writer 영수증 A 기존 조회기 최신 main 동기화 (source-only)
 
