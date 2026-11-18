@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {requiresInflationR2TrendDateRefresh as refresh}
+import {requiresInflationR2TrendDateRefresh as refresh,
+ inflationR2AsOfTrendCompatibility as compatible}
  from '../scripts/pc-writer/inflation-r2-trend-date-refresh.mjs';
 import {inflationR2TrendDates}
  from '../worker/projection-builders/inflation.mjs';
@@ -76,4 +77,54 @@ test('W01 one-time repair uses existing saved-input checkpoint, writer and D1 pu
  assert.match(script,/await projectionWriter\(core\)\.write\(id,payload,Date\.now\(\),checkpoint\)/);
  assert.match(script,/await projectionWriter\(remote\.adapter\(config\.core,\{allowWrites:true\}\)\)\.write\(id,envelope\.payload,row\.stored_at,envelope\.projection\)/);
  assert.doesNotMatch(script,/\bfetch\s*\('https:\/\//);
+});
+
+test('W01 legacy PC builder display repair uses its genuine current score, not the future score',()=>{
+ const legacy=shell({score:58.125,
+  updatedAt:'2026-11-18T08:30:00.000Z',
+  sourceStoredAt:'2026-11-16T10:30:00.000Z',
+  scoreComparisons:{week:1,month:null},
+  axes:{TARGET_STABILITY:53},
+  features:{CORE_PCE:{value:3.8}},
+  trend:[...trend.slice(0,-1),{label:'2026-11-30',value:77}],
+ });
+ const source=structuredClone(legacy.payload);
+ const fixed=compatible(legacy.payload);
+ assert.notStrictEqual(fixed,legacy.payload);
+ assert.equal(fixed.score,58.125);
+ assert.deepEqual(fixed.trend.slice(0,-1),trend.slice(0,-1));
+ assert.deepEqual(fixed.trend.at(-1),{label:'2026-11-18',value:58.125});
+ assert.strictEqual(fixed.axes,legacy.payload.axes);
+ assert.strictEqual(fixed.features,legacy.payload.features);
+ assert.strictEqual(fixed.scoreComparisons,legacy.payload.scoreComparisons);
+ assert.equal(fixed.sourceStoredAt,legacy.payload.sourceStoredAt);
+ assert.equal(fixed.updatedAt,legacy.payload.updatedAt);
+ assert.deepEqual(legacy.payload,source,'existing stored payload must remain byte-equivalent');
+ assert.equal(refresh({payload:fixed}),false,'exact repair must not repeat');
+});
+
+test('W01 actual as-of builder or unsafe/missing source never triggers a synthetic repair',()=>{
+ const current=shell({trend:[...trend.slice(0,-1),
+  {label:'2026-11-18',value}]});
+ assert.strictEqual(compatible(current.payload),current.payload);
+ const invalids=[
+  null,{},shell({status:'PARTIAL'}).payload,
+  shell({score:null}).payload,
+  shell({methodologyVersion:'OTHER'}).payload,
+  shell({trend:[{label:'2026-11-30',value:null}]}).payload,
+  shell({asOfDate:'2026-11-31'}).payload,
+  shell({trend:[{label:'2026-12-31',value:40}]}).payload,
+  shell({trend:[]}).payload,
+ ];
+ for(const candidate of invalids)
+  assert.strictEqual(compatible(candidate),candidate);
+});
+
+test('W01 compatibility is pure and affects no existing scorer formulas or public GET',()=>{
+ const helper=readFileSync('scripts/pc-writer/inflation-r2-trend-date-refresh.mjs','utf8');
+ assert.match(helper,/inflationR2AsOfTrendCompatibility/);
+ assert.match(helper,/label:payload\.asOfDate,value:payload\.score/);
+ assert.doesNotMatch(helper,/\bfetch\s*\(|\.prepare\s*\(|\.run\s*\(/);
+ const writer=readFileSync('scripts/pc-writer/run-local.mjs','utf8');
+ assert.match(writer,/await projectionWriter\(core\)\.write\(id,payload,Date\.now\(\),checkpoint\)/);
 });
