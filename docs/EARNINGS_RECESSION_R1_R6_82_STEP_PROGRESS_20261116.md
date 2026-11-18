@@ -2446,3 +2446,15 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 
 **다음 필수 실행:** #1257의 exact 15파일 소스 검토·정규 main merge GO를 확인한 범위 내에서 적용 후 main CI·Cloudflare Git Integration build→exact active Deployment→API/UI를 각각 검증한다. #1297 단독 병합 금지. 별도 R6-14 active Deployment ID/Version ID/traffic은 인증된 Cloudflare metadata 읽기 전용 경로를 확보했을 때만 확인하고, GitHub Build ID로 대신하지 않는다. WPSFD42 실제 수집·게시 B는 위 사용자 HOLD 해제 증거가 선행되어야 한다.
 
+
+## 135. R4-09 최신 main 소스 계보 안전 동기화 및 새 CI (2026-11-19 KST)
+
+<!-- W05-R135-R409-MAIN-DRIFT-SOURCE-MERGE-CI-20261119 -->
+
+- **시작/범위:** 원담당 W05, 기능 저장소 `ansqhd5774-Choi/zgmini`; 지정 진행 브랜치 `codex/api-site-integration-r1-20261026`. 순차 **26/82(31.7%)**, 개별 **35/82(42.7%)** 유지. 기존 §134 SOURCE_CI_PASS, R3-04 사용자 Task owner+자연 idle HOLD 및 R6-14 active Cloudflare Deployment ID 미확인 재사용.
+- **GitHub 정확 비교:** 통합 PR [#1257](https://github.com/ansqhd5774-Choi/zgmini/pull/1257) 소스 HEAD `b49cba51f3eceeaca8edabc22fab8bbaadb49cda`와 당시 최신 `main@2cd5d7f6e074eb2c227d23e078a504a3c6306f37` 비교 `ahead=4,behind=2`. 뒤처진 main 2개 커밋의 변경은 `.github/workflows/community-chat-browser.yml`, `lib/market-score/live-refresh.mjs`, `tests/cnn-current-session-verified-checks-browser-r12.mjs`, `tests/live-refresh.test.mjs` 정확 4파일로 W05 PR 15파일과 불일치/비충돌. GitHub 원시 PR API `mergeable=true/clean`도 직접 확인.
+- **실제 source-only 동기화:** 새 branch·reset·force 없이 기존 `codex/w05-r409-selective-main-20261117`의 기존 tree와 위 main 4파일 Git blob만 합성, 기존 HEAD와 main을 부모로 한 merge commit **`a5601a3461517b290abd1ff124b28d138533cc01`**을 expected old HEAD CAS fast-forward. 원격 readback: PR head 동일, `ahead=5,behind=0`, **정확 W05 15파일**, `mergeable=true`/Draft/UNMERGED. 기존 두 row READY+FRESH 조건, partial/stale 시 base5 복귀, base/service D1 key 분리, 게시시각 header 보존; main source 변경 0.
+- **신규 exact HEAD Node CI:** [Run #44344892218](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44344892218) `completed/success`. Build/Type/Regression/PC recovery/Cloudflare contracts 전 step PASS. 실제 Node log: **5,197 total / 5,187 PASS / 0 FAIL / 7 SKIP / 3 TODO**, PC recovery **27/27**, Cloudflare read contracts **72/72**. partial WPSFD42/expired WPSFD42/older base5 preserve 시험 3개 각각 로그 개별 PASS. [Chromium Run #44344891951](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44344891951)는 본 원장 기재 시 `in_progress`: 최종 SUCCESS 증거가 나오기 전에는 PASS로 기록하지 않음.
+- **FIRST UNFINISHED/경계:** PR #1257은 명시적 정확 **15파일 source main merge GO 미확정**이므로 Draft/미병합. 종속 #1297 단독 병합 금지. R3-04 [#1919 사용자 HOLD](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1919#issuecomment-6943640912)는 Task owner 인증과 1.5초 간격 자연 idle 2표본 모두 필요; 신규 Writer B 요청/SQLite/D1 쓰기 0. R6-14 active Deployment/Version/traffic은 Cloudflare 인증 metadata RO 부재로 미검증, Build ID를 active Deployment ID로 대체하지 않음. 기능 main/PC/Task/원자료/SQLite/D1/Cloudflare Production/DNS/예약 변경 **0**.
+- **다음 필수 실행:** Chromium CI 최종 상태 확인·원장 보완 → 정확 15파일 scope의 정규 source GO 확인 시 #1257을 main에 선별 반영하고 해당 merge SHA→Cloudflare Git Integration→정확 배포 식별자→실제 API/UI를 단계별 검증. 운영 WPSFD42 수집/게시 B는 R3-04 HOLD 해제 전 실행 금지.
+
