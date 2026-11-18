@@ -1,5 +1,11 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
+> **현재 인계 정본 — W06 계획·원장 교차검증 — #39 기존 DONE 복원 및 #41 원담당 정정 (2026-11-19 02:32 KST):** 계획 docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_EXECUTION_R4_20261116.md 13–21/47–51행과 전체 역사원장 다시 대조. **고유 DONE #02,#03,#04,#05,#06,#08,#10,#21,#22,#23,#24,#26,#27,#33,#34,#35,#39,#63,#69,#70,#71,#72 = 22/75(29.3%) 유지**, 잔여 53(#62 퇴역 포함), 완료 이력 삭제·새 DONE 발명 없음.
+**과거 오류 바로잡음:** 2026-11-17 원장 `R4 #39 — 한국 등락 counts 미연결 및 향후 완료 거래일 표시 경계 감사 (DONE: UI/설계)`에서 #39는 미연결 정직한 표시·필요한 완료 거래일 metadata 계약·한국 원담당 인계라는 분석/설계 항목을 이미 완료하여 **22개 DONE 집합에 포함**되었다. 2026-11-19 02:24 KST의 #39 `PARTIAL`은 같은 한국 운영 공개 연결 미구현을 이유로 **이미 완료된 분석형 #39를 잘못 재분류한 후속 회차 오류**이므로 **단계 판정으로 채택하지 않음**. 한국 원담당 신규 공개 counts 실배포는 독립 미완료/별도 승인 계약이며 #39 기존 DONE 취소 사유 아님. 추가 8/8 fixture는 완료 점검으로만 재사용한다.
+**#38 W06:** 미국 IEX provisional UI PR #1420 merged + CI 및 Workers Builds 4/4 PASS는 재사용하되 활성 Production exact Deployment 및 실제 신규 IEX 공개 갱신 검증 없으므로 **기존 #38 PARTIAL**을 임의 DONE으로 올리지 않음. **#40 W06/Writer:** 11월 17일에도 PARTIAL 이력이 존재. 11월 19일 9개 fixture는 W06 UI 경계 보강이나 실제 적격 원자료 1개→Writer 재계산→SQLite/D1→공개 1D 실전파는 입증되지 않으므로 **#40 PARTIAL**, 계산/Writer 소관 분리. 둘 다 W06에게 원자료 모니터링 Gate를 요구하지 않음.
+**다음 작업 소유권 정정:** #41 D06 인플레이션 위험은 **물가 원담당**이며 W06 필수 실행으로 지정하면 안 됨. 현재 계획서 W06 소유권 정정(2026-11-19)의 **다음 단일 구조 실행**을 우선하여 `app/dashboard-ui.tsx`의 `use-stored-index`·`startStoredRefresh` 연계 및 기존 60초 갱신·늦은 응답 덮어쓰기 adapter를 최신 main에서 실제 deterministic fixture로 확인. 기존 #34가 DONE이므로 source 변경·상충 증거가 있는 정확한 경로만 영향 범위 재검증, 정상 수행을 반복 완료 산입하지 않음. 실제 결함이 확인될 때만 최소 파일 패치/회귀 CI/main 병합. 운영 PC/SQLite/D1/권리/산식/TTL/배포 효과 변경0.
+>
+
 > **현재 인계 정본 — W06 #40 D05 12도메인 미국 종합점수 저장→1D 차트 승인 3.5배 구조 검증 (2026-11-19 02:27 KST):** W06 #39 한국 등락 기존 UI/계산 함수 8/8 검증 결과와 미연결 상태는 이전 인계에서 유지. #40에서 최신 main c05ef223a967302a261098fb5f4cf8762386fbc6의 app/dashboard-ui.tsx와 5개 기존 공용 UI 어댑터를 직접 조회: composite-display-sensitivity-r1.mjs, composite-observed-display-r1.mjs, market-trend-normalize-r4.mjs, market-trend-window-r1.mjs, published-domain-trend-r4.mjs.
 **독립 구조 시험:** 저장된 승인 current 계산값 54는 전체 카드에서 승인 3.5배 기준 중심50 → 64점으로 표시됨. 1D 계산 관측 실제 시각 15:30 raw50, 16:30 raw53 및 공개된 16:45 raw54 current fixture는 화면에서 50→60.5→64의 3 실제 점으로 병합. 기존 archive의 카드보다 뒤인 16:50 raw63은 아직 공개 current에 반영되지 않아 plot에서 제외. 1D 마지막점은 카드 64 및 공개 시간 16:45와 정확 일치. 매번 모든 12개 도메인의 새 값이 나오기를 기다리는 UI Gate 없음; overall READY/공개 계산 결과를 입력으로 사용. 과거 일별 trend READY만 수용, 미래일자/PARTIAL/0에 대한 경계 확인. 1Y는 승인된 실제 일별 확정점만 유지하고 intraday 임의 확장하지 않음. 실제 0은 유지. 원점수 0→2는 3.5배 변환의 0 하한에 모두 고정되므로 새로운 서로 다른 표시점 두 개가 만들어지지 않는 것이 정상이고, 0→40의 유효 변화는 0→15의 다른 두 점으로 표시됨. 첫 fixture의 0→2에서 서로 다른 표시점이 필요하다는 기대는 시험 기대치 오류로 정정; 소스 FIRST FAIL 아님. 실제 함수 경계 최종 9/9 시나리오 검증, dashboard-ui 소스 연결 가드 별도 확인. 기존 1D 저장 archive route의 50→53→56 재현 회귀는 tests/r4-composite-observed-route.test.mjs에 존재하며 새 기능 CI 재실행은 이번에 불필요.
 **판정:** W06 UI/source adapter는 올바른 인입 표시 경계를 수행함. 신규 확정 W06 소관 source 버그 없음 → 신규 코드/테스트/PR/CI 변경0. 다른 계산/Writer 원담당의 실제 12도메인 입력 1개만 신규 수집·재계산→SQLite checkpoint/event→D1 current+archive 게시 증거는 확인하지 않았으므로 #40 전체 PARTIAL, 소스 검증을 운영 실증으로 바꾸지 않음. 폐기 출처권 및 overall PARTIAL/null 이력 표시 차단 유지. 고유 DONE **22/75(29.3%)**, 잔여 53(#62 퇴역). 정확 활성 Cloudflare 배포 SHA/PC 설치 SHA 미확인.
@@ -1655,3 +1661,13 @@
 다음 필수 실행 1개: W06 #41 D06 인플레이션 위험 R2 공개 Reader→차트 기간별 실점수/관측일/결측 경계 function fixture 검사. 타 담당 원자료·산식·게시 변경 금지.
 진행률: 고유 DONE 22/75(29.3%) 유지, 잔여53. #40 PARTIAL.
 원격 인계 재조회: 이번 원장 커밋 뒤 확인 예정.
+
+
+### [2026-11-19 02:32 KST] W06 R4 계획/원장 정합성 정정 — DONE 번호 보존·다음 구조 실행 재설정
+원격 기준: codex/ui-improvements 기록 blob 5ce6d81750650e205e6817cf684d3f2e424ec361 / main 기준 최근 c05ef223a967302a261098fb5f4cf8762386fbc6; 실제 설치/Cloudflare active SHA UNKNOWN.
+검증: 계획 R4 #39 = 미연결 사실과 정상 거래일 연결 경계 명시, 담당 한국 원담당; 계획 판정 규칙 49–51행 분석·설계 source/fixture DONE 허용. 역사원장 2026-11-17 #39 DONE: UI/설계, 더 오래된 고유 DONE집합에 이미 #39 포함. 2026-11-19 재검토 후 #39 PARTIAL은 운영 구현과 분석형 단계 상태를 혼합한 오류. 최신 효력 #39 DONE 기존 유지, 실제 한국 운영 공개 counts 연결은 별도 미완료.
+계획 #41 물가 원담당, W06 독립 다음 작업으로 배정한 2026-11-19 02:27 인계는 무효. 계획서 W06 소유권 정정 21행이 지정한 60초 저장갱신/지연응답 UI 실함수 검증이 W06 다음 단일 실행. #34 과거 DONE·#39 과거 DONE 재수행과 신규 진척 중복 금지.
+계수: #02,#03,#04,#05,#06,#08,#10,#21,#22,#23,#24,#26,#27,#33,#34,#35,#39,#63,#69,#70,#71,#72 = 22 distinct DONE /75 (29.3%); #38 PARTIAL, #40 PARTIAL, #62 RETIRED/OUT_OF_SCOPE; 나머지53(퇴역1 포함). 이번 기록 정정으로 새 DONE 없음.
+실제 변경: 진행 기록 이력 보존·최상위 정본 정정만; source/코드/수집/계산/Writer/PC/D1/Cloudflare 변경0.
+다음 필수 실행: 최신 main app/dashboard-ui.tsx와 저장 Refresh hook의 실제 이전 응답 역행/60초 갱신 selector를 기존 #34 이후 변경 파일에 한정해 fixture 확인; FAIL 재현 시 W06 UI Reader 최소 수정과 관련 CI/PR/병합, PASS 시 별도 중복 완료 산입 없이 진짜 미완료 W06 구조 작업으로 이동.
+기록 원격 확인: 이번 update 후 blob+branch HEAD 읽기 검증 필수.
