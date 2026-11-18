@@ -74,7 +74,7 @@ test("retired R3 production collection is absent while stored public reads stay 
   assert.doesNotMatch(route,/collectBreadth|waitUntil/);
   assert.doesNotMatch(scheduled,/collectBreadthR2StoreOnlyR2/);
   assert.doesNotMatch(scheduled,/breadth:.*collectBreadthB1R3StoreOnlyR1/);
-  assert.match(scheduled,/collectBreadthDomain:readBreadthB1R5StoredPublicDomainR1/);
+  assert.match(scheduled,/collectBreadthDomain:retiredBreadthPublicDomain/);
 });
 
 test("score path uses D1 stored reader and does not invoke live breadth service",()=>{
