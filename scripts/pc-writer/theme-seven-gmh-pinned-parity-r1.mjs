@@ -75,6 +75,10 @@ export function reconcilePinnedGmhSeven({
  const privateResult=readJson(privateBytes,'PRIVATE_JSON_INVALID');
  const legacySeed=readJson(seedBytes,'LEGACY_JSON_INVALID');
  assertPrivateDerivedOnly(privateResult);
+ // A private immutable calculation must not claim a scheduler mutation.
+ // The historical format may omit this field; if present it must be zero.
+ need(privateResult.schedulerWrites===undefined||
+  privateResult.schedulerWrites===0,'PRIVATE_SCHEDULER_WRITE_CONTRACT');
  need(privateResult.rawManifestSha256===expectedRawManifestSha256,
   'RAW_MANIFEST_REFERENCE_MISMATCH');
  need(typeof sourceStoredAt==='string'&&
