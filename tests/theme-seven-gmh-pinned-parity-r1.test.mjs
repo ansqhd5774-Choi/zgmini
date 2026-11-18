@@ -132,3 +132,11 @@ test('private GMH histories must contain derived date/score fields only',()=>{
  assert.throws(()=>reconcilePinnedGmhSeven(input(withRawWindow)),
   {code:'W03_PINNED_PARITY_PRIVATE_TOP_LEVEL_FIELD_SCOPE'});
 });
+
+test('a newer D1 legacy seed cannot validate an older GMH private candidate',()=>{
+ const seed=legacySeed();
+ seed.observationDate='2026-11-16';
+ seed.themes=rows('2026-11-16').map(t=>({...t,latestScore:40}));
+ assert.throws(()=>reconcilePinnedGmhSeven(input(privateResult(),seed)),
+  {code:'W03_PINNED_PARITY_LEGACY_OBSERVATION_AFTER_PRIVATE'});
+});
