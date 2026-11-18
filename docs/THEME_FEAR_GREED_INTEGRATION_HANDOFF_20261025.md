@@ -1,3 +1,15 @@
+## 2026-11-18 W03 13/68 — R178 게시 진단의 과도한 PUBLIC READY 선행조건 제거 / 사용 중지 공급자 경로 보존
+
+- **진행률:** 시작 12/68 완료(17.6%), 13/68 진행 → 종료 12/68 완료(17.6%), 13/68 진행. 독립 소스 개선 1건 완료, 게시 실제 완료 아님.
+- **확인된 실제 설계 문제:** `scripts/pc-writer/theme-optional-cycle.mjs:diagnoseSevenProvisionalLane`이 공개 GET `READY`를 먼저 요구해 `STORED_DATA_STALE`/HTTP503 환경에서 기존 R178 D1 저장 스냅샷·seed·권리 플래그를 **읽을 기회조차 없었다**. 이는 데이터를 게시할 필수 검증과 장애의 근거를 **조회할 진단**을 부당하게 결합한 것이다. 별개로 R178 확정-only 모드에서 `latestCompletedSession===pending.at(-1)`(잠정 0개 시 undefined)를 검사해 정당한 확정 GMH-only 계보를 부정하는 허위 진단도 확인.
+- **해결/CI:** [기능 PR #1365](https://github.com/ansqhd5774-Choi/zgmini/pull/1365) 2파일(읽기 전용 진단+회귀시험) 최소 수정, main 병합 `17fb26b57cec0d1768e1663105a4853ce781f3b0`. [Node.js CI #44280688173](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44280688173) **SUCCESS**. 신규 테스트 3/3 PASS: 503 stale에도 read-only D1 계보/시각 조회·공개 일치 허위 PASS 금지, transport exception/redaction, 잠정 0개 confirmed GMH-only 정확한 `latestCompletedSession` 판정. API GET/HEAD, 권리/TTL, 실제 점수값, 예약, D1/PC writes 변경 0.
+- **브랜치 충돌 직접 해결:** 기존 W03 통합 전용 브랜치에는 새 진단 기능이 부분적으로 존재했으나 동시에 `verifySevenProvisionalAuthority` 및 `buildAiProvisionalFromExistingSeven`에서 **2026-11-16 사용자 승인으로 제거한 MarketParquet 보조 공급자를 재허용하는 오래된 미병합 구현**이 발견됐다. 이를 무조건 main으로 병합하면 정책 역행이므로, 분리 PR #1365에는 **진단만 선택 반영**. W03 전용 브랜치의 `theme-optional-cycle.mjs`, `theme-ai-marketparquet-provisional-r2.mjs`, `tests/theme-optional-cycle.test.mjs` 3파일을 승인된 현재 main blob과 일치하도록 안전 동기화하여 해당 두 재허용 경로를 차단. **MarketParquet 제거 자체를 되돌리지 않음.**
+- **유효 완료 증거 재사용:** 실PC #2166은 14종 30페이지·679 공통일·7×252 비공개 저장 PASS, R178 D1 seed 기존 #2133 1624점 겹침 검증 0 mismatch. 이들은 동일 source/날짜 범위 증거로 보존하되 새 진단의 실PC 설치/실행/현재 공개 READY로 승격하지 않는다.
+- **게시기 경계:** R178 `worker/theme-etf-rolling-public.mjs`의 `secondarySource===null` / pending 0 / 서명·rights / 8-day freshness는 원상 그대로. R179/R183 PC-only 기존 운영 source는 사전 승인 없이 교체·재시작하지 않았다. GMH 익명 무료 1h 조건부 파생권리는 각각의 upstream provenance, 가격 비복원성, D1 CAS/readback 확인 없이 publish true로 바뀌지 않는다.
+- **다음 실제 필수 행동:** 승인된 읽기 전용 R179/R183 운영 원장의 현행 게시 파생 계보·L7 최신 관측일·D1 기존 key/sourceVersion을 단회 확인하고, GMH-only 1764점 candidate를 승인된 현재 게시기로 연결할 수 있는 최소 수정 범위만 구체화한다. 503 자체를 TTL 완화나 미관측 수치 생성으로 숨기지 않는다.
+
+---
+
 ## 2026-11-18 W03 여섯 구성요소 합리성 감사 — 과도한 입력 기준·실패 보고 개선 및 CI/main 반영
 
 - **착수/종료:** W03 12/68 DONE **17.6% → 17.6%**, 13/68 진행 중. 본 소스 개선이 추가된 독립 업무 1건이지 PC 게시까지 완료된 13단계는 아니다. 기존 PC V2 [#2166](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2166)의 14종·30 raw pages·679 공통일·1764점·비공개 SHA 저장 PASS를 그대로 재사용한다.
