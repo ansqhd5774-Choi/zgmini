@@ -156,7 +156,7 @@ test('Census no usable monthly values remains explicitly unavailable, without nu
   // though neither year produced a usable value or a successful source file.
   const raw=path.join(fixture.writer,'inflation-causal-candidates-r1','raw');
   const archives=fs.readdirSync(raw).filter(name=>
-    /^census-m3-mtm-202[56]-[a-f0-9]{64}\\.json$/.test(name));
+    /^census-m3-mtm-202[56]-[a-f0-9]{64}\.json$/.test(name));
   assert.equal(archives.length,2);
   assert.equal(archives.some(name=>name.startsWith('census-m3-mtm-2025-')),true);
   assert.equal(archives.some(name=>name.startsWith('census-m3-mtm-2026-')),true);
