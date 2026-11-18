@@ -114,8 +114,9 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays,curre
       </div>;
      }}
     />
-    {/* Daily reconstruction and calculation-time observations are separate nullable keys.
-        The merged timeline can interleave their rows. Nulls in the other provenance
+    {/* The dashed reconstructed daily trend and solid calculation-time trend are separate lines.
+        Each uses an independent nullable key. The merged timeline can interleave
+        their rows. Nulls in the other provenance
         are not missing observations in this series: connect successive real samples
         of each key without inventing values or connecting the two keys. */}
     <Area type="monotone" dataKey="reconstructedValue" stroke={color} strokeDasharray="4 4" fill="none" strokeWidth={1.8} dot={false} activeDot={{r:3.5,strokeWidth:0,fill:color}} connectNulls={true} isAnimationActive={false}/>
