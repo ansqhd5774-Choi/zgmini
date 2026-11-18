@@ -1,5 +1,14 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-CENSUS-APPROVED-4FILE-VS-APP-MAIN-SHA -->
+## 2026-11-18 — Census #28 기존 승인 4파일과 최신 app/main 실제 바이트 해시 불일치 확인
+
+- **진행률:** 33/71(46.5%) → **33/71(46.5%)**. 이번 검증에서 새 수집·저장·게시나 A4-07 감사 완료는 없으므로 DONE 추가 0.
+- **정확 비교:** Census 승인 `APPROVED_B` 운영 파일 pin [#1818 정본](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1818) 4개 SHA256과 앱 `main@bc88e15b5cf3dd7370cd325c03446b4d59d79cef` GitHub 원본 UTF-8 바이트를 직접 SHA256으로 비교. 기존 `inflation-causal-candidate-once.mjs` **68c6a873… ≠ 2b484cee…**, `inflation-causal-candidate-census-m3.mjs` **650c9ac8… ≠ 6c936c50…**, `local-env.mjs` **8b5a4f38… ≠ c291b76a…**, `quota-fetch.mjs` **5ff750e1… ≠ adb40188…**. 4/4 source-version byte mismatch; SHA256 `abc` selftest 및 control fixed 2파일 공식 hash 교차검사 PASS. 정확 64자리 해시 전체는 [#1818 조사 댓글 #6968530417](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1818#issuecomment-6968530417).
+- **증거 경계:** 기존 PC [#1805](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1805) 시점 installed source `2070ff53549e2f9f2cea57d5af7e1d83f9fd7388`의 운영 4파일 SHA 4/4 일치는 유지. 하지만 `2070ff...`은 연결된 앱/제어 GitHub에서 commit fetch 404/422; PC 로컬 checkout 변경을 의미하지 않고 **원격 source ancestry 접근 불명확**. 4개 최신 코드가 운영 승인 원본과 다르므로 최신 main을 동일 source라 가정하거나 새 B manifest를 승인 없이 자동 생성/실행하지 않음.
+- **Census 공급자 계약:** 공식 M3 API variables에서 `time` predicate-only, `time_slot_date` optional 반환 필드 확인. 승인 collector는 `time_slot_date` 요청 및 `time` 대체 처리를 갖지만 실제 2026-11-17 Core failure `CENSUS_M3_HEADERS_INVALID` raw header shape 미조회로 근본 원인 미확정. 임의 header 허용 완화/숫자 대체 금지. 기존 B #1818은 owner validation `INFL_MANUAL_B_CORE_OWNER_EVENT129_UNVERIFIED_STOP`/GET 0/2이고 자연 Core parser 실패와 구분. 공급자 호출·비밀키/원자료 외부 노출 0.
+- **다음 독립 필수 행동:** 재호출 없는 **기존 승인 read-only PC 원본 metadata 경로**에서 Census archived response schema 및 설치된 4파일 실제 bytes/효과를 필요한 범위만 증명, 무관 파일 교체 없이 정확한 최소 Parser/Writer source B 변경 명세·별도 효과 GO를 준비. C급 Event129 채널 설정 또는 Task-linked WMI 생생 증거가 없으면 Census 단회 B 재접수 금지. 공용 A407 Controller 5/6파일 설치 GO는 별도 공유 자원 대기만 유지하며 W01 업무 인계 없음.
+
 <!-- W01-20261118-A407-SHARED-5V6-CROSSCHECK-AND-CENSUS-OWNER -->
 ## 2026-11-18 — A4-07 단일 공유 설치 범위 W01/W04 교차검증 및 Census #28 기존 중단 조건 재판정
 
