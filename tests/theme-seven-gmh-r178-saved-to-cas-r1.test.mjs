@@ -114,10 +114,11 @@ function inject(f,pins,changes={}){
   async read(){throw Error('UNEXPECTED_D1_READ')},
   async replace(){writes++;throw Error('UNEXPECTED_D1_WRITE')}
  };
- return {...changes,
+ return {
   dataRoot:'/synthetic/readonly',pins,storage,
   readSaved:()=>f.saved,readPrivate:()=>f.privateArtifactBytes,
-  now:NOW,counts:()=>({reads,writes})
+  now:NOW,counts:()=>({reads,writes}),
+  ...changes
  };
 }
 test('real verified Nov13 GMH pinned SHA are immutable, not an operator license',()=>{
