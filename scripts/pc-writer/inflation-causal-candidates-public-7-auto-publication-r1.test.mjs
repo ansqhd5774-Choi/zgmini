@@ -189,6 +189,27 @@ test('unready or side-effectful preview, malformed stored checkpoint fail closed
   assert.equal(f.calls.length,0);
 });
 
+test('Writer rejects D1 checkpoints built before the newest published source was saved',async()=>{
+  const f=fixture(),p=payload(4);
+  const backed={payload:p,projection:{status:'READY',
+    sourceVersion:p.sourceVersion,sourceStoredAt:p.sourceStoredAt,builtAt:T0-1}};
+  f.rows.set(INFLATION_CANDIDATES_7_PUBLIC_KEY,{
+    body:JSON.stringify(backed),stored_at:T0-1,
+  });
+  await assert.rejects(run(f,p,T1),/INFL7_AUTO_REMOTE_CONTRACT_DENIED/,
+    'the PC Writer must not accept a remote row that its public GET rejects');
+  assert.deepEqual(f.calls,[],'invalid prior snapshot cannot be overwritten');
+  assert.equal(f.rows.get(INFLATION_CANDIDATES_7_PUBLIC_KEY).stored_at,T0-1,
+    'preserve the exact invalid D1 envelope for authorized recovery');
+  const legitimate={...backed,projection:{...backed.projection,builtAt:T0}};
+  f.rows.set(INFLATION_CANDIDATES_7_PUBLIC_KEY,{
+    body:JSON.stringify(legitimate),stored_at:T0,
+  });
+  assert.equal((await run(f,p,T1)).status,'UNCHANGED_VERIFIED',
+    'a true source-first publication checkpoint remains valid');
+  assert.deepEqual(f.calls,[]);
+});
+
 test('payload comparison omits checkpoint metadata, not observation values',()=>{
   const a=payload(4),b=structuredClone(a);
   b.sourceVersion='INFL7_PRESENTATION_'+'f'.repeat(64);
