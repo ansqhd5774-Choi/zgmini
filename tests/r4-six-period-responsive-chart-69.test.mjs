@@ -33,7 +33,7 @@ const summary=(period,score=53,observed=[{observedAt:archiveTime,score:50}],over
  return mergeCompositeObservedDisplay(daily,archived,period,current);
 };
 const domain=(period,score=53,override=raw)=>{
- const daily=marketTrendWindowR1(normalize(override),period);
+ const daily=marketTrendWindowR1(normalize(override),period,{includeBoundaryCarry:false});
  return appendPublishedDomainCurrent(daily,score===null?null:{label:currentTime,value:score},period);
 };
 
@@ -86,6 +86,21 @@ test('#69 all six domain chart periods retain native 0-100 scores without compos
   assert.ok(points.length>0);
   assert.equal(points.at(-1).value,period>=180?50:53,String(period));
   assert.ok(!points.some(p=>p.label.startsWith('2026-11-17')));
+ }
+});
+
+test('#69 domain charts show only actual dated observations, not a fabricated window-start sample',()=>{
+ const sourceDates=new Set(normalize(raw).map(p=>p.label));
+ const ui=readFileSync(new URL('../app/dashboard-ui.tsx',import.meta.url),'utf8');
+ assert.match(ui,/const daily=marketTrendWindowR1\\(normalizeMarketTrendPointsR4\\(domain\\?\\.trend,market\\?\\.updatedAt\\),periodDays,\\{includeBoundaryCarry:false\\}\\)/);
+ for(const period of [7,30,90,180,365]){
+  const cutoff=new Date(Date.parse('2026-11-16T00:00:00Z')-period*86400000).toISOString().slice(0,10);
+  assert.equal(sourceDates.has(cutoff),false,'fixture has no real boundary sample: '+period);
+  const points=domain(period);
+  assert.equal(points.some(point=>point.label===cutoff),false,'no synthetic cutoff point at '+period+'D');
+  assert.ok(points.every(point=>point.label.includes('T')||sourceDates.has(point.label)),
+   period+'D every plotted date is from published history or the verified current calculation');
+  assert.ok(points.length>=2,period+'D still shows a connected line from real points');
  }
 });
 
