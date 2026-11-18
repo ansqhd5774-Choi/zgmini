@@ -126,10 +126,17 @@ export function planInflationCandidateCoreDue({approved=false,bootstrapApproved=
     `release:${event.source}:${event.id}:${event.date}`):
     recoverable?`legacy-parser-recovery:${group}`:null;
   const attempt=checkpoint.attempted[group];
+  // Bootstrap and legacy-parser recovery authorize ONE provider attempt, not
+  // a fresh call every 24h if the first attempt yielded no new observation.
+  // Normal dated release events retain their existing transient retry policy.
+  const oneShotAlreadyAttempted=attempt?.eventKey===eventKey&&
+    (initial||eventKey===`legacy-parser-recovery:${group}`);
   const recently=attempt?.eventKey===eventKey&&isIso(attempt.at)&&
     moment.getTime()>=Date.parse(attempt.at)&&moment.getTime()-Date.parse(attempt.at)<candidateAttemptCooldownMs(attempt.failureCode);
-  if(!eventKey||checkpoint.processed[group]?.eventKey===eventKey||recently||
-     !validKey(providerEnv,group)){skipped.push(group);continue;}
+  if(!eventKey||checkpoint.processed[group]?.eventKey===eventKey||
+     oneShotAlreadyAttempted||recently||!validKey(providerEnv,group)){
+    skipped.push(group);continue;
+  }
   due.push({group,eventKey,releaseDate:initial||!event?null:event.date});
  }
  return {status:due.length?'DUE':'NO_VERIFIED_RELEASE_DUE',due,skipped};
