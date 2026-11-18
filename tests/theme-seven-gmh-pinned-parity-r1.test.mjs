@@ -117,4 +117,12 @@ test('private GMH histories must contain derived date/score fields only',()=>{
  withRawSeries.themes[2].rawBars=[{close:1}];
  assert.throws(()=>reconcilePinnedGmhSeven(input(withRawSeries)),
   {code:'W03_PINNED_PARITY_PRIVATE_THEME_FIELD_SCOPE'});
+ const withRawTop=privateResult();
+ withRawTop.rawCloses=[123.45];
+ assert.throws(()=>reconcilePinnedGmhSeven(input(withRawTop)),
+  {code:'W03_PINNED_PARITY_PRIVATE_TOP_LEVEL_FIELD_SCOPE'});
+ const withRawWindow=privateResult();
+ withRawWindow.sourceWindow.rawSeries=[1,2,3];
+ assert.throws(()=>reconcilePinnedGmhSeven(input(withRawWindow)),
+  {code:'W03_PINNED_PARITY_PRIVATE_TOP_LEVEL_FIELD_SCOPE'});
 });
