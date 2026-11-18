@@ -31,3 +31,23 @@
 5. W01 19+7 원자료→로컬 계산→Writer/D1→API·사이트 종단 검증. 예약 검증은 모든 기능 완료 이후 후속으로만 분리.
 
 **결과:** 본 요청은 source 조건 감사만 실시. 신규 provider GET·PC 설치·Core/Task/SQLite·D1·공개 배포·운영 승인 변경 0. 상기 위험 항목 **실운영 발생 여부는 미확정**이며, 전체 진행률 **33/71 (46.5%) 유지**.
+
+
+<!-- W01-20261118-FIVE-COLLECTOR-GATES-SOURCE-MERGED -->
+## 구현 실적 — 2026-11-18 최신 main 3개 source PR, 5개 조건 수정
+
+| 기존 감사 항목 | 실제 변경 | CI/병합 | 실PC 적용 |
+|---|---|---|---|
+| ① 전체 collect-local 실패 시 19개 수집 차단 | `local-cycle.mjs`의 `collection.status===0` 분기 제거. 기존 19개 자기 활성 플래그·Core lock·provider quota/발표일 독립 유지 | [#1284](https://github.com/ansqhd5774-Choi/zgmini/pull/1284) / [CI #44221922693](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44221922693) success / main `0892fc020525a2fc36be883f6e09688fe2059c2c` | 미적용·별도 승인 필요 |
+| ② 성공·실패 구분 없는 고정 24h | `candidate-core-bridge.mjs` + `inflation-causal-recurring-r1.mjs`: 408/500/502/503/504 및 공급자 quota guard에 한해 1h 후 *기존 승인 Core tick에서* 재평가; 429·schema·값 오류·UNCHANGED·기존 기록은 24h 유지. 실제 호출은 quota ledger가 최종 제한 | [#1287](https://github.com/ansqhd5774-Choi/zgmini/pull/1287) / [CI #44222527085](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44222527085) success / main `76ad2e29fb6fb5b8d350039a7d2e9e30e535ac06` | 미적용 |
+| ③ 달력 SOURCE_FAILED가 기존 검증 발표까지 무효화 | 소스별 과거 유효 `checkedAt`·이벤트의 정확한 공식 HTTPS origin을 함께 확인했을 때만 이전 발표 이벤트 유지. 미래일·위조 URL·이전 검증 없는 상태는 차단 | [#1290](https://github.com/ansqhd5774-Choi/zgmini/pull/1290) / [CI #44224229368](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44224229368) success / main `2f5e275f1aa43e3f0cab09572a58421f0f6dd98b` | 미적용 |
+| ⑥ BLS8 1계열 오류 시 8종 전체 취소 | 최초 8종 필수 검증 그대로. 이미 검증된 정상본이 있을 때 오류·중복·결손 계열은 last-good, 정상 계열만 저장. `PARTIAL_SAVED_LAST_GOOD`는 전체 발표 checkpoint 처리 금지, 개별 `seriesSourceStoredAt`로 기존값을 최신값처럼 표현하지 않음. 19개 공개 Reader는 구형 문서도 호환 | [#1284](https://github.com/ansqhd5774-Choi/zgmini/pull/1284) + [#1290](https://github.com/ansqhd5774-Choi/zgmini/pull/1290), CI 2/2 success | 미적용 |
+| ⑦ FRED gas 일시 오류도 같은 UTC day 전부 차단 | 명확한 일시적 HTTP/쿼터 실패만 1h 재평가, 이미 완료된 gas 일자는 여전히 차단. Core tick/쿼터/승인 빈도 불변 | [#1287](https://github.com/ansqhd5774-Choi/zgmini/pull/1287), CI success | 미적용 |
+
+### 남은 확인 2범주 — 소스 미수정
+- **④ UTC 22시 날짜만 있는 release gating:** 근거 있는 실제 발표시각/공식 공개증거가 없는 상태에서 날짜만 보고 22시 이전 새 원자료를 가정할 수 없어 소스 유지. 공식 시각·타임존과 검증된 발표 준비 신호가 계약에 포함될 때만 소스 재설계.
+- **⑤ EIA #2/ Treasury #16 공식 정기 갱신:** 현 캘린더에 주간 retail gasoline/월간 MTS 그 자체를 나타내는 공식 이벤트가 없어, *무관한* EIA WPSR/Treasury CUSIP 이벤트를 대용으로 사용하지 않음. 승인된 추가 수집 주기·정확 릴리스 source 신설 여부를 확인한 뒤 별도 source/기능 절차 추진.
+
+**실제 범위 확인:** GitHub PR 세 건 모두 `merged=true`/CI success 및 최신 main 6개 핵심 파일 blob 존재 직접 재조회. 이 증거는 **운영 PC 설치, Core 승인 플래그, 승인 source pin, 원자료 전진, D1/API/사이트 최신화 성공 아님**. 사용자 승인 없이 PC source/Task/Cron/DB/공급자/API/D1/Cloudflare를 변경하지 않았음. 정확 설치 source/승인 manifest/실제 PC SHA·lease/preimage 확인 후 W01 원담당이 B 적용·재수집/시각 검증 진행.
+
+**W01 종료:** 기능 목표 33/71(46.5%) **변화 없음** (개발 결함 5범주 source 개선만 완료); Census #28 `MISSING`·`CENSUS_M3_HEADERS_INVALID` 실원인 헤더 보관본 조회 미완료, A4-07 19종 private SHA audit Controller ingress 미설치, D1/Production 최종 readback 미완료.
