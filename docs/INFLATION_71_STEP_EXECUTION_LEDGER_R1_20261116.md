@@ -1,5 +1,16 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261119-LIVE-INFL28-STILL-PENDING-R2-FUTURE-LABEL-0019KST -->
+## 2026-11-19 00:19 KST — 공개 데이터 GET 신규 시각 확인, Census #28 미게시·R2 미래 월말 지속
+
+- **공개 정확 두 GET read-only:** 2026-11-18 15:19:13 GMT [후보7](https://zgmini.kr/api/inflation-candidate-inputs) HTTP200, schema `inflation-causal-candidates-7-r1-v1`, `PARTIAL`, 7개 중 **6 READY / ID28 1 PENDING**, Census #28 `value=null,observationDate=null,sourceStoredAt=null`, 전체 `score=null`, 후보 7 `sourceStoredAt=1794825002905`, 기존 `sourceVersion=INFL7_PRESENTATION_...3f644` 동일. 15:19:16 GMT [R2 상세](https://zgmini.kr/api/inflation-detail) HTTP200 `asOfDate=2026-11-18`, `score=57.97005405261128`, `trend.at(-1)={label:2026-11-30,value:57.97005405261128}` → **기준일보다 12일 미래 월말 레이블 그대로**. 공개 GET으로 Cloudflare active deployment SHA / D1 관리자 row / PC raw fresh를 단정하지 않음.
+- **기존 확정 성공 재사용:** 공식 XLSX SHA `8ec724...`, 원본 XLSX 974835바이트, 고정 PC 승인 *구형* `xlsx-lite.mjs` SHA256 `44d4c230...`와 현 개발 파서 모두 417개월 동일 PASS [GitHub CI #44330963144](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44330963144); [소스전용 PR #1401](https://github.com/ansqhd5774-Choi/zgmini/pull/1401) closed/unmerged. PC approved V2 4파일 hash 4/4 일치 기록 [#2099/#2100](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2099) 재사용. 공식 XLSX parser source 교체/추가 API fallback/새 승인 작업 불필요.
+- **FIRST BLOCKER / 현행 검산:** 제어 main `e918b13f4bb5ccb1f9a33275b696951af220ba35`, 앱 main 조회 `ef8624f34b5fd53a681520ca58e5c5e700f1300e`(조회시각 GitHub 변경될 수 있음). 기존 수집 [#1177](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1177)·[#1818](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1818)은 Core Task/Node/PID/E: lock owner preflight에서 providerCalls=0, 저장=0 안전 STOP. [#1955](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1955) 실PC Event129 채널 `enabled=false`는 **2026-11-17 당시 값**이며, 2026-11-19 현재 채널 상태/사용자 관리자 변경은 검증 못함. 이후 동일 기능의 B 정상 실행/Task owner direct WMI 증명/설치 완료 결과 증거 없음. Workflow `ZGMINI_INFLATION_MANUAL_B_ENABLED` 현재 값도 관리자 API 권한 밖/UNKNOWN. 따라서 기존 허용된 C 설정 및 진짜 owner proof·Workflow opt-in GO 전 **신규 단회 B 발행 금지**. 과거 B 재실행/로그·잠금/Task 우회 0.
+- **별개 R2 운영 미적용:** [앱 Issue #1330](https://github.com/ansqhd5774-Choi/zgmini/issues/1330)는 2026-11-18 **소스 결함 완료** 범위로 Closed/Completed 처리됐지만 PC Writer [Draft B #2167](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2167) 여전히 `REVIEW_REQUIRED_B`, exact 2-file Writer 운영 설치·D1 `detail:inflation:v1` readback/active UI 수정 미확인. 현재 공개 R2 GET에서도 미래 월말 직접 재현. Closed Issue를 운영 수정 완료로 승격하지 않음.
+- **다음 필수 실행/실제 효과:** 사용자가 관리자 `Microsoft-Windows-TaskScheduler/Operational` 채널의 현재 상태를 직접 확인하고 **실제 disabled일 경우에만 Enable Log 1회**(C급, 기능이 대신 변경 불가); 기존 승인 Task를 자연 실행 중 Task PID/lock/WMI/VBS timestamp 인증 PASS·기존 독립 B Workflow opt-in GO → 이미 `APPROVED_B` V2 정적 Census/BLS 정확 원본 2GET·두 JSON 저장 hash/readback → 기존 SQLite/checkpoint → 후보7 Writer/D1 API/UI 7/7. 그 전 별도 W01 R2 운영 2파일 Writer B 승인/설치와 public readback은 자기 독립 승인 범위에서 진행 가능하나 현재 승인 없음. 이번 GET만 수행했으며 새로운 PC/Provider/SQLite/D1/Task/배포 쓰기 **0**.
+- **단계:** 기존 W01 실제 DONE **33/71=46.5%**, 미완료 38, 이번 운영 DONE 0. 새 검증 시각 기록은 실서비스 조회 증거일 뿐 단계 완료가 아님.
+
+
 <!-- W01-20261118-LEGACY-APPROVED-XLSX-REAL-417-OF-417-NODECI44330963144 -->
 ## 2026-11-18 23:59 KST — 기존 PC 승인 **구형 XLSX parser 정확 SHA** 실물 공식 417개월 PASS → 불필요한 Writer source 교체 해소
 
