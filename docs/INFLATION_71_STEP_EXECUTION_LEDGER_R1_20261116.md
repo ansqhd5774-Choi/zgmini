@@ -1,5 +1,14 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-INFL7-PREVIOUS-HISTORY-PR1323-MERGED -->
+## 2026-11-18 — 공개 7개 연구 원자료: 이전값·직전 관측일과 차트 이력의 저장 계약 대조 (source-only)
+
+- **기능 진행률:** 33/71(46.5%) → **33/71(46.5%)**. 기존 19개·4축 산식/원자료/D1 실제 갱신 진전 없음. 신규 DONE 0, 미완료 38. 이미 성공한 수집·단위 테스트를 반복 실행하지 않았다.
+- **확인된 결함:** 실제 앱 `main@274113c7acfe109c87a936ee2ea8c83d78f3a65a`에서 `worker/inflation-causal-candidates-public-7-r1.mjs`의 저장 결과 검증은 마지막 차트 이력값과 `value`는 비교하지만, 공개 `previousValue`/ `previousObservationDate`가 `history.at(-2)`와 다르더라도 통과시켰다. 표의 직전 값과 차트 직전 점이 서로 달라질 수 있는 계약 불일치이며 특정 실PC D1에 실제 발생했다는 뜻은 아니다.
+- **정확 2파일 최소 수정:** [앱 PR #1323](https://github.com/ansqhd5774-Choi/zgmini/pull/1323) `worker/inflation-causal-candidates-public-7-r1.mjs` 와 `tests/inflation-causal-candidates-public-7-r1.test.mjs`. READY/STALE 공개 행의 이전값·이전일은 실제 저장 이력의 직전 점과 일치해야 하고, 단일 이력이면 `previousValue`는 null이어야 한다. 회귀시험은 이전값 변조, 이전일 변조, Treasury 음수/0의 정확성, 한 점 이력에서 잘못된 이전값을 차단하며 정상 7행을 수용한다. 공개 스키마·score:null·7 ID·0/null/PENDING 의미·19/4축 원칙은 변경하지 않았다.
+- **검증/병합:** PR HEAD `ec0f340c8bf5d7a84f1c7741da6e0c8f25f69870`; [Node.js CI #44254705073](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44254705073) `completed/success`, Build·Type check·Regression tests·PC publication recovery tests·Cloudflare candidate read contracts 5/5 통과. `main` squash [`33ab1d78c674dddbb0c18a0d8e087a9b3ae4c921`](https://github.com/ansqhd5774-Choi/zgmini/commit/33ab1d78c674dddbb0c18a0d8e087a9b3ae4c921). W01 원장 전용 브랜치에 변경 성과만 기록했으며, 전용 브랜치 전체 병합/운영 PC 적용 없음.
+- **실제 운영 차단/다음 실행:** 공유 Controller 원본 [#2094](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2094)는 `BLOCKED/FIRST_FAIL=STAGED`, W04 공유 설치 영수증 없음; W01 헤더-only [Draft #2111](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2111) 미설치. 마지막 실제 PC [A #2122](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2122) #28 `MISSING`, `CENSUS_M3_HEADERS_INVALID`. 이번 공개 스키마 수정은 실제 원본 헤더/Controller/D1/Cloudflare Production 배포 문제를 해소하지 않는다. 승인되지 않은 수동 B [#1818](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1818) 재실행/신규 공급자 GET·PC SQLite·Task·D1·사이트 변경 없음. 공유 stage 정규 복구 및 W04 실제 설치 후 W01 기보관 2025·2026 header-only A readback이 다음 필요한 PC 실행이다.
+
 <!-- W01-20261118-CENSUS-PRIOR-INTEGRITY-PR1319-MERGED -->
 ## 2026-11-18 — Census #28 기저 정상본 중복 월 무결성 및 선제 검증 완료 (source-only)
 
