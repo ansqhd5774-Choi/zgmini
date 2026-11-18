@@ -62,13 +62,16 @@ export function mergeNineR47HourlyRows({symbol,existing=[],incoming=[]}={}){
   return [...byTimestamp.values()].sort((a,b)=>a.timestamp.localeCompare(b.timestamp));
 }
 
-function parsePage(bytes,symbol,window=null){
+// Provider R35 page start/end are UTC calendar dates. A 00:00Z bar can
+// belong to the previous NY day; NY time is applied only by the R25 selector.
+export function parsePage(bytes,symbol,window=null){
   let previous='';
   return bytes.toString('utf8').split(/\r?\n/).filter(Boolean).map(line=>{
     let row;try{row=JSON.parse(line);}catch{fail('MERGED_PAGE_INVALID_JSONL');}
     if(!goodStamp(row.timestamp)||row.symbol!==symbol||
        (previous&&row.timestamp<=previous)||
-       (window&&(nyDate(row.timestamp)<window.start||nyDate(row.timestamp)>window.end)))
+       (window&&(row.timestamp.slice(0,10)<window.start||
+         row.timestamp.slice(0,10)>window.end)))
       fail('MERGED_PAGE_TIMESTAMP');
     previous=row.timestamp;
     return row;
