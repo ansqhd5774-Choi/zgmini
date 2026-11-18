@@ -226,3 +226,42 @@ test('invalid provider row cannot overwrite stored data and missing key blocks n
   assert.equal(calls,earlier);
 });
 
+
+test('Census M3 rejects malformed thousands separators without inventing inventory values',()=>{
+  const values=normalizeCensusM3Inventories(payload(
+    row(2026,'01','12,34'),
+    row(2026,'02','1,,234'),
+    row(2026,'03','1,234,56'),
+    row(2026,'04','01,234'),
+    row(2026,'05','1,234'),
+    row(2026,'06','12,345,678.50'),
+    row(2026,'07','1,234.0'),
+    row(2026,'08','12345678'),
+  ));
+  assert.deepEqual(values.map(x=>[x.date,x.value]),[
+    ['2026-05-01',1234],
+    ['2026-06-01',12345678.5],
+    ['2026-07-01',1234],
+    ['2026-08-01',12345678],
+  ]);
+  assert.equal(values.diagnostics.invalid,4);
+});
+
+test('malformed values in both official Census years fail the initial snapshot and retain raw archives',async t=>{
+  const fixture=base();t.after(fixture.clear);
+  let requests=0;
+  await assert.rejects(()=>collectCensusM3Inventories({
+    base:fixture.writer,censusKey:'fixture-key',now,
+    quotaFetch:async url=>{
+      requests++;
+      const year=Number(new URL(url).searchParams.get('time'));
+      return response(payload(row(year,'09','12,34')));
+    },
+  }),{code:'CENSUS_M3_NO_USABLE_OBSERVATIONS'});
+  assert.equal(requests,2);
+  assert.equal(fs.existsSync(path.join(fixture.writer,CENSUS_M3_INVENTORIES_FILE)),false);
+  const archiveNames=fs.readdirSync(path.join(fixture.writer,'inflation-causal-candidates-r1','raw'));
+  assert.equal(archiveNames.length,2);
+  assert.equal(archiveNames.some(name=>name.startsWith('census-m3-mtm-2025-')),true);
+  assert.equal(archiveNames.some(name=>name.startsWith('census-m3-mtm-2026-')),true);
+});
