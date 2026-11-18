@@ -2266,3 +2266,15 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 **운영 경계/별도 과제:** 소스와 CI 성공은 Cloudflare active deployment SHA, production UI, D1 body/stored_at 또는 PC SQLite 저장 최신성 실증과 다름. PC/SQLite/Source/Task/D1/Cloudflare 직접 쓰기 0. WPSFD42 2개 신규 Collector/Publisher + 7행 dynamic adapter는 [Draft #1257](https://github.com/ansqhd5774-Choi/zgmini/pull/1257) 미병합 및 [PR #1261](https://github.com/ansqhd5774-Choi/zgmini/pull/1261) **closed/unmerged**, 사용자 HOLD #1919. 이 PR은 그 승인 범위를 변경하지 않음.
 
 **다음 독립 실행:** R5-04 기존 BLS 3원천 5행 공개 stored GET 및 표시되는 출처·단위·관측/수집일의 동일성, 그 다음 R5-11 실제 Production 확인. 신규 WPSFD42 승인·소스 병합·운영 게시가 필요한 7행 부분은 별도 보류.
+
+## 124. R5-04 — Production BLS 기본 5행 실제 API·PC UI 대조, checkpoint 별도 미검증 (2026-11-18 KST)
+
+<!-- W05-R124-R504-LIVE-BLS -->
+
+**시작/종료:** 순차 26/82(31.7%), 개별 DONE 33/82(40.2%) 유지. R5-04 전체 완료 조건의 원본 checkpoint 동치는 아직 증명되지 않아 DONE으로 승격하지 않음.
+
+**실제 공개 읽기 전용 Browser 검증:** https://zgmini.kr/api/earnings-recession-indicators HTTP 응답에서 정확 BLS 5행 READY/FRESH, top-level sourceVersion `d7db335939bbdf07272f2467f8ad8239b01304727174ee606bc2db23324bb2af`, retrievedAt `2026-10-26T17:02:53.996Z` 확인. 행/원천/단위/관측기/값은 (1) `bls_ppi_final_demand_yoy_sa` WPSFD4 PERCENT 2026-09 6.346301041632008, (2) `bls_ppi_final_demand_index` WPSFD4 INDEX 2026-09 159.78, (3) `bls_ppi_goods_yoy_sa` WPSFD41 PERCENT 2026-09 9.772194010372637, (4) `bls_ppi_goods_index` WPSFD41 INDEX 2026-09 162.341, (5) `bls_unit_labor_cost_yoy` PRS85006111 PERCENT 2026-Q2 1.4. API는 `checkpoint` 필드를 공개하지 않음.
+
+**동일 공개 PC JS 화면:** https://zgmini.kr/earnings-recession/ 의 5개 표시값 6.35%/159.78/9.77%/162.34/1.40%, 관측기 2026-09 또는 2026-Q2, 수집일 2026-10-26이 API 원본과 반올림 수준 일치. 공개 API/화면에서 기존 5행 누락·단위 변경·출처 불일치 없음. 실제 운영 PC SQLite checkpoint와 게시 D1 sourceVersion의 원격 동치는 별도 확인 필요. 브라우저 공개 GET 외 PC/SQLite/D1/Provider/Cloudflare 쓰기 0.
+
+**FIRST UNFINISHED:** R5-04의 PC 저장 checkpoint와 D1 게시 sourceVersion 동일성 읽기 전용 영수증 확보 후 DONE 판정. 동시에 R5-11 공개 PC/모바일 날짜·stale·차트 검증을 독립 진행 가능. WPSFD42 #1919 HOLD 및 QFR #2089 승인 미확보를 우회하지 않음.
