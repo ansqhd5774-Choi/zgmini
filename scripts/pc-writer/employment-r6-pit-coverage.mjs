@@ -33,20 +33,20 @@ const sourceRows=(db,table,asOfDate)=>{
     .all(...ids,asOfDate);
 };
 const knownAt=row=>Date.parse(row.available_at??row.retrieved_at??"");
-// Known future/malformed stored times do not qualify for historical as-of.
-// A legacy NULL optional time, however, must not erase a CURRENT identity;
-// the per-key metadata validator separately keeps its PIT attestation on HOLD.
-const optionalRecordedAsOf=(row,end)=>["first_seen_at","recorded_at"].every(field=>{
+// A malformed optional time must not erase a CURRENT identity: keep it for
+// per-key HOLD review. HISTORY revisions still need a valid as-of timestamp.
+const optionalRecordedAsOf=(row,end,{retainMalformed=false}={})=>["first_seen_at","recorded_at"].every(field=>{
   if(!Object.hasOwn(row,field))return true;
   if(row[field]===null||row[field]===undefined)return true;
   const n=Date.parse(row[field]);
-  return Number.isFinite(n)&&n<=end;
+  return Number.isFinite(n)?n<=end:retainMalformed;
 });
 const isKnownAsOf=(row,asOfDate)=>{
   const end=Date.parse(asOfDate+"T23:59:59.999Z");
   const retrieved=Date.parse(row.retrieved_at??"");
   return Number.isFinite(knownAt(row))&&knownAt(row)<=end
-    &&Number.isFinite(retrieved)&&retrieved<=end&&optionalRecordedAsOf(row,end);
+    &&Number.isFinite(retrieved)&&retrieved<=end
+    &&optionalRecordedAsOf(row,end,{retainMalformed:true});
 };
 // Do not coerce SQLite NULL/empty TEXT to zero when previewing PIT lineage.
 const numericObservation=value=>value!==null&&value!==undefined
@@ -56,7 +56,11 @@ const sameObservation=(a,b)=>Boolean(a&&b&&a.source_hash===b.source_hash
   &&Number(a.value)===Number(b.value)
   &&a.provider===b.provider&&a.provider_series_id===b.provider_series_id);
 const validSourceMetadata=row=>{
-  if(!row||!numericObservation(row.value)||!(/^[a-f\d]{64}$/i.test(String(row.source_hash??"")))
+  // A malformed or missing declared storage timestamp cannot certify a
+  // candidate repair even when the CURRENT identity remains visible.
+  if(!row||["first_seen_at","recorded_at"].some(field=>
+    Object.hasOwn(row,field)&&!Number.isFinite(Date.parse(row[field]??"")))
+    ||!numericObservation(row.value)||!(/^[a-f\d]{64}$/i.test(String(row.source_hash??"")))
     ||!Number.isFinite(Date.parse(row.retrieved_at??""))
     ||!String(row.provider??"").trim()||!String(row.provider_series_id??"").trim()
     ||!String(row.quality_status??"").trim()
