@@ -12,6 +12,7 @@ import {installLocalRuntime} from './local-env.mjs';
 import {client,credential,read,save,hash} from './d1.mjs';
 import {mergeStoredCompositeTrend,oneYearHistoryStart} from '../../worker/composite-history.mjs';
 import {attachStoredDomainScoreComparisons,attachStoredEarningsFactorTrends,sameVerifiedLineage} from './market-snapshot-comparisons.mjs';
+import {attachStoredGrowthFactorTrends} from './growth-r2-saved-factor-history.mjs';
 import {publicationCompatibility,recoverPublication,appendPublicationEvent} from './publication-guard.mjs';
 import {koreaPublicationPlan} from './korea-publication.mjs';
 import {readAssetR10Projection} from './asset-r10-projection.mjs';
@@ -98,6 +99,7 @@ try{
  }
  attachStoredDomainScoreComparisons(body,storedHistory);
  attachStoredEarningsFactorTrends(body,storedHistory);
+ attachStoredGrowthFactorTrends(body,storedHistory);
  // Compare published-calculation snapshots from distinct dates, not reconstructed curves.
  const priorRows=(await core.prepare("SELECT snapshot_key,body FROM market_public_snapshots_v1 WHERE snapshot_key!='current' AND snapshot_key<? ORDER BY snapshot_key DESC LIMIT 30").bind(body.asOfDate).all()).results;
  const priorMarket=priorRows.find(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.snapshot_key)&&JSON.parse(row.body).status==='SUCCESS');
