@@ -43,17 +43,18 @@ export function parseSavedGmhBarSource({symbol,format,bytes,sha256,provider}={})
  }catch{fail('RAW_JSON_INVALID');}
  need(Array.isArray(rows)&&rows.length>0&&rows.length<=100_000,
   'RAW_ROWS_UNAVAILABLE');
- const saved=new Map();let skippedGaps=0;
+ const saved=new Map();let skippedGaps=0,skippedUnusable=0;
  for(const bar of rows){
   need(bar&&typeof bar==='object'&&!Array.isArray(bar)&&
    bar.symbol===symbol&&typeof bar.timestamp==='string'&&
    !Number.isNaN(Date.parse(bar.timestamp))&&
    bar.timestamp.length<=40,'RAW_INSTRUMENT_OR_TIME_INVALID');
   if(bar.is_gap===true){skippedGaps++;continue;}
-  // A supplied close must be a numeric, strictly positive traded price.
-  // This is calculator eligibility, not provider payload rejection.
-  need(typeof bar.close==='number'&&Number.isFinite(bar.close)&&
-   bar.close>0,'RAW_PRICE_UNUSABLE_FOR_SCORE');
+  // Store provider bars verbatim upstream. A malformed non-gap price is
+  // ineligible for scoring, not a reason to reject other valid sessions.
+  // The 628-common-session requirement below still fails closed: no filling.
+  if(typeof bar.close!=='number'||!Number.isFinite(bar.close)||
+   bar.close<=0){skippedUnusable++;continue;}
   const old=saved.get(bar.timestamp);
   need(old===undefined||old===bar.close,
    'RAW_CONFLICTING_DUPLICATE');
@@ -64,7 +65,7 @@ export function parseSavedGmhBarSource({symbol,format,bytes,sha256,provider}={})
   .map(([timestamp,close])=>({timestamp,close}));
  return Object.freeze({symbol,provider,sha256,
   inputRows:rows.length,eligibleHours:ordered.length,skippedGaps,
-  rows:ordered});
+  skippedUnusable,rows:ordered});
 }
 const expectedOrder=(received)=>received.length===GMH_SEVEN_SYMBOLS.length&&
  GMH_SEVEN_SYMBOLS.every(symbol=>received.some(x=>x?.symbol===symbol))&&
@@ -111,7 +112,8 @@ export function calculateGmhSevenPrivate252(savedSources,{asOf}={}){
  });
  const evidence=Object.freeze(Object.fromEntries(sources.map(s=>[s.symbol,
   {sha256:s.sha256,inputRows:s.inputRows,
-   eligibleHours:s.eligibleHours,skippedGaps:s.skippedGaps}])));
+   eligibleHours:s.eligibleHours,skippedGaps:s.skippedGaps,
+   skippedUnusable:s.skippedUnusable}])));
  // This is the exact private R145/R149 research-envelope contract. The
  // existing R149 adapter may consume it, but it cannot publish or set rights.
  return Object.freeze({
