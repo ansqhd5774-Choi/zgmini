@@ -17,11 +17,24 @@ const validSha=x=>typeof x==='string'&&/^[a-f0-9]{64}$/.test(x);
 export function readArchivedBeaMfgR6({root,sourceSha,now=Date.now()}={}){
   if(typeof root!=='string'||!path.isAbsolute(root)||!validSha(sourceSha))
     throw Error('BEA_MFG_ARCHIVE_ARGUMENT_INVALID');
-  const folder=path.join(root,...RAW);
+  // Do not follow a linked archive directory or file outside the approved
+  // PC raw-source tree. Hash verification alone does not prove path ownership.
+  let folder=root;
+  for(const name of RAW){
+    folder=path.join(folder,name);
+    if(!fs.existsSync(folder))throw Error('BEA_MFG_ARCHIVE_MISSING');
+    const directory=fs.lstatSync(folder);
+    if(directory.isSymbolicLink()||!directory.isDirectory())
+      throw Error('BEA_MFG_ARCHIVE_UNSAFE_PATH');
+  }
   const csvFile=path.join(folder,sourceSha+'.csv');
   const metaFile=path.join(folder,sourceSha+'.json');
   if(!fs.existsSync(csvFile)||!fs.existsSync(metaFile))throw Error('BEA_MFG_ARCHIVE_MISSING');
-  if(fs.statSync(csvFile).size>100_000||fs.statSync(metaFile).size>10_000)
+  const csvStat=fs.lstatSync(csvFile),metaStat=fs.lstatSync(metaFile);
+  if(csvStat.isSymbolicLink()||!csvStat.isFile()
+    ||metaStat.isSymbolicLink()||!metaStat.isFile())
+    throw Error('BEA_MFG_ARCHIVE_UNSAFE_PATH');
+  if(csvStat.size>100_000||metaStat.size>10_000)
     throw Error('BEA_MFG_ARCHIVE_TOO_LARGE');
   const original=fs.readFileSync(csvFile);
   if(sha256(original)!==sourceSha)throw Error('BEA_MFG_ARCHIVE_SHA_MISMATCH');
