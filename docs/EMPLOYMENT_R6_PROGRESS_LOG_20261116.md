@@ -1113,3 +1113,14 @@
 - **소스/CI 경계:** 본 단계는 기존 등록된 PC 실측과 통과된 원래 read-only 계산기/테스트의 판정 결과를 **재사용**하여 기존 코드/DB 재검사 및 신규 테스트 반복 실행하지 않음. 전담 72단계 계획서의 PIT-05-03/04만 DONE으로 변경. 이 문서 확정은 source/운영 설치/데이터 복구 성공이 아님.
 - **공유 차단:** [원본 #2094](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2094) STAGED 잔여·복구 미입증, 공통 [#2116](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2116) 소스 승인과 독립 유지보수기 실제 PC 적용 구분. 본 원담당은 별도 6파일 B 재요청/임의 stage 삭제를 하지 않음.
 - **다음 필수:** PIT-05-05에서 기존 공통 B 유지보수기의 지원 범위 및 실제 미지원 DB History 단일 INSERT 기능 여부를 정확 소스·승인 등록으로 판정. 복구 가능한 키셋/승인이 없으면 새 B 요청은 생성하지 않음. 동시에 PIT-04-05/07/08 원자료 SHA/c3/분모·식별키 확인은 여전히 별도 실PC 필수. 최종 사용자 육안 검증은 모든 실제 기능 완료 후에만.
+
+## 97. PIT-05-05 — 기존 공통 B/등록 R6 수집 B의 실제 효력과 History 복구 미지원 분리 (2026-11-18 KST)
+
+<!-- W04-PIT0505-EXISTING-B-ROUTES-SCOPE-20261118 -->
+
+- **진행:** PIT-05-03/04 완료 `31/72 DONE(43.1%)` → PIT-05-05 완료 `32/72 DONE(44.4%)`; 잔여 40. 원담당 승인된 운영 실행은 이번 단계에 새로 발생하지 않음.
+- **확인한 실제 등록·코드:** 제어 저장소 설치 SHA `f7f1559bc0ef15bb9b375982d048369c474c490f` 및 최신 `config/operations.json`의 A-grade `employment-r6-candidate-stage-readonly` / `employment-r6-collection-evidence-readonly`, `mutationsEnabled=false`; 독립 `tools/maintenance-apply.mjs`·`tools/maintenance-contract.mjs`와 `pc-controller-update`는 승인된 Controller 파일 교체·백업·재연결 효과만 있음. 공통 `pc-writer-b-source-once.yml`는 정규 승인된 소스 파일 overlay를 설치하고, 임의 SQL/history repair를 허용하지 않음.
+- **이미 있는 R6 B는 별도 기능:** [`pc-employment-r6-registered-data-once.yml`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/.github/workflows/pc-employment-r6-registered-data-once.yml), [`r6-registered-data-b/operation.mjs`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/r6-registered-data-b/operation.mjs)는 정규 pinned source/approval·`ONE_YEAR`/`BACKFILL` 모드에 한해 기존 Collector가 공급자 호출→SQLite 저장→게시 계약을 수행하도록 하는 **고정 작업**. 기존 `effects.sqliteWrites===true`는 이 원래 수집 효과이며, 후보 DB에서 정확 누락 History로 자유형 INSERT 허가라는 의미 아님.
+- **결론:** 현재 승인·등록된 A/Controller B/Writer Source B/수집 Data B 중 PIT-05-04의 단일 History 결손 INSERT를 외부 인수로 안전하게 직접 승인할 기능 없음. **기존 B로 임의 shell·SQL을 우회하지 않는다.** 현재 확정된 원본 키별 복구 GO 집합과 해당 기능 승인 모두 0/미확인. 신규 SQL/DB schema/원자료/Collector·TTL·게시 주기 변경 없음. 필요 시 PIT-06에서 기존 설치·보호·Runner 구조를 재사용하는 정확 기능 구현과 승인 효과를 검토할 수 있으나 이것을 PIT-05-06의 신규 승인 요구나 전체 업무 차단으로 확장하지 않음.
+- **남은 핵심 실제 미완료:** PIT-04-05 원문 해시 귀속 27 미인증, PIT-04-07 실제 ETA539 CSV c3·4주 분모, PIT-04-08 per-key 충돌 분리/가용시각, #2094 STAGED 원본 보존 및 공통 independent maintainer V2 운영 적용 증거. [실PC A #2117](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2117) 및 [Stage A #2088](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2088) PASS는 기존 범위에서 재사용하며 새 A/B를 반복 발급하지 않음.
+- **다음 필수 W04:** PIT-05-06 기존 승인 manifest·해시·원본 보호 계약의 실제 범위와 History 복구의 미승인 효과를 분리 검증, 이후 PIT-05-07 동일 DB writer lane 안전 조건 명세화. 단, PIT-07 운영 쓰기 승인·실제 RAW/PIT 증명이 없는 경우 정확히 STOP하며 다음 승인 없는 실행을 만들지 않는다.
