@@ -1,0 +1,118 @@
+{
+  "kind": "ZGMINI_W04_PIT0408_CONTROLLER_MAIN8_PREAPPROVAL_SOURCE_REVIEW_V1",
+  "status": "NON_EXECUTABLE_REVIEW_NO_GO",
+  "notAPcMaintenanceManifest": true,
+  "observedAt": "2026-11-18",
+  "controlRepository": "ansqhd5774-Choi/zgmini-pc-control",
+  "installedControllerSha": "f7f1559bc0ef15bb9b375982d048369c474c490f",
+  "targetSourceSha": "0e0a3c50ea9c072bc3074d03ca3eb1fd6bd0023c",
+  "targetSourceBranch": "main",
+  "targetProvenance": "Merged PR #2134 - bounded PIT-04-08 Controller A projection",
+  "latestMainAtSourceReview": "dc307f9475a0d1e01cdca0fe4aea7dc9944303ec",
+  "gitPreflight": {
+    "installedAncestorOfTarget": true,
+    "targetAncestorOfCurrentMain": true,
+    "sevenFileSourceTargetOffMainRejected": "TARGET_NOT_ON_MAIN",
+    "exactControllerConfigDeltaFromInstalled": 8,
+    "noSourceRuntimeChangesBetweenTargetAndMain9ExceptER1": true,
+    "targetAndMain9FilesIdentical": 8,
+    "retainsInstalledER1SourceOriginBytes": true,
+    "crossOwnerLiveEffectsIncluded": [
+      "W05 earnings-bea-mfg-archive-readonly and shared operation/config"
+    ],
+    "crossOwnerLiveEffectsExcluded": [
+      "ER1 pc-source-origin-readonly.mjs 64-to-256 expansion"
+    ],
+    "preflightSourceScope": "PASS_SOURCE_ONLY_NOT_PRODUCTION_APPROVAL"
+  },
+  "allowFilesReview": {
+    "paths": [
+      {
+        "path": "config/operations.json",
+        "owner": "W01+W04+W05 공통",
+        "observedTargetBlobPrefix": "b7fc050148cb",
+        "sha256": "a12fb8fdbf3c575f34bddb33334e59c73616aa3b53a195917a492ece56fb4632"
+      },
+      {
+        "path": "controller/common.mjs",
+        "owner": "W04 PIT-04-08",
+        "observedTargetBlobPrefix": "607e8dcfe21d",
+        "sha256": "67d54cae62829e833a3ac547da621dbd1231ba4e40b7a54960a89610995b32e6"
+      },
+      {
+        "path": "controller/earnings-bea-mfg-archive-readonly.mjs",
+        "owner": "W05",
+        "observedTargetBlobPrefix": "03cbc144f35a",
+        "sha256": "0835fc60ebaa63ce0b0ead772a5dfa9d1834fa9bffb6f90e0d63cb24428495ad"
+      },
+      {
+        "path": "controller/employment-r6-candidate-readonly.mjs",
+        "owner": "W04 PIT-04",
+        "observedTargetBlobPrefix": "947bed58051b",
+        "sha256": "9a7411946b70c13837a68825aac4078a7c2044219bffe7cd3c4fda7a0a100b87"
+      },
+      {
+        "path": "controller/employment-r6-collection-evidence-readonly.mjs",
+        "owner": "W04 PIT-04-05",
+        "observedTargetBlobPrefix": "126a245272b0",
+        "sha256": "12bd06c9f6ff6ea2b3aabe49a12fc3020550d917e6f3a611ad0c754b32df47cd"
+      },
+      {
+        "path": "controller/inflation-a401-private23-readonly.mjs",
+        "owner": "W01",
+        "observedTargetBlobPrefix": "ff6c041a8278",
+        "sha256": "db62b0799731d48a9f04e0c8510c6fa273f70e2b07c2eda5411cc636743d27aa"
+      },
+      {
+        "path": "controller/inflation-a407-integrity-readonly.mjs",
+        "owner": "W01",
+        "observedTargetBlobPrefix": "f50e4af8ed26",
+        "sha256": "8d038527098d7527ee09575af11f53e81524476da85400eb46be5bf896bac88e"
+      },
+      {
+        "path": "controller/operations.mjs",
+        "owner": "W01+W04+W05 공통",
+        "observedTargetBlobPrefix": "7ba551fd8bc3",
+        "sha256": "51d785f781ed313b94a3fb234b09d892f6b144abdbcecafe15bf2f4a72575891"
+      }
+    ],
+    "deterministicFingerprintSha256": "0a2a603fbe2bd17cc30fa25b489bdba2a8c12b4d4f419cad24600ca185f57e1b",
+    "digestVerifiedBy": [
+      "Python hashlib JSON compact canonical sort",
+      "Node.js crypto SHA256 JSON.stringify localeCompare sort"
+    ],
+    "digestPurpose": "FILE_LIST_FINGERPRINT_ONLY_NOT_A_GRANTED_B_APPROVAL"
+  },
+  "ownerEffects": {
+    "W04": "PIT-04-08 common offset and 8-key classified projections; collection-evidence source",
+    "W01": "A401/A407 read-only inflation verification",
+    "W05": "BEA manufacturing archive reader plus corresponding shared dispatch and config registration",
+    "ER1": "EXCLUDED source-origin directory expansion",
+    "shared": "config/operations.json; controller/operations.mjs"
+  },
+  "priorBApproval": "approvals/controller-updates/ead5d2d585ff2ce2a6df5f9b6cf720f65d90b49b.json",
+  "priorBApprovalDoesNotCoverThisEightFileSource": true,
+  "prerequisites": [
+    "Owner-confirmed W05 read-only archive operation/source authorization for the exact eight-file target combined with existing W01/W04 scope",
+    "Common process owner's actual #2094 STAGED safe recovery proof and pinned independent maintainer V2 Windows handoff readback",
+    "Fresh installed PC Controller SHA, backup/protection, owner lease and precise manifest/CI approval under existing B path",
+    "One single new approved controller-only B request and actual post-install Controller SHA readback",
+    "Existing Host R2 abd8f755 source used for new PIT04 offset=0 8-key readonly A with JSON+TXT evidence",
+    "Original raw provenance and true PIT judgment of 14 conflicting and 255 unverified candidates before any History write"
+  ],
+  "forbidden": [
+    "Do not use review JSON as maintenance intake manifest or a B approval",
+    "Do not rewrite ancestry or bypass TARGET_NOT_ON_MAIN",
+    "Do not replace currently approved independent maintainer V2 bytes without separate approval",
+    "Do not automatically include W05 operation without owner go or manually remove other approved main functions",
+    "Do not repeat #2094 or modify its staged files/lease by hand",
+    "Do not mutate SQLite/D1/Task/Provider/production or promote 2625 internal matches as TRUE_PIT"
+  ],
+  "observedEffects": {
+    "newControllerB": "NOT_REQUESTED",
+    "newOffsetA": "NOT_REQUESTED",
+    "approvedHistoryInsertKeys": 0,
+    "operatingControllerChanged": false,
+    "otherOperatingDataChanged": false
+  }
+}
