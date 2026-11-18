@@ -279,14 +279,14 @@ for(const failure of ['502','timeout','empty']){
       fetchImpl,sleep:async()=>{}});
     assert.equal(result.status,failure==='502'?'STOP_HTTP_502':failure==='timeout'?
       'STOP_NETWORK_OR_TIMEOUT':'WAIT_SOURCE_NO_NEW_VERIFIED_SPY_SESSION');
-    assert.equal(calls,1);
+    assert.equal(calls,failure==='empty'?1:3);
     assert.deepEqual(fs.readdirSync(path.join(f.deltaHome,'state')).filter(s=>s.endsWith('.json')),
       files);
     assert.deepEqual(fs.readFileSync(path.join(f.deltaHome,'raw-manifest.json')),before);
-    const immediate=await runNineR47Recurring({...f,now:new Date('2026-10-28T08:00:00Z'),
+    const immediate=await runNineR47Recurring({...f,now:new Date('2026-10-28T07:00:30Z'),
       fetchImpl,sleep:async()=>{}});
     assert.equal(immediate.status,'WAIT_SOURCE_PROBE_COOLDOWN');
-    assert.equal(calls,1);
+    assert.equal(calls,failure==='empty'?1:3);
   });
 }
 
@@ -349,4 +349,18 @@ test('R47 accepts archived old R35 checkpoint URL alongside current stocks/us pa
   setFixtureCollectedAt(f,f.firstTime);
   const next=planNineR47Recurring({...f,now:f.secondTime});
   assert.equal(next.status,'READY_NEW_WINDOW');
+});
+
+test('R47 transport failures do not consume valid freshness probe cap or six-hour wait',async t=>{
+  const f=fixture(t),at=new Date('2026-10-28T17:00:00Z');
+  const failed=await runNineR47Recurring({...f,now:at,auto:false,
+    fetchImpl:async()=>new Response('',{status:502,headers:{'retry-after':'120'}})});
+  assert.equal(failed.status,'STOP_HTTP_502');
+  assert.equal(planNineR47Recurring({...f,now:new Date(at.getTime()+60000)}).status,
+    'WAIT_SOURCE_PROBE_COOLDOWN');
+  assert.equal(planNineR47Recurring({...f,now:new Date(at.getTime()+121000)}).status,
+    'READY_NEW_WINDOW');
+  const completed=await runNineR47Recurring({...f,now:new Date(at.getTime()+121000),sleep:async()=>{}});
+  assert.equal(completed.status,'R35_DELTA_PRIVATE_COLLECTION_COMPLETE');
+  assert.equal(completed.providerCalls,64);
 });

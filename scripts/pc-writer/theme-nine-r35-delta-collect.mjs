@@ -17,6 +17,14 @@ const BATCH_PAUSE_MS = 60_000;
 const REQUEST_TIMEOUT_MS = 45_000;
 const PAGE_LIMIT = 5000;
 const MAX_BODY_BYTES = 8_000_000;
+export const isR35TransientFailure = status => status==='STOP_NETWORK_OR_TIMEOUT'||
+  /^STOP_HTTP_(429|500|502|503|504)$/.test(status??'');
+const retryDelay = response => {
+  const value=response.headers.get('retry-after');
+  if(!value)return BATCH_PAUSE_MS;
+  const delay=/^\d+$/.test(value)?Number(value)*1000:Date.parse(value)-Date.now();
+  return Number.isFinite(delay)?Math.max(BATCH_PAUSE_MS,delay):BATCH_PAUSE_MS;
+};
 
 const dateOK = x => typeof x==='string' && /^\d{4}-\d{2}-\d{2}$/.test(x) &&
   !Number.isNaN(Date.parse(x+'T00:00:00Z')) && new Date(x+'T00:00:00Z').toISOString().slice(0,10)===x;
@@ -166,8 +174,14 @@ export async function collectNineR35Delta({dataRoot,rosterPath,start,end,previou
   let stateInfo=null;
   if(hasDelta){home=fs.realpathSync(existingHome);if(!within(root,home))fail('DELTA_ROOT_SYMLINK');
     stateInfo=metadata(home,base.rosterSha256,start,end,symbols);
-    if(stateInfo.state.failedAt){report.status='STOP_PREVIOUS_FAILURE_REVIEW_REQUIRED';
+    if(stateInfo.state.failedAt&&!isR35TransientFailure(stateInfo.state.failure)){report.status='STOP_PREVIOUS_FAILURE_REVIEW_REQUIRED';
       report.failure=stateInfo.state.failure;return report;}
+    if(stateInfo.state.retryNotBefore!==undefined){
+      const retryAt=Date.parse(stateInfo.state.retryNotBefore);
+      if(!Number.isFinite(retryAt))fail('RETRY_TIME_INVALID');
+      if(retryAt>Date.now()){report.status='WAIT_PROVIDER_RETRY_AFTER';
+        report.retryAfterMs=retryAt-Date.now();return report;}
+    }
     if(symbols.every(s=>stateInfo.state.symbols[s].complete)){
       report.status='R35_DELTA_ALREADY_COLLECTED';report.completedSymbols=64;return report;}
   }
@@ -176,7 +190,7 @@ export async function collectNineR35Delta({dataRoot,rosterPath,start,end,previou
   if(probeNeeded){
     firstSpy=await requestPage({symbol:'SPY',start,end,cursor:null,after:null,
       fetchImpl,timeoutMs});report.providerCalls++;
-    if(firstSpy.error){report.status=firstSpy.error;return report;}
+    if(firstSpy.error){report.status=firstSpy.error;report.retryAfterMs=firstSpy.retryAfterMs;return report;}
     if(!firstSpy.next&&(!firstSpy.page.lastValidNY||
       firstSpy.page.lastValidNY<=freshnessDay)){
       report.status='WAIT_SOURCE_NO_NEW_VERIFIED_SPY_SESSION';
@@ -202,8 +216,12 @@ export async function collectNineR35Delta({dataRoot,rosterPath,start,end,previou
           pageResult=await requestPage({symbol,start,end,cursor:p.cursor,after:p.lastTimestamp,
             fetchImpl,timeoutMs});report.providerCalls++;}
         if(pageResult.error){state.failedAt=new Date().toISOString();
-          state.failure=pageResult.error;writeJSON(stateFile,state);
-          report.status=pageResult.error;report.failedSymbol=symbol;return report;}
+          state.failure=pageResult.error;
+          if(isR35TransientFailure(pageResult.error))state.retryNotBefore=new Date(
+            Date.now()+Math.max(BATCH_PAUSE_MS,pageResult.retryAfterMs??0)).toISOString();
+          writeJSON(stateFile,state);
+          report.status=pageResult.error;report.retryAfterMs=pageResult.retryAfterMs;
+          report.failedSymbol=symbol;return report;}
         const {bytes,page,next,url}=pageResult;
         if((next&&(!page.rows||next===p.cursor))||(!page.rows&&p.pages>0)){
           state.failedAt=new Date().toISOString();state.failure='STOP_PAGINATION_CONFLICT';
@@ -227,7 +245,7 @@ export async function collectNineR35Delta({dataRoot,rosterPath,start,end,previou
         }else p.noBars=true;
         p.lastTimestamp=page.lastTimestamp;
         p.cursor=next||null;p.pages++;p.complete=!next;
-        delete state.failedAt;delete state.failure;
+        delete state.failedAt;delete state.failure;delete state.retryNotBefore;
         writeJSON(stateFile,state);
       }
       if(report.providerCalls>=maxRequests)break;
@@ -251,7 +269,7 @@ async function requestPage({symbol,start,end,cursor,after,fetchImpl,timeoutMs}){
   let response;
   try{response=await fetchImpl(url,{redirect:'error',signal:AbortSignal.timeout(timeoutMs)});}
   catch{return {error:'STOP_NETWORK_OR_TIMEOUT'};}
-  if(!response.ok)return {error:'STOP_HTTP_'+response.status};
+  if(!response.ok)return {error:'STOP_HTTP_'+response.status,retryAfterMs:retryDelay(response)};
   let bytes,page;
   try{bytes=await bodyLimited(response);page=validatePage(bytes,symbol,after);}
   catch{return {error:'STOP_RESPONSE_OR_INVALID_BARS'};}
@@ -261,14 +279,20 @@ async function requestPage({symbol,start,end,cursor,after,fetchImpl,timeoutMs}){
 export async function collectNineR35Auto({sleep=ms=>new Promise(r=>setTimeout(r,ms)),
   maxBatches=MAX_BATCHES,...args}={}){
   if(!Number.isInteger(maxBatches)||maxBatches<1||maxBatches>MAX_BATCHES)fail('BATCH_ARGUMENTS');
-  let calls=0,stored=0,batches=0,report;
+  let calls=0,stored=0,batches=0,report,retries=0;
   for(;batches<maxBatches;batches++){
     report=await collectNineR35Delta(args);calls+=report.providerCalls;
     stored+=report.rawFilesStored;
-    if(report.status!=='R35_DELTA_CHECKPOINT_READY_TO_RESUME')break;
-    if(batches+1<maxBatches)await sleep(BATCH_PAUSE_MS);
+    const transient=isR35TransientFailure(report.status);
+    if(report.status!=='R35_DELTA_CHECKPOINT_READY_TO_RESUME'&&!transient)break;
+    const delay=Math.max(BATCH_PAUSE_MS,report.retryAfterMs??0);
+    // Retry only known idempotent GET failures, inside the existing batch budget.
+    // Long provider backoff is returned to the caller rather than shortened.
+    if(transient&&(retries>=2||delay>300_000))break;
+    if(batches+1<maxBatches){if(transient)retries++;await sleep(delay);}
   }
-  return {...report,totalProviderCalls:calls,totalRawFilesStored:stored,batches:batches+1};
+  return {...report,totalProviderCalls:calls,totalRawFilesStored:stored,
+    transientRetries:retries,batches:Math.min(batches+1,maxBatches)};
 }
 
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){

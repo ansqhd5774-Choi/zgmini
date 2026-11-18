@@ -13,7 +13,7 @@ const expected=Object.freeze([
   {section:'SCORER',filename:'theme-nine-r47-private-score.mjs',
     sha256:'30ed98bbcb76039eb949b53b5492727ada90e1e68c8d9612831d668d1aa4399c'},
   {section:'R35',filename:'theme-nine-r35-delta-collect.mjs',
-    sha256:'fca04343f4af573944f8c08a795aed37d9672fce8246cf2aed91862d622a5dcf'},
+    sha256:'1a7b8a40e449713978b51e5d2b909eb19ad03d846dfe44dc19b0d9831bb5dabe'},
 ]);
 function extract(cmd,section){
   const begin='::R47_'+section+'_BEGIN';

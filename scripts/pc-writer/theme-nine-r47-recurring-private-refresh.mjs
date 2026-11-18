@@ -6,7 +6,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {auditNineR34RefreshPreflight} from './theme-nine-r34-refresh-preflight.mjs';
-import {collectNineR35Delta, collectNineR35Auto} from './theme-nine-r35-delta-collect.mjs';
+import {collectNineR35Delta, collectNineR35Auto,isR35TransientFailure} from './theme-nine-r35-delta-collect.mjs';
 
 const fail = code => {throw Object.assign(new Error('THEME_NINE_R47_'+code),
   {code:'THEME_NINE_R47_'+code});};
@@ -106,6 +106,7 @@ function probeGate(dataRoot,rosterSha,window,now,previousCheckedAt=null) {
      prior.window?.start!==window.start||prior.window?.end!==window.end||
      !Array.isArray(prior.attempts)||prior.attempts.length>14||
      prior.attempts.some(a=>typeof a.at!=='string'||!Number.isFinite(Date.parse(a.at))||
+       (a.retryAfterMs!==undefined&&(!Number.isFinite(a.retryAfterMs)||a.retryAfterMs<0))||
        !recordedProbeOutcome(a.status))))
     fail('PROBE_LEDGER_INVALID');
   const currentNYDay=nyDate(now);
@@ -116,7 +117,18 @@ function probeGate(dataRoot,rosterSha,window,now,previousCheckedAt=null) {
   if(mostRecent!==undefined&&mostRecent>now.getTime())return {
     status:'WAIT_SOURCE_PROBE_COOLDOWN',lastCheckedAt:new Date(mostRecent).toISOString(),
     nextRetryAt:new Date(mostRecent+RECHECK_MIN_INTERVAL_MS).toISOString(),file};
-  if(attempts.length>=RECHECK_MAX_PER_NY_DAY)return {status:'WAIT_SOURCE_PROBE_DAILY_CAP',
+  const sourceAttempts=attempts.filter(a=>!isR35TransientFailure(a.status));
+  const latestAttempt=(prior?.attempts??[]).slice().sort((a,b)=>Date.parse(b.at)-Date.parse(a.at))[0];
+  const transientLatest=latestAttempt&&isR35TransientFailure(latestAttempt.status)&&
+    Date.parse(latestAttempt.at)===mostRecent;
+  if(transientLatest){
+    const delay=Math.max(60_000,latestAttempt.retryAfterMs??0);
+    if(now.getTime()-mostRecent<delay)return {status:'WAIT_SOURCE_PROBE_COOLDOWN',
+      nextRetryAt:new Date(mostRecent+delay).toISOString(),lastCheckedAt:latestAttempt.at,file};
+    // A transport failure is not a successful source-freshness probe.
+    if(sourceAttempts.length<RECHECK_MAX_PER_NY_DAY)return {status:'READY',lastCheckedAt:latestAttempt.at,file};
+  }
+  if(sourceAttempts.length>=RECHECK_MAX_PER_NY_DAY)return {status:'WAIT_SOURCE_PROBE_DAILY_CAP',
     nextRetryAt:null,lastCheckedAt:new Date(mostRecent).toISOString(),file};
   if(mostRecent!==undefined&&now.getTime()-mostRecent<RECHECK_MIN_INTERVAL_MS)
     return {status:'WAIT_SOURCE_PROBE_COOLDOWN',
@@ -143,7 +155,8 @@ function recordProbe(dataRoot,rosterSha,window,now,collection) {
     attempts:[...(previous?.attempts??[]).slice(-13),{
       at:now.toISOString(),status:collection.status,
       latestSeenSpyNYDay:collection.latestSeenSpyNYDay??null,
-      providerCalls:collection.totalProviderCalls??collection.providerCalls??0}]};
+      providerCalls:collection.totalProviderCalls??collection.providerCalls??0,
+      retryAfterMs:collection.retryAfterMs??60_000}]};
   const tmp=file+'.'+process.pid+'.'+Math.random().toString(36).slice(2)+'.tmp';
   fs.writeFileSync(tmp,JSON.stringify(record,null,2)+'\n',{flag:'wx'});
   try{fs.renameSync(tmp,file);}finally{if(fs.existsSync(tmp))fs.unlinkSync(tmp);}
@@ -212,7 +225,7 @@ export function planNineR47Recurring({dataRoot,rosterPath,now=new Date(),
     // A late-data repair may use the same end, but must advance the actual
     // verified SPY session. The chain still has exactly one next state.
     if(prior&&state.end<prior.end)fail('CHAIN_WINDOW_NOT_ADVANCING');
-    if(state.failure)fail('PRIOR_PROVIDER_FAILURE_REVIEW_REQUIRED');
+    if(state.failure&&!isR35TransientFailure(state.failure))fail('PRIOR_PROVIDER_FAILURE_REVIEW_REQUIRED');
     if(!state.completed) {
       if(remaining.length)fail('CHAIN_AFTER_INCOMPLETE_WINDOW');
       return {...result,status:'RESUME_FROZEN_WINDOW',window:{start:state.start,end:state.end},
