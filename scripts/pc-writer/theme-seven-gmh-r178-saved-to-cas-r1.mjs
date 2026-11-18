@@ -53,6 +53,45 @@ export function readPinnedPrivateGmhSeven({dataRoot}={}){
  return original;
 }
 
+// This inner projection is READ ONLY, with caller-pinned hashes for synthetic
+// test fixtures. It never approves a publication or mutates any destination.
+// The operational wrapper below always supplies the exact prior-PC evidence.
+export async function preparePinnedGmhSevenR178({
+ dataRoot,storage,readSaved=readPcSavedGmhSeven,
+ readPrivate=readPinnedPrivateGmhSeven,
+ pins=W03_GMH_SOURCE_PINS,now=Date.now()
+}={}){
+ need(typeof dataRoot==='string'&&path.isAbsolute(dataRoot)&&
+  Number.isSafeInteger(now)&&typeof readSaved==='function'&&
+  typeof readPrivate==='function'&&
+  storage&&typeof storage.readSeed==='function'&&
+  /^[a-f0-9]{64}$/.test(pins?.manifestSha256??'')&&
+  /^[a-f0-9]{64}$/.test(pins?.checkpointSha256??'')&&
+  /^[a-f0-9]{64}$/.test(pins?.privateArtifactSha256??''),
+  'PC_SOURCE_INPUT_UNAVAILABLE');
+ const saved=readSaved({dataRoot});
+ need(saved?.manifestSha256===pins.manifestSha256&&
+  saved.checkpointSha256===pins.checkpointSha256,
+  'SAVED_MANIFEST_CHECKPOINT_PIN_STOP');
+ const bytes=readPrivate({dataRoot});
+ need(Buffer.isBuffer(bytes)&&sha(bytes)===pins.privateArtifactSha256,
+  'SAVED_PRIVATE_SHA_STOP');
+ const seed=await storage.readSeed();
+ const prepared=await prepareGmhSevenR178AttestedDraft({
+  saved,privateArtifactBytes:bytes,
+  privateArtifactSha256:pins.privateArtifactSha256,
+  expectedManifestSha256:pins.manifestSha256,
+  expectedCheckpointSha256:pins.checkpointSha256,
+  legacySeed:seed,now
+ });
+ need(prepared.rolling.observationDate===pins.observationDate&&
+  prepared.rolling.sourceStoredAt===pins.sourceStoredAt&&
+  prepared.rolling.lineage.secondarySource===null&&
+  prepared.rolling.provisional.points.length===0,
+  'OBSERVATION_OR_SOURCE_TIME_PIN_STOP');
+ return prepared;
+}
+
 // The caller is an already authorized Windows Writer with a separately
 // reviewed operator license/price-policy effect. The caller supplies an
 // approved READY record and trusted verifier; this function never promotes
@@ -62,6 +101,7 @@ export async function runApprovedGmhSevenR178SavedOnce({
  readSaved=readPcSavedGmhSeven,readPrivate=readPinnedPrivateGmhSeven,
  now=Date.now()
 }={}){
+ // No PC source read or D1 query without the approved Writer contract.
  need(typeof verifyApprovedEffect==='function'&&
   approvedRecord&&typeof approvedRecord==='object'&&
   !Array.isArray(approvedRecord)&&
@@ -69,35 +109,10 @@ export async function runApprovedGmhSevenR178SavedOnce({
   typeof storage.read==='function'&&
   typeof storage.replace==='function',
   'NO_APPROVED_WRITER_OR_RECORD');
- need(typeof dataRoot==='string'&&path.isAbsolute(dataRoot)&&
-  Number.isSafeInteger(now)&&typeof readSaved==='function'&&
-  typeof readPrivate==='function',
-  'PC_SOURCE_INPUT_UNAVAILABLE');
- const saved=readSaved({dataRoot});
- need(saved?.manifestSha256===W03_GMH_SOURCE_PINS.manifestSha256&&
-  saved.checkpointSha256===W03_GMH_SOURCE_PINS.checkpointSha256,
-  'SAVED_MANIFEST_CHECKPOINT_PIN_STOP');
- const bytes=readPrivate({dataRoot});
- need(Buffer.isBuffer(bytes)&&
-  sha(bytes)===W03_GMH_SOURCE_PINS.privateArtifactSha256,
-  'SAVED_PRIVATE_SHA_STOP');
- // This read is the confirmed old R144 D1 seed; new R178 is a separate key.
- // No stale in-memory seed is accepted from the issue or the private artifact.
- const seed=await storage.readSeed();
- const prepared=await prepareGmhSevenR178AttestedDraft({
-  saved,privateArtifactBytes:bytes,
-  privateArtifactSha256:W03_GMH_SOURCE_PINS.privateArtifactSha256,
-  expectedManifestSha256:W03_GMH_SOURCE_PINS.manifestSha256,
-  expectedCheckpointSha256:W03_GMH_SOURCE_PINS.checkpointSha256,
-  legacySeed:seed,now
+ const prepared=await preparePinnedGmhSevenR178({
+  dataRoot,storage,readSaved,readPrivate,now,
+  pins:W03_GMH_SOURCE_PINS
  });
- need(prepared.rolling.observationDate===
-  W03_GMH_SOURCE_PINS.observationDate&&
-  prepared.rolling.sourceStoredAt===
-  W03_GMH_SOURCE_PINS.sourceStoredAt&&
-  prepared.rolling.lineage.secondarySource===null&&
-  prepared.rolling.provisional.points.length===0,
-  'OBSERVATION_OR_SOURCE_TIME_PIN_STOP');
  return publishApprovedGmhSevenR178({
   prepared,record:approvedRecord,storage,verifyApprovedEffect,now
  });
