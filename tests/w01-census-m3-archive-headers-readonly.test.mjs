@@ -75,3 +75,9 @@ test('arbitrary paths and duplicate years cannot expand scan scope',t=>{
   assert.throws(()=>inspectCensusM3ArchiveHeaders({base:f.home,years:[2025,2025]}),
     {code:'CENSUS_ARCHIVE_SCOPE_DENIED'});
 });
+
+test('missing archive directory gives a fixed denial without private paths',t=>{
+  const f=fixture(t);fs.rmSync(f.raw,{recursive:true,force:true});
+  assert.throws(()=>inspectCensusM3ArchiveHeaders({base:f.home,years:[2025]}),
+    {code:'CENSUS_ARCHIVE_DIR_UNSAFE'});
+});
