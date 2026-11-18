@@ -363,7 +363,7 @@ test('R6-03 WPSFD42 publisher records uncertain remote outcome and forbids autom
     '../scripts/pc-writer/EARNINGS_BLS_SERVICE_R1_D1_ONCE.mjs',import.meta.url),'utf8');
   assert.match(source,/let remoteOutcomeUnknown=false;/);
   assert.match(source,/remoteOutcomeUnknown=true;\s*const result=await earningsCompanionWriter/);
-  assert.match(source,/remoteOutcomeUnknown=false;\s*if\(!\['READBACK_VERIFIED','ALREADY_STORED'\]/);
+  assert.match(source,/throw Error\('EARNINGS_C_SERVICE_READBACK_NOT_VERIFIED'\);\s*remoteOutcomeUnknown=false;/);
   assert.match(source,/remoteOutcomeUnknown\?'STATE_UNKNOWN_EARNINGS_C_SERVICE_D1':'FAIL_EARNINGS_C_SERVICE_D1'/);
   assert.match(source,/'D1_AUTO_RETRY=NO'/);
   assert.match(source,/if\(!apply\)\{/);
