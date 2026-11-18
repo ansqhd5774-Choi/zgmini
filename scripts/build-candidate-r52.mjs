@@ -6,6 +6,7 @@ import {setTimeout as delay} from 'node:timers/promises';
 import {shellRoutes,shellArtifact} from '../worker/candidate-shell-r7.mjs';
 import {extractRscPayloadFromPrerenderedHtml} from '../node_modules/vinext/dist/build/prerender.js';
 import {candidateBranchGate} from './candidate-branch-gate.mjs';
+import {omitMissingCssOnlyPreloads} from './candidate-css-only-preload-r1.mjs';
 candidateBranchGate();
 execFileSync(process.execPath,['--test','tests/tailwind-runtime-sources-r7.test.mjs'],{stdio:'inherit'});
 execFileSync(process.execPath,['--test','tests/candidate-writer-linkage-r3.test.mjs'],{stdio:'inherit'});
@@ -36,7 +37,18 @@ try{
 await run(['node_modules/vite/bin/vite.js','build','--config','vite.candidate-r52.config.ts'],'work/r7-candidate-build.log');
 const after=hashes();if(JSON.stringify(before)!==JSON.stringify(after))throw Error('Renderer/client asset identity drift across candidate builds');
 mkdirSync('dist/client/__candidate_shells',{recursive:true});
-const manifest=shells.map(({route,html,rsc})=>{for(const [data,isRsc] of [[html,false],[rsc,true]]){const target='dist/client'+shellArtifact(route,isRsc);mkdirSync(dirname(target),{recursive:true});writeFileSync(target,data);}return {route,html:shellArtifact(route),rsc:shellArtifact(route,true),html_bytes:Buffer.byteLength(html),rsc_bytes:Buffer.byteLength(rsc),sha256:createHash('sha256').update(html).digest('hex')};});
+const emittedAssets=new Set(Object.keys(after));
+const manifest=shells.map(({route,html,rsc})=>{
+ const cleaned=omitMissingCssOnlyPreloads(html,emittedAssets);
+ if(cleaned.removed.length)console.log('Removed absent CSS-only modulepreload hints: '+route+' '+cleaned.removed.length);
+ for(const [data,isRsc] of [[cleaned.html,false],[rsc,true]]){
+  const target='dist/client'+shellArtifact(route,isRsc);
+  mkdirSync(dirname(target),{recursive:true});writeFileSync(target,data);
+ }
+ return {route,html:shellArtifact(route),rsc:shellArtifact(route,true),
+  html_bytes:Buffer.byteLength(cleaned.html),rsc_bytes:Buffer.byteLength(rsc),
+  sha256:createHash('sha256').update(cleaned.html).digest('hex')};
+});
 writeFileSync('docs/migration/d1-r52/shell-artifacts.json',JSON.stringify({generated_at:new Date().toISOString(),duration_seconds:(Date.now()-begin)/1000,method:'Build-time allowlisted rendering of compiled local Workerd/Vinext bundle, official Vinext RSC extraction; no public runtime snapshot or API static export.',client_assets_identical:true,routes:manifest},null,2)+'\n');
 execFileSync(process.execPath,['scripts/check-candidate-r52.mjs'],{stdio:'inherit'});
 execFileSync(process.execPath,['scripts/check-candidate-writer-scheduled-r3.mjs'],{stdio:'inherit',env});
