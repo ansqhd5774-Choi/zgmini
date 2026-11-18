@@ -13,13 +13,14 @@ const fail=code=>Object.assign(new Error(code),{code});
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 
 function checkedDirectory(dir){
-  const st=fs.lstatSync(dir);
+  let st;try{st=fs.lstatSync(dir);}catch{throw fail('CENSUS_ARCHIVE_DIR_UNSAFE');}
   if(!st.isDirectory()||st.isSymbolicLink())throw fail('CENSUS_ARCHIVE_DIR_UNSAFE');
   return fs.realpathSync.native(dir);
 }
 function readPinnedArchive(rawDir,name,expectedSha){
   if(!ARCHIVE.test(name)||!SHA64.test(expectedSha))throw fail('CENSUS_ARCHIVE_NAME_INVALID');
-  const file=path.join(rawDir,name),st=fs.lstatSync(file);
+  const file=path.join(rawDir,name);
+  let st;try{st=fs.lstatSync(file);}catch{throw fail('CENSUS_ARCHIVE_FILE_UNSAFE');}
   if(!st.isFile()||st.isSymbolicLink()||st.size<1||st.size>MAX_FILE_BYTES)
     throw fail('CENSUS_ARCHIVE_FILE_UNSAFE');
   const real=fs.realpathSync.native(file);
