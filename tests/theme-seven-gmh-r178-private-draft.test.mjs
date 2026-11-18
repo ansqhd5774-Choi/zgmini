@@ -145,7 +145,7 @@ function attestedInput(mutate=()=>{}){
  const rawPages=[];
  for(const [i,symbol] of GMH_SEVEN_SYMBOLS.entries()){
   const bytes=Buffer.from(JSON.stringify({symbol,
-   timestamp:'2026-11-13T20:00:00.000Z',close:100+i,is_gap:false})+'\\n');
+   timestamp:'2026-11-13T20:00:00.000Z',close:100+i,is_gap:false})+String.fromCharCode(10));
   const digest=sha(bytes),path='raw/'+symbol+'_'+digest+'.jsonl';
   manifest.files.push({symbol,path,sha256:digest,
    source:'GETMARKETHISTORY_FREE_1H',
@@ -163,7 +163,7 @@ function attestedInput(mutate=()=>{}){
  const manifestSha256=sha(manifestBytes),checkpointSha256=sha(checkpointBytes);
  const candidate=privateCandidate();
  candidate.rawManifestSha256=manifestSha256;
- const bytes=Buffer.from(JSON.stringify(candidate)+'\\n');
+ const bytes=Buffer.from(JSON.stringify(candidate)+String.fromCharCode(10));
  return {privateArtifactBytes:bytes,privateArtifactSha256:sha(bytes),
   expectedManifestSha256:manifestSha256,expectedCheckpointSha256:checkpointSha256,
   legacySeed:seed(),now:NOW,
@@ -208,7 +208,7 @@ test('fake collection dates, source pins or raw-page changes stop before a R178 
   {...verified,privateArtifactSha256:'f'.repeat(64)},
   {...verified,saved:{...verified.saved,
    rawPages:verified.saved.rawPages.map((p,i)=>i?p:{
-    ...p,bytes:Buffer.from('{}\\n')})}},
+    ...p,bytes:Buffer.from('{}'+String.fromCharCode(10))})}},
  ]){
   await assert.rejects(prepareGmhSevenR178AttestedDraft(x),/W03_/);
  }
