@@ -97,6 +97,13 @@ if(process.argv[1]&&path.resolve(process.argv[1])===self){
           operational:inspectD1Source(operationalRoot)});
       }
       const payload=readArchivedBeaMfgR6({root,sourceSha});
+      // The existing shared B runner pins the preflight archive checkpoint.
+      // For its one-shot mode, reject metadata/release drift BEFORE any D1 call.
+      if(apply&&process.env.ZGMINI_EARNINGS_BEA_MFG_B_PIN_REQUIRED==='1'
+        &&(process.env.ZGMINI_EARNINGS_BEA_MFG_SOURCE_VERSION!==payload.sourceVersion
+          ||process.env.ZGMINI_EARNINGS_BEA_MFG_SOURCE_STORED_AT!==String(payload.sourceStoredAt)
+          ||process.env.ZGMINI_EARNINGS_BEA_MFG_OBSERVED_THROUGH!==payload.indicator.observationPeriod))
+        throw Error('BEA_MFG_APPLY_SOURCE_DRIFT_NO_WRITE');
       if(!apply)console.log(JSON.stringify({status:'PASS_READONLY_ARCHIVE_PREFLIGHT',
         sourceVersion:payload.sourceVersion,sourceStoredAt:payload.sourceStoredAt,
         period:payload.indicator.observationPeriod,
