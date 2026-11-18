@@ -1,5 +1,17 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-INFL19-READPPI-PER-SERIES-PR1376-MAIN-CI -->
+## 2026-11-18 — 19개 연구 원자료 PPI 8계열 중 1개 불량 시 정상 7계열 일괄 누락 제거 (main/CI)
+
+- **기준 완료점:** 기존 Census #28 원본 6/7·ID28 MISSING(`CENSUS_M3_HEADERS_INVALID`), B #1818 Event129 STOP 및 공유 제어 #2094 STAGED 복구 미입증. 기존 Draft #2111 archive header A, #2139 물가7 Writer 영수증 A는 source/CI 검증됐지만 운영 설치/실제 A 미완료. 이전 앱 BLS8 수집기 사전 검증 수정 #1374 main SHA `661d35db` CI PASS는 재사용하고 중복 실행 없음.
+- **확인된 구체 소스 결함:** 앱 `scripts/pc-writer/inflation-causal-public-preview-r1.mjs` `readPpi`는 8개 저장 PPI 계열을 단일 `.map`으로 읽어 한 계열의 잘못된 숫자·시각이 `throw`되면 외부 `previewInflation19`가 **PPI 8개 전부를 missing/PENDING**으로 치환. 저장된 정상 독립 계열 7개까지 공개 계산의 입력에서 삭제되는 과도한 전역 실패. 실제 PC에 특정 계열 손상 발생 여부는 미관측이므로 SOURCE_DEFECT_CONFIRMED / RUNTIME_CAUSE_UNPROVEN.
+- **실제 최소 수정:** [앱 PR #1376](https://github.com/ansqhd5774-Choi/zgmini/pull/1376) 정확 2파일. 기존 독립 `readPpi(root)` strict 8계열 계약 불변, `previewInflation19` 내부에서만 per-series `onSeriesError`로 해당 ID만 `INFL19_BLS_SOURCE_UNAVAILABLE` 처리, 나머지 유효 원자료 개별 `sourceStoredAt`/관측·이전값/최대 13개 추이 그대로 보존. 전체 제공자 신원·BLS8 fixed ID·일괄 원장 구조 불량은 이전처럼 전체 PPI 거부. 미확정값 0 치환/새 관측값 제조 없음.
+- **회귀 실제 확인:** 한 PPI 계열 저장 문자열 손상 → 7 READY/1 PENDING, 동일 계열 저장시각 오류 → 7 READY, top-level provider 위조 → 8 PENDING; 기존 단독 `readPpi`는 여전히 throw; Provider·SQLite·D1 실행 쓰기/수집 0. 기존 `tests/inflation-causal-public-preview-r1.test.mjs`에 시험 1건 추가. HEAD `18bff75062c393f13527578feefb09b66fbc7a15`, [Node CI #44291013656](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44291013656) `completed/success` (Build, Type check, Regression, PC publication recovery, Cloudflare candidate read contracts PASS).
+- **GitHub 결과:** main squash [commit `cf1ebca62fb7752ddc654d76dc9bf752beb6a40f`](https://github.com/ansqhd5774-Choi/zgmini/commit/cf1ebca62fb7752ddc654d76dc9bf752beb6a40f) 확인·PR #1376 merged/closed. main source blob `2e8e42504993e18a1fd372005fc1e9deff0da31f`, test blob `ff6852c7e0fecdccbcebe4bd30dc39c2318c733f` 2/2 직접 재조회.
+- **운영 상태:** PC 승인 source/Writer/원본 19개/D1/Cloudflare/Task·예약/수집 주기·가중치·원자료/보호 SHA 등 변경 0. 개발 CI의 7/1 합성 fixture 결과를 운영 PC에 실제 불량 계열이 존재했다는 증거 또는 공개 UI 업데이트로 표현하지 않음. 공통 W04 작업의 Controller 실제 운영 복구와 정확 설치 대기. W01 전체 **33/71(46.5%) 유지**, 신규 운영 DONE 0/잔여 38.
+- **다음 필수 실제 실행:** 기존 공통 owner #2094 staged-safe-recovery/independent maintainer Windows 영수증 및 W04 공유 Controller 실제 설치/사후 SHA를 확보하면 W01은 Draft #2111 고정 archive header A를 별도 승인 경로로 최소 설치해 Census 기보관 2025/26 raw header만 JSON/TXT 2/2 1회 조회 → 실측 파서 원인 교정·정규 수집기/Writer 적용→Census #28 저장·D1 `detail:inflation-causal-candidates-7:r1` 역조회→API/UI 일치. #2139 B2-05 기존 A 적용/영수증과 #1330 R2 승인 B 2파일 적용은 자원 충돌 없는 범위에서 독립 진행. 원본 B #1818 재실행/무승인 D1 쓰기 금지.
+
+
 <!-- W01-20261118-BLS8-LASTGOOD-PREFLIGHT-PR1374-MAIN-CI -->
 ## 2026-11-18 — BLS8 기존 last-good 손상본 API 호출 전 차단·행 검증 (소스 main 완료, PC 미적용)
 
