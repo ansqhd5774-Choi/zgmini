@@ -18,7 +18,7 @@ export default function TermsPage(){
     <p className={styles.processNote}>This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis.</p>
     <aside className={styles.rightsNote}>
      <h2>FRED API 이용자 동의</h2>
-     <p>ZGMINI에서 FRED® API를 이용한 기능을 사용하는 경우, 이용자는 <a href="https://fred.stlouisfed.org/docs/api/terms_of_use.html" target="_blank" rel="noopener noreferrer">FRED® API Terms of Use</a>의 적용을 받으며 해당 약관을 준수하는 데 동의합니다.</p>
+     <p>ZGMINI 서비스를 이용하면 이용자는 <a href="https://fred.stlouisfed.org/docs/api/terms_of_use.html" target="_blank" rel="noopener noreferrer">FRED® API Terms of Use</a>의 적용을 받으며 해당 약관을 준수하는 데 동의합니다.</p>
      <p>FRED는 여러 원발표기관의 자료를 제공하는 경로입니다. 개별 시계열의 이용 권한·상업적 재사용 조건은 원자료 소유자의 정책에 따라 별도로 적용됩니다. ZGMINI가 계산한 파생 점수는 해당 기관의 공식 점수나 승인·추천을 뜻하지 않습니다.</p>
     </aside>
    </section>
