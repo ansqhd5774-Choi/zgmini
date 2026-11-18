@@ -49,7 +49,7 @@ test('W06 #38 actual zero rising with observed declining equity stays a valid 0%
  assert.ok(published);
  assert.equal(published.risingPct,0);
  assert.equal(published.fallingPct,0.2);
- assert.equal(published.unobservedPct,99.8);
+ assert.ok(Math.abs(published.unobservedPct-99.8)<1e-9,'IEX percentages retain floating-point precision');
  assert.equal(accepted(published),true,'genuine observed 0% must not be treated as missing');
 });
 test('W06 #38 rights mismatch and stale provisional records remain unavailable',()=>{
