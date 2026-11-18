@@ -6,6 +6,7 @@ import {execFileSync} from 'node:child_process';
 import {DatabaseSync} from 'node:sqlite';
 import {gunzipSync} from 'node:zlib';
 import {calculateCandidate,weights} from '../../lib/diagnostic-layer/supply-r10-candidate.mjs';
+import {supplyR10FactorMiniHistories} from '../../lib/diagnostic-layer/supply-r10-factor-mini-history.mjs';
 import {save,hash} from './d1.mjs';
 import {supplyFailureReason} from '../supply-source-validation.mjs';
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
@@ -44,7 +45,8 @@ export function buildSupplyR10(base,{now=Date.now()}={}){
  if(Date.parse(asOfDate)-Date.parse(monthEnd)>120*86400000)return {status:'STALE',reason:'SUPPLY_R10_OBSERVATION_STALE',payload:null};
  const cutoff=new Date(`${latest.month}-01T00:00:00Z`);cutoff.setUTCFullYear(cutoff.getUTCFullYear()-1);
  const names={G:'글로벌 공급망 압력',E:'미국 석유 공급 제약',O:'에너지 가격 충격',P:'공급 주도 물가 압력',I:'산업생산 충격'};
- const payload={status:'READY',score:latest.score,methodologyVersion:'SUPPLY_SHOCK_R10',scoreObservationMonth:latest.month,asOfDate,sourceVersion:stored.sourceVersion+':'+batch.batch_key,sourceStoredAt:Math.max(stored.sourceStoredAt,Number(batch.stored_at)),historyMode:'CURRENT_VINTAGE_ONLY',lookAheadSafe:false,missingFactors:[],inputCount:12,indicators:Object.entries(weights).map(([id,weight])=>({id,name:names[id],weight,status:'READY',score:100-latest.scores[id],riskScore:latest.scores[id],value:latest.scores[id],unit:'위험점수',observationDate:`${latest.month}-01`,source:id==='G'?'NY Fed':id==='P'?'SF Fed':id==='E'?'EIA':'FRED / BEA / EIA'})),trend:evaluated.rows.filter(row=>row.status==='READY'&&row.month>=cutoff.toISOString().slice(0,7)&&row.month<=latest.month).map(row=>({label:row.month+'-01',value:row.score})),notes:['공급망·석유 공급·에너지 가격·공급 주도 물가·산업생산의 5개 영역을 평가합니다. 높은 점수는 관측된 공급 충격 위험이 낮다는 뜻이며 발생 확률이 아닙니다.','현재 수정 자료로 재구성한 월간 이력입니다. 당시 발표본 기준 검증은 미완료이며 수요 통제 잔차가 공급 원인을 확정하지 않습니다.'],collectionStatus:JSON.parse(fs.readFileSync(path.join(base,'local-supply-r10-collection.json'),'utf8')).status};
+ const factorTrends=supplyR10FactorMiniHistories(evaluated.rows,latest.month);
+ const payload={status:'READY',score:latest.score,methodologyVersion:'SUPPLY_SHOCK_R10',scoreObservationMonth:latest.month,asOfDate,sourceVersion:stored.sourceVersion+':'+batch.batch_key,sourceStoredAt:Math.max(stored.sourceStoredAt,Number(batch.stored_at)),historyMode:'CURRENT_VINTAGE_ONLY',lookAheadSafe:false,missingFactors:[],inputCount:12,indicators:Object.entries(weights).map(([id,weight])=>({id,name:names[id],weight,status:'READY',score:100-latest.scores[id],riskScore:latest.scores[id],value:latest.scores[id],unit:'위험점수',observationDate:`${latest.month}-01`,trend:factorTrends[id],source:id==='G'?'NY Fed':id==='P'?'SF Fed':id==='E'?'EIA':'FRED / BEA / EIA'})),trend:evaluated.rows.filter(row=>row.status==='READY'&&row.month>=cutoff.toISOString().slice(0,7)&&row.month<=latest.month).map(row=>({label:row.month+'-01',value:row.score})),notes:['공급망·석유 공급·에너지 가격·공급 주도 물가·산업생산의 5개 영역을 평가합니다. 높은 점수는 관측된 공급 충격 위험이 낮다는 뜻이며 발생 확률이 아닙니다.','현재 수정 자료로 재구성한 월간 이력입니다. 당시 발표본 기준 검증은 미완료이며 수요 통제 잔차가 공급 원인을 확정하지 않습니다.'],collectionStatus:JSON.parse(fs.readFileSync(path.join(base,'local-supply-r10-collection.json'),'utf8')).status};
  if(payload.trend.length<13)return {status:'PARTIAL',reason:'SUPPLY_R10_ONE_YEAR_INCOMPLETE',payload:null};
  save(path.join(base,'local-supply-r10-release-payload.json'),payload);
  return {status:'READY',payload,checkpoint:{sourceVersion:payload.sourceVersion+':'+hash(payload),sourceStoredAt:payload.sourceStoredAt}};
