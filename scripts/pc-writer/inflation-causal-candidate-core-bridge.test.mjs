@@ -316,3 +316,32 @@ test('W01 candidate temporary outage uses one hour retry, quota guard does not l
   assert.ok(!JSON.stringify(result).includes('secret-url'));
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
+
+
+test('W01 restores only previously validated official PPI, Fed and Census events when calendar refresh fails',()=>{
+ const oldAt='2026-11-18T20:00:00.000Z';
+ const retained=[
+  {...EVENTS.find(e=>e.id==='ppi'),sourceUrl:'https://www.bls.gov/schedule/news_release/ppi.htm'},
+  {...EVENTS.find(e=>e.id==='industrial-production'),
+   sourceUrl:'https://www.federalreserve.gov/releases/g17/'},
+  {...EVENTS.find(e=>e.source==='census'&&e.id.startsWith('census-full-report')),
+   sourceUrl:'https://www.census.gov/economic-indicators/calendar-listview.html'},
+ ];
+ const src={
+  bls:{status:'SOURCE_FAILED',checkedAt:oldAt},
+  fed:{status:'SOURCE_FAILED',checkedAt:oldAt},
+  census:{status:'SOURCE_FAILED',checkedAt:oldAt},
+ };
+ const input={approved:true,events:retained,sources:src,
+  providerEnv:keys,checkpoint:checkpoint(),now:NOW};
+ assert.deepEqual(planInflationCandidateCoreDue(input).due.map(x=>x.group),
+  ['ppi','fed','census']);
+ const poison=retained.map(x=>({...x,sourceUrl:x.sourceUrl.replace('www.','www.evil-')}));
+ assert.equal(planInflationCandidateCoreDue({...input,events:poison}).due.length,0);
+ const never={...src,bls:{status:'SOURCE_FAILED',checkedAt:null}};
+ assert.deepEqual(planInflationCandidateCoreDue({...input,sources:never}).due.map(x=>x.group),
+  ['fed','census']);
+ const future={...src,census:{status:'SOURCE_FAILED',checkedAt:'2026-11-21T00:00:00.000Z'}};
+ assert.deepEqual(planInflationCandidateCoreDue({...input,sources:future}).due.map(x=>x.group),
+  ['ppi','fed']);
+});

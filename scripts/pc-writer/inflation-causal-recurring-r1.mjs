@@ -151,7 +151,7 @@ export async function collectInflation19IfDue({
   electricity:(await import('./inflation-causal-gas-electric.mjs')).collectIndustrialElectricity,
   sce:(await import('./inflation-sce-collector.mjs')).collectSceOneYear,
  };
- const report={status:'COMPLETE',providerRequests:0,updated:[],unchanged:[],
+ const report={status:'COMPLETE',providerRequests:0,updated:[],unchanged:[],partial:[],
   skipped:[...plan.skipped],failed:[]};
  const next={schema:INFL19_RECURRING_SCHEMA,processed:{...previous.processed},
   attempted:{...(previous.attempted??{})}};
@@ -189,9 +189,17 @@ export async function collectInflation19IfDue({
     throw err('INFL19_RECURRING_REQUEST_BOUND_EXCEEDED');
    // Mark a release/day handled only after an approved collector has returned
    // with its own existing storage/readback/unchanged contract.
-   if(!['SAVED_READBACK','UNCHANGED','UNCHANGED_VALID_INPUT_PRESERVED','STORED'].includes(result?.status))
+   if(!['SAVED_READBACK','PARTIAL_SAVED_LAST_GOOD','UNCHANGED','UNCHANGED_VALID_INPUT_PRESERVED','STORED'].includes(result?.status))
     throw err('INFL19_RECURRING_COLLECTOR_CONTRACT_DENIED');
    const unchanged=['UNCHANGED','UNCHANGED_VALID_INPUT_PRESERVED'].includes(result.status);
+   if(result.status==='PARTIAL_SAVED_LAST_GOOD'){
+    // Healthy series were saved and read back, but one or more BLS8 siblings
+    // still use last-good. Do not certify the whole release as processed.
+    // The persisted attempt enforces the existing cooldown before a retry.
+    report.partial.push({source:group.key,status:result.status,
+     providerRequests:count});
+    continue;
+   }
    if(unchanged&&group.key!=='gas'){
     // Date-only calendar events can precede the provider's actual publication.
     // The pre-call attempted checkpoint already prevents a retry for 24 hours;
@@ -213,9 +221,30 @@ export async function collectInflation19IfDue({
   }finally{report.providerRequests+=groupRequests;}
  }
  if(report.failed.length)report.status='PARTIAL_PREVIOUS_CHECKPOINT_PRESERVED';
+ else if(report.partial.length)report.status='PARTIAL_LAST_GOOD_AWAITING_NEXT_DUE';
  else if(!report.updated.length&&report.unchanged.length)
   report.status='UNCHANGED_AWAITING_NEXT_DUE';
  return report;
+}
+
+const ORIGINAL_RELEASE_ORIGINS=Object.freeze({
+ bls:'https://www.bls.gov',
+ eia_epm:'https://www.eia.gov',
+ nyfed:'https://www.newyorkfed.org',
+});
+export function inflation19CalendarEventVerified(event,sources,clock){
+ const state=sources?.[event?.source];
+ if(!state||!validTimestamp(state.checkedAt)||
+    Date.parse(state.checkedAt)>clock)return false;
+ if(state.status==='READY')return true;
+ // The release-calendar writer restores prior parsed events on SOURCE_FAILED.
+ // An official HTTPS origin and a previously successful snapshot are both
+ // required. Never infer a date from a newly failed/unverified source.
+ if(state.status!=='SOURCE_FAILED')return false;
+ const expected=ORIGINAL_RELEASE_ORIGINS[event.source];
+ if(!expected||typeof event.sourceUrl!=='string')return false;
+ try{return new URL(event.sourceUrl).origin===expected;}
+ catch{return false;}
 }
 
 // Production adapter for the existing PC Core lane. The feature flag is read
@@ -250,10 +279,8 @@ export async function runInflation19RecurringFromCore(base,{now=new Date(),
  }catch{calendar=null;}
  const sources=calendar?.sources??{},events=Array.isArray(calendar?.events)?calendar.events:[];
  const clock=now instanceof Date?now.getTime():new Date(now).getTime();
- const officialEvents=events.filter(e=>e&&sources[e.source]?.status==='READY'&&
-  typeof sources[e.source]?.checkedAt==='string'&&
-  Number.isFinite(Date.parse(sources[e.source].checkedAt))&&
-  Date.parse(sources[e.source].checkedAt)<=clock);
+ const officialEvents=events.filter(e=>e&&
+  inflation19CalendarEventVerified(e,sources,clock));
  let quota;
  const lazyQuotaFetch=async(...args)=>{
   if(!quota){

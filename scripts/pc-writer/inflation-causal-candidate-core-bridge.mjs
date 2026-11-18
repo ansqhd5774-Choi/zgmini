@@ -62,6 +62,23 @@ function validateCheckpoint(doc){
  return doc;
 }
 
+// Restore only release events retained by the approved calendar writer after
+// a refresh failure. The source must have succeeded before and the event URL
+// must belong to the exact official provider origin.
+const OFFICIAL_RELEASE_ORIGINS=Object.freeze({
+ ppi:'https://www.bls.gov',fed:'https://www.federalreserve.gov',
+ census:'https://www.census.gov',
+});
+function previousOfficialRelease(group,event,sources,now){
+ const state=sources?.[event.source];
+ if(state?.status!=='SOURCE_FAILED'||!isIso(state.checkedAt)||
+    Date.parse(state.checkedAt)>now.getTime())return false;
+ const expected=OFFICIAL_RELEASE_ORIGINS[group];
+ if(!expected)return false;
+ try{return new URL(event.sourceUrl).origin===expected;}
+ catch{return false;}
+}
+
 // Official release dates are date-only; avoid pre-release calls during the US day.
 function matchingEvent(group,events,sources,now){
  const predicate=CALENDAR_MATCH[group];if(!predicate)return null;
@@ -77,7 +94,8 @@ function matchingEvent(group,events,sources,now){
   ((group==='cpi'&&/^https:\/\/(?:www\.)?bls\.gov\//i.test(e.sourceUrl))||
    (sources?.[e.source]?.status==='READY'&&
     isIso(sources[e.source].checkedAt)&&
-    Date.parse(sources[e.source].checkedAt)<=now.getTime())));
+    Date.parse(sources[e.source].checkedAt)<=now.getTime())||
+   previousOfficialRelease(group,e,sources,now)));
  return found.sort((a,b)=>a.date.localeCompare(b.date)||a.id.localeCompare(b.id)).at(-1)??null;
 }
 

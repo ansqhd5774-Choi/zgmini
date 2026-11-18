@@ -62,14 +62,22 @@ export function summarize(meta,data,sourceStoredAt,{dateField}={}){
   previousObservationDate:prev.date,availableAt,
   sourceStoredAt:stamp(sourceStoredAt),history:months};
 }
-function readPpi(root){
+export function readPpi(root){
  const doc=readJson(root,'inflation-causal-r1/bls-ppi8.json');
  if(doc?.provider!=='BLS'||doc.schemaVersion!==1||doc.sourceVersion!=='BLS_API_V2_PPI_BATCH8_R1'
    ||!Array.isArray(doc.ids)||doc.ids.length!==8||!doc.series||!stamp(doc.sourceStoredAt))
   throw Error('INFL19_BLS_PROVENANCE');
+ const bySeries=doc.seriesSourceStoredAt;
+ // Legacy eight-series sources had only the document-level stored timestamp.
+ // New partial sources retain each affected sibling's original timestamp.
+ if(bySeries!==undefined&&(!bySeries||typeof bySeries!=='object'||
+   Array.isArray(bySeries)||Object.keys(bySeries).length!==8||
+   [...BLS.values()].some(series=>!stamp(bySeries[series]))))
+  throw Error('INFL19_BLS_PROVENANCE');
  return Object.fromEntries([...BLS].map(([id,series])=>{
   if(!doc.ids.includes(series))throw Error('INFL19_BLS_SERIES_MISSING');
-  return [id,summarize(INFLATION_CAUSAL_19.find(x=>x.id===id),doc.series[series],doc.sourceStoredAt)];
+  const storedAt=bySeries?.[series]??doc.sourceStoredAt;
+  return [id,summarize(INFLATION_CAUSAL_19.find(x=>x.id===id),doc.series[series],storedAt)];
  }));
 }
 function readGasElectric(root,id){
