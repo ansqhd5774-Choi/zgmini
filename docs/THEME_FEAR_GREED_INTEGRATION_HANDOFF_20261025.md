@@ -1,3 +1,11 @@
+## 2026-11-18 11:57 KST W03 10/68 — 공통 정확 B GO·receiver 병합 확인, W03 후속 설치 게이트 전환
+
+- **시작/종료:** 9/68 DONE(13.2%), 10단계 IN_PROGRESS. 기존 11:34 기록의 공통 B GO 대기는 최신 공통 원장 확인으로 해소. 실제 W03 신규 CMD 설치·R25/R32 비공개 재계산이 아직 없어 10단계 완료 처리하지 않음.
+- **신규 원격 증거:** [#1894 총괄 결정 #6967593909](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1894#issuecomment-6967593909) 2026-11-18 11:54 KST 등록. 정확 old SHA256 `4d1cc9f180b7169e892da2fec888d08b5f7fcbfa7db285ced68cc5d09e6869c4` → new `b75f7e2cb253b6abb327096e19c49d676c8c75b25bb816ca82756815aec91639` at immutable W03 source `2bee93f59bb488acff29f6a00e1c0c5813af777b` 1파일 B 효과 **조건부 GO**. [공통 PR #2082](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2082) main merged `27542dc31ff59bf9aa8e1554665b1da2a0060dd3`; [Windows C996 #44226363719](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44226363719) 317/317 PASS. 이는 **공통 receiver 검증**이며 W03 기능 전체 CI나 실제 PC 설치 PASS가 아님.
+- **소유권:** 프로세스 총괄의 정확 B 공통 지원은 DONE. 남은 기능 Node 전체 회귀/CI, W03 raw APPROVED_B manifest 및 main 등록, 새 고유 B Issue 단회 발행, PC preimage/Task quiet/lease/backup/CAS/readback, 완료된 R35 raw로 private R25/R32 재계산은 **W03 원담당 직접 실행**. 추가 공통 업무 재인계 금지.
+- **실데이터 상태:** [#2077](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2077#issuecomment-6967201785) 기존 A 632페이지·SPY NY11/13, R35 11/12~17 미완 checkpoint 1, failed 0. #2070 진행 수집 중복 실행 금지. 승인된 기존 공개 10개/D1/SQLite/Task XML/Cloudflare 및 권리 상태 유지.
+- **다음 실행 순서:** (1) W03 scorer와 R47 embedded 검증 전체 Node CI의 실제 결과 확보 (2) 정확 승인 triple로 W03 소유 manifest/PR/CI/main 등록 (3) 새 고유 B 설치·결과 JSON/TXT readback (4) 완료된 raw checkpoint만 사용한 R25/R32 private 계산·보존 검증 (5) 64종 후속 수집 checkpoint 완성 여부 별도 확인. 자연 예약 검증은 기능 완료 후 최종 후속. 이번 기록 회차 PC/공급자/D1/SQLite/Task/배포 변경 0.
+
 ## 2026-11-18 W03 10/68 — Node 22 UTC 경계 14/14 격리 PASS·원격 회귀 추가
 
 - **시작/종료:** 9/68단계 완료(13.2%), 10단계 IN_PROGRESS, 11~15 후속 미착수. 사용자 요청은 10단계 실수집·R25/R32 비공개 계산 목표를 계속 진행하되 9~15 번호별 상태를 명확히 보고하는 것.
