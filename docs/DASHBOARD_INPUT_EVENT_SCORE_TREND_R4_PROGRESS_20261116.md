@@ -1,5 +1,9 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
+> **W06 #69 D03/D04 비율형 검증 범위 감사 (2026-11-18 09:03 KST):** 지정 계획·원장과 main의 `tests/dashboard-history-browser-r5.mjs` (blob `328e605d35aed2024d296cffb56b397eed65103c`) 및 `app/dashboard-ui.tsx` (blob `2cfd2241b5f6d3c8de259832202f6db666e6d3e7`) 원문 직접 대조. 기존 Chromium 시험은 390/768/1440/1920px×6기간 **종합 시장 점수**의 geometry·0점·12개 경제 카드·overflow를 검증하지만, fixture의 `snapshot()`은 overall/domains 0–100 점수형만 공급하고 **D03 미국 등락 비율형·D04 한국 등락 비율형 데이터와 카드 마지막점/단위 변환 assertion은 존재하지 않음**. 따라서 기존 24/24 PASS를 D03/D04 비율 검증 PASS로 확대할 수 없음. D04는 계획 #02/#06 기준 독립 공개 API NOT_CONNECTED이므로 임의로 0%/가짜 계산점 주입 금지. **#69 PARTIAL, 고유 DONE 22/75(29.3%)·잔여 53 불변**. 이번은 source-only 계약 감사로 신규 CI/PR·운영 PC/SQLite/D1/배포 변경 0. **다음 단일 실행:** W06가 D03 실제 비율 카드의 렌더러/공개 API와 D04 미연결 placeholder 계약을 소스에서 정확히 특정한 후 별도 UI fixture를 설계; 실데이터가 없는 D04에 점수형 차트 생성 금지. #74/#75는 별도 PARTIAL. 진행 기록 원격 재조회 필요.
+>
+
+
 > **W06 #69 main 병합 후 파일 동일성 확인 (2026-11-18 08:04 KST):** 지정 R4 계획과 진행 기록을 다시 확인. [PR #1270](https://github.com/ansqhd5774-Choi/zgmini/pull/1270) GitHub metadata `merged=true`, merge SHA `eb2c062a0aa60616c3e1100562e6fa0021c33a3b`, 변경 파일 1개를 독립 재조회 PASS. `main:tests/dashboard-history-browser-r5.mjs` 및 `codex/ui-improvements` 동일 blob `328e605d35aed2024d296cffb56b397eed65103c` PASS; 두 파일 모두 390/768/1440/1920px, overflow assertion 포함. 이전 [Chromium CI #44175286226](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44175286226) 및 [Node CI #44175286122](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44175286122) 성공 기록은 기존 증거로 재사용(이번 신규 실행 아님). 최신 브랜치 비교는 main 대비 ahead 552 / behind 833, 전체 병합 금지. **#69 격리 fixture PASS, Production 실서빙/활성 배포 미확인으로 전체 PARTIAL, DONE 22/75(29.3%)·잔여53 유지**. 운영 PC/SQLite/D1/배포 변경 0. 다음 단일 실행: W06 독립 #69 비율형 D03/D04 출력·카드 마지막점 계약이 실제 Chromium 시험에서 검증되는지 확인하고 누락 시 UI fixture만 최소 보완; 실운영 #74/#75는 별도 담당/승인 증거 대기. 원장 커밋 후 원격 재조회 필수.
 >
 
