@@ -13,6 +13,15 @@ import {validateBeaMfgProfit,beaMfgFreshness,beaMfgWriter,BEA_MFG_SNAPSHOT_KEY}
 const sha256=x=>createHash('sha256').update(x).digest('hex');
 const RAW=['raw','earnings-recession','bea-manufacturing-profits-r5'];
 const validSha=x=>typeof x==='string'&&/^[a-f0-9]{64}$/.test(x);
+const archiveStat=file=>{
+  try{return fs.lstatSync(file);}
+  catch(error){
+    // Only a genuinely missing entry is absence; dangling links must reach
+    // lstat and fail path-ownership checks rather than being treated as missing.
+    if(error?.code==='ENOENT')throw Error('BEA_MFG_ARCHIVE_MISSING');
+    throw Error('BEA_MFG_ARCHIVE_UNREADABLE');
+  }
+};
 
 export function readArchivedBeaMfgR6({root,sourceSha,now=Date.now()}={}){
   if(typeof root!=='string'||!path.isAbsolute(root)||!validSha(sourceSha))
@@ -22,15 +31,13 @@ export function readArchivedBeaMfgR6({root,sourceSha,now=Date.now()}={}){
   let folder=root;
   for(const name of RAW){
     folder=path.join(folder,name);
-    if(!fs.existsSync(folder))throw Error('BEA_MFG_ARCHIVE_MISSING');
-    const directory=fs.lstatSync(folder);
+    const directory=archiveStat(folder);
     if(directory.isSymbolicLink()||!directory.isDirectory())
       throw Error('BEA_MFG_ARCHIVE_UNSAFE_PATH');
   }
   const csvFile=path.join(folder,sourceSha+'.csv');
   const metaFile=path.join(folder,sourceSha+'.json');
-  if(!fs.existsSync(csvFile)||!fs.existsSync(metaFile))throw Error('BEA_MFG_ARCHIVE_MISSING');
-  const csvStat=fs.lstatSync(csvFile),metaStat=fs.lstatSync(metaFile);
+  const csvStat=archiveStat(csvFile),metaStat=archiveStat(metaFile);
   if(csvStat.isSymbolicLink()||!csvStat.isFile()
     ||metaStat.isSymbolicLink()||!metaStat.isFile())
     throw Error('BEA_MFG_ARCHIVE_UNSAFE_PATH');
@@ -41,7 +48,8 @@ export function readArchivedBeaMfgR6({root,sourceSha,now=Date.now()}={}){
   let meta;
   try{meta=JSON.parse(fs.readFileSync(metaFile,'utf8'));}
   catch{throw Error('BEA_MFG_ARCHIVE_METADATA_INVALID');}
-  if(meta.schemaVersion!=='earnings-bea-manufacturing-raw-r5-v1'
+  if(!meta||typeof meta!=='object'||Array.isArray(meta)
+    ||meta.schemaVersion!=='earnings-bea-manufacturing-raw-r5-v1'
     ||meta.sourceVersion!==sourceSha||meta.seriesId!==BEA_MFG_PROFIT_SERIES
     ||meta.sourceUrl!==BEA_MFG_PROFIT_CSV
     ||meta.file!==sourceSha+'.csv'||meta.historicalMode!=='CURRENT_VINTAGE_NOT_PIT'
