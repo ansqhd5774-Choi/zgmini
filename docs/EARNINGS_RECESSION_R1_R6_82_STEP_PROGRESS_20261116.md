@@ -2159,6 +2159,8 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 - control [#2146](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2146) B 한키 operation `bea-manufacturing-profit-once`와 JSON preflight/apply validator 계약 원문 재확인. 기존 code/중앙 #68/관련 원본에서 현재 공개 2026-Q2의 **확정 publication B requestId, 실D1 SELECT body/stored_at 및 ledger 원격 JSON/TXT** 확보 실패. pc-publication 라벨 Issue 일반 목록 조회 결과 0건은 검색 범위의 관측일 뿐, 운영 저장 원장 부재 증명이 아님.
 - 기존 [§115 Production BEA Mfg GET/PC·모바일 일치 실증](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6972719987)은 재사용. 공개 READY/FRESH와 sourceVersion SHA prefix `ebaf93f7a1e5`는 내부 CSV SHA 파일을 직접 읽은 영수증 또는 정규 B 게시 승인/실D1 결과가 아님. Cloudflare 활성 Deployment 및 내부 D1 read 권한/영수증 미확보 유지.
 
+**추가 최신 실PC 교차 증거(2026-11-18 17:38 KST):** W01의 별도 승인된 기존 A `pc-source-preflight` [Run #44268746055 seat-4 TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44268746055-1-seat-4.txt)가 `PASS/PC_SOURCE_READONLY_DIAGNOSIS`, `actualExecutionSha=controlSourceSha=f7f1559bc0ef15bb9b375982d048369c474c490f`, `protectedStateUnchanged=true`, `d1Writes=providerCalls=0`을 직접 기록. 기존 Controller SHA가 현 시각에도 유지되는 **실PC 새 영수증**이며, 이 A는 source 조회일 뿐 W05 고정 BEA archive A가 실행됐거나 stage 복구/설치가 끝났다는 증거가 아니다. 원래 별도 W01 run과 requestId를 재실행하지 않음.
+
 **이번에 하지 않은 작업:** Controller 설치/복구·B 승인 생성/pc-publication 신청·새 A 요청·재게시/운영 PC·원자료/SQLite/D1/Provider/Cloudflare/Task/DNS 쓰기 0. 공개 API·화면 재측정이나 기존 CI 재실행 0.
 
 **LAST PASS:** 현재 소스와 운영 원본 사이의 명확한 경계, 공통 STAGED 잔여·독립 A 미등록 조건 및 B 단일키 소스 완성 상태 확인. **FIRST UNFINISHED:** R3-11 운영 PC archive CSV SHA256/메타/rowCount/observedThrough 실제 A JSON/TXT 2/2, R4-12 실제 D1 body/version/stored_at·B ledger 원본 없음. 재게시가 필요한 신규 관측 자료도 입증되지 않음.
