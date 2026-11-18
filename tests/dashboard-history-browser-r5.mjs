@@ -239,9 +239,33 @@ try{
      assert.ok(points[i-1].observedAt<points[i].observedAt,
       'Live '+period+' strictly increasing actual calculation timestamps');
     const button=periods.getByRole('button',{name:period,exact:true});
-    await button.click();
+    // An aria-pressed update precedes React's async observed-archive fetch.
+    // Wait for the *UI's own* archive response before measuring the SVG.
+    await Promise.all([
+     live.waitForResponse(response=>{
+      const url=new URL(response.url());
+      return url.hostname==='zgmini.kr'&&url.pathname==='/api/market-score/observations'
+       &&url.searchParams.get('period')===period&&response.status()===200;
+     },{timeout:22000}),
+     button.click(),
+    ]);
     assert.equal(await button.getAttribute('aria-pressed'),'true',
      'Live '+width+'px '+period+' period selected');
+    // Two or more real calculation-time observations require a connected
+    // SOLID calculation series, not only the dashed daily reconstruction.
+    // A single observed point has no valid connecting segment.
+    if(points.length>=2){
+     await live.waitForFunction(()=>{
+      const root=document.querySelector('.zg-r55-summary-chart');
+      return [...(root?.querySelectorAll('path.recharts-area-curve')??[])].some(p=>{
+       const d=p.getAttribute('d')??'';
+       const dash=p.getAttribute('stroke-dasharray')??'';
+       const stroke=p.getAttribute('stroke')??getComputedStyle(p).stroke;
+       return dash===''&&/^M/.test(d)&&/[CLQ]/.test(d.slice(1))
+        &&stroke!=='none'&&stroke!=='transparent'&&!/NaN|Infinity/.test(d);
+      });
+     },null,{timeout:20000});
+    }
     const curves=await live.locator('.zg-r55-summary-chart path.recharts-area-curve')
      .evaluateAll(paths=>paths.map(p=>({
       d:p.getAttribute('d')??'',dash:p.getAttribute('stroke-dasharray')??'',
