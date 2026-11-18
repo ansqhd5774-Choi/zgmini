@@ -190,6 +190,11 @@ export async function collectCensusM3Inventories({base,censusKey,quotaFetch,now=
   // last-good, but never misreport a broken two-GET attempt as UNCHANGED.
   if(unavailable.length===2)
     throw fail(unavailable[0].sourceShape);
+  // No first successful snapshot exists: a two-GET response containing zero
+  // valid observations must not be reported as a successful UNCHANGED readback.
+  // The raw response archives remain available for private diagnosis.
+  if(!prior&&!observations.length)
+    throw fail('CENSUS_M3_NO_USABLE_OBSERVATIONS');
   if(JSON.stringify(prior?.observations??[])===JSON.stringify(observations)||!observations.length)
     return {status:'UNCHANGED',stored:false,providerRequests:2,count:observations.length,
       latest,coverage,diagnostics,provenance:archives};
