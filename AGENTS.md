@@ -24,6 +24,12 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - 상위 시스템·보안 제한을 준수한다. 동일 범위에서는 사용자의 최신 명시 지시·승인이 과거 프로젝트 지침보다 우선한다.
 - 지침과 최신 승인 contract 충돌 시 실행 중단 후 최신 contract 기준으로 지침 갱신.
 
+## 0.1. 두 PC와 Issues·PR 전문 담당자 인계 (2026-11-18 사용자 확정)
+
+- `zgmini` 프로세스 총괄과 `zgmini-pc-control` Issues·PR 전문 담당자는 **다른 직책·담당 범위**다. 전문 담당자는 별도 PC `DESKTOP-N62L0NG`의 승인된 개발·격리 환경에서 이슈·PR 해결에 필요한 폭넓은 수정·테스트·모의시험을 수행하여 운영 PC `PC`의 메모리·CPU 부담을 줄인다. 해당 저장소의 **자동 인계 Runner의 제한된 허용 작업**과 전문 담당자의 업무 전체를 혼동하지 않는다.
+- 전문 담당자에게 **운영 PC 설치·변경 권한은 없다**. 운영 변경이 필요한 결과는 원본 Issue/PR·브랜치/SHA·정확한 대상·manifest·테스트/시뮬레이션 결과·LAST PASS/FIRST FAIL·원본 보존/복구·승인 조건과 함께 총괄에 인계한다. 총괄은 기존 승인 및 운영 보호 절차에 따라 직접 적용하거나 정규 운영 담당을 조정하고 Runtime·결과 readback을 확인한다. C급 관리자 작업은 사용자 직접 수행하며, 다른 기능 원담당 업무를 무단 이관하지 않는다.
+- 별도 PC 시험 PASS·PR/merge·GitHub 인계 댓글·총괄 대화 실제 인수·운영 PC 설치 PASS는 서로 구분한다. 운영 적용이 없는 이슈·PR은 전문 담당자가 독립 처리한다. 과거 `zgmini-pc-control`의 `codex/controller-ops-lessons-20261105`라는 브랜치 이름만으로 총괄 소속을 추정하지 않는다.
+
 ## 1. GitHub — SOURCE OF TRUTH
 - 기준 소스는 GitHub 최신 `main`.
 - 개발 main, PC 운영 승인 SHA, 실제 실행·배포 SHA를 구분한다. PC 운영 source는 config·작업 등록·실행 기록으로 확인하며 main과 다르다는 이유만으로 교체하지 않는다.
