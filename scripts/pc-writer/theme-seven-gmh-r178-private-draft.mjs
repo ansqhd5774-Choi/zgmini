@@ -34,6 +34,17 @@ export async function prepareGmhSevenR178PrivateDraft({
  const checked=prepareGmhSevenPrivateSeed(candidate,{
   legacySeed,sourceStoredAt,now});
  const {draft,reconciliation}=checked;
+ // The existing R144 private-seed bridge accepts a 1e-5 historical
+ // reconciliation tolerance. R178's actual public reader allows only 1e-6.
+ // Stop here rather than reporting a projection that the unchanged reader
+ // would inevitably reject after operational approval.
+ for(let i=0;i<legacySeed.themes.length;i++){
+  const old=new Map(legacySeed.themes[i].history.map(p=>[p.date,p.score]));
+  for(const p of draft.themes[i].history){
+   if(old.has(p.date)&&Math.abs(old.get(p.date)-p.score)>0.000001)
+    fail('R178_READER_OVERLAP_MISMATCH');
+  }
+ }
  // Source recency MUST remain the attested provider-storage timestamp.
  // Neither this draft's creation time nor publication time refreshes it.
  need(Number.isSafeInteger(now)&&Number.isFinite(Date.parse(sourceStoredAt))&&
