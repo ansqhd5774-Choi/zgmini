@@ -1,3 +1,14 @@
+## 2026-11-18 13:22 KST W03 10/68 — 전용 push CI 경로 실실행, R47 테스트 2건 수정, 승인 설치 보류
+
+- **시작/현재:** 9/68 DONE(13.2%), 10단계 IN_PROGRESS; 스케줄러 자연 예약 검증은 전체 기능 완료 이후로 유보. W03 원담당 직접 실행, 프로세스 총괄 신규 인계 0.
+- **최초 CI 실행 차단 해소:** 기존 앱 `node.js.yml` workflow_dispatch는 브라우저 로그인 만료로 실행할 수 없었음. 전용 브랜치에만 `push` 트리거를 추가한 `12ba5b327949884629ebf1c73ab2ced8211bf504`로 정규 [Node.js CI #44235788636](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44235788636) 생성. Build / Type check PASS, 전체 회귀 3747 중 3695 PASS, 33 FAIL, 16 SKIP, 3 TODO; 회귀 진행 중 GitHub runner shutdown signal, job failure. PC publication recovery SKIPPED. 다른 계약·bundle SHA 실패도 있어 전체 성공으로 오판 금지.
+- **R47 직접 확인·수정:** 첫 CI의 R47 실수집→R25/R32 격리 회귀는 `tests/theme-nine-r47-private-score.test.mjs:187`에서 `planNineR47Recurring is not defined` (테스트 import 누락)로 FAIL. [커밋 306b1ec](https://github.com/ansqhd5774-Choi/zgmini/commit/306b1ec20e9451b78e6338ceb97b2a9aef7da4f7)으로 실제 모듈 import 추가. R49 고정 번들 별개 SHA 비교에서 R47 최신 승인 candidate `b75f7e2c...` vs 테스트 예전 `a08fdec8...` 불일치는 [커밋 e755f54](https://github.com/ansqhd5774-Choi/zgmini/commit/e755f54abb596b633b8c424415654262d9d729e3)으로 현행 정확 B GO 새 SHA로 갱신. **R49 동결 번들 SHA / 설치 CMD / 승인 manifest / 계산기 본문 변경 없음.**
+- **후속 정규 CI:** 새 [Node.js CI #44236291749](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44236291749), 입력 `e755f54abb596b633b8c424415654262d9d729e3`, Build / Type check PASS, 회귀 시험 진행 중(작성 시점). **결론은 아직 NOT_VERIFIED**. 임시 브랜치 CI 트리거는 [7cd7b3c](https://github.com/ansqhd5774-Choi/zgmini/commit/7cd7b3c71b7f57d561452ea55cb0522369e7868a)에서 제거하여 원래 workflow Git blob `cb8b57400514bf7d79304e8c35549eeeac22e5eb`로 복원. 두 번째 실행은 독립된 immutable commit 증거로 유지됨.
+- **불변 보호:** 원격 R47 CMD blob `93cb900cc502b31b6e507f505e35797572072946`, 승인 after SHA256 `b75f7e2cb253b6abb327096e19c49d676c8c75b25bb816ca82756815aec91639` 불변. 앱 Draft #714 543파일 미병합, 제어 Draft #2087 미병합, 신규 실PC B Issue 0, PC 운영 Task / SQLite / 공급자 API / D1 / Cloudflare 변경 0.
+- **LAST PASS / FIRST FAIL:** FULL_CI_DISPATCH_BLOCK 해소, Build/Typecheck PASS, R47 테스트 단순결함 2건 소스 수정 완료. 그러나 전체 CI SUCCESS 증거 미확보, 다른 회귀 실패 존재. 승인 조건을 충족하기 전 #2087 main 등록이나 W03 B 원샷 설치 금지. **다음:** #44236291749 최종 로그에서 수정한 R47 2건 및 전체 실패 건수 판정 → 정규 CI 관련 결함 자체 해결 → 그 후 정확 승인 manifest/main/실PC SHA readback/R25-R32 비공개 계산 검증. 9/68(13.2%) 유지.
+
+---
+
 ## 2026-11-18 W03 10/68 — 신규 UTC scorer B receiver GO 수령, 정확 B manifest CI PASS, 기능 CI 원인 좁힘
 
 - **목표/진행:** 기존 R47 9단계 DONE=9/68(13.2%), 10단계 수집→R25/R32 비공개 계산·저장 IN_PROGRESS. 자연 예약 검증은 **전 기능 완료 이후 후속**, 11~15단계는 마스터 P1/P4/S4~S10 연계 후속으로 작업별 증거 충족 전 전부 미착수. 163개 테마 최종 목표 유지.
