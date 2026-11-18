@@ -46,6 +46,34 @@ test("W04 PIT-04-07 rejects missing ETA539 C3 without inventing zero or a comple
   assert.equal(valid.rows.every(row=>typeof row.value==="number"&&Number.isFinite(row.value)),true);
 });
 
+test("W04 PIT-04-07 a newer invalid ETA539 c3 revision invalidates an older valid state-week",async()=>{
+  const retrievedAt="2026-11-18T00:00:00.000Z";
+  const header="st,rptdate,c1,c2,c3,c8";
+  const week="10/31/2026";
+  const baseline=EMPLOYMENT_R4_CORE_STATES.map(st=>
+    `${st},11/04/2026,2,${week},${st==="AL"?"300":"450"},9000`);
+  const latest=token=>`AL,11/11/2026,2,${week},${token},9000`;
+  const parse=async lines=>parseEta539ShadowRows([header,...lines].join("\n"),{retrievedAt});
+  for(const bad of ["","  ","-1","1.5","1e3","0x10","9007199254740992"]){
+    const result=await parse([...baseline,latest(bad)]);
+    assert.equal(result.rows.length,0,"invalid newer c3 must not reuse the earlier revision: "+bad);
+    assert.equal(result.meta.latestCompleteWeek,null);
+  }
+  const zero=await parse([...baseline,latest("0")]);
+  assert.equal(zero.rows.length,51,"a genuine latest zero retains 51-state coverage");
+  assert.equal(zero.rows.find(row=>row.geographyCode==="AL")?.value,0);
+  assert.equal(zero.rows.find(row=>row.geographyCode==="AL")?.sourceRevision,"ETA539:RPTDATE:2026-11-11");
+  const olderInvalid=await parse([
+    ...baseline.filter(line=>!line.startsWith("AL,")),
+    `AL,11/01/2026,2,${week},,9000`,
+    `AL,11/11/2026,2,${week},400,9000`
+  ]);
+  assert.equal(olderInvalid.rows.length,51,"a later valid correction supersedes an older missing value");
+  assert.equal(olderInvalid.rows.find(row=>row.geographyCode==="AL")?.value,400);
+  const sameDateInvalid=await parse([...baseline,`AL,11/04/2026,2,${week},,9000`]);
+  assert.equal(sameDateInvalid.rows.length,0,"a later row with the same report date and missing c3 cannot be treated as complete");
+});
+
 test("W04 PIT-04-07 latest missing state falls back only to an earlier complete 51-state week",async()=>{
   const lines=["st,rptdate,c1,c2,c3,c8"];
   for(const week of ["10/17/2026","10/24/2026"]){
