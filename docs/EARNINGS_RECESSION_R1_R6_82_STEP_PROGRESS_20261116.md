@@ -153,7 +153,7 @@
 | R6-14 | 관련 PR·CI·main 통합→Cloudflare Git Integration→정확 배포 SHA→공개 확인 | `IN_PROGRESS_SOURCE` | 앱 QFR main SHA faa89cfbe8b2aeabcbd8b8e9747cc07620f9eff4, 제어 B main SHA 8c67a6c9e9e778278259593d0eb35b2b0e2a05ea 개발 통합, 관련 CI PASS. 실제 PC/D1/Cloudflare 정확 Deployment/API/UI 검증 미완료 |
 | R6-15 | 다음 공식 발표 이후 자연 수집·checkpoint·D1·UI 실제 전진 관찰 | `DEFERRED` | 다음 실제 공식 발표 후 자연 갱신 확인; 현재 구현 STOP Gate 아님 |
 
-**상태 집계(82개 정확히 1회씩):** `DONE` 6개 · `EVIDENCE_NOT_MAPPED` 33개 · `PARTIAL_SOURCE` 2개 · `SOURCE_REVIEWED` 1개 · `EXISTING_EVIDENCE` 6개 · `NOT_RUN` 13개 · `SOURCE_READY` 3개 · `SOURCE_CI_PASS` 3개 · `SOURCE_MAIN_CI_PASS` 3개 · `BLOCKED_PUBLISH_SCOPE` 2개 · `SOURCE_BRANCH_ONLY` 2개 · `PUBLISH_SCOPE_UNVERIFIED` 1개 · `SOURCE_MAIN_READY` 3개 · `TARGETED_CI_PASS` 1개 · `IN_PROGRESS_SOURCE` 1개 · `DEFERRED` 1개. `SOURCE_MAIN_CI_PASS_PARTIAL / LIVE_API_NOT_VERIFIED` 1개. 각각의 상태는 최종 운영 완료율이 아니다.
+**상태 집계(82개 개별행을 현재 SHA에서 직접 재집계):** `DONE` **31개** · `EVIDENCE_NOT_MAPPED` **9개** · `NOT_RUN` **10개** · 기타 부분/소스/승인대기 **32개** = **82개**. 각 복합 상태는 원장의 세부 행을 정본으로 하며 DONE 이외는 완료율에 산입하지 않음.
 
 ## 1. 현재 확정 가능한 진행 상태
 
@@ -2188,7 +2188,7 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 
 <!-- W05-R120-R501-STRICT-CALENDAR-HISTORY-20261118 -->
 
-**시작·종료 진행률:** 순차 **26/82(31.7%)** 유지, 개별 DONE **31/82(37.8%)** 유지. R5-01은 `EVIDENCE_NOT_MAPPED` → `SOURCE_MAIN_CI_PASS_PARTIAL / LIVE_API_NOT_VERIFIED`로만 전환; 기준 R5-02 완료 31건 재사용.
+**시작·종료 진행률:** 순차 **26/82(31.7%)** 유지, 개별 DONE **31/82(37.8%)** 유지. 기존 요약 상태 집계가 6 DONE으로 표기됐지만 82개 개별행의 실제 DONE은 31건이었으므로 상태표 실측 기준으로 집계만 교정(`DONE 31 / EVIDENCE_NOT_MAPPED 9 / NOT_RUN 10 / 기타 32`); 개별 항목의 판정이나 기능 진행률 임의 변경 없음. R5-01은 `EVIDENCE_NOT_MAPPED` → `SOURCE_MAIN_CI_PASS_PARTIAL / LIVE_API_NOT_VERIFIED`로만 전환; 기준 R5-02 완료 31건 재사용.
 
 **원본·문제:** 최신 main `app/earnings-recession/earnings-risk-only-panel.tsx`의 4개 고정 Risk factor ID `epsGrowth/margin/revenueGrowth/earningsGrowthBreadth`, Hero `READY/validScore`된 `/api/earnings-recession-detail` 점수만 사용, 별도 E1-R5 `storedE1`와 결합하지 않음; `worker/projection-builders/earningsRecession.ts`는 `EARNINGS_RECESSION_DIAGNOSTIC_R1` 4개/승인 가중치 `[0.35,0.25,0.20,0.20]` 합산의 진단값 동치 검증(재계산·가중치 변경 아님). `lib/market-score/earnings-recession-history-r1.mjs`는 현재 method와 일치하는 저장 날짜의 최근 1년 검증, `MarketFearGreedChart`는 null 미연결/결측 분기 점선 표시. 실제 공개 [`/earnings-recession/`](https://zgmini.kr/earnings-recession/) HTTP 200 HTML은 정확 4행, 다른 12대 기업실적과 분리, 1년 추이 설명·미제공 시 `—` 표시; HTML 초기 렌더만으로 JS hydrated 값·실제 D1 stored body는 실증할 수 없음. 직접 [`/api/earnings-recession-detail`](https://zgmini.kr/api/earnings-recession-detail) JSON 조회는 이번 읽기 도구에서 접근 오류; 실제 운영 API 정상/지표 수치/차트 점 수를 추측하지 않음.
 
