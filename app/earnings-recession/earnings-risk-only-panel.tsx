@@ -41,7 +41,8 @@ const labels:Record<string,{name:string;description:string;direction:string}>={
  earningsGrowthBreadth:{name:"이익 성장 기업 비율",description:"이익 개선이 여러 기업으로 확산되는 정도",direction:"높을수록 방어력 양호"},
 };
 const validScore=(value:unknown):value is number=>typeof value==="number"&&Number.isFinite(value)&&value>=0&&value<=100;
-const validDate=(value:unknown):value is string=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value+"T00:00:00Z"));
+const validDate=(value:unknown):value is string=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&
+ !Number.isNaN(Date.parse(value+"T00:00:00Z"))&&new Date(value+"T00:00:00Z").toISOString().slice(0,10)===value;
 const dateLabel=(value:unknown)=>validDate(value)?value.replaceAll("-",". ")+".":"—";
 const stage=(score:number|null)=>score===null?"데이터 준비 중":score>=75?"매우 양호":score>=60?"양호":score>=45?"중립":score>=25?"실적 주의":"실적 침체 위험";
 const tone=(score:number|null)=>score===null?"#94a3b8":score>=60?"#45d99f":score>=45?"#94a3b8":"#ff7076";
