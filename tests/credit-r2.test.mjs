@@ -61,6 +61,23 @@ test('NFCICREDIT null, empty and whitespace are missing, never a percentile zero
  assert.ok(without.missingFactors.includes('credit-43'));
 });
 
+test('NFCICREDIT boolean, array, boxed zero and object cannot masquerade as valid 260th observation',()=>{
+ const pre=nfci.slice(0,259);
+ for(const raw of [false,true,[],[0],{},new Number(0),0n]){
+  const rows=[...pre,{...nfci[259],value:raw}];
+  const result=buildCreditR2({...inputs(),nfciCredit:rows});
+  assert.equal(result.status,'PARTIAL',String(raw));
+  assert.equal(result.score,null,String(raw));
+  assert.ok(result.missingFactors.includes('credit-43'),String(raw));
+  assert.equal(result.indicators.find(x=>x.id==='credit-43').score,null,String(raw));
+ }
+ const numerical=buildCreditR2({...inputs(),nfciCredit:[...pre,{...nfci[259],value:0}]});
+ const textual=buildCreditR2({...inputs(),nfciCredit:[...pre,{...nfci[259],value:'0'}]});
+ assert.equal(numerical.status,'READY');
+ assert.equal(textual.status,'READY');
+ assert.equal(numerical.score,textual.score);
+});
+
 test('NFCICREDIT genuine numeric zero and nonblank string zero count as valid 260th observation',()=>{
  const pre=nfci.slice(0,259);
  const observed=nfci[259];
