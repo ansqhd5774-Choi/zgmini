@@ -60,6 +60,59 @@ test('exact recorded legacy CPI/Census parser failures admit initial recovery wi
  assert.deepEqual(planInflationCandidateCoreDue(input).due,[]);
 });
 
+test('W01 legacy-parser recovery is truly once after 24h, not a repeating quota consumer',()=>{
+ const doc=checkpoint();
+ doc.attempted.census={eventKey:'legacy:census',at:'2026-11-08T22:45:02.525Z',
+  failureCode:'CENSUS_M3_HEADERS_INVALID'};
+ const input={approved:true,bootstrapApproved:true,events:[],sources:{},
+  checkpoint:doc,providerEnv:keys,now:NOW};
+ const first=planInflationCandidateCoreDue(input);
+ assert.deepEqual(first.due.map(x=>x.eventKey),['legacy-parser-recovery:census']);
+ doc.attempted.census={eventKey:'legacy-parser-recovery:census',at:NOW.toISOString(),
+  failureCode:'CENSUS_M3_HEADERS_INVALID'};
+ for(const date of ['2026-11-21T23:30:00.000Z','2026-11-30T23:30:00.000Z']){
+  const after=planInflationCandidateCoreDue({...input,now:new Date(date)});
+  assert.deepEqual(after.due,[],date);
+ }
+ // A new independently verified full Census release is a different event.
+ const release=planInflationCandidateCoreDue({...input,events:EVENTS,
+  sources,now:new Date('2026-11-30T23:30:00.000Z')});
+ assert.deepEqual(release.due.map(x=>x.group),['census']);
+});
+
+test('W01 bootstrap Treasury/EIA request is once even on unchanged or failed readback',()=>{
+ const doc=checkpoint();
+ const input={approved:true,bootstrapApproved:true,events:[],sources:{},
+  checkpoint:doc,providerEnv:keys,now:NOW};
+ assert.deepEqual(planInflationCandidateCoreDue(input).due.map(x=>x.group),
+  ['treasury','eia']);
+ doc.attempted.treasury={eventKey:'bootstrap:treasury',at:NOW.toISOString()};
+ doc.attempted.eia={eventKey:'bootstrap:eia',at:NOW.toISOString(),
+  failureCode:'EIA_REGULAR_HTTP_503'};
+ for(const date of ['2026-11-21T00:40:00.000Z','2026-12-20T23:30:00.000Z']){
+  assert.deepEqual(planInflationCandidateCoreDue({...input,now:new Date(date)}).due,[],
+   'one-shot bootstrap does not re-fetch after cooldown');
+ }
+});
+
+test('W01 unchanged one-shot collector does not reenter approved provider quota',async()=>{
+ const doc=checkpoint(),calls=[];
+ const original=async()=>({status:'UNCHANGED',providerRequests:1});
+ const mock={treasury:async args=>{calls.push('treasury');await args.quotaFetch('approved');return original();}};
+ const opts={base:'/tmp/pc-writer',approved:true,bootstrapApproved:true,
+  officialEvents:[],officialSources:{},providerEnv:{},quotaFetch:async()=>({ok:true}),
+  collectors:mock,checkpointIO:{load:()=>doc,save:()=>{}},
+  latestIO:()=>null,now:NOW};
+ const first=await collectInflationCandidatesIfDue(opts);
+ assert.deepEqual(first.completed,[{group:'treasury',status:'AWAITING_NEW_OBSERVATION',latest:null}]);
+ assert.deepEqual(calls,['treasury']);
+ const later=await collectInflationCandidatesIfDue({...opts,
+  now:new Date('2026-11-30T23:30:00.000Z')});
+ assert.deepEqual(later.completed,[]);
+ assert.equal(later.providerRequests,0);
+ assert.deepEqual(calls,['treasury']);
+});
+
 test('one-shot recovery executes only failed groups and advances checkpoint on saved readback',async()=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-recovery-'));
  const base=path.join(root,'pc-writer');fs.mkdirSync(base);
