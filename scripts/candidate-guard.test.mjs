@@ -70,3 +70,18 @@ test('candidate import boundary rewrites app operational-store imports only',()=
  assert.match(out,/candidate-market-operational-store\.mjs/);
  assert.doesNotMatch(out,/from ["']\.\.\/\.\.\/\.\.\/worker\/market-operational-store\.mjs["']/);
 });
+
+test('retired sign-in HEAD and URL variants stay noindex without calling application',async()=>{
+ let calls=0;
+ const w=candidateWorker({fetch(){calls++;return new Response('unexpected')}});
+ for(const route of ['/signin-with-chatgpt','/signin-with-chatgpt/?return_to=%2F','/%73ignin-with-chatgpt']){
+  const response=await w.fetch(new Request('https://candidate'+route,{method:'HEAD'}),{},{});
+  assert.equal(response.status,410);
+  assert.equal(response.headers.get('x-robots-tag'),'noindex, nofollow');
+  assert.equal(response.headers.get('cache-control'),'no-store');
+  assert.equal(await response.text(),'');
+ }
+ for(const route of ['/signout-with-chatgpt','/%2573ignin-with-chatgpt'])
+  assert.equal((await w.fetch(new Request('https://candidate'+route),{},{})).status,403);
+ assert.equal(calls,0);
+});
