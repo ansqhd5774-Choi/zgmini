@@ -7,7 +7,8 @@ import {createHash} from 'node:crypto';
 import {DatabaseSync} from 'node:sqlite';
 import {buildPreview} from '../scripts/pc-writer/EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs';
 import {
-  EARNINGS_C_SNAPSHOT_KEY,earningsCompanionWriter,readEarningsCompanionResponse,
+  EARNINGS_C_SNAPSHOT_KEY,EARNINGS_C_SERVICE_SNAPSHOT_KEY,
+  earningsCompanionWriter,readEarningsCompanionResponse,
 } from '../worker/earnings-companion-c-r4.mjs';
 
 const RETRIEVED='2026-10-26T17:02:53.996Z';
@@ -179,7 +180,16 @@ test('verified older BLS 5 rows survive newer incomplete capture through D1 read
     assert.equal(mismatched.headers.get('x-projection-published-at'),null);
     remote.records.set(EARNINGS_C_SNAPSHOT_KEY,original);
     assert.equal(remote.calls.filter(x=>x.kind==='WRITE').length,1);
-    assert.ok(remote.calls.every(x=>x.key===EARNINGS_C_SNAPSHOT_KEY));
+    assert.deepEqual(remote.calls.filter(x=>x.kind==='WRITE').map(x=>x.key),
+      [EARNINGS_C_SNAPSHOT_KEY], 'only the original base checkpoint may be written');
+    assert.ok(remote.calls.filter(x=>x.kind==='READ')
+      .some(x=>x.key===EARNINGS_C_SNAPSHOT_KEY), 'base checkpoint readback is retained');
+    assert.ok(remote.calls.every(x=>x.kind==='WRITE'
+      ?x.key===EARNINGS_C_SNAPSHOT_KEY
+      :x.kind==='READ'&&[EARNINGS_C_SNAPSHOT_KEY,EARNINGS_C_SERVICE_SNAPSHOT_KEY]
+        .includes(x.key)), 'optional service lookup must be read-only and allowlisted');
+    assert.equal(remote.records.size,1,'no service checkpoint may be published by base-only test');
+    assert.equal(remote.records.has(EARNINGS_C_SERVICE_SNAPSHOT_KEY),false);
   }finally{db.close();}
 });
 
