@@ -1,5 +1,11 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
+> **현재 인계 정본 — W06 #40 D05 12도메인 미국 종합점수 저장→1D 차트 승인 3.5배 구조 검증 (2026-11-19 02:27 KST):** W06 #39 한국 등락 기존 UI/계산 함수 8/8 검증 결과와 미연결 상태는 이전 인계에서 유지. #40에서 최신 main c05ef223a967302a261098fb5f4cf8762386fbc6의 app/dashboard-ui.tsx와 5개 기존 공용 UI 어댑터를 직접 조회: composite-display-sensitivity-r1.mjs, composite-observed-display-r1.mjs, market-trend-normalize-r4.mjs, market-trend-window-r1.mjs, published-domain-trend-r4.mjs.
+**독립 구조 시험:** 저장된 승인 current 계산값 54는 전체 카드에서 승인 3.5배 기준 중심50 → 64점으로 표시됨. 1D 계산 관측 실제 시각 15:30 raw50, 16:30 raw53 및 공개된 16:45 raw54 current fixture는 화면에서 50→60.5→64의 3 실제 점으로 병합. 기존 archive의 카드보다 뒤인 16:50 raw63은 아직 공개 current에 반영되지 않아 plot에서 제외. 1D 마지막점은 카드 64 및 공개 시간 16:45와 정확 일치. 매번 모든 12개 도메인의 새 값이 나오기를 기다리는 UI Gate 없음; overall READY/공개 계산 결과를 입력으로 사용. 과거 일별 trend READY만 수용, 미래일자/PARTIAL/0에 대한 경계 확인. 1Y는 승인된 실제 일별 확정점만 유지하고 intraday 임의 확장하지 않음. 실제 0은 유지. 원점수 0→2는 3.5배 변환의 0 하한에 모두 고정되므로 새로운 서로 다른 표시점 두 개가 만들어지지 않는 것이 정상이고, 0→40의 유효 변화는 0→15의 다른 두 점으로 표시됨. 첫 fixture의 0→2에서 서로 다른 표시점이 필요하다는 기대는 시험 기대치 오류로 정정; 소스 FIRST FAIL 아님. 실제 함수 경계 최종 9/9 시나리오 검증, dashboard-ui 소스 연결 가드 별도 확인. 기존 1D 저장 archive route의 50→53→56 재현 회귀는 tests/r4-composite-observed-route.test.mjs에 존재하며 새 기능 CI 재실행은 이번에 불필요.
+**판정:** W06 UI/source adapter는 올바른 인입 표시 경계를 수행함. 신규 확정 W06 소관 source 버그 없음 → 신규 코드/테스트/PR/CI 변경0. 다른 계산/Writer 원담당의 실제 12도메인 입력 1개만 신규 수집·재계산→SQLite checkpoint/event→D1 current+archive 게시 증거는 확인하지 않았으므로 #40 전체 PARTIAL, 소스 검증을 운영 실증으로 바꾸지 않음. 폐기 출처권 및 overall PARTIAL/null 이력 표시 차단 유지. 고유 DONE **22/75(29.3%)**, 잔여 53(#62 퇴역). 정확 활성 Cloudflare 배포 SHA/PC 설치 SHA 미확인.
+**다음 단일 W06 실행:** #41 D06 인플레이션 위험 R2 16입력/7축의 승인된 READY·6/7 이월 기준 하에서 실제 공개 저장 Reader→1D/1Y 차트 마지막점·관측일·결측/미래일 정규화 경계 UI/fixture 검증. R2 원자료/산식/Collector/Writer 원담당 작업은 분리. 소스 소관 결함이 확인된 경우만 최소 UI 수정·회귀/CI/병합.
+>
+
 > **현재 인계 정본 — W06 #39 D04 한국 등락 기존 UI/계산 adapter 기능 검증 (2026-11-19 02:24 KST):** 기존 진행률 **22/75(29.3%)**, #39 PARTIAL. 기준 main c05ef223a967302a261098fb5f4cf8762386fbc6, 전담 기록 시작 357bf5679279bebd767329fbb654cd463ed7e19f.
 **실제 경로:** app/korea-composite-view.tsx의 KoreanCountryCard는 MarketBreadthStrip market=korea에 counts를 전달하지 않음. app/api/market-breadth/route.ts는 market=usa만 지원하고 한국 조회는 404. app/market-breadth-strip.tsx는 counts 미전달 시 연결 예정/대시, 0합계·음수·비정수·결측 거부, 유효 원숫자로 상승·보합·하락 비율 3개만 계산. lib/market-breadth/compute.mjs의 calculateMarketBreadthCounts는 날짜/종목 ID/유효 변화/커버리지 검증 후 READY counts를 계산하나, 공용 계산 함수가 존재한다는 사실만으로 한국 승인 공개 Reader가 존재하는 것은 아님. worker/korea-market-v2.mjs 결과는 researchOnly:true / productionEligible:false. 한국 Rev7 시장폭 요인 점수는 한국 종목별 등락 건수와 다른 데이터 계약.
 **실제 함수/fixture 8/8 PASS:** READY 2상승/1보합/1하락→50%/25%/25%, 0변화만 있는 정상 종목은 100% 보합, missing change→PARTIAL/counts=null→UI 미제공, 합계0/음수/비정수→미제공, 한국 부모 counts 미전달/API 비지원/연구용 비공개 확인. 기존 GitHub 소스 함수 본문을 독립 실행했으며 전체 GitHub CI/실PC/실사이트 검증 주장하지 않음.
@@ -1637,3 +1643,15 @@
 다음 필수 실행 1개: W06 #40 D05 12도메인 종합점수 current/observed 마지막점/3.5배 변환 deterministic fixture 검사; W06 결함 발견 시 최소 코드 수정·CI·main 병합.
 전체 진행률: DONE22/75(29.3%), 잔여53; #39 PARTIAL.
 기록 원격 확인: 갱신 이후 file 및 branch SHA 재조회 예정.
+
+
+### [2026-11-19 02:27 KST] R4 #40 — D05 미국 종합점수 저장 current와 1D observed 화면 계약
+상태: PARTIAL. W06 표시 구조 9개 독립 fixture 경계 검사/실소스 7가드 확인 PASS. 실제 원담당 신규 input→계산/로컬 SQLite→D1/runtime 실증은 이번 미확인.
+담당: W06 UI/Reader/차트 접점. 외부 Calculator·Writer·운영 source/수집·게시 변경 없음.
+시작 main c05ef223a967302a261098fb5f4cf8762386fbc6, 전담 기록 시작 520e5d01872ca3f12b661cd0ed3d201c58ed8dc9. 실제 active PC/Cloudflare exact SHA 미확인.
+실제 함수 fixture: stored previous 50→53, verified newly published current54 at 2026-11-18T16:45Z. 승인 3.5배→50→60.5→64, 1D last/current/시각 동치. 미래 archive16:50은 제거, PARTIAL/미래 daily점 제외, 1Y에는 당일 가짜 intraday 추가하지 않음, missing 점 없고 0 유지. 같은 표시값이 0에 clamp되는 raw0→2는 신규 시각 시각화 생성을 기대할 수 없음(테스트 기대 해석 정정); raw0→40은 0→15 두 점 PASS.
+현행 app/dashboard-ui.tsx 소스: overall READY와 0~100 유효 점수만 current; 권리 폐기 state면 전체 trend 차단; 실제 archive/current bound; 기존 1D~1Y 선택 및 일별 window 재사용. 기존 route 관련 회귀 파일 검사, CI 재실행/새 PR 없음.
+실제 문제: 새 W06 UI 결함 확인 없음. 운영 12도메인 중 유효 신규 input 1개가 원담당 Calculator/Writer/D1까지 실제 전파되는지는 별도 미검증, W06 구조 작업 차단 사유 아님.
+다음 필수 실행 1개: W06 #41 D06 인플레이션 위험 R2 공개 Reader→차트 기간별 실점수/관측일/결측 경계 function fixture 검사. 타 담당 원자료·산식·게시 변경 금지.
+진행률: 고유 DONE 22/75(29.3%) 유지, 잔여53. #40 PARTIAL.
+원격 인계 재조회: 이번 원장 커밋 뒤 확인 예정.
