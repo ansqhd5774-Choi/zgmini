@@ -1,3 +1,12 @@
+## 2026-11-18 17:00 KST W03 12/68 — main/전용 브랜치 분기 정량 감사
+
+- **시작/종료:** 11/68 DONE(16.2%) → 11/68 DONE(16.2%); 12단계 진행 중. 목표 163개 테마, 공개/권리 승인 조건 불변.
+- **직접 GitHub 비교:** `main` SHA `30d9c62b0122879a57604419069aff38695ad455`; `main...codex/theme-fear-greed-integration-20261025` 비교 결과 `diverged`, 전용 브랜치 **831커밋 앞/1084커밋 뒤**, merge-base `f9312d5069754dc82b4d5a93cc7712dbdac4b640`. 이는 브랜치 전체를 main에 병합하거나 기존 SHA-pin 실패를 일괄 수정하면 타 담당자 변경을 손상시킬 수 있다는 구체적 위험 증거다. 비교 API의 파일 목록은 크기 제한이 있을 수 있으므로 전 파일 전수 감사로 간주하지 않는다.
+- **실행/보호:** GitHub 파일 2개(계획·진행 원장) 조회, 브랜치 비교, PR 검색만 수행. Node CI/PC/Provider/SQLite/D1/Cloudflare/예약/Controller 신규 실행·변경 0. 기존 CI #44261520910 신규 W03 6/6 PASS·전체 30 FAIL은 이전 증거 재사용. 권리 3개 플래그 false, 현재 API stale, 신규 D1 CAS 미완료.
+- **LAST PASS/FIRST BLOCK:** LAST PASS=main/전용 브랜치 정확 비교와 기존 W03 신규 6개 회귀 통과; FIRST BLOCK=전용 브랜치의 1084개 main 누락 커밋 및 전체 30개 레거시 테스트 실패, 실PC 비공개 바이트·상용권리·정규 Writer CAS 미확인. **다음 단일 실행:** 최신 main 기준 신규 3파일(검증기·두 테스트)의 정확한 SHA와 의존성을 대조하고 선택 통합 PR에서 전체 Node CI를 검증한다. 그 후 승인된 실제 바이트/권리/게시 Gate를 순서대로 처리한다. 오래된 전용 브랜치 전체 병합·TTL 완화·무승인 D1 게시 금지. 자연 예약 검증은 전체 기능 완료 후.
+
+---
+
 ## 2026-11-18 W03 12/68 — GitHub Actions Node.js 실제 CI 검증: 신규 6/6 PASS, 브랜치 전체 30 FAIL
 
 - **시작/종료 진척:** 11/68 DONE(16.2%) → 11/68 DONE(16.2%); 12/68 IN_PROGRESS. W03 전용 브랜치 기준 main 재검사 시 main `ccda8e3fc04d98ac949a76e620ebece8557a7ef8`의 [Node.js CI #44261372865](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44261372865)는 **SUCCESS**, W03 전용 브랜치의 전체 suite는 레거시 SHA pin·테마 설정/게시 관련 드리프트 존재.
