@@ -1,5 +1,15 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-EXACT-ONESHOT-CANDIDATE-RECOVERY-PR1362 -->
+## 2026-11-18 — 수집/검증/보고 불필요 중복호출 해소: 최초 bootstrap·레거시 헤더 복구 진짜 1회
+
+- **범위/실제 결함:** 기존 app `scripts/pc-writer/inflation-causal-candidate-core-bridge.mjs`는 주석과 승인 범위가 `bootstrap:treasury`, `bootstrap:eia`, `legacy-parser-recovery:cpi`, `legacy-parser-recovery:census`를 **1회성**으로 한정함에도, 체크포인트 `attempted[group].eventKey` 동일 조건에서 `candidateAttemptCooldownMs`(1h/24h)만 확인. 실패/UNCHANGED/새 관측 부재로 `processed[group]`가 없으면 24시간 이후 동일 1회성 요청을 다시 `due`로 등록해 공급자 호출 반복 가능. 실제 운영에서 이 호출이 반복 발생했다는 증거는 없으며 **SOURCE_LOGIC_CONFIRMED**, 사용자가 요청한 불필요한 수집 반복 구조 개선.
+- **고정 2파일 소스 수정:** [PR #1362](https://github.com/ansqhd5774-Choi/zgmini/pull/1362) `planInflationCandidateCoreDue`에 기존 저장 체크포인트의 정확 `eventKey`를 재사용하는 `oneShotAlreadyAttempted` 판정만 추가. 앞서 한 번 시도된 정확 Bootstrap/Treasury·EIA와 정확 legacy-parser recovery/CPI·Census는 24h 경과 후에도 재접수하지 않음. 새로운 공식 발표 `release:<provider>:<event>:<date>`는 기존 별도 이벤트 키로 계속 정상 허용; 정규 발표 데이터의 임시 HTTP 408/5xx와 승인 quota 재시도 1h·기타 24h 규칙 **유지**. 원자료/가중치/공급자 URL/월발표 시간·인증/승인 범위/수집 주기·Core 잠금·체크포인트 스키마·DB/D1/TTL/게시 산식 변경 0. 새 Controller/예약/Runner 없음.
+- **3개 회귀시험 추가:** (1) Census 구 파서 `HEADERS_INVALID` 1회 복구 직후 및 10일 후 재시도 차단, 새 공식 `Full Report` 발표는 허용, (2) Treasury/EIA 1회 Bootstrap 후 실패·UNCHANGED 1일·30일 경과 시 중복 호출 없음, (3) 메모리 checkpoint와 기존 metered quota runner 2회 연속 호출 시 실제 provider 호출 총 1회, 이후 `providerRequests=0`. 기존 1h/24h 일반 공식 발표 재시도 회귀 유지.
+- **CI/main:** 최초 HEAD `a95fa02c`의 범위 혼합 테스트를 정확 Census 이벤트로 한정한 후 HEAD `9d9ccee20e36b1d131042339302e255e7bb8441c`. [Node.js CI #44279200706](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44279200706) completed/success (Build/Type/Regression/PC publication recovery/Cloudflare). 중간 GitHub PR `mergeable=false`는 최신 main 조회에서 소스 파일 그대로·재조회 `mergeable=true`를 확인하여 별도 rebase/reset/강제 병합 없이 정확 HEAD squash [main `7192014cc3b7187bbbd50cc0c2e8dca9166af835`](https://github.com/ansqhd5774-Choi/zgmini/commit/7192014cc3b7187bbbd50cc0c2e8dca9166af835). PR merged=true, main logic SHA `ae4915697d0ca119b4ef0b2c57aa0bace25f12fa`, main test SHA `7a4d4f87161206c66debba8e1820c9d0c400fbe2` 직접 재조회.
+- **정확 단계 경계:** 실제 PC 설치/기존 런타임 소스 이전 `2070ff...` 유지 여부 별도 A 실증 전 미확정. 신규 개선 source는 운영 PC에 자동 설치되지 않았으며 과거 수집 시도의 checkpoint 수정·재수집·현재 원본 공개·D1 쓰기·UI 제공 완료 주장 불가. #1818 Census `MISSING/CENSUS_M3_HEADERS_INVALID`는 archived header 실측·승인 Collector 운영 경로가 필요, #1330 R2 저장형 D1 미검증, Draft #2167 B source 검토 계속. **W01 진행 33/71(46.5%)→33/71(46.5%), 잔여 38, 운영 단계 신규 DONE 0**.
+- **다음 필수 한 단계:** 새로운 코어 승인 절차를 추가하는 대신 기존 고정 A/bounded Writer B·Controller의 승인 source와 실제 실PC 보관 Census archive 조회가 가능한지 확인하고, 가능한 최소 원자료 파서 복구→저장 readback→물가7 key/게시→API/UI까지 이어 진행. 다른 대화의 댓글 작성은 실제 인계 수신이 아니며, 과거 원본 B #1818을 자동 재시도하지 않음.
+
 <!-- W01-20261118-SIX-STAGE-THRESHOLD-AUDIT-PR1358 -->
 ## 2026-11-18 — W01 수집·검증·계산·인증·보고·게시 6단계 과도한 기준 감사 및 최소 결함 수정
 
