@@ -131,6 +131,77 @@ test('WPSFD42 D1 writer uses only service checkpoint and GET merges 5+2 without 
   ]);
 });
 
+test('partial stored WPSFD42 pair returns base five rows without mutating either checkpoint',async()=>{
+  const db=d1(),base=basePayload(),service=servicePayload();
+  await earningsCompanionWriter(db).write(base,{storedAt:NOW-1000});
+  const baseBefore=db.records.get(EARNINGS_C_SNAPSHOT_KEY).body;
+  const missing=service.rows[0];
+  missing.status='PARTIAL';
+  missing.value=null;
+  missing.change=null;
+  missing.unavailableReason='EXACT_T_MINUS_12_BASE_MISSING_OR_NONPOSITIVE';
+  missing.history.at(-1).value=null;
+  missing.historyCoverage.actualPoints-=1;
+  missing.historyCoverage.complete=false;
+  service.status='PARTIAL';
+  service.coverage={configured:2,ready:1,partial:1,unavailable:0};
+  const written=await earningsCompanionWriter(db,{
+    snapshotKey:EARNINGS_C_SERVICE_SNAPSHOT_KEY,
+  }).write(service,{storedAt:NOW-500});
+  assert.equal(written.status,'READBACK_VERIFIED');
+  const writesBefore=db.actions.filter(x=>x.kind==='WRITE').length;
+  const reply=await readEarningsCompanionResponse(request(),db,{now:NOW});
+  assert.equal(reply.status,200);
+  assert.equal(reply.headers.get('x-earnings-c-service'),'PARTIAL');
+  const result=await reply.json();
+  assert.equal(result.rows.length,5);
+  assert.equal(result.coverage.configured,5);
+  assert.deepEqual(result.rows.map(x=>x.indicatorId),base.rows.map(x=>x.indicatorId));
+  assert.equal(result.sourceVersion,base.sourceVersion);
+  assert.equal(db.records.get(EARNINGS_C_SNAPSHOT_KEY).body,baseBefore);
+  assert.equal(db.actions.filter(x=>x.kind==='WRITE').length,writesBefore);
+});
+
+test('expired service observations return base five even with a structurally valid stored checkpoint',async()=>{
+  const db=d1(),base=basePayload(),old=servicePayload();
+  await earningsCompanionWriter(db).write(base,{storedAt:NOW-1000});
+  // Independent service data can become stale while newer base data stays fresh.
+  const oldPeriods=MONTHS.map(period=>{
+    const ordinal=Number(period.slice(0,4))*12+Number(period.slice(5))-1-2;
+    return `${Math.floor(ordinal/12)}-${String(ordinal%12+1).padStart(2,'0')}`;
+  });
+  const oldSourceAt=Date.parse('2026-08-20T09:00:00.000Z');
+  const oldRetrievedAt='2026-08-20T12:00:00.000Z';
+  const oldStoredAt=Date.parse('2026-08-20T18:00:00.000Z');
+  for(const row of old.rows){
+    row.history=row.history.map((point,i)=>({...point,period:oldPeriods[i]}));
+    row.observationPeriod=oldPeriods.at(-1);
+    row.previousPeriod=oldPeriods.at(-2);
+    row.retrievedAt=oldRetrievedAt;
+  }
+  old.sourceStoredAt=oldSourceAt;
+  old.generatedAt='2026-08-20T16:00:00.000Z';
+  old.observedThroughBySeries.WPSFD42=oldPeriods.at(-1);
+  assert.equal(validateEarningsCompanionPayload(old,{now:NOW}),old);
+  const projection={
+    status:'READY',sourceVersion:old.sourceVersion,sourceStoredAt:old.sourceStoredAt,
+    expectedSourceVersion:old.sourceVersion,expectedSourceStoredAt:old.sourceStoredAt,
+    builtAt:oldStoredAt,
+  };
+  db.records.set(EARNINGS_C_SERVICE_SNAPSHOT_KEY,{
+    body:JSON.stringify({payload:old,projection}),stored_at:oldStoredAt,
+  });
+  const before=db.actions.filter(x=>x.kind==='WRITE').length;
+  const reply=await readEarningsCompanionResponse(request(),db,{now:NOW});
+  assert.equal(reply.status,200);
+  assert.equal(reply.headers.get('x-earnings-c-service'),'STALE');
+  const result=await reply.json();
+  assert.equal(result.rows.length,5);
+  assert.equal(result.sourceVersion,base.sourceVersion);
+  assert.deepEqual(result.coverage,{configured:5,ready:5,partial:0,stale:0,unavailable:0});
+  assert.equal(db.actions.filter(x=>x.kind==='WRITE').length,before);
+});
+
 test('same WPSFD42 content cannot overwrite the established base key; service repeat is no-op',async()=>{
   const db=d1(),service=servicePayload(),writer=earningsCompanionWriter(db,{
     snapshotKey:EARNINGS_C_SERVICE_SNAPSHOT_KEY,
