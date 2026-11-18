@@ -1,5 +1,15 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-LIVE-R2-1130-FUTURE-TREND-REPRO-1110Z -->
+## 2026-11-18 20:10 KST — 운영 공개 API 2경로 읽기 전용 브라우저 실측 및 R2 미래 월말 오류 재현
+
+- **공개 GET 두 건 직접 재조회:** 공개 [후보 7개](https://zgmini.kr/api/inflation-candidate-inputs) 2026-11-18 11:10:35 GMT HTTP200/JSON `status=PARTIAL,score=null`, schema 7종, `sourceVersion=INFL7_PRESENTATION_18a38bc27e850b0a83ad6528c0929746ae67ee26fff847197f54ca2f0ca3f644`, `sourceStoredAt=1794825002905`, ID28 Census `PENDING/value=null/observationDate=null`; 공개 [물가 R2](https://zgmini.kr/api/inflation-detail) 11:10:40 GMT HTTP200/JSON `asOfDate=2026-11-18,score=57.97005405261128,trend last label=2026-11-30,last value=57.97005405261128`. 일반 web fetch는 URL access 불가여서 읽기 전용 공개 브라우저 navigation 이용, 입력/로그인/게시/운영 변경 0.
+- **실제 확인된 FIRST FAIL:** R2 저장 공개 마지막 추이 레이블이 `asOfDate=2026-11-18` 이후 **2026-11-30 미래 월말**을 사용. 값/점수는 동일하므로 현재 시점 관측일처럼 보이는 표시 오류, 산식 오류나 D1 관리자 row 불일치 증거는 아님. [앱 이슈 #1330/직접 증거](https://github.com/ansqhd5774-Choi/zgmini/issues/1330#issuecomment-6976921966) 신규 기록/OPEN. 앞서 main에 병합한 R2 `inflationR2AsOfTrendCompatibility` 날짜 보정 소스는 PC에 실제 설치돼 있지 않으므로 소스만 재구현해도 공개가 복구되지 않음. published GET 200·오늘 asOfDate는 운영 source/Writer D1 readback·Cloudflare 배포 SHA 증거로 쓰지 않음.
+- **기존 승인 및 다음 대상:** 제어 [Draft #2167](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2167)는 `run-local.mjs` M(insertion CAS) + `inflation-r2-trend-date-refresh.mjs` A 정확 **2파일**, `REVIEW_REQUIRED_B`이며 설치 효과 승인 manifest **없음**, PC B 요청 **0**. 기존 원본 [A #2163](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2163)의 preimage, Task XML, 2/2 result 보존. 새 승인 전 source SHA·Task first hop·import dependency/현재 B 공유 Writer lease 검산 → 승인된 정규 B 단회 설치 → 로컬 정확 `detail:inflation:v1` body/checkpoint readback → D1 해당 key의 `body/stored_at` 관리자 조회 → GET·PC/모바일 UI 동일 관측일/최종 점 검증. 작성된 코드가 이미 충분한 경우 추가 제어 Gate/새 Reader/중복 B 없이 그대로 적용.
+- **Census 및 공유 상태:** 후보 6/7 READY / ID28 PENDING 직접 갱신 확인. 마지막 실제 PC #2122 `CENSUS_M3_HEADERS_INVALID`와 공유 #2094 `FIRST_FAIL=STAGED` / W04 설치 성공증거 여전히 없음. #2111 archive A/#2139 Writer per-key A Draft 소스 CI 성공만 재사용하고 미설치. 사용된 #1818 Census 수동 B requestId 재시도 금지. 공개 GET 2회 외 Provider/PC/SQLite/D1/Task/Controller/배포 변경 0.
+- **71단계 판정:** 이 기록은 기존 공개 B4-04/05의 시각·오류 증거를 보강한 것으로, D1 per-key·정규 Writer/PC source·활성 배포까지 미증명. 실제 신규 완료 단계 **0**, W01 **33/71=46.5%, 미완료 38** 유지. 다음 기능 행동은 #1330 정확 2파일 운영 B 승인/설치 가능여부 검증 및 source preimage 갱신(기존 담당 W01), 공용 #2094의 복구는 공통 총괄/W04 담당.
+
+
 <!-- W01-20261118-INFL19-READPPI-PER-SERIES-PR1376-MAIN-CI -->
 ## 2026-11-18 — 19개 연구 원자료 PPI 8계열 중 1개 불량 시 정상 7계열 일괄 누락 제거 (main/CI)
 
