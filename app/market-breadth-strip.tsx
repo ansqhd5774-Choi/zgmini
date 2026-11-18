@@ -2,6 +2,7 @@
 import {useEffect, useState} from "react";
 import styles from "./market-breadth-strip.module.css";
 import {startStoredRefresh} from "../lib/market-score/live-refresh.mjs";
+import {currentUsIexDisplaySession} from "../lib/market-breadth/us-iex-display-session-r69.mjs";
 import type {MarketPeriod} from "./market-card-shared";
 
 /** Optional non-US input; US confirmed and provisional are strictly percentage-only public feeds. */
@@ -49,7 +50,8 @@ function currentIexProvisional(value: unknown): value is UsaIexProvisionalRecord
   const ny = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit"
   }).formatToParts(new Date()).map(part => [part.type, part.value]));
-  return record.observationDate === `${ny.year}-${ny.month}-${ny.day}`;
+  return record.observationDate === `${ny.year}-${ny.month}-${ny.day}`
+    && currentUsIexDisplaySession(record.observationDate, record.slotEndUtc);
 }
 
 function normalizedCounts(counts?: MarketBreadthCounts | null) {
