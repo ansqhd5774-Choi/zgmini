@@ -10,7 +10,7 @@ import {ContentHelp} from "../content-help";
 import {EarningsFavoriteButton,EarningsFavoriteHeaderIcon} from "./earnings-favorite-button";
 import {EARNINGS_RISK_HISTORY_KIND} from "../../lib/market-score/earnings-recession-history-r1.mjs";
 import {readBeaStoredS6,type BeaIndicator} from "./earnings-bea-s6-source";
-import {earningsCostRetrievalDay,earningsCostDisplayStatus,earningsCostSparkGeometry} from "./earnings-cost-observation-display-r1.mjs";
+import {earningsCostRetrievalDay,earningsCostDisplayStatus,earningsCostSparkGeometry,earningsCostPublicationKst} from "./earnings-cost-observation-display-r1.mjs";
 import "./earnings-indicator-r2.css";
 import "./earnings-inflation-layout.css";
 
@@ -215,7 +215,7 @@ export default function EarningsRiskOnlyPanel(){
  const {payload:riskRawPayload}=useStoredIndex<RiskFourRawPayload>("/api/earnings-recession-risk-four-raw");
  const riskRawReady=riskRawUsable(riskRawPayload,payload);
  const rawFactors=new Map<string,RiskRawFactor>(riskRawReady?riskRawPayload!.factors.map(row=>[row.id,row]):[]);
- const {payload:costPayload,loading:costLoading,error:costError}=
+ const {payload:costPayload,loading:costLoading,error:costError,publishedAt:costPublishedAt}=
   useStoredIndex<CostPayload>("/api/earnings-recession-indicators");
   const {payload:unitPayload,loading:unitLoading,error:unitError}=
    useStoredIndex<BeaUnitPayload>("/api/earnings-recession-bea-unit-profit");
@@ -329,7 +329,7 @@ export default function EarningsRiskOnlyPanel(){
   <section className="inflation-indicator-section earnings-r2-indicators" aria-labelledby="earnings-risk-factor-title">
    <header><div><p className="cnn-eyebrow">EARNINGS RECESSION RISK FACTORS</p>
     <h2 id="earnings-risk-factor-title">실적 침체 분석 지표</h2></div>
-     <p>기존 4개는 {riskRawReady?"저장된 SEC 재무 원자료 수치와 기존 진단 점수를 구분":"기존 실적 침체 방어 진단 점수"}하여 표시합니다. 추가 {costIndicators.length}개는 BLS 비용 압력 원자료, {mfgReady?"3개":"2개"}는 BEA 기업이익 원자료입니다. 추가 원자료와 Census QFR 제조업 세후이익률은 진단 점수에 합산하지 않습니다. <span className="earnings-r2-cost-status" role="status">SEC 원자료 {riskRawReady?"4/4 연결":"게시 확인 대기"} · {costStatus} · BEA 기업이익 {beaReady?"연결 완료":"자료 확인 대기"} · BEA 단위이익 {unitStatus} · Census QFR {qfrStatus}</span></p>
+     <p>기존 4개는 {riskRawReady?"저장된 SEC 재무 원자료 수치와 기존 진단 점수를 구분":"기존 실적 침체 방어 진단 점수"}하여 표시합니다. 추가 {costIndicators.length}개는 BLS 비용 압력 원자료, {mfgReady?"3개":"2개"}는 BEA 기업이익 원자료입니다. 추가 원자료와 Census QFR 제조업 세후이익률은 진단 점수에 합산하지 않습니다. <span className="earnings-r2-cost-status" role="status">SEC 원자료 {riskRawReady?"4/4 연결":"게시 확인 대기"} · {costStatus} · BEA 기업이익 {beaReady?"연결 완료":"자료 확인 대기"} · BEA 단위이익 {unitStatus} · Census QFR {qfrStatus}</span> <span className="earnings-r2-published-at">BLS 게시 {costValid?earningsCostPublicationKst(costPublishedAt):"—"}</span></p>
    </header>
    <div className="inflation-table-wrap earnings-r2-table-wrap"><table className="inflation-indicator-table earnings-r2-table">
     <colgroup><col className="earnings-col-favorite"/><col className="earnings-col-name"/><col className="earnings-col-content"/><col className="earnings-col-criterion"/><col className="earnings-col-prior"/><col className="earnings-col-current"/><col className="earnings-col-release"/><col className="earnings-col-judgement"/><col className="earnings-col-spark"/><col className="earnings-col-help"/></colgroup>
