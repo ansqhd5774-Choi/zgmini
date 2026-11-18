@@ -127,3 +127,11 @@ test('cannot refresh stale observation using a fresh draft creation timestamp',a
   derivedLicenseVerified:true,sourcePriceReconciled:true};
  assert.equal(await validRollingPublic(forced,x.legacySeed,{now:t}),false);
 });
+
+test('private-seed tolerance cannot mask a stricter existing R178 reader rejection',async()=>{
+ const p=privateCandidate();
+ const overlap=datesTo('2026-10-16')[44];
+ p.themes[1].history.find(x=>x.date===overlap).score=40.000005;
+ await assert.rejects(prepareGmhSevenR178PrivateDraft(input(p)),
+  {code:'W03_R178_R178_READER_OVERLAP_MISMATCH'});
+});
