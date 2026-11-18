@@ -44,8 +44,8 @@ try{
   await page.screenshot({path:`artifacts/dashboard-history/introduction-${width}.png`,caret:'initial'});
   await intro.getByRole('button',{name:'닫기',exact:true}).click();
   await intro.waitFor({state:'hidden'});
-  // Reconstructed history has a dashed line. Unversioned calculation-time
-  // observations are disconnected dots; both are real visible geometry.
+  // Reconstructed daily history is dashed; actual calculation-time samples
+  // form a separate solid line. Never bridge these different provenances.
   const chartSelector='.zg-r55-summary-chart';
   const chartSignature=()=>page.locator(chartSelector).evaluate(root=>[
    ...[...root.querySelectorAll('path.recharts-area-curve')].map(p=>p.getAttribute('d')??''),
@@ -121,6 +121,16 @@ try{
    .waitFor({state:'visible',timeout:15000});
   await waitForGeometry();
   assert.equal(await periods.getByRole('button',{name:'1D',exact:true}).getAttribute('aria-pressed'),'true');
+  // The 1D archive contains two actual observations plus the changed current
+  // publication: their stroke must contain a real segment, not just dots.
+  // No reconstructed daily points are available in the 1D series.
+  const oneDayObservedLine=await page.locator(chartSelector+' path.recharts-area-curve').evaluateAll(paths=>paths.some(path=>{
+   const d=path.getAttribute('d')??'';
+   const stroke=path.getAttribute('stroke')??getComputedStyle(path).stroke;
+   return /^M/.test(d)&&/[CLQ]/.test(d.slice(1))&&!/NaN|Infinity/.test(d)
+    &&stroke!=='none'&&stroke!=='transparent'&&stroke!==''; 
+  }));
+  assert.equal(oneDayObservedLine,true,width+'px 1D actual calculated observations connect as a line');
   // W06 R4 #69: verify actual viewport overflow after all six period changes.
   const overflow=await page.evaluate(()=>{
    const viewport=document.documentElement.clientWidth;
