@@ -1,3 +1,11 @@
+## 2026-11-18 W03 10/68 — 실제 GitHub scorer 원격 함수 V8 격리 검증 13/13 PASS
+
+- **대상:** 기존 실제 PC FIRST FAIL `THEME_NINE_R47_MERGED_PAGE_TIMESTAMP`의 최소 수정 코드 `scripts/pc-writer/theme-nine-r47-private-score.mjs`를 지정 W03 원격 브랜치에서 재조회. `parsePage()`·`goodStamp()` 원문이 고정된 검사 대상과 정확 일치하는 경우에 한해 V8 격리에서 함수 자체를 실행.
+- **검증 결과:** 13/13 PASS(실제 `2026-11-12T00:00:00Z`의 NY 전날에 해당하는 UTC 범위 시작 허용, UTC end 마지막 시각 허용, 같은날 시간봉 2개, fractional timestamp, 이전 날짜·다음 날짜 거부, 불가능한 날짜 2종 거부, offset 형식 거부, 중복·역순·티커 불일치 거부, 별도 요청 범위 윤년 날짜 확인). 이는 **Node 전체 모듈 회귀/CI·실제 Windows 실행이 아닌 원문 코드의 격리 런타임 검증**이다.
+- **기존 단계별 진행 판단:** 단계9 DONE; 단계10 IN_PROGRESS(부분 source test·실PC 보유 원자료 증거는 PASS, B 새 CMD 미설치, 원자료 1구간 미완, 신규 R25/R32 실PC 저장 미증명). 11~15는 마스터 P1/P4/S4~S10의 후속 업무로 예정이나 단일 원본 번호 매핑은 미확정. stage별 완료 수는 여전히 **9/68(13.2%)**, 예약 자연 실행 검증은 전체 기능 완료 후 최종 후속.
+- **보호:** 이전 R35/Task·DB/D1·권리·원자료·산식·가중치·ETF 구성·공개 API·Cloudflare 변경 0. 기존 원장 [#2077](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2077#issuecomment-6967201785)와 공통 정확 B 승인 요청 [#1894/#6967155938](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1894#issuecomment-6967155938) 재사용.
+- **다음 필수:** 현재 지정 브랜치 전체 Node CI 실제 실행 경로 확보 및 결과 확인(현재 GitHub 연결은 workflow_dispatch 호출 미제공, 임의 전체 브랜치 PR/운영 우회 안 함) → 정확 B 승인/수신기 반환 시 W03 직접 1파일 정규 설치 → 실제 저장 원자료 private 계산/재조회.
+
 ## 2026-11-18 W03 10/68 — 후속 부분수집 중 기존 완료 구간만 계산하는 회귀 추가·실원장 세션 분포 확인
 
 - **작업 시작:** 9/68 완료(13.2%), 10/68 진행. 원래 확정 9단계 R47 CMD 1파일 B 설치 증거 [#2008](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2008)를 재사용. 10단계는 실공급자 원자료→SHA·checkpoint→기존 R25/R32 비공개 점수와 저장의 실제 실행 완료 필요. 11~15단계는 마스터의 P1/S3~S10 관련 후속 업무로 구분하되 **68개 1:1 확정 체크리스트가 없는 이상 임의 단계명·진행률 승격 금지**.
