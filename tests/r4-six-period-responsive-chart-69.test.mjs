@@ -6,7 +6,7 @@ import {marketTrendWindowR1} from '../lib/market-score/market-trend-window-r1.mj
 import {mergeCompositeObservedDisplay} from '../lib/market-score/composite-observed-display-r1.mjs';
 import {appendPublishedDomainCurrent,verifiedPublishedDomainCurrentR4} from '../lib/market-score/published-domain-trend-r4.mjs';
 import {amplifyCompositeDisplayScore,amplifyCompositeDisplayTrend} from '../lib/market-score/composite-display-sensitivity-r1.mjs';
-import {miniTrendGeometry} from '../lib/market-score/mini-trend-geometry.mjs';
+import {miniTrendGeometry,miniTrendLastPointMetadata} from '../lib/market-score/mini-trend-geometry.mjs';
 
 const days=[1,7,30,90,180,365];
 const currentTime='2026-11-16T12:10:00Z';
@@ -243,4 +243,51 @@ test('#69 dashboard wires only domain-verified update times into the shared char
  assert.match(src,/const current=score===null\?null:verifiedPublishedDomainCurrentR4\(domain,market\?\.updatedAt\);/);
  assert.doesNotMatch(src,/const current=score===null\|\|!market\?\.updatedAt\?null:\{label:market\.updatedAt,value:score\}/);
  assert.match(src,/appendPublishedDomainCurrent\(daily,current,periodDays\)/);
+});
+
+
+test('#69 mini chart exposes only the exact final saved point date and score, not a global publication timestamp',()=>{
+ const monthly=[{label:'2026-02-01',value:43},{label:'2026-03-01',value:38.01742685025818}];
+ const last=miniTrendLastPointMetadata(monthly);
+ assert.deepEqual(last,{label:'2026-03-01',score:38.01742685025818});
+ const geom=miniTrendGeometry(monthly,365);
+ assert.ok(geom.last);
+ assert.equal(geom.last.y,57-38.01742685025818*.54);
+ assert.notEqual(last.label,'2026-11-18T11:30:51.459Z');
+ const sameData=monthly.map(x=>({...x}));
+ assert.deepEqual(sameData,monthly,'metadata read does not mutate history or make a later point');
+});
+
+test('#69 intraday calculated timestamp and valid true zero remain exact accessible chart metadata',()=>{
+ const rows=[
+  {label:'2026-11-17',value:50},
+  {label:'2026-11-18T09:21:07.018Z',value:0},
+ ];
+ assert.deepEqual(miniTrendLastPointMetadata(rows),{
+  label:'2026-11-18T09:21:07.018Z',score:0,
+ });
+ assert.equal(miniTrendGeometry(rows,7).last.y,57);
+});
+
+test('#69 absent, invalid, impossible, partial and nonnumeric points never gain chart last-point metadata',()=>{
+ for(const input of [[],null,undefined,
+  [{label:'2026-02-30',value:50}],
+  [{label:'bad-date',value:50}],
+  [{label:'2026-11-18',value:null}],
+  [{label:'2026-11-18',value:-1}],
+  [{label:'2026-11-18',value:101}],
+  [{label:'2026-11-18',value:NaN}],
+  [{label:'2026-11-18',value:'50'}],
+  [{label:'2026-11-18',value:undefined}],
+ ])assert.equal(miniTrendLastPointMetadata(input),null,String(input));
+});
+
+test('#69 dashboard last-dot DOM accessibility and machine-readable labels use the plotted point, not refresh time',()=>{
+ const ui=readFileSync(new URL('../app/dashboard-ui.tsx',import.meta.url),'utf8');
+ assert.match(ui,/const lastPoint=miniTrendLastPointMetadata\(data\);/);
+ assert.match(ui,/data-last-chart-point-at=\{lastPoint\?\.label\}/);
+ assert.match(ui,/data-last-chart-point-score=\{lastPoint\?\.score\}/);
+ assert.match(ui,/aria-label=\{chartLabel\}/);
+ assert.match(ui,/마지막 차트점/);
+ assert.doesNotMatch(ui,/data-last-chart-point-at=\{market\?\.updatedAt\}/);
 });
