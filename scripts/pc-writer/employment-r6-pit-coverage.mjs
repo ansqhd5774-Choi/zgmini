@@ -2,6 +2,7 @@
 // an optional isolated candidate. Counts are diagnostics, not approval to copy
 // data, backdate availability, modify schemas, or publish a candidate to D1.
 import fs from "node:fs";
+import {createHash} from "node:crypto";
 import {DatabaseSync} from "node:sqlite";
 import {EMPLOYMENT_R6_TABLES} from "../../lib/market-score/employment-r6-contract.mjs";
 import {EMPLOYMENT_R6_REQUIRED_LOGICAL_SERIES} from "../../lib/market-score/employment-r6-formula.mjs";
@@ -129,6 +130,131 @@ const classifyCoreCurrentHistory=(currentKeys,historyKeys)=>{
     coreCurrentHistoryMissingKeys:missing,
   };
 };
+// PIT-04-05: attribute observations to an existing provider response and
+// successful/partial collector run. Raw body bytes stay inside SQLite;
+// only aggregate classifications leave this reader. This DOES NOT prove that
+// a parser extracted a particular row from the body or establish TRUE_PIT.
+const SHA256=/^[0-9a-f]{64}$/i;
+const digestText=value=>createHash("sha256").update(value).digest("hex");
+const parseRecord=value=>{
+  try{
+    const parsed=JSON.parse(value);
+    return parsed&&typeof parsed==="object"&&!Array.isArray(parsed)?parsed:null;
+  }catch{return null;}
+};
+const requiredColumns=(db,table,required)=>{
+  if(!db.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(table))return false;
+  const columns=new Set(db.prepare(`PRAGMA table_info(${table})`).all().map(x=>x.name));
+  return required.every(x=>columns.has(x));
+};
+const readRawLineageEvidence=(db,asOfDate)=>{
+  if(!requiredColumns(db,T.rawSnapshot,["snapshot_id","chunk_index","chunk_count",
+    "release_group","provider","request_key","retrieved_at","created_at","body_sha256",
+    "detail_json","body_chunk"])
+    ||!requiredColumns(db,T.runs,["provider","status","completed_at","detail_json"]))return null;
+  const end=Date.parse(asOfDate+"T23:59:59.999Z");
+  const isoEnd=new Date(end).toISOString();
+  const meta=db.prepare(`SELECT snapshot_id,chunk_index,chunk_count,release_group,provider,
+    request_key,retrieved_at,created_at,body_sha256,detail_json
+    FROM ${T.rawSnapshot} WHERE retrieved_at<=?`).all(isoEnd);
+  const groups=new Map(),byClaimedResponse=new Map();
+  for(const row of meta){
+    const bucket=groups.get(row.snapshot_id)??[];
+    bucket.push(row);groups.set(row.snapshot_id,bucket);
+    const key=row.provider+"\u001f"+row.body_sha256;
+    if(SHA256.test(String(row.body_sha256??""))&&String(row.provider??"").trim())
+      byClaimedResponse.set(key,true);
+  }
+  const valid=new Map();
+  const body=db.prepare(`SELECT chunk_index,body_chunk FROM ${T.rawSnapshot}
+    WHERE snapshot_id=? ORDER BY chunk_index`);
+  for(const [id,parts] of groups){
+    parts.sort((a,b)=>a.chunk_index-b.chunk_index);
+    const head=parts[0],count=head?.chunk_count;
+    if(!SHA256.test(String(id??""))||!SHA256.test(String(head?.body_sha256??""))
+      ||!Number.isSafeInteger(count)||count<1||count>4096||parts.length!==count
+      ||!String(head.provider??"").trim()||!String(head.request_key??"").trim()
+      ||!String(head.release_group??"").trim())continue;
+    const rt=Date.parse(head.retrieved_at??""),ct=Date.parse(head.created_at??"");
+    const info=parseRecord(head.detail_json);
+    if(!Number.isFinite(rt)||!Number.isFinite(ct)||ct<rt||ct>end||rt>end
+      ||info?.responseHash!==head.body_sha256
+      ||digestText([head.release_group,head.provider,head.request_key,
+        head.body_sha256].join("|"))!==id)continue;
+    if(parts.some((part,i)=>part.chunk_index!==i
+      ||part.chunk_count!==count||part.body_sha256!==head.body_sha256
+      ||part.provider!==head.provider||part.release_group!==head.release_group
+      ||part.request_key!==head.request_key||part.retrieved_at!==head.retrieved_at
+      ||part.created_at!==head.created_at||part.detail_json!==head.detail_json))continue;
+    const sha=createHash("sha256");let bytes=0,index=0,complete=true;
+    for(const chunk of body.iterate(id)){
+      if(chunk.chunk_index!==index++||typeof chunk.body_chunk!=="string"){
+        complete=false;break;
+      }
+      bytes+=Buffer.byteLength(chunk.body_chunk);
+      if(bytes>32*1024*1024){complete=false;break;}
+      sha.update(chunk.body_chunk,"utf8");
+    }
+    if(!complete||index!==count||sha.digest("hex")!==head.body_sha256)continue;
+    valid.set(id,head);
+  }
+  const certified=new Set();
+  const runs=db.prepare(`SELECT provider,status,completed_at,detail_json FROM ${T.runs}
+    WHERE completed_at<=?`).all(isoEnd);
+  for(const run of runs){
+    const completed=Date.parse(run.completed_at??"");
+    if(!["SUCCESS","PARTIAL"].includes(run.status)||!Number.isFinite(completed)
+      ||completed>end)continue;
+    const details=parseRecord(run.detail_json);
+    if(!Array.isArray(details?.rawSnapshots))continue;
+    for(const item of details.rawSnapshots){
+      const snap=valid.get(item?.snapshotId),retrieved=Date.parse(snap?.retrieved_at??"");
+      if(snap&&item.bodySha256===snap.body_sha256
+        &&run.provider==="EMPLOYMENT_R6_"+snap.release_group
+        &&Number.isFinite(retrieved)&&retrieved<=completed)certified.add(snap.snapshot_id);
+    }
+  }
+  const byResponse=new Map(),byStoredResponse=new Map();
+  for(const snap of valid.values()){
+    byStoredResponse.set(snap.provider+"\u001f"+snap.body_sha256,true);
+  }
+  for(const id of certified){
+    const snap=valid.get(id),key=snap.provider+"\u001f"+snap.body_sha256;
+    const entries=byResponse.get(key)??[];
+    entries.push(snap);byResponse.set(key,entries);
+  }
+  return {byResponse,byStoredResponse,byClaimedResponse,rawSnapshotMetadataKeys:groups.size,
+    rawSnapshotCertifiedKeys:certified.size};
+};
+const classifyRawLineage=(rows,evidence)=>{
+  if(!evidence||rows===null)return null;
+  const out={verified:0,missingSnapshot:0,conflicting:0,unverified:0};
+  for(const row of rows){
+    const p=parseRecord(row?.provenance_json);
+    if(!p||!SHA256.test(String(row?.source_hash??""))
+      ||!SHA256.test(String(p.rawRecordHash??""))
+      ||!SHA256.test(String(p.responseHash??""))
+      ||!String(row?.provider??"").trim()
+      ||!Number.isFinite(Date.parse(row?.retrieved_at??""))){
+      out.unverified++;continue;
+    }
+    if(p.rawRecordHash!==row.source_hash){out.conflicting++;continue;}
+    const key=row.provider+"\u001f"+p.responseHash;
+    const candidates=evidence.byResponse.get(key)??[];
+    if(!candidates.length){
+      if(evidence.byStoredResponse.has(key))out.unverified++;
+      else if(evidence.byClaimedResponse.has(key))out.conflicting++;
+      else out.missingSnapshot++;
+      continue;
+    }
+    const retrieved=Date.parse(row.retrieved_at);
+    if(candidates.some(s=>Date.parse(s.retrieved_at)<=retrieved
+      &&(!p.releaseGroup||p.releaseGroup===s.release_group)))out.verified++;
+    else out.unverified++;
+  }
+  return out;
+};
+
 const endReadSnapshot=(db,active)=>{
   if(!db)return;
   try{if(active)db.exec("ROLLBACK");}finally{db.close();}
@@ -170,6 +296,9 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
     const history=sourceRows(core,T.observationHistory,asOfDate);
     const candidates=candidate?sourceRows(candidate,T.observationHistory,asOfDate):null;
     const candidateCurrent=candidate?sourceRows(candidate,T.observationCurrent,asOfDate):null;
+    // Reuse the same Core SQLite read transaction for PIT-04-05 raw snapshots
+    // and collector-run receipts; never infer TRUE_PIT from a valid hash.
+    const rawLineage=readRawLineageEvidence(core,asOfDate);
     // Release read locks before comparing lineage, which may be CPU-heavy.
     core.exec("ROLLBACK");coreSnapshot=false;
     if(candidate){candidate.exec("ROLLBACK");candidateSnapshot=false;}
@@ -177,6 +306,8 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
       .map(row=>[identity(row),row]));
     const historyKeys=historyIndex(history,asOfDate);
     const candidateKeys=historyIndex(candidates,asOfDate);
+    const currentLineage=classifyRawLineage([...currentKeys.values()],rawLineage);
+    const historyLineage=classifyRawLineage([...historyKeys.values()].flat(),rawLineage);
     const coreRevisionEvidence=history===null?null:revisionEvidence(historyKeys);
     const candidateRevisionEvidence=candidates===null?null:revisionEvidence(candidateKeys);
     const coreHistoryComparison=current!==null&&history!==null
@@ -253,6 +384,22 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
       :"READ_ONLY_PREVIEW_NO_PUBLICATION_APPROVAL";
     return {
       kind:"EMPLOYMENT_R6_PIT_READONLY_COVERAGE_R1",asOfDate,
+      rawSnapshotMetadataKeys:rawLineage?.rawSnapshotMetadataKeys??null,
+      rawSnapshotCertifiedKeys:rawLineage?.rawSnapshotCertifiedKeys??null,
+      coreCurrentRawLineageVerifiedKeys:currentLineage?.verified??null,
+      coreCurrentRawLineageMissingSnapshotKeys:currentLineage?.missingSnapshot??null,
+      coreCurrentRawLineageConflictingKeys:currentLineage?.conflicting??null,
+      coreCurrentRawLineageUnverifiedKeys:currentLineage?.unverified??null,
+      coreHistoryRawLineageTotalRows:historyLineage
+        ?historyLineage.verified+historyLineage.missingSnapshot+historyLineage.conflicting+historyLineage.unverified:null,
+      coreHistoryRawLineageVerifiedRows:historyLineage?.verified??null,
+      coreHistoryRawLineageMissingSnapshotRows:historyLineage?.missingSnapshot??null,
+      coreHistoryRawLineageConflictingRows:historyLineage?.conflicting??null,
+      coreHistoryRawLineageUnverifiedRows:historyLineage?.unverified??null,
+      rawLineageEvidenceStatus:!rawLineage?"NO_RUNTIME_EVIDENCE"
+        :currentLineage?.missingSnapshot||currentLineage?.conflicting||currentLineage?.unverified
+          ||historyLineage?.missingSnapshot||historyLineage?.conflicting||historyLineage?.unverified
+          ?"HOLD_INCOMPLETE_SOURCE_LINEAGE":"READONLY_SOURCE_LINKS_NOT_PIT_APPROVAL",
       coreCurrentTableExists:current!==null,coreHistoryTableExists:history!==null,
       candidateHistoryTableExists:candidate?candidates!==null:null,
       coreCurrentRows:current?.length??null,coreHistoryRevisions:history?.length??null,
