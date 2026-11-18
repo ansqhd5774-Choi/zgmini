@@ -314,3 +314,28 @@ test('visitor query, write method, absent or corrupt snapshots are safely reject
     assert.equal(response.status,status);
   }
 });
+
+test('public seven-row history and previous values must describe the same stored point',t=>{
+  const {home}=makeHome(t);
+  const complete=previewInflationCandidates7(home,{now:NOW}).payload;
+  const altered=()=>structuredClone(complete);
+  const find=(payload,id)=>payload.indicators.find(row=>row.id===id);
+  let bad=altered();
+  find(bad,'22').previousValue=999;
+  assert.throws(()=>validateInflationCandidates7Public(bad,{now:NOW}),
+    /INFL7_PUBLIC_READY_INVALID/,'the API cannot report a previous value absent from its chart');
+  bad=altered();
+  find(bad,'23').previousObservationDate='2025-02-01';
+  assert.throws(()=>validateInflationCandidates7Public(bad,{now:NOW}),
+    /INFL7_PUBLIC_READY_INVALID/,'an earlier but non-adjacent date cannot be the previous point');
+  bad=altered();
+  find(bad,'16').previousValue=-1200000.24;
+  assert.throws(()=>validateInflationCandidates7Public(bad,{now:NOW}),
+    /INFL7_PUBLIC_READY_INVALID/,'signed and zero Treasury values remain exact');
+  bad=altered();
+  const prior=find(bad,'29');
+  prior.history=[prior.history.at(-1)];
+  assert.throws(()=>validateInflationCandidates7Public(bad,{now:NOW}),
+    /INFL7_PUBLIC_READY_INVALID/,'a single-point history cannot still claim a previous value');
+  assert.equal(validateInflationCandidates7Public(complete,{now:NOW}),complete);
+});
