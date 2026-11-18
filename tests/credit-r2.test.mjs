@@ -46,6 +46,37 @@ test('missing NFCICREDIT fails closed without reweighting',()=>{
  assert.ok(r.missingFactors.includes('credit-43'));
 });
 
+test('NFCICREDIT null, empty and whitespace are missing, never a percentile zero or warmup row',()=>{
+ const pre=nfci.slice(0,259);
+ for(const raw of [null,'','  ',undefined,'NA']){
+  const bad=[...pre,{...nfci[259],value:raw}];
+  const r=buildCreditR2({...inputs(),nfciCredit:bad});
+  assert.equal(r.status,'PARTIAL',String(raw));
+  assert.equal(r.score,null,String(raw));
+  assert.ok(r.missingFactors.includes('credit-43'),String(raw));
+  assert.equal(r.indicators.find(x=>x.id==='credit-43').score,null,String(raw));
+ }
+ const without=buildCreditR2({...inputs(),nfciCredit:pre});
+ assert.equal(without.status,'PARTIAL');
+ assert.ok(without.missingFactors.includes('credit-43'));
+});
+
+test('NFCICREDIT genuine numeric zero and nonblank string zero count as valid 260th observation',()=>{
+ const pre=nfci.slice(0,259);
+ const observed=nfci[259];
+ const numeric=buildCreditR2({...inputs(),nfciCredit:[...pre,{...observed,value:0}]});
+ const textual=buildCreditR2({...inputs(),nfciCredit:[...pre,{...observed,value:'0'}]});
+ assert.equal(numeric.status,'READY');
+ assert.equal(textual.status,'READY');
+ assert.equal(numeric.missingFactors.includes('credit-43'),false);
+ assert.equal(numeric.indicators.find(x=>x.id==='credit-43').value,0);
+ assert.equal(textual.indicators.find(x=>x.id==='credit-43').value,0);
+ assert.equal(textual.componentScores.nfciCredit,numeric.componentScores.nfciCredit);
+ assert.equal(textual.score,numeric.score);
+ assert.deepEqual(CREDIT_R2_CONTRACT.weights,{hy:.35,ig:.35,nfciCredit:.10,bondVolatility:.20});
+ assert.equal(CREDIT_R2_CONTRACT.nfciMinValid,260);
+});
+
 test('credit detail catalog shows four component scores in approved order',()=>{
  const r=buildCreditR2(inputs());
  const rows=marketDetailRows('credit',r.indicators);
