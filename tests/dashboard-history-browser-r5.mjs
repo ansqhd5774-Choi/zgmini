@@ -1,4 +1,8 @@
 import assert from 'node:assert/strict';
+import {normalizeMarketTrendPointsR4} from '../lib/market-score/market-trend-normalize-r4.mjs';
+import {marketTrendWindowR1} from '../lib/market-score/market-trend-window-r1.mjs';
+import {appendPublishedDomainCurrent} from '../lib/market-score/published-domain-trend-r4.mjs';
+import {miniTrendGeometry} from '../lib/market-score/mini-trend-geometry.mjs';
 import {mkdirSync} from 'node:fs';
 import {chromium} from 'playwright';
 const base=process.env.CHAT_PREVIEW_URL??'http://127.0.0.1:5173';
@@ -172,4 +176,150 @@ try{
   console.log(`PASS ${width}px: 6 chart periods, newer snapshot and true zero in mocked Chromium`);
   await page.close();
  }
+
+ // W06 #40 isolated LIVE domain parity; public GET + DOM read only.
+ // This diagnostic PR must close without merge. 12 domains x 6 periods x
+ // mobile/desktop compare using the *exact* approved pure display functions.
+ const expectedIds=['inflation','employment','rates','credit','growth',
+  'consumption','earnings','liquidity','fundFlows','breadth','dollarFx','commodities'];
+ const ranges=[['1D',1],['1W',7],['1M',30],['3M',90],['6M',180],['1Y',365]];
+ const validScore=s=>typeof s==='number'&&Number.isFinite(s)&&s>=0&&s<=100;
+ for(const width of [390,1440]){
+  const ctx=await browser.newContext({viewport:{width,height:900},locale:'ko-KR',colorScheme:'light'});
+  const live=await ctx.newPage();
+  const errors=[],latestPublished=[];
+  live.on('pageerror',err=>errors.push(err.message));
+  live.on('response',response=>{
+   const u=new URL(response.url());
+   if(u.hostname==='zgmini.kr'&&u.pathname==='/api/market-score'
+     &&response.status()===200)
+    latestPublished.push(response.json().catch(()=>null));
+  });
+  try{
+   const html=await live.goto('https://zgmini.kr/',{waitUntil:'domcontentloaded',timeout:45000});
+   assert.equal(html?.status(),200,width+'px homepage HTTP');
+   const intro=live.locator('#zg-about-intro-dialog');
+   if(await intro.isVisible({timeout:2000}).catch(()=>false)){
+    await intro.getByRole('button',{name:'닫기',exact:true}).click();
+    await intro.waitFor({state:'hidden',timeout:15000});
+   }
+   const cards=live.locator('.zg-r55-card-grid article');
+   await cards.first().waitFor({state:'visible',timeout:30000});
+   assert.equal(await cards.count(),12,width+'px domain count');
+   // Use the snapshot actually received by this browser session. A separate
+   // current GET is compared to prevent silent stale-cache masking.
+   await live.waitForFunction(()=>[...document.querySelectorAll('.zg-r55-card-grid article')]
+    .some(el=>el.getAttribute('data-status')==='ready'),null,{timeout:30000});
+   const current=await live.request.get('https://zgmini.kr/api/market-score',{
+    timeout:20000,headers:{accept:'application/json','cache-control':'no-cache'}
+   });
+   assert.equal(current.status(),200,'public market-score GET');
+   const fresh=await current.json();
+   const client=latestPublished.length?await latestPublished.at(-1):null;
+   const market=client?.status==='SUCCESS'?client:fresh;
+   assert.equal(market.status,'SUCCESS','client published market state');
+   assert.ok(Array.isArray(market.domains)&&market.domains.length===12,
+    'published 12 economic domain records');
+   const seen=new Set(market.domains.map(d=>d.id));
+   assert.deepEqual([...seen].sort(),[...expectedIds].sort(),
+    'exact 12 public domain IDs, no deleted standalone breadth index');
+   const renderExpected=expectedIds.map(id=>{
+    const d=market.domains.find(x=>x.id===id);
+    return {id,score:d.status==='READY'&&validScore(d.score)?d.score:null,
+     publicStatus:d.status,observationDate:d.observationDate??null,
+     trendCount:Array.isArray(d.trend)?d.trend.length:0,
+     clientUpdatedAt:market.updatedAt};
+   });
+   try{
+    await live.waitForFunction(expected=>{
+     const cards=[...document.querySelectorAll('.zg-r55-card-grid article')];
+     return cards.length===12&&cards.every((card,i)=>{
+      const row=expected[i];
+      const status=card.getAttribute('data-status');
+      const meter=card.querySelector('[role="meter"]');
+      const actual=meter?.getAttribute('aria-valuenow')??null;
+      return status===String(row.publicStatus??'unavailable').toLowerCase()
+       &&(row.score===null?actual===null:actual!==null&&Number(actual)===row.score);
+     });
+    },renderExpected,{timeout:30000});
+   }catch(err){
+    const actual=await cards.evaluateAll(rows=>rows.map((card,i)=>({
+     i,status:card.getAttribute('data-status'),
+     meter:card.querySelector('[role="meter"]')?.getAttribute('aria-valuenow')??null
+    })));
+    console.log('W06_40_CARD_HYDRATION_MISMATCH',JSON.stringify({
+     width,expected:renderExpected,actual,clientUpdatedAt:client?.updatedAt,
+     directGetUpdatedAt:fresh.updatedAt
+    }));
+    throw err;
+   }
+   // If public snapshot advanced during hydration, compare to exactly the
+   // client's response; do not flag the independent newer GET as UI corruption.
+   const samePublishedVersion=fresh.updatedAt===market.updatedAt;
+   const periods=live.getByRole('group',{name:'종합 시장 점수 추이 기간'});
+   await periods.waitFor({state:'visible',timeout:15000});
+   const domainResults=[];
+   for(const [period,days] of ranges){
+    const button=periods.getByRole('button',{name:period,exact:true});
+    await button.click();
+    assert.equal(await button.getAttribute('aria-pressed'),'true',period+' selected');
+    // Domain points are already contained in the published market snapshot;
+    // no 1D archive is required for the individual domain cards.
+    const expected=expectedIds.map((id,i)=>{
+     const domain=market.domains.find(d=>d.id===id);
+     const score=renderExpected[i].score;
+     const normalized=normalizeMarketTrendPointsR4(domain.trend,market.updatedAt);
+     const daily=marketTrendWindowR1(normalized,days,{includeBoundaryCarry:false});
+     const curr=score===null||!market.updatedAt?null:{label:market.updatedAt,value:score};
+     const chart=appendPublishedDomainCurrent(daily,curr,days);
+     const missingDates=id==='consumption'?(domain.trend??[])
+      .filter(point=>point.value==null&&point.score==null)
+      .map(point=>point.date??point.label??''):[];
+     const geo=chart.length>0?miniTrendGeometry(chart,days,missingDates):null;
+     return {id,days,score,rawTrend:domain.trend?.length??0,points:chart.length,
+      lastAt:chart.at(-1)?.label??null,lastScore:chart.at(-1)?.value??null,
+      path:geo?.path??null,hasDot:geo?.last!=null};
+    });
+    const actual=await cards.evaluateAll(rows=>rows.map(card=>{
+     const svg=card.querySelector('.zg-r55-card-visual .zg-r55-mini-chart svg');
+     const paths=svg?[...svg.querySelectorAll(':scope > path')]:[];
+     const circle=svg?.querySelector('circle');
+     return {path:paths.at(-1)?.getAttribute('d')??null,hasDot:!!circle,
+      hasEmpty:!!card.querySelector('.zg-r55-card-spark-empty'),
+      status:card.getAttribute('data-status')};
+    }));
+    const failures=[];
+    for(let i=0;i<12;i++){
+     const ex=expected[i],got=actual[i];
+     if(ex.path===null){
+      if(!got.hasEmpty)failures.push({id:ex.id,reason:'missing history should render empty',got});
+     }else{
+      if(got.path!==ex.path)failures.push({id:ex.id,reason:'SVG path differs from saved observation geometry',
+       expectedPath:ex.path,actualPath:got.path,expectedLastAt:ex.lastAt,expectedLastScore:ex.lastScore});
+      if(got.hasDot!==ex.hasDot)failures.push({id:ex.id,reason:'last observation dot missing or invented',got});
+     }
+     // A point on a period boundary is never invented by normalize+window.
+     if(ex.path&&/NaN|Infinity/.test(ex.path))failures.push({id:ex.id,reason:'nonfinite svg'});
+    }
+    domainResults.push({period,
+     exactGeometry:12-failures.length,
+     withDisplayedLine:expected.filter(x=>typeof x.path==='string'&&x.path.includes('L')).length,
+     singleOrEmpty:expected.filter(x=>x.points<2).length,
+     lastSamples:expected.map(x=>({id:x.id,n:x.points,at:x.lastAt,score:x.lastScore})),
+     issues:failures});
+    // No hidden score reweighting or fake points in the comparison: the
+    // published original score and exact per-domain geometry are authoritative.
+    assert.deepEqual(failures,[],width+'px '+period+' public domain card parity');
+   }
+   const results={width,clientUpdatedAt:market.updatedAt,
+    freshUpdatedAt:fresh.updatedAt,samePublishedVersion,
+    domains:renderExpected,periods:domainResults,
+    javaScriptErrors:errors};
+   console.log('W06_40_LIVE_DOMAIN_PARITY',JSON.stringify(results));
+   assert.deepEqual(errors,[],'Live domain JS errors');
+   await live.screenshot({path:'artifacts/dashboard-history/live-domain-parity-'+width+'.png',
+    fullPage:false,timeout:20000});
+  }finally{await ctx.close();}
+ }
+
 }finally{await browser.close();}
