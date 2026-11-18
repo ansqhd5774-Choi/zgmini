@@ -1,5 +1,16 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-CENSUS-FIRST-EMPTY-SOURCE-PR1302-W04-GO -->
+## 2026-11-18 — Census #28 초기 빈 수집 정상 오판 수정·공유 Controller W04 단일 설치 GO 수신
+
+- **시작·종료 진행률:** 33/71(46.5%) → 33/71(46.5%), DONE 신규 0. 실PC 정상 수집·A4-07·D1 게시를 이번 소스 개발 완료로 승격하지 않음.
+- **Census 신규 확정 소스 결함:** `collectCensusM3Inventories`가 공식 2 GET 후 *기존 정상본 0개 + 신규 유효 관측 0개*에서도 `UNCHANGED`/성공 반환 가능. 운영 데이터 결측을 성공으로 표시하지 않도록 `CENSUS_M3_NO_USABLE_OBSERVATIONS`로 명시 실패 처리. 공급자 호출 최대 2·아카이브 저장·last-good 불변. 신규 회귀시험 두 개: 첫 저장 없음/정확 2 GET/원본 2개 보존/실패 코드, 과거 정상본 존재 시 이번 응답 빈 경우 `UNCHANGED` 및 파일·시각 불변.
+- **소스 커밋 및 정확 단독 PR:** W01 전용 소스 `44c641b4d77f650cdb80a8e1a79e7b031ca83419`, 테스트 `83b7ad3ef66c685c5d7a2ebc3de2151b9af28c93`; 장기 기능 브랜치 대규모 diff를 `main`에 병합하지 않기 위해 최신 main `b8d3c665e32de4721e174cd23bd6c25d739cf1e9`에서 2파일만 cherry-pick 아닌 정확 내용 반영. [PR #1302](https://github.com/ansqhd5774-Choi/zgmini/pull/1302), head `5f72c758018200cfed700fc52ca247e78da96ddb`, GitHub diff **2파일** 확인. [Node.js CI #44236151419](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44236151419) 실행 시작, 본 기록 시점 `IN_PROGRESS`, PASS 또는 병합/PC 운영 적용으로 오인 금지.
+- **중요 현재 실패 범위 분리:** 현 PC 자연 Core의 `CENSUS_M3_HEADERS_INVALID`는 과거 설치 source 기준이며 이번 *초기 빈 수집* 코드 경로와 다름. 공식 API 문서의 허용 `time_slot_date`/필수 `time` predicate-only를 확인했지만 실제 raw archive header 형태·구버전 배포 byte 차이는 아직 미조회. 첫 #1818 B Core 소유권 STOP 재실행·공급자 GET 없음.
+- **공유 GO 신규 실제 회신:** 중앙 [#68/6968491524](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6968491524) **공유 정확 6파일 조건부 GO / 단일 설치 담당 W04 / W01 5파일 B 중복 NO-GO** 확인. W04는 승인 manifest·lease/preimage 확인·PC B 실제 실행/JSON·TXT 회수 담당, W01은 PC 설치 verified 인계 받은 뒤 A4-07 source bundle A 직접 단회 실증 담당. W01에서 Controller B 발행 0.
+- **다음 W01 실행:** #1302 관련 Node CI PASS 확인→2파일만 main 병합→운영 source가 아닌 개발 HEAD에 한정된 결과 검증. PC Census raw header 진단은 기존 고정 승인 read-only가 raw 아카이브 header를 출력하지 않으므로 임의 새 PC 조회·원문 노출하지 않음. 실제 승인 안전 경로에서 비공개 raw header shape만 증명하는 최소 방법 검토. W04 설치 영수증 확보되면 W01 A4-07 19+6 source SHA와 checkpoint2 double-read 고유 A 단회; 동일 증거 반복 진단 금지.
+- **실PC/공급자/SQLite/D1/Task/Controller 실제 변경 0**.
+
 <!-- W01-20261118-SHARED-CONTROLLER-GO-W04-2092 -->
 ## 2026-11-18 — 공용 A407 Controller 6파일 단일 설치 조건부 GO 및 W04 설치 주체 확정
 
