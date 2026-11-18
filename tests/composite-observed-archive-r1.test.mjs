@@ -103,3 +103,94 @@ test('existing formula, refresh schedule, Korea and current publication remain u
  assert.doesNotMatch(api,/https:\/\/production\.dataviz\.cnn\.io|fetch\('https:/);
  assert.doesNotMatch(read('app/korea-composite-view.tsx'),/compositeArchive|COMPOSITE_OBSERVED_VERSION/);
 });
+
+test('equal-stored_at composite archive checks D1 body and refuses false VERIFIED without writes',async()=>{
+ const stamp=at('2026-11-18T00:00:48.177Z');
+ const key='composite-observed:2026-11-18';
+ const body=score=>JSON.stringify({
+  version:COMPOSITE_OBSERVED_VERSION,date:'2026-11-18',
+  points:[{calculatedAt:new Date(stamp).toISOString(),score,
+   asOfDate:'2026-11-18',signature:'score-'+score}]
+ });
+ const localBody=body(53),remoteBody=body(50);
+ const local={prepare(){return {async all(){return {results:[{snapshot_key:key,body:localBody,stored_at:stamp}]}}}}};
+ const queries=[],requests=[];
+ const remote={
+  async query(_db,sql,params=[]){
+   queries.push({sql,params});
+   if(sql.includes("snapshot_key='current'"))return {results:[{stored_at:stamp}]};
+   if(sql.includes('SELECT snapshot_key,stored_at'))return {results:[{snapshot_key:key,stored_at:stamp}]};
+   if(sql.includes('SELECT body,stored_at'))return {results:[{body:remoteBody,stored_at:stamp}]};
+   throw Error('UNEXPECTED_D1_QUERY');
+  },
+  async request(_db,commands){requests.push(commands);}
+ };
+ await assert.rejects(
+  publishCompositeObservedArchive(local,remote,'core'),
+  {message:'COMPOSITE_ARCHIVE_EQUAL_TIMESTAMP_BODY_MISMATCH'}
+ );
+ assert.equal(queries.filter(q=>q.sql.includes('SELECT body,stored_at')).length,1);
+ assert.deepEqual(requests,[]);
+ assert.notEqual(localBody,remoteBody);
+});
+
+test('equal-stored_at exact D1 body permits idempotent VERIFIED, and older remote still CAS-publishes',async()=>{
+ const stamp=at('2026-11-18T00:00:48.177Z');
+ const key='composite-observed:2026-11-18';
+ const body=score=>JSON.stringify({
+  version:COMPOSITE_OBSERVED_VERSION,date:'2026-11-18',
+  points:[{calculatedAt:new Date(stamp).toISOString(),score,
+   asOfDate:'2026-11-18',signature:'score-'+score}]
+ });
+ const localBody=body(53);
+ const local={prepare(){return {async all(){return {results:[{snapshot_key:key,body:localBody,stored_at:stamp}]}}}}};
+ for(const previousAt of [stamp,stamp-60000]){
+  const state={body:previousAt===stamp?localBody:body(50),stored_at:previousAt};
+  const queries=[],requests=[];
+  const remote={
+   async query(_db,sql,params=[]){
+    queries.push(sql);
+    if(sql.includes("snapshot_key='current'"))return {results:[{stored_at:stamp}]};
+    if(sql.includes('SELECT snapshot_key,stored_at'))return {results:[{snapshot_key:key,stored_at:state.stored_at}]};
+    if(sql.includes('SELECT body,stored_at'))return {results:[{body:state.body,stored_at:state.stored_at}]};
+    throw Error('UNEXPECTED_D1_QUERY');
+   },
+   async request(_db,commands){
+    requests.push(commands);
+    const [target,nextBody,nextAt]=commands[0].params;
+    assert.equal(target,key);
+    if(nextAt>state.stored_at){state.body=nextBody;state.stored_at=nextAt;}
+   }
+  };
+  const result=await publishCompositeObservedArchive(local,remote,'core');
+  assert.equal(result.status,'VERIFIED');
+  assert.equal(result.publishedDays,previousAt===stamp?0:1);
+  assert.equal(requests.length,previousAt===stamp?0:1);
+  assert.ok(queries.some(q=>q.includes('SELECT body,stored_at')));
+  assert.equal(state.body,localBody);
+  assert.equal(state.stored_at,stamp);
+ }
+});
+
+test('equal-stored_at mismatch blocks other eligible archive writes before CAS',async()=>{
+ const date='2026-11-18',date2='2026-11-19';
+ const key=d=>'composite-observed:'+d;
+ const stamp=at('2026-11-19T00:00:48.177Z');
+ const points=d=>JSON.stringify({version:COMPOSITE_OBSERVED_VERSION,date:d,points:[]});
+ const rows=[{snapshot_key:key(date),body:points(date),stored_at:stamp-86400000},
+             {snapshot_key:key(date2),body:points(date2),stored_at:stamp}];
+ const local={prepare(){return {async all(){return {results:rows}}}}};
+ let writes=0;
+ const remote={
+  async query(_db,sql,params=[]){
+   if(sql.includes("snapshot_key='current'"))return {results:[{stored_at:stamp}]};
+   if(sql.includes('SELECT snapshot_key,stored_at'))return {results:[{snapshot_key:key(date),stored_at:stamp-86400000}]};
+   if(sql.includes('SELECT body,stored_at'))return {results:[{body:points(date)+' ',stored_at:stamp-86400000}]};
+   throw Error('UNEXPECTED_D1_QUERY');
+  },
+  async request(){writes++;}
+ };
+ await assert.rejects(publishCompositeObservedArchive(local,remote,'core'),
+  {message:'COMPOSITE_ARCHIVE_EQUAL_TIMESTAMP_BODY_MISMATCH'});
+ assert.equal(writes,0);
+});
