@@ -38,17 +38,22 @@ export function normalizeCensusM3Inventories(payload){
   // column labels as case-insensitive, not as a fixed ZGMINI column order.
   const headers=payload[0].map(x=>typeof x==='string'?x.trim().toLowerCase():null);
   const mandatory=['data_type_code','seasonally_adj','category_code','cell_value','us'];
-  if(headers.some(x=>!x)||new Set(headers).size!==headers.length||
-    !mandatory.every(x=>headers.includes(x))||
-    (!headers.includes('time_slot_date')&&!headers.includes('time')))
+  const dates=['time_slot_date','time'].filter(key=>headers.includes(key));
+  // Only columns consumed by this selector need an unambiguous header.
+  // Census may include irrelevant provider metadata; an empty or repeated
+  // *unused* label must not discard genuine MTM/TI observations for a year.
+  // Keep all selector, geography and date columns strict to prevent mixing.
+  const required=[...mandatory,...dates];
+  if(dates.length===0||required.some(key=>headers.filter(x=>x===key).length!==1))
     throw fail('CENSUS_M3_HEADERS_INVALID');
+  const columnIndices=required.map(key=>headers.indexOf(key));
   const byDate=new Map(),conflicts=new Set();
   const diagnostics={missing:0,invalid:0,duplicate:0,conflict:0,ignored:0,available:0};
   for(const values of payload.slice(1)){
     if(!Array.isArray(values)||values.length!==headers.length){
       diagnostics.invalid++;continue;
     }
-    const row=Object.fromEntries(headers.map((key,i)=>[key,values[i]]));
+    const row=Object.fromEntries(required.map((key,i)=>[key,values[columnIndices[i]]]));
     if(String(row.data_type_code??'').trim().toUpperCase()!=='TI'||
        String(row.category_code??'').trim().toUpperCase()!=='MTM'||
        String(row.seasonally_adj??'').trim().toLowerCase()!=='yes'){

@@ -62,6 +62,45 @@ test('official Census M3 MTM/TI uses only U.S. total manufacturer SA inventory l
 });
 
 
+test('W01 Census optional provider metadata never rejects valid required MTM/TI columns',()=>{
+  const columns=[...HEADERS,'ERROR_DATA','',null];
+  const original=row(2026,'09','900000');
+  const data=[columns,
+    [...original,'duplicate annotation','provider unused text','ignored null label'],
+    [...row(2026,'08','850000'),'','',''],
+  ];
+  const items=normalizeCensusM3Inventories(data);
+  assert.deepEqual(items.map(x=>[x.date,x.value]),[
+    ['2026-08-01',850000],['2026-09-01',900000],
+  ]);
+  assert.equal(items.diagnostics.available,2);
+  assert.equal(items.diagnostics.invalid,0);
+  assert.equal(items.every(x=>x.selector==='MTM/TI'&&x.seasonallyAdjusted===true),true);
+});
+
+test('W01 Census still rejects ambiguous required/geography/date columns',()=>{
+  const base=row(2026,'09','900000');
+  for(const key of ['data_type_code','seasonally_adj','category_code',
+    'cell_value','us','time_slot_date']){
+    const duplicated=[...HEADERS,key.toUpperCase()];
+    assert.throws(()=>normalizeCensusM3Inventories([duplicated,[...base,'alternate']]),
+      {code:'CENSUS_M3_HEADERS_INVALID'},key);
+  }
+  for(const key of ['data_type_code','seasonally_adj','category_code',
+    'cell_value','us','time_slot_date']){
+    const keep=HEADERS.map((name,i)=>({name,value:base[i]}))
+      .filter(item=>item.name!==key);
+    assert.throws(()=>normalizeCensusM3Inventories([
+      keep.map(x=>x.name),keep.map(x=>x.value)]),
+      {code:'CENSUS_M3_HEADERS_INVALID'},key);
+  }
+  const valid=[...HEADERS,'error_data'];
+  const wrongLength=[...base,'unused', 'extra'];
+  const data=normalizeCensusM3Inventories([valid,wrongLength,[...base,'annotation']]);
+  assert.equal(data.length,1,'wrong-length rows must remain excluded');
+  assert.equal(data.diagnostics.invalid,1);
+});
+
 test('Census EITS supplier uppercase headers, official missing and conflicting months are isolated',()=>{
   const caps=HEADERS.map(h=>h.toUpperCase());
   const items=normalizeCensusM3Inventories([caps,
