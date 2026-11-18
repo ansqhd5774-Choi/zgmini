@@ -232,6 +232,11 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
         collected?.external?.registeredFundFlowRows??[],
         {asOfDate:asOf},
       );
+      // Keep the SEC file release date separate from its final observation month.
+      // Use only the date saved with this fundFlows input; never use GET or publish time.
+      const storedSecReleaseDate=collected?.providerSummary?.secFundFlows?.sourceReleaseDate;
+      const secSourceReleaseDate=typeof storedSecReleaseDate==='string'&&storedSecReleaseDate<=asOf
+        ?storedSecReleaseDate:null;
       const dollarFx=compute(buildDollarFxR54,
         collected?.series?.DTWEXBGS??[],
         {asOfDate:asOf},
@@ -267,7 +272,7 @@ function composeMarketSnapshot({liquidityHistory,collected,storedInflation,infla
         employment,
         rates:rate,
         credit,
-        fundFlows:fundFlow,
+        fundFlows:fundFlow?.status==='READY'?{...fundFlow,sourceReleaseDate:secSourceReleaseDate}:fundFlow,
         dollarFx,
         publicDomains:approvedPublicDomains,
       });
