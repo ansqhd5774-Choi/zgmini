@@ -1,5 +1,14 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-INFL19-A2135-WRITER-READBACK -->
+## 2026-11-18 — 실PC 19개 로컬 공개 준비본·Writer 상태 직접 조회
+
+- **이번 W01 실동작:** 기존 설치된 A급 inflation19-runtime-readonly를 1회 새 고유 pc-job [Issue #2135](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2135)로 실행; [Run #44256802723](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44256802723) Windows seat1 2026-11-18T07:10:39.341Z PASS / INFL19_RUNTIME_READONLY_EVIDENCE. 고정 Controller SHA f7f1559bc0ef15bb9b375982d048369c474c490f, app 요청 branch SHA 4a46b1e14d3e49f0570edb534c46bdf82b9aff0f. 원격 [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44256802723-1-seat-1.json)/[TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44256802723-1-seat-1.txt) 직접 2/2 재조회 및 Actions job success 확인.
+- **현장 저장/실행 분리:** 물가 19개 기존 공개 준비 단계의 19개 정확 ID 모두 READY, local projection stagingOnly=true, sourceStoredAt 2026-11-17T13:50:15.288Z, sourceVersion INFL19_PRESENTATION_3bc102756d3a7a61cfe5cb956c97deb70962d6bdb9b8c6fe657ca3eb2a951a1b. 2026-11-18T07:00:12.796Z Writer 원장 VERIFIED / SKIPPED_METADATA_ONLY, readyCount 19, d1Writes 0, 실패 null. Core 07:06Z COMPLETE / NO_VERIFIED_RELEASE_DUE, providerRequests 0. metadata-only 정규 스킵은 수집 장애나 신규 D1 기록 성공이 아니다.
+- **증거 한계:** A의 로컬 preview는 stagingOnly이며 실제 D1 per-key 본문 SHA/현재 4축 점수 및 Production API/UI 동시 일치가 미검증. 최신 19개 실 저장본의 개별 원본 전수 SHA도 이 operation 출력에 없음. 그러므로 B4-09 PARTIAL만 강화하며 DONE 승격, 7후보 B2-05 게시 성공 또는 26/26 수집 성공 주장 금지.
+- **보호/차단:** JSON/TXT에서 providerCalls=0, operationalWrites=0, d1Writes=0, sqliteOpened=false, before/after SHA256 591c8e7efc555f926d3d14d70cbb92b680b100066b224e026bc9ca4c212591ae 동일 확인. 공유 Controller [#2094](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2094)는 기존 STAGED 미복구, W04 단일 6파일 미설치; W01 Census #28의 최후 실PC [#2122](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2122) MISSING/CENSUS_M3_HEADERS_INVALID 유지. 기존 B #1818 재실행이나 PC/DB/D1/Task/Provider/사이트 변경 없음.
+- **W01 71단계:** 시작/종료 33/71 (46.5%), 미완료 38. 다음 기능 필수 PC 실행은 공유 승인 복구/W04 설치 이후 W01 정확 2025/2026 보관 archive 헤더-only A 단회 회수→실제 포맷 파서 수리→승인 수집·저장·게시·공개 검증.
+
 <!-- W01-20261118-CENSUS-PRIOR-METADATA-PR1325-MERGED -->
 ## 2026-11-18 — Census #28 기존 원자료 메타데이터와 공개 Reader 검증 계약 일치 (source-only)
 
@@ -569,7 +578,7 @@ B4 10 | Production·화면 최종 검증
 - [ ] **B4-06** 결측·STALE·마지막 정상값 검증 — PARTIAL | 2026-11-17 API 신규 실측 `status=PARTIAL`, #28 PENDING·value:null·history:[]·sourceStoredAt:null, ready 6 / stale 0, `score=null`; 결측을 0으로 채우지 않음 확인. 신규 정상본 이후 STALE 전환·마지막 정상값 보존·저장 vs 공개 D1 직접 비교 미완료
 - [x] **B4-07** 데스크톱 화면 데이터 확인 — DONE | 2026-11-17 실제 Chromium 렌더링 PC 뷰포트 **1440×900** `https://zgmini.kr/economic-indicators/inflation/`: 화면 로딩 후 '추가 물가 관련 연구 원자료 (7개)' 실제 **6개 수치/단위·관측일**이 같은 시점 GET API와 1:1 일치(4.153 USD/갤런, 5,910,402,249.78 USD, CPI #22=451.337·#23=446.588 지수, PPI #24=159.78, GMF #29=99.436 지수 표시 반올림). #28 제조업 총재고 원자료 게시 대기·대시. 별도 기존 **19/19 공개 확인**, 저장 물가 **54.9점(2026-11-17)**, 차트 x/y축·저장 이력 마지막 2026-11-17, SVG 우측 점(cx=792/806) 렌더. document scrollWidth 1425 <= viewport 1440. **현재 PC 화면 조회 DONE**, 원자료 7/7 공개 완료·D1 관리자 판정 아님
 - [x] **B4-08** 모바일 화면·표·차트 확인 — DONE | 2026-11-17 실제 Chromium 렌더링 모바일 뷰포트 **390×844**: 7개 연구용 모바일 카드 표시, 6개 최근 원값·이전 원값·단위·관측일/출처·발표 주기 API 및 PC 표와 일치, Census #28은 'US_CENSUS_M3 · 공개 요약 미게시'·대시. 기존 19개 `19/19 공개 확인`, 물가 **54.9점**/데이터 기준 2026-11-17 유지, 모바일 차트 SVG 179×132·우측 마지막 점 cx=165, y축 0/25/50/75/100·x축 06/08/10/11 포함, 화면 '저장 이력 마지막 2026. 11. 17.' 표시. `documentElement.scrollWidth=375 <= innerWidth=390` 가로 넘침 없음. **모바일 실제 카드/차트 확인 DONE**, #28 미게시·D1 관리자 readback 별개
-- [ ] **B4-09** 기존 19개 원자료와 4축 점수 보존 확인 — HISTORICAL_OUTPUT | 2026-11-10 기존 19/4축 UI 존재, D1 비교 미완료
+- [ ] **B4-09** 기존 19개 원자료와 4축 점수 보존 확인 — HISTORICAL_OUTPUT | 2026-11-10 기존 19/4축 UI 존재, D1 비교 미완료 | 2026-11-18 실제 PC 승인 경량 A [#2135](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2135) / [Run #44256802723](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44256802723) PASS: 정확 19/19 원본 관련 로컬 projection READY, stagingOnly=true, sourceStoredAt=2026-11-17T13:50:15.288Z; Writer 최신 2026-11-18T07:00:12.796Z VERIFIED/SKIPPED_METADATA_ONLY, readyCount=19, d1Writes=0, inflationFailure=null. Core cycle 07:06:51Z COMPLETE/NO_VERIFIED_RELEASE_DUE, providerRequests=0. 고정 A 읽기는 SQLite 미오픈, D1 per-key/4축 현재 수치 미출력: B4-09 PARTIAL 유지, DONE 금지. 운영 보호 SHA 591c8e7e... 전후 일치, 공급자·운영·D1 쓰기 0.
 - [ ] **B4-10** 최종 실제 게시 증거 및 사용자 확인 준비 — PENDING | 새로운 실제 증거 없음
 
 
