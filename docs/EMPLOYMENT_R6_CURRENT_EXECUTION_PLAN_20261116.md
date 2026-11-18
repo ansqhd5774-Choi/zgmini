@@ -166,7 +166,7 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 | PIT-03-07 | Current·History·후보 누락/충돌 총계 획득 | #1787 실제 Core+candidate PIT aggregate | Current 40,726, History 38,753, missing 2,880, matching/meta 2,625, unsupported 255, candidate conflicting 14; 11/07 과거 결과와 날짜 구별 | DONE |
 | PIT-03-08 | 자료가 부족하면 승인된 기존 A의 최소 메타 조회 적합성 평가 | `controller/employment-r6-candidate-readonly.mjs`·`employment-r6-collection-evidence-readonly.mjs` | stage A는 PIT aggregate, evidence A는 Current/raw snapshot만 제공; 주차별 History-asOf 전체 검증 대체 불가·무근거 B 금지 | DONE |
 
-### PIT-04 — 지역별·주별 원자료와 PIT 정합성 분류 (8개, 3 DONE · 5 미완료)
+### PIT-04 — 지역별·주별 원자료와 PIT 정합성 분류 (8개, 5 DONE · 3 미완료)
 
 | 세부 ID | 실제 실행·분석 작업 | 입력·근거 | 완료 판정 / 결과 | 상태 |
 |---|---|---|---|---|
@@ -450,3 +450,11 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 - **소스 완료, 운영 미실행:** [PC 제어 PR #2078](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2078) 정확 2파일 W04 전용 모듈/테스트, W04 CI [#44224139250](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44224139250) SUCCESS, C996 CI [#44224139231](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44224139231) SUCCESS. 제어 `main` source-only squash merge `04823cd1decf79349551f91a9be1321aec462224`; PC 현재 설치 Controller와 동일하다는 증거 없음.
 - **검증 기능:** 기존 A/light `employment-r6-collection-evidence-readonly`가 저장 수집 run의 원본 `bodySha256`에 일치하는 National XML 청크만 bounded readOnly/원문 SHA 재조회한 후, 실제 XML week/4개 계열별 관측주와 동일 run 파서 기록을 비교. 결과에 원문·수치·원본 해시 노출 없음. 새 공급자 호출·DB 쓰기/산식/임계값 변경 없음.
 - **직접 다음 실행:** 운영 PC 공통 Controller B 설치가 실제 정확 승인된 통합 변경분/자원 보호/lease/전후 SHA를 충족하는지 확인한 뒤, 적용 성공 시 W04가 **새 고유 A/light**를 직접 실행하여 National raw 최신 4계열의 출처/파서 차이를 확정. 현재 #2072는 신규 raw 대조 결과가 없으며 과거 고유 요청 재사용 금지. Controller 운영 설치 GO는 공통 설치 권한 영역으로만 제한하고 W04 본연 Reader/원자료 조사와 Heavy A·BED 후속은 전가하지 않는다. `27/72`(37.5%), PIT-04-05 HOLD, raw 미인증 27과 승인 RAM 1,536 MiB 제한 유지. [§84 원장](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md).
+
+### W04 — 2026-11-18 정확 6파일 Controller CAS 승인 후보 고정 (비실행)
+
+<!-- W04-PLAN-SHARED-6FILE-CAS-PR2083-20261118 -->
+
+- **대상과 미해결 설치:** PC #2072에 보고된 설치 Controller `f7f1559bc0ef15bb9b375982d048369c474c490f` → 제어 source 고정 target `ead5d2d585ff2ce2a6df5f9b6cf720f65d90b49b`; 설치 영향 6파일 중 W04 2, W01 4. W04 단독 1파일 선언으로 최신 main을 적용할 수 없는 `ALLOWFILE_DIFF_MISMATCH` 사전 확인. Controller만 선택적 설치, workflow/result/원장 파일은 제외.
+- **구현 증거:** [W04 Draft PR #2083](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2083), target 6파일 SHA256 fingerprint `5eac97ce0fc4bf290d152b948502da0dc09446342dbf22bafd09fb0564925608`, [C996 #44226535487](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44226535487) SUCCESS. **초안은 `B_PENDING`·PC 설치 승인/실행 아님.** 공유 영향 GO/NO-GO만 [중앙 #68/6967597730](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6967597730) 요청. W04 설치/실측 본 업무 타인 인계 없음.
+- **다음 필수 실행:** 승인된 공유 6파일 적용 순서 확인 → W04가 직접 실제 preimage·lease·정규 B 승인 manifest/사후 검증 → 설치 Controller와 source 일치하면 새 A/light 전국 저장 XML/run 최신일 대조. 공식 DOL 주차를 임의 저장하지 않음. 승인 없는 B 요청 0; 기존 BED #2056 Core 자연 유휴·heavy 1,536MiB 별도 게이트. **전체 27/72 DONE(37.5%), 잔여 45; PIT-04-05 IN_PROGRESS**. 상세 [§85 진행 기록](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md).
