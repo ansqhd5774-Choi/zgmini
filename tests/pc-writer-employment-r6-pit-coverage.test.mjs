@@ -497,3 +497,33 @@ test("PIT-04-08 remains disabled by default; invalid offset and missing candidat
    dbPath:core,asOfDate:"2026-11-18",keyReviewOffset:0}),/PIT_AUDIT_KEY_REVIEW_INPUT_MISSING/);
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
+
+test("PIT-04-08 optional NULL timestamp cannot erase an as-of Current key",()=>{
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit0408-null-time-"));
+ try{
+  const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+  const al=observation("AL",100,"a".repeat(64));
+  fixture(core,{current:[al],history:[]});
+  fixture(candidate,{current:[al],history:[al]});
+  const db=new DatabaseSync(core);
+  try{db.exec(`ALTER TABLE ${T.observationCurrent} ADD COLUMN recorded_at TEXT`);}
+  finally{db.close();}
+  const before=[digest(core),digest(candidate)];
+  const result=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,
+   asOfDate:"2026-11-18",keyReviewOffset:0});
+  assert.equal(result.coreCurrentKeysMissingHistory,1);
+  assert.equal(result.pit04KeyReview.counts.coreKeys,1);
+  assert.equal(result.pit04KeyReview.counts.coreHistoryMissing,1);
+  assert.equal(result.pit04KeyReview.counts.missingCandidateIncomplete,1);
+  assert.equal(result.pit04KeyReview.counts.missingCandidateInternalMatch,0);
+  assert.equal(result.pit04KeyReview.evidenceTotal,1);
+  assert.deepEqual([digest(core),digest(candidate)],before);
+  const update=new DatabaseSync(core);
+  try{
+   update.prepare(`UPDATE ${T.observationCurrent} SET recorded_at=?`)
+     .run("2026-11-19T00:00:00Z");
+  }finally{update.close();}
+  assert.throws(()=>auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,
+   asOfDate:"2026-11-18",keyReviewOffset:0}),/PIT_AUDIT_KEY_COVERAGE_MISMATCH/);
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
