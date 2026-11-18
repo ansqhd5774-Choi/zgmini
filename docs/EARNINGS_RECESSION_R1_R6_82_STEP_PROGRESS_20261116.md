@@ -1855,3 +1855,22 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 **LAST PASS:** #2105 source REVIEW_REQUESTED / 과거 source CI PASS / 새 원장 반영. **FIRST UNFINISHED:** 실 게시 B 효과 명시 승인/Workflow 활성 상태/현장 두 checkout·SQLite source pin·D1 key 결과 검증; 이는 R4-06 하나의 실행 결손이며 신규 7파일 운영 설치나 전역 Controller/원담당 전체 업무 BLOCKER가 아님.
 
 **다음 필수 실행:** W05는 control #2089 기존 이슈에서 QFR 1key 게시 **정확한 사용자 운영 승인/기존 활성조건 여부**를 분리 확정한 후, 정규 PR/manifest 소스 승인을 거쳐 고유 1회 `pc-publication` 경로 → SQLite preflight → D1 1키 body/sourceVersion/sourceStoredAt/stored_at 실조회 → Production API/UI. 상위 효과 미승인 상태에서는 요청 생성·owner 승인 댓글 대리 작성·Workflow 활성/C관리 변경·D1 쓰기/미승인 병합을 하지 않음. 필요 권한이 실제 확인될 때 그 범위만 사용자에게 요청, 다른 독립 업무는 지속.
+
+
+## 102. R4-06 (2026-11-18 KST) QFR 게시 후보 최신 SHA 재핀·소스 CI 재확인 — 운영 게시 미실행
+
+<!-- W05-R406-SOURCE-REPIN-CI-20261118-1425 -->
+
+**시작/종료:** 순차 26/82(31.7%), 개별 28/82(34.1%). QFR 실제 한 키 D1 게시 전이므로 단계 완료 수 변동 없음.
+
+**실제 완료:** 현행 앱 `main=24f80c4cc096114537ceb5c5a7dab01591791c43`를 GitHub branch로 확인. 기존 QFR publisher pin `7b95f8fee83b031a14bf2e199b812d403e211c19`와의 비교에서 변경 목록은 인플레이션·고용 소스/테스트이며, QFR Publisher 10파일 변경 0. 별도 제어 PR [#2105](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2105)에 정확 두 파일(manifest/test)만 갱신해 Publisher SHA를 현행 app main으로 재핀, 새 HEAD `f5f45ebb72d1a17fe5c7138d96be54c6feb5c1ae`. 그 외 10개 source raw digests·operational SHA pin·D1 1키·무재시도·SQLite stored-only 효과는 불변. 변경 후 [집중 CI #44244582087](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44244582087) 및 [C996 #44244582248](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44244582248) 완료/SUCCESS. 본문 메타데이터도 새 SHA로 정정.
+
+**정확 승인 후보 raw SHA256:** `c8b38246dec122c548b974a4520db6f6561694a1c8952001ccf83fcff049745f`; 이전 해시 `325c5ee...`는 구 후보이며 동일 요청에 재사용 금지. 기존 해시와 계산 코드를 대조해 정합 확인. [QFR 승인 원본 #2089 원장 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2089#issuecomment-6970053296)에 scope·현재 검증·미승인 사실 등록.
+
+**추가 실제 외부 조회:** Production `/earnings-recession/` 화면의 QFR 관측·현재 값은 `—`/연결 확인 중이고, QFR 전용 API exact URL은 웹 읽기 도구로 접근 미확정. 화면 텍스트만으로 D1 미존재 또는 게시 성공 판정 금지.
+
+**보호 상태:** [PR #2105](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2105)는 OPEN/ready for review/UNMERGED, 자체 source-only CI는 승인 아님. #2089에는 동일 D1 key 게시 효과의 명시적인 독립 owner 승인 댓글 없음. `ZGMINI_B_PUBLICATION_APPLY_ENABLED`의 실제 repo 설정과 Windows 동작·실PC SQLite 최신 revision/근거·operational checkout 현재 상태는 NOT_VERIFIED. 게시 Issue 0, D1/SQLite/PC writes 0, WPSFD42 #1919 HOLD 불변.
+
+**LAST PASS:** QFR source-only PR SHA 최신화 및 두 CI SUCCESS / 기존 7파일 운영 소스 설치 비필수 정정 유지. **FIRST UNFINISHED:** 사용자 단일키 B 게시 운영 효과 승인, 현재 Workflow 활성 조건과 fresh 두 checkout/SQLite 원본 및 D1 동일키 충돌 보호 검증, 정규 단회 Issue 실행과 저장/공개 재조회.
+
+**다음 필수 실행:** 기존 승인 범위에서 가능한 독립 읽기/소스 작업을 이어 수행. 신규 운영효과 B 승인이 실제 확인되면 변경 시점 app main SHA/QFR 10파일 원문·운영 source preflight를 갱신하고 승인된 manifest main 반영→정확한 owner Issue 승인→고유 publication Issue 단회→PC SQLite QFR ZIP·sourceVersion·storedAt 확인→D1 body/sourceVersion/sourceStoredAt/stored_at→Production API/UI. 무승인 효과·Controller/Task/7파일 설치·중복 요청을 만들지 않음.
