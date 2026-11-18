@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {newestUsIexPercentPublication} from '../lib/market-breadth/us-provisional-ui-r4.mjs';
+import {usIexPublicPercentOnly} from '../lib/market-breadth/us-provisional-r1.mjs';
 
 const slotA='2026-11-18T15:45:00.000Z';
 const slotB='2026-11-18T16:00:00.000Z';
@@ -46,4 +47,30 @@ test('W06 #38 unavailable, invalid and source-rejected responses still clear the
  assert.match(source,/pct === undefined \? "—"/);
  assert.doesNotMatch(source,/confirmed-r2|lastHistory|activeConfirmed|MarketParquet/);
  assert.doesNotMatch(source,/data\?\.risingPct\s*\?\?/);
+});
+
+
+test('W06 #38 stored IEX Reader publishes only the three public shares plus explicit unobserved fraction',()=>{
+ const stored={version:1,phase:'PROVISIONAL',status:'PROVISIONAL',market:'usa',universe:'SP500',
+  source:'ALPACA_IEX_15MIN_SPLIT',referenceSource:'ALPACA_IEX_1DAY_SPLIT',
+  methodologyVersion:'OBSERVED_ISSUE_DIRECTION_COUNTS_R1',
+  observationDate:'2026-11-18',priorDate:'2026-11-17',
+  slotEndUtc:slotB,collectedAt:'2026-11-18T16:02:00.000Z',
+  expectedCount:500,sessionPriceObservedCount:350,referenceObservedCount:500,
+  observedCount:350,missingCount:150,freshWithin30m:100,coverage:0.7,
+  counts:{rising:100,unchanged:0,falling:250},collectionStatus:'INCOMPLETE_PAGINATION'};
+ const published=usIexPublicPercentOnly(stored);
+ assert.ok(published,'existing actual public Reader must accept the synthetic stored row');
+ assert.deepEqual([published.risingPct,published.unchangedPct,published.fallingPct,published.unobservedPct],
+  [20,0,50,30]);
+ assert.equal('counts' in published,false,'no private member counts in visitor output');
+ assert.equal('score' in published,false,'D03 percentage is not a 0–100 score');
+ const later=usIexPublicPercentOnly({...stored,slotEndUtc:slotC,
+  collectedAt:'2026-11-18T16:17:00.000Z',counts:{rising:0,unchanged:100,falling:250}});
+ assert.ok(later);
+ assert.equal(newestUsIexPercentPublication(later,published),later);
+ assert.equal(later.risingPct,0,'zero percentage must remain visible');
+ const retired=usIexPublicPercentOnly({...stored,source:'SP500_STORED_MARKETPARQUET_FREE_SAMPLE'});
+ assert.equal(retired,null,'retired/unauthorized source is not converted to public percentages');
+ assert.equal(newestUsIexPercentPublication(later,retired),null,'invalid source clears prior UI');
 });
