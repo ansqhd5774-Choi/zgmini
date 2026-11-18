@@ -1,6 +1,7 @@
 
 const finite=(v:unknown):v is number=>typeof v==="number"&&Number.isFinite(v);
-const validDate=(v:unknown):v is string=>typeof v==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&\n !Number.isNaN(Date.parse(v+"T00:00:00Z"))&&new Date(v+"T00:00:00Z").toISOString().slice(0,10)===v;
+const validDate=(v:unknown):v is string=>typeof v==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&
+ !Number.isNaN(Date.parse(v+"T00:00:00Z"))&&new Date(v+"T00:00:00Z").toISOString().slice(0,10)===v;
 
 const sourcePeriodBasis="CURRENT_VINTAGE_SOURCE_PERIOD_END";
 const quarterEnd=(value:unknown):value is string=>{
