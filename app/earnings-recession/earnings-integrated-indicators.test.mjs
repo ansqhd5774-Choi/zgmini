@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import {readFileSync,existsSync} from "node:fs";
 import {buildEarningsCostIndicatorView,KNOWN_EARNINGS_COST_INDICATORS,
  OPTIONAL_EARNINGS_COST_INDICATORS,EARNINGS_C_COST_SCHEMA,
- earningsCostRetrievalDay} from "./earnings-cost-indicator-list.mjs";
+ earningsCostRetrievalDay,earningsExactCalendarDay} from "./earnings-cost-indicator-list.mjs";
 
 const page=readFileSync(new URL("./page.tsx",import.meta.url),"utf8");
 const risk=readFileSync(new URL("./earnings-risk-only-panel.tsx",import.meta.url),"utf8");
@@ -184,3 +184,19 @@ test("W05 R5-12 BLS sparklines have distinct accessible names on desktop and mob
  assert.ok(risk.includes('role="img"'));
  assert.ok(!risk.includes('<CostSpark history={row.history}/>'));
 });
+
+test("W05 R5-11 exact SEC and financial quarter dates reject calendar rollover",()=>{
+ for(const date of ["2026-11-18","2024-02-29","2000-02-29","2026-12-31","2026-01-01"])
+  assert.equal(earningsExactCalendarDay(date),true,date);
+ for(const invalid of ["2026-02-29","2026-02-30","2026-04-31","2026-06-31",
+   "2026-11-31","1900-02-29","2026-13-01","2026-00-01","2026-01-00",
+   "2026-01-32","2026-1-1","2026-01-01T00:00:00Z","",null,0,undefined])
+  assert.equal(earningsExactCalendarDay(invalid),false,String(invalid));
+ assert.ok(risk.includes('const validDate=(value:unknown):value is string=>earningsExactCalendarDay(value);'));
+ assert.ok(risk.includes('const dateLabel=(value:unknown)=>validDate(value)?'));
+ assert.ok(risk.includes('if(!validDate(value))return false;'));
+ assert.ok(risk.includes('if(score===null||!validDate(payload?.asOfDate))return [];'));
+ assert.ok(risk.includes('raw.financialPeriodEnd===risk.riskFinancialPeriodEnd&&quarterEnd(raw.financialPeriodEnd)'));
+ assert.ok(risk.includes('trend.every')===false); // do not rewrite scoring/history
+});
+
