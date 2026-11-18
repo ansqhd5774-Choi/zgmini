@@ -1,5 +1,8 @@
 # ZGMINI W04 고용지표 R6 — 최신 실행 계획 (2026-11-16)
 
+> **2026-11-19 W04 R3+PIT-04-08 정확 Host source 수정·PC A 공통 보호 조회 실패:** 기존 R3 `35163189...`의 실행 17파일 중 직접 관련 후속 #1386 PIT timestamp guard만 [앱 #1424](https://github.com/ansqhd5774-Choi/zgmini/pull/1424)로 분리 반영, R3 브랜치 merge `863ed1bef077301949899dd4aeb3f78f448fd9ed`, 격리 Node [#44360997602](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44360997602) **4,151 PASS/0 FAIL**, 새 17파일 manifest+approval [제어 #2207](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2207) merge `8f9fc626b195361ff887f13b154af9b48842b2da` / C996 PASS. 기존 #2176 고정 R3 승인 불변. 실제 보호 A [#2208](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2208) **`BLOCKED/RETIRED_IRAN_INVENTORY_UNAVAILABLE`** — R13 승인 제거된 작업에 대한 설치 Controller 공통 상태 조회가 고용 Host 검사 시작 전 PREVALIDATION 거부, 원본·DB 쓰기 0. 기존 request 재시도/우회 B 금지; 공통 원인 해결 후 **새 고유 A 원본 CAS 조회→승인 정규 B→PIT raw 8키 조회**. **W04 42/72(58.3%)·PIT-06 7/8 유지**, 실제 PIT-06-05/History/D1 미완료. [진행 원장 §128](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md).
+
+
 > **2026-11-19 W04 PIT-06-08 정확 소스/CI 영향 감사 완료:** 앱 PR #1404/#1408/#1412/#1416/#1418 + 제어 #2199의 **6개 유일 변경 파일** 최신 main blob=검증된 병합 시점 blob 전부 일치, 관련 7개 CI 성공/원본 로그 및 최신 누적 Node **5,160 PASS/0 FAIL**·제어 R6 **108/108**·C996 SUCCESS 재확인. 앱 read-only PIT 대조기·제어 기존 R6 B child-result 외 생산 소스 변경 없음. **PIT-06-08 DONE, 전체 42/72(58.3%), PIT-06 7/8**. PIT-06-05 실제 raw provenance/적격 복구 키는 아직 0, 제어 R3 Host PR #2176 OPEN·명시 GO 없음, PC 운영 설치/History 쓰기/게시 성공 아님. [진행 원장 §127](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md).
 
 
