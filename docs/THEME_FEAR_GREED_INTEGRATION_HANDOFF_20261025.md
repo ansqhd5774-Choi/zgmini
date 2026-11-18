@@ -1,3 +1,12 @@
+## 2026-11-18 W03 12/68 — R188 파생 점수 원가격 비단사성 직접 검증·회귀 소스
+
+- **진행률:** 11/68(16.2%) 유지, 12단계 IN_PROGRESS. 권리·계산 분리: 실제 11/13 7테마 비공개 GMH 및 #2133 1,624 점수 실PC 대조는 이전 증거 재사용, R181 11/16 ledger와 혼동 금지.
+- **새 실제 검증:** 전용 브랜치 기존 `scripts/pc-writer/theme-optional-score-r188.mjs` Git blob `4be861428316e8056325f7d00e97b0deaa13ef04`의 **실제 `scoreAll252` 코드**를 V8 격리 실행했다. 628일 서로 다른 ETF/SPY 종가 두 시계열과 ETF 가격 ×2·SPY 가격 ×4로 만든 **서로 다른 두 입력**의 출력 252개를 전점 비교한 결과 **정확 불일치 0 / 최대 차 0**, 점수는 첫날 85.61507936507938, 마지막 23.31746031746032로 변화(상수 fixture가 아님). 이는 기존 정상화/상대강도/변동성 파생 산식이 raw 가격 수준을 **유일하게 역산할 수 없는 비단사 mapping**이라는 코드 기반 한정 증거. 원시 1h OHLCV 전체의 비복원성, 상업 계약 권리, 실PC 저장 바이트 및 실제 개인정보/원자료 비노출에 대한 법적 포괄 인증은 아님.
+- **회귀시험 구현:** [source commit a01d116c](https://github.com/ansqhd5774-Choi/zgmini/commit/a01d116c9cf71384b32e2e4cfe45ed8c785554ec) `tests/theme-gmh-score-noninjective-r1.test.mjs`를 전용 브랜치에 추가. 실제 Node.js 전체 suite/CI는 아직 NOT_RUN. 라이선스 플래그 publicationAuthorized/upstreamCommercialRightsVerified/derivedLicenseVerified 모두 false, 시장권리·D1 CAS/DB/Controller/PC/예약/배포 쓰기 0.
+- **다음 실제 단계:** 승인된 실제 GMH 입력 계보/서비스 이용 조건과 정규 공개 산출물의 필드·비복원성·상용 요건을 판정하고, 독립적으로 코드를 전체 Node 회귀·CI 대상으로 포팅/검증. 충분한 권리·CAS 증거 전 10/16 오래된 base를 날짜 위장하거나 TTL 완화/직접 D1 게시하지 않는다.
+
+---
+
 ## 2026-11-18 W03 12/68 — R181 조회 권한 경계 확정·GMH 권리 시행일 오류/원가격 혼입 방지 소스 수정
 
 - **진행률:** 시작 11/68(16.2%) → 종료 11/68(16.2%), 12단계 IN_PROGRESS. 최신 main 등록 A `theme-l7-runtime-readonly`는 R181 11/16 14/14 **ledger metadata**만 검증하고 최신 R181 raw bytes/checkpoint를 rehash하지 않음; 임의 A나 Controller 설치로 조회 권한 확대하지 않음.
