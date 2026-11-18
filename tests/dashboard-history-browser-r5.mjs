@@ -172,4 +172,177 @@ try{
   console.log(`PASS ${width}px: 6 chart periods, newer snapshot and true zero in mocked Chromium`);
   await page.close();
  }
+
+ // W06 #36 one-off PUBLIC/READ-ONLY actual CNN/PC archive and 1D..1Y UI probe.
+ // Must not be merged as an external-network CI test.
+ for(const width of [390,1440]){
+  const ctx=await browser.newContext({viewport:{width,height:900},locale:'ko-KR',colorScheme:'light'});
+  const live=await ctx.newPage();
+  const apiCalls=[],errors=[];
+  live.on('pageerror',err=>errors.push(err.message));
+  live.on('response',response=>{
+   const url=new URL(response.url());
+   if(url.hostname==='zgmini.kr'&&(url.pathname==='/api/fear-greed'||url.pathname==='/api/fear-greed/observations'))
+    apiCalls.push({path:url.pathname,period:url.searchParams.get('period'),status:response.status()});
+  });
+  const root='https://zgmini.kr';
+  try{
+   const homepage=await live.goto(root+'/fear-greed/usa/',{waitUntil:'domcontentloaded',timeout:50000});
+   assert.equal(homepage?.status(),200,'USA CNN page '+width+'px HTTP200');
+   const intro=live.locator('#zg-about-intro-dialog');
+   if(await intro.isVisible({timeout:1500}).catch(()=>false)){
+    await intro.getByRole('button',{name:'닫기',exact:true}).click();
+    await intro.waitFor({state:'hidden',timeout:15000});
+   }
+   const feedResponse=await live.request.get(root+'/api/fear-greed',{
+    timeout:20000,headers:{accept:'application/json','cache-control':'no-cache'}
+   });
+   const feedStatus=feedResponse.status();
+   if(feedStatus!==200){
+    console.log('W06_36_LIVE_PUBLIC_FEED_BLOCKED',JSON.stringify({width,http:feedStatus,
+     reason:(await feedResponse.text()).slice(0,450)}));
+   }
+   assert.equal(feedStatus,200,'actual stored CNN feed HTTP200');
+   assert.equal(feedResponse.headers()['x-data-source'],'STORED','stored-only CNN GET');
+   const feed=await feedResponse.json();
+   assert.equal(feed.status,'verified','current CNN source verified');
+   assert.ok(typeof feed.score==='number'&&Number.isFinite(feed.score)&&feed.score>=0&&feed.score<=100,
+    'CNN current 0..100 finite');
+   assert.ok(typeof feed.observedAt==='string'&&Number.isFinite(Date.parse(feed.observedAt)),
+    'CNN source observedAt valid');
+   assert.ok(Date.parse(feed.observedAt)<=Date.now()+300000,'CNN observation not in future');
+   const rawHistory=Array.isArray(feed.history)?feed.history:[];
+   const validHistory=rawHistory.filter(p=>{
+    const at=p?.date??p?.timestamp,score=typeof p?.score==='number'?p.score:p?.value;
+    return typeof at==='string'&&Number.isFinite(Date.parse(at))
+     &&typeof score==='number'&&Number.isFinite(score)&&score>=0&&score<=100;
+   });
+   const markerScore=feed.score.toFixed(1)+'점';
+   const panel=live.locator('[data-testid="cnn-reference-panel"]');
+   await panel.waitFor({state:'visible',timeout:20000});
+   // Real panel must show the exact published CNN original score, never a
+   // recalculated score, publication time or fabricated missing value.
+   await live.waitForFunction(score=>{
+    const panel=document.querySelector('[data-testid="cnn-reference-panel"]');
+    const label=panel?.querySelector('.cnn-score-orb[role="group"]')?.getAttribute('aria-label')??'';
+    return label.includes(score)&&panel?.getAttribute('data-market-state')!=='loading';
+   },markerScore,{timeout:20000});
+   const state=await panel.getAttribute('data-market-state');
+   const periodGroup=live.getByRole('group',{name:'CNN 지수 기간 선택'});
+   await periodGroup.waitFor({state:'visible',timeout:15000});
+   const periods=[];
+   const dateValid=x=>typeof x==='string'&&Number.isFinite(Date.parse(x));
+   const scoreValid=x=>typeof x==='number'&&Number.isFinite(x)&&x>=0&&x<=100;
+   for(const period of ['1D','1W','1M','3M','6M','1Y']){
+    const res=await live.request.get(root+'/api/fear-greed/observations?period='+period,
+     {timeout:20000,headers:{accept:'application/json','cache-control':'no-cache'}});
+    assert.equal(res.status(),200,'CNN archive '+period+' HTTP200');
+    assert.equal(res.headers()['x-data-source'],'STORED','CNN archive '+period+' stored GET');
+    const archive=await res.json();
+    assert.equal(archive.period,period,'CNN archive period');
+    assert.ok(['READY','PENDING'].includes(archive.status),period+' archive state');
+    assert.equal(archive.checkTimeMeaning,'PC_VERIFIED_STORED_AT',period+' PC verified timestamps named');
+    const points=Array.isArray(archive.points)?archive.points:[];
+    const checks=Array.isArray(archive.checkedPoints)?archive.checkedPoints:[];
+    for(const p of points)assert.ok(dateValid(p.observedAt)&&scoreValid(p.score),
+      period+' source observation finite');
+    for(const p of checks)assert.ok(dateValid(p.checkedAt)&&dateValid(p.sourceObservedAt)
+      &&scoreValid(p.score)&&Date.parse(p.sourceObservedAt)<=Date.parse(p.checkedAt)+300000,
+      period+' PC check contains separate sourceObservedAt');
+    for(let i=1;i<points.length;i++)assert.ok(points[i-1].observedAt<points[i].observedAt,
+      period+' source observations increasing');
+    for(let i=1;i<checks.length;i++)assert.ok(checks[i-1].checkedAt<checks[i].checkedAt,
+      period+' checked points increasing');
+    assert.ok(archive.totalObservedPoints>=points.length,period+' source count contains sampled');
+    assert.ok(archive.verifiedCheckCount>=checks.length,period+' verified checks count contains sampled');
+    const button=periodGroup.getByRole('button',{name:period,exact:true});
+    await Promise.all([
+     live.waitForResponse(response=>{
+      const u=new URL(response.url());
+      return u.hostname==='zgmini.kr'&&u.pathname==='/api/fear-greed/observations'
+       &&u.searchParams.get('period')===period;
+     },{timeout:22000}),
+     button.click(),
+    ]);
+    assert.equal(await button.getAttribute('aria-pressed'),'true',
+     width+'px '+period+' selected');
+    const chart=panel.locator('.cnn-history-chart-hitbox');
+    const shape=await chart.locator('path.recharts-area-curve').evaluateAll(paths=>
+     paths.map(p=>({d:p.getAttribute('d')??'',stroke:p.getAttribute('stroke')??'',
+      dash:p.getAttribute('stroke-dasharray')??''})));
+    const segments=shape.filter(p=>/^M/.test(p.d)&&/[CLQ]/.test(p.d.slice(1))
+     &&p.stroke!=='none'&&!/NaN|Infinity/.test(p.d));
+    periods.push({period,state:archive.status,sourceTotal:archive.totalObservedPoints,
+     sourceReturned:points.length,checksTotal:archive.verifiedCheckCount,
+     checksReturned:checks.length,
+     sourceLast:points.at(-1)??null,
+     pcCheckLast:checks.at(-1)??null,
+     rawConnectedCurves:segments.length,
+     curveCount:shape.length,
+     chartEmpty:await panel.locator('.cnn-chart-empty').isVisible().catch(()=>false),
+    });
+    if(period==='1D'){
+     const {currentCnnSessionHistory}=await import('../lib/cnn-current-session-history-r4.mjs');
+     const {CNN_OBSERVED_HISTORY_VERSION}=await import('../lib/cnn-observed-history-r1.mjs');
+     const old=feed.observedHistoryVersion===CNN_OBSERVED_HISTORY_VERSION?
+       (Array.isArray(feed.intradayObservations)?feed.intradayObservations:[]):[];
+     const displayed=archive.status==='READY'
+      ?currentCnnSessionHistory(feed.observedAt,
+       {checkedPoints:checks,observedPoints:points,intradayObservations:old})
+      :currentCnnSessionHistory(feed.observedAt,{intradayObservations:old});
+     const count=displayed.length;
+     periods.at(-1).eligibleNewYorkSession=count;
+     periods.at(-1).eligibleSessionLast=displayed.at(-1)??null;
+     // Do not require a line if 0/1 genuine US-session observations exist.
+     if(count>=2){
+      await live.waitForFunction(()=>{
+       const root=document.querySelector('[data-testid="cnn-reference-panel"]');
+       return [...(root?.querySelectorAll('path.recharts-area-curve')??[])].some(p=>{
+        const d=p.getAttribute('d')??'';
+        const stroke=p.getAttribute('stroke')??getComputedStyle(p).stroke;
+        return /^M/.test(d)&&/[CLQ]/.test(d.slice(1))&&!/NaN|Infinity/.test(d)
+         &&stroke!=='none'&&stroke!=='transparent';
+       });
+      },null,{timeout:20000});
+      periods.at(-1).connectedAfterHydration=true;
+     }else{
+      periods.at(-1).singleOrEmptyWithoutFabricatedLine=true;
+      // One observed point is not enough to create the 1D score trend.
+      assert.equal(await panel.locator('path.recharts-area-curve').count(),0,
+       width+'px 1D does not create fictitious connecting stroke');
+     }
+    }else if(['6M','1Y'].includes(period)&&validHistory.length>=2){
+     // 6M/1Y use actual CNN daily closes; not PC check-time curves.
+     await live.waitForFunction(()=>{
+      const root=document.querySelector('[data-testid="cnn-reference-panel"]');
+      return [...(root?.querySelectorAll('path.recharts-area-curve')??[])].some(p=>{
+       const d=p.getAttribute('d')??'',stroke=p.getAttribute('stroke')??getComputedStyle(p).stroke;
+       return /^M/.test(d)&&/[CLQ]/.test(d.slice(1))&&stroke!=='none'&&!/NaN|Infinity/.test(d);
+      });
+     },null,{timeout:20000});
+     periods.at(-1).connectedDailyAfterHydration=true;
+    }
+   }
+   const overflow=await live.evaluate(()=>({
+    width:document.documentElement.clientWidth,
+    scrollWidth:document.documentElement.scrollWidth
+   }));
+   assert.ok(overflow.scrollWidth<=overflow.width+1,'CNN '+width+'px no horizontal overflow');
+   assert.deepEqual(errors,[],'CNN '+width+'px no JavaScript page errors');
+   await live.screenshot({path:'artifacts/dashboard-history/cnn-live-w06-36-'+width+'.png',
+    fullPage:false,timeout:20000});
+   console.log('W06_36_LIVE_CNN_PUBLIC',JSON.stringify({
+    width,source:'STORED',current:{status:feed.status,score:feed.score,
+     observedAt:feed.observedAt,previousClose:feed.previous?.close??null,
+     observedHistoryVersion:feed.observedHistoryVersion??null,
+     sidecarPoints:feed.intradayObservations?.length??0,
+     dailyRangeCount:feed.dailyObservedRanges?.length??0,
+     dailyHistory:validHistory.length,
+     lastDaily:validHistory.at(-1)??null,
+     display:state,aria:await panel.locator('.cnn-score-orb[role="group"]').getAttribute('aria-label')},
+    periods,overflow,errors,requests:apiCalls.length
+   }));
+  }finally{await ctx.close();}
+ }
+
 }finally{await browser.close();}
