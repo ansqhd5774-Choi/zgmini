@@ -170,7 +170,8 @@ export async function readEarningsCompanionResponse(request,readOnlyCore,{now=Da
     stale:rows.filter(row=>row.status==='STALE').length,
     unavailable:rows.filter(row=>!['READY','PARTIAL','STALE'].includes(row.status)).length};
   return reply({...payload,status:freshReady===rows.length?'READY':'PARTIAL',coverage,rows},200,
-    {'x-projection-source-at':new Date(payload.sourceStoredAt).toISOString()});
+    {'x-projection-source-at':new Date(payload.sourceStoredAt).toISOString(),
+     'x-projection-published-at':new Date(projection.builtAt).toISOString()});
 }
 
 // Called only by an explicitly approved PC-side publisher, NEVER from a public request.
