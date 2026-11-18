@@ -48,6 +48,9 @@ test('R47 raw page accepts UTC boundary bars crossing NY date, rejects out-of-wi
   ];
   const page=values=>Buffer.from(values.map(row=>JSON.stringify(row)).join('\n')+'\n');
   assert.deepEqual(parsePage(page(rows),'SPY',window),rows);
+  const leap=price('SPY','2024-02-29T00:00:00Z');
+  assert.deepEqual(parsePage(page([leap]),'SPY',
+    {start:'2024-02-29',end:'2024-03-01'}),[leap]);
   for(const timestamp of ['2026-11-11T23:00:00Z','2026-11-18T00:00:00Z',
       '2026-02-30T19:00:00Z']){
     assert.throws(()=>parsePage(page([price('SPY',timestamp)]),'SPY',window),
