@@ -55,3 +55,13 @@ test("output caps evidence without losing counts",()=>{
  assert.equal(r.evidenceTruncated,true);
  assert.throws(()=>go([base],[],[],[],{maxEvidenceRows:513}),/PIT0408_ARGUMENT_INVALID/);
 });
+
+test("forged PIT class and ambiguous equal-time revisions cannot be an internal match",()=>{
+ const forged={...base,pit_class:"FORGED_HISTORY"};
+ const no=go([base],[],[forged],[forged]);
+ assert.equal(no.counts.missingCandidateInternalMatch,0);
+ assert.equal(no.counts.missingCandidateIncomplete,1);
+ const ambiguous=go([base],[base,{...base,value:2}]);
+ assert.equal(ambiguous.counts.coreHistoryAmbiguous,1);
+ assert.equal(ambiguous.evidence[0].reason,"CORE_HISTORY_AMBIGUOUS");
+});
