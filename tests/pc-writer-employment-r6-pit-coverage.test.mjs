@@ -656,3 +656,27 @@ test("PIT-04-05 absent raw snapshot/run tables yield NO_RUNTIME_EVIDENCE, never 
   assert.equal(report.coreHistoryRawLineageTotalRows,null);
   assert.equal(report.rawLineageEvidenceStatus,"NO_RUNTIME_EVIDENCE");
 });
+
+test("PIT-04-05 and opt-in PIT-04-08 use one Core snapshot while keeping independent HOLD statuses",t=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-w04-r3-raw-and-keys-"));
+  t.after(()=>fs.rmSync(dir,{recursive:true,force:true}));
+  const core=path.join(dir,"core.sqlite");
+  const candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+  rawLineageFixture(core);
+  fixture(candidate,{});
+  const prior=[digest(core),digest(candidate)];
+  const report=auditEmploymentR6PitCoverage({
+    dbPath:core,candidateDbPath:candidate,asOfDate:"2026-11-02",keyReviewOffset:0,
+  });
+  assert.equal(report.rawSnapshotMetadataKeys,1);
+  assert.equal(report.rawSnapshotCertifiedKeys,1);
+  assert.equal(report.coreCurrentRawLineageVerifiedKeys,1);
+  assert.equal(report.rawLineageEvidenceStatus,"HOLD_INCOMPLETE_SOURCE_LINEAGE");
+  assert.equal(report.pit04KeyReview?.counts.coreKeys,4);
+  assert.equal(report.pit04KeyReview?.evidenceTotal,0);
+  assert.equal(report.pit04KeyReview?.status,"HOLD_KEY_CLASSIFICATION_NOT_RAW_PIT_ATTESTATION");
+  assert.equal(report.pit04KeyReview?.rawPitAttested,false);
+  assert.equal(report.promotionApproved,false);
+  assert.equal(report.coreWrites,0);
+  assert.deepEqual([digest(core),digest(candidate)],prior);
+});
