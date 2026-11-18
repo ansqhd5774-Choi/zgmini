@@ -34,8 +34,11 @@ try{
  const publishSkipped=null;
  // Optional 19-input research collection uses the existing Core lock and
  // occurs before the early Writer publication pass. Off by default.
+ // An unrelated collect-local exit must not prevent separately approved
+ // inflation collection; its own release, quota, credential and checkpoint
+ // gates remain enforced inside runInflation19RecurringFromCore.
  let inflationRecurring={status:lane==='core'?'DISABLED':'SKIPPED_KOREA_LANE',providerRequests:0};
- if(lane==='core'&&collection.status===0){
+ if(lane==='core'){
   try{
    const {runInflation19RecurringFromCore}=await import('./inflation-causal-recurring-r1.mjs');
    inflationRecurring=await runInflation19RecurringFromCore(base);
