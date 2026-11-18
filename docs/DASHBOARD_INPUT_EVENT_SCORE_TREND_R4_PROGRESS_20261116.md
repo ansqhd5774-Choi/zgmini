@@ -2,6 +2,9 @@
 
 > **W06 #75 실제 Production API/차트 검증 PASS (2026-11-18 11:51 KST):** 일회성 [PR #1291](https://github.com/ansqhd5774-Choi/zgmini/pull/1291) **CLOSED/UNMERGED**, [실 Chromium #44225475506](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44225475506) SUCCESS: `zgmini.kr` 390/1440px, 공개 12도메인·6기간·실제 1W/1M/3M 계산점 연결선, 6M/1Y 일별선, 0 JS error/overflow. 공개 원점수 **45.47265033907002**→카드 **34.2점**, 1D 1점·1W 48점·1M~1Y 각79점 조회. [Node #44225475459](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44225475459) **4909 PASS/0 FAIL**. main `a7385348` Cloudflare Build `970fe858-06b9-491d-99e9-f54083ef1e6c`/생성 Version `006a62c4-eac6-47c3-a75f-a0fb16bb432f` 확인, **활성 Deployment ID/Version/서빙 SHA UNKNOWN**. #74 SQLite–D1 private 동치 미확인; #75 PARTIAL, DONE **22/75(29.3%)** 유지.
 >
+> **11:53 KST 원격 main 후속 변화 확인:** 실사이트 증거 기준은 `main@a7385348e8d2d34757df14d0ae45e184517d6ae4`이며, 기록 재조회 시 최신 `main@2f5e275f1aa43e3f0cab09572a58421f0f6dd98b`가 W01 물가지표 `scripts/pc-writer/inflation-causal-*` 및 관련 시험 **7파일만** 추가 변경. GitHub compare 1커밋 ahead·0behind·W06 차트/UI/API·시험 파일 중복0 확인. 따라서 W06 #75 실사이트 점수/선분 검증은 영향 없음; 최신 main 전체를 이전 SHA와 같다고 표현하지 않음.
+
+
 > **W06 #69 PR #1283 병합 후 본선 검증 완료 (2026-11-18 11:27 KST):** `main@a7385348e8d2d34757df14d0ae45e184517d6ae4`의 [Node CI #44223037765](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44223037765) **4919 total/4909 PASS/0 FAIL/7 skipped/3 todo**, Writer 11/11 및 Cloudflare GET 계약 69/69 PASS; GitHub check/verify/notify/Workers Builds **4/4 completed/success**(Cloudflare Git Integration Build `970fe858-06b9-491d-99e9-f54083ef1e6c`). PR #1283 정확 3파일의 source·모의 Chromium 검증·main/Build까지 완료. **Cloudflare 현재 활성 Production Deployment ID/서빙 SHA, 공개 API/D1 실제 게시점·홈페이지 hydration 검증은 계속 미확정**. W06 #69/#75 PARTIAL, 고유 DONE 22/75(29.3%)·잔여53. 다음 단일 실행은 W06가 현재 Production 활성 버전과 공개 GET·현재 카드·6기간 실제 마지막점 일치를 기존 승인된 조회 경로에서 확인하는 것. 총괄 인계0, 예약 검증 제외.
 >
 
