@@ -6,6 +6,10 @@ import {buildEarningsCostIndicatorView,KNOWN_EARNINGS_COST_INDICATORS,
  earningsCostRetrievalDay,earningsExactCalendarDay,
  earningsCostSparkGeometry} from "./earnings-cost-indicator-list.mjs";
 
+import {earningsQuarterIndexFromEnd,earningsQuarterIndexFromLabel,
+ earningsQfrQuarterHistoryMatches,earningsBeaUnitQuarterHistoryMatches,
+ earningsBeaManufacturingQuarterHistoryMatches} from "./earnings-sidecar-quarter-read-model.mjs";
+
 const page=readFileSync(new URL("./page.tsx",import.meta.url),"utf8");
 const risk=readFileSync(new URL("./earnings-risk-only-panel.tsx",import.meta.url),"utf8");
 const styles=readFileSync(new URL("./earnings-indicator-r2.css",import.meta.url),"utf8");
@@ -222,4 +226,71 @@ test("W05 R5-11 chart gaps do not create a false latest point",()=>{
  assert.ok(risk.includes("d={geometry.path}"));
  assert.ok(risk.includes("geometry.marker&&<circle"));
  assert.ok(!risk.includes("const latest=valid.at(-1)!;"));
+});
+
+test("W05 R5-06 QFR actual quarter history must align with current, prior and change",()=>{
+ const periods=["2025-Q2","2025-Q3","2025-Q4","2026-Q1","2026-Q2"];
+ const history=periods.map((period,index)=>({period,value:index+1}));
+ const row={observationPeriod:"2026-Q2",previousPeriod:"2026-Q1",
+  value:5,previousValue:4,change:1,history};
+ assert.equal(earningsQuarterIndexFromLabel("2026-Q2"),8105);
+ assert.equal(earningsQuarterIndexFromLabel("2026-Q5"),null);
+ assert.equal(earningsQfrQuarterHistoryMatches(row),true);
+ for(const patch of [
+  {observationPeriod:"2026-Q3"},{previousPeriod:"2025-Q4"},
+  {value:0},{previousValue:0},{change:0},
+  {history:[...history.slice(0,4),{period:"2026-Q3",value:5}]},
+  {history:[...history.slice(0,4),{period:"2026-Q2",value:4}]},
+  {history:history.slice(1)},
+  {history:[{period:"2025-Q2",value:1},history[0],...history.slice(2)]},
+ ]){
+  assert.equal(earningsQfrQuarterHistoryMatches({...row,...patch}),false,JSON.stringify(patch));
+ }
+ assert.ok(risk.includes("earningsQfrQuarterHistoryMatches(payload.rows[0])"));
+});
+
+test("W05 R5-07 BEA unit profit five quarters must match previous and current dollars",()=>{
+ const dates=["2025-06-30","2025-09-30","2025-12-31","2026-03-31","2026-06-30"];
+ const history=dates.map((date,i)=>({date,value:0.11+i*0.01}));
+ const row={observationPeriodEnd:dates[4],previousPeriodEnd:dates[3],
+  value:history[4].value,previousValue:history[3].value,
+  change:history[4].value-history[3].value,history};
+ assert.equal(earningsQuarterIndexFromEnd("2026-06-30"),8105);
+ assert.equal(earningsQuarterIndexFromEnd("2026-06-31"),null);
+ assert.equal(earningsBeaUnitQuarterHistoryMatches(row),true);
+ for(const patch of [
+  {previousPeriodEnd:"2025-12-31"},{value:0},{previousValue:0},{change:1},
+  {history:history.map((x,i)=>i===2?{...x,date:dates[1]}:x)},
+  {history:history.map((x,i)=>i===4?{...x,value:0}:x)},
+  {history:history.slice(0,4)},
+ ]){
+  assert.equal(earningsBeaUnitQuarterHistoryMatches({...row,...patch}),false,JSON.stringify(patch));
+ }
+ assert.ok(risk.includes("earningsBeaUnitQuarterHistoryMatches(payload.indicator)"));
+});
+
+test("W05 R5-08 BEA manufacturing YoY preserves five contiguous quarters and both base amounts",()=>{
+ const dates=["2025-06-30","2025-09-30","2025-12-31","2026-03-31","2026-06-30"];
+ const periods=["2025-Q2","2025-Q3","2025-Q4","2026-Q1","2026-Q2"];
+ const history=dates.map((periodEnd,i)=>({
+  period:periods[i],periodEnd,profitsBillionsUsdAnnualRate:100+10*i,
+ }));
+ const row={observationPeriod:periods[4],observationPeriodEnd:dates[4],
+  yearAgoPeriod:periods[0],yearAgoPeriodEnd:dates[0],
+  currentProfitsBillionsUsdAnnualRate:140,yearAgoProfitsBillionsUsdAnnualRate:100,history};
+ assert.equal(earningsBeaManufacturingQuarterHistoryMatches(row),true);
+ for(const patch of [
+  {observationPeriod:"2026-Q1"},{yearAgoPeriod:"2025-Q3"},
+  {yearAgoPeriodEnd:"2025-09-30"},
+  {currentProfitsBillionsUsdAnnualRate:145},
+  {yearAgoProfitsBillionsUsdAnnualRate:101},
+  {history:history.map((x,i)=>i===2?{...x,period:"2026-Q1"}:x)},
+  {history:history.map((x,i)=>i===2?{...x,periodEnd:"2026-03-31"}:x)},
+  {history:history.slice(0,4)},
+ ]){
+  assert.equal(earningsBeaManufacturingQuarterHistoryMatches({...row,...patch}),false,JSON.stringify(patch));
+ }
+ assert.ok(risk.includes("earningsBeaManufacturingQuarterHistoryMatches(payload.indicator)"));
+ assert.equal((risk.match(/data-source="bea-manufacturing-profit"/g)??[]).length,2);
+ assert.ok(!risk.includes("score+mfg"));
 });
