@@ -194,7 +194,7 @@ function projectPit04KeyReview(input){
     ||input.status!=="HOLD_KEY_CLASSIFICATION_NOT_RAW_PIT_ATTESTATION"
     ||input.rawPitAttested!==false||input.promotionApproved!==false||input.repairAuthorized!==false
     ||[offset,pageSize,total,...Object.values(counts)].some(x=>x===null)
-    ||offset>50000||pageSize<1||pageSize>24||total>counts.coreKeys
+    ||offset>50000||pageSize<1||pageSize>8||total>counts.coreKeys
     ||counts.coreHistoryMissing!==counts.missingCandidateInternalMatch
       +counts.missingCandidateIncomplete+counts.missingWithoutCandidate
     ||!Array.isArray(input.evidence)||input.evidence.length>pageSize
