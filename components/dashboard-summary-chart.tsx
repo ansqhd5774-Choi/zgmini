@@ -114,11 +114,12 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays,curre
       </div>;
      }}
     />
-    {/* The dashed reconstructed daily trend and solid calculation-time trend are separate lines.
-        A segment joins consecutive stored observations only; it does not add samples,
-        identify older model versions or bridge the two provenance series. */}
-    <Area type="monotone" dataKey="reconstructedValue" stroke={color} strokeDasharray="4 4" fill="none" strokeWidth={1.8} dot={false} activeDot={{r:3.5,strokeWidth:0,fill:color}} connectNulls={false} isAnimationActive={false}/>
-    <Area type="monotone" dataKey="calculatedValue" stroke={color} fill="none" strokeWidth={2.1} dot={{r:2.4,fill:color,strokeWidth:0}} activeDot={{r:3.5,strokeWidth:0,fill:color}} connectNulls={false} isAnimationActive={false}/>
+    {/* Daily reconstruction and calculation-time observations are separate nullable keys.
+        The merged timeline can interleave their rows. Nulls in the other provenance
+        are not missing observations in this series: connect successive real samples
+        of each key without inventing values or connecting the two keys. */}
+    <Area type="monotone" dataKey="reconstructedValue" stroke={color} strokeDasharray="4 4" fill="none" strokeWidth={1.8} dot={false} activeDot={{r:3.5,strokeWidth:0,fill:color}} connectNulls={true} isAnimationActive={false}/>
+    <Area type="monotone" dataKey="calculatedValue" stroke={color} fill="none" strokeWidth={2.1} dot={{r:2.4,fill:color,strokeWidth:0}} activeDot={{r:3.5,strokeWidth:0,fill:color}} connectNulls={true} isAnimationActive={false}/>
     {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={4.4} fill={color} stroke="#fff7f7" strokeWidth={2}/>}
     {extrema.map(point=><ReferenceDot key={'extreme-'+point.kind} x={scaled.points[point.index].ts} y={point.value} ifOverflow="visible" shape={<ChartExtremumPoint point={point} peerIndex={extrema.find(p=>p.kind!==point.kind)?.index} samples={scaled.points.map(p=>({x:p.ts,value:p.value}))} count={scaled.points.length} color={color}/>}/>)}
    </AreaChart>
