@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 
+const PC_BASE=String.raw`E:\ZGmini\data\pc-writer`;
 const SHA64=/^[a-f0-9]{64}$/;
 const ARCHIVE=/^census-m3-mtm-(20\d{2})-([a-f0-9]{64})\.json$/;
 const MANDATORY=['data_type_code','seasonally_adj','category_code','cell_value','us'];
@@ -54,8 +55,11 @@ function headerSummary(bytes){
   return {schema:valid?'HEADERS_VALID':'HEADERS_INVALID',missingRequired,hasMonthlyDate,
     duplicateHeaderCount,unrecognizedHeaderCount,rowCount:body.length-1};
 }
-export function inspectCensusM3ArchiveHeaders({base,years}={}){
-  if(typeof base!=='string'||!path.isAbsolute(base)||path.basename(path.resolve(base))!=='pc-writer'||
+export function inspectCensusM3ArchiveHeaders({base,years,strictPlatform=true}={}){
+  if(typeof base!=='string'||!path.isAbsolute(base)||
+     (strictPlatform&&(process.platform!=='win32'||
+       path.win32.normalize(base).toLowerCase()!==path.win32.normalize(PC_BASE).toLowerCase()))||
+     (!strictPlatform&&path.basename(path.resolve(base))!=='pc-writer')||
      !Array.isArray(years)||years.length<1||years.length>2||
      new Set(years).size!==years.length||
      !years.every(y=>Number.isInteger(y)&&y>=2000&&y<=2099))
