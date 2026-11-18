@@ -524,11 +524,17 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
     : [], [observedSidecarReady,payload?.intradayObservations]);
   // After two real successful PC feed checks, the 1D/long-term chart uses their checkedAt time.
   // CNN sourceObservedAt stays separate and is never invented or rewritten.
-  const archiveHistory=useMemo(() => archived?.period===selectedPeriod
-    ? normalizeHistory((archived.checkedPoints.length>=2
-        ? archived.checkedPoints.map(point=>({timestamp:point.checkedAt,score:point.score}))
-        : archived.points.map(point=>({timestamp:point.observedAt,score:point.score}))))
-    : [], [archived,selectedPeriod]);
+  const archiveHistory=useMemo(()=>{
+    if(archived?.period!==selectedPeriod)return [];
+    // Keep every authentic CNN point even when the PC verifies it twice.
+    // On equal timestamps, a stored source observation wins over a PC check.
+    const checks=archived.checkedPoints.length>=2
+      ? normalizeHistory(archived.checkedPoints.map(point=>({timestamp:point.checkedAt,score:point.score})))
+      : [];
+    const observations=normalizeHistory(archived.points.map(point=>({timestamp:point.observedAt,score:point.score})));
+    const byTime=new Map([...checks,...observations].map(point=>[point.date,point]));
+    return [...byTime.values()].sort((a,b)=>a.time-b.time);
+  },[archived,selectedPeriod]);
   // Archive is an addition to existing real daily closes, not a replacement.
   // When an intraday date exists, use its real individual points instead of
   // drawing a second daily point on top. Unrecorded dates keep CNN daily data.
@@ -553,14 +559,15 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
       return end === undefined ? [] : allHistory.filter(point => point.time >= end - selected.days * 86400000 && point.time <= end);
     }
     const selected = getMarketPeriodConfig(selectedPeriod);
-    // A verified PC check can be later than the unchanged CNN closing observation.
-    const checkedEnd=(archived?.checkedPoints?.length??0)>=2?archiveHistory.at(-1)?.time:undefined;
+    // Real source observations or verified checks may post after the daily close.
+    // The latest actual timestamp determines the chart end, not PC checks alone.
     const dailyEnd=allHistory.at(-1)?.time;
-    const end=checkedEnd===undefined?(dailyEnd??combinedObserved.at(-1)?.time):Math.max(dailyEnd??checkedEnd,checkedEnd);
+    const observedEnd=combinedObserved.at(-1)?.time;
+    const end=observedEnd===undefined?dailyEnd:dailyEnd===undefined?observedEnd:Math.max(dailyEnd,observedEnd);
     const start = end===undefined?null:end-selected.days*86400000;
     const maxTime=end??Number.POSITIVE_INFINITY;
     const daily = start===null?allHistory:allHistory.filter(point=>point.time>=start&&point.time<=maxTime);
-    if(archiveHistory.length<2)return daily;
+    if(combinedObserved.length<2)return daily;
     const actual = start===null?combinedObserved:combinedObserved.filter(point=>point.time>=start&&point.time<=maxTime);
     const observedDays=new Set(actual.map(point=>point.date.slice(0,10)));
     return [...daily.filter(point=>!observedDays.has(point.date.slice(0,10))),...actual]
@@ -647,7 +654,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
     if(selectedPeriod!=="1D"||archived?.period!==selectedPeriod)return new Set<string>();
     const checks=currentCnnSessionCheckedPoints(payload?.observedAt,archived.checkedPoints);
     if(checks.length<2)return new Set<string>();
-    const cnnObservedTimes=new Set(allIntraday.map(point=>point.date));
+    const cnnObservedTimes=new Set([...allIntraday.map(point=>point.date),...archived.points.map(point=>point.observedAt)]);
     return new Set(checks.map(point=>point.date).filter(date=>!cnnObservedTimes.has(date)));
   },[selectedPeriod,archived,payload?.observedAt,allIntraday]);
   const chartAxis = useMemo(
