@@ -1,5 +1,17 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-R2-1330-PR1344-STORED-DATE-REFRESH-MAIN -->
+## 2026-11-18 — #1330 Inflation R2 계산기 날짜 수정의 실제 Writer 미반영 경로 최소 보완
+
+- **지난 유효 완료:** 앱 [PR #1340](https://github.com/ansqhd5774-Choi/zgmini/pull/1340) main `7e882034cb6f58d669927f02e24fd1809493a25e`, CI #44265088148 SUCCESS. 이전 11개 완료 월말 평가일·R2 산식·7축/16개 원자료를 유지하고 현재 월 마지막 평가일을 실제 `asOfDate`로 수정. 기존 UI 날짜 guard #1309는 그대로 보존.
+- **이번에 확인한 별도 실제 source 결함:** PC `scripts/pc-writer/run-local.mjs`의 공용 projection loop는 로컬 기존 `projection.status==='READY'`이며 `sourceVersion/sourceStoredAt`이 현재 읽힌 checkpoint와 같으면 새 입력 `builders.inflation`을 호출하지 않는 구조. 따라서 정정한 PR #1340 계산기가 운영 source에 적용되어도 옛 저장 `trend.at(-1).label=2026-11-30`과 `asOfDate=2026-11-18`의 불일치를 기존 체크포인트 불변일 때 스스로 고치지 못함. 이 판정은 저장된 실제 D1의 비공개 `body`를 조회했다는 뜻이 아니라 소스/기존 공개값의 재현 가능한 게이트 문제다.
+- **실제 3파일 최소 수정·병합:** [앱 PR #1344](https://github.com/ansqhd5774-Choi/zgmini/pull/1344)로 기존 `run-local.mjs` projection 분기에 물가 R2만의 `inflationR2DateRefresh` 조건을 연결하고, 새 순수 `scripts/pc-writer/inflation-r2-trend-date-refresh.mjs`에서 정확 승인 R2 READY와 유효 `asOfDate`·과거 정상 이력·현재 월 미래 월말 마지막 점일 때만 같은 Writer 저장형 입력 경로를 한번 사용하도록 제한. `tests/w01-inflation-r2-trend-date-refresh-r1.test.mjs`의 월중·월말·윤년·연도경계·이상데이터·정상 무재실행·기존 Writer/게시 경로 회귀 추가. 신규 Controller operation/예약/원자료/산식/가중치/TTL/DB 스키마 변경 0.
+- **원격 검증:** Node.js [CI #44266741004](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44266741004) `completed/success` — Build, Type check, Regression tests, PC publication recovery tests, Cloudflare candidate read contracts PASS. `main` squash `a7b7869153218e285e4439e55c855dffab622fc0` [commit](https://github.com/ansqhd5774-Choi/zgmini/commit/a7b7869153218e285e4439e55c855dffab622fc0)·PR merged=true 재조회. main Writer blob `522aac22be1b5c92836e79a74f018b2d7b5bbc8b`, Gate blob `4dce8959d5ac6cea6fc3f9465f59a98ac71639a4`, 시험 blob `78a062d286463c7cbcbf8d7668fd132a209801ef` 3개 직접 확인.
+- **운영 결과 한계 및 이슈 상태:** 개발 main 변경은 운영 PC의 실제 Writer source cutover, Core 현재 체크포인트, 물가 R2 로컬 projection 업데이트, 승인 D1 정확 `detail:inflation:v1` 저장값/`stored_at` 동등성, Production `/api/inflation-detail`의 날짜·score 및 1440/390 화면 적용 증거가 아니다. 따라서 #1330은 **개발 SOURCE_FIXED / 운영 게시 UNVERIFIED / 이슈 OPEN**. 실제 공개 endpoint는 이번 대화 web 도구와 격리 컨테이너 DNS에서 접근 불가였으며, 이 환경적 조회 실패를 Production 장애로 확정하지 않는다.
+- **독립 작업 및 실제 차단:** 공유 Controller 원본 [#2094](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2094) STAGED 원장·stage 잔존, independent maintainer V2/정규 안전복구 운영 영수증 미입증, W04 정확 6파일 공유 Controller 실설치 미확인. W01 B2-05 기존 A 영수증 확장 [Draft #2139](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2139) 운영 미설치, B2-06 D1 직접 조회 미완료. Census #28 `MISSING/CENSUS_M3_HEADERS_INVALID`·원본 archive header 미관측. 기존 원본 #1818 재실행/신규 B 중복 요청, PC/Task/SQLite/D1/Provider·Cloudflare 직접 쓰기 0.
+- **다음 실제 필수 실행:** 총괄 #2094 안전복구 운영 증거 → W04 단일 Controller 설치/사후 검증 → W01 승인된 기존 Reader 최소 적용/고유 A 1회 `report.inflation7` JSON/TXT 2/2로 B2-05 판정 → D1 exact key readback으로 B2-06 판정. 별도 #1330 R2는 실제 PC Writer source/preimage/승인 범위 확인 후 정규 저장 입력 재계산 → 로컬/원격 `detail:inflation:v1`의 본문·시각·버전 대조 → 공개 GET/UI 최종 검증. 작업 순서는 공유 자원 충돌이 없는 범위에서 독립적으로 실행한다.
+- **진행:** W01 33/71 (46.5%) → **33/71 (46.5%)**, 잔여 38; 신규 실제 완료 단계 0. 지정 71개 체크박스 변경 없음.
+
 <!-- W01-20261118-R2-ASOF-TREND-PR1340-SOURCE-MAIN -->
 ## 2026-11-18 — Inflation R2 미래 월말 평가일 표시 오류 #1330 upstream 소스 수정
 
