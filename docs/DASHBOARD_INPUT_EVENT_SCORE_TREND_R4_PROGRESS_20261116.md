@@ -1,5 +1,11 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
+> **현재 인계 정본 — W06 #34 후속 저장 Reader 60초 갱신 게시·원자료 시계 분리 PR #1426 (2026-11-19 02:51 KST):** 최신 main 소스 초기 `c05ef223a967302a261098fb5f4cf8762386fbc6`, 전담 기록 직전 `ac51f74a46e4c89819884b2e93a90c3a1ae52455`. 사용자 지시와 계획 W06 소유권 정정의 다음 단일 필수 실행인 `components/use-stored-index.ts` 실제 60초 저장 GET·게시 역행 여부를 독립 점검. **소스 FIRST FAIL:** `x-projection-published-at`가 검증돼도 기존 `lastPublication` 비교는 `x-projection-source-at` (또는 snapshot/source fallback)만 사용하여, 같은 유효 관측일에서 원자료 source 11:00→10:00로 보정됐지만 **승인 게시 시각 12:00→12:05가 진전된 정정값 53→54를 거절**. 실제 원본 TS hook을 transpile한 fixture로 기존 상태 **2 PASS / 1 FAIL (53 != 54)** 직접 재현; 운영 장애 발생 주장은 아님.
+**실행:** 최소 변경 [PR #1426](https://github.com/ansqhd5774-Choi/zgmini/pull/1426) 3파일(`components/use-stored-index.ts`, 신규 `lib/market-score/stored-index-publication-order-r4.mjs`, 신규 `tests/stored-index-publication-order-r4.test.mjs`). 게시시각을 source/retrieval 시각과 별도로 유지, 명시된 verified 게시시각이 나온 후에는 오래된/누락된 게시 헤더로 역행 불가. 기존 source-only 응답은 기존 source 날짜 순서 유지. 원본문의 관측일/게시 순서는 종전 `acceptsStoredUpdate` 이중 검증 보존, 합법 0 및 정정 반영, 갱신 60초 불변. 수집·산식·가중치·DB/TTL·Writer/운영 PC·D1·예약·Cloudflare 배포 명령 변경0.
+**검증/배포층:** 로컬 실제 hook fixture 3/3 PASS. 첫 [Node CI #44362361547](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44362361547) build 성공 후 TypeScript 2건 FAIL(신규 .mjs 선택적 문자열 param JSDoc 미지정) 발견; JSDoc 정확 입력 타입 보완 후 최종 [Node CI #44362618817](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44362618817) **Build·Type check·Regression tests·PC publication recovery tests·Cloudflare candidate read contracts SUCCESS**, PR #1426 **Merged** main SHA **`ef574b9b0c61aebdfc27c0e58e21e064ce4c569b`**, merge HEAD 확인 PASS. 병합 SHA GitHub Workers Build/check/verify/notify 별도 진행·최종 상태는 추가 재조회. 정확 활성 Production Cloudflare Deployment SHA, 실PC 설치·SQLite/D1 원본/신규 정정 게시값은 **미확인**; PR/Node CI를 실배포/실관측 DONE으로 확장하지 않음.
+**진도 및 다음 하나:** #34는 기존 고유 DONE에 이미 포함되어 **중복 신규 DONE 없음**. 고유 DONE #02,#03,#04,#05,#06,#08,#10,#21,#22,#23,#24,#26,#27,#33,#34,#35,#39,#63,#69,#70,#71,#72 = **22/75(29.3%)**, 잔여 53(#62 퇴역), #39 기존 분석 DONE 유지. 다음 W06 단일 실행은 **#75 UI/Worker Git Integration 병합 SHA→exact active Cloudflare Production Deployment·공개 API/PC·모바일 hydration** 증거를 선택적으로 읽어 배포층과 source층 구분; 원담당 운영 PC Writer의 #74를 W06 필수 Gate로 만들지 말고 실사용자 육안검수는 마지막 단계로 유지.
+>
+
 > **현재 인계 정본 — W06 계획·원장 교차검증 — #39 기존 DONE 복원 및 #41 원담당 정정 (2026-11-19 02:32 KST):** 계획 docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_EXECUTION_R4_20261116.md 13–21/47–51행과 전체 역사원장 다시 대조. **고유 DONE #02,#03,#04,#05,#06,#08,#10,#21,#22,#23,#24,#26,#27,#33,#34,#35,#39,#63,#69,#70,#71,#72 = 22/75(29.3%) 유지**, 잔여 53(#62 퇴역 포함), 완료 이력 삭제·새 DONE 발명 없음.
 **과거 오류 바로잡음:** 2026-11-17 원장 `R4 #39 — 한국 등락 counts 미연결 및 향후 완료 거래일 표시 경계 감사 (DONE: UI/설계)`에서 #39는 미연결 정직한 표시·필요한 완료 거래일 metadata 계약·한국 원담당 인계라는 분석/설계 항목을 이미 완료하여 **22개 DONE 집합에 포함**되었다. 2026-11-19 02:24 KST의 #39 `PARTIAL`은 같은 한국 운영 공개 연결 미구현을 이유로 **이미 완료된 분석형 #39를 잘못 재분류한 후속 회차 오류**이므로 **단계 판정으로 채택하지 않음**. 한국 원담당 신규 공개 counts 실배포는 독립 미완료/별도 승인 계약이며 #39 기존 DONE 취소 사유 아님. 추가 8/8 fixture는 완료 점검으로만 재사용한다.
 **#38 W06:** 미국 IEX provisional UI PR #1420 merged + CI 및 Workers Builds 4/4 PASS는 재사용하되 활성 Production exact Deployment 및 실제 신규 IEX 공개 갱신 검증 없으므로 **기존 #38 PARTIAL**을 임의 DONE으로 올리지 않음. **#40 W06/Writer:** 11월 17일에도 PARTIAL 이력이 존재. 11월 19일 9개 fixture는 W06 UI 경계 보강이나 실제 적격 원자료 1개→Writer 재계산→SQLite/D1→공개 1D 실전파는 입증되지 않으므로 **#40 PARTIAL**, 계산/Writer 소관 분리. 둘 다 W06에게 원자료 모니터링 Gate를 요구하지 않음.
@@ -1671,3 +1677,14 @@
 실제 변경: 진행 기록 이력 보존·최상위 정본 정정만; source/코드/수집/계산/Writer/PC/D1/Cloudflare 변경0.
 다음 필수 실행: 최신 main app/dashboard-ui.tsx와 저장 Refresh hook의 실제 이전 응답 역행/60초 갱신 selector를 기존 #34 이후 변경 파일에 한정해 fixture 확인; FAIL 재현 시 W06 UI Reader 최소 수정과 관련 CI/PR/병합, PASS 시 별도 중복 완료 산입 없이 진짜 미완료 W06 구조 작업으로 이동.
 기록 원격 확인: 이번 update 후 blob+branch HEAD 읽기 검증 필수.
+
+
+### [2026-11-19 02:51 KST] W06 #34 후속 — 저장 Index 게시 헤더·원자료 헤더 혼합 정정 (PR #1426)
+상태: 소스 결함 수정·회귀·CI·GitHub main 병합 PASS. #34 기존 DONE 재사용, 새 DONE 증가0; 운영/활성 Cloudflare 정확 배포는 별도 UNKNOWN.
+시작 SHA: main c05ef223a967302a261098fb5f4cf8762386fbc6 / 전담 기록 ac51f74a46e4c89819884b2e93a90c3a1ae52455. 종료 main ef574b9b0c61aebdfc27c0e58e21e064ce4c569b.
+FIRST FAIL: 새 x-projection-published-at(12:05) + 과거 source_at(10:00)이 이전 게시(12:00)+source_at(11:00)보다 늦는데 기존 useStoredIndex는 source_at만 비교해 새 게시 54를 거부. 실제 TS hook 기존 코드 deterministic read-only 시험 2PASS/1FAIL(53!=54).
+수정: nextStoredIndexPublicationOrder 별도 순서 checkpoint, 기존 acceptsStoredUpdate·60초 주기·0/결측·원자료 상태 보존. 3파일. 수집/산식/Writer/D1/DB/TTL/Cloudflare/DNS 변경 없음.
+검증: 로컬 3/3 PASS, Node CI #44362361547 TypeScript 2FAIL 정확 JSDoc 인자 오류, 수정 후 Node #44362618817 Build/Type/Regressions/PC recovery/Cloudflare reader PASS. PR #1426 Merged main ef574b9b0c61aebdfc27c0e58e21e064ce4c569b. 병합 SHA Workers checks 최신 최종은 후속 관측. Active Cloudflare Deployment·운영 PC/SQLite/D1 실제 새정정 효과 UNKNOWN.
+진도: 기존 고유 DONE 22/75(29.3%) 유지, 잔여53. #39 기존 DONE 유지. 실코드 결함은 조치, 신규 75단계 DONE 중복 주장 금지.
+다음 단일 필수 실행: W06 #75 병합 main 정확 SHA와 Cloudflare Git Integration active Production Deployment/공개 API UI PC·모바일 hydration 확인. 장기 운영 원자료 #74는 Writer 담당 별도.
+원격 인계: 원장 갱신 후 브랜치 HEAD 및 파일 재조회 검증 필수.
