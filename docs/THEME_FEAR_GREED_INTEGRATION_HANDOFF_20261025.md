@@ -1,3 +1,13 @@
+## 2026-11-18 W03 12/68 — GMH-only private seed parity source CI PASS/main 병합·원담당 브랜치 동기화
+
+- **진행률:** 11/68 DONE (16.2%), 12/68 **IN_PROGRESS** 유지. 7테마 비공개 후보 코드만 개선했고, 실제 D1/public API/UI 게시·R51 날짜 정렬 성공은 아직 없음.
+- **새 독립 기능 source 실제 완료:** [앱 PR #1321](https://github.com/ansqhd5774-Choi/zgmini/pull/1321) 정확 **신규 2파일**, CI [Node.js #44254670871](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44254670871) **completed/success**, build 성공, 전체 Node `4,959 tests / 4,949 PASS / 0 FAIL / 7 skip / 3 todo`, 기존 PC publication 24/24, Cloudflare reader 69/69 PASS. 신규 4개 테스트(정상 7x252, 기존 이력 오차 거부, 권리/원가격/날짜/ETF identity 결함 차단, 구형 baseline 결함 차단) 4/4 PASS. 처음 [#44254157044](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44254157044) 신규 테스트 fixture 오류 1건 `history[17]` 공통구간 밖 값 수정으로 생긴 false expected failure; 실제 공통일 `2026-10-05`로 교정 뒤 전체 PASS, 실패를 숨기지 않음.
+- **main 병합 SHA:** `5db34d7ea43c5a1b2773e7d2dde641c827e94e17`. [새 모델 소스](https://github.com/ansqhd5774-Choi/zgmini/blob/main/scripts/pc-writer/theme-seven-gmh-private-seed-r1.mjs) Git blob `727a0b189332af6dbcebc2465441ea5078cc7927`, [신규 테스트](https://github.com/ansqhd5774-Choi/zgmini/blob/main/tests/theme-seven-gmh-private-seed-r1.test.mjs) blob `c106f599945e038e1a6181d358bdc32641b81364`. 원담당 기존 feature branch에도 두 파일 **바이트 동일** create-only 복사, 커밋 `c48898d8491339439829e71f0abff2690c1b3298` 및 `ad2d7d8886b9345906756c93915b95e9f8760cfe`. 기존 기능 branch 이력/타 담당 파일 보존.
+- **검증 의미:** 외부 라이선스/Raw 파일 SHA 재해시 증거는 생성된 함수로만 입증하지 않음(`rawFilesRehashedNow=false`), `sourceStoredAt`은 호출자 입력임을 명시. 후보 출력 `CANDIDATE_GMH_ONLY_PRIVATE_NOT_APPROVED`, `publishedAt=null`, 3개 권리 플래그 모두 false, 공개값/D1 저장/원자료/공급자/Task/Controller 변경 없음. 실제 11/13 비공개 파일과 D1 stored 10/16 baseline을 source-only pure converter에 **실PC 연결/실데이터 실행한 결과는 아직 없음**.
+- **다음 필수 실제 실행:** 승인된 PC 로컬 파일 읽기 경로에서 기존 GMH-only 비공개 저장 파일(11/13, SHA 확인 #1700)과 D1 baseline(10/16, #2133)을 실제 읽기 전용으로 새 parity 함수에 입력해 날짜/점수 재현; R181 11/16 이후 별도 저장 원본 SHA·checkpoint 경로를 현재 승인 범위에서 분리 확인. 그 뒤 실제 GMH-only 공개 가능 권리/비복원성/Reader 7테마 계약을 검증한 경우에만 기존 정규 Publisher D1 CAS/readback 및 Production READY, R51 현행 확정/잠정 날짜 연결 판정. 8일 stale 보호 유지, MarketParquet 사용 금지; 전체 기능 완료 전 자연 예약 검증 Gate 없음.
+
+---
+
 ## 2026-11-18 15:55 KST W03 12/68 — PR #1321 최신 CI 실패 확정, 원인 미확인
 
 - **진행률:** 시작 11/68(16.2%), 종료 11/68(16.2%), 12단계 IN_PROGRESS. 기준 작업 브랜치 `codex/theme-fear-greed-integration-20261025` HEAD `86c7d1d02471253aef2be4adb2a827400af21c34` (조회 시점); PR #1321 후보 HEAD `974b7774f6abb0508a4a16c5af66e39e0e965e83`.
