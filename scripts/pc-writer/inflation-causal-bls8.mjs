@@ -88,7 +88,12 @@ export function normalizeBls8WithLastGood(payload,previous){
 
 const isExistingDocument=x=>x?.schemaVersion===1&&x?.provider==='BLS'
  &&Array.isArray(x?.ids)&&x.ids.join('|')===BLS8_IDS.join('|')
- &&x?.series&&BLS8_IDS.every(id=>Array.isArray(x.series[id])&&x.series[id].length);
+ &&x?.series&&BLS8_IDS.every(id=>Array.isArray(x.series[id])&&x.series[id].length)
+ &&(x.seriesSourceStoredAt===undefined||
+  (x.seriesSourceStoredAt&&typeof x.seriesSourceStoredAt==='object'&&
+   !Array.isArray(x.seriesSourceStoredAt)&&
+   Object.keys(x.seriesSourceStoredAt).length===BLS8_IDS.length&&
+   BLS8_IDS.every(id=>validIso(x.seriesSourceStoredAt[id]))));
 
 export function mergeBls8(previous,incoming){
  const merged={};
@@ -178,8 +183,12 @@ export async function collectInflationCausalBls8({base,blsKey,quotaFetch,now=new
    latest:Object.fromEntries(BLS8_IDS.map(id=>[id,old.series[id].at(-1).date]))};
  }
  const sourceStoredAt=moment.toISOString();
+ // A partial batch has distinct per-series last-good provenance. Do not
+ // report the document's new storage time as the old series' source time.
+ const seriesSourceStoredAt=Object.fromEntries(BLS8_IDS.map(id=>[id,
+  quarantinedSeries.includes(id)?(old?.seriesSourceStoredAt?.[id]??old.sourceStoredAt):sourceStoredAt]));
  const document={schemaVersion:1,provider:'BLS',ids:[...BLS8_IDS],frequency:'MONTHLY',seasonalAdjustment:'NSA',
-  sourceStoredAt,sourceVersion:'BLS_API_V2_PPI_BATCH8_R1',requestYears:[begin,year],
+  sourceStoredAt,seriesSourceStoredAt,sourceVersion:'BLS_API_V2_PPI_BATCH8_R1',requestYears:[begin,year],
   responseSha256:sha256(responseText),providerRawSeries:payload.Results.series,series:merged};
  const proof=atomicSaveAndVerify(file,document);
  return {status:quarantinedSeries.length?'PARTIAL_SAVED_LAST_GOOD':'SAVED_READBACK',
