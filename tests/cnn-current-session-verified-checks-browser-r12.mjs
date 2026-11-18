@@ -64,6 +64,9 @@ try{
   assert.equal(await oneDay.getAttribute('aria-pressed'),'true');
 
   const chart=page.locator('.zg-fg-us .cnn-history-chart-hitbox');
+  // Lazy renderer is gated by viewport visibility; scrolling the placeholder
+  // first makes this test independent from the initial page fold.
+  await chart.scrollIntoViewIfNeeded();
   const curve=chart.locator('path.recharts-area-curve');
   await curve.waitFor({state:'visible',timeout:20000});
   await page.waitForFunction(()=>{
