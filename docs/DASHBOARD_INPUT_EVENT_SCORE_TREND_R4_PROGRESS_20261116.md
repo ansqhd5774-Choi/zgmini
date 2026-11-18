@@ -1404,3 +1404,9 @@
 - **원담당 이슈:** 중복 검색 후 [product issue #1335](https://github.com/ansqhd5774-Choi/zgmini/issues/1335) W04 고용 R54 계산/PC Writer 담당에 첫 실패와 최소 readback·원인판정·실제 계산점 연결 기준 기록. 이슈 생성은 다른 대화의 실제 수신/수정/운영 적용과 별개. W06가 R54 공식 계산점을 만들어 넣거나 R6 29원자료를 R54 네 점수에 재가중하지 않음. 해당 문제는 #51 독립 검증을 막지 않음.
 - **운영 상태:** 이번 W06 변경은 진행 원장 + 정확한 GitHub Issue만, 앱/Writer/DB/SQLite/D1·산식/가중·TTL·예약·DNS/Cloudflare Git Deployment 변경 **0**. 실PC 승인 running SHA, Writer checkpoint/SQLite 계산 시각, D1 `body/stored_at` 동치, exact active Cloudflare Deployment/serving SHA **UNVERIFIED**, published GET200만으로 Done 선언 불가.
 - **다음 필수 1개:** **W06 #51 D16 경제 금리** 실제 `/economic-indicators/rates/`, `/api/market-score`, 승인 R3 일별/정책 4요인과 각 독립 관측일·period comparisons·현재/이력 last·connected SVG/path 390/1440px 검증. 실제 UI 결함일 때만 W06 범위의 최소 수정; upstream 저장값은 금리 원담당. #50 W04 #1335는 별도 follow-through.
+
+### [2026-11-18 17:00 KST] W06 R4 #51 — 경제 금리 정적 Reader 진입 경로 확인
+- 상태: **PARTIAL**; W06 소유 UI 진입 경로 정적 확인 PASS, live 브라우저 요청은 결과 미회수(STATE_UNKNOWN). 기존 DONE **22/75(29.3%)**, 잔여53.
+- 범위/증거: `main`의 `app/economic-indicators/rates/page.tsx` → `EconomicDetailPage id=rates` → 공통 패널, `lib/economic-detail-catalog.ts` 표시-only. 실제 API 4요인·관측일·가중합·1Y chart·모바일/PC·PC SQLite→D1 검증은 아직 미완료. 기존 #50의 W04 #1335 인계는 별도.
+- 변경: 진행 원장만; 앱·Collector·Writer·SQLite·D1·Cloudflare·산식·TTL 변경0. 새로운 CI/PR 없음. 활성 Production/PC SHA 미확인.
+- 다음 필수 단일 실행: W06 #51 `/api/market-score`와 `/economic-indicators/rates/` 동일 공개 스냅샷 4요인·관측일·현재/last·390/1440 SVG 확인. PASS 증거 전에는 DONE 승격 금지.
