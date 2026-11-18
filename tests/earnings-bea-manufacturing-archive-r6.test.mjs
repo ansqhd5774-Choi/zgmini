@@ -159,3 +159,14 @@ test('dangling CSV/meta and raw directory links are unsafe rather than missing',
     assert.throws(()=>readArchivedBeaMfgR6({root,sourceSha:hash,now}),
       /BEA_MFG_ARCHIVE_UNSAFE_PATH/);
 }));
+
+
+test('B result contract publishes source checkpoint and exact D1 stored timestamp without changing data',()=>{
+ const source=fs.readFileSync(new URL('../scripts/pc-writer/EARNINGS_BEA_MFG_PROFIT_R6_D1_ONE_SHOT.mjs',import.meta.url),'utf8');
+ assert.equal((source.match(/sourceStoredAt:payload\.sourceStoredAt/g)??[]).length,2);
+ assert.match(source,/storedAt:result\.storedAt/);
+ assert.match(source,/status:'PASS_READONLY_ARCHIVE_PREFLIGHT'/);
+ assert.match(source,/d1Readback:result\.status/);
+ assert.match(source,/--confirm-bea-manufacturing-d1-write/);
+ assert.match(source,/--source-sha/);
+});

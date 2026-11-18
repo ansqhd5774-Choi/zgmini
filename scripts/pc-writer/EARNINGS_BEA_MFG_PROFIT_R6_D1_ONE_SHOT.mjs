@@ -98,7 +98,8 @@ if(process.argv[1]&&path.resolve(process.argv[1])===self){
       }
       const payload=readArchivedBeaMfgR6({root,sourceSha});
       if(!apply)console.log(JSON.stringify({status:'PASS_READONLY_ARCHIVE_PREFLIGHT',
-        sourceVersion:payload.sourceVersion,period:payload.indicator.observationPeriod,
+        sourceVersion:payload.sourceVersion,sourceStoredAt:payload.sourceStoredAt,
+        period:payload.indicator.observationPeriod,
         yoyPercent:payload.indicator.value,rawWrites:0,sqliteWrites:0,d1Writes:0}));
       else{
         const {client,credential}=await import('./d1.mjs');
@@ -107,8 +108,10 @@ if(process.argv[1]&&path.resolve(process.argv[1])===self){
         if(!['READBACK_VERIFIED','ALREADY_STORED'].includes(result.status))
           throw Error('BEA_MFG_D1_READBACK_NOT_VERIFIED');
         console.log(JSON.stringify({status:result.status,key:BEA_MFG_SNAPSHOT_KEY,
-          sourceVersion:payload.sourceVersion,period:payload.indicator.observationPeriod,
-          yoyPercent:payload.indicator.value,sqliteWrites:0,scoreWrites:0,d1Readback:result.status}));
+          sourceVersion:payload.sourceVersion,sourceStoredAt:payload.sourceStoredAt,
+        period:payload.indicator.observationPeriod,
+          yoyPercent:payload.indicator.value,sqliteWrites:0,scoreWrites:0,storedAt:result.storedAt,
+          d1Readback:result.status}));
       }
     }catch(error){console.error('ERROR='+String(error?.message??'BEA_MFG_R6_FAILED'));process.exitCode=1;}
   }
