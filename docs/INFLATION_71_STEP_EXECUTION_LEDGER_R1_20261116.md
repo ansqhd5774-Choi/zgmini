@@ -1,5 +1,16 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-CENSUS28-ARCHIVED-HEADERS-SOURCE-PR1307 -->
+## 2026-11-18 — Census #28 기보관 응답 헤더 원인 확인용 비민감 read-only 소스 준비
+
+- **시작/현재:** 33/71(46.5%) → **33/71(46.5%)**, DONE 신규 0, 잔여 38. 이전 source/PC preimage 4/4 PASS 및 기존 main PR #1302 CI를 재실행하지 않음.
+- **독립 사실 재확인:** 현 승인 PC A `inflation-candidates-runtime-readonly` #2060과 static 공식 V2 preimage #2099/#2100은 기보관 Census API raw 첫 header row를 출력하지 않는다. `CENSUS_M3_HEADERS_INVALID`의 정확 누락/중복/형태는 **여전히 미확정**. 기존 2026-11-17 승인 API source 4파일 pin과 최신 개발 main을 혼동하지 않음.
+- **신규 source-only Draft PR [#1307](https://github.com/ansqhd5774-Choi/zgmini/pull/1307):** 최신 main `88ecff9b09d69d65470acf9916e7d0f010ae980e`에서 분리한 `codex/w01-census28-archive-header-readonly-20261118`, HEAD `e7cbe04e63ed4d71aff34a1e37ffd5f3d371bfe8`, 정확 2개 신규 파일: `scripts/pc-writer/inflation-census-m3-archive-headers-readonly.mjs`, `tests/w01-census-m3-archive-headers-readonly.test.mjs`. 공급자 GET 없이 기존 `raw/census-m3-mtm-YEAR-SHA256.json` 1~2연도만 SHA와 double-read, 디렉터리/파일 symlink/범위 보호 후 필수 헤더 누락·중복·날짜 헤더·행수의 **비민감 metadata만** 출력. 원본 값·API key·절대 경로 출력 금지. 새 코드 자체는 PC operation/Host/Controller에 등록되지 않아 **현장 실행 불가**.
+- **실행 증거:** Node 22 로컬 임시 파일 fixture 회귀 **6/6 PASS**(정상, header 불일치, 연도 누락, hash 변조, symlink, 범위 제한/없는 디렉터리). 원격 PR diff **2파일**, `mergeable=true`, source/test blob 재조회 완료. **GitHub Actions Node CI [Run #44240775775](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44240775775)는 등록 시 queued** — 완료 여부 별도 실증 전 SUCCESS 주장 금지. 실제 공식 Census archived response 바이트 파싱은 **미실행**.
+- **공유 차단 분리:** W04 공용 Controller #2094은 `BLOCKED/WORKFLOW_DISABLE_NOT_CONFIRMED`, installed `f7f1559...` 유지; 유지보수 복구는 공통/W04 기존 담당으로 유지하며 W01 5파일 중복 설치·lease/Workflow 조작 0. 기존 Census B #1177/#1818 재실행 금지. Event129 C급 활성화 사용자 신규 승인 없음, Core Task/VBS/Node/E-lock owner 여전히 미인증. Provider/운영 SQLite/D1/Writer/Task/배포/Controller 변경 **0**.
+- **W01 다음 필수 실행:** #1307 정확 HEAD의 Node CI 결과 확인 → PASS여도 raw root/실PC 등록이 없으므로 **운영 A로 허위 승격하지 않음**. 기존 승인 Host/Controller 보호 경로를 통해 비민감 header reader를 실행할 최소 기능 소유 W01 source/manifest를 별도 검토하고 실제 raw schema를 근거로만 1개 원인 수정. Owner proof 및 Writer lease가 실제 확인되기 전 정식 Census 수집 B 신규 발행 금지. W04 공유 Controller 설치 복구·승인 SHA 수신 후 A407 고유 A 1회(19+6 raw/checkpoint2) 별도 진행.
+
+
 <!-- W01-20261118-STATIC-CENSUS-FOURFILE-CLOSURE-A2099-A2100 -->
 ## 2026-11-18 — 승인된 Census #28 공식 XLSX 경로 현재 실PC 4파일 source closure 완료
 
