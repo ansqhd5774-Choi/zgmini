@@ -1134,3 +1134,12 @@
 - **현재 실제 CI:** 초기 Node #44216690085는 기존 설명 문구 source assertion 1건 FAIL(4902 pass/1 fail), 해당 설명 복원 후 새 head `1656ebafc0f727850b2b708dd617cc22b8a6bf34`; [최신 Node #44216972252](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44216972252) Build/TS/Regression **4913 total /4903 PASS /0 FAIL /7 skipped /3 todo**, 신설 교차 provenance 테스트 PASS. [Chromium #44216972299](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44216972299) 브라우저 설치 단계 **실행 중**, 화면 합격 주장 금지. 4파일 compare main 대비 ahead 5/behind0. **PR 아직 미병합**.
 - **운영 경계:** 운영 PC/Collector/SQLite/D1/API/Writer/Cloudflare/DNS/공통 Controller 변경0, 총괄 신규 인계0. 정확 Production 활성 배포·실자료 hydrated 차트 증거 아직 없음(#69/#75 PARTIAL). 공개 사이트의 SSR placeholder/API 접근 실패를 UI 실제 렌더 FAIL 증거로 오판 금지.
 - **다음 단일 실행:** Chromium #44216972299가 종료되면 실제 390/768/1440/1920 1W 교차 2계열 및 12개 카드 stroke 확인. FAIL은 해당 SVG/DOM 근거로 W06에서 수정, PASS와 최신 main 무충돌이면 PR #1282 병합→main Node/Workers Build 검증→원격 원장 갱신. 예약·수동 최종 검증은 전 기능 완료 후.
+
+### [2026-11-18 11:00 KST] W06 #69 — 교차 관측 계열 SVG 연결 회귀 CI PASS 및 PR #1282 병합
+- **시작/종료:** 고유 DONE 22/75(29.3%), 잔여 53. #69 UI 격리 테스트/소스 PASS; 실서비스/활성 Production 검증은 PARTIAL. #62 삭제된 등락지수 복원 금지.
+- **기준:** 이전 인계의 PR #1282 head `1656ebafc0f727850b2b708dd617cc22b8a6bf34`, Node [#44216972252](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44216972252) 4903 PASS/0 FAIL. 본 실행 GitHub compare main 대비 4개 UI/시험 파일만 변경, behind 0 확인.
+- **실제 완료:** [Chromium #44216972299](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44216972299) job 134509129104 `completed/success`, 4폭×6기간 및 1W 두 계열 stroke·12카드 검증 단계 success. [PR #1282](https://github.com/ansqhd5774-Choi/zgmini/pull/1282) squash **MERGED**, main merge SHA `c38f9845e3868a324cf5ccd0bfe6f22b79250064`. 교차 배치된 실제 계산점 실선과 일간 재구성 점선은 출처별 별도 계열에서 기존 유효 샘플끼리 연결하며 새 점·시각·산식·방법론 버전을 생성하지 않음.
+- **운영 범위:** 앱 UI 1파일 및 시험 3파일. 운영 PC/SQLite/D1/API/Writer/Collector/Cloudflare 직접 변경 0. Chromium은 격리 mocked browser이며 Production DOM·Cloudflare active Deployment/실제 새 입력의 계보 증명 아님. 병합 이후 main CI 상태는 별도 재조회 필요. 프로세스 총괄 신규 인계 0.
+- **LAST PASS/FIRST FAIL:** Chromium 최초 실행 중 상태 → completed SUCCESS로 해소. 초기 Node 설명 문구 assertion FAIL은 수정된 최신 head에서 PASS; 운영 실서비스 FIRST FAIL 관측 없음(미검증).
+- **다음 필수 실행 하나:** W06가 main merge `c38f9845`의 후속 Node/Workers Build 체크를 조회해 PASS/FAIL 판정한 후, 현재 표시되는 종합/12개 카드의 1D~1Y 마지막점과 현재 게시점의 provenance·관측일·0점 계약을 기존 시험과 대조한다. #74 Writer PC→D1, #75 Cloudflare active Production/사용자 최종 검수는 별도 미완료이며 예약 검증은 전 기능 후속.
+- **진행 기록 원격 확인:** 아래 커밋 후 해당 파일을 원격 재조회하여 확정. 신규 DONE 증가 없음.
