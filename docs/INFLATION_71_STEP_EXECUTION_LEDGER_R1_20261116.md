@@ -1,5 +1,15 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-INFL7-B205-WRITER-STATUS-GUARD-PR2139 -->
+## 2026-11-18 — B2-05 기존 A의 개별 Writer 영수증 과대인증 방지 (source-only)
+
+- **이번 확인된 source 결함:** [제어 Draft PR #2139](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2139)의 첫 버전은 inflation7 개별 `READBACK_VERIFIED`/`ALREADY_STORED` 메타데이터가 유효해 보이면 상위 Writer 결과가 `FAILED` 또는 `DRY_RUN_PASS`이거나 동일 `inflation-7-publication` 실패가 기록된 경우도 `verifiedAtWriterTime=true`로 표시할 수 있었다. 이는 운영에서 관측된 손상 영수증이라는 뜻이 아니라 새 진단 소스의 모순 인증 위험이다.
+- **실제 최소 수정:** 기존 Reader 파일 [commit 35961bba](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/35961bbaa1b054818f8ee1db02e531105c2edcc2)와 전용 회귀시험 [commit 3e43e86b](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/3e43e86be16205455e1eec683f62b71365cfa5af), PR 정확 3파일 유지. 상위 `VERIFIED` 또는 `VERIFIED_WITH_GAPS`이고 동일 inflation7 단계 실패가 없을 때만 개별 게시 인증 허용. 상위 실패·dry run·미승인 상태·동일 단계 실패는 `CONTRACT_UNVERIFIED`/false로 종료하며 무관한 단계의 일부 실패는 기존 개별 정상 영수증을 보존한다. 신규 operation/설치/Runner/예약/게시 재실행 없음.
+- **최신 HEAD/CI:** 제어 PR #2139 HEAD `3e43e86be16205455e1eec683f62b71365cfa5af`, [C996 #44263695770](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44263695770) `completed/success`, [Maintenance #44263695887](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44263695887) `completed/success`; 신규 W01 Writer 메타 영수증 회귀 단계도 성공. 이것은 isolated Windows source-only 검사로 운영 PC 적용·실제 개별 D1 영수증 확인을 의미하지 않는다.
+- **현장 FIRST UNFINISHED:** 공유 Controller #2094는 `BLOCKED/FIRST_FAIL=STAGED`, stage/stagedHost 실제 잔여이며 independent maintainer V2 설치/정규 안전복구 영수증 없음. 기존 설치 Controller `f7f1559...`에는 위 변경 미반영. W04 정확 6파일 공유 B 실설치도 미완료. #2139는 명시 Draft HOLD/미병합을 유지하며 기존 W04 승인 manifest를 묵시 확장하거나 별도 중복 B 요청을 만들지 않는다. #1818 원본 B 재실행 금지.
+- **다음 필수 실행:** 공통 총괄의 #2094 안전복구 근거와 W04 단일 공유 설치 결과가 실제 확보되면 W01이 정확한 현재 Controller SHA/preimage·기존 고정 A 조회 승인 범위 확인 → PR #2139 Reader 최소 변경 운영 적용 경로 승인 → 고유 1회 A로 `report.inflation7` Writer 영수증 JSON/TXT 2/2 회수 → B2-05 판정. 이후 승인된 D1 정확 1key SELECT로 B2-06 검증. Census #28 `MISSING/CENSUS_M3_HEADERS_INVALID` 별도 미해결. Writer·SQLite·Provider·D1·Task·Production 쓰기 0.
+- **실제 진행률:** 시작/종료 **33/71 (46.5%)**, 미완료 38, 신규 운영 DONE 0. 기존 71개 체크 상태를 변경하지 않는다.
+
 <!-- W01-20261118-INFL7-B205-EXISTING-A-PR2139-CI-PASS-DRAFT -->
 ## 2026-11-18 — B2-05 Writer 개별 게시 영수증 조회 경로 최소화 (source-only, Draft HOLD)
 
