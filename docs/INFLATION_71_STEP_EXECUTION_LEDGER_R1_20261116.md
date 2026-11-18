@@ -1,5 +1,15 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-CENSUS28-ARCHIVE-ROOT-PR1312-MERGED -->
+## 2026-11-18 — Census #28 archive header helper 실제 경로 허용 취약 범위 최소 수정 완료
+
+- **이번 실제 소스 작업:** 앱 기존 PR #1307에서 생성한 `scripts/pc-writer/inflation-census-m3-archive-headers-readonly.mjs`는 `path.basename(base)==='pc-writer'`만 확인해 임의 절대 경로도 열 수 있는 결함이 확인됨. 실제 원격 PC A operation은 미설치이지만 미래 W01 helper 재사용의 접근 범위가 E: 데이터 고정 계약보다 넓어지지 않도록 수정. 승인 Windows 기본 `E:\ZGmini\data\pc-writer`만 허용하고 `strictPlatform:false`는 단위시험 fixture에서만 명시 사용. SHA-256·2회 readback·symlink 보호·원문 수치/키/절대경로 비노출 유지.
+- **완료 증거:** 앱 [PR #1312](https://github.com/ansqhd5774-Choi/zgmini/pull/1312) 정확 2파일, Node22 로컬 fixture 7/7 PASS, [Node.js CI #44246052089](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44246052089) `completed/success`, `main` squash 병합 `bb149d4ae14faf7fe53f24b9ffa3ddf86c9ccf30`. main 정확 module/test blob `ab34d908afbae940377a0cb2d5698118659b48c1`/`00c2ed514c4b5c625f0624fb41cc1b92722efd5e` 2/2 직접 재조회 일치. 실제 PC archive 읽기/원자료 수집 성공과 무관.
+- **공통 장애 최신 실측:** [#2094 R13 결과](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2094#issuecomment-6970113944)에서 실PC [A #2114/Run #44243383920](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44243383920) `PASS`, stageRoot/stagedHost는 `PRESENT`, lease owner/recovery marker `ABSENT`, backlog 1 closed window, Workflow `active`, 실제 Controller `f7f1559...` 유지, `restorationVerified=false`. 임의 stage 삭제/원본 #2094 재실행 불가. 공통 유지보수기 [PR #2116](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2116) main 병합은 독립 maintainer Windows 버전 교체/복구 성공 증거 아님. W04 6파일 단일 설치 담당, W01 별도 5파일 Controller [Draft #2111](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2111) 설치 HOLD.
+- **독립 공식 경로 확인:** 승인 공식 static B [manifest](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/approvals/inflation-manual-b/official-static-two-source-w01-v2-approved-20261116.json)의 Census XLSX는 브라우저 조회 시 `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`, BLS flatfile은 `application/octet-stream` 타입으로 응답했으나 본 진단 환경은 해당 바이너리를 가져오지 못함. 즉 HTTP 접근·본문/SHA/파서/실PC 수집 성공을 주장하거나 B 승인 source URL을 바꾸지 않음.
+- **다음 실제 필수 실행:** 공유 STAGED 복구와 W04 정확 Controller 설치 완료/후속 W01 A 별도 승인 등록을 확인한 뒤, W01이 직접 archive header-only 실PC A 고유 요청 1회로 기존 2025/2026 원본 헤더를 진단. 그 결과로 입증된 단일 parser 호환 문제만 수정. Event129/실행 Task→Node→E:lock 증명 전 신규 Census 공급자 B 요청 금지. 기존 완료 W01 단계 33/71(46.5%) 불변, 신규 DONE 0. 운영 Writer/DB/D1/Task/Controller/공급자 변경 0.
+
+
 <!-- W01-20261118-INDEPENDENT-CLOUDFLARE-BUILD-VERSION-IDENTITY -->
 ## 2026-11-18 — Controller 비의존 B1-07/B4-01 배포 신원 실증
 
