@@ -27,6 +27,8 @@ const lines=['EARNINGS_BLS_SERVICE_R1_D1_ONCE',`UTC=${now}`,
   'BASE_SNAPSHOT_KEY_WRITES=0','SCORE_WRITES=0'];
 let db;
 let exitCode=0;
+// A lost D1 response may hide a committed write; require verified readback.
+let remoteOutcomeUnknown=false;
 let resultDirectory=os.tmpdir();
 try {
   // Approved Writer B runs may supply a request-specific evidence directory.
@@ -78,11 +80,13 @@ try {
   }else{
     const {client,credential}=await import('./d1.mjs');
     const remote=client(config,()=>credential(operationalRoot));
+    remoteOutcomeUnknown=true;
     const result=await earningsCompanionWriter(remote.adapter(config.core,{allowWrites:true}),
       {snapshotKey:EARNINGS_C_SERVICE_SNAPSHOT_KEY}).write(payload,{storedAt:Date.now()});
     if(!['READBACK_VERIFIED','ALREADY_STORED'].includes(result.status)
       ||result.key!==EARNINGS_C_SERVICE_SNAPSHOT_KEY)
       throw Error('EARNINGS_C_SERVICE_READBACK_NOT_VERIFIED');
+    remoteOutcomeUnknown=false;
     lines.push(`D1_RESULT=${result.status}`,
       `D1_READBACK=${result.status==='READBACK_VERIFIED'?'VERIFIED':'PREVIOUS_IDENTICAL'}`,
       `RESULT=${result.status==='READBACK_VERIFIED'
@@ -91,7 +95,8 @@ try {
 }catch(error){
   const code=String(error?.message??'');
   lines.push(`ERROR=${/^[A-Z0-9_]{1,85}$/.test(code)?code:'EARNINGS_C_SERVICE_D1_FAILED'}`,
-    'RESULT=FAIL_EARNINGS_C_SERVICE_D1');
+    `RESULT=${remoteOutcomeUnknown?'STATE_UNKNOWN_EARNINGS_C_SERVICE_D1':'FAIL_EARNINGS_C_SERVICE_D1'}`,
+    'D1_AUTO_RETRY=NO');
   exitCode=1;
 }finally{
   try{db?.close();}catch{}
