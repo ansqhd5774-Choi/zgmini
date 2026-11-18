@@ -78,6 +78,32 @@ test('NFCICREDIT boolean, array, boxed zero and object cannot masquerade as vali
  assert.equal(numerical.score,textual.score);
 });
 
+test('CREDIT R2 rejects impossible observation calendar dates before the 260-row NFCI warmup',()=>{
+ const pre=nfci.slice(0,259);
+ for(const invalid of ['2026-02-30','2026-02-29','2026-04-31','2026-00-01','2026-13-01']){
+  const result=buildCreditR2({...inputs(),nfciCredit:[...pre,{observationDate:invalid,value:0}]});
+  assert.equal(result.status,'PARTIAL',invalid);
+  assert.equal(result.score,null,invalid);
+  assert.ok(result.missingFactors.includes('credit-43'),invalid);
+  assert.equal(result.indicators.find(x=>x.id==='credit-43').score,null,invalid);
+ }
+ const leap=buildCreditR2({...inputs(),nfciCredit:[...pre,{observationDate:'2024-02-29',value:0}]});
+ assert.equal(leap.status,'READY');
+ assert.equal(leap.indicators.find(x=>x.id==='credit-43').value,0);
+ assert.equal(leap.indicators.find(x=>x.id==='credit-43').observationDate,'2024-02-29');
+});
+
+test('CREDIT R2 rejects impossible as-of dates without inventing a calendar observation',()=>{
+ for(const asOfDate of ['2026-02-30','2026-02-29','2026-04-31','2026-13-01']){
+  const result=buildCreditR2({...inputs(),asOfDate});
+  assert.equal(result.status,'UNAVAILABLE',asOfDate);
+  assert.equal(result.reason,'INVALID_AS_OF',asOfDate);
+  assert.equal(result.score,null,asOfDate);
+ }
+ const leap=buildCreditR2({...inputs(),asOfDate:'2024-02-29'});
+ assert.notEqual(leap.reason,'INVALID_AS_OF');
+});
+
 test('NFCICREDIT genuine numeric zero and nonblank string zero count as valid 260th observation',()=>{
  const pre=nfci.slice(0,259);
  const observed=nfci[259];
