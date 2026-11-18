@@ -1,5 +1,14 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261119-E129-A2196-LIVE-OPERATIONAL-DISABLED-0038KST -->
+## 2026-11-19 00:38~00:39 KST — 기존 승인 Event129 A 실PC 신규 원격 2/2 확인: 현재 로그 비활성·Core link 미입증
+
+- **실제 운영 PC 고유 신규 조회:** [A #2196](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2196) / [Run #44337757016](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44337757016) `completed/success`, 기존 설치 A `inflation-event129-evidence-readonly` seat1. `requestId=pc-w01-event129-a-20261119-bea81f59-f9f5-4902-bda2-e0b91a12482c`, requested app main SHA `30e51a3e207167b424c52694a0988d6ed6f18519`. 실제 Controller SHA `f7f1559bc0ef15bb9b375982d048369c474c490f`, PC approved source SHA `2070ff53549e2f9f2cea57d5af7e1d83f9fd7388`. 고정 [원격 JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44337757016-1-seat-1.json)·[TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44337757016-1-seat-1.txt) 직접 재조회 2/2, requestId/status/code/lastPass/firstFail/실제 SHA/보호 불변/finishedAt 동일.
+- **신규 현재 PC 실측:** 2026-11-18 15:38:53~15:38:58 UTC(=11월19일 00:38 KST) Windows `Microsoft-Windows-TaskScheduler/Operational` 로그 설정 read `OK`, `enabled=false` **현재 재확인**. `reader=OK`·`EMPTY_STDOUT`, Event129 `total=0`. Task definition `OK`, Task instance `EMPTY`. WMI `status=OK/ownerFound=true/coreMatched=true/taskRunning=true`지만 `linked=false`. `local-cycle.lock` 검사 전후 `PRESENT/PRESENT,same=true`. WMI가 Core 관련 소유자를 관찰했다는 것과 Task→Node→동일 lock 소유권이 인증됐다는 것은 별개이며, 로그 비활성만이 연결 실패의 유일 원인이라고 단정하지 않음.
+- **안전 결과/최초 실패:** 실행 verdict `STATE_UNKNOWN/INFL_E129_NOT_OBSERVED_WITHIN_LIMIT`, `stage=PROOF`, `lastPass=ALLOWLISTED_WORKER_STARTED`, `firstFail=ALLOWLISTED_OPERATION`, `authorizesB=false`. `operationalWrites=0/providerCalls=0/d1Writes=0/sqliteOpened=false/protectedStateUnchanged=true`; 보호 전후 SHA256 `591c8e7efc555f926d3d14d70cbb92b680b100066b224e026bc9ca4c212591ae` 일치. Actions success는 B 소유권 인증 PASS 아님. **이번 요청 재실행/기존 #1177/#1818 재실행 금지**, 새 B 수집 요청 없음.
+- **다음 필수 실행 및 정확 소유자:** 관리자 C급 설정은 사용자 직접: Windows 이벤트 뷰어 → 응용 프로그램 및 서비스 로그 → Microsoft → Windows → TaskScheduler → Operational → 현재 disabled가 유지될 경우에만 **로그 사용(Enable Log) 1회**. Task·Core 강제 시작, lock/lease 삭제, Workflow 수동 토글, 별도 CMD 우회 없음. 로그 활성화 또는 기존 독립 direct WMI에서 인증 성공 후 **자연 Core 실행** 시 기존 승인 A로 Task PID/VBS/Node 생성시각·E: lock 소유권을 같은 시각 검증한다. 그 결과와 정규 Workflow opt-in 조건이 모두 PASS일 때만 현재 이미 승인된 V2 고정 4파일 `APPROVED_B`에서 신규 고유 정적 Census/BLS B 단회 수집→PC 저장·readback→계산·D1/API/UI. 별도 R2 Writer [Draft #2167](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2167)는 `REVIEW_REQUIRED_B`로 운영 설치 승인/공개 수복 없음.
+- **진행률:** W01 전체 세부 DONE **33/71=46.5%**, 잔여 38. 이번 회차 신규 운영 완료 단계 0. GitHub 원장은 실제 운영 데이터/승인 변경 증거가 아니며 PC/SQLite/D1/Cloudflare 쓰기 0.
+
 <!-- W01-20261119-LIVE-INFL28-STILL-PENDING-R2-FUTURE-LABEL-0019KST -->
 ## 2026-11-19 00:19 KST — 공개 데이터 GET 신규 시각 확인, Census #28 미게시·R2 미래 월말 지속
 
