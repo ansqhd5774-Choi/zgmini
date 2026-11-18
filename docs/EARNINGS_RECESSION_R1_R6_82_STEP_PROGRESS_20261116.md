@@ -2458,3 +2458,9 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 - **FIRST UNFINISHED/경계:** PR #1257은 명시적 정확 **15파일 source main merge GO 미확정**이므로 Draft/미병합. 종속 #1297 단독 병합 금지. R3-04 [#1919 사용자 HOLD](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1919#issuecomment-6943640912)는 Task owner 인증과 1.5초 간격 자연 idle 2표본 모두 필요; 신규 Writer B 요청/SQLite/D1 쓰기 0. R6-14 active Deployment/Version/traffic은 Cloudflare 인증 metadata RO 부재로 미검증, Build ID를 active Deployment ID로 대체하지 않음. 기능 main/PC/Task/원자료/SQLite/D1/Cloudflare Production/DNS/예약 변경 **0**.
 - **다음 필수 실행:** Chromium CI 최종 상태 확인·원장 보완 → 정확 15파일 scope의 정규 source GO 확인 시 #1257을 main에 선별 반영하고 해당 merge SHA→Cloudflare Git Integration→정확 배포 식별자→실제 API/UI를 단계별 검증. 운영 WPSFD42 수집/게시 B는 R3-04 HOLD 해제 전 실행 금지.
 
+
+<!-- W05-R135-BROWSER-CI-SUCCESS-FINAL-20261119 -->
+**§135 최종 Chromium CI 보완 (동일 exact HEAD):** [Browser Run #44344891951](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44344891951) **completed/success**, job #134944503314, PR `a5601a3461517b290abd1ff124b28d138533cc01` 일치. GitHub job 단계 중 W05 BLS 390/768/1440/1920px stored observation·gap-safe chart, 공개 first-party JS read-only, 4폭 mock scenarios, PC-check 신규 CNN 최신 session 검증 전부 `completed/success`; 전체 실패 step 0. Browser Artifact ID #14446416305 업로드 성공. Mock/자산 검증을 신규 서비스 2행 실운영 게시·active Cloudflare Deployment 증명으로 간주하지 않음.
+
+**종료 직전 타 담당 main drift:** `main@5b586738c3858f6a59a70ef8402dbd07915ebe22`, 앞선 합성 기준 `2cd5d7f6e074...` 이후 추가 2개 커밋의 변경 3파일(`lib/cnn-current-session-history-r4.mjs`, `tests/cnn-current-session-history-r4.test.mjs`, `tests/market-score-employment-r4-shadow-store.test.mjs`)은 W05 15파일과 겹치지 않음. 완료 CI의 exact HEAD는 불변이며 이 무관한 main drift만을 이유로 재동기화·재시험 반복하지 않음. 최종 GitHub 비교 `ahead=5,behind=2`; 최신 main의 새 Cloudflare 배포 ID는 주장하지 않음. W05 progress 순차 26/82·개별 35/82 그대로.
+
