@@ -218,6 +218,26 @@ export async function collectInflation19IfDue({
  return report;
 }
 
+const ORIGINAL_RELEASE_ORIGINS=Object.freeze({
+ bls:'https://www.bls.gov',
+ eia_epm:'https://www.eia.gov',
+ nyfed:'https://www.newyorkfed.org',
+});
+export function inflation19CalendarEventVerified(event,sources,clock){
+ const state=sources?.[event?.source];
+ if(!state||!validTimestamp(state.checkedAt)||
+    Date.parse(state.checkedAt)>clock)return false;
+ if(state.status==='READY')return true;
+ // The release-calendar writer restores prior parsed events on SOURCE_FAILED.
+ // An official HTTPS origin and a previously successful snapshot are both
+ // required. Never infer a date from a newly failed/unverified source.
+ if(state.status!=='SOURCE_FAILED')return false;
+ const expected=ORIGINAL_RELEASE_ORIGINS[event.source];
+ if(!expected||typeof event.sourceUrl!=='string')return false;
+ try{return new URL(event.sourceUrl).origin===expected;}
+ catch{return false;}
+}
+
 // Production adapter for the existing PC Core lane. The feature flag is read
 // from the already installed provider environment, never from a new scheduler.
 // The hook remains inert unless an explicitly approved source scope is enabled.
@@ -250,10 +270,8 @@ export async function runInflation19RecurringFromCore(base,{now=new Date(),
  }catch{calendar=null;}
  const sources=calendar?.sources??{},events=Array.isArray(calendar?.events)?calendar.events:[];
  const clock=now instanceof Date?now.getTime():new Date(now).getTime();
- const officialEvents=events.filter(e=>e&&sources[e.source]?.status==='READY'&&
-  typeof sources[e.source]?.checkedAt==='string'&&
-  Number.isFinite(Date.parse(sources[e.source].checkedAt))&&
-  Date.parse(sources[e.source].checkedAt)<=clock);
+ const officialEvents=events.filter(e=>e&&
+  inflation19CalendarEventVerified(e,sources,clock));
  let quota;
  const lazyQuotaFetch=async(...args)=>{
   if(!quota){
