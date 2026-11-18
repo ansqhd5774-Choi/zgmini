@@ -118,8 +118,9 @@ test("D3 factor minis use only real dated score rows for four displayed componen
   assert.deepEqual(out.indicators.map(x=>x.trend.at(-1).value),[65,40,55,70]);
   assert.equal(out.indicators[3].source,"Federal Reserve / RRPONTSYD active transform");
   assert.equal(out.indicators[3].sourceUrl,"https://fred.stlouisfed.org/series/RRPONTSYD");
-  assert.match(out.indicators[3].content,/© 2026 Federal Reserve Bank of New York/);
-  assert.match(out.indicators[3].content,/승인·추천이 아닙니다/);
+  assert.match(out.indicators[3].licenseNotice,/© 2026 Federal Reserve Bank of New York/);
+  assert.match(out.indicators[3].licenseNotice,/승인·추천이 아닙니다/);
+  assert.equal(out.indicators[3].content,undefined); // no verbose legal copy in summary table
   assert.equal(out.indicators[0].trend[0].value,0); // 0 is a real score
   for(const item of out.indicators){
     assert.ok(item.trend.length>=2);
