@@ -148,14 +148,18 @@ test('Census bad schema in one year does not discard valid observations from oth
 
 test('Census no usable monthly values remains explicitly unavailable, without numeric fallback',async t=>{
   const fixture=base();t.after(fixture.clear);
-  const result=await collectCensusM3Inventories({base:fixture.writer,censusKey:'k',
-    quotaFetch:async url=>response(payload(row(Number(new URL(url).searchParams.get('time')),'09','NA'))),now});
-  assert.equal(result.status,'UNCHANGED');
-  assert.equal(result.coverage,'NO_USABLE_OBSERVATIONS');
-  assert.equal(result.count,0);
+  await assert.rejects(()=>collectCensusM3Inventories({base:fixture.writer,censusKey:'k',
+    quotaFetch:async url=>response(payload(row(Number(new URL(url).searchParams.get('time')),'09','NA'))),now}),
+  {code:'CENSUS_M3_NO_USABLE_OBSERVATIONS'});
   assert.equal(fs.existsSync(path.join(fixture.writer,CENSUS_M3_INVENTORIES_FILE)),false);
-  for(const p of result.provenance)
-    assert.equal(fs.existsSync(path.join(fixture.writer,'inflation-causal-candidates-r1',p.archive)),true);
+  // The attempted responses are still retained by their verified SHA, even
+  // though neither year produced a usable value or a successful source file.
+  const raw=path.join(fixture.writer,'inflation-causal-candidates-r1','raw');
+  const archives=fs.readdirSync(raw).filter(name=>
+    /^census-m3-mtm-202[56]-[a-f0-9]{64}\\.json$/.test(name));
+  assert.equal(archives.length,2);
+  assert.equal(archives.some(name=>name.startsWith('census-m3-mtm-2025-')),true);
+  assert.equal(archives.some(name=>name.startsWith('census-m3-mtm-2026-')),true);
 });
 
 test('collects two source years and archives private provider snapshots without key leakage',async t=>{
