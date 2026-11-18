@@ -54,7 +54,13 @@ export function validateInflationCandidates7Public(payload,{now=Date.now()}={}){
         (row.previousObservationDate!==null&&row.previousObservationDate>=row.observationDate)||
         row.history.length===0||row.history.at(-1).date!==row.observationDate||
         row.history.at(-1).value!==row.value||
-        row.history.some(point=>point.date>row.observationDate))
+        row.history.some(point=>point.date>row.observationDate)||
+        // The displayed previous figure must come from the immediately
+        // preceding stored history point, including a legitimate zero.
+        (row.history.length===1&&row.previousValue!==null)||
+        (row.history.length>1&&(
+          row.previousObservationDate!==row.history.at(-2).date||
+          row.previousValue!==row.history.at(-2).value)))
         throw Error('INFL7_PUBLIC_READY_INVALID');
       if(row.status==='READY')ready++;
       else stale++;
