@@ -172,4 +172,260 @@ try{
   console.log(`PASS ${width}px: 6 chart periods, newer snapshot and true zero in mocked Chromium`);
   await page.close();
  }
+
+ // W06 #43 one-off LIVE S21 confirmed vs R21 provisional stored-only
+ // provenance, month/date and real line fidelity. Do not merge this into
+ // recurring external-network CI or invoke any supplier/PC/DB write.
+ const validMonth=s=>typeof s==='string'
+  &&/^\d{4}-(0[1-9]|1[0-2])-01$/.test(s)
+  &&Number.isFinite(Date.parse(s+'T00:00:00.000Z'))
+  &&new Date(Date.parse(s+'T00:00:00.000Z')).toISOString().slice(0,10)===s;
+ const validScore=n=>typeof n==='number'&&Number.isFinite(n)&&n>=0&&n<=100;
+ const validTime=s=>typeof s==='string'&&Number.isFinite(Date.parse(s));
+ const inputIds=['PCEPI','PCEPILFE','INDPRO','DPCERA3M086SBEA',
+  'DSPIC96','PAYEMS','EXPINF5YR','MCOILWTICO'];
+ const fourAxis=['inflation','realEconomy','labor','expectationsEnergy'];
+ for(const width of [390,1440]){
+  const context=await browser.newContext({
+   viewport:{width,height:900},locale:'ko-KR',colorScheme:'light'});
+  const live=await context.newPage(),errors=[],hydrated={confirmed:[],provisional:[]};
+  live.on('pageerror',error=>errors.push(error.message));
+  live.on('response',response=>{
+   const path=new URL(response.url()).pathname;
+   if(new URL(response.url()).hostname!=='zgmini.kr')return;
+   if(path==='/api/stagflation-risk-detail')
+    hydrated.confirmed.push({status:response.status(),
+     body:response.json().catch(()=>null)});
+   if(path==='/api/stagflation-risk-provisional')
+    hydrated.provisional.push({status:response.status(),
+     body:response.json().catch(()=>null)});
+  });
+  try{
+   const page=await live.goto('https://zgmini.kr/stagflation-risk/',{
+    waitUntil:'domcontentloaded',timeout:50000});
+   assert.equal(page?.status(),200,width+'px actual Stagflation page HTTP200');
+   const intro=live.locator('#zg-about-intro-dialog');
+   if(await intro.isVisible({timeout:1000}).catch(()=>false)){
+    await intro.getByRole('button',{name:'닫기',exact:true}).click();
+    await intro.waitFor({state:'hidden',timeout:12000});
+   }
+   const hero=live.locator('[data-testid="stagflation-detail-hero"]');
+   await hero.waitFor({state:'visible',timeout:18000});
+   await live.waitForFunction(()=>document.querySelector('[data-testid="stagflation-detail-hero"]')
+    ?.getAttribute('aria-busy')==='false',null,{timeout:30000});
+   await live.waitForFunction(()=>performance.getEntriesByType('resource')
+    .some(e=>e.name.includes('/api/stagflation-risk-provisional')),
+    null,{timeout:20000});
+   const directConfirmed=await live.request.get('https://zgmini.kr/api/stagflation-risk-detail',
+    {timeout:20000,headers:{accept:'application/json','cache-control':'no-cache'}});
+   const directProvisional=await live.request.get('https://zgmini.kr/api/stagflation-risk-provisional',
+    {timeout:20000,headers:{accept:'application/json','cache-control':'no-cache'}});
+   const confApi=await directConfirmed.json(),provApi=await directProvisional.json();
+   const confClient=hydrated.confirmed.length?await hydrated.confirmed.at(-1).body:null;
+   const provClient=hydrated.provisional.length?await hydrated.provisional.at(-1).body:null;
+   const statusC=directConfirmed.status(),statusP=directProvisional.status();
+   const state={width,
+    confirmedHttp:statusC,confirmedStatus:confApi.status,
+    confirmedReason:confApi.reason??null,
+    confirmedSnapshotAt:directConfirmed.headers()['x-data-snapshot-at']??null,
+    confirmedClientStatus:hydrated.confirmed.at(-1)?.status??null,
+    provisionalHttp:statusP,provisionalStatus:provApi.status,
+    provisionalReason:provApi.reason??null,
+    provisionalSnapshotAt:directProvisional.headers()['x-data-snapshot-at']??null,
+    provisionalClientStatus:hydrated.provisional.at(-1)?.status??null
+   };
+   const scoreAria=await hero.locator('.cnn-score-orb[role="group"]').getAttribute('aria-label');
+   const headerDate=await hero.locator('.cnn-source strong').textContent();
+   const axes=hero.locator('.inflation-r2-axis-grid .inflation-r2-axis-item');
+   assert.equal(await axes.count(),0,'S21 risk axes are separate from hero, not within hero');
+   const riskAxes=live.locator('.stagflation-axes .inflation-r2-axis-grid .inflation-r2-axis-item');
+   assert.equal(await riskAxes.count(),4,'confirmed four displayed risk axes');
+   const inputTable=live.locator('.stagflation-inputs .inflation-indicator-table-r2 tbody tr');
+   const mobileInputs=live.locator('.stagflation-inputs .inflation-r2-mobile-card');
+   assert.equal(await inputTable.count(),10,'ten confirmed S21 derived input signals');
+   assert.equal(await mobileInputs.count(),10,'mobile matches desktop S21 signals');
+   const fixed={http:statusC,score:confApi?.score??null,
+    observationMonth:confApi?.observationMonth??null,
+    methodologyVersion:confApi?.methodologyVersion??null,
+    historyPolicy:confApi?.historyPolicy??null,
+    trendLength:Array.isArray(confApi?.trend)?confApi.trend.length:0,
+    last:confApi?.trend?.at(-1)??null,first:confApi?.trend?.[0]??null,
+    scoreAria,headerDate,axes:[]};
+   if(statusC===200){
+    assert.equal(confApi.status,'READY');
+    assert.equal(confApi.methodologyVersion,'STAGFLATION_S2.1_SHADOW');
+    assert.equal(confApi.historyPolicy,'CURRENT_VINTAGE_RECONSTRUCTION_NOT_PIT');
+    assert.equal(confClient?.status,confApi.status,'confirmed hydration status equals direct');
+    assert.equal(confClient?.score,confApi.score,'confirmed hydration score equals direct');
+    assert.equal(confClient?.observationMonth,confApi.observationMonth,'confirmed month equals direct');
+    assert.ok(validScore(confApi.score)&&validMonth(confApi.observationMonth));
+    assert.ok(scoreAria?.includes(confApi.score.toFixed(1)+'점'),
+     width+'px confirmed score renders from stored public S21');
+    assert.ok(headerDate?.includes(confApi.observationMonth.slice(0,7)),
+     'confirmed page header matches common observation month');
+    const history=confApi.trend??[];
+    assert.equal(history.length,13,'confirmed exactly 13 actual monthly reconstructed points');
+    for(let i=0;i<history.length;i++){
+     const x=history[i];assert.ok(validMonth(x.label)&&validScore(x.value),
+      'confirmed monthly points valid, no missing imputation');
+     if(i>0){
+      const y=history[i-1].label;
+      const next=new Date(Date.UTC(Number(y.slice(0,4)),Number(y.slice(5,7)),1)).toISOString().slice(0,10);
+      assert.equal(x.label,next,'confirmed actual 13 consecutive months');
+     }
+    }
+    assert.equal(history.at(-1).label,confApi.observationMonth,
+     'confirmed source latest month correctly keyed');
+    assert.ok(Math.abs(history.at(-1).value-confApi.score)<1e-8,
+     'confirmed last observed score equals current card');
+    const chart=hero.locator('.fg-chart-slot');
+    await live.waitForFunction(()=>{
+     const hero=document.querySelector('[data-testid="stagflation-detail-hero"]');
+     return [...(hero?.querySelectorAll('.fg-chart-slot path.recharts-area-curve')??[])]
+      .some(x=>{
+       const d=x.getAttribute('d')??'',stroke=x.getAttribute('stroke')??getComputedStyle(x).stroke;
+       return /^M/.test(d)&&/[CLQ]/.test(d.slice(1))&&stroke!=='none'&&!/NaN|Infinity/.test(d);
+      });
+    },null,{timeout:22000});
+    const paths=await chart.locator('path.recharts-area-curve').evaluateAll(all=>all.map(p=>({
+     d:p.getAttribute('d')??'',stroke:p.getAttribute('stroke')??''})));
+    const dot=chart.locator('.cnn-latest-point').first();
+    assert.equal(await dot.count(),1,'confirmed 13 monthly values have one last real dot');
+    let tooltip=null;try{
+     await dot.hover({force:true,timeout:12000});
+     await live.waitForTimeout(250);
+     const label=hero.locator('.cnn-history-tooltip span').first();
+     if(await label.isVisible())tooltip=(await label.textContent())?.trim()??null;
+    }catch{}
+    if(tooltip)assert.equal(tooltip,confApi.observationMonth.slice(0,7),
+     'confirmed hover source month, never publication timestamp');
+    fixed.chart={connected:paths.some(p=>/^M/.test(p.d)&&/[CLQ]/.test(p.d.slice(1))
+     &&p.stroke!=='none'&&!/NaN|Infinity/.test(p.d)),
+     latestDot:await dot.count(),tooltip,rawRows:history.length,
+     latest:history.at(-1)};
+    for(let i=0;i<fourAxis.length;i++){
+     const val=confApi.axes?.[fourAxis[i]];
+     assert.ok(validScore(val),'approved S21 risk axis valid');
+     const actual=await riskAxes.nth(i).locator('.inflation-r2-axis-top strong').textContent();
+     assert.equal(actual?.trim(),val.toFixed(1),'risk axis independently displayed');
+     fixed.axes.push({id:fourAxis[i],value:val,display:actual?.trim()});
+    }
+    assert.equal(confApi.scoreComparisons?.week??null,null,
+     'do not create weekly score from a monthly reconstructed history');
+    const sourceInputs=Array.isArray(confApi.inputs)?confApi.inputs:[];
+    assert.equal(sourceInputs.length,10,'ten published S21 signals');
+    const inputStates=[];
+    for(const [i,row] of sourceInputs.entries()){
+     const el=inputTable.nth(i);
+     const real=Array.isArray(row.trend)?row.trend:[];
+     const chart=el.locator('svg.inflation-mini-chart');
+     const connected=await chart.count()===1;
+     if(real.length>=2){
+      assert.ok(connected,width+'px '+row.id+' 2+ stored points connect');
+      const d=await chart.locator('path.inflation-mini-chart-line').getAttribute('d');
+      assert.ok(d&&/^M/.test(d)&&/L/.test(d)&&!/NaN|Infinity/.test(d),
+       row.id+' real monthly raw line');
+     }else assert.equal(connected,false,row.id+' no fabricated raw mini line');
+     inputStates.push({id:row.id,status:row.status,
+      observationMonth:row.observationMonth,
+      previousObservationMonth:row.previousObservationMonth,
+      latest:real.at(-1)??null,rawPoints:real.length,connected});
+    }
+    fixed.inputStates=inputStates;
+    fixed.comparisons=confApi.scoreComparisons;
+   }else{
+    assert.equal(statusC,503,'confirmed incomplete must be explicit 503');
+    assert.ok(['STORED_DATA_PENDING','STORED_DATA_STALE',
+     'STORED_DATA_NOT_APPROVED','STORED_READ_UNAVAILABLE'].includes(confApi.reason),
+     'correct confirmed unavailable reason');
+    assert.ok(scoreAria?.includes('—점'),'confirmed 503 cannot display fake score');
+    assert.equal((await hero.locator('.cnn-latest-point').count()),0,
+     'no confirmed publication means no real chart last-dot');
+   }
+   const provisional=live.locator('[data-testid="stagflation-latest-provisional"]');
+   const provisionalVisible=await provisional.isVisible().catch(()=>false);
+   const dynamic={http:statusP,status:provApi?.status??null,reason:provApi?.reason??null,
+    visible:provisionalVisible,
+    score:provApi?.score??null,
+    confirmedObservationMonth:provApi?.confirmedObservationMonth??null,
+    oldestInputMonth:provApi?.oldestInputMonth??null,
+    newestInputMonth:provApi?.newestInputMonth??null,
+    inputMonths:provApi?.inputMonths??null,
+    observedAt:provApi?.observedAt??null,calculatedAt:provApi?.calculatedAt??null,
+    sourceStoredAt:provApi?.sourceStoredAt??null,
+    historyLength:provApi?.history?.length??0,
+    latest:provApi?.history?.at(-1)??null,chart:null};
+   if(statusP===200){
+    assert.equal(provApi.status,'READY');
+    assert.equal(provClient?.status,provApi.status,'provisional hydration status');
+    assert.equal(provClient?.score,provApi.score,'provisional direct score consistent');
+    assert.ok(provisionalVisible,'published latest provisional has a separate card');
+    assert.equal(provApi.methodologyVersion,'STAGFLATION_LATEST_PUBLISHED_R1');
+    assert.equal(provApi.evaluationMode,'LATEST_PUBLISHED_INPUTS_NOT_COMMON_MONTH_OR_FORECAST');
+    assert.equal(provApi.historyPolicy,'ACTUAL_CALCULATION_OBSERVATIONS_ONLY');
+    assert.equal(provApi.phase,'PROVISIONAL');
+    assert.ok(validScore(provApi.score),'valid provisional 0-100');
+    assert.ok(validMonth(provApi.confirmedObservationMonth)&&validMonth(provApi.oldestInputMonth)
+      &&validMonth(provApi.newestInputMonth),'provisional input months well-formed');
+    assert.ok(provApi.oldestInputMonth<=provApi.newestInputMonth);
+    assert.ok(provApi.confirmedObservationMonth<provApi.newestInputMonth,
+     'provisional new released input beyond common month');
+    assert.equal(provApi.inputCount,8);
+    assert.deepEqual(Object.keys(provApi.inputMonths).sort(),[...inputIds].sort(),
+     'all eight real source input months');
+    assert.ok(validTime(provApi.observedAt)&&validTime(provApi.calculatedAt)
+     &&validTime(provApi.sourceStoredAt),'three independent dates valid');
+    assert.equal(provApi.history.at(-1).observedAt,provApi.observedAt,
+     'latest point actual calc observation, not a month label');
+    assert.equal(provApi.history.at(-1).score,provApi.score);
+    for(let i=0;i<provApi.history.length;i++){
+     const p=provApi.history[i];
+     assert.ok(validScore(p.score)&&validTime(p.observedAt));
+     if(i>0)assert.ok(Date.parse(p.observedAt)>Date.parse(provApi.history[i-1].observedAt),
+      'real calc-observation timestamps strictly increasing');
+    }
+    assert.ok((await provisional.locator('.stagflation-latest-heading strong').textContent())
+      ?.includes(provApi.score.toFixed(1)),
+      'separate provisional score is published source, not confirmed data');
+    const c=provisional.locator('.stagflation-latest-chart');
+    const paths=await c.locator('path.recharts-area-curve').evaluateAll(all=>
+     all.map(p=>({d:p.getAttribute('d')??'',stroke:p.getAttribute('stroke')??'',
+      dash:p.getAttribute('stroke-dasharray')??''})));
+    const connected=paths.some(p=>/^M/.test(p.d)&&/[CLQ]/.test(p.d.slice(1))
+      &&p.stroke!=='none'&&!/NaN|Infinity/.test(p.d));
+    if(provApi.history.length>=2){
+     await live.waitForFunction(()=>{
+      const el=document.querySelector('[data-testid="stagflation-latest-provisional"]');
+      return [...(el?.querySelectorAll('path.recharts-area-curve')??[])]
+       .some(p=>/^M/.test(p.getAttribute('d')??'')
+        &&/[CLQ]/.test((p.getAttribute('d')??'').slice(1)));
+     },null,{timeout:18000});
+     assert.ok(connected,'provisional actual 2+ stored calculations connect');
+    }else assert.ok(!connected,'no invented line with only one actual provisional calculation');
+    dynamic.chart={connected,dashed:paths.some(p=>Boolean(p.dash)),
+     dots:await c.locator('.cnn-latest-point').count()};
+   }else{
+    assert.equal(statusP,503,'unavailable provisional explicit 503');
+    assert.ok(['LATEST_PUBLISHED_INPUTS_PENDING','LATEST_PUBLISHED_INPUTS_STALE',
+     'STORED_READ_UNAVAILABLE','STORED_DATA_NOT_APPROVED',
+     'PROVISIONAL_SUPERSEDED'].includes(provApi.reason),
+     'expected provisional publication boundary code');
+    assert.equal(provisionalVisible,false,'unapproved stale or superseded provisional must be hidden');
+   }
+   assert.deepEqual(errors,[],'no actual Production page JS errors');
+   const overflow=await live.evaluate(()=>({
+    client:document.documentElement.clientWidth,
+    scroll:document.documentElement.scrollWidth
+   }));
+   assert.ok(overflow.scroll<=overflow.client+1,
+    width+'px real page must not overflow');
+   await live.screenshot({path:'artifacts/dashboard-history/stagflation-43-'+width+'.png',
+    fullPage:false,timeout:20000});
+   console.log('W06_43_LIVE_STAGFLATION',JSON.stringify({state,fixed,dynamic,
+    scoresMixed:statusC===200&&statusP===200?
+     Math.abs(confApi.score-provApi.score)<1e-9:null,
+    mobileWidth:width,overflow,errors}));
+  }finally{await context.close();}
+ }
+
 }finally{await browser.close();}
