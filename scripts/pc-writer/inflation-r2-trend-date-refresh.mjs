@@ -33,3 +33,22 @@ export function requiresInflationR2TrendDateRefresh(envelope){
  }
  return previous<last.label;
 }
+
+// Compatibility for an installed, otherwise approved R2 builder that computes
+// the current score at asOfDate but labels the last trend bucket at a future
+// month end. Only the exact verified legacy shape is eligible: do not infer
+// missing scores/dates or change PIT inputs, weights, preceding trend points,
+// source timestamps, or any other published fields.
+//
+// New builders already produce a last point at asOfDate and return unchanged.
+// A legacy PC Writer may apply this to a fresh, saved-input-derived payload
+// before its existing guarded publication; this function does not publish.
+export function inflationR2AsOfTrendCompatibility(payload){
+ if(!requiresInflationR2TrendDateRefresh({payload}))return payload;
+ const last=payload.trend.at(-1);
+ return {
+  ...payload,
+  trend:[...payload.trend.slice(0,-1),
+   {...last,label:payload.asOfDate,value:payload.score}],
+ };
+}
