@@ -1,5 +1,14 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-CENSUS-PRIOR-INTEGRITY-PR1319-MERGED -->
+## 2026-11-18 — Census #28 기저 정상본 중복 월 무결성 및 선제 검증 완료 (source-only)
+
+- **진행률:** 시작 33/71(46.5%) → 종료 **33/71(46.5%)**, 신규 DONE 0, 잔여 38. 실PC 수집·원자료 저장·게시 진전이 아닌 독립 소스 안전성 수정.
+- **확정된 결함:** 최신 앱 `main@6c7b132ffa104a465013266fa794a45c270370b8`의 Census M3 수집기는 기존 저장본 `prior`을 공식 2025/2026년 2개 GET 및 SHA archive 생성 **후** 읽고 검증했다. `validPrior`는 같은 관측월 중복을 거부하지 않아 2개 다른 값이 기존 JSON에 있을 때 `Map` 결합이 한 달 값을 조용히 덮을 수 있었다. 형식이 손상된 기저 원본에도 공급자 요청 2회를 먼저 소비할 위험이 있었다.
+- **실제 수정:** [앱 PR #1319](https://github.com/ansqhd5774-Choi/zgmini/pull/1319) 정확 2파일 `scripts/pc-writer/inflation-causal-candidate-census-m3.mjs` 및 동일 경로 `.test.mjs`. 기존 정상본 검증을 2 GET 전으로 이동하고 월 중복이면 `CENSUS_M3_EXISTING_CONTRACT_INVALID` 안전 실패. 새 회귀시험은 정상 2년 저장 뒤 동일 월 중복값을 인위적으로 가진 파일을 입력하여 다음 수집이 공급자 호출 추가 **0회**, 원본 바이트/아카이브 변경 **0건**을 검사한다. 정상 보관본의 2 GET·수정 관측월 갱신·last-good/원본 해시 보존 계약은 유지한다.
+- **검증/병합:** PR HEAD `c01e3266819c2c9a51377aa75d3fab34741fd6a2`, [Node.js CI #44253081968](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44253081968) **completed/success**, Build·Type check·Regression tests·PC publication recovery tests·Cloudflare candidate read contracts 5개 주요 단계 PASS. `main` squash 병합 [`84180017f61c7c3f9d9f387af321dd0de5608085`](https://github.com/ansqhd5774-Choi/zgmini/commit/84180017f61c7c3f9d9f387af321dd0de5608085). 기존 지정 W01 브랜치와 독립 2파일 선별 반영, 전체 브랜치 병합/운영 설치 없음.
+- **운영 상태 및 정확 다음 필수 실행:** 제어 공유 #2094 기존 `BLOCKED/FIRST_FAIL=STAGED`·설치 `f7f1559...` 유지, W04 실제 공용 Controller 설치 및 W01 [Draft A #2111](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2111) 미확인. 실PC 마지막 [#2122](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2122)에서 #28 Census `MISSING`/0개월, checkpoint `CENSUS_M3_HEADERS_INVALID`. 본 개발 수정은 그 실제 헤더 원인을 입증/해결한 것이 아니다. 기존 수동 B [#1818](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1818) 재실행/추가 Provider 호출·운영 PC/Task/SQLite/D1/Cloudflare 변경 0. 공유 STAGED 정규 복구→W04 정확 공유 설치 결과→W01 고정 A 헤더-only 실제 readback→근거 확인 후 파서 수정→승인된 원자료 저장·D1/API/UI 종단 확인을 계속한다.
+
 <!-- W01-20261118-CENSUS-NUMERIC-GROUPING-PR1318-MERGED -->
 ## 2026-11-18 — Census #28 잘못된 천 단위 쉼표에 의한 원자료 값 변조 결함 최소 수정·CI·main 병합
 
