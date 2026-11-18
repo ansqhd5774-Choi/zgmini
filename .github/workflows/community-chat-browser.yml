@@ -40,6 +40,7 @@ on:
       - 'lib/dashboard-chart-startup.mjs'
       - 'lib/market-score/market-trend-window-r1.mjs'
       - 'tests/dashboard-history-browser-r5.mjs'
+      - 'tests/cnn-current-session-verified-checks-browser-r12.mjs'
       - 'app/globals.css'
       - 'public/styles/fear-greed-education-r1.css'
       - 'app/fear-greed/usa/page.tsx'
@@ -123,6 +124,8 @@ jobs:
         run: node tests/fear-greed-education-browser-r4.mjs
       - name: Validate dashboard history period changes and newer snapshot refresh
         run: node tests/dashboard-history-browser-r5.mjs
+      - name: Verify CNN actual PC-check 1D curve and stale-session exclusion at 390/1440
+        run: node tests/cnn-current-session-verified-checks-browser-r12.mjs
       - name: Upload browser UI evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -135,6 +138,7 @@ jobs:
             artifacts/dashboard-deferred-ui/
             artifacts/fear-greed-education/
             artifacts/dashboard-history/
+            artifacts/cnn-current-session-checks/
             artifacts/about-intro-bootstrap/
             artifacts/inflation-criterion-review/
             artifacts/earnings-r511-browser/
