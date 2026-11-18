@@ -21,6 +21,20 @@ const validTimestamp=v=>typeof v==='string'&&Number.isFinite(Date.parse(v))&&
  new Date(v).toISOString()===v;
 const err=code=>Object.assign(new Error(code),{code});
 const validKey=v=>typeof v==='string'&&v.trim().length>0;
+const RETRYABLE_SOURCE=/^(?:BLS|PROVIDER|SCE_PROVIDER)_HTTP_(?:408|500|502|503|504)$/;
+const DIAGNOSTIC_SOURCE=/^(?:BLS|PROVIDER|SCE_PROVIDER)_HTTP_(?:4\d\d|5\d\d)$/;
+export function recurringAttemptCooldownMs(failureCode){
+ return failureCode==='INFL19_RECURRING_QUOTA_GUARD'||
+  RETRYABLE_SOURCE.test(failureCode??'')?3_600_000:86_400_000;
+}
+function safeFailureCode(error){
+ if(error?.code==='PROVIDER_QUOTA_GUARD')return 'INFL19_RECURRING_QUOTA_GUARD';
+ const code=error?.code??error?.message;
+ return DIAGNOSTIC_SOURCE.test(code??'')?code:
+  /^INFL19_[A-Z0-9_]+$/.test(error?.code??'')?
+   error.code:'INFL19_RECURRING_SOURCE_FAILED';
+}
+
 
 function releaseDate(group,events,today,utcHour){
  if(!Array.isArray(events)||events.length>1000)return null;
@@ -45,10 +59,11 @@ export function planInflation19Due({enabled=false,gasDailyApproved=false,events=
   const attempt=checkpoint?.attempted?.[group.key];
   const attemptedRecently=eventKey=>attempt?.eventKey===eventKey&&
    validTimestamp(attempt.at)&&current.getTime()>=Date.parse(attempt.at)&&
-   current.getTime()-Date.parse(attempt.at)<24*3600000;
+   current.getTime()-Date.parse(attempt.at)<recurringAttemptCooldownMs(attempt.failureCode);
   if(group.key==='gas'){
    if(gasDailyApproved===true&&(!validDay(previous)||previous<today)&&
-    (!validDay(attempt?.eventKey)||attempt.eventKey<today))
+    (!validDay(attempt?.eventKey)||attempt.eventKey<today||
+     (attempt.eventKey===today&&attempt.failureCode&&!attemptedRecently(today))))
     due.push({key:group.key,eventKey:today,maxRequests:group.maxRequests});
    else skipped.push(group.key);
    continue;
@@ -93,7 +108,8 @@ function loadCheckpoint(file){
   (value.attempted!==undefined&&(
    typeof value.attempted!=='object'||!value.attempted||Array.isArray(value.attempted)||
    Object.entries(value.attempted).some(([k,v])=>!GROUPS.some(g=>g.key===k)||
-    !validDay(v?.eventKey)||!validTimestamp(v?.at)))))
+    !validDay(v?.eventKey)||!validTimestamp(v?.at)||
+    (v?.failureCode!==undefined&&!/^(?:INFL19_[A-Z0-9_]+|(?:BLS|PROVIDER|SCE_PROVIDER)_HTTP_(?:4\d\d|5\d\d))$/.test(v.failureCode)))))
   throw err('INFL19_RECURRING_CHECKPOINT_INVALID');
  return value;
 }
@@ -189,8 +205,11 @@ export async function collectInflation19IfDue({
    if(unchanged)report.unchanged.push({source:group.key,status:result.status,providerRequests:count});
    else report.updated.push({source:group.key,status:result.status,providerRequests:count});
   }catch(error){
-   report.failed.push({source:group.key,code:/^INFL19_[A-Z0-9_]+$/.test(error?.code??'')?
-    error.code:'INFL19_RECURRING_SOURCE_FAILED'});
+   const code=safeFailureCode(error);
+   report.failed.push({source:group.key,code});
+   next.attempted[group.key].failureCode=code;
+   try{(checkpointIO?.save??(value=>saveCheckpoint(file,value)))(next);}
+   catch{report.failed.push({source:group.key,code:'INFL19_RECURRING_FAILURE_CHECKPOINT_SAVE_FAILED'});}
   }finally{report.providerRequests+=groupRequests;}
  }
  if(report.failed.length)report.status='PARTIAL_PREVIOUS_CHECKPOINT_PRESERVED';

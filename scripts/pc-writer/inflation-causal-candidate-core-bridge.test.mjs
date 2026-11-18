@@ -274,3 +274,45 @@ test('failed groups persist safe codes without changing retry timing or last-goo
    /INFL_CANDIDATE_CORE_CHECKPOINT_INVALID/);
  }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
+
+
+test('W01 candidate temporary outage uses one hour retry, quota guard does not lose its code',async()=>{
+ const eventKey='release:bls:cpi:2026-11-19';
+ const doc=checkpoint();
+ doc.attempted.cpi={eventKey,at:'2026-11-21T22:30:00.000Z',
+  failureCode:'BLS_CANDIDATE_HTTP_503'};
+ const params={approved:true,events:EVENTS.filter(x=>x.id==='cpi'),
+  sources,checkpoint:doc,providerEnv:keys};
+ const before=planInflationCandidateCoreDue({...params,
+  now:new Date('2026-11-21T23:29:00.000Z')});
+ assert.ok(!before.due.some(x=>x.group==='cpi'));
+ const after=planInflationCandidateCoreDue({...params,
+  now:new Date('2026-11-21T23:31:00.000Z')});
+ assert.ok(after.due.some(x=>x.group==='cpi'));
+ doc.attempted.cpi.failureCode='BLS_CANDIDATE_HTTP_429';
+ assert.ok(!planInflationCandidateCoreDue({...params,
+  now:new Date('2026-11-21T23:31:00.000Z')}).due.some(x=>x.group==='cpi'));
+ doc.attempted.cpi.failureCode='BLS_CANDIDATE_VALUE_OR_DUPLICATE';
+ assert.ok(!planInflationCandidateCoreDue({...params,
+  now:new Date('2026-11-21T23:31:00.000Z')}).due.some(x=>x.group==='cpi'));
+ doc.attempted.cpi.failureCode='INFL_CANDIDATE_QUOTA_GUARD';
+ assert.ok(planInflationCandidateCoreDue({...params,
+  now:new Date('2026-11-21T23:31:00.000Z')}).due.some(x=>x.group==='cpi'));
+
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'w01-candidate-guard-'));
+ const base=path.join(root,'pc-writer');fs.mkdirSync(base);
+ try{
+  const saved=checkpoint();
+  const result=await collectInflationCandidatesIfDue({approved:true,base,
+   officialEvents:EVENTS.filter(x=>x.id==='cpi'),officialSources:sources,
+   providerEnv:keys,now:NOW,quotaFetch:async()=>{throw Object.assign(
+    Error('secret-url-with-key'),{code:'PROVIDER_QUOTA_GUARD'});},
+   collectors:{cpi:async({quotaFetch})=>{await quotaFetch('https://api.bls.gov');
+    return {status:'SAVED_READBACK',providerRequests:1};}},
+   checkpointIO:{load:()=>saved,save:()=>{}},latestIO:()=>null});
+  assert.equal(result.status,'PARTIAL_PREVIOUS_INPUTS_PRESERVED');
+  assert.equal(result.failed[0].code,'INFL_CANDIDATE_QUOTA_GUARD');
+  assert.equal(saved.attempted.cpi.failureCode,'INFL_CANDIDATE_QUOTA_GUARD');
+  assert.ok(!JSON.stringify(result).includes('secret-url'));
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
