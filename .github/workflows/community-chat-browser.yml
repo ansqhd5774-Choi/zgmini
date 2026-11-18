@@ -40,6 +40,7 @@ on:
       - 'lib/dashboard-chart-startup.mjs'
       - 'lib/market-score/market-trend-window-r1.mjs'
       - 'tests/dashboard-history-browser-r5.mjs'
+      - 'tests/cnn-verified-checks-browser-r11.mjs'
       - 'app/globals.css'
       - 'public/styles/fear-greed-education-r1.css'
       - 'app/fear-greed/usa/page.tsx'
@@ -109,6 +110,8 @@ jobs:
         run: node tests/employment-r6-public-browser-r1.mjs
       - name: Validate W06 latest visible theme date in mocked Chromium at 390/1440
         run: node tests/theme-visible-asof-browser-r1.mjs
+      - name: Validate mocked CNN verified checks and composite 1D chart controls at 390/1440
+        run: node tests/cnn-verified-checks-browser-r11.mjs
       - name: Validate introduction before hydration and dismissal preferences
         run: node tests/about-intro-bootstrap-browser-r6.mjs
       - name: Validate chat UI at 390, 768, 1440 and 1920 px with mocked backend
@@ -135,6 +138,7 @@ jobs:
             artifacts/dashboard-deferred-ui/
             artifacts/fear-greed-education/
             artifacts/dashboard-history/
+            artifacts/cnn-verified-checks/
             artifacts/about-intro-bootstrap/
             artifacts/inflation-criterion-review/
             artifacts/earnings-r511-browser/
