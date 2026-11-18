@@ -34,7 +34,7 @@ test('actual CM-R1 composite omits employment.methodologyVersion but preserves R
  assert.equal(publicEmployment.status,'READY');
  assert.equal(verifiedEconomicEmploymentScore(publicEmployment,date),63,
   'must not hide existing correctly stored original four-factor public score');
- const spoofed={...publicEmployment,interpretation:'Employment R6 current version'};
+ const spoofed={...publicEmployment,methodologyVersion:null,interpretation:'Employment R6 current version'};
  assert.equal(verifiedEconomicEmploymentScore(spoofed,date),null);
  const explicitWrong={...publicEmployment,methodologyVersion:'EMPLOYMENT_R6_29_FACTOR'};
  assert.equal(verifiedEconomicEmploymentScore(explicitWrong,date),null);
