@@ -9,8 +9,8 @@ const rows=Array.from({length:30},(_,i)=>{
  const allNetRatio=i===23?0.16:(i%7-3)/10;
  return {observationDate,value:allNetRatio,allNetRatio,indexNetRatio:allNetRatio+0.24,nonIndexNetRatio:allNetRatio-0.18,allOutflowRatio:-(2.2+(i%5)*0.11)};
 });
-async function response(input){
- const handler=createMarketScoreR1Handler({collectInputs:async()=>({external:{registeredFundFlowRows:input}}),orchestrate:()=>({snapshot:{diagnostics:{}}}),now:()=>new Date('2025-12-20T00:00:00Z')});
+async function response(input,providerSummary={}){
+ const handler=createMarketScoreR1Handler({collectInputs:async()=>({external:{registeredFundFlowRows:input},providerSummary}),orchestrate:()=>({snapshot:{diagnostics:{}}}),now:()=>new Date('2025-12-20T00:00:00Z')});
  return (await handler(new Request('https://example.test/api/market-score'))).json();
 }
 test('R54 public trend uses the weighted monthly score and exposes four stable indicators',async()=>{
@@ -94,4 +94,34 @@ test('R54 legacy single-series rows do not receive a synthetic or reweighted sco
  assert.equal(domain.status,'PARTIAL');
  assert.deepEqual(domain.trend,[]);
  assert.deepEqual(domain.indicators,[]);
+});
+
+test('SEC R54 publishes the stored source release date separately from observation and snapshot dates',async()=>{
+ const expected=buildFundFlowR54(rows,{asOfDate:'2025-12-20'});
+ const body=await response(rows,{secFundFlows:{status:'READY_CURRENT_VINTAGE_RAW',sourceReleaseDate:'2025-12-19'}});
+ const domain=body.domains.find(x=>x.id==='fundFlows');
+ assert.equal(domain.status,'READY');
+ assert.equal(domain.score,expected.score);
+ assert.equal(domain.observationDate,'2025-12-01');
+ assert.equal(domain.updatedAt,'2025-12-01');
+ assert.equal(domain.sourceReleaseDate,'2025-12-19');
+ assert.equal(domain.trend.at(-1).label,'2025-12-01');
+ assert.ok(domain.indicators.every(x=>x.observationDate==='2025-12-01'));
+ assert.ok(domain.indicators.every(x=>!Object.hasOwn(x,'sourceReleaseDate')));
+ assert.equal(body.asOfDate,'2025-12-20');
+});
+
+test('SEC R54 does not invent or mislabel an unknown, invalid, earlier or future source release',async()=>{
+ for(const sourceReleaseDate of [undefined,null,'','2025-11-30','2025-12-21','2025-02-30','2025-13-01','GET_2025-12-19']){
+  const domain=(await response(rows,{secFundFlows:{sourceReleaseDate}})).domains.find(x=>x.id==='fundFlows');
+  assert.equal(domain.sourceReleaseDate,null,String(sourceReleaseDate));
+  assert.equal(domain.updatedAt,'2025-12-01');
+  assert.equal(domain.observationDate,'2025-12-01');
+ }
+ const valid=(await response(rows,{secFundFlows:{sourceReleaseDate:'2025-12-19'}})).domains.find(x=>x.id==='fundFlows');
+ assert.equal(valid.sourceReleaseDate,'2025-12-19');
+ const legacy=rows.map(({observationDate,value})=>({observationDate,value}));
+ const partial=(await response(legacy,{secFundFlows:{sourceReleaseDate:'2025-12-19'}})).domains.find(x=>x.id==='fundFlows');
+ assert.equal(partial.status,'PARTIAL');
+ assert.equal(partial.sourceReleaseDate,null);
 });
