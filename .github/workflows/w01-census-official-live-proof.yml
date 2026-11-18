@@ -1,0 +1,24 @@
+name: W01 Census real XLSX & FRED read-only proof
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'scripts/verification/w01-census-official-live-xlsx-parity.mjs'
+      - '.github/workflows/w01-census-official-live-proof.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  official-input-parity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Verify real Census XLSX with production Node parser and compare FRED 21 months
+        run: node scripts/verification/w01-census-official-live-xlsx-parity.mjs
