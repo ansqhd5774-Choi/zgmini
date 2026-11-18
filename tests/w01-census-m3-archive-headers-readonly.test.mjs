@@ -28,7 +28,7 @@ test('existing archived headers only: no observation values, secrets or writes',
   f.save(2025,[HEAD,['TI','2025-09-01','yes','MTM','123456','1']]);
   f.save(2026,[HEAD,['TI','2026-09-01','yes','MTM','987654','1']]);
   const before=fs.readdirSync(f.raw);
-  const result=inspectCensusM3ArchiveHeaders({base:f.home,years:[2025,2026]});
+  const result=inspectCensusM3ArchiveHeaders({base:f.home,years:[2025,2026],strictPlatform:false});
   assert.equal(result.status,'PASS');
   assert.equal(result.archiveCount,2);
   assert.equal(result.invalidArchiveCount,0);
@@ -43,7 +43,7 @@ test('missing date, required columns and duplicate headers classified without va
   f.save(2025,[['data_type_code','seasonally_adj','category_code','cell_value','us'],
     ['TI','yes','MTM','123','1']]);
   f.save(2026,[['DATA_TYPE_CODE','DATA_TYPE_CODE','TIME','US'],['TI','TI','2026-09','1']]);
-  const result=inspectCensusM3ArchiveHeaders({base:f.home,years:[2025,2026]});
+  const result=inspectCensusM3ArchiveHeaders({base:f.home,years:[2025,2026],strictPlatform:false});
   assert.equal(result.status,'DIAGNOSED');
   assert.equal(result.code,'CENSUS_ARCHIVE_HEADERS_INCOMPATIBLE');
   assert.equal(result.archives[0].hasMonthlyDate,false);
@@ -53,31 +53,37 @@ test('missing date, required columns and duplicate headers classified without va
 });
 test('missing archived year remains PARTIAL, never collection success',t=>{
   const f=fixture(t);f.save(2025,[HEAD]);
-  const result=inspectCensusM3ArchiveHeaders({base:f.home,years:[2025,2026]});
+  const result=inspectCensusM3ArchiveHeaders({base:f.home,years:[2025,2026],strictPlatform:false});
   assert.equal(result.status,'PARTIAL');
   assert.deepEqual(result.missingYears,[2026]);
 });
 test('archive hash tampering and symbolic-link redirection stop readback',t=>{
   const f=fixture(t),file=f.save(2025,[HEAD]);
   fs.writeFileSync(file,JSON.stringify([['bogus']]));
-  assert.throws(()=>inspectCensusM3ArchiveHeaders({base:f.home,years:[2025]}),
+  assert.throws(()=>inspectCensusM3ArchiveHeaders({base:f.home,years:[2025],strictPlatform:false}),
     {code:'CENSUS_ARCHIVE_SHA_MISMATCH'});
   fs.unlinkSync(file);
   const outside=path.join(path.dirname(f.home),'outside.json');
   fs.writeFileSync(outside,'[]');fs.symlinkSync(outside,file);
-  assert.throws(()=>inspectCensusM3ArchiveHeaders({base:f.home,years:[2025]}),
+  assert.throws(()=>inspectCensusM3ArchiveHeaders({base:f.home,years:[2025],strictPlatform:false}),
     {code:'CENSUS_ARCHIVE_FILE_UNSAFE'});
 });
 test('arbitrary paths and duplicate years cannot expand scan scope',t=>{
   const f=fixture(t);
-  assert.throws(()=>inspectCensusM3ArchiveHeaders({base:f.raw,years:[2025]}),
+  assert.throws(()=>inspectCensusM3ArchiveHeaders({base:f.raw,years:[2025],strictPlatform:false}),
     {code:'CENSUS_ARCHIVE_SCOPE_DENIED'});
-  assert.throws(()=>inspectCensusM3ArchiveHeaders({base:f.home,years:[2025,2025]}),
+  assert.throws(()=>inspectCensusM3ArchiveHeaders({base:f.home,years:[2025,2025],strictPlatform:false}),
     {code:'CENSUS_ARCHIVE_SCOPE_DENIED'});
 });
 
 test('missing archive directory gives a fixed denial without private paths',t=>{
   const f=fixture(t);fs.rmSync(f.raw,{recursive:true,force:true});
-  assert.throws(()=>inspectCensusM3ArchiveHeaders({base:f.home,years:[2025]}),
+  assert.throws(()=>inspectCensusM3ArchiveHeaders({base:f.home,years:[2025],strictPlatform:false}),
     {code:'CENSUS_ARCHIVE_DIR_UNSAFE'});
+});
+
+test('default admission denies an unpinned PC writer root even when basename matches',t=>{
+  const f=fixture(t);
+  assert.throws(()=>inspectCensusM3ArchiveHeaders({base:f.home,years:[2025]}),
+    {code:'CENSUS_ARCHIVE_SCOPE_DENIED'});
 });
