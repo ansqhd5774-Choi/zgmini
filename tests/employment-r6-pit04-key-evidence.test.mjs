@@ -65,3 +65,13 @@ test("forged PIT class and ambiguous equal-time revisions cannot be an internal 
  assert.equal(ambiguous.counts.coreHistoryAmbiguous,1);
  assert.equal(ambiguous.evidence[0].reason,"CORE_HISTORY_AMBIGUOUS");
 });
+
+test("non-decimal and unsafe numeric counts never qualify as candidate evidence",()=>{
+ for(const value of ["0x10","1e2","+1","01","1.0"," 1 ","9007199254740992",-1,1.5,Infinity]){
+  const r=go([base],[],[{...base,value}],[{...base,value}]);
+  assert.equal(r.counts.missingCandidateInternalMatch,0,String(value));
+  assert.equal(r.counts.missingCandidateIncomplete,1,String(value));
+  assert.equal(r.repairAuthorized,false);
+ }
+ assert.equal(go([base],[],[base],[base]).counts.missingCandidateInternalMatch,1);
+});
