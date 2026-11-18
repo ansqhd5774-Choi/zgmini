@@ -1,5 +1,14 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-CENSUS-PRIOR-METADATA-PR1325-MERGED -->
+## 2026-11-18 — Census #28 기존 원자료 메타데이터와 공개 Reader 검증 계약 일치 (source-only)
+
+- **W01 진행률:** 시작 33/71(46.5%) → 종료 **33/71(46.5%)**. 이번에 개발 소스 무결성 결함 1건 개선, 신규 DONE 0, 실제 기능 원장 미완료 38. 전담 브랜치의 타 변경/과거 검증 증거를 보존.
+- **확정한 입력→공개 결함:** `scripts/pc-writer/inflation-causal-candidate-census-m3.mjs`의 기존 정상 저장본 `validPrior()`는 월/date/value/중복만 확인했다. 기존 2025/2026 저장본의 상단 `selector`·`frequency`·`unit` 또는 한 월의 `selector`·`unit`·`seasonallyAdjusted` 값이 잘못되어도 다음 수집에 섞여 들어갈 수 있었고, 공개 Reader의 정확 MTM/TI·MONTHLY·USD_MILLION_SA_NOMINAL·SA true 검사와 불일치했다. 이는 소스의 구체 계약 결함이며 실PC에서 해당 변조가 발생했다는 의미는 아님.
+- **실제 최소 수정:** [앱 PR #1325](https://github.com/ansqhd5774-Choi/zgmini/pull/1325), 정확 2파일(해당 Census 수집기와 동일 `.test.mjs`). 기존 이전본 사전 검증에서 상단 metadata 3필드와 월별 metadata 3필드를 공개 Reader와 동일하게 요구. 7가지 정상본 메타 변조 fixture에 `CENSUS_M3_EXISTING_CONTRACT_INVALID`, 추가 API GET **0회**, 기존 원본 바이트/response archives 불변을 테스트하며, 정상 원본으로 복귀 시 기존 승인 연도 2 GET `UNCHANGED` 보존.
+- **CI 및 main 병합:** PR head `bede89013ea0da840a2098b36ab7418823cb710f`; [Node.js CI #44255817087](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44255817087) `completed/success` — Build/Type check/Regression tests/PC publication recovery tests/Cloudflare candidate read contracts PASS. 앱 `main` squash 병합 [`73584941a68ae7cbaa7cc47569809d9f5c394d42`](https://github.com/ansqhd5774-Choi/zgmini/commit/73584941a68ae7cbaa7cc47569809d9f5c394d42). 기존 19개/4축 산식·데이터 계약·공급자 GET 주기·Task·D1·Cloudflare Production 변경 0.
+- **운영 경계/다음 실행:** 공유 Controller 원본 [#2094](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2094) 여전히 `BLOCKED/FIRST_FAIL=STAGED`, W04 실제 Controller 공유 설치 불명. 마지막 실제 PC [A #2122](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2122) Census #28 `MISSING`·0개월·checkpoint `CENSUS_M3_HEADERS_INVALID`; 이번 source fix는 해당 실제 archive header mismatch의 원인 확정/수리 증거가 아님. 기존 수동 B [#1818](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1818) 재실행/운영 저장·게시 0. 공통 복구 + W04 단일 Controller 실제 설치 이후 W01 기존 2025·2026 SHA 원본 header-only 승인 A 1회 readback → 확인된 호환 오류 수정 → 정규 수집·저장·D1/API/UI 확인.
+
 <!-- W01-20261118-INFL7-PREVIOUS-HISTORY-PR1323-MERGED -->
 ## 2026-11-18 — 공개 7개 연구 원자료: 이전값·직전 관측일과 차트 이력의 저장 계약 대조 (source-only)
 
