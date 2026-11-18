@@ -1,5 +1,13 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261119-R2-PR2197-MERGED-A2198-RUNNING -->
+## 2026-11-19 00:56 KST — W01 R2 양 분기 프리뷰 source-only 병합·CI PASS, 운영 PC A #2198 실행 중
+
+- **SOURCE_DONE:** [제어 PR #2197](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2197) 정확 3파일(읽기 전용 2-anchor `approvals/writer-previews/w01-r2-stored-payload-two-branch-20261119.json`, 전용 3-case `writer-b/w01-r2-two-branch-preview.test.mjs`, 격리 source CI 등록)을 `main`으로 **squash merge** `793713b4c8a456c6a1ab5f73146d14a4513594e2`. [C996 #44340623711](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44340623711) completed/success, [Controller Maintenance #44340623549](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44340623549) completed/success, 새 회귀시험 및 격리 호스트 step success. **R2 계산기/운영 source/PC 설치 변경 아님.**
+- **실행 중 읽기 전용 정확 A:** 새 [Issue #2198](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2198) `pc-writer-insert-preview`, requestId `d8ee689f-9643-4d21-aeee-8de2905080db`, spec SHA256 `fa508c6164a8d6790177e881f651d4472073eac39286fe7d7f8272ccccd536e3`(1671바이트), 제어 main exact specimen. [Run #44341371299](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44341371299) 최초 조회 `in_progress` / 원격 JSON/TXT 아직 미게시. Checkout 단계였으므로 실제 PC anchor 검증 `STATE_UNKNOWN`; Actions 요청·CI 완료를 실PC 프리뷰 PASS로 주장하지 않음. 같은 requestId 재실행 금지.
+- **다음 W01 원담당 실행:** 해당 고유 Run 완료/원격 `results/writer-b-insert-preview-2198-d8ee689f-9643-4d21-aeee-8de2905080db.json/.txt` 2/2 직접 대조. `PASS_READONLY`이면 정확 2-anchor `afterSha256`, Task XML/런처 SHA와 현재 실PC preimage 대조해 [기존 Draft #2167](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2167) 리뷰 manifest 갱신, **별도 명시 승인 전 B 요청 금지**. `BLOCKED`이면 증거에 나온 anchor cardinality/최초 실패만 분석하여 원본 보호; 허가 없는 Writer/Task/잠금 수정 금지. Event129 C 로그 설정과 Census owner 연결은 [#2196](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2196)처럼 독립 과제.
+- **진행률:** W01 실제 33/71=46.5%, 미완료 38. 이번 source/CI 단계는 DONE이나 **신규 운영 단계 완료 0**, 새 PC source/Provider/SQLite/D1/Cloudflare 쓰기 0.
+
 <!-- W01-20261119-R2-TWO-BRANCH-READONLY-PR2197 -->
 ## 2026-11-19 00:52 KST — W01 R2 Writer 구형 builder 재계산 분기 위험 확인, 읽기 전용 두 분기 프리뷰 PR #2197
 
