@@ -1756,3 +1756,18 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 **LAST PASS / FIRST UNFINISHED:** LAST PASS=실PC QFR 6파일·fixed source/read-only·보호 불변 PASS(실제 원격 JSON/TXT). FIRST UNFINISHED=QFR 운영 원본 publisher/Reader/Worker 핵심 5파일 ABSENT, 나머지 10파일 의존 검증·source-only B manifest/실제 설치 승인 없음, 그 후 단일키 D1 게시 owner approval/원격 readback 미완료. 사용자가 직접 CMD·파일을 전달할 작업 없음.
 
 **다음 W05 독립 실행 하나:** 기존 정규 Writer B를 재사용하여 **QFR 최소 설치에 필요한 정확 10파일 의존성**, 승인된 main publisher·실PC operation checkout 실제 A/M/SHA·동일 경로 source 보호를 확인해 source-only manifest를 작성하고 승인된 범위에서 단회 설치→readback(무단 Core 중단 없음). 이후 현행 QFR SQLite 저장자료 최신 checkpoint와 1키 D1 별도 B manifest/명시 효과 승인·GET/UI를 직접 처리한다. 새 WPS 운영·QFR 단일키 D1 쓰기는 승인 전 금지. 예약/미래 자연 검증 선행 조건 없음.
+
+
+## 98. R4-06 (2026-11-18 KST) QFR B 게시 10파일 계약과 앱 main 소스 존재 대조 — SOURCE INVENTORY PASS / PC INSTALL HOLD
+
+<!-- W05-R406-QFR-TEN-SOURCE-INVENTORY-20261118 -->
+
+**진행률:** 시작→종료 순차 DONE **26/82(31.7%)→26/82(31.7%)**, 개별 DONE **28/82(34.1%)→28/82(34.1%)**. 첫 미완료 R3-04 WPSFD42 실제 운영 수집; 사용자 #1919 HOLD 불변. R4-06 QFR 게시 DONE 아님.
+
+**실행:** 제어 main `tools/publication-contract.mjs`의 `operationSpec('census-qfr-margin-once').sourceFiles` 정확 10개를 읽고 앱 `main` 각 파일을 GitHub contents로 개별 조회해 **10/10 PRESENT** 확인. 10파일: `scripts/pc-writer/EARNINGS_CENSUS_QFR_R1_READONLY.mjs`, `EARNINGS_CENSUS_QFR_R2_SQLITE_APPEND.mjs`, `EARNINGS_CENSUS_QFR_R3_STORED_PREVIEW_READONLY.mjs`, `EARNINGS_CENSUS_QFR_R4_PROJECTION_DRAFT_READONLY.mjs`, `EARNINGS_CENSUS_QFR_R4_D1_ONCE.mjs`, `EARNINGS_R4_C_D1_DUAL_SOURCE_GATES.mjs`, `d1.mjs`, `d1-transient.mjs`, `d1-diagnostics.mjs` (이상 scripts/pc-writer), `worker/earnings-companion-c-qfr-r1.mjs`. 해당 Git blob SHA는 GitHub contents SHA이며 **운영 설치용 원본 바이트 SHA256이 아님**.
+
+**실PC 선행 결과와 차이:** §97의 실PC 6파일 A에서 5개 ABSENT, `d1.mjs`만 PRESENT; 앱 main의 10/10 PRESENT는 **현장 운영 checkout의 10/10 설치를 증명하지 않는다**. 실제 운영 clean SHA/config.source, 별도 clean main publisher checkout, 정확 10개 SHA256, 2026Q3 포함 현재 QFR SQLite checkpoint/원본 신선도, source-only 설치 manifest/승인 및 단일키 D1 게시 효과 승인 모두 미확보. 제어 계약은 `publisherFiles` 정확 10개, 서로 다른 clean publisher/operational checkout, 명시 B 승인 댓글, ONCE/0 retry/1 key를 요구한다.
+
+**LAST PASS / FIRST FAIL:** LAST PASS=정식 게시 계약 10파일과 앱 main source 존재 10/10 원격 대조; §97 실PC 6파일 보호 A readback PASS 재사용. FIRST UNFINISHED=운영 checkout에 핵심 5파일 부재·나머지 4파일 실측 없음, 승인된 정확 10파일 source-only 설치 및 별도 게시 B 승인 없음. 이번 공급자 호출·운영 PC/SQLite/D1/Cloudflare 쓰기 0, 프로세스 총괄 신규 인계 0.
+
+**다음 W05 실행:** 기존 승인된 읽기 전용 PC 경로로 정확 10파일의 현장 존재·원본 SHA256·clean checkout 및 config.source를 확인하고, 그 실측 핀에만 결속된 최소 source-only 설치 manifest를 준비한다. 승인·lease 보호 충족 전 설치 금지. 설치 후 저장 QFR 최신 snapshot 재조회→별도 정확 단일키 B 효과 승인→1회 게시/readback→Production API/UI 검증. WPSFD42 #1919 HOLD 별도 유지; 미래 예약 검증은 최종 후속.
