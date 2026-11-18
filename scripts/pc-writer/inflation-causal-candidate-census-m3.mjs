@@ -108,7 +108,8 @@ function validPrior(doc){
     doc.sourceVersion===CENSUS_M3_INVENTORIES_VERSION&&validIso(doc.sourceStoredAt)&&
     Array.isArray(doc.observations)&&doc.observations.length>0&&
     doc.observations.every(x=>/^20\d{2}-(0[1-9]|1[0-2])-01$/.test(x?.date??'')&&
-      typeof x?.value==='number'&&Number.isFinite(x.value)&&x.value>=0);
+      typeof x?.value==='number'&&Number.isFinite(x.value)&&x.value>=0)&&
+    new Set(doc.observations.map(x=>x.date)).size===doc.observations.length;
 }
 async function readBody(res){
   if(res?.status>=300&&res.status<400)throw fail('CENSUS_M3_REDIRECT_DENIED');
@@ -140,6 +141,16 @@ export async function collectCensusM3Inventories({base,censusKey,quotaFetch,now=
   if(!Number.isFinite(moment.getTime()))throw fail('CENSUS_M3_NOW_INVALID');
   const year=moment.getUTCFullYear(),archives=[],incoming=[],diagnostics=[];
   const dir=child(base,'inflation-causal-candidates-r1');
+  // An unsafe prior must fail before consuming the supplier's two-GET budget.
+  // Reject duplicate stored months rather than silently overwriting one via Map.
+  const file=path.join(dir,'census-m3-manufacturing-inventories.json');
+  let prior=null;
+  if(fs.existsSync(file)){
+    if(!safeFile(file))throw fail('CENSUS_M3_EXISTING_FILE_UNSAFE');
+    try{prior=JSON.parse(fs.readFileSync(file,'utf8'));}
+    catch{throw fail('CENSUS_M3_EXISTING_JSON_INVALID');}
+    if(!validPrior(prior))throw fail('CENSUS_M3_EXISTING_CONTRACT_INVALID');
+  }
   // Each API response belongs to Census. Archive its exact bytes regardless
   // of whether a year includes nulls or zero usable monthly observations.
   const rawDir=child(dir,'raw');
@@ -172,14 +183,6 @@ export async function collectCensusM3Inventories({base,censusKey,quotaFetch,now=
     const matched=rows.filter(x=>Number(x.date.slice(0,4))===y);
     incoming.push(...matched);
     diagnostics.push({year:y,...rows.diagnostics,available:matched.length});
-  }
-  const file=path.join(dir,'census-m3-manufacturing-inventories.json');
-  let prior=null;
-  if(fs.existsSync(file)){
-    if(!safeFile(file))throw fail('CENSUS_M3_EXISTING_FILE_UNSAFE');
-    try{prior=JSON.parse(fs.readFileSync(file,'utf8'));}
-    catch{throw fail('CENSUS_M3_EXISTING_JSON_INVALID');}
-    if(!validPrior(prior))throw fail('CENSUS_M3_EXISTING_CONTRACT_INVALID');
   }
   const byDate=new Map([...(prior?.observations??[]),...incoming].map(x=>[x.date,x]));
   const observations=[...byDate.values()].sort((a,b)=>a.date.localeCompare(b.date));
