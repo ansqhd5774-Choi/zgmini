@@ -102,6 +102,12 @@ test('unattested or inconsistent timestamps and public-rights flags never pass',
  const p=privateResult();p.publicationAuthorized=true;
  assert.throws(()=>reconcilePinnedGmhSeven(input(p)),
   {code:'W03_SEVEN_SEED_PRIVATE_GMH_CONTRACT'});
+ const scheduled=privateResult();scheduled.schedulerWrites=1;
+ assert.throws(()=>reconcilePinnedGmhSeven(input(scheduled)),
+  {code:'W03_PINNED_PARITY_PRIVATE_SCHEDULER_WRITE_CONTRACT'});
+ const neverScheduled=privateResult();neverScheduled.schedulerWrites=0;
+ assert.equal(reconcilePinnedGmhSeven(input(neverScheduled)).status,
+  'PRIVATE_PINNED_PARITY_VERIFIED_NOT_PUBLISHED');
 });
 
 test('private GMH histories must contain derived date/score fields only',()=>{
