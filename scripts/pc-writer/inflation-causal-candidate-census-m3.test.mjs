@@ -265,3 +265,30 @@ test('malformed values in both official Census years fail the initial snapshot a
   assert.equal(archiveNames.some(name=>name.startsWith('census-m3-mtm-2025-')),true);
   assert.equal(archiveNames.some(name=>name.startsWith('census-m3-mtm-2026-')),true);
 });
+
+test('invalid last-good Census file fails before network and preserves its exact bytes',async t=>{
+  const fixture=base();t.after(fixture.clear);
+  let providerCalls=0;
+  const fetchYear=async url=>{
+    providerCalls++;
+    const year=Number(new URL(url).searchParams.get('time'));
+    return response(payload(row(year,'09',year===2025?'700000':'900000')));
+  };
+  const first=await collectCensusM3Inventories({
+    base:fixture.writer,censusKey:'fixture-key',quotaFetch:fetchYear,now});
+  assert.equal(first.status,'SAVED_READBACK');
+  assert.equal(providerCalls,2);
+  const file=path.join(fixture.writer,CENSUS_M3_INVENTORIES_FILE);
+  const doc=JSON.parse(fs.readFileSync(file,'utf8'));
+  doc.observations.push({...doc.observations[0],value:888888});
+  const conflicting=Buffer.from(JSON.stringify(doc));
+  fs.writeFileSync(file,conflicting);
+  const archiveDir=path.join(fixture.writer,'inflation-causal-candidates-r1','raw');
+  const archivesBefore=fs.readdirSync(archiveDir).sort();
+  await assert.rejects(()=>collectCensusM3Inventories({
+    base:fixture.writer,censusKey:'fixture-key',quotaFetch:fetchYear,now}),
+    {code:'CENSUS_M3_EXISTING_CONTRACT_INVALID'});
+  assert.equal(providerCalls,2,'invalid prior cannot consume another two provider GETs');
+  assert.deepEqual(fs.readFileSync(file),conflicting,'preserve original bytes for diagnosis');
+  assert.deepEqual(fs.readdirSync(archiveDir).sort(),archivesBefore,'no attempted response archives');
+});
