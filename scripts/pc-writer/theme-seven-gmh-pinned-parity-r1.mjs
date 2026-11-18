@@ -74,6 +74,12 @@ export function reconcilePinnedGmhSeven({
  need(digest(seedBytes)===expectedLegacySeedBodySha256,'LEGACY_SHA_MISMATCH');
  const privateResult=readJson(privateBytes,'PRIVATE_JSON_INVALID');
  const legacySeed=readJson(seedBytes,'LEGACY_JSON_INVALID');
+ // Reference history must not postdate the saved candidate being verified.
+ // Otherwise an older candidate may be mistaken for a base recovery update.
+ need(typeof legacySeed.observationDate==='string'&&
+  typeof privateResult.observationDate==='string'&&
+  legacySeed.observationDate<=privateResult.observationDate,
+  'LEGACY_OBSERVATION_AFTER_PRIVATE');
  assertPrivateDerivedOnly(privateResult);
  // A private immutable calculation must not claim a scheduler mutation.
  // The historical format may omit this field; if present it must be zero.
