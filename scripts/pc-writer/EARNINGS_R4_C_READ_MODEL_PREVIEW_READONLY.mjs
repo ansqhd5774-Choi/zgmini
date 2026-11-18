@@ -135,8 +135,10 @@ export function buildPreview(db,{generatedAt=new Date().toISOString()}={}) {
   const coverage={configured:rows.length,ready:rows.filter(r=>r.status==='READY').length,
     partial:rows.filter(r=>r.status==='PARTIAL').length,
     unavailable:rows.filter(r=>r.status==='UNAVAILABLE').length};
-  const status=prior.status==='PASS_R3D_STORED_ONLY_CALCULATION'&&coverage.ready===coverage.configured
-    ?'READY':'PARTIAL';
+  // An incomplete newer capture does not invalidate the last hash-verified complete
+  // cohort. Keep its original source version/time; the newer gap remains in diagnostics.
+  // The public payload status must agree with its READY/PARTIAL row coverage.
+  const status=coverage.ready===coverage.configured?'READY':'PARTIAL';
   const identity=[SCHEMA_VERSION,...prior.rows.map(x=>`${x.id}|${x.snapshotSha256}`).sort()];
   const sourceVersion=sha256(identity.join('\n'));
   return {
