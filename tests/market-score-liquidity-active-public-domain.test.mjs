@@ -92,3 +92,68 @@ test("stored production liquidity points override reconstructed points on the sa
   assert.equal(out.trend.find(x=>x.label==="2026-09-20").value,59.5);
   assert.equal(out.trend.at(-1).value,61);
 });
+
+
+test("D3 factor minis use only real dated score rows for four displayed components",()=>{
+  const latest={
+    bankReserves:{observationDate:"2026-10-14",value:65},
+    m2:{observationDate:"2026-09-01",value:40},
+    tga:{observationDate:"2026-10-14",value:55},
+    onRrp:{observationDate:"2026-10-16",value:70},
+  };
+  const rows=(values)=>values.map(([observationDate,score])=>({observationDate,score,rawSecret:1234}));
+  const diagnostic={snapshot:{
+    diagnostics:{liquidityCrisisDefense:{status:"READY",score:57,missing:[]}},
+    r1:{latest,components:{
+      bankReserves:{rows:rows([["2026-10-07",0],["2026-10-14",65]])},
+      m2:{rows:rows([["2026-08-01",35],["2026-09-01",40]])},
+      tga:{rows:rows([["2026-10-07",50],["2026-10-14",55]])},
+      onRrp:{rows:rows([["2026-10-15",69],["2026-10-16",70]])},
+    }},
+  }};
+  const out=buildLiquidityActivePublicDomainR1({diagnostic,asOfDate:"2026-10-18"});
+  assert.equal(out.score,57);
+  assert.deepEqual(out.indicators.map(x=>x.trend.at(-1).label),
+    ["2026-10-14","2026-09-01","2026-10-14","2026-10-16"]);
+  assert.deepEqual(out.indicators.map(x=>x.trend.at(-1).value),[65,40,55,70]);
+  assert.equal(out.indicators[0].trend[0].value,0); // 0 is a real score
+  for(const item of out.indicators){
+    assert.ok(item.trend.length>=2);
+    for(const p of item.trend){
+      assert.deepEqual(Object.keys(p).sort(),["label","status","value"]);
+      assert.equal(p.label<="2026-10-18",true);
+      assert.equal(Object.hasOwn(p,"rawSecret"),false);
+      assert.equal(typeof p.value,"number");
+    }
+  }
+});
+
+test("D3 minis preserve null, prevent future/invalid months and break actual source gaps",()=>{
+  const diagnostic={snapshot:{
+    diagnostics:{liquidityCrisisDefense:{status:"READY",score:50,missing:[]}},
+    r1:{latest:{bankReserves:{observationDate:"2026-10-14",value:60}},components:{
+      bankReserves:{rows:[
+        {observationDate:"2025-09-01",score:80}, // out of one-year window
+        {observationDate:"2026-09-23",score:0},
+        {observationDate:"2026-09-30",score:null},
+        {observationDate:"2026-10-14",score:60},
+        {observationDate:"2026-10-19",score:99},
+        {observationDate:"2026-02-30",score:88},
+      ]},
+      m2:{rows:[{observationDate:"2026-07-01",score:45},{observationDate:"2026-09-01",score:55}]},
+    }},
+  }};
+  const out=buildLiquidityActivePublicDomainR1({diagnostic,asOfDate:"2026-10-18"});
+  assert.deepEqual(out.indicators[0].trend,[
+    {label:"2026-09-23",value:0,status:"READY"},
+    {label:"2026-09-30",value:null,status:"PARTIAL"},
+    {label:"2026-10-14",value:60,status:"READY",breakBefore:true},
+  ]);
+  assert.equal(out.indicators[1].trend[1].breakBefore,true); // missing M2 month
+  const prior=diagnostic.snapshot.r1.components.bankReserves.rows;
+  diagnostic.snapshot.r1.components.bankReserves.rows=[...prior,
+    {observationDate:"2026-10-14",score:61}];
+  const duplicate=buildLiquidityActivePublicDomainR1({diagnostic,asOfDate:"2026-10-18"});
+  assert.deepEqual(duplicate.indicators[0].trend,[]);
+  assert.equal(duplicate.indicators[0].score,60);
+});
