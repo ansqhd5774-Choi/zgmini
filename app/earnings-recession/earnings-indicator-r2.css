@@ -216,7 +216,8 @@
 /* R4-C: render stored BLS cost observations as rows in the existing 10-column
    risk-indicator table. These values remain independent of the E1 score. */
 .earnings-r2-indicators .earnings-r2-cost-status{
- display:inline-block;margin-left:8px;color:#83d6cc;font-size:11px;font-weight:700;white-space:nowrap;
+ display:inline-block;max-width:100%;margin-left:8px;color:#83d6cc;font-size:11px;font-weight:700;
+  white-space:normal;overflow-wrap:anywhere;
 }
 .earnings-r2-indicators .earnings-r2-cost-row th[scope="row"]{color:#dff5f6}
 .earnings-r2-indicators .earnings-r2-cost-row td:nth-child(4) small{
