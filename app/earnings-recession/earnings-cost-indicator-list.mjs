@@ -62,6 +62,30 @@ export function earningsCostRetrievalDay(value){
   return Number.isFinite(at)&&new Date(at).toISOString()===value?value.slice(0,10):'—';
 }
 
+// Render-only geometry from stored observations. Index slots with missing values
+// remain disconnected; a highlighted last dot is valid only for the LAST slot.
+export function earningsCostSparkGeometry(history){
+  if(!Array.isArray(history))return null;
+  const points=history;
+  const valid=points.map((point,index)=>({index,value:point?.value}))
+    .filter(point=>typeof point.value==='number'&&Number.isFinite(point.value));
+  if(valid.length<2)return null;
+  const min=Math.min(...valid.map(point=>point.value));
+  const max=Math.max(...valid.map(point=>point.value));
+  const x=index=>5+index*110/Math.max(1,points.length-1);
+  const y=value=>max===min?18:30-24*(value-min)/(max-min);
+  let path='',previous=-2;
+  for(const point of valid){
+    path+=(previous===point.index-1?' L':' M')
+      +x(point.index).toFixed(1)+' '+y(point.value).toFixed(1);
+    previous=point.index;
+  }
+  const newest=valid.at(-1);
+  const marker=newest.index===points.length-1
+    ?{cx:x(newest.index),cy:y(newest.value)}:null;
+  return {path:path.trim(),marker};
+}
+
 export function buildEarningsCostIndicatorView(payload){
   const valid=payload?.schemaVersion===EARNINGS_C_COST_SCHEMA
     &&payload?.historicalMode==='CURRENT_RETRIEVAL_NOT_PIT'
