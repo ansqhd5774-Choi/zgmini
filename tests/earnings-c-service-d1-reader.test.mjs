@@ -2,6 +2,8 @@
 // No Cloudflare API, BLS provider, operational SQLite, or deployment access.
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import {client as d1Client} from '../scripts/pc-writer/d1.mjs';
 import {
   EARNINGS_C_SNAPSHOT_KEY,EARNINGS_C_SERVICE_SNAPSHOT_KEY,EARNINGS_C_ROUTE,
   earningsCompanionWriter,readEarningsCompanionResponse,
@@ -194,4 +196,176 @@ test('corrupt existing WPSFD42 checkpoint is not reported as ALREADY_STORED',asy
       /EARNINGS_C_EXISTING_INVALID/);
     assert.equal(db.actions.filter(x=>x.kind==='WRITE').length,writesBefore);
   }
+});
+
+const d1FixtureConfig={account:'c'.repeat(32),core:'a'.repeat(36),history:'b'.repeat(36)};
+const d1OkResult=(results=[],meta={})=>Response.json({
+  success:true,result:[{success:true,results,meta:{rows_read:0,rows_written:0,...meta}}],
+});
+const d1Sql=options=>JSON.parse(options.body).batch[0].sql;
+
+test('R6-03 base D1 read failures and missing checkpoint remain 503 without GET writes',async()=>{
+  const db=d1();
+  const before=db.actions.length;
+  const pending=await readEarningsCompanionResponse(request(),db,{now:NOW});
+  assert.equal(pending.status,503);
+  assert.equal((await pending.json()).reason,'STORED_PROJECTION_PENDING');
+  const unavailable=await readEarningsCompanionResponse(request(),{
+    prepare(){throw Error('D1_HTTP_500');},
+  },{now:NOW});
+  assert.equal(unavailable.status,503);
+  assert.equal((await unavailable.json()).reason,'PROJECTION_READ_UNAVAILABLE');
+  const noAdapter=await readEarningsCompanionResponse(request(),null,{now:NOW});
+  assert.equal(noAdapter.status,503);
+  assert.equal((await noAdapter.json()).reason,'PROJECTION_READ_UNAVAILABLE');
+  assert.equal(db.actions.filter(action=>action.kind==='WRITE').length,0);
+  assert.equal(db.actions.length,before+1);
+});
+
+test('R6-03 optional service read timeout returns verified base five only',async()=>{
+  const db=d1(),base=basePayload();
+  assert.equal((await earningsCompanionWriter(db).write(base,{storedAt:NOW-1000})).status,
+    'READBACK_VERIFIED');
+  const baseline=db.records.get(EARNINGS_C_SNAPSHOT_KEY).body;
+  const calls=[];
+  const fault={
+    prepare(sql){
+      return {bind(key){
+        const item=db.prepare(sql).bind(key);
+        return {async first(){
+          calls.push(key);
+          if(key===EARNINGS_C_SERVICE_SNAPSHOT_KEY)throw Error('D1_OUTCOME_UNKNOWN');
+          return item.first();
+        }};
+      }};
+    },
+  };
+  const response=await readEarningsCompanionResponse(request(),fault,{now:NOW});
+  assert.equal(response.status,200);
+  assert.equal(response.headers.get('x-earnings-c-service'),'READ_UNAVAILABLE');
+  const published=await response.json();
+  assert.equal(published.rows.length,5);
+  assert.deepEqual(published.rows.map(x=>x.indicatorId),base.rows.map(x=>x.indicatorId));
+  assert.deepEqual(calls,[EARNINGS_C_SNAPSHOT_KEY,EARNINGS_C_SERVICE_SNAPSHOT_KEY]);
+  assert.equal(db.records.get(EARNINGS_C_SNAPSHOT_KEY).body,baseline);
+  assert.deepEqual([...db.records.keys()],[EARNINGS_C_SNAPSHOT_KEY]);
+});
+
+test('R6-03 corrupt required projection version fails closed; optional one preserves base',async()=>{
+  const db=d1(),base=basePayload(),service=servicePayload();
+  await earningsCompanionWriter(db).write(base,{storedAt:NOW-1000});
+  await earningsCompanionWriter(db,{snapshotKey:EARNINGS_C_SERVICE_SNAPSHOT_KEY})
+    .write(service,{storedAt:NOW-500});
+  const baseline=db.records.get(EARNINGS_C_SNAPSHOT_KEY).body;
+  const opt=db.records.get(EARNINGS_C_SERVICE_SNAPSHOT_KEY);
+  const corruptService=JSON.parse(opt.body);
+  corruptService.projection.expectedSourceVersion='d'.repeat(64);
+  db.records.set(EARNINGS_C_SERVICE_SNAPSHOT_KEY,{
+    body:JSON.stringify(corruptService),stored_at:opt.stored_at,
+  });
+  let response=await readEarningsCompanionResponse(request(),db,{now:NOW});
+  assert.equal(response.status,200);
+  assert.equal(response.headers.get('x-earnings-c-service'),'INVALID');
+  assert.equal((await response.json()).rows.length,5);
+  assert.equal(db.records.get(EARNINGS_C_SNAPSHOT_KEY).body,baseline);
+  const core=db.records.get(EARNINGS_C_SNAPSHOT_KEY);
+  const corruptCore=JSON.parse(core.body);
+  corruptCore.projection.expectedSourceVersion='d'.repeat(64);
+  db.records.set(EARNINGS_C_SNAPSHOT_KEY,{
+    body:JSON.stringify(corruptCore),stored_at:core.stored_at,
+  });
+  response=await readEarningsCompanionResponse(request(),db,{now:NOW});
+  assert.equal(response.status,503);
+  assert.equal((await response.json()).reason,'STORED_PROJECTION_INVALID');
+  assert.equal(db.actions.filter(action=>action.kind==='WRITE').length,2);
+});
+
+test('R6-03 D1 HTTP 403/429/500 reject a WPSFD42 write without replay',async()=>{
+  for(const code of [403,429,500]){
+    const requests=[];
+    const cloud=d1Client(d1FixtureConfig,'fixture-token',{
+      fetchImpl:async (_url,options)=>{
+        const sql=d1Sql(options);
+        requests.push(sql);
+        if(sql.startsWith('SELECT'))return d1OkResult();
+        return new Response(JSON.stringify({success:false,errors:[{code}]}),{
+          status:code,headers:{'content-type':'application/json'},
+        });
+      },
+      sleep:async()=>{throw Error('UNEXPECTED_WRITE_RETRY');},
+    });
+    await assert.rejects(
+      earningsCompanionWriter(cloud.adapter(d1FixtureConfig.core,{allowWrites:true}),{
+        snapshotKey:EARNINGS_C_SERVICE_SNAPSHOT_KEY,
+      }).write(servicePayload(),{storedAt:NOW-500}),
+      new RegExp('D1_HTTP_'+code),
+    );
+    assert.equal(requests.filter(sql=>sql.startsWith('INSERT')).length,1,code);
+    assert.equal(requests.filter(sql=>sql.startsWith('SELECT')).length,1,code);
+    assert.equal(cloud.stats.rowsWritten,0,code);
+  }
+});
+
+test('R6-03 lost response after remote write stays unverified and never auto-replays INSERT',async()=>{
+  let writeAttempts=0,readAttempts=0;
+  const cloud=d1Client(d1FixtureConfig,'fixture-token',{
+    fetchImpl:async (_url,options)=>{
+      const sql=d1Sql(options);
+      if(sql.startsWith('INSERT')){
+        writeAttempts++;
+        // A remote commit may have succeeded even when transport response is lost.
+        throw Object.assign(Error('socket closed after submitting write'),{code:'ETIMEDOUT'});
+      }
+      readAttempts++;
+      return d1OkResult();
+    },
+    sleep:async()=>{throw Error('UNEXPECTED_WRITE_RETRY');},
+  });
+  await assert.rejects(
+    earningsCompanionWriter(cloud.adapter(d1FixtureConfig.core,{allowWrites:true}),{
+      snapshotKey:EARNINGS_C_SERVICE_SNAPSHOT_KEY,
+    }).write(servicePayload(),{storedAt:NOW-500}),
+    /D1_OUTCOME_UNKNOWN/,
+  );
+  assert.equal(writeAttempts,1);
+  assert.equal(readAttempts,1);
+  assert.equal(cloud.stats.rowsWritten,0);
+});
+
+test('R6-03 accepted D1 write with failed readback never claims success or sends second write',async()=>{
+  let writeAttempts=0,reads=0;
+  const cloud=d1Client(d1FixtureConfig,'fixture-token',{
+    fetchImpl:async (_url,options)=>{
+      const sql=d1Sql(options);
+      if(sql.startsWith('INSERT')){
+        writeAttempts++;
+        return d1OkResult([],{changes:1,rows_written:1});
+      }
+      reads++;
+      if(writeAttempts)throw Object.assign(Error('readback timed out'),{code:'ETIMEDOUT'});
+      return d1OkResult();
+    },
+    sleep:async()=>{},
+  });
+  await assert.rejects(
+    earningsCompanionWriter(cloud.adapter(d1FixtureConfig.core,{allowWrites:true}),{
+      snapshotKey:EARNINGS_C_SERVICE_SNAPSHOT_KEY,
+    }).write(servicePayload(),{storedAt:NOW-500}),
+    /D1_OUTCOME_UNKNOWN/,
+  );
+  assert.equal(writeAttempts,1);
+  assert.equal(reads,3); // one initial read and exactly two allowed readback attempts
+  assert.equal(cloud.stats.rowsWritten,1); // remote accepted write is NOT readback proof
+});
+
+test('R6-03 WPSFD42 publisher records uncertain remote outcome and forbids automatic replay',()=>{
+  const source=fs.readFileSync(new URL(
+    '../scripts/pc-writer/EARNINGS_BLS_SERVICE_R1_D1_ONCE.mjs',import.meta.url),'utf8');
+  assert.match(source,/let remoteOutcomeUnknown=false;/);
+  assert.match(source,/remoteOutcomeUnknown=true;\s*const result=await earningsCompanionWriter/);
+  assert.match(source,/remoteOutcomeUnknown=false;\s*if\(!\['READBACK_VERIFIED','ALREADY_STORED'\]/);
+  assert.match(source,/remoteOutcomeUnknown\?'STATE_UNKNOWN_EARNINGS_C_SERVICE_D1':'FAIL_EARNINGS_C_SERVICE_D1'/);
+  assert.match(source,/'D1_AUTO_RETRY=NO'/);
+  assert.match(source,/if\(!apply\)\{/);
+  assert.match(source,/'D1_QUERIES=0','D1_WRITES=0'/);
 });
