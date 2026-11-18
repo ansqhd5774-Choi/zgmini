@@ -1358,3 +1358,5 @@
 - **LAST PASS/FIRST UNVERIFIED:** R7 다섯 점수·raw 날짜·승인 가중 검산, 저장 GET, 메인/5 mini 연결선·마지막점, 반응형/JS 모두 PASS. FIRST UNVERIFIED 실제 PC SQLite 계산결과·원본 BIS/BEA/CMDI checkpoint SHA ↔ private D1 `body/stored_at` 동치 및 명시적 신규 원본 반영 실증, Production exact asset-serving deployment. **#47 전체 DONE 아님**. 404는 W05/웹 빌드·배포 원담당이 이미 존재하는 Git Integration/정적 shell asset manifest를 좁게 대조할 항목; 승인 없는 Cloudflare 직배포·DNS 변경/캐시 강제 삭제 금지.
 - **운영 변경:** 제품 UI·Worker, PC Collector/Writer/SQLite/D1, DNS/TTL/예약/Cloudflare 배포 변경 **0**, W06 전담 진행 원장만 추가. #45 미배포 모바일 `nowrap` 수정/CI 문제와 #46 source 분기 문구 미확인은 독립 잔여로 보존.
 - **다음 필수 독립 실행:** **W06 #48 D13 공급 충격** 6요인 공통 관측월·완결 Gate, 실제 공개 1Y 연결선/마지막점 및 모바일·PC를 검증. 이 404 조사/PC→D1 별도 검증은 #48 독립 진행을 임의 차단하지 않음.
+
+- **별도 이슈 원장:** 실제 Production 공통 JS 자산 HTTP404 2건을 중복 이슈 검색 후 [ZGMINI #1324](https://github.com/ansqhd5774-Choi/zgmini/issues/1324)로 신규 기록. W05/웹 배포 담당이 active exact Deployment와 static-shell asset manifest를 재조회할 결함 후보로 분류. 담당자의 실제 대화 수신·원인 확정·수정 완료 증거는 **없음**. #47 R7 점수/차트 UI를 실패로 오판하지 않으며 운영 우회 변경은 0.
