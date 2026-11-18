@@ -6,6 +6,7 @@ import {MARKETPARQUET_REMOVED_CODE as RETIRED} from '../lib/marketparquet-retire
 import {retiredBreadthPublicDomain} from '../worker/market-retired-breadth-domain.mjs';
 import {isRetiredBreadthPartialMarket,assertCompleteMarket} from '../worker/market-publication-validation.mjs';
 import {maskRetiredMarketPublicSnapshot} from '../worker/market-retired-public-snapshot-mask.mjs';
+import {marketPlan} from '../scripts/pc-writer/publish.mjs';
 
 function makePartial(){
  const retired=retiredBreadthPublicDomain();
@@ -40,6 +41,10 @@ test('the precise 11 READY / 1 rights-retired payload is permitted with no rewei
  assert.equal(isRetiredBreadthPartialMarket(body),true);
  assert.doesNotThrow(()=>assertCompleteMarket(body));
  assert.equal(maskRetiredMarketPublicSnapshot(body),body);
+ const statements=marketPlan(body,Date.parse('2026-11-18T09:00:00Z'),'approved-test-lease',-1);
+ assert.ok(statements.some(item=>item.sql.includes('market_public_snapshots_v1')));
+ assert.ok(statements.some(item=>item.sql.includes("snapshot_key='current'")));
+ assert.equal(statements.filter(item=>item.sql.includes('INSERT INTO market_public_snapshots_v1')).length,2);
 });
 test('the complete 12-domain publication contract and its score history remain enforced',()=>{
  const old={
@@ -49,6 +54,9 @@ test('the complete 12-domain publication contract and its score history remain e
  assert.doesNotThrow(()=>assertCompleteMarket(old));
  const noTrend=structuredClone(old);noTrend.overall.trend=[];
  assert.throws(()=>assertCompleteMarket(noTrend),/MARKET_REQUIRED_TREND_MISSING/);
+ const oldUnsafe=structuredClone(old);
+ oldUnsafe.domains[0].indicators=[{source:'MarketParquet Free Sample',score:30}];
+ assert.throws(()=>assertCompleteMarket(oldUnsafe),/MARKET_REQUIRED_SCORE_MISSING/);
 });
 test('retired-breadth exception never admits a second missing, stale or unready domain',()=>{
  const failures=[
@@ -71,6 +79,9 @@ test('retired-breadth exception never admits a second missing, stale or unready 
   body=>body.modelVersion='UNAPPROVED',
   body=>body.domains.find(d=>d.id==='rates').indicators=[{source:'MarketParquet Free Sample',score:85}],
   body=>body.domains.find(d=>d.id==='breadth').source='MARKETPARQUET_FREE_SAMPLE',
+  body=>body.domains.find(d=>d.id==='breadth').rawBars=[{value:1}],
+  body=>body.domains.find(d=>d.id==='breadth').methodologyVersion='B1-R5-STORED-BREADTH-4FACTOR-EMA3-R2',
+  body=>body.domains.find(d=>d.id==='breadth').asOfDate='2026-11-18',
  ];
  for(const mutate of failures){
   const bad=structuredClone(makePartial());mutate(bad);
