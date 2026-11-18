@@ -33,11 +33,20 @@ const sourceRows=(db,table,asOfDate)=>{
     .all(...ids,asOfDate);
 };
 const knownAt=row=>Date.parse(row.available_at??row.retrieved_at??"");
+// Known future/malformed stored times do not qualify for historical as-of.
+// A legacy NULL optional time, however, must not erase a CURRENT identity;
+// the per-key metadata validator separately keeps its PIT attestation on HOLD.
+const optionalRecordedAsOf=(row,end)=>["first_seen_at","recorded_at"].every(field=>{
+  if(!Object.hasOwn(row,field))return true;
+  if(row[field]===null||row[field]===undefined)return true;
+  const n=Date.parse(row[field]);
+  return Number.isFinite(n)&&n<=end;
+});
 const isKnownAsOf=(row,asOfDate)=>{
   const end=Date.parse(asOfDate+"T23:59:59.999Z");
   const retrieved=Date.parse(row.retrieved_at??"");
   return Number.isFinite(knownAt(row))&&knownAt(row)<=end
-    &&Number.isFinite(retrieved)&&retrieved<=end;
+    &&Number.isFinite(retrieved)&&retrieved<=end&&optionalRecordedAsOf(row,end);
 };
 // Do not coerce SQLite NULL/empty TEXT to zero when previewing PIT lineage.
 const numericObservation=value=>value!==null&&value!==undefined
@@ -65,7 +74,8 @@ const historyIndex=(rows,asOfDate)=>{
     const retrieved=Date.parse(row.retrieved_at??"");
     // The stored provider release time must not make a later download appear
     // available to an earlier PIT snapshot during candidate promotion.
-    if(!Number.isFinite(known)||known>end||!Number.isFinite(retrieved)||retrieved>end)continue;
+    if(!Number.isFinite(known)||known>end||!Number.isFinite(retrieved)||retrieved>end
+       ||!optionalRecordedAsOf(row,end))continue;
     const key=identity(row),set=out.get(key)??[];
     set.push(row);out.set(key,set);
   }
