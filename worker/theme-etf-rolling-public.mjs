@@ -15,7 +15,9 @@ export async function validRollingPublic(rolling,base,{now=Date.now(),expectedMe
  if(!rolling||rolling.status!=='READY'||rolling.version!==THEME_ETF_ROLLING_VERSION||!['CONFIRMED','PROVISIONAL'].includes(rolling.phase)||rolling.methodologyVersion!==expectedMethod)return false;
  for(const flag of ['publicationAuthorized','upstreamCommercialRightsVerified','derivedLicenseVerified','sourcePriceReconciled'])if(rolling[flag]!==true)return false;
  if(rolling.individualStocksUsed!==0||rolling.baseObservationDate!==base.observationDate||rolling.coverage?.etfs!==13||rolling.coverage?.benchmark!=='SPY'||rolling.coverage?.complete!==true)return false;
- if(!stamp(rolling.asOf)||!stamp(rolling.sourceStoredAt)||Date.parse(rolling.asOf)>now||Date.parse(rolling.sourceStoredAt)>now||now-Date.parse(rolling.asOf)>=PUBLIC_DISPLAY_MAX_AGE_MS)return false;
+ // New D1 publication time cannot refresh an expired underlying GMH request.
+ if(!stamp(rolling.asOf)||!stamp(rolling.sourceStoredAt)||Date.parse(rolling.asOf)>now||Date.parse(rolling.sourceStoredAt)>now||now-Date.parse(rolling.asOf)>=PUBLIC_DISPLAY_MAX_AGE_MS||now-Date.parse(rolling.sourceStoredAt)>=PUBLIC_DISPLAY_MAX_AGE_MS)return false;
+
  if(!/^([a-f0-9]{64})$/.test(rolling.baseHash??'')||rolling.baseHash!==await immutableBaseHash(base))return false;
  if(!Array.isArray(rolling.themes)||rolling.themes.length!==base.themes.length||!date(rolling.observationDate)||rolling.confirmedObservationDate!==rolling.observationDate)return false;
  // A future-dated completed session is not made real by a fresh D1 write.
