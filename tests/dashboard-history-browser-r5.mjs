@@ -172,4 +172,113 @@ try{
   console.log(`PASS ${width}px: 6 chart periods, newer snapshot and true zero in mocked Chromium`);
   await page.close();
  }
+
+ // W06 #75 ONE-OFF, PUBLIC READ-ONLY live production verification.
+ // No user credentials, D1 credentials, POST, deployment, persistent CI gate,
+ // fabricated observations or source/model edits. Never merge this probe.
+ for(const width of [390,1440]){
+  const liveContext=await browser.newContext({viewport:{width,height:900},locale:'ko-KR',colorScheme:'light'});
+  const live=await liveContext.newPage();
+  const errors=[];
+  const requests=[];
+  live.on('pageerror',error=>errors.push(String(error.message).slice(0,240)));
+  live.on('response',response=>{
+   const url=new URL(response.url());
+   if(url.hostname==='zgmini.kr'&&
+     ['/api/market-score','/api/market-score/observations'].includes(url.pathname))
+    requests.push({path:url.pathname,period:url.searchParams.get('period'),http:response.status()});
+  });
+  const origin='https://zgmini.kr';
+  try{
+   const html=await live.goto(origin+'/',{waitUntil:'domcontentloaded',timeout:45000});
+   assert.equal(html?.status(),200,'Live homepage HTTP 200 at '+width+'px');
+   const dialog=live.locator('#zg-about-intro-dialog');
+   if(await dialog.isVisible({timeout:2500}).catch(()=>false)){
+    await dialog.getByRole('button',{name:'닫기',exact:true}).click();
+    await dialog.waitFor({state:'hidden',timeout:15000});
+   }
+   const cards=live.locator('.zg-r55-card-grid article');
+   await cards.first().waitFor({state:'visible',timeout:35000});
+   assert.equal(await cards.count(),12,'Live 12 domains at '+width+'px');
+   const periods=live.getByRole('group',{name:'종합 시장 점수 추이 기간'});
+   await periods.waitFor({state:'visible',timeout:25000});
+   const summary=live.locator('.zg-r55-summary-top[role="img"]');
+   await summary.waitFor({state:'visible',timeout:25000});
+   const curRes=await live.request.get(origin+'/api/market-score',
+    {timeout:18000,headers:{accept:'application/json','cache-control':'no-cache'}});
+   assert.equal(curRes.status(),200,'Live current GET HTTP 200');
+   const market=await curRes.json();
+   assert.equal(market.status,'SUCCESS','Live market current published status');
+   assert.equal(market.overall?.status,'READY','Live current overall READY');
+   assert.ok(typeof market.overall?.score==='number'&&Number.isFinite(market.overall.score),
+    'Live current score finite');
+   assert.equal(market.domains?.length,12,'Live API has twelve domains');
+   const expectedDisplay=Math.max(0,Math.min(100,50+(market.overall.score-50)*3.5)).toFixed(1);
+   await live.waitForFunction(()=>{
+    const s=document.querySelector('.zg-r55-summary-top[role="img"]')?.getAttribute('aria-label')??'';
+    return /종합 시장 점수 [0-9]+[.][0-9]점$/.test(s);
+   },null,{timeout:25000});
+   const summaryLabel=await summary.getAttribute('aria-label');
+   const archives=[];
+   for(const period of ['1D','1W','1M','3M','6M','1Y']){
+    const res=await live.request.get(origin+'/api/market-score/observations?period='+period,
+     {timeout:18000,headers:{accept:'application/json','cache-control':'no-cache'}});
+    assert.equal(res.status(),200,'Live '+period+' archive HTTP 200');
+    const body=await res.json();
+    assert.equal(body.period,period,'Live '+period+' response label');
+    assert.ok(['READY','PENDING'].includes(body.status),'Live '+period+' published state');
+    assert.equal(body.timeMeaning,'PC_CALCULATED_AT','Live '+period+' observed time source');
+    assert.equal(res.headers()['x-data-source'],'STORED','Live '+period+' stored-only GET');
+    const points=Array.isArray(body.points)?body.points:[];
+    assert.ok(points.every(p=>
+     typeof p?.score==='number'&&Number.isFinite(p.score)
+      &&p.score>=0&&p.score<=100
+      &&typeof p?.observedAt==='string'&&Number.isFinite(Date.parse(p.observedAt))
+    ),'Live '+period+' only finite observed score and dates');
+    for(let i=1;i<points.length;i++)
+     assert.ok(points[i-1].observedAt<points[i].observedAt,
+      'Live '+period+' strictly increasing actual calculation timestamps');
+    const button=periods.getByRole('button',{name:period,exact:true});
+    await button.click();
+    assert.equal(await button.getAttribute('aria-pressed'),'true',
+     'Live '+width+'px '+period+' period selected');
+    const curves=await live.locator('.zg-r55-summary-chart path.recharts-area-curve')
+     .evaluateAll(paths=>paths.map(p=>({
+      d:p.getAttribute('d')??'',dash:p.getAttribute('stroke-dasharray')??'',
+      stroke:p.getAttribute('stroke')??''
+     })));
+    const lines=curves.filter(c=>/^M/.test(c.d)&&/[CLQ]/.test(c.d.slice(1))
+     &&c.stroke!=='none'&&!/NaN|Infinity/.test(c.d));
+    const domains=await live.locator('.zg-r55-card-grid article .zg-r55-mini-chart svg > path')
+     .evaluateAll(paths=>paths.map(p=>p.getAttribute('d')??''));
+    archives.push({period,state:body.status,points:points.length,
+     lastAt:points.at(-1)?.observedAt??null,
+     lastRawScore:points.at(-1)?.score??null,
+     compositeConnectedLines:lines.length,
+     reconstructionAndCalculationStyles:curves.map(c=>c.dash?'dashed':'solid'),
+     domainConnectedLines:domains.filter(d=>/^M/.test(d)&&/L/.test(d)).length});
+   }
+   const overflow=await live.evaluate(()=>{
+    const w=document.documentElement.clientWidth;
+    return {width:w,scrollWidth:document.documentElement.scrollWidth,
+     tooWide:document.documentElement.scrollWidth>w+1};
+   });
+   assert.equal(overflow.tooWide,false,'Live '+width+'px document does not overflow');
+   assert.equal(await cards.count(),12,'Live domain count remains 12 after six periods');
+   assert.deepEqual(errors,[],'Live '+width+'px no JS page errors');
+   await live.screenshot({path:'artifacts/dashboard-history/live-prod-w06-75-'+width+'.png',
+    fullPage:false,timeout:20000});
+   const report={width,htmlStatus:html?.status(),current:{
+    sourceVersion:market.modelVersion??null,
+    updatedAt:market.updatedAt??null,
+    rawScore:market.overall.score,
+    expectedDisplay,actualAria:summaryLabel,displayMatches:summaryLabel==='종합 시장 점수 '+expectedDisplay+'점'
+   },archives,overflow,jsErrors:errors,requestCount:requests.length};
+   console.log('W06_75_LIVE_CHART_PUBLIC',JSON.stringify(report));
+   assert.ok(report.current.displayMatches,'Live card score equals approved UI conversion on '+width+'px');
+  }finally{
+   await liveContext.close();
+  }
+ }
+
 }finally{await browser.close();}
