@@ -5,10 +5,11 @@ import fs from "node:fs";
 import {DatabaseSync} from "node:sqlite";
 import {EMPLOYMENT_R6_TABLES} from "../../lib/market-score/employment-r6-contract.mjs";
 import {EMPLOYMENT_R6_REQUIRED_LOGICAL_SERIES} from "../../lib/market-score/employment-r6-formula.mjs";
-import {EMPLOYMENT_R4_PIT_CLASSES} from "../../lib/market-score/employment-r4-shadow-contract.mjs";
+import {EMPLOYMENT_R4_PIT_CLASSES,EMPLOYMENT_R4_CORE_STATES} from "../../lib/market-score/employment-r4-shadow-contract.mjs";
 import {classifyEmploymentR6Pit04KeyEvidence} from "../../lib/market-score/employment-r6-pit04-key-evidence.mjs";
 
 const T=EMPLOYMENT_R6_TABLES;
+const CLAIM_STATES=new Set(EMPLOYMENT_R4_CORE_STATES);
 const ids=[...EMPLOYMENT_R6_REQUIRED_LOGICAL_SERIES];
 const identity=row=>[row.logical_series_id,row.geography_type,row.geography_code,row.observation_date].join("\u001f");
 const validAsOf=date=>typeof date==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(date)
@@ -233,6 +234,16 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
       candidateCurrentRows:candidateCurrent,candidateHistoryRows:candidates,
       asOfIso:asOfDate+"T23:59:59.999Z",offset:keyReviewOffset,maxEvidenceRows:8,
     });
+    // Reconcile the key-level audit against the *same* read-only Core
+    // CURRENT as-of snapshot. Optional time columns or invalid Saturday
+    // metadata may affect attribution, but can never silently drop a key.
+    if(pit04KeyReview!==null){
+      const expectedClaims=[...currentKeys.values()].filter(row=>
+        row.logical_series_id==="STATE_INITIAL_CLAIMS"
+        &&row.geography_type==="STATE"&&CLAIM_STATES.has(row.geography_code)).length;
+      if(pit04KeyReview.counts.coreKeys!==expectedClaims)
+        throw Error("PIT_AUDIT_KEY_COVERAGE_MISMATCH");
+    }
     const previewStatus=!planHasEvidence?"NO_RUNTIME_EVIDENCE"
       :coreRevisionEvidence?.ambiguousLatestKeys>0||candidateRevisionEvidence?.ambiguousLatestKeys>0
         ?"HOLD_AMBIGUOUS_LATEST_REVISIONS"
