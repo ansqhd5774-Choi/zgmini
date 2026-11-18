@@ -1,5 +1,15 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-CENSUS-ARCHIVED-HEADERS-READER-CONSUMED-COLUMNS-PR2111 -->
+## 2026-11-18 — #2111 보관 헤더 A 진단·실제 Census 수집기 기준 불일치 수정 (Draft / Source-only)
+
+- **신규 확인한 소스 불일치:** 앱 main의 Census #28 파서(PR #1358)는 실제 소비하는 data_type_code/seasonally_adj/category_code/cell_value/us 및 존재하는 time_slot_date/time 컬럼만 유일성을 요구한다. 그러나 제어 Draft #2111 archived-header-only A 진단기는 모든 optional metadata의 공백·중복도 HEADERS_INVALID로 분류해 수집기가 실제 허용할 헤더까지 거짓 불량 진단할 수 있었다. 원본 2025/26 PC 보관 헤더는 아직 미조회이므로 과거 실패의 실제 원인이라 단정하지 않는다.
+- **수정:** 제어 [PR #2111](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2111) Draft 전용 브랜치에 커밋 [0ed8ae36](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/0ed8ae36cf2098a9a79ff76f682ade840725c4ac) 등록. 정확 2파일(헤더 Reader/회귀시험). 소비 필수/날짜 컬럼 중복 차단 유지, 미사용 supplier metadata의 중복·빈 이름은 계수로만 분리. optional metadata 허용과 필수/월 날짜 컬럼 중복 차단 회귀 2건 추가. 운영 쓰기 0.
+- **검증:** GitHub PR HEAD·소스/시험 blob 재조회 PASS. 새 HEAD의 Actions 결과는 조회 시점 0건, PR mergeable_state=dirty. 이전 HEAD 462d8b1의 Windows 3/3 CI PASS는 수정 후 검증을 대체하지 않음. Draft/HOLD, main 미병합, Controller A 미설치·보관 header 실PC NOT_RUN.
+- **실제 상태:** 기존 Census B #1818 소유권/Event129 STOP·provider 0/2, #2094 STAGED 잔여, Census #28 MISSING. 사용자 승인 원자료·PC schedule/Task/SQLite/D1/게시 미변경. W01 진행 33/71(46.5%) 유지, 신규 실제 운영 DONE 0.
+- **다음:** #2094 안전 복구 및 W04 공유 6파일 운영 설치의 실제 검증 이후, 누적 diff·승인 preimage를 대조해 W01 #2111 Reader 설치 GO를 판단. 설치되면 기존 2025/26 보관 원본 header-only A 1회 JSON/TXT 회수, 실제 헤더에 한정한 parser 수정·정규 새 Census 수집·Writer/D1/API/UI exact readback 수행. 원본 #1818 재실행 금지.
+
+
 <!-- W01-20261118-CENSUS-M3-OFFICIAL-RELEASE-ID-NOT-TITLE-PR1367 -->
 ## 2026-11-18 — W01 Census M3 공식 발표 식별 중복 Title Gate 제거 / PR #1367 main CI PASS
 
