@@ -1,3 +1,12 @@
+## 2026-11-18 W03 10/68 — Node 22 UTC 경계 14/14 격리 PASS·원격 회귀 추가
+
+- **시작/종료:** 9/68단계 완료(13.2%), 10단계 IN_PROGRESS, 11~15 후속 미착수. 사용자 요청은 10단계 실수집·R25/R32 비공개 계산 목표를 계속 진행하되 9~15 번호별 상태를 명확히 보고하는 것.
+- **새 소스 검증:** W03 원격 `scripts/pc-writer/theme-nine-r47-private-score.mjs`의 `goodStamp()`·`parsePage()` 본문을 정확 대조한 뒤 격리 V8 직접 실행 13/13 PASS. 같은 구현을 Node 22 격리 `node --test` 14/14 PASS(정상 UTC 00:00Z/마지막 시각/중간 바/fractional/2024 윤일의 올바른 요청 범위, 요청 범위 상·하 초과, 잘못된 실제 날짜·오프셋 형식·중복·역순·종목 불일치·JSON 파손 거부). **원격 저장소 전체 모듈 의존성/CI와 실제 실PC 점수 계산을 실행한 결과는 아님**. 서버 코드 변조·산식/저장/공개 변경 0.
+- **회귀 시험 소스:** [추가 `fdcdaac`](https://github.com/ansqhd5774-Choi/zgmini/commit/fdcdaac496114824aebf6d947da87ff9384f1cda)에서 미완료 새 R35 구간 존재 시 이전 완료 구간의 비공개 score 재사용 조건 확인 assertion 추가. [추가 `ca065ea`](https://github.com/ansqhd5774-Choi/zgmini/commit/ca065eab06d38f1a49a1b5b899780d5131024566)에서 윤년 유효 UTC 00:00Z 봉의 정상 범위 허용 fixture 추가. **저장소 내 신규 회귀시험 Node/full CI는 아직 NOT_RUN**, PASS를 주장하지 않음.
+- **실PC 기존 원장 재사용:** [#2077](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2077#issuecomment-6967201785) 원자료 검증 632페이지, SPY 마지막 NY 11/13, 64종 날짜 분포 11/13=19, 11/12=42, 11/11=2, 11/10=1; R35 최신 요청 11/12~17 checkpoint incomplete=1 failed=0. 이미 수집 중인 #2070 중복 요청/공급자 호출 0. 신규 R47 계산기 PC 설치·D1/API/UI 검증 0.
+- **정확 대기 조건:** 새 R47 CMD old `4d1cc9f1...` → candidate `b75f7e2c...`의 B receiver GO/최소 triple 등록은 기존 [공통 #1894/#6967155938](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1894#issuecomment-6967155938), [#68/#6967164171](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6967164171)에 요청, 승인 전 운영 변경 금지. W03 자체 소관 B manifest/실PC 설치/결과 검산/권리 게시. 현재 연결된 GitHub CI 도구는 기존 run read/rerun만 제공하고 신규 workflow_dispatch 전용 호출 부재. 임의 대규모 PR/새 브랜치/Controller 설치 우회하지 않음.
+- **다음 필수 실행:** W03 수정분 정확 전체 CI 실행·PASS를 얻을 정규 경로 확보 → 정확 B 승인·receiver 반환 이후 W03 본인 1파일 설치·재조회 → 저장 완료한 R35 원자료만으로 R25/R32 비공개 재계산·보존. 임의 최신 거래일 보정/권리 무단 확대/자연 예약 선행조건 추가 없음.
+
 ## 2026-11-18 W03 10/68 — 실제 GitHub scorer 원격 함수 V8 격리 검증 13/13 PASS
 
 - **대상:** 기존 실제 PC FIRST FAIL `THEME_NINE_R47_MERGED_PAGE_TIMESTAMP`의 최소 수정 코드 `scripts/pc-writer/theme-nine-r47-private-score.mjs`를 지정 W03 원격 브랜치에서 재조회. `parsePage()`·`goodStamp()` 원문이 고정된 검사 대상과 정확 일치하는 경우에 한해 V8 격리에서 함수 자체를 실행.
