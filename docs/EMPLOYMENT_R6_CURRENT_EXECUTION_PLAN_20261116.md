@@ -184,7 +184,7 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 | 세부 ID | 실제 실행·분석 작업 | 입력·근거 | 완료 판정 / 결과 | 상태 |
 |---|---|---|---|---|
 | PIT-05-01 | 과거 공식 자료와 당시 실제 PIT의 입증 가능 범위 구별 | R4/R6 PIT source 계약 + [실PC #2088](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2088)/[2026-11-18 A #2117](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2117), DOL 2026-11-12 공식 발표(11-07 관측) | 과거 provider-history/current-vintage는 당시 접근 가능한 시점의 진짜 TRUE_PIT로 승격 금지; forward는 실제 first-seen/retrievedAt·원본 SHA·PIT 적격성별 재검증 필요. National 최신 공개 2026-11-07 ≠ PC 저장 2026-10-17. Core 40,777/History 38,804 중 raw 미인증/누락과 candidate 14 충돌/255 메타 불충분은 자동 복구 제외. 복구 적격 키 확정/소급 승인 아님. [§94](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md) | DONE — VINTAGE_VS_TRUE_PIT_CLASSIFIED / REPAIR_GO_NOT_GRANTED |
-| PIT-05-02 | 복구 불가능한 구간을 정직한 PARTIAL로 남길 조건 확정 | 확정된 참조기간·발표 근거 | 10년 근거가 없으면 무리하게 점수 READY로 전환하지 않음 | TODO |
+| PIT-05-02 | 복구 불가능한 구간을 정직한 PARTIAL로 남길 조건 확정 | 확정된 참조기간·발표 근거 | 10년 근거가 없으면 무리하게 점수 READY로 전환하지 않음 | DONE — PARTIAL_FAIL_CLOSED_CRITERIA_DEFINED / REPAIR_GO_NOT_GRANTED (§95) |
 | PIT-05-03 | 후보 DB의 상충 개정 및 불확실 자료 제외 | 기존 과거 충돌 2건 + 현 실측 | 정확 원본 일치 입증 없는 후보 자동 편입 0 | TODO |
 | PIT-05-04 | 변경 목표 테이블·키·필드의 최소 집합 결정 | 공식 Core Current/History·원자료 | 승인 범위 밖 다른 테이블·DB·지표 무변경 | TODO |
 | PIT-05-05 | 공통 B 유지보수기의 실제 지원 범위 확인 | 등록 operation·승인 범위·필수 효과 | 일반 임의 SQL·shell 없이 필요한 경우에만 공식 B 검토 | TODO |
@@ -529,3 +529,14 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 - **설치 승인 분리:** #2094 기존 정확 6파일 B `STAGED/BLOCKED`, 설치 `f7f1559...` 유지. 공통 #2098/#2102 main source-only 완료이나 독립 maintainer 설치·원본 stage/backlog/lease 복구 증거 없음. 기존 승인 target `ead5d2d...`는 신규 PR #2110 이전 source이므로 변경된 read-only 진단을 자동 설치됐다고 주장하거나 고정 manifest 변경 불가. 복구 증거 수신 후 W04가 정확 target CAS/새 승인 범위·중복 W01 5파일 방지에 대한 재판정 책임.
 - **필수 후속:** W04 소관 실제 원자료 ETA539 c3 0/null/missing 및 이전 4주 분모 유효성, National 저장 XML↔Run 주차 대조, 미인증 raw 27개 원인/후보 14충돌·255 미입증 HOLD 판정. 실제 A/light 결과 없이 PIT-04-07 완료로 승격하지 않음. 예약 자연 검증은 기능 완료 이후에만 실행.
 - **단계:** 시작/종료 27/72 DONE(37.5%), 잔여 45. PIT-04-07 `IN_PROGRESS / PC_DATA_VALIDITY_PENDING`. [진행 원장 §92](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md).
+
+
+### W04 — 2026-11-18 PIT-05-02 복구 불가 구간 PARTIAL 판정 계약 확정
+
+<!-- W04-PIT0502-PARTIAL-FAIL-CLOSED-20261118 -->
+
+- **PIT-05-02 DONE (계약 판정만):** 10년 입력 주차 개수 충족과 실제 당시 vintage/원본값 적격성을 구분한다. 참조기간의 특정 관측주에 (1) 공식 발표/관측일·해당 당시 판본, (2) raw body SHA 및 수집 run/first_seen/recorded_at 계보, (3) 유효 숫자·분모 및 해당 지역/계열 완전성, (4) 상충 개정 해소 증거 중 필요한 항목이 부족하면 해당 구간은 `PARTIAL/UNVERIFIED`로 유지하고 `READY`, `TRUE_PIT`, 자동 복구/게시로 승격하지 않는다. 현재 판본의 과거 데이터는 `HISTORICAL_CURRENT_OR_REVISED`로만 취급한다.
+- **실제 근거와 범위:** 운영 A #2088 raw 86 중 미인증 27, Current missing 10,889/unverified 857, History missing 8,873/unverified 915, 후보 충돌 14·메타 미입증 255. 운영 A #2117의 ETA539 600/600주 및 National 2026-10-17 stale은 개수/최신성 자료일 뿐 각 주 `c3`·4주 분모/원문 SHA·과거 vintage 인증이 아니다. 따라서 해당 미입증 구간은 명시적으로 PARTIAL/HOLD; **개별 10년 결손 날짜·복구 불가능 판본의 확정 목록을 새로 산출한 것은 아니다.**
+- **판정 게이트:** 재조회로 채울 수 없는 역사 당시 판본/발표 증거는 `UNRECOVERABLE_AS_TRUE_PIT`로 별도 표기할 수 있으나 단순 현재 자료 부족만으로 영구 복구 불가능이라고 단정하지 않는다. 이후 원문과 날짜가 입증되면 해당 키만 재평가하고 기존 기록을 덮어쓰지 않는다. 자동 복구 GO/점수 READY 0.
+- **공통 차단:** Controller B #2094의 STAGED 잔여와 운영 maintainer V2 미설치 여부는 원본 복구 영수증으로 재확인해야 한다. 이 계약 완료는 운영 설치/데이터 복구 완료가 아니다. W04는 PIT-05-03 후보 상충 개정·미입증 자료 제외를 다음 독립 단계로 수행한다.
+- **진행률:** 28/72 → **29/72 DONE(40.3%)**, 잔여 43. PIT-04-05 `HOLD_INCOMPLETE_SOURCE_LINEAGE`, PIT-04-07 `PC_DATA_VALIDITY_PENDING`, `promotionApproved=false` 유지. 운영 PC/SQLite/D1/수집/Task/Workflow 변경 0.
