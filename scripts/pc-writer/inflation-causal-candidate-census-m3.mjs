@@ -9,6 +9,9 @@ export const CENSUS_M3_ENDPOINT='https://api.census.gov/data/timeseries/eits/m3'
 export const CENSUS_M3_INVENTORIES_FILE='inflation-causal-candidates-r1/census-m3-manufacturing-inventories.json';
 export const CENSUS_M3_INVENTORIES_VERSION='INFLATION_CAUSAL_CANDIDATE_CENSUS_M3_R1';
 const MAX_BODY=5_000_000;
+// Accept plain numbers or correctly grouped thousands; never turn malformed
+// punctuation such as 12,34 into a different numeric observation.
+const OFFICIAL_NUMERIC=/^(?:(?:0|[1-9]\d*)|(?:[1-9]\d{0,2}(?:,\d{3})+))(?:\.\d+)?$/;
 const fail=code=>Object.assign(new Error(code),{code});
 const sha=x=>createHash('sha256').update(x).digest('hex');
 const safeDir=dir=>{try{const s=fs.lstatSync(dir);return s.isDirectory()&&!s.isSymbolicLink();}catch{return false;}};
@@ -59,7 +62,7 @@ export function normalizeCensusM3Inventories(payload){
     const slotDate=monthDate(row.time_slot_date);
     const timeDate=monthDate(row.time);
     const date=slotDate??timeDate;
-    const raw=String(row.cell_value??'').replace(/,/g,'').trim();
+    const raw=String(row.cell_value??'').trim();
     // A present but malformed official monthly date is not missing data.
     // Never silently replace it with the alternate `time` month.
     const invalidExplicitDate=row.time_slot_date!=null&&
@@ -70,12 +73,13 @@ export function normalizeCensusM3Inventories(payload){
     if(raw===''||raw==='-'||raw.toUpperCase()==='NA'||raw.toUpperCase()==='N'){
       diagnostics.missing++;continue;
     }
-    if(!/^(?:0|[1-9]\d*)(?:\.\d+)?$/.test(raw)||
-       !Number.isFinite(Number(raw))||Number(raw)<0){
+    const numericValue=Number(raw.replace(/,/g,''));
+    if(!OFFICIAL_NUMERIC.test(raw)||
+       !Number.isFinite(numericValue)||numericValue<0){
       diagnostics.invalid++;continue;
     }
     if(conflicts.has(date))continue;
-    const value=Number(raw),old=byDate.get(date);
+    const value=numericValue,old=byDate.get(date);
     if(old){
       if(old.value===value)diagnostics.duplicate++;
       else{
