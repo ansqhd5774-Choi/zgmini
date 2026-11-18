@@ -523,8 +523,17 @@ test("PIT-04-08 optional NULL timestamp cannot erase an as-of Current key",()=>{
    update.prepare(`UPDATE ${T.observationCurrent} SET recorded_at=?`)
      .run("2026-11-19T00:00:00Z");
   }finally{update.close();}
-  assert.throws(()=>auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,
-   asOfDate:"2026-11-18",keyReviewOffset:0}),/PIT_AUDIT_KEY_COVERAGE_MISMATCH/);
+  // Known future storage time is excluded consistently from both the Core
+  // aggregate and 8-key review. It must not become a retrospective PIT row.
+  const later=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,
+   asOfDate:"2026-11-18",keyReviewOffset:0});
+  assert.equal(later.coreCurrentRows,1);
+  assert.equal(later.coreCurrentKeys,0);
+  assert.equal(later.coreCurrentKeysMissingHistory,0);
+  assert.equal(later.pit04KeyReview.counts.coreKeys,0);
+  assert.equal(later.pit04KeyReview.evidenceTotal,0);
+  assert.equal(later.pit04KeyReview.rawPitAttested,false);
+  assert.equal(later.promotionApproved,false);
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
 
