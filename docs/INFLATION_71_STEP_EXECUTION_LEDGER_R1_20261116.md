@@ -1,5 +1,16 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-INFL7-WRITER-RECEIPT-PR2139-MAIN-SYNC -->
+## 2026-11-18 — B2-05 물가7 Writer 영수증 A 기존 조회기 최신 main 동기화 (source-only)
+
+- **기존 유효점:** 제어 Draft #2139 HEAD `3e43e86be16205455e1eec683f62b71365cfa5af`는 `inflation19-runtime-readonly`의 기존 읽기 원장 `local-writer-last-run.json`에 `inflation7Writer` sanitized metadata를 추가. Windows Maintenance #44263695887 / C996 #44263695770 2/2 PASS. 실제 PC 미설치·B2-05 완료 아님.
+- **이번 신규 GitHub 변경:** [제어 PR #2139](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2139) 전용 브랜치를 정확 최신 main `aa5ce0968e8724ba62ab0e80da641e204c731d71`에 2-parent 비강제 merge [b09b925f7c4127246e175144e15edcdc4b8f5951](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/b09b925f7c4127246e175144e15edcdc4b8f5951)로 통합. 공용 CI 워크플로 기존 테스트/경로 전부 보존, 기존 조회기 1파일 + 신규 회귀시험 1파일 + 공용 CI 추가 1파일만 PR 영향. `mergeable=true`/main `behind=0`/Draft 유지. force/reset/rebase 및 shared PC 설치 0.
+- **실제 Writer 계약 교차검증:** 앱 main `scripts/pc-writer/run-local.mjs`의 `attemptOutput('inflation-7-publication')`는 `report.inflation7`를 고정 `local-writer-last-run.json`에 저장. `inflation-causal-candidates-public-7-auto-publication-r1.mjs`는 `key`, `INFL7_PRESENTATION_...`, epoch-ms `sourceStoredAt`, `ready`, `d1Writes` 메타데이터를 산출하며 새 A의 정제 필드와 일치. 상위 Writer FAILED·DRY_RUN 또는 동일 단계 failure면 `verifiedAtWriterTime=false`, 과거 Writer 당시 readback과 현재 live D1 조회를 분리(`d1NowVerified=false` 불변). 새로운 provider GET/DB/Writer 실행 없이 소스 대조만 수행.
+- **신규 CI(기록 당시):** exact `b09b925f` C996 [#44286772082](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44286772082) completed/success. Maintenance [#44286772134](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44286772134) in_progress, 내부 `Verify W01 inflation7 Writer receipt in existing Inflation19 read-only A without PC effects` step completed/success. 전체 Maintenance PASS는 완료 전 주장 금지.
+- **실제 문제:** #2094 STAGED 유지보수 안전 복구 미실증·W04 공유 6파일 Controller 실설치 미확인. PR #2139는 기존 A의 운영 바이트가 바뀐 증거가 아니며 물가7 현재 Writer per-key 영수증 B2-05, 관리자 D1 exact key B2-06은 AUTOMATION_BLOCKED 그대로. 기존 #1818 Census B 재실행 금지.
+- **다음 필수 실행:** 새 SHA Maintenance 전체 성공 여부 확인 → 공유 #2094 복구 및 W04 단일 공유 Controller 적용 완료 영수증 확보 → 현재 설치 preimage/승인 pin·누적 diff와 #2139 1개 런타임 파일을 검산해 정규 설치 → 기존 `inflation19-runtime-readonly` A 고유 단회 request/result 2/2로 B2-05 판정. D1 exact 1key 관리자 조회는 별도 B2-06. 원자료/SQLite/D1/Task/Provider/운영 source/게시 쓰기 0. **W01 33/71(46.5%) 유지.**
+
+
 <!-- W01-20261118-CENSUS-A-2111-EXACT-HEAD-CI-3PASS -->
 ## 2026-11-18 — W01 #2111 정확 HEAD Windows CI 3/3 PASS, 소스 검증 완료 / 운영 HOLD
 
