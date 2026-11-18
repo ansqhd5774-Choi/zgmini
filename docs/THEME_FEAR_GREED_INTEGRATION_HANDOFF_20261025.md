@@ -1,3 +1,14 @@
+## 2026-11-18 W03 10/68 — R47 관련 GitHub CI 55/55 PASS, 전체 CI 별도 미종결
+
+- **확정 실행:** [W03 관련 CI Run #44237475558](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44237475558), exact push commit `6af7cd957fe31eba94422e4e82cf7ade40f250c3`, job `134576972891`, `completed/success`. Node 24 npm ci, `npm run build`, `npm run typecheck`, R24/R25/R32/R35/R47/R49 **10개 테스트 파일** 모두 실행. Node test summary **57 tests / 55 pass / 0 fail / 2 skipped / 0 cancelled / 0 todo**, 약 5.6초 회귀시험. SKIP 둘은 GitHub에 존재하지 않는 비공개 R25 실PC JSON·R25 bundle 검증이므로 운영 PC PASS로 오인 금지.
+- **지난 1차 R47 결함 검증:** `planNineR47Recurring` import 누락을 고친 R47 real-baseline→completed R35→R25/R32 비공개 계산·추가 checkpoint 수집 중 미완료 최신 구간 배제 회귀 **PASS**. 최신 UTC 경계·가짜 날짜·순서·SHA 검사 및 16/16 embedded byte parity **PASS**. 새 승인 R47 CMD `b75f7e2c...`와 동결 R49 패키지를 별도로 검증하는 회귀 **PASS**. 원래 CMD blob `93cb900cc502b31b6e507f505e35797572072946` 불변.
+- **CI 증거와 트리거 원상 복구:** 테스트용 `.github/workflows/w03-r47-scope-ci-temporary.yml`은 `6af7cd9`에서 추가한 뒤 성공 영수증 수령 후 [`bf1296f`](https://github.com/ansqhd5774-Choi/zgmini/commit/bf1296f401a939541f690c6fa6932378e5c51a91)에서 삭제. 일반 `node.js.yml`은 이미 원래 Git blob `cb8b57400514bf7d79304e8c35549eeeac22e5eb`로 복원·보존. 추가 브랜치·지속 CI 예약/Task 0.
+- **전체 저장소 CI 구분:** 지난 [Node.js CI #44235788636](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44235788636)은 3747 중 33 fail 및 runner shutdown으로 FAIL. 새 [Node.js CI #44236291749](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44236291749), exact input `e755f54abb596b633b8c424415654262d9d729e3`, Build·Typecheck PASS, full regressions **IN_PROGRESS at last readback**, PC publication recovery pending. 해당 전체 시험은 이력·다른 테마 버전 SHA/계약 실패를 포함하며 W03 관련 55/55 PASS만으로 full-green이라 주장하지 않음.
+- **운영/승인 보호:** [B manifest Draft PR #2087](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2087) 미병합, 실PC 신규 B Issue·CMD 설치·R25/R32 PC 계산·저장·D1/API/UI 0건. [앱 Draft #714](https://github.com/ansqhd5774-Choi/zgmini/pull/714) 543파일 미병합·보존. 공통 receiver 정확 triple GO [#1894/#6967593909](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1894#issuecomment-6967593909) 재사용. 승인 범위를 넓히거나 실패 시험/검증 조건을 삭제하지 않음.
+- **다음 필수 실행:** 전체 CI #44236291749 최종 job 결론·원인 확인, W03와 무관한 회귀/운영 실패를 구분하여 정확 원 승인 기준을 충족하는지 판정. 충족 전 임의 PR merge / B 설치 금지; 충족하면 W03 자체 manifest/main 승인·신규 고유 B 1회 설치·PC SHA/Task XML/JSON+TXT readback, 이후 기존 SHA-완료 R35 raw로 R25/R32 비공개 실제 계산·저장. 자연 예약검증은 전 기능 종료 뒤 후속. 전체 진행률 **9/68(13.2%) 유지**.
+
+---
+
 ## 2026-11-18 13:22 KST W03 10/68 — 전용 push CI 경로 실실행, R47 테스트 2건 수정, 승인 설치 보류
 
 - **시작/현재:** 9/68 DONE(13.2%), 10단계 IN_PROGRESS; 스케줄러 자연 예약 검증은 전체 기능 완료 이후로 유보. W03 원담당 직접 실행, 프로세스 총괄 신규 인계 0.
