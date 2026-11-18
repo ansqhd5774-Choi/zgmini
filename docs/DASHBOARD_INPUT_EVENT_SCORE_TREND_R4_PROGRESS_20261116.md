@@ -1,5 +1,8 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
+> **현재 인계 — W06 #36 CNN range 중복 결정적 분기 재현 (2026-11-19 06:00 KST):** 시작/종료 고유 DONE **22/75(29.3%)**, 잔여53. 지정 R4 계획·원장과 최신 main `app/fear-greed/usa/cnn-panel.tsx` blob `1f1c62617ce8a3a0e917e1e29abb852a3a0b1077` 525–586행을 읽었다. 실제 소스 분기식 그대로 Node 결정적 입력 archive 1점(`2026-11-18T15:00Z`), sidecar 1점(`16:00Z`), 동일 날짜 daily range 1개를 대입한 결과 **actualPoints=2, rangeOverlays=2, FIRST FAIL=true**. 원인은 history가 `combinedObserved.length>=2`로 실관측을 채택하는데 observedRanges가 `archiveHistory.length>=2`로만 범위 제외 여부를 판단하는 불일치. 이는 분기 재현이며 전체 React 컴포넌트/Chromium·운영 사이트 결함 재현은 아님. 최소 수정은 1W/1M/3M에서 history가 채택한 실제 관측일에 한해 range를 제거하고 6M/1Y 기존 daily range는 유지하는 것. 이번 회차 코드·PR·CI·PC·SQLite·D1·Cloudflare 변경 없음. **다음 단일 실행:** W06 소유 CNN UI 코드의 해당 조건과 독립 회귀시험을 정확한 최신 main 기준으로 최소 변경하고 Node/Chromium CI 검증 후 승인된 PR 경로로 병합. 오래된 전담 브랜치 전체 병합 금지. 단계 #36 PARTIAL, 신규 DONE0, active Production SHA 미확인. 원격 기록 재조회 필요.
+>
+
 > **현재 인계 — W06 #36 CNN 일별 range 중복 조건 확정 (2026-11-19 05:00 KST):** 시작/종료 고유 DONE **22/75(29.3%)**, 잔여53. 지정 계획/원장과 `main`의 `app/fear-greed/usa/cnn-panel.tsx` 490–610행 재조회. 조건식을 실제 코드 기준으로 대조: archive 1점+sidecar 1점이면 `combinedObserved.length===2`, 1W/1M/3M `history`는 해당 날짜의 daily close를 제거하고 실제 관측점을 채택하나 `observedRanges`는 `archiveHistory.length>=2`가 false여서 `observedDays`가 비며, 동일 날짜의 `dailyObservedRanges`가 남아 중복 표시 후보가 확정된다. 이는 코드 분기상 확정된 조건 불일치이며 브라우저 시각 재현/운영 장애를 입증한 것은 아님. #1428의 별도 해결 결함은 재개방하지 않음. 이번에는 코드 수정/CI/PC/DB/Cloudflare 쓰기0. **다음 단일 실행:** W06가 이 1+1 시나리오의 deterministic 회귀를 작성하고 `observedRanges` 제외 조건을 실제 `history`에 채택된 관측일 기준으로 최소 수정, Node/Chromium CI·최신 main 대상 최소 PR 병합 검증. 신규 DONE0; 활성 배포 SHA 미확인.
 >
 
