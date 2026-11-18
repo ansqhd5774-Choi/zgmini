@@ -1,5 +1,15 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261119-R2-MAIN-SOURCE-COMPAT-PR2167 -->
+## 2026-11-19 — R2 2파일 Writer B 검토 후보와 최신 app main 변경 분리 확인 (source-only)
+
+- **LAST PASS / 실제 신규 검증:** app `main@5b586738c3858f6a59a70ef8402dbd07915ebe22` vs R2 후보 source `8b642196a8c572b774d3c5bf177d9e0d94714008` 비교는 78커밋 전진. 공유 `scripts/pc-writer/run-local.mjs` 파일에는 4줄 추가·1줄 삭제만 있었고, 변경은 `attachStoredEarningsFactorTrends`·`attachStoredGrowthFactorTrends` import/기존 저장이력 연결 관련. 두 R2 삽입 anchor는 current main과 기존 후보에 그대로 각각 1개. current main run-local Git blob `ddd1f04126a63a53eacc76ceec2c2fa164a445ab`, pinned candidate blob `522aac22be1b5c92836e79a74f018b2d7b5bbc8b`; 차이가 존재하므로 전체 파일 교체 금지.
+- **Helper/공통 B 정합성:** `inflation-r2-trend-date-refresh.mjs` 두 ref의 Git blob 동일 `5ac33f63bcc786b6451e8046dd55f5f434a6ad22`; 추가 R2 소스 수정 불필요. 제어 `main@9d710c537e7d365dcc489408972e98a09b8846e6`의 Writer B 계약·설치기·Windows adapter는 insertion M 모드와 before/after SHA, import closure 검사를 지원. 정확 workflow `.github/workflows/pc-writer-b-source-once.yml`은 승인 manifest의 `candidateSourceSha`를 checkout하므로 후행 `main` HEAD를 임의 후보로 사용하지 않음.
+- **검토 결과:** 기존 [Draft #2167](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2167#issuecomment-6984783516)에 신규 exact source diff·안전 적용 경계를 기록. 이전 실PC A [#2198](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2198)의 PC original `d7f601aa...` / 2-anchor after `1d79fe8a...`는 당시 **읽기 전용** 증거로 재사용. 신규 원격 PC 설치·Core lease·현재 Task/런처 해시, 다른 기능의 실제 Writer 변경 여부는 미확인. 원본 baseline이 바뀌었다면 old after SHA 사용 금지.
+- **현재 차단/다음 필수 행동:** #2167 여전히 `REVIEW_REQUIRED_B`·Draft, 정확 두 파일 운영 source 변경 효과 승인 없음. 승인된 `approvals/writer-updates/` manifest 발급 전 B Issue 생성하지 않음. B 효과 승인 뒤 실제 PC preimage/checkout/config/Task first hop/동일 Writer lease/영향 import closure와 공유 파일 경합을 설치기에서 검증하고 정확 1회 정규 적용 → 로컬 R2 저장/checkpoint → D1 `detail:inflation:v1` body/stored_at → 공개 /api/inflation-detail 및 PC/모바일 차트 결과 확인. 독립 Census #28의 Event129 사용자 C 설정/owner 미인증은 그대로이며 R2 선행 Gate 아님.
+- **진척:** 33/71(46.5%) → **33/71(46.5%) 유지**. 신규 운영 단계 DONE 0, 이번 PC source/SQLite/Provider/Task/D1/배포 변경 0.
+
+
 <!-- W01-20261119-R2-A2198-2ANCHOR-PASS-DRAFT2167-UPDATED -->
 ## 2026-11-19 — R2 구형 계산기 보존 2분기 실PC A PASS, Draft Writer B #2167 새 SHA 정합화 (운영 미적용)
 
