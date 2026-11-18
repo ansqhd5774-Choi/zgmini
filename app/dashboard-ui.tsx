@@ -224,7 +224,7 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
  // Independent diagnostic responses and arrow expiry do not change these histories.
  const domainChartTrends=useMemo(()=>r55DomainIds.map(id=>{
   const domain=market?.domains?.find(d=>d.id===id);
-  const daily=marketTrendWindow(normalizeMarketTrendPointsR4(domain?.trend,market?.updatedAt),periodDays);
+  const daily=marketTrendWindowR1(normalizeMarketTrendPointsR4(domain?.trend,market?.updatedAt),periodDays,{includeBoundaryCarry:false});
   const score=domain?.status==='READY'&&validPublicScore(domain.score)?domain.score:null;
   const current=score===null||!market?.updatedAt?null:{label:market.updatedAt,value:score};
   return appendPublishedDomainCurrent(daily,current,periodDays);
