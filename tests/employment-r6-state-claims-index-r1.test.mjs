@@ -29,8 +29,8 @@ test("600 weekly observations across exactly 51 states yield same 545 strict 52-
   assert.ok(result.every(point=>point.sourceHashes.length===8*51));
   const states=[...EMPLOYMENT_R4_CORE_STATES].sort();
   assert.deepEqual(result[0].sourceHashes.slice(0,8),
-    [...[55,54,53,52].map(i=>states[0]+":"+i),
-      ...[3,2,1,0].map(i=>states[0]+":"+i)]);
+    [...[52,53,54,55].map(i=>states[0]+":"+i),
+      ...[0,1,2,3].map(i=>states[0]+":"+i)]);
 });
 
 test("a blank state claim never becomes zero or a complete 51-region week",()=>{
