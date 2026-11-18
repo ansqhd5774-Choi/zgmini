@@ -1,5 +1,15 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-A407-SHARED-5V6-CROSSCHECK-AND-CENSUS-OWNER -->
+## 2026-11-18 — A4-07 단일 공유 설치 범위 W01/W04 교차검증 및 Census #28 기존 중단 조건 재판정
+
+- **시작·종료:** 33/71(46.5%) → **33/71(46.5%)**, 잔여 38; 단계 신규 DONE 0. 이 항목은 중첩 설치 조율·정규 원장 기록이며 PC 기능 완료 증거가 아님.
+- **설치 원본:** 기존 실PC [W01 #2081](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2081)의 실제 Controller `f7f1559bc0ef15bb9b375982d048369c474c490f`와 app Host source `0a674eac32418d0c1bd23a9a050b2202e8951f1a` 재사용. 새 PC 작업 없이 GitHub compare 두 개를 재검증: `f7f155...ac027b...` Controller/config **정확 5파일**(W01 4+W04 1), `f7f155...ead5d2...` **정확 6파일**(W01 4+W04 2). 두 target의 W01 4파일 SHA-256은 동일하고, 후자의 추가 1개 `controller/employment-r6-collection-evidence-readonly.mjs`는 W04 소관. 최신 HEAD 임의 적용이나 서로 충돌하는 두 B 동시 설치는 금지.
+- **신규 공유 정합 기록:** W04 [Draft PR #2083](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2083)에서 `f7f155...ead5d2...` 6파일을 검토 중이며 `DRAFT_ONLY_NOT_APPROVED_NOT_FOR_PC_MAINTENANCE_INTAKE`, W04 승인·PC 실행 아님. W01 자체 검토 결과와 권한 경계를 [#2083 W01 댓글 #6968080578](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2083#issuecomment-6968080578)로 등록. 중앙 기존 [W01 #68/6967630142](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6967630142), [W04 #68/6967597730](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6967597730)의 공유 **GO/NO_GO·단일 설치 대상 및 주체** 결정은 아직 별도 실증 없음. 신규 중복 GO·공통 기능 대행 요청 0.
+- **Census #28 독립 경로 실제 병목:** 승인 정본 `approvals/inflation-census-api-b/w01-census-m3-api-once-approved-20261117.json`은 `APPROVED_B`, `MTM/TI/SA/US` 공식 2 GET, 고정 4파일을 허용. 그러나 소비된 원본 [#1818](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1818) / Run 43985786219는 **`INFL_MANUAL_B_CORE_OWNER_EVENT129_UNVERIFIED_STOP`**, 공급자 GET 0/2; 같은 requestId 재실행 불가. 기존 [#1818/6943680866](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1818#issuecomment-6943680866)의 자연 Core Task→WMI 생성시각→E: lock 연결과 Event129 채널 사용 여부가 미입증. 기존 `core-status` #2081의 `COMPLETE`는 이 owner proof가 아니므로 새 Census B 발행하지 않음. 공식 API 문서는 2026-11-18 기준 Census API 키 필수로 명시. 로컬 앱 코드 `CENSUS_M3_HEADERS_INVALID` parser 결함 수정 PR #1238은 이미 main 병합, **운영 PC 승인 source pin 교체나 실제 수집 성공의 증거는 아님**.
+- **이번 작업 효과:** control Controller 설치·Census B·A407 A·공급자 GET·SQLite/Writer/D1/Task/스케줄 변경 **모두 0**. `A4-07 PARTIAL / INSTALLED_INGRESS_ABSENT`, `CENSUS_28 MISSING / OWNER_EVIDENCE_MISSING` 유지.
+- **다음 필수 실행:** 중앙 공유 5/6파일 효과와 정확 1개의 Controller B 설치 주체·target **GO 판정** 후 W01 몫의 정규 승인 preimage/manifest 검증 → 단회 승인 설치 결과 JSON/TXT 및 실제 설치 SHA 확인 → W01 고유 A407 A 1회로 19+6 raw SHA, checkpoint 2개, double-read 전량 검사. 공유 GO가 없다면 *그 설치만 HOLD*; Census #28은 별도로 승인된 자연 Task/lock 소유권 증거를 확보하기 전 새 B를 생성하지 않고 독립 source/DB 읽기·계산·게시 검증을 계속한다.
+
 <!-- W01-20261118-A407-LIVE-CONTROLLER-F7-CUMULATIVE-TARGET-Ac027 -->
 ## 2026-11-18 — A4-07 실제 PC Controller SHA 검증·중간 목표 5파일 확정·W04 중첩 1파일 보호 판단 요청
 
