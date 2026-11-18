@@ -1,4 +1,13 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
+<!-- W01-20261119-B205-PR2139-CLEAN-MAIN-MERGE-SOURCE-ONLY -->
+## 2026-11-19 — B2-05 물가7 Writer 읽기 전용 영수증 Reader 기존 Draft #2139 충돌 해결 (SOURCE_ONLY)
+
+- **이번 실제 GitHub 변경:** 제어 저장소 [PR #2139](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2139)의 충돌된 전용 head `b09b925f7c4127246e175144e15edcdc4b8f5951`에서 최신 제어 `main@8f9fc626b195361ff887f13b154af9b48842b2da`를 보존하는 정상 2부모 merge commit [`f54145056bfd23300d683acd27ea8e7eca71022e`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/f54145056bfd23300d683acd27ea8e7eca71022e)으로 수정. 기존 브랜치 강제 이동·reset/rebase 없이 `expected_sha` 조건 fast-forward 성공.
+- **정확 main 대비 diff:** `controller/inflation19-runtime-readonly.mjs` +39, `tests/w01-inflation7-writer-ledger-existing-a.test.mjs` +120, `.github/workflows/controller-maintenance-source-tests.yml` +4, 삭제 0, 총 3파일. 기존 Reader 파일은 PR 신규 함수/출력 39줄을 제거하면 현재 main과 정확 동일함을 문자열 비교로 증명했고, 기존 기능/Controller dispatch/고정 허용목록/다른 workflow 내용을 보존. 원격 compare `ahead`·`behind=0`, PR `mergeable=true`, **여전히 Draft/미병합**.
+- **검사/남은 검증:** 신 HEAD C996 읽기 전용 source 검사 [Run #44363317626](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44363317626) `completed/success`. 새 W01 regression이 포함된 [Controller Maintenance Source Tests #44363317647](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44363317647)은 첫 확인 `queued` → 후속 확인 `in_progress`로, **최종 결론 미확정**. CI 성공/기능 수신·검토 전 소스 main 병합 및 운영 설치 성과 주장 금지.
+- **실운영/진행률 분리:** 이번 PC Controller 설치, Reader A/Writer B, Census #28 GET, SQLite/D1 변경·Cloudflare 배포 모두 0. 이전 [PC A #2205](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2205) 최신 관측 설치 Controller `f7f1559bc0ef15bb9b375982d048369c474c490f` 및 A4-07 미설치 유지(새 실측 아님). 기존 R2 B [Draft #2167](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2167)도 `REVIEW_REQUIRED_B`, 설치 미확인. 실제 완료 **33/71(46.5%)**, 38개 미완료 유지.
+- **다음 독립 행동:** #44363317647 결과/신규 W01 시험 로그 확인. PASS일 때에도 #2139를 순수 source 반영과 공유 Controller 운영 설치로 구분해 검토하며, 별도 실제 Controller 설치 SHA/기존 허용 A 실증 및 D1 exact key 조회 없이는 B2-05/B2-06 DONE 승격하지 않음. A4-07·Census Event129는 각각 승인된 공유 설치·Task 소유권의 기존 증거에 따라 후속 처리.
+
 <!-- W01-20261119-CORE-STATUS-A2205-CURRENT-F7-A407-NOT-INSTALLED -->
 ## 2026-11-19 02:35 KST — 실PC A #2205 현재 Controller 확인: A4-07 미설치, 독립 작업 경계 유지
 
