@@ -36,3 +36,13 @@ export function earningsCostSparkGeometry(history){
     ?{cx:x(latest.index),cy:y(latest.value)}:null;
   return {path:path.trim(),marker};
 }
+
+// Separate D1 publication time from BLS observation and PC retrieval dates.
+// Never generate a fallback current-time or treat sourceStoredAt as publishedAt.
+export function earningsCostPublicationKst(value){
+  if(typeof value!=='string'||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}\.[0-9]{3}Z$/.test(value))return '—';
+  const instant=Date.parse(value);
+  if(!Number.isFinite(instant)||new Date(instant).toISOString()!==value)return '—';
+  const kst=new Date(instant+9*60*60*1000).toISOString();
+  return kst.slice(0,10)+' '+kst.slice(11,19)+' KST';
+}
