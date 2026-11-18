@@ -1,8 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
-import {prepareGmhSevenR178PrivateDraft}
+import {prepareGmhSevenR178PrivateDraft,prepareGmhSevenR178AttestedDraft}
  from '../scripts/pc-writer/theme-seven-gmh-r178-private-draft.mjs';
+import {GMH_SEVEN_SYMBOLS,} from '../scripts/pc-writer/theme-gmh-seven-private-bridge.mjs';
 import {THEME_ETF_ONLY_PAIRS,THEME_ETF_ONLY_PUBLIC_VERSION,
  THEME_ETF_ONLY_METHOD} from '../worker/theme-etf-only-public.mjs';
 import {immutableBaseHash,validRollingPublic}
@@ -134,4 +135,81 @@ test('private-seed tolerance cannot mask a stricter existing R178 reader rejecti
  p.themes[1].history.find(x=>x.date===overlap).score=40.000005;
  await assert.rejects(prepareGmhSevenR178PrivateDraft(input(p)),
   {code:'W03_R178_R178_READER_OVERLAP_MISMATCH'});
+});
+
+function attestedInput(mutate=()=>{}){
+ const manifest={schema:'GMH_SEVEN_1H_SAVED_RAW_V1',version:1,
+  start:'2024-03-04',end:'2026-11-13',files:[]};
+ const checkpoint={schema:manifest.schema,version:1,start:manifest.start,
+  end:manifest.end,symbols:{}};
+ const rawPages=[];
+ for(const [i,symbol] of GMH_SEVEN_SYMBOLS.entries()){
+  const bytes=Buffer.from(JSON.stringify({symbol,
+   timestamp:'2026-11-13T20:00:00.000Z',close:100+i,is_gap:false})+String.fromCharCode(10));
+  const digest=sha(bytes),path='raw/'+symbol+'_'+digest+'.jsonl';
+  manifest.files.push({symbol,path,sha256:digest,
+   source:'GETMARKETHISTORY_FREE_1H',
+   priceMode:'RAW_UNADJUSTED_1H_NOT_OFFICIAL_CLOSE',
+   rowCount:1,observationFrom:'2026-11-13',
+   observationThrough:'2026-11-13',
+   collectedAt:i<7?'2026-11-14T03:00:00.000Z':'2026-11-14T05:00:00.000Z'});
+  checkpoint.symbols[symbol]={complete:true,cursor:null,pages:1,
+   files:[{path,sha256:digest}]};
+  rawPages.push({path,bytes});
+ }
+ mutate(manifest,checkpoint,rawPages);
+ const manifestBytes=Buffer.from(JSON.stringify(manifest)),
+  checkpointBytes=Buffer.from(JSON.stringify(checkpoint));
+ const manifestSha256=sha(manifestBytes),checkpointSha256=sha(checkpointBytes);
+ const candidate=privateCandidate();
+ candidate.rawManifestSha256=manifestSha256;
+ const bytes=Buffer.from(JSON.stringify(candidate)+String.fromCharCode(10));
+ return {privateArtifactBytes:bytes,privateArtifactSha256:sha(bytes),
+  expectedManifestSha256:manifestSha256,expectedCheckpointSha256:checkpointSha256,
+  legacySeed:seed(),now:NOW,
+  saved:{manifestBytes,manifestSha256,
+   checkpointBytes,checkpointSha256,rawPages}};
+}
+
+test('attested GMH-only R178 uses the oldest of 14 latest-session request receipts',async()=>{
+ const x=attestedInput(),v=await prepareGmhSevenR178AttestedDraft(x);
+ assert.equal(v.status,'R178_GMH_ONLY_PRIVATE_DRAFT_NOT_PUBLISHED');
+ assert.equal(v.rolling.sourceStoredAt,'2026-11-14T03:00:00.000Z');
+ assert.equal(v.rolling.asOf,'2026-11-14T03:00:00.000Z');
+ assert.equal(v.provenance.sourceTimestampBasis,'MANIFEST_GET_REQUEST_AT');
+ assert.equal(v.provenance.sourceTimestampIsFileCommitTime,false);
+ assert.equal(v.provenance.sourceStoredAtIsCallerSupplied,false);
+ assert.equal(v.provenance.sourceStoredAtAttestedByManifest,true);
+ assert.equal(v.provenance.rawFilesRehashedNow,true);
+ assert.equal(v.provenance.rawPagesVerified,14);
+ assert.equal(v.provenance.verifiedSymbols,14);
+ assert.equal(v.provenance.checkpointSha256,x.expectedCheckpointSha256);
+ assert.equal(v.provenance.rightsVerified,false);
+ assert.equal(v.provenance.publicationAuthorized,false);
+ assert.equal(v.provenance.d1CasVerified,false);
+ assert.equal(v.rolling.publicationAuthorized,false);
+ assert.equal(v.d1Writes,0);
+ assert.equal(v.publicWrites,0);
+ assert.equal(v.providerCalls,0);
+ assert.doesNotMatch(JSON.stringify(v),/rawClose|close":|rawBars|volume/);
+});
+test('fake collection dates, source pins or raw-page changes stop before a R178 attestation',async()=>{
+ const bad=[
+  attestedInput(m=>{m.files[0].collectedAt='2026-11-19T00:00:00.000Z';}),
+  attestedInput(m=>{m.files[0].collectedAt='2026-11-12T00:00:00.000Z';}),
+  attestedInput(m=>{m.files[0].observationThrough='2026-11-12';}),
+ ];
+ for(const x of bad)await assert.rejects(
+  prepareGmhSevenR178AttestedDraft(x),/W03_SAVED_/);
+ const verified=attestedInput();
+ for(const x of [
+  {...verified,expectedManifestSha256:'f'.repeat(64)},
+  {...verified,expectedCheckpointSha256:'f'.repeat(64)},
+  {...verified,privateArtifactSha256:'f'.repeat(64)},
+  {...verified,saved:{...verified.saved,
+   rawPages:verified.saved.rawPages.map((p,i)=>i?p:{
+    ...p,bytes:Buffer.from('{}'+String.fromCharCode(10))})}},
+ ]){
+  await assert.rejects(prepareGmhSevenR178AttestedDraft(x),/W03_/);
+ }
 });

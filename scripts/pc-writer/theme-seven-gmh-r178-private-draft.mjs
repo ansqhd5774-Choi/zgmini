@@ -2,6 +2,8 @@
 // No provider/SQLite/D1/public API calls, publishing approval or rights change.
 // Reuse existing 7-theme immutable-seed parity and existing R178 reader schema.
 import {createHash} from 'node:crypto';
+import {attestSavedGmhSevenCollectionTime}
+ from './theme-gmh-seven-saved-input-r1.mjs';
 import {prepareGmhSevenPrivateSeed} from './theme-seven-gmh-private-seed-r1.mjs';
 import {THEME_ETF_ROLLING_VERSION,validRollingPublic}
  from '../../worker/theme-etf-rolling-public.mjs';
@@ -97,5 +99,50 @@ export async function prepareGmhSevenR178PrivateDraft({
   },
   providerCalls:0,sqliteOpened:false,sqliteWrites:0,d1Writes:0,
   publicWrites:0,schedulerWrites:0
+ });
+}
+
+// Only this stronger path may claim the source time is bound to verified
+// provider GET receipts. The caller still must supply independently approved
+// manifest, checkpoint and private artifact SHA pins from existing PC evidence.
+export async function prepareGmhSevenR178AttestedDraft({
+ saved,privateArtifactBytes,privateArtifactSha256,
+ expectedManifestSha256,expectedCheckpointSha256,
+ legacySeed,now=Date.now()
+}={}){
+ need(saved&&saved.manifestSha256===expectedManifestSha256&&
+  saved.checkpointSha256===expectedCheckpointSha256&&
+  HEX.test(expectedCheckpointSha256??'')&&
+  Buffer.isBuffer(privateArtifactBytes)&&
+  HEX.test(privateArtifactSha256??'')&&
+  sha(privateArtifactBytes)===privateArtifactSha256,
+  'APPROVED_SOURCE_PINS_MISMATCH');
+ let observationDate;
+ try{observationDate=JSON.parse(privateArtifactBytes.toString('utf8'))
+  .observationDate;}
+ catch{fail('PRIVATE_ARTIFACT_JSON');}
+ const collected=attestSavedGmhSevenCollectionTime({
+  ...saved,observationDate,now
+ });
+ need(collected.rawManifestSha256===expectedManifestSha256&&
+  collected.checkpointSha256===expectedCheckpointSha256,
+  'COLLECTION_LINEAGE_MISMATCH');
+ const projected=await prepareGmhSevenR178PrivateDraft({
+  privateArtifactBytes,privateArtifactSha256,expectedManifestSha256,
+  legacySeed,sourceStoredAt:collected.sourceStoredAt,now
+ });
+ return Object.freeze({
+  ...projected,
+  provenance:Object.freeze({
+   ...projected.provenance,
+   checkpointSha256:expectedCheckpointSha256,
+   sourceStoredAtIsCallerSupplied:false,
+   sourceStoredAtAttestedByManifest:true,
+   sourceTimestampBasis:collected.sourceTimestampBasis,
+   sourceTimestampIsFileCommitTime:false,
+   rawFilesRehashedNow:collected.rawFilesRehashedInMemory,
+   verifiedSymbols:collected.verifiedSymbols,
+   rawPagesVerified:collected.checkedRawPages
+  })
  });
 }

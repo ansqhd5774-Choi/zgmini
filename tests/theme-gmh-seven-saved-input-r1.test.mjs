@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {GMH_SEVEN_SYMBOLS} from '../scripts/pc-writer/theme-gmh-seven-private-bridge.mjs';
-import {calculateFromSavedGmhSeven,GMH_SEVEN_SAVED_SCHEMA}
+import {calculateFromSavedGmhSeven,attestSavedGmhSevenCollectionTime,GMH_SEVEN_SAVED_SCHEMA}
  from '../scripts/pc-writer/theme-gmh-seven-saved-input-r1.mjs';
 
 const sha=b=>createHash('sha256').update(b).digest('hex');
@@ -114,4 +114,59 @@ test('manifest file identity and checkpoint page binding cannot be redirected',(
  assert.throws(()=>calculateFromSavedGmhSeven(mutateCheckpoint(input,
   cp=>{cp.symbols.SPY.files[0].sha256='b'.repeat(64);})),
   {code:'W03_SAVED_CHECKPOINT_PAGE_REFERENCE'});
+});
+
+test('GMH request time comes from all 14 SHA-verified latest-session receipts, not current time',()=>{
+ const fixed=fixture(),last=rows.at(-1);
+ const present=mutateManifest(fixed,m=>m.files.forEach((e,i)=>{
+  e.collectedAt=i===0?'2024-06-01T03:00:00.000Z':
+   '2024-06-01T05:00:00.000Z';
+ }));
+ const out=attestSavedGmhSevenCollectionTime({
+  ...present,observationDate:last,now:Date.parse('2024-06-05T00:00:00Z')
+ });
+ assert.equal(out.status,'GMH_SEVEN_SOURCE_REQUEST_TIME_ATTESTED_READONLY');
+ assert.equal(out.sourceStoredAt,'2024-06-01T03:00:00.000Z');
+ assert.equal(out.sourceTimestampBasis,'MANIFEST_GET_REQUEST_AT');
+ assert.equal(out.sourceTimestampIsFileCommitTime,false);
+ assert.equal(out.checkedRawPages,14);
+ assert.equal(out.verifiedSymbols,14);
+ assert.equal(out.coveringPages,14);
+ assert.equal(out.rawFilesRehashedInMemory,true);
+ assert.equal(out.d1Writes,0);
+ assert.equal(out.publicWrites,0);
+ assert.equal(out.providerCalls,0);
+ assert.equal(out.publicationAuthorized,false);
+ assert.doesNotMatch(JSON.stringify(out),/close|rawPrices|volume|credentials/);
+});
+test('request receipts cannot be invented, future-dated, omitted or detached from raw SHA',()=>{
+ const input=fixture(),last=rows.at(-1),now=Date.parse('2024-06-05T00:00:00Z');
+ const att=i=>attestSavedGmhSevenCollectionTime({
+  ...i,observationDate:last,now
+ });
+ assert.throws(()=>att(input),
+  {code:'W03_SAVED_COLLECTION_REQUEST_TIME_INVALID'});
+ const valid=mutateManifest(input,m=>m.files.forEach(e=>{
+  e.collectedAt='2024-06-01T03:00:00.000Z';
+ }));
+ assert.equal(att(valid).verifiedSymbols,14);
+ for(const alteration of [
+  m=>{m.files[0].collectedAt='2024-06-06T03:00:00.000Z';},
+  m=>{m.files[0].collectedAt='2024-05-01T03:00:00.000Z';},
+  m=>{m.files[0].collectedAt='2024-06-01T03:00:00';},
+  m=>{m.files[0].observationThrough=rows[0];}
+ ]){
+  const v=mutateManifest(valid,alteration);
+  assert.throws(()=>att(v),/W03_SAVED_/);
+ }
+ assert.throws(()=>att({...valid,manifestSha256:'f'.repeat(64)}),
+  {code:'W03_SAVED_MANIFEST_SHA_OR_BYTES'});
+ assert.throws(()=>att({...valid,checkpointSha256:'f'.repeat(64)}),
+  {code:'W03_SAVED_CHECKPOINT_SHA_OR_BYTES'});
+ const pages=valid.rawPages.map((p,i)=>i? p:{...p,bytes:Buffer.from('{}\\n')});
+ assert.throws(()=>att({...valid,rawPages:pages}),
+  {code:'W03_SAVED_SAVED_PAGE_SHA_OR_IDENTITY'});
+ assert.throws(()=>attestSavedGmhSevenCollectionTime({
+  ...valid,observationDate:'2025-01-01',now
+ }),{code:'W03_SAVED_COLLECTION_WINDOW_MISMATCH'});
 });
