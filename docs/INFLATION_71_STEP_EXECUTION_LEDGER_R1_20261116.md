@@ -1,5 +1,14 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261119-R2-TWO-BRANCH-READONLY-PR2197 -->
+## 2026-11-19 00:52 KST — W01 R2 Writer 구형 builder 재계산 분기 위험 확인, 읽기 전용 두 분기 프리뷰 PR #2197
+
+- **이번 새 소스 리뷰:** 기존 제어 [Draft Writer B #2167](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2167)의 `run-local.mjs` 단일 insertion은 `p?.status==='READY'`·`p.sourceVersion===checkpoint.sourceVersion`·`p.sourceStoredAt===checkpoint.sourceStoredAt`일 때만 구형 저장 R2 payload를 `inflationR2AsOfTrendCompatibility`로 고침. 그러나 checkpoint가 새로 전진했을 때는 `builders[id](input)`가 생성한 legacy R2를 기존 `projectionWriter(core).write(id,payload,...)`로 그대로 다시 저장할 수 있는 **별도 실행 경로**가 있음. 이는 코드상 도달 가능한 미검증 누락이며 운영 실패라고 단정한 것은 아님. 기존 [PC A #2163](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2163) 1-anchor `afterSha256=58a8d36d...`는 **두 분기 패치 해시로 재사용 불가**.
+- **실제 GitHub 신규 준비:** 제어 [PR #2197](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2197) 정확 HEAD `14c2429150f829f6cebff01f06f06044c974a405`, 3파일 (미승인 A급 프리뷰 spec 1, 검증용 Node test 1, 격리 source CI 등록 1). 첫 anchor는 기존 저장 payload와 현재 checkpoint 동일 시에만 수정; 두 번째 anchor는 구형 builder 출력 payload를 *저장 직전* 정밀 보정하고 점수·산식·inputs·선행 trend/계보를 보존. 원본 PC source를 포함한 안전 프리뷰가 anchor를 찾지 못하면 `WRITER_B_INSERT_ANCHOR_MATCH_STOP`으로 차단. 새로운 승인/Writer 설치 코드는 만들지 않음. [#2167 리뷰 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2167#issuecomment-6983742213)에 정확 LAST PASS/FIRST FAIL과 인계 조건 등록.
+- **새 검증 상태:** #2197 해당 HEAD 격리 C996 [Run #44340623711](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44340623711) `completed/success`. Controller Maintenance [Run #44340623549](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44340623549)은 마지막 조회에서 `queued`; 실제 새 Node 3-case 결과는 **PENDING**. 완료된 것으로 선보고하거나 CI/프리뷰를 실PC 소스 설치로 오인하지 않음.
+- **다음 독립 W01 작업:** 해당 isolated source CI 실제 완료 확인 → 검증 PASS에서 프리뷰 spec만 정규 control main source-only 병합 → **신규 고유** read-only `pc-writer-insert-preview` A로 실제 설치 PC 원본에 두 anchor 존재/작업 전후 SHA·Task XML 증명 → W01 #2167 정확 2파일 REVIEW_REQUIRED_B 승인 후보 재계산, *효과 승인 획득 후* 공유 Writer Core/lock·Task first-hop·사전 원본 검증, 고유 B 단회 설치→로컬 R2 저장·D1 `detail:inflation:v1` readback→Production API/UI. Event129 현재 비활성 C급 관리자는 [A #2196](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2196)의 결과에 따라 사용자 직접만 처리, Census owner 수집 B와 독립 분리. 이번 PC source/SQLite/Provider/D1/Task/Cloudflare 운영 변경 0.
+- **진행률:** 실제 W01 완료 단계 **33/71(46.5%) 유지**, 미완료 38; 이번 신규 완료 운영 단계 0.
+
 <!-- W01-20261119-E129-A2196-LIVE-OPERATIONAL-DISABLED-0038KST -->
 ## 2026-11-19 00:38~00:39 KST — 기존 승인 Event129 A 실PC 신규 원격 2/2 확인: 현재 로그 비활성·Core link 미입증
 
