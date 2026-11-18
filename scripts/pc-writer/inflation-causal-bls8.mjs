@@ -182,7 +182,8 @@ export async function collectInflationCausalBls8({base,blsKey,quotaFetch,now=new
   sourceStoredAt,sourceVersion:'BLS_API_V2_PPI_BATCH8_R1',requestYears:[begin,year],
   responseSha256:sha256(responseText),providerRawSeries:payload.Results.series,series:merged};
  const proof=atomicSaveAndVerify(file,document);
- return {status:'SAVED_READBACK',providerCalls:1,stored:true,quarantinedSeries,
+ return {status:quarantinedSeries.length?'PARTIAL_SAVED_LAST_GOOD':'SAVED_READBACK',
+  providerCalls:1,stored:true,quarantinedSeries,
   ids:BLS8_IDS.length,counts:Object.fromEntries(BLS8_IDS.map(id=>[id,merged[id].length])),
   latest:Object.fromEntries(BLS8_IDS.map(id=>[id,merged[id].at(-1).date])),
   sourceStoredAt,sourceVersion:document.sourceVersion,...proof};
