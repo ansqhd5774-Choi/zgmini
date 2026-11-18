@@ -1,3 +1,15 @@
+## 2026-11-18 W03 12/68 — GitHub Actions Node.js 실제 CI 검증: 신규 6/6 PASS, 브랜치 전체 30 FAIL
+
+- **시작/종료 진척:** 11/68 DONE(16.2%) → 11/68 DONE(16.2%); 12/68 IN_PROGRESS. W03 전용 브랜치 기준 main 재검사 시 main `ccda8e3fc04d98ac949a76e620ebece8557a7ef8`의 [Node.js CI #44261372865](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44261372865)는 **SUCCESS**, W03 전용 브랜치의 전체 suite는 레거시 SHA pin·테마 설정/게시 관련 드리프트 존재.
+- **실제 GitHub 원본 실행(신규):** 기존 `.github/workflows/node.js.yml` W03 브랜치에만 `on.push.branches`를 임시 1회 확장해 GitHub-hosted 기존 CI [Run #44261520910](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44261520910) 발생, run checkout SHA `ec1c50a68da8789344e088c4f18c62bcc2fbcf0c`, job `134655748223`. 최초 Run 인식 후 곧바로 원본 워크플로를 [commit fcce41c3](https://github.com/ansqhd5774-Choi/zgmini/commit/fcce41c3e076f8d50950de5e84089901e035dd6a)에서 복원, 원본 Git blob `cb8b57400514bf7d79304e8c35549eeeac22e5eb`와 **동일**. 새로운 Workflow/Runner/예약/PC 작업/지속 트리거 없음.
+- **CI 단계별 실제 결과:** `npm ci` PASS, `npm run build` PASS, Type check PASS. 2026-11-18 07:48Z Regression tests 전체 **3,757 tests / PASS 3,707 / FAIL 30 / CANCELLED 1 / SKIP 16 / TODO 3**, job/result `completed/failure`, 후속 PC publication recovery tests skipped. **GitHub Actions 전체 SUCCESS가 아님**.
+- **이번 변경의 원본 CI 개별 PASS 6/6:** `tests/theme-seven-gmh-pinned-parity-r1.test.mjs` 5개(232x7 private parity, 입력 SHA 불일치 거절, 과거 점수 변조 거부, timestamp/rights 거부, 새 RAW top-level/theme/history/window field 제한) 전부 ✔; `tests/theme-gmh-score-noninjective-r1.test.mjs` R188 실제 628 가격 입력 ×2/×4 → 252 점수 전점 동일 ✔. Actions 원본 **job log 134655748223**에서 각 명칭/✔ 확인. 이전 격리 V8/Node shim이 아니라 branch 실제 모듈로 **GitHub hosted Node24 실실행**.
+- **기존 전체 실패 30건:** 별도 `theme-config*` 저장·예산·일시 상태 테스트, `theme-space-satellite-r13~19` SHA 고정 CMD/로컬 source 불일치, `theme-ten-r75` R74_PACKAGE_SHA_MISMATCH, `theme-nine-r53/r54` 의존 SHA drift, R32 public/provisional 연계 등; **새 W03 3개 코드/테스트의 직접 실패는 0**. 전용 브랜치가 최신 main에서 오래 분기된 사실과 main CI SUCCESS를 분리. 다른 담당 파일·assertion·SHA를 임의 수정하거나 전체 CI 실패를 통과로 위장하지 않는다.
+- **권리/게시·Runtime 보호:** 현행 [GMH Terms §5](https://getmarkethistory.com/docs/terms)(2026-11-17 발효), [Partners](https://getmarkethistory.com/docs/partners) 재확인: 0~100 파생 지표의 원시 bars 역구성 불가와 정확 데이터/계정 정당성은 출력별로 별도 판정. 3개 공개 권리 플래그 false; R181 11/16 14/14 저장 *ledger* 증거, #1700 GMH private 11/13, #2133 D1 10/16 seed 232일·1624 score 일치 기존 증거 재사용. 새로운 실PC raw/checkpoint SHA, D1 CAS/readback, API/UI READY는 없음. 공용 운영/수집기/SQLite/D1/Cloudflare 배포/예약/Controller 수정 0.
+- **LAST PASS/FIRST FAIL/다음 실행:** LAST PASS=새 W03 6/6 CI 케이스, npm/build/typecheck; FIRST FAIL=W03 브랜치 레거시 전체 회귀 30건(관련 W03 새 파일 직접 실패 아님), 신규 private/D1 실제 바이트 주입 및 상용 권리 검증 미완료. **다음 필수 동작:** main 기준 최소 3파일 선별 CI/PR 경로에서 본 소스의 전체 통합 검증을 추진하고, 현재 권리 증거/정규 Writer 승인 범위에서 GMH-only 공개 base D1 CAS가 허용 가능한지 판정한다. 오래된 10/16 값을 현재 결과로 승격하거나 TTL 완화/권리 임의 변경은 하지 않는다.
+
+---
+
 ## 2026-11-18 W03 12/68 — R188 파생 점수 원가격 비단사성 직접 검증·회귀 소스
 
 - **진행률:** 11/68(16.2%) 유지, 12단계 IN_PROGRESS. 권리·계산 분리: 실제 11/13 7테마 비공개 GMH 및 #2133 1,624 점수 실PC 대조는 이전 증거 재사용, R181 11/16 ledger와 혼동 금지.
