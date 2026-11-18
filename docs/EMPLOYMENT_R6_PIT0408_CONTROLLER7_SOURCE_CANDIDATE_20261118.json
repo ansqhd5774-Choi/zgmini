@@ -1,0 +1,86 @@
+{
+  "kind": "ZGMINI_W04_PIT0408_CONTROLLER_SOURCE_REVIEW_V1",
+  "decision": "SOURCE_ONLY_CANDIDATE_NOT_APPROVED_NOT_INSTALLABLE",
+  "observedDate": "2026-11-18",
+  "controlRepository": "ansqhd5774-Choi/zgmini-pc-control",
+  "installedControllerSha": "f7f1559bc0ef15bb9b375982d048369c474c490f",
+  "latestMainAtReview": "f7cfe08640bea6e7a087b621a9738a9f31384b70",
+  "candidateBranch": "codex/w04-pit0408-controller7-candidate-20261118",
+  "candidateSha": "6eb398858f72bf18f16bc57df9773e13efa7d0e8",
+  "candidateBaseInstalledSha": "f7f1559bc0ef15bb9b375982d048369c474c490f",
+  "changeCountComparedToInstalled": 7,
+  "candidateFiles": [
+    {
+      "path": "config/operations.json",
+      "sha256": "1129de6324a0a80b9840b22626c0c2025f0e9e37158ca08990fb54ceb6a52176",
+      "byteIdenticalToPriorApprovedSix": true
+    },
+    {
+      "path": "controller/common.mjs",
+      "sha256": "67d54cae62829e833a3ac547da621dbd1231ba4e40b7a54960a89610995b32e6",
+      "byteIdenticalToPriorApprovedSix": false
+    },
+    {
+      "path": "controller/employment-r6-candidate-readonly.mjs",
+      "sha256": "9a7411946b70c13837a68825aac4078a7c2044219bffe7cd3c4fda7a0a100b87",
+      "byteIdenticalToPriorApprovedSix": false
+    },
+    {
+      "path": "controller/employment-r6-collection-evidence-readonly.mjs",
+      "sha256": "12bd06c9f6ff6ea2b3aabe49a12fc3020550d917e6f3a611ad0c754b32df47cd",
+      "byteIdenticalToPriorApprovedSix": false
+    },
+    {
+      "path": "controller/inflation-a401-private23-readonly.mjs",
+      "sha256": "db62b0799731d48a9f04e0c8510c6fa273f70e2b07c2eda5411cc636743d27aa",
+      "byteIdenticalToPriorApprovedSix": true
+    },
+    {
+      "path": "controller/inflation-a407-integrity-readonly.mjs",
+      "sha256": "8d038527098d7527ee09575af11f53e81524476da85400eb46be5bf896bac88e",
+      "byteIdenticalToPriorApprovedSix": true
+    },
+    {
+      "path": "controller/operations.mjs",
+      "sha256": "208bbdb89b18a02860825c4aab46d310ae33b31f527be4d7f810629bd9219d14",
+      "byteIdenticalToPriorApprovedSix": true
+    }
+  ],
+  "priorApprovalRef": "approvals/controller-updates/ead5d2d585ff2ce2a6df5f9b6cf720f65d90b49b.json",
+  "priorSixIdenticalCount": 4,
+  "priorSixModifiedCount": 2,
+  "additionalControllerFile": "controller/common.mjs",
+  "excludedOtherOwnerRuntimeEffects": [
+    "controller/earnings-bea-mfg-archive-readonly.mjs",
+    "controller/pc-source-origin-readonly.mjs",
+    "earnings-bea-mfg-archive-readonly operation and import"
+  ],
+  "evidence": {
+    "candidateBranchCompare": "EXACT_7_FILES_VERIFIED",
+    "W05RegisteredOperation": false,
+    "ER1SourceFileMatchesInstalled": true,
+    "candidateFilesSha256": "SHA256_UTF8_BYTES_CALCULATED_AND_VERIFIED_VECTORS",
+    "newW04ControllerContractCI": "PR_2134_CI_PASS_SOURCE_ONLY",
+    "registeredHostR2B": "pc-control/issues/2141 SUCCEEDED",
+    "aggregateR2A": "pc-control/issues/2144 PASS",
+    "maintenanceStageRecovery": "NOT_VERIFIED",
+    "exactBApproval": "NOT_GRANTED",
+    "runtimeInstalled": "NOT_RUN",
+    "pit04KeyPageA": "NOT_RUN",
+    "historyRepairApprovedKeys": 0
+  },
+  "requiredBeforeUse": [
+    "common-owner original #2094 stage and independent maintainer V2 actual Windows recovery receipt",
+    "confirm latest installed Controller SHA/preimage/lease and W01/W04 scope",
+    "new exact B approval manifest pinned to final target SHA and seven file bytes",
+    "regular one-shot Controller maintenance B and postinstall readback",
+    "new valid 8-key PIT04 A offset=0 and source/PIT evidence verification"
+  ],
+  "forbidden": [
+    "do not feed this JSON to maintenance intake",
+    "do not replay #2094",
+    "do not bypass pinned maintainer V2",
+    "do not install W05/ER1 unapproved effects",
+    "do not modify live SQLite/D1/Task"
+  ]
+}
