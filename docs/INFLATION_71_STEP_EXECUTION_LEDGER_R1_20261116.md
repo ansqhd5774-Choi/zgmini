@@ -1,4 +1,12 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
+<!-- W01-20261119-B205-PR2139-SOURCE-MERGED-CI-2PASS -->
+## 2026-11-19 — B2-05 물가7 Writer 기존 A 영수증 Reader source-only main 병합 완료
+
+- **W01 이번 실제 개발 완료:** `zgmini-pc-control` 기존 [PR #2139](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2139)의 충돌을 정상 merge-commit `f54145056bfd23300d683acd27ea8e7eca71022e`으로 해소하고, 정확 3파일(`controller/inflation19-runtime-readonly.mjs` +39, 신규 `tests/w01-inflation7-writer-ledger-existing-a.test.mjs` +120, source-test Workflow +4, 삭제 0)을 기존 기능 불변 조건에서 `main`에 **squash merge**. 최종 병합 commit [`c30a3c863c31a6c3f21b4b49ad91f45563c2b983`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/c30a3c863c31a6c3f21b4b49ad91f45563c2b983), PR `closed/merged`, 제어 main의 Reader Git blob `7bd0c883af00086ad9c048f16a1a32be0aa1153a`가 본 PR 소스와 정확 일치함을 원격 재조회.
+- **CI 실제 완료:** 신 HEAD [C996 Run #44363317626](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44363317626) `completed/success` 및 [Controller Maintenance Run #44363317647](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44363317647) `completed/success`, 정확 W01 inflation7 Writer receipt regression step도 `completed/success`. 앞선 snapshot의 `queued/in_progress`는 과거 시점이며 현재 종료 증거로 갱신함. 기존 Inflation19 조회 동작·allowlist·dispatch/원자료·공급자·DB/D1 수정 없음.
+- **완료 경계:** 개발 `SOURCE_DONE`, 운영 `RUNTIME_UNVERIFIED`. 본 main 병합만으로 PC 설치 Controller `f7f1559bc0ef15bb9b375982d048369c474c490f` 변경 또는 B2-05의 실PC `inflation7Writer` 영수증 획득을 주장하지 않음. 현재 PC 설치 SHA는 마지막 [A #2205](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2205) 실측으로서 신규 관측 아님. Writer 현재 D1 key/body/stored_at readback은 여전히 없음. Census #28 Core Task/Event129 owner·R2 [B Draft #2167](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2167) exact 승인/설치도 별개.
+- **정확 다음 필수 실행:** 공유 Controller 정상 승인 단일 적용 결과의 실제 설치 SHA/고정 A admission이 확인되면 W01은 A4-07 고유 조회 1회→25개 원자료·checkpoint SHA/readback을 회수한다. B2-05는 같은 공유 설치에 신 `inflation19-runtime-readonly` Reader가 포함됐을 때 기존 A 1회로 7-key Writer metadata를 받고, B2-06 현재 D1 관리 readback은 별도 검증. B2-05/B2-06 및 W01 71단계 체크박스 완료 상태 변경 없음: **33/71 (46.5%)**.
+
 <!-- W01-20261119-B205-PR2139-CLEAN-MAIN-MERGE-SOURCE-ONLY -->
 ## 2026-11-19 — B2-05 물가7 Writer 읽기 전용 영수증 Reader 기존 Draft #2139 충돌 해결 (SOURCE_ONLY)
 
