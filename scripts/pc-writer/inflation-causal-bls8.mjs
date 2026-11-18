@@ -90,7 +90,7 @@ export function normalizeBls8WithLastGood(payload,previous){
 // Reject damage before fetching a new BLS batch; do not silently drop history.
 const validExistingBlsRows=rows=>Array.isArray(rows)&&rows.length>0&&rows.every((row,i)=>
  row!==null&&typeof row==='object'&&!Array.isArray(row)&&
- typeof row.date==='string'&&/^\\d{4}-(0[1-9]|1[0-2])-01$/.test(row.date)&&
+ typeof row.date==='string'&&/^\d{4}-(0[1-9]|1[0-2])-01$/.test(row.date)&&
  typeof row.value==='number'&&Number.isFinite(row.value)&&row.value>=0&&
  (i===0||rows[i-1].date<row.date));
 
