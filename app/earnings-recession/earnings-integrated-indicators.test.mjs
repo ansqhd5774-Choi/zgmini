@@ -197,6 +197,6 @@ test("W05 R5-11 exact SEC and financial quarter dates reject calendar rollover",
  assert.ok(risk.includes('if(!validDate(value))return false;'));
  assert.ok(risk.includes('if(score===null||!validDate(payload?.asOfDate))return [];'));
  assert.ok(risk.includes('raw.financialPeriodEnd===risk.riskFinancialPeriodEnd&&quarterEnd(raw.financialPeriodEnd)'));
- assert.ok(risk.includes('trend.every')===false); // do not rewrite scoring/history
+ assert.ok(risk.includes('const score=payload?.status==="READY"&&validScore(payload?.score)?payload.score:null;'));
 });
 
