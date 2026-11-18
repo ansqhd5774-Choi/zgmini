@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {parseReleaseCalendar} from '../../lib/release-calendar.mjs';
 import {planInflationCandidateCoreDue,collectInflationCandidatesIfDue,
  runInflationCandidatesFromCore,CANDIDATE_CORE_SCHEMA,CANDIDATE_CORE_CHECKPOINT}
  from './inflation-causal-candidate-core-bridge.mjs';
@@ -141,6 +142,37 @@ test('one-shot recovery executes only failed groups and advances checkpoint on s
   assert.equal(planInflationCandidateCoreDue({approved:true,bootstrapApproved:true,
    events:[],checkpoint:doc,providerEnv:keys,now:new Date('2026-11-23T23:00Z')}).due.length,0);
  }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
+test('W01 verified Census Full Report ID remains due after cosmetic official title variation',()=>{
+ const censusHtml=`<table><tbody>
+  <tr><td>Full Report - Manufacturers' Shipments, Inventories and Orders (Revised)</td>
+   <td>November 19, 2026</td><td>10:00 AM</td>
+   <td>September 2026</td><td>Final</td><td>Official</td></tr>
+  <tr><td>Advance Report on Durable Goods--Manufacturers' Shipments, Inventories and Orders</td>
+   <td>November 19, 2026</td><td>10:00 AM</td>
+   <td>September 2026</td><td>Final</td><td>Official</td></tr>
+ </tbody></table>`;
+ const official=parseReleaseCalendar(censusHtml,'census');
+ assert.equal(official.length,2);
+ const full=official.find(x=>x.id.startsWith('census-full-report-'));
+ assert.ok(full,'official calendar parser must provide the canonical full-release ID');
+ assert.match(full.id,/^census-full-report-manufacturers-shipments-inventories-and-orders-/);
+ assert.ok(full.title.includes('(Revised)'));
+ const input={approved:true,events:official,sources,providerEnv:keys,
+  checkpoint:checkpoint(),now:NOW};
+ const planned=planInflationCandidateCoreDue(input);
+ assert.deepEqual(planned.due.map(x=>x.group),['census']);
+ assert.equal(planned.due[0].eventKey,`release:census:${full.id}:${full.date}`);
+ assert.deepEqual(planInflationCandidateCoreDue({...input,
+  events:official.filter(x=>x!==full)}).due,[],
+  'Advance Durable Goods is not the approved M3 Full Report trigger');
+ assert.deepEqual(planInflationCandidateCoreDue({...input,
+  now:new Date('2026-11-19T21:59:00Z')}).due,[],
+  'the known full release must still respect the official release date');
+ assert.deepEqual(planInflationCandidateCoreDue({...input,
+  providerEnv:{...keys,CENSUS_API_KEY:''}}).due,[],
+  'existing provider credential requirement remains unchanged');
 });
 
 test('exact BLS CPI/PPI, Fed G17 and Census M3 full-release mapping only',()=>{
