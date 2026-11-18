@@ -165,4 +165,32 @@ test('R47 reuses R25 approved scoring on verified 9-theme baseline plus R35 wind
   assert.equal(repeated.shadow.writtenFiles,0);
   assert.equal(repeated.shadow.calculationSkipped,true);
   assert.equal(repeated.stage,'EXISTING_PRIVATE_RESULT_REUSED_NO_RECALCULATION');
+
+  // A later partial delta must never erase, manufacture or block the earlier
+  // SHA-verified complete window's R25/R32 private calculation.
+  let resumedSourceCalls=0;
+  const partial=await runNineR47Recurring({dataRoot,rosterPath,
+    now:new Date('2026-10-29T18:00:00Z'),auto:false,
+    fetchImpl:async url=>{
+      resumedSourceCalls++;
+      const symbol=url.pathname.split('/').at(-2);
+      return new Response([
+        price(symbol,'2026-10-26T19:00:00Z',10.51),
+        price(symbol,'2026-10-27T19:00:00Z',10.52),
+      ].map(v=>JSON.stringify(v)).join('\n')+'\n');
+    }});
+  assert.equal(partial.providerCalls,4);
+  assert.equal(resumedSourceCalls,4);
+  const pending=planNineR47Recurring({dataRoot,rosterPath,
+    now:new Date('2026-10-29T18:00:00Z')});
+  assert.equal(pending.status,'RESUME_FROZEN_WINDOW');
+  assert.equal(pending.verifiedCompletedWindows.length,1);
+  const scoresWhilePending=calculateNineR47PrivateScores({dataRoot,rosterPath,
+    now:new Date('2026-10-29T18:00:00Z')});
+  assert.equal(scoresWhilePending.status,'PRIVATE_R47_SCORES_CALCULATED_NOT_PUBLISHED');
+  assert.equal(scoresWhilePending.source.latestSpySessionDate,'2026-10-26');
+  assert.equal(scoresWhilePending.source.deltaCompletedWindows.length,1);
+  assert.equal(scoresWhilePending.source.deltaVerifiedPageReferences,64);
+  assert.equal(scoresWhilePending.publicationAuthorized,false);
+  assert.equal(scoresWhilePending.providerCalls,0);
 });
