@@ -70,8 +70,14 @@ const expectedOrder=(received)=>received.length===GMH_SEVEN_SYMBOLS.length&&
  GMH_SEVEN_SYMBOLS.every(symbol=>received.some(x=>x?.symbol===symbol))&&
  new Set(received.map(x=>x?.symbol)).size===GMH_SEVEN_SYMBOLS.length;
 function selectedSessions(sources){
- const tables=Object.fromEntries(sources.map(s=>[s.symbol,
-  new Map(regularHour15Rows(s.rows).map(d=>[d.date,d.close]))]));
+ // R188 needs 628 eligible hourly rows per symbol before 628 common days.
+ // Keep one W03 fail-closed code for insufficient stored GMH history.
+ const tables=Object.fromEntries(sources.map(s=>{
+  need(s.rows.length>=GMH_SEVEN_REQUIRED_SESSIONS,
+   'COMMON_628_GMH_SESSIONS_MISSING');
+  return [s.symbol,new Map(regularHour15Rows(s.rows)
+   .map(d=>[d.date,d.close]))];
+ }));
  const common=[...tables.SPY.keys()]
   .filter(day=>date(day)&&GMH_SEVEN_SYMBOLS.every(symbol=>tables[symbol].has(day)))
   .sort();
