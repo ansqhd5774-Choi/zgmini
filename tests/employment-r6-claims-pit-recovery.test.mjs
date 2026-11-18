@@ -268,3 +268,53 @@ test("PIT-06-07 complete in-memory reference uses identical chart/scoring transf
  assert.equal(computed.rawValue,points.at(-1).value);
  assert.deepEqual(current,original);
 });
+
+test("PIT-06-05 invalid C3 counts and unproven/future storage times stay HOLD-only",()=>{
+ const original=row(0,"AL");
+ const untouched=structuredClone(original);
+ for(const change of [
+  {value:1.5},{value:Number.MAX_SAFE_INTEGER+1},
+  {value:"1.5"},{value:"1e3"},{value:"0x10"},{value:"01"},
+  {recorded_at:"2026-11-17T00:00:00Z"},
+  {first_seen_at:"2026-11-17T00:00:00Z"},
+  {recordedAt:"2026-11-17T00:00:00Z"},
+  {firstSeenAt:"2026-11-17T00:00:00Z"},
+  {recorded_at:"malformed"},
+  {first_seen_at:null},
+  {provider:"UNOFFICIAL_PROVIDER"},
+  {source_hash:"invalid"},
+ ]){
+  const report=inspectStateClaimsPitReconciliation({
+   currentRows:[{...original,...change}],historyRows:[],asOfIso:at,
+  });
+  assert.equal(report.currentKnownKeys,1,JSON.stringify(change));
+  assert.equal(report.missingHistoryKeys,1,JSON.stringify(change));
+  assert.equal(report.metadataEligibleMissingKeys,0,JSON.stringify(change));
+  assert.equal(report.metadataUnverifiedMissingKeys,1,JSON.stringify(change));
+  assert.equal(report.status,"HOLD_UNVERIFIED_SOURCE_METADATA");
+  assert.equal(report.repairAuthorized,false);
+  assert.equal(report.promotionApproved,false);
+  assert.equal(report.operationalWrites,0);
+ }
+ assert.deepEqual(original,untouched);
+});
+
+test("PIT-06-05 genuine zero and known non-future storage times remain review-only",()=>{
+ const current=row(0,"AL",{
+  value:0,recorded_at:"2026-11-09T11:00:00Z",
+  first_seen_at:"2026-11-09T09:00:00Z",
+ });
+ const before=structuredClone(current);
+ const report=inspectStateClaimsPitReconciliation({
+  currentRows:[current],historyRows:[],asOfIso:at,
+ });
+ assert.equal(report.currentKnownKeys,1);
+ assert.equal(report.missingHistoryKeys,1);
+ assert.equal(report.metadataEligibleMissingKeys,1);
+ assert.equal(report.metadataUnverifiedMissingKeys,0);
+ assert.equal(report.status,"REVIEW_MISSING_HISTORY");
+ assert.equal(report.repairAuthorized,false);
+ assert.equal(report.promotionApproved,false);
+ assert.equal(report.operationalWrites,0);
+ assert.deepEqual(current,before);
+});
