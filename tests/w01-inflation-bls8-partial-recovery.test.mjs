@@ -49,7 +49,7 @@ test('W01: valid prior permits healthy siblings while malformed and missing seri
  response.Results.series=response.Results.series.filter(s=>s.seriesID!=='WPU029');
  response.Results.series.find(s=>s.seriesID==='WPU1017').data[1].value='150';
  const second=await collectInflationCausalBls8({...opts,now:new Date('2026-11-18T01:00:00.000Z')});
- assert.equal(second.status,'SAVED_READBACK');
+ assert.equal(second.status,'PARTIAL_SAVED_LAST_GOOD');
  assert.deepEqual(second.quarantinedSeries,['WPU102502','WPU029']);
  const saved=JSON.parse(fs.readFileSync(f.file,'utf8'));
  assert.equal(saved.ids.length,8);
