@@ -151,7 +151,7 @@ export async function collectInflation19IfDue({
   electricity:(await import('./inflation-causal-gas-electric.mjs')).collectIndustrialElectricity,
   sce:(await import('./inflation-sce-collector.mjs')).collectSceOneYear,
  };
- const report={status:'COMPLETE',providerRequests:0,updated:[],unchanged:[],
+ const report={status:'COMPLETE',providerRequests:0,updated:[],unchanged:[],partial:[],
   skipped:[...plan.skipped],failed:[]};
  const next={schema:INFL19_RECURRING_SCHEMA,processed:{...previous.processed},
   attempted:{...(previous.attempted??{})}};
@@ -189,9 +189,17 @@ export async function collectInflation19IfDue({
     throw err('INFL19_RECURRING_REQUEST_BOUND_EXCEEDED');
    // Mark a release/day handled only after an approved collector has returned
    // with its own existing storage/readback/unchanged contract.
-   if(!['SAVED_READBACK','UNCHANGED','UNCHANGED_VALID_INPUT_PRESERVED','STORED'].includes(result?.status))
+   if(!['SAVED_READBACK','PARTIAL_SAVED_LAST_GOOD','UNCHANGED','UNCHANGED_VALID_INPUT_PRESERVED','STORED'].includes(result?.status))
     throw err('INFL19_RECURRING_COLLECTOR_CONTRACT_DENIED');
    const unchanged=['UNCHANGED','UNCHANGED_VALID_INPUT_PRESERVED'].includes(result.status);
+   if(result.status==='PARTIAL_SAVED_LAST_GOOD'){
+    // Healthy series were saved and read back, but one or more BLS8 siblings
+    // still use last-good. Do not certify the whole release as processed.
+    // The persisted attempt enforces the existing cooldown before a retry.
+    report.partial.push({source:group.key,status:result.status,
+     providerRequests:count});
+    continue;
+   }
    if(unchanged&&group.key!=='gas'){
     // Date-only calendar events can precede the provider's actual publication.
     // The pre-call attempted checkpoint already prevents a retry for 24 hours;
@@ -213,6 +221,7 @@ export async function collectInflation19IfDue({
   }finally{report.providerRequests+=groupRequests;}
  }
  if(report.failed.length)report.status='PARTIAL_PREVIOUS_CHECKPOINT_PRESERVED';
+ else if(report.partial.length)report.status='PARTIAL_LAST_GOOD_AWAITING_NEXT_DUE';
  else if(!report.updated.length&&report.unchanged.length)
   report.status='UNCHANGED_AWAITING_NEXT_DUE';
  return report;
