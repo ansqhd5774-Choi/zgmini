@@ -152,3 +152,65 @@ test("W04 PIT-04-07 distinguishes SQLite null/blank from genuine zero",()=>{
   assert.equal(paired.revisionDisagreements,0);
  }
 });
+
+test("PIT-06-04 equal-time conflicting HISTORY revisions HOLD regardless of input order",()=>{
+ const current=row(0,"AL");
+ const matching={...current,recorded_at:"2026-11-09T11:00:00.000Z"};
+ const conflicting={...matching,source_hash:"b".repeat(64),value:matching.value+1};
+ const before=structuredClone([current,matching,conflicting]);
+ for(const historyRows of [[matching,conflicting],[conflicting,matching]]){
+  const result=inspectStateClaimsPitReconciliation({
+   currentRows:[current],historyRows,asOfIso:at,
+  });
+  assert.equal(result.status,"HOLD_REVISION_CONFLICTS");
+  assert.equal(result.historyMatchedKeys,0);
+  assert.equal(result.revisionDisagreements,1);
+  assert.equal(result.historyMatchedComplete51Weeks,0);
+  assert.equal(result.promotionApproved,false);
+  assert.equal(result.repairAuthorized,false);
+  assert.equal(result.operationalWrites,0);
+ }
+ assert.deepEqual([current,matching,conflicting],before);
+});
+
+test("PIT-06-04 identical equal-time HISTORY duplicates do not falsely conflict",()=>{
+ const current=row(0,"AL");
+ const revision={...current,recorded_at:"2026-11-09T11:00:00.000Z"};
+ const report=inspectStateClaimsPitReconciliation({
+  currentRows:[current],historyRows:[revision,{...revision}],asOfIso:at,
+ });
+ assert.equal(report.historyMatchedKeys,1);
+ assert.equal(report.revisionDisagreements,0);
+ assert.equal(report.status,"CURRENT_HISTORY_MATCHED");
+ assert.equal(report.repairAuthorized,false);
+});
+
+test("PIT-06-04 equal-time conflicting PIT provenance must HOLD even for same value/hash",()=>{
+ const current=row(0,"AL");
+ const revision={...current,recorded_at:"2026-11-09T11:00:00.000Z"};
+ const changed={...revision,provenance_json:'{"parser":"ETA539","truePitAsserted":true}'};
+ for(const historyRows of [[revision,changed],[changed,revision]]){
+  const report=inspectStateClaimsPitReconciliation({
+   currentRows:[current],historyRows,asOfIso:at,
+  });
+  assert.equal(report.status,"HOLD_REVISION_CONFLICTS");
+  assert.equal(report.historyMatchedKeys,0);
+  assert.equal(report.revisionDisagreements,1);
+  assert.equal(report.repairAuthorized,false);
+ }
+});
+
+test("PIT-06-04 later recorded time wins over an older same-retrieval revision",()=>{
+ const current=row(0,"AL");
+ const earlier={...current,recorded_at:"2026-11-09T10:03:00.000Z",
+  source_hash:"b".repeat(64),value:1234};
+ const latest={...current,recorded_at:"2026-11-09T11:00:00.000Z"};
+ for(const historyRows of [[earlier,latest],[latest,earlier]]){
+  const report=inspectStateClaimsPitReconciliation({
+   currentRows:[current],historyRows,asOfIso:at,
+  });
+  assert.equal(report.historyMatchedKeys,1);
+  assert.equal(report.revisionDisagreements,0);
+  assert.equal(report.status,"CURRENT_HISTORY_MATCHED");
+ }
+});
