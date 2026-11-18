@@ -18,6 +18,10 @@ export async function validRollingPublic(rolling,base,{now=Date.now(),expectedMe
  if(!stamp(rolling.asOf)||!stamp(rolling.sourceStoredAt)||Date.parse(rolling.asOf)>now||Date.parse(rolling.sourceStoredAt)>now||now-Date.parse(rolling.asOf)>=PUBLIC_DISPLAY_MAX_AGE_MS)return false;
  if(!/^([a-f0-9]{64})$/.test(rolling.baseHash??'')||rolling.baseHash!==await immutableBaseHash(base))return false;
  if(!Array.isArray(rolling.themes)||rolling.themes.length!==base.themes.length||!date(rolling.observationDate)||rolling.confirmedObservationDate!==rolling.observationDate)return false;
+ // A future-dated completed session is not made real by a fresh D1 write.
+ // The immutable source request must be no earlier than the reported session.
+ const observationStart=Date.parse(rolling.observationDate+'T00:00:00Z');
+ if(observationStart>now||observationStart>Date.parse(rolling.sourceStoredAt))return false;
  let common=null;
  for(let i=0;i<base.themes.length;i++){
   const x=rolling.themes[i],seed=base.themes[i];
