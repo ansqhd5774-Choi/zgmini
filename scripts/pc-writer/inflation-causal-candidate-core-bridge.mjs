@@ -13,9 +13,11 @@ const CALENDAR_MATCH=Object.freeze({
  cpi:e=>e.source==='bls'&&e.id==='cpi',
  ppi:e=>e.source==='bls'&&e.id==='ppi',
  fed:e=>e.source==='fed'&&e.id==='industrial-production',
+ // The approved release-calendar parser already derives the canonical ID
+ // from the official Census title and period. Require that ID, not a second,
+ // punctuation-sensitive display-title match that can reject the same release.
  census:e=>e.source==='census'&&
-  /^census-full-report-manufacturers-shipments-inventories-and-orders(?:-|$)/.test(e.id??'')&&
-  /^Full Report\s*[-–—]\s*Manufacturers['’] Shipments, Inventories,? and Orders(?:\s*·.*)?$/i.test(e.title??''),
+  /^census-full-report-manufacturers-shipments-inventories-and-orders(?:-|$)/.test(e.id??''),
 });
 const SNAPSHOT=Object.freeze({
  cpi:'bls-cpi-ppi3.json',ppi:'bls-cpi-ppi3.json',fed:'fed-g17-manufacturing-ip.json',
