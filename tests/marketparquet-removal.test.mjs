@@ -2,6 +2,9 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';import os from 'node:os';import path from 'node:path';
 import {MARKETPARQUET_REMOVED_CODE as code} from '../lib/marketparquet-retirement.mjs';
+import {storedMarketResponse as candidateMarketResponse} from '../worker/candidate-market-operational-store.mjs';
+import {candidate2dbImportBoundary} from '../scripts/candidate-2db-import-boundary.mjs';
+import {fileURLToPath} from 'node:url';
 import {createQuotaFetch} from '../scripts/pc-writer/quota-fetch.mjs';
 import {policyForProvider,providerForUrl} from '../scripts/pc-writer/quota-policy.mjs';
 import {collectBreadthB1R3ToStore} from '../lib/market-score/breadth-b1-r3-collector.mjs';
@@ -137,8 +140,8 @@ test('retired stored breadth cannot leak through market-score JSON or NDJSON',as
  assert.equal(JSON.stringify(masked).includes('MarketParquet Free Sample'),false);
  assert.equal(stored.domains[1].score,42); // no D1/body mutation
  const store={readScore:async()=>({body:stored,storedAt:now})};
- for(const accept of ['application/json','application/x-ndjson']){
-  const response=await storedMarketResponse(new Request('https://zgmini.kr/api/market-score',{headers:{accept}}),{store,now});
+ for(const reader of [storedMarketResponse,candidateMarketResponse])for(const accept of ['application/json','application/x-ndjson']){
+  const response=await reader(new Request('https://zgmini.kr/api/market-score',{headers:{accept}}),{store,now});
   assert.equal(response.status,200);
   const payload=await response.text();
   assert.equal(payload.includes('MarketParquet Free Sample'),false);
@@ -157,7 +160,20 @@ test('clean market score is unchanged and unexpected retired source fails closed
  const contaminated={...clean,source:'MarketParquet Free Sample'};
  assert.equal(maskRetiredMarketPublicSnapshot(contaminated),null);
  const now=Date.parse('2026-11-18T06:00:00Z');
- const response=await storedMarketResponse(new Request('https://zgmini.kr/api/market-score'),{store:{readScore:async()=>({body:contaminated,storedAt:now})},now});
- assert.equal(response.status,503);
- assert.equal((await response.json()).reason,code);
+ for(const reader of [storedMarketResponse,candidateMarketResponse]){
+  const response=await reader(new Request('https://zgmini.kr/api/market-score'),{store:{readScore:async()=>({body:contaminated,storedAt:now})},now});
+  assert.equal(response.status,503);
+  assert.equal((await response.json()).reason,code);
+ }
+});
+
+
+test('production candidate build rewrites public market-score route to protected SELECT-only reader',()=>{
+ const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
+ const routePath=path.join(root,'app/api/market-score/route.ts');
+ const transformed=candidate2dbImportBoundary(root).transform(fs.readFileSync(routePath,'utf8'),routePath);
+ assert.ok(transformed?.code);
+ assert.match(transformed.code,/worker\/candidate-market-operational-store\.mjs/);
+ assert.match(transformed.code,/worker\/candidate-env-2db\.ts/);
+ assert.doesNotMatch(transformed.code,/from\s*['"](?:\.\.\/)+worker\/market-operational-store\.mjs['"]/);
 });
