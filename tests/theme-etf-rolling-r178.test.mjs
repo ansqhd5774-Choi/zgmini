@@ -88,3 +88,28 @@ test('R178 confirmed session cannot be future or newer than its GMH source reque
  r.asOf=r.sourceStoredAt;
  assert.equal(await validRollingPublic(r,base,{now:followingDay}),true);
 });
+
+test('fresh publishedAt and D1 storedAt cannot disguise a stale GMH source request',async()=>{
+ const b=seed(),p=rolling(b);
+ p.phase='CONFIRMED';
+ p.provisional.points=[];
+ p.lineage={confirmedPrimaryCount:252,secondaryPendingCount:0,
+  latestCompletedSession:p.observationDate,
+  primarySource:'GETMARKETHISTORY_1H_CLOSE',secondarySource:null};
+ const later=Date.parse('2026-10-24T12:00:00Z');
+ // Same confirmed observation date Oct 16 is still just within the
+ // eight-day end-of-session window at noon Oct 24. Source collected
+ // at the *start* of Oct 16 is already more than eight days old.
+ p.sourceStoredAt='2026-10-16T01:00:00Z';
+ p.asOf='2026-10-24T11:00:00Z';
+ assert.equal(await validRollingPublic(p,b,{now:later}),false);
+ const db={prepare(sql){assert.match(sql,/^SELECT /);return{
+  bind(key){assert.equal(key,THEME_ETF_ROLLING_KEY);return{
+   first:async()=>({body:JSON.stringify(p),stored_at:later-500})
+  }}}}};
+ assert.equal(await readRollingPublic(db,b,{now:later}),null);
+ // A genuinely recent source request after the same observation begins
+ // passes the EXISTING freshness period without new approval gates.
+ p.sourceStoredAt='2026-10-16T13:00:00Z';
+ assert.equal(await validRollingPublic(p,b,{now:later}),true);
+});
