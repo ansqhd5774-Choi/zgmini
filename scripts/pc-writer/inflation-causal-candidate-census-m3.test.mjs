@@ -292,3 +292,47 @@ test('invalid last-good Census file fails before network and preserves its exact
   assert.deepEqual(fs.readFileSync(file),conflicting,'preserve original bytes for diagnosis');
   assert.deepEqual(fs.readdirSync(archiveDir).sort(),archivesBefore,'no attempted response archives');
 });
+
+test('Census last-good metadata must match public MTM/TI contract before any supplier GET',async t=>{
+  const fixture=base();t.after(fixture.clear);
+  let calls=0;
+  const quotaFetch=async url=>{
+    calls++;
+    const year=Number(new URL(url).searchParams.get('time'));
+    return response(payload(row(year,'09',year===2025?'700000':'900000')));
+  };
+  const first=await collectCensusM3Inventories({
+    base:fixture.writer,censusKey:'fixture-key',quotaFetch,now});
+  assert.equal(first.status,'SAVED_READBACK');
+  assert.equal(calls,2);
+  const file=path.join(fixture.writer,CENSUS_M3_INVENTORIES_FILE);
+  const normal=JSON.parse(fs.readFileSync(file,'utf8'));
+  const rawDir=path.join(fixture.writer,'inflation-causal-candidates-r1','raw');
+  const beforeArchives=fs.readdirSync(rawDir).sort();
+  const mutations=[
+    doc=>{doc.selector='MTM/NO';},
+    doc=>{doc.frequency='DAILY';},
+    doc=>{doc.unit='USD';},
+    doc=>{doc.observations[0].selector='MTM/NO';},
+    doc=>{doc.observations[0].unit='USD';},
+    doc=>{doc.observations[0].seasonallyAdjusted=false;},
+    doc=>{delete doc.observations[0].seasonallyAdjusted;},
+  ];
+  for(const mutate of mutations){
+    const bad=structuredClone(normal);mutate(bad);
+    const badBytes=Buffer.from(JSON.stringify(bad));
+    fs.writeFileSync(file,badBytes);
+    await assert.rejects(()=>collectCensusM3Inventories({
+      base:fixture.writer,censusKey:'fixture-key',quotaFetch,now}),
+      {code:'CENSUS_M3_EXISTING_CONTRACT_INVALID'});
+    assert.equal(calls,2,'bad last-good must never spend provider quota');
+    assert.deepEqual(fs.readFileSync(file),badBytes,'retain exact damaged bytes for owner audit');
+    assert.deepEqual(fs.readdirSync(rawDir).sort(),beforeArchives,
+      'prior validation must stop before creating new provider archives');
+  }
+  fs.writeFileSync(file,JSON.stringify(normal));
+  const unchanged=await collectCensusM3Inventories({
+    base:fixture.writer,censusKey:'fixture-key',quotaFetch,now});
+  assert.equal(unchanged.status,'UNCHANGED','existing correctly labeled last-good remains usable');
+  assert.equal(calls,4,'the normal approved path still performs its two yearly GETs');
+});
