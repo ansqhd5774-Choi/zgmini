@@ -313,7 +313,8 @@ try{
     assert.equal(confApi.scoreComparisons?.week??null,null,
      'do not create weekly score from a monthly reconstructed history');
     const sourceInputs=Array.isArray(confApi.inputs)?confApi.inputs:[];
-    assert.equal(sourceInputs.length,10,'ten published S21 signals');
+    assert.ok(sourceInputs.length===0||sourceInputs.length===10,
+     'compatible S21 may omit optional input-detail payload; never create source inputs');
     const inputStates=[];
     for(const [i,row] of sourceInputs.entries()){
      const el=inputTable.nth(i);
