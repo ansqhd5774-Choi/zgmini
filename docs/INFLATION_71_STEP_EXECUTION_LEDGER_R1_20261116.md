@@ -1,5 +1,15 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-SHARED-CONTROLLER-GO-W04-2092 -->
+## 2026-11-18 — 공용 A407 Controller 6파일 단일 설치 조건부 GO 및 W04 설치 주체 확정
+
+- **진행률:** 33/71(46.5%) → 33/71(46.5%), 잔여 38. 이번 확인은 공용 설치 승인 경로의 진전이며 A407 실PC 감사 완료나 Census 수집 완료가 아님.
+- **신규 중앙 결정:** [중앙 #68 조건부 GO #6968491524](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-6968491524)를 근거로 [제어 PR #2092](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2092)가 정확 **6파일 단일 공용 Controller B**를 승인 명세 후보로 제출. **설치 주체는 W04 단독**, W01 기존 5파일 중첩 설치는 보류. W01이 중복 B 설치 요청을 만들지 않음.
+- **고정 범위:** 실PC 최신 사전 점검 [#2091](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2091)/[Run #44235695757](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44235695757) PASS로 PR 본문 보고. 설치 preimage Controller `f7f1559bc0ef15bb9b375982d048369c474c490f`, target `ead5d2d585ff2ce2a6df5f9b6cf720f65d90b49b`, W01 4파일+W04 2파일. 6파일 fingerprint `5eac97ce0fc4bf290d152b948502da0dc09446342dbf22bafd09fb0564925608`, 승인 manifest raw SHA256 예정 `2b887fbafd37855b2eccd21f3a6830ac032546938313b6f98e5b9e1e4b090b4a`. 기존 Draft #2083은 실행 불가.
+- **증거 경계:** #2092 PR 본문은 **CI/main 병합 이후** W04가 공유 lease/CAS 검증→고유 B 1회→JSON/TXT postcheck→W04 A 1회를 수행한다고 명시. 본 확인에서 PR 병합·실제 B 영수증·새 설치 SHA·W01 A407 JSON/TXT는 확보하지 못함. 조건부 GO를 설치 성공으로 승격하지 않음.
+- **W01 다음 독립 행동:** W04 단일 설치의 실제 영수증과 A407 고정 ingress 설치 SHA를 읽기 전용으로 확인한 다음 **W01이 직접** 고유 A407 A 1회 실행하여 원본 19+후보 6 SHA, checkpoint 2개, double-read 및 보호 상태 검증. 병행 독립 경로는 Census #28 archive header의 승인 read-only metadata 확보와 기존 4파일 source version 불일치 원인 조사. Event129 owner proof 미확인 시 Census B 재접수 금지. 공급자 GET·SQLite/D1/Task/Writer 쓰기 없음.
+
+
 <!-- W01-20261118-CENSUS-APPROVED-4FILE-VS-APP-MAIN-SHA -->
 ## 2026-11-18 — Census #28 기존 승인 4파일과 최신 app/main 실제 바이트 해시 불일치 확인
 
