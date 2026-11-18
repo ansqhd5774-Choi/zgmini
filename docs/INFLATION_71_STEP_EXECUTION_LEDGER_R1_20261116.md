@@ -1,5 +1,15 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-R2-ASOF-TREND-PR1340-SOURCE-MAIN -->
+## 2026-11-18 — Inflation R2 미래 월말 평가일 표시 오류 #1330 upstream 소스 수정
+
+- **실제 결함 근거:** [개발 이슈 #1330](https://github.com/ansqhd5774-Choi/zgmini/issues/1330)의 2026-11-18 공개 GET에서 `asOfDate=2026-11-18`인데 R2 12개월 `trend` 마지막 라벨이 미래 `2026-11-30`으로 저장되는 날짜 불일치. 이 날짜는 실제 11/30 관측일 근거가 아니라 `worker/projection-builders/inflation.mjs`가 12개월 월말 `monthEnds(asOf)`를 생성한 뒤 해당 **미래 평가일**로 `calculateInflationR2At`을 계산하는 구조에서 비롯. W06 UI 표시 방어 [PR #1309](https://github.com/ansqhd5774-Choi/zgmini/pull/1309)는 기존 완료로 재수정하지 않음. R2와 경제 4축 점수 계보는 별개.
+- **이번 독립 소스 실행:** [앱 PR #1340](https://github.com/ansqhd5774-Choi/zgmini/pull/1340) 정확 2파일: `worker/projection-builders/inflation.mjs`는 지난 11개월 완료 월말의 날짜·계산점 11개를 그대로 보존하고, 현재 달 마지막 12번째 평가일을 실제 `asOfDate`로 계산한다. `tests/w01-inflation-r2-current-asof-trend-r1.test.mjs`는 16개 저장 시계열 synthetic fixture를 실 `buildProjection`에 넣어 중간월·월말·윤년·연도 경계·오류날짜·결측·12개 점 정렬과 마지막 값=current.score, 이미 승인된 W06 UI guard 호환을 회귀 검증. 산식/7개 축/16개 입력·PIT/진짜 이전 관측일·TTL·수집주기·D1 계약 변경 0.
+- **CI/실제 main 병합:** [Node.js CI #44265088148](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44265088148) `completed/success`: Build, Type check, Regression tests, PC publication recovery tests, Cloudflare candidate read contracts PASS. `main` squash [`7e882034cb6f58d669927f02e24fd1809493a25e`](https://github.com/ansqhd5774-Choi/zgmini/commit/7e882034cb6f58d669927f02e24fd1809493a25e), 실제 main 위 Builder blob `23fe332bcf74761f0aea9c3e715e828beeb63601` 재조회 일치. PR merged=true, #1330 이슈 OPEN 유지.
+- **운영 경계:** 해당 날짜 소스 수정은 PC Writer 설치 SHA/실제 저장 projection 재생성, D1 개별 row+stored_at 조회, 실 Production API/PC·모바일 차트 날짜 갱신의 증거가 아니다. 따라서 #1330 upstream source 수정은 완료, **운영 게시·실공개 검증은 미완료**. 정확 승인 원본/source 설치→기존 계산·게시 경로→D1 동일 key/시각·버전→공개 GET/1440·390 UI를 분리 판정. 기존 게시값 수동 덮어쓰기·원자료 재생성·DNS/Worker 직배포 금지.
+- **공통 의존 관계 불변:** W01 물가7 B2-05 기존 A 메타 조회 준비 [Draft #2139](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2139) 격리 CI PASS/운영 미설치, 공유 #2094 STAGED 복구 미인증/W04 단일 Controller 실설치 미완료, Census #28 MISSING/CENSUS_M3_HEADERS_INVALID. 본 R2 별도 소스 수정은 이를 완료하지 않음.
+- **진행률:** 시작/종료 W01 **33/71(46.5%)**, 남은 38 단계, 신규 운영 DONE 0. 기존 71개 체크박스 불변. 다음 우선 실행은 #2094 안전복구 및 W04 공유 설치 완료 근거 후 승인된 B2-05 원장 A 1회·B2-06 D1 정확 key 대조, 별도 #1330 승인 R2 운영 배포·실공개 확인.
+
 <!-- W01-20261118-INFL7-B205-WRITER-STATUS-GUARD-PR2139 -->
 ## 2026-11-18 — B2-05 기존 A의 개별 Writer 영수증 과대인증 방지 (source-only)
 
