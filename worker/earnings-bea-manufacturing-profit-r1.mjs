@@ -76,6 +76,24 @@ const headers={'content-type':'application/json; charset=utf-8',
   'cache-control':'no-store','x-robots-tag':'noindex',
   'x-content-type-options':'nosniff','x-public-projection':'STORED'};
 
+// Verify the entire stored row before a public read OR an idempotent success.
+// A valid source payload alone does not authenticate the D1 checkpoint.
+function verifiedBeaMfgEnvelope(raw,{now}){
+  if(typeof raw?.body!=='string'||raw.body.length>32_000)
+    throw Error('BEA_MFG_STORED_BODY_INVALID');
+  const envelope=JSON.parse(raw.body);
+  if(!keys(envelope,['payload','projection'])||!keys(envelope.projection,
+    ['status','sourceVersion','sourceStoredAt','builtAt']))
+    throw Error('BEA_MFG_STORED_ENVELOPE_INVALID');
+  const p=validateBeaMfgProfit(envelope.payload,{now}),x=envelope.projection;
+  if(x.status!=='READY'||x.sourceVersion!==p.sourceVersion
+    ||x.sourceStoredAt!==p.sourceStoredAt||!Number.isSafeInteger(x.builtAt)
+    ||x.builtAt<p.sourceStoredAt||x.builtAt>now
+    ||Number(raw.stored_at)!==x.builtAt)
+    throw Error('BEA_MFG_STORED_CHECKPOINT_INVALID');
+  return envelope;
+}
+
 export async function readBeaMfgResponse(request,db,{now=Date.now()}={}){
   const reply=(body,status=200)=>new Response(request.method==='HEAD'?null:JSON.stringify(body),{status,headers});
   if(!['GET','HEAD'].includes(request.method))return reply({reason:'METHOD_NOT_ALLOWED'},405);
@@ -87,15 +105,7 @@ export async function readBeaMfgResponse(request,db,{now=Date.now()}={}){
   catch{return reply({status:'unavailable',reason:'PROJECTION_READ_UNAVAILABLE'},503);}
   if(!raw)return reply({status:'unavailable',reason:'STORED_PROJECTION_PENDING'},503);
   try{
-    if(typeof raw.body!=='string'||raw.body.length>32_000)throw Error('INVALID_BODY');
-    const e=JSON.parse(raw.body);
-    if(!keys(e,['payload','projection'])||!keys(e.projection,
-      ['status','sourceVersion','sourceStoredAt','builtAt']))throw Error('INVALID_STORED_ENVELOPE');
-    const p=validateBeaMfgProfit(e.payload,{now}),x=e.projection;
-    if(x.status!=='READY'||x.sourceVersion!==p.sourceVersion
-      ||x.sourceStoredAt!==p.sourceStoredAt||!Number.isSafeInteger(x.builtAt)
-      ||x.builtAt>now||Number(raw.stored_at)!==x.builtAt)
-      throw Error('INVALID_PROJECTION_CHECKPOINT');
+    const {payload:p}=verifiedBeaMfgEnvelope(raw,{now});
     const freshness=beaMfgFreshness(p,{now});
     if(freshness.status==='STALE')return reply({status:'unavailable',reason:freshness.reason},503);
     return reply({...p,freshness});
@@ -113,13 +123,15 @@ export function beaMfgWriter(db){
       .bind(BEA_MFG_SNAPSHOT_KEY).first();
     if(previous){
       let old;
-      try{old=JSON.parse(previous.body);validateBeaMfgProfit(old.payload,{now:storedAt});}
+      try{old=verifiedBeaMfgEnvelope(previous,{now:storedAt});}
       catch{throw Error('BEA_MFG_EXISTING_INVALID');}
       if(old.payload.sourceStoredAt>payload.sourceStoredAt)throw Error('BEA_MFG_SUPERSEDED');
       if(old.payload.sourceStoredAt===payload.sourceStoredAt
         &&old.payload.sourceVersion!==payload.sourceVersion)
         throw Error('BEA_MFG_CONFLICTING_VERSION');
-      if(old.payload.sourceVersion===payload.sourceVersion
+      // Reusing the raw SHA does not mean this retrieval/checkpoint was stored.
+      if(old.payload.sourceStoredAt===payload.sourceStoredAt
+        &&old.payload.sourceVersion===payload.sourceVersion
         &&JSON.stringify(old.payload.indicator)===JSON.stringify(payload.indicator))
         return {status:'ALREADY_STORED',key:BEA_MFG_SNAPSHOT_KEY,storedAt:Number(previous.stored_at)};
     }
