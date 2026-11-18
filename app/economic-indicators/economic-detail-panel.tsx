@@ -38,7 +38,7 @@ type Indicator={
  retrievedAt?:string|null;
  previousValue?:number|null;previousObservationDate?:string|null;
  criterion?:string|null;criterionLabel?:string|null;
- source?:string|null;sourceDisplay?:string|null;sourceStoredAt?:string|null;sourceUrl?:string|null;description?:string|null;content?:string|null;
+ source?:string|null;sourceDisplay?:string|null;sourceStoredAt?:string|null;sourceUrl?:string|null;description?:string|null;content?:string|null;licenseNotice?:string|null;
  researchJudgement?:{name:string;tone:"positive"|"negative"|"neutral"|"missing"};
  history?:Point[];trend?:Point[];
  releaseCadence?:string|null;nextReleaseDate?:string|null;nextRelease?:string|null;
@@ -150,6 +150,7 @@ function IndicatorHelp({item,title}:{item:Indicator;title:string}){
  return <ContentHelp label={title+" 도움말"}><p>{indicatorDescription(item,title)}</p>
   <p>원자료와 0~100점은 서로 다른 값입니다. 결측은 0점이 아닙니다.</p>
   <p>관측일: {dateLabel(item.observationDate??item.asOfDate)} · 출처: {technicalSource(item.source)}</p>
+  {item.licenseNotice&&<p>{item.licenseNotice}</p>}
   {item.retrievedAt&&<p>원천 최종 조회일: {dateLabel(item.retrievedAt)}</p>}
   {href&&<a href={href} target="_blank" rel="noopener noreferrer">공개 원문 열기 ↗</a>}
  </ContentHelp>;
