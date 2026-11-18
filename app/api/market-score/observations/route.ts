@@ -1,6 +1,8 @@
 import {env} from 'cloudflare:workers';
 import {COMPOSITE_OBSERVED_PREFIX,COMPOSITE_OBSERVED_VERSION} from '../../../../lib/composite-observed-history-r1.mjs';
 import {sampleCnnObservedPoints} from '../../../../lib/cnn-observed-sampling-r1.mjs';
+import {maskRetiredMarketPublicSnapshot} from '../../../../worker/market-retired-public-snapshot-mask.mjs';
+import {MARKETPARQUET_REMOVED_CODE} from '../../../../lib/marketparquet-retirement.mjs';
 
 // Derived published composite scores only. Visitor GET does no calculation,
 // provider I/O, or remote write. Dates without samples are not interpolated.
@@ -20,6 +22,27 @@ export async function GET(request:Request){
  const params=new URL(request.url).searchParams;
  const period=params.get('period')??'1D';
  if(!Object.prototype.hasOwnProperty.call(periods,period))return Response.json({status:'INVALID_PERIOD'},{status:400});
+ // Archive points predate the rights removal and carry only score/signature,
+ // not independently verifiable per-point public-use lineage. Check the
+ // published current snapshot through the same retired-source mask used by
+ // /api/market-score. Never delete archived rows or convert scores to 0.
+ let publicCurrent:any;
+ try{
+  const row=await env.DB.prepare("SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key='current'").first<{body:string}>();
+  publicCurrent=maskRetiredMarketPublicSnapshot(JSON.parse(row?.body??'null'));
+ }catch{
+  return Response.json({status:'UNAVAILABLE',reason:'COMPOSITE_CURRENT_UNVERIFIED',points:[]},{
+   status:503,headers:{'Cache-Control':'no-store','x-data-source':'STORED','x-content-type-options':'nosniff'},
+  });
+ }
+ if(!publicCurrent)return Response.json({status:'UNAVAILABLE',reason:'COMPOSITE_CURRENT_UNVERIFIED',points:[]},{
+  status:503,headers:{'Cache-Control':'no-store','x-data-source':'STORED','x-content-type-options':'nosniff'},
+ });
+ const retired=publicCurrent.overall?.state===MARKETPARQUET_REMOVED_CODE
+  ||publicCurrent.domains?.some((domain:any)=>domain?.state===MARKETPARQUET_REMOVED_CODE);
+ if(retired)return Response.json({status:'UNAVAILABLE',reason:MARKETPARQUET_REMOVED_CODE,points:[]},{
+  status:503,headers:{'Cache-Control':'no-store','x-data-source':'STORED','x-content-type-options':'nosniff'},
+ });
  const days=periods[period as keyof typeof periods];
  const now=Date.now(),dayMs=86400000;
  const from=new Date(now-(days-1)*dayMs).toISOString().slice(0,10);
