@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {mkdirSync,writeFileSync} from 'node:fs';
 import {chromium} from 'playwright';
-import {earningsCostSparkGeometry,earningsCostRetrievalDay} from '../app/earnings-recession/earnings-cost-observation-display-r1.mjs';
+import {earningsCostSparkGeometry,earningsCostRetrievalDay,earningsCostDisplayStatus} from '../app/earnings-recession/earnings-cost-observation-display-r1.mjs';
 
 // Real Production GET+hydrated DOM readback; no mock routes, authentication or writes.
 // PR CI runs on an isolated candidate branch; no Production deployment occurs here.
@@ -72,7 +72,15 @@ try{
    const shown=(await current.innerText()).trim();
    assert.equal(shown,ok?format(row.value,row.unit):'—',
     ids[i]+' current/0/null parity at '+width);
+   const previous=isDesktop?
+    element.locator('.earnings-r2-prior'):
+    element.locator('.earnings-r2-mobile-metrics strong').nth(0);
+   assert.equal((await previous.innerText()).trim(),
+    ok?format(row.previousValue,row.unit):'—',
+    ids[i]+' prior/null parity at '+width);
    const details=await element.innerText();
+   assert(details.includes(earningsCostDisplayStatus(row,ok)),
+    ids[i]+' READY/STALE/PARTIAL presentation at '+width);
    assert(details.includes(row.observationPeriod??'—'),
     ids[i]+' observation period must be displayed at '+width);
    const retrieved=earningsCostRetrievalDay(row.retrievedAt);
@@ -103,7 +111,7 @@ try{
   }
   report.readyRows=usableCount;
   assert(usableCount>0,'Production API should expose at least one real READY BLS row');
-  assert.equal(page.locator('.earnings-r2-cost-status').count?await page.locator('.earnings-r2-cost-status').count():0,1);
+  assert.equal(await page.locator('.earnings-r2-cost-status').count(),1);
   assert.deepEqual(failedJS,[],'Production first-party JS requests loaded '+width);
   assert.deepEqual(errors,[],'Production page hydrated without exceptions '+width);
   await page.screenshot({path:'artifacts/earnings-r511-production/live-'+width+'.png'});
