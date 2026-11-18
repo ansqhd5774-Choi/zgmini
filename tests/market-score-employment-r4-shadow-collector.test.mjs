@@ -62,6 +62,44 @@ test("W04 PIT-04-07 latest missing state falls back only to an earlier complete 
   assert.equal(parsed.rows.find(row=>row.geographyCode==="AK")?.value,0);
 });
 
+test("W04 PIT-04-07 impossible ETA539 dates cannot normalize into a fabricated complete week",async()=>{
+  const csvFor=(week,report="10/30/2026")=>["st,rptdate,c1,c2,c3,c8",
+    ...EMPLOYMENT_R4_CORE_STATES.map(st=>`${st},${report},2,${week},300,9000`)].join("\n");
+  for(const impossible of ["02/30/2026","2026-02-30","02/29/2026",
+    "11/31/2026","2026-13-01","00/24/2026","2026-00-24"]){
+    const parsed=await parseEta539ShadowRows(csvFor(impossible),{
+      retrievedAt:"2026-11-01T00:00:00.000Z"});
+    assert.equal(parsed.rows.length,0,impossible);
+    assert.equal(parsed.meta.latestCompleteWeek,null,impossible);
+  }
+  const leapReport=await parseEta539ShadowRows(csvFor("02/24/2024","02/29/2024"),{
+    retrievedAt:"2024-03-01T00:00:00.000Z"});
+  assert.equal(leapReport.rows.length,51,"valid leap-day report metadata is retained");
+  assert.equal(leapReport.meta.latestCompleteWeek,"2024-02-24");
+  assert.ok(leapReport.rows.every(row=>row.sourceRevision==="ETA539:RPTDATE:2024-02-29"));
+});
+
+test("W04 PIT-04-07 accepts exact zero and grouped integer counts, rejects other c3 encodings",async()=>{
+  const csvFor=token=>["st,rptdate,c1,c2,c3,c8",
+    ...EMPLOYMENT_R4_CORE_STATES.map(st=>
+      `${st},10/30/2026,2,10/24/2026,${st==="AL"?token:"300"},9000`)].join("\n");
+  for(const bad of ["-1","+1","1.5","1e3","0x10","NaN","1,2","1,23,456",
+    "9007199254740992"]){
+    const csvToken=bad.includes(",")?`"${bad}"`:bad;
+    const parsed=await parseEta539ShadowRows(csvFor(csvToken),{
+      retrievedAt:"2026-11-01T00:00:00.000Z"});
+    assert.equal(parsed.rows.length,0,bad+" must not fabricate a 51-state week");
+    assert.equal(parsed.meta.latestCompleteWeek,null,bad);
+  }
+  for(const [token,expected] of [["0",0],["000",0],['"1,234"',1234],["1234",1234]]){
+    const parsed=await parseEta539ShadowRows(csvFor(token),{
+      retrievedAt:"2026-11-01T00:00:00.000Z"});
+    assert.equal(parsed.rows.length,51,token);
+    assert.equal(parsed.meta.latestCompleteWeek,"2026-10-24",token);
+    assert.equal(parsed.rows.find(row=>row.geographyCode==="AL")?.value,expected,token);
+  }
+});
+
 function sampleRow(logicalSeriesId,geo,value,hashChar="a"){return{logicalSeriesId,provider:"TEST",providerSeriesId:`TEST:${logicalSeriesId}`,geographyType:"STATE",geographyCode:geo,frequency:"WEEKLY",unit:"COUNT",seasonalAdjustment:"NA",populationCoverage:"TEST",observationDate:"2026-09-12",releaseDate:null,availableAt:"2026-09-20T00:00:00Z",retrievedAt:"2026-09-20T00:00:00Z",value,sourceRevision:null,sourceHash:hashChar.repeat(64),qualityStatus:"READY",pitClass:EMPLOYMENT_R4_PIT_CLASSES.forwardObserved,schemaVersion:1,provenance:{}}}
 function goodProvider(value=10){return{async fetchStateClaims(){return{requestCount:1,rows:[sampleRow("STATE_INITIAL_CLAIMS","AL",value,"a")],meta:{}}},async fetchGeographicDiffusion(){return{requestCount:1,rows:[sampleRow("STATE_EMP_DIFFUSION_3M","ALL_STATES",60,"b")],meta:{}}}}}
 
