@@ -62,7 +62,7 @@ test("output caps evidence without losing counts",()=>{
  assert.equal(second.evidenceTruncated,false);
  assert.equal(second.nextOffset,null);
  assert.ok(second.evidence.every(x=>!r.evidence.some(y=>x.geographyCode===y.geographyCode)));
- assert.throws(()=>go([base],[],[],[],{maxEvidenceRows:25}),/PIT0408_ARGUMENT_INVALID/);
+ assert.throws(()=>go([base],[],[],[],{maxEvidenceRows:9}),/PIT0408_ARGUMENT_INVALID/);
  assert.throws(()=>go([base],[],[],[],{offset:-1}),/PIT0408_ARGUMENT_INVALID/);
 });
 
@@ -95,8 +95,8 @@ test("max default page is smaller than registered 12 KiB A-grade report limit",(
  }
  const r=go(rows,[],[],[]);
  assert.equal(r.counts.coreHistoryMissing,rows.length);
- assert.equal(r.evidence.length,24);
- assert.equal(r.nextOffset,24);
+ assert.equal(r.evidence.length,8);
+ assert.equal(r.nextOffset,8);
  assert.ok(Buffer.byteLength(JSON.stringify(r),"utf8")<9000);
  assert.equal(r.rawPitAttested,false);
 });
