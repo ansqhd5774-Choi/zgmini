@@ -109,12 +109,15 @@ test('complete 64 symbols with bounded auto run and zero repeated GETs',async t=
   assert.equal(sha(fs.readFileSync(f.baseManifestFile)),f.before);
 });
 
-test('HTTP 429 stops without retries or new data root',async t=>{
+test('HTTP 429 respects retry-after and stops after two bounded retries without data writes',async t=>{
   const f=setup(t);let calls=0;
   const r=await collectNineR35Auto({...f,fetchImpl:async()=>{
-    calls++;return new Response('limited',{status:429});},sleep:async()=>{throw Error('UNEXPECTED_SLEEP');}});
+    calls++;return new Response('limited',{status:429,headers:{'retry-after':'120'}});},
+    sleep:async ms=>assert.equal(ms,120000)});
   assert.equal(r.status,'STOP_HTTP_429');
-  assert.equal(calls,1);
+  assert.equal(calls,3);
+  assert.equal(r.totalProviderCalls,3);
+  assert.equal(r.transientRetries,2);
   assert.equal(fs.existsSync(f.deltaHome),false);
 });
 
@@ -137,4 +140,68 @@ test('invalid raw bar halts before storing',async t=>{
     JSON.stringify({symbol:'SPY',timestamp:'2026-10-26T19:00:00Z',open:-1})+'\n')});
   assert.equal(r.status,'STOP_RESPONSE_OR_INVALID_BARS');
   assert.equal(fs.existsSync(f.deltaHome),false);
+});
+
+test('known transient checkpoint resumes validated pages without repeating completed SPY',async t=>{
+  const f=setup(t);let calls=[];
+  const first=await collectNineR35Delta({...f,fetchImpl:async url=>{
+    calls.push(url.pathname);return calls.length===2?new Response('',{status:503}):f.api(url);
+  }});
+  assert.equal(first.status,'STOP_HTTP_503');
+  assert.equal(first.rawFilesStored,1);
+  const cpFile=path.join(f.deltaHome,'state',fs.readdirSync(path.join(f.deltaHome,'state')).find(n=>n.endsWith('.json')));
+  const cp=JSON.parse(fs.readFileSync(cpFile));
+  const waiting=await collectNineR35Delta({...f,fetchImpl:async()=>{throw Error('TOO_EARLY');}});
+  assert.equal(waiting.status,'WAIT_PROVIDER_RETRY_AFTER');
+  assert.equal(waiting.providerCalls,0);
+  cp.retryNotBefore=new Date(Date.now()-1).toISOString();
+  fs.writeFileSync(cpFile,JSON.stringify(cp));
+  const resumed=await collectNineR35Delta({...f,fetchImpl:async url=>{
+    calls.push(url.pathname);return f.api(url);
+  }});
+  assert.equal(resumed.status,'R35_DELTA_CHECKPOINT_READY_TO_RESUME');
+  assert.equal(calls.filter(p=>p.includes('/SPY/')).length,1);
+  assert.equal(calls[1],calls[2]);
+  assert.equal(sha(fs.readFileSync(f.baseManifestFile)),f.before);
+});
+
+test('unknown request outcome and invalid bars remain hard stops on resume',async t=>{
+  const f=setup(t);
+  await collectNineR35Delta({...f,fetchImpl:f.api,maxRequests:2});
+  const stateDir=path.join(f.deltaHome,'state');
+  const cpFile=path.join(stateDir,fs.readdirSync(stateDir).find(n=>n.endsWith('.json')));
+  const cp=JSON.parse(fs.readFileSync(cpFile));
+  for(const failure of ['REQUEST_OUTCOME_UNKNOWN','STOP_RESPONSE_OR_INVALID_BARS','STOP_HTTP_404']){
+    cp.failedAt=new Date().toISOString();cp.failure=failure;
+    fs.writeFileSync(cpFile,JSON.stringify(cp));
+    const report=await collectNineR35Delta({...f,fetchImpl:async()=>{throw Error('MUST_NOT_FETCH');}});
+    assert.equal(report.status,'STOP_PREVIOUS_FAILURE_REVIEW_REQUIRED');
+    assert.equal(report.providerCalls,0);
+  }
+});
+
+test('long retry-after and HTTP 404 never trigger automatic retries',async t=>{
+  const f=setup(t);
+  for(const status of [404,429,503]){
+    let calls=0;
+    const report=await collectNineR35Auto({...f,fetchImpl:async()=>{
+      calls++;return new Response('',{status,headers:{'retry-after':'3600'}});
+    },sleep:async()=>{throw Error('MUST_NOT_SLEEP');}});
+    assert.equal(calls,1);
+    assert.equal(report.status,'STOP_HTTP_'+status);
+    assert.equal(report.totalProviderCalls,1);
+  }
+});
+
+test('transient retry succeeds within existing request and batch budgets',async t=>{
+  const f=setup(t);let calls=0,sleeps=0;
+  const report=await collectNineR35Auto({...f,maxBatches:2,fetchImpl:async url=>{
+    calls++;return calls===1?new Response('',{status:502}):f.api(url);
+  },sleep:async ms=>{assert.equal(ms,60000);sleeps++;}});
+  assert.equal(report.status,'R35_DELTA_CHECKPOINT_READY_TO_RESUME');
+  assert.equal(report.transientRetries,1);
+  assert.equal(report.totalProviderCalls,5);
+  assert.equal(report.totalRawFilesStored,4);
+  assert.equal(report.batches,2);
+  assert.equal(calls,5);assert.equal(sleeps,1);
 });
