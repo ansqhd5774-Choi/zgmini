@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {currentUsIexDisplaySession} from '../lib/market-breadth/us-iex-display-session-r69.mjs';
-import {usProvisionalSlot} from '../lib/market-breadth/us-provisional-r1.mjs';
+import {usProvisionalSlot,usIexPublicPercentOnly,US_BREADTH_PROVISIONAL_SOURCE,US_BREADTH_PROVISIONAL_REFERENCE,US_BREADTH_PROVISIONAL_METHOD} from '../lib/market-breadth/us-provisional-r1.mjs';
 
 const before=iso=>Date.parse(iso);
 const day='2026-11-17';
@@ -82,4 +82,40 @@ test('R4 #69 existing period controls do not turn US current-only or Korea uncon
  assert.doesNotMatch(ui,/history\?|readScoreHistory|fetch\('\/api\/market-breadth\/history/);
  assert.match(ui,/const activeProvisional = market === "usa"/);
  assert.match(ui,/return \(\s*<section/);
+});
+
+test('R4 #69 actual validated 500-member IEX public projection preserves 0% and unobserved 30%',()=>{
+ const record={
+  version:1,phase:'PROVISIONAL',status:'PROVISIONAL',market:'usa',universe:'SP500',
+  source:US_BREADTH_PROVISIONAL_SOURCE,
+  referenceSource:US_BREADTH_PROVISIONAL_REFERENCE,
+  methodologyVersion:US_BREADTH_PROVISIONAL_METHOD,
+  observationDate:day,priorDate:'2026-11-16',slotEndUtc:correct,
+  collectedAt:'2026-11-17T15:01:00.000Z',
+  expectedCount:500,sessionPriceObservedCount:350,referenceObservedCount:350,
+  observedCount:350,missingCount:150,freshWithin30m:350,coverage:0.7,
+  counts:{rising:0,unchanged:200,falling:150},collectionStatus:'COMPLETE',
+ };
+ const publicRecord=usIexPublicPercentOnly(record);
+ assert.deepEqual([
+  publicRecord.risingPct,publicRecord.unchangedPct,
+  publicRecord.fallingPct,publicRecord.unobservedPct,
+ ],[0,40,30,30]);
+ assert.equal('counts' in publicRecord,false,'private issue counts never reach public projection');
+ assert.equal('score' in publicRecord,false,'percent cannot become an invented 0-100 score');
+ assert.equal(currentUsIexDisplaySession(publicRecord.observationDate,publicRecord.slotEndUtc,before(mid)),true);
+ assert.equal(currentUsIexDisplaySession(publicRecord.observationDate,publicRecord.slotEndUtc,before('2026-11-17T21:16:00Z')),false);
+});
+
+test('R4 #69 D03/D04 strips are optional and currently NOT mounted on the live country dashboard',()=>{
+ const country=readFileSync(new URL('../app/country-fear-greed.tsx',import.meta.url),'utf8');
+ const usa=readFileSync(new URL('../app/fear-greed/usa/cnn-panel.tsx',import.meta.url),'utf8');
+ const korea=readFileSync(new URL('../app/korea-composite-view.tsx',import.meta.url),'utf8');
+ assert.match(country,/<CnnPanel\s*\/>/);
+ assert.match(country,/<KoreanCountryCard\s*\/>/);
+ assert.doesNotMatch(country,/showBreadth/);
+ assert.match(usa,/showBreadth = false/);
+ assert.match(korea,/showBreadth=false/);
+ // This source/format fixture is not evidence that D03 or D04 has been
+ // rendered or validated in production. Do not resurrect the retired strips.
 });
