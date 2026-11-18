@@ -84,10 +84,10 @@ try {
     remoteOutcomeUnknown=true;
     const result=await earningsCompanionWriter(remote.adapter(config.core,{allowWrites:true}),
       {snapshotKey:EARNINGS_C_SERVICE_SNAPSHOT_KEY}).write(payload,{storedAt:Date.now()});
-    remoteOutcomeUnknown=false;
     if(!['READBACK_VERIFIED','ALREADY_STORED'].includes(result.status)
       ||result.key!==EARNINGS_C_SERVICE_SNAPSHOT_KEY)
       throw Error('EARNINGS_C_SERVICE_READBACK_NOT_VERIFIED');
+    remoteOutcomeUnknown=false;
     lines.push(`D1_RESULT=${result.status}`,
       `D1_READBACK=${result.status==='READBACK_VERIFIED'?'VERIFIED':'PREVIOUS_IDENTICAL'}`,
       `RESULT=${result.status==='READBACK_VERIFIED'
