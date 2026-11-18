@@ -66,7 +66,7 @@ test('GMH private 7x252 matches old seed but never transfers historical rights',
 });
 test('a single mismatched overlap prevents conversion instead of backfilling scores',()=>{
  const p=privateGmh();
- p.themes[2].history[0].score=41; // outside old window, not a mismatch
+ p.themes[2].history.at(-1).score=41; // Nov 13 is outside old seed through Oct 16
  assert.equal(prepareGmhSevenPrivateSeed(p,options()).reconciliation.mismatchedScores,0);
  const overlap=datesTo('2026-10-16').at(-12);
  p.themes[2].history.find(x=>x.date===overlap).score=41;
