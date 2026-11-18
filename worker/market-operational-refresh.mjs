@@ -6,7 +6,6 @@ import {assertCompleteMarket} from './market-publication-validation.mjs';
 import {collectionDisposition} from './collection-result-contract.mjs';
 import {fetchDiagnosticFredSeries} from '../lib/diagnostic-layer/official-macro-adapters.mjs';
 import {collectRateR2Inputs,RATE_R2_PROVIDER_CONTRACT} from '../lib/market-score/rate-r2-provider.mjs';
-import {collectBreadthB1R3StoreOnlyR1} from '../lib/market-score/breadth-b1-r3-worker-domain.mjs';
 import {readBreadthB1R5StoredPublicDomainR1} from '../lib/market-score/breadth-b1-r5-worker-domain.mjs';
 import {collectInflationR2StoreOnly} from './inflation-r2-collector.mjs';
 import {collectEarningsE1R4ToStore} from '../lib/market-score/sec-earnings-e1-r4-provider.mjs';
@@ -104,7 +103,6 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    rates:()=>collectRateR2Inputs(args),
    earnings:()=>collectEarningsE1R4ToStore({...args,db:env.DB}),
    consumption:()=>runConsumptionR3OperationalRefresh({...args,maxSourcesPerRun:1}),
-   breadth:()=>collectBreadthB1R3StoreOnlyR1(args),
    inflation:()=>collectInflationR2StoreOnly(args),
    employment:()=>runEmploymentR4ShadowRuntimeStep(args),
    growth:()=>collectGrowthR2StoreOnlyR1(args),
@@ -168,8 +166,7 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
   phase='CALCULATE';profile('calculate-start');const result=await calculate(env,store,now);profile('calculate-complete');
   const sourceStatus=collected?.status??collected?.rateR2?.status??'COLLECTED';
   const failed=/^(FAIL|FAILED|ERROR)$/.test(sourceStatus);
-  const backlog=selected==='breadth'&&sourceStatus==='PARTIAL_BATCH';
-  const finalStatus=failed?'SOURCE_FAILED':backlog?'BACKLOG':'COMPLETE';
+  const finalStatus=failed?'SOURCE_FAILED':'COMPLETE';
   await store.finish(selected,jobLease,now,finalStatus);
   return {status:finalStatus,job:selected,sourceStatus,...result};
  }catch(error){
