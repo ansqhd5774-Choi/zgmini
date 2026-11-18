@@ -1,5 +1,15 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261118-LIVE-PUBLIC-API-UI-READBACK-BROWSER-20261118 -->
+## 2026-11-18 — 실공개 API 및 별개 물가 상세 화면 read-only 실측, 기존 PC 원자료 6/7 교차대조
+
+- **실제 외부 public GET:** 2026-11-18 KST 공개 브라우저로 https://zgmini.kr/api/inflation-candidate-inputs 직접 HTTP 200. schemaVersion inflation-causal-candidates-7-r1-v1, status PARTIAL, score null, sourceVersion INFL7_PRESENTATION_18a38bc27e850b0a83ad6528c0929746ae67ee26fff847197f54ca2f0ca3f644, sourceStoredAt 1794825002905 (2026-11-16T10:30:02.905Z). 지표 ID 2/16/22/23/24/29는 READY, ID28 Census는 PENDING/null/관측일 null/sourceStoredAt null/history0. 유효 각 6행 history13. 방문자 GET에서 provider/PC 원본 접근·운영 쓰기 없음.
+- **공개값과 운영 PC 마지막 A #2122 교차비교:** 공개 #2=4.153(2026-11-02, sourceStoredAt=2026-11-07T22:40:02.928Z), #16=5910402249.78(2026-09-30, 동일), #22=451.337/#23=446.588(2026-10-01, sourceStoredAt=2026-11-16T10:30:02.905Z), #24=159.78(2026-09-01, 동일 BLS 저장시각), #29=99.4361(2026-09-01, EIA/Treasury와 동일 저장시각). 공개 6개 각 관측일·저장시각 및 #28 결측 여부가 [실제 PC A #2122](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2122) saved metadata와 7/7 일치. #2122 출력은 각 실제 수치 본문을 노출하지 않았으므로 수치 원본 바이트 단위 동등성/재계산 정합까지 주장하지 않는다.
+- **별도 R2/4축 화면 readback (7개 연구 후보와 혼합 금지):** https://zgmini.kr/inflation/ 클라이언트 렌더러 58.0/100 중립, https://zgmini.kr/api/inflation-detail HTTP 200 READY, Core PCE 3.12%, Core CPI 2.83%, Core CPI3M 3.75%, Median CPI 2.86%, Trimmed Mean CPI 3.57%, Headline PCE 3.65%, 5Y 기대 인플레이션 2.72%. https://zgmini.kr/economic-indicators/의 다른 산식 물가 54.9점 및 https://zgmini.kr/api/market-score READY는 별도 계보임. 위 R2의 7개 활성 행/추가 6개 개발중은 연구 후보 #2/16/22/23/24/28/29의 6/7과 전혀 다른 모집단이므로 7/7 완료 수치로 잘못 합산하지 않는다.
+- **신규 날짜 확인 필요:** 상세 화면 데이터 기준 2026-11-18, 해당 상세 API 1년 추세 마지막 label 2026-11-30. 이는 월말 month-bucket 계약일 수도 있으므로 미래 관측일 오류/운영 데이터 조작이라고 확정하지 않았다. 날짜 표현 차이는 B4-05 PARTIAL의 검토 메모로 보존. 기존 2026-11-17 B4-07/B4-08의 경제지표/물가 원자료 전용 PC·모바일 화면 DONE 증거는 재사용, 재실행하지 않는다.
+- **실제 남은 운영 차단:** W01 B2-05는 설치된 writer-publication-evidence-readonly가 고정 ER1 전용이며 inflation7 개별 원장·승인 D1 readback을 반환하지 않아 AUTOMATION_BLOCKED 유지. B2-06/B4-03은 D1 관리자 정확 1key SELECT/body/stored_at 증거 없이 DONE 불가. 공개 HTTP 200은 현재 활성 Cloudflare exact Deployment SHA를 증명하지 않음. W01 #28 MISSING/CENSUS_M3_HEADERS_INVALID, #2094 STAGED/W04 공유 6파일 실설치 미확인 불변. 공급자·Writer·DB/D1·PC Task·배포 쓰기 0.
+- **실제 단계 진행률:** 시작/종료 33/71(46.5%), 미완료 38, 신규 DONE 0. B4-04·B4-05·B4-06의 기존 PARTIAL 증거만 최신화. 다음 단계는 정확 inflation7 Writer per-key read-only 허용 경로가 적법하게 등록될 때 B2-05 조회 → D1 관리자 또는 승인된 고정 Reader로 B2-06/B4-03. Census #28 필수 원본 수집은 공통 #2094 복구→W04 단일 설치→W01 header-only 고정 A→파서/원자료 저장→정규 게시 순서 유지.
+
 <!-- W01-20261118-INFL7-STORED-TIME-PR1329-MERGED -->
 ## 2026-11-18 — 저장형 물가 7행 GET/HEAD 원자료·게시 시각 계보 검증 보완 (source-only)
 
