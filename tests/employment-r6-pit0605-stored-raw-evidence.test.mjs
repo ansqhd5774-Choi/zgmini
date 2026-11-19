@@ -40,18 +40,22 @@ async function fixture(){
 }
 const audit=async(overrides={})=>classifyStoredEta539MissingHistory({
   missingCurrentRows:await fixture(),candidateHistoryRows:[],
-  rawSnapshots:[snapshot],collectorRuns:[run],checkedAt,...overrides,
+  rawSnapshots:[snapshot],collectorRuns:[run],checkedAt,
+  writePrivateEvidence:async()=>{},...overrides,
 });
 test("verified stored raw observation and original run partition three missing keys without historical PIT promotion",async()=>{
-  const result=await audit({candidateHistoryRows:[(await fixture())[0]]});
+  let privateEvidence=[];
+  const result=await audit({candidateHistoryRows:[(await fixture())[0]],
+    writePrivateEvidence:async rows=>{privateEvidence=rows;}});
   assert.equal(result.missingHistoryKeys,3);
   assert.equal(result.acceptedDOLSnapshots,1);
   assert.equal(result.counts.ORIGINAL_VERSION_AND_HISTORICAL_AVAILABILITY_PROVED,0);
   assert.equal(result.counts.RAW_OBSERVATION_MATCH_HISTORICAL_TIME_UNPROVEN,1);
   assert.equal(result.counts.RAW_OBSERVATION_OR_REVISION_CONFLICT,1);
   assert.equal(result.counts.RAW_NOT_FOUND_IN_CHECKED_SCOPE,1);
-  assert.equal(result.privateEvidence.length,3);
-  const ak=result.privateEvidence.find(x=>x.geographyCode==="AK");
+  assert.equal(privateEvidence.length,3);
+  assert.equal(Object.hasOwn(result,"privateEvidence"),false);
+  const ak=privateEvidence.find(x=>x.geographyCode==="AK");
   assert.equal(ak.candidateInternalValueAndHashMatch,true);
   assert.equal(ak.sourceVersions[0].snapshotId,snapshotId);
   assert.equal(ak.sourceVersions[0].retrievedAt,retrievedAt);
