@@ -91,3 +91,13 @@ test("W04 XML missing national values are absent, never coerced to zero", () => 
   const rows=parseDolNationalClaimsXml(xml,{retrievedAt:"2026-11-12T14:00:00.000Z"});
   assert.deepEqual(rows,[]);
 });
+
+
+test("W04 true numeric zero remains a valid claim value", () => {
+  const xml='<r539cyNational><week source="r539cy">'+
+    '<weekEnded>11/07/2026</weekEnded>'+
+    '<InitialClaims><SA>0</SA><SA4WK>0</SA4WK></InitialClaims>'+
+    '</week></r539cyNational>';
+  const rows=parseDolNationalClaimsXml(xml,{retrievedAt:"2026-11-12T14:00:00.000Z"});
+  assert.deepEqual(rows.map(row=>row.value),[0,0]);
+});
