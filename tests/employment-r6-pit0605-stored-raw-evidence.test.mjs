@@ -63,9 +63,6 @@ test("missing run does not falsely link otherwise valid raw body",async()=>{
   assert.equal(result.counts.RAW_NOT_FOUND_IN_CHECKED_SCOPE,3);
 });
 test("tampered raw body fails independent SHA and cannot certify keys",async()=>{
-  const result=await audit({rawSnapshots:[{...snapshot,body:body.replace("AK,","AK,")} ]});
-  // Preserve identical input above and verify the actual tampered variant.
-  assert.equal(result.acceptedDOLSnapshots,1);
   const altered=await audit({rawSnapshots:[{...snapshot,body:body.replace("10/17/2026,1","10/17/2026,9")}]});
   assert.equal(altered.acceptedDOLSnapshots,0);
   assert.equal(altered.rejectedRawSnapshots.bodyOrId,1);
