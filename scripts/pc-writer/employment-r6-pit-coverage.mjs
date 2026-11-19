@@ -375,7 +375,7 @@ export async function auditEmploymentR6Pit0605StoredRaw({
   for(const row of core.prepare(sql).iterate("DOL_ETA","DOL_UI_WEEKLY_CLAIMS",checkedAt)){
    if(!group||group.id!==row.snapshot_id){
     finish();
-    if(snapshots.length+malformedSnapshots>=256)throw Error("PIT0605_SNAPSHOT_CAP");
+    if(snapshots.length+malformedSnapshots>=4000)throw Error("PIT0605_SNAPSHOT_CAP");
     group={id:row.snapshot_id,index:0,valid:true,
      chunkCount:row.chunk_count,requestKey:row.request_key,
      retrievedAt:row.retrieved_at,bodySha256:row.body_sha256,
@@ -389,7 +389,7 @@ export async function auditEmploymentR6Pit0605StoredRaw({
    group.index++;
    if(typeof row.body_chunk==="string"){
     bytes+=Buffer.byteLength(row.body_chunk,"utf8");
-    if(bytes>256*1024*1024)throw Error("PIT0605_TOTAL_RAW_BYTE_CAP");
+    if(bytes>512*1024*1024)throw Error("PIT0605_TOTAL_RAW_BYTE_CAP");
     if(group.valid)group.parts.push(row.body_chunk);
    }
   }
