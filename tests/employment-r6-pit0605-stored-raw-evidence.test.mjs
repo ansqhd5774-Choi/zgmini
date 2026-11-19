@@ -45,7 +45,7 @@ const audit=async(overrides={})=>classifyStoredEta539MissingHistory({
 });
 test("verified stored raw observation and original run partition three missing keys without historical PIT promotion",async()=>{
   let privateEvidence=[];
-  const result=await audit({candidateHistoryRows:[(await fixture())[0]],
+  const result=await audit({candidateHistoryRows:[{...(await fixture())[0],retrieved_at:retrievedAt,available_at:retrievedAt}],
     writePrivateEvidence:async rows=>{privateEvidence=rows;}});
   assert.equal(result.missingHistoryKeys,3);
   assert.equal(result.acceptedDOLSnapshots,1);
@@ -89,4 +89,17 @@ test("missing or failed private evidence persistence cannot produce a completed 
   await assert.rejects(audit({writePrivateEvidence:null}),/PIT0605_INPUT_INVALID/);
   await assert.rejects(audit({writePrivateEvidence:async()=>{throw Error("PRIVATE_WRITE_FAILED");}}),
     /PRIVATE_WRITE_FAILED/);
+});
+
+test("same-time conflicting candidate revisions remain ambiguous, not verified",async()=>{
+ const key=(await fixture())[0],at={...key,retrieved_at:retrievedAt,
+   available_at:retrievedAt,recorded_at:retrievedAt};
+ let rows=null;
+ const result=await audit({candidateHistoryRows:[at,{...at,value:Number(at.value)+1}],
+   writePrivateEvidence:async items=>{rows=items;}});
+ assert.equal(result.missingHistoryKeys,3);
+ const ak=rows.find(x=>x.geographyCode==="AK");
+ assert.equal(ak.candidateLatestRevisionAmbiguous,true);
+ assert.equal(ak.candidateInternalValueAndHashMatch,false);
+ assert.equal(ak.historicalAvailabilityProved,false);
 });
