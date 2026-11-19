@@ -310,7 +310,8 @@ export async function auditEmploymentR6Pit0605StoredRaw({
    ||fs.realpathSync(dbPath)===fs.realpathSync(candidateDbPath)
    ||typeof writePrivateEvidence!=="function")
   throw Error("PIT0605_INPUT_INVALID");
- const checkedAt=asOfDate+"T23:59:59.999Z";
+ // A current-day as-of cutoff must not admit future collection receipts.
+ const checkedAt=new Date(Math.min(Date.now(),Date.parse(asOfDate+"T23:59:59.999Z"))).toISOString();
  let core=null,candidate=null,coreActive=false,candidateActive=false;
  const snapshots=[],runs=[];
  let missingRows=[],candidateRows=[],malformedSnapshots=0;
