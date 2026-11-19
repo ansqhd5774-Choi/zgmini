@@ -6,7 +6,7 @@ import {DatabaseSync} from "node:sqlite";
 import {EMPLOYMENT_R6_TABLES} from "../../lib/market-score/employment-r6-contract.mjs";
 import {EMPLOYMENT_R6_REQUIRED_LOGICAL_SERIES} from "../../lib/market-score/employment-r6-formula.mjs";
 import {EMPLOYMENT_R4_PIT_CLASSES,EMPLOYMENT_R4_CORE_STATES} from "../../lib/market-score/employment-r4-shadow-contract.mjs";
-import {classifyEmploymentR6Pit04KeyEvidence} from "../../lib/market-score/employment-r6-pit04-key-evidence.mjs";
+import {classifyEmploymentR6Pit04KeyEvidence,classifyStoredEta539MissingHistory} from "../../lib/market-score/employment-r6-pit04-key-evidence.mjs";
 
 const T=EMPLOYMENT_R6_TABLES;
 const CLAIM_STATES=new Set(EMPLOYMENT_R4_CORE_STATES);
@@ -294,4 +294,120 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
     try{endReadSnapshot(candidate,candidateSnapshot);}
     finally{endReadSnapshot(core,coreSnapshot);}
   }
+}
+
+
+// PIT-06-05: existing Reader's opt-in raw/candidate attestation.
+// Fixed authorized Core/candidate paths are supplied by the existing PC Runner,
+// never by a GitHub Issue. Capture one SQLite read snapshot and release its WAL
+// read locks BEFORE parsing stored CSV or persisting PC-private evidence.
+export async function auditEmploymentR6Pit0605StoredRaw({
+ dbPath,candidateDbPath,asOfDate,writePrivateEvidence,
+ beforeReadOnlyOpen=null,afterReadOnlyOpen=null,onSqliteOpened=null,
+}={}){
+ if(!validAsOf(asOfDate)||typeof dbPath!=="string"||typeof candidateDbPath!=="string"
+   ||!fs.existsSync(dbPath)||!fs.existsSync(candidateDbPath)
+   ||fs.realpathSync(dbPath)===fs.realpathSync(candidateDbPath)
+   ||typeof writePrivateEvidence!=="function")
+  throw Error("PIT0605_INPUT_INVALID");
+ const checkedAt=asOfDate+"T23:59:59.999Z";
+ let core=null,candidate=null,coreActive=false,candidateActive=false;
+ const snapshots=[],runs=[];
+ let missingRows=[],candidateRows=[],malformedSnapshots=0;
+ try{
+  beforeReadOnlyOpen?.(dbPath);
+  core=new DatabaseSync(dbPath,{readOnly:true});
+  core.exec("PRAGMA query_only=ON");
+  onSqliteOpened?.(dbPath);
+  afterReadOnlyOpen?.(dbPath);
+  beforeReadOnlyOpen?.(candidateDbPath);
+  candidate=new DatabaseSync(candidateDbPath,{readOnly:true});
+  candidate.exec("PRAGMA query_only=ON");
+  onSqliteOpened?.(candidateDbPath);
+  afterReadOnlyOpen?.(candidateDbPath);
+  core.exec("BEGIN");coreActive=true;
+  candidate.exec("BEGIN");candidateActive=true;
+  const current=sourceRows(core,T.observationCurrent,asOfDate);
+  const history=sourceRows(core,T.observationHistory,asOfDate);
+  candidateRows=sourceRows(candidate,T.observationHistory,asOfDate)??[];
+  if(!current||!history||!sourceRows(candidate,T.observationCurrent,asOfDate))
+   throw Error("PIT0605_SOURCE_SCHEMA_UNAVAILABLE");
+  const historyKeys=historyIndex(history,asOfDate);
+  const currentKeys=new Map();
+  for(const row of current)if(isKnownAsOf(row,asOfDate))
+   currentKeys.set(identity(row),row);
+  missingRows=[...currentKeys].filter(([id,row])=>!historyKeys.has(id)
+    &&row.logical_series_id==="STATE_INITIAL_CLAIMS"
+    &&row.provider==="DOL_ETA").map(([,row])=>row);
+  // Exact pre-existing R6 raw schema. No broad disk scan or new data source.
+  const raw="market_score_employment_r6_raw_snapshot_v1";
+  const runsTable="market_score_employment_r4_shadow_runs_v1";
+  const hasCols=(table,cols)=>{
+   if(!core.prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(table))
+    return false;
+   const existing=new Set(core.prepare("PRAGMA table_info("+table+")").all().map(x=>x.name));
+   return cols.every(x=>existing.has(x));
+  };
+  if(!hasCols(raw,["snapshot_id","chunk_index","chunk_count","release_group","provider",
+    "request_key","retrieved_at","body_sha256","detail_json","body_chunk"])
+    ||!hasCols(runsTable,["provider","status","completed_at","detail_json"]))
+   throw Error("PIT0605_RAW_RUN_SCHEMA_UNAVAILABLE");
+  let group=null,bytes=0;
+  const finish=()=>{
+   if(!group)return;
+   if(group.valid&&group.index===group.chunkCount)
+    snapshots.push({provider:"DOL_ETA",releaseGroup:"DOL_UI_WEEKLY_CLAIMS",
+     requestKey:group.requestKey,retrievedAt:group.retrievedAt,
+     snapshotId:group.id,bodySha256:group.bodySha256,
+     detailJson:group.detailJson,body:group.parts.join("")});
+   else malformedSnapshots++;
+   group=null;
+  };
+  const sql="SELECT snapshot_id,chunk_index,chunk_count,release_group,provider,"+
+   "request_key,retrieved_at,body_sha256,detail_json,body_chunk FROM "+raw+
+   " WHERE provider=? AND release_group=? AND retrieved_at<=?"+
+   " ORDER BY snapshot_id,chunk_index";
+  for(const row of core.prepare(sql).iterate("DOL_ETA","DOL_UI_WEEKLY_CLAIMS",checkedAt)){
+   if(!group||group.id!==row.snapshot_id){
+    finish();
+    if(snapshots.length+malformedSnapshots>=256)throw Error("PIT0605_SNAPSHOT_CAP");
+    group={id:row.snapshot_id,index:0,valid:true,
+     chunkCount:row.chunk_count,requestKey:row.request_key,
+     retrievedAt:row.retrieved_at,bodySha256:row.body_sha256,
+     detailJson:row.detail_json,parts:[]};
+   }
+   if(!Number.isSafeInteger(row.chunk_index)||row.chunk_index!==group.index
+      ||row.chunk_count!==group.chunkCount||row.request_key!==group.requestKey
+      ||row.retrieved_at!==group.retrievedAt||row.body_sha256!==group.bodySha256
+      ||row.detail_json!==group.detailJson||typeof row.body_chunk!=="string")
+    group.valid=false;
+   group.index++;
+   if(typeof row.body_chunk==="string"){
+    bytes+=Buffer.byteLength(row.body_chunk,"utf8");
+    if(bytes>256*1024*1024)throw Error("PIT0605_TOTAL_RAW_BYTE_CAP");
+    if(group.valid)group.parts.push(row.body_chunk);
+   }
+  }
+  finish();
+  const sqlRuns="SELECT provider,status,completed_at,detail_json FROM "+runsTable+
+   " WHERE completed_at<=? AND provider=?";
+  for(const row of core.prepare(sqlRuns).iterate(checkedAt,
+      "EMPLOYMENT_R6_DOL_UI_WEEKLY_CLAIMS")){
+   if(runs.length>=20000)throw Error("PIT0605_RUN_CAP");
+   runs.push({provider:row.provider,status:row.status,
+     completedAt:row.completed_at,detailJson:row.detail_json});
+  }
+  core.exec("ROLLBACK");coreActive=false;
+  candidate.exec("ROLLBACK");candidateActive=false;
+ }finally{
+  try{if(candidate){if(candidateActive)candidate.exec("ROLLBACK");candidate.close();}}
+  finally{if(core){if(coreActive)core.exec("ROLLBACK");core.close();}}
+ }
+ const report=await classifyStoredEta539MissingHistory({
+  missingCurrentRows:missingRows,candidateHistoryRows:candidateRows,
+  rawSnapshots:snapshots,collectorRuns:runs,checkedAt,writePrivateEvidence,
+ });
+ return {...report,malformedRawSnapshotGroups:malformedSnapshots,
+  inputSnapshotIdentity:"CORE_AND_CANDIDATE_READONLY_TRANSACTIONS",
+  historicalVersionAttested:false,repairAuthorized:false};
 }
