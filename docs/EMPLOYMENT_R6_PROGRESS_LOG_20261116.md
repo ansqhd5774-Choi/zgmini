@@ -1696,3 +1696,14 @@
 - **43번 4가지 최종 분류:** 원자료 본문 재파싱·버전·가용시각의 **키별 검증 0/2,880**; ① TRUE_PIT 입증 0, ② 동일 값이나 과거시각 미입증 **건수 미산출**, ③ 상충 값/개정 **건수 미산출**, ④ 확인 저장 범위에 원문 미발견 **건수 미산출**. 2,625/255는 후보 내부 메타 버킷이지 ①~④ 인증 결과로 치환 불가. 중복 없는 최종 4분류 합계 검산 미실행, 운영 내부 비공개 키별 산출물 없음.
 - **LAST PASS:** 기존 승인 A 1회 실제 PC 8키 분류·동일 시점 Current/History/후보 집계·JSON/TXT 2/2·보호 불변. **FIRST UNPROVEN:** 2,880건 실제 저장 DOL_ETA539 HTTP body CSV 원문 재파싱·행별 canonical sourceHash, 수집 Run/원본 버전, 발표/첫 확인/가용 시각, 후보 교집합과 4가지 배타적 원인별 키 원장. PIT-06-05 TODO, History INSERT·원자료 수정·D1 게시 0.
 - **다음 한 작업:** 기존 승인 원자료 경로·DOL/ETA 파서를 재사용해 2,880키 전체를 *한 번의 안전한 읽기 스냅샷*에서 실제 raw body/수집 Run/후보별 버전·가용시각 대조하고, 내부에 키별 배타적 4분류 증거를 남기며 외부에는 총합·해시·위치만 반환하도록 기존 R6 Reader/Controller의 최소 수정·회귀·정규 적용. #2370 반복/무효한 8키 전체 페이지 반복 호출 금지. 증거 없는 과거시각 생성·History 쓰기 금지.
+
+## 144. PIT-06-05 — 저장 DOL/ETA Raw 키별 대조 함수·회귀 소스 및 격리 시뮬레이션 (2026-11-19 KST)
+
+<!-- W04-PIT0605-STORED-RAW-SOURCE-20261119 -->
+- **기준/진행률:** 전담 브랜치 codex/employment-1y-reader-r1 유지, 42/72 DONE(58.3%), PIT-06 7/8, PIT-06-05 실제 과거 PIT 입증 TODO. 기존 BED #2363/8키 A #2370 결과 재사용·반복 없음.
+- **소스 수정:** [337a32c6](https://github.com/ansqhd5774-Choi/zgmini/commit/337a32c68c8315515fcd71f4db1a9fc3ccc71ab0), 기존 lib/market-score/employment-r6-pit04-key-evidence.mjs에 classifyStoredEta539MissingHistory 추가. 기존 parseEta539ShadowRows 재사용, 저장 HTTP body SHA/snapshot ID/responseHash/수집 Run의 연결과 시각을 각각 검증한 뒤 정확 historyWeeks로 DOL_ETA539 CSV를 재파싱하여 관측 키별 SHA·값을 대조. 키별 분류 결과와 내부 증거 digest를 산출하며 미입증 과거 가용일은 만들지 않음. PC-private 키별 증거를 외부 원장/Issue에 그대로 게시 금지.
+- **회귀 소스:** [b764981b](https://github.com/ansqhd5774-Choi/zgmini/commit/b764981b742b5b1b1b8804386c3506160fdfe4cf), [f61f89a2](https://github.com/ansqhd5774-Choi/zgmini/commit/f61f89a268421c18b35419360fa7b94af631393e), tests/employment-r6-pit0605-stored-raw-evidence.test.mjs 신규. 총 4개 Node test 정의; 정식 Node CI 성공은 아직 미검증.
+- **격리 소스 시뮬레이션:** GitHub 원문 파서·함수를 격리 V8로 로드하고 SHA-256 abc 알려진 값 자체 검산 후 합성 51개 지역 CSV 실험. 키 3개가 원자료+Run 유효 시 일치 1/값 또는 판본 불일치 1/확인 범위 미발견 1로 배타 분류. body 1값 변조 후 Snapshot 원문 SHA 실패 1·인증 snapshot 0·범위 내 미발견 3으로 전환. 합성 시뮬레이션은 실제 2,880키 판정이나 운영 Node/CI·PC Runtime 성공이 아님.
+- **실제 마지막 PC 증거:** #2370/Run 44541682922 Current 40,781·History 37,901·누락 History 2,880·후보 내부일치 2,625·메타 미확인 255, 다른 모집단 후보 충돌 14. #2363 기존 BED 27건 증거 그대로 보존. 이번 소스 개발 중 PC 요청·원자료/History/DB/D1 쓰기·공급자 호출·배포 0.
+- **미완료/첫 미입증:** 같은 안전한 Core/후보 읽기 스냅샷에서 Raw chunks·Run·2,880개 누락 키를 구성하여 새 함수를 실제 호출하는 Runner 연결, PC-private 키별 증거 저장과 외부 비민감 집계 projection, Node CI, 정규 Host/Controller 승인 적용, 과거 판본·가용 시각 증거. 네 배타적 최종분류의 실제 2,880건별 건수 아직 미산출; ① historical PIT 인증 0, ②/③/④ 미산출. History 복구 적격·게시 승인 0.
+- **다음 한 작업:** 기존 R6 Runner의 요청 시 한정 안전 조회에 이 소스를 연결하고 같은 read snapshot에서 Raw/Run 청크를 재구성, 내부 key evidence 파일을 보존하며 외부에 합계·hash·위치만 표시. 이후 Node 회귀/CI·정규 등록/적용과 고유 읽기 A로 2,880건을 실제 분류. 다른 정상 A의 자원/시간 병목을 늘리지 않고 기존 요청을 replay하지 않는다.
