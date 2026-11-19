@@ -11,12 +11,13 @@ import {EMPLOYMENT_R6_FEATURES} from "../../lib/market-score/employment-r6-formu
 import {EMPLOYMENT_R4_CORE_STATES} from "../../lib/market-score/employment-r4-shadow-contract.mjs";
 import {validEmploymentR6PublicDisplay} from "../../worker/employment-r6-public-display.mjs";
 import {optionsFrom,stageEmploymentR6OneYearWithPitAudit} from "./employment-r6-one-year-stage.mjs";
+import {auditEmploymentR6Pit0605StoredRaw} from "./employment-r6-pit-coverage.mjs";
 
 const FEATURE_IDS=new Set(EMPLOYMENT_R6_FEATURES.map(x=>x.id));
 const RAW=new Set(["READY","STALE","UNAVAILABLE"]);
 const CHART=new Set(["READY","PARTIAL","UNAVAILABLE"]);
 const SCORE=new Set(["READY","PARTIAL_HISTORY","PARTIAL_MISSING"]);
-const INPUT_FLAGS=new Set(["--db","--candidate-db-external","--output-dir","--as-of","--pit04-offset"]);
+const INPUT_FLAGS=new Set(["--db","--candidate-db-external","--output-dir","--as-of","--pit04-offset","--pit0605-raw"]);
 const PIT_COUNTS=[
   "coreCurrentRows","coreHistoryRevisions","coreCurrentKeys",
   // Fixed non-sensitive counts also permitted by the existing Controller A.
@@ -87,20 +88,25 @@ export function runnerOptionsFrom(argv){
     throw Error("RUNNER_R6_REQUIRED_ARGUMENT_MISSING");
   }
   const lower=[];
-  let keyReviewOffset=null;
+  let keyReviewOffset=null,pit0605Raw=false;
   for(let i=0;i<argv.length;i+=2){
-    if(argv[i]==="--pit04-offset"){
+    if(argv[i]==="--pit0605-raw"){
+      if(argv[i+1]!=="1")throw Error("RUNNER_R6_ARGUMENT_NOT_ALLOWED");
+      pit0605Raw=true;
+    }else if(argv[i]==="--pit04-offset"){
       const value=argv[i+1];
       if(!/^(0|[1-9][0-9]{0,4})$/.test(value)||Number(value)>50000)
         throw Error("RUNNER_R6_ARGUMENT_NOT_ALLOWED");
       keyReviewOffset=Number(value);
     }else lower.push(argv[i],argv[i+1]);
   }
+  if(pit0605Raw&&keyReviewOffset!==null)
+    throw Error("RUNNER_R6_ARGUMENT_NOT_ALLOWED");
   const options=optionsFrom(lower);
   if(!options.candidateDbExternal||options.publish||options.discoverApprovedCandidate){
     throw Error("RUNNER_R6_ISOLATED_CANDIDATE_REQUIRED");
   }
-  return {...options,keyReviewOffset};
+  return {...options,keyReviewOffset,pit0605Raw};
 }
 
 // SQLite can create -wal/-shm even for DatabaseSync(readOnly:true). Do not
@@ -228,6 +234,44 @@ function projectPit04KeyReview(input){
     rawPitAttested:false,promotionApproved:false,repairAuthorized:false};
 }
 
+
+// Opt-in PIT-06-05 projection cannot disclose individual keys, source hashes,
+// paths or precise timestamps. It remains distinct from the normal 29-series
+// display contract; the Controller must explicitly approve this new result.
+export function projectPit0605Aggregate(raw){
+ const labels=["ORIGINAL_VERSION_AND_HISTORICAL_AVAILABILITY_PROVED",
+  "RAW_OBSERVATION_MATCH_HISTORICAL_TIME_UNPROVEN",
+  "RAW_OBSERVATION_OR_REVISION_CONFLICT","RAW_NOT_FOUND_IN_CHECKED_SCOPE"];
+ const integer=v=>Number.isSafeInteger(v)&&v>=0?v:null;
+ if(raw?.schema!=="ZGMINI_W04_PIT0605_SOURCE_ONLY_V1"
+   ||raw.scope!=="CHECKED_STORED_RAW_SNAPSHOTS_NOT_HISTORICAL_PIT"
+   ||raw.historicPitAttested!==false||raw.repairAuthorized!==false
+   ||raw.providerCalls!==0||raw.sqliteWrites!==0||raw.d1Writes!==0
+   ||typeof raw.evidenceDigest!=="string"||!/^[a-f0-9]{64}$/.test(raw.evidenceDigest)
+   ||!Number.isFinite(Date.parse(raw.checkedAt??"")))
+  throw Error("RUNNER_R6_PIT0605_REPORT_INVALID");
+ const counts=Object.fromEntries(labels.map(label=>[label,integer(raw.counts?.[label])]));
+ const checkedKeys=integer(raw.missingHistoryKeys);
+ const snapshots=integer(raw.checkedRawSnapshots);
+ const accepted=integer(raw.acceptedDOLSnapshots);
+ const malformed=integer(raw.malformedRawSnapshotGroups);
+ const rejected=Object.fromEntries(["bodyOrId","metadata","run","parser"]
+  .map(label=>[label,integer(raw.rejectedRawSnapshots?.[label])]));
+ if(checkedKeys===null||checkedKeys>50000||Object.values(counts).some(v=>v===null)
+   ||Object.values(counts).reduce((a,b)=>a+b,0)!==checkedKeys
+   ||counts.ORIGINAL_VERSION_AND_HISTORICAL_AVAILABILITY_PROVED!==0
+   ||snapshots===null||accepted===null||malformed===null
+   ||accepted>snapshots||Object.values(rejected).some(v=>v===null))
+  throw Error("RUNNER_R6_PIT0605_REPORT_INVALID");
+ return {kind:"ZGMINI_W04_PIT0605_AGGREGATE_ONLY_V1",
+  status:"HOLD_HISTORICAL_PIT_UNATTESTED",checkedAt:raw.checkedAt,
+  missingHistoryKeys:checkedKeys,counts,checkedRawSnapshots:snapshots,
+  acceptedDOLSnapshots:accepted,rejectedRawSnapshots:rejected,
+  malformedRawSnapshotGroups:malformed,evidenceDigest:raw.evidenceDigest,
+  historicalVersionAttested:false,repairAuthorized:false,
+  operationalWrites:0,providerCalls:0,d1Writes:0};
+}
+
 export function projectEmploymentR6RunnerResult({body=null,pitCoverage=null,pitCoverageError=null,
   error=null,wal=null,sqliteOpened=false,walFailure=null}={}){
   if(!error&&(!body||!validEmploymentR6PublicDisplay(body))){
@@ -306,12 +350,12 @@ function writeRunnerReport(outputDir,report){
     "ZGMINI EMPLOYMENT R6 RUNNER READONLY",
     "STATUS: "+report.status,
     "CODE: "+report.code,
-    "DATA_STATUS: "+report.dataStatus,
-    "RAW_FEATURES: "+(report.summary.sourceFeatures??"NO_EVIDENCE"),
-    "RECENT_QUARTER: "+(report.summary.recentlyObservedFeatures??"NO_EVIDENCE"),
-    "ONE_YEAR_CHART_READY: "+(report.summary.chartReadyFeatures??"NO_EVIDENCE"),
-    "CORE_PIT_HISTORY_MISSING: "+(report.pit.coreCurrentKeysMissingHistory??"NO_EVIDENCE"),
-    "CANDIDATE_RECONCILIATION: "+report.pit.candidateReconciliationPreviewStatus,
+    "DATA_STATUS: "+(report.dataStatus??"PIT0605_NOT_PUBLICATION"),
+    "RAW_FEATURES: "+(report.summary?.sourceFeatures??"NO_EVIDENCE"),
+    "RECENT_QUARTER: "+(report.summary?.recentlyObservedFeatures??"NO_EVIDENCE"),
+    "ONE_YEAR_CHART_READY: "+(report.summary?.chartReadyFeatures??"NO_EVIDENCE"),
+    "CORE_PIT_HISTORY_MISSING: "+(report.pit?.coreCurrentKeysMissingHistory??report.pit0605Aggregate?.missingHistoryKeys??"NO_EVIDENCE"),
+    "CANDIDATE_RECONCILIATION: "+(report.pit?.candidateReconciliationPreviewStatus??"NOT_REQUESTED"),
     "WAL_FAILURE_ROLE: "+(report.walFailure?.dbRole??"NONE"),
     "WAL_FAILURE_PHASE: "+(report.walFailure?.phase??"NONE"),
     "WAL_FAILURE_STATES: "+(report.walFailure
@@ -353,12 +397,43 @@ export async function runEmploymentR6Runner(argv){
       }
       else throw Error("RUNNER_R6_ARGUMENT_NOT_ALLOWED");
     };
+    if(options.pit0605Raw){
+      // The existing Controller must supply this sealed output directory.
+      // File is never returned in the public JSON/TXT summary; completion of
+      // PIT-06-05 still requires durable private evidence retention/readback.
+      const evidenceFile=path.join(options.outputDir,"PIT0605_PRIVATE_KEY_EVIDENCE.json");
+      const saved=async(rows,digest)=>{
+        if(!Array.isArray(rows)||rows.length>50000||!/^[a-f0-9]{64}$/.test(digest))
+          throw Error("RUNNER_R6_PIT0605_REPORT_INVALID");
+        const payload={kind:"PIT0605_PC_WORKSPACE_PRIVATE_V1",digest,rows};
+        const bytes=Buffer.byteLength(JSON.stringify(payload));
+        if(bytes>32*1024*1024)throw Error("RUNNER_R6_PIT0605_REPORT_INVALID");
+        fs.writeFileSync(evidenceFile,JSON.stringify(payload)+"\n",
+          {encoding:"utf8",flag:"wx",mode:0o600});
+      };
+      const result=await auditEmploymentR6Pit0605StoredRaw({
+        dbPath:options.dbPath,candidateDbPath:options.candidateDbPath,
+        asOfDate:options.asOfDate,writePrivateEvidence:saved,
+        beforeReadOnlyOpen:dbPath=>check(dbPath,"BEFORE_READ"),
+        afterReadOnlyOpen:dbPath=>check(dbPath,"AFTER_READ"),
+        onSqliteOpened:()=>{sqliteOpened=true;},
+      });
+      const aggregate=projectPit0605Aggregate(result);
+      // No individually identifiable key, source hash or private path escapes.
+      // Separate shape; never fabricate a normal display PASS to satisfy
+      // the existing Controller 29-indicator validation.
+      report={kind:"EMPLOYMENT_R6_RUNNER_PIT0605_AGGREGATE_V1",
+        status:"PASS",code:"PIT0605_SOURCE_EVIDENCE_CLASSIFIED_NOT_PIT",
+        pit0605Aggregate:aggregate,providerCalls:0,d1Writes:0,
+        publicationStatus:"NOT_REQUESTED",promotionApproved:false};
+    }else{
     const diagnostic=await stageEmploymentR6OneYearWithPitAudit({...options,
       beforeReadOnlyOpen:dbPath=>check(dbPath,"BEFORE_READ"),
       afterReadOnlyOpen:dbPath=>check(dbPath,"AFTER_READ"),
       onSqliteOpened:()=>{sqliteOpened=true;},
     });
     report=projectEmploymentR6RunnerResult({...diagnostic,wal,sqliteOpened});
+    }
   }catch(error){
     report=projectEmploymentR6RunnerResult({error,wal,sqliteOpened,walFailure});
   }
