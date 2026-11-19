@@ -2574,3 +2574,14 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 
 <!-- W05-R144-LATEST-CI-20261119 -->
 **FIRST UNFINISHED:** BLS provider POST+SQLite append 정확 효과 GO 및 승인 manifest 바이트 고정·PR 검토/병합, 고유 B 단회 Runtime Result+SQLite raw/hash readback. 이후 R3-05 저장자료-only 파생 2행 계산과 D1/Production은 별도 단계. 진행률 **순차 26/82(31.7%), 개별 35/82(42.7%)**, 원자료 수집 0건.
+
+
+## 145. W05 R3-04 최신 scoped B CI 결과 회수 (2026-11-19 KST)
+
+<!-- W05-R145-R304-LATEST-CI-VERIFIED-20261119 -->
+
+- **시작/종료:** 순차 **26/82(31.7%) → 26/82(31.7%)**, 개별 **35/82(42.7%) → 35/82(42.7%)**. FIRST UNFINISHED **R3-04** 유지.
+- **최신 소스 검증 실증:** 제어 Draft [PR #2245](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2245)의 §144 보완 후 [W05 source CI #44446665546](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44446665546) **completed/success**; `publication-source` job에서 정확 W05 scoped BLS one-shot approval/metadata 테스트 step **success**. [C996 #44446665617](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44446665617) **completed/success**, `c996-source` job의 source-only 단위·공통 회귀 step 전부 **success**. GitHub Actions job/step 원격 결과 직접 조회.
+- **효과 승인 실물 재조회:** `codex/w05-r304-collector-b-registration-20261119:approvals/w05-r304-service-b/approval.json` blob `75402945dadb9990fa78c7bea2adcc3604edffaa`, status **PROPOSED_NOT_APPROVED**. WPSFD42(2025~26) POST 1회 및 기존 SQLite append-only는 아직 **APPROVED_B** 효과 승인 아님. 기존 W05 설치 source `e16669ae4d35af25cadd68c939ed70533fa457ab` 3파일은 재설치 대상 아님.
+- **운영 결과:** 신규 B 요청·공급자 호출·SQLite/D1·Cloudflare 변경 **0**. 소스 CI PASS를 R3-04 운영 DONE으로 승격하지 않음. [#2240](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2240) 및 PR #2245의 source-only/승인 경계 유지.
+- **NEXT:** 정확한 Provider POST 1회+SQLite append 효과의 승인 범위/승인 manifest SHA 확정 → PR #2245의 정확 소스 검토 및 승인된 main 통합 → 기존 B 경로 고유 단회 실행 → 결과 JSON/TXT와 실제 SQLite raw/checkpoint/content SHA readback. 승인 불명확 시 B 효과 실행 금지. 이후 R3-05 저장자료-only 계산.
