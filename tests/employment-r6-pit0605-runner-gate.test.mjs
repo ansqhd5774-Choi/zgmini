@@ -1,13 +1,24 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
 import {
  runnerOptionsFrom,projectPit0605Aggregate,
 } from "../scripts/pc-writer/employment-r6-runner-stage.mjs";
 
-const args=[
- "--db","C:/temp/core.sqlite","--candidate-db-external","C:/temp/EMPLOYMENT_R6_CANDIDATE.sqlite",
- "--output-dir","C:/temp/output","--as-of","2026-11-19",
-];
+function optionsFixture(t){
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),"w04-pit0605-cli-"));
+ t.after(()=>fs.rmSync(root,{recursive:true,force:true}));
+ const core=path.join(root,"core.sqlite");
+ const candidate=path.join(root,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+ const output=path.join(root,"output");
+ fs.writeFileSync(core,"sqlite-fixture");
+ fs.writeFileSync(candidate,"isolated-fixture");
+ fs.mkdirSync(output);
+ return ["--db",core,"--candidate-db-external",candidate,
+  "--output-dir",output,"--as-of","2026-11-19"];
+}
 const counts={
  ORIGINAL_VERSION_AND_HISTORICAL_AVAILABILITY_PROVED:0,
  RAW_OBSERVATION_MATCH_HISTORICAL_TIME_UNPROVEN:2,
@@ -26,7 +37,8 @@ const raw={
  providerCalls:0,sqliteWrites:0,d1Writes:0,
  privateEvidence:[{geographyCode:"AK",sourceHash:"1".repeat(64)}],
 };
-test("PIT0605 is opt-in and mutually exclusive with PIT04 page",()=>{
+test("PIT0605 is opt-in and mutually exclusive with PIT04 page",t=>{
+ const args=optionsFixture(t);
  assert.equal(runnerOptionsFrom(args).pit0605Raw,false);
  assert.equal(runnerOptionsFrom([...args,"--pit0605-raw","1"]).pit0605Raw,true);
  assert.throws(()=>runnerOptionsFrom([...args,"--pit0605-raw","0"]),
