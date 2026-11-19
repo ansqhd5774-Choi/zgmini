@@ -1713,3 +1713,12 @@
 
 <!-- W04-PIT0605-HOST17-LAZY-PARSER-COMPAT-20261119 -->
 - **기존 Host 의존성 보존:** [a11d512e](https://github.com/ansqhd5774-Choi/zgmini/commit/a11d512e2dcae6c7d43ec8f7099bae610e851e3b)에서 신규 ETA539 검증 함수가 실제 호출될 때만 기존 DOL/ETA 파서를 로드하도록 수정. 이미 승인된 17파일 Host 번들의 일반 PIT-04-08 실행이 새 파서 파일 부재 때문에 정적 import 단계에서 실패하지 않도록 의존성을 분리함. 새 PIT-06-05 실행에는 기존 파서 파일을 정확 Host manifest에 포함해야 하며 이 작업은 아직 미실행·미승인. 변경 후 Node/CI 성공은 아직 미확인.
+
+## 145. PIT-06-05 — 기존 R6 Reader의 선택형 저장 Raw·Run·후보 대조 연결 소스 (2026-11-19 KST)
+
+<!-- W04-PIT0605-READER-BRIDGE-20261119 -->
+- **기준:** 전용 브랜치 codex/employment-1y-reader-r1 및 기존 42/72(58.3%) DONE 유지, PIT-06-05 TODO. 이전 운영 #2363 BED 27건과 #2370 첫 8키·2,880 누락 증거는 재실행하지 않음.
+- **실제 소스 변경:** [Reader d7bea4ab](https://github.com/ansqhd5774-Choi/zgmini/commit/d7bea4ab82d7a01a2030bc63a5ddeab152f4a689) 및 시간 상한 [c204256f](https://github.com/ansqhd5774-Choi/zgmini/commit/c204256f62b38b10b757763237235ff13a56d027), 중복 candidate 스캔 제거 [8559a9ef](https://github.com/ansqhd5774-Choi/zgmini/commit/8559a9ef6d89dfdcb81c539a92f3ece86a28d1f3). 기존 scripts/pc-writer/employment-r6-pit-coverage.mjs에 요청 시에만 호출되는 auditEmploymentR6Pit0605StoredRaw() 추가. 실제 승인 Runner가 제공하는 Core/candidate 경로로 native SQLite readOnly+query_only와 각각 한 번의 BEGIN snapshot 사용, 저장 Raw 청크/Run/Current·History/후보 관련 범위만 읽음. ROLLBACK/close로 읽기 잠금 해제 후 기존 parseEta539ShadowRows + 검증 함수로 재파싱, 비밀 키별 증거는 필수 private callback으로만 전달하고 외부 집계에는 해시·분류별 건수만 남김. 원자료·DB/History/D1 변경 및 공급처 호출 금지. 대량 입력 cap은 원본 검사 자원 한정이며 정상 다른 A에 기능을 상시 추가하지 않음.
+- **테스트 소스:** [SQLite bridge fixture c3c9a7f9](https://github.com/ansqhd5774-Choi/zgmini/commit/c3c9a7f99ca17ec26b5dad348f2f63657800da0b), tests/employment-r6-pit0605-sqlite-bridge.test.mjs 신규 2개. TEMP 격리 Core/candidate/native sqlite fixture에 51지역 합성 DOL/ETA 원문과 Raw/Run 영수증을 넣고 읽기 트랜잭션·51개 미복구 키 비교·외부 키 비노출·내부 저장 실패 중단·History 무쓰기 확인하도록 작성. 관련 Reader/source/test의 격리 V8 구문 분석 3/3 PASS, 기존 parser+evidence 함수의 수정 후 합성 3키·tamper/run/no-sink 시뮬레이션 PASS. 이는 Node의 실제 sqlite/CI PASS가 아니므로 교체해서 기재하지 않음.
+- **아직 미완료:** 기존 등록 PC Runner의 명시적 선택 입력/비공개 파일 저장·결과 projection 연결, 정확 Host 신규 의존 파일 manifest/정규 B, Controller 필요한 최소 표시 계약, Windows Node/CI 실제 회귀 및 2,880키 운영 PC A 실행. 원본/개정 버전·과거 가용 시각의 4가지 키별 실제 판정 아직 미산출. 이번은 source-only, 운영 PC 변경 0. 현시점 43번 전체 완료와 History 복구 허가 아님.
+- **다음 한 작업:** 기존 Runner의 승인된 result artifact/PC-private 경계를 확인하고 선택형 PIT0605 입력에서 안전한 내부 증거 저장·비민감 집계를 연결해 Windows Node/SQLite 회귀를 완료한다. 그 뒤 정확 Host/Controller 승인·설치, 고유 A 1회로 실제 2,880키를 분류한다. 무관한 A의 자원·시간 또는 보안 정책을 변경하지 않는다.
