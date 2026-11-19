@@ -1707,3 +1707,6 @@
 - **실제 마지막 PC 증거:** #2370/Run 44541682922 Current 40,781·History 37,901·누락 History 2,880·후보 내부일치 2,625·메타 미확인 255, 다른 모집단 후보 충돌 14. #2363 기존 BED 27건 증거 그대로 보존. 이번 소스 개발 중 PC 요청·원자료/History/DB/D1 쓰기·공급자 호출·배포 0.
 - **미완료/첫 미입증:** 같은 안전한 Core/후보 읽기 스냅샷에서 Raw chunks·Run·2,880개 누락 키를 구성하여 새 함수를 실제 호출하는 Runner 연결, PC-private 키별 증거 저장과 외부 비민감 집계 projection, Node CI, 정규 Host/Controller 승인 적용, 과거 판본·가용 시각 증거. 네 배타적 최종분류의 실제 2,880건별 건수 아직 미산출; ① historical PIT 인증 0, ②/③/④ 미산출. History 복구 적격·게시 승인 0.
 - **다음 한 작업:** 기존 R6 Runner의 요청 시 한정 안전 조회에 이 소스를 연결하고 같은 read snapshot에서 Raw/Run 청크를 재구성, 내부 key evidence 파일을 보존하며 외부에 합계·hash·위치만 표시. 이후 Node 회귀/CI·정규 등록/적용과 고유 읽기 A로 2,880건을 실제 분류. 다른 정상 A의 자원/시간 병목을 늘리지 않고 기존 요청을 replay하지 않는다.
+
+<!-- W04-PIT0605-PC-PRIVATE-EVIDENCE-20261119 -->
+- **키별 내부 근거 보강:** [cfafbb68](https://github.com/ansqhd5774-Choi/zgmini/commit/cfafbb6879d978fb871cca9742107177ac2eb9d7)에서 privateEvidence에 검증된 저장 snapshotId/responseHash/개별 raw sourceHash·원문 수집 시각·수정 버전·후보 원값/해시/가용일을 기록하도록 소스 보완. 외부 집계나 실제 PC 결과로 이 비공개 근거를 자동 공개하지 않는다. 저장/Controller 연결 및 실제 자료 증명은 별도 미완료. 기존 인용된 초기 source commit 대신 최신 브랜치 code blob을 검증 대상으로 사용.
