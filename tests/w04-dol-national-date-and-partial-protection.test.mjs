@@ -38,6 +38,24 @@ test('W04 DOL national parser rejects impossible weeks instead of inventing obse
  }
 });
 
+
+// <!-- W04-NATIONAL-NULL-VS-TRUE-ZERO-20261119 -->
+test('W04 DOL National absent SA values never become numeric zero',()=>{
+ const xml='<r539cyNational><week source="r539cy"><weekEnded>11/07/2026</weekEnded>'+
+  '<InitialClaims><SA></SA><SA4WK> </SA4WK></InitialClaims></week></r539cyNational>';
+ const rows=parseDolNationalClaimsXml(xml,{retrievedAt:'2026-11-12T14:00:00.000Z'});
+ assert.deepEqual(rows,[],'empty and whitespace fields are missing, not zero claims');
+});
+
+test('W04 DOL National explicit zero is valid and remains distinguishable from missing',()=>{
+ const xml='<r539cyNational><week source="r539cy"><weekEnded>11/07/2026</weekEnded>'+
+  '<InitialClaims><SA>0</SA><SA4WK>0</SA4WK></InitialClaims></week></r539cyNational>';
+ const rows=parseDolNationalClaimsXml(xml,{retrievedAt:'2026-11-12T14:00:00.000Z'});
+ assert.deepEqual(rows.map(row=>row.logicalSeriesId),['INITIAL_CLAIMS','INITIAL_CLAIMS_4W']);
+ assert.deepEqual(rows.map(row=>row.value),[0,0]);
+ assert.ok(rows.every(row=>row.availableAt==='2026-11-12T14:00:00.000Z'));
+});
+
 test('W04 3/4 valid national series persist with immutable official XML evidence; 600w states survive',async()=>{
  let calls=0;
  const provider=createEmploymentR6Provider({now,fetchImpl:async url=>{
