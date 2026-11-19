@@ -1669,3 +1669,19 @@
 - **National Provider 실바이트 경계:** PC fixed checkout의 `lib/market-score/employment-r6-provider.mjs` SHA256 `9a41a73e8cca84ae6ced6998f88c5dadc6fd5f12e6d09b7542748a5b187ddb12`. 해당 로컬 HEAD `23d474...` 및 과거 checkpoint `42bd5a7...`는 원격 `zgmini` Git ref로 조회되지 않음. 독립 SHA256 구현 self-test(`abc`·빈 문자열) 후 GitHub 파일 바이트와 비교: `main@d71dea9...` provider SHA256 `3d573886...`, 등록 Host R3 `863ed1...` provider `1b88fa6e...`, W04 전담 branch provider `96ea10ef...` — **세 소스 모두 PC SHA와 다름**. 그러므로 구 Host R3 parser가 실제 예약 Core의 National stale 원인이라는 주장 또는 main 파일을 PC에 그대로 덮어쓸 근거 없음. PC 의 19개 실제 preimage 중 collector SHA256 `848c83202b2b63944629655850542ef2a90fefdeed48ffbfdc1774ad487a0bc5`, scheduler `7f33c6f3920317cdfd362bb04b570f7af8a5c3322e5924edb4c0cfaf31c16a88` 확보. 파일 내용을 외부로 출력하거나 임의 원본 교체하지 않음.
 - **새로운 증거 vs 미완료:** PIT-07-01의 preimage 준비 중 `fixed checkout identity + R6 file hashes` 부분은 실제 진전이나 `live Core source`와 DB 대상 검증 미완으로 PIT-07 완료 아님. National 2026-10-17 stale 실제 원인은 XML 본문·활성 Core parser 출처 미확인으로 UNKNOWN 유지; Last PASS=`FIXED_CHECKOUT_SOURCE_CHECKPOINT_MATCH + 19FILE_PREIMAGE_READBACK`, First Unproven=`ACTIVE_CORE_R6_PROVIDER_BYTES_AND_SAVED_NATIONAL_XML_STRUCTURE`. PIT-06-05 실 raw SHA/PIT 8키·적격 INSERT 키 0, 14충돌/255미확인 HOLD 유지.
 - **다음 단일 필수 실행:** 공유 Controller Owner가 기존 b909 설치본 기반 선택적 8키 옵션 + 필요시 collection-evidence 진단의 정확 승인 최소 설치/JSON-TXT·보호 검증을 완료하면, W04 원담당은 새 고유 `pit04Offset=0` A를 메모리 ≥1536MiB/WAL 정상 조건에서 한 번 수행해 raw snapshot/run/availableAt·출처를 판정. National 활성 Core/저장 XML 구분은 이미 허용된 실제 source readback 경로가 확보될 때 진행, 불명한 로컬 소스를 main으로 무단 덮어쓰지 않음.
+
+
+## PIT-06-05 후속 — 해시 형식 차이와 누락 History의 실제 원인 분리 (2026-11-19 KST)
+
+<!-- PIT0605-ROOT-LEGACY27-DOL2880-2363-20261119 -->
+
+사용자 직접 수정·재발방지 지시로 공통 감사 경로를 보완하고 운영 설치·실자료 검증까지 완료했다. 전체 W04 단계 수나 기존 TODO를 근거 없이 DONE으로 변경하지 않는다.
+
+- 소스 [PC-control #2357](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2357), 정확 1파일 설치 명세 [#2359](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2359). 관련 Windows 로컬 15/15 PASS, W04/C996 CI SUCCESS.
+- 정규 설치 [#2361](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2361) SUCCEEDED/APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED, Controller 6e52999aeb7dda5975464a78780559ba5cd46895. 자동 사후 #2362 PASS, 실제 [A #2363](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2363)/Run 44535391169 PASS/R6_RAW_RUN_AGGREGATE_READONLY. JSON/TXT 직접 원격 2/2 조회, 실제 SHA 일치·보호 불변·업무 데이터/공급처/D1 쓰기·호출 0.
+- **BED 27건 원인 확정:** 본문 SHA 27/27, snapshot ID 27/27, 수집 run 27/27 일치. 정확 구형 parser의 sorted canonical JSON SHA 재계산도 27/27 일치. 구형 해시 형식 차이이며 실제 변조 증거는 없다. strict 기존 invalidBody=27과 별도 legacyBedProof를 구분하고 이를 과거 PIT 승인으로 바꾸지 않았다. 신규 수집 source 수정은 기존 앱 #1252를 재사용하며 운영 Writer에 새로 설치했다고 주장하지 않는다.
+- **History 누락의 별개 원인:** 누락 2,880건 전부 DOL_ETA/STATE_INITIAL_CLAIMS. 동일 키·provider/responseHash/retrievedAt 기준 rawRunLinked=0, rawRunLinkMissing=2,880, availableTimeMissing=2,880, metadataInvalid=0. BED 27건이나 Controller 미설치를 이 키들의 전역 대기로 삼을 근거가 없다. 정확 연결 조건 밖의 원자료까지 전역 부재라고 주장하지 않는다.
+- **후속 판단:** 61 raw 인증은 이 2,880키의 과거 출처/가용일 인증과 다르다. 후보 DB의 2,625 내부 일치·255 불충분·14 충돌 이력은 별도 키별 검토 대상으로 보존한다. 현재 값·현재 snapshot으로 과거 최초확인 시각을 만들지 않는다. 과거 증거가 없는 키의 현시점 History 재구성과 TRUE_PIT 복구를 구분한다. 이 증거를 다시 얻기 위해 같은 A/Controller 설치를 반복하지 않는다. History INSERT/D1/게시·PIT 적격키 승격 0.
+- **재발 방지 적용:** 공통 감사에서 본문·해시 계약·수집 run·누락 History 연결을 같은 snapshot으로 한 번에 분류한다. PC-control docs/PC_AUTOMATION_STANDARD.md에 해시 대상 구분/무관 계열 영향 격리/부재 증거의 명시적 판정 원칙을 저장했다. 보고·CI·설치 성공을 W04 최종 기능 완료로 혼동하지 않는다.
+
+세부 정본: https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-7010821813
