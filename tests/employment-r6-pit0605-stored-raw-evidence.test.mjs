@@ -84,3 +84,9 @@ test("future receipts, duplicate identities and invalid snapshot metadata fail c
   const same=await fixture();
   await assert.rejects(audit({missingCurrentRows:[same[0],same[0]]}),/PIT0605_DUPLICATE_KEY/);
 });
+
+test("missing or failed private evidence persistence cannot produce a completed aggregate",async()=>{
+  await assert.rejects(audit({writePrivateEvidence:null}),/PIT0605_INPUT_INVALID/);
+  await assert.rejects(audit({writePrivateEvidence:async()=>{throw Error("PRIVATE_WRITE_FAILED");}}),
+    /PRIVATE_WRITE_FAILED/);
+});
