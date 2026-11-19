@@ -8,6 +8,12 @@ import {assetR10PublicationDryRun} from '../../lib/diagnostic-layer/asset-bubble
 import {isMarketSession} from '../../lib/market-score/breadth-b1-r3-calendar.mjs';
 
 const isDate=value=>typeof value==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(value);
+// R10 Alpaca IEX source excluded; no substitute B-source yet approved.
+export const R10_BREADTH_SOURCE_POLICY=Object.freeze({ALPACA_IEX:'EXCLUDED'});
+export function assertR10BreadthSourceAllowed(source){
+ if(R10_BREADTH_SOURCE_POLICY[source]==='EXCLUDED')throw Error('R10_ALPACA_SOURCE_EXCLUDED');
+ if(R10_BREADTH_SOURCE_POLICY[source]!=='APPROVED')throw Error('R10_BREADTH_SOURCE_NOT_APPROVED');
+}
 function lastMarketSessionOfMonth(month){
  const [year,number]=month.split('-').map(Number);
  if(!Number.isInteger(year)||!Number.isInteger(number)||number<1||number>12)throw Error('R10_B_MONTH_INVALID');
@@ -54,6 +60,7 @@ export function completedR10BreadthQuarterScores({breadthRows=[],qualityRows=[],
 }
 
 function buildRelease(){
+assertR10BreadthSourceAllowed('ALPACA_IEX');
 const read=name=>JSON.parse(fs.readFileSync(path.join(base,'local-asset-bubble-r10-'+name+'.json')));
 const breadth=read('breadth-research'),quality=read('alpaca-pit-validation'),audit=read('alpaca-collected-audit');
 if(breadth.formulaApproved!==true||audit.invalid!==0||audit.conflicts!==0)throw Error('R10_INPUT_VALIDATION_FAILED');
