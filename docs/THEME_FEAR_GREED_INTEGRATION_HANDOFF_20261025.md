@@ -1,3 +1,14 @@
+## 2026-11-19 KST W03 #2227 cancelled Actions receipt audit
+
+- **진행률:** 12/68 (17.6%) → 12/68 (17.6%); 13단계 진행 중. 상위 목표 163개 테마 유지. 본 회차는 13단계 운영 PC preimage 진단의 실패 외피 증거 확정이며 기능 완료가 아니다.
+- **대상:** `ansqhd5774-Choi/zgmini` / `codex/theme-fear-greed-integration-20261025`; 진행 기록 작업 전 blob `d2ef634b126be8b1041a8f27510db3d81aac1bfd`. 승인된 R178 Writer 소스와 기존 R32, GMH 14종 원자료/비공개 점수 불변.
+- **새 증거:** [pc-job #2227 댓글 #6997089656](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2227#issuecomment-6997089656), [Actions run #44372235510](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44372235510). `issues` 이벤트 workflow 실행 및 `zgmini-pc-03` runner 할당은 PASS. Job `135041841316`은 약 13분 뒤 `completed/cancelled`, `steps=[]`, job log 404, artifacts 0, JSON/TXT 결과 없음. 따라서 **STATE_UNKNOWN/CANCELLED_NO_RESULT**, 32개 파일 preimage는 전부 `NOT_OBSERVED`이며 ABSENT로 판단하지 않는다. 기존 #2218의 3개 ABSENT만 별도 보존.
+- **원인 구분:** 후행 pc-job 라벨 때문에 workflow가 실행되지 않았다는 가설은 실제 run 존재로 반증. 별도 W04 #2223도 13분 취소/steps 0이지만 공통 원인은 아직 UNKNOWN. LAST PASS=`ISSUES_WORKFLOW_DISPATCHED_AND_RUNNER_ASSIGNED`; FIRST UNVERIFIED=`RUNNER_JOB_STEP_START_AND_PC_WORKER_LEDGER`. 승인된 공통 Runner/Controller 소유 영역의 조사만 총괄 소관; W03 파일 선별·권리·가격·게시 정책은 W03 직접 담당.
+- **운영 효과:** 본 회차 PC 실행/원자료/SQLite/D1/배포/Task 변경 0; 신규 설치/게시 승인 0. GitHub 결과 조회만 수행. 동일 requestId 재사용·무조건 재실행·우회 설치 금지. GMH 파생 공개 권리·상위 공급자 조건·15시 가격 정책·게시 승인 여전히 PENDING.
+- **다음 한 가지 필수 실행:** 공통 Runner/Controller 담당의 #2227 Job `135041841316` 실행 원장 진단 결과를 확보하여 실제 worker 진입 여부와 취소 원인을 판정한다. 정상 복구와 미실행 입증 후에만 신규 고유 A급 preimage 조회 1회를 검토한다. 결과 32개 SHA가 확인되면 W03가 최소 Writer B 설치 파일을 선별한다. 예약 검증은 기능 완료 후로 유지.
+
+---
+
 ## 2026-11-19 KST W03 13/68 — 실제 승인 Writer D1 연결 소스 구현 (운영 실행 별도)
 
 - **실제 코드 반영:** 운영 호출이 없던 `runApprovedGmhSevenR178SavedOnce`를 기존 PC Writer의 `d1.mjs` `client.query`/`client.request` 계약에 연결하는 `scripts/pc-writer/theme-seven-gmh-r178-approved-writer-entry.mjs`을 신규 구현. `runApprovedGmhSevenR178FromPcWriter`는 이미 승인된 Writer가 자신이 인증한 client, GMH 출력 전용 approvedRecord, 독립 SHA 결합 `verifyApprovedEffect`를 전달할 때에만 실행하며, 없는 경우 E: 원자료/원격 D1 읽기 전에 차단한다. R144 seed + R178/R32 고정 키 읽기, R178 단일 `stored_at=?` CAS, 본문·시각 readback, R32 불변 검증, 결과 불명시 재시도 금지를 기존 핵심 모듈과 결합.
