@@ -1710,3 +1710,6 @@
 
 <!-- W04-PIT0605-PC-PRIVATE-EVIDENCE-20261119 -->
 - **키별 내부 근거 보강:** [cfafbb68](https://github.com/ansqhd5774-Choi/zgmini/commit/cfafbb6879d978fb871cca9742107177ac2eb9d7)에서 privateEvidence에 검증된 저장 snapshotId/responseHash/개별 raw sourceHash·원문 수집 시각·수정 버전·후보 원값/해시/가용일을 기록하도록 소스 보완. 외부 집계나 실제 PC 결과로 이 비공개 근거를 자동 공개하지 않는다. 저장/Controller 연결 및 실제 자료 증명은 별도 미완료. 기존 인용된 초기 source commit 대신 최신 브랜치 code blob을 검증 대상으로 사용.
+
+<!-- W04-PIT0605-HOST17-LAZY-PARSER-COMPAT-20261119 -->
+- **기존 Host 의존성 보존:** [a11d512e](https://github.com/ansqhd5774-Choi/zgmini/commit/a11d512e2dcae6c7d43ec8f7099bae610e851e3b)에서 신규 ETA539 검증 함수가 실제 호출될 때만 기존 DOL/ETA 파서를 로드하도록 수정. 이미 승인된 17파일 Host 번들의 일반 PIT-04-08 실행이 새 파서 파일 부재 때문에 정적 import 단계에서 실패하지 않도록 의존성을 분리함. 새 PIT-06-05 실행에는 기존 파서 파일을 정확 Host manifest에 포함해야 하며 이 작업은 아직 미실행·미승인. 변경 후 Node/CI 성공은 아직 미확인.
