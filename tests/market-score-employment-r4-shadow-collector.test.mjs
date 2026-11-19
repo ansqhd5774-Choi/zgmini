@@ -194,3 +194,50 @@ test("BLS provider falls back to official single-series GET only for missing dif
   assert.equal(calls.filter(x=>x.method==="POST").length,1);
   assert.equal(calls.filter(x=>x.method==="GET").length,8);
 });
+
+test("W04 PIT-04-07 rejects missing ETA539 C3 without inventing zero or a complete week",async()=>{
+  const retrievedAt="2026-11-01T00:00:00.000Z";
+  const csvFor=c3=>["st,rptdate,c1,c2,c3,c8",
+    ...EMPLOYMENT_R4_CORE_STATES.map(st=>
+      `${st},10/30/2026,2,10/24/2026,${st==="AL"?c3:"300"},9000`)].join("\n");
+  for(const missing of ["","  ","\t"]){
+    const parsed=await parseEta539ShadowRows(csvFor(missing),{retrievedAt});
+    assert.equal(parsed.rows.length,0,"missing state must block a false 51-state week");
+    assert.equal(parsed.meta.latestCompleteWeek,null);
+    assert.equal(parsed.rows.some(row=>row.geographyCode==="AL"&&row.value===0),false);
+  }
+  const valid=await parseEta539ShadowRows(csvFor("0"),{retrievedAt});
+  assert.equal(valid.rows.length,51,"genuine zero does not remove a state");
+  assert.equal(valid.meta.latestCompleteWeek,"2026-10-24");
+  assert.equal(valid.rows.find(row=>row.geographyCode==="AL")?.value,0);
+  assert.equal(valid.rows.every(row=>typeof row.value==="number"&&Number.isFinite(row.value)),true);
+});
+
+test("W04 PIT-04-07 a newer invalid ETA539 c3 revision invalidates an older valid state-week",async()=>{
+  const retrievedAt="2026-11-18T00:00:00.000Z";
+  const header="st,rptdate,c1,c2,c3,c8";
+  const week="10/31/2026";
+  const baseline=EMPLOYMENT_R4_CORE_STATES.map(st=>
+    `${st},11/04/2026,2,${week},${st==="AL"?"300":"450"},9000`);
+  const latest=token=>`AL,11/11/2026,2,${week},${token},9000`;
+  const parse=async lines=>parseEta539ShadowRows([header,...lines].join("\n"),{retrievedAt});
+  for(const bad of ["","  ","-1","1.5","1e3","0x10","9007199254740992"]){
+    const result=await parse([...baseline,latest(bad)]);
+    assert.equal(result.rows.length,0,"invalid newer c3 must not reuse the earlier revision: "+bad);
+    assert.equal(result.meta.latestCompleteWeek,null);
+  }
+  const zero=await parse([...baseline,latest("0")]);
+  assert.equal(zero.rows.length,51,"a genuine latest zero retains 51-state coverage");
+  assert.equal(zero.rows.find(row=>row.geographyCode==="AL")?.value,0);
+  assert.equal(zero.rows.find(row=>row.geographyCode==="AL")?.sourceRevision,"ETA539:RPTDATE:2026-11-11");
+  const olderInvalid=await parse([
+    ...baseline.filter(line=>!line.startsWith("AL,")),
+    `AL,11/01/2026,2,${week},,9000`,
+    `AL,11/11/2026,2,${week},400,9000`
+  ]);
+  assert.equal(olderInvalid.rows.length,51,"a later valid correction supersedes an older missing value");
+  assert.equal(olderInvalid.rows.find(row=>row.geographyCode==="AL")?.value,400);
+  const sameDateInvalid=await parse([...baseline,`AL,11/04/2026,2,${week},,9000`]);
+  assert.equal(sameDateInvalid.rows.length,0,"a later row with the same report date and missing c3 cannot be treated as complete");
+});
+
