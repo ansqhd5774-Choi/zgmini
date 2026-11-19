@@ -51,7 +51,11 @@ test("verified stored raw observation and original run partition three missing k
   assert.equal(result.counts.RAW_OBSERVATION_OR_REVISION_CONFLICT,1);
   assert.equal(result.counts.RAW_NOT_FOUND_IN_CHECKED_SCOPE,1);
   assert.equal(result.privateEvidence.length,3);
-  assert.equal(result.privateEvidence.find(x=>x.geographyCode==="AK").candidateInternalValueAndHashMatch,true);
+  const ak=result.privateEvidence.find(x=>x.geographyCode==="AK");
+  assert.equal(ak.candidateInternalValueAndHashMatch,true);
+  assert.equal(ak.sourceVersions[0].snapshotId,snapshotId);
+  assert.equal(ak.sourceVersions[0].retrievedAt,retrievedAt);
+  assert.equal(ak.candidateVersion.sourceHash,(await fixture())[0].source_hash);
   assert.equal(result.historicPitAttested,false);
   assert.equal(result.repairAuthorized,false);
   assert.match(result.evidenceDigest,/^[a-f0-9]{64}$/);
