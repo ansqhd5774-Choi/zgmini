@@ -20,7 +20,7 @@ const sourceRows=(db,table,asOfDate)=>{
   if(!exists)return null;
   const fields=new Set(db.prepare(`PRAGMA table_info(${table})`).all().map(col=>col.name));
   const available=fields.has("available_at")?"available_at":"NULL AS available_at";
-  const extras=["provider","provider_series_id","quality_status","pit_class","provenance_json"]
+  const extras=["provider","provider_series_id","source_revision","quality_status","pit_class","provenance_json"]
     .map(name=>fields.has(name)?name:`NULL AS ${name}`);
   // Read optional time columns only when present. Absence in legacy fixture
   // must remain distinguishable from a real NULL in the operational schema.
