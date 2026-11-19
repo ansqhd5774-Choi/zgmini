@@ -331,7 +331,11 @@ export async function auditEmploymentR6Pit0605StoredRaw({
   const current=sourceRows(core,T.observationCurrent,asOfDate);
   const history=sourceRows(core,T.observationHistory,asOfDate);
   candidateRows=sourceRows(candidate,T.observationHistory,asOfDate)??[];
-  if(!current||!history||!sourceRows(candidate,T.observationCurrent,asOfDate))
+  // This is an existence check; do not read the entire candidate CURRENT
+  // table a second time merely to establish the schema prerequisite.
+  const candidateCurrentExists=Boolean(candidate.prepare(
+   "SELECT 1 FROM sqlite_master WHERE type='table' AND name=?").get(T.observationCurrent));
+  if(!current||!history||!candidateCurrentExists)
    throw Error("PIT0605_SOURCE_SCHEMA_UNAVAILABLE");
   const historyKeys=historyIndex(history,asOfDate);
   const currentKeys=new Map();
