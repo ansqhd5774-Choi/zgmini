@@ -81,3 +81,13 @@ test("W04 invalid February XML week never rolls into a fabricated observation", 
   assert.equal(rows.length,4);
   assert.deepEqual([...new Set(rows.map(r=>r.observationDate))],["2026-02-28"]);
 });
+
+
+test("W04 XML missing national values are absent, never coerced to zero", () => {
+  const xml='<r539cyNational><week source="r539cy">'+
+    '<weekEnded>11/07/2026</weekEnded>'+
+    '<InitialClaims><SA></SA><SA4WK> </SA4WK></InitialClaims>'+
+    '</week></r539cyNational>';
+  const rows=parseDolNationalClaimsXml(xml,{retrievedAt:"2026-11-12T14:00:00.000Z"});
+  assert.deepEqual(rows,[]);
+});
