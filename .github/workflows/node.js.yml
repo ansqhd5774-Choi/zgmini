@@ -4,7 +4,7 @@ on:
   push:
     branches: [main]
   pull_request:
-    branches: [main]
+    branches: [main, codex/w04-pit0408-source-ci-base-20261120]
   workflow_dispatch:
 
 permissions:
