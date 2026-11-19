@@ -575,7 +575,10 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
   }, [allHistory, allIntraday, archiveHistory, combinedObserved, selectedPeriod, archived, observedSidecarReady, payload?.observedAt, payload?.intradayObservations]);
   const observedRanges = useMemo(() => {
     if (!observedSidecarReady || selectedPeriod === "1D") return [];
-    const observedDays=new Set(archiveHistory.length>=2?combinedObserved.map(p=>p.date.slice(0,10)):[]);
+    // Short periods substitute genuine intraday observations for daily closes.
+    // Long 6M/1Y charts deliberately retain only daily closes and their ranges.
+    const displayIntraday=selectedPeriod!=="6M"&&selectedPeriod!=="1Y"&&combinedObserved.length>=2;
+    const observedDays=new Set(displayIntraday?combinedObserved.map(point=>point.date.slice(0,10)):[]);
     const ranges = new Map((payload?.dailyObservedRanges ?? []).map(row=>[row.date,row]));
     return history.flatMap(point=>{
       const row=observedDays.has(point.date.slice(0,10))?undefined:ranges.get(point.date.slice(0,10));
@@ -583,7 +586,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
         && row.low.score>=0 && row.high.score<=100 && row.low.score<=row.high.score
         ? [{date:point.date,low:row.low.score,high:row.high.score}] : [];
     });
-  }, [observedSidecarReady,payload?.dailyObservedRanges,history,selectedPeriod,archiveHistory,combinedObserved]);
+  }, [observedSidecarReady,payload?.dailyObservedRanges,history,selectedPeriod,combinedObserved]);
 
   // CNN's previous_close is the authoritative baseline for a live score.
   // The most recent chart point can equal today's score.
