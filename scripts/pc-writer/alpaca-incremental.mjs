@@ -4,6 +4,8 @@ import {loadLocalProviders} from './local-env.mjs';
 import {createQuotaFetch} from './quota-fetch.mjs';
 import {observeIndependentProviderFetch} from './provider-endpoint-fingerprint.mjs';
 export async function collectAlpacaIncremental(base,{fetchImpl=fetch,now=Date.now(),wait=ms=>new Promise(r=>setTimeout(r,ms))}={}){
+ // Retired R10 input; preserve existing stored history, never network or mutate.
+ return {status:'EXCLUDED_BY_USER',runRequests:0};
  const file=path.join(base,'local-asset-bubble-r10-alpaca-collection.json'),dir=path.join(base,'asset-r10-alpaca');
  const read=f=>fs.existsSync(f)?JSON.parse(fs.readFileSync(f,'utf8')):null;
  const save=(f,v)=>{const tmp=`${f}.tmp-${process.pid}-${randomUUID()}`;fs.writeFileSync(tmp,JSON.stringify(v),{flag:'wx'});try{fs.renameSync(tmp,f);}catch(error){try{fs.unlinkSync(tmp);}catch{}throw error;}};
