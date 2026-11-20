@@ -10,7 +10,10 @@ function fixture({busy=false,fail=null,approvalOverride={}}={}){
  const writer={
   verify:async()=>{calls.push('lease:verify');},
   claimOnce:async()=>{calls.push('claim');},
-  release:async options=>{calls.push('release:'+options.retain);}
+  release:async options=>{calls.push('release:'+options.retain);
+   if(fail==='release')throw Object.assign(new Error('release unverified'),
+    {code:'WRITER_RELEASE_UNKNOWN'});
+  }
  };
  const approval={status:'APPROVED_B',scope:INFLATION_CORE_STATIC_SCOPE,
   requestId:id,runCount:1,coreExecution:'CURRENT_CORE_OWNED_LOCK',
@@ -93,4 +96,13 @@ test('Core owner race after Writer acquisition stops before claim',async()=>{
  assert.ok(!f.calls.includes('claim'));
  assert.ok(!f.calls.includes('fetch'));
  assert.equal(f.calls.at(-1),'release:false');
+});
+
+test('unverified Writer lock finalization never returns PASS',async()=>{
+ const f=fixture({fail:'release'});
+ const r=await runCoreOwnedInflationStaticOnce({requestId:id,adapter:f.adapter});
+ assert.equal(r.status,'RECOVERY_REQUIRED');
+ assert.equal(r.code,'INFL_CORE_STATIC_WRITER_FINALIZE_STOP');
+ assert.equal(r.retry,'NO_AUTOMATIC_REPLAY');
+ assert.ok(f.calls.includes('journal:COMPLETED'));
 });
