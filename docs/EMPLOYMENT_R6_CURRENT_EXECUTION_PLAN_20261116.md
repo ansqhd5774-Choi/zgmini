@@ -317,7 +317,7 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 | PIT-07-07 | 변경 후 History·raw·sourceHash·값 재조회 | B 런타임 JSON/TXT·readback | 승인 행 수·트랜잭션·원본 보호 검증 | TODO |
 | PIT-07-08 | 최종 PASS/WAIT/FAIL과 LAST PASS/FIRST FAIL 기록 | 동일 요청 ID·실행 결과 | 실제 DB 성공과 source/CI 결과를 분리 | TODO |
 
-### PIT-08 — 저장 자료 기반 계산·로컬 결과 재검증 (6개 중 3개 DONE, 3개 미완료)
+### PIT-08 — 저장 자료 기반 계산·로컬 결과 재검증 (6개 중 4개 DONE, 2개 미완료)
 
 | 세부 ID | 실제 실행·분석 작업 | 입력·근거 | 완료 판정 / 결과 | 상태 |
 |---|---|---|---|---|
