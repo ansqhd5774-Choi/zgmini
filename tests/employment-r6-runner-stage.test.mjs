@@ -89,6 +89,37 @@ test("Runner-facing stage emits only bounded aggregate and 29 statuses from real
   assert.deepEqual(fs.readdirSync(path.dirname(env.candidate)),[CANDIDATE]);
 });
 
+test("PIT-08 R6 one-year chart projects bounded 52 weekly dates and last point without raw values",async t=>{
+  const env=environment(t);fixture(env.core);fixture(env.candidate,{row:true});
+  const body=await stageEmploymentR6OneYear(runnerOptionsFrom(argv(env)));
+  const state=body.indicators.find(item=>item.id==="STATE_CLAIMS_BREADTH");
+  assert.ok(state);
+  const points=Array.from({length:52},(_,i)=>({
+    date:new Date(Date.UTC(2025,10,7+7*i)).toISOString().slice(0,10),
+    value:12,...(i===10?{breakBefore:true}:{})
+  }));
+  assert.equal(points.at(-1).date,"2026-10-30");
+  state.history=points;
+  state.value=12;state.observationDate="2026-10-30";state.unit="%";
+  state.rawStatus="READY";state.chartStatus="READY";state.scoreStatus="PARTIAL_HISTORY";state.score=null;
+  state.retrievedAt="2026-11-01T09:00:00.000Z";
+  for(const [key,compute] of Object.entries({
+    sourceFeatures:()=>body.indicators.filter(x=>x.rawStatus!=="UNAVAILABLE").length,
+    recentlyObservedFeatures:()=>body.indicators.filter(x=>x.rawStatus==="READY").length,
+    chartReadyFeatures:()=>body.indicators.filter(x=>x.chartStatus==="READY").length,
+    chartPartialFeatures:()=>body.indicators.filter(x=>x.chartStatus==="PARTIAL").length,
+    scoredFeatures:()=>body.indicators.filter(x=>x.scoreStatus==="READY").length,
+    recentlyScoredFeatures:()=>body.indicators.filter(x=>x.scoreStatus==="READY"&&x.rawStatus==="READY").length,
+  }))body.summary[key]=compute();
+  const report=projectEmploymentR6RunnerResult({body});
+  assert.deepEqual(report.stateClaimsChart,{
+    pointCount:52,unit:"%",unitMatchesApproved:true,gapCount:1,
+    firstDate:"2025-11-07",lastDate:"2026-10-30",observationDate:"2026-10-30",
+    lastPointFinite:true,lastPointMatchesCurrent:true,
+  });
+  assert.doesNotMatch(JSON.stringify(report),/"history"|"value"|"sourceHash"/);
+});
+
 test("Runner projection ignores injected source paths, raw values and unbounded optional PIT metadata",async t=>{
   const env=environment(t);fixture(env.core);fixture(env.candidate,{row:true});
   const options=runnerOptionsFrom(argv(env));
