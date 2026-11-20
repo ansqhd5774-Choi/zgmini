@@ -89,7 +89,15 @@ export async function runCoreOwnedInflationStaticOnce({requestId,adapter}={}){
   if(writer){
    // The trusted writer adapter alone verifies and releases its own exact
    // lease; it must preserve owner/lease state on uncertain finalization.
-   await writer.release({retain:writeIntent&&!completed});
+   try{await writer.release({retain:writeIntent&&!completed});}
+   catch{
+    // A failed finalize must never be reported as a successful handoff.
+    // The installed receiver must preserve unknown ownership for read-only
+    // reconciliation; never delete or recreate a foreign Writer lock here.
+    return {status:'RECOVERY_REQUIRED',
+     code:'INFL_CORE_STATIC_WRITER_FINALIZE_STOP',requestId,
+     retry:'NO_AUTOMATIC_REPLAY',providerCalls:null};
+   }
   }
  }
 }
