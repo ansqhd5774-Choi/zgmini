@@ -113,20 +113,19 @@ try{
     width+'px '+label+' provenance curves and discrete calculations have finite geometry');
    assert.equal(await page.locator('.zg-r55-card-grid article').count(),12);
    if(label==='1W'){
-    // 10/22 and 10/24 are saved calculations with no per-point model
-    // identity. Preserve both as discrete dots rather than connecting them
-    // to one another or to the current model's publication.
-    // Only reconstructed daily points may retain their own dashed stroke.
+    // Reconstructed daily and actual calculation histories retain separate
+    // line styles without a dot at every calculation timestamp.
     const curves=await page.locator(chartSelector+' path.recharts-area-curve').evaluateAll(paths=>
      paths.map(path=>({d:path.getAttribute('d')??'',dash:path.getAttribute('stroke-dasharray'),stroke:path.getAttribute('stroke')})));
     const drawn=curves.filter(p=>p.stroke!=='none'&&p.d);
-    assert.equal(drawn.length,1,width+'px only reconstructed history draws a connecting line');
-    assert.ok(drawn[0].dash,width+'px reconstructed history remains dashed');
+    assert.equal(drawn.length,2,width+'px reconstructed and calculated histories draw separate lines');
+    assert.ok(drawn.some(p=>p.dash),width+'px reconstructed history remains dashed');
+    assert.ok(drawn.some(p=>!p.dash),width+'px actual calculation history has a solid line');
     assert.ok(/^M/.test(drawn[0].d)&&/[CLQ]/.test(drawn[0].d.slice(1))
      &&(drawn[0].d.match(/M/g)??[]).length===1,
      width+'px reconstructed history is one connected SVG subpath');
-    assert.ok(await page.locator(chartSelector+' circle.recharts-area-dot').count()>=2,
-     width+'px unknown-method calculated history remains visible as independent dots');
+    assert.equal(await page.locator(chartSelector+' circle.recharts-area-dot').count(),0,
+     width+'px calculated history does not become a scatter plot');
     const domainLines=await page.locator('.zg-r55-card-grid article .zg-r55-mini-chart svg > path').evaluateAll(paths=>
      paths.map(path=>path.getAttribute('d')??''));
     assert.equal(domainLines.length,12,width+'px 12 domain observation paths');
@@ -143,9 +142,7 @@ try{
    .waitFor({state:'visible',timeout:15000});
   await waitForGeometry();
   assert.equal(await periods.getByRole('button',{name:'1D',exact:true}).getAttribute('aria-pressed'),'true');
-  // All 1D calculated observations are version-unidentified in the
-  // archive, even when the current card carries a verified version. They
-  // must remain visible as dots without a misleading continuous stroke.
+  // Existing actual observations use a line; no historic data is invented.
   const oneDayMarks=await page.locator(chartSelector).evaluate(root=>({
    strokes:[...root.querySelectorAll('path.recharts-area-curve')].filter(path=>{
     const d=path.getAttribute('d')??'';
@@ -154,8 +151,8 @@ try{
    }).length,
    dots:root.querySelectorAll('circle.recharts-area-dot').length,
   }));
-  assert.equal(oneDayMarks.strokes,0,width+'px 1D unknown-method history has no drawn stroke');
-  assert.ok(oneDayMarks.dots>=2,width+'px 1D actual calculated dots remain visible');
+  assert.equal(oneDayMarks.strokes,1,width+'px 1D actual calculations form a continuous line');
+  assert.equal(oneDayMarks.dots,0,width+'px 1D has no repeated calculation dots');
   // W06 R4 #69: verify actual viewport overflow after all six period changes.
   const overflow=await page.evaluate(()=>{
    const viewport=document.documentElement.clientWidth;

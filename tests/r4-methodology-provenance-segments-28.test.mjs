@@ -47,7 +47,7 @@ test('R4 #28 Recharts uses two nullable provenance series with no bridge and hon
  const chart=readFileSync(new URL('../components/dashboard-summary-chart.tsx',import.meta.url),'utf8');
  assert.match(chart,/splitCompositeChartProvenance\(data\)/);
  assert.match(chart,/<Area type="monotone" dataKey="reconstructedValue"[^>]*connectNulls=\{true\}/);
- assert.match(chart,/<Area type="monotone" dataKey="calculatedValue" stroke="none" fill="none" strokeWidth=\{0\} dot=\{\{r:2\.4,fill:color,strokeWidth:0\}\}[^>]*connectNulls=\{false\}/);
+ assert.match(chart,/<Area type="monotone" dataKey="calculatedValue" stroke=\{color\} fill="none" strokeWidth=\{2\.1\} dot=\{false\}[^>]*connectNulls=\{true\}/);
  assert.match(chart,/<Area type="monotone" dataKey="reconstructedValue" stroke=\{color\} strokeDasharray="4 4"/);
  assert.doesNotMatch(chart,/<Area type="monotone" dataKey="value"/);
  assert.match(chart,/현행 산식 재구성 · 당시 실계산점 아님/);
@@ -79,7 +79,7 @@ test('R4 #69 interleaved reconstructed and archived samples keep distinct line s
  assert.deepEqual(classified.filter(p=>p.calculatedValue!==null).map(p=>p.calculatedValue),[48,49]);
  assert.deepEqual({daily,archive},original);
  const chart=readFileSync(new URL('../components/dashboard-summary-chart.tsx',import.meta.url),'utf8');
- assert.equal((chart.match(/connectNulls=\{true\}/g)??[]).length,1);
- assert.match(chart,/dataKey="calculatedValue"[^>]*connectNulls=\{false\}/);
+ assert.equal((chart.match(/connectNulls=\{true\}/g)??[]).length,2);
+ assert.match(chart,/dataKey="calculatedValue"[^>]*connectNulls=\{true\}/);
  assert.doesNotMatch(chart,/dataKey="value"/);
 });
