@@ -1,3 +1,4 @@
+import {isValidatedPaidBreadthDomain} from './breadth-paid-contract.mjs';
 // Single fail-closed MarketParquet retirement mask for both the production and candidate SELECT-only market-score readers.
 // Historical snapshots are not edited, and approved weights are never recomputed.
 import {MARKETPARQUET_REMOVED_CODE,hasMarketParquetProvenance} from '../lib/marketparquet-retirement.mjs';
@@ -9,6 +10,7 @@ import {MARKETPARQUET_REMOVED_CODE,hasMarketParquetProvenance} from '../lib/mark
  */
 function containsRetiredMarketSource(value,depth=0){
  if(!value||typeof value!=='object')return false;
+ if(isValidatedPaidBreadthDomain(value))return false;
  if(depth>32)return true;
  if(hasMarketParquetProvenance(value))return true;
  return Object.values(value).some(child=>containsRetiredMarketSource(child,depth+1));

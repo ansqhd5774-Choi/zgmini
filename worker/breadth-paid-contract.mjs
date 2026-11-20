@@ -12,3 +12,9 @@ export function validPaidBreadthRecord(b){
  Array.isArray(d.indicators)&&d.indicators.length===4&&d.indicators.every((p,i)=>p.id==='breadth-'+(41+i)&&p.status==='READY'&&num(p.score)&&num(p.value)&&p.observationDate===b.observationDate)&&
  b.quality?.returnCoverage>=.98&&b.quality?.returnCoverage<=1&&b.quality?.tradingValueCoverage>=.98&&b.quality?.tradingValueCoverage<=1;
 }
+
+// Scope the paid exception to a complete, verifiable B1-R5 derived domain.
+export function isValidatedPaidBreadthDomain(domain){
+ const p=domain?.paidSource;
+ return !!p&&validPaidBreadthRecord({version:p.version,plan:p.plan,source:domain.source,sourceVersion:p.sourceVersion,pitSha256:p.pitSha256,inputSha256:p.inputSha256,observationDate:p.observationDate,sourceLatestDate:p.sourceLatestDate,domain,quality:{returnCoverage:p.returnCoverage,tradingValueCoverage:p.tradingValueCoverage}});
+}
