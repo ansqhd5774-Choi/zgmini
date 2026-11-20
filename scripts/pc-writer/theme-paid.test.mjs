@@ -9,7 +9,7 @@ import {choosePaidPhaseDates,mergePublishedThemeHistory,calculatePaidThemes} fro
 import {scoreOneR25} from './theme-r25-pure.mjs';
 import {mixNineR32Date} from './theme-r32-pure.mjs';
 import {scoreAll252} from './theme-optional-score-r188.mjs';
-import {publishPaidThemeRecord} from './theme-paid-cycle.mjs';
+import {publishPaidThemeRecord,storePaidPrivateResults} from './theme-paid-cycle.mjs';
 import {validPaidThemeRecord,PAID_THEME_KEY} from '../../worker/theme-paid-contract.mjs';
 import {readPaidThemeFeed} from '../../worker/theme-paid-public.mjs';
 import {themeEtfDashboardSeries} from '../../lib/theme-etf-dashboard.mjs';
@@ -28,7 +28,24 @@ test('approved pure source sections retain their original byte identities',()=>{
 test('R25 mature scores equal the independent original R188 implementation',()=>{const own=series.AAA.map(p=>p.close),spy=series.SPY.map(p=>p.close);const expected=scoreAll252(own,spy),actual=scoreOneR25({symbol:'AAA',ownSessions:series.AAA,spySessions:series.SPY}).history;assert.equal(expected.length,actual.length);for(let i=0;i<expected.length;i++)assert.ok(Math.abs(expected[i]-actual[i].score)<1e-9);});
 test('R32 preserves AUM weighting and real zero scores',()=>{const rows=[{ticker:'AAA',score:0,sessions:800,status:'R188_COMPATIBLE',aumUsd:100,aumAsOf:'2026-10-23'},{ticker:'BBB',score:50,sessions:800,status:'R188_COMPATIBLE',aumUsd:200,aumAsOf:'2026-10-23'},{ticker:'CCC',score:100,sessions:800,status:'R188_COMPATIBLE',aumUsd:100,aumAsOf:'2026-10-23'}];const x=mixNineR32Date({date:'2026-11-17',rows,benchmarkDate:'2026-11-17',allowDatedOfficialAum:true});assert.equal(x.score,50);assert.deepEqual(x.weightsPercent,{AAA:25,BBB:50,CCC:25});});
 test('published past values are retained exactly, including zero; only new real dates append',()=>{const prior={history:[{date:'2026-11-16',score:0},{date:'2026-11-17',score:40}]};assert.deepEqual(mergePublishedThemeHistory(prior,[{date:'2026-11-16',score:99},{date:'2026-11-18',score:20}], '2026-11-18'),[...prior.history,{date:'2026-11-18',score:20}]);});
-test('105 public registrations calculate through one shared source and one private theme stays private',()=>{const x=input(105);x.registry.themes.push({...x.registry.themes[0],id:'private-development',label:'개발 중',public:false});x.aumByTheme['private-development']=x.aumByTheme['theme-0'];const r=calculatePaidThemes(x);assert.equal(r.record.themes.length,105);assert.equal(r.privateResults.length,1);assert.equal(r.record.themes.some(t=>t.id==='private-development'),false);assert.equal(r.results.length,106);});
+test('105 public registrations calculate through one shared source and one private theme stays private',()=>{const x=input(105);x.registry.themes.push({...x.registry.themes[0],id:'private-development',label:'개발 중',public:false});x.aumByTheme['private-development']=x.aumByTheme['theme-0'];const r=calculatePaidThemes(x);assert.equal(r.record.themes.length,105);assert.equal(r.privateResults.length,1);assert.equal(r.privateRecords.length,1);assert.equal(r.privateRecords[0].id,'private-development');assert.equal(r.privateRecords[0].history.length,252);assert.equal(r.privateRecords[0].history.at(-1).date,phases.confirmed);assert.equal(r.record.themes.some(t=>t.id==='private-development'),false);assert.equal(JSON.stringify(r.record).includes('private-development'),false);assert.equal(r.results.length,106);});
+test('private derived score history persists with immutable readback without D1 publication',()=>{
+ const x=input();x.registry.themes[0].public=false;x.registry.themes[0].operational={family:'configured'};
+ const output=calculatePaidThemes(x);assert.equal(output.record.themes.length,0);
+ const dir=fs.mkdtempSync(path.join(os.tmpdir(),'paid-private-result-'));
+ try{
+  const args={privateRecords:output.privateRecords,sourceVersion:H,registrySha256:H,phases};
+  const first=storePaidPrivateResults(dir,args);
+  assert.equal(first.status,'PRIVATE_STORED_READBACK_VERIFIED');assert.equal(first.count,1);
+  const filenames=fs.readdirSync(dir);assert.equal(filenames.length,1);
+  const stored=JSON.parse(fs.readFileSync(path.join(dir,filenames[0]),'utf8'));
+  assert.equal(stored.themes[0].id,'theme-0');assert.equal(stored.themes[0].history.length,252);
+  assert.equal(storePaidPrivateResults(dir,args).bodySha256,first.bodySha256);
+  assert.equal(fs.readdirSync(dir).length,1);
+  fs.writeFileSync(path.join(dir,filenames[0]),'{}');
+  assert.throws(()=>storePaidPrivateResults(dir,args),/PAID_THEME_PRIVATE_READBACK_MISMATCH/);
+ }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
 test('one incomplete registration does not block independent ready themes',()=>{const x=input(2);x.registry.themes[1].etfs=['MISSING'];const r=calculatePaidThemes(x);assert.equal(r.record.themes.length,1);assert.deepEqual(r.record.dataQuality.pendingPublicIds,['theme-1']);});
 test('paid record is renderable by existing dashboard adapter',()=>{const r=fixture();assert.ok(validPaidThemeRecord(r));const view=themeEtfDashboardSeries(r);assert.equal(view.series.length,1);assert.equal(view.data.length,253);assert.equal(Object.keys(view.provisionalBySeries).length,1);});
 test('record validation rejects bad numbers, method changes and dishonest coverage',()=>{const r=fixture();for(const change of [x=>x.themes[0].score=NaN,x=>x.themes[0].methodologyVersion='FAKE',x=>x.dataQuality.readyPublicIds.push('private')]){const b=structuredClone(r);change(b);assert.equal(validPaidThemeRecord(b),false);}});
