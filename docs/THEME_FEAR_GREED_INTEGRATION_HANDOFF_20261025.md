@@ -1,3 +1,16 @@
+## 2026-11-20 16:00 KST W03 13단계 — R178 저장→게시 계약 정적 감사 (운영 쓰기 없음)
+
+- **진척:** 시작 12/68(17.6%) → 종료 12/68(17.6%), 13단계 IN_PROGRESS. 상위 목표 163테마 불변. main@a7c0cf678bb3d3e29d97d4a6c15f48e9dec69cfd, W03 전용 브랜치 codex/theme-fear-greed-integration-20261025, 원장 이전 blob 180c50e60f5dad32a82e1aaeb0018a0fc7162811.
+- **이번 직접 검사:** 지정 계획서/원장 및 전용 브랜치의 실제 4개 모듈 원본 조회. `theme-seven-gmh-r178-approved-writer-entry.mjs` blob `a742af09cc2eb58e3e4be93d0599bb59092bd61e`, `theme-seven-gmh-r178-saved-to-cas-r1.mjs` blob `37f747709d78d4fcca323eee285c042160589445`, `theme-seven-gmh-r178-private-draft.mjs` blob `71621184aa1684bb119704f323454f008df5acbd`, `theme-seven-gmh-r178-authorized-cas.mjs` blob `89df70ec427a8d3fe0a5791b7de01a67ba2afe0f`. 실제 PC/DB를 이번 회차 조회한 것은 아님.
+- **정적 확인 PASS:** source pin은 manifest `82f380e3...`, checkpoint `3ddc2544...`, private `9f5fa50f...`, observationDate `2026-11-13`, sourceStoredAt `2026-11-16T11:47:59.532Z`로 고정. 실제 read path는 saved manifest/checkpoint, private SHA, 원본 raw in-memory rehash를 검증하도록 구현. draft 공개 필드에는 theme/ETF/score/date history와 provenance/phase만 있고 원시 OHLCV 필드 출력은 보이지 않음. 이는 **코드 구조상 비복원 지향**이지 실제 payload의 독립 비복원성 실증 PASS가 아님.
+- **정적 확인 PENDING:** 승인 진입점은 `approvedRecord` 및 신뢰된 `verifyApprovedEffect` 없이는 파일/D1 접근 전에 중단. CAS는 정확 1개 R178 feed key의 `stored_at` 비교 교체 후 body/stored_at readback, R32 전후 hash/stored_at 동일성 확인을 구현. 이 코드가 실제 운영 승인 verifier에 연결되어 실행됐다는 증거는 이번 조회에 없음. 특히 승인 레코드는 권리/가격 플래그 4개 true, R178 reader 검증, 정확 source/projection SHA 결합 verifier가 별도로 필요함. 임의 flag true 금지.
+- **신선도 주의:** 고정 관측일 2026-11-13과 수집시각 2026-11-16은 이번 날짜 2026-11-20의 새 거래일 증거가 아님. 기존 #2455의 503/STORED_DATA_STALE가 마지막 운영 조회 증거. `publishedAt/asOf`만 현재로 설정해 8일 source freshness를 우회할 수 없음. 새로운 승인된 GMH 무료 계정/key 기반 최소 delta 확보 및 동일 가격모드 재검산 필요 여부는 실제 운영 조회로 판정.
+- **LAST PASS/FIRST PENDING:** LAST PASS=기존 #2449 B 설치/#2450 사후 파일 검사 및 이번 정적 source/CAS 계약 확인. FIRST PENDING=실제 7×252 저장 payload 필드·manifest/checkpoint/raw SHA·관측/수집일의 PC read-only 재인증과 신뢰 승인 효과 바인딩. 별도 GMH 공급처 서면 회신/권리 등록부 반영은 기존 완료 증거 재사용.
+- **이번 변경:** 원장 1파일만 갱신. 신규 코드/테스트 실행/PC A·B/provider GET/SQLite/D1 CAS/Cloudflare/Task/예약 변경 0. 기존 10개 공개/R32·GMH 원본 불변. 권리·게시 flag 자동 승격 0.
+- **다음 단일 필수 실행:** 기존 승인된 W03 PC 읽기 전용 경로에서 고정 manifest/checkpoint/private 3 SHA, 실제 raw 재해시, 7×252 출력 필드 whitelist, observationDate/sourceStoredAt 및 reader 8일 신선도 판정을 한 번에 JSON/TXT로 확보. 이후 신선도 불충족이면 최소 delta 수집 계획으로, 충족이면 독립 운영자 승인 `verifyApprovedEffect` 연결 검증으로 진행. 증거 없는 D1 CAS/READY 금지.
+
+---
+
 ## 2026-11-20 14:57 KST W03 13단계 — GMH 회신 권리 등록부 반영
 
 - **시작/끝:** 12/68(17.6%) → 12/68(17.6%), 13단계 미완료. 전체 목표 163테마 유지. `main@a7c0cf678bb3d3e29d97d4a6c15f48e9dec69cfd`, 전용 브랜치 `codex/theme-fear-greed-integration-20261025`; 이전 원장 blob `ef1700ed2ca881f693fd37c3c8a9f0162b7f20c4`.
