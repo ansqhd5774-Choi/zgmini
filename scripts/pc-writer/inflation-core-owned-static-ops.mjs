@@ -17,7 +17,8 @@ const TARGETS=Object.freeze([
  'bls-cpi-ppi3.json','census-m3-manufacturing-inventories.json'
 ]);
 const DIR='inflation-causal-candidates-r1';
-const methods=['authenticateExistingB','tryAcquireSharedWriterLease',
+const methods=['authenticateExistingB','assertCoreAcquisitionOrigin',
+ 'tryAcquireSharedWriterLease',
  'readCurrentSourcePreimage','recordOnceJournal'];
 const stop=code=>{throw Object.assign(new Error(code),{code});};
 const need=(ok,code)=>{if(!ok)stop(code);};
@@ -49,7 +50,19 @@ export function makeCoreOwnedInflationStaticOps({
   typeof apply==='function',
   'INFL_CORE_STATIC_OPS_CONTRACT_STOP');
  // Re-prove current Core ownership on each transaction boundary.
- const prove=()=>assertCurrentCoreOwnedLock({base,approvedRoot});
+ const prove=async()=>{
+  const candidate=assertCurrentCoreOwnedLock({base,approvedRoot});
+  // A matching PID in a file is spoofable and does not prove creation.
+  // Only a trusted, *live Core acquisition* witness can satisfy this.
+  // This is a separate installed/approved contract, not a permissive flag.
+  const origin=await controller.assertCoreAcquisitionOrigin({base,approvedRoot});
+  need(origin?.originAuthenticated===true&&
+   origin?.source==='CURRENT_CORE_ACQUISITION'&&
+   origin?.pid===process.pid&&
+   candidate.authorizesExecution===false,
+   'INFL_CORE_STATIC_ORIGIN_UNATTESTED_STOP');
+ };
+
  return Object.freeze({
   authenticateExistingB:requestId=>controller.authenticateExistingB(requestId),
   assertCurrentCoreOwner:prove,
