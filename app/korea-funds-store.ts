@@ -22,17 +22,36 @@ const snapshot=()=>state;
 function load(signal?:AbortSignal):Promise<void>{
  if(signal?.aborted)return Promise.resolve();
  if(inFlight)return inFlight.then(()=>load(signal));
- const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),95000);
- inFlight=fetch('/api/indicators/korea-funds',{cache:'no-store',signal:signal??controller.signal})
-  .then(async r=>{if(!r.ok){if(r.status===503){const failure=await r.json() as {reason?:string};if(!signal?.aborted&&/STALE|EXPIRED/.test(failure.reason??'')){lastPayload=null;state={loading:false,indicators:[],composite:null};}}throw Error();}return r.json() as Promise<{indicators?:Indicator[];composite?:Composite}>;})
+ const controller=new AbortController();
+ const onAbort=()=>controller.abort();
+ signal?.addEventListener('abort',onAbort,{once:true});
+ if(signal?.aborted)controller.abort();
+ const timer=setTimeout(()=>controller.abort(),95000);
+ // Cancellation must release the shared slot even if fetch ignores AbortSignal.
+ let cancelHandler;
+ const cancelled=new Promise<void>(resolve=>{
+  cancelHandler=()=>resolve();
+  controller.signal.addEventListener('abort',cancelHandler,{once:true});
+  if(controller.signal.aborted)resolve();
+ });
+ const request=Promise.resolve().then(()=>fetch('/api/indicators/korea-funds',{cache:'no-store',signal:controller.signal}))
+  .then(async r=>{if(!r.ok){if(r.status===503){const failure=await r.json() as {reason?:string};if(!controller.signal.aborted&&/STALE|EXPIRED/.test(failure.reason??'')){lastPayload=null;state={loading:false,indicators:[],composite:null};}}throw Error();}return r.json() as Promise<{indicators?:Indicator[];composite?:Composite}>;})
   .then(d=>{
-   if(signal?.aborted||!acceptsStoredUpdate(lastPayload,d))return;
+   if(controller.signal.aborted||!acceptsStoredUpdate(lastPayload,d))return;
    lastPayload=d;
    const accepted=d.composite?.methodologyVersion==='kr-fg-cnn-r7-1.0.0';
    state={loading:false,indicators:Array.isArray(d.indicators)?d.indicators:[],composite:accepted?d.composite??null:null};
   })
-  .catch(()=>{state={...state,loading:false};})
-  .finally(()=>{clearTimeout(timer);inFlight=null;listeners.forEach(fn=>fn());});
- return inFlight;
+  .catch(()=>{if(!controller.signal.aborted)state={...state,loading:false};});
+ const running=Promise.race([request,cancelled]).finally(()=>{
+  signal?.removeEventListener('abort',onAbort);
+  controller.signal.removeEventListener('abort',cancelHandler);
+  clearTimeout(timer);
+  if(inFlight===running)inFlight=null;
+  if(state.loading)state={...state,loading:false};
+  listeners.forEach(fn=>fn());
+ });
+ inFlight=running;
+ return running;
 }
 export function useKoreaFunds(){const data=useSyncExternalStore(subscribe,snapshot,()=>empty);useEffect(()=>{subscribers++;if(!stopRefresh)stopRefresh=startStoredRefresh(load);return()=>{subscribers--;if(!subscribers){stopRefresh?.();stopRefresh=null;}};},[]);return data;}
