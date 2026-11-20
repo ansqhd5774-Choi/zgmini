@@ -3,6 +3,8 @@
 // No provider/Writer I/O. A local JSON alone is NOT authority.
 // Public key must come from approved *installed* source, never from envelope.
 import {createPublicKey,verify} from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 export const W01_HANDOFF_ENVELOPE_SCHEMA='ZGMINI_W01_CORE_HANDOFF_SIGNED_V1';
 const UUID=/^[a-f0-9]{8}-[a-f0-9]{4}-[1-8][a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/i;
 const SHA=/^[a-f0-9]{64}$/i;
@@ -52,4 +54,39 @@ export function verifySignedCoreHandoff({
   requestId:envelope.requestId,manifestSha256:envelope.manifestSha256,
   sourceSha:envelope.sourceSha,issueNumber:envelope.issueNumber,
   nonce:envelope.nonce,authorizesExecution:false});
+}
+
+/**
+ * Read a fixed request's staged candidate. Read-only and non-authorizing.
+ * Called from existing Core after the Core-owned acquisition witness.
+ * Does not delete, rename, claim or execute the staged JSON file.
+ */
+export function inspectStagedCoreHandoff({
+ requestId,approvedRoot,pinnedPublicKey,expectedSourceSha,now=Date.now(),
+ fsImpl=fs,
+}={}){
+ if(!UUID.test(requestId??'')||typeof approvedRoot!=='string'||
+  !path.isAbsolute(approvedRoot)||typeof fsImpl?.realpathSync!=='function')
+  fail();
+ let parent,dir,file,stat,raw,envelope;
+ try{
+  parent=fsImpl.realpathSync(approvedRoot);
+  if(path.normalize(parent).toLowerCase()!==
+   path.normalize(approvedRoot).toLowerCase())fail();
+  dir=path.join(parent,'inflation-causal-candidates-r1','core-handoff');
+  const ds=fsImpl.lstatSync(dir);
+  if(!ds.isDirectory()||ds.isSymbolicLink()||
+   fsImpl.realpathSync(dir)!==dir)fail();
+  file=path.join(dir,requestId+'.signed.json');
+  stat=fsImpl.lstatSync(file);
+  if(!stat.isFile()||stat.isSymbolicLink()||stat.nlink!==1||
+   stat.size<100||stat.size>2048)fail();
+  raw=fsImpl.readFileSync(file);
+  if(!Buffer.isBuffer(raw)||raw.length!==stat.size)fail();
+  envelope=JSON.parse(raw.toString('utf8'));
+ }catch{fail();}
+ const proof=verifySignedCoreHandoff({envelope,pinnedPublicKey,
+  expectedSourceSha,now});
+ if(proof.requestId!==requestId)fail();
+ return proof; // signature verified only; no single-use claim or GET.
 }
