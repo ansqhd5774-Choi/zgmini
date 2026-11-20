@@ -33,7 +33,7 @@ test('unrelated existing lock cannot be claimed or deleted',()=>{
 test('a forged PID-only lock cannot replace the original fd-witness',async()=>{
  const f=fixture();try{
   const lease=acquireCoreLockWithWitness({file:f.file});
-  fs.writeFileSync(f.file,JSON.stringify({pid:process.pid,at:Date.now()}));
+  fs.writeFileSync(f.file,JSON.stringify({pid:process.pid,at:1}));
   await assert.rejects(()=>lease.witness({approvedRoot:f.root}),
    {code:'INFL_CORE_STATIC_ACQUISITION_WITNESS_STOP'});
   lease.release();
