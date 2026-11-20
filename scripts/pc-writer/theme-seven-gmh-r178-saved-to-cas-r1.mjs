@@ -117,3 +117,41 @@ export async function runApprovedGmhSevenR178SavedOnce({
   prepared,record:approvedRecord,storage,verifyApprovedEffect,now
  });
 }
+
+// Read-only audit entry: the caller supplies a previously verified legacy seed.
+// Deliberately exposes no D1 client, CAS operation, approval flag or provider GET.
+// The pinned production snapshot is mandatory; synthetic pins are not accepted.
+export async function auditPinnedGmhSevenR178ReadOnly({
+ dataRoot,legacySeed,now=Date.now(),
+ readSaved=readPcSavedGmhSeven,
+ readPrivate=readPinnedPrivateGmhSeven
+}={}){
+ need(legacySeed&&typeof legacySeed==='object'&&
+  !Array.isArray(legacySeed),'READONLY_SEED_REQUIRED');
+ const storage=Object.freeze({async readSeed(){return legacySeed;}});
+ const prepared=await preparePinnedGmhSevenR178({
+  dataRoot,storage,readSaved,readPrivate,now,pins:W03_GMH_SOURCE_PINS
+ });
+ need(prepared.status==='R178_GMH_ONLY_PRIVATE_DRAFT_NOT_PUBLISHED'&&
+  prepared.rolling.publicationAuthorized===false&&
+  prepared.rolling.upstreamCommercialRightsVerified===false&&
+  prepared.rolling.derivedLicenseVerified===false,
+  'READONLY_PRIVATE_STATUS_STOP');
+ return Object.freeze({
+  status:'PRIVATE_READONLY_AUDIT_NOT_PUBLISHED',
+  observationDate:prepared.rolling.observationDate,
+  sourceStoredAt:prepared.rolling.sourceStoredAt,
+  manifestSha256:W03_GMH_SOURCE_PINS.manifestSha256,
+  checkpointSha256:W03_GMH_SOURCE_PINS.checkpointSha256,
+  privateArtifactSha256:W03_GMH_SOURCE_PINS.privateArtifactSha256,
+  rawFilesRehashedNow:prepared.provenance.rawFilesRehashedNow,
+  sourceStoredAtAttestedByManifest:
+   prepared.provenance.sourceStoredAtAttestedByManifest,
+  verifiedSymbols:prepared.provenance.verifiedSymbols,
+  rawPagesVerified:prepared.provenance.rawPagesVerified,
+  themeCount:prepared.rolling.themes.length,
+  historyPoints:prepared.rolling.themes.reduce(
+   (sum,theme)=>sum+theme.history.length,0),
+  publicationAuthorized:false
+ });
+}
