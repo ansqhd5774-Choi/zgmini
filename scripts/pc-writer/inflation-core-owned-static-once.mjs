@@ -34,7 +34,7 @@ export async function runCoreOwnedInflationStaticOnce({requestId,adapter}={}){
  need(UUID.test(requestId??'')&&isObject(adapter)&&
   allowedMethods.every(m=>typeof adapter[m]==='function'),
   'INFL_CORE_STATIC_ADAPTER_CONTRACT_STOP');
- let claimed=false,writer=null;
+ let claimed=false,completed=false,writer=null;
  try{
   const approval=await adapter.authenticateExistingB(requestId);
   exactApproval(approval,requestId);
@@ -72,7 +72,7 @@ export async function runCoreOwnedInflationStaticOnce({requestId,adapter}={}){
    result.d1Writes===0&&result.coreCheckpointWrites===0,
    'INFL_CORE_STATIC_STORE_SCOPE_STOP');
   await adapter.readbackSavedFiles(result);
-  await adapter.recordOnceJournal(requestId,'COMPLETED');
+  await adapter.recordOnceJournal(requestId,'COMPLETED');completed=true;
   return {status:'PASS',code:'INFL_CORE_STATIC_READBACK_VERIFIED',
    requestId,providerCalls:2,storedStatus:result.status};
  }catch(e){
@@ -87,7 +87,7 @@ export async function runCoreOwnedInflationStaticOnce({requestId,adapter}={}){
   if(writer){
    // The trusted writer adapter alone verifies and releases its own exact
    // lease; it must preserve owner/lease state on uncertain finalization.
-   await writer.release({retain:claimed});
+   await writer.release({retain:claimed&&!completed});
   }
  }
 }
