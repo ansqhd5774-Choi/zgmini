@@ -1,3 +1,15 @@
+## 2026-11-21 KST — P2 유료 비공개 파생 이력 저장 결손 수정 (source-only)
+
+- 시작/종료: 12/68(17.6%) 기존 수치 유지, P2 소스 결손 1건 수정 완료. P2 기능 DONE/실PC 완료로 승격하지 않음.
+- **직접 확인한 실제 결손:** `scripts/pc-writer/theme-paid-calculate.mjs`는 기존 `privateResults`에 ID/상태/날짜만 반환하고, 점수·252일 이력은 `publicThemes`에서 제외한 뒤 버렸다. `theme-paid-cycle.mjs`는 공개 `output.record`만 SHA 파일로 저장하므로 `ai-software` 같은 유료 Core 비공개 테마의 계산 결과를 사후에 독립 검산·해시 재조회할 수 없었다. 기존 PC #182 단발 등록 PASS는 유지.
+- **최소 변경 3파일:** `theme-paid-calculate.mjs`가 비공개 파생 `privateRecords`를 반환하되 기존 `record.themes`(공개 D1 출력)는 변경하지 않도록 분리. `theme-paid-cycle.mjs`에 `storePaidPrivateResults` 추가: 기존 `marketparquet-paid/derived/` 아래 `private-theme-<sha256>.json` 불변 파일 1개 저장·바이트 해시 재조회·동일 결과 재실행 무쓰기, 공개 D1 미포함. `theme-last-run.json`에는 private 점수 대신 `privateStored:{status,count,bodySha256}`만 기록. 비공개 저장 실패는 `PRIVATE_STORE_FAILED`로 기록해 정상 공개 피드를 차단하지 않도록 격리. `theme-paid.test.mjs`에 private 원자료 아님·파생 252점·공개 분리·중복 무쓰기·변조 탐지 fixture 테스트 보강. 산식/가중치/ETF/등록 조건/권리/공개 계약/예약/공급처 API/SQL/TTL 변경 없음.
+- **소스 커밋:** 계산 `b27091764d5b7fba0b5c76bc12416b9092da2f3a`, 저장 `d46a3a34a214def1e62e626e7388b316e2bcff3a`, 회귀 추가 `876ab91d755d92258965481fbc9c6f381deceb99`, 실패격리 보완 `a4e22bb555a48c97124fe0a83320bd04193477b7`. main과 변경 직전 세 파일의 Git blob은 동일했으나 W03 전체 브랜치는 main과 대량 diverged 상태라 전체 병합 금지.
+- **검증 수준:** 최신 원격 세 파일 재조회·구조 정적 검사 8/8 일치. 이번에는 실제 Node 회귀 실행/CI/PR/병합/Writer B 설치/PC 재실행이 수행되지 않음; 8/8을 테스트 PASS로 표기하지 않는다. 유효한 별도 새 실PC `ai-software` 계산 성공·private 파일 저장 SHA·Reader 발견·실제 최신 API/UI도 미입증.
+- **다음 필수 실행:** 이 3파일의 변경분만 main 최신 소스에 정확히 통합할 수 있는 기존 승인 PR 경로로 CI `node --test scripts/pc-writer/theme-paid.test.mjs` 검증 후, 정규 Writer B manifest/설치 SHA·정규 Core 자연 실행의 비공개 `privateStored` 파일 SHA·`privateResults` 상태를 승인된 조회로 대조한다. 공개 10개 자연 Core 성공과 구형 GMH Shadow의 차단 상태는 별개. 운영 수집/재계산·D1/예약·운영 설정을 이번 source 커밋만으로 변경하지 않는다.
+- 도구 점검: 기존 `writer-publication-evidence-readonly` A는 시장 캘린더 ER1 고정키만 조회하므로 유료 테마 private SHA 증거 회수에 사용하지 않음. 사용 금지 Remote Desktop Commander 미사용·유료 도구 추가 없음.
+
+---
+
 ## 2026-11-21 KST — P2 AI 소프트웨어 기존 실PC 등록 PASS 재발견·미완료 분리
 
 - 시작·종료: 12/68(17.6%) 기존 기록 유지. P2의 등록 하위 작업은 **기존 성공 증거를 재발견해 완료로 재분류**했지만 신규 단계 전체를 DONE으로 승격하지 않음.
