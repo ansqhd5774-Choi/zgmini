@@ -428,3 +428,12 @@ test("PIT-04-08 Runner rejects nonallowlisted key data and preserves bounded whi
    /RUNNER_R6_PIT04_REVIEW_INVALID/);
  }
 });
+
+test("PIT-08 projection rejects non-array indicator input without leaking raw metadata",()=>{
+  const secret="PRIVATE_INDICATOR_PAYLOAD_MUST_NOT_LEAK";
+  for(const indicators of [null,{},secret,42]){
+    const body={indicators,asOfDate:"2026-11-02",summary:{}};
+    assert.throws(()=>projectEmploymentR6RunnerResult({body}),
+      /RUNNER_R6_PUBLIC_DISPLAY_INVALID|RUNNER_R6_INDICATOR_COUNT_INVALID/);
+  }
+});
