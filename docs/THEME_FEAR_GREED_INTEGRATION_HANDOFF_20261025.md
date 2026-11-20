@@ -1,3 +1,13 @@
+## 2026-11-20 14:57 KST W03 13단계 — GMH 회신 권리 등록부 반영
+
+- **시작/끝:** 12/68(17.6%) → 12/68(17.6%), 13단계 미완료. 전체 목표 163테마 유지. `main@a7c0cf678bb3d3e29d97d4a6c15f48e9dec69cfd`, 전용 브랜치 `codex/theme-fear-greed-integration-20261025`; 이전 원장 blob `ef1700ed2ca881f693fd37c3c8a9f0162b7f20c4`.
+- **실제 변경:** `docs/API_SOURCE_RIGHTS_REGISTRY.md`의 GMH 구간에 2026-11-20 13:58 KST 공급처 서면 회신 증거 thread `1a1ef72ab94cdc2d` / message `1a1f7519587c26e4`를 연결. 커밋 `877f3379307d4d575745b0c57ae84122b8944959`, 결과 blob `04cb1486c64635ba1afdd4d00b1116aa658a72bc`. 11/16 무계정 1h 과거 이용 허용과 11/20 이후 신규 1h 무료 계정/key 필요, 비복원 0~100 점수/252일 이력 상업 공개 허용과 raw 가격 표시 불허를 분리. 기존 10/22 반송 이력·타 공급자 불허 기록 보존.
+- **검증 범위:** GitHub 원장/권리 대장 원본 조회, main HEAD 확인, 등록부 업데이트 성공. 공급처 서면 허용은 권리 문의 차단 해소이며 정확한 R178 payload 비복원성·source SHA·가격정합·8일 freshness·운영 승인 effect의 PASS가 아니다. LAST PASS=GMH 공급처 권리 회신 및 권리 등록부 반영; FIRST PENDING=R178 실제 저장 payload/관측일/신뢰 게시 승인 연결의 읽기 전용 감사.
+- **운영 변경:** Provider GET 0, 실제 PC A/B 0, DB/D1 CAS 0, Cloudflare·Task·예약 0. 기존 Writer #2449/#2450 PASS 및 API #2455 503 재사용, 재실행 없음. `publicationAuthorized=false` 유지, R32·기존 10개 보호.
+- **다음 단일 필수 실행:** 기존 R178 7×252 저장 출력의 필드 whitelist/비복원성, 원자료 manifest/checkpoint/private SHA, 실제 observationDate/sourceStoredAt와 8일 freshness, `approvedRecord` 및 신뢰 `verifyApprovedEffect` 제공 여부를 **읽기 전용**으로 대조. 증거 부족 부분은 UNKNOWN으로 남기고 새 원자료 확보 및 운영자 게시 승인 없이는 D1 CAS/READY 금지. 최신 관측일이 오래되었다면 승인된 무료 계정 기반 최소 delta 수집 경로를 별도로 검토.
+
+---
+
 ## 2026-11-20 13:58 KST W03 13단계 — GMH 공식 회신 수신, 권리 차단 원인 해소 범위 분류
 
 - **진행률:** 12/68(17.6%) → 12/68(17.6%); 13단계 미완료. 전용 브랜치 `codex/theme-fear-greed-integration-20261025`, 원장 갱신 전 blob `29c4659b5a217664bc8f90125d50102d78528e84`. 기존 main 근거 `a7c0cf678bb3d3e29d97d4a6c15f48e9dec69cfd`는 과거 기록이며 이번 회차 최신 main HEAD는 별도 미확인.
