@@ -1,5 +1,15 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
+
+> **W06 #28/#75 배포 증거 조회 경로 정정 및 미완료 상태 기록 — 2026-11-21 KST**
+> - **기준 소스:** `ansqhd5774-Choi/zgmini` `main` 병합 커밋 `010e127f99f9ea95ade904423404787fa4148a8f`; 기존 `main` 비교 identical(앞섬 0/뒤처짐 0). PR [#1452](https://github.com/ansqhd5774-Choi/zgmini/pull/1452) 병합, 최종 Node.js CI [#44772888787](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44772888787) SUCCESS, Chromium UI CI [#44772888662](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44772888662) SUCCESS; 이는 Production 배포 증거와 구별함.
+> - **기존 성공 조회 방식 발견:** `scripts/indexnow-notify.mjs`는 `GET /repos/ansqhd5774-Choi/zgmini/commits/<sha>/check-runs?per_page=100`의 `check_runs`에서 `app.slug === 'cloudflare-workers-and-pages'`, `name` 접두사 `Workers Builds:`, `status === 'completed'`, `conclusion === 'success'`를 확인함. `scripts/pc-writer/theme-data-center-power-gate-r6.mjs`는 실제 Worker 이름에 대응하는 `Workers Builds: <worker>`와 `details_url`의 `/production/builds/` 일치를 검사함. 검사 방식 자체 확인이지 목표 SHA의 Cloudflare 배포 성공 증명은 아님.
+> - **검증 차이 정정:** 이전의 `get_commit_combined_status statuses=[]`와 `fetch_commit_workflow_runs=[]`는 각각 GitHub status API와 PR-triggered Actions 범위만 나타내며 **GitHub Checks의 Cloudflare check-runs 부재를 증명하지 않음**. 이 둘을 Cloudflare 실패/미실행 근거로 확대하지 않음.
+> - **현재 미확인:** 해당 SHA의 실제 Cloudflare `check-runs` 원본, exact Production Deployment ID/배포 SHA, `https://zgmini.kr/` 공개 API/UI 신규 렌더링. 현재 연결된 GitHub 도구에 `check-runs` 직접 조회가 노출되지 않았고, Cloudflare 관리 읽기 도구도 확인되지 않았음. 성공도 실패도 단정하지 않고 `NOT_VERIFIED` 유지. 홈페이지 로그인 필요조건 없음; 유료 Browser Use/재배포/Cloudflare 설정·DNS 변경/반복 동일 실패 재시도 없음.
+> - **다음 필수 조회:** 승인된 기존 무료 GitHub Checks 조회 경로에서 **정확한** `GET /repos/ansqhd5774-Choi/zgmini/commits/010e127f99f9ea95ade904423404787fa4148a8f/check-runs?per_page=100`의 전체 대상 결과 확보 → 해당 Worker Production `details_url`과 정확한 Build/Deployment readback → 공개 API·실제 UI 최종점 검증. 조회가 불가능한 현재 상태를 전체 W06 작업의 전역 BLOCKER로 사용하지 않음.
+> - **작업 상태:** #28 소스/CI/main 병합은 완료, Production 검증 #75 연계 `PARTIAL/NOT_VERIFIED`; 고유 완료 단계 **22/75(29.3%)** 불변. 이번 단계는 조사/원장 갱신만 수행, 운영·소스 코드 수정 0건.
+
+
 > **W06 #75/28 — PR #1452 Production 배포 확인 조사 (2026-11-21 KST, 순수 조회):** 확인 대상 main merge `010e127f99f9ea95ade904423404787fa4148a8f`, 현재 `main`과 이 커밋의 GitHub 비교 **identical(ahead0/behind0)** 확인. PR #1452 MERGED, 해당 main SHA combined status `statuses=[]`, `fetch_commit_workflow_runs=[]`, PR 댓글 `[]`; GitHub를 통한 exact Cloudflare Deployment ID/Build/Production 영수증 **미발견**. 공개 `https://zgmini.kr/` 및 `/api/market-score`, `/api/market-score/observations?period=1D` 검증을 시도했으나 웹 도구 fetch cache miss/API inaccessible, 현재 검사 환경 DNS 연결 실패. 연결된 공개 브라우저 탭은 접근 권한 부족, 별도 read-only browser 호출은 `insufficient_credits`로 실행 전 거부(결제/충전 금지). Cloudflare 계정·배포 상태 직접 조회 가능한 연결 도구 없음. 따라서 **Build/배포/활성 UI 적용 모두 NOT_VERIFIED**; 기존 Node/Chromium PR CI success와 실제 Production 적용을 동일시하지 않음. DNS·재배포·Wrangler·유료 크레딧·추가 자동화/예약 변경 **0**. 타 기능 독립 W06 구현은 계속 가능, 이 미입증은 #75/28 Production 증거 범위만 PARTIAL. 다음 실행: 무료/승인된 Cloudflare 읽기 전용 계정 경로가 확보된 경우 exact Deployment(commit SHA 포함) readback과 공개 PC/mobile 차트 실제 렌더링을 1회 대조. 기존 재시도 차단 원인 반복 호출 불필요. 전체 고유 DONE **22/75(29.3%) 유지**.
 >
 
