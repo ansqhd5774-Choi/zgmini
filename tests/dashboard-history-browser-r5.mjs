@@ -143,16 +143,19 @@ try{
    .waitFor({state:'visible',timeout:15000});
   await waitForGeometry();
   assert.equal(await periods.getByRole('button',{name:'1D',exact:true}).getAttribute('aria-pressed'),'true');
-  // The 1D archive contains two actual observations plus the changed current
-  // publication: their stroke must contain a real segment, not just dots.
-  // No reconstructed daily points are available in the 1D series.
-  const oneDayObservedLine=await page.locator(chartSelector+' path.recharts-area-curve').evaluateAll(paths=>paths.some(path=>{
-   const d=path.getAttribute('d')??'';
-   const stroke=path.getAttribute('stroke')??getComputedStyle(path).stroke;
-   return /^M/.test(d)&&/[CLQ]/.test(d.slice(1))&&!/NaN|Infinity/.test(d)
-    &&stroke!=='none'&&stroke!=='transparent'&&stroke!==''; 
+  // All 1D calculated observations are version-unidentified in the
+  // archive, even when the current card carries a verified version. They
+  // must remain visible as dots without a misleading continuous stroke.
+  const oneDayMarks=await page.locator(chartSelector).evaluate(root=>({
+   strokes:[...root.querySelectorAll('path.recharts-area-curve')].filter(path=>{
+    const d=path.getAttribute('d')??'';
+    const stroke=path.getAttribute('stroke')??getComputedStyle(path).stroke;
+    return /^M/.test(d)&&/[CLQ]/.test(d.slice(1))&&stroke!=='none'&&stroke!=='transparent'&&stroke!=='';
+   }).length,
+   dots:root.querySelectorAll('circle.recharts-area-dot').length,
   }));
-  assert.equal(oneDayObservedLine,true,width+'px 1D actual calculated observations connect as a line');
+  assert.equal(oneDayMarks.strokes,0,width+'px 1D unknown-method history has no drawn stroke');
+  assert.ok(oneDayMarks.dots>=2,width+'px 1D actual calculated dots remain visible');
   // W06 R4 #69: verify actual viewport overflow after all six period changes.
   const overflow=await page.evaluate(()=>{
    const viewport=document.documentElement.clientWidth;
