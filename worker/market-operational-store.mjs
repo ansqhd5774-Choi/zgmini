@@ -1,3 +1,4 @@
+import {readPaidBreadthRow,overlayPaidBreadth} from './breadth-paid-public.mjs';
 import {assertMarketInput,readValidatedInput,VALIDATED_INPUT_KEYS} from './market-input-validation.mjs';
 import {assertCompleteMarket} from './market-publication-validation.mjs';
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
@@ -28,6 +29,7 @@ export function marketOperationalStore(db){
   initialize:init,
   async readInput(key){await init();if(VALIDATED_INPUT_KEYS.includes(key))return readValidatedInput(db,key,decodeInput);const row=await db.prepare('SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1').bind(key+':%').first();return row?{body:decodeInput(row.body),storedAt:row.stored_at}:null},
   readScore:()=>read('market_public_snapshots_v1','current'),
+  readPaidBreadth:()=>readPaidBreadthRow(db),
   async readScoreHistory({sinceDate='0000-00-00',limit=370}={}){
    await init();
    const bounded=Math.max(1,Math.min(1000,Math.trunc(Number(limit)||370)));
@@ -77,7 +79,7 @@ export async function storedMarketResponse(request,{store,now=Date.now()}={}){
  if(!snapshot||now<snapshot.storedAt||now-snapshot.storedAt>=PUBLIC_DISPLAY_MAX_AGE_MS)return Response.json({status:'FAILED',reason:snapshot?'STORED_SCORE_STALE':'STORED_SCORE_PENDING',overall:{score:null,status:'UNAVAILABLE',trend:[]},domains:[],dataQuality:{overallComputable:false,reweighted:false}},{status:503,headers});
  headers['cache-control']='public, max-age=60, must-revalidate';
  headers['x-market-snapshot-at']=new Date(snapshot.storedAt).toISOString();
- const publicBody=maskRetiredMarketPublicSnapshot(snapshot.body);
+ const publicBody=await overlayPaidBreadth(maskRetiredMarketPublicSnapshot(snapshot.body),{readPaid:store.readPaidBreadth,now});
  if(!publicBody)return Response.json({status:'UNAVAILABLE',reason:MARKETPARQUET_REMOVED_CODE,overall:{score:null,status:'UNAVAILABLE',trend:[]},domains:[]},{status:503,headers:{...headers,'cache-control':'no-store'}});
  if(request.headers.get('accept')?.includes('application/x-ndjson'))return new Response(JSON.stringify({type:'complete',body:publicBody,cacheControl:headers['cache-control']})+'\n',{headers:{...headers,'content-type':'application/x-ndjson; charset=utf-8','vary':'Accept'}});
  return Response.json(publicBody,{headers});
