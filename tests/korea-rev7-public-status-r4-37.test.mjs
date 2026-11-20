@@ -90,7 +90,7 @@ test('W06 #37 incomplete, impossible, and future dates cannot replace last compl
  const view=await snapshot([
   row('20261118',42.3,'READY'),row('20261119',60.6,'READY'),
   row('20261120',99,'PARTIAL'),row('20260230',98,'READY'),
-  row('20261121',97,'READY'),
+  row('20261122',97,'READY'),
  ]);
  assert.equal(view.composite.status,'READY');
  assert.equal(view.composite.observationDate,'20261119');
