@@ -1,3 +1,14 @@
+## 2026-11-20 20:02 KST W03 13단계 — R178 독립 읽기 전용 감사 진입점 구현
+
+- **진척:** 12/68 (17.6%) → 12/68 (17.6%). 단계 13은 실PC JSON/TXT·게시 승인·CAS/API/UI 미완료. 전체 목표 163 유지. 작업 브랜치 `codex/theme-fear-greed-integration-20261025`, 이번 최신 main SHA는 별도 미조회(UNKNOWN).
+- **실제 구현:** `scripts/pc-writer/theme-seven-gmh-r178-saved-to-cas-r1.mjs`에 `auditPinnedGmhSevenR178ReadOnly` 추가. 기존 검증 함수와 **운영 고정 SHA pins만** 사용, 호출자가 제공한 검증된 legacySeed를 메모리 전용 `readSeed`로 전달. D1 query/replace, 공급자 GET, 승인 flag 승격, CAS 불가능. 반환은 상태·원본 3 SHA·raw 재해시/manifest 수집시각 증거·심볼/페이지/7×252 개수와 관측/수집일 요약뿐이며 원봉/가격을 출력하지 않음. 코드 커밋 `ba7935e32f35197cf2a44074c57a54c57fac80d2`.
+- **회귀 추가:** `tests/theme-seven-gmh-r178-saved-to-cas-r1.test.mjs`에 seed 누락 시 PC 접근 전 중단, synthetic SHA가 운영 pin과 다르면 private 접근 전 중단 2개 추가. 커밋 `c62d7c4a8d18c302489d9898e2c81ed9eb66a2df`. GitHub 파일 쓰기 성공, **Node 테스트 실행/CI/실PC 검증은 아직 없음(PENDING)**. 정적 코드 추가를 실측 PASS로 계상하지 않음.
+- **입력 제약:** legacySeed는 기존 운영 D1 또는 신뢰된 읽기 전용 A 증거에서 별도로 확인된 원본이어야 함. 이 함수는 해당 seed를 자체 확보하지 않으며, 운영 원본 SHA의 실제 PC 일치도 이번에는 미측정. 기존 #2449/#2450 Writer 설치 성공과 #2455 503은 그대로 유지; 재설치·공개 갱신 없음.
+- **운영 변경:** PC A/B, 공급처 GET, SQLite/D1, Cloudflare, 예약, 게시 0. R32·기존 공개 10개·GMH 7×252 저장 원본 불변. LAST PASS=기존 Writer 설치와 GitHub 코드 커밋; FIRST PENDING=테스트 실행 및 실제 PC 읽기 전용 seed·고정 원본 감사 영수증.
+- **다음 한 가지 실행:** 위 2개 신규 테스트와 기존 R178 회귀를 Node에서 실행·CI 확인한 뒤, 기존 승인 A에서 신뢰 legacySeed와 dataRoot를 **쓰기 없이** 전달할 수 있는지 확인하여 실제 7×252 감사 JSON/TXT를 확보. 승인된 읽기 경로가 없다면 최소 A 연결만 별도 검토. 결과 확인 전 D1 CAS/READY 금지.
+
+---
+
 ## 2026-11-20 19:00 KST W03 13단계 — 읽기 전용 감사 경로의 실제 결합점 확인
 
 - **진행:** 시작 12/68(17.6%) → 종료 12/68(17.6%), 13단계 미완료. 기존 Writer 설치 #2449/#2450, 공급처 서면 회신, 7×252 비공개 계산 증거를 재사용하며 재실행하지 않음.
