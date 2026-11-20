@@ -1,4 +1,5 @@
 import {REV7_VERSION,REV7_INDEX_ID,REV7_FACTORS,REV7_DIRECTIONS} from './korea-rev7-engine.mjs';
+import {koreaRev7DisplayDayMs} from '../lib/korea-rev7-display-day-r4.mjs';
 
 export const PUBLIC_VERSION=`${REV7_VERSION}-public-3`;
 export const PUBLIC_CACHE_KEY=`${REV7_VERSION}:${PUBLIC_VERSION}`;
@@ -102,9 +103,16 @@ export async function publicSnapshot(env,context={}){
     };
   }
 
+  // A snapshot row must not become today's public score before its recorded
+  // observation day exists in Korea. Never normalize impossible YYYYMMDD keys.
+  const dayParts=Object.fromEntries(new Intl.DateTimeFormat('en-US',{
+    timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',
+  }).formatToParts(clock()).map(part=>[part.type,part.value]));
+  const todayKorea=`${dayParts.year}${dayParts.month}${dayParts.day}`;
   const rawRows=await loadRows(env,PUBLIC_HISTORY_LIMIT);
   const rows=rawRows.map(normalizeSnapshotRow)
-    .filter(row=>row.methodologyVersion===REV7_VERSION&&/^\d{8}$/.test(row.date??''));
+    .filter(row=>row.methodologyVersion===REV7_VERSION
+      &&Number.isFinite(koreaRev7DisplayDayMs(row.date))&&row.date<=todayKorea);
 
   if(!rows.length){
     return {
