@@ -33,12 +33,14 @@ export function verifiedCoreHandoffBytes(e){
  ]),'utf8');
 }
 export function verifySignedCoreHandoff({
- envelope,pinnedPublicKey,expectedSourceSha,now=Date.now(),
+ envelope,pinnedPublicKey,expectedSourceSha,expectedManifestSha256,now=Date.now(),
 }={}){
  if(!SHA40.test(expectedSourceSha??'')||
+  !SHA.test(expectedManifestSha256??'')||
   !Number.isSafeInteger(now)||now<1)fail();
  const bytes=verifiedCoreHandoffBytes(envelope);
  if(envelope.sourceSha!==expectedSourceSha||
+  envelope.manifestSha256!==expectedManifestSha256||
   envelope.issuedAt>now+60_000||envelope.expiresAt<=now)fail();
  let key,signature;
  try{
@@ -62,7 +64,7 @@ export function verifySignedCoreHandoff({
  * Does not delete, rename, claim or execute the staged JSON file.
  */
 export function inspectStagedCoreHandoff({
- requestId,approvedRoot,pinnedPublicKey,expectedSourceSha,now=Date.now(),
+ requestId,approvedRoot,pinnedPublicKey,expectedSourceSha,expectedManifestSha256,now=Date.now(),
  fsImpl=fs,
 }={}){
  if(!UUID.test(requestId??'')||typeof approvedRoot!=='string'||
@@ -86,7 +88,7 @@ export function inspectStagedCoreHandoff({
   envelope=JSON.parse(raw.toString('utf8'));
  }catch{fail();}
  const proof=verifySignedCoreHandoff({envelope,pinnedPublicKey,
-  expectedSourceSha,now});
+  expectedSourceSha,expectedManifestSha256,now});
  if(proof.requestId!==requestId)fail();
  return proof; // signature verified only; no single-use claim or GET.
 }
