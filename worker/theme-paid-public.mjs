@@ -4,7 +4,7 @@ import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
 export async function readPaidThemeFeed(db,{now=Date.now()}={}){
  let row,b;try{row=await db.prepare("SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'").bind(PAID_THEME_KEY).first();if(!row)return null;b=JSON.parse(row.body);}catch{return null;}
  if(!validPaidThemeRecord(b))return null;
- const stamps=[row.stored_at,Date.parse(b.sourceStoredAt),Date.parse(b.updatedAt),Date.parse(b.observationDate+'T23:59:59Z')];
+ const stamps=[row.stored_at,Date.parse(b.sourceStoredAt),Date.parse(b.updatedAt),Date.parse(b.observationDate+'T00:00:00Z')];
  if(stamps.some(t=>!Number.isSafeInteger(Number(t))||t>now||now-t>=PUBLIC_DISPLAY_MAX_AGE_MS))return null;
  // Explicit projection: raw prices, bars, private registrations and credentials cannot escape.
  const themes=b.themes.map(t=>({id:t.id,...(t.configured?{configured:true}:{}),theme:t.theme,etfs:t.etfs,score:t.score,history:t.history.map(p=>({date:p.date,score:p.score})),methodologyVersion:t.methodologyVersion,confirmedObservationDate:t.confirmedObservationDate,provisionalObservationDate:t.provisionalObservationDate,sourcePriceMode:t.sourcePriceMode,transitionAfter:t.transitionAfter??null,previousPriceMode:t.previousPriceMode??null,missingETFs:t.missingETFs??[]}));

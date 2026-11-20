@@ -7,9 +7,12 @@ const score=s=>typeof s==='number'&&Number.isFinite(s)&&s>=0&&s<=100;
 const sha=s=>typeof s==='string'&&/^[a-f0-9]{64}$/.test(s);
 const methods=new Set(['ETF_ONLY_T40_R20_V40_PAIR50','ETF_ONLY_T40_R20_V40_ADAPTIVE_R2_DATED_ISSUER_AUM_R32','ETF_ONLY_T40_R20_V40_ADAPTIVE_R2_AUM_DATE_ELIGIBLE_SINGLE_R32','ADAPTIVE_R2_PAIR_R3']);
 export function validPaidThemeRecord(b){
+ const policy=b?.phasePolicy;
+ // Existing 48h/24h rows remain readable for migration; new Writer uses the provider policy.
+ const validPhasePolicy=policy?.clockBasis==='PROVIDER_PUBLISHED_PROXY_BAR_END'&&policy.confirmedLagHours===0&&policy.provisionalLagHours===0||policy?.clockBasis==='ACTUAL_NY_PROXY_BAR_END'&&policy.confirmedLagHours===48&&policy.provisionalLagHours===24;
  if(b?.version!==PAID_THEME_VERSION||b.status!=='READY'||b.sourcePriceMode!==PAID_HOURLY_MODE||!sha(b.sourceVersion)||!sha(b.registrySha256)||
   !day(b.observationDate)||b.confirmedObservationDate!==b.observationDate||!day(b.sourceLatestDate)||b.sourceLatestDate<b.observationDate||
-  b.phasePolicy?.confirmedLagHours!==48||b.phasePolicy?.provisionalLagHours!==24||b.phasePolicy?.clockBasis!=='ACTUAL_NY_PROXY_BAR_END'||
+  !validPhasePolicy||
   !Array.isArray(b.themes)||!b.themes.length||!Array.isArray(b.provisional?.points)||!['PROVISIONAL','CONFIRMED'].includes(b.phase))return false;
  const ids=new Set(),names=new Set();
  for(const t of b.themes){
