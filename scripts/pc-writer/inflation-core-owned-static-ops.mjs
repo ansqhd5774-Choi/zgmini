@@ -17,8 +17,7 @@ const TARGETS=Object.freeze([
  'bls-cpi-ppi3.json','census-m3-manufacturing-inventories.json'
 ]);
 const DIR='inflation-causal-candidates-r1';
-const methods=['authenticateExistingB','assertCoreAcquisitionOrigin',
- 'tryAcquireSharedWriterLease',
+const methods=['authenticateExistingB','tryAcquireSharedWriterLease',
  'readCurrentSourcePreimage','recordOnceJournal'];
 const stop=code=>{throw Object.assign(new Error(code),{code});};
 const need=(ok,code)=>{if(!ok)stop(code);};
@@ -39,13 +38,14 @@ const safeFile=(file,base,max=24_000_000)=>{
 // The current Core base is an actual runtime value, not Issue-body input;
 // approvedRoot is a fixed, installed contractual value.
 export function makeCoreOwnedInflationStaticOps({
- base,approvedRoot,controller,
+ base,approvedRoot,controller,coreAcquisitionWitness,
  fetchImpl=globalThis.fetch,
  parse=prepareOfficialManualStore,apply=applyOfficialManualStore,
 }={}){
  need(typeof base==='string'&&path.isAbsolute(base)&&
   typeof approvedRoot==='string'&&path.isAbsolute(approvedRoot)&&
   isObject(controller)&&methods.every(m=>typeof controller[m]==='function')&&
+  typeof coreAcquisitionWitness==='function'&&
   typeof fetchImpl==='function'&&typeof parse==='function'&&
   typeof apply==='function',
   'INFL_CORE_STATIC_OPS_CONTRACT_STOP');
@@ -55,7 +55,7 @@ export function makeCoreOwnedInflationStaticOps({
   // A matching PID in a file is spoofable and does not prove creation.
   // Only a trusted, *live Core acquisition* witness can satisfy this.
   // This is a separate installed/approved contract, not a permissive flag.
-  const origin=await controller.assertCoreAcquisitionOrigin({base,approvedRoot});
+  const origin=await coreAcquisitionWitness({base,approvedRoot});
   need(origin?.originAuthenticated===true&&
    origin?.source==='CURRENT_CORE_ACQUISITION'&&
    origin?.pid===process.pid&&
