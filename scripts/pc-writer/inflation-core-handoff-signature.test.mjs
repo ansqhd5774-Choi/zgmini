@@ -8,6 +8,7 @@ import {verifySignedCoreHandoff,verifiedCoreHandoffBytes,inspectStagedCoreHandof
  from './inflation-core-handoff-signature.mjs';
 const now=Date.UTC(2026,10,21);
 const expectedSourceSha='a'.repeat(40);
+const expectedManifestSha256='b'.repeat(64);
 const data=()=>({schema:'ZGMINI_W01_CORE_HANDOFF_SIGNED_V1',
  requestId:'c131d4c4-b788-4a1c-9f60-146dd6f7abb1',
  nonce:'7c4e0b76-153d-41af-99d4-ec13a8394c89',
@@ -25,7 +26,7 @@ function fixture(){
 test('signed exact V3 handoff remains a non-authorizing candidate',()=>{
  const f=fixture();
  const result=verifySignedCoreHandoff({envelope:f.envelope,pinnedPublicKey:f.publicKey,
-  expectedSourceSha,now});
+  expectedSourceSha,expectedManifestSha256,now});
  assert.equal(result.status,'SIGNATURE_VERIFIED_CANDIDATE_ONLY');
  assert.equal(result.authorizesExecution,false);
  assert.equal(result.requestId,f.envelope.requestId);
@@ -33,13 +34,13 @@ test('signed exact V3 handoff remains a non-authorizing candidate',()=>{
 test('wrong key, drifted manifest, new source and unsigned JSON are denied',()=>{
  const f=fixture(),other=generateKeyPairSync('ed25519');
  assert.throws(()=>verifySignedCoreHandoff({envelope:f.envelope,
-  pinnedPublicKey:other.publicKey,expectedSourceSha,now}),
+  pinnedPublicKey:other.publicKey,expectedSourceSha,expectedManifestSha256,now}),
   {code:'INFL_CORE_STATIC_SIGNED_HANDOFF_DENIED_STOP'});
  for(const change of [{manifestSha256:'d'.repeat(64)},
   {sourceSha:'e'.repeat(40)},{nonce:'a'.repeat(8)+'-'.repeat(4)},
   {issueNumber:101},{signature:Buffer.alloc(64).toString('base64')} ]){
   assert.throws(()=>verifySignedCoreHandoff({envelope:{...f.envelope,...change},
-   pinnedPublicKey:f.publicKey,expectedSourceSha,now}),
+   pinnedPublicKey:f.publicKey,expectedSourceSha,expectedManifestSha256,now}),
    {code:'INFL_CORE_STATIC_SIGNED_HANDOFF_DENIED_STOP'});
  }
 });
@@ -47,14 +48,15 @@ test('expired, future, mismatched Core source and extra fields are denied',()=>{
  const f=fixture();
  for(const options of [
   {now:now+1_200_000},{now:now-60_001},
-  {expectedSourceSha:'d'.repeat(40)}
+  {expectedSourceSha:'d'.repeat(40)},
+  {expectedManifestSha256:'c'.repeat(64)}
  ]){
   assert.throws(()=>verifySignedCoreHandoff({envelope:f.envelope,
-   pinnedPublicKey:f.publicKey,expectedSourceSha,now,...options}),
+   pinnedPublicKey:f.publicKey,expectedSourceSha,expectedManifestSha256,now,...options}),
    {code:'INFL_CORE_STATIC_SIGNED_HANDOFF_DENIED_STOP'});
  }
  assert.throws(()=>verifySignedCoreHandoff({envelope:{...f.envelope,
-  allowTaskChanges:true},pinnedPublicKey:f.publicKey,expectedSourceSha,now}),
+  allowTaskChanges:true},pinnedPublicKey:f.publicKey,expectedSourceSha,expectedManifestSha256,now}),
   {code:'INFL_CORE_STATIC_SIGNED_HANDOFF_DENIED_STOP'});
 });
 
@@ -67,7 +69,7 @@ test('staged envelope read is read-only and does not grant a collection',()=>{
   const p=path.join(dir,f.envelope.requestId+'.signed.json');
   fs.writeFileSync(p,JSON.stringify(f.envelope)+'\n',{flag:'wx'});
   const proof=inspectStagedCoreHandoff({requestId:f.envelope.requestId,
-   approvedRoot:root,pinnedPublicKey:f.publicKey,expectedSourceSha,now});
+   approvedRoot:root,pinnedPublicKey:f.publicKey,expectedSourceSha,expectedManifestSha256,now});
   assert.equal(proof.authorizesExecution,false);
   assert.equal(proof.status,'SIGNATURE_VERIFIED_CANDIDATE_ONLY');
   assert.equal(fs.existsSync(p),true);
@@ -83,7 +85,7 @@ test('invalid signed stage is denied without consuming the local request',()=>{
   const p=path.join(dir,f.envelope.requestId+'.signed.json');
   fs.writeFileSync(p,JSON.stringify({...f.envelope,issueNumber:202})+'\n',{flag:'wx'});
   assert.throws(()=>inspectStagedCoreHandoff({requestId:f.envelope.requestId,
-   approvedRoot:root,pinnedPublicKey:f.publicKey,expectedSourceSha,now}),
+   approvedRoot:root,pinnedPublicKey:f.publicKey,expectedSourceSha,expectedManifestSha256,now}),
    {code:'INFL_CORE_STATIC_SIGNED_HANDOFF_DENIED_STOP'});
   assert.equal(fs.existsSync(p),true);
  }finally{fs.rmSync(root,{recursive:true,force:true});}
