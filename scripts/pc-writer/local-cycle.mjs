@@ -10,6 +10,7 @@ import {dispatchEarningsRiskProvisionalR23} from './earnings-risk-provisional-r2
 import {collectionPublicationPolicy} from './collection-publication-policy.mjs';
 import {progressivePublication,auxiliaryInputCheckpoint} from './progressive-publication.mjs';
 import {updateDataAlert} from './local-data-alert.mjs';
+import {acquireCoreLockWithWitness} from './core-lock-owned-witness.mjs';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
@@ -19,7 +20,9 @@ if(fs.existsSync(file)){
  if(alive){console.log('LOCAL_CYCLE_RUNNING');process.exit(0);}
  fs.renameSync(file,file+'.interrupted-'+Date.now());
 }
-fs.writeFileSync(file,JSON.stringify({pid:process.pid,at:Date.now()}),{flag:'wx'});
+// Preserve the existing one Core/Korea lock with an in-process acquisition
+// witness; this does not enable W01 manual collection or authorize an Issue.
+const coreLock=acquireCoreLockWithWitness({file});
 try{
  const lane=process.argv.includes('--korea')?'korea':'core';
  // Paid sector/theme inputs share one stored archive; no extra Task or publisher.
@@ -33,6 +36,12 @@ try{
   try{const {runPaidThemeCycle}=await import('./theme-paid-cycle.mjs');
    console.log('THEME_PAID '+JSON.stringify(await runPaidThemeCycle(base,{publish:process.argv.includes('--publish')})));
   }catch(e){const report={status:'FAILED_PREVIOUS_DATA_PRESERVED',code:/^PAID_[A-Z0-9_]+$/.test(e.code??'')?e.code:'PAID_THEME_RUNTIME_FAILED',d1Outcome:'CHECK_STORED_RESULT_BEFORE_RETRY'};console.warn('THEME_PAID '+JSON.stringify(report));try{save(path.join(base,'marketparquet-paid','theme-last-run.json'),report);}catch{}}
+ }
+ // Paid breadth uses the existing Core and approved B1-R5 formula only.
+ if(lane==='core'){
+  try{const {runPaidBreadthCycle}=await import('./breadth-paid-cycle.mjs');
+   console.log('BREADTH_PAID '+JSON.stringify(await runPaidBreadthCycle(base,{publish:process.argv.includes('--publish')})));
+  }catch(e){const report={status:'FAILED_PREVIOUS_DATA_PRESERVED',code:/^BREADTH_PAID_[A-Z0-9_]+$/.test(e.code??'')?e.code:'BREADTH_PAID_RUNTIME_FAILED',d1Outcome:'CHECK_STORED_RESULT_BEFORE_RETRY'};console.warn('BREADTH_PAID '+JSON.stringify(report));try{save(path.join(base,'marketparquet-paid','breadth-last-run.json'),report);}catch{}}
  }
  const collection=spawnSync(process.execPath,[path.join(here,'collect-local.mjs'),...(lane==='korea'?['--korea']:[])],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:30*60000});
  try{updateDataAlert(base,{key:'collection',failed:collection.status!==0});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
@@ -215,4 +224,4 @@ try{
  save(path.join(base,'local-cycle-last-run.json'),report);console.log(JSON.stringify(report));
  if(publishRequested)try{updateDataAlert(base,{key:'publication',failed:publication.status!==0});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
  if(publication.status!==0)process.exitCode=1;
-}finally{fs.unlinkSync(file);}
+}finally{coreLock.release();}
