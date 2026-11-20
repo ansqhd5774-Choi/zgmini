@@ -4,6 +4,8 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {paidMcpCall} from './theme-paid-hourly-source.mjs';
 import {paidDates,readPaidDaily,readPaidProjection} from './marketparquet-paid-store.mjs';
+import {marketParquetSymbolVariants} from '../../lib/market-score/breadth-b1-r3-history-r4.mjs';
+import {normalizePitTicker} from '../../lib/market-score/sp500-pit-universe-r1.mjs';
 import {parseSectorFearGreedR3PitCsv} from '../../lib/market-score/sector-fear-greed-r3-rolling.mjs';
 const sha=b=>createHash('sha256').update(b).digest('hex');
 const need=(ok,code)=>{if(!ok)throw Object.assign(Error(code),{code});};
@@ -14,8 +16,11 @@ export function paidBreadthSql(entries,start,end){
  const relevant=entries.filter(e=>e.dateAdded<=end&&(!e.dateRemoved||e.dateRemoved>start));
  need(relevant.length>=490&&relevant.every(e=>/^[A-Z0-9][A-Z0-9.-]*$/.test(e.ticker)&&date(e.dateAdded)&&(!e.dateRemoved||date(e.dateRemoved))),'BREADTH_PAID_PIT');
  const values=relevant.map(e=>"('"+e.ticker+"',DATE '"+e.dateAdded+"',DATE '"+(e.dateRemoved??'9999-12-31')+"')").join(',');
- return `WITH pit(symbol,first_date,last_date) AS (VALUES ${values}),
- raw AS (SELECT CAST(date AS DATE) d,symbol,close,volume FROM bars WHERE symbol IN (SELECT symbol FROM pit)),
+ const variants=[...new Set(relevant.flatMap(e=>[...marketParquetSymbolVariants(e.ticker),...marketParquetSymbolVariants(normalizePitTicker(e.ticker))].map(v=>JSON.stringify([e.ticker,v]))))].map(v=>JSON.parse(v));
+ const aliases=variants.map(([ticker,provider])=>"('"+ticker+"','"+provider+"')").join(',');
+ return `WITH pit(symbol,first_date,last_date) AS (VALUES ${values}), aliases(symbol,provider_symbol) AS (VALUES ${aliases}),
+ raw_source AS (SELECT CAST(date AS DATE) d,symbol provider_symbol,close,volume FROM bars WHERE symbol IN (SELECT provider_symbol FROM aliases)),
+ raw AS (SELECT d,a.symbol,min(close) AS "close",min(volume) AS "volume" FROM raw_source r JOIN aliases a USING(provider_symbol) GROUP BY d,a.symbol HAVING count(*)=1),
  dates AS (SELECT d,lag(d) OVER(ORDER BY d) previous_date FROM (SELECT DISTINCT d FROM raw)),
  members AS (SELECT dates.d,count(*) member_count,count(DISTINCT pit.symbol) unique_members FROM dates JOIN pit ON dates.d>=pit.first_date AND dates.d<pit.last_date GROUP BY dates.d),
  prices AS (SELECT *,lag(d) OVER(PARTITION BY symbol ORDER BY d) pd,lag(close) OVER(PARTITION BY symbol ORDER BY d) pc FROM raw),
@@ -47,10 +52,10 @@ export async function loadPaidBreadthInputs(base,{call=paidMcpCall}={}){
  const catalog=(await call(base,'list_datasets',{})).value,dataset=catalog.datasets?.find(d=>d.dataset==='stock_daily'),end=dataset?.coverage?.[1];
  need(catalog.plan==='full'&&catalog.mcp_included===true&&date(end),'BREADTH_PAID_ENTITLEMENT');
  const start=new Date(Date.parse(end+'T00:00:00Z')-430*86400000).toISOString().slice(0,10),pitSha256=sha(pitBytes);
- const dir=path.join(base,'marketparquet-paid','breadth-aggregates',pitSha256);fs.mkdirSync(dir,{recursive:true});const file=path.join(dir,end+'.json'),receiptFile=file+'.receipt.json';let acquired=0;
+ const dir=path.join(base,'marketparquet-paid','breadth-aggregates-resolved-v2',pitSha256);fs.mkdirSync(dir,{recursive:true});const file=path.join(dir,end+'.json'),receiptFile=file+'.receipt.json';let acquired=0;
  if(!fs.existsSync(receiptFile)){
   const {value,bytes}=await call(base,'query_sql',{asset:'stock',timeframe:'daily',start_date:start,end_date:end,sql:paidBreadthSql(pit.entries,start,end),max_rows:500});
-  parsePaidBreadthAggregates(value);const receipt={schema:'BREADTH_PAID_AGGREGATES_V1',plan:'full',dataset:'stock_daily',start,end,pitSha256,sha256:sha(bytes),sourceStoredAt:new Date().toISOString()};
+  parsePaidBreadthAggregates(value);const receipt={schema:'BREADTH_PAID_AGGREGATES_RESOLVED_V2',plan:'full',dataset:'stock_daily',start,end,pitSha256,sha256:sha(bytes),sourceStoredAt:new Date().toISOString()};
   if(fs.existsSync(file))need(sha(fs.readFileSync(file))===receipt.sha256,'BREADTH_PAID_ORPHAN_BYTES');else fs.writeFileSync(file,bytes,{flag:'wx'});
   fs.writeFileSync(receiptFile,JSON.stringify(receipt,null,2)+'\n',{flag:'wx'});acquired=1;
  }
