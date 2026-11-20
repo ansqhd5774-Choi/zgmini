@@ -1,3 +1,15 @@
+## 2026-11-21 KST — 공개 화면 접근 제한 및 P2 등록형 구조 실제 소스 검토
+
+- 시작/종료: 이전 기록 12/68(17.6%) 유지. 확정 68개 1:1 체크리스트 부재로 이번 소스 조사·브라우저 실패를 신규 완료 단계로 계산하지 않음.
+- P1/P4 UI 실측 시도: `https://zgmini.kr/api/theme-fear-greed`, `https://zgmini.kr/theme-fear-greed` 공개 웹 조회 불가; 로컬 직접 HTTPS는 DNS `NameResolutionError`; 연결된 기존 zgmini.kr 탭은 브라우저 확장 host permission 부족; read-only Browser Use도 `insufficient_credits`. 유료 크레딧 구매/충전·우회 경로 없음. 따라서 이번 회차 최신 API HTTP·PC/모바일 시각 결과·차트 마지막 점 모두 `UNVERIFIED_THIS_RUN`. 상단의 11/21 D1/API 성공 기록은 계속 유효한 이전 실측이며 이번 재조회 PASS로 포장하지 않음.
+- P2 실제 소스 연결 정적 확인: `theme-paid-cycle.mjs` → `theme-paid-registry.mjs` → 활성 V2 `ACTIVE_RUNTIME.json` 해시 검증·`listRegistered(dataRoot)` → `buildOperationalRegistry` → `calculatePaidThemes`. `calculatePaidThemes`는 등록된 public=false 테마를 `privateResults`로만 반환하고 공개 D1 payload의 `themes`에 포함하지 않음. `theme-paid-registry.mjs`의 공개 승인 파일은 정확 정의 SHA·profile·ETF·권리·기간 등으로 검증, 임의 공개 플래그 금지. 기존 Core 공통 실행 재사용 및 새 예약 없음(소스 구조).
+- 신규 AI 정의 `config/theme-ai-software-v2.json` 존재: id `ai-software`, WISE/IGV/XSW/AIQ, R32 정의와 근거 SHA. `docs/THEME_AI_SOFTWARE_ONBOARDING_20261103.md`의 사용자가 승인한 ETF 선정과 정의 파일은 재사용. 단 이 파일의 과거 `provider=getmarkethistory`·과거 무료 잠정정책은 현재 유료 입력 운영 상태를 증명하지 않으므로 과거 공급자 제한을 다시 적용하는 근거로 삼지 않음.
+- 현재 정확한 FIRST PENDING: **설치된 V2 등록부에 `ai-software`가 실제 등록돼 있는지와 동일 Core 실행 결과의 `privateResults[id=ai-software]` 및 비공개 저장/checkpoint SHA 실측 확인**. `PRIVATE_CALCULATED_NOT_PUBLISHED`가 확인되면 P2 비공개 계산 경로를 인정하되, Reader 표시·별도 공개 권한을 자동 완료로 승격 금지. `theme-configured-public.mjs`은 전통적인 개별 키를 읽는 별도 Reader이며 신규 paid 공통 D1 경로와 동일하다고 단정하지 않음.
+- 다음 동작: 기존 승인 A/운영 원장·Core 실행 결과를 재조회하여 실제 등록·비공개 저장 증거 확보. 승인된 조회 수단이 없으면 **P2 해당 런타임 확인만** `AUTOMATION_BLOCKED`로 분리하고 UI 브라우저 크레딧 문제를 전체 작업 차단으로 확대하지 않는다.
+- 이번 변경: 이 진행 원장 단일 파일만 갱신. 새로운 설치/수집/계산/DB/D1/Cloudflare/예약 변경 0.
+
+---
+
 ## 2026-11-21 KST — 원본 계획 대비 최신 운영 증거 재분류 (읽기 전용 감사)
 
 - 기준: `docs/THEME_FEAR_GREED_163_THEME_MASTER_PLAN_20261027.md`의 P1→P4→P2→P3 및 `docs/THEME_SCALE_AND_METHODOLOGY_WORKFLOW.md`의 T1~T5. 이 원장의 기존 2026-11-20 기록은 '68개 1:1 확정 체크리스트가 없는 이상 임의 단계명·진행률 승격 금지'라고 명시한다. 따라서 과거 12/68은 마지막 기록값으로만 유지하며 현재 13/68 DONE 또는 새로운 정확한 68단계 완료 수를 단정하지 않는다.
