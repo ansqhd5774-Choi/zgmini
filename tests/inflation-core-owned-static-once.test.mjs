@@ -2,3 +2,5 @@
 import '../scripts/pc-writer/inflation-core-owned-static-once.test.mjs';
 
 import '../scripts/pc-writer/inflation-core-owned-lock-proof.test.mjs';
+
+import '../scripts/pc-writer/inflation-core-owned-static-ops.test.mjs';
