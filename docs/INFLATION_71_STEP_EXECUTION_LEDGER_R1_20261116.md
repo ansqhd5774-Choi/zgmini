@@ -1,6 +1,17 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
 
+<!-- W01-20261121-C2505-CONTROLLER-IMPORT-FAIL-A407-INSTALLED -->
+## 2026-11-21 — 현재 W01 A4-07 진입점은 Controller에 설치되어 있으나 공통 ESM 로더 실패로 실행 불능 (새 설치 불필요)
+
+- **W01 차단의 실제 변경 증거:** 공통 유지보수 [#2505](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2505)의 후속 [#2534 실PC 고정 readonly](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2534)는 실제 Controller installed SHA `0f1effad0c58e8b7bd684aa638521180183ca902`를 확인했고, 공유 설치 lease `held=true/recoveryRequired=true`, owner/marker 존재 확인. 별개 postcheck [#2506](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2506) Actions [44753202464](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44753202464)은 `Execute fixed host allowlist entry`에서 `ERR_MODULE_NOT_FOUND: controller/r54-runtime-binding-readonly.mjs`로 **실제 실패**, 보고 JSON 미생성/댓글 미업로드. 그래서 원래 #2506 `RESULT_NOT_OBSERVED`만으로 진행했던 판정은 이전 #2506의 후속 실제 실패 증거로 갱신. 다른 #2536 A의 GitHub 댓글 `0`은 실행 실패로 **소급 확정하지 않음**.
+- **설치된 source tree 직접 검사:** 정확 설치 ref `0f1effad...`에서 `controller/operations.mjs`의 `inflation-a407-integrity-readonly` import/dispatch, `config/operations.json`의 해당 A 등재, `controller/inflation-a407-integrity-readonly.mjs` 실제 존재 **3/3**, `controller/inflation19-runtime-readonly.mjs`에 `inflation7Writer` reader 존재. 반면 같은 설치 ref `controller/r54-runtime-binding-readonly.mjs` **NOT_FOUND**, `operations.mjs`는 이를 import함. 이는 원래 W01 A4-07가 **아직 설치되지 않았다**는 과거 #2250의 상태와 달라진 실제 상황. 신규 A407 모듈·Reader만 중복 설치하지 않음.
+- **범위별 status:** A4-07 `SOURCE_AND_ADMISSION_INSTALLED_BUT_CONTROLLER_IMPORT_BLOCKED`로 기술상 갱신(해당 stage DONE 아님); B2-05 Reader `SOURCE_INSTALLED_BUT_RUNTIME_READBACK_BLOCKED`, B2-06 D1 관리자 조회 독립. 신규 #2536 A `open, result comments 0`: `RESULT_NOT_OBSERVED`, 중복 요청 금지. [제어 Draft PR #2531](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2531)의 V2 SHA profile 16분기 시뮬레이션 CI PASS는 source-only이며 현 Controller 복구/owner 증명과 별개.
+- **최소 원인 수정 책임/진행 순서:** 공통 #2505 원 owner가 기존 backup/lease/host CAS·복구 계약에 따라 불완전 import closure를 **정규 복구**하고 실제 `core-status` 새 정상 동작 및 설치 SHA readback을 증명해야 함. W01은 그 증거를 재사용하고 신규 중복 Controller B/Task 제어/lock 삭제 없이 **이미 등록된** A4-07 고유 읽기 1회 → 19+6 raw SHA/2 checkpoint, 기존 Inflation19 A Writer 7 metadata → 독립 D1 readback. Census #28 Core owner 증명/수집 B는 해당 범위만 별도 복구, Event129 C 보안 변경 무단 실행 금지.
+- **이번 실제 변경:** app W01 진행 원장만 갱신. Controller/Writer/PC/공급자/DB/D1/배포 쓰기 0, 유효 완료 33/71(46.5%) 그대로. #2536 결과 없는 상태를 근거 없이 Runner offline이나 완료로 표현하지 않음.
+
+
+
 <!-- W01-20261121-V2-PIN-SIMULATION-16CASES -->
 ## 2026-11-21 — V2 설치 해시 16개 분기 시뮬레이션 CI PASS, Core 운영 owner 별도 NO-GO
 
