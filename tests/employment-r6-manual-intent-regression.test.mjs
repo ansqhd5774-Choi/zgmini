@@ -28,7 +28,7 @@ function fixture() {
     async initialize() {},
     async getLatestRun(provider) {
       calls.latest++;
-      assert.equal(provider, "DOL_UI_WEEKLY_CLAIMS");
+      assert.equal(provider, "EMPLOYMENT_R6_DOL_UI_WEEKLY_CLAIMS");
       return stored();
     },
     async acquire() {
