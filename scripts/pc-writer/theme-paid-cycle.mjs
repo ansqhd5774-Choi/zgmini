@@ -76,8 +76,12 @@ export async function runPaidThemeCycle(base,{publish=false,now=Date.now(),sync=
  const output=calculatePaidThemes({...context,...saved,...seed,phases,sourceVersion,now});
  const dir=path.join(base,'marketparquet-paid','derived');fs.mkdirSync(dir,{recursive:true});const bytes=Buffer.from(JSON.stringify(output.record));const candidate=path.join(dir,'theme-'+sha(bytes)+'.json');if(!fs.existsSync(candidate))fs.writeFileSync(candidate,bytes,{flag:'wx'});
  need(sha(fs.readFileSync(candidate))===sha(bytes),'PAID_THEME_CANDIDATE_READBACK');
- const privateStored=storePaidPrivateResults(dir,{privateRecords:output.privateRecords,
-  sourceVersion,registrySha256:context.registrySha256,phases});
+ // Optional private evidence failure must not block independent approved public feeds.
+ let privateStored;
+ try{privateStored=storePaidPrivateResults(dir,{privateRecords:output.privateRecords,
+  sourceVersion,registrySha256:context.registrySha256,phases});}
+ catch(e){privateStored={status:'PRIVATE_STORE_FAILED',count:output.privateRecords.length,
+  code:/^PAID_THEME_PRIVATE_[A-Z_]+$/.test(e?.code??'')?e.code:'PAID_THEME_PRIVATE_STORE_ERROR'};}
  const result={...report,status:'PRIVATE_CALCULATED',sourceLatestDate:phases.sourceLatest,confirmedDate:phases.confirmed,provisionalDate:phases.provisional,expectedIds:output.record.dataQuality.expectedPublicIds,readyIds:output.record.dataQuality.readyPublicIds,pendingIds:output.record.dataQuality.pendingPublicIds,privateResults:output.privateResults,privateStored,acquisition:{chunks:acquisition.acquired,proofs:saved.proofs.length},results:output.results};
  if(publish&&validPaidThemeRecord(output.record)){const applied=await publishPaidThemeRecord({remote,dbId:config.core,record:output.record,preimage:seed.preimage,now});result.status=applied.status;result.d1Writes=applied.written;result.storedAt=applied.storedAt;result.bodySha256=applied.bodySha256??sha(seed.preimage.body);}
  fs.writeFileSync(path.join(base,'marketparquet-paid','theme-last-run.json'),JSON.stringify(result,null,2)+'\n');return result;
