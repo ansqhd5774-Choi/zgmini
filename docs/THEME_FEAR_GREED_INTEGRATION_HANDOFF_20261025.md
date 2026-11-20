@@ -1,3 +1,13 @@
+## 2026-11-20 KST W03 13단계 — 공급처 회신 조회 및 중복 수집 보완 PR #1097 미병합 종결
+
+- **진행률:** 12/68(17.6%) → 12/68(17.6%), 기능 단계 13 진행 중. 기준 `main@a7c0cf678bb3d3e29d97d4a6c15f48e9dec69cfd`, 지정 브랜치 `codex/theme-fear-greed-integration-20261025`; 이번 원장 수정 직전 blob `061b9d939f5d7c3ba26830fb7539371b3d43f5a8`. 기존 11/20 GMH 공급처 문의 발송·CAS Writer 설치 #2449/#2450·API #2455 공개 503 증거 전부 보존.
+- **신규 외부 조회:** 공식 GMH 파트너십 메일 스레드 `1a1ef72ab94cdc2d`에서 실제 `SENT` 원문 1건만 확인. 별도 도메인 발신 이메일 검색 결과 0건(2026-11-19 이후 범위). **공급처 회신/사용권 승인 여전히 미확인**, 동일 문의 재발송 금지.
+- **실제 코드/시험 중복 검증과 GitHub 정리:** W03 Draft [PR #1097](https://github.com/ansqhd5774-Choi/zgmini/pull/1097) HEAD `e92c445d66e79e408aab1c1714a284db579637ac` 대비 현 main의 정확 6개 파일 경로/코드 대조. 수집기 `scripts/pc-writer/theme-optional-collect.mjs`, 공급자 probe `scripts/pc-writer/theme-space-satellite-r12-provider-probe.mjs`, 각 테스트 2파일 모두 **동일 Git blob 4/4** (현재 main에 `stocks/us`, dataset 쿼리, HTTP200 범위외/갭 원자료 저장 거부와 회귀가 이미 반영). 나머지 merge 코드와 시험 2개는 blob이 다르나 main은 `legacy.length>0&&base.phase==='PROVISIONAL'`와 UNAVAILABLE legacy 배제·configured 복원·정상 READY legacy 보존 사례를 포함해 PR 보호와 동등 이상. 이를 새 개발/실행 PASS로 꾸미지 않고 기존 main과 PR의 정적 대조 완료로 판정. PR #1097에 실제 검사 근거 댓글 추가 후 **closed/unmerged** (PR 명시 NO MERGE 존중); 브랜치 삭제·main 전체 병합·운영 변경 없음.
+- **결과·보호:** W03 개발 PR 1건 종료, 실제 R178 공개 복구는 여전히 미완료. 공급처 권리·상위 상업 라이선스·가격 정책·정확 D1 공개 효과 승인 미확인, provider GET/D1 writes/운영 PC 설치·Cloudflare 배포/예약 0. 이전 성공 A/B 및 R32 데이터/권리 false 불변.
+- **다음 단일 필수 실행:** 공급처가 실제로 회신할 경우 동일 스레드 원문을 이용권·무계정 1h·정상 계정·상위 권리·비복원 공개·유료 계약으로 구분하고 범위가 명확한 승인만 재사용한다. 확정 전 무단 R178 CAS 금지; 별도 독립 W03 코드 이슈는 마지막 유효 source/Runtime과 비교해 실제 결손만 처리한다.
+
+---
+
 ## 2026-11-20 KST W03 13단계 — GMH 상업 파생 공개권 공식 문의 발송 및 SENT readback
 
 - **진행률:** 시작 12/68(17.6%) → 종료 12/68(17.6%), 13단계 미완료. 상위 163테마 목표·기존 승인 산식/ETF/PC Runner·D1 계약 불변. 기준 기능 main `a7c0cf678bb3d3e29d97d4a6c15f48e9dec69cfd`; 지정 브랜치 `codex/theme-fear-greed-integration-20261025`, 작업 전 진행원장 Git blob `840b25639312bc546cd84722c6bb825becf5395f`. 원본 기록과 #2449/#2450 설치 및 #2455 공개 503 증거 보존.
