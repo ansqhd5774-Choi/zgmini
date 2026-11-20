@@ -181,6 +181,52 @@ test('expired GMH observation cannot be rescued with fresh D1 publish timestamp'
  }),{code:'W03_R178_PUBLISH_READER_OR_IMMUTABLE_SEED_REJECTED'});
  assert.equal(db.stats().writes,0);
 });
+test('unknown CAS response reconciles identical stored effect with zero additional writes',async()=>{
+ const f=await fixtures(),db=storage(f);
+ let attempts=0;
+ const underlying=db.replace;
+ db.replace=async(key,record,prior)=>{
+  attempts++;
+  await underlying(key,record,prior);
+  throw Object.assign(Error('lost response'),{
+   code:'W03_GMH_WRITER_D1_CAS_OUTCOME_UNKNOWN_NO_RETRY'});
+ };
+ const result=await publishApprovedGmhSevenR178({
+  ...f,storage:db,verifyApprovedEffect:approved,now:NOW
+ });
+ assert.equal(result.status,'R178_GMH_ONLY_EFFECT_OBSERVED_AFTER_UNCERTAIN_CAS');
+ assert.equal(result.effectOwnerVerified,false);
+ assert.equal(result.d1Writes,null);
+ assert.equal(result.publicApiVerified,false);
+ assert.equal(attempts,1);
+ assert.deepEqual(db.stats(),{writes:1,r32Reads:2,storedAt:NOW-1000});
+});
+test('CAS collision with another body preserves original failure and does not retry',async()=>{
+ const f=await fixtures(),db=storage(f);let attempts=0;
+ db.replace=async()=>{
+  attempts++;
+  throw Object.assign(Error('collision'),{
+   code:'W03_GMH_WRITER_D1_CAS_NOT_APPLIED_NO_RETRY'});
+ };
+ await assert.rejects(publishApprovedGmhSevenR178({
+  ...f,storage:db,verifyApprovedEffect:approved,now:NOW
+ }),{code:'W03_GMH_WRITER_D1_CAS_NOT_APPLIED_NO_RETRY'});
+ assert.equal(attempts,1);
+ assert.equal(db.stats().writes,0);
+});
+test('uncertain CAS that changes R32 cannot pass reconciliation',async()=>{
+ const f=await fixtures(),db=storage(f,{changeR32After:true});
+ const underlying=db.replace;
+ db.replace=async(...args)=>{
+  await underlying(...args);
+  throw Object.assign(Error('lost response'),{
+   code:'W03_GMH_WRITER_D1_CAS_OUTCOME_UNKNOWN_NO_RETRY'});
+ };
+ await assert.rejects(publishApprovedGmhSevenR178({
+  ...f,storage:db,verifyApprovedEffect:approved,now:NOW
+ }),{code:'W03_R178_PUBLISH_R32_CHANGED_AFTER_UNCERTAIN_CAS_NO_RETRY'});
+ assert.equal(db.stats().writes,1);
+});
 test('compare-and-swap failures are preserved and never treated as successful publication',async()=>{
  const f=await fixtures(),db=storage(f);
  db.replace=async()=>{throw Object.assign(new Error('D1_COMPARE_AND_SWAP_FAILED'),
