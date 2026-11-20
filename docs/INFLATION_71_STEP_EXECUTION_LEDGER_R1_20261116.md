@@ -1,6 +1,14 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
 
+<!-- W01-20261121-V2-PIN-SIMULATION-16CASES -->
+## 2026-11-21 — V2 설치 해시 16개 분기 시뮬레이션 CI PASS, Core 운영 owner 별도 NO-GO
+
+- 제어 PR [#2531](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2531), 최신 head `0dab2cf818378afc65c91128c59f3c41da70a666`에서 공식 수동 V2 `validateApprovalManifest`를 호출하는 16개 분기 데이터 기반 테스트: 기존 2개 정확 source profile + #2515 실제 설치 Core SHA 후보 프로필 **3개 승인**, collector/store/XLSX/Core SHA 변조·새 Core와 다른 파서 혼합·임의 공급자 URL·저장 경로·Task/source 변경 허용·2회 실행·잠금 계약·source policy·추가 필드 **13개 모두 거부**. 격리 CI [#44787989064](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44787989064) `completed/success`, 정확 inflation-manual V1/V2 guard step `success`. **소스 계약 16/16 시험 성공 = 운영 GET 성공 확률 아님**.
+- 최신 동시 Writer B [#2537](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2537)은 2개 theme-paid 파일만 설치하고 `local-cycle.mjs`에는 영향 없음. 성공 영수증은 해당 설치 범위만 인정한다.
+- 기존 승인 A [#2536](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2536)은 `writer-install-preimage-readonly` 고유 requestId `pc-e553d79e-4fa9-46ef-8940-bab4e3e28bb8`, 승인 원문 SHA `de4e9d80984383d4f300d37477800f54d28ed21ca39dd4a39b4c6354517a8db6` 검산. 마지막 조회 결과 `open/comments=0`, **RUNNING/FAILED/DONE 미확정**. 같은 요청 반복 금지. 이 조회 scope는 Core 파일+bridge **2개**이며 모든 V2 수집파일을 확인한 것으로 해석 금지.
+- 단계 완료 조건은 실제 Core Task owner proof(과거 #2469 instance=0, Event129 비활성), 현재 승인 4파일 preimage/source 효과, 실제 고유 B 1회 정상 원자료 저장과 readback. 관리 보안 설정 임의 변경/old B replay 금지. 운영 신규 완료 0, **33/71(46.5%) 불변**.
+
 <!-- W01-20261121-INSTALLED-CORE-SHA-V2-CLOSURE-NEW-BLOCKER -->
 ## 2026-11-21 — #2515 실PC 설치로 기존 수집 V2 source closure가 만료됨: 최소 source-only 후보 검증, 기능 33/71 유지
 
