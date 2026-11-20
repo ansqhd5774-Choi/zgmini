@@ -10,14 +10,14 @@ import {runCoreOwnedInflationStaticOnce,INFLATION_CORE_STATIC_SCOPE}
  from './inflation-core-owned-static-once.mjs';
 import {MANUAL_STORE_OPERATION}
  from './inflation-causal-candidate-manual-official-store-r1.mjs';
+import {acquireCoreLockWithWitness} from './core-lock-owned-witness.mjs';
 
 const id='c131d4c4-b788-4a1c-9f60-146dd6f7abb1';
 const hash=bytes=>createHash('sha256').update(bytes).digest('hex');
 function fixture({foreignRoot=false,ppi=true}={}){
  const home=fs.mkdtempSync(path.join(os.tmpdir(),'w01-core-ops-'));
  const second=foreignRoot?fs.mkdtempSync(path.join(os.tmpdir(),'w01-foreign-')):home;
- fs.writeFileSync(path.join(home,'local-cycle.lock'),
-  JSON.stringify({pid:process.pid,at:Date.now()}));
+ const ownership=acquireCoreLockWithWitness({file:path.join(home,'local-cycle.lock')});
  const calls=[];
  const writer={
   verify:async()=>calls.push('lease'),
@@ -81,10 +81,11 @@ function fixture({foreignRoot=false,ppi=true}={}){
     coreCheckpointWrites:0};
   });
  };
- return {home,second,calls,controller,coreAcquisitionWitness:async()=>({
-   originAuthenticated:true,source:'CURRENT_CORE_ACQUISITION',pid:process.pid}),
+ return {home,second,calls,controller,
+  coreAcquisitionWitness:args=>ownership.witness(args),
   sourceA,sourceB,parse,apply,
   fetchImpl:fetchReal,requests:()=>requests,cleanup:()=>{
+   ownership.release();
    fs.rmSync(home,{recursive:true,force:true});
    if(second!==home)fs.rmSync(second,{recursive:true,force:true});
   }};
