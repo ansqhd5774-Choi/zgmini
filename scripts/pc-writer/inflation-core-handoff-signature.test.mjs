@@ -1,7 +1,10 @@
 import test from 'node:test';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import assert from 'node:assert/strict';
 import {generateKeyPairSync,sign} from 'node:crypto';
-import {verifySignedCoreHandoff,verifiedCoreHandoffBytes}
+import {verifySignedCoreHandoff,verifiedCoreHandoffBytes,inspectStagedCoreHandoff}
  from './inflation-core-handoff-signature.mjs';
 const now=Date.UTC(2026,10,21);
 const expectedSourceSha='a'.repeat(40);
@@ -53,4 +56,35 @@ test('expired, future, mismatched Core source and extra fields are denied',()=>{
  assert.throws(()=>verifySignedCoreHandoff({envelope:{...f.envelope,
   allowTaskChanges:true},pinnedPublicKey:f.publicKey,expectedSourceSha,now}),
   {code:'INFL_CORE_STATIC_SIGNED_HANDOFF_DENIED_STOP'});
+});
+
+test('staged envelope read is read-only and does not grant a collection',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'w01-core-consume-'));
+ try{
+  const dir=path.join(root,'inflation-causal-candidates-r1','core-handoff');
+  fs.mkdirSync(dir,{recursive:true});
+  const f=fixture();
+  const p=path.join(dir,f.envelope.requestId+'.signed.json');
+  fs.writeFileSync(p,JSON.stringify(f.envelope)+'\n',{flag:'wx'});
+  const proof=inspectStagedCoreHandoff({requestId:f.envelope.requestId,
+   approvedRoot:root,pinnedPublicKey:f.publicKey,expectedSourceSha,now});
+  assert.equal(proof.authorizesExecution,false);
+  assert.equal(proof.status,'SIGNATURE_VERIFIED_CANDIDATE_ONLY');
+  assert.equal(fs.existsSync(p),true);
+  assert.equal(JSON.parse(fs.readFileSync(p,'utf8')).requestId,proof.requestId);
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+test('invalid signed stage is denied without consuming the local request',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'w01-core-deny-'));
+ try{
+  const dir=path.join(root,'inflation-causal-candidates-r1','core-handoff');
+  fs.mkdirSync(dir,{recursive:true});
+  const f=fixture();
+  const p=path.join(dir,f.envelope.requestId+'.signed.json');
+  fs.writeFileSync(p,JSON.stringify({...f.envelope,issueNumber:202})+'\n',{flag:'wx'});
+  assert.throws(()=>inspectStagedCoreHandoff({requestId:f.envelope.requestId,
+   approvedRoot:root,pinnedPublicKey:f.publicKey,expectedSourceSha,now}),
+   {code:'INFL_CORE_STATIC_SIGNED_HANDOFF_DENIED_STOP'});
+  assert.equal(fs.existsSync(p),true);
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
 });
