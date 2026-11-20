@@ -40,7 +40,7 @@ export function calculatePaidThemes({registry,aumByTheme,series,previousThemes=[
   observed[symbol]=new Set(own.map(p=>p.date));let count=0;sessionCounts[symbol]=new Map(spy.map(p=>{if(byDate.has(p.date))count++;return [p.date,count];}));
   if(spaceSymbols.has(symbol))rawTimelines.set(symbol,scoreAdaptiveTimeline(spy.map(p=>({date:p.date,own:byDate.get(p.date)??null,spy:p.close}))));
  }
- const previous=new Map(previousThemes.map(t=>[t.id??t.theme,t]));const results=[],publicThemes=[],privateResults=[];
+ const previous=new Map(previousThemes.map(t=>[t.id??t.theme,t]));const results=[],publicThemes=[],privateResults=[],privateRecords=[];
  const points=new Map();
  for(const t of registry.themes.filter(t=>t.enabled)){
   try{
@@ -73,10 +73,10 @@ export function calculatePaidThemes({registry,aumByTheme,series,previousThemes=[
    const missingETFs=t.etfs.filter(s=>!observed[s].has(phases.provisional));
    const item={id:t.id,configured:t.operational?.family==='configured',theme:t.label,etfs:[...t.etfs],methodologyVersion:t.methodologyVersion,score:last.score,history,confirmedObservationDate:phases.confirmed,provisionalObservationDate:provisional.at(-1)?.date??null,sourcePriceMode:PAID_HOURLY_MODE,previousPriceMode:prior?.previousPriceMode??prior?.sourcePriceMode??null,transitionAfter:prior?.transitionAfter??prior?.history?.at(-1)?.date??null,missingETFs,provisional};
    if(t.public){publicThemes.push(item);for(const p of provisional){const point=points.get(p.date)??{date:p.date,scores:{}};point.scores[t.label]=p.score;points.set(p.date,point);}}
-   else privateResults.push({id:t.id,status:'PRIVATE_CALCULATED_NOT_PUBLISHED',confirmedDate:phases.confirmed,provisionalDate:item.provisionalObservationDate});
+   else {privateRecords.push(item);privateResults.push({id:t.id,status:'PRIVATE_CALCULATED_NOT_PUBLISHED',confirmedDate:phases.confirmed,provisionalDate:item.provisionalObservationDate});}
    results.push({id:t.id,public:t.public,status:'READY',missingETFs});
   }catch(e){results.push({id:t.id,public:t.public,status:'WAIT_SOURCE_OR_SCORE',code:/^[A-Z0-9_]+$/.test(e.code??'')?e.code:'PAID_THEME_CALCULATION_FAILED'});}
  }
  const expected=registry.themes.filter(t=>t.enabled&&t.public).map(t=>t.id),ready=publicThemes.map(t=>t.id);
- return {record:{version:PAID_THEME_VERSION,status:publicThemes.length?'READY':'PENDING',phase:points.size?'PROVISIONAL':'CONFIRMED',observationDate:phases.confirmed,confirmedObservationDate:phases.confirmed,sourceLatestDate:phases.sourceLatest,methodologyVersion:'REGISTERED_APPROVED_THEME_METHODS_V1',sourcePriceMode:PAID_HOURLY_MODE,historicalSourcePolicy:'PRESERVE_PRE_TRANSITION_PUBLIC_VALUES',sourceStoredAt,sourceVersion,registrySha256,updatedAt:new Date(now).toISOString(),phasePolicy:{confirmedLagHours:phases.confirmedLagHours,provisionalLagHours:phases.provisionalLagHours,clockBasis:phases.clockBasis},themes:publicThemes,provisional:{points:[...points.values()].sort((a,b)=>a.date.localeCompare(b.date))},dataQuality:{expectedPublicIds:expected,readyPublicIds:ready,pendingPublicIds:expected.filter(id=>!ready.includes(id)),results:results.filter(r=>r.public)}},results,privateResults};
+ return {record:{version:PAID_THEME_VERSION,status:publicThemes.length?'READY':'PENDING',phase:points.size?'PROVISIONAL':'CONFIRMED',observationDate:phases.confirmed,confirmedObservationDate:phases.confirmed,sourceLatestDate:phases.sourceLatest,methodologyVersion:'REGISTERED_APPROVED_THEME_METHODS_V1',sourcePriceMode:PAID_HOURLY_MODE,historicalSourcePolicy:'PRESERVE_PRE_TRANSITION_PUBLIC_VALUES',sourceStoredAt,sourceVersion,registrySha256,updatedAt:new Date(now).toISOString(),phasePolicy:{confirmedLagHours:phases.confirmedLagHours,provisionalLagHours:phases.provisionalLagHours,clockBasis:phases.clockBasis},themes:publicThemes,provisional:{points:[...points.values()].sort((a,b)=>a.date.localeCompare(b.date))},dataQuality:{expectedPublicIds:expected,readyPublicIds:ready,pendingPublicIds:expected.filter(id=>!ready.includes(id)),results:results.filter(r=>r.public)}},results,privateResults,privateRecords};
 }
