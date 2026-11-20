@@ -1,3 +1,17 @@
+## 2026-11-20 23:47 KST — 유료 공통 경로 운영 연결 완료
+
+- 사용자 확정: MarketParquet Complete Archive + Keep Current, 확정·잠정 입력 통합. 과거 무료 거절/GMH 고정 지시는 이번 유료 범위를 차단하지 않는다.
+- 앱 PR #1443 병합 `f35fab59dbcc5c013fcd0b1109fb70391a351f28`; app CI·Cloudflare Worker Build SUCCESS. 소스 관련 회귀 104/104 PASS. UI 코드는 변경하지 않았다.
+- B 설치 승인 PR pc-control #2508 / 실제 설치 #2509 (`WRITER_B_INSTALLED_VERIFIED`, Run 44755956858, result pair 원격 readback). 실제 운영 Writer `7a73ed450d06ba98425defc4096576cdae42a17b`, config.source 일치, 대상 11파일 SHA 확인. 기존 Core 복원 및 실제 `--publish` 진입 확인.
+- 기존 Core 자연 실행 23:45:01 KST 시작 후 D1 paid key 저장시각 23:45:05.096 KST. 별도 실행은 23:45:12 이후 시작해 `UNCHANGED_READBACK_VERIFIED`·추가 D1 쓰기0을 반환했다. 기존 Core 한 곳에서 공개10개·등록 비공개 AI를 같이 처리했다.
+- 실제 D1 key `theme-fear-greed-paid-hourly-v1`, body SHA `cf21412b3fd9657cc7d4055fdfc7edea167059bc8943db5a272e2aaa6c88e1e2`, stored_at `1795185905096`. 공급처 최신 11/19, 48시간 확정 11/17, 24시간 잠정 11/18.
+- 공개 `/api/theme-fear-greed` HTTP200 READY. 공개10개×252 확정 점수(2,520개) 및 잠정 본문이 실제 D1과 동일, 불일치0. 기존 UI 데이터 어댑터 10시리즈·253점. AI 소프트웨어 비공개 유지. 과거 공개 겹침2,400값 변경0. 원자료 가격은 공개하지 않았다.
+- 전환 후 구 테마 전용 예약5개(Configured, R47, R54, Biotech, Data-Center-Power)를 XML 백업 후 비활성화했다. Core·다른 업무는 유지했다. 새 테마별 예약·Controller·CMD는 없다.
+- 실제 브라우저 육안 렌더링은 도구 접근 제한으로 미검증이다. API/D1/기존 화면 입력 계약의 성공을 취소하지 않으며 화면 PASS로 과장하지 않는다. 기존 전체 68단계나 데이터센터 R32 산식 전환 완료를 뜻하지 않는다.
+- 이후 신규 테마는 기존 등록부에 등록하고 승인 프로필·공개 권리 계약에 따라 같은 Core에서 처리한다. R178 7개 경로를 다시 복구하거나 동일 설치·수집을 반복하지 않는다. 이력이 바뀌지 않는 동일 입력은 재게시하지 않는다.
+
+---
+
 ## 2026-11-20 유료 입력 통합 — 최신 사용자 결정 우선
 
 - Complete Archive·Keep Current 및 MarketParquet 확정·잠정 입력 통합이 승인됐다. 과거 GMH 전용 R178 감사 반복을 이번 운영 연결의 선행조건으로 두지 않는다.
