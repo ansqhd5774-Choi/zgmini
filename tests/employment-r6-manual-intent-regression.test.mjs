@@ -26,9 +26,9 @@ function fixture() {
   const calls = { latest: 0, provider: 0, records: [], locks: 0 };
   const store = {
     async initialize() {},
-    async getLatestRunInMode(provider, mode) {
+    async getLatestRun(provider) {
       calls.latest++;
-      assert.equal(mode, "ONE_YEAR");
+      assert.equal(provider, "DOL_UI_WEEKLY_CLAIMS");
       return stored();
     },
     async acquire() {
