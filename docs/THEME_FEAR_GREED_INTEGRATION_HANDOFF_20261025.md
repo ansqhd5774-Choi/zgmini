@@ -8,6 +8,17 @@
 
 ---
 
+## 2026-11-20 23:00 KST W03 13단계 — 실행 경로 재확인 및 테스트 환경 차단 실증
+
+- **진척:** 12/68(17.6%) → 12/68(17.6%), 13단계 IN_PROGRESS. 163개 목표 불변. 기준 main `489962306f899bbce631e6117c7a51b02988d472` (이번 신규 #1442 병합), 지정 브랜치 작업 전 `7698f024dc702e8e59fd1543ea69177fd6c2c1af`.
+- **이번 직접 실행:** GitHub 지정 계획/원장 및 R178 감사 구현 blob `d132810ee7bc27ae674288856ced70c15bf4de68`, 테스트 blob `1753979165e7c6c5a1416e1b78e6ad8c2ba8c030` 재조회. 로컬 `node --version` → `v22.16.0` PASS. `git ls-remote https://github.com/ansqhd5774-Choi/zgmini.git HEAD` → `Could not resolve host: github.com` FAIL. Desktop Commander `list_devices` → `pc Offline`, 마지막 연결 1181시간 전. 따라서 **Node 바이너리는 있지만 실제 테스트 의존 파일 checkout/실PC 접근이 불가능**함을 구분. 테스트 실행 PASS/FAIL 증거 없음.
+- **정적 감사 확인:** `auditPinnedGmhSevenR178ReadOnly`는 운영 3 SHA pins 고정, caller-provided `legacySeed`, 메모리 `readSeed`, D1 write/CAS 미노출, 원가격 미출력. 신규 2개 테스트는 seed 부재와 synthetic pin 거부만 확인하도록 작성됨. **정상 운영 pin에 대한 실제 성공 경로 테스트 및 실행시점 8일 freshness 판정은 아직 별도 증거 없음**. 이는 테스트 실패 확정이 아님.
+- **LAST PASS:** #2449/#2450 기존 Writer 설치·보호 확인 및 GitHub 코드 커밋. **FIRST PENDING:** 실제 Node 회귀 실행, 신뢰 legacySeed를 이용한 실PC 7×252 SHA·payload·신선도 JSON/TXT 감사. #2455 503/STORED_DATA_STALE는 과거 결과이며 이번 신규 API 실측 없음.
+- **운영 변경:** PC A/B, Provider GET, SQLite/D1, Cloudflare, scheduler, 승인/권리 flag, 기존 R32·공개 10개 변경 0. 기존 설치 재실행 0. 지정 원장만 갱신.
+- **다음 한 가지 실행:** 테스트 소스 및 상대 import 의존성 전체를 실행 가능한 Node runner에 확보한 뒤 `node --test tests/theme-seven-gmh-r178-saved-to-cas-r1.test.mjs` 실행 결과를 증거로 저장. 이어 실PC read-only legacySeed/dataRoot 경로를 연결한다. 미검증 R178 D1 CAS 금지.
+
+---
+
 ## 2026-11-20 22:00 KST W03 13단계 — 신규 감사 테스트 CI 증거 조회
 
 - **진척:** 12/68(17.6%) → 12/68(17.6%); 13단계 진행 중. 기존 20:02 감사 함수·회귀 2건 구현, 21:03 실행환경 점검 결과를 재사용.
