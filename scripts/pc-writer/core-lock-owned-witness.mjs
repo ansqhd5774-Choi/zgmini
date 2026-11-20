@@ -22,7 +22,13 @@ export function acquireCoreLockWithWitness({
  try{
   // Existing Core runs with the same wx exclusive-file semantics.
   fd=fsImpl.openSync(file,'wx');
-  fsImpl.writeSync(fd,bytes,0,bytes.length,0);
+  let offset=0;
+  while(offset<bytes.length){
+   const written=fsImpl.writeSync(fd,bytes,offset,bytes.length-offset,offset);
+   if(!Number.isSafeInteger(written)||written<=0)
+    fail('INFL_CORE_STATIC_LOCK_ACQUIRE_FAILED_STOP');
+   offset+=written;
+  }
   fsImpl.fsyncSync(fd);
  }catch(e){
   if(fd!==undefined)try{fsImpl.closeSync(fd);}catch{}
