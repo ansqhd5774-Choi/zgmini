@@ -41,13 +41,17 @@ function normalizeSnapshotRow(row){
   const factors=parseJson(row?.factors_json,{});
   const composite=parseJson(row?.composite_json,{});
   const score=valid(composite?.score)?composite.score:null;
+  const status=composite?.status??(score===null?'WARMUP':'READY');
+  // An incomplete row can carry a numeric candidate. Only a completed
+  // READY composite is a public score or a valid chart point.
+  const publicScore=status==='READY'?score:null;
   return {
     date:row?.date??null,
     methodologyVersion:row?.methodology_version??null,
     factors,
-    score,
-    displayScore:round1(score),
-    status:composite?.status??(score===null?'WARMUP':'READY'),
+    score:publicScore,
+    displayScore:round1(publicScore),
+    status,
     historyMode:row?.history_mode??'RECONSTRUCTED_CURRENT_VINTAGE',
     pointInTimeVerified:Boolean(row?.point_in_time_verified),
     calculatedAt:row?.calculated_at??null,
