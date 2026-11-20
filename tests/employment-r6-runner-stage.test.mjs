@@ -66,6 +66,9 @@ test("Runner-facing stage emits only bounded aggregate and 29 statuses from real
   assert.match(report.formulaHash,/^sha256:[a-f0-9]{64}$/);
   assert.equal(report.methodologyVersion,"EMP-R6-FORMULA-R1");
   assert.equal(report.stateClaimsChart.pointCount,0);
+  assert.equal(report.stateClaimsChart.unit,"%");
+  assert.equal(report.stateClaimsChart.unitMatchesApproved,true);
+  assert.equal(report.stateClaimsChart.gapCount,0);
   assert.equal(report.stateClaimsChart.lastDate,null);
   assert.equal(report.stateClaimsChart.lastPointFinite,false);
   assert.equal(report.stateClaimsChart.lastPointMatchesCurrent,false);
@@ -104,6 +107,8 @@ test("Runner projection ignores injected source paths, raw values and unbounded 
   assert.equal(report.indicators.length,29);
   assert.equal(report.sourceStoredAt,Date.parse("2026-11-01T09:00:00.000Z"));
   assert.equal(report.stateClaimsChart.pointCount,0);
+  assert.equal(report.stateClaimsChart.unit,"%");
+  assert.equal(report.stateClaimsChart.gapCount,0);
   assert.doesNotMatch(text,/PRIVATE_RAW_OR_KEY_MUST_NEVER_LEAK|sourcePath|history|retrievedAt/);
   assert.ok(Buffer.byteLength(text)<12000);
 });
