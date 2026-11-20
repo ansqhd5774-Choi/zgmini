@@ -1,5 +1,7 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
+> **추가 검증 — Node 22 격리 복합 4/4 PASS (2026-11-21 KST):** 최신 main의 게시시각 보호 로직과 `codex/ui-improvements`에서 수정한 실제 polling scheduler 텍스트를 합성한 격리 Node 파일에서 기존 `tests/live-refresh.test.mjs`의 **기존 2건**(역행·진짜 0·갱신 직렬화·이벤트 cleanup), 신규 **2건**(미종결 취소 후 재조회, 늦은 reject·직렬화·정리)을 `node --test`로 함께 실행해 **4/4 PASS**, 실패 0. 이 결과는 격리 시험이며 GitHub CI/실제 운영 PASS가 아니고 latest main 변경은 0. 앞선 신규 2/2 시험을 보강한 실제 증거임. 다음 필요한 사항: 최신 main hunk 선택 병합 안전 경로 + 해당 브랜치 기반 정규 CI 검증.
+
 
 > **W06 #34 기존 DONE 이후 갱신 타임아웃 결함 최소 소스 수정 및 격리 시험 (2026-11-21 KST)**
 > - **목표·직접 담당:** 기존 60초 저장 결과 갱신 `startStoredRefresh`의 30초 취소 후 미종결 Promise에 의한 영구 `busy` 교착을 제거. 과거 #34 DONE 판정/3건 모의시험·기존 #75 최종배포 판단은 보존. 원본 증거 `main` `lib/market-score/live-refresh.mjs` blob `0cd9240d2c390a6fc24475108cb5b3405b5e4f58`, `tests/live-refresh.test.mjs` blob `583d9daf99dcf560d104ba2a9d38bff261fdbae7`. 변경 전 `codex/ui-improvements` 소스 blob `a4699fef877ba57f28e517cdb590035b5992e4c4`, 테스트 blob `ff02f017d635d31ad6403a780ede23f18cd8e617`.
