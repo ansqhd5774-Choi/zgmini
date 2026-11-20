@@ -28,7 +28,7 @@ function load(signal?:AbortSignal):Promise<void>{
  if(signal?.aborted)controller.abort();
  const timer=setTimeout(()=>controller.abort(),95000);
  // Cancellation must release the shared slot even if fetch ignores AbortSignal.
- let cancelHandler;
+ let cancelHandler:()=>void;
  const cancelled=new Promise<void>(resolve=>{
   cancelHandler=()=>resolve();
   controller.signal.addEventListener('abort',cancelHandler,{once:true});
