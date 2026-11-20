@@ -1,3 +1,15 @@
+## 2026-11-21 KST — P2 AI 소프트웨어 기존 실PC 등록 PASS 재발견·미완료 분리
+
+- 시작·종료: 12/68(17.6%) 기존 기록 유지. P2의 등록 하위 작업은 **기존 성공 증거를 재발견해 완료로 재분류**했지만 신규 단계 전체를 DONE으로 승격하지 않음.
+- **실제 등록 LAST PASS:** 제어 #182 원본 결과 `results/ai-software-v2-pc-ai-software-f3418ee3-f5fa-48b8-b520-49b008d94c88.json` 직접 조회, Git blob `023e79edd335a5aceb8b999f8305c9574fed1468`. 정확 `PASS / AI_V2_PRIVATE_REGISTRATION_VERIFIED`, `REGISTERED_PRIVATE_ONLY`, `registered=true`; definition SHA256 `a09f5e65c4aa74d2bd79730d558c40df286651b6e2a41a1d5fb1a5c56d6c192d`; installedToolSourceSha `9cad027530230d5b4f97707a9707ab97866dd1d6`; registered request `pc-ai-software-f3418ee3-f5fa-48b8-b520-49b008d94c88`. Provider/D1/예약/공개 쓰기 0. #151/#154/#157/#170/#178/#179 이전 실패 단발을 재등록 재시도하지 않음. #182 결과는 **당시 등록 성공**이지 현재 ACTIVE_RUNTIME 재조회·점수 계산 성공은 아님.
+- **구형 private 실행 LAST FAIL 유지:** 제어 #1517 Run `43789176758`에서 AI 소프트웨어 confirmed+provisional 두 행은 `THEME_NINE_R25_NON_SPY_DATE`, `privateCoverage=PARTIAL`. 당시 유료 전환 이전 Shadow 실행 실패임. 이후 새 paid Core 도입/Writer 설치 뒤 같은 실패 재현됐다는 근거 없음. #1517을 PASS로 변경하거나 구형 GMH 데이터 수집을 재개하지 않음.
+- **새 paid 공개 성공과 private 증거의 경계:** 앱 #1009 11/20~11/21 운영 댓글에는 새 Core 10개 공개 `HTTP200 READY`, D1 2520점 일치, 11/19 확정, AI 소프트웨어는 **공개하지 않았음**이 명시됨. 이는 `privateResults[ai-software]` 성공/실제 로컬 비공개 결과 SHA 또는 Reader 발견을 직접 보고하지 않음.
+- **현재 허용목록 직접 대조:** 제어 `main/config/operations.json`에서 `theme-platform-shadow-readonly`와 `theme-l7-runtime-readonly`는 있으나 `ai-software` 신규 paid Core 비공개 `privateResults`·현재 `ACTIVE_RUNTIME`/derived SHA를 정확히 반환하는 전용 고정 조회는 확인되지 않음. `mutationsEnabled=false`. 예전 Shadow A를 동일 실패 조건으로 반복하거나 source-only 조사 결과를 현 운영 PASS로 위조하지 않음. 기존 public 성공을 막는 전역 차단은 아님.
+- **NEXT:** 현재 설치된 Core의 이미 생성된 `marketparquet-paid/theme-last-run.json` 결과(민감값 제외한 `privateResults`, `results`) 및 `ACTIVE_RUNTIME.json` 등록 ID/해시와 derived readback의 **기존 승인 읽기 계약**을 확인해 `ai-software`의 `PRIVATE_CALCULATED_NOT_PUBLISHED` 또는 정확한 `WAIT_SOURCE_OR_SCORE` code/대상 SHA를 단일 readback으로 확보. 필요한 범위의 새 읽기 효과만 정규 경로로 처리하고, 승인 없는 임의 shell/SQL·재등록·공급자 GET·D1 쓰기 금지.
+- 효과: GitHub 이 진행 원장 단일 파일 추가 외 PC/원자료·SQLite/D1·Worker·예약·설치·공개 변경 0.
+
+---
+
 ## 2026-11-21 KST — 공개 화면 접근 제한 및 P2 등록형 구조 실제 소스 검토
 
 - 시작/종료: 이전 기록 12/68(17.6%) 유지. 확정 68개 1:1 체크리스트 부재로 이번 소스 조사·브라우저 실패를 신규 완료 단계로 계산하지 않음.
