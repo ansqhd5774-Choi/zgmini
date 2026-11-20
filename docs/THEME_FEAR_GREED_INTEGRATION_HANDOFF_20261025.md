@@ -1,3 +1,13 @@
+## 2026-11-20 21:03 KST W03 13단계 — 신규 읽기 전용 감사의 실행 가능성 점검
+
+- **진척:** 12/68 (17.6%) → 12/68 (17.6%). 신규 완료 단계 없음. 기존 20:02 구현/테스트 커밋과 #2449/#2450 설치 성공은 재사용하며 재실행하지 않음.
+- **직접 소스 점검:** `theme-seven-gmh-r178-saved-to-cas-r1.mjs` blob `d132810ee7bc27ae674288856ced70c15bf4de68`, 대응 테스트 blob `1753979165e7c6c5a1416e1b78e6ad8c2ba8c030`. 감사 함수는 호출자가 검증된 `legacySeed`를 전달해야 하며 운영 고정 manifest/checkpoint/private SHA만 허용. 정상 반환에는 `rawFilesRehashedNow`, `sourceStoredAtAttestedByManifest`, `verifiedSymbols`, `rawPagesVerified`, `themeCount`, `historyPoints`가 존재하나, **현재 반환값에는 실행 시각 기준 8일 신선도 판정 필드가 없음**. 7×252 = 1,764 포인트이며 기존 R32 9×252 = 2,268과 혼동 금지.
+- **실행 환경 점검:** 연결된 Desktop Commander `pc` 장치가 offline 상태. 이 경로로 실PC Node 테스트/원자료 감사 불가. GitHub 원격 파일은 읽혔으나 로컬 컨테이너의 github.com DNS 연결 실패로 저장소 전체 checkout 및 Node 회귀 실행 불가. 따라서 코드 정적 확인만 수행, 테스트 PASS/실PC PASS 주장 금지.
+- **FIRST PENDING:** 기존 CI에서 신규 커밋의 Node 회귀 실행 증거 확인 또는 실행 가능한 테스트 runner 확보, 이후 신뢰된 seed를 기존 승인 A 경로로 읽기 전용 공급하고 PC JSON/TXT 영수증 검증. 신선도는 별도 검증 계약에서 실제 관측일/수집일/검사시각으로 판정해야 하며 미검증 자료를 READY로 승격 금지.
+- **보호:** 새 A/B 요청, Provider GET, 원본 DB/D1/CAS, Cloudflare, 예약 변경 0. 기존 Writer 재설치 금지. 다음 작업은 테스트 실행 증거 확보와 신선도 판정의 독립 검증 연결이며, 공개 승인은 별도.
+
+---
+
 ## 2026-11-20 20:02 KST W03 13단계 — R178 독립 읽기 전용 감사 진입점 구현
 
 - **진척:** 12/68 (17.6%) → 12/68 (17.6%). 단계 13은 실PC JSON/TXT·게시 승인·CAS/API/UI 미완료. 전체 목표 163 유지. 작업 브랜치 `codex/theme-fear-greed-integration-20261025`, 이번 최신 main SHA는 별도 미조회(UNKNOWN).
