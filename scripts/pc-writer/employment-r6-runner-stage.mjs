@@ -361,7 +361,7 @@ export function projectEmploymentR6RunnerResult({body=null,pitCoverage=null,pitC
     const points=state?.history;
     const last=Array.isArray(points)?points.at(-1):null;
     const first=Array.isArray(points)?points[0]:null;
-    if(state&&Array.isArray(points)&&points.length<=600){
+    if(state&&Array.isArray(points)&&points.length<=400){
       result.stateClaimsChart={
         pointCount:points.length,
         // The approved R6 model defines this specific indicator in percent.
