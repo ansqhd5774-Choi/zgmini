@@ -38,7 +38,7 @@ function fixture({busy=false,fail=null,approvalOverride={}}={}){
  return {adapter,calls};
 }
 test('refuses missing trusted adapter before doing any I/O',async()=>{
- const r=await assert.rejects(()=>runCoreOwnedInflationStaticOnce({requestId:id,adapter:{}}),
+ await assert.rejects(()=>runCoreOwnedInflationStaticOnce({requestId:id,adapter:{}}),
   {code:'INFL_CORE_STATIC_ADAPTER_CONTRACT_STOP'});
 });
 test('fails closed for approval scope drift without provider I/O',async()=>{
@@ -60,12 +60,14 @@ test('single approved execution claims before official GET and reads back',async
  assert.ok(f.calls.indexOf('claim')<f.calls.indexOf('fetch'));
  assert.ok(f.calls.indexOf('fetch')<f.calls.indexOf('apply'));
  assert.ok(f.calls.indexOf('readback')<f.calls.indexOf('journal:COMPLETED'));
+ assert.equal(f.calls.at(-1),'release:false');
 });
-test('post-claim failure retains no-replay journal',async()=>{
+test('post-claim prewrite failure stops without retaining Writer lock',async()=>{
  const f=fixture({fail:'fetch'});
  const r=await runCoreOwnedInflationStaticOnce({requestId:id,adapter:f.adapter});
- assert.equal(r.status,'RECOVERY_REQUIRED');
+ assert.equal(r.status,'STOP');
  assert.equal(r.retry,'NO_AUTOMATIC_REPLAY');
- assert.ok(f.calls.includes('journal:RECOVERY_REQUIRED'));
+ assert.ok(f.calls.includes('journal:CLAIMED_UNTOUCHED_STOP'));
+ assert.equal(f.calls.at(-1),'release:false');
  assert.ok(!f.calls.includes('apply'));
 });
