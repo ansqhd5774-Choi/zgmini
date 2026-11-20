@@ -36,7 +36,9 @@ test('a forged PID-only lock cannot replace the original fd-witness',async()=>{
   fs.writeFileSync(f.file,JSON.stringify({pid:process.pid,at:1}));
   await assert.rejects(()=>lease.witness({approvedRoot:f.root}),
    {code:'INFL_CORE_STATIC_ACQUISITION_WITNESS_STOP'});
-  lease.release();
+  assert.throws(()=>lease.release(),
+   {code:'INFL_CORE_STATIC_LOCK_RELEASE_DRIFT_STOP'});
+  assert.equal(fs.existsSync(f.file),true);
  }finally{f.cleanup();}
 });
 test('approved root mismatch stops before accepting owner witness',async()=>{
