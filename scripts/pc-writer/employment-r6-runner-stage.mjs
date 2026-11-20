@@ -364,6 +364,9 @@ export function projectEmploymentR6RunnerResult({body=null,pitCoverage=null,pitC
     if(state&&Array.isArray(points)&&points.length<=400){
       result.stateClaimsChart={
         pointCount:points.length,
+        // The approved R6 model defines this specific indicator in percent.
+        unit:"%",unitMatchesApproved:state.unit==="%",
+        gapCount:points.filter(point=>point.breakBefore===true).length,
         firstDate:typeof first?.date==="string"?first.date:null,
         lastDate:typeof last?.date==="string"?last.date:null,
         observationDate:typeof state.observationDate==="string"?state.observationDate:null,
