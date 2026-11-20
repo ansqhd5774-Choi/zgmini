@@ -6,7 +6,7 @@ import {runCoreOwnedInflationStaticOnce,INFLATION_CORE_STATIC_SCOPE}
 const id='c131d4c4-b788-4a1c-9f60-146dd6f7abb1';
 const bytes=Buffer.from('valid');
 function fixture({busy=false,fail=null,approvalOverride={}}={}){
- const calls=[];
+ const calls=[];let coreChecks=0;
  const writer={
   verify:async()=>{calls.push('lease:verify');},
   claimOnce:async()=>{calls.push('claim');},
@@ -19,7 +19,10 @@ function fixture({busy=false,fail=null,approvalOverride={}}={}){
   ...approvalOverride};
  const adapter={
   authenticateExistingB:async()=>{calls.push('auth');return approval;},
-  assertCurrentCoreOwner:async()=>{calls.push('core');},
+  assertCurrentCoreOwner:async()=>{calls.push('core');coreChecks++;
+   if(fail==='coreAfterWriter'&&coreChecks===2)
+    throw Object.assign(new Error('core mismatch'),{code:'INFL_CORE_STATIC_LOCK_RACE_STOP'});
+  },
   tryAcquireSharedWriterLease:async()=>{calls.push('writer');return busy?null:writer;},
   readCurrentSourcePreimage:async()=>{calls.push('preimage');},
   recordOnceJournal:async(_id,phase)=>{calls.push('journal:'+phase);},
@@ -80,4 +83,14 @@ test('during-write failure requires reconciliation and retains exact owned lease
  assert.equal(r.retry,'NO_AUTOMATIC_REPLAY');
  assert.ok(f.calls.includes('journal:RECOVERY_REQUIRED'));
  assert.equal(f.calls.at(-1),'release:true');
+});
+
+test('Core owner race after Writer acquisition stops before claim',async()=>{
+ const f=fixture({fail:'coreAfterWriter'});
+ const r=await runCoreOwnedInflationStaticOnce({requestId:id,adapter:f.adapter});
+ assert.equal(r.status,'STOP');
+ assert.equal(r.code,'INFL_CORE_STATIC_LOCK_RACE_STOP');
+ assert.ok(!f.calls.includes('claim'));
+ assert.ok(!f.calls.includes('fetch'));
+ assert.equal(f.calls.at(-1),'release:false');
 });
