@@ -2,6 +2,7 @@
 import {useEffect, useState} from "react";
 import styles from "./market-breadth-strip.module.css";
 import {startStoredRefresh} from "../lib/market-score/live-refresh.mjs";
+import {newestUsIexPercentPublication} from "../lib/market-breadth/us-provisional-ui-r4.mjs";
 import type {MarketPeriod} from "./market-card-shared";
 
 /** Optional non-US input; US confirmed and provisional are strictly percentage-only public feeds. */
@@ -24,6 +25,7 @@ type UsaIexProvisionalRecord = {
   source: "ALPACA_IEX_15MIN_SPLIT";
   observationDate: string;
   slotEndUtc: string;
+  collectedAt: string;
   collectionStatus: "COMPLETE" | "INCOMPLETE_PAGINATION";
   risingPct: number;
   fallingPct: number;
@@ -43,9 +45,14 @@ function currentIexProvisional(value: unknown): value is UsaIexProvisionalRecord
     ![record.risingPct, record.fallingPct, record.unchangedPct, record.unobservedPct].every(validPercent) ||
     !near100(record.risingPct, record.fallingPct, record.unchangedPct, record.unobservedPct) ||
     !["COMPLETE", "INCOMPLETE_PAGINATION"].includes(record.collectionStatus)) return false;
+  // A stored row with 100% unobserved members is not a genuine 0% breadth reading.
+  // Preserve real 0% categories only when at least one member was observed.
+  if (record.risingPct + record.fallingPct + record.unchangedPct <= 0) return false;
   const stamp = Date.parse(record.slotEndUtc);
+  const collected = Date.parse(record.collectedAt);
   const age = Date.now() - stamp;
-  if (!Number.isFinite(stamp) || age < 0 || age > 30 * 60_000) return false;
+  if (!Number.isFinite(stamp) || !Number.isFinite(collected) || collected < stamp ||
+    collected > Date.now() + 60_000 || age < 0 || age > 30 * 60_000) return false;
   const ny = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit"
   }).formatToParts(new Date()).map(part => [part.type, part.value]));
@@ -87,7 +94,9 @@ export function MarketBreadthStrip({ market, counts }: MarketBreadthStripProps) 
         body = null;
       }
       if (!active || signal.aborted) return;
-      setProvisional(currentIexProvisional(body) ? body : null);
+      const incoming = currentIexProvisional(body) ? body : null;
+      setProvisional(previous => newestUsIexPercentPublication(
+        currentIexProvisional(previous) ? previous : null, incoming));
     });
     return () => { active = false; stop(); };
   }, [market]);

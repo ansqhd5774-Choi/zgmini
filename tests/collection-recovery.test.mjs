@@ -1,13 +1,30 @@
 import test from 'node:test';import assert from 'node:assert/strict';import fs from 'node:fs';import os from 'node:os';import path from 'node:path';
 import {collectAlpacaIncremental} from '../scripts/pc-writer/alpaca-incremental.mjs';
 import {collectCorePceFeed} from '../worker/data-health.mjs';
-test('Alpaca incremental retains original history, verifies storage and avoids repeated calls',async()=>{
- const base=fs.mkdtempSync(path.join(os.tmpdir(),'zg-alpaca-')),dir=path.join(base,'asset-r10-alpaca');fs.mkdirSync(dir);fs.writeFileSync(path.join(base,'providers.env'),'APCA_API_KEY_ID=fixture\nAPCA_API_SECRET_KEY=fixture\n');
- const original=JSON.stringify([{ticker:'SPY',tradeDate:'2026-10-05',currentClose:100}]);fs.writeFileSync(path.join(dir,'group-000.json'),original);fs.writeFileSync(path.join(dir,'checkpoint.json'),JSON.stringify({end:'2026-10-05'}));
- let calls=0;const now=Date.parse('2026-10-11T12:00:00Z'),fetchImpl=async url=>{calls++;assert.equal(url.searchParams.get('feed'),'iex');assert.equal(url.searchParams.get('start'),'2026-10-05T00:00:00Z');return Response.json({bars:{SPY:[{t:'2026-10-09T00:00:00Z',c:101,v:10}]},next_page_token:null});};
- const report=await collectAlpacaIncremental(base,{now,fetchImpl});assert.equal(report.storageVerified,true);assert.equal(report.completedGroups,1);assert.equal(fs.readFileSync(path.join(dir,'group-000.json'),'utf8'),original);
- assert.equal((await collectAlpacaIncremental(base,{now,fetchImpl})).status,'CACHED');assert.equal(calls,1);
- fs.rmSync(base,{recursive:true});
+test('retired R10 Alpaca collector preserves original history and checkpoint without provider calls',async t=>{
+ const base=fs.mkdtempSync(path.join(os.tmpdir(),'zg-alpaca-')),dir=path.join(base,'asset-r10-alpaca');
+ t.after(()=>fs.rmSync(base,{recursive:true,force:true}));
+ fs.mkdirSync(dir);
+ const providerConfig='APCA_API_KEY_ID=fixture\nAPCA_API_SECRET_KEY=fixture\n';
+ fs.writeFileSync(path.join(base,'providers.env'),providerConfig);
+ const original=JSON.stringify([{ticker:'SPY',tradeDate:'2026-10-05',currentClose:100}]);
+ const checkpoint=JSON.stringify({end:'2026-10-05'});
+ fs.writeFileSync(path.join(dir,'group-000.json'),original);
+ fs.writeFileSync(path.join(dir,'checkpoint.json'),checkpoint);
+ let calls=0;
+ const now=Date.parse('2026-10-11T12:00:00Z');
+ const fetchImpl=async()=>{calls++;throw Error('R10_ALPACA_PROVIDER_CALLED');};
+ const first=await collectAlpacaIncremental(base,{now,fetchImpl});
+ const second=await collectAlpacaIncremental(base,{now:now+1000,fetchImpl});
+ assert.deepEqual(first,{status:'EXCLUDED_BY_USER',runRequests:0});
+ assert.deepEqual(second,{status:'EXCLUDED_BY_USER',runRequests:0});
+ assert.equal(calls,0);
+ assert.equal(fs.readFileSync(path.join(dir,'group-000.json'),'utf8'),original);
+ assert.equal(fs.readFileSync(path.join(dir,'checkpoint.json'),'utf8'),checkpoint);
+ assert.equal(fs.readFileSync(path.join(base,'providers.env'),'utf8'),providerConfig);
+ assert.deepEqual(fs.readdirSync(dir).sort(),['checkpoint.json','group-000.json']);
+ assert.equal(fs.existsSync(path.join(base,'local-asset-bubble-r10-alpaca-collection.json')),false);
+ assert.equal(fs.existsSync(path.join(base,'alpaca-quota-ledger.json')),false);
 });
 test('Core PCE preserves good data and reports credential rejection without exposing provider text',async()=>{
  const original=globalThis.fetch,writes=[];globalThis.fetch=async()=>Response.json({error:'invalid api_key secret'}, {status:403});

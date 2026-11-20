@@ -67,7 +67,7 @@ export async function refreshStoredMarketScoreSnapshot({env,store,now=Date.now()
   const result=await calculateStoredMarketScore(env,store,now);
   return {status:'COMPLETE',providerRequests:0,...result};
  }catch(error){
-  const reason=['STORED_CALCULATION_FAILED','SCORE_CONTRACT_FAILED','MARKET_REQUIRED_SCORE_MISSING','MARKET_REQUIRED_TREND_MISSING'].includes(error?.message)?error.message:'STORED_PRECOMPUTE_FAILED';
+  const reason=['STORED_CALCULATION_FAILED','SCORE_CONTRACT_FAILED','MARKET_REQUIRED_SCORE_MISSING','MARKET_REQUIRED_TREND_MISSING','MACRO_CREDIT_OBSERVATION_REGRESSION'].includes(error?.message)?error.message:'STORED_PRECOMPUTE_FAILED';
   return {status:'ERROR',providerRequests:0,reason};
  }
 }
@@ -171,7 +171,7 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
   return {status:finalStatus,job:selected,sourceStatus,...result};
  }catch(error){
   if(jobLease)await store.finish(selected,jobLease,now,`${phase}_FAILED`).catch(()=>{});
-  const reason=['INPUT_STORAGE_LIMIT','INPUT_NOT_VALID','STORED_CALCULATION_FAILED','SCORE_CONTRACT_FAILED','MARKET_REQUIRED_SCORE_MISSING','MARKET_REQUIRED_TREND_MISSING'].includes(error?.message)?error.message:(String(error?.message??'').match(/^GROWTH_R2_[A-Z0-9_]+/)?.[0]??null);
+  const reason=['INPUT_STORAGE_LIMIT','INPUT_NOT_VALID','MACRO_CREDIT_OBSERVATION_REGRESSION','STORED_CALCULATION_FAILED','SCORE_CONTRACT_FAILED','MARKET_REQUIRED_SCORE_MISSING','MARKET_REQUIRED_TREND_MISSING'].includes(error?.message)?error.message:(String(error?.message??'').match(/^GROWTH_R2_[A-Z0-9_]+/)?.[0]??null);
   const source=error?.sourceDiagnostic;
   const sourceDiagnostic=source?.provider==='BLS'&&Number.isInteger(source.attempts)&&source.attempts>=1&&source.attempts<=2
    ?{provider:'BLS',httpStatus:Number.isInteger(source.httpStatus)?source.httpStatus:null,attempts:source.attempts,registered:source.registered===true}:null;

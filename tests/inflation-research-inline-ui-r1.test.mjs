@@ -22,8 +22,11 @@ test('calculation and scoring logic uses original stored rows only',()=>{
 });
 test('month-resolution source does not gain fabricated daily observation date',()=>{
  assert.match(file,/^const dateLabel=.*월/m);
- const graph=fs.readFileSync(path.resolve('app/inflation/inflation-mini-chart.tsx'),'utf8');
- assert.match(graph,/point\.date\.length===7\?point\.date\+"-01":point\.date/);
+  const graph=fs.readFileSync(path.resolve('app/inflation/inflation-mini-chart.tsx'),'utf8');
+  const geometry=fs.readFileSync(path.resolve('lib/inflation-mini-chart-geometry.mjs'),'utf8');
+  assert.match(graph,/cleanInflationMiniTrend\(points\)/);
+  assert.match(geometry,/const day=MONTH\.test\(date\)\?date\+'-01':date/);
+  assert.match(geometry,/new Date\(time\)\.toISOString\(\)\.slice\(0,10\)===day/);
 });
 
 test('inflation table and mobile cards use criterion / previous / current wording and show observed dates and sources',()=>{

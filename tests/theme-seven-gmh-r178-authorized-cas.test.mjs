@@ -74,10 +74,11 @@ async function fixtures(){
   }))};
  return {base,prepared,record,r32};
 }
-function storage(f,{changeR32After=false,changeRollingBefore=false}={}){
- const old={body:{status:'READY',version:THEME_ETF_ROLLING_VERSION,
-  observationDate:'2026-10-28',
-  lineage:{secondarySource:'MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED'}},
+function storage(f,{changeR32After=false,changeRollingBefore=false,alreadyPublished=false}={}){
+ const old={body:alreadyPublished?JSON.parse(JSON.stringify(f.record)):
+  {status:'READY',version:THEME_ETF_ROLLING_VERSION,
+   observationDate:'2026-10-28',
+   lineage:{secondarySource:'MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED'}},
   storedAt:1793337682201};
  const current=JSON.parse(JSON.stringify(old));
  const r32={body:f.r32,storedAt:1793793697333};
@@ -180,6 +181,52 @@ test('expired GMH observation cannot be rescued with fresh D1 publish timestamp'
  }),{code:'W03_R178_PUBLISH_READER_OR_IMMUTABLE_SEED_REJECTED'});
  assert.equal(db.stats().writes,0);
 });
+test('unknown CAS response reconciles identical stored effect with zero additional writes',async()=>{
+ const f=await fixtures(),db=storage(f);
+ let attempts=0;
+ const underlying=db.replace;
+ db.replace=async(key,record,prior)=>{
+  attempts++;
+  await underlying(key,record,prior);
+  throw Object.assign(Error('lost response'),{
+   code:'W03_GMH_WRITER_D1_CAS_OUTCOME_UNKNOWN_NO_RETRY'});
+ };
+ const result=await publishApprovedGmhSevenR178({
+  ...f,storage:db,verifyApprovedEffect:approved,now:NOW
+ });
+ assert.equal(result.status,'R178_GMH_ONLY_EFFECT_OBSERVED_AFTER_UNCERTAIN_CAS');
+ assert.equal(result.effectOwnerVerified,false);
+ assert.equal(result.d1Writes,null);
+ assert.equal(result.publicApiVerified,false);
+ assert.equal(attempts,1);
+ assert.deepEqual(db.stats(),{writes:1,r32Reads:2,storedAt:NOW-1000});
+});
+test('CAS collision with another body preserves original failure and does not retry',async()=>{
+ const f=await fixtures(),db=storage(f);let attempts=0;
+ db.replace=async()=>{
+  attempts++;
+  throw Object.assign(Error('collision'),{
+   code:'W03_GMH_WRITER_D1_CAS_NOT_APPLIED_NO_RETRY'});
+ };
+ await assert.rejects(publishApprovedGmhSevenR178({
+  ...f,storage:db,verifyApprovedEffect:approved,now:NOW
+ }),{code:'W03_GMH_WRITER_D1_CAS_NOT_APPLIED_NO_RETRY'});
+ assert.equal(attempts,1);
+ assert.equal(db.stats().writes,0);
+});
+test('uncertain CAS that changes R32 cannot pass reconciliation',async()=>{
+ const f=await fixtures(),db=storage(f,{changeR32After:true});
+ const underlying=db.replace;
+ db.replace=async(...args)=>{
+  await underlying(...args);
+  throw Object.assign(Error('lost response'),{
+   code:'W03_GMH_WRITER_D1_CAS_OUTCOME_UNKNOWN_NO_RETRY'});
+ };
+ await assert.rejects(publishApprovedGmhSevenR178({
+  ...f,storage:db,verifyApprovedEffect:approved,now:NOW
+ }),{code:'W03_R178_PUBLISH_R32_CHANGED_AFTER_UNCERTAIN_CAS_NO_RETRY'});
+ assert.equal(db.stats().writes,1);
+});
 test('compare-and-swap failures are preserved and never treated as successful publication',async()=>{
  const f=await fixtures(),db=storage(f);
  db.replace=async()=>{throw Object.assign(new Error('D1_COMPARE_AND_SWAP_FAILED'),
@@ -187,5 +234,27 @@ test('compare-and-swap failures are preserved and never treated as successful pu
  await assert.rejects(publishApprovedGmhSevenR178({
   ...f,storage:db,verifyApprovedEffect:approved,now:NOW
  }),{code:'D1_COMPARE_AND_SWAP_FAILED'});
+ assert.equal(db.stats().writes,0);
+});
+
+test('identical R178 preimage is verified without another CAS or stored_at refresh',async()=>{
+ const f=await fixtures(),db=storage(f,{alreadyPublished:true});
+ const result=await publishApprovedGmhSevenR178({
+  ...f,storage:db,verifyApprovedEffect:approved,now:NOW
+ });
+ assert.equal(result.status,'R178_GMH_ONLY_ALREADY_PUBLISHED_READBACK_VERIFIED');
+ assert.equal(result.d1Writes,0);
+ assert.equal(result.d1StoredAt,1793337682201);
+ assert.equal(result.r32Writes,0);
+ assert.equal(result.outputKey,THEME_ETF_ROLLING_KEY);
+ assert.deepEqual(db.stats(),{writes:0,r32Reads:2,storedAt:1793337682201});
+ assert.equal(result.publicApiVerified,false);
+ assert.equal(result.uiVerified,false);
+});
+test('identical R178 preimage still rejects concurrent R32 changes without writing',async()=>{
+ const f=await fixtures(),db=storage(f,{alreadyPublished:true,changeR32After:true});
+ await assert.rejects(publishApprovedGmhSevenR178({
+  ...f,storage:db,verifyApprovedEffect:approved,now:NOW
+ }),{code:'W03_R178_PUBLISH_R32_CHANGED_DURING_NOOP_READBACK'});
  assert.equal(db.stats().writes,0);
 });
