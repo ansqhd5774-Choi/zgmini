@@ -136,7 +136,48 @@ export async function publishApprovedGmhSevenR178({
  }
  // No detached historical storedAt or secondary-provider rights are copied
  // into the new, GMH-only 252-point public result.
- const changed=await storage.replace(THEME_ETF_ROLLING_KEY,record,before.storedAt);
+ let changed;
+ try{
+  changed=await storage.replace(THEME_ETF_ROLLING_KEY,record,before.storedAt);
+ }catch(error){
+  // The CAS may have committed even when its response was lost or reported
+  // a collision. One readback distinguishes observed effect from conflict;
+  // no second write, and no unsupported claim about the writer's ownership.
+  const uncertainCodes=new Set([
+   'W03_GMH_WRITER_D1_CAS_OUTCOME_UNKNOWN_NO_RETRY',
+   'W03_GMH_WRITER_D1_CAS_NOT_APPLIED_NO_RETRY',
+   'W03_GMH_WRITER_D1_CAS_READBACK_MISMATCH_NO_RETRY',
+   'D1_COMPARE_AND_SWAP_FAILED'
+  ]);
+  if(!uncertainCodes.has(error?.code))throw error;
+  let observed;
+  try{observed=await storage.read(THEME_ETF_ROLLING_KEY);}
+  catch{throw error;}
+  if(observed?.storedAt>before.storedAt&&same(observed.body,record)){
+   let protectedAfter;
+   try{protectedAfter=await storage.read(R32_KEY);}
+   catch{throw error;}
+   need(protectedAfter?.storedAt===r32Before.storedAt&&
+    sha(JSON.stringify(protectedAfter.body))===r32Fingerprint,
+    'R32_CHANGED_AFTER_UNCERTAIN_CAS_NO_RETRY');
+   return Object.freeze({
+    status:'R178_GMH_ONLY_EFFECT_OBSERVED_AFTER_UNCERTAIN_CAS',
+    observationDate:record.observationDate,
+    sourceStoredAt:record.sourceStoredAt,
+    manifestSha256:evidence.manifestSha256,
+    privateArtifactSha256:evidence.privateArtifactSha256,
+    publishedBodySha256:evidence.projectionSha256,
+    r32BodySha256:r32Fingerprint,
+    r32StoredAt:r32Before.storedAt,
+    d1StoredAt:observed.storedAt,
+    outputKey:THEME_ETF_ROLLING_KEY,
+    d1Writes:null,effectOwnerVerified:false,
+    providerCalls:0,seedWrites:0,r32Writes:0,
+    publicApiVerified:false,uiVerified:false
+   });
+  }
+  throw error; // A different body, unchanged timestamp or failed readback.
+ }
  need(Number.isSafeInteger(changed?.storedAt)&&
   changed.storedAt>before.storedAt,
   'D1_WRITE_OUTCOME_UNKNOWN_NO_RETRY');
