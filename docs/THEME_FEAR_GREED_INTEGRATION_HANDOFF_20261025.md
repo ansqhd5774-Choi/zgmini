@@ -6,7 +6,7 @@
 - 기존 Core 자연 실행 23:45:01 KST 시작 후 D1 paid key 저장시각 23:45:05.096 KST. 별도 실행은 23:45:12 이후 시작해 `UNCHANGED_READBACK_VERIFIED`·추가 D1 쓰기0을 반환했다. 기존 Core 한 곳에서 공개10개·등록 비공개 AI를 같이 처리했다.
 - 실제 D1 key `theme-fear-greed-paid-hourly-v1`, body SHA `cf21412b3fd9657cc7d4055fdfc7edea167059bc8943db5a272e2aaa6c88e1e2`, stored_at `1795185905096`. 공급처 최신 11/19, 48시간 확정 11/17, 24시간 잠정 11/18.
 - 공개 `/api/theme-fear-greed` HTTP200 READY. 공개10개×252 확정 점수(2,520개) 및 잠정 본문이 실제 D1과 동일, 불일치0. 기존 UI 데이터 어댑터 10시리즈·253점. AI 소프트웨어 비공개 유지. 과거 공개 겹침2,400값 변경0. 원자료 가격은 공개하지 않았다.
-- 전환 후 구 테마 전용 예약5개(Configured, R47, R54, Biotech, Data-Center-Power)를 XML 백업 후 비활성화했다. Core·다른 업무는 유지했다. 새 테마별 예약·Controller·CMD는 없다.
+- 전환 후 기존 공개 테마 전용 예약4개(R47, R54, Biotech, Data-Center-Power)를 XML 백업 후 비활성화했다. 개발 중 비공개 Configured 예약과 Core·다른 업무는 유지했다. 새 테마별 예약·Controller·CMD는 없다.
 - 실제 브라우저 육안 렌더링은 도구 접근 제한으로 미검증이다. API/D1/기존 화면 입력 계약의 성공을 취소하지 않으며 화면 PASS로 과장하지 않는다. 기존 전체 68단계나 데이터센터 R32 산식 전환 완료를 뜻하지 않는다.
 - 이후 신규 테마는 기존 등록부에 등록하고 승인 프로필·공개 권리 계약에 따라 같은 Core에서 처리한다. R178 7개 경로를 다시 복구하거나 동일 설치·수집을 반복하지 않는다. 이력이 바뀌지 않는 동일 입력은 재게시하지 않는다.
 
