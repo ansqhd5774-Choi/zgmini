@@ -89,6 +89,11 @@ try{
  const comparableCompositeHistory=storedHistory.filter(snapshot=>
   sameVerifiedLineage(currentInflation,snapshot?.body?.domains?.find(d=>d.id==='inflation'))
  );
+ // Old unverified provider snapshots are not a paid-history source.
+ const {isValidatedPaidBreadthDomain}=await import('../../worker/breadth-paid-contract.mjs');
+ if(isValidatedPaidBreadthDomain(body.domains?.find(d=>d.id==='breadth'))){
+  for(let i=comparableCompositeHistory.length-1;i>=0;i--)if(!isValidatedPaidBreadthDomain(comparableCompositeHistory[i]?.body?.domains?.find(d=>d.id==='breadth')))comparableCompositeHistory.splice(i,1);
+ }
  if(body?.overall?.status==='READY'){
   body.overall.trend=mergeStoredCompositeTrend({
    legacyTrend:body.overall.trend,
