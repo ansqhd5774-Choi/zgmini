@@ -296,7 +296,7 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 
 | 세부 ID | 실제 실행·분석 작업 | 입력·근거 | 완료 판정 / 결과 | 상태 |
 |---|---|---|---|---|
-| PIT-07-01 | 운영용 실제 source/config/DB 대상 SHA 재대조 | 최신 운영 PC 등록·설치 증거 | 개발 main과 실행 소스 및 DB 경로 구분 | TODO |
+| PIT-07-01 | 운영용 실제 source/config/DB 대상 SHA 재대조 | 실제 [B #2462](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2462#issuecomment-7029481480) 및 [Writer 고정 checkout A #2463](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2463#issuecomment-7029506907), [Core 진단 A #2464](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2464#issuecomment-7029530087), [Core SQLite 읽기 A #2454](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2454#issuecomment-7029046544) | Writer HEAD=config `48e892755161b8d829f21b7ae0f270b07278d1ca`, BED 1파일 SHA `b94cd972...`·Core Task SHA 보호 검증, R6 자동수집/게시 opt-in enabled, Core `E:/ZGmini/data/pc-writer/storage/core.sqlite` native 읽기·600주/3060키 PASS. 하지만 #2463 checkpoint는 설치 전 `51beb04b...`, `runtimeSourceVerified=false`, 신규 실제 Core 실행 SHA·활성 DB 대상 연결/바이트 SHA 미입증. 과거 DOL_ETA 2880 TRUE_PIT·History 복구 승인 0, 기존 source/DB 변경 안 함. [원장 §165](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md). | IN_PROGRESS — SOURCE_CHECKOUT_CONFIG_TASK_VERIFIED / CORE_SQLITE_READABLE / ACTIVE_RUNTIME_AND_DB_TARGET_UNATTESTED |
 | PIT-07-02 | 실제 안전 실행 기회 및 Core 자원 보호 확인 | PC Core/SQLite lease·B admission | 공유 쓰기 충돌 시 절차 중단·기존 원장 보존 | TODO |
 | PIT-07-03 | 필요 B 승인 manifest와 변경 키 집합 고정 | 사용자 승인 효력·PIT-05 GO 결과 | 정확 승인 범위 외 실행 불가 | TODO |
 | PIT-07-04 | 승인된 유지보수기 1회 고유 요청 생성 | 기존 공식 B 절차·고유 requestId | 허용된 변경만 실행, 중복 요청 0 | TODO |
