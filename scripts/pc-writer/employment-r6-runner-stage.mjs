@@ -356,7 +356,7 @@ export function projectEmploymentR6RunnerResult({body=null,pitCoverage=null,pitC
   }
   // PIT-08: expose only bounded public chart geometry from the already built
   // model, never raw series rows, keys, source hashes, or full chart values.
-  if(body?.indicators){
+  if(Array.isArray(body?.indicators)){
     const state=body.indicators.find(item=>item.id==="STATE_CLAIMS_BREADTH");
     const points=state?.history;
     const last=Array.isArray(points)?points.at(-1):null;
