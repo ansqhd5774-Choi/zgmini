@@ -62,6 +62,16 @@ test("Runner-facing stage emits only bounded aggregate and 29 statuses from real
   assert.equal(report.summary.sourceFeatures,1);
   assert.equal(report.indicators.length,29);
   assert.equal(report.indicators.find(x=>x.id==="U3_UNEMPLOYMENT").rawStatus,"READY");
+  assert.equal(report.sourceStoredAt,Date.parse("2026-11-01T09:00:00.000Z"));
+  assert.match(report.formulaHash,/^sha256:[a-f0-9]{64}$/);
+  assert.equal(report.methodologyVersion,"EMP-R6-FORMULA-R1");
+  assert.equal(report.stateClaimsChart.pointCount,0);
+  assert.equal(report.stateClaimsChart.unit,"%");
+  assert.equal(report.stateClaimsChart.unitMatchesApproved,true);
+  assert.equal(report.stateClaimsChart.gapCount,0);
+  assert.equal(report.stateClaimsChart.lastDate,null);
+  assert.equal(report.stateClaimsChart.lastPointFinite,false);
+  assert.equal(report.stateClaimsChart.lastPointMatchesCurrent,false);
   assert.equal(report.publicationStatus,"NOT_REQUESTED");
   assert.equal(report.promotionApproved,false);
   assert.equal(report.providerCalls,0);
@@ -73,10 +83,41 @@ test("Runner-facing stage emits only bounded aggregate and 29 statuses from real
   assert.equal(report.walPreflight.candidateObserved,true);
   assert.ok(Buffer.byteLength(json)+Buffer.byteLength(txt)<16384);
   assert.doesNotMatch(json+txt,/ORIGINAL-CANDIDATE-PATH-MUST-NOT-APPEAR/);
-  assert.doesNotMatch(json+txt,/4\.2|sourceHash|sourceHashes|sourceStoredAt|history\W*:/);
+  assert.doesNotMatch(json+txt,/4\.2|sourceHash|sourceHashes|history\W*:/);
   assert.deepEqual(fs.readFileSync(env.core),coreBefore);
   assert.deepEqual(fs.readFileSync(env.candidate),candidateBefore);
   assert.deepEqual(fs.readdirSync(path.dirname(env.candidate)),[CANDIDATE]);
+});
+
+test("PIT-08 R6 one-year chart projects bounded 52 weekly dates and last point without raw values",async t=>{
+  const env=environment(t);fixture(env.core);fixture(env.candidate,{row:true});
+  const body=await stageEmploymentR6OneYear(runnerOptionsFrom(argv(env)));
+  const state=body.indicators.find(item=>item.id==="STATE_CLAIMS_BREADTH");
+  assert.ok(state);
+  const points=Array.from({length:52},(_,i)=>({
+    date:new Date(Date.UTC(2025,10,7+7*i)).toISOString().slice(0,10),
+    value:12,...(i===10?{breakBefore:true}:{})
+  }));
+  assert.equal(points.at(-1).date,"2026-10-30");
+  state.history=points;
+  state.value=12;state.observationDate="2026-10-30";state.unit="%";
+  state.rawStatus="READY";state.chartStatus="READY";state.scoreStatus="PARTIAL_HISTORY";state.score=null;
+  state.retrievedAt="2026-11-01T09:00:00.000Z";
+  for(const [key,compute] of Object.entries({
+    sourceFeatures:()=>body.indicators.filter(x=>x.rawStatus!=="UNAVAILABLE").length,
+    recentlyObservedFeatures:()=>body.indicators.filter(x=>x.rawStatus==="READY").length,
+    chartReadyFeatures:()=>body.indicators.filter(x=>x.chartStatus==="READY").length,
+    chartPartialFeatures:()=>body.indicators.filter(x=>x.chartStatus==="PARTIAL").length,
+    scoredFeatures:()=>body.indicators.filter(x=>x.scoreStatus==="READY").length,
+    recentlyScoredFeatures:()=>body.indicators.filter(x=>x.scoreStatus==="READY"&&x.rawStatus==="READY").length,
+  }))body.summary[key]=compute();
+  const report=projectEmploymentR6RunnerResult({body});
+  assert.deepEqual(report.stateClaimsChart,{
+    pointCount:52,unit:"%",unitMatchesApproved:true,gapCount:1,
+    firstDate:"2025-11-07",lastDate:"2026-10-30",observationDate:"2026-10-30",
+    lastPointFinite:true,lastPointMatchesCurrent:true,
+  });
+  assert.doesNotMatch(JSON.stringify(report),/"history"|"value"|"sourceHash"/);
 });
 
 test("Runner projection ignores injected source paths, raw values and unbounded optional PIT metadata",async t=>{
@@ -95,7 +136,11 @@ test("Runner projection ignores injected source paths, raw values and unbounded 
   assert.equal(report.bodyDigest,crypto.createHash("sha256").update(JSON.stringify(body)).digest("hex"));
   assert.equal(report.pit.coreCurrentKeysMissingHistory,2880);
   assert.equal(report.indicators.length,29);
-  assert.doesNotMatch(text,/PRIVATE_RAW_OR_KEY_MUST_NEVER_LEAK|sourcePath|history|retrievedAt|sourceStoredAt/);
+  assert.equal(report.sourceStoredAt,Date.parse("2026-11-01T09:00:00.000Z"));
+  assert.equal(report.stateClaimsChart.pointCount,0);
+  assert.equal(report.stateClaimsChart.unit,"%");
+  assert.equal(report.stateClaimsChart.gapCount,0);
+  assert.doesNotMatch(text,/PRIVATE_RAW_OR_KEY_MUST_NEVER_LEAK|sourcePath|history|retrievedAt/);
   assert.ok(Buffer.byteLength(text)<12000);
 });
 
@@ -382,4 +427,13 @@ test("PIT-04-08 Runner rejects nonallowlisted key data and preserves bounded whi
   assert.throws(()=>projectEmploymentR6RunnerResult({body,pitCoverage:{pit04KeyReview:bad}}),
    /RUNNER_R6_PIT04_REVIEW_INVALID/);
  }
+});
+
+test("PIT-08 projection rejects non-array indicator input without leaking raw metadata",()=>{
+  const secret="PRIVATE_INDICATOR_PAYLOAD_MUST_NOT_LEAK";
+  for(const indicators of [null,{},secret,42]){
+    const body={indicators,asOfDate:"2026-11-02",summary:{}};
+    assert.throws(()=>projectEmploymentR6RunnerResult({body}),
+      /RUNNER_R6_PUBLIC_DISPLAY_INVALID|RUNNER_R6_INDICATOR_COUNT_INVALID/);
+  }
 });

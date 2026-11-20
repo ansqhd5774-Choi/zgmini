@@ -7,7 +7,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import {pathToFileURL} from "node:url";
 
-import {EMPLOYMENT_R6_FEATURES} from "../../lib/market-score/employment-r6-formula.mjs";
+import {EMPLOYMENT_R6_FEATURES,EMPLOYMENT_R6_FORMULA_REVISION} from "../../lib/market-score/employment-r6-formula.mjs";
 import {EMPLOYMENT_R4_CORE_STATES} from "../../lib/market-score/employment-r4-shadow-contract.mjs";
 import {validEmploymentR6PublicDisplay} from "../../worker/employment-r6-public-display.mjs";
 import {optionsFrom,stageEmploymentR6OneYearWithPitAudit} from "./employment-r6-one-year-stage.mjs";
@@ -287,6 +287,14 @@ export function projectEmploymentR6RunnerResult({body=null,pitCoverage=null,pitC
     status:failure?(["WAL_SIDECAR_NOT_READY","WAL_SIDECAR_CHANGED"].includes(failure)?"BLOCKED":"FAIL"):"PASS",
     code:failure??"EMPLOYMENT_R6_READONLY_STAGE_COMPLETED",
     asOfDate:/^\d{4}-\d{2}-\d{2}$/.test(body?.asOfDate??"")?body.asOfDate:null,
+    // This is the latest retrievedAt of the selected verified PIT observations,
+    // not the file mtime, current clock, or publication timestamp.
+    sourceStoredAt:Number.isSafeInteger(body?.sourceStoredAt)&&body.sourceStoredAt>0
+      ?body.sourceStoredAt:null,
+    formulaHash:typeof body?.formulaHash==="string"&&/^sha256:[a-f0-9]{64}$/.test(body.formulaHash)
+      ?body.formulaHash:null,
+    methodologyVersion:body?.methodologyVersion===EMPLOYMENT_R6_FORMULA_REVISION
+      ?body.methodologyVersion:null,
     dataStatus:body?.status==="READY"?"READY":body?.status==="PARTIAL"?"PARTIAL":"NO_RUNTIME_EVIDENCE",
     bodyDigest:body?crypto.createHash("sha256").update(JSON.stringify(body)).digest("hex"):null,
     sourceMode:"CORE_PLUS_ISOLATED_CANDIDATE_READONLY",
@@ -345,6 +353,28 @@ export function projectEmploymentR6RunnerResult({body=null,pitCoverage=null,pitC
       seen.add(item.id);
       return {id:item.id,rawStatus:item.rawStatus,chartStatus:item.chartStatus,scoreStatus:item.scoreStatus};
     });
+  }
+  // PIT-08: expose only bounded public chart geometry from the already built
+  // model, never raw series rows, keys, source hashes, or full chart values.
+  if(Array.isArray(body?.indicators)){
+    const state=body.indicators.find(item=>item.id==="STATE_CLAIMS_BREADTH");
+    const points=state?.history;
+    const last=Array.isArray(points)?points.at(-1):null;
+    const first=Array.isArray(points)?points[0]:null;
+    if(state&&Array.isArray(points)&&points.length<=400){
+      result.stateClaimsChart={
+        pointCount:points.length,
+        // The approved R6 model defines this specific indicator in percent.
+        unit:"%",unitMatchesApproved:state.unit==="%",
+        gapCount:points.filter(point=>point.breakBefore===true).length,
+        firstDate:typeof first?.date==="string"?first.date:null,
+        lastDate:typeof last?.date==="string"?last.date:null,
+        observationDate:typeof state.observationDate==="string"?state.observationDate:null,
+        lastPointFinite:Number.isFinite(last?.value),
+        lastPointMatchesCurrent:last?.date===state.observationDate&&
+          last?.value===state.value,
+      };
+    }
   }
   const size=Buffer.byteLength(JSON.stringify(result));
   if(size>12000)throw Error("RUNNER_R6_REPORT_TOO_LARGE");
