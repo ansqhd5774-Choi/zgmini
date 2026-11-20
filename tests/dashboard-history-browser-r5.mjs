@@ -113,18 +113,20 @@ try{
     width+'px '+label+' provenance curves and discrete calculations have finite geometry');
    assert.equal(await page.locator('.zg-r55-card-grid article').count(),12);
    if(label==='1W'){
-    // 10/22 and 10/24 are saved calculations; reconstructed daily 10/23
-    // is between them. Both provenance lines must remain connected within
-    // their own source, never joined into a single provenance-changing line.
+    // 10/22 and 10/24 are saved calculations with no per-point model
+    // identity. Preserve both as discrete dots rather than connecting them
+    // to one another or to the current model's publication.
+    // Only reconstructed daily points may retain their own dashed stroke.
     const curves=await page.locator(chartSelector+' path.recharts-area-curve').evaluateAll(paths=>
-     paths.map(path=>({d:path.getAttribute('d')??'',dash:path.getAttribute('stroke-dasharray')})));
-    assert.equal(curves.length,2,width+'px reconstructed and calculated series are separate');
-    assert.ok(curves.some(p=>p.dash)&&curves.some(p=>!p.dash),width+'px dashed and solid series');
-    for(const curve of curves){
-     assert.ok(/^M/.test(curve.d)&&/[CLQ]/.test(curve.d.slice(1))
-      &&(curve.d.match(/M/g)??[]).length===1,
-      width+'px 1W provenance line is a single connected SVG subpath');
-    }
+     paths.map(path=>({d:path.getAttribute('d')??'',dash:path.getAttribute('stroke-dasharray'),stroke:path.getAttribute('stroke')})));
+    const drawn=curves.filter(p=>p.stroke!=='none'&&p.d);
+    assert.equal(drawn.length,1,width+'px only reconstructed history draws a connecting line');
+    assert.ok(drawn[0].dash,width+'px reconstructed history remains dashed');
+    assert.ok(/^M/.test(drawn[0].d)&&/[CLQ]/.test(drawn[0].d.slice(1))
+     &&(drawn[0].d.match(/M/g)??[]).length===1,
+     width+'px reconstructed history is one connected SVG subpath');
+    assert.ok(await page.locator(chartSelector+' circle.recharts-area-dot').count()>=2,
+     width+'px unknown-method calculated history remains visible as independent dots');
     const domainLines=await page.locator('.zg-r55-card-grid article .zg-r55-mini-chart svg > path').evaluateAll(paths=>
      paths.map(path=>path.getAttribute('d')??''));
     assert.equal(domainLines.length,12,width+'px 12 domain observation paths');
