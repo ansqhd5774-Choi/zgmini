@@ -1,3 +1,13 @@
+## 2026-11-21 KST — P2 private derived 결과 CI·main 통합 완료
+
+- **시작→끝:** W03 12/68 기존 기록 유지(17.6%→17.6%). P2 별도 source 결손이 해결돼 main에 반영됐지만 PC Runtime 새 계산·저장/Reader 검증 전이므로 P2/13단계 DONE으로 승격하지 않음.
+- 이전 W03 대형 브랜치(최신 확인 기준 main보다 ahead 920/behind 1217) 전체 병합 대신, `main@010e127f99f9ea95ade904423404787fa4148a8f`에서 **4파일 정확 범위** 전용 통합 브랜치 `codex/w03-private-derived-readback-20261121` 생성. 차이는 `theme-paid-calculate.mjs`, `theme-paid-cycle.mjs`, `theme-paid.test.mjs`, `tests/w03-paid-private-regression.test.mjs`뿐. 마지막 테스트 파일은 기존 paid suite가 `node --test tests/*.test.mjs` CI 대상에서 빠져 있어 신규 기능 테스트가 실제 실행되도록 import한 최소 브리지.
+- [PR #1453](https://github.com/ansqhd5774-Choi/zgmini/pull/1453) **squash MERGED**, 정확 main source SHA `f91a198e71ee72200144e048149e0c64c4d1bae1`. [Node CI Run 44785344349](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44785344349) 최종 **completed/success**; Build / Type check / Regression tests / PC publication recovery tests / Cloudflare candidate read contracts 모두 PASS. 이전 head CI 44785077591는 새 커밋 발생에 따른 **cancelled**로 실패 원인 아님. Merge 후 main 파일 blob `a139a62c3781ca233bcce6f9ac4551d514c9a3a8`(calc), `c746e9841fd599e3d50dab994c51b130af80b320`(cycle), `c551322ec1e4602fb9d921d08a504063c780abb2`(test), `38088214223bca00d27569cb4c620ee81feb6496`(CI bridge) 독립 재조회 일치.
+- **확정 범위:** 계산기가 private history를 반환하고, 공통 Core가 비공개 파일을 불변 SHA 저장/readback하며, 오류는 공개 피드에 전역 전파하지 않는 source+CI 검증 완료. 실제 운영 `E:` 설치 변경 없음, 기존 Core 실행 확인 불가, `ai-software`의 지금 private score·derived SHA/readback 미완. 기존 #182 비공개 등록 PASS/새 공개 10개 API/D1 PASS 증거 유지. 새 공개 승인·등록·수집/게시·예약 변경 없음.
+- **다음 행동:** 기존 제어 #2509→#2511 Writer 설치 계보·현재 원본 preimage 조회와 `docs/PC_AUTOMATION_STANDARD.md`의 B 계약 대조 → main `f91a198e...`의 변경 2운영파일만 정규 B manifest/hash/CAS로 적용 → 운영 Core에서 이미 생성된 private score 및 `private-theme-<sha>.json` readback. 이때 기존 Runtime/운영 source와 SHA를 반드시 구분하고 승인된 기존 B 경로만 사용; 새 비공개 등록 재시도 금지.
+
+---
+
 ## 2026-11-21 KST — P2 비공개 저장 순수 함수 격리 시뮬레이션
 
 - 변경된 최신 `storePaidPrivateResults` 함수 본문을 원격 브랜치에서 읽어 V8 격리 실행. 가상 파일시스템과 모의 해시 사용, 실제 PC/Node/운영 영속 저장 아님.
