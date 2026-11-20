@@ -205,7 +205,7 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 | PIT-01 기존 운영 완료 증거 확정·재사용 | 7 | 7 | 0 | DONE |
 | PIT-02 소스 계보 판정기·격리 회귀 완료 | 7 | 7 | 0 | DONE |
 | PIT-03 현재 운영 PC의 실제 PIT 결손 확보 | 8 | 8 | 0 | DONE (PC #1786/#1787 읽기 전용 PASS) |
-| PIT-04 지역별·주별 원자료와 PIT 정합성 분류 | 8 | 5 | 3 | IN_PROGRESS — PIT-04-05 raw snapshot/source hash lineage |
+| PIT-04 지역별·주별 원자료와 PIT 정합성 분류 | 8 | 8 | 0 | DONE — ALL_8_ORIGINAL_VERIFICATION_STEPS_CLASSIFIED / HISTORICAL_TRUE_PIT_HOLD |
 | PIT-05 복구 가능성 판정·최소 운영 승인 설계 | 8 | 8 | 0 | DONE — CURRENT_REPAIR_NO_GO, 실제 INSERT 승인 0 |
 | PIT-06 선별 복구 코드·fixture 회귀·시뮬레이션 | 8 | 3 | 5 | IN_PROGRESS — 06-02/04/07 source-only 검증 완료 |
 | PIT-07 승인된 PC의 최소 History 복구·원장 | 8 | 0 | 8 | DEFERRED (선행 근거 필요) |
