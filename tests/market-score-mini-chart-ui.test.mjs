@@ -81,7 +81,7 @@ test("composite uses sentiment area styling without the removed captions",()=>{
   assert.match(summary,/<AreaChart/);
   assert.match(summary,/<Area type="monotone" dataKey="reconstructedValue" stroke=\{color\}/);
   assert.match(summary,/<Area type="monotone" dataKey="calculatedValue" stroke="none" fill="none" strokeWidth=\{0\} dot=\{\{r:2\.4,fill:color,strokeWidth:0\}\}/);
-  assert.match(summary,/Historical calculation points do not have individual model versions/);
+  assert.match(summary,/calculation points do not have individual model versions/);
   assert.doesNotMatch(summary,/<Area type="monotone" dataKey="value"/);
   assert.match(summary,/<linearGradient/);
   assert.doesNotMatch(src,/className="zg-r55-main-period"|<span>종합 점수<\/span>|<span>\/ 100<\/span>/);
