@@ -67,6 +67,15 @@
 - **현재 R178 공개 대상:** 신규 7테마×252 거래일의 비공개 projection은 개별 1h OHLCV/원가격·rawRows·volume을 표시하지 않고 0~100점/날짜·테마 ETF 명칭만 후보로 작성한다. 공개 Worker 역시 `theme`, `etfs`, `score`, `history.date/score`만 전송하도록 projection을 제한한다. **출력 필드 감사는 라이선스 전체·원가격의 대량 역추정 불가를 수학적으로 인증한 것이 아니다.** 기존 D1 R178 행에는 사용 중지된 MarketParquet 보조 계보가 남아 있으므로 해당 행의 권리가 GMH로 소급되지 않는다.
 - **보호·다음 실제 조건:** `publicationAuthorized=false`, `upstreamCommercialRightsVerified=false`, `derivedLicenseVerified=false`, `sourcePriceReconciled=false` 유지. 실제 게시 전 GMH 라이선스 적용 범위와 비복원성/상위 공급자 권리의 운영자 승인, 기존 R178 D1 정확한 CAS·readback 및 독립 R32 비퇴행 확인이 필요하다. 승인되지 않은 유료 구매·추가 GET·TTL 완화·MarketParquet 재도입은 하지 않는다.
 
+
+### 2026-11-20 13:58 KST — GetMarketHistory 개별 서면 회신 (W03 R178 한정)
+
+- **원문 증거:** 기존 문의 Gmail thread `1a1ef72ab94cdc2d`, 회신 message `1a1f7519587c26e4` (2026-11-20T04:58:00Z). 개인 메일 주소·원문·API key는 저장하지 않는다. 10/22 배달 실패 스레드와는 **별개**이며 과거 실패 기록을 지우지 않는다.
+- **공급처 회신상 허용:** GMH에서 합법적으로 받은 1h 원자료를 사용한 **원가격·OHLCV·거래량·가격차트가 없는 비복원 일별 0~100 테마 점수 및 약 252거래일 날짜/점수 이력**을 광고지원 상업 웹사이트에 공개 가능. 해당 출력에 별도 display/redistribution 계약·비용이 필요 없고, 비복원 파생물에 별도 upstream 제한이 없다고 공급처가 답변했다. **원가격 표시/재배포**에는 별도 라이선스 필요.
+- **취득 시점 구분:** 2026-11-16 무계정 1h 취득은 당시 허용된 사용이었다고 회신. **2026-11-20 이후 신규 1h 수집**에는 무료 계정·API key가 필요하며 안내 한도는 월 250,000 bars. 과거 취득 적법성 회신이 미래 익명 1h 수집 허용은 아니다.
+- **증거 수준과 적용 범위:** 공급처 서면 설명은 W03 GMH-only 7테마 비복원 파생 결과의 라이선스 해석 근거다. 독립 계약/법률 검토, 정확한 게시 payload의 비복원성 검증, 원본 SHA·가격모드·8일 신선도, 실제 승인된 `approvedRecord`/`verifyApprovedEffect`, D1 CAS 및 Production 공개 성공을 증명하지 않는다. **공급처 문의 차단은 해소, 운영 게시 승인은 미완료**. `publicationAuthorized=false` 등 실제 기록의 플래그는 검증·승인 없이 변경 금지. MarketParquet·Twelve Data 등 다른 공급자에는 적용 불가.
+- **중복 문의 방지:** 동일 GMH 공개권 질문 재발송 금지. 다음 작업은 저장된 R178 GMH-only 출력과 위 허용 범위를 실제 필드/해시/관측일로 대조하는 읽기 전용 감사다.
+
 ## 3. 회신 미확보 문의의 기술적 상태 및 용도
 
 | 공급자 | 발신/확인 시각(KST) | 미해결 항목 | 재문의 판단 |
