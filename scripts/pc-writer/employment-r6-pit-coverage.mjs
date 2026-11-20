@@ -2,6 +2,7 @@
 // an optional isolated candidate. Counts are diagnostics, not approval to copy
 // data, backdate availability, modify schemas, or publish a candidate to D1.
 import fs from "node:fs";
+import {createHash} from "node:crypto";
 import {DatabaseSync} from "node:sqlite";
 import {EMPLOYMENT_R6_TABLES} from "../../lib/market-score/employment-r6-contract.mjs";
 import {EMPLOYMENT_R6_REQUIRED_LOGICAL_SERIES} from "../../lib/market-score/employment-r6-formula.mjs";
@@ -135,8 +136,11 @@ const endReadSnapshot=(db,active)=>{
 };
 
 export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDate,
-  keyReviewOffset=null,beforeReadOnlyOpen=null,afterReadOnlyOpen=null,onSqliteOpened=null}={}){
+  keyReviewOffset=null,onPrivateKeyLedger=null,
+  beforeReadOnlyOpen=null,afterReadOnlyOpen=null,onSqliteOpened=null}={}){
   if(!validAsOf(asOfDate))throw Error("PIT_AUDIT_AS_OF_INVALID");
+  if(onPrivateKeyLedger!==null&&(typeof onPrivateKeyLedger!=="function"||keyReviewOffset!==0))
+    throw Error("PIT_AUDIT_PRIVATE_SCOPE_INVALID");
   if(keyReviewOffset!==null&&(!Number.isSafeInteger(keyReviewOffset)
     ||keyReviewOffset<0||keyReviewOffset>50000))throw Error("PIT_AUDIT_KEY_OFFSET_INVALID");
   if(typeof dbPath!=="string"||!fs.existsSync(dbPath))throw Error("PIT_AUDIT_CORE_NOT_FOUND");
@@ -229,10 +233,12 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
     // locks. Only the bounded, safe 8-key projection leaves this function.
     if(keyReviewOffset!==null&&!planHasEvidence)
       throw Error("PIT_AUDIT_KEY_REVIEW_INPUT_MISSING");
+    let fullPrivateRows=null;
     const pit04KeyReview=keyReviewOffset===null?null:classifyEmploymentR6Pit04KeyEvidence({
       coreCurrentRows:current,coreHistoryRows:history,
       candidateCurrentRows:candidateCurrent,candidateHistoryRows:candidates,
       asOfIso:asOfDate+"T23:59:59.999Z",offset:keyReviewOffset,maxEvidenceRows:8,
+      onPrivateEvidence:onPrivateKeyLedger===null?null:rows=>{fullPrivateRows=rows;},
     });
     // Reconcile the key-level audit against the *same* read-only Core
     // CURRENT as-of snapshot. Optional time columns or invalid Saturday
@@ -243,6 +249,38 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
         &&row.geography_type==="STATE"&&CLAIM_STATES.has(row.geography_code)).length;
       if(pit04KeyReview.counts.coreKeys!==expectedClaims)
         throw Error("PIT_AUDIT_KEY_COVERAGE_MISMATCH");
+    }
+    let privateLedgerDigest=null;
+    if(onPrivateKeyLedger!==null){
+      if(!pit04KeyReview||fullPrivateRows?.length!==pit04KeyReview.evidenceTotal
+        ||fullPrivateRows.length>50000)
+        throw Error("PIT_AUDIT_PRIVATE_COVERAGE_INVALID");
+      // These conflicts cover ALL R6 series. A claims-only conflict may
+      // occur in the missing-key list and must not be double counted.
+      const overlapConflicts=[];
+      for(const [k,candidateRow] of candidateCurrentKeys){
+        const coreRow=currentKeys.get(k);
+        if(coreRow&&!sameObservation(coreRow,candidateRow)){
+          overlapConflicts.push({logicalSeriesId:coreRow.logical_series_id,
+            geographyType:coreRow.geography_type,geographyCode:coreRow.geography_code,
+            observationDate:coreRow.observation_date,reason:"CANDIDATE_CURRENT_CONFLICT"});
+        }
+      }
+      overlapConflicts.sort((a,b)=>a.logicalSeriesId.localeCompare(b.logicalSeriesId)
+        ||a.observationDate.localeCompare(b.observationDate)
+        ||a.geographyCode.localeCompare(b.geographyCode));
+      if(overlapConflicts.length!==candidateOverlapConflicts
+        ||overlapConflicts.filter(x=>x.logicalSeriesId==="STATE_INITIAL_CLAIMS").length
+          !==pit04KeyReview.counts.candidateOverlapConflicts)
+        throw Error("PIT_AUDIT_PRIVATE_COVERAGE_INVALID");
+      const privateLedger={schema:"W04_PIT0408_PRIVATE_KEYS_V1",asOfDate,
+        coreStateKeyCount:pit04KeyReview.counts.coreKeys,
+        counts:pit04KeyReview.counts,evidence:fullPrivateRows,
+        allSeriesCandidateCurrentConflicts:overlapConflicts,
+        rawPitAttested:false,repairAuthorized:false};
+      const body=JSON.stringify(privateLedger);
+      privateLedgerDigest=createHash("sha256").update(body).digest("hex");
+      onPrivateKeyLedger(privateLedger,privateLedgerDigest);
     }
     const previewStatus=!planHasEvidence?"NO_RUNTIME_EVIDENCE"
       :coreRevisionEvidence?.ambiguousLatestKeys>0||candidateRevisionEvidence?.ambiguousLatestKeys>0
@@ -287,6 +325,8 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
       coreMissingHistoryKeysWithoutConsistentCandidateMetadata:planHasEvidence?missing-missingHistoryWithVerifiedLineage:null,
       candidateReconciliationPreviewStatus:previewStatus,
       ...(pit04KeyReview===null?{}:{pit04KeyReview}),
+      ...(privateLedgerDigest===null?{}:{pit04PrivateEvidenceDigest:privateLedgerDigest,
+        pit04PrivateEvidencePersisted:true}),
       missingBySeries:current!==null&&history!==null?[...missingBySeries.values()].sort((a,b)=>a.id.localeCompare(b.id)):null,
       promotionApproved:false,coreWrites:0,providerCalls:0,
     };

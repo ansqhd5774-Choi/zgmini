@@ -128,3 +128,24 @@ test("malformed optional time remains in HOLD; known future time excludes its re
  }
  assert.equal(go([base],[],[base],[base]).counts.missingCandidateInternalMatch,1);
 });
+
+test("opt-in private ledger receives every sorted key once while external page stays eight",()=>{
+ const stateCodes=["AL","AK","AZ","CA","CO","CT","DE","DC","FL","GA","HI","ID"];
+ const current=stateCodes.map(geography_code=>({...base,geography_code}));
+ let privateRows=null;
+ const r=go(current,[],[],[],{onPrivateEvidence:rows=>{privateRows=rows;}});
+ assert.equal(r.evidenceTotal,stateCodes.length);
+ assert.equal(r.evidence.length,8);
+ assert.equal(r.nextOffset,8);
+ assert.equal(privateRows.length,stateCodes.length);
+ assert.equal(new Set(privateRows.map(x=>x.geographyCode+"|"+x.observationDate)).size,stateCodes.length);
+ assert.ok(privateRows.every(x=>x.coreHistoryMissing===true
+   &&x.reason==="MISSING_HISTORY_NO_CANDIDATE"&&x.rawPitAttested===false
+   &&x.repairAuthorized===false));
+ assert.equal(Object.hasOwn(r,"privateEvidence"),false);
+ assert.throws(()=>go([base],[],[],[],{onPrivateEvidence:true}),/PIT0408_ARGUMENT_INVALID/);
+});
+test("private callback cannot silently fail after sorted classification",()=>{
+ assert.throws(()=>go([base],[],[],[],{onPrivateEvidence:()=>{throw Error("PRIVATE_SINK_FAILED");}}),
+   /PRIVATE_SINK_FAILED/);
+});

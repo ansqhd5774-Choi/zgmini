@@ -17,7 +17,7 @@ const FEATURE_IDS=new Set(EMPLOYMENT_R6_FEATURES.map(x=>x.id));
 const RAW=new Set(["READY","STALE","UNAVAILABLE"]);
 const CHART=new Set(["READY","PARTIAL","UNAVAILABLE"]);
 const SCORE=new Set(["READY","PARTIAL_HISTORY","PARTIAL_MISSING"]);
-const INPUT_FLAGS=new Set(["--db","--candidate-db-external","--output-dir","--as-of","--pit04-offset","--pit0605-raw"]);
+const INPUT_FLAGS=new Set(["--db","--candidate-db-external","--output-dir","--as-of","--pit04-offset","--pit0605-raw","--pit0408-private"]);
 const PIT_COUNTS=[
   "coreCurrentRows","coreHistoryRevisions","coreCurrentKeys",
   // Fixed non-sensitive counts also permitted by the existing Controller A.
@@ -88,9 +88,12 @@ export function runnerOptionsFrom(argv){
     throw Error("RUNNER_R6_REQUIRED_ARGUMENT_MISSING");
   }
   const lower=[];
-  let keyReviewOffset=null,pit0605Raw=false;
+  let keyReviewOffset=null,pit0605Raw=false,pit0408Private=false;
   for(let i=0;i<argv.length;i+=2){
-    if(argv[i]==="--pit0605-raw"){
+    if(argv[i]==="--pit0408-private"){
+      if(argv[i+1]!=="1")throw Error("RUNNER_R6_ARGUMENT_NOT_ALLOWED");
+      pit0408Private=true;
+    }else if(argv[i]==="--pit0605-raw"){
       if(argv[i+1]!=="1")throw Error("RUNNER_R6_ARGUMENT_NOT_ALLOWED");
       pit0605Raw=true;
     }else if(argv[i]==="--pit04-offset"){
@@ -100,13 +103,14 @@ export function runnerOptionsFrom(argv){
       keyReviewOffset=Number(value);
     }else lower.push(argv[i],argv[i+1]);
   }
-  if(pit0605Raw&&keyReviewOffset!==null)
+  if((pit0605Raw&&keyReviewOffset!==null)
+    ||(pit0408Private&&(pit0605Raw||keyReviewOffset!==0)))
     throw Error("RUNNER_R6_ARGUMENT_NOT_ALLOWED");
   const options=optionsFrom(lower);
   if(!options.candidateDbExternal||options.publish||options.discoverApprovedCandidate){
     throw Error("RUNNER_R6_ISOLATED_CANDIDATE_REQUIRED");
   }
-  return {...options,keyReviewOffset,pit0605Raw};
+  return {...options,keyReviewOffset,pit0605Raw,pit0408Private};
 }
 
 // SQLite can create -wal/-shm even for DatabaseSync(readOnly:true). Do not
@@ -290,6 +294,11 @@ export function projectEmploymentR6RunnerResult({body=null,pitCoverage=null,pitC
     summary:{},
     pit:projectPit(pitCoverage),
     ...(pitCoverage?.pit04KeyReview==null?{}:{pit04KeyReview:projectPit04KeyReview(pitCoverage.pit04KeyReview)}),
+    ...(typeof pitCoverage?.pit04PrivateEvidenceDigest==="string"&&
+      /^[a-f0-9]{64}$/.test(pitCoverage.pit04PrivateEvidenceDigest)&&
+      pitCoverage.pit04PrivateEvidencePersisted===true
+      ?{pit04PrivateEvidenceDigest:pitCoverage.pit04PrivateEvidenceDigest,
+        pit04PrivateEvidencePersisted:true}:{}),
     pitAuditError:pitCoverageError?safeCode(pitCoverageError):null,
     indicators:[],
     promotionApproved:false,
@@ -427,7 +436,23 @@ export async function runEmploymentR6Runner(argv){
         pit0605Aggregate:aggregate,providerCalls:0,d1Writes:0,
         publicationStatus:"NOT_REQUESTED",promotionApproved:false};
     }else{
+    const privateKeyLedger=options.pit0408Private
+      ?(ledger,digest)=>{
+        if(ledger?.schema!=="W04_PIT0408_PRIVATE_KEYS_V1"
+          ||!/^[a-f0-9]{64}$/.test(digest)
+          ||crypto.createHash("sha256").update(JSON.stringify(ledger)).digest("hex")!==digest
+          ||ledger.evidence?.length>50000
+          ||ledger.allSeriesCandidateCurrentConflicts?.length>50000)
+          throw Error("RUNNER_R6_PIT0408_PRIVATE_INVALID");
+        const serialized=JSON.stringify({
+          kind:"PIT0408_PC_WORKSPACE_PRIVATE_V1",digest,ledger})+"\n";
+        if(Buffer.byteLength(serialized)>32*1024*1024)
+          throw Error("RUNNER_R6_PIT0408_PRIVATE_INVALID");
+        fs.writeFileSync(path.join(options.outputDir,"PIT0408_PRIVATE_KEY_EVIDENCE.json"),
+          serialized,{encoding:"utf8",flag:"wx",mode:0o600});
+      }:null;
     const diagnostic=await stageEmploymentR6OneYearWithPitAudit({...options,
+      onPrivateKeyLedger:privateKeyLedger,
       beforeReadOnlyOpen:dbPath=>check(dbPath,"BEFORE_READ"),
       afterReadOnlyOpen:dbPath=>check(dbPath,"AFTER_READ"),
       onSqliteOpened:()=>{sqliteOpened=true;},

@@ -2,7 +2,7 @@ name: Node.js CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, codex/w04-pit0408-source-ci-20261120]
   pull_request:
     branches: [main, codex/w04-pit0408-source-ci-base-20261120]
   workflow_dispatch:
