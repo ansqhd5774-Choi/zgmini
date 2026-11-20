@@ -20,3 +20,70 @@ test('periodic and resume refresh serialize calls and clean up aborted requests'
  documentTarget.visibilityState='visible';docHandlers.get('visibilitychange')();assert.equal(calls,3);
  stop();assert.equal(aborted,true);assert.equal(handlers.size,0);assert.equal(docHandlers.size,0);assert.equal(tick,null);
 });
+
+
+test('W06 timeout releases the polling slot when an aborted load never settles',async()=>{
+ const listeners=new Map(),docListeners=new Map(),timeouts=new Map();
+ let interval,nextId=0,calls=0;
+ const target={
+  setTimeout:fn=>{const id=++nextId;timeouts.set(id,fn);return id;},
+  clearTimeout:id=>timeouts.delete(id),
+  setInterval:(fn,ms)=>{assert.equal(ms,60000);interval=fn;return 99;},
+  clearInterval:()=>{interval=null;},
+  addEventListener:(k,fn)=>listeners.set(k,fn),
+  removeEventListener:k=>listeners.delete(k),
+ };
+ const documentTarget={visibilityState:'visible',addEventListener:(k,fn)=>docListeners.set(k,fn),removeEventListener:k=>docListeners.delete(k)};
+ const signals=[];
+ const stop=startStoredRefresh(signal=>{calls++;signals.push(signal);return new Promise(()=>{});},{target,documentTarget});
+ assert.equal(calls,1);
+ for(const fn of [...timeouts.values()])fn();
+ assert.equal(signals[0].aborted,true);
+ await new Promise(resolve=>setImmediate(resolve));
+ interval();
+ assert.equal(calls,2,'timed-out unsettled load must not block next scheduled refresh');
+ stop();
+ assert.equal(signals[1].aborted,true);
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(interval,null);
+ assert.equal(timeouts.size,0);
+ assert.equal(listeners.size,0);
+ assert.equal(docListeners.size,0);
+});
+
+test('W06 late rejection after timeout cannot jam subsequent normal refreshes',async()=>{
+ const listeners=new Map(),docListeners=new Map(),timeouts=new Map();
+ let interval,nextId=0,calls=0,rejectFirst,finishNext;
+ const target={
+  setTimeout:fn=>{const id=++nextId;timeouts.set(id,fn);return id;},
+  clearTimeout:id=>timeouts.delete(id),
+  setInterval:fn=>{interval=fn;return 99;},
+  clearInterval:()=>{interval=null;},
+  addEventListener:(k,fn)=>listeners.set(k,fn),
+  removeEventListener:k=>listeners.delete(k),
+ };
+ const documentTarget={visibilityState:'visible',addEventListener:(k,fn)=>docListeners.set(k,fn),removeEventListener:k=>docListeners.delete(k)};
+ const stop=startStoredRefresh(()=>{
+  calls++;
+  return calls===1?new Promise((_,reject)=>{rejectFirst=reject;}):new Promise(resolve=>{finishNext=resolve;});
+ },{target,documentTarget});
+ assert.equal(calls,1);
+ for(const fn of [...timeouts.values()])fn();
+ await new Promise(resolve=>setImmediate(resolve));
+ interval();
+ assert.equal(calls,2);
+ interval();
+ assert.equal(calls,2,'a live request remains serialized');
+ rejectFirst(new Error('late rejection after abort'));
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(calls,2);
+ finishNext();
+ await new Promise(resolve=>setImmediate(resolve));
+ interval();
+ assert.equal(calls,3,'normal completion releases the next polling slot');
+ stop();
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(timeouts.size,0);
+ assert.equal(listeners.size,0);
+ assert.equal(docListeners.size,0);
+});
