@@ -10,12 +10,15 @@ export {PAID_THEME_KEY,PAID_THEME_VERSION} from '../../worker/theme-paid-contrac
 import {PAID_THEME_KEY,PAID_THEME_VERSION} from '../../worker/theme-paid-contract.mjs';
 const need=(ok,c)=>{if(!ok)throw Object.assign(Error(c),{code:c});};
 const score=n=>typeof n==='number'&&Number.isFinite(n)&&n>=0&&n<=100;
-export function choosePaidPhaseDates(spy,{now=Date.now(),confirmedLagHours=48,provisionalLagHours=24}={}){
+export function choosePaidPhaseDates(spy,{now=Date.now()}={}){
  need(Array.isArray(spy)&&spy.length&&Number.isSafeInteger(now),'PAID_THEME_CLOCK_OR_SPY');
- const eligible=hours=>spy.filter(p=>Number.isFinite(Date.parse(p.timestamp))&&Date.parse(p.timestamp)+3600000+hours*3600000<=now).at(-1)?.date;
- const confirmed=eligible(confirmedLagHours),provisional=eligible(provisionalLagHours);
+ // MarketParquet publishes dated partitions. A present, validated proxy bar
+ // becomes confirmed after its own end; no inherited GMH 48h/24h embargo.
+ const available=spy.filter(p=>Number.isFinite(Date.parse(p.timestamp))&&Date.parse(p.timestamp)<=now);
+ const confirmed=available.filter(p=>Date.parse(p.timestamp)+3600000<=now).at(-1)?.date;
+ const provisional=available.at(-1)?.date;
  need(confirmed&&provisional&&confirmed<=provisional,'PAID_THEME_PHASE_SOURCE_NOT_READY');
- return {confirmed,provisional,sourceLatest:spy.at(-1).date,confirmedLagHours,provisionalLagHours,clockBasis:'ACTUAL_NY_PROXY_BAR_END'};
+ return {confirmed,provisional,sourceLatest:available.at(-1).date,confirmedLagHours:0,provisionalLagHours:0,clockBasis:'PROVIDER_PUBLISHED_PROXY_BAR_END'};
 }
 export function mergePublishedThemeHistory(previous,calculated,through,{window=252}={}){
  const old=previous?.history??[];need(Array.isArray(old)&&old.every((p,i)=>typeof p.date==='string'&&score(p.score)&&(!i||p.date>old[i-1].date)),'PAID_THEME_PRIOR_HISTORY_INVALID');
