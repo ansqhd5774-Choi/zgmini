@@ -1,4 +1,6 @@
-// Current-process Core lock proof for the proposed W01 Core-owned transaction.
+// Current-process Core lock shape and PID candidate check only.
+// It cannot establish WHICH executable originally created the lock;
+// the trusted Core-acquisition evidence is a separate mandatory boundary.
 // Read only; never creates, removes or reclaims the Core lock.
 // The trusted Core bridge must pass its actual base and current process PID.
 // The approved operational root must be read from the installed B contract,
@@ -44,7 +46,9 @@ export function assertCurrentCoreOwnedLock({base,approvedRoot,
   need(first===second&&stat.dev===after.dev&&stat.ino===after.ino&&
    stat.nlink===after.nlink&&stat.size===after.size,
    'INFL_CORE_STATIC_LOCK_RACE_STOP');
-  return Object.freeze({status:'PASS',code:'INFL_CORE_STATIC_CURRENT_CORE_LOCK_VERIFIED'});
+  return Object.freeze({status:'CANDIDATE_ONLY',
+   code:'INFL_CORE_STATIC_PID_AND_PATH_MATCH_UNATTESTED',
+   authorizesExecution:false});
  }catch(e){
   if(typeof e?.code==='string'&&e.code.startsWith('INFL_CORE_STATIC_'))throw e;
   fail('INFL_CORE_STATIC_LOCK_PROOF_UNAVAILABLE_STOP');
