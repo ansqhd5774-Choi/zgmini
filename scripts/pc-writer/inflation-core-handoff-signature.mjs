@@ -2,7 +2,7 @@
 // process; dormant until an approved pinned receiver and key are installed.
 // No provider/Writer I/O. A local JSON alone is NOT authority.
 // Public key must come from approved *installed* source, never from envelope.
-import {createPublicKey,verify} from 'node:crypto';
+import {KeyObject,createPublicKey,verify} from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 export const W01_HANDOFF_ENVELOPE_SCHEMA='ZGMINI_W01_CORE_HANDOFF_SIGNED_V1';
@@ -44,7 +44,8 @@ export function verifySignedCoreHandoff({
   envelope.issuedAt>now+60_000||envelope.expiresAt<=now)fail();
  let key,signature;
  try{
-  key=createPublicKey(pinnedPublicKey);
+  key=pinnedPublicKey instanceof KeyObject&&pinnedPublicKey.type==='public'?
+   pinnedPublicKey:createPublicKey(pinnedPublicKey);
   signature=Buffer.from(envelope.signature,'base64');
  }catch{fail();}
  if(key.asymmetricKeyType!=='ed25519'||signature.length!==64||
