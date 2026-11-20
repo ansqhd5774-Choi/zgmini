@@ -1,5 +1,7 @@
 # ZGMINI W04 고용지표 R6 — 최신 실행 계획 (2026-11-16)
 
+> **2026-11-20 PIT-08-03/04 저장 검증 DONE:** 기존 실PC [#2410](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2410#issuecomment-7016775344) Core Current 51지역×600/600 완전 주·strict52 후보 545 및 4주 분모 검증, [#2406](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2406#issuecomment-7016541520) read-only 2026-11-19 기준 History 누락 2,880과 `STATE_CLAIMS_BREADTH` raw READY / chart READY / score PARTIAL_HISTORY를 재사용. **History-asOf 완전성 미충족과 점수 미산출은 그대로 유지**; fixture 차트 479/545는 실PC 최신 출력으로 주장하지 않음. 이번 완료는 새로운 계산/최종 sourceStoredAt/1년 차트 점 검증/게시가 아니며 W04 **47/72→49/72(68.1%)**, 잔여 23. 다음 PIT-08-01에서 실제 게시 후보의 저장 시점/sourceVersion을 구분해 확인. [원장 §169](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md). <!-- W04-PIT0803-0804-SAVED-EVIDENCE-20261120 -->
+
 > **2026-11-20 W04 PIT-07-01 원래 범위 종료:** 승인된 Writer source/config/고정 Core SQLite 대상 확인은 [B #2462](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2462#issuecomment-7029481480)·[A #2468](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2468#issuecomment-7029988997)의 설치/저장 Writer VERIFIED 체크포인트 SHA 일치 및 [A #2454](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2454#issuecomment-7029046544) 고정 Core SQLite native 읽기, 기존 `run-local.mjs`의 실제 `source` 기록/고정 DB 개방 계약으로 충족. 실시간 Core Task PID/WMI [#2469](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2469#issuecomment-7030068741) `STATE_UNKNOWN`은 실시간 특정 인스턴스의 계보 미입증이며 위 단계의 새로운 필수 Gate로 추가하지 않음. PIT-07-01 **DONE**, 전체 **47/72(65.3%)**. 과거 2,880키 TRUE_PIT/History 쓰기 GO는 여전히 0. PIT-07-02는 실제 적격 History 쓰기 전 lease·Core 보호 확인 단계이며, 적격 없는 지금 불필요한 B 요청/예약 생성 없음. [원장 §168](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md). <!-- W04-PIT0701-SCOPE-CLOSED-20261120 -->
 
 > **2026-11-20 W04 PIT-04-05 종료:** 기존 [A #2363](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2363#issuecomment-7010766425)의 실제 PC JSON/TXT로 Raw 88건을 **61 HTTP body SHA 인증 + 27 BED 구형 canonical JSON 해시/원문 ID·Run 연결 전수 일치**로 분리. 이후 정규 [Writer B #2462](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2462#issuecomment-7029481480) 설치와 [A #2463](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2463#issuecomment-7029506907) after SHA도 확인. 원본 귀속 단계 DONE, W04 **45/72→46/72(63.9%), 잔여 26**. 구형 27의 해시 표기를 현재 형식으로 소급 갱신하지 않고, DOL_ETA 누락 History 2,880/당시 availableAt·TRUE_PIT는 별도 미인증. [진행 원장 §164](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md). <!-- W04-PIT0405-LEGACY-27-DONE-20261120 -->
@@ -307,14 +309,14 @@ W04 원담당이 기능 로직·실제 수동 검증·DB 이력·저장 자료 �
 | PIT-07-07 | 변경 후 History·raw·sourceHash·값 재조회 | B 런타임 JSON/TXT·readback | 승인 행 수·트랜잭션·원본 보호 검증 | TODO |
 | PIT-07-08 | 최종 PASS/WAIT/FAIL과 LAST PASS/FIRST FAIL 기록 | 동일 요청 ID·실행 결과 | 실제 DB 성공과 source/CI 결과를 분리 | TODO |
 
-### PIT-08 — 저장 자료 기반 계산·로컬 결과 재검증 (6개, 미실행)
+### PIT-08 — 저장 자료 기반 계산·로컬 결과 재검증 (6개 중 2개 DONE, 4개 미완료)
 
 | 세부 ID | 실제 실행·분석 작업 | 입력·근거 | 완료 판정 / 결과 | 상태 |
 |---|---|---|---|---|
 | PIT-08-01 | 게시 대상 Core 저장 시점·sourceVersion 확정 | PIT-07 저장 원장과 기존 checkpoint | 관측일/저장일/계산일을 혼동하지 않음 | TODO |
 | PIT-08-02 | 승인된 R6 산식으로만 재계산 수행 | SQLite 원자료·PIT History | 공급자 API 호출 0, 가중치·산식 변경 0 | TODO |
-| PIT-08-03 | 52주 참조·4주 변화율 분모·지역 51개 검사 | History-asOf의 주차별 완전성 | 부족 자료는 임의 0/보간 금지 | TODO |
-| PIT-08-04 | STATE_CLAIMS_BREADTH 실제 값·점수 상태 확인 | 저장 자료 계산 결과 | READY 또는 근거 있는 PARTIAL_HISTORY를 정확 판정 | TODO |
+| PIT-08-03 | 52주 참조·4주 변화율 분모·지역 51개 검사 | [실PC #2410](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2410#issuecomment-7016775344) Current 600/600주·51지역, strict52 545; 기존 PIT-04-07 4주 분모 검사·PIT-06-02 fixture; [실PC #2406](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2406#issuecomment-7016541520) History-asOf 누락 2,880 | Current 완전성 PASS, **History-asOf 미충족 확정**: 부분 데이터 0/보간/현재값 소급 금지. 참조 수량은 PIT 완전성 증명이 아님. [원장 §169](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md) | DONE — CURRENT_COVERAGE_VERIFIED / HISTORY_PARTIAL_CLASSIFIED |
+| PIT-08-04 | STATE_CLAIMS_BREADTH 실제 값·점수 상태 확인 | [실PC #2406](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2406#issuecomment-7016541520) / Run 44575710220; 기준 2026-11-19; sourceBundle 0c893c4f... | rawStatus READY, chartStatus READY, **scoreStatus PARTIAL_HISTORY**, 2,880키 History 누락. 점수 READY나 수치 창작 금지; 이후 신규 결과는 별도. [원장 §169](EMPLOYMENT_R6_PROGRESS_LOG_20261116.md) | DONE — SAVED_SCORE_STATUS_PARTIAL_HISTORY |
 | PIT-08-05 | 1년 차트 포인트 수·날짜·마지막 점 검증 | 로컬 계산 출력·관측일 | 차트 날짜/단위·결측/축 일관성 | TODO |
 | PIT-08-06 | 로컬 계산 결과·checksum·원장 재조회 | 기존 결과 저장 경로 | sourceStoredAt/관측일/계산시각 보존 및 최신화 증거 | TODO |
 
