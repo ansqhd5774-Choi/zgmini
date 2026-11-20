@@ -30,7 +30,8 @@ function fixture({busy=false,fail=null,approvalOverride={}}={}){
   },
   preflightExistingStore:async()=>{calls.push('parse');},
   applyUnderExistingBLease:async({requestId})=>{
-   calls.push('apply');return {status:'SAVED_READBACK',requestId,
+   calls.push('apply');if(fail==='apply')throw Object.assign(new Error('partial'),
+    {code:'INFL_CORE_STATIC_TEST_PARTIAL_STOP'});return {status:'SAVED_READBACK',requestId,
     apiCalls:0,dbWrites:0,d1Writes:0,coreCheckpointWrites:0};
   },
   readbackSavedFiles:async()=>{calls.push('readback');},
@@ -70,4 +71,13 @@ test('post-claim prewrite failure stops without retaining Writer lock',async()=>
  assert.ok(f.calls.includes('journal:CLAIMED_UNTOUCHED_STOP'));
  assert.equal(f.calls.at(-1),'release:false');
  assert.ok(!f.calls.includes('apply'));
+});
+
+test('during-write failure requires reconciliation and retains exact owned lease',async()=>{
+ const f=fixture({fail:'apply'});
+ const r=await runCoreOwnedInflationStaticOnce({requestId:id,adapter:f.adapter});
+ assert.equal(r.status,'RECOVERY_REQUIRED');
+ assert.equal(r.retry,'NO_AUTOMATIC_REPLAY');
+ assert.ok(f.calls.includes('journal:RECOVERY_REQUIRED'));
+ assert.equal(f.calls.at(-1),'release:true');
 });
