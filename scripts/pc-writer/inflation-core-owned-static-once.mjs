@@ -34,7 +34,7 @@ export async function runCoreOwnedInflationStaticOnce({requestId,adapter}={}){
  need(UUID.test(requestId??'')&&isObject(adapter)&&
   allowedMethods.every(m=>typeof adapter[m]==='function'),
   'INFL_CORE_STATIC_ADAPTER_CONTRACT_STOP');
- let claimed=false,completed=false,writer=null;
+ let claimed=false,writeIntent=false,completed=false,writer=null;
  try{
   const approval=await adapter.authenticateExistingB(requestId);
   exactApproval(approval,requestId);
@@ -66,6 +66,7 @@ export async function runCoreOwnedInflationStaticOnce({requestId,adapter}={}){
   await writer.verify();
   await adapter.assertCurrentCoreOwner();
   await adapter.readCurrentSourcePreimage(approval);
+  writeIntent=true;
   const result=await adapter.applyUnderExistingBLease({requestId,sources,writer});
   need(isObject(result)&&['SAVED_READBACK','UNCHANGED','ARCHIVED_READBACK'].includes(result.status)&&
    result.requestId===requestId&&result.apiCalls===0&&result.dbWrites===0&&
@@ -79,15 +80,16 @@ export async function runCoreOwnedInflationStaticOnce({requestId,adapter}={}){
   const code=typeof e?.code==='string'&&CODE.test(e.code)?
    e.code:'INFL_CORE_STATIC_UNVERIFIED_STOP';
   if(claimed){
-   try{await adapter.recordOnceJournal(requestId,'RECOVERY_REQUIRED');}catch{}
+   try{await adapter.recordOnceJournal(requestId,
+    writeIntent?'RECOVERY_REQUIRED':'CLAIMED_UNTOUCHED_STOP');}catch{}
   }
-  return {status:claimed?'RECOVERY_REQUIRED':'STOP',code,requestId,
+  return {status:writeIntent?'RECOVERY_REQUIRED':'STOP',code,requestId,
    retry:'NO_AUTOMATIC_REPLAY',providerCalls:null};
  }finally{
   if(writer){
    // The trusted writer adapter alone verifies and releases its own exact
    // lease; it must preserve owner/lease state on uncertain finalization.
-   await writer.release({retain:claimed&&!completed});
+   await writer.release({retain:writeIntent&&!completed});
   }
  }
 }
