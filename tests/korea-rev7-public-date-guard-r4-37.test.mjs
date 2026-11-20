@@ -50,9 +50,9 @@ test('W06 #37 an impossible 8-digit date can never become a public score or char
  assert.equal(actual.composite.score,null);
  assert.equal(actual.composite.history.length,0);
 });
-test('W06 #37 the public Reader uses Korea local day, not UTC midnight',async()=>{
+test('W06 #37 future Korean observation stays unavailable before the next completed session',async()=>{
  const before=await get('2026-11-22T14:59:00.000Z'); // 23:59 Sunday in Seoul
- const after=await get('2026-11-22T15:01:00.000Z'); // 00:01 Monday in Seoul
+ const after=await get('2026-11-23T10:00:00.000Z'); // 19:00 Monday in Seoul
  assert.equal(before.composite.observationDate,'20261120');
  assert.equal(after.composite.observationDate,'20261123');
  assert.equal(after.composite.history.at(-1).date,'20261123');
