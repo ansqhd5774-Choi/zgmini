@@ -32,8 +32,6 @@ function fixture({foreignRoot=false,ppi=true}={}){
    dbWrites:false,d1Writes:false,taskChanges:false,sourceChanges:false,
    manifestSha256:'a'.repeat(64),
   }),
-  assertCoreAcquisitionOrigin:async()=>({originAuthenticated:true,
-   source:'CURRENT_CORE_ACQUISITION',pid:process.pid}),
   tryAcquireSharedWriterLease:async()=>writer,
   readCurrentSourcePreimage:async()=>calls.push('preimage'),
   recordOnceJournal:async(_,phase)=>calls.push('journal:'+phase),
@@ -83,7 +81,9 @@ function fixture({foreignRoot=false,ppi=true}={}){
     coreCheckpointWrites:0};
   });
  };
- return {home,second,calls,controller,sourceA,sourceB,parse,apply,
+ return {home,second,calls,controller,coreAcquisitionWitness:async()=>({
+   originAuthenticated:true,source:'CURRENT_CORE_ACQUISITION',pid:process.pid}),
+  sourceA,sourceB,parse,apply,
   fetchImpl:fetchReal,requests:()=>requests,cleanup:()=>{
    fs.rmSync(home,{recursive:true,force:true});
    if(second!==home)fs.rmSync(second,{recursive:true,force:true});
@@ -93,6 +93,7 @@ test('Core-owned adapter uses existing two official URLs and readback under owne
  const f=fixture();try{
   const adapter=makeCoreOwnedInflationStaticOps({base:f.home,
    approvedRoot:f.second,controller:f.controller,
+   coreAcquisitionWitness:f.coreAcquisitionWitness,
    fetchImpl:f.fetchImpl,parse:f.parse,apply:f.apply});
   const result=await runCoreOwnedInflationStaticOnce({requestId:id,adapter});
   assert.equal(result.status,'PASS');
@@ -106,6 +107,7 @@ test('different canonical Core data roots prevent official GET',async()=>{
  const f=fixture({foreignRoot:true});try{
   const adapter=makeCoreOwnedInflationStaticOps({base:f.home,
    approvedRoot:f.second,controller:f.controller,
+   coreAcquisitionWitness:f.coreAcquisitionWitness,
    fetchImpl:f.fetchImpl,parse:f.parse,apply:f.apply});
   const result=await runCoreOwnedInflationStaticOnce({requestId:id,adapter});
   assert.equal(result.status,'STOP');
@@ -117,6 +119,7 @@ test('missing PPI preimage stops after GET but before applying data',async()=>{
  const f=fixture({ppi:false});try{
   const adapter=makeCoreOwnedInflationStaticOps({base:f.home,
    approvedRoot:f.second,controller:f.controller,
+   coreAcquisitionWitness:f.coreAcquisitionWitness,
    fetchImpl:f.fetchImpl,parse:async()=>({plan:{documents:{bls:{series:{WPSFD4:[]}}}}}),
    apply:()=>{throw Error('should-not-apply');}});
   const result=await runCoreOwnedInflationStaticOnce({requestId:id,adapter});
@@ -129,9 +132,10 @@ test('missing PPI preimage stops after GET but before applying data',async()=>{
 
 test('without verified original Core lock acquisition attestation, no supplier GET',async()=>{
  const f=fixture();try{
-  f.controller.assertCoreAcquisitionOrigin=async()=>({originAuthenticated:false});
+  f.coreAcquisitionWitness=async()=>({originAuthenticated:false});
   const adapter=makeCoreOwnedInflationStaticOps({base:f.home,
    approvedRoot:f.second,controller:f.controller,
+   coreAcquisitionWitness:f.coreAcquisitionWitness,
    fetchImpl:f.fetchImpl,parse:f.parse,apply:f.apply});
   const result=await runCoreOwnedInflationStaticOnce({requestId:id,adapter});
   assert.equal(result.status,'STOP');
