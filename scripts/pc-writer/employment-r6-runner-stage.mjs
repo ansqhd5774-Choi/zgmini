@@ -7,7 +7,7 @@ import path from "node:path";
 import crypto from "node:crypto";
 import {pathToFileURL} from "node:url";
 
-import {EMPLOYMENT_R6_FEATURES} from "../../lib/market-score/employment-r6-formula.mjs";
+import {EMPLOYMENT_R6_FEATURES,EMPLOYMENT_R6_FORMULA_REVISION} from "../../lib/market-score/employment-r6-formula.mjs";
 import {EMPLOYMENT_R4_CORE_STATES} from "../../lib/market-score/employment-r4-shadow-contract.mjs";
 import {validEmploymentR6PublicDisplay} from "../../worker/employment-r6-public-display.mjs";
 import {optionsFrom,stageEmploymentR6OneYearWithPitAudit} from "./employment-r6-one-year-stage.mjs";
@@ -293,7 +293,7 @@ export function projectEmploymentR6RunnerResult({body=null,pitCoverage=null,pitC
       ?body.sourceStoredAt:null,
     formulaHash:typeof body?.formulaHash==="string"&&/^sha256:[a-f0-9]{64}$/.test(body.formulaHash)
       ?body.formulaHash:null,
-    methodologyVersion:body?.methodologyVersion==="EMP-R6-FORMULA-R1"
+    methodologyVersion:body?.methodologyVersion===EMPLOYMENT_R6_FORMULA_REVISION
       ?body.methodologyVersion:null,
     dataStatus:body?.status==="READY"?"READY":body?.status==="PARTIAL"?"PARTIAL":"NO_RUNTIME_EVIDENCE",
     bodyDigest:body?crypto.createHash("sha256").update(JSON.stringify(body)).digest("hex"):null,
