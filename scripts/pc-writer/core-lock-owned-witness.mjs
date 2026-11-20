@@ -73,9 +73,11 @@ export function acquireCoreLockWithWitness({
     'INFL_CORE_STATIC_LOCK_RELEASE_OWNER_STOP');
    const current=fsImpl.fstatSync(fd);
    const stat=fsImpl.lstatSync(file);
+   const currentBytes=fsImpl.readFileSync(file);
    need(current.dev===original.dev&&current.ino===original.ino&&
     stat.dev===original.dev&&stat.ino===original.ino&&
-    stat.nlink===1,
+    stat.nlink===1&&Buffer.isBuffer(currentBytes)&&
+    currentBytes.equals(bytes),
     'INFL_CORE_STATIC_LOCK_RELEASE_DRIFT_STOP');
    record.released=true;
    fsImpl.closeSync(fd);
