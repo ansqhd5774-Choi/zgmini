@@ -22,6 +22,12 @@ if(fs.existsSync(file)){
 fs.writeFileSync(file,JSON.stringify({pid:process.pid,at:Date.now()}),{flag:'wx'});
 try{
  const lane=process.argv.includes('--korea')?'korea':'core';
+ // Paid sector/theme inputs share one stored archive; no extra Task or publisher.
+ if(lane==='core'){
+  try{const {collectPaidCurrent}=await import('./marketparquet-paid-store.mjs');
+   console.log('MARKETPARQUET_PAID '+JSON.stringify(await collectPaidCurrent(base)));
+  }catch(e){console.warn('MARKETPARQUET_PAID '+JSON.stringify({status:'FAILED_PREVIOUS_INPUTS_PRESERVED',code:/^MP_PAID_[A-Z0-9_]+$/.test(e.code??'')?e.code:'MP_PAID_COLLECTION_FAILED'}));}
+ }
  const collection=spawnSync(process.execPath,[path.join(here,'collect-local.mjs'),...(lane==='korea'?['--korea']:[])],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:30*60000});
  try{updateDataAlert(base,{key:'collection',failed:collection.status!==0});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
  // A provider failure retains stored good data; publication still reads local storage.
