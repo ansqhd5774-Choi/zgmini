@@ -1,3 +1,13 @@
+## 2026-11-20 KST W03 13단계 — GMH 무료 익명 1h 조건의 최신 공식 문서 불일치 확인 및 기존 문의 초안 보완
+
+- **시작/끝:** 12/68 완료(17.6%) → 12/68 완료(17.6%), 13단계 미완료. 기준 기능 main `a7c0cf678bb3d3e29d97d4a6c15f48e9dec69cfd`, 지정 W03 브랜치 `codex/theme-fear-greed-integration-20261025`, 작업 전 handoff Git blob `4d2599c4a208467285eead7c087680644a9b7684`. 기존 B #2449 / A #2450 CAS source 설치, #2455 API 503, GMH 7×252 private 증거 유지; 반복 수행하지 않음.
+- **신규 외부 사실과 과거 증거 분리:** 2026-11-20 공식 [GMH Terms effective 2026-11-17](https://getmarkethistory.com/docs/terms) §1과 [US stock historical-data guide](https://getmarkethistory.com/docs/guides/historical-stock-market-data)는 현재 무계정 샘플을 **1d 일봉**으로, 무료 계정 할당량을 **1h 시간봉**으로 기술. 이전 W03 실제 #2185는 2026-11-16 무계정 `/api/v1/bars/stocks/us/{ticker}/1h` 경로를 통해 수집된 14종·30 raw 페이지의 당시 저장 증거. **현재 문서 설명과 과거 수집 경로가 다르다**는 점은 확인했으나, 실제 API가 시간봉 GET을 현재 거부하는지·11/16 당시 허가 범위·이미 받은 관측의 이용권은 미확정. 공식 [Partners 안내](https://getmarkethistory.com/docs/partners/)는 데이터셋별 상위 제한과 정확한 공개 사용 형태를 문의하도록 명시. 현재 공개 파생 점수·익명 1h 권리를 자동 PASS로 승격하지 않음.
+- **실제 처리:** 기존 2026-11-18 Gmail `partners@getmarkethistory.com` **미발송 초안 1건만 제자리 수정**. 기존 상업적 0–100 7테마·252일 비복원 파생 출력, 11/17 §5 익명 계정조건·상위 권리·가격/계약 문의는 보존하고, (a) 11/16 무계정 1h 수집 시점 이용 허가/기존 파생물 공개의 유효성 (b) 현재 신규 1h는 로그인 무료 계정 및 key가 필요한지·그 상업적 파생 허용 범위를 추가 질의. Gmail 초안 ID `r-9159224603131191736`, 새 message ID `1a1f6fb209a04a38`, DRAFT/readback 확인, **외부 발송 0건**. 개인정보·인증키·원시 가격·기밀 원자료 인계/출력 없음.
+- **현재 판정:** R178 단일 CAS source PC 설치 완료 유지, 게시 효과 `approvedRecord`/`verifyApprovedEffect`·GMH 파생 상업 공개권·가격정합 등은 미입증. 공개 `503/STORED_DATA_STALE`, CAS/R32/API/UI 실제 공개 복구 미완료. 공급자 GET/PC 설치/SQLite/D1/Cloudflare/예약/원자료 수정 0; 이번 실제 변경은 Gmail 기존 문의 초안 및 지정 브랜치 원장 1파일.
+- **다음 단일 필수 행동:** 공급처 문의의 **사용자 발송 승인 또는 다른 실제 라이선스 증빙**이 확보되면 그 근거로 무계정 1h·계정/상위 권리·정확 GMH-only 출력에 대한 운영 게시 효과 승인 가능 여부를 판정한다. 승인 전에는 D1 CAS·권리 플래그 변경 금지; 승인 후에도 게시 직전 GMH 최근 확정 세션·원자료 hash·8일 freshness를 별도 확인한다.
+
+---
+
 ## 2026-11-20 KST W03 13단계 — 기존 1파일 CAS Writer 운영 설치 및 공개 503 재검증 결과 누적
 
 - **회차 목표·진척:** W03 13/68 단계의 검증된 실제 Writer CAS 설치/조회 증거와 공개 결과를 최신 누적 원장에 반영. 시작/끝 **12/68 DONE (17.6%)**, 단계 13 IN_PROGRESS, 163개 테마 최종 목표 불변. 이 항목은 13단계의 기능 완료 또는 새 단계 1개 완료가 아님. 원장 이전 마지막 기록은 2026-11-19 #2237; 기존 본문/이전 승인 전부 보존.
