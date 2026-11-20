@@ -1,3 +1,12 @@
+## 2026-11-21 KST — P2 비공개 저장 순수 함수 격리 시뮬레이션
+
+- 변경된 최신 `storePaidPrivateResults` 함수 본문을 원격 브랜치에서 읽어 V8 격리 실행. 가상 파일시스템과 모의 해시 사용, 실제 PC/Node/운영 영속 저장 아님.
+- 확인 결과: 신규 1건 `PRIVATE_STORED_READBACK_VERIFIED`, 동일 입력 두 번째 실행 해시 동일·파일 1개 유지, 저장 바이트 변조 뒤 `PAID_THEME_PRIVATE_READBACK_MISMATCH` 예외, 빈 비공개 등록 `NONE`. 시뮬레이션 4/4 기대값 PASS.
+- 조건부 테스트 한계: 원본 계산기·전체 Node test·GitHub Actions CI를 실행한 것이 아니며, 공급처 실제 데이터/Runtime `ai-software` 비공개 계산 성공이나 D1/Reader 검증 근거가 아님. 로컬 private 파일 쓰기를 현재 운영 PC에 적용하지 않음.
+- 다음 실제 목표: 3파일 범위의 Node 정규 테스트와 안전한 main 통합 → 기존 승인 Writer B 설치(정확 SHA/manifest) → 현재 Core private 결과 저장/recheck. 원본 W03 브랜치 전체 diverged 병합은 금지, 실제 운영 반영 전 source SHA·승인 설치 경로 확인.
+
+---
+
 ## 2026-11-21 KST — P2 유료 비공개 파생 이력 저장 결손 수정 (source-only)
 
 - 시작/종료: 12/68(17.6%) 기존 수치 유지, P2 소스 결손 1건 수정 완료. P2 기능 DONE/실PC 완료로 승격하지 않음.
