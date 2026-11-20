@@ -17,7 +17,8 @@ test('only same canonical Core root and current PID can pass',()=>{
  const f=fixture();try{
   f.write();
   const result=assertCurrentCoreOwnedLock({base:f.root,approvedRoot:f.root});
-  assert.equal(result.status,'PASS');
+  assert.equal(result.status,'CANDIDATE_ONLY');
+  assert.equal(result.authorizesExecution,false);
  }finally{f.cleanup();}
 });
 test('different root fails rather than accepting a second Core lock',()=>{
@@ -55,5 +56,14 @@ test('hard-linked file rejected to avoid identity alias',()=>{
   fs.linkSync(f.lock,path.join(f.root,'second-link'));
   assert.throws(()=>assertCurrentCoreOwnedLock({base:f.root,approvedRoot:f.root}),
    {code:'INFL_CORE_STATIC_LOCK_SHAPE_STOP'});
+ }finally{f.cleanup();}
+});
+
+test('PID/path match by itself never grants operating permission',()=>{
+ const f=fixture();try{
+  f.write();
+  const result=assertCurrentCoreOwnedLock({base:f.root,approvedRoot:f.root});
+  assert.equal(result.authorizesExecution,false);
+  assert.equal(result.code,'INFL_CORE_STATIC_PID_AND_PATH_MATCH_UNATTESTED');
  }finally{f.cleanup();}
 });
