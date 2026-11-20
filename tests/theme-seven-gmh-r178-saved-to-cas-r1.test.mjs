@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {
  W03_GMH_SOURCE_PINS,readPinnedPrivateGmhSeven,
- preparePinnedGmhSevenR178,runApprovedGmhSevenR178SavedOnce
+ preparePinnedGmhSevenR178,runApprovedGmhSevenR178SavedOnce,
+ auditPinnedGmhSevenR178ReadOnly
 } from '../scripts/pc-writer/theme-seven-gmh-r178-saved-to-cas-r1.mjs';
 import {GMH_SEVEN_SYMBOLS}
  from '../scripts/pc-writer/theme-gmh-seven-private-bridge.mjs';
@@ -196,4 +197,24 @@ test('actual operational entry denies missing approval before PC reads and canno
  }),{code:'W03_GMH_R178_ONCE_SAVED_MANIFEST_CHECKPOINT_PIN_STOP'});
  assert.deepEqual([savedReads,privateReads,seedReads,writeAttempts],[1,0,0,0]);
  assert.notDeepEqual(pins,W03_GMH_SOURCE_PINS);
+});
+
+test('read-only audit rejects missing seed before any PC source read',async()=>{
+ let reads=0;
+ await assert.rejects(auditPinnedGmhSevenR178ReadOnly({
+  dataRoot:'/synthetic/readonly',
+  readSaved:()=>{reads++;throw Error('UNEXPECTED_PC_READ');}
+ }),{code:'W03_GMH_R178_ONCE_READONLY_SEED_REQUIRED'});
+ assert.equal(reads,0);
+});
+test('read-only audit never accepts synthetic source pins as operational evidence',async()=>{
+ const {f}=synthetic();
+ let privateReads=0;
+ await assert.rejects(auditPinnedGmhSevenR178ReadOnly({
+  dataRoot:'/synthetic/readonly',legacySeed:f.legacySeed,
+  readSaved:()=>f.saved,
+  readPrivate:()=>{privateReads++;return f.privateArtifactBytes;},
+  now:NOW
+ }),{code:'W03_GMH_R178_ONCE_SAVED_MANIFEST_CHECKPOINT_PIN_STOP'});
+ assert.equal(privateReads,0);
 });
