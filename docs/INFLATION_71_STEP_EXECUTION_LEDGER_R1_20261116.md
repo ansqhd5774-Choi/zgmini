@@ -1,4 +1,15 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
+
+
+<!-- W01-20261121-INSTALLED-CORE-SHA-V2-CLOSURE-NEW-BLOCKER -->
+## 2026-11-21 — #2515 실PC 설치로 기존 수집 V2 source closure가 만료됨: 최소 source-only 후보 검증, 기능 33/71 유지
+
+- **실패 조건의 새로운 구분:** 기존 Census/BLS 수동 V2 승인 `approvals/inflation-manual-b/official-static-two-source-w01-v2-approved-20261116.json`은 `local-cycle.mjs` SHA256 `2e6200e5637fb99f339fdc74a64592f34c1272423a39366b8559c16ea1b13b5d`를 고정. 그러나 기존 Writer B [#2515](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2515) / [원격 설치 JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/writer-b-source-install-dd1d3425-bef5-42d9-942c-32b80e8b7163.json)이 실제 `WRITER_B_INSTALLED_VERIFIED/WRITER_B_INSTALL_VERIFIED`, 설치 6파일 중 `local-cycle.mjs` afterSha256 `2cfa0f9ae794e36d0a2fcf865a571258c5d3a4e1709557a5e4c1059dde46da75`를 확인. 이후 설치 [#2518](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2518)는 해당 Core 파일을 변경하지 않음. 따라서 기존 V2가 Owner 증명을 통과해도 소스 4파일 preimage에서 안전 중단 가능. #2515 당시 설치 증거와 **현재 즉시 실행 중인 Core 동일성**은 별개.
+- **최소 코드 수정/실제 CI:** 기존 외부 B 수집 계약을 재사용하고 `inflation-manual-b/contract.mjs`의 V2 allowed closure에 정확 1개 `#2515` Core 설치 SHA 후보만 추가. 이전 세 파일의 검증 SHA, 기존 2개 허용 프로필, 공식 BLS/Census URL, 정확 2개 JSON, Writer lease/단회 원장, no Task/DB/D1/source writes 불변. 반대 시험은 cross-profile 혼합 SHA와 임의 변조를 거부. 제어 [Draft PR #2531](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2531), head `fc797aab06161fb17bc371563247b9956cb8eb69`; [Controller Maintenance CI #44786037462](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44786037462) `completed/success`, 정확 W01 V1/V2 사전검증 step `completed/success`. 이 후보 **신규 승인 manifest 아님**; 정규 설치/신규 B 요청 없음.
+- **독립 owner 미해결:** 2026-11-20 [Core runtime A #2469](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2469) 결과 `CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE`, Task State 4/4이나 GetInstances(0)=0, lock lineage 미입증. 2026-11-19 [Event129 A](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44337757016-1-seat-1.json)은 `enabled=false`, Task/WMI Core 일치하나 Task->Node 링크 없음. 해당 보안 설정의 C급 명시 승인/관리자 적용 또는 별도 실제 동등 증거 없이는 Event129/owner 체크 제거·기존 #1177/#1818 재실행 금지.
+- **다음 필요한 실행:** 운영 시점 4파일 SHA/config.source/current source와 Owner 증명에 대한 기존 승인 읽기 증거 확인 → 변경된 실행 소스 효과의 승인 여부/정확 manifest 재발급 판단 → 정규 설치 및 신규 고유 V2 1회 공식 static BLS/Census 2GET → 두 raw archive SHA+last-good 실PC readback → Census #28 및 물가 7개 공개 Writer/D1/API/UI. 전체 물가 단계에서 독립 A4/B2 작업은 해당 개별 소유자/설치 상태대로 병행. 기존 Event129/Census 실패와 무관한 작업을 글로벌 HOLD로 묶지 않음.
+- **완료/효과:** SOURCE candidate + CI PASS, OPERATING SOURCE ADMISSION/OWNER/RAW/POST 미완료. 기능 시작 33/71(46.5%) → 종료 **33/71(46.5%)**, DONE 신규 0, Provider/PC/DB/D1/Task/Cloudflare 작업 0.
+
 <!-- W01-20261119-B909-CONTROLLER-POSTINSTALL-DELTA-READBACK -->
 ## 2026-11-19 — 공유 Controller 실제 설치 b9099839 PASS, W01 A4-07/B2-05 아직 미적용 (신규 Runtime 범위 확인)
 
