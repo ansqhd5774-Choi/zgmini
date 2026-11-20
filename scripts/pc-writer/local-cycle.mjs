@@ -28,6 +28,12 @@ try{
    console.log('MARKETPARQUET_PAID '+JSON.stringify(await collectPaidCurrent(base)));
   }catch(e){console.warn('MARKETPARQUET_PAID '+JSON.stringify({status:'FAILED_PREVIOUS_INPUTS_PRESERVED',code:/^MP_PAID_[A-Z0-9_]+$/.test(e.code??'')?e.code:'MP_PAID_COLLECTION_FAILED'}));}
  }
+ // Independent registered-theme lane; a source wait never blocks Core or sector updates.
+ if(lane==='core'){
+  try{const {runPaidThemeCycle}=await import('./theme-paid-cycle.mjs');
+   console.log('THEME_PAID '+JSON.stringify(await runPaidThemeCycle(base,{publish:process.argv.includes('--publish')})));
+  }catch(e){const report={status:'FAILED_PREVIOUS_DATA_PRESERVED',code:/^PAID_[A-Z0-9_]+$/.test(e.code??'')?e.code:'PAID_THEME_RUNTIME_FAILED',d1Outcome:'CHECK_STORED_RESULT_BEFORE_RETRY'};console.warn('THEME_PAID '+JSON.stringify(report));try{save(path.join(base,'marketparquet-paid','theme-last-run.json'),report);}catch{}}
+ }
  const collection=spawnSync(process.execPath,[path.join(here,'collect-local.mjs'),...(lane==='korea'?['--korea']:[])],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:30*60000});
  try{updateDataAlert(base,{key:'collection',failed:collection.status!==0});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
  // A provider failure retains stored good data; publication still reads local storage.
