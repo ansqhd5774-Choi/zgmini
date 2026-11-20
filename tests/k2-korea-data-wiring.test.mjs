@@ -100,7 +100,7 @@ function koreaStoreForCancellation(fetchImpl){
    throw Error('UNEXPECTED_MODULE:'+id);
   },
  };
- vm.runInNewContext(js+'\\nexports.__load=load;exports.__snapshot=snapshot;',context);
+ vm.runInNewContext(js+String.fromCharCode(10)+'exports.__load=load;exports.__snapshot=snapshot;',context);
  return {load:context.exports.__load,snapshot:context.exports.__snapshot,timers};
 }
 
