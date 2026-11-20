@@ -1,3 +1,14 @@
+## 2026-11-20 KST W03 13단계 — GMH 상업 파생 공개권 공식 문의 발송 및 SENT readback
+
+- **진행률:** 시작 12/68(17.6%) → 종료 12/68(17.6%), 13단계 미완료. 상위 163테마 목표·기존 승인 산식/ETF/PC Runner·D1 계약 불변. 기준 기능 main `a7c0cf678bb3d3e29d97d4a6c15f48e9dec69cfd`; 지정 브랜치 `codex/theme-fear-greed-integration-20261025`, 작업 전 진행원장 Git blob `840b25639312bc546cd84722c6bb825becf5395f`. 원본 기록과 #2449/#2450 설치 및 #2455 공개 503 증거 보존.
+- **실제 조치:** 2026-11-18 작성된 기존 GMH 문의 Gmail 초안 `r-9159224603131191736` 수신처 `partners@getmarkethistory.com`, 제목 `Commercial derived-score publication rights for free 1h ETF sample (GMH Terms §§1,5,6)` 원문 확인. 초안에 §1 무계정 1h 허용을 단정한 문장과 현행 무계정 1d 안내가 충돌하여, 단정 표현만 역사적 수집 경로의 이용권 문의 문장으로 수정; 사용자의 '작업해라' 지시에 따라 기존 Gmail 초안 단회 발송.
+- **실제 발송 증거:** Gmail 발송 message ID `1a1f6fe4059985ad`, thread ID `1a1ef72ab94cdc2d`. 별도 `read_email`에서 수신처/제목 및 `SENT` 라벨 재조회 확인, 동일 draft ID가 더 이상 `list_drafts` 결과에 존재하지 않음. 수신·열람·공급처 승인·답변은 **미확인**, 응답이 올 때까지 무조건 반복 발송하지 않음. 인증키, 원봉/비공개 원자료, 투자자 개인정보 등 발송하지 않음.
+- **질의 범위:** (1) 비복원 상업 광고지원 웹의 일별 0~100점 7개 테마/약252거래일 이력 배포 가능, (2) 2026-11-16 익명 1h 취득 당시 권리 및 기존 파생물의 후속 공개, (3) 현행 무료 계정 기반 1h 수집과 §5 account in good standing 적용, (4) 거래소/기초 제공자 등 상위 이용권, (5) 별도 유료 라이선스 필요시 정확 범위/비용. 본 메일은 권리 해석 문의이지 유료 구매·공급자 사용 승인 수령이 아님.
+- **운영 상태:** 이번 조치는 **Gmail 외부 문의 1건 발송 및 W03 진행원장 갱신**뿐. 신규 PC A/B/Controller/Writer 설치·공급자 GET·SQLite/D1 CAS·Cloudflare 배포·DNS·예약·가격정책 변경 0. 기존 설치 소스 #2449 PASS 및 사후 #2450 PASS, 생산 공개 조회 #2455의 기본/방문자 HTTP503 `STORED_DATA_STALE` 유지. `publicationAuthorized`/rights flags=false, `approvedRecord`/신뢰 `verifyApprovedEffect`의 실운영 연결 및 게시 미완료.
+- **다음 단일 필수 실행:** 해당 공급처 발신 답변이 실제 도착했을 때 기존 메일 스레드 원문에서 익명 무료 1h/파생 공개권/상위 권리/계정 요건을 조항별 분류하여 기존 `docs/API_SOURCE_RIGHTS_REGISTRY.md`의 적용 범위를 결정한다. 공급처 답변 없이 무단 게시하거나 오래된 2026-11-13 관측을 최신으로 재표기하지 않는다. 허가 후에도 실제 승인된 효과·최근 원자료 SHA 및 8일 신선도·R32 직전 상태를 확인하고 기존 Writer 단일 CAS/readback·Production API/UI를 진행한다.
+
+---
+
 ## 2026-11-20 KST W03 13단계 — GMH 무료 익명 1h 조건의 최신 공식 문서 불일치 확인 및 기존 문의 초안 보완
 
 - **시작/끝:** 12/68 완료(17.6%) → 12/68 완료(17.6%), 13단계 미완료. 기준 기능 main `a7c0cf678bb3d3e29d97d4a6c15f48e9dec69cfd`, 지정 W03 브랜치 `codex/theme-fear-greed-integration-20261025`, 작업 전 handoff Git blob `4d2599c4a208467285eead7c087680644a9b7684`. 기존 B #2449 / A #2450 CAS source 설치, #2455 API 503, GMH 7×252 private 증거 유지; 반복 수행하지 않음.
