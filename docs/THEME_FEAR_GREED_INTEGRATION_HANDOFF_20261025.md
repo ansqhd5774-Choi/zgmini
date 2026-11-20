@@ -1,3 +1,13 @@
+## 2026-11-20 19:00 KST W03 13단계 — 읽기 전용 감사 경로의 실제 결합점 확인
+
+- **진행:** 시작 12/68(17.6%) → 종료 12/68(17.6%), 13단계 미완료. 기존 Writer 설치 #2449/#2450, 공급처 서면 회신, 7×252 비공개 계산 증거를 재사용하며 재실행하지 않음.
+- **이번 소스 직접 확인:** `scripts/pc-writer/theme-seven-gmh-r178-approved-writer-entry.mjs` blob `a742af09cc2eb58e3e4be93d0599bb59092bd61e`, `theme-seven-gmh-r178-saved-to-cas-r1.mjs` blob `37f747709d78d4fcca323eee285c042160589445`, `theme-seven-gmh-r178-private-draft.mjs` 원본 확인. `preparePinnedGmhSevenR178`는 저장 manifest/checkpoint SHA, private bytes SHA, `attestSavedGmhSevenCollectionTime`을 통한 raw in-memory 재해시, R178 projection을 재사용할 수 있으나 `storage.readSeed()`가 필요함. 현 운영 adapter의 `approvedGmhSevenR178Storage.readSeed()`는 D1 SELECT를 호출함. 따라서 승인 게시 함수 `runApprovedGmhSevenR178FromPcWriter`를 단순 호출하는 것은 **독립 읽기 전용 감사**가 아님: `approvedRecord`·`verifyApprovedEffect`를 요구하고 이후 CAS 가능 경로에 진입함.
+- **검증 분리:** 비공개 projection은 `publicationAuthorized:false` 등 안전 상태이며, `prepareGmhSevenR178PrivateDraft`에서 과거 겹침 오차 1e-6 초과를 거부함. 이는 정적 계약 확인일 뿐 PC 저장 파일·D1 실측 PASS가 아님. 기존 11/13 관측·11/16 수집 시각은 고정 source pin으로, 신규 날짜 자동 적용 불가. #2455의 HTTP 503은 과거 공개 조회 결과이며 이번 신규 측정이 아님.
+- **FIRST PENDING / 최소 후속:** (1) 기존 승인 A allowlist에 PC 저장 manifest/checkpoint/private 검증 + legacy seed **읽기 전용** 입력을 제공하는 작업이 있는지 확인. (2) 없다면 기존 `preparePinnedGmhSevenR178`에 D1 쓰기 능력이 없는 read-only seed adapter를 결합하는 최소 감사 진입점·회귀 테스트를 작성하고 정규 승인 A로 JSON/TXT 영수증을 확보. (3) 영수증에서 7×252 필드/비복원성, sourceStoredAt, 관측일·신선도 판정. (4) 적격 확인 후에만 독립 `verifyApprovedEffect`와 CAS/readback으로 진행. 기존 승인 게시 경로를 감사용으로 오용하거나 불필요한 Writer 재설치 금지.
+- **이번 범위:** 소스 감사 및 이 원장 1파일 갱신. PC A/B, 공급처 GET, D1/SQLite, Cloudflare, scheduler, 운영 게시 변경 0. 신규 PC 영수증/테스트 PASS 주장 없음.
+
+---
+
 ## 2026-11-20 16:00 KST W03 13단계 — R178 저장→게시 계약 정적 감사 (운영 쓰기 없음)
 
 - **진척:** 시작 12/68(17.6%) → 종료 12/68(17.6%), 13단계 IN_PROGRESS. 상위 목표 163테마 불변. main@a7c0cf678bb3d3e29d97d4a6c15f48e9dec69cfd, W03 전용 브랜치 codex/theme-fear-greed-integration-20261025, 원장 이전 blob 180c50e60f5dad32a82e1aaeb0018a0fc7162811.
