@@ -104,7 +104,7 @@ test('actual CNN card 1D path invokes current session guard; other periods are u
  assert.match(panel,/if \(selectedPeriod === "6M" \|\| selectedPeriod === "1Y"\)/);
  assert.match(panel,/periodBaseline[\s\S]*?selectedPeriod === "1D"\) return history.length>=2/);
  assert.match(panel,/currentSessionPcDates\.has\(value\)/);
- assert.match(panel,/cnnObservedTimes=new Set\(allIntraday\.map\(point=>point\.date\)\)/);
+ assert.match(panel,/cnnObservedTimes=new Set\(\[\.\.\.allIntraday\.map\(point=>point\.date\),\.\.\.archived\.points\.map\(point=>point\.observedAt\)\]\)/);
 });
 
 
