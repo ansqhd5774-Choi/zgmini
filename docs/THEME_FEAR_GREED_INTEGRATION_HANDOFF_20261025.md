@@ -1,3 +1,13 @@
+## 2026-11-21 KST — 5단계 공통 경로 소스 대조 선행 점검 (종결 아님)
+
+- **기준 차이 분리:** 실제 최신 `main`과 전용 브랜치 `codex/theme-fear-greed-integration-20261025`의 동명 파일을 별도 읽었다. 전용 브랜치 `app/api/theme-fear-greed/route.ts` Git blob `bc59a864...`은 구형 `readThemeEtfOnly`만 호출하지만, `main` blob `61a85009...`은 `readPaidThemeFeed`를 우선 읽고 무효·부재 시 기존 Reader로 되돌린다. 전용 브랜치의 구형 라우트를 `main`에 복사하거나 전체 병합해서는 안 된다. 이 차이는 **운영 결함 아님/소스 드리프트**로 구분.
+- **기존 공통 수집·계산·게시:** `main`과 브랜치의 `theme-paid-registry.mjs`, `theme-paid-cycle.mjs`, `theme-paid-calculate.mjs` Git blob은 각각 동일. `loadPaidRegistry`가 `ACTIVE_RUNTIME` 및 등록부를 읽고, 승인된 공개만 `public`; `symbols`는 모든 활성 등록의 ETF+benchmark를 중복 제거. `calculatePaidThemes`는 등록부 활성 테마 순회 및 `methodologyVersion`별 로직, `publicThemes/privateRecords` 분리; `theme-paid-cycle`은 단일 `PAID_THEME_KEY` D1 CAS/readback과 비공개 로컬 저장을 재사용. **신규 복제 실행기·테마별 D1 테이블 추가 증거 없음**(검토한 이 경로 한정).
+- **공개 Reader/UI:** `main`의 `worker/theme-paid-public.mjs`는 저장 D1 읽기·공개 필드만 projection, `app/api/theme-fear-greed/route.ts`가 우선 소비. `main`의 상세 `theme-detail-charts.tsx`는 설정형 `configured`에 1~252점 및 카탈로그 밖 ID를 허용하나, 기존 목록은 252점 검사를 보존. 홈 `lib/theme-etf-dashboard.mjs`는 등록된 공개 항목도 252점을 요구. 따라서 **미래 승인된 15점 설정형 테마의 홈/상세 일치 여부는 별도 제품 정책 미결**이고, 현재 비공개 AI에 대한 운영 장애로 판정하지 않음.
+- **5단계 범위 판정:** 저장·공유 계산·Reader의 소스 연결은 확인했지만 새로운 공개 등록의 Production 화면 end-to-end 실증은 해당 등록 미승인·미실행, 4단계 상세/모바일 렌더링과 API 실시간 동일시각 대조도 미완료. 5단계 `IN_REVIEW/NOT_DONE`, 전체 완료 단계는 3/5 유지. 기존 운영 설치·D1 readback은 종전 성공 증거 재사용만 하며 이번 조회로 재수행 주장 금지.
+- **변경 효과:** 기록 문서만, UI·산식·등록·D1·운영 PC·배포 변경 0. 다음 단계는 비용 추가 없는 기존 공식 GUI/승인 경로로 4단계 누락 화면/차트 검증을 회수한 후, 실제 차이만 최소 수정하고 5단계를 마무리한다.
+
+---
+
 ## 2026-11-21 KST — 4단계 홈 PC 실제 hydrated DOM 부분 확인 (미종결)
 
 - **증거 경계:** 사용자의 연결 브라우저에 기존 열려 있던 `https://zgmini.kr/` 탭의 렌더링 후 DOM 텍스트를 읽기 전용 회수. 웹 검색 SSR의 초기 로딩 문구와 구분됨. 화면 너비/스크린샷 및 모바일 기기 실측은 이 조회에서 제공되지 않으므로 **PC 탭 실렌더 텍스트 검증만 PARTIAL**로 인정.
