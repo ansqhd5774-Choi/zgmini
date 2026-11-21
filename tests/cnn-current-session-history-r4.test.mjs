@@ -152,3 +152,17 @@ test('W06 #36 PC checks need two eligible records and cannot override an exact-t
  assert.deepEqual(two.map(p=>p.score),[0,10,55],'authentic source overrides a same-time check');
  assert.equal(two.at(-1).date,current);
 });
+
+test('W06 #36 impossible calendar day cannot normalize into a CNN source observation',()=>{
+ const impossible='2026-02-30T20:00:00.000Z';
+ const actual='2026-03-02T20:00:00.000Z';
+ assert.equal(cnnNyObservationDay(impossible),null);
+ assert.equal(cnnNyObservationDay('2024-02-29T20:00:00.000Z'),'2024-02-29');
+ assert.deepEqual(currentCnnSessionHistory(actual,{
+  observedPoints:[obs(impossible,90)],
+  intradayObservations:[obs(impossible,95)],
+ }),[],'invalid date is not transformed into a real source point');
+ assert.deepEqual(currentCnnSessionCheckedPoints(actual,[
+  check(actual,impossible,90),
+ ]),[],'invalid claimed source date is not a verified PC check');
+});
