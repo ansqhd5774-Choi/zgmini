@@ -31,6 +31,12 @@
 
 ## 개편 후 기록
 
+### 2026-11-21 — WPSFD42 exact-effect decision request #2240
+
+- **신규 결정 요청:** [#2240 정확 결정 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2240#issuecomment-7059205279)에서 기존 공통 W05 B job/계약을 재사용하고, 한정된 WPSFD42 2025~2026 **US BLS POST 최대1회 + 기존 SQLite chunks/snapshots append-only** 효과의 유효 기존 GO 링크 또는 신규 단일 GO/NO-GO만 요청했다. 계약 `w05-r304-service-b/contract.mjs`는 `status=APPROVED_B`와 manifest SHA 결속을 강제하며 현재 원문은 `PROPOSED_NOT_APPROVED`. 임의 승인 승격·단회 B Issue·SQLite/provider/D1 실행 0. 중복 Controller/Workflow 설치 없음.
+- **독립 확인:** QFR age gate는 2026Q2 기록상 기간 미만료일 가능성이 있지만 실제 PC freshness/PIN/D1 원격 게시 증명은 별개다. BEA unit #1183은 실제 권리/아카이브/승인 전 source-only Draft 유지. 사용자가 신규 쓰기효과를 명시 허용한 증거가 없으므로 기존 읽기/소스 분석과 분리.
+- **NEXT:** #2240의 정확 효과 승인 결정(기존 유효 승인 있으면 재사용) 확인. GO가 확인돼야만 기존 B 단회 및 raw SHA/checkpoint readback→저장 계산. 미승인이면 해당 수집만 BLOCKED, QFR/BEA 독립 read-only 검증 계속. 현행 1/5 DONE, 2 IN_PROGRESS.
+
 ### 2026-11-21 — W05 approval provenance and QFR freshness narrowed
 
 - **승인 출처 최종 교차 확인:** 기존 #2240/#2089 승인 원장·control main 검색 및 과거 사용자 지시 조회에서 WPSFD42(US BLS WPSFD42, 2025~26, POST 최대1회, PC SQLite chunks/snapshots append-only) 실행효과와 QFR exact D1 key 게시효과의 **사용자 별도 명시 GO 근거가 확인되지 않았다**. 기존 사용자 '계속'은 이미 승인된 source-only 작업 연속 지시이지 새로운 provider/DB/D1 쓰기 권한의 증거가 아니다. 현재 main WPSFD42 manifest status=`PROPOSED_NOT_APPROVED`, contract는 `APPROVED_B`만 허용. 따라서 무허가 B 실행 Issue 생성/프로필 우회/manifest 임의 승격 0. #1919 과거 사용자 HOLD 귀속 오류 정정은 승인 자체를 생성하지 않는다.
