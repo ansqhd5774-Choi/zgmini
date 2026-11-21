@@ -42,6 +42,14 @@
 
 ## 개편 후 기록
 
+### 2026-11-21 — 활성 Production 1D 마지막점 툴팁 브라우저 직접 검증 2회, 모순 증거 분리
+
+- **시작/종료:** 개편 완료조건 3/5 DONE(60%), #4 PARTIAL, #5 NOT_DONE. 기존 `2026-11-21` 실제 Production Chromium 390/1440 카드33.0·1D/1W/1Y 차트·overflow 0 성공은 재사용. Source 수정·CI/PR·main merge·Cloudflare 배포·PC/SQLite/D1/Writer·DNS 변경0.
+- 연결된 기존 TinyFish 브라우저 선불잔액(자동 충전 unconfigured)을 사용한 **읽기 전용** 두 Run: [1차](https://agent.tinyfish.ai/runs/58adfff9-1627-400e-afad-df443a0a6f2c) 완료, [2차](https://agent.tinyfish.ai/runs/db8c3e43-56ad-4856-8465-0076e87ecad3) 완료. 신규 구독/충전 없음. 둘 다 공개 `https://zgmini.kr/` 실제 접속하고 종합시장점수 1D 선택을 시도. 첫 Run은 최신점 호버 결과로 `33.0(11-21)`을 보고했지만 **이는 차트 화면 라벨/현재 카드와 혼동 가능하며 시분을 포함한 Tooltip 원문이 아니므로 14:01 KST 최종점 PASS로 인정하지 않음**.
+- 첫 Run의 공식 저장 Reader GET `/api/market-score/observations?period=1D`: `READY`, 실제 2점 `2026-11-21T00:05:41.317Z@45.298118360903416` / 마지막 `2026-11-21T05:01:38.086Z@45.137344974152676` 원점수. 화면 표시 `33.5` / `33.0`은 승인된 변환 `50+(raw-50)*3.5`의 소수1자리 처리에 해당. 첫 Run의 '원점수45 vs 카드33은 캐시/오류 가능성' 추정은 **정의가 다른 값을 비교한 오판으로 명시 정정**, 실제 점수 충돌 증거 없음.
+- 두 번째 Run은 정확 selector `.zg-r55-summary-chart` 내 `.recharts-reference-dot circle` 최신점 hover 및 `.cnn-history-tooltip` 원문 판독을 요청했으나, 실제 보고된 툴팁은 **과거점 `2026. 11. 21. 09:05 (계산 시각) / 33.5 / 실제 계산시각 점 · 당시 방법론 버전 미확인`**. 즉 두 Run 합산해도 **최신 14:01/33.0 툴팁을 직접 읽은 검증은 없음**. 도구 보고서에 `.zg-r55-summary-chart`/ `.cnn-history-tooltip` 요소가 없고 aria-pressed도 없다는 주장은 기존 `main` JSX source의 class 및 `aria-pressed={periodDays===p.days}`, 실제 Chromium #44880063693의 버튼 선택 assert와 모순. DOM scope/동적 tooltip/선택자 탐색 오류 가능성이 있으므로 사이트 결함으로 확정하지 않음.
+- **현재 확정:** 저장점 2개·시각·변환 점수, 카드33.0, 09:05 과거점 툴팁 일치. **정확 잔여 1건:** 동일 현재 Production의 1D 마지막 계산점(현재 저장 기준 `2026-11-21T05:01:38.086Z`)을 마우스 hover해 `14:01 (계산 시각) / 33.0`을 실제 화면/DOM에서 직접 읽기. 데이터가 변경되면 그 시점의 실제 GET 마지막점으로 대조. 가능 경로는 기존 CI의 정확 Recharts 첫 최신점 locator를 실제 실행하거나 공식 사용자 GUI 1회 확인; 동일 실패 경로를 반복하거나 원래 UI를 불필요하게 바꾸지 않음. #4 PARTIAL 및 #5 NOT_DONE 유지.
+
 ### 2026-11-21 — 마지막 계산점 툴팁 1회 독립 재검증 시도 및 정확한 차단 상태
 
 - **시작/종료** W06 **3/5 DONE(60%)**, #4 PARTIAL, #5 NOT_DONE. [기존 실제 Production Chromium #44880063693](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44880063693)의 PC1440/모바일390 카드33.0·1D/1W/1Y 전환·곡선·0px overflow PASS를 재사용. 당시 `ReferenceDot.last()`는 최신 저장점이 아닌 09:05 KST/33.5 **유효한 과거 계산점**을 hover한 것이어서 마지막점 직접 툴팁 증명에는 사용할 수 없었다.
