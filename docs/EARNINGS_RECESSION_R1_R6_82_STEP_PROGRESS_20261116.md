@@ -31,6 +31,13 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — PR #2600 moved to ready-for-review
+
+- **실제 GitHub 처리:** [control PR #2600](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2600)의 2개 exact selective approval source 파일, installed Controller `565ddbd4…` preimage, target `50163cd2…`/1파일, SHA256/fingerprint, versioned rollback 검증을 재사용. [C996 #44882361247](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44882361247) `completed/success` 유지. GitHub REST PR `mergeable=true/mergeable_state=clean`; control main `82b7923…` 이후 최신 main `4b98e36…`까지 7커밋 변경 9파일은 정확 선택 설치 `config/operations.json`과 비중첩.
+- **PR Draft 해제 완료:** #2600을 `OPEN/ready for review/draft=false/merged=false`로 전환하고 재조회함. **이 변경은 코드 승인 검토의 진전이지 운영 B 효과 GO나 source main 병합·Controller 설치가 아님.** PR 본문에 별도 owner 승인·preimage/lease·독립 유지보수기·backup/restore·사후 A 절차 명시 유지.
+- **미완료:** 실PC 설치 기준의 마지막 관측은 [A #2630](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2630) (`controlSourceSha=565ddbd4…`); 실제 적용 직전 CAS는 재확인 필수. WPSFD42 공급자 POST+SQLite B 승인, QFR 단일 D1 게시 B 승인, BEA unit 저장형 소스 권리/원본 검증 모두 별개. 이번 운영 변경 0. 개편 1/5 DONE·2 IN_PROGRESS.
+- **NEXT:** PR #2600 소스 승인/병합 여부 확인 후 최신 실PC preimage와 승인 manifest를 정확 대조, 정규 독립 유지보수기 적용 및 JSON/TXT·BEA mfg 새 A 원본 검증을 진행. 소스 검토가 대기 중인 동안 독립 QFR·BEA unit 조회·게시 준비 계속.
+
 ### 2026-11-21 — PR #2600 current-installed B manifest repin completed
 
 - **선택 설치 SHA-256 독립 검증:** 실제 PC #2630 PASS로 확인한 `565ddbd4ebfc46c88fb7dbaa810fd545656c6306`에서 직접 분기한 1파일 후보 `50163cd2e44f905fd35611d079c4c896748d9477`의 `config/operations.json` UTF-8 원문 SHA256 `299b762a5d945f99e3a39bce7ef76d0e18cbef90e2ecd79887af37c6a920a7ea`. 자체 SHA256 구현은 표준 `abc` 해시 및 이전 기존 후보 파일의 기록 해시 `af6f2204...`와 교차 일치. 동일 `allowFiles=[{path,sha256}]` canonical JSON fingerprint `350e29d4294336438557b8ad5fc97b3f061a7ba15ec346114aef1e1b91b4f9f2`(기존 PR도 동일 JSON 알고리즘).
