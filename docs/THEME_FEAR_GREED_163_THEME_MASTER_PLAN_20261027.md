@@ -13,17 +13,17 @@
 
 ## 2. 현재 위치와 실행 순서
 
-**2/5단계 완료 · 3단계 진행 중.** 이는 완료 조건 충족 개수이며 작업량40%나 테마 전체 기능40%라는 뜻이 아니다. 기존12/68·P1/P2/P3/P4·T1/T5의 과거 기록을 새 계수와 합산하지 않는다. 확정68항목 원본이 불명확한 상태에서 가상의68행 체크리스트를 재구성하지 않는다.
+**3/5단계 기능 연결 확인 · 4단계 실제 화면 검증 진행 대상.** 이는 완료 조건 충족 개수이며 작업량60%나 테마 전체 기능60%라는 뜻이 아니다. 기존12/68·P1/P2/P3/P4·T1/T5의 과거 기록을 새 계수와 합산하지 않는다. 확정68항목 원본이 불명확한 상태에서 가상의68행 체크리스트를 재구성하지 않는다.
 
 | 단계 | 실제 목표 | 완료 기준 | 현재 |
 |---|---|---|---|
 | 1 | 기존 공개 테마 공통 갱신 운영 | 공유 유료 입력→등록부 기반 계산→기존 D1 CAS/readback→공개 API가 기존 승인 프로필·공개 이력을 보존하며 동작 | DONE — 기존 운영 증거 재사용, 이번 API 10개×252점 확인 |
 | 2 | 신규 등록의 비공개 계산·저장 실증 | 기존 등록 AI를 같은 Core에서 발견·계산·불변 SHA 저장/readback. 비공개가 공개로 유출되지 않고 자료 부족이 다른 테마를 막지 않음 | DONE — PRIVATE_STORED_READBACK_VERIFIED, 실제15점/PARTIAL |
-| 3 | 신규 등록 Reader·공개 전환 계약 연결 | 비공개 결과를 승인된 내부 조회로 소비하고, 승인된 설정만 공통 공개 Reader로 이어지는지 기존 코드·관련 시험으로 확인. 실제 미연결부만 수정 | IN_PROGRESS — 실제 Reader 소비/승인 전환 계약 미검증 |
+| 3 | 신규 등록 Reader·공개 전환 계약 연결 | 비공개 결과를 승인된 내부 조회로 소비하고, 승인된 설정만 공통 공개 Reader로 이어지는지 기존 코드·관련 시험으로 확인. 실제 미연결부만 수정 | DONE(기존 경로·실PC 비공개 SHA 조회·기존 공개 Reader 검사). 새 통합 회귀 1건은 CI 미실행, 실제 신규 공개 전환 미승인/미실행으로 구분 |
 | 4 | 홈·상세 PC/모바일 화면 검증 | 공개 등록 ID·날짜·점수·252일 이력·확정/잠정·결측 표시가 저장 API와 일치. 오류만 최소 수정 | NOT_VERIFIED — 기존 데이터/API 성공과 구분 |
 | 5 | 공통 확장 절차 종결·담당자 인계 | 등록부→버전별 공통 산식→실행→저장→조회가 개수 하드코딩·테마별 복제 없이 이어짐을 변경 영향 범위에서 확인, 운영·자료 한계·확장 작업 목록 구분 | NOT_DONE — 3·4단계 결과를 모아 종료 |
 
-**즉시 재개: 3단계의 실제 Reader 소비 경로를 기존 유료 공통 입력으로 확인. 4단계 화면 확인은 독립 진행 가능하다.** 특정 GUI 도구나 비공개 이력 부족을 나머지 작업의 전역 차단으로 만들지 않는다. 이번 개편은 문서·목적 정리이며 실제 코드/Reader 결함 수정이나 화면 검증을 수행한 것은 아니다.
+**즉시 재개: 4단계의 실제 PC/모바일 화면 대조.** 3단계의 유효 내부 조회와 공개/비공개 분리는 기존 증거로 확인했으며, 실제 승인된 신규 공개가 없으므로 임의 공개하지 않는다. 추가 통합 테스트 CI는 별도 소스 검증 미완으로 기록하되 4단계의 선행 차단으로 확대하지 않는다. 특정 GUI 도구나 비공개 이력 부족을 나머지 작업의 전역 차단으로 만들지 않는다. 이번 개편은 문서·목적 정리이며 실제 코드/Reader 결함 수정이나 화면 검증을 수행한 것은 아니다.
 
 ## 3. 이미 끝난 작업 — 다시 하지 않는다
 
@@ -33,6 +33,13 @@
 - 실제 종료된 공급처 선택 봉으로 확정한다. 더 최신인 진행 중 선택 봉이 없으므로 현재 phase=CONFIRMED/provisional.points=[]는 정상이며 가짜 잠정 점수·날짜를 만들지 않는다. 달력상 오늘21일이라고 공급처가 제공하지 않은21일 점수를 생성하지 않는다. 공개 기록의 최신일이 공급처의 모든 최신 원본을 완전히 검사했다는 별도 증거는 아니다.
 - 공통 실행은 모든 등록 ID를 순회하되 산식 프로필을 보존한다. 이번 API에서 기존8개는 dated-AUM R32, 데이터센터·전력은 PAIR50, 우주·위성은 기존 승인 AUM-date-eligible R32다. 이는 버전 차이이며8/2 별도 실행 파이프라인을 다시 만드는 이유가 아니다. 데이터센터 R32 전환은 별도 방법론 변경으로 미완료이며 이번 구조 종결 조건으로 강제하지 않는다.
 - AI 등록 #182와 실제 Writer 설치 #2537은 완료 증거를 재사용한다. [실PC #2596](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2596#issuecomment-7058110878) Run44872080181 원격 JSON/TXT는 PASS/PROCESS_INVENTORY_COLLECTED, 운영쓰기·provider0. 원격 JSON `results/pc-process-inventory-44872080181-1-operating.json`의 w03PaidPrivate는 PRIVATE_STORED_READBACK_VERIFIED, historyPoints15/2026-11-02~11-20, privateBodySha256=142605e94cf85453f0f503206382cd32a13b49e2a3e30296c2f190fddd1e9528, 실제8개 source receipts SHA 연결. 등록·비공개 계산·저장을 다시 구현하거나 재등록하지 않는다.
+
+### 2026-11-21 실제 3단계 계약 대조 — 정상 경로 변경 없이 인정
+
+- **비공개 내부 소비(실PC):** 제어 저장소 기존 `pc-process-inventory-readonly`의 `w03PaidPrivate`가 실제 `theme-last-run.json` 및 digest-named `private-theme-<sha>.json`을 읽어 15개의 날짜별 유효 점수·불변 SHA·8건 sourceVersion 결합 증거를 독립 확인했다. [#2596](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2596), Run 44872080181, JSON/TXT 2개 readback. PC 외부에 비공개 점수 원값·시세는 공개하지 않음. **비공개 개인용 전체 그래프/점수 다운로드 기능의 존재를 뜻하지 않으며 이번 플랫폼 구조의 완료조건으로 새로 추가하지 않음.**
+- **등록 승인 판정과 공통 공개 소비:** 운영 `theme-paid-registry.mjs/loadPaidRegistry`는 기존 `ACTIVE_RUNTIME/listRegistered/buildOperationalRegistry`을 이용하고, 설정형 테마의 별도 승인 문서(정의 SHA·프로필·ETF·양쪽 확인 및 권리 유효기간) 조건을 통과할 때만 `t.public=true`. 공통 `calculatePaidThemes`는 `public=false`를 `privateRecords`에만 보존하고 공개 `record.themes`에서 제외한다. `public=true`는 기존 단일 `PAID_THEME_KEY` payload를 통과해 `readPaidThemeFeed`의 stored D1 GET에서 읽는다. 개별 테마 API/D1 테이블/예약 추가 불필요.
+- **기존 관련 회귀 재사용:** `scripts/pc-writer/theme-paid.test.mjs`의 105개 공개+1개 비공개 동시 배치 격리, 불변 private write/readback, D1 CAS/readback, `public GET`의 raw/private extra 제거 및 stale fallback 코드를 확인. 추가 동일 소스 내 교차 회귀 `configured private to approved-public boundary uses the same stored paid Reader`을 전용 브랜치 커밋 `a8e7be962b1ad777b7ee9e0d86f464c73f6472bc`에 기록했으나, **해당 추가 테스트의 Node CI는 아직 실행 확인되지 않음(미검증)**. 기존 CI 성과를 새 테스트 통과로 표현하지 않음.
+- **범위:** `/api/theme-configured`는 구형 per-theme 공개 계약 Reader로, 유료 공통 `/api/theme-fear-greed` Reader의 설정형 승인 경로를 대신하지 않는다. 현재 `ai-software`는 선정 승인만 있고 실제 공개 승인 문서 없음; 비공개 유지 정상, 실제 신규 공개 0. 252점이 없는 상태를 오류/새 Gate로 취급하지 않음. 3단계 기능 연결 확인 완료, 4단계 독립 진행. 신규 Reader/배포/DB/권리/운영 변경 0.
 
 ## 4. 3단계 — 신규 등록 Reader와 공통 경로의 마지막 연결
 
