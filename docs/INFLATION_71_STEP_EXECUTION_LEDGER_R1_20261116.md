@@ -47,6 +47,15 @@
 
 ## 개편 후 진행 기록
 
+### 2026-11-21 — #2618 현재 Core Task 유휴 스냅샷·소유권 미인증
+
+- **신규 유효 PC A 1회:** [#2618](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2618) / [Run44878923732](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44878923732), operation `core-runtime-source-readonly`, requestId `pc-88e4756d-415e-4a3f-a71a-099f262e4f3b`; 운영 Controller 고정 작업 완료, `results/44878923732-1-seat-5.json`·TXT 2/2 원격 독립 회수. `STATE_UNKNOWN/CORE_TASK_NOT_RUNNING_AT_SNAPSHOT`, task stateBefore/stateAfter=3/3(Ready), visibleRunningInstances=0, stoppedProven=false, securityContextMayLimitVisibility=true, `lockOwner.status=ABSENT/code=CORE_LOCK_ABSENT`, runtimeSourceVerified=false. 읽은 한 시각의 정상 유휴 가능성과 Task-owner 인증을 구분한다. 쓰기 0, 보호 before/after 동일.
+- **새 관측으로 바뀐 정확한 조건:** 과거 `INFL_CORE_LOCK_PRESENT_TASK_ENGINE_GAP` 스냅샷과 이번 빈 Core lock 스냅샷은 조건이 다름. 현재 해당 시점에 잠금/소유자 자체가 없어 B의 '자연 Task/PID/E:lock owner 인증' 성공 증거가 아님; 동시에 새 공유 잠금 충돌·PC 전체 장애도 입증하지 않음. 이번 A 재실행/임의 Task 재시작/Event129 활성화 없음.
+- **정확 B 승인 manifest 후보 검증:** 제어 [Draft PR #2613](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2613) 원본 승인 파일을 보존한 `docs/W01_CENSUS28_CORE2515_B_MANIFEST_REVIEW_20261121.json` (commit 4290e698). 승인 원본과 후보(상태 제외) 구조 비교에서 오직 `sourceFiles[3].sha256` 변경 1건, 나머지 3파일/2공식 URL/2목표/단회/lease 등 동일. `PROPOSED_NOT_APPROVED`, 기존 `APPROVED_B` 파일은 미수정, 새 B 미발행. 이 조건은 독립적인 2단계 D1 직접 읽기와 결합하지 않음.
+- **Census 외부 파일 확인 한계:** 공식 Census historical time series 페이지에서 `Total Inventories` 링크가 기존 승인 XLSX URL로 연결되는 사실 확인. 이 대화에서 XLSX 바이너리 다운로드 실패로 실제 parser 통과/관측값 미확보; provider 성공을 추정하지 않음. 신규 공급처/URL 교체하지 않음.
+- **진행 상태 유지:** 1 DONE/2 IN_PROGRESS/3-5 NOT_DONE. 다음은 새 유효 원본 상태 변화가 있는 경우에만 자연 Task ownership 검증과 기존 효과 승인·정확 immutable manifest, 이후 정규 단회 XLSX 수집/원자료 저장; 별개 D1 현재 1키 body/stored_at 관리자 readback.
+
+
 ### 2026-11-21 — Census B 승인 원본 보존·정확 1해시 차이 비실행 검토안
 
 - **현행 운영 source 4/4 확정 재사용:** PC A #2607/#2609 JSON·TXT 2/2 원본 검증 재사용. 제어 `main` `inflation-manual-b/contract.mjs`에 실PC `local-cycle.mjs` 해시를 허용하는 세 번째 프로필이 소스 커밋 `43d6122367e7908f166780679a2d1ae5757696d4`로 들어가 있지만 실제 `APPROVED_B` 원본 `official-static-two-source-w01-v2-approved-20261116.json`의 고정 SHA는 구 `2e6200e5...`로 유지.
