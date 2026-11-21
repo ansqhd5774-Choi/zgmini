@@ -1,3 +1,67 @@
+# W01 물가지표 — 운영 완료 5단계 작업원장 (2026-11-21 개편)
+
+<!-- W01-ACTIVE-FIVE-STAGE-PLAN-20261121 -->
+
+**현재 실행 기준: 1/5단계 완료 · 2단계 진행 중.** 완료 조건 충족 개수이며 작업량 20%·전체 서비스 20%라는 뜻이 아니다. 이번 계획 개편으로 실제 기능 진척이 새로 발생한 것은 아니다.
+
+- 저장소: `ansqhd5774-Choi/zgmini`
+- 작업 브랜치: `fix/economic12-inflation-legacy4-r35-20261021`
+- 개편 전 HEAD: `22b461b97be93d3c9c3dc787b9162b7884e2861b`
+- 상세 수행 기준: [26개 원자료·공개 실행계획](INFLATION_26_SOURCE_AND_PUBLICATION_EXECUTION_PLAN_R1_20261110.md).
+- **이 상단 5단계 표가 현재 상태 정본이다.** 아래 보관 영역의 71개 체크리스트·NEXT·대기·진행률은 당시 기록이며 실행 순서로 재사용하지 않는다. 기존 34/71은 과거 증거 계수로 보존하고 새 5단계 진행률과 합산하지 않는다.
+
+## 현재 실행계획과 단계
+
+| 단계 | 실제 작업 | 완료 기준 | 현재 상태 |
+|---|---|---|---|
+| 1 | 운영 기준선 확정 | 유효한 PC 원자료·게시/API 증거와 남은 결함을 식별. 기존 승인·설치 성공 재사용 | DONE |
+| 2 | 기존 정상 자료의 저장·게시 연결 확인 및 최소 수정 | 기존 Writer 원장→D1 정확키→공개 API의 값/날짜/버전 일치. 이미 일치하면 수정·재게시 없음 | IN_PROGRESS |
+| 3 | Census #28 결손 복구와 기존 수집 개선의 실제 적용 | 기존 공식 경로로 Census 원자료 저장·재조회 후 26/26 입력, 연구7행의 정당한 최신 상태 확인. 필요한 수집 수정만 실제 적용·검증 | NOT_DONE |
+| 4 | R2 미래 날짜·화면 결함 수정 및 표시 검증 | 기존 산식·기존 19종·4축 보존, 미래 월말 오표시 해소. PC/모바일 값·단위·날짜·차트가 API와 일치 | NOT_DONE |
+| 5 | 기존 자동 실행 확인 및 종결 | 실제 기존 실행 기록으로 수집→저장→계산/연구 projection→게시/UNCHANGED→공개 결과 연결, 실패 복귀와 데이터 한계 구분 | NOT_DONE |
+
+2단계의 D1 읽기 경로 제약 또는 3단계의 Census 자료 부족 때문에 4단계의 기존 R2 날짜 결함 수정을 멈추지 않는다. 겹치는 운영 쓰기만 기존 보호 절차로 직렬화한다. 독립 읽기·소스 수정은 계속 진행한다.
+
+## 현재 증거와 실제 남은 문제
+
+1. **기존 정상 자료 보존:** [실PC #2576](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2576), Run `44869285127`, 결과 `results/44869285127-1-seat-5.json` 실제 PASS/A407_STORED_25_LOCAL_FINGERPRINTS_VERIFIED. original19/candidate6 해시 검증, Census MISSING. 공급자·D1 쓰기 0, 보호 불변. 이는 25종 저장 자료의 무결성 검사이며 26/26 확보·공개권한·실시간 최신성 완료가 아니다.
+2. **공개 API 직접 관측(2026-11-21):** /api/inflation-candidate-inputs HTTP200/PARTIAL, 7행 중 READY6·Census ID28 PENDING, score:null, sourceStoredAt=1794825002905. ID28 value/observationDate/sourceStoredAt null, history 0. 기존 6행의 노출은 정상이나 현재 D1 body/stored_at 직접 동치와 최신 원자료까지 증명한 것은 아니다.
+3. **Writer 조회의 한계:** 기존 [#2577](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2577) 원장은 7후보 UNCHANGED_VERIFIED/ready6이지만 key/sourceVersion/sourceStoredAt 미출력, verifiedAtWriterTime=false/d1NowVerified=false. 현재 게시 부재나 권한 오류로 단정하지 않고 정확한 저장값·기존 재조회 영수증을 대조한다.
+4. **기다리던 W04 설치는 완료:** [#2597 실제 결과](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2597#issuecomment-7058230482)는 SUCCEEDED/APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED, target=actual `5b33787dd32523496cd5a87dca73beb07ffaa409`, 보호 불변·Workflow enabled. 과거 '설치 결과 대기'를 현재 전역 차단으로 재사용하지 않는다. W01 Census A 진단기의 실제 설치는 별도이며 이 W04 성공으로 설치됐다고 간주하지 않는다.
+5. **Census 소스와 운영 구분:** 제어 source PR #2588 병합 완료. 후속 Draft PR #2595 HEAD `c39bf5d170fc50c88b48b66fb584e279477481ff` CI3/3 SUCCESS, Census 시험 실제8 PASS. 이는 보관 헤더 진단 source 검증으로 운영 설치·Census 원자료 확보는 아니다. 진단기 설치 자체를 목표로 삼지 않고 실제 원자료 복구에 필요한 경우에만 적용한다.
+6. **현재 재현되는 R2 표시 문제:** /api/inflation-detail 직접 HTTP200/READY, asOfDate=2026-11-21, score=57.97005405261128, 마지막 trend.label=2026-11-30. 과거에 이미 구현된 날짜 수정 후보와 정확 적용 경로부터 확인한다. 새 산식·새 계산기 개발로 확대하지 않는다.
+7. **기존 source 개선:** 과도한 수집 gate 개선 #1284/#1287/#1290은 source 병합·시험 완료 기록이 있다. 현재 실제 설치 여부와 바이트가 달라진 범위만 확인해 필요한 수정만 기존 Writer에 적용한다. [과거 감사 기록](W01_INFLATION_COLLECTOR_GUARDS_AUDIT_20261118.md)을 재감사 전체 작업으로 반복하지 않는다.
+
+## 담당자가 지금 할 작업
+
+**2단계부터 재개한다.** 기존 Writer의 최근 물가7 projection/게시 영수증과 D1 `detail:inflation-causal-candidates-7:r1`의 body/stored_at을 공개 7행과 대조한다. 값·단위·관측일·개별 sourceStoredAt·sourceVersion·상태를 비교한다. 전체 저장시각을 개별 원자료 관측일로 대체하지 않는다. 기존 19종·4축의 정확 저장 key는 현재 정규 게시 코드에서 확인하며 새 key를 추정·생성하지 않는다.
+
+이미 같은 결과면 재게시 없이 3단계로 간다. 불일치하면 최초 달라지는 연결만 수정→관련 검사→기존 승인 경로 적용→실제 readback까지 수행한다. 특정 D1 도구의 권한·접근 제한은 AUTOMATION_BLOCKED로 한정하고, 기존 공식 읽기 경로·기존 재조회 증거·정확한 수동 Cross-Check를 활용한다. 미확인 사실은 기록하되 Census/날짜 수정의 전역 Gate로 만들지 않는다.
+
+## 진행 기록과 재발 방지
+
+- 새 기록은 **이 5단계 표와 같은 상태**로 바로 아래 '개편 후 진행 기록'에 남긴다. 과거 보관 영역 위에 또 오래된 숫자의 스냅샷을 누적하지 않는다.
+- 기능별 최초 실패→필요한 최소 수정→관련 시험→실제 적용→실제 결과 확인을 한 흐름으로 끝낸다. 진단·CI·문서·인계 댓글 수를 완료 개수로 계산하지 않는다.
+- 변경 전 정상본·정확 설정/게시 preimage를 기존 백업/원장에 보존한다. 확정 실패 시 해당 변경만 복귀·확인한다. UNKNOWN은 원장·실제 저장값부터 확인하고 무조건 재실행·롤백하지 않는다.
+- 마지막 보고는 현재 단계/실제 DONE/최초 남은 결함/다음 구체 실행만 짧게 남긴다. 날짜·원자료·산식·원본 공개 권한·공급처 실제 quota 보호는 유지하고 새 허들을 임의 추가하지 않는다.
+
+## 개편 후 진행 기록
+
+### 2026-11-21 — 71단계 실행 순서를 운영 완료 5단계로 교체
+
+- 사용자 지시에 따라 기존 71단계 원장 자체와 관련 실행계획 2개 문서를 개편했다. 과거 원장 본문은 아래에 원문 보존하고 고정 commit 링크로도 남긴다.
+- 현재 위치는 **1/5 DONE·2단계 IN_PROGRESS**. 과거 계수34/71은 보존하고 기능 신규 완료로 산입하지 않았다.
+- 실제 운영 증거는 #2576/#2577/#2597 및 이번 공개 두 API 조회로 구분했다. Census 결손·D1 동치·R2 미래 날짜·자동 갱신은 미완료다.
+- NEXT: W01이 기존 물가7 게시 원장과 D1 정확키 readback을 대조. 같은 값이면 재설치·재게시 생략. Census 복구와 R2 날짜 수정은 독립 실행 가능한 범위에서 계속한다.
+- 이번 반영은 문서 2개만 변경. 코드·PC·DB·D1·산식·예약·배포 변경0. 새 승인 Gate/Controller/감시 예약0.
+
+## 과거 71단계 및 작업 증거 보관
+
+[개편 전 원문 고정 링크](https://github.com/ansqhd5774-Choi/zgmini/blob/22b461b97be93d3c9c3dc787b9162b7884e2861b/docs/INFLATION_71_STEP_EXECUTION_LEDGER_R1_20261116.md). 아래 내용은 역사 기록이다. 당시의 미확인/차단/NEXT를 현재 지시나 운영 상태로 간주하지 않는다.
+
+<details>
+<summary>과거 71단계 원장 전체 펼치기 — 보존 기록, 현재 실행 지시 아님</summary>
+
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
 <!-- W01-20261121-W04-2597-ACTUAL-INSTALL-ISSUE-AND-3CI -->
@@ -1766,3 +1830,6 @@ B4 10 | Production·화면 최종 검증
 - #2094 원본은 `BLOCKED/FIRST_FAIL=STAGED`, 마지막 확인 운영 Controller `f7f1559bc0ef15bb9b375982d048369c474c490f`. 유지보수기 V2 승인 `36cf8ff...→732d94a...`는 [#2116](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2116) 병합 및 승인 JSON만 확인; **실제 Windows 7→7 인계 영수증·#2094 STAGED 복구·Controller 누적 설치 결과는 여전히 미확인**. Git blob은 Windows 실제 파일 SHA-256이나 PC preimage를 대체하지 않음.
 - **다음 필수 공유 실행:** 단일 적용 Owner가 V2 정확 Windows handoff 영수증 → #2094 원장/STAGED 복구 GO → W01·W04 및 영향받는 W03 변경을 기존 승인 범위 안에서 최종 선택 commit/PC before SHA256/통합 manifest로 고정·정규 적용. W01은 설치 실제 SHA/operation 확인 후 기존 등록 Host `zgmini@0a674eac32418d0c1bd23a9a050b2202e8951f1a`로 A4-07 **단회** 25 raw + checkpoint 2 audit; Reader 바이트 설치 확인 후 기존 A로 Writer 영수증 7개 조회. #2094/#2114/#2205 재실행 금지. R2 #2167·Census #28 별도.
 - **검증 범위:** GitHub read-only 및 이 문서 1파일 기록만. 운영 PC/Task/SQLite/D1/공급자/Cloudflare 쓰기 0. 71단계 새 완료 0, **33/71 (46.5%) 유지**.
+
+
+</details>
