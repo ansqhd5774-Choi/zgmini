@@ -8,9 +8,16 @@ import {
 } from "../../lib/diagnostic-layer/inflation-r2-stored.mjs";
 const validDate=value=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value);
 const finite=value=>typeof value==="number"&&Number.isFinite(value);
-function monthEnds(asOf,count=12){
-  const end=new Date(`${asOf}T00:00:00Z`),out=[];
+// Previous completed calendar months plus the actual current evaluation day.
+// A current-month-end label is future-dated before month close and must not
+// stand for an observation or a calculation performed on that future date.
+export function inflationR2TrendDates(asOf,count=12){
+  if(!validDate(asOf)||!Number.isSafeInteger(count)||count<1||count>12)return [];
+  const end=new Date(`${asOf}T00:00:00Z`);
+  if(!Number.isFinite(end.getTime())||end.toISOString().slice(0,10)!==asOf)return [];
+  const out=[];
   for(let offset=count-1;offset>=0;offset-=1){
+    if(offset===0){out.push(asOf);continue;}
     const d=new Date(Date.UTC(end.getUTCFullYear(),end.getUTCMonth()-offset+1,0));
     out.push(d.toISOString().slice(0,10));
   }
@@ -124,7 +131,7 @@ if(pit.status!=="READY_STORED_PIT_HISTORY"){
     ["기대인플레","EXPECTATIONS"],
     ["공급압력","SUPPLY_PIPELINE"],
   ];
-  const trend=monthEnds(asOf,12)
+  const trend=inflationR2TrendDates(asOf,12)
     .map(date=>({date,result:calculateInflationR2At(history,date)}))
     .filter(item=>item.result.status==="READY")
     .map(item=>({label:item.date,value:item.result.score}));
