@@ -42,6 +42,13 @@
 
 ## 개편 후 기록
 
+### 2026-11-21 — 4단계 최신 실화면 접근·#64 Writer 원담당 상태 재확인
+
+- 5단계 정본 기준 **3/5 DONE(60%)**, **4 PARTIAL/5 NOT_DONE**. 추가 결제 없이 실Production 390px·1440px 인터랙티브 화면을 읽을 수 있는 현재 연결 도구를 점검. `Browser`의 기존 사용자 사이트 탭은 **읽기 전용 텍스트**만 지원하여 resize, hover, click, scrollWidth 측정 불가. `BrowserStack`은 제품 설명상 `devicecontrol` 브라우저 제어 가능하나, 이 세션에 호출할 `searchCapability`/`invokeCapability`가 제공되지 않고 목록의 `runBrowserLiveSession`은 사용자가 수동 조작하는 별도 세션(유료/계정분 사용 가능)이므로 **추가 세션 실행하지 않음**. `Firecrawl`은 직전 `Insufficient credits`가 이미 확정됐으므로 재호출하지 않았음. 로컬 격리 환경 `zgmini.kr`/일반 외부 도메인 연결은 NameResolutionError; 로컬 네트워크 실패를 서비스 장애·새 UI 결함으로 주장하지 않음.
+- GitHub의 기존 Chromium UI run #44871059071은 `390/768/1440/1920`, 6기간·실제 0·최신점·DOM overflow 검증 PASS이며 별도 재실행 없음. 실Production API/활성 JS/점수는 앞선 독립 성공 영수증 재사용. **현 활성 Production 390/1440 툴팁/period click/scrollWidth는 여전히 UNVERIFIED.** 중복 디버그/새 가짜 완료·디자인 변경·재배포 없음.
+- 기존 #64 변경점15분 이력 유실 관련 정확 [PR #1185](https://github.com/ansqhd5774-Choi/zgmini/pull/1185), [PR #1228](https://github.com/ansqhd5774-Choi/zgmini/pull/1228)을 GitHub PR 원격 직접 재조회: 모두 `state=open`, `draft=true`, `merged=false`, 마지막 updated_at 각각 `2026-11-17T06:43:40Z`, `2026-11-18T10:41:22Z`. Writer 정책 결정·적용 및 실운영 게시가 미완료라는 실제 근거로 유지하고 W06 UI 작업 전역 차단하지 않음.
+- **다음 필수 조치:** 기존 사용자 웹 브라우저(또는 공식 무료 범위의 PC/모바일 실화면)로 해당 활성 버전 1440px·390px 1D/1W/1Y 최종점 tooltip·가로 넘침을 **한 번**만 확인하고 당시 공개 `/api/market-score/observations`와 대조. 이전 정상 화면 증거로 확인 가능한 것은 재사용. 이상 확인 시 정확 UI/Reader 최소 수정, 정상 확인 시 4단계 DONE과 5단계 W06 종료/Writer 원담당 잔여 분리 인계. 현 시점 4단계 PARTIAL과 3/5 유지. 유료 브라우저 결제·새 예약·수집·DB 쓰기·강제 배포·새 PR 없음.
+
 ### 2026-11-21 — 4단계 미확인 범위 재확인 및 5단계 원담당 인계 계약 사전 정리
 
 - **기준:** 시작/종료 **3/5 DONE(완료조건 60%)**, #4 **PARTIAL**, #5 **NOT_DONE**. main source/Cloudflare 빌드/실공개 API·기존 Chromium 시험의 기존 유효 증거는 재사용. `docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_EXECUTION_R4_20261116.md` 최신 5단계 정본 재조회. 기존 로컬 Chromium `tests/dashboard-history-browser-r5.mjs`는 390·768·1440·1920 CSS px, 1D/1W/1M/3M/6M/1Y, 최신 snapshot·차트 선/실제 0점 및 scrollWidth overflow를 실제 React/Recharts DOM에 대해 검사하며 이전 [GitHub CI #44871059071](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44871059071) PASS 증거가 유효. UI screenshot에 해당하지 않는 community-chat artifact는 W06 실사이트 화면 증거로 사용하지 않음.
