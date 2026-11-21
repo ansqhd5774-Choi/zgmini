@@ -1,5 +1,18 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261121-CENSUS28-ARCHIVE-A-MERGED-C36F-3FILE-PLAN -->
+## 2026-11-21 — Census #28 원본 archived-header 진단 코드 main 통합 완료, 현재 운영 설치 독립 미확인
+
+- **LAST PASS / 소스 병합:** 기존 #2111 reader/test의 정확 코드 재사용, 현재 control main 공용 변경을 보존한 [PR #2588](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2588) 정확 5파일(source-only)과 고정 A `inflation-census-m3-archive-headers-readonly`. 새 branch `codex/w01-census28-header-current-main-20261121` source HEAD `2bed7394f8524bf9860fa1dd0aeb279f3490d9e8`; 독립 CI `Maintenance #44870826415 completed/success` (Census archived-header reader fixture **8/8 PASS**), `C996 #44870826426 success`, `D05 #44870826360 success` 3/3. **squash merge main** commit `c36fb3336e013d8a3f1c8461375547767a55d220` 재조회, reader/test 및 공용 operations import/dispatch·config allowlist 존재 확인.
+- **원인/목적 한정:** #28 자연 Core의 마지막 실패 `CENSUS_M3_HEADERS_INVALID`는 실제 2025/26 저장 원문 헤더 누락/중복 입력 조건 미확인. 기존 2025·2026 private archives 고정 파일의 hash/double-read, header-only 안전 프로젝션을 사용해 **조회 후** 원인을 구분하려는 단계임. 이번 코드는 이미 보관된 raw의 행 수·필수 컬럼·월 날짜·중복만 반환하며 값/경로/공급자 키를 게시하지 않음. 실제 PC 아카이브를 이번 작업에서 조회하지 않음.
+- **현재 설치와 정확 source 효과 분리:** 기존 정상 Controller 실PC SHA `24f1139b97712b2e1383650a78f65877f9d1ae67`에서 신규 A operation 미등록. 설치본 `operations.mjs` import 42줄이며 새로운 모듈 참조 없음, 현재 main 신규 reader는 `node:fs,node:path,node:crypto` 내장 imports만. 실제 유지보수 최소 runtime overlay는 **3파일** (`controller/operations.mjs`에 import+dispatch 2행, `config/operations.json`에 1행, 신규 `controller/inflation-census-m3-archived-headers-readonly.mjs`), 신규 reader Git blob SHA `169cda10d58a1357092db293350536bdd97a8a29`. CI 전용 test/workflow 2파일은 runtime 설치 필요 없음. 전체 main 대비 기존 installed 비교는 최신 1006 commit ahead/15 behind, GitHub diff 300파일 제한이므로 누적 HEAD 통째 설치 **금지**. 새 모듈을 빼고 operations import만 설치하면 #2505와 같은 ESM boot 실패가 생기므로 preimage/CAS/backup/lease/최종 import closure 포함한 정확 선택 적용 필요.
+- **공통 인계:** 동일 공유 설치 조정 [#68 댓글 #7057992157](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-7057992157)에 3파일 최소 계획과 CI, #2505 import closure 재발 방지 조건을 전달. 댓글은 실제 타 대화 수신·승인·Windows 적용 성공의 증거가 아님. 원본 stale Draft #2111도 새 merged #2588 출처 안내, 구형 공통 파일 덮어쓰기 금지.
+- **FIRST UNFINISHED:** 신규 A 설치 및 실PC archive header-only 실행, Census #28 실제 새 raw 수집·저장, Core Task owner proof, W01 7후보 D1 key/body/stored_at 독립 확인. 기존 B2-05·B2-06은 Reader #2577 `UNCHANGED_VERIFIED,readyCount=6,key=null,d1NowVerified=false` 범위만 유효. 비승인 Task/로그/공급자/DB/D1 변경 및 소비 #1177/#1818 재요청 0.
+- **NEXT 한 실행:** 공유 적용 경로에서 현재 설치 `24f1139b...`·새 3파일 source/현재 CAS·lease·manifest 등 승인 효과를 검산한 뒤 정규 설치와 새 모듈 포함 완전 import closure/operation admission actual readback. 성공 증거 회수 시 W01 신규 고유 A 1회로 2025/2026 raw archived header 첫 행만 조회해 오류 원인을 식별, 필요한 부분만 수정 후 승인된 공식 수집 실행. 다른 계열의 게시·수집은 독립.
+- **실제 진행:** 71개 중 **34개 DONE/37개 OPEN (47.9%)** 유지. 코드 통합/CI는 완료됐으나 운영 추가 기능 DONE 0, Provider/SQLite/D1/Task/Cloudflare 변경 0.
+
+
+
 <!-- W01-20261121-B205-D1-READ-BLOCKER-CENSUS-A2588 -->
 ## 2026-11-21 — B2-05/B2-06 실제 증거 제한 재확인, Census 보관 헤더 기존 소스 최신 main 통합 후보 PR #2588
 
