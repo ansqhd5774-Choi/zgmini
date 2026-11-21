@@ -14,7 +14,7 @@ const processRows=[
  {ProcessId:60,ParentProcessId:55,Name:'node.exe',CommandLine:nodeCommand,CreationDate:stamp},
 ];
 function simulateWsh({rows=processRows,state=4,instances=1,enabled=true,pid='60',script=path,taskError=false}={}){
- const source=fs.readFileSync(new URL('../scripts/pc-writer/core-origin-wmi.js',import.meta.url),'utf8');
+ const source=fs.readFileSync(new URL('../scripts/pc-writer/core-origin-wmi.mjs',import.meta.url),'utf8');
  const output=[];
  const scheduler={Connect:()=>{},GetFolder:()=>({GetTask:()=>{
   if(taskError)throw Error('unavailable');
