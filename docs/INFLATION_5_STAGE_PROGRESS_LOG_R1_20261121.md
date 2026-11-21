@@ -45,10 +45,18 @@
 - **2단계 현재 제한:** PC 공식 Writer의 고정 쿼리 경로는 확인했지만 현재 연결된 D1 직접 조회 수단이나 기존 물가키용 실행 허용 operation은 확인되지 않아 D1 `detail:inflation-causal-candidates-7:r1` `body/stored_at` 실측은 계속 미완료. 공개 GET은 직접 D1 원장 대신 사용할 수 없음. 신규 무승인 SQL/임의 Runner 생성하지 않음.
 - **단계 판정:** 1 DONE / 2 IN_PROGRESS / 3~5 NOT_DONE, 운영 설치·수집·D1·게시 쓰기 0. 다음은 2단계 정규 D1 정확키 readback과 병행해 #2636 승인 효과·실시간 설치 CAS를 확인한 뒤 정규 설치 후 Census A로 연결.
 
+## 2026-11-22 — 물가7 D1 고정 읽기 조회기 소스 후보 작성 (SOURCE_ONLY)
+
+- **원인 분리:** 마지막 실제 설치로 확인된 Controller `565ddbd4…`에 D1 승인 A 읽기는 `employment-r6-d1-readback-readonly`만 존재하며 물가7 정확 키 직접 SELECT 동작은 없음. 기존 #2577 Writer 원장은 `LOCAL_WRITER_LEDGER_ONLY_NOT_LIVE_D1`; 공개 GET으로 관리자 D1 저장값을 대체할 수 없음.
+- **최소 재사용 구현:** 신규 [Draft PR #2647](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2647) 소스 후보. 변경 타깃 `fef90d5f64daf37b0084c82c9fd9edda7f1820e2`는 실제 설치 기준 `565ddbd4ebfc46c88fb7dbaa810fd545656c6306`의 직접 자식(`ahead=1/behind=0`). diff: `config/operations.json` +1 A/light/90s, `controller/operations.mjs` +1 import/+1 dispatch, 신규 `controller/inflation7-d1-readback-readonly.mjs` 123행, 소스 테스트 `controller/inflation7-d1-readback-readonly.test.mjs` 37행(설치 대상에서 제외). 기존 operation 48개와 W04 읽기 모듈은 건드리지 않음.
+- **D1 쿼리 고정:** 기존 W04와 같은 설치 PC Writer `scripts/pc-writer/d1.mjs` 인증·Git checkout integrity 경로를 재사용, 매개변수화된 `SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?`의 정확 key `detail:inflation-causal-candidates-7:r1`만 읽도록 제한. 7개 ID·저장 projection 시각/버전·0/null/READY/PENDING 상태를 확인하고 공개 요약·body SHA256만 반환; 비밀 키·원문 raw 출력/수정 없음.
+- **실제 상태:** GitHub source CI 3개 접수 확인(Controller Maintenance [#44964084806](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44964084806), C996 [#44964084803](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44964084803), D05 [#44964084813](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44964084813)); **검사 완료/PASS 미확인**, 새로운 source 테스트가 기존 workflow에서 실제 실행되었는지도 별도 확인 필요. #2647은 Draft·무승인·미설치이며 **D1 실측은 여전히 미완료**. 기존 Census #2636은 독립 source 후보로 유지하며 운영 설치를 반복·병렬 쓰기하지 않음.
+- **다음 실행:** 정확 HEAD CI·테스트 결과 회수, 결함 시 소스만 최소 수정. 실제 운영 효과는 기존 Controller 승인 계약과 현시점 CAS/lease·백업을 충족하는 정규 통합 설치 후에만 사용. 물가7 D1 readback → 공개 7행 동치 검증이 완료되기 전에는 2단계 DONE 금지.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
-2. **독립 단계 3:** #2629 정확 후보 회귀·효과 승인/manifest 및 실제 installed CAS 확인 뒤 정규 B 적용; 실제 설치가 확인된 후 Census header A; 승인된 원자료 복구로 이어감.
+2. **독립 단계 3:** #2636 정확 후보 회귀·효과 승인/manifest 및 실제 installed CAS 확인 뒤 정규 B 적용; 실제 설치가 확인된 후 Census header A; 승인된 원자료 복구로 이어감.
 3. **독립 단계 4:** 기존 R2 Writer 2파일 후보의 승인 여부/현재 실물 preimage 확인 후 정규 적용, 실제 로컬·D1·API·PC/모바일 날짜 동치 확인.
 4. DONE은 기능의 실제 운영 결과·영수증을 확보한 경우에만 갱신. 기존 문서/PR/CI 성공을 설치나 게시 성공으로 승격하지 않는다.
 
