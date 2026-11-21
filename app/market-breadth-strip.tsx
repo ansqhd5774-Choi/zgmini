@@ -45,15 +45,25 @@ function currentIexProvisional(value: unknown): value is UsaIexProvisionalRecord
     ![record.risingPct, record.fallingPct, record.unchangedPct, record.unobservedPct].every(validPercent) ||
     !near100(record.risingPct, record.fallingPct, record.unchangedPct, record.unobservedPct) ||
     !["COMPLETE", "INCOMPLETE_PAGINATION"].includes(record.collectionStatus)) return false;
+  // A stored row with 100% unobserved members is not a genuine 0% breadth reading.
+  // Preserve real 0% categories only when at least one member was observed.
+  if (record.risingPct + record.fallingPct + record.unchangedPct <= 0) return false;
   const stamp = Date.parse(record.slotEndUtc);
   const collected = Date.parse(record.collectedAt);
   const age = Date.now() - stamp;
   if (!Number.isFinite(stamp) || !Number.isFinite(collected) || collected < stamp ||
     collected > Date.now() + 60_000 || age < 0 || age > 30 * 60_000) return false;
-  const ny = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+  const nyFormat = new Intl.DateTimeFormat("en-US", {
     timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit"
-  }).formatToParts(new Date()).map(part => [part.type, part.value]));
-  return record.observationDate === `${ny.year}-${ny.month}-${ny.day}`;
+  });
+  const nyDay = (date: Date) => {
+    const parts = Object.fromEntries(nyFormat.formatToParts(date).map(part => [part.type, part.value]));
+    return `${parts.year}-${parts.month}-${parts.day}`;
+  };
+  // A previous NY day's stored slot must never masquerade as today's session
+  // at the local midnight rollover, even if it was collected <30m ago.
+  return record.observationDate === nyDay(new Date()) &&
+    record.observationDate === nyDay(new Date(stamp));
 }
 
 function normalizedCounts(counts?: MarketBreadthCounts | null) {
