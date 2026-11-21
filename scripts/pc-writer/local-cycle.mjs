@@ -1,4 +1,6 @@
 import fs from 'node:fs';
+import {createHash} from 'node:crypto';
+import {newCoreCycleId} from './core-cycle-id.mjs';
 import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
@@ -19,7 +21,24 @@ if(fs.existsSync(file)){
  if(alive){console.log('LOCAL_CYCLE_RUNNING');process.exit(0);}
  fs.renameSync(file,file+'.interrupted-'+Date.now());
 }
-fs.writeFileSync(file,JSON.stringify({pid:process.pid,at:Date.now()}),{flag:'wx'});
+// Record an execution-local correlation key at the real Core entrypoint.
+// This is not yet authenticated Scheduler Task->VBS->Node ancestry.
+const cycleStartedAt=Date.now(),coreCycleId=newCoreCycleId();
+const checkoutSourceAtStart=(()=>{
+ try{
+  const probe=spawnSync('git',['rev-parse','HEAD'],{cwd:path.resolve(here,'../..'),encoding:'utf8',windowsHide:true,timeout:4000});
+  const sha=typeof probe?.stdout==='string'?probe.stdout.trim():'';
+  return probe?.status===0&&/^[a-f0-9]{40}$/.test(sha)?sha:null;
+ }catch{return null;}
+})();
+const entrypointSha256=(()=>{
+ try{return createHash('sha256').update(fs.readFileSync(fileURLToPath(import.meta.url))).digest('hex');}
+ catch{return null;}
+})();
+fs.writeFileSync(file,JSON.stringify({pid:process.pid,at:cycleStartedAt,coreCycleId,
+ checkoutSourceAtStart,entrypointSha256}),{flag:'wx'});
+// Existing spawnSync children inherit this exact key without changed arguments.
+process.env.ZGMINI_CORE_CYCLE_ID=coreCycleId;
 try{
  const lane=process.argv.includes('--korea')?'korea':'core';
  // Paid sector/theme inputs share one stored archive; no extra Task or publisher.
@@ -217,7 +236,11 @@ try{
   sectors:sectorFearGreedR3Report?.sectors??null,
   error:sectorFearGreedR3Report?.error??(sectorFearGreedR3?.error?.code??null),
  }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
- const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,inflationRecurring,inflationCandidates,supplyR10,alpacaIncremental,sp500Shadow,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,publicationPolicy,progressive,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsRiskProvisionalR23,researchEarningsR5Prospective,status:publication.status===0?(publicationPolicy.collectionDegraded?'COMPLETE_WITH_COLLECTION_GAPS':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
+ const report={at:new Date().toISOString(),lane,coreCycleId,
+  coreCycleStartedAt:new Date(cycleStartedAt).toISOString(),
+  coreCheckoutSourceSha:checkoutSourceAtStart,coreEntrypointSha256:entrypointSha256,
+  coreProcessPid:process.pid,coreParentPid:process.ppid,
+  coreOriginEvidence:'SELF_RECORDED_NOT_TASK_ATTESTED',collectionExit:collection.status,collectionStatus:collectionReport?.status??null,inflationRecurring,inflationCandidates,supplyR10,alpacaIncremental,sp500Shadow,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,publicationPolicy,progressive,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsRiskProvisionalR23,researchEarningsR5Prospective,status:publication.status===0?(publicationPolicy.collectionDegraded?'COMPLETE_WITH_COLLECTION_GAPS':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
  save(path.join(base,'local-cycle-last-run.json'),report);console.log(JSON.stringify(report));
  if(publishRequested)try{updateDataAlert(base,{key:'publication',failed:publication.status!==0});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
  if(publication.status!==0)process.exitCode=1;
