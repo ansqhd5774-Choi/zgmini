@@ -1,3 +1,12 @@
+## 2026-11-21 KST — 31차 실브라우저 홈 차트 축·공개 점수·CI 산출물 확인
+
+- 기존 사용자 연결 브라우저의 `https://zgmini.kr/` **hydrated DOM 텍스트 재조회 성공**(탭 `183831268`, 읽기 전용). 테마 공포·탐욕 차트의 기간 버튼 `1W/1M/3M/6M/1Y`, 가로축 표기 `08-27, 09-15, 10-01, 10-19, 11-04, 11-20`, 테마 선택 버튼 10개 및 순위 버튼 10개를 확인했다.
+- 표시된 테마별 `aria-label`과 `title`의 날짜/반올림 점수는 모두 `2026-11-20`: 사이버보안20, 핀테크17, 클라우드·SaaS16, 우주·위성16, 방산14, 바이오·신약14, 원전·SMR8, 데이터센터·전력4, 로봇·자동화1, 자율주행1. 비공개 AI는 DOM 선택 옵션/점수 목록에 없음. 이는 **실제 홈 텍스트·마지막 X축 tick까지 부분 검증**이며 최종 데이터 점 좌표/실제 렌더 스크린샷·API 원래 소수 점수/개별252점은 확인 불가. X축 11-20 tick을 252점 last-point verified로 잘못 승격하지 않음.
+- `main@2eb796d` Run `44873050889` artifact 조회: `production-js-assets` / `production-css-assets` 존재, 별도 실제 PC·모바일 screenshot artifact 없음. 원본 Run의 Build/CI 성공 증거로 사용하되 JS/CSS 저장이 Production 화면 실렌더 결과를 뜻하지 않음.
+- 신규 무료 리모트 화면 제어 가능 환경은 확보하지 못했고, 새 BrowserStack device session·유료 크레딧 지출·GitHub workflow/deploy 변경 없이 종료. 4단계는 홈 점수/축 표시에 한정한 `PARTIAL`; 상세 PC/모바일 및 API와의 정밀 동시 대조는 `NOT_VERIFIED`. 5단계 최종 종결 미완료, 이전 유효 1~3단계 결과 보존.
+
+---
+
 ## 2026-11-21 KST — 30차 Production 상세 URL의 기존 실행 증거 회수
 
 - **새로운 증거:** `main@2eb796da811d0e074ca0cabab8e2cad9502bff43`의 Production SEO Health [Run #44873050829](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44873050829), Job `136751624458`, stdout 직접 확인. `2026-11-21T05:57:39.6742716Z SEO_HEALTH_URL_PASS=https://zgmini.kr/theme-fear-greed/` 및 `2026-11-21T05:57:41.0844162Z SEO_HEALTH_PASS=36`. 기존 정상 Production URL 읽기/SEO 검사는 유효한 증거로 재사용하며 같은 접속 검사를 반복 요청하지 않음.
