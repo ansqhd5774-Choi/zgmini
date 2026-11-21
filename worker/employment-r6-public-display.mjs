@@ -1,6 +1,7 @@
 import {
   EMPLOYMENT_R6_FEATURES,
   EMPLOYMENT_R6_FORMULA_HASH,
+  EMPLOYMENT_R6_FORMULA_REVISION,
 } from "../lib/market-score/employment-r6-formula.mjs";
 import {employmentR6OneYearStart,employmentR6RecentQuarterStart} from "../lib/market-score/employment-r6-window.mjs";
 
@@ -18,6 +19,7 @@ const validPoint=(point,start,end)=>point&&validDate(point.date)
 export function validEmploymentR6PublicDisplay(body){
   if(!body||body.kind!=="EMPLOYMENT_R6_ONE_YEAR_STORED_DISPLAY_R1"
     ||body.formulaHash!==EMPLOYMENT_R6_FORMULA_HASH
+    ||body.methodologyVersion!==EMPLOYMENT_R6_FORMULA_REVISION
     ||!validDate(body.asOfDate)
     ||!validDate(body.window?.start)
     ||!validDate(body.window?.recentQuarterStart)
