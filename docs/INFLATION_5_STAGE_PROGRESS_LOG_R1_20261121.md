@@ -31,6 +31,13 @@
 - **Census 선택 후보 정적 시험:** 설치 `565ddbd4…`와 [#2629 후보 `f0e4771…`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2629#issuecomment-7059504623)를 원본 UTF-8 텍스트로 직접 비교. 추가한 설정 1행 제거 시 기존 `config/operations.json` 원문 동일, import 1행/dispatch 1행 제거 시 기존 `controller/operations.mjs` 원문 동일. 기존 허용목록 48/48 불변·신규 하나로 49. 새 Census 모듈의 import는 `node:fs`, `node:path`, `node:crypto`만, provider fetch 및 파일 쓰기 API 없음. **정적 불변성 PASS이며 Windows CI·정규 설치·실제 아카이브 검증 아님**.
 - **다음 실행:** 2단계는 이미 인증된 PC D1 클라이언트의 W01 정확 키 조회를 기존 승인·정규 운영 경로로 확보하여 현재 D1 `body/stored_at`과 공개 7행 비교. 독립 3단계는 #2629 정확 HEAD의 승인된 CI 및 Controller 3파일 B manifest/설치 CAS·lease 충족 시 설치→새 고유 헤더 A. R2의 기존 2파일 Writer 수정도 독립 추적. 단계 상태 **1 DONE / 2 IN_PROGRESS / 3~5 NOT_DONE** 유지.
 
+## 2026-11-21 — #2636 단일 부모 설치 후보 확정·소스 CI 접수
+
+- **근거 및 최소 교정:** #2629는 실제 설치 `565ddbd4ebfc46c88fb7dbaa810fd545656c6306` 대비 3 commits / 정확 3파일 diff. 이전 검증된 3개 파일 blob을 그대로 사용한 Git tree `623c843224ac418d5b5262bfb767609eb38b6782`에서 실제 설치 SHA를 **단일 부모**로 하는 신규 source commit `77dd931163531674550d6176b360fa80ed4d1e99` 생성. 실제 GitHub compare `ahead=1,behind=0`, 변경은 `config/operations.json` +1, `controller/operations.mjs` +2, 신규 reader +95 **정확 3파일**. 기존 W04 operation·파일 48개는 변형하지 않음.
+- **단일 후보 GitHub 반영:** 새 검토용 [Draft PR #2636](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2636), source branch `codex/w01-census28-singlecommit-from-installed-565-20261121`; base는 실제 설치 `565ddbd4…` 고정 브랜치. 기존 #2629에 신규 PR로 대체 안내 댓글 남김(기존 3-commit 이력 보존·강제 push 없음). 3파일 SHA256은 기존 #2629 확인값과 **동일**. 이번 행동은 GitHub source 작성만 수행, 운영 설치/조회/DB·게시 변경 0.
+- **소스 CI 접수 증거:** 새 PR target `77dd9311…`로 GitHub Actions 3건 확인 — Controller Maintenance Tests [run 44882261137](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44882261137), D05 Readonly Tests [run 44882261088](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44882261088), C996 R5 Checks [run 44882261100](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44882261100). 최초 확인 시 queued/in_progress 상태였으며 **PASS 증거 아님**. 실제 결론은 별도 회수 필요.
+- **3단계 잔여:** 정확 target CI 결과→기존 승인 효과 범위 대조→정확 B manifest/현시점 installed SHA CAS·lease·보호·복구→독립 유지보수기로 설치→새 고유 Census A→공식 원자료 복구. #2636 Draft·B 미승인 상태에서는 운영 설치를 요청하지 않음. 개편 2단계 D1 정확 키 독립 미완료 유지.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
