@@ -1,3 +1,12 @@
+## 2026-11-22 KST — 38차 기존 Linux Chromium 390px 모바일 원본 스크린샷 실제 회수
+
+- **중복 검사 회피**: 원담당 W06의 [PR #1080](https://github.com/ansqhd5774-Choi/zgmini/pull/1080)에서 `tests/theme-visible-asof-browser-r1.mjs`와 실제 브라우저 [Run #43648422108](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43648422108) 발견. GitHub Actions `ui` Job `132611288568` SUCCESS, 로그에서 `PASS W06_THEME_VISIBLE_ASOF` 390/1440 × 유효/비실재 잠정일 4/4 직접 대조.
+- **실제 아티팩트 회수**: [artifact #14135076254](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43648422108/artifacts/14135076254) 기존 13,095,294 byte ZIP을 내려받아 `theme-visible-asof/theme-asof-{390,1440}-{valid,invalid}.png` 4개 원본 실제 확인. 390px valid/invalid PNG 시각 확인: 상단 현재 표시 일자 2026-11-15/14, 고정 2개 테마 순위·91.0 및 35.0/31.0 점수, 3M 비교 차트, 기간 선택·범례·순위표 가시 렌더링. 브라우저 test가 `document.documentElement.scrollWidth<=innerWidth+1`·pageerror 0·순위 2개·유효 날짜/비실재 잠정 날짜 제외를 assert하여 통과. CSS 카테고리 필터는 오른쪽 일부가 보이지 않는 가로 선택 인터페이스이므로 캡처만으로 잘림 버그로 확정하지 않는다.
+- **증거 범위 엄격 구분**: 이 실브라우저 촬영은 2026-11-14 CI Ubuntu Chromium·390px·**localhost 고정 mock API**. 현재 운영 `zgmini.kr`의 2026-11-20 공개10개와는 별도 환경/입력/시점. Production 실모바일 10개 렌더·원본 2,520점 직접 파싱 PASS 근거로 확장하지 않음. 사용자 연결 Chrome 현재 탭은 홈 2개이고 브라우저 도구는 read-only; web/open과 local requests는 도메인 fetch/DNS 실패. 유료 Firecrawl 재시도·비승인 유료 세션 없음.
+- **판정**: 단계4 모바일 **고정입력 브라우저 실제 렌더 390px 회수 완료**, 운영 모바일 미확인 / 기존 PC 홈·상세와 공개 점수 10개 교차확인 유지. 단계4 `PARTIAL`, 단계5 `SOURCE_PATH_REVIEWED/NOT_DONE`, 전체 3/5단계 완료 유지. 재검증 없이 같은 테스트 다시 실행하거나 코드·DB·공개·배포 변경하지 않음.
+
+---
+
 ## 2026-11-21 KST — 37차 로컬 Chromium 모바일 순위표 폭 제한 시뮬레이션
 
 - 목적: 실운영 사이트 DNS 접근이 실패하는 로컬 격리 환경에서 화면 정상 PASS를 가장하지 않고 모바일 표 **열 폭 조건만** 독립 검사. 설치된 Chromium headless와 Python Playwright를 이용했으며, Production 요청·D1/PC 명령·배포·비용 추가 0.
