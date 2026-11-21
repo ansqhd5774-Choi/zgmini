@@ -1,3 +1,13 @@
+## 2026-11-21 KST — 28차 실렌더 검증 경로·CI 근거 판정
+
+- 브랜치 실측: `main@2eb796da811d0e074ca0cabab8e2cad9502bff43`, 기능 전용 이전 `be4939590d83ecadef33c7b26363bd472c17f9a5`. 다른 브랜치의 오래된 `/api/theme-fear-greed` 라우트를 복사·배포하지 않았다.
+- 추가 교차 회귀 commit `a8e7be962b1ad777b7ee9e0d86f464c73f6472bc`에 연결된 GitHub Actions workflow runs 조회 결과 **0건**. 따라서 해당 신규 회귀는 CI PASS 미확인으로 유지하며, 기존 별도 성공 CI를 이 커밋에 귀속하지 않는다.
+- 무료 접근 점검: 공개 `https://zgmini.kr/theme-fear-greed/`의 현행 SSR에서는 헤더·필터와 `테마 데이터 대기` 초기 출력만 확인. 실제 hydrated 상세 10개/252점 차트나 모바일 화면 증거가 아니다. 현재 실행 container의 `zgmini.kr` DNS resolution 실패는 외부 실행 환경 현상이며 Production 장애로 주장하지 않는다. 비용 추가 없는 브라우저/기존 승인된 화면 캡처 경로가 확보되지 않아 **4단계의 해당 화면만 미검증**.
+- 소스 범위에서 공통 등록→중복 제거 입력→methodologyVersion 기반 계산→공개 D1/비공개 저장→paid Reader→상세 acceptedThemes 연결은 기존 5단계 점검 기록을 재사용. 소스 구현 사실과 실제 모바일/차트 end-to-end 완료를 구분하여 전체 **3/5단계 유지, 5단계 종결 보류**.
+- 다음 실제 수행은 기존 무료 GUI에서 상세 PC·모바일 렌더와 API 응답의 날짜·숫자·마지막 차트점을 동시에 읽는 것. 증거 확보 전 신규 UI 수정/브랜치 병합/배포·D1·PC 쓰기를 하지 않는다.
+
+---
+
 ## 2026-11-21 KST — 5단계 공통 경로 소스 대조 선행 점검 (종결 아님)
 
 - **기준 차이 분리:** 실제 최신 `main`과 전용 브랜치 `codex/theme-fear-greed-integration-20261025`의 동명 파일을 별도 읽었다. 전용 브랜치 `app/api/theme-fear-greed/route.ts` Git blob `bc59a864...`은 구형 `readThemeEtfOnly`만 호출하지만, `main` blob `61a85009...`은 `readPaidThemeFeed`를 우선 읽고 무효·부재 시 기존 Reader로 되돌린다. 전용 브랜치의 구형 라우트를 `main`에 복사하거나 전체 병합해서는 안 된다. 이 차이는 **운영 결함 아님/소스 드리프트**로 구분.
