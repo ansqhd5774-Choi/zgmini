@@ -1,9 +1,12 @@
+import {isValidatedPaidBreadthDomain} from '../worker/breadth-paid-contract.mjs';
+import {paidBreadthDomainFromRow} from '../worker/breadth-paid-public.mjs';
+import {paidBreadthFixture} from './helpers/paid-breadth-fixtures.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import ts from 'typescript';
 import {sampleCnnObservedPoints} from '../lib/cnn-observed-sampling-r1.mjs';
-import {COMPOSITE_OBSERVED_PREFIX,COMPOSITE_OBSERVED_VERSION} from '../lib/composite-observed-history-r1.mjs';
+import {COMPOSITE_OBSERVED_PREFIX,COMPOSITE_OBSERVED_VERSION,isPaidCompositeObservedPoint,COMPOSITE_PAID_SOURCE_CONTRACT} from '../lib/composite-observed-history-r1.mjs';
 import {maskRetiredMarketPublicSnapshot} from '../worker/market-retired-public-snapshot-mask.mjs';
 import {MARKETPARQUET_REMOVED_CODE} from '../lib/marketparquet-retirement.mjs';
 
@@ -57,10 +60,10 @@ function harness(rows=[],current=approvedCurrent){
  const exports={};
  const GET=new Function('exports','env','COMPOSITE_OBSERVED_PREFIX','COMPOSITE_OBSERVED_VERSION',
   'sampleCnnObservedPoints','maskRetiredMarketPublicSnapshot','MARKETPARQUET_REMOVED_CODE',
-  'Date','Response','URL',compiled+'\nreturn exports.GET;')
+  'isValidatedPaidBreadthDomain','isPaidCompositeObservedPoint','Date','Response','URL',compiled+'\nreturn exports.GET;')
   (exports,env,COMPOSITE_OBSERVED_PREFIX,COMPOSITE_OBSERVED_VERSION,
    sampleCnnObservedPoints,maskRetiredMarketPublicSnapshot,MARKETPARQUET_REMOVED_CODE,
-   Clock,Response,URL);
+   isValidatedPaidBreadthDomain,isPaidCompositeObservedPoint,Clock,Response,URL);
  return {GET,reads};
 }
 
@@ -259,3 +262,5 @@ test('W06 rights regression: dashboard never plots preserved private legacy hist
  assert.match(source,/maskRetiredMarketPublicSnapshot\(JSON\.parse\(row\?\.body\?\?'null'\)\)/);
  assert.doesNotMatch(source,/INSERT INTO|UPDATE market_public_snapshots_v1|DELETE FROM/);
 });
+
+test('paid restoration exposes only actually recorded new paid points and keeps old archive bytes untouched',async()=>{const d=paidBreadthDomainFromRow({body:JSON.stringify(paidBreadthFixture({now,date:'2026-11-13'})),stored_at:now},{now});const current={status:'SUCCESS',overall:{status:'READY',score:50},domains:[d]};const old=point('12:00:00',48),fresh={...point('12:15:00',50),publicSourceContract:COMPOSITE_PAID_SOURCE_CONTRACT,breadthSourceVersion:'a'.repeat(64)},stored=archive('2026-11-16',[old,fresh]),original=stored.body;const {GET}=harness([stored],current);const response=await GET(req('1Y'));const body=await response.json();assert.equal(response.status,200);assert.equal(body.points.length,1);assert.equal(body.points[0].score,50);assert.equal(stored.body,original);});

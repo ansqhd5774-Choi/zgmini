@@ -70,3 +70,45 @@ test('1W/1M/3M without intraday observations respect the selected window',()=>{
  assert.deepEqual(mergeCompositeObservedDisplay([],[],7),[]);
  assert.deepEqual(mergeCompositeObservedDisplay([...history].reverse(),[],7).map(p=>p.value),[47,50]);
 });
+
+// W06 #40: exercise the actual React effect callback, not a duplicated mock
+// implementation. The public GET remains read-only and must not erase the
+// last verified archive on an incomplete or temporarily unavailable response.
+test('W06 #40 transient observations response preserves last verified archive until next READY',async()=>{
+ const ts=(await import('typescript')).default;
+ const page=readFileSync(new URL('../app/dashboard-ui.tsx',import.meta.url),'utf8');
+ const anchor=page.indexOf(' const [compositeArchive,setCompositeArchive]');
+ const start=page.indexOf(' useEffect(()=>{',anchor);
+ const end=page.indexOf('\n const [market,setMarket]',start);
+ assert.ok(anchor>0&&start>anchor&&end>start,'find actual composite archive effect');
+ const effectSource=page.slice(start,end);
+ const compiled=ts.transpileModule('function run(){'+effectSource+'}',{
+  compilerOptions:{target:ts.ScriptTarget.ES2022,module:ts.ModuleKind.None},
+ }).outputText;
+ let refresh=null;
+ let saved=null;
+ let payload={status:'READY',period:'1D',points:[{observedAt:'2026-11-16T12:00:00Z',score:50}]};
+ const run=new Function('useEffect','startStoredRefresh','fetch','setCompositeArchive','periodDays',
+  compiled+';return run;')(
+  effect=>effect(),fn=>{refresh=fn;return()=>{};},
+  async()=>new Response(JSON.stringify(payload),{status:200,headers:{'content-type':'application/json'}}),
+  value=>{saved=value;},1);
+ run();
+ assert.equal(typeof refresh,'function');
+ const signal=new AbortController().signal;
+ await refresh(signal);
+ assert.equal(saved.points[0].score,50);
+ const known=saved;
+ payload={status:'PENDING',period:'1D',points:[]};
+ await refresh(signal);
+ assert.equal(saved,known,'PENDING does not wipe last valid archive');
+ payload={status:'READY',period:'1W',points:[]};
+ await refresh(signal);
+ assert.equal(saved,known,'late wrong-period response does not wipe selected period');
+ payload={status:'READY',period:'1D',points:[{observedAt:'2026-11-16T12:05:00Z',score:53}]};
+ await refresh(signal);
+ assert.deepEqual(saved.points.map(p=>p.score),[53],'next READY read replaces prior stored points');
+ payload={status:'READY',period:'1D',points:[]};
+ await refresh(signal);
+ assert.deepEqual(saved.points,[],'legitimate READY empty archive clears it explicitly');
+});

@@ -113,18 +113,19 @@ try{
     width+'px '+label+' provenance curves and discrete calculations have finite geometry');
    assert.equal(await page.locator('.zg-r55-card-grid article').count(),12);
    if(label==='1W'){
-    // 10/22 and 10/24 are saved calculations; reconstructed daily 10/23
-    // is between them. Both provenance lines must remain connected within
-    // their own source, never joined into a single provenance-changing line.
+    // Reconstructed daily and actual calculation histories retain separate
+    // line styles without a dot at every calculation timestamp.
     const curves=await page.locator(chartSelector+' path.recharts-area-curve').evaluateAll(paths=>
-     paths.map(path=>({d:path.getAttribute('d')??'',dash:path.getAttribute('stroke-dasharray')})));
-    assert.equal(curves.length,2,width+'px reconstructed and calculated series are separate');
-    assert.ok(curves.some(p=>p.dash)&&curves.some(p=>!p.dash),width+'px dashed and solid series');
-    for(const curve of curves){
-     assert.ok(/^M/.test(curve.d)&&/[CLQ]/.test(curve.d.slice(1))
-      &&(curve.d.match(/M/g)??[]).length===1,
-      width+'px 1W provenance line is a single connected SVG subpath');
-    }
+     paths.map(path=>({d:path.getAttribute('d')??'',dash:path.getAttribute('stroke-dasharray'),stroke:path.getAttribute('stroke')})));
+    const drawn=curves.filter(p=>p.stroke!=='none'&&p.d);
+    assert.equal(drawn.length,2,width+'px reconstructed and calculated histories draw separate lines');
+    assert.ok(drawn.some(p=>p.dash),width+'px reconstructed history remains dashed');
+    assert.ok(drawn.some(p=>!p.dash),width+'px actual calculation history has a solid line');
+    assert.ok(/^M/.test(drawn[0].d)&&/[CLQ]/.test(drawn[0].d.slice(1))
+     &&(drawn[0].d.match(/M/g)??[]).length===1,
+     width+'px reconstructed history is one connected SVG subpath');
+    assert.equal(await page.locator(chartSelector+' circle.recharts-area-dot').count(),0,
+     width+'px calculated history does not become a scatter plot');
     const domainLines=await page.locator('.zg-r55-card-grid article .zg-r55-mini-chart svg > path').evaluateAll(paths=>
      paths.map(path=>path.getAttribute('d')??''));
     assert.equal(domainLines.length,12,width+'px 12 domain observation paths');
@@ -141,16 +142,17 @@ try{
    .waitFor({state:'visible',timeout:15000});
   await waitForGeometry();
   assert.equal(await periods.getByRole('button',{name:'1D',exact:true}).getAttribute('aria-pressed'),'true');
-  // The 1D archive contains two actual observations plus the changed current
-  // publication: their stroke must contain a real segment, not just dots.
-  // No reconstructed daily points are available in the 1D series.
-  const oneDayObservedLine=await page.locator(chartSelector+' path.recharts-area-curve').evaluateAll(paths=>paths.some(path=>{
-   const d=path.getAttribute('d')??'';
-   const stroke=path.getAttribute('stroke')??getComputedStyle(path).stroke;
-   return /^M/.test(d)&&/[CLQ]/.test(d.slice(1))&&!/NaN|Infinity/.test(d)
-    &&stroke!=='none'&&stroke!=='transparent'&&stroke!==''; 
+  // Existing actual observations use a line; no historic data is invented.
+  const oneDayMarks=await page.locator(chartSelector).evaluate(root=>({
+   strokes:[...root.querySelectorAll('path.recharts-area-curve')].filter(path=>{
+    const d=path.getAttribute('d')??'';
+    const stroke=path.getAttribute('stroke')??getComputedStyle(path).stroke;
+    return /^M/.test(d)&&/[CLQ]/.test(d.slice(1))&&stroke!=='none'&&stroke!=='transparent'&&stroke!=='';
+   }).length,
+   dots:root.querySelectorAll('circle.recharts-area-dot').length,
   }));
-  assert.equal(oneDayObservedLine,true,width+'px 1D actual calculated observations connect as a line');
+  assert.equal(oneDayMarks.strokes,1,width+'px 1D actual calculations form a continuous line');
+  assert.equal(oneDayMarks.dots,0,width+'px 1D has no repeated calculation dots');
   // W06 R4 #69: verify actual viewport overflow after all six period changes.
   const overflow=await page.evaluate(()=>{
    const viewport=document.documentElement.clientWidth;

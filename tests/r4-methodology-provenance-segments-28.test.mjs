@@ -47,7 +47,7 @@ test('R4 #28 Recharts uses two nullable provenance series with no bridge and hon
  const chart=readFileSync(new URL('../components/dashboard-summary-chart.tsx',import.meta.url),'utf8');
  assert.match(chart,/splitCompositeChartProvenance\(data\)/);
  assert.match(chart,/<Area type="monotone" dataKey="reconstructedValue"[^>]*connectNulls=\{true\}/);
- assert.match(chart,/<Area type="monotone" dataKey="calculatedValue" stroke=\{color\} fill="none" strokeWidth=\{2\.1\} dot=\{\{r:2\.4,fill:color,strokeWidth:0\}\}[^>]*connectNulls=\{true\}/);
+ assert.match(chart,/<Area type="monotone" dataKey="calculatedValue" stroke=\{color\} fill="none" strokeWidth=\{2\.1\} dot=\{false\}[^>]*connectNulls=\{true\}/);
  assert.match(chart,/<Area type="monotone" dataKey="reconstructedValue" stroke=\{color\} strokeDasharray="4 4"/);
  assert.doesNotMatch(chart,/<Area type="monotone" dataKey="value"/);
  assert.match(chart,/현행 산식 재구성 · 당시 실계산점 아님/);
@@ -80,5 +80,24 @@ test('R4 #69 interleaved reconstructed and archived samples keep distinct line s
  assert.deepEqual({daily,archive},original);
  const chart=readFileSync(new URL('../components/dashboard-summary-chart.tsx',import.meta.url),'utf8');
  assert.equal((chart.match(/connectNulls=\{true\}/g)??[]).length,2);
+ assert.match(chart,/dataKey="calculatedValue"[^>]*connectNulls=\{true\}/);
  assert.doesNotMatch(chart,/dataKey="value"/);
+});
+
+test('W06 #28 impossible daily, archived, and published dates never become chart points',()=>{
+ const invalidDay='2026-02-30';
+ const invalidTime=invalidDay+'T12:00:00Z';
+ const validDay='2024-02-29';
+ const future='2026-03-02T12:10:00Z';
+ const originalDaily=[{label:invalidDay,value:99},{label:validDay,value:0}];
+ const originalArchive=[{label:invalidTime,value:88},{label:'2026-03-02T12:00:00Z',value:50}];
+ const before=structuredClone({originalDaily,originalArchive});
+ const values=mergeCompositeObservedDisplay(originalDaily,originalArchive,7,{label:invalidTime,value:100,boundToPublishedCard:true});
+ assert.ok(!values.some(p=>p.value===99||p.value===88||p.value===100),'impossible days cannot be retimed into actual points');
+ assert.ok(values.some(p=>p.value===50),'valid actual archive remains unchanged');
+ assert.deepEqual({originalDaily,originalArchive},before,'input histories are never mutated');
+ assert.deepEqual(mergeCompositeObservedDisplay([],[],1,{label:invalidTime,value:40,boundToPublishedCard:true}),[]);
+ assert.deepEqual(mergeCompositeObservedDisplay([],[],1,{label:future,value:0,boundToPublishedCard:true}),
+  [{label:'2026-03-02T12:10:00.000Z',value:0}],'genuine valid zero survives');
+ assert.deepEqual(mergeCompositeObservedDisplay([{label:validDay,value:0}],[],365),[{label:validDay,value:0}]);
 });

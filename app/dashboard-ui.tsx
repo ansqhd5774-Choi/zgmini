@@ -147,8 +147,10 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
     if(!response.ok)return;
     const data=await response.json() as {status?:string;period?:string;points?:Array<{observedAt:string;score:number}>};
     if(signal.aborted)return;
-    setCompositeArchive(data.status==='READY'&&data.period===label&&Array.isArray(data.points)
-     ?{days:periodDays,points:data.points}:null);
+    // A transient PENDING/invalid response is not evidence that the last
+    // verified stored history disappeared. Only replace it with a READY read.
+    if(data.status==='READY'&&data.period===label&&Array.isArray(data.points))
+     setCompositeArchive({days:periodDays,points:data.points});
    }catch{/* Keep the last stored archive during transient failures. */}
   });
   return stop;

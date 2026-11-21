@@ -89,15 +89,17 @@ test('retired-breadth exception never admits a second missing, stale or unready 
   assert.throws(()=>assertCompleteMarket(bad),/MARKET_REQUIRED_SCORE_MISSING/);
  }
 });
-test('both approved worker and PC calculation inject the tombstone; visitor GET remains stored-only',()=>{
+test('worker keeps retired input blocked; PC accepts only verified paid evidence; visitor GET remains stored-only',()=>{
  const worker=fs.readFileSync(new URL('../worker/market-operational-refresh.mjs',import.meta.url),'utf8');
  const pc=fs.readFileSync(new URL('../scripts/pc-writer/market.mjs',import.meta.url),'utf8');
  const scored=fs.readFileSync(new URL('../worker/market-score-r1.mjs',import.meta.url),'utf8');
  const http=fs.readFileSync(new URL('../app/api/market-score/route.ts',import.meta.url),'utf8');
- for(const code of [worker,pc]){
-  assert.match(code,/collectBreadthDomain:retiredBreadthPublicDomain/);
-  assert.doesNotMatch(code,/collectBreadthDomain:readBreadthB1R5StoredPublicDomainR1/);
- }
+ assert.match(worker,/collectBreadthDomain:retiredBreadthPublicDomain/);
+ assert.match(pc,/collectBreadthDomain:\(\)=>paidCompositeBreadthDomain\(base,now\)/);
+ assert.doesNotMatch(pc,/collectBreadthDomain:readBreadthB1R5StoredPublicDomainR1/);
+ const paid=fs.readFileSync(new URL('../scripts/pc-writer/paid-composite-breadth.mjs',import.meta.url),'utf8');
+ assert.match(paid,/paidBreadthDomainFromRow/);
+ assert.match(paid,/bodySha256/);
  assert.match(scored,/rightsRetiredBreadth/);
  assert.match(scored,/state:MARKETPARQUET_REMOVED_CODE/);
  assert.match(http,/storedMarketResponse/);

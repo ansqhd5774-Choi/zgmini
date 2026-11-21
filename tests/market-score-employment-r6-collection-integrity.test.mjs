@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 
 import { planEmploymentR6Collection, runEmploymentR6CollectionStep } from "../lib/market-score/employment-r6-collector.mjs";
-import { createEmploymentR6Provider } from "../lib/market-score/employment-r6-provider.mjs";
+import { createEmploymentR6Provider, parseDolNationalClaimsXml } from "../lib/market-score/employment-r6-provider.mjs";
 import { createEmploymentR6Store } from "../lib/market-score/employment-r6-store.mjs";
 import { BLS_BED_PUBLIC_API_URL, parseBlsBedShadowRows } from "../lib/market-score/employment-r4-bed-provider.mjs";
 
@@ -425,4 +425,70 @@ test("DOL national empty XML cannot overwrite old valid snapshot; valid XML unch
  assert.equal(good.snapshots.length,1);
  assert.equal(good.partialFailureCode,"DOL_ETA539_SOURCE_FAILED");
  assert.equal(good.rows.length,4);
+});
+
+// W04_NATIONAL_XML_PER_SERIES_PIT_20261119
+const nationalWeek = (date, initial, previous = true) =>
+  '<week source="r539cy"><weekEnded>'+date+'</weekEnded>'+
+  '<InitialClaims><SA>'+initial+'</SA><SA4WK>195250</SA4WK></InitialClaims>'+
+  (previous ? '<ContinuedClaims><SA>1900000</SA></ContinuedClaims><IUR><SA>1.2</SA></IUR>' : '')+
+  '</week>';
+
+test("W04 attributed XML week and per-series lag preserve forward PIT availability", () => {
+  const retrievedAt="2026-11-12T14:00:00.000Z";
+  const releaseAt="2026-11-12T13:30:00.000Z";
+  const xml='<r539cyNational>'+
+    nationalWeek("10/31/2026",191000)+nationalWeek("11/07/2026",200000,false)+
+    '</r539cyNational>';
+  const rows=parseDolNationalClaimsXml(xml,{retrievedAt,releaseAt});
+  assert.equal(rows.length,6);
+  const last=new Map([
+    ["INITIAL_CLAIMS","2026-11-07"],
+    ["INITIAL_CLAIMS_4W","2026-11-07"],
+    ["CONTINUED_CLAIMS","2026-10-31"],
+    ["INSURED_UNEMPLOYMENT_RATE","2026-10-31"],
+  ]);
+  for (const [series,date] of last) {
+    const bySeries=rows.filter(r=>r.logicalSeriesId===series);
+    const newest=bySeries.filter(r=>r.availableAt===retrievedAt);
+    assert.equal(newest.length,1,series);
+    assert.equal(newest[0].observationDate,date);
+    assert.equal(newest[0].releaseDate,releaseAt);
+    assert.equal(newest[0].qualityStatus,"READY_FORWARD");
+    for (const earlier of bySeries.filter(r=>r.observationDate!==date)) {
+      assert.equal(earlier.availableAt,null);
+      assert.equal(earlier.releaseDate,null);
+    }
+  }
+  assert.equal(rows.filter(r=>r.availableAt===retrievedAt).length,4);
+});
+
+test("W04 invalid February XML week never rolls into a fabricated observation", () => {
+  const xml='<r539cyNational>'+
+    nationalWeek("02/30/2026",999999)+
+    nationalWeek("02/28/2026",188000)+
+    '</r539cyNational>';
+  const rows=parseDolNationalClaimsXml(xml,{retrievedAt:"2026-03-05T13:30:00.000Z"});
+  assert.equal(rows.length,4);
+  assert.deepEqual([...new Set(rows.map(r=>r.observationDate))],["2026-02-28"]);
+});
+
+
+test("W04 XML missing national values are absent, never coerced to zero", () => {
+  const xml='<r539cyNational><week source="r539cy">'+
+    '<weekEnded>11/07/2026</weekEnded>'+
+    '<InitialClaims><SA></SA><SA4WK> </SA4WK></InitialClaims>'+
+    '</week></r539cyNational>';
+  const rows=parseDolNationalClaimsXml(xml,{retrievedAt:"2026-11-12T14:00:00.000Z"});
+  assert.deepEqual(rows,[]);
+});
+
+
+test("W04 true numeric zero remains a valid claim value", () => {
+  const xml='<r539cyNational><week source="r539cy">'+
+    '<weekEnded>11/07/2026</weekEnded>'+
+    '<InitialClaims><SA>0</SA><SA4WK>0</SA4WK></InitialClaims>'+
+    '</week></r539cyNational>';
+  const rows=parseDolNationalClaimsXml(xml,{retrievedAt:"2026-11-12T14:00:00.000Z"});
+  assert.deepEqual(rows.map(row=>row.value),[0,0]);
 });
