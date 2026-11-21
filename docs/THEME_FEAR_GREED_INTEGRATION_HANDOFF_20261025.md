@@ -1,3 +1,12 @@
+## 2026-11-21 KST — W03 paid private 15/252 실제 saved-source 원인 분리
+
+- **운영 최초 실제 source correlation:** 제어 [PR #2589](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2589) merged `94000af344e0d9d550dedac97880558426d9c316`, Windows CI 44871213077 및 C996 44871213065 SUCCESS. 기존 A PC inventory 고정 읽기만 사용하고 provider GET/SQLite/D1/원자료 쓰기 0. [Issue #2590](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2590), Run 44871388510, result JSON/TXT direct readback, `PASS/PROCESS_INVENTORY_COLLECTED`, private `PARTIAL/W03_AI_PRIVATE_PARTIAL_HISTORY` 15점(2026-11-02~11-20). 유료 저장소 `hourly-selected`의 **정확 8 receipts SHA 및 `sourceVersion=037fe90232a30631ba267955f115a7f70ecf9a3ddb0de50af4442e3f2b7c7066`** 원 비공개 파일과 일치. ETF 저장 SPY 974(2023-01-03~), WISE 586(2023-12-13~), IGV 974, XSW 949, AIQ 974. **2026-11-02 이전** SPY 959/WISE 574/IGV 959/XSW 934/AIQ 959 거래일; 단순 15일치 원자료 부재 가설 반증.
+- **연속 관측 분리:** [PR #2591](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2591) merged `f97506e386d19594588e2a0706721000dccaaf11`, Windows CI 44871580001/C996 44871579986 SUCCESS. [Issue #2592](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2592), Run 44871707169, JSON/TXT direct readback. WISE 최초 누적 40회 2024-02-22, 첫 **연속 40 SPY일** 2025-02-11, 최장 연속 75일(11/02 이전도 75). WISE 586 누적만으로 R25 metric validity/공식 AUM 2026-06-30 이후 적격성을 보장하지 않음. IGV/AIQ 연속 974일, XSW 최대 연속 232일. 가격/점수 외부 노출 없음.
+- **근본 원인 현재 경계:** 저장 자료는 충분하지만 승인 공식 AUM IGV/XSW/AIQ 기준일 2026-11-02 이전은 `theme-paid-calculate.mjs`에서 `m.aumAsOf<=p.date`로 R32 후보 제외. WISE는 공식 2026-06-30로 더 이르지만 해당 기간에 R25 자격이 있는지 미확인; 과거 WISE 최장 75일이 **그 기간인지 모름**. 무단 AUM 소급 생성·가짜 스코어 보간/과거 날짜 변경 금지. 신규 source [PR #2594](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2594) 2파일 비식별 조회(2026-06-30~11-01 종료되는 SPY 연속 window 중 최대·>=40 길이) CI 대기/검증 중, 병합·실PC 조회 전 결과 주장 금지.
+- **진행률/검증:** 공식 W03 `12/68` 유지, private 등록/계산/불변 SHA 저장은 실PC PASS, **252점 이력 15/252 PARTIAL**, Reader discovery·실 UI 비공개 체험 미검증, 신규 공개 승인 0. 계산·공개 산식/비율·ETF·권리·DB/D1/Task unchanged.
+
+---
+
 ## 2026-11-21 KST — P2 AI 소프트웨어 실제 비공개 저장 SHA PASS·이력 15/252 PARTIAL
 
 - **이전 미확인 정정:** Controller 정규 복구 #2572 결과 `SUCCEEDED/APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED`, 설치 SHA `24f1139b97712b2e1383650a78f65877f9d1ae67` JSON/TXT 2/2. 후속 A #2573 Run 44812678111 `PASS/CORE_READONLY_DIAGNOSIS`; 기존 #2539 모듈 누락 실패는 구형 Controller 시점의 증거이며 현재 전체 조회 불가로 유지하지 않는다.
