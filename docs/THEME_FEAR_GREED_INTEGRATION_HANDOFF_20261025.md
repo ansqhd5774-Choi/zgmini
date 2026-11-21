@@ -1,3 +1,11 @@
+## 2026-11-21 KST — 30차 Production 상세 URL의 기존 실행 증거 회수
+
+- **새로운 증거:** `main@2eb796da811d0e074ca0cabab8e2cad9502bff43`의 Production SEO Health [Run #44873050829](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44873050829), Job `136751624458`, stdout 직접 확인. `2026-11-21T05:57:39.6742716Z SEO_HEALTH_URL_PASS=https://zgmini.kr/theme-fear-greed/` 및 `2026-11-21T05:57:41.0844162Z SEO_HEALTH_PASS=36`. 기존 정상 Production URL 읽기/SEO 검사는 유효한 증거로 재사용하며 같은 접속 검사를 반복 요청하지 않음.
+- **정확한 한계:** 위 검사는 DOM hydration 후 카드 10개·252점 마지막 값·점수/날짜의 API 일치·모바일 390px 표시·기간 버튼·범례를 확인하는 브라우저 GUI 시험이 아님. 이번 실행의 외부 웹 tool `/api/theme-fear-greed` 조회는 접근 실패, 상세 URL도 cache miss로 반환되어 사용자 연결 브라우저의 지난 홈 DOM 10개 표시 증거를 취소할 근거가 되지 않음. Production API/GUI 직접 검증은 여전히 `NOT_VERIFIED`.
+- **후속 행동:** 기존 유료 브라우저 예산 부족을 재시도하지 않고 기존 공식 무료 화면 캡처/실제 브라우저 테스트가 가능한 환경에서 홈/상세 PC+모바일을 같은 API 저장시각에 비교. 차이가 확인된 항목만 최소 수정. 추가 유료 계정·서비스 생성, 임의 PC 조작·D1 쓰기·공개 승인 변경 없음. 4단계 부분 검증, 5단계 미종결, 전체 3/5 유지.
+
+---
+
 ## 2026-11-21 KST — 29차 과거 CI 실패 분리 및 최신 main 정상 CI 확인
 
 - **소스 기준:** `main@2eb796da811d0e074ca0cabab8e2cad9502bff43` / 기능 전용 작업 시작 `f60fbc6fd0a67935bd8b6d7c7448dcf7374bac64`. GitHub Run [#44873050889](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44873050889)의 Job `136751624903`은 `completed/success`; Build, Type check, Regression tests, PC publication recovery, Cloudflare candidate read contracts 모두 해당 Job step `success`. 이는 정확한 **main SHA의 CI**이며 전용 브랜치 신규 테스트 `a8e7be9`가 실행된 증거는 아님.
