@@ -47,6 +47,14 @@
 
 ## 개편 후 진행 기록
 
+### 2026-11-21 — Census 공식 B 대상 4파일 현재 실PC 4/4 검증
+
+- **읽기 전용 신규 실PC 작업:** 제어 기존 승인 `approvals/writer-preimage/inflation-manual-official-r1.json` + SHA256 `cfd3fa07eac039f63c0cdaf0ebb10529a9c9103612441c72ed5ddfd6d28fa8a8`를 재사용해 신규 #2609 (requestId `pc-5c9a2574-7a22-4e08-9c66-f6c528f14d43`) 발행. 최초 이슈에 `pc-job` label 포함. [Run44876714433](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44876714433) `completed/success`, `PASS/WRITER_APPROVED_PREIMAGE_READONLY`; JSON `results/44876714433-1-seat-4.json` 및 TXT 동시 2/2 실제 회수. 보호 전후 동일, 공급자/운영/D1 쓰기 0, SQLite 미개방.
+- **2026-11-21 실PC 4/4 SHA:** `inflation-causal-candidate-manual-official-r1.mjs` 53c01bbc129e1c4c5ff129d37fae8e0ff801c30bfe50a6ad0ab1227d394a5ed6; `inflation-causal-candidate-manual-official-store-r1.mjs` 3ef346bd5e240cdcdbd741a0f62b665bba42bf33556e37a6efa359f07de834ec; `lib/diagnostic-layer/xlsx-lite.mjs` 44d4c230a0620faea0d8bb2575e6f13c9ab7cfb5700aa11d752017db747f619a. 이전 #2607의 `local-cycle.mjs` 2cfa0f9ae794e36d0a2fcf865a571258c5d3a4e1709557a5e4c1059dde46da75와 함께 정확 4파일 closure. 양쪽 sourceHead/config/checkpoint 동일 a206220cc11045c24660e814124edbba9c0ff49f, coreTaskSourceLinked=false.
+- **차단 원인/다음 효과 분리:** 4파일 실측은 Draft 제어 PR #2531 3번째 프로필과 정확 일치하나, 현재 `main` 실행 계약과 기존 V2 승인 manifest는 새 Core SHA 미포함. source/metadata 정상임에도 **정규 B 승인 profile 차이 + 자연 Core owner 미인증**으로 Census 원자료 실행은 미승인·미실행. [PR #2531 검증 회신](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2531#issuecomment-7058777898). 옛 #1818 요청 중복 금지. 단순 A 소스조회에 owner 전체 검증 요구하지 않고, 실제 B 수집 시에만 기존 Task/lease 계약 적용.
+- **단계 결과:** 운영 A source 검증 4/4 DONE, 실제 Census 26번째 원자료 저장 0건; D1 `body/stored_at` 현재 직접 조회 미해결. 1/5 DONE, 2/5 IN_PROGRESS, 3/4/5 NOT_DONE 유지. 기존 승인 수정 효과 확인 뒤 기존 정규 B 수집→원자료 SHA/readback→D1/API 순으로 진행.
+
+
 ### 2026-11-21 — #2607 실제 PC Core 2파일 SHA 확인 및 승인 불일치 특정
 
 - **A 최초 요청 오류와 정정:** #2606은 본 대화에서 생성 시 필수 `pc-job` label 누락. `pc-job.yml`의 owner-opened label 조건 때문에 Actions Run 44876247730 `approved-pc-job=skipped`; 실제 실행 아님. 원본 #2606을 closed/not_planned로 종료하고, 별도 신규 고유 정규 A [#2607](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2607)는 최초 생성 시 title=pc-job + label=pc-job 동시 포함. 같은 requestId 중복 발행 없음.
