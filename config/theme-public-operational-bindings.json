@@ -1,0 +1,36 @@
+{
+  "schema": "ZGMINI_THEME_PUBLIC_OPERATIONAL_BINDINGS_V1",
+  "publicationAuthority": "EXISTING_WRITERS_ONLY_NO_CUTOVER",
+  "families": {
+    "r37": {
+      "methodologyVersion": "ETF_ONLY_T40_R20_V40_ADAPTIVE_R2_DATED_ISSUER_AUM_R32",
+      "confirmed": "theme-legacy-nine-r37",
+      "provisional": "theme-nine-r32-provisional-r88",
+      "sourceRoot": "themes/legacy-nine-r47-private"
+    },
+    "data-center": {
+      "methodologyVersion": "ETF_ONLY_T40_R20_V40_PAIR50",
+      "confirmed": "theme-data-center-power-r1",
+      "provisional": "theme-data-center-power-provisional-r1",
+      "sourceRoot": "themes/data-center-power"
+    },
+    "space": {
+      "methodologyVersion": "ETF_ONLY_T40_R20_V40_ADAPTIVE_R2_AUM_DATE_ELIGIBLE_SINGLE_R32",
+      "confirmed": "theme-space-satellite-r2",
+      "provisional": "theme-space-satellite-provisional-r1",
+      "sourceRoot": "themes/space-satellite"
+    }
+  },
+  "themes": [
+    {"id":"robotics","label":"로봇·자동화","family":"r37","rosterSource":"r20-group"},
+    {"id":"cloud-saas","label":"클라우드·SaaS","family":"r37","rosterSource":"r20-group"},
+    {"id":"autonomous-driving","label":"자율주행","family":"r37","rosterSource":"r20-group"},
+    {"id":"nuclear-smr","label":"원전·SMR","family":"r37","rosterSource":"r20-group"},
+    {"id":"defense","label":"방산","family":"r37","rosterSource":"r20-group"},
+    {"id":"fintech","label":"핀테크","family":"r37","rosterSource":"r20-group"},
+    {"id":"cybersecurity","label":"사이버보안","family":"r37","rosterSource":"r20-group"},
+    {"id":"biotech","label":"바이오·신약","family":"r37","rosterSource":"r20-group"},
+    {"id":"data-center-power","label":"데이터센터·전력","family":"data-center","etfs":["DTCR","GRID"]},
+    {"id":"space-satellite","label":"우주·위성","family":"space","etfs":["UFO","NASA","WARP","ROKT"]}
+  ]
+}

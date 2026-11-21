@@ -42,3 +42,21 @@ test('R158 rejects missing ETF/SPY, copied dates, synthetic zero and formula bas
  configs[3].confirmed.themes[0].score+=2;
  for(const input of configs)assert.throws(()=>buildPrivateThemeTwoDayCandidate(input),/THEME_R158_/);
 });
+
+test('R158 rejects missing or invalid early 701-session prices instead of claiming complete coverage',()=>{
+ const spyMissing=inputs();
+ spyMissing.joined.SPY.days[0].proxyClose=null;
+ assert.throws(()=>buildPrivateThemeTwoDayCandidate(spyMissing),/THEME_R158_PRICE_INVALID_SPY/);
+ const etfMissing=inputs();
+ etfMissing.joined.ROBO.days[120].proxyClose=NaN;
+ assert.throws(()=>buildPrivateThemeTwoDayCandidate(etfMissing),/THEME_R158_PRICE_INVALID_ROBO/);
+});
+test('R158 rejects normalized calendar overflow in aligned history and new sessions',()=>{
+ const invalidHistory=inputs();
+ for(const ticker of R158_SYMBOLS)invalidHistory.joined[ticker].days[58].date='2023-02-30';
+ assert.throws(()=>buildPrivateThemeTwoDayCandidate(invalidHistory),/THEME_R158_PRICE_DATES_/);
+ const invalidNew=inputs();
+ invalidNew.newPrices[0].date='2025-02-30';
+ invalidNew.newPrices[1].date='2025-03-05';
+ assert.throws(()=>buildPrivateThemeTwoDayCandidate(invalidNew),/THEME_R158_NEW_PRICE_DATE_OR_COVERAGE/);
+});
