@@ -42,7 +42,8 @@
   var me=records[pidText],nodeCmd='e:\\zgmini\\runtime\\node.exe '+expected+' --publish';
   // The fixed Windows Core lane has the exact --publish command, no extras.
   var canonical=me?me.command.replace(/"/g,'').replace(/^\s+|\s+$/g,'').replace(/\s+/g,' ').toLowerCase():'';
-  if(!me||me.name!=='node.exe'||canonical!==nodeCmd||!isFinite(me.created)){
+  if(!me||me.name!=='node.exe'||canonical!==nodeCmd||
+    typeof me.created!=='number'||!isFinite(me.created)||me.created<946684800000){
    out(false,'CORE_NODE_IDENTITY_UNVERIFIED',null,count);return;
   }
   var started=me.created,seen={},cur=Number(pidText),lastTime=null;
@@ -50,8 +51,9 @@
    if(engines[String(cur)]){out(true,'TASK_ENGINE_CHAIN_MATCH',started,count);return;}
    if(seen[String(cur)])break;seen[String(cur)]=true;
    var row=records[String(cur)];
-   if(!row||!isFinite(row.parent)||row.parent<1)break;
-   if(isFinite(row.created)&&lastTime!==null&&row.created>lastTime+1000)break;
+   if(!row||!isFinite(row.parent)||row.parent<1||
+      typeof row.created!=='number'||!isFinite(row.created)||row.created<946684800000)break;
+   if(lastTime!==null&&row.created>lastTime+1000)break;
    lastTime=row.created;
    cur=row.parent;
   }
