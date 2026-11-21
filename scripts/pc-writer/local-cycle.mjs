@@ -30,7 +30,9 @@ fs.writeFileSync(file,JSON.stringify({pid:process.pid,at:cycleStartedAt,coreCycl
 process.env.ZGMINI_CORE_CYCLE_ID=coreCycleId;
 try{
 // Inside the Core's own Task context, before provider/SQLite work. Fail-closed but nonblocking.
-const coreOrigin=captureCoreOriginAtStart({startedAt:cycleStartedAt});
+const coreOrigin=process.argv.includes('--publish')&&!process.argv.includes('--korea')
+ ?captureCoreOriginAtStart({startedAt:cycleStartedAt}):
+ {status:'UNVERIFIED',code:'CORE_ORIGIN_OUTSIDE_APPROVED_LANE',ownerCreatedAtMs:null};
 const checkoutSourceAtStart=(()=>{
  try{
   const probe=spawnSync('git',['rev-parse','HEAD'],{cwd:path.resolve(here,'../..'),encoding:'utf8',windowsHide:true,timeout:4000});
