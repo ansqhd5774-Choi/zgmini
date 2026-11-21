@@ -47,6 +47,15 @@
 
 ## 개편 후 진행 기록
 
+### 2026-11-21 — 2단계 실조회 경계 및 4단계 기존 R2 소스 선택 재사용
+
+- **2단계 실조회:** 운영 #2577/Run44869316745 writer ledger는 7후보 ready6/UNCHANGED_VERIFIED이나 D1의 현재 body/stored_at, 개별 값/단위/관측일/버전 동치를 포함하지 않는다. 기존 원장의 공개 GET 6 READY/Census28 PENDING 증거는 보존. web GET은 접근되지 않았고 외부 browser 도구는 insufficient_credits로 차단, 추가 결제·우회·재게시 없음. Cloudflare D1 연결 읽기 플러그인 없음. 현 대화에서 D1 직접 readback **AUTOMATION_BLOCKED 범위 한정**, 2단계 IN_PROGRESS 유지.
+- **원본 권리·실행 준수:** 7키는 코드의 `detail:inflation-causal-candidates-7:r1`, 테이블 `market_public_snapshots_v1`, `body/stored_at` 읽기임을 재확인. 정확 기존 운영 D1 binding으로 단 한 키를 읽어 Writer·API와 비교해야 완료다. 원본값 추정/신규 DB/쓰기·일회성 수집·공급자 GET 없음.
+- **독립 4단계 SOURCE_ONLY 실제 진전:** 기존 작업 브랜치의 `worker/projection-builders/inflation.mjs`를 `main`에서 이미 병합된 PR #1340의 검증된 날짜 구현으로 최소 갱신. 새 commit `4de95329b986dadf069482ae78c6a46fd4568bef`, 갱신 후 Git blob `23fe332bcf74761f0aea9c3e715e828beeb63601`이 최신 `main`과 정확 동일. 기존 `monthEnds` 미래 현재월 말일은 actual `asOfDate`를 마지막 트렌드 평가일로 사용하는 `inflationR2TrendDates`로 변경. 같은 원본 PR #1340의 기존 테스트/CI를 같은 blob 근거로 재사용, 이번 원장 변경을 신규 CI 실행으로 주장하지 않는다. 기능 브랜치 외 운영 PC/Writer/DB/D1/API/UI 변경 없음.
+- **운영 원인 구분:** PR #1340/#1344/#1352는 이미 main 병합; UI PR #1309도 기존 완료. R2 운영의 기존 Writer 원본이 독립적이라는 실제 #1330 증거가 있어 개발 Builder 교체를 운영 설치안으로 채택하지 않는다. 승인 전 제어 Draft #2167의 변경 2파일 및 현재 Writer preimage/lease/백업 확인 후 기존 정규 Writer 적용→저장/D1/API/PC모바일 대조가 필요하다. 4단계는 SOURCE_REUSED, OPERATING_NOT_DONE.
+- **단계 상태:** 1/5 DONE · 2/5 IN_PROGRESS · 3/5 NOT_DONE · 4/5 NOT_DONE(소스 재사용만) · 5/5 NOT_DONE. 완료 추가 0. 역사적 34/71은 보관 숫자.
+
+
 ### 2026-11-21 — 개편 2단계 기존 게시 증거 정밀 확인
 
 - 실행 기준은 상단 5단계 계획이다. 실PC #2577/Run44869316745 JSON 재조회: inflation7Writer.status=UNCHANGED_VERIFIED, readyCount=6, writerStatus=VERIFIED, key/sourceVersion/sourceStoredAt=null, verifiedAtWriterTime=false, d1NowVerified=false, d1Writes=0. 기존 Writer ledger의 정상 자료가 재게시되지 않았다는 사실이지 D1 직접 본문 동치 증거는 아니다.
