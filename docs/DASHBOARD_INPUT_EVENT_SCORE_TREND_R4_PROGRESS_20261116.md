@@ -9,21 +9,21 @@
 | 단계 | W06가 끝낼 작업 | 완료 기준 | 현재 상태 |
 |---|---|---|---|
 | 1 | 현재 소유 범위·유효 완료 증거 확정 | 기존 27개 연결표·수정/시험/실화면 증거 재사용, 퇴역/미연결 콘텐츠와 원담당 작업 분리 | DONE |
-| 2 | 이미 병합한 UI/Reader 수정의 실제 적용 확인 | 관련 변경이 활성 Production 산출물에 포함됐는지 확인하고 실제 공개 동작 대조. 이미 정상인 변경의 재구현·재배포 없음 | IN_PROGRESS — 최근 #1460/#1461/#1462 병합 확인, 활성 배포/화면 미확인 |
+| 2 | 이미 병합한 UI/Reader 수정의 실제 적용 확인 | 관련 변경이 활성 Production 산출물에 포함됐는지 확인하고 실제 공개 동작 대조. 이미 정상인 변경의 재구현·재배포 없음 | IN_PROGRESS — 실제 Production JS #1460/#1461 포함·공개 API/현재 카드 확인; #1462 비활성 경로/정확 Cloudflare Deployment↔SHA 연결 미확인 |
 | 3 | 실제 남은 W06 소유 결함만 마무리 | 재현되는 Reader/갱신/카드/차트 결함만 최소 수정·관련 회귀·정규 적용. 업스트림 제약은 별도 전달 | NOT_DONE — 2단계 결과로 실제 결함 범위를 확정 |
 | 4 | PC·모바일 실화면 종합 확인 | 영향받은 화면의 값/단위/날짜/카드 최신점/차트 끝점·기간/결측·역행·overflow가 공개 저장 응답과 일치 | PARTIAL — 기존 실사이트 성공 증거 있음, 최신 변경의 미검증 범위 남음 |
 | 5 | UI 작업 종결·업스트림 잔여 인계 | W06 완료/Production 검증/Writer·데이터 잔여를 구분하고 정확한 원담당·작업·종료조건으로 정리 | NOT_DONE |
 
 ## 현재 확인된 근거
 
-- 최근 #1460/#1461/#1462는 원격 MERGED를 확인했다. 기존 정상1D archive 보존·실제 달력 날짜·IEX NY 동일일 보호의 source 수정/시험을 반복하지 않고2단계 실제 적용을 확인한다. 활성 Production 포함·최신 변경의 화면 PASS는 아직 미확인이다.
+- 최근 #1460/#1461/#1462는 main MERGED. **2026-11-21 15:37~15:46 KST 공개 Production 읽기**에서 현재 HTML이 참조한 실자산 `/assets/page-DsDQu-Ab.js`에 #1460의 `READY+period+Array.isArray(points)`만 갱신하는 코드와 #1461의 strict Gregorian 원본 날짜 검사 `T00:00:00Z + ISO 동일일`을 직접 확인했다. 활성 CNN 자산 `/assets/cnn-panel-DfAkRdB-.js`에서도 #1459 관측달력 차단 코드 확인. #1462 IEX 비율 컴포넌트는 승인상 비활성/미마운트로 실사이트 표시 검증 대상이 아님; 활성 JS 내 #1462 source 포함 및 정확 Cloudflare Production Deployment→Git SHA 관계는 미입증(배포 장애 증거 아님). 동일 소스/CI/재배포 반복 금지.
 - 기존27개 source/화면 매핑, 관련 source/fixture·실사이트 PC/모바일 성공은 각 범위의 증거를 재사용한다. 새로운 DOM/실사이트 검증을 이번 문서 작업에서 수행하지 않았다.
 - #64의 current 전진/15분 observed 점 유실은 기존 실함수 재현으로 확인됐다. Draft #1185/#1228은 이번 원격 조회에서 여전히 OPEN/Draft다. 새 재현/Writer 수정·sampling 승인·운영 설치는 이번에 수행하지 않았다.
 - #28의 점별 역사적 방법론 미입증, 각 원담당의 신규 저장/게시 계보, 퇴역·미연결 콘텐츠는 UI 정상/오류와 분리한다. 알 수 없는 modelVersion을 만들어 채우거나 비활성 콘텐츠를 강제 활성화하지 않는다.
 
 ## NEXT — W06가 직접 수행
 
-**2단계: 최근 병합된 #1460/#1461/#1462의 변경이 현재 활성 Cloudflare 산출물에 포함됐는지 확인하고 영향받는 실제 공개 Reader/UI 동작을 대조한다.** 이미 포함돼 정상이면 재배포·재코딩 없이 증거로 사용한다. 실제 적용 누락/화면 실패가 있으면 해당 연결만 정규 경로로 수정·적용·확인한다. 관련 없는 원담당 PC/D1 미검증은 W06 개발·화면 확인의 전역 Gate가 아니다.
+**2단계 남은 범위:** 활성 Production의 #1460/#1461 적용과 현재 Reader/카드 일치 증거는 재사용한다. 접근 가능한 기존 공식 Cloudflare 배포 원장 또는 Git Integration 결과로 `Production Deployment ID ↔ Git SHA`만 선택 확인하고, #1462는 비활성 경로라는 사실을 유지해 강제 렌더·재배포하지 않는다. **독립 후속:** 실제 오류가 있는 W06 활성 Reader/화면만 3단계에서 수정하고, 기존 390px 모바일 화면 값·1D 실제 마지막점 확인을 4단계에 재사용한다. PC Writer/D1 업스트림·#64는 원담당 범위이며 전체 차단 아님.
 
 ## 별도 원담당 대기·인계
 
@@ -34,6 +34,14 @@
 | 공식 최신성/역사적 modelVersion | 각 기능 원담당 | 입증 없는 값은 미확인 | 실제 자료/근거 가능 범위 판단. W06는 날짜·결측·계보 미확인 표시 보존 |
 
 ## 개편 후 기록
+
+### 2026-11-21 — 2단계 실제 Production 공개 Reader·배포 자산 확인 (읽기 전용)
+
+- 기준 `ansqhd5774-Choi/zgmini` main `2eb796da811d0e074ca0cabab8e2cad9502bff43`. GitHub source 블롭 `app/dashboard-ui.tsx=c571fef55ecd16625f942989721d628648ff1994`, `lib/market-score/composite-observed-display-r1.mjs=358df92d5fceb614bddf8dff9a9f67e7e2be0873`, `app/market-breadth-strip.tsx=a48e1be17ada3569ef949035b48a1d4c7eb694b6` 재조회 PASS. 해당 수정 CI/main 통합 이력은 기존 #1460/#1461/#1462 영수증 재사용.
+- 실제 `https://zgmini.kr/` HTTP 200, HTML preload client JS `/assets/page-DsDQu-Ab.js` 공개 응답 HTTP 200에서 **#1460** `/api/market-score/observations?period=` 조회 뒤 `r.status==='READY' && r.period===label && Array.isArray(r.points)`일 때만 기존 archive state를 변경하는 minified 실코드 확인. **#1461** `chartTime`의 날짜 `T00:00:00Z` 재검산 및 `new Date(...).toISOString().slice(0,10)===day` 검증 minified 실코드 확인. 활성 CNN JS `/assets/cnn-panel-DfAkRdB-.js`의 2월30일 등 불가능한 관측일 검사도 별도 확인. 이는 실제 공개 자산 포함 증거로서 CI만의 증거와 구분.
+- `https://zgmini.kr/api/market-score` HTTP 200 `status=SUCCESS`, `modelVersion=CM-R1`, `overall.status=READY`, `overall.score=45.137344974152676`, `updatedAt=2026-11-21T06:40:26.865Z`; `/api/market-score/observations?period=1D` HTTP 200 `status=READY` `timeMeaning=PC_CALCULATED_AT`, `totalObservedPoints=2`, `2026-11-21T00:05:41.317Z@45.298118360903416`, `2026-11-21T05:01:38.086Z@45.137344974152676`. 승인 UI display sensitivity 3.5에 의한 기대값 **33.5→33.0**, 현재 카드 **33.0**과 실제 공개 홈페이지·390px 모바일 렌더 텍스트 **33.0** 일치. `updatedAt`이 마지막 observed보다 뒤여도 점수 동일하므로 확인되지 않은 새 점을 주장하지 않음. 1D의 두 원본점 존재는 이번 Read 시각 범위로만 확정, 이력 완전성/과거 PIT 및 원본 실PC DB 동치는 미인증.
+- 공개 HTML app의 `deploymentVersion=8347609a-2f05-4748-98ff-a3c89eef83d0` 문자열은 확인되나 이를 **Cloudflare Deployment ID 또는 source commit SHA로 단정하지 않음**. Cloudflare 계정의 Production active Deployment↔Git SHA 정규 readback은 현재 연결된 공식 도구로 확보 못함. #1462 변경은 비활성 D03 IEX breadth 소스 계약 보호이며 `showBreadth=false`로 현행 화면에 마운트되지 않으므로 실사이트 0/비율 표시 PASS·신규 활성화 증거는 없음. 2단계 전체를 DONE으로 올리지 않고 **IN_PROGRESS(활성 Reader/UI 부분 PASS)** 유지. 도구 웹 API 일부 접근 실패는 서비스 장애로 해석하지 않고 독립 공개 HTTP 200 응답 사용.
+- 운영 source/DB/Writer/D1/TTL/예약/DNS/Cloudflare deploy 변경, 신규 CI/PR/재배포 및 PC A/B Job 발행 **0**. 다음은 정확 활성 Deployment source SHA를 공식 기존 인계/계정에서 선택 확인 가능할 때 회수; 불가한 항목만 UNVERIFIED로 보존하고 활성 W06 소유 3·4단계를 독립 진행. 기존 완성 1/5, 2단계 IN_PROGRESS; 과거 22/75 이력 계수 유지.
 
 ### 2026-11-21 — 역할별 완료·재개 기준으로75단계 개편
 
