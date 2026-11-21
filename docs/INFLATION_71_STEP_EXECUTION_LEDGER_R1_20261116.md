@@ -1,5 +1,16 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261121-2595-CI-REAL-8PASS-LINEAGE-CONSTRAINT -->
+## 2026-11-21 — 공유 W04 후속 Census archive A 후보 CI 진짜 8/8 재검증 및 선택 설치 single-parent 계약 확인
+
+- **소스 후보** [Draft PR #2595](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2595), W04 `5b33787dd32523496cd5a87dca73beb07ffaa409` 기준 5파일만 변경, W04 provenance 코드는 원형 보존. 새 archive Reader는 기존 control main 병합본과 byte/hash 동일, 명시된 새 A import/dispatch 2행 + config 1항목 외 공용 handler 변경 없음.
+- **첫 CI false-green 정확 정정:** [Run44871873029](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44871873029)은 전체 SUCCESS지만 신규 `Verify W01 Census`만 `skipped`였음(기존 W04 workflow에 없는 `steps.scope` 참조). 수정 [commit `c39bf5d170fc50c88b48b66fb584e279477481ff`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/c39bf5d170fc50c88b48b66fb584e279477481ff)에서 해당 검사의 잘못된 조건 한 줄 제거. [Maintenance #44872068679](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44872068679) 실제 Windows log `ok1..ok8, tests8, pass8, fail0`, workflow `completed/success`, [C996 #44872068690](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44872068690) SUCCESS, [D05 #44872068720](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44872068720) SUCCESS. 이건 source-only 회귀 통과이며 실PC header 값 인증 아님.
+- **선택 설치 계약의 추가 제약 명확화:** 현재 PR #2595 branch head는 W04 후보에서 **여러 개발 commit**이 쌓인 상태. 제어 공통 `validateControllerSelectivePin` 및 현재 유지보수 계약은 정확 B 승인 target이 **현재 installedSha를 단일 부모(sole parent)**로 갖고 installed→target diff=승인 allowFiles이어야 함. 그래서 현재 PR #2595 HEAD 자체는 설치 target으로 바로 사용할 수 없음. 사용자의 무강제·무이력수정 원칙을 보존하고 W04 실제 적용/최신 installed SHA 확인 이후 해당 source tree를 하나의 새 단일부모 commit과 exact manifest/pin으로 **정규 준비**; 그 전에는 A/B 운영 요청 발행하지 않음. 별도 W01 B를 W04 공유 lease에 병렬 실행하지 않음.
+- **NEXT:** W04 승인 #2585의 정확 설치 Issue/Run 및 운영 SHA readback → 새 부합하는 single-parent target/파일 SHA256·source main pin/권한 승인/백업/lease와 import closure 검산 → 정규 단일 설치 후 archive header A 1회 결과로 Census M3 실제 결손/중복 컬럼 특정 → 필요한 최소 파서 보완/승인 official 수집·저장. B2 D1 직접 관리자 읽기는 독립 미확인 유지.
+- **진행:** W01 실제 기능 **34/71(47.9%)**, 원자료 Census #28 여전히 MISSING, 운영 신규 완료 0. Provider/Task/SQLite/D1/Controller 실설치 없음.
+
+
+
 <!-- W01-20261121-2595-W04-DEPENDENT-SOURCE-AND-CI-SKIP-FIX -->
 ## 2026-11-21 — 공유 W04 승인 Controller 선택 설치와 경합하지 않는 후속 Census A 후보 #2595·시험 누락 조건 보완
 
