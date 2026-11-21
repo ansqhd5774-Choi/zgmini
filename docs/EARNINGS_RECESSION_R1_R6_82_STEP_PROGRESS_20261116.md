@@ -31,6 +31,14 @@
 
 ## 개편 후 기록
 
+### 2026-11-21 — W05 approval provenance and QFR freshness narrowed
+
+- **승인 출처 최종 교차 확인:** 기존 #2240/#2089 승인 원장·control main 검색 및 과거 사용자 지시 조회에서 WPSFD42(US BLS WPSFD42, 2025~26, POST 최대1회, PC SQLite chunks/snapshots append-only) 실행효과와 QFR exact D1 key 게시효과의 **사용자 별도 명시 GO 근거가 확인되지 않았다**. 기존 사용자 '계속'은 이미 승인된 source-only 작업 연속 지시이지 새로운 provider/DB/D1 쓰기 권한의 증거가 아니다. 현재 main WPSFD42 manifest status=`PROPOSED_NOT_APPROVED`, contract는 `APPROVED_B`만 허용. 따라서 무허가 B 실행 Issue 생성/프로필 우회/manifest 임의 승격 0. #1919 과거 사용자 HOLD 귀속 오류 정정은 승인 자체를 생성하지 않는다.
+- **독립 QFR 165일 신선도 계약 확인:** 앱 main `worker/earnings-companion-c-qfr-r1.mjs`는 **retrieved 및 관측분기 종료 각각 165일** 판정. 기존 #2089에 기록된 QFR 2026Q2 periodEnd=`2026-06-30`, sourceStoredAt=`1793112733108`(2026-10-27T14:52:13.108Z)는 2026-11-21 UTC 기준 약 **143일/24일** 경과로 그 시점의 **기간 경과 기준 자체는 만료 전**이다. 종료 분기 만료 경계는 2026-12-12T23:59:59Z로 계산. 이는 과거 원장이 현재 PC에 실제 존재하고 body가 동일하다는 증거도 아니며 현행 `retrievedAt`·SQLite / manifest·Owner GO / D1 readback의 실제 검증을 대신하지 않는다. 단지 **나이가 오래됐다는 추측으로 QFR 재수집부터 시작하는 가설은 기각**.
+- **등록 실측 경계:** 제어 `config/operations.json`에서 BEA 제조업 archive 읽기는 A로 등록됐지만 QFR SQLite·BEA 단위이익 archive 전용 A는 확인되지 않았다. `writer-publication-evidence-readonly`는 ER1 시장일정용이고 해당 두 지표에 대용 불가. 기존 Reader를 임의 shell/SQL로 우회하지 않음. 공개 사이트 URL 접근 도구 오류는 Production 503 또는 D1 장애의 새로운 근거가 아니다.
+- **LAST PASS:** GitHub control/main 소스 계약·과거 승인 출처·QFR freshness 소스의 일치 여부만 확정. **FIRST UNFINISHED:** WPSFD42 exact effect B GO와 실PC 원본 저장; 독립 QFR 게시 B GO/현행 sqlite readback; BEA unit source/provider 승인/actual archive. **상태:** 1/5 DONE, 2 IN_PROGRESS. 새로운 기능 DONE/PC 데이터쓰기/공개 적용 0.
+- **NEXT:** WPSFD42 exact B 효과 승인 결정은 기존 #2240의 좁은 범위에서만 받고, 승인 없을 때 반복 조회/새 B 실행 대신 독립된 QFR/BEA 소스·저장형 readback의 기존 승인 경로 탐색 및 실증을 진행한다.
+
 ### 2026-11-21 — W05 source/readiness evidence correction (non-executing)
 
 - **2단계 WPSFD42:** 제어 `main`의 `approvals/w05-r304-service-b/approval.json`은 직접 조회 시 `PROPOSED_NOT_APPROVED`. [#2240](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2240)의 등록/CI와 설치 #2234~#2236, A #2584는 유지되지만 WPSFD42 단회 BLS POST + 기존 SQLite append 효과 GO를 대신하지 않는다. 새 B Issue/Provider/SQLite 쓰기 0. 기존 #1919의 오래된 사용자 HOLD 주장은 [정정 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1919#issuecomment-6986858219)에 따라 승인 원본으로 재사용하지 않는다.
