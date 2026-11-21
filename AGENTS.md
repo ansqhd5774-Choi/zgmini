@@ -1,5 +1,8 @@
 ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 
+## W06 UI 작업 목적·현재 실행계획 — 2026-11-21 개편
+- UI/Reader 작업은 `docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_EXECUTION_R4_20261116.md`의5단계 계획, 현재 단계·NEXT는 `docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_R4_PROGRESS_20261116.md` 상단만 따른다. 현재1/5 완료·2단계(최근 병합 수정의 실제 배포·공개 동작 확인) 진행 중이다. 과거75단계·22/75·중간 현재표·#44/#64 NEXT는 역사 기록으로 보존한다. 이미 완료한 시험을 반복하지 않고 UI 소유 작업을 실제 반영·화면 확인까지 끝낸다. 수집/Calculator/Writer·15분sampling·실운영 D1 계보는 원담당 업무로 구분하며 그 대기가 W06 독립 작업의 전역 차단이 되지 않게 한다. 기존 승인 산식·UI 디자인·배포·소유권 계약은 유지한다.
+
 ## 0. 최상위 원칙
 - 승인된 산식·데이터 구조·Revision·작업 기준 최우선.
 - 승인 없는 구조/DB/배포방식/산식/DNS 변경 금지.
