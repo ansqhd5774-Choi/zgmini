@@ -2173,3 +2173,13 @@
 - **동일 역사 제공 방식 외부 교차검증:** `https://asxnd.me/sources/dol-eta-insured-unemployment-rate`는 원문이 아니라 제3자 설명이지만 DOL long-history XML이 최신 PDF보다 늦을 수 있음을 명시한다. `https://catalog.data.gov/dataset/historical-unemployment-insurance-seasonally-adjusted-and-unadjusted-weekly-claims-data`의 역사 archive는 갱신주기가 불규칙함(`irregular`)을 표시한다. 따라서 `DOL_RELEASE_OBSERVATION_STALE`을 인증/네트워크/파서 실패와 동일시하지 않는다.
 - **기존 계약·수정 판단:** `lib/market-score/employment-r6-provider.mjs`의 National POST 요청 필드 및 `parseDolNationalClaimsXml` 최신 날짜 선택, `employment-r6-scheduler.mjs`의 initial/continued 7일 보고 시차 가정 모두 관측된 입력과 충돌하지 않는다. 최신 발표일이 수집 파일에 없다는 이유만으로 미래 가용시각을 부여하거나 임의 보간/삭제/오류 차단 해제 금지. 동일 공급처의 PDF 등 **새 저장 입력 포맷 추가는 실제 parser, raw 해시, 두 요청 비용, license, B 운영 효과를 확인해야 하는 별도 변경**이며 이번 근거만으로 적용하지 않았다.
 - **다음 실행:** 기존 정규 수집이 저장한 더 최근 National RAW·checkpoint가 생기는 경우 정확한 관측 주차/본문 해시/계산/게시를 검증한다. 3단계 원인 분류는 `HISTORICAL_XML_LAGS_PUBLISHED_RELEASE / precise upstream publication policy unverified`; 출처 원문이 없는 상태에서 새로운 소스 버그를 단정하거나 같은 A/B 재검증을 반복하지 않는다. 4단계의 독립 PC/모바일 렌더링도 계속한다. **단계 진행 2/5 DONE, 3단계 IN_PROGRESS.**
+
+
+## 196. 개편 3·4단계 — 공식 National 제공 경로 재대조 / 승인 A 최신 원장 조회 / UI 검증 범위 (2026-11-22 KST)
+<!-- W04-STEP3-STEP4-READ-20261122-R2643 -->
+- **기존 실PC 기준:** #2631/Run 44880998942의 원문 연결 National `2026-10-24`, 4개 유효 시리즈, Release `PARTIAL/DOL_RELEASE_OBSERVATION_STALE`, ETA539 주차 `2026-11-07`; 원문·파서 일치, D1 정확키 #2628 `R6_D1_LOCAL_MATCHED` PASS를 보존.
+- **공식 공개 HTML 점검:** https://oui.doleta.gov/unemploy/claims.asp 는 National/State, Beginning/Ending Year, XML 선택을 제공한다. https://oui.doleta.gov/unemploy/wkclaims/report.asp 를 파라미터 없이 GET하면 공식 `user input` 누락 오류를 반환한다. 이는 수집기가 폼 값이 있는 POST를 사용해야 한다는 계약만 뒷받침하며 현 운영 POST XML이 최신임을 입증하지 않는다. DOL 공식 최신 주간 발표와 National 역사 XML 시계열은 여전히 별도 제공물이다. 원인 확정 전 공급처/파서/수집 시각/DB 쓰기 변경하지 않는다.
+- **새 실PC A 읽기 1회:** https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2643, `employment-r6-collection-evidence-readonly`, requestId `pc-e68f2552-0f2e-4db6-a6c7-b0616831d248`. 생성 시 `pc-job` 라벨 포함. 마지막 조회 당시 OPEN, 실행 댓글 및 JSON/TXT 미수신이므로 **새 원자료 전진/실패 모두 미판정**. 동일 A 재발행 없음.
+- **독립 4단계 SOURCE 검토:** `tests/employment-r6-public-browser-r1.mjs`는 Playwright 1440px/390px, 모의 API 29/29 table+mobile rows, READY/STALE/UNAVAILABLE, chart PARTIAL 및 가로 넘침 검사 계약을 가진다. 이는 소스에 정의된 fixture 검사이며 금번 실행 PASS 또는 실제 Production 브라우저 검증이 아니다. 연결 Browser Use는 `insufficient_credits`, 과금·충전하지 않았다. 공개 사이트 GET 역시 검색 도구에서 응답을 확보하지 못했으므로 실제 29 ID 값/날짜/차트 마지막 점, PC·모바일 화면은 4단계 미검증 유지.
+- **후속:** 기존 #2643 JSON/TXT 도착 시 최신 `dol.RELEASE` 관측일/Raw hash/부분실패와 ETA539를 #2631과 비교하여 실제 전진 여부 판정. DOL 원자료의 계속 지연이 확인되면 출처측 지연과 구현 결함을 분리하고 대체 수집 효과는 기존 계약·승인 내에서만 검토. 독립 UI 실제 렌더링이 가능한 공식 경로에서만 4단계 완료 검증.
+- **상태 불변:** 개편 2/5 DONE, 3단계 IN_PROGRESS, 4·5 NOT_DONE. DB/수집기/Cloudflare/예약/보안 변경 없음.
