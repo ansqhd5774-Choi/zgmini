@@ -2,15 +2,15 @@
 
 <!-- W06-ACTIVE-FIVE-STAGE-PLAN-20261121 -->
 
-**현재1/5단계 완료·2단계 진행 중.** 실제 완료 조건 개수이며 작업량20%라는 뜻은 아니다. 과거22/75(29.3%)는 당시 증거 범위의 완료 계수로 보존한다. 전체 데이터 종단이 완료됐다는 의미도 아니다.
+**현재2/5단계 완료·3단계 진행 중.** 실제 완료 조건 개수이며 작업량20%라는 뜻은 아니다. 과거22/75(29.3%)는 당시 증거 범위의 완료 계수로 보존한다. 전체 데이터 종단이 완료됐다는 의미도 아니다.
 
 저장소 `ansqhd5774-Choi/zgmini` / 브랜치 `codex/ui-improvements` / 개편 전HEAD `cfbb592fa3e94b0eba96cf79167501151b2dd44c`. 목적·실행 기준은 [개편 계획](DASHBOARD_INPUT_EVENT_SCORE_TREND_EXECUTION_R4_20261116.md)을 따른다. **이 상단 표와 NEXT가 유일한 현재 인계 정본**이다. 아래 과거 기록 중간의 '현재 인계 정본', #44/#64 NEXT와75행 체크리스트는 역사 기록으로 취급한다.
 
 | 단계 | W06가 끝낼 작업 | 완료 기준 | 현재 상태 |
 |---|---|---|---|
 | 1 | 현재 소유 범위·유효 완료 증거 확정 | 기존 27개 연결표·수정/시험/실화면 증거 재사용, 퇴역/미연결 콘텐츠와 원담당 작업 분리 | DONE |
-| 2 | 이미 병합한 UI/Reader 수정의 실제 적용 확인 | 관련 변경이 활성 Production 산출물에 포함됐는지 확인하고 실제 공개 동작 대조. 이미 정상인 변경의 재구현·재배포 없음 | IN_PROGRESS — 실제 Production JS #1460/#1461 포함·공개 API/현재 카드 확인; #1462 비활성 경로/정확 Cloudflare Deployment↔SHA 연결 미확인 |
-| 3 | 실제 남은 W06 소유 결함만 마무리 | 재현되는 Reader/갱신/카드/차트 결함만 최소 수정·관련 회귀·정규 적용. 업스트림 제약은 별도 전달 | NOT_DONE — 2단계 결과로 실제 결함 범위를 확정 |
+| 2 | 이미 병합한 UI/Reader 수정의 실제 적용 확인 | 관련 변경이 활성 Production 산출물에 포함됐는지 확인하고 실제 공개 동작 대조. 이미 정상인 변경의 재구현·재배포 없음 | DONE — GitHub merge SHA의 공식 Cloudflare Production Build SUCCESS + 공개 활성 JS #1460/#1461 + 공개 API/카드 일치; 비활성 #1462 재마운트 금지. 실제 active Deployment ID 직접 readback은 별도 UNVERIFIED |
+| 3 | 실제 남은 W06 소유 결함만 마무리 | 재현되는 Reader/갱신/카드/차트 결함만 최소 수정·관련 회귀·정규 적용. 업스트림 제약은 별도 전달 | IN_PROGRESS — 2단계 실제 공개 Reader 오류 미재현; 최신 영향받는 활성 1D/6기간 DOM/단위·상태 확인 후 발견된 결함만 수정 |
 | 4 | PC·모바일 실화면 종합 확인 | 영향받은 화면의 값/단위/날짜/카드 최신점/차트 끝점·기간/결측·역행·overflow가 공개 저장 응답과 일치 | PARTIAL — 기존 실사이트 성공 증거 있음, 최신 변경의 미검증 범위 남음 |
 | 5 | UI 작업 종결·업스트림 잔여 인계 | W06 완료/Production 검증/Writer·데이터 잔여를 구분하고 정확한 원담당·작업·종료조건으로 정리 | NOT_DONE |
 
@@ -30,7 +30,7 @@
 
 ## NEXT — W06가 직접 수행
 
-**2단계 남은 범위:** 활성 Production의 #1460/#1461 적용과 현재 Reader/카드 일치 증거는 재사용한다. 접근 가능한 기존 공식 Cloudflare 배포 원장 또는 Git Integration 결과로 `Production Deployment ID ↔ Git SHA`만 선택 확인하고, #1462는 비활성 경로라는 사실을 유지해 강제 렌더·재배포하지 않는다. **독립 후속:** 실제 오류가 있는 W06 활성 Reader/화면만 3단계에서 수정하고, 기존 390px 모바일 화면 값·1D 실제 마지막점 확인을 4단계에 재사용한다. PC Writer/D1 업스트림·#64는 원담당 범위이며 전체 차단 아님.
+**3·4단계의 활성 UI 실화면 검증:** 2단계는 공식 GitHub Cloudflare Production Workers Build SUCCESS와 실제 공개 자산·API/카드 동작 검증으로 DONE. 같은 배포 원장과 동일 source/fixture를 반복 조사하거나 재배포하지 않음. 활성 `https://zgmini.kr/`의 종합 점수 카드·1D 최신 관측점·6기간 해당 범위·390/1440 반응형 차트 경계/툴팁/overflow를 기존 실Chromium 증거와 비교하여 변경된 부분만 보완. 실제 문제 재현 시 해당 최소 UI/Reader 수정→관련 CI→정규 main 적용. 정확 Cloudflare active Deployment **ID 별도 조회는 아직 미인증**이나 이미 확인된 정상 공개 동작의 재검사를 전역 차단하지 않는다. #1462 비활성 위젯은 렌더링 시험·강제 마운트 금지. 3·4단계 확인이 완료되면 5단계에서 W06 UI 완료와 Writer/D1/#64 원담당 미완료를 분리 인계.
 
 ## 별도 원담당 대기·인계
 
@@ -41,6 +41,13 @@
 | 공식 최신성/역사적 modelVersion | 각 기능 원담당 | 입증 없는 값은 미확인 | 실제 자료/근거 가능 범위 판단. W06는 날짜·결측·계보 미확인 표시 보존 |
 
 ## 개편 후 기록
+
+### 2026-11-21 — 2단계 정규 배포 체크 확인 / 공개 UI 검증 완료 범위
+
+- GitHub `ansqhd5774-Choi/zgmini` `main=2eb796da811d0e074ca0cabab8e2cad9502bff43`의 **공식 check-runs API** 직접 조회 (`GET /repos/ansqhd5774-Choi/zgmini/commits/2eb796da811d0e074ca0cabab8e2cad9502bff43/check-runs?per_page=100`): `cloudflare-workers-and-pages` App `Workers Builds: zgmini-migration-candidate-r5` `completed/success` 2026-11-21T05:57:31Z, 정확 [Production 빌드 66b6dfc0-3f0e-4c56-bda4-f5c663340c17](https://dash.cloudflare.com/6e9b57e718b247330a6efa42a9516e95/workers/services/view/zgmini-migration-candidate-r5/production/builds/66b6dfc0-3f0e-4c56-bda4-f5c663340c17) 링크 확인. 단순 PR Actions와 달리 Cloudflare 공급자 공식 설치 체크이며 이 source commit과 결합됨. 해당 source SHA의 GitHub 다른 check-run 3개(check/notify/verify)도 success.
+- 이전 공개 사이트 `https://zgmini.kr/`의 현재 배포 JS `/assets/page-DsDQu-Ab.js`가 #1460 READY 이력 유지·#1461 Gregorian 달력 엄격 검증을 포함하는 실바이트 확인과 공개 `/api/market-score` CM-R1 READY 45.137344974152676 및 `/api/market-score/observations?period=1D` 2 실제 계산점(45.298118360903416→45.137344974152676), 카드 33.0 일치 증거를 재사용. 390px 공개 렌더 텍스트 카드 33.0도 기존 확인. 2026-11-21 공개 산출물·API·카드 실값은 코드 CI 외 실제 기능 증거임. #1462는 의도대로 안 켜진 IEX 등락 위젯 소스이므로 런타임 표시·활성화를 의무화하지 않음.
+- **2단계 DONE 판정:** 정확 source SHA→공식 Production **빌드 SUCCESS** + active 공개 JavaScript와 현재 Reader/API/카드 기능의 일치로 관련 변경 실서비스 적용 입증. Cloudflare 별도 **active Deployment ID↔source SHA direct control-plane readback은 여전히 UNVERIFIED**, 따라서 해당 명시 항목을 별도 표시하며 exact ID를 만들어내거나 Build만으로 active Deployment ID를 주장하지 않음. 정상 서비스에 불필요한 Wrangler/Sites 직배포·새 PR·강제 운영 확인 금지.
+- 실제 PC/모바일 390·1440 현재 화면의 차트 툴팁·6기간 overflow를 전부 새로 검증한 것은 아니므로 **4단계 PARTIAL 유지**. 기존 실사이트/Chromium 검증은 해당 소스/시점 범위에서 재사용. 추가 Firecrawl UI 브라우저 상호작용은 65s timeout으로 결과 획득 실패(서비스 장애 미입증), 동일 실패 반복하지 않음; 390px 스크린샷 확보 시도는 시각적 판독/DOM 측정 불가로 PASS 산입하지 않음. 신규 W06 활성 화면 실제 결함도 미재현이므로 코드 변경0, #64 Writer 재현 반복0, 기존 2단계 외 원담당 실증과 분리. **다음 3/4단계** 활성 화면 해당 미검증 범위만 점검하고, 실제 결함이 입증될 때만 수정.
 
 ### 2026-11-21 — 2단계 실제 Production 공개 Reader·배포 자산 확인 (읽기 전용)
 
