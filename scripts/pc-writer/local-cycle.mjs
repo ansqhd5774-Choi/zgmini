@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import {createHash} from 'node:crypto';
 import {newCoreCycleId} from './core-cycle-id.mjs';
+import {captureCoreOriginAtStart} from './core-origin-runtime.mjs';
 import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
@@ -28,6 +29,8 @@ const cycleStartedAt=Date.now(),coreCycleId=newCoreCycleId();
 fs.writeFileSync(file,JSON.stringify({pid:process.pid,at:cycleStartedAt,coreCycleId}),{flag:'wx'});
 process.env.ZGMINI_CORE_CYCLE_ID=coreCycleId;
 try{
+// Inside the Core's own Task context, before provider/SQLite work. Fail-closed but nonblocking.
+const coreOrigin=captureCoreOriginAtStart({startedAt:cycleStartedAt});
 const checkoutSourceAtStart=(()=>{
  try{
   const probe=spawnSync('git',['rev-parse','HEAD'],{cwd:path.resolve(here,'../..'),encoding:'utf8',windowsHide:true,timeout:4000});
@@ -240,7 +243,9 @@ const entrypointSha256=(()=>{
   coreCycleStartedAt:new Date(cycleStartedAt).toISOString(),
   coreCheckoutSourceSha:checkoutSourceAtStart,coreEntrypointSha256:entrypointSha256,
   coreProcessPid:process.pid,coreParentPid:process.ppid,
-  coreOriginEvidence:'SELF_RECORDED_NOT_TASK_ATTESTED',collectionExit:collection.status,collectionStatus:collectionReport?.status??null,inflationRecurring,inflationCandidates,supplyR10,alpacaIncremental,sp500Shadow,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,publicationPolicy,progressive,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsRiskProvisionalR23,researchEarningsR5Prospective,status:publication.status===0?(publicationPolicy.collectionDegraded?'COMPLETE_WITH_COLLECTION_GAPS':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
+  coreOriginEvidence:coreOrigin.status==='PASS'?'TASK_ENGINE_WMI_CAPTURED_AT_START':'START_ONLY_UNVERIFIED',
+  coreOriginCode:coreOrigin.code,
+  coreNodeCreatedAtMs:coreOrigin.ownerCreatedAtMs,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,inflationRecurring,inflationCandidates,supplyR10,alpacaIncremental,sp500Shadow,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,publicationPolicy,progressive,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsRiskProvisionalR23,researchEarningsR5Prospective,status:publication.status===0?(publicationPolicy.collectionDegraded?'COMPLETE_WITH_COLLECTION_GAPS':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
  save(path.join(base,'local-cycle-last-run.json'),report);console.log(JSON.stringify(report));
  if(publishRequested)try{updateDataAlert(base,{key:'publication',failed:publication.status!==0});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
  if(publication.status!==0)process.exitCode=1;
