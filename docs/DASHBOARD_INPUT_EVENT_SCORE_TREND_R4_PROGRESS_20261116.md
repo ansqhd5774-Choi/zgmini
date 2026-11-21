@@ -42,6 +42,13 @@
 
 ## 개편 후 기록
 
+### 2026-11-21 — 마지막 계산점 툴팁 1회 독립 재검증 시도 및 정확한 차단 상태
+
+- **시작/종료** W06 **3/5 DONE(60%)**, #4 PARTIAL, #5 NOT_DONE. [기존 실제 Production Chromium #44880063693](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44880063693)의 PC1440/모바일390 카드33.0·1D/1W/1Y 전환·곡선·0px overflow PASS를 재사용. 당시 `ReferenceDot.last()`는 최신 저장점이 아닌 09:05 KST/33.5 **유효한 과거 계산점**을 hover한 것이어서 마지막점 직접 툴팁 증명에는 사용할 수 없었다.
+- **실행:** 기존 테스트용 Workflow 전체를 `main=2eb796da811d0e074ca0cabab8e2cad9502bff43`에서 **1파일만** 선택 복사해 신규 분리 브랜치 `test/w06-live-lastpoint-viewport-20261121` 생성, 임시 브라우저 검사에서 `.recharts-reference-dot circle`.first()로 최신 표시점 예상 후보를 hover하고 **당시 `/api/market-score/observations?period=1D` 마지막 저장점 score의 공식 감도 변환값과 `Asia/Seoul` 실제 계산시각을 함께 assert**하도록 설계. Draft [PR #1466](https://github.com/ansqhd5774-Choi/zgmini/pull/1466), 커밋 `6f9fb31c01a6f72434afdf0a64e39cf7a5a7ef11`, 정확 변경 `.github/workflows/community-chat-browser.yml` 1파일·main 대비 behind 0 확인.
+- **실제 결과:** [GitHub Node.js CI #44881068910](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44881068910) completed SUCCESS. 그러나 해당 커밋의 GitHub Action 연계 조회에서 **브라우저 UI Workflow 실행 기록이 없었으므로 최신점 실제 hover의 화면 PASS는 확보되지 않음**. Node CI 성공과 실제 실화면 검증을 혼동하지 않고 4단계 상태를 올리지 않음. PR #1466 **CLOSED / NOT MERGED**, 배포·운영 소스·DB·Writer·D1·DNS 변경0. 같은 GitHub PR 생성 패턴을 반복해 실패를 우회하려 하지 않음.
+- **잔여 최소범위:** 실Production PC1440/모바일390의 1D 최신점 *실제* 계산시각/표시점수 툴팁 확인 1항목. 기존 2026-11-21 저장 마지막점은 `2026-11-21T05:01:38.086Z @45.137344974152676`(예상 14:01 KST/33.0). **조회 시점이 바뀌면 당시 API 마지막 observedAt/score로 다시 대조**. 공식 사용자 GUI 1회 확인 또는 기설치 기존 CI의 실제 browser run 영수증이 있으면 수용, 신규 유료 브라우저·무단 자동배포·추가 Workflow PR 반복 금지. 정상 증거 확보 전까지 #4 PARTIAL/#5 NOT_DONE 유지; #64 Writer 원담당 미완료는 W06 UI 상태와 별도.
+
 ### 2026-11-21 — 실제 Production Chromium 390px·1440px 독립 검증 PASS / 마지막점 툴팁 범위 분리
 
 - **시작·종료:** 3/5 DONE(60% 완료조건), 4 PARTIAL, 5 NOT_DONE. 기존 도구의 시각 접근 실패를 우회하기 위해 **기존 GitHub Actions Chromium workflow**에만 일회성 read-only 검사 삽입한 테스트용 **Draft [PR #1464](https://github.com/ansqhd5774-Choi/zgmini/pull/1464)** 생성. 변경 대상 `.github/workflows/community-chat-browser.yml` 1파일, 임시 test 브랜치 `test/w06-live-production-viewport-oneoff-20261121`; 운영 소스·main·Cloudflare Production·PC·D1·DNS 변경0. **PR #1464 CLOSED, MERGED=false** 및 두 번째 보완용 [Draft #1465](https://github.com/ansqhd5774-Choi/zgmini/pull/1465)도 CLOSED/MERGED=false. 두 PR은 실제 서비스 배포하지 않았고 기존 CI 테스트 검증 전용으로만 사용.
