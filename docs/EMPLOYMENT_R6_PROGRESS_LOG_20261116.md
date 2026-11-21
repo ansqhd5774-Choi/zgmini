@@ -2155,3 +2155,12 @@
 - **계산·공개 현황:** D1 정확키 #2628의 `PASS/R6_D1_LOCAL_MATCHED`, asOfDate `2026-11-21` 및 sourceStoredAt `1795220421678` 유지. 이것은 11월 14일 관측 수집 완료 증거가 아님. 최신 National이 확인되기 전 점수·관측일을 가짜로 올리지 않음.
 - **3단계 계속:** 기존 Collector `employment-r6-provider.mjs`의 공식 National POST 파라미터 `level=us,final_yr=2026,strtdate=2025,enddate=2026,filetype=xml` 및 원문 최신 숫자 주차/가용 시점과 DOL 공식 발표 경로의 차이를 최소 관측으로 구분한다. 새 공급처·수집 주기·B 쓰기 추가는 하지 않으며, 승인된 정규 자연 실행 원장에 새 관측일이 생겼는지 확인한 뒤 필요한 부분만 수정한다.
 - **상태:** 2/5 DONE, 3단계 IN_PROGRESS. D1 조회 복구 성공은 완료로 재사용하며 새 B/Reader 재설치 불필요.
+
+
+## 194. 3단계 National POST 자료 계약·4단계 UI ID 소스 대조 (2026-11-21 KST)
+<!-- W04-R6-20261121-DOL-SOURCE-UI-ID-AUDIT -->
+- **현재 승인 수집 경로의 입력 검토:** `lib/market-score/employment-r6-provider.mjs`는 `https://oui.doleta.gov/unemploy/wkclaims/report.asp`에 `POST level=us,final_yr=2026,strtdate=2025,enddate=2026,filetype=xml,submit=Submit`을 사용. 2021년 동일 사이트 Form/POST 공개 사용 예(`https://codereview.stackexchange.com/questions/270245/web-scraping-dol-with-selenium`)와 핵심 항목/전송 경로가 일치해 **필드 오기 입력 결함의 근거는 확보하지 못함**. URL/요금제/수집 주기 및 인증을 변경하지 않음.
+- **공식 발표와 자료 피드 차이 재확인:** DOL `https://oui.doleta.gov/press/2026/111926.pdf`는 2026-11-14 종료 주 SA Initial Claims 203,000 발표. 공식 `claims.asp`는 별도 데이터 폼(2026-08-07 업데이트로 표시)이고 현재 실PC National XML 원본은 2026-10-24 이후 검증 숫자가 없다(#2631). 제3자 2026-11-20 공개 자료(`https://economicriskclock.org/indicators/us_dol_initial_claims_sa`)에도 공식 DOL XML 역사파일의 최신 주차 2026-10-24라는 표기가 있으나 이것을 독립적 PC 원본·공급자 전체 장애 입증으로 격상하지 않는다. 현 단계에서는 공급처 데이터 가용 범위와 정규 수집 경로를 분리해 보존, 가짜 주차·PDF 수치 삽입·검증되지 않은 대체 공급자 추가 금지.
+- **코드 변환 검증:** `parseDolNationalClaimsXml`는 Initial, 4주 평균, Continued, IUR 각 시리즈의 최신 날짜를 독립 선택한다. `fetchDolClaims`는 유효하지 않은 미래 주차/요일/중복 충돌을 격리하며, #2631에는 유효 National RAW ↔ parser `RAW_EQUALS_RUN_PARSER` 근거가 있다. 따라서 현재 원장에서는 파서 날짜 조작으로 최신화를 시도할 합리적 증거가 없음.
+- **독립 4단계 코드 연결 사전확인:** 앱 최신 main의 `EMPLOYMENT_R6_FEATURES` 정본 29 ID와 `app/economic-indicators/economic-detail-panel.tsx`의 `EMPLOYMENT_R6_PUBLIC_LIST` 29 ID를 모두 1:1 비교하여 **누락 0·추가 0·순서 불일치 0·중복 0**. `IUR` UI ID는 공식 feature ID `IUR`이며 원자료 logical ID `INSURED_UNEMPLOYMENT_RATE`와 다르므로 오기 아님. 이 증거는 SOURCE_ONLY; Production PC/모바일 실제 렌더링, 수치·단위·관측일·차트 최신점 검증은 여전히 4단계 NOT_DONE.
+- **현재 판정 불변:** 2/5 DONE, 3단계 IN_PROGRESS. DOL National 유효 데이터가 10월 24일에 머무는 실제 공급처 데이터 최신성 차이가 남았고, 공급처 내부 지연 또는 2026 연도 출력 정책의 세부 원인은 미입증. D1 정확키 #2628의 완료 증거는 유효. 새 운영 수집·게시·설치·예약·DB 변경 없음.
