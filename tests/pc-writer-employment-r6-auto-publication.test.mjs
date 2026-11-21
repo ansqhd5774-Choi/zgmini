@@ -64,6 +64,19 @@ test("approved lane stages Core, persists and rereads the public display before 
  }finally{fs.rmSync(pcHome,{recursive:true,force:true});}
 });
 
+test("R6 local persistence rejects missing or altered methodology version without writing a snapshot",()=>{
+ const pcHome=temporaryPcHome();
+ try{
+  for(const invalid of [
+   {...body,methodologyVersion:undefined},
+   {...body,methodologyVersion:"EMP-R6-FORMULA-R99"},
+  ]){
+   assert.throws(()=>persistEmploymentR6PublicResult({pcHome,body:invalid}),/R6_LOCAL_RESULT_INVALID/);
+  }
+  assert.equal(fs.existsSync(path.join(pcHome,"employment-r6-public-results")),false);
+ }finally{fs.rmSync(pcHome,{recursive:true,force:true});}
+});
+
 test("identical computed result reuses immutable local result without rewriting",()=>{
  const pcHome=temporaryPcHome();
  try{
