@@ -2,8 +2,19 @@
 // Emits bounded booleans/enums only. Never prints a process command, path or identity.
 (function(){
  function out(linked,code,created,instances){
-  WScript.Echo(JSON.stringify({ok:true,linked:linked===true,
-   code:code,createdAtMs:created,visibleInstances:instances}));
+  // WSH JScript 5.7 does not guarantee the JSON global (even on modern Windows).
+  var codes={INPUT_INVALID:1,CORE_TASK_NOT_RUNNING:1,
+   CORE_TASK_ENGINE_NOT_VISIBLE:1,PROCESS_LIMIT:1,
+   CORE_NODE_IDENTITY_UNVERIFIED:1,TASK_ENGINE_CHAIN_MATCH:1,
+   TASK_ENGINE_CHAIN_UNVERIFIED:1,CORE_ORIGIN_PROBE_UNAVAILABLE:1};
+  if(!codes[code])code='CORE_ORIGIN_PROBE_UNAVAILABLE';
+  var createdNumber=typeof created==='number'&&isFinite(created)&&created>=946684800000?
+   String(Math.floor(created)):'null';
+  var count=typeof instances==='number'&&isFinite(instances)&&instances>=0&&instances<=12?
+   String(Math.floor(instances)):'0';
+  WScript.Echo('{"ok":true,"linked":'+(linked===true?'true':'false')+
+   ',"code":"'+code+'","createdAtMs":'+createdNumber+
+   ',"visibleInstances":'+count+'}');
  }
  function parsedTime(raw){
   var s=String(raw||''),m=/^(\d{14})\.\d{6}([+-])(\d{3})$/.exec(s);
