@@ -2,12 +2,12 @@
 // No network calls, SQLite writes, D1 operations, scheduling or score changes.
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {DatabaseSync} from 'node:sqlite';
-import {analyze} from './EARNINGS_R3D_STORED_BLS_CALC_READONLY.mjs';
+import {analyze,validateSnapshot} from './EARNINGS_R3D_STORED_BLS_CALC_READONLY.mjs';
 
-const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PC_ROOT = path.resolve(process.env.ZGMINI_PC_HOME || 'E:\\ZGmini\\data\\pc-writer');
 const DB_PATH = path.join(PC_ROOT, 'storage', 'core.sqlite');
 export const SCHEMA_VERSION = 'earnings-companion-c-r4-v1';
@@ -22,6 +22,12 @@ export const INDICATORS = Object.freeze([
   {indicatorId:'bls_ppi_goods_yoy_sa',name:'재화 생산자물가 · 전년 대비',seriesId:'WPSFD41',kind:'DERIVED',method:'YOY_SA_T_MINUS_12',unit:'PERCENT'},
   {indicatorId:'bls_ppi_goods_index',name:'재화 생산자물가 · 지수',seriesId:'WPSFD41',kind:'RAW',method:'SOURCE_INDEX',unit:'INDEX'},
   {indicatorId:'bls_unit_labor_cost_yoy',name:'비농업 단위노동비용 · 전년 대비',seriesId:'PRS85006111',kind:'RAW',method:'SOURCE_YOY',unit:'PERCENT'},
+]);
+export const SERVICE_INDICATORS = Object.freeze([
+  {indicatorId:'bls_ppi_services_yoy_sa',name:'서비스 생산자물가 · 전년 대비',
+    seriesId:'WPSFD42',kind:'DERIVED',method:'YOY_SA_T_MINUS_12',unit:'PERCENT'},
+  {indicatorId:'bls_ppi_services_index',name:'서비스 생산자물가 · 지수',
+    seriesId:'WPSFD42',kind:'RAW',method:'SOURCE_INDEX',unit:'INDEX'},
 ]);
 
 const isoUTC = value => typeof value === 'string'
@@ -99,9 +105,42 @@ function buildRow(def, item) {
   };
 }
 
+// WPSFD42 is stored under its own BLS lineage and D1 checkpoint.
+// Verify every retained service revision independently of the base three-source cohort.
+function readVerifiedServiceSource(db) {
+  const services=db.prepare(`SELECT provider,dataset,snapshot_sha256,as_of,retrieved_at,
+    status,history_mode,row_count,latest_observation_date,chunk_hashes_json,provenance_json
+    FROM api_history_snapshots_v1
+    WHERE provider='BLS' AND dataset='WPSFD42'
+    ORDER BY retrieved_at DESC LIMIT 501`).all();
+  if(services.length>500)fail('R4_SERVICE_SNAPSHOT_SCAN_LIMIT');
+  const verified=services.map(item=>validateSnapshot(db,item));
+  for(let i=1;i<verified.length;i++){
+    if(verified[i].retrievedAt===verified[i-1].retrievedAt
+      &&verified[i].snapshotSha256!==verified[i-1].snapshotSha256)
+      fail('R4_SERVICE_REVISION_ORDER_AMBIGUOUS');
+  }
+  if(!verified.length)return {source:null,versions:0};
+  const source=verified[0],hashList=JSON.parse(services[0].chunk_hashes_json);
+  const chunk=db.prepare(`SELECT payload_json,first_seen_at FROM api_history_chunks_v1
+    WHERE provider='BLS' AND dataset='WPSFD42' AND chunk_sha256=? LIMIT 1`)
+    .get(hashList[0]);
+  if(!chunk||sha256(chunk.payload_json)!==hashList[0])
+    fail('R4_SERVICE_CHUNK_CHANGED_AFTER_VALIDATION');
+  if(!isoUTC(chunk.first_seen_at)
+    ||Date.parse(chunk.first_seen_at)>Date.parse(source.retrievedAt))
+    fail('R4_SERVICE_FIRST_SEEN_AT_INVALID');
+  let rawRows;
+  try{rawRows=JSON.parse(chunk.payload_json);}catch{fail('R4_SERVICE_RAW_JSON_INVALID');}
+  if(!Array.isArray(rawRows)||rawRows.length!==source.rows
+    ||rawRows.at(-1)?.observationDate!==source.last)
+    fail('R4_SERVICE_RAW_ROWS_CHANGED_AFTER_VALIDATION');
+  return {source:{...source,rawRows,firstSeenAt:chunk.first_seen_at},versions:verified.length};
+}
+
 // Invokes the previously verified R3D validator before reading the chosen raw cohort.
 // Only explicitly selected, hash-verified BLS rows are used; no fallback namespace.
-export function buildPreview(db,{generatedAt=new Date().toISOString()}={}) {
+export function buildPreview(db,{generatedAt=new Date().toISOString(),includeServices=true}={}) {
   if (!isoUTC(generatedAt)) fail('R4_GENERATED_AT_INVALID');
   const prior=analyze(db);
   const picked=new Map();
@@ -127,7 +166,18 @@ export function buildPreview(db,{generatedAt=new Date().toISOString()}={}) {
     picked.set(item.id,{...item,rawRows,firstSeenAt:chunk.first_seen_at});
     firstSeen.push(Date.parse(chunk.first_seen_at));
   }
-  const rows=INDICATORS.map(def=>{
+  // Optional service source is validated separately; it may have its own
+  // retrieval time, and must not alter the original five-row base checkpoint.
+  const {source:serviceSource,versions:serviceSnapshotVersions}=includeServices
+    ?readVerifiedServiceSource(db):{source:null,versions:0};
+  if(serviceSource){
+    picked.set(serviceSource.id,serviceSource);
+    firstSeen.push(Date.parse(serviceSource.firstSeenAt));
+  }
+  const activeIndicators=picked.has('WPSFD42')
+    ?[...INDICATORS,...SERVICE_INDICATORS]:INDICATORS;
+  const activeSources=[...prior.rows,...(picked.has('WPSFD42')?[picked.get('WPSFD42')]:[])];
+  const rows=activeIndicators.map(def=>{
     const source=picked.get(def.seriesId);
     if(!source) fail('R4_REGISTRY_SOURCE_UNVERIFIED');
     return buildRow(def,source);
@@ -135,26 +185,68 @@ export function buildPreview(db,{generatedAt=new Date().toISOString()}={}) {
   const coverage={configured:rows.length,ready:rows.filter(r=>r.status==='READY').length,
     partial:rows.filter(r=>r.status==='PARTIAL').length,
     unavailable:rows.filter(r=>r.status==='UNAVAILABLE').length};
-  // An incomplete newer capture does not invalidate the last hash-verified complete
-  // cohort. Keep its original source version/time; the newer gap remains in diagnostics.
-  // The public payload status must agree with its READY/PARTIAL row coverage.
+  // A newer incomplete capture does not invalidate the last verified complete cohort.
+  // Its source identity and five-row coverage remain unchanged.
   const status=coverage.ready===coverage.configured?'READY':'PARTIAL';
-  const identity=[SCHEMA_VERSION,...prior.rows.map(x=>`${x.id}|${x.snapshotSha256}`).sort()];
+  const identity=[SCHEMA_VERSION,...activeSources.map(x=>`${x.id}|${x.snapshotSha256}`).sort()];
   const sourceVersion=sha256(identity.join('\n'));
   return {
     payload:{schemaVersion:SCHEMA_VERSION,status,sourceVersion,
       sourceStoredAt:Math.min(...firstSeen),generatedAt,
       historicalMode:'CURRENT_RETRIEVAL_NOT_PIT',
-      observedThroughBySeries:Object.fromEntries(prior.rows.map(x=>[
+      observedThroughBySeries:Object.fromEntries(activeSources.map(x=>[
         x.id,x.quarterly?x.last:x.last.slice(0,7)])),
       coverage,rows},
-    diagnostics:{r3dStatus:prior.status,snapshotsChecked:prior.snapshotsChecked,
+    diagnostics:{r3dStatus:prior.status,snapshotsChecked:prior.snapshotsChecked+serviceSnapshotVersions,
+       serviceSnapshotVersions,
       newerIncomplete:prior.newerIncomplete,cohortRetrievedAt:prior.cohortRetrievedAt,
       sourceStoredAtPolicy:'OLDEST_FIRST_SEEN_AT',
-      bySeries:prior.rows.map(x=>({seriesId:x.id,snapshotSha256:x.snapshotSha256,
+      serviceRetrievalIndependent:serviceSource!==null,
+      bySeries:activeSources.map(x=>({seriesId:x.id,snapshotSha256:x.snapshotSha256,
         firstSeenAt:picked.get(x.id).firstSeenAt,rawRows:x.rows,gaps:x.gaps})),
-      duplicateEvidenceGroups:['WPSFD4 RAW+DERIVED','WPSFD41 RAW+DERIVED']},
+      duplicateEvidenceGroups:['WPSFD4 RAW+DERIVED','WPSFD41 RAW+DERIVED',
+        ...(picked.has('WPSFD42')?['WPSFD42 RAW+DERIVED']:[])]},
   };
+}
+
+// Only the independent WPSFD42 lineage enters the supplementary D1 checkpoint.
+// The existing three-source C key continues to publish its same original five rows.
+export function buildServiceSourcePreview(db,{generatedAt=new Date().toISOString()}={}){
+  if(!isoUTC(generatedAt))fail('R4_GENERATED_AT_INVALID');
+  if(!db||typeof db.prepare!=='function')fail('SQLITE_DATABASE_REQUIRED');
+  // An independent source-only projection must not require the original BLS
+  // three-series cohort. The base five-row preview still calls analyze(db).
+  const {source,versions}=readVerifiedServiceSource(db);
+  if(!source)fail('R4_SERVICE_SOURCE_NOT_STORED');
+  const rows=SERVICE_INDICATORS.map(def=>buildRow(def,source));
+  if(rows.length!==2)fail('R4_SERVICE_INDICATOR_COUNT_MISMATCH');
+  const ready=rows.filter(row=>row.status==='READY').length;
+  const partial=rows.filter(row=>row.status==='PARTIAL').length;
+  const unavailable=rows.length-ready-partial;
+  const sourceStoredAt=Date.parse(source.firstSeenAt);
+  if(!Number.isSafeInteger(sourceStoredAt)||sourceStoredAt<=0)
+    fail('R4_SERVICE_FIRST_SEEN_AT_INVALID');
+  const payload={
+    schemaVersion:SCHEMA_VERSION,
+    status:ready===rows.length?'READY':'PARTIAL',
+    sourceVersion:sha256(`EARNINGS_C_SERVICE_SOURCE_CHECKPOINT_V1\nWPSFD42|${source.snapshotSha256}`),
+    sourceStoredAt,generatedAt,
+    historicalMode:'CURRENT_RETRIEVAL_NOT_PIT',
+    observedThroughBySeries:{WPSFD42:rows[0].observationPeriod},
+    coverage:{configured:rows.length,ready,partial,unavailable},
+    rows,
+  };
+  return {payload,diagnostics:{
+    r3dStatus:'NOT_APPLICABLE_SERVICE_ONLY',
+    snapshotsChecked:versions,serviceSnapshotVersions:versions,
+    newerIncomplete:false,cohortRetrievedAt:null,
+    serviceRetrievalIndependent:true,
+    bySeries:[{seriesId:source.id,snapshotSha256:source.snapshotSha256,
+      firstSeenAt:source.firstSeenAt,rawRows:source.rows,gaps:source.gaps}],
+    duplicateEvidenceGroups:['WPSFD42 RAW+DERIVED'],
+    sourceStoredAtPolicy:'WPSFD42_FIRST_SEEN_AT',
+    sourcePartition:'WPSFD42_ONLY_NO_BASE_REWRITE',
+  }};
 }
 
 export function reportLines(result,now) {
@@ -190,19 +282,25 @@ export function reportLines(result,now) {
     lines.push(`${prefix}_STATUS=${row.status}`);
     lines.push(`${prefix}_UNAVAILABLE_REASON=${row.unavailableReason??'NONE'}`);
   }
-  lines.push('SOURCE_GROUPS_INDEPENDENT=3',
+  lines.push(`SOURCE_GROUPS_INDEPENDENT=${diagnostics.bySeries.length}`,
     'RELEASE_DATES_INFERRED=NO',
     'PUBLIC_API_REGISTERED=NO','PUBLICATION_PERFORMED=NO',
     `RESULT=${payload.status==='READY'?'PASS_R4_LOCAL_PREVIEW_READY':'PARTIAL_R4_LOCAL_PREVIEW'}`);
   return lines;
 }
 
+export function resultPaths(stamp,{tempDirectory=os.tmpdir()}={}) {
+  if (typeof stamp!=='string' || !/^\d{8}-\d{6}Z$/.test(stamp))
+    fail('INVALID_RESULT_STAMP');
+  const stem=`EARNINGS_R4_C_READ_MODEL_PREVIEW_RESULT_${stamp}`;
+  return {txtFile:path.join(tempDirectory,stem+'.txt'),
+    jsonFile:path.join(tempDirectory,stem+'.json')};
+}
+
 async function main() {
   const now=new Date().toISOString();
   const stamp=now.replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z').replace('T','-');
-  const stem=`EARNINGS_R4_C_READ_MODEL_PREVIEW_RESULT_${stamp}`;
-  const txtFile=path.join(HERE,stem+'.txt');
-  const jsonFile=path.join(HERE,stem+'.json');
+  const {txtFile,jsonFile}=resultPaths(stamp);
   let db,lines=[];
   try {
     if (!fs.existsSync(DB_PATH)) fail('PC_SQLITE_FILE_MISSING');
