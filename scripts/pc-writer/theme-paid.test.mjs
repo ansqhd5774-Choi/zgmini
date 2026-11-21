@@ -46,6 +46,45 @@ test('private derived score history persists with immutable readback without D1 
   assert.throws(()=>storePaidPrivateResults(dir,args),/PAID_THEME_PRIVATE_READBACK_MISMATCH/);
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
+test('configured private to approved-public boundary uses the same stored paid Reader',async()=>{
+ const x=input(2),confirmed=phases.confirmed;
+ // Fixed simulated current observation, no real provider, D1 or approval file writes.
+ const at=Date.parse(confirmed+'T23:00:00Z');
+ x.now=at-1000;x.sourceStoredAt=new Date(at-2000).toISOString();
+ x.phases={confirmed,provisional:confirmed,sourceLatest:confirmed,
+  confirmedLagHours:0,provisionalLagHours:0,clockBasis:'PROVIDER_PUBLISHED_PROXY_BAR_END'};
+ x.registry.themes[1].id='ai-software';x.registry.themes[1].label='AI 소프트웨어';
+ x.registry.themes[1].public=false;x.registry.themes[1].operational={family:'configured'};
+ x.aumByTheme['ai-software']=x.aumByTheme['theme-1'];delete x.aumByTheme['theme-1'];
+ const privateOutput=calculatePaidThemes(x);
+ assert.equal(privateOutput.privateRecords.length,1);
+ assert.equal(privateOutput.privateRecords[0].id,'ai-software');
+ assert.equal(privateOutput.record.themes.some(t=>t.id==='ai-software'),false);
+ const stored=(record)=>({prepare(){
+  return {bind(key){
+   assert.equal(key,PAID_THEME_KEY);
+   return {async first(){return {body:JSON.stringify(record),stored_at:at-1000};}};
+  }};
+ }});
+ const before=await readPaidThemeFeed(stored(privateOutput.record),{now:at});
+ assert.equal(before.status,200);
+ const beforeBody=await before.json();
+ assert.deepEqual(beforeBody.themes.map(t=>t.id),['theme-0']);
+ assert.equal(JSON.stringify(beforeBody).includes('ai-software'),false);
+ assert.equal(beforeBody.dataQuality.expectedPublicIds.includes('ai-software'),false);
+ // Simulate a previously approved registry result, not grant actual publication approval.
+ x.registry.themes[1].public=true;
+ const approvedOutput=calculatePaidThemes(x);
+ assert.equal(approvedOutput.privateRecords.length,0);
+ assert.equal(approvedOutput.record.themes.length,2);
+ assert.ok(validPaidThemeRecord(approvedOutput.record));
+ const after=await readPaidThemeFeed(stored(approvedOutput.record),{now:at});
+ assert.equal(after.status,200);
+ const afterBody=await after.json();
+ assert.deepEqual(afterBody.themes.map(t=>t.id),['theme-0','ai-software']);
+ assert.equal(afterBody.themes[1].history.length,252);
+ assert.equal(afterBody.dataQuality.pendingPublicIds.length,0);
+});
 test('one incomplete registration does not block independent ready themes',()=>{const x=input(2);x.registry.themes[1].etfs=['MISSING'];const r=calculatePaidThemes(x);assert.equal(r.record.themes.length,1);assert.deepEqual(r.record.dataQuality.pendingPublicIds,['theme-1']);});
 test('paid record is renderable by existing dashboard adapter',()=>{const r=fixture();assert.ok(validPaidThemeRecord(r));const view=themeEtfDashboardSeries(r);assert.equal(view.series.length,1);assert.equal(view.data.length,253);assert.equal(Object.keys(view.provisionalBySeries).length,1);});
 test('record validation rejects bad numbers, method changes and dishonest coverage',()=>{const r=fixture();for(const change of [x=>x.themes[0].score=NaN,x=>x.themes[0].methodologyVersion='FAKE',x=>x.dataQuality.readyPublicIds.push('private')]){const b=structuredClone(r);change(b);assert.equal(validPaidThemeRecord(b),false);}});
