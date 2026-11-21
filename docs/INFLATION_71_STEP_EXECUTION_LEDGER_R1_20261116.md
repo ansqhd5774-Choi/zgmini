@@ -1,5 +1,16 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261121-B205-D1-READ-BLOCKER-CENSUS-A2588 -->
+## 2026-11-21 — B2-05/B2-06 실제 증거 제한 재확인, Census 보관 헤더 기존 소스 최신 main 통합 후보 PR #2588
+
+- **B2 독립 조사:** 실제 [#2577](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2577)/Run 44869316745의 `inflation7Writer`는 `PRESENT,UNCHANGED_VERIFIED,readyCount=6,key=null,sourceVersion=null,sourceStoredAt=null,d1NowVerified=false`. 기존 Reader `inflation19-runtime-readonly`는 읽기 전용 Writer **메타**와 현재 D1 직접 조회를 분리하며, `UNCHANGED_VERIFIED`를 D1 현재 게시 PASS로 바꾸지 않는다. 현 설치 Controller allowlist 47개 중 정확 W01 D1 1-key 관리자 조회 operation 없음. 현재 연결된 D1 직접 읽기 커넥터 확인되지 않았고 공개 /api/inflation-candidate-inputs·/api/inflation-detail은 본 웹 도구에서 본문 접근 실패. 기존 등록 원장이 없는 상태에 새 공급자 GET·새 D1 쓰기·임의 SQL로 우회하지 않음. **B2-05/B2-06 미완료**(전체 기능 HOLD 아님).
+- **독립 Census #28 최초 오류 근거:** 기존 [#2576](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2576) 실제 19+6 원자료 지문 PASS, Census #28 MISSING. 과거 자연 Core 수집의 `CENSUS_M3_HEADERS_INVALID` 실제 archived 2025/2026 첫 행을 관측하지 못해 어느 필수 헤더인지 아직 원인 미입증. 소비된 #1818 및 수동 B 재요청 금지.
+- **기존 코드 재사용:** 제어 기존 [Draft PR #2111](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2111)의 안전한 2025/26 header-only reader/test를 변경 없이 재사용하되 기존 공용 operations/config/workflow가 후행 변경으로 `mergeable=false`인 상태라 복사 병합하지 않음. 최신 control `main`에 새 전용 브랜치 `codex/w01-census28-header-current-main-20261121` 생성. 정확 5파일로 고정 A `inflation-census-m3-archive-headers-readonly` 1 operation 및 전용 CI 추가: 원본 reader+test 2파일, operations import/dispatch 2행, config allowlist 1행, 기존 workflow 5행. 현재 공용 import 50 개 등 다른 기능 코드는 보존, 공급자·운영 파일·Task·DB/D1 변경 없음. [Draft PR #2588](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2588), 소스 HEAD `2bed7394f8524bf9860fa1dd0aeb279f3490d9e8`; 같은 PR의 [CI 44870826415](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44870826415)·44870826426·44870826360 최초 `queued`, **PASS 미주장**.
+- **정확 다음 실행:** 신규 PR의 현재 main 충돌 및 source CI 최종 결과 확인 → 성공하면 기존 Controller 독립 maintainer의 정확 source/preimage/CAS·공유 설치 작업과 충돌하지 않도록 정규 1 operation 설치 승인 범위 확인 → 설치 및 A admission 실제 확인 뒤 기존 archive fixed read-only 고유 요청 1회로 Census 실보관 헤더 누락/충돌 원인을 분리. 그 결과에 따라 최소 파서 교정 및 승인된 공식 Census GET→원자료 저장/readback을 진행. B2 정확 D1 읽기는 해당 권한이 생길 때 별도 수행.
+- **현재 단계 집계:** `34/71 (47.9%)` 유지. 제어 Draft source-only 5파일·CI queued. 기존 34개 DONE 수정/취소 없음. 작업 새 PC 조회/수집/DB 게시 0.
+
+
+
 <!-- W01-20261121-2576-2577-REAL-PC-READBACK -->
 ## 2026-11-21 — #2505 공통 운영 복구 재사용 후 W01 A4-07 실PC PASS (34/71), Writer 7후보는 미게시 증거
 
