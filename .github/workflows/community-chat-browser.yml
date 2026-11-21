@@ -152,10 +152,15 @@ jobs:
               const last=payload.points?.at(-1);
               periods.push({label,observedCount:payload.points?.length,last,geometry});
               if(label==='1D'){
-               const dot=chart.locator('.recharts-reference-dot circle').last();
+               const dot=chart.locator('.recharts-reference-dot circle').first();
                if(await dot.count()){
                 await dot.hover({force:true,timeout:5000}).catch(()=>{});
                 periods.at(-1).tooltip=await chart.locator('.cnn-history-tooltip').first().textContent({timeout:2500}).catch(()=>null);
+      const actualTooltip=periods.at(-1).tooltip;
+      const expectedLatest=(Math.max(0,Math.min(100,50+(Number(last.score)-50)*3.5))).toFixed(1);
+      const expectedLocal=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(last.observedAt));
+      assert(actualTooltip?.includes(expectedLatest),width+'px latest 1D tooltip score '+expectedLatest+' vs '+actualTooltip);
+      assert(actualTooltip?.includes(expectedLocal),width+'px latest 1D tooltip calculatedAt '+expectedLocal+' vs '+actualTooltip);
                }
               }
               await page.screenshot({path:output+'/'+width+'-'+label+'.png',animations:'disabled'});
