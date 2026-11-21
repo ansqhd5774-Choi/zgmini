@@ -1,3 +1,42 @@
+# W03 테마 공포·탐욕 — 공통 운영·설정형 확장 진행원장 (2026-11-21 개편)
+
+<!-- W03-ACTIVE-FIVE-STAGE-PLAN-20261121 -->
+
+**현재: 2/5단계 완료 · 3단계 진행 중.** 실제 완료 조건 개수이며 작업량40%가 아니다. 과거12/68은 역사적 기록으로 보존하고 현재 진행률로 재사용하지 않는다.
+
+작업 브랜치: `codex/theme-fear-greed-integration-20261025`. 목적·수행 기준 정본은 [개편 마스터 계획](THEME_FEAR_GREED_163_THEME_MASTER_PLAN_20261027.md). 기존 공개 운영은 복구 완료 범위를 재사용하고 신규 Reader·실화면 확인에 집중한다.
+
+| 단계 | 실제 목표 | 완료 기준 | 현재 |
+|---|---|---|---|
+| 1 | 기존 공개 테마 공통 갱신 운영 | 공유 유료 입력→등록부 기반 계산→기존 D1 CAS/readback→공개 API가 기존 승인 프로필·공개 이력을 보존하며 동작 | DONE — 기존 운영 증거 재사용, 이번 API 10개×252점 확인 |
+| 2 | 신규 등록의 비공개 계산·저장 실증 | 기존 등록 AI를 같은 Core에서 발견·계산·불변 SHA 저장/readback. 비공개가 공개로 유출되지 않고 자료 부족이 다른 테마를 막지 않음 | DONE — PRIVATE_STORED_READBACK_VERIFIED, 실제15점/PARTIAL |
+| 3 | 신규 등록 Reader·공개 전환 계약 연결 | 비공개 결과를 승인된 내부 조회로 소비하고, 승인된 설정만 공통 공개 Reader로 이어지는지 기존 코드·관련 시험으로 확인. 실제 미연결부만 수정 | IN_PROGRESS — 실제 Reader 소비/승인 전환 계약 미검증 |
+| 4 | 홈·상세 PC/모바일 화면 검증 | 공개 등록 ID·날짜·점수·252일 이력·확정/잠정·결측 표시가 저장 API와 일치. 오류만 최소 수정 | NOT_VERIFIED — 기존 데이터/API 성공과 구분 |
+| 5 | 공통 확장 절차 종결·담당자 인계 | 등록부→버전별 공통 산식→실행→저장→조회가 개수 하드코딩·테마별 복제 없이 이어짐을 변경 영향 범위에서 확인, 운영·자료 한계·확장 작업 목록 구분 | NOT_DONE — 3·4단계 결과를 모아 종료 |
+
+## 현재 완료 증거와 재개 지점
+
+- 공개 API 이번 직접 GET HTTP200/READY, 10개×252점, 최신 확정/공급처기록11월20일, pendingPublicIds0, 실제 진행 중 잠정 없음. 기존 #1443/#1444/#2509/#2511 D1·Core 운영 성공과 이력 보존은 과거 유효 증거로 재사용한다.
+- 비공개 실제 #2596/Run44872080181 JSON/TXT PASS, privateStoreStatus PRIVATE_STORED_READBACK_VERIFIED, AI15점(11/02~11/20), source8 receipts 연결. 과거237점 부족은 공식 AUM 날짜/WISE 연속 입력 부족으로 PARTIAL이며 새 전역 차단이 아니다. 소스 수정/반복 재등록/가짜252점 생성 불필요.
+- /api/theme-configured는200/PENDING/themes:[]이지만 AI 비공개와 모순되지 않는다. 유료 공통 feed와 구형 per-theme Reader 경계를 실제로 확인해야 한다. 비공개 소비·공개 설정 전환 계약·화면의 완료 증거는 아직 없다.
+- **NEXT:** 3단계 기존 비공개 저장 결과의 내부 Reader 소비 및 승인 설정의 공통 Reader 연결 검증. 현재 유효한 신규 공개 승인이 없으면 실제 공개는 하지 않고 기존 fixture/승인된 자료로 계약을 검증한다. 이와 독립적으로4단계 PC/모바일 화면을 확인한다. 기존 공개10개 재설치·재게시·GMH 복구부터 시작하지 않는다.
+
+## 개편 후 진행 기록
+
+### 2026-11-21 — 목적·계획·진행률 정본 개편
+
+- 사용자가 기존 작업 성과를 반영해 목적과 계획을 개편하도록 지시. 기존 공개 운영과 AI 비공개 저장 완료를 인정해2/5로 정리하되 이번 개편으로 새로운 기능이 완료됐다고 주장하지 않음.
+- 현재 단계 표는 이 상단 하나로 유지하며 새 작업 결과는 이 영역에 기록한다. 과거 각 기록의 NEXT·12/68·공급자 미해결 상태를 현재 실행 지시로 사용하지 않는다.
+- 현재 미완료는 공통 신규 Reader 소비/공개 계약 검증, 실제 화면, 그 결과를 반영한 공통화·확장 인계. AI 역사 보강·데이터센터 R32 전환·실제 신규 공개 승인·163개 순차 출시는 별도 데이터/방법론/제품 작업이다.
+- 변경은 마스터 계획·진행 원장·확장 지침·AGENTS의4문서. 원문 증거 보존, 운영 코드/원자료/DB/D1/예약/배포 변경0.
+
+## 과거 실행·인수인계 증거 보관
+
+[개편 전 인계 원문 고정 링크](https://github.com/ansqhd5774-Choi/zgmini/blob/972b1a80cac2e9f0fb41eaf1f44c7718e0262b05/docs/THEME_FEAR_GREED_INTEGRATION_HANDOFF_20261025.md). 아래 이전 성공/실패는 해당 실행·시점 범위로 재사용하되 최신 운영 상태를 덮어쓰지 않는다.
+
+<details>
+<summary>기존 인계 원장 전체 — 과거 기록, 현재 실행 지시 아님</summary>
+
 ## 2026-11-21 KST — P2 AI 15/252 역사 결손 원인 실PC 확정 (AUM 날짜 + WISE R25 연속성)
 
 - **최종 WISE 적격 기간 조회:** [제어 PR #2594](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2594) 2파일 bounded read-only metadata, Windows isolated CI `44871861093` SUCCESS, C996 `44871861132` SUCCESS, merged `d6ad2c5bc4e8fcbe298bf3f8b89c11e0fbb43cd0`. 기존 승인된 운영 PC 인벤토리 A [#2596](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2596)/Run **44872080181**, 실PC `PC`, 2026-11-21T05:42:40Z, `PASS/PROCESS_INVENTORY_COLLECTED`, 원격 JSON/TXT 2/2 direct readback, 변경/Provider/D1/SQLite 호출 0.
@@ -1902,3 +1941,6 @@
 - scripts/pc-writer/theme-space-satellite-r26-approved-roster.json에 승인 구성/혼합 공시/현재 5개 제외/무상한 선언. theme-space-satellite-r26-roster-audit.mjs는 R21 PC 3 SHA를 통과한 R23 실제 4종 정보와 정책을 read-only 검증. 2026-10-23 실측 개별점수+혼합 10/22·10/23 AUM의 **비공개 44.65075** 재현. 10개 입력 synthetic 회귀 포함 **Node 11/11 PASS**.
 - R25의 ROKT 제외 3종 점수 **44.70775**는 비교 예시로만 보존, 현재 선택 상태는 **finalBasketSelected=true**; rightsVerified=false, publicationAuthorized=false, historical252DayAumVerified=false 유지. ETF Provider 호출/실가격/원본/D1/공개/스케줄러/main 변경 0. 이전 R25 CI #40269330297 **success**, PR #714 Draft 보존.
 - 후속: 무료·상업적 파생 저장/공개 가능 AUM 입력 경로의 지속성 및 과거 252일 적법한 날짜별 가중 증거, 가격 공급자 사용 조건 점검 후 **별도 공개 승인을 요청**. 불가 ETF 반복 수집 금지.
+
+
+</details>

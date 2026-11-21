@@ -1,5 +1,8 @@
 ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 
+## 테마 작업 목적·진행 정본 — 2026-11-21 계획 개편
+- 현재 목적과 실행 순서는 `docs/THEME_FEAR_GREED_163_THEME_MASTER_PLAN_20261027.md`, 진행 상태는 `docs/THEME_FEAR_GREED_INTEGRATION_HANDOFF_20261025.md` 상단을 따른다. 기존 공개 공통 갱신과 신규 비공개 저장은 완료, 현재2/5단계 완료·3단계 Reader 연결 검증 중이다. 구형12/68·T1~T5 백분율·GMH 전용 복구를 현재 실행 기준으로 되살리지 않는다. 실제 화면 검증은 독립 진행하고 AI15/252점 자료 부족이 기존 공개/확장 전체를 막지 않게 한다. 기존 유료 공급자·권리·프로필·공개 승인 계약은 보존한다.
+
 ## 현재 테마 공급자·공통 갱신 결정 — 2026-11-20
 - 사용자 Complete Archive·Keep Current 구매 및 **MarketParquet로 확정·잠정 입력 통합** 지시가 과거 무료 사용 제거·GMH 고정 지시보다 우선한다. 공개 권리 해결 결과는 재사용한다. [현재 공급자 결정](docs/MARKETPARQUET_REMOVAL.md)을 따른다.
 - main의 `theme-paid-*` 공통 구현과 이 브랜치의 동일 모듈을 사용한다. 실제 설치된 등록부에서 기존 공개 10개와 신규 테마를 발견하고 한 Core 경로로 수집·계산·게시한다. 8개/2개/7개로 고정 분리하거나 신규 테마별 CMD·예약·API를 추가하지 않는다.
