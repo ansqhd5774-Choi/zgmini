@@ -6,6 +6,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {runR77,publicationPlan} from './theme-ten-r77-retry-gate.mjs';
+import {withR54SourceLeaseSync} from './r54-source-lease.mjs';
 
 const HERE=path.dirname(fileURLToPath(import.meta.url));
 const DATA_ROOT='E:/ZGmini/data';
@@ -21,7 +22,10 @@ const specs=[
   now:'d10ce08c801d5f20918ffe4ce71b9b2c95b32cdbc068670a0d31d5fb8922e5c7'},
 ];
 
-export function applyPinnedFiles({installRoot,payloadRoot,sources=specs}={}){
+export function applyPinnedFiles(options={}){
+ return withR54SourceLeaseSync(()=>applyPinnedFilesUnprotected(options));
+}
+function applyPinnedFilesUnprotected({installRoot,payloadRoot,sources=specs}={}){
  const root=fs.realpathSync(installRoot);
  const checked=sources.map(x=>{
   if(!/^(scripts\/pc-writer|worker)\/[a-z0-9-]+\.mjs$/.test(x.name))

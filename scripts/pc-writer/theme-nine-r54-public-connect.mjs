@@ -5,6 +5,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {fileURLToPath,pathToFileURL} from 'node:url';
+import {withR54SourceLease} from './r54-source-lease.mjs';
 import {stageCurrentNineR48} from './theme-nine-r48-stage-current.mjs';
 import {stageNineR51Current} from './theme-nine-r51-stage-current.mjs';
 import {buildNineR48PrivatePublicationCandidate} from './theme-nine-r48-r47-bridge.mjs';
@@ -174,7 +175,10 @@ async function fetchPublic({fetchImpl=fetch,now=Date.now(),publicationBase=true}
  return parsed;
 }
 
-export async function runNineR54PublicConnect({dataRoot='E:/ZGmini/data',
+export async function runNineR54PublicConnect(options={}){
+ return withR54SourceLease(()=>runNineR54PublicConnectUnprotected(options));
+}
+async function runNineR54PublicConnectUnprotected({dataRoot='E:/ZGmini/data',
  configDirectory=path.resolve(here,'../../config'),now=Date.now(),
  publisherConsent=false,fetchImpl=fetch,tokenFn=approvedNineR54SevenToken,
  stageR48=stageCurrentNineR48,stageR51=stageNineR51Current,
