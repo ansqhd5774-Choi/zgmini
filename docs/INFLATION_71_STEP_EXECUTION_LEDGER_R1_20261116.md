@@ -47,6 +47,14 @@
 
 ## 개편 후 진행 기록
 
+### 2026-11-21 — Census B 승인 소스 3번째 정확 프로필 main 통합
+
+- **운영 4/4 정상 source 확인 이후 실제 최소 통합:** 제어 [PR #2531](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2531) 변경 2파일(+100/-1), 정확 16회 source-only 조건 검증(3 정상, 13 변조 거부), 기존 CI #44787989064 success를 확인. `main` 대비 127커밋 뒤인 기존 Draft에서 실제 변경 2파일/mergeable 검증 뒤 READY→squash merge 진행. merge commit [43d6122367e7908f166780679a2d1ae5757696d4](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/43d6122367e7908f166780679a2d1ae5757696d4), 현재 main `inflation-manual-b/contract.mjs`는 `V2_EXECUTABLE_SHA256_CORE_2515` 정확 source hash 프로필 포함. 이전 2프로필과 fail-closed 거부 조건은 보존.
+- **효과 경계:** 이번 것은 **control repository의 source-only 수정/통합**. 운영 Controller/수신기 교체·기존 승인 원본 V2 manifest·공급자 호출·PC Writer/DB/D1/예약/사이트 변경 없음. 해당 manifest `official-static-two-source-w01-v2-approved-20261116.json`은 여전히 구 local-cycle SHA `2e6200e5...`을 핀하여, 현재 실PC `2cfa0f9a...`와 다르다. main merge만으로 B 실행을 승인하거나 작업 후 상태로 승격하지 않음.
+- **직접 B 차단:** 현재 정확 4파일 SHA 실측 증거 #2607/#2609와 정규 contract source가 일치하나 **manifest 승인 source pin 차이**와 **자연 Core Task/lock owner 미인증** 두 조건이 남음. 기존 #1818 원본 B 반복/우회 금지. 이전 자연 owner 점검은 Task GetInstances=0/Event129 disabled 등이라 변경 증거 없는 과거 26/26 재실험은 하지 않는다. 소스-only 완료=TRUE, 원자료 수집=FALSE.
+- **진행:** 1/5 단계 DONE, 2/5 IN_PROGRESS, 3/4/5 NOT_DONE. 2단계 현재 D1 body/stored_at 미확보는 독립 보류. 다음은 실제 승인 범위 유지 조건에서 정확 V2 manifest/source pin 정합 처리와 Core owner 유효 증거 확보 후 원본 Census XLSX 단회 수집·저장 검증; 별개 기존 D1 관리자 읽기 경로 확보.
+
+
 ### 2026-11-21 — Census 공식 B 대상 4파일 현재 실PC 4/4 검증
 
 - **읽기 전용 신규 실PC 작업:** 제어 기존 승인 `approvals/writer-preimage/inflation-manual-official-r1.json` + SHA256 `cfd3fa07eac039f63c0cdaf0ebb10529a9c9103612441c72ed5ddfd6d28fa8a8`를 재사용해 신규 #2609 (requestId `pc-5c9a2574-7a22-4e08-9c66-f6c528f14d43`) 발행. 최초 이슈에 `pc-job` label 포함. [Run44876714433](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44876714433) `completed/success`, `PASS/WRITER_APPROVED_PREIMAGE_READONLY`; JSON `results/44876714433-1-seat-4.json` 및 TXT 동시 2/2 실제 회수. 보호 전후 동일, 공급자/운영/D1 쓰기 0, SQLite 미개방.
