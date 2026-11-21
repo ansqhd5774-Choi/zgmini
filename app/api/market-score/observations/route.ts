@@ -1,5 +1,6 @@
+import {isValidatedPaidBreadthDomain} from '../../../../worker/breadth-paid-contract.mjs';
 import {env} from 'cloudflare:workers';
-import {COMPOSITE_OBSERVED_PREFIX,COMPOSITE_OBSERVED_VERSION} from '../../../../lib/composite-observed-history-r1.mjs';
+import {COMPOSITE_OBSERVED_PREFIX,COMPOSITE_OBSERVED_VERSION,isPaidCompositeObservedPoint} from '../../../../lib/composite-observed-history-r1.mjs';
 import {sampleCnnObservedPoints} from '../../../../lib/cnn-observed-sampling-r1.mjs';
 import {maskRetiredMarketPublicSnapshot} from '../../../../worker/market-retired-public-snapshot-mask.mjs';
 import {MARKETPARQUET_REMOVED_CODE} from '../../../../lib/marketparquet-retirement.mjs';
@@ -43,6 +44,7 @@ export async function GET(request:Request){
  if(retired)return Response.json({status:'UNAVAILABLE',reason:MARKETPARQUET_REMOVED_CODE,points:[]},{
   status:503,headers:{'Cache-Control':'no-store','x-data-source':'STORED','x-content-type-options':'nosniff'},
  });
+ const requiresPaidHistory=isValidatedPaidBreadthDomain(publicCurrent.domains?.find((domain:any)=>domain.id==='breadth'));
  const days=periods[period as keyof typeof periods];
  const now=Date.now(),dayMs=86400000;
  const from=new Date(now-(days-1)*dayMs).toISOString().slice(0,10);
@@ -59,6 +61,7 @@ export async function GET(request:Request){
    return Response.json({status:'INVALID_STORED_SCORE'},{status:503});
   validDays++;
   for(const point of data.points){
+   if(requiresPaidHistory&&!isPaidCompositeObservedPoint(point))continue;
    const t=Date.parse(point?.calculatedAt??'');
    if(!Number.isFinite(t)||t>now+300000||new Date(t).toISOString().slice(0,10)!==day
      ||typeof point?.score!=='number'||!Number.isFinite(point.score)||point.score<0||point.score>100)

@@ -32,8 +32,10 @@ test('observations preserve actual calculation times and only verified scores',(
 
 test('PC core.sqlite retains archived daily row separately from current and existing daily score',async t=>{
  const dir=mkdtempSync(join(tmpdir(),'zgmini-comp-archive-'));
+ const db=localDatabase(join(dir,'core.sqlite'));
+ // Windows cannot remove the directory while the SQLite handle is open.
+ t.after(()=>db.close());
  t.after(()=>rmSync(dir,{recursive:true,force:true}));
- const db=localDatabase(join(dir,'core.sqlite'));t.after(()=>db.close());
  await db.prepare("CREATE TABLE market_public_snapshots_v1(snapshot_key TEXT PRIMARY KEY,body TEXT NOT NULL,stored_at INTEGER NOT NULL)").run();
  let now=at('2026-10-31T12:00:00Z');
  const put=async body=>db.prepare("INSERT INTO market_public_snapshots_v1(snapshot_key,body,stored_at) VALUES('current',?,?) ON CONFLICT(snapshot_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at").bind(JSON.stringify(body),now).run();
