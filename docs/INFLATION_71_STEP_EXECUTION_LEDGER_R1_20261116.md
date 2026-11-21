@@ -47,6 +47,14 @@
 
 ## 개편 후 진행 기록
 
+### 2026-11-21 — #2620 운영 허용목록 3파일 누락 근거 확인·공유 설치 지원 연결
+
+- **실제 차단 조건 추가 확인:** 제어 A #2619 유지보수 replay #2620 / Run44879274635 결과 `OPERATION_NOT_ALLOWED`는 요청 형식 문제가 아닌 현재 운영 Controller에 정확 operation 미등록. 마지막 유효 실제 설치 #2597의 `actualControllerSha=5b33787dd32523496cd5a87dca73beb07ffaa409` Git tree를 이번에 직접 비교함.
+- **정확 3파일 소스/운영 차이:** 설치 `5b33787d...`의 `config/operations.json` blob `267902073cabe04a4a6b46a4b10bb6ab8b57e379`에는 해당 operation 없음, `controller/operations.mjs` blob `ff679fef1abc033bd7c68021a82419d8ac33c2b5`에는 신규 import/dispatch 없음, `controller/inflation-census-m3-archived-headers-readonly.mjs` 파일 없음. 반면 최신 main에는 3개 모두 있음; main 고정 헤더 조회기 blob `169cda10d58a1357092db293350536bdd97a8a29`, 테스트 blob `555dddee35afa07bcf1c955d57a82ee711840060`는 기존 #2111 Draft 소스와 동일. 원인=운영 Controller 3파일 선택 설치 필요, Census raw 손상/헤더 오류 입증 아님.
+- **공통 설치 이슈 연결:** 기존 공유 [#68 정확 3파일 지원 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-7059161070) 작성. 현재 정상 설치본 기점 최소 선택 통합·정확 import closure·복원/승인/lease·실제 실행과 영수증 회수를 요청했고, 신규 별도 Controller/Runner·동일 A 반복 요청·#2094 재실행하지 않음. **지원 댓글=총괄 실제 인수/Controller 설치 완료가 아님**.
+- **원담당 역할/다음 실행:** 공유 3파일 실제 설치가 승인 완료되는 경우에만 고유 Census archived header A를 새로 읽고, 직접 원자료 SHA·필수 헤더/누락 연도를 확인. 별개 기존 공식 XLSX B의 승인 manifest/Core owner 조건 및 물가7 D1 조회는 독립 진행. 현재 1/5 DONE, 2 IN_PROGRESS, 3~5 NOT_DONE. 쓰기·수집·게시 0.
+
+
 ### 2026-11-21 — Census 헤더 A 운영 미허용 실증 및 소스·설치 차이 특정
 
 - **신규 허용 작업 확인 착오 수정:** 제어 `main` `config/operations.json`과 `controller/operations.mjs`에 operation `inflation-census-m3-archive-headers-readonly` 및 handler는 존재. 하지만 기존 #2111은 Draft/미병합으로, 현재 운영 Controller 허용목록에 이 operation이 설치돼 있다는 증거가 아님. 이 구분을 확인하기 전에 실PC A를 발행한 것은 본 담당의 판단 오류.
