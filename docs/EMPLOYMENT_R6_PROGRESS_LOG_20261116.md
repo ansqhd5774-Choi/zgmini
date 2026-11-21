@@ -1,6 +1,6 @@
 # ZGMINI W04 고용지표 R6 — 실행 진행 기록
 
-> **현재 실행 기준(2026-11-21 개편): [운영 완료 5단계 계획](EMPLOYMENT_R6_CURRENT_EXECUTION_PLAN_20261116.md). 1/5 완료, 2단계 진행 중.** 이전 53/72는 역사적 증거 추적 계수이며 현재 기능 완료율이 아니다. 아래 과거 보고의 NEXT/차단/접근 실패를 현재 지시로 재사용하지 않는다. 이번 Production 직접 GET은 200이며 PC와 모델 버전·hash·sourceStoredAt이 일치했으나 D1 body/stored_at 전체 readback은 미검증이다.
+> **현재 실행 기준(2026-11-21 개편): [운영 완료 5단계 계획](EMPLOYMENT_R6_CURRENT_EXECUTION_PLAN_20261116.md). 2/5 완료, 3단계 진행 중.** 이전 53/72는 역사적 증거 추적 계수이며 현재 기능 완료율이 아니다. 아래 과거 보고의 NEXT/차단/접근 실패를 현재 지시로 재사용하지 않는다. Production 직접 GET은 200이며 PC와 모델 버전·hash·sourceStoredAt이 일치했고, 실PC D1 고정키 body SHA/stored_at 직접 readback은 #2628에서 PASS했다. API/UI 전체 필드 대조와 자동 갱신 검증은 별도 진행한다.
 
 
 - 기록 기준: **2026-11-16 KST**
@@ -2135,3 +2135,12 @@
 - **정규 최소 선택 설치 후보:** 기존 설치 `385035...`의 단일 자식 `565ddbd4ebfc46c88fb7dbaa810fd545656c6306`, diff `controller/employment-r6-d1-readback-readonly.mjs` **단 1파일**, SHA256 `817c2904e50671010fad58cb819a52d5aec2883d3bd2e7f91e3d6dbb16cdda15`, manifestFingerprint `da8843004cfd64e8ce8cc7b4cd644fec0a161ec69967297ebc90b047afe766d4`. [승인 PR #2625](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2625) C996 PASS, main squash `974e98beb08924ab1be0e100c92ed155817cbea6`; 정확 pin+manifest 2파일만 반영. B manifest raw SHA256 `88a2fc9c824e4314c69fe4cc0ac0be1c8806f37d79eddb52bece99ae143a4e66` 및 기존 정상 `385035...` CAS·복구 계약 포함.
 - **B 단회 요청:** [제어 #2626](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2626), requestId `pc-update-e4c6d7b2-24e6-4e0e-a938-f7cf3a7db299`. 마지막 조회 시 원본 Issue OPEN / 결과 댓글 0 / 유지보수 JSON 미수신. **설치 미입증**이며 중복 B 요청 없음.
 - **판정:** 개편 1/5 DONE, 2단계 IN_PROGRESS. 다음은 #2626 실제 설치 영수증으로 source/protected state를 확인한 후 새로운 정확 requestId A 1회로 R6 D1 `body/stored_at` readback. 실패하면 해당 phase만 조사하고 성공하면 저장 로컬 SHA·공개 API 대응 비교; TRUE_PIT 과거 2,880키는 인증하지 않음.
+
+
+## 192. 개편 2단계 실제 D1 정확키 조회 PASS / 3단계 시작 (2026-11-21 KST)
+<!-- W04-STEP2-D1-DIRECT-PASS-20261121 -->
+- **정규 설치 완료:** [제어 #2626](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2626#issuecomment-7059293030), `SUCCEEDED/APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED`, target=actual Controller SHA `565ddbd4ebfc46c88fb7dbaa810fd545656c6306`, 보호 불변/Workflow 활성, JSON/TXT 결과 확보. 이는 Reader Git PATH root fix의 실제 설치다.
+- **실PC D1 직접 SELECT 성공:** [제어 #2628](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2628#issuecomment-7059333207) / [Run 44880744929](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44880744929) / `results/44880744929-1-seat-5.json`, `status=PASS`, `code=R6_D1_LOCAL_MATCHED`, `actualExecutionSha=565ddbd4...`. 정확키 `market_public_snapshots_v1/detail:employment-r6:one-year:v1`, `d1StoredAt=1795220441703`, `sourceStoredAt=1795220421678`, `asOfDate=2026-11-21`, `sourceFeatures=29`, `chartReadyFeatures=22`, `methodologyVersion=EMP-R6-FORMULA-R2-CPS-2025-10`, `formulaHash=sha256:04486846cd6063452d1c764116d3a31209f074d23a8764bf5b6ec8467095210e`.
+- **정확한 전체 저장 해시 동치:** `d1BodyHash=localResultHash=8694003053de364a6190ea46f48c2beb2a17f52f4a828fafac099c8e26ba8442`, `matchedToLocal=true`. 증명은 실PC D1 1행 body ↔ 저장 로컬 JSON 전체의 계산 바이트 기준 동일성. 29개 지표 각각의 공개 HTML 렌더링 검증으로 확대하지 않는다. providerCalls=0, d1Writes=0, operationalWrites=0, sqliteOpened=false; 보호 전후 SHA 동일.
+- **공개 연결:** 기존 Production GET HTTP200 / PARTIAL, 29 indicators·모델·`sourceStoredAt` 일치 검증 재사용. 현재 `app/api/employment-r6/observations/route.ts`→ `worker/employment-r6-public-display.mjs` 소스는 동일 D1 정확키를 `SELECT body,stored_at`한 뒤 `Response.json(body)`로 응답하며 신규 계산·수집 없음. 전체 공개 JSON 바이트 해시 독립 캡처는 없으므로 PC/모바일 29개 필드·관측일·차트 마지막 점 상세 일치는 4단계 검증 대상으로 유지한다.
+- **2단계 DONE, 3단계 IN_PROGRESS** (개편 2/5 완료). 게시된 1행은 기존 valid source와 일치하므로 재게시/설치/D1 갱신 없음. 3단계 `DOL_UI_WEEKLY_CLAIMS CIRCUIT_OPEN / DOL_RELEASE_OBSERVATION_STALE`의 마지막 실제 실패 로그·원문·체크포인트·수집 윈도우를 구분하는 최소 관측을 우선 수행한다. 실제 최신 데이터 전진·공급처 갱신 성공은 아직 미검증. 과거 2,880키 PIT 미인증 유지.
