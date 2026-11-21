@@ -62,3 +62,24 @@ test('W06 #38 rights mismatch and stale provisional records remain unavailable',
  assert.equal(accepted({...published,slotEndUtc:'2026-11-18T15:00:00.000Z'}),false);
  assert.equal(accepted({...published,source:'MARKETPARQUET_FREE_SAMPLE'}),false);
 });
+
+test('W06 #38 New York midnight rollover never relabels yesterday slot as today',()=>{
+ const midnight=Date.parse('2026-11-19T05:05:00.000Z'); // NY 00:05 on Nov 19 (EST)
+ class RolloverClock extends Date{
+  constructor(value){super(value===undefined?midnight:value);}
+  static now(){return midnight;}
+ }
+ const gate=new Function('Date',compiled+'\nreturn currentIexProvisional;')(RolloverClock);
+ const correct=usIexPublicPercentOnly({...baseline,
+  observationDate:'2026-11-19',priorDate:'2026-11-18',
+  slotEndUtc:'2026-11-19T05:00:00.000Z',
+  collectedAt:'2026-11-19T05:01:00.000Z',
+  observedCount:1,sessionPriceObservedCount:1,missingCount:499,
+  freshWithin30m:1,coverage:1/500,counts:{rising:0,unchanged:0,falling:1},
+ });
+ assert.ok(correct);
+ assert.equal(gate(correct),true,'matching NY day with genuine zero is eligible');
+ const yesterday={...correct,slotEndUtc:'2026-11-19T04:55:00.000Z',
+  collectedAt:'2026-11-19T04:56:00.000Z'};
+ assert.equal(gate(yesterday),false,'prior NY day cannot carry today label even within 30m');
+});
