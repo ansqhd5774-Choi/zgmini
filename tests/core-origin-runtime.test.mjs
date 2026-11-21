@@ -25,7 +25,7 @@ function simulateWsh({rows=processRows,state=4,instances=1,enabled=true,pid='60'
  }})};
  function Enumerator(items){this.items=items;this.i=0;this.atEnd=()=>this.i>=this.items.length;
   this.moveNext=()=>{this.i++;};this.item=()=>this.items[this.i];}
- vm.runInNewContext(source,{ActiveXObject:()=>scheduler,
+ vm.runInNewContext(source,{ActiveXObject:function(){return scheduler;},
   GetObject:()=>({ExecQuery:()=>rows}),Enumerator,
   WScript:{Arguments:{length:2,Item:i=>i===0?pid:script},Echo:s=>output.push(s)}},{timeout:2000});
  assert.equal(output.length,1);
