@@ -47,6 +47,14 @@
 
 ## 개편 후 진행 기록
 
+### 2026-11-21 — 현재 운영 b362 기준 Census Controller 3파일 단일 커밋 후보 완성
+
+- **실제 설치 계승:** 공통 #2602 유지보수 `SUCCEEDED` 영수증의 실제 Controller `b3621f24860de277c74abbefbab68a158b3e39c2`가 #2597의 `5b337...` 이후 최신 정상 설치 확인점임을 명확히 반영. #2620 `OPERATION_NOT_ALLOWED`는 이 설치 Commit의 3파일 미반영으로 설명되며 소스 문제 아님. `b362...` Git tree에서 정확 3파일 상태/anchor 검증.
+- **정확 신규 Git source 후보 실제 작성:** 설치 원본 `b362...` Git tree를 `base_tree_sha=fb271bea0e3e06c5004a7e7a43cb6ee3c8162606`로 사용하여, 다른 기존 파일을 건드리지 않은 새 Git tree `db694ef9d1b8950dc38fb4368708c002a43a3b1b` → single-parent commit [2232705f89f9e30c636a58b47cab27d4eb524298](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/2232705f89f9e30c636a58b47cab27d4eb524298). [Draft PR #2624](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2624) (base `codex/core-092-twofile-singlecommit-20261121`, head `codex/w01-census28-controller-threefile-from-b362-20261121`). Git 비교 `ahead=1 behind=0`, 변경 정확 3파일: `config/operations.json` +1 A/light/60s, `controller/operations.mjs` +1 import/+1 dispatch, 신규 `controller/inflation-census-m3-archived-headers-readonly.mjs` 95행(기존 main 검토 blob `169cda10d58a1357092db293350536bdd97a8a29` 동일).
+- **독립 source 검증:** 기존 47 operation JSON 항목 47/47 완전 불변, 신규 하나 추가하여 48. 모듈 외부 import는 Node builtins만. `PR #2595`의 검증된 기존 Windows 고정 8/8 회귀는 같은 모듈 기능 소스 범위에서 재사용하되 **신규 정확 target 3파일의 설치 CI/PASS 아님**. 공유 [#68 후속 실물 전달](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-7059206871)에 정확 target/parent/3파일/설치 경계 전달.
+- **미완료 운영 효과:** #2624는 Draft/source 후보로 B effect 승인/pin·실제 설치/사후 A 미실시. 현재 추가 PC/Provider/DB/D1/Task 쓰기 0. 다음은 기존 승인 효과와 현재 installed SHA/lease 보호를 유지한 정확 Controller 3파일 정규 설치 후 새 고유 archive header A 1회. 원본 Census B 승인 pin/Core 소유권과 2단계 D1 1key 직접 조회는 독립 미해결. 단계 1 DONE, 2 IN_PROGRESS, 3/4/5 NOT_DONE.
+
+
 ### 2026-11-21 — #2620 운영 허용목록 3파일 누락 근거 확인·공유 설치 지원 연결
 
 - **실제 차단 조건 추가 확인:** 제어 A #2619 유지보수 replay #2620 / Run44879274635 결과 `OPERATION_NOT_ALLOWED`는 요청 형식 문제가 아닌 현재 운영 Controller에 정확 operation 미등록. 마지막 유효 실제 설치 #2597의 `actualControllerSha=5b33787dd32523496cd5a87dca73beb07ffaa409` Git tree를 이번에 직접 비교함.
