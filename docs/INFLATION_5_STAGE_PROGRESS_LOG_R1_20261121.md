@@ -38,6 +38,13 @@
 - **소스 CI 접수 증거:** 새 PR target `77dd9311…`로 GitHub Actions 3건 확인 — Controller Maintenance Tests [run 44882261137](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44882261137), D05 Readonly Tests [run 44882261088](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44882261088), C996 R5 Checks [run 44882261100](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44882261100). 최초 확인 시 queued/in_progress 상태. **새로운 2차 GitHub Actions 조회에서 D05 #44882261088, C996 #44882261100, Controller Maintenance #44882261137 모두 completed/success (3/3)** 확인. 정확 HEAD `77dd9311…`의 소스 CI 검증 완료. 이는 **source-only 검증**이며 실제 B 승인·Controller 설치·PC 동작·D1 직접 조회 증거는 아님.
 - **3단계 잔여:** 정확 target CI 결과→기존 승인 효과 범위 대조→정확 B manifest/현시점 installed SHA CAS·lease·보호·복구→독립 유지보수기로 설치→새 고유 Census A→공식 원자료 복구. #2636 Draft·B 미승인 상태에서는 운영 설치를 요청하지 않음. 개편 2단계 D1 정확 키 독립 미완료 유지.
 
+## 2026-11-22 — #2636 3/3 CI 재확인·설치 승인 후보 패킷 완성
+
+- **실제 CI:** 정확 후보 `77dd931163531674550d6176b360fa80ed4d1e99`의 GitHub Actions 3건 재조회에서 D05 #44882261088, C996 #44882261100, Controller Maintenance #44882261137 **전부 completed/success**. 개별 Workflow 소스 시험 결과이지 Windows 실PC 설치/아카이브 유효성 입증이 아님.
+- **정확 B 검토 명세:** [PR #2636 검토 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2636#issuecomment-7071152472)에 마지막 실증 설치 `565ddbd4…`→단일 부모 target `77dd9311…`, 3파일 SHA-256, canonical allowFiles fingerprint `5f86383613686af9898c35b1809e6b5f49560a2769c17bf8ff6c03862b3a534f`, 기존 정규 설치 schema·CAS·lease·백업·복구·postcheck 요구를 명시. fingerprint는 승인 manifest 전체 해시가 아님. **APPROVED_B 파일/유효 승인·설치 요청은 생성하지 않음**. 기존 #2626 성공 시점의 설치 SHA를 지금까지 변하지 않은 실시간 설치본으로 단정하지 않음.
+- **2단계 현재 제한:** PC 공식 Writer의 고정 쿼리 경로는 확인했지만 현재 연결된 D1 직접 조회 수단이나 기존 물가키용 실행 허용 operation은 확인되지 않아 D1 `detail:inflation-causal-candidates-7:r1` `body/stored_at` 실측은 계속 미완료. 공개 GET은 직접 D1 원장 대신 사용할 수 없음. 신규 무승인 SQL/임의 Runner 생성하지 않음.
+- **단계 판정:** 1 DONE / 2 IN_PROGRESS / 3~5 NOT_DONE, 운영 설치·수집·D1·게시 쓰기 0. 다음은 2단계 정규 D1 정확키 readback과 병행해 #2636 승인 효과·실시간 설치 CAS를 확인한 뒤 정규 설치 후 Census A로 연결.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
