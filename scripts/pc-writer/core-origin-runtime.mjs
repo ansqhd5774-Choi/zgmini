@@ -22,7 +22,7 @@ export function captureCoreOriginAtStart({
     !Number.isFinite(Date.now()-startedAt)||startedAt>Date.now()+60000)
   return fail('CORE_ORIGIN_INPUT_INVALID');
  const cscript=path.win32.join(systemRoot,'System32','cscript.exe');
- const probe=fileURLToPath(new URL('./core-origin-wmi.js',import.meta.url));
+ const probe=fileURLToPath(new URL('./core-origin-wmi.mjs',import.meta.url));
  if(!exists(cscript)||!exists(probe))return fail('CORE_ORIGIN_PROBE_UNAVAILABLE');
  try{
   const response=spawn(cscript,['//NoLogo','//E:JScript',probe,String(pid),entrypoint],{
