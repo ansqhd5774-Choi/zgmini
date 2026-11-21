@@ -1,3 +1,13 @@
+## 2026-11-21 KST — 33차 홈/상세 점수 표시 계약 대조 및 API 브라우저 조회 경계
+
+- 실PC 연결 Chrome 두 탭을 재확인: 홈 `183831268`(`https://zgmini.kr/`)과 상세 `183831378`(`/theme-fear-greed/?utm_source=chatgpt.com`). 상세 hydrated DOM의 10개 순위/소수점수와 사용자 업로드 PC 스크린샷의 값이 일치한다는 32차 증거 재사용.
+- 최신 main `components/theme-sentiment-dashboard-chart.tsx`는 홈 `themeEtfDashboardSeries`→`SectorSentimentChart dashboardThemeScores`; `components/sector-sentiment-chart.tsx`는 홈 카드와 범례의 숫자를 `Math.round(value)`로 정수 표시한다(관련 줄 103,116,167,176). 상세 `theme-detail-charts.tsx`는 `item.score.toFixed(1)` 소수 한 자리 표시. 홈 정수와 상세 소수점수의 차이는 **표시 정밀도 계약 차이**, 동일 API `/api/theme-fear-greed`를 사용하며 별도 점수 산식이 아니다. 상세16.5 표시만으로 정확한 원본의 정수 반올림 결과를 단정하지 않으며 API 원문 숫자 readback 전까지 동일 정밀도 1:1 검증 PASS 아님.
+- 현행 `main` 테스트 `scripts/pc-writer/theme-paid.test.mjs`에는 유료 READY record→홈 adapter, 252점 확정, 비공개 공개 격리, D1 Reader 공개 필드 테스트가 존재하고 기존 main Node CI `44873050889` PASS로 재사용 가능. 단 운영 API의 실제 10개 원본 252점 동일 시각 조회를 대체하지 않는다.
+- 도구 조사: 연결 Chrome 인터페이스는 이미 열린 탭만 read-only 조회 가능, 현재 공개 API JSON 탭은 없음. 웹 fetch API 접근 실패는 공급자·운영 장애 입증 아님. 다음 최소 검증은 사용자 기존 Chrome에 `https://zgmini.kr/api/theme-fear-greed` 원문 탭 1개를 열어 주면 읽기 연결로 정확한 소수점수/252점/마지막 이력 날짜를 회수하여 홈/상세와 대조하는 것. 사용자 운영 명령·공개 전환·유료 새 세션 불필요.
+- 범위: 4단계 PC 두 화면 표시 부분 확인, raw API 및 모바일 화면 NOT_VERIFIED. 기능 수정·운영 변경 없음, 전체 3/5 유지.
+
+---
+
 ## 2026-11-21 KST — 32차 사용자 실PC 상세 화면 및 hydrated DOM 확인
 
 - **신규 독립 증거:** 사용자가 직접 업로드한 `https://zgmini.kr/theme-fear-greed/` PC 화면 스크린샷(2026-11-21, 900×999 이미지)과 연결 Chrome 신규 상세 탭 `183831378`의 JS hydrated DOM을 읽기 전용으로 대조. 서로 같은 화면 내용을 제공한다. 실제 상세 페이지에 초기 로딩 문구 대신 공개 랭킹/차트가 그려진 것이 확인되므로 기존의 **상세 PC 미검증을 부분 검증 완료로 갱신**한다. 소스 HTML·SEO URL 200만으로 주장한 결과가 아님.
