@@ -14,6 +14,13 @@
 | 4 | PC·모바일 실화면 종합 확인 | 영향받은 화면의 값/단위/날짜/카드 최신점/차트 끝점·기간/결측·역행·overflow가 공개 저장 응답과 일치 | PARTIAL — 기존 실사이트 성공 증거 있음, 최신 변경의 미검증 범위 남음 |
 | 5 | UI 작업 종결·업스트림 잔여 인계 | W06 완료/Production 검증/Writer·데이터 잔여를 구분하고 정확한 원담당·작업·종료조건으로 정리 | NOT_DONE |
 
+### 2026-11-21 16:01 KST — 2단계 공식 배포 계보 조회 경계 (읽기 전용)
+
+- 시작 기준 W06 브랜치 HEAD `4f2ec1519fa98b010461400b1d057a8b4566ff40`, main `2eb796da811d0e074ca0cabab8e2cad9502bff43`. 지정 계획·원장 상단의 개편 5단계 정본 재조회 PASS. 시작/종료 **1/5 DONE, 2단계 IN_PROGRESS**, 과거 22/75는 역사 계수.
+- 공식 GitHub REST main commit status는 `state=pending,total_count=0,statuses=[]` — legacy status가 비어 있는 결과이지 Cloudflare 배포 실패 또는 대기 상태 증거가 아님. GitHub REST deployments collection은 연결된 읽기 도구에서 허용되지 않아 `INVALID_ARGUMENT`; active Cloudflare Deployment ID ↔ Git SHA는 여전히 **UNVERIFIED**. 이전 공개 자산 #1460/#1461·API/390px 화면 PASS 증거를 재사용, 이번 회차 공개 API/DOM 재실행은 없음.
+- FIRST UNVERIFIED: Cloudflare 공식 active Deployment→Git SHA 매핑. #1462는 비활성 경로로 유지. 신규 코드·테스트·PR·CI·PC/SQLite/D1/Cloudflare 변경 0. 배포 실패·W06 화면 결함으로 오판하지 않음.
+- 다음 단일 실행: 공식 Cloudflare 계정 read-only Deployment/Version 기록을 조회할 수 있을 때 정확 source SHA를 대조. 접근 불가 시 이 항목만 UNVERIFIED로 보존하고 **3단계 활성 Reader/화면의 독립적 실제 결함 재현**으로 이동; 중복 배포/재검증 금지.
+
 ## 현재 확인된 근거
 
 - 최근 #1460/#1461/#1462는 main MERGED. **2026-11-21 15:37~15:46 KST 공개 Production 읽기**에서 현재 HTML이 참조한 실자산 `/assets/page-DsDQu-Ab.js`에 #1460의 `READY+period+Array.isArray(points)`만 갱신하는 코드와 #1461의 strict Gregorian 원본 날짜 검사 `T00:00:00Z + ISO 동일일`을 직접 확인했다. 활성 CNN 자산 `/assets/cnn-panel-DfAkRdB-.js`에서도 #1459 관측달력 차단 코드 확인. #1462 IEX 비율 컴포넌트는 승인상 비활성/미마운트로 실사이트 표시 검증 대상이 아님; 활성 JS 내 #1462 source 포함 및 정확 Cloudflare Production Deployment→Git SHA 관계는 미입증(배포 장애 증거 아님). 동일 소스/CI/재배포 반복 금지.
