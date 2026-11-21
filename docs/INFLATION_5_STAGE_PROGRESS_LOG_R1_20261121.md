@@ -53,9 +53,17 @@
 - **실제 상태:** GitHub source CI 3개 접수 확인(Controller Maintenance [#44964084806](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44964084806), C996 [#44964084803](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44964084803), D05 [#44964084813](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44964084813)); **검사 완료/PASS 미확인**, 새로운 source 테스트가 기존 workflow에서 실제 실행되었는지도 별도 확인 필요. #2647은 Draft·무승인·미설치이며 **D1 실측은 여전히 미완료**. 기존 Census #2636은 독립 source 후보로 유지하며 운영 설치를 반복·병렬 쓰기하지 않음.
 - **다음 실행:** 정확 HEAD CI·테스트 결과 회수, 결함 시 소스만 최소 수정. 실제 운영 효과는 기존 Controller 승인 계약과 현시점 CAS/lease·백업을 충족하는 정규 통합 설치 후에만 사용. 물가7 D1 readback → 공개 7행 동치 검증이 완료되기 전에는 2단계 DONE 금지.
 
+## 2026-11-22 — Census와 물가7 D1 A급 조회 단일 설치 후보 완성 (SOURCE_ONLY)
+
+- **공유 CAS 충돌 예방:** 별도 [#2636](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2636)(Census)·[#2647](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2647)(물가 D1)은 같은 마지막 검증 설치 `565ddbd4…`에서 분기해 두 번 설치하면 두 번째 preimage CAS가 불일치할 수 있음. 기존 source PR/증거는 보존하고 실제 설치용으로는 **한 번의 B 효과**만 검토하도록 [Draft #2649](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2649) 통합 source 후보 생성. 두 component PR에는 별도 설치 요청 금지 댓글 연결.
+- **실제 구성:** 통합 target `8309119a13992b1e608b51e4d68d230a832e250b`는 기존 설치 `565ddbd4ebfc46c88fb7dbaa810fd545656c6306`의 **단일 부모/단일 커밋**(`ahead=1 behind=0`). diff 정확 4 운영 파일: `config/operations.json` +2, `controller/operations.mjs` +4, 원본 Census header reader 95줄, 신규 물가7 D1 reader 123줄. + 소스 테스트 37줄은 설치에서 제외. 기존 48개 operation과 W04 employment D1 동작 불변, 신규 2개만 추가해 50개.
+- **정확 파일 SHA256·회귀 근거:** [#2649 설치 검토 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2649#issuecomment-7071230576)에 4파일별 SHA-256와 `manifestFingerprint(allowFiles)=55eb2222ee575ea1a6b7c4df89229d8a531977a9b229df60c10c021288be579c` 기록. Node SHA-256 `abc` known vector로 해시 구현 검증, 각 실제 GitHub 파일 원문 해시 산출. component #2636 CI 3/3 SUCCESS, #2647 CI 3/3 SUCCESS. D1 순수 검증 함수의 격리 V8 테스트 3/3 PASS(해시 함수 스텁; Windows/D1 네트워크 아님). **통합 정확 HEAD #2649 CI는 별도 접수·최종 PASS 미확인**이므로 component PASS를 통합 승인으로 전가하지 않음.
+- **현재 실제 장애와 단계 상태:** #2649는 Draft/source-only; 이 시점 B 효과 승인·immutable 승인 manifest·실물 설치 CAS/lease·유지보수기 영수증 없음. 실제 인증된 물가7 D1 `body/stored_at`은 여전히 미확인, Census archive A와 공식 원자료 복구도 미실시. 운영 Provider/SQLite/D1/Controller 설치/공개 게시 변경 0. **단계 1 DONE / 2 IN_PROGRESS / 3~5 NOT_DONE**.
+- **다음 실행:** #2649 exact CI 결과 회수 및 기능별 회귀 검증 → 승인 범위/정확 B 효과 확인 → 설치 시점 실제 Controller SHA CAS·lease·보호 원장 및 rollback 검증 → 기존 독립 유지보수기 단일 B 적용 → 고유 물가 D1 조회 A와 Census 보관 헤더 A 각각 결과 회수 → 실제 원자료/공개 API 비교. 기존 R2 Writer 미래 날짜 문제는 독립 승인 범위로 계속.
+
 ## 다음 실행·종결 규칙
 
-1. **현 단계 2:** 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
+1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
 2. **독립 단계 3:** #2636 정확 후보 회귀·효과 승인/manifest 및 실제 installed CAS 확인 뒤 정규 B 적용; 실제 설치가 확인된 후 Census header A; 승인된 원자료 복구로 이어감.
 3. **독립 단계 4:** 기존 R2 Writer 2파일 후보의 승인 여부/현재 실물 preimage 확인 후 정규 적용, 실제 로컬·D1·API·PC/모바일 날짜 동치 확인.
 4. DONE은 기능의 실제 운영 결과·영수증을 확보한 경우에만 갱신. 기존 문서/PR/CI 성공을 설치나 게시 성공으로 승격하지 않는다.
