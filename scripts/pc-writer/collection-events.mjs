@@ -1,4 +1,5 @@
 import fs from 'node:fs';import path from 'node:path';
+import {coreCycleIdFromEnv} from './core-cycle-id.mjs';
 import {safeMacroDiagnostic} from '../../worker/macro-result-contract-r61.mjs';
 import {DIAGNOSTIC_FRED_SERIES} from '../../lib/diagnostic-layer/input-registry.mjs';
 import {safeCollectionFailure} from '../../worker/collection-failure-diagnostic.mjs';
@@ -11,7 +12,7 @@ export function appendCollectionEvent(base,report){
  const feeds=(report.feeds??[]).filter(x=>['fear-greed','market-data','core-pce'].includes(x.key)).map(x=>({key:x.key,status:code(x.status)}));
  const d=report.failureDiagnostic;
  const failureDiagnostic=d?{...safeCollectionFailure({name:d.name,code:d.code}),location:typeof d.location?.module==='string'&&/^(worker|lib|scripts\/pc-writer)\/[A-Za-z0-9_./-]+\.(mjs|js|ts)$/.test(d.location.module)&&!d.location.module.includes('..')&&Number.isInteger(d.location.line)&&Number.isInteger(d.location.column)?{module:d.location.module,line:d.location.line,column:d.location.column}:null}:null;
- fs.appendFileSync(path.join(base,'collection-events.jsonl'),JSON.stringify({at,lane:code(report.lane),job:code(report.job),status:code(report.status),reason:code(report.reason),phase:code(report.phase),sourceStatus:code(report.sourceStatus),sourceDiagnostic,...(failureDiagnostic?{failureDiagnostic}:{}),providers,feeds})+'\n');
+ fs.appendFileSync(path.join(base,'collection-events.jsonl'),JSON.stringify({at,lane:code(report.lane),coreCycleId:coreCycleIdFromEnv({ZGMINI_CORE_CYCLE_ID:report.coreCycleId}),job:code(report.job),status:code(report.status),reason:code(report.reason),phase:code(report.phase),sourceStatus:code(report.sourceStatus),sourceDiagnostic,...(failureDiagnostic?{failureDiagnostic}:{}),providers,feeds})+'\n');
 }
 export function appendProviderFailure(base,input,{phase,httpStatus=null,error=null,now=Date.now()}={}){
  const url=new URL(typeof input==='string'||input instanceof URL?input:input.url),raw=error?.cause?.code??error?.code;
