@@ -47,6 +47,15 @@
 
 ## 개편 후 진행 기록
 
+### 2026-11-21 — Census 헤더 A 운영 미허용 실증 및 소스·설치 차이 특정
+
+- **신규 허용 작업 확인 착오 수정:** 제어 `main` `config/operations.json`과 `controller/operations.mjs`에 operation `inflation-census-m3-archive-headers-readonly` 및 handler는 존재. 하지만 기존 #2111은 Draft/미병합으로, 현재 운영 Controller 허용목록에 이 operation이 설치돼 있다는 증거가 아님. 이 구분을 확인하기 전에 실PC A를 발행한 것은 본 담당의 판단 오류.
+- **실PC 최초 실제 거부:** 신규 #2619 (`requestId=pc-28453d6a-0d5b-4407-b2ae-6e772175542a`)는 유지보수 잠시 중지 구간에 접수되어 제어 정규 backlog가 동등 요청 #2620으로 연결. [#2620 결과](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2620#issuecomment-7059122383), [Run44879274635](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44879274635), `results/44879274635-1-seat-6.json` 및 TXT 2/2 회수: **BLOCKED / OPERATION_NOT_ALLOWED**, `lastPass=EVENT_RECEIVED`, `firstFail=EVENT_OR_REQUEST_VALIDATION`, 운영/공급자/D1 쓰기 0. 등록·실제 설치 차이의 운영 증거이며 보관 아카이브 부재 또는 Census 원본 헤더 불량의 증거는 아니다.
+- **불필요한 소스 재도입 배제:** 과거 [Draft #2111](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2111)의 Census header reader `.mjs` 및 `.test.mjs` blob SHA가 현재 제어 main과 각각 정확 동일(`169cda10...`, `555dddee...`). `config/operations.json`과 `controller/operations.mjs`도 main에 등록된 해당 경로를 확인. 따라서 새 Controller 소스/진단기를 또 만들 필요 없음. 단, main 존재만으로 운영 적용은 확정 못 함.
+- **다음 선택:** 필요하면 **기존 정규 Controller 설치 승인/설치 계약**에서 이 한 등록 작업의 정확 운영 source·허용목록 차이만 수정·검증한다. 설치가 되어 있지 않은 동일 A 작업은 재발행하지 않는다. Census 공식 XLSX 단회 B 원본 복구는 다른 독립 승인/자연 Core 소유권 확인 조건에 따름. 2단계 물가7 D1 exact readback 역시 별도이며 source/현행 local A에서 직접 제공하지 않으므로 막힌 사실을 전역 중단으로 확대하지 않는다.
+- **단계:** 1 DONE/2 IN_PROGRESS/3-5 NOT_DONE. 오직 A 거부 실증과 소스/설치 경계 확인만 추가, 운영 수집·DB/D1·게시 완료 0.
+
+
 ### 2026-11-21 — #2618 현재 Core Task 유휴 스냅샷·소유권 미인증
 
 - **신규 유효 PC A 1회:** [#2618](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2618) / [Run44878923732](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44878923732), operation `core-runtime-source-readonly`, requestId `pc-88e4756d-415e-4a3f-a71a-099f262e4f3b`; 운영 Controller 고정 작업 완료, `results/44878923732-1-seat-5.json`·TXT 2/2 원격 독립 회수. `STATE_UNKNOWN/CORE_TASK_NOT_RUNNING_AT_SNAPSHOT`, task stateBefore/stateAfter=3/3(Ready), visibleRunningInstances=0, stoppedProven=false, securityContextMayLimitVisibility=true, `lockOwner.status=ABSENT/code=CORE_LOCK_ABSENT`, runtimeSourceVerified=false. 읽은 한 시각의 정상 유휴 가능성과 Task-owner 인증을 구분한다. 쓰기 0, 보호 before/after 동일.
