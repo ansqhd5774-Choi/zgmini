@@ -1,5 +1,15 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261121-W04-2597-ACTUAL-INSTALL-ISSUE-AND-3CI -->
+## 2026-11-21 — W04 공유 Controller 정규 설치 #2597 실제 접수, W01 후속 Census 선택 소스 CI 전부 PASS
+
+- **새로운 운영 요청 발견:** [W04 #2597](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2597) 정확 original requestId `pc-update-c2e85f73-91b6-4ba7-b603-5d2a0f8ec471`, operation `controller-update`, target `5b33787dd32523496cd5a87dca73beb07ffaa409`, pinned approval manifest sha `1ca069b18dcb7e6aa9472ee7d4203edd125bbb6ae6fee9ba6ea49e2cc13a09ab`. 마지막 조회 시 OPEN/comments0으로 **정규 접수**만 확인, Windows 적용·사후검사 성패는 아직 미확인. W01 동일 설치 효과 중복 요청 금지.
+- **W01 후속 소스 HEAD 검증 완료:** 기존 W04 target `5b337...` 대비 정확 5파일 source-only [Draft #2595](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2595), head `c39bf5d170fc50c88b48b66fb584e279477481ff`. 초기 CI `Run44871873029`는 Census focus SKIPPED였으므로 그 상태를 실패 조건으로 보고 정확 1개 잘못된 `if` 제거. 새 Windows [Maintenance Run44872068679](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44872068679) **completed/success**, raw job log `ok1..8,tests8,pass8,fail0`, [C996 Run44872068690](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44872068690) success, [D05 Run44872068720](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44872068720) success (3/3). W04 원본 operations 500줄/42 imports → 후속 502줄/43 imports, 새 파일은 Node 내장 imports만. 이것은 운영 import closure 증거가 아니라 source admission 준비임.
+- **다음 GO/NO-GO:** W04 #2597 정확 B 결과/installed SHA·lease/backup 확인 → W01 단일 새 A 실PC 설치 target은 `installedSha=실제 새 SHA`의 **단일 부모 commit**여야 하므로 다중 commit draft #2595 HEAD는 그대로 target으로 설치하지 않음. 기존 main W01 #2588 source를 재사용해 정확 3 runtime path, file hash, CAS, approval pin, backup 및 완전 import closure 통과하는 최소 정규 후속 적용만 준비. W04 실패/복구 중이면 별도 설치 경합 안 함.
+- **기능 영향:** 신규 Census 원문 header 실측·수집 0, B2 D1 직접 읽기 권한 미확인. **34/71** 유지, 운영 새 DONE 0.
+
+
+
 <!-- W01-20261121-2595-CI-REAL-8PASS-LINEAGE-CONSTRAINT -->
 ## 2026-11-21 — 공유 W04 후속 Census archive A 후보 CI 진짜 8/8 재검증 및 선택 설치 single-parent 계약 확인
 
