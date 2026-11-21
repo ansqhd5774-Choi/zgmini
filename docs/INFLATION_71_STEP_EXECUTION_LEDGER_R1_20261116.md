@@ -47,6 +47,15 @@
 
 ## 개편 후 진행 기록
 
+### 2026-11-21 — #2607 실제 PC Core 2파일 SHA 확인 및 승인 불일치 특정
+
+- **A 최초 요청 오류와 정정:** #2606은 본 대화에서 생성 시 필수 `pc-job` label 누락. `pc-job.yml`의 owner-opened label 조건 때문에 Actions Run 44876247730 `approved-pc-job=skipped`; 실제 실행 아님. 원본 #2606을 closed/not_planned로 종료하고, 별도 신규 고유 정규 A [#2607](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2607)는 최초 생성 시 title=pc-job + label=pc-job 동시 포함. 같은 requestId 중복 발행 없음.
+- **실제 PC 성공:** #2607 / [Actions Run44876354239](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44876354239), seat4, `PASS/WRITER_APPROVED_PREIMAGE_READONLY`, JSON `results/44876354239-1-seat-4.json`/TXT `results/44876354239-1-seat-4.txt` 2/2 원격 회수. requestId `pc-c0d33f88-9a7e-4f27-871e-40cb1752d601`. 실제 현재 sourceHead=config.source=checkpointSource `a206220cc11045c24660e814124edbba9c0ff49f`, `sourceIdentityConsistent=true`; sourceRoot 고정 checkout만, `runtimeSourceVerified=false,coreTaskSourceLinked=false`.
+- **핵심 실측 SHA:** `scripts/pc-writer/local-cycle.mjs` = `2cfa0f9ae794e36d0a2fcf865a571258c5d3a4e1709557a5e4c1059dde46da75`, `scripts/pc-writer/inflation-causal-candidate-core-bridge.mjs` = `87a5fdeff8f3ef33a48adfff8e67c55c3080d207a2e490483fa94817a3774c37`. 두 파일 모두 PRESENT, 첫 파일 trackedDirty=false. 보호 전후 해시 동일, providerCalls/operationalWrites/d1Writes=0, SQLite 미개방.
+- **원인 조건 확정:** #2515 설치의 Core SHA와 이번 최신 조회가 동일. 현재 제어 `main`의 `inflation-manual-b/contract.mjs`는 구 `2e6200e5...`만 두 V2 allowed profile에 포함; Draft [PR #2531](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2531)은 실측 신규 `2cfa0f9a...` 3번째 정확 profile을 포함하나 main 미병합. 현재 공식 승인 V2 manifest `official-static-two-source-w01-v2-approved-20261116.json` 역시 `2e6200e5...`을 핀. 따라서 **CURRENT_CORE_SHA_CONFIRMED / B_APPROVAL_AND_OWNER_NOT_READY**. 승인 효과/서명없는 manifest 수정, 강제 실행, #1818 반복은 NO-GO. 후보의 실제 원인/근거는 [PR #2531 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2531#issuecomment-7058730977) 전달.
+- **2단계 독립 미완료:** D1 exact `detail:inflation-causal-candidates-7:r1`의 현재 `body/stored_at` 직접 readback 미확보. 이번 A는 Census/Core source preimage 증거만이며 D1 값 검증으로 승격하지 않는다. 1/5 DONE, 2 IN_PROGRESS, 3/4/5 NOT_DONE 유지. 다음 작업은 현재 공식 승인 범위/적정 live Core owner 증거를 확인해 단회 Census 수집 가능한 정확한 변경 효과만 정규 적용; 별개 D1 관리자 읽기 필요.
+
+
 ### 2026-11-21 — Census Core 최신 2파일 승인 A 재검증 요청 #2606
 
 - 기존 #2536은 Controller ESM `ERR_MODULE_NOT_FOUND`로 실제 preimage 함수가 한 번도 실행되지 않았음. 이후 공용 W04 Controller #2597 실제 설치 SUCCEEDED 및 import 복구가 운영 영수증으로 확인돼 **환경이 변경된 정확 읽기 재검증 1회**를 수행함. 기존 requestId는 재발행·재실행하지 않음.
