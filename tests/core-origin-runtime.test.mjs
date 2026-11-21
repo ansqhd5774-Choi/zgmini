@@ -66,7 +66,7 @@ test('wrapper verifies only close-in-time current PID proof, never trusts malfor
  assert.equal(capture(known).status,'PASS');
  assert.equal(capture({...known,createdAtMs:start-40000}).status,'UNVERIFIED');
  assert.equal(capture({...known,code:'CORE_TASK_ENGINE_NOT_VISIBLE'}).status,'UNVERIFIED');
- assert.equal(capture({...known,visibleInstances:0}).status,'PASS');
+ assert.equal(capture({...known,visibleInstances:0}).status,'UNVERIFIED');
  assert.equal(capture({...known,linked:false}).status,'UNVERIFIED');
  assert.equal(capture({...known,createdAtMs:null}).status,'UNVERIFIED');
 });
