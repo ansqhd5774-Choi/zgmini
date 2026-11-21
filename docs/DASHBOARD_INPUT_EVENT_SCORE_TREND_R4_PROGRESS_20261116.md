@@ -11,7 +11,7 @@
 | 1 | 현재 소유 범위·유효 완료 증거 확정 | 기존 27개 연결표·수정/시험/실화면 증거 재사용, 퇴역/미연결 콘텐츠와 원담당 작업 분리 | DONE |
 | 2 | 이미 병합한 UI/Reader 수정의 실제 적용 확인 | 관련 변경이 활성 Production 산출물에 포함됐는지 확인하고 실제 공개 동작 대조. 이미 정상인 변경의 재구현·재배포 없음 | DONE — GitHub merge SHA의 공식 Cloudflare Production Build SUCCESS + 공개 활성 JS #1460/#1461 + 공개 API/카드 일치; 비활성 #1462 재마운트 금지. 실제 active Deployment ID 직접 readback은 별도 UNVERIFIED |
 | 3 | 실제 남은 W06 소유 결함만 마무리 | 재현되는 Reader/갱신/카드/차트 결함만 최소 수정·관련 회귀·정규 적용. 업스트림 제약은 별도 전달 | DONE — 기존 #1459/#1460/#1461/#1462 최소 수정·CI·main/Production 적용 재사용, 활성 저장형 API 6기간 READY 및 최신값 일치, 신규 W06 Reader 소스 실패 미재현; 미확인 운영 입력/실화면은 4·5단계에서 별도 유지 |
-| 4 | PC·모바일 실화면 종합 확인 | 영향받은 화면의 값/단위/날짜/카드 최신점/차트 끝점·기간/결측·역행·overflow가 공개 저장 응답과 일치 | PARTIAL — 기존 실사이트 성공 증거 있음, 최신 변경의 미검증 범위 남음 |
+| 4 | PC·모바일 실화면 종합 확인 | 영향받은 화면의 값/단위/날짜/카드 최신점/차트 끝점·기간/결측·역행·overflow가 공개 저장 응답과 일치 | PARTIAL — **이번 실제 Production 390/1440 1D·1W·1Y 카드33.0·차트 곡선·기간 전환·가로넘침0 PASS**. 기존 1D 툴팁은 09:05/33.5 과거점 정확 확인, 최신 14:01/33.0 툴팁만 아직 별도 미검증 |
 | 5 | UI 작업 종결·업스트림 잔여 인계 | W06 완료/Production 검증/Writer·데이터 잔여를 구분하고 정확한 원담당·작업·종료조건으로 정리 | NOT_DONE |
 
 ### 2026-11-21 16:01 KST — 2단계 공식 배포 계보 조회 경계 (읽기 전용)
@@ -30,7 +30,7 @@
 
 ## NEXT — W06가 직접 수행
 
-**4단계 PC·모바일 실제 렌더링/툴팁/가로 넘침 확인:** 2단계 정상 Production 빌드·실행 자산 반영 DONE, 3단계 기존 재현 UI 결함 최소 수정/실반영 및 현재 공개 Reader 6기간 정상 대조 DONE. **독립 미확인:** 활성 PC 1440px·모바일 390px의 영향받는 기간 선택/툴팁/마지막점/overflow를 실제 브라우저로 다시 대조. 기존 CI Chromium PASS·공개 DOM 33.0 점수는 범위별 재사용하고, Firecrawl 상호작용 timeout을 실사이트 오류로 오판하지 않음. 이미 시도한 같은 브라우저 경로를 무한 재시도하지 않으며 기존 공식 GUI/사용자 육안 확인은 사용자가 최종 확인을 수행하는 #5 단계에만 필요한 만큼 요청. 실제 화면 결함 발생 시 해당 W06 최소 변경·정규 Git integration 실행. 원담당 #64 sampling 및 PC/D1 원본 운영 미인증은 4단계 전역 대기 아님.
+**4단계 잔여 최종 확인:** 2단계 정규 배포·3단계 실제 공개 Reader DONE. 이번 실제 Production Chromium CI #44880063693에서 **PC1440/모바일390의 1D·1W·1Y 기간 전환·곡선·카드 점수·가로 overflow 0·과거 1D 툴팁은 PASS**. **독립 미확인:** 마지막 저장 계산점 `2026-11-21T05:01:38.086Z@45.137344974152676`의 390/1440 실제 hover **14:01 KST·표시 33.0**가 정확한지. 기존 시험에서 09:05 KST·33.5 역사적 최댓값 툴팁을 읽었으므로 최신점 툴팁 완료로 오판하지 않는다. 기존 CI Chromium PASS·공개 DOM 33.0 점수는 범위별 재사용하고, Firecrawl 상호작용 timeout을 실사이트 오류로 오판하지 않음. 이미 시도한 같은 브라우저 경로를 무한 재시도하지 않으며 기존 공식 GUI/사용자 육안 확인은 사용자가 최종 확인을 수행하는 #5 단계에만 필요한 만큼 요청. 실제 화면 결함 발생 시 해당 W06 최소 변경·정규 Git integration 실행. 원담당 #64 sampling 및 PC/D1 원본 운영 미인증은 4단계 전역 대기 아님.
 
 ## 별도 원담당 대기·인계
 
@@ -41,6 +41,14 @@
 | 공식 최신성/역사적 modelVersion | 각 기능 원담당 | 입증 없는 값은 미확인 | 실제 자료/근거 가능 범위 판단. W06는 날짜·결측·계보 미확인 표시 보존 |
 
 ## 개편 후 기록
+
+### 2026-11-21 — 실제 Production Chromium 390px·1440px 독립 검증 PASS / 마지막점 툴팁 범위 분리
+
+- **시작·종료:** 3/5 DONE(60% 완료조건), 4 PARTIAL, 5 NOT_DONE. 기존 도구의 시각 접근 실패를 우회하기 위해 **기존 GitHub Actions Chromium workflow**에만 일회성 read-only 검사 삽입한 테스트용 **Draft [PR #1464](https://github.com/ansqhd5774-Choi/zgmini/pull/1464)** 생성. 변경 대상 `.github/workflows/community-chat-browser.yml` 1파일, 임시 test 브랜치 `test/w06-live-production-viewport-oneoff-20261121`; 운영 소스·main·Cloudflare Production·PC·D1·DNS 변경0. **PR #1464 CLOSED, MERGED=false** 및 두 번째 보완용 [Draft #1465](https://github.com/ansqhd5774-Choi/zgmini/pull/1465)도 CLOSED/MERGED=false. 두 PR은 실제 서비스 배포하지 않았고 기존 CI 테스트 검증 전용으로만 사용.
+- **실행 성공 증거:** [Actions #44880063693](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44880063693) `ui` job `136773177116` completed SUCCESS. 단계 `One-time W06 Production viewport 390 and 1440 (read-only, test PR only)` 자체 SUCCESS. 관련 `community-chat-browser-r1` artifact id `14697881659`(17,368,978 bytes)로 390/1440 1D·1W·1Y 스크린샷·`artifacts/w06-production-viewport/evidence.json` 업로드 단계 SUCCESS. 검증은 **실제 https://zgmini.kr 현재 방문, 네트워크 공개 GET, React/Recharts DOM**으로 실행. 기존 local mocked Chromium과 혼동하지 않는다.
+- **실수치 로그, 두 화면 모두:** `/api/market-score` `overall.status=READY`, `market.updatedAt=2026-11-21T07:20:45.469Z`, 변환 표시 현재 카드 **33.0점**. 390px document scrollWidth **390**, 1440px scrollWidth **1440**로 가로 넘침 **0**. 종합차트 영역은 모바일 x130~362, PC x182~707로 viewport 내. 실제 버튼 선택 `aria-pressed=true`로 **1D·1W·1Y** 확인. 각 기간 실 Recharts path 2개·ReferenceDot 3개 및 표시가 있음. 공개 저장형 `/api/market-score/observations?period=` **1D 2점, 1W 6점, 1Y 6점**; 공통 마지막 실제 저장 계산점 `2026-11-21T05:01:38.086Z@45.137344974152676` 확인. 기존 1M/3M/6M는 별도 실제 공개 GET 6점 마지막 동일 + 기존 mock Chromium 6기간 PASS 증거를 재사용하여 불필요한 모든 기간 신설 라이브 시험 없음.
+- **중요하게 미완료인 한 항목:** 첫 검증의 ReferenceDot `.last()` hover는 마지막 저장 계산점이 아니라 실제 **과거 2026-11-21 00:05:41 UTC(한국 09:05), 표시33.5**의 극값 Dot을 선택했다. 툴팁 원문: `2026. 11. 21. 09:05 (계산 시각)33.5실제 계산시각 점 · 당시 방법론 버전 미확인`. 이 값은 해당 과거 실제 점과 **일치 PASS**. 그러나 최종 **05:01 UTC(한국 14:01), 표시33.0** hover는 **아직 직접 입증되지 않음**. 보완 시험은 ReferenceDot `.first()` + 현재 시간/점수 assert로 수정된 임시 브랜치 commit `1ff6e10c066c7f99856512c0891743db62d7c756`이나, #1464 이후 새 브라우저 job이 트리거되지 않아 #1465를 통한 완료 증거 없음. Node CI와 브라우저 실행을 혼동하지 않고, 4단계 PARTIAL 유지.
+- **검증 한계/다음 행동:** 4단계에서 남은 것은 새 입력 수집·Cloudflare 배포·매일 새 체크가 아니라 **실제 차트 1D 마지막 실제 점의 툴팁 클릭/hover 시각·점수 한 항목**. 기존 무료 GitHub UI job으로 PC/mobile 화면 기능·0 overflow 입증했고 반복적 로컬 시험/새 가짜 데이터/Writer sampling 수정/유료 브라우저 비용 없음. 정규 GUI 직접 관측 또는 새 유효한 CI 실제 hover 로그에서 14:01 KST/33.0 확인 시 4단계 DONE 판정→5단계 W06 UI 종료와 #64 Writer 잔여 인계 분리. 최초 툴팁이 역사점이라는 사실을 숨기거나 전체 UI 오류로 단정하지 않음.
 
 ### 2026-11-21 — 4단계 최신 실화면 접근·#64 Writer 원담당 상태 재확인
 
