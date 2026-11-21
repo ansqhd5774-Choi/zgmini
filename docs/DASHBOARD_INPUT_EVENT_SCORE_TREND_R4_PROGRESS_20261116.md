@@ -42,6 +42,15 @@
 
 ## 개편 후 기록
 
+### 2026-11-21 — W06 4단계 PC·모바일 시각 증거 재사용/미인증 경계 확정 (비변경)
+
+- **기준:** 3/5 DONE, 4단계 PARTIAL(진척 완료 조건 변화 0), `ansqhd5774-Choi/zgmini` latest 확인 main `2eb796da811d0e074ca0cabab8e2cad9502bff43`; W06 5단계 원장 상단을 현재 실행 정본으로 재조회. 기존 2·3단계 Production/Reader API 원본 증거 재사용, #64 다른 담당 Writer 초단기 sampling 재현은 반복하지 않음.
+- **무료 기존 GitHub 실제 Chromium 회귀 증거 회수:** [GitHub browser run #44871059071](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44871059071) `ui` Job completed SUCCESS. 실제 `tests/dashboard-history-browser-r5.mjs`는 `390/768/1440/1920px`, 대시보드 **1D·1W·1M·3M·6M·1Y** 버튼 선택, 곡선 경로·최신 stored snapshot·실제 0·1D 선/중복점 금지 및 `document.documentElement.scrollWidth<=viewport+1`를 DOM 단언. 테스트는 **모의 저장형 자료를 사용한 local Chromium**이며 활성 Production 사이트의 현시점 화면/tooltip 완성 직접 증거와 구분. 관련 PR #1460의 React effect 실제 callback 테스트/Chromium PASS, #1461 날짜 guard/#1462 비활성 계약 Node CI PASS는 이전 완료 증거 재사용. Browser UI job artifact `community-chat-browser-r1` 존재하지만 현재 카드/차트의 실사이트 스크린샷이 아님.
+- **기존 사용자 브라우저 읽기:** 브라우저에 열려 있던 `https://zgmini.kr/` 탭 텍스트가 종합시장 점수 `33.0`, `33.0(11-21)`, 6개 기간 버튼과 현재/전일 표시를 노출함을 확인. 기존 공개 `/api/market-score` 원점수 `45.137344974152676` 및 1D 마지막 실제 계산점 `2026-11-21T05:01:38.086Z@45.137344974152676`과 표시값 33.0 일치. 다만 **이미 열려 있던 탭의 현재 Reload/최신 Deployment 바이트는 검증되지 않아** 이 결과만으로 당일 PC/390px 최신 viewport overflow/tooltip PASS 처리하지 않음.
+- **새 시각 캡처 불가:** 공식 Firecrawl 공개 390px 스크린샷 단회 요청은 연결된 계정의 `Insufficient credits`로 **작업 시작 전 거부**. 이전 interact browser 세션도 timeout이었으므로 실패 경로를 반복하지 않고 유료 플랜/추가 credit/신규 도구 연결·결제 요청 없음. 격리 container에서 직접 공개 사이트 DNS 연결 실패로 신규 렌더링 도달 불가. 이 제약은 **AUTOMATION_BLOCKED(시각 재검증 범위 한정)**이며 서비스 Runtime 장애·데이터 오류 증거가 아님. 기존 소스/CI/Production GET PASS 취소하지 않음.
+- **정확 현재 판정:** UI DOM 테스트의 390/1440 responsive/기간/zero/overflow 계약은 기존 CI 범위 **PASS**. 활성 Production 현재 카드 33.0/마지막점은 공개 응답·읽기 가능한 DOM 스냅샷 범위 **일치**. 최신 활성 Production에 대한 실제 390px/1440px **툴팁·기간 선택 후 DOM 마지막점·viewport scrollWidth 및 화면 육안**은 아직 **UNVERIFIED**. 결함이 재현되지 않았으므로 UI 디자인/JS/산식 수정0, 신규 PR/배포/Writer/DB/D1/예약 변경0. 4단계 **PARTIAL 유지**, 5단계 NOT_DONE.
+- **다음 단일 행동:** 중복 브라우저 크레딧 소모·유료 실행 대신 기존 공식 GUI/실제 사용자 한 번의 확인으로 현재 `https://zgmini.kr/` 1440px 데스크톱과 390px 모바일 화면을 새로 열고 종합점수 1D/1W/1Y 버튼·마지막점 툴팁/가로 스크롤 여부를 확인한다. 동적 점수는 검증 시 공개 API 마지막 계산시각/원점수를 같은 시각에 대조하며 과거 33.0을 고정 기대값으로 삼지 않는다. 표시 오류가 보일 때만 화면/실제 API가 다른 정확 key를 사용해 최소 수정. UI 종료 이후 #64 sampling Writer Draft #1185/#1228, 실제 저장→D1 readback·과거 point modelVersion은 원담당 별도 인계, 글로벌 차단 아님.
+
 ### 2026-11-21 — 3단계 W06 직접 담당 신규 Reader 결함 점검 및 6기간 실공개 GET 대조
 
 - 2단계 PASS 실증 소스/배포/공개점수 재사용. 직접 새 소스/시험/PR 없이 현재 Production `/api/market-score/observations` 6기간만 개별 GET. 전 기간 HTTP200, `status=READY`, `version=COMPOSITE_CALCULATED_SCORES_R1`, `sampled=false`. 1D 전체 **2점**, 1W/1M/3M/6M/1Y **각 6점**, 1W 첫 `2026-11-20T19:53:00.460Z@45.3241750396837`, 전 기간 마지막 `2026-11-21T05:01:38.086Z@45.137344974152676`로 일치. 모든 조회는 공개 저장형 Reader GET, 원자료 공급처/PC Writer/SQLite/D1 쓰기/배포/예약 호출 0. 공개 현재점수 `45.137344974152676`, 카드 변환 표시 `33.0`과 마지막 점 일치. 공개 이력에 없는 계산점·보간을 새로 만들지 않음. `availableDays` 1D=2, 1W=9, 1M~1Y=20은 데이터 제공 가능 일수 필드로 보며 관측점 개수와 혼동하지 않음. 전체 과거 이력/point modelVersion/실PC DB 동치는 이 결과만으로 인증 불가.
