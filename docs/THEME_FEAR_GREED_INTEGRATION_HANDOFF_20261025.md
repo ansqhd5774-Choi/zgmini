@@ -1,3 +1,14 @@
+## 2026-11-21 KST — 37차 로컬 Chromium 모바일 순위표 폭 제한 시뮬레이션
+
+- 목적: 실운영 사이트 DNS 접근이 실패하는 로컬 격리 환경에서 화면 정상 PASS를 가장하지 않고 모바일 표 **열 폭 조건만** 독립 검사. 설치된 Chromium headless와 Python Playwright를 이용했으며, Production 요청·D1/PC 명령·배포·비용 추가 0.
+- 입력/범위: 최신 main `app/theme-fear-greed/theme-detail.css`의 실제 반응형 순위표 그리드 수치 `@media(max-width:680px)`의 `15px 112px minmax(24px,1fr) 35px 55px 53px`·gap 3px, `@media(max-width:355px)`의 `14px 100px minmax(24px,1fr) 31px 51px 43px`·gap 2px를 별도 로컬 HTML fixture에 재현. 10개 표시 테마명/소수 점수는 기존 화면 결과 재사용. 외곽 12px padding은 **시뮬레이션 가정**이며 실제 홈/상세 DOM·전체 CSS·Recharts는 포함하지 않는다.
+- 실제 실행: Chromium viewport 390×800에서 `documentElement.scrollWidth <= innerWidth`, 10개 행 `scrollWidth <= rowWidth`, 10개 테마명 `nameScroll <= nameClient` 전부 PASS. 열 크기 `15,112,77,35,55,53px`. 320×800에서도 같은 3개 조건 PASS, 열 크기 `14,100,43,31,51,43px`. 두 폭에서 미니 그래프 **대체 문자** 일부 overflow가 나왔으나 이는 fixture 문자 폭이지 실제 차트 결함 증거가 아니다.
+- 증거 파일(로컬 임시 screenshot, Production 스크린샷 아님): `/mnt/data/w03_mobile_grid_390_simulation.png`, `/mnt/data/w03_mobile_grid_320_simulation.png`. 이 임시 산출물은 저장소/운영 DB에 업로드하지 않음.
+- 도구 상태: API의 무료 Firecrawl 원문 접근은 `insufficient credits`로 불가, 이후 재호출·결제 없음; 연결 Chrome에서는 기존 탭 읽기 전용만 가능하며 뷰포트 변경 불가. 로컬 `zgmini.kr` DNS 실패는 Production 장애 입증 아님.
+- 결론: 모바일 랭킹 **열 폭·테마명 표기 가정 시험** PASS. 실제 Production 모바일 홈·상세에서 차트, 범례, 중첩, 종합 overflow, 확정/잠정/결측 확인은 `NOT_VERIFIED`. 단계4 PARTIAL, 단계5 NOT_DONE 및 전체 완료3/5 유지. 실제 결함 확인 전 UI 변경 없음.
+
+---
+
 ## 2026-11-21 KST — 36차 5단계 공통 확장 구조 실제 코드 연결 재검증
 
 - **기준**: 최신 `main@2eb796da811d0e074ca0cabab8e2cad9502bff43` 및 브랜치 기존 승인 증거. 이전 35차의 PC 홈/상세/API 일부 교차확인 결과 재사용. 이번 브라우저 탭 목록에는 홈·상세·번역된 API 원문 탭뿐, 모바일 viewport 또는 새로운 촬영 증거는 없음. 단순 이미지 리사이즈로 모바일 실렌더 PASS 생성하지 않음.
