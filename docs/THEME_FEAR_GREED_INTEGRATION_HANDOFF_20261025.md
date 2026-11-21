@@ -1,3 +1,12 @@
+## 2026-11-21 KST — 34차 사용자 제공 API 화면 복사본과 상세 점수 교차검증
+
+- 사용자 제공 파일 `붙여넣은 마크다운.md`(API 브라우저 화면의 텍스트 복사본) 실제 파일을 읽고 연결 Chrome `https://zgmini.kr/api/theme-fear-greed?utm_source=chatgpt.com` 탭 `183831391` 읽기 결과와 비교. 두 텍스트 모두 Google 번역으로 바뀐 한국어 key(`버전/상태/점수/이력`)와 문자열 분절·부분 중복을 포함. Python JSON 파서 원문에 직접 적용 불가. 따라서 **정상 raw JSON 다운로드·각 252점 이력/정렬/전 관측 SHA 무결성 검증 성공은 주장하지 않음**. 손상은 복사/브라우저 화면의 텍스트 변환으로 보이며 Production API 자체 반환 bytes 손상을 입증하지 않는다.
+- 텍스트에서 읽을 수 있는 API 최상위 저장 메타: `ZGMINI_THEME_PAID_HOURLY_V1`, observationDate `2026-11-20`, sourceStoredAt `2026-11-21T05:00:58.041Z`, sourcePriceMode `MARKETPARQUET_PAID_SPLIT_ADJUSTED_1H_NY_PROXY_V1`, provisional.points 빈 배열, expected/readyPublicIds 10개와 pendingPublicIds 빈 배열(파일 말미 반복 구간은 중복 계측으로 세지 않음).
+- 10개 마지막 `2026-11-20` 점수의 각 테마 단편과 실제 상세 hydrated DOM 32차 점수 비교: `robotics=0.77524→0.8`, `cloud-saas=15.72677→15.7`, `autonomous-driving=1.08783→1.1`, `nuclear-smr=7.99083→8.0`, `defense=13.64877→13.6`, `fintech=16.66764→16.7`, `cybersecurity=20.0041→20.0`, `biotech=13.65157→13.7`, `data-center-power=3.56151→3.6`, `space-satellite=16.45465→16.5`. **마지막 숫자/반올림 비교는 10개 일치**, 그러나 불완전한 JSON 화면 문자열의 가시 구간을 활용한 것이므로 전체 구조/252점 길이 검증과 구별한다.
+- 현재 확인된 실제 값 불일치 없음. 다음 최소 행동은 Chrome 페이지 번역 OFF 후 원문 JSON의 `themes` 각 `history.length` 252 및 순서·날짜·마지막점 직접 파싱(또는 공식 무료 웹 요청 경로)과 모바일 실제 viewport 확인. 반복 운영 갱신·수집/계산/배포/승인 정책 변경 금지. 4단계 `PARTIAL`, 5단계 `NOT_DONE` 보존.
+
+---
+
 ## 2026-11-21 KST — 33차 홈/상세 점수 표시 계약 대조 및 API 브라우저 조회 경계
 
 - 실PC 연결 Chrome 두 탭을 재확인: 홈 `183831268`(`https://zgmini.kr/`)과 상세 `183831378`(`/theme-fear-greed/?utm_source=chatgpt.com`). 상세 hydrated DOM의 10개 순위/소수점수와 사용자 업로드 PC 스크린샷의 값이 일치한다는 32차 증거 재사용.
