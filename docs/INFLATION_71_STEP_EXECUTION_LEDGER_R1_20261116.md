@@ -47,6 +47,14 @@
 
 ## 개편 후 진행 기록
 
+### 2026-11-21 — Census Core 최신 2파일 승인 A 재검증 요청 #2606
+
+- 기존 #2536은 Controller ESM `ERR_MODULE_NOT_FOUND`로 실제 preimage 함수가 한 번도 실행되지 않았음. 이후 공용 W04 Controller #2597 실제 설치 SUCCEEDED 및 import 복구가 운영 영수증으로 확인돼 **환경이 변경된 정확 읽기 재검증 1회**를 수행함. 기존 requestId는 재발행·재실행하지 않음.
+- 기존 승인 A `writer-install-preimage-readonly`와 pin `approvals/writer-preimage/inflation-core-hook-2-20261109.json`, manifest sha256 `de4e9d80984383d4f300d37477800f54d28ed21ca39dd4a39b4c6354517a8db6`를 그대로 재사용. 현재 public app main `2eb796da811d0e074ca0cabab8e2cad9502bff43` 정확 고정. 신규 고유 [#2606](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2606) / requestId `pc-0d1e8f4a-35b8-4f36-9e21-5c77dc113802` 발행. 대상은 Core `local-cycle.mjs`와 `inflation-causal-candidate-core-bridge.mjs`의 고정 읽기만; Supplier/SQLite/D1/Writer/Task 쓰기 없음.
+- #2606 발행 직후 결과 댓글 0: **REQUESTED / RESULT_NOT_OBSERVED**. Run/실제 source SHA·JSON/TXT 및 자연 Core ownership·Event129은 성공으로 판단하지 않음. 회수 후 실제 2파일 SHA를 승인 V2/Core #2515 설치 영수증과 대조하여 최소 수정 및 정규 단회 Census 수집 여부 결정.
+- 2단계 D1 live `body/stored_at` 미확보와 독립. 기존 ER1 전용 `writer-publication-evidence-readonly`를 물가 D1 인증으로 전용하지 않음. 1/5 DONE, 2단계 IN_PROGRESS, 3~5 NOT_DONE 유지.
+
+
 ### 2026-11-21 — 개편 2단계 공식 읽기 경로 재확인·3단계 Census 승인 소스 대조
 
 - **2단계 현장 조회 한계 재확인:** 생산 /api/inflation-candidate-inputs 및 /api/inflation-detail의 새 직접 GET은 이 웹 경로에서 URL_NOT_ACCESSIBLE. 기존 #2577 Writer 원장은 `UNCHANGED_VERIFIED/ready6`이지만 D1 live `body,stored_at` 부재. `writer-publication-evidence-readonly`의 실제 module은 ER1 시장 캘린더 output/ledger 전용이며 물가7 D1 원본 조회기가 아니다. 따라서 새 A 재발행/재게시/임의 Cloudflare SQL 없이 `D1_CURRENT_VALUE_NOT_OBSERVED` 유지. 기존 2026-11-21 API 6 READY/PENDING1은 당시 관측 증거로 보존하며 현재 동치로 확대하지 않는다.
