@@ -1,5 +1,8 @@
 ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 
+## W05 현재 목적·작업계획 — 2026-11-21 개편
+- 실적 정보성 지표의 실제 원자료 저장·계산·게시·사이트 연결은 `docs/EARNINGS_RECESSION_R1_R6_82_STEP_EXECUTION_PLAN_20261116.md`의5단계 계획을 따른다. 현재 위치·NEXT 정본은 `docs/EARNINGS_RECESSION_R1_R6_82_STEP_PROGRESS_20261116.md` 상단이며1/5 완료·2단계 실제 WPSFD42 수집 효과 승인/실행 준비 중이다. 기존3파일 설치는 재사용하고 소스 설치 GO를 Provider/SQLite append GO로 확대하지 않는다. 다른기능5키 D1 의미동치 지원감사는 `docs/API_SITE_R1_ACTIVE_WORK_PLAN_20261114.md`로 분리하며 그대기가 W05 독립 기능작업을 멈추게 하지 않는다. 과거82단계 연속26/개별35·5키75%와중첩NEXT는역사기록이다. 기존 산식·역할·권리·운영승인·배포 계약은 유지한다.
+
 ## 0. 최상위 원칙
 - 승인된 산식·데이터 구조·Revision·작업 기준 최우선.
 - 승인 없는 구조/DB/배포방식/산식/DNS 변경 금지.

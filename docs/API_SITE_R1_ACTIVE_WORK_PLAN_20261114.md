@@ -1,3 +1,38 @@
+# API–사이트 통합 — 주 실행과 5개 경로 의미동치 지원업무 (2026-11-21 개편)
+
+## 목적·권한·현재 실행 정본
+
+브랜치 `codex/api-site-integration-r1-20261026`의 주 실행은 [실적 정보성 지표 5단계 계획](EARNINGS_RECESSION_R1_R6_82_STEP_EXECUTION_PLAN_20261116.md), 현재 상태는 [진행 원장 상단](EARNINGS_RECESSION_R1_R6_82_STEP_PROGRESS_20261116.md)을 따른다. **현재1/5 완료·2단계 진행 중.** 과거5키 감사75%/3단계 완료 수치는 주 기능 완료율이 아니다. 원래 실적침체 R1~R6 설계·적격 정보행 확장·기존 E1-R4 보호는 폐기하지 않는다.
+
+독립 지원 목적은 물가19/7·시장일정·테마·고용의 **현재 선택된 D1 저장 결과→실제 Reader 변환→공개 응답** 의미 동치를 기존 권한·비민감 비교 결과로 확인하는 것이다. 원담당 수집·산식·DB 설계·기능 코드를 대체하거나 W05의 실적 원자료 완료와 같은 분모로 묶지 않는다.
+
+## 현재 Reader 기준 비교표
+
+| 지원 범위 | 실제 저장 대상·공개 경로 | 비교 기준 |
+|---|---|---|
+| 물가19 | market_public_snapshots_v1 / detail:inflation-causal-public-19:r1 → /api/inflation-causal-inputs | 저장 래퍼의 payload와 공개 응답의 정확 변환·각 계열 관측일/상태/시각 |
+| 물가7 | market_public_snapshots_v1 / detail:inflation-causal-candidates-7:r1 → /api/inflation-candidate-inputs | 현재 유효6행/Census 별도 상태 등은 원담당 증거 재사용. 과거ID22/23도 결손이라고 고정하지 않음 |
+| 시장일정 | public_feed_snapshots_v1 / kind=output,feed_key=release-calendar,snapshot_key=current → /api/release-calendar | 실제 body·각 source checkedAt/updatedAt·조회 기간/개별 변환. 존재하지 않는 통일 sourceVersion 필드를 강제하지 않음 |
+| 테마 | public_feed_snapshots_v1 / kind=output,feed_key=theme-fear-greed-paid-hourly-v1,snapshot_key=current → /api/theme-fear-greed | 이번 main worker/theme-paid-contract.mjs·theme-paid-public.mjs의 유료 공통 키 확인. 구형 seed만으로 현재 공개 동치 판정 금지 |
+| 고용 | market_public_snapshots_v1 / detail:employment-r6:one-year:v1 → /api/employment-r6/observations | 29행/유효 점수 구분·formulaHash/methodologyVersion/sourceStoredAt/asOfDate와 표시 변환 |
+
+## 실행·완료 기준
+
+- 원담당의 기존 실행·D1 CAS/readback·현재 API 증거를 유효 source/시점/결과 범위에서 재사용한다. 현재 권한/배포/선택 key가 달라진 부분만 검증한다. 과거 '0/5 미확인'을 현재 실제 실패0/5라고 고정하지 않는다.
+- 정확 관련 row만 조회하거나 기존 보호 실행환경 내부에서 변환 후 의미 비교하고, 비민감 일치/불일치 필드·source/저장 시각·원본 영수증 참조를 회수한다. 원본의 private 데이터/키/모든 피드 본문을 댓글에 공개하지 않는다.
+- 전체 body SHA와 변환 API SHA의 기계적 동일성은 요구하지 않는다. HTTP200/build/설치PASS와 현재 D1 row 의미 동치를 구분한다. 공개 빈 응답·PARTIAL·미발표는 계약에 따라 해석한다.
+- 각 경로의 실제 현재 비교가 끝날 때만 해당 경로 DONE. 새 증거가 없으면 미검증으로 남기고 전체 Runtime 실패로 확대하지 않는다. 한 경로·도구 제한으로 다른 경로나 실적 정보행 개발을 중단하지 않는다.
+- 불일치 시 W05 Reader/응답 소유 범위만 최소 수정한다. 원자료/계산/Writer 문제는 정확키·최초 불일치·기존 증거·요청 행동을 해당 원담당에게 연결하며 타 기능의 산식·수집·PC 설치를 대신 변경하지 않는다.
+- UI 현재값/단위/날짜/차트 검증은 기존 UI 담당의 유효 실사이트 증거를 재사용한다. source 접근 제약만으로 유효 Production 성공을 취소하지 않고, 미검증 계보를 가짜 완료로 올리지 않는다.
+- 이 지원 업무에 추가 권한·새 Controller·새 감시 예약·전역 D1 감사 체계를 만들지 않는다. 기존 공식 도구·읽기 경로·재조회 영수증으로 필요한 비교를 완료한다. 승인 없는 Provider/DB/D1 쓰기·배포는 이 계획에 포함되지 않는다.
+
+## 과거5키감사계획 보관
+
+[개편 전 원문](https://github.com/ansqhd5774-Choi/zgmini/blob/61e2c02eb2bbd4ef967a8506ee78b3324c1331f3/docs/API_SITE_R1_ACTIVE_WORK_PLAN_20261114.md). 과거 접근 실패·구형 테마 seed·75%·0/5는 당시 진단으로 보존하며 현재 실행계획을 대체하지 않는다.
+
+<details>
+<summary>이전 API–사이트 현행 계획 전체 — 역사 기록, 현재 실행 지시 아님</summary>
+
 # ZGMINI API–사이트 연결 — 전용 브랜치 현행 작업계획 및 최종 완료 기준 (2026-11-14 KST)
 
 > **계획·현행 상태 문서, 운영 승인이나 배포 지시가 아님.** 기존 승인된 계약·원자료·산식·DB·TTL·주기·권리·DNS·Cloudflare 배포 경로는 변경하지 않는다. 이 문서의 source 검증 PASS를 운영 성공으로 승격하지 않는다.
@@ -69,3 +104,6 @@
 이 브랜치에 보존된 2026-10-26 [R1~R6 원계획](EARNINGS_RECESSION_COMPANION_API_SITE_INTEGRATION_PLAN_R1_20261026.md)은 **E1-R4 승인 위험 4요소/가중치/원자료/이력 불변**과 **정보성 C 지표는 개수 제한 없이 유효한 것만 추가**가 최종 목표다. 각 공급자(기존 BLS/BEA 재사용 우선, Census/SEC는 적격 시) 권리·실자료 검증 → PC 보존·lineage → 별도 승인된 공개 read-model/D1 readback → `/earnings-recession/` 실제 화면·출처·날짜 → 통합 CI·정규 main 승인·Cloudflare Production·정기 갱신까지 충족해야 종료한다.
 
 [브랜치 이탈 감사](EARNINGS_API_SITE_BRANCH_ALIGNMENT_AUDIT_R1_20261027.md)에 명시한 BLS 3원천 저장/계산·5정보행 근거, BEA preflight 수준과 Production 미증명 차이를 보존한다. **이 별도 R1~R6 종단 완결도는 75%라고 측정한 적 없으며, 중앙 65차의 5키 업무 완료만으로 자동 종료되지 않는다.** 새 정보성 키/스키마·UI·게시가 필요하면 해당 대상에 대한 사전 승인을 거쳐 진행한다.
+
+
+</details>

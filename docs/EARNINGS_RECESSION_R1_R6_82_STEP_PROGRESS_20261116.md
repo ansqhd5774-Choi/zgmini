@@ -1,3 +1,49 @@
+# W05 API·실적 정보행 — 운영 완료 5단계 진행원장 (2026-11-21 개편)
+
+<!-- W05-ACTIVE-FIVE-STAGE-PLAN-20261121 -->
+
+**현재 1/5단계 완료·2단계 진행 중.** 완료 조건 개수이며 작업량 20%가 아니다. 기존 순차26/82·개별35/82·독립5키75%는 과거 계수로 보존하고 합산하지 않는다. 이 상단이 유일한 현재 인계 정본이며 아래 과거 §148/0-A/C표의 NEXT·HOLD·순번은 시점별 기록이다.
+
+저장소 `ansqhd5774-Choi/zgmini` / 브랜치 `codex/api-site-integration-r1-20261026` / 개편전HEAD `61e2c02eb2bbd4ef967a8506ee78b3324c1331f3`.
+목적·실행 기준: [개편 계획](EARNINGS_RECESSION_R1_R6_82_STEP_EXECUTION_PLAN_20261116.md). 독립 지원 업무: [5개 API–D1 비교](API_SITE_R1_ACTIVE_WORK_PLAN_20261114.md).
+
+| 단계 | 직접 수행할 작업 | 완료 조건 | 현재 |
+|---|---|---|---|
+| 1 | 기존 운영 자산·완료 범위·실제 결손 확정 | 설치된 코드/저장 자료/공개 API/실화면의 유효 증거 재사용, source 준비와 운영 효과 구분 | DONE |
+| 2 | 실제 미확보 원자료·저장 계산 마무리 | WPSFD42 정확 수집 효과 승인 확인→기존 단회 B→SQLite 원문/해시/checkpoint readback→저장 자료 계산. 이미 확보된 QFR/BEA는 재수집하지 않음 | IN_PROGRESS — 수집 manifest PROPOSED_NOT_APPROVED, 실제 POST·append 미실행 |
+| 3 | 저장된 결과의 기존 게시·API 연결 | 적격 BLS 서비스/BEA 단위이익/QFR 등 필요한 각 projection을 기존 Writer로 게시·D1 readback·저장형 GET 대조. 정상 경로는 재게시하지 않음 | NOT_DONE — BEA 단위이익/QFR 현재 STORED_PROJECTION_PENDING |
+| 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | PARTIAL — 기존 실사이트 PASS 재사용, 신규 연결 영향만 확인 |
+| 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | NOT_DONE |
+
+## 현재 완료 근거와 실제 미완료
+
+- #2234/#2235/#2236 설치 완료와 #2584 실PC A PASS·3파일 SHA 일치·운영 쓰기0을 재사용한다. #2245/#2252/#2586 source·CI·main 반영은 완료지만 수집 B 실행 완료와 다르다.
+- 이번 제어 main의 WPSFD42 수집 manifest는 PROPOSED_NOT_APPROVED. 실제 POST1회/SQLite append 효과 승인 원본 확정→기존 단회 B→원문 SHA/checkpoint→저장 자료 계산이 미완료다. 기존 source 설치를 다시 하지 않는다.
+- 이번 실제 공개 GET: BLS 정보행200/READY5행, BEA 제조업200/READY. BEA 단위이익·QFR은 각503/STORED_PROJECTION_PENDING. 원자료 소실로 추정하지 않고 기존 PC 저장·계산→게시 projection의 최초 미연결만 수정한다.
+- #1257은 현재 OPEN/Draft이고 원문15파일 merge HOLD를 보존한다. 필요한 정확 효과만 기존 절차로 결정하고 다른 정상 작업을 전역 보류하지 않는다.
+- 기존 PC/모바일·4폭 실사이트 성공은 해당 범위에서 재사용한다. 현재 D1 직접 readback·새 API 연결·정규 갱신을 이번 문서 개편에서 완료한 것으로 주장하지 않는다.
+
+## NEXT — 담당자의 재개 작업
+
+**2단계: 기존 #2240·승인 원문에서 WPSFD42 2025~2026 BLS POST 최대1회+기존 SQLite 두 테이블 append-only 효과의 실제 GO를 확인한다.** 기존 유효 승인이 있으면 반복 승인 없이 기존 정규 단회 B를 실행하고 raw SHA/checkpoint·저장 자료 계산까지 끝낸다. 없으면 그 효과의 정확 범위·횟수·보호·종료조건만 구체화한 단일 결정을 요청한다. 이 문서를 승인 manifest로 사용하지 않는다.
+
+승인 대기 중에는 기존 QFR/BEA 저장 자료의 3단계 게시 연결·기존 화면 검증·지원5키 읽기를 독립 진행한다. 새 Controller/진단 체계 구축이나 구형 Core owner 검사 반복을 기본 다음 작업으로 삼지 않는다.
+
+## 개편 후 기록
+
+### 2026-11-21 — 82단계와 5키 감사를 분리한 5단계 계획 개편
+
+- 사용자가 이 브랜치도 개편하도록 지시했다. 현재 목표는 실적 정보행의 실제 저장·공개 종단 완료이고, 다른 기능5키 동치 감사는 독립 지원 범위로 정리했다.
+- 원문82단계/개별 완료/순차 완료/실제 성공·실패 증거는 아래 원문 보존. 현재 위치1/5 DONE·2단계 IN_PROGRESS. 문서 작성만으로 기능 새 완료를 추가하지 않았다.
+- 계획·진행 원장·지원 업무 계획·AGENTS 4파일 변경. 운영 코드·source 설치·Provider POST·SQLite/D1 쓰기·sampling·산식·예약·배포 변경0.
+
+## 과거82단계 진행·원문 증거 보관
+
+[개편 전 원문 고정 링크](https://github.com/ansqhd5774-Choi/zgmini/blob/61e2c02eb2bbd4ef967a8506ee78b3324c1331f3/docs/EARNINGS_RECESSION_R1_R6_82_STEP_PROGRESS_20261116.md). 아래 여러 '현재/최신/다음'은 각 당시 시점이며 현재 상단의 NEXT보다 우선하지 않는다.
+
+<details>
+<summary>과거82단계 진행원장 전체 — 역사 기록, 현재 실행 지시 아님</summary>
+
 # ZGMINI W05 실적 침체 — R1~R6 전체 82단계 진행 기록
 
 - 기준일: **2026-11-16 KST**
@@ -2630,3 +2676,6 @@ R3C와 R3D는 Node built-in 모듈만 정적 import하고, R4 preview의 유일�
 - **소스 적용 완료:** [제어 PR #2586](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2586) 3파일 범위, source-pin과 `PROPOSED_NOT_APPROVED` **제안** manifest의 installedSourceSha만 `a206220c…`로 수정, 기존 W05 3파일 SHA 불변. 정확 PR HEAD `e56c156c36a972daaaab610a8195fd086db73504` [W05 Source CI #44870726072](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44870726072) PASS, [C996 #44870726066](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44870726066) PASS. 실제 main squash `0bc70e9810e68298ff8a9afb8b9b694fe92b1b7d` blob/status 재조회, 기능 효과 **미승인 유지**. 실행기 구조·원자료/DB/schema/Task·D1·Cloudflare 변경 없음.
 - **R3-11 독립 항목 조사:** 복구된 Controller `24f1139b…`의 `controller/operations.mjs`에는 `earnings-bea-mfg-archive-readonly` handler/import 존재하나 동일 target `config/operations.json`에는 operation 없음. GitHub source만으로 실제 PC config 등록을 증명할 수 없으므로 A 요청하지 않았으며 공유 Controller 소유자의 정확 허용목록/설치 readback 범위로 분리. R3-04 승인 대기로 R3-11을 전역 HOLD하지 않음.
 - **첫 실기능 미완료:** WPSFD42 2025~2026 BLS API 1회 POST + 기존 PC SQLite chunk/snapshot append-only 효과 승인 원본 미확정, [#2240](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2240) 진행. 단회 B Issue/Provider/SQLite/D1/Production 실제 효과 아직 0; 승인된 source/manifest 사전 검사 통과 및 실제 단회 저장·SHA/checkpoint readback 전까지 R3-04 DONE 아님. **순차 26/82(31.7%), 개별 35/82(42.7%) 유지**.
+
+
+</details>

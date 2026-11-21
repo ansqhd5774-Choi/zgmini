@@ -1,3 +1,89 @@
+# W05 실적 정보성 지표 API–사이트 연결 — 운영 완료 5단계 실행계획
+
+개정: 2026-11-21 KST / 저장소 `ansqhd5774-Choi/zgmini` / 브랜치 `codex/api-site-integration-r1-20261026` / 개편 전HEAD `61e2c02eb2bbd4ef967a8506ee78b3324c1331f3`.
+
+## 1. 목적·완료 범위·현재 위치
+
+**이미 확보한 공식 원자료와 필요한 추가 원자료를 기존 저장·계산·게시 경로로 실적 정보행에 연결하고, 실제 사이트에서 정확한 값·날짜·차트·갱신 상태를 제공한다.** 기존 위험 점수 E1-R4의4요소/산식/가중치/결측·공개 이력은 보존한다. 별도12대 경제 기업실적 도메인 및 E1-R5 Shadow의 승인 경계를 유지하며 정보행을 점수에 임의 합산하지 않는다. 지표 수에 사업상 상한을 두지 않되 부적격 후보를 개수 채우기 위해 사용하지 않는다.
+
+이 브랜치의 주 실행은 위 **실적 정보행 종단 완료**다. 물가/시장일정/테마/고용 **5개 공개 경로의 D1 의미 동치 감사**는 독립 지원 업무다. 두 업무의 완료율·승인·소유자를 합치지 않는다. 다른4담당의 데이터 복구를 W05의 전역 선행조건으로 만들지 않는다.
+
+**현재1/5단계 완료·2단계 진행 중.** 완료 조건 개수이며 작업량20%나 실제 전체 서비스20%가 아니다. 기존 연속26/82·개별35/82·별도5키3/4(75%)는 각 과거 계수로 보존하고 현재 기능 완료율로 합산하지 않는다. 기존 순번을 유지하려고 실제 진행 가능한 게시/화면 검증을 멈추지 않는다. 이 개편은 기존 완료·실패를 소급 변경한 것이 아니다.
+
+## 2. 현재 실행 순서
+
+| 단계 | 직접 수행할 작업 | 완료 조건 | 현재 |
+|---|---|---|---|
+| 1 | 기존 운영 자산·완료 범위·실제 결손 확정 | 설치된 코드/저장 자료/공개 API/실화면의 유효 증거 재사용, source 준비와 운영 효과 구분 | DONE |
+| 2 | 실제 미확보 원자료·저장 계산 마무리 | WPSFD42 정확 수집 효과 승인 확인→기존 단회 B→SQLite 원문/해시/checkpoint readback→저장 자료 계산. 이미 확보된 QFR/BEA는 재수집하지 않음 | IN_PROGRESS — 수집 manifest PROPOSED_NOT_APPROVED, 실제 POST·append 미실행 |
+| 3 | 저장된 결과의 기존 게시·API 연결 | 적격 BLS 서비스/BEA 단위이익/QFR 등 필요한 각 projection을 기존 Writer로 게시·D1 readback·저장형 GET 대조. 정상 경로는 재게시하지 않음 | NOT_DONE — BEA 단위이익/QFR 현재 STORED_PROJECTION_PENDING |
+| 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | PARTIAL — 기존 실사이트 PASS 재사용, 신규 연결 영향만 확인 |
+| 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | NOT_DONE |
+
+현재 상태·유일한NEXT는 [진행원장 상단](EARNINGS_RECESSION_R1_R6_82_STEP_PROGRESS_20261116.md)을 따른다. 2단계 WPSFD42 승인 대기는 **그 단회 수집 효과만** 제한한다. 이미 저장된 QFR/BEA의3단계 게시 준비·기존 화면 확인·별도5키 읽기는 각 기존 승인 범위에서 계속 진행한다. 동일 자원에 겹치는 운영 쓰기만 기존 lease/Owner 절차로 직렬화한다.
+
+## 3. 이미 확인된 증거 — 반복하지 않는다
+
+- 기존 W05 3파일 설치 #2234/#2235/#2236 및 [실PC A #2584](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2584)/Run44870551163은 유효 근거다. 이번 원격 결과JSON은 PASS/WRITER_APPROVED_PREIMAGE_READONLY·보호 불변·provider/운영/D1쓰기0. 기존 원장의 sourceHead=config=checkpoint `a206220cc11045c24660e814124edbba9c0ff49f`, W05 R3C/R3D/Preview 3파일 hash3/3 일치 증거를 재사용한다. 이 A는 고정 checkout 증거이며 실행 중 Core PID 동일성·실제 BLS 수집 성공까지 뜻하지 않는다. source가 더 전진했다면 영향받는 출발점만 좁게 확인한다.
+- 정규 단회 수집 등록 #2245·영수증 TMP/TEMP 수정 #2252·실측 source pin 수정 [#2586](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2586)은 병합·관련 CI 성공 증거가 있다. #2586 main `0bc70e9810e68298ff8a9afb8b9b694fe92b1b7d`. 코드 등록은 수집·SQLite append 승인이 아니다.
+- 이번 제어main `approvals/w05-r304-service-b/approval.json` 직접 조회는 **PROPOSED_NOT_APPROVED**, installedSourceSha=a206220c…다. 기존 source 설치 승인에서 allowProviderCalls=false/allowDbChanges=false인 범위를 실제 POST·DB append GO로 확대하지 않는다. 과거 잘못 귀속됐다고 정정된 사용자HOLD를 현재HOLD로 복원하지도 않는다.
+- 이번2026-11-21 공개 직접 GET: /api/earnings-recession-indicators HTTP200/READY, 5행/5 READY, historicalMode=CURRENT_RETRIEVAL_NOT_PIT, sourceStoredAt1793034173996. /api/earnings-recession-bea-manufacturing-profit HTTP200/READY, sourceStoredAt1793191354160. 응답 READY나 현재 조회시각이 모든 원자료의 최신성·역사적 PIT 완전성을 증명하지 않는다.
+- 이번 GET /api/earnings-recession-bea-unit-profit 및 /api/earnings-recession-census-qfr-margin은 각각 HTTP503/unavailable/STORED_PROJECTION_PENDING이다. **저장형 공개projection 미준비**까지 확인됐으며, 원자료 소실·공급처 장애·접근권한 부족을 이 응답만으로 단정하지 않는다.
+- 기존 QFR PC SQLite 저장·계산 및 BEA 제조업 API/실화면·4폭 접근성/출처/게시일·수집일 분리 성공은 기존 원장 범위에서 재사용한다. 실제 저장 원본/계산물이 있는 경로를 HTTP503이라는 이유로 처음부터 재수집하지 않는다.
+- [기존 Draft PR #1257](https://github.com/ansqhd5774-Choi/zgmini/pull/1257)은 현재OPEN/Draft이며 정확15파일 main merge HOLD를 명시한 기록이 있다. source/CI를 운영 승인·병합·D1 성공으로 읽지 않는다. 관련 범위가 실제 필요하면 현재diff/기존 결정을 확인하고 정확 변경에 대한 결정만 처리한다.
+
+## 4. 다음 작업 — 2단계 실제 BLS 서비스 입력 확보
+
+1. 기존 #2240·최신 원장·승인 원문에서 **WPSFD42 2025~2026 BLS POST 최대1회 + 기존 SQLite api_history_chunks_v1/api_history_snapshots_v1 append-only** 효과에 대한 실제 승인 범위를 확인한다. 기존 정확 승인이 유효하면 반복 승인 없이 실행한다. 승인이 없다면 그 효과·대상·횟수·원본 보호·복귀/STOP만 특정한 단일 결정 요청을 기존 원장에 남긴다. 새 추상 승인 체계/Controller/진단 프로그램은 만들지 않는다.
+2. 문서만 수정해 PROPOSED를APPROVED로 바꾸지 않는다. 현재 runtime/source pin·3파일 SHA·기존 B lease/preimage가 맞는 범위에서 기존 정규 단회 실행 경로를 사용한다. 현재 이미 정상인3파일을 재설치하거나 오래된 owner/idle 진단을 반복하지 않는다. 실제 현행 효과에 필요한 보호 검사만 유지한다.
+3. 승인된 단회 B의 실제 실행 원장/요청ID·저장 raw snapshot/chunk SHA·계열/월/단위·checkpoint·append 결과를 재조회하고 관련 저장 기반 계산으로 이어간다. 공급자 호출·DB 저장·로컬 계산은 각각 판정한다. timeout은 실제 원장·checkpoint를 먼저 읽고 무조건 신규요청/재호출하지 않는다.
+4. 일부 실제 입력이 준비되지 않으면 해당 정보행만 정확한 PENDING/STALE/UNAVAILABLE로 남긴다. 계산 중 공급자 GET을 다시 하지 않고 정상 기존 BLS5행·BEA 제조업·기존 점수를 보존한다.
+
+## 5. 3단계 — 원자료 확보보다 게시 연결이 남은 경로부터 해결
+
+BEA 단위이익/QFR은 현재 공개503이지만 기존 수집·저장·계산 완료 범위부터 대조한다. 저장물→projection 생성→로컬 Writer 호출/출력→정확 D1 row→Worker Reader 중 **처음 끊긴 구간**만 특정한다. 이미 가진 원본을 다시 수집하거나 같은 기능의 새 게시기를 만들지 않는다.
+
+각 지표군의 기존 정규 key/스키마/권한/후보 source를 실제 현재 게시 코드에서 확인한다. 필요한 코드가 준비됐다면 검증·정확 범위의 기존 승인·정규 적용·실제 게시/readback까지 끝내고 source-only 상태를 반복하지 않는다. 새 공개 효과/15파일 HOLD가 남아 있으면 그 부분의 결정만 특정하고 독립 작업은 계속한다. 모든 API·DB 키를 한 번에 감사해야 한 행을 게시할 수 있다는 전역 Gate를 만들지 않는다.
+
+저장 body의 값·단위·실제 관측일·계산 버전·sourceStoredAt/publishedAt/stored_at을 Reader 변환 후 공개 응답과 비교한다. 래퍼/표시용 변환이 다르면 의미 비교하며 전체 JSON byte hash 일치만 요구하지 않는다. 원자료·토큰·비공개 전체 DB를 외부 API·GitHub에 노출하지 않는다. 이미 같은 유효 결과가 공개됐다면 재게시·재배포 없이 기존 완료로 인정한다.
+
+M3/MTIS/SEC의 새 수집·게시·표시는 기존82단계의 조건부범위다. endpoint·권리·단위/회계기간·coverage 적격이면 기존 계약으로 연결하고, 부적격이면 근거를 남겨해당 후보만 HOLD/NOT_APPLICABLE로 분리한다. 후보수를 채우려고 무관한 자료를 대용하거나 최초6영역 전체 개발을 새로운 필수 완료조건으로 추가하지 않는다.
+
+## 6. 4단계 — 실제 사이트 확인
+
+기존 공개 BLS5행과 BEA 제조업의 과거 실사이트 성공은 해당source·환경·내용 범위에서 재사용한다. 신규 서비스/단위이익/QFR 연결 또는 관련 표시 변경이 있는 영역만 PC·모바일에서 값·단위·이전값/증감·관측일·수집일·게시일·차트 첫/마지막점·결측/STALE·출처·가로 넘침을 확인한다.
+
+기존 E1-R4 점수와 정보성 분석행을 혼합하지 않고1년 표시가능과원자료·PIT·점수산식 준비를 구분한다. 원자료 단위를 임의변환하거나 미래 관측일·0 대체·가짜 차트를 넣지 않는다. 화면 결함만 UI 담당의 기존브랜치·승인 범위로 최소 수정하고 실제 렌더링을 확인한다. UI 전체 재설계는 하지 않는다.
+
+GUI/도구 제한은 해당 검증의 AUTOMATION_BLOCKED이고 API503/기능실패와 구분한다. 기존 공식 수단·실제 수동검증을 활용하며 동일 버전의 유효 수동PASS를 자동화접근 실패로 취소하지 않는다. 사용자 수동 요청은 목적·준비·화면/클릭/입력/단회횟수/기대값/STOP/금지행동/반환결과를 구체화한다.
+
+## 7. 5단계 — 실제 적용·정규 갱신·종결
+
+필요한 source만 기존 브랜치→정규 PR/main→Cloudflare Git integration 자동 배포로 연결한다. 이미 main에 포함된 수정은 재병합·불필요한 재배포를 하지 않는다. Build와 활성 Deployment, 저장 API와 실제 화면을 구분하고 필요한 현재 배포 포함 여부를 확인한다. 각 과거 PR의 배포 ID 전부나 전체 서비스 정상화를 새 선행조건으로 강제하지 않는다.
+
+기존 승인 Core/Writer의 실행·checkpoint·D1 게시/UNCHANGED 재조회로 정규 갱신을 확인한다. 이미 있는 유효 근거를 재사용하고 다음 발표/다음 날 자연 예약을 현재 구현 종결의 새 Gate로 추가하지 않는다. 새 공급자 자료가 필요한 범위만 미검증으로 명시한다. 새 감시 예약·중복 CMD·Controller·DB는 만들지 않는다.
+
+운영 변경 전 정상 source·설정·정확키 preimage를 기존 백업·원장에 보존한다. 확정 실패는 해당 변경만 정규 절차로 복귀·정상 확인한다. DB append·외부 효과는 기존 트랜잭션/복구 계약을 따르고 UNKNOWN은 실제 결과부터 읽는다. 강제 잠금 해제·source 이력 덮어쓰기·무승인 삭제는 하지 않는다.
+
+최종 보고는 **실적 정보행 기능 완료**, **미발표/부적격/권리·효과 결정 보류**, **독립 5키 의미 동치 감사**, **차후 확장 후보**를 따로 판정한다. UI/기존 5행 완료를 전체 82단계 성공으로 표현하지 않고, 5키 타 담당의 미완료를 W05 자체 수집·게시 실패로 표현하지 않는다.
+
+## 8. 5개 API–D1 동치 지원 업무
+
+[API–사이트 현행 작업계획](API_SITE_R1_ACTIVE_WORK_PLAN_20261114.md)의 지원표를 따른다. 기존 물가19/7·시장일정·테마·고용의 원담당 완료 증거를 재사용하고, 이미 해결된 공급자/Controller 복구를 반복하지 않는다. 현재 Reader가 선택한 정확키와 변환 계약만 확인해 민감정보 없는 비교 결과를 회수한다. 직접 D1 접근이 없으면 기존 보호된 비교/게시 readback 영수증과 공식 수단을 확인하며 새 대규모 실행 체계를 만들지 않는다.
+
+테마는 현재 유료 `public_feed_snapshots_v1 / kind=output,feed_key=theme-fear-greed-paid-hourly-v1,snapshot_key=current`가 공개 기본 경로다. 구형 `public:theme-etf-only:r1` seed 하나를 강제해 현재 API를 불일치로 판정하지 않는다. source/키가 바뀐 범위만 정정하고 다른 기능 데이터는 원담당 영역에 유지한다.
+
+## 9. 기록·이력 보존
+
+현재 원장 상단의 5단계와 단일 NEXT만 갱신한다. 과거 '순차 26/82에서 멈춤'과 '개별 35/82'의 차이 때문에 실행 가능한 독립 작업을 중단하거나 미검증을 DONE으로 바꾸지 않는다. 새 구현·테스트·설치·데이터 저장·공개·화면은 각각 정확하게 기록한다. 이번 개편은 4개 지침 문서만 변경했으며 운영 효과를 추가 승인·실행한 것이 아니다.
+
+[개편 전 82단계 원문](https://github.com/ansqhd5774-Choi/zgmini/blob/61e2c02eb2bbd4ef967a8506ee78b3324c1331f3/docs/EARNINGS_RECESSION_R1_R6_82_STEP_EXECUTION_PLAN_20261116.md)과 아래 원문을 보존한다. 최초 R1~R6 역사 설계의 링크는 유지한다. 현재 일을 진행하지 않고 전수 조사·권리 재조회·검사 코드 추가만 반복하지 않는다.
+
+## 과거82단계 실행계획 보관
+
+<details>
+<summary>기존82단계 계획 전체 — 역사 기록, 현재 실행 지시 아님</summary>
+
 # ZGMINI W05 실적 침체 R1~R6 — 전체 82단계 세부 실행계획 (2026-11-16)
 
 > **상태: 사용자 확인 82단계 계획을 W05 지정 브랜치에 문서로 확정.** 이 문서는 개발·실행 작업 목록이며 단계 자체의 실제 PC/D1/Production 완료를 증명하지 않는다. 82개는 **기본 범위**이고, 미래 추가 적격 정보성 지표 수는 제한하지 않는다.
@@ -252,3 +338,6 @@ BEA #1183 최신 App CI [Run #43884699372](https://github.com/ansqhd5774-Choi/zg
 - 실운영 E:\\ZGmini 원자료·DB·D1·Cloudflare·Task·config·scheduler 쓰기 **0건**. 전담 브랜치·기존 main 원본 데이터 보존.
 
 **다음 실행:** 이미 완료한 Native Node CI를 다시 돌리지 않고, 승인된 QFR 정확키 B 실행 경로/운영 설치·source SHA/manifest를 확인하여 필요한 선별 main 통합 후 기존 QFR 저장 원본으로 단일키 D1 게시→직접 재조회. BEA는 별도 승인된 저장 원본 확보 후에만 실제 게시.
+
+
+</details>
