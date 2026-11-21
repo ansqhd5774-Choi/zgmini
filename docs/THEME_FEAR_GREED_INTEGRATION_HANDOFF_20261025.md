@@ -1,3 +1,15 @@
+## 2026-11-21 KST — 36차 5단계 공통 확장 구조 실제 코드 연결 재검증
+
+- **기준**: 최신 `main@2eb796da811d0e074ca0cabab8e2cad9502bff43` 및 브랜치 기존 승인 증거. 이전 35차의 PC 홈/상세/API 일부 교차확인 결과 재사용. 이번 브라우저 탭 목록에는 홈·상세·번역된 API 원문 탭뿐, 모바일 viewport 또는 새로운 촬영 증거는 없음. 단순 이미지 리사이즈로 모바일 실렌더 PASS 생성하지 않음.
+- **등록부/입력** `scripts/pc-writer/theme-paid-registry.mjs`: 설치된 `ACTIVE_RUNTIME.json` manifest SHA 검증 후 `listRegistered`→`buildOperationalRegistry`를 호출하고 `enabled` 전체 ID의 `etfs+benchmark`를 `Set`으로 중복 제거한다. 설정형 `public=true`는 definition SHA·profile·ETF 목록·권리 근거·승인 날짜/만료 등 기존 승인 구조가 맞아야 가능하다.
+- **공통 계산과 실패 격리** `scripts/pc-writer/theme-paid-calculate.mjs`: `for(const t of registry.themes.filter(t=>t.enabled))`가 각 등록을 순회하며 `methodologyVersion`별 4개 기존 지원식으로 분기한다. 개별 `try/catch`로 해당 ID의 `WAIT_SOURCE_OR_SCORE`를 기록해 다른 테마를 계산하며 `publicThemes`와 `privateRecords`를 분리한다. 기존 252점 공개 이력과 과거 날짜 점수를 보존하는 merge·검사를 유지한다. **새로운 승인 산식 버전 추가 시 이 공통 dispatch에 공식 승인된 구현·계약/테스트 연결이 필요**하며, 현재 등록 수 증가만으로 테마별 CMD·예약/Reader 추가 필요는 없음.
+- **저장/Reader** `scripts/pc-writer/theme-paid-cycle.mjs`: 승인 정책 연결에서 기존 수집 동기화 후 공통 계산, 로컬 private 결과 SHA 불변 저장·readback, 기존 `PAID_THEME_KEY`의 D1 CAS 쓰기/사후 readback, `UNCHANGED` 사용. `worker/theme-paid-contract.mjs`에서 ID 중복·날짜 정렬·last score·공개 ID 리스트 일치 검증, `worker/theme-paid-public.mjs`가 D1 저장 결과만 읽어 공개 필드 projection; `main` `app/api/theme-fear-greed/route.ts`는 paid Reader 우선, 구 Reader fallback. GET으로 Provider 호출/계산/쓰기 없음.
+- **화면 연계** `app/theme-fear-greed/theme-detail-charts.tsx`에 `acceptedThemes`는 저장 API에서 기존 공개10 개별 252점 및 등록 설정형 1~252점 유효성 검사 후 표시. 홈은 `themeEtfDashboardSeries`의 기존 252점 수용 정책 유지. 따라서 **새로 공개할 252점 미만의 설정형 테마의 홈 노출 정책은 미확정이며 현 비공개 AI에 대해 강제로 수정하지 않는다**. 현재 PC 상세 실렌더 10개·API 화면 복사본의 10개 마지막 숫자 대조는 성공; 모바일 렌더·API raw byte 2,520점 직접 파싱은 미실시.
+- **5단계 선행 점검 판정**: ID 발견→공통 입력→버전 분기→실패 격리→공개/비공개 저장→Reader→PC 화면의 **소스 경로 확인**. 이 범위에서 새 하드코딩 상한이나 복제 Job 결함 입증 없음. 다만 마스터플랜 5단계 완료 조건은 3/4 결과를 함께 인계하는 것이므로 현재 상태 `SOURCE_PATH_REVIEWED / NOT_DONE` 유지. 실제 신규 공개 승인·Production 등록을 임의로 만드는 것은 완료 조건 아님.
+- **진척 지표 해석 정정**: 마스터플랜의 `3/5`는 완료 조건 수이며 작업량 `60%`나 실제 기능 완성률 `60%`라는 뜻이 아니다. 별도 퍼센트를 산정하지 않고 단계 상태만 기록한다. 운영 변경 0, 문서만 갱신.
+
+---
+
 ## 2026-11-21 KST — 35차 API 텍스트 손상 검증 및 상세 252점 수용 조건
 
 - 사용자 업로드 `붙여넣은 마크다운.md` 실파일(116,520 bytes)을 독립 Python으로 읽고 구조 검토. 파일에는 Google 번역된 `버전/상태/이력/날짜/점수` 키, 깨진 JSON 토큰, 공백 삽입된 날짜, 중간 결손 및 말미의 중복 덩어리 존재. JSON 파서가 정상 객체를 복원하지 못하므로 **날짜 regex 건수로 252점 이력을 세지 않음**, 파일 중복 날짜만으로 운영 저장 중복·PIT 오류 주장하지 않음.
