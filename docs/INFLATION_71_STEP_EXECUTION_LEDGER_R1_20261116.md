@@ -47,6 +47,15 @@
 
 ## 개편 후 진행 기록
 
+### 2026-11-21 — 개편 2단계 공식 읽기 경로 재확인·3단계 Census 승인 소스 대조
+
+- **2단계 현장 조회 한계 재확인:** 생산 /api/inflation-candidate-inputs 및 /api/inflation-detail의 새 직접 GET은 이 웹 경로에서 URL_NOT_ACCESSIBLE. 기존 #2577 Writer 원장은 `UNCHANGED_VERIFIED/ready6`이지만 D1 live `body,stored_at` 부재. `writer-publication-evidence-readonly`의 실제 module은 ER1 시장 캘린더 output/ledger 전용이며 물가7 D1 원본 조회기가 아니다. 따라서 새 A 재발행/재게시/임의 Cloudflare SQL 없이 `D1_CURRENT_VALUE_NOT_OBSERVED` 유지. 기존 2026-11-21 API 6 READY/PENDING1은 당시 관측 증거로 보존하며 현재 동치로 확대하지 않는다.
+- **3단계 독립 실행성 조사:** 공식 승인 원본 `approvals/inflation-manual-b/official-static-two-source-w01-v2-approved-20261116.json`은 `APPROVED_B`이지만 정확 4파일 source closure와 기존 Core의 lock owner를 요구. 공식 Census XLSX 파일 `naicsinvp.xlsx`/기존 `m3-outp-invp` sheet `AMTMTI` parser와 Writer 설치본의 해당 3파일 해시가 #44238275189 실PC 스냅샷에서 승인 SHA와 3/3 일치한 기록을 재확인. 그러나 이는 2026-11-18 checkout 스냅샷이며 현재 Core 실행/원본 최신성 인증이 아니다.
+- **실제 변경 조건 확인:** 승인 Core `local-cycle.mjs` sha256=`2e6200e5...`, 운영 #2515 승인 B 설치 결과 해당 파일 after sha256=`2cfa0f9a...`로 변경. 제어 Draft #2531은 세 번째 정확 SHA profile만 추가하고 16개 source 가드 회귀 PASS이나 여전히 `Draft/미병합`, 현 승인 manifest 변경/실행 가능 증거 아님. #2536 원본 읽기는 최신 댓글 근거 `ERR_MODULE_NOT_FOUND` (당시 #2505 ESM 장애)로 운영 함수 자체 미실행; 이를 `UNKNOWN` 조회 성공으로 취급하거나 동일 ID 재시도하지 않는다. #2597 Controller 설치 복구는 이후 별개 성공. 과거 #1818 Census B는 owner/Event129 fail-closed STOP, GET 0/2. 새로운 Core 소유권 증거·해시/유효 승인 범위 확인 전 B 발행 금지.
+- **선택한 다음 최소 실행:** 2단계는 기존 인증된 D1 관리 읽기 경로 확보 시 고정 key 한 건 readback. 그 사이 3단계는 기존 공식 XLSX와 자연 수집 경로의 현재 설치/원본 비교 및 Core lock/Task 인증 증거 확보 후 정상 단회 저장으로 진행. 과거 실패 API B와 헤더 문제를 동일 원인으로 취급하지 않는다. 4단계 R2 source는 기존 반영 그대로 보존한다.
+- **현재 판정:** 1/5 DONE, 2단계 IN_PROGRESS, 3/4/5 NOT_DONE. 추가 DONE=0; 이번 원격 확인에서 PC/공급자/DB/D1/배포 쓰기 0.
+
+
 ### 2026-11-21 — 2단계 실조회 경계 및 4단계 기존 R2 소스 선택 재사용
 
 - **2단계 실조회:** 운영 #2577/Run44869316745 writer ledger는 7후보 ready6/UNCHANGED_VERIFIED이나 D1의 현재 body/stored_at, 개별 값/단위/관측일/버전 동치를 포함하지 않는다. 기존 원장의 공개 GET 6 READY/Census28 PENDING 증거는 보존. web GET은 접근되지 않았고 외부 browser 도구는 insufficient_credits로 차단, 추가 결제·우회·재게시 없음. Cloudflare D1 연결 읽기 플러그인 없음. 현 대화에서 D1 직접 readback **AUTOMATION_BLOCKED 범위 한정**, 2단계 IN_PROGRESS 유지.
