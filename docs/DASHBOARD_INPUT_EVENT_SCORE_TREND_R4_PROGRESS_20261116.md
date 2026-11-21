@@ -42,6 +42,16 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — 4단계 최종점 tooltip 접근 재확인 / 기존 유효 PASS 보존
+
+- **시작·종료:** 3/5 DONE(60%, 완료조건), 4 PARTIAL, 5 NOT_DONE. 최신 5단계 계획·진행원장 정본 GitHub 직접 재조회. main `2eb796da811d0e074ca0cabab8e2cad9502bff43`의 기존 W06 React/Chart 대상 두 파일을 읽기 전용 재조회. 새로운 실제 Production 계산점 hover PASS를 주장하지 않음.
+- **신규 접근 증거:** Browser Use 읽기 전용 실행 요청은 `insufficient_credits`로 **실행 시작 전 거부**. 공개 API 일반 웹 열람도 이번 조회에서 응답을 확보하지 못함. TinyFish 잔액 추가 조회 시도는 현재 인증/권한 거부로 실패; 해당 경로 재시도 금지. 요금 결제·구독·자동 충전·새 워크플로 PR 발행 없음. 이들은 **AUTOMATION_BLOCKED/READBACK_UNAVAILABLE**이며 서비스 장애 또는 실제 UI 동작 실패로 판정하지 않음.
+- **대상 코드 계약 재확인:** `app/dashboard-ui.tsx`에는 `className="zg-r55-summary-chart"` 및 6기간 버튼의 `aria-pressed={periodDays===p.days}`, `components/dashboard-summary-chart.tsx`에는 `<div className="cnn-history-tooltip">`와 `latest ReferenceDot`이 `extrema ReferenceDot`보다 먼저 표시되는 실제 JSX가 존재. 따라서 과거 TinyFish 보고의 해당 CSS 클래스/aria 속성 부재를 원본 UI 결함으로 확정할 근거가 없음. DOM tooltip은 활성 hover 동안만 렌더링되므로 존재하지 않는 순간을 오류로 판정하지 않음. 소스 코드만으로 현재 Production 최신점 hover 정상까지 인증하지 않음.
+- **유효 완료 재사용:** 기존 실제 Chromium [#44880063693](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44880063693) 390/1440 현재 카드·1D/1W/1Y 전환·차트·가로 overflow 0 PASS, 09:05 과거점 33.5 Tooltip PASS; 실제 마지막 저장점 `2026-11-21T05:01:38.086Z` 14:01 KST·33.0 Tooltip 직접 PASS는 여전히 없음. 최신 관측이 변경되면 검증 시각의 공개 API 마지막점으로 비교.
+- **업스트림 상태:** 원담당 Draft [#1185](https://github.com/ansqhd5774-Choi/zgmini/pull/1185)·[#1228](https://github.com/ansqhd5774-Choi/zgmini/pull/1228) 재조회 `OPEN/draft=true/merged=false`, #64 변경점 15분 이력 복구·배포 완료를 W06 UI 완료로 꾸미지 않음.
+- **다음 정확 한 단계:** 이미 확인된 정상 범위를 다시 시험하지 않고, 공식 사용자 GUI 또는 이미 허용된 기존 browser runner에서 종합점수 **1D 최신 ReferenceDot을 정확히 hover**하고 실제 Tooltip `계산 시각`(KST)·변환표시 점수를 그 시점 `/api/market-score/observations?period=1D` 마지막 관측과 비교한다. 실제 검증 PASS 때만 #4 DONE → #5 UI/Reader 종료·Writer 데이터 잔여 인계. 신규 외부 유료 세션/동일 실패 PR/임의 배포 없음.
+- **효과:** 문서 원장 1파일 기록만. 운영 코드·데이터·DB·D1·Cloudflare·DNS·예약 변경0.
+
 ### 2026-11-21 — 활성 Production 1D 마지막점 툴팁 브라우저 직접 검증 2회, 모순 증거 분리
 
 - **시작/종료:** 개편 완료조건 3/5 DONE(60%), #4 PARTIAL, #5 NOT_DONE. 기존 `2026-11-21` 실제 Production Chromium 390/1440 카드33.0·1D/1W/1Y 차트·overflow 0 성공은 재사용. Source 수정·CI/PR·main merge·Cloudflare 배포·PC/SQLite/D1/Writer·DNS 변경0.
