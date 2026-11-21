@@ -104,9 +104,9 @@ test('retired biotech D1 adapter cannot create an authenticated writer',async()=
  let calls=0;assert.throws(()=>biotechProvisionalD1R8({tokenFn(){calls++;},fetchImpl(){calls++;}}),{code});
  assert.equal(calls,0);
 });
-test('mixed sector benchmark cannot reuse the retired repair price',async()=>{
+test('sector loader requires a new paid connection before legacy input reads',async()=>{
  const {loadSectorFearGreedR3RollingInputs}=await import('../scripts/pc-writer/sector-fear-greed-r3-rolling-local.mjs');
- assert.throws(()=>loadSectorFearGreedR3RollingInputs('MUST_NOT_READ'),{code});
+ assert.throws(()=>loadSectorFearGreedR3RollingInputs('MUST_NOT_READ'),{message:'MARKETPARQUET_PAID_CONNECTION_REQUIRED'});
 });
 
 

@@ -8,7 +8,7 @@ import {MarketBreadthStrip} from './market-breadth-strip';
 import {MarketCardInsight} from './market-card-insight';
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from './market-fear-greed-chart';
 import {fearGreedStateColor} from '../lib/fear-greed-state-color.mjs';
-import {koreaRev7DisplayDayMs,koreaRev7VisibleHistoryDays} from '../lib/korea-rev7-display-day-r4.mjs';
+import {koreaRev7DisplayDayMs,koreaRev7VisibleHistoryDays,koreaRev7ChartScore} from '../lib/korea-rev7-display-day-r4.mjs';
 
 const KoreaCompositePlot=lazy(()=>import('../components/korea-composite-plot'));
 
@@ -36,12 +36,7 @@ function normalizeCompositeHistory(history:Composite['history']):Array<MarketFea
   if(!/^\d{8}$/.test(point.date))return [];
   const pointTime=time(point.date);
   if(!Number.isFinite(pointTime))return [];
-  const visibleScore=typeof point.displayScore==='number'&&Number.isFinite(point.displayScore)
-   ?point.displayScore
-   :point.score;
-  const score=typeof visibleScore==='number'&&Number.isFinite(visibleScore)&&visibleScore>=0&&visibleScore<=100
-   ?visibleScore
-   :null;
+  const score=koreaRev7ChartScore(point);
   return [{date:point.date,time:pointTime,score}];
  }).sort((a,b)=>a.time-b.time);
 }

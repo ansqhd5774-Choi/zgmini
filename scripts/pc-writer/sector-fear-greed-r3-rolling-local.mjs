@@ -1,4 +1,4 @@
-import {throwMarketParquetRemoved} from '../../lib/marketparquet-retirement.mjs';
+import {paidRoot,paidDates,readPaidProjection} from './marketparquet-paid-store.mjs';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -42,12 +42,66 @@ function requireText(base,name){
   if(!fs.existsSync(file))throw Error(`SECTOR_FEAR_GREED_R3_ROLLING_INPUT_MISSING:${name}`);
   return fs.readFileSync(file,'utf8');
 }
-export function loadSectorFearGreedR3RollingInputs(){return throwMarketParquetRemoved();}
+export function loadSectorFearGreedR3RollingInputs(base=DEFAULT_BASE,{cutoffDate=null}={}){
+  const connection=safeJson(path.join(paidRoot(base),'connection.json'));
+  if(connection?.plan!=='full'||!/^\d{4}-\d{2}-\d{2}$/.test(connection?.sectorContinuationAfter??''))throw Error('MARKETPARQUET_PAID_CONNECTION_REQUIRED');
+  const files=listAlpacaStockFiles(path.join(base,ALPACA_DIR));
+  if(!files.length)throw Error('SECTOR_FEAR_GREED_R3_ROLLING_STOCK_STORE_MISSING');
+  // Incremental filenames are ordered by request start/end; later overlapping
+  // official batches supersede earlier bars. The raw batches remain untouched.
+  let stockRows=mergeSectorFearGreedR3StockRows(files.map(safeArray),{cutoffDate,allowProviderRevisions:true});
+  if(!stockRows.length)throw Error('SECTOR_FEAR_GREED_R3_ROLLING_STOCK_ROWS_MISSING');
+  const pitCsv=requireText(base,PIT_FILE);
+  const previousLast=connection.sectorContinuationAfter;
+  stockRows=stockRows.filter(row=>row.tradeDate<=previousLast);
+  const paidStockDates=paidDates(base,'stock_daily').filter(d=>d>previousLast&&(!cutoffDate||d<=cutoffDate));
+  const paidEtfDates=new Set(paidDates(base,'etf_daily'));
+  const wanted=new Set(pitCsv.split(/\r?\n/).slice(1).map(line=>line.split(',')[0].replace(/^\"|\"$/g,'')));
+  const appended=[];
+  for(const date of paidStockDates){
+   if(!paidEtfDates.has(date))continue;
+   const rows=readPaidProjection(base,'stock_daily',date).filter(r=>wanted.has(r.symbol));
+   appended.push(...rows.map(r=>({ticker:r.symbol,tradeDate:date,currentClose:r.close,currentVolume:r.volume})));
+  }
+  stockRows=mergeSectorFearGreedR3StockRows([stockRows,appended]);
+  const iex=requireJson(base,IEX_FILE),backfill=requireJson(base,ETF_BACKFILL_FILE),spyGap=requireJson(base,SPY_GAP_FILE),inventory=requireJson(base,BENCHMARK_INVENTORY_FILE);
+  const incremental=safeJson(path.join(base,ETF_INCREMENTAL_FILE));
+  const selected=inventory?.selection?.selected??{};
+  const repairedRows={};
+  for(const ticker of SECTOR_FEAR_GREED_R3_BENCHMARKS){
+    const hit=selected[ticker],date=String(hit?.date??''),close=Number(hit?.close);
+    if(date!=='2026-08-27'||!Number.isFinite(close)||close<=0||hit?.marketParquetEvidence!==true)throw Error(`SECTOR_FEAR_GREED_R3_BENCHMARK_REPAIR_INVALID:${ticker}`);
+    repairedRows[ticker]=[{date,close,volume:0}];
+  }
+  const series={};
+  for(const ticker of SECTOR_FEAR_GREED_R3_BENCHMARKS){
+    const pieces=[];
+    if(ticker==='SPY')pieces.push(spyGap.rows??spyGap.series?.SPY??[]);
+    else pieces.push(backfill.series?.[ticker]??[]);
+    pieces.push(iex.series?.[ticker]??[]);
+    pieces.push(repairedRows[ticker]);
+    pieces.push(incremental?.series?.[ticker]??[]);
+    const paidPieces=[];
+    for(const date of paidStockDates.filter(d=>paidEtfDates.has(d))){
+     const row=readPaidProjection(base,'etf_daily',date).find(r=>r.symbol===ticker);
+     if(row)paidPieces.push({date,close:row.close,volume:row.volume});
+    }
+    const paidDaySet=new Set(paidPieces.map(r=>r.date));
+    series[ticker]=mergeSectorFearGreedR3PriceRows(...pieces.map(rows=>rows.filter(r=>!paidDaySet.has(r.date))),paidPieces).filter(row=>!cutoffDate||row.date<=cutoffDate);
+  }
+  return {stockRows,pitCsv,series,diagnostics:{
+    stockRows:stockRows.length,
+    paidContinuationRows:appended.length,paidContinuationAfter:previousLast,paidSource:'MARKETPARQUET_PAID',
+    stockLastDate:stockRows.at(-1)?.tradeDate??null,
+    benchmarkLastDates:Object.fromEntries(SECTOR_FEAR_GREED_R3_BENCHMARKS.map(t=>[t,series[t].at(-1)?.date??null])),
+    incrementalPresent:Boolean(incremental),
+  }};
+}
 export function buildSectorFearGreedR3RollingLocalSource(base=DEFAULT_BASE,{now=new Date(),cutoffDate=null,write=true}={}){
   const generatedAt=(now instanceof Date?now:new Date(now)).toISOString();
   const inputs=loadSectorFearGreedR3RollingInputs(base,{cutoffDate});
   const source=buildSectorFearGreedR3RollingSource({...inputs,generatedAt,cutoffDate});
-  const out={...source,inputDiagnostics:inputs.diagnostics};
+  const out={...source,version:inputs.diagnostics.paidContinuationRows?source.version+'-PAID-MP-CONTINUATION':source.version,inputDiagnostics:inputs.diagnostics};
   if(write)saveJson(path.join(base,SECTOR_FEAR_GREED_R3_ROLLING_FILE),out);
   return out;
 }

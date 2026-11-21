@@ -4,7 +4,7 @@ import path from 'node:path';
 import {pathToFileURL} from 'node:url';
 import {marketOperationalStore,readStoredMarketInputs} from '../../worker/candidate-market-operational-store.mjs';
 import {buildStoredDiagnostic} from '../../worker/stored-diagnostic-r61.mjs';
-import {retiredBreadthPublicDomain} from '../../worker/market-retired-breadth-domain.mjs';
+import {paidCompositeBreadthDomain} from './paid-composite-breadth.mjs';
 import {mergeEarningsProductionCandidate} from '../../lib/market-score/earnings-e1-r5-production-domain.mjs';
 import {runEarningsR5ProductionCycle} from './earnings-r5-production-cycle-r1.mjs';
 import {readStoredEarningsRiskFourFactor} from '../../lib/market-score/earnings-recession-stored-r4-pc-r1.mjs';
@@ -44,7 +44,7 @@ export async function calculateMarket(root,db,now){
    return mergeEarningsProductionCandidate(riskInput,candidate);
   }catch{return riskInput;}
  };
- const handler=createMarketScoreR1Handler({env:{DB:db},fetchImpl:async()=>{throw Error('PROVIDER_NETWORK_FORBIDDEN')},collectInputs,orchestrate:buildStoredDiagnostic,collectBreadthDomain:retiredBreadthPublicDomain,now:()=>new Date(now)});
+ const handler=createMarketScoreR1Handler({env:{DB:db},fetchImpl:async()=>{throw Error('PROVIDER_NETWORK_FORBIDDEN')},collectInputs,orchestrate:buildStoredDiagnostic,collectBreadthDomain:()=>paidCompositeBreadthDomain(base,now),now:()=>new Date(now)});
  const response=await handler(new Request('https://zgmini.kr/api/market-score'));
  const body=await response.json();
  if(!response.ok||body.status!=='SUCCESS'||body.domains?.length!==12)throw Error('SCORE_CONTRACT_FAILED');

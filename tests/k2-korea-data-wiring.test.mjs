@@ -2,6 +2,8 @@ import {marketChartSource} from './helpers/market-chart-source.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
+import vm from 'node:vm';
+import ts from 'typescript';
 import {calculateComposite,buildComposite,COMPOSITE_VERSION} from '../worker/korea-composite.mjs';
 
 const read=p=>readFileSync(new URL('../'+p,import.meta.url),'utf8');
@@ -78,4 +80,79 @@ test('shared score orb allows Korea previous-observation semantics without chang
   assert.match(orb,/<span aria-label=\{dayLabel\}>\{dayLabel\.replace/);
   assert.match(shell,/dayLabel\?: string/);
   assert.match(shell,/comparisonAriaLabel\?: string/);
+});
+
+
+function koreaStoreForCancellation(fetchImpl){
+ const typescript=read('app/korea-funds-store.ts');
+ // Execute the real exported store module after TypeScript transpilation, with
+ // React hooks isolated: the callback is the same one used by useKoreaFunds.
+ const js=ts.transpileModule(typescript,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
+ const timers=new Map();let nextTimer=0;
+ const context={
+  exports:{},AbortController,Promise,Set,
+  fetch:fetchImpl,
+  setTimeout(fn){const id=++nextTimer;timers.set(id,fn);return id;},
+  clearTimeout(id){timers.delete(id);},
+  require(id){
+   if(id==='react')return {useEffect(){},useSyncExternalStore(){}};
+   if(id==='../lib/market-score/live-refresh.mjs')return {acceptsStoredUpdate:()=>true,startStoredRefresh:()=>()=>{}};
+   throw Error('UNEXPECTED_MODULE:'+id);
+  },
+ };
+ vm.runInNewContext(js+String.fromCharCode(10)+'exports.__load=load;exports.__snapshot=snapshot;',context);
+ return {load:context.exports.__load,snapshot:context.exports.__snapshot,timers};
+}
+
+test('W06 Korea inFlight cancellation releases a pending fetch that ignores abort',async()=>{
+ let calls=0;
+ const store=koreaStoreForCancellation(()=>{calls++;return new Promise(()=>{});});
+ const first=new AbortController();
+ const waiting=store.load(first.signal);
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(calls,1);
+ first.abort();
+ await waiting;
+ const second=new AbortController();
+ const retry=store.load(second.signal);
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(calls,2,'a cancelled non-settling request must not block the next refresh');
+ second.abort();await retry;
+ assert.equal(store.timers.size,0,'timers must be cleaned up');
+ assert.equal(store.snapshot().loading,false);
+});
+
+test('W06 Korea independent watchdog recovers with no caller signal',async()=>{
+ let calls=0;
+ const store=koreaStoreForCancellation(()=>{calls++;return new Promise(()=>{});});
+ const original=store.load();
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(calls,1);
+ for(const fn of [...store.timers.values()])fn();
+ await original;
+ const next=store.load();
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(calls,2);
+ for(const fn of [...store.timers.values()])fn();
+ await next;
+ assert.equal(store.timers.size,0);
+});
+
+test('W06 Korea late stale success cannot overwrite a newer Revision 7 snapshot',async()=>{
+ const pending=[];
+ const store=koreaStoreForCancellation(()=>new Promise(resolve=>pending.push(resolve)));
+ const firstAbort=new AbortController();
+ const first=store.load(firstAbort.signal);
+ await new Promise(resolve=>setImmediate(resolve));
+ firstAbort.abort();await first;
+ const secondAbort=new AbortController();
+ const second=store.load(secondAbort.signal);
+ await new Promise(resolve=>setImmediate(resolve));
+ pending[1]({ok:true,json:async()=>({indicators:[{id:'new'}],composite:{methodologyVersion:'kr-fg-cnn-r7-1.0.0',score:60}})});
+ await second;
+ assert.equal(store.snapshot().composite.score,60);
+ pending[0]({ok:true,json:async()=>({indicators:[{id:'old'}],composite:{methodologyVersion:'kr-fg-cnn-r7-1.0.0',score:10}})});
+ await new Promise(resolve=>setImmediate(resolve));
+ assert.equal(store.snapshot().composite.score,60,'late cancelled response must not regress the current value');
+ assert.equal(store.timers.size,0);
 });

@@ -111,9 +111,73 @@ export async function publishApprovedGmhSevenR178({
   typeof before.body.observationDate==='string'&&
   before.body.observationDate<=record.observationDate,
   'R178_PREIMAGE_OR_DATE_INVALID');
+ // An equivalent approved result might already be present after a prior
+ // ambiguous CAS outcome. Do not refresh its stored_at or issue another write.
+ // Check the protected R32 row again before returning a readback-only result.
+ if(same(before.body,record)){
+  const r32After=await storage.read(R32_KEY);
+  need(r32After?.storedAt===r32Before.storedAt&&
+   sha(JSON.stringify(r32After.body))===r32Fingerprint,
+   'R32_CHANGED_DURING_NOOP_READBACK');
+  return Object.freeze({
+   status:'R178_GMH_ONLY_ALREADY_PUBLISHED_READBACK_VERIFIED',
+   observationDate:record.observationDate,
+   sourceStoredAt:record.sourceStoredAt,
+   manifestSha256:evidence.manifestSha256,
+   privateArtifactSha256:evidence.privateArtifactSha256,
+   publishedBodySha256:evidence.projectionSha256,
+   r32BodySha256:r32Fingerprint,
+   r32StoredAt:r32Before.storedAt,
+   d1StoredAt:before.storedAt,
+   outputKey:THEME_ETF_ROLLING_KEY,
+   d1Writes:0,providerCalls:0,seedWrites:0,r32Writes:0,
+   publicApiVerified:false,uiVerified:false
+  });
+ }
  // No detached historical storedAt or secondary-provider rights are copied
  // into the new, GMH-only 252-point public result.
- const changed=await storage.replace(THEME_ETF_ROLLING_KEY,record,before.storedAt);
+ let changed;
+ try{
+  changed=await storage.replace(THEME_ETF_ROLLING_KEY,record,before.storedAt);
+ }catch(error){
+  // The CAS may have committed even when its response was lost or reported
+  // a collision. One readback distinguishes observed effect from conflict;
+  // no second write, and no unsupported claim about the writer's ownership.
+  const uncertainCodes=new Set([
+   'W03_GMH_WRITER_D1_CAS_OUTCOME_UNKNOWN_NO_RETRY',
+   'W03_GMH_WRITER_D1_CAS_NOT_APPLIED_NO_RETRY',
+   'W03_GMH_WRITER_D1_CAS_READBACK_MISMATCH_NO_RETRY',
+   'D1_COMPARE_AND_SWAP_FAILED'
+  ]);
+  if(!uncertainCodes.has(error?.code))throw error;
+  let observed;
+  try{observed=await storage.read(THEME_ETF_ROLLING_KEY);}
+  catch{throw error;}
+  if(observed?.storedAt>before.storedAt&&same(observed.body,record)){
+   let protectedAfter;
+   try{protectedAfter=await storage.read(R32_KEY);}
+   catch{throw error;}
+   need(protectedAfter?.storedAt===r32Before.storedAt&&
+    sha(JSON.stringify(protectedAfter.body))===r32Fingerprint,
+    'R32_CHANGED_AFTER_UNCERTAIN_CAS_NO_RETRY');
+   return Object.freeze({
+    status:'R178_GMH_ONLY_EFFECT_OBSERVED_AFTER_UNCERTAIN_CAS',
+    observationDate:record.observationDate,
+    sourceStoredAt:record.sourceStoredAt,
+    manifestSha256:evidence.manifestSha256,
+    privateArtifactSha256:evidence.privateArtifactSha256,
+    publishedBodySha256:evidence.projectionSha256,
+    r32BodySha256:r32Fingerprint,
+    r32StoredAt:r32Before.storedAt,
+    d1StoredAt:observed.storedAt,
+    outputKey:THEME_ETF_ROLLING_KEY,
+    d1Writes:null,effectOwnerVerified:false,
+    providerCalls:0,seedWrites:0,r32Writes:0,
+    publicApiVerified:false,uiVerified:false
+   });
+  }
+  throw error; // A different body, unchanged timestamp or failed readback.
+ }
  need(Number.isSafeInteger(changed?.storedAt)&&
   changed.storedAt>before.storedAt,
   'D1_WRITE_OUTCOME_UNKNOWN_NO_RETRY');

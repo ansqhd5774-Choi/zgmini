@@ -80,7 +80,10 @@ export function confirmEiaUsIndustrialFacet(raw){
   const options=raw?.response?.facets;
   if(!Array.isArray(options)||options.length>1000)fail('EIA_STATE_METADATA_INVALID');
   const us=options.find(x=>x?.id==='US');
-  if(!us||!/(united states|^u\.s\.$|^us$)/i.test(String(us.name??us.alias??'')))
+  // EIA labels the US national aggregate as "U.S. Total" in facet metadata.
+  // Admit explicit national synonyms only; never accept territories or regions.
+  const name=String(us?.name??us?.alias??'').trim().toUpperCase();
+  if(!us||!['UNITED STATES','UNITED STATES TOTAL','U.S.','U.S. TOTAL','US','US TOTAL'].includes(name))
     fail('EIA_US_NATIONAL_FACET_UNVERIFIED');
   return true;
 }
@@ -98,8 +101,11 @@ export function normalizeEiaIndustrial(raw){
       months.has(item.period)||!Number.isFinite(Number(item.price))||
       String(item.price??'').trim()===''||Number(item.price)<0)
       fail('EIA_ROW_INVALID_OR_MIXED_FACET');
+    // EIA's current API dashboard uses "cents per kilowatt-hour"; its older
+    // technical examples use "cents per kilowatthour". Both mean cents/kWh.
     const unit=item['price-units'];
-    if(unit!=='cents per kilowatthour')fail('EIA_PRICE_UNITS_CHANGED');
+    if(!['cents per kilowatthour','cents per kilowatt-hour'].includes(unit))
+      fail('EIA_PRICE_UNITS_CHANGED');
     months.add(item.period);
     observations.push({month:item.period,value:Number(item.price),unit:'cents_per_kWh'});
   }
