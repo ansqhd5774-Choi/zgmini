@@ -45,7 +45,7 @@ const entrypointSha256=(()=>{
  catch{return null;}
 })();
 const coreProofFileSha256=Object.fromEntries([
- 'core-cycle-id.mjs','core-origin-runtime.mjs','core-origin-wmi.js'
+ 'core-cycle-id.mjs','core-origin-runtime.mjs','core-origin-wmi.mjs'
 ].map(name=>{
  try{
   const f=path.join(here,name),st=fs.lstatSync(f);
