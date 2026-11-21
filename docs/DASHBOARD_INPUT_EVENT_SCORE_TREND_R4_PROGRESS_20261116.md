@@ -42,6 +42,18 @@
 
 ## 개편 후 기록
 
+### 2026-11-21 — 4단계 미확인 범위 재확인 및 5단계 원담당 인계 계약 사전 정리
+
+- **기준:** 시작/종료 **3/5 DONE(완료조건 60%)**, #4 **PARTIAL**, #5 **NOT_DONE**. main source/Cloudflare 빌드/실공개 API·기존 Chromium 시험의 기존 유효 증거는 재사용. `docs/DASHBOARD_INPUT_EVENT_SCORE_TREND_EXECUTION_R4_20261116.md` 최신 5단계 정본 재조회. 기존 로컬 Chromium `tests/dashboard-history-browser-r5.mjs`는 390·768·1440·1920 CSS px, 1D/1W/1M/3M/6M/1Y, 최신 snapshot·차트 선/실제 0점 및 scrollWidth overflow를 실제 React/Recharts DOM에 대해 검사하며 이전 [GitHub CI #44871059071](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44871059071) PASS 증거가 유효. UI screenshot에 해당하지 않는 community-chat artifact는 W06 실사이트 화면 증거로 사용하지 않음.
+- **현재 화면 한계:** 사용자 연결 브라우저의 `zgmini.kr` 열린 탭에서 `종합 시장 점수 33.0`, 6기간 버튼, `33.0(11-21)`은 읽을 수 있었지만 연결 Browser 읽기는 기존 탭 **텍스트 확인만** 가능; 새로고침, 화면 크기 390/1440 전환, 마지막점 tooltip hover·DOM scrollWidth 측정 권한/기능은 제공하지 않음. 이전 공개 API `CM-R1` 점수 `45.137344974152676`와 1D last `2026-11-21T05:01:38.086Z@45.137344974152676` 표시 변환 33.0 일치는 그때의 snapshot 범위에서만 유효. 새 크레딧 구매 없이 실Production 화면을 새로 확인할 수 없음: Firecrawl 기존 API가 `Insufficient credits`, 실행 전 차단; container 실Public DNS 요청도 불가. 실제 사이트 UI 오류는 **미재현**, 불가능한 자동화 검증은 **AUTOMATION_BLOCKED**, 정상 과거 성공/실공개 GET을 무효화하지 않음. CI 유효 범위와 최신 Production 마우스·터치 상호작용 미인증 범위를 구분하여 #4 PARTIAL 유지.
+- **중복 없는 5단계 인계 사전 정리(인계 발송/담당자 ACK 아님):**
+  - `#64 composite-observed` same-day 변경계산 50→52→53: 기존 실제 Writer/메모리 SQLite/D1 재현 [Draft #1185](https://github.com/ansqhd5774-Choi/zgmini/pull/1185)·[증거 #1228](https://github.com/ansqhd5774-Choi/zgmini/pull/1228). **담당: 계산·Writer 원담당**. 종전 15분/하루100점 sampling 승인 계약과 실제 변경점 보존 요구를 대조해 승인 범위의 최소 저장·게시 및 D1 readback 검증. W06는 누락 점수를 보간/재수집하지 않음. 기존 PR 원문은 Draft 제출로, 병합·실운영 완료 증거 아님.
+  - `#40/#74` CM-R1 신규 도메인 입력·계산/PC Writer→SQLite→D1 current/observed: **담당: 각 경제 기능·Writer 원담당**. 관련 정확 key의 승인된 수집/계산 실행 원장·checkpoint와 로컬/D1 readback·공개 GET을 같은 관측일/계산시각/버전으로 대조하고 누락 구간만 수정. W06의 6기간 API READY·카드 last 33.0 성공은 원본 전체 계보 증명이 아님.
+  - `#28 historical modelVersion`: 공개 과거 계산점별 방법론이 원본/응답에 없고 시각 연결만 존재. **담당: 모델·계산/데이터 원담당**. 실제 보존된 PIT 출처에서 증거 가능한 범위만 확인하고 API meta가 갖춰질 때 W06 Reader는 그 값만 표시. 임의 과거 버전 생성·과거 점/선 재작성 금지.
+  - `#36 CNN/#37 Korea` 신뢰 가능한 원자료 새 시각·Korea KRX 실제 공개 Writer 자료: **담당: CNN/Korea 데이터·Writer 원담당**. 실제 source archive/수집 시각·단독 원본/SQLite→D1 게시 영수증→GET 확인. W06는 공개 날짜·0/null/결측·STALE를 정확히 표시하고 새 수집을 하지 않음.
+- **W06 소유 미완료 단일 범위:** 활성 Production PC1440/mobile390에서 종합점수 1D·1W·1Y (나머지 기간은 기존 CI 및 API 확인 범위 재사용), 마지막 실제 계산점 tooltip의 시간·점수, 실제 390px 가로 overflow를 정확한 **현재 공개 GET**과 대조하는 **1회 실제 GUI 사용자 확인**. 새 시점 기대 점수 고정 금지. 이상 시 화면 1개와 당시 API 결과만 접수해 해당 source/Reader 결함에 한해 최소 수정. 정상 확인일 때만 #4 DONE 및 #5 종료 검토. 별도 Cloudflare control-plane active Deployment ID direct readback은 미인증 사실로 보존하고 이미 유효한 공개 빌드/asset PASS에 중복 Gate를 추가하지 않음.
+- **부작용 0:** 신규 source/test/PR/CI/배포/DNS/PC job/Writer/DB/D1/예산 사용 없이 정본 원장에 인계 범위를 정리. 역사 22/75와 최신 3/5 별도 유지. 재현되지 않은 UI 버그의 코드 수정/가짜 PASS 없음.
+
 ### 2026-11-21 — W06 4단계 PC·모바일 시각 증거 재사용/미인증 경계 확정 (비변경)
 
 - **기준:** 3/5 DONE, 4단계 PARTIAL(진척 완료 조건 변화 0), `ansqhd5774-Choi/zgmini` latest 확인 main `2eb796da811d0e074ca0cabab8e2cad9502bff43`; W06 5단계 원장 상단을 현재 실행 정본으로 재조회. 기존 2·3단계 Production/Reader API 원본 증거 재사용, #64 다른 담당 Writer 초단기 sampling 재현은 반복하지 않음.
