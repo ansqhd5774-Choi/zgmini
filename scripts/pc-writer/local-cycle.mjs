@@ -44,6 +44,17 @@ const entrypointSha256=(()=>{
  try{return createHash('sha256').update(fs.readFileSync(fileURLToPath(import.meta.url))).digest('hex');}
  catch{return null;}
 })();
+const coreProofFileSha256=Object.fromEntries([
+ 'core-cycle-id.mjs','core-origin-runtime.mjs','core-origin-wmi.js'
+].map(name=>{
+ try{
+  const f=path.join(here,name),st=fs.lstatSync(f);
+  if(!st.isFile()||st.isSymbolicLink()||st.size<1||st.size>100000)return [name,null];
+  const bytes=fs.readFileSync(f);
+  return [name,bytes.length===st.size?
+   createHash('sha256').update(bytes).digest('hex'):null];
+ }catch{return [name,null];}
+}));
 // Existing spawnSync children inherit this exact key without changed arguments.
  const lane=process.argv.includes('--korea')?'korea':'core';
  // Paid sector/theme inputs share one stored archive; no extra Task or publisher.
@@ -244,7 +255,7 @@ const entrypointSha256=(()=>{
  const report={at:new Date().toISOString(),lane,coreCycleId,
   coreCycleStartedAt:new Date(cycleStartedAt).toISOString(),
   coreCheckoutSourceSha:checkoutSourceAtStart,coreEntrypointSha256:entrypointSha256,
-  coreProcessPid:process.pid,coreParentPid:process.ppid,
+  coreProofFileSha256,coreProcessPid:process.pid,coreParentPid:process.ppid,
   coreOriginEvidence:coreOrigin.status==='PASS'?'TASK_ENGINE_WMI_CAPTURED_AT_START':'START_ONLY_UNVERIFIED',
   coreOriginCode:coreOrigin.code,
   coreNodeCreatedAtMs:coreOrigin.ownerCreatedAtMs,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,inflationRecurring,inflationCandidates,supplyR10,alpacaIncremental,sp500Shadow,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,publicationPolicy,progressive,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsRiskProvisionalR23,researchEarningsR5Prospective,status:publication.status===0?(publicationPolicy.collectionDegraded?'COMPLETE_WITH_COLLECTION_GAPS':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
