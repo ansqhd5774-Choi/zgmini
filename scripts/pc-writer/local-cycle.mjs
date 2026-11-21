@@ -24,6 +24,10 @@ if(fs.existsSync(file)){
 // Record an execution-local correlation key at the real Core entrypoint.
 // This is not yet authenticated Scheduler Task->VBS->Node ancestry.
 const cycleStartedAt=Date.now(),coreCycleId=newCoreCycleId();
+// Acquire the existing exclusive lock before doing any potentially slow source probe.
+fs.writeFileSync(file,JSON.stringify({pid:process.pid,at:cycleStartedAt,coreCycleId}),{flag:'wx'});
+process.env.ZGMINI_CORE_CYCLE_ID=coreCycleId;
+try{
 const checkoutSourceAtStart=(()=>{
  try{
   const probe=spawnSync('git',['rev-parse','HEAD'],{cwd:path.resolve(here,'../..'),encoding:'utf8',windowsHide:true,timeout:4000});
@@ -35,11 +39,7 @@ const entrypointSha256=(()=>{
  try{return createHash('sha256').update(fs.readFileSync(fileURLToPath(import.meta.url))).digest('hex');}
  catch{return null;}
 })();
-fs.writeFileSync(file,JSON.stringify({pid:process.pid,at:cycleStartedAt,coreCycleId,
- checkoutSourceAtStart,entrypointSha256}),{flag:'wx'});
 // Existing spawnSync children inherit this exact key without changed arguments.
-process.env.ZGMINI_CORE_CYCLE_ID=coreCycleId;
-try{
  const lane=process.argv.includes('--korea')?'korea':'core';
  // Paid sector/theme inputs share one stored archive; no extra Task or publisher.
  if(lane==='core'){
