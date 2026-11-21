@@ -1,3 +1,14 @@
+## 2026-11-21 KST — 개편 5단계 3단계 코드·실PC 근거 인정, 4단계 실제 화면 경계
+
+- 최신 [5단계 개편 마스터플랜](THEME_FEAR_GREED_163_THEME_MASTER_PLAN_20261027.md) 기준 **3/5 기능 연결 완료**, 4단계 실제 렌더링 검증 대상. 구 12/68은 역사 기록, 현재 단계 진척과 합산하지 않는다. 개편 마스터플랜 source commit `b5ce87585c0f6425aa96b08f762a7ee560a7300f`.
+- **3단계 신규 코드 필요성 재판정:** 실PC 제어 [#2596](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2596)/44872080181은 private scored file 실제 읽기→15개 점수·날짜·SHA 및 source lineage 검증을 수행했고, 가격·비공개 점수 외부 미출력. 기존 `loadPaidRegistry`는 설정형 등록의 명시적 유효 공개 승인/권리/프로필/해시/ETF를 모두 확인해야 `public`로 등록하며, `calculatePaidThemes`는 privateRecords와 유료 single paid public key를 분리. 기존 `readPaidThemeFeed`/GET는 저장된 공개 payload만 추출하며 raw/private 필드 제거. 별도 승인 없이 신규 테마 공개/권리 승인 생성 0.
+- 기존 source 회귀 `theme-paid.test.mjs`: 105개 공개+1비공개 격리, immutable private saved file, 승인된 paid public Reader projection, D1 CAS/readback, stale fallback. 위 결합을 한 테스트로 대조하는 추가 source-only 시험을 **전용 브랜치에만** commit `a8e7be962b1ad777b7ee9e0d86f464c73f6472bc`로 작성했으나 GitHub Actions/Node 실제 실행 **미확인** (신규 테스트 PASS 주장 금지). 이는 기존 운영 PASS를 취소하지 않고 추가 source 검증 범위에 남긴다. 개발 브랜치 전체 PR #714 575파일은 main 자동 병합 대상 아님.
+- **4단계 현황 구분:** 공개 `https://zgmini.kr/theme-fear-greed/` SSR/HTML에서 정적 헤더/선택/대기 문구 응답 확인했으나 JS hydration 이후 실제 10개 카드, 차트 252점 마지막 점·수치·날짜·PC/모바일 2 viewport 화면을 확인한 증거가 **아니다**. 공개 API raw 접근도 이번 웹 조회 도구에서 실패했고, 기존 개편 계획의 10개 공개 GET 검증과 서로 다른 시각/범위. 새 접근 실패를 운영 장애라 추정하거나 기존 성공 취소 금지.
+- **화면 어댑터 정책 차이:** `app/theme-fear-greed/theme-detail-charts.tsx`는 등록형 `configured=true`의 1~252 유효 점수를, `lib/theme-etf-dashboard.mjs` 홈은 현재 모든 테마에 252점 검사를 수행. 이는 실제 15점 테마를 **추가 공개**할 경우 홈/상세 노출 차이를 만들 가능성은 있으나 현재 `ai-software`는 비공개이며 **단축 이력 공개 제품 결정이 없는 상태**다. 기존 승인 252일 공개 계약을 임의 완화하지 않고 별도 미승인 제품 범위로 보존. 현재10개/252점과 연관된 소스 결함 증거 0; 불필요한 UI 수정·공개 설정 변경 0.
+- 남은 현재 단계는 **실제 hydrate 화면**의 홈·상세 2 viewport 기준 데이터 API와의 숫자/날짜/차트 끝/결측 대조. 현재 도구로 실제 렌더 화면이 확보되지 않은 항목만 NOT_VERIFIED; 방문자 GET·Provider·D1·운영 source 재수집/쓰기·신규 예약 모두 0.
+
+---
+
 # W03 테마 공포·탐욕 — 공통 운영·설정형 확장 진행원장 (2026-11-21 개편)
 
 <!-- W03-ACTIVE-FIVE-STAGE-PLAN-20261121 -->
