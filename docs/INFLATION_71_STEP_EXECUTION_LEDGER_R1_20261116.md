@@ -1,5 +1,19 @@
 # W01 물가지표 — 71개 세부 실행 작업원장 R1 (2026-11-16)
 
+<!-- W01-20261121-2595-W04-DEPENDENT-SOURCE-AND-CI-SKIP-FIX -->
+## 2026-11-21 — 공유 W04 승인 Controller 선택 설치와 경합하지 않는 후속 Census A 후보 #2595·시험 누락 조건 보완
+
+- **현재 실제 운영 설치:** 기존 정상 Controller `24f1139b97712b2e1383650a78f65877f9d1ae67`, W04 [PR #2585](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2585)의 승인 고정 target `5b33787dd32523496cd5a87dca73beb07ffaa409`은 설치 성공 영수증 미확보. #2585 승인과 신규 변경 설치는 다른 효과. 같은 공유 Controller 설치를 W01에서 중복 신청하지 않음.
+- **신규 종속 후보:** W04 target `5b33787d...` 자체에서 W01 소스 전용 브랜치 `codex/w01-census28-after-w04-selective-20261121` 분기해 [Draft PR #2595](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2595) 작성. W04 source base 대비 정확 5파일 변경 (운영 관련 3: `controller/operations.mjs` import/dispatch +2행, `config/operations.json` allowlist +1행, 신규 `controller/inflation-census-m3-archived-headers-readonly.mjs`; 비운영 2: 기존 안전 reader 회귀시험·공용 CI). 원본 기능은 별도 [PR #2588](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2588)에서 이미 main 병합돼 있으므로 이 PR은 정확 운용 후속 source 후보이지 기능 중복 PR/즉시 설치 승인이 아님.
+- **원인 구분·시뮬레이션:** 처음 HEAD `70f7e07ce886676d90f93e670104adf532124a37`의 Controller Maintenance [Run44871873029](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44871873029) overall `success`에도 새 Census header test step은 `skipped`. 이는 W04 부모 workflow에 `steps.scope`가 없는데 그 신규 step이 `if: steps.scope.outputs.w01 == 'true'`를 참조했기 때문이며 실제 8/8 수행으로 오인 금지. 후속 커밋 `c39bf5d170fc50c88b48b66fb584e279477481ff`에서 **신규 step의 잘못된 if 한 줄만 삭제**하여 regression이 항상 실행되게 수정. 새 CI [Maintenance #44872068679](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44872068679), C996 #44872068690, D05 #44872068720의 최종 결과 회수 후 PASS 판단.
+- **정확 변경 비교:** W04 parent `operations.mjs` 500줄/42 imports → W01 502줄/43 imports, 추가 2행·삭제 0, 기존 나머지 행 동일. config.operations 신규 exact A `inflation-census-m3-archive-headers-readonly` 한 건만 추가·기존 설정 JSON 값 전체 동일. 신규 모듈 import는 `node:fs`, `node:path`, `node:crypto` 빌트인 세 개뿐이며 외부/npm 또는 미설치 새 모듈 0. 기존 50 closure+새 모듈을 확인하는 정규 실PC 후속 검증은 별도 필요.
+- **공통 owner 인계:** [#68 댓글 #7058080163](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-7058080163)에 W04 설치 의존성·새 후보 정확 파일·운영 무변경 사실 전달, 댓글은 인수/실행 증거 아님.
+- **중요한 NO-GO:** W04 실제 설치 preimage/lease·새 approved manifest·source SHA·backup·운영 import closure 미확보 상태라 W01 Controller B는 발급하지 않음. 기존 #1818/#1177 재실행·Core Task/Node 계보 검사 제거·임의 D1 SQL·Provider 재호출 금지. 별도 B2-05/B2-06는 기존 #2577 `UNCHANGED_VERIFIED,readyCount=6,key=null,d1NowVerified=false`로 미완료 유지.
+- **다음 실행:** 정확 신규 CI 완료와 Census 8/8 실제 실행 여부 확인 → W04 target 실제 PC 적용 증거 확인 → 해당 target 기준 W01 신규 3파일 CAS·전문 import closure·안전 승인 계약 검산 후 공유 owner 단일 적용 → W01 신규 고유 A header-only run으로 실제 2025/26 archived Census field diagnosis.
+- **진행:** 신규 기능 단계 DONE 0. 전체 **34/71(47.9%)**, 37개 OPEN 유지. Source-only branch/PR/CI 외 PC/Provider/SQLite/D1/Task/Cloudflare 변경 0.
+
+
+
 <!-- W01-20261121-CENSUS28-ARCHIVE-A-MERGED-C36F-3FILE-PLAN -->
 ## 2026-11-21 — Census #28 원본 archived-header 진단 코드 main 통합 완료, 현재 운영 설치 독립 미확인
 
