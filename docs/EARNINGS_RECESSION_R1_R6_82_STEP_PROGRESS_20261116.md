@@ -31,6 +31,15 @@
 
 ## 개편 후 기록
 
+### 2026-11-21 — W05 source/readiness evidence correction (non-executing)
+
+- **2단계 WPSFD42:** 제어 `main`의 `approvals/w05-r304-service-b/approval.json`은 직접 조회 시 `PROPOSED_NOT_APPROVED`. [#2240](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2240)의 등록/CI와 설치 #2234~#2236, A #2584는 유지되지만 WPSFD42 단회 BLS POST + 기존 SQLite append 효과 GO를 대신하지 않는다. 새 B Issue/Provider/SQLite 쓰기 0. 기존 #1919의 오래된 사용자 HOLD 주장은 [정정 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1919#issuecomment-6986858219)에 따라 승인 원본으로 재사용하지 않는다.
+- **독립 3단계 QFR:** [#2089](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2089)의 소스-only 게시 manifest는 control main에 존재하나 Owner exact B 효과 GO/실행 영수증 미확인. 기존 앱 publisher pin `24f80c4c…` 대비 앱 main `2eb796da…` GitHub compare(167커밋, 241변경파일)에서 QFR 10개 pinned 파일과 일치하는 변경 **0개**. 변경 비교는 실제 PC checkout, 10개 원문 바이트 SHA, 현행 SQLite freshness, D1 readback 인증이 아니며 7파일 운영 설치 필요성을 부활시키지 않는다.
+- **독립 3단계 BEA 단위이익:** [앱 Draft PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183) OPEN/Draft/미병합, 관련 Node CI [#43991469836](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43991469836) SUCCESS. 현재 앱 main 게시기는 공급자 fetch를 포함하고 W05 저장형 브랜치의 `EARNINGS_BEA_UNIT_STORED_RAW_R1.mjs`는 main에 부재. 현재 main과 PR 구 base의 비교에서 해당 변경 파일의 직접 충돌 확인 없음. **소스 교정 준비와 운영 CSV/meta archive 실물·권리·별도 게시 승인·D1 503 원인은 구분**한다. PR 본문에 명시된 source/provider 승인 전 병합 금지 유지.
+- **A 경로:** control main `config/operations.json`에 `earnings-bea-mfg-archive-readonly`는 등록돼 있으나 이는 제조업 원본 전용이다. QFR/BEA 단위이익 전용 승인 A 검증은 이번 조회에서 확인되지 않았고 임의 shell/SQL이나 타 기능 조회기 재사용 없음. 현재 Controller 설치·실PC 결과를 config 등록만으로 추정하지 않는다.
+- **효과:** GitHub 소스·승인·원장 조회만, Provider POST/SQLite/D1/PC 설치/배포 0. 5단계 **1/5 DONE, 2단계 IN_PROGRESS**; 과거 순차26/82·개별35/82 보존.
+- **NEXT 하나:** [#2240](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2240)의 정확한 WPSFD42 1 POST + 두 SQLite 테이블 append-only 효과 승인 원본을 최종 확정한다. 유효 GO가 없으면 추가 승인 결정은 **해당 효과 하나**에 한정하고 독립 QFR/BEA 게시 준비를 계속한다. 실제 GO/설치·저장·D1 영수증을 회수하기 전 DONE 가산 없음.
+
 ### 2026-11-21 — 82단계와 5키 감사를 분리한 5단계 계획 개편
 
 - 사용자가 이 브랜치도 개편하도록 지시했다. 현재 목표는 실적 정보행의 실제 저장·공개 종단 완료이고, 다른 기능5키 동치 감사는 독립 지원 범위로 정리했다.
