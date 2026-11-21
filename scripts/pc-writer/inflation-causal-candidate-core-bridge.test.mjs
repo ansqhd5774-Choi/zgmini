@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {parseReleaseCalendar} from '../../lib/release-calendar.mjs';
 import {planInflationCandidateCoreDue,collectInflationCandidatesIfDue,
  runInflationCandidatesFromCore,CANDIDATE_CORE_SCHEMA,CANDIDATE_CORE_CHECKPOINT}
  from './inflation-causal-candidate-core-bridge.mjs';
@@ -60,6 +61,60 @@ test('exact recorded legacy CPI/Census parser failures admit initial recovery wi
  assert.deepEqual(planInflationCandidateCoreDue(input).due,[]);
 });
 
+test('W01 legacy-parser recovery is truly once after 24h, not a repeating quota consumer',()=>{
+ const doc=checkpoint();
+ doc.attempted.census={eventKey:'legacy:census',at:'2026-11-08T22:45:02.525Z',
+  failureCode:'CENSUS_M3_HEADERS_INVALID'};
+ const input={approved:true,bootstrapApproved:true,events:[],sources:{},
+  checkpoint:doc,providerEnv:keys,now:NOW};
+ const first=planInflationCandidateCoreDue(input);
+ assert.deepEqual(first.due.map(x=>x.eventKey),['legacy-parser-recovery:census']);
+ doc.attempted.census={eventKey:'legacy-parser-recovery:census',at:NOW.toISOString(),
+  failureCode:'CENSUS_M3_HEADERS_INVALID'};
+ for(const date of ['2026-11-21T23:30:00.000Z','2026-11-30T23:30:00.000Z']){
+  const after=planInflationCandidateCoreDue({...input,now:new Date(date)});
+  assert.deepEqual(after.due,[],date);
+ }
+ // A new independently verified full Census release is a different event.
+ const release=planInflationCandidateCoreDue({...input,
+  events:EVENTS.filter(x=>x.source==='census'),
+  sources,now:new Date('2026-11-30T23:30:00.000Z')});
+ assert.deepEqual(release.due.map(x=>x.group),['census']);
+});
+
+test('W01 bootstrap Treasury/EIA request is once even on unchanged or failed readback',()=>{
+ const doc=checkpoint();
+ const input={approved:true,bootstrapApproved:true,events:[],sources:{},
+  checkpoint:doc,providerEnv:keys,now:NOW};
+ assert.deepEqual(planInflationCandidateCoreDue(input).due.map(x=>x.group),
+  ['treasury','eia']);
+ doc.attempted.treasury={eventKey:'bootstrap:treasury',at:NOW.toISOString()};
+ doc.attempted.eia={eventKey:'bootstrap:eia',at:NOW.toISOString(),
+  failureCode:'EIA_REGULAR_HTTP_503'};
+ for(const date of ['2026-11-21T00:40:00.000Z','2026-12-20T23:30:00.000Z']){
+  assert.deepEqual(planInflationCandidateCoreDue({...input,now:new Date(date)}).due,[],
+   'one-shot bootstrap does not re-fetch after cooldown');
+ }
+});
+
+test('W01 unchanged one-shot collector does not reenter approved provider quota',async()=>{
+ const doc=checkpoint(),calls=[];
+ const original=async()=>({status:'UNCHANGED',providerRequests:1});
+ const mock={treasury:async args=>{calls.push('treasury');await args.quotaFetch('approved');return original();}};
+ const opts={base:'/tmp/pc-writer',approved:true,bootstrapApproved:true,
+  officialEvents:[],officialSources:{},providerEnv:{},quotaFetch:async()=>({ok:true}),
+  collectors:mock,checkpointIO:{load:()=>doc,save:()=>{}},
+  latestIO:()=>null,now:NOW};
+ const first=await collectInflationCandidatesIfDue(opts);
+ assert.deepEqual(first.completed,[{group:'treasury',status:'AWAITING_NEW_OBSERVATION',latest:null}]);
+ assert.deepEqual(calls,['treasury']);
+ const later=await collectInflationCandidatesIfDue({...opts,
+  now:new Date('2026-11-30T23:30:00.000Z')});
+ assert.deepEqual(later.completed,[]);
+ assert.equal(later.providerRequests,0);
+ assert.deepEqual(calls,['treasury']);
+});
+
 test('one-shot recovery executes only failed groups and advances checkpoint on saved readback',async()=>{
  const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-recovery-'));
  const base=path.join(root,'pc-writer');fs.mkdirSync(base);
@@ -87,6 +142,37 @@ test('one-shot recovery executes only failed groups and advances checkpoint on s
   assert.equal(planInflationCandidateCoreDue({approved:true,bootstrapApproved:true,
    events:[],checkpoint:doc,providerEnv:keys,now:new Date('2026-11-23T23:00Z')}).due.length,0);
  }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
+test('W01 verified Census Full Report ID remains due after cosmetic official title variation',()=>{
+ const censusHtml=`<table><tbody>
+  <tr><td>Full Report - Manufacturers' Shipments, Inventories and Orders (Revised)</td>
+   <td>November 19, 2026</td><td>10:00 AM</td>
+   <td>September 2026</td><td>Final</td><td>Official</td></tr>
+  <tr><td>Advance Report on Durable Goods--Manufacturers' Shipments, Inventories and Orders</td>
+   <td>November 19, 2026</td><td>10:00 AM</td>
+   <td>September 2026</td><td>Final</td><td>Official</td></tr>
+ </tbody></table>`;
+ const official=parseReleaseCalendar(censusHtml,'census');
+ assert.equal(official.length,2);
+ const full=official.find(x=>x.id.startsWith('census-full-report-'));
+ assert.ok(full,'official calendar parser must provide the canonical full-release ID');
+ assert.match(full.id,/^census-full-report-manufacturers-shipments-inventories-and-orders-/);
+ assert.ok(full.title.includes('(Revised)'));
+ const input={approved:true,events:official,sources,providerEnv:keys,
+  checkpoint:checkpoint(),now:NOW};
+ const planned=planInflationCandidateCoreDue(input);
+ assert.deepEqual(planned.due.map(x=>x.group),['census']);
+ assert.equal(planned.due[0].eventKey,`release:census:${full.id}:${full.date}`);
+ assert.deepEqual(planInflationCandidateCoreDue({...input,
+  events:official.filter(x=>x!==full)}).due,[],
+  'Advance Durable Goods is not the approved M3 Full Report trigger');
+ assert.deepEqual(planInflationCandidateCoreDue({...input,
+  now:new Date('2026-11-19T21:59:00Z')}).due,[],
+  'the known full release must still respect the official release date');
+ assert.deepEqual(planInflationCandidateCoreDue({...input,
+  providerEnv:{...keys,CENSUS_API_KEY:''}}).due,[],
+  'existing provider credential requirement remains unchanged');
 });
 
 test('exact BLS CPI/PPI, Fed G17 and Census M3 full-release mapping only',()=>{
@@ -273,4 +359,75 @@ test('failed groups persist safe codes without changing retry timing or last-goo
    checkpoint:doc,providerEnv:keys,now:new Date('2026-11-24T23:30:00Z')}),
    /INFL_CANDIDATE_CORE_CHECKPOINT_INVALID/);
  }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
+
+test('W01 candidate temporary outage uses one hour retry, quota guard does not lose its code',async()=>{
+ const eventKey='release:bls:cpi:2026-11-19';
+ const doc=checkpoint();
+ doc.attempted.cpi={eventKey,at:'2026-11-21T22:30:00.000Z',
+  failureCode:'BLS_CANDIDATE_HTTP_503'};
+ const params={approved:true,events:EVENTS.filter(x=>x.id==='cpi'),
+  sources,checkpoint:doc,providerEnv:keys};
+ const before=planInflationCandidateCoreDue({...params,
+  now:new Date('2026-11-21T23:29:00.000Z')});
+ assert.ok(!before.due.some(x=>x.group==='cpi'));
+ const after=planInflationCandidateCoreDue({...params,
+  now:new Date('2026-11-21T23:31:00.000Z')});
+ assert.ok(after.due.some(x=>x.group==='cpi'));
+ doc.attempted.cpi.failureCode='BLS_CANDIDATE_HTTP_429';
+ assert.ok(!planInflationCandidateCoreDue({...params,
+  now:new Date('2026-11-21T23:31:00.000Z')}).due.some(x=>x.group==='cpi'));
+ doc.attempted.cpi.failureCode='BLS_CANDIDATE_VALUE_OR_DUPLICATE';
+ assert.ok(!planInflationCandidateCoreDue({...params,
+  now:new Date('2026-11-21T23:31:00.000Z')}).due.some(x=>x.group==='cpi'));
+ doc.attempted.cpi.failureCode='INFL_CANDIDATE_QUOTA_GUARD';
+ assert.ok(planInflationCandidateCoreDue({...params,
+  now:new Date('2026-11-21T23:31:00.000Z')}).due.some(x=>x.group==='cpi'));
+
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'w01-candidate-guard-'));
+ const base=path.join(root,'pc-writer');fs.mkdirSync(base);
+ try{
+  const saved=checkpoint();
+  const result=await collectInflationCandidatesIfDue({approved:true,base,
+   officialEvents:EVENTS.filter(x=>x.id==='cpi'),officialSources:sources,
+   providerEnv:keys,now:NOW,quotaFetch:async()=>{throw Object.assign(
+    Error('secret-url-with-key'),{code:'PROVIDER_QUOTA_GUARD'});},
+   collectors:{cpi:async({quotaFetch})=>{await quotaFetch('https://api.bls.gov');
+    return {status:'SAVED_READBACK',providerRequests:1};}},
+   checkpointIO:{load:()=>saved,save:()=>{}},latestIO:()=>null});
+  assert.equal(result.status,'PARTIAL_PREVIOUS_INPUTS_PRESERVED');
+  assert.equal(result.failed[0].code,'INFL_CANDIDATE_QUOTA_GUARD');
+  assert.equal(saved.attempted.cpi.failureCode,'INFL_CANDIDATE_QUOTA_GUARD');
+  assert.ok(!JSON.stringify(result).includes('secret-url'));
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
+
+test('W01 restores only previously validated official PPI, Fed and Census events when calendar refresh fails',()=>{
+ const oldAt='2026-11-18T20:00:00.000Z';
+ const retained=[
+  {...EVENTS.find(e=>e.id==='ppi'),sourceUrl:'https://www.bls.gov/schedule/news_release/ppi.htm'},
+  {...EVENTS.find(e=>e.id==='industrial-production'),
+   sourceUrl:'https://www.federalreserve.gov/releases/g17/'},
+  {...EVENTS.find(e=>e.source==='census'&&e.id.startsWith('census-full-report')),
+   sourceUrl:'https://www.census.gov/economic-indicators/calendar-listview.html'},
+ ];
+ const src={
+  bls:{status:'SOURCE_FAILED',checkedAt:oldAt},
+  fed:{status:'SOURCE_FAILED',checkedAt:oldAt},
+  census:{status:'SOURCE_FAILED',checkedAt:oldAt},
+ };
+ const input={approved:true,events:retained,sources:src,
+  providerEnv:keys,checkpoint:checkpoint(),now:NOW};
+ assert.deepEqual(planInflationCandidateCoreDue(input).due.map(x=>x.group),
+  ['ppi','fed','census']);
+ const poison=retained.map(x=>({...x,sourceUrl:x.sourceUrl.replace('www.','www.evil-')}));
+ assert.equal(planInflationCandidateCoreDue({...input,events:poison}).due.length,0);
+ const never={...src,bls:{status:'SOURCE_FAILED',checkedAt:null}};
+ assert.deepEqual(planInflationCandidateCoreDue({...input,sources:never}).due.map(x=>x.group),
+  ['fed','census']);
+ const future={...src,census:{status:'SOURCE_FAILED',checkedAt:'2026-11-21T00:00:00.000Z'}};
+ assert.deepEqual(planInflationCandidateCoreDue({...input,sources:future}).due.map(x=>x.group),
+  ['ppi','fed']);
 });

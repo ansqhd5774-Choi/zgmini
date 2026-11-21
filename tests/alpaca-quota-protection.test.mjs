@@ -114,85 +114,82 @@ const prepare=(now,groupNames=['group-01.json'])=>{
  return {base,dir,start,end};
 };
 
-test('R10 collector preserves complete multi-page group and verified checkpoint',async()=>{
- const now=Date.now(),{base,dir,start,end}=prepare(now);
+test('retired R10 collector never starts multi-page collection or mutates its source group',async()=>{
+ const now=Date.now(),{base,dir,start}=prepare(now);
+ const group=fs.readFileSync(path.join(dir,'group-01.json'),'utf8');
  let calls=0;
  const fetchImpl=async url=>{assert.equal(url.searchParams.has('asof'),false);calls++;return {ok:true,status:200,headers:headers(180),json:async()=>({
   bars:{ABC:[{t:'2026-10-29T00:00:00Z',c:10,v:100}]},next_page_token:calls===1?'page-2':null})};};
  const r=await collectAlpacaIncremental(base,{now,fetchImpl,wait:async()=>{}});
- assert.equal(r.status,'COLLECTED_PENDING_VALIDATION');
- assert.equal(r.runRequests,2);
- assert.equal(JSON.parse(fs.readFileSync(path.join(dir,'incremental-checkpoint.json'),'utf8')).through,end);
- assert.equal(JSON.parse(fs.readFileSync(path.join(dir,'incremental',`${start}-${end}-group-01.json`),'utf8')).length,2);
- const saved=JSON.parse(fs.readFileSync(path.join(dir,'incremental',`${start}-${end}-group-01.json`),'utf8'));
- assert.deepEqual(saved[0],{ticker:'ABC',tradeDate:'2026-10-29',currentClose:10,currentVolume:100,
-  source:'ALPACA',feed:'iex',adjustmentStatus:'split'});
+ assert.deepEqual(r,{status:'EXCLUDED_BY_USER',runRequests:0});
+ assert.equal(calls,0);
+ assert.equal(fs.readFileSync(path.join(dir,'group-01.json'),'utf8'),group);
+ assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir,'checkpoint.json'),'utf8')),{end:start});
+ assert.equal(fs.existsSync(path.join(dir,'incremental-checkpoint.json')),false);
+ assert.equal(fs.existsSync(path.join(dir,'incremental')),false);
+ assert.equal(fs.existsSync(alpacaQuotaLedgerPath(base)),false);
 });
 
-test('R10 collector defers on shared guard and preserves prior completed checkpoint',async()=>{
+test('retired R10 collector ignores quota state without changing prior checkpoint or ledger',async()=>{
  const now=Date.now(),{base,dir,start}=prepare(now);
  const prior={through:start};
  fs.writeFileSync(path.join(dir,'incremental-checkpoint.json'),JSON.stringify(prior));
  const ledger=new QuotaLedger(base);
  for(let i=0;i<140;i++)ledger.beforeRequest('ALPACA',now);
+ const ledgerBefore=fs.readFileSync(alpacaQuotaLedgerPath(base),'utf8');
  let calls=0;
  const r=await collectAlpacaIncremental(base,{now,fetchImpl:async()=>{calls++;throw Error('unexpected call');},wait:async()=>{}});
- assert.equal(r.status,'DEFERRED_QUOTA');
- assert.equal(r.runRequests,0);
+ assert.deepEqual(r,{status:'EXCLUDED_BY_USER',runRequests:0});
  assert.equal(calls,0);
  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir,'incremental-checkpoint.json'),'utf8')),prior);
+ assert.equal(fs.readFileSync(alpacaQuotaLedgerPath(base),'utf8'),ledgerBefore);
 });
 
-test('R10 collector treats server 429 as deferred, preserving stored checkpoint',async()=>{
+test('retired R10 collector makes no request that could receive HTTP 429',async()=>{
  const now=Date.now(),{base,dir,start}=prepare(now);
  fs.writeFileSync(path.join(dir,'incremental-checkpoint.json'),JSON.stringify({through:start}));
- const r=await collectAlpacaIncremental(base,{now,fetchImpl:async()=>({status:429,ok:false,headers:headers(0)}),wait:async()=>{}});
- assert.equal(r.status,'DEFERRED_QUOTA');
- assert.equal(r.errorCode,'ALPACA_RATE_LIMITED');
- assert.equal(r.runRequests,1);
+ let calls=0;
+ const r=await collectAlpacaIncremental(base,{now,fetchImpl:async()=>{calls++;return {status:429,ok:false,headers:headers(0)};},wait:async()=>{}});
+ assert.deepEqual(r,{status:'EXCLUDED_BY_USER',runRequests:0});
+ assert.equal(calls,0);
  assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir,'incremental-checkpoint.json'),'utf8')),{through:start});
+ assert.equal(fs.existsSync(alpacaQuotaLedgerPath(base)),false);
 });
 
-test('120-page ceiling defers then resumes at page 121 without re-fetching pages',async()=>{
- const now=Date.now(),{base,dir,start,end}=prepare(now);
+test('retired R10 collector cannot create or resume paginated download state',async()=>{
+ const now=Date.now(),{base,dir,start}=prepare(now);
  let calls=0;
- const fetchImpl=async url=>{
-  const page=new URL(url).searchParams.get('page_token');
-  const expected=page?Number(page.slice(2)):1;
-  assert.equal(expected,calls+1);
+ const fetchImpl=async()=>{
   calls++;
   return {ok:true,status:200,headers:headers(200),json:async()=>({
    bars:{ABC:[{t:'2026-10-29T00:00:00Z',c:calls,v:100}]},
    next_page_token:calls<125?`p-${calls+1}`:null})};
  };
  const first=await collectAlpacaIncremental(base,{now,fetchImpl,wait:async()=>{}});
- assert.equal(first.status,'DEFERRED_QUOTA');
- assert.equal(first.runRequests,120);
- assert.equal(calls,120);
- assert.equal(JSON.parse(fs.readFileSync(path.join(dir,'incremental-progress.json'),'utf8')).active.rows.length,120);
+ assert.deepEqual(first,{status:'EXCLUDED_BY_USER',runRequests:0});
  assert.equal(fs.existsSync(path.join(dir,'incremental-checkpoint.json')),false);
- // Simulate the next rate-limit window; production never resets the ledger.
- const q=JSON.parse(fs.readFileSync(alpacaQuotaLedgerPath(base),'utf8'));
- Object.assign(q,{requestTimes:[],lastRemoteLimit:null,lastRemoteRemaining:null,lastRemoteResetAt:null});
- fs.writeFileSync(alpacaQuotaLedgerPath(base),JSON.stringify(q));
- const second=await collectAlpacaIncremental(base,{now,fetchImpl,wait:async()=>{}});
- assert.equal(second.status,'COLLECTED_PENDING_VALIDATION');
- assert.equal(second.runRequests,5);
- assert.equal(calls,125);
- assert.equal(JSON.parse(fs.readFileSync(path.join(dir,'incremental',`${start}-${end}-group-01.json`),'utf8')).length,125);
- assert.equal(JSON.parse(fs.readFileSync(path.join(dir,'incremental-checkpoint.json'),'utf8')).through,end);
+ const second=await collectAlpacaIncremental(base,{now:now+60_000,fetchImpl,wait:async()=>{}});
+ assert.deepEqual(second,{status:'EXCLUDED_BY_USER',runRequests:0});
+ assert.equal(calls,0);
+ assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir,'checkpoint.json'),'utf8')),{end:start});
+ assert.equal(fs.existsSync(path.join(dir,'incremental-progress.json')),false);
+ assert.equal(fs.existsSync(path.join(dir,'incremental')),false);
+ assert.equal(fs.existsSync(alpacaQuotaLedgerPath(base)),false);
 });
 
-test('approved 20-hour completed-window recheck is not suppressed by page-resume state',async()=>{
+test('retired R10 collector preserves historical progress across a 21-hour window',async()=>{
  const firstAt=Date.parse('2026-11-02T00:30:00Z');
  const {base,dir}=prepare(firstAt);
+ const historical={version:1,start:'2026-10-25',end:'2026-11-01',groupFingerprint:'historical',completed:{},active:null};
+ fs.writeFileSync(path.join(dir,'incremental-progress.json'),JSON.stringify(historical));
  let calls=0;
  const fetchImpl=async()=>{calls++;return {ok:true,status:200,headers:headers(200),
   json:async()=>({bars:{ABC:[{t:'2026-11-01T00:00:00Z',c:10,v:100}]},next_page_token:null})};};
  const first=await collectAlpacaIncremental(base,{now:firstAt,fetchImpl,wait:async()=>{}});
- assert.equal(first.status,'COLLECTED_PENDING_VALIDATION');
+ assert.deepEqual(first,{status:'EXCLUDED_BY_USER',runRequests:0});
  const second=await collectAlpacaIncremental(base,{now:firstAt+21*3600000,fetchImpl,wait:async()=>{}});
- assert.equal(second.status,'COLLECTED_PENDING_VALIDATION');
- assert.equal(calls,2);
- assert.equal(fs.existsSync(path.join(dir,'incremental-progress.json')),true);
+ assert.deepEqual(second,{status:'EXCLUDED_BY_USER',runRequests:0});
+ assert.equal(calls,0);
+ assert.deepEqual(JSON.parse(fs.readFileSync(path.join(dir,'incremental-progress.json'),'utf8')),historical);
+ assert.equal(fs.existsSync(path.join(dir,'incremental-checkpoint.json')),false);
 });

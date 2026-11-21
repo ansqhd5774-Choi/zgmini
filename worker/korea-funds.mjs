@@ -1,4 +1,5 @@
 import {REV7_VERSION,REV7_INDEX_ID,REV7_FACTORS,REV7_DIRECTIONS} from './korea-rev7-engine.mjs';
+import {koreaRev7DisplayDayMs} from '../lib/korea-rev7-display-day-r4.mjs';
 
 export const PUBLIC_VERSION=`${REV7_VERSION}-public-3`;
 export const PUBLIC_CACHE_KEY=`${REV7_VERSION}:${PUBLIC_VERSION}`;
@@ -40,13 +41,17 @@ function normalizeSnapshotRow(row){
   const factors=parseJson(row?.factors_json,{});
   const composite=parseJson(row?.composite_json,{});
   const score=valid(composite?.score)?composite.score:null;
+  const status=composite?.status??(score===null?'WARMUP':'READY');
+  // An incomplete row can carry a numeric candidate. Only a completed
+  // READY composite is a public score or a valid chart point.
+  const publicScore=status==='READY'?score:null;
   return {
     date:row?.date??null,
     methodologyVersion:row?.methodology_version??null,
     factors,
-    score,
-    displayScore:round1(score),
-    status:composite?.status??(score===null?'WARMUP':'READY'),
+    score:publicScore,
+    displayScore:round1(publicScore),
+    status,
     historyMode:row?.history_mode??'RECONSTRUCTED_CURRENT_VINTAGE',
     pointInTimeVerified:Boolean(row?.point_in_time_verified),
     calculatedAt:row?.calculated_at??null,
@@ -102,9 +107,16 @@ export async function publicSnapshot(env,context={}){
     };
   }
 
+  // A snapshot row must not become today's public score before its recorded
+  // observation day exists in Korea. Never normalize impossible YYYYMMDD keys.
+  const dayParts=Object.fromEntries(new Intl.DateTimeFormat('en-US',{
+    timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',
+  }).formatToParts(clock()).map(part=>[part.type,part.value]));
+  const todayKorea=`${dayParts.year}${dayParts.month}${dayParts.day}`;
   const rawRows=await loadRows(env,PUBLIC_HISTORY_LIMIT);
   const rows=rawRows.map(normalizeSnapshotRow)
-    .filter(row=>row.methodologyVersion===REV7_VERSION&&/^\d{8}$/.test(row.date??''));
+    .filter(row=>row.methodologyVersion===REV7_VERSION
+      &&Number.isFinite(koreaRev7DisplayDayMs(row.date))&&row.date<=todayKorea);
 
   if(!rows.length){
     return {

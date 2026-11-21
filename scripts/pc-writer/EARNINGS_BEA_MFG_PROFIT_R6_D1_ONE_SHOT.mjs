@@ -13,22 +13,43 @@ import {validateBeaMfgProfit,beaMfgFreshness,beaMfgWriter,BEA_MFG_SNAPSHOT_KEY}
 const sha256=x=>createHash('sha256').update(x).digest('hex');
 const RAW=['raw','earnings-recession','bea-manufacturing-profits-r5'];
 const validSha=x=>typeof x==='string'&&/^[a-f0-9]{64}$/.test(x);
+const archiveStat=file=>{
+  try{return fs.lstatSync(file);}
+  catch(error){
+    // Only a genuinely missing entry is absence; dangling links must reach
+    // lstat and fail path-ownership checks rather than being treated as missing.
+    if(error?.code==='ENOENT')throw Error('BEA_MFG_ARCHIVE_MISSING');
+    throw Error('BEA_MFG_ARCHIVE_UNREADABLE');
+  }
+};
 
 export function readArchivedBeaMfgR6({root,sourceSha,now=Date.now()}={}){
   if(typeof root!=='string'||!path.isAbsolute(root)||!validSha(sourceSha))
     throw Error('BEA_MFG_ARCHIVE_ARGUMENT_INVALID');
-  const folder=path.join(root,...RAW);
+  // Do not follow a linked archive directory or file outside the approved
+  // PC raw-source tree. Hash verification alone does not prove path ownership.
+  let folder=root;
+  for(const name of RAW){
+    folder=path.join(folder,name);
+    const directory=archiveStat(folder);
+    if(directory.isSymbolicLink()||!directory.isDirectory())
+      throw Error('BEA_MFG_ARCHIVE_UNSAFE_PATH');
+  }
   const csvFile=path.join(folder,sourceSha+'.csv');
   const metaFile=path.join(folder,sourceSha+'.json');
-  if(!fs.existsSync(csvFile)||!fs.existsSync(metaFile))throw Error('BEA_MFG_ARCHIVE_MISSING');
-  if(fs.statSync(csvFile).size>100_000||fs.statSync(metaFile).size>10_000)
+  const csvStat=archiveStat(csvFile),metaStat=archiveStat(metaFile);
+  if(csvStat.isSymbolicLink()||!csvStat.isFile()
+    ||metaStat.isSymbolicLink()||!metaStat.isFile())
+    throw Error('BEA_MFG_ARCHIVE_UNSAFE_PATH');
+  if(csvStat.size>100_000||metaStat.size>10_000)
     throw Error('BEA_MFG_ARCHIVE_TOO_LARGE');
   const original=fs.readFileSync(csvFile);
   if(sha256(original)!==sourceSha)throw Error('BEA_MFG_ARCHIVE_SHA_MISMATCH');
   let meta;
   try{meta=JSON.parse(fs.readFileSync(metaFile,'utf8'));}
   catch{throw Error('BEA_MFG_ARCHIVE_METADATA_INVALID');}
-  if(meta.schemaVersion!=='earnings-bea-manufacturing-raw-r5-v1'
+  if(!meta||typeof meta!=='object'||Array.isArray(meta)
+    ||meta.schemaVersion!=='earnings-bea-manufacturing-raw-r5-v1'
     ||meta.sourceVersion!==sourceSha||meta.seriesId!==BEA_MFG_PROFIT_SERIES
     ||meta.sourceUrl!==BEA_MFG_PROFIT_CSV
     ||meta.file!==sourceSha+'.csv'||meta.historicalMode!=='CURRENT_VINTAGE_NOT_PIT'
@@ -76,8 +97,16 @@ if(process.argv[1]&&path.resolve(process.argv[1])===self){
           operational:inspectD1Source(operationalRoot)});
       }
       const payload=readArchivedBeaMfgR6({root,sourceSha});
+      // The existing shared B runner pins the preflight archive checkpoint.
+      // For its one-shot mode, reject metadata/release drift BEFORE any D1 call.
+      if(apply&&process.env.ZGMINI_EARNINGS_BEA_MFG_B_PIN_REQUIRED==='1'
+        &&(process.env.ZGMINI_EARNINGS_BEA_MFG_SOURCE_VERSION!==payload.sourceVersion
+          ||process.env.ZGMINI_EARNINGS_BEA_MFG_SOURCE_STORED_AT!==String(payload.sourceStoredAt)
+          ||process.env.ZGMINI_EARNINGS_BEA_MFG_OBSERVED_THROUGH!==payload.indicator.observationPeriod))
+        throw Error('BEA_MFG_APPLY_SOURCE_DRIFT_NO_WRITE');
       if(!apply)console.log(JSON.stringify({status:'PASS_READONLY_ARCHIVE_PREFLIGHT',
-        sourceVersion:payload.sourceVersion,period:payload.indicator.observationPeriod,
+        sourceVersion:payload.sourceVersion,sourceStoredAt:payload.sourceStoredAt,
+        period:payload.indicator.observationPeriod,
         yoyPercent:payload.indicator.value,rawWrites:0,sqliteWrites:0,d1Writes:0}));
       else{
         const {client,credential}=await import('./d1.mjs');
@@ -86,8 +115,10 @@ if(process.argv[1]&&path.resolve(process.argv[1])===self){
         if(!['READBACK_VERIFIED','ALREADY_STORED'].includes(result.status))
           throw Error('BEA_MFG_D1_READBACK_NOT_VERIFIED');
         console.log(JSON.stringify({status:result.status,key:BEA_MFG_SNAPSHOT_KEY,
-          sourceVersion:payload.sourceVersion,period:payload.indicator.observationPeriod,
-          yoyPercent:payload.indicator.value,sqliteWrites:0,scoreWrites:0,d1Readback:result.status}));
+          sourceVersion:payload.sourceVersion,sourceStoredAt:payload.sourceStoredAt,
+        period:payload.indicator.observationPeriod,
+          yoyPercent:payload.indicator.value,sqliteWrites:0,scoreWrites:0,storedAt:result.storedAt,
+          d1Readback:result.status}));
       }
     }catch(error){console.error('ERROR='+String(error?.message??'BEA_MFG_R6_FAILED'));process.exitCode=1;}
   }

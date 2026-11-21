@@ -10,7 +10,9 @@ test('approved current-only US provisional request never falls back to retired c
  assert.match(code,/fetch\('\/api\/market-breadth\?market=usa&phase=provisional'/);
  assert.match(code,/if \(response\.ok\) body = await response\.json\(\) as unknown/);
  assert.match(code,/catch \{\s*body = null;/);
- assert.match(code,/setProvisional\(current(?:Iex|Us)Provisional\(body\) \? body : null\)/);
+ assert.match(code,/const incoming = currentIexProvisional\(body\) \? body : null/);
+ assert.match(code,/setProvisional\(previous => newestUsIexPercentPublication\(/);
+ assert.match(code,/currentIexProvisional\(previous\) \? previous : null, incoming/);
  assert.match(code,/const data = market === "usa" \? activeProvisional : normalizedCounts\(counts\)/);
  for(const forbidden of ['MarketParquet','confirmed-r2','market-breadth-r2-history','lastHistory','activeConfirmed']){
   assert.equal(code.includes(forbidden),false,forbidden);

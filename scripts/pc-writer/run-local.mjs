@@ -11,7 +11,8 @@ import {localDatabase} from './local-db.mjs';
 import {installLocalRuntime} from './local-env.mjs';
 import {client,credential,read,save,hash} from './d1.mjs';
 import {mergeStoredCompositeTrend,oneYearHistoryStart} from '../../worker/composite-history.mjs';
-import {attachStoredDomainScoreComparisons,sameVerifiedLineage} from './market-snapshot-comparisons.mjs';
+import {attachStoredDomainScoreComparisons,attachStoredEarningsFactorTrends,sameVerifiedLineage} from './market-snapshot-comparisons.mjs';
+import {attachStoredGrowthFactorTrends} from './growth-r2-saved-factor-history.mjs';
 import {publicationCompatibility,recoverPublication,appendPublicationEvent} from './publication-guard.mjs';
 import {koreaPublicationPlan} from './korea-publication.mjs';
 import {readAssetR10Projection} from './asset-r10-projection.mjs';
@@ -20,6 +21,7 @@ import {buildSupplyR10} from './supply-r10.mjs';
 import {acceptsStoredUpdate} from '../../lib/market-score/live-refresh.mjs';
 import {publishCoreArrowState} from './score-arrow-publication.mjs';
 import {requiresRecessionR3DisplayRefresh} from './recession-r3-refresh.mjs';
+import {requiresInflationR2TrendDateRefresh} from './inflation-r2-trend-date-refresh.mjs';
 import {requiresLiquidityR2DisplayRefresh} from './liquidity-r2-refresh.mjs';
 import {requiresCreditR2DisplayRefresh} from './credit-r2-refresh.mjs';
 import {requiresDebtHistoryRefresh} from './debt-history-refresh.mjs';
@@ -87,6 +89,11 @@ try{
  const comparableCompositeHistory=storedHistory.filter(snapshot=>
   sameVerifiedLineage(currentInflation,snapshot?.body?.domains?.find(d=>d.id==='inflation'))
  );
+ // Old unverified provider snapshots are not a paid-history source.
+ const {isValidatedPaidBreadthDomain}=await import('../../worker/breadth-paid-contract.mjs');
+ if(isValidatedPaidBreadthDomain(body.domains?.find(d=>d.id==='breadth'))){
+  for(let i=comparableCompositeHistory.length-1;i>=0;i--)if(!isValidatedPaidBreadthDomain(comparableCompositeHistory[i]?.body?.domains?.find(d=>d.id==='breadth')))comparableCompositeHistory.splice(i,1);
+ }
  if(body?.overall?.status==='READY'){
   body.overall.trend=mergeStoredCompositeTrend({
    legacyTrend:body.overall.trend,
@@ -96,6 +103,8 @@ try{
   });
  }
  attachStoredDomainScoreComparisons(body,storedHistory);
+ attachStoredEarningsFactorTrends(body,storedHistory);
+ attachStoredGrowthFactorTrends(body,storedHistory);
  // Compare published-calculation snapshots from distinct dates, not reconstructed curves.
  const priorRows=(await core.prepare("SELECT snapshot_key,body FROM market_public_snapshots_v1 WHERE snapshot_key!='current' AND snapshot_key<? ORDER BY snapshot_key DESC LIMIT 30").bind(body.asOfDate).all()).results;
  const priorMarket=priorRows.find(row=>/^\d{4}-\d{2}-\d{2}$/.test(row.snapshot_key)&&JSON.parse(row.body).status==='SUCCESS');
@@ -197,7 +206,10 @@ try{
   const liquidityR2Refresh=id==='liquidityCrisis'&&requiresLiquidityR2DisplayRefresh(envelope);
   const creditR2Refresh=id==='creditRisk'&&requiresCreditR2DisplayRefresh(envelope);
   const debtHistoryRefresh=id==='debtRisk'&&requiresDebtHistoryRefresh(envelope);
-  if(p?.status!=='READY'||p.sourceVersion!==checkpoint.sourceVersion||p.sourceStoredAt!==checkpoint.sourceStoredAt||recessionR3Refresh||liquidityR2Refresh||creditR2Refresh||debtHistoryRefresh){
+  // Repair only the legacy future-month-end evaluation label using saved PIT
+  // inputs; unchanged checkpoints and unrelated projections remain untouched.
+  const inflationR2DateRefresh=id==='inflation'&&requiresInflationR2TrendDateRefresh(envelope);
+  if(p?.status!=='READY'||p.sourceVersion!==checkpoint.sourceVersion||p.sourceStoredAt!==checkpoint.sourceStoredAt||recessionR3Refresh||liquidityR2Refresh||creditR2Refresh||debtHistoryRefresh||inflationR2DateRefresh){
    const input=r10?.status==='READY'?null:await loadProjectionSource(id,scope,{now:checkpoint.sourceStoredAt});
    const payload=r10?.status==='READY'?r10.payload:await builders[id](input);
    await projectionWriter(core).write(id,payload,Date.now(),checkpoint);

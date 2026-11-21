@@ -62,6 +62,45 @@ test('official Census M3 MTM/TI uses only U.S. total manufacturer SA inventory l
 });
 
 
+test('W01 Census optional provider metadata never rejects valid required MTM/TI columns',()=>{
+  const columns=[...HEADERS,'ERROR_DATA','',null];
+  const original=row(2026,'09','900000');
+  const data=[columns,
+    [...original,'duplicate annotation','provider unused text','ignored null label'],
+    [...row(2026,'08','850000'),'','',''],
+  ];
+  const items=normalizeCensusM3Inventories(data);
+  assert.deepEqual(items.map(x=>[x.date,x.value]),[
+    ['2026-08-01',850000],['2026-09-01',900000],
+  ]);
+  assert.equal(items.diagnostics.available,2);
+  assert.equal(items.diagnostics.invalid,0);
+  assert.equal(items.every(x=>x.selector==='MTM/TI'&&x.seasonallyAdjusted===true),true);
+});
+
+test('W01 Census still rejects ambiguous required/geography/date columns',()=>{
+  const base=row(2026,'09','900000');
+  for(const key of ['data_type_code','seasonally_adj','category_code',
+    'cell_value','us','time_slot_date']){
+    const duplicated=[...HEADERS,key.toUpperCase()];
+    assert.throws(()=>normalizeCensusM3Inventories([duplicated,[...base,'alternate']]),
+      {code:'CENSUS_M3_HEADERS_INVALID'},key);
+  }
+  for(const key of ['data_type_code','seasonally_adj','category_code',
+    'cell_value','us','time_slot_date']){
+    const keep=HEADERS.map((name,i)=>({name,value:base[i]}))
+      .filter(item=>item.name!==key);
+    assert.throws(()=>normalizeCensusM3Inventories([
+      keep.map(x=>x.name),keep.map(x=>x.value)]),
+      {code:'CENSUS_M3_HEADERS_INVALID'},key);
+  }
+  const valid=[...HEADERS,'error_data'];
+  const wrongLength=[...base,'unused', 'extra'];
+  const data=normalizeCensusM3Inventories([valid,wrongLength,[...base,'annotation']]);
+  assert.equal(data.length,1,'wrong-length rows must remain excluded');
+  assert.equal(data.diagnostics.invalid,1);
+});
+
 test('Census EITS supplier uppercase headers, official missing and conflicting months are isolated',()=>{
   const caps=HEADERS.map(h=>h.toUpperCase());
   const items=normalizeCensusM3Inventories([caps,
@@ -148,14 +187,18 @@ test('Census bad schema in one year does not discard valid observations from oth
 
 test('Census no usable monthly values remains explicitly unavailable, without numeric fallback',async t=>{
   const fixture=base();t.after(fixture.clear);
-  const result=await collectCensusM3Inventories({base:fixture.writer,censusKey:'k',
-    quotaFetch:async url=>response(payload(row(Number(new URL(url).searchParams.get('time')),'09','NA'))),now});
-  assert.equal(result.status,'UNCHANGED');
-  assert.equal(result.coverage,'NO_USABLE_OBSERVATIONS');
-  assert.equal(result.count,0);
+  await assert.rejects(()=>collectCensusM3Inventories({base:fixture.writer,censusKey:'k',
+    quotaFetch:async url=>response(payload(row(Number(new URL(url).searchParams.get('time')),'09','NA'))),now}),
+  {code:'CENSUS_M3_NO_USABLE_OBSERVATIONS'});
   assert.equal(fs.existsSync(path.join(fixture.writer,CENSUS_M3_INVENTORIES_FILE)),false);
-  for(const p of result.provenance)
-    assert.equal(fs.existsSync(path.join(fixture.writer,'inflation-causal-candidates-r1',p.archive)),true);
+  // The attempted responses are still retained by their verified SHA, even
+  // though neither year produced a usable value or a successful source file.
+  const raw=path.join(fixture.writer,'inflation-causal-candidates-r1','raw');
+  const archives=fs.readdirSync(raw).filter(name=>
+    /^census-m3-mtm-202[56]-[a-f0-9]{64}\.json$/.test(name));
+  assert.equal(archives.length,2);
+  assert.equal(archives.some(name=>name.startsWith('census-m3-mtm-2025-')),true);
+  assert.equal(archives.some(name=>name.startsWith('census-m3-mtm-2026-')),true);
 });
 
 test('collects two source years and archives private provider snapshots without key leakage',async t=>{
@@ -222,3 +265,113 @@ test('invalid provider row cannot overwrite stored data and missing key blocks n
   assert.equal(calls,earlier);
 });
 
+
+test('Census M3 rejects malformed thousands separators without inventing inventory values',()=>{
+  const values=normalizeCensusM3Inventories(payload(
+    row(2026,'01','12,34'),
+    row(2026,'02','1,,234'),
+    row(2026,'03','1,234,56'),
+    row(2026,'04','01,234'),
+    row(2026,'05','1,234'),
+    row(2026,'06','12,345,678.50'),
+    row(2026,'07','1,234.0'),
+    row(2026,'08','12345678'),
+  ));
+  assert.deepEqual(values.map(x=>[x.date,x.value]),[
+    ['2026-05-01',1234],
+    ['2026-06-01',12345678.5],
+    ['2026-07-01',1234],
+    ['2026-08-01',12345678],
+  ]);
+  assert.equal(values.diagnostics.invalid,4);
+});
+
+test('malformed values in both official Census years fail the initial snapshot and retain raw archives',async t=>{
+  const fixture=base();t.after(fixture.clear);
+  let requests=0;
+  await assert.rejects(()=>collectCensusM3Inventories({
+    base:fixture.writer,censusKey:'fixture-key',now,
+    quotaFetch:async url=>{
+      requests++;
+      const year=Number(new URL(url).searchParams.get('time'));
+      return response(payload(row(year,'09','12,34')));
+    },
+  }),{code:'CENSUS_M3_NO_USABLE_OBSERVATIONS'});
+  assert.equal(requests,2);
+  assert.equal(fs.existsSync(path.join(fixture.writer,CENSUS_M3_INVENTORIES_FILE)),false);
+  const archiveNames=fs.readdirSync(path.join(fixture.writer,'inflation-causal-candidates-r1','raw'));
+  assert.equal(archiveNames.length,2);
+  assert.equal(archiveNames.some(name=>name.startsWith('census-m3-mtm-2025-')),true);
+  assert.equal(archiveNames.some(name=>name.startsWith('census-m3-mtm-2026-')),true);
+});
+
+test('invalid last-good Census file fails before network and preserves its exact bytes',async t=>{
+  const fixture=base();t.after(fixture.clear);
+  let providerCalls=0;
+  const fetchYear=async url=>{
+    providerCalls++;
+    const year=Number(new URL(url).searchParams.get('time'));
+    return response(payload(row(year,'09',year===2025?'700000':'900000')));
+  };
+  const first=await collectCensusM3Inventories({
+    base:fixture.writer,censusKey:'fixture-key',quotaFetch:fetchYear,now});
+  assert.equal(first.status,'SAVED_READBACK');
+  assert.equal(providerCalls,2);
+  const file=path.join(fixture.writer,CENSUS_M3_INVENTORIES_FILE);
+  const doc=JSON.parse(fs.readFileSync(file,'utf8'));
+  doc.observations.push({...doc.observations[0],value:888888});
+  const conflicting=Buffer.from(JSON.stringify(doc));
+  fs.writeFileSync(file,conflicting);
+  const archiveDir=path.join(fixture.writer,'inflation-causal-candidates-r1','raw');
+  const archivesBefore=fs.readdirSync(archiveDir).sort();
+  await assert.rejects(()=>collectCensusM3Inventories({
+    base:fixture.writer,censusKey:'fixture-key',quotaFetch:fetchYear,now}),
+    {code:'CENSUS_M3_EXISTING_CONTRACT_INVALID'});
+  assert.equal(providerCalls,2,'invalid prior cannot consume another two provider GETs');
+  assert.deepEqual(fs.readFileSync(file),conflicting,'preserve original bytes for diagnosis');
+  assert.deepEqual(fs.readdirSync(archiveDir).sort(),archivesBefore,'no attempted response archives');
+});
+
+test('Census last-good metadata must match public MTM/TI contract before any supplier GET',async t=>{
+  const fixture=base();t.after(fixture.clear);
+  let calls=0;
+  const quotaFetch=async url=>{
+    calls++;
+    const year=Number(new URL(url).searchParams.get('time'));
+    return response(payload(row(year,'09',year===2025?'700000':'900000')));
+  };
+  const first=await collectCensusM3Inventories({
+    base:fixture.writer,censusKey:'fixture-key',quotaFetch,now});
+  assert.equal(first.status,'SAVED_READBACK');
+  assert.equal(calls,2);
+  const file=path.join(fixture.writer,CENSUS_M3_INVENTORIES_FILE);
+  const normal=JSON.parse(fs.readFileSync(file,'utf8'));
+  const rawDir=path.join(fixture.writer,'inflation-causal-candidates-r1','raw');
+  const beforeArchives=fs.readdirSync(rawDir).sort();
+  const mutations=[
+    doc=>{doc.selector='MTM/NO';},
+    doc=>{doc.frequency='DAILY';},
+    doc=>{doc.unit='USD';},
+    doc=>{doc.observations[0].selector='MTM/NO';},
+    doc=>{doc.observations[0].unit='USD';},
+    doc=>{doc.observations[0].seasonallyAdjusted=false;},
+    doc=>{delete doc.observations[0].seasonallyAdjusted;},
+  ];
+  for(const mutate of mutations){
+    const bad=structuredClone(normal);mutate(bad);
+    const badBytes=Buffer.from(JSON.stringify(bad));
+    fs.writeFileSync(file,badBytes);
+    await assert.rejects(()=>collectCensusM3Inventories({
+      base:fixture.writer,censusKey:'fixture-key',quotaFetch,now}),
+      {code:'CENSUS_M3_EXISTING_CONTRACT_INVALID'});
+    assert.equal(calls,2,'bad last-good must never spend provider quota');
+    assert.deepEqual(fs.readFileSync(file),badBytes,'retain exact damaged bytes for owner audit');
+    assert.deepEqual(fs.readdirSync(rawDir).sort(),beforeArchives,
+      'prior validation must stop before creating new provider archives');
+  }
+  fs.writeFileSync(file,JSON.stringify(normal));
+  const unchanged=await collectCensusM3Inventories({
+    base:fixture.writer,censusKey:'fixture-key',quotaFetch,now});
+  assert.equal(unchanged.status,'UNCHANGED','existing correctly labeled last-good remains usable');
+  assert.equal(calls,4,'the normal approved path still performs its two yearly GETs');
+});

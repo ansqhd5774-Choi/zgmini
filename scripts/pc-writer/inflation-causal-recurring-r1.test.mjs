@@ -221,3 +221,110 @@ test('gas UNCHANGED closes the day, but the next UTC day may run again',async()=
  assert.equal(nextDay.status,'UNCHANGED_AWAITING_NEXT_DUE');
  assert.equal(cp.processed.gas,'2026-11-08');assert.equal(network,2);
 });
+
+
+test('W01 recurring 503 and quota guards retry within allowed Core ticks but integrity failures keep 24h',()=>{
+ const doc={processed:{},attempted:{
+  bls8:{eventKey:'2026-11-07',at:'2026-11-08T22:30:00.000Z',
+   failureCode:'BLS_HTTP_503'},
+  gas:{eventKey:'2026-11-08',at:'2026-11-08T22:30:00.000Z',
+   failureCode:'PROVIDER_HTTP_503'},
+ }};
+ const params={enabled:true,gasDailyApproved:true,checkpoint:doc,
+  events:[releases[0]]};
+ const before=planInflation19Due({...params,now:new Date('2026-11-08T23:29:00Z')});
+ assert.deepEqual(before.due,[]);
+ const after=planInflation19Due({...params,now:new Date('2026-11-08T23:31:00Z')});
+ assert.deepEqual(after.due.map(x=>x.key),['bls8','gas']);
+ doc.attempted.bls8.failureCode='BLS_HTTP_429';
+ doc.attempted.gas.failureCode='INFL19_RECURRING_SOURCE_FAILED';
+ assert.deepEqual(planInflation19Due({...params,now:new Date('2026-11-08T23:31:00Z')}).due,[]);
+ doc.attempted.gas.failureCode='INFL19_RECURRING_QUOTA_GUARD';
+ assert.deepEqual(planInflation19Due({...params,now:new Date('2026-11-08T23:31:00Z')})
+  .due.map(x=>x.key),['gas']);
+});
+
+test('W01 recurring outage is recorded as sanitized category then cleared by successful later readback',async()=>{
+ const cp={schema:INFL19_RECURRING_SCHEMA,processed:{},attempted:{}};
+ let clock=new Date('2026-11-08T22:30:00.000Z'),calls=0;
+ const run=()=>collectInflation19IfDue({approved:true,base:'/staged/pc-writer',
+  now:clock,officialEvents:[releases[0]],providerEnv:{BLS_API_KEY:'fixture'},
+  quotaFetch:async()=>({ok:true}),
+  collectors:{bls8:async({quotaFetch})=>{
+   await quotaFetch('https://api.bls.gov');calls++;
+   if(calls===1)throw Object.assign(Error('credentials-must-not-leak'),
+    {code:'BLS_HTTP_503'});
+   return {status:'SAVED_READBACK',providerCalls:1};
+  }},
+  checkpointIO:{file:'/never',load:()=>cp,save:x=>{
+   cp.processed={...x.processed};cp.attempted={...x.attempted};
+  }}});
+ const first=await run();
+ assert.equal(first.failed[0].code,'BLS_HTTP_503');
+ assert.equal(cp.attempted.bls8.failureCode,'BLS_HTTP_503');
+ assert.ok(!JSON.stringify(first).includes('credentials-must-not-leak'));
+ clock=new Date('2026-11-08T23:29:00.000Z');
+ assert.equal((await run()).status,'NO_VERIFIED_RELEASE_DUE');
+ clock=new Date('2026-11-08T23:31:00.000Z');
+ const second=await run();
+ assert.equal(second.status,'COMPLETE');
+ assert.equal(cp.attempted.bls8.failureCode,undefined);
+ assert.equal(cp.processed.bls8,'2026-11-07');
+ assert.equal(calls,2);
+});
+
+
+test('W01 last verified calendar events survive refresh failure only with a trusted original host',async()=>{
+ const official={...releases[0],sourceUrl:'https://www.bls.gov/schedule/news_release/ppi.htm'};
+ const state={bls:{status:'SOURCE_FAILED',checkedAt:'2026-11-07T18:00:00.000Z'}};
+ let requests=0;
+ const cp={schema:INFL19_RECURRING_SCHEMA,processed:{},attempted:{}};
+ const run=(events,sources)=>runInflation19RecurringFromCore('/staged/pc-writer',{
+  now,envLoader:()=>({ZGMINI_INFL19_RECURRING_APPROVED:'1',BLS_API_KEY:'test'}),
+  calendarLoader:()=>({events,sources}),
+  quotaFactory:()=>({fetch:async()=>{requests++;return {ok:true};}}),
+  collectors:{bls8:async({quotaFetch})=>{
+   await quotaFetch('https://api.bls.gov');return {status:'SAVED_READBACK',providerCalls:1};
+  }},
+  checkpointIO:{file:'/fake',load:()=>cp,save:x=>{
+   cp.processed={...x.processed};cp.attempted={...x.attempted};
+  }}
+ });
+ const wrong=await run([{...official,sourceUrl:'https://www.bls.gov.evil.invalid/ppi'}],state);
+ assert.equal(wrong.status,'NO_VERIFIED_RELEASE_DUE');assert.equal(requests,0);
+ const unknown=await run([official],{bls:{status:'SOURCE_FAILED',checkedAt:null}});
+ assert.equal(unknown.status,'NO_VERIFIED_RELEASE_DUE');assert.equal(requests,0);
+ const valid=await run([official],state);
+ assert.equal(valid.status,'COMPLETE');
+ assert.equal(valid.updated[0].source,'bls8');
+ assert.equal(cp.processed.bls8,'2026-11-07');
+ assert.equal(requests,1);
+});
+
+
+test('W01 partial BLS8 storage preserves last-good and does not mark release fully processed',async()=>{
+ const cp={schema:INFL19_RECURRING_SCHEMA,processed:{},attempted:{}};
+ let when=now,called=0;
+ const collect=()=>collectInflation19IfDue({approved:true,base:'/staged/pc-writer',
+  now:when,officialEvents:[releases[0]],providerEnv:{BLS_API_KEY:'key'},
+  quotaFetch:async()=>({ok:true}),collectors:{bls8:async({quotaFetch})=>{
+   await quotaFetch('https://api.bls.gov');called++;
+   return {status:called===1?'PARTIAL_SAVED_LAST_GOOD':'SAVED_READBACK',providerCalls:1};
+  }},
+  checkpointIO:{file:'/none',load:()=>cp,save:x=>{
+   cp.processed={...x.processed};cp.attempted={...x.attempted};
+  }}});
+ const first=await collect();
+ assert.equal(first.status,'PARTIAL_LAST_GOOD_AWAITING_NEXT_DUE');
+ assert.deepEqual(first.partial,[{source:'bls8',status:'PARTIAL_SAVED_LAST_GOOD',providerRequests:1}]);
+ assert.equal(first.updated.length,0);
+ assert.equal(cp.processed.bls8,undefined);
+ const immediate=await collect();
+ assert.equal(immediate.status,'NO_VERIFIED_RELEASE_DUE');
+ assert.equal(called,1);
+ when=new Date(now.getTime()+86_400_001);
+ const recovered=await collect();
+ assert.equal(recovered.status,'COMPLETE');
+ assert.equal(cp.processed.bls8,'2026-11-07');
+ assert.equal(called,2);
+});

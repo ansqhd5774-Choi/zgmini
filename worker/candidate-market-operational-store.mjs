@@ -1,4 +1,7 @@
+import {readPaidBreadthRow,overlayPaidBreadth} from './breadth-paid-public.mjs';
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
+import {MARKETPARQUET_REMOVED_CODE} from '../lib/marketparquet-retirement.mjs';
+import {maskRetiredMarketPublicSnapshot} from './market-retired-public-snapshot-mask.mjs';
 // Candidate-only SELECT-only operational store.
 // Mirrors the public read contract without schema initialization or write methods.
 import {gunzipSync} from 'node:zlib';
@@ -40,6 +43,7 @@ export function marketOperationalStore(db){
    return latest;
   },
   readScore:()=>read('market_public_snapshots_v1','current'),
+  readPaidBreadth:()=>readPaidBreadthRow(db),
   async readProjectionMacro(id,onMetadata){
    const prefix=projectionMacroKey(id);
    const row=await db.prepare('SELECT body,stored_at FROM market_input_batches_v1 WHERE batch_key LIKE ? ORDER BY stored_at DESC LIMIT 1').bind(prefix+':%').first();
@@ -85,6 +89,8 @@ export async function storedMarketResponse(request,{store,now=Date.now()}={}){
  if(!snapshot||now<snapshot.storedAt||now-snapshot.storedAt>=PUBLIC_DISPLAY_MAX_AGE_MS)return Response.json({status:'FAILED',reason:snapshot?'STORED_SCORE_STALE':'STORED_SCORE_PENDING',overall:{score:null,status:'UNAVAILABLE',trend:[]},domains:[],dataQuality:{overallComputable:false,reweighted:false}},{status:503,headers});
  headers['cache-control']='public, max-age=60, must-revalidate';
  headers['x-market-snapshot-at']=new Date(snapshot.storedAt).toISOString();
- if(request.headers.get('accept')?.includes('application/x-ndjson'))return new Response(JSON.stringify({type:'complete',body:snapshot.body,cacheControl:headers['cache-control']})+'\n',{headers:{...headers,'content-type':'application/x-ndjson; charset=utf-8','vary':'Accept'}});
- return Response.json(snapshot.body,{headers});
+ const publicBody=await overlayPaidBreadth(maskRetiredMarketPublicSnapshot(snapshot.body),{readPaid:store.readPaidBreadth,now});
+ if(!publicBody)return Response.json({status:'UNAVAILABLE',reason:MARKETPARQUET_REMOVED_CODE,overall:{score:null,status:'UNAVAILABLE',trend:[]},domains:[]},{status:503,headers:{...headers,'cache-control':'no-store'}});
+ if(request.headers.get('accept')?.includes('application/x-ndjson'))return new Response(JSON.stringify({type:'complete',body:publicBody,cacheControl:headers['cache-control']})+'\n',{headers:{...headers,'content-type':'application/x-ndjson; charset=utf-8','vary':'Accept'}});
+ return Response.json(publicBody,{headers});
 }

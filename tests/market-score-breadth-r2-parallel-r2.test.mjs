@@ -67,14 +67,14 @@ test("stored public reader projects score without provider access",async()=>{
   assert.equal(result.methodologyVersion,"ZGMINI_BREADTH_R2_METHOD_R1");
 });
 
-test("production collection is scheduled separately from stored public reads",()=>{
+test("retired R3 production collection is absent while stored public reads stay isolated",()=>{
   const route=text("app/api/market-score/route.ts");
   const scheduled=text("worker/market-operational-refresh.mjs");
   assert.match(route,/storedMarketResponse/);
   assert.doesNotMatch(route,/collectBreadth|waitUntil/);
   assert.doesNotMatch(scheduled,/collectBreadthR2StoreOnlyR2/);
-  assert.match(scheduled,/breadth:.*collectBreadthB1R3StoreOnlyR1/);
-  assert.match(scheduled,/collectBreadthDomain:readBreadthB1R5StoredPublicDomainR1/);
+  assert.doesNotMatch(scheduled,/breadth:.*collectBreadthB1R3StoreOnlyR1/);
+  assert.match(scheduled,/collectBreadthDomain:retiredBreadthPublicDomain/);
 });
 
 test("score path uses D1 stored reader and does not invoke live breadth service",()=>{

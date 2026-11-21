@@ -62,15 +62,34 @@ export function summarize(meta,data,sourceStoredAt,{dateField}={}){
   previousObservationDate:prev.date,availableAt,
   sourceStoredAt:stamp(sourceStoredAt),history:months};
 }
-function readPpi(root){
+export function readPpi(root,{onSeriesError}={}){
  const doc=readJson(root,'inflation-causal-r1/bls-ppi8.json');
  if(doc?.provider!=='BLS'||doc.schemaVersion!==1||doc.sourceVersion!=='BLS_API_V2_PPI_BATCH8_R1'
    ||!Array.isArray(doc.ids)||doc.ids.length!==8||!doc.series||!stamp(doc.sourceStoredAt))
   throw Error('INFL19_BLS_PROVENANCE');
- return Object.fromEntries([...BLS].map(([id,series])=>{
-  if(!doc.ids.includes(series))throw Error('INFL19_BLS_SERIES_MISSING');
-  return [id,summarize(INFLATION_CAUSAL_19.find(x=>x.id===id),doc.series[series],doc.sourceStoredAt)];
- }));
+ const bySeries=doc.seriesSourceStoredAt;
+ // Legacy eight-series sources had only the document-level stored timestamp.
+ // New partial sources retain each affected sibling's original timestamp.
+ if(bySeries!==undefined&&(!bySeries||typeof bySeries!=='object'||
+   Array.isArray(bySeries)||Object.keys(bySeries).length!==8))
+  throw Error('INFL19_BLS_PROVENANCE');
+ const result={};
+ for(const [id,series] of BLS){
+  try{
+   if(!doc.ids.includes(series))throw Error('INFL19_BLS_SERIES_MISSING');
+   if(bySeries!==undefined&&!stamp(bySeries[series]))
+    throw Error('INFL19_BLS_PROVENANCE');
+   const storedAt=bySeries?.[series]??doc.sourceStoredAt;
+   result[id]=summarize(INFLATION_CAUSAL_19.find(x=>x.id===id),
+    doc.series[series],storedAt);
+  }catch(error){
+   // Keep the standalone readPpi contract strict. Only the public preview
+   // may quarantine a bad sibling while publishing healthy saved series.
+   if(typeof onSeriesError!=='function')throw error;
+   onSeriesError(id);
+  }
+ }
+ return result;
 }
 function readGasElectric(root,id){
  const rel=id==='3'?'inflation-causal-r1/gas-dhhngsp.json':
@@ -164,8 +183,12 @@ export function previewInflation19(root,{openDb=file=>new DatabaseSync(file,{rea
   try{records[id]=reader();}
   catch(error){missing[id]=/^INFL19_[A-Z0-9_]+$/.test(error.message)?error.message:'INFL19_SOURCE_UNAVAILABLE';}
  };
- try{const ppi=readPpi(root);for(const [id,v] of Object.entries(ppi))records[id]=v;}
- catch(e){for(const id of BLS.keys())missing[id]='INFL19_BLS_SOURCE_UNAVAILABLE';}
+ try{
+  const ppi=readPpi(root,{onSeriesError:id=>{
+   missing[id]='INFL19_BLS_SOURCE_UNAVAILABLE';
+  }});
+  for(const [id,v] of Object.entries(ppi))records[id]=v;
+ }catch(e){for(const id of BLS.keys())missing[id]='INFL19_BLS_SOURCE_UNAVAILABLE';}
  for(const id of ['3','4'])attempt(id,()=>readGasElectric(root,id));
  attempt('31',()=>readSce(root));
  for(const id of ['21','26'])attempt(id,()=>readSupply(root,id));

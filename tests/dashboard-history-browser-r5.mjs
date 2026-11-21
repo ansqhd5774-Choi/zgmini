@@ -25,6 +25,7 @@ try{
     :path==='/api/market-score/observations'?{
      status:'READY',period:new URL(route.request().url()).searchParams.get('period'),
      points:[
+      {observedAt:'2026-10-22T12:00:00Z',score:46},
       {observedAt:'2026-10-24T11:50:00Z',score:48},
       {observedAt:'2026-10-24T12:00:00Z',score:50},
      ],
@@ -44,26 +45,45 @@ try{
   await page.screenshot({path:`artifacts/dashboard-history/introduction-${width}.png`,caret:'initial'});
   await intro.getByRole('button',{name:'닫기',exact:true}).click();
   await intro.waitFor({state:'hidden'});
-  // Composite uses two independent reconstructed/calculated Area paths.
-  // Check actual geometry, not an obsolete one-path renderer contract.
-  const curveSelector='.zg-r55-summary-chart path.recharts-area-curve';
-  const curve=page.locator(curveSelector+'[d^="M"]').first();
-  const curveSignature=()=>page.locator(curveSelector)
-   .evaluateAll(paths=>paths.map(path=>path.getAttribute('d')??'').join('|'));
-  await curve.waitFor({state:'visible'});
+  // Reconstructed daily history is dashed; actual calculation-time samples
+  // form a separate solid line. Never bridge these different provenances.
+  const chartSelector='.zg-r55-summary-chart';
+  const chartSignature=()=>page.locator(chartSelector).evaluate(root=>[
+   ...[...root.querySelectorAll('path.recharts-area-curve')].map(p=>p.getAttribute('d')??''),
+   ...[...root.querySelectorAll('circle.recharts-area-dot')].map(p=>(p.getAttribute('cx')??'')+':'+(p.getAttribute('cy')??'')),
+  ].join('|'));
+  const waitForGeometry=()=>page.waitForFunction(selector=>{
+   const root=document.querySelector(selector);
+   if(!root)return false;
+   return [...root.querySelectorAll('path.recharts-area-curve')].some(p=>/^M/.test(p.getAttribute('d')??''))
+    ||[...root.querySelectorAll('circle.recharts-area-dot')].some(p=>Number.isFinite(Number(p.getAttribute('cx')))&&Number.isFinite(Number(p.getAttribute('cy'))));
+  },chartSelector);
+  await waitForGeometry();
   await page.locator('.usa-target-card path.recharts-area-curve').waitFor({state:'visible'});
   await page.reload({waitUntil:'networkidle'});
   await intro.waitFor({state:'hidden'});
-  await curve.waitFor({state:'visible'});
-  const year=await curveSignature();
+  await waitForGeometry();
+  const year=await chartSignature();
   const periods=page.getByRole('group',{name:'종합 시장 점수 추이 기간'});
   await periods.getByRole('button',{name:'1M',exact:true}).click();
-  await page.waitForFunction(({selector,old})=>[...document.querySelectorAll(selector)].map(p=>p.getAttribute('d')??'').join('|')!==old,{selector:curveSelector,old:year});
-  const month=await curveSignature();
+  await page.waitForFunction(({selector,old})=>{
+   const root=document.querySelector(selector);
+   return root&&[
+    ...[...root.querySelectorAll('path.recharts-area-curve')].map(p=>p.getAttribute('d')??''),
+    ...[...root.querySelectorAll('circle.recharts-area-dot')].map(p=>(p.getAttribute('cx')??'')+':'+(p.getAttribute('cy')??'')),
+   ].join('|')!==old;
+  },{selector:chartSelector,old:year});
+  const month=await chartSignature();
   revision=2;
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   await page.getByRole('img',{name:'종합 시장 점수 60.5점',exact:true}).waitFor({state:'visible'});
-  await page.waitForFunction(({selector,old})=>[...document.querySelectorAll(selector)].map(p=>p.getAttribute('d')??'').join('|')!==old,{selector:curveSelector,old:month});
+  await page.waitForFunction(({selector,old})=>{
+   const root=document.querySelector(selector);
+   return root&&[
+    ...[...root.querySelectorAll('path.recharts-area-curve')].map(p=>p.getAttribute('d')??''),
+    ...[...root.querySelectorAll('circle.recharts-area-dot')].map(p=>(p.getAttribute('cx')??'')+':'+(p.getAttribute('cy')??'')),
+   ].join('|')!==old;
+  },{selector:chartSelector,old:month});
   assert.equal(await periods.getByRole('button',{name:'1M',exact:true}).getAttribute('aria-pressed'),'true');
   assert.equal(await page.locator('.zg-r55-card-grid article').count(),12);
   // W06 #69: exercise every selectable period with real Recharts in mocked
@@ -82,13 +102,36 @@ try{
    ]);
    assert.equal(await button.getAttribute('aria-pressed'),'true',
     width+'px '+label+' selected period');
-   await curve.waitFor({state:'visible',timeout:15000});
-   const paths=await page.locator(curveSelector).evaluateAll(curves=>curves
-    .map(curve=>curve.getAttribute('d')??'').filter(Boolean));
-   assert.ok(paths.length>=1&&paths.length<=2
-    &&paths.every(path=>path.startsWith('M')&&!/NaN|Infinity/.test(path)),
-    width+'px '+label+' provenance curves have finite independent geometry');
+   await waitForGeometry();
+   const geometry=await page.locator(chartSelector).evaluate(root=>({
+    paths:[...root.querySelectorAll('path.recharts-area-curve')].map(p=>p.getAttribute('d')??'').filter(Boolean),
+    dots:[...root.querySelectorAll('circle.recharts-area-dot')].map(p=>[p.getAttribute('cx'),p.getAttribute('cy')]),
+   }));
+   assert.ok(geometry.paths.length+geometry.dots.length>=1
+    &&geometry.paths.every(path=>path.startsWith('M')&&!/NaN|Infinity/.test(path))
+    &&geometry.dots.every(([x,y])=>Number.isFinite(Number(x))&&Number.isFinite(Number(y))),
+    width+'px '+label+' provenance curves and discrete calculations have finite geometry');
    assert.equal(await page.locator('.zg-r55-card-grid article').count(),12);
+   if(label==='1W'){
+    // Reconstructed daily and actual calculation histories retain separate
+    // line styles without a dot at every calculation timestamp.
+    const curves=await page.locator(chartSelector+' path.recharts-area-curve').evaluateAll(paths=>
+     paths.map(path=>({d:path.getAttribute('d')??'',dash:path.getAttribute('stroke-dasharray'),stroke:path.getAttribute('stroke')})));
+    const drawn=curves.filter(p=>p.stroke!=='none'&&p.d);
+    assert.equal(drawn.length,2,width+'px reconstructed and calculated histories draw separate lines');
+    assert.ok(drawn.some(p=>p.dash),width+'px reconstructed history remains dashed');
+    assert.ok(drawn.some(p=>!p.dash),width+'px actual calculation history has a solid line');
+    assert.ok(/^M/.test(drawn[0].d)&&/[CLQ]/.test(drawn[0].d.slice(1))
+     &&(drawn[0].d.match(/M/g)??[]).length===1,
+     width+'px reconstructed history is one connected SVG subpath');
+    assert.equal(await page.locator(chartSelector+' circle.recharts-area-dot').count(),0,
+     width+'px calculated history does not become a scatter plot');
+    const domainLines=await page.locator('.zg-r55-card-grid article .zg-r55-mini-chart svg > path').evaluateAll(paths=>
+     paths.map(path=>path.getAttribute('d')??''));
+    assert.equal(domainLines.length,12,width+'px 12 domain observation paths');
+    assert.ok(domainLines.every(d=>/^M/.test(d)&&/L/.test(d)),
+     width+'px 12 domains connect their real 1W observations');
+   }
   }
   // A real zero score remains visible, not a null/missing placeholder, on
   // each responsive viewport and the 1D calc archive.
@@ -97,8 +140,35 @@ try{
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   await page.getByRole('img',{name:'종합 시장 점수 0.0점',exact:true})
    .waitFor({state:'visible',timeout:15000});
-  await curve.waitFor({state:'visible',timeout:15000});
+  await waitForGeometry();
   assert.equal(await periods.getByRole('button',{name:'1D',exact:true}).getAttribute('aria-pressed'),'true');
+  // Existing actual observations use a line; no historic data is invented.
+  const oneDayMarks=await page.locator(chartSelector).evaluate(root=>({
+   strokes:[...root.querySelectorAll('path.recharts-area-curve')].filter(path=>{
+    const d=path.getAttribute('d')??'';
+    const stroke=path.getAttribute('stroke')??getComputedStyle(path).stroke;
+    return /^M/.test(d)&&/[CLQ]/.test(d.slice(1))&&stroke!=='none'&&stroke!=='transparent'&&stroke!=='';
+   }).length,
+   dots:root.querySelectorAll('circle.recharts-area-dot').length,
+  }));
+  assert.equal(oneDayMarks.strokes,1,width+'px 1D actual calculations form a continuous line');
+  assert.equal(oneDayMarks.dots,0,width+'px 1D has no repeated calculation dots');
+  // W06 R4 #69: verify actual viewport overflow after all six period changes.
+  const overflow=await page.evaluate(()=>{
+   const viewport=document.documentElement.clientWidth;
+   const violations=[];
+   if(document.documentElement.scrollWidth>viewport+1)
+    violations.push('document scrollWidth='+document.documentElement.scrollWidth);
+   for(const selector of ['.zg-r55-summary-chart','.zg-r55-card-grid article']){
+    for(const element of document.querySelectorAll(selector)){
+     const rect=element.getBoundingClientRect();
+     if(rect.width>0&&(rect.left< -1||rect.right>viewport+1))
+      violations.push(selector+' left='+rect.left+' right='+rect.right);
+    }
+   }
+   return violations;
+  });
+  assert.deepEqual(overflow,[],width+'px horizontal overflow');
   await page.screenshot({path:`artifacts/dashboard-history/history-${width}.png`});
   assert.deepEqual(errors,[]);
   console.log(`PASS ${width}px: 6 chart periods, newer snapshot and true zero in mocked Chromium`);

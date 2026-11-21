@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {INFLATION_CAUSAL_19} from '../lib/inflation-causal-public-catalog.mjs';
-import {summarize,previewInflation19,readSupply,readMacroSeries} from '../scripts/pc-writer/inflation-causal-public-preview-r1.mjs';
+import {summarize,previewInflation19,readSupply,readMacroSeries,readPpi} from '../scripts/pc-writer/inflation-causal-public-preview-r1.mjs';
 
 const first=INFLATION_CAUSAL_19[0];
 const stored='2026-11-04T09:00:00Z';
@@ -85,4 +85,59 @@ test('untyped numeric availability stays null instead of a misleading 1970 relea
   {date:'2026-08-01',value:10,availableAt:0},
   {date:'2026-09-01',value:11,availableAt:0}],stored);
  assert.equal(r.availableAt,null);
+});
+
+test('one invalid private PPI sibling does not hide the other seven saved research rows',()=>{
+ const root=fs.mkdtempSync(path.join(os.tmpdir(),'w01-infl19-ppi-independent-'));
+ const home=path.join(root,'pc-writer');
+ const dir=path.join(home,'inflation-causal-r1');fs.mkdirSync(dir,{recursive:true});
+ const ids=['WPU1017','WPU102502','WPU081','WPU061',
+  'WPU012','WPU0221','WPU029','WPUID61'];
+ const stamp='2026-11-16T10:30:02.905Z';
+ const goodRows=()=>[{date:'2026-08-01',value:100},
+  {date:'2026-09-01',value:101}];
+ const doc={schemaVersion:1,provider:'BLS',
+  sourceVersion:'BLS_API_V2_PPI_BATCH8_R1',sourceStoredAt:stamp,
+  ids,series:Object.fromEntries(ids.map(id=>[id,goodRows()])),
+  seriesSourceStoredAt:Object.fromEntries(ids.map(id=>[id,stamp]))};
+ const sourceFile=path.join(dir,'bls-ppi8.json');
+ const preview=()=>previewInflation19(home,{now:Date.parse('2026-11-18T11:00:00.000Z'),
+  openDb:()=>{throw Error('NO_DB_FIXTURE');}});
+ try{
+  doc.series.WPU102502[1].value='provider-invalid-string';
+  fs.writeFileSync(sourceFile,JSON.stringify(doc));
+  assert.throws(()=>readPpi(home),/INFL19_ROW_INVALID/,
+   'existing standalone readPpi remains all-eight strict');
+  const oneBad=preview();
+  assert.equal(oneBad.status,'PASS_READONLY');
+  assert.equal(oneBad.ready,7);
+  assert.equal(oneBad.payload.status,'PARTIAL');
+  assert.equal(oneBad.payload.score,null);
+  assert.equal(oneBad.missing['6'],'INFL19_BLS_SOURCE_UNAVAILABLE');
+  assert.deepEqual(oneBad.payload.indicators
+   .filter(row=>['5','6','7','8','9','10','11','25'].includes(row.id))
+   .map(row=>[row.id,row.status,row.value]),[
+    ['5','READY',101],['6','PENDING',null],['7','READY',101],
+    ['8','READY',101],['9','READY',101],['10','READY',101],
+    ['11','READY',101],['25','READY',101]]);
+  assert.equal(oneBad.providerCalls,0);
+  assert.equal(oneBad.d1Writes,0);
+  assert.equal(oneBad.dbWrites,0);
+  // A corrupted timestamp is also series-local when the document itself is intact.
+  doc.series.WPU102502=goodRows();
+  doc.seriesSourceStoredAt.WPU102502='NOT_A_TIMESTAMP';
+  fs.writeFileSync(sourceFile,JSON.stringify(doc));
+  const badTime=preview();
+  assert.equal(badTime.ready,7);
+  assert.equal(badTime.missing['6'],'INFL19_BLS_SOURCE_UNAVAILABLE');
+  // Bad top-level provider provenance must still reject every PPI sibling.
+  doc.provider='UNAPPROVED_SOURCE';
+  fs.writeFileSync(sourceFile,JSON.stringify(doc));
+  const invalidBatch=preview();
+  assert.equal(invalidBatch.status,'PENDING');
+  assert.equal(invalidBatch.ready,0);
+  assert.equal(invalidBatch.payload,null);
+  assert.equal(Object.keys(invalidBatch.missing)
+   .filter(id=>['5','6','7','8','9','10','11','25'].includes(id)).length,8);
+ }finally{fs.rmSync(root,{recursive:true,force:true});}
 });

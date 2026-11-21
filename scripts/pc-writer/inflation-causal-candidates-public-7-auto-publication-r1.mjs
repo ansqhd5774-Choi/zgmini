@@ -64,6 +64,7 @@ function validRemote(row,validate,now){
       record.projection.sourceStoredAt!==payload.sourceStoredAt||
       !Number.isSafeInteger(record.projection.builtAt)||
       record.projection.builtAt>now||
+      record.projection.builtAt<payload.sourceStoredAt||
       record.projection.builtAt!==Number(row.stored_at))
       throw Error('CHECKPOINT_INVALID');
   }catch{fail('INFL7_AUTO_REMOTE_CONTRACT_DENIED');}

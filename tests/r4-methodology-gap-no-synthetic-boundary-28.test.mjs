@@ -19,7 +19,7 @@ test('R4 #28 verified composite history never invents a point at the window cuto
  assert.equal(strict.length,2);
 });
 
-test('R4 #28 existing domain chart consumers retain historical cutoff behavior',()=>{
+test('R4 #28 legacy window option remains available for unrelated consumers',()=>{
  const legacy=marketTrendWindowR1(real,7);
  assert.deepEqual(legacy,[
   {label:'2026-11-09',value:42},
@@ -54,8 +54,8 @@ test('R4 #28 does not turn missing/partial values into flat or zero points',()=>
  ]);
 });
 
-test('R4 #28 opt-out applies only to the composite current-vintage display',()=>{
+test('R4 #28 composite and domain chart rendering both opt out of synthetic cutoff dates',()=>{
  const source=readFileSync(new URL('../app/dashboard-ui.tsx',import.meta.url),'utf8');
  assert.match(source,/marketTrendWindowR1\(amplifyCompositeDisplayTrend\(verifiedOverallHistory\),periodDays,\{includeBoundaryCarry:false\}\)/);
- assert.match(source,/marketTrendWindow\(normalizeMarketTrendPointsR4\(domain\?\.trend,market\?\.updatedAt\),periodDays\)/);
+ assert.ok(source.includes('const daily=marketTrendWindowR1(normalizeMarketTrendPointsR4(domain?.trend,market?.updatedAt),periodDays,{includeBoundaryCarry:false});'));
 });

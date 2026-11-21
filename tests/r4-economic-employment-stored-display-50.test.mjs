@@ -29,11 +29,12 @@ test('actual CM-R1 composite omits employment.methodologyVersion but preserves R
  const p=base();
  p.interpretation='Employment R54 candidate: 실업률 30% + 비농업고용 3M 평균 증감 30% + 신규 실업수당 4W 평균 20% + 주 실업수당 개선 비율 20%. 백분위 산식은 저장된 과거 데이터만 사용하며 결측 가중치 재배분은 하지 않습니다.';
  const publicEmployment=buildCompositeMarketScore(buildCmR1DomainResults({employment:p}),{updatedAt:date+'T00:00:00.000Z'}).domains.find(d=>d.id==='employment');
- assert.equal(publicEmployment.methodologyVersion,undefined,'old publisher omits this metadata');
+ assert.equal(publicEmployment.methodologyVersion,EMPLOYMENT_R54_METHOD,'CM-R1 retains exact R54 lineage');
+ assert.equal(publicEmployment.asOfDate,date,'CM-R1 retains the actual R54 evaluation date');
  assert.equal(publicEmployment.status,'READY');
  assert.equal(verifiedEconomicEmploymentScore(publicEmployment,date),63,
   'must not hide existing correctly stored original four-factor public score');
- const spoofed={...publicEmployment,interpretation:'Employment R6 current version'};
+ const spoofed={...publicEmployment,methodologyVersion:null,interpretation:'Employment R6 current version'};
  assert.equal(verifiedEconomicEmploymentScore(spoofed,date),null);
  const explicitWrong={...publicEmployment,methodologyVersion:'EMPLOYMENT_R6_29_FACTOR'};
  assert.equal(verifiedEconomicEmploymentScore(explicitWrong,date),null);

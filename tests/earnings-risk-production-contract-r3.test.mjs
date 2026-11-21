@@ -109,3 +109,22 @@ test("actual R3 FIX1 aggregate replay keeps fiscal observation distinct from Oct
  assert.deepEqual(build({...base,snapshot:corrupted.snapshot,riskHistory:history}).riskFactors,[],
   "mismatched component weights must not leak as legitimate 4-factor values");
 });
+
+test("risk history refuses impossible calendar dates without inventing chart points",()=>{
+ // JS Date.parse normalizes these strings instead of rejecting them.
+ for(const impossible of ["2026-02-30","2026-04-31","2026-02-29"]){
+  const history={kind:EARNINGS_RISK_HISTORY_KIND,points:[
+   {date:impossible,score:60},{date,score:84.6875}
+  ]};
+  const output=build({...base,riskHistory:history});
+  assert.deepEqual(output.riskTrend,[],impossible);
+  assert.equal(output.riskHistoryKind,null,impossible);
+ }
+ const valid=build({...base,riskHistory:{kind:EARNINGS_RISK_HISTORY_KIND,points:[
+  {date:"2026-02-28",score:60},{date,score:84.6875}
+ ]}});
+ assert.deepEqual(valid.riskTrend,[{date:"2026-02-28",score:60},{date,score:84.6875}]);
+ assert.equal(valid.riskHistoryKind,EARNINGS_RISK_HISTORY_KIND);
+ const panel=readFileSync("app/earnings-recession/earnings-risk-only-panel.tsx","utf8");
+ assert.match(panel,/new Date\(value\+"T00:00:00Z"\)\.toISOString\(\)\.slice\(0,10\)===value/);
+});

@@ -9,6 +9,7 @@ import { MarketCardInsight } from "../../market-card-insight";
 import { MarketFearGreedChart } from "../../market-fear-greed-chart";
 import {fearGreedStateColor} from '../../../lib/fear-greed-state-color.mjs';
 import {CNN_OBSERVED_HISTORY_VERSION} from '../../../lib/cnn-observed-history-r1.mjs';
+import {currentCnnSessionHistory,currentCnnSessionCheckedPoints} from '../../../lib/cnn-current-session-history-r4.mjs';
 
 import {useStoredIndex} from '../../../components/use-stored-index';
 import FactorAnalysisR2,{type FactorR2} from '../factor-analysis-r2';
@@ -523,11 +524,17 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
     : [], [observedSidecarReady,payload?.intradayObservations]);
   // After two real successful PC feed checks, the 1D/long-term chart uses their checkedAt time.
   // CNN sourceObservedAt stays separate and is never invented or rewritten.
-  const archiveHistory=useMemo(() => archived?.period===selectedPeriod
-    ? normalizeHistory((archived.checkedPoints.length>=2
-        ? archived.checkedPoints.map(point=>({timestamp:point.checkedAt,score:point.score}))
-        : archived.points.map(point=>({timestamp:point.observedAt,score:point.score}))))
-    : [], [archived,selectedPeriod]);
+  const archiveHistory=useMemo(()=>{
+    if(archived?.period!==selectedPeriod)return [];
+    // Keep every authentic CNN point even when the PC verifies it twice.
+    // On equal timestamps, a stored source observation wins over a PC check.
+    const checks=archived.checkedPoints.length>=2
+      ? normalizeHistory(archived.checkedPoints.map(point=>({timestamp:point.checkedAt,score:point.score})))
+      : [];
+    const observations=normalizeHistory(archived.points.map(point=>({timestamp:point.observedAt,score:point.score})));
+    const byTime=new Map([...checks,...observations].map(point=>[point.date,point]));
+    return [...byTime.values()].sort((a,b)=>a.time-b.time);
+  },[archived,selectedPeriod]);
   // Archive is an addition to existing real daily closes, not a replacement.
   // When an intraday date exists, use its real individual points instead of
   // drawing a second daily point on top. Unrecorded dates keep CNN daily data.
@@ -537,10 +544,13 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
   },[archiveHistory,allIntraday]);
   const history = useMemo(() => {
     if (selectedPeriod === "1D") {
-      const intraday=archiveHistory.length>=2?combinedObserved:allIntraday;
-      const lastDay=(archived?.checkedPoints?.length??0)>=2?archiveHistory.at(-1)?.date.slice(0,10)
-        : (allIntraday.at(-1)?.date.slice(0,10)??intraday.at(-1)?.date.slice(0,10));
-      return lastDay ? intraday.filter(point=>point.date.slice(0,10)===lastDay) : [];
+      // A verified CNN current score must not be compared with stale PC checks.
+      // Compare the CNN source's New York session, not a PC check's UTC day.
+      return currentCnnSessionHistory(payload?.observedAt,{
+        checkedPoints:archived?.period===selectedPeriod?archived.checkedPoints:[],
+        observedPoints:archived?.period===selectedPeriod?archived.points:[],
+        intradayObservations:observedSidecarReady?(payload?.intradayObservations??[]):[],
+      });
     }
     // Long ranges use the existing CNN daily closes only.
     if (selectedPeriod === "6M" || selectedPeriod === "1Y") {
@@ -549,22 +559,26 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
       return end === undefined ? [] : allHistory.filter(point => point.time >= end - selected.days * 86400000 && point.time <= end);
     }
     const selected = getMarketPeriodConfig(selectedPeriod);
-    // A verified PC check can be later than the unchanged CNN closing observation.
-    const checkedEnd=(archived?.checkedPoints?.length??0)>=2?archiveHistory.at(-1)?.time:undefined;
+    // Real source observations or verified checks may post after the daily close.
+    // The latest actual timestamp determines the chart end, not PC checks alone.
     const dailyEnd=allHistory.at(-1)?.time;
-    const end=checkedEnd===undefined?(dailyEnd??combinedObserved.at(-1)?.time):Math.max(dailyEnd??checkedEnd,checkedEnd);
+    const observedEnd=combinedObserved.at(-1)?.time;
+    const end=observedEnd===undefined?dailyEnd:dailyEnd===undefined?observedEnd:Math.max(dailyEnd,observedEnd);
     const start = end===undefined?null:end-selected.days*86400000;
     const maxTime=end??Number.POSITIVE_INFINITY;
     const daily = start===null?allHistory:allHistory.filter(point=>point.time>=start&&point.time<=maxTime);
-    if(archiveHistory.length<2)return daily;
+    if(combinedObserved.length<2)return daily;
     const actual = start===null?combinedObserved:combinedObserved.filter(point=>point.time>=start&&point.time<=maxTime);
     const observedDays=new Set(actual.map(point=>point.date.slice(0,10)));
     return [...daily.filter(point=>!observedDays.has(point.date.slice(0,10))),...actual]
       .sort((a,b)=>a.time-b.time);
-  }, [allHistory, allIntraday, archiveHistory, combinedObserved, selectedPeriod]);
+  }, [allHistory, allIntraday, archiveHistory, combinedObserved, selectedPeriod, archived, observedSidecarReady, payload?.observedAt, payload?.intradayObservations]);
   const observedRanges = useMemo(() => {
     if (!observedSidecarReady || selectedPeriod === "1D") return [];
-    const observedDays=new Set(archiveHistory.length>=2?combinedObserved.map(p=>p.date.slice(0,10)):[]);
+    // Short periods substitute genuine intraday observations for daily closes.
+    // Long 6M/1Y charts deliberately retain only daily closes and their ranges.
+    const displayIntraday=selectedPeriod!=="6M"&&selectedPeriod!=="1Y"&&combinedObserved.length>=2;
+    const observedDays=new Set(displayIntraday?combinedObserved.map(point=>point.date.slice(0,10)):[]);
     const ranges = new Map((payload?.dailyObservedRanges ?? []).map(row=>[row.date,row]));
     return history.flatMap(point=>{
       const row=observedDays.has(point.date.slice(0,10))?undefined:ranges.get(point.date.slice(0,10));
@@ -572,7 +586,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
         && row.low.score>=0 && row.high.score<=100 && row.low.score<=row.high.score
         ? [{date:point.date,low:row.low.score,high:row.high.score}] : [];
     });
-  }, [observedSidecarReady,payload?.dailyObservedRanges,history,selectedPeriod,archiveHistory,combinedObserved]);
+  }, [observedSidecarReady,payload?.dailyObservedRanges,history,selectedPeriod,combinedObserved]);
 
   // CNN's previous_close is the authoritative baseline for a live score.
   // The most recent chart point can equal today's score.
@@ -637,6 +651,15 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
     });
   }, [allHistory, payload?.observedAt, score]);
   const latestHistoryPoint = history.at(-1) ?? null;
+  // Tooltip provenance must be attached to the actual plotted timestamp:
+  // stale checks and same-time CNN intraday observations are never PC checks.
+  const currentSessionPcDates = useMemo(()=>{
+    if(selectedPeriod!=="1D"||archived?.period!==selectedPeriod)return new Set<string>();
+    const checks=currentCnnSessionCheckedPoints(payload?.observedAt,archived.checkedPoints);
+    if(checks.length<2)return new Set<string>();
+    const cnnObservedTimes=new Set([...allIntraday.map(point=>point.date),...archived.points.map(point=>point.observedAt)]);
+    return new Set(checks.map(point=>point.date).filter(date=>!cnnObservedTimes.has(date)));
+  },[selectedPeriod,archived,payload?.observedAt,allIntraday]);
   const chartAxis = useMemo(
     () => buildChartAxisTicks(history, selectedPeriod),
     [history, selectedPeriod],
@@ -758,9 +781,9 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
         latestPoint={latestHistoryPoint}
         instanceKey={selectedPeriod}
         gradientId="cnn-fill"
-        formatTooltipLabel={selectedPeriod==="1D"&&(archived?.checkedPoints?.length??0)>=2
-          ? (value:string)=>`PC 확인 ${intradayLabel(value)}`
-          : (selectedPeriod==="1D"||archiveHistory.length>=2?intradayLabel:dateLabel)}
+        formatTooltipLabel={selectedPeriod==="1D"
+          ? (value:string)=>`${currentSessionPcDates.has(value)?"PC 확인 ":""}${intradayLabel(value)}`
+          : (archiveHistory.length>=2?intradayLabel:dateLabel)}
         emptyLabel={selectedPeriod==="1D"?"시간별 관측값이 2개 이상 쌓이면 1일 추이가 표시됩니다":"이력 없음"}
       />}
       breadth={showBreadth && !showEducation ? <MarketBreadthStrip market="usa" period={selectedPeriod}/> : undefined}

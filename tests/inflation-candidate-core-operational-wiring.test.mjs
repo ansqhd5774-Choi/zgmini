@@ -23,3 +23,22 @@ test('candidate collection is independent of unrelated collection exit and repor
  assert.match(bridge,/if\(env\?\.ZGMINI_INFLATION_CANDIDATE_CORE_APPROVED!=='1'\)/);
  assert.match(bridge,/return \{status:'DISABLED',providerRequests:0\}/);
 });
+
+test('W01 both 19 recurring and 7 candidate collectors run independently of unrelated collect-local exit',()=>{
+ const source=cycle();
+ const index19=source.indexOf('inflationRecurring=await runInflation19RecurringFromCore(base)');
+ const index7=source.indexOf('inflationCandidates=await runInflationCandidatesFromCore(base)');
+ assert.ok(index19>0&&index7>index19);
+ const gate19=source.slice(source.lastIndexOf('if(',index19),index19);
+ const gate7=source.slice(source.lastIndexOf('if(',index7),index7);
+ assert.match(gate19,/if\(lane==='core'\)/);
+ assert.match(gate7,/if\(lane==='core'\)/);
+ assert.doesNotMatch(gate19,/collection\.status|collectionExit/);
+ assert.doesNotMatch(gate7,/collection\.status|collectionExit/);
+ assert.match(source,/runInflation19RecurringFromCore/);
+ assert.match(source,/runInflationCandidatesFromCore/);
+ const recurring=fs.readFileSync('scripts/pc-writer/inflation-causal-recurring-r1.mjs','utf8');
+ const candidate=fs.readFileSync('scripts/pc-writer/inflation-causal-candidate-core-bridge.mjs','utf8');
+ assert.match(recurring,/ZGMINI_INFL19_RECURRING_APPROVED/);
+ assert.match(candidate,/ZGMINI_INFLATION_CANDIDATE_CORE_APPROVED/);
+});

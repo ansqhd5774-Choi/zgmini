@@ -128,6 +128,8 @@ export default function DataSourcesPage() {
             <span><strong>{route.name}</strong><small>{route.detail}</small></span><ArrowUpRight size={20} strokeWidth={1.7} aria-hidden="true" />
           </a>)}</div>
           <aside className={styles.rightsNote} aria-label="원자료 이용 안내">
+            <h3>FRED API 이용조건</h3>
+            <p>This product uses the FRED® API but is not endorsed or certified by the Federal Reserve Bank of St. Louis. <a href="https://fred.stlouisfed.org/docs/api/terms_of_use.html" target="_blank" rel="noopener noreferrer">FRED API Terms of Use</a> · <a href="/terms/">ZGMINI 이용조건</a></p>
             <h3>자료 이용에 관한 안내</h3>
             <p>데이터 공개와 재배포 허용은 별개입니다. 외부 자료의 저작권·상업적 이용·자동 수집 조건은 원제공처마다 다르며, 출처만 표기했다고 재이용이 허용되는 것은 아닙니다. 오류가 의심된다면 페이지 주소·지표 이름·관측일을 <a href="mailto:ansqhd5774@gmail.com">이메일</a>로 알려주세요.</p>
           </aside>

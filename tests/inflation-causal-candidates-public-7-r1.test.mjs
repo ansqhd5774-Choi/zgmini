@@ -5,6 +5,8 @@ import os from 'node:os';
 import path from 'node:path';
 import {INFLATION_CANDIDATES_7,INFLATION_CANDIDATES_7_IDS}
   from '../lib/inflation-causal-candidates-public-7-catalog.mjs';
+import {INFLATION_CAUSAL_19_IDS}
+  from '../lib/inflation-causal-public-catalog.mjs';
 import {INFLATION_CANDIDATES_7_PUBLIC_KEY,INFLATION_CANDIDATES_7_PUBLIC_ROUTE,
   INFLATION_CANDIDATES_7_PUBLIC_SCHEMA,validateInflationCandidates7Public,
   readInflationCandidates7PublicResponse}
@@ -188,6 +190,73 @@ test('unapproved stale/future sourceStoredAt is not relabeled as current',t=>{
   assert.equal(result.payload.indicators[0].status,'PENDING');
 });
 
+test('A4-05: exact 26 research IDs keep approved units and no overlapping inputs',()=>{
+  const from19=INFLATION_CAUSAL_19_IDS;
+  const from7=INFLATION_CANDIDATES_7_IDS;
+  assert.equal(from19.length,19);
+  assert.equal(from7.length,7);
+  assert.equal(new Set([...from19,...from7]).size,26);
+  for(const id of ['22','23','24','29'])
+    assert.equal(meta(id).unit,'지수');
+  assert.equal(meta('28').unit,'백만 USD');
+  assert.equal(meta('2').unit,'USD/갤런');
+  assert.equal(meta('16').unit,'USD');
+});
+
+test('A4-05: CPI monthly date, duplicate and numeric source observations fail closed',()=>{
+  for(const id of ['22','23']){
+    const sample=docs()['bls-cpi-ppi3.json'];
+    const series=sample.series[meta(id).series];
+    series[3].date='2026-02-30';
+    assert.throws(()=>projectInflationCandidate7Row(meta(id),sample,{now:NOW}),
+      /INFL7_SOURCE_ROW_INVALID/);
+    series[3].date='2025-04-30';
+    assert.throws(()=>projectInflationCandidate7Row(meta(id),sample,{now:NOW}),
+      /INFL7_SOURCE_MONTH_INVALID/);
+    series[3].date='2025-04-01';
+    series[3].value=Number.NaN;
+    assert.throws(()=>projectInflationCandidate7Row(meta(id),sample,{now:NOW}),
+      /INFL7_SOURCE_ROW_INVALID/);
+    series[3].value=4;
+    series[3].date=series[2].date;
+    assert.throws(()=>projectInflationCandidate7Row(meta(id),sample,{now:NOW}),
+      /INFL7_SOURCE_ROW_INVALID/);
+  }
+});
+
+test('A4-05: provider units and missing Census do not synthesize amounts',t=>{
+  const badEia=docs()['eia-us-regular-gasoline-weekly.json'];
+  badEia.unit='USD_PER_LITER';
+  assert.throws(()=>projectInflationCandidate7Row(meta('2'),badEia,{now:NOW}),
+    /INFL7_EIA_SELECTOR_INVALID/);
+  const badTreasury=docs()['treasury-mts-customs-duties.json'];
+  badTreasury.observations[0].unit='EUR';
+  assert.throws(()=>projectInflationCandidate7Row(meta('16'),badTreasury,{now:NOW}),
+    /INFL7_TREASURY_ROW_INVALID/);
+  const badCensus=docs()['census-m3-manufacturing-inventories.json'];
+  badCensus.unit='USD';
+  assert.throws(()=>projectInflationCandidate7Row(meta('28'),badCensus,{now:NOW}),
+    /INFL7_CENSUS_SELECTOR_INVALID/);
+  const badFed=docs()['fed-g17-manufacturing-ip.json'];
+  badFed.unit='CURRENT_G17_OTHER';
+  assert.throws(()=>projectInflationCandidate7Row(meta('29'),badFed,{now:NOW}),
+    /INFL7_FED_SELECTOR_INVALID/);
+
+  const selected=docs();
+  delete selected['census-m3-manufacturing-inventories.json'];
+  const {home}=makeHome(t,selected),result=previewInflationCandidates7(home,{now:NOW});
+  assert.equal(result.status,'PASS_READONLY');
+  assert.equal(result.ready,6);
+  const census=result.payload.indicators.find(r=>r.id==='28');
+  assert.equal(census.status,'PENDING');
+  for(const key of ['value','previousValue','observationDate',
+    'previousObservationDate','sourceStoredAt','availableAt'])
+    assert.equal(census[key],null);
+  assert.deepEqual(census.history,[]);
+  assert.equal(result.payload.indicators.find(r=>r.id==='16').value,0,
+    'actual zero Treasury receipts remain valid and distinct from missing');
+});
+
 test('public validator rejects private/raw keys, invalid 0/NaN, and leakage in pending',t=>{
   const {home}=makeHome(t),payload=previewInflationCandidates7(home,{now:NOW}).payload;
   const altered=()=>structuredClone(payload);
@@ -244,4 +313,66 @@ test('visitor query, write method, absent or corrupt snapshots are safely reject
     const response=await readInflationCandidates7PublicResponse(request,db,{now:NOW});
     assert.equal(response.status,status);
   }
+});
+
+test('public seven-row history and previous values must describe the same stored point',t=>{
+  const {home}=makeHome(t);
+  const complete=previewInflationCandidates7(home,{now:NOW}).payload;
+  const altered=()=>structuredClone(complete);
+  const find=(payload,id)=>payload.indicators.find(row=>row.id===id);
+  let bad=altered();
+  find(bad,'22').previousValue=999;
+  assert.throws(()=>validateInflationCandidates7Public(bad,{now:NOW}),
+    /INFL7_PUBLIC_READY_INVALID/,'the API cannot report a previous value absent from its chart');
+  bad=altered();
+  find(bad,'23').previousObservationDate='2025-02-01';
+  assert.throws(()=>validateInflationCandidates7Public(bad,{now:NOW}),
+    /INFL7_PUBLIC_READY_INVALID/,'an earlier but non-adjacent date cannot be the previous point');
+  bad=altered();
+  find(bad,'16').previousValue=-1200000.24;
+  assert.throws(()=>validateInflationCandidates7Public(bad,{now:NOW}),
+    /INFL7_PUBLIC_READY_INVALID/,'signed and zero Treasury values remain exact');
+  bad=altered();
+  const prior=find(bad,'29');
+  prior.history=[prior.history.at(-1)];
+  assert.throws(()=>validateInflationCandidates7Public(bad,{now:NOW}),
+    /INFL7_PUBLIC_READY_INVALID/,'a single-point history cannot still claim a previous value');
+  assert.equal(validateInflationCandidates7Public(complete,{now:NOW}),complete);
+});
+
+test('public seven-row sourceStoredAt equals newest actual ready source, never a fabricated timestamp',t=>{
+  const {home}=makeHome(t),payload=previewInflationCandidates7(home,{now:NOW}).payload;
+  const changed=structuredClone(payload);
+  changed.sourceStoredAt+=1;
+  assert.throws(()=>validateInflationCandidates7Public(changed,{now:NOW}),
+    /INFL7_PUBLIC_PROVENANCE_MISMATCH/);
+  const earlier=structuredClone(payload);
+  earlier.sourceStoredAt-=1;
+  assert.throws(()=>validateInflationCandidates7Public(earlier,{now:NOW}),
+    /INFL7_PUBLIC_PROVENANCE_MISMATCH/);
+  assert.equal(validateInflationCandidates7Public(payload,{now:NOW}),payload);
+  const reduced=docs();
+  delete reduced['census-m3-manufacturing-inventories.json'];
+  const partialHome=makeHome(t,reduced).home;
+  const partial=previewInflationCandidates7(partialHome,{now:NOW}).payload;
+  assert.equal(partial.status,'PARTIAL');
+  assert.equal(validateInflationCandidates7Public(partial,{now:NOW}),partial,
+    'a genuinely missing Census observation remains PENDING without a synthetic timestamp');
+});
+
+test('stored inflation GET and HEAD reject publication built before the source was saved',async t=>{
+  const {home}=makeHome(t),payload=previewInflationCandidates7(home,{now:NOW}).payload;
+  const url='https://zgmini.kr/api/inflation-candidate-inputs';
+  const saved=savedRecord(payload,payload.sourceStoredAt-1);
+  for(const method of ['GET','HEAD']){
+    const response=await readInflationCandidates7PublicResponse(
+      new Request(url,{method}),readDb(saved),{now:NOW});
+    assert.equal(response.status,503);
+    assert.equal(response.headers.get('x-public-projection'),'STORED');
+    if(method==='HEAD')assert.equal(await response.text(),'');
+    else assert.equal((await response.json()).reason,'STORED_PUBLIC_SUMMARY_INVALID');
+  }
+  const good=await readInflationCandidates7PublicResponse(
+    new Request(url),readDb(savedRecord(payload)),{now:NOW});
+  assert.equal(good.status,200);
 });

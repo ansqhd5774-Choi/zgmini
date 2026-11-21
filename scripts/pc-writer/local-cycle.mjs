@@ -5,7 +5,6 @@ import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {save,read} from './d1.mjs';
 import {collectSupplyR10} from './supply-r10.mjs';
-import {collectAlpacaIncremental} from './alpaca-incremental.mjs';
 import {refreshSp500ShadowIfDue} from './asset-r10-sp500-refresh.mjs';
 import {dispatchEarningsRiskProvisionalR23} from './earnings-risk-provisional-r23-hook.mjs';
 import {collectionPublicationPolicy} from './collection-publication-policy.mjs';
@@ -23,6 +22,24 @@ if(fs.existsSync(file)){
 fs.writeFileSync(file,JSON.stringify({pid:process.pid,at:Date.now()}),{flag:'wx'});
 try{
  const lane=process.argv.includes('--korea')?'korea':'core';
+ // Paid sector/theme inputs share one stored archive; no extra Task or publisher.
+ if(lane==='core'){
+  try{const {collectPaidCurrent}=await import('./marketparquet-paid-store.mjs');
+   console.log('MARKETPARQUET_PAID '+JSON.stringify(await collectPaidCurrent(base)));
+  }catch(e){console.warn('MARKETPARQUET_PAID '+JSON.stringify({status:'FAILED_PREVIOUS_INPUTS_PRESERVED',code:/^MP_PAID_[A-Z0-9_]+$/.test(e.code??'')?e.code:'MP_PAID_COLLECTION_FAILED'}));}
+ }
+ // Independent registered-theme lane; a source wait never blocks Core or sector updates.
+ if(lane==='core'){
+  try{const {runPaidThemeCycle}=await import('./theme-paid-cycle.mjs');
+   console.log('THEME_PAID '+JSON.stringify(await runPaidThemeCycle(base,{publish:process.argv.includes('--publish')})));
+  }catch(e){const report={status:'FAILED_PREVIOUS_DATA_PRESERVED',code:/^PAID_[A-Z0-9_]+$/.test(e.code??'')?e.code:'PAID_THEME_RUNTIME_FAILED',d1Outcome:'CHECK_STORED_RESULT_BEFORE_RETRY'};console.warn('THEME_PAID '+JSON.stringify(report));try{save(path.join(base,'marketparquet-paid','theme-last-run.json'),report);}catch{}}
+ }
+ // Paid breadth uses the existing Core and approved B1-R5 formula only.
+ if(lane==='core'){
+  try{const {runPaidBreadthCycle}=await import('./breadth-paid-cycle.mjs');
+   console.log('BREADTH_PAID '+JSON.stringify(await runPaidBreadthCycle(base,{publish:process.argv.includes('--publish')})));
+  }catch(e){const report={status:'FAILED_PREVIOUS_DATA_PRESERVED',code:/^BREADTH_PAID_[A-Z0-9_]+$/.test(e.code??'')?e.code:'BREADTH_PAID_RUNTIME_FAILED',d1Outcome:'CHECK_STORED_RESULT_BEFORE_RETRY'};console.warn('BREADTH_PAID '+JSON.stringify(report));try{save(path.join(base,'marketparquet-paid','breadth-last-run.json'),report);}catch{}}
+ }
  const collection=spawnSync(process.execPath,[path.join(here,'collect-local.mjs'),...(lane==='korea'?['--korea']:[])],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:30*60000});
  try{updateDataAlert(base,{key:'collection',failed:collection.status!==0});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
  // A provider failure retains stored good data; publication still reads local storage.
@@ -34,8 +51,11 @@ try{
  const publishSkipped=null;
  // Optional 19-input research collection uses the existing Core lock and
  // occurs before the early Writer publication pass. Off by default.
+ // An unrelated collect-local exit must not prevent separately approved
+ // inflation collection; its own release, quota, credential and checkpoint
+ // gates remain enforced inside runInflation19RecurringFromCore.
  let inflationRecurring={status:lane==='core'?'DISABLED':'SKIPPED_KOREA_LANE',providerRequests:0};
- if(lane==='core'&&collection.status===0){
+ if(lane==='core'){
   try{
    const {runInflation19RecurringFromCore}=await import('./inflation-causal-recurring-r1.mjs');
    inflationRecurring=await runInflation19RecurringFromCore(base);
@@ -56,7 +76,8 @@ try{
    inflationCandidates={status:'FAILED_PREVIOUS_INPUTS_PRESERVED',providerRequests:null};
   }
  }
- let supplyR10=null,alpacaIncremental=null,sp500Shadow=null,sectorFearGreedR3=null,sectorFearGreedR3Report=null;
+ // R10 Alpaca-only job is retired; unrelated registered providers are not disabled.
+ let supplyR10=null,alpacaIncremental={status:'EXCLUDED_BY_USER',runRequests:0},sp500Shadow=null,sectorFearGreedR3=null,sectorFearGreedR3Report=null;
  const {publication,progressive}=await progressivePublication({
   enabled:lane==='core'&&publishAllowed,
   publish:async({early})=>{
@@ -75,8 +96,6 @@ try{
   }catch{
    sp500Shadow={status:'FAILED_PREVIOUS_INPUTS_PRESERVED',providerRequests:null};
   }
-  try{const result=await collectAlpacaIncremental(base);alpacaIncremental={status:result.status,runRequests:result.runRequests??0};}
-  catch{alpacaIncremental={status:'FAILED_PREVIOUS_INPUTS_PRESERVED',runRequests:null};}
  }
 
  if(lane==='core'){
