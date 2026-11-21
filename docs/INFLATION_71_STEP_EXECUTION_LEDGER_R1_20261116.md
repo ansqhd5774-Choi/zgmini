@@ -47,6 +47,15 @@
 
 ## 개편 후 진행 기록
 
+### 2026-11-21 — 개편 2단계 기존 게시 증거 정밀 확인
+
+- 실행 기준은 상단 5단계 계획이다. 실PC #2577/Run44869316745 JSON 재조회: inflation7Writer.status=UNCHANGED_VERIFIED, readyCount=6, writerStatus=VERIFIED, key/sourceVersion/sourceStoredAt=null, verifiedAtWriterTime=false, d1NowVerified=false, d1Writes=0. 기존 Writer ledger의 정상 자료가 재게시되지 않았다는 사실이지 D1 직접 본문 동치 증거는 아니다.
+- 코드 경로 확인: inflation-causal-candidates-public-7-auto-publication-r1.mjs는 고정 key detail:inflation-causal-candidates-7:r1의 market_public_snapshots_v1 body/stored_at을 읽고 같은 자료면 쓰기를 생략한다. 신규 변경에만 CAS Writer와 직후 readback을 쓴다. 공개 Reader 역시 동일 key의 저장 payload/projection과 stored_at, sourceVersion, sourceStoredAt 정합을 검사한다. 기존 2026-11-21 공개 HTTP200/PARTIAL 6 READY, Census28 PENDING 관측은 별도 증거로 보존.
+- 현재 연결된 도구에서 정확 D1 body/stored_at 관리자 조회는 미확보, 공개 API 실시간 GET도 접근 제한으로 NOT_OBSERVED. 현재 D1/API per-row 완전 동치나 운영 장애를 단정하지 않는다. 재게시/공급자 재수집/운영 수정은 하지 않았다. 2단계 IN_PROGRESS, D1 직접 조회만 AUTOMATION_BLOCKED. 기존 승인 D1 읽기 경로에서 exact key 한 건을 조회해 개별 값/단위/관측일/sourceStoredAt/sourceVersion/status를 공개 API와 대조한다.
+- 독립 4단계 코드 재사용 근거: 기능 브랜치의 worker/projection-builders/inflation.mjs blob aeea00b0은 future monthEnds 코드이나 현 main blob 23fe332b에는 inflationR2TrendDates(asOf)로 현재 평가일을 사용하도록 수정된 버전이 존재한다. 중복 계산기 개발 금지, 실제 설치/저장/공개 적용은 아직 미확인.
+- 현재 1/5 DONE, 2단계 IN_PROGRESS. 이번 조회만으로 DONE 추가 0.
+
+
 ### 2026-11-21 — 71단계 실행 순서를 운영 완료 5단계로 교체
 
 - 사용자 지시에 따라 기존 71단계 원장 자체와 관련 실행계획 2개 문서를 개편했다. 과거 원장 본문은 아래에 원문 보존하고 고정 commit 링크로도 남긴다.
