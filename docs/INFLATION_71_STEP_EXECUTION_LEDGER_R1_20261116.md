@@ -47,6 +47,15 @@
 
 ## 개편 후 진행 기록
 
+### 2026-11-21 — Census B 승인 원본 보존·정확 1해시 차이 비실행 검토안
+
+- **현행 운영 source 4/4 확정 재사용:** PC A #2607/#2609 JSON·TXT 2/2 원본 검증 재사용. 제어 `main` `inflation-manual-b/contract.mjs`에 실PC `local-cycle.mjs` 해시를 허용하는 세 번째 프로필이 소스 커밋 `43d6122367e7908f166780679a2d1ae5757696d4`로 들어가 있지만 실제 `APPROVED_B` 원본 `official-static-two-source-w01-v2-approved-20261116.json`의 고정 SHA는 구 `2e6200e5...`로 유지.
+- **실제 신규 검토 후보 생성:** 제어 저장소 `main@62b04db3cbdbf5dff25e26906c0a78f6ff7ff980`에서 분기 `codex/w01-census28-b-manifest-exact-review-20261121`, commit [4290e6989dd8e573e4e893cc548a08db17b55d1c](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/4290e6989dd8e573e4e893cc548a08db17b55d1c). [Draft PR #2613](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2613)에 `docs/W01_CENSUS28_CORE2515_B_MANIFEST_REVIEW_20261121.json` 1파일 추가. 실행 가능한 `approvals/` 파일은 수정·생성하지 않음.
+- **독립 구조 비교:** 기존 승인 JSON과 후보 JSON에서 `status`를 제외한 차이를 재귀 비교하여 `manifest.sourceFiles[3].sha256` **1건만** 변경: `2e6200e5637fb99f339fdc74a64592f34c1272423a39366b8559c16ea1b13b5d` → `2cfa0f9ae794e36d0a2fcf865a571258c5d3a4e1709557a5e4c1059dde46da75`. 공식 공급처 URL 2개, 2개 목표 저장 파일, 다른 3개 code SHA, lock/단회/무DB·D1·Task·Source 변경 정책 100% 불변. 후보 `REVIEW_REQUIRED_NOT_AUTHORIZED`, 내부 `PROPOSED_NOT_APPROVED`로 설정; 정규 승인 아님.
+- **현재 차단과 다음 실행:** 현행 B 효과/manifest 소스 PIN 정합의 유효 승인 및 자연 Core Task→PID→E:lock 소유권 증거 둘 다 미충족. #1818 반복/새 B 호출 금지. 과거 Event129 disabled/GetInstances=0 증거만으로 현재 권한이 있다고 추정하거나 검사 완화 금지. 독립적인 2단계 D1 `body/stored_at` 조회는 별도 미확보; 확인되지 않은 값은 정상으로 표기하지 않음.
+- **완료 기준 유지:** Stage1 DONE, Stage2 IN_PROGRESS, Stage3~5 NOT_DONE. 금번 새 증거는 실PC 자료 수집이 아닌 비실행 정확 manifest 후보 검토뿐이며 공급자·DB/D1·PC Writer·Cloudflare 운영 변경 0.
+
+
 ### 2026-11-21 — Census B 승인 소스 3번째 정확 프로필 main 통합
 
 - **운영 4/4 정상 source 확인 이후 실제 최소 통합:** 제어 [PR #2531](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2531) 변경 2파일(+100/-1), 정확 16회 source-only 조건 검증(3 정상, 13 변조 거부), 기존 CI #44787989064 success를 확인. `main` 대비 127커밋 뒤인 기존 Draft에서 실제 변경 2파일/mergeable 검증 뒤 READY→squash merge 진행. merge commit [43d6122367e7908f166780679a2d1ae5757696d4](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/43d6122367e7908f166780679a2d1ae5757696d4), 현재 main `inflation-manual-b/contract.mjs`는 `V2_EXECUTABLE_SHA256_CORE_2515` 정확 source hash 프로필 포함. 이전 2프로필과 fail-closed 거부 조건은 보존.
