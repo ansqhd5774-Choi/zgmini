@@ -31,6 +31,13 @@
 
 ## 개편 후 기록
 
+### 2026-11-21 — A #2630 current Controller real runtime confirmed
+
+- **실제 PC A급 1회 실행 완료:** [Issue #2630](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2630) / [Run 44880973239](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44880973239) `core-status`, requestId `pc-3948826e-51d6-46a6-b957-dbe0ea006ad4`. 실행 결과 `PASS/CORE_READONLY_DIAGNOSIS`. [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44880973239-1-seat-2.json) 및 [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44880973239-1-seat-2.txt) 2/2 직접 GET·requestId/SHA/status 대조. `controlSourceSha=565ddbd4ebfc46c88fb7dbaa810fd545656c6306`, `pcOperationalApprovedSha=a206220cc11045c24660e814124edbba9c0ff49f`; 기존 Core cycle COMPLETE, collection COMPLETE, Writer VERIFIED, 보호 해시 before=after. Provider/D1/operational writes 0, `sqliteOpened=false`. Core 동작 PASS는 W05 데이터 원자료 존재의 증거가 아니다.
+- **R3-11 선택 설치 PR #2600 pin 무효화:** 현재 설치 Controller `565ddbd4…`의 실제 소스 tree에서 `earnings-bea-mfg-archive-readonly` reader와 handler는 존재하나 `config/operations.json` 48개 허용목록에 entry 없음. 현재 control main에는 52개, 48개 기존 entry/정책 동일 + 4 신규 A entry. [PR #2600](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2600)은 구 installed `5b33787d…` → target `7b94ac63…`로 묶여 지금의 정확 CAS에 부적합. [PR 인계 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2600#issuecomment-7059372760)에 현재 설치 증거와 preimage repin 필요를 기록. #2593 동일 실패 재실행하지 않음.
+- **FIRST UNFINISHED:** WPSFD42 B 효과 승인·원본 SQLite append 및 QFR D1 별도 승인·readback은 유지. BEA 제조업 R3-11은 정확 `565ddbd4…` preimage 기준 허용목록 선택 설치 승인·유지보수 결과 후 새 A 검증 필요. source/main 허용목록 존재만으로 설치 DONE 아님.
+- **효과:** 해당 A 조회 이외 Provider POST·SQLite append/D1/Controller 설치 0, 5단계 1/5 DONE·2단계 진행 보존. **NEXT:** 이미 존재하는 승인/유지보수기 계약 재사용해 PR #2600의 구 pin을 현재 설치 SHA로 조정할 소스 후보만 준비하고, 정확 owner B GO 전 실제 Controller 교체 금지. 독립 QFR/BEA unit readiness는 계속 진행.
+
 ### 2026-11-21 — WPSFD42 exact-effect decision request #2240
 
 - **신규 결정 요청:** [#2240 정확 결정 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2240#issuecomment-7059205279)에서 기존 공통 W05 B job/계약을 재사용하고, 한정된 WPSFD42 2025~2026 **US BLS POST 최대1회 + 기존 SQLite chunks/snapshots append-only** 효과의 유효 기존 GO 링크 또는 신규 단일 GO/NO-GO만 요청했다. 계약 `w05-r304-service-b/contract.mjs`는 `status=APPROVED_B`와 manifest SHA 결속을 강제하며 현재 원문은 `PROPOSED_NOT_APPROVED`. 임의 승인 승격·단회 B Issue·SQLite/provider/D1 실행 0. 중복 Controller/Workflow 설치 없음.
