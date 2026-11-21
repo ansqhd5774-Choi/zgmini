@@ -35,6 +35,9 @@ export function captureCoreOriginAtStart({
      !expectedCode.has(result.code)||!Number.isSafeInteger(result.visibleInstances)||
      result.visibleInstances<0||result.visibleInstances>12)
    return fail('CORE_ORIGIN_PROBE_INVALID');
+  if((result.linked===true&&result.visibleInstances<1)||
+     (result.linked===true&&result.code!=='TASK_ENGINE_CHAIN_MATCH'))
+   return fail('CORE_ORIGIN_PROBE_INVALID');
   if(result.linked!==true||result.code!=='TASK_ENGINE_CHAIN_MATCH')
    return fail(result.code==='TASK_ENGINE_CHAIN_MATCH'?'CORE_ORIGIN_PROBE_INVALID':result.code);
   if(!Number.isSafeInteger(result.createdAtMs)||result.createdAtMs<946684800000||
