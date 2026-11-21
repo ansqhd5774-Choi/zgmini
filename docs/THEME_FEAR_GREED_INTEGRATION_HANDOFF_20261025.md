@@ -1,3 +1,13 @@
+## 2026-11-21 KST — 29차 과거 CI 실패 분리 및 최신 main 정상 CI 확인
+
+- **소스 기준:** `main@2eb796da811d0e074ca0cabab8e2cad9502bff43` / 기능 전용 작업 시작 `f60fbc6fd0a67935bd8b6d7c7448dcf7374bac64`. GitHub Run [#44873050889](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44873050889)의 Job `136751624903`은 `completed/success`; Build, Type check, Regression tests, PC publication recovery, Cloudflare candidate read contracts 모두 해당 Job step `success`. 이는 정확한 **main SHA의 CI**이며 전용 브랜치 신규 테스트 `a8e7be9`가 실행된 증거는 아님.
+- **기존 전용 브랜치 실패 해석 정정:** 2026-11-18 Run `44267032577` Job `134674005088` 실제 로그에서 R32 provisional integration `THEME_CONFIG_PUBLIC_PROVISIONAL_INPUT_CONTRACT`, 설정형 수집 예산 기대값 불일치 `2 != 4` / `6 != 12`, 개별 처리 `STOP != PRIVATE_HISTORY_PENDING`, `BAR_INVALID`, R74 패키지 SHA 불일치를 구분. 이들은 한 가지 운영 원인으로 입증되지 않음.
+- `tests/theme-config-tool.test.mjs`, `tests/theme-config-r32-integration.test.mjs`, `scripts/pc-writer/theme-config-tool.mjs`, `scripts/pc-writer/theme-config-publication-d1.mjs`은 이 시점 `main`에 404로 부재, 구형 전용 브랜치에는 존재. 따라서 과거 브랜치 테스트를 현행 main 공통 유료 Reader의 실패라고 확대하지 않고, 현재 관련 구현과 CI 성공 근거를 우선한다. 외부 쓰기/공급자 재호출 또는 구형 코드 병합하지 않음.
+- **남은 범위 정확화:** 단계4 실제 상세·모바일 hydrated 화면 및 API의 동시 점수/날짜/252점 마지막 점 readback은 미검증. 브라우저 자동화 `insufficient_credits` 및 외부 격리 DNS 실패를 Production 장애로 분류하지 않음. 다른 BrowserStack 제품의 유료 사용도 시작하지 않음. 단계5 공통 소스 연결 확인과 실제 end-to-end 화면 검증은 구분하여 전체 3/5 유지.
+- 이번 GitHub 작업은 진행 문서 기록만; Production/PC/D1/배포·산식·공개 정책 변경 없음. 다음 확인은 무료/기존 승인 GUI 실화면 증거 확보이며, 이 결과가 없으면 불일치 수정이나 완료 선언을 하지 않는다.
+
+---
+
 ## 2026-11-21 KST — 28차 실렌더 검증 경로·CI 근거 판정
 
 - 브랜치 실측: `main@2eb796da811d0e074ca0cabab8e2cad9502bff43`, 기능 전용 이전 `be4939590d83ecadef33c7b26363bd472c17f9a5`. 다른 브랜치의 오래된 `/api/theme-fear-greed` 라우트를 복사·배포하지 않았다.
