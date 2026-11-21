@@ -1838,3 +1838,13 @@ LAST PASS: main merge SHA=Cloudflare Build check source, candidate Version gener
 ### [2026-11-19 KST] W06 #75 main source drift 영향만 선택 검증
 - 최신 main `1fb774c115d5570e451a7ced31e43b3102f6d6c1`: asset-r10 연구 검증 및 시험 8파일만 변경. PR #1426 당시 `ef574b9b0c61aebdfc27c0e58e21e064ce4c569b` 대비 W06 수정 파일 3경로 Git blob 각각 완전 일치(3/3 PASS). 해당 main 전진을 W06 source drift나 UI 장애로 취급하지 않음.
 - Git Integration build/active Production exact 상태는 최신 main 기준 별도 검증 필요. 전체 DONE 22/75 유지. 운영 쓰기0.
+
+
+### [2026-11-21 12:04 KST] R4 #69 — 기존 6기간 회귀 범위 정밀 감사
+상태: 기존 #69 DONE 유지, 비율형 D03/D04 Chromium 독립 검증 미확인 (신규 DONE 0).
+담당·범위: W06, 읽기 전용 소스/테스트 계약 감사. 기존 완료 집합 22/75(29.3%) 유지.
+실행 결과: 최신 main tests/dashboard-history-browser-r5.mjs(blob 8f24119edbafd6f620e0271f2ecef9791e52a95c, 178행), tests/r4-six-period-responsive-chart-69.test.mjs(blob 4a5aa6e0132f2cb4a477b4a8f2dd462f6f5046cb, 294행) 원격 조회. 전자는 390/768/1440/1920px, 6기간 선택 및 12개 점수 영역 카드의 차트 계약을 검사. 후자는 composite/domain 점수의 0/결측/기간/미래점/마지막점 등을 검증. 두 파일에서 D03/D04 비율형 등락 UI의 독립 Chromium 렌더·퍼센트 합계 단언은 발견되지 않음. 이는 테스트 범위의 공백이지 실서비스 기능 장애 확증이 아님.
+검증: GitHub 원격 파일 읽기 PASS. 실제 Chromium/Node 시험 실행 없음, CI PASS 새 주장 없음. PC/SQLite/D1/API/Cloudflare 활성 배포 변경·검증 없음.
+LAST PASS: 기존 테스트 코드가 6기간/반응형 점수형을 포괄한다는 정적 확인. FIRST UNVERIFIED: D03/D04 비율형 출력의 390/1440px 실제 브라우저 회귀와 현재 main 시험 실행 결과.
+다음 필수 실행 1개: W06가 기존 브라우저 테스트의 mock route/실제 DOM을 확인해 D03/D04 비율형 UI 0·결측·정상 퍼센트, 모바일/PC 가로 넘침 단언을 기존 테스트에 최소 추가; Node/Chromium CI 실제 PASS를 회수한 후에만 검증 완료 기록. 이미 통과한 점수형 6기간 시험 중복 작성 금지. 활성 Production은 #75에서 별도 검증.
+진행률: 시작/종료 22/75(29.3%), 잔여 53. 신규 기능 코드·PR 0. 원격 인계 재조회 필요.
