@@ -31,6 +31,13 @@
 
 ## 개편 후 기록
 
+### 2026-11-21 — W05 R3-11 installed-parent onefile A allowlist candidate
+
+- **실제 source 후보 작성:** 최신 실PC `core-status` A [#2630](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2630) (Run 44880973239)로 검증한 installed Controller `565ddbd4ebfc46c88fb7dbaa810fd545656c6306`를 부모로 [control 단일 커밋 `50163cd2e44f905fd35611d079c4c896748d9477`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/50163cd2e44f905fd35611d079c4c896748d9477) 생성. 브랜치 `codex/w05-bea-mfg-a-allowlist-from-565ddbd4-20261121`. GitHub compare ahead1/behind0·변경 `config/operations.json` **1파일, +2/-1줄**.
+- **계약 정적 검증:** 이전 48 operation/다른 정책 필드 모두 그대로 유지, `earnings-bea-mfg-archive-readonly` **A/light/60** 1개만 추가(49개); 해당 부모 트리 기존 handler/module 존재. `CANDIDATE_STATIC_PASS`. 브랜치는 최신 main의 다른 A 허용목록 3개를 임의 설치 대상에 끌어오지 않는 별도 base-anchored 후보다.
+- **인계:** [PR #2600 새 후보 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2600#issuecomment-7059502873). 기존 PR의 `5b33787d…` preimage는 현행 `565ddbd4…`와 불일치하므로 재사용 불가. 원문 파일 SHA-256·B manifest 정확 pin·lease/백업/복구·현재 승인 확인과 실제 유지보수기 적용 및 신규 A 원본 검증은 **미완료**. 이 소스 후보는 운영 설치 성공/허가를 의미하지 않는다.
+- **효과:** GitHub source 후보/원장 변경만, 실제 PC Controller 설치·Provider POST/SQLite/D1/배포 **0**. 기존 5단계 1/5 DONE, 2단계 IN_PROGRESS. WPSFD42 #2240 및 QFR #2089 신규 쓰기 승인 별도.
+
 ### 2026-11-21 — A #2630 current Controller real runtime confirmed
 
 - **실제 PC A급 1회 실행 완료:** [Issue #2630](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2630) / [Run 44880973239](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44880973239) `core-status`, requestId `pc-3948826e-51d6-46a6-b957-dbe0ea006ad4`. 실행 결과 `PASS/CORE_READONLY_DIAGNOSIS`. [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44880973239-1-seat-2.json) 및 [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44880973239-1-seat-2.txt) 2/2 직접 GET·requestId/SHA/status 대조. `controlSourceSha=565ddbd4ebfc46c88fb7dbaa810fd545656c6306`, `pcOperationalApprovedSha=a206220cc11045c24660e814124edbba9c0ff49f`; 기존 Core cycle COMPLETE, collection COMPLETE, Writer VERIFIED, 보호 해시 before=after. Provider/D1/operational writes 0, `sqliteOpened=false`. Core 동작 PASS는 W05 데이터 원자료 존재의 증거가 아니다.
