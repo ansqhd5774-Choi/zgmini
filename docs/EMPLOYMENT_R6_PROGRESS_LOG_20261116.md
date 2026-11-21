@@ -1,5 +1,8 @@
 # ZGMINI W04 고용지표 R6 — 실행 진행 기록
 
+> **현재 실행 기준(2026-11-21 개편): [운영 완료 5단계 계획](EMPLOYMENT_R6_CURRENT_EXECUTION_PLAN_20261116.md). 1/5 완료, 2단계 진행 중.** 이전 53/72는 역사적 증거 추적 계수이며 현재 기능 완료율이 아니다. 아래 과거 보고의 NEXT/차단/접근 실패를 현재 지시로 재사용하지 않는다. 이번 Production 직접 GET은 200이며 PC와 모델 버전·hash·sourceStoredAt이 일치했으나 D1 body/stored_at 전체 readback은 미검증이다.
+
+
 - 기록 기준: **2026-11-16 KST**
 - 저장소: `ansqhd5774-Choi/zgmini`
 - 고용 전담 브랜치: `codex/employment-1y-reader-r1` (문서/이력 관리)
@@ -2070,3 +2073,14 @@
 - **PIT-09-01 독립 경계:** 앱 main 공개 GET은 D1 `market_public_snapshots_v1`의 `snapshot_key=detail:employment-r6:one-year:v1`, `stored_at`·8일 유효성 및 버전/29지표 검증. [앱 #1335](https://github.com/ansqhd5774-Choi/zgmini/issues/1335)에서 **2026-11-18 당시** Production HTTP200/`STORED_D1`/29개·22 chart READY 실측은 존재. 그러나 **2026-11-21 현재** D1 row `body/stored_at`와 Production GET의 신규 응답은 확보하지 못함: 외부 GET 도구 접근 오류 및 실행 환경 DNS 실패; 이를 서버 503/게시 데이터 부재로 추정하지 않음. 제어 `config/operations.json`에 직접 D1 snapshot 조회 A 없음. 새로운 권한/공급자 호출/게시 쓰기/운영 코드 교체 0.
 - **단계 판정:** PIT-08-01 **DONE**, PIT-08 전체 6/6. PIT-09-01 **IN_PROGRESS / CURRENT_D1_AND_PRODUCTION_READBACK_UNVERIFIED**. 다른 52개 기존 완료 유지. **W04 53/72 (73.6%), 잔여 19**. 과거 2,880키 TRUE_PIT 미인증·`PARTIAL_HISTORY` 유지.
 - **다음 실행:** 기존 정규 Cloudflare/D1 읽기 권한을 보유한 공식 경로로 D1 정확 1키 `body/stored_at` 조회 후, Production `/api/employment-r6/observations` HTTP 응답의 모델 버전·hash·sourceStoredAt·snapshot 시각을 대조. 일치와 최신성 충족 시에만 PIT-09-01 DONE. 이미 DONE인 Controller B/core-status 반복 금지.
+
+
+## 186. 운영 완료 5단계 실행계획 개편 · 현재 1단계 완료/2단계 진행 (2026-11-21 KST)
+
+- **사용자 요청:** 현재 브랜치의 계획 파일을 개편해 원담당이 새 계획으로 작업하도록 반영. 코드/운영 복구 수행 요청으로 확대하지 않고 문서 3개만 수정.
+- **새 실행 정본:** [현재 실행계획](EMPLOYMENT_R6_CURRENT_EXECUTION_PLAN_20261116.md). ①기준선 확정 DONE → ②저장·게시 연결 IN_PROGRESS → ③원자료 갱신 → ④PC·모바일 표시 → ⑤기존 자동 실행 검증·종결. 기능 완료 기준 충족 1/5이며 작업량 20%가 아니다.
+- **근거:** #2597 설치 SUCCEEDED/#2599 실제 로컬 checksum·모델 VERIFIED를 재사용. 이번 Production GET /api/employment-r6/observations 직접 조회 HTTP200: PARTIAL/asOf2026-11-21/29 indicators/sourceStoredAt1795220421678, R2 모델·formulaHash 일치. 요약 29 source/22 chart READY/5 chart PARTIAL/28 scored/22 recent scored. 전체 PC-D1-API 본문 동치 또는 현재 D1 readback을 완료한 증거는 아님.
+- **실제 미완료:** D1 정확키 body/stored_at 직접 대조, DOL checkpoint CIRCUIT_OPEN/DOL_RELEASE_OBSERVATION_STALE 원인별 최소 수정 및 실제 최신자료 전진, 공개 응답 INITIAL_CLAIMS·4W·CONTINUED_CLAIMS 관측일2026-10-24 및 STATE_CLAIMS_BREADTH2025-07-19/PARTIAL_HISTORY의 단계별 원인 확인, PC/모바일 실제 표시와 기존 자동 갱신 근거. asOfDate 최신을 최신 원자료로 과장하지 않음.
+- **이력 보존:** 과거 53/72 완료 증거는 보존. History 2,880키 역사적 TRUE_PIT 미인증/복구 승인 없음은 별도 유지하며 현재 경로 전체를 막는 선행조건으로 삼지 않음. 이전 72단계 원문은 개편 직전 commit 20fd8977766be7634605efa8a4f68a1863c2b339의 고정 링크로 보존. 기존 2026-11-08 DELIVERY_PLAN은 역사 설계로 표시하고 새 정본에 연결.
+- **NEXT:** W04가 기존 Writer 게시 원장→D1 정확키→공개 API를 실제 결과로 대조. 이미 일치하면 재게시·재설치 없음. 조회 도구가 제한되면 기존 공식 수단을 사용하고 독립 수집 로그/화면 검증은 계속. 새 Gate/Controller/예약/권한 확대 없음.
+- **이번 변경 상태:** 문서 개편만 수행. 코드·산식·DB·D1·Controller·Writer·예약·배포 변경 0. 기존 53/72를 올리지 않고 새 5단계도 1/5 유지.
