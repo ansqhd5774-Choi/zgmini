@@ -1,4 +1,5 @@
 import path from 'node:path';
+import {coreCycleIdFromEnv} from './core-cycle-id.mjs';
 import os from 'node:os';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
@@ -105,7 +106,7 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
    }
   }
   // Reports contain statuses only; provider URLs, credentials, and exception messages are excluded.
-  const report={at:new Date().toISOString(),lane,status:result.status,job:result.job??null,attempted:result.attempted??null,feeds:result.feeds?.map(({key,status})=>({key,status})),sectorFearGreedEtf:{status:sectorFearGreedEtf.status,providerRequests:sectorFearGreedEtf.providerRequests??0,commonLatest:sectorFearGreedEtf.commonLatest??null,code:sectorFearGreedEtf.code??sectorFearGreedEtf.error??null},providers,quota:quota.summary()};
+  const report={at:new Date().toISOString(),lane,coreCycleId:coreCycleIdFromEnv(),status:result.status,job:result.job??null,attempted:result.attempted??null,feeds:result.feeds?.map(({key,status})=>({key,status})),sectorFearGreedEtf:{status:sectorFearGreedEtf.status,providerRequests:sectorFearGreedEtf.providerRequests??0,commonLatest:sectorFearGreedEtf.commonLatest??null,code:sectorFearGreedEtf.code??sectorFearGreedEtf.error??null},providers,quota:quota.summary()};
   report.employmentR6Collection=employmentR6Collection;
   for(const key of ['phase','reason','sourceStatus'])if(typeof result?.[key]==='string'&&/^[A-Za-z0-9_.:-]{1,120}$/.test(result[key]))report[key]=result[key];
   report.releaseCalendar=releaseCalendar;
@@ -131,5 +132,5 @@ if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.ur
   const job=jobArg?jobArg.slice('--job='.length):null;
   console.log(JSON.stringify(await collectLocal(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),{lane:process.argv.includes('--korea')?'korea':'core',importOnly:process.argv.includes('--import-only'),job})));
  }
- catch(error){const report={at:new Date().toISOString(),lane:process.argv.includes('--korea')?'korea':'core',status:'FAILED',reason:'LOCAL_COLLECTION_FAILED',failureDiagnostic:safeCollectionFailure(error)};try{appendCollectionEvent(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),report);}catch{}console.log(JSON.stringify({...report,...(process.argv.includes('--import-only')?{importError:error.message}:{})}));process.exitCode=1;}
+ catch(error){const report={at:new Date().toISOString(),lane:process.argv.includes('--korea')?'korea':'core',coreCycleId:coreCycleIdFromEnv(),status:'FAILED',reason:'LOCAL_COLLECTION_FAILED',failureDiagnostic:safeCollectionFailure(error)};try{appendCollectionEvent(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),report);}catch{}console.log(JSON.stringify({...report,...(process.argv.includes('--import-only')?{importError:error.message}:{})}));process.exitCode=1;}
 }
