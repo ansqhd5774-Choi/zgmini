@@ -2183,3 +2183,11 @@
 - **독립 4단계 SOURCE 검토:** `tests/employment-r6-public-browser-r1.mjs`는 Playwright 1440px/390px, 모의 API 29/29 table+mobile rows, READY/STALE/UNAVAILABLE, chart PARTIAL 및 가로 넘침 검사 계약을 가진다. 이는 소스에 정의된 fixture 검사이며 금번 실행 PASS 또는 실제 Production 브라우저 검증이 아니다. 연결 Browser Use는 `insufficient_credits`, 과금·충전하지 않았다. 공개 사이트 GET 역시 검색 도구에서 응답을 확보하지 못했으므로 실제 29 ID 값/날짜/차트 마지막 점, PC·모바일 화면은 4단계 미검증 유지.
 - **후속:** 기존 #2643 JSON/TXT 도착 시 최신 `dol.RELEASE` 관측일/Raw hash/부분실패와 ETA539를 #2631과 비교하여 실제 전진 여부 판정. DOL 원자료의 계속 지연이 확인되면 출처측 지연과 구현 결함을 분리하고 대체 수집 효과는 기존 계약·승인 내에서만 검토. 독립 UI 실제 렌더링이 가능한 공식 경로에서만 4단계 완료 검증.
 - **상태 불변:** 개편 2/5 DONE, 3단계 IN_PROGRESS, 4·5 NOT_DONE. DB/수집기/Cloudflare/예약/보안 변경 없음.
+
+
+### 196-A. 2026-11-22 추가 실PC 결과 — 진단 Timeout을 DOL 수집 실패와 구분
+<!-- W04-20261122-A2634-2644-OWN-WORKER-TIMEOUT -->
+- 11월 22일 최신 DOL 진단용 고유 A [#2643](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2643#issuecomment-7071168007) / Run `44963803671`은 `status=FAIL/code=JOB_EXECUTION_TIMEOUT`, `lastPass=ALLOWLISTED_WORKER_STARTED`, `firstFail=OWN_WORKER_TIMEOUT`, 소요 `67,546ms`. 실제 실행 Controller `565ddbd4ebfc46c88fb7dbaa810fd545656c6306`, 보호 상태 불변, Provider/D1/운영 쓰기 0. **DOL 원자료의 신규 PARTIAL 또는 데이터 실패를 증명하지 않는다.**
+- 기존 같은 진단 operation은 2026-11-21 #2631에서 58,490ms에 완료됐으며, 설치된 operation 허용시간 `config/operations.json`에서 60초. 600주/51지역 coverage, National RAW 및 ETA539 전체 비교 등 큰 읽기와 밀접한 제한이며 최신 한 번의 timeout으로 SQLite 손상/락/DB 오류 또는 특정 SQL 병목을 확정할 수 없다. 진단을 동일 조건으로 재요청하지 않음.
+- 기존 검증된 공통 `core-status`에 대한 별도 고유 경량 A [#2644](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2644) 1회 등록. Controller/체크포인트 최신 상태만 읽고, DOL RAW 최신 주차의 직접 재검증으로 승격하지 않는다. 실행 영수증 도착 전 성공/진전 판단 보류.
+- 4단계는 `tests/employment-r6-public-browser-r1.mjs`의 fixture 1440/390px 검사 존재 확인만 SOURCE_ONLY, 실제 Production PC/모바일 검증 미완료. 연결 Browser Use `insufficient_credits`로 외부 라이브 브라우저 실행 불가(유료 충전 미승인); 웹 열람 도구도 실 페이지/API GET 불가. 새 UI 배포/소스 변경 없음. 
