@@ -6,11 +6,14 @@ const cycle=()=>fs.readFileSync('scripts/pc-writer/local-cycle.mjs','utf8');
 
 test('candidate collection reuses Core lock and precedes early Writer publication',()=>{
  const source=cycle();
- const lock=source.indexOf("fs.writeFileSync(file,JSON.stringify(");
+ const lock=source.indexOf("const coreLock=acquireCoreLockWithWitness({file});");
  const existing19=source.indexOf('inflationRecurring=await runInflation19RecurringFromCore(base)');
  const candidate=source.indexOf('inflationCandidates=await runInflationCandidatesFromCore(base)');
  const publication=source.indexOf('await progressivePublication({');
  assert.ok(lock>=0&&existing19>lock&&candidate>existing19&&publication>candidate);
+ assert.match(source,/import \{acquireCoreLockWithWitness\} from '\.\/core-lock-owned-witness\.mjs'/);
+ assert.match(source,/\}finally\{coreLock\.release\(\);\}/);
+ assert.doesNotMatch(source,/fs\.unlinkSync\(file\)/);
  assert.match(source,/const \{runInflationCandidatesFromCore\}=await import\('\.\/inflation-causal-candidate-core-bridge\.mjs'\)/);
 });
 
