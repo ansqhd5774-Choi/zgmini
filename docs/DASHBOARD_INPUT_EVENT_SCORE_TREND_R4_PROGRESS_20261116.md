@@ -1,5 +1,13 @@
 # ZGMINI R4 75단계 — 실제 수행 원장 (2026-11-16 KST)
 
+> **2026-11-21 W06 #69 후속 — D03/D04 비율형 Chromium 검증 실행 경계 (읽기 전용)**
+> - 시작/종료 고유 DONE: **22/75 (29.3%)**, 신규 완료 **0**. 실제 계획 #69은 기존 DONE, 이번 검토는 그 단계의 점수형 시험과 별개인 비율형 검증 공백 조사이며 #37 운영 미증명을 새 UI 공통 Gate로 사용하지 않음.
+> - GitHub main의 `tests/dashboard-history-browser-r5.mjs` blob `8f24119edbafd6f620e0271f2ecef9791e52a95c`, `tests/r4-six-period-responsive-chart-69.test.mjs` blob `4a5aa6e0132f2cb4a477b4a8f2dd462f6f5046cb`, `app/market-breadth-strip.tsx` blob `e2aae797f17186e247785a5a6df5f55f6f393ce7` 원격 읽기 PASS. 기존 Chromium은 390/768/1440/1920와 점수형 6기간/12도메인 SVG, overflow를 검사하지만 D03/D04 등락 비율의 실제 DOM 퍼센트 합계/미제공을 단언하지 않음. 소스 `MarketBreadthStrip`는 한국 counts의 0합계/음수/소수를 미제공으로 거부하고 미국 IEX 잠정 4비율 합계·시각·권리 조건을 검증; 실제 화면 Chromium 검증을 대체하지 않음.
+> - 공개 읽기전용 Chromium 접근 시도: 연결된 Browser Use 응답 `insufficient_credits`로 실행 시작 전 거부. 추가 결제/충전/유료 도구 요청 없음. 별도 공개 URL 웹 조회도 `Internal Error / Cache miss`이므로 HTTP 5xx·사이트 장애로 판정하지 않음. 이번 신규 Node/Chromium 실행, 코드 PR/CI, PC/SQLite/D1/API Runtime, Production exact Deployment 검증 **미실행/미확인**. 진짜 FIRST FAIL 코드 결함은 미재현.
+> - 판정: **#69 기존 DONE 유지**, D03/D04 반응형 Chromium 검증 공백은 **NON_BLOCKING/UNVERIFIED**. 재현 없는 UI 소스 수정·중복 테스트 추가 금지. #37은 기존 Reader fixture 3/3과 PR #1456 main 병합 PASS를 보존하되 신규 완성 거래일 Writer→D1→API/UI 실증 없으므로 PARTIAL 유지. #75 active Deployment 증거 별도 미확인.
+> - 다음 단일 실행: 이미 승인된 무료/기존 CI Chromium 경로에서 `tests/dashboard-history-browser-r5.mjs`가 실제 `MarketBreadthStrip`를 렌더하는 페이지의 D03/D04 selectors를 확인한 뒤 정상%·진짜 0·missing/한국 미연결·390/1440 overflow만 최소 회귀로 추가하고 실제 CI PASS 회수. 외부 유료 Browser Use 재시도 금지. 실제 DB·게시·수집 변경 없음. 이 기록은 원격 커밋/파일 재조회 시 PASS 확정.
+
+
 
 > **W06 #37 다음 계획·결정적 시뮬레이션·최소 회귀 main 반영 (2026-11-21 KST)**
 > - **계획 근거/업무 범위:** R4 원본 #37(D02 한국 공포탐욕 신규 **완성** KRX 거래일 → 저장 Rev7 READY → 공개 Reader → 카드 현재점/1D·1W·1M·3M·6M·1Y 차트 마지막점 일치). #37 Reader 미래일/미완료 숫자 차단 PR #1445/#1447, 취소 이후 저장 갱신 복구 PR #1455의 기존 CI/main 완료 증거 재사용. 누락된 것은 신규 완성 거래일 전체 전파의 *실제 함수 통합 회귀* 및 원담당 PC 수집·Writer/D1/공개 최신 거래일 영수증. 두 범위를 분리하고 기존 #75 개별 배포 추적을 선행 게이트로 만들지 않음. `zgmini-pc-control` 중앙 #68의 최근 KFG/Rev7 관련 댓글과 GitHub Issue 검색에서 **해당 신규 완성 거래일의 최신 운영 readback 증거 미발견**; 공개 `https://zgmini.kr/api/indicators/korea-funds` 조회는 현재 외부 웹 도구 `Internal Error / not accessible`로 결과 미확인. 이는 장애·미게시 증거가 아님.
