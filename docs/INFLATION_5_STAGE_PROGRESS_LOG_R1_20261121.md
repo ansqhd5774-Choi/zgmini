@@ -106,6 +106,14 @@
 - **정확 신규 승인 source:** [PR #2664](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2664)에 target `d6a7c6bb…`/base `d260aea2…`, 동일 승인 4파일 SHA256, `VERSIONED_SNAPSHOT`, `RESTORE_INSTALLED_SHA(d260aea2…)` pin·manifest 추가. C996 CI는 최초 조회 당시 queued. 승인 source main 반영 전, 정확 target 자체 CI 및 현재 PC CAS·lease 검증 전에는 다음 B Issue 발행하지 않음.
 - **현재 단계:** 1 DONE / 2 IN_PROGRESS / 3~5 NOT_DONE. D1/Census 실제 원장 readback·수집/게시 변경 없음.
 
+## 2026-11-22 — 정확 4파일 승인 CI 완료 및 #2665 설치 요청
+
+- **실제 사전검증 실패 수정:** 이전 [#2662](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2662#issuecomment-7071511671)는 `BLOCKED/SELECTIVE_NONSCOPED_DIFF`로 설치 이전 차단, 실제 구 Controller `d260aea2…`, rollback 없음. 테스트 파일이 포함된 Git diff 5파일과 정확 허용 4파일의 비교 조건 불일치를 기존 `tools/update.mjs`에서 직접 확인. 검사 삭제·우회 없이 새 source는 정확 4파일 diff로 교정.
+- **새 통합 소스 확정:** [source PR #2663](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2663), 직접 부모 `d260aea2513902a77425344629f91575e2d950ef`, 목표 `d6a7c6bbaecc918f63afa3f6bd8b292bb6391439`; GitHub compare `ahead=1/behind=0`, 변경 정확 4개 Controller 파일(테스트 파일 diff 없음). C996 #44966386366, D05 #44966386321, Controller Maintenance #44966386365 **3/3 SUCCESS**.
+- **새 B 승인 정본:** [approval PR #2664](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2664) C996 #44966431471 SUCCESS, main merge `5365d7fef2d2c37923a37d14ee1135a19547f9a4`. 새 2 승인 파일에서 동일 allowFiles fingerprint `55eb2222ee575ea1a6b7c4df89229d8a531977a9b229df60c10c021288be579c`와 `VERSIONED_SNAPSHOT/RESTORE_INSTALLED_SHA(d260aea2…)` 보존. 원문 승인 manifest SHA-256 `0d319423f6afd6b09064a7f186f849b901ac6e424aa6c76de8e3d514482f3104` 자체 계산/known vector 시험 통과.
+- **새 단회 B 요청:** [Issue #2665](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2665), 고유 requestId `pc-update-8cb6f1b1-88e3-444d-bf44-af8ab4dd8fea`, 대상 `d6a7c6bb…`, 정확 manifest raw SHA256 pin, `pc-maintenance` label로 등록. 최초 댓글/결과 JSON readback 미확보: **설치 성공/롤백 성공을 주장할 수 없음**, 진행/미확인으로 유지. 같은 requestId로 재접수·기존 #2662 replay 금지.
+- **다음:** 원본 #2665 상태·유지보수기 결과 JSON/TXT를 재조회해 `status/code/actualControllerSha/recoverySha/protectedStateUnchanged/workflowEnabled` 검증. 성공 시 Census 헤더와 물가7 D1의 고유 A 조회를 순차 발행하고 실제 값 검증; 실패/미상 시 설치/백업/lease 실제 상태 확인 후 규정 복구. 단계 1 DONE, 2 IN_PROGRESS, 3~5 NOT_DONE 유지.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
