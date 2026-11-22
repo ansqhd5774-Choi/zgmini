@@ -2304,3 +2304,12 @@
 - **차이의 위치:** 동일 미 노동부 내 **뉴스 발표/대시보드 자료는 11월 14일**, **기존 r539cy XML 본문의 최신 숫자는 10월 24일**. 수집 빈도·산식/파서 오류나 PC 미접속으로 설명할 증거는 없고, 현재 확인된 첫 불일치는 **공식 자료 제공 경로 간 최신 숫자 주차**다. 단, r539cy 제공 시스템의 구체 내부 갱신 장애/의도적 지연 원인은 확인되지 않아 추정하지 않음.
 - **허용 범위 판단:** 현재 승인된 XML과 검증된 과거 원문/PIT를 보호하고 DOL News Release PDF를 별도 canonical raw로 임의 치환하거나 미검증 과거 availableAt을 부여하지 않는다. 새로운 파서·raw schema·공개 계약을 승인 없이 적용하지 않으며, 같은 XML에 신규 유효 숫자가 나타날 때 정규 수집/Writer/D1을 재검증한다. 독립 4단계 API/브라우저 상세 대조는 웹 GET/렌더 도구 제한으로 미검증 상태를 유지.
 - **원장 판정:** 실제 PC #2697 성공/원문 검증과 별도로 **공식 사이트의 2026-11-14 최신 공개 상태**를 독립 검증했다. 이 회차는 제공물 차이의 최초 확인 지점을 좁힌 조사 성과이며, 운영 코드/DB/D1/API·UI/예약 변경 및 새 A/B 요청 0건. 1·2 DONE(2/5), 3 IN_PROGRESS, 4·5 NOT_DONE.
+
+
+## 208. 3단계 — ETA 539 CSV를 National 공식 SA 4계열 대체로 사용하지 않는 근거 (2026-11-22 KST)
+<!-- W04-20261122-ETA538-539-ALTERNATIVE-SOURCE-NOT-EQUIVALENT -->
+- **DOL 직접 확인:** [공식 ETA Data Downloads](https://oui.doleta.gov/unemploy/DataDownloads.asp)는 ETA 539를 주별 청구·연장급여 trigger 행정 원자료로 명시하고, `csv/ar539.csv`라는 non-embargoed CSV를 제공한다. 공표용 National/XML은 [공식 Weekly Claims form](https://oui.doleta.gov/unemploy/claims.asp/)의 National/XML에서 조회되는 자료다. `Data Downloads`의 매일 갱신 설명을 National 계절조정치 4계열의 최신 보장으로 해석하지 않는다.
+- **정의/시차 교차검증:** 미국 네바다 주 노동시장 연구기관의 [ETA 539 재구성 분석](https://nvlmi.mt.gov/_docs/Other-Publications/Current-Fact-Sheet/National-Weekly-Claims-Report)은 공식 발표가 **ETA 538 사전 신규청구 보고 + ETA 539 주별 행정 보고**를 활용하는 반면, ETA 539만 합산해 계절조정계수로 재구성한 추정치는 동일값이 아님을 명시한다. 원문은 일부 주 누락 시 별도 최근4주 대체값 추정도 적용하므로 **이 재구성 숫자 또는 ETA 539 원본의 단순 합계를 공식 National `INITIAL_CLAIMS`/4W/`CONTINUED_CLAIMS`/IUR로 등치시킬 수 없다**.
+- **실제 획득 범위:** DOL HTML의 CSV 링크 `https://oui.doleta.gov/unemploy/csv/ar539.csv`는 발견했으나 이번 조회 도구에서 CSV 응답 본문을 획득하지 못했다. CSV의 실제 최신 날짜·행·해시는 미확인이다. PDF/공식 발표(2026-11-19 신규 11/14 203,000, 계속 11/07 1,763,000)와 #2697의 National XML 숫자 최신 10/24 차이를 유지하며 CSV가 공식 발표와 같은지 추정하지 않는다.
+- **코드 대조:** 최신 `main`의 `lib/market-score/employment-r6-provider.mjs`는 승인된 `wkclaims/report.asp` National/XML POST와 ETA539 지역 51개 경로를 분리하며, `tests/w04-dol-national-date-and-partial-protection.test.mjs`는 공식 4개 National 필드와 `null`/0 차이, 538/539 자료 재구성을 혼용하지 않는 파서 계약을 포함한다. **이번 회차 시험을 실제 실행해 PASS라고 주장하지 않는다.**
+- **판정/다음 행동:** 공식 National 4계열 최신화에 ETA539 CSV 직접 대체 또는 단순 보간은 부적합. 기존 r539cy XML 원문 자체가 10/24까지 유효함은 #2697에서 확정했다. 새 자료 경로가 필요하다면 우선 동일 4계열·계절조정/잠정치·발표주차·revision/PIT/hash 계약이 모두 일치하는 공식 데이터 제공물을 특정·독립 검증한 뒤 기존 승인 범위 내 변경만 진행한다. 이 판단은 운영 적용·신규 저장 갱신·UI 기능 검증 완료가 아님. 원자료/운영 PC/DB/D1/예약 수정·새 A/B 요청 없음. 개편 1·2 DONE(2/5), 3 IN_PROGRESS, 4·5 NOT_DONE.
