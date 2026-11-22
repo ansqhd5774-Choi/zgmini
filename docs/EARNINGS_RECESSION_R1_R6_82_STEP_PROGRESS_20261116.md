@@ -31,6 +31,13 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — BEA NIPA CL_UNIT real-format correction
+
+- **기존 CI 회수:** BEA unit NIPA/FRED 비교 2파일 최초 추가 HEAD `12a131ebc5b90b0878f01c623dc94bfa6ecec021` [Node CI #45006275722](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45006275722) `completed/success`.
+- **실제 API 표기 계약 결함 발견:** BEA 공식 API 예제의 `CL_UNIT`는 `dollars`(소문자)로 반환되는 경우가 있음. 기존 비교기의 `['USD','Dollars']` 직접 대조는 값과 분기가 맞는 정당한 BEA 응답을 `BEA_UNIT_NIPA_UNIT_UNVERIFIED`로 거부. BEA 문서: https://apps.bea.gov/api/_pdf/bea_web_service_api_user_guide.pdf ; https://us-bea.github.io/beaapi/iTables_to_api.html . **실제 이 계열의 BEA 원문은 아직 미수집**.
+- **최소 수정:** [PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183)에 `scripts/pc-writer/EARNINGS_BEA_UNIT_NIPA_EQUIVALENCE_R1.mjs` `CL_UNIT` trim/case-normalization(`usd`/`dollars`)과 `UNIT_MULT` `0` 조건 유지. [source `2c9a82d`](https://github.com/ansqhd5774-Choi/zgmini/commit/2c9a82d30f438df8468d89d5f561748e4d58e096) + [regression `f87c34c`](https://github.com/ansqhd5774-Choi/zgmini/commit/f87c34c471c9366467700ad18e0356dedc68a1c0), 허용 소문자·공백과 잘못된 비영 배율 거부 확인. 기존 권리·수집·저장·D1 publisher/산식 변경 없음. 최신 PR HEAD `f87c34c471c9366467700ad18e0356dedc68a1c0` / GitHub [Node CI #45006529649](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45006529649) 실행 중(기록 시점).
+- **FIRST UNFINISHED:** 실제 승인 BEA NIPA `T11500` Q/line7 `A463RD` 원본 JSON의 `DataValue/CL_UNIT/UNIT_MULT` 및 최신 분기 대조. PR은 Draft/소스-only 유지. Controller 설치, WPSFD42 BLS POST·SQLite, QFR D1 1key 각 운영 승인 별개. W05 1/5단계 DONE·2단계 진행 중.
+
 ### 2026-11-22 — BEA unit offline NIPA/FRED equivalence regression source
 
 - **공식 계열 재확인:** FRED [A463RD3Q052SBEA](https://fred.stlouisfed.org/series/A463RD3Q052SBEA)는 2026Q2=0.250, 2026Q1=0.231, 2025Q4=0.222, Q3=0.219, Q2=0.216 USD(분기·계절조정), BEA 원천 NIPA Table 1.15 `T11500` line 7 `A463RD`. BEA API 원문 JSON/값·단위 동치 실측은 별도 미확인.
