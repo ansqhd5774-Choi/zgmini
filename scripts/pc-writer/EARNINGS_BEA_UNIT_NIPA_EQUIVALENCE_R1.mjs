@@ -17,7 +17,7 @@ export function compareBeaUnitNipaToFred({beaResponse,fredCsv}={}){
     if(row.TableName!==undefined&&row.TableName!=='T11500')
       throw Error('BEA_UNIT_NIPA_TABLE_MISMATCH');
     // No implicit multiplier or currency conversion is permitted.
-    if(String(row.UNIT_MULT??'')!=='0'||!['USD','Dollars'].includes(row.CL_UNIT))
+    if(String(row.UNIT_MULT??'').trim()!=='0'||!['usd','dollars'].includes(String(row.CL_UNIT??'').trim().toLowerCase()))
       throw Error('BEA_UNIT_NIPA_UNIT_UNVERIFIED');
     const match=QUARTER.exec(String(row.TimePeriod??''));
     if(!match)throw Error('BEA_UNIT_NIPA_QUARTER_INVALID');
