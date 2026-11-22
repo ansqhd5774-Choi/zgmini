@@ -60,6 +60,22 @@ test('hidden lookup rejects other tasks, missing identity and inaccessible servi
  assert.equal(simulateWsh({instances:0,hidden:[hiddenCore],rows:processRows.map(
   x=>x.ProcessId===60?{...x,ParentProcessId:999}:x)}).linked,false);
 });
+test('EnginePID requires a real WMI process anchor created no later than its child',()=>{
+ const missingEngine=processRows.filter(x=>x.ProcessId!==10);
+ const reusedEngine=processRows.map(x=>x.ProcessId===10?
+  {...x,CreationDate:'20261121160002.000000+540'}:x);
+ const reusedWrapper=processRows.map(x=>x.ProcessId===55?
+  {...x,CreationDate:'20261121160003.000000+540'}:x);
+ for(const rows of [missingEngine,reusedEngine,reusedWrapper]){
+  const visible=simulateWsh({rows});
+  assert.equal(visible.linked,false);
+  assert.equal(visible.code,'TASK_ENGINE_CHAIN_UNVERIFIED');
+  const hidden=simulateWsh({rows,instances:0,hidden:[hiddenCore]});
+  assert.equal(hidden.linked,false);
+  assert.equal(hidden.code,'TASK_ENGINE_CHAIN_UNVERIFIED');
+ }
+});
+
 test('invisible Task instance, disabled Task, wrong command and sibling process fail closed',()=>{
  assert.equal(simulateWsh({instances:0}).linked,false);
  assert.equal(simulateWsh({state:3}).linked,false);
