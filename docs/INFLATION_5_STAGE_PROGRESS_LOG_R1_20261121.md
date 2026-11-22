@@ -206,6 +206,13 @@
 - **실제 B 요청·결과 경계:** [Issue #2690](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2690) `requestId=49b2e5c3-7d60-4f91-bf25-5a1284aebc0d`, `pc-writer-source-install` 제목/`pc-writer-b-install` label, 위 manifest SHA 고정 후 고유 단회 요청. 초기 댓글/JSON 결과 미수신: **실제 Writer 설치·롤백 미판정**, 같은 요청 중복 금지.
 - **다음:** #2690 영수증 JSON/TXT의 status/code, 실제 local overlay HEAD/config, rollback, protected state 회수. 성공한 뒤에도 Census 공식 GET/원본 저장·계산·D1 재게시를 자동 완료로 간주하지 않는다. 기존 2025/2026 4개 SHA 원본을 보존한 상태에서 소비 selector 열의 행별 일치 및 사용 가능 관측 확인, 승인된 저장·게시 경로만 실행. 5단계 `1 DONE/2 IN_PROGRESS/3~5 NOT_DONE` 유지.
 
+## 2026-11-22 — Writer #2690 실제 설치·#2693 저장 스냅샷 검증
+
+- **실제 Writer B 정상 적용:** [#2690 / Run 45008557954](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2690#issuecomment-7077294929) 유지보수기 JSON/TXT **2/2 직접 회수**. `status=WRITER_B_INSTALLED_VERIFIED`, `code=WRITER_B_INSTALL_VERIFIED`, `mode=LOCAL_OVERLAY`, 기존 `baseHead=91b0e5a602883b9d3ee61310281957d3cdd23f11`, 후보 `9d23a8f552c2720b12b1b3ea559cc7c7a8a02c6d`, 실제 PC Writer `sourceSha=1e52876f5112c4a58a43273d264588755b7b9402`, 정확 변경 1파일 `scripts/pc-writer/inflation-causal-candidate-census-m3.mjs`, `recovery=NONE`. 실제 SHA는 **PC 로컬 overlay**로, GitHub 원격 branch/commit이 아님. 설치기 PASS는 원자료 저장/계산/D1 게시 PASS가 아님.
+- **설치 후 실PC 저장·원장 A 검증:** 새로운 정규 [#2693 / Run 45009152589](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2693#issuecomment-7077362886), `operation=inflation-candidates-runtime-readonly`, `status=PASS`, 실제 `pcOperationalApprovedSha=1e52876f5112c4a58a43273d264588755b7b9402`로 #2690 설치 SHA와 일치, `protectedStateUnchanged=true`, `operationalWrites=providerCalls=d1Writes=0`. 스냅샷 검사 범위는 `LOCAL_SNAPSHOT_AND_CHECKPOINT_ONLY`·`operationalReadiness=NOT_ASSERTED`.
+- **Census #28 현재 미완료 사실:** `indicator28.status=MISSING/observationCount=0/sourceStoredAt=null/fileSha256=null`; Census checkpoint `processed=false/attempted=true/lastAttemptedAt=2026-11-21T11:00:05.775Z/failureCode=CENSUS_M3_HEADERS_INVALID`. **새 파서 설치 후 별도 Census Core 수집/재처리 성공 증거 없음.** 7개 중 다른 6개는 `PRESENT_VALID`, `presentValidCount=6`. 이전 [#2683](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2683#issuecomment-7077108457)의 2025/2026 원본 SHA 아카이브 4개 존재·중복 선택 헤더 확정과 정규화 Writer 저장 완료는 다른 상태. 과거 실패의 시각을 현재 실패로 소급하지 않음.
+- **다음 필수 실행:** 기존 승인 수집 경로의 신규 **실제** 실행·checkpoint 전진 여부 확인; 새 승인 scope 없는 #1818 과거 소모 B 재사용/중복 발행 금지. 행별 중복 selector 값의 실측 일치·유효 월관측 검증과 실제 Census source 파일 `SAVED_READBACK/sourceStoredAt/fileSha256` 확보→저장자료 계산→D1 #28 READY 7/7 및 Production API/UI 대조. 다른 6개 유효값과 원본·이력 보존. **5단계 상태: 1 DONE/2 IN_PROGRESS/3~5 NOT_DONE.**
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
