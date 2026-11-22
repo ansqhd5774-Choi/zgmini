@@ -7,6 +7,15 @@ const QUARTER=/^(\d{4})Q([1-4])$/;
 const NUMBER=/^-?\d+(?:\.\d+)?$/;
 const quarterOrdinal=(year,q)=>year*4+q-1;
 
+// Pure request parameters for an already-approved existing PC BEA reader.
+// No UserID is accepted, no credentials are returned, and no network occurs.
+export function beaUnitNipaRequestSpec({observationYear}={}){
+  if(!Number.isSafeInteger(observationYear)||observationYear<2001||observationYear>2100)
+    throw Error('BEA_UNIT_NIPA_YEAR_INVALID');
+  return Object.freeze({method:'GetData',datasetname:'NIPA',TableName:'T11500',
+    Frequency:'Q',Year:`${observationYear-1},${observationYear}`,ResultFormat:'JSON'});
+}
+
 export function compareBeaUnitNipaToFred({beaResponse,fredCsv}={}){
   const bea=beaResponse?.BEAAPI?.Results?.Data;
   if(!Array.isArray(bea)||bea.length===0)throw Error('BEA_UNIT_NIPA_DATA_MISSING');
