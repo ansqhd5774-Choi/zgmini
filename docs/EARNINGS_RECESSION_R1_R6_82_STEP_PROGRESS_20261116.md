@@ -31,6 +31,13 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — Final bounded BEA GetData source CI and W05 BLS approval readback
+
+- **최신 source CI 실제 종결:** [Node CI #45009234318](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45009234318) `completed/success`, job `check` SUCCESS, 실패 step 0. BEA unit [PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183) exact HEAD `9ddce0b9bd65264707008724ab25121cfe81bb75` OPEN/Draft/미병합. 오프라인 `T11500/Q` fixed request spec·분기/단위/값 비교 source CI 완료. 원자료 실제 취득/저장/게시 증명으로 해석하지 않음.
+- **2단계 승인 원본 재조회:** 현재 control `main`의 `approvals/w05-r304-service-b/approval.json` blob `aa32c1c63f0173e470c9d7ca3c3d82ec0861fb26`는 여전히 `status=PROPOSED_NOT_APPROVED`. 신규 BLS WPSFD42 공급자 POST/SQLite append 불허는 code failure가 아니라 **해당 운영 효과 GO 미확인**. 기존 승인 원장에서 확보되면 정확 효과를 재사용하고, 승인 전에는 임의 `APPROVED_B` 변경/새 B Issue 발행 금지.
+- **BEA unit 최초 미완료:** 실제 승인된 NIPA `T11500/Q/A463RD` 원본 BEA `GetData` 응답 및 저장 raw SHA·sourceStoredAt·동치 확인. 같은 BEA API 키로 다른 표 `T20600` 등을 조회한 성공 증거는 이 계열 승인/수집 증명이 아님. 신규 공급자 GET/DB·D1 쓰기 0.
+- **작업 상태:** 소스·CI 완료 / BEA real-provider 검증 대기 / W05 1/5 DONE·2단계 IN_PROGRESS. 독립 QFR one-key 게시 및 BEA mfg Controller 선택 설치는 각 정확 B 승인 조건 그대로.
+
 ### 2026-11-22 — BEA unit bounded pure GetData request specification added
 
 - **실제 소스 작업:** [PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183) 기존 `EARNINGS_BEA_UNIT_NIPA_EQUIVALENCE_R1.mjs`에 `beaUnitNipaRequestSpec({observationYear})` pure 함수 추가. 기존 `consumption-r5.mjs` BEA API 전송 파라미터 형식(`method=GetData,datasetname=NIPA,TableName,Frequency,Year,ResultFormat`)을 재사용해 `T11500/Q/2025,2026`(기준연도 2026) 한정 요청 사양만 산출. 인증키/UserID·fetch·쓰기·Runner/job/예약 신규 생성 0. [구현 `ff898e89`](https://github.com/ansqhd5774-Choi/zgmini/commit/ff898e89d47fee910938e9d48848db6aba157b00) / [시험 `9ddce0b9`](https://github.com/ansqhd5774-Choi/zgmini/commit/9ddce0b9bd65264707008724ab25121cfe81bb75).
