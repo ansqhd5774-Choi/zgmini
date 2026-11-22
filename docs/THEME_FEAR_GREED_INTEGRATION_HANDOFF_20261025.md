@@ -1,3 +1,13 @@
+## 2026-11-22 KST — 40차 잠정치 혼입 회귀 경로 최신 main 판정
+
+- **요청 목표**: 4단계 홈·상세 실제 화면과 연계된 잠정치 표시 계약에서 신규 코드 결함이 남았는지 구분. 기존 2026-11-21 공개10×252/API 직접 조회, PC 실렌더, CI 390px mock 4/4 PASS는 재사용.
+- **과거 PR 실제 상태**: [#1078](https://github.com/ansqhd5774-Choi/zgmini/pull/1078) `[NO MERGE] W03: prevent stale legacy provisional points leaking into registered theme charts`는 `closed, draft, merged=false`. PR patch의 위험 조건은 `base.phase==='PROVISIONAL'`만 검사하여 `UNAVAILABLE` 레거시 feed가 잠정 point를 넣을 수 있는 경로였음.
+- **최신 main source의 다른 직접 안전 조건**: `lib/theme-configured-merge.mjs` Git blob `b5ee0c3ae8ea994179764ad50531bdac751e6bfc`은 `legacy=base.status==='READY'&&Array.isArray(base.themes)?base.themes:[]`로 유효 feed만 취급하고 `for(const p of legacy.length>0&&base?.phase==='PROVISIONAL'?base.provisional?.points??[]:[])`로 잠정치 반영을 제한한다. 따라서 PR #1078이 제기한 `UNAVAILABLE`+stale provisional 사례는 main에서 `legacy.length===0`이 되어 차단되는 것으로 **코드 조건상 직접 확인**. #1078의 동일 변경을 새로 적용하지 않으며 해당 PR을 강제 병합하지 않음. 이 조사만으로 새 CI run이나 실제 Production 잠정 테스트 성공을 주장하지 않음.
+- **운영 화면 접근**: 현 실행 컨테이너 `zgmini.kr` DNS 실패, 외부 웹 URL cache miss / API inaccessible, 기존 연결 Chrome은 홈 탭 2개 읽기 전용. Production 장애 입증이 아닌 자동검증 환경 제약. 신규 유료 BrowserStack/Firecrawl 세션 또는 운영 수정·재배포 0.
+- **결론**: 잠정치 혼입의 이미 해결된 코드 문제는 별도 재작업 대상에서 제외. 단계4의 390px 실제 Production 홈·상세 hydrated 렌더·날짜/점수/차트/잘림 대조만 `NOT_VERIFIED`. 단계5 기존 등록→공통 산식→저장→Reader→UI 소스 연결과 승인 경계 확인 결과 재사용하고 `SOURCE_PATH_REVIEWED/NOT_DONE` 유지. 전체 완료 3/5단계 유지.
+
+---
+
 ## 2026-11-22 KST — 39차 4단계 남은 필수 검증 조건 정리
 
 - **기존 API 완료 증거 재사용**: 마스터플랜 1단계/원장 2026-11-21 당시 직접 GET에는 `HTTP200/READY`, 공개10개 × 각252점(2,520점), 확정 2026-11-20, pending0, sourceVersion/registrySha256 기록이 있다. 34~35차의 번역된 브라우저 복사본 파싱 실패는 **동일 원문 API 데이터 오류가 아닌 복사본 무결성 제약**. 검증된 11/21 API 성공 증거를 취소하거나 반복 원문 파싱을 새 Gate로 만들지 않는다. 그렇다고 11/22 신규 원문 GET 성공을 주장하지도 않는다.
