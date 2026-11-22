@@ -42,6 +42,13 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — BEA unit archive raw HTTP byte integrity fix
+
+- **실패 조건:** [BEA unit Draft PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183)의 기존 `captureBeaUnitSourceOnce`에서 `response.text()` 후 `Buffer.from(content,'utf8')`을 SHA 계산·CSV 아카이브에 사용해 HTTP **수신 원문 바이트** 해시라는 무결성 계약을 보장하지 못함. UTF-8 부정합·디코딩 변형 위험. 현재 운영 원본 손상·PC 수집 실패를 입증한 것은 아니며 소스 조건 결함을 확인한 것.
+- **최소 수정/시험:** [code `f1e0f78d`](https://github.com/ansqhd5774-Choi/zgmini/commit/f1e0f78d2e29fa3b0840f3718bbe46c326522414)에서 `response.arrayBuffer()` 실제 바이트 SHA·아카이브, strict UTF-8 파서 확인, Content-Length 실제 바이트 불일치/잘못된 인코딩은 저장 전 거부. [test `84601229`](https://github.com/ansqhd5774-Choi/zgmini/commit/84601229d2d148d6214467d46029ebb5eff7c206)에서 text() 호출 금지·원문 SHA·길이 mismatch·invalid UTF8 fail-closed 검증. 정확 2파일 source-only, 기존 아카이브 불변·보호·FRED CSV 계열·게시 산식 변경 0.
+- **PR/검증 상태:** HEAD `84601229d2d148d6214467d46029ebb5eff7c206`, [Node CI #45016160377](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45016160377) 실행 중(기록 시점), [원인·범위 설명](https://github.com/ansqhd5774-Choi/zgmini/pull/1183#issuecomment-7078296486). 실제 운영 공급자 GET/PC 보관/SQLite/D1/Controller·배포 쓰기 0. 실BEA `T11500/Q/A463RD` 조회 승인·원본 SHA/readback과 별개인 **소스 보안·무결성 결함만 수정**.
+- **독립 계속:** QFR 단일키 #2089 원문 승인 댓글 부재, BLS WPSFD42 B 수집 승인 미확보는 운영효과 범위만 보류. 기존 BEA 제조업 #2703 실PC PASS 재사용. 단계 상태 1/5 DONE·2 IN_PROGRESS 유지.
+
 ### 2026-11-22 — QFR one-key B proposal pins corrected and control main integrated
 
 - **QFR 게시 후보 소스 통합 완료:** [control PR #2708](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2708) 정확 HEAD `2e4d08c66ea7b549936cef7b49380918647ccb21`를 소스-only squash MERGED, control main [`6299bed3425229e40264320f0c5be2d933d27fd7`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/6299bed3425229e40264320f0c5be2d933d27fd7). 파일은 `approvals/publications/pc-publication-34db72af-680c-4129-b6ee-8a7f31e5c40a.json` 및 `tests/w05-qfr-publication-draft.test.mjs` 정확 2개; 전체 10개 QFR publisher 파일 SHA·한 키·retry=0·Provider=STORED_SQLITE_ONLY 계약 유지.
