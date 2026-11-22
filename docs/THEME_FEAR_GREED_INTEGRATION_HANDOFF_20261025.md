@@ -1,3 +1,19 @@
+## 2026-11-22 KST — 41차 5단계 최종 완료 (운영 모바일 실제 검증 확보)
+
+### 증거·최종 상태
+
+- **기존 승인 기능 5단계 중 5단계 완료**: (1) 기존 공개10 공통 갱신/D1/GET, (2) 신규 AI 비공개 계산·불변 저장/readback(15점), (3) 비공개 Reader 소비 및 설정형 공개 승인 경계, (4) 실제 운영 홈/상세 PC와 390px 모바일 API/UI 대조, (5) 등록부/공유 입력/산식 버전 분기/ID별 실패 격리/private·public 저장/공통 Reader/화면 연결 및 확장 절차 인계.
+- **운영 모바일 신규 실증**: main 기반 검증 전용 Draft [PR #1468](https://github.com/ansqhd5774-Choi/zgmini/pull/1468), head `7d6713d6aea5b86c6e2be9bb1636af7116eded28`, [GitHub Actions Run #45006804045](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45006804045), Job `137160095068`의 정확한 `Validate W03 production theme API and hydrated 390px home/detail (read-only)` step `completed/success`. 로그 `W03_PRODUCTION_MOBILE_PASS`의 8개 항목: `API_10X252`, `DETAIL_10_SCORES`, `DETAIL_LEGEND`, `DETAIL_CHART`, `DETAIL_390_NO_OVERFLOW`, `HOME_10_SCORES`, `HOME_CHART`, `HOME_390_NO_OVERFLOW`. API `READY` 공개10×252/2026-11-20, 상세 헤더 최신 관측일 2026.11.20·공개10개, 홈/상세 10개 점수는 각각 정수/소수 한 자리 표시 계약대로 같음. SVG 각1, 문서 horizontal overflow=false, 순위 행 viewport 이탈0, JS 예외0.
+- **실제 사진**: 같은 Run의 [artifact #14748366086](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45006804045/artifacts/14748366086)에서 `w03-production-mobile/detail-390.png`, `home-390.png`, `result.json` 직접 다운로드 후 시각 확인. 실제 Production 데이터를 쓰며 소개 popup은 기존 bootstrap sessionStorage 정책으로 사전에 닫음; 홈 `#strength` IntersectionObserver lazy load 구역에 scrollIntoView 진입 후 검사. 정상 데이터 뒤에 가짜 페이지/막대 렌더링을 사용하지 않음.
+- **첫 실패와 수정 연결**: [Run #45006246208](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45006246208)은 W03 테스트 전에 기존 `tests/production-assets-network-r1.mjs`의 `/inflation/` React `#418` 문제로 STOP. 테스트를 기존 검사 앞으로 이동하되 검사를 삭제하지 않음. [Run #45006490250](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45006490250)의 W03는 API10×252·상세 390px/10점·범례·SVG·overflow 모두 PASS, 홈의 소개 팝업 미처리/IntersectionObserver 미진입으로 `waitForFunction 30000ms` FAIL. 실제 실패 PNG에서 팝업 가림과 미진입 확인 후 기존 `zgmini-about-intro-dismissed-r1`·`#strength` 진입만 시험에서 수정. 최종 W03 step PASS.
+- **전체 workflow 구분**: Run #45006804045 자체의 `ui` Job 결론은 `failure`; W03 step 다음에 실행된 기존 `production-assets-network-r1.mjs`가 `/inflation/` 390px React hydration error `#418`을 재현하여 FAIL. 이는 별도 인플레이션 UI 문제이고 W03 운영 모바일 PASS를 취소하지 않음. 전체 CI PASS·PR 병합·운영 배포를 주장하지 않음.
+- **운영/수정 범위**: 검증용 main 기반 Draft/NO MERGE [PR #1468](https://github.com/ansqhd5774-Choi/zgmini/pull/1468)은 신규 읽기 전용 `tests/w03-production-mobile-browser-r1.mjs`과 기존 browser workflow의 트리거·시험 step·artifact 경로만 변경. Production 웹소스·Cloudflare·D1·PC·Writer·테마 산식·권리·예약/공개 상태 변경 **0**. 기존 W03 장기 기능 브랜치 대량 분기 PR #714 병합하지 않음.
+- **별도 후속 범위**: 비공개 AI `15점/PARTIAL`, 공개 승인 없음·미출시, 향후 163개 테마 선정·등록·승인·검증 순차 확대, 다른 방법론 버전 추가, 독립 `/inflation/` hydration 문제는 이번 W03 5단계 종결과 무관. 가짜 AI 252점 생성·무단 공개·신규 유료 의존성/배포는 하지 않음.
+
+**판정: W03 개편 5단계 DONE 5/5 (완료조건의 개수; 작업량 비율 아님).** 운영 데이터·홈/상세 모바일 실제 검증 완료와 후속 비공개 AI 데이터/승인 한계는 별개로 기록. W03 추가 필수 실행 없음. 검증용 Draft PR은 병합 대상이 아니며 원담당의 별도 판단 전 그대로 보존.
+
+---
+
 ## 2026-11-22 KST — 40차 잠정치 혼입 회귀 경로 최신 main 판정
 
 - **요청 목표**: 4단계 홈·상세 실제 화면과 연계된 잠정치 표시 계약에서 신규 코드 결함이 남았는지 구분. 기존 2026-11-21 공개10×252/API 직접 조회, PC 실렌더, CI 390px mock 4/4 PASS는 재사용.
