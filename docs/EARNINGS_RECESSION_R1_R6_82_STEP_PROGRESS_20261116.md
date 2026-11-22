@@ -31,6 +31,13 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — BEA unit strict T11500 CI completed and real-input proof boundary
+
+- **CI 최종 회수:** [Node CI #45007254215](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45007254215) `completed/success`, 정확 BEA unit PR #1183 HEAD `c5016c806fc2593ffa0d838c4eabab2401481566` (BEA NIPA `T11500` 필수 + 회귀시험). PR은 OPEN/Draft/미병합 유지. 코드/CI PASS는 운영 원본·D1 API/UI 검증 완료가 아님.
+- **승인 증거 범위 조회:** 현재 앱/제어 저장소 Issue 텍스트에서 `T11500`, `A463RD`, `BEA_UNIT_SOURCE` 검색 시 정확 대상 실PC BEA API 원문 영수증/해당 공급처 호출 승인 근거는 찾지 못함. 이는 조회 범위 결과이며 전체 이력 부재 확정이 아님. [PR #1183 최신 결론](https://github.com/ansqhd5774-Choi/zgmini/pull/1183#issuecomment-7077147590).
+- **원래 목표 잔여:** 기존 승인된 BEA NIPA `T11500/Q/A463RD` 실제 응답의 분기·단위·배율·값을 기존 저장 FRED 원문과 비교하여 실제 원본 동치를 입증, 승인된 원자료 보관·계산·게시 연결. 검증 모듈의 모의값만으로 source 계약을 바꾸거나 새 GET/아카이브/D1 쓰기를 승인된 효과로 간주하지 않음.
+- **운영 효과:** 이번 회수·원장 기록 외 공급자 GET/SQLite·D1 쓰기/Controller 설치/배포 **0**. 개편 5단계 `1/5 DONE`, 2단계 진행 중. 독립 WPSFD42 B·QFR 게시 B·BEA mfg Controller B 승인 조건 계속 별도.
+
 ### 2026-11-22 — BEA NIPA T11500 identity fail-closed correction
 
 - **직전 CI 완료 회수:** [BEA unit PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183) CL_UNIT 소문자 호환 수정 HEAD `f87c34c471c9366467700ad18e0356dedc68a1c0` [Node CI #45006529649](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45006529649) `completed/success`. 해당 source CI 성공은 실BEA API 원문 동치 및 운영 게시 성공 증거가 아님.
