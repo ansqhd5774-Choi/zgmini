@@ -280,3 +280,13 @@
 ## 기록 관리
 
 새 완료 증거는 이 문서의 상태표와 날짜별 기록에만 추가하고, 완료 조건은 계획서에서만 변경한다. 기존 71단계 파일은 과거 보존 원장으로 유지한다.
+
+## 2026-11-22 — R2 자연 Core 실값 조회 경로 최소화 (#2739)
+
+- **완료 기준 유지:** #2728 B 설치는 이미 성공했으나 자연 Core가 그 뒤 계산·저장한 R2의 실값은 아직 직접 조회하지 못함. 기존 1·3단계 DONE, 2 진행, 4·5 미완료(2/5) 보존. 이전 증거를 무효화하거나 #2728/Census #28을 재실행하지 않음.
+- **정확 키 확인:** 기능 저장소 `worker/market-public-projection-store.mjs`에서 R2 공개 키 `detail:inflation:v1` 확인; 후보7 `detail:inflation-causal-candidates-7:r1`와 구별. 저장 테이블은 `market_public_snapshots_v1`, 원본 `body,stored_at`.
+- **기존 A 조회 범위 확인:** 설치 허용목록에는 `inflation19-runtime-readonly`, `inflation7-d1-readback-readonly`, `core-status` 등이 있으나 R2 저장된 `asOfDate/score/trend`를 직접 반환하는 operation은 확인되지 않음. 공급자 호출/재설치 없이 해당 단일 키 조회를 위한 제어 저장소 [Draft PR #2739](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2739) 신규 소스 후보 작성.
+- **PR #2739 범위:** 제어 전용 `codex/w01-inflation-r2-readback-20261122`, `config/operations.json` A/light 1개 등록, `controller/operations.mjs` import/dispatch 2줄, 신규 `controller/inflation-r2-local-readonly.mjs`, 신규 `tests/w01-inflation-r2-local-readonly.test.mjs`; 기본 키 제한 로컬 SQLite 읽기·`PRAGMA query_only=ON`, R2 평가일/마지막점 비교와 Source·Core/Writer 보고서의 제한 메타데이터. GitHub source-only이며 **CI 성공·운영 Controller 설치·실제 A 실행·R2 데이터/D1/UI 성공이 아님**. PR base main 비교 4파일, 생성 후 source HEAD `6f7bceed2b42a5fbaac41ec8046fcfd8f277f2e4`.
+- **독립 장애 분리:** #2729 보호 상태 Drift는 #2728의 설치 시각과 중첩, 설치 후 #2730 동일 조회 보호 불변 PASS로 확인되어 현재 지속 장애로 확장하지 않음. R2 계산 실값 미확인은 별개의 문제.
+- **외부 검증 경계:** 현재 공개 `/economic-indicators/inflation/` HTML은 hydration 전 placeholder로 보이며, `/api/inflation-candidate-inputs` 직접 웹 조회는 도구 `DisabledError`. Production 오류/성공으로 단정하지 않음.
+- **다음 필수 실행:** #2739의 단위 테스트/소스 CI를 실제 확인하고, 현행 Controller 설치본 SHA·변경 3개 운영 파일의 CAS·백업/롤백·기존 권한과 resource lease를 확인하여 정규 최소 B 선택 설치. 이후 고유 R2 A 요청 1회로 로컬 평가일·마지막점·실행 시각 판정, 필요시 실제 실패 조건만 수정. 정상일 때만 정확 R2 D1 및 Production API/PC·모바일 대조. 새 승인·임의 운영 쓰기/재수집 없음.
