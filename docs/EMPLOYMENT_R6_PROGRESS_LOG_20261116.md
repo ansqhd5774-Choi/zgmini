@@ -2257,3 +2257,12 @@
 - **기존 증거 재사용 및 진단 선택:** #2631에서 이미 RAW 구조적 완전성은 확인됐고 #2643의 동일 대규모 읽기 작업은 60초 timeout이었으므로 반복 요청하지 않는다. 현 단계 원인 분리는 `RAW_51_600_COMPLETE / PIT_HISTORY_SELECTION_UNATTESTED`로 유지한다. PIT-07 History 2,880키의 실제 가용시각·정본 lineage를 임의 생성하거나 신규 History 쓰기/게시·산식 변경하지 않는다. DOL National 공식 역사 XML 최신일 미전진 문제는 별개 3단계 과제로 유지한다.
 - **독립 4단계:** 기존 Production D1 body와 Writer SHA 일치는 #2673에서 검증됐지만 실제 클라이언트 화면·29개 원값·차트 마지막 점 비교는 미완료. 유료 브라우저 크레딧 부족 외 새 Production 결함은 확인되지 않음.
 - **판정:** 1·2단계 DONE(2/5), 3단계 IN_PROGRESS, 4·5 NOT_DONE. 이번에는 PC A/B 신규 요청, 운영 코드·DB·D1·예약·배포 변경 없음. 다음에는 **실제 승인 읽기 경로가 반환할 수 있는 PIT History 최신 51지역×8주 및 52주 전 비교 주차·가용시각 요약**을 먼저 확인하고, 자격이 검증된 신규 관측만 기존 Writer 정상 경로로 반영한다.
+
+
+## 203. 3단계 — 기존 실PC PIT 키 결과에서 2025-07-26 누락 실측 회수 (2026-11-22 KST)
+<!-- W04-STEP3-20261122-PIT-FIRST-MISSING-EVIDENCE-REUSED -->
+- **새 A/B 없이 기존 PC 실제 JSON 회수:** [실PC Run 44575710220](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/44575710220-1-seat-6.json), `PASS/EMPLOYMENT_R6_READONLY_STAGE_COMPLETED`의 `result.pit04KeyReview`를 원본에서 확인했다. `coreKeys=30651`, `coreHistoryMissing=2880`, `missingCandidateInternalMatch=2625`, `missingWithoutCandidate=255`, `evidenceTotal=2881`, `pageSize=8`, `evidenceTruncated=true`, `rawPitAttested=false`, `repairAuthorized=false`. 전체 첫 탈락 키를 이 8행 표본만으로 확정하지 않는다.
+- **실제 특정 누락 키:** 제공된 표본에서 `STATE_INITIAL_CLAIMS`의 `2025-07-26` 주 AK/AL/AR/AZ/CA/CO/CT는 `MISSING_HISTORY_NO_CANDIDATE`, `coreHistoryMissing=true`, `rawPitAttested=false`였다. `2026-10-17` NE는 별개 `CANDIDATE_CURRENT_CONFLICT`로 분리한다. 이 실제 History 누락은 기존 Production `STATE_CLAIMS_BREADTH`가 `2025-07-19` 마지막 점을 표시했던 현상과 시간상 연결되고, `2026-11-07`까지 완비된 RAW/CURRENT 51×600과 대조했을 때 **RAW 부족이 아니라 저장 PIT History 선택 이후의 공백**이라는 가설을 강하게 지지한다. 신규 Runtime 전 구간의 동일 결과 또는 2025-07-26의 전 지역 51개 누락을 입증한 것은 아니다.
+- **정확 연결 계약:** `scripts/pc-writer/employment-r6-one-year-stage.mjs`는 `employment-r6-observation-reader.mjs`의 `observationHistory`와 `selectAsOfRevisions`를 이용해 저장 PIT 가용시각·실제 retrieval 시각으로 고른 History만 `stateClaimsBreadth`의 현재4주/전년4주×51개 필수 산식에 전달한다. 따라서 RAW 구조적 완비와 공개 History 출력을 혼동하거나 `CURRENT` 값을 History에 임의 복사해서는 안 된다.
+- **다음 실행 범위:** 새 진단을 추가하기 전 이미 허용된 `employment-r6-candidate-stage-readonly`의 내부 키 표본·기존 PIT 판단을 재사용하고, 실제 운영 선택 입력이 현 판정과 같은지의 readback 근거를 확보한다. 누락 2,880키의 과거 가용시각·정본 해시가 검증되기 전 History 쓰기/게시·정상 READY 판정은 금지한다. 독립 DOL National 관측 최신성과 4단계 실제 브라우저 검증은 미완료 유지.
+- **진행 상태:** 1·2 DONE(2/5), 3 IN_PROGRESS, 4·5 NOT_DONE. 이번에는 검증된 기존 PC 결과 재해석 및 원장 기록만 수행; 새 PC 실행·운영 코드/DB/D1/배포 변경 없음.
