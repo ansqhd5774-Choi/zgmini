@@ -46,7 +46,7 @@
 
 - **실제 실패:** NIPA 값 검증 Draft [PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183) HEAD `24fba1342a4b21134ad854418c58ea72c9ba4d67` [Node CI #45017322395](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45017322395) 최종 `completed/failure`, Build·Type check SUCCESS, Regression 5417 tests 중 PASS 5406, FAIL 1, SKIP 7, TODO 3. 유일한 실패: `tests/earnings-bea-unit-nipa-equivalence-r1.test.mjs:65`의 잘못된 숫자 그룹핑 거부 테스트. `0,250`이 숫자 형식에 통과해 `BEA_UNIT_NIPA_VALUE_INVALID` 대신 `BEA_UNIT_NIPA_VALUE_MISMATCH` 발생.
 - **원인·최소 수정:** 쉼표가 있는 숫자도 선행 0의 `0,250` 그룹핑을 허용하던 정규식 조건. 기존 소스 비교기 단일 파일만 [commit `e29c7e3`](https://github.com/ansqhd5774-Choi/zgmini/commit/e29c7e397d24d786e24d075a578db194256bbcf4)로 고쳐 그룹핑 첫 자리 `[1-9]`를 요구. 오프라인 동일 정규식 확인에서 정상 `0.250`, `1,234.50`, `1234.50`, `-1,234.50` 통과·잘못된 5종 모두 거부. 값·비교 단위/계열/산식·원자료 변경 없음.
-- **후속 CI:** 새 HEAD [Node CI #45017550567](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45017550567) 실행 중(기록 시점); 최종 결과 회수 전 PASS 선언 금지. 이번 수정은 소스 전용이며 운영 PC·SQLite·D1·Provider·Cloudflare 변경 0. W05 단계 상태 1/5 DONE, 2단계 IN_PROGRESS·순차26/82·개별35/82 유지.
+- **후속 CI:** 새 HEAD [Node CI #45017550567](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45017550567) 최종 `completed/success` 및 job `check=success` 확인. BEA NIPA 숫자 파서 소스 회귀는 통과했으나 실제 BEA 공급자 원자료 수집·SQLite·D1 게시·사이트 검증으로 간주하지 않음. 이번 수정은 소스 전용이며 운영 PC·SQLite·D1·Provider·Cloudflare 변경 0. W05 단계 상태 1/5 DONE, 2단계 IN_PROGRESS·순차26/82·개별35/82 유지.
 
 ### 2026-11-22 — BEA NIPA numeric comma normalization safeguard
 
