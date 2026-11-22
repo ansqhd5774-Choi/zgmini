@@ -128,6 +128,13 @@
 - **오류 정정:** 이전 조회 때 #2669 댓글/결과가 아직 없어 `STATE_UNKNOWN`이라고 기록했으나 이후 완료 영수증 수신이 확인됨. 미수신은 당시 관측 상태였지, 설치 실패나 유지보수기 장애의 입증 원인이 아님. #2662 `SELECTIVE_NONSCOPED_DIFF`와 #2665 `SELECTIVE_MAIN_SOURCE_HASH_MISMATCH`는 별도 실패로 기록 유지.
 - **아직 완료 아님:** 설치 완료는 물가 D1 실제 body/stored_at·Census 보관 헤더·원자료 복구·R2 Writer/Production UI 검증의 완료가 아님. 다음은 설치된 명령 `inflation7-d1-readback-readonly` 및 `inflation-census-m3-archive-headers-readonly`의 정확 operation 이름을 현재 config/dispatcher에서 재확인하고, 각각 고유 A급 정상 요청·JSON/TXT 결과 회수. 5단계 `1 DONE/2 IN_PROGRESS/3~5 NOT_DONE` 유지.
 
+## 2026-11-22 — 설치 후 W01 D1·Census 실제 A급 읽기 요청
+
+- **설치본 operation 확인:** 제어 `9c084bf032dee10c0172646619559f641c1e422a`의 `config/operations.json`과 `controller/operations.mjs` 직접 조회. 정확 2개 A/light 이름은 `inflation7-d1-readback-readonly`(90s), `inflation-census-m3-archive-headers-readonly`(60s). 두 모듈은 readonly이고 별도 provider/DB/D1 쓰기 없음.
+- **중복 방지:** 과거 Census 요청 [#2619](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2619)→[#2620](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2620) 동일 requestId는 구 Controller의 `OPERATION_NOT_ALLOWED`로 종료 확인. 신규 명령은 현재 설치 후 처음 실행하는 고유 A급 작업으로 발행.
+- **신규 고유 A 요청:** 고정 public source `ansqhd5774-Choi/zgmini main@2eb796da811d0e074ca0cabab8e2cad9502bff43` 기반 [D1 Issue #2671](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2671) `requestId=pc-ff69e9ef-a316-46c7-b0b3-268b198f628e`; [Census Issue #2672](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2672) `requestId=pc-28af9cac-95c4-47f0-92f1-3bd65089aec4`. 요청 생성 후 최초 결과 댓글 조회는 미수신. **설치 성공이 D1 데이터 조회 성공이라는 뜻은 아니며 결과 조회 전까지 미확인.**
+- **검증 대상:** D1 키 `detail:inflation-causal-candidates-7:r1` 조회에서 `d1StoredAt,d1BodySha256,sourceVersion,ready,stale,indicators`와 status/code 검증. Census는 원본 2025·2026 보관 헤더 모양/원본 SHA/연도별 누락 확인. 각각 JSON/TXT와 실제 실행 SHA 9c084bf0…를 확인하고, 문제시 독립적으로 처리. 전체 개편 1 DONE / 2 IN_PROGRESS / 3~5 NOT_DONE.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
