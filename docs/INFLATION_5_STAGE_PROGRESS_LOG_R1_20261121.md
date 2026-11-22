@@ -150,6 +150,14 @@
 - **가설과 현재 미확인 구분:** `scripts/pc-writer/inflation-causal-candidate-census-m3.mjs`의 생산 파서는 selector/date 필수 소비 헤더의 고유성만 요구함. Controller 진단도 필수/날짜 헤더 중복을 기준으로 `HEADERS_INVALID` 처리했으나, 결과가 **중복된 열의 정확 이름**은 공개하지 않음. 중복 헤더 2건이 모두 소비 열인지 여부와 실제 행 선택 가능성은 추가 증거 없이 확정 불가. 기존 파일 SHA 보존한 읽기 전용 소비 헤더 이름·중복 횟수 진단이 다음 최소 관측. 무작정 재수집·파서 완화·가짜 데이터 채우기 금지.
 - **다음 단계:** 기존 승인된 정규 readonly 진단 범위로 중복 헤더 키/소비 컬럼 명확히 구별 → 정상 MTM/TI 행 확인 → 기존 Writer 복구 및 로컬 readback → 저장자료 계산→D1 7/7·API/UI. 단계 `1 DONE/2 IN_PROGRESS/3~5 NOT_DONE` 유지.
 
+## 2026-11-22 — Census #28 중복 필수 헤더 최소 읽기 진단 소스 준비
+
+- **실제 운영 증거 재사용:** [A #2675](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2675#issuecomment-7076697982)의 Census 2025·2026 원자료 4개가 SHA로 보존되었고, 4개 전부 `HEADERS_INVALID`, `duplicateHeaderCount=2`, `missingRequired=[]`, `hasMonthlyDate=true`. [D1 #2674](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2674#issuecomment-7076698907)는 `PASS`지만 ID 28 `PENDING`, 6/7 READY. 둘 다 운영 데이터 변경·공급자 호출 없음.
+- **코드 조건 대조:** 운영 중인 `controller/inflation-census-m3-archived-headers-readonly.mjs`의 `classify`는 5개 필수 선택 키와 존재하는 날짜 키(`time_slot_date`, `time`)가 각 정확 1회인지 요구함. 모든 필수 키 존재·날짜 존재인데 `HEADERS_INVALID`이므로 **적어도 하나의 소비 헤더가 중복**됨은 논리적으로 확정. `duplicateHeaderCount=2` 전체 중 어떤 고정 키가 반복되는지, 2025/2026 헤더별 실제 이름은 결과에 미포함. 미사용 메타데이터 충돌만으로 발생한 오류라고 단정하지 않음.
+- **최소 소스 수정:** 제어 전용 브랜치 `codex/w01-census-consumed-headers-diagnostic-20261122`, [PR #2677](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2677), 코드/테스트 2파일만. 기존 진단의 반환값에 `duplicateConsumedHeaders` 배열 추가: 허용된 고정 selector/date 헤더명 중 복수 등장한 키만 반환. 공급자 임의 헤더·원자료 행·관측값·비밀·경로는 출력하지 않음. 테스트에서 선택/날짜 중복과 미사용 메타데이터 중복을 독립 검증. 생성 시점 CI C996 [run #45004775433](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45004775433), Controller Maintenance [run #45004775408](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45004775408) 대기/진행; 미검증 PASS로 표현 금지.
+- **권한/운영 구분:** PR은 source-only이며 **운영 Controller 변경 없음**. 추가 설치가 필요하면 현시점 설치 SHA·lease 확인 후 승인된 정확 범위·백업/롤백 및 고유 B 계약이 필요. 기존 4파일 B 설치 #2669를 새 소스 설치 승인으로 확대 해석하거나 반복하지 않음. 다음 실제 원인 판정은 신규 진단이 정규 운영 적용된 후 해당 A를 한 번 읽어 증빙. 이미 확보한 #2674/#2675 결과 반복 실행하지 않음.
+- **남은 과제:** 중복 소비 컬럼 식별 → 기존 파서/공식 원본 정의 비교 → 최소 교정/원본 보존 → Census #28 저장자료 복구 → D1 7/7/생성 시각 검증. 5단계 상태 `1 DONE / 2 IN_PROGRESS / 3~5 NOT_DONE`.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
