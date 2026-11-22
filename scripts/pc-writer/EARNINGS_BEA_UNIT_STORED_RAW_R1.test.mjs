@@ -158,3 +158,23 @@ test('half-written archive is preserved, not automatically healed or overwritten
     assert.equal(fs.existsSync(files.meta),false);
   }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
 });
+
+test('dangling CSV or metadata symlink fails closed as unsafe, not missing',async()=>{
+  const pcBase=root();
+  try{
+    const captured=await captureBeaUnitSourceOnce({pcBase,storedAt:AT,
+      fetchImpl:async()=>response()});
+    const files=beaUnitRawPaths({pcBase,sourceSha:captured.sourceSha});
+    for(const file of [files.csv,files.meta]){
+      const before=fs.readFileSync(file);
+      fs.rmSync(file);
+      fs.symlinkSync(path.join(files.archive,'not-present'),file,'file');
+      assert.throws(()=>readBeaUnitArchivedSource({pcBase,sourceSha:captured.sourceSha}),
+        /BEA_UNIT_STORED_PATH_UNSAFE/);
+      await assert.rejects(captureBeaUnitSourceOnce({pcBase,storedAt:AT+1000,
+        fetchImpl:async()=>response()}),/BEA_UNIT_STORED_PATH_UNSAFE/);
+      fs.rmSync(file);
+      fs.writeFileSync(file,before,{flag:'wx'});
+    }
+  }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
+});
