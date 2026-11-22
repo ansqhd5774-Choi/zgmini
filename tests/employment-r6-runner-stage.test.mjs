@@ -120,6 +120,24 @@ test("PIT-08 R6 one-year chart projects bounded 52 weekly dates and last point w
   assert.doesNotMatch(JSON.stringify(report),/"history"|"value"|"sourceHash"/);
 });
 
+test("PIT-08 last-point match fails closed for empty, missing and nonfinite values",async t=>{
+  const env=environment(t);fixture(env.core);fixture(env.candidate,{row:true});
+  const body=await stageEmploymentR6OneYear(runnerOptionsFrom(argv(env)));
+  const state=body.indicators.find(item=>item.id==="STATE_CLAIMS_BREADTH");
+  const date="2026-10-30";
+  const check=(history,value,observationDate)=> {
+    state.history=history;state.value=value;state.observationDate=observationDate;
+    return projectEmploymentR6RunnerResult({body}).stateClaimsChart.lastPointMatchesCurrent;
+  };
+  assert.equal(check([],undefined,undefined),false);
+  assert.equal(check([{date}],undefined,date),false);
+  assert.equal(check([{value:12}],12,undefined),false);
+  assert.equal(check([{date,value:NaN}],NaN,date),false);
+  assert.equal(check([{date,value:Infinity}],Infinity,date),false);
+  assert.equal(check([{date,value:12}],12,date),true);
+  assert.equal(check([{date,value:12}],13,date),false);
+});
+
 test("Runner projection ignores injected source paths, raw values and unbounded optional PIT metadata",async t=>{
   const env=environment(t);fixture(env.core);fixture(env.candidate,{row:true});
   const options=runnerOptionsFrom(argv(env));
