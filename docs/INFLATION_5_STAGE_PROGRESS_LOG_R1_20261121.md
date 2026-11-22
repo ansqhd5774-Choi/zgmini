@@ -61,6 +61,13 @@
 - **현재 실제 장애와 단계 상태:** #2649는 Draft/source-only; 이 시점 B 효과 승인·immutable 승인 manifest·실물 설치 CAS/lease·유지보수기 영수증 없음. 실제 인증된 물가7 D1 `body/stored_at`은 여전히 미확인, Census archive A와 공식 원자료 복구도 미실시. 운영 Provider/SQLite/D1/Controller 설치/공개 게시 변경 0. **단계 1 DONE / 2 IN_PROGRESS / 3~5 NOT_DONE**.
 - **다음 실행:** #2649 exact CI 결과 회수 및 기능별 회귀 검증 → 승인 범위/정확 B 효과 확인 → 설치 시점 실제 Controller SHA CAS·lease·보호 원장 및 rollback 검증 → 기존 독립 유지보수기 단일 B 적용 → 고유 물가 D1 조회 A와 Census 보관 헤더 A 각각 결과 회수 → 실제 원자료/공개 API 비교. 기존 R2 Writer 미래 날짜 문제는 독립 승인 범위로 계속.
 
+## 2026-11-22 — #2649 통합 HEAD CI 최종 3/3 확인 및 B 효과 범위 대조
+
+- **정확 HEAD 확인:** [통합 PR #2649](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2649) HEAD `8309119a13992b1e608b51e4d68d230a832e250b`를 GitHub Actions commit 조회로 확인. [C996 #44964319765](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44964319765), [D05 #44964319815](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44964319815), [Controller Maintenance #44964319849](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44964319849) 모두 **completed/success, 3/3**. 과거 대기 표기는 이 확인으로 대체. source-only이며 운영 설치 증거는 아님.
+- **승인 효과 대조:** `main`의 기존 승인 `approvals/controller-updates/565ddbd4ebfc46c88fb7dbaa810fd545656c6306.json`은 이전 설치 `38503532… → 565ddbd4…`의 W04 고용 D1 조회 **1파일** 승인만 명시. 통합 목표 `8309119a…`의 Census·물가 D1 4파일에 대한 승인으로 전용할 수 없음. `main`의 `approvals/controller-updates/8309119a13992b1e608b51e4d68d230a832e250b.json` 및 `approvals/controller-selective-targets/8309119a13992b1e608b51e4d68d230a832e250b.json`는 조회 당시 404. 이는 해당 두 경로가 없다는 사실이지 다른 모든 승인·실시간 PC 상태가 부재한다는 단정은 아님.
+- **결과/제약:** [#2649 검토 패킷](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2649#issuecomment-7071230576)은 `SOURCE ONLY / PROPOSED, NOT APPROVED_B`로 명시. 현시점 실PC installed CAS·lease·동일효과 승인 및 실행 영수증은 미확인. 별도 순차 설치·임의 PC Issue/명령을 실행하지 않았으며 D1/Census live 조회·원자료 복구·게시 변경도 없음. 단계 **1 DONE / 2 IN_PROGRESS / 3~5 NOT_DONE** 유지.
+- **다음 필수 실행:** 기존 다른 유효 승인까지 해당 4파일·2개 고정 읽기 효과에 적용 가능한지 확인하고, 정확 B 승인 및 현시점 CAS·lease·백업·복원 계약을 갖춘 후 독립 유지보수기로 통합 단회 설치. 이어 신규 고유 A 두 건의 결과 JSON/TXT를 회수하여 D1 및 Census 실제 상태 검증. 단계 4 R2 Writer는 독립 진행.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
