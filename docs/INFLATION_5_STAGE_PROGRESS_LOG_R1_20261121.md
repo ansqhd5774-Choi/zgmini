@@ -166,6 +166,13 @@
 - **B 승인·원복 후보:** 제어 [승인 PR #2680](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2680)에 `approvals/controller-selective-targets/042c4556….json` 및 `approvals/controller-updates/042c4556….json` 추가. allowFiles·customPaths는 오직 `controller/inflation-census-m3-archived-headers-readonly.mjs`; `installedSha=9c084bf0…`; `targetSha=042c4556…`; `VERSIONED_SNAPSHOT` 및 `RESTORE_INSTALLED_SHA(9c084bf0…)`, `core-status`. 승인 소스 C996 #45006242578은 최초 확인 시 PENDING; source·승인·운영 설치는 구분. 추가 B 요청·사용자 DB 쓰기·수집 호출 없음.
 - **다음 최소 동작:** 승인 PR C996 SUCCESS·main 확인→raw manifest SHA256 재검증→실제 installed CAS/lease·backup 롤백 계약 검증→새 고유 독립 B 설치→실제 영수증→추가 필드 A 조회 1회 → 소비 헤더 이름·현재 Parser selector와 대조하여 #28 복구/게시까지 수행. 5단계 `1 DONE/2 IN_PROGRESS/3~5 NOT_DONE` 유지.
 
+## 2026-11-22 — Census 소비 헤더 정밀 진단 승인/설치 요청 #2681
+
+- **확인된 고정 소스:** [PR #2677](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2677)의 Census `duplicateConsumedHeaders` readonly 검사 코드/테스트 CI 2/2 PASS. 현재 설치된 `9c084bf032dee10c0172646619559f641c1e422a`에 진단 모듈 **1파일만** 덮는 [선택 source #2679](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2679), 부모 9c084, target `042c45567d31c5ec620c9e13b154fc3f08218774`, diff 1파일, 별도 C996 PASS.
+- **승인 원본:** [B 승인 PR #2680](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2680) main merge `c4af55aa8f806a090499ef80eb5bc8f72a67f5aa`. 두 승인 JSON main 재조회, allowFiles 1경로·`customPaths` 1경로·직계 부모 SHA·승인 ref·`VERSIONED_SNAPSHOT`·`RESTORE_INSTALLED_SHA(9c084…)`·`postOperation=core-status` 일치. 원본 manifest UTF-8 SHA256 `76309bfd9e0d5ecdb029af556352d7586453628d70d522b2e5b1a3f77a54656b`, allowFiles fingerprint `f739edcadc153cb5da4c27c007de9181076f2f135fb93fbe099ae09fe4439ed6`, 변경 파일 SHA256 `e3efced7442397d6599fe93b718c1f995083fc79b7cec25d10ca2e199be567ba` 직접 검증. 승인 PR C996 #45006242578은 마지막 조회 `pending`으로 **통과 아님**; 직접 불변조건 확인과 소스 CI PASS를 근거로 승인 소스 main 반영했음을 구분.
+- **정규 B 요청:** [Issue #2681](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2681), `requestId=pc-update-1d91e683-8860-4e5f-b8d0-55e99051f3ac`, operation `controller-update`, label `pc-maintenance`, 목표 `042c4556…`, 상기 정확 manifest SHA256. 최초 댓글 조회는 미수신. 설치/rollback 성공 여부 **아직 미판정**; 동일 requestId 중복 발행 금지.
+- **다음 실제 기능:** #2681의 유지보수기 댓글·JSON/TXT로 status/code/actualSha/recovery/protectedState 읽기. 성공 시 설치된 `inflation-census-m3-archive-headers-readonly` 단회 A로 4개 보관 원본의 중복 *소비* 헤더 정확 이름만 확인. 해당 컬럼의 공식 스키마/운영 파서 계약 비교→필요한 최소 원자료 복구/저장 계산→D1 7/7·UI/API 검증. 단계 1 DONE, 2 IN_PROGRESS, 3~5 NOT_DONE.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
