@@ -118,6 +118,51 @@ test('Census EITS supplier uppercase headers, official missing and conflicting m
   assert.equal(items.diagnostics.available,2);
 });
 
+
+test('archived Census duplicate predicate headers are accepted only with agreement',()=>{
+  const doubled=['data_type_code','time_slot_date','seasonally_adj','category_code',
+    'cell_value','us','seasonally_adj','category_code'];
+  const valid=['TI','2026-09-01','yes','MTM','900000','1','YES','mtm'];
+  const second=['TI','2026-08-01','yes','MTM','850000','1','yes','MTM'];
+  const result=normalizeCensusM3Inventories([doubled,valid,second]);
+  assert.deepEqual(result.map(x=>[x.date,x.value]),[
+    ['2026-08-01',850000],['2026-09-01',900000],
+  ]);
+  assert.equal(result.diagnostics.invalid,0);
+  const conflict=['TI','2026-07-01','yes','MTM','800000','1','no','MTM'];
+  const categoryConflict=['TI','2026-06-01','yes','MTM','750000','1','yes','OTHER'];
+  const safe=normalizeCensusM3Inventories([doubled,valid,conflict,categoryConflict]);
+  assert.deepEqual(safe.map(x=>x.date),['2026-09-01']);
+  assert.equal(safe.diagnostics.invalid,2);
+  for(const key of ['data_type_code','time_slot_date','cell_value','us']){
+    const malformed=[...doubled,key];
+    assert.throws(()=>normalizeCensusM3Inventories([malformed]),/CENSUS_M3_HEADERS_INVALID/);
+  }
+});
+
+test('two-year Census raw archives remain intact when duplicate selectors agree',async t=>{
+  const fixture=base();t.after(fixture.clear);
+  const doubled=['data_type_code','time_slot_date','seasonally_adj','category_code',
+    'cell_value','us','seasonally_adj','category_code'];
+  const quotaFetch=async url=>{
+    const year=Number(new URL(url).searchParams.get('time'));
+    return response([doubled,['TI',year+'-09-01','yes','MTM',
+      year===2025?'700000':'900000','1','yes','MTM']]);
+  };
+  const out=await collectCensusM3Inventories({
+    base:fixture.writer,censusKey:'test-key',quotaFetch,now,
+  });
+  assert.equal(out.status,'SAVED_READBACK');
+  assert.equal(out.providerRequests,2);
+  assert.equal(out.count,2);
+  assert.deepEqual(out.diagnostics.map(d=>d.available),[1,1]);
+  for(const info of out.provenance){
+    const original=fs.readFileSync(path.join(fixture.writer,
+      'inflation-causal-candidates-r1',info.archive));
+    assert.deepEqual(JSON.parse(original.toString('utf8'))[0],doubled);
+  }
+});
+
 test('Census partial official year preserves usable month and archives all response years',async t=>{
   const fixture=base();t.after(fixture.clear);
   const quotaFetch=async url=>{
