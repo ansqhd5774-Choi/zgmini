@@ -2295,3 +2295,12 @@
 - **독립 ETA539 검증:** 기존 RAW/CURRENT 60주×51지역 비교 `checkedKeys=3060`, `MISSING_CURRENT=0`, `VALUE_DIFFERENT/HASH_DIFFERENT/REVISION_DIFFERENT=0`, CURRENT가 비교 RAW보다 신규인 `CURRENT_NEWER_THAN_RAW=3060`; `rawPitAttested=false`이므로 과거 History 적격 증거는 아님. 지역과 National의 공급처·주차·계산 경로를 분리한다.
 - **후속 실제 행동:** 원래 National XML 수집기는 현 요청 계약대로 공식 XML 유효일을 유지하고, 향후 같은 제공물에서 진짜 최신 숫자가 확인되면 기존 Collector→Writer→D1 경로로 전진 검증. 발표 PDF를 별도 canonical 수집원으로 추가하거나 주기를 변경하려면 실제 데이터 계약·원본/해시·공개 범위를 확인해야 하며 현 작업에서 승인 없는 source 교체를 하지 않는다. 4단계 Production 실제 브라우저 렌더링 미검증 유지.
 - **단계 판정 변경 없음:** 1·2 DONE(2/5), 3 IN_PROGRESS, 4·5 NOT_DONE. 신규 PC A 요청은 원본 1건(재접수 동일 requestId), 운영 코드/DB/D1/스케줄·배포 수정 없음.
+
+
+## 207. 3단계 — DOL 공식 대시보드와 기존 r539cy XML의 독립 게시 경로 검증 (2026-11-22 KST)
+<!-- W04-NOV22-DOL-DASHBOARD-VS-R539CY-SOURCE-CLASSIFICATION -->
+- **공식 2개 제공 경로 교차검증:** DOL ETA [Unemployment Insurance Data Dashboard](https://oui.doleta.gov/unemploy/DataDashboard.asp)는 2026-11-22 조회 화면에서 `Seasonally Adjusted Initial Claims (11/14/2026) = 203,000`을 표시한다. 수치 링크는 [weeklyRedirect.php](https://oui.doleta.gov/unemploy/weeklyRedirect.php)로 이어지며 2026-11-19 공식 Weekly Claims PDF를 제공한다. PDF 표(6페이지)는 2026-11-14 초기청구 203k/4주평균 197.75k, 2026-11-07 계속청구 1,763k/IUR 1.1%이며 발표본 자체에서 정확한 관측일을 구분한다.
+- **기존 승인 XML과 구분:** [claims.asp](https://oui.doleta.gov/unemploy/claims.asp/)는 National/State 및 HTML/Spreadsheet/XML 출력 선택을 제공하고, 기존 수집기는 `wkclaims/report.asp`에 `level=us,final_yr=2026,strtdate=2025,enddate=2026,filetype=xml`로 정식 폼 POST한다. 직접 GET [report.asp](https://oui.doleta.gov/unemploy/wkclaims/report.asp)는 사용자 폼 입력 없는 요청으로 거부되며 이는 기존 **POST** 요청 불량의 증거가 아니다. 2026-11-22 실제 실PC #2697의 POST XML 4계열 최신 숫자 주차는 2026-10-24로 모두 같고 `RAW_EQUALS_RUN_PARSER`/원문 hash 연결이 입증되어 있음.
+- **차이의 위치:** 동일 미 노동부 내 **뉴스 발표/대시보드 자료는 11월 14일**, **기존 r539cy XML 본문의 최신 숫자는 10월 24일**. 수집 빈도·산식/파서 오류나 PC 미접속으로 설명할 증거는 없고, 현재 확인된 첫 불일치는 **공식 자료 제공 경로 간 최신 숫자 주차**다. 단, r539cy 제공 시스템의 구체 내부 갱신 장애/의도적 지연 원인은 확인되지 않아 추정하지 않음.
+- **허용 범위 판단:** 현재 승인된 XML과 검증된 과거 원문/PIT를 보호하고 DOL News Release PDF를 별도 canonical raw로 임의 치환하거나 미검증 과거 availableAt을 부여하지 않는다. 새로운 파서·raw schema·공개 계약을 승인 없이 적용하지 않으며, 같은 XML에 신규 유효 숫자가 나타날 때 정규 수집/Writer/D1을 재검증한다. 독립 4단계 API/브라우저 상세 대조는 웹 GET/렌더 도구 제한으로 미검증 상태를 유지.
+- **원장 판정:** 실제 PC #2697 성공/원문 검증과 별도로 **공식 사이트의 2026-11-14 최신 공개 상태**를 독립 검증했다. 이 회차는 제공물 차이의 최초 확인 지점을 좁힌 조사 성과이며, 운영 코드/DB/D1/API·UI/예약 변경 및 새 A/B 요청 0건. 1·2 DONE(2/5), 3 IN_PROGRESS, 4·5 NOT_DONE.
