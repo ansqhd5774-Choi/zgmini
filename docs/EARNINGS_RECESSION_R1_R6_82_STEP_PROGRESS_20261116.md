@@ -42,6 +42,14 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — QFR one-key B proposal pins corrected and control main integrated
+
+- **QFR 게시 후보 소스 통합 완료:** [control PR #2708](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2708) 정확 HEAD `2e4d08c66ea7b549936cef7b49380918647ccb21`를 소스-only squash MERGED, control main [`6299bed3425229e40264320f0c5be2d933d27fd7`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/6299bed3425229e40264320f0c5be2d933d27fd7). 파일은 `approvals/publications/pc-publication-34db72af-680c-4129-b6ee-8a7f31e5c40a.json` 및 `tests/w05-qfr-publication-draft.test.mjs` 정확 2개; 전체 10개 QFR publisher 파일 SHA·한 키·retry=0·Provider=STORED_SQLITE_ONLY 계약 유지.
+- **관련 CI 실제 종결:** [W05 focused #45014769337](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45014769337) 및 [C996 #45014769371](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45014769371) **2/2 SUCCESS**. 원격 main readback에 후보 publisherSha `2f4a8227ecfc954d6c72ecbc6b56242c709a7f0f` (확인된 앱 main) / operationalSha `1e52876f5112c4a58a43273d264588755b7b9402` (실PC Writer A #2704 관측) 및 main manifest blob `71be23550c7b3e26e9bb1d9c931dbe60b4704367`, 시험 blob `e11346c72c32062d16517350a55bc2c42301d305` 확인. 새 manifest **원문 바이트 해시**는 추가 검증 필요하며 과거 `c8b38246...` 승인 후보 raw hash 재사용 금지.
+- **운영 승인·실행 엄격 분리:** [QFR 승인 Issue #2089](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2089) 최신 댓글에서 새 requestId+manifest raw SHA256에 일치하는 `ZGMINI_B_PUBLICATION_APPROVED` 독립 owner 댓글 미확인. 후보 `approval.grade=B` 필드는 실행 승인 자체가 아님. 현재 installed Writer SHA는 #2704의 **fixed checkout 관측**이며 실행 직전 CAS·lease·소스/SQLite freshness·checkpoint·원본 SHA 재확인 필요. 이번 D1/SQLite/Provider·Controller·Cloudflare 운영 쓰기 **0**.
+- **추가 완료 증거 재사용:** [BEA 제조업 A #2703](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2703) `PASS/BEA_MFG_ARCHIVE_SHA_METADATA_READONLY`, 원문 SHA `ebaf93f7a1e526cabae22388ed96d280d94eb58fdd4ddf484325bf651c59bf9b`, `2026-Q2`, 102행, provider/SQLite/D1 업무 쓰기 0. 재실행 불필요.
+- **FIRST UNFINISHED:** QFR 1키 효과에 대한 정확 B owner GO / workflow activation·실PC stored SQLite preflight → 고유 1회 게시 영수증 → D1/Worker/API/UI. WPSFD42 별도 B GO, BEA unit 원본 실측은 독립 미완료. W05 5단계 `1/5 DONE`, 2단계 진행 중.
+
 ### 2026-11-22 — Final bounded BEA GetData source CI and W05 BLS approval readback
 
 - **최신 source CI 실제 종결:** [Node CI #45009234318](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45009234318) `completed/success`, job `check` SUCCESS, 실패 step 0. BEA unit [PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183) exact HEAD `9ddce0b9bd65264707008724ab25121cfe81bb75` OPEN/Draft/미병합. 오프라인 `T11500/Q` fixed request spec·분기/단위/값 비교 source CI 완료. 원자료 실제 취득/저장/게시 증명으로 해석하지 않음.
