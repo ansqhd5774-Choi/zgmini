@@ -1,5 +1,13 @@
 # W06 UI·Reader — 실제 적용·화면 완료 5단계 진행원장 (2026-11-21 개편)
 
+### 2026-11-22 — W06 5단계 UI 종결 판정·업스트림 실제 미확인 분리
+
+- **W06 완료 증거와 마지막 유효 결과:** [#1470](https://github.com/ansqhd5774-Choi/zgmini/pull/1470) 수정 main `8756ef33b02d88b203dd34b4259b58ac7298816e`에 포함, [#1471](https://github.com/ansqhd5774-Choi/zgmini/pull/1471) 390px·1440px Production 6기간 총12 상태와 1440px hover PASS [Actions #45020347751](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45020347751). 공개 `/api/market-score` HTTP200/SUCCESS, `/api/market-score/observations?period=1D` HTTP200/READY 실제 1점 `2026-11-22T00:00:50.969Z`, 원시 `45.137344974152676`→표시 `33.0` 일치. 로컬 [PC #2724](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2724) 동일 날짜1점/계산시각, [PC #2726](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2726) D05 마지막 계산시각 정확 일치; 기존 검사 재요청 없음.
+- **정본 종료 범위:** W06 독립 UI·Reader의 현재 실제 1D 빈 차트 장애는 수정·Git Integration으로 활성 화면 동작·실PC 관측 계보와 일치하는 출력까지 확인. 1점이기에 2점 이상의 추이선 생성 안 함. W06 1~5단계의 **UI 소유 완료 조건 DONE (5/5=100%)**, 다른 기능 점수·원자료/Publisher 운용 정상화 완료 선언이 아님.
+- **독립 업스트림 미확인:** 2026-11-22 당일 신규 Core marketReady 실행 여부·입력 checkpoint 변화·`composite-archive-local` LOCAL_STORED/UNCHANGED, 15분 제한 때문에 실제 계산점 누락 여부, `publishCompositeObservedArchive` VERIFIED/BACKLOG/PENDING_VERIFIED_MARKET, 로컬/D1 개별 `current` 및 `composite-observed:2026-11-22` 본문 SHA256/stored_at, Cloudflare 활성 Deployment ID는 여전히 미확인. 공개 API/화면 일치는 해당 날짜 1개 점의 출력 검증이지 D1 개별 키 해시 동등성을 보증하지 않음.
+- **증거 경계 재확인:** [Writer Draft #1185](https://github.com/ansqhd5774-Choi/zgmini/pull/1185)·[실함수 시험 Draft #1228](https://github.com/ansqhd5774-Choi/zgmini/pull/1228)는 15분 미만 실제 값 변화점 보존 누락을 격리 테스트로 재현하였으나 11/22 운영에서 이 현상이 발생했다는 증거는 아님. 변경은 15분 보존/일100점 승인 계약 영향이 있으므로 무승인 병합/운영 설치 금지. [PC #2567](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2567)의 Writer B 설치 PASS는 `LOCAL_ONLY=true`, 실제 게시 readback이 아님.
+- **책임 있는 다음 작업:** Writer·게시 운영 담당은 기존 승인 PC 원장의 11/22 최초 계산 이후 실행·계산·게시 상태와 인증된 D1 개별 키 readback이 가능한 경우 그 결과를 조회해 정상 1점인지 실제 누락인지 판별한다. 현재 등록 A `writer-publication-evidence-readonly`는 ER1 전용이므로 composite D1 readback 대체로 호출하지 않음. 무관한 타 도메인 D1 조회 작업/자유 SQL/허용목록 우회 금지. 실제 증거로 운영 결함이 입증됐을 때만 기존 Writer 담당과 동일 승인 절차로 최소 수정·정규 검증. 별도 미확인이 W06 이미 PASS인 UI의 계속 대기 조건이 되지 않음.
+
 ### 2026-11-22 — W06 Production 390/1440 및 6기간 읽기 전용 Chromium 회귀 성공
 
 - **시작 상태:** W06 3/5 DONE(60%), 4 PARTIAL/5 NOT_DONE. 기존 1D 실제 단일점 UI 수정 [PR #1470](https://github.com/ansqhd5774-Choi/zgmini/pull/1470)의 main 병합 `8756ef33b02d88b203dd34b4259b58ac7298816e`과 1920px Production hover PASS 보존.
@@ -39,7 +47,7 @@
 
 <!-- W06-ACTIVE-FIVE-STAGE-PLAN-20261121 -->
 
-**현재4/5단계 완료·5단계 잔여 인계 진행 중.** 완료 조건 기준 4/5(80%)이며 실제 작업량·전체 데이터 종단의 완료율과는 구분한다. 과거22/75(29.3%)는 당시 증거 범위의 완료 계수로 보존한다. 전체 데이터 종단이 완료됐다는 의미도 아니다.
+**W06 UI·Reader 책임 범위 5/5단계 DONE (100%).** 운영 Writer·D1 세부 계보의 미확인은 독립 UPSTREAM_UNVERIFIED 항목으로 유지하며 전체 수집·저장·게시 복구가 100%라는 의미가 아니다.이며 실제 작업량·전체 데이터 종단의 완료율과는 구분한다. 과거22/75(29.3%)는 당시 증거 범위의 완료 계수로 보존한다. 전체 데이터 종단이 완료됐다는 의미도 아니다.
 
 저장소 `ansqhd5774-Choi/zgmini` / 브랜치 `codex/ui-improvements` / 개편 전HEAD `cfbb592fa3e94b0eba96cf79167501151b2dd44c`. 목적·실행 기준은 [개편 계획](DASHBOARD_INPUT_EVENT_SCORE_TREND_EXECUTION_R4_20261116.md)을 따른다. **이 상단 표와 NEXT가 유일한 현재 인계 정본**이다. 아래 과거 기록 중간의 '현재 인계 정본', #44/#64 NEXT와75행 체크리스트는 역사 기록으로 취급한다.
 
@@ -49,7 +57,7 @@
 | 2 | 이미 병합한 UI/Reader 수정의 실제 적용 확인 | 관련 변경이 활성 Production 산출물에 포함됐는지 확인하고 실제 공개 동작 대조. 이미 정상인 변경의 재구현·재배포 없음 | DONE — GitHub merge SHA의 공식 Cloudflare Production Build SUCCESS + 공개 활성 JS #1460/#1461 + 공개 API/카드 일치; 비활성 #1462 재마운트 금지. 실제 active Deployment ID 직접 readback은 별도 UNVERIFIED |
 | 3 | 실제 남은 W06 소유 결함만 마무리 | 재현되는 Reader/갱신/카드/차트 결함만 최소 수정·관련 회귀·정규 적용. 업스트림 제약은 별도 전달 | DONE — 기존 #1459/#1460/#1461/#1462 최소 수정·CI·main/Production 적용 재사용, 활성 저장형 API 6기간 READY 및 최신값 일치, 신규 W06 Reader 소스 실패 미재현; 미확인 운영 입력/실화면은 4·5단계에서 별도 유지 |
 | 4 | PC·모바일 실화면 종합 확인 | 영향받은 화면의 값/단위/날짜/카드 최신점/차트 끝점·기간/결측·역행·overflow가 공개 저장 응답과 일치 | **DONE (영향 범위)** — 2026-11-22 실Production Chromium 390/1440, 1D·1W·1M·3M·6M·1Y 총 12상태 전부 차트 SVG 표시, 빈 상태 0/overflow 0, 1D 공개 실점1개·KST 계산시각·3.5배 표시 33.0 일치. 1440 실제 hover tooltip PASS; 390에서는 고정 시각·점수 안내 PASS, hover tooltip `hidden`으로 별도 기록(터치 입력 검증 아님). CI #45020347751 |
-| 5 | UI 작업 종결·업스트림 잔여 인계 | W06 완료/Production 검증/Writer·데이터 잔여를 구분하고 정확한 원담당·작업·종료조건으로 정리 | PARTIAL — UI 실화면 검증 완료. Cloudflare active Deployment ID 및 SQLite↔D1 개별 키 해시/게시 원장 미확인, 같은 날 추가 계산점 부재 원인 미입증. Writer 원담당과 정규 읽기 경로의 원장 확정 후 종결 |
+| 5 | UI 작업 종결·업스트림 잔여 인계 | W06 완료/Production 검증/Writer·데이터 잔여를 구분하고 정확한 원담당·작업·종료조건으로 정리 | **DONE (W06 UI·Reader 범위)** — 원점 1개와 카드 33.0 정합, Production 390/1440 실제 12기간 및 1440 hover PASS, PR #1470/#1471 main 병합. Writer 추가 계산점·15분 보존 계약은 #1185/#1228 별도 업스트림으로 분리; 원격 D1 두 키 body SHA/stored_at/Cloudflare Deployment ID 미확인으로 별도 UNVERIFIED 유지, 이력을 임의 추가·재설치하지 않음 |
 
 ### 2026-11-22 — 1D 당일 1점 공백의 실제 코드 경로 및 Writer 승인 경계 판별
 
