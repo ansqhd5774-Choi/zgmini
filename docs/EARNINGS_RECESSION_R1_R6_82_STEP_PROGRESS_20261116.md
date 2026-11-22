@@ -42,6 +42,14 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — BEA NIPA numeric comma normalization safeguard
+
+- **실패 조건(소스에서 재현 가능):** BEA NIPA `T11500/Q/A463RD` 오프라인 비교기의 기존 `DataValue.replaceAll(',', '')`는 `1,2` → `12`처럼 잘못된 천 단위 표기까지 유효 숫자로 정규화할 수 있었다. 실제 공급자 응답이 손상됐거나 운영 결과가 잘못 게시됐다는 증거는 아니다.
+- **최소 수정:** [Draft PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183) 기존 NIPA 비교기에서 숫자 형식을 정규식으로 먼저 검증한 뒤에만 쉼표를 제거. `1,234.50` 정상 묶음은 허용하고 `1,2`, `12,34`, `1,234,56`, `1234,567`, `0,250`은 저장·게시 없이 `BEA_UNIT_NIPA_VALUE_INVALID`로 거부. 기존 정확 2파일(비교기 + 회귀시험) 소스 전용 변경.
+- **코드/시험:** [`e2388436`](https://github.com/ansqhd5774-Choi/zgmini/commit/e2388436f7d3ec112f4dda123b958b78175d31bd) 및 [`24fba134`](https://github.com/ansqhd5774-Choi/zgmini/commit/24fba1342a4b21134ad854418c58ea72c9ba4d67). 최종 HEAD `24fba1342a4b21134ad854418c58ea72c9ba4d67`, [Node CI #45017322395](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45017322395) 최초 조회 `queued`; 성공 주장 금지.
+- **운영 효과:** 실제 PC 원자료 수집·SQLite·D1·Cloudflare·Controller 변경 0. WPSFD42 기존 수집 B 제안 `PROPOSED_NOT_APPROVED`, QFR 단일 D1 key owner 승인 댓글 없음, BEA 실제 `T11500/Q/A463RD` 원본 readback 미입증. 5단계 1/5 DONE, 2단계 IN_PROGRESS·순차 26/82·개별 35/82 유지.
+- **NEXT:** 정확 HEAD의 CI 결과 회수, 오류 시 해당 범위만 수정. 유효 원자료/효과 승인이 확보되면 기존 PC 수집→원본 SHA→저장 계산→승인 D1/API/UI로 실제 연결.
+
 ### 2026-11-22 — BEA unit dangling-link readback guard source fix
 
 - **원인 재현(소스 조건):** [BEA unit Draft #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183)의 저장형 archive Reader는 `fs.existsSync`로 고정 CSV/meta의 존재를 먼저 검사했다. 끊어진 심볼릭 링크는 `existsSync=false`가 되어 단순 `SOURCE_MISSING`으로 잘못 분류됐고, capture의 재사용 분기도 동일한 파일명 존재를 놓쳤다. 실제 PC archive 훼손 발생을 의미하지 않는다.
