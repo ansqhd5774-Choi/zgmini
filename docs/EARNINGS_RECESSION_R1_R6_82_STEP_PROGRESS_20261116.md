@@ -31,6 +31,13 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — BEA T11500 exact PC reader scope gap confirmed
+
+- **실제 소스 조건 대조:** `scripts/pc-writer/consumption-r5.mjs`는 BEA `NIUnderlyingDetail/U20306` + `NIPA/T20600`만 `Frequency=M`으로 호출하고 소비 입력 SQLite까지 저장한다. `worker/data-health.mjs`는 BEA `NIPA/T20804/M` + `NIPA/T10106/Q` 조회만 갖는다. 둘 다 W05 BEA unit `NIPA/T11500/Q/A463RD`에 대한 승인된 PC 실원문 호출·저장 경로가 아니며, 방문자 Worker GET에서 공급자 수집을 추가하는 우회도 금지.
+- **실패 조건 구체화:** 기존 BEA API 키 존재 또는 다른 BEA 테이블의 성공 영수증을 해당 T11500 분기 읽기 승인/원본 SHA와 혼동하면 안 됨. 현재 `EARNINGS_BEA_UNIT_NIPA_EQUIVALENCE_R1.mjs`는 이미 제공된 BEA JSON/FRED CSV만 비교하는 offline 기능이며 직접 공급자를 호출하지 않는다. 따라서 실BEA 원문 부재는 테스트 실패가 아니라 **정확 T11500/Q 공급자 읽기 효과 미확인**에 기인. [PR #1183 원인 기록](https://github.com/ansqhd5774-Choi/zgmini/pull/1183#issuecomment-7077247406).
+- **최소 다음 필수 실행:** 기존 공급처 인증과 정규 PC 수집기·Writer를 재사용해 승인 범위가 확인된 경우만 NIPA T11500/Q (최근 5분기 필요 연도) 단회 원문 GET→바이트 SHA/수집 시각·저장 파일 재조회→FRED stored raw와 분기/값/단위 대조. 신설 별도 예약/계산기/Worker 요청 GET/DB schema/D1 쓰기 없음. 새로운 해당 공급자 호출 승인 근거 없으면 승인 효과로 오인하여 요청하지 않음.
+- **검증 현황:** PR #1183 head `c5016c806fc2593ffa0d838c4eabab2401481566` [Node CI #45007254215](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45007254215) SUCCESS 재사용; OPEN/Draft/미병합. 실PC 원문/저장/게시 미확인, 이번 운영 쓰기 0. 개편 1/5 DONE·2 IN_PROGRESS.
+
 ### 2026-11-22 — BEA NIPA/FRED public published latest quarter crosscheck
 
 - **신규 독립 자료 대조 (공개 읽기):** [BEA NIPA Table 1.15 / line7 재게시 DBnomics](https://db.nomics.world/BEA/NIPA-T11500/A463RD-Q)에서 계열 `A463RD-Q`, 2026-09-30 최종 개정·2026-10-01 재조회, 최신 `2026Q2=0.250`; [FRED 공식 공개 계열](https://fred.stlouisfed.org/series/A463RD3Q052SBEA)은 BEA 계정코드 `A463RD`·원단위 Dollars·분기·계절조정 및 최근 `2025Q2=0.216`, `2025Q3=0.219`, `2025Q4=0.222`, `2026Q1=0.231`, `2026Q2=0.250`. **BEA-origin mirror와 FRED의 계열 정체성·최신 분기·값은 일치**, 최신 5개 분기 양쪽 원본 전체 동치는 아님.
