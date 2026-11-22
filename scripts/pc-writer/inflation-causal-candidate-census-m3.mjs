@@ -39,14 +39,18 @@ export function normalizeCensusM3Inventories(payload){
   const headers=payload[0].map(x=>typeof x==='string'?x.trim().toLowerCase():null);
   const mandatory=['data_type_code','seasonally_adj','category_code','cell_value','us'];
   const dates=['time_slot_date','time'].filter(key=>headers.includes(key));
-  // Only columns consumed by this selector need an unambiguous header.
-  // Census may include irrelevant provider metadata; an empty or repeated
-  // *unused* label must not discard genuine MTM/TI observations for a year.
-  // Keep all selector, geography and date columns strict to prevent mixing.
   const required=[...mandatory,...dates];
-  if(dates.length===0||required.some(key=>headers.filter(x=>x===key).length!==1))
-    throw fail('CENSUS_M3_HEADERS_INVALID');
-  const columnIndices=required.map(key=>headers.indexOf(key));
+  // Observed archived EITS responses duplicate both predicate selectors in
+  // the header. Only these two fixed fields may repeat, and only when all
+  // copies agree within each row. Never choose an arbitrary conflicting copy.
+  const duplicateSafe=new Set(['seasonally_adj','category_code']);
+  const positions=new Map(required.map(key=>[key,
+    headers.flatMap((name,index)=>name===key?[index]:[])]));
+  if(dates.length===0||required.some(key=>{
+    const count=positions.get(key).length;
+    return count===0||(count!==1&&!duplicateSafe.has(key));
+  }))throw fail('CENSUS_M3_HEADERS_INVALID');
+  const columnIndices=required.map(key=>positions.get(key)[0]);
   const byDate=new Map(),conflicts=new Set();
   const diagnostics={missing:0,invalid:0,duplicate:0,conflict:0,ignored:0,available:0};
   for(const values of payload.slice(1)){
@@ -54,6 +58,11 @@ export function normalizeCensusM3Inventories(payload){
       diagnostics.invalid++;continue;
     }
     const row=Object.fromEntries(required.map((key,i)=>[key,values[columnIndices[i]]]));
+    const selectorConflict=[...duplicateSafe].some(key=>{
+      const copies=positions.get(key).map(i=>String(values[i]??'').trim().toLowerCase());
+      return new Set(copies).size!==1;
+    });
+    if(selectorConflict){diagnostics.invalid++;continue;}
     if(String(row.data_type_code??'').trim().toUpperCase()!=='TI'||
        String(row.category_code??'').trim().toUpperCase()!=='MTM'||
        String(row.seasonally_adj??'').trim().toLowerCase()!=='yes'){
