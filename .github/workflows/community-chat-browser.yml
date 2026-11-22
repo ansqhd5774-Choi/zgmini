@@ -88,6 +88,8 @@ jobs:
         run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
       - name: Install browser for offline UI interactions
         run: npx playwright install --with-deps chromium
+      - name: Validate W03 production theme API and hydrated 390px home/detail (read-only)
+        run: node tests/w03-production-mobile-browser-r1.mjs
       - name: Verify Production first-party JavaScript assets with read-only Chromium
         run: node tests/production-assets-network-r1.mjs
       - name: Start local dev UI (no remote bindings and no deployment)
@@ -111,8 +113,6 @@ jobs:
         run: node tests/employment-r6-public-browser-r1.mjs
       - name: Validate W06 latest visible theme date in mocked Chromium at 390/1440
         run: node tests/theme-visible-asof-browser-r1.mjs
-      - name: Validate W03 production theme API and hydrated 390px home/detail (read-only)
-        run: node tests/w03-production-mobile-browser-r1.mjs
       - name: Validate introduction before hydration and dismissal preferences
         run: node tests/about-intro-bootstrap-browser-r6.mjs
       - name: Validate chat UI at 390, 768, 1440 and 1920 px with mocked backend
