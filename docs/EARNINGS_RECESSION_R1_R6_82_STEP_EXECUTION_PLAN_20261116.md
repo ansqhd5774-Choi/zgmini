@@ -24,6 +24,14 @@
 
 ## 3. 이미 확인된 증거 — 반복하지 않는다
 
+<!-- W05_20261122_POST_R311_PCLATEST -->
+
+**2026-11-22 현행 관측 우선(아래 11월 21일 SHA·조회는 이력):** BEA 제조업 R3-11은 Controller 선택 설치 [#2701](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2701)와 독립 Core [#2702](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2702), 새 고유 archive A [#2703](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2703) `PASS`로 **저장 CSV 원문 SHA·102행·2026-Q2 분기 metadata 읽기 완료**. 운영 Controller SHA는 관측 시점 `80e39771bbfe72062e47f9b421f7d3c777ab7068`; 읽기 성공은 신규 수집·게시 결과가 아니다.
+
+WPSFD42 R3-04의 최신 고정 Writer checkout은 [#2704](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2704) `HEAD=config.source=checkpoint=1e52876f5112c4a58a43273d264588755b7b9402`, 설치 3파일 원문 SHA 3/3 동일. 구형 PIN은 [제어 PR #2705](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2705) `main@290cd34370749f0479e89c7c9e791457100c8266`에서 정정, 집중 CI/C996 2/2 SUCCESS. **B 효과 manifest는 여전히 `PROPOSED_NOT_APPROVED`**, Provider POST·SQLite append 미실행. Writer/Controller 중복 설치·조회 재실행 금지. 이 계획의 2단계는 정확 B 효과 승인 후 단회 실제 수집→저장 SHA 검증→R3-05로 이어간다. 공개 API 현재 HTTP 상태는 금일 조회 도구 접근 실패로 불명확하며 과거 200/503은 해당 시점 기록으로 유지한다.
+
+
+
 - 기존 W05 3파일 설치 #2234/#2235/#2236 및 [실PC A #2584](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2584)/Run44870551163은 유효 근거다. 이번 원격 결과JSON은 PASS/WRITER_APPROVED_PREIMAGE_READONLY·보호 불변·provider/운영/D1쓰기0. 기존 원장의 sourceHead=config=checkpoint `a206220cc11045c24660e814124edbba9c0ff49f`, W05 R3C/R3D/Preview 3파일 hash3/3 일치 증거를 재사용한다. 이 A는 고정 checkout 증거이며 실행 중 Core PID 동일성·실제 BLS 수집 성공까지 뜻하지 않는다. source가 더 전진했다면 영향받는 출발점만 좁게 확인한다.
 - 정규 단회 수집 등록 #2245·영수증 TMP/TEMP 수정 #2252·실측 source pin 수정 [#2586](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2586)은 병합·관련 CI 성공 증거가 있다. #2586 main `0bc70e9810e68298ff8a9afb8b9b694fe92b1b7d`. 코드 등록은 수집·SQLite append 승인이 아니다.
 - 이번 제어main `approvals/w05-r304-service-b/approval.json` 직접 조회는 **PROPOSED_NOT_APPROVED**, installedSourceSha=a206220c…다. 기존 source 설치 승인에서 allowProviderCalls=false/allowDbChanges=false인 범위를 실제 POST·DB append GO로 확대하지 않는다. 과거 잘못 귀속됐다고 정정된 사용자HOLD를 현재HOLD로 복원하지도 않는다.
