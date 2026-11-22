@@ -301,3 +301,10 @@
 - [정확 B 승인/pin PR #2746](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2746) 파일 2개 작성. 선택 SHA·파일별 UTF-8 SHA256·출처 main SHA `34fb0f…`, B scope `PC_CONTROL_CONTROLLER_UPDATE`, 버전 백업/13af 원본 복원 및 사후 Core 상태 조회 고정. PR #2746 C996 source CI SUCCESS 확인, #2745 Controller Maintenance/C996 source CI SUCCESS, D05 아직 queued (확인 시점). 정규 설치 Issue는 미발행.
 - 2026-11-22 외부 웹 재조회: 물가 상세 페이지는 JS hydration 이전 초기 HTML만 확인, 공개 `/api/inflation-candidate-inputs`는 도구 `DisabledError`; HTTP API 및 PC/모바일 실렌더링 검증 아님. 기존 D1 7/7 유효 결과는 보존.
 - **실제 다음:** #2745 D05 완료·기존 승인·현재 설치 SHA·복구/lease 확인→#2746 B 명세 main 통합→고유 유지보수 B 1회→고유 R2 A 1회로 실제 저장 날짜/점수 비교. 설치 전 2/5 유지, 기능 정상화 100% 불가.
+
+## 2026-11-22 — R2 A 등록 Controller 정규 B #2751 단회 접수
+
+- R2 로컬 조회 소스 [#2739](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2739) main 병합, 설치본 `13af1b1e…`의 정확 3파일 선택 SHA `9e3542e616f3fa781a2d614294d6bde17c087180` [#2745](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2745) 대상 CI **D05/Controller Maintenance/C996 3/3 SUCCESS**.
+- [선택 승인 PR #2746](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2746) `main` 병합 `cb4e242dc355fff6bbf68e69b313540d6257394c` 확인. `approvals/controller-updates/9e3542e616f3fa781a2d614294d6bde17c087180.json` raw UTF-8 SHA-256 **`c6f3ed03b37b10d80e5d3963c14d62e21c3dfb2200828f6030710b77ab19f769`**, 정확 3파일 fingerprint `2b1ced19d9d72c6f8cadb23a286573110651e31a2efcb71508bf09c2ede3b0f9`; pin의 sourceMainSha/approvalRef/targetBranch/allowFiles 일치. 기존 설치 13af로 버전 스냅샷 복원 고정.
+- **정규 유지보수기 B 최초 요청:** [PC Issue #2751](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2751), requestId `pc-update-0a3936cd-387d-42fc-b559-0eca56b0a179`, target `9e3542e616f3fa781a2d614294d6bde17c087180`, 지정 manifest rawSHA로 1회 요청. 최초 후속 조회 `open / no comments`, **설치·백업·rollback/사후 A 미확인**. 동일 요청 재발행 금지.
+- 현재 R2 실제 `asOfDate/score/trend` 저장 결과와 D1/Production API·PC/모바일 렌더링은 아직 미확인. 1·3 DONE, 2 진행 중, 4·5 미완료 (2/5 유지). 다음 필수 행동은 #2751 원본 JSON/TXT/댓글 상태 회수 후 성공 시에만 신규 R2 A 고유 요청 1회 및 로컬→D1/API/UI 대조.
