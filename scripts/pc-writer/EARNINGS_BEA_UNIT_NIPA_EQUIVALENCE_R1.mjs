@@ -4,7 +4,7 @@ import {parseBeaUnitProfitCsv} from '../../lib/market-score/earnings-bea-unit-pr
 
 const SERIES='A463RD';
 const QUARTER=/^(\d{4})Q([1-4])$/;
-const NUMBER=/^-?(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d+)?$/;
+const NUMBER=/^-?(?:\d+|[1-9]\d{0,2}(?:,\d{3})+)(?:\.\d+)?$/;
 const quarterOrdinal=(year,q)=>year*4+q-1;
 
 // Pure request parameters for an already-approved existing PC BEA reader.
