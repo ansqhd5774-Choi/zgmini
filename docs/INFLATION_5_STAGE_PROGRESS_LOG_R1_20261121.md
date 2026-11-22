@@ -135,6 +135,13 @@
 - **신규 고유 A 요청:** 고정 public source `ansqhd5774-Choi/zgmini main@2eb796da811d0e074ca0cabab8e2cad9502bff43` 기반 [D1 Issue #2671](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2671) `requestId=pc-ff69e9ef-a316-46c7-b0b3-268b198f628e`; [Census Issue #2672](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2672) `requestId=pc-28af9cac-95c4-47f0-92f1-3bd65089aec4`. 요청 생성 후 최초 결과 댓글 조회는 미수신. **설치 성공이 D1 데이터 조회 성공이라는 뜻은 아니며 결과 조회 전까지 미확인.**
 - **검증 대상:** D1 키 `detail:inflation-causal-candidates-7:r1` 조회에서 `d1StoredAt,d1BodySha256,sourceVersion,ready,stale,indicators`와 status/code 검증. Census는 원본 2025·2026 보관 헤더 모양/원본 SHA/연도별 누락 확인. 각각 JSON/TXT와 실제 실행 SHA 9c084bf0…를 확인하고, 문제시 독립적으로 처리. 전체 개편 1 DONE / 2 IN_PROGRESS / 3~5 NOT_DONE.
 
+## 2026-11-22 — #2671/#2672 A급 미접수 원인 확인 및 #2674/#2675 정상 접수
+
+- **원인 증거 확인:** [#2671](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2671#issuecomment-7074839095)과 [#2672](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2672#issuecomment-7074839332)의 공통 프로세스 접수 진단을 읽고 직접 기존 Issue 라벨도 조회. 두 원본은 생성 시 `pc-job` 라벨이 없었음. 최신 `.github/workflows/pc-job.yml`에서 `opened` 시 `contains(issue.labels, 'pc-job')` 필수, `labeled`는 `ZGMINI_PC_JOB_LATE_LABEL_ENABLED=true`일 때만 허용. 따라서 원본은 정상 Runner 정규 접수 조건 미충족. 지난 결과 댓글 없음; 기존 requestId 재접수·사후 라벨 트리거 금지.
+- **기존 실행 원본 보존:** 공개 기능 저장소 `ansqhd5774-Choi/zgmini main@2eb796da811d0e074ca0cabab8e2cad9502bff43` 재조회. 설치된 Controller `9c084bf032dee10c0172646619559f641c1e422a`의 고정 A/light 명령 2개 및 기존 B 설치 PASS 유효.
+- **정상 원자 접수 조치:** [물가 7 D1 #2674](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2674) `requestId=pc-113fbd26-c431-45a9-9c17-bb2771b052f9`, [Census 2025/2026 헤더 #2675](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2675) `requestId=pc-3fb57cd5-9ca4-4f57-9344-cc1292f2f5c3`를 각각 고유 ID·동일 고정 source·`labels=['pc-job']` 원자 생성. GitHub 응답 및 사후 Issue 조회에서 둘 다 `pc-job` 라벨 실제 존재 확인.
+- **결과 판정 경계:** 새 요청의 초기 결과 댓글은 아직 없으므로 현재 D1 `body/stored_at`, 지표 상태, Census 헤더 SHA/연도 판정은 미확인. 댓글 또는 결과 JSON/TXT로 `status/code/actualExecutionSha`와 작업 별 세부값을 회수하여 실제 기능 상태 판단. 재요청/Provider 쓰기/SQLite 쓰기 없음. 5단계 `1 DONE/2 IN_PROGRESS/3~5 NOT_DONE` 유지.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
