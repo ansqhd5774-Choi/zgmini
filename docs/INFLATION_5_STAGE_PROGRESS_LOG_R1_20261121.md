@@ -75,6 +75,13 @@
 - **정확 상태:** 통합 source CI 3/3 success, 현재 #2649 Draft `SOURCE ONLY / PROPOSED, NOT APPROVED_B`. 현행 통합 4파일 설치를 포괄하는 유효한 사용자 승인·동결 manifest·실행 시점 lease는 **미확인**. 따라서 운영 설치 B 또는 미설치 A 조회는 생성하지 않음. 원자료·D1·공개 게시 변경 0. 단계 1 DONE, 2 IN_PROGRESS, 3~5 NOT_DONE.
 - **다음:** 명시 승인 여부 최종 결정 후 정확 4파일 B manifest와 현재 PC CAS/lease·백업/롤백을 검증해 단일 독립 유지보수기 적용. 실제 설치·사후 조회 확인 후 2개 신규 고유 A 결과 회수.
 
+## 2026-11-22 — 사용자 통합 B 설치 승인·롤백 고정 및 #2657 승인 소스 준비
+
+- **사용자 명시 승인:** Census header A + inflation7 D1 A를 추가하는 [#2649](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2649) 정확 4운영파일의 단일 Controller B급 설치를 승인하고, 문제 시 즉시 복구 가능한 백업·롤백 동반 진행을 지시함. 범위 밖 Writer/DB/D1 쓰기·provider/scheduler 변경은 승인 대상 아님.
+- **정규 승인 명세 소스 준비:** 제어소스 `main@7a887124c591c81f661cfc4e56a167a3003d5c8a` 기반 별도 [PR #2657](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2657)에 `approvals/controller-selective-targets/8309119a13992b1e608b51e4d68d230a832e250b.json`과 `approvals/controller-updates/8309119a13992b1e608b51e4d68d230a832e250b.json` 두 파일 작성. 대상 `8309119a…`, 이전 설치 `565ddbd4…`, 승인 PR `#2657`, 변경 4파일 SHA256, `manifestFingerprint=55eb2222ee575ea1a6b7c4df89229d8a531977a9b229df60c10c021288be579c`, `VERSIONED_SNAPSHOT`, `RESTORE_INSTALLED_SHA(565ddbd4…)`, `postOperation=core-status`, 선택 Source branch/SHA를 명시. SHA256 목록 canonical JSON 해시 재계산 일치.
+- **아직 운영 적용 아님:** PR #2657 승인 파일 검사 C996 [run #44965753719](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44965753719)는 최초 조회 시 `queued`. main 수락, 승인 manifest raw byte hash 고정, 유지보수기 실제 installed CAS/lease, PC B 영수증 및 사후 A 결과는 **미완료**. PR 파일 준비/사용자 동의만으로 설치 성공이나 자동 롤백 완료를 주장하지 않음. 다른 Controller 설치가 먼저 발생해 CAS가 변경되면 기존 manifest 강행 금지.
+- **다음 필수 실행:** #2657 검증 성공 및 main 정확 반영→현재 운영 CAS/lease와 기존 설치 충돌 검증→새 고유 정규 단일 B 요청→실제 설치·필요 시 원복·코어 사후검사 영수증 회수→각 고유 D1/Census A 실행→R2 독립 검증. 개편 단계 `1 DONE / 2 IN_PROGRESS / 3~5 NOT_DONE` 유지.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
