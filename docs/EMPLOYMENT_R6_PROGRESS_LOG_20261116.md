@@ -2413,3 +2413,11 @@
 - **후속 변경 후보:** [제어 PR #2760](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2760) 4파일 복구 후보. 이번 조회에서 PR의 최신 HEAD·CI·mergeability와 4파일 승인 manifest의 실제 경로/해시를 검증하지 못함. 추정 경로 `approvals/writer-updates/w04-r54-stored-event-fourfile-candidate-20261122.json`의 main 조회는 404였으므로 해당 경로를 설치 인자로 사용하지 않음.
 - **다음 실행:** (1) #2760 실제 diff/HEAD/CI 및 최종 manifest 위치 확인 (2) 4파일 import closure·정확 before/after SHA와 W01 보호 파일 비변경 검증 (3) 유효한 기존 B 승인/CAS·lease·백업·복구 확인 후 단회 설치 (4) 자연 Writer의 R54 이벤트 current/day 원문→D1→공개 API→PC·모바일 마지막점 검증. DOL National 공식 XML 최신성은 별도 3단계 미해결이며, R54 설치를 R6 공급처 정상화로 혼동하지 않음.
 - **이번 회차 효과:** GitHub 정본 계획·원장 및 #2758 요청 재조회, 후속 manifest 경로 확인 시도. PC/SQLite/D1/배포 변경·새 B 요청 없음.
+
+
+## 220. R54 4파일 승인 manifest 정본 확인 (2026-11-23 KST)
+<!-- W04-20261123-R54-FOURFILE-MANIFEST-VERIFIED -->
+- 제어 저장소 `main`의 [4파일 승인 정본](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/approvals/writer-updates/w04-r54-fourfile-import-closure-20261122.json)을 GitHub 연결로 직접 읽음. 파일 Git blob SHA `f46ce8be5f17674823087aed0162229558d0b149`, `status=APPROVED_B`, `scope=PC_WRITER_APPROVED_FILE_OVERLAY_ONLY`, `candidateSourceSha=8a6dc683348ca549c110fabedd44c04d22183050`, `baseHead=baseConfigSourceSha=aabb9e85441fc1150ba572a840245ab4a05c35c4`, `runCount=1`.
+- 변경 대상 정확히 4파일: `lib/market-score/composite-model-r1.mjs`(M), `lib/market-score/employment-r54-calculation-event.mjs`(A), `lib/economic-employment-stored-display-r4.mjs`(A), `worker/market-operational-store.mjs`(M). 3파일 실패의 누락 import 대상이 정본에 포함됨. `domain-adapter-r1.mjs`, `run-local.mjs`는 별도 보호 파일로 명시. Provider/DB/D1/Task 정의 변경 모두 불허.
+- 이전 §219의 추정 manifest 경로 404는 정본 부재를 뜻하지 않음. 위 정본 위치로 정정. 다만 **manifest 존재와 APPROVED_B는 운영 설치 성공의 증거가 아님**. 이번 조회에서 실제 최신 PC CAS, 기존 동일 manifest 설치 요청/실행 영수증, HEAD CI, runtime source 결박 및 자연 Writer event 저장은 미확인. 추가 B 설치 요청을 발행하지 않음.
+- 다음 순서: 기존 동일 4파일 B 요청·결과 검색 → 현재 PC CAS/보호파일 SHA 및 기존 설치와 충돌 여부 확인 → 정규 B 단회 적용 여부 판정 → 자연 Writer current/day event·D1·API/화면 검증. 별개 DOL National 원자료 최신성은 3단계에서 독립 처리. 완료 2/5(40%) 유지. 이번 변경은 원장 문서만, PC/SQLite/D1/배포/예약 쓰기 없음.
