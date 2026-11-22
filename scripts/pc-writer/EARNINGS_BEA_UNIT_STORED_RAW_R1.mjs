@@ -83,11 +83,18 @@ export async function captureBeaUnitSourceOnce({pcBase,fetchImpl,storedAt}={}){
   const response=await fetchImpl(UNIT_PROFIT_CSV,{
     headers:{accept:'text/csv'},signal:AbortSignal.timeout(25_000)});
   if(!response?.ok||!response.body)throw Error('BEA_UNIT_SOURCE_HTTP_FAILED');
-  const size=Number(response.headers?.get?.('content-length')??0);
-  if(!Number.isSafeInteger(size)||size>100_000)throw Error('BEA_UNIT_SOURCE_TOO_LARGE');
-  const content=await response.text();
-  const bytes=Buffer.from(content,'utf8');
+  // Hash and archive the exact provider response bytes, not a decoded/re-encoded text copy.
+  const lengthHeader=response.headers?.get?.('content-length');
+  const size=lengthHeader===null||lengthHeader===undefined?null:Number(lengthHeader);
+  if(size!==null&&(!Number.isSafeInteger(size)||size<0||size>100_000))
+    throw Error('BEA_UNIT_SOURCE_TOO_LARGE');
+  if(typeof response.arrayBuffer!=='function')throw Error('BEA_UNIT_SOURCE_HTTP_FAILED');
+  const bytes=Buffer.from(await response.arrayBuffer());
   if(bytes.length<20||bytes.length>100_000)throw Error('BEA_UNIT_SOURCE_TOO_LARGE');
+  if(size!==null&&size!==bytes.length)throw Error('BEA_UNIT_SOURCE_LENGTH_MISMATCH');
+  let content;
+  try{content=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes);}
+  catch{throw Error('BEA_UNIT_SOURCE_ENCODING_INVALID');}
   const sourceSha=digest(bytes);
   const files=beaUnitRawPaths({pcBase,sourceSha});
   // Reject incompatible provider changes before adding any local artifact.
