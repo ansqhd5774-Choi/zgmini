@@ -122,6 +122,12 @@
 - **새 고유 B 원본:** [Issue #2669](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2669), `requestId=pc-update-3652629d-dd06-4e5d-a7a7-1efeb056cf9d`, 목표 `9c084bf0…`, 정확 manifest hash pin 및 `pc-maintenance` 등록. 마지막 댓글 조회 시 결과 아직 없음, 대응 상태 `STATE_UNKNOWN / RESULT_PENDING` (정확 실제 단계는 미확인). 결과 파일 404는 실패 또는 설치 여부 판정 아님. 중복 요청 금지.
 - **후속:** #2669 실제 유지보수기 결과 JSON/TXT의 status, code, actualControllerSha, recoverySha, protectedStateUnchanged, workflowEnabled 회수. PASS이면 신규 A 두건 고유 실행 후 D1/Census 저장 근거 대조. 실패 시 조건·실제 파일/backup/lease로 복구 판단. 전체 개편 단계 `1 DONE/2 IN_PROGRESS/3~5 NOT_DONE` 유지.
 
+## 2026-11-22 — #2669 실제 Controller 설치 성공·롤백 불필요
+
+- **실제 PC 설치 완료:** [제어 Issue #2669 결과 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2669#issuecomment-7071670003), [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/maintenance-pc-update-3652629d-dd06-4e5d-a7a7-1efeb056cf9d.json), [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/maintenance-pc-update-3652629d-dd06-4e5d-a7a7-1efeb056cf9d.txt) 직접 회수. `requestId=pc-update-3652629d-dd06-4e5d-a7a7-1efeb056cf9d`; `STATUS=SUCCEEDED`; `CODE=APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED`; `LAST_PASS=PASS`; `FIRST_FAIL=NONE`; `targetControllerSha=actualControllerSha=9c084bf032dee10c0172646619559f641c1e422a`; `PROTECTED_STATE_UNCHANGED=true`; `WORKFLOW_ENABLED=true`; `recoverySha=null`; `REPORT_UPLOAD=VERIFIED`. 사용자 승인 4파일 정규 설치 및 Controller 사후검사 **완료**, 롤백 수행 필요 없음.
+- **오류 정정:** 이전 조회 때 #2669 댓글/결과가 아직 없어 `STATE_UNKNOWN`이라고 기록했으나 이후 완료 영수증 수신이 확인됨. 미수신은 당시 관측 상태였지, 설치 실패나 유지보수기 장애의 입증 원인이 아님. #2662 `SELECTIVE_NONSCOPED_DIFF`와 #2665 `SELECTIVE_MAIN_SOURCE_HASH_MISMATCH`는 별도 실패로 기록 유지.
+- **아직 완료 아님:** 설치 완료는 물가 D1 실제 body/stored_at·Census 보관 헤더·원자료 복구·R2 Writer/Production UI 검증의 완료가 아님. 다음은 설치된 명령 `inflation7-d1-readback-readonly` 및 `inflation-census-m3-archive-headers-readonly`의 정확 operation 이름을 현재 config/dispatcher에서 재확인하고, 각각 고유 A급 정상 요청·JSON/TXT 결과 회수. 5단계 `1 DONE/2 IN_PROGRESS/3~5 NOT_DONE` 유지.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
