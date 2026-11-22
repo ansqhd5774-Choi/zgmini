@@ -263,6 +263,13 @@
 - **별도 공개 검증:** `https://zgmini.kr/api/inflation-candidate-inputs`의 정규 공개 GET은 현재 웹 읽기 연결에서 실패. 공개 물가 HTML은 JS 로딩 전 placeholder 상태라 렌더된 7개 값을 입증하지 못함. 연결된 Browser Use 서비스는 `insufficient_credits`로 실행 불가(별도 유료 충전 금지). 기존 D1 정확 키 [#2717](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2717#issuecomment-7078270219) 7/7 READY·stale 0은 유효하나 Production API/UI 검증으로 승격하지 않음.
 - **다음:** #2728 JSON/TXT 영수증의 `status/code/actualLocalOverlaySha/rollback/protectedState` 재조회→설치 SUCCESS면 자연 Core R2 로컬 계산 readback·D1 점수/날짜 검증 후 공개 화면 1440/390px 비교; STOP이면 정확 실패 계약만 수정. **현재 단계 1·3 DONE / 2 진행 / 4·5 미완료.**
 
+## 2026-11-22 — #2728 R2 날짜 보정 운영 Writer 실제 설치 성공
+
+- **이전 대기 판정 정정:** [Writer B #2728](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2728#issuecomment-7078499371)에는 처음 댓글 및 원격 JSON/TXT가 보이지 않았으나, 후속 조회 시 **설치 결과 영수증이 정상 게시됨**. 결과 미수신은 당시 시점의 미확인 상태이지 영구 차단이나 설치 실패가 아니며 중복 신청하지 않음. 본 건의 실제 성공은 설치기 완료 영수증으로 판단.
+- **설치 실제 결과/원장:** [#2728 / Actions #45017438158](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45017438158), [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/writer-b-source-install-80f6d6cb-3f61-44a0-acb3-867e4f6d5c9a.json)·[TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/writer-b-source-install-80f6d6cb-3f61-44a0-acb3-867e4f6d5c9a.txt) 실제 **2/2 readback**. `WRITER_B_INSTALLED_VERIFIED / WRITER_B_INSTALL_VERIFIED`, `LOCAL_ONLY=true`(원격 source push 아님), 실제 설치 로컬 overlay SHA `aabb9e85441fc1150ba572a840245ab4a05c35c4`, 기존 PC `baseHead=1e52876f5112c4a58a43273d264588755b7b9402`, candidate `2f4a8227ecfc954d6c72ecbc6b56242c709a7f0f`, `manifestSha256=c36c3765d170a9f8b89c7be682a872a56c06bb5aea415be5fd99cbfbf6ed6102`, provenance SHA `1363e56fb80c8c3e0ff755c8dd467412b7ffab6c14aa13c524dd9f39419c8149`, `recovery=NONE` (TXT). `changedPaths` **정확 2파일**: `scripts/pc-writer/run-local.mjs`와 `scripts/pc-writer/inflation-r2-trend-date-refresh.mjs`. 기존 승인 산식·PIT·가중치·Census 원자료/7개 D1은 변경 없음.
+- **정확 완료 경계:** **R2 운영 소스 설치 및 설치기 사후 검증 완료**. 다만 R2 실제 자연 Core 계산 실행, 저장된 R2 `asOfDate`와 마지막 `trend.label` 동치, D1 게시 및 Production API/UI PC·390px 모바일 실물 검증은 아직 미확인. 설치 SHA를 실서비스 데이터·UI 완료로 격상하지 않음. 이전 4단계 NOT_DONE 유지, 2단계 공개 API GET 미확인 유지.
+- **다음:** 등록된 자연 Core 기존 예약 실제 완료 후 저장된 R2 payload·projection의 `asOfDate` vs 마지막 `trend.label`을 기존 승인된 읽기 전용 경로로 비교하고, 필요하면 운영 R2 상태만 안전 A 조회로 확인. 값·날짜 동치가 확인되면 D1/Production API 및 PC/모바일 실제 화면 검증으로 4·5단계 판정. #2728 B 재실행/코드 재설치 금지.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
