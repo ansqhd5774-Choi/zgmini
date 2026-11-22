@@ -11,9 +11,12 @@ const CSV='observation_date,A463RD3Q052SBEA\n'
   +'2024-01-01,0.202\n2024-04-01,0.207\n2024-07-01,0.213\n'
   +'2024-10-01,0.220\n2025-01-01,0.231\n2025-04-01,0.250\n';
 function root(){return fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-bea-archive-'));}
-function response(text=CSV){
-  return {ok:true,body:{},headers:{get:()=>String(Buffer.byteLength(text))},
-    text:async()=>text};
+function response(text=CSV,{lengthHeader,rawBytes}={}){
+  const bytes=rawBytes??Buffer.from(text,'utf8');
+  const declared=lengthHeader===undefined?String(bytes.length):lengthHeader;
+  return {ok:true,body:{},headers:{get:()=>declared},
+    arrayBuffer:async()=>bytes.buffer.slice(bytes.byteOffset,bytes.byteOffset+bytes.byteLength),
+    text:async()=>{throw Error('HTTP_TEXT_MUST_NOT_BE_USED');}};
 }
 test('one source fetch, immutable bytes, pinned offline reread and preserved capture time',async()=>{
   const pcBase=root();let calls=0;
@@ -33,6 +36,33 @@ test('one source fetch, immutable bytes, pinned offline reread and preserved cap
       fetchImpl:async()=>{calls++;return response();}});
     assert.equal(repeated.status,'ALREADY_CAPTURED');
     assert.equal(repeated.sourceStoredAt,AT);
+  }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
+});
+test('archive SHA pins the raw HTTP response bytes without using response.text',async()=>{
+  const pcBase=root();let reads=0;
+  try{
+    const captured=await captureBeaUnitSourceOnce({pcBase,storedAt:AT,
+      fetchImpl:async()=>{reads++;return response();}});
+    assert.equal(reads,1);
+    const f=beaUnitRawPaths({pcBase,sourceSha:captured.sourceSha});
+    const actual=fs.readFileSync(f.csv);
+    const {createHash}=await import('node:crypto');
+    assert.equal(createHash('sha256').update(actual).digest('hex'),captured.sourceSha);
+    assert.equal(actual.toString('utf8'),CSV);
+  }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
+});
+test('reject declared byte-length mismatch or malformed UTF-8 before writing',async()=>{
+  const pcBase=root();
+  try{
+    await assert.rejects(captureBeaUnitSourceOnce({pcBase,storedAt:AT,
+      fetchImpl:async()=>response(CSV,{lengthHeader:'1'})}),
+      /BEA_UNIT_SOURCE_LENGTH_MISMATCH/);
+    assert.equal(fs.existsSync(path.join(pcBase,'raw')),false);
+    const invalid=Buffer.concat([Buffer.from(CSV),Buffer.from([0xff])]);
+    await assert.rejects(captureBeaUnitSourceOnce({pcBase,storedAt:AT,
+      fetchImpl:async()=>response(CSV,{rawBytes:invalid})}),
+      /BEA_UNIT_SOURCE_ENCODING_INVALID/);
+    assert.equal(fs.existsSync(path.join(pcBase,'raw')),false);
   }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
 });
 test('reject wrong SHA and broken/changed source without publishing',async()=>{
