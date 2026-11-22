@@ -82,6 +82,15 @@
 - **아직 운영 적용 아님:** PR #2657 승인 파일 검사 C996 [run #44965753719](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44965753719)는 최초 조회 시 `queued`. main 수락, 승인 manifest raw byte hash 고정, 유지보수기 실제 installed CAS/lease, PC B 영수증 및 사후 A 결과는 **미완료**. PR 파일 준비/사용자 동의만으로 설치 성공이나 자동 롤백 완료를 주장하지 않음. 다른 Controller 설치가 먼저 발생해 CAS가 변경되면 기존 manifest 강행 금지.
 - **다음 필수 실행:** #2657 검증 성공 및 main 정확 반영→현재 운영 CAS/lease와 기존 설치 충돌 검증→새 고유 정규 단일 B 요청→실제 설치·필요 시 원복·코어 사후검사 영수증 회수→각 고유 D1/Census A 실행→R2 독립 검증. 개편 단계 `1 DONE / 2 IN_PROGRESS / 3~5 NOT_DONE` 유지.
 
+## 2026-11-22 — 승인 manifest 통합 후 실제 설치 CAS 변경 대응
+
+- **사용자 명시 승인 범위 유지:** #2649 동일 4개 Controller 운영 파일(Census 보관 헤더 A + 물가7 D1 고정 A), 문제 시 버전 백업 후 롤백. Writer/DB/D1/Provider/Task 효과 없음.
+- **첫 승인 반영 완료, 무설치:** [제어 PR #2657](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2657)은 C996 성공 후 정확 2개 승인 파일이 main merge `3280c45fb91c091478b74cfc7cca12241419b333`로 반영됨. 이는 구 설치 `565ddbd4…`→구 후보 `8309119a…`용 B 파일이며 **PC 설치 성공 아님**.
+- **새 운영 증거가 구 CAS를 무효화:** 기존 다른 기능 [제어 Issue #2652](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2652#issuecomment-7071405074)는 `SUCCEEDED/APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED`, `actualControllerSha=d260aea2513902a77425344629f91575e2d950ef`, `protectedStateUnchanged=true`, `workflowEnabled=true` 및 JSON/TXT 기록을 반환. `565ddbd4… → d260aea2…` diff는 `controller/core-runtime-source-readonly.mjs`, `controller/core-runtime-source-wmi.mjs` 2파일뿐이며, 구 W01 2개 operation은 없음. 이 실증 시점 이후 구 `8309119a…` manifest 설치는 preimage CAS가 일치하지 않으므로 **실행 요청하지 않음**. [구 PR #2657 안전 공지](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2657#issuecomment-7071488002) 남김.
+- **기존 변경 보존 단일 부모 후보 재구성:** [새 source Draft #2659](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2659), `d260aea2513902a77425344629f91575e2d950ef`의 직접 자식 `6a4c1221c9a246f739a37f58f3e956aa3c61108d` (GitHub compare `ahead=1 behind=0`). 기존 W01 검증된 4개 운영 파일의 Git blob을 그대로 적용하고 소스 테스트 1개만 병행하며 `d260…`의 공통 Runtime 파일 2개를 변경하지 않음. source CI C996 #44966025628, D05 #44966025615, Controller Maintenance #44966025636 **3/3 SUCCESS**.
+- **새 승인/복구 source:** [#2660](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2660)에서 원본 `d260…`→목표 `6a4c…`, 4파일 SHA256·allowFiles fingerprint `55eb2222ee575ea1a6b7c4df89229d8a531977a9b229df60c10c021288be579c`, `VERSIONED_SNAPSHOT`, `RESTORE_INSTALLED_SHA(d260…)`, `core-status`를 고정. 최초 확인 시 승인 소스 C996 #44966077309 **in_progress**. 아직 main 승인 파일 반영/실시간 CAS·lease/B 설치 영수증 미확인으로 **운영 설치 0**.
+- **다음 필수 실행:** #2660 CI 성공→main 정확 승인 source 확인→PC 설치 시점 실제 installed CAS·lease 정규 안전 검사→고유 단일 B 유지보수기 요청→실제 설치/실패 시 원복 JSON/TXT 회수→D1/Census A 각각 단회 읽기. 단계 `1 DONE / 2 IN_PROGRESS / 3~5 NOT_DONE` 유지.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
