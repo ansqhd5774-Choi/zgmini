@@ -1,5 +1,15 @@
 # W06 UI·Reader — 실제 적용·화면 완료 5단계 진행원장 (2026-11-21 개편)
 
+### 2026-11-22 — W06 Production 390/1440 및 6기간 읽기 전용 Chromium 회귀 성공
+
+- **시작 상태:** W06 3/5 DONE(60%), 4 PARTIAL/5 NOT_DONE. 기존 1D 실제 단일점 UI 수정 [PR #1470](https://github.com/ansqhd5774-Choi/zgmini/pull/1470)의 main 병합 `8756ef33b02d88b203dd34b4259b58ac7298816e`과 1920px Production hover PASS 보존.
+- **기존 무료 검증기 활용:** 새 Runner/Cron/유료 브라우저/앱 배포 없이 기존 `.github/workflows/community-chat-browser.yml`의 Playwright job에 W06 Production 읽기 전용 단계 추가. 실제 새 검증 [PR #1471](https://github.com/ansqhd5774-Choi/zgmini/pull/1471) MERGED `92b347d265c7fee0198f16601e99f8d06149983a`. 변경은 `tests/w06-production-singlepoint-readonly-r1.mjs`와 기존 workflow만, 운영 기능코드/Writer/D1 미변경. 기존 소개 dialog가 1D 클릭을 가로막던 초기 테스트 오류는 정규 닫기 클릭으로 해결; 모바일 hover를 데스크톱 hover와 혼동하지 않도록 구분한 뒤 최종 PASS.
+- **실제 성공 증거:** [Node CI #45020347755](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45020347755) SUCCESS, [실운영 Chromium #45020347751](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45020347751) SUCCESS. `W06_PRODUCTION_READONLY_PASS`에 **390px와 1440px 각각 1D/1W/1M/3M/6M/1Y 총12상태**의 SVG 1개, empty0, 문서가로폭 390/1440으로 overflow0, 1D 공개 적법 관측1개를 각각 기록. 실제 main/Production 홈페이지 1D 33.0·2026-11-22T00:00:50.969Z(KST 09:00) 일치.
+- **정확한 툴팁 판정:** 1440px `W06_SINGLE_TOOLTIP` 출력 `visibility=visible`, `2026. 11. 22. 09:00 (계산 시각) / 33.0 / 실제 계산시각 점 · 당시 방법론 버전 미확인` 확인. 390px에서는 `visibility=hidden`; 모바일에는 `실제 관측점 1개 · ... · 33.0점` 상시 표시, 390 마우스 hover PASS라고 주장하지 않음. 실제 터치/탭 UI 별도 테스트 미실시.
+- **아티팩트:** [Run #45020347751 artifact #14753089869](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45020347751/artifacts/14753089869) 390/1440 스크린샷 및 `w06-production-readonly/results.json`; 실제 12기간/너비·값 검증 로그 보존.
+- **판정:** 4단계 영향받은 PC/모바일 너비 렌더·값·날짜·결측·기간·overflow **DONE**, 5단계 **PARTIAL**. 전체 4/5=80%. 유효 1점만 존재하는 것은 정상 공개 표현으로 해결됐으며 합성 2점 추이선 생성 없음. 원격 D1 개별 key `current`/`composite-observed:2026-11-22`의 body SHA/stored_at 및 Writer 후속 marketReady/UNCHANGED/PUBLISH 로그는 여전히 미검증. 추가 관측점 부재 이유를 추정으로 단정하거나 Writer sampling 15분 정책을 무승인 변경하지 않는다. 활성 Cloudflare deployment ID 자체도 별도 미확인.
+- **5단계 다음 실행:** 기존 PC Writer/Cloudflare 공식 인증된 읽기 전용 경로의 source SHA·로컬 published snapshot과 D1 정확 두 키 body SHA/stored_at, 계산/게시 ledger의 마지막 정상·추가 실행 여부를 비교. 1점이 적법한 최신 결과임이 확인되면 W06 UI 작업 종결과 미확인 운영 데이터 계보를 분리해 종료. 실제 변동점 저장/게시 누락 입증 시 기존 승인 원담당 최소 복구만 진행.
+
 ### 2026-11-22 — 병합 후 Production 단일 1D 실제 마커·툴팁 검증
 
 - **시작 상태:** 1~3단계 DONE(3/5=60%), 4단계 PARTIAL, 5단계 NOT_DONE. 변경 대상 소스/main SHA `8756ef33b02d88b203dd34b4259b58ac7298816e` 유지. 이번에는 기존 #1470 수정을 재구현하지 않음.
@@ -29,7 +39,7 @@
 
 <!-- W06-ACTIVE-FIVE-STAGE-PLAN-20261121 -->
 
-**현재3/5단계 완료·4단계 진행 중.** 완료 조건 기준 3/5(60%)이며 실제 작업량·전체 데이터 종단의 완료율과는 구분한다. 과거22/75(29.3%)는 당시 증거 범위의 완료 계수로 보존한다. 전체 데이터 종단이 완료됐다는 의미도 아니다.
+**현재4/5단계 완료·5단계 잔여 인계 진행 중.** 완료 조건 기준 4/5(80%)이며 실제 작업량·전체 데이터 종단의 완료율과는 구분한다. 과거22/75(29.3%)는 당시 증거 범위의 완료 계수로 보존한다. 전체 데이터 종단이 완료됐다는 의미도 아니다.
 
 저장소 `ansqhd5774-Choi/zgmini` / 브랜치 `codex/ui-improvements` / 개편 전HEAD `cfbb592fa3e94b0eba96cf79167501151b2dd44c`. 목적·실행 기준은 [개편 계획](DASHBOARD_INPUT_EVENT_SCORE_TREND_EXECUTION_R4_20261116.md)을 따른다. **이 상단 표와 NEXT가 유일한 현재 인계 정본**이다. 아래 과거 기록 중간의 '현재 인계 정본', #44/#64 NEXT와75행 체크리스트는 역사 기록으로 취급한다.
 
@@ -38,8 +48,8 @@
 | 1 | 현재 소유 범위·유효 완료 증거 확정 | 기존 27개 연결표·수정/시험/실화면 증거 재사용, 퇴역/미연결 콘텐츠와 원담당 작업 분리 | DONE |
 | 2 | 이미 병합한 UI/Reader 수정의 실제 적용 확인 | 관련 변경이 활성 Production 산출물에 포함됐는지 확인하고 실제 공개 동작 대조. 이미 정상인 변경의 재구현·재배포 없음 | DONE — GitHub merge SHA의 공식 Cloudflare Production Build SUCCESS + 공개 활성 JS #1460/#1461 + 공개 API/카드 일치; 비활성 #1462 재마운트 금지. 실제 active Deployment ID 직접 readback은 별도 UNVERIFIED |
 | 3 | 실제 남은 W06 소유 결함만 마무리 | 재현되는 Reader/갱신/카드/차트 결함만 최소 수정·관련 회귀·정규 적용. 업스트림 제약은 별도 전달 | DONE — 기존 #1459/#1460/#1461/#1462 최소 수정·CI·main/Production 적용 재사용, 활성 저장형 API 6기간 READY 및 최신값 일치, 신규 W06 Reader 소스 실패 미재현; 미확인 운영 입력/실화면은 4·5단계에서 별도 유지 |
-| 4 | PC·모바일 실화면 종합 확인 | 영향받은 화면의 값/단위/날짜/카드 최신점/차트 끝점·기간/결측·역행·overflow가 공개 저장 응답과 일치 | PARTIAL — **현재 사용자 Production 캡처 2건에서 1D 차트가 `추이 데이터 준비 중`으로 지속 비표시**. 2026-11-21 이전 시점 실Chromium 390/1440 차트·기간·overflow 0 PASS는 역사적 유효 증거로 별도 유지. 현재 API `status/reason/points` 미확인, 차트 복구 전 최신점 Tooltip 확인 불가 |
-| 5 | UI 작업 종결·업스트림 잔여 인계 | W06 완료/Production 검증/Writer·데이터 잔여를 구분하고 정확한 원담당·작업·종료조건으로 정리 | NOT_DONE |
+| 4 | PC·모바일 실화면 종합 확인 | 영향받은 화면의 값/단위/날짜/카드 최신점/차트 끝점·기간/결측·역행·overflow가 공개 저장 응답과 일치 | **DONE (영향 범위)** — 2026-11-22 실Production Chromium 390/1440, 1D·1W·1M·3M·6M·1Y 총 12상태 전부 차트 SVG 표시, 빈 상태 0/overflow 0, 1D 공개 실점1개·KST 계산시각·3.5배 표시 33.0 일치. 1440 실제 hover tooltip PASS; 390에서는 고정 시각·점수 안내 PASS, hover tooltip `hidden`으로 별도 기록(터치 입력 검증 아님). CI #45020347751 |
+| 5 | UI 작업 종결·업스트림 잔여 인계 | W06 완료/Production 검증/Writer·데이터 잔여를 구분하고 정확한 원담당·작업·종료조건으로 정리 | PARTIAL — UI 실화면 검증 완료. Cloudflare active Deployment ID 및 SQLite↔D1 개별 키 해시/게시 원장 미확인, 같은 날 추가 계산점 부재 원인 미입증. Writer 원담당과 정규 읽기 경로의 원장 확정 후 종결 |
 
 ### 2026-11-22 — 1D 당일 1점 공백의 실제 코드 경로 및 Writer 승인 경계 판별
 
