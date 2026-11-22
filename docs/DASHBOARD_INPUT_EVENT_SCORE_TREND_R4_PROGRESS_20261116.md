@@ -42,6 +42,14 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — 사용자 실화면 지속 공백: W05/Writer 원담당 실API 판별 인계 기록
+
+- **시작/종료:** W06 개편 5단계 중 3/5 DONE(60%), 4 PARTIAL/5 NOT_DONE. 사용자 실제 1D 차트 공백 2회 지속을 신규 정상화 대상 유지. GitHub main의 현재 `app/api/market-score/observations/route.ts`, `worker/market-operational-store.mjs`, `worker/breadth-paid-contract.mjs`, `lib/composite-observed-history-r1.mjs` 및 `app/dashboard-ui.tsx`를 근거로 실제 실패 분기 재대조.
+- **새 구별 증거:** `isPaidCompositeObservedPoint`는 개별 저장 계산점에 `publicSourceContract=CM_R1_PAID_BREADTH_RESTORED_R1` 및 64자 출처 SHA 없으면 paid breadth의 공개 관측점에서 배제한다. 따라서 D1에 과거 원시 점수가 남아 있어도 paid current에서 공개 허용한 계산점이 0~1개면 **의도된 1D 차트 공백**이 될 수 있다. 이 경로는 **가능한 원인**일 뿐 사용자 화면만으로 실제 현재 상태를 입증한 것은 아님. 기존 11개 독립 도메인 게시 보호 개선 [#1355](https://github.com/ansqhd5774-Choi/zgmini/pull/1355)와 [#1364](https://github.com/ansqhd5774-Choi/zgmini/pull/1364)는 GitHub PR 직접 재조회에서 둘 다 **MERGED**. 해당 source 결함 수정 반복 금지; 새 paid 이력 원장 검증만 실행 대상.
+- **정식 동일 이슈 원담당 인계 수행:** 기존 공통 게시 감사 [#1357 댓글 #7077050876](https://github.com/ansqhd5774-Choi/zgmini/issues/1357#issuecomment-7077050876)에 사용자 실화면·source 조건·개별 관측점 rights/paid marker·현재 API와 1D API 같은 시각 조회 요구·W06/Writer 분기별 완료 조건 기록. GitHub 댓글 재조회에서 정확 ID/내용 **PRESENT** 확인. **인계 기록**일 뿐 W05 대화/Runner 수신·실실행·D1 readback 증거가 아니며, 이슈 종결 상태를 임의 변경하지 않음.
+- **자동화 한계:** 공개 `https://zgmini.kr/api/market-score` 및 `/api/market-score/observations?period=1D` HTTP 원문은 현재 연결 읽기 도구들이 접근 불가, 개발 컨테이너 외부 DNS 실패. 원장에 공개값을 추측 작성하지 않고 새로운 외부 유료 browser/중복 CI/공급자 호출을 만들지 않음. 앞선 기존 Actions 재실행은 W06 전용 단계 전 `/inflation/` hydration React#418로 중단됐으며 해당 선행 차단을 1D 결함으로 확장하지 않음.
+- **남은 직접 필수 행동:** 현재 public score `overall.status/state/updatedAt` 및 1D `HTTP/status/reason/totalObservedPoints`를 **동일 관측 시각** 실제 readback. `READY >=2`인데 화면 공백이면 W06 새 결함 수정, rights 거부면 공개 보존/비인가 과거점 복원 금지, approved paid 실제 관측점 부족이면 W05/Writer가 로컬 계산/게시 실행 원장을 확인. 1D 차트 정상 복구와 마지막점 tooltip 실제 표시 증명 후 #4 DONE, #5 W06 종료 판정. 운영 코드·DB·D1·배포·계약 변경 없음.
+
 ### 2026-11-22 — 1D 실사이트 API 판별을 위한 기존 CI 재실행·실제 차단 단계 식별
 
 - **시작/종료:** W06 3/5 DONE(완료조건60%), 4 PARTIAL, 5 NOT_DONE. 사용자가 제공한 2026-11-22 실화면 2건에서 카드33.0/1D 선택/차트 `추이 데이터 준비 중` 재현을 진단 목표로 유지. GUI 툴팁 확인 작업은 차트 부재로 아직 수행 불가.
