@@ -8,7 +8,8 @@
 - **전담 브랜치 커밋:** `de8ea782b6a3cb841d09a57e473befa52994087d`, `3a522e424fc7b6d3eb7998c5527ddded0984bf7c`, `09ed3e2ee0af0740004f8102cf0577f691b9f265`. 기존 원본 blob SHA: dashboard `196cace83565e8b425386f50324d811e65758db9`, chart `ad08348ef8c628b9581394f6a7131e3fb64296da`.
 - **통합 보호:** 전담 브랜치가 최신 main에 비해 크게 diverged이므로 해당 브랜치 통째 병합 금지. 최신 main에서 필요한 3개 파일만 분리한 [PR #1470](https://github.com/ansqhd5774-Choi/zgmini/pull/1470) 사용. PR HEAD `fdd207dd5d2ff7e95441cc38ad34e72f73299afe`; CI/merge/Cloudflare Deployment/실화면 hover는 이 기록 시점 미확인.
 - **별도 미확인:** 하루 추가 Core 계산 여부와 marketReady, 저장 서명/15분 sampling, Writer 출판 ledger, SQLite↔D1 개별 key readback, paid breadth 계보 전체, 390/1440 실화면 및 1D 마지막점 hover. 추가 유효점이 없는 운영 정상 조건인지 Writer 누락인지는 아직 확정하지 않음. #2724/#2726 동일 조회 재요청 금지.
-- **다음:** PR #1470 관련 CI 확인 → 안전한 main 통합·Git Integration 배포 → Production PC/모바일 실화면의 단일점·실제 시각/값·tooltip 및 나머지 기간 확인. 별도 Writer/D1 증거에 의해 실측 누락이 확인될 때만 기존 승인의 최소 원인 수정.
+- **후속 확인(동일 작업):** PR #1470에서 Node.js CI [Run #45018289299](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45018289299) SUCCESS, Mocked API 브라우저 UI [Run #45018289445](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45018289445) SUCCESS. PR #1470은 Squash MERGED; main 병합 SHA `8756ef33b02d88b203dd34b4259b58ac7298816e`. Cloudflare 정확한 Production Deployment/활성 asset SHA, 실제 PC1440·모바일390의 1D 단일점 및 hover, SQLite↔D1 원격 원장 readback은 미확인. 초기 SSR 문서의 `추이 데이터 준비 중`은 클라이언트 fetch 전 placeholder라서 동적 차트의 정상/실패 증거로 사용하지 않음. 전체 3/5 DONE(60%), 4 PARTIAL, 5 NOT_DONE 유지.
+- **다음:** 기존 Cloudflare Git Integration 실제 배포 SHA 확인 → PC/모바일 실화면의 단일점·실제 시각/값·tooltip 및 나머지 기간 확인. Writer/D1 누락 여부는 별도 실제 원장 증거로 판정. 별도 Writer/D1 증거에 의해 실측 누락이 확인될 때만 기존 승인의 최소 원인 수정.
 
 <!-- W06-ACTIVE-FIVE-STAGE-PLAN-20261121 -->
 
