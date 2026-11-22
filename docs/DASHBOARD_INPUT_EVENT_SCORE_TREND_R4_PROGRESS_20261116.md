@@ -21,6 +21,14 @@
 - FIRST UNVERIFIED: Cloudflare 공식 active Deployment→Git SHA 매핑. #1462는 비활성 경로로 유지. 신규 코드·테스트·PR·CI·PC/SQLite/D1/Cloudflare 변경 0. 배포 실패·W06 화면 결함으로 오판하지 않음.
 - 다음 단일 실행: 공식 Cloudflare 계정 read-only Deployment/Version 기록을 조회할 수 있을 때 정확 source SHA를 대조. 접근 불가 시 이 항목만 UNVERIFIED로 보존하고 **3단계 활성 Reader/화면의 독립적 실제 결함 재현**으로 이동; 중복 배포/재검증 금지.
 
+
+### 2026-11-22 20:00 KST — W06 #4 공개 1D 원문 재조회 경로 검증
+- 시작/종료: 개편 3/5 DONE(60%), #4 PARTIAL, #5 NOT_DONE. 작업 기준 브랜치 HEAD 598af9df26486fbdf31993082077e17f4deced8a; PC/Cloudflare active SHA 미확인.
+- 실행: 지정 R4 계획·진행 정본을 GitHub 연결로 재조회하고 전담 브랜치 최근 커밋 API에서 HEAD를 확인. 독립 Python HTTPS GET으로 https://zgmini.kr/api/market-score 및 https://zgmini.kr/api/market-score/observations?period=1D를 각각 시도했으나 두 요청 모두 실행 환경 DNS NameResolutionError로 실패. 실제 HTTP 응답 자체가 없으므로 Production 서비스 장애·rights 503·READY/관측점 수·UI 결함 어느 것도 새로 확정하지 않음.
+- 기존 증거: 2026-11-22 사용자 1D 빈 차트와 과거 2026-11-21 Chromium PASS는 관측 시점이 달라 병합 판정 금지. 최신점 tooltip PASS 없음. 기존 W05 인계 #1357 재발행 없음.
+- 영향: 코드/테스트/PR/CI/Writer/DB/D1/Cloudflare/권리/수집주기 변경0. 현재 공개 API readback UNVERIFIED; #4 완료 주장 금지.
+- 다음 단일 실행: 정상 DNS/브라우저의 기존 승인된 읽기 전용 경로에서 같은 시각의 두 GET HTTP/status/reason/period/points.length/마지막 observedAt·score 확보. READY 유효 2점 이상인데 실제 1D DOM이 계속 비면 W06 archive 합성 최소 수정·회귀; 0~1점/권리/STALE이면 W05 Writer·공급자 계보 분리. 차트 복구 후 최신점 tooltip 직접 검증. 진행률 3/5 유지.
+
 ## 현재 확인된 근거
 
 - 최근 #1460/#1461/#1462는 main MERGED. **2026-11-21 15:37~15:46 KST 공개 Production 읽기**에서 현재 HTML이 참조한 실자산 `/assets/page-DsDQu-Ab.js`에 #1460의 `READY+period+Array.isArray(points)`만 갱신하는 코드와 #1461의 strict Gregorian 원본 날짜 검사 `T00:00:00Z + ISO 동일일`을 직접 확인했다. 활성 CNN 자산 `/assets/cnn-panel-DfAkRdB-.js`에서도 #1459 관측달력 차단 코드 확인. #1462 IEX 비율 컴포넌트는 승인상 비활성/미마운트로 실사이트 표시 검증 대상이 아님; 활성 JS 내 #1462 source 포함 및 정확 Cloudflare Production Deployment→Git SHA 관계는 미입증(배포 장애 증거 아님). 동일 소스/CI/재배포 반복 금지.
