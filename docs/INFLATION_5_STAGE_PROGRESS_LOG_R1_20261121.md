@@ -247,6 +247,13 @@
 - **다음:** 3개 파일 중 실제 수정 필요한 정확 바이트를 현 Writer `1e528`에 대해 기존 insert-only preview/immutable source 후보로 재정렬. 기존 scorer 계산·과거 추세 보존, `asOfDate`과 마지막 `trend.label` 동치 회귀 확보, 승인 Writer B manifest의 현재 CAS·Task/consumer 보호·원복 범위 확인한 뒤 정규 설치. 그 후 실제 D1 R2 및 PC/모바일 렌더링 확인. R2 단계 4 **NOT_DONE** 유지.
 - **단계 상태:** 1·3 DONE, 2 IN_PROGRESS, 4·5 NOT_DONE. Census #28 원자료/D1 7/7 완료 유효, 재호출 불필요.
 
+## 2026-11-22 — R2 현재 Writer 1e528 기준 2분기 read-only 삽입 미리보기 #2722
+
+- **현재 운영 preimage 실증:** [PC A #2719](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2719#issuecomment-7078315944) `WRITER_APPROVED_PREIMAGE_READONLY/PASS`. Writer `1e52876f5112c4a58a43273d264588755b7b9402`, 실제 `scripts/pc-writer/run-local.mjs` SHA256 `9cfbd0736e305aabdee0bf285c92515949eafe0c83968b9029961a37e6bf6c3b`, `worker/projection-builders/inflation.mjs` PRESENT/기존 helper `scripts/pc-writer/inflation-r2-trend-date-refresh.mjs` ABSENT. 예전 [#2198](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2198#issuecomment-6984069168) 2분기 미리보기 `PASS_READONLY`의 preimage는 `2070ff…` / `d7f601aa…`로 **현재에 직접 설치 불가**.
+- **최소 원본 재고정:** [제어 PR #2720](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2720), branch `codex/w01-r2-current-writer-preview-20261122`, 새 `approvals/writer-previews/w01-r2-stored-payload-two-branch-current-20261122.json` 단일 명세 추가. 이전 테스트 완료된 정확 2분기 insert anchor/text는 변경하지 않고 `baseHead=1e528…`, `beforeSha256=9cfbd…`로만 변경. C996 [run #45016707223](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45016707223) SUCCESS, main merge `3124331b96fb0c200c22bddc8f711b63e7e05110`; 명세 raw SHA256 `a81eb1e105f1b99525aece5994d90d4288c3cab8774389639090752daffb6e2b`.
+- **실PC read-only 1회 요청:** [#2722](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2722) `operation=pc-writer-insert-preview`, requestId `4ae84d61-9856-4763-82d6-7ef8b6f00937`, 정확 새 명세 SHA·경로 고정. 최초 조회 결과 댓글 없음, **미리보기 PASS/STOP 및 계산된 afterSha 미확인**. 운영 Writer/DB/D1/Task·공급처 쓰기 없음. 중복 요청 금지.
+- **다음 실행:** #2722 정규 읽기 결과의 정확 2개 anchor match/afterSha 및 Core drain 상태 판정. 정합성 PASS면 현재 1e528 + run-local 부분 변경 + helper 추가의 최소 B manifest·현재 source CAS·Task 보호/rollback 검증 뒤 설치. STOP이면 기존 코드를 무조건 덮어쓰기/조건 완화하지 않고 현재 실제 바이트의 anchor 충돌만 수정. 그 후 R2 저장 데이터로 계산·D1·Production API/UI 및 1440/390px asOfDate 마지막 trend 점 비교. **단계 1·3 DONE / 2 IN_PROGRESS / 4·5 NOT_DONE** 유지.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
