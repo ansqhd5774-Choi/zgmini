@@ -61,3 +61,17 @@ test('no matching BEA row is unavailable, not a fabricated source',()=>{
   assert.throws(()=>compareBeaUnitNipaToFred({beaResponse:api(rows().map(r=>({...r,SeriesCode:'OTHER'}))),fredCsv:fred}),
     /BEA_UNIT_NIPA_SERIES_MISSING/);
 });
+
+test('reject malformed BEA numeric grouping before comparison',()=>{
+  for(const malformed of ['1,2','12,34','1,234,56','1234,567','0,250']){
+    const changed=rows();
+    changed[0].DataValue=malformed;
+    assert.throws(()=>compareBeaUnitNipaToFred({
+      beaResponse:api(changed),fredCsv:fred}),/BEA_UNIT_NIPA_VALUE_INVALID/);
+  }
+  const grouped=rows();
+  grouped[0].DataValue='1,234.50';
+  const alternateFred=fred.replace('2025-04-01,0.216','2025-04-01,1234.5');
+  assert.equal(compareBeaUnitNipaToFred({
+    beaResponse:api(grouped),fredCsv:alternateFred}).status,'MATCH');
+});
