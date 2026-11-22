@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {validateD1DualSource} from '../scripts/pc-writer/EARNINGS_R4_C_D1_DUAL_SOURCE_GATES.mjs';
+import {validateD1DualSource,inspectD1Source} from '../scripts/pc-writer/EARNINGS_R4_C_D1_DUAL_SOURCE_GATES.mjs';
 
 const config={collectionTarget:'pc',enabled:true,source:'7'.repeat(40)};
 const publisher={root:'C:\\stage',sha:'a'.repeat(40),branch:'main',remoteMatch:true,clean:true,provenanceVerified:true};
@@ -23,4 +23,30 @@ test('rejects untrusted or edited publisher source',()=>{
 test('rejects dirty operational source and same-root publishing',()=>{
   assert.throws(()=>pass({operational:{...operational,clean:false}}),/OPERATIONAL_SOURCE/);
   assert.throws(()=>pass({publisher:{...publisher,root:operational.root}}),/NOT_ISOLATED/);
+});
+
+test('exact approved main-history commit survives unrelated tip changes and detached checkout',()=>{
+ const root=process.cwd(),sha='a'.repeat(40),calls=[];
+ const git=(_root,args)=>{
+  calls.push(args);
+  if(args[0]==='rev-parse'&&args[1]==='--show-toplevel')return root;
+  if(args[0]==='rev-parse'&&args[1]==='HEAD')return sha;
+  if(args[0]==='rev-parse')return 'c'.repeat(40);
+  if(args[0]==='branch')return '';
+  if(args[0]==='config')return 'https://github.com/ansqhd5774-Choi/zgmini.git';
+  if(args[0]==='merge-base')return sha;
+  return '';
+ };
+ const inspected=inspectD1Source(root,{git,realpath:x=>x,publisher:true,approvedPublisherSha:sha});
+ assert.equal(inspected.provenanceVerified,true);assert.equal(inspected.approvedShaPin,sha);
+ assert.equal(pass({publisher:inspected}).publisherSha,sha);
+ assert.ok(calls.some(x=>x[0]==='merge-base'));
+ const legacy=inspectD1Source(root,{git,realpath:x=>x,publisher:true});
+ assert.equal(legacy.provenanceVerified,false);
+ const divergent=inspectD1Source(root,{git:(r,a)=>a[0]==='merge-base'?'d'.repeat(40):git(r,a),
+  realpath:x=>x,publisher:true,approvedPublisherSha:sha});
+ assert.equal(divergent.provenanceVerified,false);assert.equal(divergent.approvedShaPin,null);
+ assert.throws(()=>pass({publisher:divergent}),/PUBLISHER_SOURCE/);
+ const wrongPin=inspectD1Source(root,{git,realpath:x=>x,publisher:true,approvedPublisherSha:'e'.repeat(40)});
+ assert.equal(wrongPin.provenanceVerified,false);
 });
