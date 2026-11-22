@@ -11,6 +11,7 @@ let page;
 try{
  page=await browser.newPage({viewport:{width:390,height:844},deviceScaleFactor:1,isMobile:true,hasTouch:true});
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
+ await page.addInitScript(()=>sessionStorage.setItem('zgmini-about-intro-dismissed-r1','1'));
  const apiResponse=await page.request.get(origin+'/api/theme-fear-greed',{timeout:30000});
  assert.equal(apiResponse.status(),200,'Production API HTTP status');
  const feed=await apiResponse.json();
@@ -53,13 +54,17 @@ try{
  summary.checks.push('DETAIL_10_SCORES','DETAIL_LEGEND','DETAIL_CHART','DETAIL_390_NO_OVERFLOW');
  await page.screenshot({path:dir+'/detail-390.png',fullPage:true});
  await page.goto(origin+'/',{waitUntil:'domcontentloaded',timeout:45000});
- await page.waitForFunction(()=>document.body.textContent?.includes('테마별 공포·탐욕')&&document.body.textContent?.includes('사이버보안'),{timeout:30000});
- const home=await page.evaluate(()=>({text:document.body.textContent??'',overflow:document.documentElement.scrollWidth>innerWidth+1,buttons:[...document.querySelectorAll('button[title]')].filter(x=>x.title?.includes('관측')).map(x=>({title:x.title,label:x.getAttribute('aria-label')}))}));
- for(const t of feed.themes)assert.ok(home.text.includes(t.theme),'home visible '+t.id);
+ const section=page.locator('#strength');
+ await section.scrollIntoViewIfNeeded({timeout:15000});
+ await page.waitForFunction(()=>document.querySelectorAll('.zg-theme-score-card .zg-theme-selected-label').length===10,null,{timeout:30000});
+ const home=await page.evaluate(()=>({overflow:document.documentElement.scrollWidth>innerWidth+1,buttons:[...document.querySelectorAll('.zg-theme-score-card .zg-theme-selected-label')].map(x=>({title:x.title,label:x.getAttribute('aria-label'),value:x.querySelector('.zg-theme-legend-score')?.textContent?.trim()})),chartSvgCount:document.querySelectorAll('.zg-theme-score-card .zg-sector-chart-plot svg').length}));
+ assert.equal(home.buttons.length,10,'home actual legend buttons');
+ for(const t of feed.themes){const hit=home.buttons.find(x=>x.title?.startsWith(t.theme+' ·'));assert.ok(hit,'home legend for '+t.id);assert.equal(Number(hit.value),Math.round(t.score),'home whole-score rounding '+t.id);}
+ assert.ok(home.chartSvgCount>0,'home comparison SVG rendered');
  assert.equal(home.overflow,false,'home no horizontal overflow');
  assert.deepEqual(errors,[],'no page JS exceptions');
- summary.home={overflow:home.overflow,themeTextCount:feed.themes.filter(t=>home.text.includes(t.theme)).length};
- summary.checks.push('HOME_10_NAMES','HOME_390_NO_OVERFLOW');
+ summary.home={overflow:home.overflow,themeLegendCount:home.buttons.length,chartSvgCount:home.chartSvgCount};
+ summary.checks.push('HOME_10_SCORES','HOME_CHART','HOME_390_NO_OVERFLOW');
  await page.screenshot({path:dir+'/home-390.png',fullPage:true});
  summary.status='PASS';console.log('W03_PRODUCTION_MOBILE_PASS',JSON.stringify(summary));
 }catch(e){
