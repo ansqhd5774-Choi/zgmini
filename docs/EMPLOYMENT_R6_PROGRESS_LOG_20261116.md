@@ -2266,3 +2266,12 @@
 - **정확 연결 계약:** `scripts/pc-writer/employment-r6-one-year-stage.mjs`는 `employment-r6-observation-reader.mjs`의 `observationHistory`와 `selectAsOfRevisions`를 이용해 저장 PIT 가용시각·실제 retrieval 시각으로 고른 History만 `stateClaimsBreadth`의 현재4주/전년4주×51개 필수 산식에 전달한다. 따라서 RAW 구조적 완비와 공개 History 출력을 혼동하거나 `CURRENT` 값을 History에 임의 복사해서는 안 된다.
 - **다음 실행 범위:** 새 진단을 추가하기 전 이미 허용된 `employment-r6-candidate-stage-readonly`의 내부 키 표본·기존 PIT 판단을 재사용하고, 실제 운영 선택 입력이 현 판정과 같은지의 readback 근거를 확보한다. 누락 2,880키의 과거 가용시각·정본 해시가 검증되기 전 History 쓰기/게시·정상 READY 판정은 금지한다. 독립 DOL National 관측 최신성과 4단계 실제 브라우저 검증은 미완료 유지.
 - **진행 상태:** 1·2 DONE(2/5), 3 IN_PROGRESS, 4·5 NOT_DONE. 이번에는 검증된 기존 PC 결과 재해석 및 원장 기록만 수행; 새 PC 실행·운영 코드/DB/D1/배포 변경 없음.
+
+
+## 204. 공유 Controller 최신 설치본 및 W04 자동 실행 분리 확인 (2026-11-22 KST)
+<!-- W04-R6-20261122-CONTROLLER-042C-POSTCHECK-NOOP -->
+- **신규 외부 작업의 실제 사후 A 영수증 재사용:** [제어 #2682](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2682#issuecomment-7077079456) / [Run 45006973325](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45006973325)에서 `PASS/CORE_READONLY_DIAGNOSIS`, actual Controller SHA `042c45567d31c5ec620c9e13b154fc3f08218774`, `protectedStateUnchanged=true`. 이전 #2676 설치 SHA `9c084bf...`보다 새 설치본이므로 이전 설치를 현재로 잘못 인용하지 않는다. 이번 W04 담당의 Controller 설치/변경은 0건.
+- **시각 구분:** PC 수집 checkpoint `2026-11-22T09:15:42.519Z`는 전체 `BACKLOG`, W04 자체는 `NOOP`/providerRequests=0이며 DOL `CIRCUIT_OPEN/DOL_RELEASE_OBSERVATION_STALE`, BLS 5그룹 `RELEASE_ALREADY_STORED`이다. 전체 BACKLOG, `lockPresent=true`를 W04 National 수집 실패 원인이나 공유 락 제거 근거로 확대하지 않는다. Core cycle checkpoint `COMPLETE` `09:10:02.972Z`. 이 조회는 SQLite 미개방·Provider/D1/업무 쓰기 0이므로 실제 새 National XML 확인이 아님.
+- **Writer 최신 정규 실행:** `2026-11-22T09:19:10.874Z` `VERIFIED`, W04 `UNCHANGED`, `localResultReadback=VERIFIED`, `sourceStoredAt=1795307425460`, 29 지표/22 차트, SHA `47c68f081a9dcce5c7e6ff80b36ad47dca655c4244a8538f2cbde20fa14a1ee8`. #2673 D1 일치 증거와 동일 결과이므로 별도 D1 재조회·재게시 없음.
+- **PIT 복구 판단 유지:** 실PC #44575710220 누락 History 2,880키 중 후보 일치 2,625·후보 없음 255는 분류 결과이지 복구 승인·시점 인증이 아니다. #2631 지역 51×600 RAW 완비와 별도로 History 누락이 있고, 복구 적격=0이라는 기존 상태에 모순 증거 없음. 임의 이력 쓰기 대신 유효한 새로운 수집/History 변경이 실측되는 시점에만 최소 readback 및 게시 검증한다.
+- **판정:** 1·2 DONE(2/5), 3 IN_PROGRESS, 4·5 NOT_DONE. 최신 설치·정규 실행 관련 상태를 반영했을 뿐 DOL National 최신 주차 전진/Production 브라우저를 입증하지 않는다. W04 신규 A/B·운영 코드/DB/Cloudflare/예약 변경 없음.
