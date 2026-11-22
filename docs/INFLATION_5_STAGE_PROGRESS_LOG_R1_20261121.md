@@ -292,3 +292,12 @@
 - **다음 필수 실행:** #2739의 단위 테스트/소스 CI를 실제 확인하고, 현행 Controller 설치본 SHA·변경 3개 운영 파일의 CAS·백업/롤백·기존 권한과 resource lease를 확인하여 정규 최소 B 선택 설치. 이후 고유 R2 A 요청 1회로 로컬 평가일·마지막점·실행 시각 판정, 필요시 실제 실패 조건만 수정. 정상일 때만 정확 R2 D1 및 Production API/PC·모바일 대조. 새 승인·임의 운영 쓰기/재수집 없음.
 
 - **#2739 CI 접수 후속:** PR Ready for review, HEAD `6f7bceed2b42a5fbaac41ec8046fcfd8f277f2e4`; [D05 source tests #45021245043](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45021245043) `completed/success` 확인. [Controller Maintenance #45021245048](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45021245048) `in_progress`, [C996 #45021245083](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45021245083) `queued` (조회 시점). 두 미완료 CI는 PASS로 판정하지 않으며 운영 설치·실제 R2 readback은 여전히 미실행.
+
+## 2026-11-22 — R2 조회 3파일 선택 적용 후보·정확 B 계약 준비
+
+- 기존 R2 키 `detail:inflation:v1` 대상 로컬 읽기 operation 구현 [PR #2739](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2739) main 병합 `34fb0fc96582c1ad78911ebe1971773975e26562`, D05·Controller Maintenance·C996 CI 3/3 SUCCESS (source-only).
+- 기존 [Controller 유지보수 Issue #2736](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2736) actual SHA `13af1b1e9deb43d3008c521c0a528a51355f6905`, `SUCCEEDED/APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED`·복구 없음·보호 불변·workflow 활성 확인. 이는 W01 신규 operation 설치 아님.
+- 해당 설치 SHA를 단일 부모로 하는 선택 target `9e3542e616f3fa781a2d614294d6bde17c087180` [PR #2745](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2745), 비교 `ahead=1/behind=0`, 정확 `config/operations.json`(+1), `controller/operations.mjs`(+2), `controller/inflation-r2-local-readonly.mjs`(신규) 3파일만 변경. 운영 PC에 적용하지 않음.
+- [정확 B 승인/pin PR #2746](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2746) 파일 2개 작성. 선택 SHA·파일별 UTF-8 SHA256·출처 main SHA `34fb0f…`, B scope `PC_CONTROL_CONTROLLER_UPDATE`, 버전 백업/13af 원본 복원 및 사후 Core 상태 조회 고정. PR #2746 C996 source CI SUCCESS 확인, #2745 Controller Maintenance/C996 source CI SUCCESS, D05 아직 queued (확인 시점). 정규 설치 Issue는 미발행.
+- 2026-11-22 외부 웹 재조회: 물가 상세 페이지는 JS hydration 이전 초기 HTML만 확인, 공개 `/api/inflation-candidate-inputs`는 도구 `DisabledError`; HTTP API 및 PC/모바일 실렌더링 검증 아님. 기존 D1 7/7 유효 결과는 보존.
+- **실제 다음:** #2745 D05 완료·기존 승인·현재 설치 SHA·복구/lease 확인→#2746 B 명세 main 통합→고유 유지보수 B 1회→고유 R2 A 1회로 실제 저장 날짜/점수 비교. 설치 전 2/5 유지, 기능 정상화 100% 불가.
