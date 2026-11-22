@@ -14,6 +14,13 @@
 | 4 | PC·모바일 실화면 종합 확인 | 영향받은 화면의 값/단위/날짜/카드 최신점/차트 끝점·기간/결측·역행·overflow가 공개 저장 응답과 일치 | PARTIAL — **현재 사용자 Production 캡처 2건에서 1D 차트가 `추이 데이터 준비 중`으로 지속 비표시**. 2026-11-21 이전 시점 실Chromium 390/1440 차트·기간·overflow 0 PASS는 역사적 유효 증거로 별도 유지. 현재 API `status/reason/points` 미확인, 차트 복구 전 최신점 Tooltip 확인 불가 |
 | 5 | UI 작업 종결·업스트림 잔여 인계 | W06 완료/Production 검증/Writer·데이터 잔여를 구분하고 정확한 원담당·작업·종료조건으로 정리 | NOT_DONE |
 
+### 2026-11-22 — 공개 D1 연결 경로 및 유료 수급 Writer 설치/게시 구분 확인
+
+- **현재 추가 조사:** 제어 저장소 최신 `config/operations.json`과 `controller/operations.mjs` 허용목록, 기존 `inflation7-d1-readback-readonly` 및 `employment-r6-d1-readback-readonly` 구현을 비교했다. 이들은 각각 고정된 타 도메인 D1 key만 조회한다. 승인된 A 작업 중 **`composite-observed:2026-11-22` 개별 D1 readback을 바로 제공하는 고정 작업은 확인되지 않았다**. 타 도메인 작업에 임의 key/SQL을 주입하거나 범위 밖 실행·설치하지 않음. 외부 Cloudflare 계정 도구는 현재 연결 목록에서 확인되지 않음.
+- **설치·운영 효과 구분:** 기존 유료 수급/종합시장 복구 Writer 설치 [#2567](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2567#issuecomment-7049153319)는 `WRITER_B_INSTALLED_VERIFIED`, 결과 2/2, [Run #44805608664](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44805608664)으로 **파일 설치는 검증**됐다. 그러나 원본 영수증의 `LOCAL_ONLY: true`/`REMOTE_SOURCE: NOT_PUBLISHED_BY_INSTALLER` 문구처럼 계산·D1 publish·API/UI readback은 설치 효과에 포함되지 않는다. 추가 공개 게시 증거로 혼동하지 않음.
+- **4단계의 현재 입증 경계:** 운영 PC `composite-observed:2026-11-22` 1점 및 로컬 D05 동일 마지막 계산시각은 #2724/#2726으로 VERIFIED. 다만 **동일 key의 원격 D1 값, 공개 1D HTTP/status/reason/points, 유료 공개권리 마커는 여전히 UNVERIFIED**. 무료 사용 이력을 소급 복원하거나 임의 2점을 생성하는 UI 변조 금지. 기등록 `fear-greed-archive-status` 및 `d05-lineage-readonly`의 성공을 재실행하지 않음.
+- **다음 정확한 실행:** 기존 Writer/Cloudflare 공식 인증 read-only 채널이 실제 사용 가능해지는 범위에서 `composite-observed:2026-11-22`의 D1 조회·공개 1D 응답을 같은 시각에 회수한다. 해당 원담당 #1357 증거 전달은 이미 완료, 새 이슈/기능별 CMD/Controller 등록을 이 조회만을 위해 임의 생성하지 않음. 로컬 1점과 공개 1점이 일치하면 실제 신규 유효 계산점 부재/게시 주기의 실패 조건을 원담당 로컬 원장으로 판정한다. 공개 2점+인데 UI만 공백일 경우에만 W06 Reader 최소 수정. 4단계 PARTIAL/5단계 NOT_DONE, 전체 3/5(60%) 유지.
+
 ### 2026-11-22 20:26 KST — 4단계 D05 계산 이벤트 로컬 계보 독립 대조 (#2726 PASS)
 
 - **실행:** 운영 Controller 기등록 A급 `d05-lineage-readonly` 단회 [#2726](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2726) → [Actions #45017277981](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45017277981) seat 4 `PASS / D05_READONLY_DIAGNOSIS`, exitCode 0. 실제 [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/45017277981-1-seat-4.json)과 [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/45017277981-1-seat-4.txt) 2/2 회수. Controller 실행 SHA `156fa7eb85b5020d3167fb92da3edbcccbb54ccc`, before/after 보호 상태 해시 일치, 원자료 호출/운영 데이터 변경/D1 쓰기 0.
