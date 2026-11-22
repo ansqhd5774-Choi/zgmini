@@ -41,6 +41,11 @@ test('reject unknown multiplier, unit, table and duplicated quarter',()=>{
   assert.throws(()=>compareBeaUnitNipaToFred({beaResponse:api([...rows(),rows()[0]]),fredCsv:fred}),
     /BEA_UNIT_NIPA_DUPLICATE_QUARTER/);
 });
+test('reject absent table identity, even when series and line number match',()=>{
+  const withoutTable=rows().map(({TableName,...rest})=>rest);
+  assert.throws(()=>compareBeaUnitNipaToFred({beaResponse:api(withoutTable),fredCsv:fred}),
+    /BEA_UNIT_NIPA_TABLE_MISMATCH/);
+});
 test('no matching BEA row is unavailable, not a fabricated source',()=>{
   assert.throws(()=>compareBeaUnitNipaToFred({beaResponse:api(rows().map(r=>({...r,SeriesCode:'OTHER'}))),fredCsv:fred}),
     /BEA_UNIT_NIPA_SERIES_MISSING/);
