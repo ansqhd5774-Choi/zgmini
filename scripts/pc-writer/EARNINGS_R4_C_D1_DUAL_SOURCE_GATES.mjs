@@ -12,7 +12,11 @@ const execGit = (root, args) => execFileSync('git', ['-C',root,...args], {
   stdio:['ignore','pipe','pipe'],
 }).trim();
 
-export function inspectD1Source(root, {git=execGit,realpath=fs.realpathSync,publisher=false}={}) {
+export const approvedPublisherHistorySupported=true;
+// This pin selects verified code; it grants no publication/write permission.
+// The common B executor supplies it only from its authenticated manifest.
+export function inspectD1Source(root, {git=execGit,realpath=fs.realpathSync,publisher=false,
+  approvedPublisherSha=process.env.ZGMINI_PUBLICATION_APPROVED_PUBLISHER_SHA??null}={}) {
   const absolute=path.resolve(root);
   const top=git(absolute,['rev-parse','--show-toplevel']);
   if(path.normalize(realpath(absolute)).toLowerCase()!==path.normalize(realpath(top)).toLowerCase())
@@ -23,6 +27,7 @@ export function inspectD1Source(root, {git=execGit,realpath=fs.realpathSync,publ
   const changed=git(absolute,['status','--porcelain','--untracked-files=no',
     '--','worker','scripts/pc-writer']);
   let provenanceVerified=false;
+  let approvedShaPin=null;
   if(publisher){
     const necessary=[
       'scripts/pc-writer/EARNINGS_R4_C_D1_DUAL_SOURCE_ONCE.mjs',
@@ -32,16 +37,24 @@ export function inspectD1Source(root, {git=execGit,realpath=fs.realpathSync,publ
     ];
     git(absolute,['ls-files','--error-unmatch','--',...necessary]);
     const fetchedMain=git(absolute,['rev-parse','refs/remotes/origin/main']);
-    provenanceVerified=fetchedMain===sha;
+    if(approvedPublisherSha!==null){
+      if(SHA.test(approvedPublisherSha)&&approvedPublisherSha===sha){
+        // The exact reviewed commit remains valid when unrelated main commits
+        // advance. A sibling/non-main commit is never accepted by this proof.
+        provenanceVerified=git(absolute,['merge-base',sha,'refs/remotes/origin/main'])===sha;
+        if(provenanceVerified)approvedShaPin=sha;
+      }
+    }else provenanceVerified=fetchedMain===sha;
   }
   return {root:path.normalize(realpath(absolute)),sha,branch,
-    remoteMatch:REPO.test(remote),clean:changed.length===0,provenanceVerified};
+    remoteMatch:REPO.test(remote),clean:changed.length===0,provenanceVerified,
+    approvedShaPin};
 }
 
 export function validateD1DualSource({config,publisher,operational}) {
   if(config?.collectionTarget!=='pc'||config.enabled!==true||!SHA.test(config.source??''))
     throw Error('EARNINGS_C_PC_CONFIG_NOT_APPROVED');
-  if(!SHA.test(publisher?.sha??'')||publisher.branch!=='main'
+  if(!SHA.test(publisher?.sha??'')||(publisher.branch!=='main'&&publisher.approvedShaPin!==publisher.sha)
     ||!publisher.remoteMatch||!publisher.clean||!publisher.provenanceVerified)
     throw Error('EARNINGS_C_PUBLISHER_SOURCE_NOT_MAIN_CLEAN');
   if(!SHA.test(operational?.sha??'')||!operational.remoteMatch||!operational.clean)
