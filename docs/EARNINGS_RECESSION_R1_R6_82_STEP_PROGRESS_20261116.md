@@ -31,6 +31,13 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — BEA unit offline NIPA/FRED equivalence regression source
+
+- **공식 계열 재확인:** FRED [A463RD3Q052SBEA](https://fred.stlouisfed.org/series/A463RD3Q052SBEA)는 2026Q2=0.250, 2026Q1=0.231, 2025Q4=0.222, Q3=0.219, Q2=0.216 USD(분기·계절조정), BEA 원천 NIPA Table 1.15 `T11500` line 7 `A463RD`. BEA API 원문 JSON/값·단위 동치 실측은 별도 미확인.
+- **실제 소스 개발:** [BEA unit Draft PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183) 전용 브랜치 `fix/w05-bea-unit-stored-publisher-20261116`에 기존 저장형 운영 코드를 유지하면서 `scripts/pc-writer/EARNINGS_BEA_UNIT_NIPA_EQUIVALENCE_R1.mjs` 및 `tests/earnings-bea-unit-nipa-equivalence-r1.test.mjs` 2파일 추가. PR HEAD `12a131ebc5b90b0878f01c623dc94bfa6ecec021`. **공급처 호출·CSV 저장·D1 쓰기 없음**, 이미 보유한 BEA 응답과 FRED 원본이 입력됐을 때 분기·단위·변환·값이 일치하는지 fail-closed 정적으로 검증. 단위/배율 미확인, 값/분기 불일치, 중복, 시리즈 누락은 명시 거부.
+- **로컬 회귀:** Node 22 테스트 **4/4 PASS** (공개 계열 값 기반 모의 fixtures; 실공급처 BEA API GET 결과는 아님). [Node CI #45006275722](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45006275722) 생성, 최초 관측 시 RUNNING. [PR 설명 댓글](https://github.com/ansqhd5774-Choi/zgmini/pull/1183#issuecomment-7076988911)로 결과·경계 기록.
+- **첫 미완료:** 실제 승인 BEA NIPA `T11500/Q/A463RD` 원본 JSON/원본 SHA·가용일 확보 및 해당 source FRED 수치/단위 동치 검증. 동일 값이라고 가정해 FRED publisher를 임의 BEA로 교체하거나 BEA API를 신규 운영 호출하지 않음. #1183 Draft/미병합과 별도 B 게시 승인 유지. 1/5 DONE, 2 IN_PROGRESS.
+
 ### 2026-11-22 — BEA unit official source lineage and FRED transport terms
 
 - **PR #1183 독립 공급처 원본 검토:** 해당 BEA unit draft는 `A463RD3Q052SBEA` 원본 계열을 FRED `fredgraph.csv` 전송 경로로 가져옴. [BEA 원자료 FAQ](https://www.bea.gov/help/faq/147)는 별도 표시 없는 BEA 자료가 public domain임을 안내하지만 [FRED Legal](https://fred.stlouisfed.org/legal/)·[FRED Terms](https://fred.stlouisfed.org/legal/terms/)는 FRED 서비스 이용 및 상업적 이용에 별도 계약을 둔다. 따라서 BEA 데이터 권리와 FRED CSV 전송 경로 사용 허가는 같지 않음.
