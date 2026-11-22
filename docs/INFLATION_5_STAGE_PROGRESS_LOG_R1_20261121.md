@@ -239,6 +239,14 @@
 - **공개 사이트 검증 경계:** 정규 Production route 소스 `worker/inflation-causal-candidates-public-7-r1.mjs`의 `/api/inflation-candidate-inputs`, 소비 화면 `app/economic-indicators/inflation-candidate-7-inputs.tsx`에서 동일 key와 client endpoint 사용 확인. 공개 `https://zgmini.kr/economic-indicators/inflation/` HTML은 JS 로딩 전 placeholder만 보이며 정적 웹 조회로 현재 API 응답·실제 PC/모바일 렌더링을 검증할 수 없음. 공개 `/api/inflation-candidate-inputs` 직접 외부 GET은 현재 도구에서 접근 실패해 **Production API/UI 동치 아직 미확인**. D1 7/7을 사용자 화면 7/7 검증으로 과장하지 않음. [공개 물가 화면](https://zgmini.kr/economic-indicators/inflation/) 링크 보존.
 - **다음:** 이미 완료된 수집/원자료/Writer/D1을 재실행하지 말고 Production API `HTTP/status/storedAt/sourceVersion/7 indicators` 정상 조회, PC/모바일 화면 #28 `976044 백만 USD`·관측일·7/7 READY·차트/툴팁 확인; 상충 시 해당 Reader·UI 경로만 최소 수정. 4단계 R2 기존 미래 날짜 `trend.label=2026-11-30` 별도 실물 검증 필요. 5단계 전체 완료 아님.
 
+## 2026-11-22 — R2 실제 설치 원본 3파일 readback #2719
+
+- **기존 승인 read-only 범위 재사용:** `approvals/writer-preimage/w01-r2-trend-threefile-20261118.json` (raw SHA256 `7499ecb3707f05e2615ba522aeeddde05e369c7d02f13961a247cec63359bf06`) 그대로 사용. [PC A #2719 / Run 45016312075](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2719#issuecomment-7078315944) 실제 `PASS/WRITER_APPROVED_PREIMAGE_READONLY`, `sourceHead=approvedConfigSource=checkpointSource=1e52876f5112c4a58a43273d264588755b7b9402`, protectedStateUnchanged true, provider/operational/D1 writes 0. 이 증거는 **고정 checkout**이며 라이브 Core PID 연결 `runtimeSourceVerified=false/coreTaskSourceLinked=false`은 미입증 범위로 유지.
+- **R2 실제 PC 파일:** `scripts/pc-writer/run-local.mjs` `M/PRESENT` before SHA256 `9cfbd0736e305aabdee0bf285c92515949eafe0c83968b9029961a37e6bf6c3b`; `worker/projection-builders/inflation.mjs` `M/PRESENT` SHA `f213d294f6fe171bc59a9373d541fee07f0c34296e45b6b16c72fe8e2ec48d53`; `scripts/pc-writer/inflation-r2-trend-date-refresh.mjs` `A/ABSENT`. 원본 2파일 dirty=false, 신규 파일 collision=false.
+- **판정:** R2 날짜 소스 변경 PR #1340/#1344/#1352가 `zgmini/main`에 있어도 현재 PC Writer 1e528의 세 번째 helper는 없으므로 **운영 R2 미래 라벨 수정 적용 완료라고 볼 수 없음**. 과거 2070f… 기준 preview/manifest를 현재 source preimage로 재사용하거나 main 전체 `run-local.mjs`를 교체해 타 기능 변경을 덮는 일 금지.
+- **다음:** 3개 파일 중 실제 수정 필요한 정확 바이트를 현 Writer `1e528`에 대해 기존 insert-only preview/immutable source 후보로 재정렬. 기존 scorer 계산·과거 추세 보존, `asOfDate`과 마지막 `trend.label` 동치 회귀 확보, 승인 Writer B manifest의 현재 CAS·Task/consumer 보호·원복 범위 확인한 뒤 정규 설치. 그 후 실제 D1 R2 및 PC/모바일 렌더링 확인. R2 단계 4 **NOT_DONE** 유지.
+- **단계 상태:** 1·3 DONE, 2 IN_PROGRESS, 4·5 NOT_DONE. Census #28 원자료/D1 7/7 완료 유효, 재호출 불필요.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
