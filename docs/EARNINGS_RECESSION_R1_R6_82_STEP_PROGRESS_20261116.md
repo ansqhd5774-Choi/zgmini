@@ -23,6 +23,17 @@
 - #1257은 현재 OPEN/Draft이고 원문15파일 merge HOLD를 보존한다. 필요한 정확 효과만 기존 절차로 결정하고 다른 정상 작업을 전역 보류하지 않는다.
 - 기존 PC/모바일·4폭 실사이트 성공은 해당 범위에서 재사용한다. 현재 D1 직접 readback·새 API 연결·정규 갱신을 이번 문서 개편에서 완료한 것으로 주장하지 않는다.
 
+## 2026-11-22 현행 증거 — W05 R3-11 완료 및 R3-04 소스 정정 (운영효과 구분)
+
+<!-- W05_20261122_CURRENT_R304_R311_FACTS -->
+
+- **R3-11 실PC 원자료 읽기 DONE:** Controller 정확 1파일 선택 설치 [#2701](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2701#issuecomment-7077831664) `SUCCEEDED / APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED`, 설치 SHA `80e39771bbfe72062e47f9b421f7d3c777ab7068`. 독립 Core [#2702](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2702#issuecomment-7077828938) PASS 및 새 고유 A [#2703](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2703#issuecomment-7077845317) `PASS / BEA_MFG_ARCHIVE_SHA_METADATA_READONLY`: 저장 제조업 CSV 1건/102행, observedThrough `2026-Q2`, CSV SHA `ebaf93f7a1e526cabae22388ed96d280d94eb58fdd4ddf484325bf651c59bf9b`. 원문 해시·분기 metadata 검증 범위이며 신규 수집·계산·D1 게시 완료가 아님. 업무 쓰기/공급자 호출 0, 보호 상태 불변. 이전 원장의 R3-11 Controller 허용목록 미설치 판정은 과거 사실임.
+- **R3-04 최신 Writer checkout 확인:** 승인 A [#2704](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2704#issuecomment-7077899380) `PASS / WRITER_APPROVED_PREIMAGE_READONLY`에서 `HEAD=config.source=checkpoint=1e52876f5112c4a58a43273d264588755b7b9402`, W05 R3C/R3D/Preview 파일 해시 **3/3 기존 승인값 유지**. 고정 checkout의 관측이지 실제 Core PID source 연계 실증 아님. 업무 쓰기·Provider/D1 호출 0, 보호 전후 SHA 동일.
+- **운영 소스 PIN 갱신 DONE:** 제어 [PR #2705](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2705) 정확 계약/제안 manifest/테스트 3파일 최소 수정, `main@290cd34370749f0479e89c7c9e791457100c8266` 병합. 정확 PR HEAD `ef471bf9f7e041703955815676227cf859e49b5c` [W05 집중 CI](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45013493157)·[C996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45013493150) **2/2 SUCCESS**. 실제 Writer source·SQLite·Controller 재설치 0.
+- **FIRST UNFINISHED(정확 효과):** 현재 [WPSFD42 B 제안 manifest](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/approvals/w05-r304-service-b/approval.json) `PROPOSED_NOT_APPROVED`. 기존 3파일 Writer source-only 승인은 공급자 POST·DB append를 허용하지 않음. 사용자 일반 `계속해라`를 신규 GO로 대체하지 않는다. 기존 승인 원본에서 **BLS `WPSFD42` 2025~2026 POST 최대 1회 + 기존 SQLite 두 이력 테이블 append-only** 정확 GO를 확인한 뒤에만 정규 B 고유 1회→원본 SHA/checkpoint/readback→R3-05 저장 계산. 현재 동일 효과 승인·실행 영수증 미확보. 독립 QFR D1 one-key·BEA unit 원천/권리·게시 GO는 별도 경계.
+- **독립 공개 API 실측 한계:** `zgmini.kr` 4개 저장형 API를 현 조회 도구에서 직접 열지 못해 **현재 HTTP/status 값 미확정**. 과거 200/503을 2026-11-22 새 실측으로 표기하지 않음. 승인된 저장 결과와 새 공개 GET 간 의미 동치가 가능한 영역부터 이어간다.
+- **실제 완료율 불변:** 5단계 **1/5 DONE, 2단계 진행**, 82단계 순차 **26/82(31.7%)**, 개별 **35/82(42.7%)**. R3-11 실물 PASS와 source fix를 BLS 수집 단계 완료로 중복 가산하지 않음.
+
 ## NEXT — 담당자의 재개 작업
 
 **2단계: 기존 #2240·승인 원문에서 WPSFD42 2025~2026 BLS POST 최대1회+기존 SQLite 두 테이블 append-only 효과의 실제 GO를 확인한다.** 기존 유효 승인이 있으면 반복 승인 없이 기존 정규 단회 B를 실행하고 raw SHA/checkpoint·저장 자료 계산까지 끝낸다. 없으면 그 효과의 정확 범위·횟수·보호·종료조건만 구체화한 단일 결정을 요청한다. 이 문서를 승인 manifest로 사용하지 않는다.
