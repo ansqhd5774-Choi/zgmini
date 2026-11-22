@@ -42,6 +42,16 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — 지속 빈 1D 차트의 저장형 Reader·사용권 상태 분기 진단
+
+- **현재 시작/종료:** 3/5 DONE(60%), #4 PARTIAL/#5 NOT_DONE. 사용자가 같은 종합시장 1D 탭의 차트 빈 화면을 두 차례 제공했고, 카드33.0·차트`추이 데이터 준비 중`이 **시간이 지난 뒤에도 유지**되는 사용자 직접 증거. 새 저장점·새 차트 정상화의 근거가 없으므로 4단계 최종점 툴팁 테스트는 그 순간 **차트 자체가 없어서 불가**.
+- **진단 결과 — 정확한 조건:** `main app/dashboard-ui.tsx`는 공개 `/api/market-score/observations?period=1D`의 `READY/period=1D/points[]`만 `compositeArchive`에 적용. 표시 합성 `mergeCompositeObservedDisplay(daily,archived,1,current)`의 결과 `overallTrend.length>1`일 때만 Recharts 마운트, 0/1점이면 준비 중. `startStoredRefresh`는 최초 즉시 fetch, visible 탭에서 60초마다 재조회, 30초 signal 취소 계약. 정상 응답에 실제 이전과 현재 2개 점이 있고 권리 제한이 없다면 `mergeCompositeObservedDisplay`는 해당 하루 2점 선을 보존하는 구조. 따라서 '기다림' 반복은 근거 있는 수정이 아님.
+- **제2 독립 게이트 발견:** `app/api/market-score/observations/route.ts`는 현재 공개 snapshot을 `maskRetiredMarketPublicSnapshot`로 검증. `overall.state` 또는 도메인 상태가 `PROVIDER_REMOVED_MARKETPARQUET_PUBLICATION_DENIED`면 명시적으로 HTTP **503 UNAVAILABLE**/이력0을 반환. `app/dashboard-ui.tsx` 역시 동일 `retiredCompositeHistory`면 모든 과거 점수 그래프를 빈 배열로 처리. 이는 2026-11-16 사용자 지시 제거의 **승인된 공개권리 보호**이며 이를 삭제해 데이터/곡선을 재노출하는 UI 수정은 허용 범위 밖. 반대로 현재 `isValidatedPaidBreadthDomain` 등 별도 승인된 공급자 검증이 통과하면 일반 READY 이력이 사용될 수 있음. 이번 화면의 33.0 숫자 하나만으로 현재 API의 권리 상태 또는 정상 READY를 단정할 수 없음.
+- **제3 독립 게이트:** `worker/market-operational-store.mjs`의 현재 `/api/market-score`는 저장 current snapshot 만료 시 HTTP503 `STORED_SCORE_STALE`를 반환하고, UI는 해당 정확 reason일 때 기존 market 값을 지움; 503 기타 이유는 마지막 수락본을 보존할 수 있다. 따라서 화면상 카드 33.0은 실시간 1D 이력 READY를 인증하지 않는다는 사실을 유지. 1D API의 `PENDING`/empty/503과 실제 화면 소스 렌더 문제를 구분해야 함.
+- **실시간 원문 확보 한계:** 이번 읽기 전용 `TinyFish.fetch_content`는 계정 권한/인증 거부로 실행되지 않았으며 재시도 금지. 외부 일반 웹 도구에서 API URL 두 개도 접근 불가. 사용자의 스크린샷에는 JSON/HTTP 없으므로 '실제 운영 원인은 rights' 또는 'Writer 장애' 등으로 확정하지 않음.
+- **단일 판별 입력/다음 실행:** 같은 시점의 공개 GET `https://zgmini.kr/api/market-score/observations?period=1D`에서 **HTTP/상태/status/reason/period/points.length**를 판별. `READY` + 실제 유효 2점 이상이고 `/api/market-score`가 READY이며 rights-free라면 W06의 `compositeArchive` 수신/합성/렌더 오류로 좁혀 최소 수정·회귀·정규 배포. `PENDING`/READY0/1이면 Writer 이력 게시 원담당 확인. `503` + retired reason이면 라이선스 보호가 원인으로, 무단 마스킹 해제 금지하고 별도 승인된 신규 공급자 검증·저장 계보 문제를 원담당으로 인계. `503` current stale이면 예약/Writer 게시 최신성 문제 분리. 최신 유효 응답을 확인할 때까지 UI 기존 PASS 증거는 해당 시점에 한해 유지하고, **추이 복구/4단계 완료로 보고하지 않음**.
+- **효과:** 운영 source/산식/TTL/권리/공급자/PC/DB/D1/Cloudflare/DNS/예약 모두 무변경. 신규 PR·반복 GUI 작업 없이 원장에 실제 새 분기 조건과 사용자 화면 증거 정리.
+
 ### 2026-11-22 12:03 KST — 4단계 1D 빈 차트 조건 최신 소스 독립 재검증
 
 - 시작/종료: 3/5 DONE(60%), #4 PARTIAL, #5 NOT_DONE. 기준 브랜치 HEAD `0bc6864de44d5330d7f2140174bb85184166b81c`; main `2eb796da811d0e074ca0cabab8e2cad9502bff43`. PC 설치 SHA·Cloudflare active deployment SHA 미확인.
