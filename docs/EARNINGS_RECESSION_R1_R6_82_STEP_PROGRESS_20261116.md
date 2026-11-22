@@ -31,6 +31,13 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — BEA unit bounded pure GetData request specification added
+
+- **실제 소스 작업:** [PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183) 기존 `EARNINGS_BEA_UNIT_NIPA_EQUIVALENCE_R1.mjs`에 `beaUnitNipaRequestSpec({observationYear})` pure 함수 추가. 기존 `consumption-r5.mjs` BEA API 전송 파라미터 형식(`method=GetData,datasetname=NIPA,TableName,Frequency,Year,ResultFormat`)을 재사용해 `T11500/Q/2025,2026`(기준연도 2026) 한정 요청 사양만 산출. 인증키/UserID·fetch·쓰기·Runner/job/예약 신규 생성 0. [구현 `ff898e89`](https://github.com/ansqhd5774-Choi/zgmini/commit/ff898e89d47fee910938e9d48848db6aba157b00) / [시험 `9ddce0b9`](https://github.com/ansqhd5774-Choi/zgmini/commit/9ddce0b9bd65264707008724ab25121cfe81bb75).
+- **회귀 계약:** 고정 GetData params, 정확 연도 경계, no UserID, frozen 반환, 잘못된 날짜/형식 거부 시험 추가. 기존 실제 값·단위 비교/미일치 거부 유지. [PR 설명 댓글](https://github.com/ansqhd5774-Choi/zgmini/pull/1183#issuecomment-7077375685); 최신 HEAD `9ddce0b9bd65264707008724ab25121cfe81bb75`, [CI #45009234318](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45009234318) 실행 중 (최초 관측). 새 승인된 BEA Reader/실제 provider 조회 성공을 주장하지 않음.
+- **외부 실사이트 직접 GET 장애:** 일반 공개 GET 검증은 검색 도구가 `zgmini.kr` 3개 Worker 경로에 접근 불가, 독립 공개 브라우저도 사용 잔여 credit 부족으로 실행 차단. 구 503을 오늘의 HTTP 상태로 간주하지 않고 무료 웹/기존 승인 도구로 다음 실제 조회 시 재검증. 새 유료 browser credit 승인 없이 추가 결제 안 함.
+- **FIRST UNFINISHED:** 정확 BEA `T11500/Q/A463RD` 공급처 읽기 효과에 대한 원본 승인 및 실제 PC read/retrieval/archive SHA 영수증, 기존 저장 FRED 원문과 5분기 동치 검증. PR #1183 Draft 및 운영 권리 경계 유지. 별도 WPSFD42/QFR/BEA mfg B 효과와 혼동하지 않음. 개편 1/5 DONE, 2 IN_PROGRESS.
+
 ### 2026-11-22 — BEA T11500 exact PC reader scope gap confirmed
 
 - **실제 소스 조건 대조:** `scripts/pc-writer/consumption-r5.mjs`는 BEA `NIUnderlyingDetail/U20306` + `NIPA/T20600`만 `Frequency=M`으로 호출하고 소비 입력 SQLite까지 저장한다. `worker/data-health.mjs`는 BEA `NIPA/T20804/M` + `NIPA/T10106/Q` 조회만 갖는다. 둘 다 W05 BEA unit `NIPA/T11500/Q/A463RD`에 대한 승인된 PC 실원문 호출·저장 경로가 아니며, 방문자 Worker GET에서 공급자 수집을 추가하는 우회도 금지.
