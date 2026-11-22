@@ -173,6 +173,13 @@
 - **정규 B 요청:** [Issue #2681](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2681), `requestId=pc-update-1d91e683-8860-4e5f-b8d0-55e99051f3ac`, operation `controller-update`, label `pc-maintenance`, 목표 `042c4556…`, 상기 정확 manifest SHA256. 최초 댓글 조회는 미수신. 설치/rollback 성공 여부 **아직 미판정**; 동일 requestId 중복 발행 금지.
 - **다음 실제 기능:** #2681의 유지보수기 댓글·JSON/TXT로 status/code/actualSha/recovery/protectedState 읽기. 성공 시 설치된 `inflation-census-m3-archive-headers-readonly` 단회 A로 4개 보관 원본의 중복 *소비* 헤더 정확 이름만 확인. 해당 컬럼의 공식 스키마/운영 파서 계약 비교→필요한 최소 원자료 복구/저장 계산→D1 7/7·UI/API 검증. 단계 1 DONE, 2 IN_PROGRESS, 3~5 NOT_DONE.
 
+## 2026-11-22 — #2681 정규 1파일 설치 실증 및 #2683 소비 중복 헤더 A 재조회
+
+- **승인 소스·CI:** 제어 [#2680](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2680) B manifest/pin `main` 반영 `c4af55aa8f806a090499ef80eb5bc8f72a67f5aa`; C996 [#45006242578](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45006242578) 최종 `completed/success`. raw manifest SHA256 `76309bfd9e0d5ecdb029af556352d7586453628d70d522b2e5b1a3f77a54656b`, 허용 1파일 및 기존 설치 SHA 복원 계약 확인.
+- **실PC 실제 설치 성공:** [B #2681 / 댓글 #7077082170](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2681#issuecomment-7077082170) 및 [유지보수기 JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/maintenance-pc-update-1d91e683-8860-4e5f-b8d0-55e99051f3ac.json) 직접 회수. `SUCCEEDED/APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED`, `targetControllerSha=actualControllerSha=042c45567d31c5ec620c9e13b154fc3f08218774`, `LAST_PASS=PASS/FIRST_FAIL=NONE`, `protectedStateUnchanged=true`, `workflowEnabled=true`, `recoverySha=null`. 이전 `9c084bf0…`에서 진단 모듈 단일 파일 설치 완료, 롤백 불필요. 기존 물가7 D1·Census operation 보존.
+- **실제 재진단 요청:** 새 설치 `042c4556…`에서 `inflation-census-m3-archive-headers-readonly` A/light 등록 및 추가 `duplicateConsumedHeaders` 필드 소스 존재 확인. `zgmini/main@2eb796da811d0e074ca0cabab8e2cad9502bff43` 고정하여 [Issue #2683](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2683) `requestId=pc-8ca31eb2-fb5a-41bd-a70d-f4de4179646e`, `pc-job` 라벨로 원자 생성. 최초 댓글 조회는 결과 없음: 실제 파일별 중복 소비 컬럼은 **결과 수신 전 미확정**. 요청 추가 생성/중복 조회 재실행 금지.
+- **다음:** #2683 결과 JSON/TXT 수신해 4개 공식 보관 아카이브의 `duplicateConsumedHeaders` 실제 키 확인→앱 Census 파서 소비 헤더·중복 column 규칙 대조→올바른 원본/필요 최소 source 복구→로컬 저장자료·Writer·D1의 7/7/Production GET/UI 교차검증. 개편 상태 `1 DONE/2 IN_PROGRESS/3~5 NOT_DONE` 유지.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
