@@ -15,6 +15,13 @@ test('offline equivalence: exact BEA NIPA line 7 values and FRED series',()=>{
   assert.deepEqual(result,{status:'MATCH',tableName:'T11500',seriesCode:'A463RD',
     lineNumber:'7',fredSeries:'A463RD3Q052SBEA',unit:'USD',comparedQuarters:5,lastQuarter:'2026Q2'});
 });
+test('accept official lowercase dollars and whitespace, without allowing nonzero multiplier',()=>{
+  const withOfficialUnits=rows().map(row=>({...row,CL_UNIT:' dollars ',UNIT_MULT:' 0 '}));
+  assert.equal(compareBeaUnitNipaToFred({beaResponse:api(withOfficialUnits),fredCsv:fred}).status,'MATCH');
+  withOfficialUnits[0].UNIT_MULT='3';
+  assert.throws(()=>compareBeaUnitNipaToFred({beaResponse:api(withOfficialUnits),fredCsv:fred}),
+    /BEA_UNIT_NIPA_UNIT_UNVERIFIED/);
+});
 test('reject different observations and periods, never silently substitute values',()=>{
   const changed=rows();changed.at(-1).DataValue='0.249';
   assert.throws(()=>compareBeaUnitNipaToFred({beaResponse:api(changed),fredCsv:fred}),
