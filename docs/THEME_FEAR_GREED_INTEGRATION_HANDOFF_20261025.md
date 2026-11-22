@@ -1,3 +1,12 @@
+## 2026-11-22 KST — 39차 4단계 남은 필수 검증 조건 정리
+
+- **기존 API 완료 증거 재사용**: 마스터플랜 1단계/원장 2026-11-21 당시 직접 GET에는 `HTTP200/READY`, 공개10개 × 각252점(2,520점), 확정 2026-11-20, pending0, sourceVersion/registrySha256 기록이 있다. 34~35차의 번역된 브라우저 복사본 파싱 실패는 **동일 원문 API 데이터 오류가 아닌 복사본 무결성 제약**. 검증된 11/21 API 성공 증거를 취소하거나 반복 원문 파싱을 새 Gate로 만들지 않는다. 그렇다고 11/22 신규 원문 GET 성공을 주장하지도 않는다.
+- **이번 도구 관측**: 공개 API/상세 web 직접 GET은 각각 inaccessible/cache miss, container DNS는 `zgmini.kr`·`github.com` `Temporary failure in name resolution`; 연결 Chrome ZGMINI 탭은 홈 2개뿐, 현재 read-only API는 뷰포트 변경·스크린샷 불가. 도구 실패를 Production 사이트 장애로 추정하지 않음. 신규 공개/개발·유료 브라우저 세션·변경 없음.
+- **모바일 유효 선행 증거**: 38차 실제 Ubuntu Chromium 390px 4/4 로컬 mock PASS 및 4개 PNG, 별도 37차 390/320 CSS 폭 시뮬레이션 PASS는 그대로 재사용. PC 홈/상세 hydrated 공개10개/최종 표시 점수·날짜 비교도 유효. **남은 직접 필수 작업은 운영 390px 실제 모바일 홈·상세**에서 공개10개·관측일·점수·차트 마지막 점·범례·겹침/잘림 확인. 허용된 무료 브라우저 제어/사용자 제공 실제 모바일 캡처가 있을 때만 해당 화면 검증 재개.
+- **마스터플랜 정정**: `THEME_FEAR_GREED_163_THEME_MASTER_PLAN_20261027.md`의 4단계 상태에 과거 API 원문 검증 재사용·번역 복사본 별도 구분 반영, 관련 commit `a151e201f06fe6ec08e595f6ea0401f9d359c7cf`. 여전히 4단계 `PARTIAL`, 5단계 `SOURCE_PATH_REVIEWED/NOT_DONE`, 단계완료 3/5. 임의 화면 PASS·원자료 복구·공개 전환·DB/배포 변경 0.
+
+---
+
 ## 2026-11-22 KST — 38차 기존 Linux Chromium 390px 모바일 원본 스크린샷 실제 회수
 
 - **중복 검사 회피**: 원담당 W06의 [PR #1080](https://github.com/ansqhd5774-Choi/zgmini/pull/1080)에서 `tests/theme-visible-asof-browser-r1.mjs`와 실제 브라우저 [Run #43648422108](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43648422108) 발견. GitHub Actions `ui` Job `132611288568` SUCCESS, 로그에서 `PASS W06_THEME_VISIBLE_ASOF` 390/1440 × 유효/비실재 잠정일 4/4 직접 대조.
