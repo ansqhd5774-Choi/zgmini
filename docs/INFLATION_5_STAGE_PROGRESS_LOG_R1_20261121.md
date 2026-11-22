@@ -114,6 +114,14 @@
 - **새 단회 B 요청:** [Issue #2665](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2665), 고유 requestId `pc-update-8cb6f1b1-88e3-444d-bf44-af8ab4dd8fea`, 대상 `d6a7c6bb…`, 정확 manifest raw SHA256 pin, `pc-maintenance` label로 등록. 최초 댓글/결과 JSON readback 미확보: **설치 성공/롤백 성공을 주장할 수 없음**, 진행/미확인으로 유지. 같은 requestId로 재접수·기존 #2662 replay 금지.
 - **다음:** 원본 #2665 상태·유지보수기 결과 JSON/TXT를 재조회해 `status/code/actualControllerSha/recoverySha/protectedStateUnchanged/workflowEnabled` 검증. 성공 시 Census 헤더와 물가7 D1의 고유 A 조회를 순차 발행하고 실제 값 검증; 실패/미상 시 설치/백업/lease 실제 상태 확인 후 규정 복구. 단계 1 DONE, 2 IN_PROGRESS, 3~5 NOT_DONE 유지.
 
+## 2026-11-22 — #2665 소스 연결 mismatch 해결·#2669 3차 단회 설치 요청
+
+- **두 번째 실제 B 결과/원인:** [#2665 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2665#issuecomment-7071577875) `BLOCKED / SELECTIVE_MAIN_SOURCE_HASH_MISMATCH`, `firstFail=RECEIVED`, `actualControllerSha=d260aea2513902a77425344629f91575e2d950ef`, `recoverySha=NONE`, `protectedStateUnchanged=UNVERIFIED`, workflow 활성. 설치/롤백 실행 증거 없음. 직접 코드 `tools/update.mjs`의 `selective.customPaths.includes(item.path)` 검사를 확인: 4개 W01 신규 파일은 `main` 기존 바이트와 일치하지 않으므로 customPath로 명시해야 하지만 이전 manifest는 빈 배열. 과거 #2665 B 요청 재실행 금지.
+- **실제 실패 조건 최소 수정:** 새 직접 부모 d260 source commit `9c084bf032dee10c0172646619559f641c1e422a`, [source PR #2667](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2667). 기존 W01 운영 4파일 바이트 동일, 다른 코드 수정·테스트 파일 diff 없음. GitHub compare 정확 `ahead=1 behind=0`, 4파일만. C996 #44966879472, D05 #44966879471, Controller Maintenance #44966879480 모두 `completed/success`.
+- **공식 선택 설치 customPaths·복원 고정:** [승인 PR #2668](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2668)에서 `allowFiles` 4경로를 `selectiveSource.customPaths`와 승인 pin `customPaths`에 정확 동일하게 반영. `validateControllerSelectivePin`의 정확 파일/기준/승인 ref/복원 조건 자체는 유지. C996 #44966933720 SUCCESS, control main merge `17aff99ed3b3b1ee0b9053a64bca3eead043fe05`. manifest 원문 SHA256 `701fdf5fe843ac840a614c603f5c7b8adef4edf46a1b167b3470ca88848e17c0`, allowFiles canonical fingerprint `55eb2222ee575ea1a6b7c4df89229d8a531977a9b229df60c10c021288be579c`, rollback `RESTORE_INSTALLED_SHA(d260aea2…)`.
+- **새 고유 B 원본:** [Issue #2669](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2669), `requestId=pc-update-3652629d-dd06-4e5d-a7a7-1efeb056cf9d`, 목표 `9c084bf0…`, 정확 manifest hash pin 및 `pc-maintenance` 등록. 마지막 댓글 조회 시 결과 아직 없음, 대응 상태 `STATE_UNKNOWN / RESULT_PENDING` (정확 실제 단계는 미확인). 결과 파일 404는 실패 또는 설치 여부 판정 아님. 중복 요청 금지.
+- **후속:** #2669 실제 유지보수기 결과 JSON/TXT의 status, code, actualControllerSha, recoverySha, protectedStateUnchanged, workflowEnabled 회수. PASS이면 신규 A 두건 고유 실행 후 D1/Census 저장 근거 대조. 실패 시 조건·실제 파일/backup/lease로 복구 판단. 전체 개편 단계 `1 DONE/2 IN_PROGRESS/3~5 NOT_DONE` 유지.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
