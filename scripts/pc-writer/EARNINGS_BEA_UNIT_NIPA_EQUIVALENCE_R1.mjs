@@ -14,7 +14,7 @@ export function compareBeaUnitNipaToFred({beaResponse,fredCsv}={}){
     String(row?.LineNumber??'')==='7');
   if(sourceRows.length<5)throw Error('BEA_UNIT_NIPA_SERIES_MISSING');
   const points=sourceRows.map(row=>{
-    if(row.TableName!==undefined&&row.TableName!=='T11500')
+    if(row.TableName!=='T11500')
       throw Error('BEA_UNIT_NIPA_TABLE_MISMATCH');
     // No implicit multiplier or currency conversion is permitted.
     if(String(row.UNIT_MULT??'').trim()!=='0'||!['usd','dollars'].includes(String(row.CL_UNIT??'').trim().toLowerCase()))
