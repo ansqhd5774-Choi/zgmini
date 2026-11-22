@@ -31,6 +31,14 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — W05 UI pending/stale reason separation issue #1467
+
+- **독립 4단계 원인 분리:** 2026-11-22 앱 main `app/earnings-recession/earnings-risk-only-panel.tsx`는 BEA unit/QFR `unitError/qfrError`의 모든 미연결 상태를 `자료 확인 대기` 하나로 표시하고, `components/use-stored-index.ts`는 Worker HTTP 503의 `reason`을 일반 `UPDATE_FAILED`로 축약. Worker의 `STORED_PROJECTION_PENDING`, `PROJECTION_READ_UNAVAILABLE`, `STORED_PROJECTION_INVALID`, `STALE` 등 실제 오류 원인별 표시 구분이 소스상 불가능한 조건 확인.
+- **실제 처리:** [앱 Issue #1467](https://github.com/ansqhd5774-Choi/zgmini/issues/1467)에 UI 담당용 최소 수선·PC/모바일·회귀시험 요구 등록. 앱 main과 W05 브랜치의 공용 hook/UI blob이 서로 달라 기존 W05 브랜치로 공용 hook을 구형으로 덮어쓰지 않음. 타 담당 UI 소스 수정/병합/실배포 증거는 아직 없음. 이 항목은 W05의 BLS 수집/QFR·BEA 원자료·D1 게시와 독립 NON_BLOCKING.
+- **현재 변경 없음 재확인:** control #2593/#2089/#2240 댓글에서 신규 owner exact B GO/실제 설치·게시 영수증 없음, BEA unit [Draft PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183) OPEN/Draft/미병합. [A #2650](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2650#issuecomment-7071263400) 최근 `controlSourceSha=565ddbd4…` PASS를 그대로 재사용. Controller source PR #2600 merged 상태와 운영 효과 승인/적용 미완료는 구분.
+- **외부 공개 조회 한계:** 금일 `zgmini.kr` Worker 3 API 직접 GET은 web 도구에서 접근 불가. 따라서 과거 HTTP 503을 오늘 관측으로 바꿔 쓰지 않음.
+- **다음 필수 효과:** BEA 제조업 Controller 1파일 B 운영 승인 확인 시 기존 독립 유지보수기→B 영수증→A archive 원본; 별도 WPSFD42 POST+SQLite, QFR 단일키 D1 게시 효과 owner GO 확인. 승인 없는 설치/수집/게시 신규 실행 0, 현재 개편 1/5 DONE·2단계 IN_PROGRESS.
+
 ### 2026-11-22 — Latest host A #2650 confirms Controller preimage unchanged
 
 - **실제 Windows 결과 재사용:** [#2650](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2650#issuecomment-7071263400) / [Run 44964594236](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44964594236), `PASS/CORE_READONLY_DIAGNOSIS`, 설치 `controlSourceSha=565ddbd4ebfc46c88fb7dbaa810fd545656c6306`. 기존 #2630 실측과 동일하며 새 A를 중복 발행하지 않음.
