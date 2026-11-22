@@ -315,3 +315,10 @@
 - [B 설치 후 core-status A #2755](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2755) 실제 PC 결과 `PASS/CORE_READONLY_DIAGNOSIS`, `controlSourceSha=9e3542e…`, `pcOperationalApprovedSha=aabb9e85441fc1150ba572a840245ab4a05c35c4`, Core cycle checkpoint `COMPLETE` (관측 modifiedAt `2026-11-22T12:20:14.798Z`). Core 정상 검사는 R2 관측값 검증이 아님.
 - 신규 고유 A 단회 [#2757](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2757): `operation=inflation-r2-local-readonly`, requestId `pc-w01-r2-local-readback-20261122-9e3542e-r1`, R2 fixed key `detail:inflation:v1`, 요청 접수. 최초 조회 OPEN/댓글 0건, 결과 **아직 미확인**. 중복 요청 금지.
 - 다음 실행은 #2757 actual JSON/TXT 회수로 `methodologyVersion/score/asOfDate/trend` 마지막점 일치 검증 → 필요시 실제 원인 수정 → D1/Production API/PC·모바일 검증. 작업 범위 2/5 유지.
+
+## 2026-11-22 — R2 로컬 projection 날짜·점수 운영 PASS (단계4 부분 증거)
+
+- [R2 A #2757 Run 45023125936](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2757#issuecomment-7079227186): `PASS/W01_R2_LOCAL_DATE_VALUE_MATCH`, actual Controller SHA `9e3542e616f3fa781a2d614294d6bde17c087180`, SQLite 실제 opened, `operationalWrites=0/providerCalls=0/d1Writes=0`, 보호 전후 SHA 일치.
+- 고정 로컬 키 `detail:inflation:v1`; `projectionStatus=READY/payloadStatus=READY`; `methodologyVersion=INFLATION_R2_R29_56_IA`; `score=57.97005405261128`; `asOfDate=2026-11-22`; `trendLength=12`; 마지막 `label=2026-11-22`, `value=57.97005405261128`; `trendDateMatchesAsOf=true`, `trendValueMatchesScore=true`.
+- `storedAt=1795350660521`, `sourceStoredAt=1795350628537`, `projectionBuiltAt=1795350660521`, 원본 `bodySha256=ea6912d2d1606b4fd0b1ccd3d1ca1f4b3d5b6ec542e30b0fa2490509a4bc8344`. Core 체크포인트 `2026-11-22T12:34:00.611Z / COMPLETE`, Writer 메타 `2026-11-22T12:30:28.273Z`, config source SHA `aabb9e85441fc1150ba572a840245ab4a05c35c4`. `runtimeWriterSourceVerified=false`이므로 Writer 실행 계보 증명 완료로 표현하지 않음.
+- 이 결과의 증거 scope는 `LOCAL_SQLITE_ONLY_NOT_D1_OR_PRODUCTION`; D1 게시·공개 API·PC/모바일 렌더링 일치는 **미확인**. 완료 단계는 기존 **1·3 DONE, 2·4 진행 중, 5 미완료 (2/5)** 유지. 다음 필수는 D1 정확 키 본문/게시 시각 및 Production `/api/inflation-detail` readback 뒤 UI 비교.
