@@ -14,6 +14,12 @@
 | 4 | PC·모바일 실화면 종합 확인 | 영향받은 화면의 값/단위/날짜/카드 최신점/차트 끝점·기간/결측·역행·overflow가 공개 저장 응답과 일치 | PARTIAL — **현재 사용자 Production 캡처 2건에서 1D 차트가 `추이 데이터 준비 중`으로 지속 비표시**. 2026-11-21 이전 시점 실Chromium 390/1440 차트·기간·overflow 0 PASS는 역사적 유효 증거로 별도 유지. 현재 API `status/reason/points` 미확인, 차트 복구 전 최신점 Tooltip 확인 불가 |
 | 5 | UI 작업 종결·업스트림 잔여 인계 | W06 완료/Production 검증/Writer·데이터 잔여를 구분하고 정확한 원담당·작업·종료조건으로 정리 | NOT_DONE |
 
+### 2026-11-22 — 1D 당일 1점 공백의 실제 코드 경로 및 Writer 승인 경계 판별
+
+- **실제로 확인한 저장/화면 경로:** `scripts/pc-writer/run-local.mjs`의 `composite-archive-local`은 `marketReady` 성공 시에만 `appendCompositeObservedFromCurrent`를 실행한다. `scripts/pc-writer/composite-observed-archive-r1.mjs`는 이전/당일 마지막 `signature`가 동일하면 동일 결과를 재저장하지 않는다. `lib/composite-observed-history-r1.mjs`는 15분 미만의 서로 다른 서명도 현재 승인 정책에서 저장하지 않는다. 공개 `app/api/market-score/observations/route.ts`는 1D에서 마지막 UTC 날짜만 남기고, `lib/market-score/composite-observed-display-r1.mjs` 또한 1D를 마지막 UTC 날짜로만 선택한다. 따라서 로컬 #2724의 11/22 한 점이 공개 D1에도 동일하게 반영되었다면, 전날 11/21 두 점을 가져와 **존재하지 않는 당일 점처럼 1D선을 만들지 않는 현행 정책**과 사용자 공백이 일치한다. 권리 필터/실제 D1 값 미인증이므로 서비스 근본 원인 확정은 아님.
+- **진짜 원인과 기존 승인 정책 구분:** 당일 추가 `marketReady` 계산이 있었는지, 변경된 실점이 `signature` 중복·15분 조건으로 누락됐는지, 단지 저장할 새로운 유효 입력이 없었는지는 현재 일별 건수만으로 판별할 수 없다. 기존 [Draft #1185](https://github.com/ansqhd5774-Choi/zgmini/pull/1185#issuecomment-7078498255) 담당자에게 이번 런타임 1점과 15분 미만 변경점 유실의 **증거 범위가 다르다**고 전달했다. 이 Draft를 11/22 공백 수리로 무승인 병합/설치하지 않음. 로그로 `marketReady`/아카이브`UNCHANGED`/게시 `VERIFIED` 각 단계를 먼저 확인할 필요가 있다.
+- **새 결과:** 생산자·Reader 소스 검증과 담당 PR 인계 댓글 1건. 실제 D1 per-key/public API readback, UI 복구, 최신점 툴팁은 여전히 미완료. 데이터/코드/주기/권리/배포 변경 0. W06 3/5(60%), 4 PARTIAL, 5 NOT_DONE.
+
 ### 2026-11-22 — 공개 D1 연결 경로 및 유료 수급 Writer 설치/게시 구분 확인
 
 - **현재 추가 조사:** 제어 저장소 최신 `config/operations.json`과 `controller/operations.mjs` 허용목록, 기존 `inflation7-d1-readback-readonly` 및 `employment-r6-d1-readback-readonly` 구현을 비교했다. 이들은 각각 고정된 타 도메인 D1 key만 조회한다. 승인된 A 작업 중 **`composite-observed:2026-11-22` 개별 D1 readback을 바로 제공하는 고정 작업은 확인되지 않았다**. 타 도메인 작업에 임의 key/SQL을 주입하거나 범위 밖 실행·설치하지 않음. 외부 Cloudflare 계정 도구는 현재 연결 목록에서 확인되지 않음.
