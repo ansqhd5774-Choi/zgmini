@@ -42,6 +42,16 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — 1D 실사이트 API 판별을 위한 기존 CI 재실행·실제 차단 단계 식별
+
+- **시작/종료:** W06 3/5 DONE(완료조건60%), 4 PARTIAL, 5 NOT_DONE. 사용자가 제공한 2026-11-22 실화면 2건에서 카드33.0/1D 선택/차트 `추이 데이터 준비 중` 재현을 진단 목표로 유지. GUI 툴팁 확인 작업은 차트 부재로 아직 수행 불가.
+- **실제 운영 검증 실행:** 기존 [GitHub Actions #44880063693](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/44880063693)의 read-only Chromium `ui` job `136773177116`을 **재실행**(새 job `137158083764`), 실제 실행 시작/종료 로그 직접 회수. 신규 workflow 파일/PR/branch, 코드, 배포, PC/DB 변경 없음. 이 기존 job에는 1D 공개 API와 차트를 조회하는 W06 절차가 포함돼 있지만, 해당 단계가 이전에 있는 `Verify Production first-party JavaScript assets with read-only Chromium` step를 먼저 거치도록 정의돼 있음.
+- **실제 실패 위치:** 2026-11-22T09:11:19~09:11:28Z 기존 자산 검사가 `/inflation/` 모바일390 및 데스크톱1440에서 `Minified React error #418` hydration 예외를 수집. `/debt-risk/`, `/supply-shock/`, `/economic-indicators/inflation/`의 앞선 자산 GET은 JS404/실패 없이 확인됐지만 `/inflation/`의 `pageErrors` 비어있음 assert가 실패. **job conclusion=failure**, `One-time W06 Production viewport 390 and 1440` 실제 단계는 **NOT_RUN**. 해당 오류는 독립 페이지의 렌더링 문제로, W06 1D 차트의 API/권리/Reader 원인을 새롭게 입증하지 않음. W06 진행률 전역 하락/상승 금지, 물가 UI 소유자에게 독립 이슈로 구분.
+- **권리 경로와 W06 분기 재검증:** `app/api/market-score/observations/route.ts`의 `maskRetiredMarketPublicSnapshot`에 의한 `PROVIDER_REMOVED_MARKETPARQUET_PUBLICATION_DENIED` HTTP503/UNAVAILABLE 필터와 `isPaidCompositeObservedPoint` 별도 신규 승인 계보 필터가 존재. 실제 `/api/market-score`는 저장 current GET을 읽고 유효한 paid breadth overlay가 있더라도 원래 atomic overall 계산점을 임의 재산정하지 않음. `app/dashboard-ui.tsx`는 1D 전환 후 READY 저장점 또는 새 계산점이 부족해 `overallTrend.length <= 1`이면 빈 영역을 표시한다. **사용자 화면만으로 rights 503, paid 점 유효 부족, 현재점 stale, archive fetch 실패 등 무엇이 실제 발생했는지는 식별 불가**. 명확한 reader/readback 없이 제약을 해제해 이전 무료 데이터/가짜 선 그래프를 보여주지 않음.
+- **실시간 조회 제한:** 이번 공개 URL `/api/market-score` 및 `/api/market-score/observations?period=1D` 웹 직접 조회는 `not accessible` 반환. 기존 TinyFish fetch 경로는 사용자/연결 서비스의 권한 거부로 실행하지 않도록 지시된 상태. 신규 유료 크레딧 구매·권한 우회·동일 실패 CI 무조건 재실행 없이 구분 증거를 유지.
+- **다음 최소 필수 입력:** 현재 Production 1D 공개 응답의 실제 HTTP status·`status/reason/points.length`와 현재 score GET의 `overall.status/state/updatedAt`(민감정보 제외) 동시 조회. `READY`이며 적법한 2개+ 점이 제공되는데 UI가 지속 비면 W06 `setCompositeArchive`/기간 결합 버그로 최소 수정·회귀·공식 배포. `PENDING` 또는 유효점 0~1개면 원담당 Writer 게시/계보 확인, retired 503이면 권리 보호를 그대로 유지하고 허용된 새 유료 계보의 신규 관측만 복구한다. 물가 hydration #418은 별도 UI 담당의 독립 문제로 분리. 현재 #4 PARTIAL/#5 NOT_DONE.
+- **효과:** 본 진행 원장 1파일 수정만. 기존 CI 실행은 읽기 전용; 운영 source/저장 데이터/Cloudflare/DNS/권리/TTL/수집 주기 변경 없음.
+
 ### 2026-11-22 — 지속 빈 1D 차트의 저장형 Reader·사용권 상태 분기 진단
 
 - **현재 시작/종료:** 3/5 DONE(60%), #4 PARTIAL/#5 NOT_DONE. 사용자가 같은 종합시장 1D 탭의 차트 빈 화면을 두 차례 제공했고, 카드33.0·차트`추이 데이터 준비 중`이 **시간이 지난 뒤에도 유지**되는 사용자 직접 증거. 새 저장점·새 차트 정상화의 근거가 없으므로 4단계 최종점 툴팁 테스트는 그 순간 **차트 자체가 없어서 불가**.
