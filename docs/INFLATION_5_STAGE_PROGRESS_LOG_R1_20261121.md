@@ -12,11 +12,11 @@
 | --- | --- | --- |
 | 1. 운영 기준선 | **DONE** | 기존 [#2576](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2576) 원자료 25개 보존 검사 PASS 및 공개 API 기존 결과 확인. 26/26이나 게시 최신성 인증은 아님 |
 | 2. Writer→D1→API | **IN_PROGRESS** | [#2717](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2717#issuecomment-7078270219) D1 정확 키 현재 `body/stored_at` 직접 PASS, 7/7 READY·stale 0; **Production GET/실제 클라이언트 화면 7값 동치 검증은 미완료** |
-| 3. Census #28 | **IN_PROGRESS** | [#2716](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2716#issuecomment-7078262599) 자연 Core 승인 복구 성공: Census 21 관측, 저장 SHA 확보, checkpoint processed true. 기존 26/26 등 단계 전체 범위의 완료 근거는 별도 확인 필요 |
+| 3. Census #28 | **DONE** | [#2683](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2683#issuecomment-7077108457) 원본 4개 SHA·헤더 확인 → [#2716](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2716#issuecomment-7078262599) Census #28 21개 관측 로컬 저장/재조회·checkpoint 성공 및 후보 7/7 원자료 정상 → [#2717](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2717#issuecomment-7078270219) #28 D1 READY, 기존 [#2707](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2707#issuecomment-7078088675) 19/19 저장 projection과 합쳐 연구 입력 26/26 확인. Production API/UI 전체 동치는 2·4·5단계 별도 |
 | 4. R2 미래 날짜 | **NOT_DONE** | 이전 실측 `asOfDate=2026-11-21`인데 마지막 `trend.label=2026-11-30`; 소스 수정 PR #1340/#1344/#1352 완료 이력과 운영 미적용을 구분 |
 | 5. 최종 종결 | **NOT_DONE** | 수집→저장→게시→UI 실제 동일 증거 미충족 |
 
-**완료: 1/5단계. 2단계 진행 중.** 이 비율은 전체 작업량 20%를 뜻하지 않는다.
+**완료: 2/5단계(1·3). 2단계 진행 중, 4·5단계 미완료.** 완료 단계 수를 전체 작업량의 퍼센트로 환산하지 않는다.
 
 ## 2026-11-21 — 최신 실제 작업 증거
 
