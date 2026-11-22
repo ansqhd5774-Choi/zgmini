@@ -31,6 +31,13 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — BEA NIPA T11500 identity fail-closed correction
+
+- **직전 CI 완료 회수:** [BEA unit PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183) CL_UNIT 소문자 호환 수정 HEAD `f87c34c471c9366467700ad18e0356dedc68a1c0` [Node CI #45006529649](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45006529649) `completed/success`. 해당 source CI 성공은 실BEA API 원문 동치 및 운영 게시 성공 증거가 아님.
+- **공식 스키마 추가 대조:** BEA NIPA API `BEAAPI.Results.Data[]`의 `TableName,SeriesCode,LineNumber,TimePeriod,CL_UNIT,UNIT_MULT,DataValue`와 분기 `YYYYQn` 규칙을 [BEA API User Guide](https://apps.bea.gov/api/_pdf/bea_web_service_api_user_guide.pdf)·[BEA beaapi](https://us-bea.github.io/beaapi/iTables_to_api.html)로 확인. 기존 비교기에서 `row.TableName===undefined`가 비거부되어 출처 `T11500`를 확인할 수 없는 행도 통과할 수 있었음.
+- **정확 수정:** PR #1183 전용 소스 [commit `85525df3`](https://github.com/ansqhd5774-Choi/zgmini/commit/85525df3abc9ea6f86bca80a2d1eb607a27fa75d)에서 `TableName==='T11500'` 필수, [test `c5016c80`](https://github.com/ansqhd5774-Choi/zgmini/commit/c5016c806fc2593ffa0d838c4eabab2401481566)에서 누락 테이블명 거부. 기존 단위/배율/동일 5개 분기 값 검증 유지, 운영 코드·수집·D1 호출 없음. [PR 설명](https://github.com/ansqhd5774-Choi/zgmini/pull/1183#issuecomment-7077113456), 최신 HEAD `c5016c806fc2593ffa0d838c4eabab2401481566` OPEN/Draft/미병합. 최신 HEAD의 GitHub CI는 최초 조회에서 생성 확인 안 됨, PASS라 주장하지 않음.
+- **FIRST UNFINISHED:** 실제 승인된 `T11500/Q/A463RD` BEA JSON (단위/원문/분기) 대조 및 기존 수집 효과/BEA 소스 권리 승인과 저장 원본 증거. WPSFD42 BLS POST/SQLite, QFR D1 1key, BEA mfg Controller B 설치는 독립 미완료. 개편 1/5 DONE, 2 IN_PROGRESS.
+
 ### 2026-11-22 — BEA NIPA CL_UNIT real-format correction
 
 - **기존 CI 회수:** BEA unit NIPA/FRED 비교 2파일 최초 추가 HEAD `12a131ebc5b90b0878f01c623dc94bfa6ecec021` [Node CI #45006275722](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45006275722) `completed/success`.
