@@ -158,6 +158,14 @@
 - **권한/운영 구분:** PR은 source-only이며 **운영 Controller 변경 없음**. 추가 설치가 필요하면 현시점 설치 SHA·lease 확인 후 승인된 정확 범위·백업/롤백 및 고유 B 계약이 필요. 기존 4파일 B 설치 #2669를 새 소스 설치 승인으로 확대 해석하거나 반복하지 않음. 다음 실제 원인 판정은 신규 진단이 정규 운영 적용된 후 해당 A를 한 번 읽어 증빙. 이미 확보한 #2674/#2675 결과 반복 실행하지 않음.
 - **남은 과제:** 중복 소비 컬럼 식별 → 기존 파서/공식 원본 정의 비교 → 최소 교정/원본 보존 → Census #28 저장자료 복구 → D1 7/7/생성 시각 검증. 5단계 상태 `1 DONE / 2 IN_PROGRESS / 3~5 NOT_DONE`.
 
+## 2026-11-22 — #2677 CI 성공·Census 중복 소비 컬럼 진단 1파일 설치 후보
+
+- **실제 실패 기준:** [PC Census #2675](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2675#issuecomment-7076697982)의 4개 SHA 보관 응답 모두 필수 누락 없음·날짜 있음·중복 헤더 2개·`HEADERS_INVALID`; [D1 #2674](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2674#issuecomment-7076698907) 읽기 계약 PASS/6 READY+ID28 PENDING. consumed 키 중복 최소 하나가 직접 실패 조건이고 정확 중복 키 이름은 아직 미확인.
+- **소스 수정 검증:** 제어 [PR #2677](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2677) `controller/inflation-census-m3-archived-headers-readonly.mjs`와 동일경로 테스트 2파일 변경; 추가 출력 `duplicateConsumedHeaders`는 기존 하드코딩된 5개 필수 키+존재하는 날짜 키 중 중복된 이름만 노출. 임의 공급자 헤더·원자료 본문·값·키·경로는 출력하지 않음. Controller Maintenance #45004775408, C996 #45004775433 둘 다 SUCCESS.
+- **운영 영향 최소화:** 실제 설치 `9c084bf032dee10c0172646619559f641c1e422a`를 부모로 하는 단일 소스 커밋 `042c45567d31c5ec620c9e13b154fc3f08218774` 작성. [정확 1파일 후보 PR #2679](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2679); Git compare `ahead=1/behind=0`, 기존 Census readonly 모듈 1파일 변경 5+/1-만, 시험 파일이나 다른 운영 파일 diff 없음. 단일 후보 C996 #45006165235 SUCCESS. 원본 #2677의 테스트는 source-only 근거로 재사용.
+- **B 승인·원복 후보:** 제어 [승인 PR #2680](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2680)에 `approvals/controller-selective-targets/042c4556….json` 및 `approvals/controller-updates/042c4556….json` 추가. allowFiles·customPaths는 오직 `controller/inflation-census-m3-archived-headers-readonly.mjs`; `installedSha=9c084bf0…`; `targetSha=042c4556…`; `VERSIONED_SNAPSHOT` 및 `RESTORE_INSTALLED_SHA(9c084bf0…)`, `core-status`. 승인 소스 C996 #45006242578은 최초 확인 시 PENDING; source·승인·운영 설치는 구분. 추가 B 요청·사용자 DB 쓰기·수집 호출 없음.
+- **다음 최소 동작:** 승인 PR C996 SUCCESS·main 확인→raw manifest SHA256 재검증→실제 installed CAS/lease·backup 롤백 계약 검증→새 고유 독립 B 설치→실제 영수증→추가 필드 A 조회 1회 → 소비 헤더 이름·현재 Parser selector와 대조하여 #28 복구/게시까지 수행. 5단계 `1 DONE/2 IN_PROGRESS/3~5 NOT_DONE` 유지.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
