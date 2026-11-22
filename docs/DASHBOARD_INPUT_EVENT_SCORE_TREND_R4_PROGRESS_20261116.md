@@ -42,6 +42,17 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 12:03 KST — 4단계 1D 빈 차트 조건 최신 소스 독립 재검증
+
+- 시작/종료: 3/5 DONE(60%), #4 PARTIAL, #5 NOT_DONE. 기준 브랜치 HEAD `0bc6864de44d5330d7f2140174bb85184166b81c`; main `2eb796da811d0e074ca0cabab8e2cad9502bff43`. PC 설치 SHA·Cloudflare active deployment SHA 미확인.
+- 실제 수행: GitHub 지정 계획/진행 정본 및 최신 main `app/dashboard-ui.tsx` 원격 조회. 기간 변경 시 `startStoredRefresh`가 `/api/market-score/observations?period=1D`를 요청하고, 응답이 `READY`, `period===label`, `Array.isArray(points)`일 때만 `setCompositeArchive({days:periodDays,points})` 하는 경계 확인. 렌더 `overallTrend`는 같은 기간 archive, 승인 일간 history, 현재 카드 점수를 `mergeCompositeObservedDisplay`로 합성하며, 2점 미만이면 준비 중 화면을 표시한다. API READY라도 0/1점이면 차트 표시 완료 조건을 충족하지 않는다는 점을 분리.
+- 검증: GitHub 원격 source read PASS. 신규 Production GET/브라우저 hover/실행 CI 없음. 2026-11-22 사용자 빈 차트 캡처는 일시 상태/지속 결함 어느 쪽도 단독 확정 불가. 기존 #44880063693 실Production 390/1440 PASS 및 마지막점 tooltip 미확인 증거 보존. 이 시점 API 상태·point count는 UNVERIFIED. 앱 오류/Writer 결함 단정 금지.
+- 변경: 지정 진행 원장만. UI/Reader/Writer/DB/D1/배포/승인·테스트 코드 변경 없음. 중복 유료 브라우저 및 실패 Workflow PR 생성 없음.
+- 다음 단일 실행: W06 #4, 실제 공개 1D GET과 동일 시점 카드 GET에서 HTTP/status/period/points count/last observedAt/score 확인 후, READY 유효점 2개 이상일 때만 실제 DOM 빈 차트 지속 여부 및 최신점 tooltip을 검증한다. API 부족이면 Writer/D1 담당에게 증거 인계; API READY 2점 이상+DOM 지속 공백일 때만 W06 합성 경로 최소 수정·회귀. 4단계 완료 증거 없으므로 3/5 유지.
+- 원격 인계: 본 갱신 후 파일 재조회 필요.
+
+
+
 ### 2026-11-22 — 사용자 실제 1D 빈 차트 화면 증거 및 조건 분리
 
 - **시작/종료:** W06 조건충족 3/5 DONE(60%), #4 PARTIAL, #5 NOT_DONE. **신규 실제 사용자 스크린샷:** `2026-11-22`에 사용자가 공유한 공개 대시보드 화면. `종합 시장 점수` 카드 **33.0**, 기간 **1D** 강조, `전일 0.0`/`1일 0.0`, 차트 자리에 **`추이 데이터 준비 중`** 표시. 이는 그 순간 **1D의 실제 1개 이상 곡선/마지막 툴팁이 화면에 없었다는 독립 증거**이며 이전 라이브 Chromium 2026-11-21의 1D 차트 PASS를 현재 시점에 소급 적용할 수 없음을 뜻함. 카드 숫자가 살아 있는 사실만으로 저장된 1D 이력 정상 표시를 인증하지 않음.
