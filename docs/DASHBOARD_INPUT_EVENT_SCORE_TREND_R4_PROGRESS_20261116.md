@@ -1,5 +1,13 @@
 # W06 UI·Reader — 실제 적용·화면 완료 5단계 진행원장 (2026-11-21 개편)
 
+### 2026-11-22 — 병합 후 Production 단일 1D 실제 마커·툴팁 검증
+
+- **시작 상태:** 1~3단계 DONE(3/5=60%), 4단계 PARTIAL, 5단계 NOT_DONE. 변경 대상 소스/main SHA `8756ef33b02d88b203dd34b4259b58ac7298816e` 유지. 이번에는 기존 #1470 수정을 재구현하지 않음.
+- **실제 Production API readback:** 2026-11-22 신규 읽기 전용 GET `/api/market-score/observations?period=1D` HTTP 200, `READY`, `availableDays=2`, `totalObservedPoints=1`, `sampled=false`, `observedAt=2026-11-22T00:00:50.969Z`, 원시 `45.137344974152676`. `/api/market-score` HTTP 200 `SUCCESS` 및 `overall.score=45.137344974152676` 일치. 승인된 3.5배 민감도 변환 후 표시 `33.0` 일치. CDN/브라우저 오류로 이전에 미확인했던 공개 API 현재값 확인.
+- **실제 운영 브라우저 읽기 전용 검증 (1920×993):** 종합 시장 점수 1D 버튼 실제 클릭 후 유효 차트가 로드됨. `추이 데이터 준비 중`이 사라짐. Recharts SVG 실제 ReferenceDot/Area dot `cx=387, cy=61.594276516944575` 확인, `실제 관측점 1개 · 2026. 11. 22. 09:00 (계산 시각) · 33.0점` 상태 텍스트 및 컨테이너 aria-label 확인. 실제 마커 hover로 `.recharts-tooltip-wrapper` visibility visible 및 툴팁 `2026. 11. 22. 09:00 (계산 시각) / 33.0 / 실제 계산시각 점 · 당시 방법론 버전 미확인` 확인. 한 점을 2점 이상의 완성된 선이라고 주장하지 않음.
+- **남은 검증:** 해당 브라우저에서는 실제 viewport 1440/390 전환이 차단돼 Production 1920만 PASS. 후속 모바일 `390×844`+1W/1M/3M/6M/1Y 실제 상호작용 세션은 연결 앱 credits exhausted로 **실행 시작 전 거부**, 실패한 UI 증거가 아니며 재시도·신규 결제하지 않음. 기존 390/1440 mock CI는 정상 보존하지만 Production 모바일 PASS로 대체하지 않음. Cloudflare 정확한 Deployment ID/배포 source SHA 및 로컬 SQLite↔D1 개별 키 body/stored_at 읽기 결과도 미확인. UI 증상이 실제 사이트에서 제거된 것은 입증됐으나 Writer의 추가 계산점 부재 원인은 아직 미입증.
+- **상태 판정:** 종합 1D 실제 운영 단일점 표시/마커/툴팁 복구 PASS(1920). 사용자 정의 4단계(PC1440·모바일390 등 전수 검증) PARTIAL, 5단계 NOT_DONE, 3/5 DONE=60% 유지. 새 Writer/권리/DB/DNS/Cloudflare 설정 변경 0. 후속 정상 실행 가능 경로 확보 시 모바일/기간 regression만 영향 범위에서 확인하고, 공통 운영 저장 누락은 독립 증거가 있을 때만 처리.
+
 ### 2026-11-22 — 병합 후 W06 4·5단계 실제 배포 검증 경로 점검
 
 - **소스 기준:** [main commit 8756ef33](https://github.com/ansqhd5774-Choi/zgmini/commit/8756ef33b02d88b203dd34b4259b58ac7298816e)와 현재 main 비교 `identical`, ahead/behind 0/0. 신규 PR/수정/강제 배포 불필요.
