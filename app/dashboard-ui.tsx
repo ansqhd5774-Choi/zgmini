@@ -279,7 +279,7 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
      </div>
 
      <div className="zg-r55-summary-chart">
-      {overallTrend.length>1
+      {overallTrend.length>0
        ?<SummaryTrend data={overallTrend} label="종합 시장 점수" color={overallScore===null?'#94a3b8':scoreColor(overallScore)} periodDays={periodDays}
         currentPublished={overallScore!==null&&market?.updatedAt&&typeof market?.modelVersion==='string'
          ?{updatedAt:market.updatedAt,displayScore:overallScore,modelVersion:market.modelVersion}:null}/>
