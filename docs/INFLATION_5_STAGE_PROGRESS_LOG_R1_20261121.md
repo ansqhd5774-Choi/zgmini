@@ -98,6 +98,14 @@
 - **실제 B 요청 발행:** [독립 유지보수기 Issue #2662](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2662), `requestId=pc-update-68eee7fc-ae3f-4df8-b8ae-3b75b41caabb`, operation `controller-update`, pin `6a4c1221…` / manifest SHA256 `83ba4320…`, `pc-maintenance` label. 동일 효과 요청 추가 생성하지 않음. 최초 댓글 조회 시 결과 없음. **접수 성공은 설치/롤백 성공이 아니며** 현재 `RUNNING/STATE_UNKNOWN`의 정확한 단계는 유지보수기 JSON/TXT 회수 전까지 미확인.
 - **필수 후속:** #2662 단일 원본의 유지보수기 댓글/결과 JSON/TXT 회수하여 `status/code/actualControllerSha/recoverySha/protectedStateUnchanged/workflowEnabled` 확인. 성공 시 정확 SHA 신규 A 2개 단회 조회, 실제 D1/헤더 결과 검증. 실패면 승인된 rollback 결과 및 현시점 설치 상태 검증. 운영 데이터 수정 0. 5단계 `1 DONE / 2 IN_PROGRESS / 3~5 NOT_DONE` 유지.
 
+## 2026-11-22 — #2662 실제 사전검증 BLOCKED 원인 수정 및 정확 4파일 후보
+
+- **실제 B 결과:** [원본 Issue #2662](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2662#issuecomment-7071511671) 유지보수기 댓글·[JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/maintenance-pc-update-68eee7fc-ae3f-4df8-b8ae-3b75b41caabb.json) 확인: `status=BLOCKED`, `code=SELECTIVE_NONSCOPED_DIFF`, `firstFail=RECEIVED`, `actualControllerSha=d260aea2513902a77425344629f91575e2d950ef`, `recoverySha=null`, `protectedStateUnchanged=null`, `workflowEnabled=true`. 사전검증 단계에서 중단됐으므로 설치·rollback 성공 주장은 하지 않음. **동일 requestId replay 금지**.
+- **실패 코드의 직접 조건 확인:** 설치된 기존 `tools/update.mjs`는 `manifest.selectiveSource`가 있는 경우 `git diff --name-only installedSha...targetSha`의 **전체 변경 파일 배열**과 `allowFiles`의 4개 path 정확 일치를 요구해 `SELECTIVE_NONSCOPED_DIFF`를 발생시킴. 구 source `6a4c1221…`에는 배포 제외 테스트 `controller/inflation7-d1-readback-readonly.test.mjs` 1개가 추가돼 정확히 5개 변경으로 차단. 이는 실제 테스트/운영 파일 구분 계약 충돌이며 Provider/DB의 문제 아님.
+- **원인 직접 수정:** 정규 승인 scope를 늘리거나 안전 검사를 삭제하지 않고, 같은 base `d260aea2…`로 **정확 4파일**만 변경한 새 단일 부모 source commit `d6a7c6bbaecc918f63afa3f6bd8b292bb6391439` 작성. [source Draft #2663](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2663), compare `ahead=1 behind=0`, 정확 `config/operations.json`, `controller/operations.mjs`, Census header 모듈, inflation7 D1 모듈 4파일만. 기존 Core092의 두 모듈 및 다른 운영 코드 보존. 테스트는 이전 #2659에서 CI 3/3 성공 근거 유지; 새 후보 자체 CI 완료 필요.
+- **정확 신규 승인 source:** [PR #2664](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2664)에 target `d6a7c6bb…`/base `d260aea2…`, 동일 승인 4파일 SHA256, `VERSIONED_SNAPSHOT`, `RESTORE_INSTALLED_SHA(d260aea2…)` pin·manifest 추가. C996 CI는 최초 조회 당시 queued. 승인 source main 반영 전, 정확 target 자체 CI 및 현재 PC CAS·lease 검증 전에는 다음 B Issue 발행하지 않음.
+- **현재 단계:** 1 DONE / 2 IN_PROGRESS / 3~5 NOT_DONE. D1/Census 실제 원장 readback·수집/게시 변경 없음.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
