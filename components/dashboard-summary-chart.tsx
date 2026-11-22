@@ -79,9 +79,10 @@ function summaryAxisConfig(points:Array<DashboardPoint&{ts:number}>,periodDays:n
 const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays,currentPublished}:{data:DashboardPoint[];label:string;color:string;periodDays:number;currentPublished?:{updatedAt:string;displayScore:number;modelVersion:string}|null}){
  const mobileAxisRight=useDashboardMobileAxis();
  const scaled=timeScaledTrend(data,periodDays,currentPublished),latest=scaled.points.at(-1),axis=summaryAxisConfig(scaled.points,periodDays);
+ const singlePointLabel=scaled.points.length===1&&latest?`${new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(latest.ts))} (계산 시각) · ${latest.value.toFixed(1)}점`:null;
  const gradientId=`summary-${useId().replace(/:/g,'')}`;
  const extrema=chartExtrema(scaled.points.map(p=>({date:new Date(p.ts).toISOString().slice(0,10),value:p.value})));
- return <div className="zg-spark zg-r55-mini-chart zg-r55-summary-mini-chart" style={{height:120,minHeight:120,maxHeight:120}} aria-label={`${label} 관측 추이`}>
+ return <div className="zg-spark zg-r55-mini-chart zg-r55-summary-mini-chart" style={{height:120,minHeight:120,maxHeight:120,position:"relative"}} aria-label={`${label} 관측 추이${singlePointLabel?` · 단일 실제 관측점 ${singlePointLabel}`:""}`} title={singlePointLabel??undefined}>
   <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
    <AreaChart data={scaled.points} accessibilityLayer={false} tabIndex={-1} margin={{top:12,right:mobileAxisRight?4:18,left:mobileAxisRight?6:0,bottom:4}}>
     <defs><linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity=".6"/><stop offset="100%" stopColor={color} stopOpacity="0"/></linearGradient></defs>
@@ -120,6 +121,7 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays,curre
     {extrema.map(point=><ReferenceDot key={'extreme-'+point.kind} x={scaled.points[point.index].ts} y={point.value} ifOverflow="visible" shape={<ChartExtremumPoint point={point} peerIndex={extrema.find(p=>p.kind!==point.kind)?.index} samples={scaled.points.map(p=>({x:p.ts,value:p.value}))} count={scaled.points.length} color={color}/>}/>)}
    </AreaChart>
   </ResponsiveContainer>
+  {singlePointLabel&&<span role="status" title={singlePointLabel} style={{position:"absolute",top:0,right:6,maxWidth:"90%",fontSize:10,color:"var(--zg-text-meta,#a8bcd0)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>실제 관측점 1개 · {singlePointLabel}</span>}
  </div>;
 });
 
