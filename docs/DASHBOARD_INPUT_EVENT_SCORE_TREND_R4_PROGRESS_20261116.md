@@ -1,5 +1,13 @@
 # W06 UI·Reader — 실제 적용·화면 완료 5단계 진행원장 (2026-11-21 개편)
 
+### 2026-11-22 — 병합 후 W06 4·5단계 실제 배포 검증 경로 점검
+
+- **소스 기준:** [main commit 8756ef33](https://github.com/ansqhd5774-Choi/zgmini/commit/8756ef33b02d88b203dd34b4259b58ac7298816e)와 현재 main 비교 `identical`, ahead/behind 0/0. 신규 PR/수정/강제 배포 불필요.
+- **CI 재확인:** [Node CI #45018289299](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45018289299) completed/success (type check·regression), [Mocked UI #45018289445](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45018289445) completed/success. 본 CI는 main 병합 이전 PR HEAD에 대한 시험이며 Production의 새 asset 활성 증거가 아님. 11:39–11:40Z 실행된 기존 production-assets-network 스텝은 /debt-risk/, /supply-shock/, /inflation/, /economic-indicators/inflation/의 390/1440 GET/JS404/pageErrors 0만 보여주며, W06 homepage 실1D 확인은 포함되지 않음. 과거 /inflation/ hydration #418이 이 검사에서는 재현되지 않았지만 이를 W06 정상 증거로 확대하지 않음.
+- **현재 접근 제약:** 웹 직접 공개 GET은 DisabledError, 실행 컨테이너 DNS resolution 실패, 연결 Browser Use read-only는 `insufficient_credits`로 시작 자체 거부, 열려 있는 Chromium 탭은 브라우저 확장 호스트 권한 없어 읽기 불가. 추가 유료 크레딧/계정/우회 실행 없음. 따라서 11:43Z 이후 실제 Cloudflare Deployment SHA, /api/market-score·1D의 새로운 읽기 결과, 1440/390 차트 실제 마커/hover는 이 기록 시점 미확인.
+- **안전 판정:** 공개 1D 1점과 UI `>1` 조건의 코드 결함은 수정·PR CI·main 병합 완료. 새 Writer sampling/수집 주기/공급자 rights 변경 근거가 아직 없음. #2724/#2726 재실행하지 않음. UI 4단계 PARTIAL/5단계 NOT_DONE 및 전체 3/5=60% 보존.
+- **다음 필수 행동:** 기존 무료 공식 수단으로 Cloudflare Git Integration Production의 활성 Deployment와 이번 main SHA 일치 readback → 390/1440 홈페이지의 1D 단일 실제 마커·KST 시각·점수·hover 확인 → 합법적 신규 계산점 누락을 특정한 경우에만 로컬 Writer/D1 키별 증거 재조회. 이 증거 없이 DONE·종결 처리 금지.
+
 ### 2026-11-22 — W06 1D 실API 1점 확정 및 단일 관측 렌더 최소 수정 (운영 적용 대기)
 
 - **진행률:** 기존 1~3단계 DONE(3/5=60%) 유지. 4단계 PARTIAL, 5단계 NOT_DONE. 이번 작업은 운영 검증 완료가 아니라 소스 수정과 PR 생성 단계임.
