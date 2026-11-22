@@ -1,5 +1,15 @@
 # W06 UI·Reader — 실제 적용·화면 완료 5단계 진행원장 (2026-11-21 개편)
 
+### 2026-11-22 — W06 1D 실API 1점 확정 및 단일 관측 렌더 최소 수정 (운영 적용 대기)
+
+- **진행률:** 기존 1~3단계 DONE(3/5=60%) 유지. 4단계 PARTIAL, 5단계 NOT_DONE. 이번 작업은 운영 검증 완료가 아니라 소스 수정과 PR 생성 단계임.
+- **공개 원문 관측:** `GET https://zgmini.kr/api/market-score/observations?period=1D`는 `READY`, `availableDays=2`, `totalObservedPoints=1`, `sampled=false`, 정확히 `2026-11-22T00:00:50.969Z`, 원시점수 `45.137344974152676` 반환. 동시 공개 카드 GET은 `SUCCESS`, `overall.status=READY`, 동일 원시점수 반환. 사용자 33.0은 승인 3.5배 display sensitivity 변환 후 33.0으로 일치. 실제 점이 1개인 한 2점짜리 선을 새로 만들지 않음.
+- **직접 입증된 W06 조건:** `app/dashboard-ui.tsx`가 `overallTrend.length>1`일 때만 `SummaryTrend`를 마운트해서 유효점 1개도 `추이 데이터 준비 중`으로 숨김. 원인인 프런트 렌더 경계만 `>0`으로 변경. `components/dashboard-summary-chart.tsx`는 실제 단일점 계산시각(KST)·표시점수 안내 및 접근성 label/title 추가. 기존 ReferenceDot, 두 점 이상의 선, Rights/Writer/D1 안전 조건 보존.
+- **전담 브랜치 커밋:** `de8ea782b6a3cb841d09a57e473befa52994087d`, `3a522e424fc7b6d3eb7998c5527ddded0984bf7c`, `09ed3e2ee0af0740004f8102cf0577f691b9f265`. 기존 원본 blob SHA: dashboard `196cace83565e8b425386f50324d811e65758db9`, chart `ad08348ef8c628b9581394f6a7131e3fb64296da`.
+- **통합 보호:** 전담 브랜치가 최신 main에 비해 크게 diverged이므로 해당 브랜치 통째 병합 금지. 최신 main에서 필요한 3개 파일만 분리한 [PR #1470](https://github.com/ansqhd5774-Choi/zgmini/pull/1470) 사용. PR HEAD `fdd207dd5d2ff7e95441cc38ad34e72f73299afe`; CI/merge/Cloudflare Deployment/실화면 hover는 이 기록 시점 미확인.
+- **별도 미확인:** 하루 추가 Core 계산 여부와 marketReady, 저장 서명/15분 sampling, Writer 출판 ledger, SQLite↔D1 개별 key readback, paid breadth 계보 전체, 390/1440 실화면 및 1D 마지막점 hover. 추가 유효점이 없는 운영 정상 조건인지 Writer 누락인지는 아직 확정하지 않음. #2724/#2726 동일 조회 재요청 금지.
+- **다음:** PR #1470 관련 CI 확인 → 안전한 main 통합·Git Integration 배포 → Production PC/모바일 실화면의 단일점·실제 시각/값·tooltip 및 나머지 기간 확인. 별도 Writer/D1 증거에 의해 실측 누락이 확인될 때만 기존 승인의 최소 원인 수정.
+
 <!-- W06-ACTIVE-FIVE-STAGE-PLAN-20261121 -->
 
 **현재3/5단계 완료·4단계 진행 중.** 완료 조건 기준 3/5(60%)이며 실제 작업량·전체 데이터 종단의 완료율과는 구분한다. 과거22/75(29.3%)는 당시 증거 범위의 완료 계수로 보존한다. 전체 데이터 종단이 완료됐다는 의미도 아니다.
