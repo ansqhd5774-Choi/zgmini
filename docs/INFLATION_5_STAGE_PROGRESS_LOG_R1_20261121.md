@@ -68,6 +68,13 @@
 - **결과/제약:** [#2649 검토 패킷](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2649#issuecomment-7071230576)은 `SOURCE ONLY / PROPOSED, NOT APPROVED_B`로 명시. 현시점 실PC installed CAS·lease·동일효과 승인 및 실행 영수증은 미확인. 별도 순차 설치·임의 PC Issue/명령을 실행하지 않았으며 D1/Census live 조회·원자료 복구·게시 변경도 없음. 단계 **1 DONE / 2 IN_PROGRESS / 3~5 NOT_DONE** 유지.
 - **다음 필수 실행:** 기존 다른 유효 승인까지 해당 4파일·2개 고정 읽기 효과에 적용 가능한지 확인하고, 정확 B 승인 및 현시점 CAS·lease·백업·복원 계약을 갖춘 후 독립 유지보수기로 통합 단회 설치. 이어 신규 고유 A 두 건의 결과 JSON/TXT를 회수하여 D1 및 Census 실제 상태 검증. 단계 4 R2 Writer는 독립 진행.
 
+## 2026-11-22 — #2650 운영 Controller 실증 재사용 및 통합 설치 사전 판단
+
+- **새 실제 PC 근거 재사용:** W04 기존 고유 A [#2650](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2650#issuecomment-7071263400)의 PC JSON/TXT 결과를 회수. `finishedAt=2026-11-22T00:01:46.536Z` (KST 09:01:46), `status=PASS`, `code=CORE_READONLY_DIAGNOSIS`, `actualExecutionSha=565ddbd4ebfc46c88fb7dbaa810fd545656c6306`, `protectedStateUnchanged=true`, `providerCalls=0`, `d1Writes=0`. 이는 그 실행 시점 기존 Controller 실제 SHA의 증거이며 **현시점 설치 lease·승인까지 입증하지 않음**. 동일 효과 조회 중복 요청하지 않음.
+- **설치 diff 재검사:** GitHub compare `565ddbd4… → 8309119a…`는 `ahead=1 behind=0`, 변경 `config/operations.json`, `controller/operations.mjs`, 신규 Census/D1 조회 모듈 각 1개, 추가 테스트 1개로 **운영 대상 4파일+테스트 1파일**. 기존 승인 W04 `approvals/controller-updates/565ddbd4….json`/선택 pin은 이전 1파일 변경 전용. 기존 승인 Census API 및 Writer 파일 manifest는 해당 수집·Writer 효과만 승인하며 신규 4파일 Controller 설치 자체의 승인은 아님.
+- **정확 상태:** 통합 source CI 3/3 success, 현재 #2649 Draft `SOURCE ONLY / PROPOSED, NOT APPROVED_B`. 현행 통합 4파일 설치를 포괄하는 유효한 사용자 승인·동결 manifest·실행 시점 lease는 **미확인**. 따라서 운영 설치 B 또는 미설치 A 조회는 생성하지 않음. 원자료·D1·공개 게시 변경 0. 단계 1 DONE, 2 IN_PROGRESS, 3~5 NOT_DONE.
+- **다음:** 명시 승인 여부 최종 결정 후 정확 4파일 B manifest와 현재 PC CAS/lease·백업/롤백을 검증해 단일 독립 유지보수기 적용. 실제 설치·사후 조회 확인 후 2개 신규 고유 A 결과 회수.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
