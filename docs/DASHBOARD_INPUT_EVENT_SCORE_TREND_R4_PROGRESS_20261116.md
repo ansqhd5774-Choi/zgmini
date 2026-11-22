@@ -42,6 +42,14 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — 사용자 실제 1D 빈 차트 화면 증거 및 조건 분리
+
+- **시작/종료:** W06 조건충족 3/5 DONE(60%), #4 PARTIAL, #5 NOT_DONE. **신규 실제 사용자 스크린샷:** `2026-11-22`에 사용자가 공유한 공개 대시보드 화면. `종합 시장 점수` 카드 **33.0**, 기간 **1D** 강조, `전일 0.0`/`1일 0.0`, 차트 자리에 **`추이 데이터 준비 중`** 표시. 이는 그 순간 **1D의 실제 1개 이상 곡선/마지막 툴팁이 화면에 없었다는 독립 증거**이며 이전 라이브 Chromium 2026-11-21의 1D 차트 PASS를 현재 시점에 소급 적용할 수 없음을 뜻함. 카드 숫자가 살아 있는 사실만으로 저장된 1D 이력 정상 표시를 인증하지 않음.
+- **직접 렌더 조건 확인:** `main`의 `app/dashboard-ui.tsx`에서 `overallTrend.length>1`일 때만 `<SummaryTrend>`를 마운트하고, 0/1개면 정확히 `<div className="zg-r55-empty-spark">추이 데이터 준비 중</div>`를 표시한다. `overallTrend`는 `market?.overall?.trend` 일별 점수, 요청 중 1D `compositeArchive?.days===periodDays`로 확인된 `/api/market-score/observations?period=1D`의 `READY` 원본점, 현재 공개 카드 `updatedAt` 기반 1개 계산점의 결합 결과. 초기 기간은 1Y, 사용자가 1D로 바꾸면 별도 저장형 GET이 비동기 실행되고 새 기간의 READY 자료가 적용되기 전 **차트가 1점만 구성될 가능성**이 있다. Source의 `setCompositeArchive`는 정상 `READY`일 때만 실행; fetch 실패/PENDING에서는 이전 자료 보존하지만 새 기간 1D 표시에는 사용할 수 없다.
+- **원인과 미확인 분리:** 이번 캡처가 1D 선택 직후의 **일시 화면인지**, 같은 기간의 `READY`가 계속 미제공된 **지속 결함인지**, 혹은 시각/버전/권한 필터 문제인지는 스크린샷만으로 결정할 수 없다. 기존 API 2026-11-21에는 1D 실제 2점과 카드 33.0 일치 증거가 있지만 캡처 시각의 API body가 아니므로 현재 1D가 READY라고 가정하지 않는다. 공개 GET 실시간 재조회는 연결 웹 도구에서 접근 실패했으므로 이번에는 새로운 API 상태를 주장하지 않는다.
+- **다음 최소 실행:** (1) 같은 `zgmini.kr` 탭에서 1D 선택 후 비동기 로딩 완료를 기다렸을 때 차트가 표시되는지 **동일 화면 확인**(추가 장시간 검증·임의 새 공급자 호출 없이) (2) 지속 빈 차트면 Chrome DevTools Network의 **읽기 전용 GET** `/api/market-score/observations?period=1D`의 HTTP/status/period/points 개수 및 `/api/market-score`의 updatedAt/overall.status/score를 **동일 시각에** 대조 (3) 공개 API가 READY 2점 이상인데 화면이 계속 비면 1D archive 수신→`overallTrend` 합성/기간 전환 시점만 W06 직접 최소 수정. API도 이력이 없으면 Writer/D1 게시 원담당으로 정확 키/시각 인계. 차트 미출력 순간에는 최신점 tooltip 검증 불가; 먼저 정상 차트 재현부터 판정.
+- **효과:** 화면 증거·소스 조건만 정본 원장에 기록. 프로덕션 코드, 산식, 저장형 이력, PC/SQLite/D1, 배포, DNS 변경 0. 4단계 PARTIAL 유지; 기존 시간 범위 PASS는 폐기하지 않음.
+
 ### 2026-11-22 — 4단계 최종점 tooltip 접근 재확인 / 기존 유효 PASS 보존
 
 - **시작·종료:** 3/5 DONE(60%, 완료조건), 4 PARTIAL, 5 NOT_DONE. 최신 5단계 계획·진행원장 정본 GitHub 직접 재조회. main `2eb796da811d0e074ca0cabab8e2cad9502bff43`의 기존 W06 React/Chart 대상 두 파일을 읽기 전용 재조회. 새로운 실제 Production 계산점 hover PASS를 주장하지 않음.
