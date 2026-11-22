@@ -35,7 +35,12 @@ function checkArchivePath(files,{create=false}={}){
   }
 }
 function checkExistingFile(file){
-  const entry=fs.lstatSync(file);
+  let entry;
+  try{entry=fs.lstatSync(file);}
+  catch(error){
+    if(error.code==='ENOENT')throw Error('BEA_UNIT_STORED_SOURCE_MISSING');
+    throw error;
+  }
   if(entry.isSymbolicLink()||!entry.isFile())
     throw Error('BEA_UNIT_STORED_PATH_UNSAFE');
 }
@@ -51,8 +56,7 @@ export function beaUnitRawPaths({pcBase,sourceSha}={}){
 export function readBeaUnitArchivedSource({pcBase,sourceSha}={}){
   const files=beaUnitRawPaths({pcBase,sourceSha});
   checkArchivePath(files);
-  if(!fs.existsSync(files.csv)||!fs.existsSync(files.meta))
-    throw Error('BEA_UNIT_STORED_SOURCE_MISSING');
+  // lstat sees dangling links, unlike existsSync which follows and hides them.
   checkExistingFile(files.csv);
   checkExistingFile(files.meta);
   const bytes=fs.readFileSync(files.csv);
@@ -102,7 +106,12 @@ export async function captureBeaUnitSourceOnce({pcBase,fetchImpl,storedAt}={}){
   // Check (or create) each archive directory without following unapproved
   // filesystem links before the first source byte can be written.
   checkArchivePath(files,{create:true});
-  if(fs.existsSync(files.csv)||fs.existsSync(files.meta)){
+  // Inspect both names without following links; preserve half-written archives.
+  const sourcePresent=[files.csv,files.meta].some(file=>{
+    try{fs.lstatSync(file);return true;}
+    catch(error){if(error.code==='ENOENT')return false;throw error;}
+  });
+  if(sourcePresent){
     const previous=readBeaUnitArchivedSource({pcBase,sourceSha});
     return {status:'ALREADY_CAPTURED',sourceSha,
       sourceStoredAt:previous.sourceStoredAt};
