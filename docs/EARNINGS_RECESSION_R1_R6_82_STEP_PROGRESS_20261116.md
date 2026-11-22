@@ -31,6 +31,13 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — BEA unit official source lineage and FRED transport terms
+
+- **PR #1183 독립 공급처 원본 검토:** 해당 BEA unit draft는 `A463RD3Q052SBEA` 원본 계열을 FRED `fredgraph.csv` 전송 경로로 가져옴. [BEA 원자료 FAQ](https://www.bea.gov/help/faq/147)는 별도 표시 없는 BEA 자료가 public domain임을 안내하지만 [FRED Legal](https://fred.stlouisfed.org/legal/)·[FRED Terms](https://fred.stlouisfed.org/legal/terms/)는 FRED 서비스 이용 및 상업적 이용에 별도 계약을 둔다. 따라서 BEA 데이터 권리와 FRED CSV 전송 경로 사용 허가는 같지 않음.
+- **대안 출처 연결 특정:** 공식 [BEA API](https://apps.bea.gov/api/)의 NIPA `T11500` (Table 1.15)·`A463RD` line 7 (quarterly)가 같은 원작성자 계열임을 외부 계열 목록·공식 BEA Table 1.15로 대조. 현행 값/단위/API JSON·분기 파싱, 승인된 BEA adapter에서 직접 취득 가능 여부는 아직 Runtime 확인 전이며 **현재 FRED 원본과 동치 실측을 주장하지 않음**. [PR #1183 출처 검증 댓글](https://github.com/ansqhd5774-Choi/zgmini/pull/1183#issuecomment-7076784343)에 정확한 차이와 최소 후속 확인 기록.
+- **향후 최초 검증:** 기존 승인 BEA API 읽기 경로에서 Table `T11500`/line `A463RD`의 원시 분기/값/단위를 조회한 뒤 현재 `A463RD3Q052SBEA` 정의와 비교. 동일하면 FRED 추가 서비스 권한 없이 BEA 공식 원자료 기반 저장형 Publisher로 소스만 정정 가능. 새 BEA 공급자·수집 주기·값 재작성·D1 쓰기/진단 점수 산식 변경 금지. 아직 신규 PC/provider/D1 운영 효과 없음.
+- **단계 유지:** WPSFD42 수집 B 및 QFR D1 1key B 정확 승인과 BEA mfg Controller B 설치는 별도. 1/5 DONE, 2단계 IN_PROGRESS. BEA unit PR #1183 OPEN/Draft/미병합.
+
 ### 2026-11-22 — W05 UI pending/stale reason separation issue #1467
 
 - **독립 4단계 원인 분리:** 2026-11-22 앱 main `app/earnings-recession/earnings-risk-only-panel.tsx`는 BEA unit/QFR `unitError/qfrError`의 모든 미연결 상태를 `자료 확인 대기` 하나로 표시하고, `components/use-stored-index.ts`는 Worker HTTP 503의 `reason`을 일반 `UPDATE_FAILED`로 축약. Worker의 `STORED_PROJECTION_PENDING`, `PROJECTION_READ_UNAVAILABLE`, `STORED_PROJECTION_INVALID`, `STALE` 등 실제 오류 원인별 표시 구분이 소스상 불가능한 조건 확인.
