@@ -2221,3 +2221,9 @@
 - **신규 D1 정확키 한 번만 요청:** [제어 #2673](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2673), `employment-r6-d1-readback-readonly`, 기존 승인/고정 소스 SHA `20fd897...`, 고유 requestId `pc-b4ba929a-6297-465b-b837-097a1dd558a9`. 요청 직후 조회에서는 결과 댓글/JSON 미수신이므로 새 Writer SHA의 **D1 직접 일치 아직 미입증**. 영수증으로 `d1BodyHash/localResultHash,stored_at,sourceStoredAt` 대조 후 판정; 이전 #2646 D1 PASS를 새 저장 결과의 readback으로 소급하지 않음.
 - **4단계 라이브 화면:** 외부 https://zgmini.kr/api/employment-r6/observations 및 /economic-indicators/employment/ 직접 GET 도구에서 접근/캐시 오류. 기존 테스트의 fixture 화면 성공을 Production PC·모바일 렌더링으로 확대하지 않음; 연결 Browser Use 크레딧 미충전. 새 UI 코드/배포 변경 없음.
 - **단계:** 1·2 DONE(2/5), 3 IN_PROGRESS, 4·5 NOT_DONE. 새 진전은 Writer 저장 및 실제 Core이며 DOL National 최신 수집·29개 실제 화면 완료는 별도 미검증.
+
+
+### 199-A. #2673 11월 22일 신규 저장 결과 D1 실PC 재조회 PASS
+<!-- W04-NOV22-D1-R2673-PASS -->
+- [실PC #2673](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2673#issuecomment-7071749357) / 실행 영수증 `PASS/R6_D1_LOCAL_MATCHED`, 실제 Controller SHA `9c084bf032dee10c0172646619559f641c1e422a`. `market_public_snapshots_v1/detail:employment-r6:one-year:v1` `d1StoredAt=1795307449690`, `sourceStoredAt=1795307425460`, `asOfDate=2026-11-22`, `d1BodyHash=localResultHash=47c68f081a9dcce5c7e6ff80b36ad47dca655c4244a8538f2cbde20fa14a1ee8`, `matchedToLocal=true`, 29 source / 22 chart. R2 `EMP-R6-FORMULA-R2-CPS-2025-10`와 `sha256:04486846cd6063452d1c764116d3a31209f074d23a8764bf5b6ec8467095210e` 일치, Provider·D1·업무 쓰기 0, 보호 상태 불변.
+- **판정:** §199에서 미수신으로 남긴 #2673 결과가 실제 도착해 D1 정확키 **새 저장 결과 전체 해시 동치가 입증**됨. DOL National 정상 수집/최신 관측 전진 및 Production API 본문 전체·실제 PC/모바일 화면 검증과는 구분. 기존 2단계 DONE 유지, 현재 전체 2/5 DONE·3단계 IN_PROGRESS. 중복 A/재게시 없음.
