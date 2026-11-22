@@ -31,6 +31,13 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — PR #2600 approval-source merged into control main
+
+- **실제 GitHub 소스 통합 성공:** control [PR #2600](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2600) exact-head `ddbf90fc85d7925b48d9b5a03ab16db700307bab` 조건으로 squash MERGED; [control main commit `fc86b88800c3ab18c029bae8611b2da3f967c8c2`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/fc86b88800c3ab18c029bae8611b2da3f967c8c2) 직접 재조회. 기존 CI [#44882361247](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44882361247) SUCCESS.
+- **병합된 두 파일 readback:** `approvals/controller-selective-targets/50163cd2e44f905fd35611d079c4c896748d9477.json` blob `aecabd54883ecb6a3e7817ece66f74f677838c5c`, `approvals/controller-updates/50163cd2e44f905fd35611d079c4c896748d9477.json` blob `80ee9e896250bd0411333b107d0ee94f58b32d9b`. 정확 installed `565ddbd4ebfc46c88fb7dbaa810fd545656c6306` → target `50163cd2e44f905fd35611d079c4c896748d9477`, 단일 `config/operations.json` SHA256 `299b762a5d945f99e3a39bce7ef76d0e18cbef90e2ecd79887af37c6a920a7ea`, rollback `565ddbd4...`. pin/manifest source/effect 필드 일치.
+- **단계 판정:** 이는 B급 운영 설치를 위한 **source-only 후보 main 병합**이지 실제 owner의 해당 운영 효과 승인·PC CAS/lease 재확인·설치 JSON/TXT·BEA 신규 A readback이 아니다. 실제 운영 Controller 설치/Provider POST/SQLite/D1/배포 변경 0. W05 개편 **1/5 DONE, 2단계 IN_PROGRESS** 유지.
+- **NEXT:** 1) 실제 owner exact approval 확인, 2) 운영 설치 직전 installed SHA·lease/preimage 대조, 3) 기존 독립 유지보수기로 승인된 경우에만 정확 1파일 B 설치, 4) 사후 JSON/TXT 및 신규 `earnings-bea-mfg-archive-readonly` A 검증. WPSFD42 #2240·QFR #2089의 별도 쓰기 효과는 독립 보류/진행.
+
 ### 2026-11-22 — PR #2600 moved to ready-for-review
 
 - **실제 GitHub 처리:** [control PR #2600](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2600)의 2개 exact selective approval source 파일, installed Controller `565ddbd4…` preimage, target `50163cd2…`/1파일, SHA256/fingerprint, versioned rollback 검증을 재사용. [C996 #44882361247](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44882361247) `completed/success` 유지. GitHub REST PR `mergeable=true/mergeable_state=clean`; control main `82b7923…` 이후 최신 main `4b98e36…`까지 7커밋 변경 9파일은 정확 선택 설치 `config/operations.json`과 비중첩.
