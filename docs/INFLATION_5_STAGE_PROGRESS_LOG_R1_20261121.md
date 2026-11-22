@@ -180,6 +180,15 @@
 - **실제 재진단 요청:** 새 설치 `042c4556…`에서 `inflation-census-m3-archive-headers-readonly` A/light 등록 및 추가 `duplicateConsumedHeaders` 필드 소스 존재 확인. `zgmini/main@2eb796da811d0e074ca0cabab8e2cad9502bff43` 고정하여 [Issue #2683](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2683) `requestId=pc-8ca31eb2-fb5a-41bd-a70d-f4de4179646e`, `pc-job` 라벨로 원자 생성. 최초 댓글 조회는 결과 없음: 실제 파일별 중복 소비 컬럼은 **결과 수신 전 미확정**. 요청 추가 생성/중복 조회 재실행 금지.
 - **다음:** #2683 결과 JSON/TXT 수신해 4개 공식 보관 아카이브의 `duplicateConsumedHeaders` 실제 키 확인→앱 Census 파서 소비 헤더·중복 column 규칙 대조→올바른 원본/필요 최소 source 복구→로컬 저장자료·Writer·D1의 7/7/Production GET/UI 교차검증. 개편 상태 `1 DONE/2 IN_PROGRESS/3~5 NOT_DONE` 유지.
 
+## 2026-11-22 — Census 소비 헤더 이름 확정 및 조건부 중복 필드 파서 수정 PR #1469
+
+- **Controller 실증 완료:** [독립 설치 #2681](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2681#issuecomment-7077082170) `SUCCEEDED/APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED`, actualSha `042c45567d31c5ec620c9e13b154fc3f08218774`, protected state unchanged, rollback 불필요.
+- **원인 증거 확정:** [신규 읽기 A #2683](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2683#issuecomment-7077108457) `DIAGNOSED/W01_CENSUS_ARCHIVE_HEADER_MISMATCH`, 2025 아카이브 2건(각 192행)·2026 2건(각 144행) SHA 유효, missingYears=[]/missingRequired=[]/hasMonthlyDate=true/duplicateHeaderCount=2. 네 파일 모두 **`duplicateConsumedHeaders=['seasonally_adj','category_code']`** 확인; 공급자 호출 0, 운영 쓰기 0, 보호 상태 불변. 기존 필수 헤더 단일성 검사에서 두 키가 중복돼 #28 파서가 거부하는 직접 조건 확정. 같은 이름 중복 열의 **행별 값 일치 여부는 아직 실PC 관측되지 않았으므로** 원본 정상 사용 가능하다고 단정하지 않음.
+- **공식 근거:** [Census API Query Components](https://www.census.gov/data/developers/guidance/api-user-guide/query-components.html)는 같은 변수를 GET과 predicate에 중복 지정하지 않도록 안내. 기존 수집 코드에는 위 두 변수가 GET과 별도 filter에 동시 지정됨. 다만 이 설명만으로 4개 저장 파일의 행별 값 일치나 실제 공급자 중복 열 생성 경로까지 확정하지 않음.
+- **소스 최소 수정:** [앱 PR #1469](https://github.com/ansqhd5774-Choi/zgmini/pull/1469), main 기반 `fix/w01-census-m3-duplicate-consumed-headers-20261122` commit `4feeaf33d34a733aef33a461704bb4ff83bbd95d`. `scripts/pc-writer/inflation-causal-candidate-census-m3.mjs`의 필수 소비 키 유일성 계약은 유지하되 **오직 두 확정 selector만 중복 허용**, 각 월별 행에서 중복 selector 열이 대소문자/공백 정규화 후 동일한 경우에만 정상 판독. 값 충돌 행은 `diagnostics.invalid++` 및 제외, `data_type_code/cell_value/us/time*/기타 필수` 중복은 기존처럼 schema 오류. 테스트 1파일에 동치/충돌/다른 키 중복 거부 및 2025/2026 원본 아카이브 보존 사례 추가. 원자료 본문, 관측일·단위·버전·산식·공급처 호출 budget·D1 계약 **변경 없음**.
+- **검증 단계:** PR #1469 Node.js CI [#45007354698](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45007354698) 최초 조회 `queued`, PASS 미확인. PR 작성은 운영 Writer 설치가 아니며 #28 로컬 저장·계산·게시/7/7 미완료. 별도 B 원본 효과 승인/실제 운영 source CAS·lease·백업·rollback 계약 없이 운영 변경 또는 공급자 재호출 금지.
+- **다음:** CI 최종 결과·파서 회귀 확인 → 필요시 수정 → 실제 승인 Writer 적용/재처리 범위 결정(먼저 기존 SHA 고정 archive를 읽어 처리 가능성 확인) → 로컬 sourceStoredAt·provenance·원자료 SHA readback → 저장자료 기반 계산·D1 7/7·API/UI 검증. 5단계 `1 DONE / 2 IN_PROGRESS / 3~5 NOT_DONE`.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
