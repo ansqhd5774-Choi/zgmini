@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {compareBeaUnitNipaToFred} from '../scripts/pc-writer/EARNINGS_BEA_UNIT_NIPA_EQUIVALENCE_R1.mjs';
+import {compareBeaUnitNipaToFred,beaUnitNipaRequestSpec} from '../scripts/pc-writer/EARNINGS_BEA_UNIT_NIPA_EQUIVALENCE_R1.mjs';
 
 const entries=[['2025Q2',0.216],['2025Q3',0.219],['2025Q4',0.222],['2026Q1',0.231],['2026Q2',0.250]];
 const fred='observation_date,A463RD3Q052SBEA\n'+entries.map(([q,value])=>{
@@ -10,6 +10,17 @@ const fred='observation_date,A463RD3Q052SBEA\n'+entries.map(([q,value])=>{
 const rows=()=>entries.map(([TimePeriod,DataValue])=>({TableName:'T11500',
   SeriesCode:'A463RD',LineNumber:'7',TimePeriod,DataValue:String(DataValue),CL_UNIT:'USD',UNIT_MULT:'0'}));
 const api=Data=>({BEAAPI:{Results:{Data}}});
+test('BEA NIPA fixed request spec is bounded, pure and credential-free',()=>{
+  const spec=beaUnitNipaRequestSpec({observationYear:2026});
+  assert.deepEqual(spec,{method:'GetData',datasetname:'NIPA',TableName:'T11500',
+    Frequency:'Q',Year:'2025,2026',ResultFormat:'JSON'});
+  assert.equal(Object.isFrozen(spec),true);
+  assert.equal('UserID' in spec,false);
+  for(const year of [null,undefined,2000,2101,2026.5,'2026']){
+    assert.throws(()=>beaUnitNipaRequestSpec({observationYear:year}),
+      /BEA_UNIT_NIPA_YEAR_INVALID/);
+  }
+});
 test('offline equivalence: exact BEA NIPA line 7 values and FRED series',()=>{
   const result=compareBeaUnitNipaToFred({beaResponse:api(rows().reverse()),fredCsv:fred});
   assert.deepEqual(result,{status:'MATCH',tableName:'T11500',seriesCode:'A463RD',
