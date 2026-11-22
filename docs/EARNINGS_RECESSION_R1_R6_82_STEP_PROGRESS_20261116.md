@@ -42,6 +42,14 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — QFR current manifest raw SHA and owner approval cross-check
+
+- **검증 대상:** 제어 main [QFR 단일키 후보 manifest](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/approvals/publications/pc-publication-34db72af-680c-4129-b6ee-8a7f31e5c40a.json) blob `71be23550c7b3e26e9bb1d9c931dbe60b4704367`; 정확 원문 SHA256 `161b727536dd46cfb49244d5eb229ee40c485ba2bb77b737364e639b418d443e` (기존 [owner 기록](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2089#issuecomment-7078212699)). 이는 Git blob SHA1과 서로 다른 대상이다. 변경된 manifest 자체는 없고 기존 검증 근거를 인용한다.
+- **현행 후보 범위:** requestId `pc-publication-34db72af-680c-4129-b6ee-8a7f31e5c40a`, publisherSha `2f4a8227ecfc954d6c72ecbc6b56242c709a7f0f`, operationalSha `1e52876f5112c4a58a43273d264588755b7b9402`; D1 정확 한 키 `detail:earnings-recession-indicators:census-qfr-mfg-margin:v1`, `STORED_SQLITE_ONLY`, 자동 재시도 0. operationalSha는 기존 시점의 고정 Writer A 증거이지 현시점 실행 CAS가 아니다.
+- **승인 댓글 직접 점검:** [#2089](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2089) 댓글 총 7건 중 `ZGMINI_B_PUBLICATION_APPROVED pc-publication-34db72af-680c-4129-b6ee-8a7f31e5c40a 161b727536dd46cfb49244d5eb229ee40c485ba2bb77b737364e639b418d443e` 정확 승인문 없음. `approval.grade=B`는 요청 후보 필드이고 소유자 GO가 아니다. Workflow 활성/실PC fresh SQLite·D1 preflight 미입증, 실제 게시·새 PC 실행 0.
+- **독립 WPSFD42 상태:** [제어 main 수집 제안](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/approvals/w05-r304-service-b/approval.json)은 여전히 `PROPOSED_NOT_APPROVED`; 기존 source-only 허가를 Provider POST 및 SQLite append 효과 승인으로 전용할 수 없다. 정확 효과 GO가 확인되기 전 실행 Issue/재시도 생성하지 않는다.
+- **다음 실제 기능 작업:** 유효한 B 승인 및 현재 Writer/게시 clean checkout·lease·원자료 freshness 증거가 있으면 기존 정규 단회 QFR 게시 경로로 D1 readback까지 이어간다. BEA unit은 `NIPA/T11500/Q/A463RD` 실제 승인된 원자료/저장 SHA가 별도 미확인이다. 이 기록은 5단계 1/5 DONE·2 IN_PROGRESS, 순차 26/82·개별 35/82를 변경하지 않는다.
+
 ### 2026-11-22 — BEA unit archive raw HTTP byte integrity fix
 
 - **실패 조건:** [BEA unit Draft PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183)의 기존 `captureBeaUnitSourceOnce`에서 `response.text()` 후 `Buffer.from(content,'utf8')`을 SHA 계산·CSV 아카이브에 사용해 HTTP **수신 원문 바이트** 해시라는 무결성 계약을 보장하지 못함. UTF-8 부정합·디코딩 변형 위험. 현재 운영 원본 손상·PC 수집 실패를 입증한 것은 아니며 소스 조건 결함을 확인한 것.
