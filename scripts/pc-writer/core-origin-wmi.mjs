@@ -75,12 +75,15 @@
   }
   var started=me.created,seen={},cur=Number(pidText),lastTime=null;
   for(var j=0;j<64;j++){
-   if(engines[String(cur)]){out(true,'TASK_ENGINE_CHAIN_MATCH',started,count);return;}
    if(seen[String(cur)])break;seen[String(cur)]=true;
+   // An EnginePID alone is not a verified ancestor: its current WMI row
+   // must exist and must not have been created after its child (PID reuse).
    var row=records[String(cur)];
-   if(!row||!isFinite(row.parent)||row.parent<1||
-      typeof row.created!=='number'||!isFinite(row.created)||row.created<946684800000)break;
-   if(lastTime!==null&&row.created>lastTime+1000)break;
+   if(!row||typeof row.created!=='number'||!isFinite(row.created)||
+      row.created<946684800000)break;
+   if(lastTime!==null&&row.created>lastTime)break;
+   if(engines[String(cur)]){out(true,'TASK_ENGINE_CHAIN_MATCH',started,count);return;}
+   if(!isFinite(row.parent)||row.parent<1)break;
    lastTime=row.created;
    cur=row.parent;
   }
