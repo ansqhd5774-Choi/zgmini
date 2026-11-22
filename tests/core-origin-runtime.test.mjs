@@ -13,10 +13,13 @@ const processRows=[
  {ProcessId:55,ParentProcessId:10,Name:'wscript.exe',CommandLine:'unrelated secret not output',CreationDate:stamp},
  {ProcessId:60,ParentProcessId:55,Name:'node.exe',CommandLine:nodeCommand,CreationDate:stamp},
 ];
-function simulateWsh({rows=processRows,state=4,instances=1,enabled=true,pid='60',script=path,taskError=false}={}){
+function simulateWsh({rows=processRows,state=4,instances=1,enabled=true,pid='60',script=path,taskError=false,hidden=[],hiddenError=false}={}){
  const source=fs.readFileSync(new URL('../scripts/pc-writer/core-origin-wmi.mjs',import.meta.url),'utf8');
  const output=[];
- const scheduler={Connect:()=>{},GetFolder:()=>({GetTask:()=>{
+ const scheduler={Connect:()=>{},GetRunningTasks:flags=>{
+  assert.equal(flags,1);if(hiddenError)throw Error('unavailable');
+  return {Count:hidden.length,Item:i=>hidden[i-1]};
+ },GetFolder:()=>({GetTask:()=>{
   if(taskError)throw Error('unavailable');
   return {State:state,Enabled:enabled,GetInstances:flags=>{
    assert.equal(flags,0);
@@ -39,6 +42,23 @@ test('natural Core same-account TaskEngine ancestry is recorded, without paths o
  assert.equal(result.code,'TASK_ENGINE_CHAIN_MATCH');
  assert.equal(result.createdAtMs,start);
  assert.equal(result.visibleInstances,1);
+});
+
+const hiddenCore={Path:'\\ZGMINI-PC-Local-Core',State:4,EnginePID:10,
+ InstanceGuid:'{12345678-1234-4123-8123-123456789abc}'};
+test('hidden exact Core task from the official service view retains process ancestry proof',()=>{
+ const r=simulateWsh({instances:0,hidden:[hiddenCore]});
+ assert.equal(r.linked,true);assert.equal(r.code,'TASK_ENGINE_CHAIN_MATCH');
+ assert.equal(r.createdAtMs,start);assert.equal(r.visibleInstances,1);
+});
+test('hidden lookup rejects other tasks, missing identity and inaccessible service',()=>{
+ for(const row of [{...hiddenCore,Path:'\\ZGMINI-PC-Local-Korea'},
+  {...hiddenCore,Path:'\\nested\\ZGMINI-PC-Local-Core'},
+  {...hiddenCore,InstanceGuid:''},{...hiddenCore,State:3},
+  {...hiddenCore,EnginePID:0}])assert.equal(simulateWsh({instances:0,hidden:[row]}).linked,false);
+ assert.equal(simulateWsh({instances:0,hiddenError:true}).linked,false);
+ assert.equal(simulateWsh({instances:0,hidden:[hiddenCore],rows:processRows.map(
+  x=>x.ProcessId===60?{...x,ParentProcessId:999}:x)}).linked,false);
 });
 test('invisible Task instance, disabled Task, wrong command and sibling process fail closed',()=>{
  assert.equal(simulateWsh({instances:0}).linked,false);
