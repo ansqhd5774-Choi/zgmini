@@ -142,6 +142,14 @@
 - **정상 원자 접수 조치:** [물가 7 D1 #2674](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2674) `requestId=pc-113fbd26-c431-45a9-9c17-bb2771b052f9`, [Census 2025/2026 헤더 #2675](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2675) `requestId=pc-3fb57cd5-9ca4-4f57-9344-cc1292f2f5c3`를 각각 고유 ID·동일 고정 source·`labels=['pc-job']` 원자 생성. GitHub 응답 및 사후 Issue 조회에서 둘 다 `pc-job` 라벨 실제 존재 확인.
 - **결과 판정 경계:** 새 요청의 초기 결과 댓글은 아직 없으므로 현재 D1 `body/stored_at`, 지표 상태, Census 헤더 SHA/연도 판정은 미확인. 댓글 또는 결과 JSON/TXT로 `status/code/actualExecutionSha`와 작업 별 세부값을 회수하여 실제 기능 상태 판단. 재요청/Provider 쓰기/SQLite 쓰기 없음. 5단계 `1 DONE/2 IN_PROGRESS/3~5 NOT_DONE` 유지.
 
+## 2026-11-22 — #2674 D1 실제 PASS·#2675 Census 헤더 중복 실증
+
+- **A 접수 오류 수정 후 실제 완료:** `pc-job` label을 생성과 동시에 넣은 [#2674](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2674#issuecomment-7076698907) 및 [#2675](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2675#issuecomment-7076697982)에서 Runner JSON/TXT 결과 회수. 두 실행의 `actualExecutionSha=9c084bf032dee10c0172646619559f641c1e422a`, `protectedStateUnchanged=true`, `providerCalls=0`, `operationalWrites=0`, `d1Writes=0`. 원본 #2671/#2672에 `pc-job` 라벨 누락으로 접수 불충족이었던 원인 정정; 추가 재요청 불필요.
+- **물가7 D1 직접 readback 완료:** #2674 `status=PASS/code=INFL7_D1_READBACK_VERIFIED`. 키 `detail:inflation-causal-candidates-7:r1`; `d1StoredAt=1794825119516` (2026-11-16), `d1BodySha256=0f85649e97f1b2192fd2b052de9c284564733e528f8c66ef4d2a28ff0849f6fc`; `sourceVersion=INFL7_PRESENTATION_18a38bc27e850b0a83ad6528c0929746ae67ee26fff847197f54ca2f0ca3f644`; `ready=6/stale=0`; IDs 2/16/22/23/24/29 READY, **28 PENDING(null, no observationDate)**. D1 계약 정상이라는 뜻이며 7/7 최신/복구 완료는 아님.
+- **Census archive 실증:** #2675 `status=DIAGNOSED/code=W01_CENSUS_ARCHIVE_HEADER_MISMATCH`, `archiveCount=4/invalidCount=4/missingYears=[]`. 2025 원본 2개 (각 192행), 2026 원본 2개 (각 144행); 모두 `missingRequired=[]`, `hasMonthlyDate=true`, `duplicateHeaderCount=2`, `unknownHeaderCount=0`, `HEADERS_INVALID`. SHA 명칭 링크 원본은 결과에 있음; 새 공급자 호출/원본 덮어쓰기 금지.
+- **가설과 현재 미확인 구분:** `scripts/pc-writer/inflation-causal-candidate-census-m3.mjs`의 생산 파서는 selector/date 필수 소비 헤더의 고유성만 요구함. Controller 진단도 필수/날짜 헤더 중복을 기준으로 `HEADERS_INVALID` 처리했으나, 결과가 **중복된 열의 정확 이름**은 공개하지 않음. 중복 헤더 2건이 모두 소비 열인지 여부와 실제 행 선택 가능성은 추가 증거 없이 확정 불가. 기존 파일 SHA 보존한 읽기 전용 소비 헤더 이름·중복 횟수 진단이 다음 최소 관측. 무작정 재수집·파서 완화·가짜 데이터 채우기 금지.
+- **다음 단계:** 기존 승인된 정규 readonly 진단 범위로 중복 헤더 키/소비 컬럼 명확히 구별 → 정상 MTM/TI 행 확인 → 기존 Writer 복구 및 로컬 readback → 저장자료 계산→D1 7/7·API/UI. 단계 `1 DONE/2 IN_PROGRESS/3~5 NOT_DONE` 유지.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
