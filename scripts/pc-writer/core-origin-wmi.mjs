@@ -35,11 +35,27 @@
   var task=scheduler.GetFolder('\\').GetTask('ZGMINI-PC-Local-Core');
   if(!task.Enabled||Number(task.State)!==4){out(false,'CORE_TASK_NOT_RUNNING',null,0);return;}
   var running=task.GetInstances(0),count=Number(running.Count),engines={};
-  if(!isFinite(count)||count<1||count>12){out(false,'CORE_TASK_ENGINE_NOT_VISIBLE',null,0);return;}
+  if(!isFinite(count)||count<0||count>12){out(false,'CORE_TASK_ENGINE_NOT_VISIBLE',null,0);return;}
   for(var i=1;i<=count;i++){
    var engine=Number(running.Item(i).EnginePID);
    if(isFinite(engine)&&engine>0)engines[String(engine)]=true;
   }
+  if(count===0){
+   // GetInstances(0) may omit this hidden task. Use the official include-hidden
+   // service view, accepting only the exact running Core path and valid identity.
+   var hidden=scheduler.GetRunningTasks(1),total=Number(hidden.Count);
+   if(!isFinite(total)||total<0||total>256){out(false,'CORE_TASK_ENGINE_NOT_VISIBLE',null,0);return;}
+   for(var h=1;h<=total;h++){
+    var instance=hidden.Item(h),instancePath=String(instance.Path||'').toLowerCase();
+    var guid=String(instance.InstanceGuid||''),enginePid=Number(instance.EnginePID);
+    if(instancePath==='\\zgmini-pc-local-core'&&Number(instance.State)===4&&
+      /^\{[a-f0-9]{8}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{4}-[a-f0-9]{12}\}$/i.test(guid)&&
+      isFinite(enginePid)&&enginePid>0&&Math.floor(enginePid)===enginePid){
+     engines[String(enginePid)]=true;count++;
+    }
+   }
+  }
+  if(count<1||count>12){out(false,'CORE_TASK_ENGINE_NOT_VISIBLE',null,0);return;}
   var records={},enumeration=new Enumerator(GetObject('winmgmts:root\\cimv2')
    .ExecQuery('SELECT ProcessId,ParentProcessId,Name,CommandLine,CreationDate FROM Win32_Process'));
   var n=0;
