@@ -4,7 +4,7 @@ import {parseBeaUnitProfitCsv} from '../../lib/market-score/earnings-bea-unit-pr
 
 const SERIES='A463RD';
 const QUARTER=/^(\d{4})Q([1-4])$/;
-const NUMBER=/^-?\d+(?:\.\d+)?$/;
+const NUMBER=/^-?(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d+)?$/;
 const quarterOrdinal=(year,q)=>year*4+q-1;
 
 // Pure request parameters for an already-approved existing PC BEA reader.
@@ -30,8 +30,10 @@ export function compareBeaUnitNipaToFred({beaResponse,fredCsv}={}){
       throw Error('BEA_UNIT_NIPA_UNIT_UNVERIFIED');
     const match=QUARTER.exec(String(row.TimePeriod??''));
     if(!match)throw Error('BEA_UNIT_NIPA_QUARTER_INVALID');
-    const str=String(row.DataValue??'').replaceAll(',','');
-    if(!NUMBER.test(str))throw Error('BEA_UNIT_NIPA_VALUE_INVALID');
+    const raw=String(row.DataValue??'');
+    // Reject malformed grouping before removing only valid thousands separators.
+    if(!NUMBER.test(raw))throw Error('BEA_UNIT_NIPA_VALUE_INVALID');
+    const str=raw.replaceAll(',','');
     const year=Number(match[1]),q=Number(match[2]),value=Number(str);
     if(!Number.isFinite(value))throw Error('BEA_UNIT_NIPA_VALUE_INVALID');
     return {ordinal:quarterOrdinal(year,q),value,quarter:row.TimePeriod};
