@@ -31,6 +31,13 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — BEA NIPA/FRED public published latest quarter crosscheck
+
+- **신규 독립 자료 대조 (공개 읽기):** [BEA NIPA Table 1.15 / line7 재게시 DBnomics](https://db.nomics.world/BEA/NIPA-T11500/A463RD-Q)에서 계열 `A463RD-Q`, 2026-09-30 최종 개정·2026-10-01 재조회, 최신 `2026Q2=0.250`; [FRED 공식 공개 계열](https://fred.stlouisfed.org/series/A463RD3Q052SBEA)은 BEA 계정코드 `A463RD`·원단위 Dollars·분기·계절조정 및 최근 `2025Q2=0.216`, `2025Q3=0.219`, `2025Q4=0.222`, `2026Q1=0.231`, `2026Q2=0.250`. **BEA-origin mirror와 FRED의 계열 정체성·최신 분기·값은 일치**, 최신 5개 분기 양쪽 원본 전체 동치는 아님.
+- **한계 구분:** DBnomics는 BEA 재게시 제3자 자료. 위 공개 대조는 **실제 BEA `GetData` JSON 원본·해시·PC 공급자 실행·저장 영수증/승인 근거가 아니며**, FRED의 5개 공개값과 test fixture가 일치하는 사실도 실제 BEA API 원본 검증을 대체하지 않는다. [PR #1183 근거 댓글](https://github.com/ansqhd5774-Choi/zgmini/pull/1183#issuecomment-7077198105).
+- **최신 코드 검증:** PR #1183 HEAD `c5016c806fc2593ffa0d838c4eabab2401481566`, [Node CI #45007254215](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45007254215) `completed/success`, PR OPEN/Draft 유지. 이번 공개 비교/코멘트 외 PC Controller/공급자 수집/SQLite/D1/배포 변경 0.
+- **최초 미완료 실행:** 기존 승인 범위에서 실PC BEA NIPA `T11500/Q/A463RD` 원본 읽기 및 JSON 필드·SHA 회수→ FRED CSV 원본 대비 비교. 승인 확인 전 불명확한 추가 공급자 GET과 신규 쓰기 발행 금지. 다른 W05 WPSFD42·QFR·BEA 제조업 운영 효과는 독립 관리. 5단계 `1/5 DONE`·2단계 진행 중.
+
 ### 2026-11-22 — BEA unit strict T11500 CI completed and real-input proof boundary
 
 - **CI 최종 회수:** [Node CI #45007254215](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45007254215) `completed/success`, 정확 BEA unit PR #1183 HEAD `c5016c806fc2593ffa0d838c4eabab2401481566` (BEA NIPA `T11500` 필수 + 회귀시험). PR은 OPEN/Draft/미병합 유지. 코드/CI PASS는 운영 원본·D1 API/UI 검증 완료가 아님.
