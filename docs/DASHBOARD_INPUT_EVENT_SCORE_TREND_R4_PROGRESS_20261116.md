@@ -1,5 +1,11 @@
 # W06 UI·Reader — 실제 적용·화면 완료 5단계 진행원장 (2026-11-21 개편)
 
+### 2026-11-22 — W06 보관 진단 소스 main 통합 #2761, 운영 적용은 별도
+
+- 기존 진단 PR [#2748](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2748)의 C996 [Run #45022260836](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45022260836) `completed/success`; `W06` 신규 테스트·recovery 그룹 PASS. 최신 main 전진과 C996 선택기 변경을 보존하기 위해 main 기반 [대체 PR #2761](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2761) 병합, **정확한 main SHA `3925a56c824ffb3078cdf8640cdbc9750cbfecc5`** readback. #2748은 병합 없이 Closed. 검증한 진단 모듈 `3d762c89dbbf9118411a76a5b1a8747ca4de853c`, W06 테스트 `abcc0c2e5537bfd275fb6933a4f31a34ef3afe26`, 공통 `fixed-readonly-bytes.mjs` `94927a3f937a44f40e9867ca83aa54f8763e8cfa` 는 성공 CI PR과 대체 PR에서 동일. 대체 PR의 새로운 [CI #45023376561](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45023376561)은 병합시점 queued였으므로 별도 SUCCESS 주장 금지.
+- 기존 A `fear-greed-archive-status`에 로컬 고정 `local-writer-last-run.json`의 허용 상태와 SQLite `current`/최신 composite archive body SHA/stored_at를 조회하는 **제어 소스** 통합만 완료. 운영 Controller 설치 SHA를 main SHA와 혼동하지 않는다. B 승인 manifest·기존 installedSha·CAS·lease·백업/복구 조건을 실제 대조한 다음 독립 유지보수기 정규 선택 설치가 필요하며 아직 미실행. 운영 source 설치 증거가 생긴 후에만 새 고유 A #2740과 다른 requestId로 진단해 `market`, `compositeObserved`, `compositeObservedPublication` 결과를 읽고 11/22 추가 점 없음의 원인을 구분한다. 원격 D1 per-key SHA는 계속 미인증.
+- **W06 UI·Reader 5/5 DONE 유지**, Writer·D1 세부 원인 `UNVERIFIED`. 새 operation/예약/DB·D1 수정/운영 Writer 설치 없음.
+
 ### 2026-11-22 — W06 Writer 조회 소스 PR #2748 및 Windows CI 분리
 
 - **이미 확정된 관측:** 기존 승인 A [#2740](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2740)/[Run #45021379608](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45021379608) PASS. 2026-11-22 11:59:54Z Writer 체크포인트 갱신 뒤에도 로컬 21일/104점, 당일 1점(00:00:50.969Z)이 12:16Z 보관 조회에서 동일. 그러나 기존 A 응답에는 `marketReady`/보관/게시 단계 세부 결과가 없으므로 정상 무변경과 실제 기록 누락을 구별할 수 없음.
