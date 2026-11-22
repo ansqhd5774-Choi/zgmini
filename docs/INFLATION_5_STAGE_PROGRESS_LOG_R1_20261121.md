@@ -91,6 +91,13 @@
 - **새 승인/복구 source:** [#2660](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2660)에서 원본 `d260…`→목표 `6a4c…`, 4파일 SHA256·allowFiles fingerprint `55eb2222ee575ea1a6b7c4df89229d8a531977a9b229df60c10c021288be579c`, `VERSIONED_SNAPSHOT`, `RESTORE_INSTALLED_SHA(d260…)`, `core-status`를 고정. 최초 확인 시 승인 소스 C996 #44966077309 **in_progress**. 아직 main 승인 파일 반영/실시간 CAS·lease/B 설치 영수증 미확인으로 **운영 설치 0**.
 - **다음 필수 실행:** #2660 CI 성공→main 정확 승인 source 확인→PC 설치 시점 실제 installed CAS·lease 정규 안전 검사→고유 단일 B 유지보수기 요청→실제 설치/실패 시 원복 JSON/TXT 회수→D1/Census A 각각 단회 읽기. 단계 `1 DONE / 2 IN_PROGRESS / 3~5 NOT_DONE` 유지.
 
+## 2026-11-22 — #2660 승인 반영·#2662 독립 유지보수기 설치 요청
+
+- **정확 새 소스/승인 CI 완료:** `d260aea2513902a77425344629f91575e2d950ef`의 단일 자식 `6a4c1221c9a246f739a37f58f3e956aa3c61108d` [source PR #2659](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2659)에서 C996 #44966025628, D05 #44966025615, Controller #44966025636 3/3 `completed/success`. 새 [승인 PR #2660](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2660) C996 #44966077309 `completed/success`, merge SHA `8ee23a3e624ebbf4f47bf0040f372180d19ae332`. main의 정확 신규 target 2개 승인 파일 존재를 재조회.
+- **정규 승인 검증:** `approvals/controller-updates/6a4c1221c9a246f739a37f58f3e956aa3c61108d.json` 원문 UTF-8 SHA256 `83ba43208377aff0029cf6a56076e7bbe9c76985cf6802a8d95c764247d4ea19`을 known-vector SHA-256로 직접 계산. allowFiles fingerprint `55eb2222ee575ea1a6b7c4df89229d8a531977a9b229df60c10c021288be579c`와 pin 일치 확인. manifest의 `installedSha=d260aea2…`, `VERSIONED_SNAPSHOT`, `RESTORE_INSTALLED_SHA(d260aea2…)`, `postOperation=core-status` 확인.
+- **실제 B 요청 발행:** [독립 유지보수기 Issue #2662](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2662), `requestId=pc-update-68eee7fc-ae3f-4df8-b8ae-3b75b41caabb`, operation `controller-update`, pin `6a4c1221…` / manifest SHA256 `83ba4320…`, `pc-maintenance` label. 동일 효과 요청 추가 생성하지 않음. 최초 댓글 조회 시 결과 없음. **접수 성공은 설치/롤백 성공이 아니며** 현재 `RUNNING/STATE_UNKNOWN`의 정확한 단계는 유지보수기 JSON/TXT 회수 전까지 미확인.
+- **필수 후속:** #2662 단일 원본의 유지보수기 댓글/결과 JSON/TXT 회수하여 `status/code/actualControllerSha/recoverySha/protectedStateUnchanged/workflowEnabled` 확인. 성공 시 정확 SHA 신규 A 2개 단회 조회, 실제 D1/헤더 결과 검증. 실패면 승인된 rollback 결과 및 현시점 설치 상태 검증. 운영 데이터 수정 0. 5단계 `1 DONE / 2 IN_PROGRESS / 3~5 NOT_DONE` 유지.
+
 ## 다음 실행·종결 규칙
 
 1. **현 단계 2:** 통합 #2649의 승인·실제 설치가 확인되면 고유 물가 D1 A를 단회 실행하여 기존 D1 정확 키의 `body/stored_at`과 공개 물가7의 상태·값·관측일·버전 읽기 검증. 실패한 실제 연결만 수정.
