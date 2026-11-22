@@ -52,12 +52,19 @@ try{
      assert(statusText.includes(displayed+'점'),'display sensitivity matches published raw point');
      const kst=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(current.observedAt));
      assert(statusText.includes(kst),'actual KST calculated time is shown');
-     await marker.first().hover({force:true});
-     await page.waitForTimeout(400);
+     // Recharts tooltip is driven by chart mouse movement, not the ReferenceDot alone.
+     const bounds=await marker.first().boundingBox();
+     assert(bounds,'rendered marker has real page coordinates');
+     await page.mouse.move(bounds.x+bounds.width/2-12,bounds.y+bounds.height/2);
+     await page.mouse.move(bounds.x+bounds.width/2,bounds.y+bounds.height/2,{steps:4});
+     await page.waitForTimeout(450);
      const tip=page.locator('.zg-r55-summary-chart .recharts-tooltip-wrapper');
      assert((await tip.count())>0,'tooltip exists');
      const tooltipText=await tip.innerText();
-     assert(tooltipText.includes(displayed),'hover shows true score');
+     const tipVisibility=await tip.evaluate(el=>getComputedStyle(el).visibility);
+     console.log('W06_SINGLE_TOOLTIP '+JSON.stringify({width:viewport.width,displayed,tooltipText,tipVisibility,markerBounds:bounds}));
+     await page.screenshot({path:'artifacts/w06-production-readonly/point-'+viewport.width+'.png',fullPage:false});
+     assert(tipVisibility==='visible'&&tooltipText.includes(displayed),'hover shows true score');
     }
     assert.equal(await selected.getAttribute('aria-pressed'),'true',period+' selected');
     const dimension=await page.evaluate(()=>({innerWidth:window.innerWidth,documentWidth:document.documentElement.scrollWidth}));
