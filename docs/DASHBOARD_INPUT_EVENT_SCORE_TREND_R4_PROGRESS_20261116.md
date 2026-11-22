@@ -1,5 +1,12 @@
 # W06 UI·Reader — 실제 적용·화면 완료 5단계 진행원장 (2026-11-21 개편)
 
+### 2026-11-22 — W06 Writer 조회 소스 PR #2748 및 Windows CI 분리
+
+- **이미 확정된 관측:** 기존 승인 A [#2740](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2740)/[Run #45021379608](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45021379608) PASS. 2026-11-22 11:59:54Z Writer 체크포인트 갱신 뒤에도 로컬 21일/104점, 당일 1점(00:00:50.969Z)이 12:16Z 보관 조회에서 동일. 그러나 기존 A 응답에는 `marketReady`/보관/게시 단계 세부 결과가 없으므로 정상 무변경과 실제 기록 누락을 구별할 수 없음.
+- **새 operation 없이 원인 구분 소스 구현:** [제어 PR #2748](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2748) 전용 브랜치 `codex/w06-composite-writer-evidence-readonly-20261122`. 기존 A `fear-greed-archive-status` 조회 모듈을 보완해 **고정 로컬 Writer JSON**의 market/compositeObserved/compositeObservedPublication 단계 상태와 실패 stage 식별자만 허용 목록으로 추출. 동일 native SQLite readOnly/query_only 연결에서 `current`/최신 `composite-observed:YYYY-MM-DD` body bytes SHA256·stored_at만 추출. 반환값의 `d1PerKeyReadback=NOT_VERIFIED` 고정; 비밀 원문·공급자 원자료·임의 파일 경로·D1 쿼리 없음.
+- **실행 가능한 안전 회귀:** 기존 C996 source-only regression selector를 재사용하고 `tests/w06-composite-writer-evidence-readonly.test.mjs`로 고정 SHA·데이터 무변경·비밀정보 미반환·권한 미확인 판정을 검증. 최초 C996 CI [#45022041050](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45022041050)의 실패는 기존 symlink 생성 4건이 Windows Runner `EPERM`이던 테스트 환경 제약; 해당 기존 보안 시험은 삭제/허위 PASS 처리하지 않고 W06 전용 비symlink 신규 시험으로 분리. 현재 최신 CI [#45022260836](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45022260836)은 결과 대기이며 PASS 미확인.
+- **현재 경계:** PR은 후보 소스일 뿐 운영 Controller B 설치/정확 CAS·lease·backout 검증 없음, 실제 PC가 새 필드를 출력했다고 주장하지 않음. W06 UI·Reader 5/5 DONE 유지, Writer/D1 원장 세부 검증은 독립 미확인. CI 통과 뒤 승인 범위 및 실제 설치 SHA와 호환성을 확인하고 정규 선택 B 적용 후 고유 A 결과 JSON/TXT를 회수해야 함. 미승인 B·임의 실행기·강제 설치/재시도 금지.
+
 ### 2026-11-22 — PC 후속 보관 재조회 #2740: 늦은 Writer 체크포인트 이후에도 1점 유지
 
 - **관측 변화로 새 읽기 정당화:** [Core #2737](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2737) PASS의 `local-writer-last-run.json` `modifiedAt=2026-11-22T11:59:54.050Z`/`status=VERIFIED`는 기존 #2724 11:23Z보다 새로운 Writer 체크포인트. 그러나 Core는 composite 단계 자체를 노출하지 않으며 `VERIFIED`를 새 종합점수 계산·게시 성공으로 오해하지 않는다.
