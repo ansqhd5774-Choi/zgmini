@@ -46,7 +46,7 @@
 
 - **원인 재현(소스 조건):** [BEA unit Draft #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183)의 저장형 archive Reader는 `fs.existsSync`로 고정 CSV/meta의 존재를 먼저 검사했다. 끊어진 심볼릭 링크는 `existsSync=false`가 되어 단순 `SOURCE_MISSING`으로 잘못 분류됐고, capture의 재사용 분기도 동일한 파일명 존재를 놓쳤다. 실제 PC archive 훼손 발생을 의미하지 않는다.
 - **최소 변경:** Reader `checkExistingFile`에서 `lstatSync`의 `ENOENT`만 일반 결손 처리, 링크/비정규 파일은 `BEA_UNIT_STORED_PATH_UNSAFE`; capture 파일명 점검도 `lstatSync` 기반으로 변경하여 링크를 우회하지 않는다. [Reader commit `8d593cc`](https://github.com/ansqhd5774-Choi/zgmini/commit/8d593cc806839e5c432733e59d7f547c42a8b68c). 끊어진 CSV/meta 링크의 readback 및 capture 거부 시험 [`2dcf6b9`](https://github.com/ansqhd5774-Choi/zgmini/commit/2dcf6b9f08dda97acd246b1b8dadde4f35d2ee77). 기존 PR 정확 2파일, source-only.
-- **검증 구분:** 최종 HEAD `2dcf6b9f08dda97acd246b1b8dadde4f35d2ee77` [Node.js CI #45016891265](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45016891265)는 최초 점검 시 `in_progress`; 성공/실패 결과 회수 전이다. 실제 운영 수집·승인·PC 저장·D1 게시·Cloudflare 배포 0. WPSFD42 B `PROPOSED_NOT_APPROVED`, QFR owner 승인 미확인, BEA `NIPA/T11500/Q/A463RD` 원본 실PC 미검증은 그대로다.
+- **검증 구분:** 최종 HEAD `2dcf6b9f08dda97acd246b1b8dadde4f35d2ee77` [Node.js CI #45016891265](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45016891265)는 최종 `completed / success`, job `check` SUCCESS. Build·Type check·Regression·PC publication recovery·Cloudflare candidate read contracts 성공. 소스 검증이며 PC archive·Provider·SQLite·D1 실운영 검증은 아니다. 실제 운영 수집·승인·PC 저장·D1 게시·Cloudflare 배포 0. WPSFD42 B `PROPOSED_NOT_APPROVED`, QFR owner 승인 미확인, BEA `NIPA/T11500/Q/A463RD` 원본 실PC 미검증은 그대로다.
 - **NEXT:** CI 결과 회수, 기존 저장 원자료·공급처 승인 일치 확인 후 독립적인 BEA 수집/계산 실행. W05 5단계 1/5, 82단계 순차 26/82·개별 35/82 불변.
 
 ### 2026-11-22 — QFR current manifest raw SHA and owner approval cross-check
