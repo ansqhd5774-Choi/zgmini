@@ -31,6 +31,13 @@
 
 ## 개편 후 기록
 
+### 2026-11-22 — Latest host A #2650 confirms Controller preimage unchanged
+
+- **실제 Windows 결과 재사용:** [#2650](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2650#issuecomment-7071263400) / [Run 44964594236](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44964594236), `PASS/CORE_READONLY_DIAGNOSIS`, 설치 `controlSourceSha=565ddbd4ebfc46c88fb7dbaa810fd545656c6306`. 기존 #2630 실측과 동일하며 새 A를 중복 발행하지 않음.
+- **현재 완료·미완료 분리:** control [PR #2600](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2600) approval 후보 두 파일 source/main 병합 `fc86b88800c3ab18c029bae8611b2da3f967c8c2`, target `50163cd2e44f905fd35611d079c4c896748d9477`/1파일 contract. 새 owner B 운영 GO 또는 Controller 설치 receipt 없음. 해당 조회의 기존 실패 [#2593 후속 원장](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2593#issuecomment-7071303446)에 실제 current SHA와 FIRST UNFINISHED 반영.
+- **독립 공개 검증 한계:** 공식 사이트 `zgmini.kr/earnings-recession/`는 외부 공개 웹 인덱스에서 확인했으나 `/api/earnings-recession-census-qfr-margin`, `/api/earnings-recession-bea-unit-profit`, `/api/earnings-recession-bea-manufacturing-profit` 원본 직접 GET은 도구에서 접근 오류. 이를 새 HTTP503 또는 D1 행 증거로 판단하지 않음. 기존 원장 503 시점과 금일 실시간 상태 구분.
+- **NEXT:** 실제 B 효과 승인/정규 설치 없으면 동일 A나 구 #2593 재실행 금지. QFR #2089 단일키 게시, WPSFD42 #2240 POST+SQLite 효과 및 BEA unit #1183 source/provider 승인만 각각 독립 처리. 개편 1/5단계 DONE, 2단계 IN_PROGRESS. 운영 변경 0.
+
 ### 2026-11-22 — PR #2600 approval-source merged into control main
 
 - **실제 GitHub 소스 통합 성공:** control [PR #2600](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2600) exact-head `ddbf90fc85d7925b48d9b5a03ab16db700307bab` 조건으로 squash MERGED; [control main commit `fc86b88800c3ab18c029bae8611b2da3f967c8c2`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/fc86b88800c3ab18c029bae8611b2da3f967c8c2) 직접 재조회. 기존 CI [#44882361247](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44882361247) SUCCESS.
