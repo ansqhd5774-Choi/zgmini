@@ -80,11 +80,16 @@ test('W01 Census optional provider metadata never rejects valid required MTM/TI 
 
 test('W01 Census still rejects ambiguous required/geography/date columns',()=>{
   const base=row(2026,'09','900000');
-  for(const key of ['data_type_code','seasonally_adj','category_code',
-    'cell_value','us','time_slot_date']){
+  for(const key of ['data_type_code','cell_value','us','time_slot_date']){
     const duplicated=[...HEADERS,key.toUpperCase()];
     assert.throws(()=>normalizeCensusM3Inventories([duplicated,[...base,'alternate']]),
       {code:'CENSUS_M3_HEADERS_INVALID'},key);
+  }
+  for(const key of ['seasonally_adj','category_code']){
+    const duplicated=[...HEADERS,key.toUpperCase()];
+    const rows=normalizeCensusM3Inventories([duplicated,[...base,'alternate']]);
+    assert.equal(rows.length,0,key+' conflicting duplicate must not be accepted');
+    assert.equal(rows.diagnostics.invalid,1);
   }
   for(const key of ['data_type_code','seasonally_adj','category_code',
     'cell_value','us','time_slot_date']){
@@ -156,7 +161,10 @@ test('two-year Census raw archives remain intact when duplicate selectors agree'
   assert.equal(out.providerRequests,2);
   assert.equal(out.count,2);
   assert.deepEqual(out.diagnostics.map(d=>d.available),[1,1]);
-  for(const info of out.provenance){
+  const stored=JSON.parse(fs.readFileSync(path.join(fixture.writer,
+    CENSUS_M3_INVENTORIES_FILE),'utf8'));
+  assert.equal(stored.provenance.length,2);
+  for(const info of stored.provenance){
     const original=fs.readFileSync(path.join(fixture.writer,
       'inflation-causal-candidates-r1',info.archive));
     assert.deepEqual(JSON.parse(original.toString('utf8'))[0],doubled);
