@@ -18,6 +18,11 @@ try{
   try{
    const response=await page.goto(base+'/',{waitUntil:'domcontentloaded',timeout:60000});
    assert.equal(response?.status(),200,'production homepage HTTP 200');
+   // Dismiss the site's real introductory dialog via its normal UI control.
+   // Without this, the dialog correctly intercepts chart clicks on fresh sessions.
+   const intro=page.locator('#zg-about-intro-dialog');
+   await page.waitForTimeout(1200);
+   if(await intro.isVisible())await intro.getByRole('button',{name:'닫기',exact:true}).click();
    const controls=page.locator('.zg-r55-period');
    await controls.getByRole('button',{name:'1D',exact:true}).waitFor({timeout:35000});
    const api=await context.request.get(base+'/api/market-score/observations?period=1D',{timeout:30000});
