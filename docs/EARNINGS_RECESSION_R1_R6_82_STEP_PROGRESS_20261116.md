@@ -15,7 +15,7 @@
 | 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | **DONE** — 기존 WPSFD42 7/7·QFR 성공 재사용, BEA 390/1440 Production Chromium #45220124737에서 HTTP200/현재 $0.250·분기종료 2026-06-30·5분기 첫 $0.216/마지막 $0.250·실제 SVG 최종 marker·PC 저장과 D1 게시 KST 도움말·공식 BEA 출처/고지 PASS. 활성 Deployment ID 미조회는 별도 계보 항목 |
 | 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | **IN_PROGRESS** — #2768 QFR·#2882 WPSFD42·#3029 BEA 정확키 각 D1 PASS/1 write/0 provider 재확인, source의 ALREADY_STORED guard 확인. 실제 정상 갱신/UNCHANGED 운영 영수증은 별도 미확인; 중복 B 게시·다음날 예약 검증 생성 금지 |
 
-## 2026-11-24 01:52 KST 경 — 4단계 완료·5단계 시작 (실행 로그/정확키 기준)
+## 2026-11-24 — 4단계 완료·5단계 시작 (실행 로그/정확키 기준)
 
 - [PR #1516](https://github.com/ansqhd5774-Choi/zgmini/pull/1516) 병합 `575d4470f0d8844f50eb9b883b1d497ba8ab815f`: BEA `publishedAt` 실제 D1 `projection.builtAt` 검증 제공, 390/1440 도움말의 PC 저장/D1 게시 KST 분리, 첫/끝 5분기 차트 회귀. Node CI #45216397253 SUCCESS.
 - [PR #1518](https://github.com/ansqhd5774-Choi/zgmini/pull/1518) 병합 `893c4334df0f42fb5d5167933d2b149a43502ec0`: 기존 W06 앞에 **BEA 전용 읽기 전용 Production Chromium 검사**를 배치. [실행 #45220124737](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45220124737) **전체 SUCCESS**, W05 단계 390/1440 각각 HTTP200/READY, 원본 SHA `ff5a5a3a88cfc2f8758d8cd1369818eff1f9875e6df70e81caef4baf119273c3` (#3029 일치), 관측종료 2026-06-30, 첫 $0.216/마지막 $0.250, SVG marker x115 y6, 공식 BEA API 링크 및 비후원 고지/실화면 KST 날짜 PASS. PC 원자료 저장 **2026-11-23 20:58:05 KST**, D1 게시 **2026-11-24 00:20:20 KST**; 게시시각은 API의 `2026-11-23T15:20:20.060Z`로 검증(게시 실행 finishedAt과 동일시 금지). 동일 Run의 W06 1D+6기간·모바일/PC 검증도 PASS, 전체 산출물 artifact #14841366065. 신규 공급자/운영 DB/D1/설치 작업 0.
