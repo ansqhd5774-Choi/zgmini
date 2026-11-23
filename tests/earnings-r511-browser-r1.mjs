@@ -55,6 +55,9 @@ try{
     null,{timeout:30000});
   assert.equal((await page.locator('.earnings-r2-published-at').innerText()).trim(),
     'BLS 게시 2026-10-27 12:00:00 KST',width+'px: D1 publication is not retrieval');
+  // Exact BEA/QFR pending reasons must not be flattened into generic unavailable.
+  await page.waitForFunction(()=>document.querySelector('.earnings-r2-cost-status')?.textContent?.includes('BEA 단위이익 게시 대기 · Census QFR 게시 대기'),null,{timeout:15000});
+  assert.match(await page.locator('.earnings-r2-cost-status').innerText(),/BEA 단위이익 게시 대기 · Census QFR 게시 대기/,width+'px: informational 503 pending is explicitly labeled');
   const table=page.locator('.earnings-r2-table tbody tr.earnings-r2-cost-row');
   const cards=page.locator('.earnings-r2-mobile-list article.earnings-r2-cost-mobile-card');
   assert((await table.count())>=5,width+'px: five BLS desktop rows');
