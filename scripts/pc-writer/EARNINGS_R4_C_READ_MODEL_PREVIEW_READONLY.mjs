@@ -107,35 +107,13 @@ function buildRow(def, item) {
 
 // Invokes the previously verified R3D validator before reading the chosen raw cohort.
 // Only explicitly selected, hash-verified BLS rows are used; no fallback namespace.
-export function buildPreview(db,{generatedAt=new Date().toISOString(),includeServices=true}={}) {
-  if (!isoUTC(generatedAt)) fail('R4_GENERATED_AT_INVALID');
-  const prior=analyze(db);
-  const picked=new Map();
-  const firstSeen=[];
-  for(const item of prior.rows) {
-    const stored=db.prepare(`SELECT chunk_hashes_json,retrieved_at FROM api_history_snapshots_v1
-      WHERE provider='BLS' AND dataset=? AND snapshot_sha256=? LIMIT 1`)
-      .get(item.id,item.snapshotSha256);
-    if (!stored || stored.retrieved_at!==prior.cohortRetrievedAt) fail('R4_COHORT_SNAPSHOT_CHANGED');
-    let hashes;
-    try {hashes=JSON.parse(stored.chunk_hashes_json);} catch {fail('R4_COHORT_CHUNK_LIST_INVALID');}
-    if (!Array.isArray(hashes)||hashes.length!==1) fail('R4_COHORT_CHUNK_LIST_INVALID');
-    const chunk=db.prepare(`SELECT payload_json,first_seen_at FROM api_history_chunks_v1
-      WHERE provider='BLS' AND dataset=? AND chunk_sha256=? LIMIT 1`)
-      .get(item.id,hashes[0]);
-    if(!chunk||sha256(chunk.payload_json)!==hashes[0]) fail('R4_CHUNK_CHANGED_AFTER_VALIDATION');
-    if(!isoUTC(chunk.first_seen_at)
-      || Date.parse(chunk.first_seen_at)>Date.parse(item.retrievedAt)) fail('R4_FIRST_SEEN_AT_INVALID');
-    let rawRows;
-    try {rawRows=JSON.parse(chunk.payload_json);} catch {fail('R4_RAW_JSON_INVALID');}
-    if(!Array.isArray(rawRows)||rawRows.length!==item.rows
-      ||rawRows.at(-1)?.observationDate!==item.last) fail('R4_RAW_ROWS_CHANGED_AFTER_VALIDATION');
-    picked.set(item.id,{...item,rawRows,firstSeenAt:chunk.first_seen_at});
-    firstSeen.push(Date.parse(chunk.first_seen_at));
-  }
+// Read the service lineage independently: it is not part of the original
+// three-series R3D cohort. Never allow a missing base cohort to suppress a
+// valid WPSFD42 stored-source calculation.
+function verifiedServiceSource(db){
   // The optional service PPI is independently captured and hash-verified.
   // Keep each retrieval's own timestamp/SHA; never manufacture a common cohort.
-  const services=!includeServices?[]:db.prepare(`SELECT provider,dataset,snapshot_sha256,as_of,retrieved_at,
+  const services=db.prepare(`SELECT provider,dataset,snapshot_sha256,as_of,retrieved_at,
     status,history_mode,row_count,latest_observation_date,chunk_hashes_json,provenance_json
     FROM api_history_snapshots_v1
     WHERE provider='BLS' AND dataset='WPSFD42'
@@ -164,8 +142,42 @@ export function buildPreview(db,{generatedAt=new Date().toISOString(),includeSer
     if(!Array.isArray(rawRows)||rawRows.length!==source.rows
       ||rawRows.at(-1)?.observationDate!==source.last)
       fail('R4_SERVICE_RAW_ROWS_CHANGED_AFTER_VALIDATION');
-    picked.set(source.id,{...source,rawRows,firstSeenAt:chunk.first_seen_at});
+    return {source:{...source,rawRows,firstSeenAt:chunk.first_seen_at},versions:verifiedServices.length};
+  }
+  return {source:null,versions:0};
+}
+
+export function buildPreview(db,{generatedAt=new Date().toISOString(),includeServices=true}={}) {
+  if (!isoUTC(generatedAt)) fail('R4_GENERATED_AT_INVALID');
+  const prior=analyze(db);
+  const picked=new Map();
+  const firstSeen=[];
+  for(const item of prior.rows) {
+    const stored=db.prepare(`SELECT chunk_hashes_json,retrieved_at FROM api_history_snapshots_v1
+      WHERE provider='BLS' AND dataset=? AND snapshot_sha256=? LIMIT 1`)
+      .get(item.id,item.snapshotSha256);
+    if (!stored || stored.retrieved_at!==prior.cohortRetrievedAt) fail('R4_COHORT_SNAPSHOT_CHANGED');
+    let hashes;
+    try {hashes=JSON.parse(stored.chunk_hashes_json);} catch {fail('R4_COHORT_CHUNK_LIST_INVALID');}
+    if (!Array.isArray(hashes)||hashes.length!==1) fail('R4_COHORT_CHUNK_LIST_INVALID');
+    const chunk=db.prepare(`SELECT payload_json,first_seen_at FROM api_history_chunks_v1
+      WHERE provider='BLS' AND dataset=? AND chunk_sha256=? LIMIT 1`)
+      .get(item.id,hashes[0]);
+    if(!chunk||sha256(chunk.payload_json)!==hashes[0]) fail('R4_CHUNK_CHANGED_AFTER_VALIDATION');
+    if(!isoUTC(chunk.first_seen_at)
+      || Date.parse(chunk.first_seen_at)>Date.parse(item.retrievedAt)) fail('R4_FIRST_SEEN_AT_INVALID');
+    let rawRows;
+    try {rawRows=JSON.parse(chunk.payload_json);} catch {fail('R4_RAW_JSON_INVALID');}
+    if(!Array.isArray(rawRows)||rawRows.length!==item.rows
+      ||rawRows.at(-1)?.observationDate!==item.last) fail('R4_RAW_ROWS_CHANGED_AFTER_VALIDATION');
+    picked.set(item.id,{...item,rawRows,firstSeenAt:chunk.first_seen_at});
     firstSeen.push(Date.parse(chunk.first_seen_at));
+  }
+  const service=includeServices?verifiedServiceSource(db):{source:null,versions:0};
+  const serviceSnapshotVersions=service.versions;
+  if(service.source){
+    picked.set(service.source.id,service.source);
+    firstSeen.push(Date.parse(service.source.firstSeenAt));
   }
   const activeIndicators=picked.has('WPSFD42')
     ?[...INDICATORS,...SERVICE_INDICATORS]:INDICATORS;
@@ -189,11 +201,11 @@ export function buildPreview(db,{generatedAt=new Date().toISOString(),includeSer
       observedThroughBySeries:Object.fromEntries(activeSources.map(x=>[
         x.id,x.quarterly?x.last:x.last.slice(0,7)])),
       coverage,rows},
-    diagnostics:{r3dStatus:prior.status,snapshotsChecked:prior.snapshotsChecked+verifiedServices.length,
-       serviceSnapshotVersions:verifiedServices.length,
+    diagnostics:{r3dStatus:prior.status,snapshotsChecked:prior.snapshotsChecked+serviceSnapshotVersions,
+       serviceSnapshotVersions,
       newerIncomplete:prior.newerIncomplete,cohortRetrievedAt:prior.cohortRetrievedAt,
       sourceStoredAtPolicy:'OLDEST_FIRST_SEEN_AT',
-      serviceRetrievalIndependent:services.length>0,
+      serviceRetrievalIndependent:service.source!==null,
       bySeries:activeSources.map(x=>({seriesId:x.id,snapshotSha256:x.snapshotSha256,
         firstSeenAt:picked.get(x.id).firstSeenAt,rawRows:x.rows,gaps:x.gaps})),
       duplicateEvidenceGroups:['WPSFD4 RAW+DERIVED','WPSFD41 RAW+DERIVED',
@@ -204,11 +216,10 @@ export function buildPreview(db,{generatedAt=new Date().toISOString(),includeSer
 // Only the independent WPSFD42 lineage enters the supplementary D1 checkpoint.
 // The existing three-source C key continues to publish its same original five rows.
 export function buildServiceSourcePreview(db,{generatedAt=new Date().toISOString()}={}){
-  const full=buildPreview(db,{generatedAt,includeServices:true});
-  const source=full.diagnostics.bySeries.find(row=>row.seriesId==='WPSFD42');
+  if(!isoUTC(generatedAt))fail('R4_GENERATED_AT_INVALID');
+  const {source,versions}=verifiedServiceSource(db);
   if(!source)fail('R4_SERVICE_SOURCE_NOT_STORED');
-  const rows=full.payload.rows.filter(row=>row.seriesId==='WPSFD42');
-  if(rows.length!==2)fail('R4_SERVICE_INDICATOR_COUNT_MISMATCH');
+  const rows=SERVICE_INDICATORS.map(def=>buildRow(def,source));
   const ready=rows.filter(row=>row.status==='READY').length;
   const partial=rows.filter(row=>row.status==='PARTIAL').length;
   const unavailable=rows.length-ready-partial;
@@ -226,7 +237,13 @@ export function buildServiceSourcePreview(db,{generatedAt=new Date().toISOString
     rows,
   };
   return {payload,diagnostics:{
-    ...full.diagnostics,snapshotsChecked:full.diagnostics.serviceSnapshotVersions,bySeries:[source],
+    r3dStatus:'NOT_APPLICABLE_INDEPENDENT_SERVICE',
+    snapshotsChecked:versions,serviceSnapshotVersions:versions,
+    newerIncomplete:false,cohortRetrievedAt:null,
+    serviceRetrievalIndependent:true,
+    bySeries:[{seriesId:source.id,snapshotSha256:source.snapshotSha256,
+      firstSeenAt:source.firstSeenAt,rawRows:source.rows,gaps:source.gaps}],
+    duplicateEvidenceGroups:['WPSFD42 RAW+DERIVED'],
     sourceStoredAtPolicy:'WPSFD42_FIRST_SEEN_AT',
     sourcePartition:'WPSFD42_ONLY_NO_BASE_REWRITE',
   }};
