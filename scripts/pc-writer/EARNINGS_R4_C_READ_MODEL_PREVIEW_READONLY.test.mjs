@@ -112,9 +112,10 @@ test('separate service D1 checkpoint uses service first_seen and never modifies 
 test('actual service-only child process reads isolated SQLite without changing its bytes',()=>{
   const fixture=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-w05-service-cli-'));
   const home=path.join(fixture,'home'),storage=path.join(home,'storage');
-  const scripts=path.join(fixture,'scripts');
+  const scripts=path.join(fixture,'scripts'),temp=path.join(fixture,'temp');
   fs.mkdirSync(storage,{recursive:true});
   fs.mkdirSync(scripts,{recursive:true});
+  fs.mkdirSync(temp,{recursive:true});
   const here=path.dirname(fileURLToPath(import.meta.url));
   for(const name of ['EARNINGS_R3D_STORED_BLS_CALC_READONLY.mjs',
     'EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs'])
@@ -131,7 +132,7 @@ test('actual service-only child process reads isolated SQLite without changing i
     const originalHash=hashFile();
     const stdout=execFileSync(process.execPath,
       [path.join(scripts,'EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs'),'--service-only'],
-      {env:{...process.env,ZGMINI_PC_HOME:home},cwd:fixture,
+      {env:{...process.env,ZGMINI_PC_HOME:home,TMPDIR:temp,TEMP:temp,TMP:temp},cwd:fixture,
         encoding:'utf8',timeout:15_000,maxBuffer:100_000});
     assert.match(stdout,/R4_LOCAL_PREVIEW=FINISHED/);
     assert.equal(hashFile(),originalHash,'original stored SQLite bytes remain unchanged');
@@ -139,8 +140,8 @@ test('actual service-only child process reads isolated SQLite without changing i
     const txtName=stdout.match(/^TXT_CREATED=(.+)$/m)?.[1]?.trim();
     assert.match(jsonName??'',/^EARNINGS_R4_C_SERVICE_ONLY_READ_MODEL_PREVIEW_RESULT_.*\.json$/);
     assert.match(txtName??'',/^EARNINGS_R4_C_SERVICE_ONLY_READ_MODEL_PREVIEW_RESULT_.*\.txt$/);
-    const payload=JSON.parse(fs.readFileSync(path.join(scripts,jsonName),'utf8'));
-    const txt=fs.readFileSync(path.join(scripts,txtName),'utf8');
+    const payload=JSON.parse(fs.readFileSync(path.join(temp,jsonName),'utf8'));
+    const txt=fs.readFileSync(path.join(temp,txtName),'utf8');
     assert.equal(payload.status,'READY');
     assert.equal(payload.rows.length,2);
     assert.deepEqual(payload.rows.map(row=>row.seriesId),['WPSFD42','WPSFD42']);
@@ -150,7 +151,9 @@ test('actual service-only child process reads isolated SQLite without changing i
     assert.match(txt,/SQLITE_WRITES=0/);
     assert.match(txt,/API_REQUESTS=0/);
     assert.match(txt,/D1_WRITES=0/);
-    assert.equal(fs.readdirSync(scripts).filter(name=>/RESULT_/.test(name)).length,2);
+    assert.equal(fs.readdirSync(temp).filter(name=>/RESULT_/.test(name)).length,2);
+    assert.equal(fs.readdirSync(scripts).filter(name=>/RESULT_/.test(name)).length,0,
+      'read-only source checkout cannot receive diagnostic JSON/TXT');
   }finally{fs.rmSync(fixture,{recursive:true,force:true});}
 });
 
