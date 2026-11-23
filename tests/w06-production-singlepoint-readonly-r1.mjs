@@ -128,6 +128,13 @@ try{
    try{
     const doc=await earnings.goto(base+'/earnings-recession/',{waitUntil:'domcontentloaded',timeout:60000});
     assert.equal(doc?.status(),200,'earnings production document');
+    // Reuse the homepage's real first-visit dialog dismissal before testing an interactive help button.
+    const earningsIntro=earnings.locator('#zg-about-intro-dialog');
+    await earnings.waitForTimeout(1200);
+    if(await earningsIntro.isVisible()){
+     await earningsIntro.getByRole('button',{name:'닫기',exact:true}).click();
+     await earningsIntro.waitFor({state:'hidden',timeout:10000});
+    }
     const status=earnings.locator('.earnings-r2-cost-status');
     await status.waitFor({state:'visible',timeout:35000});
     const reasons={STORED_PROJECTION_PENDING:'게시 대기',PROJECTION_READ_UNAVAILABLE:'조회 불가',
