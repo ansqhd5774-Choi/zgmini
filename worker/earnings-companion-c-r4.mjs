@@ -272,6 +272,29 @@ export function earningsCompanionWriter(core,{snapshotKey=EARNINGS_C_SNAPSHOT_KE
     const previous=await core.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?')
       .bind(snapshotKey).first();
     if(previous){
+      // A previously stored WPSFD42 checkpoint must be intact before a
+      // no-op or superseding write can be acknowledged. The baseline key's
+      // established behavior is unchanged.
+      if(snapshotKey===EARNINGS_C_SERVICE_SNAPSHOT_KEY){
+        try{
+          const prior=JSON.parse(previous.body);
+          keys(prior,['payload','projection'],'EARNINGS_C_INVALID_ENVELOPE');
+          validateServicePayload(prior.payload,{now:storedAt});
+          const meta=prior.projection;
+          keys(meta,['status','sourceVersion','sourceStoredAt',
+            'expectedSourceVersion','expectedSourceStoredAt','builtAt'],
+            'EARNINGS_C_INVALID_ENVELOPE');
+          if(meta.status!=='READY'
+            ||meta.sourceVersion!==prior.payload.sourceVersion
+            ||meta.expectedSourceVersion!==prior.payload.sourceVersion
+            ||meta.sourceStoredAt!==prior.payload.sourceStoredAt
+            ||meta.expectedSourceStoredAt!==prior.payload.sourceStoredAt
+            ||!Number.isSafeInteger(meta.builtAt)
+            ||meta.builtAt!==Number(previous.stored_at)
+            ||meta.builtAt>storedAt||meta.builtAt<prior.payload.sourceStoredAt)
+            throw Error('EARNINGS_C_EXISTING_INVALID');
+        }catch{throw Error('EARNINGS_C_EXISTING_INVALID');}
+      }
       let old;try{old=JSON.parse(previous.body)?.projection;}catch{throw Error('EARNINGS_C_EXISTING_INVALID');}
       if(!Number.isSafeInteger(old?.sourceStoredAt)||!old?.sourceVersion
         ||old.sourceStoredAt>payload.sourceStoredAt)throw Error('EARNINGS_C_SUPERSEDED');
