@@ -397,3 +397,10 @@
 - **운영 배포 증거 구분:** GitHub main 병합은 Cloudflare Git Integration Deployment 성공 또는 Production UI 갱신의 증거가 아님. 현재 Cloudflare 정확 Deployment ID/readback, 실제 R2 페이지의 숫자 58.0·12-point 차트 마지막 날짜/툴팁은 미확인. Firecrawl 무료 할당 소진, Browser Use 크레딧 부족, 연결 브라우저 host 권한 오류, 독립 container DNS 불가로 2026-11-23 작업 시 새로운 live 렌더 캡처 미획득. 유료 충전·Wrangler 직배포·DNS·롤백 조작 없음.
 - **19개 경로 추가 확인:** `worker/candidate-r52.ts` → `worker/inflation-causal-public-r1.mjs` → `env.DB_CORE`의 `detail:inflation-causal-public-19:r1` D1 SELECT, payload 19행 검증·projection builtAt/stored_at 동치 및 `cache-control:no-store`로 실제 공개 API가 응답하는 코드 경로 확인. 기존 Production READY 19/19, sourceVersion/sourceStoredAt와 PC staging 일치. Writer [A #2791](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2791#issuecomment-7089082951)의 `SKIPPED_METADATA_ONLY`와 게시 소스의 19개 content-equivalence 검증 경로 대조. 현재 Writer `af537...` GitHub commit ref는 조회되지 않아 그 바이너리 실행 계보의 추가 검증은 미완료이며 이 조건을 숨기지 않음.
 - 남은 필수 실행: 승인된 Cloudflare Git Integration Deployment ID/Production readback 및 실브라우저(PC 1440, 모바일 390) 점수·날짜·12개 차트 마지막점·툴팁 검증. 날짜·수치 불일치가 재현될 때만 해당 원인 최소 수정. 전체 5단계 1·3 DONE, 2·4 진행 중, 5 미완료로 유지.
+
+## CDP 직접 Chromium Production 이동 차단 증거 2026-11-23
+
+- 현재 실행 환경의 `/usr/bin/chromium`과 Python Playwright가 존재하며 local Chromium 실행 후 `new_cdp_session(page)`, `Network.enable`, `Runtime.enable` 호출까지 가능함을 확인.
+- 바로 이어 Production `https://zgmini.kr/inflation/`으로 실제 페이지 이동을 시도하자 `Page.goto: net::ERR_BLOCKED_BY_ADMINISTRATOR`로 중단. 별도 curl도 `Could not resolve host: zgmini.kr`. 이는 **이 도구 환경의 접근 제한**이며 실제 Production 장애·CDP 브라우저 코드 결함으로 판정하지 않음. 사이트 DOM·콘솔·차트 element 크기 측정 불가, 스크린샷·툴팁 PASS 미주장.
+- 연결된 기존 브라우저 탭 읽기도 호스트 권한이 없어 접근 불가, 외부 headless service는 기존 한도 소진. 로컬 브라우저 내부 제약·사용자 PC를 원격 제어하는 비승인 플러그인으로 우회하지 않음. 추가 과금/브라우저 프로필 접근 없음.
+- 검증 완료 원본 유지: GitHub merged UI fix [PR #1476](https://github.com/ansqhd5774-Choi/zgmini/pull/1476) / merge `cc07d512d5788401f446e2bf7d9043ef2e4e80c8`, 기존 로컬→D1→Production R2 57.97005405261128, asOf 2026-11-23. 실제 Cloudflare Deployment ID와 PC/모바일 hydration 최종 표시·12개 점 툴팁은 여전히 미확인. 새 수집·계산·게시·배포 없음. 1·3 완료, 2·4 진행, 5 미완료 유지.
