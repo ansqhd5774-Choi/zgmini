@@ -132,6 +132,32 @@ test('reject altered metadata source timestamp and wrong provenance',async()=>{
       /BEA_UNIT_STORED_SOURCE_META_MISMATCH/);
   }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
 });
+test('oversized stored CSV or metadata fails before whole-file read and preserves originals',async()=>{
+  const pcBase=root();
+  try{
+    const captured=await captureBeaUnitSourceOnce({pcBase,storedAt:AT,
+      fetchImpl:async()=>response()});
+    const files=beaUnitRawPaths({pcBase,sourceSha:captured.sourceSha});
+    const cases=[[files.csv,100_001],[files.meta,10_001]];
+    for(const [file,size] of cases){
+      const original=fs.readFileSync(file);
+      const oversized=Buffer.alloc(size,0x78);
+      fs.writeFileSync(file,oversized);
+      try{
+        assert.throws(()=>readBeaUnitArchivedSource({pcBase,sourceSha:captured.sourceSha}),
+          /BEA_UNIT_STORED_SOURCE_TOO_LARGE/);
+        await assert.rejects(captureBeaUnitSourceOnce({pcBase,
+          sourceSha:captured.sourceSha,fetchImpl:async()=>{
+            throw Error('PROVIDER_MUST_NOT_BE_CALLED');
+          }}),/BEA_UNIT_STORED_SOURCE_TOO_LARGE/);
+        assert.deepEqual(fs.readFileSync(file),oversized);
+      }finally{fs.writeFileSync(file,original);}
+    }
+    assert.equal(readBeaUnitArchivedSource({pcBase,
+      sourceSha:captured.sourceSha}).payload.sourceStoredAt,AT);
+  }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
+});
+
 test('invalid provider CSV never saves an archive',async()=>{
   const pcBase=root();
   try{
