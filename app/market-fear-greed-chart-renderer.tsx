@@ -56,6 +56,7 @@ export function MarketFearGreedChart({
   marketScoreBands = false,
   observedRanges = [],
   timeAxis,
+  showLatestPointTouchTooltip = false,
 }: {
   data: MarketFearGreedChartPoint[];
   axisTicks: string[];
@@ -76,11 +77,13 @@ export function MarketFearGreedChart({
   marketScoreBands?: boolean;
   observedRanges?: MarketObservedRange[];
   timeAxis?: MarketChartTimeAxis;
+  showLatestPointTouchTooltip?: boolean;
 }) {
   const mobileAxisRight=useDashboardMobileAxis();
   const animate=useContext(MarketChartAnimationContext);
   const prefersReducedMotion = usePrefersReducedMotion();
   const [touchReleased, setTouchReleased] = useState(false);
+  const [latestTouched, setLatestTouched] = useState(false);
   const extrema=compact||!showExtrema?[]:chartExtrema(data.map(p=>({date:/^\d{8}$/.test(p.date)?`${p.date.slice(0,4)}-${p.date.slice(4,6)}-${p.date.slice(6,8)}`:p.date.slice(0,10),value:p.score})));
   const rangeByDate=new Map(observedRanges.map(row=>[row.date,row]));
   const chartX=(date:string)=>timeAxis?Date.parse(date):date;
@@ -92,10 +95,22 @@ export function MarketFearGreedChart({
 
   return <div
     className="cnn-history-chart-hitbox"
+    style={showLatestPointTouchTooltip ? {position:'relative'} : undefined}
     onMouseDown={event=>event.preventDefault()}
-    onTouchStart={() => setTouchReleased(false)}
-    onTouchEnd={() => setTouchReleased(true)}
-    onTouchCancel={() => setTouchReleased(true)}
+    onTouchStart={() => {setTouchReleased(false);if(showLatestPointTouchTooltip)setLatestTouched(false);}}
+    onTouchEnd={event => {
+      setTouchReleased(true);
+      if(!showLatestPointTouchTooltip||!latestPoint)return;
+      const touch=event.changedTouches[0];
+      const marker=event.currentTarget.querySelector('.cnn-latest-point circle, circle.cnn-latest-point');
+      if(!touch||!marker)return;
+      const rect=marker.getBoundingClientRect();
+      const centerX=rect.left+rect.width/2,centerY=rect.top+rect.height/2;
+      // Only a genuine tap on the stored latest dot shows this detail.
+      // Other data points and unrelated market charts remain unchanged.
+      setLatestTouched(Math.hypot(touch.clientX-centerX,touch.clientY-centerY)<=24);
+    }}
+    onTouchCancel={() => {setTouchReleased(true);setLatestTouched(false);}}
     onPointerMove={event => { if (event.pointerType === 'mouse') setTouchReleased(false); }}
   >
     <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
@@ -219,6 +234,13 @@ export function MarketFearGreedChart({
       {extrema.map(point=><ReferenceDot key={'extreme-'+point.kind} x={chartX(data[point.index].date)} y={point.value} ifOverflow="visible" shape={<ChartExtremumPoint point={point} peerIndex={extrema.find(p=>p.kind!==point.kind)?.index} samples={data.map(p=>({x:chartX(p.date),value:p.score}))} count={data.length} color={color}/>}/>)}
     </AreaChart>
     </ResponsiveContainer>
+    {showLatestPointTouchTooltip&&latestTouched&&latestPoint&&
+      <div data-testid="w04-r54-latest-touch-tooltip" role="status"
+        className="cnn-history-tooltip"
+        style={{position:'absolute',right:10,bottom:10,zIndex:3,pointerEvents:'none'}}>
+        <span>{formatTooltipLabel(latestPoint.date)}</span>
+        <strong>{latestPoint.score.toFixed(1)}</strong>
+      </div>}
   </div>;
 }
 
