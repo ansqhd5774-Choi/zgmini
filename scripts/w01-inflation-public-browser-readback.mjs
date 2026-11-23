@@ -59,7 +59,7 @@ async function state(){
   r2Hero:hero?.getAttribute('data-market-state')??null,
   r2ChartLatestDot:!!hero?.querySelector('.cnn-latest-point'),
   r2CorrectScore:hero?.textContent?.includes('58.0')??false,
-  r2DateTextCorrect:/2026\\D+11\\D+23/.test(hero?.textContent??''),
+  r2DateTextCorrect:/2026[^0-9]+11[^0-9]+23/.test(hero?.textContent??''),
   horizontalOverflow:document.documentElement.scrollWidth>innerWidth+1};})()`);
 }
 async function visit(url){
