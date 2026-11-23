@@ -357,3 +357,8 @@
 - 경제지표 물가 화면 `/economic-indicators/inflation/`의 실사이트 headless 브라우저 DOM을 1440x900 PC, 390x844 모바일 viewport로 로드·스크린샷 생성: 둘 다 점수 **54.9**, 기준일 **2026-11-23**, 차트 마지막 표기 **2026-11-23**, 원자료 **19/19 공개 확인**. 공개 API 수치 54.914667…의 소수 첫째 자리 반올림과 일치. 모바일/PC 정밀 픽셀 오버플로우 판정은 스크린샷 자체 육안 검증 전까지 미확인.
 - 게이지 소스 `app/market-score-orb.tsx`는 `startFromZero=true`, hero 숫자 950ms RAF 애니메이션; 초기 `0.0` 텍스트는 target 데이터가 0인 증거 아님. 경제 화면은 별도 후속 로드에서 54.9 확인. 위험 R2 화면 `/inflation/`은 4.5초 대기 headless scrape에서도 게이지 `0.0` 텍스트가 추출되었으므로 위험 UI 최종 애니메이션·툴팁은 **미입증**; 무단 임시 점수 고정/변경 금지.
 - 범위: 4요소 경제 물가 Production API↔실제 PC/모바일 텍스트 값·기준일 일치, R2 7축 로컬→D1→Production API 동치 확인. 남은 것은 정확 7행 D1/public 개별값 전수 동치, 실브라우저 위험 게이지 최종 상태 및 시각·툴팁/모바일 정밀 확인, 운영 자동 실행의 전체 Writer→D1→UI 검증. 단계 1·3 DONE, 2·4 진행, 5 미완료 유지.
+
+### W01 공개 후보 7개 개별 관측 대조 보강 (2026-11-23)
+
+- 공개 `/api/inflation-candidate-inputs` 현재 응답 `READY/HTTP200`, ID 2·16·22·23·24·28·29의 **7/7** 상태 READY, 각각의 `value`·`observationDate`를 기존 D1 [Run 45015985293](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/45015985293-1-seat-3.json) 결과와 직접 대조하여 **7/7 동치** 확인. sourceVersion/sourceStoredAt 역시 동일.
+- 위험 R2 UI `/inflation/` live HTML의 게이지 `aria-label="58.0점 중립"` 확인: 실제 API의 57.970054 점수 반올림과 일치하는 대상값이 컴포넌트에 전달됨. 다만 같은 headless 추출에서 애니메이션 숫자 텍스트 `0.0`이 관측되며, 장치에서 최종 프레임이 58.0으로 도달하는지 시각 검증은 미확인. 소스 애니메이션 시작값 0과 실제 점수 0을 혼동하지 않음.
