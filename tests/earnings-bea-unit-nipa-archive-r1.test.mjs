@@ -131,6 +131,37 @@ test('BEA echoed USERID is never persisted; HTTP hash differs from sanitized sto
   }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
 });
 
+test('unrelated BEA NIPA lines and arbitrary row fields never enter immutable archive',()=>{
+  const pcBase=temp();
+  const privateMarker='TEST_ONLY_UNRELATED_PRIVATE_FIELD';
+  try{
+    const rows=data().BEAAPI.Results.Data.map(row=>({...row,
+      ProviderDebugToken:privateMarker}));
+    rows.push({...rows[0],SeriesCode:'OTHER',LineNumber:'8',
+      DataValue:'999',ProviderDebugToken:privateMarker});
+    const httpBytes=Buffer.from(JSON.stringify({BEAAPI:{
+      Request:{RequestParam:[{ParameterName:'USERID',ParameterValue:privateMarker}]},
+      Results:{Data:rows}
+    }}),'utf8');
+    const saved=saveBeaUnitNipaArchive({pcBase,
+      rawBytes:httpBytes,sourceStoredAt:AT});
+    const files=beaUnitNipaArchivePaths({pcBase,sourceSha:saved.sourceVersion});
+    const stored=fs.readFileSync(files.raw,'utf8');
+    const meta=fs.readFileSync(files.meta,'utf8');
+    assert.doesNotMatch(stored,/TEST_ONLY_UNRELATED_PRIVATE_FIELD|ProviderDebugToken|USERID|RequestParam|OTHER|999/);
+    assert.doesNotMatch(meta,/TEST_ONLY_UNRELATED_PRIVATE_FIELD|ProviderDebugToken|USERID|RequestParam/);
+    const extracted=JSON.parse(stored).BEAAPI.Results.Data;
+    assert.equal(extracted.length,5);
+    assert.equal(extracted.every(row=>row.SeriesCode==='A463RD'&&row.LineNumber==='7'),true);
+    assert.deepEqual(Object.keys(extracted[0]),['TableName','SeriesCode','LineNumber',
+      'TimePeriod','DataValue','CL_UNIT','UNIT_MULT']);
+    const verified=readBeaUnitNipaArchive({pcBase,sourceSha:saved.sourceVersion});
+    assert.equal(verified.preview.recent.at(-1).value,0.250);
+    assert.equal(verified.sourceHttpSha256,
+      createHash('sha256').update(httpBytes).digest('hex'));
+  }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
+});
+
 test('reject invalid BEA source before creating any archive directory',()=>{
   const pcBase=temp();
   try{
