@@ -56,14 +56,18 @@ async function state(){
   research1:document.querySelector('tr[data-research-input="research-1"]')?.textContent.includes('102')??false,
   candidate28Text:document.querySelector('tr[data-research-candidate="28"]')?.textContent?.slice(0,240)??null,
   research1Text:document.querySelector('tr[data-research-input="research-1"]')?.textContent?.slice(0,240)??null,
-  r2Hero:hero?.getAttribute('data-market-state')??null};})()`);
+  r2Hero:hero?.getAttribute('data-market-state')??null,
+  r2ChartLatestDot:!!hero?.querySelector('.cnn-latest-point'),
+  r2CorrectScore:hero?.textContent?.includes('58.0')??false,
+  r2DateTextCorrect:/2026\\D+11\\D+23/.test(hero?.textContent??''),
+  horizontalOverflow:document.documentElement.scrollWidth>innerWidth+1};})()`);
 }
 async function visit(url){
  await send('Page.navigate',{url});
  for(let i=0;i<65;i++){
   const s=await state();
   if(url===origin+'/economic-indicators/inflation/'&&s.path==='/economic-indicators/inflation/'&&s.raw19===19&&s.raw7===7)return s;
-  if(url===origin+'/inflation/'&&s.path==='/inflation/'&&s.r2Hero==='ready')return s;
+  if(url===origin+'/inflation/'&&s.path==='/inflation/'&&s.r2Hero==='ready'&&s.r2ChartLatestDot)return s;
   await sleep(400);
  }
  throw Error('W01_PUBLIC_JS_LOADING_TIMEOUT:'+url);
@@ -98,9 +102,12 @@ try{
   assert(economic.research1&&economic.candidate28,'W01_PUBLIC_VALUE_MISMATCH_'+width);
   console.log('W01_ECONOMIC_RENDER_PASS='+width);
   const r2=await visit(origin+'/inflation/');
-  assert(r2.r2Hero==='ready','W01_R2_HERO_NOT_READY_'+width);
+  assert(r2.r2Hero==='ready'&&r2.r2ChartLatestDot&&r2.r2CorrectScore&&r2.r2DateTextCorrect,
+   'W01_R2_CHART_SCORE_DATE_MISMATCH_'+width);
+  assert(!economic.horizontalOverflow&&!r2.horizontalOverflow,'W01_HORIZONTAL_OVERFLOW_'+width);
   await screenshot('r2-'+width+'.png');
-  console.log('W01_R2_RENDER_PASS='+JSON.stringify({width,r2Hero:r2.r2Hero}));
+  console.log('W01_R2_RENDER_PASS='+JSON.stringify({width,r2Hero:r2.r2Hero,latestDot:r2.r2ChartLatestDot,
+   scoreDisplay:r2.r2CorrectScore,dateDisplay:r2.r2DateTextCorrect,noHorizontalOverflow:!r2.horizontalOverflow}));
  }
 }catch(error){
  console.error('W01_BROWSER_READBACK_FAIL='+String(error?.stack??error));
