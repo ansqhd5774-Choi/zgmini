@@ -41,6 +41,34 @@ test('exact BEA JSON bytes are saved once, reread by SHA, never represented as F
   }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
 });
 
+test('modern BEA Level response archives and revalidates without rewriting statistical unit values',()=>{
+  const pcBase=temp();
+  try{
+    const modern=data();
+    for(const row of modern.BEAAPI.Results.Data){
+      row.CL_UNIT='Level';
+      row.METRIC_NAME='Dollars per Unit';
+    }
+    const bytes=Buffer.from(JSON.stringify({BEAAPI:{
+      Request:{RequestParam:[{ParameterName:'USERID',ParameterValue:'SECRET_ONLY_TEST'}]},
+      Results:modern.BEAAPI.Results
+    }}));
+    const saved=saveBeaUnitNipaArchive({pcBase,rawBytes:bytes,sourceStoredAt:AT});
+    assert.equal(saved.status,'SOURCE_STORED_READBACK_VERIFIED');
+    const read=readBeaUnitNipaArchive({pcBase,sourceSha:saved.sourceVersion});
+    assert.deepEqual(read.preview.recent.map(x=>x.value),[0.216,0.219,0.222,0.231,0.25]);
+    const file=beaUnitNipaArchivePaths({pcBase,sourceSha:saved.sourceVersion});
+    const stored=fs.readFileSync(file.raw,'utf8');
+    assert.equal(stored.includes('SECRET_ONLY_TEST'),false);
+    assert.equal(stored.includes('RequestParam'),false);
+    assert.equal(stored.includes('METRIC_NAME'),false);
+    assert.equal(JSON.parse(stored).BEAAPI.Results.Data.every(row=>
+      row.CL_UNIT==='Level'&&row.UNIT_MULT==='0'),true);
+    const checked=computeBeaUnitNipaStoredPreview({pcBase,sourceSha:saved.sourceVersion});
+    assert.equal(checked.currentValue,0.25);
+  }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
+});
+
 test('missing and half-written BEA JSON archive stay missing, never auto-healed',()=>{
   const pcBase=temp();
   try{
