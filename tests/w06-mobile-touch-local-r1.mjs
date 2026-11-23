@@ -64,6 +64,7 @@ try{
    results.push(result);
    console.log('W06_LOCAL_TOUCH_OR_HOVER '+JSON.stringify(result));
    await page.screenshot({path:'artifacts/w06-touch-local/'+width+'.png',fullPage:false});
+   if(width===390)assert.equal(await page.locator('button.zg-risk-side-veil[aria-label="열린 패널 닫기"]').isVisible(),false,'mobile touch should not open risk panel');
    assert(visible,'a real '+(width===390?'touch':'hover')+' on latest dot must show tooltip');
    assert(tipText.includes(display),'tooltip must show source-scaled 33.0');
    assert(tipText.includes('09:37'),'tooltip must show exact calculated minute in KST');
