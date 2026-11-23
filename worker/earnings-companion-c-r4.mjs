@@ -177,6 +177,10 @@ async function readOptionalService(core,{now}){
       ||Number(record.stored_at)>now
       ||projection.builtAt!==Number(record.stored_at))
       throw Error('EARNINGS_C_SERVICE_CHECKPOINT_INVALID');
+    // Service must be an atomic two-row addition; never degrade the base five.
+    if(payload.rows.some(row=>row.status!=='READY'))return {state:'PARTIAL'};
+    if(payload.rows.some(row=>earningsCompanionFreshness(row,{now}).status!=='FRESH'))
+      return {state:'STALE'};
     return {state:'READY',payload};
   }catch{return {state:'INVALID'};}
 }
