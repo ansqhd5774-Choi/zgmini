@@ -97,3 +97,12 @@ test('missing/invalid ranges cannot create fake dates',()=>{
  const b=theme();b.themes[0].score=null;
  assert.throws(()=>capture('theme',b),/SCORE_INVALID/);
 });
+
+test('paid finalized theme output stays CONFIRMED even when latest envelope is PROVISIONAL',()=>{
+ const b=theme();
+ b.confirmedObservationDate=b.observationDate;
+ b.themes[0].confirmedObservationDate=b.observationDate;
+ const out=capture('theme',b);
+ assert.equal(out[0].phase,'CONFIRMED');
+ assert.equal(out[0].asOfDate,b.confirmedObservationDate);
+});
