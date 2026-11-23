@@ -2,6 +2,8 @@
 
 ### 2026-11-23 — W06 모바일 실제 터치 Production 검증 완료
 
+- **전체 Browser CI #45094528100 SUCCESS 최종 readback**: job `completed/success`, 실패 단계 0개. 실제 Production 390px touchscreen 최신 원점 2026-11-23T00:37:20.887Z(KST 09:37) 툴팁 `visible`, 값 33.0, 실제 계산시각 표기, 시장 채팅 오작동 미발생. Production 1440px hover에서도 동일 시각·점수·툴팁 `visible`. 1D/1W/1M/3M/6M/1Y × 390/1440 총 12개 화면에 SVG 있음/empty 0, documentWidth=viewportWidth. 기존 `/inflation/` 별도 React #418도 이번 전체 성공 실행에서는 실패 재현되지 않았으므로 현재의 신규 BLOCKER로 만들지 않음.
+
 - 최초 모바일 터치 실험은 차트점이 화면 하단 우측 채팅 버튼에 겹쳐 있었음. 실제 DOM hit test의 circle 여부를 먼저 확인하기 위해 차트를 화면 중앙으로 이동 후 터치. 원인 가설을 검증하고 별도 지표의 화면 오류와 구분.
 - W06 모바일 터치 구현 [PR #1473](https://github.com/ansqhd5774-Choi/zgmini/pull/1473) Merged, main 병합 SHA 00e49b6b900d9981ffa73b691a9133ed5769abb6. 최신 관측점 중심 반경 24px에서만 원관측 계산 KST 시각·표시점수·방법론 표시를 렌더하며 채팅 패널로 입력이 전파되지 않도록 제한. 기존 PC hover/산식/API/Writer/D1/데이터 경로 변경 없음.
 - [Browser #45093775592](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45093775592): 격리 로컬 Chromium 390px 진짜 touchscreen 및 1440px mouse hover 모두 최신 점 2026-11-23 09:37 KST / 33.0 tooltip PASS, 양 화면 horizontal overflow 없음. Production 데스크톱 최신점/12개 기간 조합 PASS, 당시 Production 모바일은 신규 소스 미배포를 정확히 구분. 전체 Browser workflow 실패는 W06이 아닌 /inflation/ React hydration #418.
