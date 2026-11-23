@@ -78,6 +78,27 @@ export function readBeaUnitNipaArchive({pcBase,sourceSha}={}){
     observedThrough:preview.observedThrough,preview};
 }
 
+// Offline calculation only from the exact persisted source SHA. This is not the
+// approved FRED_CSV public projection and never calls a D1 writer or provider.
+export function computeBeaUnitNipaStoredPreview({pcBase,sourceSha}={}){
+  const archive=readBeaUnitNipaArchive({pcBase,sourceSha});
+  const recent=archive.preview.recent;
+  const current=recent.at(-1),previous=recent.at(-2);
+  const history=Object.freeze(recent.map(point=>Object.freeze({
+    period:point.quarter,value:point.value
+  })));
+  return Object.freeze({
+    status:'STORED_SOURCE_CALCULATED',transport:'BEA_API_JSON',
+    schemaVersion:'earnings-bea-unit-nipa-stored-preview-r1-v1',
+    sourceVersion:archive.sourceVersion,
+    sourceStoredAt:archive.sourceStoredAt,
+    observationPeriodEnd:archive.observedThrough,
+    unit:'USD_PER_REAL_GVA_UNIT',
+    currentValue:current.value,previousValue:previous.value,
+    change:current.value-previous.value,history
+  });
+}
+
 // Caller supplies already acquired bytes under its own approved source-owner contract.
 // No implicit HTTP call, retries, directory reset or D1 publication.
 export function saveBeaUnitNipaArchive({pcBase,rawBytes,sourceStoredAt}={}){
