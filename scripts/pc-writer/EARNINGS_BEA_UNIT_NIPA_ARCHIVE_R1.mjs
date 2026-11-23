@@ -5,6 +5,14 @@ import {createHash} from 'node:crypto';
 import {inspectBeaUnitNipaRawJson} from './EARNINGS_BEA_UNIT_NIPA_EQUIVALENCE_R1.mjs';
 
 export const BEA_NIPA_ARCHIVE_SCHEMA='earnings-bea-unit-nipa-raw-r1-v1';
+// The API can return unrelated NIPA lines or extra response fields. The
+// persisted statistical archive contains only the validated unit-profit rows.
+const SOURCE_FIELDS=new Set(['TableName','SeriesCode','LineNumber','TimePeriod',
+  'DataValue','CL_UNIT','UNIT_MULT']);
+const selectUnitRows=rows=>rows.filter(row=>
+  row?.SeriesCode==='A463RD'&&String(row?.LineNumber)==='7')
+  .map(row=>Object.fromEntries(Object.entries(row)
+    .filter(([key])=>SOURCE_FIELDS.has(key))));
 const PIN=/^[a-f0-9]{64}$/;
 const PARTS=['raw','earnings-bea-unit-nipa-r1'];
 const err=code=>{throw Error('BEA_UNIT_NIPA_ARCHIVE_'+code);};
@@ -62,7 +70,7 @@ export function readBeaUnitNipaArchive({pcBase,sourceSha}={}){
   catch{err('METADATA_INVALID');}
   if(meta?.schemaVersion!==BEA_NIPA_ARCHIVE_SCHEMA||
      !PIN.test(meta.sourceHttpSha256??'')||
-     meta.storageScope!=='BEA_RESULTS_DATA_ONLY'||
+     meta.storageScope!=='BEA_NIPA_TARGET_FIELDS_ONLY'||
      meta.sourceVersion!==sourceSha||meta.transport!=='BEA_API_JSON'||
      meta.dataset!=='NIPA'||meta.tableName!=='T11500'||
      meta.seriesCode!=='A463RD'||meta.lineNumber!=='7'||
@@ -120,7 +128,7 @@ export function saveBeaUnitNipaArchive({pcBase,rawBytes,sourceStoredAt}={}){
   const original=JSON.parse(new TextDecoder('utf-8',{fatal:true}).decode(rawBytes));
   const sourceHttpSha256=createHash('sha256').update(rawBytes).digest('hex');
   const storedBytes=Buffer.from(JSON.stringify({BEAAPI:{Results:{
-    Data:original.BEAAPI.Results.Data
+    Data:selectUnitRows(original.BEAAPI.Results.Data)
   }}}),'utf8');
   const preview=inspectBeaUnitNipaRawJson({rawBytes:storedBytes,sourceStoredAt});
   const sourceSha=preview.sourceVersion;
@@ -134,7 +142,7 @@ export function saveBeaUnitNipaArchive({pcBase,rawBytes,sourceStoredAt}={}){
   }
   const meta={
     schemaVersion:BEA_NIPA_ARCHIVE_SCHEMA,transport:'BEA_API_JSON',
-    storageScope:'BEA_RESULTS_DATA_ONLY',sourceHttpSha256,
+    storageScope:'BEA_NIPA_TARGET_FIELDS_ONLY',sourceHttpSha256,
     dataset:'NIPA',tableName:'T11500',seriesCode:'A463RD',
     lineNumber:'7',frequency:'Q',sourceVersion:sourceSha,
     sourceStoredAt,sourceRetrievedAt:new Date(sourceStoredAt).toISOString(),
