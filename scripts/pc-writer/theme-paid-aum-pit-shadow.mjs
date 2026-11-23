@@ -10,7 +10,7 @@ const METHOD_STATUSES=new Set(['ADAPTIVE_PROVISIONAL','R188_COMPATIBLE']);
 // Candidate evidence has two separate dates: AUM measurement and first public filing.
 // No old 2025 AUM replaces any approved observed score on or after transitionDate.
 export function shadowPaidAumPit({dates,symbols,scoreBySymbol,officialCandidates,
- transitionDate,existingHistory=[]}={}){
+ transitionDate,existingHistory=[],recalculatedExistingHistory=null}={}){
  if(!Array.isArray(dates)||!dates.length||!dates.every((d,i)=>day(d)&&(!i||dates[i-1]<d))||
   !day(transitionDate)||!Array.isArray(symbols)||!symbols.length||
   new Set(symbols).size!==symbols.length||symbols.some(s=>!/^[A-Z][A-Z0-9.-]{0,15}$/.test(s))||
@@ -33,6 +33,13 @@ export function shadowPaidAumPit({dates,symbols,scoreBySymbol,officialCandidates
    fail('PIT_SHADOW_BASELINE_INVALID');
   baseline.set(item.date,item.score);
  }
+ let existingScoreParityVerified=null;
+ if(recalculatedExistingHistory!==null){
+  if(!Array.isArray(recalculatedExistingHistory)||recalculatedExistingHistory.length!==baseline.size||
+   recalculatedExistingHistory.some(p=>!day(p?.date)||!valid(p.score)||baseline.get(p.date)!==p.score))
+   fail('PIT_SHADOW_EXISTING_SCORE_DRIFT');
+  existingScoreParityVerified=true;
+ }
  const candidateHistory=[];
  for(const date of dates.filter(d=>d<transitionDate)){
   const rows=symbols.flatMap(ticker=>{
@@ -50,7 +57,7 @@ export function shadowPaidAumPit({dates,symbols,scoreBySymbol,officialCandidates
  return {status:'SHADOW_ONLY_NOT_APPROVED_FOR_PUBLICATION',
   transitionDate,additionalScoredDates:added.length,
   firstAdditionalDate:added[0]?.date??null,lastAdditionalDate:added.at(-1)?.date??null,
-  priorScoredDates:existingHistory.length,existingHistoryUnchanged:true,
+  priorScoredDates:existingHistory.length,existingHistoryCopied:true,existingScoreParityVerified,
   candidateHistory,existingHistory:existingHistory.map(x=>({date:x.date,score:x.score})),
   providerCalls:0,operationalWrites:0,d1Writes:0};
 }
