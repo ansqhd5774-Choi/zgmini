@@ -41,6 +41,8 @@ on:
       - 'lib/market-score/market-trend-window-r1.mjs'
       - 'tests/dashboard-history-browser-r5.mjs'
       - 'tests/w06-production-singlepoint-readonly-r1.mjs'
+      - 'tests/w04-r54-production-ui-readonly-r1.mjs'
+      - 'tests/w04-r54-touch-local-r1.mjs'
       - 'tests/cnn-current-session-verified-checks-browser-r12.mjs'
       - 'app/globals.css'
       - 'public/styles/fear-greed-education-r1.css'
