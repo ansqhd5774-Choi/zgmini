@@ -339,3 +339,11 @@
 - 정규 독립 B 요청 단회 [Issue #2773](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2773), requestId `pc-update-4d7b9848-f1d2-4238-a8f4-4121fa2d13ab`, 목표 `b048e36a072c69de4c591fb96d521d98a6e60760`. 최초 상태 OPEN/결과 댓글 없음: **운영 설치와 D1 readback 미입증**. 중복 요청 금지.
 - 다른 작업 [#2764](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2764)은 `SELECTIVE_PIN_NOT_IN_APPROVAL_PR`로 설치 전 차단, actual 9e3542e 유지. 이 요청을 재실행하지 않고 #2772 자체에 pin+manifest 포함해 독립 계약 수립.
 - `/api/inflation-detail` 직접 web 조회가 접근 오류: HTTP 상태·실제 Production 정상/실패는 미판정. 다음: #2773 JSON/TXT/댓글 회수 → B 실제 성공 시 새 `inflation-r2-d1-readback-readonly` A 단회 → 로컬과 D1 score/date/hash 비교 → Production API/PC·모바일 화면 검증. 단계 1·3 완료, 2·4 진행, 5 미완료 유지.
+
+## 2026-11-23 — W01 R2 D1 실제 원격 조회·로컬 동치 PASS
+
+- [Controller B 설치 #2773](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2773#issuecomment-7088537774) 유지보수 JSON/TXT 검증: `SUCCEEDED/APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED`, actual=target `b048e36a072c69de4c591fb96d521d98a6e60760`, 보호 불변, recovery 없음, workflow 활성. 설치 요청 종결.
+- [정규 A 단회 #2786](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2786#issuecomment-7088907211) 실제 PC `PASS/W01_R2_D1_READBACK_VERIFIED`, [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/45092797706-1-seat-2.json) 본문 확인, 고정 D1 key `detail:inflation:v1`. `localMatches=true`, D1 `score=57.97005405261128`, `asOfDate=2026-11-23`, `lastTrendLabel=2026-11-23`, `lastTrendValue=57.97005405261128`, `trendLength=12`, `methodologyVersion=INFLATION_R2_R29_56_IA`; 날짜·점수 일치 모두 true. D1/로컬 저장일 `1795395678695` 일치, body SHA256 `887df75ece4bef4c4f6494d3c5eda802903f17633adadb93e7ab08b1404e64f5` 일치. 운영 쓰기 0, 공급자 호출 0, D1 쓰기 0, 보호 전후 SHA 동일.
+- 주의: 실제 A 실행 Controller `actualExecutionSha=523fb6ec8138311977c24eb5a352c3175fbf2354` (B 설치 target b048과 다름). 후속 독립 Controller 전환 가능성이 있으므로 동일 설치 SHA로 주장하지 않음. A 결과의 고유 request/실제 실행 SHA와 동치 자체는 검증.
+- Production `/api/inflation-detail`은 web 조회 도구 접근 불가; 공개 물가 페이지 SSR HTML은 초기 loading/placeholder만 보여 브라우저 hydration 후 실제 화면값 미확인. 클라이언트 API/PC·모바일 검증은 계속 필요.
+- 이 작업으로 **R2 로컬→D1 정확 키 점수·날짜·12개 추세 마지막 점·저장 시각·해시 동치** 입증. 2단계 전체는 기존 7행 API와 19종·4축 공개 대조가 남고, 4단계는 Production/PC/모바일이 남으므로 완료 선언하지 않음. 단계 1·3 완료, 2·4 진행 중, 5 미완료 유지.
