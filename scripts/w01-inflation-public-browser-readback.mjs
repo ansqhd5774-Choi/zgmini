@@ -54,6 +54,8 @@ async function state(){
  return {path:location.pathname,rows19:rows19.length,rows7:rows7.length,raw19,raw7,mobile19,mobile7,
   candidate28:document.querySelector('tr[data-research-candidate="28"]')?.textContent.includes('976,044')??false,
   research1:document.querySelector('tr[data-research-input="1"]')?.textContent.includes('102.1')??false,
+  candidate28Text:document.querySelector('tr[data-research-candidate="28"]')?.textContent?.slice(0,240)??null,
+  research1Text:document.querySelector('tr[data-research-input="1"]')?.textContent?.slice(0,240)??null,
   r2Hero:hero?.getAttribute('data-market-state')??null};})()`);
 }
 async function visit(url){
@@ -91,9 +93,10 @@ try{
   assert(economic.rows19===19&&economic.raw19===19&&economic.rows7===7&&economic.raw7===7,
    'W01_ECONOMIC_RAW_ROW_COUNT_'+width);
   assert(economic.mobile19===19&&economic.mobile7===7,'W01_ECONOMIC_MOBILE_ROW_COUNT_'+width);
-  assert(economic.research1&&economic.candidate28,'W01_PUBLIC_VALUE_MISMATCH_'+width);
   await screenshot('economic-'+width+'.png');
-  console.log('W01_ECONOMIC_RENDER_PASS='+JSON.stringify({width,...economic}));
+  console.log('W01_ECONOMIC_RENDER_OBSERVED='+JSON.stringify({width,...economic}));
+  assert(economic.research1&&economic.candidate28,'W01_PUBLIC_VALUE_MISMATCH_'+width);
+  console.log('W01_ECONOMIC_RENDER_PASS='+width);
   const r2=await visit(origin+'/inflation/');
   assert(r2.r2Hero==='ready','W01_R2_HERO_NOT_READY_'+width);
   await screenshot('r2-'+width+'.png');
