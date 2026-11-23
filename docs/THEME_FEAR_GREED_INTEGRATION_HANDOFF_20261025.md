@@ -1,3 +1,17 @@
+## 2026-11-23 KST — 42차 #1009 과거 Reader/R181 STOP 복구 Issue 실제 종결
+
+### 실행 결과·상태
+
+- **대상:** 본체 [Issue #1009](https://github.com/ansqhd5774-Choi/zgmini/issues/1009#issuecomment-7090310360) `Closed/completed` 최신 실상태 확인. 작업 전 Issue OPEN → 작업 후 CLOSED. 기존 W03 5단계 완료점 **5/5 유지**(새 기능 구현/새 진척점 아님). 전체 프로그램 163테마 중 기존 공개10·비공개 AI1, 추가 신규 출시0. 과거 12/68 항목과 새 5단계를 합산하지 않음.
+- **저장소/브랜치:** `ansqhd5774-Choi/zgmini` / 유일한 지정 `codex/theme-fear-greed-integration-20261025`; 당 회차 기준 `main@bef69e266a1c90588bbbc2bf1450c7074e5a72bc`, 작업 전 전용 HEAD `aff8dbacd39e76179f769e4b2e2d5230a19c639f`. 이번 변경은 이 진행 원장 단일 파일만; 운영 Source SHA·설치 SHA·D1 checkpoint·프로덕션 Deployment SHA 등은 신규 변경·설치·배포 없음.
+- **확인된 유효 운영 종료 증거:** 기존 정규 #1443/#1444 및 PC Writer #2509/#2511의 공개10개 유료 MarketParquet 공통 갱신·원자료→계산→D1 CAS/readback·API READY 증거를 보존. 원본 오래된 R178 stale/R181 STOP 상태를 최신 운영 원인으로 복원하지 않음. 기존 [Run #45006804045](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45006804045) W03 Production 390px 전용 검사 8/8 **step SUCCESS**, 2026-11-22T09:19:06Z `W03_PRODUCTION_MOBILE_PASS` 원문 재회수: 실제 공개 API `READY`, 공개10×252, 관측일 `2026-11-20`, 모바일 홈·상세 점수·범례·차트·overflow PASS, JS 오류0. [기존 artifact #14748366086](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45006804045/artifacts/14748366086) 재사용. 같은 Run의 전체 Job FAIL은 W03 성공 이후 **독립 /inflation/ React #418** 문제로 분리.
+- **새로 확인한 공개 웹 소스:** 최신 main `bef69e266a1c90588bbbc2bf1450c7074e5a72bc`, 연결된 GitHub Node CI·Cloudflare Workers **candidate build SUCCESS**; 이 사실을 W03 11/23 신규 D1 write·신규 관측일·새 Deployment 적용으로 혼동하지 않음.
+- **비공개 승인/데이터 경계:** AI software는 기존 `PRIVATE_STORED_READBACK_VERIFIED` 15점/PARTIAL, 공식 PIT AUM/최소21일 연속 자료 부족·비공개 유지. 가짜 237점 생성·과거 AUM 소급·임의 게시 없음. 기존 공개10개/AI 분리, 데이터센터 R32 전환 및 후속 163 확대는 별도 미승인/미출시.
+- **이번 실제 조치:** #1009 최신 본문과 207개 누적 댓글·기존 W03 41차 결과 대조 → 실제 [종결 증거 댓글](https://github.com/ansqhd5774-Choi/zgmini/issues/1009#issuecomment-7090310360) 작성 → `Closed/completed` readback → 이 지정 원장 반영. 실제 공급자 GET·SQLite/Writer/D1 변경·GitHub main 수정·Controller/Runner 실행·예약·Cloudflare 배포·DNS·유료 도구 이용 **0**.
+- **종결 및 다음 대상:** **W03 5/5 기존 승인 목표 DONE, #1009 완료 종결**, PR #714 대형 장기 개발 Draft와 PR #1468 검증 전용 Draft는 미병합 상태 보존. 해당 Issue에 추가 필수 단계 없음. 163개 확장 목표를 재개하는 경우 다음 **하나**의 실제 신규 선정·공식 권리·ETF 정의 승인 대상이 특정된 후 기존 공통 registry→비공개 계산·저장→Reader→공개 별도 승인 경로에 태운다. 신규 공급자/점수/유료 결제/별도 테마 Runner를 임의 추가하지 않는다.
+
+---
+
 ## 2026-11-22 KST — 41차 5단계 최종 완료 (운영 모바일 실제 검증 확보)
 
 ### 증거·최종 상태
