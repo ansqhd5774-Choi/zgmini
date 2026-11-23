@@ -95,7 +95,13 @@ export async function captureBeaUnitSourceOnce({pcBase,fetchImpl,storedAt}={}){
   if(typeof response.arrayBuffer!=='function')throw Error('BEA_UNIT_SOURCE_HTTP_FAILED');
   const bytes=Buffer.from(await response.arrayBuffer());
   if(bytes.length<20||bytes.length>100_000)throw Error('BEA_UNIT_SOURCE_TOO_LARGE');
-  if(size!==null&&size!==bytes.length)throw Error('BEA_UNIT_SOURCE_LENGTH_MISMATCH');
+  // Node fetch transparently decompresses gzip/br/deflate while Content-Length
+  // describes the compressed transfer. Check exact length only for identity data.
+  const encoding=String(response.headers?.get?.('content-encoding')??'').trim().toLowerCase();
+  if(!['','identity','gzip','br','deflate'].includes(encoding))
+    throw Error('BEA_UNIT_SOURCE_ENCODING_UNSUPPORTED');
+  if(size!==null&&(!encoding||encoding==='identity')&&size!==bytes.length)
+    throw Error('BEA_UNIT_SOURCE_LENGTH_MISMATCH');
   let content;
   try{content=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes);}
   catch{throw Error('BEA_UNIT_SOURCE_ENCODING_INVALID');}
