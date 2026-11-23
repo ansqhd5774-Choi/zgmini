@@ -15,6 +15,14 @@
 | 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | PARTIAL — WPSFD42 서비스 신규 2행 390px·1440px 실사이트 PASS (#2882); BEA 단위이익 후속 연결 화면 검증 미완료 |
 | 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | NOT_DONE |
 
+## 2026-11-23 BEA 원본 보관 필드 최소화 — source-only CI 검증 (현행)
+
+- 기존 Draft [PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183)의 `saveBeaUnitNipaArchive`는 인증값이 반사되는 최상위 `Request` 객체를 제거했으나 `Results.Data` **전체**를 그대로 직렬화해, 분석 대상 외 다른 시계열·공급자 추가 필드까지 원자료 파일에 보존할 수 있었다. 이는 소스 경로의 과다 저장 가능성이며 실제 운영 유출·원본 보관 사실은 확인되지 않음.
+- 모듈 [소스 e0e22b48](https://github.com/ansqhd5774-Choi/zgmini/commit/e0e22b48625e351f2652c3b77f664fd1ebb859d2)에서 저장 대상을 정확 `SeriesCode=A463RD, LineNumber=7` 행과 `TableName/SeriesCode/LineNumber/TimePeriod/DataValue/CL_UNIT/UNIT_MULT` 7개 허용 필드만으로 축소. metadata `storageScope=BEA_NIPA_TARGET_FIELDS_ONLY`로 실제 보관 범위를 표시. 원 HTTP 바이트 SHA(`sourceHttpSha256`)와 선별 보관 통계 JSON SHA(`sourceVersion`)의 분리 유지. 기존 저장·게시 운영 효과 미변경.
+- [회귀시험 7435cc61](https://github.com/ansqhd5774-Choi/zgmini/commit/7435cc615200527240d1ab35a710ab21c4d7032c)에서 `Results.Data`에 다른 계열 및 추가 비밀값·`RequestParam`을 임의 삽입하여 저장본/metadata에 비대상 값이 없고, 원문 해시와 저장본 해시·최신값 재조회가 구분되는지 검증.
+- [Node CI #45153073272](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45153073272) Job 137619155632 **completed/SUCCESS**. 주요 Regression **5466 PASS / 0 FAIL**, PC 게시 복구 **50 PASS**, Cloudflare 읽기 계약 **72 PASS**. `unrelated BEA NIPA lines and arbitrary row fields never enter immutable archive` 신규 시험 PASS.
+- **효과 경계:** 새 module은 source-only Draft다. 실제 PC의 BEA `NIPA/T11500/Q` 원본 취득·비공개 보관은 아직 승인·실행 증거 없음. FRED 고정 원본 [A #2894](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2894) `BEA_UNIT_ARCHIVE_NOT_STORED` 및 기존 WPSFD42/QFR 실운영 완료 유지. `BEA_API_JSON` 전용 D1 게시 승인은 별도. **2/5단계 완료, 3단계 진행**.
+
 ## 2026-11-23 BEA API 인증정보 응답 반사 결함 수정 — 최신 보안 정본
 
 - **실제 원인:** [BEA 공식 API 사용자 가이드(2026-04-20)](https://apps.bea.gov/api/_pdf/bea_web_service_api_user_guide.pdf)의 응답 구조에서 `BEAAPI.Request.RequestParam`이 호출 파라미터를 되돌려주며 `USERID` 인증값도 포함될 수 있다. 이전 Draft의 `saveBeaUnitNipaArchive`는 HTTP 응답 JSON 원문을 그대로 `<SHA>.json`에 보관하여 **운영 승인 후 실행되면 API 키가 PC 원자료에 영속 저장될 소스 결함**을 포함했다. 실제 운영 저장/유출은 확인된 적 없으며 기존 실PC #2894의 보관 0건 증거를 유지한다.
