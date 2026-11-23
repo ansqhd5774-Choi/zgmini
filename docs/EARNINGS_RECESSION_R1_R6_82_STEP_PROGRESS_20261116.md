@@ -15,6 +15,12 @@
 | 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | PARTIAL — WPSFD42 서비스 신규 2행 390px·1440px 실사이트 PASS (#2882); BEA 단위이익 후속 연결 화면 검증 미완료 |
 | 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | NOT_DONE |
 
+## 2026-11-23 BEA 공식 JSON 저장자료 계산·출처 경계 source-only 검증 (최신)
+
+- BEA JSON 불변 원본 모듈 `EARNINGS_BEA_UNIT_NIPA_ARCHIVE_R1.mjs`에 **읽기 전용** `computeBeaUnitNipaStoredPreview({pcBase,sourceSha})`를 추가. 고정 SHA의 원본·metadata를 `readBeaUnitNipaArchive`로 실제 검증한 뒤, 최근 5개 분기의 `currentValue`·`previousValue`·`change`·`history`를 순수 계산한다. 반환값은 `STORED_SOURCE_CALCULATED/BEA_API_JSON`이며 실제 원문 SHA·sourceStoredAt·2026Q2 관측 종료일을 보존한다. 기존 `FRED_CSV` Writer의 READY schema와 공개 API/D1 계약을 위조하거나 변경하지 않는다.
+- 소스 [23afb263](https://github.com/ansqhd5774-Choi/zgmini/commit/23afb2637e9ec82ca7c8854ec29760684eb8b675), 회귀 [75f0c650](https://github.com/ansqhd5774-Choi/zgmini/commit/75f0c650ed48faae09e6537e6c93924331a3ddc1) 기존 Draft PR #1183 **정확 2파일**. [Node CI #45151393239](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45151393239) Job 137613505753 **completed/SUCCESS**: regression **5464 PASS/0 FAIL**, 게시 복구 50 PASS, Cloudflare 읽기 계약 72 PASS. 신규 `stored-only BEA JSON calculation preserves native provenance and exact source checkpoint`·`offline calculation rejects missing, changed or invalid BEA archive rather than inventing values` **2/2 PASS**. 위 5분기 값은 합성 fixture 결과로 실제 운영 관측치·원본 저장 성공 증거 아님.
+- **남은 실제 필수행동은 동일:** BEA `NIPA/T11500/Q/A463RD Line7`의 기존 BEA API 인증/Collector와 **정확 원문 1회 취득·PC private JSON/metadata 보관 효과 승인** 확인 → 실PC 정규 수집·SHA/시각 readback → BEA_JSON 계산/공개 Writer 출처 계약 정식 연결 및 별도 D1 B 게시 승인→API/PC·모바일 UI 실측. 현재 PC 기존 FRED 고정 원본 [#2894](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2894) `BEA_UNIT_ARCHIVE_NOT_STORED`는 변경되지 않음. 신규 Provider GET·PC Job·운영 DB/D1/예약/Cloudflare 변경 0건. 공식 **2/5 DONE, 3단계 IN_PROGRESS** 유지.
+
 ## 2026-11-23 BEA 공식 JSON 원본 보관 source-only 구현 — 운영 저장 미실행 (최신)
 
 - 앱 기존 [Draft PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183)에서 공유 BEA 수집기가 승인된 공식 API 원문 바이트를 확보한 이후 **가짜 FRED CSV 변환 없이** 불변 JSON과 metadata를 독립 보관·재조회할 수 있는 호출 없는 모듈 `EARNINGS_BEA_UNIT_NIPA_ARCHIVE_R1.mjs` 추가. 별도 폴더 `raw/earnings-bea-unit-nipa-r1/<SHA>.json`·`<SHA>.meta.json`를 sourceSha 원문 바이트로 분리하여 FRED `raw/earnings-bea-unit-profit-r1`과 충돌하지 않음.
