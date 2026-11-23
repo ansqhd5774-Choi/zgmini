@@ -61,10 +61,19 @@ export function marketOperationalStore(db){
  });
 }
 
-export async function readStoredMarketInputs(store,now=Date.now(),{onSelection}={}){
- const batches=await Promise.all(['macro','credit','supply','fundFlows','bisDsr','bisTc','rates'].map(key=>
+export async function readStoredMarketInputs(store,now=Date.now(),{onSelection,onFreshness}={}){
+ const keys=['macro','credit','supply','fundFlows','bisDsr','bisTc','rates'];
+ const batches=await Promise.all(keys.map(key=>
   typeof onSelection==='function'?store.readInput(key,{onSelection}):store.readInput(key)));
- const fresh=(x,i)=>x&&now>=x.storedAt&&now-x.storedAt<(i===4||i===5?BIS_INPUT_TTL:INPUT_TTL)?(i===0?mergeStoredMacro(null,x,now):x.body):{};
+ const fresh=(x,i)=>{
+  const included=Boolean(x&&now>=x.storedAt&&now-x.storedAt<(i===4||i===5?BIS_INPUT_TTL:INPUT_TTL));
+  // Opt-in evidence of the EXISTING Reader's TTL decision. This attests
+  // inclusion in the merged input, not downstream scoring weight or full PIT.
+  if(typeof onFreshness==='function'){
+   try{onFreshness({sourceKey:keys[i],storedAt:Number.isSafeInteger(x?.storedAt)?x.storedAt:null,included});}catch{}
+  }
+  return included?(i===0?mergeStoredMacro(null,x,now):x.body):{};
+ };
  return batches.map(fresh).reduce((all,part)=>({...all,...part,series:{...all.series,...part.series},external:{...all.external,...part.external},providerSummary:{...all.providerSummary,...part.providerSummary}}),{series:{},external:{},providerSummary:{}});
 }
 
