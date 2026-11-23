@@ -83,7 +83,7 @@ try{
      const bounds=await latestDot.boundingBox();
      assert(bounds&&bounds.width>0&&bounds.height>0,'latest marker has real visible bounds');
      const center={x:bounds.x+bounds.width/2,y:bounds.y+bounds.height/2};
-     const tip=chart.locator('.recharts-tooltip-wrapper');
+     const tip=viewport.width===390?chart.locator('[data-testid="w06-touch-tooltip"]'):chart.locator('.recharts-tooltip-wrapper');
      if(viewport.width===390){
       // An actual emulated touch must be used; mouse hover on 390px is not evidence.
       await page.touchscreen.tap(center.x,center.y);
