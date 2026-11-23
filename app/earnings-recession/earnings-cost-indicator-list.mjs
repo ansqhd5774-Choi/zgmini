@@ -24,6 +24,25 @@ const knownIds=new Set(KNOWN_EARNINGS_COST_INDICATORS.map(row=>row.id));
 const knownById=new Map([...KNOWN_EARNINGS_COST_INDICATORS,
   ...OPTIONAL_EARNINGS_COST_INDICATORS].map(row=>[row.id,row]));
 
+// Baseline BLS rows retain the already deployed API's smaller metadata
+// contract; strict service-only fields must not hide the original five rows.
+function safeBaselineRow(row){
+  const known=KNOWN_EARNINGS_COST_INDICATORS.find(x=>x.id===row?.indicatorId);
+  return Boolean(known
+    &&row&&typeof row==='object'&&!Array.isArray(row)
+    &&row.seriesId===known.series&&row.unit===known.unit
+    &&['READY','PARTIAL','PENDING','SOURCE_FAILED','UNAVAILABLE','STALE'].includes(row.status)
+    &&(row.status!=='READY'||Number.isFinite(row.value))
+    &&(row.provider===undefined||row.provider==='BLS')
+    &&(row.category===undefined||row.category==='COST_PRESSURE')
+    &&(row.kind===undefined||row.kind===known.kind)
+    &&(row.sourceURL===undefined||
+      row.sourceURL==='https://data.bls.gov/timeseries/'+known.series)
+    &&(row.adjustment===undefined||row.adjustment==='SA')
+    &&(row.changeUnit===undefined||
+      row.changeUnit===(known.unit==='INDEX'?'INDEX_POINTS':'PERCENTAGE_POINTS')));
+}
+
 function safeBlsRow(row){
   const known=knownById.get(row?.indicatorId);
   return row!==null&&typeof row==='object'&&!Array.isArray(row)
@@ -52,7 +71,7 @@ export function buildEarningsCostIndicatorView(payload){
   if(valid){
     const seen=new Set();
     for(const row of payload.rows){
-      if(!safeBlsRow(row)||!knownIds.has(row.indicatorId)||seen.has(row.indicatorId))
+      if(!safeBaselineRow(row)||seen.has(row.indicatorId))
         continue;
       seen.add(row.indicatorId);
       rows.push(row);
