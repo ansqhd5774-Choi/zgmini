@@ -64,16 +64,17 @@ async function state(){
 }
 async function visit(url){
  await send('Page.navigate',{url});
- let lastEvaluationError='NONE';
+ let lastEvaluationError='NONE',lastState=null;
  for(let i=0;i<65;i++){
   let s;
   try{s=await state();}
   catch(error){lastEvaluationError=String(error.message||error);await sleep(400);continue;}
+  lastState=s;
   if(url===origin+'/economic-indicators/inflation/'&&s.path==='/economic-indicators/inflation/'&&s.raw19===19&&s.raw7===7)return s;
   if(url===origin+'/inflation/'&&s.path==='/inflation/'&&s.r2Hero==='ready'&&s.r2ChartLatestDot)return s;
   await sleep(400);
  }
- throw Error('W01_PUBLIC_JS_LOADING_TIMEOUT:'+url+':'+lastEvaluationError);
+ throw Error('W01_PUBLIC_JS_LOADING_TIMEOUT:'+url+':'+lastEvaluationError+':'+JSON.stringify(lastState).slice(0,450));
 }
 async function screenshot(name){
  const r=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
