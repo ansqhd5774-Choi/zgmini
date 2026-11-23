@@ -29,7 +29,7 @@ try{
    await page.route('**/api/market-score',route=>route.fulfill({status:200,contentType:'application/json',
     body:JSON.stringify(market)}));
    await page.route('**/api/employment-r6/observations',route=>route.fulfill({status:200,contentType:'application/json',
-    body:JSON.stringify({status:'UNAVAILABLE',indicators:[]})}));
+    body:JSON.stringify({status:'UNAVAILABLE',indicators:[],summary:{sourceFeatures:0,recentlyObservedFeatures:0,chartReadyFeatures:0,chartPartialFeatures:0,scoredFeatures:0,recentlyScoredFeatures:0}})}));
    await page.addInitScript(()=>sessionStorage.setItem('zgmini-about-intro-dismissed-r1','1'));
    const res=await page.goto(base+'/economic-indicators/employment/',
     {waitUntil:'domcontentloaded',timeout:60000});
