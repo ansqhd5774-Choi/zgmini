@@ -2445,3 +2445,12 @@
 - **실측:** 로컬 `STORED_EVENT_CONFIRMED` / `eventVerified=true` / `datedSnapshotMatched=true`; D1 current/day 각각 `VERIFIED`, `currentMatched=true`, `dayMatched=true`; Production API HTTP 200 / `matched=true`. 세 경로 모두 `asOfDate=2026-11-23`, `score=43.159125188536954`, `methodologyVersion=EMPLOYMENT_R54_STORED_4FACTOR_R1`, `trendLastDate=2026-11-23` 일치. `currentStoredAt=1795401344189`, `eventCalculatedAt=2026-11-23T02:35:44.189Z`.
 - **보호:** `providerCalls=0`, `d1Writes=0`, `operationalWrites=0`, `protectedStateUnchanged=true`. 재설치·재게시·재실행 불필요. 이 결과는 R54 게시 경로의 확인이지 R6 29개 UI 렌더링이나 DOL National 관측일 전진 증거가 아니다.
 - **현재 5단계 판정:** 1·2 DONE, 3 IN_PROGRESS (DOL National `DOL_RELEASE_OBSERVATION_STALE`), 4 NOT_DONE (29개 ID/단위/관측일 및 PC·모바일 실화면), 5 NOT_DONE (R6 자동 갱신 종결). **2/5(40%) 유지**. 다음은 DOL 공식 National XML과 발표본의 최신 관측일/재시도 조건을 대조하고, 독립적으로 R6 29개 PC·모바일 표시를 실제 검증한다. R54 게시 증거를 다시 수집하지 않는다.
+
+
+## 224. DOL 발표문 계속청구 주차 불일치 차단 소스 수정 (2026-11-24 KST)
+<!-- W04-20261124-DOL-CONTINUED-WEEK-GUARD -->
+- 기존 DOL 발표문 텍스트 후보 파서의 최초 불일치 확인: 피보험 실업률 문장의 계속청구 주차와 실제 계속청구 건수 문장의 주차를 별도 추출·동일성 검증하지 않아 서로 다른 주차를 한 관측행으로 결합할 수 있었음.
+- 지정 브랜치 소스 수정 커밋 [3b95a7a](https://github.com/ansqhd5774-Choi/zgmini/commit/3b95a7a342b27ef3c59f4bd0c6456f01e5e557f2): 건수 문장의 월·일을 별도 캡처하고 피보험 실업률 주차와 다르면 `HOLD/WEEK_DATE_INCONSISTENT`로 차단. 값 캡처 인덱스도 변경된 그룹에 맞춰 수정.
+- 회귀 테스트 커밋 [0a7e7f8](https://github.com/ansqhd5774-Choi/zgmini/commit/0a7e7f8f085fd2ccbdca351a37f9b0c50c08aa26): 일치 주차는 `CANDIDATE_ONLY`, 불일치 주차는 `HOLD`를 요구하는 두 사례 추가. **CI/Node 실행 PASS는 아직 미확인**.
+- 발표문 파서는 여전히 원본 PDF 인증·수집·SQLite 저장 기능이 없고 `CANDIDATE_ONLY`로 제한됨. 따라서 이번 변경을 National XML 최신화나 운영 저장 성공으로 계산하지 않음. PC Job·Controller 설치·DB/D1·예약 변경 없음.
+- 다음: 신규 테스트 격리 실행 및 기존 테스트 회귀 → DOL 공식 원본 바이트·관측일 인증과 기존 National XML의 최초 차이 확인 → 적격 기존 수집 경로로 저장·계산 전진 검증 → 29개 PC/모바일 및 정규 자동 실행 검증. **1·2 DONE, 3 IN_PROGRESS, 4·5 NOT_DONE; 2/5(40%) 유지**.
