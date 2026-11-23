@@ -109,7 +109,7 @@ test('new LOCAL_STORED score event links actual 7+2 partial selected identifiers
 });
 
 test('legacy 7 batch only events remain valid and cannot be retroactively rewritten',async()=>{
- const f=fixture({independentEvidence:undefined});
+ const f=fixture({independentEvidence:null});
  const legacy=await prepareD05LineageAfterStoredArchive(f.args);
  assert.equal(legacy.status,'PREPARED_LOCAL_ONLY');
  assert.equal(Object.hasOwn(legacy,'independentInputs'),false);
