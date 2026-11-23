@@ -38,8 +38,9 @@ test('existing GMH success stays intact and retired secondary lane is removed',(
   assert.equal(slot(primary({status})).outcome,'success');
  }
  const rows=expandedCollectionEntries({primary:primary()});
- assert.equal(rows.length,5);
+ assert.equal(rows.length,4);
  assert.equal(rows.find(x=>x.id==='job:themeSecondary'),undefined);
+ assert.equal(rows.find(x=>x.id==='job:sectorEtf'),undefined);
 });
 
 test('fourteen incorrect keys cannot impersonate the mandatory R181 universe',()=>{
