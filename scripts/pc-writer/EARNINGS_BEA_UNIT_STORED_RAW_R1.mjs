@@ -81,7 +81,14 @@ export function readBeaUnitArchivedSource({pcBase,sourceSha}={}){
 
 // Source-owner-only building block for an existing approved collector.
 // No executable entrypoint, new CMD, scheduler, D1 call or automatic provider fetch.
-export async function captureBeaUnitSourceOnce({pcBase,fetchImpl,storedAt}={}){
+export async function captureBeaUnitSourceOnce({pcBase,fetchImpl,storedAt,sourceSha}={}){
+  // An already pinned immutable archive needs no second provider request.
+  // Missing/unsafe pins fail closed rather than falling back to HTTP.
+  if(sourceSha!==undefined){
+    const previous=readBeaUnitArchivedSource({pcBase,sourceSha});
+    return {status:'ALREADY_CAPTURED',sourceSha,
+      sourceStoredAt:previous.sourceStoredAt};
+  }
   if(typeof fetchImpl!=='function'||!Number.isSafeInteger(storedAt)||storedAt<=0)
     throw Error('BEA_UNIT_CAPTURE_ARGUMENT_INVALID');
   const response=await fetchImpl(UNIT_PROFIT_CSV,{
