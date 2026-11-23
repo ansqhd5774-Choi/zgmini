@@ -15,6 +15,14 @@
 | 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | PARTIAL — WPSFD42 서비스 신규 2행 390px·1440px 실사이트 PASS (#2882); BEA 단위이익 후속 연결 화면 검증 미완료 |
 | 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | NOT_DONE |
 
+## 2026-11-23 BEA 기존 API 인증 → 단회 GET → native 저장·readback 라이브러리 연결 (최신)
+
+- [Draft PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183) 소스 전용 새 `scripts/pc-writer/EARNINGS_BEA_UNIT_NIPA_SOURCE_OWNER_R1.mjs` [b6178df4](https://github.com/ansqhd5774-Choi/zgmini/commit/b6178df4f0c43419a5d826332d0523720010cc5f) 구현. 기존 `local-env.mjs`·`consumption-r5.mjs`와 같은 `providers.BEA_API_KEY` 계약만 받아, 고정 BEA 공식 `https://apps.bea.gov/api/data` / `GetData` / `NIPA` / `T11500` / `Frequency=Q` / 현재+이전 연도 규격으로 **호출된 경우에만 1회 GET**. 무제한 재시도/리다이렉트 금지, 30초 timeout, 2MB 상한, 비밀 URL/응답/예외 원문 출력 금지. 응답 통계행은 기존 `saveBeaUnitNipaArchive`의 인증정보·불필요한 행 제거, 저장 SHA/원문 HTTP SHA 별도 기록, 파일 readback 검증을 재사용. `sourceSha`를 이미 알면 기존 저장본 조회만 하며 GET **0건**. 모듈 import만으로는 네트워크/PC 쓰기 없음, CLI·예약·Controller·D1 엔트리포인트 새로 만들지 않음.
+- 회귀 [709f932c](https://github.com/ansqhd5774-Choi/zgmini/commit/709f932c7cfd65e93cd2a5f09437d86e3497fc29) `tests/earnings-bea-unit-nipa-source-owner-r1.test.mjs`는 가짜 응답만 사용. 1 GET 정확 파라미터·sanitized archive SHA/저장 계산·기존 pin 0 GET, 인증 누락 0 GET, HTTP 실패/2MB 초과/잘못된 JSON 저장·재시도 0, 공급자 오류 메시지의 credential 비노출 검증.
+- [Node CI #45155541312](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45155541312), job `137627500101` **completed/SUCCESS**, 해당 정확 HEAD Regression **5464 PASS/0 FAIL**, PC publication recovery 50 PASS, Cloudflare candidate read 72 PASS. 신규 BEA adapter 네 시험 **4/4 PASS**. 직전 다른 HEAD의 시험 총수 5466과 단순 비교하여 회귀가 삭제됐다는 결론을 내리지 않고 실행한 정확 commit과 결과를 구분.
+- **실운영은 여전히 미실행:** `zgmini-pc-control/main` `pc-approved-runtime-b-once`의 실등록 효과는 `PIN_REGISTRY_CAS`/configured runtime이고 관련 manifest `providerCalls=false`; `pc-writer-b-source-once`는 파일 설치 전용, `config/operations.json`의 BEA unit은 A 읽기 전용. 새 수집 라이브러리의 별도 **정확 공급자 호출·비공개 쓰기 효과를 인증·호출할 B 운영 계약**과 PC 설치 SHA/CAS·lease는 준비되지 않았다. 승인 범위 밖 generic B에 원시 요청을 넣지 않음. 이전 #2894 fixed FRED archive 0건과 실제 공개 D1 미완료 유지.
+- **다음 필수 실행:** 기존 공통 Source-owner B 라우트의 정확 인증된 BEA `T11500/Q/A463RD` 수집·보관 effect 등록 및 승인 핀 → 최신 실PC 설치 상태/CAS·lease/정규 수신 확인 → 기존 공통 호출자에서 새 library 호출·원본 SHA/metadata 영수증 → 별도 `BEA_API_JSON` 계산·D1 B 게시 승인 → Production API/PC·모바일 UI. 공식 **2/5 DONE, 3단계 IN_PROGRESS** 유지.
+
 ## 2026-11-23 BEA 원본 보관 필드 최소화 — source-only CI 검증 (현행)
 
 - 기존 Draft [PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183)의 `saveBeaUnitNipaArchive`는 인증값이 반사되는 최상위 `Request` 객체를 제거했으나 `Results.Data` **전체**를 그대로 직렬화해, 분석 대상 외 다른 시계열·공급자 추가 필드까지 원자료 파일에 보존할 수 있었다. 이는 소스 경로의 과다 저장 가능성이며 실제 운영 유출·원본 보관 사실은 확인되지 않음.
