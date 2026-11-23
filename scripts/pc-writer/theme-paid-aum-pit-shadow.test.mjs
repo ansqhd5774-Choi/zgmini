@@ -25,10 +25,18 @@ test('PIT first public dates gate old official rows; original post-transition po
  assert.equal(result.candidateHistory[0].score,null);
  assert.equal(result.additionalScoredDates,3);
  assert.deepEqual(result.existingHistory,baseline);
- assert.equal(result.existingHistoryUnchanged,true);
+ assert.equal(result.existingHistoryCopied,true);
+ assert.equal(result.existingScoreParityVerified,null);
  assert.equal(result.providerCalls,0);
  assert.equal(result.operationalWrites,0);
  assert.equal(result.d1Writes,0);
+});
+test('actual recalculated baseline must match each preserved date and score',()=>{
+ const result=shadowPaidAumPit({...args,recalculatedExistingHistory:structuredClone(baseline)});
+ assert.equal(result.existingScoreParityVerified,true);
+ assert.throws(()=>shadowPaidAumPit({...args,
+  recalculatedExistingHistory:[baseline[0],{...baseline[1],score:61.25}]}),
+  {message:'PIT_SHADOW_EXISTING_SCORE_DRIFT'});
 });
 test('missing 40 real sessions or missing score stays missing, never filled',()=>{
  const pointCopy=structuredClone(points);
