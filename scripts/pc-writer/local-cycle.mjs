@@ -99,8 +99,9 @@ try{
  }
 
  if(lane==='core'){
-  // Separate provisional inputs/output; failures never block the confirmed publisher.
-  spawnSync(process.execPath,[path.join(here,'sector-provisional-cycle.mjs'),'--write-local'],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
+  // Retire the independent Alpaca provisional fetch. The approved paid feed
+  // supplies observed dates; a missing intraday paid bar stays unavailable.
+  // Retain existing provisional rows and the separate confirmed publication.
   sectorFearGreedR3=spawnSync(process.execPath,[path.join(here,'sector-fear-greed-r3-local-cycle.mjs'),'--write-local'],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
   const sectorFearGreedR3File=path.join(base,'local-sector-fear-greed-r3-last-run.json');
   sectorFearGreedR3Report=fs.existsSync(sectorFearGreedR3File)?read(sectorFearGreedR3File):null;
