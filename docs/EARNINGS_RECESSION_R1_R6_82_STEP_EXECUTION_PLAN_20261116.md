@@ -8,7 +8,7 @@
 
 이 브랜치의 주 실행은 위 **실적 정보행 종단 완료**다. 물가/시장일정/테마/고용 **5개 공개 경로의 D1 의미 동치 감사**는 독립 지원 업무다. 두 업무의 완료율·승인·소유자를 합치지 않는다. 다른4담당의 데이터 복구를 W05의 전역 선행조건으로 만들지 않는다.
 
-**현재 2/5단계 완료·3단계 진행 중.** 완료 조건 개수이며 실제 서비스 작업량40%가 아니다. 과거 단계 계수는 현행 실행·진행률 기준에서 제외한다. 기존 순번을 유지하려고 실제 진행 가능한 게시/화면 검증을 멈추지 않는다. 이 개편은 기존 완료·실패를 소급 변경한 것이 아니다.
+**현재 3/5단계 완료·4단계 진행 중.** 완료 조건 개수이며 실제 서비스 작업량 60%를 의미하지 않는다. 3단계 BEA NIPA/QFR/WPSFD42 저장형 게시·Production GET 검증 완료. 4단계 일부 출처·실화면 배포 검증이 남아 있다. 과거 단계 계수는 현행 실행·진행률 기준에서 제외한다. 기존 순번을 유지하려고 실제 진행 가능한 게시/화면 검증을 멈추지 않는다. 이 개편은 기존 완료·실패를 소급 변경한 것이 아니다.
 
 ## 2. 현재 실행 순서
 
@@ -16,11 +16,17 @@
 |---|---|---|---|
 | 1 | 기존 운영 자산·완료 범위·실제 결손 확정 | 설치된 코드/저장 자료/공개 API/실화면의 유효 증거 재사용, source 준비와 운영 효과 구분 | DONE |
 | 2 | 실제 미확보 원자료·저장 계산 마무리 | WPSFD42 정확 수집 효과 승인 확인→기존 단회 B→SQLite 원문/해시/checkpoint readback→저장 자료 계산. 이미 확보된 QFR/BEA는 재수집하지 않음 | DONE — #2767 원본 22행·해시 및 #2864 실제 RAW/YOY 2행 계산, R4 서비스 source checkpoint(sourceVersion/sourceStoredAt) #2882 readback 일치 |
-| 3 | 저장된 결과의 기존 게시·API 연결 | 적격 BLS 서비스/BEA 단위이익/QFR 등 필요한 각 projection을 기존 Writer로 게시·D1 readback·저장형 GET 대조. 정상 경로는 재게시하지 않음 | IN_PROGRESS — QFR #2768, WPSFD42 #2882 정확 D1 키 게시·API 동치 완료. BEA unit #2815 원본 조회/게시 미완료 |
-| 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | PARTIAL — WPSFD42 7/7 READY 및 PC 1440px·모바일 390px 실사이트 PASS, BEA unit 후속 미검증 |
+| 3 | 저장된 결과의 기존 게시·API 연결 | 적격 BLS 서비스/BEA 단위이익/QFR 등 필요한 각 projection을 기존 Writer로 게시·D1 readback·저장형 GET 대조. 정상 경로는 재게시하지 않음 | DONE — QFR #2768, WPSFD42 #2882 유지; BEA JSON #3029 실제 1키 D1 readback PASS 및 Production #45206002236 API HTTP 200/390·1440px 연결 완료 |
+| 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | PARTIAL — WPSFD42 7/7 유지, BEA 단위이익/ QFR 390·1440px 실제 API 200·표시 PASS; #1511 출처 링크의 정확 Production 배포·상세 확인 미완료 |
 | 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | NOT_DONE |
 
 현재 상태·NEXT는 [진행원장 상단](EARNINGS_RECESSION_R1_R6_82_STEP_PROGRESS_20261116.md)을 따른다. WPSFD42 B 수집·실PC 계산·R4 source checkpoint·D1 게시·실사이트 검증은 실제 완료 증거를 재사용하며 재실행하지 않는다. BEA 단위이익은 #2815 원본/선택 설치 승인 및 실PC CAS·lease를 따로 처리한다. 동일 자원에 겹치는 운영 쓰기만 기존 lease/Owner 절차로 직렬화한다.
+
+## 2026-11-24 최신 3단계 종단 완료 증거 (과거 source-only 문구보다 우선)
+
+- BEA 단위이익 원본 고정 보관·저장 자료 계산 #2986 실PC PASS, 단일키 D1 B 게시 [#3029](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3029) / [원본 JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/publication-pc-publication-b2e4ba50-2c95-4cd4-b0da-84269b88c73c.json) `PASS/PUBLICATION_SINGLE_KEY_READBACK_VERIFIED`, providerCalls 0/d1Writes 1, sourceVersion `ff5a5a3a88cfc2f8758d8cd1369818eff1f9875e6df70e81caef4baf119273c3`.
+- [Production Chromium #45206002236](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45206002236)의 실제 공개 GET/API/UI 일치: BEA HTTP 200·연결 완료, 390px/1440px 값·관측분기 검증 PASS. 기존 WPSFD42 서비스·QFR D1/GET 정상 성공 재사용, 신규 재게시 금지.
+- [앱 #1511](https://github.com/ansqhd5774-Choi/zgmini/pull/1511) 출처 표시 main 병합·소스 CI 성공. Cloudflare 정확 Deployment SHA/변경 후 Production 출처 링크 바이트는 별도 미확인. **4단계 PARTIAL / 5단계 NOT_DONE**. 현재 작업은 새 게시가 아니라 배포 동일성·표시 종단 대조와 기존 정상 갱신 확인이다.
 
 ## 2026-11-23 최신 운영 완료 증거 (과거 본문보다 우선)
 
