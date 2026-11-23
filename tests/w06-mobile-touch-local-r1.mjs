@@ -24,7 +24,7 @@ try{
     const url=new URL(route.request().url());
     const body=url.pathname==='/api/market-score'?{
      status:'SUCCESS',updatedAt:'2026-11-23T00:37:20.887Z',
-     overall:{status:'READY',score:input.at(-1).score,trend:[]},
+     overall:{status:'READY',score:input.at(-1).score,trend:[{label:'2026-11-22',value:45.137344974152676},{label:'2026-11-23',value:45.137344974152676}]},
      domains:modules.map(id=>({id,status:'READY',score:50,trend:[]})),
      dataQuality:{readyDomains:12,totalDomains:12,coverageWeight:1}
     }:url.pathname==='/api/market-score/observations'?{
@@ -40,7 +40,9 @@ try{
    const intro=page.locator('#zg-about-intro-dialog');
    if(await intro.isVisible())await intro.getByRole('button',{name:'닫기',exact:true}).click();
    const periods=page.getByRole('group',{name:'종합 시장 점수 추이 기간'});
-   await periods.getByRole('button',{name:'1D',exact:true}).click();
+   const dayButton=periods.getByRole('button',{name:'1D',exact:true});
+   await page.waitForFunction(()=>{const b=document.querySelector('.zg-r55-period button');return !!b&&!b.hasAttribute('disabled');},null,{timeout:20000});
+   await dayButton.click();
    const chart=page.locator('.zg-r55-summary-chart');
    await chart.locator('svg.recharts-surface').waitFor({state:'visible',timeout:20000});
    const dot=chart.locator('.recharts-reference-dot circle').first();
