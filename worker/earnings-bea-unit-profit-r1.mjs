@@ -113,9 +113,14 @@ export function beaUnitWriter(db){
    if(old.payload.sourceStoredAt===payload.sourceStoredAt
     &&old.payload.sourceVersion!==payload.sourceVersion)
     throw Error('BEA_UNIT_CONFLICTING_VERSION');
-   if(old.payload.sourceVersion===payload.sourceVersion
-    &&JSON.stringify(old.payload.indicator)===JSON.stringify(payload.indicator))
+   if(old.payload.sourceVersion===payload.sourceVersion){
+    // Immutable source bytes cannot yield a different statistical projection.
+    // A changed calculation for the same hash requires an independently
+    // approved source/methodology version; never silently overwrite D1.
+    if(JSON.stringify(old.payload.indicator)!==JSON.stringify(payload.indicator))
+     throw Error('BEA_UNIT_CONFLICTING_CONTENT');
     return {status:'ALREADY_STORED',key:BEA_UNIT_SNAPSHOT_KEY,storedAt:Number(previous.stored_at)};
+   }
   }
   const envelope={payload,projection:{status:'READY',builtAt:storedAt,
    sourceStoredAt:payload.sourceStoredAt,sourceVersion:payload.sourceVersion}};

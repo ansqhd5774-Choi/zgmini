@@ -72,6 +72,31 @@ test('isolated D1 readback succeeds; public route is stored-only and never mutat
  assert.equal((await readBeaUnitResponse(request,db,{now:Date.parse('2027-03-01T00:00:00Z')})).status,503);
 });
 
+test('same BEA source hash cannot silently rewrite different statistical content',async()=>{
+ const db=fakeDb(),original=payload(),storedAt=now+1000;
+ assert.equal((await beaUnitWriter(db).write(original,{storedAt})).status,'READBACK_VERIFIED');
+ assert.equal(db.getWrites(),1);
+ const corrupted=structuredClone(original);
+ corrupted.indicator.value=0.251;
+ corrupted.indicator.change=corrupted.indicator.value-corrupted.indicator.previousValue;
+ corrupted.indicator.history.at(-1).value=0.251;
+ assert.equal(validateBeaUnitProfit(corrupted,{now:storedAt+1000}),corrupted,
+  'conflict is a valid changed projection, not an invalid row');
+ await assert.rejects(
+  beaUnitWriter(db).write(corrupted,{storedAt:storedAt+1000}),
+  /BEA_UNIT_CONFLICTING_CONTENT/);
+ assert.equal(db.getWrites(),1,'same source SHA must never trigger a second D1 write');
+ assert.equal((await beaUnitWriter(db).write(original,{storedAt:storedAt+2000})).status,'ALREADY_STORED');
+ assert.equal(db.getWrites(),1);
+ const newerTimestamp=structuredClone(corrupted);
+ newerTimestamp.sourceStoredAt+=3000;
+ newerTimestamp.retrievedAt=new Date(newerTimestamp.sourceStoredAt).toISOString();
+ await assert.rejects(
+  beaUnitWriter(db).write(newerTimestamp,{storedAt:storedAt+5000}),
+  /BEA_UNIT_CONFLICTING_CONTENT/);
+ assert.equal(db.getWrites(),1,'re-capture timestamp alone must not permit changed content');
+});
+
 test('R4-15 BEA unit public GET/HEAD verifies stored checkpoint cannot predate raw source',async()=>{
  const validPayload=payload(),builtAt=now+1000;
  const row=projection=>({body:JSON.stringify({payload:validPayload,projection}),
