@@ -3,6 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {saveBeaUnitNipaArchive,beaUnitNipaArchivePaths}
  from '../scripts/pc-writer/EARNINGS_BEA_UNIT_NIPA_ARCHIVE_R1.mjs';
 import {buildBeaUnitNipaPublicProjection,
@@ -109,5 +111,46 @@ test('missing or tampered immutable private source fails closed before projectio
   assert.throws(()=>buildBeaUnitNipaPublicProjection({
    pcBase,sourceSha:'f'.repeat(64),now:storedAt+2000}),
    /BEA_UNIT_NIPA_ARCHIVE_MISSING/);
+ }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
+});
+
+const publisher=fileURLToPath(new URL('../scripts/pc-writer/EARNINGS_BEA_UNIT_PROFIT_R1_ONCE.mjs',import.meta.url));
+function runNativePublisher(pcBase,sourceSha,args){
+ return spawnSync(process.execPath,[publisher,...args],{
+  encoding:'utf8',timeout:15_000,
+  env:{...process.env,ZGMINI_PC_HOME:pcBase,
+   ZGMINI_EARNINGS_BEA_UNIT_SOURCE_SHA:sourceSha,
+   ZGMINI_EARNINGS_C_LOG_DIR:pcBase}
+ });
+}
+test('native read-only CLI uses pinned BEA JSON, no D1 access, and no FRED fallback',()=>{
+ const pcBase=working();
+ try{
+  const source=saveBeaUnitNipaArchive({pcBase,rawBytes:raw,sourceStoredAt:storedAt});
+  const out=runNativePublisher(pcBase,source.sourceVersion,
+   ['--source-transport=BEA_API_JSON','--dry-run']);
+  assert.equal(out.status,0,out.stderr+'\n'+out.stdout);
+  assert.match(out.stdout,/RESULT=PASS_BEA_UNIT_PREFLIGHT_ONLY/);
+  const logs=fs.readdirSync(pcBase).filter(n=>n.startsWith('EARNINGS_BEA_UNIT_PROFIT_R1_RESULT_'));
+  assert.equal(logs.length,1);
+  const log=fs.readFileSync(path.join(pcBase,logs[0]),'utf8');
+  assert.match(log,/SOURCE_TRANSPORT=BEA_API_JSON/);
+  assert.match(log,/SOURCE_SERIES=A463RD/);
+  assert.match(log,/D1_WRITES=0/);
+  assert.match(log,/SOURCE_HTTP_REQUESTS=0/);
+  assert.match(log,new RegExp('SOURCE_SHA256='+source.sourceVersion));
+  assert.doesNotMatch(log,/NOT_A_REAL_KEY|USERID=/);
+ }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
+});
+test('native source requires distinct confirmation; legacy FRED flag cannot authorize BEA write',()=>{
+ const pcBase=working();
+ try{
+  const source=saveBeaUnitNipaArchive({pcBase,rawBytes:raw,sourceStoredAt:storedAt});
+  const out=runNativePublisher(pcBase,source.sourceVersion,
+   ['--apply','--source-transport=BEA_API_JSON','--confirm-bea-unit-d1-write']);
+  assert.equal(out.status,1);
+  assert.match(out.stdout,/RESULT=BEA_UNIT_FAILED/);
+  assert.match(out.stdout,/ERROR=BEA_UNIT_INVALID_ARGUMENT/);
+  assert.doesNotMatch(out.stdout,/D1_RESULT=READBACK_VERIFIED/);
  }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
 });
