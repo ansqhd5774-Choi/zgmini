@@ -11,7 +11,7 @@ const results=[];
 mkdirSync('artifacts/w06-production-readonly',{recursive:true});
 try{
  for(const viewport of viewports){
-  const context=await browser.newContext({viewport,locale:'ko-KR',timezoneId:'Asia/Seoul',serviceWorkers:'block'});
+  const context=await browser.newContext({viewport,locale:'ko-KR',timezoneId:'Asia/Seoul',serviceWorkers:'block',hasTouch:viewport.width===390,isMobile:viewport.width===390});
   const page=await context.newPage();
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
@@ -69,6 +69,37 @@ try{
      // Require actual hover tooltip content at the desktop 1440px viewport.
      if(viewport.width===1440)assert(tipVisibility==='visible'&&tooltipText.includes(displayed),'desktop hover shows true score');
      else console.log('W06_MOBILE_HOVER_NOT_CONFIRMED '+JSON.stringify({tipVisibility,tooltipText}));
+    }
+    // W06: verify a genuine multipoint stored curve with the latest actual point.
+    // An SVG with two axis labels is not by itself proof of tooltip behavior.
+    if(period==='1D'&&body.points.length>=2){
+     assert.equal(await empty.count(),0,'two stored observations must not display empty');
+     assert((await svg.count())>0,'multipoint actual SVG must mount');
+     const latest=body.points.at(-1);
+     const displayed=Math.max(0,Math.min(100,50+(latest.score-50)*3.5)).toFixed(1);
+     const kst=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(latest.observedAt));
+     const latestDot=chart.locator('.recharts-reference-dot circle').first();
+     await latestDot.waitFor({state:'visible',timeout:15000});
+     const bounds=await latestDot.boundingBox();
+     assert(bounds&&bounds.width>0&&bounds.height>0,'latest marker has real visible bounds');
+     const center={x:bounds.x+bounds.width/2,y:bounds.y+bounds.height/2};
+     const tip=chart.locator('.recharts-tooltip-wrapper');
+     if(viewport.width===390){
+      // An actual emulated touch must be used; mouse hover on 390px is not evidence.
+      await page.touchscreen.tap(center.x,center.y);
+     }else{
+      await page.mouse.move(center.x-12,center.y);
+      await page.mouse.move(center.x,center.y,{steps:4});
+     }
+     await page.waitForTimeout(500);
+     const tipExists=(await tip.count())>0;
+     const tipText=tipExists?await tip.innerText():'';
+     const tipVisibility=tipExists?await tip.evaluate(el=>getComputedStyle(el).visibility):'missing';
+     const evidence={width:viewport.width,points:body.points.length,lastAt:latest.observedAt,displayed,kst,tipVisibility,tipText,center};
+     console.log('W06_MULTIPOINT_INTERACTION '+JSON.stringify(evidence));
+     await page.screenshot({path:'artifacts/w06-production-readonly/multipoint-'+viewport.width+'.png',fullPage:false});
+     assert(tipExists&&tipVisibility==='visible'&&tipText.includes(displayed)&&tipText.includes(kst),
+       'actual '+(viewport.width===390?'mobile touch':'desktop hover')+' latest 1D point tooltip matches public data');
     }
     assert.equal(await selected.getAttribute('aria-pressed'),'true',period+' selected');
     const dimension=await page.evaluate(()=>({innerWidth:window.innerWidth,documentWidth:document.documentElement.scrollWidth}));
