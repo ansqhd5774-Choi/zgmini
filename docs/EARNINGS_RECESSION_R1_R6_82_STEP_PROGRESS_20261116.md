@@ -2,7 +2,7 @@
 
 <!-- W05-ACTIVE-FIVE-STAGE-PLAN-20261121 -->
 
-**현재 3/5단계 완료·4단계 진행 중.** 완료 조건 3개/5개 기준(실제 작업량 60%를 의미하지 않음). 2단계 WPSFD42 원본·계산 완료, 3단계 기존 WPSFD42/QFR + BEA NIPA 저장본 D1 게시·GET 대조 완료. 4단계는 BEA 값/관측분기 PC·모바일 390/1440 실제 표시 PASS를 확보했으나 최신 #1511 출처 표시의 정확한 Production 배포 SHA·실화면 적용/일부 상세 차트 대조 미확인. 과거 82단계 수치는 현행 진행률로 사용하지 않는다. 이 상단이 현재 인계 정본이며 아래 과거 기록은 시점별 이력이다.
+**현재 4/5단계 완료·5단계 진행 중(완료 조건 4개/5개; 작업량 80%를 뜻하지 않음).** 1~3단계 기존 수집·저장 계산·D1 게시/GET 완료를 재사용한다. 4단계의 BEA 단위이익 PC390/1440·모바일 실화면 값/단위/관측분기·원자료 저장/D1 게시 KST 시각·5분기 차트·출처/고지를 실제 Chromium #45220124737에서 PASS 확인했다. 변경 PR #1516/#1518 main 병합 및 정확 #1518 병합 SHA Cloudflare Git Integration Build 성공도 확인했다. 활성 Production Deployment ID와 Git Build의 정확 동일성은 별도 미조회이나, 이미 PASS한 동일 공개 기능을 무효화하는 장애·4단계 추가 Gate로 삼지 않는다. 5단계의 원장/정규 갱신·UNCHANGED 실제 운영 증거는 독립 확인 대상이다. 과거 82단계 수치는 현행 완료율로 사용하지 않는다.
 
 저장소 `ansqhd5774-Choi/zgmini` / 브랜치 `codex/api-site-integration-r1-20261026` / 개편전HEAD `61e2c02eb2bbd4ef967a8506ee78b3324c1331f3`.
 목적·실행 기준: [개편 계획](EARNINGS_RECESSION_R1_R6_82_STEP_EXECUTION_PLAN_20261116.md). 독립 지원 업무: [5개 API–D1 비교](API_SITE_R1_ACTIVE_WORK_PLAN_20261114.md).
@@ -12,8 +12,16 @@
 | 1 | 기존 운영 자산·완료 범위·실제 결손 확정 | 설치된 코드/저장 자료/공개 API/실화면의 유효 증거 재사용, source 준비와 운영 효과 구분 | DONE |
 | 2 | 실제 미확보 원자료·저장 계산 마무리 | WPSFD42 기존 B 단회 수집·SQLite 원문/해시 readback 완료. 기존 R3D(기본 3계열) 검증 후 R4 `buildServiceSourcePreview`에서 WPSFD42 별도 2행 저장자료 계산·checkpoint 확인 필요. QFR/BEA 기저장 자료 재수집 금지 | DONE — #2767 SQLite 22행·SHA, #2864 실PC RAW/YOY 2행·sourceVersion/sourceStoredAt PASS, R4 service source checkpoint 버전/시각 #2882 D1 exact-key readback 일치. 별도 로컬 checkpoint 파일은 R4 계약에 없음 |
 | 3 | 저장된 결과의 기존 게시·API 연결 | 적격 BLS 서비스/BEA 단위이익/QFR 등 필요한 각 projection을 기존 Writer로 게시·D1 readback·저장형 GET 대조. 정상 경로는 재게시하지 않음 | DONE — QFR #2768, WPSFD42 #2882 유지; BEA JSON #3029 `PUBLICATION_SINGLE_KEY_READBACK_VERIFIED`(D1 1키/Provider GET 0), W06 실제 Production #45206002236 BEA API HTTP 200/PC·모바일 연결 완료 |
-| 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | PARTIAL — WPSFD42 7/7 기존 PASS. BEA 단위이익 390/1440px API 200·sourceVersion/현재값/관측분기·원천 BEA 링크/비후원 고지 실제 Production #45210775508 PASS. BEA 차트 첫/마지막점 및 개별 수집·게시일 분리/Cloudflare Deployment ID는 별도 미확인 |
-| 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | NOT_DONE |
+| 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | **DONE** — 기존 WPSFD42 7/7·QFR 성공 재사용, BEA 390/1440 Production Chromium #45220124737에서 HTTP200/현재 $0.250·분기종료 2026-06-30·5분기 첫 $0.216/마지막 $0.250·실제 SVG 최종 marker·PC 저장과 D1 게시 KST 도움말·공식 BEA 출처/고지 PASS. 활성 Deployment ID 미조회는 별도 계보 항목 |
+| 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | **IN_PROGRESS** — #2768 QFR·#2882 WPSFD42·#3029 BEA 정확키 각 D1 PASS/1 write/0 provider 재확인, source의 ALREADY_STORED guard 확인. 실제 정상 갱신/UNCHANGED 운영 영수증은 별도 미확인; 중복 B 게시·다음날 예약 검증 생성 금지 |
+
+## 2026-11-24 01:52 KST 경 — 4단계 완료·5단계 시작 (실행 로그/정확키 기준)
+
+- [PR #1516](https://github.com/ansqhd5774-Choi/zgmini/pull/1516) 병합 `575d4470f0d8844f50eb9b883b1d497ba8ab815f`: BEA `publishedAt` 실제 D1 `projection.builtAt` 검증 제공, 390/1440 도움말의 PC 저장/D1 게시 KST 분리, 첫/끝 5분기 차트 회귀. Node CI #45216397253 SUCCESS.
+- [PR #1518](https://github.com/ansqhd5774-Choi/zgmini/pull/1518) 병합 `893c4334df0f42fb5d5167933d2b149a43502ec0`: 기존 W06 앞에 **BEA 전용 읽기 전용 Production Chromium 검사**를 배치. [실행 #45220124737](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45220124737) **전체 SUCCESS**, W05 단계 390/1440 각각 HTTP200/READY, 원본 SHA `ff5a5a3a88cfc2f8758d8cd1369818eff1f9875e6df70e81caef4baf119273c3` (#3029 일치), 관측종료 2026-06-30, 첫 $0.216/마지막 $0.250, SVG marker x115 y6, 공식 BEA API 링크 및 비후원 고지/실화면 KST 날짜 PASS. PC 원자료 저장 **2026-11-23 20:58:05 KST**, D1 게시 **2026-11-24 00:20:20 KST**; 게시시각은 API의 `2026-11-23T15:20:20.060Z`로 검증(게시 실행 finishedAt과 동일시 금지). 동일 Run의 W06 1D+6기간·모바일/PC 검증도 PASS, 전체 산출물 artifact #14841366065. 신규 공급자/운영 DB/D1/설치 작업 0.
+- 병합 `893c4334...`의 Cloudflare Git Integration **Workers Build SUCCESS**, Build ID `267dede2-1db2-49e1-a54b-a73451642c97`/Version ID `3a65d674-d55c-46f2-8da1-f955b7357215`. Git Build는 활성 Deployment ID 직접 조회와 다르며 **활성 ID는 미확인**. 실제 사이트 기능은 위 별도 Chromium 관측으로 검증; 이를 4단계 미완료/전체 장애로 확대하지 않음.
+- 5단계 기존 원장 3키 대조: QFR [#2768](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2768), WPSFD42 [#2882](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2882), BEA [#3029](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3029)의 운영 JSON 모두 `PASS/PUBLICATION_SINGLE_KEY_READBACK_VERIFIED`, `d1Writes=1`, `providerCalls=0`. BEA `beaUnitWriter`와 기존 QFR/WPSFD42 publisher의 `ALREADY_STORED` 분기/출력 코드 확인; **동일 원본의 실제 운영 재실행 영수증까지 확인했다는 뜻은 아님**.
+- **정확한 다음 실행:** 각 정규 갱신 대상의 기존 checkpoint/운영 Run 또는 `UNCHANGED/ALREADY_STORED` 영수증이 있는지 최소 읽기 전용 범위로 대조. 없으면 그 키만 `NOT_VERIFIED`로 보존하고 이미 PASS한 B 단회 게시를 중복 요청하지 않는다. 활성 Cloudflare Deployment ID 원본이 확보되면 해당 시점의 Git Build/실제 공개 응답과 연결하되 현재 정상 기능의 새 전역 Gate로 만들지 않는다. 물가19/7·달력·테마·고용 5키 동치 지원은 별도 [지원 계획](API_SITE_R1_ACTIVE_WORK_PLAN_20261114.md)에 남긴다.
 
 ## 2026-11-24 실제 BEA NIPA 게시→Production 종단 증거 (이전 11월 23일 source-only 기록보다 우선)
 
