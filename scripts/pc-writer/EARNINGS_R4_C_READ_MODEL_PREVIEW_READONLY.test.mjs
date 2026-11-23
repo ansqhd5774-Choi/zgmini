@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {DatabaseSync} from 'node:sqlite';
 import {normalizeSeries,buildPlans,insertPlans} from './EARNINGS_R3C_BLS_STORE_ONCE.mjs';
-import {buildPreview,buildServiceSourcePreview,reportLines,SCHEMA_VERSION}
+import {buildPreview,buildServiceSourcePreview,parseR4PreviewMode,reportLines,SCHEMA_VERSION}
   from './EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs';
 import {validateEarningsCompanionPayload} from '../../worker/earnings-companion-c-r4.mjs';
 import {buildEarningsCostIndicatorView} from '../../app/earnings-recession/earnings-cost-indicator-list.mjs';
@@ -101,6 +101,14 @@ test('separate service D1 checkpoint uses service first_seen and never modifies 
   });
   withDb({},db=>assert.throws(()=>buildServiceSourcePreview(db,{generatedAt:GENERATED}),
     /R4_SERVICE_SOURCE_NOT_STORED/));
+});
+
+test('service-only CLI mode is explicit and defaults to existing full preview',()=>{
+  assert.equal(parseR4PreviewMode([]),'BASE_AND_OPTIONAL_SERVICE');
+  assert.equal(parseR4PreviewMode(['--service-only']),'SERVICE_ONLY');
+  for(const args of [['--apply'],['--service-only','--apply'],['--dry-run'],['--service-only','--service-only']]){
+    assert.throws(()=>parseR4PreviewMode(args),/R4_PREVIEW_MODE_INVALID/);
+  }
 });
 
 test('service-only saved WPSFD42 remains calculable when base BLS cohort is absent',()=>{
