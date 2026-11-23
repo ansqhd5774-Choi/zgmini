@@ -115,6 +115,8 @@ jobs:
         run: node tests/earnings-r511-browser-r1.mjs
       - name: Validate employment R6 stored 29-row presentation at 1440/390
         run: node tests/employment-r6-public-browser-r1.mjs
+      - name: Verify W04 actual Production R54 employment UI at 1440/390 read-only
+        run: node tests/w04-r54-production-ui-readonly-r1.mjs
       - name: Validate W06 latest visible theme date in mocked Chromium at 390/1440
         run: node tests/theme-visible-asof-browser-r1.mjs
       - name: Validate introduction before hydration and dismissal preferences
@@ -150,6 +152,7 @@ jobs:
             artifacts/inflation-criterion-review/
             artifacts/earnings-r511-browser/
             artifacts/employment-r6-browser/
+            artifacts/w04-r54-production-ui/
             artifacts/theme-visible-asof/
             artifacts/production-assets-network/
             artifacts/w06-production-readonly/
