@@ -99,8 +99,13 @@ try{
   await screenshot('r2-'+width+'.png');
   console.log('W01_R2_RENDER_PASS='+JSON.stringify({width,r2Hero:r2.r2Hero}));
  }
+}catch(error){
+ console.error('W01_BROWSER_READBACK_FAIL='+String(error?.stack??error));
+ process.exitCode=1;
 }finally{
  try{socket?.close()}catch{}
  for(const item of pending.values())item.reject(Error('W01_CDP_CLOSED'));
- proc.kill('SIGTERM');rmSync(dir,{recursive:true,force:true});
+ proc.kill('SIGTERM');
+ try{rmSync(dir,{recursive:true,force:true,maxRetries:10,retryDelay:200});}
+ catch(error){console.error('W01_TEMP_CLEANUP_WARNING='+String(error.message||error));}
 }
