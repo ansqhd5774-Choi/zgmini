@@ -99,7 +99,7 @@ test('full 252-day model rolling history is not falsely treated as 252 calculate
 test('two saved UTC-day outputs sharing KST date keep latest actual output',async()=>{
  const later=CLOCK+8*3600000;
  const b=fixture(later,1);
- const result=await range(mockDb([row(),row(later,b)]).db);
+ const result=await range(mockDb([row(),row(later,b)]).db,'2026-11-24','2026-11-24',later+2000);
  assert.equal(result.storedUtcDays,2);
  assert.equal(result.storedFinalScoreEvents,22);
  assert.equal(result.dailyFinalScorePoints,11);
