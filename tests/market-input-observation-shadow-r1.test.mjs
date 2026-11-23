@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {observeStoredMarketInputs} from '../lib/score-history/market-input-observation-shadow-r1.mjs';
+import {readStoredMarketInputs} from '../worker/candidate-market-operational-store.mjs';
 
 const keys=['macro','credit','supply','fundFlows','bisDsr','bisTc','rates'];
 const storedAt=1794000000000;
@@ -133,4 +134,45 @@ test('a cross-key callback is rejected for the actually requested input',async()
  assert.deepEqual(result.provenance.sources[0],
   {sourceKey:'macro',status:'UNPROVEN',code:'DIRECT_SELECTION_MISMATCH'});
  assert.equal(result.provenance.sources[1].selectionWitness,'READER_DIRECT_ID');
+});
+
+
+test('a selected row rejected by the actual Reader 36h TTL is NOT seven-input causal evidence',async()=>{
+ const staleAt=storedAt-36*3600000;
+ const values=new Map(selected);
+ const stale={storedAt:staleAt,body:{key:'credit',values:[1,2,3]}};
+ values.set('credit',stale);
+ const inputRows={...rows,credit:[{batch_key:'credit:stale',stored_at:staleAt,
+  body:JSON.stringify(stale.body)}]};
+ const env=setup({values,inputRows});
+ const baseline=await readStoredMarketInputs(env.store,storedAt);
+ const result=await observeStoredMarketInputs({
+  reader:readStoredMarketInputs,store:env.store,db:env.db,decode:JSON.parse,now:storedAt
+ });
+ assert.deepEqual(result.inputs,baseline);
+ assert.equal(result.provenance.status,'SHADOW_7_BATCHES_ONLY');
+ assert.equal(result.provenance.verifiedCount,6);
+ assert.deepEqual(result.provenance.sources[1],
+  {sourceKey:'credit',status:'UNPROVEN',code:'READER_EXCLUDED_STALE_BATCH'});
+ assert.equal(env.events.includes('sql:credit'),false);
+});
+test('contradictory or duplicate TTL witnesses fail closed before evidence DB query',async()=>{
+ const env=setup();
+ const reader=async(s,now,{onFreshness})=>{
+  await Promise.all(keys.map(key=>s.readInput(key)));
+  onFreshness({sourceKey:'macro',storedAt:storedAt+1,included:true});
+  onFreshness({sourceKey:'credit',storedAt,included:true});
+  onFreshness({sourceKey:'credit',storedAt,included:true});
+  return {status:'ORIGINAL_READER_OUTPUT'};
+ };
+ const r=await observeStoredMarketInputs({
+  reader,store:env.store,db:env.db,decode:JSON.parse,now:storedAt
+ });
+ assert.deepEqual(r.inputs,{status:'ORIGINAL_READER_OUTPUT'});
+ assert.deepEqual(r.provenance.sources[0],{sourceKey:'macro',
+  status:'UNPROVEN',code:'READER_FRESHNESS_WITNESS_MISMATCH'});
+ assert.deepEqual(r.provenance.sources[1],{sourceKey:'credit',
+  status:'UNPROVEN',code:'READER_FRESHNESS_WITNESS_MISMATCH'});
+ assert.equal(env.events.includes('sql:macro'),false);
+ assert.equal(env.events.includes('sql:credit'),false);
 });
