@@ -47,7 +47,7 @@ function fixture(records=[]){
  }
  const fileSystem={
   readFileSync(file){if(!files.has(file))throw Error('ENOENT');return files.get(file);},
-  readdirSync(dir){assert.equal(dir,directory);return [...files.keys()].map(path.basename);}
+  readdirSync(dir){assert.equal(dir,directory);return [...files.keys()].map(file=>path.basename(file));}
  };
  return {directory,files,fileSystem,paths:[...files.keys()]};
 }
