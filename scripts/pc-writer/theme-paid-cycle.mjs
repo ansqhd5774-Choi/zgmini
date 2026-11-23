@@ -82,7 +82,19 @@ export async function runPaidThemeCycle(base,{publish=false,now=Date.now(),sync=
   sourceVersion,registrySha256:context.registrySha256,phases});}
  catch(e){privateStored={status:'PRIVATE_STORE_FAILED',count:output.privateRecords.length,
   code:/^PAID_THEME_PRIVATE_[A-Z_]+$/.test(e?.code??'')?e.code:'PAID_THEME_PRIVATE_STORE_ERROR'};}
- const result={...report,status:'PRIVATE_CALCULATED',sourceLatestDate:phases.sourceLatest,confirmedDate:phases.confirmed,provisionalDate:phases.provisional,expectedIds:output.record.dataQuality.expectedPublicIds,readyIds:output.record.dataQuality.readyPublicIds,pendingIds:output.record.dataQuality.pendingPublicIds,privateResults:output.privateResults,privateStored,acquisition:{chunks:acquisition.acquired,proofs:saved.proofs.length},results:output.results};
+ // D05: the immutable theme-* SHA candidate already exists at this point.
+ // Verify final confirmed scores only. A D05 evidence failure cannot block
+ // the approved paid-theme calculation, private store or public CAS lane.
+ let d05FinalOutputReadback={status:'NOT_READY_FINAL_THEME_OUTPUT'};
+ if(validPaidThemeRecord(output.record)){
+  try{
+   const {readVerifiedPaidThemeFinalOutputs}=await import('../../lib/score-history/d05-final-theme-candidate-readback-r1.mjs');
+   d05FinalOutputReadback=readVerifiedPaidThemeFinalOutputs({
+    candidatePath:candidate,calculatedAtMs:now,now:Date.now(),
+   });
+  }catch{d05FinalOutputReadback={status:'UNPROVEN_LOCAL_FINAL_THEME_OUTPUT'};}
+ }
+ const result={...report,d05FinalOutputReadback,status:'PRIVATE_CALCULATED',sourceLatestDate:phases.sourceLatest,confirmedDate:phases.confirmed,provisionalDate:phases.provisional,expectedIds:output.record.dataQuality.expectedPublicIds,readyIds:output.record.dataQuality.readyPublicIds,pendingIds:output.record.dataQuality.pendingPublicIds,privateResults:output.privateResults,privateStored,acquisition:{chunks:acquisition.acquired,proofs:saved.proofs.length},results:output.results};
  if(publish&&validPaidThemeRecord(output.record)){const applied=await publishPaidThemeRecord({remote,dbId:config.core,record:output.record,preimage:seed.preimage,now});result.status=applied.status;result.d1Writes=applied.written;result.storedAt=applied.storedAt;result.bodySha256=applied.bodySha256??sha(seed.preimage.body);}
  fs.writeFileSync(path.join(base,'marketparquet-paid','theme-last-run.json'),JSON.stringify(result,null,2)+'\n');return result;
 }
