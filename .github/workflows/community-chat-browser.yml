@@ -115,6 +115,8 @@ jobs:
         run: node tests/inflation-criterion-browser-r1.mjs
       - name: Validate W05 R5-11 BLS stored observations and gap-safe charts at 390/768/1440/1920
         run: node tests/earnings-r511-browser-r1.mjs
+      - name: W05 one-time Production public GET and real 390/1440 UI evidence (read-only)
+        run: node tests/w05-production-public-readonly-once.mjs
       - name: Validate employment R6 stored 29-row presentation at 1440/390
         run: node tests/employment-r6-public-browser-r1.mjs
       - name: Verify W04 R54 latest-point mobile tap using local stored UI fixture
@@ -155,6 +157,7 @@ jobs:
             artifacts/about-intro-bootstrap/
             artifacts/inflation-criterion-review/
             artifacts/earnings-r511-browser/
+            artifacts/w05-production-readonly/
             artifacts/employment-r6-browser/
             artifacts/w04-r54-production-ui/
             artifacts/w04-r54-touch-local/
