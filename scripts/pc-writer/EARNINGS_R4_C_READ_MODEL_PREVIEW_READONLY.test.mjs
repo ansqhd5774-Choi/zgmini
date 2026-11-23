@@ -11,7 +11,7 @@ import {createHash} from 'node:crypto';
 import {normalizeSeries,buildPlans,insertPlans} from './EARNINGS_R3C_BLS_STORE_ONCE.mjs';
 import {buildPreview,buildServiceSourcePreview,parseR4PreviewMode,reportLines,SCHEMA_VERSION}
   from './EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs';
-import {validateEarningsCompanionPayload} from '../../worker/earnings-companion-c-r4.mjs';
+import {validateEarningsCompanionPayload,earningsCompanionFreshness} from '../../worker/earnings-companion-c-r4.mjs';
 import {buildEarningsCostIndicatorView} from '../../app/earnings-recession/earnings-cost-indicator-list.mjs';
 
 const RETRIEVED='2026-10-26T17:02:53.996Z';
@@ -215,7 +215,17 @@ test('end-to-end offline seven rows validate through C worker schema and existin
   withServiceDb({},db=>{
     const {payload}=buildPreview(db,{generatedAt:GENERATED});
     assert.equal(validateEarningsCompanionPayload(payload,{now:Date.parse(GENERATED)}),payload);
-    const view=buildEarningsCostIndicatorView(payload);
+    // The raw PC preview has no published freshness annotations: it must not
+    // expose the optional service UI before the verified GET projection.
+    const previewView=buildEarningsCostIndicatorView(payload);
+    assert.equal(previewView.indicators.length,5);
+    // Mirror the public GET's actual worker freshness calculation, not a
+    // fabricated READY flag or a hard-coded value.
+    const now=Date.parse(GENERATED);
+    const publishedRows=payload.rows.map(row=>({...row,
+      freshness:earningsCompanionFreshness(row,{now})}));
+    assert.ok(publishedRows.slice(5).every(row=>row.freshness.status==='FRESH'));
+    const view=buildEarningsCostIndicatorView({...payload,rows:publishedRows});
     assert.equal(view.valid,true);
     assert.equal(view.rows.length,7);
     assert.equal(view.indicators.length,7);
