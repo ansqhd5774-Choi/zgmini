@@ -74,13 +74,24 @@ try{
  const {projectionWriter}=await import('../../worker/projection-runtime-r52.mjs');
  const {PUBLIC_PROJECTION_KEYS}=await import('../../worker/market-public-projection-store.mjs');
  const now=Date.now();
+ // Reuse the already-owned local-cycle lock; never acquire a new Core lease.
+ let d05Writer=null,d05Captured=null,d05CaptureCount=0,d05MarketBody=null;
+ if(publish){
+  try{
+   const {createD05LocalCycleExclusiveWriter}=await import('../../lib/score-history/d05-lineage-event-append-r1.mjs');
+   d05Writer=createD05LocalCycleExclusiveWriter({pcHome:base});
+  }catch{}
+ }
  // Independent US breadth count from already stored and verified source rows.
  await attemptOutput(report,'us-breadth-calculation',async()=>{
   const {prepareUsBreadth}=await import('./market-breadth-us-r1.mjs');
   report.usBreadth=await prepareUsBreadth(core,{now:new Date(now)});
  });
  const marketReady=await attemptOutput(report,'market',async()=>{
- const body=await calculateMarket(root,core,now);
+ const body=await calculateMarket(root,core,now,d05Writer?{onInputEvidence:e=>{
+  d05CaptureCount++;
+  d05Captured=d05CaptureCount===1?e:null;
+ }}:undefined);
  // Reuse the published daily score history already read for the overall chart.
  const storedHistory=await marketOperationalStore(core).readScoreHistory({sinceDate:oneYearHistoryStart(now),limit:370});
  const currentInflation=body.domains?.find(d=>d.id==='inflation')??null;
@@ -121,6 +132,7 @@ try{
  assertCompleteMarket(body);
  await marketOperationalStore(core).writeScore(body,now);
  save(path.join(base,'local-market-result.json'),body);
+ if(d05Writer)d05MarketBody=body;
  const liquidityTrend=body.domains.find(x=>x.id==='liquidity')?.trend??[];
  const liquidityDates=liquidityTrend.map(x=>x?.label??x?.date).filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)).sort();
  report.market={
@@ -141,6 +153,22 @@ try{
   const {appendCompositeObservedFromCurrent}=await import('./composite-observed-archive-r1.mjs');
   report.compositeObserved=await appendCompositeObservedFromCurrent(core,now);
  });
+ // Private selected-input metadata only, following an existing saved archive.
+ // Failure must not block the already approved market calculation or publisher.
+ if(marketReady&&d05Writer&&report.compositeObserved?.status==='LOCAL_STORED'){
+  try{
+   const {recordD05LineageFromStoredArchive}=await import('../../lib/score-history/d05-lineage-local-record-r1.mjs');
+   const result=await recordD05LineageFromStoredArchive({
+    db:core,now,marketBody:d05MarketBody,capture:d05Captured,
+    archiveResult:report.compositeObserved,runtimeSourceSha:source,
+    approvedSourceSha:config.source,recordedAt:new Date().toISOString(),
+    ledgerPath:path.join(base,'score-lineage','d05-composite-events-v1.jsonl'),
+    exclusiveWriter:d05Writer,initializeApprovedDirectory:true,
+   });
+   report.d05PrivateLineageStatus=['APPENDED_VERIFIED_LOCAL_ONLY','NOOP_SAME_EVENT'].includes(result?.status)
+    ?result.status:'UNPROVEN';
+  }catch{report.d05PrivateLineageStatus='UNPROVEN';}
+ }
  // Rate sentiment is a separate stored-data score; never modify the approved Rate R3 domain.
  const {preparePublicRateSentiment,publishPublicRateSentiment}=await import('./rate-sentiment-publication.mjs');
  let rateSentiment={status:'UNAVAILABLE'};await attemptOutput(report,'rate-sentiment-calculation',async()=>{rateSentiment=await preparePublicRateSentiment(core,now);});
