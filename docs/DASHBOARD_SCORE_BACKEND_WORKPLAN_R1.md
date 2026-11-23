@@ -425,3 +425,16 @@ Controller #917 담당자의 실제 운영 변경에 개입하지 않고, **D05�
 - **실제 다음 실행 조건:** #1206 원장 존재 판정 후 미보존이면 **미래 사건에 한한 비민감 7배치 입력 JSONL 영속 append의 필드·경로·보존기간·정규 Writer 연결과 단일 소유 실행** 효과를 별도 확정 승인받는다. 현 단계는 **범위 A 비운영 개발 승인만** 있으므로 `run-local` 운영 설치·DB/D1/공개 변경 금지.
 
 **이번 조사는 공개 GET·GitHub/소스 읽기 및 계획서 갱신만 수행. 새 PC job·Writer 설치·D1 쓰기·Cloudflare 배포·예약 변경 0건.**
+
+
+---
+
+<!-- D05_TTL_READER_WITNESS_20261123 -->
+## 2026-11-23 D05 입력 Reader TTL 증거 강화 — 소스 변경, 운영 미적용
+
+- 대상: \`ansqhd5774-Choi/zgmini\` / \`codex/dashboard-score-daily-r1\`. 최신 \`main=7d8ff9f8444ef26bab69b6dac86424419b077341\` 시점 전용 브랜치가 main에 **604 commits behind / 71 commits ahead**. 다른 작업 변경을 덮는 전체 병합은 하지 않는다.
+- 실패 조건: 기존 7개 저장 배치 \`readInput\` 선택·행 해시가 일치하더라도 실제 Reader의 TTL 필터가 해당 배치를 버릴 수 있었다. 이전 shadow는 그 경우에도 선택 행을 \`VERIFIED\`로 인정해 인과 증거를 과대 분류할 수 있었다.
+- 최소 수정: \`worker/candidate-market-operational-store.mjs\`의 기존 \`readStoredMarketInputs\`에 선택적 \`onFreshness\` 증거 콜백(원본·배치 본문 비공개)을 추가. 일반 36시간, BIS 192시간, 미래 저장 시각의 기존 필터 결과를 전달한다. \`lib/score-history/market-input-observation-shadow-r1.mjs\`는 실제 Reader에서 명시적으로 제외된 행에 \`READER_EXCLUDED_STALE_BATCH\`를, 중복·시각 불일치 증인에 \`READER_FRESHNESS_WITNESS_MISMATCH\`를 부여하여 7/7 원장 승격을 방지한다. 콜백이 없어도 이전 선택 증거와 score 계산/병합은 불변; 이전과 마찬가지로 \`effectiveUseVerified=false\` 및 \`completeD05InputLineage=false\`를 유지.
+- 추가 시험 4건: \`tests/market-reader-direct-selection-r1.test.mjs\`, \`tests/market-input-observation-shadow-r1.test.mjs\`. GitHub 커밋 시점의 소스+테스트 함수로 격리 V8 시뮬레이션 **19/19 PASS**(외부 Node 의존성과 DB digest는 모의); 직접 source 함수 5개 시나리오 5/5 PASS. **Node 24 CI·운영 Writer 설치/실행 검증은 미실행**이므로 전체 종단 성공으로 승격하지 않는다.
+- 재사용된 실제 운영 증거: D05 입력 계보 [Run 45017277981](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45017277981) 66개/12일 자기일관성 PASS, 하지만 과거 Reader 실제 사용 증명 아님. 업종 R3 [Run 45165633161](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45165633161) PC↔D1↔확정 공개 API 동일 사건 PASS, 별도 원본 인과·1년 PIT는 미입증.
+- 다음 정확한 작업: 변경된 4개 파일을 Node 환경에서 실행하고 최신 main과 소스 충돌을 격리 비교한 뒤, 기존 승인된 Writer 선택 설치 경로 및 정규 source pin이 맞는 경우에만 최소 선택 통합. 그 후 새 자연 계산에서 **실제 사용한 7개 원본 배치와 추가 SEC/E1-R5/Breadth checkpoint**의 동일 사건 연결을 저장·readback 검증한다. 과거 이벤트 복원, 수집 재호출, 산식·TTL·DB 구조·예약·게시 경로 변경 없음. 68개 1Y PIT 종단 완료율은 변경하지 않는다.
