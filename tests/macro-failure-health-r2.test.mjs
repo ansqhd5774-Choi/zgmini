@@ -41,5 +41,5 @@ test('retired Alpaca ETF health cannot be revived by a historical success or fai
   assert.equal(summary.unknown,4);
  }
  const source=fs.readFileSync('scripts/pc-writer/expanded-collection-health.mjs','utf8');
- assert.doesNotMatch(source,/local-sector-fear-greed-r3-etf-incremental-last-run\\.json/);
+ assert.doesNotMatch(source,/local-sector-fear-greed-r3-etf-incremental-last-run\.json/);
 });
