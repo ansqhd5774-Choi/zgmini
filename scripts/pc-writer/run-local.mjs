@@ -149,6 +149,18 @@ try{
  };
  });
  if(!marketReady)report.market={status:'PREVIOUS_RELEASE_PRESERVED'};
+ // D05 final OUTPUT validation reuses the already committed market score/day
+ // snapshots. No indicator collection, new SQLite key or additional write.
+ // This is independent of the legacy composite archive signature/no-op gate.
+ // Any optional evidence failure must preserve the approved market publisher.
+ if(marketReady){
+  try{
+   const {readVerifiedMarketFinalOutputs}=await import('../../lib/score-history/d05-final-score-local-readback-r1.mjs');
+   report.d05FinalOutputReadback=await readVerifiedMarketFinalOutputs(core,{
+    calculatedAtMs:now,now:Date.now(),
+   });
+  }catch{report.d05FinalOutputReadback={status:'UNPROVEN_LOCAL_FINAL_OUTPUT'};}
+ }
  if(marketReady)await attemptOutput(report,'composite-archive-local',async()=>{
   const {appendCompositeObservedFromCurrent}=await import('./composite-observed-archive-r1.mjs');
   report.compositeObserved=await appendCompositeObservedFromCurrent(core,now);
