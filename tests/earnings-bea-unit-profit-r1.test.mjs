@@ -61,6 +61,9 @@ test('isolated D1 readback succeeds; public route is stored-only and never mutat
  const body=await current.json();
  assert.equal(body.indicator.value,0.25);
  assert.equal(body.status,'READY');
+ assert.equal(body.publishedAt,new Date(storedAt).toISOString(),
+  'public D1 publication time is verified from stored_at, not sourceStoredAt');
+ assert.notEqual(Date.parse(body.publishedAt),body.sourceStoredAt);
  assert.equal(db.getWrites(),1);
  assert.equal((await beaUnitWriter(db).write(payload(),{storedAt:storedAt+5000})).status,'ALREADY_STORED');
  assert.equal(db.getWrites(),1);
@@ -89,7 +92,10 @@ test('R4-15 BEA unit public GET/HEAD verifies stored checkpoint cannot predate r
  assert.equal(good.status,200);
  assert.equal(good.headers.get('x-public-projection'),'STORED');
  assert.equal(good.headers.get('cache-control'),'no-store');
- assert.equal((await good.json()).indicator.value,0.25);
+ const verified=await good.json();
+ assert.equal(verified.indicator.value,0.25);
+ assert.equal(verified.publishedAt,new Date(builtAt).toISOString());
+ assert.equal(verified.sourceStoredAt,now);
  const goodHead=await readBeaUnitResponse(head,db,{now:now+3000});
  assert.equal(goodHead.status,200);
  assert.equal(await goodHead.text(),'');
