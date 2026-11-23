@@ -89,7 +89,9 @@ export async function readBeaUnitResponse(request,db,{now=Date.now()}={}){
    throw Error('BEA_UNIT_CHECKPOINT_MISMATCH');
   const freshness=beaUnitFreshness(payload,{now});
   if(freshness.status==='STALE')return reply({status:'unavailable',reason:freshness.reason},503);
-  return reply({...payload,freshness});
+  // D1 stored_at is verified against the immutable projection checkpoint above.
+  // Expose publication time distinctly from the source's original stored time.
+  return reply({...payload,freshness,publishedAt:new Date(p.builtAt).toISOString()});
  }catch{return reply({status:'unavailable',reason:'STORED_PROJECTION_INVALID'},503);}
 }
 
