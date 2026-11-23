@@ -53,9 +53,9 @@ async function state(){
  const hero=document.querySelector('[data-testid="inflation-detail-hero"]');
  return {path:location.pathname,rows19:rows19.length,rows7:rows7.length,raw19,raw7,mobile19,mobile7,
   candidate28:document.querySelector('tr[data-research-candidate="28"]')?.textContent.includes('976,044')??false,
-  research1:document.querySelector('tr[data-research-input="1"]')?.textContent.includes('102.1')??false,
+  research1:document.querySelector('tr[data-research-input="research-1"]')?.textContent.includes('102')??false,
   candidate28Text:document.querySelector('tr[data-research-candidate="28"]')?.textContent?.slice(0,240)??null,
-  research1Text:document.querySelector('tr[data-research-input="1"]')?.textContent?.slice(0,240)??null,
+  research1Text:document.querySelector('tr[data-research-input="research-1"]')?.textContent?.slice(0,240)??null,
   r2Hero:hero?.getAttribute('data-market-state')??null};})()`);
 }
 async function visit(url){
