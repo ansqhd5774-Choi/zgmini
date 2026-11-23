@@ -1,6 +1,7 @@
 "use client";
 import {useMemo} from "react";
 import {useStoredIndex} from "../../components/use-stored-index";
+import {earningsInfoStatus} from "../../lib/earnings-info-projection-status-r1.mjs";
 import {liquidityStoredScoreComparisons} from "../../worker/projection-builders/liquidity-stored-history.mjs";
 import {MarketCardHeader} from "../market-card-header";
 import {MarketScoreOrb} from "../market-score-orb";
@@ -218,15 +219,15 @@ export default function EarningsRiskOnlyPanel(){
  const {payload:costPayload,loading:costLoading,error:costError,publishedAt:costPublishedAt}=
   useStoredIndex<CostPayload>("/api/earnings-recession-indicators");
   const {payload:unitPayload,loading:unitLoading,error:unitError}=
-   useStoredIndex<BeaUnitPayload>("/api/earnings-recession-bea-unit-profit");
+   useStoredIndex<BeaUnitPayload>("/api/earnings-recession-bea-unit-profit",null,true,true);
   const {payload:qfrPayload,loading:qfrLoading,error:qfrError}=
-   useStoredIndex<QfrPayload>("/api/earnings-recession-census-qfr-margin");
+   useStoredIndex<QfrPayload>("/api/earnings-recession-census-qfr-margin",null,true,true);
   const unitReady=unitUsable(unitPayload);
   const unitRow=unitReady?unitPayload?.indicator:null;
-  const unitStatus=unitLoading?"연결 확인 중":unitReady?"연결 완료":unitError?"자료 확인 대기":"자료 확인 대기";
+  const unitStatus=earningsInfoStatus({loading:unitLoading,ready:unitReady,error:unitError,hasPayload:unitPayload!==null});
   const qfrReady=qfrUsable(qfrPayload);
   const qfrRow=qfrReady?qfrPayload?.rows?.[0]:null;
-  const qfrStatus=qfrLoading?"연결 확인 중":qfrReady?"연결 완료":qfrError?"자료 확인 대기":"자료 확인 대기";
+  const qfrStatus=earningsInfoStatus({loading:qfrLoading,ready:qfrReady,error:qfrError,hasPayload:qfrPayload!==null});
   const {payload:mfgPayload}=useStoredIndex<BeaMfgPayload>("/api/earnings-recession-bea-manufacturing-profit");
   const mfgReady=mfgUsable(mfgPayload);
   const mfgRow=mfgReady?mfgPayload?.indicator:null;
