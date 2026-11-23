@@ -37,6 +37,27 @@ test('one source fetch, immutable bytes, pinned offline reread and preserved cap
       fetchImpl:async()=>{calls++;return response();}});
     assert.equal(repeated.status,'ALREADY_CAPTURED');
     assert.equal(repeated.sourceStoredAt,AT);
+    assert.equal(calls,2); // Legacy unpinned repeat remains an explicit fetch.
+    const reused=await captureBeaUnitSourceOnce({pcBase,sourceSha:captured.sourceSha,
+      fetchImpl:async()=>{calls++;throw Error('PROVIDER_MUST_NOT_BE_CALLED');}});
+    assert.equal(reused.status,'ALREADY_CAPTURED');
+    assert.equal(reused.sourceStoredAt,AT);
+    assert.equal(calls,2); // Pinned archive reuse makes no second provider call.
+  }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
+});
+
+test('pinned archive missing or invalid fails before provider fetch',async()=>{
+  const pcBase=root();let calls=0;
+  const fetchImpl=async()=>{calls++;return response();};
+  try{
+    await assert.rejects(captureBeaUnitSourceOnce({
+      pcBase,sourceSha:'0'.repeat(64),fetchImpl}),
+      /BEA_UNIT_STORED_SOURCE_MISSING/);
+    await assert.rejects(captureBeaUnitSourceOnce({
+      pcBase,sourceSha:'bad',fetchImpl}),
+      /BEA_UNIT_STORED_SOURCE_PIN_INVALID/);
+    assert.equal(calls,0);
+    assert.equal(fs.existsSync(path.join(pcBase,'raw')),false);
   }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
 });
 test('archive SHA pins the raw HTTP response bytes without using response.text',async()=>{
