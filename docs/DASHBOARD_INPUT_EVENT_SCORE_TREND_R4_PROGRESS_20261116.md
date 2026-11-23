@@ -1,5 +1,15 @@
 # W06 UI·Reader — 실제 적용·화면 완료 5단계 진행원장 (2026-11-21 개편)
 
+### 2026-11-23 — W06 1D PC→D1 Reader→홈페이지 실점 2개 검증, 불필요 B 후보 종결
+
+**이번 요청의 W06 1D 기능 결과:** 운영 PC/공개 API/홈페이지가 **2026-11-23 계산 시각 두 점**을 실제 제공함. UI·Reader 담당 5/5 완료를 유지하며 W06 1D 실데이터 표시 정상. 새 Controller/Writer 설치·게시·DB 변경은 요청/실행하지 않음.
+
+1. 실PC 고유 [A #2779](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2779) / [Run #45090452194](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45090452194) `PASS/FEAR_GREED_ARCHIVE_READONLY_DIAGNOSIS`; 조회 Controller SHA `b048e36a072c69de4c591fb96d521d98a6e60760`, `sqliteOpened=true`, provider/DB 업무/D1 쓰기 0, 읽기 보호 유지. 로컬 `composite-observed:%` 22일/106점, **2026-11-23=2점**, 마지막 `2026-11-23T00:37:20.887Z` (`storedAt=1795394240887`). 이전 11/22=1점은 보존(과거 자료나 시각 소급 조작 없음). 해당 A Issue 완료 Closed.
+2. 공개 Production `https://zgmini.kr/api/market-score/observations?period=1D` live 조회 HTTP 200, `READY`, `version=COMPOSITE_CALCULATED_SCORES_R1`, `totalObservedPoints=2`, `sampled=false`, `timeMeaning=PC_CALCULATED_AT`; 정확 원관측 두 점 `2026-11-23T00:00:55.676Z` 및 `2026-11-23T00:37:20.887Z`, 두 원점수 각각 `45.137344974152676`, `asOfDate=2026-11-23`. 로컬 점수 수/최신 계산 시각과 일치. 공개 Reader는 실제 D1 저장된 두 점을 SELECT하므로 API/UI 표시 경로는 검증됐으나 **원격 D1 개별 body SHA/stored_at 독립 SQL readback까지 입증한 것은 아님**.
+3. 라이브 브라우저 [https://zgmini.kr/](https://zgmini.kr/) desktop 및 mobile 390px 접근성 DOM에서 `종합 시장 점수 33.0점`, 실제 1D SVG 차트 및 시간축 `09:00`/`09:37`, `최고·최저 33.0 (11-23)` 확인. 동일 점수 2개이므로 수평 추이 정상. 최신 점 마우스 hover tooltip 검증 브라우저 제한 시간 초과로 미입증; 모바일 터치 tooltip 및 가로 overflow 수치도 직접 확인하지 못했으므로 PASS 주장 금지. 11/22의 기존 데스크톱 단일점 hover/390·1440 회귀 PASS 이력 보존.
+4. 최신 Controller는 선행 W01 B에서 `b048e36...`로 이동했으며, 구 [Draft #2774](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2774) old CAS `9e3542...`는 무효화해 미병합 Closed. 현행 `b048e36...` 원본으로 생성한 정확 1파일 overlay `18c0a62aad44a4b95b5f6d91286ea24082e6ea08` 및 pin+manifest 2파일 [Draft #2778](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2778)은 [C996 #45090260845](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45090260845) SUCCESS까지 준비했으나 **기존 기능이 실제 정상임을 확인**했으므로 owner 승인/병합/운영 설치를 하지 않고 역사 근거 보존 후 **Not Planned / 미병합 Closed**로 종결. 신규 B 설치를 불필요한 W06 완료조건으로 확대하지 않음.
+5. **남은 사실과 범위:** 11/22 1점의 원인을 `UNCHANGED`·15분 필터·계산 불실행 중 무엇인지 과거 단일 결과만으로 확정할 수 없음; 11/23 두 점의 새 관측이 있으므로 현재 장애로 단정하지 않는다. 원본 저장/게시/D1 일자별 정확 해시 원장·tooltip 일부는 별도 과거 계보/UX 미입증으로 기록. 정상 W06을 위해 불필요한 Controller 변경/반복 A/추가 승인 Gate를 만들지 않음. 향후 실제 불일치 시 변경 시점·정확 원점부터 다시 확인.
+
 ### 2026-11-23 — W06 실제 운영 Controller b048 선행 설치 감지 및 선택 후보 CAS 재산출
 
 - **실PC 판정 갱신:** 유지보수 일시중지 중 원본 [#2775](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2775)는 같은 requestId의 승인 backlog replay [#2776](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2776)로 자동 연결. [Run #45090056367](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45090056367) 2026-11-23T00:39:47Z **PASS**, `actualExecutionSha=b048e36a072c69de4c591fb96d521d98a6e60760`, `protectedStateUnchanged=true`, `local-writer-last-run.json` modifiedAt `2026-11-23T00:32:46.380Z`, status VERIFIED(종합점수 보관/게시 인증 아님). 원본/replay 완료 요청은 Closed, 중복 A 실행 금지.
