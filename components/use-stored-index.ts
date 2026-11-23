@@ -2,7 +2,8 @@
 import {startTransition,useEffect,useState} from 'react';
 import {acceptsStoredUpdate,startStoredRefresh} from '../lib/market-score/live-refresh.mjs';
 import {nextStoredIndexPublicationOrder} from '../lib/market-score/stored-index-publication-order-r4.mjs';
-export function useStoredIndex<T>(url:string,initial:T|null=null,enabled=true){
+import {earningsProjectionReason} from '../lib/earnings-info-projection-status-r1.mjs';
+export function useStoredIndex<T>(url:string,initial:T|null=null,enabled=true,exposeProjectionReason=false){
  const [payload,setPayload]=useState<T|null>(initial);
  const [loading,setLoading]=useState(!initial);
  const [error,setError]=useState<string|null>(null);
@@ -15,7 +16,17 @@ export function useStoredIndex<T>(url:string,initial:T|null=null,enabled=true){
   const stop=startStoredRefresh(async(signal:AbortSignal)=>{
    try{
     const response=await fetch(url,{cache:'no-store',signal});
-    if(!response.ok){if(response.status===503){const body=await response.json() as {reason?:string};if(live&&!signal.aborted&&/STALE|EXPIRED/.test(body.reason??'')){accepted=null;setPayload(null);setPublishedAt(null);}}throw Error('UPDATE_FAILED');}
+    if(!response.ok){
+     let safeReason='UPDATE_FAILED';
+     if(response.status===503){
+      const body=await response.json().catch(()=>null) as {reason?:string}|null;
+      if(exposeProjectionReason)safeReason=earningsProjectionReason(body?.reason);
+      if(live&&!signal.aborted&&/STALE|EXPIRED/.test(body?.reason??'')){
+       accepted=null;setPayload(null);setPublishedAt(null);
+      }
+     }
+     throw Error(safeReason);
+    }
     const body=await response.json() as T;
     const publishedHeader=response.headers.get('x-projection-published-at');
     const publishedTimestamp=publishedHeader?Date.parse(publishedHeader):NaN;
@@ -28,10 +39,10 @@ export function useStoredIndex<T>(url:string,initial:T|null=null,enabled=true){
      accepted=body;lastOrder=order;
      startTransition(()=>{setPayload(body);setPublishedAt(verifiedPublishedAt);setError(null);});
     }
-   }catch{if(live)setError('UPDATE_FAILED');}
+   }catch(cause){if(live&&!signal.aborted)setError(exposeProjectionReason?earningsProjectionReason(cause instanceof Error?cause.message:null):'UPDATE_FAILED');}
    finally{if(live)startTransition(()=>setLoading(false));}
   });
   return()=>{live=false;stop();};
- },[url,enabled]);
+ },[url,enabled,exposeProjectionReason]);
  return {payload,loading,error,publishedAt};
 }
