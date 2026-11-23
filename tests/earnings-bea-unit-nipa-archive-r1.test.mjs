@@ -66,7 +66,7 @@ test('reject tampered original SHA or metadata without repairing or replacing fi
     const original=saveBeaUnitNipaArchive({pcBase,rawBytes,sourceStoredAt:AT});
     const p=beaUnitNipaArchivePaths({pcBase,sourceSha:original.sourceVersion});
     const meta=fs.readFileSync(p.meta);
-    fs.writeFileSync(p.raw,Buffer.concat([rawBytes,Buffer.from(' ')]));
+    fs.writeFileSync(p.raw,Buffer.from(rawBytes.toString('utf8').replace('0.250','0.251')));
     assert.throws(()=>readBeaUnitNipaArchive({pcBase,sourceSha:original.sourceVersion}),
       /BEA_UNIT_NIPA_ARCHIVE_SOURCE_MISMATCH/);
     fs.writeFileSync(p.raw,rawBytes);
