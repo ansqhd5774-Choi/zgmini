@@ -96,3 +96,29 @@ test('desktop table and mobile cards use the same validated indicator adapter',(
   assert.doesNotMatch(jsx,/const costIndicators=\[/);
   assert.doesNotMatch(jsx,/fetch\(['"]https:\/\/data\.bls\.gov/);
 });
+
+
+test('historical five-row API without service-only metadata remains visible in browser',()=>{
+  const legacy=KNOWN_EARNINGS_COST_INDICATORS.map((meta,index)=>({
+    indicatorId:meta.id,status:index===3?'STALE':index===4?'PARTIAL':'READY',
+    frequency:meta.series==='PRS85006111'?'QUARTERLY':'MONTHLY',
+    seriesId:meta.series,unit:meta.unit,
+    value:index===4?null:index===0?6.34:0,
+    previousValue:1,change:0,
+    observationPeriod:'2026-09',previousPeriod:'2026-08',
+    retrievedAt:'2026-10-26T17:02:53.996Z',
+    history:[],
+    freshness:{status:index===3?'STALE':'FRESH',reason:null},
+  }));
+  const view=buildEarningsCostIndicatorView(payload(legacy));
+  assert.equal(view.valid,true);
+  assert.equal(view.rows.length,5);
+  assert.deepEqual(ids(view),KNOWN_EARNINGS_COST_INDICATORS.map(x=>x.id));
+  assert.equal(view.rows[0].value,6.34);
+  assert.equal(view.rows[2].value,0);
+  assert.equal(view.rows[3].status,'STALE');
+  assert.equal(view.rows[4].value,null);
+  const bad=legacy.map(x=>({...x}));
+  bad[0].provider='NOT_BLS';
+  assert.equal(buildEarningsCostIndicatorView(payload(bad)).rows.length,4);
+});
