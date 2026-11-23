@@ -72,3 +72,17 @@ test('invalid excluded source root fails without writing evidence',()=>{
     excludedSourceRoot:path.join(os.tmpdir(),'zgmini-w05-nonexistent-checkout')}),
   /EARNINGS_PUBLICATION_SOURCE_ROOT_UNAVAILABLE/);
 });
+
+
+test('WPSFD42 APPLY requires immutable service checkpoint pins and rechecks before any D1 client',()=>{
+  const file=fs.readFileSync(new URL('../scripts/pc-writer/EARNINGS_BLS_SERVICE_R1_D1_ONCE.mjs',import.meta.url),'utf8');
+  assert.match(file,/ZGMINI_EARNINGS_SERVICE_SOURCE_VERSION/);
+  assert.match(file,/ZGMINI_EARNINGS_SERVICE_SOURCE_STORED_AT/);
+  assert.match(file,/EARNINGS_C_SERVICE_APPLY_PIN_REQUIRED/);
+  assert.match(file,/EARNINGS_C_SERVICE_SOURCE_DRIFT/);
+  assert.match(file,/PREFLIGHT_SOURCE_PIN=VERIFIED/);
+  assert.match(file,/SOURCE_HTTP_REQUESTS=0/);
+  assert.match(file,/if\(fresh!==2\)/);
+  assert.ok(file.indexOf("throw Error('EARNINGS_C_SERVICE_SOURCE_DRIFT')")<
+    file.indexOf("await import('./d1.mjs')"));
+});
