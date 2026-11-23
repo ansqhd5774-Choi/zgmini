@@ -244,6 +244,7 @@ export async function readEarningsCompanionResponse(request,readOnlyCore,{now=Da
     unavailable:rows.filter(row=>!['READY','PARTIAL','STALE'].includes(row.status)).length};
   return reply({...combined,status:freshReady===rows.length?'READY':'PARTIAL',coverage,rows},200,
     {'x-projection-source-at':new Date(combined.sourceStoredAt).toISOString(),
+      'x-projection-published-at':new Date(projection.builtAt).toISOString(),
       'x-earnings-c-service':extensionState});
 }
 
