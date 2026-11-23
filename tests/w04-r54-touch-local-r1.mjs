@@ -38,10 +38,32 @@ try{
    if(await intro.isVisible())await intro.getByRole('button',{name:'닫기',exact:true}).click();
    const hero=page.getByTestId('economic-employment-hero');
    await hero.waitFor({state:'visible',timeout:20000});
-   await page.waitForFunction(()=>document.querySelector('[data-testid="economic-employment-hero"]')
-    ?.getAttribute('data-history-alignment')==='matched'&&
-    !!document.querySelector('[data-testid="economic-employment-hero"] svg.recharts-surface'),
-    null,{timeout:30000});
+   await page.waitForTimeout(1500);
+   const initial=await hero.evaluate(el=>({
+    market:el.getAttribute('data-market-state'),
+    history:el.getAttribute('data-history-alignment'),
+    svg:!!el.querySelector('svg.recharts-surface'),
+    score:el.querySelector('.fg-score-slot')?.textContent?.slice(0,110)??null,
+    text:el.textContent?.slice(0,250)??null,
+   }));
+   console.log('W04_R54_MOCK_INITIAL '+JSON.stringify({width,initial,errors}));
+   try{
+    await page.waitForFunction(()=>document.querySelector('[data-testid="economic-employment-hero"]')
+     ?.getAttribute('data-history-alignment')==='matched'&&
+     !!document.querySelector('[data-testid="economic-employment-hero"] svg.recharts-surface'),
+     null,{timeout:10000});
+   }catch(error){
+    const final=await hero.evaluate(el=>({
+     market:el.getAttribute('data-market-state'),
+     history:el.getAttribute('data-history-alignment'),
+     svg:!!el.querySelector('svg.recharts-surface'),
+     score:el.querySelector('.fg-score-slot')?.textContent?.slice(0,110)??null,
+     text:el.textContent?.slice(0,400)??null,
+    }));
+    console.log('W04_R54_MOCK_NOT_READY '+JSON.stringify({width,final,errors}));
+    await page.screenshot({path:`${dir}/not-ready-${width}.png`,fullPage:false});
+    throw error;
+   }
    const marker=hero.locator('.cnn-latest-point circle, circle.cnn-latest-point').first();
    await marker.waitFor({state:'visible',timeout:20000});
    await marker.scrollIntoViewIfNeeded();
