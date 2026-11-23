@@ -65,9 +65,11 @@ type CostPayload={
 type BeaUnitPoint={date:string;value:number};
 type BeaUnitPayload={
  schemaVersion:string;status:string;historyMode:string;
+ sourceStoredAt?:number;publishedAt?:string;
  freshness?:{status:string;reason:string|null};
  indicator?:{
-  id:string;unit:string;observationPeriodEnd:string;previousPeriodEnd:string;
+  id:string;unit:string;seriesId:string;sourceURL:string;transport:string;
+  observationPeriodEnd:string;previousPeriodEnd:string;
   value:number;previousValue:number;change:number;history:BeaUnitPoint[];
  };
 };
@@ -217,6 +219,15 @@ export default function EarningsRiskOnlyPanel(){
    useStoredIndex<QfrPayload>("/api/earnings-recession-census-qfr-margin",null,true,true);
   const unitReady=unitUsable(unitPayload);
   const unitRow=unitReady?unitPayload?.indicator:null;
+ const unitPcSavedKst=unitReady&&Number.isSafeInteger(unitPayload?.sourceStoredAt)&&
+  (unitPayload?.sourceStoredAt??0)>0?
+  earningsCostPublicationKst(new Date(unitPayload!.sourceStoredAt!).toISOString()):"—";
+ const unitD1PublishedKst=unitReady?earningsCostPublicationKst(unitPayload?.publishedAt):"—";
+  const unitNativeBea=unitRow?.transport==="BEA_API_JSON"&&unitRow?.seriesId==="A463RD"&&
+   unitRow?.sourceURL==="https://apps.bea.gov/api/data";
+  const unitSourceUrl=unitNativeBea?"https://apps.bea.gov/api/data":
+   "https://fred.stlouisfed.org/series/A463RD3Q052SBEA";
+  const unitSourceLabel=unitNativeBea?"BEA 공식 API 원자료":"BEA·FRED 원자료";
   const unitStatus=earningsInfoStatus({loading:unitLoading,ready:unitReady,error:unitError,hasPayload:unitPayload!==null});
   const qfrReady=qfrUsable(qfrPayload);
   const qfrRow=qfrReady?qfrPayload?.rows?.[0]:null;
@@ -391,7 +402,8 @@ export default function EarningsRiskOnlyPanel(){
       <td><ContentHelp label="비금융기업 단위이익 도움말">
        <p>BEA NIPA 표 1.15의 비금융기업 단위이익(A463RD)입니다. 실질 총부가가치 한 단위당 이익을 달러로 표시합니다. 이익률(%)이나 전년 대비 성장률이 아닙니다.</p>
        <p>최근 저장한 원자료의 개정분을 보여주며 발표 당시 확정 자료(PIT)는 아닙니다. 실적 침체 방어 점수에도 합산하지 않습니다.</p>
-       <a href="https://fred.stlouisfed.org/series/A463RD3Q052SBEA" target="_blank" rel="noopener noreferrer">BEA·FRED 원자료</a>
+       {unitReady&&<p>PC 원자료 저장: {unitPcSavedKst} · D1 공개 게시: {unitD1PublishedKst}. 관측 분기와는 다른 시각입니다.</p>}
+       <a href={unitSourceUrl} target="_blank" rel="noopener noreferrer">{unitSourceLabel}</a>
       </ContentHelp></td>
      </tr>
      <tr className="earnings-r2-cost-row" data-source="census-qfr-margin">
@@ -488,7 +500,8 @@ export default function EarningsRiskOnlyPanel(){
         <strong>비금융기업 단위이익</strong><small>BEA · 실질 부가가치 한 단위당 달러 · 점수 미반영</small>
        </div></div><ContentHelp label="비금융기업 단위이익 도움말">
         <p>실질 부가가치 한 단위당 비금융기업 이익입니다. 비율(%) 또는 기업의 통상적인 이익률이 아니며 진단 점수에 포함하지 않습니다. 저장 당시 개정분입니다.</p>
-        <a href="https://fred.stlouisfed.org/series/A463RD3Q052SBEA" target="_blank" rel="noopener noreferrer">BEA·FRED 원자료</a>
+        {unitReady&&<p>PC 원자료 저장: {unitPcSavedKst} · D1 공개 게시: {unitD1PublishedKst}. 관측 분기와는 다른 시각입니다.</p>}
+        <a href={unitSourceUrl} target="_blank" rel="noopener noreferrer">{unitSourceLabel}</a>
        </ContentHelp></div>
       <p className="earnings-r2-mobile-content">미국 비금융기업의 실질 부가가치 한 단위당 이익</p>
       <div className="earnings-r2-mobile-metrics">

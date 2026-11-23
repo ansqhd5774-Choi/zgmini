@@ -4,6 +4,7 @@ import {localDatabase} from '../scripts/pc-writer/local-db.mjs';
 import {collectReleaseCalendar} from '../scripts/pc-writer/release-calendar.mjs';
 import {publicFeedStore} from '../worker/public-feed-store.mjs';
 import {TREASURY_CUSIP_XML_URL} from '../lib/treasury-calendar.mjs';
+import {TREASURY_DIRECT_HISTORY_URL} from '../lib/treasury-auction-history-taws.mjs';
 
 const now=Date.parse('2026-11-09T10:00:00Z');
 const priorEvent={id:'treasury-auction-912797aa1',source:'treasury',
@@ -16,7 +17,15 @@ const validXml='<Data><TreasuryCUSIPRelease><OfferingDescription>'+
  '<CompetitiveAuctionCloseDate>2026-11-12</CompetitiveAuctionCloseDate>'+
  '<IssueDate>2026-11-17</IssueDate></Dates></TreasuryCUSIPRelease></Data>';
 
-async function simulate(treasuryReply,{nextTreasuryReply=null,stalePrivateDiagnostic=false}={}){
+// Strict TA_WS awarded-year proof, independent of the weekly XML source.
+const annualAwarded=JSON.stringify([{
+ cusip:'912797YY1',competitiveAuctionCloseDate:'2026-11-05T00:00:00',
+ announcementDate:'2026-11-03T00:00:00',issueDate:'2026-11-10T00:00:00',
+ type:'Bill',securityType:'Bill',securityTerm:'4-Week',originalSecurityTerm:'4-Week',
+ reopening:'No',inflationProtected:'No',floatingRate:'No',bidToCoverRatio:'2.46',
+}]);
+async function simulate(treasuryReply,{nextTreasuryReply=null,stalePrivateDiagnostic=false,
+ annualSuccess=false,annualSuccessOnRecovery=false}={}){
  const db=localDatabase(':memory:');
  try{
   const store=publicFeedStore(db);
@@ -24,9 +33,14 @@ async function simulate(treasuryReply,{nextTreasuryReply=null,stalePrivateDiagno
   await store.writeOutput('release-calendar',
    {events:[priorEvent],sources:{treasury:{status:'READY',checkedAt:'2026-11-08T00:00:00Z'}}},
    now-7*3600000);
-  let treasuryCalls=0,reply=treasuryReply;
+  let treasuryCalls=0,reply=treasuryReply,annualAvailable=annualSuccess;
   const fetchImpl=async url=>{
    if(url===TREASURY_CUSIP_XML_URL){treasuryCalls++;return reply();}
+   if(url.startsWith(TREASURY_DIRECT_HISTORY_URL)){
+    return annualAvailable
+     ?new Response(annualAwarded,{headers:{'content-type':'application/json'}})
+     :new Response('Unavailable',{status:503});
+   }
    return new Response('Unavailable',{status:503});
   };
   const result=await collectReleaseCalendar(db,{now,fetchImpl});
@@ -37,6 +51,7 @@ async function simulate(treasuryReply,{nextTreasuryReply=null,stalePrivateDiagno
   let recovered=null,recoveredCached=null;
   if(nextTreasuryReply){
    reply=nextTreasuryReply;
+   if(annualSuccessOnRecovery)annualAvailable=true;
    recovered=await collectReleaseCalendar(db,{now:now+7*3600000,fetchImpl});
    recoveredCached=await collectReleaseCalendar(db,{now:now+7*3600000+60000,fetchImpl});
   }
@@ -78,10 +93,10 @@ test('Treasury unexpected exceptions never disclose raw messages or secrets',asy
 });
 
 test('Treasury success creates exactly two observed events and no diagnostic',async()=>{
- const {result,published,cached}=await simulate(()=>new Response(validXml));
+ const {result,published,cached}=await simulate(()=>new Response(validXml),{annualSuccess:true});
  assert.equal(published.sources.treasury.status,'READY');
  assert.equal(published.sources.treasury.coveredCusips,1);
- assert.equal(published.events.filter(e=>e.source==='treasury').length,3);
+ assert.equal(published.events.filter(e=>e.source==='treasury').length,5); // prior 1 + weekly 2 + annual 2
  assert.equal(Object.hasOwn(result,'treasuryFailureCode'),false);
  assert.equal(Object.hasOwn(cached,'treasuryFailureCode'),false);
  assert.equal(cached.providerRequests,0);
@@ -90,7 +105,7 @@ test('Treasury success creates exactly two observed events and no diagnostic',as
 test('Treasury next successful official attempt cannot reuse an earlier failure code',async()=>{
  const {result,cached,recovered,recoveredCached,treasuryCalls}=await simulate(
   ()=>new Response('Rate limited',{status:429}),
-  {nextTreasuryReply:()=>new Response(validXml)});
+  {nextTreasuryReply:()=>new Response(validXml),annualSuccessOnRecovery:true});
  assert.equal(result.treasuryFailureCode,'TREASURY_HTTP_429');
  assert.equal(cached.treasuryFailureCode,'TREASURY_HTTP_429');
  assert.equal(recovered.sources.treasury,'READY');

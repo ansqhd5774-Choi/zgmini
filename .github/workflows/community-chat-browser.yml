@@ -36,9 +36,6 @@ on:
       - 'components/dashboard-secondary-plots.tsx'
       - 'components/korea-composite-plot.tsx'
       - 'components/deferred-dashboard-charts.tsx'
-      - 'components/sector-sentiment-chart.tsx'
-      - 'components/sector-sentiment-chart.css'
-      - 'tests/sector-inline-tooltip-browser-r1.mjs'
       - 'hooks/use-dashboard-chart-startup.ts'
       - 'lib/dashboard-chart-startup.mjs'
       - 'lib/market-score/market-trend-window-r1.mjs'
@@ -56,6 +53,7 @@ on:
       - 'components/risk-detail-side-rails.*'
       - 'app/earnings-recession/**'
       - 'tests/earnings-r511-browser-r1.mjs'
+      - 'tests/w05-bea-production-readonly-r1.mjs'
       - 'tests/risk-detail-side-rails-browser-r44.mjs'
       - 'app/outbreak-events.tsx'
       - 'app/outbreak-beginner-fed-r53.tsx'
@@ -108,8 +106,9 @@ jobs:
           done
           tail -n 120 /tmp/zgmini-chat-vite.log
           exit 1
-      - name: Verify sector tooltip inline hover and held readouts at 390/1440 (local fixture)
-        run: node tests/sector-inline-tooltip-browser-r1.mjs
+      # W05 is independent of the W06 home-chart 1D selection and must run first.
+      - name: Verify W05 BEA actual Production API and 390/1440 hydrated UI read-only
+        run: node tests/w05-bea-production-readonly-r1.mjs
       - name: Verify W06 latest-point genuine touchscreen and hover with local isolated fixture
         run: node tests/w06-mobile-touch-local-r1.mjs
       - name: Verify W06 actual Production 1D and 6 periods at 390/1440 read-only
@@ -160,6 +159,7 @@ jobs:
             artifacts/about-intro-bootstrap/
             artifacts/inflation-criterion-review/
             artifacts/earnings-r511-browser/
+            artifacts/w05-bea-production-readonly/
             artifacts/employment-r6-browser/
             artifacts/w04-r54-production-ui/
             artifacts/w04-r54-touch-local/
@@ -167,7 +167,6 @@ jobs:
             artifacts/production-assets-network/
             artifacts/w06-production-readonly/
             artifacts/w06-touch-local/
-            artifacts/sector-inline-tooltip/
           if-no-files-found: warn
       - name: Show local dev errors on failure
         if: failure()

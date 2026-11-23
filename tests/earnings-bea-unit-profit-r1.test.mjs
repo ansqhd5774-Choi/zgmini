@@ -61,12 +61,40 @@ test('isolated D1 readback succeeds; public route is stored-only and never mutat
  const body=await current.json();
  assert.equal(body.indicator.value,0.25);
  assert.equal(body.status,'READY');
+ assert.equal(body.publishedAt,new Date(storedAt).toISOString(),
+  'public D1 publication time is verified from stored_at, not sourceStoredAt');
+ assert.notEqual(Date.parse(body.publishedAt),body.sourceStoredAt);
  assert.equal(db.getWrites(),1);
  assert.equal((await beaUnitWriter(db).write(payload(),{storedAt:storedAt+5000})).status,'ALREADY_STORED');
  assert.equal(db.getWrites(),1);
  assert.equal((await readBeaUnitResponse(new Request(request.url,{method:'POST'}),db)).status,405);
  assert.equal((await readBeaUnitResponse(new Request(request.url+'?x=1'),db)).status,400);
  assert.equal((await readBeaUnitResponse(request,db,{now:Date.parse('2027-03-01T00:00:00Z')})).status,503);
+});
+
+test('same BEA source hash cannot silently rewrite different statistical content',async()=>{
+ const db=fakeDb(),original=payload(),storedAt=now+1000;
+ assert.equal((await beaUnitWriter(db).write(original,{storedAt})).status,'READBACK_VERIFIED');
+ assert.equal(db.getWrites(),1);
+ const corrupted=structuredClone(original);
+ corrupted.indicator.value=0.251;
+ corrupted.indicator.change=corrupted.indicator.value-corrupted.indicator.previousValue;
+ corrupted.indicator.history.at(-1).value=0.251;
+ assert.equal(validateBeaUnitProfit(corrupted,{now:storedAt+1000}),corrupted,
+  'conflict is a valid changed projection, not an invalid row');
+ await assert.rejects(
+  beaUnitWriter(db).write(corrupted,{storedAt:storedAt+1000}),
+  /BEA_UNIT_CONFLICTING_CONTENT/);
+ assert.equal(db.getWrites(),1,'same source SHA must never trigger a second D1 write');
+ assert.equal((await beaUnitWriter(db).write(original,{storedAt:storedAt+2000})).status,'ALREADY_STORED');
+ assert.equal(db.getWrites(),1);
+ const newerTimestamp=structuredClone(corrupted);
+ newerTimestamp.sourceStoredAt+=3000;
+ newerTimestamp.retrievedAt=new Date(newerTimestamp.sourceStoredAt).toISOString();
+ await assert.rejects(
+  beaUnitWriter(db).write(newerTimestamp,{storedAt:storedAt+5000}),
+  /BEA_UNIT_CONFLICTING_CONTENT/);
+ assert.equal(db.getWrites(),1,'re-capture timestamp alone must not permit changed content');
 });
 
 test('R4-15 BEA unit public GET/HEAD verifies stored checkpoint cannot predate raw source',async()=>{
@@ -89,7 +117,10 @@ test('R4-15 BEA unit public GET/HEAD verifies stored checkpoint cannot predate r
  assert.equal(good.status,200);
  assert.equal(good.headers.get('x-public-projection'),'STORED');
  assert.equal(good.headers.get('cache-control'),'no-store');
- assert.equal((await good.json()).indicator.value,0.25);
+ const verified=await good.json();
+ assert.equal(verified.indicator.value,0.25);
+ assert.equal(verified.publishedAt,new Date(builtAt).toISOString());
+ assert.equal(verified.sourceStoredAt,now);
  const goodHead=await readBeaUnitResponse(head,db,{now:now+3000});
  assert.equal(goodHead.status,200);
  assert.equal(await goodHead.text(),'');

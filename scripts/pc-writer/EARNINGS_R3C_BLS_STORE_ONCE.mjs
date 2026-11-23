@@ -3,6 +3,7 @@
 // Runtime: Node >=22.13 with node:sqlite. Credentials are never logged or persisted.
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {parseEnv} from 'node:util';
@@ -47,8 +48,11 @@ const numeric = text => typeof text === 'string'
   && /^-?(?:0|[1-9]\d*)(?:\.\d+)?$/.test(text)
   && Number.isFinite(Number(text));
 
-function checkSchema(db,{includeServices=false}={}) {
-  const guardedSeries=includeServices?[...SERIES,...SERVICE_SERIES]:SERIES;
+function checkSchema(db,{includeServices=false,serviceOnly=false}={}) {
+  // A service-only capture must not depend on unrelated base BLS snapshots.
+  // Mixed and base-only captures retain their existing strict namespace checks.
+  const guardedSeries=serviceOnly?SERVICE_SERIES:
+    includeServices?[...SERIES,...SERVICE_SERIES]:SERIES;
   const names = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name IN (?,?)`)
     .all(CHUNKS, SNAPSHOTS).map(row => row.name);
   if (names.length !== 2) err('EXISTING_TABLE_MISSING_NO_WRITE');
@@ -87,7 +91,11 @@ function checkSchema(db,{includeServices=false}={}) {
       meta = JSON.parse(row.provenance_json);
       hashes = JSON.parse(row.chunk_hashes_json);
     } catch { err('PRIOR_BLS_PROVENANCE_INVALID_NO_WRITE'); }
-    if (meta?.contract !== CONTRACT || !Array.isArray(hashes)
+    if (meta?.contract !== CONTRACT
+      || meta?.seriesID !== row.dataset
+      || meta?.authority !== 'US_BLS'
+      || meta?.transportProvider !== 'BLS_DIRECT_API'
+      || !Array.isArray(hashes)
       || hashes.length < 1 || hashes.some(h => !/^[a-f0-9]{64}$/.test(h))) {
       err('PRIOR_BLS_NAMESPACE_CONFLICT_NO_WRITE');
     }
@@ -260,12 +268,13 @@ function insertPlans(db, plans) {
     ||plans.some(p=>![...SERIES,...SERVICE_SERIES].includes(p?.id))
     ||new Set(plans.map(p=>p.id)).size!==plans.length)err('BLS_PLAN_SERIES_INVALID_NO_WRITE');
   const includeServices=plans.some(p=>p.id==='WPSFD42');
+  const serviceOnly=plans.length===1&&plans[0].id==='WPSFD42';
   let insertedChunks = 0, insertedSnapshots = 0;
   let begun = false;
   try {
     db.exec('BEGIN IMMEDIATE');
     begun = true;
-    checkSchema(db,{includeServices}); // Recheck all selected namespaces inside transaction.
+    checkSchema(db,{includeServices,serviceOnly}); // Recheck selected namespaces inside transaction.
     const putChunk = db.prepare(`INSERT INTO ${CHUNKS}(
       provider,dataset,chunk_sha256,first_observation_date,last_observation_date,
       row_count,payload_json,first_seen_at) VALUES(?,?,?,?,?,?,?,?)
@@ -287,20 +296,48 @@ function insertPlans(db, plans) {
       insertedSnapshots += Number(snapshotResult.changes);
     }
     for (const p of plans) {
-      const chunk = db.prepare(`SELECT payload_json,row_count FROM ${CHUNKS}
+      const chunk = db.prepare(`SELECT payload_json,row_count,first_observation_date,
+        last_observation_date,first_seen_at FROM ${CHUNKS}
         WHERE provider=? AND dataset=? AND chunk_sha256=?`)
         .get('BLS',p.id,p.chunkHash);
-      const snap = db.prepare(`SELECT chunk_hashes_json,row_count,provenance_json
+      const snap = db.prepare(`SELECT chunk_hashes_json,row_count,provenance_json,
+        status,history_mode,as_of,retrieved_at,latest_observation_date
         FROM ${SNAPSHOTS} WHERE provider=? AND dataset=? AND snapshot_sha256=?`)
         .get('BLS',p.id,p.snapshotHash);
       if (!chunk || !snap || chunk.payload_json !== p.payloadJson
         || chunk.row_count !== p.rows.length
+        || chunk.first_observation_date !== p.rows[0].observationDate
+        || chunk.last_observation_date !== p.rows.at(-1).observationDate
         || snap.chunk_hashes_json !== JSON.stringify([p.chunkHash])
         || snap.row_count !== p.rows.length) err('BLS_READBACK_MISMATCH_ROLLBACK');
       let prov;
       try { prov = JSON.parse(snap.provenance_json); }
       catch { err('BLS_SNAPSHOT_PROVENANCE_INVALID_ROLLBACK'); }
-      if (prov.contract !== CONTRACT) err('BLS_SNAPSHOT_CONTRACT_MISMATCH_ROLLBACK');
+      if (prov?.contract !== CONTRACT) err('BLS_SNAPSHOT_CONTRACT_MISMATCH_ROLLBACK');
+      // A content-identical snapshot can predate this retrieval. Validate its
+      // own immutable lineage, not equality to this new attempt's timestamp.
+      const validStamp = value => typeof value === 'string'
+        && /^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$/.test(value)
+        && Number.isFinite(Date.parse(value))
+        && new Date(value).toISOString() === value;
+      const quarterly = p.id === 'PRS85006111';
+      if (snap.status !== 'READY_DIRECT_BLS' || snap.history_mode !== CONTRACT
+        || !validStamp(snap.retrieved_at)
+        || snap.as_of !== snap.retrieved_at.slice(0,10)
+        || snap.latest_observation_date !== p.rows.at(-1).observationDate
+        || !validStamp(chunk.first_seen_at)
+        || Date.parse(chunk.first_seen_at) > Date.parse(snap.retrieved_at)
+        || prov.authority !== 'US_BLS' || prov.transportProvider !== 'BLS_DIRECT_API'
+        || prov.seriesID !== p.id || prov.retrievedAt !== snap.retrieved_at
+        || prov.periodStart !== p.rows[0].observationDate
+        || prov.periodEnd !== p.rows.at(-1).observationDate
+        || prov.frequency !== (quarterly?'QUARTERLY':'MONTHLY')
+        || prov.seasonalAdjustment !== 'SA'
+        || prov.rawUnit !== (quarterly?'PERCENT_YEAR_OVER_YEAR':'INDEX')
+        || prov.officialVintageId !== null
+        || !/^[a-f0-9]{64}$/.test(prov.responseSha256??'')) {
+        err('BLS_STORED_LINEAGE_MISMATCH_ROLLBACK');
+      }
     }
     db.exec('COMMIT');
     begun = false;
@@ -315,6 +352,14 @@ function insertPlans(db, plans) {
 
 export {CONTRACT, SERIES, SERVICE_SERIES, checkSchema, normalizeSeries, buildPlans, insertPlans};
 
+export function resultLogPath(stamp,{includeServices=false,tempDirectory=os.tmpdir()}={}) {
+  if (typeof stamp!=='string' || !/^\d{8}-\d{6}Z$/.test(stamp))
+    err('INVALID_RESULT_STAMP');
+  return path.join(tempDirectory,
+    `${includeServices?'EARNINGS_BLS_SERVICE_R1':'EARNINGS_R3C_BLS_STORE_ONCE'}_RESULT_${stamp}.txt`);
+}
+
+
 async function main() {
   const flags=process.argv.slice(2);
   const includeServices=flags.length>0;
@@ -328,14 +373,16 @@ async function main() {
   const selectedSeries=includeServices?SERVICE_SERIES:SERIES;
   const utc = new Date().toISOString();
   const stamp = utc.replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z').replace('T','-');
-  const logfile = path.join(HERE,
-    `${includeServices?'EARNINGS_BLS_SERVICE_R1':'EARNINGS_R3C_BLS_STORE_ONCE'}_RESULT_${stamp}.txt`);
+  // Run receipts must be written under the invoking user's TEMP,
+  // never inside the installed/checked-out source directory.
+  const logfile = resultLogPath(stamp,{includeServices});
   const notes = [
     'EARNINGS_COMPANION_R3C_BLS_DIRECT_STORE_ONCE_V1',
     `UTC=${utc}`,
     `MODE=${dryRun?'SERVICE_PREFLIGHT_READ_ONLY':includeServices?
       'MANUAL_CONFIRMED_SERVICE_APPEND':'MANUAL_ONE_POST_EXISTING_SQLITE_APPEND_ONLY'}`,
     'PROVIDER=BLS',
+    'RESULT_LOG_LOCATION=USER_TEMP',
     `SERIES=${selectedSeries.join('|')}`,
     `YEAR_RANGE=${YEAR_START}-${YEAR_END}`,
   ];
@@ -347,7 +394,7 @@ async function main() {
     try {
       scan = new DatabaseSync(DB_PATH,{readOnly:true,timeout:3000});
       scan.exec('PRAGMA query_only=ON');
-      const previous = checkSchema(scan,{includeServices});
+      const previous = checkSchema(scan,{includeServices,serviceOnly:includeServices});
       notes.push('PC_EXISTING_SCHEMA_GUARD=PASS');
       notes.push(`PREVIOUS_BLS_SNAPSHOTS=${previous.existingSnapshots}`);
       notes.push(`PREVIOUS_BLS_CHUNKS=${previous.existingChunks}`);

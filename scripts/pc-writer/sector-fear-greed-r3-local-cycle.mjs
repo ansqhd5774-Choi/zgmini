@@ -90,6 +90,14 @@ try{
     report.status='LOCAL_READY';
     report.dbWrites=2;
     report.storedAt=check.storedAt;
+    // D05 verifies only the 11 final already-written sector scores. A failure
+    // cannot invalidate the approved R3 calculation/storage or alter its feed.
+    try{
+     const {readVerifiedSectorFinalOutputs}=await import('../../lib/score-history/d05-final-sector-local-readback-r1.mjs');
+     report.d05FinalOutputReadback=await readVerifiedSectorFinalOutputs(core,{
+      calculatedAtMs:now,now:Date.now(),
+     });
+    }catch{report.d05FinalOutputReadback={status:'UNPROVEN_LOCAL_FINAL_SECTOR_OUTPUT'};}
    }
   }
  }
