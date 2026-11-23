@@ -42,6 +42,16 @@
 
 ## 개편 후 기록
 
+### 2026-11-23 — WPSFD42 독립 저장자료 계산 소스 결합 제거
+
+- **실제 결함 조건:** 기존 `buildServiceSourcePreview`는 서비스 전용 WPSFD42 계산 전에 `buildPreview` → R3D 기본 3계열 `analyze`를 강제했다. 서비스 저장 원본이 정상이어도 다른 3계열 전체 cohort 결손/오류가 있으면 서비스 계산이 중단되는 불필요한 의존성이다. 운영 실측 실패 원인으로 단정하지 않고 소스에서 재현 가능한 구조 결합으로 분류.
+- **최소 수정:** [`c5588bc`](https://github.com/ansqhd5774-Choi/zgmini/commit/c5588bc44070a64a8873be92141ebfeff9f1e315)에서 검증된 WPSFD42 source 선택/해시 재조회만 공통 helper로 분리. 기본 전체 5/7행 `buildPreview`는 기존 R3D cohort 보존, 서비스 전용 `buildServiceSourcePreview`만 독립 2행(RAW+전년비)·원본 hash·firstSeenAt·sourceVersion 계산.
+- **실행 모드:** [`f2c46a3`](https://github.com/ansqhd5774-Choi/zgmini/commit/f2c46a3649ea07289ba4870a9a92f149eb7491b9)는 기존 R4 스크립트의 명시적 `--service-only` 모드를 추가. 미지정 호출은 기존 전체 preview로 유지하며 원자료 SQLite는 읽기 전용·독립 JSON/TXT 출력만 수행. 새로운 Controller/예약/CMD/수집기·D1 키 없음.
+- **시험 소스:** [`a1018de`](https://github.com/ansqhd5774-Choi/zgmini/commit/a1018de72b1b6406d5745bac470b4d9f175ea66e), [`48a8241`](https://github.com/ansqhd5774-Choi/zgmini/commit/48a824148ee9dfe4e1d4b9bcd12957e117c84003)에 기본 cohort 결손·출처 오염 시 서비스 독립 및 정확 CLI 모드 회귀시험 추가. 해당 SHA의 CI 실행 결과 없음, 실PC 실행·checkpoint readback 없음. 소스 수정을 정상 운영 적용으로 판단하지 않음.
+- **NEXT:** 기존 승인 Runner/정규 PC 읽기 계약을 통해 정확 서비스-only 실행 결과(2행, 최신 2026-10, SNAPSHOT SHA `e6ee311982565f49381cd68219c1a3330c875ad8697de7870aabc866a8cb5b71`, 소스/출력 시각)를 검증. 이미 승인된 BLS 공급자 POST/SQLite 저장과 QFR D1 게시를 재실행하지 않음. 정규 CI/실PC 영수증 확인 전에는 2단계 DONE 금지.
+
+
+
 ### 2026-11-22 — BEA NIPA grouped-number CI failure and minimal correction
 
 - **실제 실패:** NIPA 값 검증 Draft [PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183) HEAD `24fba1342a4b21134ad854418c58ea72c9ba4d67` [Node CI #45017322395](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45017322395) 최종 `completed/failure`, Build·Type check SUCCESS, Regression 5417 tests 중 PASS 5406, FAIL 1, SKIP 7, TODO 3. 유일한 실패: `tests/earnings-bea-unit-nipa-equivalence-r1.test.mjs:65`의 잘못된 숫자 그룹핑 거부 테스트. `0,250`이 숫자 형식에 통과해 `BEA_UNIT_NIPA_VALUE_INVALID` 대신 `BEA_UNIT_NIPA_VALUE_MISMATCH` 발생.
