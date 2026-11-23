@@ -46,7 +46,7 @@ try{
   if(!fs.existsSync(dbPath))throw Error('PC_SQLITE_FILE_MISSING');
   db=new DatabaseSync(dbPath,{readOnly:true,timeout:4000});
   db.exec('PRAGMA query_only=ON');
-  const {payload,diagnostics}=buildPreview(db,{generatedAt:now});
+  const {payload,diagnostics}=buildPreview(db,{generatedAt:now,includeServices:false});
   db.close();db=null;
   validateEarningsCompanionPayload(payload);
   const fresh=payload.rows.filter(row=>row.status==='READY'
