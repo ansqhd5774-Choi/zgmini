@@ -1,5 +1,13 @@
 # W06 UI·Reader — 실제 적용·화면 완료 5단계 진행원장 (2026-11-21 개편)
 
+### 2026-11-23 — W06 모바일 실제 터치 Production 검증 완료
+
+- 최초 모바일 터치 실험은 차트점이 화면 하단 우측 채팅 버튼에 겹쳐 있었음. 실제 DOM hit test의 circle 여부를 먼저 확인하기 위해 차트를 화면 중앙으로 이동 후 터치. 원인 가설을 검증하고 별도 지표의 화면 오류와 구분.
+- W06 모바일 터치 구현 [PR #1473](https://github.com/ansqhd5774-Choi/zgmini/pull/1473) Merged, main 병합 SHA 00e49b6b900d9981ffa73b691a9133ed5769abb6. 최신 관측점 중심 반경 24px에서만 원관측 계산 KST 시각·표시점수·방법론 표시를 렌더하며 채팅 패널로 입력이 전파되지 않도록 제한. 기존 PC hover/산식/API/Writer/D1/데이터 경로 변경 없음.
+- [Browser #45093775592](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45093775592): 격리 로컬 Chromium 390px 진짜 touchscreen 및 1440px mouse hover 모두 최신 점 2026-11-23 09:37 KST / 33.0 tooltip PASS, 양 화면 horizontal overflow 없음. Production 데스크톱 최신점/12개 기간 조합 PASS, 당시 Production 모바일은 신규 소스 미배포를 정확히 구분. 전체 Browser workflow 실패는 W06이 아닌 /inflation/ React hydration #418.
+- [Production 보강 PR #1475](https://github.com/ansqhd5774-Choi/zgmini/pull/1475): 원래 허용했던 미배포 skip 조건을 제거해 Production 모바일 터치 배포 마커, 최신점 실제 tooltip 시각·33.0, 채팅 side rail 미오픈을 필수로 검증. [Browser #45094528100](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45094528100) 기존 W06 local touch/desktop hover step SUCCESS 및 실제 Production 1D 390/1440 6기간 step SUCCESS. [Node #45094528078](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45094528078) SUCCESS. PR Merged main SHA 890ebade1c6dbf39acfe486e140550737d7e4165.
+- 최종 W06 UI·Reader 5/5 DONE. 실PC 보관 관측점 2개와 공개 API·홈페이지 동일, 모바일 터치·데스크톱 hover 검증 완료. 운영 PC/SQLite/D1/직배포/DNS 변경 0. 다른 /inflation/ #418과 D1 각 키 원격 body SHA/stored_at 독립 증거는 W06 정상 표시를 부정하지 않으며 별도 미검증으로 남김.
+
 ### 2026-11-23 — W06 1D PC→D1 Reader→홈페이지 실점 2개 검증, 불필요 B 후보 종결
 
 **이번 요청의 W06 1D 기능 결과:** 운영 PC/공개 API/홈페이지가 **2026-11-23 계산 시각 두 점**을 실제 제공함. UI·Reader 담당 5/5 완료를 유지하며 W06 1D 실데이터 표시 정상. 새 Controller/Writer 설치·게시·DB 변경은 요청/실행하지 않음.
