@@ -15,6 +15,13 @@
 | 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | PARTIAL — WPSFD42 서비스 신규 2행 390px·1440px 실사이트 PASS (#2882); BEA 단위이익 후속 연결 화면 검증 미완료 |
 | 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | NOT_DONE |
 
+## 2026-11-23 BEA API 인증정보 응답 반사 결함 수정 — 최신 보안 정본
+
+- **실제 원인:** [BEA 공식 API 사용자 가이드(2026-04-20)](https://apps.bea.gov/api/_pdf/bea_web_service_api_user_guide.pdf)의 응답 구조에서 `BEAAPI.Request.RequestParam`이 호출 파라미터를 되돌려주며 `USERID` 인증값도 포함될 수 있다. 이전 Draft의 `saveBeaUnitNipaArchive`는 HTTP 응답 JSON 원문을 그대로 `<SHA>.json`에 보관하여 **운영 승인 후 실행되면 API 키가 PC 원자료에 영속 저장될 소스 결함**을 포함했다. 실제 운영 저장/유출은 확인된 적 없으며 기존 실PC #2894의 보관 0건 증거를 유지한다.
+- **수정 방식:** Draft [#1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183)의 동일 모듈 `EARNINGS_BEA_UNIT_NIPA_ARCHIVE_R1.mjs`에 원문 JSON을 메모리에서 검증한 다음 `BEAAPI.Results.Data`만 통계 원본으로 선별하여 영속 저장하도록 수정했다. 요청 객체와 `RequestParam.USERID`는 **절대 파일/metadata에 기록하지 않는다**. 원 HTTP 응답의 바이트 해시 `sourceHttpSha256`와 보관된 통계 JSON 바이트 해시 `sourceVersion`을 **구분**, 저장본 SHA만 보관 원본 readback으로 검증하며 원 HTTP 바이트는 재조회 가능하다고 주장하지 않는다. 저장본에 요청 객체가 다시 포함되면 fail-closed. 원문 보존 설계·증거 표현을 **명시 정정**하며, 이전의 '동일 SHA가 HTTP 원문과 저장본을 함께 식별'한다는 표현은 더 이상 유효하지 않다.
+- 수정 소스 [5215d05a](https://github.com/ansqhd5774-Choi/zgmini/commit/5215d05ace1482a684ebbe0892a55f5890afea08), 회귀 [225656a3](https://github.com/ansqhd5774-Choi/zgmini/commit/225656a389de2cdd403226da3e397ec9fe54d02d). [Node CI #45152323856](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45152323856) Job 137616529295 **completed/SUCCESS**, Regression **5465 PASS / 0 FAIL**, 게시 복구 50 PASS, Cloudflare 읽기 계약 72 PASS. 신규 `BEA echoed USERID is never persisted; HTTP hash differs from sanitized stored hash` PASS.
+- **실제 운영 범위:** 이 개선은 승인되지 않은 BEA 신규 Provider GET이나 PC 원본 저장을 실행하지 않고, 자체 수집기·예약·D1 Writer를 추가하지 않는다. 새 JSON 보관 모듈 및 계산기는 소스 전용 Draft이고, 기존 WPSFD42/QFR 및 설치된 BEA 읽기 Controller는 그대로다. 정확 BEA `T11500/Q` 수집·통계 JSON 저장 효과 승인과 Writer의 `BEA_API_JSON` 출처 계약, 별도 D1 B 게시·Production API/UI 검증이 남아 있다. 공식 **2/5 DONE, 3단계 IN_PROGRESS** 유지.
+
 ## 2026-11-23 BEA 공식 JSON 저장자료 계산·출처 경계 source-only 검증 (최신)
 
 - BEA JSON 불변 원본 모듈 `EARNINGS_BEA_UNIT_NIPA_ARCHIVE_R1.mjs`에 **읽기 전용** `computeBeaUnitNipaStoredPreview({pcBase,sourceSha})`를 추가. 고정 SHA의 원본·metadata를 `readBeaUnitNipaArchive`로 실제 검증한 뒤, 최근 5개 분기의 `currentValue`·`previousValue`·`change`·`history`를 순수 계산한다. 반환값은 `STORED_SOURCE_CALCULATED/BEA_API_JSON`이며 실제 원문 SHA·sourceStoredAt·2026Q2 관측 종료일을 보존한다. 기존 `FRED_CSV` Writer의 READY schema와 공개 API/D1 계약을 위조하거나 변경하지 않는다.
