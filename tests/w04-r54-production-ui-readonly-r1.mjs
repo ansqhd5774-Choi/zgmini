@@ -61,7 +61,7 @@ try{
    const display=employment.score.toFixed(1);
    const orb=hero.locator('.fg-score-slot');
    result.visibleScore=(await orb.innerText()).trim().slice(0,300);
-   assert(result.visibleScore.includes(display),
+   assert(result.visibleScore.replace(/\\s+/g,'').includes(display),
     'visible R54 score must equal current Production score rounded to 1 decimal');
    const header=hero.locator('.fg-header-slot');
    result.visibleDate=(await header.innerText()).trim().slice(0,400);
