@@ -138,7 +138,7 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays,curre
   {latest&&touchedLatestAt===latest.ts&&<div data-testid="w06-touch-tooltip" role="status" aria-live="polite" className="cnn-history-tooltip" style={{position:'absolute',top:0,right:4,zIndex:5,pointerEvents:'none',maxWidth:'calc(100% - 8px)'}}>
    <span>{new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(latest.ts))} (계산 시각)</span>
    <strong style={{color:scoreColor(latest.value)}}>{latest.value.toFixed(1)}</strong>
-   <span>{publishedCompositeMethodLabel(latest,currentPublished??null)?`현재 게시 계산점 · ${publishedCompositeMethodLabel(latest,currentPublished??null)}`:latest.calculatedValue!==null?'실제 계산시각 점 · 당시 방법론 버전 미확인':'현행 산식 재구성 · 당시 실계산점 아님'}</span>
+   <span>{publishedCompositeMethodLabel(latest,currentPublished??null)?`현재 게시 계산점 · ${publishedCompositeMethodLabel(latest,currentPublished??null)}`:(latest as DashboardPoint&{calculatedValue?:number|null}).calculatedValue!=null?'실제 계산시각 점 · 당시 방법론 버전 미확인':'현행 산식 재구성 · 당시 실계산점 아님'}</span>
   </div>}
   {singlePointLabel&&<span role="status" title={singlePointLabel} style={{position:"absolute",top:0,right:6,maxWidth:"90%",fontSize:10,color:"var(--zg-text-meta,#a8bcd0)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>실제 관측점 1개 · {singlePointLabel}</span>}
  </div>;
