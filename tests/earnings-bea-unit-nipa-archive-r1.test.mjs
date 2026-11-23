@@ -97,6 +97,40 @@ test('reject oversized stored files before loading full file into memory',()=>{
   }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
 });
 
+test('BEA echoed USERID is never persisted; HTTP hash differs from sanitized stored hash',()=>{
+  const pcBase=temp();
+  const credential='TEST_ONLY_BEa_API_CREDENTIAL_36CHARS';
+  try{
+    const original={BEAAPI:{
+      Request:{RequestParam:[{ParameterName:'USERID',ParameterValue:credential},
+        {ParameterName:'METHOD',ParameterValue:'GETDATA'}]},
+      Results:{Data:data().BEAAPI.Results.Data}
+    }};
+    const httpBytes=Buffer.from(JSON.stringify(original),'utf8');
+    const httpSha=createHash('sha256').update(httpBytes).digest('hex');
+    const saved=saveBeaUnitNipaArchive({pcBase,rawBytes:httpBytes,sourceStoredAt:AT});
+    assert.equal(saved.status,'SOURCE_STORED_READBACK_VERIFIED');
+    assert.equal(saved.sourceHttpSha256,httpSha);
+    assert.notEqual(saved.sourceVersion,httpSha);
+    const p=beaUnitNipaArchivePaths({pcBase,sourceSha:saved.sourceVersion});
+    const stored=fs.readFileSync(p.raw,'utf8');
+    const meta=fs.readFileSync(p.meta,'utf8');
+    assert.equal(stored.includes(credential),false);
+    assert.equal(meta.includes(credential),false);
+    assert.equal(stored.includes('RequestParam'),false);
+    assert.equal(stored.includes('USERID'),false);
+    const verified=readBeaUnitNipaArchive({pcBase,sourceSha:saved.sourceVersion});
+    assert.equal(verified.sourceHttpSha256,httpSha);
+    assert.equal(verified.preview.sourceVersion,saved.sourceVersion);
+    assert.equal(verified.preview.recent.at(-1).value,0.250);
+    const replay=saveBeaUnitNipaArchive({
+      pcBase,rawBytes:httpBytes,sourceStoredAt:AT+1000});
+    assert.equal(replay.status,'ALREADY_CAPTURED');
+    assert.equal(replay.sourceStoredAt,AT);
+    assert.equal(replay.sourceHttpSha256,httpSha);
+  }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
+});
+
 test('reject invalid BEA source before creating any archive directory',()=>{
   const pcBase=temp();
   try{
