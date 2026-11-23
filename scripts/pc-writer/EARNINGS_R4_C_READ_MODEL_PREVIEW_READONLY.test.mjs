@@ -137,8 +137,8 @@ test('actual service-only child process reads isolated SQLite without changing i
     assert.equal(hashFile(),originalHash,'original stored SQLite bytes remain unchanged');
     const jsonName=stdout.match(/^JSON_CREATED=(.+)$/m)?.[1]?.trim();
     const txtName=stdout.match(/^TXT_CREATED=(.+)$/m)?.[1]?.trim();
-    assert.match(jsonName??'',/^EARNINGS_R4_C_SERVICE_ONLY_READ_MODEL_PREVIEW_RESULT_.*\\.json$/);
-    assert.match(txtName??'',/^EARNINGS_R4_C_SERVICE_ONLY_READ_MODEL_PREVIEW_RESULT_.*\\.txt$/);
+    assert.match(jsonName??'',/^EARNINGS_R4_C_SERVICE_ONLY_READ_MODEL_PREVIEW_RESULT_.*\.json$/);
+    assert.match(txtName??'',/^EARNINGS_R4_C_SERVICE_ONLY_READ_MODEL_PREVIEW_RESULT_.*\.txt$/);
     const payload=JSON.parse(fs.readFileSync(path.join(scripts,jsonName),'utf8'));
     const txt=fs.readFileSync(path.join(scripts,txtName),'utf8');
     assert.equal(payload.status,'READY');
