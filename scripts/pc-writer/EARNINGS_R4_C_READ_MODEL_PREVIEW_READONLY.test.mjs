@@ -343,7 +343,7 @@ test('inconsistent first_seen_at fails; earliest verified first_seen_at is conse
   });
 });
 
-test('a newer incomplete cohort is previewed as partial, not ready',()=>{
+test('a newer incomplete cohort retains verified READY rows while diagnostics flag the gap',()=>{
   withDb({},db=>{
     // Create a genuinely different single-series snapshot after the full cohort.
     const changed=response({sep2026:130});
@@ -364,7 +364,7 @@ test('a newer incomplete cohort is previewed as partial, not ready',()=>{
         'EARNINGS_COMPANION_R3C_BLS_DIRECT_V1',single.rows.length,
         single.rows.at(-1).observationDate,JSON.stringify([single.chunkHash]),single.provenanceJson);
     const {payload,diagnostics}=buildPreview(db,{generatedAt:GENERATED});
-    assert.equal(payload.status,'PARTIAL');
+    assert.equal(payload.status,'READY');
     assert.equal(diagnostics.newerIncomplete,true);
     assert.equal(diagnostics.cohortRetrievedAt,RETRIEVED);
   });
