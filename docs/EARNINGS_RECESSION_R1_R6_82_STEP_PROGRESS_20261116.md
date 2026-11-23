@@ -15,6 +15,13 @@
 | 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | PARTIAL — WPSFD42 서비스 신규 2행 390px·1440px 실사이트 PASS (#2882); BEA 단위이익 후속 연결 화면 검증 미완료 |
 | 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | NOT_DONE |
 
+## 2026-11-23 BEA 공식 JSON 원본 보관 source-only 구현 — 운영 저장 미실행 (최신)
+
+- 앱 기존 [Draft PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183)에서 공유 BEA 수집기가 승인된 공식 API 원문 바이트를 확보한 이후 **가짜 FRED CSV 변환 없이** 불변 JSON과 metadata를 독립 보관·재조회할 수 있는 호출 없는 모듈 `EARNINGS_BEA_UNIT_NIPA_ARCHIVE_R1.mjs` 추가. 별도 폴더 `raw/earnings-bea-unit-nipa-r1/<SHA>.json`·`<SHA>.meta.json`를 sourceSha 원문 바이트로 분리하여 FRED `raw/earnings-bea-unit-profit-r1`과 충돌하지 않음.
+- `saveBeaUnitNipaArchive`는 `inspectBeaUnitNipaRawJson`의 기존 `NIPA/T11500/Q/A463RD/Line7`·단위·관측분기·원문 SHA 검증을 사용. 동일 SHA 보관본은 재조회/최초시각 보존, 오류/부분 보관은 자동 복구·덮어쓰기 없이 중단, 디렉터리 소유권·symlink·파일 크기 제한을 확인. `readBeaUnitNipaArchive`는 metadata/SHA와 기간 재검사. 모든 함수는 **운영 HTTP 수집이나 D1/SQLite 호출 없음**.
+- 소스 [1d8803a7](https://github.com/ansqhd5774-Choi/zgmini/commit/1d8803a7fbb342154392a9187673269051a8e8b9), 테스트 [534f9057](https://github.com/ansqhd5774-Choi/zgmini/commit/534f90571361aa8d74d78a18775d5eee562bee4b), 테스트 수정 [7bd53ff3](https://github.com/ansqhd5774-Choi/zgmini/commit/7bd53ff3c6224339f988bf4d27f21f17e33d252b). 첫 [CI #45150168950](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45150168950)는 새 회귀시험의 길이가 달라지는 변조 fixture 때문에 `METADATA_MISMATCH`가 `SOURCE_MISMATCH` 예상보다 먼저 발생하여 **5461 PASS/1 FAIL**. **정확 실패 시험 fixture만** 같은 길이의 숫자 변조로 변경, 별도 [CI #45150539466](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45150539466) terminal 결과 확인 필요. 안전/무결성 assert 삭제 없음.
+- **운영 경계:** 기존 PC [#2894](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2894)는 기존 **FRED 고정 아카이브** `NOT_STORED`; 이번 새로운 BEA JSON 보관 파일도 PC에 설치/기록되지 않음. 기존 BEA 원본 읽기 Controller 성공은 보존. **승인된 `T11500/Q` source-owner 취득·private 저장 효과와 이후 JSON transport 기반 Writer/공개 B**는 아직 미완료. 공식 5단계 진행 **2/5 DONE, 3단계 IN_PROGRESS** 유지.
+
 ## 2026-11-23 BEA unit B 실행 등록 계약 확인 — 직접 차단 조건 (최신)
 
 - 제어 `main/config/operations.json`은 읽기 전용 `earnings-bea-unit-archive-readonly` **A** 등록만 가진다. 실제 [#2891](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2891) 선택 설치 및 [#2894](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2894) `BEA_UNIT_ARCHIVE_NOT_STORED` 원본 결과는 완료 증거로 유지한다. 이 A 경로를 신규 수집 B로 전용하거나 재실행하지 않는다.
