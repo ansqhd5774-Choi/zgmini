@@ -2,7 +2,7 @@
 
 <!-- W05-ACTIVE-FIVE-STAGE-PLAN-20261121 -->
 
-**현재 2/5단계 완료·3단계 진행 중.** 완료 단계 개수 기준이며 작업량 40%가 아니다. 2단계 WPSFD42 원자료 수집·SQLite readback·실PC RAW/YOY 계산·R4 service source checkpoint 검증 완료. 3단계는 WPSFD42·QFR 게시 완료, BEA 단위이익 미완료. 과거 82단계 수치는 현행 진행률로 사용하지 않는다. 이 상단이 현재 인계 정본이며 아래 과거 기록은 시점별 이력이다.
+**현재 3/5단계 완료·4단계 진행 중.** 완료 조건 3개/5개 기준(실제 작업량 60%를 의미하지 않음). 2단계 WPSFD42 원본·계산 완료, 3단계 기존 WPSFD42/QFR + BEA NIPA 저장본 D1 게시·GET 대조 완료. 4단계는 BEA 값/관측분기 PC·모바일 390/1440 실제 표시 PASS를 확보했으나 최신 #1511 출처 표시의 정확한 Production 배포 SHA·실화면 적용/일부 상세 차트 대조 미확인. 과거 82단계 수치는 현행 진행률로 사용하지 않는다. 이 상단이 현재 인계 정본이며 아래 과거 기록은 시점별 이력이다.
 
 저장소 `ansqhd5774-Choi/zgmini` / 브랜치 `codex/api-site-integration-r1-20261026` / 개편전HEAD `61e2c02eb2bbd4ef967a8506ee78b3324c1331f3`.
 목적·실행 기준: [개편 계획](EARNINGS_RECESSION_R1_R6_82_STEP_EXECUTION_PLAN_20261116.md). 독립 지원 업무: [5개 API–D1 비교](API_SITE_R1_ACTIVE_WORK_PLAN_20261114.md).
@@ -11,9 +11,16 @@
 |---|---|---|---|
 | 1 | 기존 운영 자산·완료 범위·실제 결손 확정 | 설치된 코드/저장 자료/공개 API/실화면의 유효 증거 재사용, source 준비와 운영 효과 구분 | DONE |
 | 2 | 실제 미확보 원자료·저장 계산 마무리 | WPSFD42 기존 B 단회 수집·SQLite 원문/해시 readback 완료. 기존 R3D(기본 3계열) 검증 후 R4 `buildServiceSourcePreview`에서 WPSFD42 별도 2행 저장자료 계산·checkpoint 확인 필요. QFR/BEA 기저장 자료 재수집 금지 | DONE — #2767 SQLite 22행·SHA, #2864 실PC RAW/YOY 2행·sourceVersion/sourceStoredAt PASS, R4 service source checkpoint 버전/시각 #2882 D1 exact-key readback 일치. 별도 로컬 checkpoint 파일은 R4 계약에 없음 |
-| 3 | 저장된 결과의 기존 게시·API 연결 | 적격 BLS 서비스/BEA 단위이익/QFR 등 필요한 각 projection을 기존 Writer로 게시·D1 readback·저장형 GET 대조. 정상 경로는 재게시하지 않음 | IN_PROGRESS — QFR #2768, WPSFD42 #2882 D1 단일키 readback 완료; WPSFD42 실사이트 API·PC/모바일 7/7 PASS. BEA 단위이익 원본·D1 게시 미완료 (#2815) |
-| 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | PARTIAL — WPSFD42 서비스 신규 2행 390px·1440px 실사이트 PASS (#2882); BEA 단위이익 후속 연결 화면 검증 미완료 |
+| 3 | 저장된 결과의 기존 게시·API 연결 | 적격 BLS 서비스/BEA 단위이익/QFR 등 필요한 각 projection을 기존 Writer로 게시·D1 readback·저장형 GET 대조. 정상 경로는 재게시하지 않음 | DONE — QFR #2768, WPSFD42 #2882 유지; BEA JSON #3029 `PUBLICATION_SINGLE_KEY_READBACK_VERIFIED`(D1 1키/Provider GET 0), W06 실제 Production #45206002236 BEA API HTTP 200/PC·모바일 연결 완료 |
+| 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | PARTIAL — WPSFD42 7/7 기존 PASS, BEA 단위이익 390px/1440px 실제 API 200·현재값/관측분기·연결 완료 (#45206002236) PASS. #1511의 출처 링크·고지 `main` 병합/CI PASS, 정확 Production 배포 반영·추가 상세 표시 대조 미확인 |
 | 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | NOT_DONE |
+
+## 2026-11-24 실제 BEA NIPA 게시→Production 종단 증거 (이전 11월 23일 source-only 기록보다 우선)
+
+- 정규 B #3014 소유자 승인 및 정확 새 requestId [#3029](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3029) [결과 JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/publication-pc-publication-b2e4ba50-2c95-4cd4-b0da-84269b88c73c.json)에서 `PASS/PUBLICATION_SINGLE_KEY_READBACK_VERIFIED`, key `detail:earnings-bea-unit-profit:v1`, `d1Writes=1`, `providerCalls=0`, 원본 SHA `ff5a5a3a88cfc2f8758d8cd1369818eff1f9875e6df70e81caef4baf119273c3`. 별도 #3023은 예전 Writer CAS 불일치로 `BLOCKED`/0 D1이며 재실행 없이 `not_planned` 종료. #3029 `completed` 종료. 이전 원장 source-only 미완료 표시는 당시 이력으로만 남긴다.
+- 새 실행 없이 기존 [W06 실제 Production Chromium Run #45206002236](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45206002236) job `137801780955` SUCCESS 로그의 `W06_EARNINGS_PRODUCTION_READBACK`에서 BEA 단위이익 `/api/earnings-recession-bea-unit-profit` **HTTP 200**, UI **연결 완료**(390px 모바일 `2026-11-23T15:33:02Z`, 1440px PC `15:33:20Z`) 확인. 테스트는 실제 표시값·관측분기가 API row에 포함됨을 검증하며 Census QFR도 두 폭 모두 HTTP 200/연결 완료. 이 기록은 2026-11-24 KST 00:33의 관측이며 모든 다음날 결과를 보장하지 않는다.
+- 출처 표시 보완 [앱 PR #1511](https://github.com/ansqhd5774-Choi/zgmini/pull/1511) source `a61e20b0a923984f9ae2e0317dd34d5abce35660` main 병합; 변경 HEAD Node CI #45206002340 5,583 PASS/0 FAIL, 병합 SHA Node CI #45206748532 SUCCESS, SEO Health #45206748741 `/data-sources/` 200. **Cloudflare 정확 Deployment SHA 및 #1511의 Production HTML 출처 링크/비후원 고지 바이트까지는 미확인**. SEO HTTP 200만으로 배포 동일성을 보증하지 않는다.
+- 3단계 완료: 기존 정상 WPSFD42/QFR을 재수집·재게시하지 않았고 BEA 저장형 D1·GET까지 유효 영수증이 연결됐다. **4단계 PARTIAL**, 5단계 NOT_DONE. 남은 현재 필수 확인은 #1511의 실제 Cloudflare Git Integration 배포 식별과 모바일/PC 출처·상세 표시 대조 및 기존 갱신/UNCHANGED 정리뿐이다. #2960 공통 유지보수 복구는 독립 범위로 남긴다.
 
 ## 2026-11-23 BEA 기존 API 인증 → 단회 GET → native 저장·readback 라이브러리 연결 (최신)
 
