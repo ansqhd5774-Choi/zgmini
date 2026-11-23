@@ -34,6 +34,28 @@ test('accept official lowercase dollars and whitespace, without allowing nonzero
   assert.throws(()=>compareBeaUnitNipaToFred({beaResponse:api(withOfficialUnits),fredCsv:fred}),
     /BEA_UNIT_NIPA_UNIT_UNVERIFIED/);
 });
+
+test('native T11500 A463RD Level/0 preserves values and exact FRED equivalence',()=>{
+  const native=rows().map(row=>({...row,CL_UNIT:'Level',UNIT_MULT:'0'}));
+  const before=JSON.stringify(native);
+  assert.equal(compareBeaUnitNipaToFred({beaResponse:api(native),fredCsv:fred}).status,'MATCH');
+  const out=inspectBeaUnitNipaRawJson({
+    rawBytes:Buffer.from(JSON.stringify(api(native))),
+    sourceStoredAt:Date.parse('2026-11-23T00:00:00Z')
+  });
+  assert.deepEqual(out.recent.map(x=>x.value),entries.map(x=>x[1]));
+  assert.equal(JSON.stringify(native),before);
+  assert.equal(out.unit,'USD');
+  const scaled=native.map(row=>({...row,UNIT_MULT:'3'}));
+  assert.throws(()=>compareBeaUnitNipaToFred({beaResponse:api(scaled),fredCsv:fred}),
+    /BEA_UNIT_NIPA_UNIT_UNVERIFIED/);
+  const wrongTable=native.map(row=>({...row,TableName:'T10101'}));
+  assert.throws(()=>compareBeaUnitNipaToFred({beaResponse:api(wrongTable),fredCsv:fred}),
+    /BEA_UNIT_NIPA_TABLE_MISMATCH/);
+  const wrongSeries=native.map(row=>({...row,SeriesCode:'OTHER'}));
+  assert.throws(()=>compareBeaUnitNipaToFred({beaResponse:api(wrongSeries),fredCsv:fred}),
+    /BEA_UNIT_NIPA_SERIES_MISSING/);
+});
 test('reject different observations and periods, never silently substitute values',()=>{
   const changed=rows();changed.at(-1).DataValue='0.249';
   assert.throws(()=>compareBeaUnitNipaToFred({beaResponse:api(changed),fredCsv:fred}),

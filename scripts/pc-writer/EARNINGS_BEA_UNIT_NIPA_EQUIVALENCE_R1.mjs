@@ -26,8 +26,11 @@ export function parseBeaUnitNipaRecentQuarters(beaResponse){
   const points=sourceRows.map(row=>{
     if(row.TableName!=='T11500')
       throw Error('BEA_UNIT_NIPA_TABLE_MISMATCH');
-    // No implicit multiplier or currency conversion is permitted.
-    if(String(row.UNIT_MULT??'').trim()!=='0'||!['usd','dollars'].includes(String(row.CL_UNIT??'').trim().toLowerCase()))
+    // BEA native T11500/A463RD line 7 reports CL_UNIT=Level, UNIT_MULT=0
+    // (PC evidence #2945). Its dollar-per-real-GVA-unit identity is fixed by
+    // this table/series/line, not inferred from a generic "Level" label.
+    // Keep source values unchanged: no multiplier or currency conversion.
+    if(String(row.UNIT_MULT??'').trim()!=='0'||!['usd','dollars','level'].includes(String(row.CL_UNIT??'').trim().toLowerCase()))
       throw Error('BEA_UNIT_NIPA_UNIT_UNVERIFIED');
     const match=QUARTER.exec(String(row.TimePeriod??''));
     if(!match)throw Error('BEA_UNIT_NIPA_QUARTER_INVALID');

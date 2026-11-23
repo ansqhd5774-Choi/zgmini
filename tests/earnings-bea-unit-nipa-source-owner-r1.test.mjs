@@ -110,3 +110,31 @@ test('provider exception never exposes secrets in failure error or writes',async
     assert.equal(fs.existsSync(path.join(pcBase,'raw')),false);
   }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
 });
+
+test('native Level/0 six-row response stores and rereads without scaling or a second GET',async()=>{
+  const pcBase=temp();let hits=0;
+  try{
+    const body=payload();
+    body.BEAAPI.Results.Data=body.BEAAPI.Results.Data.map(row=>({...row,CL_UNIT:'Level'}));
+    body.BEAAPI.Results.Data.unshift({...body.BEAAPI.Results.Data[0],TimePeriod:'2025Q1',DataValue:'0.210'});
+    const saved=await collectBeaUnitNipaSourceOnce({
+      pcBase,providers:{BEA_API_KEY:KEY},now:()=>AT,
+      fetchImpl:async()=>{hits++;return fake(body);}
+    });
+    assert.equal(saved.status,'SOURCE_STORED_READBACK_VERIFIED');
+    assert.equal(saved.providerRequests,1);
+    assert.equal(hits,1);
+    const files=beaUnitNipaArchivePaths({pcBase,sourceSha:saved.sourceVersion});
+    const stored=JSON.parse(fs.readFileSync(files.raw,'utf8'));
+    assert.equal(stored.BEAAPI.Results.Data.length,6);
+    assert.equal(stored.BEAAPI.Results.Data.at(-1).DataValue,'0.250');
+    assert.equal(stored.BEAAPI.Results.Data.at(-1).CL_UNIT,'Level');
+    assert.equal(stored.BEAAPI.Results.Data.at(-1).UNIT_MULT,'0');
+    const preview=computeBeaUnitNipaStoredPreview({pcBase,sourceSha:saved.sourceVersion});
+    assert.equal(preview.currentValue,0.25);
+    await collectBeaUnitNipaSourceOnce({pcBase,sourceSha:saved.sourceVersion,
+      fetchImpl:()=>{throw Error('SECOND_GET_FORBIDDEN');}});
+    assert.equal(hits,1);
+    assert.equal(fs.readFileSync(files.raw,'utf8').includes(KEY),false);
+  }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
+});
