@@ -362,3 +362,11 @@
 
 - 공개 `/api/inflation-candidate-inputs` 현재 응답 `READY/HTTP200`, ID 2·16·22·23·24·28·29의 **7/7** 상태 READY, 각각의 `value`·`observationDate`를 기존 D1 [Run 45015985293](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/45015985293-1-seat-3.json) 결과와 직접 대조하여 **7/7 동치** 확인. sourceVersion/sourceStoredAt 역시 동일.
 - 위험 R2 UI `/inflation/` live HTML의 게이지 `aria-label="58.0점 중립"` 확인: 실제 API의 57.970054 점수 반올림과 일치하는 대상값이 컴포넌트에 전달됨. 다만 같은 headless 추출에서 애니메이션 숫자 텍스트 `0.0`이 관측되며, 장치에서 최종 프레임이 58.0으로 도달하는지 시각 검증은 미확인. 소스 애니메이션 시작값 0과 실제 점수 0을 혼동하지 않음.
+
+## W01 위험 R2 게이지/차트 실제 최종 렌더 검증 제한 2026-11-23
+
+- `https://zgmini.kr/inflation/` PC 1440×900 / 모바일 390×844 live headless screenshot·HTML 조회: HTTP 200, **hero `aria-label="58.0점 중립"`** 양쪽 모두 확인. 해당 목표점수는 별도 R2 API `57.97005405261128` 반올림과 일치. 점수 원본·전달 오류는 입증되지 않음.
+- 같은 headless 렌더 HTML에서 `cnn-score-whole=0`, fraction `.0`, gauge marker left `0%`, Recharts responsive container 내부 `width:0px;height:0px` 확인. 이는 애니메이션 첫 프레임 및 headless viewport 측정 제한 가능성과 실제 브라우저 최종 표시 불량 가능성을 구분하지 못함. **실제 사용자 브라우저 게이지 58.0 최종 표시·차트 정상 렌더 PASS를 주장하지 않음.** 5초 대기 이후도 headless HTML은 같은 상태. Firecrawl live browser interactive measurement는 도구 호출 timeout, Browser Use는 크레딧 부족(재시도·과금/충전 없음). 안전 검사 우회·가짜 PASS·무검증 디자인 변경 없음.
+- 소스 `app/market-score-orb.tsx`의 hero `startFromZero=true`, RAF `duration=950ms` 확인. `app/inflation/inflation-panel.tsx`는 `/api/inflation-detail`의 `score.toFixed(1)`을 hero에 직접 전달하고 `inflationR2VisibleTrend`로 저장 점만 차트에 매핑; 기존 `tests/w01-inflation-r2-current-asof-trend-r1.test.mjs`는 해당 평가일·마지막 점 계약을 회귀 검증하도록 구성됨. 현재 관측만으로 원인 코드 결함이라고 확정하지 않음.
+- 최신 별도 B 설치 [#2781](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2781#issuecomment-7088851495): actual Controller `523fb6ec8138311977c24eb5a352c3175fbf2354`, 성공/보호 불변. W01 D1 단회 [#2786](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2786#issuecomment-7088907211)는 **바로 그 실행 SHA 523fb6ec…에서 PASS**하므로 W01 로컬↔D1 증거 유효. 뒤따르는 다른 담당자의 B [#2788](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2788)은 조회 당시 승인 manifest/claim 통과·실행 준비였고 미완료; W01 전역 BLOCKER로 취급하지 않음.
+- 남은 실제 필수 증명: 실제 인터랙티브 PC·모바일 브라우저에서 애니메이션 후 hero 58.0, 차트 12점/마지막 2026-11-23 / 57.970054 및 툴팁 확인; 동작 불량일 때만 렌더의 실제 원인을 최소 수정. 운영 전체 자동 수집→Writer→D1→UI 연결의 실제 실행 인계 체크포인트도 상호 대조. 현 상태 1·3 DONE, 2·4 진행, 5 미완료 유지.
