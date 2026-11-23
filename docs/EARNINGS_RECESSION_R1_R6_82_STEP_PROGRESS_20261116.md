@@ -15,6 +15,13 @@
 | 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | PARTIAL — WPSFD42 서비스 신규 2행 390px·1440px 실사이트 PASS (#2882); BEA 단위이익 후속 연결 화면 검증 미완료 |
 | 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | NOT_DONE |
 
+## 2026-11-23 BEA unit 기존 수집 경로·권리 대조 — 승인 효과 범위 (최신)
+
+- 앱 `main`의 `scripts/pc-writer/consumption-r5.mjs`에는 공식 BEA `https://apps.bea.gov/api/data`의 `GetData` 호출 및 기존 로컬 `BEA_API_KEY` 설정 재사용이 구현되어 있다. **하지만 실제 등록된 대상은 월간 `NIPA/T20600` 및 `NIUnderlyingDetail/U20306`이고, unit profit의 분기별 `NIPA/T11500`(`A463RD`, `LineNumber=7`)은 기존 그 수집 호출에 없다.** 별도 유효 사용자 승인 없이 이 수집기의 Dataset·Table·Frequency를 변경하거나 호출하지 않는다.
+- [Draft PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183)의 `EARNINGS_BEA_UNIT_NIPA_EQUIVALENCE_R1.mjs`는 `T11500/Q/A463RD/LineNumber=7` 공식 API 응답과 FRED CSV의 5분기·단위·값을 **오프라인** 대조하는 순수 도구이며 실제 BEA 응답 수집 영수증이 아니다. `main`에 남은 `EARNINGS_BEA_UNIT_PROFIT_R1_ONCE.mjs`는 실행 시 FRED CSV를 직접 재호출하는 구버전이므로 **운영 게시에 사용하지 않는다**. 기존 저장형 PR의 fetch-free 게시기로 정확 선택 통합하고 승인된 로컬 원본 SHA가 존재할 때만 후속 게시한다.
+- 공식 권리 자료: [BEA 재사용 FAQ](https://www.bea.gov/help/faq/147)는 명시적 예외가 없는 BEA 사이트 데이터의 public domain 재사용을 설명한다. [FRED unit series](https://fred.stlouisfed.org/series/A463RD3Q052SBEA)는 이 계열을 `Public Domain: Citation Requested`로 표시하고 BEA를 원출처로 밝히지만, [FRED 서비스 약관](https://fred.stlouisfed.org/legal/)에는 별도 API 캐싱·아카이빙·상업 재배포 제한이 있다. **BEA 원자료 자체의 이용 권리와 FRED 경유 다운로드/저장 권리를 동일하게 취급하지 않는다.** 구체적인 BEA 공식 API 수집·저장과 사용 목적의 기존 승인 여부를 별도 대조한다.
+- **NEXT/현재 직접 의존성:** 이미 증명된 `BEA_UNIT_ARCHIVE_NOT_STORED`는 재조회하지 않는다. 기존 BEA 공유 인증·수집기 구조와 공통 저장·readback 기능을 우선 재사용하되 **`T11500/Q` 정확 1회 신규 취득·비공개 원본 아카이브 저장 효과 승인**이 없는 현 상태에서는 Provider GET·원자료 쓰기 금지. 검증된 수집 영수증·SHA 확보 후 별도 D1 B 게시 승인/공개 readback으로 진행. WPSFD42/QFR 성과 불변.
+
 ## 2026-11-23 BEA unit 실PC 검증 — Controller 설치 DONE / 원본 archive NOT_STORED (최신 정본)
 
 - **실PC 선택 설치 및 사후검사 완료:** 제어 [정규 유지보수 #2891](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2891) 고유 requestId `pc-update-946c599c-6c01-4654-82aa-bdc102fe3423`, [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/maintenance-pc-update-946c599c-6c01-4654-82aa-bdc102fe3423.json)·TXT 모두 `SUCCEEDED/APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED`, target=actual `156a364647009327ce0f0c15fe3a6fc8c4fbd98a`, protected unchanged/Workflow enabled. [A 사후검사 #2893](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2893) [Run 45146295223](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45146295223) `PASS/CORE_READONLY_DIAGNOSIS`, 동일 Controller SHA·보호 불변. 기존 설치 요청 재실행 금지.
