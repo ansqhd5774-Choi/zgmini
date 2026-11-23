@@ -34,7 +34,7 @@ function checkArchivePath(files,{create=false}={}){
       throw Error('BEA_UNIT_STORED_PATH_UNSAFE');
   }
 }
-function checkExistingFile(file){
+function checkExistingFile(file,maxBytes){
   let entry;
   try{entry=fs.lstatSync(file);}
   catch(error){
@@ -43,6 +43,9 @@ function checkExistingFile(file){
   }
   if(entry.isSymbolicLink()||!entry.isFile())
     throw Error('BEA_UNIT_STORED_PATH_UNSAFE');
+  // Reject oversized disk files before readFileSync allocates their full contents.
+  if(!Number.isSafeInteger(entry.size)||entry.size>maxBytes)
+    throw Error('BEA_UNIT_STORED_SOURCE_TOO_LARGE');
 }
 
 export function beaUnitRawPaths({pcBase,sourceSha}={}){
@@ -57,8 +60,8 @@ export function readBeaUnitArchivedSource({pcBase,sourceSha}={}){
   const files=beaUnitRawPaths({pcBase,sourceSha});
   checkArchivePath(files);
   // lstat sees dangling links, unlike existsSync which follows and hides them.
-  checkExistingFile(files.csv);
-  checkExistingFile(files.meta);
+  checkExistingFile(files.csv,100_000);
+  checkExistingFile(files.meta,10_000);
   const bytes=fs.readFileSync(files.csv);
   if(bytes.length<20||bytes.length>100_000||digest(bytes)!==sourceSha)
     throw Error('BEA_UNIT_STORED_SOURCE_HASH_MISMATCH');
