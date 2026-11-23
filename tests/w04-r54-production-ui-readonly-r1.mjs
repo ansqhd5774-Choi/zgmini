@@ -102,7 +102,15 @@ try{
    result.hoverSamples=[];
    if(viewport.width===390){
     await page.touchscreen.tap(center.x,center.y);
-    await page.waitForTimeout(300);
+    const mobileTip=hero.getByTestId('w04-r54-latest-touch-tooltip');
+    await mobileTip.waitFor({state:'visible',timeout:5000});
+    result.tooltipText=await mobileTip.innerText();
+    assert(result.tooltipText.includes(display),
+     'real mobile touch must display latest published R54 score');
+    const [year,month,day]=body.asOfDate.split('-');
+    assert(result.tooltipText.includes(year)&&result.tooltipText.includes(String(Number(month)))&&
+     result.tooltipText.includes(String(Number(day))),
+     'real mobile touch must display latest published evaluation date');
     result.hoverSamples.push(await inspect(center.x,center.y));
    }else{
     // ReferenceDot is not necessarily the AreaChart pointer receiver.
