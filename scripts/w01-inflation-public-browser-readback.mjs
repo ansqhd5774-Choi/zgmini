@@ -39,7 +39,7 @@ function send(method,params={}){
 }
 async function evaluate(expression){
  const r=await send('Runtime.evaluate',{expression,returnByValue:true});
- if(r.exceptionDetails)throw Error('W01_BROWSER_EVALUATION_EXCEPTION');
+ if(r.exceptionDetails)throw Error('W01_BROWSER_EVALUATION_EXCEPTION:'+String(r.exceptionDetails.exception?.description??r.exceptionDetails.text??'UNKNOWN').slice(0,220));
  return r.result?.value;
 }
 async function state(){
@@ -60,17 +60,20 @@ async function state(){
   r2ChartLatestDot:!!hero?.querySelector('.cnn-latest-point'),
   r2CorrectScore:hero?.textContent?.includes('58.0')??false,
   r2DateTextCorrect:/2026[^0-9]+11[^0-9]+23/.test(hero?.textContent??''),
-  horizontalOverflow:document.documentElement.scrollWidth>innerWidth+1};})()`);
+  horizontalOverflow:(document.documentElement?.scrollWidth??0)>innerWidth+1};})()`);
 }
 async function visit(url){
  await send('Page.navigate',{url});
+ let lastEvaluationError='NONE';
  for(let i=0;i<65;i++){
-  const s=await state();
+  let s;
+  try{s=await state();}
+  catch(error){lastEvaluationError=String(error.message||error);await sleep(400);continue;}
   if(url===origin+'/economic-indicators/inflation/'&&s.path==='/economic-indicators/inflation/'&&s.raw19===19&&s.raw7===7)return s;
   if(url===origin+'/inflation/'&&s.path==='/inflation/'&&s.r2Hero==='ready'&&s.r2ChartLatestDot)return s;
   await sleep(400);
  }
- throw Error('W01_PUBLIC_JS_LOADING_TIMEOUT:'+url);
+ throw Error('W01_PUBLIC_JS_LOADING_TIMEOUT:'+url+':'+lastEvaluationError);
 }
 async function screenshot(name){
  const r=await send('Page.captureScreenshot',{format:'png',captureBeyondViewport:false});
