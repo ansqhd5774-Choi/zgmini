@@ -26,8 +26,14 @@ export function parseBeaUnitNipaRecentQuarters(beaResponse){
   const points=sourceRows.map(row=>{
     if(row.TableName!=='T11500')
       throw Error('BEA_UNIT_NIPA_TABLE_MISMATCH');
-    // No implicit multiplier or currency conversion is permitted.
-    if(String(row.UNIT_MULT??'').trim()!=='0'||!['usd','dollars'].includes(String(row.CL_UNIT??'').trim().toLowerCase()))
+    // Modern BEA NIPA uses CL_UNIT=Level for the calculation type, not
+    // the currency. The *fixed* T11500/A463RD/line 7 observation is
+    // denominated in dollars per real-GVA unit (BEA/FRED series identity).
+    // Accept Level only for this exact series; never convert the value or
+    // accept an unknown multiplier, index, percent-change or rate class.
+    const calculationType=String(row.CL_UNIT??'').trim().toLowerCase();
+    if(String(row.UNIT_MULT??'').trim()!=='0'||
+       !['level','usd','dollars'].includes(calculationType))
       throw Error('BEA_UNIT_NIPA_UNIT_UNVERIFIED');
     const match=QUARTER.exec(String(row.TimePeriod??''));
     if(!match)throw Error('BEA_UNIT_NIPA_QUARTER_INVALID');
