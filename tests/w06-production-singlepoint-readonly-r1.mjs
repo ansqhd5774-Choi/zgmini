@@ -158,11 +158,45 @@ try{
        const text=await earnings.locator('body').innerText();
        assert(text.includes(value),item.name+' published value/unit absent: '+value);
        assert(text.includes(String(period)),item.name+' published period absent');
+       if(item.kind==='unit'&&row.transport==='BEA_API_JSON'){
+        assert.equal(row.seriesId,'A463RD','native BEA series identity');
+        assert.equal(row.sourceURL,'https://apps.bea.gov/api/data','native BEA URL');
+        assert.match(payload.sourceVersion,/^[a-f0-9]{64}$/,'public source version');
+        const indicator=earnings.locator(viewport.width===390
+         ?'article.earnings-r2-mobile-card[data-source="bea-unit-profit"]'
+         :'tr.earnings-r2-cost-row[data-source="bea-unit-profit"]');
+        const infoButton=indicator.getByRole('button',{name:'비금융기업 단위이익 도움말'});
+        if(viewport.width===390)await infoButton.tap();
+        else await infoButton.click();
+        const sourceLink=earnings.getByRole('tooltip')
+         .getByRole('link',{name:'BEA 공식 API 원자료'});
+        await sourceLink.waitFor({state:'visible',timeout:12000});
+        assert.equal(await sourceLink.getAttribute('href'),row.sourceURL,
+         'deployed PC/mobile source link must match actual native BEA payload');
+        console.log('W05_BEA_NATIVE_PRODUCTION_SOURCE '+JSON.stringify({
+         width:viewport.width,sourceVersion:payload.sourceVersion,
+         sourceURL:row.sourceURL,sourceLabel:await sourceLink.innerText(),
+         observedPeriod:period,value:row.value}));
+        await earnings.keyboard.press('Escape');
+       }
       }
      }
      console.log('W06_EARNINGS_PRODUCTION_READBACK '+JSON.stringify({width:viewport.width,name:item.name,http,reason,uiStatus:label}));
     }
     await earnings.screenshot({path:'artifacts/w06-production-readonly/earnings-'+viewport.width+'.png',fullPage:false});
+    // Verify the already merged BEA API attribution on the actual public page.
+    const sources=await context.newPage();
+    try{
+     const sourcePage=await sources.goto(base+'/data-sources/',{
+      waitUntil:'domcontentloaded',timeout:60000});
+     assert.equal(sourcePage?.status(),200,'production data sources page');
+     const notice=sources.getByText('This product uses the Bureau of Economic Analysis (BEA) Data API but is not endorsed or certified by BEA.',{exact:false});
+     await notice.waitFor({state:'visible',timeout:15000});
+     assert.equal(await sources.getByRole('link',{name:'BEA Data API Terms of Use'}).getAttribute('href'),
+      'https://apps.bea.gov/api/_pdf/bea_api_tos.pdf');
+     console.log('W05_BEA_NATIVE_NOTICE_PRODUCTION '+JSON.stringify({
+      width:viewport.width,noticePresent:true,termsURL:'https://apps.bea.gov/api/_pdf/bea_api_tos.pdf'}));
+    }finally{await sources.close();}
    }finally{await earnings.close();}
    assert.deepEqual(errors,[],'no page errors at '+viewport.width);
   }finally{await context.close();}
