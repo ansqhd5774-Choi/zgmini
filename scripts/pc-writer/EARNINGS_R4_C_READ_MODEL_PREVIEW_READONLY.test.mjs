@@ -103,6 +103,34 @@ test('separate service D1 checkpoint uses service first_seen and never modifies 
     /R4_SERVICE_SOURCE_NOT_STORED/));
 });
 
+test('service-only saved WPSFD42 remains calculable when base BLS cohort is absent',()=>{
+  withServiceDb({},db=>{
+    db.prepare("DELETE FROM api_history_snapshots_v1 WHERE provider='BLS' AND dataset IN ('WPSFD4','WPSFD41','PRS85006111')").run();
+    assert.throws(()=>buildPreview(db,{generatedAt:GENERATED}),
+      /BLS_DIRECT_SNAPSHOTS_MISSING/);
+    const {payload,diagnostics}=buildServiceSourcePreview(db,{generatedAt:GENERATED});
+    assert.equal(payload.status,'READY');
+    assert.deepEqual(payload.rows.map(row=>row.seriesId),['WPSFD42','WPSFD42']);
+    assert.equal(payload.rows[0].value,100*(157.666/150.273-1));
+    assert.equal(payload.rows[1].value,157.666);
+    assert.equal(diagnostics.r3dStatus,'NOT_APPLICABLE_INDEPENDENT_SERVICE');
+    assert.equal(diagnostics.snapshotsChecked,1);
+    assert.equal(validateEarningsCompanionPayload(payload,{now:Date.parse(GENERATED)}),payload);
+  });
+});
+
+test('service-only preview ignores corrupted unrelated baseline lineage',()=>{
+  withServiceDb({},db=>{
+    db.prepare("UPDATE api_history_snapshots_v1 SET provenance_json='{}' WHERE provider='BLS' AND dataset='WPSFD4'").run();
+    assert.throws(()=>buildPreview(db,{generatedAt:GENERATED}),
+      /BLS_SOURCE_PROVENANCE_INVALID/);
+    const {payload}=buildServiceSourcePreview(db,{generatedAt:GENERATED});
+    assert.equal(payload.status,'READY');
+    assert.equal(payload.rows.length,2);
+    assert.equal(payload.observedThroughBySeries.WPSFD42,'2026-09');
+  });
+});
+
 test('optional WPSFD42 adds two verified service indicators without changing five existing rows',()=>{
   const baseline=(()=>{const db=seeded();try{return buildPreview(db,{generatedAt:GENERATED}).payload;}finally{db.close();}})();
   withServiceDb({},db=>{
