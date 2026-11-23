@@ -94,8 +94,8 @@ test('approved production scorer uses the existing Reader/output and callback on
  const source=readFileSync(new URL('../scripts/pc-writer/market.mjs',import.meta.url),'utf8');
  assert.match(source,/const merged=mergeEarningsProductionCandidate\(riskInput,candidate\)/);
  assert.match(source,/mergedInputs:merged/);
- assert.match(source,/collectBreadthDomain:\(\)=>\{/);
- assert.match(source,/const selected=paidCompositeBreadthDomain\(base,now\)/);
+ assert.match(source,/collectBreadthDomain:\(\)=>paidCompositeBreadthDomain\(base,now\)/);
+ assert.match(source,/const selected=approvedPaidCompositeBreadthDomain\(b,at\)/);
  assert.match(source,/return selected;/);
  assert.match(source,/independentEvidence:correlateD05IndependentInputs/);
  assert.match(source,/provider_NETWORK_FORBIDDEN|PROVIDER_NETWORK_FORBIDDEN/);
