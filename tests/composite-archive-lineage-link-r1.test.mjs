@@ -124,3 +124,16 @@ test('read errors and missing DB reader are safe, never retried or written',asyn
  const {read:read2}=fixture();
  assert.equal((await read2({db:null})).code,'ARCHIVE_READER_UNAVAILABLE');
 });
+
+test('published paid breadth source contract cannot be misattributed to a different stored event',async()=>{
+ const contract='CM_R1_PAID_BREADTH_RESTORED_R1';
+ const sourceSha='a'.repeat(64);
+ for(const point of [
+  {...sample,publicSourceContract:contract,breadthSourceVersion:sourceSha},
+  {...sample,publicSourceContract:contract},
+  {...sample,breadthSourceVersion:sourceSha},
+ ]){
+  const {read}=fixture({archive:{points:[point]}});
+  assert.equal((await read()).code,'ARCHIVE_SAMPLE_MISMATCH');
+ }
+});
