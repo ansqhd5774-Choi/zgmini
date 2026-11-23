@@ -21,6 +21,10 @@ const now=new Date().toISOString();
 const stamp=now.replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z').replace('T','-');
 const args=process.argv.slice(2);
 const apply=args.includes('--apply');
+const serviceSourcePin=Object.freeze({
+  version:process.env.ZGMINI_EARNINGS_SERVICE_SOURCE_VERSION,
+  storedAt:process.env.ZGMINI_EARNINGS_SERVICE_SOURCE_STORED_AT,
+});
 const lines=['EARNINGS_BLS_SERVICE_R1_D1_ONCE',`UTC=${now}`,
   `MODE=${apply?'APPLY_EXPLICIT':'READ_ONLY_PREFLIGHT'}`,
   `SNAPSHOT_KEY=${EARNINGS_C_SERVICE_SNAPSHOT_KEY}`,
@@ -41,6 +45,10 @@ try {
     throw Error('EARNINGS_C_SERVICE_INVALID_ARGUMENT');
   if(apply&&!args.includes('--confirm-earnings-c-service-d1-write'))
     throw Error('EARNINGS_C_SERVICE_APPLY_CONFIRMATION_REQUIRED');
+  if(apply&&(!/^[a-f0-9]{64}$/.test(serviceSourcePin.version??'')
+    ||!/^[1-9][0-9]*$/.test(serviceSourcePin.storedAt??'')
+    ||!Number.isSafeInteger(Number(serviceSourcePin.storedAt))))
+    throw Error('EARNINGS_C_SERVICE_APPLY_PIN_REQUIRED');
   if(!operationalRoot||!fs.existsSync(operationalRoot))
     throw Error('EARNINGS_C_APPROVED_OPERATIONAL_ROOT_REQUIRED');
   const config=JSON.parse(fs.readFileSync(path.join(base,'config.json'),'utf8'));
@@ -72,7 +80,15 @@ try {
     `SOURCE_STORED_AT=${payload.sourceStoredAt}`,
     `WPSFD42_VERIFIED_SNAPSHOTS=${diagnostics.snapshotsChecked}`,
     `ROW_COUNT=${payload.rows.length}`,`FRESH_READY_ROWS=${fresh}`);
-  if(fresh===0)throw Error('EARNINGS_C_SERVICE_NO_FRESH_ROWS');
+  if(fresh!==2)throw Error('EARNINGS_C_SERVICE_PAIR_NOT_FRESH');
+  if(apply){
+    if(payload.sourceVersion!==serviceSourcePin.version
+      ||String(payload.sourceStoredAt)!==serviceSourcePin.storedAt){
+      lines.push('D1_QUERIES=0','D1_WRITES=0');
+      throw Error('EARNINGS_C_SERVICE_SOURCE_DRIFT');
+    }
+    lines.push('PREFLIGHT_SOURCE_PIN=VERIFIED');
+  }
 
   if(!apply){
     lines.push('D1_QUERIES=0','D1_WRITES=0',
@@ -100,7 +116,7 @@ try {
   exitCode=1;
 }finally{
   try{db?.close();}catch{}
-  lines.push('PC_SQLITE_WRITES=0','EXISTING_C_CHECKPOINT_WRITES=0',
+  lines.push('SOURCE_HTTP_REQUESTS=0','PC_SQLITE_WRITES=0','EXISTING_C_CHECKPOINT_WRITES=0',
     'SCHEDULER_CHANGED=NO','WORKER_DEPLOYED=NO');
   try{
     const file=path.join(resultDirectory,`EARNINGS_BLS_SERVICE_R1_D1_RESULT_${stamp}.txt`);
