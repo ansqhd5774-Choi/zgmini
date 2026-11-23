@@ -34,6 +34,28 @@ test('accept official lowercase dollars and whitespace, without allowing nonzero
   assert.throws(()=>compareBeaUnitNipaToFred({beaResponse:api(withOfficialUnits),fredCsv:fred}),
     /BEA_UNIT_NIPA_UNIT_UNVERIFIED/);
 });
+test('modern BEA NIPA Level calculation class is valid only for exact USD series with multiplier zero',()=>{
+  // CL_UNIT is a BEA calculation type, not its display currency.
+  // The fixed source identity T11500/A463RD/Line7 has the USD-per-unit
+  // definition independently verified against FRED.
+  const modern=rows().map(row=>({...row,
+    METRIC_NAME:'Dollars per Unit',CL_UNIT:'Level',UNIT_MULT:'0'}));
+  const validated=inspectBeaUnitNipaRawJson({
+    rawBytes:Buffer.from(JSON.stringify(api(modern))),
+    sourceStoredAt:Date.parse('2026-11-23T00:00:00Z')});
+  assert.equal(validated.status,'SOURCE_ONLY_VALIDATED');
+  assert.equal(validated.observedThrough,'2026-06-30');
+  assert.equal(compareBeaUnitNipaToFred({
+    beaResponse:api(modern),fredCsv:fred}).status,'MATCH');
+  for(const changed of [
+    modern.map((row,i)=>i===0?{...row,CL_UNIT:'Percent change, annual rate'}:row),
+    modern.map((row,i)=>i===0?{...row,UNIT_MULT:'3'}:row),
+    modern.map((row,i)=>i===0?{...row,TableName:'T10101'}:row)
+  ])assert.throws(()=>compareBeaUnitNipaToFred({
+    beaResponse:api(changed),fredCsv:fred}),
+    /BEA_UNIT_NIPA_(?:UNIT_UNVERIFIED|TABLE_MISMATCH)/);
+});
+
 test('reject different observations and periods, never silently substitute values',()=>{
   const changed=rows();changed.at(-1).DataValue='0.249';
   assert.throws(()=>compareBeaUnitNipaToFred({beaResponse:api(changed),fredCsv:fred}),
