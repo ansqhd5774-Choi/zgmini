@@ -47,9 +47,13 @@ try{
    await chart.locator('svg.recharts-surface').waitFor({state:'visible',timeout:20000});
    const dot=chart.locator('.recharts-reference-dot circle').first();
    await dot.waitFor({state:'visible',timeout:15000});
+   await dot.evaluate(el=>el.scrollIntoView({block:'center',inline:'nearest'}));
+   await page.waitForTimeout(200);
    const bounds=await dot.boundingBox();
    assert(bounds,'latest actual chart point geometry');
    const center={x:bounds.x+bounds.width/2,y:bounds.y+bounds.height/2};
+   const topHit=await page.evaluate(({x,y})=>{const el=document.elementFromPoint(x,y);return {tag:el?.tagName??null,cls:el?.getAttribute('class')??null,aria:el?.getAttribute('aria-label')??null};},center);
+   console.log('W06_LOCAL_TARGET_HIT '+JSON.stringify({width,center,topHit}));
    if(width===390)await page.touchscreen.tap(center.x,center.y);
    else{
     await page.mouse.move(center.x-12,center.y);
