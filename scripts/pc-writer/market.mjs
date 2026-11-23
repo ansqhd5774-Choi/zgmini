@@ -11,6 +11,7 @@ import {mergeEarningsProductionCandidate} from '../../lib/market-score/earnings-
 import {runEarningsR5ProductionCycle} from './earnings-r5-production-cycle-r1.mjs';
 import {readStoredEarningsRiskFourFactor} from '../../lib/market-score/earnings-recession-stored-r4-pc-r1.mjs';
 import {candidate2dbImportBoundary} from '../candidate-2db-import-boundary.mjs';
+import {observeD05EarningsR5Selection,observeD05PaidBreadthSelection,correlateD05IndependentInputs} from '../../lib/score-history/d05-independent-input-selector-witness-r1.mjs';
 
 function preserveEarningsDiagnosticCompatibility(candidate,current){
  if(candidate?.methodologyVersion!=="E1-R5"||current?.methodologyVersion!=="E1-R4")return candidate;
@@ -36,7 +37,8 @@ export async function calculateMarket(root,db,now,{onInputEvidence}={}){
  const code=resolve(fs.readFileSync(file,'utf8').replace('"../lib/market-score/credit-r2.mjs"',JSON.stringify(creditUrl)),file);
  const {createMarketScoreR1Handler}=await import('data:text/javascript;base64,'+Buffer.from(code).toString('base64'));
  const store=marketOperationalStore(db),base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
- let inputEvidence=null;
+ let inputEvidence=null,earningsCandidate=null,earningsWitness=null,breadthSelected=null,breadthWitness=null;
+ let earningsSelectionCount=0,breadthSelectionCount=0;
  const collectInputs=async()=>{
   const observed=typeof onInputEvidence==='function'
    ?await observeStoredMarketInputs({reader:readStoredMarketInputs,store,db,decode:decodeStoredBatch,now})
@@ -58,10 +60,29 @@ export async function calculateMarket(root,db,now,{onInputEvidence}={}){
   try{
    const result=await runEarningsR5ProductionCycle({base,now:new Date(now).toISOString()});
    const candidate=preserveEarningsDiagnosticCompatibility(result?.candidate,current);
-   return mergeEarningsProductionCandidate(riskInput,candidate);
+   const merged=mergeEarningsProductionCandidate(riskInput,candidate);
+   if(typeof onInputEvidence==='function'){
+    earningsSelectionCount++;
+    if(earningsSelectionCount===1){
+     earningsCandidate=candidate;
+     earningsWitness=observeD05EarningsR5Selection({
+      candidate,report:result?.report,mergedInputs:merged});
+    }else{earningsCandidate=null;earningsWitness=null;}
+   }
+   return merged;
   }catch{return riskInput;}
  };
- const handler=createMarketScoreR1Handler({env:{DB:db},fetchImpl:async()=>{throw Error('PROVIDER_NETWORK_FORBIDDEN')},collectInputs,orchestrate:buildStoredDiagnostic,collectBreadthDomain:()=>paidCompositeBreadthDomain(base,now),now:()=>new Date(now)});
+ const handler=createMarketScoreR1Handler({env:{DB:db},fetchImpl:async()=>{throw Error('PROVIDER_NETWORK_FORBIDDEN')},collectInputs,orchestrate:buildStoredDiagnostic,collectBreadthDomain:()=>{
+  const selected=paidCompositeBreadthDomain(base,now);
+  if(typeof onInputEvidence==='function'){
+   breadthSelectionCount++;
+   if(breadthSelectionCount===1){
+    breadthSelected=selected;
+    breadthWitness=observeD05PaidBreadthSelection(selected);
+   }else{breadthSelected=null;breadthWitness=null;}
+  }
+  return selected;
+ },now:()=>new Date(now)});
  const response=await handler(new Request('https://zgmini.kr/api/market-score'));
  const body=await response.json();
  if(!response.ok||body.status!=='SUCCESS'||body.domains?.length!==12)throw Error('SCORE_CONTRACT_FAILED');
@@ -71,7 +92,9 @@ export async function calculateMarket(root,db,now,{onInputEvidence}={}){
   // Seven market batches cannot prove separate SEC/E1-R5/Breadth inputs.
   try{await onInputEvidence({calculatedAt:new Date(now).toISOString(),
    asOfDate:body.asOfDate??null,score:body.overall?.score??null,
-   evidence:inputEvidence??{status:'UNPROVEN_NO_READER_OBSERVATION'}});}catch{}
+   evidence:inputEvidence??{status:'UNPROVEN_NO_READER_OBSERVATION'},
+   independentEvidence:correlateD05IndependentInputs({
+    earningsWitness,breadthWitness,earningsCandidate,breadthSelected,marketBody:body})});}catch{}
  }
  return body;
 }
