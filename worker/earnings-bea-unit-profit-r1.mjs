@@ -5,6 +5,9 @@ export const BEA_UNIT_SNAPSHOT_KEY='detail:earnings-bea-unit-profit:v1';
 export const BEA_UNIT_SCHEMA='earnings-bea-unit-profit-r1-v1';
 const SERIES='A463RD3Q052SBEA';
 const PAGE=`https://fred.stlouisfed.org/series/${SERIES}`;
+// Official BEA NIPA JSON is a distinct provenance, never a FRED_CSV alias.
+const NIPA_SERIES='A463RD';
+const NIPA_PAGE='https://apps.bea.gov/api/data';
 const DAY=86_400_000,MAX_AGE=165*DAY;
 const finite=value=>typeof value==='number'&&Number.isFinite(value);
 const object=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
@@ -31,7 +34,8 @@ export function validateBeaUnitProfit(payload,{now=Date.now()}={}){
  if(!keys(i,['id','source','seriesId','sourceURL','transport','unit','observationPeriodEnd',
  'previousPeriodEnd','value','previousValue','change','history'])
  ||i.id!=='bea_nonfinancial_unit_profit'||i.source!=='BEA NIPA Table 1.15 A463RD'
- ||i.seriesId!==SERIES||i.sourceURL!==PAGE||i.transport!=='FRED_CSV'
+ ||!((i.transport==='FRED_CSV'&&i.seriesId===SERIES&&i.sourceURL===PAGE)
+    ||(i.transport==='BEA_API_JSON'&&i.seriesId===NIPA_SERIES&&i.sourceURL===NIPA_PAGE))
  ||i.unit!=='USD_PER_REAL_GVA_UNIT'||!finite(i.value)||!finite(i.previousValue)
  ||!finite(i.change)||Math.abs(i.change-(i.value-i.previousValue))>1e-9
  ||quarter(i.observationPeriodEnd)===null
