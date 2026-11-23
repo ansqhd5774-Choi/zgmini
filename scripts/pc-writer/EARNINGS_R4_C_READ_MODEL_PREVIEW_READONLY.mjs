@@ -2,12 +2,12 @@
 // No network calls, SQLite writes, D1 operations, scheduling or score changes.
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {DatabaseSync} from 'node:sqlite';
 import {analyze,validateSnapshot} from './EARNINGS_R3D_STORED_BLS_CALC_READONLY.mjs';
 
-const HERE = path.dirname(fileURLToPath(import.meta.url));
 const PC_ROOT = path.resolve(process.env.ZGMINI_PC_HOME || 'E:\\ZGmini\\data\\pc-writer');
 const DB_PATH = path.join(PC_ROOT, 'storage', 'core.sqlite');
 export const SCHEMA_VERSION = 'earnings-companion-c-r4-v1';
@@ -296,13 +296,24 @@ export function parseR4PreviewMode(args){
   fail('R4_PREVIEW_MODE_INVALID');
 }
 
+// The caller's TEMP is the only permitted local diagnostic output root.
+// Preserve the current service-only filename distinction without changing data.
+export function resultPaths(stamp,{mode='BASE_AND_OPTIONAL_SERVICE',tempDirectory=os.tmpdir()}={}){
+  if(typeof stamp!=='string'||!/^\d{8}-\d{6}Z$/.test(stamp))
+    fail('INVALID_RESULT_STAMP');
+  if(!['BASE_AND_OPTIONAL_SERVICE','SERVICE_ONLY'].includes(mode)
+    ||typeof tempDirectory!=='string'||!path.isAbsolute(tempDirectory))
+    fail('R4_PREVIEW_OUTPUT_INVALID');
+  const stem=`EARNINGS_R4_C_${mode==='SERVICE_ONLY'?'SERVICE_ONLY_':''}READ_MODEL_PREVIEW_RESULT_${stamp}`;
+  return {txtFile:path.join(tempDirectory,stem+'.txt'),
+    jsonFile:path.join(tempDirectory,stem+'.json')};
+}
+
 async function main() {
   const now=new Date().toISOString();
   const stamp=now.replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z').replace('T','-');
   const mode=parseR4PreviewMode(process.argv.slice(2));
-  const stem=`EARNINGS_R4_C_${mode==='SERVICE_ONLY'?'SERVICE_ONLY_':''}READ_MODEL_PREVIEW_RESULT_${stamp}`;
-  const txtFile=path.join(HERE,stem+'.txt');
-  const jsonFile=path.join(HERE,stem+'.json');
+  const {txtFile,jsonFile}=resultPaths(stamp,{mode});
   let db,lines=[];
   try {
     if (!fs.existsSync(DB_PATH)) fail('PC_SQLITE_FILE_MISSING');
@@ -325,7 +336,7 @@ async function main() {
     process.exitCode=2;
   } finally {
     try{db?.close();}catch{}
-    lines.push('API_REQUESTS=0','SQLITE_WRITES=0','D1_WRITES=0',
+    lines.push('RESULT_LOG_LOCATION=USER_TEMP','API_REQUESTS=0','SQLITE_WRITES=0','D1_WRITES=0',
       'SCHEDULER_CHANGED=NO','EXISTING_SCORE_UNMODIFIED=YES');
     try{
       fs.writeFileSync(txtFile,lines.join('\r\n')+'\r\n',{encoding:'utf8',flag:'wx'});
