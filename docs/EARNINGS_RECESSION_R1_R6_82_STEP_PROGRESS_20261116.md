@@ -15,6 +15,13 @@
 | 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | PARTIAL — WPSFD42 서비스 신규 2행 390px·1440px 실사이트 PASS (#2882); BEA 단위이익 후속 연결 화면 검증 미완료 |
 | 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | NOT_DONE |
 
+## 2026-11-23 BEA unit B 실행 등록 계약 확인 — 직접 차단 조건 (최신)
+
+- 제어 `main/config/operations.json`은 읽기 전용 `earnings-bea-unit-archive-readonly` **A** 등록만 가진다. 실제 [#2891](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2891) 선택 설치 및 [#2894](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2894) `BEA_UNIT_ARCHIVE_NOT_STORED` 원본 결과는 완료 증거로 유지한다. 이 A 경로를 신규 수집 B로 전용하거나 재실행하지 않는다.
+- 제어 `main/.github/workflows/pc-approved-runtime-b-once.yml`, `pc-writer-b-source-once.yml` 및 `tools/publication-contract.mjs`의 정확 활성 계약을 읽었다. **기존 B workflow가 존재한다는 사실과 BEA `NIPA/T11500/Q/A463RD Line7` 신규 원본 취득·비공개 저장 B operation이 등록·승인됐다는 사실은 다르다.** 현재 조회한 고정 Issue/manifest 및 실행 계약에서 해당 정확 B 원자료 수집 등록/승인을 찾지 못했다. 신규 기능별 Workflow·Controller·CMD를 만들거나 기존 수집 허용목록을 임의 확장하지 않는다.
+- 게시기는 `tools/publication-contract.mjs`에서 `bea-unit-profit-once`를 별도 D1 키 `detail:earnings-bea-unit-profit:v1`에 대응시킨다. **operation의 소스 등록 자체는 개별 B 게시 승인 manifest가 아니며**, `main/approvals/publications/`의 기존 승인 사례는 QFR/WPSFD42로 BEA unit 게시 승인이 아님. 추가로 기존 `main` BEA publisher는 직접 FRED GET을 포함하고, 소스-only [Draft #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183)의 저장형 코드/공식 BEA JSON 분리 검사와는 출처·바이트 계약이 다르다. BEA JSON을 FRED CSV로 위장하거나 해시·저장시각을 소급하지 않는다.
+- **정확 NEXT:** 현재 `T11500/Q` 한 계열의 **기존 BEA API 인증 재사용, 필요한 1회 API GET, 승인 PC private 원본 JSON/metadata append·SHA readback**이라는 신규 수집·저장 효과 범위가 실제 승인된 경우에만 공통 수집기 등록·정규 B 수행. 그 결과 `VERIFIED` 이후 원본에 맞는 source/Writer/D1 계약과 **별도 단일키 B 게시 승인**을 확정하고 D1/API/UI를 검증. 승인되지 않은 Provider/DB/D1 호출 0. 기존 5단계 진행 `2/5 DONE, 3단계 IN_PROGRESS` 불변.
+
 ## 2026-11-23 BEA 공식 API 원문 분리 검사 — 소스·CI 완료, 운영 취득 미실행 (최신)
 
 - **원본 취득 권리 분리:** [FRED 서비스 약관](https://fred.stlouisfed.org/legal/terms/)상 FRED Content 장기 아카이브/상업적 이용의 별도 허가 문제와, [BEA 공식 FAQ](https://www.bea.gov/help/faq/147)의 예외 없는 BEA 공개자료 공공영역 안내를 구분. BEA 원자료의 공개 이용 조건만으로 FRED 서비스의 캐싱·저장 계약을 자동 승인하지 않는다. 기존 FRED CSV 직접 가져오기·게시 경로는 출처/권리 계약 전환 전 **운영 미승인 유지**.
