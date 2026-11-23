@@ -4,21 +4,25 @@
 .zg-sector-chart h2>a{color:inherit;text-decoration:none}
 .zg-sector-chart h2>a:hover{text-decoration:underline;text-underline-offset:4px}
 .zg-sector-chart :focus,.zg-sector-chart :focus-visible{outline:none!important}
-.zg-sector-tooltip{width:max-content;min-width:160px;max-width:min(220px,calc(100vw - 32px));box-sizing:border-box;padding:8px 10px;border:1px solid #3b5a6e;border-radius:6px;background:#0b2030;color:#dbe7ee;box-shadow:0 8px 20px #0005;font-size:14px;font-weight:600;line-height:1.35}
-.zg-sector-tooltip p{margin:0 0 6px;color:#b8ccd9;font-size:14px;font-weight:600}
-.zg-sector-tooltip ul{display:grid;grid-template-columns:minmax(0,1fr);gap:5px 12px;list-style:none;margin:0;padding:0}
-.zg-sector-tooltip:has(li:nth-child(2)){width:min(320px,calc(100vw - 32px));max-width:none}
-.zg-sector-tooltip:has(li:nth-child(2)) ul{grid-template-columns:repeat(2,minmax(0,1fr))}
-.zg-sector-tooltip li{display:flex;align-items:center;gap:6px;min-width:0}
-.zg-sector-tooltip li::before{content:"";width:6px;height:6px;border-radius:50%;flex:none;background:currentColor}
-.zg-sector-tooltip li span{flex:1;min-width:0;color:#dbe7ee;font-size:14px;overflow-wrap:anywhere}
-.zg-sector-tooltip strong{flex:none;color:#fff;font-size:14px;font-weight:800;font-variant-numeric:tabular-nums}
+/* Sector and theme share the Korea chart's .cnn-history-tooltip colors,
+   border, 4px radius, 10px date and bold 16px score. */
+.zg-sector-tooltip{min-width:92px;max-width:min(320px,calc(100vw - 24px));box-sizing:border-box;pointer-events:none}
+.zg-sector-tooltip .zg-sector-tooltip-date{display:block}
+.zg-sector-tooltip .zg-sector-tooltip-score{display:block}
+.zg-sector-tooltip.is-multi{width:min(320px,calc(100vw - 24px));max-width:calc(100% - 8px);text-align:left}
+.zg-sector-tooltip.is-multi .zg-sector-tooltip-date{text-align:center}
+.zg-sector-tooltip .zg-sector-tooltip-values{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));column-gap:9px;row-gap:2px;list-style:none;margin:6px 0 0;padding:0}
+.zg-sector-tooltip .zg-sector-tooltip-values li{display:flex;align-items:center;gap:4px;min-width:0;font-size:10px;line-height:14px}
+.zg-sector-tooltip .zg-sector-tooltip-values li::before{content:"";width:5px;height:5px;border-radius:50%;flex:none;background:currentColor}
+.zg-sector-tooltip .zg-sector-tooltip-values li span{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--zg-text);font-size:10px;line-height:14px}
+.zg-sector-tooltip .zg-sector-tooltip-values li strong{flex:none;display:inline;margin:0;font-size:11px;font-weight:900;line-height:14px;font-variant-numeric:tabular-nums}
 .zg-sector-chart-heading{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px;flex-wrap:nowrap}
 .zg-sector-period{display:flex;flex:none;width:142px;height:30px;box-sizing:border-box;border:1px solid rgba(107,145,176,.48);border-radius:6px;overflow:hidden;margin-left:auto}
 .zg-sector-period button{height:28px;width:28px;min-width:28px;padding:0;border:0;background:transparent;color:#aebfd0;font-size:10px;font-weight:800;cursor:pointer}
 .zg-sector-period button[aria-pressed=true]{background:#ffbf47;color:#071a29}
 .zg-sector-chart-plot{position:relative;height:120px;min-width:0;touch-action:pan-y}
-.zg-sector-held-tooltip{position:absolute;left:0;bottom:calc(100% + 8px);z-index:20;pointer-events:none}
+.zg-sector-held-tooltip{position:absolute;z-index:20;pointer-events:none;width:max-content;max-width:calc(100% - 8px)}
+.zg-sector-held-tooltip>.zg-sector-tooltip{max-width:100%}
 .zg-sector-chart-legend{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:3px;margin-top:8px}
 .zg-sector-chart-legend button{min-width:0;white-space:nowrap;height:32px;padding:0;border:0;border-bottom:2px solid;border-radius:3px 3px 0 0;background:#102b3b;color:#e2e8f0;font-size:10px;font-weight:600;cursor:pointer}
 .zg-sector-chart-legend button:hover{background:#1a3a4d}
