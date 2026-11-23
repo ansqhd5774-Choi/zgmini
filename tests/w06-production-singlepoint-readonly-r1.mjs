@@ -11,7 +11,7 @@ const results=[];
 mkdirSync('artifacts/w06-production-readonly',{recursive:true});
 try{
  for(const viewport of viewports){
-  const context=await browser.newContext({viewport,locale:'ko-KR',timezoneId:'Asia/Seoul',serviceWorkers:'block'});
+  const context=await browser.newContext({viewport,locale:'ko-KR',timezoneId:'Asia/Seoul',serviceWorkers:'block',hasTouch:viewport.width===390,isMobile:viewport.width===390});
   const page=await context.newPage();
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
@@ -70,6 +70,58 @@ try{
      if(viewport.width===1440)assert(tipVisibility==='visible'&&tooltipText.includes(displayed),'desktop hover shows true score');
      else console.log('W06_MOBILE_HOVER_NOT_CONFIRMED '+JSON.stringify({tipVisibility,tooltipText}));
     }
+    // W06: verify a genuine multipoint stored curve with the latest actual point.
+    // An SVG with two axis labels is not by itself proof of tooltip behavior.
+    if(period==='1D'&&body.points.length>=2){
+     assert.equal(await empty.count(),0,'two stored observations must not display empty');
+     assert((await svg.count())>0,'multipoint actual SVG must mount');
+     const latest=body.points.at(-1);
+     const displayed=Math.max(0,Math.min(100,50+(latest.score-50)*3.5)).toFixed(1);
+     const kst=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(latest.observedAt));
+     const latestDot=chart.locator('.recharts-reference-dot circle').first();
+     await latestDot.waitFor({state:'visible',timeout:15000});
+     await latestDot.evaluate(el=>el.scrollIntoView({block:'center',inline:'nearest'}));
+     await page.waitForTimeout(200);
+     const bounds=await latestDot.boundingBox();
+     assert(bounds&&bounds.width>0&&bounds.height>0,'latest marker has real visible bounds');
+     const center={x:bounds.x+bounds.width/2,y:bounds.y+bounds.height/2};
+     const topHit=await page.evaluate(({x,y})=>{const el=document.elementFromPoint(x,y);return {tag:el?.tagName??null,cls:el?.getAttribute('class')??null,aria:el?.getAttribute('aria-label')??null};},center);
+     console.log('W06_MULTIPOINT_TARGET_HIT '+JSON.stringify({width:viewport.width,center,topHit}));
+     const tip=viewport.width===390?chart.locator('[data-testid="w06-touch-tooltip"]'):chart.locator('.recharts-tooltip-wrapper');
+     if(viewport.width===390){
+      // An actual emulated touch must be used; mouse hover on 390px is not evidence.
+      await page.touchscreen.tap(center.x,center.y);
+     }else{
+      await page.mouse.move(center.x-12,center.y);
+      await page.mouse.move(center.x,center.y,{steps:4});
+     }
+     await page.waitForTimeout(500);
+     const tipExists=(await tip.count())>0;
+     const tipText=tipExists?await tip.innerText():'';
+     const tipVisibility=tipExists?await tip.evaluate(el=>getComputedStyle(el).visibility):'missing';
+     const evidence={width:viewport.width,points:body.points.length,lastAt:latest.observedAt,displayed,kst,tipVisibility,tipText,center};
+     console.log('W06_MULTIPOINT_INTERACTION '+JSON.stringify(evidence));
+     await page.screenshot({path:'artifacts/w06-production-readonly/multipoint-'+viewport.width+'.png',fullPage:false});
+     const deployedTouchCapability=(await chart.locator('[data-w06-touch-tooltip-ready="true"]').count())>0;
+     // On PRs the live website still runs the old deployed JS. Record that
+     // condition explicitly; the local fixture enforces the new touch feature.
+     // Once Git Integration deploys the change, this real Production assertion
+     // becomes mandatory and fails closed on a genuine touch regression.
+     if(viewport.width===390){
+      const sideVeil=page.locator('button.zg-risk-side-veil[aria-label="열린 패널 닫기"]');
+      if(await sideVeil.isVisible()){
+       if(deployedTouchCapability)assert.fail('touch latest composite point must not open an unrelated risk side panel');
+       console.log('W06_LEGACY_TOUCH_OPENS_SIDE_PANEL '+JSON.stringify({lastAt:latest.observedAt}));
+       await page.getByRole('button',{name:'시장 채팅 닫기',exact:true}).click();
+      }
+     }
+     if(viewport.width===390&&!deployedTouchCapability){
+      console.log('W06_PRODUCTION_TOUCH_NOT_YET_DEPLOYED '+JSON.stringify({width:viewport.width,lastAt:latest.observedAt,displayed,tipVisibility}));
+     }else{
+      assert(tipExists&&tipVisibility==='visible'&&tipText.includes(displayed)&&tipText.includes(kst),
+        'actual '+(viewport.width===390?'mobile touch':'desktop hover')+' latest 1D point tooltip matches public data');
+     }
+    }
     assert.equal(await selected.getAttribute('aria-pressed'),'true',period+' selected');
     const dimension=await page.evaluate(()=>({innerWidth:window.innerWidth,documentWidth:document.documentElement.scrollWidth}));
     assert.equal(dimension.innerWidth,viewport.width,'real tested viewport width');
@@ -85,4 +137,4 @@ try{
 }finally{await browser.close();}
 writeFileSync('artifacts/w06-production-readonly/results.json',JSON.stringify({checkedAt:new Date().toISOString(),results},null,2)+'\n');
 assert.equal(results.length,12,'six periods across two production viewports');
-console.log('W06_PRODUCTION_READONLY_PASS '+JSON.stringify(results));
+console.log('W06_PRODUCTION_READONLY_CHECK_FINISHED '+JSON.stringify(results));
