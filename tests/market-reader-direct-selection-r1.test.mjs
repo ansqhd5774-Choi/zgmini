@@ -57,3 +57,38 @@ test('Reader passes optional witness to seven store reads only when requested',a
  assert.ok(keys.every(x=>x.withObserver));
  assert.deepEqual(observed.map(x=>x.sourceKey),['macro','credit','supply','fundFlows','bisDsr','bisTc','rates']);
 });
+
+
+test('opt-in freshness witness distinguishes Reader TTL inclusion without changing the calculation',async()=>{
+ const names=['macro','credit','supply','fundFlows','bisDsr','bisTc','rates'];
+ const ms=3600000;
+ const stamps=[now-36*ms+1,now-36*ms,now+1,now-1,
+  now-192*ms+1,now-192*ms,now-1];
+ const observed=[];
+ const store={async readInput(key){
+  const index=names.indexOf(key);
+  return {storedAt:stamps[index],body:{
+   series:{[key]:[{observationDate:'2026-11-10',value:index+1}]},
+   external:{},providerSummary:{}
+  }};
+ }};
+ const baseline=await readStoredMarketInputs(store,now);
+ const actual=await readStoredMarketInputs(store,now,{onFreshness:metadata=>observed.push(metadata)});
+ assert.deepEqual(actual,baseline);
+ assert.deepEqual(observed.map(x=>x.sourceKey),names);
+ assert.deepEqual(observed.map(x=>x.included),[true,false,false,true,true,false,true]);
+ assert.deepEqual(observed.map(x=>x.storedAt),stamps);
+ assert.equal(Object.hasOwn(actual.series,'credit'),false);
+ assert.equal(Object.hasOwn(actual.series,'bisTc'),false);
+ assert.equal(Object.hasOwn(actual.series,'bisDsr'),true);
+ assert.equal(JSON.stringify(observed).includes('series'),false);
+});
+test('freshness callback failures never change Reader output or leak business data',async()=>{
+ const store={async readInput(key){return {storedAt:now,body:{
+  series:{[key]:[{observationDate:'2026-11-10',value:3}]},
+  external:{},providerSummary:{private:'NOT_RETURNED'}
+ }};}};
+ const baseline=await readStoredMarketInputs(store,now);
+ const actual=await readStoredMarketInputs(store,now,{onFreshness(){throw Error('PRIVATE_OBSERVER_FAILURE');}});
+ assert.deepEqual(actual,baseline);
+});
