@@ -40,6 +40,7 @@ on:
       - 'lib/dashboard-chart-startup.mjs'
       - 'lib/market-score/market-trend-window-r1.mjs'
       - 'tests/dashboard-history-browser-r5.mjs'
+      - 'tests/w05-bea-production-visual-readonly-r1.mjs'
       - 'tests/w06-production-singlepoint-readonly-r1.mjs'
       - 'tests/w04-r54-production-ui-readonly-r1.mjs'
       - 'tests/w04-r54-touch-local-r1.mjs'
@@ -107,6 +108,8 @@ jobs:
           exit 1
       - name: Verify W06 latest-point genuine touchscreen and hover with local isolated fixture
         run: node tests/w06-mobile-touch-local-r1.mjs
+      - name: Verify W05 actual Production BEA 5-quarter SVG and source vs D1 KST times at 390/1440
+        run: node tests/w05-bea-production-visual-readonly-r1.mjs
       - name: Verify W06 actual Production 1D and 6 periods at 390/1440 read-only
         run: node tests/w06-production-singlepoint-readonly-r1.mjs
       - name: Verify Production first-party JavaScript assets with read-only Chromium
@@ -160,6 +163,7 @@ jobs:
             artifacts/w04-r54-touch-local/
             artifacts/theme-visible-asof/
             artifacts/production-assets-network/
+            artifacts/w05-bea-production-readonly/
             artifacts/w06-production-readonly/
             artifacts/w06-touch-local/
           if-no-files-found: warn
