@@ -39,7 +39,7 @@ function mockDb(rows,{current=rows.at(-1)}={}){
    async all(){return {results:[...dbRows.entries()].filter(([key])=>
     key!=='current'&&key>=args[1]&&key<=args[2]).map(([key,value])=>
     ({...value,snapshot_key:key})).sort((a,b)=>a.snapshot_key.localeCompare(b.snapshot_key))};}
-  }};}}};
+  }}};}}};
 }
 const exact=(db,clock=CLOCK,now=CLOCK+2000)=>readVerifiedSectorFinalOutputs(db,{calculatedAtMs:clock,now});
 const range=(db,fromDay='2026-11-24',toDay='2026-11-24',now=CLOCK+2000)=>
