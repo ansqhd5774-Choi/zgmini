@@ -26,7 +26,7 @@ try{
     {waitUntil:'domcontentloaded',timeout:60000});
    assert.equal(documentResponse?.status(),200,'W01_UI_DOCUMENT_HTTP_STATUS');
    await page.waitForFunction(()=>{
-    const root19=document.querySelector('section[aria-labelledby="economic-inflation-research-inputs"]');
+    const root19=document.querySelector('section[aria-labelledby="economic-inflation-indicators"]');
     const root7=document.querySelector('section[aria-labelledby="economic-inflation-candidate-7"]');
     const rows19=[...(root19?.querySelectorAll('tbody tr[data-research-input]')??[])];
     const rows7=[...(root7?.querySelectorAll('tbody tr[data-research-candidate]')??[])];
@@ -35,7 +35,7 @@ try{
      rows7.every(row=>row.querySelector('[data-value-kind="raw"]'));
    },null,{timeout:40000});
    const display=await page.evaluate(()=>{
-    const a=document.querySelector('section[aria-labelledby="economic-inflation-research-inputs"]');
+    const a=document.querySelector('section[aria-labelledby="economic-inflation-indicators"]');
     const b=document.querySelector('section[aria-labelledby="economic-inflation-candidate-7"]');
     const rows=(root,attr)=>[...(root?.querySelectorAll('tbody tr['+attr+']')??[])];
     const aRows=rows(a,'data-research-input'),bRows=rows(b,'data-research-candidate');
