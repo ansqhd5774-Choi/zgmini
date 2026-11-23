@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {compareBeaUnitNipaToFred,beaUnitNipaRequestSpec} from '../scripts/pc-writer/EARNINGS_BEA_UNIT_NIPA_EQUIVALENCE_R1.mjs';
+import {compareBeaUnitNipaToFred,beaUnitNipaRequestSpec,inspectBeaUnitNipaRawJson} from '../scripts/pc-writer/EARNINGS_BEA_UNIT_NIPA_EQUIVALENCE_R1.mjs';
+import {createHash} from 'node:crypto';
 
 const entries=[['2025Q2',0.216],['2025Q3',0.219],['2025Q4',0.222],['2026Q1',0.231],['2026Q2',0.250]];
 const fred='observation_date,A463RD3Q052SBEA\n'+entries.map(([q,value])=>{
@@ -74,4 +75,43 @@ test('reject malformed BEA numeric grouping before comparison',()=>{
   const alternateFred=fred.replace('2025-04-01,0.216','2025-04-01,1234.5');
   assert.equal(compareBeaUnitNipaToFred({
     beaResponse:api(grouped),fredCsv:alternateFred}).status,'MATCH');
+});
+
+test('official BEA raw JSON receives its own exact-byte provenance, never a FRED alias',()=>{
+  const raw=Buffer.from(JSON.stringify(api(rows().reverse())),'utf8');
+  const at=Date.parse('2026-11-23T00:00:00Z');
+  const inspected=inspectBeaUnitNipaRawJson({rawBytes:raw,sourceStoredAt:at});
+  assert.equal(inspected.status,'SOURCE_ONLY_VALIDATED');
+  assert.equal(inspected.transport,'BEA_API_JSON');
+  assert.equal(inspected.dataset,'NIPA');
+  assert.equal(inspected.tableName,'T11500');
+  assert.equal(inspected.seriesCode,'A463RD');
+  assert.equal(inspected.lineNumber,'7');
+  assert.equal(inspected.sourceVersion,createHash('sha256').update(raw).digest('hex'));
+  assert.equal(inspected.observedThrough,'2026-06-30');
+  assert.deepEqual(inspected.recent.map(x=>x.value),entries.map(x=>x[1]));
+  assert.equal(Object.isFrozen(inspected),true);
+  assert.equal(Object.isFrozen(inspected.recent),true);
+  assert.equal('indicator' in inspected,false); // Never advertise publishable FRED transport.
+  assert.equal('sourceUrl' in inspected,false);
+});
+
+test('BEA source preflight rejects malformed raw bytes, oversized body and future period',()=>{
+  const at=Date.parse('2026-11-23T00:00:00Z');
+  for(const rawBytes of [Buffer.alloc(2_000_001),Buffer.from([0xff,0xff,...Buffer.alloc(30)]),
+    Buffer.from('{not json}','utf8'),Buffer.from(fred,'utf8')]){
+    assert.throws(()=>inspectBeaUnitNipaRawJson({rawBytes,sourceStoredAt:at}),
+      /BEA_UNIT_NIPA_RAW_(?:SIZE|JSON)_INVALID/);
+  }
+  assert.throws(()=>inspectBeaUnitNipaRawJson({
+    rawBytes:Buffer.from(JSON.stringify(api(rows()))),
+    sourceStoredAt:Date.parse('2026-01-01T00:00:00Z')
+  }),/BEA_UNIT_NIPA_FUTURE_OBSERVATION/);
+  assert.throws(()=>inspectBeaUnitNipaRawJson({
+    rawBytes:Buffer.from(JSON.stringify(api(rows()))),sourceStoredAt:0
+  }),/BEA_UNIT_NIPA_SOURCE_TIME_INVALID/);
+  const bad=rows();bad[0].UNIT_MULT='3';
+  assert.throws(()=>inspectBeaUnitNipaRawJson({
+    rawBytes:Buffer.from(JSON.stringify(api(bad))),sourceStoredAt:at
+  }),/BEA_UNIT_NIPA_UNIT_UNVERIFIED/);
 });
