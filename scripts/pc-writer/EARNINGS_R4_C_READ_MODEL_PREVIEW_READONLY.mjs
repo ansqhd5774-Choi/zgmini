@@ -289,10 +289,17 @@ export function reportLines(result,now) {
   return lines;
 }
 
+export function parseR4PreviewMode(args){
+  if(Array.isArray(args)&&args.length===0)return 'BASE_AND_OPTIONAL_SERVICE';
+  if(Array.isArray(args)&&args.length===1&&args[0]==='--service-only')return 'SERVICE_ONLY';
+  fail('R4_PREVIEW_MODE_INVALID');
+}
+
 async function main() {
   const now=new Date().toISOString();
   const stamp=now.replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z').replace('T','-');
-  const stem=`EARNINGS_R4_C_READ_MODEL_PREVIEW_RESULT_${stamp}`;
+  const mode=parseR4PreviewMode(process.argv.slice(2));
+  const stem=`EARNINGS_R4_C_${mode==='SERVICE_ONLY'?'SERVICE_ONLY_':''}READ_MODEL_PREVIEW_RESULT_${stamp}`;
   const txtFile=path.join(HERE,stem+'.txt');
   const jsonFile=path.join(HERE,stem+'.json');
   let db,lines=[];
@@ -300,7 +307,9 @@ async function main() {
     if (!fs.existsSync(DB_PATH)) fail('PC_SQLITE_FILE_MISSING');
     db=new DatabaseSync(DB_PATH,{readOnly:true,timeout:4000});
     db.exec('PRAGMA query_only=ON');
-    const result=buildPreview(db,{generatedAt:now});
+    const result=mode==='SERVICE_ONLY'
+      ?buildServiceSourcePreview(db,{generatedAt:now})
+      :buildPreview(db,{generatedAt:now});
     lines=reportLines(result,now);
     // Read-only source DB is closed before writing local preview artifacts.
     db.close();db=null;
