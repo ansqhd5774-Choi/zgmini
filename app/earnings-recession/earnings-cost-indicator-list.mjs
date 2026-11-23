@@ -52,19 +52,20 @@ export function buildEarningsCostIndicatorView(payload){
   if(valid){
     const seen=new Set();
     for(const row of payload.rows){
-      if(!safeBlsRow(row)||seen.has(row.indicatorId))continue;
+      if(!safeBlsRow(row)||!knownIds.has(row.indicatorId)||seen.has(row.indicatorId))
+        continue;
       seen.add(row.indicatorId);
       rows.push(row);
-      if(!knownIds.has(row.indicatorId)){
-        indicators.push(knownById.get(row.indicatorId)??{
-          id:row.indicatorId,
-          name:row.name,
-          description:row.kind==='DERIVED'
-            ?'BLS 저장 관측값을 기반으로 계산한 파생 지표'
-            :'BLS에서 발표한 저장 원자료 지표',
-          series:row.seriesId,
-        });
-      }
+    }
+    // WPSFD42 is an optional, atomic pair: avoid exposing a partial or
+    // expired service observation as a new line in desktop/mobile lists.
+    // This view never invents values or invokes a provider.
+    const service=OPTIONAL_EARNINGS_COST_INDICATORS.map(meta=>
+      payload.rows.filter(row=>row?.indicatorId===meta.id));
+    if(service.every(group=>group.length===1&&safeBlsRow(group[0])
+      &&group[0].status==='READY'&&group[0].freshness?.status==='FRESH')){
+      rows.push(...service.map(group=>group[0]));
+      indicators.push(...OPTIONAL_EARNINGS_COST_INDICATORS);
     }
   }
   return {valid,rows,indicators};
