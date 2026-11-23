@@ -84,6 +84,7 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays,curre
  const gradientId=`summary-${useId().replace(/:/g,'')}`;
  const extrema=chartExtrema(scaled.points.map(p=>({date:new Date(p.ts).toISOString().slice(0,10),value:p.value})));
  return <div className="zg-spark zg-r55-mini-chart zg-r55-summary-mini-chart" style={{height:120,minHeight:120,maxHeight:120,position:"relative"}} aria-label={`${label} 관측 추이${singlePointLabel?` · 단일 실제 관측점 ${singlePointLabel}`:""}`} title={singlePointLabel??undefined} data-w06-touch-tooltip-ready="true"
+  onClick={event=>{if(latest&&touchedLatestAt===latest.ts)event.stopPropagation();}}
   onTouchStart={event=>{
    // Recharts does not reliably open its hover tooltip for a real touch tap.
    // Only expose the actual latest calculated point when touched near its marker.
@@ -92,6 +93,7 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays,curre
    if(!touch||!dot||!latest){setTouchedLatestAt(null);return;}
    const rect=dot.getBoundingClientRect();
    const distance=Math.hypot(touch.clientX-(rect.left+rect.width/2),touch.clientY-(rect.top+rect.height/2));
+   if(distance<=24)event.stopPropagation();
    setTouchedLatestAt(distance<=24?latest.ts:null);
   }}>
   <ResponsiveContainer width="100%" height="100%" initialDimension={{width:1,height:1}}>
