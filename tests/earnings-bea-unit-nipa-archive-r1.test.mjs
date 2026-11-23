@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {beaUnitNipaArchivePaths,readBeaUnitNipaArchive,
-  saveBeaUnitNipaArchive} from '../scripts/pc-writer/EARNINGS_BEA_UNIT_NIPA_ARCHIVE_R1.mjs';
+  saveBeaUnitNipaArchive,computeBeaUnitNipaStoredPreview} from '../scripts/pc-writer/EARNINGS_BEA_UNIT_NIPA_ARCHIVE_R1.mjs';
 
 const AT=Date.parse('2026-11-23T00:00:00Z');
 const data=()=>({BEAAPI:{Results:{Data:
@@ -106,5 +106,47 @@ test('reject invalid BEA source before creating any archive directory',()=>{
       pcBase,rawBytes:Buffer.from(JSON.stringify(modified)),sourceStoredAt:AT
     }),/BEA_UNIT_NIPA_UNIT_UNVERIFIED/);
     assert.equal(fs.existsSync(path.join(pcBase,'raw')),false);
+  }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
+});
+
+test('stored-only BEA JSON calculation preserves native provenance and exact source checkpoint',()=>{
+  const pcBase=temp();
+  try{
+    const rawBytes=bytes();
+    const source=saveBeaUnitNipaArchive({pcBase,rawBytes,sourceStoredAt:AT});
+    const calc=computeBeaUnitNipaStoredPreview({pcBase,sourceSha:source.sourceVersion});
+    assert.equal(calc.status,'STORED_SOURCE_CALCULATED');
+    assert.equal(calc.transport,'BEA_API_JSON');
+    assert.equal(calc.sourceVersion,source.sourceVersion);
+    assert.equal(calc.sourceStoredAt,AT);
+    assert.equal(calc.observationPeriodEnd,'2026-06-30');
+    assert.equal(calc.currentValue,0.250);
+    assert.equal(calc.previousValue,0.231);
+    assert.ok(Math.abs(calc.change-0.019)<1e-12);
+    assert.deepEqual(calc.history.map(x=>x.period),
+      ['2025Q2','2025Q3','2025Q4','2026Q1','2026Q2']);
+    assert.equal(Object.isFrozen(calc),true);
+    assert.equal(Object.isFrozen(calc.history),true);
+    assert.equal('indicator' in calc,false); // Never fake the FRED_CSV writer envelope.
+    assert.equal('sourceURL' in calc,false);
+    const archived=beaUnitNipaArchivePaths({pcBase,sourceSha:source.sourceVersion});
+    const meta=fs.readFileSync(archived.meta);
+    assert.deepEqual(fs.readFileSync(archived.raw),rawBytes);
+    assert.deepEqual(fs.readFileSync(archived.meta),meta);
+  }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
+});
+
+test('offline calculation rejects missing, changed or invalid BEA archive rather than inventing values',()=>{
+  const pcBase=temp();
+  try{
+    const hash=createHash('sha256').update(bytes()).digest('hex');
+    assert.throws(()=>computeBeaUnitNipaStoredPreview({pcBase,sourceSha:hash}),
+      /BEA_UNIT_NIPA_ARCHIVE_MISSING/);
+    const saved=saveBeaUnitNipaArchive({pcBase,rawBytes:bytes(),sourceStoredAt:AT});
+    const file=beaUnitNipaArchivePaths({pcBase,sourceSha:saved.sourceVersion});
+    const original=fs.readFileSync(file.raw);
+    fs.writeFileSync(file.raw,Buffer.from(original.toString('utf8').replace('0.250','0.251')));
+    assert.throws(()=>computeBeaUnitNipaStoredPreview({pcBase,sourceSha:hash}),
+      /BEA_UNIT_NIPA_ARCHIVE_SOURCE_MISMATCH/);
   }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
 });
