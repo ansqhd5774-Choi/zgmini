@@ -220,6 +220,36 @@ test('same WPSFD42 content cannot overwrite the established base key; service re
   assert.deepEqual([...db.records.keys()],[EARNINGS_C_SERVICE_SNAPSHOT_KEY]);
 });
 
+test('WPSFD42 same source SHA recapture preserves prior D1 timestamp and forbids changed statistics',async()=>{
+  const db=d1(),old=servicePayload(),writer=earningsCompanionWriter(db,{
+    snapshotKey:EARNINGS_C_SERVICE_SNAPSHOT_KEY,
+  });
+  assert.equal((await writer.write(old,{storedAt:NOW-1000})).status,'READBACK_VERIFIED');
+  const published=db.records.get(EARNINGS_C_SERVICE_SNAPSHOT_KEY);
+  const next=structuredClone(old);
+  next.sourceStoredAt+=1000;
+  for(const row of next.rows)row.retrievedAt=new Date(next.sourceStoredAt).toISOString();
+  assert.equal(validateEarningsCompanionPayload(next,{now:NOW}),next);
+  const repeated=await writer.write(next,{storedAt:NOW-100});
+  assert.equal(repeated.status,'ALREADY_STORED');
+  assert.equal(repeated.storedAt,published.stored_at);
+  assert.equal(db.records.get(EARNINGS_C_SERVICE_SNAPSHOT_KEY).body,published.body);
+  assert.equal(db.actions.filter(x=>x.kind==='WRITE').length,1);
+  const changed=structuredClone(next);
+  const row=changed.rows[0];
+  row.value+=0.25;
+  row.history.at(-1).value=row.value;
+  row.change=row.value-row.previousValue;
+  assert.equal(validateEarningsCompanionPayload(changed,{now:NOW}),changed);
+  await assert.rejects(writer.write(changed,{storedAt:NOW}),/EARNINGS_C_CONFLICTING_CONTENT/);
+  assert.equal(db.actions.filter(x=>x.kind==='WRITE').length,1);
+  const newer=structuredClone(next);
+  newer.sourceVersion='c'.repeat(64);
+  assert.equal((await writer.write(newer,{storedAt:NOW})).status,'READBACK_VERIFIED',
+    'actual changed version with a newer verified source time remains publishable');
+  assert.equal(db.actions.filter(x=>x.kind==='WRITE').length,2);
+});
+
 test('invalid optional WPSFD42 checkpoint is ignored without exposing invalid service rows',async()=>{
   const db=d1();
   await earningsCompanionWriter(db).write(basePayload(),{storedAt:NOW-1000});

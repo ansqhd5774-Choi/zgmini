@@ -298,15 +298,22 @@ export function earningsCompanionWriter(core,{snapshotKey=EARNINGS_C_SNAPSHOT_KE
       let old;try{old=JSON.parse(previous.body)?.projection;}catch{throw Error('EARNINGS_C_EXISTING_INVALID');}
       if(!Number.isSafeInteger(old?.sourceStoredAt)||!old?.sourceVersion
         ||old.sourceStoredAt>payload.sourceStoredAt)throw Error('EARNINGS_C_SUPERSEDED');
-      if(old.sourceStoredAt===payload.sourceStoredAt){
-        if(old.sourceVersion!==payload.sourceVersion)throw Error('EARNINGS_C_CONFLICTING_VERSION');
+      if(old.sourceStoredAt===payload.sourceStoredAt
+        &&old.sourceVersion!==payload.sourceVersion)
+        throw Error('EARNINGS_C_CONFLICTING_VERSION');
+      if(old.sourceStoredAt===payload.sourceStoredAt
+        ||snapshotKey===EARNINGS_C_SERVICE_SNAPSHOT_KEY
+          &&old.sourceVersion===payload.sourceVersion){
         let priorPayload;
         try{priorPayload=JSON.parse(previous.body)?.payload;
           validateEarningsCompanionPayload(priorPayload,{now:storedAt});}
         catch{throw Error('EARNINGS_C_EXISTING_INVALID');}
         const modelIdentity=x=>JSON.stringify({schemaVersion:x.schemaVersion,
           historicalMode:x.historicalMode,observedThroughBySeries:x.observedThroughBySeries,
-          coverage:x.coverage,rows:x.rows});
+          coverage:x.coverage,rows:x.rows.map(({retrievedAt,...row})=>
+            snapshotKey===EARNINGS_C_SERVICE_SNAPSHOT_KEY?row:{...row,retrievedAt})});
+        // A later retrieval of identical source bytes does not constitute
+        // a new statistical observation or permission to refresh D1 timestamps.
         if(modelIdentity(priorPayload)!==modelIdentity(payload))
           throw Error('EARNINGS_C_CONFLICTING_CONTENT');
         return {status:'ALREADY_STORED',key:snapshotKey,storedAt:Number(previous.stored_at)};
