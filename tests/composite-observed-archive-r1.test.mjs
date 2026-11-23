@@ -311,3 +311,22 @@ test('R4 changed-score archive keeps verified MarketParquet paid breadth provena
  assert.deepEqual(output.body.points.map(x=>x.score),[50,53]);
  assert.deepEqual(output.body.points.map(x=>x.breadthSourceVersion),[h('a'),h('a')]);
 });
+
+test('PC archive appender does not suppress a real score change when stored signatures collide',async t=>{
+ const dir=mkdtempSync(join(tmpdir(),'zgmini-score-signature-collision-'));
+ const db=localDatabase(join(dir,'core.sqlite'));
+ t.after(()=>db.close());
+ t.after(()=>rmSync(dir,{recursive:true,force:true}));
+ await db.prepare("CREATE TABLE market_public_snapshots_v1(snapshot_key TEXT PRIMARY KEY,body TEXT NOT NULL,stored_at INTEGER NOT NULL)").run();
+ const start=at('2026-10-31T12:00:00Z'),later=start+5*60000;
+ const newer=compositeSampleFromVerified(calc(53),later);
+ const older={...compositeSampleFromVerified(calc(50),start),signature:newer.signature};
+ const archive={version:COMPOSITE_OBSERVED_VERSION,date:'2026-10-31',points:[older]};
+ const upsert=(key,body,stamp)=>db.prepare("INSERT INTO market_public_snapshots_v1(snapshot_key,body,stored_at) VALUES(?,?,?)").bind(key,JSON.stringify(body),stamp).run();
+ await upsert('composite-observed:2026-10-31',archive,start);
+ await upsert('current',calc(53),later);
+ const result=await appendCompositeObservedFromCurrent(db,later);
+ assert.equal(result.status,'LOCAL_STORED');
+ const row=await db.prepare("SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key='composite-observed:2026-10-31'").first();
+ assert.deepEqual(JSON.parse(row.body).points.map(p=>p.score),[50,53]);
+});
