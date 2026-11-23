@@ -39,14 +39,20 @@ try{
    const hero=page.getByTestId('economic-employment-hero');
    await hero.waitFor({state:'visible',timeout:20000});
    await page.waitForTimeout(1500);
-   const initial=await hero.evaluate(el=>({
-    market:el.getAttribute('data-market-state'),
-    history:el.getAttribute('data-history-alignment'),
-    svg:!!el.querySelector('svg.recharts-surface'),
-    score:el.querySelector('.fg-score-slot')?.textContent?.slice(0,110)??null,
-    text:el.textContent?.slice(0,250)??null,
-   }));
+   const initial=await page.evaluate(()=>{
+    const el=document.querySelector('[data-testid="economic-employment-hero"]');
+    return {href:location.href,heroPresent:!!el,
+     market:el?.getAttribute('data-market-state')??null,
+     history:el?.getAttribute('data-history-alignment')??null,
+     svg:!!el?.querySelector('svg.recharts-surface'),
+     score:el?.querySelector('.fg-score-slot')?.textContent?.slice(0,110)??null,
+     text:document.body?.innerText?.slice(0,600)??null};
+   });
    console.log('W04_R54_MOCK_INITIAL '+JSON.stringify({width,initial,errors}));
+   if(!initial.heroPresent){
+    await page.screenshot({path:`${dir}/hero-disappeared-${width}.png`,fullPage:false});
+    throw Error('R54_MOCK_HERO_DISAPPEARED');
+   }
    try{
     await page.waitForFunction(()=>document.querySelector('[data-testid="economic-employment-hero"]')
      ?.getAttribute('data-history-alignment')==='matched'&&
