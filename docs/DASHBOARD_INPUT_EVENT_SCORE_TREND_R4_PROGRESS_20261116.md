@@ -1,5 +1,14 @@
 # W06 UI·Reader — 실제 적용·화면 완료 5단계 진행원장 (2026-11-21 개편)
 
+### 2026-11-23 — W06 BEA/QFR 정보행 상태 구분 Issue #1467 종결
+
+- 기존 W06 종합 시장 점수 1D 차트·모바일 터치의 완료 증거는 유지. 최신 main SHA `bef69e266a1c90588bbbc2bf1450c7074e5a72bc`. #1473 및 #1475의 기존 UI 변경 파일 `components/dashboard-summary-chart.tsx`는 이번 수정에서 불변.
+- W06/UI 보유 범위 내 열린 [Issue #1467](https://github.com/ansqhd5774-Choi/zgmini/issues/1467) — W05 실적정보 BEA 단위이익과 Census QFR의 HTTP 503 사유를 모두 `자료 확인 대기`로 표시하던 코드 결함 분리·수정. [PR #1477](https://github.com/ansqhd5774-Choi/zgmini/pull/1477) **Merged**, main 설치가 아니라 **GitHub 소스 통합 SHA** `bef69e266a1c90588bbbc2bf1450c7074e5a72bc` 확인, Issue 자동 Closed readback.
+- `useStoredIndex`의 새 `exposeProjectionReason` 인자는 기본 `false`, BEA/QFR 정보 조회 두 곳에서만 true. Worker의 정확 503 이유 `STORED_PROJECTION_PENDING`, `PROJECTION_READ_UNAVAILABLE`, `STORED_PROJECTION_INVALID`, `SOURCE_RETRIEVAL_EXPIRED`/`OBSERVATION_EXPIRED`, `FUTURE_SOURCE_OR_PERIOD`를 고정 허용 목록으로 해석하며 임의 외부 오류 텍스트는 UI에 표시하지 않음. 과거 유효 payload 보존(대기·조회불가), 만료 payload 제거, 이후 유효 200 복구, 기존 score/Writer/Worker/D1 계약 유지.
+- [Node CI #45097003337](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45097003337) **SUCCESS**, Type check 및 공유 저장 훅의 실응답 순서/503/200 회귀시험 포함. [Browser CI #45097003294](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45097003294) **SUCCESS**, 실적 정보행 503 게시 대기 분리 표시를 390/768/1440/1920px Chromium에서 검사, 기존 W06 공개 1D 데이터 2점/모바일 touch/PC hover/12개 기간×화면 검사도 PASS.
+- 운영 데이터·Controller·SQLite·D1·공급자 수집·Cloudflare 직배포 수정 0. **기능 소스·모의 API 브라우저 시험 완료**, GitHub 병합만으로 새 Production 정적/JS bundle 배포 SHA를 확정하지 않는다. 실제 W05 BEA/QFR 원자료 값·단위·날짜 D1 게시 검증은 W05 단계 책임이며 이번 UI 오류종결에 포함하지 않음.
+
+
 ### 2026-11-23 — W06 모바일 실제 터치 Production 검증 완료
 
 - **전체 Browser CI #45094528100 SUCCESS 최종 readback**: job `completed/success`, 실패 단계 0개. 실제 Production 390px touchscreen 최신 원점 2026-11-23T00:37:20.887Z(KST 09:37) 툴팁 `visible`, 값 33.0, 실제 계산시각 표기, 시장 채팅 오작동 미발생. Production 1440px hover에서도 동일 시각·점수·툴팁 `visible`. 1D/1W/1M/3M/6M/1Y × 390/1440 총 12개 화면에 SVG 있음/empty 0, documentWidth=viewportWidth. 기존 `/inflation/` 별도 React #418도 이번 전체 성공 실행에서는 실패 재현되지 않았으므로 현재의 신규 BLOCKER로 만들지 않음.
