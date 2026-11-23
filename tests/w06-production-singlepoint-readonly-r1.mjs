@@ -103,6 +103,14 @@ try{
      // condition explicitly; the local fixture enforces the new touch feature.
      // Once Git Integration deploys the change, this real Production assertion
      // becomes mandatory and fails closed on a genuine touch regression.
+     if(viewport.width===390){
+      const sideVeil=page.locator('button.zg-risk-side-veil[aria-label="열린 패널 닫기"]');
+      if(await sideVeil.isVisible()){
+       if(deployedTouchCapability)assert.fail('touch latest composite point must not open an unrelated risk side panel');
+       console.log('W06_LEGACY_TOUCH_OPENS_SIDE_PANEL '+JSON.stringify({lastAt:latest.observedAt}));
+       await sideVeil.click();
+      }
+     }
      if(viewport.width===390&&!deployedTouchCapability){
       console.log('W06_PRODUCTION_TOUCH_NOT_YET_DEPLOYED '+JSON.stringify({width:viewport.width,lastAt:latest.observedAt,displayed,tipVisibility}));
      }else{
