@@ -8,6 +8,8 @@ import path from 'node:path';
 import {
   checkSchema,normalizeSeries,buildPlans,insertPlans,SERVICE_SERIES,resultLogPath,
 } from '../scripts/pc-writer/EARNINGS_R3C_BLS_STORE_ONCE.mjs';
+import {resultLogPath as r3dResultLogPath} from '../scripts/pc-writer/EARNINGS_R3D_STORED_BLS_CALC_READONLY.mjs';
+import {resultPaths as r4ResultPaths} from '../scripts/pc-writer/EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs';
 
 function newDb() {
   const db = new DatabaseSync(':memory:');
@@ -275,3 +277,19 @@ test('R3C manual diagnostic TXT is emitted under user TEMP rather than source ch
   assert.throws(()=>resultLogPath('2026-11-17T11:45:00Z'),/INVALID_RESULT_STAMP/);
 });
 
+test('R3D and R4 original/service-only local receipts remain in user TEMP, never checkout',()=>{
+ const stamp='20261123-154500Z',tmp=os.tmpdir();
+ const p3=r3dResultLogPath(stamp);
+ assert.equal(path.dirname(p3),tmp);
+ assert.match(path.basename(p3),/^EARNINGS_R3D_STORED_BLS_CALC_RESULT_/);
+ assert.throws(()=>r3dResultLogPath('../evil'),/INVALID_RESULT_STAMP/);
+ const normal=r4ResultPaths(stamp),isolated=r4ResultPaths(stamp,{mode:'SERVICE_ONLY'});
+ for(const file of [normal.txtFile,normal.jsonFile,isolated.txtFile,isolated.jsonFile]){
+  assert.equal(path.dirname(file),tmp);
+  assert.notEqual(path.dirname(file),path.resolve('scripts/pc-writer'));
+ }
+ assert.notEqual(normal.txtFile,isolated.txtFile);
+ assert.match(path.basename(isolated.jsonFile),/SERVICE_ONLY_READ_MODEL_PREVIEW_RESULT/);
+ assert.throws(()=>r4ResultPaths('../evil'),/INVALID_RESULT_STAMP/);
+ assert.throws(()=>r4ResultPaths(stamp,{mode:'UNKNOWN'}),/R4_PREVIEW_OUTPUT_INVALID/);
+});
