@@ -12,7 +12,7 @@ const body=()=>({status:'SUCCESS',asOfDate:'2026-11-23',
  overallTrend:[{label:'2025-11-23',value:72}]});
 const row=(clock=ms,marketBody=body())=>({snapshot_key:new Date(clock).toISOString().slice(0,10),
  body:JSON.stringify(marketBody),stored_at:clock});
-function store(rows,{current=rows.at(-1),denyWrites=false}={}){
+function store(rows,{current=rows.at(-1)}={}){
  const records=new Map(rows.map(x=>[x.snapshot_key,x]));
  if(current)records.set('current',current);
  const queries=[];
@@ -23,8 +23,8 @@ function store(rows,{current=rows.at(-1),denyWrites=false}={}){
   queries.push(sql);
   return {bind(...args){return {
    async first(){return records.get(args[0])??null;},
-   async all(){return {results:[...records.values()].filter(v=>v.snapshot_key!=='current'&&
-    v.snapshot_key>=args[0]&&v.snapshot_key<=args[1])
+   async all(){return {results:[...records.entries()].filter(([key])=>key!=='current'&&
+    key>=args[0]&&key<=args[1]).map(([key,v])=>({...v,snapshot_key:key}))
     .sort((a,b)=>a.snapshot_key.localeCompare(b.snapshot_key))};}
   };}};
  }};
@@ -107,7 +107,7 @@ test('numeric zero remains a real final score with no artificial input detail',a
   fromDay:'2026-11-24',toDay:'2026-11-24',now:ms+10000});
  assert.deepEqual(res.points.map(x=>x.score),[0,0]);
 });
-test('equal UTC-day conflicting rows are refused instead of rewriting events',async()=>{
+test('existing storage keeps one UTC-day row and reports no duplicate scores',async()=>{
  const a=row(ms),b=row(ms);
  const s=store([a,b]); // regular store map keeps only one key
  s.records.set('2026-11-23',a);
