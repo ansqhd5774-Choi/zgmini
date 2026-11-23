@@ -113,7 +113,7 @@ export async function captureBeaUnitSourceOnce({pcBase,fetchImpl,storedAt,source
   try{content=new TextDecoder('utf-8',{fatal:true,ignoreBOM:true}).decode(bytes);}
   catch{throw Error('BEA_UNIT_SOURCE_ENCODING_INVALID');}
   const capturedSha=digest(bytes);
-  const files=beaUnitRawPaths({pcBase,capturedSha});
+  const files=beaUnitRawPaths({pcBase,sourceSha:capturedSha});
   // Reject incompatible provider changes before adding any local artifact.
   buildBeaUnitProfitSource(content,{sourceVersion:capturedSha,sourceStoredAt:storedAt});
   // Check (or create) each archive directory without following unapproved
@@ -125,8 +125,8 @@ export async function captureBeaUnitSourceOnce({pcBase,fetchImpl,storedAt,source
     catch(error){if(error.code==='ENOENT')return false;throw error;}
   });
   if(sourcePresent){
-    const previous=readBeaUnitArchivedSource({pcBase,capturedSha});
-    return {status:'ALREADY_CAPTURED',capturedSha,
+    const previous=readBeaUnitArchivedSource({pcBase,sourceSha:capturedSha});
+    return {status:'ALREADY_CAPTURED',sourceSha:capturedSha,
       sourceStoredAt:previous.sourceStoredAt};
   }
   // Exclusive create: never overwrite or silently heal a half-written archive.
@@ -136,7 +136,7 @@ export async function captureBeaUnitSourceOnce({pcBase,fetchImpl,storedAt,source
     filename:capturedSha+'.csv',byteLength:bytes.length,
     sourceStoredAt:storedAt,sourceRetrievedAt:new Date(storedAt).toISOString()};
   fs.writeFileSync(files.meta,JSON.stringify(metadata)+'\n',{flag:'wx'});
-  const check=readBeaUnitArchivedSource({pcBase,capturedSha});
+  const check=readBeaUnitArchivedSource({pcBase,sourceSha:capturedSha});
   if(check.sourceStoredAt!==storedAt)throw Error('BEA_UNIT_CAPTURE_READBACK_MISMATCH');
-  return {status:'SOURCE_STORED_READBACK_VERIFIED',capturedSha,sourceStoredAt:storedAt};
+  return {status:'SOURCE_STORED_READBACK_VERIFIED',sourceSha:capturedSha,sourceStoredAt:storedAt};
 }
