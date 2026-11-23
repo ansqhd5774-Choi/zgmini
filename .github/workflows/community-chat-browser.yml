@@ -39,6 +39,7 @@ on:
       - 'components/sector-sentiment-chart.tsx'
       - 'components/sector-sentiment-chart.css'
       - 'tests/sector-inline-tooltip-browser-r1.mjs'
+      - 'tests/sector-inline-tooltip-production-readonly-20261123.mjs'
       - 'hooks/use-dashboard-chart-startup.ts'
       - 'lib/dashboard-chart-startup.mjs'
       - 'lib/market-score/market-trend-window-r1.mjs'
@@ -108,6 +109,8 @@ jobs:
           done
           tail -n 120 /tmp/zgmini-chat-vite.log
           exit 1
+      - name: Verify sector tooltip hover and held on real Production 390/1440 (read-only)
+        run: node tests/sector-inline-tooltip-production-readonly-20261123.mjs
       - name: Verify sector tooltip inline hover and held readouts at 390/1440 (local fixture)
         run: node tests/sector-inline-tooltip-browser-r1.mjs
       - name: Verify W06 latest-point genuine touchscreen and hover with local isolated fixture
@@ -168,6 +171,7 @@ jobs:
             artifacts/w06-production-readonly/
             artifacts/w06-touch-local/
             artifacts/sector-inline-tooltip/
+            artifacts/sector-inline-tooltip-production-readonly/
           if-no-files-found: warn
       - name: Show local dev errors on failure
         if: failure()
