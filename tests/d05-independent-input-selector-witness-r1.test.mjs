@@ -97,7 +97,7 @@ test('approved production scorer uses the existing Reader/output and callback on
  assert.match(source,/collectBreadthDomain:\(\)=>paidCompositeBreadthDomain\(base,now\)/);
  assert.match(source,/const selected=approvedPaidCompositeBreadthDomain\(b,at\)/);
  assert.match(source,/return selected;/);
- assert.match(source,/independentEvidence:correlateD05IndependentInputs/);
+ assert.match(source,/independentEvidence=correlateD05IndependentInputs/);
  assert.match(source,/provider_NETWORK_FORBIDDEN|PROVIDER_NETWORK_FORBIDDEN/);
  assert.doesNotMatch(source,/\bINSERT\b|\bUPDATE\b|\bDELETE\b/);
 });
