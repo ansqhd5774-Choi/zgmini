@@ -1,11 +1,12 @@
 // Explicit PC-only, stored-source D1 publication. No provider call in preflight/apply.
-// Source-owner collector must first pin and archive verified BEA/FRED CSV separately.
+// Verified FRED CSV and official BEA NIPA JSON remain distinct pinned sources.
 // No scheduler, existing PC SQLite, score formula or config is changed.
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import {fileURLToPath} from 'node:url';
 import {readBeaUnitArchivedSource} from './EARNINGS_BEA_UNIT_STORED_RAW_R1.mjs';
+import {buildBeaUnitNipaPublicProjection} from './EARNINGS_BEA_UNIT_NIPA_PUBLIC_PROJECTION_R1.mjs';
 import {validateBeaUnitProfit,beaUnitFreshness,beaUnitWriter,BEA_UNIT_SNAPSHOT_KEY}
  from '../../worker/earnings-bea-unit-profit-r1.mjs';
 import {inspectD1Source,validateD1DualSource} from './EARNINGS_R4_C_D1_DUAL_SOURCE_GATES.mjs';
@@ -17,14 +18,22 @@ const now=new Date().toISOString();
 const stamp=now.replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z').replace('T','-');
 const args=process.argv.slice(2);
 const apply=args.includes('--apply');
+const native=args.includes('--source-transport=BEA_API_JSON');
+const sourceTransport=native?'BEA_API_JSON':'FRED_CSV';
 const lines=['EARNINGS_BEA_UNIT_PROFIT_R1_ONCE',`UTC=${now}`,
  `MODE=${apply?'EXPLICIT_APPLY':'READ_ONLY_PREFLIGHT'}`,
- `SOURCE_SERIES=A463RD3Q052SBEA`,`SNAPSHOT_KEY=${BEA_UNIT_SNAPSHOT_KEY}`];
+ `SOURCE_SERIES=${native?'A463RD':'A463RD3Q052SBEA'}`,
+ `SOURCE_TRANSPORT=${sourceTransport}`,`SNAPSHOT_KEY=${BEA_UNIT_SNAPSHOT_KEY}`];
 let failure=false;
 try{
- if(args.some(arg=>!['--dry-run','--apply','--confirm-bea-unit-d1-write'].includes(arg))
-  ||apply&&args.includes('--dry-run'))throw Error('BEA_UNIT_INVALID_ARGUMENT');
- if(apply&&!args.includes('--confirm-bea-unit-d1-write'))
+ const allowed=['--dry-run','--apply','--confirm-bea-unit-d1-write',
+  '--confirm-bea-nipa-d1-write','--source-transport=BEA_API_JSON'];
+ if(args.some(arg=>!allowed.includes(arg))||apply&&args.includes('--dry-run')
+  ||native&&args.includes('--confirm-bea-unit-d1-write')
+  ||!native&&args.includes('--confirm-bea-nipa-d1-write'))
+  throw Error('BEA_UNIT_INVALID_ARGUMENT');
+ if(apply&&!(native?args.includes('--confirm-bea-nipa-d1-write')
+   :args.includes('--confirm-bea-unit-d1-write')))
   throw Error('BEA_UNIT_EXPLICIT_CONFIRMATION_REQUIRED');
  if(!fs.existsSync(pcBase))throw Error('BEA_UNIT_APPROVED_PC_ROOT_MISSING');
  let config,approved;
@@ -39,8 +48,12 @@ try{
    `OPERATIONAL_SHA=${approved.approvedOperationalSha}`,'SOURCE_GATES=PASS');
  }
  const sourceShaPin=process.env.ZGMINI_EARNINGS_BEA_UNIT_SOURCE_SHA;
- const {payload,sourceSha,sourceStoredAt}=readBeaUnitArchivedSource({
-   pcBase,sourceSha:sourceShaPin});
+ // Never fall back from native to FRED. A missing pinned BEA archive stops.
+ const stored=native?(()=>{
+   const payload=buildBeaUnitNipaPublicProjection({pcBase,sourceSha:sourceShaPin});
+   return {payload,sourceSha:payload.sourceVersion,sourceStoredAt:payload.sourceStoredAt};
+  })():readBeaUnitArchivedSource({pcBase,sourceSha:sourceShaPin});
+ const {payload,sourceSha,sourceStoredAt}=stored;
  const checkedAt=Date.now();
  validateBeaUnitProfit(payload,{now:checkedAt});
  const freshness=beaUnitFreshness(payload,{now:checkedAt});
