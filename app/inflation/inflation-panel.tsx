@@ -217,7 +217,7 @@ export default function InflationPanel(){
    </div>
    <div className="fg-content-slot">
     <div className="fg-score-slot">
-     <MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={scoreComparisonItems} comparisonAriaLabel="인플레이션 압력 완화 점수 변화" metaDate={dateLabel(payload?.asOfDate)}/>
+     <MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" startScoreFromZero={false} comparisonItems={scoreComparisonItems} comparisonAriaLabel="인플레이션 압력 완화 점수 변화" metaDate={dateLabel(payload?.asOfDate)}/>
     </div>
     <MarketTrendFrame className="fg-analysis-slot">
      <div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart showExtrema data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="1Y" gradientId="inflation-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"이력 없음"}/></div></div>

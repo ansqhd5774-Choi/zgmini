@@ -11,7 +11,7 @@ const results=[];
 mkdirSync('artifacts/w06-production-readonly',{recursive:true});
 try{
  for(const viewport of viewports){
-  const context=await browser.newContext({viewport,locale:'ko-KR',timezoneId:'Asia/Seoul',serviceWorkers:'block'});
+  const context=await browser.newContext({viewport,locale:'ko-KR',timezoneId:'Asia/Seoul',serviceWorkers:'block',hasTouch:viewport.width===390,isMobile:viewport.width===390});
   const page=await context.newPage();
   const errors=[];
   page.on('pageerror',error=>errors.push(error.message));
@@ -70,6 +70,49 @@ try{
      if(viewport.width===1440)assert(tipVisibility==='visible'&&tooltipText.includes(displayed),'desktop hover shows true score');
      else console.log('W06_MOBILE_HOVER_NOT_CONFIRMED '+JSON.stringify({tipVisibility,tooltipText}));
     }
+    // W06: verify a genuine multipoint stored curve with the latest actual point.
+    // An SVG with two axis labels is not by itself proof of tooltip behavior.
+    if(period==='1D'&&body.points.length>=2){
+     assert.equal(await empty.count(),0,'two stored observations must not display empty');
+     assert((await svg.count())>0,'multipoint actual SVG must mount');
+     const latest=body.points.at(-1);
+     const displayed=Math.max(0,Math.min(100,50+(latest.score-50)*3.5)).toFixed(1);
+     const kst=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(latest.observedAt));
+     const latestDot=chart.locator('.recharts-reference-dot circle').first();
+     await latestDot.waitFor({state:'visible',timeout:15000});
+     await latestDot.evaluate(el=>el.scrollIntoView({block:'center',inline:'nearest'}));
+     await page.waitForTimeout(200);
+     const bounds=await latestDot.boundingBox();
+     assert(bounds&&bounds.width>0&&bounds.height>0,'latest marker has real visible bounds');
+     const center={x:bounds.x+bounds.width/2,y:bounds.y+bounds.height/2};
+     const topHit=await page.evaluate(({x,y})=>{const el=document.elementFromPoint(x,y);return {tag:el?.tagName??null,cls:el?.getAttribute('class')??null,aria:el?.getAttribute('aria-label')??null};},center);
+     console.log('W06_MULTIPOINT_TARGET_HIT '+JSON.stringify({width:viewport.width,center,topHit}));
+     const tip=viewport.width===390?chart.locator('[data-testid="w06-touch-tooltip"]'):chart.locator('.recharts-tooltip-wrapper');
+     if(viewport.width===390){
+      // An actual emulated touch must be used; mouse hover on 390px is not evidence.
+      await page.touchscreen.tap(center.x,center.y);
+     }else{
+      await page.mouse.move(center.x-12,center.y);
+      await page.mouse.move(center.x,center.y,{steps:4});
+     }
+     await page.waitForTimeout(500);
+     const tipExists=(await tip.count())>0;
+     const tipText=tipExists?await tip.innerText():'';
+     const tipVisibility=tipExists?await tip.evaluate(el=>getComputedStyle(el).visibility):'missing';
+     const evidence={width:viewport.width,points:body.points.length,lastAt:latest.observedAt,displayed,kst,tipVisibility,tipText,center};
+     console.log('W06_MULTIPOINT_INTERACTION '+JSON.stringify(evidence));
+     await page.screenshot({path:'artifacts/w06-production-readonly/multipoint-'+viewport.width+'.png',fullPage:false});
+     const deployedTouchCapability=(await chart.locator('[data-w06-touch-tooltip-ready="true"]').count())>0;
+     // Main already contains the approved touch implementation. A Production
+     // run without the marker must now fail, not silently skip verification.
+     if(viewport.width===390){
+      assert(deployedTouchCapability,'merged W06 touch UI must be present in Production assets');
+      const sideVeil=page.locator('button.zg-risk-side-veil[aria-label="열린 패널 닫기"]');
+      assert(!(await sideVeil.isVisible()),'latest chart-point touch must not open market chat overlay');
+     }
+     assert(tipExists&&tipVisibility==='visible'&&tipText.includes(displayed)&&tipText.includes(kst),
+       'actual '+(viewport.width===390?'mobile touch':'desktop hover')+' latest 1D point tooltip matches public data');
+    }
     assert.equal(await selected.getAttribute('aria-pressed'),'true',period+' selected');
     const dimension=await page.evaluate(()=>({innerWidth:window.innerWidth,documentWidth:document.documentElement.scrollWidth}));
     assert.equal(dimension.innerWidth,viewport.width,'real tested viewport width');
@@ -79,10 +122,52 @@ try{
    await controls.getByRole('button',{name:'1D',exact:true}).click();
    await page.waitForTimeout(1100);
    await page.screenshot({path:'artifacts/w06-production-readonly/home-'+viewport.width+'-1D.png',fullPage:false});
+
+   // Read-only W06 information-row acceptance against actual Production responses.
+   const earnings=await context.newPage();
+   try{
+    const doc=await earnings.goto(base+'/earnings-recession/',{waitUntil:'domcontentloaded',timeout:60000});
+    assert.equal(doc?.status(),200,'earnings production document');
+    const status=earnings.locator('.earnings-r2-cost-status');
+    await status.waitFor({state:'visible',timeout:35000});
+    const reasons={STORED_PROJECTION_PENDING:'게시 대기',PROJECTION_READ_UNAVAILABLE:'조회 불가',
+     STORED_PROJECTION_INVALID:'자료 오류',SOURCE_RETRIEVAL_EXPIRED:'자료 갱신 지연',
+     OBSERVATION_EXPIRED:'자료 갱신 지연',FUTURE_SOURCE_OR_PERIOD:'자료 시각 오류'};
+    for(const item of [
+     {name:'BEA 단위이익',path:'/api/earnings-recession-bea-unit-profit',kind:'unit'},
+     {name:'Census QFR',path:'/api/earnings-recession-census-qfr-margin',kind:'qfr'}
+    ]){
+     const response=await context.request.get(base+item.path,{timeout:30000,headers:{'cache-control':'no-cache'}});
+     const http=response.status();
+     assert([200,503].includes(http),item.name+' HTTP '+http);
+     const payload=await response.json();
+     await earnings.waitForFunction(name=>{
+      const s=document.querySelector('.earnings-r2-cost-status')?.textContent??'';
+      return s.includes(name+' ')&&!s.includes(name+' 연결 확인 중');
+     },item.name,{timeout:35000});
+     const label=await status.innerText(),reason=typeof payload?.reason==='string'?payload.reason:null;
+     if(http===503){
+      const expected=reasons[reason]??'자료 조회 실패';
+      assert(label.includes(item.name+' '+expected),item.name+' API/UI state mismatch: '+reason+' / '+label);
+     }else{
+      const row=item.kind==='unit'?payload?.indicator:payload?.rows?.[0];
+      if(payload?.status==='READY'&&row&&Number.isFinite(row.value)){
+       assert(label.includes(item.name+' 연결 완료'),item.name+' READY API/UI mismatch');
+       const value=item.kind==='unit'?String.fromCharCode(36)+row.value.toFixed(3):row.value.toFixed(2)+'%';
+       const period=item.kind==='unit'?row.observationPeriodEnd:row.observationPeriod;
+       const text=await earnings.locator('body').innerText();
+       assert(text.includes(value),item.name+' published value/unit absent: '+value);
+       assert(text.includes(String(period)),item.name+' published period absent');
+      }
+     }
+     console.log('W06_EARNINGS_PRODUCTION_READBACK '+JSON.stringify({width:viewport.width,name:item.name,http,reason,uiStatus:label}));
+    }
+    await earnings.screenshot({path:'artifacts/w06-production-readonly/earnings-'+viewport.width+'.png',fullPage:false});
+   }finally{await earnings.close();}
    assert.deepEqual(errors,[],'no page errors at '+viewport.width);
   }finally{await context.close();}
  }
 }finally{await browser.close();}
 writeFileSync('artifacts/w06-production-readonly/results.json',JSON.stringify({checkedAt:new Date().toISOString(),results},null,2)+'\n');
 assert.equal(results.length,12,'six periods across two production viewports');
-console.log('W06_PRODUCTION_READONLY_PASS '+JSON.stringify(results));
+console.log('W06_PRODUCTION_READONLY_CHECK_FINISHED '+JSON.stringify(results));
