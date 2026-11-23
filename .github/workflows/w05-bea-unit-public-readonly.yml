@@ -1,0 +1,27 @@
+name: W05 BEA Unit Public GET Readonly Probe
+on:
+  pull_request:
+    paths:
+      - 'tests/w05-bea-unit-public-readonly-probe.mjs'
+      - '.github/workflows/w05-bea-unit-public-readonly.yml'
+permissions:
+  contents: read
+jobs:
+  probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Observe only public stored GET status
+        run: node tests/w05-bea-unit-public-readonly-probe.mjs
+      - name: Retain sanitized output
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: w05-bea-unit-public-readonly
+          path: artifacts/w05-bea-unit-public-readonly/summary.json
+          if-no-files-found: warn
+          retention-days: 3
