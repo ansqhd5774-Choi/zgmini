@@ -123,61 +123,47 @@ try{
    await page.waitForTimeout(1100);
    await page.screenshot({path:'artifacts/w06-production-readonly/home-'+viewport.width+'-1D.png',fullPage:false});
 
-   // Only public GETs: validate the Production informational rows without altering D1.
-   const earningsPage=await context.newPage();
-   const earningsReadback=[];
+   // Read-only W06 information-row acceptance against actual Production responses.
+   const earnings=await context.newPage();
    try{
-    const documentResponse=await earningsPage.goto(base+'/earnings-recession/',{waitUntil:'domcontentloaded',timeout:60000});
-    assert.equal(documentResponse?.status(),200,'Production earnings page HTTP 200');
-    const infoStatus=earningsPage.locator('.earnings-r2-cost-status');
-    await infoStatus.waitFor({state:'visible',timeout:35000});
-    const reasons={
-     STORED_PROJECTION_PENDING:'게시 대기',
-     PROJECTION_READ_UNAVAILABLE:'조회 불가',
-     STORED_PROJECTION_INVALID:'자료 오류',
-     SOURCE_RETRIEVAL_EXPIRED:'자료 갱신 지연',
-     OBSERVATION_EXPIRED:'자료 갱신 지연',
-     FUTURE_SOURCE_OR_PERIOD:'자료 시각 오류'
-    };
+    const doc=await earnings.goto(base+'/earnings-recession/',{waitUntil:'domcontentloaded',timeout:60000});
+    assert.equal(doc?.status(),200,'earnings production document');
+    const status=earnings.locator('.earnings-r2-cost-status');
+    await status.waitFor({state:'visible',timeout:35000});
+    const reasons={STORED_PROJECTION_PENDING:'게시 대기',PROJECTION_READ_UNAVAILABLE:'조회 불가',
+     STORED_PROJECTION_INVALID:'자료 오류',SOURCE_RETRIEVAL_EXPIRED:'자료 갱신 지연',
+     OBSERVATION_EXPIRED:'자료 갱신 지연',FUTURE_SOURCE_OR_PERIOD:'자료 시각 오류'};
     for(const item of [
-     {label:'BEA 단위이익',path:'/api/earnings-recession-bea-unit-profit',field:'indicator',period:'observationPeriodEnd'},
-     {label:'Census QFR',path:'/api/earnings-recession-census-qfr-margin',field:'rows',period:'observationPeriod'}
+     {name:'BEA 단위이익',path:'/api/earnings-recession-bea-unit-profit',kind:'unit'},
+     {name:'Census QFR',path:'/api/earnings-recession-census-qfr-margin',kind:'qfr'}
     ]){
      const response=await context.request.get(base+item.path,{timeout:30000,headers:{'cache-control':'no-cache'}});
-     const httpStatus=response.status(),payload=await response.json();
-     const reason=typeof payload?.reason==='string'?payload.reason:null;
-     assert([200,503].includes(httpStatus),item.label+' unexpected Production HTTP '+httpStatus);
-     await earningsPage.waitForFunction(label=>{
-      const text=document.querySelector('.earnings-r2-cost-status')?.textContent??'';
-      return text.includes(label+' ')&&!text.includes(label+' 연결 확인 중');
-     },item.label,{timeout:35000});
-     const shown=await infoStatus.innerText();
-     if(httpStatus===503){
+     const http=response.status();
+     assert([200,503].includes(http),item.name+' HTTP '+http);
+     const payload=await response.json();
+     await earnings.waitForFunction(name=>{
+      const s=document.querySelector('.earnings-r2-cost-status')?.textContent??'';
+      return s.includes(name+' ')&&!s.includes(name+' 연결 확인 중');
+     },item.name,{timeout:35000});
+     const label=await status.innerText(),reason=typeof payload?.reason==='string'?payload.reason:null;
+     if(http===503){
       const expected=reasons[reason]??'자료 조회 실패';
-      assert(shown.includes(item.label+' '+expected),item.label+' Production 503 reason mismatch: '+reason+' / '+shown);
+      assert(label.includes(item.name+' '+expected),item.name+' API/UI state mismatch: '+reason+' / '+label);
      }else{
-      const row=item.field==='indicator'?payload?.indicator:payload?.rows?.[0];
+      const row=item.kind==='unit'?payload?.indicator:payload?.rows?.[0];
       if(payload?.status==='READY'&&row&&Number.isFinite(row.value)){
-       const formatted=item.field==='indicator'?'
-  }finally{await context.close();}
- }
-}finally{await browser.close();}
-writeFileSync('artifacts/w06-production-readonly/results.json',JSON.stringify({checkedAt:new Date().toISOString(),results},null,2)+'\n');
-assert.equal(results.length,12,'six periods across two production viewports');
-console.log('W06_PRODUCTION_READONLY_CHECK_FINISHED '+JSON.stringify(results));
-+row.value.toFixed(3):row.value.toFixed(2)+'%';
-       assert(shown.includes(item.label+' 연결 완료'),item.label+' published READY is not connected: '+shown);
-       const pageText=await earningsPage.locator('body').innerText();
-       assert(pageText.includes(formatted),item.label+' published value/unit missing: '+formatted);
-       assert(pageText.includes(String(row[item.period])),item.label+' observation period missing');
+       assert(label.includes(item.name+' 연결 완료'),item.name+' READY API/UI mismatch');
+       const value=item.kind==='unit'?String.fromCharCode(36)+row.value.toFixed(3):row.value.toFixed(2)+'%';
+       const period=item.kind==='unit'?row.observationPeriodEnd:row.observationPeriod;
+       const text=await earnings.locator('body').innerText();
+       assert(text.includes(value),item.name+' published value/unit absent: '+value);
+       assert(text.includes(String(period)),item.name+' published period absent');
       }
      }
-     earningsReadback.push({viewport:viewport.width,key:item.label,httpStatus,reason,uiStatus:shown,
-      observationPeriod:httpStatus===200?(item.field==='indicator'?payload?.indicator?.observationPeriodEnd:payload?.rows?.[0]?.observationPeriod)??null:null});
+     console.log('W06_EARNINGS_PRODUCTION_READBACK '+JSON.stringify({width:viewport.width,name:item.name,http,reason,uiStatus:label}));
     }
-    await earningsPage.screenshot({path:'artifacts/w06-production-readonly/earnings-'+viewport.width+'.png',fullPage:false});
-    console.log('W06_EARNINGS_PRODUCTION_READBACK '+JSON.stringify(earningsReadback));
-   }finally{await earningsPage.close();}
+    await earnings.screenshot({path:'artifacts/w06-production-readonly/earnings-'+viewport.width+'.png',fullPage:false});
+   }finally{await earnings.close();}
    assert.deepEqual(errors,[],'no page errors at '+viewport.width);
   }finally{await context.close();}
  }
