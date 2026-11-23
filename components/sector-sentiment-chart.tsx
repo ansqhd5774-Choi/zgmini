@@ -9,6 +9,7 @@ import ChartExtremumPoint from './chart-extremum-point';
 import './sector-sentiment-chart.css';
 import ChartAxisLabels from './chart-axis-labels';
 import {uniqueChartTooltipEntries} from '../lib/chart-tooltip-unique.mjs';
+import {placeSectorHeldTooltip} from '../lib/sector-tooltip-position.mjs';
 import './chart-axis-labels.css';
 
 export const SECTORS=[
@@ -143,17 +144,10 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
  const moveHeld=(clientX:number,clientY:number,element:HTMLDivElement)=>{
   const rect=element.getBoundingClientRect();
   setHeldIndex(clampedChartIndex(clientX,rect.left+(mobileAxisRight?0:32),rect.width-44,visibleRows.length));
-  const px=clientX-rect.left,py=clientY-rect.top;
-  const fallbackWidth=shownSeries.length>1?Math.min(320,rect.width-8):112;
-  const tipWidth=Math.min(heldTooltipRef.current?.offsetWidth||fallbackWidth,Math.max(0,rect.width-8));
-  const tipHeight=heldTooltipRef.current?.offsetHeight||(shownSeries.length>1?112:56);
-  let x=px+12;
-  if(x+tipWidth>rect.width-4)x=px-tipWidth-12;
-  x=Math.max(4,Math.min(x,Math.max(4,rect.width-tipWidth-4)));
-  let y=py-tipHeight-12;
-  if(y<4)y=py+12;
-  y=Math.max(4,Math.min(y,Math.max(4,rect.height-tipHeight-4)));
-  setHeldPosition({x,y});
+  const width=heldTooltipRef.current?.offsetWidth||(shownSeries.length>1?Math.min(320,rect.width-8):112);
+  const height=heldTooltipRef.current?.offsetHeight||(shownSeries.length>1?112:56);
+  setHeldPosition(placeSectorHeldTooltip({pointerX:clientX-rect.left,pointerY:clientY-rect.top,
+   plotWidth:rect.width,plotHeight:rect.height,tooltipWidth:width,tooltipHeight:height}));
  };
  return <section className={`zg-sector-chart${compactSectorScores?' zg-sector-score-card':''}${themePicker?" zg-theme-picker-enabled":""}${showDashboardThemeScores?' zg-theme-score-card':''}`} aria-label={`${series.length}개 ${title} 비교 차트`}>
   <div className="zg-sector-chart-heading"><h2>{draggable?<Sparkles size={18} aria-hidden="true"/>:<Layers3 size={18} aria-hidden="true"/>}{showDashboardThemeScores?<a href="/theme-fear-greed/">{title}</a>:autoStored&&linkToDetail?<a href="/sector-fear-greed/">{title}</a>:title}</h2><div className="zg-sector-period" aria-label={`${title} 기간`}>{[[7,'1W'],[30,'1M'],[90,'3M'],[180,'6M'],[365,'1Y']].map(([days,label])=><button key={days} type="button" aria-pressed={period===days} onClick={()=>setPeriod(Number(days))}>{label}</button>)}</div></div>
