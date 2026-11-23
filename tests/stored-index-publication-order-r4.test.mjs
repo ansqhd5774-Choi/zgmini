@@ -4,6 +4,7 @@ import {readFileSync} from 'node:fs';
 import ts from 'typescript';
 import {acceptsStoredUpdate,REFRESH_INTERVAL_MS} from '../lib/market-score/live-refresh.mjs';
 import {nextStoredIndexPublicationOrder} from '../lib/market-score/stored-index-publication-order-r4.mjs';
+import {earningsProjectionReason} from '../lib/earnings-info-projection-status-r1.mjs';
 
 const iso=minute=>`2026-11-18T${minute}:00.000Z`;
 const body=(score,updatedAt,observedAt='2026-11-18')=>({status:'READY',observedAt,updatedAt,score});
@@ -18,7 +19,7 @@ const response=(data,{publishedAt=null,sourceAt=null}={})=>({
 // stored GET fixtures; no browser, source collection, Writer, or D1 writes.
 const hookSource=readFileSync(new URL('../components/use-stored-index.ts',import.meta.url),'utf8');
 const compiled=ts.transpileModule(hookSource,{compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
-function harness(outputs){
+function harness(outputs,{url='/api/earnings-recession-indicators',exposeProjectionReason=false}={}){
  const states=[],fetches=[];
  let refresh=null,stop=null;
  const react={
@@ -33,10 +34,12 @@ function harness(outputs){
    startStoredRefresh(fn){refresh=fn;return ()=>{};},
   };
   if(path==='../lib/market-score/stored-index-publication-order-r4.mjs')return {nextStoredIndexPublicationOrder};
+  if(path==='../lib/earnings-info-projection-status-r1.mjs')return {earningsProjectionReason};
   throw Error('UNEXPECTED_IMPORT:'+path);
  };
+ const expectedUrl=url;
  const fetch=async(url,options)=>{
-  assert.equal(url,'/api/earnings-recession-indicators');
+  assert.equal(url,expectedUrl);
   assert.equal(options.cache,'no-store');
   assert.ok(options.signal instanceof AbortSignal);
   const current=outputs[fetches.length];
@@ -46,7 +49,7 @@ function harness(outputs){
  };
  const exports={};
  const useStoredIndex=new Function('require','exports','fetch',compiled+'\nreturn exports.useStoredIndex;')(require,exports,fetch);
- useStoredIndex('/api/earnings-recession-indicators');
+ useStoredIndex(url,null,true,exposeProjectionReason);
  assert.ok(refresh,'hook must attach the stored-refresh callback');
  return {
   step:async()=>{await refresh(new AbortController().signal);return {payload:states[0],loading:states[1],error:states[2],publishedAt:states[3]};},
@@ -104,4 +107,41 @@ test('separate header clocks and 60-second scheduler contract stay intact',()=>{
  assert.equal(nextStoredIndexPublicationOrder(point,{publishedAt:'2026-11-18T11:59:00.000Z',snapshotAt:iso('14:00')}),null);
  assert.equal(nextStoredIndexPublicationOrder(point,{publishedAt:null,snapshotAt:iso('15:00')}),null);
  assert.equal(nextStoredIndexPublicationOrder(null,{publishedAt:null,snapshotAt:null}).publication,null);
+});
+
+const server503=reason=>({ok:false,status:503,
+ headers:new Headers(),json:async()=>({status:'unavailable',reason})});
+
+test('W06 opt-in BEA/QFR 503 reasons retain last valid, expire stale and recover on verified 200',async()=>{
+ const h=harness([
+  response(body(12,iso('12:00')),{publishedAt:iso('12:00'),sourceAt:iso('11:00')}),
+  server503('STORED_PROJECTION_PENDING'),
+  server503('PROJECTION_READ_UNAVAILABLE'),
+  server503('SOURCE_RETRIEVAL_EXPIRED'),
+  response(body(13,iso('12:10')),{publishedAt:iso('12:10'),sourceAt:iso('12:09')}),
+ ],{url:'/api/earnings-recession-bea-unit-profit',exposeProjectionReason:true});
+ assert.equal((await h.step()).payload.score,12);
+ const pending=await h.step();
+ assert.equal(pending.payload.score,12);
+ assert.equal(pending.error,'STORED_PROJECTION_PENDING');
+ const unavailable=await h.step();
+ assert.equal(unavailable.payload.score,12);
+ assert.equal(unavailable.error,'PROJECTION_READ_UNAVAILABLE');
+ const stale=await h.step();
+ assert.equal(stale.payload,null,'expired payload must not be displayed as current');
+ assert.equal(stale.publishedAt,null);
+ assert.equal(stale.error,'SOURCE_RETRIEVAL_EXPIRED');
+ const restored=await h.step();
+ assert.equal(restored.payload.score,13);
+ assert.equal(restored.error,null);
+ assert.equal(restored.publishedAt,iso('12:10'));
+ h.cleanup();
+});
+
+test('non-opt-in hook callers never expose BEA/QFR 503 reasons',async()=>{
+ const h=harness([server503('STORED_PROJECTION_INVALID')]);
+ const r=await h.step();
+ assert.equal(r.error,'UPDATE_FAILED');
+ assert.equal(r.payload,null);
+ h.cleanup();
 });
