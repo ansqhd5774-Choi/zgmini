@@ -98,7 +98,7 @@ try{
      const evidence={width:viewport.width,points:body.points.length,lastAt:latest.observedAt,displayed,kst,tipVisibility,tipText,center};
      console.log('W06_MULTIPOINT_INTERACTION '+JSON.stringify(evidence));
      await page.screenshot({path:'artifacts/w06-production-readonly/multipoint-'+viewport.width+'.png',fullPage:false});
-     const deployedTouchCapability=await chart.getAttribute('data-w06-touch-tooltip-ready')==='true';
+     const deployedTouchCapability=(await chart.locator('[data-w06-touch-tooltip-ready="true"]').count())>0;
      // On PRs the live website still runs the old deployed JS. Record that
      // condition explicitly; the local fixture enforces the new touch feature.
      // Once Git Integration deploys the change, this real Production assertion
