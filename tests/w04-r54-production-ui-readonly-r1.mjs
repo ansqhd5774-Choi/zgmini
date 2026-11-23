@@ -54,6 +54,17 @@ try{
     return el?.getAttribute('data-market-state')==='ready'&&
       !!el.querySelector('.recharts-surface');
    },null,{timeout:45000});
+   // The real first-visit introduction intentionally overlays chart input.
+   // Dismiss using the site's standard close button, as the existing W06
+   // Production test does; this changes no server data or user account.
+   const intro=page.locator('#zg-about-intro-dialog');
+   await page.waitForTimeout(1200);
+   result.introDismissed=false;
+   if(await intro.isVisible()){
+    await intro.getByRole('button',{name:'닫기',exact:true}).click();
+    result.introDismissed=true;
+    await intro.waitFor({state:'hidden',timeout:10000});
+   }
    result.phase='HYDRATED';
    assert.equal(await hero.getAttribute('data-market-state'),'ready');
    assert.equal(await hero.getAttribute('data-history-alignment'),'matched',
