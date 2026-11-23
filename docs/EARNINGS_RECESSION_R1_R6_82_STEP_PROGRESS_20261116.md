@@ -42,6 +42,16 @@
 
 ## 개편 후 기록
 
+### 2026-11-23 — WPSFD42 저장자료 CLI 격리 실제 프로세스 검증
+
+- [전용 검증 PR #1474](https://github.com/ansqhd5774-Choi/zgmini/pull/1474) 최신 시험 commit `42a1c46c0c973fb859f4050a77d781a026acc6c7`의 [Node.js CI #45096045063](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45096045063) **SUCCESS**. 전체 회귀시험 5,394 PASS/0 FAIL, PC 회귀시험 50/50 PASS.
+- 이전 in-memory 함수 검증을 넘어 별도 임시 SQLite 파일 및 실제 Node `--service-only` 자식 프로세스를 실행하는 테스트가 PASS. `WPSFD42` 단일 공급원 원본의 RAW/YOY 2행·출력 JSON/TXT·원본 SQLite SHA 불변성·비수집/비게시 로그를 확인. 이는 격리 합성 입력에 대한 검증이지 운영 PC 실제 데이터 계산은 아니다.
+- 시험 코드는 해당 PR과 원담당 브랜치 [`0e886be`](https://github.com/ansqhd5774-Choi/zgmini/commit/0e886be2a79def341ff8adc34053bf3f8e43d3b3)에 동일 blob `33035ed6179410be20a1822a6134d2332aa0a8fa`로 보존.
+- 공통 제어 저장소의 실제 A 허용목록·Controller 분기에 WPSFD42 R4 실행 경로가 없어 [지원 #2794](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2794)를 정규 인계 계약으로 접수. 최신 댓글은 자동 선택 후보일 뿐 **실제 담당자 인수·Controller 설치·PC 계산 실행 미입증**. [정확한 후속 실행·CI 보완 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2794#issuecomment-7089391017) 연결.
+- **NEXT:** 현재 설치 R4 소스 SHA와 승인 수정 후보를 확인하여 필요한 경우 정규 선택 source 설치→A 계산 실행 경로 등록/검증→기존 SQLite 22행·최신 2026-10 RAW+YOY 2행·sourceVersion/checkpoint PC readback. #2767 BLS 수집·#2768 QFR 단일키 게시 재실행 금지. 2단계는 실PC 계산 근거 전까지 IN_PROGRESS.
+
+
+
 ### 2026-11-23 — WPSFD42 독립 서비스 계산 소스 정규 CI PASS
 
 - [WPSFD42 한정 Draft PR #1474](https://github.com/ansqhd5774-Choi/zgmini/pull/1474)는 최신 main 기반으로 R3C/R3D/R4·Worker·UI adapter·회귀시험 등 **정확 7개 W05 관련 소스/시험 파일 + 기존 CI 테스트 명령 1파일**을 격리한 source-only 검증 PR이다. 전담 브랜치 전체 병합/운영설치가 아니다.
