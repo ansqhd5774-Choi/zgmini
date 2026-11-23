@@ -10,16 +10,16 @@
 | 단계 | 직접 수행할 작업 | 완료 조건 | 현재 |
 |---|---|---|---|
 | 1 | 기존 운영 자산·완료 범위·실제 결손 확정 | 설치된 코드/저장 자료/공개 API/실화면의 유효 증거 재사용, source 준비와 운영 효과 구분 | DONE |
-| 2 | 실제 미확보 원자료·저장 계산 마무리 | WPSFD42 정확 수집 효과 승인 확인→기존 단회 B→SQLite 원문/해시/checkpoint readback→저장 자료 계산. 이미 확보된 QFR/BEA는 재수집하지 않음 | IN_PROGRESS — 수집 manifest PROPOSED_NOT_APPROVED, 실제 POST·append 미실행 |
-| 3 | 저장된 결과의 기존 게시·API 연결 | 적격 BLS 서비스/BEA 단위이익/QFR 등 필요한 각 projection을 기존 Writer로 게시·D1 readback·저장형 GET 대조. 정상 경로는 재게시하지 않음 | NOT_DONE — BEA 단위이익/QFR 현재 STORED_PROJECTION_PENDING |
+| 2 | 실제 미확보 원자료·저장 계산 마무리 | WPSFD42 기존 B 단회 수집·SQLite 원문/해시 readback 완료. 저장 자료 기반 R3D 계산과 후속 checkpoint 확인 필요. 이미 확보된 QFR/BEA는 재수집하지 않음 | IN_PROGRESS — WPSFD42 수집/저장 PASS, R3D 계산 운영 결과 미확보 |
+| 3 | 저장된 결과의 기존 게시·API 연결 | 적격 BLS 서비스/BEA 단위이익/QFR 등 필요한 각 projection을 기존 Writer로 게시·D1 readback·저장형 GET 대조. 정상 경로는 재게시하지 않음 | IN_PROGRESS — QFR 1키 D1 readback 및 당시 API 200/READY 확인; BEA 단위이익·WPSFD42 후속 연결 미완료 |
 | 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | PARTIAL — 기존 실사이트 PASS 재사용, 신규 연결 영향만 확인 |
 | 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | NOT_DONE |
 
 ## 현재 완료 근거와 실제 미완료
 
 - #2234/#2235/#2236 설치 완료와 #2584 실PC A PASS·3파일 SHA 일치·운영 쓰기0을 재사용한다. #2245/#2252/#2586 source·CI·main 반영은 완료지만 수집 B 실행 완료와 다르다.
-- 이번 제어 main의 WPSFD42 수집 manifest는 PROPOSED_NOT_APPROVED. 실제 POST1회/SQLite append 효과 승인 원본 확정→기존 단회 B→원문 SHA/checkpoint→저장 자료 계산이 미완료다. 기존 source 설치를 다시 하지 않는다.
-- 이번 실제 공개 GET: BLS 정보행200/READY5행, BEA 제조업200/READY. BEA 단위이익·QFR은 각503/STORED_PROJECTION_PENDING. 원자료 소실로 추정하지 않고 기존 PC 저장·계산→게시 projection의 최초 미연결만 수정한다.
+- **2026-11-22 WPSFD42 수집·SQLite 저장 DONE:** 승인 manifest는 현재 `APPROVED_B`; [정규 B #2767](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2767) 실제 [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/w05-r304-service-pc-w05-r304-211831ef-547e-426a-8838-762b5913c214.json)/TXT `PASS / W05_B_SERVICE_SQLITE_READBACK_VERIFIED`, Provider 1회, retries 0, 22행·2026-10, snapshot SHA `e6ee311982565f49381cd68219c1a3330c875ad8697de7870aabc866a8cb5b71`, chunk SHA `64671e41a1b22510142205abe0499a81173dd7c5bae4d956f1c33bc9254b34f1`, D1·예약 쓰기 0. 독립 원본 재조회 결과는 [운영 검증 증거](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/common-process-w05-runtime-verified-20261122.json)에 기록. 새 공급자 호출·기존 요청 재실행 금지. **NEXT: R3D 저장 자료 계산의 실제 PC 결과 검증.**
+- **QFR 게시 DONE(해당 한 키):** [정규 게시 #2768](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2768)의 [원본 JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/publication-pc-publication-34db72af-680c-4129-b6ee-8a7f31e5c40a.json) `PASS / PUBLICATION_SINGLE_KEY_READBACK_VERIFIED`, D1 1키 1회·원자료 재수집 0·sourceVersion `0cf9d0e4bced96b300810a448bf67be3b663252178f15853f103561d876ddeb3`·sourceStoredAt `1793112733108`. [독립 운영 검증](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/common-process-w05-runtime-verified-20261122.json)에서 **2026-11-22 당시** 공개 API HTTP200/READY·키·sourceVersion·시각 동치 확인. 기존 BLS5행/BEA 제조업 성공 범위는 유지, BEA 단위이익은 여전히 미완료. 현재 시각 API/UI 전체 재검증으로 확대 해석 금지.
 - #1257은 현재 OPEN/Draft이고 원문15파일 merge HOLD를 보존한다. 필요한 정확 효과만 기존 절차로 결정하고 다른 정상 작업을 전역 보류하지 않는다.
 - 기존 PC/모바일·4폭 실사이트 성공은 해당 범위에서 재사용한다. 현재 D1 직접 readback·새 API 연결·정규 갱신을 이번 문서 개편에서 완료한 것으로 주장하지 않는다.
 
@@ -36,9 +36,9 @@
 
 ## NEXT — 담당자의 재개 작업
 
-**2단계: 기존 #2240·승인 원문에서 WPSFD42 2025~2026 BLS POST 최대1회+기존 SQLite 두 테이블 append-only 효과의 실제 GO를 확인한다.** 기존 유효 승인이 있으면 반복 승인 없이 기존 정규 단회 B를 실행하고 raw SHA/checkpoint·저장 자료 계산까지 끝낸다. 없으면 그 효과의 정확 범위·횟수·보호·종료조건만 구체화한 단일 결정을 요청한다. 이 문서를 승인 manifest로 사용하지 않는다.
+**2단계 FIRST UNFINISHED: 이미 저장·readback한 WPSFD42 22행을 대상으로 기존 `EARNINGS_R3D_STORED_BLS_CALC_READONLY.mjs` 저장자료 계산을 승인된 PC 읽기 경로에서 수행하고, 결과의 sourceVersion·관측월·계산 출력과 checkpoint를 확인한다.** #2767의 기존 B 수집은 완료됐으므로 공급자 POST·DB append·설치·승인 재요청을 반복하지 않는다. BEA 단위이익은 별도 정확 원자료 취득·저장 증거 확보가 필요하다.
 
-승인 대기 중에는 기존 QFR/BEA 저장 자료의 3단계 게시 연결·기존 화면 검증·지원5키 읽기를 독립 진행한다. 새 Controller/진단 체계 구축이나 구형 Core owner 검사 반복을 기본 다음 작업으로 삼지 않는다.
+**독립 3단계:** QFR은 #2768에서 D1 게시 및 2026-11-22 당시 Production API 동치까지 완료되었으므로 중복 게시하지 않는다. BEA 단위이익의 실PC 원자료 확보·저장/게시와 신규 정보행 UI 검증은 계속 진행한다. 새 Controller/진단 체계 구축이나 구형 Core owner 검사 반복을 기본 다음 작업으로 삼지 않는다.
 
 ## 개편 후 기록
 
