@@ -42,6 +42,16 @@
 
 ## 개편 후 기록
 
+### 2026-11-23 — WPSFD42 독립 서비스 계산 소스 정규 CI PASS
+
+- [WPSFD42 한정 Draft PR #1474](https://github.com/ansqhd5774-Choi/zgmini/pull/1474)는 최신 main 기반으로 R3C/R3D/R4·Worker·UI adapter·회귀시험 등 **정확 7개 W05 관련 소스/시험 파일 + 기존 CI 테스트 명령 1파일**을 격리한 source-only 검증 PR이다. 전담 브랜치 전체 병합/운영설치가 아니다.
+- [Node.js CI #45094281052](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45094281052) 최신 PR HEAD `26a5308bd1e0c5a66cdea15a2b479995a5e771ea`에서 **completed/success**. 기존 PC publication recovery + WPSFD42 회귀시험 **49/49 PASS**, 기본 5행 D1 readback·GET 통합시험 PASS, 기존 Cloudflare 읽기 계약 72/72 PASS.
+- 검증 중 발견한 두 기존 계약 회귀를 정확히 수정·보존: 불완전 최신 수집이 이전 검증 완료 5행을 `PARTIAL`로 낮추지 않음(`READY` 유지, 진단 별도), 기존 공개 API의 `x-projection-published-at` 헤더 유지. 새 WPSFD42 서비스 원본의 독립 저장·계산은 유지하고 보조 키는 읽기만 허용(기본 5행 게시자가 보조 키를 쓰지 않음).
+- 전담 브랜치 반영 소스 커밋: `0fc0d19`(READY 유지), `de88c6d`(API 게시 헤더), `48823f5`(상충 구형 회귀시험 수정). PR은 **Draft/미병합**, 실PC 새 계산 출력·checkpoint 미회수, Writer/D1/운영 source 반영 0건. 소스 CI PASS로 2단계 DONE 판정하지 않음.
+- **NEXT:** 기존 승인된 A 읽기 경로가 WPSFD42 `--service-only`를 직접 실행할 수 있는지 정규 계약에서 확인, 없다면 기존 Runner 허용목록 우회·새 임의 명령 없이 필요한 정확 1회 읽기 실행을 정규 승인 경로로 연결. 실PC 결과의 snapshot SHA `e6ee311982565f49381cd68219c1a3330c875ad8697de7870aabc866a8cb5b71`, 2026-10, RAW/YOY 2행, sourceVersion·checkpoint·결측을 검산. QFR 게시 및 BLS Provider POST 중복 실행 금지.
+
+
+
 ### 2026-11-23 — WPSFD42 독립 저장자료 계산 소스 결합 제거
 
 - **실제 결함 조건:** 기존 `buildServiceSourcePreview`는 서비스 전용 WPSFD42 계산 전에 `buildPreview` → R3D 기본 3계열 `analyze`를 강제했다. 서비스 저장 원본이 정상이어도 다른 3계열 전체 cohort 결손/오류가 있으면 서비스 계산이 중단되는 불필요한 의존성이다. 운영 실측 실패 원인으로 단정하지 않고 소스에서 재현 가능한 구조 결합으로 분류.
