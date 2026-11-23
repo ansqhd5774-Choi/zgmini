@@ -83,7 +83,7 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays,curre
  const singlePointLabel=scaled.points.length===1&&latest?`${new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(latest.ts))} (계산 시각) · ${latest.value.toFixed(1)}점`:null;
  const gradientId=`summary-${useId().replace(/:/g,'')}`;
  const extrema=chartExtrema(scaled.points.map(p=>({date:new Date(p.ts).toISOString().slice(0,10),value:p.value})));
- return <div className="zg-spark zg-r55-mini-chart zg-r55-summary-mini-chart" style={{height:120,minHeight:120,maxHeight:120,position:"relative"}} aria-label={`${label} 관측 추이${singlePointLabel?` · 단일 실제 관측점 ${singlePointLabel}`:""}`} title={singlePointLabel??undefined}
+ return <div className="zg-spark zg-r55-mini-chart zg-r55-summary-mini-chart" style={{height:120,minHeight:120,maxHeight:120,position:"relative"}} aria-label={`${label} 관측 추이${singlePointLabel?` · 단일 실제 관측점 ${singlePointLabel}`:""}`} title={singlePointLabel??undefined} data-w06-touch-tooltip-ready="true"
   onTouchStart={event=>{
    // Recharts does not reliably open its hover tooltip for a real touch tap.
    // Only expose the actual latest calculated point when touched near its marker.
