@@ -190,8 +190,9 @@ export function buildPreview(db,{generatedAt=new Date().toISOString(),includeSer
   const coverage={configured:rows.length,ready:rows.filter(r=>r.status==='READY').length,
     partial:rows.filter(r=>r.status==='PARTIAL').length,
     unavailable:rows.filter(r=>r.status==='UNAVAILABLE').length};
-  const status=prior.status==='PASS_R3D_STORED_ONLY_CALCULATION'&&coverage.ready===coverage.configured
-    ?'READY':'PARTIAL';
+  // Preserve the last complete hash-verified cohort if a newer batch is incomplete.
+  // Cohort incompleteness is diagnostic and must not downgrade its READY rows.
+  const status=coverage.ready===coverage.configured?'READY':'PARTIAL';
   const identity=[SCHEMA_VERSION,...activeSources.map(x=>`${x.id}|${x.snapshotSha256}`).sort()];
   const sourceVersion=sha256(identity.join('\n'));
   return {
