@@ -79,20 +79,44 @@ try{
    const box=await marker.first().boundingBox();
    assert(box&&box.width>0&&box.height>0,'latest point must have visible bounds');
    const center={x:box.x+box.width/2,y:box.y+box.height/2};
+   const tip=hero.locator('.cnn-history-tooltip');
+   const inspect=async(x,y)=>{
+    const hit=await page.evaluate(({x,y})=>{
+     const el=document.elementFromPoint(x,y);
+     return {tag:el?.tagName??null,cls:el?.getAttribute('class')??null};
+    },{x,y});
+    const content=await tip.count()?await tip.first().innerText():'';
+    return {x,y,hit,content};
+   };
+   result.hoverSamples=[];
    if(viewport.width===390){
     await page.touchscreen.tap(center.x,center.y);
+    await page.waitForTimeout(300);
+    result.hoverSamples.push(await inspect(center.x,center.y));
    }else{
-    await page.mouse.move(center.x-15,center.y);
-    await page.mouse.move(center.x,center.y,{steps:5});
+    // ReferenceDot is not necessarily the AreaChart pointer receiver.
+    // Probe inside the last X-axis category and require exact latest date
+    // AND current score, never a tooltip for an earlier stored observation.
+    const positions=[
+     [center.x-30,center.y],[center.x-10,center.y],
+     [center.x,center.y],[center.x-5,center.y-15],
+     [center.x-5,center.y+15],[center.x-45,center.y-20]
+    ];
+    for(const [px,py] of positions){
+     await page.mouse.move(px-8,py);
+     await page.mouse.move(px,py,{steps:5});
+     await page.waitForTimeout(220);
+     const sample=await inspect(px,py);
+     result.hoverSamples.push(sample);
+     if(sample.content.includes(display)&&
+      sample.content.includes(String(Number(body.asOfDate.slice(8,10))))) {
+       result.tooltipText=sample.content;break;
+     }
+    }
    }
-   await page.waitForTimeout(350);
-   const tooltip=hero.locator('.cnn-history-tooltip');
-   result.tooltipText=await tooltip.count()?await tooltip.first().innerText():null;
-   // Desktop hover must show true latest point. Mobile touch is separately
-   // recorded rather than falsifying a pass based on mouse hover emulation.
    if(viewport.width===1440){
     assert(result.tooltipText?.includes(display),
-     'real desktop hover tooltip must include current score');
+     'desktop tooltip must show exact current score after multi-position hover');
    }
    result.documentWidth=await page.evaluate(()=>document.documentElement.scrollWidth);
    assert(result.documentWidth<=viewport.width+2,'no horizontal overflow');
@@ -103,7 +127,8 @@ try{
    result.phase='FAIL';
    result.failure=String(error?.message??error).slice(0,700);
    console.log('W04_R54_PRODUCTION_UI_FAIL '+JSON.stringify(result));
-   throw error;
+   // Keep the second viewport running after a first-viewport failure;
+   // the final assertion preserves the CI failure status.
   }finally{
    await page.screenshot({path:`${folder}/employment-${viewport.width}.png`,fullPage:false})
     .catch(()=>{});
@@ -115,4 +140,6 @@ try{
  writeFileSync(folder+'/results.json',JSON.stringify({checkedAt:new Date().toISOString(),summary},null,2)+'\n');
 }
 assert.equal(summary.length,2);
+assert(summary.every(item=>item.phase==='PASS'),
+ 'Production W04 desktop/mobile acceptance failed; inspect JSON and screenshots');
 console.log('W04_R54_REAL_PRODUCTION_UI_FINISHED '+JSON.stringify(summary));
