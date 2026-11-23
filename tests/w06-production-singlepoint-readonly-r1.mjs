@@ -103,24 +103,15 @@ try{
      console.log('W06_MULTIPOINT_INTERACTION '+JSON.stringify(evidence));
      await page.screenshot({path:'artifacts/w06-production-readonly/multipoint-'+viewport.width+'.png',fullPage:false});
      const deployedTouchCapability=(await chart.locator('[data-w06-touch-tooltip-ready="true"]').count())>0;
-     // On PRs the live website still runs the old deployed JS. Record that
-     // condition explicitly; the local fixture enforces the new touch feature.
-     // Once Git Integration deploys the change, this real Production assertion
-     // becomes mandatory and fails closed on a genuine touch regression.
+     // Main already contains the approved touch implementation. A Production
+     // run without the marker must now fail, not silently skip verification.
      if(viewport.width===390){
+      assert(deployedTouchCapability,'merged W06 touch UI must be present in Production assets');
       const sideVeil=page.locator('button.zg-risk-side-veil[aria-label="열린 패널 닫기"]');
-      if(await sideVeil.isVisible()){
-       if(deployedTouchCapability)assert.fail('touch latest composite point must not open an unrelated risk side panel');
-       console.log('W06_LEGACY_TOUCH_OPENS_SIDE_PANEL '+JSON.stringify({lastAt:latest.observedAt}));
-       await page.getByRole('button',{name:'시장 채팅 닫기',exact:true}).click();
-      }
+      assert(!(await sideVeil.isVisible()),'latest chart-point touch must not open market chat overlay');
      }
-     if(viewport.width===390&&!deployedTouchCapability){
-      console.log('W06_PRODUCTION_TOUCH_NOT_YET_DEPLOYED '+JSON.stringify({width:viewport.width,lastAt:latest.observedAt,displayed,tipVisibility}));
-     }else{
-      assert(tipExists&&tipVisibility==='visible'&&tipText.includes(displayed)&&tipText.includes(kst),
-        'actual '+(viewport.width===390?'mobile touch':'desktop hover')+' latest 1D point tooltip matches public data');
-     }
+     assert(tipExists&&tipVisibility==='visible'&&tipText.includes(displayed)&&tipText.includes(kst),
+       'actual '+(viewport.width===390?'mobile touch':'desktop hover')+' latest 1D point tooltip matches public data');
     }
     assert.equal(await selected.getAttribute('aria-pressed'),'true',period+' selected');
     const dimension=await page.evaluate(()=>({innerWidth:window.innerWidth,documentWidth:document.documentElement.scrollWidth}));
