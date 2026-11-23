@@ -60,3 +60,14 @@ jobs:
       - name: W01 isolated production inflation API readback (GET only)
         if: github.event_name == 'pull_request' && github.head_ref == 'codex/w01-public-api-pr-ci-readback-20261123'
         run: node scripts/w01-inflation-public-api-readback.mjs
+      - name: W01 isolated Production desktop/mobile Chrome CDP readback
+        if: github.event_name == 'pull_request' && github.head_ref == 'codex/w01-public-api-pr-ci-readback-20261123'
+        run: node scripts/w01-inflation-public-browser-readback.mjs
+      - name: W01 Production desktop/mobile screenshots
+        if: always() && github.event_name == 'pull_request' && github.head_ref == 'codex/w01-public-api-pr-ci-readback-20261123'
+        uses: actions/upload-artifact@v4
+        with:
+          name: w01-production-ui-readonly
+          path: artifacts/w01-public-ui/*.png
+          retention-days: 7
+          if-no-files-found: warn
