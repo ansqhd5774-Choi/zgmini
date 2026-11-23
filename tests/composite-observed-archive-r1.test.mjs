@@ -4,7 +4,7 @@ import {mkdtempSync,rmSync,readFileSync} from 'node:fs';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {localDatabase} from '../scripts/pc-writer/local-db.mjs';
-import {COMPOSITE_OBSERVED_VERSION,compositeSampleFromVerified,mergeCompositeObservedDay} from '../lib/composite-observed-history-r1.mjs';
+import {COMPOSITE_OBSERVED_VERSION,COMPOSITE_OBSERVED_MAX_POINTS_PER_DAY,compositeSampleFromVerified,mergeCompositeObservedDay} from '../lib/composite-observed-history-r1.mjs';
 import {mergeCompositeObservedDisplay} from '../lib/market-score/composite-observed-display-r1.mjs';
 import {appendCompositeObservedFromCurrent,publishCompositeObservedArchive} from '../scripts/pc-writer/composite-observed-archive-r1.mjs';
 
@@ -229,19 +229,60 @@ test('R4 same-value signature revisions respect 15-minute sampling and never fab
   compositeSampleFromVerified(revised,at('2026-10-31T12:15:00Z'))).changed,true);
 });
 
-test('R4 still enforces the original 100-point/day safety bound without discarding original points',()=>{
+test('approved 512-point/day safety bound preserves earlier points and rejects the 513th',()=>{
  const date='2026-10-31',start=at('2026-10-31T00:00:00Z');
+ assert.equal(COMPOSITE_OBSERVED_MAX_POINTS_PER_DAY,512);
  let original=null;
- for(let i=0;i<100;i++){
+ for(let i=0;i<COMPOSITE_OBSERVED_MAX_POINTS_PER_DAY;i++){
   const record=compositeSampleFromVerified(calc(i%2===0?50:51),start+i*60000);
   const result=mergeCompositeObservedDay(original,date,record);
   assert.equal(result.changed,true);
   original=result.body;
  }
- assert.equal(original.points.length,100);
+ assert.equal(original.points.length,512);
  assert.throws(()=>mergeCompositeObservedDay(original,date,
-  compositeSampleFromVerified(calc(52),start+100*60000)),/COMPOSITE_DAILY_CAP_EXCEEDED/);
- assert.equal(original.points.length,100);
+  compositeSampleFromVerified(calc(52),start+512*60000)),/COMPOSITE_DAILY_CAP_EXCEEDED/);
+ assert.equal(original.points.length,512,'cap must not truncate or mutate saved points');
+});
+
+test('all 288 verified five-minute score changes survive one full UTC day',()=>{
+ const date='2026-10-31',start=at('2026-10-31T00:00:00Z');
+ let archive=null;
+ for(let i=0;i<288;i++){
+  const record=compositeSampleFromVerified(calc(i%2===0?50:51),start+i*5*60000);
+  const result=mergeCompositeObservedDay(archive,date,record);
+  assert.equal(result.changed,true,'five-minute change '+i);
+  archive=result.body;
+ }
+ assert.equal(archive.points.length,288);
+ assert.equal(archive.points[0].calculatedAt,'2026-10-31T00:00:00.000Z');
+ assert.equal(archive.points.at(-1).calculatedAt,'2026-10-31T23:55:00.000Z');
+});
+
+test('same timestamp is idempotent only for the same verified value and signature',()=>{
+ const date='2026-10-31',time=at('2026-10-31T12:00:00Z');
+ const first=compositeSampleFromVerified(calc(50),time);
+ const previous=mergeCompositeObservedDay(null,date,first).body;
+ assert.equal(mergeCompositeObservedDay(previous,date,first).changed,false);
+ assert.throws(()=>mergeCompositeObservedDay(previous,date,
+  compositeSampleFromVerified(calc(53),time)),/COMPOSITE_ARCHIVE_EQUAL_TIMESTAMP_CONFLICT/);
+ const revised=calc(50);revised.domains[0].score=53;
+ assert.throws(()=>mergeCompositeObservedDay(previous,date,
+  compositeSampleFromVerified(revised,time)),/COMPOSITE_ARCHIVE_EQUAL_TIMESTAMP_CONFLICT/);
+ assert.deepEqual(previous.points,[first],'conflict must not mutate prior history');
+});
+
+test('a genuine score change is never dropped solely due to an equal source fingerprint',()=>{
+ const date='2026-10-31',first=compositeSampleFromVerified(calc(50),at('2026-10-31T12:00:00Z'));
+ const archive=mergeCompositeObservedDay(null,date,first).body;
+ const changed={...compositeSampleFromVerified(calc(53),at('2026-10-31T12:05:00Z')),
+  signature:first.signature};
+ assert.deepEqual(mergeCompositeObservedDay(archive,date,changed).body.points.map(p=>p.score),[50,53]);
+});
+
+test('the PC archive still enforces the existing 1.8MB row guard',()=>{
+ const writer=readFileSync(new URL('../scripts/pc-writer/composite-observed-archive-r1.mjs',import.meta.url),'utf8');
+ assert.match(writer,/Buffer\.byteLength\(encoded\)>1800000/);
 });
 
 test('R4 changed-score archive keeps verified MarketParquet paid breadth provenance',()=>{
