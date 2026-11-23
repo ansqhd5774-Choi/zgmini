@@ -1,0 +1,41 @@
+name: W05 Production Public Readonly Acceptance
+
+on:
+  pull_request:
+    paths:
+      - 'tests/w05-production-public-readonly-r1.mjs'
+      - '.github/workflows/w05-production-public-readonly.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Install isolated browser test runner
+        run: |
+          mkdir -p /tmp/w05-public-readonly-deps
+          cd /tmp/w05-public-readonly-deps
+          npm install --no-save --no-package-lock playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Read Production GET and verify desktop/mobile without writes
+        env:
+          NODE_PATH: /tmp/w05-public-readonly-deps/node_modules
+        run: |
+          ln -s /tmp/w05-public-readonly-deps/node_modules node_modules
+          node tests/w05-production-public-readonly-r1.mjs
+      - name: Retain bounded public evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: w05-production-public-readonly
+          path: artifacts/w05-production-readonly/
+          if-no-files-found: warn
+          retention-days: 3
