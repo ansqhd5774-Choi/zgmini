@@ -1,3 +1,4 @@
+import {createHash} from 'node:crypto';
 import {INFLATION_CANDIDATES_7_PUBLIC_ROUTE,validateInflationCandidates7Public}
  from '../worker/inflation-causal-candidates-public-7-r1.mjs';
 import {INFLATION_CAUSAL_PUBLIC_ROUTE,validateInflationCausalPublic}
@@ -6,10 +7,10 @@ import {INFLATION_CAUSAL_PUBLIC_ROUTE,validateInflationCausalPublic}
 // One-off production GET verification on the isolated W01 PR. No PC/D1/provider writes.
 const SITE='https://zgmini.kr';
 const expected={
- seven:{version:'INFL7_PRESENTATION_c46e53726c17d811e62a42865a9f3801c57a72234e843bac85c237e6732276d6',rows:[
+ seven:{version:'INFL7_PRESENTATION_c46e53726c17d811e62a42865a9f3801c57a72234e843bac85c237e6732276d6',storedAt:1795345763749,bodySha256:'dff3a07c19019df83020dd089bd37c1cd5b73c2bf92788efaf5884c9be406c2e',rows:[
  ['2',4.153,'2026-11-02'],['16',5910402249.78,'2026-09-30'],['22',451.337,'2026-10-01'],
  ['23',446.588,'2026-10-01'],['24',159.78,'2026-09-01'],['28',976044,'2026-09-01'],['29',99.4361,'2026-09-01']]},
- nineteen:{version:'INFL19_PRESENTATION_3e5a3fced8b2f6875a5a822ee322064b3d77420f352dac8ddd817d4534f6cd2e',rows:[
+ nineteen:{version:'INFL19_PRESENTATION_3e5a3fced8b2f6875a5a822ee322064b3d77420f352dac8ddd817d4534f6cd2e',storedAt:1795046823250,bodySha256:'52015f3fbf286cd74f7a08ae076f87a90411ada151de0e9c174bc662da0085a8',rows:[
  ['1',102.07,'2026-10-01'],['3',3.1,'2026-11-17'],['4',9.64,'2026-08'],
  ['5',388.58,'2026-09-01'],['6',835.342,'2026-09-01'],['7',282.34,'2026-09-01'],
  ['8',338.06,'2026-09-01'],['9',203.861,'2026-09-01'],['10',275.172,'2026-09-01'],
@@ -27,7 +28,11 @@ function matchKnownSnapshot(payload,pin){
   check(row?.status==='READY'&&row.value===value&&row.observationDate===date,
    'PINNED_D1_VALUE_OR_DATE_MISMATCH_'+id);
  }
- return 'PINNED_D1_VALUES_AND_DATES_MATCH';
+ const envelope={payload,projection:{status:'READY',sourceVersion:payload.sourceVersion,
+  sourceStoredAt:payload.sourceStoredAt,builtAt:pin.storedAt}};
+ const actualHash=createHash('sha256').update(JSON.stringify(envelope)).digest('hex');
+ check(actualHash===pin.bodySha256,'PINNED_D1_FULL_BODY_SHA256_MISMATCH');
+ return 'PINNED_D1_FULL_BODY_SHA256_MATCH';
 }
 export function checkR2(payload,now=Date.now()){
  check(payload?.status==='READY','R2_NOT_READY');
