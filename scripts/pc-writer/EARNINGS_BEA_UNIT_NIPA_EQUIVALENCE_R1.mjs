@@ -1,6 +1,7 @@
 // Source-only comparison: never calls BEA/FRED, writes a source archive or publishes D1.
 // BEA NIPA Table 1.15, line 7 / A463RD-Q versus FRED A463RD3Q052SBEA.
 import {parseBeaUnitProfitCsv} from '../../lib/market-score/earnings-bea-unit-profit-source-r1.mjs';
+import {createHash} from 'node:crypto';
 
 const SERIES='A463RD';
 const QUARTER=/^(\d{4})Q([1-4])$/;
@@ -16,7 +17,7 @@ export function beaUnitNipaRequestSpec({observationYear}={}){
     Frequency:'Q',Year:`${observationYear-1},${observationYear}`,ResultFormat:'JSON'});
 }
 
-export function compareBeaUnitNipaToFred({beaResponse,fredCsv}={}){
+export function parseBeaUnitNipaRecentQuarters(beaResponse){
   const bea=beaResponse?.BEAAPI?.Results?.Data;
   if(!Array.isArray(bea)||bea.length===0)throw Error('BEA_UNIT_NIPA_DATA_MISSING');
   const sourceRows=bea.filter(row=>String(row?.SeriesCode??'')===SERIES&&
@@ -44,6 +45,42 @@ export function compareBeaUnitNipaToFred({beaResponse,fredCsv}={}){
   const recent=points.slice(-5);
   if(recent.some((point,i)=>i>0&&point.ordinal!==recent[i-1].ordinal+1))
     throw Error('BEA_UNIT_NIPA_NONCONTIGUOUS_QUARTERS');
+  return recent.map(point=>Object.freeze({
+    ordinal:point.ordinal,quarter:point.quarter,value:point.value
+  }));
+}
+
+export function inspectBeaUnitNipaRawJson({rawBytes,sourceStoredAt}={}){
+  // This is a pure, source-only preflight. It cannot capture, publish or
+  // convert a BEA response into the existing FRED transport contract.
+  if(!(rawBytes instanceof Uint8Array)||rawBytes.byteLength<20||
+     rawBytes.byteLength>2_000_000)
+    throw Error('BEA_UNIT_NIPA_RAW_SIZE_INVALID');
+  if(!Number.isSafeInteger(sourceStoredAt)||sourceStoredAt<=0)
+    throw Error('BEA_UNIT_NIPA_SOURCE_TIME_INVALID');
+  let response;
+  try{
+    const text=new TextDecoder('utf-8',{fatal:true}).decode(rawBytes);
+    response=JSON.parse(text);
+  }catch{throw Error('BEA_UNIT_NIPA_RAW_JSON_INVALID');}
+  const recent=parseBeaUnitNipaRecentQuarters(response);
+  const latest=recent.at(-1);
+  const year=Number(latest.quarter.slice(0,4)),quarter=Number(latest.quarter.at(-1));
+  const observedThrough=new Date(Date.UTC(year,quarter*3,0)).toISOString().slice(0,10);
+  if(Date.parse(observedThrough+'T23:59:59Z')>sourceStoredAt)
+    throw Error('BEA_UNIT_NIPA_FUTURE_OBSERVATION');
+  const sourceVersion=createHash('sha256').update(rawBytes).digest('hex');
+  return Object.freeze({
+    status:'SOURCE_ONLY_VALIDATED',transport:'BEA_API_JSON',
+    dataset:'NIPA',tableName:'T11500',seriesCode:SERIES,
+    lineNumber:'7',frequency:'Q',unit:'USD',
+    sourceVersion,sourceStoredAt,sourceByteLength:rawBytes.byteLength,
+    observedThrough,recent:Object.freeze(recent)
+  });
+}
+
+export function compareBeaUnitNipaToFred({beaResponse,fredCsv}={}){
+  const recent=parseBeaUnitNipaRecentQuarters(beaResponse);
   const fred=parseBeaUnitProfitCsv(fredCsv).slice(-5);
   for(let i=0;i<5;i++){
     if(recent[i].ordinal!==fred[i].ordinal)
