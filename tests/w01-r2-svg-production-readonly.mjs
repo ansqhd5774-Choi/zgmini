@@ -44,8 +44,13 @@ test('W01 actual R2 SVG last-point at PC/mobile widths',async()=>{
     assert(svgCount>0,'real SVG chart rendered');
     const actualDocumentWidth=await page.evaluate(()=>document.documentElement.scrollWidth);
     assert(actualDocumentWidth<=width+2,'no viewport horizontal overflow');
-    const heroText=await hero.innerText();
-    assert(heroText.includes(body.score.toFixed(1)),'score orb matches API score');
+    // The score orb counts up from zero; wait for its visible final value.
+    await page.waitForFunction(expected=>
+      [...document.querySelectorAll('[data-testid="inflation-detail-hero"] .cnn-score-value')]
+        .some(el=>el.textContent?.replace(/\\s/g,'').trim()===expected),
+      body.score.toFixed(1),{timeout:12000});
+    const displayedOrb=await hero.locator('.cnn-score-value').first().innerText();
+    assert.equal(displayedOrb.replace(/\\s/g,''),body.score.toFixed(1),'final orb equals public score');
     await page.screenshot({path:'/tmp/w01-inflation-r2-'+width+'.png',fullPage:false});
     const summary={viewport:width+'px',document:doc?.status(),score:body.score,asOfDate:body.asOfDate,
      lastTrendLabel:last.label,lastTrendValue:last.value,svgCount,marker:meta,center,
