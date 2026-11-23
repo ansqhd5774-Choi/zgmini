@@ -15,6 +15,13 @@
 | 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | PARTIAL — WPSFD42 서비스 신규 2행 390px·1440px 실사이트 PASS (#2882); BEA 단위이익 후속 연결 화면 검증 미완료 |
 | 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | NOT_DONE |
 
+## 2026-11-23 3단계 최신 실행 증거 — BEA B 승인 확보·원본 설치 미완료 (정본)
+
+- **기존 'BEA B 승인 미확보'는 더 이상 현행 사실이 아님.** 제어 [#2815 사용자 명시 승인](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2815#issuecomment-7096347488)과 [승인 manifest/선택 pin PR #2889](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/2889) `main` 병합 확인. 승인 선택 설치 target `156a364647009327ce0f0c15fe3a6fc8c4fbd98a`, 직전 검증 Controller `003d185040a0beeac429bcfd6ece283d933ec38c`, 변경 정확 3파일. Manifest `b8dc5f32faa30dbc607bab77cb8dcf61c62d00dced0cdb4cc2560dedbf86e216` 및 selector는 제어 main에 있음. 기존 #2884 시험 후보는 바이트 동일하나 시험 전용 Draft/미병합.
+- **운영 효과 미완료:** 최신 실PC 설치 전 CAS/lease, 독립 유지보수기 요청/실행 JSON/TXT, BEA 원본 A 조회 영수증은 아직 회수하지 못함. 소스/승인 등록만으로 설치·원본 VERIFIED를 주장하지 않는다. 다른 W01/W05/고용 운영 기능과 원자료·DB/D1 불변.
+- **독립 BEA 저장 소스 결함 수정:** 앱 [Draft PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183)에 SHA pin 지정 시 보관 CSV를 공급자 재호출 없이 조회하고 invalid/missing pin은 fail-closed하는 source-only 수정 및 회귀를 추가. 최초 CI [45145192348](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45145192348)은 `sourceSha` 중복 선언 SyntaxError로 실제 FAIL, 해당 실패 조건을 최소 수정한 후 source HEAD [e634cb65](https://github.com/ansqhd5774-Choi/zgmini/commit/e634cb65df913a69ac9b7ac47b525bc40ba98039) 새 [CI #45145711266](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45145711266) 검증 중. 최종 CI 성공 주장 금지. PC Provider 호출·SQLite/D1 변경 없음.
+- **NEXT:** (1) 이미 승인·병합된 `156a364...`의 현장 설치 SHA/CAS/lease와 정규 maintenance 요청/영수증 존재 여부를 먼저 대조하고 중복 제출 없이 단회 선택 적용. (2) 설치 PASS면 기존 승인 `earnings-bea-unit-archive-readonly` A 1회와 JSON/TXT 결과로 실제 아카이브 상태 판정. (3) 별도 BEA 원자료 취득·저장/게시 B 효과는 확인된 승인 범위에서만 진행. (4) #1183 신규 CI 최종값 회수. 5단계 완료율 `2/5` 유지.
+
 ## 2026-11-23 2단계 완료 판정 — 실제 R4 checkpoint 계약 대조 (최신)
 
 - [R4 원본](https://github.com/ansqhd5774-Choi/zgmini/blob/main/scripts/pc-writer/EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs)의 `buildServiceSourcePreview`는 WPSFD42 독립 source checkpoint를 `sha256("EARNINGS_C_SERVICE_SOURCE_CHECKPOINT_V1\\nWPSFD42|"+snapshotSha256)`로 계산하고 `sourceStoredAt=firstSeenAt`으로 고정한다. 별도의 로컬 checkpoint 파일 영속 쓰기는 함수 완료 조건이 아니다. 앞서 '독립 로컬 checkpoint 파일 확인'을 필수 추가 Gate로 둔 판단을 **정정**한다.
