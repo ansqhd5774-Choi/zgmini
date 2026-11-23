@@ -80,9 +80,13 @@ try{
      const kst=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(latest.observedAt));
      const latestDot=chart.locator('.recharts-reference-dot circle').first();
      await latestDot.waitFor({state:'visible',timeout:15000});
+     await latestDot.evaluate(el=>el.scrollIntoView({block:'center',inline:'nearest'}));
+     await page.waitForTimeout(200);
      const bounds=await latestDot.boundingBox();
      assert(bounds&&bounds.width>0&&bounds.height>0,'latest marker has real visible bounds');
      const center={x:bounds.x+bounds.width/2,y:bounds.y+bounds.height/2};
+     const topHit=await page.evaluate(({x,y})=>{const el=document.elementFromPoint(x,y);return {tag:el?.tagName??null,cls:el?.getAttribute('class')??null,aria:el?.getAttribute('aria-label')??null};},center);
+     console.log('W06_MULTIPOINT_TARGET_HIT '+JSON.stringify({width:viewport.width,center,topHit}));
      const tip=viewport.width===390?chart.locator('[data-testid="w06-touch-tooltip"]'):chart.locator('.recharts-tooltip-wrapper');
      if(viewport.width===390){
       // An actual emulated touch must be used; mouse hover on 390px is not evidence.
@@ -108,7 +112,7 @@ try{
       if(await sideVeil.isVisible()){
        if(deployedTouchCapability)assert.fail('touch latest composite point must not open an unrelated risk side panel');
        console.log('W06_LEGACY_TOUCH_OPENS_SIDE_PANEL '+JSON.stringify({lastAt:latest.observedAt}));
-       await sideVeil.click();
+       await page.getByRole('button',{name:'시장 채팅 닫기',exact:true}).click();
       }
      }
      if(viewport.width===390&&!deployedTouchCapability){
