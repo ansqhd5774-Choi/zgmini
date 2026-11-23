@@ -15,6 +15,14 @@
 | 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | PARTIAL — WPSFD42 서비스 신규 2행 390px·1440px 실사이트 PASS (#2882); BEA 단위이익 후속 연결 화면 검증 미완료 |
 | 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | NOT_DONE |
 
+## 2026-11-23 BEA 공식 API 원문 분리 검사 — 소스·CI 완료, 운영 취득 미실행 (최신)
+
+- **원본 취득 권리 분리:** [FRED 서비스 약관](https://fred.stlouisfed.org/legal/terms/)상 FRED Content 장기 아카이브/상업적 이용의 별도 허가 문제와, [BEA 공식 FAQ](https://www.bea.gov/help/faq/147)의 예외 없는 BEA 공개자료 공공영역 안내를 구분. BEA 원자료의 공개 이용 조건만으로 FRED 서비스의 캐싱·저장 계약을 자동 승인하지 않는다. 기존 FRED CSV 직접 가져오기·게시 경로는 출처/권리 계약 전환 전 **운영 미승인 유지**.
+- **BEA 원본 자체를 검증하는 별도 source-only 함수:** [Draft #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183)의 `EARNINGS_BEA_UNIT_NIPA_EQUIVALENCE_R1.mjs`에 `parseBeaUnitNipaRecentQuarters`와 `inspectBeaUnitNipaRawJson`을 추가. 원본 JSON 2MB 상한·UTF-8·공식 `NIPA/T11500/Q/A463RD/Line7`·USD·배수0·최근 5연속 분기·미래 관측 거부, 원문 **바이트** SHA256을 `BEA_API_JSON` 출처로 별도 계산. `SOURCE_ONLY_VALIDATED` 결과만 반환하며 기존 `FRED_CSV` Worker `READY`·D1 sourceVersion으로 재표기/게시하지 않는다. 소스 [f72f639e](https://github.com/ansqhd5774-Choi/zgmini/commit/f72f639e2bcb8fa2c0ab9b788549b25636ae69e7), 시험 [6d2cd9a6](https://github.com/ansqhd5774-Choi/zgmini/commit/6d2cd9a6134649452a9ccdd345595921d60b8e5a), 정확 2파일 소스 전용.
+- [Node CI #45148841643](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45148841643) Job `137604814101` 최종 **completed/SUCCESS**. Regression **5,451 PASS/0 FAIL**, PC 게시 복구 50 PASS, Cloudflare 읽기 계약 72 PASS. 신규 `official BEA raw JSON receives its own exact-byte provenance, never a FRED alias` 및 `BEA source preflight rejects malformed raw bytes, oversized body and future period` 모두 PASS.
+- **단계·운영 경계:** source-only 새 함수는 BEA 실API GET·실PC 원본 아카이브 저장·Controller 새 설치·DB/D1 게시를 하지 않는다. 실제 [고정 PC A #2894](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2894)의 `BEA_UNIT_ARCHIVE_NOT_STORED`/0건 증거 유지. 공식 단계 **2/5 DONE, 3단계 IN_PROGRESS**.
+- **NEXT:** 기존 승인 BEA API credential/공통 Collector와 정확 `T11500/Q` 원자료 취득·비공개 JSON 아카이브 저장 효과를 명시 대조, 승인 범위 내에서 정규 수집·SHA readback. BEA JSON을 기존 FRED CSV로 위장하지 않도록 기존 계산기·Reader·Writer의 **정확 출처 계약 수정은 별도 검증·승인 범위**로만 진행. 이후 별도 D1 B 게시 및 Production API/UI 실제 결과 판정. 기존 WPSFD42/QFR 재실행 금지.
+
 ## 2026-11-23 BEA unit 저장 원본 bounded-read 수정 및 실제 CI 성공 (최신)
 
 - [Draft PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183) 기존 source-only 브랜치에서 `readBeaUnitArchivedSource`의 **CSV 100KB·metadata 10KB 파일 크기 `lstat` 사전 확인**을 추가하여 크기 초과 파일을 `fs.readFileSync` 전체 할당 전에 `BEA_UNIT_STORED_SOURCE_TOO_LARGE`로 거부. 심볼릭 링크·SHA·metadata·관측기간 검증과 기존 불변 원본 유지. 소스 [28b30d8f](https://github.com/ansqhd5774-Choi/zgmini/commit/28b30d8f650bf3140f9bf7e10fe6017cda28479d), 회귀 [fc99936b](https://github.com/ansqhd5774-Choi/zgmini/commit/fc99936b6d99cc6c17087b5014e8118d985843d5) 정확 2파일.
