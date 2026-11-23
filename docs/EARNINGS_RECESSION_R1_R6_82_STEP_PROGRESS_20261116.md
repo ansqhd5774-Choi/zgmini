@@ -2,7 +2,7 @@
 
 <!-- W05-ACTIVE-FIVE-STAGE-PLAN-20261121 -->
 
-**현재 1/5단계 완료·2단계 진행 중.** 완료 조건 개수이며 작업량 20%가 아니다. 기존 순차26/82·개별35/82·독립5키75%는 과거 계수로 보존하고 합산하지 않는다. 이 상단이 유일한 현재 인계 정본이며 아래 과거 §148/0-A/C표의 NEXT·HOLD·순번은 시점별 기록이다.
+**현재 1/5단계 완료·2단계 진행 중(실PC 2행 계산 검증 완료, 별도 checkpoint 직접 확인 미입증).** 완료 단계 개수 기준이며 작업량 20%가 아니다. 3단계는 WPSFD42·QFR 게시 완료, BEA 단위이익 미완료. 과거 82단계 수치는 현행 진행률로 사용하지 않는다. 이 상단이 현재 인계 정본이며 아래 과거 기록은 시점별 이력이다.
 
 저장소 `ansqhd5774-Choi/zgmini` / 브랜치 `codex/api-site-integration-r1-20261026` / 개편전HEAD `61e2c02eb2bbd4ef967a8506ee78b3324c1331f3`.
 목적·실행 기준: [개편 계획](EARNINGS_RECESSION_R1_R6_82_STEP_EXECUTION_PLAN_20261116.md). 독립 지원 업무: [5개 API–D1 비교](API_SITE_R1_ACTIVE_WORK_PLAN_20261114.md).
@@ -10,10 +10,17 @@
 | 단계 | 직접 수행할 작업 | 완료 조건 | 현재 |
 |---|---|---|---|
 | 1 | 기존 운영 자산·완료 범위·실제 결손 확정 | 설치된 코드/저장 자료/공개 API/실화면의 유효 증거 재사용, source 준비와 운영 효과 구분 | DONE |
-| 2 | 실제 미확보 원자료·저장 계산 마무리 | WPSFD42 기존 B 단회 수집·SQLite 원문/해시 readback 완료. 기존 R3D(기본 3계열) 검증 후 R4 `buildServiceSourcePreview`에서 WPSFD42 별도 2행 저장자료 계산·checkpoint 확인 필요. QFR/BEA 기저장 자료 재수집 금지 | IN_PROGRESS — WPSFD42 수집/저장 PASS, R4 서비스 2행 계산·checkpoint 운영 결과 미확보 |
-| 3 | 저장된 결과의 기존 게시·API 연결 | 적격 BLS 서비스/BEA 단위이익/QFR 등 필요한 각 projection을 기존 Writer로 게시·D1 readback·저장형 GET 대조. 정상 경로는 재게시하지 않음 | IN_PROGRESS — QFR 1키 D1 readback 및 당시 API 200/READY 확인; BEA 단위이익·WPSFD42 후속 연결 미완료 |
-| 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | PARTIAL — 기존 실사이트 PASS 재사용, 신규 연결 영향만 확인 |
+| 2 | 실제 미확보 원자료·저장 계산 마무리 | WPSFD42 기존 B 단회 수집·SQLite 원문/해시 readback 완료. 기존 R3D(기본 3계열) 검증 후 R4 `buildServiceSourcePreview`에서 WPSFD42 별도 2행 저장자료 계산·checkpoint 확인 필요. QFR/BEA 기저장 자료 재수집 금지 | IN_PROGRESS — 수집·저장 #2767, 실제 서비스 2행 계산 #2864 PASS. sourceVersion·sourceStoredAt는 #2882 게시 readback과 일치; **별도 로컬 checkpoint 직접 readback 증거는 미확인** |
+| 3 | 저장된 결과의 기존 게시·API 연결 | 적격 BLS 서비스/BEA 단위이익/QFR 등 필요한 각 projection을 기존 Writer로 게시·D1 readback·저장형 GET 대조. 정상 경로는 재게시하지 않음 | IN_PROGRESS — QFR #2768, WPSFD42 #2882 D1 단일키 readback 완료; WPSFD42 실사이트 API·PC/모바일 7/7 PASS. BEA 단위이익 원본·D1 게시 미완료 (#2815) |
+| 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | PARTIAL — WPSFD42 서비스 신규 2행 390px·1440px 실사이트 PASS (#2882); BEA 단위이익 후속 연결 화면 검증 미완료 |
 | 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | NOT_DONE |
+
+## 2026-11-23 최신 유효 증거와 NEXT (정본)
+
+- **2단계 확인 완료된 작업:** WPSFD42 저장 #2767의 snapshot SHA `e6ee311982565f49381cd68219c1a3330c875ad8697de7870aabc866a8cb5b71`을 실제 실PC [#2864 JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/45124486353-1-seat-1.json)·TXT에서 재조회. `PASS/W05_SERVICE_STORED_CALC_VERIFIED`, `2026-10`, `INDEX=158.076`, `YoY=4.973901956357141%`, `sourceVersion=a28e8c4a8a1074fbb6fb4affa0156b99d094c5c8e5e6f02dbaac6ee2986fe3ed`, `sourceStoredAt=1795351641253`. Provider/업무/D1 쓰기 각 0, 보호 해시 동일. 과거 '계산 영수증 없음' 판정은 **정정**. 단, 이 결과에는 별도 `checkpoint` 항목이 없으므로 **직접 checkpoint readback 완료는 주장하지 않는다**.
+- **3단계 일부 완료:** WPSFD42 정확 단일 키 게시 [#2882 JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/publication-pc-publication-c8627e3e-d090-466b-bfd0-7fb6795e2bcd.json) `PASS/PUBLICATION_SINGLE_KEY_READBACK_VERIFIED`, D1 write 1, 동일 sourceVersion/sourceStoredAt. QFR #2768 성공 보존. [Production 검증 Run 45136000909](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45136000909)에서 BLS 7/7 READY, 390px·1440px 서비스 2행 표시와 JS 오류 0 확인. WPSFD42 수집·계산·게시·API/UI를 재실행하지 않는다.
+- **실제 남은 범위:** WPSFD42 로컬 checkpoint가 필수 별도 항목이라면 현재 저장된 checkpoint 원장에 sourceVersion/sourceStoredAt 동치가 있는지 **읽기만** 확인해 2단계 완료 판정. 게시 성공을 독립 checkpoint 검증으로 날조하지 않는다. 병행 3단계 BEA 단위이익 [#2815](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2815)는 Controller 선택 설치 B 승인·현재 CAS/lease 미확인, archive 자체 `UNKNOWN`, 공개 API 503/`STORED_PROJECTION_PENDING`. 기존 3파일 source CI를 운영 설치로 보지 않는다.
+- **NEXT:** (1) WPSFD42 저장 계산의 checkpoint 존재와 대응 버전 읽기 확인(실제 운영 쓰기 없음) → 2단계 DONE 여부 판정. (2) BEA #2815의 정확한 3파일 설치 효과에 대한 유효 승인 및 실PC CAS/lease 확인 후에만 설치/A readback. 무관한 전역 진단·QFR/WPS 재실행 금지.
 
 ## 현재 완료 근거와 실제 미완료
 
