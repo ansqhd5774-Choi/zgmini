@@ -15,6 +15,12 @@
 | 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | PARTIAL — WPSFD42 서비스 신규 2행 390px·1440px 실사이트 PASS (#2882); BEA 단위이익 후속 연결 화면 검증 미완료 |
 | 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | NOT_DONE |
 
+## 2026-11-23 BEA unit 저장 원본 bounded-read 수정 및 실제 CI 성공 (최신)
+
+- [Draft PR #1183](https://github.com/ansqhd5774-Choi/zgmini/pull/1183) 기존 source-only 브랜치에서 `readBeaUnitArchivedSource`의 **CSV 100KB·metadata 10KB 파일 크기 `lstat` 사전 확인**을 추가하여 크기 초과 파일을 `fs.readFileSync` 전체 할당 전에 `BEA_UNIT_STORED_SOURCE_TOO_LARGE`로 거부. 심볼릭 링크·SHA·metadata·관측기간 검증과 기존 불변 원본 유지. 소스 [28b30d8f](https://github.com/ansqhd5774-Choi/zgmini/commit/28b30d8f650bf3140f9bf7e10fe6017cda28479d), 회귀 [fc99936b](https://github.com/ansqhd5774-Choi/zgmini/commit/fc99936b6d99cc6c17087b5014e8118d985843d5) 정확 2파일.
+- [Node CI #45147799512](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45147799512) **completed/SUCCESS**, 주요 Regression **5449 PASS / 0 FAIL**, 별도 PC publication recovery 50 PASS, Cloudflare candidate contract 72 PASS. 신규 `oversized stored CSV or metadata fails before whole-file read and preserves originals` **PASS**, 기존 pinned archive/no-provider 시험 **PASS**. 직전 SEC quota `peak=9` 실패는 이번 정확 HEAD에서는 재현되지 않았으나 SEC 보호 코드·상한·테스트는 수정하지 않았으며 재발 방지 보장하지 않는다.
+- **운영 효과 0:** 본 성공은 저장형 소스의 보호·회귀 증거로, 이전 [실PC BEA #2894](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2894) `BEA_UNIT_ARCHIVE_NOT_STORED`를 바꾸지 않는다. BEA 공식 `T11500/Q` 취득/원본 아카이브 저장과 별도 D1 게시 B가 남아 있으므로 5단계 진행 상태는 **2/5 DONE·3단계 IN_PROGRESS** 유지.
+
 ## 2026-11-23 BEA unit 기존 수집 경로·권리 대조 — 승인 효과 범위 (최신)
 
 - 앱 `main`의 `scripts/pc-writer/consumption-r5.mjs`에는 공식 BEA `https://apps.bea.gov/api/data`의 `GetData` 호출 및 기존 로컬 `BEA_API_KEY` 설정 재사용이 구현되어 있다. **하지만 실제 등록된 대상은 월간 `NIPA/T20600` 및 `NIUnderlyingDetail/U20306`이고, unit profit의 분기별 `NIPA/T11500`(`A463RD`, `LineNumber=7`)은 기존 그 수집 호출에 없다.** 별도 유효 사용자 승인 없이 이 수집기의 Dataset·Table·Frequency를 변경하거나 호출하지 않는다.
