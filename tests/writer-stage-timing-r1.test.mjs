@@ -33,6 +33,8 @@ test('Writer timing groups independently instrumented computation and D1 stages'
  assert.equal(report.writerStageTiming.byStage['w05-stored-sidecar'].samples,1);
  assert.equal(report.writerStageTiming.byStage['other-stages'].samples,1);
  assert.doesNotMatch(JSON.stringify(report.writerStageTiming),/SECRET|untrusted/);
+ recordOutputStageTiming(report,'constructor',7,true);
+ assert.equal(report.writerStageTiming.byStage.constructor.samples,1);
 });
 
 test('normal and failed output contracts remain unchanged with monotonic timing',async()=>{
