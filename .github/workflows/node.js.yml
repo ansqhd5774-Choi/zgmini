@@ -83,5 +83,14 @@ jobs:
         env:
           GITHUB_EVENT_BEFORE: ${{ github.event.before }}
         run: node scripts/ci-actionlint-changed.mjs
+      # #15 Supply Chain: official GitHub PR dependency graph diff, advisory only.
+      # Full SHA pin v5.0.1; no PR write token, new approval gate or new job.
+      - name: Review PR dependency changes (advisory only)
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/dependency-review-action@bbc44d14a204704ccc493733616cd1e93a0321ec
+        with:
+          warn-only: 'true'
+          vulnerability-check: 'true'
+          license-check: 'true'
       - name: Audit production dependency vulnerabilities (high or critical)
         run: npm audit --omit=dev --audit-level=high --audit=true --fund=false
