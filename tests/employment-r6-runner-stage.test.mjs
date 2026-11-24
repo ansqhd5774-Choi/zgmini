@@ -11,6 +11,7 @@ import {
   projectEmploymentR6RunnerResult,runnerOptionsFrom,runEmploymentR6Runner,
 } from "../scripts/pc-writer/employment-r6-runner-stage.mjs";
 import {stageEmploymentR6OneYear} from "../scripts/pc-writer/employment-r6-one-year-stage.mjs";
+import {EMPLOYMENT_R6_FORMULA_HASH,EMPLOYMENT_R6_FORMULA_REVISION} from "../lib/market-score/employment-r6-formula.mjs";
 
 const CANDIDATE="EMPLOYMENT_R6_CANDIDATE.sqlite";
 const TABLE="market_score_employment_r4_shadow_history_v1";
@@ -63,8 +64,8 @@ test("Runner-facing stage emits only bounded aggregate and 29 statuses from real
   assert.equal(report.indicators.length,29);
   assert.equal(report.indicators.find(x=>x.id==="U3_UNEMPLOYMENT").rawStatus,"READY");
   assert.equal(report.sourceStoredAt,Date.parse("2026-11-01T09:00:00.000Z"));
-  assert.match(report.formulaHash,/^sha256:[a-f0-9]{64}$/);
-  assert.equal(report.methodologyVersion,"EMP-R6-FORMULA-R1");
+  assert.equal(report.formulaHash,EMPLOYMENT_R6_FORMULA_HASH);
+  assert.equal(report.methodologyVersion,EMPLOYMENT_R6_FORMULA_REVISION);
   assert.equal(report.stateClaimsChart.pointCount,0);
   assert.equal(report.stateClaimsChart.unit,"%");
   assert.equal(report.stateClaimsChart.unitMatchesApproved,true);

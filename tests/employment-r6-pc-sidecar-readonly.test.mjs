@@ -31,7 +31,7 @@ test("one-year display combines approved Core + isolated candidate read-only, se
   ];
   const recent="2026-10-05T00:00:00.000Z";
   const candidateRows=[
-    {id:"U3_UNEMPLOYMENT_RATE",date:"2025-10-31",value:4.7,retrieved:recent},
+    {id:"U3_UNEMPLOYMENT_RATE",date:"2025-09-30",value:4.7,retrieved:recent},
     {id:"U3_UNEMPLOYMENT_RATE",date:"2025-11-30",value:4.6,retrieved:recent},
     {id:"U3_UNEMPLOYMENT_RATE",date:"2026-09-30",value:4.2,retrieved:recent},
   ];

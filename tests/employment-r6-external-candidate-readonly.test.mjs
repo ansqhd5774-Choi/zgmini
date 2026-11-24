@@ -64,7 +64,11 @@ function syntheticTwentyNineFeatureHistory(){
     const feature=EMPLOYMENT_R6_FEATURES.find(x=>x.logical.includes(id));
     const dates=feature.freq==="WEEKLY"?weekly:
       feature.freq==="QUARTERLY"?quarterly:monthly;
-    for(const [i,date] of dates.entries()){
+    // The official October 2025 CPS survey did not occur. Never put a
+    // fabricated CPS source month into the otherwise synthetic PIT fixture.
+    const officialCpsGap=["U3_UNEMPLOYMENT","U6_UNEMPLOYMENT","LFPR","EPOP"].includes(feature.id);
+    const actualDates=officialCpsGap?dates.filter(date=>date!=="2025-10-31"):dates;
+    for(const [i,date] of actualDates.entries()){
       if(id==="STATE_INITIAL_CLAIMS"){
         for(const [s,code] of states.entries())add(id,date,code,100+i+s/10);
       }else if(id==="BED_STATE_GAINS_LEVEL"||id==="BED_STATE_LOSSES_LEVEL"){
