@@ -131,3 +131,23 @@
 - PC 제어 `tests/employment-r6-controller-integration.test.mjs`는 임시 경로·합성 Runner/SQLite 파일로 Controller engine→Worker/Bundled source 실행을 검증; `tests/maintenance-route-integration.test.mjs`는 주입된 가짜 GitHub/updater로 승인 라우팅·중복 차단을 검증. 기존 C996 격리 CI에 두 시험 포함 (PR #3428). **검증 범위는 격리 Integration, 운영 PC 실행 아님**.
 - W05 게시 `w05-publication-source-ci.yml`은 승인/게시 계약 시험을 수행 (PR #3434·Actions #45455117036 SUCCESS). 실제 D1 게시 완료와는 별개. 운영 수집→SQLite→계산→D1→Production API/UI의 단일 실측 연결은 기존 원장/승인 실행 증거를 별도로 대조해야 하며 현재 단계 `PARTIAL`.
 - 이 1차 검토에서 새 코드 결함은 아직 입증되지 않았음. 기존 안전 검사/모의 시험을 제거하지 않고 다음으로 대상별 운영 원장·게시 readback의 기존 유효 증거를 찾아 범위를 한정한다. 운영 호출·쓰기 없음.
+
+
+### R2 P1-B 운영 결과·계보 2차 대조 및 P2-C Type/Build 적합성 판정 (2026-11-25)
+
+**Integration 운영 증거 (유효 실측과 한계 분리)**
+
+- W04 운영 수집 B 원본 [#3404](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3404), Actions [#45441655199](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45441655199): 수집 작업 자체 `R6_B_SUCCESS/R6_DOL_MANUAL_COLLECTED`; 결과 JSON/TXT GitHub 업로드 `RESULT_PAIR_REF_CONFLICT_UNTOUCHED 0/2`로 실패. **동일 B 효과 재실행 금지, 보고 완료로 변경 금지**.
+- 운영 독립 A 읽기 [#3408](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3408), [Run #45443484534](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45443484534): `PASS/R6_DOL_BED_STORED_EVIDENCE_READONLY`, 실제 SQLite readback, National 4 계열·State 51지역 600개 완전 주 기록; providerCalls/operationalWrites/d1Writes=0. **로컬 저장·조회 특정 범위 PASS**, 원 PDF SHA/PIT/D1 쓰기 검증이 아님.
+- #3404의 2026-11-25 공식 ETA538 결과 대조 댓글: 공식 4개 국가 지표 (신규 203000/4주 평균 197750, 계속 1763000/피보험률 1.1%)가 공개 `/api/employment-r6/observations` 및 1440/390 하이드레이션 화면의 관측값과 일치했다는 독립 기록. 이는 **해당 공개 snapshot의 값 비교 증거**이며, 동일 B 요청에서 D1 게시까지 이어진 단일 거래 증거가 아니다.
+- PDF SHA·National4 원문 개별 hash 연결 감사 [#3414](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3414)는 OPEN/미입증. #3414 마지막 댓글에 따르면 별도 원자적 접수 #3435 후에도 GitHub PC Job workflow Run 미등록; 주석 변경 PR #3433은 복구 효과 없음. 이는 **운영 자동화 진입 문제로, GitHub CI 회귀시험 실패와 구분**한다. 동일 Issue 재라벨·고유 A 반복 발행·운영 보호 우회 금지.
+- 정규 자동 `RELEASE` Collector와 수동 ETA538 `ONE_YEAR` 경로는 다르므로 수동 성공을 후속 정규 자동 갱신의 성공으로 확장하지 않는다. 전체 수집→저장→계산→D1→API/UI 동일 주기 연결은 여전히 `PARTIAL/미입증`. 기능 소유자/공통 자동화 Owner의 기존 증거가 생길 때 그 정확한 효과만 재판정한다.
+
+**PC 제어 Type/Build 기술적 적용성**
+
+- 최신 main Git tree `recursive=1` 전수 응답 `truncated=false`, **4925개 파일**, JS/CJS/MJS 807개, `.test.mjs` 390개, `.ts/.tsx/.mts/.cts` **0개**, `package.json/package-lock.json/pnpm-lock.yaml/tsconfig.json` **0개**. 루트 및 Controller/Tools/Tests에서도 TS 없음.
+- 따라서 현재 언어 구조에서 본체의 `tsc --noEmit`을 PC에 복사하는 **TypeScript-specific Type Check는 `NOT_APPLICABLE`**. 이는 JS의 정적 분석·계약 오류 전체가 없음을 뜻하지 않음. 현행 Oxlint의 변경 JS 정적 검사, 해당 범위 `node --check`, JSDoc/계약·회귀시험은 기존 안전 범위로 유지. 추가 `checkJs`는 구체적 미탐지 결함 증거 없이 도입하지 않는다.
+- 루트 package manager/앱 빌드 명세가 없고 Controller/Writer는 승인된 개별 source·selective install, CAS·manifest hash·transitive import closure가 배포 계약. 웹 방식 `npm ci && npm run build` **PC 전체에 `NOT_APPLICABLE`**. 반면 **선택 소스 묶음 무결성·설치 closure는 기존 회귀/manifest 검사로 검증**되며 Runtime 실제 설치 성공과 구분한다.
+- **영향:** R2 P2-C 판단 조사 완료; 새로운 build/tsconfig/패키지/Workflow/Runner 만들지 않음. Type/Build `NOT_APPLICABLE`의 범위는 웹 방식 검사에 한하며 소스 검증·운영 설치 무결성 의무를 없애지 않음.
+
+**다음 필수 작업:** P2-D 기존 유효 PC E2E 실행·결과 원장과 Cloudflare/D1/API/UI의 동일 키·시각·버전 대조. P2-E 기존 CodeQL/Gitleaks/Oxlint/Zizmor/npm audit 실행 결과 및 라이선스/비용 정책 최신 evidence 정리. 소스 오류가 독립적으로 재현되면 최신 main 기점 분리 브랜치에서 최소 수정·CI·PR; 그 전에는 운영 변경·새 CI를 하지 않는다.
