@@ -1,6 +1,11 @@
 name: Community Chat Browser UI (Mocked API)
 
 on:
+  push:
+    branches: [codex/employment-1y-reader-r1]
+    paths:
+      - '.github/workflows/community-chat-browser.yml'
+      - 'tests/w04-r6-production-ui-readonly-r1.mjs'
   pull_request:
     branches: [main]
     paths:
