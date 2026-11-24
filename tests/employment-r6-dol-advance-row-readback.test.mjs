@@ -100,6 +100,8 @@ test("W04 rejects missing, duplicated, tampered or XML-masquerading National row
       {observationRows:alter(0,{source_hash:"0".repeat(64)})},
       {observationRows:alter(0,{provider_series_id:"DOL:r539cy"})},
       {observationRows:alter(0,{available_at:"2026-11-18T00:00:00.000Z"})},
+      {observationRows:alter(0,{available_at:"2026-11-19T18:00:00.000Z"})},
+      {observationRows:alter(0,{retrieved_at:"2026-11-24T14:00:00.000Z"})},
       {observationRows:alter(0,{provenance_json:JSON.stringify({...p,responseHash:"0".repeat(64)})})},
       {observationRows:alter(0,{provenance_json:JSON.stringify({...p,rawSnapshotId:"0".repeat(64)})})},
       {rawChunks:data.rawChunks.map((x,i)=>i===0?{...x,body_sha256:"0".repeat(64)}:x)},
