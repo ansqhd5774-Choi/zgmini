@@ -2,7 +2,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {fileURLToPath} from 'node:url';
 import {hasCompleteLocalSeed,publishW05WithIncompleteSeed}
  from '../scripts/pc-writer/w05-seed-fallback-r1.mjs';
 import {W05_SAVED_IDS} from '../scripts/pc-writer/w05-stored-sidecar-publication-r1.mjs';
