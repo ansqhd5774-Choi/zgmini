@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {REPO,WORKFLOWS,triage,keyFor,markerFor} from '../scripts/ci-failure-issue.mjs';
 
 const event=(overrides={})=>({
- action:'completed',repository:{full_name:REPO,private:true},
+ action:'completed',repository:{full_name:REPO,private:false},
  workflow_run:{id:123456,run_attempt:1,name:WORKFLOWS[0],
   status:'completed',conclusion:'failure',event:'pull_request',
   head_sha:'a'.repeat(40),head_repository:{full_name:REPO},...overrides}
@@ -63,6 +63,15 @@ test('success, cancelled, unknown workflow and fork origin cause no GitHub API c
   const r=await triage({event:event(changed),request:async()=>{calls++;throw Error('must not call');}});
   assert.deepEqual(r,{state:'IGNORED'});assert.equal(calls,0);
  }
+});
+test('public source repository is accepted and private event is rejected',async()=>{
+ const f=fixture();
+ assert.deepEqual(await triage({event:event(),request:f.request}),{state:'CREATED',issue:6200});
+ let called=false;
+ const privateEvent=event();privateEvent.repository.private=true;
+ const ignored=await triage({event:privateEvent,request:async()=>{called=true;throw Error('unexpected');}});
+ assert.deepEqual(ignored,{state:'IGNORED'});
+ assert.equal(called,false);
 });
 test('incomplete GitHub evidence fails closed without Issue writes',async()=>{
  const request=async(resource)=>{
