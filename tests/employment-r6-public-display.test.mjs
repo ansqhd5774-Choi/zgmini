@@ -91,6 +91,36 @@ test("public R6 display validates 29 approved IDs, provenance and score/raw sepa
   assert(!validEmploymentR6PublicDisplay(invalidCadence));
 });
 
+
+test("W04 rejects fabricated missing values, dates and scores before visitor publication",()=>{
+  for(const mutation of [
+    {value:4.2},
+    {observationDate:"2026-10-31"},
+    {retrievedAt:"2026-11-01T09:00:00.000Z"},
+    {scoreStatus:"READY",score:50},
+  ]){
+    const invalid=structuredClone(body);
+    Object.assign(invalid.indicators[0],mutation);
+    if(mutation.scoreStatus==="READY")invalid.summary.scoredFeatures+=1;
+    assert.equal(validEmploymentR6PublicDisplay(invalid),false,JSON.stringify(mutation));
+  }
+});
+
+test("W04 rejects false stale classification of a recent stored observation",()=>{
+  const model=buildEmploymentR6OneYearReadModel([{
+    logicalSeriesId:"U3_UNEMPLOYMENT_RATE",
+    geographyType:"NATIONAL",geographyCode:"US",
+    observationDate:"2026-10-31",value:4.2,
+    sourceHash:"a".repeat(64),retrievedAt:"2026-11-01T09:00:00.000Z",
+  }],{asOfDate:"2026-11-01",sourceStoredAt:Date.parse("2026-11-01T10:00:00.000Z")});
+  assert.equal(validEmploymentR6PublicDisplay(model),true);
+  const invalid=structuredClone(model);
+  assert.equal(invalid.indicators[0].rawStatus,"READY");
+  invalid.indicators[0].rawStatus="STALE";
+  invalid.summary.recentlyObservedFeatures-=1;
+  assert.equal(validEmploymentR6PublicDisplay(invalid),false);
+});
+
 test("visitor GET reads a single verified D1 public row; never fetches provider data",async()=>{
   const trace=[];
   const originalFetch=globalThis.fetch;
