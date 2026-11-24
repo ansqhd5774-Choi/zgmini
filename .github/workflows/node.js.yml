@@ -67,6 +67,17 @@ jobs:
       # Reuses TypeScript from npm ci, no added dependencies or global baseline.
       - name: Validate public-to-PC architecture boundaries
         run: node scripts/ci-architecture-boundary.mjs
+      # R2 #20: public projection Data CI uses synthetic, read-only D1 fixtures.
+      # No provider calls, live DB, writer, publication or production API access.
+      - name: Verify stored data read and freshness contract
+        run: node scripts/ci-data-contract-r2.mjs
+      - name: Upload synthetic data contract evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-data-contract
+          path: artifacts/ci-data-contract/report.json
+          retention-days: 7
+          if-no-files-found: error
       - name: Regression tests
         run: node --test tests/*.test.mjs
       - name: PC publication recovery tests
