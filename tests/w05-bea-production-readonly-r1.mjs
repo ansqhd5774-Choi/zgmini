@@ -49,7 +49,7 @@ try{
     assert.equal(data.sourceStoredAt,1795435085956);
     assert.equal(data.indicator.observationPeriodEnd,'2026-06-30');
     const history=data.indicator.history.map(item=>{
-     const q=/^(20\\d{2})-(03|06|09|12)-(?:30|31)$/.exec(item.date);
+     const q=/^(20\d{2})-(03|06|09|12)-(?:30|31)$/.exec(item.date);
      assert(q,'BEA public history quarter-end date');
      return {quarter:q[1]+'Q'+(Number(q[2])/3),value:item.value};
     });
