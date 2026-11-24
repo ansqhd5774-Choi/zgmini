@@ -153,6 +153,12 @@ test("DOL 600w ETA539 HTTP failure retains national claims and records a partial
   assert.equal(result.groupResults[0].failureCode, "DOL_ETA539_SOURCE_FAILED");
   assert.equal(runs[0].failureCode, "DOL_ETA539_SOURCE_FAILED");
   assert.equal(runs[0].detail.backfillWindowVersion, undefined);
+  assert.deepEqual(runs[0].detail.latestNationalSeriesObservationDates, {
+    INITIAL_CLAIMS: "2026-10-31",
+    INITIAL_CLAIMS_4W: "2026-10-31",
+    CONTINUED_CLAIMS: "2026-10-31",
+    INSURED_UNEMPLOYMENT_RATE: "2026-10-31",
+  });
   assert.equal(runs[0].detail.scoreComputed, false);
   assert.equal(snapshots.length, 1);
   assert.equal(result.publicOutput, false);
