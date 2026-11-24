@@ -2,7 +2,7 @@
 
 ## 목적·권한·현재 실행 정본
 
-브랜치 `codex/api-site-integration-r1-20261026`의 주 실행은 [실적 정보성 지표 5단계 계획](EARNINGS_RECESSION_R1_R6_82_STEP_EXECUTION_PLAN_20261116.md), 현재 상태는 [진행 원장 상단](EARNINGS_RECESSION_R1_R6_82_STEP_PROGRESS_20261116.md)을 따른다. **현재4/5단계 완료·5단계 진행 중.** 실적 정보행 4단계는 기존 WPSFD42/QFR 및 BEA #45220124737 실제 Production PC·모바일 화면 검증으로 DONE이며, 5단계의 정규 갱신/UNCHANGED 운영 결과는 별도 미검증이다. 과거5키 감사75%/3단계 완료 수치는 주 기능 완료율이 아니다. 원래 실적침체 R1~R6 설계·적격 정보행 확장·기존 E1-R4 보호는 폐기하지 않는다.
+브랜치 `codex/api-site-integration-r1-20261026`의 주 실행은 [실적 정보성 지표 5단계 계획](EARNINGS_RECESSION_R1_R6_82_STEP_EXECUTION_PLAN_20261116.md), 현재 상태는 [진행 원장 상단](EARNINGS_RECESSION_R1_R6_82_STEP_PROGRESS_20261116.md)을 따른다. **W05 주 실행 5/5단계 DONE(2026-11-24).** 실적 정보행의 기존 수집·저장·계산·3키 D1/GET·390/1440px 화면 성공을 재사용하고, 마지막 5단계는 자연 Writer [#3243](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3243#issuecomment-7124638333)의 신규 승인 SHA `24077edc2fb4196e83ba202fdd9681b1fe841447`, 세 키 `ALREADY_STORED/readbackAtWriter=true`, 실제 36개 공개 이력 대조 통과로 확인했다. [공통 #68 최신 실증](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-7124665082). 이 결과와 아래 **5개 타 기능 D1 의미 동치 지원 감사(현행 정확 저장 본문 읽기 권한 미확인)**는 독립 상태이며 5/5에 합산하지 않는다. 과거5키 감사75%/3단계 완료 수치는 주 기능 완료율이 아니다. 원래 실적침체 R1~R6 설계·적격 정보행 확장·기존 E1-R4 보호는 폐기하지 않는다.
 
 독립 지원 목적은 물가19/7·시장일정·테마·고용의 **현재 선택된 D1 저장 결과→실제 Reader 변환→공개 응답** 의미 동치를 기존 권한·비민감 비교 결과로 확인하는 것이다. 원담당 수집·산식·DB 설계·기능 코드를 대체하거나 W05의 실적 원자료 완료와 같은 분모로 묶지 않는다.
 
