@@ -26,7 +26,7 @@ export async function runEmploymentR6AutoCollection({
   // Release/circuit dates are already computed by the approved scheduler.
   // Preserve only canonical UTC timestamps: no provider body, URL or secret.
   const safeTime=value=>typeof value==="string"
-    &&/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$/.test(value)
+    &&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)
     &&Number.isFinite(Date.parse(value))
     &&new Date(value).toISOString()===value?value:null;
   return {
