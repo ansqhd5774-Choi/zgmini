@@ -74,6 +74,8 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'vite.config.ts'
+      - 'scripts/ci-browser-performance.mjs'
+      - 'tests/ci-browser-performance.test.mjs'
       - '.github/workflows/community-chat-browser.yml'
   workflow_dispatch:
 
@@ -179,3 +181,37 @@ jobs:
       - name: Show local dev errors on failure
         if: failure()
         run: tail -n 120 /tmp/zgmini-chat-vite.log || true
+
+      # Reuse the already installed Playwright Chromium; no Lighthouse npm
+      # download and no dedicated runner or additional workflow.
+      - name: Build isolated local production preview for browser performance
+        run: npm run build
+      - name: Measure local production preview Web Performance API
+        timeout-minutes: 2
+        run: |
+          set -euo pipefail
+          ./node_modules/.bin/vite preview --host 127.0.0.1 --port 3000 --strictPort > /tmp/zgmini-ci-browser-perf.log 2>&1 &
+          PREVIEW_PID=$!
+          trap 'kill "$PREVIEW_PID" 2>/dev/null || true' EXIT
+          READY=0
+          for i in $(seq 1 30); do
+            if curl -fsS --max-time 2 http://127.0.0.1:3000/about > /dev/null 2>&1; then
+              READY=1
+              break
+            fi
+            sleep 1
+          done
+          if [ "$READY" != 1 ]; then
+            echo "CI_PERFORMANCE_LOCAL_PREVIEW_UNAVAILABLE"
+            tail -n 35 /tmp/zgmini-ci-browser-perf.log
+            exit 1
+          fi
+          node scripts/ci-browser-performance.mjs
+      - name: Upload local browser performance summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: local-browser-performance-summary
+          path: artifacts/ci-performance-browser/summary.json
+          retention-days: 7
+          if-no-files-found: warn
