@@ -138,3 +138,53 @@ test("W04 true numeric zero remains a valid claim value", () => {
   const rows=parseDolNationalClaimsXml(xml,{retrievedAt:"2026-11-12T14:00:00.000Z"});
   assert.deepEqual(rows.map(row=>row.value),[0,0]);
 });
+
+
+test("W04 DOL release only succeeds when all four national series meet their own reporting lags", async () => {
+  const run = async (continuedDate) => {
+    const recorded = [];
+    const store = {
+      async initialize() {},
+      async getLatestRun() { return null; },
+      async acquire() { return { acquired: true }; },
+      async release() { return true; },
+      async writeRawSnapshot() { return { snapshotId: 1, bodySha256: "x", chunkCount: 1, noop: false }; },
+      async upsertObservationRows() { return { inserted: 4, revised: 0, noop: 0, rejected: 0 }; },
+      async recordRun(entry) { recorded.push(entry); return 101; },
+    };
+    const dates = {
+      INITIAL_CLAIMS: "2026-11-14",
+      INITIAL_CLAIMS_4W: "2026-11-14",
+      CONTINUED_CLAIMS: continuedDate,
+      INSURED_UNEMPLOYMENT_RATE: continuedDate,
+    };
+    const result = await runEmploymentR6CollectionStep({
+      db: { prepare() { return {}; } },
+      now: () => new Date("2026-11-19T15:00:00Z"),
+      groups: ["DOL_UI_WEEKLY_CLAIMS"],
+      storeFactory: () => store,
+      providerFactory: () => ({
+        async fetchGroup() {
+          return {
+            requestCount: 2,
+            missingSeries: [],
+            snapshots: [],
+            rows: Object.entries(dates).map(([logicalSeriesId, observationDate]) => ({
+              logicalSeriesId, observationDate, value: 1,
+            })),
+          };
+        },
+      }),
+    });
+    return { result, recorded };
+  };
+  const stale = await run("2026-10-24");
+  assert.equal(stale.result.groupResults[0].status, "PARTIAL");
+  assert.equal(stale.result.groupResults[0].failureCode, "DOL_RELEASE_OBSERVATION_STALE");
+  assert.equal(stale.recorded[0].detail.latestInitialClaimsObservationDate, "2026-11-14");
+  assert.equal(stale.recorded[0].detail.latestNationalSeriesObservationDates.CONTINUED_CLAIMS, "2026-10-24");
+
+  const fresh = await run("2026-11-07");
+  assert.equal(fresh.result.groupResults[0].status, "SUCCESS");
+  assert.equal(fresh.recorded[0].failureCode, null);
+});
