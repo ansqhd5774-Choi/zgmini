@@ -165,6 +165,6 @@ test('created Issue says grouping is by CI step, not by confirmed root cause',as
  const f=fixture();
  assert.deepEqual(await triage({event:event(),request:f.request}),{state:'CREATED',issue:6200});
  const created=f.calls.find(x=>x.resource==='issues'&&x.method==='POST');
- assert.match(created.body.body,/묶음 기준: 같은 Workflow\\/Job\\/Step/);
+ assert.ok(created.body.body.includes('묶음 기준: 같은 Workflow/Job/Step'));
  assert.match(created.body.body,/근본 원인이 같다는 뜻은 아닙니다/);
 });
