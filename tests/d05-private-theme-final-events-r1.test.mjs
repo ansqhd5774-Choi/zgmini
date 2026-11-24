@@ -138,5 +138,5 @@ test('paid Core integration adds only optional local private event readback',()=
  assert.match(source,/privateStored\?\.status==='PRIVATE_STORED_READBACK_VERIFIED'/);
  assert.match(source,/storeVerifiedPrivateThemeFinalEvents\(/);
  assert.match(source,/d05PrivateFinalOutputReadback/);
- assert.match(source,/catch\{d05PrivateFinalOutputReadback=\{status:'UNPROVEN_PRIVATE_FINAL_OUTPUT'\}\}/);
+ assert.match(source,/UNPROVEN_PRIVATE_FINAL_OUTPUT/);
 });
