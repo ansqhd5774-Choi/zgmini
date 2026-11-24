@@ -44,6 +44,19 @@ test('nonregistry source, missing integrity and install scripts are advisory war
  assert.equal(sourceKind('http://registry.npmjs.org/x'),'INSECURE_HTTP');
  assert.equal(sourceKind('git+ssh://example/x'),'GIT');
 });
+test('same-version SRI and tarball changes are still detected without exposing values',()=>{
+ const a=lock({'node_modules/x':npm('1.2.3')});
+ const b=lock({'node_modules/x':{
+  version:'1.2.3',
+  resolved:'https://registry.npmjs.org/x/-/different-tarball.tgz',
+  integrity:'sha512-'+Buffer.from('different').toString('base64')
+ }});
+ const report=compareSupplyLocks(a,b);
+ assert.equal(report.modified,1);
+ assert(report.changes[0].warnings.includes('RESOLUTION_VALUE_CHANGED'));
+ assert(report.changes[0].warnings.includes('INTEGRITY_VALUE_CHANGED'));
+ assert.doesNotMatch(JSON.stringify(report),/different-tarball|sha512-|different/);
+});
 test('invalid or unsupported lockfile fails without inventing valid report',()=>{
  assert.throws(()=>compareSupplyLocks(lock(),{}),/CI_SUPPLY_LOCK_INVALID/);
  assert.throws(()=>compareSupplyLocks(lock(),JSON.stringify({lockfileVersion:2,packages:{}})),/CI_SUPPLY_LOCK_INVALID/);
