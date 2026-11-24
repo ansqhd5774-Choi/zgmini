@@ -169,7 +169,7 @@ jobs:
             artifacts/production-assets-network/
             artifacts/w06-production-readonly/
             artifacts/w06-touch-local/
-          artifacts/cnn1521-production-viewport/
+            artifacts/cnn1521-production-viewport/
           if-no-files-found: warn
       - name: Show local dev errors on failure
         if: failure()
