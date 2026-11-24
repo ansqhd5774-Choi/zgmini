@@ -5,6 +5,7 @@ import {buildEmploymentR6OneYearReadModel} from '../lib/market-score/employment-
 import {INFLATION_CAUSAL_19} from '../lib/inflation-causal-public-catalog.mjs';
 import {INFLATION_CANDIDATES_7} from '../lib/inflation-causal-candidates-public-7-catalog.mjs';
 import {collectFiveKeyInPlace,W05_FIXED_READS} from '../scripts/api-site/five-key-inplace-readback-prework-r12.mjs';
+import {readW05PublicApi,W05_PUBLIC_API_URLS,W05_PUBLIC_MAX_BODY_BYTES} from '../scripts/api-site/five-key-public-api-reader-r1.mjs';
 import {comparePublicReadback,PUBLIC_READBACK_SLOTS,MAX_PUBLIC_READBACK_SPAN_MS} from '../scripts/api-site/compare-five-public-readbacks-r1.mjs';
 const now=Date.parse('2026-11-14T00:00:00.000Z');
 const readAt='2026-11-14T00:00:00.000Z';
@@ -288,4 +289,103 @@ test('protected adapter stops a changed paid D1 row rather than comparing old by
  assert.equal(r.results.find(x=>x.slot==='theme').status,'SOURCE_DRIFT_UNVERIFIED');
  assert.equal(f.reads.theme,2);
  assert.equal(r.runtimeVerified,false);
+});
+
+const httpResponse=(body,{status=200,headers={}}={})=>new Response(
+ JSON.stringify(body),{status,headers:{'content-type':'application/json',...headers}});
+test('HTTP reader is restricted to five exact public GET URLs without credentials',async()=>{
+ const slots=Object.keys(PUBLIC_READBACK_SLOTS);
+ assert.deepEqual(Object.keys(W05_PUBLIC_API_URLS),slots);
+ const calls=[];
+ for(const slot of slots){
+  const result=await readW05PublicApi(slot,{fetcher:async (url,opts)=>{
+   calls.push({url,opts});
+   return httpResponse({status:'READY',slot});
+  }});
+  assert.equal(result.statusCode,200);
+  assert.equal(result.body.slot,slot);
+  assert.deepEqual(result.headers,{});
+ }
+ assert.deepEqual(calls.map(x=>x.url),slots.map(x=>W05_PUBLIC_API_URLS[x]));
+ for(const {opts} of calls){
+  assert.equal(opts.method,'GET');
+  assert.equal(opts.redirect,'error');
+  assert.equal(opts.cache,'no-store');
+  assert.equal(opts.headers.accept,'application/json');
+  assert.equal(opts.headers.authorization,undefined);
+  assert.ok(opts.signal instanceof AbortSignal);
+ }
+});
+test('HTTP reader rejects unknown slot before any request or URL override',async()=>{
+ let calls=0;
+ await assert.rejects(readW05PublicApi('theme?publication-base=1',{fetcher:()=>{calls++;}}),
+  /W05_PUBLIC_SLOT_NOT_ALLOWED/);
+ await assert.rejects(readW05PublicApi('__proto__',{fetcher:()=>{calls++;}}),
+  /W05_PUBLIC_SLOT_NOT_ALLOWED/);
+ assert.equal(calls,0);
+});
+test('HTTP reader preserves paid route marker only from actual HTTP headers',async()=>{
+ const result=await readW05PublicApi('theme',{fetcher:async()=>httpResponse({status:'READY'},
+  {headers:{'x-zgmini-theme-source':'MARKETPARQUET_PAID_HOURLY'}})});
+ assert.deepEqual(result.headers,{'x-zgmini-theme-source':'MARKETPARQUET_PAID_HOURLY'});
+ const absent=await readW05PublicApi('theme',{fetcher:async()=>httpResponse({status:'READY'})});
+ assert.deepEqual(absent.headers,{});
+ const nonTheme=await readW05PublicApi('calendar',{fetcher:async()=>httpResponse({status:'READY'},
+  {headers:{'x-zgmini-theme-source':'MARKETPARQUET_PAID_HOURLY'}})});
+ assert.deepEqual(nonTheme.headers,{});
+});
+test('HTTP 503 JSON response remains explicit API_NOT_READY evidence',async()=>{
+ const result=await readW05PublicApi('calendar',{fetcher:async()=>httpResponse(
+  {status:'UNAVAILABLE',reason:'STORED_DATA_STALE'},{status:503})});
+ assert.equal(result.statusCode,503);
+ assert.equal(result.body.status,'UNAVAILABLE');
+ assert.equal(check('calendar',d1('calendar',{status:'READY',events:[]}),
+  {...result,observedAt:apiAt}).status,'API_NOT_READY');
+ const html=await readW05PublicApi('calendar',{fetcher:async()=>new Response('error',{
+  status:503,headers:{'content-type':'text/html'}})});
+ assert.equal(html.statusCode,503);
+ assert.equal(html.body,null);
+});
+test('HTTP reader rejects unsafe 200 content types, malformed JSON and arrays',async()=>{
+ await assert.rejects(readW05PublicApi('calendar',{fetcher:async()=>new Response('<html/>',{
+  headers:{'content-type':'text/html'}})}),/W05_PUBLIC_CONTENT_TYPE_INVALID/);
+ await assert.rejects(readW05PublicApi('calendar',{fetcher:async()=>new Response('not-json',{
+  headers:{'content-type':'application/json'}})}),/W05_PUBLIC_JSON_INVALID/);
+ await assert.rejects(readW05PublicApi('calendar',{fetcher:async()=>httpResponse([])}),
+  /W05_PUBLIC_JSON_SHAPE_INVALID/);
+});
+test('HTTP reader enforces byte bound from both headers and actual stream',async()=>{
+ assert.equal(W05_PUBLIC_MAX_BODY_BYTES,1_800_000);
+ await assert.rejects(readW05PublicApi('calendar',{fetcher:async()=>new Response('{}',{
+  headers:{'content-type':'application/json',
+   'content-length':String(W05_PUBLIC_MAX_BODY_BYTES+1)}})}),
+  /W05_PUBLIC_RESPONSE_SIZE_DENIED/);
+ await assert.rejects(readW05PublicApi('calendar',{fetcher:async()=>new Response(
+  new Uint8Array(W05_PUBLIC_MAX_BODY_BYTES+1),
+  {headers:{'content-type':'application/json'}})}),
+  /W05_PUBLIC_RESPONSE_SIZE_DENIED/);
+});
+test('network exception details are not disclosed in read receipts',async()=>{
+ await assert.rejects(readW05PublicApi('calendar',{
+  fetcher:async()=>{throw Error('PRIVATE_AUTHENTICATION_TOKEN');}
+ }),e=>e.message==='W05_PUBLIC_NETWORK_UNVERIFIED'&&
+  !e.message.includes('PRIVATE_AUTHENTICATION_TOKEN'));
+});
+test('real HTTP Response adapter composes with fixed two-pass D1 comparator',async()=>{
+ const fixture=protectedFixture();
+ const visited=[];
+ const readApi=slot=>readW05PublicApi(slot,{fetcher:async url=>{
+  visited.push(url);
+  const raw=await fixture.readApi(slot);
+  return httpResponse(raw.body,{headers:slot==='theme'?
+   {'x-zgmini-theme-source':'MARKETPARQUET_PAID_HOURLY'}:{}});
+ }});
+ const receipt=await collectFiveKeyInPlace({db:fixture.db,readApi,clock:()=>now});
+ assert.deepEqual(visited,Object.values(W05_PUBLIC_API_URLS));
+ assert.deepEqual(receipt.results.map(x=>x.status),
+  Array(5).fill('STRUCTURAL_MATCH_NOT_RUNTIME_PROOF'));
+ assert.equal(receipt.runtimeVerified,false);
+ assert.equal(receipt.ownerAuthorizationVerified,false);
+ assert.equal(receipt.deploymentIdentityVerified,false);
+ assert.doesNotMatch(JSON.stringify(receipt),/dataQuality|indicators|history|PRIVATE_AUTHENTICATION_TOKEN/);
 });
