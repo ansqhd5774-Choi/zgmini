@@ -1,5 +1,5 @@
-// Static, source-only regression: the shared Writer is staged but W05
-// recurring D1 effects stay disabled until their exact approval/installed CAS.
+// Static regression for the W05 three-key recurring activation candidate.
+// Operational deployment remains subject to exact source/installed CAS.
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
@@ -11,9 +11,9 @@ import {W05_SAVED_IDS,W05_SAVED_KEYS}
 const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'..');
 const read=file=>fs.readFileSync(path.join(root,file),'utf8');
 
-test('W05 run-local hook is disabled by default; no recurring D1 effect is authorized',()=>{
+test('W05 recurring hook is enabled only inside existing Writer publication block',()=>{
  const run=read('scripts/pc-writer/run-local.mjs');
- assert.match(run,/const W05_SAVED_SIDECARS_AUTO_PUBLICATION_APPROVED=false;/);
+ assert.match(run,/const W05_SAVED_SIDECARS_AUTO_PUBLICATION_APPROVED=true;/);
  assert.match(run,/if\(W05_SAVED_SIDECARS_AUTO_PUBLICATION_APPROVED\)\{/);
  assert.match(run,/await import\(\s*'\.\/w05-stored-sidecar-publication-r1\.mjs'\)/);
  assert.ok(run.indexOf('if(W05_SAVED_SIDECARS_AUTO_PUBLICATION_APPROVED)')
