@@ -4,6 +4,7 @@ import {createHash} from 'node:crypto';
 import {buildEmploymentR6OneYearReadModel} from '../lib/market-score/employment-r6-one-year-read-model.mjs';
 import {INFLATION_CAUSAL_19} from '../lib/inflation-causal-public-catalog.mjs';
 import {INFLATION_CANDIDATES_7} from '../lib/inflation-causal-candidates-public-7-catalog.mjs';
+import {collectFiveKeyInPlace,W05_FIXED_READS} from '../scripts/api-site/five-key-inplace-readback-prework-r12.mjs';
 import {comparePublicReadback,PUBLIC_READBACK_SLOTS,MAX_PUBLIC_READBACK_SPAN_MS} from '../scripts/api-site/compare-five-public-readbacks-r1.mjs';
 const now=Date.parse('2026-11-14T00:00:00.000Z');
 const readAt='2026-11-14T00:00:00.000Z';
@@ -234,4 +235,57 @@ test('matching paid metadata with false source clock policy cannot be certified'
 test('200 with theme status UNAVAILABLE is API readiness, never parity',()=>{
  assert.equal(check('theme',d1('theme',paidTheme),apiPaid({...paidView,status:'UNAVAILABLE'})).status,
   'API_NOT_READY');
+});
+
+test('protected reader uses exact paid theme compound key instead of legacy seed SELECT',()=>{
+ assert.deepEqual(Object.keys(W05_FIXED_READS),Object.keys(PUBLIC_READBACK_SLOTS));
+ assert.deepEqual(W05_FIXED_READS.theme.bind,['output','theme-fear-greed-paid-hourly-v1','current']);
+ assert.match(W05_FIXED_READS.theme.sql,/^SELECT body,stored_at FROM public_feed_snapshots_v1/);
+ assert.equal(new Set(Object.values(W05_FIXED_READS).map(x=>JSON.stringify(x.bind))).size,5);
+});
+const fiveBodies={inflation19:inflationEnvelope(inflation19Payload),
+ inflation7:inflationEnvelope(inflation7Payload),
+ calendar:{status:'READY',sources:{},events:[]},theme:paidTheme,employment};
+function protectedFixture({changePaidAfter=false}={}){
+ const reads=Object.fromEntries(Object.keys(fiveBodies).map(k=>[k,0]));
+ const db={prepare(sql){assert.match(sql,/^SELECT body,stored_at FROM /);
+  return{bind(...args){
+   const slot=Object.keys(W05_FIXED_READS).find(k=>W05_FIXED_READS[k].sql===sql&&
+    JSON.stringify(W05_FIXED_READS[k].bind)===JSON.stringify(args));
+   assert.ok(slot,'only five allowlisted exact SELECTs');
+   return{async first(){reads[slot]++;
+    return {body:JSON.stringify(changePaidAfter&&slot==='theme'&&reads[slot]===2?
+     {...paidTheme,sourceVersion:'c'.repeat(64)}:fiveBodies[slot]),stored_at:storedAt};
+   }};}};}};
+ const readApi=async slot=>({statusCode:200,body:slot==='theme'?paidView:
+  slot==='inflation19'?inflation19Payload:slot==='inflation7'?inflation7Payload:
+   fiveBodies[slot],
+  ...(slot==='theme'?{headers:{'x-zgmini-theme-source':'MARKETPARQUET_PAID_HOURLY'}}:{})});
+ return {db,reads,readApi};
+}
+test('protected two-pass same-window reader verifies five fixture structures but never claims runtime',async()=>{
+ const f=protectedFixture();
+ const r=await collectFiveKeyInPlace({db:f.db,readApi:f.readApi,clock:()=>now});
+ assert.equal(r.keysChecked,5);
+ assert.equal(r.ownerAuthorizationVerified,false);
+ assert.equal(r.deploymentIdentityVerified,false);
+ assert.equal(r.runtimeVerified,false);
+ assert.deepEqual(Object.values(f.reads),Array(5).fill(2));
+ assert.deepEqual(r.results.map(x=>x.status),Array(5).fill('STRUCTURAL_MATCH_NOT_RUNTIME_PROOF'));
+ assert.doesNotMatch(JSON.stringify(r),/PRIVATE_FIXTURE_ONLY|DO_NOT_EXPOSE|"body":/);
+});
+test('protected reader retains paid vs legacy branch uncertainty without source header',async()=>{
+ const f=protectedFixture();
+ const readApi=async slot=>{const result=await f.readApi(slot);
+  if(slot==='theme')delete result.headers;return result;};
+ const r=await collectFiveKeyInPlace({db:f.db,readApi,clock:()=>now});
+ assert.equal(r.results.find(x=>x.slot==='theme').status,'THEME_READER_BRANCH_UNVERIFIED');
+ assert.equal(r.runtimeVerified,false);
+});
+test('protected adapter stops a changed paid D1 row rather than comparing old bytes',async()=>{
+ const f=protectedFixture({changePaidAfter:true});
+ const r=await collectFiveKeyInPlace({db:f.db,readApi:f.readApi,clock:()=>now});
+ assert.equal(r.results.find(x=>x.slot==='theme').status,'SOURCE_DRIFT_UNVERIFIED');
+ assert.equal(f.reads.theme,2);
+ assert.equal(r.runtimeVerified,false);
 });
