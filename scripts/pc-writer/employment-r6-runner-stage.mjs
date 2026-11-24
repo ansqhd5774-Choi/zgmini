@@ -371,8 +371,11 @@ export function projectEmploymentR6RunnerResult({body=null,pitCoverage=null,pitC
         lastDate:typeof last?.date==="string"?last.date:null,
         observationDate:typeof state.observationDate==="string"?state.observationDate:null,
         lastPointFinite:Number.isFinite(last?.value),
-        lastPointMatchesCurrent:last?.date===state.observationDate&&
-          last?.value===state.value,
+        lastPointMatchesCurrent:points.length>0&&
+          typeof last?.date==="string"&&last.date.length>0&&
+          typeof state.observationDate==="string"&&state.observationDate.length>0&&
+          Number.isFinite(last?.value)&&Number.isFinite(state.value)&&
+          last.date===state.observationDate&&last.value===state.value,
       };
     }
   }
