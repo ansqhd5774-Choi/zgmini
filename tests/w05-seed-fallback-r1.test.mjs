@@ -61,7 +61,7 @@ test('source keeps global market/Korea guard, runtime auth, recovery and incompl
  const db=src.indexOf("const core=localDatabase(path.join(base,'storage','core.sqlite'))");
  assert.ok(guard>0&&db>guard);
  assert.match(src,/if\(!publish\|\|!W05_SAVED_SIDECARS_AUTO_PUBLICATION_APPROVED\)/);
- assert.match(src,/report\.recovery=await recoverPublication\(remote,config\.core,base\)/);
+ assert.match(src,/report\.recovery=await recoverPublication\(w05Remote,config\.core,base\)/);
  assert.match(src,/await publishW05WithIncompleteSeed\(/);
  assert.match(src,/process\.exitCode=1;\s*\}else\{\s*const core=localDatabase/);
  assert.match(src,/report\.status=verified\?'VERIFIED_WITH_GAPS':'FAILED'/);
