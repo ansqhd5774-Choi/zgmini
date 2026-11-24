@@ -69,5 +69,9 @@ jobs:
       # Use the existing npm lockfile and registry's public vulnerability feed.
       # Fail on high/critical findings, including existing debt; source changes stay Draft.
       # Recheck after PR #1560, #1561 and #1562 patched dependency upgrades.
+      - name: Validate changed GitHub Actions YAML (actionlint)
+        env:
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+        run: node scripts/ci-actionlint-changed.mjs
       - name: Audit production dependency vulnerabilities (high or critical)
         run: npm audit --omit=dev --audit-level=high --audit=true --fund=false
