@@ -51,11 +51,13 @@ function expectedChartEndpoint(history){
  const y=3+26*(1-(points.at(-1).value-low)/(high-low||1));
  return {x:Number(x.toFixed(2)),y:Number(y.toFixed(2)),lastDate:points.at(-1).date};
 }
-async function verifyRows(section,body){
+async function verifyRows(section,body,viewportWidth){
  const rows=section.locator("tbody tr");
  const cards=section.locator(".inflation-r2-mobile-list article");
  assert.equal(await rows.count(),29,"29 desktop table rows");
  assert.equal(await cards.count(),29,"29 mobile cards");
+ if(viewportWidth===390)assert(await cards.first().isVisible(),"Mobile cards must actually render");
+ if(viewportWidth===1440)assert(await rows.first().isVisible(),"Desktop table must actually render");
  for(let i=0;i<29;i++){
   const item=body.indicators[i],row=rows.nth(i),card=cards.nth(i);
   const actual=(await row.locator("td[data-value-kind] strong").innerText()).trim();
@@ -83,12 +85,17 @@ async function verifyRows(section,body){
   const prev=(await row.locator("td.inflation-r2-value").first().locator("strong").innerText()).trim();
   const expectedPrev=item.rawStatus!=="UNAVAILABLE"?fmt(item.previousValue,item.unit):"—";
   assert.equal(prev,expectedPrev,"Previous raw value: "+item.id);
+  const mobilePrev=(await card.locator(".inflation-r2-mobile-metrics > div").first().locator("strong").innerText()).trim();
+  assert.equal(mobilePrev,expectedPrev,"Mobile previous raw value: "+item.id);
   const last=expectedChartEndpoint(item.history??[]);
   const chart=row.locator(".inflation-r2-spark-cell svg.inflation-mini-chart");
+  const mobileChart=card.locator(".inflation-r2-mobile-spark svg.inflation-mini-chart");
   if(!last){
-   assert.equal(await chart.count(),0,"No fabricated line for sparse history: "+item.id);
+   assert.equal(await chart.count(),0,"No fabricated desktop line for sparse history: "+item.id);
+   assert.equal(await mobileChart.count(),0,"No fabricated mobile line for sparse history: "+item.id);
   }else{
-   assert.equal(await chart.count(),1,"Real historical line: "+item.id);
+   assert.equal(await chart.count(),1,"Real desktop historical line: "+item.id);
+   assert.equal(await mobileChart.count(),1,"Real mobile historical line: "+item.id);
    const label=await chart.getAttribute("aria-label");
    assert(label.includes(last.lastDate),"Actual last observation date: "+item.id);
    const d=await chart.locator("path").getAttribute("d");
@@ -96,6 +103,10 @@ async function verifyRows(section,body){
    assert(endpoint,"Chart final point exists: "+item.id);
    assert.equal(Number(endpoint[1]),last.x,"Chart last X: "+item.id);
    assert.equal(Number(endpoint[2]),last.y,"Chart last value Y: "+item.id);
+   const mobileLabel=await mobileChart.getAttribute("aria-label");
+   assert(mobileLabel.includes(last.lastDate),"Mobile chart last date: "+item.id);
+   const mobilePath=await mobileChart.locator("path").getAttribute("d");
+   assert.equal(mobilePath,d,"Desktop/mobile historical chart points: "+item.id);
   }
   if(item.chartStatus==="PARTIAL")assert((await row.innerText()).includes("최근 분기 자료 없음"),"Partial history: "+item.id);
   if(item.chartStatus==="UNAVAILABLE")assert((await row.innerText()).includes("1년 이력 부족"),"Missing history: "+item.id);
@@ -133,7 +144,7 @@ try{
     const text=document.querySelector('section.economic-indicators[aria-labelledby="economic-employment-indicators"] header > p')?.textContent??"";
     return text.includes("R6 저장 원자료")&&text.includes("1년 차트 "+count+"/29개");
    },body.summary.chartReadyFeatures,{timeout:45000});
-   await verifyRows(section,body);
+   await verifyRows(section,body,viewport.width);
    const pageWidth=await page.evaluate(()=>document.documentElement.scrollWidth);
    assert(pageWidth<=viewport.width+2,"Horizontal overflow");
    assert.deepEqual(errors,[],"Browser JavaScript errors");
