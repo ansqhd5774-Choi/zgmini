@@ -26,6 +26,34 @@ export const W05_FIXED_READS=Object.freeze({
  employment:Object.freeze({sql:'SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?',bind:Object.freeze(['detail:employment-r6:one-year:v1'])}),
 });
 
+// Adapt an EXISTING approved Writer D1 client's fixed read method to the
+// prepared read-only interface used by this comparator. The owner supplies
+// queryFixed(sql, literalParams), e.g. through the pinned, integrity-checked
+// Writer client. This does not obtain credentials, authorize a PC job or
+// execute anything until the owner actually invokes the protected collector.
+export function createW05ReadonlyD1Adapter(queryFixed){
+ if(typeof queryFixed!=='function')throw Error('W05_APPROVED_D1_READER_REQUIRED');
+ return Object.freeze({prepare(sql){
+  const compatible=Object.values(W05_FIXED_READS).filter(spec=>spec.sql===sql);
+  if(!compatible.length)throw Error('W05_D1_SQL_NOT_ALLOWLISTED');
+  return Object.freeze({bind(...params){
+   const exact=compatible.filter(spec=>spec.bind.length===params.length&&
+    spec.bind.every((value,i)=>value===params[i]));
+   if(exact.length!==1)throw Error('W05_D1_KEY_NOT_ALLOWLISTED');
+   const spec=exact[0];
+   return Object.freeze({async first(){
+    // Only pinned SELECT and frozen exact keys are forwarded to the existing
+    // approved client. No caller SQL/keys, writes or stored body disclosure.
+    const row=await queryFixed(spec.sql,[...spec.bind]);
+    if(row===null||row===undefined)return null;
+    if(!row||typeof row!=='object'||Array.isArray(row))
+     throw Error('W05_D1_ROW_SHAPE_INVALID');
+    return {body:row.body,stored_at:row.stored_at};
+   }});
+  }});
+ }});
+}
+
 async function readFixed(db,slot){
  const spec=W05_FIXED_READS[slot];
  const row=await db.prepare(spec.sql).bind(...spec.bind).first();
