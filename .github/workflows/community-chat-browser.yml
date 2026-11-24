@@ -113,7 +113,7 @@ jobs:
         run: node tests/w06-mobile-touch-local-r1.mjs
       - name: Verify W06 actual Production 1D and 6 periods at 390/1440 read-only
         run: node tests/w06-production-singlepoint-readonly-r1.mjs
-      - name: Verify CNN #1521 Production 1D/1W 1440px hover and 390px touch (read-only)
+      - name: 'Verify CNN #1521 Production 1D/1W 1440px hover and 390px touch (read-only)'
         run: node tests/cnn1521-production-viewport-readonly-r1.mjs
       - name: Verify Production first-party JavaScript assets with read-only Chromium
         run: node tests/production-assets-network-r1.mjs
@@ -169,6 +169,7 @@ jobs:
             artifacts/production-assets-network/
             artifacts/w06-production-readonly/
             artifacts/w06-touch-local/
+          artifacts/cnn1521-production-viewport/
           if-no-files-found: warn
       - name: Show local dev errors on failure
         if: failure()
