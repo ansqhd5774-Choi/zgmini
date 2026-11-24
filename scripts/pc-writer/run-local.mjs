@@ -60,16 +60,16 @@ if(!hasCompleteLocalSeed(seed)){
  const report={at:new Date(now).toISOString(),source,mode:'PUBLISH',
   inputLocation:'SAVED_LOCAL_INPUTS_ONLY',seedStatus:'LOCAL_SEED_INCOMPLETE',
   providerCalls:0,projections:[],w05SavedSidecars:{}};
- const originalFetch=globalThis.fetch;
+ const savedFetch=globalThis.fetch;
  try{
   // Reuse the same authenticated D1 client and unresolved-publication recovery,
   // without opening a write-capable localDatabase or replacing the market ledger.
-  const remote=client(config,()=>credential(root),{onDiagnostic:diagnostic=>appendD1Diagnostic(base,{runAt:report.at,source},diagnostic)});
-  report.remote=remote.stats;
-  report.recovery=await recoverPublication(remote,config.core,base);
+  const w05Remote=client(config,()=>credential(root),{onDiagnostic:diagnostic=>appendD1Diagnostic(base,{runAt:report.at,source},diagnostic)});
+  report.remote=w05Remote.stats;
+  report.recovery=await recoverPublication(w05Remote,config.core,base);
   // client captured the approved D1 transport before this provider-only guard.
   globalThis.fetch=async()=>{report.providerCalls++;throw Error('W05_PROVIDER_NETWORK_FORBIDDEN');};
-  await publishW05WithIncompleteSeed({report,pcHome:base,remote,coreDb:config.core,now});
+  await publishW05WithIncompleteSeed({report,pcHome:base,remote:w05Remote,coreDb:config.core,now});
   const verified=Object.values(report.w05SavedSidecars).some(item=>
    ['READBACK_VERIFIED','ALREADY_STORED'].includes(item?.status)
    &&item.historyParityVerified===true);
@@ -79,7 +79,7 @@ if(!hasCompleteLocalSeed(seed)){
   report.status='FAILED';
   report.error=/^[A-Z0-9_]+$/.test(error.message??'')?error.message:error.code??'W05_SEED_FALLBACK_FAILED';
  }finally{
-  globalThis.fetch=originalFetch;
+  globalThis.fetch=savedFetch;
   save(path.join(base,'local-writer-last-run.json'),report);
   appendPublicationEvent(base,{at:report.at,source,status:report.status,
    error:report.error??null,recovery:report.recovery?.outcome??null});
