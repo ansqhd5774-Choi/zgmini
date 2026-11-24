@@ -47,7 +47,14 @@ export function compareSupplyLocks(before,after){
  const changes=[];
  for(const path of paths){
   const old=describe(oldPackages[path]),now=describe(newPackages[path]);
-  if(JSON.stringify(old)===JSON.stringify(now))continue;
+  // Compare original lock attributes without persisting URLs or digest values.
+  // Categorized metadata alone would miss a changed tarball at the same version.
+  const oldRaw=oldPackages[path],newRaw=newPackages[path];
+  const rawSignature=value=>value?JSON.stringify([
+   value.version??null,value.resolved??null,value.integrity??null,
+   value.hasInstallScript===true,value.dev===true,value.optional===true
+  ]):null;
+  if(rawSignature(oldRaw)===rawSignature(newRaw))continue;
   const kind=!old?'ADDED':!now?'REMOVED':'MODIFIED';
   const warnings=[];
   if(now){
@@ -55,6 +62,10 @@ export function compareSupplyLocks(before,after){
    if(now.integrity==='UNVERIFIED')warnings.push('INTEGRITY_UNVERIFIED');
    if(now.hasInstallScript)warnings.push('INSTALL_SCRIPT_PRESENT');
    if(old&&old.source!==now.source)warnings.push('SOURCE_KIND_CHANGED');
+   if(old&&oldRaw?.resolved!==newRaw?.resolved)
+    warnings.push('RESOLUTION_VALUE_CHANGED');
+   if(old&&oldRaw?.integrity!==newRaw?.integrity)
+    warnings.push('INTEGRITY_VALUE_CHANGED');
   }
   changes.push({packagePath:path,kind,previousVersion:old?.version??null,
    currentVersion:now?.version??null,source:now?.source??null,
