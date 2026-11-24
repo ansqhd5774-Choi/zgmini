@@ -3,6 +3,7 @@
 // Enabling repeated D1 effects requires an approved B publication scope and
 // an exact operational source CAS; the previous ONCE grants do not suffice.
 import fs from 'node:fs';
+import {createHash} from 'node:crypto';
 import path from 'node:path';
 import {DatabaseSync} from 'node:sqlite';
 import {buildServiceSourcePreview}
@@ -131,6 +132,51 @@ export function prepareW05StoredSidecar({id,pcHome,now=Date.now()}={}){
  }finally{db?.close();}
 }
 
+// Compare *every* previously stored source-derived public history point with
+// D1's exact readback. Never export the underlying private ZIP/BEA raw rows.
+// generatedAt is deliberately excluded: it varies each natural Writer cycle.
+export function verifyW05StoredHistoryParity(id,preparedPayload,storedPayload){
+ if(!Object.hasOwn(W05_SAVED_KEYS,id)
+  ||!preparedPayload||!storedPayload
+  ||preparedPayload.sourceVersion!==storedPayload.sourceVersion
+  ||preparedPayload.sourceStoredAt!==storedPayload.sourceStoredAt)
+  fail('W05_SAVED_REMOTE_HISTORY_PARITY_MISMATCH');
+ const expectedLength=id==='wpsfd42'?13:5;
+ const expectedRows=id==='wpsfd42'?2:1;
+ const project=payload=>{
+  const rows=id==='bea'?[payload.indicator]:payload.rows;
+  if(!Array.isArray(rows)||rows.length!==expectedRows)
+   fail('W05_SAVED_REMOTE_HISTORY_PARITY_MISMATCH');
+  return rows.map(row=>{
+   if(!row||typeof row!=='object'||!Array.isArray(row.history)
+    ||row.history.length!==expectedLength
+    ||row.history.some(point=>!point||typeof point!=='object'
+      ||!(point.value===null&&id==='wpsfd42'||Number.isFinite(point.value))
+      ||!(typeof point.period==='string'||typeof point.date==='string'))
+    ||!Number.isFinite(row.value)||typeof row.unit!=='string'
+    ||typeof (row.observationPeriod??row.observationPeriodEnd)!=='string')
+    fail('W05_SAVED_REMOTE_HISTORY_PARITY_MISMATCH');
+   return {
+    indicatorId:id==='bea'?'bea-unit-profit':row.indicatorId,
+    observationPeriod:row.observationPeriod??row.observationPeriodEnd,
+    unit:row.unit,value:row.value,history:row.history.map(point=>({
+     period:point.period??point.date,value:point.value,
+    })),
+   };
+  }).sort((a,b)=>a.indicatorId.localeCompare(b.indicatorId));
+ };
+ const expected=project(preparedPayload);
+ const actual=project(storedPayload);
+ if(JSON.stringify(expected)!==JSON.stringify(actual))
+  fail('W05_SAVED_REMOTE_HISTORY_PARITY_MISMATCH');
+ const stable={sourceVersion:preparedPayload.sourceVersion,
+  sourceStoredAt:preparedPayload.sourceStoredAt,rows:expected};
+ const historySha256=createHash('sha256')
+  .update(JSON.stringify(stable)).digest('hex');
+ return {historyParityVerified:true,
+  historyPointsVerified:expectedRows*expectedLength,historySha256};
+}
+
 // The concrete Writer validates immutable source versions, compares against
 // D1 and performs its own exact readback. There is no retry on uncertain writes.
 function writerFor(id,db){
@@ -187,12 +233,14 @@ export async function publishW05StoredSidecar({
  const publishedAt=verifiedRemoteRow(rows[0],prepared.payload.sourceVersion,
   result,now);
  const storedEnvelope=JSON.parse(rows[0].body);
+ const parity=verifyW05StoredHistoryParity(id,prepared.payload,storedEnvelope.payload);
  if(result.status==='READBACK_VERIFIED'
   &&storedEnvelope.payload.sourceStoredAt!==prepared.payload.sourceStoredAt)
   fail('W05_SAVED_REMOTE_READBACK_SOURCE_MISMATCH');
  return {status:result.status,key:W05_SAVED_KEYS[id],
   sourceVersion:storedEnvelope.payload.sourceVersion,
   sourceStoredAt:storedEnvelope.payload.sourceStoredAt,publishedAt,
+  ...parity,
   providerCalls:0,sqliteWrites:0,
   d1Writes:result.status==='READBACK_VERIFIED'?1:0,schedulerWrites:0};
 }
