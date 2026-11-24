@@ -39,6 +39,12 @@ function runFixture({failureCode=null,includeNational=false,includeState=true}={
   const store={
     async initialize(){},
     async getLatestRun(){return null},
+    // Production ONE_YEAR dedup is mode-scoped. Keep the isolated fixture
+    // faithful rather than silently downgrading the runtime safety guard.
+    async getLatestRunInMode(provider,mode){
+      assert.equal(mode,"ONE_YEAR");
+      return null;
+    },
     async acquire(){return {acquired:true}},
     async release(){releaseCalls++;return true},
     async writeRawSnapshot(snapshot){
@@ -105,8 +111,13 @@ test("W04 unchanged successful National + 51 state path and legacy error code",a
   assert.equal(good.raw.length,2);
   assert.equal(good.groupCalls,1);
   assert.equal(good.releaseCalls,1);
-  const legacy=await runFixture({failureCode:"DOL_NATIONAL_HTTP_FAILED"});
-  assert.equal(legacy.result.groupResults[0].failureCode,"DOL_NATIONAL_HTTP_FAILED");
+  for(const code of ["DOL_NATIONAL_HTTP_FAILED","DOL_NATIONAL_SOURCE_UNAVAILABLE",
+    "DOL_NATIONAL_RESPONSE_FORMAT_UNSUPPORTED"]){
+    const legacy=await runFixture({failureCode:code});
+    assert.equal(legacy.result.groupResults[0].failureCode,code);
+    assert.equal(legacy.ledger[0].failureCode,code);
+    assert.equal(legacy.result.providerRequests,2);
+  }
 });
 
 

@@ -23,7 +23,7 @@ function stored() {
   };
 }
 function fixture() {
-  const calls = { latest: 0, provider: 0, records: [], locks: 0 };
+  const calls = { latest: 0, provider: 0, providerOptions: [], records: [], locks: 0 };
   const store = {
     async initialize() {},
     async getLatestRunInMode(provider, mode) {
@@ -47,8 +47,8 @@ function fixture() {
     async recordRun(data) { calls.records.push(data); return calls.records.length; },
   };
   const providerFactory = () => ({
-    async fetchGroup(groupName) {
-      calls.provider++;
+    async fetchGroup(groupName,options) {
+      calls.provider++;calls.providerOptions.push(options);
       assert.equal(groupName, groups[0]);
       return {
         rows: [{ logicalSeriesId: "INITIAL_CLAIMS", observationDate: "2026-11-07" }],
@@ -154,4 +154,40 @@ test("W04 V2 missing source kind/hash and scheduled execution fail before store 
   executionIntent:"SCHEDULED",manualApprovalEvidence:pdfApproval,
  }),/R6_MANUAL_COLLECTION_APPROVAL_REQUIRED/);
  assert.deepEqual([f.calls.provider,f.calls.locks],[0,0]);
+});
+
+test("W04 manual V1 preserves installed National retry within two-call budget",async()=>{
+ const f=fixture();
+ const result=await runEmploymentR6CollectionStep({
+  db,now,mode:"ONE_YEAR",groups,...f,
+  executionIntent:"AUTHORIZED_MANUAL",manualApprovalEvidence:approval,
+ });
+ assert.equal(result.providerRequests,2);
+ assert.equal(f.calls.providerOptions.length,1);
+ assert.equal(f.calls.providerOptions[0].manualNationalOutageRecovery,true);
+});
+test("W04 opt-in ETA538 PDF V2 does not consume manual XML retry",async()=>{
+ const f=fixture();
+ const result=await runEmploymentR6CollectionStep({
+  db,now,mode:"ONE_YEAR",groups,...f,
+  executionIntent:"AUTHORIZED_MANUAL",manualApprovalEvidence:pdfApproval,
+ });
+ assert.equal(result.providerRequests,2);
+ assert.equal(f.calls.providerOptions.length,1);
+ assert.equal(f.calls.providerOptions[0].manualNationalOutageRecovery,false);
+});
+test("W04 scheduled ONE_YEAR dedup checks the last 1Y run even after a RELEASE",async()=>{
+ const f=fixture(),store=f.storeFactory();
+ store.getLatestRun=async()=>({status:"SUCCESS",completed_at:"2026-11-16T11:30:00.000Z",
+  detail_json:JSON.stringify({mode:"RELEASE"})});
+ // The 10:14 PARTIAL 1Y run is the same-day effective guard;
+ // a later RELEASE must not hide it.
+ const result=await runEmploymentR6CollectionStep({
+  db,now,mode:"ONE_YEAR",groups,...f,
+ });
+ assert.equal(result.status,"NOOP");
+ assert.equal(result.providerRequests,0);
+ assert.equal(f.calls.provider,0);
+ assert.equal(f.calls.latest,1);
+ assert.equal(f.calls.locks,0);
 });
