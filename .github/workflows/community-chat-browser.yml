@@ -74,6 +74,8 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'vite.config.ts'
+      - 'scripts/ci-cross-browser-core.mjs'
+      - 'tests/ci-cross-browser-core.test.mjs'
       # R2 performance lab shares the existing installed Playwright Chromium.
       - 'scripts/ci-performance-lab.mjs'
       - 'tests/ci-performance-lab.test.mjs'
@@ -101,7 +103,7 @@ jobs:
       - name: Install test-only Playwright without changing lockfile
         run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
       - name: Install browser for offline UI interactions
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium firefox webkit
       # Independent W06 public chart test runs before unrelated risk-page asset checks.
       # Both retain their assertions; a failure in either still fails the overall job.
       - name: Start local dev UI (no remote bindings and no deployment)
@@ -157,12 +159,17 @@ jobs:
       # Lab results are observations, not a new unapproved Lighthouse score gate.
       - name: Measure isolated Chromium performance laboratory
         run: node scripts/ci-performance-lab.mjs
+      # #23: core routes only; layout differences are observations, not new global gates.
+      - name: Observe local Firefox and WebKit core routes
+        timeout-minutes: 4
+        run: node scripts/ci-cross-browser-core.mjs
       - name: Upload browser UI evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: community-chat-browser-r1
           path: |
+            artifacts/ci-cross-browser/
             artifacts/performance-lab/
             artifacts/community-chat-browser/
             artifacts/risk-detail-side-rails/
