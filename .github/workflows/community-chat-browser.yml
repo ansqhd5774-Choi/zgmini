@@ -83,6 +83,8 @@ on:
       - 'tests/ci-performance-lab.test.mjs'
       - 'scripts/ci-performance-budget-observation.mjs'
       - 'tests/ci-performance-budget-observation.test.mjs'
+      - 'scripts/ci-web-speed-good-r2.mjs'
+      - 'tests/ci-web-speed-good-r2.test.mjs'
       - '.github/workflows/community-chat-browser.yml'
   workflow_dispatch:
 
@@ -171,6 +173,10 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: node scripts/ci-performance-budget-observation.mjs
+      # Official Google Good thresholds, applied to local lab metrics only.
+      # INP / real-user P75 / Lighthouse are not measured; no false site PASS.
+      - name: Evaluate official Google Good web-speed reference
+        run: node scripts/ci-web-speed-good-r2.mjs
       # Accessibility results are observations; reviewed baseline approval is separate.
       - name: Measure local WCAG A/AA accessibility with axe-core
         timeout-minutes: 2
