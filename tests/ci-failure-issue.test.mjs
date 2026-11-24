@@ -146,6 +146,6 @@ test('an incorrect Issue creation readback is rejected',async()=>{
 
 test('failure intake queues overlapping events instead of replacing earlier pending failures',()=>{
  const yml=readFileSync(new URL('../.github/workflows/ci-failure-issue-intake.yml',import.meta.url),'utf8');
- assert.match(yml,/concurrency:\\n  group: ci-failure-issue-intake\\n  queue: max\\n  cancel-in-progress: false/);
+ assert.match(yml,/concurrency:\n  group: ci-failure-issue-intake\n  queue: max\n  cancel-in-progress: false/);
  assert.match(yml,/workflow_run:/);
 });
