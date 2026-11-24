@@ -58,9 +58,15 @@ export function validEmploymentR6PublicDisplay(body){
     const vals=item.history.map(p=>p.date);
     if(vals.some((d,j)=>j>0&&d<=vals[j-1]))return false;
     if(item.scoreStatus==="READY"?!finite(item.score)||item.score<0||item.score>100:item.score!==null)return false;
+    // Missing raw data cannot carry a value, a date or a computed score.
+    // Otherwise a valid-looking D1 snapshot can present invented "current" data.
+    if(item.rawStatus==="UNAVAILABLE"&&(item.value!==null||item.observationDate!==null
+      ||item.retrievedAt!==null||item.scoreStatus!=="PARTIAL_MISSING"))return false;
     if(item.rawStatus!=="UNAVAILABLE"&&(!finite(item.value)||!validDate(item.observationDate)
       ||item.observationDate>body.asOfDate||item.retrievedAt===null))return false;
+    // READY/STALE classify the same quarter boundary used by the read model.
     if(item.rawStatus==="READY"&&item.observationDate<body.window.recentQuarterStart)return false;
+    if(item.rawStatus==="STALE"&&item.observationDate>=body.window.recentQuarterStart)return false;
     return true;
   });
 }
