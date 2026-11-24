@@ -2454,3 +2454,10 @@
 - 회귀 테스트 커밋 [0a7e7f8](https://github.com/ansqhd5774-Choi/zgmini/commit/0a7e7f8f085fd2ccbdca351a37f9b0c50c08aa26): 일치 주차는 `CANDIDATE_ONLY`, 불일치 주차는 `HOLD`를 요구하는 두 사례 추가. **CI/Node 실행 PASS는 아직 미확인**.
 - 발표문 파서는 여전히 원본 PDF 인증·수집·SQLite 저장 기능이 없고 `CANDIDATE_ONLY`로 제한됨. 따라서 이번 변경을 National XML 최신화나 운영 저장 성공으로 계산하지 않음. PC Job·Controller 설치·DB/D1·예약 변경 없음.
 - 다음: 신규 테스트 격리 실행 및 기존 테스트 회귀 → DOL 공식 원본 바이트·관측일 인증과 기존 National XML의 최초 차이 확인 → 적격 기존 수집 경로로 저장·계산 전진 검증 → 29개 PC/모바일 및 정규 자동 실행 검증. **1·2 DONE, 3 IN_PROGRESS, 4·5 NOT_DONE; 2/5(40%) 유지**.
+
+
+## 225. DOL 공식 발표문 수치·관측주 대조 (2026-11-24 KST)
+<!-- W04-20261124-DOL-OFFICIAL-RELEASE-CROSSCHECK -->
+- 공식 PDF https://oui.doleta.gov/press/2026/111926.pdf 직접 열람: 11월 19일 발표, 계절조정 초기청구 11월 14일 203000, 4주 평균 197750; 계속청구 11월 7일 1763000, 피보험 실업률 1.1%. 첫 페이지 본문과 4페이지 표 일치. 기존 §3 National XML 저장 관측일 10월 24일 대비 각각 21일/14일 전진한 발표 자료임. XML 자체의 최신 재조회는 아님.
+- 직전 대화의 격리 Node 2/2 PASS 보고는 독립 실행 로그 미회수로 보고 이력으로만 기록; GitHub CI PASS로 승격하지 않음. PDF 바이트 SHA 및 수집 계약 인증 미완료. 후보값 운영 저장 금지 유지.
+- 다음: 공식 PDF 원본 바이트 인증과 기존 수집 경로의 연결 가능 여부 검증, 실제 SQLite readback. 1·2 DONE, 3 IN_PROGRESS, 4·5 NOT_DONE, 40%. 운영 변경 없음.
