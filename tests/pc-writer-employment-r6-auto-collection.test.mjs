@@ -66,3 +66,43 @@ test("group diagnostics preserve safe FAIL, PARTIAL and CIRCUIT_OPEN codes only"
   ]);
   assert(!JSON.stringify(result).includes("SECRET_"));
 });
+
+test("W04 Core receipt retains only canonical scheduler UTC time fields",async()=>{
+ const calls=[];
+ const output=await runEmploymentR6AutoCollection({...options,enabled:true,
+   collect:async args=>{
+     calls.push(args);
+     return {
+       status:"NOOP",providerRequests:0,
+       plannedGroups:[
+         {groupName:"DOL_UI_WEEKLY_CLAIMS",status:"CIRCUIT_OPEN",due:false,
+          failureCode:"DOL_RELEASE_OBSERVATION_STALE",
+          retryAt:"2026-11-24T11:20:00.000Z",
+          latestStoredData:{secret:"DO_NOT_EXPORT"}},
+         {groupName:"BLS_JOLTS",status:"WAITING_FOR_COLLECTION_WINDOW",due:false,
+          releaseAt:"2026-11-24T13:30:00.000Z",
+          collectAt:"2026-11-25T15:30:00.000Z"},
+         {groupName:"BLS_ECI",status:"CIRCUIT_OPEN",due:false,
+          retryAt:"SECRET_1",
+          releaseAt:"2026-13-99T08:00:00.000Z",
+          collectAt:"2026-11-25T15:30:00.000Z\\nPRIVATE"},
+         {groupName:"BLS_STATE_MSA",status:"WAITING_FOR_COLLECTION_WINDOW",due:false,
+          collectAt:"2026-11-25T15:30:00+00:00"}
+       ]
+     };
+   },
+ });
+ assert.equal(calls.length,1,"existing approved collection runs exactly once");
+ assert.equal(calls[0].mode,"RELEASE");
+ assert.deepEqual(output.plannedGroups,[
+   {groupName:"DOL_UI_WEEKLY_CLAIMS",status:"CIRCUIT_OPEN",due:false,
+    failureCode:"DOL_RELEASE_OBSERVATION_STALE",
+    retryAt:"2026-11-24T11:20:00.000Z"},
+   {groupName:"BLS_JOLTS",status:"WAITING_FOR_COLLECTION_WINDOW",due:false,
+    releaseAt:"2026-11-24T13:30:00.000Z",collectAt:"2026-11-25T15:30:00.000Z"},
+   {groupName:"BLS_ECI",status:"CIRCUIT_OPEN",due:false},
+   {groupName:"BLS_STATE_MSA",status:"WAITING_FOR_COLLECTION_WINDOW",due:false}
+ ]);
+ assert.doesNotMatch(JSON.stringify(output),/DO_NOT_EXPORT|PRIVATE|SECRET_/);
+ assert.equal(output.providerRequests,0);
+});
