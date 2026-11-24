@@ -20,7 +20,10 @@ test("official DOL Thanksgiving Wednesday supersedes the normal Thursday release
   assert.equal(due.releaseAt,"2026-11-25T13:30:00.000Z");
   const stored=releasePlanForGroup("DOL_UI_WEEKLY_CLAIMS",{
     now:"2026-11-26T16:00:00Z",
-    latestRun:{status:"SUCCESS",detail_json:JSON.stringify({releaseAt:due.releaseAt})},
+    latestRun:{status:"SUCCESS",detail_json:JSON.stringify({releaseAt:due.releaseAt,latestNationalSeriesObservationDates:{
+      INITIAL_CLAIMS:"2026-11-21",INITIAL_CLAIMS_4W:"2026-11-21",
+      CONTINUED_CLAIMS:"2026-11-14",INSURED_UNEMPLOYMENT_RATE:"2026-11-14",
+    }})},
   });
   assert.equal(stored.status,"RELEASE_ALREADY_STORED");
 });

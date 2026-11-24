@@ -31,6 +31,10 @@ function fixture() {
       assert.equal(mode, "ONE_YEAR");
       return stored();
     },
+    async getLatestRun() {
+      calls.latest++;
+      return stored();
+    },
     async acquire() {
       calls.locks++;
       return { acquired: true };

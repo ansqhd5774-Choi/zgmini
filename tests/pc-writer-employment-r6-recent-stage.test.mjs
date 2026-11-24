@@ -50,9 +50,9 @@ function mockFetch() {
     requests.push({ url: String(url), body: options.body ?? null });
     let body;
     if (String(url).includes("api.bls.gov")) body = JSON.stringify(blsPayload(JSON.parse(options.body).seriesid));
-    else if (String(url).includes("report.asp")) body = `<?xml version="1.0"?><weeks>
+    else if (String(url).includes("report.asp")) body = `<?xml version="1.0"?><r539cyNational>
       <week><weekEnded>10/24/2026</weekEnded><InitialClaims><SA>220000</SA><SA4WK>225000</SA4WK></InitialClaims>
-      <ContinuedClaims><SA>1900000</SA></ContinuedClaims><IUR><SA>1.2</SA></IUR></week></weeks>`;
+      <ContinuedClaims><SA>1900000</SA></ContinuedClaims><IUR><SA>1.2</SA></IUR></week></r539cyNational>`;
     else body = claimsCsv();
     return { ok: true, status: 200, headers: { get: () => "text/plain" }, text: async () => body };
   };
@@ -130,12 +130,12 @@ test("DOL national response with no four national claim rows is explicitly PARTI
 });
 
 test("DOL national values cannot hide an ETA539 response with no complete state week", async () => {
-  const national = `<?xml version="1.0"?><weeks><week>
+  const national = `<?xml version="1.0"?><r539cyNational><week>
     <weekEnded>10/24/2026</weekEnded>
     <InitialClaims><SA>220000</SA><SA4WK>225000</SA4WK></InitialClaims>
     <ContinuedClaims><SA>1900000</SA></ContinuedClaims>
     <IUR><SA>1.2</SA></IUR>
-  </week></weeks>`;
+  </week></r539cyNational>`;
   for (const stateCsv of [
     "st,rptdate,c1,c2,c3,c8\n",
     claimsCsv().split("\n").slice(0, -1).join("\n"),
