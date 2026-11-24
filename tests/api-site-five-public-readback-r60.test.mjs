@@ -16,24 +16,47 @@ const inflationEnvelope=payload=>({payload,projection:{status:'READY',builtAt:st
   sourceVersion:payload.sourceVersion,sourceStoredAt:payload.sourceStoredAt}});
 const employment={kind:'EMPLOYMENT_R6_ONE_YEAR_STORED_DISPLAY_R1',asOfDate:'2026-11-13',sourceStoredAt:storedAt-1000,
   formulaHash:'sha256:fixture',methodologyVersion:'EMP-R6-FORMULA-R2',indicators:Array.from({length:29},(_,i)=>({id:i+1}))};
-const themePairs=[
- {theme:'로봇·자동화',etfs:['BOTZ','ROBO']},
- {theme:'클라우드·SaaS',etfs:['SKYY','CLOU']},
- {theme:'자율주행',etfs:['DRIV','BOTZ']},
- {theme:'원전·SMR',etfs:['NLR','URA']},
- {theme:'방산',etfs:['ITA','SHLD']},
- {theme:'핀테크',etfs:['FINX','ARKF']},
- {theme:'사이버보안',etfs:['CIBR','BUG']},
-];
-const theme={version:'THEME_ETF_ONLY_R144_252_PUBLIC_V1',
- methodologyVersion:'ETF_ONLY_T40_R20_V40_PAIR50',
- sourceVersion:'theme-fixture',sourceStoredAt:'2026-11-13T22:00:00.000Z',
- publishedAt:'2026-11-13T23:00:00.000Z',observationDate:'2026-11-13',
- themes:themePairs.map(t=>({...t,latestScore:42,history:[]}))};
-const composedTheme=()=>({...theme,status:'READY',sourceVersion:'rolling-fixture-new-version',
- themes:[...themePairs.map(t=>({...t,score:47,history:[]})),
-  {theme:'AI 반도체',etfs:['SMH','SOXX'],score:47,history:[]}]});
-
+const paidTheme={
+ version:'ZGMINI_THEME_PAID_HOURLY_V1',status:'READY',phase:'CONFIRMED',
+ sourcePriceMode:'MARKETPARQUET_PAID_SPLIT_ADJUSTED_1H_NY_PROXY_V1',
+ sourceVersion:'a'.repeat(64),registrySha256:'b'.repeat(64),
+ methodologyVersion:'THEME_PAID_V1',observationDate:'2026-11-13',
+ confirmedObservationDate:'2026-11-13',sourceLatestDate:'2026-11-13',
+ sourceStoredAt:'2026-11-13T23:57:00.000Z',updatedAt:'2026-11-13T23:57:30.000Z',
+ phasePolicy:{clockBasis:'PROVIDER_PUBLISHED_PROXY_BAR_END',confirmedLagHours:0,provisionalLagHours:0},
+ historicalSourcePolicy:{basis:'fixture'},
+ themes:[{id:'robotics',theme:'로봇·자동화',etfs:['BOTZ','ROBO'],
+  score:42,history:[{date:'2026-11-13',score:42}],
+  methodologyVersion:'ETF_ONLY_T40_R20_V40_PAIR50',
+  confirmedObservationDate:'2026-11-13',provisionalObservationDate:null,
+  sourcePriceMode:'MARKETPARQUET_PAID_SPLIT_ADJUSTED_1H_NY_PROXY_V1',
+  configured:false,privateProviderValue:'DO_NOT_EXPOSE'}],
+ provisional:{points:[]},
+ dataQuality:{expectedPublicIds:['robotics'],readyPublicIds:['robotics'],pendingPublicIds:[]},
+ credential:'PRIVATE_FIXTURE_ONLY'
+};
+const paidView={
+ version:paidTheme.version,status:'READY',phase:'CONFIRMED',
+ observationDate:paidTheme.observationDate,
+ confirmedObservationDate:paidTheme.confirmedObservationDate,
+ sourceLatestDate:paidTheme.sourceLatestDate,
+ methodologyVersion:paidTheme.methodologyVersion,
+ sourcePriceMode:paidTheme.sourcePriceMode,
+ historicalSourcePolicy:paidTheme.historicalSourcePolicy,
+ sourceStoredAt:paidTheme.sourceStoredAt,
+ sourceVersion:paidTheme.sourceVersion,registrySha256:paidTheme.registrySha256,
+ updatedAt:paidTheme.updatedAt,phasePolicy:paidTheme.phasePolicy,
+ themes:[{id:'robotics',theme:'로봇·자동화',etfs:['BOTZ','ROBO'],
+  score:42,history:[{date:'2026-11-13',score:42}],
+  methodologyVersion:'ETF_ONLY_T40_R20_V40_PAIR50',
+  confirmedObservationDate:'2026-11-13',provisionalObservationDate:null,
+  sourcePriceMode:'MARKETPARQUET_PAID_SPLIT_ADJUSTED_1H_NY_PROXY_V1',
+  transitionAfter:null,previousPriceMode:null,missingETFs:[]}],
+ provisional:{points:[]},
+ dataQuality:{expectedPublicIds:['robotics'],readyPublicIds:['robotics'],pendingPublicIds:[]}
+};
+const apiPaid=body=>({...api(body),
+ headers:{'x-zgmini-theme-source':'MARKETPARQUET_PAID_HOURLY'}});
 test('five keys are fixed and enforce table, feed kind and compound key exactly',()=>{
  assert.equal(Object.keys(PUBLIC_READBACK_SLOTS).length,5);
  assert.equal(check('calendar',d1('calendar',{events:[]},{kind:'input'}),api({events:[]})).status,'WRONG_EXACT_KEY');
@@ -81,15 +104,46 @@ test('employment direct body requires 29 indicators and formula identity',()=>{
  assert.equal(check('employment',d1('employment',{...employment,indicators:[]}),api(employment)).status,'INVALID_EMPLOYMENT_METADATA');
  assert.equal(check('employment',receipt,api({...employment,methodologyVersion:'different'})).status,'PUBLIC_BODY_MISMATCH');
 });
-test('theme seed identity can align while rolling and optional sidecars remain unverified',()=>{
- const r=check('theme',d1('theme',theme),api(composedTheme()));
- assert.equal(r.status,'SEED_READBACK_ONLY_COMPOSED_UNVERIFIED');
- assert.equal(r.seedIdentityShapeAligned,true);
- assert.equal(r.rollingAndSidecarsVerified,false);
- assert.equal(r.seedSourceVersion,theme.sourceVersion);
+test('theme slot uses the currently selected paid feed exact key',()=>{
+ assert.equal(PUBLIC_READBACK_SLOTS.theme.table,'public_feed_snapshots_v1');
+ assert.equal(PUBLIC_READBACK_SLOTS.theme.kind,'output');
+ assert.equal(PUBLIC_READBACK_SLOTS.theme.feed_key,'theme-fear-greed-paid-hourly-v1');
+ assert.equal(PUBLIC_READBACK_SLOTS.theme.snapshot_key,'current');
+ assert.equal(check('theme',d1('theme',paidTheme,{feed_key:'legacy'}),apiPaid(paidView)).status,'WRONG_EXACT_KEY');
+});
+test('paid theme full projection matches while private fields stay hidden',()=>{
+ const row=d1('theme',paidTheme);
+ const found=check('theme',row,apiPaid(paidView));
+ assert.equal(found.status,'STRUCTURAL_MATCH_NOT_RUNTIME_PROOF');
+ assert.equal(found.readerBranch,'PAID');
+ assert.equal(found.d1BodySha256,sha(row.body));
+ assert.doesNotMatch(JSON.stringify(found),/DO_NOT_EXPOSE|PRIVATE_FIXTURE_ONLY/);
+ assert.notEqual(row.body,JSON.stringify(paidView));
+});
+test('paid comparison detects value and historical date differences',()=>{
+ for(const mutate of [
+  x=>{x.themes[0].score=77;},
+  x=>{x.themes[0].history[0].date='2026-11-12';},
+  x=>{x.sourceVersion='c'.repeat(64);},
+ ]){const body=structuredClone(paidView);mutate(body);
+  assert.equal(check('theme',d1('theme',paidTheme),apiPaid(body)).status,'THEME_PAID_PAYLOAD_MISMATCH');
+ }
+});
+test('legacy fallback does not prove a current paid row mismatch',()=>{
+ const legacy={version:'THEME_ETF_ONLY_R144_252_PUBLIC_V1',status:'READY',themes:[]};
+ assert.equal(check('theme',d1('theme',paidTheme),api(legacy)).status,'THEME_LEGACY_FALLBACK_UNVERIFIED');
+});
+test('paid body without verified source header is not a branch proof',()=>{
+ assert.equal(check('theme',d1('theme',paidTheme),api(paidView)).status,'THEME_READER_BRANCH_UNVERIFIED');
+});
+test('malformed paid metadata and expired paid rows fail closed',()=>{
+ assert.equal(check('theme',d1('theme',{...paidTheme,registrySha256:'bad'}),apiPaid(paidView)).status,
+  'INVALID_THEME_PAID_METADATA');
+ assert.equal(check('theme',d1('theme',{...paidTheme,updatedAt:'2026-11-01T00:00:00.000Z'}),apiPaid(paidView)).status,
+  'THEME_PAID_ROW_NOT_ELIGIBLE');
 });
 test('503 stale is a public API readiness failure, not a D1 mismatch verdict',()=>{
- const r=check('theme',d1('theme',theme),{observedAt:apiAt,statusCode:503,body:{reason:'STORED_DATA_STALE'}});
+ const r=check('theme',d1('theme',paidTheme),{observedAt:apiAt,statusCode:503,body:{reason:'STORED_DATA_STALE'}});
  assert.equal(r.status,'API_NOT_READY');assert.equal(r.httpStatus,503);
 });
 test('invalid JSON and future D1 stored_at fail closed',()=>{
@@ -137,41 +191,3 @@ test('known HTTP 503 remains API_NOT_READY even when captures are not coincident
  assert.equal(result.httpStatus,503);
 });
 
-test('theme public output must preserve immutable seed version and methodology',()=>{
- for(const [field,value] of [['version','different'],['methodologyVersion','INVALID']]){
-  const r=check('theme',d1('theme',theme),api({...composedTheme(),[field]:value}));
-  assert.equal(r.status,'THEME_SEED_LINEAGE_MISMATCH');
-  assert.equal(r.field,field);
-  assert.equal(r.rollingAndSidecarsVerified,undefined);
- }
-});
-test('different rolling sourceVersion is valid, missing sourceVersion is not evidence',()=>{
- const r=check('theme',d1('theme',theme),api(composedTheme()));
- assert.equal(r.status,'SEED_READBACK_ONLY_COMPOSED_UNVERIFIED');
- const lost=check('theme',d1('theme',theme),api({...composedTheme(),sourceVersion:''}));
- assert.equal(lost.status,'THEME_SEED_LINEAGE_MISMATCH');
- assert.equal(lost.field,'sourceVersion');
-});
-test('seed base ETF identities must be preserved across rolling and sidecars',()=>{
- for(const mutate of [
-  p=>{p.themes[0].etfs=['SPY','ROBO'];},
-  p=>{p.themes[1].theme='changed theme';},
-  p=>{p.themes=[...p.themes].slice(1);},
-  p=>{p.themes=[...p.themes].reverse();},
- ]){const payload=composedTheme();mutate(payload);
-  const r=check('theme',d1('theme',theme),api(payload));
-  assert.equal(r.status,'THEME_SEED_LINEAGE_MISMATCH');
-  assert.equal(r.field,'baseThemes');
- }
-});
-test('partial or malformed theme seed metadata never becomes a structural match',()=>{
- for(const mutate of [
-  p=>{p.sourceVersion='';},
-  p=>{p.version='';},
-  p=>{p.methodologyVersion='';},
-  p=>{p.themes=p.themes.slice(0,6);},
-  p=>{p.themes[0].etfs=[];},
- ]){const saved=JSON.parse(JSON.stringify(theme));mutate(saved);
-  assert.equal(check('theme',d1('theme',saved),api(composedTheme())).status,'INVALID_THEME_SEED_METADATA');
- }
-});
