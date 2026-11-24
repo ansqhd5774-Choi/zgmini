@@ -74,6 +74,8 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'vite.config.ts'
+      - 'scripts/ci-accessibility-axe.mjs'
+      - 'tests/ci-accessibility-axe.test.mjs'
       # R2 performance lab shares the existing installed Playwright Chromium.
       - 'scripts/ci-performance-lab.mjs'
       - 'tests/ci-performance-lab.test.mjs'
@@ -99,7 +101,7 @@ jobs:
       - name: Install locked repository dependencies
         run: npm ci
       - name: Install test-only Playwright without changing lockfile
-        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1 axe-core@4.14.1
       - name: Install browser for offline UI interactions
         run: npx playwright install --with-deps chromium
       # Independent W06 public chart test runs before unrelated risk-page asset checks.
@@ -157,12 +159,17 @@ jobs:
       # Lab results are observations, not a new unapproved Lighthouse score gate.
       - name: Measure isolated Chromium performance laboratory
         run: node scripts/ci-performance-lab.mjs
+      # Accessibility results are observations; reviewed baseline approval is separate.
+      - name: Measure local WCAG A/AA accessibility with axe-core
+        timeout-minutes: 2
+        run: node scripts/ci-accessibility-axe.mjs
       - name: Upload browser UI evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: community-chat-browser-r1
           path: |
+            artifacts/ci-accessibility/
             artifacts/performance-lab/
             artifacts/community-chat-browser/
             artifacts/risk-detail-side-rails/
@@ -183,6 +190,7 @@ jobs:
             artifacts/w06-production-readonly/
             artifacts/w06-touch-local/
           if-no-files-found: warn
+          retention-days: 7
       - name: Show local dev errors on failure
         if: failure()
         run: tail -n 120 /tmp/zgmini-chat-vite.log || true
