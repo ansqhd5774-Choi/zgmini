@@ -36,9 +36,9 @@ const publish=process.argv.includes('--publish');
 // Candidate only: recurring inflation research sidecar writes require their own
 // approved publication scope and exact installed-source manifest before enablement.
 const INFLATION_19_AUTO_PUBLICATION_APPROVED=true;
-// W05's existing B grants cover one publication per key, not recurring D1.
-// Source hook is staged but must not become a new implicit write effect.
-const W05_SAVED_SIDECARS_AUTO_PUBLICATION_APPROVED=false;
+// W05 recurring scope: the three saved-only sidecars, no provider or SQLite writes.
+// Deployment of this activation candidate requires the exact Writer B source CAS.
+const W05_SAVED_SIDECARS_AUTO_PUBLICATION_APPROVED=true;
 const config=read(path.join(base,'config.json'));
 const source=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
 if(publish){
@@ -365,8 +365,8 @@ try{
    const {publishInflationCandidates7Auto}=await import('./inflation-causal-candidates-public-7-auto-publication-r1.mjs');
    report.inflation7=await publishInflationCandidates7Auto({pcHome:base,remote,coreDb:config.core});
   });
-  // W05 saved-only informational sidecars. Deliberately inert until the
-  // three-key recurring D1 effect and exact installed source/CAS are approved.
+  // W05 saved-only informational sidecars. Activation candidate for the
+  // three-key recurring D1 scope; install only through exact Writer B CAS.
   // Reuse the existing run-local Writer lane and its attemptOutput isolation;
   // never create a second Task, scheduler, provider call or DB writer.
   if(W05_SAVED_SIDECARS_AUTO_PUBLICATION_APPROVED){
