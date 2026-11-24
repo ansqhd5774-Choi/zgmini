@@ -78,6 +78,9 @@ test('existing Playwright CI reuses its browser and separately builds a producti
  assert.match(y,/name: Build isolated local production preview for browser performance/);
  assert.match(y,/vite preview --host 127\.0\.0\.1 --port 3000 --strictPort/);
  assert.match(y,/node scripts\/ci-browser-performance\.mjs/);
+ const script=readFileSync(new URL('../scripts/ci-browser-performance.mjs',import.meta.url),'utf8');
+ assert.match(script,/waitUntil:'commit'/);
+ assert.match(script,/locator\('main'\)\.waitFor/);
  assert.match(y,/artifacts\/ci-performance-browser\/summary\.json/);
  assert.doesNotMatch(y,/lhci collect|temporary-public-storage/);
 });
