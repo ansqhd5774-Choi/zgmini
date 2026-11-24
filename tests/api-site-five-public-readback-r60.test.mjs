@@ -7,6 +7,9 @@ import {INFLATION_CANDIDATES_7} from '../lib/inflation-causal-candidates-public-
 import {collectFiveKeyInPlace,createW05ReadonlyD1Adapter,W05_FIXED_READS} from '../scripts/api-site/five-key-inplace-readback-prework-r12.mjs';
 import {readW05PublicApi,W05_PUBLIC_API_URLS,W05_PUBLIC_MAX_BODY_BYTES} from '../scripts/api-site/five-key-public-api-reader-r1.mjs';
 import {comparePublicReadback,PUBLIC_READBACK_SLOTS,MAX_PUBLIC_READBACK_SPAN_MS} from '../scripts/api-site/compare-five-public-readbacks-r1.mjs';
+import * as libComparator from '../lib/w05-audit/compare-five-public-readbacks-r1.mjs';
+import * as libCollection from '../lib/w05-audit/five-key-inplace-readback-prework-r12.mjs';
+import * as libPublicApi from '../lib/w05-audit/five-key-public-api-reader-r1.mjs';
 const now=Date.parse('2026-11-14T00:00:00.000Z');
 const readAt='2026-11-14T00:00:00.000Z';
 const storedAt=now-60_000;
@@ -422,4 +425,15 @@ test('approved D1 query bridge rejects invalid owner and query row shape',async(
  const db=createW05ReadonlyD1Adapter(async()=>[]);
  await assert.rejects(db.prepare(W05_FIXED_READS.theme.sql).bind(
   ...W05_FIXED_READS.theme.bind).first(),/W05_D1_ROW_SHAPE_INVALID/);
+});
+
+test('canonical allowed lib/ layout preserves all existing W05 import identities',()=>{
+ assert.equal(libComparator.comparePublicReadback,comparePublicReadback);
+ assert.equal(libComparator.PUBLIC_READBACK_SLOTS,PUBLIC_READBACK_SLOTS);
+ assert.equal(libCollection.collectFiveKeyInPlace,collectFiveKeyInPlace);
+ assert.equal(libCollection.createW05ReadonlyD1Adapter,createW05ReadonlyD1Adapter);
+ assert.equal(libCollection.W05_FIXED_READS,W05_FIXED_READS);
+ assert.equal(libPublicApi.readW05PublicApi,readW05PublicApi);
+ assert.equal(libPublicApi.W05_PUBLIC_API_URLS,W05_PUBLIC_API_URLS);
+ assert.equal(libPublicApi.W05_PUBLIC_MAX_BODY_BYTES,W05_PUBLIC_MAX_BODY_BYTES);
 });
