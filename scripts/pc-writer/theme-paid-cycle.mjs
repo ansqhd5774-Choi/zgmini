@@ -95,6 +95,20 @@ export async function runPaidThemeCycle(base,{publish=false,now=Date.now(),sync=
   }catch{d05FinalOutputReadback={status:'UNPROVEN_LOCAL_FINAL_THEME_OUTPUT'};}
  }
  const result={...report,d05FinalOutputReadback,status:'PRIVATE_CALCULATED',sourceLatestDate:phases.sourceLatest,confirmedDate:phases.confirmed,provisionalDate:phases.provisional,expectedIds:output.record.dataQuality.expectedPublicIds,readyIds:output.record.dataQuality.readyPublicIds,pendingIds:output.record.dataQuality.pendingPublicIds,privateResults:output.privateResults,privateStored,acquisition:{chunks:acquisition.acquired,proofs:saved.proofs.length},results:output.results};
+ // D05 private: record only actual calculated final outputs. The original
+ // content-addressed private snapshot may be reused for many clocked cycles.
+ // A missing/invalid private receipt must never block the existing public lane.
+ if(privateStored?.status==='PRIVATE_STORED_READBACK_VERIFIED'){
+  try{
+   const {storeVerifiedPrivateThemeFinalEvents}=await import(
+    '../../lib/score-history/d05-private-theme-final-events-r1.mjs');
+   result.d05PrivateFinalOutputReadback=storeVerifiedPrivateThemeFinalEvents({
+    directory:dir,privateStored,sourceVersion,
+    registrySha256:context.registrySha256,confirmedDate:phases.confirmed,
+    calculatedAtMs:now,now:Date.now()
+   });
+  }catch{result.d05PrivateFinalOutputReadback={status:'UNPROVEN_PRIVATE_FINAL_OUTPUT'};}
+ }else{result.d05PrivateFinalOutputReadback={status:'NO_VERIFIED_PRIVATE_FINAL_OUTPUT'};}
  if(publish&&validPaidThemeRecord(output.record)){const applied=await publishPaidThemeRecord({remote,dbId:config.core,record:output.record,preimage:seed.preimage,now});result.status=applied.status;result.d1Writes=applied.written;result.storedAt=applied.storedAt;result.bodySha256=applied.bodySha256??sha(seed.preimage.body);}
  fs.writeFileSync(path.join(base,'marketparquet-paid','theme-last-run.json'),JSON.stringify(result,null,2)+'\n');return result;
 }
