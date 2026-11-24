@@ -16,7 +16,7 @@ const GROUP="DOL_UI_WEEKLY_CLAIMS";
 const IDS=["INITIAL_CLAIMS","INITIAL_CLAIMS_4W",
   "CONTINUED_CLAIMS","INSURED_UNEMPLOYMENT_RATE"];
 const clock=()=>new Date("2026-11-24T14:50:00.000Z");
-function runFixture({failureCode=null,includeNational=false,includeState=true}={}){
+function runFixture({failureCode=null,stateFailureCode=null,includeNational=false,includeState=true}={}){
   const ledger=[],raw=[];
   let releaseCalls=0,groupCalls=0;
   const stateRows=includeState
@@ -77,6 +77,7 @@ function runFixture({failureCode=null,includeNational=false,includeState=true}={
           bodySha256:"1".repeat(64),
         },
         ...(failureCode?{partialFailureCode:failureCode}:{}),
+        ...(stateFailureCode?{stateFailureCode}:{}),
       };
     }}),
   });
@@ -118,6 +119,40 @@ test("W04 unchanged successful National + 51 state path and legacy error code",a
     assert.equal(legacy.ledger[0].failureCode,code);
     assert.equal(legacy.result.providerRequests,2);
   }
+});
+
+
+test("W04 missing complete ETA539 week preserves its precise reason and valid National results",async()=>{
+  const run=await runFixture({
+    failureCode:"DOL_ETA539_NO_COMPLETE_CORE_WEEK",
+    stateFailureCode:"DOL_ETA539_NO_COMPLETE_CORE_WEEK",
+    includeNational:true,includeState:false,
+  });
+  assert.equal(run.result.status,"PARTIAL");
+  assert.equal(run.result.providerRequests,2);
+  assert.equal(run.ledger[0].failureCode,"DOL_ETA539_NO_COMPLETE_CORE_WEEK");
+  assert.equal(run.ledger[0].detail.stateFailureCode,"DOL_ETA539_NO_COMPLETE_CORE_WEEK");
+  assert.equal(run.result.groupResults[0].stateFailureCode,"DOL_ETA539_NO_COMPLETE_CORE_WEEK");
+  assert.deepEqual(run.ledger[0].detail.missingSeries,["STATE_INITIAL_CLAIMS"]);
+  assert.equal(run.ledger[0].collectedRows,4);
+  assert.equal(run.raw.length,1,"verified National PDF raw is preserved without complete State");
+  assert.equal(run.releaseCalls,1);
+});
+test("W04 concurrent ETA538 and ETA539 failures retain both independent error identities",async()=>{
+  const run=await runFixture({
+    failureCode:"DOL_ETA538_PDF_PIN_MISMATCH",
+    stateFailureCode:"DOL_ETA539_SOURCE_FAILED",
+    includeNational:false,includeState:false,
+  });
+  assert.equal(run.result.status,"PARTIAL");
+  assert.equal(run.result.providerRequests,2);
+  assert.equal(run.ledger[0].failureCode,"DOL_ETA538_PDF_PIN_MISMATCH");
+  assert.equal(run.ledger[0].detail.stateFailureCode,"DOL_ETA539_SOURCE_FAILED");
+  assert.equal(run.result.groupResults[0].stateFailureCode,"DOL_ETA539_SOURCE_FAILED");
+  assert.deepEqual(run.ledger[0].detail.missingSeries,[...IDS,"STATE_INITIAL_CLAIMS"]);
+  assert.equal(run.ledger[0].collectedRows,0);
+  assert.equal(run.raw.length,0);
+  assert.equal(run.releaseCalls,1);
 });
 
 
