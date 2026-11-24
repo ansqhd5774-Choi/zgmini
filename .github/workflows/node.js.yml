@@ -62,6 +62,10 @@ jobs:
           if-no-files-found: error
       - name: Type check
         run: npm run typecheck
+      # #6 Architecture Testing: no public/runtime direct import of PC-only operations.
+      # Reuses TypeScript from npm ci, no added dependencies or global baseline.
+      - name: Validate public-to-PC architecture boundaries
+        run: node scripts/ci-architecture-boundary.mjs
       - name: Regression tests
         run: node --test tests/*.test.mjs
       - name: PC publication recovery tests
