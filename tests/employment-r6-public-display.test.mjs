@@ -172,3 +172,26 @@ test("publisher only writes a verified public snapshot, guards downgrades and re
   await assert.rejects(publishEmploymentR6OneYear({body,remote:protectedTarget,dbId:"test-db",now:now+200}),/REMOTE_SOURCE_NEWER/);
   assert.equal(protectedTarget.writes,0);
 });
+
+test("W04 legacy R1 GET stays readable but R2 writes and missing-value protection remain strict",async()=>{
+ const legacy=structuredClone(body);
+ legacy.formulaHash="sha256:18e18d1025d8c5b1ea9e4aa1bdd33596cfb8b5d5df7e59a6c2629f230be5480d";
+ legacy.methodologyVersion="EMP-R6-FORMULA-R1";
+ assert.equal(validEmploymentR6PublicDisplay(legacy),false,"R1 is not valid for writing");
+ assert.equal(validEmploymentR6PublicDisplay(legacy,{allowLegacy:true}),true);
+ const response=await employmentR6StoredDisplayResponse(
+  new Request("https://zgmini.kr/api/employment-r6/observations"),
+  db({body:JSON.stringify(legacy),stored_at:now}),{now:now+5000});
+ assert.equal(response.status,200,"only pre-existing R1 snapshot can be read");
+ assert.equal((await response.json()).methodologyVersion,"EMP-R6-FORMULA-R1");
+ const fabricated=structuredClone(legacy);
+ fabricated.indicators[0].value=42;
+ assert.equal(validEmploymentR6PublicDisplay(fabricated,{allowLegacy:true}),false,
+  "legacy GET must not admit fabricated missing-value observations");
+ const moreRecent=structuredClone(legacy);
+ moreRecent.sourceStoredAt=now+300;
+ const target=remote({body:JSON.stringify(moreRecent),stored_at:now+301});
+ await assert.rejects(publishEmploymentR6OneYear({body,remote:target,
+  dbId:"test-db",now:now+500}),/REMOTE_SOURCE_NEWER/);
+ assert.equal(target.writes,0,"never overwrite a newer legacy R1 snapshot");
+});
