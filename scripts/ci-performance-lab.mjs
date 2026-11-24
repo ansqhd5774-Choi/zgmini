@@ -5,7 +5,7 @@ import {mkdir,writeFile} from 'node:fs/promises';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
-export const LAB_SCHEMA=1;
+export const LAB_SCHEMA=2; // CLS precision changed; v1 rounded 0.101 to 0.10
 export const LAB_FIXTURE='localhost-vite-api-unavailable-v1';
 export const VIEWPORTS=Object.freeze([{width:390,height:844},{width:1440,height:900}]);
 export const METRIC_NAMES=Object.freeze([
@@ -13,14 +13,15 @@ export const METRIC_NAMES=Object.freeze([
 ]);
 export const BASE='http://127.0.0.1:5173';
 
-const round=value=>typeof value==='number'&&Number.isFinite(value)&&value>=0
- ?Math.round(value*100)/100:null;
+const round=(value,digits=2)=>typeof value==='number'&&Number.isFinite(value)&&value>=0
+ ?Math.round(value*10**digits)/10**digits:null;
 
 export function normalizeRawMetrics(raw){
  if(!raw||typeof raw!=='object'||Array.isArray(raw))
   throw Error('CI_PERFORMANCE_METRICS_UNVERIFIED');
  const measured={};
- for(const name of METRIC_NAMES)measured[name]=round(raw[name]);
+ // Keep enough CLS precision to distinguish 0.10001 from the 0.1 Good limit.
+ for(const name of METRIC_NAMES)measured[name]=round(raw[name],name==='cls'?5:2);
  return measured;
 }
 
@@ -39,7 +40,7 @@ export function comparePerformanceLab(baseline,current){
  let comparable=0;
  for(const metric of METRIC_NAMES){
   deltas[metric]=old[metric]===null||now[metric]===null?
-   null:round(Math.abs(now[metric]-old[metric]))*
+   null:round(Math.abs(now[metric]-old[metric]),metric==='cls'?5:2)*
     (now[metric]<old[metric]?-1:1);
   if(deltas[metric]!==null)comparable++;
  }
