@@ -1,5 +1,17 @@
 # ZGMINI W04 고용지표 R6 — 실행 진행 기록
 
+<!-- W04_20261124_REOPEN_CORE_DOL_RELEASE_AUDIT -->
+## 2026-11-24 KST — 마지막 W04 재개: 자연 Core·DOL 공개 출처·재시도 조건 실제 대조
+
+- **작업 기준:** `ansqhd5774-Choi/zgmini` / 전담 `codex/employment-1y-reader-r1`, 최신 `main` 기능 코드와 설치된 운영 PC 증거를 구분한다. 현행 5단계 **2/5 DONE, 3 IN_PROGRESS, 4·5 NOT_DONE**, 72단계 과거 계수를 현재 완료율로 사용하지 않음.
+- **새 운영 영수증 재조회:** 제어 [#3318](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3318#issuecomment-7129697366) / [Run #45381282378](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45381282378) / `results/45381282378-1-seat-5.json`에서 `CORE_READONLY_DIAGNOSIS PASS`; 자연 `local-cycle` checkpoint 2026-11-24T11:02:43.649Z `COMPLETE`, `collection` 11:05:33.622Z `COMPLETE`, `writer` 11:07:25.021Z `VERIFIED/UNCHANGED`. 고용 `sourceFeatures=29`, `chartReadyFeatures=22`, `recentlyObservedFeatures=22`, `sourceStoredAt=1795307425460`, 로컬 readback `VERIFIED`. 신규 결과 저장은 `localResultStored=false`; 정상 `UNCHANGED`를 새 게시 성공으로 꾸미지 않음.
+- **최초 미완료 조건:** `DOL_UI_WEEKLY_CLAIMS`만 `CIRCUIT_OPEN` / `DOL_RELEASE_OBSERVATION_STALE` / `due=false`. BLS `EMPLOYMENT_SITUATION/JOLTS/ECI/STATE_MSA/BED` 다섯 그룹은 각 `RELEASE_ALREADY_STORED`; 불필요한 BLS 재수집 금지. 이 읽기 조회에서 공급자 호출/SQLite/D1 쓰기 0, protected before/after 동일.
+- **공식 제공물 차이 재확인:** [DOL 2026-11-19 공식 보도자료](https://oui.doleta.gov/press/2026/111926.pdf)는 2026-11-14 주 최초청구 203,000·4주 평균 197,750, 2026-11-07 주 계속청구 1,763,000·수급률 1.1%를 명시한다. 기존 승인된 `report.asp` XML의 마지막 검증 숫자 관측일 2026-10-24(#2697)는 별개 제공물. PDF **원본 파일 바이트 SHA256·PC 보관·소스 계약 연결은 미검증**이며 이 발표값을 SQLite 원자료·역사 PIT·D1에 소급 저장하지 않음.
+- **과도 차단 가설 분리:** 최신 `main` `lib/market-score/employment-r6-contract.mjs`에서 DOL 일반 `retryTtlMs=15분`, quota는 24시간이며, `employment-r6-scheduler.mjs`는 실제 최신 실패의 `completed_at+TTL` 동안만 `CIRCUIT_OPEN` 처리한다. #3318은 `due=false`만 관측했으므로 해당 시각의 정확 `retryAt`·최신 원본 업데이트 상태를 증명하지 않는다. 근거 없이 보호를 제거하거나 과도한 정책이라고 단정하지 않음.
+- **웹 표시 범위:** 공개 고용 페이지 HTML에서 고정 29개 지표 라벨과 초기 로딩 화면만 확인. 브라우저 hydration 후 실제 데이터·PC1440/모바일390·차트 마지막 점은 미실증. 공개 API 직접 조회는 이번 웹 도구에서 접근 실패했으나 과거 검증된 D1→API 운영 일치를 무효화하지 않음.
+- **LAST PASS:** #3318 Core 자연 실행·기존 Writer 저장 결과 readback, 최신 source의 제한적 circuit 확인. **FIRST UNFINISHED:** 공급처 XML의 실제 신규 수치 가용성 또는 같은 DOL 공식 PDF 원본 바이트/해시·저장 계약 인증(해당 기능 범위의 정규 효과 승인 포함); 4단계 진짜 렌더링 대조. **다음 실행:** 이미 확보한 #2697 원본/판정 유지, 새 공식 raw 원본의 실제 가용·계약·동일 지표 정의를 검증한 뒤에만 기존 승인 Writer 경로로 최소 갱신·readback. BLS/D1/운영 PC/Controller/Task/TTL/산식 신규 변경 0.
+
+
 > **현재 실행 기준(2026-11-21 개편): [운영 완료 5단계 계획](EMPLOYMENT_R6_CURRENT_EXECUTION_PLAN_20261116.md). 2/5 완료, 3단계 진행 중.** 이전 53/72는 역사적 증거 추적 계수이며 현재 기능 완료율이 아니다. 아래 과거 보고의 NEXT/차단/접근 실패를 현재 지시로 재사용하지 않는다. Production 직접 GET은 200이며 PC와 모델 버전·hash·sourceStoredAt이 일치했고, 실PC D1 고정키 body SHA/stored_at 직접 readback은 #2628에서 PASS했다. API/UI 전체 필드 대조와 자동 갱신 검증은 별도 진행한다.
 
 
