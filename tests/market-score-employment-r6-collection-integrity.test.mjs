@@ -188,3 +188,69 @@ test("W04 DOL release only succeeds when all four national series meet their own
   assert.equal(fresh.result.groupResults[0].status, "SUCCESS");
   assert.equal(fresh.recorded[0].failureCode, null);
 });
+
+
+test("W04 RELEASE reuses previously verified same-release PDF but never a stale or partial source",async()=>{
+  const fresh={
+    sourceReleaseDate:"2026-11-19",rawSnapshotId:"a".repeat(64),
+    originalPdfSha256:"b".repeat(64),
+    latestNationalSeriesObservationDates:{
+      INITIAL_CLAIMS:"2026-11-14",INITIAL_CLAIMS_4W:"2026-11-14",
+      CONTINUED_CLAIMS:"2026-11-07",INSURED_UNEMPLOYMENT_RATE:"2026-11-07",
+    },
+  };
+  async function run(stored,{missingState=false}={}){
+    const runs=[],requested=[];
+    const store={
+      async initialize(){},async getLatestRun(){return null;},
+      async acquire(){return {acquired:true};},async release(){},
+      async upsertObservationRows(){return {inserted:0,revised:0,noop:5,rejected:0};},
+      async getVerifiedStoredDolNationalRelease(release){requested.push(release);return stored;},
+      async recordRun(entry){runs.push(entry);return 42;},
+    };
+    const result=await runEmploymentR6CollectionStep({
+      db:{prepare(){return {};}},
+      now:()=>new Date("2026-11-19T15:00:00.000Z"),
+      mode:"RELEASE",groups:["DOL_UI_WEEKLY_CLAIMS"],
+      storeFactory:()=>store,
+      providerFactory:()=>({async fetchGroup(){
+        return {
+          requestCount:2,snapshots:[],
+          rows:["INITIAL_CLAIMS","INITIAL_CLAIMS_4W","CONTINUED_CLAIMS",
+              "INSURED_UNEMPLOYMENT_RATE"].map(logicalSeriesId=>({
+                logicalSeriesId,observationDate:"2026-10-24",value:1,
+              })).concat(missingState?[]:[{logicalSeriesId:"STATE_INITIAL_CLAIMS",
+                geographyType:"STATE",observationDate:"2026-11-07",value:1}]),
+          missingSeries:missingState?["STATE_INITIAL_CLAIMS"]:[],
+          nationalResponseEvidence:{responseFormat:"NATIONAL_XML",
+            parsedNationalSeriesCount:4,latestNationalObservationDate:"2026-10-24"},
+          ...(missingState?{stateFailureCode:"DOL_ETA539_SOURCE_FAILED",
+            partialFailureCode:"DOL_ETA539_SOURCE_FAILED"}:{}),
+        };
+      }}),
+    });
+    return {result,run:runs[0],requested};
+  }
+  const matched=await run(fresh);
+  assert.equal(matched.result.status,"SUCCESS");
+  assert.equal(matched.run.status,"SUCCESS");
+  assert.equal(matched.run.failureCode,null);
+  assert.deepEqual(matched.requested,["2026-11-19T13:30:00.000Z"]);
+  assert.equal(matched.run.detail.nationalFreshnessSource,"VERIFIED_STORED_ETA538_PDF");
+  assert.equal(matched.run.detail.nationalResponseEvidence.latestNationalObservationDate,
+    "2026-10-24","do not misrepresent the XML response as fresh");
+  assert.equal(matched.run.detail.latestNationalSeriesObservationDates.INITIAL_CLAIMS,"2026-11-14");
+  assert.equal(matched.run.detail.providerNationalSeriesObservationDates.INITIAL_CLAIMS,"2026-10-24");
+  const missing=await run(null);
+  assert.equal(missing.result.status,"PARTIAL");
+  assert.equal(missing.run.failureCode,"DOL_RELEASE_OBSERVATION_STALE");
+  const wrongRelease=await run({...fresh,sourceReleaseDate:"2026-11-12"});
+  assert.equal(wrongRelease.result.status,"PARTIAL");
+  const older=await run({...fresh,latestNationalSeriesObservationDates:{
+    ...fresh.latestNationalSeriesObservationDates,CONTINUED_CLAIMS:"2026-10-24",
+  }});
+  assert.equal(older.result.status,"PARTIAL");
+  const stateFailed=await run(fresh,{missingState:true});
+  assert.equal(stateFailed.result.status,"PARTIAL");
+  assert.deepEqual(stateFailed.requested,[],"do not mask independent ETA539 failure");
+});

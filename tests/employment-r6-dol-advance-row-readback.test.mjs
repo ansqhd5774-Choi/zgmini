@@ -112,3 +112,31 @@ test("W04 rejects missing, duplicated, tampered or XML-masquerading National row
     assert.equal(verify(data).status,"LINEAGE_VERIFIED");
   }finally{data.sqlite.close()}
 });
+
+
+test("W04 RELEASE accepts only exact-release PDF bytes and all four stored National row hashes",async()=>{
+  const data=await prepareStored();
+  try {
+    const store=createEmploymentR6Store(data.db);
+    const matched=await store.getVerifiedStoredDolNationalRelease(options.releaseAt);
+    assert.equal(matched?.sourceReleaseDate,"2026-11-19");
+    assert.equal(matched?.rawSnapshotId,data.saved.snapshotId);
+    assert.equal(matched?.originalPdfSha256,sha256(fixturePdf()));
+    assert.deepEqual(matched?.latestNationalSeriesObservationDates,{
+      INITIAL_CLAIMS:"2026-11-14",
+      INITIAL_CLAIMS_4W:"2026-11-14",
+      CONTINUED_CLAIMS:"2026-11-07",
+      INSURED_UNEMPLOYMENT_RATE:"2026-11-07",
+    });
+    // A verified 19 Nov source may not satisfy the next scheduled release.
+    assert.equal(await store.getVerifiedStoredDolNationalRelease("2026-11-25T13:30:00.000Z"),null);
+    assert.equal(await store.getVerifiedStoredDolNationalRelease("2026-11-19T14:00:00.000Z"),null);
+    // A modified current row must not be accepted solely on its PDF metadata.
+    await data.db.prepare("UPDATE "+EMPLOYMENT_R4_SHADOW_TABLES.current+
+      " SET source_hash=? WHERE logical_series_id=? AND release_date=?")
+      .bind("0".repeat(64),"INITIAL_CLAIMS",options.releaseAt).run();
+    assert.equal(await store.getVerifiedStoredDolNationalRelease(options.releaseAt),null);
+  } finally {
+    data.sqlite.close();
+  }
+});
