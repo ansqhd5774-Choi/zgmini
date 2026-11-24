@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  actions: read # historical completed Actions job metadata only
 
 concurrency:
   group: node-ci-${{ github.workflow }}-${{ github.ref }}
@@ -114,3 +115,18 @@ jobs:
           if-no-files-found: error
       - name: Audit production dependency vulnerabilities (high or critical)
         run: npm audit --omit=dev --audit-level=high --audit=true --fund=false
+      # #36: use completed main-push Node CI metadata; ignore in-flight runs.
+      # No performance threshold, newly scheduled job, or external telemetry platform.
+      - name: Observe completed Node CI queue and execution trends
+        if: ${{ !cancelled() }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci-continuous-benchmark-r2.mjs
+      - name: Upload descriptive CI benchmark evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-continuous-benchmark
+          path: artifacts/ci-continuous-benchmark/report.json
+          retention-days: 7
+          if-no-files-found: error
