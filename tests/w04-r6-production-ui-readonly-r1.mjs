@@ -49,7 +49,7 @@ function checkData(body,headers){
   const item=body.indicators.find(x=>x.id===id);
   assert(item,"W04 bounded public Claims indicator present: "+id);
   const historyDates=(item.history??[]).filter(x=>typeof x?.date==="string"
-   &&/^\\d{4}-\\d{2}-\\d{2}$/.test(x.date)).map(x=>x.date).sort();
+   &&/^\d{4}-\d{2}-\d{2}$/.test(x.date)).map(x=>x.date).sort();
   return {id,rawStatus:item.rawStatus??null,observationDate:item.observationDate??null,
    chartStatus:item.chartStatus??null,historyLastDate:historyDates.at(-1)??null};
  });
