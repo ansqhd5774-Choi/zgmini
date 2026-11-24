@@ -1,6 +1,9 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
+import {buildEmploymentR6OneYearReadModel} from '../lib/market-score/employment-r6-one-year-read-model.mjs';
+import {INFLATION_CAUSAL_19} from '../lib/inflation-causal-public-catalog.mjs';
+import {INFLATION_CANDIDATES_7} from '../lib/inflation-causal-candidates-public-7-catalog.mjs';
 import {comparePublicReadback,PUBLIC_READBACK_SLOTS,MAX_PUBLIC_READBACK_SPAN_MS} from '../scripts/api-site/compare-five-public-readbacks-r1.mjs';
 const now=Date.parse('2026-11-14T00:00:00.000Z');
 const readAt='2026-11-14T00:00:00.000Z';
@@ -11,11 +14,25 @@ const d1=(slot,body,extras={})=>({ ...PUBLIC_READBACK_SLOTS[slot],readAt,exists:
   stored_at:storedAt,body:JSON.stringify(body),...extras});
 const api=body=>({observedAt:apiAt,statusCode:200,body});
 const check=(slot,db,pub)=>comparePublicReadback(slot,{d1:db,api:pub,now});
-const inflationPayload={schemaVersion:'synthetic-r1',status:'PARTIAL',score:null,sourceVersion:'fixture-source-v1',sourceStoredAt:storedAt-1000,indicators:[]};
+const pending=meta=>({id:meta.id,series:meta.series,unit:meta.unit,
+ status:'PENDING',value:null,previousValue:null,observationDate:null,
+ previousObservationDate:null,availableAt:null,sourceStoredAt:null,history:[]});
+const inflation19Payload={schemaVersion:'inflation-causal-public-19-r1-v1',
+ status:'PARTIAL',score:null,sourceVersion:'fixture-inflation-19-source-v1',
+ sourceStoredAt:storedAt-1000,indicators:INFLATION_CAUSAL_19.map(pending)};
+const infl7ObservationAt='2026-11-13T22:00:00.000Z';
+const inflation7Payload={schemaVersion:'inflation-causal-candidates-7-r1-v1',
+ status:'PARTIAL',score:null,sourceVersion:'fixture-inflation-7-source-v1',
+ sourceStoredAt:Date.parse(infl7ObservationAt),
+ indicators:INFLATION_CANDIDATES_7.map((meta,i)=>i===0?{
+ ...pending(meta),status:'READY',value:2.5,observationDate:'2026-11-13',
+ sourceStoredAt:infl7ObservationAt,history:[{date:'2026-11-13',value:2.5}]
+ }:pending(meta))};
+const inflationPayload=inflation19Payload;
 const inflationEnvelope=payload=>({payload,projection:{status:'READY',builtAt:storedAt,
   sourceVersion:payload.sourceVersion,sourceStoredAt:payload.sourceStoredAt}});
-const employment={kind:'EMPLOYMENT_R6_ONE_YEAR_STORED_DISPLAY_R1',asOfDate:'2026-11-13',sourceStoredAt:storedAt-1000,
-  formulaHash:'sha256:fixture',methodologyVersion:'EMP-R6-FORMULA-R2',indicators:Array.from({length:29},(_,i)=>({id:i+1}))};
+const employment=buildEmploymentR6OneYearReadModel([],{asOfDate:'2026-11-13',
+ sourceStoredAt:storedAt-1000});
 const paidTheme={
  version:'ZGMINI_THEME_PAID_HOURLY_V1',status:'READY',phase:'CONFIRMED',
  sourcePriceMode:'MARKETPARQUET_PAID_SPLIT_ADJUSTED_1H_NY_PROXY_V1',
@@ -75,11 +92,21 @@ test('raw D1 SHA is over serialized envelope, not API payload',()=>{
  assert.equal(r.d1BodySha256,sha(receipt.body));
  assert.notEqual(r.d1BodySha256,sha(JSON.stringify(inflationPayload)));
 });
-test('inflation 19 and candidates 7 use the identical verified payload envelope rule',()=>{
+test('inflation 19 and candidates 7 use respective public validator envelopes',()=>{
  for(const slot of ['inflation19','inflation7']){
-  const row=d1(slot,inflationEnvelope(inflationPayload));
-  assert.equal(check(slot,row,api(inflationPayload)).status,'STRUCTURAL_MATCH_NOT_RUNTIME_PROOF');
-  assert.equal(check(slot,row,api({...inflationPayload,sourceVersion:'other'})).status,'PUBLIC_PAYLOAD_MISMATCH');
+  const payload=slot==='inflation19'?inflation19Payload:inflation7Payload;
+  const row=d1(slot,inflationEnvelope(payload));
+  assert.equal(check(slot,row,api(payload)).status,'STRUCTURAL_MATCH_NOT_RUNTIME_PROOF');
+  assert.equal(check(slot,row,api({...payload,sourceVersion:'other'})).status,'PUBLIC_PAYLOAD_MISMATCH');
+ }
+});
+test('matching invalid inflation metadata must never be mistaken for public Reader output',()=>{
+ for(const slot of ['inflation19','inflation7']){
+  const original=slot==='inflation19'?inflation19Payload:inflation7Payload;
+  const invalid=JSON.parse(JSON.stringify(original));
+  invalid.indicators[0].id='NOT_AN_APPROVED_SERIES';
+  assert.equal(check(slot,d1(slot,inflationEnvelope(invalid)),api(invalid)).status,
+   'INVALID_INFLATION_PUBLIC_METADATA');
  }
 });
 test('sourceVersion, sourceStoredAt and builtAt conflicts reject envelope before equality',()=>{
@@ -191,3 +218,20 @@ test('known HTTP 503 remains API_NOT_READY even when captures are not coincident
  assert.equal(result.httpStatus,503);
 });
 
+
+test('matching 29 fake employment IDs do not imply Reader-valid public data',()=>{
+ const invalid=JSON.parse(JSON.stringify(employment));
+ invalid.indicators[0].id='NOT_AN_APPROVED_SERIES';
+ assert.equal(check('employment',d1('employment',invalid),api(invalid)).status,
+  'INVALID_EMPLOYMENT_METADATA');
+});
+test('matching paid metadata with false source clock policy cannot be certified',()=>{
+ const invalid=JSON.parse(JSON.stringify(paidTheme));
+ invalid.phasePolicy.confirmedLagHours=24;
+ assert.equal(check('theme',d1('theme',invalid),apiPaid(paidView)).status,
+  'INVALID_THEME_PAID_METADATA');
+});
+test('200 with theme status UNAVAILABLE is API readiness, never parity',()=>{
+ assert.equal(check('theme',d1('theme',paidTheme),apiPaid({...paidView,status:'UNAVAILABLE'})).status,
+  'API_NOT_READY');
+});
