@@ -243,7 +243,7 @@ test("W04 Thanksgiving Wednesday scheduled ETA538 PDF uses exact archive and bou
  assert.equal(result.requestCount,2,"one PDF and one ETA539 request only");
  assert.deepEqual(urls,[
   "https://oui.doleta.gov/press/2026/112526.pdf",
-  "https://oui.doleta.gov/unemploy/ETA539.xlsx",
+  "https://oui.doleta.gov/unemploy/csv/ar539.csv",
  ]);
  assert.equal(result.partialFailureCode,"DOL_ETA538_PDF_INVALID");
  assert.deepEqual(result.rows,[],"HTTP failure cannot fabricate official rows");
