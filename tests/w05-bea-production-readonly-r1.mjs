@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
 import {mkdirSync} from 'node:fs';
 import {chromium} from 'playwright';
 import {earningsCostPublicationKst,earningsCostSparkGeometry}
@@ -40,6 +41,37 @@ try{
     'D1 publication must not predate PC source storage');
    assert(Array.isArray(data.indicator.history)&&data.indicator.history.length===5);
    assert.equal(data.indicator.history.at(-1).value,data.indicator.value);
+   // Independently confirmed local-PC stored-only source calculation #2986.
+   // Compare the five public quarter points to the SHA256 of all five private
+   // source values; do not upload or log private source data.
+   if(data.sourceVersion===
+    'ff5a5a3a88cfc2f8758d8cd1369818eff1f9875e6df70e81caef4baf119273c3'){
+    assert.equal(data.sourceStoredAt,1795435085956);
+    assert.equal(data.indicator.observationPeriodEnd,'2026-06-30');
+    const history=data.indicator.history.map(item=>{
+     const q=/^(20\\d{2})-(03|06|09|12)-(?:30|31)$/.exec(item.date);
+     assert(q,'BEA public history quarter-end date');
+     return {quarter:q[1]+'Q'+(Number(q[2])/3),value:item.value};
+    });
+    const canonical=JSON.stringify({
+     schema:'BEA_NIPA_STORED_CALC_ATTESTATION_R1',
+     sourceVersion:data.sourceVersion,sourceStoredAt:data.sourceStoredAt,
+     periodEnd:data.indicator.observationPeriodEnd,
+     unit:'USD_PER_REAL_GVA_UNIT',history,
+     currentValue:data.indicator.value,
+     previousValue:data.indicator.previousValue,
+     change:data.indicator.value-data.indicator.previousValue
+    });
+    const sha=createHash('sha256').update(Buffer.from(canonical,'utf8')).digest('hex');
+    assert.equal(sha,
+     'ab683f0b030b30f956343e9613d9e97dc073c48cf650d677a29dff3e7a77188e',
+     'BEA 5-quarter D1 points must match PC private raw archive attestation');
+    console.log('W05_BEA_SOURCE_D1_HISTORY_PARITY_PASS '+JSON.stringify({
+     width:viewport.width,historyPoints:history.length,pcEvidence:'issue-2986',
+     sourceVersion:data.sourceVersion,historySha256:sha
+    }));
+   }
+
    if(data.indicator.observationPeriodEnd==='2026-06-30'){
     assert.equal(data.indicator.history[0].value,0.216);
     assert.equal(data.indicator.value,0.250);
@@ -145,6 +177,24 @@ try{
    assert.equal(data.status,'READY','merged BLS service+base actual payload');
    assert.match(data.sourceVersion,/^[a-f0-9]{64}$/);
    assert(Number.isSafeInteger(data.sourceStoredAt)&&data.sourceStoredAt>0);
+   // Compare stored-only PC A result #2864 with D1's two public October points.
+   const localPcLatest={
+    bls_ppi_services_index:{value:158.076,unit:'INDEX'},
+    bls_ppi_services_yoy_sa:{value:4.973901956357141,unit:'PERCENT'}
+   };
+   const publicRows=data.rows.filter(row=>row.seriesId==='WPSFD42');
+   for(const row of publicRows){
+    const expected=localPcLatest[row.indicatorId];
+    assert(expected,'local WPSFD42 indicator identity');
+    if(row.observationPeriod==='2026-10'){
+     assert.equal(row.value,expected.value,'WPSFD42 D1 value equals PC raw latest');
+     assert.equal(row.unit,expected.unit,'WPSFD42 D1 unit equals PC raw latest');
+     console.log('W05_WPSFD42_SOURCE_D1_LATEST_PARITY_PASS '+JSON.stringify({
+      width:viewport.width,id:row.indicatorId,period:row.observationPeriod,
+      value:row.value,unit:row.unit,pcEvidence:'issue-2864'
+     }));
+    }
+   }
    const service=data.rows.filter(row=>row.seriesId==='WPSFD42');
    assert.deepEqual(service.map(row=>row.indicatorId).sort(),[
     'bls_ppi_services_index','bls_ppi_services_yoy_sa'
