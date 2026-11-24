@@ -2,7 +2,7 @@ name: Node.js CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, codex/employment-1y-reader-r1]
   pull_request:
     branches: [main]
   workflow_dispatch:
