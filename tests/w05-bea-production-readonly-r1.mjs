@@ -126,6 +126,70 @@ try{
   assert.equal(await page.getByRole('link',{name:'BEA Data API Terms of Use'}).getAttribute('href'),
    'https://apps.bea.gov/api/_pdf/bea_api_tos.pdf');
  }finally{await context.close();}
+ // W05 optional BLS service extension: a separate D1 checkpoint must
+ // produce exactly two verified WPSFD42 rows, visible in both live layouts.
+ // This test performs only public GET and screenshot reads.
+ for(const viewport of views){
+  const context=await browser.newContext({
+   viewport,locale:'ko-KR',timezoneId:'Asia/Seoul',
+   serviceWorkers:'block',hasTouch:viewport.width===390,isMobile:viewport.width===390
+  });
+  try{
+   const api=await context.request.get(base+'/api/earnings-recession-indicators',{
+    timeout:30000,headers:{'cache-control':'no-cache'}
+   });
+   assert.equal(api.status(),200,'WPSFD42 actual Production GET');
+   assert.equal(api.headers()['x-earnings-c-service'],'READY',
+    'separate WPSFD42 D1 checkpoint must be valid and fresh');
+   const data=await api.json();
+   assert.equal(data.status,'READY','merged BLS service+base actual payload');
+   assert.match(data.sourceVersion,/^[a-f0-9]{64}$/);
+   assert(Number.isSafeInteger(data.sourceStoredAt)&&data.sourceStoredAt>0);
+   const service=data.rows.filter(row=>row.seriesId==='WPSFD42');
+   assert.deepEqual(service.map(row=>row.indicatorId).sort(),[
+    'bls_ppi_services_index','bls_ppi_services_yoy_sa'
+   ]);
+   assert.equal(data.coverage.configured,7);
+   for(const row of service){
+    assert.equal(row.provider,'BLS');
+    assert.equal(row.status,'READY');
+    assert.equal(row.freshness?.status,'FRESH');
+    assert.equal(row.sourceURL,'https://data.bls.gov/timeseries/WPSFD42');
+    assert(Array.isArray(row.history)&&row.history.length>0);
+    assert.equal(row.history.at(-1).value,row.value);
+   }
+   const page=await context.newPage();
+   await page.addInitScript(()=>{
+    sessionStorage.setItem('zgmini-about-intro-dismissed-r1','1');
+   });
+   const response=await page.goto(base+'/earnings-recession/',{
+    waitUntil:'domcontentloaded',timeout:60000
+   });
+   assert.equal(response?.status(),200);
+   const rowSelector=viewport.width===390
+    ?'.earnings-r2-mobile-list article.earnings-r2-cost-mobile-card'
+    :'.earnings-r2-table tbody tr.earnings-r2-cost-row';
+   await page.waitForFunction(selector=>{
+    const rows=Array.from(document.querySelectorAll(selector),node=>node.textContent||'');
+    return rows.length>=7
+     &&rows.some(text=>text.includes('서비스 생산자물가 상승률'))
+     &&rows.some(text=>text.includes('서비스 생산자물가 지수'));
+   },rowSelector,{timeout:35000});
+   const visibleRows=await page.locator(rowSelector).allTextContents();
+   assert(visibleRows.some(text=>text.includes('서비스 생산자물가 상승률')));
+   assert(visibleRows.some(text=>text.includes('서비스 생산자물가 지수')));
+   await page.screenshot({
+    path:'artifacts/w05-bea-production-readonly/wpsfd42-'+viewport.width+'.png',
+    fullPage:false
+   });
+   console.log('W05_WPSFD42_PRODUCTION_READONLY_PASS '+JSON.stringify({
+    width:viewport.width,http:api.status(),serviceState:api.headers()['x-earnings-c-service'],
+    sourceVersion:data.sourceVersion,sourceStoredAt:data.sourceStoredAt,
+    count:service.length,visibleRows:visibleRows.length,
+    period:service[0].observationPeriod
+   }));
+  }finally{await context.close();}
+ }
 }finally{await browser.close();}
 assert.equal(verified.length,2,'BEA 390px and 1440px both measured');
 console.log('W05_BEA_PRODUCTION_READONLY_FINISHED '+JSON.stringify(verified));
