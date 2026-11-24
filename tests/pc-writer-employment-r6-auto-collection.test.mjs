@@ -31,6 +31,13 @@ test("approved collector uses the complete release planner, not the four-group c
         {groupName:"BLS_BED",status:"WAITING_FOR_COLLECTION_WINDOW",due:false}]};},
   });
   assert.equal(captured.mode,"RELEASE");
+  assert.equal(typeof captured.providerFactory,"function");
+  const provider=captured.providerFactory({fetchImpl,now:()=>new Date("2026-11-24T14:14:40.919Z")});
+  await assert.rejects(
+    provider.fetchGroup("DOL_UI_WEEKLY_CLAIMS",{mode:"ONE_YEAR"}),
+    /DOL_ETA538_SCHEDULED_SCOPE_FORBIDDEN/,
+  );
+
   assert.equal(captured.db,db);
   assert.equal(captured.fetchImpl,fetchImpl);
   assert.equal(Object.hasOwn(captured,"groups"),false);
