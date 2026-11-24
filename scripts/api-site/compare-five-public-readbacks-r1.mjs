@@ -2,12 +2,17 @@
 // The approved D1 reader and the HTTP reader must independently supply their own evidence.
 import {createHash} from 'node:crypto';
 import {isDeepStrictEqual} from 'node:util';
+import {PAID_THEME_KEY,PAID_THEME_VERSION,PAID_HOURLY_MODE,validPaidThemeRecord} from '../../worker/theme-paid-contract.mjs';
+import {PUBLIC_DISPLAY_MAX_AGE_MS} from '../../worker/public-display-freshness.mjs';
+import {validEmploymentR6PublicDisplay} from '../../worker/employment-r6-public-display.mjs';
+import {validateInflationCausalPublic} from '../../worker/inflation-causal-public-r1.mjs';
+import {validateInflationCandidates7Public} from '../../worker/inflation-causal-candidates-public-7-r1.mjs';
 
 export const PUBLIC_READBACK_SLOTS=Object.freeze({
  inflation19:Object.freeze({table:'market_public_snapshots_v1',snapshot_key:'detail:inflation-causal-public-19:r1',mode:'ENVELOPE'}),
  inflation7:Object.freeze({table:'market_public_snapshots_v1',snapshot_key:'detail:inflation-causal-candidates-7:r1',mode:'ENVELOPE'}),
  calendar:Object.freeze({table:'public_feed_snapshots_v1',kind:'output',feed_key:'release-calendar',snapshot_key:'current',mode:'DIRECT'}),
- theme:Object.freeze({table:'public_feed_snapshots_v1',kind:'output',feed_key:'theme-fear-greed-paid-hourly-v1',snapshot_key:'current',mode:'PAID_PROJECTION'}),
+ theme:Object.freeze({table:'public_feed_snapshots_v1',kind:'output',feed_key:PAID_THEME_KEY,snapshot_key:'current',mode:'PAID_PROJECTION'}),
  employment:Object.freeze({table:'market_public_snapshots_v1',snapshot_key:'detail:employment-r6:one-year:v1',mode:'DIRECT'}),
 });
 const isObject=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -61,6 +66,12 @@ export function comparePublicReadback(slot,{d1,api,now=Date.now()}={}){
      typeof p.sourceVersion!=='string'||p.sourceVersion.length===0||
      projection.sourceVersion!==p.sourceVersion||projection.sourceStoredAt!==p.sourceStoredAt)
     return result(slot,'CHECKPOINT_MISMATCH',evidence);
+  // Reuse the exact currently deployed public Reader validators rather than
+  // falsely matching two equally malformed, non-publicatable JSON bodies.
+  try{
+   if(slot==='inflation19')validateInflationCausalPublic(p,{now:apiReadMs});
+   else validateInflationCandidates7Public(p,{now:apiReadMs});
+  }catch{return result(slot,'INVALID_INFLATION_PUBLIC_METADATA',evidence);}
   if(!isDeepStrictEqual(api.body,p))return result(slot,'PUBLIC_PAYLOAD_MISMATCH',evidence);
   return result(slot,'STRUCTURAL_MATCH_NOT_RUNTIME_PROOF',{...evidence,sourceVersion:p.sourceVersion,sourceStoredAt:p.sourceStoredAt});
  }
@@ -68,41 +79,18 @@ export function comparePublicReadback(slot,{d1,api,now=Date.now()}={}){
   // The current /api/theme-fear-greed route selects the paid D1 feed first;
   // it may serve the legacy ETF Reader when that record is absent or ineligible.
   // Never treat an ETF-only seed as the paid feed's authoritative raw body.
-  const version='ZGMINI_THEME_PAID_HOURLY_V1';
-  const priceMode='MARKETPARQUET_PAID_SPLIT_ADJUSTED_1H_NY_PROXY_V1';
-  if(api.body.version!==version||api.body.sourcePriceMode!==priceMode)
+  if(api.body.status!=='READY')
+   return result(slot,'API_NOT_READY', {...evidence,httpStatus:200});
+  if(api.body.version!==PAID_THEME_VERSION||api.body.sourcePriceMode!==PAID_HOURLY_MODE)
    return result(slot,'THEME_LEGACY_FALLBACK_UNVERIFIED',evidence);
-  const hex64=x=>typeof x==='string'&&/^[a-f0-9]{64}$/.test(x);
-  const validDate=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&
-   Number.isFinite(Date.parse(x+'T00:00:00Z'))&&
-   new Date(x+'T00:00:00Z').toISOString().slice(0,10)===x;
-  const validScore=x=>typeof x==='number'&&Number.isFinite(x)&&x>=0&&x<=100;
-  const quality=saved.dataQuality;
-  if(saved.version!==version||saved.status!=='READY'||saved.sourcePriceMode!==priceMode||
-     !hex64(saved.sourceVersion)||!hex64(saved.registrySha256)||
-     !validDate(saved.observationDate)||saved.confirmedObservationDate!==saved.observationDate||
-     !validDate(saved.sourceLatestDate)||saved.sourceLatestDate<saved.observationDate||
-     !['CONFIRMED','PROVISIONAL'].includes(saved.phase)||
-     !isObject(saved.phasePolicy)||!Array.isArray(saved.provisional?.points)||
-     saved.phase!==(saved.provisional.points.length?'PROVISIONAL':'CONFIRMED')||
-     !Array.isArray(saved.themes)||saved.themes.length===0||
-     !Array.isArray(quality?.expectedPublicIds)||!Array.isArray(quality?.readyPublicIds)||
-     !Array.isArray(quality?.pendingPublicIds)||
-     quality.readyPublicIds.length!==saved.themes.length||
-     saved.themes.some(t=>!isObject(t)||!populated(t.id)||!populated(t.theme)||
-       t.sourcePriceMode!==priceMode||t.confirmedObservationDate!==saved.observationDate||
-       !Array.isArray(t.etfs)||!t.etfs.length||!Array.isArray(t.history)||
-       !t.history.length||t.history.length>252||!validScore(t.score)||
-       t.history.some((p,i)=>!validDate(p?.date)||!validScore(p.score)||
-         i>0&&p.date<=t.history[i-1].date)||
-       t.history.at(-1).date!==saved.observationDate||
-       t.history.at(-1).score!==t.score))
+  if(!validPaidThemeRecord(saved))
    return result(slot,'INVALID_THEME_PAID_METADATA',evidence);
+  const quality=saved.dataQuality;
   const stamps=[d1.stored_at,Date.parse(saved.sourceStoredAt),
    Date.parse(saved.updatedAt),Date.parse(saved.observationDate+'T00:00:00Z')];
   // Match the existing main Reader's eight-day PUBLIC_DISPLAY_MAX_AGE_MS
   // eligibility at API observation time. A stale paid row can trigger fallback.
-  const apiMs=Date.parse(api.observedAt),maxAgeMs=8*86_400_000;
+  const apiMs=Date.parse(api.observedAt),maxAgeMs=PUBLIC_DISPLAY_MAX_AGE_MS;
   if(stamps.some(t=>!Number.isSafeInteger(Number(t))||t>apiMs||apiMs-t>=maxAgeMs))
    return result(slot,'THEME_PAID_ROW_NOT_ELIGIBLE',{...evidence,maxAgeMs});
   const themes=saved.themes.map(t=>({id:t.id,...(t.configured?{configured:true}:{}),
@@ -138,11 +126,14 @@ export function comparePublicReadback(slot,{d1,api,now=Date.now()}={}){
    {...evidence,readerBranch:'PAID',sourceVersion:saved.sourceVersion});
  }
  if(slot==='employment'){
-  if(typeof saved.formulaHash!=='string'||typeof saved.methodologyVersion!=='string'||
-     !safeMs(saved.sourceStoredAt)||saved.sourceStoredAt>d1.stored_at||
-     !Array.isArray(saved.indicators)||saved.indicators.length!==29||
-     typeof saved.asOfDate!=='string')
+  // Exactly mirror the published 29-series contract, including the approved
+  // formulas, date windows, ID order, summaries, and legacy read policy.
+  if(!validEmploymentR6PublicDisplay(saved,{allowLegacy:true})||
+     !safeMs(saved.sourceStoredAt)||saved.sourceStoredAt>d1.stored_at)
    return result(slot,'INVALID_EMPLOYMENT_METADATA',evidence);
+  if(d1.stored_at>apiReadMs||
+     apiReadMs-d1.stored_at>PUBLIC_DISPLAY_MAX_AGE_MS)
+   return result(slot,'EMPLOYMENT_ROW_NOT_ELIGIBLE',evidence);
  }
  // The calendar and employment Readers return the stored JSON body itself.
  if(!isDeepStrictEqual(api.body,saved))return result(slot,'PUBLIC_BODY_MISMATCH',evidence);
