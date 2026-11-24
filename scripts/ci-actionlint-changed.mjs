@@ -21,6 +21,28 @@ export function selectChangedWorkflows(paths,isFile=p=>{
   /^\.github\/workflows\/[A-Za-z0-9][A-Za-z0-9._-]*\.(?:yml|yaml)$/.test(p)&&
   isFile(p)).sort();
 }
+// GitHub supports concurrency.queue=single|max, but actionlint v1.7.12
+// incorrectly rejects its key. Verify values ourselves before a narrow waiver.
+export function validateConcurrencyQueueSource(source){
+ if(typeof source!=='string')throw Error('ACTIONLINT_QUEUE_SOURCE_INVALID');
+ let concurrencyIndent=-1;
+ for(const line of source.split(/\r?\n/)){
+  if(!line.trim()||/^\s*#/.test(line))continue;
+  const indent=line.match(/^ */)[0].length;
+  if(concurrencyIndent>=0&&indent<=concurrencyIndent)concurrencyIndent=-1;
+  if(/^\s*concurrency:\s*(?:#.*)?$/.test(line)){
+   concurrencyIndent=indent;continue;
+  }
+  const queue=line.match(/^\s*queue:\s*(.*)$/);
+  if(queue&&concurrencyIndent>=0&&indent>concurrencyIndent){
+   const value=queue[1].replace(/\s+#.*$/,'').trim();
+   if(indent!==concurrencyIndent+2||
+     !['max','single','"max"','"single"',"'max'","'single'"].includes(value))
+    throw Error('ACTIONLINT_CONCURRENCY_QUEUE_INVALID');
+  }
+ }
+ return true;
+}
 export function verifyArchive(bytes,expected=ARCHIVE_SHA256){
  const digest=crypto.createHash('sha256').update(bytes).digest('hex');
  if(digest!==expected)throw Error('ACTIONLINT_ARCHIVE_SHA256_MISMATCH');
@@ -52,6 +74,8 @@ export async function main(env=process.env,fetcher=fetch){
  console.log('ACTIONLINT_CHANGED_WORKFLOWS='+paths.length+
   ' base='+base.slice(0,12));
  if(!paths.length)return;
+ for(const changed of paths)
+  validateConcurrencyQueueSource(fs.readFileSync(changed,'utf8'));
  const response=await fetcher(ARCHIVE_URL,{signal:AbortSignal.timeout(20000)});
  if(!response.ok)throw Error('ACTIONLINT_DOWNLOAD_HTTP_'+response.status);
  const bytes=Buffer.from(await response.arrayBuffer());
@@ -65,7 +89,8 @@ export async function main(env=process.env,fetcher=fetch){
   if(!fs.lstatSync(binary).isFile())throw Error('ACTIONLINT_BINARY_MISSING');
   fs.chmodSync(binary,0o700);
   // Shellcheck/pyflakes are independent scanners; validate YAML/expressions.
-  command(binary,['-shellcheck=','-pyflakes=',...paths]);
+  command(binary,['-shellcheck=','-pyflakes=',
+   '-ignore','^unexpected key "queue" for "concurrency" section',...paths]);
  }finally{fs.rmSync(tmp,{recursive:true,force:true});}
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url))
