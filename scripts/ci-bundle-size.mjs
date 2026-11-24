@@ -87,7 +87,7 @@ export function compareBundleSizes(baseline,current){
   throw Error('CI_BUNDLE_SIZE_BASELINE_INCOMPARABLE');
  const compared={};
  for(const kind of ['js','css']){
-  const old=baseline.totals[k],next=current.totals[k];
+  const old=baseline.totals[kind],next=current.totals[kind];
   const rawDelta=next.rawBytes-old.rawBytes;
   const gzipDelta=next.gzipBytes-old.gzipBytes;
   compared[kind]={
