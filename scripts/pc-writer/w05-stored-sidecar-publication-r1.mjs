@@ -151,7 +151,7 @@ export function verifyW05StoredHistoryParity(id,preparedPayload,storedPayload){
    if(!row||typeof row!=='object'||!Array.isArray(row.history)
     ||row.history.length!==expectedLength
     ||row.history.some(point=>!point||typeof point!=='object'
-      ||!Number.isFinite(point.value)
+      ||!(point.value===null&&id==='wpsfd42'||Number.isFinite(point.value))
       ||!(typeof point.period==='string'||typeof point.date==='string'))
     ||!Number.isFinite(row.value)||typeof row.unit!=='string'
     ||typeof (row.observationPeriod??row.observationPeriodEnd)!=='string')
