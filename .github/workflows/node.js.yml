@@ -87,5 +87,19 @@ jobs:
         env:
           GITHUB_EVENT_BEFORE: ${{ github.event.before }}
         run: node scripts/ci-actionlint-changed.mjs
+      # #15 Supply Chain: the official dependency-graph comparison API returned
+      # HTTP 403 on this public personal repo. Read local npm lock diff instead.
+      # Advisory evidence only; npm audit retains the existing high/critical gate.
+      - name: Review PR npm lockfile changes (local evidence)
+        if: ${{ github.event_name == 'pull_request' && !cancelled() && steps.install.outcome == 'success' }}
+        run: node scripts/ci-supply-chain-review.mjs
+      - name: Upload PR supply-chain evidence
+        if: ${{ github.event_name == 'pull_request' && !cancelled() && steps.install.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-supply-chain-review
+          path: artifacts/ci-supply-chain-review/report.json
+          retention-days: 7
+          if-no-files-found: error
       - name: Audit production dependency vulnerabilities (high or critical)
         run: npm audit --omit=dev --audit-level=high --audit=true --fund=false
