@@ -32,7 +32,8 @@ const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 mkdirSync('artifacts/cnn-current-session-checks',{recursive:true});
 try{
  for(const width of [390,1440]){
-  const page=await browser.newPage({viewport:{width,height:900},reducedMotion:'reduce'});
+  const page=await browser.newPage({viewport:{width,height:900},reducedMotion:'reduce',
+   hasTouch:width===390,isMobile:width===390});
   let sourceAt=sourceObservedAt;
   const requests=[],pageErrors=[];
   page.on('pageerror',error=>pageErrors.push(error.message));
@@ -77,6 +78,20 @@ try{
    const d=path?.getAttribute('d')??'';
    return /^M/.test(d)&&/[CLQ]/.test(d.slice(1))&&!/NaN|Infinity/.test(d);
   },null,{timeout:15000});
+  // Actual 390px touchscreen tap on the latest verified PC check must
+  // expose its true score and New York check clock, never a hover simulation.
+  if(width===390){
+   const latest=chart.locator('.cnn-latest-point circle, circle.cnn-latest-point').first();
+   await latest.waitFor({state:'attached',timeout:12000});
+   const bounds=await latest.boundingBox();
+   assert(bounds&&bounds.width>0&&bounds.height>0,'latest real CNN point has touch coordinates');
+   await page.touchscreen.tap(bounds.x+bounds.width/2,bounds.y+bounds.height/2);
+   const mobileTip=page.getByTestId('w04-r54-latest-touch-tooltip');
+   await mobileTip.waitFor({state:'visible',timeout:10000});
+   const mobileText=await mobileTip.innerText();
+   assert(mobileText.includes('26.2')&&mobileText.includes('10:15'),
+    'real latest-point tap displays 26.2 and New York 10:15: '+mobileText);
+  }
   const pathD=await curve.getAttribute('d');
   assert.ok(pathD?.length>20,width+'px three actual PC checks draw a continuous same-score line');
   const labels=await chart.locator('.recharts-cartesian-axis-tick-value').allTextContents();
