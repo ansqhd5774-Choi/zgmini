@@ -66,7 +66,9 @@ jobs:
         timeout-minutes: 4
         run: |
           set -euo pipefail
-          PORT=3000 NODE_ENV=production npm run start > /tmp/zgmini-ci-lighthouse-preview.log 2>&1 &
+          # Cloudflare Vite plugin runs the built Worker in local workerd.
+          # vinext start uses Node and cannot import cloudflare: modules.
+          ./node_modules/.bin/vite preview --host 127.0.0.1 --port 3000 --strictPort > /tmp/zgmini-ci-lighthouse-preview.log 2>&1 &
           PREVIEW_PID=$!
           trap 'kill "$PREVIEW_PID" 2>/dev/null || true' EXIT
           READY=0
