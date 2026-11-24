@@ -46,6 +46,19 @@ test('above threshold is a lab warning and does not falsify production score',()
   assert.equal(out.coreWebVitalsSiteGood,'UNVERIFIED');
  }
 });
+test('CLS just above official Good threshold is not rounded down to 0.10',()=>{
+ const out=assessWebSpeedGoodLab(sample({cls:0.10001}));
+ for(const device of out.devices){
+  assert.equal(device.metrics.cls.observed,0.10001);
+  assert.equal(device.metrics.cls.state,'EXCEEDS_GOOD_TARGET');
+  assert.equal(device.labReferenceState,'LAB_GOOD_TARGET_EXCEEDED');
+ }
+});
+test('changed CLS precision makes legacy schema-1 laboratory samples incomparable',()=>{
+ const old=sample();old.schemaVersion=1;
+ for(const r of old.reports)r.schemaVersion=1;
+ assert.throws(()=>assessWebSpeedGoodLab(old),/CI_WEB_SPEED_LAB_UNVERIFIED/);
+});
 test('missing LCP or CLS observations never count as 0 or Good',()=>{
  for(const params of [{lcpMs:null},{cls:null},{fcpMs:NaN},{lcpMs:-1}]){
   const out=assessWebSpeedGoodLab(sample(params));
