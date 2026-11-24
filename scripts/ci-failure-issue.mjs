@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto';
 import {pathToFileURL} from 'node:url';
 
 export const REPO='ansqhd5774-Choi/zgmini';
-export const WORKFLOWS=Object.freeze(["Node.js CI","CodeQL JavaScript TypeScript","Source Secret Scan","Community Chat Browser UI (Mocked API)"]);
+export const WORKFLOWS=Object.freeze(["Node.js CI","CodeQL JavaScript TypeScript","Source Secret Scan","Community Chat Browser UI (Mocked API)","Community Chat Candidate Build (Read Only)"]);
 const fail=code=>{throw Error('CI_INCIDENT_'+code);};
 const goodId=value=>Number.isSafeInteger(value)&&value>0;
 const clean=value=>String(value??'').replace(/[^A-Za-z0-9 ._():/\-]/g,' ').trim().slice(0,110);
