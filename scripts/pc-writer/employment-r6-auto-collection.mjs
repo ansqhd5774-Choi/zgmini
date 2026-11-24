@@ -47,9 +47,30 @@ export async function runEmploymentR6AutoCollection({
     &&/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/.test(value)
     &&Number.isFinite(Date.parse(value))
     &&new Date(value).toISOString()===value?value:null;
+  // The original release's row counts remain in Core after a later NOOP.
+  // Fixed SELECT only; no provider calls, schema mutation or caller SQL.
+  // A stored run is historical evidence, NOT this cycle's row changes.
+  let lastStoredDolRelease=null;
+  try{
+    const row=await db.prepare(`SELECT status,completed_at,collected_rows,inserted_count,
+        revised_count,noop_count,rejected_count,history_rows_added
+      FROM market_score_employment_r4_shadow_runs_v1
+      WHERE provider='EMPLOYMENT_R6_DOL_UI_WEEKLY_CLAIMS'
+        AND json_extract(detail_json,'$.mode')='RELEASE'
+      ORDER BY completed_at DESC LIMIT 1`).first();
+    if(row&&["SUCCESS","PARTIAL","FAIL"].includes(row.status)&&safeTime(row.completed_at)){
+      lastStoredDolRelease={status:row.status,completedAt:row.completed_at,
+        ...safeCounters({collectedRows:row.collected_rows,inserted:row.inserted_count,
+          revised:row.revised_count,noop:row.noop_count,rejected:row.rejected_count,
+          historyRowsAdded:row.history_rows_added})};
+    }
+  }catch{
+    // Missing or unreadable run evidence must not change collection success.
+  }
   return {
     status:result.status,
     providerRequests:result.providerRequests??0,
+    ...(lastStoredDolRelease?{lastStoredDolRelease}:{}),
     groups:(result.groupResults??[]).map(item=>({
       groupName:item.groupName,status:item.status,
       ...safeCounters(item),
