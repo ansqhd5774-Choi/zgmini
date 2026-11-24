@@ -149,3 +149,22 @@ test('failure intake queues overlapping events instead of replacing earlier pend
  assert.match(yml,/concurrency:\n  group: ci-failure-issue-intake\n  queue: max\n  cancel-in-progress: false/);
  assert.match(yml,/workflow_run:/);
 });
+
+test('nonempty GitHub job count with omitted jobs fails closed before Issue writes',async()=>{
+ const calls=[];
+ const request=async(resource,{method='GET'}={})=>{
+  calls.push({resource,method});
+  if(resource==='actions/runs/123456/attempts/1/jobs?per_page=100')
+   return {total_count:1,jobs:[]};
+  throw Error('must not enumerate or write Issues');
+ };
+ await assert.rejects(triage({event:event(),request}),/CI_INCIDENT_JOB_INVENTORY_INCOMPLETE/);
+ assert.deepEqual(calls.map(c=>c.method),['GET']);
+});
+test('created Issue says grouping is by CI step, not by confirmed root cause',async()=>{
+ const f=fixture();
+ assert.deepEqual(await triage({event:event(),request:f.request}),{state:'CREATED',issue:6200});
+ const created=f.calls.find(x=>x.resource==='issues'&&x.method==='POST');
+ assert.ok(created.body.body.includes('묶음 기준: 같은 Workflow/Job/Step'));
+ assert.match(created.body.body,/근본 원인이 같다는 뜻은 아닙니다/);
+});

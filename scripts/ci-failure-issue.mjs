@@ -27,7 +27,8 @@ export async function triage({event,repository=REPO,request}){
  const jobsResponse=await request('actions/runs/'+run.id+'/attempts/'+run.run_attempt+'/jobs?per_page=100');
  const jobs=jobsResponse?.jobs;
  if(!Array.isArray(jobs)||!Number.isSafeInteger(jobsResponse.total_count)||
-    jobsResponse.total_count>100)fail('JOB_INVENTORY_INCOMPLETE');
+    jobsResponse.total_count>100||jobs.length!==jobsResponse.total_count)
+  fail('JOB_INVENTORY_INCOMPLETE');
  const broken=jobs.filter(j=>['failure','timed_out'].includes(j.conclusion))
    .sort((a,b)=>String(a.name).localeCompare(String(b.name)));
  const job=broken[0];
@@ -40,7 +41,7 @@ export async function triage({event,repository=REPO,request}){
  const evidence=[receipt,'**CI 실패 관측**', '- Workflow: '+clean(run.name),
   '- Job: '+jobName,'- Step: '+stepName,'- Conclusion: '+run.conclusion,
   '- Run: '+runUrl,'- Attempt: '+run.run_attempt,'- HEAD: `'+run.head_sha+'`',
-  '- 이 기록은 실패 증거이며 근본 원인·운영 장애를 확정하지 않습니다.'].join('\n');
+  '- 묶음 기준: 같은 Workflow/Job/Step이며, 실패의 근본 원인이 같다는 뜻은 아닙니다.'].join('\n');
  let found=null;
  for(let page=1;page<=10;page++){
   const list=await request('issues?state=open&per_page=100&page='+page);
@@ -61,7 +62,7 @@ export async function triage({event,repository=REPO,request}){
  }
  const title='[CI] '+clean(run.name)+' / '+jobName+' / '+stepName;
  const created=await request('issues',{method:'POST',
-  body:{title,body:[marker,evidence,'\n재발 시 이 Issue로 병합하며, 자동 재실행·자동 종료는 하지 않습니다.'].join('\n')}});
+  body:{title,body:[marker,evidence,'\n동일 CI 단계의 후속 실패를 기록하되 원인별 조사는 구분합니다. 자동 재실행·자동 종료는 하지 않습니다.'].join('\n')}});
  if(!goodId(created?.number))fail('ISSUE_CREATE_RESULT_UNKNOWN');
  const check=await request('issues/'+created.number);
  if(check?.number!==created.number||!check?.body?.includes(marker))fail('ISSUE_CREATE_READBACK');
