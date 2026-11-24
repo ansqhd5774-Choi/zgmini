@@ -70,6 +70,10 @@ on:
       - 'tests/outbreak-beginner-approved-r53.test.mjs'
       - 'app/outbreak-scenarios-r51.css'
       - 'tests/outbreak-scenarios-browser-r51.mjs'
+      # npm packages and Vite runtime affect every Playwright browser route.
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
       - '.github/workflows/community-chat-browser.yml'
   workflow_dispatch:
 
