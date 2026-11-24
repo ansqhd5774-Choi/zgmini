@@ -64,7 +64,7 @@ export function recordOutputStageTiming(report,id,elapsedMs,success){
  const ms=Math.min(86_400_000,Math.floor(elapsedMs));
  const t=report.writerStageTiming??={
   scope:'ATTEMPT_OUTPUT_CALLBACKS_ONLY_NOT_FULL_CORE_OR_WRITER',
-  samples:0,totalMeasuredMs:0,byStage:{},slowest:[],
+  samples:0,totalMeasuredMs:0,byStage:Object.create(null),slowest:[],
  };
  t.samples++;t.totalMeasuredMs+=ms;
  const group=boundedStageGroup(id);
