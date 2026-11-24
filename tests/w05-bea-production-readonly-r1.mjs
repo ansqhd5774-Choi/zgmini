@@ -155,7 +155,8 @@ try{
     assert.equal(row.status,'READY');
     assert.equal(row.freshness?.status,'FRESH');
     assert.equal(row.sourceURL,'https://data.bls.gov/timeseries/WPSFD42');
-    assert(Array.isArray(row.history)&&row.history.length>0);
+    assert(Array.isArray(row.history)&&row.history.length===13,
+     'exact 13-month WPSFD42 public history, not the raw 22-record archive');
     assert.equal(row.history.at(-1).value,row.value);
    }
    const page=await context.newPage();
@@ -178,6 +179,24 @@ try{
    const visibleRows=await page.locator(rowSelector).allTextContents();
    assert(visibleRows.some(text=>text.includes('서비스 생산자물가 상승률')));
    assert(visibleRows.some(text=>text.includes('서비스 생산자물가 지수')));
+   const labelById={
+    bls_ppi_services_yoy_sa:'서비스 생산자물가 상승률',
+    bls_ppi_services_index:'서비스 생산자물가 지수'
+   };
+   for(const row of service){
+    const displayed=visibleRows.find(text=>text.includes(labelById[row.indicatorId]));
+    assert(displayed,'real WPSFD42 row must be in viewport');
+    const formatted=row.value.toLocaleString('ko-KR',{
+     minimumFractionDigits:2,maximumFractionDigits:2
+    })+(row.unit==='PERCENT'?'%':'');
+    assert(displayed.includes(formatted),'public WPSFD42 number/unit must match D1 API');
+    assert(displayed.includes(row.observationPeriod),'observation month must match D1 API');
+   }
+   const cards=page.locator(rowSelector).filter({hasText:'서비스 생산자물가'});
+   assert.equal(await cards.count(),2,'exact two service indicator rows');
+   assert.equal(await cards.locator('svg.earnings-r2-cost-spark').count(),2,
+    'both historical sparkline charts must be rendered');
+
    await page.screenshot({
     path:'artifacts/w05-bea-production-readonly/wpsfd42-'+viewport.width+'.png',
     fullPage:false
