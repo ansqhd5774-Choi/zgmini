@@ -7,7 +7,7 @@
 
 ## 1. 현재 위치와 최종 목표
 
-**현재: 2/5단계 완료, 3단계 진행 중.** 완료 조건 충족 개수이며 작업량의 20% 또는 운영 복구 20%라는 뜻이 아니다. 이 문서 개정으로 기능 완료 개수는 늘어나지 않는다.
+**현재: 3/5단계 완료(1·2·4), 3단계 진행 중, 5단계 미완료.** 완료 조건 충족 개수이며 작업량의 20% 또는 운영 복구 20%라는 뜻이 아니다. 이 문서 개정으로 기능 완료 개수는 늘어나지 않는다.
 
 기존 고용지표 29개가 실제 저장 원자료에 따라 계산·게시·표시되고, 기존 자동 실행에서 갱신되는 상태를 완성한다. 공개 기준일, 실제 관측일, 저장·게시 시각을 구분한다. 과거 자료가 부족한 범위는 정확한 PARTIAL로 공개하되 현재 수집·게시 전체의 전역 선행조건으로 만들지 않는다.
 
@@ -20,7 +20,7 @@
 | 1 | 운영 기준선 확정 | 유효한 기존 설치·PC 저장 계산·공개 API 증거로 버전/시각/지표 수 및 현재 결함을 식별 | DONE |
 | 2 | 저장·게시 연결 확인 및 필요한 최소 복구 | 기존 Writer 게시 원장→D1 정확키→공개 API의 같은 결과 확인. 다르면 최초 불일치 연결만 수정·검증 | DONE |
 | 3 | 원자료 갱신 정상화 | DOL 차단·오래된 관측일의 원인을 고치고, 공급처에서 실제 제공되는 최신 자료의 수집·저장·계산 전진 확인 | IN_PROGRESS |
-| 4 | PC·모바일 표시 확인 및 필요한 최소 수정 | API와 화면의 29개 ID·원값·관측일·단위·점수/차트 상태 일치. 결측과 부분 이력을 정확히 표시 | NOT_DONE |
+| 4 | PC·모바일 표시 확인 및 필요한 최소 수정 | API와 화면의 29개 ID·원값·관측일·단위·점수/차트 상태 일치. 결측과 부분 이력을 정확히 표시 | DONE |
 | 5 | 기존 자동 실행 확인과 종결 | 유효한 기존 정규 실행 기록으로 정상 갱신/정당한 UNCHANGED를 확인하고, 코드·운영·자료 한계를 구분해 종결 | NOT_DONE |
 
 순서는 기본 작업 흐름이다. 2단계의 특정 D1 조회 도구 제한이 3단계의 기존 수집 로그 분석이나 4단계의 공개 화면 확인까지 막지 않는다. 동일 자원에 겹치는 쓰기만 기존 절차로 직렬화한다. 문서·진단·승인 파일 수를 늘리는 것을 진척으로 계산하지 않는다.
@@ -89,13 +89,22 @@ W04 원담당이 기존 권한 범위의 기능 작업을 끝까지 수행한다
 
 매 회차 이 파일의 단계 표와 진행 원장에 실제 변화만 동기화한다. 현재 단계/완료 근거/최초 불일치/다음 구체 실행을 짧게 기록한다. 코드·CI·설치·저장·공개·화면 검증을 구분한다. 이번 5단계 계획 작성 자체나 과거 증거 재확인만으로 단계를 올리지 않는다.
 
-**담당자 재개 지점은 아래 §8의 최신 운영 검증으로 갱신한다. 위 2026-11-21 기준 수집 실패 이력은 과거 상태로 보존하며 2단계 D1 조회/게시 반복은 금지한다.**
+**담당자 재개 지점은 아래 §9의 최신 운영 검증으로 갱신한다. 위 2026-11-21 기준 수집 실패 이력은 과거 상태로 보존하며 2단계 D1 조회/게시 반복은 금지한다.**
 
-## 8. 2026-11-25 후속 운영 체크포인트 — 3~5단계 재개 기준
+## 8. 2026-11-25 초기 운영 체크포인트 — §9 이전 이력
 - **단계1·2 DONE(기존 증거 재사용):** [#3461](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3461) / Run #45467625998의 정규 Writer 4파일 선택 설치 `WRITER_B_INSTALLED_VERIFIED`, 로컬 운영 source SHA `d8ac245003e7b8e006c2345382d5c639c6d5f18b`, Task 원본 복원. [#3467](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3467)은 실제 활성 Core와 승인 source 연결 확인. 기존 [#3466](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3466)에서 로컬↔D1 `detail:employment-r6:one-year:v1` 결과 hash 일치(29 ID·22 차트)는 **11/24 19:23 UTC 신규 수집 이전 데이터**의 유효 확인 범위이다.
 - **3단계 전진:** [#3468](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3468) / Run #45469724495, [#3469](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3469)에서 실제 2026-11-24 19:23:15 UTC 정규 DOL `RELEASE`, `DOL_UI_WEEKLY_CLAIMS=SUCCESS`, 공식 호출 2회, BLS 다른 계열은 기존 저장 결과 재사용 확인. **새 수집 이후 Writer·SQLite 상세행·D1 갱신의 동일 결과/같은 사이클 연결은 아직 미확인**. 전체 상세 감사 [#3465](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3465)는 `STATE_CLAIMS_51_COVERAGE`에서 시간 초과, 과거 51지역×600주 유효 증거 보존; 이를 DB 손상이나 신규 수집 실패로 재해석하지 않는다.
 - **실패한 읽기 작업의 정확한 종료:** 원래 [#3471](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3471) Core/Writer 및 [#3472](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3472) D1 검사 모두 원본 result JSON/TXT 0/2. 접수 시각에 대응하는 후보 Actions Run #45470608675, #45470614866은 Runner 배정 후 Step 0개·`completed/cancelled`, 후보 #45470609077/#45470617514는 `skipped`. 요청 ID를 직접 연결한 webhook 영수증은 없어 Run과 Issue의 정확한 귀속은 미인증. **AUTOMATION_RESULT_NOT_DELIVERED**로 #3471·#3472 `CLOSED/not_planned`; R6 계산·게시 장애나 정상 결과로 치환하지 않는다. 같은 조건의 무근거 재요청·강제 취소/Runner 재시작은 하지 않는다.
 - **4단계 검증기 신규 소스(실실행 미완료):** `tests/w04-r6-production-ui-readonly-r1.mjs`를 W04 전용 브랜치에 추가했다. Production API와 1440/390px 실브라우저의 29개 원값·관측일·단위·점수·차트 마지막 점을 모의 응답 없이 대조하며 실제 정상 GET/Playwright 실행 증거가 나올 때만 완료로 판정한다. 2026-11-25 현재 구현·구문 파싱·GitHub 파일 readback만 확인. 추가 CI/설치/DB/D1 변경 없음.
 - **4단계 부분 계약 증거:** 현재 `zgmini/main` R2 formula의 29개 고유 ID와 R6 화면 표의 29개 고유 ID는 순서까지 29/29 동일. 하지만 Production HTML의 hydration 전 `R6 공개 저장값 확인 중`은 실제 실데이터 없는 오류 증거가 아니며, 기존 `employment-r6-public-browser-r1.mjs`는 mocked API, 기존 R54 Production E2E는 다른 상단 점수 검증이다. **실제 29개 원값·관측일·단위·점수·차트 마지막점과 PC 1440px/모바일 390px 동치 검증은 NOT_DONE**.
 - **다음 필수 실행:** 기존 정상 Core/Writer 새 주기 결과가 현재 환경에서 확인 가능해질 때 **원본 수집 checkpoint 이후 Writer 완료/정당한 UNCHANGED 시각·sourceStoredAt·local hash→D1 body/hash/stored_at→공개 API→UI**를 동일 입력/기준일로 연결 검증한다. 단, 이미 취소된 #3471/#3472를 같은 조건으로 반복하지 않으며 정상 실행 경로/필수 로그 가용성이 달라졌는지 먼저 확인. 정규 다음 발표 대기를 요청하지 않은 새 완료조건으로 만들지 않는다.
-- **단계 판정:** 1·2 DONE / 3 IN_PROGRESS / 4·5 NOT_DONE = **2/5단계(40%) 유지**. 문서·Issue 종결은 실기능 완료 증거 아님.
+- **§8 당시 단계 판정(§9에서 갱신):** 1·2 DONE / 3 IN_PROGRESS / 4·5 NOT_DONE = 2/5단계(40%). 문서·Issue 종결은 실기능 완료 증거 아님.
+
+## 9. 2026-11-25 실제 Production R6 PC·모바일 검증 — 4단계 DONE
+<!-- W04-STEP4-PRODUCTION-REAL-PASS-20261125 -->
+- **실측 코드·운영 기준 분리:** W04 전용 브랜치의 구 R1 formulaHash `sha256:18e18d10...`와 현재 배포 R2 `sha256:04486846...`를 혼동해 [초회 Run #45475125267](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45475125267)이 스크립트의 잘못된 기준으로 FAIL. `zgmini/main` 공식 R2 및 기존 #3466 운영 영수증에 맞춘 **읽기 전용 검증기**로 수정. 브랜치·운영 산식, DB/D1 수정 없음. 29개 ID는 R1 브랜치와 R2 main에서 순서까지 동일.
+- **실제 브라우저 성공:** [Run #45475574834](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45475574834)의 W04 실데이터 전용 Step SUCCESS, **PC 1440px·모바일 390px PASS**, 모의 API/가짜 값 없음. Production GET HTTP 200, 29개 ID·원값·단위·관측일·이전값·점수 및 차트 마지막 관측일/도형 좌표, READY/STALE/결측 표시를 각각 검증. `sourceFeatures=29`, `recentlyObservedFeatures=22`, `chartReadyFeatures=22`, `chartPartialFeatures=5`, `scoredFeatures=24`, `recentlyScoredFeatures=18`, JS 오류 0. 결과 JSON/스크린샷 GitHub artifact #14960690247 회수·확인. 최초 스크린샷에는 정상 첫 방문 소개 팝업이 표를 가려 실화면 가시성 캡처 한계가 확인됨.
+- **팝업 종료·실화면 보완 성공:** W04 테스트가 첫 방문 안내창의 기존 `닫기` 버튼을 클릭하고 숨김 상태 및 실제 테이블/카드 표시를 검증하도록 최소 보완(`ef57a7b81e25204458e740ea75a8e2cccf438a26`). [후속 Run #45476398968](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45476398968)에서도 W04 Step SUCCESS. 해당 run의 전체 CI·최종 스크린샷 아티팩트는 결과 별도 대조 대상으로 둔다. Node.js CI [#45476399043](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45476399043) SUCCESS.
+- **최신성의 실제 한계:** 공개 API `sourceStoredAt=1795536201789`(2026-11-24 19:13:21.789 UTC), `D1 stored_at=1795536461679`(19:17:41.679 UTC), `asOfDate=2026-11-24`. DOL 신규 정규 수집 `2026-11-24T19:23:15.174Z`보다 **원천 저장·게시 시간이 앞섬**. 따라서 4단계 화면 동치 PASS는 **신규 수집→Writer 계산→D1 재게시까지 갱신됐다는 증거가 아님**. 단계3은 IN_PROGRESS, 단계5는 NOT_DONE을 유지한다.
+- **기타 CI 분리:** #45475574834의 전체 브라우저 Workflow는 W04 Step PASS 이후 **무관한** `dashboard-deferred-ui-browser-r1.mjs`에서 미국 공탐 breadth SVG 5초 표시 대기 TIMEOUT으로 FAIL. 원인은 추가 증거 전 미확정, W04 자체 실패/완료 취소의 근거가 아니며 범위 외 개선을 새 전역 Gate로 두지 않는다.
+- **최신 단계 판정: 1·2·4 DONE / 3 IN_PROGRESS / 5 NOT_DONE = 3/5 (60%)**. 다음 필수 W04 실행은 기존 승인 PC/Writer 정상 경로로 수집 이후 Writer 완료·정당한 UNCHANGED checkpoint/로컬 해시·sourceStoredAt과 D1 정확키 `detail:employment-r6:one-year:v1`의 `stored_at`·body hash를 동일 입력/주기로 연결하는 것. 기존 #3471/#3472 취소 요청의 중복 재실행 금지. 브랜치 PR #933은 Draft/충돌 상태로 전체 병합·운영 자동 적용 금지.
