@@ -73,7 +73,7 @@ export function comparePublicReadback(slot,{d1,api,now=Date.now()}={}){
   if(api.body.version!==version||api.body.sourcePriceMode!==priceMode)
    return result(slot,'THEME_LEGACY_FALLBACK_UNVERIFIED',evidence);
   const hex64=x=>typeof x==='string'&&/^[a-f0-9]{64}$/.test(x);
-  const validDate=x=>typeof x==='string'&&/^\\d{4}-\\d{2}-\\d{2}$/.test(x)&&
+  const validDate=x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)&&
    Number.isFinite(Date.parse(x+'T00:00:00Z'))&&
    new Date(x+'T00:00:00Z').toISOString().slice(0,10)===x;
   const validScore=x=>typeof x==='number'&&Number.isFinite(x)&&x>=0&&x<=100;
