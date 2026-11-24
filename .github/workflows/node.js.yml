@@ -36,6 +36,16 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+      # Reuse the existing Vite output; no second build or external sizing service.
+      - name: Measure client JS/CSS bundle sizes
+        run: node scripts/ci-bundle-size.mjs
+      - name: Upload bundle size report
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-bundle-size-report
+          path: artifacts/ci-bundle-size/report.json
+          retention-days: 7
+          if-no-files-found: error
       - name: Save public CSS for asset comparison
         uses: actions/upload-artifact@v4
         with:
