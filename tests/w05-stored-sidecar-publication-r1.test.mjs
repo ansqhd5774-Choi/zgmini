@@ -15,11 +15,37 @@ import {
 const NOW=Date.parse('2026-11-24T01:00:00.000Z');
 const VERSION='a'.repeat(64);
 const SOURCE=NOW-10_000;
-const payload=()=>({status:'READY',sourceVersion:VERSION,sourceStoredAt:SOURCE,
- indicator:{value:0.25}});
-const prepared=()=>({status:'READY',payload:payload()});
+const payload=(id='bea')=>{
+ const common={status:'READY',sourceVersion:VERSION,sourceStoredAt:SOURCE};
+ if(id==='bea')return {...common,indicator:{
+  unit:'USD_PER_REAL_GVA_UNIT',observationPeriodEnd:'2026-06-30',value:0.25,
+  history:['2025-06-30','2025-09-30','2025-12-31','2026-03-31','2026-06-30']
+   .map((date,i)=>({date,value:[0.216,0.219,0.222,0.231,0.25][i]}))
+ }};
+ if(id==='qfr')return {...common,rows:[{
+  indicatorId:'census_qfr_manufacturing_after_tax_margin_nsa',
+  unit:'PERCENT',observationPeriod:'2026-Q2',value:6,
+  history:['2025-Q2','2025-Q3','2025-Q4','2026-Q1','2026-Q2']
+   .map((period,i)=>({period,value:i+2}))
+ }]};
+ if(id==='wpsfd42')return {...common,rows:[
+  {indicatorId:'bls_ppi_services_index',unit:'INDEX',
+   observationPeriod:'2026-10',value:158.076,
+   history:Array.from({length:13},(_,i)=>({
+    period:'month-'+i,value:i===12?158.076:i+140
+   }))},
+  {indicatorId:'bls_ppi_services_yoy_sa',unit:'PERCENT',
+   observationPeriod:'2026-10',value:4.973901956357141,
+   history:Array.from({length:13},(_,i)=>({
+    period:'month-'+i,value:i<3?null:i===12?4.973901956357141:i/10
+   }))}
+ ]};
+ throw Error('unrecognized fixture id');
+};
+const prepared=({id}={})=>({status:'READY',payload:payload(id)});
 
-function fakeRemote({result='READBACK_VERIFIED',badReadback=false,missing=false}={}){
+function fakeRemote({result='READBACK_VERIFIED',badReadback=false,missing=false,
+ corruptHistoricalPoint=false}={}){
  let row=null,writes=0,queries=0,adapters=0;
  const remote={
   adapter(db,opts){
@@ -39,7 +65,12 @@ function fakeRemote({result='READBACK_VERIFIED',badReadback=false,missing=false}
   assert.ok(W05_SAVED_IDS.includes(id));
   return {async write(p,{storedAt}){
    if(result==='READBACK_VERIFIED')writes++;
-   row={body:JSON.stringify({payload:p,projection:{
+   const stored=structuredClone(p);
+   if(corruptHistoricalPoint){
+    const first=id==='bea'?stored.indicator:stored.rows[0];
+    first.history[0].value=927348.5;
+   }
+   row={body:JSON.stringify({payload:stored,projection:{
     status:'READY',sourceVersion:p.sourceVersion,sourceStoredAt:p.sourceStoredAt,
     builtAt:badReadback?storedAt+1:result==='ALREADY_STORED'?storedAt-1000:storedAt,
    }}),stored_at:result==='ALREADY_STORED'?storedAt-1000:storedAt};
@@ -134,6 +165,9 @@ test('each sidecar reuses the exact D1 key and independent verified readback',as
   assert.equal(result.providerCalls,0);
   assert.equal(result.sqliteWrites,0);
   assert.equal(result.schedulerWrites,0);
+  assert.equal(result.historyParityVerified,true);
+  assert.equal(result.historyPointsVerified,id==='wpsfd42'?26:5);
+  assert.match(result.historySha256,/^[a-f0-9]{64}$/);
   assert.deepEqual(f.stats(),{writes:1,queries:1,adapters:1});
  }
 });
@@ -147,6 +181,8 @@ test('ALREADY_STORED preserves prior published timestamp and reports zero D1 wri
  assert.equal(result.status,'ALREADY_STORED');
  assert.equal(result.publishedAt,NOW-1000);
  assert.equal(result.d1Writes,0);
+ assert.equal(result.historyParityVerified,true);
+ assert.equal(result.historyPointsVerified,5);
  assert.deepEqual(f.stats(),{writes:0,queries:1,adapters:1});
 });
 
@@ -177,4 +213,25 @@ test('invalid sidecar, clock, database or unverified prepared source fails befor
   makeWriter:f.factory,
  }),/W05_SAVED_PREVIEW_INVALID/);
  assert.deepEqual(f.stats(),{writes:0,queries:0,adapters:0});
+});
+
+test('same hash but altered D1 historical values fails without retrying',async()=>{
+ for(const id of W05_SAVED_IDS)for(const mode of ['ALREADY_STORED','READBACK_VERIFIED']){
+  const f=fakeRemote({result:mode,corruptHistoricalPoint:true});
+  await assert.rejects(publishW05StoredSidecar({
+   id,pcHome:'fixture',coreDb:'d1-core',remote:f.remote,now:NOW,
+   prepare:prepared,makeWriter:f.factory
+  }),/W05_SAVED_REMOTE_HISTORY_PARITY_MISMATCH/);
+  assert.equal(f.stats().queries,1);
+  assert.equal(f.stats().writes,mode==='ALREADY_STORED'?0:1);
+ }
+});
+test('WPS historical missing values remain null and count as checked',async()=>{
+ const f=fakeRemote({result:'ALREADY_STORED'});
+ const result=await publishW05StoredSidecar({
+  id:'wpsfd42',pcHome:'fixture',coreDb:'d1-core',remote:f.remote,now:NOW,
+  prepare:prepared,makeWriter:f.factory
+ });
+ assert.equal(result.historyParityVerified,true);
+ assert.equal(result.historyPointsVerified,26);
 });
