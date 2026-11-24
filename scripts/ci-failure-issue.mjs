@@ -19,12 +19,12 @@ export async function triage({event,repository=REPO,request}){
     event.repository.private!==true||
     repository!==REPO||!run||!WORKFLOWS.includes(run.name)||
     !['pull_request','push','workflow_dispatch'].includes(run.event)||
-    (run.head_repository?.full_name&&run.head_repository.full_name!==REPO)||
+    run.head_repository?.full_name!==REPO||
     run.status!=='completed'||!['failure','timed_out'].includes(run.conclusion))
   return {state:'IGNORED'};
  if(!goodId(run.id)||!goodId(run.run_attempt)||
     !/^[a-f0-9]{40}$/.test(run.head_sha??''))fail('RUN_IDENTITY_INVALID');
- const jobsResponse=await request('actions/runs/'+run.id+'/jobs?per_page=100');
+ const jobsResponse=await request('actions/runs/'+run.id+'/attempts/'+run.run_attempt+'/jobs?per_page=100');
  const jobs=jobsResponse?.jobs;
  if(!Array.isArray(jobs)||!Number.isSafeInteger(jobsResponse.total_count)||
     jobsResponse.total_count>100)fail('JOB_INVENTORY_INCOMPLETE');
