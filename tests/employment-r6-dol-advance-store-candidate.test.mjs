@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { createHash } from "node:crypto";
 import { deflateSync } from "node:zlib";
-import { buildDolAdvanceStoreCandidate } from "../lib/market-score/employment-r6-dol-advance-store-candidate.mjs";
+import { buildDolAdvanceStoreCandidate, inspectDolAdvanceStoredSnapshot } from "../lib/market-score/employment-r6-dol-advance-store-candidate.mjs";
 
 const RELEASE="2026-11-19T13:30:00.000Z";
 const OBSERVED="2026-11-24T14:06:51.000Z";
@@ -93,4 +93,32 @@ test("W04 malformed, mixed-vintage or impossible timestamps cannot be storage in
     assert.equal(out.operationalWrites,0);
     assert.equal(out.writeAuthorized,false);
   }
+});
+
+
+test("W04 eventual stored body readback detects base64 and original-PDF tampering independently",()=>{
+  const candidate=buildDolAdvanceStoreCandidate(fixturePdf(),opts);
+  assert.equal(candidate.status,"CANDIDATE_ONLY");
+  const snapshot=candidate.snapshots[0];
+  const input={
+    body:snapshot.body,
+    bodySha256:sha256(Buffer.from(snapshot.body,"utf8")),
+    detail:snapshot.detail,
+  };
+  const ok=inspectDolAdvanceStoredSnapshot(input);
+  assert.equal(ok.status,"RAW_BYTES_VERIFIED",JSON.stringify(ok));
+  assert.equal(ok.originalPdfSha256,candidate.originalPdfSha256);
+  assert.equal(ok.observationsVerified,false);
+  assert.equal(ok.historicalAvailabilityAttested,false);
+  assert.equal(ok.operationalWrites,0);
+  const wrongBody=inspectDolAdvanceStoredSnapshot({...input,bodySha256:"0".repeat(64)});
+  assert.equal(wrongBody.reason,"STORED_BODY_HASH_MISMATCH");
+  const wrongOriginal=inspectDolAdvanceStoredSnapshot({...input,
+    detail:{...input.detail,originalPdfSha256:"0".repeat(64)}});
+  assert.equal(wrongOriginal.reason,"ORIGINAL_PDF_HASH_MISMATCH");
+  const wrongLength=inspectDolAdvanceStoredSnapshot({...input,
+    detail:{...input.detail,originalPdfByteLength:input.detail.originalPdfByteLength+1}});
+  assert.equal(wrongLength.reason,"ORIGINAL_PDF_HASH_MISMATCH");
+  const notBase64=inspectDolAdvanceStoredSnapshot({...input,body:"not PDF!!!"});
+  assert.equal(notBase64.reason,"STORED_SNAPSHOT_FORMAT_INVALID");
 });
