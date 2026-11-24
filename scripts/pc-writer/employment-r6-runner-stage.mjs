@@ -126,17 +126,23 @@ export function inspectWalSidecars(dbPath){
       throw Error("RUNNER_R6_SQLITE_HEADER_INVALID");
     }
     const wal=header[18]===2||header[19]===2;
+    let walSidecarsPreexisting=false;
     if(wal){
       const walState=sidecarState(dbPath,"-wal");
       const shmState=sidecarState(dbPath,"-shm");
-      if(walState!=="PRESENT_FILE"||shmState!=="PRESENT_FILE"){
+      // A closed, checkpointed WAL database can legitimately have neither
+      // sidecar. Native SQLite readOnly:true may create/adjust them; that is
+      // not a database row/schema write or evidence of corruption.
+      const valid=state=>state==="PRESENT_FILE"||state==="ABSENT";
+      if(!valid(walState)||!valid(shmState)){
         const blocked=Error("WAL_SIDECAR_NOT_READY");
         blocked.walDetail={headerMode:"WAL",walState,shmState,
           observedAt:new Date().toISOString()};
         throw blocked;
       }
+      walSidecarsPreexisting=walState==="PRESENT_FILE"&&shmState==="PRESENT_FILE";
     }
-    return {walMode:wal,walSidecarsPreexisting:wal};
+    return {walMode:wal,walSidecarsPreexisting};
   }catch(error){
     const code=safeCode(error?.message);
     const normalized=Error(code==="RUNNER_R6_READ_FAILED"?"RUNNER_R6_SQLITE_INSPECTION_FAILED":code);
@@ -145,12 +151,15 @@ export function inspectWalSidecars(dbPath){
   }finally{if(file!==undefined)fs.closeSync(file);}
 }
 
-function fileIdentity(file){
+function fileIdentity(file,{optional=false}={}){
   try{
     const stat=fs.statSync(file,{bigint:true});
     if(!stat.isFile())throw Error("WAL_SIDECAR_NOT_READY");
     return {dev:stat.dev,ino:stat.ino};
-  }catch{throw Error("WAL_SIDECAR_NOT_READY");}
+  }catch(error){
+    if(optional&&error?.code==="ENOENT")return null;
+    throw Error("WAL_SIDECAR_NOT_READY");
+  }
 }
 
 // Recheck both sidecar existence and file identity around *each* SQLite open.
@@ -159,14 +168,17 @@ function fileIdentity(file){
 export function captureWalSidecarSeal(dbPath){
   const preflight=inspectWalSidecars(dbPath);
   return {preflight,sqlite:fileIdentity(dbPath),
-    wal:preflight.walMode?fileIdentity(dbPath+"-wal"):null,
-    shm:preflight.walMode?fileIdentity(dbPath+"-shm"):null};
+    wal:preflight.walMode?fileIdentity(dbPath+"-wal",{optional:true}):null,
+    shm:preflight.walMode?fileIdentity(dbPath+"-shm",{optional:true}):null};
 }
 
 export function assertWalSidecarSeal(dbPath,expected){
   const actual=captureWalSidecarSeal(dbPath);
-  const same=(a,b)=>a===null&&b===null
-    ||Boolean(a&&b&&a.dev===b.dev&&a.ino===b.ino);
+  // A missing-at-start sidecar may appear through normal SQLite read locks.
+  // A pre-existing sidecar must retain its identity throughout this read.
+  const same=(a,b)=>a===null
+    ? b===null||Boolean(b)
+    : Boolean(b&&a.dev===b.dev&&a.ino===b.ino);
   if(actual.preflight.walMode!==expected.preflight.walMode
     ||!same(actual.sqlite,expected.sqlite)
     ||!same(actual.wal,expected.wal)||!same(actual.shm,expected.shm)){
