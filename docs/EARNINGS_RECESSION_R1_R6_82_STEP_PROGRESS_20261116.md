@@ -1,8 +1,13 @@
 # W05 API·실적 정보행 — 운영 완료 5단계 진행원장 (2026-11-21 개편)
 
+<!-- W05_FINAL_FIVE_STAGE_RUNTIME_PASS_20261124 -->
+
+**최종 단계 판정 — 5/5 DONE (2026-11-24 KST).** 기존 1~4단계 성공 증거를 재사용하고, 5단계는 설치된 Writer의 실제 자연 `PUBLISH/VERIFIED` 재실행과 WPSFD42·QFR·BEA 3키 `ALREADY_STORED`, 기존 D1 `sourceVersion/sourceStoredAt` 3/3 일치, 설치 이후 Production 390px·1440px GET/UI PASS로 확인했다. 추가 승인된 단일 파일 이력 강화 B [#3241](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3241#issuecomment-7124451071) 결과 `WRITER_B_INSTALLED_VERIFIED`, 운영 source `24077edc2fb4196e83ba202fdd9681b1fe841447`. [자연 Writer #3243](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3243#issuecomment-7124638333) 실제 2026-11-24 16:05:22 KST `PUBLISH/VERIFIED`, 세 키 전부 `ALREADY_STORED/readbackAtWriter=true`; 36개 현재 승인 공개 이력(WPSFD42 월 13×2, QFR 분기 5, BEA 분기 5)의 기간·값·단위·버전 직접 동등성 비교는 신규 Writer의 필수 `verifyW05StoredHistoryParity` 성공 후에만 해당 상태를 반환하는 운영 조건으로 검증됐다. 비공개 과거 전체 빈티지를 D1로 복사하는 조건이 아니다. [원장 #68 증거](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-7124665082). 운영 D1·공급자·예약·Cloudflare 재실행 없이 검사했고 보호 상태가 유지됐다. 본 5단계 완료는 **W05 실적 정보행 종단 범위만**이며, 별도 5개 공개경로 의미 동치 지원 감사·다른 기능·과거 82단계 계수까지 소급 완료시키지 않는다. 활성 Deployment ID는 직접 미확인이나 실제 운영 API·UI 검증의 미완료 조건으로 추가하지 않는다.
+
+
 <!-- W05-ACTIVE-FIVE-STAGE-PLAN-20261121 -->
 
-**현재 4/5단계 완료·5단계 진행 중(완료 조건 4개/5개; 작업량 80%를 뜻하지 않음).** 1~3단계 기존 수집·저장 계산·D1 게시/GET 완료를 재사용한다. 4단계의 BEA 단위이익 PC390/1440·모바일 실화면 값/단위/관측분기·원자료 저장/D1 게시 KST 시각·5분기 차트·출처/고지를 실제 Chromium #45220124737에서 PASS 확인했다. 변경 PR #1516/#1518 main 병합 및 정확 #1518 병합 SHA Cloudflare Git Integration Build 성공도 확인했다. 활성 Production Deployment ID와 Git Build의 정확 동일성은 별도 미조회이나, 이미 PASS한 동일 공개 기능을 무효화하는 장애·4단계 추가 Gate로 삼지 않는다. 5단계의 원장/정규 갱신·UNCHANGED 실제 운영 증거는 독립 확인 대상이다. 과거 82단계 수치는 현행 완료율로 사용하지 않는다.
+**현행 W05 운영 완료 5/5단계 DONE (2026-11-24 실운영 검증 기준).** 1~3단계 기존 수집·저장 계산·D1 게시/GET 완료를 재사용한다. 4단계의 BEA 단위이익 PC390/1440·모바일 실화면 값/단위/관측분기·원자료 저장/D1 게시 KST 시각·5분기 차트·출처/고지를 실제 Chromium #45220124737에서 PASS 확인했다. 변경 PR #1516/#1518 main 병합 및 정확 #1518 병합 SHA Cloudflare Git Integration Build 성공도 확인했다. 활성 Production Deployment ID와 Git Build의 정확 동일성은 별도 미조회이나, 이미 PASS한 동일 공개 기능을 무효화하는 장애·4단계 추가 Gate로 삼지 않는다. 5단계의 원장/정규 갱신·UNCHANGED 실제 운영 증거는 독립 확인 대상이다. 과거 82단계 수치는 현행 완료율로 사용하지 않는다.
 
 저장소 `ansqhd5774-Choi/zgmini` / 브랜치 `codex/api-site-integration-r1-20261026` / 개편전HEAD `61e2c02eb2bbd4ef967a8506ee78b3324c1331f3`.
 목적·실행 기준: [개편 계획](EARNINGS_RECESSION_R1_R6_82_STEP_EXECUTION_PLAN_20261116.md). 독립 지원 업무: [5개 API–D1 비교](API_SITE_R1_ACTIVE_WORK_PLAN_20261114.md).
@@ -13,7 +18,7 @@
 | 2 | 실제 미확보 원자료·저장 계산 마무리 | WPSFD42 기존 B 단회 수집·SQLite 원문/해시 readback 완료. 기존 R3D(기본 3계열) 검증 후 R4 `buildServiceSourcePreview`에서 WPSFD42 별도 2행 저장자료 계산·checkpoint 확인 필요. QFR/BEA 기저장 자료 재수집 금지 | DONE — #2767 SQLite 22행·SHA, #2864 실PC RAW/YOY 2행·sourceVersion/sourceStoredAt PASS, R4 service source checkpoint 버전/시각 #2882 D1 exact-key readback 일치. 별도 로컬 checkpoint 파일은 R4 계약에 없음 |
 | 3 | 저장된 결과의 기존 게시·API 연결 | 적격 BLS 서비스/BEA 단위이익/QFR 등 필요한 각 projection을 기존 Writer로 게시·D1 readback·저장형 GET 대조. 정상 경로는 재게시하지 않음 | DONE — QFR #2768, WPSFD42 #2882 유지; BEA JSON #3029 `PUBLICATION_SINGLE_KEY_READBACK_VERIFIED`(D1 1키/Provider GET 0), W06 실제 Production #45206002236 BEA API HTTP 200/PC·모바일 연결 완료 |
 | 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | **DONE** — 기존 WPSFD42 7/7·QFR 성공 재사용, BEA 390/1440 Production Chromium #45220124737에서 HTTP200/현재 $0.250·분기종료 2026-06-30·5분기 첫 $0.216/마지막 $0.250·실제 SVG 최종 marker·PC 저장과 D1 게시 KST 도움말·공식 BEA 출처/고지 PASS. 활성 Deployment ID 미조회는 별도 계보 항목 |
-| 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | **IN_PROGRESS — 실제 Core 출처 확인**: #3050 PC `PASS/CORE_RUNTIME_SOURCE_VERIFIED`, 승인 실행 SHA `37f904...`, 활성 Core 프로세스/Task/4파일 검사 PASS. 해당 SHA는 원격 GitHub에서 조회되지 않으며 운영의 `local-cycle`·`run-local`·`collect-local` 해시는 현재 GitHub main과 3/3 상이함. 따라서 main의 3개 별도 게시기 미연결을 운영 Core의 실제 결함으로 단정하지 않음. 세 B는 `ONCE`, 새 갱신/UNCHANGED 운영 결과 미확인. BEA #1522·WPSFD42/QFR #1524 원본 보호, #1525 QFR 시험, #1527 저장본 3키 Writer adapter main 병합·CI PASS(전부 운영 미설치). 기존 반복 D1 승인/운영 소스 CAS 확인 전 #1528 run-local 호출 경로 main 병합(실행 승인 상수 false·운영 미설치). 운영 파일별 A #3077/Run 45305946354 접수·대기(실행 미확정), 다른 Writer B #3064 drain timeout 후 원본 복구. 승인 범위 밖 반복 B/새 예약 실행 금지 |
+| 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | **DONE — #3241 Writer 한 파일 B 실설치, #3243 자연 PUBLISH/VERIFIED·3키 ALREADY_STORED, 36개 공개 이력 전체 비교 PASS, Production 390/1440 화면 PASS (별도 5개 지원 감사 분리)** |
 
 ## 2026-11-24 — W05 운영 5파일 사전이미지 A 등록 (실행 대기, 운영 변경 없음)
 
