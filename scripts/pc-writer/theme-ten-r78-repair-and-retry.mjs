@@ -1,3 +1,4 @@
+import {withR54SourceLeaseSync} from './r54-source-lease.mjs';
 // R78: restore the existing R51/R37 legacy-provisional date contract and
 // then call the already-approved R77 R54/R8 one-time publisher gate.
 // No task, formula, provider, roster, raw series or D1 key changes.
@@ -21,7 +22,10 @@ const specs=[
   now:'d10ce08c801d5f20918ffe4ce71b9b2c95b32cdbc068670a0d31d5fb8922e5c7'},
 ];
 
-export function applyPinnedFiles({installRoot,payloadRoot,sources=specs}={}){
+export function applyPinnedFiles(options={}){
+ return withR54SourceLeaseSync(()=>applyPinnedFilesUnprotected(options));
+}
+function applyPinnedFilesUnprotected({installRoot,payloadRoot,sources=specs}={}){
  const root=fs.realpathSync(installRoot);
  const checked=sources.map(x=>{
   if(!/^(scripts\/pc-writer|worker)\/[a-z0-9-]+\.mjs$/.test(x.name))
