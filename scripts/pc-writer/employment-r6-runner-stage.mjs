@@ -174,11 +174,12 @@ export function captureWalSidecarSeal(dbPath){
 
 export function assertWalSidecarSeal(dbPath,expected){
   const actual=captureWalSidecarSeal(dbPath);
-  // A missing-at-start sidecar may appear through normal SQLite read locks.
-  // A pre-existing sidecar must retain its identity throughout this read.
-  const same=(a,b)=>a===null
-    ? b===null||Boolean(b)
-    : Boolean(b&&a.dev===b.dev&&a.ino===b.ino);
+  // The first identity is observed now; the second is the initial seal.
+  // A sidecar absent at the start may be created by native SQLite read locks,
+  // but an initially existing file cannot disappear or be replaced.
+  const same=(observed,initial)=>initial===null
+    ? observed===null||Boolean(observed)
+    : Boolean(observed&&observed.dev===initial.dev&&observed.ino===initial.ino);
   if(actual.preflight.walMode!==expected.preflight.walMode
     ||!same(actual.sqlite,expected.sqlite)
     ||!same(actual.wal,expected.wal)||!same(actual.shm,expected.shm)){
