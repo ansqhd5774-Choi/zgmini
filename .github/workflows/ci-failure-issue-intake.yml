@@ -1,0 +1,39 @@
+# CI-only failure intake. Operates from reviewed default-branch source, never checkout failed PR SHA.
+name: ZGMINI CI Failure Issue Intake
+on:
+  workflow_run:
+    workflows:
+      - 'Node.js CI'
+      - 'CodeQL JavaScript TypeScript'
+      - 'Source Secret Scan'
+      - 'Community Chat Browser UI (Mocked API)'
+      - 'Community Chat Candidate Build (Read Only)'
+    types: [completed]
+permissions:
+  contents: read
+  actions: read
+  issues: write
+concurrency:
+  group: ci-failure-issue-intake
+  cancel-in-progress: false
+jobs:
+  record-verified-failure:
+    if: >-
+      github.repository == 'ansqhd5774-Choi/zgmini' &&
+      github.event.repository.private == true &&
+      (github.event.workflow_run.conclusion == 'failure' ||
+       github.event.workflow_run.conclusion == 'timed_out')
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: main
+          persist-credentials: false
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0 pinned
+        with:
+          node-version: '22'
+      - name: Verify GitHub CI failure and upsert one incident Issue
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci-failure-issue.mjs
