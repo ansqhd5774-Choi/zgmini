@@ -106,3 +106,42 @@ test("W04 Core receipt retains only canonical scheduler UTC time fields",async()
  assert.doesNotMatch(JSON.stringify(output),/DO_NOT_EXPORT|PRIVATE|SECRET_/);
  assert.equal(output.providerRequests,0);
 });
+
+
+test("W04 checkpoint preserves bounded SQLite change counts without exporting raw fields",async()=>{
+  const result=await runEmploymentR6AutoCollection({...options,enabled:true,
+    collect:async()=>({status:"SUCCESS",providerRequests:2,
+      groupResults:[{groupName:"DOL_UI_WEEKLY_CLAIMS",status:"SUCCESS",
+        providerRequests:2,runId:456,sourceHash:"SECRET_HASH",rawBody:"SECRET_BODY",
+        changedSeriesIds:["SECRET_SERIES"],collectedRows:3440,inserted:0,
+        revised:0,noop:3440,rejected:0,historyRowsAdded:0,
+        rawSnapshots:2,rawSnapshotNoops:2}],
+      plannedGroups:[]}),
+  });
+  assert.deepEqual(result.groups,[{
+    groupName:"DOL_UI_WEEKLY_CLAIMS",status:"SUCCESS",providerRequests:2,
+    collectedRows:3440,inserted:0,revised:0,noop:3440,rejected:0,
+    historyRowsAdded:0,rawSnapshots:2,rawSnapshotNoops:2,
+  }]);
+  assert.doesNotMatch(JSON.stringify(result),/SECRET_|runId/);
+});
+
+test("W04 checkpoint omits noninteger, negative and excessive counts",async()=>{
+  const result=await runEmploymentR6AutoCollection({...options,enabled:true,
+    collect:async()=>({status:"PARTIAL",providerRequests:0,plannedGroups:[],
+      groupResults:[{groupName:"DOL_UI_WEEKLY_CLAIMS",status:"PARTIAL",
+        collectedRows:0,inserted:-1,revised:1.5,noop:"0",rejected:NaN,
+        historyRowsAdded:1_000_001,rawSnapshots:1,rawSnapshotNoops:undefined}]}),
+  });
+  assert.deepEqual(result.groups,[{groupName:"DOL_UI_WEEKLY_CLAIMS",status:"PARTIAL",
+    collectedRows:0,rawSnapshots:1}]);
+});
+
+test("W04 no-due collection does not invent changed-row counts",async()=>{
+  const result=await runEmploymentR6AutoCollection({...options,enabled:true,
+    collect:async()=>({status:"NOOP",providerRequests:0,groupResults:[],
+      plannedGroups:[{groupName:"DOL_UI_WEEKLY_CLAIMS",status:"RELEASE_ALREADY_STORED",due:false}]}),
+  });
+  assert.deepEqual(result.groups,[]);
+  assert.equal(result.plannedGroups[0].status,"RELEASE_ALREADY_STORED");
+});
