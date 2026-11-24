@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, codex/employment-1y-reader-r1]
   pull_request:
-    branches: [main]
+    branches: [main, codex/employment-1y-reader-r1]
   workflow_dispatch:
 
 permissions:
