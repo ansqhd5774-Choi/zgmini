@@ -48,8 +48,48 @@ if(publish){
  if(blocked)throw Error(blocked.status);
  execFileSync('git',['diff','--quiet','HEAD','--','worker','lib','scripts/pc-writer'],{cwd:root,stdio:'pipe',windowsHide:true});
 }
-const seed=read(path.join(base,'local-seed-progress.json'));
-if(!Object.keys(seed).length||Object.values(seed).some(x=>!x.complete))throw Error('LOCAL_SEED_INCOMPLETE');
+const seedFile=path.join(base,'local-seed-progress.json');
+const seed=fs.existsSync(seedFile)?read(seedFile):{};
+const {hasCompleteLocalSeed,publishW05WithIncompleteSeed}=await import('./w05-seed-fallback-r1.mjs');
+if(!hasCompleteLocalSeed(seed)){
+ // A global initial-copy checkpoint must not suppress independently validated
+ // W05 saved sidecars. All market/Korea calculations stay closed.
+ if(!publish||!W05_SAVED_SIDECARS_AUTO_PUBLICATION_APPROVED)
+  throw Error('LOCAL_SEED_INCOMPLETE');
+ const now=Date.now();
+ const report={at:new Date(now).toISOString(),source,mode:'PUBLISH',
+  inputLocation:'SAVED_LOCAL_INPUTS_ONLY',seedStatus:'LOCAL_SEED_INCOMPLETE',
+  providerCalls:0,projections:[],w05SavedSidecars:{}};
+ const originalFetch=globalThis.fetch;
+ try{
+  // Reuse the same authenticated D1 client and unresolved-publication recovery,
+  // without opening a write-capable localDatabase or replacing the market ledger.
+  const remote=client(config,()=>credential(root),{onDiagnostic:diagnostic=>appendD1Diagnostic(base,{runAt:report.at,source},diagnostic)});
+  report.remote=remote.stats;
+  report.recovery=await recoverPublication(remote,config.core,base);
+  // client captured the approved D1 transport before this provider-only guard.
+  globalThis.fetch=async()=>{report.providerCalls++;throw Error('W05_PROVIDER_NETWORK_FORBIDDEN');};
+  await publishW05WithIncompleteSeed({report,pcHome:base,remote,coreDb:config.core,now});
+  const verified=Object.values(report.w05SavedSidecars).some(item=>
+   ['READBACK_VERIFIED','ALREADY_STORED'].includes(item?.status)
+   &&item.historyParityVerified===true);
+  report.status=verified?'VERIFIED_WITH_GAPS':'FAILED';
+  if(!verified)report.error='LOCAL_SEED_INCOMPLETE';
+ }catch(error){
+  report.status='FAILED';
+  report.error=/^[A-Z0-9_]+$/.test(error.message??'')?error.message:error.code??'W05_SEED_FALLBACK_FAILED';
+ }finally{
+  globalThis.fetch=originalFetch;
+  save(path.join(base,'local-writer-last-run.json'),report);
+  appendPublicationEvent(base,{at:report.at,source,status:report.status,
+   error:report.error??null,recovery:report.recovery?.outcome??null});
+  try{updateDataAlert(base,{key:'publication',failed:true});}
+  catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
+  console.log(JSON.stringify(report));
+ }
+ // A W05-only partial cycle is never advertised as full Writer completion.
+ process.exitCode=1;
+}else{
 const core=localDatabase(path.join(base,'storage','core.sqlite'));
 const history=localDatabase(path.join(base,'storage','history.sqlite'));
 const env={DB:core,DB_CORE:core,DB_HISTORY:history};
@@ -475,3 +515,5 @@ try{
 }catch(error){report.status='FAILED';report.error=/^[A-Z0-9_]+$/.test(error.message??'')?error.message:error.code??'LOCAL_WRITER_FAILED';process.exitCode=1;}
 finally{globalThis.fetch=originalFetch;console.warn=originalWarn;hook.deregister();core.close();history.close();save(path.join(base,'local-writer-last-run.json'),report);if(publish){appendPublicationEvent(base,{at:report.at,source,status:report.status,error:report.error??null,recovery:report.recovery?.outcome??null});try{updateDataAlert(base,{key:'publication',failed:report.status!=='VERIFIED'});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}}console.log(JSON.stringify(report));}
 
+
+}
