@@ -4,7 +4,7 @@ import {createHash} from 'node:crypto';
 import {buildEmploymentR6OneYearReadModel} from '../lib/market-score/employment-r6-one-year-read-model.mjs';
 import {INFLATION_CAUSAL_19} from '../lib/inflation-causal-public-catalog.mjs';
 import {INFLATION_CANDIDATES_7} from '../lib/inflation-causal-candidates-public-7-catalog.mjs';
-import {collectFiveKeyInPlace,W05_FIXED_READS} from '../scripts/api-site/five-key-inplace-readback-prework-r12.mjs';
+import {collectFiveKeyInPlace,createW05ReadonlyD1Adapter,W05_FIXED_READS} from '../scripts/api-site/five-key-inplace-readback-prework-r12.mjs';
 import {readW05PublicApi,W05_PUBLIC_API_URLS,W05_PUBLIC_MAX_BODY_BYTES} from '../scripts/api-site/five-key-public-api-reader-r1.mjs';
 import {comparePublicReadback,PUBLIC_READBACK_SLOTS,MAX_PUBLIC_READBACK_SPAN_MS} from '../scripts/api-site/compare-five-public-readbacks-r1.mjs';
 const now=Date.parse('2026-11-14T00:00:00.000Z');
@@ -388,4 +388,38 @@ test('real HTTP Response adapter composes with fixed two-pass D1 comparator',asy
  assert.equal(receipt.ownerAuthorizationVerified,false);
  assert.equal(receipt.deploymentIdentityVerified,false);
  assert.doesNotMatch(JSON.stringify(receipt),/dataQuality|indicators|history|PRIVATE_AUTHENTICATION_TOKEN/);
+});
+
+test('approved query bridge allows only literal five-key SELECT and no writes',async()=>{
+ const fixture=protectedFixture(),queries=[];
+ const db=createW05ReadonlyD1Adapter(async (sql,args)=>{
+  queries.push({sql,args});
+  return fixture.db.prepare(sql).bind(...args).first();
+ });
+ assert.deepEqual(Object.keys(db),['prepare']);
+ assert.throws(()=>db.prepare('DELETE FROM market_public_snapshots_v1'),
+  /W05_D1_SQL_NOT_ALLOWLISTED/);
+ assert.throws(()=>db.prepare('SELECT body FROM public_feed_snapshots_v1'),
+  /W05_D1_SQL_NOT_ALLOWLISTED/);
+ assert.throws(()=>db.prepare(W05_FIXED_READS.calendar.sql).bind('input','release-calendar','current'),
+  /W05_D1_KEY_NOT_ALLOWLISTED/);
+ assert.throws(()=>db.prepare(W05_FIXED_READS.theme.sql).bind(
+  'output','public:theme-etf-only:r1','current'),/W05_D1_KEY_NOT_ALLOWLISTED/);
+ const result=await collectFiveKeyInPlace({db,readApi:fixture.readApi,clock:()=>now});
+ assert.equal(result.keysChecked,5);
+ assert.deepEqual(Object.values(fixture.reads),Array(5).fill(2));
+ assert.equal(queries.length,10);
+ assert.deepEqual(queries.map(({sql,args})=>{
+  const exact=Object.values(W05_FIXED_READS).find(x=>x.sql===sql&&
+    JSON.stringify(x.bind)===JSON.stringify(args));
+  return Boolean(exact);
+ }),Array(10).fill(true));
+ assert.deepEqual(result.results.map(x=>x.status),Array(5).fill('STRUCTURAL_MATCH_NOT_RUNTIME_PROOF'));
+ assert.equal(result.runtimeVerified,false);
+});
+test('approved D1 query bridge rejects invalid owner and query row shape',async()=>{
+ assert.throws(()=>createW05ReadonlyD1Adapter(null),/W05_APPROVED_D1_READER_REQUIRED/);
+ const db=createW05ReadonlyD1Adapter(async()=>[]);
+ await assert.rejects(db.prepare(W05_FIXED_READS.theme.sql).bind(
+  ...W05_FIXED_READS.theme.bind).first(),/W05_D1_ROW_SHAPE_INVALID/);
 });
