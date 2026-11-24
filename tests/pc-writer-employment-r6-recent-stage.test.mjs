@@ -187,7 +187,7 @@ test("manual recent stage writes candidate only, retains core file and reports 1
     now: () => new Date("2026-11-01T10:02:00Z"),
     fetchImpl: () => { throw new Error("REPEAT_SHOULD_NOT_FETCH"); },
   });
-  assert.equal(repeated.status, "CANDIDATE_SOURCE_ROWS_COLLECTED");
+  assert.equal(repeated.status, "CANDIDATE_SOURCE_ROWS_COLLECTED", JSON.stringify({status:repeated.status,collectionStatus:repeated.collectionStatus,groups:repeated.groups,baselineMissing:repeated.baselineMissingSourceSeries,stagedMissing:repeated.stagedMissingSourceSeries,plannedGroups:repeated.plannedGroups}));
   assert.equal(repeated.providerRequests, 0);
   assert.equal(repeated.stagedMissingSourceSeries, 18);
   assert.deepEqual(fs.readdirSync(f.outputDir).sort(), [
