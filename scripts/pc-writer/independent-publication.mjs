@@ -48,11 +48,46 @@ export function canReuseER1VintageEvidence(current,previous){
   current?.key===previous?.key&&current?.localStoredAt===previous?.localStoredAt&&
   current?.localBodySha256===previous?.localBodySha256;
 }
+// Optional private Writer checkpoint metadata; never includes provider inputs,
+// raw feed keys, credentials, or public score changes. Monotonic measurements
+// identify the slow output stage without another Task or external request.
+const boundedStageGroup=id=>{
+ if(typeof id!=='string')return 'other-stages';
+ if(id.startsWith('feed:'))return 'feed-publication';
+ if(id.startsWith('projection-publication:'))return 'projection-publication';
+ if(id.startsWith('projection:'))return 'projection-build';
+ if(id.startsWith('w05-saved-sidecar:'))return 'w05-stored-sidecar';
+ return /^[a-z][a-z0-9-]{0,64}$/.test(id)?id:'other-stages';
+};
+export function recordOutputStageTiming(report,id,elapsedMs,success){
+ if(!report||typeof report!=='object'||!Number.isFinite(elapsedMs)||elapsedMs<0)return;
+ const ms=Math.min(86_400_000,Math.floor(elapsedMs));
+ const t=report.writerStageTiming??={
+  scope:'ATTEMPT_OUTPUT_CALLBACKS_ONLY_NOT_FULL_CORE_OR_WRITER',
+  samples:0,totalMeasuredMs:0,byStage:{},slowest:[],
+ };
+ t.samples++;t.totalMeasuredMs+=ms;
+ const group=boundedStageGroup(id);
+ const name=Object.hasOwn(t.byStage,group)||Object.keys(t.byStage).length<32?
+  group:'other-stages';
+ const stage=t.byStage[name]??={samples:0,totalMs:0,failed:0};
+ stage.samples++;stage.totalMs+=ms;if(success!==true)stage.failed++;
+ // Keep only the 12 most expensive isolated operations; unknown IDs and raw
+ // feed keys never enter the published diagnostic metadata.
+ t.slowest.push({stage:name,elapsedMs:ms,success:success===true});
+ t.slowest.sort((a,b)=>b.elapsedMs-a.elapsedMs);
+ if(t.slowest.length>12)t.slowest.length=12;
+}
+
 export async function attemptOutput(report,id,run){
- try{await run();return true;}
+ const started=process.hrtime.bigint();let success=false;
+ try{await run();success=true;return true;}
  catch(error){
   const reason=/^[A-Z][A-Z0-9_]{1,100}$/.test(error?.message??'')?error.message:'OUTPUT_STAGE_FAILED';
   (report.failures??=[]).push({id,reason});return false;
+ }finally{
+  // Measurement must never change the existing success/failure contract.
+  try{recordOutputStageTiming(report,id,Number(process.hrtime.bigint()-started)/1_000_000,success);}catch{}
  }
 }
 
