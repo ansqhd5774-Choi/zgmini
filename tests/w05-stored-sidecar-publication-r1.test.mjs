@@ -26,7 +26,7 @@ const payload=(id='bea')=>{
   indicatorId:'census_qfr_manufacturing_after_tax_margin_nsa',
   unit:'PERCENT',observationPeriod:'2026-Q2',value:6,
   history:['2025-Q2','2025-Q3','2025-Q4','2026-Q1','2026-Q2']
-   .map((period,i)=>({period,value:i+2))
+   .map((period,i)=>({period,value:i+2}))
  }]};
  if(id==='wpsfd42')return {...common,rows:[
   {indicatorId:'bls_ppi_services_index',unit:'INDEX',
