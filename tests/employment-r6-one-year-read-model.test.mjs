@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import {test} from "node:test";
 import {buildEmploymentR6OneYearReadModel} from "../lib/market-score/employment-r6-one-year-read-model.mjs";
+import {EMPLOYMENT_R6_FEATURES} from "../lib/market-score/employment-r6-formula.mjs";
+import {deriveEmploymentR6FeatureHistory,computeFamilyScores,computeEmploymentScore} from "../lib/market-score/employment-r6-feature-engine.mjs";
+
 import {normalizeStoredObservation,selectAsOfRevisions} from "../lib/market-score/employment-r6-observation-reader.mjs";
 
 const row=(id,date,value)=>({
@@ -10,8 +13,9 @@ const row=(id,date,value)=>({
 
 test("29 separate stored raw series remain distinct from strict 10-year scores",()=>{
   const observations=[
-    row("U3_UNEMPLOYMENT_RATE","2025-10-31",4.7),
+    row("U3_UNEMPLOYMENT_RATE","2025-09-30",4.7),
     row("U3_UNEMPLOYMENT_RATE","2025-11-30",4.6),
+    row("U3_UNEMPLOYMENT_RATE","2025-12-31",4.55),
     row("U3_UNEMPLOYMENT_RATE","2026-04-30",4.4),
     row("U3_UNEMPLOYMENT_RATE","2026-09-30",4.2),
     row("U3_UNEMPLOYMENT_RATE","2026-12-31",1),
@@ -25,8 +29,8 @@ test("29 separate stored raw series remain distinct from strict 10-year scores",
   assert.equal(u3.score,null);
   assert.equal(u3.value,4.2);
   assert.equal(u3.previousValue,4.4);
-  assert.deepEqual(u3.history.map(p=>p.date),["2025-11-30","2026-04-30","2026-09-30"]);
-  assert.equal(u3.history[1].breakBefore,true);
+  assert.deepEqual(u3.history.map(p=>p.date),["2025-11-30","2025-12-31","2026-04-30","2026-09-30"]);
+  assert.equal(u3.history[2].breakBefore,true);
   assert.equal(u3.chartStatus,"READY");
   assert.equal(result.indicators[1].rawStatus,"UNAVAILABLE");
 });
@@ -195,4 +199,52 @@ test("ETA 539 breadth refuses 52-observed-week substitutions when a whole calend
   ).indicators.find(x=>x.id==="STATE_CLAIMS_BREADTH");
   assert.equal(gap.rawStatus,"UNAVAILABLE");
   assert.equal(gap.value,null);
+});
+
+test("W04 PIT-04-07 rejects null/blank at scoring boundary but preserves actual zero",()=>{
+  const feature=EMPLOYMENT_R6_FEATURES.find(x=>x.id==="U3_UNEMPLOYMENT");
+  assert(feature);
+  const observations=[
+    row("U3_UNEMPLOYMENT_RATE","2026-09-30",null),
+    row("U3_UNEMPLOYMENT_RATE","2026-10-31",""),
+    row("U3_UNEMPLOYMENT_RATE","2026-11-30","  "),
+    row("U3_UNEMPLOYMENT_RATE","2026-12-31",false),
+    row("U3_UNEMPLOYMENT_RATE","2027-01-31","0"),
+    row("U3_UNEMPLOYMENT_RATE","2027-02-28",0),
+  ];
+  const values=deriveEmploymentR6FeatureHistory(feature,observations);
+  assert.deepEqual(values.map(p=>p.date),["2027-01-31","2027-02-28"]);
+  assert.deepEqual(values.map(p=>p.value),[0,0]);
+  const features=EMPLOYMENT_R6_FEATURES.map(f=>({featureId:f.id,status:"READY",score:50}));
+  const family=EMPLOYMENT_R6_FEATURES[0].family;
+  features[0]={...features[0],score:null};
+  const families=computeFamilyScores(features);
+  assert.equal(families[family].status,"PARTIAL");
+  assert.equal(families[family].score,null);
+  const partialFamilies=Object.fromEntries([...new Set(EMPLOYMENT_R6_FEATURES.map(f=>f.family))]
+    .map(f=>[f,{status:"READY",score:f===family?null:50}]));
+  assert.deepEqual(computeEmploymentScore(features,partialFamilies),{status:"PARTIAL",score:null});
+});
+
+
+test("W04 documented October 2025 CPS survey gap remains explicit in display without creating PIT evidence",()=>{
+ // Synthetic unit-test values only: no database, provider, backfill or PIT claims.
+ const months=Array.from({length:121},(_,i)=>
+  new Date(Date.UTC(2026,9-i,0)).toISOString().slice(0,10));
+ const raw=months.filter(date=>date!=="2025-10-31")
+  .map((date,i)=>row("U3_UNEMPLOYMENT_RATE",date,4+(i%10)/10));
+ const a=buildEmploymentR6OneYearReadModel(raw,{asOfDate:"2026-09-30"});
+ const u3=a.indicators.find(v=>v.id==="U3_UNEMPLOYMENT");
+ assert.equal(u3.scoreStatus,"READY");
+ assert.equal(u3.officialMissingReferenceDate,"2025-10-31");
+ assert.equal(u3.firstMissingReferenceDate,null);
+ const unrelated=a.indicators.find(v=>v.id==="U6_UNEMPLOYMENT");
+ assert.equal(unrelated.officialMissingReferenceDate,null);
+ assert.equal(unrelated.score,null);
+ const conflict=buildEmploymentR6OneYearReadModel([
+  ...raw,row("U3_UNEMPLOYMENT_RATE","2025-10-31",4.2),
+ ],{asOfDate:"2026-09-30"}).indicators.find(v=>v.id==="U3_UNEMPLOYMENT");
+ assert.equal(conflict.scoreStatus,"PARTIAL_SOURCE_CONFLICT");
+ assert.equal(conflict.officialMissingReferenceDate,null);
+ assert.equal(conflict.score,null);
 });
