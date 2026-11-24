@@ -37,3 +37,12 @@
 - GitHub 메인 병합은 Cloudflare Git 빌드를 개시할 뿐, 사용자 Windows PC의 코드를 설치하거나 예약 작업을 변경하지 않는다.
 - 실제 숫자가 나오는 운영 완료 조건: 최신 메인 버전 PC 설치 → PC에 해당 날짜 S&P 500 소스 확보 → 예약 `--publish` 성공 → D1 현재/일별 키 재조회 일치 → 공개 GET 확인.
 - UI와 API 배포만 성공하고 PC 미설치 또는 소스 미수집이면 데이터는 대기 표시인 것이 정상.
+
+## 진행 원장 — 홈페이지 미국·한국 등락 지수 카드 제거 (2026-11-25 기록)
+
+- **요청 범위:** 홈페이지 미국·한국 공포탐욕 카드 안의 '미국 등락 지수' 및 '한국 등락 지수' UI 두 영역(상승·보합·하락, 연결 예정, 미국 R2 확정 이력 펼치기) 제거. 기존 공포탐욕 점수·차트·푸터·상세페이지 유지.
+- **소스 반영:** [zgmini PR #1158](https://github.com/ansqhd5774-Choi/zgmini/pull/1158) `main` 병합 `0a7a577bf7a22294778120bf2d141fdff42b6c99`. 홈페이지의 `app/country-fear-greed.tsx`에서 두 `showBreadth` 호출을 제외하고 관련 테스트 6종 갱신. 원자료·DB·D1·API·산식·PC 수집기 변경 없음.
+- **회귀 검증:** #1158 Node.js CI 성공. 기존 브라우저 테스트는 제거된 카드의 존재와 위치를 요구하여 1건 실패했고, 원인 식별 뒤 [zgmini PR #1161](https://github.com/ansqhd5774-Choi/zgmini/pull/1161)에서 `tests/dashboard-deferred-ui-browser-r1.mjs`만 변경해 기존 점수/차트 및 푸터 유지, 두 카드 부재, 해당 카드의 API 호출 0건을 검사하도록 정정. **Node.js CI 및 브라우저 UI CI 모두 성공**, `main` 병합 `12eaf5492acd38887adf5f913d4acfa6cb3b2a62`.
+- **실제 운영 화면 검증:** [https://zgmini.kr/](https://zgmini.kr/) 새 브라우저에서 두 등락 지수·`연결 예정` 문구·`.fg-breadth-slot`이 모두 사라진 것을 확인. 미국·한국 공포탐욕 점수, 차트, 푸터는 정상 표시. 빈 공간 없음(검증 당시 카드 높이 273px → 232px). 사용자가 직접 정상 반영을 확인. 최초 로드에서 구 캐시가 잠시 노출됐으나 캐시 우회 후 제거 상태 검증.
+- **완료 판정:** 요청 범위의 UI 소스 수정·테스트·`main` 병합·운영 공개 화면 확인 **DONE**. Cloudflare 개별 Deployment ID는 확보하지 않아 정확한 배포 ID 검증은 **미확인**. 별도 API `/api/earnings-risk-provisional` HTTP 503 관측은 본 작업과 독립적인 NON_BLOCKING.
+- **최신 공급자 계약과 구분:** 이 기록은 **홈페이지의 구 등락 UI 제거**에 한정. [2026-11-20 유료 MarketParquet 연결 재승인](MARKETPARQUET_REMOVAL.md) 및 이후 종합시장 수급·폭·섹터·테마 계산/저장/게시 계약을 폐기하거나 변경하지 않음. 위 문서의 과거 R1/R2 설계와 '연결 예정' 표기는 역사 기록이며 현재 홈 UI 상태가 아님.
