@@ -107,6 +107,21 @@ test("W04 PDF rejection and independent state failure cannot fabricate stored ob
   assert.equal(out.snapshots.length,0);
   assert.equal(out.missingSeries.length,5);
   assert.equal(out.partialFailureCode,"DOL_ETA538_PDF_INVALID");
+  assert.equal(out.stateFailureCode,"DOL_ETA539_SOURCE_FAILED");
+});
+test("W04 ETA539-only network outage keeps the four verified PDF National observations and exact state error",async()=>{
+  const pdf=fixturePdf(),mock=makeFetch(pdf,{stateFail:true});
+  const adapter=createEmploymentR6DolEta538Provider({fetchImpl:mock.fetchImpl,
+    now:()=>new Date(CHECKED),sourceConfig:sourceConfig(pdf)});
+  const out=await adapter.fetchGroup("DOL_UI_WEEKLY_CLAIMS",{mode:"ONE_YEAR"});
+  assert.equal(out.requestCount,2);
+  assert.deepEqual(mock.calls,[{url:PDF_URL,method:"GET"},{url:DOL_ETA539_URL,method:"GET"}]);
+  assert.equal(out.partialFailureCode,"DOL_ETA539_SOURCE_FAILED");
+  assert.equal(out.stateFailureCode,"DOL_ETA539_SOURCE_FAILED");
+  assert.equal(out.rows.filter(x=>x.geographyType==="NATIONAL").length,4);
+  assert.equal(out.rows.filter(x=>x.geographyType==="STATE").length,0);
+  assert.equal(out.snapshots.filter(x=>x.requestKey.startsWith("DOL_ETA538_PDF:")).length,1);
+  assert.deepEqual(out.missingSeries,["STATE_INITIAL_CLAIMS"]);
 });
 test("W04 exact release/byte pin and DOL-only ONE_YEAR scope fail before any provider call",async()=>{
   const pdf=fixturePdf(),mock=makeFetch(pdf);
