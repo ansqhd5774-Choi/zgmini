@@ -1,5 +1,10 @@
 # W05 실적 정보성 지표 API–사이트 연결 — 운영 완료 5단계 실행계획
 
+<!-- W05_FINAL_5OF5_EVIDENCE_20261124 -->
+
+**최신 유효 결과 (2026-11-24): W05 실적 정보행 운영 5/5 DONE.** 마지막 5단계의 정규 자연 갱신·UNCHANGED/ALREADY_STORED·중복 방지·실사이트 검증은 실제 Writer [#3243](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3243#issuecomment-7124638333)에서 source `24077edc2fb4196e83ba202fdd9681b1fe841447`, 자연 `PUBLISH/VERIFIED` 및 세 키 각각 `ALREADY_STORED/readbackAtWriter=true`로 확인. 강화 단일 파일 B [#3241](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3241#issuecomment-7124451071)은 설치 1회 완료, Reader/Controller는 기존 성공 보호 상태를 유지한다. 승인 공개 이력 36개(WPSFD42 26, QFR 5, BEA 5)는 새로운 Writer의 필수 점별 parity 비교 후 반환되는 실제 성공 경로에서 일치. 기존 Production BEA·QFR [Run45220124737](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45220124737), WPSFD42 [Run45335459406](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45335459406) 390/1440 및 공개 시각/출처/차트 PASS 증거를 재사용. 별도 5경로 의미 동치 지원·다른 업무·과거 82개 순번 완료율은 이 W05 5/5와 합산하지 않는다. 상세 [#68 최신 원장](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-7124665082).
+
+
 개정: 2026-11-21 KST / 저장소 `ansqhd5774-Choi/zgmini` / 브랜치 `codex/api-site-integration-r1-20261026` / 개편 전HEAD `61e2c02eb2bbd4ef967a8506ee78b3324c1331f3`.
 
 ## 1. 목적·완료 범위·현재 위치
@@ -8,7 +13,7 @@
 
 이 브랜치의 주 실행은 위 **실적 정보행 종단 완료**다. 물가/시장일정/테마/고용 **5개 공개 경로의 D1 의미 동치 감사**는 독립 지원 업무다. 두 업무의 완료율·승인·소유자를 합치지 않는다. 다른4담당의 데이터 복구를 W05의 전역 선행조건으로 만들지 않는다.
 
-**현재 4/5단계 완료·5단계 진행 중.** 완료 조건 4개/5개이며 실제 작업량 80%를 의미하지 않는다. 3단계 BEA NIPA/QFR/WPSFD42 기존 저장형 게시/GET 완료, 4단계의 BEA 실사이트 390/1440값·날짜·출처·5분기 차트까지 [Production #45220124737](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45220124737)에서 PASS했다. 5단계는 기존 정상 갱신·UNCHANGED 운영 영수증 및 인계 종결을 대조한다. 활성 Deployment ID는 별도 계보 미확인으로, 이미 PASS한 화면 검증을 무효화하지 않는다. 과거 단계 계수는 현행 실행·진행률 기준에서 제외한다. 기존 순번을 유지하려고 실제 진행 가능한 게시/화면 검증을 멈추지 않는다. 이 개편은 기존 완료·실패를 소급 변경한 것이 아니다.
+**현행 W05 실적 정보행 운영 완료 5/5단계 DONE (2026-11-24 KST 실운영 근거).** 완료 조건 4개/5개이며 실제 작업량 80%를 의미하지 않는다. 3단계 BEA NIPA/QFR/WPSFD42 기존 저장형 게시/GET 완료, 4단계의 BEA 실사이트 390/1440값·날짜·출처·5분기 차트까지 [Production #45220124737](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45220124737)에서 PASS했다. 5단계는 기존 정상 갱신·UNCHANGED 운영 영수증 및 인계 종결을 대조한다. 활성 Deployment ID는 별도 계보 미확인으로, 이미 PASS한 화면 검증을 무효화하지 않는다. 과거 단계 계수는 현행 실행·진행률 기준에서 제외한다. 기존 순번을 유지하려고 실제 진행 가능한 게시/화면 검증을 멈추지 않는다. 이 개편은 기존 완료·실패를 소급 변경한 것이 아니다.
 
 ## 2. 현재 실행 순서
 
@@ -18,7 +23,7 @@
 | 2 | 실제 미확보 원자료·저장 계산 마무리 | WPSFD42 정확 수집 효과 승인 확인→기존 단회 B→SQLite 원문/해시/checkpoint readback→저장 자료 계산. 이미 확보된 QFR/BEA는 재수집하지 않음 | DONE — #2767 원본 22행·해시 및 #2864 실제 RAW/YOY 2행 계산, R4 서비스 source checkpoint(sourceVersion/sourceStoredAt) #2882 readback 일치 |
 | 3 | 저장된 결과의 기존 게시·API 연결 | 적격 BLS 서비스/BEA 단위이익/QFR 등 필요한 각 projection을 기존 Writer로 게시·D1 readback·저장형 GET 대조. 정상 경로는 재게시하지 않음 | DONE — QFR #2768, WPSFD42 #2882 유지; BEA JSON #3029 실제 1키 D1 readback PASS 및 Production #45206002236 API HTTP 200/390·1440px 연결 완료 |
 | 4 | PC·모바일 정보행·날짜·차트 확인 | 기존 점수/다른 실적 도메인과 정보행 분리, 실제 저장 값·단위·관측/수집/게시일·차트·결측 표시 일치 | **DONE** — WPSFD42 7/7·QFR 이전 PASS 보존; BEA NIPA 값 $0.250/관측 2026-06-30, 차트 첫 $0.216·마지막 $0.250, 분리된 PC/D1 시각·출처/고지 390/1440px #45220124737 전부 PASS |
-| 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | **IN_PROGRESS** — #2768/#2882/#3029 D1 정확키 3개 기존 게시 PASS, QFR/WPSFD42/BEA 소스 멱등 분기 확인; 실제 정규 갱신/UNCHANGED 영수증은 해당 범위 미확인 |
+| 5 | 정규 갱신·최소 통합·미완료 인계 종결 | 기존 실행 근거로 갱신·UNCHANGED·중복 방지 확인, 필요한 수정의 실제 적용·화면까지 검증. 별도5키 감사는 범위별 상태로 인계 | **DONE — #3241 Writer 한 파일 B 실설치, #3243 자연 PUBLISH/VERIFIED·3키 ALREADY_STORED, 36개 공개 이력 전체 비교 PASS, Production 390/1440 화면 PASS (별도 5개 지원 감사 분리)** |
 
 현재 상태·NEXT는 [진행원장 상단](EARNINGS_RECESSION_R1_R6_82_STEP_PROGRESS_20261116.md)을 따른다. WPSFD42 B 수집·실PC 계산·R4 source checkpoint·D1 게시·실사이트 검증은 실제 완료 증거를 재사용하며 재실행하지 않는다. BEA 단위이익은 #2815 원본/선택 설치 승인 및 실PC CAS·lease를 따로 처리한다. 동일 자원에 겹치는 운영 쓰기만 기존 lease/Owner 절차로 직렬화한다.
 
