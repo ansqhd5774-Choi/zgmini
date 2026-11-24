@@ -108,6 +108,11 @@ test("W04 exact readback rejects a byte-flipped PDF, chunk reorder, lost chunk, 
     assert.equal(verifyStoredDolAdvancePdfRawSnapshot(rows,{
       ...opts,releaseDate:"2026-11-25",
     }).status,"HOLD");
+    const corrupted=JSON.parse(rows[0].detail_json);
+    corrupted.sourceObservationWeeks.INITIAL_CLAIMS="2026-11-07";
+    const mutated=rows.map(row=>({...row,detail_json:JSON.stringify(corrupted)}));
+    assert.equal(verifyStoredDolAdvancePdfRawSnapshot(mutated,opts).status,"HOLD",
+      "incorrect claimed observation week must never pass with valid PDF bytes");
   }finally{sqlite.close()}
 });
 test("W04 malformed date, tampered source and binary-only payload cannot be silently promoted",()=>{
