@@ -273,45 +273,71 @@ test("SQLite-open evidence remains true when both PIT audit and stage fail after
   assert.equal(report.status,"FAIL");
 });
 
-test("WAL read-only open is fail-closed before SQLite can create missing sidecars",async t=>{
+test("checkpointed Core WAL without sidecars uses safe native read-only SQLite",async t=>{
   const env=environment(t);fixture(env.core,{wal:true});fixture(env.candidate,{row:true});
-  const filesBefore=fs.readdirSync(env.dir).sort();
+  const original=fs.readFileSync(env.core);
   assert.equal(fs.existsSync(env.core+"-wal"),false);
+  assert.equal(fs.existsSync(env.core+"-shm"),false);
+  assert.deepEqual(inspectWalSidecars(env.core),{walMode:true,walSidecarsPreexisting:false});
+  const result=await runEmploymentR6Runner(argv(env));
+  assert.equal(result.status,"PASS",JSON.stringify(result));
+  const report=JSON.parse(fs.readFileSync(path.join(env.output,result.reportFile+".json"),"utf8"));
+  assert.equal(report.sqliteOpened,true);
+  assert.equal(report.walFailure,null);
+  assert.equal(report.walPreflight.coreObserved,true);
+  assert.equal(report.walPreflight.coreWalMode,true);
+  assert.equal(report.walPreflight.coreWalSidecarsPreexisting,false);
+  assert.equal(report.summary.sourceFeatures,1);
+  assert.equal(report.operationalDirectoryWrites,"NOT_ASSERTED");
+  assert.equal(report.providerCalls,0);
+  assert.equal(report.d1Writes,0);
+  assert.deepEqual(fs.readFileSync(env.core),original);
+});
+
+test("checkpointed isolated candidate WAL without sidecars is not overblocked",async t=>{
+  const env=environment(t);fixture(env.core);fixture(env.candidate,{wal:true,row:true});
+  const before=fs.readFileSync(env.candidate);
+  assert.equal(fs.existsSync(env.candidate+"-wal"),false);
+  assert.deepEqual(inspectWalSidecars(env.candidate),{walMode:true,walSidecarsPreexisting:false});
+  const result=await runEmploymentR6Runner(argv(env));
+  assert.equal(result.status,"PASS",JSON.stringify(result));
+  const report=JSON.parse(fs.readFileSync(path.join(env.output,result.reportFile+".json"),"utf8"));
+  assert.equal(report.walPreflight.coreObserved,true);
+  assert.equal(report.walPreflight.candidateObserved,true);
+  assert.equal(report.walPreflight.candidateWalMode,true);
+  assert.equal(report.walPreflight.candidateWalSidecarsPreexisting,false);
+  assert.equal(report.sqliteOpened,true);
+  assert.equal(report.walFailure,null);
+  assert.equal(report.summary.sourceFeatures,1);
+  assert.deepEqual(fs.readFileSync(env.candidate),before);
+});
+
+test("WAL non-file sidecar still blocks before native database read",async t=>{
+  const env=environment(t);fixture(env.core,{wal:true});fixture(env.candidate,{row:true});
+  fs.mkdirSync(env.core+"-wal");
   assert.throws(()=>inspectWalSidecars(env.core),/WAL_SIDECAR_NOT_READY/);
   const result=await runEmploymentR6Runner(argv(env));
   assert.equal(result.status,"BLOCKED");
   assert.equal(result.code,"WAL_SIDECAR_NOT_READY");
-  assert.equal(fs.existsSync(env.core+"-wal"),false);
-  assert.equal(fs.existsSync(env.core+"-shm"),false);
-  assert.deepEqual(fs.readdirSync(env.dir).sort(),filesBefore);
   const report=JSON.parse(fs.readFileSync(path.join(env.output,result.reportFile+".json"),"utf8"));
   assert.equal(report.sqliteOpened,false);
-  assert.equal(report.walPreflight.coreObserved,false);
-  assert.equal(report.walPreflight.candidateObserved,false);
-  assert.deepEqual({role:report.walFailure.dbRole,phase:report.walFailure.phase,
-    header:report.walFailure.headerMode,wal:report.walFailure.walState,
-    shm:report.walFailure.shmState},{role:"CORE",phase:"INITIAL_SEAL",
-    header:"WAL",wal:"ABSENT",shm:"ABSENT"});
-  assert.match(report.walFailure.observedAt,/^\d{4}-\d{2}-\d{2}T/);
-  const txt=fs.readFileSync(path.join(env.output,result.reportFile+".txt"),"utf8");
-  assert.match(txt,/WAL_FAILURE_ROLE: CORE/);
-  assert.doesNotMatch(txt,/employment-r6-runner-fixture-|PRIVATE/);
+  assert.equal(report.walFailure.dbRole,"CORE");
+  assert.equal(report.walFailure.phase,"INITIAL_SEAL");
+  assert.equal(report.walFailure.walState,"NOT_FILE");
+  assert.equal(report.walFailure.shmState,"ABSENT");
 });
 
-test("WAL failure identifies isolated candidate when Core preflight succeeded",async t=>{
-  const env=environment(t);fixture(env.core);fixture(env.candidate,{wal:true,row:true});
-  assert.equal(fs.existsSync(env.candidate+"-wal"),false);
-  const result=await runEmploymentR6Runner(argv(env));
-  assert.equal(result.status,"BLOCKED");
-  const report=JSON.parse(fs.readFileSync(path.join(env.output,result.reportFile+".json"),"utf8"));
-  assert.equal(report.walPreflight.coreObserved,true);
-  assert.equal(report.walPreflight.candidateObserved,false);
-  assert.equal(report.walFailure.dbRole,"CANDIDATE");
-  assert.equal(report.walFailure.phase,"INITIAL_SEAL");
-  assert.equal(report.walFailure.walState,"ABSENT");
-  assert.equal(report.walFailure.shmState,"ABSENT");
-  assert.equal(report.sqliteOpened,false);
-  assert.equal(fs.existsSync(env.candidate+"-wal"),false);
+test("WAL seal accepts SQLite-created sidecars but still checks original DB identity",t=>{
+  const env=environment(t);fixture(env.core,{wal:true,row:true});
+  const seal=captureWalSidecarSeal(env.core);
+  assert.equal(seal.preflight.walSidecarsPreexisting,false);
+  assert.equal(seal.wal,null);
+  assert.equal(seal.shm,null);
+  const db=new DatabaseSync(env.core,{readOnly:true});
+  try{
+    assert.equal(db.prepare("SELECT COUNT(*) AS count FROM "+TABLE).get().count,1);
+    assert.doesNotThrow(()=>assertWalSidecarSeal(env.core,seal));
+  }finally{db.close();}
 });
 
 test("already-present WAL sidecars permit a bounded read without claiming zero directory I/O",async t=>{
