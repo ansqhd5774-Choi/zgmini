@@ -15,6 +15,7 @@ permissions:
   issues: write
 concurrency:
   group: ci-failure-issue-intake
+  queue: max
   cancel-in-progress: false
 jobs:
   record-verified-failure:
