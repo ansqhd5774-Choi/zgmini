@@ -13,6 +13,8 @@ permissions:
   contents: read
   actions: read
   issues: write
+# GitHub documents concurrency.queue; actionlint 1.7.12 wrongly flags the key.
+# The changed-workflow CI independently validates queue values before a narrow waiver.
 concurrency:
   group: ci-failure-issue-intake
   queue: max
