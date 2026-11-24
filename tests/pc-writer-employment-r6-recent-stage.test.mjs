@@ -167,7 +167,7 @@ test("manual recent stage writes candidate only, retains core file and reports 1
     now: () => new Date("2026-11-01T10:00:00Z"), fetchImpl: fetch,
   });
   assert.deepEqual(RECENT_GROUPS, ["DOL_UI_WEEKLY_CLAIMS", "BLS_EMPLOYMENT_SITUATION", "BLS_JOLTS", "BLS_ECI"]);
-  assert.equal(result.status, "CANDIDATE_SOURCE_ROWS_COLLECTED");
+  assert.equal(result.status, "CANDIDATE_SOURCE_ROWS_COLLECTED", JSON.stringify({collectionStatus:result.collectionStatus,groups:result.groups,baselineMissing:result.baselineMissingSourceSeries,staged:result.stagedMissingSourceSeries}));
   assert.equal(result.baselineMissingSourceSeries.length, 18);
   assert.equal(result.stagedMissingSourceSeries, 18);
   assert.equal(result.stagedQuarterSourceSeries, 18);
@@ -187,7 +187,7 @@ test("manual recent stage writes candidate only, retains core file and reports 1
     now: () => new Date("2026-11-01T10:02:00Z"),
     fetchImpl: () => { throw new Error("REPEAT_SHOULD_NOT_FETCH"); },
   });
-  assert.equal(repeated.status, "CANDIDATE_SOURCE_ROWS_COLLECTED");
+  assert.equal(repeated.status, "CANDIDATE_SOURCE_ROWS_COLLECTED", JSON.stringify({status:repeated.status,collectionStatus:repeated.collectionStatus,groups:repeated.groups,baselineMissing:repeated.baselineMissingSourceSeries,stagedMissing:repeated.stagedMissingSourceSeries,plannedGroups:repeated.plannedGroups}));
   assert.equal(repeated.providerRequests, 0);
   assert.equal(repeated.stagedMissingSourceSeries, 18);
   assert.deepEqual(fs.readdirSync(f.outputDir).sort(), [
