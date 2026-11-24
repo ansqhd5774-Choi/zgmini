@@ -151,3 +151,11 @@
 - **영향:** R2 P2-C 판단 조사 완료; 새로운 build/tsconfig/패키지/Workflow/Runner 만들지 않음. Type/Build `NOT_APPLICABLE`의 범위는 웹 방식 검사에 한하며 소스 검증·운영 설치 무결성 의무를 없애지 않음.
 
 **다음 필수 작업:** P2-D 기존 유효 PC E2E 실행·결과 원장과 Cloudflare/D1/API/UI의 동일 키·시각·버전 대조. P2-E 기존 CodeQL/Gitleaks/Oxlint/Zizmor/npm audit 실행 결과 및 라이선스/비용 정책 최신 evidence 정리. 소스 오류가 독립적으로 재현되면 최신 main 기점 분리 브랜치에서 최소 수정·CI·PR; 그 전에는 운영 변경·새 CI를 하지 않는다.
+
+
+### R2 P2-E 기존 보안/의존성 실측 재확인 (2026-11-25)
+
+- 본체 `main@8410a857d2d8cd47beae811152a676c6eee07a75`에서 **Node.js CI #45448912690 SUCCESS** (`npm ci`, Build, `tsc --noEmit`, 회귀시험, 변경 소스 ESLint, `npm audit --omit=dev --audit-level=high` 포함), **CodeQL #45448912575 SUCCESS**, **Secret Scan #45448912664 SUCCESS**. 일치 SHA 검증. ESLint는 변경 소스 범위, npm audit은 현행 임계/프로덕션 범위이지 무취약점 보장 아님.
+- PC 제어 PR #3434 HEAD `57343f59832ac33a8327985586ab6c8150ddb98e` 기준 **C996 #45455116728 SUCCESS** (`node --test` + changed GitHub Actions에 대한 Zizmor), **Secret Scan #45455117121 SUCCESS** (Gitleaks history + changed JS Oxlint), **W05 Publication Source #45455117036 SUCCESS**. #3434는 main 병합 `b299f95940975cbaadde9ccb99d4588dabaf4526`, 다만 검사 HEAD와 병합 SHA의 구분을 유지.
+- PC tree `truncated=false`, npm/lockfile 없음. PC에 본체 `npm audit` 재사용 불가. 유료 private CodeQL/Dependency Review 기능은 권한·요금/사용자 승인 없이 적용하지 않음. 기존 소스 CI 보안 검사로 검증되는 범위만 `IMPLEMENTED`, 전체 무취약·운영 설치 무결성으로 확대하지 않음.
+- 이 단계에서 새 보안 미탐지 결함은 재현되지 않았으며 신규 도구·유료 서비스·Workflow·운영 변경 없음. P2-E 범위 현황 조사는 완료, 미입증은 GitHub private 유료 기능 활성 상태와 운영 전 구간 E2E 별도 증거.
