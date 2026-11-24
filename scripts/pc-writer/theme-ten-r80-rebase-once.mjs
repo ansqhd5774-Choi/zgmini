@@ -1,3 +1,4 @@
+import {withR54SourceLeaseSync} from './r54-source-lease.mjs';
 // R80: one-file, pinned fix for the existing R54 writer's same-day D1 CAS.
 // Does NOT change schedules, rosters, scores, formulas, raw input or consent.
 import fs from 'node:fs';
@@ -66,7 +67,10 @@ function latestR54(folder){
   d1Writes:count===undefined?null:Number(count),
   publicScoresMatched:t.match(/"publicScoresMatched"\s*:\s*(true|false)/)?.[1]??null};
 }
-export function pinnedInstall({home=HOME,payload=HERE}={}){
+export function pinnedInstall(options={}){
+ return withR54SourceLeaseSync(()=>pinnedInstallUnprotected(options));
+}
+function pinnedInstallUnprotected({home=HOME,payload=HERE}={}){
  const root=fs.realpathSync(home);
  const dest=path.resolve(root,PATCH),src=path.resolve(payload,PATCH);
  if(!dest.startsWith(root+path.sep)||fs.lstatSync(dest).isSymbolicLink()||
