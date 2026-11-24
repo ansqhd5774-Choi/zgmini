@@ -85,8 +85,9 @@ test('existing Chromium browser workflow runs the bounded lab and uploads eviden
  const y=readFileSync(new URL('../.github/workflows/community-chat-browser.yml',import.meta.url),'utf8');
  const start=y.indexOf('      - name: Start local dev UI');
  const perf=y.indexOf('      - name: Measure isolated Chromium performance laboratory');
- const tests=y.indexOf('      - name: Verify W05 BEA actual Production API');
- assert.ok(start>=0&&perf>start&&tests>perf);
+ const last=y.indexOf('      - name: Verify CNN actual PC-check 1D curve');
+ const upload=y.indexOf('      - name: Upload browser UI evidence');
+ assert.ok(start>=0&&last>start&&perf>last&&upload>perf);
  assert.match(y,/run: node scripts\/ci-performance-lab\.mjs/);
  assert.match(y,/artifacts\/performance-lab\//);
  assert.match(y,/runs-on: ubuntu-24\.04/);
