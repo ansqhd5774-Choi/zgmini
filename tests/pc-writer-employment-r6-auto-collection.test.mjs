@@ -224,3 +224,31 @@ test("W04 scheduled ETA538 rejects unscheduled ONE_YEAR before calling a provide
     /DOL_ETA538_SCHEDULED_SCOPE_FORBIDDEN/);
   assert.equal(calls,0);
 });
+
+
+test("W04 Thanksgiving Wednesday scheduled ETA538 PDF uses exact archive and bounded official requests",async()=>{
+ const urls=[];
+ const makeProvider=now=>createEmploymentR6ScheduledProviderFactory({
+  now:()=>new Date(now),
+  fetchImpl:async url=>{urls.push(String(url));return {ok:false,status:503};},
+ });
+ const release="2026-11-25T13:30:00.000Z"; // DOL published Wednesday 08:30 EST
+ const early=makeProvider("2026-11-25T13:29:59.000Z");
+ await assert.rejects(early.fetchGroup("DOL_UI_WEEKLY_CLAIMS",
+  {mode:"RELEASE",releaseAt:release}),/DOL_ETA538_RELEASE_NOT_SCHEDULED/);
+ assert.equal(urls.length,0,"never fetch before the official release");
+ const published=makeProvider("2026-11-25T13:45:00.000Z");
+ const result=await published.fetchGroup("DOL_UI_WEEKLY_CLAIMS",
+  {mode:"RELEASE",releaseAt:release});
+ assert.equal(result.requestCount,2,"one PDF and one ETA539 request only");
+ assert.deepEqual(urls,[
+  "https://oui.doleta.gov/press/2026/112526.pdf",
+  "https://oui.doleta.gov/unemploy/ETA539.xlsx",
+ ]);
+ assert.equal(result.partialFailureCode,"DOL_ETA538_PDF_INVALID");
+ assert.deepEqual(result.rows,[],"HTTP failure cannot fabricate official rows");
+ await assert.rejects(published.fetchGroup("DOL_UI_WEEKLY_CLAIMS",
+  {mode:"RELEASE",releaseAt:"2026-11-26T13:30:00.000Z"}),
+  /DOL_ETA538_RELEASE_NOT_SCHEDULED/);
+ assert.equal(urls.length,2,"no duplicate Thursday call after Wednesday release");
+});
