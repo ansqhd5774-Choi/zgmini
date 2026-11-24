@@ -23,6 +23,12 @@ export async function runEmploymentR6AutoCollection({
   // provider response bodies, source URLs, credentials, or raw snapshots.
   const safeCode=value=>typeof value==="string"&&/^[A-Z][A-Z0-9_]{0,99}$/.test(value)?value:null;
   const safeRequests=value=>Number.isSafeInteger(value)&&value>=0&&value<=100000?value:null;
+  // Release/circuit dates are already computed by the approved scheduler.
+  // Preserve only canonical UTC timestamps: no provider body, URL or secret.
+  const safeTime=value=>typeof value==="string"
+    &&/^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z$/.test(value)
+    &&Number.isFinite(Date.parse(value))
+    &&new Date(value).toISOString()===value?value:null;
   return {
     status:result.status,
     providerRequests:result.providerRequests??0,
@@ -34,6 +40,9 @@ export async function runEmploymentR6AutoCollection({
     plannedGroups:(result.plannedGroups??[]).map(item=>({
       groupName:item.groupName,status:item.status,due:item.due,
       ...(safeCode(item.failureCode)?{failureCode:safeCode(item.failureCode)}:{}),
+      ...Object.fromEntries(['retryAt','releaseAt','collectAt']
+        .filter(key=>safeTime(item[key])!==null)
+        .map(key=>[key,item[key]])),
     })),
   };
 }
