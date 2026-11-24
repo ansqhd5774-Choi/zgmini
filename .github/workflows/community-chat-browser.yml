@@ -71,6 +71,8 @@ on:
       - 'app/outbreak-scenarios-r51.css'
       - 'tests/outbreak-scenarios-browser-r51.mjs'
       # npm packages and Vite runtime affect every Playwright browser route.
+      - 'scripts/ci-accessibility-axe.mjs'
+      - 'tests/ci-accessibility-axe.test.mjs'
       - 'package.json'
       - 'package-lock.json'
       - 'vite.config.ts'
@@ -96,7 +98,7 @@ jobs:
       - name: Install locked repository dependencies
         run: npm ci
       - name: Install test-only Playwright without changing lockfile
-        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1 axe-core@4.14.1
       - name: Install browser for offline UI interactions
         run: npx playwright install --with-deps chromium
       # Independent W06 public chart test runs before unrelated risk-page asset checks.
@@ -151,12 +153,18 @@ jobs:
         run: node tests/dashboard-history-browser-r5.mjs
       - name: Verify CNN actual PC-check 1D curve and stale-session exclusion at 390/1440
         run: node tests/cnn-current-session-verified-checks-browser-r12.mjs
+      # One local WCAG scan reusing the existing Playwright Chromium and dev UI.
+      # Existing findings are evidence, not an unapproved global PR gate.
+      - name: Measure local WCAG A/AA accessibility with axe-core
+        timeout-minutes: 2
+        run: node scripts/ci-accessibility-axe.mjs
       - name: Upload browser UI evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: community-chat-browser-r1
           path: |
+            artifacts/ci-accessibility/
             artifacts/community-chat-browser/
             artifacts/risk-detail-side-rails/
             artifacts/outbreak-scenarios/
