@@ -96,7 +96,7 @@ test("W04 rejects missing, duplicated, tampered or XML-masquerading National row
       {observationRows:original.slice(1)},
       {observationRows:[original[0],...original.slice(0,3)]},
       {observationRows:alter(0,{value:999999})},
-      {observationRows:alter(0,{observation_date:"2026-11-07"})},
+      {observationRows:alter(0,{observation_date:"2026-10-31"})},
       {observationRows:alter(0,{source_hash:"0".repeat(64)})},
       {observationRows:alter(0,{provider_series_id:"DOL:r539cy"})},
       {observationRows:alter(0,{available_at:"2026-11-18T00:00:00.000Z"})},
