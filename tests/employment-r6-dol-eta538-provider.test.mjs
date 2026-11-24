@@ -7,7 +7,7 @@ import {EMPLOYMENT_R4_CORE_STATES} from "../lib/market-score/employment-r4-shado
 import {DOL_ETA539_URL} from "../lib/market-score/employment-r4-shadow-provider.mjs";
 import {DOL_NATIONAL_CLAIMS_URL} from "../lib/market-score/employment-r6-provider.mjs";
 import {fetchDolAdvancePdfCandidate} from "../lib/market-score/employment-r6-dol-advance-pdf-candidate.mjs";
-import {createEmploymentR6DolEta538Provider} from "../lib/market-score/employment-r6-dol-eta538-provider.mjs";
+import {createEmploymentR6DolEta538Provider,createEmploymentR6ScheduledDolProvider} from "../lib/market-score/employment-r6-dol-eta538-provider.mjs";
 
 const RELEASE="2026-11-19T13:30:00.000Z",CHECKED="2026-11-24T14:14:40.919Z";
 const PDF_URL="https://oui.doleta.gov/press/2026/111926.pdf";
@@ -149,4 +149,71 @@ test("W04 original candidate public API still returns no raw PDF bytes",async()=
   assert.equal(Object.hasOwn(out,"rawPdfBytes"),false);
   assert.equal(Object.hasOwn(out,"bytes"),false);
   assert.equal(mock.calls.length,1);
+});
+
+
+test("W04 scheduled RELEASE selects exact official archived ETA538 PDF and 60w ETA539 within two calls",async()=>{
+  const pdf=fixturePdf(),mock=makeFetch(pdf);
+  const provider=createEmploymentR6ScheduledDolProvider({fetchImpl:mock.fetchImpl,
+    now:()=>new Date(CHECKED)});
+  const out=await provider.fetchGroup("DOL_UI_WEEKLY_CLAIMS",{
+    mode:"RELEASE",releaseAt:RELEASE,
+  });
+  assert.deepEqual(mock.calls,[{url:PDF_URL,method:"GET"},{url:DOL_ETA539_URL,method:"GET"}]);
+  assert.equal(out.requestCount,2);
+  assert.equal(out.partialFailureCode,undefined);
+  assert.deepEqual(out.missingSeries,[]);
+  assert.deepEqual(out.snapshots.map(x=>x.requestKey),[
+    "DOL_ETA538_PDF:2026-11-19","DOL_ETA539:60w"]);
+  assert.equal(out.snapshots[0].detail.originalBodySha256,hash(pdf));
+  assert.equal(out.nationalResponseEvidence.sourceKind,"ETA538_ARCHIVED_RELEASE");
+  assert.equal(out.nationalResponseEvidence.priorPinRequired,false);
+  assert.deepEqual(out.rows.filter(x=>x.geographyType==="NATIONAL")
+    .map(x=>x.observationDate),["2026-11-14","2026-11-14",
+    "2026-11-07","2026-11-07"]);
+  assert.equal(out.rows.filter(x=>x.geographyType==="STATE").length,51);
+  assert.ok(out.rows.filter(x=>x.geographyType==="NATIONAL")
+    .every(row=>row.provenance.originalPdfSha256===hash(pdf)
+      &&row.provenance.historicAvailabilityAttested===false));
+  assert.ok(!mock.calls.some(x=>x.url===DOL_NATIONAL_CLAIMS_URL));
+});
+
+test("W04 scheduled PDF rejects nonrelease dates and manual modes before provider requests",async()=>{
+  const mock=makeFetch();
+  const provider=createEmploymentR6ScheduledDolProvider({fetchImpl:mock.fetchImpl,
+    now:()=>new Date(CHECKED)});
+  for(const params of [
+    {mode:"ONE_YEAR",releaseAt:RELEASE},
+    {mode:"RELEASE",releaseAt:null},
+    {mode:"RELEASE",releaseAt:"2026-11-12T13:30:00.000Z"},
+    {mode:"RELEASE",releaseAt:"2026-11-25T13:30:00.000Z"},
+  ])await assert.rejects(
+    provider.fetchGroup("DOL_UI_WEEKLY_CLAIMS",params),/DOL_ETA538_/);
+  assert.equal(mock.calls.length,0);
+});
+
+test("W04 scheduled PDF/ETA539 failures preserve independent sources, limits and original error codes",async()=>{
+  const pdf=fixturePdf();
+  const missing=makeFetch(pdf,{badPdf:true});
+  const provider=createEmploymentR6ScheduledDolProvider({fetchImpl:missing.fetchImpl,
+    now:()=>new Date(CHECKED)});
+  const out=await provider.fetchGroup("DOL_UI_WEEKLY_CLAIMS",{
+    mode:"RELEASE",releaseAt:RELEASE,
+  });
+  assert.equal(out.requestCount,2);
+  assert.equal(out.partialFailureCode,"DOL_ETA538_PDF_INVALID");
+  assert.equal(out.rows.filter(r=>r.geographyType==="NATIONAL").length,0);
+  assert.equal(out.rows.filter(r=>r.geographyType==="STATE").length,51);
+  assert.equal(out.missingSeries.length,4);
+  const stateFailed=makeFetch(pdf,{stateFail:true});
+  const second=await createEmploymentR6ScheduledDolProvider({fetchImpl:stateFailed.fetchImpl,
+    now:()=>new Date(CHECKED)}).fetchGroup("DOL_UI_WEEKLY_CLAIMS",{
+      mode:"RELEASE",releaseAt:RELEASE,
+    });
+  assert.equal(second.requestCount,2);
+  assert.equal(second.partialFailureCode,"DOL_ETA539_SOURCE_FAILED");
+  assert.equal(second.stateFailureCode,"DOL_ETA539_SOURCE_FAILED");
+  assert.equal(second.rows.filter(r=>r.geographyType==="NATIONAL").length,4);
+  assert.equal(second.rows.filter(r=>r.geographyType==="STATE").length,0);
+  assert.deepEqual(second.missingSeries,["STATE_INITIAL_CLAIMS"]);
 });
