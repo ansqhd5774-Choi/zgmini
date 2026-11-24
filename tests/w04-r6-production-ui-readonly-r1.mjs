@@ -1,7 +1,13 @@
 import assert from "node:assert/strict";
 import {mkdirSync,writeFileSync} from "node:fs";
 import {chromium} from "playwright";
-import {EMPLOYMENT_R6_FEATURES,EMPLOYMENT_R6_FORMULA_HASH} from "../lib/market-score/employment-r6-formula.mjs";
+import {EMPLOYMENT_R6_FEATURES} from "../lib/market-score/employment-r6-formula.mjs";
+
+// Approved Production R2 read contract, independently evidenced by Core/D1 #3466
+// and the latest zgmini/main formula module. The W04 feature branch still
+// contains the historical R1 hash; never treat that branch SHA as Production.
+const APPROVED_PRODUCTION_R6_FORMULA_HASH="sha256:04486846cd6063452d1c764116d3a31209f074d23a8764bf5b6ec8467095210e";
+const APPROVED_PRODUCTION_R6_METHODOLOGY="EMP-R6-FORMULA-R2-CPS-2025-10";
 
 // Production-only readback. No API fixtures, D1 writes, provider calls or deployments.
 // Run on an existing Playwright-equipped host: node tests/w04-r6-production-ui-readonly-r1.mjs
@@ -17,7 +23,8 @@ const expectedValue=item=>item.rawStatus!=="UNAVAILABLE"?fmt(item.value,item.uni
 function checkData(body,headers){
  assert.equal(body.kind,"EMPLOYMENT_R6_ONE_YEAR_STORED_DISPLAY_R1");
  assert(["PARTIAL","READY"].includes(body.status),"Production R6 status");
- assert.equal(body.formulaHash,EMPLOYMENT_R6_FORMULA_HASH,"Deployed formula contract must match source");
+ assert.equal(body.formulaHash,APPROVED_PRODUCTION_R6_FORMULA_HASH,"Production must retain approved R2 hash");
+ assert.equal(body.methodologyVersion,APPROVED_PRODUCTION_R6_METHODOLOGY,"Production must retain approved R2 methodology");
  assert.equal(body.indicators?.length,29,"Production must include 29 source indicators");
  assert.deepEqual(body.indicators.map(item=>item.id),EMPLOYMENT_R6_FEATURES.map(item=>item.id),"Exact approved ID order");
  assert.equal(headers["x-employment-r6-source"],"STORED_D1","GET must read stored D1 projection");
