@@ -35,10 +35,21 @@ export async function runEmploymentR6AutoCollection({
   }
   const result=await collect({env:{DB:db},db,fetchImpl,now,mode:"RELEASE",
     providerFactory:createEmploymentR6ScheduledProviderFactory});
+  // The collector already records these row-change counters in Core SQLite.
+  // Keep bounded counts in the existing collection checkpoint so SUCCESS can
+  // be distinguished from an actual insert/revision; missing is not zero.
+  // Never forward run IDs, source hashes, raw bodies or provider details.
+  const safeCount=value=>Number.isSafeInteger(value)&&value>=0&&value<=1_000_000?value:null;
+  const countFields=["collectedRows","inserted","revised","noop","rejected",
+    "historyRowsAdded","rawSnapshots","rawSnapshotNoops"];
+  const safeCounters=item=>Object.fromEntries(countFields
+    .filter(key=>safeCount(item?.[key])!==null).map(key=>[key,item[key]]));
   return {
     status:result.status,
     providerRequests:result.providerRequests??0,
-    groups:(result.groupResults??[]).map(item=>({groupName:item.groupName,status:item.status})),
+    groups:(result.groupResults??[]).map(item=>({
+      groupName:item.groupName,status:item.status,...safeCounters(item),
+    })),
     plannedGroups:(result.plannedGroups??[]).map(item=>({groupName:item.groupName,status:item.status,due:item.due})),
   };
 }
