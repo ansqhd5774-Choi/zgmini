@@ -74,6 +74,9 @@ on:
       - 'package.json'
       - 'package-lock.json'
       - 'vite.config.ts'
+      # R2 performance lab shares the existing installed Playwright Chromium.
+      - 'scripts/ci-performance-lab.mjs'
+      - 'tests/ci-performance-lab.test.mjs'
       - '.github/workflows/community-chat-browser.yml'
   workflow_dispatch:
 
@@ -151,12 +154,16 @@ jobs:
         run: node tests/dashboard-history-browser-r5.mjs
       - name: Verify CNN actual PC-check 1D curve and stale-session exclusion at 390/1440
         run: node tests/cnn-current-session-verified-checks-browser-r12.mjs
+      # Lab results are observations, not a new unapproved Lighthouse score gate.
+      - name: Measure isolated Chromium performance laboratory
+        run: node scripts/ci-performance-lab.mjs
       - name: Upload browser UI evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: community-chat-browser-r1
           path: |
+            artifacts/performance-lab/
             artifacts/community-chat-browser/
             artifacts/risk-detail-side-rails/
             artifacts/outbreak-scenarios/
