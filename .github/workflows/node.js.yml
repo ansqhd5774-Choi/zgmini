@@ -49,6 +49,9 @@ jobs:
           if-no-files-found: error
       - name: Type check
         run: npm run typecheck
+      # Reuse the repository's existing ESLint command; no new scanner or runner.
+      - name: Lint (ESLint)
+        run: npm run lint
       - name: Regression tests
         run: node --test tests/*.test.mjs
       - name: PC publication recovery tests
