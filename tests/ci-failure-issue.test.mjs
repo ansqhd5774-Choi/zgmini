@@ -89,3 +89,57 @@ test('tracked workflows and intake permission are fixed, without schedule or PC 
  assert.match(yml,/ref: main/);
  assert.doesNotMatch(yml,/schedule:|issue_comment:|workflow_dispatch:|pc-job\.yml/);
 });
+
+test('timed out second attempt records the exact attempt and timeout metadata',async()=>{
+ const calls=[];
+ const issue={number:6201,user:{login:'github-actions[bot]'}};
+ const request=async(resource,{method='GET',body}={})=>{
+  calls.push({resource,method,body});
+  if(resource==='actions/runs/123456/attempts/2/jobs?per_page=100')
+   return {total_count:1,jobs:[{name:'CI timeout',conclusion:'timed_out',steps:[]}]};
+  if(resource==='issues?state=open&per_page=100&page=1')return [];
+  if(resource==='issues'&&method==='POST')return {...issue,body:body.body};
+  if(resource==='issues/6201')return {...issue,body:markerFor(keyFor(WORKFLOWS[0],'CI timeout','JOB_TIMEOUT'))};
+  throw Error('unexpected route '+resource);
+ };
+ assert.deepEqual(await triage({event:event({run_attempt:2,conclusion:'timed_out'}),request}),
+  {state:'CREATED',issue:6201});
+ assert.equal(calls.some(x=>x.resource==='actions/runs/123456/attempts/1/jobs?per_page=100'),false);
+ const created=calls.find(x=>x.resource==='issues'&&x.method==='POST');
+ assert.match(created.body.body,/Attempt: 2/);
+ assert.match(created.body.body,/Conclusion: timed_out/);
+ assert.match(created.body.title,/JOB_TIMEOUT/);
+});
+test('invalid run identity fails closed without GitHub API requests',async()=>{
+ for(const changed of [{id:0},{run_attempt:0},{head_sha:'invalid'}]){
+  let calls=0;
+  await assert.rejects(triage({event:event(changed),request:async()=>{calls++;throw Error('unexpected');}}),
+   /CI_INCIDENT_RUN_IDENTITY_INVALID/);
+  assert.equal(calls,0);
+ }
+});
+test('GitHub job retrieval errors are propagated with zero issue writes',async()=>{
+ const calls=[];
+ await assert.rejects(triage({event:event(),request:async(resource,{method='GET'}={})=>{
+  calls.push({resource,method});throw Error('CI_INCIDENT_GITHUB_HTTP_403');
+ }}),/CI_INCIDENT_GITHUB_HTTP_403/);
+ assert.deepEqual(calls.map(x=>x.method),['GET']);
+});
+test('full comment inventory blocks writes rather than duplicating an incident',async()=>{
+ const f=fixture({existing:true,comments:Array.from({length:100},()=>({body:'other run'}))});
+ await assert.rejects(triage({event:event(),request:f.request}),/CI_INCIDENT_COMMENTS_UNVERIFIED/);
+ assert.equal(f.calls.some(x=>x.method==='POST'),false);
+});
+test('an incorrect Issue creation readback is rejected',async()=>{
+ let wrote=0;
+ const request=async(resource,{method='GET',body}={})=>{
+  if(resource==='actions/runs/123456/attempts/1/jobs?per_page=100')
+   return {total_count:1,jobs:[failureJob]};
+  if(resource==='issues?state=open&per_page=100&page=1')return [];
+  if(resource==='issues'&&method==='POST'){wrote++;return {number:6202};}
+  if(resource==='issues/6202')return {number:6202,body:'missing marker'};
+  throw Error('unexpected route '+resource);
+ };
+ await assert.rejects(triage({event:event(),request}),/CI_INCIDENT_ISSUE_CREATE_READBACK/);
+ assert.equal(wrote,1);
+});
