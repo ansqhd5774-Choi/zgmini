@@ -2658,3 +2658,12 @@
 - **계획 동기화:** 현재 5단계 정본 `docs/EMPLOYMENT_R6_CURRENT_EXECUTION_PLAN_20261116.md`를 2026-11-25 운영 상태로 갱신했다. 이전 문서의 "11/21 DOL 실패 재개"는 역사적 기준선으로 보존하고 재개 지점을 **새 정규 수집 후 Writer checkpoint→로컬 결과/D1 readback→실화면**으로 변경했다. 신규 승인·설치·새 감시 예약·원자료 수동 재호출 0.
 - **다음 하나의 결정적 증거:** 검증용 PC A 취소 조건이 실제로 바뀌었다는 영수증이 있는 경우에만 해당 scope 기존 공식 read-only로 새 **Writer checkpoint 시간/상태와 D1 stored_at/body hash**를 회수. 그 전에는 이미 완료된 수집이나 구 D1 저장값을 새 데이터 완료로 처리하지 않음. 필요 시 실제 공개 브라우저 대조는 독립 진행.
 - **진행률 2/5(40%) 유지:** 1·2 DONE, 3 자동 DOL SUCCESS를 포함한 `IN_PROGRESS`, 4·5 `NOT_DONE`. 코드/DB/D1/예약/운영 source 변경 없음.
+
+## 245. W04 Production R6 비모의 브라우저 동치 검증기 소스 추가 (2026-11-25 KST)
+<!-- W04-20261125-R6-PRODUCTION-REAL-BROWSER-245 -->
+- 기존 #3471/#3472는 CLOSED/not_planned 및 JSON/TXT 미생성 상태를 유지한다. 11/24 19:23:15.174Z DOL 수집 성공 이후 Writer·D1 신규 계산/게시 동치는 **미검증**. 마지막 실제 #3469 Core 결과의 Writer checkpoint 19:13:53.922Z 및 local-cycle 19:17:41.502Z는 신규 수집보다 이전이며, #3466 D1 일치 해시 `4b5f4807...` 역시 새 수집 전 자료에 한정된다.
+- PC Job `.github/workflows/pc-job.yml`의 concurrency는 이슈번호 기준 `pc-request-${{ github.event.issue.number }}`, `cancel-in-progress: false`다. #3471/#3472의 동시 요청이 단순 concurrency 자기취소라고 입증할 근거는 없고 취소 실행 행위자와 Runner 0-step 원인은 **미확정**. 일반 자동화 담당 범위를 임의 수정하거나 요청 재실행하지 않는다.
+- 기존 fixture API Playwright 시험만으로 실제 공개 화면 동치가 성립하지 않는 공백을 좁히기 위해 **신규 읽기 전용 테스트 소스** `tests/w04-r6-production-ui-readonly-r1.mjs`를 W04 전용 브랜치에 추가했다. GitHub 커밋 `06f1a044706284fe0beec88dc2d0c3bdd74452f8`. 모의 API 없이 Production 정확 엔드포인트와 페이지를 GET하고, 29개 ID/원값·단위/관측일/점수/이력 결측/미니차트 마지막 점, 1440/390px 및 JS 오류·넘침을 검사한다. 중간 저장본 교체를 별도 불일치로 구분하고 두 뷰포트 결과/스크린샷 출력을 갖췄다.
+- **코드 구현/구문 파싱 및 브랜치 readback까지만 확인.** 본 환경의 실제 Production API 공개 GET과 브라우저 네트워크는 불가했고 신규 시험의 Playwright 실실행 결과·GitHub CI/Production PASS는 아직 없음. 이 테스트만으로 UI 완성, D1 최신 갱신이나 운영 소스 설치를 주장하지 않는다. 원자료·DB/D1·Controller·DNS·운영 Writer 수정 0.
+- **다음 실행:** 네트워크 및 Playwright가 기존에 정상 사용 가능한 승인 환경에서 신규 읽기 전용 테스트 1회 실행 후 29개 비교 결과/스크린샷 회수. 수집 이후 Writer checkpoint와 D1 저장일의 기존 정상 경로 재조회가 가능하면 같은 source 기준으로 별도 연결 확인. 기존 #3471/#3472 반복하지 않는다.
+- **단계 1·2 DONE / 3 IN_PROGRESS / 4·5 NOT_DONE, 2/5(40%) 유지.**
