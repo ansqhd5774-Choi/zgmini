@@ -55,3 +55,9 @@
 - `package.json`: `lint`/ESLint 실행 명령은 있으나 기본 Node.js CI 단계는 없음. 우선 Lint 사전 오류 확인 후 기존 workflow에 붙일지 결정.
 - Unit IMPLEMENTED, Type IMPLEMENTED, Build IMPLEMENTED, Integration PARTIAL (실제 DB/서비스 호출과 Mock/계약 구분), E2E PARTIAL 또는 특정 UI 경로 IMPLEMENTED, Lint NOT_CONFIGURED in CI, Security/Secret workflow UNVERIFIED (GitHub repo security settings도 UNVERIFIED).
 - 첫 수정 후보: 현행 기본 Node.js CI 내 Lint 단계, 다만 기존 린트 오류·빌드 정상성·CI 게이트 영향 확인 후 최소 변경.
+
+### 2026-11-25 CI 실측 — 웹사이트 Lint 초기 기준
+- 저장소 PUBLIC (GitHub metadata). GitHub native Secret Scanning은 별도 Workflow와 구분.
+- Node.js CI Draft PR #1556, 첫 Run 45431525570 (d81aa4978e2b321f3412c5fdacbe22039923eda7): Build·Type Check 성공, ESLint 625건 (errors 239, warnings 386)으로 실패. 주요 오류 @typescript-eslint/no-explicit-any (175), @next/next/no-html-link-for-pages (25), @next/next/no-assign-module-variable (11). 기존 소스 전체 검사로 인한 신규 PR 차단 위험. 무단 rule 해제/무차별 fix/가짜 PASS 금지.
+- Lint를 현행 regression·publication·Cloudflare 시험 이후로 이동. Draft PR에서 사전 오류 정밀 분류 후 단계적 enforcement 설계. 최초 실패는 해결 완료 아님.
+- 공개 actions/starter-workflows/ci/node.js.yml을 확인했고 이미 기존 npm ci, Build, Test 경로를 재사용; 중복 workflow 불필요.
