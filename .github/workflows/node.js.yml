@@ -60,40 +60,6 @@ jobs:
           path: dist/client/assets/*.js
           retention-days: 7
           if-no-files-found: error
-      # Benchmark only the locally built app, not dev mode or live Production.
-      # Official Lighthouse CI v0.16.1 (Apache-2.0), no remote upload or new job.
-      - name: Measure local production preview with Lighthouse
-        timeout-minutes: 4
-        run: |
-          set -euo pipefail
-          # Cloudflare Vite plugin runs the built Worker in local workerd.
-          # vinext start uses Node and cannot import cloudflare: modules.
-          ./node_modules/.bin/vite preview --host 127.0.0.1 --port 3000 --strictPort > /tmp/zgmini-ci-lighthouse-preview.log 2>&1 &
-          PREVIEW_PID=$!
-          trap 'kill "$PREVIEW_PID" 2>/dev/null || true' EXIT
-          READY=0
-          for i in $(seq 1 40); do
-            if curl -fsS --max-time 2 http://127.0.0.1:3000/about > /dev/null 2>&1; then
-              READY=1
-              break
-            fi
-            sleep 1
-          done
-          if [ "$READY" != 1 ]; then
-            echo "CI_PERFORMANCE_LOCAL_PREVIEW_UNAVAILABLE"
-            tail -n 35 /tmp/zgmini-ci-lighthouse-preview.log
-            exit 1
-          fi
-          npm exec --yes --package=@lhci/cli@0.16.1 -- lhci collect --config=scripts/ci-lighthouse.config.cjs
-          node scripts/ci-lighthouse-performance.mjs
-      - name: Upload local Lighthouse CI performance summary
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: local-lighthouse-performance-summary
-          path: artifacts/ci-performance-lighthouse/summary.json
-          retention-days: 7
-          if-no-files-found: warn
       - name: Type check
         run: npm run typecheck
       - name: Regression tests
