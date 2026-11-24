@@ -77,7 +77,7 @@ test('a replay of the exact calculation is idempotent, not another event',()=>{
 });
 test('a zero final score remains zero; old trend values cannot create stored PIT dates',()=>{
  const old=Array.from({length:252},(_,i)=>({
-  date:new Date(Date.UTC(2026,0,1)+i*86400000).toISOString().slice(0,10),score:i===251?0:60
+  date:new Date(Date.parse(DATE+'T00:00:00Z')-(251-i)*86400000).toISOString().slice(0,10),score:i===251?0:60
  }));
  const f=fixture({score:0,history:old});try{
   f.capture();
