@@ -40,6 +40,7 @@ test('W04 ETA538 advance and lagged continued dates remain candidate only withou
     expectedInitialWeekEnd: '2026-11-14',
   });
   assert.equal(candidate.status, 'CANDIDATE_ONLY');
+  assert.equal(candidate.reason, 'SOURCE_TEXT_REQUIRES_ORIGINAL_BYTES_ATTESTATION');
   assert.deepEqual(
     Object.fromEntries(candidate.rows.map(row => [row.logicalSeriesId, [row.observationDate, row.value]])),
     {
