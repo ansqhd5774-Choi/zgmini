@@ -41,7 +41,20 @@ function checkData(body,headers){
   recentlyScoredFeatures:body.indicators.filter(x=>x.scoreStatus==="READY"&&x.rawStatus==="READY").length
  };
  for(const [key,value] of Object.entries(expectedCounts))assert.equal(summary[key],value,"R6 summary "+key);
- return {publishedAt,sourceStoredAt:body.sourceStoredAt,asOfDate:body.asOfDate,counts:expectedCounts};
+ // W04 source-vs-publication chronology: inspect only the five bounded, public
+ // Claims indicators. A source's newer observation date is not a published
+ // value and must never be inferred from sourceStoredAt alone.
+ const claimIds=["INITIAL_CLAIMS","INITIAL_CLAIMS_4W","CONTINUED_CLAIMS","IUR","STATE_CLAIMS_BREADTH"];
+ const claimsReadback=claimIds.map(id=>{
+  const item=body.indicators.find(x=>x.id===id);
+  assert(item,"W04 bounded public Claims indicator present: "+id);
+  const historyDates=(item.history??[]).filter(x=>typeof x?.date==="string"
+   &&/^\\d{4}-\\d{2}-\\d{2}$/.test(x.date)).map(x=>x.date).sort();
+  return {id,rawStatus:item.rawStatus??null,observationDate:item.observationDate??null,
+   chartStatus:item.chartStatus??null,historyLastDate:historyDates.at(-1)??null};
+ });
+ return {publishedAt,sourceStoredAt:body.sourceStoredAt,asOfDate:body.asOfDate,
+  counts:expectedCounts,claimsReadback};
 }
 function expectedChartEndpoint(history){
  const points=history.filter(p=>typeof p.date==="string"&&finite(p.value)).slice()
