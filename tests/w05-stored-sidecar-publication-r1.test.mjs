@@ -5,6 +5,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import {saveBeaUnitNipaArchive,beaUnitNipaArchivePaths}
+ from '../scripts/pc-writer/EARNINGS_BEA_UNIT_NIPA_ARCHIVE_R1.mjs';
 import {
  W05_SAVED_KEYS,W05_SAVED_IDS,latestStoredBeaNipaSha,
  prepareW05StoredSidecar,publishW05StoredSidecar,
@@ -67,6 +69,40 @@ test('source directory absent is SKIPPED without creating PC root, SQLite or arc
     'SKIPPED_SOURCE_NOT_STORED');
   assert.equal(fs.existsSync(absent),false);
  }finally{fs.rmSync(root,{recursive:true,force:true});}
+});
+
+test('stored native BEA archive selects newer readback, preserves source provenance and fails on corruption',()=>{
+ const pcBase=fs.mkdtempSync(path.join(os.tmpdir(),'w05-stored-bea-'));
+ const record=value=>Buffer.from(JSON.stringify({BEAAPI:{Results:{Data:
+  [['2025Q2','0.216'],['2025Q3','0.219'],['2025Q4','0.222'],
+   ['2026Q1','0.231'],['2026Q2',value]]
+  .map(([TimePeriod,DataValue])=>({
+   TableName:'T11500',SeriesCode:'A463RD',LineNumber:'7',
+   TimePeriod,DataValue,CL_UNIT:'Level',UNIT_MULT:'0',
+  }))
+ }}}),'utf8');
+ const at=Date.parse('2026-11-23T12:00:00.000Z');
+ try{
+  const first=saveBeaUnitNipaArchive({
+   pcBase,rawBytes:record('0.250'),sourceStoredAt:at});
+  const second=saveBeaUnitNipaArchive({
+   pcBase,rawBytes:record('0.251'),sourceStoredAt:at+1000});
+  assert.notEqual(first.sourceVersion,second.sourceVersion);
+  assert.equal(latestStoredBeaNipaSha(pcBase,{now:NOW}),second.sourceVersion);
+  const ready=prepareW05StoredSidecar({id:'bea',pcHome:pcBase,now:NOW});
+  assert.equal(ready.status,'READY');
+  assert.equal(ready.payload.sourceVersion,second.sourceVersion);
+  assert.equal(ready.payload.indicator.value,0.251);
+  assert.equal(ready.payload.indicator.transport,'BEA_API_JSON');
+  const files=beaUnitNipaArchivePaths({pcBase,sourceSha:first.sourceVersion});
+  const original=fs.readFileSync(files.meta);
+  fs.writeFileSync(files.meta,Buffer.from('{"corrupt":true}'));
+  assert.throws(()=>latestStoredBeaNipaSha(pcBase,{now:NOW}),
+   /BEA_UNIT_NIPA_ARCHIVE_METADATA_MISMATCH/,
+   'one corrupt candidate must not be silently skipped');
+  fs.writeFileSync(files.meta,original);
+  assert.equal(latestStoredBeaNipaSha(pcBase,{now:NOW}),second.sourceVersion);
+ }finally{fs.rmSync(pcBase,{recursive:true,force:true});}
 });
 
 test('no source or stale source never opens a write-capable D1 adapter',async()=>{
