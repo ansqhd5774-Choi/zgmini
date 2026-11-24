@@ -41,7 +41,7 @@
 - 기존 2026-11-21 Production GET HTTP 200 / `PARTIAL` / 29 ID·요약·모델과 해당 저장값 일치. API `employmentR6StoredDisplayResponse`는 동일 고정키를 읽고 `Response.json(body)`로 반환하며 공개 GET에서 별도 데이터 재계산·공급자 호출 없음. 정확키의 운영 실측 원본과 공개 응답의 필수 메타데이터 연결 검증 완료. 별도 Production 본문 모든 필드의 독립 SHA 캡처는 없으므로 29개 ID별 값·단위·관측일·차트 마지막 점의 화면/API 대조는 4단계에서 검증하며 이를 2단계 D1 조회 실패로 취급하지 않는다.
 - **단계2 DONE / 단계3 IN_PROGRESS**. 아래 2단계 원문은 완료한 접근 방법의 이력으로 보존하며, 실제 다음 실행은 DOL checkpoint 수집 실패 원인 검증이다.
 
-## 4. 지금 이어갈 작업 — 2단계
+## 4. 2단계 완료 이력 — 기존 증거 재사용
 
 1. 이미 운영 중인 Writer의 최근 R6 게시 원장, 정확 저장 key `market_public_snapshots_v1 / detail:employment-r6:one-year:v1`와 재조회 영수증을 확인한다. UNCHANGED·새 게시·실패를 구분한다.
 2. 기존 승인된 공식 Cloudflare/D1 읽기 경로로 정확키의 body와 stored_at을 확인하고, 공개 응답과 PC 로컬 결과를 각각의 변환 계약에 맞춰 대조한다. 지표 ID/값/단위/관측일/상태/모델 버전/시각을 비교하며 메타데이터 일치만으로 전체 본문 일치를 선언하지 않는다. 변환된 JSON의 직렬화 hash를 원본 hash와 무조건 같게 요구하지 않는다.
