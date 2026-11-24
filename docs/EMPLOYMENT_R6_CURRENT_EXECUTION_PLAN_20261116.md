@@ -1,6 +1,6 @@
 # ZGMINI W04 고용지표 — 운영 완료 5단계 실행계획
 
-개정일: 2026-11-21 KST  
+개정일: 2026-11-25 KST  
 작업 저장소: `ansqhd5774-Choi/zgmini`  
 작업 브랜치: `codex/employment-1y-reader-r1`  
 계획 개편 직전 HEAD: `20fd8977766be7634605efa8a4f68a1863c2b339`
@@ -89,4 +89,12 @@ W04 원담당이 기존 권한 범위의 기능 작업을 끝까지 수행한다
 
 매 회차 이 파일의 단계 표와 진행 원장에 실제 변화만 동기화한다. 현재 단계/완료 근거/최초 불일치/다음 구체 실행을 짧게 기록한다. 코드·CI·설치·저장·공개·화면 검증을 구분한다. 이번 5단계 계획 작성 자체나 과거 증거 재확인만으로 단계를 올리지 않는다.
 
-**담당자 재개 지점: 3단계 DOL_UI_WEEKLY_CLAIMS 실패 원문·최종 checkpoint·실제 재시도 및 저장 최신성을 구분해 판단. 2단계 D1 조회/게시 반복 금지.**
+**담당자 재개 지점은 아래 §8의 최신 운영 검증으로 갱신한다. 위 2026-11-21 기준 수집 실패 이력은 과거 상태로 보존하며 2단계 D1 조회/게시 반복은 금지한다.**
+
+## 8. 2026-11-25 후속 운영 체크포인트 — 3~5단계 재개 기준
+- **단계1·2 DONE(기존 증거 재사용):** [#3461](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3461) / Run #45467625998의 정규 Writer 4파일 선택 설치 `WRITER_B_INSTALLED_VERIFIED`, 로컬 운영 source SHA `d8ac245003e7b8e006c2345382d5c639c6d5f18b`, Task 원본 복원. [#3467](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3467)은 실제 활성 Core와 승인 source 연결 확인. 기존 [#3466](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3466)에서 로컬↔D1 `detail:employment-r6:one-year:v1` 결과 hash 일치(29 ID·22 차트)는 **11/24 19:23 UTC 신규 수집 이전 데이터**의 유효 확인 범위이다.
+- **3단계 전진:** [#3468](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3468) / Run #45469724495, [#3469](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3469)에서 실제 2026-11-24 19:23:15 UTC 정규 DOL `RELEASE`, `DOL_UI_WEEKLY_CLAIMS=SUCCESS`, 공식 호출 2회, BLS 다른 계열은 기존 저장 결과 재사용 확인. **새 수집 이후 Writer·SQLite 상세행·D1 갱신의 동일 결과/같은 사이클 연결은 아직 미확인**. 전체 상세 감사 [#3465](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3465)는 `STATE_CLAIMS_51_COVERAGE`에서 시간 초과, 과거 51지역×600주 유효 증거 보존; 이를 DB 손상이나 신규 수집 실패로 재해석하지 않는다.
+- **실패한 읽기 작업의 정확한 종료:** 원래 [#3471](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3471) Core/Writer 및 [#3472](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3472) D1 검사 모두 원본 result JSON/TXT 0/2. 접수 시각에 대응하는 후보 Actions Run #45470608675, #45470614866은 Runner 배정 후 Step 0개·`completed/cancelled`, 후보 #45470609077/#45470617514는 `skipped`. 요청 ID를 직접 연결한 webhook 영수증은 없어 Run과 Issue의 정확한 귀속은 미인증. **AUTOMATION_RESULT_NOT_DELIVERED**로 #3471·#3472 `CLOSED/not_planned`; R6 계산·게시 장애나 정상 결과로 치환하지 않는다. 같은 조건의 무근거 재요청·강제 취소/Runner 재시작은 하지 않는다.
+- **4단계 부분 계약 증거:** 현재 `zgmini/main` R2 formula의 29개 고유 ID와 R6 화면 표의 29개 고유 ID는 순서까지 29/29 동일. 하지만 Production HTML의 hydration 전 `R6 공개 저장값 확인 중`은 실제 실데이터 없는 오류 증거가 아니며, 기존 `employment-r6-public-browser-r1.mjs`는 mocked API, 기존 R54 Production E2E는 다른 상단 점수 검증이다. **실제 29개 원값·관측일·단위·점수·차트 마지막점과 PC 1440px/모바일 390px 동치 검증은 NOT_DONE**.
+- **다음 필수 실행:** 기존 정상 Core/Writer 새 주기 결과가 현재 환경에서 확인 가능해질 때 **원본 수집 checkpoint 이후 Writer 완료/정당한 UNCHANGED 시각·sourceStoredAt·local hash→D1 body/hash/stored_at→공개 API→UI**를 동일 입력/기준일로 연결 검증한다. 단, 이미 취소된 #3471/#3472를 같은 조건으로 반복하지 않으며 정상 실행 경로/필수 로그 가용성이 달라졌는지 먼저 확인. 정규 다음 발표 대기를 요청하지 않은 새 완료조건으로 만들지 않는다.
+- **단계 판정:** 1·2 DONE / 3 IN_PROGRESS / 4·5 NOT_DONE = **2/5단계(40%) 유지**. 문서·Issue 종결은 실기능 완료 증거 아님.
