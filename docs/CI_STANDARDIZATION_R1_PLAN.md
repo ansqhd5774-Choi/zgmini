@@ -123,3 +123,11 @@
 - #45399088729에서 18개 `Verify/Validate` 브라우저 검증 step 성공: W05/W06/W04/CNN 생산 API/UI **읽기**, 모바일 탭/터치, 웹 자산, 390/768/1440/1920 화면의 모의/격리 테스트 등을 확인. **본체 브라우저 E2E는 일부 필수 UI 경로 IMPLEMENTED, 시스템 전체 E2E는 PARTIAL**.
 - 그보다 이른 [#45398118156](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45398118156) 실패 단계 `Verify CNN`은 관측됨. 이후 서로 다른 PR HEAD의 성공을 확인했으나 **해당 실패 HEAD의 수정/원인 및 현재 main 동일 동작까지 자동 입증하는 것은 아님**. 별도 실제 장애 증거가 없으면 동일 실패 재실행 금지.
 - 이 조사 단계의 코드·운영·게시 변경 없음. 다음 작업 P1-B: 본체 및 PC 제어 Integration 경로별 기존 fixture/CI 연결과 실제 저장·API readback 증거 대조. 새 PR은 확인된 필수 누락이 있을 때만 생성한다.
+
+
+### R2 P1-B Integration 1차 범위 확인 (2026-11-25)
+
+- 본체 `node.js.yml`은 `tests/market-public-projection-store.test.mjs`, `tests/projection-writer-hotpath-r54.test.mjs` 등 Cloudflare/Projection 계약시험을 실제 Node.js CI에 포함. 소스 시험은 **모의 D1 `prepare/bind/first/run`**를 사용하므로 **Mock 계약 PASS**, 실 D1 write/readback이나 전 시스템 Integration PASS는 아님.
+- PC 제어 `tests/employment-r6-controller-integration.test.mjs`는 임시 경로·합성 Runner/SQLite 파일로 Controller engine→Worker/Bundled source 실행을 검증; `tests/maintenance-route-integration.test.mjs`는 주입된 가짜 GitHub/updater로 승인 라우팅·중복 차단을 검증. 기존 C996 격리 CI에 두 시험 포함 (PR #3428). **검증 범위는 격리 Integration, 운영 PC 실행 아님**.
+- W05 게시 `w05-publication-source-ci.yml`은 승인/게시 계약 시험을 수행 (PR #3434·Actions #45455117036 SUCCESS). 실제 D1 게시 완료와는 별개. 운영 수집→SQLite→계산→D1→Production API/UI의 단일 실측 연결은 기존 원장/승인 실행 증거를 별도로 대조해야 하며 현재 단계 `PARTIAL`.
+- 이 1차 검토에서 새 코드 결함은 아직 입증되지 않았음. 기존 안전 검사/모의 시험을 제거하지 않고 다음으로 대상별 운영 원장·게시 readback의 기존 유효 증거를 찾아 범위를 한정한다. 운영 호출·쓰기 없음.
