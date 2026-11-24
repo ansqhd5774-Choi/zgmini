@@ -1,5 +1,25 @@
 # W05 실적 정보성 지표 API–사이트 연결 — 운영 완료 5단계 실행계획
 
+<!-- W05_SIX_STAGE_DESIGN_AUDIT_20261124 -->
+### 2026-11-24 W05 수집·검증·계산·인증·보고·게시 6단계 과잉 기준 감사 및 작업 기준 개선
+
+**완료점 보존:** W05 실적 정보행 5/5 DONE(#3243 자연 Writer 3키 ALREADY_STORED, 공개 이력 36점 비교, Production 390/1440 PASS), 별도 공개 5키 구조 비교 5/5(#3282), Cloudflare 활성 Deployment/Version 실PC 공식 A PASS(#3306)를 다시 미완료로 되돌리지 않는다. Cloudflare `sourceShaVerified=false`는 Git commit을 Cloudflare API만으로 독립 증명하지 못했다는 뜻으로, 이미 확인된 활성 배포·5키 비교·실화면의 실패 판정이나 재설치 Gate가 아니다.
+
+| 모듈 | 최신 main 및 유효 운영 증거 | 합리적인 완료/차단 기준 |
+| --- | --- | --- |
+| 수집기 | 퇴역 breadth 예약 제거 #1355; W05 BLS·BEA·QFR 저장 원장 성공 | 실제 해당 공급자·행·시각·원자료/해시만 점검. 다른 독립 지표 누락이나 제거된 공급자를 재시도 조건으로 만들지 않음 |
+| 검증기 | 정확한 11 READY + 권리거부 breadth 1개 부분 게시 예외 #1364 병합·회귀 통과 | 원본 무결성·권리·0/null·실제 유효 기간은 유지. 12/12 전역 Gate를 W05 정보행에 적용하지 않음. 36h batch TTL에 의한 실제 누락 인과는 미입증이므로 설정 임의 변경 금지 |
+| 계산기 | PC 저장 자료 계산·네트워크 차단 구조, WPSFD42/QFR/BEA 원본값·관측기간·단위 보존 | 해당 키의 저장 자료와 실제 산식/36점 비교로 판정. 82단계 전부 완료·타 도메인 전체 정상·추가 원자료 재수집을 요구하지 않음 |
+| 인증기 | 기존 config.source/대상 파일 보호·Wrangler OAuth 재사용, 배포 공식 A #3306 PASS | 쓰기 때만 정확 승인·CAS·lease·복구 필수. 읽기 때 새 OAuth·브라우저·수동 조작·유료 서비스·전체 Controller 재설치 요구 금지 |
+| 보고기 | 키별 D1/API 5/5 구조 비교, Writer 3개 개별 ALREADY_STORED | `READBACK_VERIFIED`/`ALREADY_STORED`/`SKIPPED`/`STATE_UNKNOWN`을 각 작업의 증거 범위에서 구별. 일부 미확인을 독립 W05 5/5 실패 또는 전역 BLOCKED로 승격하지 않음 |
+| 게시기 | 기존 Writer 3키 독립 `attemptOutput`·D1 정확키 readback·무변경 멱등 | 이미 동일 원본이면 재게시 0. 각 키 단독 성공을 인정하고 다른 키 오류가 전부를 무효화하지 않음. 승인 없는 D1/SQLite/예약·설치 변경 금지 |
+
+**검증된 과잉 Gate 2건은 재수정 대상이 아니다:** #1355의 퇴역 수급 재시도 제거, #1364의 제한적 11/12 허용은 최신 main에서 직접 확인했다. 같은 작업의 새 PR·Controller·검증기를 만들지 않는다.
+
+**현행 잠재 충돌, 원인 미확정:** 최신 main `scripts/pc-writer/run-local.mjs`의 `LOCAL_SEED_INCOMPLETE`는 독립 W05 3키 게시 훨씬 앞에서 전역으로 평가된다. seed 불완료 시 실제 W05 게시도 진입 불가한 코드 경로이므로 설계상 결합 가능성은 인정하되, #3243 정상 실행을 현재 장애로 바꾸지 않는다. 실제 실패가 발생하면 해당 실행의 seed 상태·처음 실패한 술어·W05 원자료 준비 여부를 기존 운영 원장으로 확인한 후 **W05 독립 결과만 가능하게 하는 최소 분리 수정**을 검토한다. 전체 seed/안전 검사 제거·별도 Writer/Runner/예약 추가는 금지한다. `readStoredMarketInputs`의 36h 판정도 실제 `stored_at`·관측/발표일·해당 skip reason이 연결되지 않으면 변경하지 않는다.
+
+**브랜치 안전:** 이 W05 전용 브랜치는 2026-11-24 최신 main과 크게 분기되어 있으며, 기존 소스에 퇴역 breadth 예약·12/12 전역 Gate 코드가 남아 있다. 이 전용 브랜치 전체를 main에 병합하거나 옛 파일로 최신 수정본을 덮어쓰지 않는다. 향후 실제 수정이 필요하면 최신 main의 승인된 파일만 좁은 diff·CI·정규 PR로 반영한다. **이번 항목은 작업 기준 감사로서 코드·운영·DB·D1·배포 변경을 승인하거나 완료했다고 뜻하지 않는다.**
+
 <!-- W05_FINAL_5OF5_EVIDENCE_20261124 -->
 
 **최신 유효 결과 (2026-11-24): W05 실적 정보행 운영 5/5 DONE.** 마지막 5단계의 정규 자연 갱신·UNCHANGED/ALREADY_STORED·중복 방지·실사이트 검증은 실제 Writer [#3243](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3243#issuecomment-7124638333)에서 source `24077edc2fb4196e83ba202fdd9681b1fe841447`, 자연 `PUBLISH/VERIFIED` 및 세 키 각각 `ALREADY_STORED/readbackAtWriter=true`로 확인. 강화 단일 파일 B [#3241](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3241#issuecomment-7124451071)은 설치 1회 완료, Reader/Controller는 기존 성공 보호 상태를 유지한다. 승인 공개 이력 36개(WPSFD42 26, QFR 5, BEA 5)는 새로운 Writer의 필수 점별 parity 비교 후 반환되는 실제 성공 경로에서 일치. 기존 Production BEA·QFR [Run45220124737](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45220124737), WPSFD42 [Run45335459406](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45335459406) 390/1440 및 공개 시각/출처/차트 PASS 증거를 재사용. 별도 5경로 의미 동치 지원·다른 업무·과거 82개 순번 완료율은 이 W05 5/5와 합산하지 않는다. 상세 [#68 최신 원장](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-7124665082).
