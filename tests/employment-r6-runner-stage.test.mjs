@@ -125,11 +125,11 @@ test("PIT-08 empty history cannot match an absent current observation",async t=>
   const body=await stageEmploymentR6OneYear(runnerOptionsFrom(argv(env)));
   const state=body.indicators.find(item=>item.id==="STATE_CLAIMS_BREADTH");
   state.history=[];
-  // A genuinely absent source can omit both value and observation date.
-  // The historical implementation compared undefined === undefined twice.
+  // The public R6 contract represents missing values with explicit nulls.
+  // Do not bypass the validator by deleting mandatory missing-value fields.
   assert.equal(state.rawStatus,"UNAVAILABLE");
-  delete state.value;
-  delete state.observationDate;
+  assert.equal(state.value,null);
+  assert.equal(state.observationDate,null);
   const report=projectEmploymentR6RunnerResult({body});
   assert.equal(report.stateClaimsChart.pointCount,0);
   assert.equal(report.stateClaimsChart.lastPointMatchesCurrent,false);
