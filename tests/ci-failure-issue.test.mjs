@@ -19,7 +19,7 @@ function fixture({existing=false,comments=[]}={}){
   user:{login:'github-actions[bot]'}};
  const request=async(resource,{method='GET',body}={})=>{
   calls.push({resource,method,body});
-  if(resource==='actions/runs/123456/jobs?per_page=100')
+  if(resource==='actions/runs/123456/attempts/1/jobs?per_page=100')
    return {total_count:1,jobs:[failureJob]};
   if(resource==='issues?state=open&per_page=100&page=1')
    return existing?[issue]:[];
