@@ -71,11 +71,14 @@ on:
       - 'app/outbreak-scenarios-r51.css'
       - 'tests/outbreak-scenarios-browser-r51.mjs'
       # npm packages and Vite runtime affect every Playwright browser route.
-      - 'scripts/ci-accessibility-axe.mjs'
-      - 'tests/ci-accessibility-axe.test.mjs'
       - 'package.json'
       - 'package-lock.json'
       - 'vite.config.ts'
+      - 'scripts/ci-accessibility-axe.mjs'
+      - 'tests/ci-accessibility-axe.test.mjs'
+      # R2 performance lab shares the existing installed Playwright Chromium.
+      - 'scripts/ci-performance-lab.mjs'
+      - 'tests/ci-performance-lab.test.mjs'
       - '.github/workflows/community-chat-browser.yml'
   workflow_dispatch:
 
@@ -153,8 +156,10 @@ jobs:
         run: node tests/dashboard-history-browser-r5.mjs
       - name: Verify CNN actual PC-check 1D curve and stale-session exclusion at 390/1440
         run: node tests/cnn-current-session-verified-checks-browser-r12.mjs
-      # One local WCAG scan reusing the existing Playwright Chromium and dev UI.
-      # Existing findings are evidence, not an unapproved global PR gate.
+      # Lab results are observations, not a new unapproved Lighthouse score gate.
+      - name: Measure isolated Chromium performance laboratory
+        run: node scripts/ci-performance-lab.mjs
+      # Accessibility results are observations; reviewed baseline approval is separate.
       - name: Measure local WCAG A/AA accessibility with axe-core
         timeout-minutes: 2
         run: node scripts/ci-accessibility-axe.mjs
@@ -165,6 +170,7 @@ jobs:
           name: community-chat-browser-r1
           path: |
             artifacts/ci-accessibility/
+            artifacts/performance-lab/
             artifacts/community-chat-browser/
             artifacts/risk-detail-side-rails/
             artifacts/outbreak-scenarios/
@@ -184,6 +190,7 @@ jobs:
             artifacts/w06-production-readonly/
             artifacts/w06-touch-local/
           if-no-files-found: warn
+          retention-days: 7
       - name: Show local dev errors on failure
         if: failure()
         run: tail -n 120 /tmp/zgmini-chat-vite.log || true
