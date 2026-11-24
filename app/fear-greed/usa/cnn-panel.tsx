@@ -773,6 +773,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
       />}
       chart={<MarketFearGreedChart
         showExtrema
+        showLatestPointTouchTooltip
         color={fearGreedStateColor(loading?'확인 중':stage)}
         data={history}
         axisTicks={chartAxis.ticks}
