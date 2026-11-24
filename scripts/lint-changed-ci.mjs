@@ -3,13 +3,17 @@
 import {execFileSync, spawnSync} from 'node:child_process';
 
 const SHA=/^[0-9a-f]{40}$/;
-const SOURCE=/\.(?:[cm]?js|jsx|tsx?)$/i;
-const CODE_DIR=/^(?:app|components|hooks|lib|worker|scripts|tests)\//;
+const SOURCE=/\.(?:[cm]?[jt]s|[jt]sx)$/i;
+// GitHub workflows, top-level config and other source directories also carry
+// executable code. Scope the gate by changed source extension, not a stale
+// hard-coded directory allowlist; continue excluding generated dependencies.
+const GENERATED=/^(?:node_modules|dist|out|build|coverage|\.next|\.wrangler|\.sites-runtime|\.git)\//;
 
 export function selectChangedSource(paths){
   return [...new Set(paths.filter(p=>typeof p==='string'
-    && CODE_DIR.test(p)&&SOURCE.test(p)
-    && !p.startsWith('node_modules/')))].sort();
+    && p.length>0 && !p.startsWith('/') && !p.includes('\\')
+    && !p.split('/').some(segment=>segment==='..'||segment==='.')
+    && SOURCE.test(p) && !GENERATED.test(p)))].sort();
 }
 export function chooseDiffBase({event, before, headParent}){
   if(event==='pull_request')return headParent;
