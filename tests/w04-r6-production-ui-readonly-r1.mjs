@@ -152,6 +152,21 @@ try{
     return text.includes("R6 저장 원자료")&&text.includes("1년 차트 "+count+"/29개");
    },body.summary.chartReadyFeatures,{timeout:45000});
    await verifyRows(section,body,viewport.width);
+   // The first-visit guide intentionally overlays the page. Dismiss with its
+   // existing close control before taking visible, user-facing R6 evidence.
+   const intro=page.locator("#zg-about-intro-dialog");
+   result.introDismissed=false;
+   if(await intro.isVisible()){
+    await intro.getByRole("button",{name:"닫기",exact:true}).click();
+    await intro.waitFor({state:"hidden",timeout:10000});
+    result.introDismissed=true;
+   }
+   const target=viewport.width===390
+    ?section.locator(".inflation-r2-mobile-list article").first()
+    :section.locator("tbody tr").first();
+   await target.scrollIntoViewIfNeeded();
+   assert(await target.isVisible(),"R6 table/card must be visible after guide dismissal");
+   assert.equal(await intro.isVisible(),false,"First-visit overlay must not obscure R6 screenshot");
    const pageWidth=await page.evaluate(()=>document.documentElement.scrollWidth);
    assert(pageWidth<=viewport.width+2,"Horizontal overflow");
    assert.deepEqual(errors,[],"Browser JavaScript errors");
