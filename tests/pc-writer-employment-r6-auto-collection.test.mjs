@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {runEmploymentR6AutoCollection} from "../scripts/pc-writer/employment-r6-auto-collection.mjs";
+import {runEmploymentR6AutoCollection,createEmploymentR6ScheduledProviderFactory} from "../scripts/pc-writer/employment-r6-auto-collection.mjs";
 
 const db={prepare(){return {};}},fetchImpl=async()=>{};
 const options={approvedSource:"approved-sha",runningSource:"approved-sha",db,fetchImpl};
@@ -144,4 +144,18 @@ test("W04 no-due collection does not invent changed-row counts",async()=>{
   });
   assert.deepEqual(result.groups,[]);
   assert.equal(result.plannedGroups[0].status,"RELEASE_ALREADY_STORED");
+});
+
+
+test("W04 scheduled ETA538 adapter stays wired while main collection diagnostics survive",async()=>{
+  let args;
+  const result=await runEmploymentR6AutoCollection({...options,enabled:true,
+    collect:async x=>{args=x;return {status:"NOOP",providerRequests:0,groupResults:[],plannedGroups:[]};},
+  });
+  assert.equal(result.status,"NOOP");
+  assert.equal(args.providerFactory,createEmploymentR6ScheduledProviderFactory);
+  const actual=args.providerFactory({fetchImpl,now:()=>new Date("2026-11-24T14:50:00.000Z")});
+  assert.equal(typeof actual.fetchGroup,"function");
+  await assert.rejects(actual.fetchGroup("DOL_UI_WEEKLY_CLAIMS",{mode:"ONE_YEAR"}),
+    /DOL_ETA538_SCHEDULED_SCOPE_FORBIDDEN/);
 });
