@@ -116,15 +116,21 @@ try{
     timeout:35000,headers:{"accept":"application/json","cache-control":"no-cache"}});
    result.apiStatus=api.status();
    assert.equal(api.status(),200,"Production R6 GET is not ready");
-   const body=await api.json(),readback=checkData(body,await api.allHeaders());
+   const body=await api.json(),readback=checkData(body,api.headers());
    Object.assign(result,readback);
+   const liveApiResponse=page.waitForResponse(r=>r.url().includes("/api/employment-r6/observations"),{timeout:45000});
    const pageResponse=await page.goto(base+"/economic-indicators/employment/",
     {waitUntil:"domcontentloaded",timeout:60000});
    assert.equal(pageResponse?.status(),200,"Production employment page GET");
+   const uiApi=await liveApiResponse;
+   assert.equal(uiApi.status(),200,"UI must fetch Production R6 data, not a fixture");
+   const uiBody=await uiApi.json();
+   assert.equal(uiBody.sourceStoredAt,body.sourceStoredAt,"R6 snapshot changed between API and UI readback");
+   assert.equal(uiBody.formulaHash,body.formulaHash,"UI fetched a different formula version");
    const section=page.locator('section.economic-indicators[aria-labelledby="economic-employment-indicators"]');
    await section.waitFor({state:"attached",timeout:30000});
    await page.waitForFunction(count=>{
-    const text=document.querySelector('section.economic-indicators[aria-labelledby="economic-employment-indicators"] header p')?.textContent??"";
+    const text=document.querySelector('section.economic-indicators[aria-labelledby="economic-employment-indicators"] header > p')?.textContent??"";
     return text.includes("R6 저장 원자료")&&text.includes("1년 차트 "+count+"/29개");
    },body.summary.chartReadyFeatures,{timeout:45000});
    await verifyRows(section,body);
