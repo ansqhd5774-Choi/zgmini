@@ -39,6 +39,12 @@ function runFixture({failureCode=null,includeNational=false,includeState=true}={
   const store={
     async initialize(){},
     async getLatestRun(){return null},
+    // Production ONE_YEAR dedup is mode-scoped. Keep the isolated fixture
+    // faithful rather than silently downgrading the runtime safety guard.
+    async getLatestRunInMode(provider,mode){
+      assert.equal(mode,"ONE_YEAR");
+      return null;
+    },
     async acquire(){return {acquired:true}},
     async release(){releaseCalls++;return true},
     async writeRawSnapshot(snapshot){
