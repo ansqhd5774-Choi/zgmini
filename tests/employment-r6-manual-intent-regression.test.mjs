@@ -114,3 +114,44 @@ test("direct collection planning also requires approved manual scope", async () 
   });
   assert.deepEqual(plan.map(x=>[x.status,x.due]), [["ONE_YEAR_APPROVED_MANUAL_DUE",true]]);
 });
+
+const pdfApproval=Object.freeze({
+ ...approval,
+ schema:"ZGMINI_R6_DOL_MANUAL_B_APPROVAL_V2",
+ nationalSource:"ETA538_ARCHIVED_PDF",
+ originalPdfSha256:"a".repeat(64),
+});
+test("W04 approved ETA538 B V2 only enters existing manual two-call collector",async()=>{
+ const f=fixture();
+ const result=await runEmploymentR6CollectionStep({
+  db,now,mode:"ONE_YEAR",groups,...f,
+  executionIntent:"AUTHORIZED_MANUAL",manualApprovalEvidence:pdfApproval,
+ });
+ assert.equal(result.status,"PARTIAL");
+ assert.equal(result.providerRequests,2);
+ assert.equal(f.calls.latest,0);
+ assert.equal(f.calls.provider,1);
+ assert.equal(f.calls.locks,1);
+ assert.equal(f.calls.records.length,1);
+});
+test("W04 V2 missing source kind/hash and scheduled execution fail before store lock",async()=>{
+ for(const spec of [
+  {...pdfApproval,nationalSource:"XML"},
+  {...pdfApproval,originalPdfSha256:"bad"},
+  {...pdfApproval,originalPdfSha256:null},
+  {...pdfApproval,schema:"ZGMINI_R6_DOL_MANUAL_B_APPROVAL_V3"},
+ ]){
+  const f=fixture();
+  await assert.rejects(()=>runEmploymentR6CollectionStep({
+   db,now,mode:"ONE_YEAR",groups,...f,
+   executionIntent:"AUTHORIZED_MANUAL",manualApprovalEvidence:spec,
+  }),/R6_MANUAL_COLLECTION_APPROVAL_REQUIRED/);
+  assert.deepEqual([f.calls.provider,f.calls.locks,f.calls.records.length],[0,0,0]);
+ }
+ const f=fixture();
+ await assert.rejects(()=>runEmploymentR6CollectionStep({
+  db,now,mode:"ONE_YEAR",groups,...f,
+  executionIntent:"SCHEDULED",manualApprovalEvidence:pdfApproval,
+ }),/R6_MANUAL_COLLECTION_APPROVAL_REQUIRED/);
+ assert.deepEqual([f.calls.provider,f.calls.locks],[0,0]);
+});
