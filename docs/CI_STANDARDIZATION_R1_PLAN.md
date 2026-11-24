@@ -114,3 +114,12 @@
 
 - 기존 PC CI 개선 PR #3423, #3426, #3428, #3432, #3434는 병합 및 관련 CI 통과 증거 재사용. 문서 반영만으로 CI 적용/운영 완료를 주장하지 않는다.
 - 착수 작업은 **P1-A 본체 브라우저 E2E의 실제 마지막 실행/결과 확인**. 확인한 유효 증거부터 기록하고 필요성이 증명되면 별도 최신 main 코드 수정으로 이어간다.
+
+
+### R2 P1-A 실측 체크포인트 — 2026-11-25
+
+- 본체 `.github/workflows/community-chat-browser.yml`의 `pull_request` 경로 필터 + 수동 `workflow_dispatch`를 확인. Chromium/Playwright/로컬 격리 fixture 및 일부 Production GET 읽기 경로가 혼재하며 **실운영 전 경로 E2E 증명과 구분**한다.
+- GitHub Actions `Community Chat Browser UI (Mocked API)` 최신 관측 성공: [#45399088729](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45399088729) HEAD `2af8b9050bf64c6b3c6422c6639dc302e846f75d`, [#45399077303](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45399077303) HEAD `e27293bca2d59369c8876fbc6dc4decbb160a336`; 둘 다 `completed/success` (2026-11-24 UTC). 후자/전자 모두 CI job `ui` 실제 성공.
+- #45399088729에서 18개 `Verify/Validate` 브라우저 검증 step 성공: W05/W06/W04/CNN 생산 API/UI **읽기**, 모바일 탭/터치, 웹 자산, 390/768/1440/1920 화면의 모의/격리 테스트 등을 확인. **본체 브라우저 E2E는 일부 필수 UI 경로 IMPLEMENTED, 시스템 전체 E2E는 PARTIAL**.
+- 그보다 이른 [#45398118156](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45398118156) 실패 단계 `Verify CNN`은 관측됨. 이후 서로 다른 PR HEAD의 성공을 확인했으나 **해당 실패 HEAD의 수정/원인 및 현재 main 동일 동작까지 자동 입증하는 것은 아님**. 별도 실제 장애 증거가 없으면 동일 실패 재실행 금지.
+- 이 조사 단계의 코드·운영·게시 변경 없음. 다음 작업 P1-B: 본체 및 PC 제어 Integration 경로별 기존 fixture/CI 연결과 실제 저장·API readback 증거 대조. 새 PR은 확인된 필수 누락이 있을 때만 생성한다.
