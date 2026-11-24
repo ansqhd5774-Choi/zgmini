@@ -29,10 +29,11 @@ function fixturePdf({heading="Thursday, November 19, 2026",continued="November 7
   ]);
 }
 const sha256=bytes=>createHash("sha256").update(bytes).digest("hex");
+const pinnedOpts={...opts,expectedOriginalPdfSha256:sha256(fixturePdf())};
 
 test("W04 ETA538 candidate preserves exact PDF bytes in base64, hashes separately",()=>{
   const original=fixturePdf();
-  const out=buildDolAdvanceStoreCandidate(original,opts);
+  const out=buildDolAdvanceStoreCandidate(original,pinnedOpts);
   assert.equal(out.status,"CANDIDATE_ONLY",JSON.stringify(out));
   assert.equal(out.writeAuthorized,false);
   assert.equal(out.operationalWrites,0);
@@ -51,7 +52,7 @@ test("W04 ETA538 candidate preserves exact PDF bytes in base64, hashes separatel
 });
 
 test("W04 ETA538 four National rows match R4 stored-row shape without fake PIT time",()=>{
-  const out=buildDolAdvanceStoreCandidate(fixturePdf(),opts);
+  const out=buildDolAdvanceStoreCandidate(fixturePdf(),pinnedOpts);
   assert.equal(out.status,"CANDIDATE_ONLY",JSON.stringify(out));
   assert.deepEqual(out.rows.map(x=>x.logicalSeriesId),[
     "INITIAL_CLAIMS","INITIAL_CLAIMS_4W","CONTINUED_CLAIMS","INSURED_UNEMPLOYMENT_RATE",
@@ -78,12 +79,12 @@ test("W04 ETA538 four National rows match R4 stored-row shape without fake PIT t
 
 test("W04 malformed, mixed-vintage or impossible timestamps cannot be storage input",()=>{
   for(const [bytes,config,reason] of [
-    [Buffer.from("not a PDF"),opts,"PDF_LAYOUT_UNSUPPORTED"],
-    [fixturePdf({heading:"Thursday, November 12, 2026"}),opts,"PDF_RELEASE_DATE_MISMATCH"],
-    [fixturePdf({continued:"October 31"}),opts,"WEEK_DATE_INCONSISTENT"],
-    [fixturePdf(),{...opts,releaseAt:"2026-11-26T13:30:00.000Z"},"RELEASE_TIME_INVALID"],
-    [fixturePdf(),{...opts,releaseAt:"2026-11-19T13:30:00+00:00"},"RELEASE_TIME_INVALID"],
-    [fixturePdf(),{...opts,now:()=>new Date("2026-11-18T00:00:00.000Z")},"RELEASE_TIME_INVALID"],
+    [Buffer.from("not a PDF"),pinnedOpts,"PDF_LAYOUT_UNSUPPORTED"],
+    [fixturePdf({heading:"Thursday, November 12, 2026"}),pinnedOpts,"PDF_RELEASE_DATE_MISMATCH"],
+    [fixturePdf({continued:"October 31"}),pinnedOpts,"WEEK_DATE_INCONSISTENT"],
+    [fixturePdf(),{...pinnedOpts,releaseAt:"2026-11-26T13:30:00.000Z"},"RELEASE_TIME_INVALID"],
+    [fixturePdf(),{...pinnedOpts,releaseAt:"2026-11-19T13:30:00+00:00"},"RELEASE_TIME_INVALID"],
+    [fixturePdf(),{...pinnedOpts,now:()=>new Date("2026-11-18T00:00:00.000Z")},"RELEASE_TIME_INVALID"],
   ]){
     const out=buildDolAdvanceStoreCandidate(bytes,config);
     assert.equal(out.status,"HOLD",JSON.stringify(out));
@@ -97,7 +98,7 @@ test("W04 malformed, mixed-vintage or impossible timestamps cannot be storage in
 
 
 test("W04 eventual stored body readback detects base64 and original-PDF tampering independently",()=>{
-  const candidate=buildDolAdvanceStoreCandidate(fixturePdf(),opts);
+  const candidate=buildDolAdvanceStoreCandidate(fixturePdf(),pinnedOpts);
   assert.equal(candidate.status,"CANDIDATE_ONLY");
   const snapshot=candidate.snapshots[0];
   const input={
@@ -121,4 +122,19 @@ test("W04 eventual stored body readback detects base64 and original-PDF tamperin
   assert.equal(wrongLength.reason,"ORIGINAL_PDF_HASH_MISMATCH");
   const notBase64=inspectDolAdvanceStoredSnapshot({...input,body:"not PDF!!!"});
   assert.equal(notBase64.reason,"STORED_SNAPSHOT_FORMAT_INVALID");
+});
+
+
+test("W04 cannot prepare rows without independently pinned original PDF hash",()=>{
+  const bytes=fixturePdf();
+  const missing=buildDolAdvanceStoreCandidate(bytes,opts);
+  assert.equal(missing.status,"HOLD");
+  assert.equal(missing.reason,"PDF_SOURCE_PIN_REQUIRED");
+  const mismatch=buildDolAdvanceStoreCandidate(bytes,{
+    ...pinnedOpts,expectedOriginalPdfSha256:"0".repeat(64),
+  });
+  assert.equal(mismatch.status,"HOLD");
+  assert.equal(mismatch.reason,"PDF_SOURCE_PIN_MISMATCH");
+  assert.deepEqual(mismatch.snapshots,[]);
+  assert.equal(mismatch.operationalWrites,0);
 });
