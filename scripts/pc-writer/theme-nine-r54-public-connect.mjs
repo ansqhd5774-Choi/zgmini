@@ -1,3 +1,4 @@
+import {withR54SourceLease} from './r54-source-lease.mjs';
 // R54: publish the already-approved nine-theme R47/R48/R51 score product.
 // No price API GET, new formula, raw bar upload, existing key replacement,
 // scheduled task mutation, or inferred provisional score is allowed here.
@@ -174,7 +175,10 @@ async function fetchPublic({fetchImpl=fetch,now=Date.now(),publicationBase=true}
  return parsed;
 }
 
-export async function runNineR54PublicConnect({dataRoot='E:/ZGmini/data',
+export async function runNineR54PublicConnect(options={}){
+ return withR54SourceLease(()=>runNineR54PublicConnectUnprotected(options));
+}
+async function runNineR54PublicConnectUnprotected({dataRoot='E:/ZGmini/data',
  configDirectory=path.resolve(here,'../../config'),now=Date.now(),
  publisherConsent=false,fetchImpl=fetch,tokenFn=approvedNineR54SevenToken,
  stageR48=stageCurrentNineR48,stageR51=stageNineR51Current,
