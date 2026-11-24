@@ -10,12 +10,13 @@ const goodId=value=>Number.isSafeInteger(value)&&value>0;
 const clean=value=>String(value??'').replace(/[^A-Za-z0-9 ._():/\-]/g,' ').trim().slice(0,110);
 export const keyFor=(workflow,job,step)=>createHash('sha256')
  .update(JSON.stringify([workflow,job,step])).digest('hex').slice(0,24);
-export const markerFor=key=>'<\!-- zgmini-ci-failure:'+key+' -->';
+export const markerFor=key=>'<!-- zgmini-ci-failure:'+key+' -->';
 
 export async function triage({event,repository=REPO,request}){
  if(typeof request!=='function')fail('IO_MISSING');
  const run=event?.workflow_run;
  if(event?.action!=='completed'||event.repository?.full_name!==REPO||
+    event.repository.private!==true||
     repository!==REPO||!run||!WORKFLOWS.includes(run.name)||
     !['pull_request','push','workflow_dispatch'].includes(run.event)||
     (run.head_repository?.full_name&&run.head_repository.full_name!==REPO)||
