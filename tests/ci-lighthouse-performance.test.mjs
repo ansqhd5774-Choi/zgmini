@@ -84,6 +84,8 @@ test('existing CI reuses built production output, saves local-only evidence with
  assert.ok(perf>build&&build>=0);
  assert.match(workflow,/node scripts\/ci-lighthouse-performance\.mjs/);
  assert.match(workflow,/@lhci\/cli@0\.16\.1/);
+ assert.match(workflow,/vite preview --host 127\.0\.0\.1 --port 3000 --strictPort/);
+ assert.doesNotMatch(workflow,/NODE_ENV=production npm run start/);
  assert.match(workflow,/artifacts\/ci-performance-lighthouse\/summary\.json/);
  assert.doesNotMatch(workflow,/temporary-public-storage/);
  assert.match(workflow,/retention-days: 7/);
