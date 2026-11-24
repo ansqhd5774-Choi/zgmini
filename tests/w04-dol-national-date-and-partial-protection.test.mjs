@@ -38,41 +38,57 @@ test('W04 DOL national parser rejects impossible weeks instead of inventing obse
  }
 });
 
-test('W04 3/4 national series cannot write unarchived national observations; 600w states survive',async()=>{
- let fetchedCount=0;
- const provider=createEmploymentR6Provider({
-  now,fetchImpl:async(url)=>{
-   fetchedCount++;
-   return String(url)===DOL_ETA539_URL
-    ?new Response(stateCsv,{status:200})
-    :new Response(officialNationalXml(nationalWeek('10/31/2026',{iur:false})),{status:200});
-  },
- });
+
+// <!-- W04-NATIONAL-NULL-VS-TRUE-ZERO-20261119 -->
+test('W04 DOL National absent SA values never become numeric zero',()=>{
+ const xml='<r539cyNational><week source="r539cy"><weekEnded>11/07/2026</weekEnded>'+
+  '<InitialClaims><SA></SA><SA4WK> </SA4WK></InitialClaims></week></r539cyNational>';
+ const rows=parseDolNationalClaimsXml(xml,{retrievedAt:'2026-11-12T14:00:00.000Z'});
+ assert.deepEqual(rows,[],'empty and whitespace fields are missing, not zero claims');
+});
+
+test('W04 DOL National explicit zero is valid and remains distinguishable from missing',()=>{
+ const xml='<r539cyNational><week source="r539cy"><weekEnded>11/07/2026</weekEnded>'+
+  '<InitialClaims><SA>0</SA><SA4WK>0</SA4WK></InitialClaims></week></r539cyNational>';
+ const rows=parseDolNationalClaimsXml(xml,{retrievedAt:'2026-11-12T14:00:00.000Z'});
+ assert.deepEqual(rows.map(row=>row.logicalSeriesId),['INITIAL_CLAIMS','INITIAL_CLAIMS_4W']);
+ assert.deepEqual(rows.map(row=>row.value),[0,0]);
+ assert.ok(rows.every(row=>row.availableAt==='2026-11-12T14:00:00.000Z'));
+});
+
+test('W04 3/4 valid national series persist with immutable official XML evidence; 600w states survive',async()=>{
+ let calls=0;
+ const provider=createEmploymentR6Provider({now,fetchImpl:async url=>{
+  calls++;
+  return String(url)===DOL_ETA539_URL
+   ?new Response(stateCsv,{status:200})
+   :new Response(officialNationalXml(nationalWeek('10/31/2026',{iur:false})),{status:200});
+ }});
  const fetched=await provider.fetchDolClaims({mode:'BACKFILL',currentYear:2026});
- assert.equal(fetchedCount,2,'no extra retries or requests');
+ assert.equal(calls,2,'no extra provider calls');
  assert.equal(fetched.requestCount,2);
  assert.equal(fetched.partialFailureCode,'DOL_NATIONAL_SERIES_INCOMPLETE');
- assert.deepEqual(fetched.missingSeries,[
-  'INITIAL_CLAIMS','INITIAL_CLAIMS_4W','CONTINUED_CLAIMS',
-  'INSURED_UNEMPLOYMENT_RATE']);
- assert.equal(fetched.rows.length,51,'quarantine 3 unarchived national; keep 51 validated states');
- const nationalRows=fetched.rows.filter(r=>r.geographyType==='NATIONAL');
- assert.equal(nationalRows.length,0,'unarchived national rows must not enter the ledger');
+ assert.deepEqual(fetched.missingSeries,['INSURED_UNEMPLOYMENT_RATE']);
+ assert.equal(fetched.rows.length,54);
  assert.equal(fetched.rows.filter(r=>r.geographyType==='STATE').length,51);
- assert.equal(fetched.snapshots.length,1,'partial national raw cannot replace complete archive');
- assert.equal(fetched.nationalResponseEvidence.responseFormat,'NATIONAL_XML');
+ const nationalRows=fetched.rows.filter(r=>r.geographyType==='NATIONAL');
+ assert.deepEqual(nationalRows.map(r=>r.logicalSeriesId),[
+  'INITIAL_CLAIMS','INITIAL_CLAIMS_4W','CONTINUED_CLAIMS',
+ ]);
+ assert.equal(fetched.snapshots.length,2,'partial official National XML has its own immutable source snapshot');
+ assert.match(fetched.snapshots[0].requestKey,/^DOL_NATIONAL:/);
+ assert.equal(fetched.snapshots[0].detail.coverage,'PARTIAL');
+ assert.deepEqual(fetched.snapshots[0].detail.missingSeries,['INSURED_UNEMPLOYMENT_RATE']);
+ assert.equal(fetched.snapshots[1].requestKey,'DOL_ETA539:600w');
+ assert.ok(nationalRows.every(row=>row.provenance.responseHash===fetched.snapshots[0].detail.responseHash));
+ assert.ok(nationalRows.every(row=>/^[a-f0-9]{64}$/.test(row.sourceHash)));
  assert.equal(fetched.nationalResponseEvidence.parsedNationalSeriesCount,3);
- assert.equal(fetched.nationalResponseEvidence.latestNationalObservationDate,'2026-10-31');
- assert.match(fetched.nationalResponseEvidence.bodySha256,/^[a-f0-9]{64}$/);
- assert.ok(fetched.snapshots.every(s=>!s.requestKey.startsWith('DOL_NATIONAL:')));
- assert.equal(fetched.snapshots[0].requestKey,'DOL_ETA539:600w');
- assert.equal(fetched.snapshots[0].detail.historyWeeks,600);
  const written=[],runs=[],snapshots=[];
  const store={
   async initialize(){},async getLatestRunInMode(){return null;},
-  async acquire(){return {acquired:true};},async release(){},
+  async acquire(){return {acquired:true};},async release(){return true;},
   async writeRawSnapshot(snapshot){snapshots.push(snapshot);return {
-   snapshotId:1,bodySha256:'mocked',chunkCount:1,noop:false,
+   snapshotId:snapshots.length,bodySha256:'mocked',chunkCount:1,noop:false,
   };},
   async upsertObservationRows({rows}){written.push(...rows);return {
    inserted:rows.length,revised:0,noop:0,rejected:0,changedSeriesIds:[],
@@ -88,9 +104,8 @@ test('W04 3/4 national series cannot write unarchived national observations; 600
  assert.equal(result.groupResults[0].failureCode,'DOL_NATIONAL_SERIES_INCOMPLETE');
  assert.equal(runs[0].failureCode,'DOL_NATIONAL_SERIES_INCOMPLETE');
  assert.equal(runs[0].detail.backfillWindowVersion,'DOL_ETA539_600_WEEKS_V1');
- assert.deepEqual(runs[0].detail.nationalResponseEvidence,fetched.nationalResponseEvidence);
- assert.equal(written.length,51);
- assert.equal(snapshots.length,1);
+ assert.equal(written.length,54,'valid National rows must reach the writer');
+ assert.equal(snapshots.length,2);
  assert.equal(result.publicOutput,false);
 });
 
@@ -117,27 +132,94 @@ test('W04 complete national 4-series retains raw archive and 51-region 600w path
   'INSURED_UNEMPLOYMENT_RATE']);
 });
 
-test('W04 failed national HTTP 200 classified without persisting provider error text',async()=>{
- const bad='Unable to connect! SQLSTATE=HY000 private-response-must-not-leak';
+test('W04 DOL official POST form fields and attributed National 4-series XML are parsed',async()=>{
+ const requests=[];
+ // This shape follows the DOL web report's National/XML form with one
+ // provider week carrying the exact four documented series fields.
+ const body='<?xml version="1.0" encoding="UTF-8"?>\n<!-- DOL public XML -->\n'+
+  '<r539cyNational><week source="r539cy"><weekEnded>10/31/2026</weekEnded>'+
+  '<InitialClaims><SA>189,000</SA><SA4WK>195,000</SA4WK></InitialClaims>'+
+  '<ContinuedClaims><SA>1,900,000</SA></ContinuedClaims>'+
+  '<IUR><SA>1.2</SA></IUR></week></r539cyNational>\n<!-- footer -->';
+ const provider=createEmploymentR6Provider({now,fetchImpl:async(url,options)=>{
+  requests.push({url:String(url),options});
+  return String(url)===DOL_ETA539_URL
+   ?new Response(stateCsv,{status:200})
+   :new Response(body,{status:200,headers:{'content-type':'application/xml'}});
+ }});
+ const result=await provider.fetchDolClaims({mode:'ONE_YEAR',currentYear:2026});
+ assert.equal(requests.length,2);
+ const nationalReq=requests[0];
+ assert.equal(nationalReq.url,'https://oui.doleta.gov/unemploy/wkclaims/report.asp');
+ assert.equal(nationalReq.options.method,'POST');
+ assert.equal(nationalReq.options.headers['content-type'],'application/x-www-form-urlencoded');
+ const form=new URLSearchParams(nationalReq.options.body);
+ assert.equal(form.get('level'),'us');
+ assert.equal(form.get('strtdate'),'2025');
+ assert.equal(form.get('enddate'),'2026');
+ assert.equal(form.get('filetype'),'xml');
+ assert.equal(form.get('final_yr'),'2026');
+ assert.equal(requests[1].url,DOL_ETA539_URL);
+ assert.deepEqual(result.rows.filter(r=>r.geographyType==='NATIONAL').map(r=>r.value),
+  [189000,195000,1900000,1.2]);
+ assert.equal(result.nationalResponseEvidence.responseFormat,'NATIONAL_XML');
+ assert.equal(result.nationalResponseEvidence.parsedNationalSeriesCount,4);
+ assert.equal(result.snapshots.length,2);
+ assert.equal(result.partialFailureCode,undefined);
+});
+
+test('W04 DOL HTTP-200 Informix outage is a supplier error, not an XML parsing rejection',async()=>{
+ const bad='Unable to connect! SQLSTATE=HY000, SQLDriverConnect: -25546 [Informix]Invalid ASF assoc_id. PRIVATE_PROVIDER_ERROR';
  const provider=createEmploymentR6Provider({now,fetchImpl:async(url)=>
   String(url)===DOL_ETA539_URL
    ?new Response(stateCsv,{status:200,headers:{'content-type':'text/csv'}})
    :new Response(bad,{status:200,headers:{'content-type':'text/plain; charset=utf-8'}}),
  });
- const fetched=await provider.fetchDolClaims({mode:'RELEASE',currentYear:2026});
+ const fetched=await provider.fetchDolClaims({mode:'ONE_YEAR',currentYear:2026});
  assert.equal(fetched.rows.length,51);
- assert.equal(fetched.snapshots.length,1,'do not archive invalid national body');
- assert.equal(fetched.partialFailureCode,'DOL_NATIONAL_NO_VALID_ROWS');
- assert.deepEqual(fetched.nationalResponseEvidence && {
-  status:fetched.nationalResponseEvidence.httpStatus,
-  type:fetched.nationalResponseEvidence.contentTypeCategory,
-  format:fetched.nationalResponseEvidence.responseFormat,
-  parsed:fetched.nationalResponseEvidence.parsedNationalSeriesCount,
-  last:fetched.nationalResponseEvidence.latestNationalObservationDate,
- },{status:200,type:'text/plain',format:'TEXT',parsed:0,last:null});
+ assert.equal(fetched.snapshots.length,1,'do not archive provider private error text');
+ assert.equal(fetched.partialFailureCode,'DOL_NATIONAL_SOURCE_UNAVAILABLE');
+ assert.deepEqual(fetched.missingSeries,[
+  'INITIAL_CLAIMS','INITIAL_CLAIMS_4W','CONTINUED_CLAIMS','INSURED_UNEMPLOYMENT_RATE']);
+ assert.equal(fetched.nationalResponseEvidence.httpStatus,200);
+ assert.equal(fetched.nationalResponseEvidence.contentTypeCategory,'text/plain');
+ assert.equal(fetched.nationalResponseEvidence.responseFormat,'SOURCE_UNAVAILABLE');
+ assert.equal(fetched.nationalResponseEvidence.requestFailureCode,'DOL_NATIONAL_SOURCE_UNAVAILABLE');
+ assert.equal(fetched.nationalResponseEvidence.parsedNationalSeriesCount,0);
  assert.match(fetched.nationalResponseEvidence.bodySha256,/^[a-f0-9]{64}$/);
- assert.equal(fetched.nationalResponseEvidence.bodyCharLength,bad.length);
- assert.ok(!JSON.stringify(fetched.nationalResponseEvidence).includes('private-response-must-not-leak'));
+ assert.ok(!JSON.stringify(fetched.nationalResponseEvidence).includes('PRIVATE_PROVIDER_ERROR'));
+ const runs=[];
+ const store={
+  async initialize(){},async getLatestRunInMode(){return null;},async getLatestRun(){return null;},
+  async acquire(){return {acquired:true};},async release(){return true;},
+  async writeRawSnapshot(){return {snapshotId:1,bodySha256:'mock',chunkCount:1,noop:false};},
+  async upsertObservationRows({rows}){return {inserted:rows.length,revised:0,noop:0,rejected:0};},
+  async recordRun(run){runs.push(run);return 1;},
+ };
+ const output=await runEmploymentR6CollectionStep({
+  db:{prepare(){return {};}},mode:'ONE_YEAR',now,
+  groups:['DOL_UI_WEEKLY_CLAIMS'],storeFactory:()=>store,
+  providerFactory:()=>({async fetchGroup(){return fetched;}}),
+ });
+ assert.equal(output.status,'PARTIAL');
+ assert.equal(output.groupResults[0].failureCode,'DOL_NATIONAL_SOURCE_UNAVAILABLE');
+ assert.equal(runs[0].failureCode,'DOL_NATIONAL_SOURCE_UNAVAILABLE');
+ assert.equal(runs[0].detail.nationalResponseEvidence.responseFormat,'SOURCE_UNAVAILABLE');
+ assert.equal(output.publicOutput,false);
+});
+
+test('W04 HTTP-200 HTML error remains distinct from valid National XML',async()=>{
+ const provider=createEmploymentR6Provider({now,fetchImpl:async(url)=>
+  String(url)===DOL_ETA539_URL
+   ?new Response(stateCsv,{status:200})
+   :new Response('<html><title>Service unavailable</title></html>',{status:200}),
+ });
+ const fetched=await provider.fetchDolClaims({mode:'ONE_YEAR',currentYear:2026});
+ assert.equal(fetched.partialFailureCode,'DOL_NATIONAL_RESPONSE_FORMAT_UNSUPPORTED');
+ assert.equal(fetched.nationalResponseEvidence.responseFormat,'HTML');
+ assert.equal(fetched.snapshots.length,1);
+ assert.equal(fetched.rows.filter(r=>r.geographyType==='STATE').length,51);
+ assert.equal(fetched.rows.filter(r=>r.geographyType==='NATIONAL').length,0);
 });
 
 test('W04 national mixed-week release retains latest availableAt per separate series',()=>{
@@ -172,6 +254,31 @@ test('W04 national mixed-week release retains latest availableAt per separate se
   }
   assert.equal(rows.filter(row=>row.availableAt===retrievedAt).length,4,
     'all four newest distinct series must be available as of same release');
+});
+
+// A mixed producer response can superficially look complete (four older
+// series) while attributed newer weeks are invisible to a legacy parser.
+// Regression is source-only; it cannot identify the active Windows Core parser.
+test('W04 mixed legacy and attributed National weeks retain newer series dates',()=>{
+ const retrievedAt='2026-11-12T14:00:00.000Z',releaseAt='2026-11-12T13:30:00.000Z';
+ const legacy=nationalWeek('10/17/2026');
+ const continued='<week source="r539cy"><weekEnded>10/31/2026</weekEnded>'+
+  '<ContinuedClaims><SA>1697000</SA></ContinuedClaims><IUR><SA>1.2</SA></IUR></week>';
+ const initial='<week source="r539cy"><weekEnded>11/07/2026</weekEnded>'+
+  '<InitialClaims><SA>200000</SA><SA4WK>195250</SA4WK></InitialClaims></week>';
+ const rows=parseDolNationalClaimsXml(officialNationalXml(legacy+continued+initial),{
+  retrievedAt,releaseAt,
+ });
+ assert.equal(rows.length,8,'legacy week plus two attributed weeks are all parsed');
+ const newest=rows.filter(r=>r.availableAt===retrievedAt);
+ assert.deepEqual(Object.fromEntries(newest.map(r=>[r.logicalSeriesId,r.observationDate])),{
+  INITIAL_CLAIMS:'2026-11-07',INITIAL_CLAIMS_4W:'2026-11-07',
+  CONTINUED_CLAIMS:'2026-10-31',INSURED_UNEMPLOYMENT_RATE:'2026-10-31',
+ });
+ assert.ok(newest.every(r=>r.releaseDate===releaseAt));
+ const older=rows.filter(r=>r.observationDate==='2026-10-17');
+ assert.equal(older.length,4,'old-style records remain usable as historical observations');
+ assert.ok(older.every(r=>r.availableAt===null&&r.releaseDate===null));
 });
 
 test('W04 national transport failure preserves 51-state source without exposing provider body',async()=>{
@@ -320,31 +427,41 @@ test('W04 oversized National body is quarantined without rejecting a valid 51-st
   assert.equal(data.snapshots.length,1);
 });
 
-test('W04 nonofficial National root and invalid official values cannot enter National raw',async()=>{
-  const invalid=[
-    {xml:'<error>'+nationalWeek('10/31/2026')+'</error>',code:'DOL_NATIONAL_NO_VALID_ROWS'},
-    {xml:officialNationalXml(nationalWeek('11/21/2026')),code:'DOL_NATIONAL_INVALID_DATA'},
-    {xml:officialNationalXml(nationalWeek('10/31/2026').replace('<SA>189000</SA>','<SA>-5</SA>')),code:'DOL_NATIONAL_INVALID_DATA'},
-    {xml:officialNationalXml(nationalWeek('10/31/2026')
-      +nationalWeek('10/31/2026').replace('<SA>189000</SA>','<SA>189001</SA>')),code:'DOL_NATIONAL_INVALID_DATA'},
-  ];
-  for(const scenario of invalid){
-    let calls=0;
-    const provider=createEmploymentR6Provider({
-      now,fetchImpl:async url=>{
-        calls++;
-        return String(url)===DOL_ETA539_URL
-          ?new Response(stateCsv,{status:200})
-          :new Response(scenario.xml,{status:200});
-      },
-    });
-    const data=await provider.fetchDolClaims({mode:'BACKFILL',currentYear:2026});
-    assert.equal(calls,2);
-    assert.equal(data.partialFailureCode,scenario.code);
-    assert.equal(data.rows.filter(x=>x.geographyType==='NATIONAL').length,0);
-    assert.equal(data.snapshots.length,1);
-    assert.equal(data.rows.length,51);
+test('W04 invalid official values isolate only the affected series; invalid root remains quarantined',async()=>{
+ const baseline=nationalWeek('10/31/2026');
+ const invalid=[
+  {xml:'<error>'+baseline+'</error>',code:'DOL_NATIONAL_RESPONSE_FORMAT_UNSUPPORTED',valid:0,raw:0},
+  {xml:officialNationalXml(nationalWeek('11/21/2026')),code:'DOL_NATIONAL_INVALID_DATA',valid:0,raw:0},
+  {xml:officialNationalXml(baseline.replace('<SA>189000</SA>','<SA>-5</SA>')),
+   code:'DOL_NATIONAL_INVALID_DATA',valid:3,raw:1},
+  {xml:officialNationalXml(baseline+
+    baseline.replace('<SA>189000</SA>','<SA>189001</SA>')),
+   code:'DOL_NATIONAL_INVALID_DATA',valid:6,raw:1},
+ ];
+ for(const scenario of invalid){
+  let calls=0;
+  const provider=createEmploymentR6Provider({now,fetchImpl:async url=>{
+   calls++;
+   return String(url)===DOL_ETA539_URL
+    ?new Response(stateCsv,{status:200})
+    :new Response(scenario.xml,{status:200});
+  }});
+  const data=await provider.fetchDolClaims({mode:'BACKFILL',currentYear:2026});
+  assert.equal(calls,2);
+  assert.equal(data.partialFailureCode,scenario.code);
+  const national=data.rows.filter(x=>x.geographyType==='NATIONAL');
+  assert.equal(national.length,scenario.valid);
+  assert.equal(data.snapshots.length,1+scenario.raw);
+  assert.equal(data.rows.filter(x=>x.geographyType==='STATE').length,51);
+  assert.ok(!national.some(x=>x.logicalSeriesId==='INITIAL_CLAIMS'),
+   'reject a source series with conflicting/negative/future observations');
+  if(national.length){
+   assert.equal(data.snapshots[0].detail.coverage,'PARTIAL');
+   assert.ok(national.every(x=>x.provenance.responseHash===data.snapshots[0].detail.responseHash));
+   assert.ok(national.every(x=>Number.isFinite(x.value)&&x.value>=0));
+   assert.deepEqual(data.missingSeries,['INITIAL_CLAIMS']);
   }
+ }
 });
 
 test('W04 National freshness agrees for Collector and Scheduler across all four weekly series',()=>{
@@ -390,6 +507,7 @@ test('W04 simultaneous National and ETA failures report the original HTTP failur
   assert.equal(runs[0].failureCode,'DOL_NATIONAL_HTTP_FAILED');
 });
 
+// Existing W04 exact-byte, declared-boundary XML provenance guard retained.
 test('W04 full National XML with declaration and harmless boundary comments is accepted; raw source remains unchanged',async()=>{
  const source='<?xml version="1.0" encoding="UTF-8"?>\n<!-- DOL public XML -->\n'
   +officialNationalXml(nationalWeek('10/31/2026'))+'\n<!-- official end -->';
