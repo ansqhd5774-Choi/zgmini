@@ -16,7 +16,7 @@ export async function triage({event,repository=REPO,request}){
  if(typeof request!=='function')fail('IO_MISSING');
  const run=event?.workflow_run;
  if(event?.action!=='completed'||event.repository?.full_name!==REPO||
-    event.repository.private!==true||
+    event.repository.private!==false||
     repository!==REPO||!run||!WORKFLOWS.includes(run.name)||
     !['pull_request','push','workflow_dispatch'].includes(run.event)||
     run.head_repository?.full_name!==REPO||
