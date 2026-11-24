@@ -7,7 +7,7 @@ export const PUBLIC_READBACK_SLOTS=Object.freeze({
  inflation19:Object.freeze({table:'market_public_snapshots_v1',snapshot_key:'detail:inflation-causal-public-19:r1',mode:'ENVELOPE'}),
  inflation7:Object.freeze({table:'market_public_snapshots_v1',snapshot_key:'detail:inflation-causal-candidates-7:r1',mode:'ENVELOPE'}),
  calendar:Object.freeze({table:'public_feed_snapshots_v1',kind:'output',feed_key:'release-calendar',snapshot_key:'current',mode:'DIRECT'}),
- theme:Object.freeze({table:'market_public_snapshots_v1',snapshot_key:'public:theme-etf-only:r1',mode:'COMPOSED'}),
+ theme:Object.freeze({table:'public_feed_snapshots_v1',kind:'output',feed_key:'theme-fear-greed-paid-hourly-v1',snapshot_key:'current',mode:'PAID_PROJECTION'}),
  employment:Object.freeze({table:'market_public_snapshots_v1',snapshot_key:'detail:employment-r6:one-year:v1',mode:'DIRECT'}),
 });
 const isObject=x=>x!==null&&typeof x==='object'&&!Array.isArray(x);
@@ -25,7 +25,7 @@ const result=(slot,status,extra={})=>({slot,status,...extra});
 /**
  * Compare two independently captured artifacts, without fetching either one.
  * d1 = {table,snapshot_key,kind?,feed_key?,readAt,exists,stored_at,body:rawJsonString}
- * api = {observedAt,statusCode,body:parsedHttpJson}
+ * api = {observedAt,statusCode,body:parsedHttpJson,headers?:{ 'x-zgmini-theme-source':string }}
  * A fixture result never proves that current production D1 was read.
  */
 export function comparePublicReadback(slot,{d1,api,now=Date.now()}={}){
@@ -64,32 +64,78 @@ export function comparePublicReadback(slot,{d1,api,now=Date.now()}={}){
   if(!isDeepStrictEqual(api.body,p))return result(slot,'PUBLIC_PAYLOAD_MISMATCH',evidence);
   return result(slot,'STRUCTURAL_MATCH_NOT_RUNTIME_PROOF',{...evidence,sourceVersion:p.sourceVersion,sourceStoredAt:p.sourceStoredAt});
  }
- if(expected.mode==='COMPOSED'){
-  // The Worker preserves the seven immutable seed ETF identities and its
-  // version/methodology while rolling scores and optional sidecars may change.
-  // Check only these invariant base identities; never equate the rolling
-  // sourceVersion with the seed sourceVersion or certify optional overlays.
-  if(!populated(saved.version)||!populated(saved.methodologyVersion)||
-     !populated(saved.sourceVersion)||!validIso(saved.sourceStoredAt)||
-     !validIso(saved.publishedAt)||typeof saved.observationDate!=='string'||
-     !Array.isArray(saved.themes)||saved.themes.length!==7||
-     saved.themes.some(item=>!isObject(item)||!populated(item.theme)||
-       !Array.isArray(item.etfs)||item.etfs.length!==2||
-       item.etfs.some(etf=>!populated(etf))))
-   return result(slot,'INVALID_THEME_SEED_METADATA',evidence);
-  for(const field of ['version','methodologyVersion']){
-   if(api.body[field]!==saved[field])
-    return result(slot,'THEME_SEED_LINEAGE_MISMATCH',{...evidence,field});
-  }
-  if(!populated(api.body.sourceVersion))
-   return result(slot,'THEME_SEED_LINEAGE_MISMATCH',{...evidence,field:'sourceVersion'});
-  if(!Array.isArray(api.body.themes)||api.body.themes.length<saved.themes.length||
-     saved.themes.some((item,i)=>api.body.themes[i]?.theme!==item.theme||
-       !exactStrings(api.body.themes[i]?.etfs,item.etfs)))
-   return result(slot,'THEME_SEED_LINEAGE_MISMATCH',{...evidence,field:'baseThemes'});
-  return result(slot,'SEED_READBACK_ONLY_COMPOSED_UNVERIFIED',{...evidence,
-   seedSourceVersion:saved.sourceVersion,seedIdentityShapeAligned:true,
-   rollingAndSidecarsVerified:false});
+ if(expected.mode==='PAID_PROJECTION'){
+  // The current /api/theme-fear-greed route selects the paid D1 feed first;
+  // it may serve the legacy ETF Reader when that record is absent or ineligible.
+  // Never treat an ETF-only seed as the paid feed's authoritative raw body.
+  const version='ZGMINI_THEME_PAID_HOURLY_V1';
+  const priceMode='MARKETPARQUET_PAID_SPLIT_ADJUSTED_1H_NY_PROXY_V1';
+  if(api.body.version!==version||api.body.sourcePriceMode!==priceMode)
+   return result(slot,'THEME_LEGACY_FALLBACK_UNVERIFIED',evidence);
+  const hex64=x=>typeof x==='string'&&/^[a-f0-9]{64}$/.test(x);
+  const validDate=x=>typeof x==='string'&&/^\\d{4}-\\d{2}-\\d{2}$/.test(x)&&
+   Number.isFinite(Date.parse(x+'T00:00:00Z'))&&
+   new Date(x+'T00:00:00Z').toISOString().slice(0,10)===x;
+  const validScore=x=>typeof x==='number'&&Number.isFinite(x)&&x>=0&&x<=100;
+  const quality=saved.dataQuality;
+  if(saved.version!==version||saved.status!=='READY'||saved.sourcePriceMode!==priceMode||
+     !hex64(saved.sourceVersion)||!hex64(saved.registrySha256)||
+     !validDate(saved.observationDate)||saved.confirmedObservationDate!==saved.observationDate||
+     !validDate(saved.sourceLatestDate)||saved.sourceLatestDate<saved.observationDate||
+     !['CONFIRMED','PROVISIONAL'].includes(saved.phase)||
+     !isObject(saved.phasePolicy)||!Array.isArray(saved.provisional?.points)||
+     saved.phase!==(saved.provisional.points.length?'PROVISIONAL':'CONFIRMED')||
+     !Array.isArray(saved.themes)||saved.themes.length===0||
+     !Array.isArray(quality?.expectedPublicIds)||!Array.isArray(quality?.readyPublicIds)||
+     !Array.isArray(quality?.pendingPublicIds)||
+     quality.readyPublicIds.length!==saved.themes.length||
+     saved.themes.some(t=>!isObject(t)||!populated(t.id)||!populated(t.theme)||
+       t.sourcePriceMode!==priceMode||t.confirmedObservationDate!==saved.observationDate||
+       !Array.isArray(t.etfs)||!t.etfs.length||!Array.isArray(t.history)||
+       !t.history.length||t.history.length>252||!validScore(t.score)||
+       t.history.some((p,i)=>!validDate(p?.date)||!validScore(p.score)||
+         i>0&&p.date<=t.history[i-1].date)||
+       t.history.at(-1).date!==saved.observationDate||
+       t.history.at(-1).score!==t.score))
+   return result(slot,'INVALID_THEME_PAID_METADATA',evidence);
+  const stamps=[d1.stored_at,Date.parse(saved.sourceStoredAt),
+   Date.parse(saved.updatedAt),Date.parse(saved.observationDate+'T00:00:00Z')];
+  // Match the existing main Reader's eight-day PUBLIC_DISPLAY_MAX_AGE_MS
+  // eligibility at API observation time. A stale paid row can trigger fallback.
+  const apiMs=Date.parse(api.observedAt),maxAgeMs=8*86_400_000;
+  if(stamps.some(t=>!Number.isSafeInteger(Number(t))||t>apiMs||apiMs-t>=maxAgeMs))
+   return result(slot,'THEME_PAID_ROW_NOT_ELIGIBLE',{...evidence,maxAgeMs});
+  const themes=saved.themes.map(t=>({id:t.id,...(t.configured?{configured:true}:{}),
+   theme:t.theme,etfs:t.etfs,score:t.score,
+   history:t.history.map(p=>({date:p.date,score:p.score})),
+   methodologyVersion:t.methodologyVersion,
+   confirmedObservationDate:t.confirmedObservationDate,
+   provisionalObservationDate:t.provisionalObservationDate,
+   sourcePriceMode:t.sourcePriceMode,transitionAfter:t.transitionAfter??null,
+   previousPriceMode:t.previousPriceMode??null,missingETFs:t.missingETFs??[]}));
+  // Response.json drops undefined properties, unlike direct object comparison.
+  const projected=JSON.parse(JSON.stringify({version:saved.version,status:'READY',
+   phase:saved.phase,observationDate:saved.observationDate,
+   confirmedObservationDate:saved.confirmedObservationDate,
+   sourceLatestDate:saved.sourceLatestDate,
+   methodologyVersion:saved.methodologyVersion,
+   sourcePriceMode:saved.sourcePriceMode,
+   historicalSourcePolicy:saved.historicalSourcePolicy,
+   sourceStoredAt:saved.sourceStoredAt,sourceVersion:saved.sourceVersion,
+   registrySha256:saved.registrySha256,updatedAt:saved.updatedAt,
+   phasePolicy:saved.phasePolicy,themes,provisional:saved.provisional,
+   dataQuality:{expectedPublicIds:quality.expectedPublicIds,
+     readyPublicIds:quality.readyPublicIds,
+     pendingPublicIds:quality.pendingPublicIds}}));
+  if(!isDeepStrictEqual(api.body,projected))
+   return result(slot,'THEME_PAID_PAYLOAD_MISMATCH',evidence);
+  // Source header is emitted only by readPaidThemeFeed; without an HTTP
+  // receipt it is impossible to certify the route's paid-vs-legacy choice.
+  const marker=api.headers?.['x-zgmini-theme-source']??api.themeSourceHeader;
+  if(marker!=='MARKETPARQUET_PAID_HOURLY')
+   return result(slot,'THEME_READER_BRANCH_UNVERIFIED',evidence);
+  return result(slot,'STRUCTURAL_MATCH_NOT_RUNTIME_PROOF',
+   {...evidence,readerBranch:'PAID',sourceVersion:saved.sourceVersion});
  }
  if(slot==='employment'){
   if(typeof saved.formulaHash!=='string'||typeof saved.methodologyVersion!=='string'||
