@@ -94,7 +94,13 @@ try{
    assert(validScore(index?.payload?.score),'CNN score is a valid real published score');
    const payload=index.payload;
    const score=payload.score.toFixed(1);
-   assert((await panel.innerText()).includes(score),'CNN card displays actual index score '+score);
+   // The gauge renders whole and fractional digits in distinct spans; its
+   // accessible score is the correct complete visible-score contract.
+   await page.waitForFunction(value=>document.querySelector(
+    '[data-testid="cnn-reference-panel"] .cnn-score-orb')
+    ?.getAttribute('aria-label')?.includes(value+'점')===true,score,{timeout:20000});
+   const gaugeLabel=await panel.locator('.cnn-score-orb').first().getAttribute('aria-label');
+   assert(gaugeLabel?.includes(score+'점'),'CNN accessible gauge displays real score '+score);
    for(const period of ['1D','1W']){
     const button=toolbar.locator('button[data-period-short="'+period+'"]');
     await button.scrollIntoViewIfNeeded();
