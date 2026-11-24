@@ -23,6 +23,13 @@ export async function runEmploymentR6AutoCollection({
   // provider response bodies, source URLs, credentials, or raw snapshots.
   const safeCode=value=>typeof value==="string"&&/^[A-Z][A-Z0-9_]{0,99}$/.test(value)?value:null;
   const safeRequests=value=>Number.isSafeInteger(value)&&value>=0&&value<=100000?value:null;
+  // Store only bounded collector row-change counts; a missing value is not 0.
+  // Never expose run identifiers, provider responses, source hashes or URLs.
+  const safeCount=value=>Number.isSafeInteger(value)&&value>=0&&value<=1_000_000?value:null;
+  const countFields=["collectedRows","inserted","revised","noop","rejected",
+    "historyRowsAdded","rawSnapshots","rawSnapshotNoops"];
+  const safeCounters=item=>Object.fromEntries(countFields
+    .filter(key=>safeCount(item?.[key])!==null).map(key=>[key,item[key]]));
   // Release/circuit dates are already computed by the approved scheduler.
   // Preserve only canonical UTC timestamps: no provider body, URL or secret.
   const safeTime=value=>typeof value==="string"
@@ -34,6 +41,7 @@ export async function runEmploymentR6AutoCollection({
     providerRequests:result.providerRequests??0,
     groups:(result.groupResults??[]).map(item=>({
       groupName:item.groupName,status:item.status,
+      ...safeCounters(item),
       ...(safeCode(item.failureCode)?{failureCode:safeCode(item.failureCode)}:{}),
       ...(safeRequests(item.providerRequests)!==null?{providerRequests:item.providerRequests}:{}),
     })),
