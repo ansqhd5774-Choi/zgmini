@@ -172,3 +172,12 @@
 5. Cloudflare 독립 A [#3306](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3306) / Run #45373166159 은 `PASS/CF_ACTIVE_DEPLOYMENT_READONLY_VERIFIED`, 도메인/활성 배포·Version 판독 성공이나 `sourceShaVerified=false`. 후속 [#3327](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3327) / Run #45400413554는 새로운 실제 활성 Version을 관측하며 `expectedBuildVersionActive=false,sourceShaVerified=false`. 특정 시각 배포 식별 PASS와 요청 소스/전체 D1·UI Runtime 판정을 구분한다. 기존 유효 결과 재사용, 새 배포·조회 예약 금지.
 
 **P2-D 결론:** 기존 승인 A 읽기만으로 (1) W04 한 키 로컬↔D1 해시 일치, (2) 별도 운영 SQLite National4/State51 저장 조회, (3) 공개 API/UI 일부 값 비교, (4) Cloudflare 활성 배포 확인까지 좁은 경로별 PASS. 하지만 전 구간 **동일 실행/스냅샷/버전의 수집→계산→D1→API→화면 계보는 미입증**이며, #3404 보고쌍 conflict·#3414 PDF 원본 감사·PC Job 진입 장애도 별도. 추가 A/B 호출·운영 변경 없이 기록하며 공통 자동화 담당의 정상 입구/기능 담당의 기존 원장 증거가 개선될 때만 해당 구간 재판정.
+
+
+### R2 본체 브라우저 E2E PR 경로 누락 개선 — 2026-11-25 정규 완료
+
+- 최신 `zgmini main@8410a857d2d8cd47beae811152a676c6eee07a75` 기준 기존 `.github/workflows/community-chat-browser.yml`의 실제 `node tests/*.mjs` 실행 스크립트 18개와 `pull_request.paths` 비교. 다음 네 시험 파일이 PR 필터에서 빠져 해당 파일만 수정하는 PR에 브라우저 E2E가 실행되지 않는 결함 확인: `tests/w06-mobile-touch-local-r1.mjs`, `tests/production-assets-network-r1.mjs`, `tests/inflation-criterion-browser-r1.mjs`, `tests/employment-r6-public-browser-r1.mjs`.
+- 독립 최신-main 작업 브랜치 `codex/ci-browser-test-paths-20261125`에서 기존 Workflow의 네 path 추가 + `tests/browser-ci-trigger-scope.test.mjs` 계약회귀시험(실제 실행 중인 18개 E2E 스크립트 경로 전수 검증), 총 2파일 변경. 신규 Workflow/Runner·운영 변경 없음.
+- [본체 PR #1566](https://github.com/ansqhd5774-Choi/zgmini/pull/1566) exact HEAD `60f1d07fe38ea305dced4b736c3b6bb5a1173742`의 [Node CI #45458737936](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45458737936) `SUCCESS`, [Secret #45458737918](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45458737918) `SUCCESS`, [Playwright Browser E2E #45458738065](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45458738065) `SUCCESS`.
+- Squash `MERGED`, `main@222a16f23f38e6a906ebcd0b1b945648fbd4b70c` 확인. Main의 18개 스크립트 PR 경로 누락 **0건**, 신규 계약시험 파일 재조회 확인.
+- 완료 판정은 이 **브라우저 CI 트리거 결함/해당 수정 100%**에 한정. 전체 8종 CI의 운영 End-to-End 동일 실행/게시/배포 계보 및 추가 미조사 E2E 경로는 별도 PARTIAL로 유지. 운영 PC/SQLite/D1/Cloudflare/공급자 변경 0.
