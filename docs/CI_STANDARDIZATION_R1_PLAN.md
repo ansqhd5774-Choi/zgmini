@@ -61,3 +61,56 @@
 - Node.js CI Draft PR #1556, 첫 Run 45431525570 (d81aa4978e2b321f3412c5fdacbe22039923eda7): Build·Type Check 성공, ESLint 625건 (errors 239, warnings 386)으로 실패. 주요 오류 @typescript-eslint/no-explicit-any (175), @next/next/no-html-link-for-pages (25), @next/next/no-assign-module-variable (11). 기존 소스 전체 검사로 인한 신규 PR 차단 위험. 무단 rule 해제/무차별 fix/가짜 PASS 금지.
 - Lint를 현행 regression·publication·Cloudflare 시험 이후로 이동. Draft PR에서 사전 오류 정밀 분류 후 단계적 enforcement 설계. 최초 실패는 해결 완료 아님.
 - 공개 actions/starter-workflows/ci/node.js.yml을 확인했고 이미 기존 npm ci, Build, Test 경로를 재사용; 중복 workflow 불필요.
+
+
+---
+
+# 잔여 CI 8종 표준화 실행 지시 R2 (2026-11-25)
+
+> R1 실행계획과 이미 병합·검증된 결과를 유지한다. 이 절은 **미완료 범위**에만 적용한다. 대상: `ansqhd5774-Choi/zgmini` + `ansqhd5774-Choi/zgmini-pc-control`. 각 저장소의 기존 `codex/ci-standardization-r1-20261125` 브랜치와 최신 main은 독립 상태로 보존한다. 이 브랜치의 과거 소스가 최신 main과 분기돼 있으므로 운영 또는 다른 담당자의 변경을 덮어쓰지 않는다. 코드 수정은 최신 main 기반 별도 범위 브랜치를 우선하고 정규 PR로 병합한다.
+
+## 목표/상태 판정
+
+검사 영역 8종: Lint / Type Check / Build / Unit / Integration / E2E / Security / Secret. 독립 Workflow 8개를 목표로 하지 않는다. 판정은 `IMPLEMENTED`(필요 범위 실제 CI 통과), `PARTIAL`, `NOT_CONFIGURED`, `BLOCKED`, `UNVERIFIED`, `NOT_APPLICABLE`(기술적 불필요 근거). Workflow 존재·Mock 통과·CI 병합·운영 데이터/게시 성공을 구분한다. 진행률은 실제 증거가 확보된 범위로만 보고하며 가짜 100% 금지.
+
+## P1-A — 본체 E2E 실제 실행 확인·복구
+
+1. 최신 main `.github/workflows/community-chat-browser.yml`, Chromium/Playwright 시험 목록, 변경 경로 PR 필터를 확인한다.
+2. GitHub Actions에서 최신/마지막 성공 Run, 최초 실패 Run, 실제 job/step/log를 회수한다. 트리거 미실행과 실행 실패를 분리한다.
+3. 기존 PC/모바일 390/768/1440/1920, 차트 마지막 값·날짜·결측, 입력·탭/터치·라우팅, Mock API 및 Production 읽기 전용 시험을 재사용한다. 모든 화면의 E2E 성공으로 확대하지 않는다.
+4. 실제 결함이 드러난 범위에만 최소 수정·원인 시험을 추가하고 기존 Playwright CI로 실행→PASS→병합→main readback한다. 브라우저 서비스 유료 결제, 운영 쓰기 금지.
+
+## P1-B — 두 저장소 Integration 검증 연결 대조
+
+- 본체: API→저장·조회, 저장 결과→계산/Projection, Projection→API→화면, 승인 공개 게시→D1/API readback.
+- PC 제어: 등록 수집→원자료 저장→저장자료 계산→로컬 결과→승인 공개 게시→D1/API readback; Controller→Writer 실행/JSON·TXT 회수; 승인·CAS·lease·백업·복구.
+- 각 경로의 대상 테스트·CI 트리거·실행 HEAD/Run을 연결하고 `PASS/PARTIAL/NOT_TESTED/NOT_APPLICABLE/BLOCKED`로 분류한다. 실제 빠진 경로만 기존 CI에 연결한다. 유효한 격리 통합 검사는 실운영 공급자·DB·게시 E2E와 혼동하지 않는다.
+
+## P2-C — PC 제어 Type/Build 필요성 판정
+
+- 실제 JS/MJS·TS 사용 현황, node --check, Oxlint, import closure, manifest/SHA/선택 설치 계약을 대조한다.
+- 필요성이 입증되면 무료·기존 도구로만 최소 검사 추가. `tsc --checkJs`/JSDoc 또는 별도 Build는 실제 탐지 결함/효과와 기존 코드 영향 검증 없이 추가하지 않는다.
+- 별도 배포용 빌드가 없거나 TS 검사의 대상이 없으면 `NOT_APPLICABLE` 근거를 기록한다. 검사 개수 맞추기용 새 패키지/빌드 금지.
+
+## P2-D — PC E2E 증거 범위 분리
+
+- 격리: 승인 접수/거부, Controller→Writer 호출 계약, 결과 생성, 실패·복구·중복 효과 차단, 게시 승인 무결성.
+- 운영: 기존 승인·유효 실행을 기준으로 실제 수집·계산·SQLite/checkpoint·D1/API/UI의 동일 대상 SHA/시각/버전을 대조한다. 기존 유효 Runtime 증거 재사용. 신규 공급자 호출·SQLite/D1 쓰기·PC 설치·게시·Runner·예약은 별도 승인 없이 금지.
+- 운영이 필수인데 권한/승인에 막힌 정확한 경로만 `BLOCKED` 처리하고 독립 검증 계속.
+
+## P2-E — 보안/의존성 최종 대조
+
+- 본체: CodeQL, ESLint(변경 소스), Gitleaks, npm audit/lockfile 및 실제 Run·검사 범위.
+- PC 제어: Oxlint, Gitleaks, Zizmor, 실행되는 JS 검사, 실제 manifest/lockfile. 무관한 npm audit 강제 금지.
+- private CodeQL·Dependency Review 등 유료 기능은 권한/요금 확인 및 사용자 승인 없이는 활성화 금지. 기존 안전/보안 검사·SHA pin을 보존한다.
+
+## 작업 및 완료 계약
+
+관측→실패 조건→가설 구분 증거→최소 수정→실패 경로 회귀시험→필수 Actions PASS→정규 PR 병합→main readback. 다른 담당자의 브랜치·dirty 변경을 보존하고 무단 reset/rebase/force push/광역 add 금지. 격리 Windows `zgmini-handoff-ci-isolated`은 운영 PC가 아니며 Remote Desktop Commander 사용 금지.
+
+최종 보고: 저장소별 8영역 판정표, 실제 신규 결함/수정, 각 Run ID·HEAD·테스트 결과, PR/병합 SHA와 최신 main, 구체적 미입증·BLOCKED, 다음 필수 행동. 전체 완료 = 필요한 영역 모두 `IMPLEMENTED` 또는 증거 기반 `NOT_APPLICABLE`; 나머지 상태는 미완료로 남긴다.
+
+### R2 착수 체크포인트
+
+- 기존 PC CI 개선 PR #3423, #3426, #3428, #3432, #3434는 병합 및 관련 CI 통과 증거 재사용. 문서 반영만으로 CI 적용/운영 완료를 주장하지 않는다.
+- 착수 작업은 **P1-A 본체 브라우저 E2E의 실제 마지막 실행/결과 확인**. 확인한 유효 증거부터 기록하고 필요성이 증명되면 별도 최신 main 코드 수정으로 이어간다.
