@@ -36,6 +36,9 @@ const publish=process.argv.includes('--publish');
 // Candidate only: recurring inflation research sidecar writes require their own
 // approved publication scope and exact installed-source manifest before enablement.
 const INFLATION_19_AUTO_PUBLICATION_APPROVED=true;
+// W05's existing B grants cover one publication per key, not recurring D1.
+// Source hook is staged but must not become a new implicit write effect.
+const W05_SAVED_SIDECARS_AUTO_PUBLICATION_APPROVED=false;
 const config=read(path.join(base,'config.json'));
 const source=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
 if(publish){
@@ -362,6 +365,22 @@ try{
    const {publishInflationCandidates7Auto}=await import('./inflation-causal-candidates-public-7-auto-publication-r1.mjs');
    report.inflation7=await publishInflationCandidates7Auto({pcHome:base,remote,coreDb:config.core});
   });
+  // W05 saved-only informational sidecars. Deliberately inert until the
+  // three-key recurring D1 effect and exact installed source/CAS are approved.
+  // Reuse the existing run-local Writer lane and its attemptOutput isolation;
+  // never create a second Task, scheduler, provider call or DB writer.
+  if(W05_SAVED_SIDECARS_AUTO_PUBLICATION_APPROVED){
+   const {W05_SAVED_IDS,publishW05StoredSidecar}=await import(
+    './w05-stored-sidecar-publication-r1.mjs');
+   report.w05SavedSidecars={};
+   for(const id of W05_SAVED_IDS){
+    await attemptOutput(report,'w05-saved-sidecar:'+id,async()=>{
+     report.w05SavedSidecars[id]=await publishW05StoredSidecar({
+      id,pcHome:base,remote,coreDb:config.core,now,
+     });
+    });
+   }
+  }
   // Reuse the existing public snapshot table; publish only the bounded display score.
   await attemptOutput(report,'rate-sentiment-publication',async()=>{report.rateSentiment.publication=(await publishPublicRateSentiment(remote,config.core,rateSentiment)).status;});
   try{report.stagflation.publication=(await publishStagflation(remote,config.core,stagflation)).status;}catch(error){report.stagflation.publication='UNVERIFIED';report.stagflation.reason=/^STAGFLATION_[A-Z_]+$/.test(error.message??'')?error.message:'STAGFLATION_PUBLICATION_FAILED';}
