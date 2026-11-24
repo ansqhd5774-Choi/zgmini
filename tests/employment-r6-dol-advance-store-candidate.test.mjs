@@ -48,8 +48,8 @@ test("W04 ETA538 candidate preserves exact PDF bytes in base64, hashes separatel
   assert.equal(out.originalPdfSha256,sha256(original));
   const decoded=Buffer.from(snapshot.body,"base64");
   assert.deepEqual(decoded,original);
-  assert.equal(sha256(decoded),snapshot.detail.originalPdfSha256);
-  assert.notEqual(sha256(Buffer.from(snapshot.body,"utf8")),snapshot.detail.originalPdfSha256);
+  assert.equal(sha256(decoded),snapshot.detail.originalBodySha256);
+  assert.notEqual(sha256(Buffer.from(snapshot.body,"utf8")),snapshot.detail.originalBodySha256);
 });
 
 test("W04 ETA538 four National rows match R4 stored-row shape without fake PIT time",()=>{
