@@ -94,8 +94,15 @@ export async function collectBrowserPerformance(chromium){
    try{
     const page=await context.newPage();
     await page.addInitScript(trackerScript);
+    // Cloudflare Workers preview can keep module loading pending past
+    // DOMContentLoaded. Observe the committed HTTP document first, then
+    // independently verify that the actual page main was rendered.
     const response=await page.goto(ORIGIN+'/about',
-     {waitUntil:'domcontentloaded',timeout:20000});
+     {waitUntil:'commit',timeout:20000});
+    console.log('CI_PERFORMANCE_NAV_COMMITTED '+JSON.stringify({
+     profile:profile.name,httpStatus:response?.status()??null
+    }));
+    await page.locator('main').waitFor({state:'attached',timeout:12000});
     await page.waitForTimeout(1500);
     const observation=await page.evaluate(()=>{
      const nav=performance.getEntriesByType('navigation')[0];
