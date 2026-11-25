@@ -2,7 +2,7 @@
 
 - 기준: 2026-11-25 KST GitHub OPEN 직접 조회 스냅샷
 - 최초 사용자가 지적한 89건은 조회 시점 기준이며, 현재 재조회 **88건**. OPEN PR 실시간 변동에 따른 수량 차이임.
-- 상태: **1단계 88건 OPEN 목록·본문·요청ID 조사 완료 / 2단계 댓글·원본 영수증 전수 대조 진행 중.** 이 파일의 `PENDING_EVIDENCE_REVIEW` 행은 아직 검사 완료가 아니다.
+- 상태: **1단계 88건 본문·댓글 열람 완료 / 2단계 원본 Actions·JSON/TXT 독립 검증 및 최종 종결 판정 미완료.** 이 파일의 `PENDING_EVIDENCE_REVIEW` 행은 아직 검사 완료가 아니다.
 - 보존 원칙: W01/W03/W05 완료 항목과 활성 W04/ER1/고용R6/공통 운영구조를 혼동하여 임의 폐쇄하지 않는다.
 
 | 저장소 | OPEN Issue | OPEN PR |
@@ -209,3 +209,31 @@
 - zgmini-pc-control Issue #68: REVIEWED_COMMENT, 댓글 1378, **PASS / PC_SOURCE_ORIGIN_CANDIDATE_INVENTORY**;STATUS SUCCEEDED
 - zgmini-pc-control PR #3543: REVIEWED_NO_COMMENT, 댓글 0, no standard result
 - zgmini-pc-control PR #3542: REVIEWED_COMMENT, 댓글 1, **SUCCESS**;**SUCCESS**
+
+## 2026-11-25 1차 전수 열람 완료 및 미종결 처리 판정
+
+- 최신 조회 스냅샷 **88건 = 본체 Issue 1/PR 6, PC 제어 Issue 79/PR 2**.
+- **88/88개 항목 각각의 제목·본문·요청 명세(검색 반환) 확인 및 전체 댓글 타임라인 조회**. 그중 댓글 있는 항목 **83건**, 댓글 없는 항목 **5건**: #3531, #3519, #1226, #1213, #3543. 댓글 전수 열람이 **실제 Runtime/원본 결과 JSON-TXT 직접 검증**과 같은 것은 아니다.
+- 1차 소관 키워드 분포 (소관의 *후보* 분류, 최종 담당 확정이 아님): 공통 PC/CI 40건 / 고용 R6/W04 33건 / W01/W03/W05 소속 재검증 1건 / 소속 미확정 1건 / 시장캘린더/ER1 13건.
+- OPEN PR 8건 각각 다시 조회: 본체 #1463,#1266,#1036,#1031,#933,#488은 모두 OPEN Draft/미병합. PC #3543은 OPEN non-Draft/미병합(W04), #3542는 OPEN Draft/미병합(ER1). **PR 8건 중 본 감사에서 직접 병합한 건 0**.
+
+### 실제 장애·실행 증거로 구분된 주요 사례
+
+| 원본 | 전수검사에서 확인된 실제 상태 | 안전한 다음 조치 |
+|---|---|---|
+| [본체 #1582](https://github.com/ansqhd5774-Choi/zgmini/issues/1582) | CI 실패 이슈에 후속 성공 언급 댓글 20개. 원본 실패와 정확 HEAD 재검증 필요 | 해결 CI run/commit 검증 후 종결 판정 |
+| [PC #3516](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3516) | `POSTCHECK_OUTCOME_UNKNOWN` 및 독립 C 복구 선행 조건 기록, 댓글 19건 | 원담당 복구 완료 전 임의 종료 금지 |
+| [PC #155](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/155) / [#173](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/173) | ER1 소스·선택 B 계약 준비와 운영 설치·실측 미완료를 분리, 최신 댓글에서 #3516 lease 의존 확인 | ER1 담당 작업 유지, 원본 PARTIAL 보존 |
+| [PC #2232](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2232) | `BLOCKED/RESOURCE_WAIT_MEMORY` | 자원/임계치 실측 및 담당 복구 |
+| [PC #2237](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2237) | 공통 Runner 실행 후 취소/영수증 부재 계보, 댓글 22건 | 공통 프로세스 문제로 유지 |
+| [PC #1969](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1969) | `BLOCKED/BUNDLE_B_APPROVAL_CONTRACT_INVALID` | 기존 승인 명세 계약 수정 증거 필요 |
+| [PC #2059](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2059) | `BLOCKED/APPROVAL_MANIFEST_READ_FAILED` | 승인 경로/실측 증거 필요 |
+| [PC #1026](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1026) | 과거 B 실행 댓글 `SUCCESS/R6_B_COLLECT_PUBLISH_VERIFIED`, 영수증 2/2 및 `NO_REEXECUTE` 명시 | 종료 후보지만 R6 원담당의 실제 잔여 의존성 확인 후 `completed` 종결 |
+| [PC #394](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/394) / [#474](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/474) | ER1 원본 각각 `PARTIAL/NOV30_ER1_VENDOR_ACTUAL_INVALID`, `PARTIAL/NOV30_ER1_PROVIDER_BUDGET_STOP` | 성공으로 소급 금지; 타 업무 원담당과 의존성 확인 |
+| [PC #1213](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1213) / [#1226](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1226) | 댓글 결과 0건. 범용 Core 조회 원본 | 실행·귀속 미확인 유지 |
+
+### 완료 범위 및 남은 전수검증 단계
+
+- **1차 목록·본문·댓글 전수검사: 88/88 = 100%** (동일 시점 스냅샷). 최초 언급한 89건 중 1건은 다른 작업으로 OPEN 목록에서 빠졌으며, 본 전수검사가 종결한 1건으로 집계하지 않음.
+- **2차 원본 Action run, 고정 SHA, JSON/TXT 전문 직접 재검증 및 각 항목별 정확한 종결/지속/담당자 최종 결정: 미완료**. 본문·댓글의 기존 PASS 문자열만으로 성공 증명하지 않음.
+- **이번 조사 실행 종료 수 0건 / 기존 W01·W03·W05 누적 종결 11건 유지**. 공통/고용/W04/ER1 실무가 진행 중인 항목을 건수 줄이기 위해 임의로 닫지 않음. 운영 PC/DB/Task/Controller 변경 0건.
