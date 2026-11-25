@@ -392,3 +392,7 @@ GitHub Search API `total_count` 현재 **86건** = 본체 Issue 1/PR 6 + PC 제�
 | [#1231](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1231) | [Run 42925054398](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42925054398) Actions `success`, `results/42925054398-1-seat-5.json/.txt` 9/9 필드 일치. JSON blob `8f8cd91038ef49399a1de8cfb47c17a60b490cb7` / TXT `c0bd48ae51b891967a93f883a2947241d5355274`. 결과 `STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE`, runtimeSourceVerified=false | 원본 Core runtime 소스 미입증, OPEN |
 
 중요 판정: Actions job의 `success`는 Runner/보고 경로 완료일 수 있으며 업무 결과 성공과 동치가 아니다. 차단된 요청 requestId/manifest 원문 재실행 금지. 추가 읽기 전용 조회는 각 항목의 고유 요청 목적·의존성에 한정한다. 운영 PC·Controller·Writer·DB·Task 변경 0건.
+
+### 배치 G 후 실시간 OPEN 현황
+
+GitHub Search API total_count 재조회: **87건 = 본체 Issue 1 / PR 6 + PC 제어 Issue 76 / PR 4**. 직전 배치 F의 86건 대비 신규 PC 제어 [PR #3548](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3548) 추가 확인. 이 PR은 W04 후검사 증거 복구 담당 범위이며 최초 고정 88건 2차 검사 완료율 또는 종결 실적으로 산입하지 않는다. 이번 배치에서 감사가 직접 종결한 Issue·PR 0건.
