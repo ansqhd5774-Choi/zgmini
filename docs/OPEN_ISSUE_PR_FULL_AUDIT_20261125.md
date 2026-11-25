@@ -790,3 +790,29 @@ GitHub Search API 직접 재조회: `zgmini` Issue **1** / PR **6**, `zgmini-pc-
 - 이번 신규 직접 Issue/PR 종결 **0**, 누적 본 감사 직접 종결 **10건** 유지.
 - 운영 PC/Controller/Writer/SQLite/D1/Task, 기존 운영 승인, 신규 PC Job/PR/재실행 모두 **0건 변경**.
 - 후속 단계: 남은 코호트 22건 중 미검증 고유 원본과 동등 후속 증거를 분리; W01/W03/W05 완료 항목의 안전한 종료 판정, W04·ER1·#3516 및 공통 운영 문제 보호.
+
+
+## 배치 AA — ER1 출력 근거와 #996 운영 C 원본복구 교차검증 (2026-11-25 KST)
+
+시작 기준 배치 Z **66/88(75.0%)**. 최초 88건 중 앞선 A–Z 독립 신규 산입이 없던 PC **#835, #996**의 고유 원본 증거를 직접 확인했다. **신규 2건**, 누적 **68/88(77.3%)**, 미검증 **20건**. 본문/댓글 열람과 달리 실제 저장된 Git blob 및 실행·독립 재조회 원문으로 판정한다. 업무 완료와 원본 증거검증을 구분한다.
+
+### PC #835 — 좁은 ER1 Writer/로컬 output 조회 A 검증
+
+- [원본 이슈 #835](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/835) 최신 **OPEN**. ER1 월별 Writer 로컬 결과 및 D1 게시 일치의 좁은 증거 조회 경로를 요구하며, 후속 기능 진행 원장/별개 프로젝트 요구도 이어져 있다.
+- 실제 고유 [#862 / Run 42435736855](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42435736855) completed/success; Job `128594056163` success, fixed allowlist Execute·업로드 Steps success.
+- 저장 [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/42435736855-1-seat-1.json) Git blob `f1c629c05bde3f8986dcd6fa88fefcde39459fcc`, [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/42435736855-1-seat-1.txt) Git blob `f5fe08291ea0fa8d13fc30074a58312a8c40b22a`. 정확 requestId `pc-bb2a9120-2f4b-4e49-a598-9468ec8a115a`, operation `writer-publication-evidence-readonly`, result `PASS/ER1_WRITER_METADATA_READONLY`, protectedStateUnchanged=true, operationalWrites/providerCalls/d1Writes=0. JSON↔TXT 공통 상위 필드 정합.
+- `result.output.key=market-calendar:earnings-er1-score-2026-11-public`, `state=READ`, `storedAt=1794084908736`, `bodySha256=c0852ed061cecd198ef9ed05c56e1ac513ad37f670f8df9ec90f911d2298cfcf`, scoreableIssuers=1164. **단** `result.d1.perKeyReadback=NOT_RECORDED`, `productionVerified=false`, 월별 sqliteDays/privateDays=null. 정확 개별 공개 D1 동등성까지 검증 완료 선언 불가. **원본 A 부분증거 검증 완료 / #835 OPEN 유지**. W02/ER1 진행 중 요구 보호.
+
+### PC #996 — 독립 C 복구와 원본 설치 취소 구분
+
+- [원본 이슈 #996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/996) 최신 **CLOSED**; 본래 Controller update target `9db6fff689c488a59fe8771f013b7c5d3bafc0a8`, 원본 단회 요청은 재설치 성공이 아님.
+- 독립 Windows C 실행·아카이브 보존 [원문](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/e065f2e0bae4b76bd234aec181ff9a6c9e3d5e75/artifacts/runner-recovery/996-native-c-operation-20261115.json) Git blob `ea18b5a3b3d97e8df84863febdcc45a829ab29da`: `exit=0`, `result.status=INTAKE_RECOVERED_ORIGINAL_INSTALL_ABORTED`, `completedArchiveMoves=3`, `originalInstallSucceeded=false`, `originalRequestRetries=0`, `fixedReservationPreserved=true`, `actualControllerSha=badad9124157879d7a645b64f2768113d632355b`.
+- 독립 [Archive 재조회](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/e065f2e0bae4b76bd234aec181ff9a6c9e3d5e75/artifacts/runner-recovery/996-independent-postread-20261115.json) blob `f3ff9bab2ad2c000bbc05af1b8dbe28c553128fe`: 세 보관 oldC/continuation/install의 sourceAbsent=true, archivePresent=true, oldArchiveOriginalBytesMatch=true, 원본 ID/ACL 보존, protectedStateUnchanged=true, 당시 6개 Runner online. [Control-plane 재조회](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/e065f2e0bae4b76bd234aec181ff9a6c9e3d5e75/artifacts/runner-recovery/996-control-plane-postread-20261115.json) blob `8ba6ad6dac1a6a6e455aee2078843f7c88bd97f7`, installLock.held=false, watchdog HEALTHY, receiver LISTENING; 원본 사전 identity 파일 blob `8a97a8eb76ea925ea0f1688580fb52a222d11587` 존재.
+- **#996의 실제 독립 C 복구/원본 단회 수명주기 종료 근거 확인**, 완료된 C를 다시 실행하지 않음. 목표 Controller B 설치 성공/현재 운영 정상성/별도 활성 #3516 복구까지 확대하지 않는다. 이번 감사 직접 닫은 건수 **0** (기존 담당자가 종료한 상태).
+
+### 배치 AA 종료 상태 및 경계
+
+- GitHub Search API OPEN: `zgmini` Issue 1 / PR 6, `zgmini-pc-control` Issue 57 / PR 2 = **총 66건(이슈 58, PR 8)**. 원본 최초 고정 코호트 88과 별개.
+- 1차 88/88, 2차 원본독립 감사 **68/88(77.3%)**, 잔여 **20건**. 이번 2건은 이전 배치 검증 대상과 중복 산입하지 않는다.
+- 신규 직접 Issue/PR 종결 0, 누적 직접 종결 **10건**. Controller/Writer/DB/D1/Task/운영 PC/승인/원본 재실행/신규 PC Job/PR 변경 0.
+- 후속: 미검증 20건의 고정 ID/원본 조회, W01/W03/W05 종료대상 귀속 판정. W04·ER1·#3516 실제 복구 경계를 보호.
