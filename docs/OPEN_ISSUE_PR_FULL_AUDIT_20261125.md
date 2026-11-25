@@ -52,16 +52,16 @@
 | 38 | PC Issue | [#1688](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1688) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | REVIEWED_COMMENT (2 comments; **STATE_UNKNOWN**) |
 | 39 | PC Issue | [#1646](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1646) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | REVIEWED_COMMENT (2 comments; **STATE_UNKNOWN**) |
 | 40 | PC Issue | [#1637](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1637) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | REVIEWED_COMMENT (2 comments; **STATE_UNKNOWN**) |
-| 41 | PC Issue | [#1598](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1598) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 42 | PC Issue | [#1351](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1351) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 43 | PC Issue | [#1295](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1295) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 44 | PC Issue | [#1231](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1231) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 45 | PC Issue | [#1227](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1227) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 46 | PC Issue | [#1226](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1226) core-status | `core-status` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 47 | PC Issue | [#1217](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1217) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 48 | PC Issue | [#1213](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1213) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 49 | PC Issue | [#1200](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1200) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 50 | PC Issue | [#1196](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1196) core-runtime-source-readonly | `core-runtime-source-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
+| 41 | PC Issue | [#1598](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1598) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; **STATE_UNKNOWN — CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE**;FIRST_FAIL_NO_AUTOMATIC_RETRY) |
+| 42 | PC Issue | [#1351](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1351) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | REVIEWED_COMMENT (15 comments; STATUS_AND_ADMISSION;STATUS_SOURCE_ONLY_ISOLATED_HOST) |
+| 43 | PC Issue | [#1295](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1295) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; **STATE_UNKNOWN — CORE_NO_ACTIVE_TASK_ENGINE**;FIRST_FAIL_NO_AUTOMATIC_RETRY) |
+| 44 | PC Issue | [#1231](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1231) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; **STATE_UNKNOWN — CORE_NO_ACTIVE_TASK_ENGINE**;FIRST_FAIL_NO_AUTOMATIC_RETRY) |
+| 45 | PC Issue | [#1227](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1227) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | REVIEWED_COMMENT (2 comments; no standard result) |
+| 46 | PC Issue | [#1226](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1226) core-status | `core-status` | 공통 PC/CI | REVIEWED_NO_COMMENT (0 comments; no standard result) |
+| 47 | PC Issue | [#1217](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1217) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | REVIEWED_COMMENT (2 comments; no standard result) |
+| 48 | PC Issue | [#1213](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1213) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | REVIEWED_NO_COMMENT (0 comments; no standard result) |
+| 49 | PC Issue | [#1200](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1200) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; **STATE_UNKNOWN — CORE_NO_ACTIVE_TASK_ENGINE**;FIRST_FAIL_NO_AUTOMATIC_RETRY) |
+| 50 | PC Issue | [#1196](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1196) core-runtime-source-readonly | `core-runtime-source-readonly` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; **STATE_UNKNOWN — CORE_NO_ACTIVE_TASK_ENGINE**;FIRST_FAIL_NO_AUTOMATIC_RETRY) |
 | 51 | PC Issue | [#1174](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1174) pc-job | `writer-install-preimage-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
 | 52 | PC Issue | [#1169](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1169) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
 | 53 | PC Issue | [#1165](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1165) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
@@ -151,3 +151,15 @@
 - zgmini-pc-control Issue #1688: REVIEWED_COMMENT, 댓글 2, **STATE_UNKNOWN**
 - zgmini-pc-control Issue #1646: REVIEWED_COMMENT, 댓글 2, **STATE_UNKNOWN**
 - zgmini-pc-control Issue #1637: REVIEWED_COMMENT, 댓글 2, **STATE_UNKNOWN**
+
+### 감사 댓글 검증 41–50
+- zgmini-pc-control Issue #1598: REVIEWED_COMMENT, 댓글 1, **STATE_UNKNOWN — CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE**;FIRST_FAIL_NO_AUTOMATIC_RETRY
+- zgmini-pc-control Issue #1351: REVIEWED_COMMENT, 댓글 15, STATUS_AND_ADMISSION;STATUS_SOURCE_ONLY_ISOLATED_HOST
+- zgmini-pc-control Issue #1295: REVIEWED_COMMENT, 댓글 1, **STATE_UNKNOWN — CORE_NO_ACTIVE_TASK_ENGINE**;FIRST_FAIL_NO_AUTOMATIC_RETRY
+- zgmini-pc-control Issue #1231: REVIEWED_COMMENT, 댓글 1, **STATE_UNKNOWN — CORE_NO_ACTIVE_TASK_ENGINE**;FIRST_FAIL_NO_AUTOMATIC_RETRY
+- zgmini-pc-control Issue #1227: REVIEWED_COMMENT, 댓글 2, no standard result
+- zgmini-pc-control Issue #1226: REVIEWED_NO_COMMENT, 댓글 0, no standard result
+- zgmini-pc-control Issue #1217: REVIEWED_COMMENT, 댓글 2, no standard result
+- zgmini-pc-control Issue #1213: REVIEWED_NO_COMMENT, 댓글 0, no standard result
+- zgmini-pc-control Issue #1200: REVIEWED_COMMENT, 댓글 1, **STATE_UNKNOWN — CORE_NO_ACTIVE_TASK_ENGINE**;FIRST_FAIL_NO_AUTOMATIC_RETRY
+- zgmini-pc-control Issue #1196: REVIEWED_COMMENT, 댓글 1, **STATE_UNKNOWN — CORE_NO_ACTIVE_TASK_ENGINE**;FIRST_FAIL_NO_AUTOMATIC_RETRY
