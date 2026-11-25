@@ -87,6 +87,8 @@ on:
       - 'tests/ci-web-speed-good-r2.test.mjs'
       - 'scripts/ci-pagespeed-real-user-field-r1.mjs'
       - 'tests/ci-pagespeed-real-user-field-r1.test.mjs'
+      - 'scripts/ci-production-browser-good-r1.mjs'
+      - 'tests/ci-production-browser-good-r1.test.mjs'
       - '.github/workflows/community-chat-browser.yml'
   workflow_dispatch:
     inputs:
@@ -192,6 +194,11 @@ jobs:
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_psi_field == true }}
         timeout-minutes: 3
         run: node scripts/ci-pagespeed-real-user-field-r1.mjs
+      # #8 free fallback: browser-only first-party Production GETs with strict
+      # no-write routing, no provider API keys and no claim of CrUX field P75.
+      - name: Observe production first-party read-only page speed
+        timeout-minutes: 3
+        run: node scripts/ci-production-browser-good-r1.mjs
       # Accessibility results are observations; reviewed baseline approval is separate.
       - name: Measure local WCAG A/AA accessibility with axe-core
         timeout-minutes: 2
