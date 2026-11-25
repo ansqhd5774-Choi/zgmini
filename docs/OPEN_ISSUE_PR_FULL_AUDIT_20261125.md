@@ -1278,3 +1278,22 @@ GitHub Search API 실제 재조회: 본체 Issue **1** / PR **6**, PC 제어 Iss
 - [본체 #1031](https://github.com/ansqhd5774-Choi/zgmini/pull/1031) 정확 HEAD `80a6a462158c7ee44dd0cf8d0527ad3d093e9354`, OPEN/Draft/dirty, Actions 0/check-runs 0; 이전 배치 AR에서 owner fetch wrapper/무등록 BLS 위험 분류를 정확 source SHA와 [원 PR 댓글 #7162526241](https://github.com/ansqhd5774-Choi/zgmini/pull/1031#issuecomment-7162526241)에 이미 전달했으므로 동일 중복 댓글은 작성하지 않음.
 - 인증된 운영 Windows 원본 #1969/#2059에 접근 가능한 연결 기기를 실제 재조회했지만 **offline**. 기존 out-of-band 실패 report GitHub 근거로 로컬 Windows 실제 실행자·lease/원장 해시를 추정하지 않는다. 새 설치/승인/복구 실행 없음.
 - 이번 신규 직접 종결 **0건**, 감사 누적 직접 종결 **10건**, 잔여 #1031/#1266/#1969/#2059 **4건**. 이번 실제 변경은 **원 PR #1266 검증 댓글 1건 + 감사 문서 기록**이고, owner branch·기존 PR 소스·GitHub Actions/CI·운영 PC/Controller/Writer/DB/D1/Task/Provider 변경 0. 따라서 완료율 **95.5% 유지**.
+
+
+## 배치 AT — W04 #1266 소스 전용 안전 집계 실제 구현 및 별도 Draft PR 생성 (2026-11-25 KST)
+
+**최초 고정 코호트 84/88(95.5%) 유지**. 이 회차는 조사 원장에 글만 추가하는 대신 기존 #1266 결함 범위 일부를 **실제 소스·테스트 2개 파일로 신규 구현**했다. 단 새 파일을 기존 런타임에 연결하거나 승인·설치한 것은 아니므로 원본 #1266 완료 및 운영 실증으로 산입하지 않는다.
+
+### 실제 구현
+
+- W04 원담당 `codex/employment-1y-reader-r1`에서 분기 `codex/w04-pit-safe-aggregate-source-only-20261125`, [신규 Draft PR #1614](https://github.com/ansqhd5774-Choi/zgmini/pull/1614), 정확 HEAD `b0f818880e8f291931ba9c645650a96efbb0c9b2`, base=`codex/employment-1y-reader-r1`.
+- 실제 PR `files` 원본 재조회로 **정확히 2개 added** 확인: `lib/market-score/employment-r6-raw-aggregate-source-only.mjs` / `tests/employment-r6-raw-aggregate-source-only.test.mjs`. PIT0408·PIT0605·Runner·DB/Host/Controller·Provider·Workflow 원본은 손대지 않음.
+- 새 함수 `aggregateAttestedR6Snapshots`는 읽기 전용 **이미 검증·dedupe된 비공개 identity projection 입력**을 대상으로 approved group whitelist, 그룹별·최근 12개월+OLDER/UNKNOWN 월별 세 계수 `metadataKeys/bodyVerifiedKeys/runCertifiedKeys`를 출력. `runCertified => bodyVerified`, 중복 identity 거부, 미승인 group/월 거부, 최대 4,000건/최대 64 group, group/month/total 합계 일치, 결과에 raw ID/hash/request key/body/경로를 포함하지 않도록 구현. 원본 raw 검증 또는 Runtime/DB 소스 인증 자체를 수행한다고 주장하지 않음.
+- 로컬 환경에서 별도로 구성한 **설계상 동등 함수·시험 코드**로 `node --test` 10/10 PASS 확인했지만, **GitHub #1614 원격 정확 HEAD의 CI는 0**으로 조회됨. 그러므로 remote 정확 SHA와 동일한 코드의 테스트 실증/정규 CI는 *아직 미확인*으로 구분.
+- [기존 구형 Draft #1266에 source-only 이관 인계 댓글 #7162684958](https://github.com/ansqhd5774-Choi/zgmini/pull/1266#issuecomment-7162684958) 기록. #1266 자체는 OPEN/Draft/clean, 원래 HEAD `0193056bdb47bcf6c911f17623b6c302c8199c4c`, 해당 HEAD Actions 0/check-runs 0. 구 원본 PR을 삭제·병합·대체 완료 판정하지 않음.
+
+### 남은 증명·업무 미완
+
+- 원담당 리뷰에서 집계 입력 projection의 실제 **사전 body-hash/Run 인증** 출처, 범용 R6 그룹 raw 커버리지, 현행 private/read-only/512MiB·4k/20k caps와 일치하는 운영 경계가 검증되어야 함. 신규 함수가 단독 존재한다는 것만으로 PIT0405 인증 수치가 나타나지 않음. 새 Draft 정확 HEAD CI/회귀와 원담당 승인 후에만 선택 연결.
+- 본체 #1031의 무등록 BLS 25/24h 공유 원자 예약 보호는 여전히 실PC 설치·안전 이관 미완. PC #1969/#2059 기존 out-of-band BLOCKED의 인증 Windows 실행 세션/로컬 원장 대조 역시 미완.
+- 이번 회차 신규 감사 직접 종결 0, 누적 직접 종결 10; 고정 코호트 검증 **84/88(95.5%)**, 잔여 정확 **4건** (#1031,#1266,#1969,#2059). 추가된 #1614는 **고정 최초 88건 코호트 밖의 새 source-only 보조 Draft**이며 분모나 완료 건수에 산입하지 않음. 운영 PC·Controller·Writer·SQLite/D1·Task·Provider/실제 인증/Job 변경 0.
