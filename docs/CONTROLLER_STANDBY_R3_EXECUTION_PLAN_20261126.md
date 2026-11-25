@@ -254,3 +254,12 @@ R2에서 확인한 설치 SHA·Runner online은 당시 읽기 증거로만 사�
 - 고정 Watchdog 디렉터리의 `runner-watchdog.mjs` 및 `INSTALL.json` 두 파일을 regular/no-link/크기·변경 여부 한정으로 읽고 SHA-256·manifest 일치·scope만 출력. 원본 바이트·명령줄·인증정보·운영 write 0. 실패는 `STATE_UNKNOWN`으로 표시.
 - [소스 CI](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3749/checks)는 시작 시점 대기. 승인/병합 없이 운영 PC에 새 A 프로브를 제출하지 않음. PR #3738의 Standby Active 구현 Draft와 분리하여, 현재 정상 Controller/Watchdog을 변경하지 않음.
 - 이후 기존 A에서 정확한 Watchdog raw preimage가 확보되면 Controller B 후행 Watchdog B의 대상 SHA·파일별 manifest·CAS를 현재 원본과 대조한다. **A에서 해시를 확인했다고 B 설치 승인 또는 전환 완료라고 표시하지 않음.**
+
+## 14. 2026-11-26 최신 R3 CI 실행 영수증 회수
+
+- **Controller #3738 정확 HEAD**: `c0c4dcff6c8071b1318cca956e43ba82718c4975`, Draft / 미병합.
+- [Controller Maintenance Run #45719063995](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45719063995) / Job `139572486091`은 **SUCCESS**. 실제 완료 Job 로그에서 Windows OS-TEMP lease/경합 **11/11 PASS**, Standby Node IPC 인계 **5/5 PASS** 확인. 모든 단계 완료, 작업 단계 실패 0.
+- 같은 정확 HEAD의 [Automation Status #45719063900](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45719063900) 및 [C996 #45719063953](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45719063953)은 **SUCCESS**. [Secret Scan #45719063892](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45719063892)는 이 조회 당시 **QUEUED**. 따라서 PR #3738 정확 HEAD **3/4 통과, 최종 CI 확정 전**.
+- **Watchdog 사전 해시 A #3749**: 정확 HEAD `480f81a11286f656be07685d0417840c76196c37`, Draft / 미병합. [C996 #45719391727](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45719391727), [Process Inventory Source #45719391743](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45719391743), [Secret Scan #45719391479](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45719391479)은 이 조회 당시 **QUEUED**. PR 이벤트의 operating/handoff 스냅샷 SKIPPED는 정상 분기 조건이며 운영 readback 실행으로 집계하지 않음.
+- 확인 가능한 원본 증거가 없는 CI 대기를 테스트 실패로 바꾸지 않고, 동일 HEAD의 완료 결과가 바뀌지 않는 한 재실행·재요청하지 않는다. 다음 필수 행동은 **#3749 소스 검증 확정 → 정규 main 통합 검토 → 1회 기존 A 운영 Watchdog 설치 원본 SHA-256 조회 → 정확한 새 B/CAS 명세 준비**. #3738은 운영 B 보호·전체 실기 전환 완료 전까지 Draft 유지.
+- 위 CI는 격리 소스 검증이다. 이번 진행에서 Controller/Watchdog 운영 파일·활성 Runner 6좌석·Core/DB/Writer/D1/예약을 변경하거나 신규 B를 실행하지 않았다.
