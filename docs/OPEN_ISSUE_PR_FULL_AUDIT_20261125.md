@@ -494,3 +494,21 @@ GitHub Search API total_count 최신 **80건 = 본체 Issue 1/PR 6, PC 제어 Is
 ### 배치 K 종료 시점 OPEN
 
 GitHub Search API 직접 재조회 **78건 OPEN = 본체 Issue 1 / PR 6 + PC 제어 Issue 69 / PR 2**. 직전 80건에서 본 감사가 #965 completed, #860 not_planned로 정확 2건을 직접 닫아 78건. 최초 고정 대상 88건 감사 분모 유지. 독립 증거 부분검사 44/88(50.0%), 직접 완료 7, 대체 종료 1, 신규 원본 실행·운영 변경 0.
+
+## 2차 독립 증거 조회 — 배치 L (2026-11-25)
+
+배치 K의 고정 코호트 **44/88건(50.0%)**에서 출발. 앞선 배치 A–K 원본 실행 독립검증 대상에 포함되지 않았던 아래 **CI Issue 3건**의 최초 실패 Run→Job→Steps→Job 로그를 GitHub 연결 API로 새로 직접 교차검증했다. 이들은 단순 이슈 댓글 검토가 아니라 GitHub Actions 원본 실행 로그 확인 대상이다. 따라서 고정 코호트 원본 실행 검증 **47/88건(53.4%)**, 잔여 **41건**. 각 CI 이슈는 여러 후속 실패를 포함하므로 **원본 최초 실패 검증 완료**와 **전체 문제 해결/후속 성공 검증 완료**는 별개다.
+
+| 대상 | 원본 Actions·Job 검증 | 원문 Job 로그에서 입증된 실패 원인 | 상태 |
+|---|---|---|---|
+| PC Issue [#3517](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3517) | [Run 45574811728](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45574811728) / Job 139069993380 `completed/failure`, `Run changed-source regressions only` Step 5 FAILURE | `tests/rollback-first-evidence.test.mjs:6`에 텍스트 `\\nimport`가 들어가 `SyntaxError: Invalid or unexpected token`; C996_UNGROUPED_TEST_FAILED | 최초 실패 원인 실증, 후속 동일 시험 PASS 미확정 → OPEN |
+| PC Issue [#3518](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3518) | [Run 45575303651](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45575303651) / Job 139071665776 `completed/failure`, scoped maintenance Step 22 FAILURE | 동일 test 파일 line 6 `\\nimport` 구문 오류. 해당 batch Node tests 373개 중 372 PASS, 1 FAIL | 과거 실패 원인 실증, 후속 동일 시험 PASS 미확정 → OPEN |
+| PC Issue [#3531](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3531) | [Run 45581633856](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45581633856) / Job 139092854681 `completed/failure`, 6 Runner Regression Step 62 FAILURE | `tests/maintenance-recovery.test.mjs`의 #3516 unapproved recovery proposal fixture test: SHA256 actual `5f66fcd2bac89bfce6b0b582909009b13a37f9b93fa1d56653fdb0162e8d06ca` ≠ expected `d9ad185a92bcc20f2f73bc33e3cf77694337ccd17f704627162921b8564baecb`, 28개 중 27 PASS | 승인 manifest/고정된 원본 계보 대조 미완 → OPEN |
+
+### 후속 검증 한계 및 안전 처리
+- 현재 PC `main`에서 `tests/rollback-first-evidence.test.mjs`의 실제 줄바꿈과 정상 import 확인(Git blob `4cf3cae286bf1aae19d803415e9c9514c63b3acd`). **현재 소스 수정 존재**가 해당 과거 Job의 재실행 성공을 입증하지는 않는다.
+- 실제 후속 C996 [Run 45594416465](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45594416465) / Job 139136612417 `completed/success`: changed-source 검사 + 보안 검사 2개 PASS, 로그 `C996_UNGROUPED_TEST_START files=1` 및 `C996_UNGROUPED_TEST_PASS`. 실행 범위는 ER1 #3547 변경 1파일이며 #3517의 원본 test가 실행된 증거가 아니다. 정확한 파일 범위 없이는 #3517 종료 금지.
+- #3518 이후 다른 Run에서도 Step 22 실패가 보고됐다. 이슈 문자열만으로 해결된 것으로 종료하지 않는다.
+- #3531 구형 expected SHA를 최신 observed SHA로 기계적으로 교체하면 승인 계보 위조 가능성이 있으므로 무단 변경 금지.
+- **이번 회차 추가 직접 종결 0건**, 누적 감사 담당의 직접 완료 7건 + 대체종결 1건 = 직접 CLOSED **8건 유지**. 역사적 상태 변경·신규 PR을 성과에 합산하지 않는다.
+- 원본 코호트: 88건 고정. 2차 최초 실패/원본 증거 직접검증 47/88 (53.4%), 미검증 41건. 운영 PC/Controller/Writer/DB/D1/Task·CI 재실행·승인 변경 없음.
