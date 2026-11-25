@@ -51,3 +51,13 @@
 - W04 고용 `employment-r6-*`, ER1 시장 캘린더 `er1-*`, 공통 Controller/CI 원장도 명시 제외. 특히 현재 실제 설치/후검사 관련 W04 항목과 활성 공통 Runner 장애 [#2237](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2237)은 OPEN 유지.
 - **이번 추가 감사에서 신규 안전 종결 근거 확정 0건**. 누적 확정 종결 **11건(Issue 10, PR 1)** 유지. 운영 PC/Controller/Task/Writer/SQLite/D1 수정 0건, 신규 B/PC Job 0건.
 - 다음 행동 기준: 원담당 명세·고유 `requestId`가 W01·W03·W05로 실제 연결되고, 원본 실행 소비/대체/폐기의 명확한 근거가 있는 경우에만 별도 Issue 종결과 이 원장의 증거 링크 동기화. 범위 밖 OPEN 항목을 숫자 축소만을 목적으로 닫지 않음.
+
+## 2026-11-25 추가 감사 2차 — 오래된 공통 요청 원인·소관 대조
+
+- 현재 OPEN 79건의 `operation`/`requestId`/`chatId`/`sourceBranch`/승인 경로에서 W01·W03·W05 명시적 소속을 확인하지 못한 공통 `pc-job`을 별도 식별. `sourceSha`가 동일한 것은 공유 `main` 참조일 뿐 프로젝트 담당 소유 증명이 아님.
+- [#702](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/702)는 [#699](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/699) **시장 캘린더 D+30** Writer B 이후 Core 소스 조회, 원본 `STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE`; 2026-11-25 기존 조사 댓글에서 특정 시점의 Core 실행계보 미입증을 재확인함. **W01·W03·W05 전용이 아니므로 제외**.
+- [#996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/996)는 공통 Controller 업데이트/접수 복구. 2026-11-15 후속 댓글은 `INTAKE_RECOVERED_ORIGINAL_INSTALL_ABORTED`와 원본 lease 보관 성공을 기록하지만, Controller 원 설치 성공은 아님. **공통 운영 원본이므로 별도 소관 유지**.
+- [#1969](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1969), [#2059](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2059): 공통 소스 bundle 등록에서 각각 `BUNDLE_B_APPROVAL_CONTRACT_INVALID`, `APPROVAL_MANIFEST_READ_FAILED`; W 프로젝트 소유 확인 전 종료 금지.
+- [#1213](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1213), [#1226](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1226)은 일반 Core A 원본으로 결과 댓글 0건. R6·D05·기타 공유업무로부터 소관 분리할 증거 없어 보류.
+- [#1196](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1196), [#1200](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1200), [#1231](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1231)은 `STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE`; [#1598](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1598)은 `CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE`. 과거 결함 상태만으로 단회 원본을 **완료된 W01·W03·W05 요청**으로 잘못 귀속하지 않음.
+- **추가 종료 0건 / 누적 11건 유지**. 다른 담당자 업무에 영향 주는 Issue 닫기·PC 실행·재승인/설치 없음. 이 단계는 과거 소속 미입증 항목의 **오종결 방지 검증**이며 전체 백로그 해소로 표현하지 않음.
