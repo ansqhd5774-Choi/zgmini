@@ -1,4 +1,6 @@
 import test from 'node:test';
+import {createHash} from 'node:crypto';
+import {verifyAndAggregateStoredR6Snapshots as verifyRaw} from '../lib/market-score/employment-r6-raw-aggregate-source-only.mjs';
 import assert from 'node:assert/strict';
 import {aggregateAttestedR6Snapshots as aggregate} from '../lib/market-score/employment-r6-raw-aggregate-source-only.mjs';
 const allowedGroups=['BLS_CES','DOL_UI_WEEKLY_CLAIMS'];
@@ -60,4 +62,55 @@ test('private input fields are not returned in grouped projections',()=>{
  assert.ok(!JSON.stringify(out).includes('sensitive-id'));
  assert.ok(!JSON.stringify(out).includes('C:/secret'));
  assert.ok(!JSON.stringify(out).includes('token'));
+});
+
+const sha=v=>createHash('sha256').update(v).digest('hex');
+function snapshot(body='{"hello":"world"}',createdAt='2026-11-20T01:02:04.000Z'){
+ const releaseGroup='BLS_CES',provider='BLS',requestKey='key-1';
+ const bodySha256=sha(body),snapshotId=sha([releaseGroup,provider,requestKey,bodySha256].join('|'));
+ return {releaseGroup,provider,requestKey,bodySha256,snapshotId,body,
+   responseHash:bodySha256,retrievedAt:'2026-11-20T01:02:03.000Z',createdAt};
+}
+const attest=(snap,overrides={})=>({
+ provider:'EMPLOYMENT_R6_BLS_CES',status:'SUCCESS',completedAt:'2026-11-20T01:03:00.000Z',
+ rawSnapshots:[{snapshotId:snap.snapshotId,bodySha256:snap.bodySha256}],...overrides});
+const verify=(snapshots,runs)=>verifyRaw({snapshots,runs,allowedGroups,asOfDate:'2026-11-25'});
+test('real SHA256 matching body and successful provider Run attest one key',()=>{
+ const s=snapshot(),o=verify([s],[attest(s)]);
+ assert.deepEqual([o.metadataKeys,o.bodyVerifiedKeys,o.runCertifiedKeys],[1,1,1]);
+ assert.ok(!JSON.stringify(o).includes(s.snapshotId));
+ assert.ok(!JSON.stringify(o).includes(s.requestKey));
+});
+test('tampered body does not obtain body or Run certification',()=>{
+ const s=snapshot(),o=verify([{...s,body:'TAMPERED'}],[attest(s)]);
+ assert.deepEqual([o.metadataKeys,o.bodyVerifiedKeys,o.runCertifiedKeys],[1,0,0]);
+});
+test('wrong response detail hash does not become verified',()=>{
+ const s=snapshot(),o=verify([{...s,responseHash:'f'.repeat(64)}],[attest(s)]);
+ assert.deepEqual([o.metadataKeys,o.bodyVerifiedKeys,o.runCertifiedKeys],[1,0,0]);
+});
+test('Run provider mismatch, FAILED outcome and wrong body receipt are not certified',()=>{
+ const s=snapshot();
+ for(const r of [attest(s,{provider:'OTHER'}),attest(s,{status:'FAILED'}),
+   attest(s,{rawSnapshots:[{snapshotId:s.snapshotId,bodySha256:'f'.repeat(64)}]})]){
+  const o=verify([s],[r]);assert.deepEqual([o.metadataKeys,o.bodyVerifiedKeys,o.runCertifiedKeys],[1,1,0]);
+ }
+});
+test('Run completion before retrieval is not certified',()=>{
+ const s=snapshot(),r=attest(s,{completedAt:'2026-11-20T01:02:02.000Z'});
+ assert.equal(verify([s],[r]).runCertifiedKeys,0);
+});
+test('duplicate snapshot identity and future capture reject before aggregation',()=>{
+ const s=snapshot();
+ assert.throws(()=>verify([s,s],[]),/R6_ATTEST_DUPLICATE_SNAPSHOT/);
+ assert.throws(()=>verify([snapshot(undefined,'2026-11-26T01:02:04.000Z')],[]),/R6_ATTEST_TIME_INVALID/);
+});
+test('future/invalid source Run receipts fail closed',()=>{
+ const s=snapshot();
+ assert.throws(()=>verify([s],[attest(s,{completedAt:'2026-11-26T00:00:00.000Z'})]),/R6_ATTEST_RUN_INVALID/);
+ assert.throws(()=>verify([s],[attest(s,{rawSnapshots:null})]),/R6_ATTEST_RUN_INVALID/);
+});
+test('wrong identity digest is only unverified, not certified',()=>{
+ const s=snapshot(),o=verify([{...s,snapshotId:'0'.repeat(64)}],[attest(s)]);
+ assert.deepEqual([o.metadataKeys,o.bodyVerifiedKeys,o.runCertifiedKeys],[1,0,0]);
 });
