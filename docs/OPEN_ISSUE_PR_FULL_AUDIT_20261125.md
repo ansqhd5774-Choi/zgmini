@@ -1115,3 +1115,30 @@ GitHub Search API 실제 재조회: 본체 Issue **1** / PR **6**, PC 제어 Iss
 ### 배치 AK 상태 및 범위
 
 본 감사 기준 최초 코호트 88건의 원본 증거 완료 **84/88(95.5%)**, 미완 **4건** (#1969/#2059, #1031/#1266), 이번 직접 종결 0/누적 직접 종결 10. **기존 미해결 문제의 원인 진단과 후속 담당 해결 계획은 진전됐으나 원본 최종 attestation/HEAD CI 완료는 0건**. 다른 W01/W03/W05 완료 프로젝트 이슈를 신규 W04 source PR·공통 Controller 운영 문제와 혼동하지 않음. GitHub 감사 branch 문서 외에 운영 PC·Controller·Writer·DB·Workflow·Job·외부 데이터 및 운영 승인 변경 0건.
+
+
+## 배치 AL — 원담당 실제 W04 소스 경로에서 BLS quota 위험·PIT 통합 경계 증거검증 (2026-11-25 KST)
+
+**원본 코호트 84/88(95.5%) → 84/88(95.5%) 유지**. 잔여 4건은 원본 인증 Windows 실행 증거 또는 정확 HEAD CI 결여로 완전 독립검증 미완. 이번에는 추상적 PR 설명을 재인용하는 대신 **현 W04 원담당 브랜치의 실제 소스 바이트와 구 PR의 해당 함수를 직접 대조**했다. 실제 PC 요청·운영 설치·인증·CI 실행은 수행하지 않음.
+
+### #1031 — 실제 owner fetch wiring 기준 무등록 BLS 공통 보호 공백
+
+- 현 W04 owner `codex/employment-1y-reader-r1`의 [`scripts/pc-writer/collect-local.mjs`](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/employment-1y-reader-r1/scripts/pc-writer/collect-local.mjs) Git blob `c31d2eaf7d963032ee8a4a662345b2db0474ebc2`: line 25–34 `originalFetch=globalThis.fetch`를 보관하고 `createQuotaFetch({base,originalFetch})` 래퍼로 `globalThis.fetch`를 치환. line 48–58은 `employmentR6AutoCollection===true` 등의 활성 조건일 때 `runEmploymentR6AutoCollection({...,fetchImpl:globalThis.fetch})` 호출. 그러므로 **이 활성 로컬 수집 경로에서는** R6 fetch가 `QuotaLedger`를 지나는 것으로 소스상 추적 가능. 단 운영에서 옵션이 실제 true인지와 실행 중 설치된 Git HEAD는 확인하지 못함.
+- 같은 owner [`lib/market-score/employment-r6-collector.mjs`](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/employment-1y-reader-r1/lib/market-score/employment-r6-collector.mjs) blob `b6543d232c216149d699ede8849a572262ea29a2`: `fetchImpl=globalThis.fetch` 및 `providerFactory({fetchImpl,now})` 전달.
+- owner [`lib/market-score/employment-r6-provider.mjs`](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/employment-1y-reader-r1/lib/market-score/employment-r6-provider.mjs) blob `f54e7ad86300903411675ef8027d2cbbf84a4f40`, line 467–490: `fetchBlsGroup`의 BLS `POST` `requestBody=JSON.stringify({seriesid,startyear,endyear})`로 구성하며 **본문에 `registrationkey`를 직접 첨부하지 않음**, `fetchText(fetchImpl,BLS_PUBLIC_API_URL,...)` 호출. 별도의 주입 fetch가 등록키를 보강할 가능성/실제 traffic은 이 사실만으로 배제할 수 없음.
+- owner [`scripts/pc-writer/quota-fetch.mjs`](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/employment-1y-reader-r1/scripts/pc-writer/quota-fetch.mjs) blob `239d9828c325d41b42ffae68b142adc74119c24c` line 1–25: `QuotaLedger.beforeRequest(provider,now)` 및 `afterResponse`은 있으나 BLS registered/unregistered **요청 본문 구분·공유 물리 무키 25/24h 저널 보호 구현이 없음**. 관련 owner [`quota-policy.mjs`](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/employment-1y-reader-r1/scripts/pc-writer/quota-policy.mjs) blob `52bea95da4b27155975c4d35699176d45870881a`는 BLS 범주를 `registered v2`, `perDay=500`로 명시. 즉 **실제 무등록 request가 이 경로로 들어오면 단순 500/day ledger를 25/day 안전 증거로 쓰면 안 됨**.
+- 구 [Draft #1031 HEAD `80a6a462158c7ee44dd0cf8d0527ad3d093e9354`](https://github.com/ansqhd5774-Choi/zgmini/pull/1031)의 `scripts/pc-writer/quota-fetch.mjs` blob `46c6f0d4f0523b260b62999aafc1f71d4b4a3b89`에는 명시적 기본 비활성 `blsUnregistered={enabled:false}`, 활성 시 body의 registered 판별 후 `bls-unregistered-reservation.mjs`를 dynamic import하고 통과한 요청만 physical fetch하는 가드가 있음. 하지만 원본 PR은 15파일의 오래된 source, 현재 mergeable=`dirty`, 정확 HEAD Actions/check-runs 0. **현 owner의 최신 provider/collector를 이 구 PR 전체로 교체 금지**.
+- **다음 최소 테스트 계약:** 현재 owner의 `collectLocal` side lane 및 R6 collector injected fetch를 고정한 네트워크 0 fake 시험에서 (1) config enabled=false 시 BLS 0회, (2) 등록키 없음 POST의 request classification, (3) 무등록 물리 원장 승인·잔여 25/24h 차단, (4) concurrent R4+R6가 동일 ledger를 사용하는지, (5) 등록키 주입 경로가 명시되면 기존 registered 500/day 보호를 보존하는지, (6) Provider 요청 전에 ledger 실패는 실제 물리 호출 0으로 관측되는지 확인. 운영 PC에 실제 무등록 호출 존재/NTFS 원장 인증은 **승인된 read-only 진단 및 owner 검토 필요**, 현재 결론 `RISK_PATH_SOURCE_CONFIRMED / RUNTIME_CALLS_UNVERIFIED`.
+
+### #1266 — 구 PR 집계 기능과 owner의 PIT0605 보안 경계 충돌 확정
+
+- 구 [Draft PR #1266](https://github.com/ansqhd5774-Choi/zgmini/pull/1266) 정확 HEAD `0193056bdb47bcf6c911f17623b6c302c8199c4c`, `scripts/pc-writer/employment-r6-pit-coverage.mjs` blob `892ef16e1602a182aae9e3ce045a21309432c464`, line 234–274: `rawSnapshotMetadataKeys/Certified/InvalidBody/ValidWithoutRun`와 `rawSnapshotByGroup`, `rawSnapshotByMonth`(최근 12개 월, OLDER, UNKNOWN)라는 **실제 안전 집계 설계**가 존재. group은 frozen `EMPLOYMENT_R6_GROUPS` 목록으로 제한, raw 해시·본문·정확 시각·경로는 반환하지 않도록 의도. 이 기능이 현행 owner 코드에 이미 동일하게 통합됐다고 간주하지 않음.
+- 현 W04 owner `scripts/pc-writer/employment-r6-pit-coverage.mjs` blob `6293037c022f759a3ebf863692696e02615624dc` line 354–458: PIT0605는 Core/Candidate SQLite **query_only 트랜잭션**에서 `DOL_ETA/DOL_UI_WEEKLY_CLAIMS` 전용 raw snapshot 및 Run을 읽는다. raw snapshot 행 상한 **4000**, 총 raw body byte **512MiB**, collector Run **20000**, 고정 `retrieved_at<=checkedAt`, 종료시 rollback/close를 강제하고 결과는 private safe report로 축소. owner 코드에는 별도 PIT0408 private key review path가 유지됨. 
+- 구 PR의 전체 `employment-r6-pit-coverage.mjs` 또는 runner-stage를 그대로 main/owner에 덮어쓰면 **PIT0408 및 PIT0605 한정 조회·상한/롤백 불변식**이 사라질 수 있으므로 강제 병합 금지. 또한 현재 PIT0605 조회가 DOL_ETA 전용이므로 구 PR의 **전체 R6 GROUP/MONTH aggregate**를 같은 조회의 결과만으로 해결했다고 주장하면 안 됨.
+- **다음 최소 이관 계약:** (1) owner의 기존 `PIT0408/PIT0605` 결과·비공개 보호 그대로 보존, (2) group/month 집계는 승인한 raw table 범위에 대해 `opt-in` read-only 별도 안전 함수로 분리, (3) identity별 중복 chunk 방지·certified ⊆ body-verified·group whitelist 및 월 cardinality cap 회귀검사, (4) raw/Run cap과 스키마 검증을 현행과 동일하거나 더 엄격하게 유지, (5) 외부에 key/hash/ID/path/exact timestamp 금지·최소 공개 컬럼만 투영, (6) 승인된 Host B 및 Controller safe projection과 정확 HEAD CI/후검사 뒤에만 PR 종료판정. 현재 `GAP_CONFIRMED / NOT_SAFE_TO_MERGE_OLD_HEAD`.
+
+### 남은 외부 증거와 다음 액션
+
+- PC 유지보수 #1969/#2059의 정규 결과 GitHub 원본은 실패 `BLOCKED`이나 인증된 Windows 요청 ledger 실행 주체·처리 단계 확인은 여전히 필요. 앞선 배치 AJ에서 그 경계와 정확 manifest 조회 문제를 이미 검증했으며 실제 로컬 auth 우회·재실행·중복 신규 요청을 하지 않음.
+- 본체 #1031/#1266은 위 source-level gap 판정과 별개로 **정확 HEAD CI 0**이므로 2차 완료 미산입. 두 PR 최신 owner 코드 내역/원래 PR 코드의 변경범위 비교는 완료했지만 실제 기능 반영·운영 테스트를 선언하지 않는다.
+- 기검증 고유 **84/88(95.5%)**, 미검증 정확 **4건**, 이번 신규 직접 종결 0/누적 직접 종결 10, 운영 PC·Writer·DB/D1·Task·Provider·Controller 설치/승인/Workflow/CI 재실행 0. 본 회차 변경은 감사 원장 브랜치 문서 1개만 해당.
