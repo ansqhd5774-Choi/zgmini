@@ -85,8 +85,16 @@ on:
       - 'tests/ci-performance-budget-observation.test.mjs'
       - 'scripts/ci-web-speed-good-r2.mjs'
       - 'tests/ci-web-speed-good-r2.test.mjs'
+      - 'scripts/ci-pagespeed-real-user-field-r1.mjs'
+      - 'tests/ci-pagespeed-real-user-field-r1.test.mjs'
       - '.github/workflows/community-chat-browser.yml'
   workflow_dispatch:
+    inputs:
+      run_psi_field:
+        description: 'One-off public PSI CrUX read (may return HTTP 429)'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
@@ -177,6 +185,13 @@ jobs:
       # INP / real-user P75 / Lighthouse are not measured; no false site PASS.
       - name: Evaluate official Google Good web-speed reference
         run: node scripts/ci-web-speed-good-r2.mjs
+      # Read-only, two bounded anonymous public PSI queries: mobile and desktop.
+      # CrUX field P75 is 28-day aggregate and may be absent for low traffic.
+      # Never fail the PR for absent provider field data or invent a Good PASS.
+      - name: Observe Google public PSI real-user field vitals
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_psi_field == true }}
+        timeout-minutes: 3
+        run: node scripts/ci-pagespeed-real-user-field-r1.mjs
       # Accessibility results are observations; reviewed baseline approval is separate.
       - name: Measure local WCAG A/AA accessibility with axe-core
         timeout-minutes: 2
