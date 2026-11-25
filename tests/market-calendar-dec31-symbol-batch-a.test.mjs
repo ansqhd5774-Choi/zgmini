@@ -51,3 +51,63 @@ test('429 stops without retry and preserves existing successful raw rows',async 
   assert.equal(count,6);
   assert.ok(!fs.existsSync(path.join(root,'er1-input','dec31-symbol-batch-a.lock')));
 });
+
+
+test('quota-stopped 39th symbol resumes the exact two remaining symbols',async t=>{
+  const root=temp(t),dir=path.join(root,'er1-input','dec31-symbol-batch-a');
+  let firstCalls=0;
+  const first=await runDec31Batch({pcHome:root,env:{EARNINGS_API_KEY:key},clock,
+    fetcher:async url=>{
+      firstCalls++;
+      const symbol=new URL(url).searchParams.get('symbol');
+      if(symbol==='TOL')return {ok:false,status:429};
+      return {ok:true,status:200,text:async()=>JSON.stringify([
+        {symbol,date:'2026-12-08'}])};
+    }});
+  assert.equal(first.code,'DEC31_BATCH_QUOTA_STOP');
+  assert.equal(first.providerCalls,39);
+  assert.equal(first.storedSymbols,38);
+  assert.equal(first.reusedStoredSymbols,0);
+  assert.equal(first.newStoredSymbols,38);
+  assert.equal(firstCalls,39);
+  const original=SYMBOLS.slice(0,38).map(symbol=>
+    [symbol,fs.readFileSync(path.join(dir,symbol+'.json'),'utf8')]);
+  const touched=[];
+  const second=await runDec31Batch({pcHome:root,env:{EARNINGS_API_KEY:key},clock,
+    fetcher:async url=>{
+      const symbol=new URL(url).searchParams.get('symbol');
+      touched.push(symbol);
+      return {ok:true,status:200,text:async()=>JSON.stringify([
+        {symbol,date:'2026-12-08'}])};
+    }});
+  assert.equal(second.status,'BATCH_COMPLETE');
+  assert.equal(second.code,'DEC31_BATCH_RAW_SAVED_AND_VERIFIED');
+  assert.deepEqual(touched,['TOL','CASY']);
+  assert.equal(second.providerCalls,2);
+  assert.equal(second.reusedStoredSymbols,38);
+  assert.equal(second.newStoredSymbols,2);
+  assert.equal(second.storedSymbols,40);
+  assert.equal(second.positiveSymbols,40);
+  assert.equal(second.decemberEventRows,40);
+  for(const [symbol,bytes] of original)
+    assert.equal(fs.readFileSync(path.join(dir,symbol+'.json'),'utf8'),bytes);
+  assert.equal(fs.readdirSync(dir).length,40);
+  assert.equal(fs.existsSync(path.join(root,'er1-input','dec31-symbol-batch-a.lock')),false);
+});
+
+test('invalid preexisting raw file stops without overwriting or calling provider',async t=>{
+  const root=temp(t),dir=path.join(root,'er1-input','dec31-symbol-batch-a');
+  fs.mkdirSync(dir,{recursive:true});
+  const file=path.join(dir,'ADBE.json');
+  const malformed='{not-json';
+  fs.writeFileSync(file,malformed);
+  let calls=0;
+  const result=await runDec31Batch({pcHome:root,env:{EARNINGS_API_KEY:key},clock,
+    fetcher:async()=>{calls++;throw Error('UNEXPECTED_GET')}});
+  assert.equal(result.status,'BLOCKED');
+  assert.equal(result.code,'DEC31_BATCH_EXISTING_FILE_INVALID');
+  assert.equal(result.providerCalls,0);
+  assert.equal(calls,0);
+  assert.equal(fs.readFileSync(file,'utf8'),malformed);
+  assert.equal(fs.existsSync(path.join(root,'er1-input','dec31-symbol-batch-a.lock')),false);
+});
