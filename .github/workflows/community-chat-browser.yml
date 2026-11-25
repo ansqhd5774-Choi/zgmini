@@ -81,8 +81,6 @@ on:
       # R2 performance lab shares the existing installed Playwright Chromium.
       - 'scripts/ci-performance-lab.mjs'
       - 'tests/ci-performance-lab.test.mjs'
-      - 'scripts/ci-performance-budget-observation.mjs'
-      - 'tests/ci-performance-budget-observation.test.mjs'
       - '.github/workflows/community-chat-browser.yml'
   workflow_dispatch:
 
@@ -164,13 +162,6 @@ jobs:
       # Lab results are observations, not a new unapproved Lighthouse score gate.
       - name: Measure isolated Chromium performance laboratory
         run: node scripts/ci-performance-lab.mjs
-      # Compare with a past successful Playwright artifact only if fixture,
-      # browser build, route and viewport match. No approved budget or PR gate.
-      - name: Compare historical local performance observations
-        timeout-minutes: 3
-        env:
-          GITHUB_TOKEN: ${{ github.token }}
-        run: node scripts/ci-performance-budget-observation.mjs
       # Accessibility results are observations; reviewed baseline approval is separate.
       - name: Measure local WCAG A/AA accessibility with axe-core
         timeout-minutes: 2
