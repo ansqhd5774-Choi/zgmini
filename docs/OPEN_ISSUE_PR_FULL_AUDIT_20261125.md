@@ -62,16 +62,16 @@
 | 48 | PC Issue | [#1213](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1213) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | REVIEWED_NO_COMMENT (0 comments; no standard result) |
 | 49 | PC Issue | [#1200](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1200) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; **STATE_UNKNOWN — CORE_NO_ACTIVE_TASK_ENGINE**;FIRST_FAIL_NO_AUTOMATIC_RETRY) |
 | 50 | PC Issue | [#1196](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1196) core-runtime-source-readonly | `core-runtime-source-readonly` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; **STATE_UNKNOWN — CORE_NO_ACTIVE_TASK_ENGINE**;FIRST_FAIL_NO_AUTOMATIC_RETRY) |
-| 51 | PC Issue | [#1174](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1174) pc-job | `writer-install-preimage-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 52 | PC Issue | [#1169](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1169) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 53 | PC Issue | [#1165](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1165) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 54 | PC Issue | [#1152](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1152) pc-writer-source-install | `pc-writer-source-install` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 55 | PC Issue | [#1071](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1071) PC A: Writer B recovery bounded checkout/source trace ( | `pc-source-preflight` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 56 | PC Issue | [#1064](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1064) pc-writer-source-install | `pc-writer-source-install` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 57 | PC Issue | [#1032](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1032) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 58 | PC Issue | [#1026](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1026) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 59 | PC Issue | [#1021](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1021) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 60 | PC Issue | [#1017](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1017) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
+| 51 | PC Issue | [#1174](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1174) pc-job | `writer-install-preimage-readonly` | 공통 PC/CI | REVIEWED_COMMENT (2 comments; **STATE_UNKNOWN — WRITER_PREIMAGE_CHECKOUT_NOT_CORROBORATED**;FIRST_FAIL_NO_AUTOMATIC_RETRY) |
+| 52 | PC Issue | [#1169](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1169) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | REVIEWED_COMMENT (2 comments; no standard result) |
+| 53 | PC Issue | [#1165](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1165) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | REVIEWED_COMMENT (2 comments; **BLOCKED**) |
+| 54 | PC Issue | [#1152](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1152) pc-writer-source-install | `pc-writer-source-install` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; no standard result) |
+| 55 | PC Issue | [#1071](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1071) PC A: Writer B recovery bounded checkout/source trace ( | `pc-source-preflight` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; **PASS — PC_SOURCE_READONLY_DIAGNOSIS**) |
+| 56 | PC Issue | [#1064](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1064) pc-writer-source-install | `pc-writer-source-install` | 공통 PC/CI | REVIEWED_COMMENT (3 comments; no standard result) |
+| 57 | PC Issue | [#1032](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1032) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; no standard result) |
+| 58 | PC Issue | [#1026](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1026) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; **SUCCESS**) |
+| 59 | PC Issue | [#1021](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1021) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; **BLOCKED**) |
+| 60 | PC Issue | [#1017](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1017) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; **BLOCKED**) |
 | 61 | PC Issue | [#1010](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1010) pc-job — R6 단발 수집 직후 Core lock 자연 해제 읽기전용 확인 | `core-status` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
 | 62 | PC Issue | [#1008](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1008) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
 | 63 | PC Issue | [#1004](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1004) [시장 캘린더 2027 / 공통 조회 지원] PC 원본·D1 연간 일정 해시 검증 공백 | `본문 조사` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
@@ -163,3 +163,15 @@
 - zgmini-pc-control Issue #1213: REVIEWED_NO_COMMENT, 댓글 0, no standard result
 - zgmini-pc-control Issue #1200: REVIEWED_COMMENT, 댓글 1, **STATE_UNKNOWN — CORE_NO_ACTIVE_TASK_ENGINE**;FIRST_FAIL_NO_AUTOMATIC_RETRY
 - zgmini-pc-control Issue #1196: REVIEWED_COMMENT, 댓글 1, **STATE_UNKNOWN — CORE_NO_ACTIVE_TASK_ENGINE**;FIRST_FAIL_NO_AUTOMATIC_RETRY
+
+### 감사 댓글 검증 51–60
+- zgmini-pc-control Issue #1174: REVIEWED_COMMENT, 댓글 2, **STATE_UNKNOWN — WRITER_PREIMAGE_CHECKOUT_NOT_CORROBORATED**;FIRST_FAIL_NO_AUTOMATIC_RETRY
+- zgmini-pc-control Issue #1169: REVIEWED_COMMENT, 댓글 2, no standard result
+- zgmini-pc-control Issue #1165: REVIEWED_COMMENT, 댓글 2, **BLOCKED**
+- zgmini-pc-control Issue #1152: REVIEWED_COMMENT, 댓글 1, no standard result
+- zgmini-pc-control Issue #1071: REVIEWED_COMMENT, 댓글 1, **PASS — PC_SOURCE_READONLY_DIAGNOSIS**
+- zgmini-pc-control Issue #1064: REVIEWED_COMMENT, 댓글 3, no standard result
+- zgmini-pc-control Issue #1032: REVIEWED_COMMENT, 댓글 1, no standard result
+- zgmini-pc-control Issue #1026: REVIEWED_COMMENT, 댓글 1, **SUCCESS**
+- zgmini-pc-control Issue #1021: REVIEWED_COMMENT, 댓글 1, **BLOCKED**
+- zgmini-pc-control Issue #1017: REVIEWED_COMMENT, 댓글 1, **BLOCKED**
