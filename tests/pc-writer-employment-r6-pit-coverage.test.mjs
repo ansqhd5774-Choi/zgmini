@@ -560,7 +560,8 @@ test("PIT-04-08 private audit partitions hash-only, value-only and source-identi
     });
     assert.equal(saved.ledger.allSeriesCandidateCurrentConflicts.length,4);
     assert.ok(saved.ledger.allSeriesCandidateCurrentConflicts.every(x=>
-      x.differenceFlags&&x.reason==="CANDIDATE_CURRENT_CONFLICT"));
+      Object.keys(x).length===5&&x.reason==="CANDIDATE_CURRENT_CONFLICT"));
+    assert.deepEqual(saved.ledger.candidateConflictBreakdown,breakdown);
     assert.equal(saved.digestValue,result.pit04PrivateEvidenceDigest);
     assert.doesNotMatch(JSON.stringify(breakdown),/"source_hash"|"value"|"provenance"|"observationDate"/);
     assert.deepEqual([digest(core),digest(candidate)],protectedBytes);
