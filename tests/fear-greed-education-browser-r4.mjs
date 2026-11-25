@@ -118,7 +118,7 @@ try{
     // is equivalent to a verified contrast pass.
     for(const [name,selector] of [
      ['breadcrumb','main header > span'],
-     ['greeting','main section[aria-labelledby="about-headline"] p'],
+     ['greeting','main section[aria-labelledby="about-headline"] p:first-of-type'],
      ['headline','#about-headline']
     ]){
      const element=page.locator(selector);
