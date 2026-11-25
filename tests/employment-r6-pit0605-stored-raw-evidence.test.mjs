@@ -103,3 +103,25 @@ test("same-time conflicting candidate revisions remain ambiguous, not verified",
  assert.equal(ak.candidateInternalValueAndHashMatch,false);
  assert.equal(ak.historicalAvailabilityProved,false);
 });
+
+test("candidate-absent keys expose only a verified raw receipt month, never a reconstructed 2025 vintage",async()=>{
+  const aggregate=await audit();
+  const v=aggregate.missingCandidateReceipts;
+  assert.deepEqual(v,{
+    keys:3,exactRawMatched:1,firstExactReceiptMonth:"2026-11",
+    lastExactReceiptMonth:"2026-11",exactReceiptFirstObserved2025:0,
+    scope:"EXACT_STORED_RAW_RECEIPT_NOT_HISTORICAL_PIT",
+  });
+  assert.equal(aggregate.counts.ORIGINAL_VERSION_AND_HISTORICAL_AVAILABILITY_PROVED,0);
+  assert.equal(aggregate.historicPitAttested,false);
+  assert.equal(aggregate.repairAuthorized,false);
+  assert.doesNotMatch(JSON.stringify(v),/sourceHash|snapshotId|geographyCode|observationDate/);
+});
+
+test("unlinked raw snapshots cannot produce an exact candidate-absent receipt",async()=>{
+  const x=await audit({collectorRuns:[]});
+  assert.equal(x.missingCandidateReceipts.keys,3);
+  assert.equal(x.missingCandidateReceipts.exactRawMatched,0);
+  assert.equal(x.missingCandidateReceipts.firstExactReceiptMonth,null);
+  assert.equal(x.missingCandidateReceipts.lastExactReceiptMonth,null);
+});
