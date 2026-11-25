@@ -506,11 +506,15 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
   useEffect(()=>{
     // Reuse the stored-reader scheduler: one in-flight GET, 60s cadence,
     // visibility/focus refresh, bounded timeout, and abort on period change.
-    return startStoredRefresh(async (signal:AbortSignal)=>{
+    let live=true;
+    const stop=startStoredRefresh(async (signal:AbortSignal)=>{
+      // Timeout is a delayed read; effect cleanup is not an error.
+      const markDelayed=()=>{if(live)setArchiveDelayedPeriod(selectedPeriod);};
+      signal.addEventListener('abort',markDelayed,{once:true});
       try{
         const response=await fetch(`/api/fear-greed/observations?period=${selectedPeriod}`,{cache:'no-store',signal});
         const data=(response.ok?await response.json():null) as {status?:string;period?:string;points?:ObservedScorePoint[];checkedPoints?:CheckedScorePoint[]} | null;
-        if(signal.aborted)return;
+        if(!live||signal.aborted)return;
         if(data?.status!=="READY"||data.period!==selectedPeriod||!Array.isArray(data.points)){
           setArchiveDelayedPeriod(selectedPeriod);
           return;
@@ -520,9 +524,12 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
       }catch{
         // Do not erase the last verified archive on a transient read failure.
         // A superseded request may not change the newly selected period.
-        if(!signal.aborted)setArchiveDelayedPeriod(selectedPeriod);
+        if(live&&!signal.aborted)markDelayed();
+      }finally{
+        signal.removeEventListener('abort',markDelayed);
       }
     });
+    return ()=>{live=false;stop();};
   },[selectedPeriod]);
 
 
