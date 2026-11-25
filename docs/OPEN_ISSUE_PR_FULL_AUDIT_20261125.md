@@ -1189,3 +1189,16 @@ GitHub Search API 실제 재조회: 본체 Issue **1** / PR **6**, PC 제어 Iss
 - PC [#1969](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1969)·[#2059](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2059): out-of-band result GitHub 원본은 이전 배치에 이미 검증됐으나 인증된 Windows user/host에서 실행한 원본 local ledger·실행 신원은 여전히 연결되지 않음. 기존 CLOSED를 원본 설치 PASS로 소급하지 않는다.
 
 **결론:** 코호트 감사 등록부와 중복제거 검사 자체의 별도 실행 결과는 PASS이나 **원본 신규 증거검증 완료 0건**. 고정 88/고유 84/잔여 4, 직접 종결 누적 10 유지. 운영 PC·Controller·Writer·SQLite/D1·Task·Provider·GitHub workflow·새 CI/Issue/PR 변경 없음. 다음 작업은 정규 CI에서 검사기 Node 실제 실행 증거를 확보하는 소스-only 승인 경로 확인과, 4개 차단 항목의 원담당 승인·운영 원본 신원을 분리 처리한다.
+
+
+## 배치 AO — 감사 등록부 검사기 실제 Node 11건 회귀 실행·테스트 결함 수정 (2026-11-25 KST)
+
+**기검증 고유 84/88(95.5%) 유지.** 앞선 AN은 등록부 불변식의 등가 JS 검증이었으나 원격 브랜치에 커밋된 정확한 `validate-open-issue-pr-cohort.mjs` CLI를 실제 Node로 실행했다고 주장할 수 없었다. 이번에는 **정확 Git blob을 검증한 로컬 코드 복제본**으로 Node v22.16.0에 실제 검사기 CLI를 실행한 별도 격리 fixture 회귀시험을 수행했다. 검증 대상은 합성 **88행 fixture**이며 운영 인증이나 실제 GitHub 88행 등록부에 대한 Node 단일명령 실행은 여전히 별도 제한이다.
+
+- [검사기](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/issues-lifecycle-manager-20261123/scripts/audit/validate-open-issue-pr-cohort.mjs) Git blob `742ee7cec0cb56d4820086df9642ee48a85976d1`. 로컬 복제본의 `git hash-object`가 원격 blob과 **정확 일치**, `node --check` 성공.
+- [격리 자동 테스트](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/issues-lifecycle-manager-20261123/tests/audit-cohort-validator.test.mjs) 신규 생성 및 수정. 사용법 `node --test tests/audit-cohort-validator.test.mjs`. 실제 validator CLI를 합성 temp 디렉터리의 `scripts/audit`로 복사해 파일을 읽도록 하고, fixture에 88행·84 검증·4 pending을 넣어 결과를 강제 확인. false verified/pending, 코호트 중복·누락, 미승인 외부 번호 혼입, 증거 gate 소실, Markdown 행 변경, 반복 재검토의 0 추가산입을 검사.
+- **실제 테스트 1차 10/11 PASS·1 FAIL:** Markdown 원본에 행을 추가하는 fixture에서 줄바꿈 없이 89번째 행을 기존 행 마지막에 이어 붙여 검사대상이 보이지 않은 **테스트 자체 결함**을 발견. 검사기가 실제로 행이 구분되지 않은 문자열을 원래 행으로 오판한 것이 아니라 fixture 생성 오류다. `extraTable ? '\\n'+extraTable : ''` 추가로 수정.
+- 수정한 **테스트의 원격 Git blob `432a867fe221ede52530d2ea09b4be182c449710`**과 최종 로컬 파일의 `git hash-object` **정확 일치**를 확인. 다시 `node --test` 실행: **11/11 PASS, 0 FAIL, 0 SKIP**. `node --check` 성공. 테스트는 합성 격리 fixture만 사용하고 네트워크·승인·PC·Issues/PR을 건드리지 않음.
+- GitHub에는 기존 스크립트 blob 그대로 유지, 신규 테스트 및 fixture 줄바꿈 수정만 커밋. 원본 감사 등록부 JSON의 blob `af6977bbaf2990954cc66bd6931c865776456c0f`는 변경하지 않았다. GitHub Actions의 CI가 실행됐다고 주장하지 않는다. 실제 본문 고정 88행과 등록부 84/4 일치는 AN에서 **별도 JS 실행 검사**로 확인했으며 이번 Node 시험은 동일한 값의 합성 88행에서 validator의 reject/accept 동작을 직접 수행했다.
+
+**완료 범위:** 감사 검사기 로컬 Node 회귀 실증 완료. 고정 코호트 원본 증거 검증 완료 84/88(95.5%), 남은 정확 4건은 본체 Draft #1031/#1266의 정규 CI 및 PC #1969/#2059의 인증 Windows out-of-band 실행 원본 신원. 신규 Issue/PR 직접 종결 0, 누적 직접 종결 10, 운영 PC/Controller/Writer/DB/D1/Task/Provider·GitHub Workflow/새 Job 변경 0. 다음에는 정규 GitHub CI 허용범위에 검사기 회귀를 연결할지 검토하고, 네 원본 최종 증거 확보 조건이 생긴 경우만 진행률을 수정한다.
