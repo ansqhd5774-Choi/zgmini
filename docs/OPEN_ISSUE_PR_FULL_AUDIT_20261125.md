@@ -736,3 +736,7 @@ GitHub Search API 직접 재조회 **78건 OPEN = 본체 Issue 1 / PR 6 + PC 제
 - #2237은 원본 Job 취소에 대한 **검증**이지 성공 실행·근본원인 수정이 아니다. 동일 취소 Workflows 재발행·PC Job 재실행은 수행하지 않음.
 
 이번 감사에서 신규 직접 Issue/PR 종료 **0건**, 기존 직접 종결 **10건** 유지. 운영 PC·Controller·Writer·SQLite/D1·Task·설치·승인·PR 병합·새 실행 생성 **0건**. 후속 우선순위는 **미검증 25건**의 코호트 최초 검증, W01/W03/W05 종결 가능한 원본 분류, W04·ER1·#3516 진행 업무 보호.
+
+### 배치 X 종료 시점 OPEN 재계수
+
+GitHub Search API 직접 재조회: `zgmini` Issue 1/PR 6, `zgmini-pc-control` Issue 58/PR 2, **총 OPEN 67건(이슈 59/PR 8)**. 직전 배치 V의 67건과 총량은 같지만 PC Issue 59→58, PC PR 1→2로 구성 변동. 해당 상태 변화는 본 배치의 직접 종결·신규 PR 성과가 아니다. 고정 최초 코호트 88건과 신규 유입 OPEN은 별도 집계한다.
