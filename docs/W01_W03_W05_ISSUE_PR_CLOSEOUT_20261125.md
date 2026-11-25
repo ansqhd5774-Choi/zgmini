@@ -84,3 +84,13 @@
 - [본체 Draft PR #1463](https://github.com/ansqhd5774-Choi/zgmini/pull/1463): `core092` 공유 실행 출처 상관키/Task 인증 진단 개선으로 **공통 운영 소스** 관련. W01/W03/W05의 원래 기능잔여 PR로 계상하지 않음. 미설치·원본 092 검증 미완료를 PASS로 격상하지 않음.
 - 원장에 기록된 현재 직접 W01/W03/W05 OPEN PR 0건 판정은 **기능 전용 PR만** 뜻하며, 연구용 #488 및 공통 Core #1463 등 관련 용어가 있는 OPEN Draft가 존재하지 않는다는 뜻이 아님.
 - 추가 직접 종결 근거 0건. 누적 실제 종결 11건 유지. 운영 환경 변경/신규 승인·B 실행 0건.
+
+## 2026-11-25 추가 감사 6차 — 최신 OPEN 재조회 및 종료 기준
+
+- GitHub API 실제 재조회 기준: `zgmini` OPEN Issue 1 / OPEN PR 6; `zgmini-pc-control` OPEN Issue 79 / OPEN PR 3. 두 저장소의 현재 미종결 총계 **Issue 80 / PR 9**. 시점에 따라 변동 가능한 조회 스냅샷임.
+- OPEN 제목·본문의 W01/W03/W05 및 inflation-r2, GMH, WPSFD42, sidecar, R178/R181/R54, theme 등 연관 용어를 대조했으며 **완료 프로젝트 전용 신규 종결 근거는 0건**. 공통 #68, #2237, 고용 R6, ER1, 공통 core092, 별도 연구용 본체 PR #488을 W01/W03/W05 미종결 대상으로 잘못 합산하지 않음.
+- 본체 별도 OPEN PR #933은 고용 R6, #488은 ETF 8-theme 연구용 승인보류. W03 담당자 승인 없이 연구 Draft를 닫거나 본체 main에 통합하지 않음.
+- PC 제어의 신규 OPEN PR #3541(RUM), #3542(ER1), #3543(W04)은 모두 별도 소관으로 유지함. 공통 Runner [#2237](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2237) 실제 원인 미확정도 유지.
+- **최종 스냅샷 판정:** 식별 가능한 W01·W03·W05 직접 OPEN Issue/PR **0건**, 이 정리 작업에서 직접 닫은 원본 **11건**. 과거 모든 비표준 소속의 입증 부재는 그대로 표시하고 완전한 계보 감사 100%를 주장하지 않음.
+- **재작업 억제 기준:** 새로운 원본 requestId/승인 manifest/브랜치 작업 주체가 세 프로젝트에 직접 연결되거나 실제 재오픈된 항목이 나타나기 전까지 같은 0건 검색을 이유 없이 반복 기록·재실행하지 않음. 별도 소관의 열린 장애를 무단 종료하지 않음.
+- 이번 운영 PC/Task/Controller/Writer/SQLite/D1/Cloudflare 변경 0. Issue/PR 종결 0. 문서 스냅샷 갱신만 수행.
