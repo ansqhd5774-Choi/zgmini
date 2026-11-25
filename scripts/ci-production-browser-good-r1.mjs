@@ -61,6 +61,7 @@ export function classifyProductionPage(sample){
   mainFound:sample.mainFound??false,blockedWriteRequests:sample.blockedWriteRequests,
   blockedThirdPartyRequests:sample.blockedThirdPartyRequests??0,
   pageErrors:sample.pageErrors??[],error:sample.error??null,
+  mobileInteraction:sample.mobileInteraction??null,
   rumBeacon:{scope:'DOM_SCRIPT_AND_BLOCKED_REQUEST_MARKERS_ONLY',
    domScriptPresent:sample.rumDomScriptPresent,
    blockedScriptRequests:sample.blockedCfRumScriptRequests,
@@ -86,6 +87,40 @@ export function summarizeProductionLab(rows){
   lighthousePerformanceScore:'NOT_MEASURED',siteGoodVerified:false,
   mergeBlocking:false,automaticReleaseGate:false,
   officialGoodTargets:WEB_SPEED_GOOD,observations:classified};
+}
+
+// A bounded browser-only UI interaction check. The enclosing network filter
+// blocks the Cloudflare RUM beacon and all writes; no field INP is generated.
+export async function probeEconomicMobileInteraction(page){
+ const scope='LAB_FIRST_PARTY_CLICK_NO_RUM';
+ try{
+  const intro=page.locator('#zg-about-intro-dialog');
+  if(await intro.isVisible())
+   await intro.getByRole('button',{name:'닫기',exact:true}).click();
+  const first=page.locator('button.zg-terrain-row').first();
+  await first.waitFor({state:'visible',timeout:12000});
+  const before=await first.getAttribute('aria-expanded');
+  if(before!=='false')
+   return {scope,state:'UNVERIFIED',reason:'INITIAL_CARD_STATE_UNEXPECTED'};
+  await first.click({timeout:10000});
+  const expanded=await first.getAttribute('aria-expanded');
+  if(expanded!=='true')
+   return {scope,state:'UNVERIFIED',reason:'CARD_CLICK_NOT_EXPANDED'};
+  const period=page.getByRole('group',{name:'차트 기간 선택'})
+   .getByRole('button',{name:'1M',exact:true});
+  await period.waitFor({state:'visible',timeout:10000});
+  await period.click({timeout:10000});
+  const selected=await period.getAttribute('aria-pressed');
+  if(selected!=='true')
+   return {scope,state:'UNVERIFIED',reason:'PERIOD_CLICK_NOT_SELECTED'};
+  await first.click({timeout:10000});
+  const collapsed=await first.getAttribute('aria-expanded');
+  return {scope,state:collapsed==='false'?'INTERACTION_WORKS':'UNVERIFIED',
+   reason:collapsed==='false'?null:'CARD_CLICK_NOT_COLLAPSED'};
+ }catch(e){
+  return {scope,state:'UNVERIFIED',
+   reason:'BROWSER_PROBE_FAILED: '+String(e.message).slice(0,180)};
+ }
 }
 
 export async function runProductionLab({chromium,origin=PROD_ORIGIN,delayMs=1600}={}){
@@ -148,7 +183,7 @@ export async function runProductionLab({chromium,origin=PROD_ORIGIN,delayMs=1600
       return network.continue();
      });
      let documentStatus=null,mainFound=false,raw=null,navigationError=null;
-     let rumDomScriptPresent=null;
+     let rumDomScriptPresent=null,mobileInteraction=null;
      try{
       const response=await page.goto(PROD_ORIGIN+route,{
        waitUntil:'domcontentloaded',timeout:45000
@@ -178,12 +213,14 @@ export async function runProductionLab({chromium,origin=PROD_ORIGIN,delayMs=1600
         cls:r.cls,longTaskTotalMs:r.longTaskTotalMs};
       });
       rumDomScriptPresent=raw.rumScriptPresent;
+      if(route==='/economic-indicators/'&&viewport.width===390)
+       mobileInteraction=await probeEconomicMobileInteraction(page);
      }catch(e){navigationError=String(e.message).slice(0,240);}
      all.push({schemaVersion:PROD_SCHEMA,fixture:PROD_FIXTURE,
       route,url:PROD_ORIGIN+route,viewport,browserVersion:browser.version(),
       documentStatus,mainFound,blockedWriteRequests,
       blockedThirdPartyRequests,pageErrors,
-      blockedCfRumScriptRequests,rumDomScriptPresent,
+      blockedCfRumScriptRequests,rumDomScriptPresent,mobileInteraction,
       error:navigationError,metrics:normalizeRawMetrics(raw??{})});
     }finally{await context.close();}
    }
@@ -209,7 +246,8 @@ export async function main(){
    fcpMs:x.metrics.fcpMs.observed,blockedWriteRequests:x.blockedWriteRequests,
    rumMarkerState:x.rumBeacon.markerState,
    rumDomScriptPresent:x.rumBeacon.domScriptPresent,
-   blockedCfRumScriptRequests:x.rumBeacon.blockedScriptRequests
+   blockedCfRumScriptRequests:x.rumBeacon.blockedScriptRequests,
+   ...(x.mobileInteraction?{mobileInteraction:x.mobileInteraction}:{})
   })),mergeBlocking:false}));
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url))
