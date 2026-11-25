@@ -9,7 +9,7 @@ on:
 
 permissions:
   contents: read
-  actions: read # historical completed Actions job metadata only
+  actions: read # historical completed CI metadata and prior bundle artifacts only
 
 concurrency:
   group: node-ci-${{ github.workflow }}-${{ github.ref }}
@@ -40,11 +40,22 @@ jobs:
       # Reuse the existing Vite output; no second build or external sizing service.
       - name: Measure client JS/CSS bundle sizes
         run: node scripts/ci-bundle-size.mjs
+      # Optional #29 comparison: only official read-only Actions metadata and
+      # an existing successful main bundle artifact; never a new budget gate.
+      - name: Identify and read previous main bundle evidence
+        id: bundle_baseline
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci-bundle-baseline-resolve.mjs
+      - name: Report existing baseline bundle changes
+        env:
+          CI_BUNDLE_BASELINE_RUN_ID: ${{ steps.bundle_baseline.outputs.run_id }}
+        run: node scripts/ci-bundle-size.mjs --compare-baseline
       - name: Upload bundle size report
         uses: actions/upload-artifact@v4
         with:
           name: client-bundle-size-report
-          path: artifacts/ci-bundle-size/report.json
+          path: artifacts/ci-bundle-size/*.json
           retention-days: 7
           if-no-files-found: error
       - name: Save public CSS for asset comparison

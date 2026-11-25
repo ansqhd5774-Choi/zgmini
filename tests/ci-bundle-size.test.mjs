@@ -5,7 +5,7 @@ import {mkdtemp,mkdir,writeFile,symlink,rm} from 'node:fs/promises';
 import {tmpdir} from 'node:os';
 import {join} from 'node:path';
 import {gzipSync} from 'node:zlib';
-import {collectBundleSize,compareBundleSizes} from '../scripts/ci-bundle-size.mjs';
+import {collectBundleSize,compareBundleSizes,compareSavedBundleReports} from '../scripts/ci-bundle-size.mjs';
 
 async function fixture(fn){
  const dir=await mkdtemp(join(tmpdir(),'zgmini-bundle-test-'));
@@ -78,7 +78,44 @@ test('existing Node CI measures after build, uploads evidence without new workfl
  const artifact=w.indexOf('      - name: Upload bundle size report');
  assert.ok(build>=0&&measure>build&&artifact>measure);
  assert.match(w,/node scripts\/ci-bundle-size\.mjs/);
- assert.match(w,/artifacts\/ci-bundle-size\/report\.json/);
+ assert.match(w,/artifacts\/ci-bundle-size\/\*\.json/);
  assert.match(w,/retention-days: 7/);
  assert.match(w,/runs-on: ubuntu-latest/);
+});
+
+test('optional existing baseline compares actual saved JSON with no fabricated budget',async()=>{
+ await fixture(async dir=>{
+  const baseline=join(dir,'baseline.json'),current=join(dir,'current.json');
+  const b={schemaVersion:1,scope:'dist/client/assets/*.js,*.css',totals:{
+   js:{files:1,rawBytes:100,gzipBytes:40},css:{files:1,rawBytes:20,gzipBytes:9}
+  }};
+  const next={...b,totals:{...b.totals,js:{files:1,rawBytes:110,gzipBytes:42}}};
+  await writeFile(current,JSON.stringify(next));
+  assert.deepEqual(await compareSavedBundleReports(current,baseline),
+   {status:'UNAVAILABLE_NO_BASELINE'});
+  await writeFile(baseline,JSON.stringify(b));
+  assert.deepEqual(await compareSavedBundleReports(current,baseline),{
+   status:'COMPARABLE',schemaVersion:1,scope:b.scope,
+   delta:{js:{rawDeltaBytes:10,gzipDeltaBytes:2,rawPercent:10,gzipPercent:5},
+    css:{rawDeltaBytes:0,gzipDeltaBytes:0,rawPercent:0,gzipPercent:0}}
+  });
+ });
+});
+
+test('invalid or mismatched optional previous report never becomes a synthetic zero delta',async()=>{
+ await fixture(async dir=>{
+  const baseline=join(dir,'baseline.json'),current=join(dir,'current.json');
+  const now={schemaVersion:1,scope:'dist/client/assets/*.js,*.css',totals:{
+   js:{files:1,rawBytes:100,gzipBytes:40},css:{files:1,rawBytes:20,gzipBytes:9}
+  }};
+  await writeFile(current,JSON.stringify(now));
+  await writeFile(baseline,'broken json');
+  assert.deepEqual(await compareSavedBundleReports(current,baseline),
+   {status:'UNVERIFIED_BASELINE_JSON'});
+  await writeFile(baseline,JSON.stringify({...now,schemaVersion:0}));
+  assert.deepEqual(await compareSavedBundleReports(current,baseline),
+   {status:'INCOMPARABLE_BASELINE'});
+  await rm(current);
+  await assert.rejects(compareSavedBundleReports(current,baseline),/ENOENT/);
+ });
 });
