@@ -342,8 +342,19 @@ export function projectEmploymentR6RunnerResult({body=null,pitCoverage=null,pitC
         ||!CHART.has(item.chartStatus)||!SCORE.has(item.scoreStatus)){
         throw Error("RUNNER_R6_INDICATOR_STATUS_INVALID");
       }
+      // The approved stored-PIT reader already calculated this date.
+      // Expose one bounded calendar date, never private rows or hashes.
+      const missing=item.firstMissingReferenceDate;
+      if(missing!==null&&missing!==undefined&&
+        (item.scoreStatus!=="PARTIAL_HISTORY"||
+         typeof missing!=="string"||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(missing)||
+         !Number.isFinite(Date.parse(missing+"T00:00:00Z"))||
+         new Date(missing+"T00:00:00Z").toISOString().slice(0,10)!==missing||
+         missing>body.asOfDate))throw Error("RUNNER_R6_INDICATOR_STATUS_INVALID");
       seen.add(item.id);
-      return {id:item.id,rawStatus:item.rawStatus,chartStatus:item.chartStatus,scoreStatus:item.scoreStatus};
+      return {id:item.id,rawStatus:item.rawStatus,chartStatus:item.chartStatus,
+        scoreStatus:item.scoreStatus,
+        ...(missing===null||missing===undefined?{}:{firstMissingReferenceDate:missing})};
     });
   }
   const size=Buffer.byteLength(JSON.stringify(result));
