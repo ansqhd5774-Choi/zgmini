@@ -32,16 +32,16 @@
 | 18 | PC Issue | [#3516](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3516) pc-controller-update | `controller-update` | 고용 R6/W04 | REVIEWED_COMMENT (19 comments; STATUS: UNKNOWN;CODE: POSTCHECK_OUTCOME_UNKNOWN) |
 | 19 | PC Issue | [#3073](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3073) agent-handoff handoff-24153d07cd492114dfde803e | `본문 조사` | 소속 미확정 | REVIEWED_COMMENT (7 comments; no standard result) |
 | 20 | PC Issue | [#2427](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2427) ZGMINI Wide Scout 2026-11 #1 | `본문 조사` | 공통 PC/CI | REVIEWED_COMMENT (54 comments; STATUS_COVERAGE_20261124) |
-| 21 | PC Issue | [#2426](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2426) ZGMINI Proactive Diagnostics 2026-11 #1 | `본문 조사` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 22 | PC Issue | [#2353](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2353) Runner roster readback HTTP 403 — repository Administra | `본문 조사` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 23 | PC Issue | [#2237](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2237) [W03→프로세스 총괄] #2227 Runner 배정 후 13분 취소·steps 0·영수증 미생성  | `본문 조사` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 24 | PC Issue | [#2232](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2232) pc-job | `employment-r6-wal-memory-preflight` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 25 | PC Issue | [#2079](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2079) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 26 | PC Issue | [#2059](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2059) pc-source-bundle-register | `pc-source-bundle-register` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 27 | PC Issue | [#2032](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2032) pc-job | `writer-install-preimage-readonly` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 28 | PC Issue | [#1997](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1997) Maintenance replay pc-update-7f6b2ee0-1a4e-4a62-a3bc-04 | `core-runtime-source-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 29 | PC Issue | [#1969](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1969) pc-source-bundle-register | `pc-source-bundle-register` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 30 | PC Issue | [#1922](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1922) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
+| 21 | PC Issue | [#2426](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2426) ZGMINI Proactive Diagnostics 2026-11 #1 | `본문 조사` | 공통 PC/CI | REVIEWED_COMMENT (54 comments; no standard result) |
+| 22 | PC Issue | [#2353](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2353) Runner roster readback HTTP 403 — repository Administra | `본문 조사` | 공통 PC/CI | REVIEWED_COMMENT (5 comments; no standard result) |
+| 23 | PC Issue | [#2237](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2237) [W03→프로세스 총괄] #2227 Runner 배정 후 13분 취소·steps 0·영수증 미생성  | `본문 조사` | 공통 PC/CI | REVIEWED_COMMENT (22 comments; **PASS/WRITER_APPROVED_PREIMAGE_READONLY**) |
+| 24 | PC Issue | [#2232](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2232) pc-job | `employment-r6-wal-memory-preflight` | 고용 R6/W04 | REVIEWED_COMMENT (3 comments; **BLOCKED — RESOURCE_WAIT_MEMORY**) |
+| 25 | PC Issue | [#2079](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2079) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; **STATE_UNKNOWN — CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE**;FIRST_FAIL_NO_AUTOMATIC_RETRY) |
+| 26 | PC Issue | [#2059](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2059) pc-source-bundle-register | `pc-source-bundle-register` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; STATUS: BLOCKED;CODE: APPROVAL_MANIFEST_READ_FAILED) |
+| 27 | PC Issue | [#2032](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2032) pc-job | `writer-install-preimage-readonly` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; **BLOCKED — RETIRED_IRAN_INVENTORY_UNAVAILABLE**) |
+| 28 | PC Issue | [#1997](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1997) Maintenance replay pc-update-7f6b2ee0-1a4e-4a62-a3bc-04 | `core-runtime-source-readonly` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; **STATE_UNKNOWN — CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE**;FIRST_FAIL_NO_AUTOMATIC_RETRY) |
+| 29 | PC Issue | [#1969](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1969) pc-source-bundle-register | `pc-source-bundle-register` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; STATUS: BLOCKED;CODE: BUNDLE_B_APPROVAL_CONTRACT_INVALID) |
+| 30 | PC Issue | [#1922](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1922) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; **STATE_UNKNOWN — CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE**;FIRST_FAIL_NO_AUTOMATIC_RETRY) |
 | 31 | PC Issue | [#1764](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1764) pc-job | `employment-r6-candidate-stage-readonly` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
 | 32 | PC Issue | [#1743](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1743) ZGMINI 공통 대기열 — GitHub 능동 진단 원장 R1 | `본문 조사` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
 | 33 | PC Issue | [#1742](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1742) pc-job | `employment-r6-collection-evidence-readonly` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
@@ -127,3 +127,15 @@
 - zgmini-pc-control Issue #3516: REVIEWED_COMMENT, 댓글 19, STATUS: UNKNOWN;CODE: POSTCHECK_OUTCOME_UNKNOWN
 - zgmini-pc-control Issue #3073: REVIEWED_COMMENT, 댓글 7, no standard result
 - zgmini-pc-control Issue #2427: REVIEWED_COMMENT, 댓글 54, STATUS_COVERAGE_20261124
+
+### 감사 댓글 검증 21–30
+- zgmini-pc-control Issue #2426: REVIEWED_COMMENT, 댓글 54, no standard result
+- zgmini-pc-control Issue #2353: REVIEWED_COMMENT, 댓글 5, no standard result
+- zgmini-pc-control Issue #2237: REVIEWED_COMMENT, 댓글 22, **PASS/WRITER_APPROVED_PREIMAGE_READONLY**
+- zgmini-pc-control Issue #2232: REVIEWED_COMMENT, 댓글 3, **BLOCKED — RESOURCE_WAIT_MEMORY**
+- zgmini-pc-control Issue #2079: REVIEWED_COMMENT, 댓글 1, **STATE_UNKNOWN — CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE**;FIRST_FAIL_NO_AUTOMATIC_RETRY
+- zgmini-pc-control Issue #2059: REVIEWED_COMMENT, 댓글 1, STATUS: BLOCKED;CODE: APPROVAL_MANIFEST_READ_FAILED
+- zgmini-pc-control Issue #2032: REVIEWED_COMMENT, 댓글 1, **BLOCKED — RETIRED_IRAN_INVENTORY_UNAVAILABLE**
+- zgmini-pc-control Issue #1997: REVIEWED_COMMENT, 댓글 1, **STATE_UNKNOWN — CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE**;FIRST_FAIL_NO_AUTOMATIC_RETRY
+- zgmini-pc-control Issue #1969: REVIEWED_COMMENT, 댓글 1, STATUS: BLOCKED;CODE: BUNDLE_B_APPROVAL_CONTRACT_INVALID
+- zgmini-pc-control Issue #1922: REVIEWED_COMMENT, 댓글 1, **STATE_UNKNOWN — CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE**;FIRST_FAIL_NO_AUTOMATIC_RETRY
