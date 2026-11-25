@@ -137,3 +137,26 @@ jobs:
           path: artifacts/ci-continuous-benchmark/report.json
           retention-days: 7
           if-no-files-found: error
+
+      # #1582 diagnostic only: never install candidate wrappers on main or runtime.
+      - name: "[#1582] Probe official Cloudflare wrapper candidate (PR only)"
+        if: ${{ github.event_name == 'pull_request' && github.head_ref == 'codex/controller-ops-lessons-20261105' && !cancelled() && steps.install.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          restore_locked() {
+            original_status=$?
+            trap - EXIT
+            npm ci
+            git diff --exit-code -- package.json package-lock.json
+            exit "$original_status"
+          }
+          trap restore_locked EXIT
+          echo "CI1582_WRAPPERS_DIAGNOSTIC_START"
+          npm install --no-save --package-lock=false --audit=false --fund=false wrangler@4.168.0 @cloudflare/vite-plugin@1.70.1
+          node -e 'const fs=require("node:fs"); for(const [p,v] of [["wrangler","4.168.0"],["@cloudflare/vite-plugin","1.70.1"]]) {const found=JSON.parse(fs.readFileSync("node_modules/"+p+"/package.json","utf8")).version; console.log(p+"="+found);if(found!==v)process.exitCode=2}'
+          npm ls miniflare --all --depth=2 || true
+          npm run build
+          node --test tests/korea-rev7-d1-status.test.mjs
+          node --test tests/*.test.mjs
+          echo "CI1582_WRAPPERS_BUILD_D1_FULL_TEST_PASS"
