@@ -47,7 +47,7 @@ function check(mutator, { success = false, extraTable = '' } = {}) {
   try {
     if (mutator) mutator(f.register);
     fs.writeFileSync(f.json, JSON.stringify(f.register) + '\n');
-    fs.writeFileSync(f.markdown, f.table + extraTable + '\n');
+    fs.writeFileSync(f.markdown, f.table + (extraTable ? '\n' + extraTable : '') + '\n');
     const output = spawnSync(process.execPath, [f.script], {
       cwd: f.temp, encoding: 'utf8', timeout: 10000,
       env: { PATH: process.env.PATH ?? '' },
