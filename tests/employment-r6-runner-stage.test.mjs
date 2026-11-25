@@ -383,3 +383,33 @@ test("PIT-04-08 Runner rejects nonallowlisted key data and preserves bounded whi
    /RUNNER_R6_PIT04_REVIEW_INVALID/);
  }
 });
+
+test("R1 minimal diagnostic exposes bounded missing reference date without raw input",async t=>{
+  const env=environment(t);fixture(env.core);fixture(env.candidate,{row:true});
+  const body=await stageEmploymentR6OneYear(runnerOptionsFrom(argv(env)));
+  const u3=body.indicators.find(x=>x.id==="U3_UNEMPLOYMENT");
+  assert.equal(u3.scoreStatus,"PARTIAL_HISTORY");
+  assert.match(u3.firstMissingReferenceDate,/^20\\d{2}-\\d{2}-\\d{2}$/);
+  u3.sourcePath="PRIVATE_RAW_SOURCE_PATH";
+  const report=projectEmploymentR6RunnerResult({body,pitCoverage:{}});
+  const output=report.indicators.find(x=>x.id==="U3_UNEMPLOYMENT");
+  assert.equal(output.firstMissingReferenceDate,u3.firstMissingReferenceDate);
+  assert.equal(report.indicators.length,29);
+  assert.equal(report.providerCalls,0);
+  assert.equal(report.d1Writes,0);
+  assert.equal(report.promotionApproved,false);
+  assert.ok(Buffer.byteLength(JSON.stringify(report))<12000);
+  assert.doesNotMatch(JSON.stringify(report),/PRIVATE_RAW_SOURCE_PATH|sourcePath|sourceHash|sourceHashes/);
+  for(const invalid of ["2026-02-30","2026-11-03","not-a-date","2026-10-31T12:00:00Z",123]){
+    u3.firstMissingReferenceDate=invalid;
+    assert.throws(()=>projectEmploymentR6RunnerResult({body,pitCoverage:{}}),
+      /RUNNER_R6_INDICATOR_STATUS_INVALID/);
+  }
+  u3.firstMissingReferenceDate=null;
+  assert.equal(Object.hasOwn(projectEmploymentR6RunnerResult({body,pitCoverage:{}}).indicators
+    .find(x=>x.id==="U3_UNEMPLOYMENT"),"firstMissingReferenceDate"),false);
+  u3.firstMissingReferenceDate="2026-10-31";
+  u3.scoreStatus="READY";
+  assert.throws(()=>projectEmploymentR6RunnerResult({body,pitCoverage:{}}),
+    /RUNNER_R6_INDICATOR_STATUS_INVALID/);
+});
