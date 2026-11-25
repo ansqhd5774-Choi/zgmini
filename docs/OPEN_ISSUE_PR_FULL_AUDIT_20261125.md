@@ -12,16 +12,16 @@
 
 | No. | 유형 | 항목 | 작업/증거 식별자 | 1차 분류 | 개별 증거검사 |
 |---:|---|---|---|---|---|
-| 1 | 본체 Issue | [#1582](https://github.com/ansqhd5774-Choi/zgmini/issues/1582) [CI] Node.js CI / check / Regression tests | `본문 조사` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 2 | 본체 PR | [#1463](https://github.com/ansqhd5774-Choi/zgmini/pull/1463) draft(core092): retain same-cycle source correlation in | `본문 조사` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 3 | 본체 PR | [#1266](https://github.com/ansqhd5774-Choi/zgmini/pull/1266) feat(W04 PIT-04-05): aggregate raw snapshot attestation | `본문 조사` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 4 | 본체 PR | [#1036](https://github.com/ansqhd5774-Choi/zgmini/pull/1036) feat(bls): migrate employment R6 and R4 collection to r | `본문 조사` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 5 | 본체 PR | [#1031](https://github.com/ansqhd5774-Choi/zgmini/pull/1031) draft: inactive shared BLS 25/24h atomic reservation pr | `본문 조사` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 6 | 본체 PR | [#933](https://github.com/ansqhd5774-Choi/zgmini/pull/933) feat(employment): stored R6 29-series collection and 1Y | `본문 조사` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 7 | 본체 PR | [#488](https://github.com/ansqhd5774-Choi/zgmini/pull/488) PC-only: immutable ETF 8-theme Shadow history snapshot  | `본문 조사` | W01/W03/W05 소속 재검증 | PENDING_EVIDENCE_REVIEW |
-| 8 | PC Issue | [#3533](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3533) pc-process-inventory-readonly | `process-inventory-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 9 | PC Issue | [#3531](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3531) [CI] ZGMINI Controller Maintenance Source Tests / sourc | `본문 조사` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 10 | PC Issue | [#3528](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3528) pc-process-inventory-readonly | `process-inventory-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
+| 1 | 본체 Issue | [#1582](https://github.com/ansqhd5774-Choi/zgmini/issues/1582) [CI] Node.js CI / check / Regression tests | `본문 조사` | 공통 PC/CI | REVIEWED_COMMENT (20 comments; **SUCCESS**;**SUCCESS**) |
+| 2 | 본체 PR | [#1463](https://github.com/ansqhd5774-Choi/zgmini/pull/1463) draft(core092): retain same-cycle source correlation in | `본문 조사` | 공통 PC/CI | REVIEWED_COMMENT (3 comments; no standard result) |
+| 3 | 본체 PR | [#1266](https://github.com/ansqhd5774-Choi/zgmini/pull/1266) feat(W04 PIT-04-05): aggregate raw snapshot attestation | `본문 조사` | 고용 R6/W04 | REVIEWED_COMMENT (2 comments; no standard result) |
+| 4 | 본체 PR | [#1036](https://github.com/ansqhd5774-Choi/zgmini/pull/1036) feat(bls): migrate employment R6 and R4 collection to r | `본문 조사` | 고용 R6/W04 | REVIEWED_COMMENT (3 comments; no standard result) |
+| 5 | 본체 PR | [#1031](https://github.com/ansqhd5774-Choi/zgmini/pull/1031) draft: inactive shared BLS 25/24h atomic reservation pr | `본문 조사` | 고용 R6/W04 | REVIEWED_COMMENT (2 comments; no standard result) |
+| 6 | 본체 PR | [#933](https://github.com/ansqhd5774-Choi/zgmini/pull/933) feat(employment): stored R6 29-series collection and 1Y | `본문 조사` | 고용 R6/W04 | REVIEWED_COMMENT (136 comments; **SUCCESS**;**SUCCESS**) |
+| 7 | 본체 PR | [#488](https://github.com/ansqhd5774-Choi/zgmini/pull/488) PC-only: immutable ETF 8-theme Shadow history snapshot  | `본문 조사` | W01/W03/W05 소속 재검증 | REVIEWED_COMMENT (2 comments; no standard result) |
+| 8 | PC Issue | [#3533](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3533) pc-process-inventory-readonly | `process-inventory-readonly` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; no standard result) |
+| 9 | PC Issue | [#3531](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3531) [CI] ZGMINI Controller Maintenance Source Tests / sourc | `본문 조사` | 공통 PC/CI | REVIEWED_NO_COMMENT (0 comments; no standard result) |
+| 10 | PC Issue | [#3528](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3528) pc-process-inventory-readonly | `process-inventory-readonly` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; STATUS_OBSERVED) |
 | 11 | PC Issue | [#3525](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3525) pc-process-inventory-readonly | `process-inventory-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
 | 12 | PC Issue | [#3524](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3524) pc-job | `employment-r6-raw-run-attestation-readonly` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
 | 13 | PC Issue | [#3522](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3522) pc-job | `employment-r6-raw-run-attestation-readonly` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
@@ -103,3 +103,15 @@
 
 ## 2단계 개별 증거 검증
 
+
+### 감사 댓글 검증 1–10
+- zgmini Issue #1582: REVIEWED_COMMENT, 댓글 20, **SUCCESS**;**SUCCESS**
+- zgmini PR #1463: REVIEWED_COMMENT, 댓글 3, no standard result
+- zgmini PR #1266: REVIEWED_COMMENT, 댓글 2, no standard result
+- zgmini PR #1036: REVIEWED_COMMENT, 댓글 3, no standard result
+- zgmini PR #1031: REVIEWED_COMMENT, 댓글 2, no standard result
+- zgmini PR #933: REVIEWED_COMMENT, 댓글 136, **SUCCESS**;**SUCCESS**
+- zgmini PR #488: REVIEWED_COMMENT, 댓글 2, no standard result
+- zgmini-pc-control Issue #3533: REVIEWED_COMMENT, 댓글 1, no standard result
+- zgmini-pc-control Issue #3531: REVIEWED_NO_COMMENT, 댓글 0, no standard result
+- zgmini-pc-control Issue #3528: REVIEWED_COMMENT, 댓글 1, STATUS_OBSERVED
