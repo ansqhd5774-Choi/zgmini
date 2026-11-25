@@ -1156,3 +1156,36 @@ GitHub Search API 실제 재조회: 본체 Issue **1** / PR **6**, PC 제어 Iss
 - 이번 감사 직접 신규 종결 **0**, 누적 직접 종결 **10건**. 감사 브랜치의 JSON/검사기/원장 외 **운영 PC·Controller·Writer·D1/SQLite·Task·Provider·새 Issue/PR·승인·기존 원본 실행 변경 0건**.
 
 **다음 단계:** 1) 새 검증기를 이후 원장 수정 시 먼저 적용하여 고정 88/고유 84/잔여 4를 수학적으로 확인, 2) PC 두 건은 기존 인증 운영 실행 원장에 접근 가능한 승인된 조회 경로만 독립 증거로 받아 검증, 3) Draft 두 건은 원담당 최소 소스 통합·정확 HEAD CI가 생성됐을 때만 완료 여부 재판정. 필요 시 현재 OPEN 재계수는 고정 코호트와 완전히 분리해서 보고한다.
+
+
+## 배치 AN — 고정 88건 감사 등록부 실행 등가검사와 오류 주입 8종 검증 (2026-11-25 KST)
+
+**완료 건수 84/88(95.5%) 유지, 잔여 4건.** 배치 AM의 신규 두 파일이 브랜치 원격에 실제 존재하는지 재조회하고, 원장 Markdown 88행과 JSON 원본 88행의 정확한 순서·종류·번호를 별도 JavaScript로 실행 대조했다. 기존 등록부 84 고유 검증 ID, 재검토 ID 16회, 잔여 정확 `[1031,1266,1969,2059]` 일치. 코호트 바깥 번호 0. **GitHub 원격 세 파일의 Git blob**:
+- `docs/OPEN_ISSUE_PR_FIXED_COHORT_REGISTER_20261125.json`: `af6977bbaf2990954cc66bd6931c865776456c0f`.
+- `scripts/audit/validate-open-issue-pr-cohort.mjs`: `742ee7cec0cb56d4820086df9642ee48a85976d1`.
+- `docs/OPEN_ISSUE_PR_FULL_AUDIT_20261125.md`: 검사 당시 `b06d5eaba7bb830de00f89ce75565c23a10055c0`.
+
+### 독립 실행 등가검사 및 변이 시험 결과
+
+원격 등록부를 직접 파싱해 Node 검사기와 같은 코호트 ID·행 번호·기검증 set·미검증 보완집합 불변식을 JavaScript 검사에서 실행했다. 정상 원장 `PASS`. 두 번째 별도 검사에서는 복제된 JSON에 다음 변이를 넣어 검증했다.
+
+| 변이 시험 | 기대 판정 | 별도 JavaScript 실제 판정 |
+|---|---|---|
+| 변경 없는 정상 등록부 | PASS | PASS |
+| 원본 코호트 번호 1건 중복 | FAIL | FAIL |
+| 고정 행 1건 제거 | FAIL | FAIL |
+| 코호트 외 번호 99999999 추가 | FAIL | FAIL |
+| 잔여 개수 4→3 조작 | FAIL | FAIL |
+| 고유 기검증 개수 84→85 조작 | FAIL | FAIL |
+| 잔여 #1031 필수 gate 삭제 | FAIL | FAIL |
+| 과거 이미 검증한 #155 재조회 1회 추가 | PASS(신규 건수 0) | PASS(중복 배제) |
+
+**8/8 기대결과 일치.** 이는 별도의 JavaScript 실행으로 검사한 결과이며, 원격 브랜치의 정확 `node scripts/audit/validate-open-issue-pr-cohort.mjs` 명령을 실제 Node 프로세스에서 수행했다는 뜻은 **아니다**. 현재 실행 환경에서 GitHub 호스트 이름을 DNS로 조회할 수 없어 원격 브랜치를 로컬로 가져와 해당 명령을 직접 실행하지 못했다. 저장소 CI를 수동 실행·수정하거나 운영 Windows 명령을 실행하지 않았다. 이후 CI에 적용 시 정확 Node command 로그·종료 코드 0을 별도 증거로 확보해야 한다.
+
+### 남은 원본 완료 차단 4건 현행 점검
+
+- [본체 PR #1031](https://github.com/ansqhd5774-Choi/zgmini/pull/1031), 정확 HEAD `80a6a462158c7ee44dd0cf8d0527ad3d093e9354`: OPEN/Draft, mergeable_state=`dirty`; exact HEAD Actions 0, check-runs 0, commit status entries 0(aggregate `pending`). W04 owner의 BLS 무등록 물리 요청·공유 quota 보호 gap는 기존 배치 AL source inspection에서 분리됨.
+- [본체 PR #1266](https://github.com/ansqhd5774-Choi/zgmini/pull/1266), 정확 HEAD `0193056bdb47bcf6c911f17623b6c302c8199c4c`: OPEN/Draft, mergeable_state=`clean`; exact HEAD Actions 0, check-runs 0, commit status entries 0(aggregate `pending`). 구 PIT 집계의 원담당 최신 PIT0408/PIT0605 보호 이관 미완.
+- PC [#1969](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1969)·[#2059](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2059): out-of-band result GitHub 원본은 이전 배치에 이미 검증됐으나 인증된 Windows user/host에서 실행한 원본 local ledger·실행 신원은 여전히 연결되지 않음. 기존 CLOSED를 원본 설치 PASS로 소급하지 않는다.
+
+**결론:** 코호트 감사 등록부와 중복제거 검사 자체의 별도 실행 결과는 PASS이나 **원본 신규 증거검증 완료 0건**. 고정 88/고유 84/잔여 4, 직접 종결 누적 10 유지. 운영 PC·Controller·Writer·SQLite/D1·Task·Provider·GitHub workflow·새 CI/Issue/PR 변경 없음. 다음 작업은 정규 CI에서 검사기 Node 실제 실행 증거를 확보하는 소스-only 승인 경로 확인과, 4개 차단 항목의 원담당 승인·운영 원본 신원을 분리 처리한다.
