@@ -137,3 +137,23 @@ jobs:
           path: artifacts/ci-continuous-benchmark/report.json
           retention-days: 7
           if-no-files-found: error
+      # #1582: isolated PR-only beta full-suite compatibility probe.
+      # This branch must never be merged; stable package-lock remains untouched.
+      - name: Experimental Miniflare 5 beta full regression and locked restore (do not merge)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: |
+          set +e
+          npm install --no-save --package-lock=false --audit=false --fund=false miniflare@5.20261123.1-beta
+          install_rc=$?
+          if [ "$install_rc" -eq 0 ]; then
+            node --test tests/*.test.mjs
+            suite_rc=$?
+          else
+            suite_rc=99
+          fi
+          npm ci --audit=false --fund=false
+          restore_rc=$?
+          echo "MINIFLARE5_FULL_INSTALL=$install_rc FULL_SUITE=$suite_rc LOCKED_RESTORE=$restore_rc"
+          if [ "$restore_rc" -ne 0 ]; then exit "$restore_rc"; fi
+          if [ "$install_rc" -ne 0 ]; then exit "$install_rc"; fi
+          exit "$suite_rc"
