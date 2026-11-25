@@ -529,3 +529,23 @@ GitHub Search API 직접 재조회 **78건 OPEN = 본체 Issue 1 / PR 6 + PC 제
 - 원담당이 진행하는 ER1 12월 진단 A, 선택 B 및 W04 #3516 의존사항은 독립 작업으로 유지. 이슈 종료 0, PR/승인/PC 실행 생성 0, 운영 PC/Controller/Writer/SQLite/D1/Task 변경 0.
 
 **진행률 집계:** 1차 본문·댓글 88/88(100%), 2차 원본 실행 49/88(55.7%), 2차 미검증 39/88. 원장 코호트가 아닌 신규 유입 OPEN 수와 혼동하지 않음. 누적 감사 담당 직접 종결 completed 7 + not_planned 1 = **8건 변동 없음**.
+
+## 2차 독립 증거 조회 — 배치 N (2026-11-25)
+
+기준 **49/88건(55.7%)**에서 시작. 앞서 1차만 판정한 본체 Draft PR 두 건(#1463, #1036)의 고정 HEAD·Git diff·해당 커밋 PR Actions→Job→Steps를 **새로 직접 검사**해 2차 **소스·CI 증거검증 2건** 추가. 2차 누적 **51/88건(58.0%)**, 미검증 **37건**. 이 수치는 각 원본의 *출처·소스 CI 판정* 범위를 포함하며 운영 PC 설치/기능 종결 51건이 아니다.
+
+| 최초 고정 코호트 | HEAD 및 Git compare 원본 | CI 실행 직접 검증 | 판정 |
+|---|---|---|---|
+| [zgmini PR #1463](https://github.com/ansqhd5774-Choi/zgmini/pull/1463) | `DRAFT/OPEN`, HEAD `0b02549df240e868d9de9e6b3c902b7f9cb023c1`, base `2eb796da811d0e074ca0cabab8e2cad9502bff43`, Git compare ahead 28/behind 0, 소스 7 + 테스트 2 **총 9파일** | [Node.js CI Run 45015106775](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45015106775) `completed/success`, Job `137185678290` `check` SUCCESS. GitHub job steps: Build, Type check, Regression tests, PC publication recovery tests, Cloudflare candidate read contracts 전부 SUCCESS | **정확한 PR HEAD 소스 CI 검증 완료**, 메인 미병합/운영 Core 변경 미입증으로 Draft 유지 |
+| [zgmini PR #1036](https://github.com/ansqhd5774-Choi/zgmini/pull/1036) | `DRAFT/OPEN`, HEAD `f103e9026fba781100d809fc486762d6eb73023c`, base `0c6f2fc2c134d716a6594129233c979d6bcd23c9`, Git compare ahead 91/behind 0, **40파일** | [Node.js CI Run 43487215575](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/43487215575) `completed/success`, Job `132098729904` `check` SUCCESS. Build, Type check, Regression tests 및 PC/Cloudflare 관련 Step SUCCESS | **고정 PR HEAD 소스 CI 검증 완료**. W04/R6 기능 운영 연계 미완; 40파일 Draft를 현 main으로 무단 병합/종결 금지 |
+
+### 이번 중복 확인을 신규 건수로 세지 않은 경우
+- PC #1295: [Run 43164525583](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43164525583), 원본 Git `results/43164525583-1-seat-1.json/.txt` SHA `905e97c6451ae87832d8a35224637bbd334cef0f` / `22b90c422974f098e1387ecf7935fd3ebbe3e555`, Actions Job 131003164661 success/step upload success. `STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE`, live Core 검증 불가. 배치 H 독립검증과 중복.
+- PC #1231: [Run 42925054398](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42925054398), JSON/TXT Git blob `8f8cd91038ef49399a1de8cfb47c17a60b490cb7` / `c0bd48ae51b891967a93f883a2947241d5355274`, Job 130209319923 success. `STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE`. 배치 G와 중복.
+- PC #1196: [Run 42721800118](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42721800118), JSON/TXT Git blob `0e5b0e27f94aafd065fd1822baf532ad91375e26` / `ddcfd44dce3d63aeb1ac8145b400e7b6633770a3`, Job 129517309675 success. `STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE`. 배치 F와 중복.
+- 세 원본 모두 `runtimeSourceVerified=false`, `evidenceLevel=LIVE_PROCESS_SNAPSHOT_INCONCLUSIVE`, operational/provider/D1 writes 0. Actions Job success는 업무 목표 달성 아님. **추가 집계 0**.
+- #488, #1266, #1031 등 다른 OPEN Draft PR은 현재 HEAD·상태만 부분검사했고 이 배치 2차 독립 CI 검증 수치에 **추가하지 않음**. 특히 #488은 ETF 별도 라이선스/사용자 승인 없는 연구 Draft.
+- PC #509/#503/#498/#496 등 ER1 과거 B 차단 요청은 Issue 원본 및 댓글상 BLOCKED지만 해당 고유 요청 Run ID가 직접 확보되지 않아 **이번 2차 독립검증 추가 집계 0**.
+- 원담당 W04/ER1 및 공통 Controller/Writer/Runner 상태 변경 0, 신규 실행/승인/Issue/PR 0, 이번 직접 종결 0. 누적 감사 담당 직접 종결 8(완료 7, 대체 1) 유지.
+
+**현재 기준:** 1차 본문·댓글 88/88, 2차 원본 Actions 또는 PR HEAD 소스 CI 검증 **51/88(58.0%)**, 미검증 37건. 후속 회차에서는 남은 고정 코호트 개별 식별자에 대해 중복검증을 피하고 원본 실행·영수증 확인 가능한 항목만 우선한다.
