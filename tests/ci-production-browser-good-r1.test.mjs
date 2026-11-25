@@ -126,7 +126,8 @@ test('browser start rejects arbitrary origins and unauthorized measurement optio
 });
 test('actual browser lab blocks third-party origins and all write methods',()=>{
  const src=readFileSync(new URL('../scripts/ci-production-browser-good-r1.mjs',import.meta.url),'utf8');
- assert.match(src,/sameOrigin=new URL\(request.url\(\)\)\.origin===PROD_ORIGIN/);
+ assert.match(src,/const target=new URL\(request\.url\(\)\)/);
+ assert.match(src,/sameOrigin=target\.origin===PROD_ORIGIN/);
  assert.match(src,/if\(!sameOrigin\)/);
  assert.match(src,/\['GET','HEAD'\]\.includes\(request.method\(\)\)/);
  assert.match(src,/return network\.abort\('blockedbyclient'\)/);
