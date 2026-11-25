@@ -309,3 +309,15 @@ GitHub Search API total_count 직접 조회: **86건 = 본체 Issue 1/PR 6 + PC 
 ### 배치 C 후 실시간 OPEN 변동 감지
 
 GitHub Search total_count 재조회: **86건 = 본체 Issue 1, PR 6 / PC Issue 77, PR 2**. 전 배치의 86건(PC Issue 78/PR 1)과 총량은 같지만 구성 변화가 발생. PC 제어 OPEN PR 검색 결과: [#3544](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3544), [#3545](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3545). 둘 다 고정 88건 원본에는 없는 신규 PR이며 원본 검사율/종결 건수에 합산하지 않는다. #3542는 현재 OPEN 검색에 나타나지 않으므로 그 원본 종료 방식은 별도 조회 전 확정하지 않는다. 전체 OPEN 수량만으로 원본 해결률을 추산하지 않는다.
+
+
+## 2차 독립 증거 조회 — 배치 D (2026-11-25)
+
+| 항목 | 원본 독립 증거 | 결과 |
+|---|---|---|
+| PC Issue [#1000](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1000) | [Run 42583631501](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42583631501) completed/success. GitHub `results/42583631501-1-seat-3.json/.txt` 직접 조회에서 상위 공통 12/12 필드 일치. JSON `scopedPreimage.files` 정확 13개, 각 파일 exists=true, PRESENT, trackedDirty=false. 원래 approval manifest SHA256 `0b1ef149a6f285c99a174e48ae744d2416b7ba9dd2558059f90dbcc80f5c3e84` 정합, sourceIdentityConsistent=true. | **완료·종결** CLOSED/completed, 댓글 ID `7159311684`. 단, `runtimeSourceVerified=false`, `coreTaskSourceLinked=false`, `FIXED_CHECKOUT_NOT_LIVE_CORE_PROCESS`; 운영 설치·Runtime 검증 완료가 아님 |
+| 본체 PR [#488](https://github.com/ansqhd5774-Choi/zgmini/pull/488) | GitHub PR API/전체 댓글/3개 변경 파일 확인. `OPEN/Draft/unmerged`, HEAD `366892d9b71b117934f0668adea3f24fc369d017`, 현재 main 대비 ahead 3 / behind 1792. 추가 파일은 ETF 테마 shadow 연구 구현·수동 CLI·시험의 3개. 본문에 R124 연구용·승인 전 main 미병합 명시, 운영 배포·공급자 수집 미승인. | **W01/W03/W05 완료 항목 귀속 부적절**: 독립 ETF Shadow R124 연구 Draft로 분류. 추가 승인 없이 병합·종료 금지. 1차 소속 후보를 `ETF R124 연구/승인 대기`로 정정 |
+
+- 배치 D에서 #1000은 이전 배치 B의 부분검사 대상이었으므로 **2차 부분검사 누적 건수 10/88 유지**. 실제 종결 확정 누적 **3/88건** (#1026,#939,#1000). #488은 기존 배치 A 부분검사에 포함되므로 신규 검사 건수로 중복 산입하지 않음.
+- 원래 W01/W03/W05 소속 미확정 PR 후보 #488을 R124 ETF Shadow 연구로 직접 재분류했으며, W01/W03/W05 완료 건을 이 PR 병합으로 늘리지 않는다.
+- 남은 중요 조건: #1071 및 #946 정적 Launcher 증거는 runtimeSourceVerified=false로 계속 OPEN, 원본 목적 달성 증명 전 종료 금지. #1582의 새 Node CI 실패 및 ER1 PARTIAL/BLOCKED 원인은 별도 담당자 작업과 충돌 없이 추적.
