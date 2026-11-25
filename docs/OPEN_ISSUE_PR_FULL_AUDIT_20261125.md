@@ -92,14 +92,14 @@
 | 78 | PC Issue | [#498](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/498) pc-er1-nov-forecast-publish | `saved-forecast-publish` | 시장캘린더/ER1 | REVIEWED_COMMENT (1 comments; **BLOCKED**) |
 | 79 | PC Issue | [#496](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/496) pc-er1-nov-forecast-publish | `saved-forecast-publish` | 시장캘린더/ER1 | REVIEWED_COMMENT (1 comments; **BLOCKED**) |
 | 80 | PC Issue | [#474](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/474) pc-er1-nov30-full | `private-collect` | 시장캘린더/ER1 | REVIEWED_COMMENT (1 comments; no standard result) |
-| 81 | PC Issue | [#473](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/473) pc-er1-nov30-full | `private-collect` | 시장캘린더/ER1 | PENDING_EVIDENCE_REVIEW |
-| 82 | PC Issue | [#394](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/394) pc-er1-nov30-batch20-recovery-once | `batch20-private-actual-er1` | 시장캘린더/ER1 | PENDING_EVIDENCE_REVIEW |
-| 83 | PC Issue | [#369](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/369) pc-er1-nov30-batch20-one-shot | `batch20-private-actual-er1` | 시장캘린더/ER1 | PENDING_EVIDENCE_REVIEW |
-| 84 | PC Issue | [#173](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/173) pc-er1-dec31-symbol-batch-a-one-shot | `capture-december-2026-earnings-symbol-batch-a` | 시장캘린더/ER1 | PENDING_EVIDENCE_REVIEW |
-| 85 | PC Issue | [#155](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/155) pc-er1-dec31-capture-one-shot | `capture-earnings-calendar-through-2026-12-31` | 시장캘린더/ER1 | PENDING_EVIDENCE_REVIEW |
-| 86 | PC Issue | [#68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68) 공용 Controller 적용 대기열 | `본문 조사` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 87 | PC PR | [#3543](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3543) ci(w04): publish exact #3516 independent C operator two | `본문 조사` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 88 | PC PR | [#3542](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3542) chore(er1): stage exact two-file December Controller se | `본문 조사` | 시장캘린더/ER1 | PENDING_EVIDENCE_REVIEW |
+| 81 | PC Issue | [#473](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/473) pc-er1-nov30-full | `private-collect` | 시장캘린더/ER1 | REVIEWED_COMMENT (1 comments; no standard result) |
+| 82 | PC Issue | [#394](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/394) pc-er1-nov30-batch20-recovery-once | `batch20-private-actual-er1` | 시장캘린더/ER1 | REVIEWED_COMMENT (1 comments; no standard result) |
+| 83 | PC Issue | [#369](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/369) pc-er1-nov30-batch20-one-shot | `batch20-private-actual-er1` | 시장캘린더/ER1 | REVIEWED_COMMENT (1 comments; no standard result) |
+| 84 | PC Issue | [#173](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/173) pc-er1-dec31-symbol-batch-a-one-shot | `capture-december-2026-earnings-symbol-batch-a` | 시장캘린더/ER1 | REVIEWED_COMMENT (7 comments; no standard result) |
+| 85 | PC Issue | [#155](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/155) pc-er1-dec31-capture-one-shot | `capture-earnings-calendar-through-2026-12-31` | 시장캘린더/ER1 | REVIEWED_COMMENT (10 comments; **PASS**;**SUCCESS**) |
+| 86 | PC Issue | [#68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68) 공용 Controller 적용 대기열 | `본문 조사` | 공통 PC/CI | REVIEWED_COMMENT (1378 comments; **PASS / PC_SOURCE_ORIGIN_CANDIDATE_INVENTORY**;STATUS SUCCEEDED) |
+| 87 | PC PR | [#3543](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3543) ci(w04): publish exact #3516 independent C operator two | `본문 조사` | 고용 R6/W04 | REVIEWED_NO_COMMENT (0 comments; no standard result) |
+| 88 | PC PR | [#3542](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3542) chore(er1): stage exact two-file December Controller se | `본문 조사` | 시장캘린더/ER1 | REVIEWED_COMMENT (1 comments; **SUCCESS**;**SUCCESS**) |
 
 ## 2단계 개별 증거 검증
 
@@ -199,3 +199,13 @@
 - zgmini-pc-control Issue #498: REVIEWED_COMMENT, 댓글 1, **BLOCKED**
 - zgmini-pc-control Issue #496: REVIEWED_COMMENT, 댓글 1, **BLOCKED**
 - zgmini-pc-control Issue #474: REVIEWED_COMMENT, 댓글 1, no standard result
+
+### 감사 댓글 검증 81–88
+- zgmini-pc-control Issue #473: REVIEWED_COMMENT, 댓글 1, no standard result
+- zgmini-pc-control Issue #394: REVIEWED_COMMENT, 댓글 1, no standard result
+- zgmini-pc-control Issue #369: REVIEWED_COMMENT, 댓글 1, no standard result
+- zgmini-pc-control Issue #173: REVIEWED_COMMENT, 댓글 7, no standard result
+- zgmini-pc-control Issue #155: REVIEWED_COMMENT, 댓글 10, **PASS**;**SUCCESS**
+- zgmini-pc-control Issue #68: REVIEWED_COMMENT, 댓글 1378, **PASS / PC_SOURCE_ORIGIN_CANDIDATE_INVENTORY**;STATUS SUCCEEDED
+- zgmini-pc-control PR #3543: REVIEWED_NO_COMMENT, 댓글 0, no standard result
+- zgmini-pc-control PR #3542: REVIEWED_COMMENT, 댓글 1, **SUCCESS**;**SUCCESS**
