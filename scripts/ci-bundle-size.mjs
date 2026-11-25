@@ -126,10 +126,10 @@ export async function main(){
    resolve('artifacts/ci-bundle-size/report.json'),
    resolve('artifacts/ci-bundle-size/baseline/report.json'));
   if(result.status==='COMPARABLE'){
-   result.baselineRunId=/^[1-9]\\d*$/.test(process.env.CI_BUNDLE_BASELINE_RUN_ID??'')?
+   result.baselineRunId=/^[1-9]\d*$/.test(process.env.CI_BUNDLE_BASELINE_RUN_ID??'')?
     Number(process.env.CI_BUNDLE_BASELINE_RUN_ID):null;
    await writeFile(resolve('artifacts/ci-bundle-size/comparison.json'),
-    JSON.stringify(result,null,2)+'\\n','utf8');
+    JSON.stringify(result,null,2)+'\n','utf8');
   }
   console.log('CI_BUNDLE_SIZE_BASELINE='+result.status+
    (result.status==='COMPARABLE'?' '+JSON.stringify(result.delta):''));
