@@ -342,3 +342,13 @@ GitHub Search API total_count 직접 확인: **85건** = 본체 Issue 1/PR 6 + P
 배치 E에서는 #964/#976 두 건에서 원본 Run 메타데이터 및 JSON/TXT 전문을 추가 독립 대조했다. 고정 코호트 88건 중 이전 부분검사 10건과 중복되지 않으므로 **2차 원본 증거 부분검사 누적 12/88건 (13.6%)**. 최종 증거기반 종결 누적 **3/88건** (#1026,#939,#1000), 이번 신규 종결 0건. 나머지 5건은 기존 본문·댓글 결과만 재확인했으므로 독립검사 완료 항목으로 세지 않는다.
 
 후속 목표: #1032/#1169의 `PARTIAL` 원본 JSON/TXT 고정 결과 직접 조회, #1064/#1152 Writer B 실패의 현재 source/명세 대조, #1226 실행 미등록 여부 확인. 운영 PC/Writer/Controller/DB 변경 없음.
+
+
+### 배치 E 보충 — 원본 R6 PARTIAL 두 건 전문 검증
+
+| Issue | 원본 증거 직접 검증 | 결론 |
+|---|---|---|
+| PC #1032 | Run [42597285824](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42597285824) Actions success; `results/employment-r6-registered-662f48fa-3801-43a8-b6b1-ea100ce813c0.json/.txt` 직접 조회, 핵심 7개 필드 일치. JSON blob `0580b89db1a8897cf0eaabe79c5d6bcb42e04def`/TXT blob `b468c7cc884cae418b9207bfd9bf2c30b14c5d2a`. `PARTIAL/R6_B_PARTIAL_PUBLISH_VERIFIED`, BLS_BED 그룹 `SERIES_PARTIAL`, 기타 5개 그룹 SUCCESS | Actions SUCCESS와 결과 PARTIAL 구분. 전체 6개 수집 완결 증거 없으므로 OPEN |
+| PC #1169 | Run [42710641027](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42710641027) Actions success; `results/employment-r6-registered-a4e1dc0d-f7ef-4ff8-80df-9ce56ad3d796.json/.txt` 직접 조회, 핵심 7개 필드 일치. JSON blob `524be5335c1c8260129b1e6537c040953599b73d`/TXT blob `465a7ced67e4abec7b7949c3984dc85ce37de986`. `PARTIAL/R6_B_PARTIAL_PUBLISH_VERIFIED`, DOL_UI_WEEKLY_CLAIMS 및 BLS_BED 그룹 `SERIES_PARTIAL`, 기타 4개 그룹 SUCCESS | Actions SUCCESS와 결과 PARTIAL 구분, 원본 요청 자동 재실행 금지, OPEN |
+
+두 원본 결과 파일은 발견되어 직접 확인했다. #1032/#1169는 배치 E에서 본문·댓글만 조회했던 항목이므로 **2차 독립증거 부분검사 누적 14/88건 (15.9%)**으로 갱신한다. 누적 실제 종결 **3/88건** 유지. 현재 W04 데이터 전체의 완료 여부는 원본 시점 결과와 별도로 검증해야 하며, 과거 PARTIAL을 자동 성공으로 소급하지 않는다.
