@@ -174,3 +174,52 @@ test("PIT-06-03 absent History stays missing on ordinary replay; no synthetic re
     assert.equal(audit.operationalWrites,0);
   }finally{sqlite.close();}
 });
+
+test("W04 interrupted 80-statement batch never leaves CURRENT-only keys and retries safely",async()=>{
+  const {sqlite,db}=sqliteD1();
+  const normalBatch=db.batch;
+  const stamp="2026-11-09T09:00:00Z";
+  let calls=0;
+  db.batch=async statements=>{
+    calls++;
+    if(calls===2)throw new Error("SIMULATED_BATCH_ABORT");
+    return normalBatch(statements);
+  };
+  try{
+    const store=createEmploymentR4ShadowStore(db);
+    const records=Array.from({length:45},(_,index)=>row({
+      geographyCode:"ST"+String(index).padStart(2,"0"),
+      retrievedAt:stamp,availableAt:null,
+      pitClass:EMPLOYMENT_R4_PIT_CLASSES.historicalCurrentOrRevised,
+    }));
+    await assert.rejects(store.upsertRows({rows:records,retrievedAt:stamp}),
+      /SIMULATED_BATCH_ABORT/);
+    assert.equal(calls,2);
+    const currentBefore=await store.getCurrentRows();
+    const historyBefore=await store.getHistoryRows();
+    // Each group is [CURRENT, HISTORY] and both are in one SQLite batch.
+    // Under the original 2026-09 current-first/history-later 80-item
+    // algorithm, this fault would strand 10 CURRENT rows without HISTORY.
+    assert.equal(currentBefore.length,40);
+    assert.equal(historyBefore.length,40);
+    const orphanCount=()=>sqlite.prepare(`SELECT COUNT(*) AS n FROM
+      ${EMPLOYMENT_R4_SHADOW_TABLES.current} AS c
+      WHERE NOT EXISTS (SELECT 1 FROM ${EMPLOYMENT_R4_SHADOW_TABLES.history} AS h
+      WHERE h.logical_series_id=c.logical_series_id
+        AND h.geography_type=c.geography_type
+        AND h.geography_code=c.geography_code
+        AND h.observation_date=c.observation_date)`).get().n;
+    assert.equal(orphanCount(),0);
+
+    db.batch=normalBatch;
+    const replay=await store.upsertRows({rows:records,retrievedAt:stamp});
+    assert.deepEqual([replay.inserted,replay.revised,replay.noop,replay.historyRowsAdded],
+      [5,0,40,5]);
+    assert.equal((await store.getCurrentRows()).length,45);
+    assert.equal((await store.getHistoryRows()).length,45);
+    assert.equal(orphanCount(),0);
+    assert.equal(sqlite.prepare(`SELECT COUNT(*) AS n FROM
+      ${EMPLOYMENT_R4_SHADOW_TABLES.history}
+      WHERE change_type='INSERT'`).get().n,45);
+  }finally{sqlite.close();}
+});

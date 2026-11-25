@@ -9,6 +9,7 @@ on:
 
 permissions:
   contents: read
+  actions: read # historical completed CI metadata and prior bundle artifacts only
 
 concurrency:
   group: node-ci-${{ github.workflow }}-${{ github.ref }}
@@ -23,6 +24,9 @@ jobs:
       NEXT_TELEMETRY_DISABLED: 1
     steps:
       - uses: actions/checkout@v4
+        with:
+          # Changed-file ESLint needs the real PR base and pre-push commit.
+          fetch-depth: 0
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -33,6 +37,27 @@ jobs:
         run: npm ci
       - name: Build
         run: npm run build
+      # Reuse the existing Vite output; no second build or external sizing service.
+      - name: Measure client JS/CSS bundle sizes
+        run: node scripts/ci-bundle-size.mjs
+      # Optional #29 comparison: only official read-only Actions metadata and
+      # an existing successful main bundle artifact; never a new budget gate.
+      - name: Identify and read previous main bundle evidence
+        id: bundle_baseline
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci-bundle-baseline-resolve.mjs
+      - name: Report existing baseline bundle changes
+        env:
+          CI_BUNDLE_BASELINE_RUN_ID: ${{ steps.bundle_baseline.outputs.run_id }}
+        run: node scripts/ci-bundle-size.mjs --compare-baseline
+      - name: Upload bundle size report
+        uses: actions/upload-artifact@v4
+        with:
+          name: client-bundle-size-report
+          path: artifacts/ci-bundle-size/*.json
+          retention-days: 7
+          if-no-files-found: error
       - name: Save public CSS for asset comparison
         uses: actions/upload-artifact@v4
         with:
@@ -48,8 +73,27 @@ jobs:
           retention-days: 7
           if-no-files-found: error
       - name: Type check
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npm run typecheck
+      # #6 Architecture Testing: no public/runtime direct import of PC-only operations.
+      # Reuses TypeScript from npm ci, no added dependencies or global baseline.
+      - name: Validate public-to-PC architecture boundaries
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node scripts/ci-architecture-boundary.mjs
+      # R2 #20: public projection Data CI uses synthetic, read-only D1 fixtures.
+      # No provider calls, live DB, writer, publication or production API access.
+      - name: Verify stored data read and freshness contract
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: node scripts/ci-data-contract-r2.mjs
+      - name: Upload synthetic data contract evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-data-contract
+          path: artifacts/ci-data-contract/report.json
+          retention-days: 7
+          if-no-files-found: error
       - name: Regression tests
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node --test tests/*.test.mjs
       - name: PC publication recovery tests
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
@@ -57,3 +101,50 @@ jobs:
       - name: Cloudflare candidate read contracts
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node --test scripts/projection-runtime-r52.test.mjs tests/market-projection-queue.test.mjs tests/market-public-projection-store.test.mjs scripts/candidate-guard.test.mjs scripts/candidate-2db-r5.test.mjs tests/projection-selective-source-r53.test.mjs tests/projection-writer-hotpath-r54.test.mjs tests/projection-checkpoint-r55.test.mjs tests/liquidity-percentile-r56.test.mjs scripts/candidate-shell-r7.test.mjs tests/candidate-writer-r1.test.mjs
+      # Full legacy audit remains available via npm run lint (625 existing findings).
+      # Apply the same ESLint rules to changed source without blocking unrelated code.
+      - name: Lint changed source (ESLint)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        env:
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+        run: node scripts/lint-changed-ci.mjs
+      # Use the existing npm lockfile and registry's public vulnerability feed.
+      # Fail on high/critical findings, including existing debt; source changes stay Draft.
+      # Recheck after PR #1560, #1561 and #1562 patched dependency upgrades.
+      - name: Validate changed GitHub Actions YAML (actionlint)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        env:
+          GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+        run: node scripts/ci-actionlint-changed.mjs
+      # #15 Supply Chain: the official dependency-graph comparison API returned
+      # HTTP 403 on this public personal repo. Read local npm lock diff instead.
+      # Advisory evidence only; npm audit retains the existing high/critical gate.
+      - name: Review PR npm lockfile changes (local evidence)
+        if: ${{ github.event_name == 'pull_request' && !cancelled() && steps.install.outcome == 'success' }}
+        run: node scripts/ci-supply-chain-review.mjs
+      - name: Upload PR supply-chain evidence
+        if: ${{ github.event_name == 'pull_request' && !cancelled() && steps.install.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-supply-chain-review
+          path: artifacts/ci-supply-chain-review/report.json
+          retention-days: 7
+          if-no-files-found: error
+      - name: Audit production dependency vulnerabilities (high or critical)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
+        run: npm audit --omit=dev --audit-level=high --audit=true --fund=false
+      # #36: use completed main-push Node CI metadata; ignore in-flight runs.
+      # No performance threshold, newly scheduled job, or external telemetry platform.
+      - name: Observe completed Node CI queue and execution trends
+        if: ${{ !cancelled() }}
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci-continuous-benchmark-r2.mjs
+      - name: Upload descriptive CI benchmark evidence
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-continuous-benchmark
+          path: artifacts/ci-continuous-benchmark/report.json
+          retention-days: 7
+          if-no-files-found: error

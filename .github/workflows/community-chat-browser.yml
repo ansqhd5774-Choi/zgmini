@@ -10,6 +10,14 @@ on:
       - 'lib/about-intro-bootstrap.mjs'
       - 'tests/about-intro-bootstrap-browser-r6.mjs'
       - 'app/layout.tsx'
+      # Direct dependencies of the existing home/about browser checks.
+      - 'app/responsive.css'
+      - 'app/about/about.module.css'
+      - 'components/site-header.tsx'
+      - 'components/site-footer.tsx'
+      - 'components/dashboard-side-rails.tsx'
+      - 'components/live-score-value.tsx'
+      - 'components/score-arrow-provider.tsx'
       - 'app/sector-fear-greed/page.tsx'
       - 'app/theme-fear-greed/page.tsx'
       - 'app/theme-fear-greed/theme-detail-charts.tsx'
@@ -40,6 +48,10 @@ on:
       - 'lib/dashboard-chart-startup.mjs'
       - 'lib/market-score/market-trend-window-r1.mjs'
       - 'tests/dashboard-history-browser-r5.mjs'
+      - 'tests/w06-mobile-touch-local-r1.mjs'
+      - 'tests/production-assets-network-r1.mjs'
+      - 'tests/inflation-criterion-browser-r1.mjs'
+      - 'tests/employment-r6-public-browser-r1.mjs'
       - 'tests/w06-production-singlepoint-readonly-r1.mjs'
       - 'tests/w04-r54-production-ui-readonly-r1.mjs'
       - 'tests/w04-r54-touch-local-r1.mjs'
@@ -66,11 +78,23 @@ on:
       - 'tests/outbreak-beginner-approved-r53.test.mjs'
       - 'app/outbreak-scenarios-r51.css'
       - 'tests/outbreak-scenarios-browser-r51.mjs'
+      # npm packages and Vite runtime affect every Playwright browser route.
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - 'scripts/ci-accessibility-axe.mjs'
+      - 'tests/ci-accessibility-axe.test.mjs'
+      - 'scripts/ci-cross-browser-core.mjs'
+      - 'tests/ci-cross-browser-core.test.mjs'
+      # R2 performance lab shares the existing installed Playwright Chromium.
+      - 'scripts/ci-performance-lab.mjs'
+      - 'tests/ci-performance-lab.test.mjs'
       - '.github/workflows/community-chat-browser.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
+  actions: read # inspect earlier same-workflow Actions artifacts, not other repositories
 
 jobs:
   ui:
@@ -88,9 +112,9 @@ jobs:
       - name: Install locked repository dependencies
         run: npm ci
       - name: Install test-only Playwright without changing lockfile
-        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1 axe-core@4.14.1
       - name: Install browser for offline UI interactions
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium firefox webkit
       # Independent W06 public chart test runs before unrelated risk-page asset checks.
       # Both retain their assertions; a failure in either still fails the overall job.
       - name: Start local dev UI (no remote bindings and no deployment)
@@ -143,12 +167,26 @@ jobs:
         run: node tests/dashboard-history-browser-r5.mjs
       - name: Verify CNN actual PC-check 1D curve and stale-session exclusion at 390/1440
         run: node tests/cnn-current-session-verified-checks-browser-r12.mjs
+      # Lab results are observations, not a new unapproved Lighthouse score gate.
+      - name: Measure isolated Chromium performance laboratory
+        run: node scripts/ci-performance-lab.mjs
+      # Accessibility results are observations; reviewed baseline approval is separate.
+      - name: Measure local WCAG A/AA accessibility with axe-core
+        timeout-minutes: 2
+        run: node scripts/ci-accessibility-axe.mjs
+      # #23: core routes only; non-gating browser difference observations.
+      - name: Observe local Firefox and WebKit core routes
+        timeout-minutes: 4
+        run: node scripts/ci-cross-browser-core.mjs
       - name: Upload browser UI evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: community-chat-browser-r1
           path: |
+            artifacts/ci-cross-browser/
+            artifacts/ci-accessibility/
+            artifacts/performance-lab/
             artifacts/community-chat-browser/
             artifacts/risk-detail-side-rails/
             artifacts/outbreak-scenarios/
@@ -168,6 +206,7 @@ jobs:
             artifacts/w06-production-readonly/
             artifacts/w06-touch-local/
           if-no-files-found: warn
+          retention-days: 7
       - name: Show local dev errors on failure
         if: failure()
         run: tail -n 120 /tmp/zgmini-chat-vite.log || true

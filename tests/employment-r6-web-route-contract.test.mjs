@@ -15,8 +15,8 @@ function payload(asOfDate="2026-11-01"){
     sourceStoredAt:now-3600000,
     window:{start:employmentR6OneYearStart(asOf),end:asOfDate,recentQuarterStart:employmentR6RecentQuarterStart(asOf)},
     summary:{sourceFeatures:0,recentlyObservedFeatures:0,chartReadyFeatures:0,chartPartialFeatures:0,scoredFeatures:0,recentlyScoredFeatures:0},
-    indicators:EMPLOYMENT_R6_FEATURES.map(({id})=>({id,rawStatus:"UNAVAILABLE",scoreStatus:"PARTIAL_HISTORY",score:null,
-      chartStatus:"UNAVAILABLE",releaseCadence:"월간(ET)",nextReleaseDate:null,retrievedAt:null,history:[]})),
+    indicators:EMPLOYMENT_R6_FEATURES.map(({id})=>({id,rawStatus:"UNAVAILABLE",scoreStatus:"PARTIAL_MISSING",score:null,
+      value:null,observationDate:null,chartStatus:"UNAVAILABLE",releaseCadence:"월간(ET)",nextReleaseDate:null,retrievedAt:null,history:[]})),
   };
 }
 function stored(row){
@@ -34,6 +34,9 @@ test("R6 web endpoint serves only a complete stored 29-ID display",async()=>{
   const body=payload();
   assert.equal(body.indicators.length,29);
   assert.equal(validEmploymentR6PublicDisplay(body),true);
+  const falsePartial=structuredClone(body);
+  falsePartial.indicators[0].scoreStatus="PARTIAL_HISTORY";
+  assert.equal(validEmploymentR6PublicDisplay(falsePartial),false,"unavailable raw cannot claim partial history score");
   const response=await employmentR6StoredDisplayResponse(request,stored({body:JSON.stringify(body),stored_at:now}),{now:now+1000});
   assert.equal(response.status,200);
   assert.equal(response.headers.get("x-employment-r6-source"),"STORED_D1");

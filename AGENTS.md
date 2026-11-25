@@ -4,6 +4,11 @@
 
 ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 
+## CI 1차·2차 19개 공통 사용 기준 — 2026-11-26
+- 최초 R1은 **8개 검사 영역**(Lint·Type Check·Build·Unit·Integration·E2E·Security·Secret), 차세대 R2는 **11개 적용 기술**(#1 Dynamic CI, #6 Architecture Testing, #12 Workflow Governance, #15 Supply Chain Security, #19 CI Observability, #20 Data CI, #23 Cross-browser CI, #24 격리 Chromium Performance CI, #25 Accessibility CI, #29 Bundle Size CI, #36 Continuous Benchmarking)이다. 각 코드·UI·데이터·Workflow 변경에 영향 있는 **기존 검사만 재사용**하고 PR 정확 HEAD 실행 PASS/트리거/merge SHA를 확인한다. 문서·조회만으로 전 19종 재실행을 요구하지 않는다.
+- 공통 사용 절차·저장소별 N/A·범위/증거의 정본: [PC 제어 공통 작업 표준](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/docs/PC_AUTOMATION_STANDARD.md#ci-19개-공통-사용-계약--2026-11-26-사용자-확정), [19개 항목 및 원본 PR 목록](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/docs/CI_R1_R2_FINAL_LIST_20261126.md). 기존 [웹 R1 8영역 판정](docs/CI_EIGHT_AREA_STANDARD_R1.md)은 그대로 유지한다.
+- 원안 R2 **#8 Performance Budget/실사용자 Good·P75는 사용자 결정으로 제외·전용 CI 삭제**([#1631](https://github.com/ansqhd5774-Choi/zgmini/pull/1631)). #8을 성공/미완료 후속 과제로 세거나 복원하지 않는다. **#24 격리 성능 CI는 유지**한다. 새 글로벌 Gate·예약·유료 서비스·운영 쓰기 권한을 추가하지 않고, CI PASS를 수집·DB/D1·배포·Production 검증 완료로 확대하지 않는다.
+
 ## MarketParquet — 유료 연결 재승인 (2026-11-20 사용자 지시)
 - [공급자 결정 정본](docs/MARKETPARQUET_REMOVAL.md)의 최신 결정을 적용한다. 사용자가 Complete Archive와 Keep Current 구매 및 섹터·테마 연결을 명시 승인했다. 기존 공개 이용권 해결 결과를 재사용하고 같은 권리 조사를 반복하지 않는다.
 - 무료 예외 거절 기록은 보존한다. 과거 무료 실행기 전체 복원이나 무료 데이터 공개 승격 대신 검증된 유료 일봉 저장소를 공유한다. 섹터 기존 산식은 유지한다. 추가 사용자 결정으로 테마 확정·잠정 입력을 모두 MarketParquet 분할조정 시간봉으로 통합하며 R32/승인 프로필·ETF·기존 공개 이력을 보존한다. 새 관측일의 가격 기준을 명시하고 원가격을 공개하지 않는다.
