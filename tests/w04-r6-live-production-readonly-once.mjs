@@ -32,7 +32,7 @@ try {
    const data=await api.json();
    assert(Array.isArray(data.indicators)&&data.indicators.length===29,'29 approved R6 IDs');
    assert.deepEqual(data.indicators.map(v=>v.id),EMPLOYMENT_R6_FEATURES.map(v=>v.id),'R6 ID ordering');
-   assert(/^20\\d\\d-\\d\\d-\\d\\d$/.test(data.asOfDate),'real asOfDate');
+   assert(/^20\d\d-\d\d-\d\d$/.test(data.asOfDate),'real asOfDate');
    assert(Number.isSafeInteger(data.sourceStoredAt)&&data.sourceStoredAt>0,'sourceStorage timestamp');
    check.indicators=data.indicators.length;check.asOfDate=data.asOfDate;
    check.chartReady=data.summary.chartReadyFeatures;
@@ -70,7 +70,7 @@ try {
     if(item.rawStatus==='READY'&&item.scoreStatus==='READY'&&finite(item.score)){
      assert(detail.includes('평가 '+item.score.toFixed(1)+'점'),'scored visible '+item.id);
      check.matchedScore++;
-    } else assert(!/평가 \\d+(?:\\.\\d+)?점/.test(detail),'no unapproved score '+item.id);
+    } else assert(!/평가 \d+(?:\\.\d+)?점/.test(detail),'no unapproved score '+item.id);
     if(item.chartStatus==='READY'){
      const spark=row.locator('svg.inflation-mini-chart');
      assert.equal(await spark.count(),1,'ready 1Y chart '+item.id);
@@ -95,7 +95,7 @@ try {
 }finally{
  await browser.close();
  summary.result=summary.checks.every(v=>v.status==='PASS')?'PASS':'UNVERIFIED';
- writeFileSync(folder+'/summary.json',JSON.stringify(summary,null,2)+'\\n');
+ writeFileSync(folder+'/summary.json',JSON.stringify(summary,null,2)+'\n');
 }
 console.log('W04_R6_LIVE_PRODUCTION_FINAL '+JSON.stringify({result:summary.result,
  checks:summary.checks.map(x=>({width:x.width,status:x.status,firstFail:x.firstFail??null}))}));
