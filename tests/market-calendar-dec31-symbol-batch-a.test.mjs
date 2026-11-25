@@ -111,3 +111,73 @@ test('invalid preexisting raw file stops without overwriting or calling provider
   assert.equal(fs.readFileSync(file,'utf8'),malformed);
   assert.equal(fs.existsSync(path.join(root,'er1-input','dec31-symbol-batch-a.lock')),false);
 });
+
+test('wrong symbol original archive denied without provider request',async t=>{
+  const root=temp(t),dir=path.join(root,'er1-input','dec31-symbol-batch-a');
+  fs.mkdirSync(dir,{recursive:true});
+  fs.writeFileSync(path.join(dir,'ADBE.json'),JSON.stringify({
+    storedAt:'2026-11-04T09:00:00.000Z',
+    body:[{symbol:'CASY',date:'2026-12-08'}]}));
+  let calls=0;
+  const result=await runDec31Batch({pcHome:root,env:{EARNINGS_API_KEY:key},clock,
+    fetcher:async()=>{calls++;throw Error('UNEXPECTED_GET')}});
+  assert.equal(result.code,'DEC31_BATCH_EXISTING_FILE_INVALID');
+  assert.equal(calls,0);
+});
+
+test('future timestamp original archive denied without provider request',async t=>{
+  const root=temp(t),dir=path.join(root,'er1-input','dec31-symbol-batch-a');
+  fs.mkdirSync(dir,{recursive:true});
+  fs.writeFileSync(path.join(dir,'ADBE.json'),JSON.stringify({
+    storedAt:'2026-12-31T09:00:00.000Z',body:[]}));
+  let calls=0;
+  const result=await runDec31Batch({pcHome:root,env:{EARNINGS_API_KEY:key},clock,
+    fetcher:async()=>{calls++;throw Error('UNEXPECTED_GET')}});
+  assert.equal(result.code,'DEC31_BATCH_EXISTING_FILE_INVALID');
+  assert.equal(calls,0);
+});
+
+test('symbolic-link original archive denied without provider request',async t=>{
+  const root=temp(t),dir=path.join(root,'er1-input','dec31-symbol-batch-a');
+  fs.mkdirSync(dir,{recursive:true});
+  const target=path.join(dir,'original.json');
+  fs.writeFileSync(target,JSON.stringify({storedAt:'2026-11-04T09:00:00.000Z',body:[]}));
+  fs.symlinkSync(target,path.join(dir,'ADBE.json'));
+  let calls=0;
+  const result=await runDec31Batch({pcHome:root,env:{EARNINGS_API_KEY:key},clock,
+    fetcher:async()=>{calls++;throw Error('UNEXPECTED_GET')}});
+  assert.equal(result.code,'DEC31_BATCH_EXISTING_FILE_INVALID');
+  assert.equal(calls,0);
+});
+
+test('oversized original archive denied without provider request',async t=>{
+  const root=temp(t),dir=path.join(root,'er1-input','dec31-symbol-batch-a');
+  fs.mkdirSync(dir,{recursive:true});
+  fs.writeFileSync(path.join(dir,'ADBE.json'),'x'.repeat(2_100_000));
+  let calls=0;
+  const result=await runDec31Batch({pcHome:root,env:{EARNINGS_API_KEY:key},clock,
+    fetcher:async()=>{calls++;throw Error('UNEXPECTED_GET')}});
+  assert.equal(result.code,'DEC31_BATCH_EXISTING_FILE_INVALID');
+  assert.equal(calls,0);
+});
+
+test('valid empty response original archive is reused, not marked invalid',async t=>{
+  const root=temp(t),dir=path.join(root,'er1-input','dec31-symbol-batch-a');
+  fs.mkdirSync(dir,{recursive:true});
+  const file=path.join(dir,'ADBE.json');
+  const original=JSON.stringify({storedAt:'2026-11-04T09:00:00.000Z',body:[]})+'\n';
+  fs.writeFileSync(file,original);
+  const called=[];
+  const result=await runDec31Batch({pcHome:root,env:{EARNINGS_API_KEY:key},clock,
+    fetcher:async url=>{const symbol=new URL(url).searchParams.get('symbol');
+      called.push(symbol);
+      return {ok:true,status:200,text:async()=>JSON.stringify([])};
+    }});
+  assert.equal(result.status,'BATCH_COMPLETE');
+  assert.equal(result.storedSymbols,40);
+  assert.equal(result.reusedStoredSymbols,1);
+  assert.equal(result.newStoredSymbols,39);
+  assert.equal(result.providerCalls,39);
+  assert.ok(!called.includes('ADBE'));
+  assert.equal(fs.readFileSync(file,'utf8'),original);
+});
