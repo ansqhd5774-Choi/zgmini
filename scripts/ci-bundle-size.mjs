@@ -3,7 +3,7 @@
 // No registry, browser, baseline writes, or additional network access.
 import {createHash} from 'node:crypto';
 import {createReadStream} from 'node:fs';
-import {mkdir,readdir,stat,writeFile} from 'node:fs/promises';
+import {mkdir,readFile,readdir,stat,writeFile} from 'node:fs/promises';
 import {join,resolve} from 'node:path';
 import {pipeline} from 'node:stream/promises';
 import {Writable} from 'node:stream';
@@ -100,7 +100,41 @@ export function compareBundleSizes(baseline,current){
  return compared;
 }
 
+// Comparison is descriptive and needs an existing GitHub Actions artifact.
+// Missing or schema-incompatible history must never be recorded as a zero delta.
+export async function compareSavedBundleReports(currentPath,baselinePath){
+ const current=JSON.parse(await readFile(currentPath,'utf8'));
+ let baseline;
+ try{baseline=JSON.parse(await readFile(baselinePath,'utf8'));}
+ catch(error){
+  if(error?.code==='ENOENT')return {status:'UNAVAILABLE_NO_BASELINE'};
+  if(error instanceof SyntaxError)return {status:'UNVERIFIED_BASELINE_JSON'};
+  throw error;
+ }
+ try{return {status:'COMPARABLE',schemaVersion:SCHEMA_VERSION,
+  scope:current.scope,delta:compareBundleSizes(baseline,current)};}
+ catch(error){
+  if(error?.message==='CI_BUNDLE_SIZE_BASELINE_INCOMPARABLE')
+   return {status:'INCOMPARABLE_BASELINE'};
+  throw error;
+ }
+}
+
 export async function main(){
+ if(process.argv.length===3&&process.argv[2]==='--compare-baseline'){
+  const result=await compareSavedBundleReports(
+   resolve('artifacts/ci-bundle-size/report.json'),
+   resolve('artifacts/ci-bundle-size/baseline/report.json'));
+  if(result.status==='COMPARABLE'){
+   result.baselineRunId=/^[1-9]\\d*$/.test(process.env.CI_BUNDLE_BASELINE_RUN_ID??'')?
+    Number(process.env.CI_BUNDLE_BASELINE_RUN_ID):null;
+   await writeFile(resolve('artifacts/ci-bundle-size/comparison.json'),
+    JSON.stringify(result,null,2)+'\\n','utf8');
+  }
+  console.log('CI_BUNDLE_SIZE_BASELINE='+result.status+
+   (result.status==='COMPARABLE'?' '+JSON.stringify(result.delta):''));
+  return;
+ }
  if(process.argv.length!==2)throw Error('CI_BUNDLE_SIZE_NO_ARGUMENTS');
  const root=resolve('dist/client/assets');
  const report=await collectBundleSize(root);
