@@ -420,3 +420,7 @@ GitHub Search API total_count 재조회: **87건 = 본체 Issue 1 / PR 6 + PC �
 - #1743 진단 원장은 runner의 OPEN 의존성이 검증된 기존 기록에 따라 보호하며 종결 대상에서 제외.
 
 다음 작업: 남은 56건 중 원본 Run/JSON/TXT 고정 계보를 우선 검증하고, 완료 목적이 명백한 구 요청만 종결한다.
+
+### 배치 H 후 실시간 OPEN 재조회
+
+GitHub Search API 실시간 total_count **84건** = 본체 Issue 1/PR 6 + PC 제어 Issue 75/PR 2. 직전 배치 G의 87건 대비 감소한 3건은 이번 감사의 직접 종결 결과가 아니다. PC 제어 OPEN PR은 [#3545](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3545), [#3547](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3547)로 조회. 총량 변화만으로 처리 완료 성과를 집계하지 않는다. 본 배치 직접 이슈/PR 종결 0건.
