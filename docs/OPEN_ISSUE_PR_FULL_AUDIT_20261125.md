@@ -471,3 +471,7 @@ GitHub Search API 실시간 total_count **84건** = 본체 Issue 1/PR 6 + PC 제
 기타 원장 1차 재검토: #2426/#2427은 현재 월별 Actions 능동 진단 및 Wide Scout append-only 원장으로 다른 업무가 계속 기록하므로 OPEN 보존. #2237은 CANCELLED / steps 0 원인 미확정 OPEN. #2353 Runner roster API HTTP 403은 현재 NON_BLOCKING이며 원본 API 권한 변경 성공 근거 없음. #3073은 COMMON_WRITER natural drain timeout handoff, 실제 복구 근거 미확인 OPEN. #3516 독립 C급·lease archive 미완료 OPEN. #3519 후검사 원본 실행 결과 미확인 OPEN. #3517/#3518/#3531은 CI 실패 접수 원장으로 실제 해결 및 해당 SHA 후속 테스트 증거 확보 전 종결하지 않는다. #3522/#3524는 다른 담당자가 실행 미등록 단발 요청을 CLOSED/not_planned 처리한 기록을 확인했으나 본 감사의 완료 건수로 합산하지 않는다.
 
 진행 경계: 1차 고정 대상 88건 전체 본문/댓글 열람 완료; 2차 독립 원본 증거 부분검사 **42/88**, 잔여 **46건**. 위 신규 관측 요청들은 원래 단회 조회 범위만 종결했다. 재실행·실제 PC/Task/Controller/Writer/DB 변경 0건.
+
+### 배치 J 후 실시간 OPEN 재조회
+
+GitHub Search API total_count 최신 **80건 = 본체 Issue 1/PR 6, PC 제어 Issue 71/PR 2**. 직전 배치 I의 84건에서 PC 제어 Issue 4건 감소. 이번 감사에서 직접 완료 종결한 세 Issue는 #3533/#3525/#3520이며, 나머지 감소 1건은 타 담당자 상태 변경이므로 감사 직접 성과로 산입하지 않는다. 고정 88건 코호트 분모는 변경하지 않는다.
