@@ -989,3 +989,7 @@ GitHub Search API 최신 OPEN: `zgmini` Issue **1** / PR **6**, `zgmini-pc-contr
 | 48 | PC Issue #1213 | 원본 Job 실행/동등 후속 확인 미완 |
 
 이번 감사의 직접 신규 종결 0, 이전 직접 종결 누적 10건 유지. 원본 ER1 장애를 임의로 재실행하거나 W01/W03/W05 완료건으로 잘못 분류하지 않음. 운영 PC/Controller/Writer/SQLite/D1/Task, 승인, 새 Job/PR 등 운영변경 0. 후속은 8건의 최초 원본 증거검증만 신규 산입하며, W04·ER1·RUM Controller 설치 계보·CAS를 보호한다.
+
+### 배치 AG 종료 시점 OPEN 재조회
+
+GitHub Search API 직접 조회 결과: 본체 Issue 1/PR 6, PC 제어 Issue 55/PR 2 → **전체 OPEN 64건(이슈 56, PR 8)**. 고정 최초 코호트 88행과 현재 OPEN 64건은 별개 지표이며, 본 배치 신규 직접 종결 0건이다.
