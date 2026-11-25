@@ -1,0 +1,46 @@
+name: W03 R54 Source Lease Isolated Test
+on:
+  push:
+    branches:
+      - codex/w03-r54-integration-master-20261125
+    paths:
+      - scripts/pc-writer/r54-source-lease.mjs
+      - scripts/pc-writer/theme-nine-r54-public-connect.mjs
+      - scripts/pc-writer/theme-ten-r78-repair-and-retry.mjs
+      - scripts/pc-writer/theme-ten-r80-rebase-once.mjs
+      - tests/theme-r54-source-lease.test.mjs
+      - .github/workflows/w03-r54-source-lease-isolated.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: w03-r54-source-lease-isolated-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  source-lease-contract:
+    name: Isolated source lease (${{ matrix.os }})
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 12
+    steps:
+      - name: Checkout exact W03 branch
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Install Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Validate source lease syntax
+        run: node --check scripts/pc-writer/r54-source-lease.mjs
+      - name: Validate R54/R78/R80 boundary syntax
+        shell: bash
+        run: |
+          node --check scripts/pc-writer/theme-nine-r54-public-connect.mjs
+          node --check scripts/pc-writer/theme-ten-r78-repair-and-retry.mjs
+          node --check scripts/pc-writer/theme-ten-r80-rebase-once.mjs
+      - name: Verify 10 isolated lock and ownership tests
+        run: node --test tests/theme-r54-source-lease.test.mjs
