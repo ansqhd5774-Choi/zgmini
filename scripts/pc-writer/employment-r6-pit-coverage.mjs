@@ -4,6 +4,7 @@
 import fs from "node:fs";
 import {createHash} from "node:crypto";
 import {DatabaseSync} from "node:sqlite";
+import {aggregateR6FromApprovedOpenSnapshot} from "../../lib/market-score/employment-r6-approved-snapshot-aggregate-source-only.mjs";
 import {EMPLOYMENT_R6_TABLES} from "../../lib/market-score/employment-r6-contract.mjs";
 import {EMPLOYMENT_R6_REQUIRED_LOGICAL_SERIES} from "../../lib/market-score/employment-r6-formula.mjs";
 import {EMPLOYMENT_R4_PIT_CLASSES,EMPLOYMENT_R4_CORE_STATES} from "../../lib/market-score/employment-r4-shadow-contract.mjs";
@@ -136,9 +137,10 @@ const endReadSnapshot=(db,active)=>{
 };
 
 export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDate,
-  keyReviewOffset=null,onPrivateKeyLedger=null,
+  keyReviewOffset=null,onPrivateKeyLedger=null,rawAggregateSourceOnly=false,
   beforeReadOnlyOpen=null,afterReadOnlyOpen=null,onSqliteOpened=null}={}){
   if(!validAsOf(asOfDate))throw Error("PIT_AUDIT_AS_OF_INVALID");
+  if(typeof rawAggregateSourceOnly!=="boolean")throw Error("PIT_AUDIT_RAW_AGGREGATE_SCOPE_INVALID");
   if(onPrivateKeyLedger!==null&&(typeof onPrivateKeyLedger!=="function"||keyReviewOffset!==0))
     throw Error("PIT_AUDIT_PRIVATE_SCOPE_INVALID");
   if(keyReviewOffset!==null&&(!Number.isSafeInteger(keyReviewOffset)
@@ -162,6 +164,8 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
       onSqliteOpened?.(candidateDbPath);
       afterReadOnlyOpen?.(candidateDbPath);
     }
+    // Source-only opt-in: use the approved Core reader; never open another path.
+    if(rawAggregateSourceOnly)core.exec("PRAGMA query_only=ON");
     // CURRENT and HISTORY must describe one committed snapshot per database,
     // even while the PC's existing WAL writer continues collecting data.
     core.exec("BEGIN");coreSnapshot=true;
@@ -174,6 +178,10 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
     const history=sourceRows(core,T.observationHistory,asOfDate);
     const candidates=candidate?sourceRows(candidate,T.observationHistory,asOfDate):null;
     const candidateCurrent=candidate?sourceRows(candidate,T.observationCurrent,asOfDate):null;
+    // Only a caller-selected opt-in reads all bounded R6 groups in this same Core BEGIN.
+    // The normal PIT0408/PIT0605 path performs no additional raw scan.
+    const rawAggregate=rawAggregateSourceOnly
+      ?aggregateR6FromApprovedOpenSnapshot({db:core,asOfDate}):null;
     // Release read locks before comparing lineage, which may be CPU-heavy.
     core.exec("ROLLBACK");coreSnapshot=false;
     if(candidate){candidate.exec("ROLLBACK");candidateSnapshot=false;}
@@ -328,6 +336,7 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
       ...(privateLedgerDigest===null?{}:{pit04PrivateEvidenceDigest:privateLedgerDigest,
         pit04PrivateEvidencePersisted:true}),
       missingBySeries:current!==null&&history!==null?[...missingBySeries.values()].sort((a,b)=>a.id.localeCompare(b.id)):null,
+      ...(rawAggregate===null?{}:{rawAggregateSourceOnly:rawAggregate}),
       promotionApproved:false,coreWrites:0,providerCalls:0,
     };
   }finally{
