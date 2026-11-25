@@ -7,9 +7,9 @@ import {Rev7D1Store} from '../worker/korea-rev7-d1.mjs';
 const migration=await readFile(new URL('../drizzle/0005_kfg_rev7_foundation.sql',import.meta.url),'utf8');
 const tables=['kfg_rev7_snapshots','kfg_rev7_daily_series','kfg_rev7_kospi_rows','kfg_rev7_market_dates','kfg_rev7_backfill_progress'];
 let mf,db;
-before(async()=>{mf=createMiniflare({modules:true,script:'export default {fetch(){return new MFResponse("fixture")}}',compatibilityDate:'2026-05-15',d1Databases:['DB']});db=await mf.getD1Database('DB');for(const sql of migration.split('--> statement-breakpoint'))if(sql.trim())await db.exec(sql.trim());});
+before(async()=>{mf=createMiniflare({modules:true,script:'export default {fetch(){return new MFResponse("fixture")}}',compatibilityDate:'2026-05-15',d1Databases:['DB']});db=await mf.getD1Database('DB');for(const sql of migration.split('--> statement-breakpoint'))if(sql.trim())await db.prepare(sql.trim()).run();});
 after(async()=>{await mf?.dispose();});
-// Test-only D1 fixture setup/reset: use the asynchronous D1 API instead of
+// Test-only D1 fixture reset: use the asynchronous D1 API instead of
 // Miniflare's synchronous Node-side prepare() proxy (upstream workers-sdk #15552).
 // The actual Rev7D1Store tests below still exercise their original D1 methods.
 beforeEach(async()=>{await db.exec(tables.map(t=>`DELETE FROM ${t};`).join('\n'));});
