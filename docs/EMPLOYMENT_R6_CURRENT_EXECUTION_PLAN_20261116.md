@@ -213,3 +213,6 @@ W04 원담당이 기존 권한 범위의 기능 작업을 끝까지 수행한다
 - 실제 Controller `83679b013ac9a9820331d93311ec97e572b18e13`는 목표 일치, install lock HELD/RECOVERY_REQUIRED, workflow active. 현재 자료로 Controller 재설치나 무조건 rollback을 정당화하지 않는다. #3533은 fresh 7-CAS 전체 조회가 아니라 설치 버전/lock 상태 조회이며, #3528의 과거 CAS를 최신값으로 소급 대체하지 않는다.
 - **갱신된 즉시 다음 실행:** 운영 Lease를 보존한 채 **독립 operator 경로와 기존 7-to-7 유지보수기 인계 승인 범위**를 대조하여, #3516 고정 복구를 현재 실행환경에서 허용하는 공식 방식과 원본 source/preimage/CAS 필요조건을 확인한다. B급 소스 교체는 정규 승인·백업·실제 소유 lease를 확인한 경우에만 수행한다. 현재 `approved:false` 복구 후보/일반 `main` 병합으로 복구를 실행하지 않는다.
 - #3516의 공식 복구 실행 자체가 승인·가용화될 때 fresh 7-CAS·독립 A #3528의 정확 원본 증명·원본 postcheck 이력과 함께 단회 판단한다. 원본 #3516/#3519 중복 실행·임의 CMD·lease 수동 해제 금지. **전체 단계율 60% 유지**.
+
+<!-- W04-3516-HANDOFF-LEASE-EXACT-CONDITION -->
+- **직접 선행 조건 검증:** 현행 설치 source와 main의 `tools/handoff-maintenance.mjs`는 동일 Git blob `5ab6339c4a28329c8b39d37d007ac6428f8c7e0f`. 정규 7-to-7 handoff는 기존 `leases/controller-install` 디렉터리가 존재하면 `HANDOFF_UPDATE_ACTIVE`로 fail-closed(274/338행). 운영 A #3533에서 설치 Lease `HELD`가 입증되므로 **일반 유지보수기 인계를 먼저 실행하는 순서 자체가 현재 조건과 충돌**한다. 허용목록/잠금 완화 없이 기승인 독립 operator 복구 경로의 정확한 #3516 소스·CAS·독립 영수증·승인 manifest를 우선 연결한다. 이 항목은 코드상 차단 조건 검증이며 운영 handoff 실패 실증이 아니다.
