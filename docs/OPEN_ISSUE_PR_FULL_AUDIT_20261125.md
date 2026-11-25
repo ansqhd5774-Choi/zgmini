@@ -1058,3 +1058,38 @@ GitHub Search API 직접 조회 결과: 본체 Issue 1/PR 6, PC 제어 Issue 55/
 ### 배치 AI 종료 최신 OPEN 재계수
 
 GitHub Search API 직접 조회: `zgmini` Issue **1**/PR **6**, `zgmini-pc-control` Issue **54**/PR **4** = **전체 65건(이슈 55, PR 10)**. 직전 배치 AH 전체 64건과 차이 +1은 동시 진행 중인 다른 작업의 상태 변동이며 본 감사 직접 신규 Issue/PR 개설·종결은 0건. 원본 코호트 분모 88은 변경하지 않음.
+
+
+## 배치 AJ — 마지막 유지보수 2건의 원본 수신기 계약·결과 발생 경로 독립검증 (2026-11-25 KST)
+
+**기존 기검증 84/88(95.5%) → 84/88(95.5%) 유지.** 마지막 4건(PC #1969/#2059 및 본체 W04 Draft PR #1031/#1266)에 대한 신규 독립 소스·결과 인과 분석을 완료했으나 원래 2차 검증 완료 판정의 필수 증거(인증된 운영 Windows 직접 실행 신원 또는 정확 HEAD CI)가 확보되지 않아 지표를 추가하지 않는다. 이미 감사한 GitHub 결과 JSON/TXT 또는 과거 다른 PR의 CI를 중복 산입하지 않는다.
+
+### 원본 B 수신기 계약: out-of-band·결과 정규화·GitHub 원장만으로 설치 성공 판단 금지
+
+- `zgmini-pc-control/main` [`tools/maintenance-agent.mjs`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/tools/maintenance-agent.mjs) 실제 Git blob `134e71636405abca588df728a5ecd55388f11b9b` 직접 확인.
+- L155–163: 유지보수 업데이터는 GitHub Actions가 아니라 **out-of-band Windows process**; child env에는 `ZGMINI_PC_MAINTENANCE_MODE=OUT_OF_BAND`가 사용되고 GitHub 토큰 등은 상속하지 않는다. L380–390: 고정 `update.mjs` 실행/상태조회. L604–620: 로컬 E: 요청 ledger가 먼저 생성·durable 저장. L638–643: 종료 결과는 로컬 ledger에 먼저 저장. L517–548: 그 후 JSON/TXT를 결과 **정규화·재구성**하고 GitHub에 create-only 업로드·readback. L644–685: Issue 댓글도 동일 정규화 결과를 **사후에 발행**한다.
+- L273–316 `normalizedResult`: `BLOCKED` 같은 preflight 종료, `actualControllerSha=null` 등은 **정상적인 보고 가능 상태**다. L444–465: 승인 manifest는 `approvals/source-bundles/<approvalManifestSha256>.json` 고정 위치에서만 읽고 해시 확인. L925–940: 초기 승인·status·lock 검사 단계의 오류는 실제 Controller 적용 이전에 정지할 수 있다.
+- 따라서 [#1969](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1969) 및 [#2059](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2059)의 GitHub result JSON/TXT·원본 댓글·직후 커밋으로 **당시 결과가 BLOCKED였다는 사실 및 발행 출처**를 확인했지만, GitHub 커밋 작성자/댓글 작성자가 곧 해당 시각 독립 Windows 실행자임을 증명하는 것은 아니다. 핵심 추가 attestation은 운영 PC 기존 승인 범위의 원본 요청 ledger 및 실패 단계의 실제 updater status/identity이며, 민감한 사용자 세션·로컬 원장을 GitHub에 공개하도록 강제해서는 안 된다.
+
+### #2059 직접 실패 조건 — 정확 manifest 조회 경로 404 재확인
+
+- 원본 requestId `pc-update-58a7df44-3db7-488a-a4e2-0a08a95a8343`, 원본 manifest SHA `89ef02ddd51a350717493423222b03291f5ccfe90dae218642975a00b0fd4b5d`.
+- 수신기 L447–448이 고정 요구하는 `approvals/source-bundles/89ef02ddd51a350717493423222b03291f5ccfe90dae218642975a00b0fd4b5d.json`을 main 원본에 조회한 결과 **404/NOT_FOUND**. 원본 유지보수 결과 `BLOCKED/APPROVAL_MANIFEST_READ_FAILED`, `actualControllerSha=null`와 인과적으로 일치하는 구체적 소스/조회 계약 오류. 이 일치는 원본 Windows 구동 증명이나 정확 수신기 당시 파일 바이트 검증의 완전 대체는 아님.
+- 후행 새 승인 [#2063](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2063)용 `approvals/source-bundles/aafaa00c728d0a15bd2f049e4476b5412598b8bc9fa3ffedd0a454ec03654d4a.json`은 main에서 **존재**, blob `948bf9cb6ef5e618b18fb84535369f0e2e784ae3`. 새로운 승인 manifest의 존재는 원래 #2059가 성공적으로 처리됐다는 뜻이 아니다. #2059는 타 담당자에 의해 이미 CLOSED, 원본 BLOCKED 불변.
+
+### #1969 승인 명세 존재와 계약 부적합 구분
+
+- 원본 requestId `pc-update-39484f8b-8194-4a68-82c5-5bd500180459`, 원본 승인 위치 `approvals/source-bundles/5ba6fdf3af8255ea5f95f9949d2cd3b27cede6b53dcdf21bc556f698ecf070ca.json` main에 **존재**, blob `d4703c3ff615f99437d5d22c0de090cfac05586b`. manifest는 `ZGMINI_PC_SOURCE_BUNDLE_B_APPROVAL_V2`, source `39484f8b8194ca682c55bd500180459984d0cff9`, `installedControllerSha=c9a7cc6a37dedf2a8ae46bd1171ad133ba4fb969`, `HOST_APPROVED_SOURCES_SINGLE_CAS_ONLY`를 지정한다.
+- 원본 저장 결과 `BLOCKED/BUNDLE_B_APPROVAL_CONTRACT_INVALID`; source/installed/승인 계약 부적합이 보고됐지만 **세부 세션 당시 7-CAS 실패 항목을 GitHub 재구성 보고만으로 특정하지 않는다**. 파일 경로가 현재 존재한다는 사실이 당시 승인 범위/바이트/상태를 완전히 검증하거나 원본 결과를 성공으로 뒤집지 않음. #1969는 기존 CLOSED 유지.
+
+### 정확 HEAD PR CI: 여전히 미완료 2건
+
+- 본체 [#1031](https://github.com/ansqhd5774-Choi/zgmini/pull/1031) HEAD `80a6a462158c7ee44dd0cf8d0527ad3d093e9354`, Draft OPEN, 15파일, mergeable_state `dirty`. 현재 HEAD `actions/runs?head_sha` total 0, `check-runs` total 0, combined commit status `pending`/status entries 0.
+- 본체 [#1266](https://github.com/ansqhd5774-Choi/zgmini/pull/1266) HEAD `0193056bdb47bcf6c911f17623b6c302c8199c4c`, Draft OPEN, 4파일, mergeable_state `clean`. 현재 HEAD 동일 0 Run/0 check-run/0 status. `clean`을 CI PASS로 취급하지 않음.
+- 두 PR의 merge·close·rebase·rerun은 **승인/정확 CI 없이 수행하지 않음**. 고정 코호트 두 항목의 최종 CI 증거 부족이 유지된다.
+
+### 배치 AJ 종료 OPEN 및 다음 작업
+
+GitHub Search API 실제 재조회: 본체 Issue **1** / PR **6**, PC 제어 Issue **54** / PR **5** → 총 OPEN **66건(이슈 55/PR 11)**. 이전 배치 AI 65건과 +1은 동시 진행 중인 외부 PR/Issue 상태 변동이지 본 감사가 생성한 것이 아니다.
+
+**2차 고유 증거검증 84/88 (95.5%)**, 잔여 정확 4건 #1969/#2059/#1031/#1266. 신규 직접 종결 0, 감사 누적 직접 종결 10건. 신규 GitHub PR·Job·승인/재실행·운영 PC/Controller/Writer/SQLite/D1/Task 변경 0. 다음에는 운영자가 제공할 수 있는 **기존** 인증된 로컬 ledger 해시/상태와 후속 status의 최소 비민감 증명만 검토하고, W04 PR은 해당 담당자가 정확 HEAD 테스트·정규 리뷰를 갖춘 경우에만 검증 결과를 업데이트한다. 작업 승인 없이 Windows 원본 비밀/보호 경로를 출력하거나 신규 실행을 요청하지 않는다.
