@@ -1093,3 +1093,25 @@ GitHub Search API 직접 조회: `zgmini` Issue **1**/PR **6**, `zgmini-pc-contr
 GitHub Search API 실제 재조회: 본체 Issue **1** / PR **6**, PC 제어 Issue **54** / PR **5** → 총 OPEN **66건(이슈 55/PR 11)**. 이전 배치 AI 65건과 +1은 동시 진행 중인 외부 PR/Issue 상태 변동이지 본 감사가 생성한 것이 아니다.
 
 **2차 고유 증거검증 84/88 (95.5%)**, 잔여 정확 4건 #1969/#2059/#1031/#1266. 신규 직접 종결 0, 감사 누적 직접 종결 10건. 신규 GitHub PR·Job·승인/재실행·운영 PC/Controller/Writer/SQLite/D1/Task 변경 0. 다음에는 운영자가 제공할 수 있는 **기존** 인증된 로컬 ledger 해시/상태와 후속 status의 최소 비민감 증명만 검토하고, W04 PR은 해당 담당자가 정확 HEAD 테스트·정규 리뷰를 갖춘 경우에만 검증 결과를 업데이트한다. 작업 승인 없이 Windows 원본 비밀/보호 경로를 출력하거나 신규 실행을 요청하지 않는다.
+
+
+## 배치 AK — 잔여 4건의 완료 차단 원인 정밀 분리·후속 해결 계약 (2026-11-25 KST)
+
+**고정 코호트 진행률 84/88(95.5%) → 84/88(95.5%) 유지.** 완료 증거가 없는 항목을 추가 산입하지 않는다. 이번 배치는 두 out-of-band B 요청의 **정규 수신기 보안 및 오류발행 계약**과 두 W04 Draft PR의 **현재 CI/설계 충돌 및 별도 owner 후속 논의**를 직접 확인해 차단 지점을 실행 가능한 수준으로 좁힌다. 실제 운영 PC/Writer/DB/Provider/CI를 재실행하지 않았으며 병합·강제 승인도 시도하지 않았다.
+
+### PC #1969, #2059 — GitHub에서 검증 가능한 접수 계약과 인증된 Windows 원본의 분리
+
+- 현재 `zgmini-pc-control/main` [maintenance-agent.mjs](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/tools/maintenance-agent.mjs) Git blob `134e71636405abca588df728a5ecd55388f11b9b` 직접 재검증. 이 코드는 실운영 Windows의 E: 경로에 요청 ledger를 먼저 `wx`로 생성(604–620행)하고, source bundle 요청에서 SHA256 파일명 승인 manifest를 읽고 검증(444–465행), 로컬 source-bundle status 조회(386–391행), 그 뒤 완료/차단 결과를 ledger에 기록(638–643행)하도록 설계돼 있다. GitHub report JSON/TXT는 이미 저장된 결과에서 필드만 정규화해 create-only 업로드·원격 bytes readback(471–548행)한 **별도 관측 산출물**이며 호스트 실행 trace의 완전 복사본이 아니다.
+- [#2059](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2059): 원 요청 approvalManifestSha256 `89ef02ddd51a350717493423222b03291f5ccfe90dae218642975a00b0fd4b5d`. 현재 main의 고정 경로 `approvals/source-bundles/89ef02ddd51a350717493423222b03291f5ccfe90dae218642975a00b0fd4b5d.json` **404**; 원본 영수증 `BLOCKED/APPROVAL_MANIFEST_READ_FAILED` 및 대상 `f7f1559bc0ef15bb9b375982d048369c474c490f`, 실제 설치 SHA null. 정확한 누락 경로라는 재현 가능한 실패 조건은 확정. 다만 **main 코드가 그날 설치된 수신기와 같은 바이트인지, 운영 PC가 해당 요청을 처리한 세션/시각, 보호 전후 상태**는 위 GitHub 자료만으로 확정 불가. 기존 CLOSED/not_planned 및 후속 #2063 별개 성공 보존.
+- [#1969](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1969): 원래 승인 명세 `approvals/source-bundles/5ba6fdf3af8255ea5f95f9949d2cd3b27cede6b53dcdf21bc556f698ecf070ca.json`은 main에서 존재(blob `d4703c3ff615f99437d5d22c0de090cfac05586b`). 내용의 sourceSha `39484f8b8194ca682c55bd500180459984d0cff9`, installedControllerSha `c9a7cc6a37dedf2a8ae46bd1171ad133ba4fb969`. 원본 결과는 `BLOCKED/BUNDLE_B_APPROVAL_CONTRACT_INVALID`, actual=null. 현재 승인 명세의 존재가 과거 운영 lease/CAS/installed byte 검증을 대체하지 않으므로 원본 B 성공 소급 금지. 기존 CLOSED/not_planned·후속 #1974 별개 승인 결과 유지.
+- **최소 추가 완료증거:** 이미 실행된 요청 각각의 기존 operating Windows 원본 request ledger의 `requestId,issueNumber,status,firstFail,completedAt,reportUploadStatus` 및 설치 전후 source SHA/lock 보호 여부를 **정규 승인된 비민감 읽기**로 상호 대조하고, 실행 당시 고정 수신기 소스/허용된 운영자 세션 증명을 같은 원본에 묶어야 한다. 원본 ledger 부재/접근 금지라면 `EVIDENCE_UNAVAILABLE`로 남기며 임의 재실행·새 승인·원장 복사/권한 우회 금지. 현재 GitHub 커밋 작성자만으로 Windows 운영자 인증을 주장하지 않는다.
+
+### 본체 #1031, #1266 — CI 미발행 이외의 실제 소스 계약 의존성 확인
+
+- [W04 Draft PR #1031](https://github.com/ansqhd5774-Choi/zgmini/pull/1031) 정확 HEAD `80a6a462158c7ee44dd0cf8d0527ad3d093e9354`, **15개 변경파일**, `dirty`, HEAD Actions 0/check-runs 0/status 0. 추가 원본 PR 리뷰(2026-11-23)에서 W04 owner provider blob `dfce94303f552a67c8dd92fd6f83ce56e8360c34`의 `fetchBlsGroup`와 shadow 경로가 BLS 요청에 `registrationkey`를 직접 삽입하지 않음을 보고했고, 실제 provider PC 실행은 아직 미검증이다. 사용하지 않는 옛 무등록 예약 15파일을 새 W04에 전체 덮어씌우거나 registered-v2 전환만을 이유로 **그냥 중복 종료**해서는 안 됨. **후속 필수 계약:** owner가 실제 사용 중인 registered/unregistered 각 caller, 모든 호출의 quota 공유 ledger/승인 NTFS 경로 필요성을 읽기 전용으로 분류 → 필요한 보호만 최신 W04에 선택 이관 → 공유 무키 25/24h 동시성/크래시 안전 테스트 + 정확 HEAD CI → 별도 정규 승인 후 통합/종결 판단. 운영 Provider 호출·B 설치 강행 금지.
+- [W04 Draft PR #1266](https://github.com/ansqhd5774-Choi/zgmini/pull/1266) 정확 HEAD `0193056bdb47bcf6c911f17623b6c302c8199c4c`, **4파일**, `clean`, HEAD Actions 0/check-runs 0/status 0. PR 원담당 리뷰(2026-11-23)에서 과거 원본 PIT04/05 집계 코드는 현행 owner의 PIT0408 private review/PIT0605 512MB bound attestation과 계약이 다르며, 구 Runner를 전체 이식하면 최신 방어가 제거될 수 있다고 판정. 반면 그룹별/월별 body-hash 검증 유효/Run-certified/무효 집계는 완전히 중복된 구현으로 증명되지 않았다. 추가 관련 원담당 Draft [#1512](https://github.com/ansqhd5774-Choi/zgmini/pull/1512)는 **현재 CLOSED/unmerged**, head `c5694681cd618241429ef36fb9c1057bf67e82b0`, 해당 head Actions 0이므로 #1266의 대체 성공 증거가 아니다. **후속 필수 계약:** 최신 W04 owner source에 기존 PIT0408/PIT0605 결과를 보존하는 별도 opt-in bounded aggregate로 이식 → group 및 12개월+OLDER/UNKNOWN만 출력 → 원본문·SHA·정확 시각·경로 노출 금지 → 소스/회귀 CI → 승인된 Host B 및 Controller 안전 projection 별도 후검사. `mergeable:clean`은 정규 GO나 CI PASS가 아니다.
+- 현재 양 Draft가 정확 HEAD의 CI를 전혀 받지 않았으므로 감사자가 형식적 HEAD 검증률을 높이기 위한 임의 Actions 재실행/PR 병합·폐기·owner branch force rebase를 수행하지 않는다.
+
+### 배치 AK 상태 및 범위
+
+본 감사 기준 최초 코호트 88건의 원본 증거 완료 **84/88(95.5%)**, 미완 **4건** (#1969/#2059, #1031/#1266), 이번 직접 종결 0/누적 직접 종결 10. **기존 미해결 문제의 원인 진단과 후속 담당 해결 계획은 진전됐으나 원본 최종 attestation/HEAD CI 완료는 0건**. 다른 W01/W03/W05 완료 프로젝트 이슈를 신규 W04 source PR·공통 Controller 운영 문제와 혼동하지 않음. GitHub 감사 branch 문서 외에 운영 PC·Controller·Writer·DB·Workflow·Job·외부 데이터 및 운영 승인 변경 0건.
