@@ -108,3 +108,63 @@ test('CNN minute collector refuses unapproved source and mixed lanes before stor
   assert.deepEqual(fs.readdirSync(base),['local-collection-last-run.json']);
  }finally{fs.rmSync(base,{recursive:true,force:true});}
 });
+
+test('approved CNN minute entry stores exact mock observation and receipt without touching Core checkpoint',()=>{
+ const base=temp();
+ const script=new URL('../scripts/pc-writer/collect-local.mjs',import.meta.url);
+ const root=fileURLToPath(new URL('../',import.meta.url));
+ const head=spawnSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true});
+ assert.equal(head.status,0,head.stderr);
+ const source=head.stdout.trim();
+ assert.match(source,/^[0-9a-f]{40}$/);
+ try{
+  fs.writeFileSync(path.join(base,'config.json'),JSON.stringify({enabled:true,collectionTarget:'pc',source}));
+  fs.writeFileSync(path.join(base,'providers.env'),'');
+  const checkpoint=path.join(base,'local-collection-last-run.json');
+  fs.writeFileSync(checkpoint,'core sentinel');
+  // Child-local mock transport: any non-CNN request is counted and refused.
+  // No provider credentials, production storage, or live network are used.
+  const code=`
+   import {collectLocal} from ${JSON.stringify(script.href)};
+   import {DatabaseSync} from 'node:sqlite';
+   import path from 'node:path';
+   const base=process.argv[1], observedAt=new Date().toISOString(), score=15.831;
+   const urls=[];
+   globalThis.fetch=async input=>{
+    const url=typeof input==='string'?input:input.url??String(input);
+    urls.push(url);
+    if(url!=='https://production.dataviz.cnn.io/index/fearandgreed/graphdata')throw Error('UNEXPECTED_NETWORK');
+    return Response.json({fear_and_greed:{score,rating:'extreme fear',timestamp:observedAt},fear_and_greed_historical:{data:[]}});
+   };
+   const first=await collectLocal(base,{lane:'cnn-minute'});
+   const second=await collectLocal(base,{lane:'cnn-minute'});
+   const db=new DatabaseSync(path.join(base,'storage','core.sqlite'),{readOnly:true});
+   const rows=db.prepare('SELECT kind,feed_key,snapshot_key,body FROM public_feed_snapshots_v1').all();
+   const output=rows.find(r=>r.kind==='output'&&r.feed_key==='fear-greed'&&r.snapshot_key==='current');
+   const archive=rows.find(r=>r.kind==='output'&&r.feed_key==='fear-greed-observed'&&r.snapshot_key===observedAt.slice(0,10));
+   const receipt=rows.find(r=>r.kind==='input'&&r.feed_key==='fear-greed-http-checks');
+   db.close();
+   console.log(JSON.stringify({first,second,urls,observedAt,score,output:output?JSON.parse(output.body):null,archive:archive?JSON.parse(archive.body):null,receipt:receipt?JSON.parse(receipt.body):null,keys:[...new Set(rows.map(r=>r.feed_key))]}));
+  `;
+  const child=spawnSync(process.execPath,['--input-type=module','-e',code,base],{cwd:root,env:{...process.env,ZGMINI_PC_HOME:base,ZGMINI_QUOTA_MODE:'enforce',ZGMINI_SEC_SHARED_GUARD_ENABLED:'false'},encoding:'utf8',windowsHide:true,timeout:30000});
+  assert.equal(child.status,0,child.stderr||String(child.error??''));
+  const actual=JSON.parse(child.stdout.trim());
+  assert.equal(actual.first.status,'COMPLETE');
+  assert.equal(actual.first.attempted,1);
+  assert.deepEqual(actual.first.feeds,[{key:'fear-greed',status:'COMPLETE'}]);
+  assert.equal(actual.second.attempted,0);
+  assert.deepEqual(actual.urls,['https://production.dataviz.cnn.io/index/fearandgreed/graphdata']);
+  assert.equal(actual.output.score,actual.score);
+  assert.equal(actual.output.observedAt,actual.observedAt);
+  assert.deepEqual(actual.archive.observations,[{observedAt:actual.observedAt,score:actual.score}]);
+  assert.equal(actual.receipt.checks.length,1);
+  assert.equal(actual.receipt.checks[0].httpStatus,200);
+  assert.equal(actual.receipt.checks[0].outcome,'VERIFIED');
+  assert.equal(actual.receipt.checks[0].sourceObservedAt,actual.observedAt);
+  assert.equal(actual.receipt.checks[0].score,actual.score);
+  assert.ok(actual.receipt.checks[0].checkedAt>=actual.receipt.checks[0].requestedAt);
+  assert.ok(actual.keys.every(key=>['fear-greed','fear-greed-observed','fear-greed-http-checks'].includes(key)));
+  assert.equal(fs.readFileSync(checkpoint,'utf8'),'core sentinel');
+  assert.equal(fs.existsSync(path.join(base,'storage','history.sqlite')),false);
+ }finally{fs.rmSync(base,{recursive:true,force:true});}
+});
