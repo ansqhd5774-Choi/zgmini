@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import {test} from "node:test";
-import {runEmploymentR6AutoCollection} from "../scripts/pc-writer/employment-r6-auto-collection.mjs";
+import {runEmploymentR6AutoCollection,createEmploymentR6ScheduledProviderFactory} from "../scripts/pc-writer/employment-r6-auto-collection.mjs";
 
 const db={prepare(){return {};}},fetchImpl=async()=>{};
 const options={approvedSource:"approved-sha",runningSource:"approved-sha",db,fetchImpl};
@@ -105,4 +105,110 @@ test("W04 Core receipt retains only canonical scheduler UTC time fields",async()
  ]);
  assert.doesNotMatch(JSON.stringify(output),/DO_NOT_EXPORT|PRIVATE|SECRET_/);
  assert.equal(output.providerRequests,0);
+});
+
+
+test("W04 checkpoint preserves bounded SQLite change counts without exporting raw fields",async()=>{
+  const result=await runEmploymentR6AutoCollection({...options,enabled:true,
+    collect:async()=>({status:"SUCCESS",providerRequests:2,
+      groupResults:[{groupName:"DOL_UI_WEEKLY_CLAIMS",status:"SUCCESS",
+        providerRequests:2,runId:456,sourceHash:"SECRET_HASH",rawBody:"SECRET_BODY",
+        changedSeriesIds:["SECRET_SERIES"],collectedRows:3440,inserted:0,
+        revised:0,noop:3440,rejected:0,historyRowsAdded:0,
+        rawSnapshots:2,rawSnapshotNoops:2}],
+      plannedGroups:[]}),
+  });
+  assert.deepEqual(result.groups,[{
+    groupName:"DOL_UI_WEEKLY_CLAIMS",status:"SUCCESS",providerRequests:2,
+    collectedRows:3440,inserted:0,revised:0,noop:3440,rejected:0,
+    historyRowsAdded:0,rawSnapshots:2,rawSnapshotNoops:2,
+  }]);
+  assert.doesNotMatch(JSON.stringify(result),/SECRET_|runId/);
+});
+
+test("W04 checkpoint omits noninteger, negative and excessive counts",async()=>{
+  const result=await runEmploymentR6AutoCollection({...options,enabled:true,
+    collect:async()=>({status:"PARTIAL",providerRequests:0,plannedGroups:[],
+      groupResults:[{groupName:"DOL_UI_WEEKLY_CLAIMS",status:"PARTIAL",
+        collectedRows:0,inserted:-1,revised:1.5,noop:"0",rejected:NaN,
+        historyRowsAdded:1_000_001,rawSnapshots:1,rawSnapshotNoops:undefined}]}),
+  });
+  assert.deepEqual(result.groups,[{groupName:"DOL_UI_WEEKLY_CLAIMS",status:"PARTIAL",
+    collectedRows:0,rawSnapshots:1}]);
+});
+
+test("W04 no-due collection does not invent changed-row counts",async()=>{
+  const result=await runEmploymentR6AutoCollection({...options,enabled:true,
+    collect:async()=>({status:"NOOP",providerRequests:0,groupResults:[],
+      plannedGroups:[{groupName:"DOL_UI_WEEKLY_CLAIMS",status:"RELEASE_ALREADY_STORED",due:false}]}),
+  });
+  assert.deepEqual(result.groups,[]);
+  assert.equal(result.plannedGroups[0].status,"RELEASE_ALREADY_STORED");
+});
+
+
+test("W04 scheduled ETA538 adapter stays wired while main collection diagnostics survive",async()=>{
+  let args;
+  const result=await runEmploymentR6AutoCollection({...options,enabled:true,
+    collect:async x=>{args=x;return {status:"NOOP",providerRequests:0,groupResults:[],plannedGroups:[]};},
+  });
+  assert.equal(result.status,"NOOP");
+  assert.equal(args.providerFactory,createEmploymentR6ScheduledProviderFactory);
+  const actual=args.providerFactory({fetchImpl,now:()=>new Date("2026-11-24T14:50:00.000Z")});
+  assert.equal(typeof actual.fetchGroup,"function");
+  await assert.rejects(actual.fetchGroup("DOL_UI_WEEKLY_CLAIMS",{mode:"ONE_YEAR"}),
+    /DOL_ETA538_SCHEDULED_SCOPE_FORBIDDEN/);
+});
+
+
+test("W04 latest stored DOL RELEASE run remains visible after a normal NOOP without another provider request",async()=>{
+ let statement=null;
+ const before="2026-11-24T19:23:15.174Z";
+ const fakeDb={prepare(sql){statement=sql;return {async first(){return {
+   status:"SUCCESS",completed_at:before,collected_rows:2800,
+   inserted_count:3,revised_count:1,noop_count:2796,
+   rejected_count:0,history_rows_added:4,
+   detail_json:"DO_NOT_RETURN",run_id:"PRIVATE_RUN_ID",
+ };}};}};
+ const result=await runEmploymentR6AutoCollection({...options,db:fakeDb,enabled:true,
+  collect:async()=>({status:"NOOP",providerRequests:0,groupResults:[],plannedGroups:[]})});
+ assert.equal(result.status,"NOOP");
+ assert.equal(result.providerRequests,0);
+ assert.deepEqual(result.groups,[]);
+ assert.equal(result.lastStoredDolRelease.status,"SUCCESS");
+ assert.equal(result.lastStoredDolRelease.completedAt,before);
+ assert.equal(result.lastStoredDolRelease.inserted,3);
+ assert.equal(result.lastStoredDolRelease.revised,1);
+ assert.equal(result.lastStoredDolRelease.noop,2796);
+ assert.equal(result.lastStoredDolRelease.historyRowsAdded,4);
+ assert.equal(result.lastStoredDolRelease.collectedRows,2800);
+ assert.match(statement,/^SELECT status,completed_at,collected_rows,inserted_count,/);
+ assert.match(statement,/provider='EMPLOYMENT_R6_DOL_UI_WEEKLY_CLAIMS'/);
+ assert.match(statement,/LIMIT 1/);
+ assert.doesNotMatch(JSON.stringify(result),/PRIVATE_RUN_ID|DO_NOT_RETURN|detail_json/);
+});
+
+test("W04 unavailable or invalid historical run evidence never fabricates counts or vetoes collection",async()=>{
+ const goodCollection=async()=>({status:"NOOP",providerRequests:0,groupResults:[],plannedGroups:[]});
+ for(const fakeDb of [
+  {prepare(){throw Error("TEST_NO_TABLE");}},
+  {prepare(){return {async first(){return {status:"SUCCESS",completed_at:"bad",
+   inserted_count:8};}};}},
+  {prepare(){return {async first(){return null;}};}},
+ ]){
+  const result=await runEmploymentR6AutoCollection({...options,enabled:true,
+   db:fakeDb,collect:goodCollection});
+  assert.equal(result.status,"NOOP");
+  assert.equal(Object.hasOwn(result,"lastStoredDolRelease"),false);
+ }
+ const invalid={prepare(){return {async first(){return {
+  status:"SUCCESS",completed_at:"2026-11-24T19:23:15.174Z",
+  inserted_count:-1,revised_count:"5",noop_count:1000001,
+  collected_rows:0,history_rows_added:undefined,
+ };}};}};
+ const result=await runEmploymentR6AutoCollection({...options,enabled:true,
+  db:invalid,collect:goodCollection});
+ assert.deepEqual(result.lastStoredDolRelease,{
+  status:"SUCCESS",completedAt:"2026-11-24T19:23:15.174Z",collectedRows:0,
+ });
 });

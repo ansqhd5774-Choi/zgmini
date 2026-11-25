@@ -90,6 +90,32 @@ test('same checkpoint different SHA/content, older source and corrupt prior fail
   await assert.rejects(writer.write(fixture(),{storedAt:NOW}),/QFR_D1_EXISTING_INVALID/);
   assert.equal(db.queries.filter(x=>x.kind==='WRITE').length,1);
 });
+test('QFR identical source hash recapture never advances D1 published/source time',async()=>{
+  const db=fakeD1(),writer=qfrCompanionWriter(db),first=fixture();
+  assert.equal((await writer.write(first,{storedAt:NOW-1000})).status,'READBACK_VERIFIED');
+  const original=db.records.get(QFR_SNAPSHOT_KEY);
+  const recaptured=fixture();
+  recaptured.sourceStoredAt+=1000;
+  recaptured.rows[0].retrievedAt=new Date(recaptured.sourceStoredAt).toISOString();
+  assert.equal(validateQfrCompanionPayload(recaptured,{now:NOW}),recaptured);
+  const repeat=await writer.write(recaptured,{storedAt:NOW});
+  assert.equal(repeat.status,'ALREADY_STORED');
+  assert.equal(repeat.sourceStoredAt,first.sourceStoredAt);
+  assert.equal(db.records.get(QFR_SNAPSHOT_KEY).body,original.body);
+  assert.equal(db.queries.filter(x=>x.kind==='WRITE').length,1);
+  const drift=clone(recaptured);
+  drift.rows[0].history[0].value+=0.1;
+  assert.equal(validateQfrCompanionPayload(drift,{now:NOW}),drift);
+  await assert.rejects(writer.write(drift,{storedAt:NOW}),/QFR_D1_CONFLICTING_CONTENT/);
+  assert.equal(db.queries.filter(x=>x.kind==='WRITE').length,1);
+  const changedVersion=clone(recaptured);
+  changedVersion.sourceVersion='c'.repeat(64);
+  changedVersion.sourceSha256='d'.repeat(64);
+  assert.equal((await writer.write(changedVersion,{storedAt:NOW})).status,'READBACK_VERIFIED',
+    'new source SHA and later capture must remain eligible');
+  assert.equal(db.queries.filter(x=>x.kind==='WRITE').length,2);
+});
+
 test('D1 write acknowledgment without matching body is never a verified publication',async()=>{
   const db=fakeD1({mismatch:true});
   await assert.rejects(qfrCompanionWriter(db).write(fixture(),{storedAt:NOW}),

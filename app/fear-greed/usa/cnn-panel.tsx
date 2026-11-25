@@ -10,6 +10,7 @@ import { MarketFearGreedChart } from "../../market-fear-greed-chart";
 import {fearGreedStateColor} from '../../../lib/fear-greed-state-color.mjs';
 import {CNN_OBSERVED_HISTORY_VERSION} from '../../../lib/cnn-observed-history-r1.mjs';
 import {currentCnnSessionHistory,currentCnnSessionCheckedPoints} from '../../../lib/cnn-current-session-history-r4.mjs';
+import {cnnUsMultiDayTooltipDate} from '../../../lib/cnn-tooltip-calendar-date-r1.mjs';
 
 import {useStoredIndex} from '../../../components/use-stored-index';
 import FactorAnalysisR2,{type FactorR2} from '../factor-analysis-r2';
@@ -772,6 +773,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
       />}
       chart={<MarketFearGreedChart
         showExtrema
+        showLatestPointTouchTooltip
         color={fearGreedStateColor(loading?'확인 중':stage)}
         data={history}
         axisTicks={chartAxis.ticks}
@@ -783,7 +785,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
         gradientId="cnn-fill"
         formatTooltipLabel={selectedPeriod==="1D"
           ? (value:string)=>`${currentSessionPcDates.has(value)?"PC 확인 ":""}${intradayLabel(value)}`
-          : (archiveHistory.length>=2?intradayLabel:dateLabel)}
+          : cnnUsMultiDayTooltipDate}
         emptyLabel={selectedPeriod==="1D"?"시간별 관측값이 2개 이상 쌓이면 1일 추이가 표시됩니다":"이력 없음"}
       />}
       breadth={showBreadth && !showEducation ? <MarketBreadthStrip market="usa" period={selectedPeriod}/> : undefined}

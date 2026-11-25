@@ -1,6 +1,6 @@
 ## 저장소·담당 소속 — 2026-11-23 사용자 지정
 
-프로세스 총괄은 **`zgmini` / `codex/controller-ops-lessons-20261105`**, 이슈 담당자는 **`zgmini-pc-control` / `codex/issues-lifecycle-manager-20261118`**, 자동화 담당자는 **`zgmini-pc-control` / `codex/pc-automation-process-improvement-20261119`**에 소속된다. [역할 정본](https://github.com/ansqhd5774-Choi/zgmini/blob/main/docs/REPOSITORY_ROLES.md)을 따른다. 아래 과거 소속·호칭과 충돌하면 이 결정을 우선한다. 업무 소속과 실제 코드 변경 저장소는 구분하며 기존 승인·운영 보호·기능 담당자의 독립 작업은 유지한다. 새 승인 Gate를 추가하지 않는다.
+프로세스 총괄은 **`zgmini` / `codex/controller-ops-lessons-20261105`**, **본체 이슈·PR 담당자**는 **`zgmini` / `codex/issues-lifecycle-manager-20261123`**, **PC 제어 이슈·PR 담당자**는 **`zgmini-pc-control` / `codex/issues-lifecycle-manager-20261118`**, 자동화 담당자는 **`zgmini-pc-control` / `codex/pc-automation-process-improvement-20261119`**에 소속된다. [역할 정본](https://github.com/ansqhd5774-Choi/zgmini/blob/main/docs/REPOSITORY_ROLES.md)을 따른다. 아래 과거 소속·호칭과 충돌하면 이 결정을 우선한다. 업무 소속과 실제 코드 변경 저장소는 구분하며 기존 승인·운영 보호·기능 담당자의 독립 작업은 유지한다. 새 승인 Gate를 추가하지 않는다.
 
 ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 
@@ -28,11 +28,13 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - 상위 시스템·보안 제한을 준수한다. 동일 범위에서는 사용자의 최신 명시 지시·승인이 과거 프로젝트 지침보다 우선한다.
 - 지침과 최신 승인 contract 충돌 시 실행 중단 후 최신 contract 기준으로 지침 갱신.
 
-## 0.1. 두 PC와 Issues·PR 전문 담당자 인계 (2026-11-18 사용자 확정)
+## 0.1. 두 저장소 이슈·PR 담당자와 PC 역할 구분 (2026-11-23 사용자 지정)
 
-- `zgmini` 프로세스 총괄과 `zgmini-pc-control` Issues·PR 전문 담당자는 **다른 직책·담당 범위**다. 전문 담당자는 별도 PC `DESKTOP-N62L0NG`의 승인된 개발·격리 환경에서 이슈·PR 해결에 필요한 폭넓은 수정·테스트·모의시험을 수행하여 운영 PC `PC`의 메모리·CPU 부담을 줄인다. 해당 저장소의 **자동 인계 Runner의 제한된 허용 작업**과 전문 담당자의 업무 전체를 혼동하지 않는다.
-- 전문 담당자에게 **운영 PC 설치·변경 권한은 없다**. 운영 변경이 필요한 결과는 원본 Issue/PR·브랜치/SHA·정확한 대상·manifest·테스트/시뮬레이션 결과·LAST PASS/FIRST FAIL·원본 보존/복구·승인 조건과 함께 총괄에 인계한다. 총괄은 기존 승인 및 운영 보호 절차에 따라 직접 적용하거나 정규 운영 담당을 조정하고 Runtime·결과 readback을 확인한다. C급 관리자 작업은 사용자 직접 수행하며, 다른 기능 원담당 업무를 무단 이관하지 않는다.
-- 별도 PC 시험 PASS·PR/merge·GitHub 인계 댓글·총괄 대화 실제 인수·운영 PC 설치 PASS는 서로 구분한다. 운영 적용이 없는 이슈·PR은 전문 담당자가 독립 처리한다. 과거 `zgmini-pc-control`의 `codex/controller-ops-lessons-20261105`라는 브랜치 이름만으로 총괄 소속을 추정하지 않는다.
+- **본체 담당:** `zgmini / codex/issues-lifecycle-manager-20261123`. [본체 이슈·PR R2 지침](docs/ISSUE_LIFECYCLE_MANAGEMENT_STANDARD_20261123.md)을 따른다. 본체 Issue·PR의 실제 원인 수정→시험·CI→승인된 병합→운영 검증→원본 종결까지 담당한다.
+- **PC 제어 담당:** `zgmini-pc-control / codex/issues-lifecycle-manager-20261118`. [PC 제어 이슈·PR R2 지침](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/codex/issues-lifecycle-manager-20261118/docs/ISSUE_LIFECYCLE_MANAGEMENT_STANDARD_20261118.md)을 따른다. 제어 저장소의 문제를 동일 권한·절차로 해결한다.
+- 두 담당자는 인수한 업무에서 프로세스 총괄과 동등한 **작업 범위**를 갖지만 총괄 직책·전체 작업 분장을 대신하지 않는다. 계정/도구의 실제 허용 작업, 사용자 승인, B/C 안전 검사, CAS·lease·백업, 기존 기능 담당자 권한은 그대로 유지한다. 과거의 검토·인계 전용 또는 운영 변경 일괄 금지 문구를 현행 R2 담당자에게 적용하지 않는다.
+- 별도 공통 대기열 PC `DESKTOP-N62L0NG`의 기존 격리 Runner는 승인된 접수·관제·테스트 범위만 수행한다. **격리 Runner 자체**가 곧바로 운영 PC 실행 권한을 가지는 것은 아니다. 운영 설치·게시 등은 각각 기존 정규 승인 경로와 실제 실행 가능한 호스트에서 검증한다.
+- 본체 담당자는 본체 이슈를, PC 제어 담당자는 제어 이슈를 우선 인수한다. 교차 저장소 작업·기능 원담당의 진행 중 업무는 원본 Issue/PR에서 단일 소유자를 확인해 중복 실행하지 않는다. PR/CI PASS·병합·PC 설치·실제 Runtime PASS는 각각 별개 증거다.
 
 ## 1. GitHub — SOURCE OF TRUTH
 - 기준 소스는 GitHub 최신 `main`.

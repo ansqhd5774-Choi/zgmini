@@ -16,7 +16,6 @@ import {safeCollectionFailure} from '../../worker/collection-failure-diagnostic.
 import {alertCollectionReport,dueCollectionRecovery} from './local-data-alert.mjs';
 import {collectConsumptionR5} from './consumption-r5.mjs';
 import {overdueRateJob} from './rate-refresh-priority.mjs';
-import {collectSectorFearGreedR3EtfIncremental} from './sector-fear-greed-r3-etf-incremental.mjs';
 import {collectReleaseCalendar} from './release-calendar.mjs';
 import {collectPinnedDeltaOnce} from './market-calendar-deltascreener-input.mjs';
 import {publicFeedStore} from '../../worker/public-feed-store.mjs';
@@ -57,7 +56,7 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   const {refreshKoreaRev7}=await import('../../worker/korea-rev7-refresh.mjs');
   const {Rev7D1Store}=await import('../../worker/korea-rev7-d1.mjs');
   if(importOnly)return {status:'LOCAL_IMPORT_PASS'};
-  let result,releaseCalendar={status:'SKIPPED_KOREA_LANE',providerRequests:0},sectorFearGreedEtf={status:'SKIPPED_KOREA_LANE',providerRequests:0};
+  let result,releaseCalendar={status:'SKIPPED_KOREA_LANE',providerRequests:0},sectorFearGreedEtf={status:lane==='core'?'RETIRED_LEGACY_ALPACA':'SKIPPED_KOREA_LANE',providerRequests:0};
   let deltaScreener={status:'SKIPPED_KOREA_LANE',providerRequests:0};
   let employmentR6Collection={status:'DISABLED',providerRequests:0};
   if(lane==='korea')result=await refreshKoreaRev7({env:{...env,DB:history},store:new Rev7D1Store(history,{leaseMs:600000}),now:new Date(),maxDates:1,deferCalculation:true});
@@ -89,11 +88,9 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
    // Its absence or invalidity must not stop the existing Core collection.
    try{deltaScreener=await collectPinnedDeltaOnce({store:publicFeedStore(core),fetchImpl:globalThis.fetch,now:Date.now()});}
    catch{deltaScreener={status:'FAILED_PREVIOUS_INPUT_PRESERVED',providerRequests:0};}
-   try{
-    sectorFearGreedEtf=await collectSectorFearGreedR3EtfIncremental(base,{fetchImpl:globalThis.fetch,fetchAlreadyQuotaProtected:true,now:Date.now()});
-   }catch(error){
-    sectorFearGreedEtf={status:'FAILED_PRESERVE_EXISTING',providerRequests:0,code:/^[A-Z0-9_:.-]+$/.test(error?.code??error?.message??'')?(error.code??error.message):'SECTOR_FEAR_GREED_R3_ETF_COLLECTION_FAILED'};
-   }
+   // Historical Alpaca ETF bars stay stored. New paid ETF daily rows are
+   // collected once by local-cycle and reused by the Sector rolling reader.
+   // Never fall back to the retired independent Alpaca fetch.
    const collectors={consumption:()=>collectConsumptionR5({db:core,fetchImpl:globalThis.fetch})};
    const now=Date.now();
    job??=await overdueRateJob(core,now);

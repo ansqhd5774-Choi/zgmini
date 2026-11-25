@@ -148,16 +148,19 @@ export function qfrCompanionWriter(core){
     if(before){
       const prior=verifyEnvelope(before,{now:storedAt}).payload;
       if(prior.sourceStoredAt>payload.sourceStoredAt)fail('QFR_D1_SUPERSEDED');
-      if(prior.sourceStoredAt===payload.sourceStoredAt){
-        if(prior.sourceVersion!==payload.sourceVersion)fail('QFR_D1_CONFLICTING_VERSION');
+      if(prior.sourceStoredAt===payload.sourceStoredAt
+        &&prior.sourceVersion!==payload.sourceVersion)
+        fail('QFR_D1_CONFLICTING_VERSION');
+      if(prior.sourceVersion===payload.sourceVersion){
         const identity=p=>JSON.stringify({schemaVersion:p.schemaVersion,sourceSha256:p.sourceSha256,
           historicalMode:p.historicalMode,observedThrough:p.observedThrough,
-          coverage:p.coverage,rows:p.rows});
+          coverage:p.coverage,rows:p.rows.map(({retrievedAt,...row})=>row)});
+        // A recapture with the same archive SHA cannot overwrite an earlier
+        // verified statistical row or promote unchanged source timestamps.
         if(identity(prior)!==identity(payload))fail('QFR_D1_CONFLICTING_CONTENT');
-        // Exact DB body of prior record was verified; no duplicate write.
         return {status:'ALREADY_STORED',key:QFR_SNAPSHOT_KEY,
-          storedAt:Number(before.stored_at),sourceVersion:payload.sourceVersion,
-          sourceStoredAt:payload.sourceStoredAt};
+          storedAt:Number(before.stored_at),sourceVersion:prior.sourceVersion,
+          sourceStoredAt:prior.sourceStoredAt};
       }
     }
     const envelope={payload,projection:{status:'READY',builtAt:storedAt,

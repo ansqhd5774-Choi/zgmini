@@ -36,6 +36,9 @@ const publish=process.argv.includes('--publish');
 // Candidate only: recurring inflation research sidecar writes require their own
 // approved publication scope and exact installed-source manifest before enablement.
 const INFLATION_19_AUTO_PUBLICATION_APPROVED=true;
+// W05 recurring scope: the three saved-only sidecars, no provider or SQLite writes.
+// Deployment of this activation candidate requires the exact Writer B source CAS.
+const W05_SAVED_SIDECARS_AUTO_PUBLICATION_APPROVED=true;
 const config=read(path.join(base,'config.json'));
 const source=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
 if(publish){
@@ -74,13 +77,24 @@ try{
  const {projectionWriter}=await import('../../worker/projection-runtime-r52.mjs');
  const {PUBLIC_PROJECTION_KEYS}=await import('../../worker/market-public-projection-store.mjs');
  const now=Date.now();
+ // Reuse the already-owned local-cycle lock; never acquire a new Core lease.
+ let d05Writer=null,d05Captured=null,d05CaptureCount=0,d05MarketBody=null;
+ if(publish){
+  try{
+   const {createD05LocalCycleExclusiveWriter}=await import('../../lib/score-history/d05-lineage-event-append-r1.mjs');
+   d05Writer=createD05LocalCycleExclusiveWriter({pcHome:base});
+  }catch{}
+ }
  // Independent US breadth count from already stored and verified source rows.
  await attemptOutput(report,'us-breadth-calculation',async()=>{
   const {prepareUsBreadth}=await import('./market-breadth-us-r1.mjs');
   report.usBreadth=await prepareUsBreadth(core,{now:new Date(now)});
  });
  const marketReady=await attemptOutput(report,'market',async()=>{
- const body=await calculateMarket(root,core,now);
+ const body=await calculateMarket(root,core,now,d05Writer?{onInputEvidence:e=>{
+  d05CaptureCount++;
+  d05Captured=d05CaptureCount===1?e:null;
+ }}:undefined);
  // Reuse the published daily score history already read for the overall chart.
  const storedHistory=await marketOperationalStore(core).readScoreHistory({sinceDate:oneYearHistoryStart(now),limit:370});
  const currentInflation=body.domains?.find(d=>d.id==='inflation')??null;
@@ -121,6 +135,7 @@ try{
  assertCompleteMarket(body);
  await marketOperationalStore(core).writeScore(body,now);
  save(path.join(base,'local-market-result.json'),body);
+ if(d05Writer)d05MarketBody=body;
  const liquidityTrend=body.domains.find(x=>x.id==='liquidity')?.trend??[];
  const liquidityDates=liquidityTrend.map(x=>x?.label??x?.date).filter(x=>typeof x==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(x)).sort();
  report.market={
@@ -137,10 +152,38 @@ try{
  };
  });
  if(!marketReady)report.market={status:'PREVIOUS_RELEASE_PRESERVED'};
+ // D05 final OUTPUT validation reuses the already committed market score/day
+ // snapshots. No indicator collection, new SQLite key or additional write.
+ // This is independent of the legacy composite archive signature/no-op gate.
+ // Any optional evidence failure must preserve the approved market publisher.
+ if(marketReady){
+  try{
+   const {readVerifiedMarketFinalOutputs}=await import('../../lib/score-history/d05-final-score-local-readback-r1.mjs');
+   report.d05FinalOutputReadback=await readVerifiedMarketFinalOutputs(core,{
+    calculatedAtMs:now,now:Date.now(),
+   });
+  }catch{report.d05FinalOutputReadback={status:'UNPROVEN_LOCAL_FINAL_OUTPUT'};}
+ }
  if(marketReady)await attemptOutput(report,'composite-archive-local',async()=>{
   const {appendCompositeObservedFromCurrent}=await import('./composite-observed-archive-r1.mjs');
   report.compositeObserved=await appendCompositeObservedFromCurrent(core,now);
  });
+ // Private selected-input metadata only, following an existing saved archive.
+ // Failure must not block the already approved market calculation or publisher.
+ if(marketReady&&d05Writer&&report.compositeObserved?.status==='LOCAL_STORED'){
+  try{
+   const {recordD05LineageFromStoredArchive}=await import('../../lib/score-history/d05-lineage-local-record-r1.mjs');
+   const result=await recordD05LineageFromStoredArchive({
+    db:core,now,marketBody:d05MarketBody,capture:d05Captured,
+    archiveResult:report.compositeObserved,runtimeSourceSha:source,
+    approvedSourceSha:config.source,recordedAt:new Date().toISOString(),
+    ledgerPath:path.join(base,'score-lineage','d05-composite-events-v1.jsonl'),
+    exclusiveWriter:d05Writer,initializeApprovedDirectory:true,
+   });
+   report.d05PrivateLineageStatus=['APPENDED_VERIFIED_LOCAL_ONLY','NOOP_SAME_EVENT'].includes(result?.status)
+    ?result.status:'UNPROVEN';
+  }catch{report.d05PrivateLineageStatus='UNPROVEN';}
+ }
  // Rate sentiment is a separate stored-data score; never modify the approved Rate R3 domain.
  const {preparePublicRateSentiment,publishPublicRateSentiment}=await import('./rate-sentiment-publication.mjs');
  let rateSentiment={status:'UNAVAILABLE'};await attemptOutput(report,'rate-sentiment-calculation',async()=>{rateSentiment=await preparePublicRateSentiment(core,now);});
@@ -322,6 +365,22 @@ try{
    const {publishInflationCandidates7Auto}=await import('./inflation-causal-candidates-public-7-auto-publication-r1.mjs');
    report.inflation7=await publishInflationCandidates7Auto({pcHome:base,remote,coreDb:config.core});
   });
+  // W05 saved-only informational sidecars. Activation candidate for the
+  // three-key recurring D1 scope; install only through exact Writer B CAS.
+  // Reuse the existing run-local Writer lane and its attemptOutput isolation;
+  // never create a second Task, scheduler, provider call or DB writer.
+  if(W05_SAVED_SIDECARS_AUTO_PUBLICATION_APPROVED){
+   const {W05_SAVED_IDS,publishW05StoredSidecar}=await import(
+    './w05-stored-sidecar-publication-r1.mjs');
+   report.w05SavedSidecars={};
+   for(const id of W05_SAVED_IDS){
+    await attemptOutput(report,'w05-saved-sidecar:'+id,async()=>{
+     report.w05SavedSidecars[id]=await publishW05StoredSidecar({
+      id,pcHome:base,remote,coreDb:config.core,now,
+     });
+    });
+   }
+  }
   // Reuse the existing public snapshot table; publish only the bounded display score.
   await attemptOutput(report,'rate-sentiment-publication',async()=>{report.rateSentiment.publication=(await publishPublicRateSentiment(remote,config.core,rateSentiment)).status;});
   try{report.stagflation.publication=(await publishStagflation(remote,config.core,stagflation)).status;}catch(error){report.stagflation.publication='UNVERIFIED';report.stagflation.reason=/^STAGFLATION_[A-Z_]+$/.test(error.message??'')?error.message:'STAGFLATION_PUBLICATION_FAILED';}

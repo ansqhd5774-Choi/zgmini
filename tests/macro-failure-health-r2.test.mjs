@@ -25,5 +25,21 @@ test('internal latest failure survives while public status retains the original 
  const db={prepare(){return {bind(){return {first:async()=>({body:JSON.stringify(body)})}}}}};const b=await(await readCollectionHealth(db,now+1)).json();assert.equal(b.normal,1);assert.equal(b.status,'healthy');assert.equal(b.latestFailed,1);assert.equal(b.recentFailures,1);assert.equal(body.status,'partial');
 });
 test('missing new lanes stay in the denominator; private score and manifest do not prove latest success',()=>{
- const entries=expandedCollectionEntries({secondary:{status:'PRIVATE_SCORED_PENDING_LICENSE',at:new Date(now).toISOString()},biotechManifest:{version:1,files:[{sha256:'a'.repeat(64),collectedAt:new Date(now-1).toISOString()}]}});assert.equal(entries.length,EXPANDED_HEALTH_JOBS.length);assert.equal(entries.length,5);const b=collectionHealthSummary(entries,now);assert.equal(b.normal,1);assert.equal(b.latestUnknown,5);assert.equal(b.status,'unknown');assert.equal(new Set(entries.map(x=>x.id)).size,5);
+ const entries=expandedCollectionEntries({secondary:{status:'PRIVATE_SCORED_PENDING_LICENSE',at:new Date(now).toISOString()},biotechManifest:{version:1,files:[{sha256:'a'.repeat(64),collectedAt:new Date(now-1).toISOString()}]}});assert.equal(entries.length,EXPANDED_HEALTH_JOBS.length);assert.equal(entries.length,4);const b=collectionHealthSummary(entries,now);assert.equal(b.normal,1);assert.equal(b.latestUnknown,4);assert.equal(b.status,'unknown');assert.equal(new Set(entries.map(x=>x.id)).size,4);
+});
+
+test('retired Alpaca ETF health cannot be revived by a historical success or failure receipt',()=>{
+ const historical=[{status:'COLLECTED',checkedAt:new Date(now).toISOString(),storageVerified:true,providerRequests:1},
+  {status:'FAILED',checkedAt:new Date(now).toISOString(),storageVerified:false,providerRequests:1}];
+ for(const sector of historical){
+  const entries=expandedCollectionEntries({sector});
+  assert.equal(entries.length,4);
+  assert.ok(!entries.some(x=>x.id==='job:sectorEtf'));
+  const summary=collectionHealthSummary(entries,now);
+  assert.equal(summary.latestFailed,0);
+  assert.equal(summary.normal,0);
+  assert.equal(summary.unknown,4);
+ }
+ const source=fs.readFileSync('scripts/pc-writer/expanded-collection-health.mjs','utf8');
+ assert.doesNotMatch(source,/local-sector-fear-greed-r3-etf-incremental-last-run\.json/);
 });

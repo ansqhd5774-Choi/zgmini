@@ -2,11 +2,11 @@
 // READ ONLY. No API, no DB/D1 writes, no scheduler, no E1/other scoring changes.
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 import crypto from 'node:crypto';
 import {fileURLToPath} from 'node:url';
 import {DatabaseSync} from 'node:sqlite';
 
-const HERE = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.resolve(process.env.ZGMINI_PC_HOME || 'E:\\ZGmini\\data\\pc-writer');
 const DB_PATH = path.join(ROOT,'storage','core.sqlite');
 const CONTRACT = 'EARNINGS_COMPANION_R3C_BLS_DIRECT_V1';
@@ -74,9 +74,9 @@ function validateRows(rows, id) {
     latestYoy:quarterly?null:latestYoy,latestBase};
 }
 
-function validateSnapshot(db, snapshot) {
+export function validateSnapshot(db, snapshot) {
   const id=snapshot.dataset;
-  if (snapshot.provider!=='BLS' || !SERIES.includes(id) || snapshot.status!=='READY_DIRECT_BLS'
+  if (snapshot.provider!=='BLS' || ![...SERIES,'WPSFD42'].includes(id) || snapshot.status!=='READY_DIRECT_BLS'
     || snapshot.history_mode!==CONTRACT || !isIsoDate(snapshot.retrieved_at)
     || snapshot.as_of!==snapshot.retrieved_at.slice(0,10)) {
     fail('BLS_SNAPSHOT_CONTRACT_INVALID');
@@ -157,10 +157,16 @@ export function analyze(db) {
     newerIncomplete:olderThanLatest,missingYoy};
 }
 
+export function resultLogPath(stamp,{tempDirectory=os.tmpdir()}={}) {
+  if (typeof stamp!=='string' || !/^\d{8}-\d{6}Z$/.test(stamp))
+    fail('INVALID_RESULT_STAMP');
+  return path.join(tempDirectory,`EARNINGS_R3D_STORED_BLS_CALC_RESULT_${stamp}.txt`);
+}
+
 async function main(){
   const now=new Date().toISOString();
   const stamp=now.replace(/[-:]/g,'').replace(/\.\d+Z$/,'Z').replace('T','-');
-  const output=path.join(HERE,`EARNINGS_R3D_STORED_BLS_CALC_RESULT_${stamp}.txt`);
+  const output=resultLogPath(stamp);
   const text=[
     'EARNINGS_COMPANION_R3D_STORED_BLS_CALC_READONLY_R1_20261027',
     `UTC=${now}`,
@@ -168,6 +174,7 @@ async function main(){
     `CONTRACT=${CONTRACT}`,
     'API_REQUESTS=0',
     'FRED_CACHE_READ=NO',
+    'RESULT_LOG_LOCATION=USER_TEMP',
   ];
   let db,done=false;
   try {

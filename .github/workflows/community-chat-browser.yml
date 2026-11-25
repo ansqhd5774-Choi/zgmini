@@ -40,6 +40,10 @@ on:
       - 'lib/dashboard-chart-startup.mjs'
       - 'lib/market-score/market-trend-window-r1.mjs'
       - 'tests/dashboard-history-browser-r5.mjs'
+      - 'tests/w06-mobile-touch-local-r1.mjs'
+      - 'tests/production-assets-network-r1.mjs'
+      - 'tests/inflation-criterion-browser-r1.mjs'
+      - 'tests/employment-r6-public-browser-r1.mjs'
       - 'tests/w06-production-singlepoint-readonly-r1.mjs'
       - 'tests/w04-r54-production-ui-readonly-r1.mjs'
       - 'tests/w04-r54-touch-local-r1.mjs'
@@ -53,6 +57,7 @@ on:
       - 'components/risk-detail-side-rails.*'
       - 'app/earnings-recession/**'
       - 'tests/earnings-r511-browser-r1.mjs'
+      - 'tests/w05-bea-production-readonly-r1.mjs'
       - 'tests/risk-detail-side-rails-browser-r44.mjs'
       - 'app/outbreak-events.tsx'
       - 'app/outbreak-beginner-fed-r53.tsx'
@@ -65,11 +70,37 @@ on:
       - 'tests/outbreak-beginner-approved-r53.test.mjs'
       - 'app/outbreak-scenarios-r51.css'
       - 'tests/outbreak-scenarios-browser-r51.mjs'
+      # npm packages and Vite runtime affect every Playwright browser route.
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - 'scripts/ci-accessibility-axe.mjs'
+      - 'tests/ci-accessibility-axe.test.mjs'
+      - 'scripts/ci-cross-browser-core.mjs'
+      - 'tests/ci-cross-browser-core.test.mjs'
+      # R2 performance lab shares the existing installed Playwright Chromium.
+      - 'scripts/ci-performance-lab.mjs'
+      - 'tests/ci-performance-lab.test.mjs'
+      - 'scripts/ci-performance-budget-observation.mjs'
+      - 'tests/ci-performance-budget-observation.test.mjs'
+      - 'scripts/ci-web-speed-good-r2.mjs'
+      - 'tests/ci-web-speed-good-r2.test.mjs'
+      - 'scripts/ci-pagespeed-real-user-field-r1.mjs'
+      - 'tests/ci-pagespeed-real-user-field-r1.test.mjs'
+      - 'scripts/ci-production-browser-good-r1.mjs'
+      - 'tests/ci-production-browser-good-r1.test.mjs'
       - '.github/workflows/community-chat-browser.yml'
   workflow_dispatch:
+    inputs:
+      run_psi_field:
+        description: 'One-off public PSI CrUX read (may return HTTP 429)'
+        type: boolean
+        required: false
+        default: false
 
 permissions:
   contents: read
+  actions: read # inspect earlier same-workflow Actions artifacts, not other repositories
 
 jobs:
   ui:
@@ -87,9 +118,9 @@ jobs:
       - name: Install locked repository dependencies
         run: npm ci
       - name: Install test-only Playwright without changing lockfile
-        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1 axe-core@4.14.1
       - name: Install browser for offline UI interactions
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium firefox webkit
       # Independent W06 public chart test runs before unrelated risk-page asset checks.
       # Both retain their assertions; a failure in either still fails the overall job.
       - name: Start local dev UI (no remote bindings and no deployment)
@@ -105,6 +136,9 @@ jobs:
           done
           tail -n 120 /tmp/zgmini-chat-vite.log
           exit 1
+      # W05 is independent of the W06 home-chart 1D selection and must run first.
+      - name: Verify W05 BEA actual Production API and 390/1440 hydrated UI read-only
+        run: node tests/w05-bea-production-readonly-r1.mjs
       - name: Verify W06 latest-point genuine touchscreen and hover with local isolated fixture
         run: node tests/w06-mobile-touch-local-r1.mjs
       - name: Verify W06 actual Production 1D and 6 periods at 390/1440 read-only
@@ -139,12 +173,49 @@ jobs:
         run: node tests/dashboard-history-browser-r5.mjs
       - name: Verify CNN actual PC-check 1D curve and stale-session exclusion at 390/1440
         run: node tests/cnn-current-session-verified-checks-browser-r12.mjs
+      # Lab results are observations, not a new unapproved Lighthouse score gate.
+      - name: Measure isolated Chromium performance laboratory
+        run: node scripts/ci-performance-lab.mjs
+      # #8: compare with a past successful Playwright artifact only if fixture,
+      # browser build, route and viewport match. No approved budget or PR gate.
+      - name: Compare historical local performance observations
+        timeout-minutes: 3
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/ci-performance-budget-observation.mjs
+      # Official Google Good thresholds, applied to local lab metrics only.
+      # INP / real-user P75 / Lighthouse are not measured; no false site PASS.
+      - name: Evaluate official Google Good web-speed reference
+        run: node scripts/ci-web-speed-good-r2.mjs
+      # Read-only, two bounded anonymous public PSI queries: mobile and desktop.
+      # CrUX field P75 is 28-day aggregate and may be absent for low traffic.
+      # Never fail the PR for absent provider field data or invent a Good PASS.
+      - name: Observe Google public PSI real-user field vitals
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.run_psi_field == true }}
+        timeout-minutes: 3
+        run: node scripts/ci-pagespeed-real-user-field-r1.mjs
+      # #8 free fallback: browser-only first-party Production GETs with strict
+      # no-write routing, no provider API keys and no claim of CrUX field P75.
+      - name: Observe production first-party read-only page speed
+        timeout-minutes: 3
+        run: node scripts/ci-production-browser-good-r1.mjs
+      # Accessibility results are observations; reviewed baseline approval is separate.
+      - name: Measure local WCAG A/AA accessibility with axe-core
+        timeout-minutes: 2
+        run: node scripts/ci-accessibility-axe.mjs
+      # #23: core routes only; non-gating browser difference observations.
+      - name: Observe local Firefox and WebKit core routes
+        timeout-minutes: 4
+        run: node scripts/ci-cross-browser-core.mjs
       - name: Upload browser UI evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: community-chat-browser-r1
           path: |
+            artifacts/ci-cross-browser/
+            artifacts/ci-accessibility/
+            artifacts/performance-lab/
             artifacts/community-chat-browser/
             artifacts/risk-detail-side-rails/
             artifacts/outbreak-scenarios/
@@ -155,6 +226,7 @@ jobs:
             artifacts/about-intro-bootstrap/
             artifacts/inflation-criterion-review/
             artifacts/earnings-r511-browser/
+            artifacts/w05-bea-production-readonly/
             artifacts/employment-r6-browser/
             artifacts/w04-r54-production-ui/
             artifacts/w04-r54-touch-local/
@@ -163,6 +235,7 @@ jobs:
             artifacts/w06-production-readonly/
             artifacts/w06-touch-local/
           if-no-files-found: warn
+          retention-days: 7
       - name: Show local dev errors on failure
         if: failure()
         run: tail -n 120 /tmp/zgmini-chat-vite.log || true

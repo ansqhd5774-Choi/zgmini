@@ -1,0 +1,91 @@
+// UI-only adapter for the stored BLS companion-C payload. This never calculates
+// a score or fetches a source API; existing known rows retain their UI labels.
+export const EARNINGS_C_COST_SCHEMA='earnings-companion-c-r4-v1';
+
+export const KNOWN_EARNINGS_COST_INDICATORS=Object.freeze([
+  {id:'bls_ppi_final_demand_yoy_sa',name:'최종수요 생산자물가 상승률',description:'최종수요 생산자물가의 전년 대비 변화',series:'WPSFD4',kind:'DERIVED',unit:'PERCENT'},
+  {id:'bls_ppi_final_demand_index',name:'최종수요 생산자물가 지수',description:'최종수요 생산자물가의 지수 수준',series:'WPSFD4',kind:'RAW',unit:'INDEX'},
+  {id:'bls_ppi_goods_yoy_sa',name:'재화 생산자물가 상승률',description:'재화 생산자물가의 전년 대비 변화',series:'WPSFD41',kind:'DERIVED',unit:'PERCENT'},
+  {id:'bls_ppi_goods_index',name:'재화 생산자물가 지수',description:'재화 생산자물가의 지수 수준',series:'WPSFD41',kind:'RAW',unit:'INDEX'},
+  {id:'bls_unit_labor_cost_yoy',name:'비농업 단위노동비용 증가율',description:'비농업 단위노동비용의 전년 대비 변화',series:'PRS85006111',kind:'RAW',unit:'PERCENT'},
+]);
+// These labels are activated only when the stored API actually publishes them.
+// They must not create pre-publication placeholder rows on the live page.
+export const OPTIONAL_EARNINGS_COST_INDICATORS=Object.freeze([
+  {id:'bls_ppi_services_yoy_sa',name:'서비스 생산자물가 상승률',
+    description:'최종수요 서비스 생산자물가의 전년 대비 변화',
+    series:'WPSFD42',kind:'DERIVED',unit:'PERCENT'},
+  {id:'bls_ppi_services_index',name:'서비스 생산자물가 지수',
+    description:'최종수요 서비스 생산자물가의 지수 수준',
+    series:'WPSFD42',kind:'RAW',unit:'INDEX'},
+]);
+
+const knownIds=new Set(KNOWN_EARNINGS_COST_INDICATORS.map(row=>row.id));
+const knownById=new Map([...KNOWN_EARNINGS_COST_INDICATORS,
+  ...OPTIONAL_EARNINGS_COST_INDICATORS].map(row=>[row.id,row]));
+
+// Baseline BLS rows retain the already deployed API's smaller metadata
+// contract; strict service-only fields must not hide the original five rows.
+function safeBaselineRow(row){
+  const known=KNOWN_EARNINGS_COST_INDICATORS.find(x=>x.id===row?.indicatorId);
+  return Boolean(known
+    &&row&&typeof row==='object'&&!Array.isArray(row)
+    &&row.seriesId===known.series&&row.unit===known.unit
+    &&['READY','PARTIAL','PENDING','SOURCE_FAILED','UNAVAILABLE','STALE'].includes(row.status)
+    &&(row.status!=='READY'||Number.isFinite(row.value))
+    &&(row.provider===undefined||row.provider==='BLS')
+    &&(row.category===undefined||row.category==='COST_PRESSURE')
+    &&(row.kind===undefined||row.kind===known.kind)
+    &&(row.sourceURL===undefined||
+      row.sourceURL==='https://data.bls.gov/timeseries/'+known.series)
+    &&(row.adjustment===undefined||row.adjustment==='SA')
+    &&(row.changeUnit===undefined||
+      row.changeUnit===(known.unit==='INDEX'?'INDEX_POINTS':'PERCENTAGE_POINTS')));
+}
+
+function safeBlsRow(row){
+  const known=knownById.get(row?.indicatorId);
+  return row!==null&&typeof row==='object'&&!Array.isArray(row)
+    &&typeof row.indicatorId==='string'&&/^bls_[a-z0-9_]{3,100}$/.test(row.indicatorId)
+    &&row.provider==='BLS'
+    &&typeof row.seriesId==='string'&&/^[A-Z0-9]{4,25}$/.test(row.seriesId)
+    &&row.sourceURL==='https://data.bls.gov/timeseries/'+row.seriesId
+    &&typeof row.name==='string'&&row.name.length>0&&row.name.length<=150
+    &&row.category==='COST_PRESSURE'
+    &&['RAW','DERIVED'].includes(row.kind)
+    &&['PERCENT','INDEX'].includes(row.unit)
+    &&row.changeUnit===(row.unit==='INDEX'?'INDEX_POINTS':'PERCENTAGE_POINTS')
+    &&['MONTHLY','QUARTERLY'].includes(row.frequency)
+    &&row.adjustment==='SA'
+    &&['READY','PARTIAL','PENDING','SOURCE_FAILED','UNAVAILABLE','STALE'].includes(row.status)
+    &&(row.status!=='READY'||Number.isFinite(row.value))
+    &&(!known||(known.series===row.seriesId&&known.kind===row.kind&&known.unit===row.unit));
+}
+
+export function buildEarningsCostIndicatorView(payload){
+  const valid=payload?.schemaVersion===EARNINGS_C_COST_SCHEMA
+    &&payload?.historicalMode==='CURRENT_RETRIEVAL_NOT_PIT'
+    &&Array.isArray(payload?.rows);
+  const rows=[];
+  const indicators=[...KNOWN_EARNINGS_COST_INDICATORS];
+  if(valid){
+    const seen=new Set();
+    for(const row of payload.rows){
+      if(!safeBaselineRow(row)||seen.has(row.indicatorId))
+        continue;
+      seen.add(row.indicatorId);
+      rows.push(row);
+    }
+    // WPSFD42 is an optional, atomic pair: avoid exposing a partial or
+    // expired service observation as a new line in desktop/mobile lists.
+    // This view never invents values or invokes a provider.
+    const service=OPTIONAL_EARNINGS_COST_INDICATORS.map(meta=>
+      payload.rows.filter(row=>row?.indicatorId===meta.id));
+    if(service.every(group=>group.length===1&&safeBlsRow(group[0])
+      &&group[0].status==='READY'&&group[0].freshness?.status==='FRESH')){
+      rows.push(...service.map(group=>group[0]));
+      indicators.push(...OPTIONAL_EARNINGS_COST_INDICATORS);
+    }
+  }
+  return {valid,rows,indicators};
+}

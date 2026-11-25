@@ -9,6 +9,7 @@ import ChartExtremumPoint from './chart-extremum-point';
 import './sector-sentiment-chart.css';
 import ChartAxisLabels from './chart-axis-labels';
 import {uniqueChartTooltipEntries} from '../lib/chart-tooltip-unique.mjs';
+import {placeSectorHeldTooltip} from '../lib/sector-tooltip-position.mjs';
 import './chart-axis-labels.css';
 
 export const SECTORS=[
@@ -38,6 +39,17 @@ function scoreBand(value:number|null|undefined){
  return value<25?'extreme-fear':value<45?'fear':value<=55?'neutral':value<=75?'greed':'extreme-greed';
 }
 
+type SectorTooltipEntry={id:string;name:string;color:string;score:number};
+function SectorTooltipCard({date,entries}:{date:string;entries:SectorTooltipEntry[]}){
+ if(!entries.length)return null;
+ const single=entries.length===1;
+ return <div className={`cnn-history-tooltip zg-sector-tooltip${single?'':' is-multi'}`} role="status">
+  <span className="zg-sector-tooltip-date">{date}</span>
+  {single?<strong className="zg-sector-tooltip-score" data-score-band={scoreBand(entries[0].score)}>{entries[0].score.toFixed(1)}</strong>
+   :<ul className="zg-sector-tooltip-values">{entries.map(entry=><li key={entry.id} style={{color:entry.color}} title={entry.name}><span>{entry.name}</span><strong data-score-band={scoreBand(entry.score)}>{entry.score.toFixed(1)}</strong></li>)}</ul>}
+ </div>;
+}
+
 export default function SectorSentimentChart({data=[],series=SECTORS,title='섹터별 공포·탐욕',draggable=false,themePicker=false,dashboardThemeScores=false,linkToDetail=true,showProvisionalNotice=true,snapshot,provisionalBySeries}:{data?:ChartInputRow[];series?:readonly SentimentSeries[];title?:string;draggable?:boolean;themePicker?:boolean;dashboardThemeScores?:boolean;linkToDetail?:boolean;showProvisionalNotice?:boolean;snapshot?:SectorSnapshotMeta;provisionalBySeries?:Record<string,string>}){
  const mobileAxisRight=useDashboardMobileAxis();
  const [hidden,setHidden]=useState<Set<string>>(()=>new Set(series===SECTORS?SECTORS.map(sector=>sector.id):dashboardThemeScores?series.map(item=>item.id):[]));
@@ -59,6 +71,8 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
  const [touchTooltip,setTouchTooltip]=useState<boolean|null>(null);
  const heldPointer=useRef<number|null>(null);
  const [heldIndex,setHeldIndex]=useState<number|null>(null);
+ const [heldPosition,setHeldPosition]=useState({x:4,y:4});
+ const heldTooltipRef=useRef<HTMLDivElement>(null);
  const releasePlot=()=>{heldPointer.current=null;setHeldIndex(null);setTouchTooltip(false)};
  useEffect(()=>{window.addEventListener('blur',releasePlot);return()=>window.removeEventListener('blur',releasePlot)},[]);
  const autoStored=data.length===0&&series===SECTORS&&title==='섹터별 공포·탐욕'&&!draggable;
@@ -127,12 +141,19 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
  },[showDashboardThemeScores,rankedThemeEntries,series]);
  const extrema=shownSeries.length===1?chartExtrema(visibleRows.map(row=>({date:row.date,value:row[shownSeries[0].id]}))):[];
  const heldRow=heldIndex===null?null:visibleRows[heldIndex];
- const moveHeld=(clientX:number,element:HTMLDivElement)=>{const rect=element.getBoundingClientRect();setHeldIndex(clampedChartIndex(clientX,rect.left+(mobileAxisRight?0:32),rect.width-44,visibleRows.length))};
+ const moveHeld=(clientX:number,clientY:number,element:HTMLDivElement)=>{
+  const rect=element.getBoundingClientRect();
+  setHeldIndex(clampedChartIndex(clientX,rect.left+(mobileAxisRight?0:32),rect.width-44,visibleRows.length));
+  const width=heldTooltipRef.current?.offsetWidth||(shownSeries.length>1?Math.min(320,rect.width-8):112);
+  const height=heldTooltipRef.current?.offsetHeight||(shownSeries.length>1?112:56);
+  setHeldPosition(placeSectorHeldTooltip({pointerX:clientX-rect.left,pointerY:clientY-rect.top,
+   plotWidth:rect.width,plotHeight:rect.height,tooltipWidth:width,tooltipHeight:height}));
+ };
  return <section className={`zg-sector-chart${compactSectorScores?' zg-sector-score-card':''}${themePicker?" zg-theme-picker-enabled":""}${showDashboardThemeScores?' zg-theme-score-card':''}`} aria-label={`${series.length}개 ${title} 비교 차트`}>
   <div className="zg-sector-chart-heading"><h2>{draggable?<Sparkles size={18} aria-hidden="true"/>:<Layers3 size={18} aria-hidden="true"/>}{showDashboardThemeScores?<a href="/theme-fear-greed/">{title}</a>:autoStored&&linkToDetail?<a href="/sector-fear-greed/">{title}</a>:title}</h2><div className="zg-sector-period" aria-label={`${title} 기간`}>{[[7,'1W'],[30,'1M'],[90,'3M'],[180,'6M'],[365,'1Y']].map(([days,label])=><button key={days} type="button" aria-pressed={period===days} onClick={()=>setPeriod(Number(days))}>{label}</button>)}</div></div>
   {showProvisionalNotice&&hasProvisional&&<small className="zg-provisional-label" role="status">{datedRows.at(-1)?.date} 잠정 · 점선 구간</small>}
-  <div className="zg-sector-chart-plot" onPointerDownCapture={event=>{if(event.pointerType==='mouse'&&event.button===0){heldPointer.current=event.pointerId;event.currentTarget.setPointerCapture(event.pointerId);moveHeld(event.clientX,event.currentTarget);setTouchTooltip(false);event.preventDefault()}else if(event.pointerType!=='mouse')setTouchTooltip(true)}} onPointerUpCapture={releasePlot} onPointerCancelCapture={releasePlot} onLostPointerCapture={releasePlot} onPointerMoveCapture={event=>{if(heldPointer.current===event.pointerId){moveHeld(event.clientX,event.currentTarget)}else if(event.pointerType==='mouse')setTouchTooltip(null)}}>
-   {heldRow&&<div className="zg-sector-held-tooltip zg-sector-tooltip" role="status"><p>{heldRow.date}</p><ul>{shownSeries.map(s=>typeof heldRow[s.id]==='number'?<li key={s.id} style={{color:s.color}}><span>{s.name}</span><strong data-score-band={scoreBand(Number(heldRow[s.id]))}>{Number(heldRow[s.id]).toFixed(1)}</strong></li>:null)}</ul></div>}
+  <div className="zg-sector-chart-plot" onPointerDownCapture={event=>{if(event.pointerType==='mouse'&&event.button!==0)return;heldPointer.current=event.pointerId;if(event.pointerType==='mouse')event.currentTarget.setPointerCapture(event.pointerId);moveHeld(event.clientX,event.clientY,event.currentTarget);setTouchTooltip(event.pointerType!=='mouse');if(event.pointerType==='mouse')event.preventDefault()}} onPointerUpCapture={releasePlot} onPointerCancelCapture={releasePlot} onLostPointerCapture={releasePlot} onPointerMoveCapture={event=>{if(heldPointer.current===event.pointerId){moveHeld(event.clientX,event.clientY,event.currentTarget)}else if(event.pointerType==='mouse')setTouchTooltip(null)}}>
+   {heldRow&&<div ref={heldTooltipRef} className="zg-sector-held-tooltip" style={{left:heldPosition.x,top:heldPosition.y}}><SectorTooltipCard date={heldRow.date} entries={shownSeries.flatMap(item=>typeof heldRow[item.id]==='number'&&Number.isFinite(heldRow[item.id])?[{id:item.id,name:item.name,color:item.color,score:Number(heldRow[item.id])}]:[])}/></div>}
    {!rows.length&&<ChartAxisLabels ticks={[0,25,50,75,100]} top={2.15} bottom={97.85} left={4.67}/>}
    {!rows.length?<svg className="zg-chart-empty-svg" width="100%" height="100%" viewBox="0 0 600 280" preserveAspectRatio="none" role="img" aria-label={`${title} 차트, 0부터 100점 축`}><rect x="36" y="6" width="552" height="268" fill="#071a27"/>{[0,25,50,75,100].map(value=>{const y=274-value*2.68;return <g key={value}><line x1="36" x2="588" y1={y} y2={y} stroke={value===50?'#64748b':'#25465a'} strokeDasharray="3 5"/><text x="28" y={y+4} textAnchor="end" fontSize="11" fill="#9db0c2">{value}</text></g>})}</svg>:<ResponsiveContainer width="100%" height="100%">
     <LineChart data={visibleRows} margin={{top:6,right:12,bottom:0,left:0}}>
@@ -140,7 +161,7 @@ export default function SectorSentimentChart({data=[],series=SECTORS,title='섹�
      <XAxis dataKey="date" stroke="#9db0c2" fontSize={11} axisLine={false} tickLine={false} tickFormatter={date=>String(date).slice(5)} minTickGap={36}/>
      <YAxis orientation={mobileAxisRight?"right":"left"} domain={[0,100]} ticks={[0,25,50,75,100]} interval={0} axisLine={false} tickLine={false} stroke="#9db0c2" fontSize={11} width={32} tickMargin={5}/>
      <ReferenceLine y={50} stroke="#64748b" strokeDasharray="3 5"/>
-     <Tooltip active={touchTooltip??undefined} position={{x:0,y:0}} allowEscapeViewBox={{x:true,y:true}} wrapperStyle={{transform:'translateY(calc(-100% - 8px))',zIndex:20}} isAnimationActive={false} cursor={{stroke:'#cbd5e1',strokeWidth:1,strokeDasharray:'3 3'}} content={({active,payload,label})=>!active||!payload?.length?null:<div className="zg-sector-tooltip" role="status"><p>{String(label)}</p><ul>{uniqueChartTooltipEntries(payload).map(entry=><li key={String(entry.dataKey)} style={{color:entry.color}}><span>{entry.name}</span><strong data-score-band={scoreBand(Number(entry.value))}>{Number(entry.value).toFixed(1)}</strong></li>)}</ul></div>}/>
+     <Tooltip active={heldRow||touchTooltip===false?false:undefined} offset={12} allowEscapeViewBox={{x:false,y:false}} wrapperStyle={{zIndex:20,pointerEvents:'none'}} isAnimationActive={false} cursor={{stroke:'#cbd5e1',strokeWidth:1,strokeDasharray:'3 3'}} content={({active,payload,label})=>!active||!payload?.length?null:<SectorTooltipCard date={String(label)} entries={uniqueChartTooltipEntries(payload).flatMap(entry=>{const score=Number(entry.value);return Number.isFinite(score)&&score>=0&&score<=100?[{id:String(entry.dataKey),name:String(entry.name),color:String(entry.color??'#94a3b8'),score}]:[]})}/>}/>
      {series.map(sector=>hasProvisional?[
       <Line key={sector.id+'-solid'} dataKey={sector.id+'__solid'} name={sector.name} stroke={sector.color} hide={hidden.has(sector.id)} strokeWidth={2} dot={false} activeDot={{r:4}} connectNulls={false} isAnimationActive={false}/>,
       <Line key={sector.id+'-dash'} dataKey={sector.id+'__dash'} name={sector.name} stroke={sector.color} strokeDasharray="4 5" hide={hidden.has(sector.id)} strokeWidth={2} dot={false} activeDot={{r:4}} connectNulls={false} isAnimationActive={false}/>

@@ -75,24 +75,53 @@ export function createSecSharedLimiter({base,minIntervalMs=MIN_INTERVAL_MS,maxWa
   now=Date.now,pause=sleep}={}){
  if(typeof base!=='string'||!path.isAbsolute(base)||!Number.isSafeInteger(minIntervalMs)||minIntervalMs<126||
   !Number.isSafeInteger(maxWaitMs)||maxWaitMs<0||maxWaitMs>120_000)stop('SEC_GATE_CONFIG_INVALID');
- return {
-  async reserve(){
-   const started=now();
-   for(;;){
-    const current=now();if(current-started>maxWaitMs)stop('SEC_QUEUE_DEADLINE');
-    const wait=withLock(base,()=>{
-     const ledger=readLedger(ledgerPath(base),current);
-     const next=Math.max(ledger.cooldownUntil,(ledger.lastReservedAt??0)+minIntervalMs);
-     if(next>current)return next-current;
+ // The legacy fetch adapter performs synchronous ledger I/O between reserve()
+ // and originalFetch(). A reservation timestamp alone cannot bound real
+ // transport starts when individual ledger writes have variable latency.
+ // dispatch() executes the synchronous fetch entry while holding the shared
+ // SEC-only lock, then anchors the next permit at the end of that entry.
+ // It MUST NOT receive a callback that awaits before initiating its transport.
+ const claim=async(invoke=null)=>{
+  const started=now();
+  for(;;){
+   const current=now();if(current-started>maxWaitMs)stop('SEC_QUEUE_DEADLINE');
+   const result=withLock(base,()=>{
+    const ledger=readLedger(ledgerPath(base),current);
+    const next=Math.max(ledger.cooldownUntil,(ledger.lastReservedAt??0)+minIntervalMs);
+    if(next>current)return {wait:next-current};
+    if(invoke===null){
      ledger.lastReservedAt=current;
      writeLedger(ledgerPath(base),ledger);
-     return 0;
-    },{now});
-    if(wait===0)return {at:current};
-    const remaining=maxWaitMs-(now()-started);
-    if(remaining<=0)stop('SEC_QUEUE_DEADLINE');
-    await pause(Math.max(1,Math.min(wait,remaining,1000)));
-   }
+     return {wait:0,at:current};
+    }
+    // Crash-safe temporary claim: a process dying during synchronous entry
+    // leaves a conservative future permit instead of an unrecorded request.
+    ledger.lastReservedAt=current+minIntervalMs;
+    writeLedger(ledgerPath(base),ledger);
+    let value,failure;
+    try{value=invoke();}catch(error){failure=error;}
+    // The actual transport was initiated synchronously inside invoke().
+    // Record time AFTER its pre-transport I/O so delayed calls cannot bunch.
+    const dispatchedAt=now();
+    ledger.lastReservedAt=Math.max(current,dispatchedAt);
+    writeLedger(ledgerPath(base),ledger);
+    if(failure)throw failure;
+    return {wait:0,at:dispatchedAt,value};
+   },{now});
+   if(result.wait===0)return result;
+   const remaining=maxWaitMs-(now()-started);
+   if(remaining<=0)stop('SEC_QUEUE_DEADLINE');
+   await pause(Math.max(1,Math.min(result.wait,remaining,1000)));
+  }
+ };
+ return {
+  async reserve(){
+   const {at}=await claim();return {at};
+  },
+  async dispatch(invoke){
+   if(typeof invoke!=='function')stop('SEC_DISPATCH_INVALID');
+   const {value}=await claim(invoke);
+   return await value;
   },
   // Global cooldown on 429 (plus Retry-After) and 503 avoids retry storms.
   noteResponse({status,retryAfter=null,confirmedFairAccessBlock=false}={}){
@@ -194,11 +223,14 @@ export async function fetchSecControlled({
   const seen=new Set([initial.href]);
   let mustRetry=false;
   for(;;){
-   await gate.reserve(); // Every attempt and every redirect consumes one permit.
-   requests++;
    let response;
    try{
-    response=await fetchImpl(current.href,{...init,method,redirect:'manual'});
+    const request=()=>fetchImpl(current.href,{...init,method,redirect:'manual'});
+    // SEC's shared file gate must bracket the synchronous transport entry,
+    // not just reserve an early timestamp before legacy quota-ledger I/O.
+    if(typeof gate.dispatch==='function')response=await gate.dispatch(request);
+    else{await gate.reserve();response=await request();}
+    requests++;
    }catch(error){
     if(attempt<maxAttempts&&isTransientNetworkError(error,init?.signal)){
      mustRetry=true;

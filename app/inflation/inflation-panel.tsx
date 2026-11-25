@@ -3,7 +3,7 @@ import {useStoredIndex} from '../../components/use-stored-index';
 import {ContentHelp} from '../content-help';
 import {HelpText} from '../help-copy';
 
-import {useMemo} from "react";
+import {useEffect,useMemo,useState} from "react";
 import {MarketCardHeader} from "../market-card-header";
 import {MarketScoreOrb} from "../market-score-orb";
 import {MarketTrendFrame} from "../market-trend-frame";
@@ -134,8 +134,15 @@ function releaseUrgency(days:number|null):ReleaseUrgency{
  if(days<=30)return "month";
  return "distant";
 }
-function releaseInfo(feature:string,today:string){
+function releaseInfo(feature:string,today:string|null){
  const meta=featureMeta[feature];
+ // The initial server HTML and first client render must not depend on a clock.
+ // A prerendered HTML snapshot may have been generated on a different KST day.
+ if(today===null)return {
+  cadence:meta.cadence,next:null,
+  countdown:meta.schedule?"일정 확인 중":"일정 미정",
+  urgency:"unknown" as ReleaseUrgency,
+ };
  const next=meta.schedule?releaseSchedules[meta.schedule].find(date=>date>=today)??null:null;
  const days=next?daysBetween(today,next):null;
  return {
@@ -208,7 +215,14 @@ export default function InflationPanel(){
   {label:"1년",value:payload?.scoreComparisons?.year??null},
  ] as const;
  const features=payload?.features??{};
- const today=kstTodayKey();
+ const [today,setToday]=useState<string|null>(null);
+ // Compute the live KST date only after hydration; refresh across midnight.
+ useEffect(()=>{
+  const refresh=()=>setToday(kstTodayKey());
+  refresh();
+  const interval=window.setInterval(refresh,60_000);
+  return()=>window.clearInterval(interval);
+ },[]);
 
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell inflation-target-card" data-testid="inflation-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
