@@ -74,3 +74,17 @@ test('source adapter never calls DB-writing path and has no provider or runner a
  assert.equal(called,1);
  assert.equal(out.inputSnapshotIdentity,'CALLER_APPROVED_READONLY_SINGLE_CORE_TRANSACTION');
 }));
+
+test('path replaced immediately before SQLite open is rejected without reading substituted bytes',()=>withFixture({},f=>{
+ const replacement=path.join(f.dir,'replacement.sqlite');
+ fs.copyFileSync(f.file,replacement);
+ assert.throws(()=>execute(f,{beforeReadOnlyOpen:()=>{fs.renameSync(replacement,f.file);}}),
+  /R6_READER_SOURCE_CHANGED/);
+}));
+test('path switched to an approved-looking symlink before SQLite open is rejected',()=>withFixture({},f=>{
+ const original=path.join(f.dir,'original.sqlite');
+ fs.copyFileSync(f.file,original);
+ assert.throws(()=>execute(f,{beforeReadOnlyOpen:()=>{
+  fs.rmSync(f.file);fs.symlinkSync(original,f.file);
+ }}),/R6_READER_SOURCE_CHANGED/);
+}));
