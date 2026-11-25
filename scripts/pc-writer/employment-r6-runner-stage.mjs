@@ -269,7 +269,7 @@ export function projectR6RawAggregateSourceOnly(raw){
   &&keys.every(k=>count(row[k])!==null)
   &&row.runCertifiedKeys<=row.bodyVerifiedKeys&&row.bodyVerifiedKeys<=row.metadataKeys;
  const groups=Object.keys(EMPLOYMENT_R6_GROUPS),allowed=new Set(groups);
- const month=s=>s==='OLDER'||s==='UNKNOWN'||/^20\\d{2}-(?:0[1-9]|1[0-2])$/.test(s);
+ const month=s=>s==='OLDER'||s==='UNKNOWN'||/^20\d{2}-(?:0[1-9]|1[0-2])$/.test(s);
  if(raw?.schema!=='W04_R6_SAFE_RAW_AGGREGATE_SOURCE_ONLY_V1'
   ||raw.status!=='SOURCE_ONLY_NOT_RUNTIME_ATTESTATION'
   ||raw.runtimeAuthorizationVerified!==false||raw.historicalPitAttested!==false
