@@ -88,3 +88,29 @@ test('path switched to an approved-looking symlink before SQLite open is rejecte
   fs.rmSync(f.file);fs.symlinkSync(original,f.file);
  }}),/R6_READER_SOURCE_CHANGED/);
 }));
+
+test('source-only result reports descriptor binding separately from runtime authorization',()=>withFixture({},f=>{
+ const out=execute(f);
+ assert.equal(out.descriptorBindingVerified,process.platform==='linux');
+ assert.equal(out.runtimeAuthorizationVerified,false);
+}));
+test('Linux pinned descriptor reads original inode even when pathname is substituted',()=>{
+ if(process.platform!=='linux')return;
+ const f=fixture();
+ const retained=path.join(f.dir,'retained.sqlite');
+ try{
+  const fd=fs.openSync(f.file,fs.constants.O_RDONLY|fs.constants.O_NOFOLLOW);
+  try{
+   fs.renameSync(f.file,retained);
+   const substitute=new DatabaseSync(f.file);
+   substitute.exec('CREATE TABLE decoy (not_original TEXT)');
+   substitute.close();
+   const pinnedDb=new DatabaseSync('/proc/self/fd/'+fd,{readOnly:true});
+   try{
+    assert.ok(pinnedDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name=?")
+      .get(EMPLOYMENT_R6_TABLES.rawSnapshot));
+    assert.equal(pinnedDb.prepare("SELECT name FROM sqlite_master WHERE type='table' AND name='decoy'").get(),undefined);
+   }finally{pinnedDb.close();}
+  }finally{fs.closeSync(fd);}
+ }finally{fs.rmSync(f.dir,{recursive:true,force:true});}
+});
