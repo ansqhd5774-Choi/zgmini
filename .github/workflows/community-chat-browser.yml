@@ -44,7 +44,6 @@ on:
       - 'tests/production-assets-network-r1.mjs'
       - 'tests/inflation-criterion-browser-r1.mjs'
       - 'tests/employment-r6-public-browser-r1.mjs'
-      - 'tests/w04-r6-live-production-readonly-once.mjs'
       - 'tests/w06-production-singlepoint-readonly-r1.mjs'
       - 'tests/w04-r54-production-ui-readonly-r1.mjs'
       - 'tests/w04-r54-touch-local-r1.mjs'
@@ -122,11 +121,6 @@ jobs:
         run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1 axe-core@4.14.1
       - name: Install browser for offline UI interactions
         run: npx playwright install --with-deps chromium firefox webkit
-      # One-shot live public read-only probe; failures stay observational, not a new CI gate.
-      - name: Observe W04 R6 Production 29-indicator API and hydrated PC/mobile UI
-        continue-on-error: true
-        timeout-minutes: 4
-        run: node tests/w04-r6-live-production-readonly-once.mjs
       # Independent W06 public chart test runs before unrelated risk-page asset checks.
       # Both retain their assertions; a failure in either still fails the overall job.
       - name: Start local dev UI (no remote bindings and no deployment)
@@ -234,7 +228,6 @@ jobs:
             artifacts/earnings-r511-browser/
             artifacts/w05-bea-production-readonly/
             artifacts/employment-r6-browser/
-            artifacts/w04-r6-live-production/
             artifacts/w04-r54-production-ui/
             artifacts/w04-r54-touch-local/
             artifacts/theme-visible-asof/

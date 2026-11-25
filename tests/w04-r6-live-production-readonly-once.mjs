@@ -5,7 +5,7 @@ import {mkdirSync,writeFileSync} from 'node:fs';
 import {chromium} from 'playwright';
 import {EMPLOYMENT_R6_FEATURES} from '../lib/market-score/employment-r6-formula.mjs';
 
-const base='https://zgmini.kr',folder='artifacts/w04-r6-live-production';
+const base='https://zgmini.kr',folder='artifacts/employment-r6-browser/live-production';
 const viewports=[{width:1440,height:900},{width:390,height:844}];
 const finite=v=>typeof v==='number'&&Number.isFinite(v);
 const textValue=(v,unit)=>finite(v)?String(Number(v.toFixed(Math.abs(v)>=100?1:2)))+(unit??''):'—';

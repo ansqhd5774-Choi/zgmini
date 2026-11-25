@@ -63,3 +63,6 @@ try{
     console.log(`PASS employment R6 stored 29/29 raw, stale, score and chart distinctions at ${width}px`);
   }
 }finally{await browser.close();}
+
+// Draft-only real Production observation after the existing mocked browser assertions.
+await import('./w04-r6-live-production-readonly-once.mjs');
