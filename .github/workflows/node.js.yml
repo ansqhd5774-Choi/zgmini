@@ -62,14 +62,17 @@ jobs:
           retention-days: 7
           if-no-files-found: error
       - name: Type check
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npm run typecheck
       # #6 Architecture Testing: no public/runtime direct import of PC-only operations.
       # Reuses TypeScript from npm ci, no added dependencies or global baseline.
       - name: Validate public-to-PC architecture boundaries
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node scripts/ci-architecture-boundary.mjs
       # R2 #20: public projection Data CI uses synthetic, read-only D1 fixtures.
       # No provider calls, live DB, writer, publication or production API access.
       - name: Verify stored data read and freshness contract
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node scripts/ci-data-contract-r2.mjs
       - name: Upload synthetic data contract evidence
         uses: actions/upload-artifact@v4
@@ -79,6 +82,7 @@ jobs:
           retention-days: 7
           if-no-files-found: error
       - name: Regression tests
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: node --test tests/*.test.mjs
       - name: PC publication recovery tests
         if: ${{ !cancelled() && steps.install.outcome == 'success' }}
@@ -89,6 +93,7 @@ jobs:
       # Full legacy audit remains available via npm run lint (625 existing findings).
       # Apply the same ESLint rules to changed source without blocking unrelated code.
       - name: Lint changed source (ESLint)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         env:
           GITHUB_EVENT_BEFORE: ${{ github.event.before }}
         run: node scripts/lint-changed-ci.mjs
@@ -96,6 +101,7 @@ jobs:
       # Fail on high/critical findings, including existing debt; source changes stay Draft.
       # Recheck after PR #1560, #1561 and #1562 patched dependency upgrades.
       - name: Validate changed GitHub Actions YAML (actionlint)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         env:
           GITHUB_EVENT_BEFORE: ${{ github.event.before }}
         run: node scripts/ci-actionlint-changed.mjs
@@ -114,6 +120,7 @@ jobs:
           retention-days: 7
           if-no-files-found: error
       - name: Audit production dependency vulnerabilities (high or critical)
+        if: ${{ !cancelled() && steps.install.outcome == 'success' }}
         run: npm audit --omit=dev --audit-level=high --audit=true --fund=false
       # #36: use completed main-push Node CI metadata; ignore in-flight runs.
       # No performance threshold, newly scheduled job, or external telemetry platform.
