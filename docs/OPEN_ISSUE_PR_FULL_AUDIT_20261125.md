@@ -475,3 +475,18 @@ GitHub Search API 실시간 total_count **84건** = 본체 Issue 1/PR 6 + PC 제
 ### 배치 J 후 실시간 OPEN 재조회
 
 GitHub Search API total_count 최신 **80건 = 본체 Issue 1/PR 6, PC 제어 Issue 71/PR 2**. 직전 배치 I의 84건에서 PC 제어 Issue 4건 감소. 이번 감사에서 직접 완료 종결한 세 Issue는 #3533/#3525/#3520이며, 나머지 감소 1건은 타 담당자 상태 변경이므로 감사 직접 성과로 산입하지 않는다. 고정 88건 코호트 분모는 변경하지 않는다.
+
+
+## 2차 독립 증거 조회 — 배치 K (2026-11-25)
+
+원본 88건 고정 코호트. 배치 J 42건 → **44/88 (50.0%)**: #860(원본 Windows proof + 후속 #868)과 #1351(원본 Run + JSON/TXT) 두 건 신규 독립 부분검증. #965는 기존 배치 B에 이미 포함된 2차 검사 대상이므로 추가 검증으로 중복 산입하지 않는다. 이번 직접 상태 변경: #965 `CLOSED/completed`, #860 `CLOSED/not_planned`(후속 증거 대체). 기존 직접 완료 종결 6건에서 #965 추가로 **직접 completed 7건**, 별도 **직접 superseded/not_planned 1건**. 총 직접 닫음 8건으로 분리 집계.
+
+| Issue | 원본 및 후속 증거 | 처리 및 범위 |
+|---|---|---|
+| [#965](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/965) | [Run 42546122135](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42546122135) completed/success; `results/42546122135-1-seat-4.json/.txt` Git blob JSON `f2a073b7bc8884a250fd31e114588065f6ad1d5c`, TXT `e9fed64f24a5a62020b319ab01d925484c9d90f8`. 12/12 상위 공통 필드 동일, `PASS/WRITER_FIXED_PREIMAGE_READONLY`, `sourceIdentityConsistent=true`, sourceHead `2fa9d98048ecb664add12fe183b67dc818014ebd` | **이번 직접 CLOSED/completed**, 증거 댓글 `7159890970`. 원본 read-only 조회 성공만 인정, `runtimeSourceVerified=false`, DOL 수집/운영 B 설치 성공 주장 없음 |
+| [#860](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/860) | 원본 [Run 42435388727](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42435388727) Actions failure, TEMP fixture 7파일 PASS지만 보고 1/2. `results/writer-config-b-proof-860-42435388727.json/.txt` blob JSON `e1114cb3cf50e9aa9c4515166d70dd19e5e1de19`, TXT `bd1956671101429dd1d7e05a33b1ef4f4b1527ca`; 후속 별도 [#868/Run 42436432888](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42436432888) Actions success, TEMP 8파일 PASS, workflow 결과 JSON/TXT 2/2, blob `e7360a7d7d9c99d2252563ebbcceb37425e4093b`/`b580d93b91e7f21594a015dbcdcb9dea6b56ebc6`, #868 기존 CLOSED/completed | **이번 직접 CLOSED/not_planned (후속 대체)**, 댓글 `7159902135`. 원본 1/2 실패는 변경하지 않음, 후속 대체 증거로 원본 반복 실행 필요 없음; 실제 운영 opt-in 미적용 |
+| [#1351](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1351) | [Run 43429486924](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43429486924) completed/success. 과거 원본 job은 처음 queued였으나 뒤에 실제 Runner 연결 복구로 실행됨. `results/43429486924-1-seat-4.json/.txt` blob JSON `851ebd3876160d39968153eb38a2e3a6b8fd8d62`, TXT `0f52da06a5534cbe182249a42e627f7566a7c8cf`; 공통 12/12 필드 일치, 진단 결과 `STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE`, `LIVE_PROCESS_SNAPSHOT_INCONCLUSIVE`, `runtimeSourceVerified=false` | **OPEN 유지**. 과거 queued 상태를 현재로 인용하지 않으며 Actions success가 Core Runtime 소스 증명 성공이 아님 |
+| [#155](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/155) | 최초 [Run 41693229811](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/41693229811) `completed/success`, December private capture 댓글 PASS. 그러나 이후 신규 메타데이터 설치 이행은 #3516 공유 lease 의존, 원본 run의 결과쌍 독립 대조 아직 미완 | **담당자 진행 중 OPEN**, 신규 검사 완료 건수에 미산입 |
+| [#173](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/173) | 최초 [Run 41698557847](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/41698557847) `completed/failure`, 댓글 `PARTIAL/DEC31_BATCH_QUOTA_STOP`, TOL/CASY 후속 소스·설치 #3516 의존. 원본 결과쌍 독립 대조 미완 | **담당자 진행 중 OPEN**, 신규 검사 완료 건수에 미산입 |
+
+현재 W01/W03/W05 정리 관련: 본체 PR #1463 Draft는 별도 최신 원본 범위 판정 필요, #1266/#1036/#1031/#933은 W04/고용 소스 분야, #488은 ETF Shadow 연구 승인 대기 Draft. 운영 독립 담당자의 미완 승인·CI를 본 감사가 임의 완료/병합하지 않는다. 운영 PC/Controller/Writer/DB/Task 변경 0건.
