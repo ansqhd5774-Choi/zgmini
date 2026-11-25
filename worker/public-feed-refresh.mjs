@@ -7,11 +7,10 @@ import {assertFeedOutput} from './public-feed-input-safety.mjs';
 // Explicit PC-only candidate tick; ordinary Core and other feeds stay unchanged.
 export const CNN_MINUTE_INTERVAL_MS=60_000;
 const CNN_ERROR_DELAY_MS=5*60_000;
-const CNN_MAX_RETRY_MS=24*60*60_000;
 function cnnRetryAt(response,now){
  const raw=response?.headers?.get('retry-after');
  const parsed=raw&&/^\d+$/.test(raw)?now+Number(raw)*1000:Date.parse(raw??'');
- return Math.min(now+CNN_MAX_RETRY_MS,Math.max(now+CNN_ERROR_DELAY_MS,Number.isFinite(parsed)?parsed:0));
+ return Math.max(now+CNN_ERROR_DELAY_MS,Number.isSafeInteger(parsed)&&parsed<=8.64e15?parsed:0);
 }
 
 // Authenticated scheduler only. Independent source failures retain last good output.
@@ -39,7 +38,7 @@ export async function refreshPublicFeeds({env,collectors,now=Date.now(),store,lo
    const token=await locks.claim(attempt,now);if(!token){results.push({key,status:'RUNNING'});continue}
    try{
     await store.writeAttempt(key,now);
-    const response=await collectors[key](store,now);
+    const response=await collectors[key](store,now,cnnMinuteOnly&&typeof store.appendCnnHttpCheck==='function'?{recordHttpCheck:check=>store.appendCnnHttpCheck(check)}:undefined);
     if(!response.ok){
      if(cnnMinuteOnly)await store.writeAttempt(key,now,{retryAt:cnnRetryAt(response,now)});
      throw Error('PROVIDER_UNAVAILABLE');

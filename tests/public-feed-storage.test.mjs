@@ -110,3 +110,25 @@ test('minute tick retains last good result and respects durable provider 429 coo
  await refreshPublicFeeds({...args,store:secondStore,now:at+600_000});assert.equal(calls,3);
  sql.close();
 });
+
+
+test('private CNN HTTP receipt preserves repeated source timestamps and failures without public rows',async()=>{
+ const {sql,store}=fixture();await store.initialize();
+ const sourceObservedAt='2026-10-01T00:00:00.000Z';
+ const check={requestedAt:now+1000,checkedAt:now+1100,httpStatus:200,outcome:'VERIFIED',sourceObservedAt,score:15.831};
+ assert.equal((await store.appendCnnHttpCheck(check)).status,'LOCAL_STORED');
+ assert.equal((await store.appendCnnHttpCheck(check)).status,'UNCHANGED');
+ await assert.rejects(()=>store.appendCnnHttpCheck({...check,score:16}),/CNN_HTTP_CHECK_CONFLICT/);
+ await store.appendCnnHttpCheck({...check,requestedAt:now+61000,checkedAt:now+61100});
+ await store.appendCnnHttpCheck({requestedAt:now+121000,checkedAt:now+121100,httpStatus:429,outcome:'HTTP_FAILED',sourceObservedAt:null,score:null});
+ const row=sql.prepare("SELECT kind,body FROM public_feed_snapshots_v1 WHERE feed_key='fear-greed-http-checks'").get();
+ assert.equal(row.kind,'input');
+ const records=JSON.parse(row.body).checks;
+ assert.equal(records.length,3);
+ assert.equal(records[1].sourceObservedAt,sourceObservedAt);
+ assert.equal(records[1].score,15.831);
+ assert.equal(records[2].score,null);
+ assert.equal(records[1].requestedAt-records[0].requestedAt,60_000);
+ assert.equal(sql.prepare("SELECT count(*) n FROM public_feed_snapshots_v1 WHERE kind='output'").get().n,0);
+ sql.close();
+});
