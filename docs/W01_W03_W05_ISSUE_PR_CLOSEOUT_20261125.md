@@ -41,3 +41,13 @@
 2. 전체 과거 승인 명세·비표준 제목/본문·원본 request 계보의 누락까지 없다고 입증된 것은 아니므로 **완전무결한 전수감사 100% 완료 표시는 보류**.
 3. 새로 직접 연결되는 잔여 Issue가 발견되면 증거 확인 후 개별 종결; 공통 재발 장애는 별도 담당 그대로 유지.
 4. 이번 정리에서 신규 PC Job/B 설치/Task/Controller/Writer/SQLite/D1/Cloudflare 변경 **0건**. 저장소 기록은 이 문서만 신규 작성.
+
+## 2026-11-25 추가 감사 — 일반 `pc-job` 원본 계보 교차대조
+
+- 대상 `zgmini-pc-control` OPEN Issue **79건** (해당 시점 REST GitHub 검색 결과, 이 수치가 저장소의 불변 총량은 아님). 개별 JSON 명세의 `operation`, `requestId`, `chatId`, `sourceBranch`, `approvalManifestPath`를 분리하여 프로젝트 귀속 판단.
+- 제목이 일반 `pc-job`인 항목도 **프로젝트 코드가 없다는 이유만으로 폐기하지 않음**. `main` source SHA, 공통 Core 조회, `STATE_UNKNOWN` 결과만으로 W01·W03·W05 소속을 식별할 수 없음.
+- [#1217](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1217)은 R6 복구·원본 미접수 계보, [#1227](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1227)은 D05 별도 인계 계보이므로 완료 프로젝트 전용 종결 범위에서 명시 제외.
+- [#1196](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1196), [#1200](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1200), [#1231](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1231), [#1598](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1598), [#1922](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1922), [#1997](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1997), [#2079](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2079) 등은 공통 `core-runtime-source-readonly` 과거 결과에 `STATE_UNKNOWN` 기록이 있지만 이 결과만으로 W01·W03·W05 전용이라고 단정하지 않음; 임의 종료 금지.
+- W04 고용 `employment-r6-*`, ER1 시장 캘린더 `er1-*`, 공통 Controller/CI 원장도 명시 제외. 특히 현재 실제 설치/후검사 관련 W04 항목과 활성 공통 Runner 장애 [#2237](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2237)은 OPEN 유지.
+- **이번 추가 감사에서 신규 안전 종결 근거 확정 0건**. 누적 확정 종결 **11건(Issue 10, PR 1)** 유지. 운영 PC/Controller/Task/Writer/SQLite/D1 수정 0건, 신규 B/PC Job 0건.
+- 다음 행동 기준: 원담당 명세·고유 `requestId`가 W01·W03·W05로 실제 연결되고, 원본 실행 소비/대체/폐기의 명확한 근거가 있는 경우에만 별도 Issue 종결과 이 원장의 증거 링크 동기화. 범위 밖 OPEN 항목을 숫자 축소만을 목적으로 닫지 않음.
