@@ -1202,3 +1202,16 @@ GitHub Search API 실제 재조회: 본체 Issue **1** / PR **6**, PC 제어 Iss
 - GitHub에는 기존 스크립트 blob 그대로 유지, 신규 테스트 및 fixture 줄바꿈 수정만 커밋. 원본 감사 등록부 JSON의 blob `af6977bbaf2990954cc66bd6931c865776456c0f`는 변경하지 않았다. GitHub Actions의 CI가 실행됐다고 주장하지 않는다. 실제 본문 고정 88행과 등록부 84/4 일치는 AN에서 **별도 JS 실행 검사**로 확인했으며 이번 Node 시험은 동일한 값의 합성 88행에서 validator의 reject/accept 동작을 직접 수행했다.
 
 **완료 범위:** 감사 검사기 로컬 Node 회귀 실증 완료. 고정 코호트 원본 증거 검증 완료 84/88(95.5%), 남은 정확 4건은 본체 Draft #1031/#1266의 정규 CI 및 PC #1969/#2059의 인증 Windows out-of-band 실행 원본 신원. 신규 Issue/PR 직접 종결 0, 누적 직접 종결 10, 운영 PC/Controller/Writer/DB/D1/Task/Provider·GitHub Workflow/새 Job 변경 0. 다음에는 정규 GitHub CI 허용범위에 검사기 회귀를 연결할지 검토하고, 네 원본 최종 증거 확보 조건이 생긴 경우만 진행률을 수정한다.
+
+
+## 배치 AP — 정확 Git blob Node 회귀 재실행 및 기존 Node.js CI 연결 계약 직접검사 (2026-11-25 KST)
+
+**진행률 84/88(95.5%) 유지.** 이번 검증은 2차 신규 원본 4건의 해결이 아니라 **별도 감사 검사기의 실행 적합성 및 GitHub CI 수신 계약**에 대한 실제 검증이다.
+
+- 작업 브랜치의 정확 원본 [검사기](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/issues-lifecycle-manager-20261123/scripts/audit/validate-open-issue-pr-cohort.mjs) Git blob `742ee7cec0cb56d4820086df9642ee48a85976d1` 및 [테스트](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/issues-lifecycle-manager-20261123/tests/audit-cohort-validator.test.mjs) Git blob `432a867fe221ede52530d2ea09b4be182c449710`을 원격 재확인. 작업 환경의 두 파일 `git hash-object`가 각각 위 **정확 SHA와 일치**.
+- Node `v22.16.0`에서 `node --check scripts/audit/validate-open-issue-pr-cohort.mjs` 및 `node --check tests/audit-cohort-validator.test.mjs` 실행 성공. `node --test tests/audit-cohort-validator.test.mjs` 직접 실행: `tests 11, pass 11, fail 0, skipped 0`, 약 548ms. 이 시험은 격리된 합성 88행 fixture에서 정확 검사기를 서브프로세스로 호출하여 동작을 검증한 것이며, 실제 GitHub 운영 Issue/PR이나 Windows PC를 변경하지 않음.
+- [`.github/workflows/node.js.yml`](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/issues-lifecycle-manager-20261123/.github/workflows/node.js.yml) 실제 Git blob `6696bf0c37cdce14edb9574aa893e8a0ec070a3b`. `Regression tests`는 `node --test tests/*.test.mjs`를 실행하므로 이 테스트 파일이 **정규 glob에 이미 포함됨**. `push:main`, `pull_request:main`, `workflow_dispatch`가 trigger. `package.json`의 `npm test` 역시 `node --test tests/*.test.mjs` 포함. 별도 workflow 변경 없이 기존 CI 계약 경로로 통합 가능하다.
+- 정확 감사 브랜치 `codex/issues-lifecycle-manager-20261123`의 GitHub Actions Run은 조회 당시 총 **4건**이며 과거 Run들(45194630473 success, 45194444142 cancelled, 45193489385 failure, 45188385610 success)이다. 신규 감사 검사기 파일을 추가한 뒤 **실제 GitHub CI가 실행됐다는 증거가 아니며** 새 검사기 테스트의 CI 완료를 주장하지 않음. 해당 브랜치를 head로 하는 현재 OPEN PR **0건**. main 대상으로 신규 PR을 생성하거나 workflow_dispatch를 요청하는 것은 이번 감사의 범위 밖이므로 시도하지 않음.
+- 이로써 남은 CI 쟁점은 테스트 파일의 추가 개발이 아니라 **정규 원담당 소스/PR 범위 승인 후 GitHub CI가 테스트를 실제 실행·통과했는지 확인**하는 것이다. 이 소스-only 감사 회차에서 임의의 새 PR/CI job은 생성하지 않았다.
+
+현재 고정 88건의 미검증 4건은 동일: #1969/#2059 인증 Windows out-of-band 원본 실행 신원 미확정, 본체 Draft #1031/#1266 정확 HEAD CI 및 현재 owner 소스 안전 이관 미완. **기검증 84/88(95.5%)**, 이번 신규 종결 0, 직접 종결 누적 10, 운영 시스템 변경 0.
