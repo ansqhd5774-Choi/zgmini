@@ -20,15 +20,22 @@ function alpacaGuard(retryAt,reason='ALPACA_QUOTA_GUARD'){
 }
 
 // mkdir is atomic across independent Node processes on the same local volume.
-// This is an Alpaca-only reservation lock; the existing Core PID/task lock is
-// never read, renamed, removed, or modified by this module.
-function withAlpacaLock(base,fn){
- if(!fs.existsSync(base)||!fs.statSync(base).isDirectory())throw alpacaGuard(Date.now()+60_000,'ALPACA_BASE_UNAVAILABLE');
- const lock=path.join(base,'alpaca-quota-reservation.lock');
+// Independent quota-ledger reservation locks; the existing Core PID/task lock
+// is never read, renamed, removed, or modified by this module.
+function withReservationLock(base,fn,{name,guard,prefix}){
+ if(!fs.existsSync(base)||!fs.statSync(base).isDirectory())throw guard(Date.now()+60_000,`${prefix}_BASE_UNAVAILABLE`);
+ const lock=path.join(base,name);
  const until=Date.now()+ALPACA_LOCK_WAIT_MS;
  const sleeper=new Int32Array(new SharedArrayBuffer(4));
  const ownerFile=path.join(lock,'owner.json');
  const recoverDeadOwner=()=>{
+  // Serialize reapers, then re-read the owner. Two reapers must not rename a
+  // freshly acquired directory after one has already quarantined a dead owner.
+  const recovery=`${lock}.recovery`;
+  try{fs.mkdirSync(recovery);}catch{return false;}
+  try{return recoverUnderGuard();}finally{try{fs.rmdirSync(recovery);}catch{}}
+ };
+ const recoverUnderGuard=()=>{
   // Never touch the Core lock. Only reclaim this exact quota directory after
   // proving that its owner PID has exited and it is older than five minutes.
   let owner,metadata;
@@ -41,6 +48,7 @@ function withAlpacaLock(base,fn){
   }catch{return false;}
   try{process.kill(owner.pid,0);return false;}
   catch(error){if(error.code!=='ESRCH')return false;}
+  try{const names=fs.readdirSync(lock);if(names.length!==1||names[0]!=='owner.json')return false;}catch{return false;}
   const orphan=`${lock}.stale-${process.pid}-${randomUUID()}`;
   try{
    fs.renameSync(lock,orphan);
@@ -59,14 +67,24 @@ function withAlpacaLock(base,fn){
    break;
   }
   catch(error){
-   if(created){try{fs.unlinkSync(ownerFile);}catch{}try{fs.rmdirSync(lock);}catch{}throw alpacaGuard(Date.now()+60_000,'ALPACA_LOCK_OWNER_WRITE_FAILED');}
-   if(error.code!=='EEXIST')throw alpacaGuard(Date.now()+60_000,'ALPACA_LOCK_UNAVAILABLE');
+   if(created){try{fs.unlinkSync(ownerFile);}catch{}try{fs.rmdirSync(lock);}catch{}throw guard(Date.now()+60_000,`${prefix}_LOCK_OWNER_WRITE_FAILED`);}
+   if(error.code!=='EEXIST')throw guard(Date.now()+60_000,`${prefix}_LOCK_UNAVAILABLE`);
    if(recoverDeadOwner())continue;
-   if(Date.now()>=until)throw alpacaGuard(Date.now()+60_000,'ALPACA_LOCK_BUSY');
+   if(Date.now()>=until)throw guard(Date.now()+60_000,`${prefix}_LOCK_BUSY`);
    Atomics.wait(sleeper,0,0,15);
   }
  }
  try{return fn();}finally{fs.unlinkSync(ownerFile);fs.rmdirSync(lock);}
+}
+function withAlpacaLock(base,fn){
+ return withReservationLock(base,fn,{name:'alpaca-quota-reservation.lock',guard:alpacaGuard,prefix:'ALPACA'});
+}
+function withGeneralQuotaLock(base,provider,fn){
+ fs.mkdirSync(base,{recursive:true});
+ const guard=(retryAt,reason)=>Object.assign(Error('PROVIDER_QUOTA_GUARD'),{
+  code:'PROVIDER_QUOTA_GUARD',provider,retryAt,reason
+ });
+ return withReservationLock(base,fn,{name:'quota-ledger-reservation.lock',guard,prefix:'QUOTA_LEDGER'});
 }
 
 function alpacaRead(base){
@@ -169,9 +187,9 @@ export function readQuotaLedger(base){
 
 function atomicWrite(file,value){
  fs.mkdirSync(path.dirname(file),{recursive:true});
- const temp=`${file}.tmp-${process.pid}`;
- fs.writeFileSync(temp,JSON.stringify(value,null,2));
- fs.renameSync(temp,file);
+ const temp=`${file}.tmp-${process.pid}-${randomUUID()}`;
+ fs.writeFileSync(temp,JSON.stringify(value,null,2),{flag:'wx'});
+ try{fs.renameSync(temp,file);}catch(error){try{fs.unlinkSync(temp);}catch{}throw error;}
 }
 
 function trim(item,now,policy){
@@ -200,8 +218,8 @@ function nextAllowed(item,policy,now){
 
 export class QuotaLedger{
  constructor(base,{mode='observe',now=Date.now()}={}){this.base=base;this.mode=mode;this.file=quotaLedgerPath(base);this.value=readQuotaLedger(base);this.now=now;this.events=[];}
- persist(){this.value.updatedAt=new Date().toISOString();atomicWrite(this.file,this.value);}
- item(provider,now=this.now){const policy=policyForProvider(provider);if(!policy)return null;const item=this.value.providers[provider]??=state();trim(item,now,policy);return item;}
+ #persist(){this.value.updatedAt=new Date().toISOString();atomicWrite(this.file,this.value);}
+ #item(provider,now=this.now){const policy=policyForProvider(provider);if(!policy)return null;const item=this.value.providers[provider]??=state();trim(item,now,policy);return item;}
  beforeRequest(provider,now=Date.now()){
   const policy=policyForProvider(provider);if(!policy)return {allowed:true,provider,guarded:false};
   if(provider==='ALPACA'){
@@ -217,16 +235,20 @@ export class QuotaLedger{
     throw guard;
    }
   }
-  const item=this.item(provider,now);const at=nextAllowed(item,policy,now);
+  return withGeneralQuotaLock(this.base,provider,()=>{
+  // Reload while holding the shared write lease, not at constructor time.
+  this.value=readQuotaLedger(this.base);
+  const item=this.#item(provider,now);const at=nextAllowed(item,policy,now);
   const blocked=at!=null&&at>now;
   const enforced=blocked&&this.mode==='enforce'&&policy.hard!==false;
   const event={provider,at:new Date(now).toISOString(),allowed:!enforced,blocked,mode:this.mode};
   if(blocked){event.reason='QUOTA_COOLDOWN';event.retryAt=new Date(at).toISOString();item.quotaState=this.mode==='enforce'?'COOLDOWN':'QUOTA_WARNING';}
-  if(enforced){this.events.push(event);this.persist();const error=Error('PROVIDER_QUOTA_GUARD');error.code='PROVIDER_QUOTA_GUARD';error.provider=provider;error.retryAt=at;throw error;}
-  item.requestTimes.push(now);item.lastRequestAt=now;
+  if(enforced){this.events.push(event);this.#persist();const error=Error('PROVIDER_QUOTA_GUARD');error.code='PROVIDER_QUOTA_GUARD';error.provider=provider;error.retryAt=at;throw error;}
+  item.requestTimes.push(now);item.requestTimes.sort((a,b)=>a-b);item.lastRequestAt=Math.max(item.lastRequestAt??now,now);
   if(!blocked)item.quotaState='AVAILABLE';
-  this.events.push(event);this.persist();
+  this.events.push(event);this.#persist();
   return {allowed:true,provider,guarded:false,warning:blocked?event:null};
+  });
  }
  afterResponse(provider,{status=null,ok=false,error=null,at=Date.now(),headers=null}={}){
   const policy=policyForProvider(provider);if(!policy)return;
@@ -235,12 +257,17 @@ export class QuotaLedger{
    catch(error){throw error?.code==='PROVIDER_QUOTA_GUARD'?error:alpacaGuard(at+60_000,'ALPACA_LEDGER_UNAVAILABLE');}
    return;
   }
-  const item=this.item(provider,at);item.lastStatus=status;
-  if(ok){item.lastSuccessAt=at;item.lastError=null;item.quotaState='AVAILABLE';}
-  else{item.lastError=error?.code??error?.message??'PROVIDER_ERROR';item.errorTimes.push(at);item.quotaState=status===429?'QUOTA_WARNING':'FAILED';}
-  this.persist();
+  return withGeneralQuotaLock(this.base,provider,()=>{
+   // A response may arrive after another process reserved or completed a request.
+   this.value=readQuotaLedger(this.base);
+   const item=this.#item(provider,at);item.lastStatus=status;
+   if(ok){item.lastSuccessAt=Math.max(item.lastSuccessAt??at,at);item.lastError=null;item.quotaState='AVAILABLE';}
+   else{item.lastError=error?.code??error?.message??'PROVIDER_ERROR';item.errorTimes.push(at);item.errorTimes.sort((a,b)=>a-b);item.quotaState=status===429?'QUOTA_WARNING':'FAILED';}
+   this.#persist();
+  });
  }
  summary(){
+  this.value=readQuotaLedger(this.base);
   const providers={};
   for(const [provider,item] of Object.entries(this.value.providers))providers[provider]={requests:item.requestTimes.length,lastRequestAt:item.lastRequestAt,lastSuccessAt:item.lastSuccessAt,lastStatus:item.lastStatus,quotaState:item.quotaState};
   try{const a=alpacaRead(this.base);if(a.requestTimes.length)providers.ALPACA={requests:a.requestTimes.length,
