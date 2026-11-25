@@ -109,9 +109,9 @@ test('Cloudflare beacon markers never certify RUM collection or real-user P75',(
 });
 test('read-only browser inspects only official Cloudflare beacon script markers',()=>{
  const src=readFileSync(new URL('../scripts/ci-production-browser-good-r1.mjs',import.meta.url),'utf8');
- assert.match(src,/static\\.cloudflareinsights\\.com/);
- assert.match(src,/blockedCfRumScriptRequests\\+\\+/);
- assert.match(src,/Array\\.from\\(document\\.scripts\\)/);
+ assert.match(src,/static\.cloudflareinsights\.com/);
+ assert.match(src,/blockedCfRumScriptRequests\+\+/);
+ assert.match(src,/Array\.from\(document\.scripts\)/);
  assert.match(src,/DOM_SCRIPT_AND_BLOCKED_REQUEST_MARKERS_ONLY/);
 });
 test('browser start rejects arbitrary origins and unauthorized measurement options',async()=>{
