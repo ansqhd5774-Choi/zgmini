@@ -389,7 +389,7 @@ test("R1 minimal diagnostic exposes bounded missing reference date without raw i
   const body=await stageEmploymentR6OneYear(runnerOptionsFrom(argv(env)));
   const u3=body.indicators.find(x=>x.id==="U3_UNEMPLOYMENT");
   assert.equal(u3.scoreStatus,"PARTIAL_HISTORY");
-  assert.match(u3.firstMissingReferenceDate,/^20\\d{2}-\\d{2}-\\d{2}$/);
+  assert.match(u3.firstMissingReferenceDate,/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/);
   u3.sourcePath="PRIVATE_RAW_SOURCE_PATH";
   const report=projectEmploymentR6RunnerResult({body,pitCoverage:{}});
   const output=report.indicators.find(x=>x.id==="U3_UNEMPLOYMENT");
