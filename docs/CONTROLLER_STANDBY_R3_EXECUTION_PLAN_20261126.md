@@ -225,3 +225,23 @@ R2에서 확인한 설치 SHA·Runner online은 당시 읽기 증거로만 사�
 - **운영 적용 0회**, 이전 Controller/Watchdog 정상 운영 불변, PR Draft 유지. 신규 상주 서비스/예약/Runner·Provider/DB/D1 변경 없음.
 
 **다음 필수 실행:** 기존 B 정규 설치의 실제 현행 Controller SHA·Watchdog SHA·변경 파일 목록을 읽기 전용으로 확정하고, 별도 Watchdog 정규 인계 경로와 기존 승인 범위를 맞춘다. 이미 완료된 16개 Windows 격리시험을 근거 없이 재실행할 필요는 없다.
+
+## 12. 운영 Controller 최신 읽기·Standby 최초 기동 수정 (2026-11-26)
+
+### 실제 운영 PC 확인 (기존 정규 A 경로, 단회)
+
+- 원본: [#3746](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3746), 요청 `2d8874f1-52e6-4c13-8f2e-b60f3d7241a5`, [Run #45718424591](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45718424591).
+- 정확 결과: `PASS/PROCESS_INVENTORY_COLLECTED`, `results/pc-process-inventory-45718424591-1-operating.json` 및 TXT 영수증 확인. 2026-11-25 23:05:29.613 UTC(한국시간 2026-11-26 08:05:29).
+- 당시 실설치 Controller SHA `53fe24e22446d21a9fd4ee308d12b7cba7f37e25`; 유지보수기 source SHA `9a0378ffb96aa9f1403f74c189d3c39b30e4604e`. `runtimeState=HEALTHY`, `automationState=HEALTHY`, 전용 6 Runner 온라인, 설치 lease 미점유. 원본의 `maintenance.status=STATE_UNKNOWN`은 별개 제한된 조사 범위이며 Runtime 정상 결과를 취소하는 증거가 아님.
+- 측정된 새 A 효과: 운영 쓰기 0·공급자 호출 0·D1 쓰기 0·자동 재시도 0. 해당 A Issue는 원본 JSON/TXT 검증 후 CLOSED/completed.
+- **Watchdog 현장 설치 script SHA-256 및 그 설치 manifest raw SHA는 이 A 원본 결과에 없음.** 과거 Watchdog #1393 STAGED / #1395 새 프로세스 인증은 역사적 유효 증거지만 **현재 파일 CAS preimage**가 아니므로 그대로 신형 B 승인에 사용 금지.
+
+### 구현 브랜치 소스 결함 수정
+
+- 정상 최초 시작에서 Supervisor lease와 이전 heartbeat가 모두 아예 없으면 기존 `provenOldRunnerExit()` 검사 때문에 Standby가 영구 승격 거부될 수 있었음.
+- `tools/runner-watchdog.mjs`의 `verifiedColdStandbyStart()`는 두 값이 모두 정확히 `null`일 때만 최초 시작으로 분류. 과거 owner/heartbeat의 한 쪽만 없거나 불명확하면 여전히 기존 6좌석 완전 종료 증거를 요구. 별도로 실제 WMI Listener/Worker 없음·소스해시·원자적 lease 보호를 계속 요구함.
+- `tests/controller-standby.test.mjs`에 초기 기동/불명확한 이전 소유권 회귀검사 추가. 첫 Windows CI [#45718697371](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45718697371)는 기존 test가 옛 코드 문자열을 요구한 테스트 단정 불일치로 437건 중 1건 FAIL; 제품 로직 실패라는 근거 아님. 해당 테스트 정규식을 새 안전 조건에 맞게 최소 수정함.
+- 최신 구현 HEAD `c0c4dcff6c8071b1318cca956e43ba82718c4975` / [Controller CI #45719063995](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45719063995) — **현재 재검증 결과 대기**. 이전 HEAD 4/4 성공을 최신 SHA에 전용하지 않음.
+- 기존 Worker/Runner 임의 종료·원본 lease 강제삭제·Controller/Watchdog 설치·main 병합·DB/Writer/공급자/D1 변경 없음. PR #3738 Draft.
+
+**다음 필수 실행:** 최신 CI #45719063995의 정확한 실패/통과 영수증을 확인하고, 실제 배포 직전의 **Watchdog 설치 파일 SHA**를 기존 승인된 읽기 전용 경로로 확보해, Controller B 후행 Watchdog B의 현재 SHA·파일별 CAS·승인 manifest를 확정한다. 인증되지 않은 과거 SHA로 새 B를 요청하지 않는다.
