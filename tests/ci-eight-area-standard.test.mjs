@@ -17,7 +17,7 @@ test('eight-area standard lists applicable site CI evidence without new workflow
  const codeql=text('.github/workflows/codeql-source.yml');
  assert.match(codeql,/github\/codeql-action\/analyze@/);
  const secret=text('.github/workflows/secret-scan.yml');
- assert.match(secret,/gitleaks\/gitleaks-action@/);
+ assert.match(secret,/docker:\/\/ghcr\.io\/gitleaks\/gitleaks@sha256:/);
  const browser=text('.github/workflows/community-chat-browser.yml');
  assert.match(browser,/npx playwright install --with-deps chromium/);
  assert.match(browser,/pull_request:/);
