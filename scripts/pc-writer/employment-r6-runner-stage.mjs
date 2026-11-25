@@ -239,6 +239,27 @@ function projectPit04KeyReview(input){
 }
 
 
+
+export function projectCandidateConflictBreakdown(raw){
+ if(raw==null)return null;
+ const keys=["invalidNumericValue","providerOrSeriesDifferent","valueAndHashDifferent",
+  "valueOnlyDifferent","hashOnlyDifferent"];
+ const fields=["numericValue","sourceHash","provider","providerSeries","sourceRevision"];
+ const causes=Object.fromEntries(keys.map(k=>[k,safeCount(raw.causes?.[k])]));
+ const changedFields=Object.fromEntries(fields.map(k=>[k,safeCount(raw.changedFields?.[k])]));
+ const total=safeCount(raw.total);
+ if(raw.kind!=="W04_CANDIDATE_CURRENT_CAUSE_COUNTS_V1"
+  ||raw.sourceScope!=="READONLY_CORE_CANDIDATE_SAME_SNAPSHOT_NOT_PIT"
+  ||raw.rawPitAttested!==false||raw.repairAuthorized!==false
+  ||total===null||total>50000||Object.values(causes).some(x=>x===null)
+  ||Object.values(changedFields).some(x=>x===null)
+  ||Object.values(causes).reduce((sum,n)=>sum+n,0)!==total
+  ||Object.values(changedFields).some(n=>n>total))
+  throw Error("RUNNER_R6_PIT04_CONFLICT_CAUSES_INVALID");
+ return {kind:raw.kind,total,causes,changedFields,sourceScope:raw.sourceScope,
+  rawPitAttested:false,repairAuthorized:false};
+}
+
 // Opt-in PIT-06-05 projection cannot disclose individual keys, source hashes,
 // paths or precise timestamps. It remains distinct from the normal 29-series
 // display contract; the Controller must explicitly approve this new result.
@@ -267,11 +288,28 @@ export function projectPit0605Aggregate(raw){
    ||snapshots===null||accepted===null||malformed===null
    ||accepted>snapshots||Object.values(rejected).some(v=>v===null))
   throw Error("RUNNER_R6_PIT0605_REPORT_INVALID");
+ const receipt=raw.missingCandidateReceipts;
+ const optIn=receipt===undefined?null:(()=>{
+  const keys=integer(receipt?.keys),exact=integer(receipt?.exactRawMatched);
+  const in2025=integer(receipt?.exactReceiptFirstObserved2025);
+  const month=x=>x===null||typeof x==="string"&&/^20[0-9]{2}-(0[1-9]|1[0-2])$/.test(x);
+  if(receipt?.scope!=="EXACT_STORED_RAW_RECEIPT_NOT_HISTORICAL_PIT"
+   ||keys===null||exact===null||in2025===null||keys>checkedKeys||exact>keys||in2025>exact
+   ||!month(receipt.firstExactReceiptMonth)||!month(receipt.lastExactReceiptMonth)
+   ||(exact===0&&(receipt.firstExactReceiptMonth!==null||receipt.lastExactReceiptMonth!==null))
+   ||(exact>0&&(receipt.firstExactReceiptMonth===null||receipt.lastExactReceiptMonth===null
+     ||receipt.firstExactReceiptMonth>receipt.lastExactReceiptMonth)))
+    throw Error("RUNNER_R6_PIT0605_RECEIPT_INVALID");
+  return {keys,exactRawMatched:exact,exactReceiptFirstObserved2025:in2025,
+   firstExactReceiptMonth:receipt.firstExactReceiptMonth,
+   lastExactReceiptMonth:receipt.lastExactReceiptMonth,scope:receipt.scope};
+ })();
  return {kind:"ZGMINI_W04_PIT0605_AGGREGATE_ONLY_V1",
   status:"HOLD_HISTORICAL_PIT_UNATTESTED",checkedAt:raw.checkedAt,
   missingHistoryKeys:checkedKeys,counts,checkedRawSnapshots:snapshots,
   acceptedDOLSnapshots:accepted,rejectedRawSnapshots:rejected,
   malformedRawSnapshotGroups:malformed,evidenceDigest:raw.evidenceDigest,
+  ...(optIn===null?{}:{missingCandidateReceipts:optIn}),
   historicalVersionAttested:false,repairAuthorized:false,
   operationalWrites:0,providerCalls:0,d1Writes:0};
 }
@@ -294,6 +332,9 @@ export function projectEmploymentR6RunnerResult({body=null,pitCoverage=null,pitC
     summary:{},
     pit:projectPit(pitCoverage),
     ...(pitCoverage?.pit04KeyReview==null?{}:{pit04KeyReview:projectPit04KeyReview(pitCoverage.pit04KeyReview)}),
+    ...(pitCoverage?.candidateConflictBreakdown==null?{}
+      :{candidateConflictBreakdown:projectCandidateConflictBreakdown(
+        pitCoverage.candidateConflictBreakdown)}),
     ...(typeof pitCoverage?.pit04PrivateEvidenceDigest==="string"&&
       /^[a-f0-9]{64}$/.test(pitCoverage.pit04PrivateEvidenceDigest)&&
       pitCoverage.pit04PrivateEvidencePersisted===true
