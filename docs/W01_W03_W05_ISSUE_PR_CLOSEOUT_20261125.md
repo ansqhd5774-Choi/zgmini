@@ -77,3 +77,10 @@
 - 본체 OPEN PR 별칭 검색: `w01`, `w03`, `w05`, `inflation-r2`, `theme-fear-greed`, `wpsfd42` 각 0건. 직접 프로젝트별 추가 종료 후보 없음.
 - 검색 결과는 특정 시점의 식별 가능한 OPEN 목록에 대한 **음성 증거**이지 프로젝트의 미게시 기능/운영 장애까지 없다는 증거는 아님. 전체 계보 완전성 100% 주장 보류.
 - **신규 Issue/PR 종결 0건; 누적 11건**. 다중 업무 병렬 실행 방해하지 않고 소속 미검증 항목을 보존함. 신규 PC/Writer/Controller/DB/D1 작업 0건.
+
+## 2026-11-25 추가 감사 5차 — OPEN Draft 관련성 예외
+
+- [본체 Draft PR #488](https://github.com/ansqhd5774-Choi/zgmini/pull/488): **8 ETF 테마 Shadow 연구용 252일 history 스냅샷**으로, 현재 main 미포함, 상업이용 권리·산식 승인 및 운영 적용 미승인. 기존 [2026-11-19 조사 댓글](https://github.com/ansqhd5774-Choi/zgmini/pull/488#issuecomment-6986765862)은 `OPEN_DRAFT / RESEARCH_ONLY / NOT_MAIN / OPERATION_NOT_AUTHORIZED`와 사용자 승인 전 병합 보류를 명시. 테마라는 용어만으로 W03의 완료된 운영 기능 잔여 PR이라고 단정하지 않고 **연구용 별도 승인 보류**로 유지. 원본 취소/종결 권한을 임의 가정하지 않음.
+- [본체 Draft PR #1463](https://github.com/ansqhd5774-Choi/zgmini/pull/1463): `core092` 공유 실행 출처 상관키/Task 인증 진단 개선으로 **공통 운영 소스** 관련. W01/W03/W05의 원래 기능잔여 PR로 계상하지 않음. 미설치·원본 092 검증 미완료를 PASS로 격상하지 않음.
+- 원장에 기록된 현재 직접 W01/W03/W05 OPEN PR 0건 판정은 **기능 전용 PR만** 뜻하며, 연구용 #488 및 공통 Core #1463 등 관련 용어가 있는 OPEN Draft가 존재하지 않는다는 뜻이 아님.
+- 추가 직접 종결 근거 0건. 누적 실제 종결 11건 유지. 운영 환경 변경/신규 승인·B 실행 0건.
