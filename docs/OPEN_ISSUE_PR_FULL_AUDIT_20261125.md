@@ -1032,3 +1032,25 @@ GitHub Search API 직접 조회 결과: 본체 Issue 1/PR 6, PC 제어 Issue 55/
 - 시작 **80/88(90.9%)** → 새 4개 고유 원본 PC Job 실행 등록 실증 → **84/88(95.5%)**, 잔여 **4건** = 본체 PR #1031/#1266, PC out-of-band #1969/#2059.
 - 실제 문제 해결·운영 Runtime 전체 PASS와 원본 감사 진행률은 별개. 이번 신규 직접 종결 0건, 감사 누적 직접 종결 10건 보존.
 - 운영 PC·Controller·Writer·SQLite/D1·Task·승인·신규 Job/PR·GitHub Workflow/Runner 변경 0건. 다음은 남은 4건의 정확 승인된 out-of-band 원본 실행 인과 증거 및 Draft HEAD CI/정규 결재 확인만 수행하며, 진행 중 W04·ER1·RUM 설치 계보 보호.
+
+## 배치 AI — 마지막 4건의 원본 출처·발행 계보와 정확 PR HEAD CI 재검증 (2026-11-25 KST)
+
+**진행률: 84/88(95.5%) → 84/88(95.5%) 유지.** 남은 4건에 대해 추가 독립 근거를 확보했으나, 완료 판정에 필요한 핵심 원본 실행 신원 또는 정확 HEAD CI가 없는 것을 확인했다. 출처 검증의 진전은 실제 최초 원본 검증 완료 건수에 허위로 산입하지 않는다.
+
+### Controller 유지보수 결과 2건 — 작성 시점·Git 원본 커밋까지 추적
+
+| 원본 | 이슈/원본 GitHub 타임라인 ↔ 결과 최초 커밋 | 증명된 범위와 한계 |
+|---|---|---|
+| [PC #1969](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1969) | 이슈 2026-11-17 09:25:11 UTC 생성, 09:25:13 라벨, **09:25:32 원본 JSON 신규 등록 [commit fa9ad97075ee](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/fa9ad97075eeef0bb5c18ad75edeac218a9b93f2)**, 09:25:37 원본 결과 댓글; 파일 blob `7dc70d85887f5cc94ce1af95d9287eb6ca7f23a9`; 원본 TXT blob `cbfecab895be8641678263e756d34deb22511000`. commit 작성·반영 계정 `ansqhd5774-Choi` | 이슈→원본 결과 생성·게시의 GitHub 계보와 requestId 일치. 결과는 `BLOCKED/BUNDLE_B_APPROVAL_CONTRACT_INVALID`, actual Controller SHA 미확인. **GitHub committer가 인증된 운영 Windows 실제 실행자라는 증명은 아님**; 실행 세션·호스트 식별·독립 result attestation 미확보 |
+| [PC #2059](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2059) | 이슈 2026-11-18 00:57:21 UTC 생성, 00:57:23 라벨, **00:58:18 원본 JSON 신규 등록 [commit 415b55804d3e](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/415b55804d3e50172838e2cd9b0df2918f370f2d)**, 00:58:25 원본 결과 댓글; 파일 blob `caaa41cd243aaf0eae7acdace990c249bdcb36e5`; 원본 TXT blob `75feb1f809264ea2dd378af99311c6ccaabfc4c2`. commit 작성·반영 계정 `ansqhd5774-Choi` | 원본 게시의 GitHub 출처·시점·요청 ID 일치. 결과는 `BLOCKED/APPROVAL_MANIFEST_READ_FAILED`, actual Controller SHA 미확인. 인증된 운영 PC의 실제 수신·검증·보호 lease 확인은 이 커밋만으로 입증 불가 |
+
+양쪽 JSON 최초 등록 커밋은 각각 해당 이름의 결과 파일 **1개 추가**만 포함하며, 정확 git blob sha가 현재 main 원문과 일치한다. 타 담당자가 이미 두 원본 Issue를 CLOSED 처리했음은 타임라인에서 확인(각 2026-11-25 11:24:37/11:25:11 UTC). 기존 후속 별도 #1974/#2063 성공 기록으로 과거 원본 설치가 성공했다고 소급하지 않는다. 원본 out-of-band 실행이 GitHub Actions Run 없이 진행될 수 있으므로 Workflow Run 0을 자동으로 미실행이라고 결론내리지도 않는다. 이 회차는 **Git 게시의 출처 검증 강화**만 완료. 실제 Windows 실행 주체에 대한 확인 없는 완전 독립 원본 실행 신원 판정 보류.
+
+### 본체 W04 Draft PR 2건 — 현재 HEAD 기준 최신 재조회
+
+- [PR #1031](https://github.com/ansqhd5774-Choi/zgmini/pull/1031): OPEN/Draft, HEAD `80a6a462158c7ee44dd0cf8d0527ad3d093e9354`, base `45ecabfa630404f6c2e23a4fe8b472111854ae8e`, 15파일, mergeable_state=`dirty`. 정확 HEAD Actions Run **0**, Check-runs **0**, commit statuses **0** / combined pending. 충돌 해결·정규 CI·병합 승인 없으므로 2차 완료 미산입.
+- [PR #1266](https://github.com/ansqhd5774-Choi/zgmini/pull/1266): OPEN/Draft, HEAD `0193056bdb47bcf6c911f17623b6c302c8199c4c`, base `8fffa9e27c7c3110847958a78089b3bf16697d7f`, 4파일, mergeable_state=`clean`. 정확 HEAD Actions Run **0**, Check-runs **0**, commit statuses **0** / combined pending. `clean`은 CI 통과·운영 승인·정규 병합 완료 증거가 아니다.
+
+### 분리 판정
+
+원본 88건 중 기검증 고유 **84건**, 신규 최종 완료 **0건**, 미검증 **4건**(#1969/#2059 out-of-band 실행 신원 및 #1031/#1266 정확 HEAD CI). 이번 감사 직접 종결 **0건**, 기존 직접 종결 누적 **10건** 유지. 기존 W01/W03/W05 완료 업무를 W04 Draft와 혼동하지 않으며, 운영 PC/Controller/Writer/SQLite/D1/Task/승인/워크플로 토글/재실행/PR 변경 **0건**. 다음은 두 out-of-band 유지보수 건의 보안상 허용된 PC 원본 실행 attestation 경로가 실제로 존재하는지 확인하고, Draft 2건은 원담당의 소스 CI/승인/병합 의사결정이 발생할 때만 다시 검증한다. 직접 Windows 인증을 추정하거나 과거 B를 재실행하지 않는다.
