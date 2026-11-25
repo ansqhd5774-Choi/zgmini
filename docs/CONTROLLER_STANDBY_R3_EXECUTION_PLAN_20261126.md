@@ -120,3 +120,16 @@ R2에서 확인한 설치 SHA·Runner online은 당시 읽기 증거로만 사�
 소스/CI 성공을 운영 HA 성공으로 보고하지 않는다. **전체 완료 기준은 Active 1 + Standby 1 실기동·단일 신규 작업 시작 권한·기존 원장/Worker 보존·Windows 경합·실운영 안전 전환/복귀**다. 미검증 수치는 0 또는 PASS가 아니라 미측정으로 표시한다.
 
 **현재 단계:** R3 작업 범위 확정, 전용 브랜치 기준 반영. 이후 작업은 S1부터 필요한 최소 구현·테스트에 직접 착수하되 불필요한 R2 재조사/새 서비스/추가 Standby를 만들지 않는다.
+
+## 6. 2026-11-26 구현 착수·원격 증거
+
+| 구분 | 실제 확인 | 판정 |
+|---|---|---|
+| R3 총괄 계획·R2 범위 정정 | 본 문서 및 [R2 개정](CONTROLLER_HA_RESEARCH_PLAN_R2_20261126.md) 원격 반영 | DONE (문서) |
+| 구현 브랜치 | [`zgmini-pc-control/codex/controller-standby-r1-20261126`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/tree/codex/controller-standby-r1-20261126), 신규 main 분기 | DONE (브랜치) |
+| Standby 소스·Watcher·fencing | [Draft PR #3738](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3738), 현재 source HEAD `4c214d58e6387ec328f36369db86f0d859a58406` | SOURCE IMPLEMENTED / 미병합 |
+| 소스 회귀시험 | 11개 Node 테스트 추가, 기존 Windows 격리 CI 연결; [Run 45712678648](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45712678648) 등 접수 | RUNNING/QUEUED (성공 미확인) |
+| Windows 실제 10개 경합·작업 인계 시험 | 현재 해당 결과 영수증 없음 | NOT VERIFIED |
+| 설치/전환·복귀 | B 적용 manifest·운영 설치·전환 영수증 미확인; 현재 정상 운영 PC 변경 없음 | NOT APPLIED |
+
+정확한 운영 source/설치 승인은 별도. 검증된 결과가 나오기 전 Draft PR을 main에 병합하거나 `INSTALL.json`의 Standby 활성화 값을 임의 조정하지 않는다. 완료 상태·변경 파일·실제 작업 결과는 이후 GitHub PR/Run 증거 기준으로 업데이트한다.
