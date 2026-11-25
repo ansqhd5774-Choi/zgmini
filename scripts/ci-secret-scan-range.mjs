@@ -43,7 +43,13 @@ export function checkSecretRange(range,git=(args)=>execFileSync('git',args,{enco
 export function main(env=process.env){
   const event=JSON.parse(readFileSync(env.GITHUB_EVENT_PATH,'utf8'));
   const checkedOut=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
-  need(checkedOut===env.GITHUB_SHA,'SECRET_CHECKOUT_HEAD_MISMATCH');
+  if(checkedOut!==env.GITHUB_SHA){
+    console.error('SECRET_CHECKOUT_DIAGNOSTIC '+JSON.stringify({
+      checkoutRef:SHA.test(checkedOut)?checkedOut:'INVALID',
+      eventRef:SHA.test(env.GITHUB_SHA)?env.GITHUB_SHA:'INVALID'
+    }));
+    throw Error('SECRET_CHECKOUT_HEAD_MISMATCH');
+  }
   const range=checkSecretRange(chooseSecretRange(env.GITHUB_EVENT_NAME,event,env.GITHUB_SHA));
   need(env.GITHUB_OUTPUT,'SECRET_OUTPUT_UNAVAILABLE');
   appendFileSync(env.GITHUB_OUTPUT,'log_opts='+range+'\n');
