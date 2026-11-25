@@ -142,7 +142,7 @@ export async function main(){
  await mkdir(resolve('artifacts/ci-bundle-size'),{recursive:true});
  await writeFile(output,JSON.stringify(report,null,2)+'\n','utf8');
  console.log('CI_BUNDLE_SIZE_METRICS '+JSON.stringify(report.totals));
- console.log('CI_BUNDLE_SIZE_BASELINE=UNAVAILABLE (report only; no artificial threshold)');
+ console.log('CI_BUNDLE_SIZE_MEASURED (optional historical comparison follows)');
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url))
  main().catch(e=>{console.error(e.message);process.exitCode=1;});
