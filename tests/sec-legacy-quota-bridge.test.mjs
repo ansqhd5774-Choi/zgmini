@@ -43,6 +43,31 @@ test('shared guard for two collectors enforces <=8 SEC requests in a rolling sec
  assert.equal(fs.existsSync(path.join(shared,'sec-shared-reservations.json')),true);
 }));
 
+// Reproduce #1582: synchronous legacy ledger work can delay the first actual
+// transport after its reservation, letting later real starts crowd together.
+test('delayed legacy preflight never produces a ninth actual SEC start per second',()=>fixture(async({a,b,shared})=>{
+ const times=[];
+ const make=base=>createCompatibleSecQuotaFetch({base,secSharedGuard:true,secSharedBase:shared,
+  originalFetch:async()=>{times.push(Date.now());return success();}});
+ const aa=make(a),bb=make(b);
+ const prior=aa.ledger.beforeRequest.bind(aa.ledger);
+ let delayed=false;
+ aa.ledger.beforeRequest=(provider,at)=>{
+  if(!delayed){delayed=true;
+   // A deterministic synchronous pre-transport delay, not a real network call.
+   Atomics.wait(new Int32Array(new SharedArrayBuffer(4)),0,0,220);
+  }
+  return prior(provider,at);
+ };
+ const results=await Promise.all(Array.from({length:12},(_,i)=>(i%2?aa:bb).fetch(SEC)));
+ assert.equal(delayed,true);
+ assert.equal(results.length,12);
+ assert.ok(results.every(x=>x.status===200));
+ assert.equal(times.length,12);
+ assert.ok(peak(times)<=8,'actual SEC starts peak='+peak(times));
+ assert.equal(fs.existsSync(path.join(shared,'sec-shared-reservations.json')),true);
+}));
+
 test('request POST cannot bypass global gate on legacy quota fetch',()=>fixture(async({a,shared})=>{
  let calls=0;
  const q=createCompatibleSecQuotaFetch({base:a,secSharedGuard:true,secSharedBase:shared,
