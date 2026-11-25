@@ -82,16 +82,16 @@
 | 68 | PC Issue | [#964](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/964) release-calendar-runtime-readonly | `release-calendar-runtime-readonly` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; **PASS — RELEASE_CALENDAR_SOURCE_INVENTORY_READONLY**;STATUSES_NOT_PROVIDER_GET_POLICY_PROOF) |
 | 69 | PC Issue | [#946](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/946) 고용 R6 — 승인 source ↔ 실제 Core 체크아웃 읽기 전용 확인 | `pc-source-preflight` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; **PASS — PC_SOURCE_READONLY_DIAGNOSIS**) |
 | 70 | PC Issue | [#939](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/939) pc-writer-config-b-once | `pc-writer-config-b-once` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; no standard result) |
-| 71 | PC Issue | [#936](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/936) pc-job — employment R6 post-install config keys readonl | `writer-install-preimage-readonly` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 72 | PC Issue | [#860](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/860) pc-writer-config-b-proof-once | `본문 조사` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 73 | PC Issue | [#835](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/835) [시장 캘린더 인계] ER1 자동 계산 설치 후 로컬 output·게시 증거 좁은 조회 경로 확인 | `본문 조사` | 시장캘린더/ER1 | PENDING_EVIDENCE_REVIEW |
-| 74 | PC Issue | [#783](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/783) ZGMINI R6 공통 A/B 계약 갭 — 중첩 소스 preimage 조회 및 opt-in 설정 적 | `본문 조사` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 75 | PC Issue | [#702](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/702) D+30 Core Runtime source after Writer B #699 | `core-runtime-source-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 76 | PC Issue | [#509](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/509) pc-er1-nov-forecast-publish | `saved-forecast-publish` | 시장캘린더/ER1 | PENDING_EVIDENCE_REVIEW |
-| 77 | PC Issue | [#503](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/503) pc-er1-nov-forecast-publish | `saved-forecast-publish` | 시장캘린더/ER1 | PENDING_EVIDENCE_REVIEW |
-| 78 | PC Issue | [#498](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/498) pc-er1-nov-forecast-publish | `saved-forecast-publish` | 시장캘린더/ER1 | PENDING_EVIDENCE_REVIEW |
-| 79 | PC Issue | [#496](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/496) pc-er1-nov-forecast-publish | `saved-forecast-publish` | 시장캘린더/ER1 | PENDING_EVIDENCE_REVIEW |
-| 80 | PC Issue | [#474](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/474) pc-er1-nov30-full | `private-collect` | 시장캘린더/ER1 | PENDING_EVIDENCE_REVIEW |
+| 71 | PC Issue | [#936](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/936) pc-job — employment R6 post-install config keys readonl | `writer-install-preimage-readonly` | 고용 R6/W04 | REVIEWED_COMMENT (2 comments; **PASS — WRITER_FIXED_PREIMAGE_READONLY**) |
+| 72 | PC Issue | [#860](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/860) pc-writer-config-b-proof-once | `본문 조사` | 공통 PC/CI | REVIEWED_COMMENT (3 comments; **STATE_UNKNOWN**) |
+| 73 | PC Issue | [#835](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/835) [시장 캘린더 인계] ER1 자동 계산 설치 후 로컬 output·게시 증거 좁은 조회 경로 확인 | `본문 조사` | 시장캘린더/ER1 | REVIEWED_COMMENT (65 comments; **PASS**;**PASS**) |
+| 74 | PC Issue | [#783](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/783) ZGMINI R6 공통 A/B 계약 갭 — 중첩 소스 preimage 조회 및 opt-in 설정 적 | `본문 조사` | 고용 R6/W04 | REVIEWED_COMMENT (15 comments; **PASS**;**PASS**) |
+| 75 | PC Issue | [#702](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/702) D+30 Core Runtime source after Writer B #699 | `core-runtime-source-readonly` | 공통 PC/CI | REVIEWED_COMMENT (2 comments; **STATE_UNKNOWN — CORE_NO_ACTIVE_TASK_ENGINE**;FIRST_FAIL_NO_AUTOMATIC_RETRY) |
+| 76 | PC Issue | [#509](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/509) pc-er1-nov-forecast-publish | `saved-forecast-publish` | 시장캘린더/ER1 | REVIEWED_COMMENT (1 comments; **BLOCKED**) |
+| 77 | PC Issue | [#503](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/503) pc-er1-nov-forecast-publish | `saved-forecast-publish` | 시장캘린더/ER1 | REVIEWED_COMMENT (1 comments; **BLOCKED**) |
+| 78 | PC Issue | [#498](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/498) pc-er1-nov-forecast-publish | `saved-forecast-publish` | 시장캘린더/ER1 | REVIEWED_COMMENT (1 comments; **BLOCKED**) |
+| 79 | PC Issue | [#496](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/496) pc-er1-nov-forecast-publish | `saved-forecast-publish` | 시장캘린더/ER1 | REVIEWED_COMMENT (1 comments; **BLOCKED**) |
+| 80 | PC Issue | [#474](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/474) pc-er1-nov30-full | `private-collect` | 시장캘린더/ER1 | REVIEWED_COMMENT (1 comments; no standard result) |
 | 81 | PC Issue | [#473](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/473) pc-er1-nov30-full | `private-collect` | 시장캘린더/ER1 | PENDING_EVIDENCE_REVIEW |
 | 82 | PC Issue | [#394](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/394) pc-er1-nov30-batch20-recovery-once | `batch20-private-actual-er1` | 시장캘린더/ER1 | PENDING_EVIDENCE_REVIEW |
 | 83 | PC Issue | [#369](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/369) pc-er1-nov30-batch20-one-shot | `batch20-private-actual-er1` | 시장캘린더/ER1 | PENDING_EVIDENCE_REVIEW |
@@ -187,3 +187,15 @@
 - zgmini-pc-control Issue #964: REVIEWED_COMMENT, 댓글 1, **PASS — RELEASE_CALENDAR_SOURCE_INVENTORY_READONLY**;STATUSES_NOT_PROVIDER_GET_POLICY_PROOF
 - zgmini-pc-control Issue #946: REVIEWED_COMMENT, 댓글 1, **PASS — PC_SOURCE_READONLY_DIAGNOSIS**
 - zgmini-pc-control Issue #939: REVIEWED_COMMENT, 댓글 1, no standard result
+
+### 감사 댓글 검증 71–80
+- zgmini-pc-control Issue #936: REVIEWED_COMMENT, 댓글 2, **PASS — WRITER_FIXED_PREIMAGE_READONLY**
+- zgmini-pc-control Issue #860: REVIEWED_COMMENT, 댓글 3, **STATE_UNKNOWN**
+- zgmini-pc-control Issue #835: REVIEWED_COMMENT, 댓글 65, **PASS**;**PASS**
+- zgmini-pc-control Issue #783: REVIEWED_COMMENT, 댓글 15, **PASS**;**PASS**
+- zgmini-pc-control Issue #702: REVIEWED_COMMENT, 댓글 2, **STATE_UNKNOWN — CORE_NO_ACTIVE_TASK_ENGINE**;FIRST_FAIL_NO_AUTOMATIC_RETRY
+- zgmini-pc-control Issue #509: REVIEWED_COMMENT, 댓글 1, **BLOCKED**
+- zgmini-pc-control Issue #503: REVIEWED_COMMENT, 댓글 1, **BLOCKED**
+- zgmini-pc-control Issue #498: REVIEWED_COMMENT, 댓글 1, **BLOCKED**
+- zgmini-pc-control Issue #496: REVIEWED_COMMENT, 댓글 1, **BLOCKED**
+- zgmini-pc-control Issue #474: REVIEWED_COMMENT, 댓글 1, no standard result
