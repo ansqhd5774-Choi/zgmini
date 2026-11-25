@@ -816,3 +816,22 @@ GitHub Search API 직접 재조회: `zgmini` Issue **1** / PR **6**, `zgmini-pc-
 - 1차 88/88, 2차 원본독립 감사 **68/88(77.3%)**, 잔여 **20건**. 이번 2건은 이전 배치 검증 대상과 중복 산입하지 않는다.
 - 신규 직접 Issue/PR 종결 0, 누적 직접 종결 **10건**. Controller/Writer/DB/D1/Task/운영 PC/승인/원본 재실행/신규 PC Job/PR 변경 0.
 - 후속: 미검증 20건의 고정 ID/원본 조회, W01/W03/W05 종료대상 귀속 판정. W04·ER1·#3516 실제 복구 경계를 보호.
+
+
+## 배치 AB — R6 원본 게시 실패 독립검증 및 미등록 A 대조 (2026-11-25 KST)
+
+기준 배치 AA **68/88 (77.3%)**. 이전 배치에서 원본 Run과 저장 JSON 404를 댓글 요약으로만 확인했고 2차 검증 완료에 산입하지 않았던 **PC #1646**의 실제 GitHub Actions Run/Job/Steps 및 원본 파일 조회를 독립 수행하여 **1건 신규**, 누적 **69/88 (78.4%)**, 잔여 **19건**. 실패가 확인된 원본을 ‘성공’으로 승격하지 않는다.
+
+### 신규 원본검증 1건 — PC #1646
+- [#1646](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1646) OPEN. 원본 `requestId=9b6e3d25-d1a5-4fd8-86b5-762e960aac17`, operation `employment-r6-registered-data-once`, 승인 manifest SHA `aa9e47f4896552b9f4fed46f9163c05dd12318dee24d1d9a43afe28daada4b5c`.
+- [원본 Actions Run 43846862079](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43846862079) **completed/failure**, Job `133229102924` failure. 실제 Job Steps에서 `Run owner-approved exact R6 collection and existing publisher`는 **success**, `Return create-only sanitized evidence pair and origin comment`는 **failure**. 따라서 원본 수집 단계가 성공으로 표시됐다는 사실과 결과 전달 실패를 분리한다. 원본 실제 29지표·DB·게시 상태는 결과 영수증 없이 확정하지 않는다.
+- Issue 원본 결과 댓글 `STATE_UNKNOWN/R6_B_RESULT_DELIVERY_UNVERIFIED`, `RESULT_PAIR_REF_CONFLICT_UNTOUCHED`, `CREATED=0/2 READBACK=0/2`, `NO_REEXECUTE`. [예상 JSON 경로](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/employment-r6-registered-9b6e3d25-d1a5-4fd8-86b5-762e960aac17.json) 직접 GitHub Contents 조회 **404**. 같은 고유 요청의 JSON/TXT 전달 성공/보관을 주장하지 않음.
+- **판정:** 원본 Run 실패 구간을 실물 단계 및 파일 404로 독립 확인. 원본 처리 성공·기능 완료가 아니라 **원본 실패 증거검증 완료**, #1646 OPEN 보호. 중복 재실행 금지.
+
+### 기존 W04 A 실행 등록 누락 재검토 (신규 원본 완료 산입 0)
+- [#3522](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3522): `closed/not_planned`, 원본 requestId `pc-c413c6a8-89f5-4d8d-9615-207e2d812851`. [#3524](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3524): `closed/not_planned`, 원본 requestId `pc-778e41e1-6d7d-4932-99f4-adb919a4ff75`. 둘 다 operation `employment-r6-raw-run-attestation-readonly`, source `b6049aac81b3442a58b08050ee138921f87a09e6`.
+- 양쪽 원본 이슈/댓글을 재조회: 당시 `ZGMINI PC Job` workflow ID `404502862`에 대한 원본 실행 등록 `0`, 원본 JSON/TXT `0`, 기타 `issues` Actions는 존재했다는 **당시 조사 기록**. 정확한 두 시간창의 Workflow 전체 Run 재조회는 이번 연결 경로에서 지원되지 않아, 부재의 독립 전수확증으로 간주하지 않고 **코호트 신규 산입 0**. 원본을 completed 또는 실제 History 조회 완료로 소급하지 않음.
+- 후속 독립 [#3554 / Run 45597878497](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45597878497)는 직접 `completed/success`, workflow ID `404502862`; [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/45597878497-1-seat-6.json) Git blob `d62864b9ac3be7b46a04e5d583dabcc4fca900ab`, [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/45597878497-1-seat-6.txt) blob `4438291e8c7bb14cb32257d3e9f0769e0ddc99fc`; requestId `pc-9b14d682-a4ab-49f9-9c38-478edadaa996` 및 `PASS/R6_RAW_RUN_AGGREGATE_READONLY`. 이는 **새로운 요청의 성공**이며 과거 #3522/#3524 원본 성공이나 당시 누락의 근본 원인 확정이 아니다.
+- W04 담당자의 #3516 독립 Windows C 복구, History/SQLite 실측 작업은 별개 보호. 새 Job·Workflow 토글·Issue 재라벨·운영 작업 발행 없음.
+
+이번 감사 직접 종결 0, 기존 직접 종결 누적 **10건**. PC·Controller·Writer·SQLite/D1·Task·승인·PR 병합·신규 실행 **0건 변경**. 다음 기준 **69/88(78.4%)**, 미검증 **19건**. 다음 단계는 #3522/#3524 외의 고정 원본 중 최초 독립 실물 검증 및 W01/W03/W05 최종 귀속·종결 가능성 판정.
