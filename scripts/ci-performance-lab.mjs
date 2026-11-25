@@ -1,4 +1,4 @@
-// R2 #8/#24: bounded Chromium lab measurements using the existing Playwright.
+// R2 #24: bounded Chromium lab measurements using the existing Playwright.
 // Local dev only; data APIs are explicitly unavailable, never manufactured.
 // Not Lighthouse scores, Core Web Vitals field data, or real production latency.
 import {mkdir,writeFile} from 'node:fs/promises';
