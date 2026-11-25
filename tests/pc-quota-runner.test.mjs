@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {spawn} from 'node:child_process';
+import {spawn,spawnSync} from 'node:child_process';
+import {fileURLToPath} from 'node:url';
 import {providerForUrl,policyForProvider} from '../scripts/pc-writer/quota-policy.mjs';
 import {QuotaLedger} from '../scripts/pc-writer/quota-ledger.mjs';
 
@@ -83,5 +84,27 @@ test('common quota ledger preserves concurrent reservations across Node processe
   assert.equal(saved.providers.CNN.lastStatus,200);
   assert.equal(saved.providers.FRED.lastStatus,200);
   assert.equal(fs.existsSync(path.join(base,'quota-ledger-reservation.lock')),false);
+ }finally{fs.rmSync(base,{recursive:true,force:true});}
+});
+
+// The real collector CLI must stop before creating a database or touching
+// Core checkpoint files when the minute lane is not source-approved.
+test('CNN minute collector refuses unapproved source and mixed lanes before storage',()=>{
+ const base=temp();
+ const script=fileURLToPath(new URL('../scripts/pc-writer/collect-local.mjs',import.meta.url));
+ try{
+  const checkpoint=path.join(base,'local-collection-last-run.json');
+  fs.writeFileSync(checkpoint,'core sentinel');
+  const invoke=args=>{
+   const child=spawnSync(process.execPath,[script,'--cnn-minute',...args],{env:{...process.env,ZGMINI_PC_HOME:base},encoding:'utf8',windowsHide:true,timeout:30000});
+   assert.equal(child.status,1,child.stderr||String(child.error??''));
+   return JSON.parse(child.stdout.trim());
+  };
+  assert.equal(invoke([]).reason,'CNN_MINUTE_SOURCE_NOT_APPROVED');
+  assert.equal(invoke(['--korea']).reason,'CNN_MINUTE_SCOPE_STOP');
+  assert.equal(invoke(['--job=earnings']).reason,'CNN_MINUTE_SCOPE_STOP');
+  assert.equal(invoke(['--import-only']).reason,'CNN_MINUTE_SCOPE_STOP');
+  assert.equal(fs.readFileSync(checkpoint,'utf8'),'core sentinel');
+  assert.deepEqual(fs.readdirSync(base),['local-collection-last-run.json']);
  }finally{fs.rmSync(base,{recursive:true,force:true});}
 });
