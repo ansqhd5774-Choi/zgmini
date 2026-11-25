@@ -257,3 +257,21 @@
 
 이번 배치의 Issue/PR 종료 0건, 운영 PC/DB/Writer/Controller/Task 변경 0건.
 후속: #1026 영수증 보관 위치 조회, #1582 최신 실패 원인 로그 검토, 나머지 84건 원본 Run/Job/Artifacts/의존성 검증. 최종 판정 완료율은 0/88로 엄격히 분리한다.
+
+
+## 2차 독립 증거 조회 — 배치 B (2026-11-25)
+
+**스냅샷 보존:** 원장 표의 88개 항목은 1차 고정 코호트로 유지. 해당 코호트의 #1026은 이번 배치에서 실제 completed 종결했으므로 그 항목은 현시점 OPEN으로 오인하지 않는다. 실시간 전체 OPEN 수는 별도 재조회 대상.
+
+| 고정 코호트 항목 | 원본 증거 | 최종/제한 판정 |
+|---|---|---|
+| PC Issue #1026 | Run 42595763736 성공, Job 129087884022 성공. GitHub 커밋 `2a13b25cd5eec6710cbe9e4ef88ffb6e57cd6f16`의 results JSON(blob `77176d0f4177bfcb8df66c666730deb94bc04ecd`) / TXT(blob `6c948966210620a0e3a689a385786baa61ea7ba0`) 직접 확인, 공통 17개 필드 전부 일치, 6개 그룹 SUCCESS, PUBLISH_READBACK | **완료·종결**: [Issue #1026](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1026) 실제 CLOSED/completed, 검증 댓글 ID `7159236853`. 이 단발 요청의 완료만 의미하며 후속 W04 운영 완료는 의미하지 않음 |
+| PC Issue #1010 | [Run 42590585021](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42590585021) success; `results/42590585021-1-seat-1.json/.txt` 12개 상위 공통 필드 일치. `PASS/CORE_READONLY_DIAGNOSIS`이지만 `result.core.lockPresent=true` | **실제 요청 목적 미충족/OPEN 유지**: 대상 주기의 Core lock 자연 해제 입증되지 않음. 과거 snapshot으로 현재 잠금 존재도 주장하지 않음 |
+| PC Issue #1000 | [Run 42583631501](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42583631501) success; `results/42583631501-1-seat-3.json/.txt` 12/12 공통 필드 일치. `PASS/WRITER_APPROVED_PREIMAGE_READONLY`; `evidenceLevel=FIXED_CHECKOUT_NOT_LIVE_CORE_PROCESS`, runtimeSourceVerified=false | **조회 작업 성공/운영 설치 검증 불가**, 원래 요청 목적 및 후속 의존 확인 전 OPEN 보존 |
+| PC Issue #1071 | [Run 42619247795](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42619247795) success; `results/42619247795-1-seat-6.json/.txt` 12/12 일치. `PASS/PC_SOURCE_READONLY_DIAGNOSIS`, `evidenceLevel=STATIC_LAUNCHER_TRACE_ONLY`, runtimeSourceVerified=false | **정적 진단 성공/실행 소스 검증 불가**, OPEN 보존 |
+| PC Issue #946 | [Run 42498194519](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42498194519) success; `results/42498194519-1-seat-4.json/.txt` 12/12 일치. `PASS/PC_SOURCE_READONLY_DIAGNOSIS`, `evidenceLevel=STATIC_LAUNCHER_TRACE_ONLY`, runtimeSourceVerified=false | **정적 진단 성공/운영 실행 소스 검증 불가**, OPEN 보존 |
+| PC Issue #965 | [Run 42546122135](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42546122135) success; `results/42546122135-1-seat-4.json/.txt` 12/12 일치. `PASS/WRITER_FIXED_PREIMAGE_READONLY`, `evidenceLevel=FIXED_CHECKOUT_NOT_LIVE_CORE_PROCESS`, runtimeSourceVerified=false | **고정 Checkout 검증 성공/실행 소스 검증 불가**, OPEN 보존 |
+
+- **2차 부분검사 누적:** 배치 A 4건 + 배치 B 신규 5건 = 고정 코호트 **9/88건**의 원본 Run 또는 PR/Issue 증거 조회(중복 #1026 제외). 최종 종결 판정 확정 **1/88건** (#1026). 나머지는 현재 의존성·목적 충족 추가 검증 필요.
+- **이번 실제 변경:** #1026만 CLOSED/completed; 다른 Issue·PR 종결/병합 0건. 운영 PC/DB/Task/Controller/Writer 변경 0건.
+- **다음 순서:** #1582 후속 실패 정확 로그 구분, 79개 미검사 항목 및 현재 OPEN 목록 재조회, JSON/TXT 및 원본 요청 목적을 함께 증명하는 경우에만 독립 종결.
