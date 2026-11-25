@@ -718,3 +718,21 @@ GitHub Search API 직접 재조회 **78건 OPEN = 본체 Issue 1 / PR 6 + PC 제
 ### 후속 우선순위
 
 **기준 61/88(69.3%)**으로 고정 코호트 각 식별자의 최초 독립검증 배치를 관리하고, **미검증 27건**에 대해서만 신규 산입한다. W04·ER1 진행 중 대상 및 #3516 독립 복구는 보호. 현행 OPEN 수는 별도 API 재조회하며 분모 88과 혼동하지 않는다.
+
+
+## 배치 X — 고정 원본 2건 최초 HEAD/Actions 감사 (2026-11-25 KST)
+
+배치 W의 **61/88(69.3%)**에서 시작. 최초 고정 88건 중 앞선 코호트 2차 산입이 없던 본체 PR **#933**과 PC handoff Issue **#2237**의 원본 증거를 직접 검증. 2건 신규 최초 원본 감사로 **63/88(71.6%)**, 잔여 **25건**. 동일한 코호트 번호의 이전 단순 댓글 판독·타 담당자 조사 결과를 신규 실행 성공으로 바꾸지 않는다.
+
+| 원본 | 최신 원격 메타데이터·실행 검증 | 정확한 판정 |
+|---|---|---|
+| [본체 Draft PR #933](https://github.com/ansqhd5774-Choi/zgmini/pull/933) | 현 HEAD `2f9d3b40cfcba1fbc0479fdfbca1fad0c905ae0d`, base `e8fc8de5802a106a5be3976f9dd7b89ba9441941`, changed_files=271, OPEN/Draft, mergeable=false. 해당 **정확 HEAD** [Node.js CI Run 45604208112](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45604208112) completed/success, Job `139170695445` check completed/success. Build/Type check/Regression tests/PC publication recovery tests/Cloudflare candidate read contracts 전부 steps SUCCESS; HEAD check-runs 1/1 success | **소스 HEAD CI 증거검증 완료**. W04 고용 R6 전용의 대형 활성 Draft로 운영 설치·공개 게시·병합 완료 증거가 아니다. 보안 CI 전수·운영 증거도 이번 범위 아님. **OPEN/Draft 유지, 자동 병합/종결 금지** |
+| [PC Issue #2237](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2237) | 최초 요청 [#2227](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2227) 원본 [Run 44372235510](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44372235510) completed/cancelled, Job `135041841316` completed/cancelled, 직접 조회 Job Steps `[]`. 저장 성공 JSON/TXT 영수증 확보 불가. 기존 #2237의 운영 후속 #3352도 정확 원인 이벤트 참조 `exactReferences=0` 보고 | **원본 취소 사실 독립검증 완료, 근본원인 ROOT_CAUSE_UNKNOWN**. 시작 actor와 cancel actor는 별개, 타 작업 후속 PASS는 원래 취소 원인 해결이 아님. W03 원본과 관련돼도 공통 Runner 장애 조사 Issue는 **OPEN 보호** |
+
+### 재검증 중복 제거
+- PC #1742는 배치 H, #1997·#2032는 배치 I, #1200은 배치 E에서 이미 원본 Run/JSON/TXT 감사에 산입됐다. 본 배치에서 이들의 Issue/댓글을 다시 확인했지만 **신규 산입 0**.
+- PR #1031은 배치 W에서 정확 HEAD CI 미확인으로 유지한 Draft이며, PR #933의 CI PASS를 다른 PR에 전용하지 않는다.
+- PC #1004는 release-calendar PC↔D1 원본 해시 직접 조회 경로 부재를 다룬 현행 공통 지원 Issue로, 기존 공개 UI/API 수량과 PC 원본 보관 SHA를 동일시하지 않는다. 조회 API 계약 공백이 남아 **OPEN 보호**, 본 배치 2차 독립 증거 완료 건수에는 미산입.
+- #2237은 원본 Job 취소에 대한 **검증**이지 성공 실행·근본원인 수정이 아니다. 동일 취소 Workflows 재발행·PC Job 재실행은 수행하지 않음.
+
+이번 감사에서 신규 직접 Issue/PR 종료 **0건**, 기존 직접 종결 **10건** 유지. 운영 PC·Controller·Writer·SQLite/D1·Task·설치·승인·PR 병합·새 실행 생성 **0건**. 후속 우선순위는 **미검증 25건**의 코호트 최초 검증, W01/W03/W05 종결 가능한 원본 분류, W04·ER1·#3516 진행 업무 보호.
