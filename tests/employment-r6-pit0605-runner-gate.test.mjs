@@ -4,7 +4,7 @@ import fs from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import {
- runnerOptionsFrom,projectPit0605Aggregate,
+ runnerOptionsFrom,projectPit0605Aggregate,projectCandidateConflictBreakdown,
 } from "../scripts/pc-writer/employment-r6-runner-stage.mjs";
 
 function optionsFixture(t){
@@ -63,4 +63,43 @@ test("PIT0605 rejects an impossible historical PIT promotion",()=>{
   counts:{...counts,ORIGINAL_VERSION_AND_HISTORICAL_AVAILABILITY_PROVED:1,
     RAW_OBSERVATION_MATCH_HISTORICAL_TIME_UNPROVEN:1}}),
   /RUNNER_R6_PIT0605_REPORT_INVALID/);
+});
+
+test("PIT0605 receipt month projection is bounded and rejects fabricated PIT",()=>{
+ const receipt={keys:3,exactRawMatched:1,exactReceiptFirstObserved2025:0,
+  firstExactReceiptMonth:"2026-11",lastExactReceiptMonth:"2026-11",
+  scope:"EXACT_STORED_RAW_RECEIPT_NOT_HISTORICAL_PIT",
+  privateSourceHash:"NEVER_LEAK_HASH"};
+ const output=projectPit0605Aggregate({...raw,missingCandidateReceipts:receipt});
+ assert.deepEqual(output.missingCandidateReceipts,{
+  keys:3,exactRawMatched:1,exactReceiptFirstObserved2025:0,
+  firstExactReceiptMonth:"2026-11",lastExactReceiptMonth:"2026-11",
+  scope:receipt.scope,
+ });
+ assert.doesNotMatch(JSON.stringify(output),/NEVER_LEAK_HASH/);
+ assert.equal(output.historicalVersionAttested,false);
+ assert.throws(()=>projectPit0605Aggregate({...raw,missingCandidateReceipts:{
+  ...receipt,exactRawMatched:5}}),/RUNNER_R6_PIT0605_RECEIPT_INVALID/);
+ assert.throws(()=>projectPit0605Aggregate({...raw,missingCandidateReceipts:{
+  ...receipt,firstExactReceiptMonth:"2025-13"}}),/RUNNER_R6_PIT0605_RECEIPT_INVALID/);
+});
+test("PIT0408 mismatch causes are a strictly checked safe summary",()=>{
+ const input={kind:"W04_CANDIDATE_CURRENT_CAUSE_COUNTS_V1",
+  sourceScope:"READONLY_CORE_CANDIDATE_SAME_SNAPSHOT_NOT_PIT",
+  rawPitAttested:false,repairAuthorized:false,total:4,
+  causes:{invalidNumericValue:0,providerOrSeriesDifferent:1,
+   valueAndHashDifferent:1,valueOnlyDifferent:1,hashOnlyDifferent:1},
+  changedFields:{numericValue:2,sourceHash:2,provider:1,
+   providerSeries:0,sourceRevision:0},
+  source_hash:"SENSITIVE_NEVER_PROJECT",
+ };
+ const projected=projectCandidateConflictBreakdown(input);
+ assert.equal(projected.total,4);
+ assert.deepEqual(projected.causes,input.causes);
+ assert.doesNotMatch(JSON.stringify(projected),/SENSITIVE_NEVER_PROJECT/);
+ assert.throws(()=>projectCandidateConflictBreakdown({
+  ...input,causes:{...input.causes,hashOnlyDifferent:2}}),
+  /RUNNER_R6_PIT04_CONFLICT_CAUSES_INVALID/);
+ assert.throws(()=>projectCandidateConflictBreakdown({...input,rawPitAttested:true}),
+  /RUNNER_R6_PIT04_CONFLICT_CAUSES_INVALID/);
 });
