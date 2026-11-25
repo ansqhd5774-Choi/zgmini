@@ -153,3 +153,12 @@ test('Linux rejects WAL header before SQLite opens, leaving no sidecar files',()
  assert.throws(()=>execute(f),/R6_READER_WAL_SIDECAR_UNSUPPORTED/);
  assert.deepEqual(sidecars.map(p=>fs.existsSync(p)),before);
 }));
+
+test('Linux rejects in-place WAL header transition at second pre-open check',{skip:process.platform!=='linux'},()=>withFixture({},f=>{
+ const sidecars=['-wal','-shm'].map(s=>f.file+s);
+ assert.throws(()=>execute(f,{beforeReadOnlyOpen:()=>{
+  const fd=fs.openSync(f.file,'r+');
+  try{fs.writeSync(fd,Buffer.from([2,2]),0,2,18);}finally{fs.closeSync(fd);}
+ }}),/R6_READER_WAL_SIDECAR_UNSUPPORTED/);
+ assert.ok(sidecars.every(x=>!fs.existsSync(x)));
+}));
