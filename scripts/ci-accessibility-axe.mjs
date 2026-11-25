@@ -83,14 +83,48 @@ export async function collectAccessibility(chromium,axeScriptPath){
        await page.locator('main').count()!==1)
       throw Error('CI_AXE_LOCAL_PAGE_NOT_READY');
     await page.addScriptTag({path:axeScriptPath});
-    const result=await page.evaluate(async tags=>{
+    // One-off diagnostic: map axe's incomplete nodes to a fixed public page
+    // region and semantic kind. Never print DOM text, HTML, or CSS selectors.
+    const {result,diagnostics}=await page.evaluate(async tags=>{
      if(!window.axe||typeof window.axe.run!=='function')
       throw Error('CI_AXE_LIBRARY_NOT_INJECTED');
-     return window.axe.run(document,{
+     const result=await window.axe.run(document,{
       runOnly:{type:'tag',values:tags},
       resultTypes:['violations','incomplete','passes','inapplicable']
      });
+     const diagnostics=result.incomplete
+      .filter(rule=>rule.id==='color-contrast')
+      .flatMap(rule=>rule.nodes.slice(0,12).map(node=>{
+       let element=null;
+       try{
+        const selector=node.target?.[0];
+        if(typeof selector==='string'&&selector.length<400)
+         element=document.querySelector(selector);
+       }catch{}
+       const region=element?.closest('section[aria-labelledby="about-headline"]')?'hero':
+        element?.closest('section[aria-label="개발자 이야기"]')?'questions':
+        element?.closest('main footer')?'footer':
+        element?.closest('main details')?'details':
+        element?.closest('main header')?'header':'other';
+       const tag=element?.closest('h1,h2,h3,p,a,button,summary')?.tagName?.toLowerCase()||'other';
+       const checks=[...(node.any??[]),...(node.all??[]),...(node.none??[])];
+       const message=(checks.find(c=>c.id==='color-contrast')?.message??'').toLowerCase();
+       const cause=message.includes('partially obscured')?'obscured':
+        message.includes('background image')?'background-image':
+        message.includes('background color')?'background-undetermined':
+        message.includes('foreground')?'foreground-undetermined':'other';
+       const style=element?getComputedStyle(element):null;
+       const parent=element?.parentElement?getComputedStyle(element.parentElement):null;
+       return {region,tag,cause,
+        foreground:style?.color??null,
+        background:style?.backgroundColor??null,
+        parentBackground:parent?.backgroundColor??null};
+      }));
+     return {result,diagnostics};
     },AXE_TAGS);
+    console.log('CI_AXE_INCOMPLETE_PROFILE '+JSON.stringify({
+     viewport:viewport.name,nodes:diagnostics
+    }));
     results.push(summarizeAxeResults(result,viewport.name));
    }finally{await context.close();}
   }
