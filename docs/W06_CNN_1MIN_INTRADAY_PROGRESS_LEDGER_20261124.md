@@ -113,3 +113,9 @@
 - [소스 커밋 16f0e96b](https://github.com/ansqhd5774-Choi/zgmini/commit/16f0e96b64fcb1aa91ee11d407704623fc228d5f): CNN 기존 CTA를 next/link로 변경(레이아웃/목적지 동일), lib/cnn-intraday-buckets-r1.mjs 및 tests/cnn-intraday-buckets-r1.test.mjs 추가. 1/5/10/30분 원본 최종 관측값 집계, NY 세션/DST, 표시 소수점 1자리, 동일값 연속 구간 축약, 복귀값 보존, 결측 null break, 미완료 구간 표시용 정보. 기존 원본/일별 이력/PC check 변경 없음. 아직 UI 연결 안 됨. 테스트 5개 작성, 실행 PASS 미확정. 정확 소스 HEAD의 신규 CI Node 45714854157, Browser 45714854009, CodeQL 45714853953, Secret 45714853987 시작 확인. 아래 원장 기록만의 후속 커밋은 그 정확 HEAD와 구분.
 
 다음 행동: 새 CI 결과 회수 및 실패 수정 → 실제 CNN 차트에 네 구간 집계와 provenance/결측 처리 연결(공유 스타일·기존 기간 보존) → Sidecar의 승인 source 연결 재발 원인을 정규 적용/복구 경로로 해소 → CNN 60초 실행 연결을 공급처/공통 quota 및 실제 운영 계약에 맞춰 구현. 기존 B 승인 대상이나 CAS를 새 변경에 재사용하지 않는다. 실제 변경은 승인 효과에 맞춘 새 정확 manifest 필요. 신규 예약·직접 운영 쓰기·main 병합 없음.
+
+## 10. 2026-11-26 후속 — 분 간격 UI 및 CI 수정
+
+- HEAD ee2b9bbc: Node Run 45715090624 Build/Type check/Regression PASS, Lint FAIL(React Compiler preserve-manual-memoization 2건: extrema52Week/fixedPeriodChanges의 payload 관측시각 의존성). 관측시각 scalar로 통일, 검사 우회 없음. 기존 Source Secret PASS, 나머지 이전 실행 결과는 최신 소스 판정으로 승계하지 않음.
+- 4단계: 기존 1D 확인 이력은 기본 보기로 보존하고 1/5/10/30분 원본 관측 버튼을 추가. 명시 선택 시 PC 확인 시각을 분봉 원본으로 취급하지 않음. 원본 대표시각과 실제 관측시각/구간 마감·진행 중을 구분. 변동점은 최초 값 유지, 동일값 구간 마지막 실제 관측은 선 연결용 앵커로만 유지. 결측 null 및 고립된 실제 관측만 표시. 다른 기간/지표 동작은 유지. 390/1440 기존 browser fixture에 4개 선택·bucket 수 검증 추가. 신규 CI 및 실운영 검증 전.
+- 1/2/3단계: #3741/#3742의 승인 source 불일치와 이력 정체는 미해결. 기존 승인 경로의 정확 manifest/운영 source 계약 확인 및 최소 복구 필요. 60초 공급자 호출과 원본 저장 Runtime 미입증. 운영 변경 없음.

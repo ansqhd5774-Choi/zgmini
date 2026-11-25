@@ -10,7 +10,8 @@ test('display rounding is identical to existing CNN one-decimal card and preserv
  const result=aggregateCnnIntraday(input,opt);
  assert.deepEqual(result.buckets.map(x=>x.score),[15.81,15.83,15.87,15.81]);
  assert.deepEqual(result.displayPoints.map(x=>x.score),[15.8,15.9,15.8]);
- assert.equal(result.displayPoints[0].observedAt,at(1));
+ assert.equal(result.displayPoints[0].observedAt,at(0));
+ assert.deepEqual(result.linePoints.map(p=>p.observedAt),[at(0),at(1),at(2),at(3)]);
  assert.equal(cnnDisplayScore(15.83),(15.83).toFixed(1));
  assert.deepEqual(input,original);
 });
@@ -46,4 +47,10 @@ test('NY session boundary and repeated DST hour retain distinct real timestamps'
  assert.deepEqual(r.buckets.map(x=>x.score),[11,12,13]);
  assert.equal(r.buckets[2].start-r.buckets[1].start,3600000);
  assert.deepEqual(aggregateCnnIntraday([],{...opt}).displayPoints,[]);
+});
+
+test('flat run anchors preserve its real endpoints without duplicate change events or interpolated gaps',()=>{
+ const result=aggregateCnnIntraday([p(0,15.81),p(1,15.83),p(2,15.81),p(6,15.82)],opt);
+ assert.deepEqual(result.displayPoints.map(p=>p.score),[15.8,null,15.8]);
+ assert.deepEqual(result.linePoints.map(p=>[p.date,p.score]),[[at(0),15.8],[at(2),15.8],[at(3),null],[at(6),15.8]]);
 });

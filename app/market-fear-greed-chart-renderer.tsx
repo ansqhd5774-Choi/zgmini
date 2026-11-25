@@ -57,6 +57,7 @@ export function MarketFearGreedChart({
   observedRanges = [],
   timeAxis,
   showLatestPointTouchTooltip = false,
+  showIsolatedPoints = false,
 }: {
   data: MarketFearGreedChartPoint[];
   axisTicks: string[];
@@ -78,6 +79,7 @@ export function MarketFearGreedChart({
   observedRanges?: MarketObservedRange[];
   timeAxis?: MarketChartTimeAxis;
   showLatestPointTouchTooltip?: boolean;
+  showIsolatedPoints?: boolean;
 }) {
   const mobileAxisRight=useDashboardMobileAxis();
   const animate=useContext(MarketChartAnimationContext);
@@ -89,7 +91,7 @@ export function MarketFearGreedChart({
   const chartX=(date:string)=>timeAxis?Date.parse(date):date;
   const chartData=timeAxis?data.map(point=>({...point,chartTime:Date.parse(point.date)})):data;
 
-  if (data.length === 0 || (!compact && data.length === 1)) {
+  if (data.length === 0 || (!compact && !showIsolatedPoints && data.length === 1)) {
     return <div className="cnn-chart-empty"><CircleAlert size={18}/><span>{emptyLabel}</span></div>;
   }
 
@@ -221,6 +223,7 @@ export function MarketFearGreedChart({
         animationDuration={950}
         animationEasing="ease-out"
       />
+      {showIsolatedPoints&&data.map((point,index)=>typeof point.score==='number'&&point.date!==latestPoint?.date&&typeof data[index-1]?.score!=='number'&&typeof data[index+1]?.score!=='number'?<ReferenceDot key={`isolated-${point.date}`} x={chartX(point.date)} y={point.score} r={2.5} fill={color} stroke="none" ifOverflow="visible"/>:null)}
       {observedRanges.filter(row=>row.high>row.low).map(row=><ReferenceLine
         key={`cnn-observed-range-${instanceKey}-${row.date}`}
         segment={[{x:chartX(row.date),y:row.low},{x:chartX(row.date),y:row.high}]}

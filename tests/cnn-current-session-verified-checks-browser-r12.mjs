@@ -35,7 +35,7 @@ try{
   const page=await browser.newPage({viewport:{width,height:900},reducedMotion:'reduce',
    hasTouch:width===390,isMobile:width===390});
   let sourceAt=sourceObservedAt;
-  let archiveFailure=false,extraCheck=false;
+  let archiveFailure=false,extraCheck=false,minuteFixture=false;
   const requests=[],pageErrors=[];
   await page.clock.install();
   page.on('pageerror',error=>pageErrors.push(error.message));
@@ -46,6 +46,9 @@ try{
    if(url.pathname==='/api/fear-greed/observations'&&archiveFailure)
     return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({status:'PENDING'})});
    const data=fixture(url.pathname,url.searchParams.get('period'),sourceAt);
+   if(url.pathname==='/api/fear-greed/observations'&&minuteFixture){
+    data.points=[...original,{observedAt:'2026-10-30T13:21:00.000Z',score:26.3},{observedAt:'2026-10-30T13:24:00.000Z',score:26.4},{observedAt:'2026-10-30T13:25:00.000Z',score:26.1},{observedAt:'2026-10-30T13:30:00.000Z',score:26.5}];
+   }
    if(url.pathname==='/api/fear-greed/observations'&&extraCheck)
     data.checkedPoints.push({checkedAt:'2026-10-30T14:30:00.000Z',sourceObservedAt:sourceAt,score:26.2});
    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(data)});
@@ -125,6 +128,18 @@ try{
   assert.equal(await page.getByText(/이력 갱신 지연/).count(),0);
   assert.equal(await oneDay.getAttribute('aria-pressed'),'true');
   extraCheck=false;
+  minuteFixture=true;
+  await page.clock.fastForward(60_000);
+  const minutesGroup=page.getByRole('group',{name:'CNN 원본 관측 간격'});
+  assert.equal(await minutesGroup.locator('button[data-cnn-minute]').count(),4);
+  for(const [minutes,count] of [[1,5],[5,3],[10,2],[30,2]]){
+   const choice=minutesGroup.locator(`button[data-cnn-minute="${minutes}"]`);
+   await choice.click();
+   assert.equal(await choice.getAttribute('aria-pressed'),'true');
+   await page.waitForFunction(({minutes,count})=>document.querySelector(`[data-cnn-intraday-mode="${minutes}"]`)?.getAttribute('data-cnn-bucket-count')===String(count),{minutes,count});
+  }
+  await minutesGroup.getByRole('button',{name:'확인 이력'}).click();
+  minuteFixture=false;
 
   // A check on another New York source session cannot be reinterpreted as a
   // newly published CNN observation or extend the current 1D chart.
