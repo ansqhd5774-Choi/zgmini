@@ -372,3 +372,7 @@ GitHub Search API total_count 재조회 **84건** = 본체 Issue 1/PR 6 + PC 제
 | PC #1226 | 요청 생성 `2026-11-10T12:57:33Z`, `core-status` request `pc-60ed9565-9b87-4099-a4d2-db9235a3cfd4`. Issue 댓글 0개, 저장소 코드 검색에서도 해당 requestId 영수증 미발견. 날짜 범위 workflow API 필터가 제공 수단에서 허용되지 않아 해당 시각 모든 workflow 실행의 부재까지 독립적으로 증명하지 못함. | `EXECUTION_NOT_CORROBORATED`, 원인 미확정/OPEN. `NEVER_RUN`이나 `CONTROLLER_FAILED`로 확대 판정 금지 |
 
 특별 주의: #1213 결과는 SKIPPED, #1226은 미확인, #1196/#1200은 STATE_UNKNOWN이다. 네 유형을 동일 실패 원인으로 묶거나 임의 재실행해서는 안 된다. 현재 PC·DB·Controller·Writer·Task 변경 0건.
+
+### 배치 F 후 실시간 OPEN 재조회
+
+GitHub Search API `total_count` 현재 **86건** = 본체 Issue 1/PR 6 + PC 제어 Issue 76/PR 3. PC 제어 신규 OPEN PR [#3545](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3545), [#3546](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3546), [#3547](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3547) 직접 확인. 최초 88건 고정 코호트와 달리 신규 PR이 추가되고 다른 PR이 병합되므로, OPEN 총량 상승을 본 감사 실패 또는 종결과 혼동하지 않는다. 이번 배치 직접 종결 0건.
