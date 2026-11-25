@@ -352,3 +352,7 @@ GitHub Search API total_count 직접 확인: **85건** = 본체 Issue 1/PR 6 + P
 | PC #1169 | Run [42710641027](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42710641027) Actions success; `results/employment-r6-registered-a4e1dc0d-f7ef-4ff8-80df-9ce56ad3d796.json/.txt` 직접 조회, 핵심 7개 필드 일치. JSON blob `524be5335c1c8260129b1e6537c040953599b73d`/TXT blob `465a7ced67e4abec7b7949c3984dc85ce37de986`. `PARTIAL/R6_B_PARTIAL_PUBLISH_VERIFIED`, DOL_UI_WEEKLY_CLAIMS 및 BLS_BED 그룹 `SERIES_PARTIAL`, 기타 4개 그룹 SUCCESS | Actions SUCCESS와 결과 PARTIAL 구분, 원본 요청 자동 재실행 금지, OPEN |
 
 두 원본 결과 파일은 발견되어 직접 확인했다. #1032/#1169는 배치 E에서 본문·댓글만 조회했던 항목이므로 **2차 독립증거 부분검사 누적 14/88건 (15.9%)**으로 갱신한다. 누적 실제 종결 **3/88건** 유지. 현재 W04 데이터 전체의 완료 여부는 원본 시점 결과와 별도로 검증해야 하며, 과거 PARTIAL을 자동 성공으로 소급하지 않는다.
+
+### 배치 E 실시간 OPEN 재조회
+
+GitHub Search API total_count 재조회 **84건** = 본체 Issue 1/PR 6 + PC 제어 Issue 76/PR 1. 기존 고정 코호트 88건과 실시간 84건은 서로 다른 분모이며, 이번 배치에서 직접 종결한 건은 0건. 직전 OPEN 85건에서 감소한 1건의 귀속·닫힘 사유를 아직 독립 판정하지 않았으므로 본 감사 성과로 집계하지 않는다.
