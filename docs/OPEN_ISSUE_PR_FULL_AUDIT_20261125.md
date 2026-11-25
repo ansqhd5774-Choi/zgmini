@@ -455,3 +455,19 @@ GitHub Search API 실시간 total_count **84건** = 본체 Issue 1/PR 6 + PC 제
 
 - #2032 상위 9필드 중 불일치 표시 1건은 **TXT에 `exitCode` 필드가 존재하지 않기 때문**이다. 같은 키의 값 충돌이 아니다. 원본 TXT는 `phase=PREVALIDATION`, `mutationStarted=false`, `firstFail=REQUEST_RECEIVED`, `nextAction=VERIFY_APPROVED_RETIRED_IRAN_STATE_NO_RETRY`를 기록한다. JSON/TXT에 동시에 존재하는 8개 대조 필드 8/8 일치, 출처 한쪽에 없는 `exitCode`는 비교 대상에서 제외. 원장 상위 8/9는 임의 실패 상태나 바이트 불일치로 확대 해석하지 않는다.
 - GitHub Search API 최신 OPEN 총 **84건** = `zgmini` Issue 1/PR 6, `zgmini-pc-control` Issue 75/PR 2. 원장 고정 코호트 88건과 다름. 이번 배치 직접 종결 0.
+
+
+## 2차 독립 증거 조회 — 배치 J (2026-11-25)
+
+기존 배치 I 독립 증거 부분검사 38/88에서 시작. 신규 4건(#3533,#3525,#3520,#3528)의 원본 Actions·JSON/TXT 전문을 직접 검증하여 **누적 42/88 (47.7%)**. 이번 감사자가 신규 종결한 요청 3건; 전 배치까지 직접 종결 3건과 합하여 **직접 완료 종결 누적 6건**. #3528은 이미 외부 담당자에 의해 CLOSED/completed 처리됐으며 이번 회차에서 독립 교차검증했을 뿐 직접 종결 성과 아님.
+
+| Issue | Actions·원본 영수증 | 판정 |
+|---|---|---|
+| [#3533](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3533) | [Run 45584232896](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45584232896) completed/success; operating 인벤토리 361개 프로세스/선별 45개. `results/pc-process-inventory-45584232896-1-operating.json/.txt` Git blob JSON `08c9687c200825b29b0eca791423f7003b2a4155`, TXT `be279d0f32c237867c230abace4b6343e8f3b457`, requestId·runId·PASS/PROCESS_INVENTORY_COLLECTED, 운영 쓰기 0/재시도 0 일치 | **직접 CLOSED/completed**, 원본 댓글 `7159830578`. 연동 운영 lease 복구 성공으로 확대 해석 금지 |
+| [#3525](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3525) | [Run 45578468827](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45578468827) completed/success; `results/pc-process-inventory-45578468827-1-operating.json/.txt` blob JSON `df6499b737264f82715c90490d5be6845b5351c4`, TXT `c023b7c2a6e09892c3a3c22a1e28d9c85a6f7297`. 요청 ID·role operating·runId·PASS/PROCESS_INVENTORY_COLLECTED·operationalWrites=0·automaticRetries=0 정합 | **직접 CLOSED/completed**, 증거 댓글 `7159839911` |
+| [#3520](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3520) | [Run 45576525388](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45576525388) completed/success; `results/pc-process-inventory-45576525388-1-operating.json/.txt` blob JSON `66ab3096441579313f54790a132f7cf936c7ead8`, TXT `d52d0f6412b8d39d49f3f7d75ae3c0416e86b70b`; 요청 ID·role·runId·PASS·쓰기/재시도 0 정합 | **직접 CLOSED/completed**, 증거 댓글 `7159841891` |
+| [#3528](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3528) | [Run 45579963186](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45579963186) completed/success. JSON blob `537ea9ecb5ca31a7ef8c1209c321f652445e6a53`, TXT `4d3947fbd0ec7e72a75eee52810c26bc230ec120`. `PASS/W04_3516_STATUS_OBSERVED`, requestId·runId·role 정합; observed phase RECOVERY_REQUIRED, leaseHeld=true, recoveryRequired=true, protection UNCHANGED, 쓰기/재시도 0 | **기존 타 담당자 CLOSED/completed 교차 확인**. `#3516` 운영 복구 미완료로 별도 OPEN 유지 |
+
+기타 원장 1차 재검토: #2426/#2427은 현재 월별 Actions 능동 진단 및 Wide Scout append-only 원장으로 다른 업무가 계속 기록하므로 OPEN 보존. #2237은 CANCELLED / steps 0 원인 미확정 OPEN. #2353 Runner roster API HTTP 403은 현재 NON_BLOCKING이며 원본 API 권한 변경 성공 근거 없음. #3073은 COMMON_WRITER natural drain timeout handoff, 실제 복구 근거 미확인 OPEN. #3516 독립 C급·lease archive 미완료 OPEN. #3519 후검사 원본 실행 결과 미확인 OPEN. #3517/#3518/#3531은 CI 실패 접수 원장으로 실제 해결 및 해당 SHA 후속 테스트 증거 확보 전 종결하지 않는다. #3522/#3524는 다른 담당자가 실행 미등록 단발 요청을 CLOSED/not_planned 처리한 기록을 확인했으나 본 감사의 완료 건수로 합산하지 않는다.
+
+진행 경계: 1차 고정 대상 88건 전체 본문/댓글 열람 완료; 2차 독립 원본 증거 부분검사 **42/88**, 잔여 **46건**. 위 신규 관측 요청들은 원래 단회 조회 범위만 종결했다. 재실행·실제 PC/Task/Controller/Writer/DB 변경 0건.
