@@ -1297,3 +1297,15 @@ GitHub Search API 실제 재조회: 본체 Issue **1** / PR **6**, PC 제어 Iss
 - 원담당 리뷰에서 집계 입력 projection의 실제 **사전 body-hash/Run 인증** 출처, 범용 R6 그룹 raw 커버리지, 현행 private/read-only/512MiB·4k/20k caps와 일치하는 운영 경계가 검증되어야 함. 신규 함수가 단독 존재한다는 것만으로 PIT0405 인증 수치가 나타나지 않음. 새 Draft 정확 HEAD CI/회귀와 원담당 승인 후에만 선택 연결.
 - 본체 #1031의 무등록 BLS 25/24h 공유 원자 예약 보호는 여전히 실PC 설치·안전 이관 미완. PC #1969/#2059 기존 out-of-band BLOCKED의 인증 Windows 실행 세션/로컬 원장 대조 역시 미완.
 - 이번 회차 신규 감사 직접 종결 0, 누적 직접 종결 10; 고정 코호트 검증 **84/88(95.5%)**, 잔여 정확 **4건** (#1031,#1266,#1969,#2059). 추가된 #1614는 **고정 최초 88건 코호트 밖의 새 source-only 보조 Draft**이며 분모나 완료 건수에 산입하지 않음. 운영 PC·Controller·Writer·SQLite/D1·Task·Provider/실제 인증/Job 변경 0.
+
+
+## 배치 AU — #1614 정확 Git 소스 바이트로 Node 14/14 PASS, 경계·비공개 출력 회귀 확장 (2026-11-25 KST)
+
+**원본 고정 88건 증거검증 시작/종료 84/88(95.5%)**, 잔여 #1031/#1266/#1969/#2059. 신규 후속 Draft #1614의 단순 설계 동등 코드 테스트가 아니라 **GitHub에서 직접 fetch한 원본 모듈/테스트 내용과 로컬 실제 Node 실행 바이트의 Git blob SHA를 비교**했다.
+
+- 원본 [#1614](https://github.com/ansqhd5774-Choi/zgmini/pull/1614)는 W04 원담당 `codex/employment-1y-reader-r1`을 base로 한 **Draft OPEN**. 현재 HEAD `c0c241a4a6b924e095c12596e892f9811ae0b3cb`. 변경 파일 2개.
+- `lib/market-score/employment-r6-raw-aggregate-source-only.mjs` 원격 blob `59463cb31314bc034e304744080ea49c2b119b3f`, 로컬 직접 재구성 후 `git hash-object` **동일**. 최종 `tests/employment-r6-raw-aggregate-source-only.test.mjs` 원격 blob `62a6be946762ccc61f2887c47aaaf7aae3f9dbb2`, 실제 Node 실행 로컬 파일 `git hash-object` **동일**. 중간 업데이트에서 단일 추가 공백 줄 때문에 remote SHA가 달랐지만 **최종 파일은 바이트 동일하게 수정·원격 재조회 완료**.
+- Node.js `v22.16.0` 실제 `node --check` 소스/테스트 통과. `node --test tests/employment-r6-raw-aggregate-source-only.test.mjs` 실제 실행: **14/14 PASS, 0 FAIL, 0 SKIP**. 원래 10개에서 신규 4건(4,000/4,001 행 입력 상한; 입력 순서 독립 집계와 그룹·월별 총합; 중복·비정상·64개 초과 whitelist; 민감 raw ID/경로/requestKey의 결과 미노출)을 추가. 테스트 대상은 승인된 원본 DB가 아닌 **합성 불변식 fixture**임.
+- [#1614 테스트 증거 원문 댓글 #7162786758](https://github.com/ansqhd5774-Choi/zgmini/pull/1614#issuecomment-7162786758) 직접 작성 완료. 다만 정확 HEAD `c0c241a4a6b924e095c12596e892f9811ae0b3cb`에 대한 Actions Run **0**, check-runs **0**. `Draft`와 비-main base로 인해 현재 원격 CI 성공을 추정하지 않으며, 별도 새 실행·보안 승인·병합을 발행하지 않음.
+- 코드 기능은 **이미 사전 검증된 private identity projection의 읽기 전용 group/month count**이며, 실제 raw 본문의 body SHA/Run 증명·SQLite source readback·현행 W04 PIT0408/PIT0605 보호와 입력 생산 경로 연결은 아직 구현·검증되지 않았음. 새 #1614를 원본 #1266의 완료/종결로 바꾸지 않는다.
+- #1031 원본 BLS shared 25/24h 보호, PC #1969/#2059 과거 Windows out-of-band 실행 인증은 여전히 보류. 감사 누적 직접 종결 10건/이번 직접 종결 0, 원본 검증 **84/88(95.5%) 유지**. 이번 변경은 source-only Draft #1614 테스트 4건 확장, 댓글, 감사 문서만 해당. 기존 W04 owner 브랜치 원본·실제 운영 PC/Controller/Writer/SQLite/D1/Task/Provider/Workflow/운영 승인 변경 0.
