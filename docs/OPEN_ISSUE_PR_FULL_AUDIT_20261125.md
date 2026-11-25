@@ -305,3 +305,7 @@ GitHub Search API total_count 직접 조회: **86건 = 본체 Issue 1/PR 6 + PC 
 배치 C 16건은 **후속 댓글 및 원본 요청 본문 재점검 16/16**, 2차 독립 원본 실행 및 결과쌍까지 확인한 추가 항목은 **#939 1건**. 이전 배치 A/B 고정 코호트 9건 + #939 = 독립 증거 부분검사 누적 **10/88건**, 최종 증거 기반 종결 **2/88건** (#1026,#939). 나머지 14개 신규 본문/댓글 점검 항목을 독립 증거 완료율에 섞지 않는다.
 
 작업변경: #939 CLOSED/completed, 다른 항목 종료 0, 운영 PC·DB·Task·Controller·Writer 변경 0. 다음에는 ER1 원본 결과 파일 경로와 후속 대체 증거 연결을 검증하고 W01/W03/W05의 마지막 소속 후보 #488을 별도 귀속 결정한다.
+
+### 배치 C 후 실시간 OPEN 변동 감지
+
+GitHub Search total_count 재조회: **86건 = 본체 Issue 1, PR 6 / PC Issue 77, PR 2**. 전 배치의 86건(PC Issue 78/PR 1)과 총량은 같지만 구성 변화가 발생. PC 제어 OPEN PR 검색 결과: [#3544](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3544), [#3545](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3545). 둘 다 고정 88건 원본에는 없는 신규 PR이며 원본 검사율/종결 건수에 합산하지 않는다. #3542는 현재 OPEN 검색에 나타나지 않으므로 그 원본 종료 방식은 별도 조회 전 확정하지 않는다. 전체 OPEN 수량만으로 원본 해결률을 추산하지 않는다.
