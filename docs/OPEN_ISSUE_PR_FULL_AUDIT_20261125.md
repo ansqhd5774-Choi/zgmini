@@ -863,3 +863,33 @@ GitHub Search API 최신 OPEN: `zgmini` Issue **1** / PR **6**, `zgmini-pc-contr
 - 원본 시간창 `issues` Workflow 전체 Run 목록 45/45·45/45·45/45 및 정상군 47/47 직접 대조를 완료했으나 당시 GitHub 내부 등록 실패 원인은 `ROOT_CAUSE_UNKNOWN`.
 - PC·Controller·Writer·SQLite/D1·Task·승인·PR 병합·PC Job 신설·기존 요청 재실행·Workflow 토글 **0건**.
 - 후속: 미검증 **16건**의 원본 증거 최초 감사만 신규 산입, W01/W03/W05 완료 항목의 정당한 수명주기 종결 가능성 판정, 활성 W04·ER1·#3516 보호.
+
+
+## 배치 AD — GitHub 능동 진단 3개 원장의 실제 의존성·표본 Run 검증 (2026-11-25 KST)
+
+기준 배치 AC **72/88 (81.8%)**, 잔여 16건. 원본 코호트 **PC #1743, #2426, #2427** 3건에 대한 기존 1차 원장 열람을 넘어 현재 main 소스의 실제 가드와 원본 GitHub Actions 참조 실행을 직접 교차검증하였다. **신규 독립 원본검증 3건**, 누적 **75/88 (85.2%)**, 잔여 **13건**. 이 세 건은 현재 활성 관제 기록 및 근거를 감사한 것으로, 모든 자동 진단/원래 관측된 장애 100% 해결 판정이 아니다.
+
+### #1743 — 레거시 진단 원장 자동화 의존성 유지
+
+- [PC #1743](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1743): 현재 **OPEN**, 원본 생성자 `ansqhd5774-Choi`, body marker `ZGMINI_PROACTIVE_DIAGNOSTIC_LEDGER_R1` 확인, 기존 누적 댓글 189건.
+- 현재 main [`agent-handoff/proactive-diagnostics-runner.mjs`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/agent-handoff/proactive-diagnostics-runner.mjs), Git blob `db868bb7c784ec20798e44d30065cd1e41822411`: `assertLegacyLedger`가 `SCOUT_POLICY.ledgerIssueNumber`, `state==='open'`, owner, marker를 검사하며 `scanLatest` 최초 및 GitHub write 전 두 차례 검사한다. fail-closed 예외 `LEDGER_NOT_VERIFIED`.
+- 현재 main [`agent-handoff/deep-diagnostics-runner.mjs`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/agent-handoff/deep-diagnostics-runner.mjs), Git blob `288cc514d18b6d100f4deb0f95423427ec603a40`: `ledgerIssue=DEEP_POLICY.ledgerIssueNumber` 사용, `checkLedger`가 `state==='open'`, owner, 동일 R1 marker를 요구하며 잘못되면 `LEDGER_UNVERIFIED` 중단. 현재 원장 #1743 연동은 기존 Issue 원장 및 위 두 실행 소스의 계약과 일치.
+- **판정: OPEN 유지 필수**. 단순 레거시 댓글 정리라는 이유로 #1743을 종료하면 위 두 자동 진단 실행이 fail-closed 될 수 있다. 원장 병합·종결을 하려면 두 Runner 및 고정 역사 영수증 가드의 별도 안전한 이관·CI가 선행돼야 함. 이번 원본 실행·운영 변경 없음.
+
+### #2426 — 월별 Proactive 진단 원장 근거 표본 교차검증
+
+- [PC #2426](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2426): OPEN, body `ZGMINI_PROACTIVE_DIAGNOSTIC_LEDGER_R2 month:2026-11 shard:1`, 댓글 54개. 원장에 등록된 원본 실패 관측 중 [Run 45574811728](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45574811728) 직접 API: `completed/failure`, `C996 R5 Readonly Source Checks`, head `ba5efdc82bd78fa48638ef34b9c3b980e10e9d12`; 원장 표기와 일치. Job `139069993380` failure, `Run changed-source regressions only` Step #5 failure 직접 확인.
+- 추가 원장 예 [Run 44598707292](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44598707292): completed/failure, head `5abe57b755f6a37aff2926e877c6db6e6e2794bd`, Job `135823935890` failure, Step #4 `Inspect GitHub-only scope and report evidence without PC access` failure. 이 예는 Wide Scout 자체가 실패한 원본이지 PC Runtime 실패 증거가 아니다.
+- **판정:** 월별 append-only 실패 관측 원장의 원본 Run/Job/Step 표본 실증, 이슈 OPEN 유지. 모든 과거 54개 보고의 원인/해결 완료나 운영 PC 결함 검증은 포함하지 않음.
+
+### #2427 — 월별 Wide Scout 원장 근거·범위 제한 검증
+
+- [PC #2427](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2427): OPEN, body `ZGMINI_WIDE_SCOUT_LEDGER_R4 month:2026-11 shard:1`, 댓글 54개. 각 보고에 `Actions/Issues/PR` 범위 `true/false`를 명시한 append-only GitHub 감시 이력.
+- 원장 기록된 취소 샘플 [Run 45501063730](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45501063730), [Run 45588810249](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45588810249), [Run 44581323674](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44581323674) 직접 조회: 세 건 모두 `completed/cancelled`; 각각 `PC Secret Scan`, `C996 R5 Readonly Source Checks`, `C996 R5 Readonly Source Checks`. 원장 참조의 **취소 사실**과 일치. 취소 주체/근본 원인 또는 실제 운영 시스템 고장·복구 성공은 검증되지 않음.
+- 월별 일부 보고가 `INCOMPLETE_EVIDENCE` 또는 `Actions false`라고 밝힌 사실을 유지한다. 탐색 원장 자체의 운영 이력을 갑자기 일반 W01/W03/W05 완료 요청으로 재분류하거나 폐기하지 않음. **OPEN 유지**.
+
+### 배치 AD 결론·제한
+
+- 원본 88건에 대한 **2차 검증은 75/88(85.2%)**, 잔여 **13건**. 이번 3건은 각각 별개 원장 Issue이고 원본 참조 일부의 실제 소스·실행을 교차검증했으나 전체 관제 항목을 전수 검증한 것은 아님.
+- 신규 직접 종결 **0건**, 누적 감사 직접 종결 **10건**. 운영 Windows PC·Controller·Writer·DB/D1·Task·승인·새 PC Job/PR/Workflow·원본 실행 재시도 **0건 변경**.
+- 후속: 미검증 13건의 고정 원본 ID별 최초 검증과 W01/W03/W05 직접 종결 가능성 분류. W04·ER1·#3516 독립 복구 보호.
