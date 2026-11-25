@@ -119,7 +119,7 @@
   text-decoration: none;
   transition: background-color .18s ease, transform .18s ease;
 }
-.dashboardLink:hover { background: #0c956e; transform: translateY(-1px); }
+.dashboardLink:hover { background: #0a8062; transform: translateY(-1px); }
 .dashboardLink:focus-visible,
 .brand:focus-visible,
 .externalLinks a:focus-visible,
