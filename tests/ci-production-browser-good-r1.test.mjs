@@ -4,7 +4,8 @@ import {readFileSync} from 'node:fs';
 import {WEB_SPEED_GOOD} from '../scripts/ci-web-speed-good-r2.mjs';
 import {
  PROD_ORIGIN,PROD_ROUTES,PROD_VIEWPORTS,PROD_FIXTURE,PROD_SCHEMA,
- classifyProductionPage,summarizeProductionLab,runProductionLab
+ classifyProductionPage,summarizeProductionLab,runProductionLab,
+ probeEconomicMobileInteraction
 } from '../scripts/ci-production-browser-good-r1.mjs';
 
 const sample=(route='/',viewport=PROD_VIEWPORTS[0],metrics={
@@ -107,6 +108,73 @@ test('Cloudflare beacon markers never certify RUM collection or real-user P75',(
  assert.throws(()=>classifyProductionPage(bad),/CI_PRODUCTION_SPEED_SAMPLE_INVALID/);
  assert.equal(summarizeProductionLab(all()).coreWebVitalsFieldP75,'UNVERIFIED');
 });
+test('economic mobile lab click proves local card and period state only',async()=>{
+ const events=[];
+ let expanded='false',pressed='false';
+ const first={
+  waitFor:async()=>{},
+  getAttribute:async k=>k==='aria-expanded'?expanded:null,
+  tap:async()=>{expanded=expanded==='false'?'true':'false';events.push('card');}
+ };
+ const period={
+  waitFor:async()=>{},
+  tap:async()=>{pressed='true';events.push('period');},
+  getAttribute:async k=>k==='aria-pressed'?pressed:null
+ };
+ const page={
+  locator:selector=>{
+   if(selector==='#zg-about-intro-dialog')return {isVisible:async()=>false};
+   if(selector==='button.zg-terrain-row')return {first:()=>first};
+   throw Error('UNEXPECTED_SELECTOR');
+  },
+  getByRole:(role,opts)=>{
+   assert.equal(role,'group');
+   assert.equal(opts.name,'차트 기간 선택');
+   return {getByRole:(kind,arg)=>{
+    assert.equal(kind,'button');assert.equal(arg.name,'1M');return period;
+   }};
+  }
+ };
+ assert.deepEqual(await probeEconomicMobileInteraction(page),{
+  scope:'LAB_FIRST_PARTY_TOUCH_NO_RUM',state:'INTERACTION_WORKS',reason:null
+ });
+ assert.deepEqual(events,['card','period','card']);
+ const observed=sample('/economic-indicators/');
+ observed.mobileInteraction={scope:'LAB_FIRST_PARTY_TOUCH_NO_RUM',
+  state:'INTERACTION_WORKS',reason:null};
+ assert.equal(classifyProductionPage(observed).mobileInteraction.state,'INTERACTION_WORKS');
+ assert.equal(summarizeProductionLab(all()).inpFieldP75,'NOT_MEASURED');
+ assert.equal(summarizeProductionLab(all()).siteGoodVerified,false);
+});
+test('economic mobile lab cannot certify interaction when the period does not change',async()=>{
+ const first={
+  waitFor:async()=>{},
+  getAttribute:async()=> 'false',
+  tap:async()=>{}
+ };
+ const page={
+  locator:selector=>selector==='#zg-about-intro-dialog'?
+   {isVisible:async()=>false}:{first:()=>first}
+ };
+ const result=await probeEconomicMobileInteraction(page);
+ assert.equal(result.state,'UNVERIFIED');
+ assert.equal(result.reason,'CARD_CLICK_NOT_EXPANDED');
+ assert.equal(result.scope,'LAB_FIRST_PARTY_TOUCH_NO_RUM');
+});
+test('production mobile click probe remains behind first-party-only network filter',()=>{
+ const src=readFileSync(new URL('../scripts/ci-production-browser-good-r1.mjs',import.meta.url),'utf8');
+ assert.match(src,/if\(route==='\/economic-indicators\/'&&viewport\.width===390\)/);
+ assert.match(src,/mobileInteraction=await probeEconomicMobileInteraction\(page\)/);
+ assert.match(src,/hasTouch:viewport\.width===390/);
+ assert.match(src,/isMobile:viewport\.width===390/);
+ assert.match(src,/await first\.tap\(/);
+ assert.match(src,/await period\.tap\(/);
+ assert.match(src,/if\(!sameOrigin\)/);
+ assert.match(src,/return network\.abort\('blockedbyclient'\)/);
+ assert.match(src,/\['GET','HEAD'\]\.includes\(request\.method\(\)\)/);
+ assert.doesNotMatch(src,/page\.click\(|page\.fill\(/);
+});
+
 test('read-only browser inspects only official Cloudflare beacon script markers',()=>{
  const src=readFileSync(new URL('../scripts/ci-production-browser-good-r1.mjs',import.meta.url),'utf8');
  assert.match(src,/static\.cloudflareinsights\.com/);
