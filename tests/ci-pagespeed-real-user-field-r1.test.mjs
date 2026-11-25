@@ -144,6 +144,9 @@ test('existing browser workflow collects bounded PSI evidence with other UI test
  const c=workflow.indexOf('      - name: Measure local WCAG A/AA accessibility with axe-core');
  assert(a>0&&b>a&&c>b);
  assert.match(workflow,/node scripts\/ci-pagespeed-real-user-field-r1\.mjs/);
+ assert.match(workflow,/run_psi_field:\s*\n\s*description:/);
+ assert.match(workflow,/default: false/);
+ assert.match(workflow,/github\.event_name == 'workflow_dispatch' && inputs\.run_psi_field == true/);
  assert.match(workflow,/artifacts\/performance-lab\//);
  assert.match(workflow,/node scripts\/ci-cross-browser-core\.mjs/);
  assert.doesNotMatch(workflow,/continue-on-error:\s*true/);
