@@ -763,3 +763,30 @@ GitHub Search API 직접 재조회: `zgmini` Issue 1/PR 6, `zgmini-pc-control` I
 - GitHub Search API OPEN 스냅샷: 본체 Issue **1**/PR **6**, PC 제어 Issue **58**/PR **2** = **총 67건(이슈 59, PR 8)**. 고정 최초 코호트 분모 88과 섞지 않음.
 - 신규 직접 Issue/PR 종결 **0건**, 기존 직접 종결 누적 **10건** 보존. 새로운 PC Job/워크플로 실행, 승인 변경, Controller/Writer/SQLite/D1/Task/운영 PC 변경 모두 **0건**.
 - 후속 기준 **64/88(72.7%)**, 잔여 **24건**의 최초 증거검증만 신규 산입. W01/W03/W05 완성 항목과 운영 공통 장애를 구분해 종결하며, W04·ER1·#3516 실제 복구 진행 항목은 원담당자 보호.
+
+
+## 배치 Z — 고정 코호트 공통 계약·Runner 권한 원본 2건 (2026-11-25 KST)
+
+이전 배치 Y **64/88(72.7%)**, 잔여 24건에서 시작. 최초 88건에 존재하나 앞선 A–Y 2차 신규 완료 산입이 없던 **PC #783, #2353**의 원래 문제와 실제 증거를 출처별 직접 검증했다. 신규 원본 증거검증 **2건**, 누적 **66/88(75.0%)**, 미검증 **22건**. 이 수치는 원본 증거 출처의 독립 확인이며 실제 모든 운영 업무 완료율과 다르다.
+
+### PC #783 — 공통 R6 A/B 계약 갭 완료 근거 검증
+
+- [원본 Issue #783](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/783) 현재 `CLOSED`. 원래 요구인 *고정 Writer preimage 조회 A* 및 *R6 opt-in 두 키 설정 적용 B*를 별도 고유 요청으로 정확히 구분했다.
+- 조회 A [#863 / Run 42435780811](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42435780811) `completed/success`, Job 128594187438 success. 원본 JSON/TXT Git blob `e41982cbf019a5e53a514cbdf5ed819a81682dd3` / `ef391c9262719fa41235c95b718720493fa08a46`, 원본 requestId `pc-85c3bc96-7721-4a68-800c-8df3aa90880f`. 결과 `PASS/WRITER_FIXED_PREIMAGE_READONLY`, sourceIdentityConsistent=true, `runtimeSourceVerified=false`. 운영 중 Core 프로세스 source 확인 성공이라는 뜻은 아님.
+- 설정 B [#939 / Run 42492034633](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42492034633) `completed/success`, Job 128766294368 success. 원본 JSON/TXT Git blob `dbd989b07c11b979b5aaa9f1d622a283a1b3ad67` / `5e58641de8f0a6a4487a550d0a1675c6bbb6de19`. `CONFIG_B_APPLIED_VERIFIED/CONFIG_B_OPTINS_SET`, requestId `a94b4091-6f6f-427e-98f7-a6e4dd2fa210`, backupVerified=true, changedKeys 정확 `employmentR6AutoCollection` 및 `employmentR6OneYearAutoPublication`, verifiedInstalledFiles=19, installedSourceSha `ec48fc456274fd16dbf0ebe29cf201b8497450d1`. JSON/TXT 동일 requestId/status/code/manifestSha256/beforeSha256/afterSha256/backup/installedSource/runId 대조.
+- 이전 담당자가 `CLOSED/completed` 처리한 **공통 경로 계약 목적**의 실제 성공 증거를 독립 재확인. W04/R6 전체 수집·History·D1/API·현행 설치 정상성까지 완료 선언하지 않는다. **이번 감사 신규 직접 종결 0**.
+
+### PC #2353 — 운영 PC Runner roster HTTP 403 원본 한계 검증
+
+- [원본 Issue #2353](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2353) `OPEN`, 원래 문제는 운영 PC CLI credential을 사용하는 `actions/runners` roster 읽기의 HTTP 403이며 **NON_BLOCKING**이다. 연결 계정 저장소 admin 역할과 운영 PC의 GitHub CLI credential 권한을 동일시하지 않는다.
+- 직접 원본 확인: 후속 [#2351 / Run 44528303165](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44528303165) `completed/success`, 실제 operating Job 135574633877 success. JSON `results/pc-process-inventory-44528303165-1-operating.json` blob `80dd13a948f9bc942eaa7ac57e0d248167b151b0`, TXT `results/pc-process-inventory-44528303165-1-operating.txt` blob `c4b38e9bc3938c05f3f9ec6d85000d9a73f89dae`. JSON 내부 `dedicatedRunnerEvidence.queryState=QUERY_UNAVAILABLE`, `queryFailureReason=HTTP_403_FORBIDDEN`, `allSixOnline=null`; 요청 자체 `PASS/PROCESS_INVENTORY_COLLECTED` 및 원본 maintenance 성공과 별개 결과다.
+- 원래 결함 및 권한 증거의 직접 검증은 완료. **운영 PC credential의 Administration:read 권한 확보나 roster 6대 online 검증은 아직 없음**. 추가 토큰 발급·권한 상승·Runner 재설치·운영 명령 실행 없이 OPEN 보호. 이미 병합된 PR #2354/#2355는 원래 permission 장애 해결 증명이 아님.
+
+### 종료 시점 OPEN 스냅샷 및 경계
+
+GitHub Search API 직접 재조회: `zgmini` Issue **1** / PR **6**, `zgmini-pc-control` Issue **57** / PR **2** = 전체 **66건(이슈 58/PR 8)**. 직전 배치 Y의 67건에서 PC Issue 1건 감소했으나 본 배치 직접 종결이 아니므로 감사 성과로 계상하지 않음. 최초 코호트 88과 최신 OPEN 66은 별도 분모.
+
+- 1차 본문·댓글 88/88, 2차 원본 독립검증 **66/88(75.0%)**, 잔여 **22건**.
+- 이번 신규 직접 Issue/PR 종결 **0**, 누적 본 감사 직접 종결 **10건** 유지.
+- 운영 PC/Controller/Writer/SQLite/D1/Task, 기존 운영 승인, 신규 PC Job/PR/재실행 모두 **0건 변경**.
+- 후속 단계: 남은 코호트 22건 중 미검증 고유 원본과 동등 후속 증거를 분리; W01/W03/W05 완료 항목의 안전한 종료 판정, W04·ER1·#3516 및 공통 운영 문제 보호.
