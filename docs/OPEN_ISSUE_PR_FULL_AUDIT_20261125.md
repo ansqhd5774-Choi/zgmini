@@ -549,3 +549,23 @@ GitHub Search API 직접 재조회 **78건 OPEN = 본체 Issue 1 / PR 6 + PC 제
 - 원담당 W04/ER1 및 공통 Controller/Writer/Runner 상태 변경 0, 신규 실행/승인/Issue/PR 0, 이번 직접 종결 0. 누적 감사 담당 직접 종결 8(완료 7, 대체 1) 유지.
 
 **현재 기준:** 1차 본문·댓글 88/88, 2차 원본 Actions 또는 PR HEAD 소스 CI 검증 **51/88(58.0%)**, 미검증 37건. 후속 회차에서는 남은 고정 코호트 개별 식별자에 대해 중복검증을 피하고 원본 실행·영수증 확인 가능한 항목만 우선한다.
+
+## 2차 독립 증거 조회 — 배치 O (2026-11-25)
+
+기존 배치 N **51/88건(58.0%)**에서 출발. 기존 배치 A–N에서 원본 Actions 및 결과쌍 직접검증에 포함하지 않았던 **고용 R6 원본 5건**을 GitHub Run→Job→Steps, 원격 Git 저장 `results/employment-r6-registered-<requestId>.json/.txt` 각각 직접 조회하여 신규 5건을 추가. **56/88건(63.6%)**, 미검증 **32건**. 원본 실행 검증과 실행 목적 성공·Issue 종결은 서로 다른 판정이다.
+
+| 대상 | 원본 실행 및 Git blob SHA (JSON/TXT) | JSON/TXT 교차검증 | 결과와 종결 경계 |
+|---|---|---|---|
+| [PC #1740](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1740) | [Run 43874476126](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43874476126) Job 133323799793 `completed/success`; `b9f6aa0308419a345d539216e7e44f8911c16bd1` / `0278e8fdb83f6d1b67b6574b43c69f3acf24630a` | 8/8 공통 필드 일치 | `PARTIAL/R6_DOL_MANUAL_PARTIAL`, `publication=NOT_ATTEMPTED`; 작업 미완료, OPEN |
+| [PC #1736](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1736) | [Run 43873275564](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43873275564) Job 133319687743 `completed/failure`; `dcba784c8e5113bd53c07ee636e50fc5b495ab7f` / `7714a9bb43a5ca1139aca4eeb8ec4d7526c7fb54` | 공통 8필드 중 7개 동일. sourceSha의 JSON `null` vs TXT `UNVERIFIED`는 같은 미확인 의미의 서로 다른 직렬화 | `BLOCKED/R6_B_CORE_LOCK_OCCUPIED`, `firstFail=PREFLIGHT`, publication UNVERIFIED; OPEN |
+| [PC #1688](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1688) | [Run 43861542548](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43861542548) Job 133279339026 `completed/failure`; `64a25c8af8e064b81693aaffec7c7deaec8806a1` / `a62517c50e87add15e9003b52a5e533dc813551e` | 7/8 literal 일치, sourceSha null/UNVERIFIED 직렬화 차이 | `STATE_UNKNOWN/R6_DOL_UNCLASSIFIED_STOP`, publication UNVERIFIED; OPEN |
+| [PC #1637](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1637) | [Run 43845159858](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43845159858) Job 133223367594 `completed/failure`; `4624bc97f558bcadf1183ae343cb1d8298a23c16` / `ff799a220300f65dc8a947044e1a3e9418c2325f` | 6/8 literal 일치, sourceSha/lastPass JSON null vs TXT UNVERIFIED 직렬화 차이 | `STATE_UNKNOWN/R6_B_RESULT_UNVERIFIED_STOP`, publication UNVERIFIED; OPEN |
+| [PC #1169](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1169) | [Run 42710641027](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42710641027) Job 129478924707 `completed/success`; `524be5335c1c8260129b1e6537c040953599b73d` / `465a7ced67e4abec7b7949c3984dc85ce37de986` | 8/8 일치 | `PARTIAL/R6_B_PARTIAL_PUBLISH_VERIFIED`, publication VERIFIED **부분 게시만 확인**, 전체 R6 목표 미완이므로 OPEN |
+
+### 실행·원본 정합성 기준
+- 위 5건의 원본 Issue requestId, Git result requestId 및 runId 각각 일치. GitHub Job의 완료/성공은 업무 결과 PARTIAL/BLOCKED/STATE_UNKNOWN과 별개다.
+- JSON `null` ↔ TXT `UNVERIFIED`는 미검증 값을 표시하는 형식 차이이므로 허위 source SHA mismatch로 확대 해석하지 않는다. 대신 원문 literal 8/8 일치인 것처럼 보고하지 않는다.
+- #1646 역시 Issue 댓글에 `STATE_UNKNOWN/R6_B_RESULT_DELIVERY_UNVERIFIED`, Run 43846862079 Job 133229102924 failure 기록. 그러나 Git `results/employment-r6-registered-9b6e3d25-d1a5-4fd8-86b5-762e960aac17.json` 404 및 댓글에 `CREATED=0/2 READBACK=0/2` 명시. **원본 결과쌍 미존재이므로 이번 2차 검증 완료에 산입하지 않음**.
+- 다른 작업 중인 W04·고용 R6 신규 설치/공유 승인/Task/Writer/DB/D1 및 원래 Run 재실행 없음. 이번 Issue/PR 종결 **0건**, 감사 담당 직접 누적 완료 7건 + 대체 종료 1건 유지.
+
+**진행률:** 최초 코호트 88 고정, 1차 본문/댓글 88/88, 2차 독립 원본 실행·소스 CI 증거 **56/88(63.6%)**, 잔여 **32건**. 남은 32건은 JSON/TXT 미등록, 외부 원장 의존, CI 범위 부족, 진행 중 운영 담당 업무를 구분해 검증한다.
