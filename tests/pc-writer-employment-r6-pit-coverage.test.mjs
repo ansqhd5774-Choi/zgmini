@@ -527,3 +527,46 @@ test("PIT-04-08 optional NULL timestamp cannot erase an as-of Current key",()=>{
    asOfDate:"2026-11-18",keyReviewOffset:0}),/PIT_AUDIT_KEY_COVERAGE_MISMATCH/);
  }finally{fs.rmSync(dir,{recursive:true,force:true});}
 });
+
+test("PIT-04-08 private audit partitions hash-only, value-only and source-identity conflicts without leaking raw values",()=>{
+  const dir=fs.mkdtempSync(path.join(os.tmpdir(),"zgmini-r6-pit-conflict-causes-"));
+  try{
+    const core=path.join(dir,"core.sqlite"),candidate=path.join(dir,"EMPLOYMENT_R6_CANDIDATE.sqlite");
+    const a=observation("AL",100,"a".repeat(64)),b=observation("AK",200,"b".repeat(64));
+    const c=observation("AZ",300,"c".repeat(64)),d=observation("AR",400,"d".repeat(64));
+    const original=[a,b,c,d];
+    const proposed=[
+      {...a,hash:"e".repeat(64)},                 // hash-only
+      {...b,value:201},                          // numeric-only
+      {...c,value:301,hash:"f".repeat(64)},      // numeric and hash
+      {...d,provider:"DIFFERENT_PROVIDER"},      // provider identity
+    ];
+    fixture(core,{current:original,history:original});
+    fixture(candidate,{current:proposed,history:proposed});
+    const protectedBytes=[digest(core),digest(candidate)];
+    let saved=null;
+    const result=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,
+      asOfDate:"2026-11-18",keyReviewOffset:0,
+      onPrivateKeyLedger:(ledger,digestValue)=>{saved={ledger,digestValue};}});
+    assert.equal(result.candidateOverlapConflictingKeys,4);
+    const breakdown=result.candidateConflictBreakdown;
+    assert.equal(breakdown.total,4);
+    assert.deepEqual(breakdown.causes,{
+      invalidNumericValue:0,providerOrSeriesDifferent:1,
+      valueAndHashDifferent:1,valueOnlyDifferent:1,hashOnlyDifferent:1,
+    });
+    assert.deepEqual(breakdown.changedFields,{
+      numericValue:2,sourceHash:2,provider:1,providerSeries:0,sourceRevision:0,
+    });
+    assert.equal(saved.ledger.allSeriesCandidateCurrentConflicts.length,4);
+    assert.ok(saved.ledger.allSeriesCandidateCurrentConflicts.every(x=>
+      x.differenceFlags&&x.reason==="CANDIDATE_CURRENT_CONFLICT"));
+    assert.equal(saved.digestValue,result.pit04PrivateEvidenceDigest);
+    assert.doesNotMatch(JSON.stringify(breakdown),/"source_hash"|"value"|"provenance"|"observationDate"/);
+    assert.deepEqual([digest(core),digest(candidate)],protectedBytes);
+    assert.equal(result.promotionApproved,false);
+    const normal=auditEmploymentR6PitCoverage({dbPath:core,candidateDbPath:candidate,
+      asOfDate:"2026-11-18"});
+    assert.equal(Object.hasOwn(normal,"candidateConflictBreakdown"),false);
+  }finally{fs.rmSync(dir,{recursive:true,force:true});}
+});
