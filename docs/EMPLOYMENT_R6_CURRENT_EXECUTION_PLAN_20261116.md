@@ -1,13 +1,13 @@
 # ZGMINI W04 고용지표 — 운영 완료 5단계 실행계획
 
-개정일: 2026-11-25 KST  
+개정일: 2026-11-26 KST  
 작업 저장소: `ansqhd5774-Choi/zgmini`  
 작업 브랜치: `codex/employment-1y-reader-r1`  
 계획 개편 직전 HEAD: `20fd8977766be7634605efa8a4f68a1863c2b339`
 
 ## 1. 현재 위치와 최종 목표
 
-**현재: 3/5단계 완료(1·2·4), 3·5단계 진행 중.** 완료 조건 충족 개수이며 작업량의 20% 또는 운영 복구 20%라는 뜻이 아니다. 이 문서 개정으로 기능 완료 개수는 늘어나지 않는다.
+**최신 운영 판정(2026-11-26): 5/5단계 DONE.** 현재 29개 저장 원자료의 수집·계산·게시·실화면·정규 NOOP/UNCHANGED 자동 실행 증거가 §18에 연결됐다. 이 5/5는 2025 과거 2,880건의 true PIT 인증이나 29/29 전부 READY를 의미하지 않는다. 아래 §2~17의 과거 진행률·차단 설명은 그 당시 이력으로 보존한다.
 
 기존 고용지표 29개가 실제 저장 원자료에 따라 계산·게시·표시되고, 기존 자동 실행에서 갱신되는 상태를 완성한다. 공개 기준일, 실제 관측일, 저장·게시 시각을 구분한다. 과거 자료가 부족한 범위는 정확한 PARTIAL로 공개하되 현재 수집·게시 전체의 전역 선행조건으로 만들지 않는다.
 
@@ -231,3 +231,22 @@ W04 원담당이 기존 권한 범위의 기능 작업을 끝까지 수행한다
 - **전달 패키징 완료·실제 복구 미완료:** 승인 source-only [#3539](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3539)에 더하여 기존 격리 [W04 3516 Source Packet Workflow](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/.github/workflows/w04-3516-source-packet.yml)를 재사용한 [PR #3543](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3543) **MERGED** `f8f9a0e5284ea64e5d45ffa3f27ac2b9175ae071`. 첫 Run #45589701693의 Windows worktree CMD 해시 오류(Exit 23)를 정확 Git blob 원문 bytes에서 staging하도록 수정; 최종 정확 HEAD `847bc79916f2972a1c8941c8c607312448da11d3`의 Bundle [#45590347311](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45590347311)·C996 [#45590347318](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45590347318)·Secret Scan [#45590347284](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45590347284) **3/3 SUCCESS**. 비공개 ZIP artifact ID `15009364512`를 다운로드해 2개 정확 Git blob (`824adec9...` JS, `b8a3185c...` CMD)·추가 파일 0 직접 확인; 전체 ZIP SHA256 `01890aa8cd202b890d7d5ec471c8209d0e58381d8dc46d5e85369f9c0f980e0a`. 이는 source/전달 증거이지 실제 C 운영자 인증·설치·reconcile-installed/Lease archive 영수증이 아님.
 - **실제 복구의 유일한 완료 증거:** 기존 승인 manifest raw SHA256 `fd15a911666efe560fcba984b9bff60fdffe83bd27682ddbeb2bfc3142197d4b`, 현재 운영 유지보수기 바이트, 원본 7종 CAS, 독립 #3528 A 영수증과 original #3519 UNKNOWN, 보호·Supervisor·Workflow 및 승인된 독립 Windows C ancestry를 직전 검사한 뒤 **단회** `reconcile-installed`. 출처/해시 불일치·이미 단계/보고 존재·애매한 실패에는 즉시 STOP, 중복 C/B 실행 금지. 결과 `RECOVERED_INSTALLED_STATE/INSTALLED_RUNTIME_RECOVERED_HISTORIC_POSTCHECK_UNKNOWN` + `leaseArchived=true` + archive 원본 owner/marker SHA/운영 원장 readback이 모두 입증된 뒤만 완료 처리. C 인증이 필요한 단계는 일반 Actions Runner가 대신하지 않음.
 - **이후 분리 작업:** PC Job issues-trigger 자체를 실등록 Run으로 확인하고 원인을 최소 수정한 뒤 History 2,880키 주차별 고정 A·Core SQLite native read-only 동일 범위 검증. 저장 변경 확인 시에만 계산·D1/API/UI readback. 원본 실패 일자·PIT 가용일을 소급 만들지 않음. 진행률 **60% 유지**.
+
+## 18. 2026-11-26 실제 Core → D1 → Production 5단계 종료 증거
+<!-- W04-R6-5STAGE-DONE-20261126 -->
+
+**최종 단계 판정: 1·2·3·4·5 DONE = 5/5(정의된 기능 완료조건 100%).** 이전 §17의 3/5(60%)는 해당 시점 관측치다. 다음 발표가 없는데도 임의 재수집·재게시하거나 새로운 예약/전역 Gate를 만들지 않는다.
+
+| 단계 | 원본 실행 및 확인 범위 | 판정 |
+|---|---|---|
+| 1. 기준선 | R2 formula `EMP-R6-FORMULA-R2-CPS-2025-10`, 공식 29 IDs, Core 승인 소스·D1 고정키 유지 | DONE |
+| 2. 로컬↔D1 | [PC #3703](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3703#issuecomment-7170335795)/Run `45670811746`: `PASS/R6_D1_LOCAL_MATCHED`, asOf `2026-11-25`, 29개, 차트 READY 23개. 로컬/D1 body SHA256 `a14ebd651e2b4a796bff5535b6191c13e2378b5c9e49b5dc057b10b331518389` 동일, D1 `stored_at=1795627682278`(02:28 KST) | DONE |
+| 3. 정상 원자료 갱신·보존 | [#3500](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3500) 기존 11/24 정규 DOL RELEASE 실제 수집 3064건·삽입0/개정0·National 최신 주차 11/14. [#3698](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3698#issuecomment-7169984598) 현재 Core에서 6그룹 `RELEASE_ALREADY_STORED`, R6 `NOOP`, 추가 공급자 요청 0. 존재하지 않는 신규 관측·개정을 조작하지 않음 | DONE (현재 발표 가용 범위) |
+| 4. API·실화면 | [zgmini Browser Run 45669018159](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45669018159) 실제 Production PC 1440px·모바일 390px 각각 HTTP 200, 29/29 원값, 29 관측일, 19 점수, READY 차트 23개와 마지막 관측일 일치, JS 오류 0, 전체 CI SUCCESS. Draft 검증 PR #1626은 CLOSED/미병합 | DONE |
+| 5. 기존 자동 Core/Writer 결과 | [#3698](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3698#issuecomment-7169984598) Run `45668237867`: cycle `COMPLETE`, 수집 R6 `NOOP`(모든 그룹 이미 저장), Writer `VERIFIED/UNCHANGED`, asOf 11/25, 29개·차트23, `localResultReadback=VERIFIED`, 해시 `a14ebd65...`; 정확히 [#3703] D1와 일치하며 이후 실사이트 출력 PASS. 변화 없음 때의 무게시 분기 정상 | DONE |
+
+- **History 2,880건의 실제 저장 복구는 별도 완료:** [B #3681](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3681) `W04_HISTORY_REPAIR_COMMITTED`, [사후 A #3691](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3691) `existingHistory=2880/expectedKeys=2880`, `eligible=0`. 이후 자동 cycle 및 로컬/D1/실화면에 최신 23개 차트가 연결됨. 새로운 값 발생 시 수집 재호출은 아님(`sourceStoredAt=1795614638114` 동일).
+- **GitHub→Cloudflare Production 계보:** `zgmini/main@8cb18dfe4d839d42fd62b540334dd12d83511b73` Cloudflare Check Run `139325637740` SUCCESS → Build `6ae888bb-7765-4b23-be7b-0ab4563d7a13` → Version `05ff519d-dbd7-463b-b9d4-5aafbed4318f`. [운영 #3693](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3693)에서 정확 Version 100% 활성 확인. 이번 종료 판정으로 새 배포/재설치 없음.
+- **독립 미입증(본 5단계의 BLOCKER 아님):** [PIT-06-05 #3640](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3640)에서 값 매칭 2,880/2,880건이나 **2025 당시 원본 버전·최초 가용시각의 적격 영수증 0건**. 처음 일치한 영수증은 2026-11이며 `historicalVersionAttested=false`. 2026-11 History 복구는 과거 PIT 최초확인일을 생성하지 않는다. 해당 시점의 점수·가용일을 소급 인증/대체하지 말고 부재 증거 그대로 별도 HOLD/DEFERRED 유지. 6개 비READY 차트를 임의 READY로 채우지 않는다.
+- **정규 갱신 확인과 미래 검증을 분리:** 이번 정규 자동 cycle의 정상 `NOOP/UNCHANGED`, 로컬↔D1 일치, Production 화면 실증은 이미 유효하다. 미래 다음 공식 발표·새 vintage 수신·역사적 독립 자료 발견을 새로운 완료조건이나 반복 예약으로 추가하지 않는다.
+- **진행 증거 원장:** [제어 #3669 최종 재판정](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3669#issuecomment-7170367128). 최초 #3669 차단 실행은 그대로 실패 이력으로 남기며 실제 성공은 신규 #3681에 귀속한다.
