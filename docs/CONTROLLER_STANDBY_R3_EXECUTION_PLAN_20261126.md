@@ -148,3 +148,14 @@ R2에서 확인한 설치 SHA·Runner online은 당시 읽기 증거로만 사�
 - 현행 Watchdog B 승인 계약의 과거 고정 소스 SHA로 신규 Standby를 설치했다고 주장하지 않는다. 실PC Watchdog preimage·새 정확 승인 파일/해시·실제 Windows 실행 경로 검증 전까지 **Draft 유지, 운영 변경 0**.
 
 **다음 필수 실행:** 최신 Windows CI Run #45714992080의 Job/시험 결과를 회수하고 실패 조건을 최소 수정한다. 해당 CI가 성공하더라도 운영 전환 성공을 뜻하지 않는다.
+
+## 8. 2026-11-26 Windows 실행물 승격 증거 보완
+
+- **코드 근거:** [Draft #3738](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3738), 확인된 최신 HEAD `f898a18a5d561ad047b5a73ead74230fee7e2699`.
+- **과거 CI:** R3 초판 11개 단위시험은 정확한 이전 HEAD의 [#45712678648](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45712678648)에서 PASS였음. 이후 코드가 변경되어 이 결과를 최신 HEAD의 성공으로 소급하지 않음.
+- **현행 구현:** 추가 검증 7개를 포함한 단위시험 **18개 작성**, Windows 실제 임시폴더·자식 프로세스·lease 경합 및 WMI 관측 **11개 작성**. 최신 [#45715789661](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45715789661) Windows 격리 CI 실행 결과는 **미확인/QUEUED**.
+- **확인된 실패 조건 수정:** 이전 Supervisor의 `cmd.exe` 자식 PID 6개가 종료되어도 실제 `Runner.Listener.exe`·`Runner.Worker.exe`가 생존할 수 있다. 승격에는 정확한 과거 6좌석/PID 종료 + 실제 Windows WMI의 Controller 경로에 속한 Listener/Worker **0개** 증거를 모두 요구. WMI 경로 인식·접근 불명은 승격만 보류. Watchdog IPC nonce·PID의 Runner 환경 전파 차단. 이전 리더 lease가 없는 정상 종료 뒤에는 확인된 이전 heartbeat/PID/WMI 종료 증거로만 전환.
+- **미실증/직접 제약:** 아직 실제 Windows CI 완료, Watchdog→Standby 전체 IPC 전환, 승인된 운영 PC Controller 소스·Watchdog 설치 SHA 및 B 승인 raw manifest, 실제 Active/Standby 한 번의 전환·업무·복귀 증거가 없음. 과거 Watchdog B R3 #1393의 `STAGED`와 #1395의 별도 신규 프로세스 성공은 역사 증거이며 현재 신규 HA 운영 승인/설치 근거는 아님.
+- **운영 보호:** `main` 미병합, Watchdog 또는 Controller 운영 파일 수정 0, 기존 6 Runner/Core/DB/Writer/D1/예약 변경 0. 새로운 공통 차단 Gate·서버·Runner·예약 생성 없음.
+
+**다음 필수 실행 하나:** 최신 CI #45715789661의 정확한 Job 결과를 회수하여 결함 여부를 판정한다. 정상이라면 실제 Windows 격리 IPC 검증과 변경 대상의 설치 preimage 확정으로 바로 진행한다.
