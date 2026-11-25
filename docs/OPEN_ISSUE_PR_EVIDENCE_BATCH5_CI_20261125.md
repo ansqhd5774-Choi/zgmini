@@ -41,3 +41,8 @@ Issue 댓글에서 SEC limiter 출발시각 수정 PR #1610 merged `ca459ec3e0cf
 1. `rollback-first-evidence.test.mjs`의 정확 현재 파일과 문제 발생 실행 SHA에서 line 6 및 역사적 fixture 생성 방식을 비교. 유효한 실제 줄바꿈으로 고치는 최소 테스트 전용 수정 후보를 담당 영역에 제안.
 2. `maintenance-recovery.test.mjs:226`의 expected SHA가 원본 승인 manifest / 최신 독립 C 패킷의 어떤 객체를 고정해야 하는지 검증. 승인 없는 해시 교체 금지.
 3. 수정 후 동일 step의 실제 CI success와 누락된 후속 보안 step 완료를 원본 run/job으로 검증한 다음에만 Issue #3517/#3518/#3531 종결.
+
+## 현재 PC 제어 main 직접 파일 대조
+- `tests/rollback-first-evidence.test.mjs` 현재 main Git blob `4cf3cae286bf1aae19d803415e9c9514c63b3acd`: line 6 빈 줄, line 7에 정상 `import './maintenance-postcheck-link.test.mjs';`가 **실제 줄바꿈**으로 존재. 위 과거 Run 45574811728의 literal `\\nimport` SyntaxError 상태와 다르다. **소스상 결함은 현재 main에서 사라진 상태로 관측**되지만 어떤 PR에서 해결됐는지/후속 동일 C996 단계 PASS인지는 미확인. 이미 수정된 파일을 다시 편집하지 않는다.
+- `tests/maintenance-recovery.test.mjs` 현재 main Git blob `e3a68de78826e782cd77a62cfecc7799204d9376` 확인. 과거 failure의 source line number는 실행 당시 SHA 기준이어서 최신 main의 209~226행과 단순 매칭하면 안 된다.
+- **상태:** #3517/#3518은 과거 SyntaxError가 현재 main에서 재현되는 소스인지는 부정되지만, 대상 경로의 정상 CI 확증 전 CLOSE 불가. #3531은 최신 승인 SHA 기반 fixture 증빙 필요.
