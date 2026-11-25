@@ -48,6 +48,9 @@ try{
    await page.addInitScript(()=>{
     sessionStorage.setItem('zgmini-about-intro-dismissed-r1','1');
    });
+   const uiApiResponsePromise=page.waitForResponse(response=>
+    new URL(response.url()).pathname===apiPath&&response.status()===200,
+    {timeout:45000});
    const response=await page.goto(base+'/earnings-recession/',{
     waitUntil:'domcontentloaded',timeout:60000
    });
@@ -65,6 +68,21 @@ try{
    await page.waitForFunction(({selector,value})=>
     document.querySelector(selector)?.textContent?.includes(value)===true,
     {selector,value},{timeout:35000});
+   const uiApi=await (await uiApiResponsePromise).json();
+   assert.equal(uiApi.status,'READY','hydrated UI BEA response must be READY');
+   assert(Number.isSafeInteger(uiApi.sourceStoredAt)&&uiApi.sourceStoredAt>0,
+    'hydrated UI response must expose source storage time');
+   assert.equal(new Date(uiApi.publishedAt).toISOString(),uiApi.publishedAt,
+    'hydrated UI response must expose D1 publication time');
+   if(uiApi.sourceVersion!==data.sourceVersion||
+      uiApi.sourceStoredAt!==data.sourceStoredAt||
+      uiApi.publishedAt!==data.publishedAt){
+    console.log('W05_BEA_API_UI_VERSION_MOVED '+JSON.stringify({
+     width:viewport.width,apiVersion:data.sourceVersion,uiVersion:uiApi.sourceVersion,
+     apiSourceStoredAt:data.sourceStoredAt,uiSourceStoredAt:uiApi.sourceStoredAt,
+     apiPublishedAt:data.publishedAt,uiPublishedAt:uiApi.publishedAt
+    }));
+   }
    const displayed=await indicator.innerText();
    assert(displayed.includes(data.indicator.observationPeriodEnd),
     'observation quarter in hydrated UI');
@@ -90,10 +108,14 @@ try{
    const tooltip=page.getByRole('tooltip');
    await tooltip.waitFor({state:'visible',timeout:12000});
    const help=await tooltip.innerText();
-   const sourceKst=earningsCostPublicationKst(new Date(data.sourceStoredAt).toISOString());
-   const publishedKst=earningsCostPublicationKst(data.publishedAt);
-   assert(help.includes('PC 원자료 저장: '+sourceKst),'source KST label');
-   assert(help.includes('D1 공개 게시: '+publishedKst),'D1 publish KST label');
+   // The hydrated UI uses its own GET; the independent API request can observe
+   // a different immutable publication if D1 advances between the two reads.
+   const sourceKst=earningsCostPublicationKst(new Date(uiApi.sourceStoredAt).toISOString());
+   const publishedKst=earningsCostPublicationKst(uiApi.publishedAt);
+   assert(help.includes('PC 원자료 저장: '+sourceKst),
+    'source KST label must match hydrated UI response');
+   assert(help.includes('D1 공개 게시: '+publishedKst),
+    'D1 publish KST label must match hydrated UI response');
    assert(help.includes('관측 분기와는 다른 시각입니다.'),'distinct dates');
    const link=tooltip.getByRole('link',{name:'BEA 공식 API 원자료'});
    assert.equal(await link.getAttribute('href'),data.indicator.sourceURL);
