@@ -1,0 +1,67 @@
+name: W03 R54 Cross-Repository Lease One-Shot
+on:
+  push:
+    branches:
+      - codex/w03-r54-integration-master-20261125
+    paths:
+      - .github/workflows/w03-r54-cross-repo-once.yml
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  cross-repository-windows:
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout exact W03 candidate
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          path: w03
+          persist-credentials: false
+      - name: Checkout PC control source read-only
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: ansqhd5774-Choi/zgmini-pc-control
+          ref: main
+          path: pc-control
+          persist-credentials: false
+      - name: Install Node 22
+        uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020
+        with:
+          node-version: '22'
+      - name: Run both repositories source-lease regression suites
+        shell: bash
+        run: |
+          (cd w03 && node --test tests/theme-r54-source-lease.test.mjs)
+          (cd pc-control && node --test tests/r54-b-source-lease.test.mjs)
+      - name: Verify same lock and mutual ownership using real imported implementations
+        shell: bash
+        run: |
+          node --input-type=module <<'NODE'
+          import fs from 'node:fs';
+          import os from 'node:os';
+          import path from 'node:path';
+          import assert from 'node:assert/strict';
+          import {pathToFileURL} from 'node:url';
+          const writer=await import(pathToFileURL(path.resolve('w03/scripts/pc-writer/r54-source-lease.mjs')).href);
+          const controller=await import(pathToFileURL(path.resolve('pc-control/tools/update.mjs')).href);
+          const root=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-w03-cross-lease-'));
+          const lockDir=path.join(root,'R54_B_SOURCE_EXCLUSIVE.lock');
+          try {
+            const w=writer.acquireR54SourceLease({lockDir});
+            assert.equal(JSON.parse(fs.readFileSync(w.owner,'utf8')).schema,'ZGMINI_R54_SOURCE_EXCLUSIVE_V1');
+            const ownerA=fs.readFileSync(w.owner);
+            const blocked=controller.acquireR54BSourceLease({leaseDir:lockDir});
+            assert.equal(blocked.status,'BUSY');
+            assert.deepEqual(fs.readFileSync(w.owner),ownerA);
+            w.release();
+            const b=controller.acquireR54BSourceLease({leaseDir:lockDir});
+            assert.equal(b.status,'ACQUIRED');
+            const ownerB=fs.readFileSync(b.owner);
+            assert.throws(()=>writer.acquireR54SourceLease({lockDir}),/R54_SOURCE_LEASE_HELD/);
+            assert.deepEqual(fs.readFileSync(b.owner),ownerB);
+            assert.equal(b.release(),true);
+            assert.equal(fs.existsSync(lockDir),false);
+            console.log('W03_CROSS_REPO_LEASE_WINDOWS_PASS owner/bytes mutual exclusion');
+          } finally {fs.rmSync(root,{recursive:true,force:true});}
+          NODE
