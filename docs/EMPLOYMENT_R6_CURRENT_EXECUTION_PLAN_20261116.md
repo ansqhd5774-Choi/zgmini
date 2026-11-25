@@ -216,3 +216,11 @@ W04 원담당이 기존 권한 범위의 기능 작업을 끝까지 수행한다
 
 <!-- W04-3516-HANDOFF-LEASE-EXACT-CONDITION -->
 - **직접 선행 조건 검증:** 현행 설치 source와 main의 `tools/handoff-maintenance.mjs`는 동일 Git blob `5ab6339c4a28329c8b39d37d007ac6428f8c7e0f`. 정규 7-to-7 handoff는 기존 `leases/controller-install` 디렉터리가 존재하면 `HANDOFF_UPDATE_ACTIVE`로 fail-closed(274/338행). 운영 A #3533에서 설치 Lease `HELD`가 입증되므로 **일반 유지보수기 인계를 먼저 실행하는 순서 자체가 현재 조건과 충돌**한다. 허용목록/잠금 완화 없이 기승인 독립 operator 복구 경로의 정확한 #3516 소스·CAS·독립 영수증·승인 manifest를 우선 연결한다. 이 항목은 코드상 차단 조건 검증이며 운영 handoff 실패 실증이 아니다.
+
+### 17.5 복구 선후관계 정정 — 일반 Maintainer 인계 없이 독립 C 복구 가능 (2026-11-25 KST)
+<!-- W04-3516-DIRECT-INDEPENDENT-RECOVERY-PATH-17-5 -->
+- **이전 §17.4의 '유지보수기 소스 인계가 우선 필요' 가능성을 정정:** 최신 제어 저장소 `tools/maintenance-recovery.mjs`의 `reconcile-installed`은 **별도 독립 Windows 운영자**에서 원본 `#3516`/현재 설치 Controller와 유지보수기 바이트·승인 manifest·7종 현재 CAS·Supervisor/Workflow·독립 운영 A #3528·원본 후검사 #3519 계보를 검증한다. 기존 설치 `e34a2006...` 유지보수기를 먼저 신버전으로 바꾸는 계약이 아니다. 반대로 일반 `handoff-maintenance.mjs`의 정규 7-to-7 변경은 설치 Lease가 있는 한 `HANDOFF_UPDATE_ACTIVE`이므로 이를 선행 실행하지 않는다.
+- **다만 독립 실행은 C급 실제 Windows 운영자 인증이 필수:** `GITHUB_ACTIONS`/Runner 환경의 운영자 사칭을 소스가 거부하며 실제 프로세스 계보·승인된 `cscript` 확인을 우회하지 않는다. GitHub 승인 manifest/CI/PR은 독립 C 실실행 증거가 아니다.
+- **최소 복구 명세 준비:** [제어 PR #3537](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3537)은 기존 `approved:false` 후보와 증거 핀이 같은 #3516 전용 정규 `approved:true` manifest 및 불일치 거부 회귀시험만 제출. 실제 발효는 정규 main 통합·source 범위 확인 뒤로 구분한다. `#3516` 원본 승인 B·#3409 동일 효과 독립 복구 성공 이력 외 새 설치·원장 변경 효과 없음. CI 결과·병합 전에는 승인 파일이 운영 접근 가능한 정본이라고 주장하지 않는다.
+- **수행 순서:** #3537 관련 source/보안 CI 검증 → 정확 한 파일 main 통합/원문 hash 확인 → 인증된 **독립 Windows operator의 정규 one-shot**에서 최신 source·7-CAS·Controller/보호·#3528 영수증 검증 → original lease archive/JSON/TXT readback. 승인된 효과 이외 범위 확대와 미승인 C급 대체 Runner/새 Task/임의 명령·lease 해제 금지. 이어 PC Job 트리거 장애는 별도 원인 검증 후 복원, W04 History/SQLite/PIT 인증으로 연결.
+- **진행률:** 승인 명세·CI·문서만으로 3·5단계를 DONE 처리하지 않음. 1·2·4 DONE / 3·5 IN_PROGRESS = **3/5(60%)**.
