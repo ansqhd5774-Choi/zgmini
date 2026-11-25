@@ -48,6 +48,28 @@ if(publish){
  if(blocked)throw Error(blocked.status);
  execFileSync('git',['diff','--quiet','HEAD','--','worker','lib','scripts/pc-writer'],{cwd:root,stdio:'pipe',windowsHide:true});
 }
+// Explicit saved-only W06 lane; no Core calculation, provider fetch, history DB,
+// Core ledger overwrite, or installation/scheduler effect.
+if(process.argv.includes('--cnn-minute')){
+ if(!publish||process.argv.slice(2).some(arg=>!['--cnn-minute','--publish'].includes(arg)))throw Error('CNN_MINUTE_PUBLICATION_SCOPE_STOP');
+ if(config.source!==source)throw Error('CNN_MINUTE_SOURCE_NOT_APPROVED');
+ const dirty=execFileSync('git',['status','--porcelain','--untracked-files=all','--','lib','worker','scripts/pc-writer'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
+ if(dirty)throw Error('CNN_MINUTE_SOURCE_NOT_APPROVED');
+ const file=path.join(base,'storage','core.sqlite');
+ if(!fs.existsSync(file))throw Error('CNN_MINUTE_CORE_DB_MISSING');
+ const core=localDatabase(file);
+ const receipt={at:new Date().toISOString(),source,lane:'cnn-minute',providerCalls:0};
+ try{
+  const remote=client(config,()=>credential(root),{onDiagnostic:diagnostic=>appendD1Diagnostic(base,{runAt:receipt.at,source},diagnostic)});
+  const {publishCnnMinute}=await import('./cnn-observed-archive-publication-r1.mjs');
+  Object.assign(receipt,await publishCnnMinute(core,remote,config.core));
+  if(receipt.status!=='VERIFIED')process.exitCode=1;
+ }catch(error){
+  receipt.status='FAILED';
+  receipt.error=/^[A-Z0-9_]+$/.test(error.message??'')?error.message:'CNN_MINUTE_PUBLICATION_FAILED';
+  process.exitCode=1;
+ }finally{core.close();console.log(JSON.stringify(receipt));}
+}else{
 const seed=read(path.join(base,'local-seed-progress.json'));
 if(!Object.keys(seed).length||Object.values(seed).some(x=>!x.complete))throw Error('LOCAL_SEED_INCOMPLETE');
 const core=localDatabase(path.join(base,'storage','core.sqlite'));
@@ -411,6 +433,11 @@ try{
   };
   for(const row of outputs){
    await attemptOutput(report,'feed:'+row.feed_key,async()=>{
+   if(row.feed_key==='fear-greed'){
+    const {publishCnnCurrent}=await import('./cnn-observed-archive-publication-r1.mjs');
+    report.cnnCurrentPublication=await publishCnnCurrent(core,remote,config.core);
+    return;
+   }
    const existing=(await remote.query(config.core,"SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'",[row.feed_key])).results[0];
    if(isER1MonthlyFeedKey(row.feed_key)){
     const evidence=er1MonthlyD1Readback(row,existing);
@@ -475,3 +502,5 @@ try{
 }catch(error){report.status='FAILED';report.error=/^[A-Z0-9_]+$/.test(error.message??'')?error.message:error.code??'LOCAL_WRITER_FAILED';process.exitCode=1;}
 finally{globalThis.fetch=originalFetch;console.warn=originalWarn;hook.deregister();core.close();history.close();save(path.join(base,'local-writer-last-run.json'),report);if(publish){appendPublicationEvent(base,{at:report.at,source,status:report.status,error:report.error??null,recovery:report.recovery?.outcome??null});try{updateDataAlert(base,{key:'publication',failed:report.status!=='VERIFIED'});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}}console.log(JSON.stringify(report));}
 
+
+}
