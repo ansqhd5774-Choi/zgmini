@@ -740,3 +740,26 @@ GitHub Search API 직접 재조회 **78건 OPEN = 본체 Issue 1 / PR 6 + PC 제
 ### 배치 X 종료 시점 OPEN 재계수
 
 GitHub Search API 직접 재조회: `zgmini` Issue 1/PR 6, `zgmini-pc-control` Issue 58/PR 2, **총 OPEN 67건(이슈 59/PR 8)**. 직전 배치 V의 67건과 총량은 같지만 PC Issue 59→58, PC PR 1→2로 구성 변동. 해당 상태 변화는 본 배치의 직접 종결·신규 PR 성과가 아니다. 고정 최초 코호트 88건과 신규 유입 OPEN은 별도 집계한다.
+
+
+## 배치 Y — Writer 장애 인계 원본 증거 및 W04 PR 소스 검증 (2026-11-25 KST)
+
+시작 기준: 앞선 배치 X의 **63/88 (71.6%)**, 미검증 25건. 신규 코호트 **#3073 1건**의 정확한 원본 장애 실체와 인계 요청을 독립 대조함으로써 누적 **64/88 (72.7%)**, 미검증 **24건**. **#1266은 현재 HEAD CI 증명이 없어 신규 2차 완료에 미산입**.
+
+### 신규 검증 1건 — PC handoff #3073
+
+- [PC Issue #3073](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3073) 현재 OPEN, 고정 handoff origin Issue **#3064**, requestId `ee1db478-370d-42a6-a47c-2cf676dc591d`, origin source SHA `4169eaaa98a474bda209d7ef718f7bcfb997808a`, failure code `WRITER_B_CORE_NATURAL_DRAIN_TIMEOUT_STOP`.
+- 원본 [#3064](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3064) 현재 `CLOSED/not_planned`(원본 단발 요청의 수명주기 종료). 대응 [Run #45303988421](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45303988421)는 `completed/cancelled`, head_sha가 #3073의 origin source SHA와 정확 일치. Job `138143178813`도 cancelled. **Actions Run success로 취급 금지**.
+- Git 원본 결과 [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/writer-b-source-install-ee1db478-370d-42a6-a47c-2cf676dc591d.json) blob `7f181c0eaea1c5f12cc79e619edd8688b943bf07`, [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/writer-b-source-install-ee1db478-370d-42a6-a47c-2cf676dc591d.txt) blob `b517f10d5b9e0c13c30a25ccca8820ee45a66a74`. JSON/TXT 원문 requestId/status/code/runId/recovery/retry 서로 일치. `WRITER_B_INSTALL_STOP_RESTORED / WRITER_B_CORE_NATURAL_DRAIN_TIMEOUT_STOP / ORIGINAL_VERIFIED / READ_ONLY_RECONCILE_NO_REEXECUTE`.
+- **한정 판정:** 원본 장애 코드·출처·복구 영수증의 존재 확인으로 이 handoff 원본 **사실 검증 완료**. 이는 원래 Writer B 설치 성공이나 자연 drain timeout 근본원인 수정, GitHub Actions 정상 완료, 현재 Writer 운영 상태 확인이 아니다. 다른 승인된 #3178의 성공을 #3064 원본 설치 성공으로 소급하지 않음. **#3073 OPEN 유지**, 재실행 없음.
+
+### 신규 검증 미산입 — 본체 W04 PR #1266
+
+- [본체 PR #1266](https://github.com/ansqhd5774-Choi/zgmini/pull/1266): OPEN/Draft, 최신 HEAD `0193056bdb47bcf6c911f17623b6c302c8199c4c`, base `8fffa9e27c7c3110847958a78089b3bf16697d7f`, mergeable=true, 변경 **4파일**, 비교 ahead 6/behind 0. 변경 파일: `scripts/pc-writer/employment-r6-pit-coverage.mjs`, `scripts/pc-writer/employment-r6-runner-stage.mjs` 및 관련 테스트 2개.
+- 정확 HEAD에 연결된 GitHub Actions Run **0**, Check-runs **0**, combined status pending(상태 entries 0). 소스 diff 확인은 완료했지만 정확 HEAD의 CI PASS는 미입증; **독립 HEAD CI 검증 신규 완료 0건**. 원래 W04 작업의 기존 raw 집계 계약과 충돌 가능성을 감안하여 PR 병합·종결·수정 금지.
+
+### 최신 상태·관리 경계
+
+- GitHub Search API OPEN 스냅샷: 본체 Issue **1**/PR **6**, PC 제어 Issue **58**/PR **2** = **총 67건(이슈 59, PR 8)**. 고정 최초 코호트 분모 88과 섞지 않음.
+- 신규 직접 Issue/PR 종결 **0건**, 기존 직접 종결 누적 **10건** 보존. 새로운 PC Job/워크플로 실행, 승인 변경, Controller/Writer/SQLite/D1/Task/운영 PC 변경 모두 **0건**.
+- 후속 기준 **64/88(72.7%)**, 잔여 **24건**의 최초 증거검증만 신규 산입. W01/W03/W05 완성 항목과 운영 공통 장애를 구분해 종결하며, W04·ER1·#3516 실제 복구 진행 항목은 원담당자 보호.
