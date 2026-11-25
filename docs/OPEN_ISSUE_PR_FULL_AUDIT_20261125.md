@@ -282,3 +282,26 @@ GitHub Search API total_count 직접 조회: **86건 = 본체 Issue 1/PR 6 + PC 
 - 본 감사 직접 종결: PC Issue #1026 CLOSED/completed 1건.
 - 타 업무에서 병합: PC PR [#3543](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3543) CLOSED/MERGED, merged_at 2026-11-25T10:01:06Z. 본 감사의 종결 성과로 집계하지 않음.
 - PC PR #3542 OPEN/Draft 유지. 최초 88건 고정 코호트는 기록에서 삭제하지 않고 현재 상태와 구분한다.
+
+
+## 2차 독립 증거 조회 — 배치 C (2026-11-25)
+
+원장 고정 코호트 88건 유지. 배치 C에서 PC 제어 16건(#155,#173,#369,#394,#473,#474,#496,#498,#503,#509,#702,#783,#835,#860,#936,#939)의 본문·전체 댓글 및 최신 이슈 상태 재검토. 그중 #939만 원본 Run+JSON/TXT 독립 대조·단발 목표 완료 확정. 댓글 열람만으로 나머지 15건의 2차 독립 증거 완료 처리하지 않음.
+
+| 항목 | 확인 증거·의존 | 판정 |
+|---|---|---|
+| [PC #939](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/939) | [Run 42492034633](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42492034633) completed/success, HEAD `1179f002d8a26fd420ca369d543944f6591ad766`. 고정 커밋 `2a13b25cd5eec6710cbe9e4ef88ffb6e57cd6f16`의 `results/writer-config-b-a94b4091-6f6f-427e-98f7-a6e4dd2fa210.json/.txt` 원문 직접 대조: 요청·상태·결과·승인명세·전후 SHA·백업·설치 소스·19파일·Run ID 정합. `CONFIG_B_APPLIED_VERIFIED/CONFIG_B_OPTINS_SET` | **완료·종결** 실제 CLOSED/completed; 종결 댓글 `7159283003`. 현 운영 W04 전체 성공을 의미하지 않음 |
+| PC #155,#173 | ER1 12월 수집·TOL/CASY 소스 진행 기록 및 설치 lease #3516 의존. 최신 댓글에는 #3542 병합 이후에도 실PC 설치·검증 미완 기록 | **담당자 진행 중**; 임의 종료 금지 |
+| PC #369,#394 | ER1 NOV30 batch20 `PARTIAL/NOV30_ER1_VENDOR_ACTUAL_INVALID`, D1 게시 0 | **실제 미해결**; 후속 유효 공급자 결과 별도 증명 전 종료 불가 |
+| PC #473,#474 | ER1 NOV30 full `PARTIAL/NOV30_ER1_PROVIDER_BUDGET_STOP`, 당시 게시 0 | **실제 미해결**, 재수집 승인 없이 중복 실행 금지 |
+| PC #496,#498 | ER1 forecast `BLOCKED/ER1_NOV_FORECAST_B_SOURCE_HASH_STOP` | **실제 미해결** |
+| PC #503 | ER1 forecast `BLOCKED/ER1_NOV_FORECAST_B_UNEXPECTED_STOP` | **실제 미해결** |
+| PC #509 | ER1 forecast `BLOCKED/DEC31_PUBLISH_PROJECT_SOURCE_OR_DIRTY_STOP` | **실제 미해결** |
+| PC #702 | 특정 #699 Writer B 직후 Core runtime 소스 조회. 원본 결과 `STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE`, 동시점 실행 소스 미입증 | **실제 목적 미충족**, OPEN |
+| PC #783,#835 | 공통 운영·ER1 요청에 다수 후속 증거와 다른 프로젝트 작업 이력이 누적. 댓글 PASS만으로 원래 요청 범위 완료 판정 불가 | **귀속/의존 추가 검증**, OPEN |
+| PC #860 | 원래 TEMP fixture 결과 `STATE_UNKNOWN`, 1/2. 후속 #868에는 Windows TEMP 2/2 개선 증거가 있지만 원본 실행 결과 자체가 변경된 것은 아님 | **후속 대체 증거 비교 필요**, 현재 OPEN |
+| PC #936 | 원본 고정 checkout PASS지만 config keys `ABSENT`, runtimeSourceVerified=false | **요청 목적 미충족**, 현재 OPEN |
+
+배치 C 16건은 **후속 댓글 및 원본 요청 본문 재점검 16/16**, 2차 독립 원본 실행 및 결과쌍까지 확인한 추가 항목은 **#939 1건**. 이전 배치 A/B 고정 코호트 9건 + #939 = 독립 증거 부분검사 누적 **10/88건**, 최종 증거 기반 종결 **2/88건** (#1026,#939). 나머지 14개 신규 본문/댓글 점검 항목을 독립 증거 완료율에 섞지 않는다.
+
+작업변경: #939 CLOSED/completed, 다른 항목 종료 0, 운영 PC·DB·Task·Controller·Writer 변경 0. 다음에는 ER1 원본 결과 파일 경로와 후속 대체 증거 연결을 검증하고 W01/W03/W05의 마지막 소속 후보 #488을 별도 귀속 결정한다.
