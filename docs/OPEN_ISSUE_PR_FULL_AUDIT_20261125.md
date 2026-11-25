@@ -396,3 +396,27 @@ GitHub Search API `total_count` 현재 **86건** = 본체 Issue 1/PR 6 + PC 제�
 ### 배치 G 후 실시간 OPEN 현황
 
 GitHub Search API total_count 재조회: **87건 = 본체 Issue 1 / PR 6 + PC 제어 Issue 76 / PR 4**. 직전 배치 F의 86건 대비 신규 PC 제어 [PR #3548](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3548) 추가 확인. 이 PR은 W04 후검사 증거 복구 담당 범위이며 최초 고정 88건 2차 검사 완료율 또는 종결 실적으로 산입하지 않는다. 이번 배치에서 감사가 직접 종결한 Issue·PR 0건.
+
+
+## 2차 독립 증거 조회 — 배치 H (2026-11-25)
+
+기준: 최초 OPEN 고정 코호트 88건. 배치 G에서 24건 독립 부분검사 완료, 이번 **8건 신규 원본 Run + JSON/TXT** 직접 조회. 누적 **32/88건 (36.4%)**. 원래 요청 전체 성공이 입증되지 않은 8건은 OPEN 유지. 누적 실제 감사 종결 3건으로 변동 없음.
+
+| Issue | 원본 Run | Actions 결론 | 업무 결과 | JSON/TXT 공통 필드 | 원본 blob (JSON/TXT) | 판정 |
+|---|---|---|---|---|---|---|
+| [#1295](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1295) | [43164525583](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43164525583) | success | `STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE` | 9/9 일치 | `905e97c6451ae87832d8a35224637bbd334cef0f` / `22b90c422974f098e1387ecf7935fd3ebbe3e555` | Core runtime 목적 미입증, OPEN 유지 |
+| [#1598](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1598) | [43829249480](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43829249480) | success | `STATE_UNKNOWN/CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE` | 9/9 일치 | `5189b98c7f3bccc179d3fb1a2a21673ad9f99830` / `59d6a2031e0ac0c2e4b3edd9fdbeff52d28e1552` | Core runtime 목적 미입증, OPEN 유지 |
+| [#1737](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1737) | [43873770008](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43873770008) | success | `STATE_UNKNOWN/CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE` | 9/9 일치 | `0d07a765a0652373a237f6e530a0ee004cc0c3d5` / `23eb7e805b8b14167e2f31d13c2c6ede17e82001` | Core runtime 목적 미입증, OPEN 유지 |
+| [#1739](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1739) | [43874334270](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43874334270) | success | `STATE_UNKNOWN/CORE_TASK_NOT_RUNNING_AT_SNAPSHOT` | 9/9 일치 | `c412a8103c8dc642771fb58a6d42a5594cd3f808` / `af023a3dd7c363233fd9495c319a694b0fb913e4` | Core runtime 목적 미입증, OPEN 유지 |
+| [#1637](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1637) | [43845159858](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43845159858) | failure | `STATE_UNKNOWN/R6_B_RESULT_UNVERIFIED_STOP` | 4/4 일치 | `4624bc97f558bcadf1183ae343cb1d8298a23c16` / `ff799a220300f65dc8a947044e1a3e9418c2325f` | R6 B one-shot 목적 미입증, OPEN 유지 |
+| [#1688](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1688) | [43861542548](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43861542548) | failure | `STATE_UNKNOWN/R6_DOL_UNCLASSIFIED_STOP` | 4/4 일치 | `64a25c8af8e064b81693aaffec7c7deaec8806a1` / `a62517c50e87add15e9003b52a5e533dc813551e` | R6 B one-shot 목적 미입증, OPEN 유지 |
+| [#1740](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1740) | [43874476126](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43874476126) | success | `PARTIAL/R6_DOL_MANUAL_PARTIAL` | 4/4 일치 | `b9f6aa0308419a345d539216e7e44f8911c16bd1` / `0278e8fdb83f6d1b67b6574b43c69f3acf24630a` | R6 B one-shot 목적 미입증, OPEN 유지 |
+| [#1742](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1742) | [43874735613](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43874735613) | success | `STATE_UNKNOWN/R6_EVIDENCE_WAL_SIDECARS_ABSENT` | 9/9 일치 | `6dab79f7e9481cf6535558f07b24c0b3601a7297` / `3330ba5d1287128c63612b74a429c82108f72eac` | R6 evidence read-only 목적 미입증, OPEN 유지 |
+
+- #1295/#1598/#1737/#1739의 `runtimeSourceVerified=false`는 과거 실행 시점의 live Core 실행 소스 미입증을 의미한다. Runner success로 승격 불가.
+- #1637 결과는 `publication=UNVERIFIED`, #1688은 `firstFail=COLLECT_OR_PUBLISH`와 `publication=UNVERIFIED`이다. 원본 두 요청을 성공 처리하거나 재실행하지 않는다.
+- #1740은 DOL_UI_WEEKLY_CLAIMS 그룹 `PARTIAL`, `DOL_NATIONAL_SOURCE_UNAVAILABLE`, `publication=NOT_ATTEMPTED`; Actions success와 수집/게시 완료를 구분.
+- #1742는 `R6_EVIDENCE_WAL_SIDECARS_ABSENT`, `firstFail=ALLOWLISTED_OPERATION`, 원본 증거 수집 미완. 운영 PC/Controller/Writer/DB 변경 0건.
+- #1743 진단 원장은 runner의 OPEN 의존성이 검증된 기존 기록에 따라 보호하며 종결 대상에서 제외.
+
+다음 작업: 남은 56건 중 원본 Run/JSON/TXT 고정 계보를 우선 검증하고, 완료 목적이 명백한 구 요청만 종결한다.
