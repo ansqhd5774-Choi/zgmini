@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {REPO,WORKFLOWS,triage,keyFor,markerFor,caseKeyFor} from '../scripts/ci-failure-issue.mjs';
+import {REPO,WORKFLOWS,triage,markerFor,caseKeyFor} from '../scripts/ci-failure-issue.mjs';
 
 const event=(overrides={})=>({
  action:'completed',repository:{full_name:REPO,private:false},
