@@ -245,3 +245,12 @@ R2에서 확인한 설치 SHA·Runner online은 당시 읽기 증거로만 사�
 - 기존 Worker/Runner 임의 종료·원본 lease 강제삭제·Controller/Watchdog 설치·main 병합·DB/Writer/공급자/D1 변경 없음. PR #3738 Draft.
 
 **다음 필수 실행:** 최신 CI #45719063995의 정확한 실패/통과 영수증을 확인하고, 실제 배포 직전의 **Watchdog 설치 파일 SHA**를 기존 승인된 읽기 전용 경로로 확보해, Controller B 후행 Watchdog B의 현재 SHA·파일별 CAS·승인 manifest를 확정한다. 인증되지 않은 과거 SHA로 새 B를 요청하지 않는다.
+
+## 13. Watchdog 정확한 B preimage 확보용 기존 A 보완 (2026-11-26)
+
+- 실제 운영 최신 [#3746 / Run 45718424591](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45718424591)은 Controller 설치 SHA `53fe24e22446d21a9fd4ee308d12b7cba7f37e25`, 6 Runner 정상, B 설치 lease 없음, A 쓰기 0을 입증했으나 **독립 Watchdog 설치 스크립트/INSTALL.json 원본 SHA-256을 노출하지 않는 범위**임.
+- 과거 Watchdog [#1393 STAGED](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1393)/[#1395 새 프로세스 인증](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1395)을 현재 파일 CAS 증거로 오용하지 않기 위해, **기존** `process-inventory-readonly`의 선택 probe를 추가하는 별도 읽기 전용 Draft [PR #3749](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3749)를 생성함.
+- 정확 소스: `zgmini-pc-control/codex/controller-standby-watchdog-preimage-a-20261126` / HEAD `480f81a11286f656be07685d0417840c76196c37`. 변경 파일은 기존 `tools/pc-process-inventory-readonly.mjs` 및 해당 테스트 2개뿐. 새 Workflow·Job 유형·Runner·서비스·예약·권한 없음.
+- 고정 Watchdog 디렉터리의 `runner-watchdog.mjs` 및 `INSTALL.json` 두 파일을 regular/no-link/크기·변경 여부 한정으로 읽고 SHA-256·manifest 일치·scope만 출력. 원본 바이트·명령줄·인증정보·운영 write 0. 실패는 `STATE_UNKNOWN`으로 표시.
+- [소스 CI](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3749/checks)는 시작 시점 대기. 승인/병합 없이 운영 PC에 새 A 프로브를 제출하지 않음. PR #3738의 Standby Active 구현 Draft와 분리하여, 현재 정상 Controller/Watchdog을 변경하지 않음.
+- 이후 기존 A에서 정확한 Watchdog raw preimage가 확보되면 Controller B 후행 Watchdog B의 대상 SHA·파일별 manifest·CAS를 현재 원본과 대조한다. **A에서 해시를 확인했다고 B 설치 승인 또는 전환 완료라고 표시하지 않음.**
