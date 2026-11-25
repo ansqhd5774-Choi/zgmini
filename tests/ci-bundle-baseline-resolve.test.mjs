@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {findExistingBundleBaseline,githubRead,RUNS_RESOURCE}
+import {findExistingBundleBaseline,downloadExistingBundle,githubRead,RUNS_RESOURCE}
  from '../scripts/ci-bundle-baseline-resolve.mjs';
 
 const run=(id,extra={})=>({
@@ -67,8 +67,36 @@ test('existing Node workflow only adds optional read-only compare steps',()=>{
  const yaml=readFileSync(new URL('../.github/workflows/node.js.yml',import.meta.url),'utf8');
  assert.match(yaml,/actions: read/);
  assert.match(yaml,/node scripts\/ci-bundle-baseline-resolve\.mjs/);
- assert.match(yaml,/actions\/download-artifact@v4/);
+ assert.doesNotMatch(yaml,/continue-on-error:\s*true/);
+ assert.match(yaml,/node scripts\/ci-bundle-baseline-resolve\.mjs/);
  assert.match(yaml,/node scripts\/ci-bundle-size\.mjs --compare-baseline/);
  assert.match(yaml,/artifacts\/ci-bundle-size\/\*\.json/);
  assert.doesNotMatch(yaml,/CI_BUNDLE_BUDGET_MANDATORY/);
+});
+
+test('optional GitHub CLI artifact read uses bounded process args, without shell',async()=>{
+ let called=0;
+ const expectedDir='artifacts/ci-bundle-size/baseline';
+ const ok=await downloadExistingBundle({runId:125,makeDir:async(dir,opts)=>{
+  assert.equal(dir,expectedDir);assert.deepEqual(opts,{recursive:true});
+ },run:(bin,args,opts)=>{
+  called++;
+  assert.equal(bin,'gh');
+  assert.deepEqual(args,['run','download','125','--repo',
+   'ansqhd5774-Choi/zgmini','--name','client-bundle-size-report',
+   '--dir',expectedDir]);
+  assert.equal(opts.timeout,30000);
+  assert.equal(opts.stdio,'ignore');
+  assert.equal(opts.shell,undefined);
+  return {status:0};
+ }});
+ assert.equal(ok,true);
+ assert.equal(called,1);
+ const no=await downloadExistingBundle({runId:125,makeDir:async()=>{},
+  run:()=>({status:1})});
+ assert.equal(no,false);
+ await assert.rejects(downloadExistingBundle({runId:0,makeDir:async()=>{},run:()=>{
+  called++;return {status:0};
+ }}),/CI_BUNDLE_BASELINE_RUN_ID_UNVERIFIED/);
+ assert.equal(called,1);
 });
