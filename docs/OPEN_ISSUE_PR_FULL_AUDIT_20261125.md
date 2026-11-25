@@ -1339,3 +1339,24 @@ GitHub Search API 실제 재조회: 본체 Issue **1** / PR **6**, PC 제어 Iss
 원본 CI Job 로그의 실제 `✔` 출력에서 `real SHA256 matching body and successful provider Run attest one key`, `tampered body does not obtain body or Run certification`, `Run provider mismatch, FAILED outcome and wrong body receipt are not certified`, `invalid calendar day and malformed as-of fail closed`, `cumulative collector Run reference work is capped at 40000` 등 **신규 암호학적 검증 회귀가 실제 CI에서 실행된 증거** 확보. 따라서 이전 배치 AV `CI PASS 미확정`은 **현재 HEAD에 한해 CI 성공으로 갱신**한다. 원 PR에 [검증 완료 댓글 #7162964878](https://github.com/ansqhd5774-Choi/zgmini/pull/1614#issuecomment-7162964878) 기록 완료.
 
 단, **신규 Draft #1614 소스+CI 성공은 기존 고정 코호트 #1266의 원본 실행 인증이나 실제 W04 DB/Host/Controller 기능 연결 완료가 아님**. 원담당의 승인된 원본 SQLite 읽기 및 PIT0408/PIT0605 경계 보존·Host B/Controller projection·운영 검증 미완, 따라서 #1614 Draft 및 #1266 원본 OPEN 유지. 최종 원본 감사 완료 **84/88(95.5%)**, 미완 4건, 이번 직접 종결 0/누적 직접 종결 10. 운영 PC/Controller/Writer/DB/Provider/승인 변경 0.
+
+
+## 배치 AW — W04 실제 SQLite 원자료와 검증 집계 사이의 읽기 전용 연결 구현·정확 HEAD CI SUCCESS (2026-11-25 KST)
+
+**기존 고정 코호트 증거검증 시작·종료: 84/88(95.5%) 유지.** 남은 원본 #1031/#1266/#1969/#2059. 이번 회차는 소스 설명만 추가한 것이 아니라, 별도 W04 검토 브랜치 [Draft #1614](https://github.com/ansqhd5774-Choi/zgmini/pull/1614)에 **실제 SQLite 읽기 전용 어댑터·격리 SQLite 회귀시험 2파일을 신규 구현**하고 정확 HEAD CI 전체 성공을 확인했다.
+
+### 코드 구현·안전 경계
+- 원담당 브랜치 `codex/employment-1y-reader-r1`의 기존 `EMPLOYMENT_R6_TABLES`·`EMPLOYMENT_R6_GROUPS` 원본과 `employment-r6-pit-coverage.mjs`의 PIT0605 query-only 트랜잭션·WAL 롤백/자원 한도 코드를 직접 대조했다.
+- `lib/market-score/employment-r6-raw-reader-source-only.mjs` 신규: 기존 운영 DB를 직접 수정하거나 초기화하지 않으며, 호출자가 승인한 **정확 physical Core realpath**만 입력으로 받는다. `DatabaseSync(dbPath,{readOnly:true})`, `PRAGMA query_only=ON`, 명시 `BEGIN`·`ROLLBACK`·close, 고정 raw snapshot/Run 테이블 컬럼 검증, raw chunk 연속성·원본 메타 일관성 검증을 구현했다. 한도: raw 행 16,000, snapshot 4,000, 원본문 총 64MiB, 수집 Run 20,000, 참조 40,000. Run은 **원담당 frozen R6 group의 정확 provider list를 SQL 바인딩**하고 SUCCESS/PARTIAL만 조회한다. 원본문 SHA256 계산은 트랜잭션이 종료된 후 기존 `verifyAndAggregateStoredR6Snapshots`에 위임.
+- 반환값은 원본 ID·request key·body hash·파일 경로 없는 그룹·월별 count, `runtimeAuthorizationVerified:false`, `historicalPitAttested:false`, `repairAuthorized:false`를 포함해 **소스 테스트와 실제 운영 인증을 엄격히 구분**한다. 실제 Runner·Controller·PC 업무 실행과 연결하지 않았다.
+- `tests/employment-r6-raw-reader-source-only.test.mjs` 신규 7개 독립 SQLite fixture: 유효 raw/body/Run 인과 인증, 변조 본문 비인증, chunk sequence 결함 차단, 실패 Run 인증 배제, 승인된 physical DB 경로 불일치 차단, 잘못된 날짜 배제, DB 원본 바이트 읽기 전후 동일성. 기존 소스 집계 모듈/테스트도 유지. **PR 변경은 정확 4개 파일**이고 원담당 브랜치의 PIT0408/PIT0605/Runner/DB schema/Provider/Controller는 변경하지 않음.
+
+### 정확 HEAD CI의 실제 종료 증거
+- [Node.js CI Run #45618612156](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45618612156), 정확 HEAD `c06580fed97e618d4faf5a7d79de8ed8cc3b1ae9`, Job `139220512406`: **run/job completed / SUCCESS**, `Regression tests` 포함 모든 단계 SUCCESS. Job 원문 로그에 신규 SQLite fixture **7/7 테스트 각각의 ✔ 출력**을 확인했다.
+- [PR #1614 최종 실증 댓글 #7163136937](https://github.com/ansqhd5774-Choi/zgmini/pull/1614#issuecomment-7163136937)로 정확 SHA와 CI 인과관계 기재 완료. 중간 push 후 취소된 구 CI를 새 HEAD 성공으로 세지 않았으며, 직전 성공 Run `45617426723`의 예전 HEAD를 새 HEAD CI로 대용하지 않는다.
+
+### 아직 완료되지 않은 원래 업무
+- 원담당이 승인한 운영 Windows CAS/lease·Runner가 해당 물리 DB를 정상 승인·호출하는 실제 경로는 미연결이다. 합성 테스트에서 SQLite reader가 원본 바이트를 보존한 것은 운영 PC 데이터 원본의 서명·PIT 시점·완전성·대외 공개 승인 증명이 아니다. 원담당 리뷰와 안전한 런타임 호출 계약, 정규 Host B/Controller projection·운영 사후검사가 남아 있어 **#1614는 Draft**, 과거 #1266은 여전히 원본 미검증 상태다.
+- #1031 BLS 공유 무등록 25회/24h 보호와 PC #1969/#2059의 독립 Windows 실행 신원은 이번 코드와 무관하여 완료로 산입하지 않음. 최초 88건 분모 변경 0, 이번 직접 종결 0/누적 직접 종결 10. **84/88(95.5%) 유지**. 운영 PC·Writer·SQLite/D1·Controller 설치·Task·Provider·운영 승인 변경 0.
+
+다음 순서는 원담당이 #1614 source-only 어댑터를 읽기 전용 승인 경로에 실제 연결할 수 있는지 계약 검토 → 최신 PIT0408/PIT0605/기존 Runner 무손실 회귀 → 별도 Host B/Controller 승인 및 실운영 후검사. 위 증명 전에는 Draft merge/기존 #1266 종결 금지.
