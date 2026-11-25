@@ -638,3 +638,17 @@ GitHub Search API 직접 재조회 **78건 OPEN = 본체 Issue 1 / PR 6 + PC 제
 - [PC #1226](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1226): 최신 closed/not_planned, 증거 댓글 [7161133739](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1226#issuecomment-7161133739) 확인. 최초 요청의 원본 실행 영수증은 미확보. 다른 요청인 [#1397](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1397)의 Run [43641123734](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43641123734)가 동일 operation(core-status)과 sourceSha(643b7c7c4372ffad552443fc312c6cb1b944e2fc)를 사용하고 PASS/CORE_READONLY_DIAGNOSIS를 보고한 후속 대체 근거로 기록돼 있다. #1226 원본 PASS 또는 현재 운영 상태 PASS를 의미하지 않는다. **다른 실행흐름의 종결로 이번 감사 직접 종결 실적에 중복 산입하지 않음**.
 - [PC #1213](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1213): OPEN, 댓글 0, 원본 operation(core-runtime-source-readonly), requestId(pc-683b12cd-0203-4873-9dc1-beee4b46daa2), sourceSha(643b7c7c4372ffad552443fc312c6cb1b944e2fc). #1397은 operation(core-status)이므로 동등한 후속 완료 근거가 아니다. 원본 실행 및 동등한 후속 결과 미확보 → **OPEN 보호**.
 - 신규 종결/승인/PC Job/PR/운영 PC·Controller·Writer·DB·Task 변경 0건. 감사 담당 직접 종결 기존 10건 유지. 다음 단계는 미검증 28건의 개별 operation, sourceSha, requestId 및 실행 결과쌍 검증. W04·ER1 진행 중 작업 보호.
+
+
+## 배치 T — 원본 Actions·JSON/TXT 독립 교차검증 2건 (2026-11-25 KST)
+
+배치 S 고정 코호트 **60/88(68.2%)**에서 출발. 최초 88건에 포함됐으나 앞선 배치에서 댓글 검토만 수행하고 독립 원본 실행 검증에 산입하지 않았던 **PC #1010, #936**의 원본 Run/Job/실제 result JSON·TXT를 직접 조회했다. 결과 파일 14개 상위 필드가 각 요청의 JSON↔TXT 사이에 **14/14 정확 일치**하며, 각 원본 requestId·operation·requestedSourceSha가 Issue 본문과 일치. 신규 독립 원본 검증 **2건**, 누적 **62/88(70.5%)**, 잔여 **26건**. 실행증거 검증은 해당 기능 목적 달성과 별개다.
+
+| 고정 원본 | Run→Job→Steps 직접 조회 | 원본 Git blob SHA(JSON / TXT) | 결과 범위·종결 판정 |
+|---|---|---|---|
+| [PC #1010](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1010) | [Run 42590585021](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42590585021) completed/success, Job 129070936469 approved-pc-job SUCCESS, 고정 allowlist 실행·결과 업로드 모두 success | 88d573f09743ce330ea44d4c5c4b40bc0c64ebd9 / b26fa70b9c16a4a5aa0a15a1e2e0f688dc8dbd85 | 원본 core-status 요청 PASS/CORE_READONLY_DIAGNOSIS, 보호 상태 unchanged. 그러나 원래 목적은 R6 단발 수집 직후 Core 잠금 자연 해제 확인이고 스냅샷 result.core.lockPresent=true. 해제 목적 미입증 → **OPEN 보호**. 과거 스냅샷을 현재 lock 상태로 확대하지 않음 |
+| [PC #936](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/936) | [Run 42491316168](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42491316168) completed/success, Job 128764111195 approved-pc-job SUCCESS, 고정 allowlist 실행·결과 업로드 모두 success | 373e822ea64604b1e90c0b969947a5e3c70ab36d / 56212567b2e37448bf73ff6921ff7248c1dba641 | 원본 PASS/WRITER_FIXED_PREIMAGE_READONLY는 고정 checkout 조회 성공이며 당시 R6 config 두 키 ABSENT, runtimeSourceVerified=false. 최신 Issue는 다른 감사 담당자가 후속 [#939](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/939) 설정 적용 CAS 증거를 근거로 **CLOSED/not_planned** 처리. 본 배치 직접 종결 **0**, 역사적 원본 설정 활성화 PASS로 소급 변경 금지 |
+
+- 2건 모두 JSON/TXT의 schema, jobId, requestId, operation, requestedSourceSha, status, code, lastPass, firstFail, exitCode, protectedStateUnchanged, operationalWrites, providerCalls, d1Writes를 직접 파싱해 각각 **14/14 일치**. GitHub 원본 Run status/conclusion, Job/Steps 성공도 별도 대조.
+- 이번 회차 직접 Issue/PR 종결 **0건**. 누적 감사 담당 직접 종료 건수는 배치 R 기준 **10건** 그대로; 별도 담당자의 #936 완료를 중복 실적으로 집계하지 않음.
+- 운영 PC·Controller·Writer·SQLite/D1·Task·승인·신규 PC Job·신규 PR·원본 재실행 **0건**. 다음 우선순위: 남은 26건의 고정 원본 Run·결과쌍, 특히 구형 단발 요청의 후속 동등성 및 W01/W03/W05 소속 검증. W04·ER1 진행 중 업무 보호.
