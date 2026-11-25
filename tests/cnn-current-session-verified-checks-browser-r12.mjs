@@ -120,6 +120,10 @@ try{
   assert.equal(await curve.getAttribute('d'),pathD,width+'px transient failure retains the last verified line');
   archiveFailure=false;
   extraCheck=true;
+  // Both new archive fields arrive in the same successful poll. The 10:30
+  // rendered tick below acknowledges that this response was applied.
+  // Do not advance the fake clock again before the asynchronous poll settles.
+  minuteFixture=true;
   await page.clock.fastForward(60_000);
   await page.waitForFunction(()=>{
    const labels=[...document.querySelectorAll('.zg-fg-us .cnn-history-chart-hitbox .recharts-cartesian-axis-tick-value')];
@@ -128,15 +132,19 @@ try{
   assert.equal(await page.getByText(/이력 갱신 지연/).count(),0);
   assert.equal(await oneDay.getAttribute('aria-pressed'),'true');
   extraCheck=false;
-  minuteFixture=true;
-  await page.clock.fastForward(60_000);
   const minutesGroup=page.getByRole('group',{name:'CNN 원본 관측 간격'});
   assert.equal(await minutesGroup.locator('button[data-cnn-minute]').count(),4);
   for(const [minutes,count] of [[1,5],[5,3],[10,2],[30,2]]){
    const choice=minutesGroup.locator(`button[data-cnn-minute="${minutes}"]`);
    await choice.click();
    assert.equal(await choice.getAttribute('aria-pressed'),'true');
-   await page.waitForFunction(({minutes,count})=>document.querySelector(`[data-cnn-intraday-mode="${minutes}"]`)?.getAttribute('data-cnn-bucket-count')===String(count),{minutes,count});
+   try{
+    await page.waitForFunction(({minutes,count})=>document.querySelector(`[data-cnn-intraday-mode="${minutes}"]`)?.getAttribute('data-cnn-bucket-count')===String(count),{minutes,count});
+   }catch(error){
+    const actual=await page.locator(`[data-cnn-intraday-mode="${minutes}"]`).getAttribute('data-cnn-bucket-count',{timeout:3000}).catch(()=>null);
+    console.error(JSON.stringify({width,minutes,expectedBucketCount:count,actualBucketCount:actual,archiveRequests:requests.filter(path=>path.includes('/api/fear-greed/observations'))}));
+    throw error;
+   }
   }
   await minutesGroup.getByRole('button',{name:'확인 이력'}).click();
   minuteFixture=false;
