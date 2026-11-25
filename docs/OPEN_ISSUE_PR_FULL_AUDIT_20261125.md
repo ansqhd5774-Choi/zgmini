@@ -925,3 +925,30 @@ GitHub Search API 스냅샷: `zgmini` Issue **1**/PR **6**, `zgmini-pc-control` 
 - 이번 직접 종결 **0**, 누적 본 감사 직접 종결 **10건**. 기존 #3516 종료 및 #3569 B 성공은 **타 담당자의 독립 운영 실행 성과**이며 본 감사 종결/설치 실적으로 집계하지 않음.
 - 운영 PC·Controller·Writer·SQLite/D1·Task·설치·승인·재실행·신규 Issue/PR/PC Job **본 감사 변경 0건**.
 - 후속: 고정 코호트 남은 11건의 최초 증거검증 및 W01/W03/W05 실완료 항목 종결 가능성 분석, 최신 B 적용 계보 충돌 보호, W04·ER1 업무의 기존 담당자 진행과 분리.
+
+
+## 배치 AF — ER1 12월 원본 2건, Actions 실행·Job 실패 단계 독립검증 (2026-11-25 KST)
+
+배치 AE 종료 기준 **77/88 (87.5%)**, 미검증 11건에서 시작. 최초 88건 고정 코호트에 포함됐고 과거 배치 C에서는 본문·댓글만 열람하여 독립 원본 증거 검증에 산입하지 않았던 **PC #155, #173**의 당시 event=issues GitHub Actions 전체 시간창, 실제 Run/Job/Steps, 원본 영수증 댓글을 교차조회. 신규 고유 **2건**, 누적 **79/88 (89.8%)**, 미검증 **9건**. 과거 Run 성공과 기능 목표 달성은 반드시 분리한다.
+
+### PC #155 — 31일 private snapshot 저장과 실제 12월 이벤트 0개 구분
+
+- [#155](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/155) OPEN. requestId `pc-dec31-5ca4d63b-1e1b-4de1-be7e-fa02fc658d07`, operation `capture-earnings-calendar-through-2026-12-31`, source `462941884db7ad2ebb25a7e5872296d074a10c23`.
+- 당시 생성 2026-11-03T18:22:41Z 직후 GitHub `issues` Run 전체 18:22:35Z..18:24:25Z 재조회. 실제 정확 `ZGMINI ER1 December 31 Private Capture` [Run 41693229811](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/41693229811): completed/success, workflow ID 406059960, Job 126116922518 success. `Execute bounded PC-private December collection without GitHub token` 및 `Publish sanitized coverage and day counts only` Steps 각 success. 원본 [결과 댓글 #6612085106](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/155#issuecomment-6612085106) `PASS/DEC31_PRIVATE_SAVED_AND_VERIFIED`, targetDayCount=coveredDayCount=31, newDayCount=31, providerCalls=31, **records=0**, coreWrites/d1Writes/schedulerWrites=0.
+- 같은 원본의 후속 [정정 #6612312906](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/155#issuecomment-6612312906)는 31일 응답 파일 readback 성공과 **실제 일정 데이터 확보 실패**를 명확히 분리. #166/#173/#192/#194의 별도 종목 탐색 및 일부 D1 게시를 전체 31일 완전 수집 성공으로 소급하지 않는다.
+- **판정:** 최초 원본 Run·Job·업무 결과 댓글의 실행 경계 독립 확인 완료. 2026-12 전체 발표일 데이터 완결 미입증, **OPEN 유지**, 중복 31회 Provider 재호출 금지.
+
+### PC #173 — 40종목 요청 중 38종목 저장·quota stop, 원본 Job 실패 구분
+
+- [#173](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/173) OPEN. requestId `pc-dec31-a237c95a-dedb-4d19-854c-eb1234878eab`, operation `capture-december-2026-earnings-symbol-batch-a`, pinned source `55014d3c76ac1071dbe369c0a7fe72bd94ed0c5a`.
+- 생성 2026-11-03T18:56:24Z 인접 GitHub `issues` Run 18:56:15Z..19:00:00Z 조회에서 최초 정확 `ZGMINI ER1 December Symbol Batch A` [Run 41698557847](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/41698557847) **completed/failure**, workflow ID 406090846, Job 126135465578 failure. `Checkout pinned reviewed 40-symbol collector` success, `Execute PC-private bounded batch without GitHub token` **failure**, `Upload sanitized per-symbol counts only` success. 뒤의 동일 Workflow Run 41698893818 cancelled 및 41699031497 skipped는 최초 Run의 성공 반증이나 재시도 승인 근거가 아님.
+- 원본 [결과 댓글 #6612833259](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/173#issuecomment-6612833259) `PARTIAL/DEC31_BATCH_QUOTA_STOP`, candidateSymbols=40, providerCalls=39, storedSymbols=38, positiveSymbols=35, decemberEventRows=35, retries=0, D1/Core/Task writes=0. 기존 담당 원본 source 대조에서 누락 2종목 TOL·CASY가 확인됐으나 이번 감사의 새 실제 PC 재실측은 수행하지 않았다.
+- **판정:** 원본 부분 수집/수량 및 실패 단계 독립 확인 완료, 40/40 저장·월별 전체 최신성은 여전히 미완료. **OPEN 유지**. 기존 공급자 예산·Core/Writer/게시 보호, 무승인 재호출 금지.
+
+### 배치 AF 상태·경계
+
+GitHub Search API 최신 OPEN: `zgmini` Issue **1** / PR **6**, `zgmini-pc-control` Issue **55** / PR **1** = **총 63건(이슈 56, PR 7)**. 배치 AE의 총 66건 대비 -3건은 다른 담당자 또는 동시 상태 변경이며 본 감사 신규 종결로 산입하지 않는다. 원본 고정 88건 분모는 유지.
+
+- 2차 원본 감사 **79/88 (89.8%)**, 잔여 **9건**. 원본이 실패·부분 수집이면 그 사실을 감사 성공으로만 산입하고 실제 기능 완료는 별도로 남김.
+- 본 배치 Issue/PR 직접 종결 **0**, 누적 직접 종결 **10건**. 실제 운영 PC/Controller/Writer/SQLite/D1/Task/승인/Provider 호출/재실행/신규 Issue/PR/PC Job 변경 **0건**.
+- 후속: 남은 고정 코호트 9건의 최초 검증과 W01/W03/W05 종결 가능 여부 우선 심사. 이미 #3516 복구 후 RUM V2 Controller 성공에 따라 ER1/W04 후행 적용은 **기존 83679b preimage를 재사용하면 안 됨**; 최신 설치 SHA/CAS와 원담당자 정규 승인 보호.
