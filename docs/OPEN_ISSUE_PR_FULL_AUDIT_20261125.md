@@ -72,16 +72,16 @@
 | 58 | PC Issue | [#1026](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1026) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; **SUCCESS**) |
 | 59 | PC Issue | [#1021](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1021) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; **BLOCKED**) |
 | 60 | PC Issue | [#1017](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1017) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; **BLOCKED**) |
-| 61 | PC Issue | [#1010](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1010) pc-job — R6 단발 수집 직후 Core lock 자연 해제 읽기전용 확인 | `core-status` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 62 | PC Issue | [#1008](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1008) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 63 | PC Issue | [#1004](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1004) [시장 캘린더 2027 / 공통 조회 지원] PC 원본·D1 연간 일정 해시 검증 공백 | `본문 조사` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 64 | PC Issue | [#1000](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1000) PC A: BLS v2 R6/R4 13-file Writer preimage read-only (5 | `writer-install-preimage-readonly` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 65 | PC Issue | [#996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/996) pc-controller-update | `controller-update` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 66 | PC Issue | [#976](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/976) A/read-only 시장 캘린더 2027 Census 운영 source 진단 | `release-calendar-runtime-readonly` | 시장캘린더/ER1 | PENDING_EVIDENCE_REVIEW |
-| 67 | PC Issue | [#965](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/965) 고용 R6 DOL 원본 보존 수정 — Writer B 직전 읽기전용 원본 조회 | `writer-install-preimage-readonly` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 68 | PC Issue | [#964](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/964) release-calendar-runtime-readonly | `release-calendar-runtime-readonly` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 69 | PC Issue | [#946](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/946) 고용 R6 — 승인 source ↔ 실제 Core 체크아웃 읽기 전용 확인 | `pc-source-preflight` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 70 | PC Issue | [#939](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/939) pc-writer-config-b-once | `pc-writer-config-b-once` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
+| 61 | PC Issue | [#1010](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1010) pc-job — R6 단발 수집 직후 Core lock 자연 해제 읽기전용 확인 | `core-status` | 고용 R6/W04 | REVIEWED_COMMENT (2 comments; **PASS — CORE_READONLY_DIAGNOSIS**) |
+| 62 | PC Issue | [#1008](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1008) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; **BLOCKED**) |
+| 63 | PC Issue | [#1004](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1004) [시장 캘린더 2027 / 공통 조회 지원] PC 원본·D1 연간 일정 해시 검증 공백 | `본문 조사` | 공통 PC/CI | REVIEWED_COMMENT (2 comments; no standard result) |
+| 64 | PC Issue | [#1000](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1000) PC A: BLS v2 R6/R4 13-file Writer preimage read-only (5 | `writer-install-preimage-readonly` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; **PASS — WRITER_APPROVED_PREIMAGE_READONLY**) |
+| 65 | PC Issue | [#996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/996) pc-controller-update | `controller-update` | 공통 PC/CI | REVIEWED_COMMENT (53 comments; STATUS: UNKNOWN;CODE: RUNNER_SET_DRIFT) |
+| 66 | PC Issue | [#976](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/976) A/read-only 시장 캘린더 2027 Census 운영 source 진단 | `release-calendar-runtime-readonly` | 시장캘린더/ER1 | REVIEWED_COMMENT (1 comments; **PASS — RELEASE_CALENDAR_SOURCE_INVENTORY_READONLY**;STATUSES_NOT_PROVIDER_GET_POLICY_PROOF) |
+| 67 | PC Issue | [#965](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/965) 고용 R6 DOL 원본 보존 수정 — Writer B 직전 읽기전용 원본 조회 | `writer-install-preimage-readonly` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; **PASS — WRITER_FIXED_PREIMAGE_READONLY**) |
+| 68 | PC Issue | [#964](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/964) release-calendar-runtime-readonly | `release-calendar-runtime-readonly` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; **PASS — RELEASE_CALENDAR_SOURCE_INVENTORY_READONLY**;STATUSES_NOT_PROVIDER_GET_POLICY_PROOF) |
+| 69 | PC Issue | [#946](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/946) 고용 R6 — 승인 source ↔ 실제 Core 체크아웃 읽기 전용 확인 | `pc-source-preflight` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; **PASS — PC_SOURCE_READONLY_DIAGNOSIS**) |
+| 70 | PC Issue | [#939](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/939) pc-writer-config-b-once | `pc-writer-config-b-once` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; no standard result) |
 | 71 | PC Issue | [#936](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/936) pc-job — employment R6 post-install config keys readonl | `writer-install-preimage-readonly` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
 | 72 | PC Issue | [#860](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/860) pc-writer-config-b-proof-once | `본문 조사` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
 | 73 | PC Issue | [#835](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/835) [시장 캘린더 인계] ER1 자동 계산 설치 후 로컬 output·게시 증거 좁은 조회 경로 확인 | `본문 조사` | 시장캘린더/ER1 | PENDING_EVIDENCE_REVIEW |
@@ -175,3 +175,15 @@
 - zgmini-pc-control Issue #1026: REVIEWED_COMMENT, 댓글 1, **SUCCESS**
 - zgmini-pc-control Issue #1021: REVIEWED_COMMENT, 댓글 1, **BLOCKED**
 - zgmini-pc-control Issue #1017: REVIEWED_COMMENT, 댓글 1, **BLOCKED**
+
+### 감사 댓글 검증 61–70
+- zgmini-pc-control Issue #1010: REVIEWED_COMMENT, 댓글 2, **PASS — CORE_READONLY_DIAGNOSIS**
+- zgmini-pc-control Issue #1008: REVIEWED_COMMENT, 댓글 1, **BLOCKED**
+- zgmini-pc-control Issue #1004: REVIEWED_COMMENT, 댓글 2, no standard result
+- zgmini-pc-control Issue #1000: REVIEWED_COMMENT, 댓글 1, **PASS — WRITER_APPROVED_PREIMAGE_READONLY**
+- zgmini-pc-control Issue #996: REVIEWED_COMMENT, 댓글 53, STATUS: UNKNOWN;CODE: RUNNER_SET_DRIFT
+- zgmini-pc-control Issue #976: REVIEWED_COMMENT, 댓글 1, **PASS — RELEASE_CALENDAR_SOURCE_INVENTORY_READONLY**;STATUSES_NOT_PROVIDER_GET_POLICY_PROOF
+- zgmini-pc-control Issue #965: REVIEWED_COMMENT, 댓글 1, **PASS — WRITER_FIXED_PREIMAGE_READONLY**
+- zgmini-pc-control Issue #964: REVIEWED_COMMENT, 댓글 1, **PASS — RELEASE_CALENDAR_SOURCE_INVENTORY_READONLY**;STATUSES_NOT_PROVIDER_GET_POLICY_PROOF
+- zgmini-pc-control Issue #946: REVIEWED_COMMENT, 댓글 1, **PASS — PC_SOURCE_READONLY_DIAGNOSIS**
+- zgmini-pc-control Issue #939: REVIEWED_COMMENT, 댓글 1, no standard result
