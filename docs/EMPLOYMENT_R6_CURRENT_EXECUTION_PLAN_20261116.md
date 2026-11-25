@@ -169,3 +169,40 @@ W04 원담당이 기존 권한 범위의 기능 작업을 끝까지 수행한다
 - **남은 실제 결함을 하나로 좁힘:** STATE_CLAIMS_BREADTH의 공개 관측일은 `2025-07-19`, `rawStatus=STALE`, `chartStatus=UNAVAILABLE`. 반면 Core Current의 STATE_INITIAL_CLAIMS는 최신 `2026-11-07`, 600주×51지역 수량 PASS. 계산/공개는 승인된 History-only PIT reader를 사용하고, #3488은 Current-only History 없는 키 `2880`, `rawRunLinked=0`, `availableTimeMissing=2880`을 입증. 하지만 실제 누락 **주차별** 분포·해당 차트 마지막점과 인과/과거 가용일이 미확정이므로 2880 행 History 소급 생성·후보 승격·최신 점수 대체 금지. 코드 개선 [PC 제어 #3498](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3498)은 소스 병합에만 해당, 최신 Controller 운영 설치는 별도.
 - **시간 의미와 경계:** `sourceStoredAt`은 Writer 실행시각이 아니라 PIT observation 이력의 최대 retrievedAt, D1 `stored_at`은 게시시각, RELEASE `completedAt`은 Collector 완료시각, 19:23:15.174Z는 후행 체크포인트 갱신. 정규 무변경 수집은 신규 History revision 없이 Current의 마지막 확인만 진행하므로 Writer `UNCHANGED` 및 D1 무재게시와 양립. #3409 C급 패킷 [#3499](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3499)은 소스·CI 통합 완료이나 독립 Windows 실행/lease archive 미확보; W04 운영 설치·DB/D1 변경은 이 조사에서 0.
 - **다음 필수 실행:** #3409 독립 운영복구의 원본 영수증 확보(별도 담당), 그 뒤 승인된 정확 Controller B에서 기병합 A read-only 주차 집계/저장 NOOP 투영만 선택 설치할 수 있는지 최신 CAS·효과 계약 확인 → 동일 PC A의 `STATE_INITIAL_CLAIMS` 2880키 관측 주차·rawRun/availableAt 분포 및 RELEASE persisted `noop/historyRowsAdded` readback → History 현재/과거 가용 자격이 입증될 때만 최소 복구, 그렇지 않으면 실제 미확인으로 유지. 기존 정상 National 수집/Writer/D1/PC·모바일 재실행·재게시 금지. **1·2·4 DONE, 3·5 IN_PROGRESS = 3/5(60%)**.
+
+## 17. #3516 설치상태 복구 → PC Job 복원 → History/SQLite 실증 — 개편 실행계획 R1 (2026-11-25 KST)
+<!-- W04-20261125-3516-RECOVERY-PCJOB-HISTORY-REPLAN-R1-17 -->
+
+**계승 기준:** 이 절이 §15~16의 과거 #3409 복구 대기 문장을 최신 상태로 갱신한다. **#3409는 이전 완료 증거대로 종료**됐으며 재복구하지 않는다. 전체 단계는 **1·2·4 DONE / 3·5 IN_PROGRESS = 3/5(60%)**로 유지한다. 문서 작성·소스 CI·GitHub 병합·복구 후보 생성은 운영 설치·이력 복구·공개 게시 완료가 아니다.
+
+### 17.1 최신 사실·미확인 분리
+| 대상 | 확인한 실제 증거 | 현재 판정 |
+|---|---|---|
+| 이전 #3409 | 원본 C 복구 아카이브 및 운영 A #3509 성공(진행 원장 §260 참조) | DONE, 재실행 금지 |
+| #3516 새 Controller B | 대상 SHA `83679b013ac9a9820331d93311ec97e572b18e13`가 운영 PC에 설치된 것을 [독립 A #3528 / Run #45579963186](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45579963186)에서 확인. 그러나 ledger는 `RECOVERY_REQUIRED/POSTCHECK_OUTCOME_UNKNOWN`, lease HELD, `recoveryEligible=false` | 설치 SHA 확인 / 후검사·lease 미완 |
+| 원본 후검사 #3519 | `core-status` `pc-job` Issue는 있으나 원본 PC Job Run·JSON/TXT 영수증 없음 | AUTOMATION_BLOCKED, PASS 불가 |
+| History 읽기 #3522·#3524 | 모두 기존 `employment-r6-raw-run-attestation-readonly` 요청의 PC Job Run 미등록, 결과 없음 | 미실행; History 최신 주차 분포 미인증 |
+| 정확 복구 코드 | [PC 제어 PR #3530](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3530) 2026-11-25 main 정규 병합 `e395c8e5a0cd37a6c0dfb6c9ca2c8c062a40da3b`; Maintenance CI #45581747854, C996 #45581748535, Secret Scan #45581747765 **3/3 SUCCESS** | SOURCE_INTEGRATED, 운영 복구 아님 |
+| 복구 소스·A 원본 바이트 | 고정 source `ec9009be720f3da33c3300a81aaf54be1e18c683`의 복구 관련 4파일 SHA256 4/4, 운영 A JSON `results/pc-process-inventory-45579963186-1-operating.json` SHA256 1/1이 후보 manifest와 정확 일치([검증 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3530#issuecomment-7157974089)) | SOURCE_BYTES_VERIFIED; 운용 설치 증거와 별개 |
+| 설치상태 복구 승인 | 후보 `approvals/maintenance-recoveries/candidates/pc-update-c087fa10-88e2-42e3-bc60-c758ab93f0c1.installed.json`은 `approved:false`. 같은 ID의 정규 `approvals/maintenance-recoveries/*.installed.json` 승인 파일은 조회 시 미존재 | RECOVERY_NOT_APPROVED; 복구 B 미발행·미실행 |
+| 기존 R6 정상 경로 | #3484 Core/Writer `NOOP/UNCHANGED`, #3485 D1 local match, Production 29/29 PC·모바일 PASS; DOL 2026-11-24 RELEASE는 #3500에서 `inserted=0/revised=0` 등 일부 저장 결과 확인 | 이 증거의 시점·범위 안에서 유효, History 2,880키 인증을 대신하지 않음 |
+
+### 17.2 실제 수행 순서와 완료 판정
+| 순서 | 수행 작업 및 재사용할 계약 | 성공·STOP 기준 | 현재 상태 |
+|---|---|---|---|
+| A | 운영 유지보수기 실제 installed source/독립 operator 경로, #3516 원본 승인 계보 및 **현재** lease owner/marker/backlog/보호·Writer 7종 CAS를 정확 조회. #3528은 08:52:36 UTC 스냅샷임을 보존 | 동일 소유·CAS·효과가 확인되면 B 검토. drift/owner 생존/승인 효과 불명은 해당 복구 작업만 STOP | READY_TO_VERIFY |
+| B | 기존 승인 효과와 `RECONCILE_INSTALLED` 정규 계약을 대조하여 누락된 정확 승인 manifest를 원본 SHA·파일 해시·원본 영수증·CAS와 연결. 별도 승인 효과가 부족하면 그 효과에만 승인 필요 여부 판단 | `approved:false` 후보를 승인으로 사용 금지; 독립 유지보수기 소스 설치를 GitHub 병합으로 간주 금지 | NOT_APPROVED |
+| C | 승인·독립 operator·현재 CAS가 **모두** 충족될 때 정규 수신기에서 **한 번만** #3516 설치 상태 reconciliation 실행, 원본 lease 보관/해제 후 JSON/TXT·원장·archive 실제 readback | 완료 전 `RECOVERED_INSTALLED_STATE` 선언 금지; #3519를 소급 PASS로 수정 금지. 실패하면 기존 requestId/원장 상태부터 확인하고 중복 요청 금지 | NOT_RUN |
+| D | `pc-job.yml`의 issues dispatch 이벤트/조건/실제 Workflow Run 누락을 공통 경로에서 정확 분리·수정하고 정상 새 이벤트의 approved job/entry/upload 결과를 검증. #3523 주석 reindex 실패를 반복하지 않음 | 단순 workflow active·타 Actions 이벤트·CI 성공은 PC Job 복원 증거 아님; 실제 해당 PC Job Run/영수증 필요 | AUTOMATION_BLOCKED |
+| E | 실행 복원 뒤 **기존 승인 A**로 DOL_ETA / STATE_INITIAL_CLAIMS Current-only History 결손 2,880키의 최초·최종 주차/최근 16주/원본 rawRun·availableAt 분포와 Core SQLite의 동일 행 카운터를 읽기 전용 조회 | 원본 운영 PC Run/Job + JSON/TXT 정확쌍 + 실제 SQLite 값 확인. 2,880키 과거 가용 시각을 임의 인증하거나 소급 채우지 않음 | NOT_RUN |
+| F | 검증된 주차별 결손의 출처·발표일·가용시각·revision 계보를 확인하여 읽기 전용 자료로 끝낼지, 정확한 추가 History 복원 승인이 필요한지 최소 범위만 판단 | `TRUE_PIT` 근거가 없으면 `PARTIAL_HISTORY/STALE/UNAVAILABLE` 유지. 후보 DB·가짜 보간·수집 재호출 금지 | DEFERRED |
+| G | **실제 데이터 변경분이 입증된 경우에만** 기존 저장 자료 계산→로컬 결과→D1 공개 정확키→API·PC/모바일 29개 표시를 같은 source/관측일·storedAt·버전으로 readback. 무변경이면 기존 유효 `UNCHANGED` 증거 재사용 | DB·D1·API/UI 결과를 구분해 검증하고 결과 불일치 부분만 수정. 기존 정상 경로의 무조건 재게시·재배포 금지 | CONDITIONAL |
+
+### 17.3 자원·중복 실행·분리 원칙
+- 공통 Controller 운영 복구·`pc-job` 트리거 결함은 공유 실행 계층의 범위로 분리하되 **W04 원담당은** 정확한 승인 소스·A 조회·SQLite/PIT 판정 및 필요 시 저장 계산·게시에 책임을 유지한다. 실제 인수된 공통 작업만 기존 조정 경로에 연결한다.
+- #3516 원본 B·#3519 후검사·#3522/#3524 no-run A의 requestId를 재사용해 재요청하지 않는다. 임의 shell/SQL·Lease 직접 삭제·핵심 lock 해제·Workflow 토글·전역 Runner 유휴 대기·새 예약/Controller를 대체 수단으로 추가하지 않는다.
+- #3409와 #3516은 다른 설치 계보·CAS·source다. #3409의 7종 CAS, #3529 폐기된 중복 복구 PR의 SHA를 #3530 승인 명세에 섞지 않는다. 새 원본 실행 전 **현재** CAS와 정확 고정 해시를 다시 비교한다.
+- History 2,880키는 **결손 키 수**이지 자동 복원 허가/성공 카운터가 아니다. 600주×51지역 중량 검사 #3465 타임아웃을 동일 조건으로 반복하지 않고, 승인된 주차별 bounded A부터 이용한다.
+- 1·2·4단계의 유효 실제 완료 증거는 보존한다. 3·5단계 완료는 최신 자료/History 상태, 정상 자동 실행, 필요할 때만 계산·D1/API/UI를 **실제** 검증한 뒤 결정한다.
+
+**즉시 다음 작업 1건:** #3516 독립 유지보수기 **설치 source/현재 7-CAS/기존 승인 효과**를 정규 읽기 전용 증거로 확인해 exact approved recovery manifest가 구성 가능한지 판단한다. 그 외 History 조회/게시를 선행 성공으로 주장하지 않는다. **진행률 60% → 60%, 이번 변경은 실행계획·원장 정합화뿐.**
