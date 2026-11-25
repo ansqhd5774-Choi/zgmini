@@ -66,9 +66,9 @@ test('Actions client uses only bounded official GET resources',async()=>{
 test('existing Node workflow only adds optional read-only compare steps',()=>{
  const yaml=readFileSync(new URL('../.github/workflows/node.js.yml',import.meta.url),'utf8');
  assert.match(yaml,/actions: read/);
- assert.match(yaml,/node scripts\\/ci-bundle-baseline-resolve\\.mjs/);
- assert.match(yaml,/actions\\/download-artifact@v4/);
- assert.match(yaml,/node scripts\\/ci-bundle-size\\.mjs --compare-baseline/);
- assert.match(yaml,/artifacts\\/ci-bundle-size\\/\\*\\.json/);
+ assert.match(yaml,/node scripts\/ci-bundle-baseline-resolve\.mjs/);
+ assert.match(yaml,/actions\/download-artifact@v4/);
+ assert.match(yaml,/node scripts\/ci-bundle-size\.mjs --compare-baseline/);
+ assert.match(yaml,/artifacts\/ci-bundle-size\/\*\.json/);
  assert.doesNotMatch(yaml,/CI_BUNDLE_BUDGET_MANDATORY/);
 });
