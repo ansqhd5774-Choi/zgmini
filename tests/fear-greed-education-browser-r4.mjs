@@ -7,7 +7,7 @@ const base=process.env.CHAT_PREVIEW_URL??'http://127.0.0.1:5173';
 // default axe scans do not exercise. Normal-size button text requires 4.5:1.
 function contrastRatioCss(foreground,background){
  const luminance=value=>{
-  const m=/^rgb\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)$/.exec(value);
+  const m=/^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/.exec(value);
   assert.ok(m,'unexpected computed CSS color: '+value);
   const rgb=[1,2,3].map(i=>Number(m[i])/255).map(v=>
    v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4);
