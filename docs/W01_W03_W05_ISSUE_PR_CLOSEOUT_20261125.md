@@ -69,3 +69,11 @@
 - [PC #1213](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1213), [PC #1226](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1226): 원본 댓글 0건, 범용 Core 조회. 소속·실행 실증이 없어 별도 유지.
 - 이번 범위 내 **새로 종결할 근거가 확정된 Issue·PR 0건**. 기존 실제 종결 **11건(Issue 10, PR 1)** 유지. 공유 원장·타 프로젝트의 열린 문제를 프로젝트 완료라는 이유로 닫지 않음.
 - 원본 Request/승인 manifest와 해당 프로젝트 소유가 교차 입증되지 않는 나머지 범용 Core 이력은 현 단계에서 *귀속 미확정*으로 표시하고, Issue만 반복 종료하는 활동은 중단. 새 직접 관련 증거가 등장할 경우에만 이 원장에 연결하여 처리.
+
+## 2026-11-25 추가 감사 4차 — 프로젝트 별칭 OPEN 재검색
+
+- PC-control OPEN 검색: `infl19` 전용 0건, `infl7` 0건, `w05-five-key` 전용 0건, `three-sidecar` 전용 0건, `r54` 전용 0건. 결과에 나타난 #68/#2427 등은 공통 원장임.
+- PC-control `census-m3`/`gmh` 검색에서 #835는 별도 시장 캘린더, #68 공통 중앙 원장. `r178`/`r181`/`theme-platform`에는 #996이 등장하지만 해당 원본의 역할은 **공통 Controller 운영 복구**이고 W03 전용 종결 항목이 아님. 다른 프로젝트가 본문/댓글에서 언급됐다는 이유만으로 닫지 않음.
+- 본체 OPEN PR 별칭 검색: `w01`, `w03`, `w05`, `inflation-r2`, `theme-fear-greed`, `wpsfd42` 각 0건. 직접 프로젝트별 추가 종료 후보 없음.
+- 검색 결과는 특정 시점의 식별 가능한 OPEN 목록에 대한 **음성 증거**이지 프로젝트의 미게시 기능/운영 장애까지 없다는 증거는 아님. 전체 계보 완전성 100% 주장 보류.
+- **신규 Issue/PR 종결 0건; 누적 11건**. 다중 업무 병렬 실행 방해하지 않고 소속 미검증 항목을 보존함. 신규 PC/Writer/Controller/DB/D1 작업 0건.
