@@ -7,6 +7,7 @@ import {createHash} from 'node:crypto';
 import {DatabaseSync} from 'node:sqlite';
 import {EMPLOYMENT_R6_TABLES} from '../lib/market-score/employment-r6-contract.mjs';
 import {readAndAggregateR6RawSourceOnly as read,assertR6DescriptorPlatformSupported} from '../lib/market-score/employment-r6-raw-reader-source-only.mjs';
+import {auditEmploymentR6PitCoverage} from '../scripts/pc-writer/employment-r6-pit-coverage.mjs';
 const digest=s=>createHash('sha256').update(s).digest('hex');
 function fixture({body='{"value":7}',tamper=false,chunkGap=false,invalidRun=false}={}){
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-r6-raw-source-only-'));
@@ -161,4 +162,27 @@ test('Linux rejects in-place WAL header transition at second pre-open check',{sk
   try{fs.writeSync(fd,Buffer.from([2,2]),0,2,18);}finally{fs.closeSync(fd);}
  }}),/R6_READER_WAL_SIDECAR_UNSUPPORTED/);
  assert.ok(sidecars.every(x=>!fs.existsSync(x)));
+}));
+
+test('W04 PIT0408/PIT0605 owner coverage remains unchanged across source-only raw aggregation',{
+ skip:process.platform!=='linux'},()=>withFixture({},f=>{
+ const db=new DatabaseSync(f.file);
+ try{
+  for(const table of [EMPLOYMENT_R6_TABLES.observationCurrent,
+    EMPLOYMENT_R6_TABLES.observationHistory]){
+   db.exec('CREATE TABLE '+table+' (logical_series_id TEXT,geography_type TEXT,geography_code TEXT,observation_date TEXT,source_hash TEXT,value REAL,retrieved_at TEXT,available_at TEXT,provider TEXT,provider_series_id TEXT,quality_status TEXT,pit_class TEXT,provenance_json TEXT)');
+  }
+ }finally{db.close();}
+ const beforeDigest=digest(fs.readFileSync(f.file));
+ const ownerBefore=auditEmploymentR6PitCoverage({dbPath:f.file,asOfDate:'2026-11-25'});
+ assert.equal(ownerBefore.promotionApproved,false);
+ const raw=execute(f);
+ assert.deepEqual([raw.metadataKeys,raw.bodyVerifiedKeys,raw.runCertifiedKeys],[1,1,1]);
+ assert.equal(raw.historicalPitAttested,false);
+ assert.equal(raw.repairAuthorized,false);
+ assert.equal(raw.runtimeAuthorizationVerified,false);
+ const ownerAfter=auditEmploymentR6PitCoverage({dbPath:f.file,asOfDate:'2026-11-25'});
+ assert.deepEqual(ownerAfter,ownerBefore);
+ assert.equal(ownerAfter.promotionApproved,false);
+ assert.equal(digest(fs.readFileSync(f.file)),beforeDigest);
 }));
