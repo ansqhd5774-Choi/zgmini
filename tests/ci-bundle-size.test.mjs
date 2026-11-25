@@ -78,7 +78,7 @@ test('existing Node CI measures after build, uploads evidence without new workfl
  const artifact=w.indexOf('      - name: Upload bundle size report');
  assert.ok(build>=0&&measure>build&&artifact>measure);
  assert.match(w,/node scripts\/ci-bundle-size\.mjs/);
- assert.match(w,/artifacts\/ci-bundle-size\/report\.json/);
+ assert.match(w,/artifacts\/ci-bundle-size\/\*\.json/);
  assert.match(w,/retention-days: 7/);
  assert.match(w,/runs-on: ubuntu-latest/);
 });
