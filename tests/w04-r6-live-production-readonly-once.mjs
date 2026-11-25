@@ -46,7 +46,7 @@ try {
    const expectedHeader='1년 차트 '+data.summary.chartReadyFeatures+'/29개';
    await page.waitForFunction(expected=>document.querySelector(
      'section.economic-indicators[aria-labelledby="economic-employment-indicators"]')
-     ?.textContent?.includes(expected)===true,expected,{timeout:35000});
+     ?.textContent?.includes(expected)===true,expectedHeader,{timeout:35000});
    const rows=section.locator('tbody tr');
    const mobile=section.locator('.inflation-r2-mobile-list article');
    assert.equal(await rows.count(),29,'desktop 29 rows');
