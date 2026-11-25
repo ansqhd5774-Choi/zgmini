@@ -161,12 +161,15 @@ test('nonempty GitHub job count with omitted jobs fails closed before Issue writ
  await assert.rejects(triage({event:event(),request}),/CI_INCIDENT_JOB_INVENTORY_INCOMPLETE/);
  assert.deepEqual(calls.map(c=>c.method),['GET']);
 });
-test('created Issue says grouping is by CI step, not by confirmed root cause',async()=>{
+test('created Issue isolates unverified causes by exact run and records its execution scope',async()=>{
  const f=fixture();
  assert.deepEqual(await triage({event:event(),request:f.request}),{state:'CREATED',issue:6200});
  const created=f.calls.find(x=>x.resource==='issues'&&x.method==='POST');
- assert.ok(created.body.body.includes('묶음 기준: 같은 Workflow/Job/Step'));
- assert.match(created.body.body,/근본 원인이 같다는 뜻은 아닙니다/);
+ assert.ok(created.body.body.includes('원인 미확정, 실행별 독립 사건'));
+ assert.ok(created.body.body.includes('분류: 실행·Job·Step 위치만 확인됨'));
+ assert.ok(created.body.body.includes('zgmini-ci-run:123456:1:job:87:step:2'));
+ assert.doesNotMatch(created.body.body,/묶음 기준: 같은 Workflow\/Job\/Step/);
+
 });
 
 test('unknown causes in identical CI steps are separated by run and attempt',()=>{
