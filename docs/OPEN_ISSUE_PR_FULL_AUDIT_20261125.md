@@ -1142,3 +1142,17 @@ GitHub Search API 실제 재조회: 본체 Issue **1** / PR **6**, PC 제어 Iss
 - PC 유지보수 #1969/#2059의 정규 결과 GitHub 원본은 실패 `BLOCKED`이나 인증된 Windows 요청 ledger 실행 주체·처리 단계 확인은 여전히 필요. 앞선 배치 AJ에서 그 경계와 정확 manifest 조회 문제를 이미 검증했으며 실제 로컬 auth 우회·재실행·중복 신규 요청을 하지 않음.
 - 본체 #1031/#1266은 위 source-level gap 판정과 별개로 **정확 HEAD CI 0**이므로 2차 완료 미산입. 두 PR 최신 owner 코드 내역/원래 PR 코드의 변경범위 비교는 완료했지만 실제 기능 반영·운영 테스트를 선언하지 않는다.
 - 기검증 고유 **84/88(95.5%)**, 미검증 정확 **4건**, 이번 신규 직접 종결 0/누적 직접 종결 10, 운영 PC·Writer·DB/D1·Task·Provider·Controller 설치/승인/Workflow/CI 재실행 0. 본 회차 변경은 감사 원장 브랜치 문서 1개만 해당.
+
+
+## 배치 AM — 원본 코호트의 재현 가능한 고유 번호 무결성 검사기 추가 (2026-11-25 KST)
+
+**원본 감사 진행률 84/88(95.5%) 유지**, 미검증 4건. 이번 변경은 반복 진단이 아니라 **다음 감사자가 중복 계수·원본 88건 집합 변경·외부 Issue 혼입을 기계적으로 거부**할 수 있도록 독립적인 정형 고정 등록부 및 검사기를 작업 전용 브랜치에 추가한 것이다.
+
+- [고정 88건 구조화 JSON](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/issues-lifecycle-manager-20261123/docs/OPEN_ISSUE_PR_FIXED_COHORT_REGISTER_20261125.json) — 최초 테이블 **행번호/종류/원본 번호 88건**, 배치별 검증한 원본 번호, 미검증 **4건 #1031/#1266/#1969/#2059**, 정확 HEAD·원본 requestId·차단 사유, 추정이나 합계 과다 산입을 금지하는 정책을 기록.
+- [읽기 전용 검사기](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/issues-lifecycle-manager-20261123/scripts/audit/validate-open-issue-pr-cohort.mjs) — 사용법 `node scripts/audit/validate-open-issue-pr-cohort.mjs`. 원본 Markdown의 88개 고정 행을 JSON과 순서·형태·번호까지 비교하고, batch 배열의 번호가 코호트 안에만 있는지, 각 ID를 **최초 1회만 산입**하는지, 정확히 4개 미검증이 complement인지, 84+4=88인지 검증; 오류 시 즉시 실패. GitHub API·운영 PC·Workflow·Issue를 호출하지 않고 파일만 읽는다.
+- GitHub에 생성된 **두 원본 파일을 독립 재조회**하고 등록부 JSON과 원래 88행을 별도 JS 검사로 교차 검증한 결과: `frozen=88`, `verifiedUnique=84`, `pending=[1031,1266,1969,2059]`, `rechecksNotCounted=16`, `outsideCohort=0` — **PASS**. 이 16회는 과거 배치에 재등장한 ID로, 이미 이전 배치 W/AG에서 일부 중복 산입 오류를 정정했다. **16이라는 숫자는 새로 고쳐야 할 추가 16건의 오류가 아니라 과거 재조회 발생 횟수**.
+- 검사기 Node 실행 자체를 GitHub Actions/운영 PC에서 실제 수행했다고 주장하지 않는다. 이번에는 동일 불변식의 **별도 JS 계산**으로 정형 원장 내용이 원본과 일치함을 검증했으며, 향후 정규 CI에 넣으려면 기존 저장소 소유자의 승인·workflow 범위 검토가 필요하다.
+- 현재 남은 4건은 변하지 않음: 본체 W04 Draft #1031/#1266 정확 HEAD CI·원담당 안전 이관 미확정, PC #1969/#2059 과거 out-of-band Windows 원본 실행 신원 미확정. 기존 폐쇄된 PC Issue를 다시 열거나, Draft를 병합·폐기하지 않음.
+- 이번 감사 직접 신규 종결 **0**, 누적 직접 종결 **10건**. 감사 브랜치의 JSON/검사기/원장 외 **운영 PC·Controller·Writer·D1/SQLite·Task·Provider·새 Issue/PR·승인·기존 원본 실행 변경 0건**.
+
+**다음 단계:** 1) 새 검증기를 이후 원장 수정 시 먼저 적용하여 고정 88/고유 84/잔여 4를 수학적으로 확인, 2) PC 두 건은 기존 인증 운영 실행 원장에 접근 가능한 승인된 조회 경로만 독립 증거로 받아 검증, 3) Draft 두 건은 원담당 최소 소스 통합·정확 HEAD CI가 생성됐을 때만 완료 여부 재판정. 필요 시 현재 OPEN 재계수는 고정 코호트와 완전히 분리해서 보고한다.
