@@ -61,3 +61,11 @@
 - [#1213](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1213), [#1226](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1226)은 일반 Core A 원본으로 결과 댓글 0건. R6·D05·기타 공유업무로부터 소관 분리할 증거 없어 보류.
 - [#1196](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1196), [#1200](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1200), [#1231](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1231)은 `STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE`; [#1598](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1598)은 `CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE`. 과거 결함 상태만으로 단회 원본을 **완료된 W01·W03·W05 요청**으로 잘못 귀속하지 않음.
 - **추가 종료 0건 / 누적 11건 유지**. 다른 담당자 업무에 영향 주는 Issue 닫기·PC 실행·재승인/설치 없음. 이 단계는 과거 소속 미입증 항목의 **오종결 방지 검증**이며 전체 백로그 해소로 표현하지 않음.
+
+## 2026-11-25 추가 감사 3차 — Writer 원본 소속 정밀 판별
+
+- [PC #1174](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1174): 공통 Writer preimage 읽기. 원본 [Run 42712917820](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42712917820) `STATE_UNKNOWN/WRITER_PREIMAGE_CHECKOUT_NOT_CORROBORATED`; 원본 승인 계보에는 R10/공통 Writer 검사와 별도 후속 #1175/#1182가 연결되어 있으며 원래 검사의 PASS 입증은 아님. 저장 경로에 오래된 inflation 백업이 포함돼도 그것만으로 W01 직접 소유로 분류하면 안 됨.
+- [PC #2032](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2032): 승인 경로 `approvals/writer-preimage/bls-registered-v2-preimage-13-r1.json` 및 [Run 44086082448](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44086082448) `BLOCKED/RETIRED_IRAN_INVENTORY_UNAVAILABLE`. BLS v2 계열의 별도 고용업무이므로 W01·W03·W05 정리 대상에서 제외.
+- [PC #1213](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1213), [PC #1226](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1226): 원본 댓글 0건, 범용 Core 조회. 소속·실행 실증이 없어 별도 유지.
+- 이번 범위 내 **새로 종결할 근거가 확정된 Issue·PR 0건**. 기존 실제 종결 **11건(Issue 10, PR 1)** 유지. 공유 원장·타 프로젝트의 열린 문제를 프로젝트 완료라는 이유로 닫지 않음.
+- 원본 Request/승인 manifest와 해당 프로젝트 소유가 교차 입증되지 않는 나머지 범용 Core 이력은 현 단계에서 *귀속 미확정*으로 표시하고, Issue만 반복 종료하는 활동은 중단. 새 직접 관련 증거가 등장할 경우에만 이 원장에 연결하여 처리.
