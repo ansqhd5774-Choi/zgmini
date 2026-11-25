@@ -19,6 +19,13 @@ export async function collect(store: any, now: number) {
       cache: "no-store",
     });
 
+    // Internal collector only: preserve the provider's 429 and Retry-After
+    // for the existing scheduler's durable cooldown. Public GETs never call this.
+    if(response.status===429){
+      const retryAfter=response.headers.get("retry-after");
+      return Response.json({status:"unavailable",score:null},{status:429,
+        headers:retryAfter?{"Retry-After":retryAfter}:{}});
+    }
     if (!response.ok) throw new Error(`upstream ${response.status}`);
 
     const index = parseCnnIndex(await savedJson(response, store, "fear-greed", now));

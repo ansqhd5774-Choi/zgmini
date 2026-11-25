@@ -80,3 +80,33 @@ test('removed regional feeds have no polling or public routes while CNN and Kore
  assert.doesNotMatch(ui,/showBreadth/,'retired breadth widgets must not mount or poll unavailable APIs');
  assert.doesNotMatch(ui,/ftse-fear-greed|nikkei-fear-greed|kospi-fear-greed|kospi-history/);
 });
+
+
+test('explicit PC CNN minute tick reuses durable feed lease and never calls other feeds',async()=>{
+ const {sql,db,store,locks}=fixture();let calls=0;
+ const collectors={'fear-greed':async(s,at)=>{calls++;await s.writeInput('fear-greed',feedInput('fear-greed',at),at);return Response.json(feedOutput('fear-greed',at))}};
+ const args={env:{DB:db,ZGMINI_COMPUTE_TARGET:'pc'},store,locks,collectors,cnnMinuteOnly:true};
+ await assert.rejects(()=>refreshPublicFeeds({...args,env:{DB:db},now}),/CNN_MINUTE_PC_ONLY/);
+ const first=await refreshPublicFeeds({...args,now});assert.equal(first.attempted,1);assert.equal(first.feeds.length,1);
+ await refreshPublicFeeds({...args,now:now+59_999});assert.equal(calls,1);
+ await refreshPublicFeeds({...args,now:now+60_000});assert.equal(calls,2);
+ const held=await locks.claim('public-feeds',now+120_000);
+ assert.equal((await refreshPublicFeeds({...args,now:now+120_000})).status,'ALREADY_RUNNING');
+ assert.equal(calls,2);await locks.finish('public-feeds',held,now+120_000,'IDLE');
+ assert.equal(FEED_POLICY['fear-greed'].intervalMs,15*60_000);
+ sql.close();
+});
+test('minute tick retains last good result and respects durable provider 429 cooldown across restarts',async()=>{
+ const {sql,db,store,locks}=fixture();let calls=0;
+ const collectors={'fear-greed':async(s,at)=>{calls++;if(calls===2)return new Response(null,{status:429,headers:{'retry-after':'600'}});await s.writeInput('fear-greed',feedInput('fear-greed',at),at);return Response.json(feedOutput('fear-greed',at))}};
+ const args={env:{DB:db,ZGMINI_COMPUTE_TARGET:'pc'},store,locks,collectors,cnnMinuteOnly:true};
+ await refreshPublicFeeds({...args,now});
+ const at=now+60_000;
+ assert.equal((await refreshPublicFeeds({...args,now:at})).status,'PARTIAL');
+ assert.equal((await store.readOutput('fear-greed')).storedAt,now);
+ assert.equal((await store.readAttempt('fear-greed')).body.retryAt,at+600_000);
+ const secondStore=publicFeedStore(db);
+ await refreshPublicFeeds({...args,store:secondStore,now:at+599_999});assert.equal(calls,2);
+ await refreshPublicFeeds({...args,store:secondStore,now:at+600_000});assert.equal(calls,3);
+ sql.close();
+});

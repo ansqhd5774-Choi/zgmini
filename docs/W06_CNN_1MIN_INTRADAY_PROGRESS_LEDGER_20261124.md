@@ -21,7 +21,7 @@
 | 단계 | 상태 | 이번 원장 기준 증거 / 미완료 조건 |
 | --- | --- | --- |
 | 1. 실제 경로 확정 | 진행 중 | #1521 CLOSED 및 종단 PASS 승계, 최신 main 소스 경로·15분/5분 제약 확인; 운영 설치본·실제 HTTP 요청 간격 및 기존 실행 연결 확인 필요 |
-| 2. CNN만 1분 확인 | 미착수 | 60초 자연 HTTP 요청 간격 미입증; 다른 지표 주기 보존 필요 |
+| 2. CNN만 1분 확인 | 진행 중 | 기존 refresh의 PC 전용 60초 단회 경로·durable cooldown 후보 구현; 실제 호출 연결/공급자 승인/운영 검증 미완료 |
 | 3. 원본 저장·변동 감지 | 진행 중 | 기존 archive 저장 계약 재사용; 늦은 정상 원본을 current 역행 없이 저장하는 분기/2개 회귀 추가. CI·운영 미검증 |
 | 4. 1·5·10·30분 집계 | 진행 중 | 원본 전용 순수 집계/변동 표시 모듈과 5개 회귀시험 추가; UI 연결 및 실제 CI 미완료 |
 | 5. D1·API·자동 화면 갱신 | 진행 중 | 기존 D1/API 1D·1W PASS 승계; 관측 API 60초 재조회·실패 보존 소스 및 브라우저 회귀 추가, CI/운영 검증 미완료 |
@@ -126,3 +126,10 @@
 - 실제 수집 경로 `collect-local.mjs`는 다른 Core 작업 또는 public-feed 한 건만 선택한다. `local-cycle.mjs`는 동기 단회 Core 실행; Sidecar 자체 providerCalls=0. 현재 구조에서 CNN 전용 60초 실행을 보장하지 못한다. 다른 지표의 스케줄을 변경하거나 새 예약을 생성하지 않았다.
 - `public-feed-refresh.mjs`의 current 역행 검사가 archive 이전에 실행되어 늦게 받은 검증된 CNN 원본도 폐기하던 소스 결함 확인. 원본의 실제 observedAt이 current보다 이전일 때만 검증된 원본 headline을 기존 archive 병합 계약으로 저장하고 current를 유지하도록 수정. stale sidecar 재전파·확인시각 변조 없음. 무효 점수/저장 실패 시 기존 실패 처리. 신규 회귀 2개. 다른 공급자 정책 및 현재 CNN 15분 정책 유지. 소스 구현이며 PC Runtime 미적용.
 - 이전 exact HEAD efbb1e79의 Secret/CodeQL PASS, Node/Browser는 조회 시 진행 중. 신규 HEAD의 CI로 별도 확인.
+
+## 12. 2026-11-26 — CNN 전용 분 단위 실행 후보와 기존 회귀 수정
+
+- 이전 HEAD b43552cb Node Run 45716620792 Regression FAIL: tests/public-feed-storage.test.mjs:20의 불완전 late body(history 없음)를 새 archive 분기가 COMPLETE 처리. 기존 assertFeedOutput을 late 분기에서 호출하도록 수정. 기존 실패 assertion 삭제/변경 없음. 유효한 late 원본만 archive에 진입.
+- CNN quota 공통 ledger는 일반 provider에 대해 생성 시 전체 JSON을 읽고 다시 쓰는 구조로 별도 프로세스 동시 실행 시 lost update 위험이 있다. 독립 scheduler/새 프로세스 추가 금지. 기존 Core/Writer 보호를 유지하는 실제 연결 계약은 별도 필요. CNN quota 5분은 hard:false이므로 현재 코드에서 enforce mode도 hard 차단하지 않고 경고만 기록. 이를 공급처 승인/실제 1분 허용으로 오인하지 않음.
+- 기존 refreshPublicFeeds에 PC compute target 전용 cnnMinuteOnly 단회 옵션 추가: 60초 due 조건, public-feeds 및 feed lease 재사용, CNN만 선택, 일반 Core 15분/타 지표 정책 불변. 내부 collector 429/Retry-After 전달 및 기존 attempt 행에 durable cooldown, 실패 후 마지막 정상값 유지. 기존 경로의 호출자에서 아직 활성화하지 않음. 모의 SQLite 2개 회귀 추가. 공급처 실제 호출/새 예약/운영 설치 없음. 정확한 운영 연결은 공통 Writer 인계 #3745와 분리하여 확정.
+- #3745 OPEN, 댓글 없음(조회 시점); 실제 총괄 인수/복구 미확인. 60초 실제 요청 기록·checkedAt 저장·D1/화면 종단 미완료.

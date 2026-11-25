@@ -82,7 +82,7 @@ export function publicFeedStore(db){
    const rows=(await db.prepare(sql).bind(...unique,key,key,key,limit).all()).results??[];
    return rows.map(row=>({body:JSON.parse(row.body),storedAt:row.stored_at,snapshotKey:row.snapshot_key}));
   },
-  readAttempt:key=>read('attempt',key),writeAttempt:(key,now)=>write('attempt',key,{status:'ATTEMPTED'},now),
+  readAttempt:key=>read('attempt',key),writeAttempt:(key,now,{retryAt}={})=>write('attempt',key,{status:'ATTEMPTED',...(Number.isSafeInteger(retryAt)&&retryAt>now?{retryAt}:{})},now),
   writeInput:(key,body,now)=>write('input',key,body,now),writeOutput:(key,body,now)=>write('output',key,body,now),
   // Uses the already-existing table in PC core.sqlite; no new DB schema or
   // additional provider request. Only observed public scores enter this lane.
