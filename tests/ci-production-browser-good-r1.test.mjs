@@ -13,7 +13,8 @@ const sample=(route='/',viewport=PROD_VIEWPORTS[0],metrics={
 })=>({schemaVersion:PROD_SCHEMA,fixture:PROD_FIXTURE,route,
  url:PROD_ORIGIN+route,viewport,browserVersion:'Chrome-test',
  documentStatus:200,mainFound:true,blockedWriteRequests:0,
- blockedThirdPartyRequests:1,pageErrors:[],error:null,metrics});
+ blockedThirdPartyRequests:1,pageErrors:[],error:null,metrics,
+ blockedCfRumScriptRequests:0,rumDomScriptPresent:false});
 const all=()=>PROD_ROUTES.flatMap(route=>PROD_VIEWPORTS.map(v=>sample(route,v)));
 
 test('production read-only lab tracks exactly homepage and economic overview',()=>{
@@ -88,6 +89,30 @@ test('runtime JS exceptions or blocked writes cannot falsely certify laboratory 
  slow.pageErrors=['uncaught render exception'];
  slow.metrics.cls=0.12;
  assert.equal(classifyProductionPage(slow).state,'PRODUCTION_LAB_GOOD_EXCEEDED');
+});
+test('Cloudflare beacon markers never certify RUM collection or real-user P75',()=>{
+ const noMarker=classifyProductionPage(sample());
+ assert.equal(noMarker.rumBeacon.markerState,'NO_BEACON_SCRIPT_MARKER_IN_BOUNDED_LAB');
+ assert.equal(noMarker.rumBeacon.realUserSamples,'UNVERIFIED');
+ assert.equal(noMarker.rumBeacon.fieldP75,'UNVERIFIED');
+ const dom=sample();dom.rumDomScriptPresent=true;
+ assert.equal(classifyProductionPage(dom).rumBeacon.markerState,'BEACON_SCRIPT_MARKER_OBSERVED');
+ const blocked=sample();blocked.blockedCfRumScriptRequests=1;
+ assert.equal(classifyProductionPage(blocked).rumBeacon.markerState,'BEACON_SCRIPT_MARKER_OBSERVED');
+ assert.equal(classifyProductionPage(blocked).state,'PRODUCTION_LAB_MEASURED_TARGETS_MET');
+ const failed=sample();failed.documentStatus=null;failed.mainFound=false;
+ failed.rumDomScriptPresent=null;
+ assert.equal(classifyProductionPage(failed).rumBeacon.markerState,'UNVERIFIED');
+ const bad=sample();bad.blockedCfRumScriptRequests=-1;
+ assert.throws(()=>classifyProductionPage(bad),/CI_PRODUCTION_SPEED_SAMPLE_INVALID/);
+ assert.equal(summarizeProductionLab(all()).coreWebVitalsFieldP75,'UNVERIFIED');
+});
+test('read-only browser inspects only official Cloudflare beacon script markers',()=>{
+ const src=readFileSync(new URL('../scripts/ci-production-browser-good-r1.mjs',import.meta.url),'utf8');
+ assert.match(src,/static\\.cloudflareinsights\\.com/);
+ assert.match(src,/blockedCfRumScriptRequests\\+\\+/);
+ assert.match(src,/Array\\.from\\(document\\.scripts\\)/);
+ assert.match(src,/DOM_SCRIPT_AND_BLOCKED_REQUEST_MARKERS_ONLY/);
 });
 test('browser start rejects arbitrary origins and unauthorized measurement options',async()=>{
  let launched=false;
