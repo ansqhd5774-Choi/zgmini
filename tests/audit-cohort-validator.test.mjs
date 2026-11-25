@@ -17,7 +17,7 @@ function fixture() {
   fs.mkdirSync(scripts, { recursive: true });
   fs.copyFileSync(original, path.join(scripts, 'validate-open-issue-pr-cohort.mjs'));
   // .mjs is unambiguously ESM; the fixture never runs user-supplied code.
-  const encoded = original.match(/const FROZEN_COHORT_ANCHOR = "([^"]+)";/);
+  const encoded = fs.readFileSync(original, 'utf8').match(/const FROZEN_COHORT_ANCHOR = "([^"]+)";/);
   assert.ok(encoded, 'Production validator must pin original cohort');
   const codes = { MI: '본체 Issue', MR: '본체 PR', PI: 'PC Issue', PR: 'PC PR' };
   const frozenCohort = encoded[1].split(',').map((token, i) => {
