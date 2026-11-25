@@ -952,3 +952,40 @@ GitHub Search API 최신 OPEN: `zgmini` Issue **1** / PR **6**, `zgmini-pc-contr
 - 2차 원본 감사 **79/88 (89.8%)**, 잔여 **9건**. 원본이 실패·부분 수집이면 그 사실을 감사 성공으로만 산입하고 실제 기능 완료는 별도로 남김.
 - 본 배치 Issue/PR 직접 종결 **0**, 누적 직접 종결 **10건**. 실제 운영 PC/Controller/Writer/SQLite/D1/Task/승인/Provider 호출/재실행/신규 Issue/PR/PC Job 변경 **0건**.
 - 후속: 남은 고정 코호트 9건의 최초 검증과 W01/W03/W05 종결 가능 여부 우선 심사. 이미 #3516 복구 후 RUM V2 Controller 성공에 따라 ER1/W04 후행 적용은 **기존 83679b preimage를 재사용하면 안 됨**; 최신 설치 SHA/CAS와 원담당자 정규 승인 보호.
+
+
+## 배치 AG — 원본 88건 고유 ID 중복 정정 및 ER1 신규 8건 원본 실패검증 (2026-11-25)
+
+### 집계 정정
+
+고정 원장 88행과 A–AF 배치의 신규 기산입 Issue/PR 번호 전부를 Set으로 재대조했다. W 배치에서 이미 정정한 T/U/V 9건 외에 다음 추가 **7건 중복**을 발견했다. O의 #1740/#1688/#1637은 H에, O의 #1169는 E에, P의 #946은 B에, AF의 #155/#173은 M에 이미 기산입했다. 따라서 AF 표시 79/88은 실제 고유 최초 검증 **72/88 (81.8%)**이었다. 이번 8개의 이전 미산입 원본을 처음 감사 완료 판정해 **80/88 (90.9%)**, 미검증 **8건**으로 정정한다. 여기서 완료는 원본 증거의 독립검증이며 원래 기능의 성공 또는 Issue 해결이 아니다.
+
+### 신규 최초 고유 8건: 원본 GitHub Actions Run→Job→Step과 Issue 결과 댓글 직접 대조
+
+| 최초 코호트 Issue | 원본 Run / Job | Actions·원래 업무 상태 | 판정 |
+|---|---|---|---|
+| [#369](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/369) | [Run 41911470244](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/41911470244), Job 126859848545 | completed/failure, 작업 실행 Step #4 failure, 결과 업로드/보고 Step success; NOV30_ER1_VENDOR_ACTUAL_INVALID; 20 selected / 13 calls / 0 D1 | 원본 실패 실증, OPEN 유지 |
+| [#394](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/394) | [Run 41925264059](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/41925264059), Job 126907877911 | completed/failure, 작업 실행 Step #4 failure, 결과 업로드/보고 Step success; NOV30_ER1_VENDOR_ACTUAL_INVALID; 20 selected / 13 calls / 0 D1 | 원본 실패 실증, OPEN 유지 |
+| [#473](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/473) | [Run 42220548112](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42220548112), Job 127901206841 | completed/failure, 작업 실행 Step #4 failure, 결과 업로드/보고 Step success; NOV30_ER1_PROVIDER_BUDGET_STOP; 1436 selected / 1419 missing / 17 calls | 원본 실패 실증, OPEN 유지 |
+| [#474](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/474) | [Run 42220978996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42220978996), Job 127902645129 | completed/failure, 작업 실행 Step #4 failure, 결과 업로드/보고 Step success; NOV30_ER1_PROVIDER_BUDGET_STOP; 1436 selected / 1402 missing / 17 calls | 원본 실패 실증, OPEN 유지 |
+| [#496](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/496) | [Run 42241007373](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42241007373), Job 127970969504 | completed/failure, 작업 실행 Step #4 failure, 결과 업로드/보고 Step success; ER1_NOV_FORECAST_B_SOURCE_HASH_STOP; forecast publish BLOCKED / 0 writes | 원본 실패 실증, OPEN 유지 |
+| [#498](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/498) | [Run 42241958083](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42241958083), Job 127974244401 | completed/failure, 작업 실행 Step #4 failure, 결과 업로드/보고 Step success; ER1_NOV_FORECAST_B_SOURCE_HASH_STOP; forecast publish BLOCKED / 0 writes | 원본 실패 실증, OPEN 유지 |
+| [#503](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/503) | [Run 42243517710](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42243517710), Job 127979668621 | completed/failure, 작업 실행 Step #4 failure, 결과 업로드/보고 Step success; ER1_NOV_FORECAST_B_UNEXPECTED_STOP; forecast publish BLOCKED / 0 writes | 원본 실패 실증, OPEN 유지 |
+| [#509](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/509) | [Run 42244734609](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42244734609), Job 127983858573 | completed/failure, 작업 실행 Step #4 failure, 결과 업로드/보고 Step success; DEC31_PUBLISH_PROJECT_SOURCE_OR_DIRTY_STOP; forecast publish BLOCKED / 0 writes | 원본 실패 실증, OPEN 유지 |
+
+#369/#394는 November batch20 bounded private, #473/#474는 November full private, #496/#498/#503/#509는 November forecast saved-publish로 서로 다른 requestId의 고정 단회 요청이다. 정확 해당 Issue 생성 UTC를 포함한 Github event=issues 시간창으로 Run을 찾았으며 각 Actions Job과 실패 Step #4를 실제 확인했다. #394의 처음 시간창은 108건으로 절단 위험이 있어 22:26:10–22:27:15 UTC 좁은 시간창 36/36을 재조회하여 Run 41925264059를 확정했다. 모든 Issue는 당시 결과가 PARTIAL 또는 BLOCKED였고 Provider/D1 쓰기 없이 종료됐다. Git 저장 JSON/TXT 결과쌍은 이 회차에서 2/2 직접 조회한 것으로 주장하지 않으며, 성공 실행·현재 운영상태도 주장하지 않는다.
+
+### 남은 고정 미검증 8건: 88행과 기검증 고유 ID의 정확 차집합
+
+| 원래 고정 행 | 남은 대상 | 차단 이유 |
+|---|---|---|
+| 3 | 본체 PR #1266 | 정확 HEAD의 CI PASS 영수증 미확인 |
+| 5 | 본체 PR #1031 | 정확 HEAD의 CI PASS 영수증 미확인 |
+| 26 | PC Issue #2059 | 유지보수 결과쌍 존재, 원본 out-of-band 실행 신원 독립확인 미완 |
+| 29 | PC Issue #1969 | 유지보수 결과쌍 존재, 원본 out-of-band 실행 신원 독립확인 미완 |
+| 45 | PC Issue #1227 | 원본 Job 실행/동등 후속 확인 미완 |
+| 46 | PC Issue #1226 | 역사 NO_RUN과 후속 별도 requestId 구분 필요 |
+| 47 | PC Issue #1217 | 원본 Job 실행/동등 후속 확인 미완 |
+| 48 | PC Issue #1213 | 원본 Job 실행/동등 후속 확인 미완 |
+
+이번 감사의 직접 신규 종결 0, 이전 직접 종결 누적 10건 유지. 원본 ER1 장애를 임의로 재실행하거나 W01/W03/W05 완료건으로 잘못 분류하지 않음. 운영 PC/Controller/Writer/SQLite/D1/Task, 승인, 새 Job/PR 등 운영변경 0. 후속은 8건의 최초 원본 증거검증만 신규 산입하며, W04·ER1·RUM Controller 설치 계보·CAS를 보호한다.
