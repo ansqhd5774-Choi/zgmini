@@ -282,12 +282,11 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
             :valueDiff&&hashDiff?"valueAndHashDifferent"
             :valueDiff?"valueOnlyDifferent":"hashOnlyDifferent";
           causes[cause]++;
+          // Keep the already-approved Controller's exact five-field private
+          // identity contract. Only disjoint aggregate counts are added.
           overlapConflicts.push({logicalSeriesId:coreRow.logical_series_id,
             geographyType:coreRow.geography_type,geographyCode:coreRow.geography_code,
-            observationDate:coreRow.observation_date,reason:"CANDIDATE_CURRENT_CONFLICT",
-            differenceFlags:{numericValue:valueDiff,sourceHash:hashDiff,
-              provider:providerDiff,providerSeries:providerSeriesDiff,
-              sourceRevision:revisionDiff,invalidNumericValue:!numericValid}});
+            observationDate:coreRow.observation_date,reason:"CANDIDATE_CURRENT_CONFLICT"});
         }
       }
       overlapConflicts.sort((a,b)=>a.logicalSeriesId.localeCompare(b.logicalSeriesId)
@@ -306,6 +305,7 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
         coreStateKeyCount:pit04KeyReview.counts.coreKeys,
         counts:pit04KeyReview.counts,evidence:fullPrivateRows,
         allSeriesCandidateCurrentConflicts:overlapConflicts,
+        candidateConflictBreakdown:conflictBreakdown,
         rawPitAttested:false,repairAuthorized:false};
       const body=JSON.stringify(privateLedger);
       privateLedgerDigest=createHash("sha256").update(body).digest("hex");
