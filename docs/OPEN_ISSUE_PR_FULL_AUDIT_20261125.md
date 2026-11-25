@@ -1330,3 +1330,12 @@ GitHub Search API 실제 재조회: 본체 Issue **1** / PR **6**, PC 제어 Iss
 - **데이터 출처의 남은 한계:** 이 함수는 입력받은 raw snapshot/Run 두 배열을 **상호 검증**하지만, 운영 Windows/SQLite read-only snapshot에서 승인된 시점에 **누락 없이 추출된 전체 원본**임을 독립 증명하지 않는다. 현행 owner DB query-only·bounded read·private ledger·CAS/lease 보존과의 연결 및 승인·운영 후검사는 별도. 이 소스-only Draft를 원본 #1266 완료로 산입하지 않음.
 
 이번 감사 직접 종결 0건/누적 10건, 코호트 84/88(95.5%) 유지. 운영 PC·Controller·Writer·SQLite/D1·Task·Provider·보안 설정·정규 승인 변경 0. 다음 단계는 **Run #45617426723의 Regression tests 종료 여부를 정확 HEAD로 확인**, 실패 시 해당 소스만 최소 수정, 성공 시 원담당 source-only 통합 계약 리뷰, 이후에만 #1266 최종 판정을 재검토한다.
+
+
+### 배치 AV 최종 CI 후속 — 정확 HEAD 전체 SUCCESS 추가 검증 (2026-11-25 KST)
+
+배치 AV 앞 기록 당시 `in_progress`였던 [#1614 Node.js CI Run #45617426723](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45617426723)을 종료 후 재조회: **`completed / SUCCESS`**. 작업 PR 최신 HEAD `99887af4d1ec1d6396bc057297f1ede461cee602`와 Run HEAD **정확 일치**, Job `139216434105` 역시 SUCCESS. `npm ci`, Build, Type check, **Regression tests**, PC publication recovery tests, Cloudflare candidate read contracts 등 모든 단계 SUCCESS.
+
+원본 CI Job 로그의 실제 `✔` 출력에서 `real SHA256 matching body and successful provider Run attest one key`, `tampered body does not obtain body or Run certification`, `Run provider mismatch, FAILED outcome and wrong body receipt are not certified`, `invalid calendar day and malformed as-of fail closed`, `cumulative collector Run reference work is capped at 40000` 등 **신규 암호학적 검증 회귀가 실제 CI에서 실행된 증거** 확보. 따라서 이전 배치 AV `CI PASS 미확정`은 **현재 HEAD에 한해 CI 성공으로 갱신**한다. 원 PR에 [검증 완료 댓글 #7162964878](https://github.com/ansqhd5774-Choi/zgmini/pull/1614#issuecomment-7162964878) 기록 완료.
+
+단, **신규 Draft #1614 소스+CI 성공은 기존 고정 코호트 #1266의 원본 실행 인증이나 실제 W04 DB/Host/Controller 기능 연결 완료가 아님**. 원담당의 승인된 원본 SQLite 읽기 및 PIT0408/PIT0605 경계 보존·Host B/Controller projection·운영 검증 미완, 따라서 #1614 Draft 및 #1266 원본 OPEN 유지. 최종 원본 감사 완료 **84/88(95.5%)**, 미완 4건, 이번 직접 종결 0/누적 직접 종결 10. 운영 PC/Controller/Writer/DB/Provider/승인 변경 0.
