@@ -135,3 +135,16 @@ R2에서 확인한 설치 SHA·Runner online은 당시 읽기 증거로만 사�
 정확한 운영 source/설치 승인은 별도. 검증된 결과가 나오기 전 Draft PR을 main에 병합하거나 `INSTALL.json`의 Standby 활성화 값을 임의 조정하지 않는다. 완료 상태·변경 파일·실제 작업 결과는 이후 GitHub PR/Run 증거 기준으로 업데이트한다.
 
 **최신 인수 지점:** Source-side 무변경 정상 운영 보호. 최신 PR HEAD의 격리 Windows Run/Job 실제 종료 상태를 회수 → 그 결과에 한정해 결함 수정. 운영 Watchdog B 업그레이드는 기존 계약이 과거 1회 고정 해시만 허용하므로 정확한 현장 installed SHA 및 별도 승인 manifest를 먼저 확보한 뒤 기존 정규 경로를 최소 확장한다. 동일 Runtime 미확정 상태에서 직접 `INSTALL.json` 수정 금지.
+
+## 7. 2026-11-26 R3 안전성 재검토·후속 구현
+
+대상 [구현 Draft PR #3738](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3738).
+현재 확인된 소스 HEAD: `10452721e33984a2c817df8ffb085c5a8b986876`.
+
+- **실패 조건 1 — 불완전한 Runner PID 목록:** 과거 구현의 heartbeat 판정은 `children:[]` 또는 일부 자식 목록을 종료 증거로 받아들일 수 있었다. 기존 Supervisor의 상태 쓰기와 프로세스 종료가 교차하면 남은 Runner를 놓칠 위험이 있다. `tools/runner-watchdog.mjs`에 `provenOldRunnerExit()` 추가: 이전 owner PID와 정확히 일치하는 6좌석/고유 PID 증거·모든 PID 종료가 확인된 경우에만 Standby 승격을 허용한다. heartbeat만 오래됐다는 이유로 승격하지 않는다.
+- **실패 조건 2 — Watchdog nonce의 Runner 전달:** Standby 승격 후 동적 Supervisor import는 Standby 환경을 그대로 상속할 수 있다. `controller/standby.mjs`에서 부모 Watchdog IPC 신원 확인 직후 `ZGMINI_WATCHDOG_NONCE`와 `ZGMINI_WATCHDOG_PID`를 환경에서 제거한다.
+- 두 조건에 대해 기존 `tests/controller-standby.test.mjs` 회귀시험 추가: 11 → **14개 작성**. 최신 [CI Run #45714992080](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45714992080)는 조사 시 대기 상태이므로 **14개 PASS 주장 금지**.
+- 실제 프로세스/파일시스템 경합 10종은 `tests/controller-standby-windows-isolation.test.mjs`에서 기존 Windows 격리 CI에 연결. 역시 **실행 완료 증거 미확보**.
+- 현행 Watchdog B 승인 계약의 과거 고정 소스 SHA로 신규 Standby를 설치했다고 주장하지 않는다. 실PC Watchdog preimage·새 정확 승인 파일/해시·실제 Windows 실행 경로 검증 전까지 **Draft 유지, 운영 변경 0**.
+
+**다음 필수 실행:** 최신 Windows CI Run #45714992080의 Job/시험 결과를 회수하고 실패 조건을 최소 수정한다. 해당 CI가 성공하더라도 운영 전환 성공을 뜻하지 않는다.
