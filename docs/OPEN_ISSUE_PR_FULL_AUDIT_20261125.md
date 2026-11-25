@@ -629,3 +629,12 @@ GitHub Search API 직접 재조회 **78건 OPEN = 본체 Issue 1 / PR 6 + PC 제
 - [본체 PR #1266](https://github.com/ansqhd5774-Choi/zgmini/pull/1266)는 현 W04 PIT0408/0605와 구 raw 집계 계약 차이를 기존 원담당 감사에서 이미 보고. OPEN/Draft 유지, 구 Runner를 최신 브랜치에 병합하면 보호 기능이 소실될 수 있어 자동 병합 금지.
 - 이 배치의 write는 위 Issue 2건의 증거 댓글과 `not_planned` 상태 2개뿐. 운영 PC, Runner, Controller, Writer, SQLite, D1, Task, Workflow, 승인 명세, 원본 실행 변경 **0**.
 - **이력 보호:** 완료 7건/기존 대체 1건/새 역사적 미접수 2건 = 본 감사 직접 CLOSED 10건. 고정 코호트 88 중 원본 실행증거 검증은 **60/88(68.2%)**로 유지하며 이 2건의 미실행 이슈를 실행증거 완료로 둔갑시키지 않는다.
+
+
+## 배치 S — 최신 OPEN 상태 및 원장 시차 정정 (2026-11-25 KST)
+
+- 고정 코호트 88건, 2차 원본 증거 검증 **60/88(68.2%)**, 미검증 **28건** 유지. 이번 조회는 현행 상태 확인이며 신규 원본 검증 건수를 추가하지 않는다.
+- GitHub Search API 직접 재계수: **본체 Issue 1 / PR 6, PC 제어 Issue 61 / PR 1 = 총 OPEN 69건(이슈 62 / PR 7)**. 이는 조회 시점 스냅샷이다.
+- [PC #1226](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1226): 최신 closed/not_planned, 증거 댓글 [7161133739](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1226#issuecomment-7161133739) 확인. 최초 요청의 원본 실행 영수증은 미확보. 다른 요청인 [#1397](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1397)의 Run [43641123734](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43641123734)가 동일 operation(core-status)과 sourceSha(643b7c7c4372ffad552443fc312c6cb1b944e2fc)를 사용하고 PASS/CORE_READONLY_DIAGNOSIS를 보고한 후속 대체 근거로 기록돼 있다. #1226 원본 PASS 또는 현재 운영 상태 PASS를 의미하지 않는다. **다른 실행흐름의 종결로 이번 감사 직접 종결 실적에 중복 산입하지 않음**.
+- [PC #1213](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1213): OPEN, 댓글 0, 원본 operation(core-runtime-source-readonly), requestId(pc-683b12cd-0203-4873-9dc1-beee4b46daa2), sourceSha(643b7c7c4372ffad552443fc312c6cb1b944e2fc). #1397은 operation(core-status)이므로 동등한 후속 완료 근거가 아니다. 원본 실행 및 동등한 후속 결과 미확보 → **OPEN 보호**.
+- 신규 종결/승인/PC Job/PR/운영 PC·Controller·Writer·DB·Task 변경 0건. 감사 담당 직접 종결 기존 10건 유지. 다음 단계는 미검증 28건의 개별 operation, sourceSha, requestId 및 실행 결과쌍 검증. W04·ER1 진행 중 작업 보호.
