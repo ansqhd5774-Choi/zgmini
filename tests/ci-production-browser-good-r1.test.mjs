@@ -73,6 +73,22 @@ test('source or viewport mismatch and duplicate measurements reject false eviden
  assert.throws(()=>summarizeProductionLab([rows[0]]),
   /CI_PRODUCTION_SPEED_INCOMPLETE_SAMPLES/);
 });
+test('runtime JS exceptions or blocked writes cannot falsely certify laboratory Good',()=>{
+ const jsError=sample();
+ jsError.pageErrors=['uncaught render exception'];
+ assert.equal(classifyProductionPage(jsError).state,'PRODUCTION_LAB_RUNTIME_UNVERIFIED');
+ const blockedWrite=sample();
+ blockedWrite.blockedWriteRequests=1;
+ assert.equal(classifyProductionPage(blockedWrite).state,'PRODUCTION_LAB_RUNTIME_UNVERIFIED');
+ const badEvidence=sample();
+ delete badEvidence.pageErrors;
+ assert.throws(()=>classifyProductionPage(badEvidence),
+  /CI_PRODUCTION_SPEED_SAMPLE_INVALID/);
+ const slow=sample();
+ slow.pageErrors=['uncaught render exception'];
+ slow.metrics.cls=0.12;
+ assert.equal(classifyProductionPage(slow).state,'PRODUCTION_LAB_GOOD_EXCEEDED');
+});
 test('browser start rejects arbitrary origins and unauthorized measurement options',async()=>{
  let launched=false;
  const stub={launch:async()=>{launched=true;throw Error('DO_NOT_START');}};
