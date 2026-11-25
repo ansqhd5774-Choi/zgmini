@@ -450,3 +450,8 @@ GitHub Search API 실시간 total_count **84건** = 본체 Issue 1/PR 6 + PC 제
 - #2032의 9개 상위 문자열 대조 중 1개 미일치는 저장된 TXT의 필드 표기/값 차이이므로 재검토 필요; `BLOCKED` 안전 중단 결론을 성공 처리하지 않는다.
 - 원본 #1997 제목의 Maintenance replay는 본문 명세상 `core-runtime-source-readonly` A 요청이므로 임의 실제 Maintenance 실행으로 승격하지 않음.
 - 운영 PC·Controller·Writer·DB·Task 변경 및 재실행 없음. 다음은 #1969/#2059의 정확 실행 계보 및 나머지 50건 추가 독립 검증.
+
+### 배치 I 보충 — #2032 TXT 필드 및 실시간 OPEN 재조회
+
+- #2032 상위 9필드 중 불일치 표시 1건은 **TXT에 `exitCode` 필드가 존재하지 않기 때문**이다. 같은 키의 값 충돌이 아니다. 원본 TXT는 `phase=PREVALIDATION`, `mutationStarted=false`, `firstFail=REQUEST_RECEIVED`, `nextAction=VERIFY_APPROVED_RETIRED_IRAN_STATE_NO_RETRY`를 기록한다. JSON/TXT에 동시에 존재하는 8개 대조 필드 8/8 일치, 출처 한쪽에 없는 `exitCode`는 비교 대상에서 제외. 원장 상위 8/9는 임의 실패 상태나 바이트 불일치로 확대 해석하지 않는다.
+- GitHub Search API 최신 OPEN 총 **84건** = `zgmini` Issue 1/PR 6, `zgmini-pc-control` Issue 75/PR 2. 원장 고정 코호트 88건과 다름. 이번 배치 직접 종결 0.
