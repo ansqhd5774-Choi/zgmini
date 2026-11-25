@@ -121,3 +121,9 @@ test('invalid calendar day and malformed as-of fail closed',()=>{
  assert.throws(()=>verifyRaw({snapshots:[s],runs:[],allowedGroups,asOfDate:'2026-02-31'}),/R6_ATTEST_INPUT_INVALID/);
  assert.throws(()=>verifyRaw({snapshots:[s],runs:[],allowedGroups,asOfDate:'not-a-date'}),/R6_ATTEST_INPUT_INVALID/);
 });
+
+test('cumulative collector Run reference work is capped at 40000',()=>{
+ const s=snapshot(),items=Array.from({length:4000},()=>({snapshotId:s.snapshotId,bodySha256:s.bodySha256}));
+ const runs=Array.from({length:11},()=>attest(s,{rawSnapshots:items}));
+ assert.throws(()=>verify([s],runs),/R6_ATTEST_RUN_REFERENCE_CAP/);
+});
