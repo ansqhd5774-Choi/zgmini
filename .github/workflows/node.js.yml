@@ -137,3 +137,21 @@ jobs:
           path: artifacts/ci-continuous-benchmark/report.json
           retention-days: 7
           if-no-files-found: error
+      # Temporary, draft-PR-only compatibility experiment. Never merge.
+      # Baseline npm ci / build / regressions run BEFORE this isolated probe.
+      - name: Experimental Miniflare 5 beta D1 compatibility (not for main)
+        run: |
+          set +e
+          npm install --no-save --package-lock=false --audit=false --fund=false miniflare@5.20261123.1-beta
+          install_rc=$?
+          if [ "$install_rc" -eq 0 ]; then
+            node --test tests/korea-rev7-d1-status.test.mjs
+            probe_rc=$?
+          else
+            probe_rc=$install_rc
+          fi
+          npm ci --audit=false --fund=false
+          restore_rc=$?
+          echo "MINIFLARE5_BETA_INSTALL=$install_rc D1_TEST=$probe_rc LOCKED_RESTORE=$restore_rc"
+          if [ "$restore_rc" -ne 0 ]; then exit "$restore_rc"; fi
+          exit "$probe_rc"
