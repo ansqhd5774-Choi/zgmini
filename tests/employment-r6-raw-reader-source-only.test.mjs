@@ -42,7 +42,7 @@ async function withFixture(options,callback){
  const f=fixture(options);
  try{return await callback(f);}finally{fs.rmSync(f.dir,{recursive:true,force:true});}
 }
-test('approved SQLite source delivers one body-verified and Run-certified count only',()=>withFixture({},f=>{
+test('approved SQLite source delivers one body-verified and Run-certified count only',{skip:process.platform!=='linux'},()=>withFixture({},f=>{
  const o=execute(f);
  assert.deepEqual([o.metadataKeys,o.bodyVerifiedKeys,o.runCertifiedKeys],[1,1,1]);
  assert.equal(o.runtimeAuthorizationVerified,false);
@@ -52,36 +52,36 @@ test('approved SQLite source delivers one body-verified and Run-certified count 
  assert.ok(!JSON.stringify(o).includes(f.snapshotId));
  assert.ok(!JSON.stringify(o).includes('private-key'));
 }));
-test('tampered content is metadata-only without body or Run certification',()=>withFixture({tamper:true},f=>{
+test('tampered content is metadata-only without body or Run certification',{skip:process.platform!=='linux'},()=>withFixture({tamper:true},f=>{
  const o=execute(f);
  assert.deepEqual([o.metadataKeys,o.bodyVerifiedKeys,o.runCertifiedKeys],[1,0,0]);
 }));
-test('nonconsecutive chunk indices fail closed',()=>withFixture({chunkGap:true},f=>{
+test('nonconsecutive chunk indices fail closed',{skip:process.platform!=='linux'},()=>withFixture({chunkGap:true},f=>{
  assert.throws(()=>execute(f),/R6_READER_CHUNKS_INVALID/);
 }));
-test('non-success collector receipts do not certify',()=>withFixture({invalidRun:true},f=>{
+test('non-success collector receipts do not certify',{skip:process.platform!=='linux'},()=>withFixture({invalidRun:true},f=>{
  assert.deepEqual([execute(f).bodyVerifiedKeys,execute(f).runCertifiedKeys],[1,0]);
 }));
-test('incorrect approved realpath rejects before SQLite open',()=>withFixture({},f=>{
+test('incorrect approved realpath rejects before SQLite open',{skip:process.platform!=='linux'},()=>withFixture({},f=>{
  assert.throws(()=>execute(f,{approvedDbRealpath:f.file+'.unapproved'}),/R6_READER_PATH_UNVERIFIED/);
 }));
-test('invalid as-of date rejects before SQLite open',()=>withFixture({},f=>{
+test('invalid as-of date rejects before SQLite open',{skip:process.platform!=='linux'},()=>withFixture({},f=>{
  assert.throws(()=>execute(f,{asOfDate:'2026-02-31'}),/R6_READER_DATE_INVALID/);
 }));
-test('source adapter never calls DB-writing path and has no provider or runner activation',()=>withFixture({},f=>{
+test('source adapter never calls DB-writing path and has no provider or runner activation',{skip:process.platform!=='linux'},()=>withFixture({},f=>{
  let called=0;
  const out=execute(f,{beforeReadOnlyOpen:()=>{called++;}});
  assert.equal(called,1);
  assert.equal(out.inputSnapshotIdentity,'CALLER_APPROVED_READONLY_SINGLE_CORE_TRANSACTION');
 }));
 
-test('path replaced immediately before SQLite open is rejected without reading substituted bytes',()=>withFixture({},f=>{
+test('path replaced immediately before SQLite open is rejected without reading substituted bytes',{skip:process.platform!=='linux'},()=>withFixture({},f=>{
  const replacement=path.join(f.dir,'replacement.sqlite');
  fs.copyFileSync(f.file,replacement);
  assert.throws(()=>execute(f,{beforeReadOnlyOpen:()=>{fs.renameSync(replacement,f.file);}}),
   /R6_READER_SOURCE_CHANGED/);
 }));
-test('path switched to an approved-looking symlink before SQLite open is rejected',()=>withFixture({},f=>{
+test('path switched to an approved-looking symlink before SQLite open is rejected',{skip:process.platform!=='linux'},()=>withFixture({},f=>{
  const original=path.join(f.dir,'original.sqlite');
  fs.copyFileSync(f.file,original);
  assert.throws(()=>execute(f,{beforeReadOnlyOpen:()=>{
@@ -89,7 +89,7 @@ test('path switched to an approved-looking symlink before SQLite open is rejecte
  }}),/R6_READER_SOURCE_CHANGED/);
 }));
 
-test('source-only result reports descriptor binding separately from runtime authorization',()=>withFixture({},f=>{
+test('source-only result reports descriptor binding separately from runtime authorization',{skip:process.platform!=='linux'},()=>withFixture({},f=>{
  const out=execute(f);
  assert.equal(out.descriptorBindingVerified,process.platform==='linux');
  assert.equal(out.runtimeAuthorizationVerified,false);
@@ -122,3 +122,11 @@ test('Linux pinned-descriptor mode refuses WAL databases without sidecar guarant
  finally{d.close();}
  assert.throws(()=>execute(f),/R6_READER_WAL_SIDECAR_UNSUPPORTED/);
 }));
+
+test('unsupported platforms fail closed before resolving or opening a database',()=>{
+ if(process.platform==='linux')return;
+ assert.throws(()=>read({
+  dbPath:'C:/unapproved/core.sqlite',approvedDbRealpath:'C:/unapproved/core.sqlite',
+  asOfDate:'2026-11-25',beforeReadOnlyOpen:()=>{throw Error('SHOULD_NOT_OPEN');},
+ }),/R6_READER_DESCRIPTOR_PLATFORM_UNSUPPORTED/);
+});
