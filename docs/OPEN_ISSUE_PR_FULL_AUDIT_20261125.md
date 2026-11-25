@@ -604,3 +604,28 @@ GitHub Search API 직접 재조회 **78건 OPEN = 본체 Issue 1 / PR 6 + PC 제
 - 이번 별도 Issue/PR 종료 0건, 운영 PC/Controller/Writer/SQLite/D1/Task/approval/execution 변경 없음, 기존 8건 직접 종결 실적 그대로.
 
 **진행률:** 1차 본문/댓글 88/88, 2차 원본 증거 **60/88 (68.2%)**, 잔여 28. 완료 의미는 해당 원본 증거경로에 대한 독립 감사이며 기능 업무 완결/운영 설치 성공 60건 아님.
+
+## 2차 종결·보류 교차검증 — 배치 R (2026-11-25)
+
+배치 Q 기준 2차 원본 Actions/소스 CI 증거 **60/88(68.2%)**에서 시작. 이번 배치는 **고정 원본 미접수 요청 2건에 실제 GitHub Issue 상태 변경**을 수행했으나 원본 Actions/JSON/TXT 영수증이 없어 2차 실행검증 60건에 부당 합산하지 않음. 1차 88/88, 2차 60/88(68.2%) 유지, 잔여 **28건**. 감사 담당 직접 종결 **8→10건**(completed 7건, not_planned 3건).
+
+### 원본 단회 A 요청 종료: completed 아님
+| 원본 Issue | 원본 직접 검사 | 후속 진입 증거 | 실제 변경 |
+|---|---|---|---|
+| [#1217](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1217) | 원 요청 `pc-8da91b23-f5d6-4a94-bcd5-13b0dfcdee61`, `core-runtime-source-readonly`, 결과 bot receipt/원본 Run/JSON/TXT 부재. 기존 원장 2026-11-12 intake 미수신·후행 라벨 가능성 증거 보존 | 별도 requestId인 [#1351](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1351) [Run 43429486924](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43429486924), Job 131899103441 success. 원본 JSON blob `851ebd3876160d39968153eb38a2e3a6b8fd8d62`, TXT `0f52da06a5534cbe182249a42e627f7566a7c8cf`; 업무 결과 `STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE`, runtimeSourceVerified=false | 본 감사 댓글 ID `7161098663`, `CLOSED/not_planned`. 과거 원 요청 자체는 미실행; 고용 R6 운영 Core 증거 여전히 미확정 |
+| [#1227](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1227) | 원 요청 `pc-6f7a24d4-823d-4648-b2c3-a645a352bef7`, `core-runtime-source-readonly`, 고유 결과 bot receipt/원본 Run/JSON/TXT 부재. 2026-11-11/13 원본 댓글에서 미접수 판정 | 동일 새 #1351 원본 검사 결과를 참조하되 다른 요청의 실행을 구본에 소급하지 않음. D05 실측·JSONL 기록·설치 별도 증명 필요 | 본 감사 댓글 ID `7161100142`, `CLOSED/not_planned`. 과거 원 요청 반복 실행 방지, D05 운영 완성/승인/Controller 설치 증명 아님 |
+
+### 이전 담당자가 종료한 유사 요청 독립 재확인
+- [#3519](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3519) 현재 `CLOSED/not_planned`. 원래 후검사 `pc-update-c087fa10-88e2-42e3-bc60-c758ab93f0c1-postcheck`는 당시 미등록·미실행. 후속 [#3552](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3552) A와 [#3554](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3554) A는 별도 고유 실행. 원본 #3519의 과거 Runtime 후검사 미발행은 그대로이며 W04 #3516 복구 미완과 별개. **이미 타 담당자가 종료했으므로 이번 직접 종결 성과에 산입하지 않음**.
+- [#1213](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1213), [#1226](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1226)는 현재 댓글 0/원본 실행 증거 미확보. 후속 현재 업무 의존 대체 여부가 불명확하므로 **OPEN 보존**. 무단 동일 요청 재실행·추측 종결 금지.
+
+### Out-of-band Controller B 원본 결과쌍 재대조(새 CI 검증건 0)
+| 대상 | Git blob JSON / TXT | 직접 확인한 상태 |
+|---|---|---|
+| [#1969](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1969) | `7dc70d85887f5cc94ce1af95d9287eb6ca7f23a9` / `cbfecab895be8641678263e756d34deb22511000` | `BLOCKED/BUNDLE_B_APPROVAL_CONTRACT_INVALID`, 실제 Controller SHA null, `protectedStateUnchanged=false`, workflowEnabled=false. Out-of-band 댓글과 동일. 해당 원본 GitHub Actions Run은 아직 식별되지 않음 |
+| [#2059](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2059) | `caaa41cd243aaf0eae7acdace990c249bdcb36e5` / `75feb1f809264ea2dd378af99311c6ccaabfc4c2` | `BLOCKED/APPROVAL_MANIFEST_READ_FAILED`, 실제 Controller SHA null, workflowEnabled null (TXT는 `UNVERIFIED`). 원본 GitHub Actions Run 별도 미확정 |
+
+- Out-of-band 독립 유지보수는 반드시 GitHub Actions로 실행된다는 가정이 잘못될 수 있으므로, 원본 Run 미식별을 `실행 없었음`으로 선언하지 않는다. 반면 승인·설치 성공도 선언하지 않는다.
+- [본체 PR #1266](https://github.com/ansqhd5774-Choi/zgmini/pull/1266)는 현 W04 PIT0408/0605와 구 raw 집계 계약 차이를 기존 원담당 감사에서 이미 보고. OPEN/Draft 유지, 구 Runner를 최신 브랜치에 병합하면 보호 기능이 소실될 수 있어 자동 병합 금지.
+- 이 배치의 write는 위 Issue 2건의 증거 댓글과 `not_planned` 상태 2개뿐. 운영 PC, Runner, Controller, Writer, SQLite, D1, Task, Workflow, 승인 명세, 원본 실행 변경 **0**.
+- **이력 보호:** 완료 7건/기존 대체 1건/새 역사적 미접수 2건 = 본 감사 직접 CLOSED 10건. 고정 코호트 88 중 원본 실행증거 검증은 **60/88(68.2%)**로 유지하며 이 2건의 미실행 이슈를 실행증거 완료로 둔갑시키지 않는다.
