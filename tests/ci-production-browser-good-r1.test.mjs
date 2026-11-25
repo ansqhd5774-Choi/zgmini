@@ -161,6 +161,40 @@ test('economic mobile lab cannot certify interaction when the period does not ch
  assert.equal(result.reason,'CARD_CLICK_NOT_EXPANDED');
  assert.equal(result.scope,'LAB_FIRST_PARTY_TOUCH_NO_RUM');
 });
+test('bounded Event Timing evidence never certifies field INP or site Good',()=>{
+ const s=sample('/economic-indicators/');
+ s.mobileInteraction={scope:'LAB_FIRST_PARTY_TOUCH_NO_RUM',
+  state:'INTERACTION_WORKS',reason:null};
+ s.mobileEventTiming={scope:'LAB_CHROMIUM_EVENT_TIMING_NO_RUM',
+  eventApiSupported:true,interactionIdSupported:true,eventEntries:20,
+  eligibleEntries:3,state:'ELIGIBLE_EVENT_OBSERVED'};
+ const classified=classifyProductionPage(s);
+ assert.deepEqual(classified.mobileEventTiming,s.mobileEventTiming);
+ assert.equal(classified.rumBeacon.realUserSamples,'UNVERIFIED');
+ assert.equal(classified.rumBeacon.fieldP75,'UNVERIFIED');
+ const rows=all();rows[2]=s;
+ const report=summarizeProductionLab(rows);
+ assert.equal(report.inpFieldP75,'NOT_MEASURED');
+ assert.equal(report.coreWebVitalsFieldP75,'UNVERIFIED');
+ assert.equal(report.siteGoodVerified,false);
+ assert.equal(report.mergeBlocking,false);
+});
+test('real browser Event Timing observer is bounded and cannot send RUM',()=>{
+ const src=readFileSync(new URL('../scripts/ci-production-browser-good-r1.mjs',import.meta.url),'utf8');
+ assert.match(src,/PerformanceObserver\?\.supportedEntryTypes/);
+ assert.match(src,/interactionId' in PerformanceEventTiming\.prototype/);
+ assert.match(src,/\.observe\(\{type:'event',buffered:true,durationThreshold:16\}\)/);
+ assert.match(src,/eligibleEntries\+\+/);
+ assert.match(src,/LAB_CHROMIUM_EVENT_TIMING_NO_RUM/);
+ assert.match(src,/mobileEventTiming=await page\.evaluate/);
+ assert.match(src,/if\(!sameOrigin\)/);
+ assert.match(src,/return network\.abort\('blockedbyclient'\)/);
+ assert.match(src,/\['GET','HEAD'\]\.includes\(request\.method\(\)\)/);
+ assert.match(src,/serviceWorkers:'block'/);
+ assert.match(src,/CI_PRODUCTION_SPEED_CI_ONLY/);
+ assert.equal(summarizeProductionLab(all()).siteGoodVerified,false);
+});
+
 test('production mobile click probe remains behind first-party-only network filter',()=>{
  const src=readFileSync(new URL('../scripts/ci-production-browser-good-r1.mjs',import.meta.url),'utf8');
  assert.match(src,/if\(route==='\/economic-indicators\/'&&viewport\.width===390\)/);

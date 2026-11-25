@@ -62,6 +62,7 @@ export function classifyProductionPage(sample){
   blockedThirdPartyRequests:sample.blockedThirdPartyRequests??0,
   pageErrors:sample.pageErrors??[],error:sample.error??null,
   mobileInteraction:sample.mobileInteraction??null,
+  mobileEventTiming:sample.mobileEventTiming??null,
   rumBeacon:{scope:'DOM_SCRIPT_AND_BLOCKED_REQUEST_MARKERS_ONLY',
    domScriptPresent:sample.rumDomScriptPresent,
    blockedScriptRequests:sample.blockedCfRumScriptRequests,
@@ -160,6 +161,26 @@ export async function runProductionLab({chromium,origin=PROD_ORIGIN,delayMs=1600
        }
       }
       window.__zgProductionSpeed=state;
+      // Lab-only Event Timing entries: the browser network filter below blocks
+      // all Cloudflare RUM scripts and all writes. This is NOT field INP.
+      const eventTiming={
+       eventApiSupported:active.includes('event'),
+       interactionIdSupported:typeof PerformanceEventTiming!=='undefined'&&
+        'interactionId' in PerformanceEventTiming.prototype,
+       eventEntries:0,eligibleEntries:0
+      };
+      if(eventTiming.eventApiSupported){
+       try{
+        new PerformanceObserver(list=>{
+         for(const entry of list.getEntries()){
+          eventTiming.eventEntries++;
+          if(Number.isSafeInteger(entry.interactionId)&&entry.interactionId>0)
+           eventTiming.eligibleEntries++;
+         }
+        }).observe({type:'event',buffered:true,durationThreshold:16});
+       }catch{eventTiming.eventApiSupported=false;}
+      }
+      window.__zgLabEventTiming=eventTiming;
      });
      // An ordinary visitor may fetch stored public GETs, but a diagnostic
      // browser must not write to any service or contact third-party providers.
@@ -184,7 +205,7 @@ export async function runProductionLab({chromium,origin=PROD_ORIGIN,delayMs=1600
       return network.continue();
      });
      let documentStatus=null,mainFound=false,raw=null,navigationError=null;
-     let rumDomScriptPresent=null,mobileInteraction=null;
+     let rumDomScriptPresent=null,mobileInteraction=null,mobileEventTiming=null;
      try{
       const response=await page.goto(PROD_ORIGIN+route,{
        waitUntil:'domcontentloaded',timeout:45000
@@ -214,14 +235,31 @@ export async function runProductionLab({chromium,origin=PROD_ORIGIN,delayMs=1600
         cls:r.cls,longTaskTotalMs:r.longTaskTotalMs};
       });
       rumDomScriptPresent=raw.rumScriptPresent;
-      if(route==='/economic-indicators/'&&viewport.width===390)
+      if(route==='/economic-indicators/'&&viewport.width===390){
        mobileInteraction=await probeEconomicMobileInteraction(page);
+       // Allow the buffered Event Timing observer to receive the final tap.
+       await page.waitForTimeout(300);
+       mobileEventTiming=await page.evaluate(()=>{
+        const r=window.__zgLabEventTiming;
+        const scope='LAB_CHROMIUM_EVENT_TIMING_NO_RUM';
+        if(!r)return {scope,state:'UNVERIFIED',eventApiSupported:false,
+         interactionIdSupported:false,eventEntries:null,eligibleEntries:null};
+        return {scope,eventApiSupported:r.eventApiSupported,
+         interactionIdSupported:r.interactionIdSupported,
+         eventEntries:r.eventEntries,eligibleEntries:r.eligibleEntries,
+         state:!r.eventApiSupported?'EVENT_API_UNSUPPORTED':
+          !r.interactionIdSupported?'INTERACTION_ID_UNSUPPORTED':
+          r.eligibleEntries>0?'ELIGIBLE_EVENT_OBSERVED':
+          'ELIGIBLE_EVENT_NOT_OBSERVED'};
+       });
+      }
      }catch(e){navigationError=String(e.message).slice(0,240);}
      all.push({schemaVersion:PROD_SCHEMA,fixture:PROD_FIXTURE,
       route,url:PROD_ORIGIN+route,viewport,browserVersion:browser.version(),
       documentStatus,mainFound,blockedWriteRequests,
       blockedThirdPartyRequests,pageErrors,
       blockedCfRumScriptRequests,rumDomScriptPresent,mobileInteraction,
+      mobileEventTiming,
       error:navigationError,metrics:normalizeRawMetrics(raw??{})});
     }finally{await context.close();}
    }
@@ -248,7 +286,8 @@ export async function main(){
    rumMarkerState:x.rumBeacon.markerState,
    rumDomScriptPresent:x.rumBeacon.domScriptPresent,
    blockedCfRumScriptRequests:x.rumBeacon.blockedScriptRequests,
-   ...(x.mobileInteraction?{mobileInteraction:x.mobileInteraction}:{})
+   ...(x.mobileInteraction?{mobileInteraction:x.mobileInteraction}:{}),
+   ...(x.mobileEventTiming?{mobileEventTiming:x.mobileEventTiming}:{})
   })),mergeBlocking:false}));
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url))
