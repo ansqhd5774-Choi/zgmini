@@ -17,17 +17,11 @@ export function chooseSecretRange(eventName,event,sha){
     need(SHA.test(before),'SECRET_PUSH_BEFORE_INVALID');
   }else if(eventName==='pull_request'){
     before=event?.pull_request?.base?.sha;
-    after=event?.pull_request?.head?.sha;
-    if(!(SHA.test(before)&&SHA.test(after)&&after===sha)){
-      console.error('SECRET_PR_REFS_DIAGNOSTIC '+JSON.stringify({
-        baseValid:typeof before==='string'&&SHA.test(before),
-        headValid:typeof after==='string'&&SHA.test(after),
-        expectedHeadMatchesEvent:after===sha,
-        eventHeadPresent:typeof after==='string',
-        eventBasePresent:typeof before==='string'
-      }));
-      throw Error('SECRET_PR_REFS_INVALID');
-    }
+    const eventHead=event?.pull_request?.head?.sha;
+    // GitHub PR webhook head metadata can lag a later checked-out synchronize
+    // commit. Scan the exact checkout SHA, never the stale webhook SHA.
+    need(SHA.test(before)&&SHA.test(eventHead),'SECRET_PR_REFS_INVALID');
+    after=sha;
     need(event?.pull_request?.head?.repo?.full_name===event?.repository?.full_name,
       'SECRET_PR_UNTRUSTED_FORK');
   }else if(eventName!=='workflow_dispatch')throw Error('SECRET_EVENT_UNSUPPORTED');
@@ -48,6 +42,8 @@ export function checkSecretRange(range,git=(args)=>execFileSync('git',args,{enco
 }
 export function main(env=process.env){
   const event=JSON.parse(readFileSync(env.GITHUB_EVENT_PATH,'utf8'));
+  const checkedOut=execFileSync('git',['rev-parse','HEAD'],{encoding:'utf8'}).trim();
+  need(checkedOut===env.GITHUB_SHA,'SECRET_CHECKOUT_HEAD_MISMATCH');
   const range=checkSecretRange(chooseSecretRange(env.GITHUB_EVENT_NAME,event,env.GITHUB_SHA));
   need(env.GITHUB_OUTPUT,'SECRET_OUTPUT_UNAVAILABLE');
   appendFileSync(env.GITHUB_OUTPUT,'log_opts='+range+'\n');
