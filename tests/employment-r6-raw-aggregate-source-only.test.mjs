@@ -114,3 +114,10 @@ test('wrong identity digest is only unverified, not certified',()=>{
  const s=snapshot(),o=verify([{...s,snapshotId:'0'.repeat(64)}],[attest(s)]);
  assert.deepEqual([o.metadataKeys,o.bodyVerifiedKeys,o.runCertifiedKeys],[1,0,0]);
 });
+
+test('invalid calendar day and malformed as-of fail closed',()=>{
+ const s=snapshot();
+ assert.throws(()=>verify([{...s,retrievedAt:'2026-02-31T01:02:03.000Z'}],[]),/R6_ATTEST_SNAPSHOT_INVALID/);
+ assert.throws(()=>verifyRaw({snapshots:[s],runs:[],allowedGroups,asOfDate:'2026-02-31'}),/R6_ATTEST_INPUT_INVALID/);
+ assert.throws(()=>verifyRaw({snapshots:[s],runs:[],allowedGroups,asOfDate:'not-a-date'}),/R6_ATTEST_INPUT_INVALID/);
+});
