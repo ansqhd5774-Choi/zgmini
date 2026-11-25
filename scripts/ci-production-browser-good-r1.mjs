@@ -89,10 +89,10 @@ export function summarizeProductionLab(rows){
   officialGoodTargets:WEB_SPEED_GOOD,observations:classified};
 }
 
-// A bounded browser-only UI interaction check. The enclosing network filter
+// A bounded mobile-touch UI check. The enclosing network filter
 // blocks the Cloudflare RUM beacon and all writes; no field INP is generated.
 export async function probeEconomicMobileInteraction(page){
- const scope='LAB_FIRST_PARTY_CLICK_NO_RUM';
+ const scope='LAB_FIRST_PARTY_TOUCH_NO_RUM';
  try{
   const intro=page.locator('#zg-about-intro-dialog');
   if(await intro.isVisible())
@@ -102,18 +102,18 @@ export async function probeEconomicMobileInteraction(page){
   const before=await first.getAttribute('aria-expanded');
   if(before!=='false')
    return {scope,state:'UNVERIFIED',reason:'INITIAL_CARD_STATE_UNEXPECTED'};
-  await first.click({timeout:10000});
+  await first.tap({timeout:10000});
   const expanded=await first.getAttribute('aria-expanded');
   if(expanded!=='true')
    return {scope,state:'UNVERIFIED',reason:'CARD_CLICK_NOT_EXPANDED'};
   const period=page.getByRole('group',{name:'차트 기간 선택'})
    .getByRole('button',{name:'1M',exact:true});
   await period.waitFor({state:'visible',timeout:10000});
-  await period.click({timeout:10000});
+  await period.tap({timeout:10000});
   const selected=await period.getAttribute('aria-pressed');
   if(selected!=='true')
    return {scope,state:'UNVERIFIED',reason:'PERIOD_CLICK_NOT_SELECTED'};
-  await first.click({timeout:10000});
+  await first.tap({timeout:10000});
   const collapsed=await first.getAttribute('aria-expanded');
   return {scope,state:collapsed==='false'?'INTERACTION_WORKS':'UNVERIFIED',
    reason:collapsed==='false'?null:'CARD_CLICK_NOT_COLLAPSED'};
@@ -133,7 +133,8 @@ export async function runProductionLab({chromium,origin=PROD_ORIGIN,delayMs=1600
   for(const route of PROD_ROUTES){
    for(const viewport of PROD_VIEWPORTS){
     const context=await browser.newContext({
-     viewport,serviceWorkers:'block',reducedMotion:'reduce',locale:'ko-KR',
+     viewport,hasTouch:viewport.width===390,isMobile:viewport.width===390,
+     serviceWorkers:'block',reducedMotion:'reduce',locale:'ko-KR',
      timezoneId:'Asia/Seoul'
     });
     try{
