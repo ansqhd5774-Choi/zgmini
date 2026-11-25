@@ -30,6 +30,9 @@ export function classifyProductionPage(sample){
     sample.blockedWriteRequests<0||
     !Array.isArray(sample.pageErrors)||
     sample.pageErrors.some(e=>typeof e!=='string')||
+    !Number.isSafeInteger(sample.blockedCfRumScriptRequests)||
+    sample.blockedCfRumScriptRequests<0||
+    ![true,false,null].includes(sample.rumDomScriptPresent)||
     typeof sample.documentStatus!=='number'&&sample.documentStatus!==null)
   error('CI_PRODUCTION_SPEED_SAMPLE_INVALID');
  const metrics=normalizeRawMetrics(sample.metrics??{});
@@ -39,6 +42,13 @@ export function classifyProductionPage(sample){
    'UNVERIFIED':value<=limit?'AT_OR_BELOW_GOOD_TARGET':'EXCEEDS_GOOD_TARGET'}];
  }));
  const states=Object.values(results).map(x=>x.state);
+ // A beacon script marker is not evidence of active RUM, ingested users or P75.
+ const rumMarkerState=sample.rumDomScriptPresent===true||
+  sample.blockedCfRumScriptRequests>0?
+  'BEACON_SCRIPT_MARKER_OBSERVED':
+  sample.documentStatus===200&&sample.mainFound&&
+  sample.rumDomScriptPresent===false?
+  'NO_BEACON_SCRIPT_MARKER_IN_BOUNDED_LAB':'UNVERIFIED';
  const status=sample.error||sample.documentStatus!==200||!sample.mainFound?
   'PRODUCTION_LOAD_UNVERIFIED':
   states.includes('EXCEEDS_GOOD_TARGET')?'PRODUCTION_LAB_GOOD_EXCEEDED':
@@ -51,6 +61,11 @@ export function classifyProductionPage(sample){
   mainFound:sample.mainFound??false,blockedWriteRequests:sample.blockedWriteRequests,
   blockedThirdPartyRequests:sample.blockedThirdPartyRequests??0,
   pageErrors:sample.pageErrors??[],error:sample.error??null,
+  rumBeacon:{scope:'DOM_SCRIPT_AND_BLOCKED_REQUEST_MARKERS_ONLY',
+   domScriptPresent:sample.rumDomScriptPresent,
+   blockedScriptRequests:sample.blockedCfRumScriptRequests,
+   markerState:rumMarkerState,realUserSamples:'UNVERIFIED',
+   fieldP75:'UNVERIFIED'},
   state:status,metrics:results};
 }
 
@@ -89,6 +104,7 @@ export async function runProductionLab({chromium,origin=PROD_ORIGIN,delayMs=1600
     try{
      const page=await context.newPage();
      let blockedWriteRequests=0,blockedThirdPartyRequests=0;
+     let blockedCfRumScriptRequests=0;
      const pageErrors=[];
      page.on('pageerror',e=>pageErrors.push(String(e.message).slice(0,180)));
      await page.addInitScript(()=>{
@@ -113,10 +129,16 @@ export async function runProductionLab({chromium,origin=PROD_ORIGIN,delayMs=1600
      // browser must not write to any service or contact third-party providers.
      await page.route('**/*',async network=>{
       const request=network.request();
-      let sameOrigin=false;
-      try{sameOrigin=new URL(request.url()).origin===PROD_ORIGIN;}catch{}
+      let sameOrigin=false,cfRumScript=false;
+      try{
+       const target=new URL(request.url());
+       sameOrigin=target.origin===PROD_ORIGIN;
+       cfRumScript=target.origin==='https://static.cloudflareinsights.com'&&
+        /^\/beacon\.min\.js(?:\/|$)/.test(target.pathname);
+      }catch{}
       if(!sameOrigin){
        blockedThirdPartyRequests++;
+       if(cfRumScript)blockedCfRumScriptRequests++;
        return network.abort('blockedbyclient');
       }
       if(!['GET','HEAD'].includes(request.method())){
@@ -126,6 +148,7 @@ export async function runProductionLab({chromium,origin=PROD_ORIGIN,delayMs=1600
       return network.continue();
      });
      let documentStatus=null,mainFound=false,raw=null,navigationError=null;
+     let rumDomScriptPresent=null;
      try{
       const response=await page.goto(PROD_ORIGIN+route,{
        waitUntil:'domcontentloaded',timeout:45000
@@ -141,16 +164,26 @@ export async function runProductionLab({chromium,origin=PROD_ORIGIN,delayMs=1600
        const nav=performance.getEntriesByType('navigation')[0];
        const fcp=performance.getEntriesByName('first-contentful-paint')[0];
        const r=window.__zgProductionSpeed??{};
-       return {responseEndMs:nav?.responseEnd,
+       // Detect the official script URL without loading or executing it.
+       const rumScriptPresent=Array.from(document.scripts).some(script=>{
+        try{
+         const target=new URL(script.src);
+         return target.origin==='https://static.cloudflareinsights.com'&&
+          /^\/beacon\.min\.js(?:\/|$)/.test(target.pathname);
+        }catch{return false;}
+       });
+       return {rumScriptPresent,responseEndMs:nav?.responseEnd,
         domContentLoadedMs:nav?.domContentLoadedEventEnd,
         fcpMs:fcp?.startTime,lcpMs:r.lcpMs,
         cls:r.cls,longTaskTotalMs:r.longTaskTotalMs};
       });
+      rumDomScriptPresent=raw.rumScriptPresent;
      }catch(e){navigationError=String(e.message).slice(0,240);}
      all.push({schemaVersion:PROD_SCHEMA,fixture:PROD_FIXTURE,
       route,url:PROD_ORIGIN+route,viewport,browserVersion:browser.version(),
       documentStatus,mainFound,blockedWriteRequests,
       blockedThirdPartyRequests,pageErrors,
+      blockedCfRumScriptRequests,rumDomScriptPresent,
       error:navigationError,metrics:normalizeRawMetrics(raw??{})});
     }finally{await context.close();}
    }
@@ -173,7 +206,10 @@ export async function main(){
    route:x.route,viewport:x.viewport,state:x.state,
    documentStatus:x.documentStatus,error:x.error,
    lcpMs:x.metrics.lcpMs.observed,cls:x.metrics.cls.observed,
-   fcpMs:x.metrics.fcpMs.observed,blockedWriteRequests:x.blockedWriteRequests
+   fcpMs:x.metrics.fcpMs.observed,blockedWriteRequests:x.blockedWriteRequests,
+   rumMarkerState:x.rumBeacon.markerState,
+   rumDomScriptPresent:x.rumBeacon.domScriptPresent,
+   blockedCfRumScriptRequests:x.rumBeacon.blockedScriptRequests
   })),mergeBlocking:false}));
 }
 if(process.argv[1]&&resolve(process.argv[1])===fileURLToPath(import.meta.url))
