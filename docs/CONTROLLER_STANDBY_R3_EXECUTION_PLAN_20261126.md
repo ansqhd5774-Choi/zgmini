@@ -127,9 +127,11 @@ R2에서 확인한 설치 SHA·Runner online은 당시 읽기 증거로만 사�
 |---|---|---|
 | R3 총괄 계획·R2 범위 정정 | 본 문서 및 [R2 개정](CONTROLLER_HA_RESEARCH_PLAN_R2_20261126.md) 원격 반영 | DONE (문서) |
 | 구현 브랜치 | [`zgmini-pc-control/codex/controller-standby-r1-20261126`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/tree/codex/controller-standby-r1-20261126), 신규 main 분기 | DONE (브랜치) |
-| Standby 소스·Watcher·fencing | [Draft PR #3738](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3738), 현재 source HEAD `4c214d58e6387ec328f36369db86f0d859a58406` | SOURCE IMPLEMENTED / 미병합 |
-| 소스 회귀시험 | 11개 Node 테스트 추가, 기존 Windows 격리 CI 연결; [Run 45712678648](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45712678648) 등 접수 | RUNNING/QUEUED (성공 미확인) |
-| Windows 실제 10개 경합·작업 인계 시험 | 현재 해당 결과 영수증 없음 | NOT VERIFIED |
-| 설치/전환·복귀 | B 적용 manifest·운영 설치·전환 영수증 미확인; 현재 정상 운영 PC 변경 없음 | NOT APPLIED |
+| Standby 소스·Watcher·fencing | [Draft PR #3738](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3738), 최신 확인 source HEAD `fd2947ff9dbb25d168b30064eff45662ddbd5bbc` | SOURCE IMPLEMENTED / 미병합 |
+| 소스 회귀시험 | Standby Node 단위시험 11/11 PASS, [Controller Run #45712678648](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45712678648), C996/Secret Scan PASS(이전 HEAD). 최신 HEAD는 10개 Windows TEMP 경합시험을 [Run #45714063369](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45714063369)에 추가함 | 이전 HEAD PASS / 최신 Windows 결과 QUEUED |
+| Windows 실제 10개 경합·작업 인계 시험 | Windows용 실제 자식 프로세스·mkdir lease 경합 fixture 10종 구현, 기존 격리 Runner CI에 연결. 운영 전환/실제 Windows 실행 영수증은 미확인 | SOURCE READY / WINDOWS NOT VERIFIED |
+| 설치/전환·복귀 | Watchdog B source 계약 `watchdog-b/contract.mjs`·`watchdog-b/upgrade.mjs`는 과거 고정 target에 한정. 현재 운영 Watchdog preimage SHA/계정·정규 새 B 인계 증거 미확보. 실제 운영 변경 없음 | NOT APPLIED / exact upgrade contract pending |
 
 정확한 운영 source/설치 승인은 별도. 검증된 결과가 나오기 전 Draft PR을 main에 병합하거나 `INSTALL.json`의 Standby 활성화 값을 임의 조정하지 않는다. 완료 상태·변경 파일·실제 작업 결과는 이후 GitHub PR/Run 증거 기준으로 업데이트한다.
+
+**최신 인수 지점:** Source-side 무변경 정상 운영 보호. 최신 PR HEAD의 격리 Windows Run/Job 실제 종료 상태를 회수 → 그 결과에 한정해 결함 수정. 운영 Watchdog B 업그레이드는 기존 계약이 과거 1회 고정 해시만 허용하므로 정확한 현장 installed SHA 및 별도 승인 manifest를 먼저 확보한 뒤 기존 정규 경로를 최소 확장한다. 동일 Runtime 미확정 상태에서 직접 `INSTALL.json` 수정 금지.
