@@ -34,3 +34,31 @@ test('output never exposes raw input fields',()=>{
  assert.deepEqual(Object.keys(o).sort(),['schema','status','metadataKeys','bodyVerifiedKeys','runCertifiedKeys','rawSnapshotByGroup','rawSnapshotByMonth'].sort());
  assert.ok(!JSON.stringify(o).includes('private'));
 });
+
+test('4000-row boundary remains within hard cap and 4001 fails closed',()=>{
+ const rows=Array.from({length:4000},(_,i)=>entry('bounded-'+i));
+ const out=run(rows);
+ assert.deepEqual([out.metadataKeys,out.bodyVerifiedKeys,out.runCertifiedKeys],[4000,4000,4000]);
+ assert.throws(()=>run([...rows,entry('overflow')]),/R6_AGG_INPUT_INVALID/);
+});
+test('group and month totals are independent and deterministic',()=>{
+ const rows=[entry('z','BLS_CES','2026-01',true,true),entry('a','DOL_UI_WEEKLY_CLAIMS','2026-02',true,false),entry('b','BLS_CES','2026-02',false,false)];
+ const first=run(rows),second=run([...rows].reverse());
+ assert.deepEqual(first,second);
+ const fields=['metadataKeys','bodyVerifiedKeys','runCertifiedKeys'];
+ for(const bucket of [first.rawSnapshotByGroup,first.rawSnapshotByMonth])
+  for(const field of fields)assert.equal(bucket.reduce((n,row)=>n+row[field],0),first[field]);
+});
+test('group whitelist duplicates and malformed values are rejected',()=>{
+ assert.throws(()=>aggregate({entries:[],allowedGroups:['BLS_CES','BLS_CES']}),/R6_AGG_INPUT_INVALID/);
+ assert.throws(()=>aggregate({entries:[],allowedGroups:['../secret']}),/R6_AGG_INPUT_INVALID/);
+ assert.throws(()=>aggregate({entries:[],allowedGroups:Array.from({length:65},(_,i)=>'G_'+i)}),/R6_AGG_INPUT_INVALID/);
+});
+test('private input fields are not returned in grouped projections',()=>{
+ const out=run([{...entry('sensitive-id','BLS_CES','UNKNOWN'),filePath:'C:/secret',requestKey:'token',sha256:'ff'}]);
+ assert.equal(out.rawSnapshotByGroup[0].releaseGroup,'BLS_CES');
+ assert.equal(out.rawSnapshotByMonth[0].retrievalMonth,'UNKNOWN');
+ assert.ok(!JSON.stringify(out).includes('sensitive-id'));
+ assert.ok(!JSON.stringify(out).includes('C:/secret'));
+ assert.ok(!JSON.stringify(out).includes('token'));
+});
