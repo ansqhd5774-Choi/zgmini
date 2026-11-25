@@ -1265,3 +1265,16 @@ GitHub Search API 실제 재조회: 본체 Issue **1** / PR **6**, PC 제어 Iss
 - 인터넷으로 이용 가능한 GitHub out-of-band reporter source/결과 영수증과 로컬 승인 세션 추적은 서로 다른 증거다. PC가 온라인으로 연결되거나 원담당이 **이미 존재하는 허용된 비민감 상태 readback**을 제공한 경우에만 직접 검증을 계속한다. 과거 요청 재실행·새 B 승인·원장 초기화·운영자 인증 우회 없음.
 
 **성과 및 경계:** 신규 직접 종결 0, 감사 담당 누적 직접 종결 10. 이번 실제 원격 작업은 기존 본체 Draft #1031에 증거 댓글 1건 및 이 감사 문서 기록이며, 운영 PC/Controller/Writer/SQLite/D1/Task/Provider/GitHub Actions·새 PR/승인 변경 0건. **84/88(95.5%) 유지**, 정확 미검증 4건. 다음에는 #1031 원담당의 안전 guard 단위 소스/CI 변화, #1266 최신 PIT 보존형 이관 증거, #1969/#2059 승인된 Windows 원본 읽기 가능 여부를 각각 재확인한다. 상태가 변하지 않으면 같은 근거로 진척도를 허위 상향하지 않는다.
+
+
+## 배치 AS — 본체 W04 Draft #1266 정규 이관 차단 원본 검증·PR 인계 (2026-11-25 KST)
+
+**고정 원본 고유 검증 84/88 (95.5%) 유지**, 잔여 4건. 이번에는 구 #1266 본문만 반복 인용한 것이 아니라 **현행 W04 원담당 소스 함수와 정확 HEAD 코드 바이트를 대조한 뒤 필요한 정규 이관 계약을 원 PR에 직접 전달**했다.
+
+- [본체 Draft #1266](https://github.com/ansqhd5774-Choi/zgmini/pull/1266) 정확 HEAD `0193056bdb47bcf6c911f17623b6c302c8199c4c`, OPEN/Draft/`mergeable_state=clean`, 해당 SHA Actions 0/check-runs 0. [소스 검증 및 안전 이관 신규 댓글 #7162598522](https://github.com/ansqhd5774-Choi/zgmini/pull/1266#issuecomment-7162598522) 원본 등록 완료.
+- 현행 W04 owner `codex/employment-1y-reader-r1`의 `scripts/pc-writer/employment-r6-pit-coverage.mjs` blob `6293037c022f759a3ebf863692696e02615624dc`: `PIT0408` private key review, `PIT0605` Core/Candidate read-only SQLite, raw snapshot 4000개, 본문 512MiB, run 20000개, 종료 rollback 및 close 보호. PIT0605 raw 조회는 `DOL_ETA/DOL_UI_WEEKLY_CLAIMS`로 좁혀져 전체 R6 그룹 데이터가 아님.
+- owner `scripts/pc-writer/employment-r6-runner-stage.mjs` blob `cbf92a40bf61a49f993fb57d89e67eda7dd2a359`에는 PIT0408 private ledger 및 PIT0605 safe projection/diagnostic이 추가돼 있음. 구 Draft #1266의 `employment-r6-pit-coverage.mjs` blob `892ef16e1602a182aae9e3ce045a21309432c464`에는 전체 R6 group/month bodyVerified/runCertified/invalid/withoutRun 집계 구현이 있으나 현행 보호를 그대로 유지하는 버전이 아니다.
+- **확정 후속 코드 계약:** 기존 owner 파일 전체 교체 금지; 별도 opt-in read-only 집계 함수에 group whitelist·최근 수집 12개월+OLDER/UNKNOWN·중복 chunk 배제·`runCertified <= bodyVerified <= metadata`·group/month 합계 일치 검증·원본 key/sha/body/path/정확 시각 외부 노출 금지·고정 현행 DB read-only/자원 상한 보존을 요구한다. 정확 신규 HEAD CI 및 정규 Host B/Controller safe projection 승인/후검사 후에만 완료 판정.
+- [본체 #1031](https://github.com/ansqhd5774-Choi/zgmini/pull/1031) 정확 HEAD `80a6a462158c7ee44dd0cf8d0527ad3d093e9354`, OPEN/Draft/dirty, Actions 0/check-runs 0; 이전 배치 AR에서 owner fetch wrapper/무등록 BLS 위험 분류를 정확 source SHA와 [원 PR 댓글 #7162526241](https://github.com/ansqhd5774-Choi/zgmini/pull/1031#issuecomment-7162526241)에 이미 전달했으므로 동일 중복 댓글은 작성하지 않음.
+- 인증된 운영 Windows 원본 #1969/#2059에 접근 가능한 연결 기기를 실제 재조회했지만 **offline**. 기존 out-of-band 실패 report GitHub 근거로 로컬 Windows 실제 실행자·lease/원장 해시를 추정하지 않는다. 새 설치/승인/복구 실행 없음.
+- 이번 신규 직접 종결 **0건**, 감사 누적 직접 종결 **10건**, 잔여 #1031/#1266/#1969/#2059 **4건**. 이번 실제 변경은 **원 PR #1266 검증 댓글 1건 + 감사 문서 기록**이고, owner branch·기존 PR 소스·GitHub Actions/CI·운영 PC/Controller/Writer/DB/D1/Task/Provider 변경 0. 따라서 완료율 **95.5% 유지**.
