@@ -103,3 +103,11 @@ test("PIT0408 mismatch causes are a strictly checked safe summary",()=>{
  assert.throws(()=>projectCandidateConflictBreakdown({...input,rawPitAttested:true}),
   /RUNNER_R6_PIT04_CONFLICT_CAUSES_INVALID/);
 });
+
+test("repair preview uses existing explicit raw mode and is never implicit",t=>{
+ const args=optionsFixture(t);
+ assert.equal(runnerOptionsFrom([...args,"--pit0605-raw","1"]).repairPreview,false);
+ assert.equal(runnerOptionsFrom([...args,"--pit0605-raw","1","--pit0605-repair-preview","1"]).repairPreview,true);
+ assert.throws(()=>runnerOptionsFrom([...args,"--pit0605-repair-preview","1"]),/RUNNER_R6_ARGUMENT_NOT_ALLOWED/);
+ assert.throws(()=>runnerOptionsFrom([...args,"--pit0605-raw","1","--pit0605-repair-preview","0"]),/RUNNER_R6_ARGUMENT_NOT_ALLOWED/);
+});

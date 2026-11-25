@@ -12,12 +12,13 @@ import {EMPLOYMENT_R4_CORE_STATES} from "../../lib/market-score/employment-r4-sh
 import {validEmploymentR6PublicDisplay} from "../../worker/employment-r6-public-display.mjs";
 import {optionsFrom,stageEmploymentR6OneYearWithPitAudit} from "./employment-r6-one-year-stage.mjs";
 import {auditEmploymentR6Pit0605StoredRaw} from "./employment-r6-pit-coverage.mjs";
+import {readPinnedHistoryRepairPreview} from "./employment-r6-history-repair-readonly.mjs";
 
 const FEATURE_IDS=new Set(EMPLOYMENT_R6_FEATURES.map(x=>x.id));
 const RAW=new Set(["READY","STALE","UNAVAILABLE"]);
 const CHART=new Set(["READY","PARTIAL","UNAVAILABLE"]);
 const SCORE=new Set(["READY","PARTIAL_HISTORY","PARTIAL_MISSING"]);
-const INPUT_FLAGS=new Set(["--db","--candidate-db-external","--output-dir","--as-of","--pit04-offset","--pit0605-raw","--pit0408-private"]);
+const INPUT_FLAGS=new Set(["--db","--candidate-db-external","--output-dir","--as-of","--pit04-offset","--pit0605-raw","--pit0408-private","--pit0605-repair-preview"]);
 const PIT_COUNTS=[
   "coreCurrentRows","coreHistoryRevisions","coreCurrentKeys",
   // Fixed non-sensitive counts also permitted by the existing Controller A.
@@ -88,9 +89,12 @@ export function runnerOptionsFrom(argv){
     throw Error("RUNNER_R6_REQUIRED_ARGUMENT_MISSING");
   }
   const lower=[];
-  let keyReviewOffset=null,pit0605Raw=false,pit0408Private=false;
+  let keyReviewOffset=null,pit0605Raw=false,pit0408Private=false,repairPreview=false;
   for(let i=0;i<argv.length;i+=2){
-    if(argv[i]==="--pit0408-private"){
+    if(argv[i]==="--pit0605-repair-preview"){
+      if(argv[i+1]!=="1")throw Error("RUNNER_R6_ARGUMENT_NOT_ALLOWED");
+      repairPreview=true;
+    }else if(argv[i]==="--pit0408-private"){
       if(argv[i+1]!=="1")throw Error("RUNNER_R6_ARGUMENT_NOT_ALLOWED");
       pit0408Private=true;
     }else if(argv[i]==="--pit0605-raw"){
@@ -103,14 +107,14 @@ export function runnerOptionsFrom(argv){
       keyReviewOffset=Number(value);
     }else lower.push(argv[i],argv[i+1]);
   }
-  if((pit0605Raw&&keyReviewOffset!==null)
+  if((repairPreview&&!pit0605Raw)||(pit0605Raw&&keyReviewOffset!==null)
     ||(pit0408Private&&(pit0605Raw||keyReviewOffset!==0)))
     throw Error("RUNNER_R6_ARGUMENT_NOT_ALLOWED");
   const options=optionsFrom(lower);
   if(!options.candidateDbExternal||options.publish||options.discoverApprovedCandidate){
     throw Error("RUNNER_R6_ISOLATED_CANDIDATE_REQUIRED");
   }
-  return {...options,keyReviewOffset,pit0605Raw,pit0408Private};
+  return {...options,keyReviewOffset,pit0605Raw,pit0408Private,repairPreview};
 }
 
 // SQLite can create -wal/-shm even for DatabaseSync(readOnly:true). Do not
@@ -458,7 +462,14 @@ export async function runEmploymentR6Runner(argv){
       }
       else throw Error("RUNNER_R6_ARGUMENT_NOT_ALLOWED");
     };
-    if(options.pit0605Raw){
+    if(options.repairPreview){
+      const selection=readPinnedHistoryRepairPreview({dbPath:options.dbPath,outputDir:options.outputDir,
+        beforeOpen:()=>check(options.dbPath,"BEFORE_READ"),
+        afterOpen:()=>{sqliteOpened=true;check(options.dbPath,"AFTER_READ");}});
+      report={kind:"EMPLOYMENT_R6_RUNNER_HISTORY_REPAIR_PREVIEW_V1",status:"PASS",
+        code:"W04_HISTORY_REPAIR_SELECTION_PREVIEW",selection,sqliteOpened:true,
+        providerCalls:0,d1Writes:0,publicationStatus:"NOT_REQUESTED",promotionApproved:false};
+    }else if(options.pit0605Raw){
       // The existing Controller must supply this sealed output directory.
       // File is never returned in the public JSON/TXT summary; completion of
       // PIT-06-05 still requires durable private evidence retention/readback.
