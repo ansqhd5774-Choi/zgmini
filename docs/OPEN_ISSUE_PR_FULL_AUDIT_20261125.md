@@ -275,3 +275,10 @@
 - **2차 부분검사 누적:** 배치 A 4건 + 배치 B 신규 5건 = 고정 코호트 **9/88건**의 원본 Run 또는 PR/Issue 증거 조회(중복 #1026 제외). 최종 종결 판정 확정 **1/88건** (#1026). 나머지는 현재 의존성·목적 충족 추가 검증 필요.
 - **이번 실제 변경:** #1026만 CLOSED/completed; 다른 Issue·PR 종결/병합 0건. 운영 PC/DB/Task/Controller/Writer 변경 0건.
 - **다음 순서:** #1582 후속 실패 정확 로그 구분, 79개 미검사 항목 및 현재 OPEN 목록 재조회, JSON/TXT 및 원본 요청 목적을 함께 증명하는 경우에만 독립 종결.
+
+### 2차 배치 B 후 실시간 OPEN 재조회
+
+GitHub Search API total_count 직접 조회: **86건 = 본체 Issue 1/PR 6 + PC 제어 Issue 78/PR 1**. 1차 고정 스냅샷 88건 대비 2건 감소.
+- 본 감사 직접 종결: PC Issue #1026 CLOSED/completed 1건.
+- 타 업무에서 병합: PC PR [#3543](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3543) CLOSED/MERGED, merged_at 2026-11-25T10:01:06Z. 본 감사의 종결 성과로 집계하지 않음.
+- PC PR #3542 OPEN/Draft 유지. 최초 88건 고정 코호트는 기록에서 삭제하지 않고 현재 상태와 구분한다.
