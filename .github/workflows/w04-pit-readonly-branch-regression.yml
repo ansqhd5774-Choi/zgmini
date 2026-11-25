@@ -1,0 +1,19 @@
+name: W04 PIT readonly branch regression
+on:
+  push:
+    branches:
+      - codex/w04-pit-readonly-conflict-vintage-20261125
+permissions:
+  contents: read
+jobs:
+  w04-readonly:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Targeted W04 PIT readonly regression
+        run: |
+          node --test tests/employment-r6-pit04-key-evidence.test.mjs tests/pc-writer-employment-r6-pit-coverage.test.mjs tests/employment-r6-pit0605-stored-raw-evidence.test.mjs tests/employment-r6-pit0605-runner-gate.test.mjs tests/employment-r6-runner-stage.test.mjs
