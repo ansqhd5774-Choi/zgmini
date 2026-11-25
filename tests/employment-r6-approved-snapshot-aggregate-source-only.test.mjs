@@ -45,7 +45,7 @@ test('all approved R6 groups are aggregated from existing query-only transaction
   assert.equal(output.repairAuthorized,false);
   assert.ok(!JSON.stringify(output).includes('secret-'));
   db.exec('ROLLBACK');
-  assert.deepEqual(db.prepare('PRAGMA query_only').get(),{query_only:1});
+  assert.equal(db.prepare('PRAGMA query_only').get()?.query_only,1);
  }finally{db.close();}
  assert.equal(digest(file),before);
 });
