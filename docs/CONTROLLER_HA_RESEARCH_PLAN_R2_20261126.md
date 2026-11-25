@@ -1,5 +1,7 @@
 # ZGMINI Controller HA 정밀 벤치마킹 및 실행계획 R2
 
+> **2026-11-26 사용자 R3 범위 확정:** R2는 고가용성 조사·대안 비교 자료로 보존한다. 현재 승인된 1차 구축 범위는 **동일 운영 PC의 Active 1 + Standby 1**이며, 두 번째 Standby·외부 quorum/서버·전역 RTO 추가 연구는 1차 완료조건이 아니다. 실행 정본: [R3 보조 Controller 계획](CONTROLLER_STANDBY_R3_EXECUTION_PLAN_20261126.md). 구현: `zgmini-pc-control/codex/controller-standby-r1-20261126`. R2의 1+2 장기 후보는 최신 사용자 R3 지시보다 우선하지 않는다.
+
 - 기준일: 2026-11-26 KST
 - 총괄 책임: 프로세스 총괄
 - 계획·진행 원장 저장소/브랜치: `ansqhd5774-Choi/zgmini` / `codex/controller-ops-lessons-20261105`
