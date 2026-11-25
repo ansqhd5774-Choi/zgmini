@@ -19,6 +19,21 @@ const stop=code=>{throw Error(code)};
 const safeCode=e=>/^DEC31_BATCH_[A-Z0-9_]+$/.test(String(e?.message))?
   e.message:'DEC31_BATCH_UNEXPECTED_STOP';
 
+function inspectSavedSymbol(file,symbol,now){
+  try{
+    const stat=fs.lstatSync(file);
+    if(!stat.isFile()||stat.isSymbolicLink()||stat.size<2||
+      stat.size>MAX_BYTES+65536)stop('DEC31_BATCH_EXISTING_FILE_INVALID');
+    const saved=JSON.parse(fs.readFileSync(file,'utf8'));
+    const when=Date.parse(saved?.storedAt);
+    if(typeof saved?.storedAt!=='string'||!Number.isSafeInteger(when)||
+      when<1||when>now+300000)
+      stop('DEC31_BATCH_EXISTING_FILE_INVALID');
+    return {storedAt:saved.storedAt,stats:inspectSymbol(saved.body,symbol)};
+  }catch{stop('DEC31_BATCH_EXISTING_FILE_INVALID')}
+}
+
+
 function getKey(root,env){
   const value=env.EARNINGS_API_KEY||env.EARNINGSAPI_API_KEY;
   if(value)return value;
@@ -33,7 +48,8 @@ export async function runDec31Batch({pcHome=PC_HOME,env=process.env,
   const report={schema:'ZGMINI_DEC31_SYMBOL_BATCH_A_V1',status:'BLOCKED',
     code:'DEC31_BATCH_NOT_STARTED',source:'EarningsAPI /v1/earnings',
     range:['2026-12-01','2026-12-31'],candidateSymbols:SYMBOLS.length,
-    providerCalls:0,retries:0,storedSymbols:0,positiveSymbols:0,
+    providerCalls:0,retries:0,storedSymbols:0,reusedStoredSymbols:0,
+    newStoredSymbols:0,positiveSymbols:0,
     decemberEventRows:0,results:[],coreWrites:0,d1Writes:0,
     schedulerWrites:0,publicationWrites:0,sourceStoredAt:null};
   let fd=null;
@@ -51,7 +67,16 @@ export async function runDec31Batch({pcHome=PC_HOME,env=process.env,
     try{fd=fs.openSync(lock,'wx')}catch{stop('DEC31_BATCH_ALREADY_RUNNING')}
     for(const symbol of SYMBOLS){
       const filename=path.join(dir,symbol+'.json');
-      if(fs.existsSync(filename))stop('DEC31_BATCH_ALREADY_STAGED');
+      if(fs.existsSync(filename)){
+        const {storedAt,stats}=inspectSavedSymbol(filename,symbol,clock());
+        report.storedSymbols++;
+        report.reusedStoredSymbols++;
+        report.decemberEventRows+=stats.decemberDates.length;
+        if(stats.decemberDates.length)report.positiveSymbols++;
+        report.results.push(stats);
+        report.sourceStoredAt=storedAt;
+        continue;
+      }
       const url=new URL(ENDPOINT);
       url.searchParams.set('symbol',symbol);url.searchParams.set('apikey',key);
       report.providerCalls++;
@@ -72,6 +97,7 @@ export async function runDec31Batch({pcHome=PC_HOME,env=process.env,
       const verified=inspectSymbol(saved.body,symbol);
       if(JSON.stringify(stats)!==JSON.stringify(verified))stop('DEC31_BATCH_READBACK_STOP');
       report.storedSymbols++;
+      report.newStoredSymbols++;
       report.decemberEventRows+=stats.decemberDates.length;
       if(stats.decemberDates.length)report.positiveSymbols++;
       report.results.push(stats);
