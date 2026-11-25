@@ -569,3 +569,20 @@ GitHub Search API 직접 재조회 **78건 OPEN = 본체 Issue 1 / PR 6 + PC 제
 - 다른 작업 중인 W04·고용 R6 신규 설치/공유 승인/Task/Writer/DB/D1 및 원래 Run 재실행 없음. 이번 Issue/PR 종결 **0건**, 감사 담당 직접 누적 완료 7건 + 대체 종료 1건 유지.
 
 **진행률:** 최초 코호트 88 고정, 1차 본문/댓글 88/88, 2차 독립 원본 실행·소스 CI 증거 **56/88(63.6%)**, 잔여 **32건**. 남은 32건은 JSON/TXT 미등록, 외부 원장 의존, CI 범위 부족, 진행 중 운영 담당 업무를 구분해 검증한다.
+
+## 2차 독립 증거 조회 — 배치 P (2026-11-25)
+
+원본 88건 고정 코호트. 배치 O **56/88(63.6%)**에서 출발. 과거 1차 본문·댓글 판정만 기재돼 2차 원본검증 수치에는 포함되지 않은 **PC #702, #946**의 정확한 GitHub Actions Run/Job/Steps 및 저장 JSON/TXT 실제 원문을 직접 독립조회, 고정 요청 식별과 공통 필드 11/11 literal 일치 확인. 2차 **58/88건(65.9%)**, 잔여 **30건**.
+
+| 대상 | 원본 GitHub Actions | Git JSON/TXT 직접 확인 | 실제 성취 판정 |
+|---|---|---|---|
+| [PC Issue #702](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/702) | [Run 42392082961](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42392082961) Job `128461575294` `approved-pc-job` `completed/success`; `Execute fixed host allowlist entry` 및 `Upload sanitized TXT JSON and issue result` success | `results/42392082961-1-seat-4.json/.txt` blob JSON `dcb34ed0fc0d47f6fbdb0d015b69f365ef03ccf8`, TXT `afd9c192f8034f6615c36b7f883a828871b5f524`; 공통 필드 **11/11 일치** | 원본 `STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE`, `runtimeSourceVerified=false`, `LIVE_PROCESS_SNAPSHOT_INCONCLUSIVE`, `operationalWrites=0`. #699 Writer B 이후 Core 실제 출처 확인 목표 미충족, OPEN |
+| [PC Issue #946](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/946) | [Run 42498194519](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42498194519) Job `128785000021` `approved-pc-job` `completed/success`; 실행·결과업로드 단계 success, `Stage approved read-only preimage scope` skipped(대상 scope 미해당) | `results/42498194519-1-seat-4.json/.txt` blob JSON `890d59cc1fd70f822b0bbef58af5f8196eef09aa`, TXT `46a824a1f6954b363d2d59e5b82e007076d61800`; 공통 필드 **11/11 일치** | `PASS/PC_SOURCE_READONLY_DIAGNOSIS`는 A급 정적 launcher 조회 성공. `evidenceLevel=STATIC_LAUNCHER_TRACE_ONLY`, `runtimeSourceVerified=false`. 승인 checkout ↔ *실제 실행 중* Core 동일성 목표 미입증, OPEN |
+
+### 진행 보존 및 다음 조치
+- PC #1295/#1231/#1196은 이전 배치에서 검증한 항목이므로 재조회한 값의 blob SHA만 교차 확인하고 새 건수에 재합산하지 않음.
+- PC #1217/#1227은 intake `NO_RUN` 선행 사실을 원장에 보존. 다른 Issue 성공 실행을 이 두 고정 원본 requestId의 후속 PASS로 치환 금지.
+- #783은 고용 R6 공통 A/B 권한·중첩 preimage·B 적용 개선 문제 인계 중이며 #784 등 **다른 Issue**의 PASS로 원래 공통 갭 완료 처리하지 않음.
+- 과거 ER1 #509/#503/#498/#496/#474/#473/#394/#369은 자동 댓글의 PARTIAL/BLOCKED와 원본 목표 미달 확인. 원본 Job/파일 경로까지 확보한 독립검증 건으로 허위 집계 금지.
+- 직접 종결 신규 **0건**; 누적 본 감사 완료 7 + 대체 종료 1 = 8건. 운영 PC/Controller/Writer/Task/SQLite/D1/승인/원본 PC Job 재실행·신규 PR 0.
+- 진행률: 1차 본문·댓글 **88/88**, 2차 원본 증거 **58/88(65.9%)**, 잔여 **30건**. 증거검증률은 해결 완료율이 아님.
