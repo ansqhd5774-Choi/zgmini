@@ -114,3 +114,11 @@ test('Linux pinned descriptor reads original inode even when pathname is substit
   }finally{fs.closeSync(fd);}
  }finally{fs.rmSync(f.dir,{recursive:true,force:true});}
 });
+
+test('Linux pinned-descriptor mode refuses WAL databases without sidecar guarantees',()=>withFixture({},f=>{
+ if(process.platform!=='linux')return;
+ const d=new DatabaseSync(f.file);
+ try{assert.equal(d.prepare('PRAGMA journal_mode=WAL').get().journal_mode,'wal');}
+ finally{d.close();}
+ assert.throws(()=>execute(f),/R6_READER_WAL_SIDECAR_UNSUPPORTED/);
+}));
