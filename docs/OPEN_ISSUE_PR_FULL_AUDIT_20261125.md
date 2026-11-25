@@ -897,3 +897,31 @@ GitHub Search API 최신 OPEN: `zgmini` Issue **1** / PR **6**, `zgmini-pc-contr
 ### 배치 AD 종료 시점 OPEN 재조회
 
 GitHub Search API: 본체 Issue 1/PR 6, PC 제어 Issue 55/PR 3 → **전체 OPEN 65건(이슈 56/PR 9)**. 배치 AC의 63건보다 +2건으로, 별도 동시 작업의 신규 이슈·PR/상태 변경 효과이며 이번 감사의 생성 성과로 계상하지 않는다. 고정 최초 코호트 88건과 현재 OPEN 총량은 독립 지표다.
+
+
+## 배치 AE — 중앙 Controller 원장·시장캘린더 원본 증거검증 및 #3516 복구 최신 재판정 (2026-11-25 KST)
+
+시작 기준 배치 AD **75/88(85.2%)**, 미검증 13건. 고정 최초 코호트 중 이전 배치에서는 1차/댓글 판정만 있었던 **PC #1004, PC #68**의 실제 원본 GitHub 증거를 직접 확인해 신규 **2건**, 누적 **77/88(87.5%)**, 미검증 **11건**. 이 수치는 원본 이슈에 연결된 증거 감사의 수치이지 요구된 기능·운영 장애 해결 77건을 의미하지 않는다.
+
+### PC #1004 — 공개 시장 캘린더와 운영 Writer/D1 해시 증거의 경계
+
+- [원본 Issue #1004](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1004) 현 OPEN. 요구는 2027 공개 연간 이벤트의 **PC core.sqlite 원본 + D1 공개 output + API** 동일 연간 source/id/date/sourceUrl 정규 직렬화 SHA 비교(원시 자료 외부 공개 금지)다.
+- 후속 고유 [#988 / Run 42574708549](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42574708549) 실제 `completed/success`, Job 129019703648 success. 저장 [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/42574708549-1-seat-2.json) blob `22ac0c7c687a220998f8c7da6cb4aae1005b6c8c`, [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/42574708549-1-seat-2.txt) blob `8a881534e8bef9e559228cdc9c3c3e7098beb64f`; 요청 ID `pc-77044ea9-2fae-7a2e-c65e-8ff182f74df7`, result `PASS/RELEASE_CALENDAR_SOURCE_INVENTORY_READONLY`, `calendarStatus=CACHED`, `providerRequests=0`, `sqliteOpened=false`, `runtimeSourceVerified=false`; 결과 보호 `protectedStateUnchanged=true`, operationalWrites/providerCalls/d1Writes=0. JSON/TXT 원본 requestId/operation/status/code/sourceSha/보호 필드 대조 일치.
+- 최신 [PC config operations](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/config/operations.json) Git blob `b9f4defb266b262305589ff05a4ff2bebcdb357f`: `release-calendar-runtime-readonly`, `source-inventory-runtime-readonly`, `writer-publication-evidence-readonly`는 모두 A급으로 등록되어 있지만 위 #988의 실제 출력은 **2027 로컬 연간 rows canonical SHA와 D1 비교 증명 없이** 단발 소스·체크포인트 재고 조회 성공만 보여준다. 등록된 operation 이름만으로 정확 기능별 output 해시 reader 구현/설치 또는 일치 성공을 선언할 수 없음.
+- **판정:** 원본 증거·기존 A 조회 범위 독립검증 완료; `PC_LOCAL_TO_D1_HASH_UNKNOWN / EVIDENCE_ACCESS_GAP`, #1004 OPEN 보호. 2027 API 공개 수치와 PC 저장 bytes 동일성을 추론하지 않고, Controller 임의 설치·원본 재실행 금지.
+
+### PC #68 — 실운영 공유 설치/조정 원장의 현재 증거 교차검증
+
+- [원본 Issue #68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68) 현 OPEN, 공식 공유 Controller 적용 조정 원장, 댓글 **1383건**(조회 시점). 마지막 두 댓글 GitHub REST 실제 조회: [#7161395075](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-7161395075) UTC 11:42:30에는 당시 #3516 원본 C 미실행·복구 전 선후 설치 순서 검토. 후속 [#7161649201](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-7161649201) UTC 11:53:51에는 #3516 독립 복구 아카이브 완료 후 RUM V2 B 단회 요청 접수 기록. **옛 댓글의 미복구 상태를 최신 상태로 재사용하면 안 됨**.
+- 직접 실 PC 후속 [#3567 / Run 45607943541](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45607943541) `completed/success`, 실제 operating Job `139183604971` success. [운영 결과 JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/pc-process-inventory-45607943541-1-operating.json) blob `e1a5317d25a0856a6c684492d40631036cbf6cdf` 및 [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/pc-process-inventory-45607943541-1-operating.txt) blob `463954a4a421d11c524714d583443acf04da5c40`: `PASS/W04_3516_STATUS_OBSERVED`, `leaseHeld=false`, `recoveryArchive.status=ARCHIVE_VERIFIED`, `originalLeaseArchived=true`, `archiveRecordVerified=true`, completeRecord SHA `d119d28b39c9684f2dcbd5ba2a050d2f260c538de053c5775574ae2a4a864e9f`. 단 `protectedDifferenceClass=UNVERIFIED`이므로 후속 B 7-CAS 전체 독립 합격으로 확대하지 않음. [#3516](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3516)은 이번 직접 조회에서 **CLOSED**.
+- 이후 기존 RUM V2 한 번의 B 요청 [#3569](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3569), requestId `pc-update-88351af3-dd43-4b2b-a34e-101e4ab1af1f`의 저장 [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/maintenance-pc-update-88351af3-dd43-4b2b-a34e-101e4ab1af1f.json) blob `4f72987b77b1a24e3dfa3e50b0cc1d378f39b5ab`, [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/maintenance-pc-update-88351af3-dd43-4b2b-a34e-101e4ab1af1f.txt) blob `93351f5860f1cfe28a6e9e903dd9742d3df910cb`. out-of-band 유지보수 결과 `SUCCEEDED/APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED`, `targetControllerSha=actualControllerSha=3d42f226fcffde1f09885da552f9b003ea30e57e`, protectedStateUnchanged=true, workflowEnabled=true. #3569 Issue 자체는 **OPEN**이므로 이 결과로 이슈 수명주기 종료를 대신하지 않음.
+- **중요 설치 계보 변경:** #3516 복구 이후 기존 설치 기준 `83679b013ac9a9820331d93311ec97e572b18e13`에 RUM V2 B가 성공했다고 보고됐으므로, **후행 ER1/W04는 이전 preimage 83679b를 그대로 재사용할 수 없다.** 원담당이 독립 운영 후검사와 최신 installed SHA, 원래 승인 범위·CAS·lease를 확인해 후행 범위를 재계산할 것. #68 중앙 조정 원장을 **OPEN 보호**. 여기서 추가 PC 설치·정규 승인·재실행을 새로 발행하지 않음.
+
+### 종료 시점 최신 OPEN 및 후속 경계
+
+GitHub Search API 스냅샷: `zgmini` Issue **1**/PR **6**, `zgmini-pc-control` Issue **56**/PR **3** = 총 **66건(이슈 57, PR 9)**. 기존 배치 AD 총 65건에서 +1건은 동시 작업 상태 변화이며 본 감사 작업의 생성/종결 효과 아님. 최초 88건 코호트와 독립.
+
+- 1차 원본 88/88, 2차 고유 원본 증거검증 **77/88(87.5%)**, 미검증 **11건**.
+- 이번 직접 종결 **0**, 누적 본 감사 직접 종결 **10건**. 기존 #3516 종료 및 #3569 B 성공은 **타 담당자의 독립 운영 실행 성과**이며 본 감사 종결/설치 실적으로 집계하지 않음.
+- 운영 PC·Controller·Writer·SQLite/D1·Task·설치·승인·재실행·신규 Issue/PR/PC Job **본 감사 변경 0건**.
+- 후속: 고정 코호트 남은 11건의 최초 증거검증 및 W01/W03/W05 실완료 항목 종결 가능성 분석, 최신 B 적용 계보 충돌 보호, W04·ER1 업무의 기존 담당자 진행과 분리.
