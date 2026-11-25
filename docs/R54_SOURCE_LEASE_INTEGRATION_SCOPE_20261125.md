@@ -6,7 +6,7 @@
 - 기준 브랜치: `codex/theme-fear-greed-integration-20261025`
 - 핵심 PR: #1580
 - 역사적 소스 PR: #983; 원본 보호 브랜치: `codex/theme-r54-source-lease-20261105`
-- 상태: **통합 소스 작성됨 / Linux·Windows 격리 CI 10/10 각각 PASS / 실운영 PC 경합 미검증·배포 금지**
+- 상태: **통합 소스 작성됨 / Linux·Windows 격리 CI 10/10 각각 PASS / Windows 양 저장소 교차 소스 시험 14/14 + OWNER 경합 PASS / 실운영 PC 경합 미검증·배포 금지**
 
 ## 1. 실제 목적 — 파일 사용 중 동시 소스 변경 금지
 
@@ -58,3 +58,11 @@
 - [Actions #45582584292](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45582584292)의 각 Job은 정확한 동일 HEAD 및 `node --test tests/theme-r54-source-lease.test.mjs`를 실행했다. 각 10 PASS/0 FAIL, 문법검사 PASS. 실제 Windows Runner에서의 **격리 임시 경로 시험**이며 운영 PC Task 실행 증거가 아니다.
 - 임시 CI Workflow는 지속적 신규 글로벌 Gate나 정기 작업을 남기지 않도록 결과 보관 후 삭제한다. GitHub Actions Run/Job 영수증과 이 문서가 기록이다.
 - 2026-11-25 범위 정리: 역사적 PR #1578 미병합 CLOSED, 통합 후보 #1580 Draft/OPEN; W03 owner/main 병합 및 운영 설치는 별도 검증 전 금지.
+
+## 7. 2026-11-25 두 저장소 실제 구현 교차시험
+
+- public 본체 Actions #45583409615는 private PC 제어 저장소를 checkout할 권한이 없어 `Repository not found`에서 안전 중단. 권한 추가/우회 없이 PC 제어 자체의 일회성 Draft PR #3532를 사용해 테스트 경계를 반전.
+- PC 제어 격리 Windows [Actions #45583669936](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45583669936), Job `139099705897` **completed/success**. PC 제어 현재 main `tests/r54-b-source-lease.test.mjs` **4/4 PASS**, 본체 W03 고정 SHA `aa0568707d68b3b2c47312f8252dcfcb9b0843ec`의 `tests/theme-r54-source-lease.test.mjs` **10/10 PASS**.
+- 양쪽 실제 Node 모듈 동시 import 후 동일 임시 lockDir에서 Writer 보유→B `BUSY`, B 보유→Writer `R54_SOURCE_LEASE_HELD`, 보유자 OWNER byte 불변, 해제 후 재취득 가능·잠금 잔재 0까지 확인. 명시 영수증 `W03_CROSS_REPO_LEASE_WINDOWS_PASS`.
+- 이 시험은 GitHub-hosted 격리 Windows 환경의 **두 저장소 코드 계약** 검증이고 실제 운영 PC에 설치된 `E:/...` Task/9파일 preimage에 대한 인증은 아님. 본체 W03 기능 소스와 원담당 브랜치/운영 PC에는 병합·설치하지 않음.
+- 일회성 PR #3532와 임시 workflow는 미병합 종료 및 파일 정리하고 기존 수행 Run 영수증을 보관한다.
