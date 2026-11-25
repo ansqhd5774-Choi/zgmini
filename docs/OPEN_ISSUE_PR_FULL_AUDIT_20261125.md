@@ -1309,3 +1309,24 @@ GitHub Search API 실제 재조회: 본체 Issue **1** / PR **6**, PC 제어 Iss
 - [#1614 테스트 증거 원문 댓글 #7162786758](https://github.com/ansqhd5774-Choi/zgmini/pull/1614#issuecomment-7162786758) 직접 작성 완료. 다만 정확 HEAD `c0c241a4a6b924e095c12596e892f9811ae0b3cb`에 대한 Actions Run **0**, check-runs **0**. `Draft`와 비-main base로 인해 현재 원격 CI 성공을 추정하지 않으며, 별도 새 실행·보안 승인·병합을 발행하지 않음.
 - 코드 기능은 **이미 사전 검증된 private identity projection의 읽기 전용 group/month count**이며, 실제 raw 본문의 body SHA/Run 증명·SQLite source readback·현행 W04 PIT0408/PIT0605 보호와 입력 생산 경로 연결은 아직 구현·검증되지 않았음. 새 #1614를 원본 #1266의 완료/종결로 바꾸지 않는다.
 - #1031 원본 BLS shared 25/24h 보호, PC #1969/#2059 과거 Windows out-of-band 실행 인증은 여전히 보류. 감사 누적 직접 종결 10건/이번 직접 종결 0, 원본 검증 **84/88(95.5%) 유지**. 이번 변경은 source-only Draft #1614 테스트 4건 확장, 댓글, 감사 문서만 해당. 기존 W04 owner 브랜치 원본·실제 운영 PC/Controller/Writer/SQLite/D1/Task/Provider/Workflow/운영 승인 변경 0.
+
+
+## 배치 AV — W04 #1614 원본문 SHA256·Run 인증 안전 집계 신규 구현 및 CI 직접 추적 (2026-11-25 KST)
+
+**최초 고정 코호트 독립검증 시작/종료 84/88(95.5%)**, 잔여 원본 #1031/#1266/#1969/#2059. 이번 배치는 기존 #1614의 단순 boolean 요약 입력을 증빙할 수 없는 문제를 확인하여 **실제 원본문·snapshot ID·Run 영수증을 검증한 집계 경로**를 추가했으며, 동시 검증의 자원 상한도 보완했다.
+
+### 실제 코드 및 테스트
+
+- 작업 대상 신규 Draft [#1614](https://github.com/ansqhd5774-Choi/zgmini/pull/1614), base `codex/employment-1y-reader-r1` 그대로. 현재 source SHA/blob `71d971f091f42cfa9ed120d2b1bb9f3a04ee8792`, test blob `e1d0113d85e5f8732525b9d4f2eb03caf7d6419d`, 변경은 기존 source-only 두 파일에 한정, 현행 PIT0408/PIT0605/Runner/DB 원본은 변경하지 않음.
+- `verifyAndAggregateStoredR6Snapshots` **신규**: private 메모리 내 raw snapshot 본문 SHA-256, `SHA256(releaseGroup|provider|requestKey|bodySha256)` snapshot ID, `responseHash` 대조, collector Run의 `SUCCESS/PARTIAL`·`EMPLOYMENT_R6_<releaseGroup>` provider·완료 시각과 snapshot ID/body SHA 참조가 맞는 경우에만 `runCertifiedKeys` 증가. 미검증 raw는 metadata key에만 남고 bodyVerified/Run-certified에는 산입하지 않음. 반환값은 그룹/월별 작은 정수 집계만 허용하며 원본문/해시/키/ID/정확한 타임스탬프를 반환하지 않음.
+- `asOfDate`와 UTC snapshot/retrieval/created/Run time의 **실제 달력 일치**를 검증하여 `2026-02-31` 같은 JS 자동 보정 날짜를 거부. 미래 원본·중복 snapshot·Run 증거 비일치·잘못된 provider/status 등 fail-close. snapshots <=4000, runs <=20000, 개별 raw body <=32MiB, 총 raw <=64MiB, 총 Run nested references <=40000 hard cap으로 최악 20,000x4,000 검사 비용을 방지한다.
+- 기존 집계 14개 테스트에 실제 SHA-256 본문/identity·Run 양성/음성 사례, 시각·중복·변조·잘못된 달력·누적 Run 영수증 상한 등 회귀 10개를 추가하여 `tests/employment-r6-raw-aggregate-source-only.test.mjs`의 **정적 Node `test(...)` 총 24개**를 확보. **24/24 Node 실행 PASS라고 주장하지 않는다.** 이 환경에서 코드 로직의 비암호 해시 대체 V8 격리 검사는 일부 사례 **5/5 PASS**이나 실제 cryptographic Node 테스트와 의미가 다르다. 정확 원격 바이트가 GitHub에 존재함을 재조회했으며 통과판정은 정확 HEAD CI 완료 원본으로 남긴다.
+
+### GitHub Actions 원본 조회 및 과장 없는 판정
+
+- [최신 정확 HEAD Run #45617426723](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45617426723), HEAD `99887af4d1ec1d6396bc057297f1ede461cee602`, 상태 **in_progress**. Job `139216434105`에서 checkout/setup/npm ci는 완료, Build 진행, `Regression tests`는 아직 pending이므로 **새 검증기 PASS 미확정**.
+- 같은 PR 브랜치에서 구 `c0c241a4...`의 Run #45616590485는 SUCCESS였지만, 원본문 인증 함수를 추가하기 **전** 소스이므로 현재 HEAD의 CI PASS로 소급하지 않는다. 중간 여러 Run은 새로운 push에 따른 `cancelled`; 완료 결과 미발행을 실패로 치환하거나 성공으로 주장하지 않는다.
+- [#1614 원본 증거 댓글 #7162886805](https://github.com/ansqhd5774-Choi/zgmini/pull/1614#issuecomment-7162886805)에 기본 source-proof 보강 및 정확 SHA CI 진행 상태를 기록. 이후 별도 Run reference cap 보강까지 HEAD에 반영했으므로 최신 정확 SHA CI 상태는 Run #45617426723 기준.
+- **데이터 출처의 남은 한계:** 이 함수는 입력받은 raw snapshot/Run 두 배열을 **상호 검증**하지만, 운영 Windows/SQLite read-only snapshot에서 승인된 시점에 **누락 없이 추출된 전체 원본**임을 독립 증명하지 않는다. 현행 owner DB query-only·bounded read·private ledger·CAS/lease 보존과의 연결 및 승인·운영 후검사는 별도. 이 소스-only Draft를 원본 #1266 완료로 산입하지 않음.
+
+이번 감사 직접 종결 0건/누적 10건, 코호트 84/88(95.5%) 유지. 운영 PC·Controller·Writer·SQLite/D1·Task·Provider·보안 설정·정규 승인 변경 0. 다음 단계는 **Run #45617426723의 Regression tests 종료 여부를 정확 HEAD로 확인**, 실패 시 해당 소스만 최소 수정, 성공 시 원담당 source-only 통합 계약 리뷰, 이후에만 #1266 최종 판정을 재검토한다.
