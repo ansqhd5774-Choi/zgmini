@@ -22,7 +22,7 @@
 | --- | --- | --- |
 | 1. 실제 경로 확정 | 진행 중 | #1521 CLOSED 및 종단 PASS 승계, 최신 main 소스 경로·15분/5분 제약 확인; 운영 설치본·실제 HTTP 요청 간격 및 기존 실행 연결 확인 필요 |
 | 2. CNN만 1분 확인 | 미착수 | 60초 자연 HTTP 요청 간격 미입증; 다른 지표 주기 보존 필요 |
-| 3. 원본 저장·변동 감지 | 미착수 | 기존 저장/검사 증거 재사용 가능; 신규 표시값 중복·복귀·정정 처리 미검증 |
+| 3. 원본 저장·변동 감지 | 진행 중 | 기존 archive 저장 계약 재사용; 늦은 정상 원본을 current 역행 없이 저장하는 분기/2개 회귀 추가. CI·운영 미검증 |
 | 4. 1·5·10·30분 집계 | 진행 중 | 원본 전용 순수 집계/변동 표시 모듈과 5개 회귀시험 추가; UI 연결 및 실제 CI 미완료 |
 | 5. D1·API·자동 화면 갱신 | 진행 중 | 기존 D1/API 1D·1W PASS 승계; 관측 API 60초 재조회·실패 보존 소스 및 브라우저 회귀 추가, CI/운영 검증 미완료 |
 | 6. 회귀시험·운영 적용 | 진행 중 | PR #1644 CI 실제 실행, 기존 HEAD Node Lint 실패 원인 수정; 새 HEAD CI 실행 중. 운영 설치/배포 미실시 |
@@ -119,3 +119,10 @@
 - HEAD ee2b9bbc: Node Run 45715090624 Build/Type check/Regression PASS, Lint FAIL(React Compiler preserve-manual-memoization 2건: extrema52Week/fixedPeriodChanges의 payload 관측시각 의존성). 관측시각 scalar로 통일, 검사 우회 없음. 기존 Source Secret PASS, 나머지 이전 실행 결과는 최신 소스 판정으로 승계하지 않음.
 - 4단계: 기존 1D 확인 이력은 기본 보기로 보존하고 1/5/10/30분 원본 관측 버튼을 추가. 명시 선택 시 PC 확인 시각을 분봉 원본으로 취급하지 않음. 원본 대표시각과 실제 관측시각/구간 마감·진행 중을 구분. 변동점은 최초 값 유지, 동일값 구간 마지막 실제 관측은 선 연결용 앵커로만 유지. 결측 null 및 고립된 실제 관측만 표시. 다른 기간/지표 동작은 유지. 390/1440 기존 browser fixture에 4개 선택·bucket 수 검증 추가. 신규 CI 및 실운영 검증 전.
 - 1/2/3단계: #3741/#3742의 승인 source 불일치와 이력 정체는 미해결. 기존 승인 경로의 정확 manifest/운영 source 계약 확인 및 최소 복구 필요. 60초 공급자 호출과 원본 저장 Runtime 미입증. 운영 변경 없음.
+
+## 11. 2026-11-26 — 공유 Sidecar 계약 및 늦은 원본 저장
+
+- 기존 Sidecar B `contract.mjs`의 PREIMAGE=ce07af0b5e8d… 강제 일치 조건은 현재 실제 설치본 583297b451f…와 다름. 이전 R3 manifest는 old source e4b76853…와 정확 before/after에 한정되므로 재사용 불가. `operating-probe.mjs`는 설치 HEAD/config 및 task/wrapper/lease를 모두 검증한다. 보호 우회 없이 다음 정규 적용의 정확 preimage/현재 source/후속 승인 연계와 공통 설치 계약 수정이 필요. 기존 #3741/#3742 원본과 연결한 [공통 Writer 인계 #3745](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3745) 생성. 원본 요청/결과는 유지. 실제 총괄 수신·인수/수정/설치 미확인. W06 원담당의 기능 작업 계속.
+- 실제 수집 경로 `collect-local.mjs`는 다른 Core 작업 또는 public-feed 한 건만 선택한다. `local-cycle.mjs`는 동기 단회 Core 실행; Sidecar 자체 providerCalls=0. 현재 구조에서 CNN 전용 60초 실행을 보장하지 못한다. 다른 지표의 스케줄을 변경하거나 새 예약을 생성하지 않았다.
+- `public-feed-refresh.mjs`의 current 역행 검사가 archive 이전에 실행되어 늦게 받은 검증된 CNN 원본도 폐기하던 소스 결함 확인. 원본의 실제 observedAt이 current보다 이전일 때만 검증된 원본 headline을 기존 archive 병합 계약으로 저장하고 current를 유지하도록 수정. stale sidecar 재전파·확인시각 변조 없음. 무효 점수/저장 실패 시 기존 실패 처리. 신규 회귀 2개. 다른 공급자 정책 및 현재 CNN 15분 정책 유지. 소스 구현이며 PC Runtime 미적용.
+- 이전 exact HEAD efbb1e79의 Secret/CodeQL PASS, Node/Browser는 조회 시 진행 중. 신규 HEAD의 CI로 별도 확인.

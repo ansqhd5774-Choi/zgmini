@@ -109,3 +109,36 @@ test('integration keeps current output, 15-minute cadence and read-only visitor 
  assert.match(read('app/fear-greed/usa/cnn-panel.tsx'),/\/api\/fear-greed\/observations\?period=/);
  assert.doesNotMatch(read('app/korea-composite-view.tsx'),/\/api\/fear-greed\/observations/);
 });
+
+
+test('late verified CNN original is archived without regressing current or replaying stale sidecars',async()=>{
+ const currentAt='2026-10-31T15:00:00.000Z',lateAt='2026-10-31T14:59:00.000Z';
+ const previous={body:verified(currentAt,20),storedAt:Date.parse(currentAt)};
+ const now=previous.storedAt+15*60000;
+ const events=[];
+ const store={initialize:async()=>{},readOutput:async k=>k==='fear-greed'?previous:null,
+  readAttempt:async()=>null,writeAttempt:async()=>{},
+  appendVerifiedObservations:async(body,at)=>{
+   const byDate=groupVerifiedCnnObservations(body,at);
+   const merged=mergeCnnArchivedDay(null,'2026-10-31',byDate.get('2026-10-31'),at);
+   events.push(merged.body.observations);
+  },
+  writeOutput:async()=>assert.fail('late source must not replace current')};
+ const locks={claim:async()=>1,finish:async()=>{}};
+ const collectors={'fear-greed':async()=>Response.json(verified(lateAt,19.831,[point(currentAt,5)]))};
+ const result=await refreshPublicFeeds({store,locks,collectors,now,maxFeedsPerRun:1});
+ assert.deepEqual(events,[[{observedAt:lateAt,score:19.831}]]);
+ assert.deepEqual(result.feeds.find(x=>x.key==='fear-greed'),{key:'fear-greed',status:'COMPLETE',archivedLateObservation:true});
+ assert.equal(previous.body.score,20);
+});
+test('invalid late CNN score and failed archive do not advance current',async()=>{
+ const priorAt='2026-10-31T15:00:00.000Z',now=Date.parse(priorAt)+15*60000;
+ const store={initialize:async()=>{},readOutput:async()=>({body:verified(priorAt,20),storedAt:Date.parse(priorAt)}),
+  readAttempt:async()=>null,writeAttempt:async()=>{},appendVerifiedObservations:async(body,at)=>{groupVerifiedCnnObservations(body,at);throw Error('ARCHIVE_WRITE_FAILED')},
+  writeOutput:async()=>assert.fail('failed archive must not replace current')};
+ const locks={claim:async()=>1,finish:async()=>{}};
+ for(const score of [101,19.831]){
+  const result=await refreshPublicFeeds({store,locks,collectors:{'fear-greed':async()=>Response.json(verified('2026-10-31T14:59:00.000Z',score))},now,maxFeedsPerRun:1});
+  assert.equal(result.feeds.find(x=>x.key==='fear-greed').status,'FAILED');
+ }
+});

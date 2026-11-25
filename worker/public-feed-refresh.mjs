@@ -28,7 +28,23 @@ export async function refreshPublicFeeds({env,collectors,now=Date.now(),store,lo
     const response=await collectors[key](store,now);if(!response.ok)throw Error('PROVIDER_UNAVAILABLE');
     const body=await response.json();
     if(body.status==='fallback'||body.status==='FAILED'||body.status==='unavailable')throw Error('INVALID_OUTPUT');
-    if(!acceptsStoredUpdate(previous?.body,body))throw Error('OBSERVATION_REGRESSION');
+    if(!acceptsStoredUpdate(previous?.body,body)){
+     // CNN's valid late original observation belongs in the date archive,
+     // not in the current headline. Use the existing correction/deduplication
+     // rules for its actual source timestamp; never relabel a polling time.
+     const priorAt=Date.parse(previous?.body?.observedAt??'');
+     const receivedAt=Date.parse(body?.observedAt??'');
+     if(key==='fear-greed'&&body.status==='verified'&&Number.isFinite(priorAt)&&
+        Number.isFinite(receivedAt)&&receivedAt<priorAt&&
+        typeof store.appendVerifiedObservations==='function'){
+      // Only the newly verified headline enters this path. Do not replay
+      // stale sidecar arrays over newer archived corrections.
+      await store.appendVerifiedObservations({status:'verified',observedAt:body.observedAt,score:body.score},now);
+      await locks.finish(attempt,token,now,'COMPLETE');
+      results.push({key,status:'COMPLETE',archivedLateObservation:true});continue;
+     }
+     throw Error('OBSERVATION_REGRESSION');
+    }
     // Archive only verified, distinct CNN observation timestamps. Do this
     // before advancing the current snapshot, so failures can safely retry.
     // Other feeds and Korean market data do not enter this archive.
