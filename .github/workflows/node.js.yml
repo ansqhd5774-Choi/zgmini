@@ -160,3 +160,24 @@ jobs:
           node --test tests/korea-rev7-d1-status.test.mjs
           node --test tests/*.test.mjs
           echo "CI1582_WRAPPERS_BUILD_D1_FULL_TEST_PASS"
+
+      # Create exact npm lockfile candidate for review; ephemeral PR workspace only.
+      - name: "[#1582] Generate exact candidate npm lockfiles (PR only)"
+        if: ${{ github.event_name == 'pull_request' && github.head_ref == 'codex/controller-ops-lessons-20261105' && !cancelled() && steps.install.outcome == 'success' }}
+        shell: bash
+        run: |
+          set -Eeuo pipefail
+          npm install --package-lock-only --save-dev --save-exact --ignore-scripts --audit=false --fund=false wrangler@4.168.0 @cloudflare/vite-plugin@1.70.1
+          node -e 'const fs=require("node:fs");const p=JSON.parse(fs.readFileSync("package.json","utf8"));const l=JSON.parse(fs.readFileSync("package-lock.json","utf8"));for(const [name,v] of [["wrangler","4.168.0"],["@cloudflare/vite-plugin","1.70.1"]]) {if(p.devDependencies?.[name]!==v||l.packages?.[""]?.devDependencies?.[name]!==v) throw Error("CI1582_VERSION_DRIFT "+name)}'
+          mkdir -p artifacts/ci1582-candidate-lock
+          cp package.json package-lock.json artifacts/ci1582-candidate-lock/
+          git diff --stat -- package.json package-lock.json
+          echo "CI1582_LOCK_CANDIDATE_GENERATED"
+      - name: "Upload #1582 candidate dependency lockfiles"
+        if: ${{ github.event_name == 'pull_request' && github.head_ref == 'codex/controller-ops-lessons-20261105' && !cancelled() && steps.install.outcome == 'success' }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci1582-cloudflare-lock-candidate
+          path: artifacts/ci1582-candidate-lock/
+          retention-days: 7
+          if-no-files-found: error
