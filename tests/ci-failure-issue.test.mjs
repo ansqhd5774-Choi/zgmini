@@ -221,3 +221,15 @@ test('missing failed-job identity is refused before incident writes',async()=>{
  }}),/CI_INCIDENT_JOB_IDENTITY_INVALID/);
  assert.equal(calls.length,1);
 });
+
+test('Node CI keeps independent source, security and audit checks observable after unrelated failures',()=>{
+ const yml=readFileSync(new URL('../.github/workflows/node.js.yml',import.meta.url),'utf8');
+ const independent=['Type check','Validate public-to-PC architecture boundaries',
+  'Verify stored data read and freshness contract','Regression tests',
+  'Lint changed source (ESLint)','Validate changed GitHub Actions YAML (actionlint)',
+  'Audit production dependency vulnerabilities (high or critical)'];
+ for(const name of independent)
+  assert.ok(yml.includes("      - name: "+name+"\n        if: "+String.fromCharCode(36)+"{{ !cancelled() && steps.install.outcome == 'success' }}"),
+   'missing isolated execution: '+name);
+ assert.doesNotMatch(yml,/continue-on-error:\s*true/);
+});
