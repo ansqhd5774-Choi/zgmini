@@ -179,6 +179,35 @@ test('bounded Event Timing evidence never certifies field INP or site Good',()=>
  assert.equal(report.siteGoodVerified,false);
  assert.equal(report.mergeBlocking,false);
 });
+test('production CSP markers are bounded and never claim field INP delivery',()=>{
+ const s=sample('/economic-indicators/');
+ s.rumCsp={
+  scope:'PRODUCTION_DOCUMENT_CSP_MARKERS_READONLY',
+  enforcedHeaderPresent:false,reportOnlyHeaderPresent:true,
+  enforcedMetaPresent:false
+ };
+ const out=classifyProductionPage(s);
+ assert.deepEqual(out.rumCsp,s.rumCsp);
+ assert.equal(out.rumBeacon.realUserSamples,'UNVERIFIED');
+ assert.equal(out.rumBeacon.fieldP75,'UNVERIFIED');
+ const rows=all();
+ rows[2]=s;
+ const report=summarizeProductionLab(rows);
+ assert.equal(report.coreWebVitalsFieldP75,'UNVERIFIED');
+ assert.equal(report.inpFieldP75,'NOT_MEASURED');
+ assert.equal(report.siteGoodVerified,false);
+});
+test('read-only production browser checks only document CSP presence',()=>{
+ const src=readFileSync(new URL('../scripts/ci-production-browser-good-r1.mjs',import.meta.url),'utf8');
+ assert.match(src,/Object\.hasOwn\(responseHeaders,'content-security-policy'\)/);
+ assert.match(src,/Object\.hasOwn\(responseHeaders,'content-security-policy-report-only'\)/);
+ assert.match(src,/document\.querySelectorAll\('meta\[http-equiv\]'\)/);
+ assert.match(src,/PRODUCTION_DOCUMENT_CSP_MARKERS_READONLY/);
+ assert.match(src,/if\(!sameOrigin\)/);
+ assert.match(src,/return network\.abort\('blockedbyclient'\)/);
+ assert.match(src,/\['GET','HEAD'\]\.includes\(request\.method\(\)\)/);
+ assert.match(src,/CI_PRODUCTION_SPEED_CI_ONLY/);
+});
 test('real browser Event Timing observer is bounded and cannot send RUM',()=>{
  const src=readFileSync(new URL('../scripts/ci-production-browser-good-r1.mjs',import.meta.url),'utf8');
  assert.match(src,/PerformanceObserver\?\.supportedEntryTypes/);
