@@ -100,6 +100,13 @@ test('Run completion before retrieval is not certified',()=>{
  const s=snapshot(),r=attest(s,{completedAt:'2026-11-20T01:02:02.000Z'});
  assert.equal(verify([s],[r]).runCertifiedKeys,0);
 });
+test('Run completion before snapshot storage is not certified despite earlier retrieval',()=>{
+ const s=snapshot(),premature=attest(s,{completedAt:'2026-11-20T01:02:03.500Z'});
+ const before=verify([s],[premature]);
+ assert.deepEqual([before.metadataKeys,before.bodyVerifiedKeys,before.runCertifiedKeys],[1,1,0]);
+ const atStorage=attest(s,{completedAt:'2026-11-20T01:02:04.000Z'});
+ assert.deepEqual([verify([s],[atStorage]).bodyVerifiedKeys,verify([s],[atStorage]).runCertifiedKeys],[1,1]);
+});
 test('duplicate snapshot identity and future capture reject before aggregation',()=>{
  const s=snapshot();
  assert.throws(()=>verify([s,s],[]),/R6_ATTEST_DUPLICATE_SNAPSHOT/);
