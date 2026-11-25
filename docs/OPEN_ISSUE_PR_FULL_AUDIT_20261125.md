@@ -490,3 +490,7 @@ GitHub Search API total_count 최신 **80건 = 본체 Issue 1/PR 6, PC 제어 Is
 | [#173](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/173) | 최초 [Run 41698557847](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/41698557847) `completed/failure`, 댓글 `PARTIAL/DEC31_BATCH_QUOTA_STOP`, TOL/CASY 후속 소스·설치 #3516 의존. 원본 결과쌍 독립 대조 미완 | **담당자 진행 중 OPEN**, 신규 검사 완료 건수에 미산입 |
 
 현재 W01/W03/W05 정리 관련: 본체 PR #1463 Draft는 별도 최신 원본 범위 판정 필요, #1266/#1036/#1031/#933은 W04/고용 소스 분야, #488은 ETF Shadow 연구 승인 대기 Draft. 운영 독립 담당자의 미완 승인·CI를 본 감사가 임의 완료/병합하지 않는다. 운영 PC/Controller/Writer/DB/Task 변경 0건.
+
+### 배치 K 종료 시점 OPEN
+
+GitHub Search API 직접 재조회 **78건 OPEN = 본체 Issue 1 / PR 6 + PC 제어 Issue 69 / PR 2**. 직전 80건에서 본 감사가 #965 completed, #860 not_planned로 정확 2건을 직접 닫아 78건. 최초 고정 대상 88건 감사 분모 유지. 독립 증거 부분검사 44/88(50.0%), 직접 완료 7, 대체 종료 1, 신규 원본 실행·운영 변경 0.
