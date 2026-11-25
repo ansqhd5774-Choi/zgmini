@@ -4,8 +4,8 @@
 - 문서 보관 브랜치: `codex/zgmini-gpt-workspace-20261025`
 - 실제 기능 소스 기준: `ansqhd5774-Choi/zgmini` 최신 `main` (계획 수립 당시 `ec9c9738bf3e07e15eeac06a02ab3e5bec9ef9d0`; 실행 직전 재확인)
 - PC 자동화·승인 정본: `ansqhd5774-Choi/zgmini-pc-control` 최신 `main`의 `AGENTS.md`, `docs/PC_AUTOMATION_STANDARD.md`, `docs/GENERAL_CHAT_START.md`, 실제 등록·config·Runtime
-- 상태: **개발 중 / 실제 운영 자동 게시 미완료** / 잠정 전체 진행률 **약 80%**
-- 목표: 2026년 11월 1회 계산이 아니라, **11월 원자료 완전성 회복 + 12월 이후 신규 수집분이 기존 PC Core 흐름에서 자동 계산·로컬 저장·공개 게시·화면 반영**되도록 완료한다. 자연 예약 실행 확인은 모든 기능 완료 뒤의 후속 작업이다.
+- 상태(2026-11-08 당시 계획 시점): **개발 중 / 실제 운영 자동 게시 미완료** / 당시 잠정 추정 **약 80%**. **최신 2026-11-26 W02 완료·Issue 정리 상태는 문서 맨 아래 §8을 우선 적용한다.**
+- 목표(2026-11-08 당시 계획): 2026년 11월 1회 계산이 아니라, **11월 원자료 완전성 회복 + 12월 이후 신규 수집분이 기존 PC Core 흐름에서 자동 계산·로컬 저장·공개 게시·화면 반영**되도록 완료한다. 자연 예약 실행 확인은 모든 기능 완료 뒤의 후속 작업이다.
 
 ## 1. 승인된 계약과 재사용할 완료 증거
 
@@ -106,3 +106,33 @@
 - Core 활성 여부 A [#758](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/758)에서는 순간 `STATE_UNKNOWN / CORE_NO_ACTIVE_TASK_ENGINE`, 직후 잠금 조회 A [#759](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/759)는 여전히 `core.lockPresent=true`; 조회가 비동시이므로 orphan/stale 잠금은 미확정. Core checkpoint와 승인 source는 정상 보존.
 - 실증·원인 구분·공통 담당 요청·보호 조건을 [공통 프로세스 이슈 #761](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/761)에 기록했다. 타 대화에 자동 전달되지 않으므로 프로세스 총괄 대화에서 실제 수신 후 대응해야 한다.
 - 기능 원담당인 본 작업은 승인 소스/manifest를 보존하고 기다린다. **공통 안전 유휴 구간 확보**와 **설치 직전 실제 PC source/hash 재조회** 없이 같은 B 요청을 되풀이하지 않는다. 원담당 후속은 1파일 PC 설치 → Core 계산/로컬 재조회 → D1 게시/공개 API/UI 검증 → 마지막 미래 예약 검증.
+
+## 8. W02 시장 캘린더 완료·관련 PC Issue 수명주기 최종 반영 (2026-11-26 KST)
+
+> **최신 상태 / 이 문서 §1~§7의 2026-11-08 계획·80% 추정 및 당시 '다음 필수 설치'보다 우선.** 사용자가 W02 기능 완료 및 현재 실적 캘린더 화면 확인을 명시했다. 이번 원장 작업은 기존 결과를 보존하며 GitHub Issue 정리 근거를 기록하는 작업이다. 과거 계획을 근거로 신규 개발·Writer 설치·재수집을 재개하지 않는다.
+
+### 8-1. 최종 상태와 현행 화면의 역할
+
+- **W02 기능:** 사용자 확인 기준 **완료 유지**. 공개 `/market-calendar/`의 기업 실적은 EarningsAPI 예정 일정의 **저장·게시된 HTML**과 독립적으로 저장된 ER1/R44 파생 별등급을 조합하여 표시한다. 방문자 `/api/earnings-calendar-display`는 D1의 기존 공개 `kind=output`만 읽으며 방문자 GET에서 공급자 수집·PC 계산을 호출하지 않는다. 근거: [현행 본체 API route](https://github.com/ansqhd5774-Choi/zgmini/blob/main/app/api/earnings-calendar-display/route.ts), [표시 로직](https://github.com/ansqhd5774-Choi/zgmini/blob/main/lib/earnings-api-display.mjs).
+- 완료 근거의 종류를 구분한다: **사용자 W02 화면 확인**은 유효하며, 이번 기록 시점에 **새 운영 D1 값·게시시각·화면 전체 종목 수의 독립 실시간 readback을 새로 수행했다고 주장하지 않는다.** 기존 유효한 PC·게시 증거를 반복 검증하지 않는다.
+- 2026-11-06의 #474는 당시 1,436종목 **전체 실제 EPS·매출 원자료 단발 수집** 기록으로, 현재 W02 발표 일정 표시 기능의 원자료 전수 완료 증명이 아니다. 최신 PC 읽기 감사를 통해 원본 SHA MATCH / 기존 5폴더 36종목 파일 / 미보관 1,400 확인. 이는 과거 B 요청이 성공했다는 의미도 아니며, 현재 완료한 W02를 새로 미완료로 돌리는 조건도 아니다.
+- 12월 정규 뉴욕 날짜 **D+30 입력 수집은 기존 Core 체계로 유지**한다. #155의 2026-11-26 시점 SQLite 25/31(12/26~31 여섯 날짜는 당시 미래), PC private 31/31 형식 유효 결과는 **그 시점 한정의 저장 관측**이다. 해당 일자가 지난 뒤의 실제 실행·성공을 소급 확정하지 않는다. 자연 예약 검증을 완료된 W02의 새로운 필수 단계로 추가하지 않는다.
+
+### 8-2. 사용자 지정 관련 Issue 6건 — GitHub 상태 재조회
+
+저장소: [ansqhd5774-Choi/zgmini-pc-control](https://github.com/ansqhd5774-Choi/zgmini-pc-control). **6/6 `CLOSED`**, 이 중 3건 `completed`, 3건 `not_planned`. `not_planned`은 원래 요청의 PASS가 아니라 **더 이상 진행하지 않는 과거 단발 업무의 종결**이다.
+
+| Issue | 원래 요청 및 완료 범위 | 2026-11-26 최종 상태 | 종결 근거 |
+| --- | --- | --- | --- |
+| [#3723](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3723) | 12월 TOL·CASY 2개 추가 private 수집, 기존 38+신규 2=40 파일 | **CLOSED / completed** | [원본 bot PASS / 2 GET](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3723#issuecomment-7173623957) |
+| [#173](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/173) | 원래 40종목 private raw 수집 (11/03 38/40 PARTIAL → 후속 40/40 실증) | **CLOSED / completed** | [운영+독립 A readback](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/173#issuecomment-7173679830) |
+| [#3716](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3716) | 운영 PC process-inventory 단발 조회 PASS | **CLOSED / completed** | [원장 정리](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3716#issuecomment-7175200211) |
+| [#702](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/702) | 11/07 설치 직후 Core source 조회는 STATE_UNKNOWN; 당시 source 실증은 미입증 보존 | **CLOSED / not_planned** | [과거 미입증 보존·재실행 중단](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/702#issuecomment-7175201823) |
+| [#474](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/474) | 11/06 고정 1,436종목 Actual 원본 단발 B 수집 PARTIAL; 1,400 캐시 미보관 | **CLOSED / not_planned** | [원본 부분실패 보존·W02 범위 분리](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/474#issuecomment-7175203331) |
+| [#155](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/155) | 11/03 12월 단발 31일 응답 저장, records=0; 당시 정규 D+30 SQLite 일부 미래 날짜 미도래 | **CLOSED / not_planned** | [과거 단발 종료·정규 Core 유지](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/155#issuecomment-7175205096) |
+
+### 8-3. 인계·추가 작업 경계
+
+- **지정된 W02 관련 Issue 정리 남은 건수: 0/6.** W02 기능을 다시 개발하거나 #702·#474·#155의 과거 단발 결과를 PASS로 바꾸지 않는다.
+- 이번 원장 갱신은 **지정 작업 브랜치의 이 문서 1파일**에 한정한다. `main` 병합·PC Runner·Provider 호출·SQLite·D1·Cloudflare·스케줄러·공개 웹 변경 없이 이력만 반영한다.
+- **다음 필수 W02 구현·설치·공급자 문의 작업 없음.** 이후 실제 신규 장애가 독립적으로 발생하거나 사용자가 새 범위를 지시한 경우에만 새 증거를 근거로 해당 범위에서 처리한다.
