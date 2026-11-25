@@ -42,16 +42,16 @@
 | 28 | PC Issue | [#1997](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1997) Maintenance replay pc-update-7f6b2ee0-1a4e-4a62-a3bc-04 | `core-runtime-source-readonly` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; **STATE_UNKNOWN — CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE**;FIRST_FAIL_NO_AUTOMATIC_RETRY) |
 | 29 | PC Issue | [#1969](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1969) pc-source-bundle-register | `pc-source-bundle-register` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; STATUS: BLOCKED;CODE: BUNDLE_B_APPROVAL_CONTRACT_INVALID) |
 | 30 | PC Issue | [#1922](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1922) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; **STATE_UNKNOWN — CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE**;FIRST_FAIL_NO_AUTOMATIC_RETRY) |
-| 31 | PC Issue | [#1764](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1764) pc-job | `employment-r6-candidate-stage-readonly` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 32 | PC Issue | [#1743](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1743) ZGMINI 공통 대기열 — GitHub 능동 진단 원장 R1 | `본문 조사` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 33 | PC Issue | [#1742](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1742) pc-job | `employment-r6-collection-evidence-readonly` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 34 | PC Issue | [#1740](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1740) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 35 | PC Issue | [#1739](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1739) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 36 | PC Issue | [#1737](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1737) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 37 | PC Issue | [#1736](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1736) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 38 | PC Issue | [#1688](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1688) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 39 | PC Issue | [#1646](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1646) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 40 | PC Issue | [#1637](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1637) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
+| 31 | PC Issue | [#1764](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1764) pc-job | `employment-r6-candidate-stage-readonly` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; **BLOCKED — R6_BUNDLE_NOT_APPROVED**) |
+| 32 | PC Issue | [#1743](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1743) ZGMINI 공통 대기열 — GitHub 능동 진단 원장 R1 | `본문 조사` | 공통 PC/CI | REVIEWED_COMMENT (189 comments; no standard result) |
+| 33 | PC Issue | [#1742](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1742) pc-job | `employment-r6-collection-evidence-readonly` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; **STATE_UNKNOWN — R6_EVIDENCE_WAL_SIDECARS_ABSENT**;FIRST_FAIL_NO_AUTOMATIC_RETRY) |
+| 34 | PC Issue | [#1740](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1740) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; no standard result) |
+| 35 | PC Issue | [#1739](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1739) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; **STATE_UNKNOWN — CORE_TASK_NOT_RUNNING_AT_SNAPSHOT**;FIRST_FAIL_NO_AUTOMATIC_RETRY) |
+| 36 | PC Issue | [#1737](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1737) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; **STATE_UNKNOWN — CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE**;FIRST_FAIL_NO_AUTOMATIC_RETRY) |
+| 37 | PC Issue | [#1736](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1736) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; **BLOCKED**) |
+| 38 | PC Issue | [#1688](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1688) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | REVIEWED_COMMENT (2 comments; **STATE_UNKNOWN**) |
+| 39 | PC Issue | [#1646](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1646) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | REVIEWED_COMMENT (2 comments; **STATE_UNKNOWN**) |
+| 40 | PC Issue | [#1637](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1637) pc-employment-r6-registered-data-once | `employment-r6-registered-data-once` | 고용 R6/W04 | REVIEWED_COMMENT (2 comments; **STATE_UNKNOWN**) |
 | 41 | PC Issue | [#1598](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1598) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
 | 42 | PC Issue | [#1351](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1351) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
 | 43 | PC Issue | [#1295](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1295) pc-job | `core-runtime-source-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
@@ -139,3 +139,15 @@
 - zgmini-pc-control Issue #1997: REVIEWED_COMMENT, 댓글 1, **STATE_UNKNOWN — CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE**;FIRST_FAIL_NO_AUTOMATIC_RETRY
 - zgmini-pc-control Issue #1969: REVIEWED_COMMENT, 댓글 1, STATUS: BLOCKED;CODE: BUNDLE_B_APPROVAL_CONTRACT_INVALID
 - zgmini-pc-control Issue #1922: REVIEWED_COMMENT, 댓글 1, **STATE_UNKNOWN — CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE**;FIRST_FAIL_NO_AUTOMATIC_RETRY
+
+### 감사 댓글 검증 31–40
+- zgmini-pc-control Issue #1764: REVIEWED_COMMENT, 댓글 1, **BLOCKED — R6_BUNDLE_NOT_APPROVED**
+- zgmini-pc-control Issue #1743: REVIEWED_COMMENT, 댓글 189, no standard result
+- zgmini-pc-control Issue #1742: REVIEWED_COMMENT, 댓글 1, **STATE_UNKNOWN — R6_EVIDENCE_WAL_SIDECARS_ABSENT**;FIRST_FAIL_NO_AUTOMATIC_RETRY
+- zgmini-pc-control Issue #1740: REVIEWED_COMMENT, 댓글 1, no standard result
+- zgmini-pc-control Issue #1739: REVIEWED_COMMENT, 댓글 1, **STATE_UNKNOWN — CORE_TASK_NOT_RUNNING_AT_SNAPSHOT**;FIRST_FAIL_NO_AUTOMATIC_RETRY
+- zgmini-pc-control Issue #1737: REVIEWED_COMMENT, 댓글 1, **STATE_UNKNOWN — CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE**;FIRST_FAIL_NO_AUTOMATIC_RETRY
+- zgmini-pc-control Issue #1736: REVIEWED_COMMENT, 댓글 1, **BLOCKED**
+- zgmini-pc-control Issue #1688: REVIEWED_COMMENT, 댓글 2, **STATE_UNKNOWN**
+- zgmini-pc-control Issue #1646: REVIEWED_COMMENT, 댓글 2, **STATE_UNKNOWN**
+- zgmini-pc-control Issue #1637: REVIEWED_COMMENT, 댓글 2, **STATE_UNKNOWN**
