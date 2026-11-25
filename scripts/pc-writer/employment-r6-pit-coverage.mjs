@@ -250,7 +250,7 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
       if(pit04KeyReview.counts.coreKeys!==expectedClaims)
         throw Error("PIT_AUDIT_KEY_COVERAGE_MISMATCH");
     }
-    let privateLedgerDigest=null;
+    let privateLedgerDigest=null,conflictBreakdown=null;
     if(onPrivateKeyLedger!==null){
       if(!pit04KeyReview||fullPrivateRows?.length!==pit04KeyReview.evidenceTotal
         ||fullPrivateRows.length>50000)
@@ -258,12 +258,36 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
       // These conflicts cover ALL R6 series. A claims-only conflict may
       // occur in the missing-key list and must not be double counted.
       const overlapConflicts=[];
+      // One read-only snapshot: disjoint cause counts, never original values or hashes.
+      const causes={invalidNumericValue:0,providerOrSeriesDifferent:0,
+        valueAndHashDifferent:0,valueOnlyDifferent:0,hashOnlyDifferent:0};
+      const changedFields={numericValue:0,sourceHash:0,provider:0,
+        providerSeries:0,sourceRevision:0};
       for(const [k,candidateRow] of candidateCurrentKeys){
         const coreRow=currentKeys.get(k);
         if(coreRow&&!sameObservation(coreRow,candidateRow)){
+          const numericValid=numericObservation(coreRow.value)&&numericObservation(candidateRow.value);
+          const valueDiff=numericValid&&Number(coreRow.value)!==Number(candidateRow.value);
+          const hashDiff=coreRow.source_hash!==candidateRow.source_hash;
+          const providerDiff=coreRow.provider!==candidateRow.provider;
+          const providerSeriesDiff=coreRow.provider_series_id!==candidateRow.provider_series_id;
+          const revisionDiff=coreRow.source_revision!==candidateRow.source_revision;
+          if(valueDiff)changedFields.numericValue++;
+          if(hashDiff)changedFields.sourceHash++;
+          if(providerDiff)changedFields.provider++;
+          if(providerSeriesDiff)changedFields.providerSeries++;
+          if(revisionDiff)changedFields.sourceRevision++;
+          const cause=!numericValid?"invalidNumericValue"
+            :providerDiff||providerSeriesDiff?"providerOrSeriesDifferent"
+            :valueDiff&&hashDiff?"valueAndHashDifferent"
+            :valueDiff?"valueOnlyDifferent":"hashOnlyDifferent";
+          causes[cause]++;
           overlapConflicts.push({logicalSeriesId:coreRow.logical_series_id,
             geographyType:coreRow.geography_type,geographyCode:coreRow.geography_code,
-            observationDate:coreRow.observation_date,reason:"CANDIDATE_CURRENT_CONFLICT"});
+            observationDate:coreRow.observation_date,reason:"CANDIDATE_CURRENT_CONFLICT",
+            differenceFlags:{numericValue:valueDiff,sourceHash:hashDiff,
+              provider:providerDiff,providerSeries:providerSeriesDiff,
+              sourceRevision:revisionDiff,invalidNumericValue:!numericValid}});
         }
       }
       overlapConflicts.sort((a,b)=>a.logicalSeriesId.localeCompare(b.logicalSeriesId)
@@ -271,8 +295,13 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
         ||a.geographyCode.localeCompare(b.geographyCode));
       if(overlapConflicts.length!==candidateOverlapConflicts
         ||overlapConflicts.filter(x=>x.logicalSeriesId==="STATE_INITIAL_CLAIMS").length
-          !==pit04KeyReview.counts.candidateOverlapConflicts)
+          !==pit04KeyReview.counts.candidateOverlapConflicts
+        ||Object.values(causes).reduce((sum,n)=>sum+n,0)!==candidateOverlapConflicts)
         throw Error("PIT_AUDIT_PRIVATE_COVERAGE_INVALID");
+      conflictBreakdown={kind:"W04_CANDIDATE_CURRENT_CAUSE_COUNTS_V1",
+        total:candidateOverlapConflicts,causes,changedFields,
+        sourceScope:"READONLY_CORE_CANDIDATE_SAME_SNAPSHOT_NOT_PIT",
+        rawPitAttested:false,repairAuthorized:false};
       const privateLedger={schema:"W04_PIT0408_PRIVATE_KEYS_V1",asOfDate,
         coreStateKeyCount:pit04KeyReview.counts.coreKeys,
         counts:pit04KeyReview.counts,evidence:fullPrivateRows,
@@ -327,6 +356,7 @@ export function auditEmploymentR6PitCoverage({dbPath,candidateDbPath=null,asOfDa
       ...(pit04KeyReview===null?{}:{pit04KeyReview}),
       ...(privateLedgerDigest===null?{}:{pit04PrivateEvidenceDigest:privateLedgerDigest,
         pit04PrivateEvidencePersisted:true}),
+      ...(conflictBreakdown===null?{}:{candidateConflictBreakdown:conflictBreakdown}),
       missingBySeries:current!==null&&history!==null?[...missingBySeries.values()].sort((a,b)=>a.id.localeCompare(b.id)):null,
       promotionApproved:false,coreWrites:0,providerCalls:0,
     };
