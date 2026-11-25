@@ -7,7 +7,7 @@ import {createHash} from 'node:crypto';
 import {DatabaseSync} from 'node:sqlite';
 import {EMPLOYMENT_R6_TABLES} from '../lib/market-score/employment-r6-contract.mjs';
 import {readAndAggregateR6RawSourceOnly as read,assertR6DescriptorPlatformSupported} from '../lib/market-score/employment-r6-raw-reader-source-only.mjs';
-import {auditEmploymentR6PitCoverage} from '../scripts/pc-writer/employment-r6-pit-coverage.mjs';
+import {auditEmploymentR6PitCoverage,auditEmploymentR6Pit0605StoredRaw} from '../scripts/pc-writer/employment-r6-pit-coverage.mjs';
 const digest=s=>createHash('sha256').update(s).digest('hex');
 function fixture({body='{"value":7}',tamper=false,chunkGap=false,invalidRun=false}={}){
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-r6-raw-source-only-'));
@@ -185,4 +185,21 @@ test('W04 PIT0408/PIT0605 owner coverage remains unchanged across source-only ra
  assert.deepEqual(ownerAfter,ownerBefore);
  assert.equal(ownerAfter.promotionApproved,false);
  assert.equal(digest(fs.readFileSync(f.file)),beforeDigest);
+}));
+
+test('W04 PIT0605 owner refuses missing source schema without private evidence or DB writes',{
+ skip:process.platform!=='linux'},async()=>withFixture({},async f=>{
+ const candidatePath=path.join(f.dir,'isolated-candidate.sqlite');
+ const candidate=new DatabaseSync(candidatePath);
+ candidate.close();
+ const original=digest(fs.readFileSync(f.file));
+ const isolated=digest(fs.readFileSync(candidatePath));
+ let written=0;
+ await assert.rejects(()=>auditEmploymentR6Pit0605StoredRaw({
+  dbPath:f.file,candidateDbPath:candidatePath,asOfDate:'2026-11-25',
+  writePrivateEvidence:async()=>{written++;},
+ }),/PIT0605_SOURCE_SCHEMA_UNAVAILABLE/);
+ assert.equal(written,0);
+ assert.equal(digest(fs.readFileSync(f.file)),original);
+ assert.equal(digest(fs.readFileSync(candidatePath)),isolated);
 }));
