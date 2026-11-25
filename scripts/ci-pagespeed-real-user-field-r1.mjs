@@ -143,9 +143,12 @@ export function summarizePsiDevices(devices){
   scope:FIELD_SCOPE,referenceThresholds:WEB_SPEED_GOOD,
   targetKind:'OFFICIAL_GOOD',
   classification:devices.every(x=>x.fieldState==='FIELD_ALL_THREE_GOOD')?
-   'BOTH_DEVICES_FIELD_GOOD':
+   devices.every(x=>x.dataScope==='ORIGIN_AGGREGATE')?
+    'ORIGIN_BOTH_DEVICES_GOOD':
+    devices.every(x=>x.dataScope==='PAGE_URL')?
+     'HOMEPAGE_BOTH_DEVICES_GOOD':'MIXED_SCOPE_GOOD_SITE_UNVERIFIED':
    devices.some(x=>x.fieldState==='FIELD_GOOD_TARGET_EXCEEDED')?
-   'ONE_OR_MORE_DEVICES_EXCEED_GOOD':
+   'OBSERVED_SCOPE_GOOD_TARGET_EXCEEDED':
    'SITE_FIELD_GOOD_UNVERIFIED',
   mergeBlocking:false,automaticReleaseGate:false,
   devices};
