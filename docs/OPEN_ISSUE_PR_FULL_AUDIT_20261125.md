@@ -586,3 +586,21 @@ GitHub Search API 직접 재조회 **78건 OPEN = 본체 Issue 1 / PR 6 + PC 제
 - 과거 ER1 #509/#503/#498/#496/#474/#473/#394/#369은 자동 댓글의 PARTIAL/BLOCKED와 원본 목표 미달 확인. 원본 Job/파일 경로까지 확보한 독립검증 건으로 허위 집계 금지.
 - 직접 종결 신규 **0건**; 누적 본 감사 완료 7 + 대체 종료 1 = 8건. 운영 PC/Controller/Writer/Task/SQLite/D1/승인/원본 PC Job 재실행·신규 PR 0.
 - 진행률: 1차 본문·댓글 **88/88**, 2차 원본 증거 **58/88(65.9%)**, 잔여 **30건**. 증거검증률은 해결 완료율이 아님.
+
+## 2차 독립 증거 조회 — 배치 Q (2026-11-25)
+
+배치 P의 원본 88건 중 **58/88(65.9%)**에서 시작. 처음부터 코호트에 포함돼 있으나 후속 다른 담당자의 병합 사실만 기록했던 **PC 제어 PR #3543, #3542**의 GitHub PR 원본 메타데이터, immutable base→head diff, HEAD에 결부된 Actions Run/Job을 새로 직접 확인. 독립검증 **60/88건(68.2%)**, 잔여 **28건**. 각 PR의 소스 통합 증명은 실제 운영 Windows 복구·B 설치 증명이 아니다.
+
+| 대상 | 정규 병합·고정 소스 변경 | CI/후속 효과 검증 | 정확한 판정 |
+|---|---|---|---|
+| [PC PR #3543](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3543) | `closed/merged=true`; 병합 SHA `f8f9a0e5284ea64e5d45ffa3f27ac2b9175ae071`; HEAD `847bc79916f2972a1c8941c8c607312448da11d3`; base `2a13b25cd5eec6710cbe9e4ef88ffb6e57cd6f16`; diff ahead3/behind0, **1파일** `.github/workflows/w04-3516-source-packet.yml` | HEAD [Source Packet Run 45590347311](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45590347311), Job 139122616880 `operator-bundle-only` success. Exact Windows guard, Git object bytes staging, private handoff upload 모두 step success. Artifact `W04_3516_INDEPENDENT_OPERATOR_ONCE_2a13b25c` ID 15009364512, size 20627, `expired=false`. [C996 45590347318](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45590347318), [Secret 45590347284](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45590347284) success | **소스 병합 및 독립 Windows 실행자 전달 패키징 완료**. 기존 W04 #3516 실제 독립 C 실행, archive/lease readback 미입증. #3516 OPEN 보존 |
+| [PC PR #3542](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3542) | `closed/merged=true`; 병합 SHA `501668efd776cfa939e27d845f3413e2207d152a`; HEAD `aff05686653f9d8978ce33eb489d62ce32348434`, base `c436cc97dc933ad0c3e09f4a2b8339b7244a59c6`, diff ahead4/behind0, **3파일** (2 immutable approval pin/manifest JSON + 1 regression test) | HEAD [C996 45588865332](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45588865332), [Maintenance Source Tests 45588864412](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45588864412), [Secret Scan 45588864286](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45588864286) 각각 Job completed/success | **승인 후보/manifest 소스 통합 검증 완료**. 이는 실제 Controller B 설치/운영 승인/후검사 PASS 아님. #155/#173/#3516 등 업무 미완 상태 보존 |
+
+### 실행 미연결 별도 검토 — 이번 추가 검증 건수 0
+- [PC #1969](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1969) `pc-source-bundle-register`: comment out-of-band 결과 `BLOCKED/BUNDLE_B_APPROVAL_CONTRACT_INVALID`, `results/maintenance-pc-update-39484f8b-8194-4a68-82c5-5bd500180459.json/.txt` 위치 확인. 과거 원장 배치 I에서는 Git blob까지 대조했으나 **고정 원본 Actions Run은 댓글에 없어** 원본 Actions 계보 교차검증 미완. 승인/실제 설치 미확인 → OPEN.
+- [PC #2059](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2059) `pc-source-bundle-register`: comment `BLOCKED/APPROVAL_MANIFEST_READ_FAILED`, `results/maintenance-pc-update-58a7df44-3db7-488a-a4e2-0a08a95a8343.json/.txt`; 원본 out-of-band 실행을 일반 Actions Run 없음만으로 무실행 판정하지 않는다. OPEN.
+- [PC #996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/996)는 후속 운영 C recovery 성공 증거와 원본 미설치 Controller SHA 차이가 존재. 복구 성공으로 원래 B 설치가 성공했다고 바꾸지 않는다.
+- [PC #1217](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1217), [#1227](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1227) 원본 요청 수신/Run/JSON/TXT 미확인. 후속 새로운 requestId #1351의 별도 조회를 소급해 원본 Run PASS로 치환하지 않음. 모두 미집계.
+- 이번 별도 Issue/PR 종료 0건, 운영 PC/Controller/Writer/SQLite/D1/Task/approval/execution 변경 없음, 기존 8건 직접 종결 실적 그대로.
+
+**진행률:** 1차 본문/댓글 88/88, 2차 원본 증거 **60/88 (68.2%)**, 잔여 28. 완료 의미는 해당 원본 증거경로에 대한 독립 감사이며 기능 업무 완결/운영 설치 성공 60건 아님.
