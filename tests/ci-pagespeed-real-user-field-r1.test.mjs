@@ -119,7 +119,12 @@ test('transport or invalid PSI JSON reports UNVERIFIED without inventing lab dat
 test('site-level verdict requires both devices with all 3 real P75 values',()=>{
  const mobile=evaluatePsiFieldResponse('mobile',base());
  const desktop=evaluatePsiFieldResponse('desktop',base());
- assert.equal(summarizePsiDevices([mobile,desktop]).classification,'BOTH_DEVICES_FIELD_GOOD');
+ assert.equal(summarizePsiDevices([mobile,desktop]).classification,'HOMEPAGE_BOTH_DEVICES_GOOD');
+ const originPsi=base({loadingExperience:{id:PAGE,origin_fallback:true,metrics:fields(2000,100,5)},originLoadingExperience:{id:ORIGIN,metrics:fields(2000,100,5)}});
+ const originMobile=evaluatePsiFieldResponse('mobile',originPsi);
+ const originDesktop=evaluatePsiFieldResponse('desktop',originPsi);
+ assert.equal(summarizePsiDevices([originMobile,originDesktop]).classification,'ORIGIN_BOTH_DEVICES_GOOD');
+ assert.equal(summarizePsiDevices([mobile,originDesktop]).classification,'MIXED_SCOPE_GOOD_SITE_UNVERIFIED');
  const missing=unavailablePsiResult('desktop','HTTP_429');
  const partial=summarizePsiDevices([mobile,missing]);
  assert.equal(partial.classification,'SITE_FIELD_GOOD_UNVERIFIED');
@@ -128,7 +133,7 @@ test('site-level verdict requires both devices with all 3 real P75 values',()=>{
  const poor=evaluatePsiFieldResponse('desktop',base({
   loadingExperience:{id:PAGE,metrics:fields(2501,200,10)}
  }));
- assert.equal(summarizePsiDevices([mobile,poor]).classification,'ONE_OR_MORE_DEVICES_EXCEED_GOOD');
+ assert.equal(summarizePsiDevices([mobile,poor]).classification,'OBSERVED_SCOPE_GOOD_TARGET_EXCEEDED');
  assert.throws(()=>summarizePsiDevices([desktop,mobile]),
   /CI_PSI_DEVICE_INVENTORY_INVALID/);
 });
