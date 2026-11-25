@@ -136,3 +136,20 @@ test('platform security gate rejects Windows and macOS on every CI host',()=>{
   assert.throws(()=>assertR6DescriptorPlatformSupported(platform),/R6_READER_DESCRIPTOR_PLATFORM_UNSUPPORTED/);
  assert.doesNotThrow(()=>assertR6DescriptorPlatformSupported('linux'));
 });
+
+test('Linux rejects malformed SQLite header before starting a reader',()=>withFixture({},f=>{
+ if(process.platform!=='linux')return;
+ const d=fs.openSync(f.file,'r+');
+ try{fs.writeSync(d,Buffer.from([0x00]),0,1,0);}finally{fs.closeSync(d);}
+ assert.throws(()=>execute(f),/R6_READER_HEADER_INVALID/);
+}));
+test('Linux rejects WAL header before SQLite opens, leaving no sidecar files',()=>withFixture({},f=>{
+ if(process.platform!=='linux')return;
+ const d=new DatabaseSync(f.file);
+ try{assert.equal(d.prepare('PRAGMA journal_mode=WAL').get().journal_mode,'wal');}
+ finally{d.close();}
+ const sidecars=['-wal','-shm'].map(s=>f.file+s);
+ const before=sidecars.map(p=>fs.existsSync(p));
+ assert.throws(()=>execute(f),/R6_READER_WAL_SIDECAR_UNSUPPORTED/);
+ assert.deepEqual(sidecars.map(p=>fs.existsSync(p)),before);
+}));
