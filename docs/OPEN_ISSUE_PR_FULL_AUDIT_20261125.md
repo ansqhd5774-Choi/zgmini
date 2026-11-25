@@ -669,3 +669,20 @@ GitHub Search API 직접 재조회 **78건 OPEN = 본체 Issue 1 / PR 6 + PC 제
 - 공통 result evidenceLevel=LIVE_PROCESS_SNAPSHOT_INCONCLUSIVE, protectedStateUnchanged=true, operationalWrites=0. **Actions success는 런타임 실제 출처 확인 성공이 아니다.** 스냅샷상 관측 실패를 현재 운영 장애 확정으로 소급하지 않는다.
 - 조회 시점 최신 GitHub OPEN: **본체 Issue 1 / PR 6, PC 제어 Issue 60 / PR 1 = 총 68건(이슈 61, PR 7)**. 배치 S 69건 대비 1건 감소는 다른 작업에 의한 상태 변경으로 취급하며 이번 감사 직접 종결 성과 아님.
 - 이번 직접 종결/실행/CI 재시도/신규 PR·Issue/승인·PC·Controller·Writer·DB·D1·Task 변경 **0건**. 누적 감사 직접 종결 **10건** 유지. 다음 단계 남은 22건의 고유 원본 Run/JSON/TXT 확인과 W01/W03/W05 소속·대체 가능성 분류; W04·ER1·운영 복구 보호.
+
+ 
+## 배치 V — 원본 Actions·JSON/TXT 독립검증 4건 (2026-11-25 KST)
+
+기존 배치 U의 고정 원본 증거 검증 **66/88 (75.0%)**에서 출발. 기존 회차에서 댓글 판정만 존재하고 2차 독립 증거검증에 산입하지 않았던 **PC #1598, #1174, #2232, #1764**의 원본 Issue requestId·operation·sourceSha, GitHub Actions Run/Job/Steps, main 저장 JSON/TXT 실물을 각각 직접 대조. 4건 신규 증거 검증으로 **70/88 (79.5%)**, 잔여 **18건**. 결과 증거의 확인은 원래 업무 목표 달성, 현재 운영 상태와 구분한다.
+
+| 대상 | 원본 Actions Run / Job | 원본 JSON/TXT Git blob SHA | 원본 결과 및 처리 |
+|---|---|---|---|
+| [PC #1598](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1598) | [Run 43829249480](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43829249480) completed/success, Job 133170292832 success | 5189b98c7f3bccc179d3fb1a2a21673ad9f99830 / 59d6a2031e0ac0c2e4b3edd9fdbeff52d28e1552 | STATE_UNKNOWN/CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE, runtimeSourceVerified=false, OPEN 보호 |
+| [PC #1174](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1174) | [Run 42712917820](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42712917820) completed/success, Job 129486884529 success | 19b1831712a2db5837b54401cc8995e389ae7a1a / ff24cb734a9ad1ebef6f3e14aebfbc6368e9d3af | STATE_UNKNOWN/WRITER_PREIMAGE_CHECKOUT_NOT_CORROBORATED; sourceIdentityConsistent=false, runtimeSourceVerified=false, OPEN 보호 |
+| [PC #2232](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2232) | [Run 44439988087](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44439988087) completed/success, Job 135278129814 success | b15ee006ec5b3c8c1d0c95bf6d799a5d3d4dc883 / 605cf11c1c6dba38770c84e901b5119e6480f9e7 | BLOCKED/RESOURCE_WAIT_MEMORY; 당시 free 1228MiB < required 1536MiB, 308MiB 부족. candidateExecuted=false, OPEN 보호 |
+| [PC #1764](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1764) | [Run 43884550303](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43884550303) completed/success, Job 133359048232 success | 91c5ee7336306c909963bdc3ea2b41c3b3f3486f / e21d05e70f214e69bd01e7d5f8a0732c4831616c | BLOCKED/R6_BUNDLE_NOT_APPROVED, 승인 없는 번들 실제 적용 없음, OPEN 보호 |
+
+- 각 원본 issue의 requestId·operation·requestedSourceSha가 저장 JSON과 정확히 일치, JSON↔TXT 공통 상위 필드 **각 14/14 literal 일치**. 각 Job의 고정 allowlist 실행과 결과 업로드 Step success.
+- 네 항목 모두 protectedStateUnchanged=true 및 operationalWrites=0. Actions success는 업무 목적 달성 판정이 아니라 실행·결과 업로드 파이프라인 성공이다.
+- W04/R6 진행 중 설치·승인/Writer·DB 갱신을 감사 작업에서 실행하지 않으며, 위 SNAPSHOT 결과를 현재 운영 상태로 단정하지 않는다.
+- 이번 감사 Issue/PR 직접 종결 **0**, 누적 감사 담당 직접 종결 **10** 유지. PC·Controller·Writer·SQLite/D1·Task·승인·재실행·신규 PC Job·PR 변경 **0건**. 다음 검증은 미확인 18건의 원본 실행·결과쌍 확인 및 W01/W03/W05 종료 귀속 판정이다.
