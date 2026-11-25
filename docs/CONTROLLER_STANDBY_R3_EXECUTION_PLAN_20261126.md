@@ -277,3 +277,18 @@ R2에서 확인한 설치 SHA·Runner online은 당시 읽기 증거로만 사�
 - 소스 전용 PR [#3749](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3749)은 exact head 검증 후 정규 **squash merge SUCCESS**, main SHA `f3e5b493975f32101ebfb4fb335288079fa0d1ca`. main의 `tools/pc-process-inventory-readonly.mjs`에서 고정 `controller-standby-watchdog-preimage-readonly`가 실제 존재함을 readback함. Watchdog/Controller 운영 파일을 설치·재기동하지 않음.
 - 운영 PC 기존 A 요청 [Issue #3750](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3750), requestId `59dc4e79-7b13-4766-9d52-6b3b4a2c8e51`, 기존 `pc-process-inventory-readonly` / `role=operating` / 위 고정 probe로 **1회** 발행. [Run #45720992541](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45720992541)의 운영 Job `139578970797`이 진행 중인 시점의 기록; JSON/TXT 최종 영수증과 실제 SHA가 아직 없으면 미확인으로 유지.
 - **#3738**은 아직 Draft/source-only, main 미병합. 다음 필수 행동은 원 요청 #3750의 실제 결과 JSON/TXT 조회 → source SHA-256, manifest raw SHA-256, installedMatch 및 scope 대조 → Controller와 Watchdog의 별도 B 계약·기존 승인 효과 검증. 운영 6 Runner/Core/Writer/DB/D1·현행 설치 보호 유지.
+
+## 17. 운영 Watchdog 원본 CAS 확보 및 신규 B 입력 확정
+
+- **실제 운영 PC A 조회 완료:** [요청 #3750](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3750) (requestId `59dc4e79-7b13-4766-9d52-6b3b4a2c8e51`) → [Run #45720992541](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45720992541), 운영 Job `139578970797` **SUCCESS**, 관측시각 `2026-11-25T23:24:54.534Z` / KST 2026-11-26 08:24:54. 결과쌍 `results/pc-process-inventory-45720992541-1-operating.json` 및 `.txt`를 main에서 직접 재조회·대조. `status=PASS`, `code=WATCHDOG_PREIMAGE_SOURCE_AND_MANIFEST_MATCH`, `installedMatch=true`, `operationalWrites=0`, `providerCalls=0`, `d1Writes=0`. Issue #3750은 결과검증 후 `completed`로 종결.
+- **현장 설치 Watchdog 소스 preimage SHA-256:** `3f99ea3357c6731cc9000bde1273db915cb07ba5fa480718194deb6330c29072`. INSTALL.json에 선언된 `sha256`과 실제 스크립트 바이트가 **일치**. 기존 설치 `scope=RUNNER_RECOVERY_AND_MAINTENANCE_HANDOFF_V1`.
+- **현장 설치 INSTALL.json 원본 bytes SHA-256:** `28c8017d469a0e2b13af96e01e686bae874d174b1ddac9e6a170ee2487bd6829`. 이 raw manifest 해시는 소스 SHA와 다른 CAS 입력이며, 과거 #1393/#1395의 고정값에서 추정하지 않음.
+- **격리 확인용 정확한 신규 Standby 후보:** 구현 Draft [#3738](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3738) / HEAD `c0c4dcff6c8071b1318cca956e43ba82718c4975`. GitHub 원본 파일 바이트(base64) SHA-256을 독립 계산하여 역사적 소스 commit `a2ec241d...`의 실제 Watchdog SHA-256 `3f99ea...`가 일치함도 교차 검증함.
+  - `tools/runner-watchdog.mjs`: `4029b768d8dcbb75353106b761b5da672433e693a8be033411c62abebfd27470`.
+  - `controller/common.mjs`: `91e4ceb5d26412893cc047670a420338aa8ef293e95498f852ac0a2f5edd6cc6`.
+  - `controller/engine.mjs`: `6112b5a357d6ecba2ffb299857c2649ee51ca97e1e7755162efd69337976769f`.
+  - `controller/entry.mjs`: `407ea8693ab48a03b04ec77fe63f86d05537a37661b42c9ddcd55f5b36aa01d7`.
+  - `controller/supervisor.mjs`: `5ec0952872adcaa16eb14adec614f024bac7264deb5b59fb68b9080f0edb0344`.
+  - `controller/standby.mjs`: `e18c09b7e9b90fc483d5200e1e0c4741d2e4f93e049328566d710e37c21be7e7`.
+- **현행 B 계약 제한:** 기존 `watchdog-b/contract.mjs`와 `upgrade.mjs`는 역사적 R2/R3 대상 SHA 및 당시 Controller 설치 SHA를 엄격히 고정함. 신규 Watchdog 후보 `4029b768...`와 현재 Controller 버전·INSTALL.json raw SHA, `installed.standby={mode:'ACTIVE_1_STANDBY_1',approved:true}`의 새 운영 효과를 기존 B 요청에 몰래 대입할 수 없음. 기존 B 계약을 임의 우회·재사용하지 않음.
+- **다음 필수 구현:** 별도 정확 B 승인/manifest·CAS 계약에서 현장 Watchdog preimage 두 해시와 신규 후보 파일 SHA, 향후 **먼저 설치·readback 완료된 Controller**의 source SHA/파일 목록, Startup·ACL·Owner/heartbeat·자원 lease·백업/복구를 연결. 설치 적용은 현행 Controller B → 검증된 Watchdog B 순서. [#3738] Draft, 새 HA 운영 미적용; 운영 PC의 WMI 실제 Runner.Listener/Worker 경로·tick/승격/업무 인계/복귀는 여전히 미실증. 검증된 상태와 미완료 단계를 혼동하지 않는다.
