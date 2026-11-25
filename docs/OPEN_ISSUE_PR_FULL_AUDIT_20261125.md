@@ -512,3 +512,20 @@ GitHub Search API 직접 재조회 **78건 OPEN = 본체 Issue 1 / PR 6 + PC 제
 - #3531 구형 expected SHA를 최신 observed SHA로 기계적으로 교체하면 승인 계보 위조 가능성이 있으므로 무단 변경 금지.
 - **이번 회차 추가 직접 종결 0건**, 누적 감사 담당의 직접 완료 7건 + 대체종결 1건 = 직접 CLOSED **8건 유지**. 역사적 상태 변경·신규 PR을 성과에 합산하지 않는다.
 - 원본 코호트: 88건 고정. 2차 최초 실패/원본 증거 직접검증 47/88 (53.4%), 미검증 41건. 운영 PC/Controller/Writer/DB/D1/Task·CI 재실행·승인 변경 없음.
+
+## 2차 독립 증거 조회 — 배치 M (2026-11-25)
+
+배치 L의 고정 코호트 **47/88건(53.4%)**에서 출발. 배치 K에서 원본 Run 상태만 확인하고 결과쌍 대조 미완으로 독립검증에 미산입한 **PC #155, #173**에 대해 연결된 GitHub Actions의 원본 Run→Job→개별 Steps→실제 Job 로그를 이번에 직접 검증했다. 두 요청의 **실제 실행 경과 및 원본 상태를 독립 확인**했으므로 2차 원본 실행검증 누적 **49/88건(55.7%)**, 잔여 **39건**. 단, *운영 원본 JSON/TXT 2/2 bytes 및 비공개 실제 데이터 내용은 이번 배치에서 열람·검증하지 않았다.* 이것을 완전한 운영영수증 검증 또는 기능 목표 완료로 표현하면 안 된다.
+
+| 기존 88건 코호트 | 실제 조회한 증거 | 결과/보호 |
+|---|---|---|
+| PC Issue [#155](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/155) | [Run 41693229811](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/41693229811), Job `126116922518` `completed/success`; GitHub Job Steps 8개 전부 success. 실제 원본 로그 `STATUS=PASS CODE=DEC31_PRIVATE_SAVED_AND_VERIFIED COVERED=31/31 CALLS=31`. Event source HEAD `4629418...` 원 요청 immutable source SHA와 일치 | 최초 12월 **31일치 private 응답 파일 저장** 성공. 원본 봇 결과에 `records=0`, 후속 담당 정정에서도 실제 발표 일정 데이터는 미확보·전체월 `SAVED_MONTH_INCOMPLETE`. **원본 업무 목표 PARTIAL, OPEN 보호** |
+| PC Issue [#173](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/173) | [Run 41698557847](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/41698557847), Job `126135465578` `completed/failure`; `Execute PC-private bounded batch without GitHub token` step failure, `Upload sanitized per-symbol counts only` success. 원본 로그 `STATUS=PARTIAL CODE=DEC31_BATCH_QUOTA_STOP SAVED=38/40 FOUND=35`; collector HEAD `55014d3...` 원 요청과 일치 | 최초 **40종목 중 38건 저장, 쿼터 차단으로 2건 누락**. 기존 담당 원장상 TOL/CASY 미저장으로 분류. 별도 후속 게시 38건이 40종목 완전 수집을 입증하지 않음. **OPEN 보호** |
+
+### 교차 검증 한계
+- 원본 Issue 댓글의 JSON 결과는 상대적으로 풍부하지만 GitHub Actions 로그/Steps와 다른 출처다. 이번 배치는 둘의 요청 목적·결과 코드를 대조했으며, **비공개 PC 원본 파일을 직접 열람한 것으로 가장하지 않는다**.
+- #155의 `PASS`는 31/31 저장에 관한 PASS이지 `records>0` 성공이나 ER1 월간 발표 일정 완성의 PASS가 아니다.
+- #173의 Actions workflow failure는 의도한 비용·쿼터 제한으로 `PARTIAL`을 반환한 업무 실행 결과다. 무단 재시도/공급자 변경/데이터 보충 금지.
+- 원담당이 진행하는 ER1 12월 진단 A, 선택 B 및 W04 #3516 의존사항은 독립 작업으로 유지. 이슈 종료 0, PR/승인/PC 실행 생성 0, 운영 PC/Controller/Writer/SQLite/D1/Task 변경 0.
+
+**진행률 집계:** 1차 본문·댓글 88/88(100%), 2차 원본 실행 49/88(55.7%), 2차 미검증 39/88. 원장 코호트가 아닌 신규 유입 OPEN 수와 혼동하지 않음. 누적 감사 담당 직접 종결 completed 7 + not_planned 1 = **8건 변동 없음**.
