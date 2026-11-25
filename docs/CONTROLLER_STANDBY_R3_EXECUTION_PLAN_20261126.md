@@ -197,3 +197,19 @@ R2에서 확인한 설치 SHA·Runner online은 당시 읽기 증거로만 사�
 - 최신 Controller CI: [Run 45716201111](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45716201111) — 최종 결과 확인 전까지 `QUEUED/NOT_VERIFIED`. 같은 HEAD의 Automation Status는 SUCCESS, 다른 검사는 미완료. 오래된 HEAD의 PASS를 현재 HEAD에 전용하지 않는다.
 
 **인계할 단일 다음 행동:** Run 45716201111의 실제 Windows Job 로그와 18개 단위·11개 격리시험 결과를 회수하여 필요 시 실패한 경로만 수정한다. 이후 기존 B 계약으로 Controller→Watchdog 단계별 적용의 실제 SHA·CAS·소유권을 확정한다.
+
+## 10. 2026-11-26 Windows 격리 경합 실증 및 IPC 인계 검증 추가
+
+**정확 HEAD `d050e4dfa54f3ea1a045db6d03320748eedc7403` 검증 회수 완료:**
+
+| 증거 | 결과 | 해석 범위 |
+|---|---|---|
+| [Controller Maintenance Source Run #45716201111](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45716201111), Job #139562773112 | **SUCCESS** | Windows 격리 CI 전체 성공 |
+| 위 Run의 `tests/controller-standby-windows-isolation.test.mjs` | **11/11 PASS, 0 FAIL, 0 SKIP** | 실제 Windows 프로세스/파일시스템 lease 경합과 TEMP WMI 검증; 운영 전환 아님 |
+| 같은 HEAD의 Automation Status·C996·Secret Scan | **모두 SUCCESS** | 소스·보안 검사, 설치 아님 |
+
+**다음 구현 증분:** [Draft PR #3738](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3738)의 후속 HEAD `eb796b1357cfc3b9039ca1136aa554c85963b981`에서 `tests/controller-standby-ipc-windows-isolation.test.mjs` 5개 통합시험을 새로 작성하고 기존 Windows 격리 CI에 연결함. TEMP에 복사한 Standby 및 최소 Supervisor가 실제 Node IPC로 `READY`→`PROMOTE`를 수행한다. 정상 승격/거부/기존 owner 보호/Watchdog 신원 불일치/두 후보 경합 모두 시험 대상이나 이 HEAD의 실제 CI PASS는 **아직 미확인**. [최신 Run #45717320783](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45717320783) 결과를 확인해야 한다.
+
+- 격리 프로세스는 실제 운영 `E:` Controller·Watchdog을 읽거나 수정하지 않으며 TEMP 사본의 인증 경로와 소유권만 사용한다.
+- 이 시험은 실제 Standby IPC 및 atomic Supervisor lease 취득 검증이지 **실제 Watchdog tick 전체 수명주기**·운영 Runner 6좌석의 안전한 재접속·업무 원장 인계/운영 전환 증거가 아니다.
+- **다음 필수 실행:** 위 최신 Run의 실제 IPC 5종 결과 회수 및 실패 조건 최소 수정. 이후 동일 Windows 격리에서 실제 Watchdog 단일 승격 경로와 Controller 원장 인계에 필요한 남은 구현 경계를 검증한다.
