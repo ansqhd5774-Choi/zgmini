@@ -11,8 +11,9 @@ const event=(overrides={})=>({
 });
 const failureJob={id:87,name:'source-check',conclusion:'failure',steps:[
  {name:'checkout',conclusion:'success'},{name:'Regression tests',conclusion:'failure'}]};
-function fixture({existing=false,comments=[]}={}){
+function fixture({existing=false,comments=[],commentPage2=[]}={}){
  const calls=[];
+ let lastPostedComment=null;
  const hash=caseKeyFor(WORKFLOWS[0],'source-check','Regression tests',123456,1,87,2);
  const marker=markerFor(hash);
  const issue={number:6200,body:marker+'\nold failure',
@@ -24,7 +25,11 @@ function fixture({existing=false,comments=[]}={}){
   if(resource==='issues?state=open&per_page=100&page=1')
    return existing?[issue]:[];
   if(resource==='issues/6200/comments?per_page=100')return comments;
-  if(resource==='issues/6200/comments'&&method==='POST')return {id:1};
+  if(resource==='issues/6200/comments?per_page=100&page=2')return commentPage2;
+  if(resource==='issues/6200/comments'&&method==='POST'){
+   lastPostedComment=body.body;return {id:1};
+  }
+  if(resource==='issues/comments/1')return {id:1,body:lastPostedComment};
   if(resource==='issues'&&method==='POST')return {...issue,body:body.body};
   if(resource==='issues/6200')return {...issue,body:marker+'\ncreated'};
   throw Error('unexpected route '+method+' '+resource);
@@ -125,10 +130,30 @@ test('GitHub job retrieval errors are propagated with zero issue writes',async()
  }}),/CI_INCIDENT_GITHUB_HTTP_403/);
  assert.deepEqual(calls.map(x=>x.method),['GET']);
 });
-test('full comment inventory blocks writes rather than duplicating an incident',async()=>{
- const f=fixture({existing:true,comments:Array.from({length:100},()=>({body:'other run'}))});
- await assert.rejects(triage({event:event(),request:f.request}),/CI_INCIDENT_COMMENTS_UNVERIFIED/);
- assert.equal(f.calls.some(x=>x.method==='POST'),false);
+test('the 100-comment boundary checks the next page and reuses an exact receipt',async()=>{
+ const receipt='<!-- zgmini-ci-run:123456:1:job:87:step:2 -->';
+ const f=fixture({existing:true,
+  comments:Array.from({length:100},()=>({body:'different observed run'})),
+  commentPage2:[{body:receipt+'\noriginal evidence'}]});
+ const result=await triage({event:event(),request:f.request});
+ assert.deepEqual(result,{state:'REUSED',issue:6200});
+ assert.ok(f.calls.some(c=>c.resource==='issues/6200/comments?per_page=100&page=2'));
+ assert.equal(f.calls.filter(c=>c.method==='POST').length,0);
+});
+test('incomplete 1000-comment evidence fails closed without writes',async()=>{
+ const calls=[];
+ const hash=caseKeyFor(WORKFLOWS[0],'source-check','Regression tests',123456,1,87,2);
+ const request=async(resource,{method='GET'}={})=>{
+  calls.push({resource,method});
+  if(resource.startsWith('actions/runs/'))return {total_count:1,jobs:[failureJob]};
+  if(resource==='issues?state=open&per_page=100&page=1')return [{
+   number:6200,body:markerFor(hash),user:{login:'github-actions[bot]'}}];
+  if(/^issues\/6200\/comments\?per_page=100/.test(resource))
+   return Array.from({length:100},()=>({body:'different incident'}));
+  throw Error('must not write');
+ };
+ await assert.rejects(triage({event:event(),request}),/CI_INCIDENT_COMMENTS_UNVERIFIED/);
+ assert.equal(calls.filter(c=>c.method==='POST').length,0);
 });
 test('an incorrect Issue creation readback is rejected',async()=>{
  let wrote=0;
@@ -235,4 +260,59 @@ test('Node CI keeps independent source, security and audit checks observable aft
   assert.ok(yml.includes("      - name: "+name+"\n        if: "+String.fromCharCode(36)+"{{ !cancelled() && steps.install.outcome == 'success' }}"),
    'missing isolated execution: '+name);
  assert.doesNotMatch(yml,/continue-on-error:\s*true/);
+});
+
+test('101 attempt jobs are fully paged, including a failure on page two',async()=>{
+ const calls=[],stored=new Map();
+ let issue=7500;
+ const jobs=Array.from({length:101},(_,i)=>({
+  id:10000+i,name:'job-'+i,conclusion:i===0||i===100?'failure':'success',
+  steps:i===0||i===100?[{name:'Unit',number:1,conclusion:'failure'}]:[]}));
+ const prefix='actions/runs/123456/attempts/1/jobs?per_page=100';
+ const request=async(resource,{method='GET',body}={})=>{
+  calls.push({resource,method});
+  if(resource===prefix)return {total_count:101,jobs:jobs.slice(0,100)};
+  if(resource===prefix+'&page=2')return {total_count:101,jobs:jobs.slice(100)};
+  if(resource==='issues?state=open&per_page=100&page=1')return [];
+  if(resource==='issues'&&method==='POST'){
+   const number=issue++;
+   stored.set(number,{number,body:body.body});return {number};
+  }
+  const m=resource.match(/^issues\/(\d+)$/);
+  if(m)return stored.get(Number(m[1]));
+  throw Error('unexpected '+resource);
+ };
+ const result=await triage({event:event(),request});
+ assert.equal(result.state,'MULTIPLE_INCIDENTS');
+ assert.equal(result.incidents.length,2);
+ assert.ok(calls.some(c=>c.resource===prefix+'&page=2'));
+ assert.equal(issue,7502);
+});
+test('short second job page fails closed without creating an Issue',async()=>{
+ const jobs=Array.from({length:100},(_,i)=>({
+  id:11000+i,name:'job-'+i,conclusion:'success',steps:[]}));
+ let wrote=false;
+ const request=async(resource,{method='GET'}={})=>{
+  if(resource.endsWith('/jobs?per_page=100'))return {total_count:101,jobs};
+  if(resource.endsWith('/jobs?per_page=100&page=2'))
+   return {total_count:101,jobs:[]};
+  wrote=wrote||method==='POST';throw Error('unexpected Issue access');
+ };
+ await assert.rejects(triage({event:event(),request}),/CI_INCIDENT_JOB_INVENTORY_INCOMPLETE/);
+ assert.equal(wrote,false);
+});
+test('comment acknowledgement requires an exact remote receipt readback',async()=>{
+ const hash=caseKeyFor(WORKFLOWS[0],'source-check','Regression tests',123456,1,87,2);
+ let posts=0;
+ const request=async(resource,{method='GET'}={})=>{
+  if(resource.startsWith('actions/runs/'))return {total_count:1,jobs:[failureJob]};
+  if(resource==='issues?state=open&per_page=100&page=1')
+   return [{number:6200,body:markerFor(hash),user:{login:'github-actions[bot]'}}];
+  if(resource==='issues/6200/comments?per_page=100')return [];
+  if(resource==='issues/6200/comments'&&method==='POST'){posts++;return {id:5};}
+  if(resource==='issues/comments/5')return {id:5,body:'missing receipt'};
+  throw Error('unexpected route '+resource);
+ };
+ await assert.rejects(triage({event:event(),request}),/CI_INCIDENT_ISSUE_COMMENT_READBACK/);
+ assert.equal(posts,1);
 });
