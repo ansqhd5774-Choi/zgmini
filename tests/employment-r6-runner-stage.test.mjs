@@ -410,6 +410,8 @@ test("R1 minimal diagnostic exposes bounded missing reference date without raw i
     .find(x=>x.id==="U3_UNEMPLOYMENT"),"firstMissingReferenceDate"),false);
   u3.firstMissingReferenceDate="2026-10-31";
   u3.scoreStatus="READY";
+  // The existing public-display guard rejects inconsistent READY+missing-ref
+  // before the Runner's own indicator projection is reached.
   assert.throws(()=>projectEmploymentR6RunnerResult({body,pitCoverage:{}}),
-    /RUNNER_R6_INDICATOR_STATUS_INVALID/);
+    /RUNNER_R6_PUBLIC_DISPLAY_INVALID/);
 });
