@@ -356,3 +356,19 @@ GitHub Search API total_count 직접 확인: **85건** = 본체 Issue 1/PR 6 + P
 ### 배치 E 실시간 OPEN 재조회
 
 GitHub Search API total_count 재조회 **84건** = 본체 Issue 1/PR 6 + PC 제어 Issue 76/PR 1. 기존 고정 코호트 88건과 실시간 84건은 서로 다른 분모이며, 이번 배치에서 직접 종결한 건은 0건. 직전 OPEN 85건에서 감소한 1건의 귀속·닫힘 사유를 아직 독립 판정하지 않았으므로 본 감사 성과로 집계하지 않는다.
+
+
+## 2차 독립 증거 조회 — 배치 F (2026-11-25)
+
+기준은 최초 OPEN 고정 코호트 88건. 배치 E 누적 14건에서 원본 Run 및 JSON/TXT 전문을 새로 확인한 네 항목 #1064, #1152, #1196, #1200을 더해 **독립 증거 부분검사 18/88 (20.5%)**, 증거 기반 실제 종결은 **3/88** 유지. #1213과 #1226은 아직 완전한 원본 JSON/TXT 검증 대상에 산입하지 않는다.
+
+| Issue | 독립 확인된 원본 증거 | 실제 판정 |
+|---|---|---|
+| PC #1064 | [Run 42617820467](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42617820467) `completed/failure` HEAD `1b828e20c46fad1f26d6332d77e72a68fc0f4eb9`; `results/writer-b-source-install-9a4b8f9c-eae2-4566-b4ad-7bcd9d418b64.json/.txt` 원문 대조. 원본 `WRITER_B_PREFLIGHT_STOP/WRITER_B_SHARED_INSTALL_BUSY_NOOP_STOP`, sourceSha=null, manifestSha256=null, retry `READ_ONLY_RECONCILE_NO_REEXECUTE`. 블롭 JSON `5eb1ee63b503308305dfbec36b80fe1497575be4` / TXT `3a877e84fb8f96409959fd0cc98c28f205c5fa66`. | 원래 B 설치 미실행·미완료. #1087 공통 잠금 복구와 원본 설치 성공 구별. OPEN, 원본 중복 실행 금지 |
+| PC #1152 | [Run 42705165402](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42705165402) `completed/failure` HEAD `3b53717704bc42d1afb77a065650b20668767c5e`; `results/writer-b-source-install-f96d86bd-6053-45f7-99dd-95380b6f8828.json/.txt` 원문 대조. `WRITER_B_SETUP_STOP/WRITER_B_ENTRYPOINT_CONSUMER_MISSING_STOP`, sourceSha=null, manifestSha256=null. JSON blob `a7f0f0430cc0e2e7791300c0e61c2707d02492e5` / TXT blob `06273a29ca32a4e834ce09cfc07b8a65b58d4801`. | 운영 설치 성공 근거 없음. entrypoint consumer 계약 해결 증거 필요. OPEN |
+| PC #1196 | [Run 42721800118](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42721800118) Actions `success`; `results/42721800118-1-seat-6.json/.txt` 공통 12/12 필드 일치. 블롭 JSON `0e5b0e27f94aafd065fd1822baf532ad91375e26` / TXT `ddcfd44dce3d63aeb1ac8145b400e7b6633770a3`; 결과 `STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE`, `runtimeSourceVerified=false`, `firstFail=ALLOWLISTED_OPERATION`. | Actions 성공은 Core 실행 소스 검증 성공이 아님. OPEN |
+| PC #1200 | [Run 42722462277](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42722462277) Actions `success`; `results/42722462277-1-seat-5.json/.txt` 공통 12/12 필드 일치. 블롭 JSON `b077d021546d8788d27d4d8a7f6e5956cccd18dd` / TXT `aa5fd03b7e78022e7b09b758970e771ce449226d`; 결과 `STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE`, `runtimeSourceVerified=false`, `firstFail=ALLOWLISTED_OPERATION`. | runtime 미관측, OPEN |
+| PC #1213 | [Run 42726083946](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42726083946) GitHub API 직접 조회 결과 `ZGMINI PC Job`, event issues, created `2026-11-10T00:09:14Z`, `completed/skipped`. Issue 요청 생성 `2026-11-10T00:09:10Z`과 시각 정합. | 원본 워크플로 등록은 확인됐으나 실행은 SKIPPED. 실행·JSON/TXT 성공 불가; OPEN. 2차 부분검사 완료 수에는 불산입 |
+| PC #1226 | 요청 생성 `2026-11-10T12:57:33Z`, `core-status` request `pc-60ed9565-9b87-4099-a4d2-db9235a3cfd4`. Issue 댓글 0개, 저장소 코드 검색에서도 해당 requestId 영수증 미발견. 날짜 범위 workflow API 필터가 제공 수단에서 허용되지 않아 해당 시각 모든 workflow 실행의 부재까지 독립적으로 증명하지 못함. | `EXECUTION_NOT_CORROBORATED`, 원인 미확정/OPEN. `NEVER_RUN`이나 `CONTROLLER_FAILED`로 확대 판정 금지 |
+
+특별 주의: #1213 결과는 SKIPPED, #1226은 미확인, #1196/#1200은 STATE_UNKNOWN이다. 네 유형을 동일 실패 원인으로 묶거나 임의 재실행해서는 안 된다. 현재 PC·DB·Controller·Writer·Task 변경 0건.
