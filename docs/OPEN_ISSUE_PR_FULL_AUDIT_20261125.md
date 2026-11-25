@@ -242,3 +242,18 @@
 
 - [PC 제어 PR #3541](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3541) `fix(ci): bound RUM field path groups and exclude bots before P75`는 현재 GitHub 원본 재조회에서 **CLOSED / MERGED=true**, 최종 updated `2026-11-25T09:55:13Z`. 이 PR의 병합은 **다른 진행 업무의 결과**이며 이 전수검사가 종결한 건수에 포함하지 않음.
 - 최초 OPEN 89건에서 최신 OPEN 88건이 된 이유를 이 PR 상태 변동으로 설명할 수 있음. 88건의 전수 목록 및 댓글 검사는 완료했으나 정확한 89건 모두의 원본 Actions·영수증 독립 재확인은 아직 수행하지 않았음.
+
+
+## 2차 독립 증거 조회 — 배치 A (2026-11-25)
+
+2차 부분 검사: 4/88. 각 항목의 원본 메타데이터는 검토했으나, 결과 JSON/TXT 전문과 현재 의존성까지 모두 검증한 최종 완료 항목은 0/88이다. 기존 1차 본문·댓글 88/88은 유지한다.
+
+| 원본 | 독립 조회 증거 | 판정 |
+|---|---|---|
+| PC #1026 | Actions Run 42595763736 completed/success, HEAD ccb045e5fa1caf57ffdd9fb5e8dde326b8618e39; Job 129087884022 r6-registered-b success. 원본 댓글에 CREATED/READBACK 2/2 기록. 그러나 원본 Run Artifacts API total_count=0으로 JSON/TXT 자체의 바이트·해시는 재검증하지 못함 | 종결 후보. 기존 결과쌍 보관 위치·후속 의존 확인 전 OPEN 유지; 재실행 금지 |
+| 본체 #1582 | SEC 수정 병합 후 main push Run 45580917379 success(HEAD ca459ec3e0cf96e08ddced2c02e32e17099e965f). 후속 Run 45581429123 failure(HEAD ca1413534d654e3586bd2cba9e1f3a5903a4474a), Job 139092155239 Regression tests failure | 원인 분리 전 OPEN 유지. 이전 SEC 성공으로 후속 실패를 덮지 않음 |
+| PC #3516 | 원본 controller-update 요청과 targetControllerSha 83679b013ac9a9820331d93311ec97e572b18e13 직접 확인. 설치 후검사 JSON/TXT 독립 확인 없음 | 담당자 진행 중. OPEN, 중복 B 실행 금지 |
+| 본체 PR #488 | GitHub PR 직접 조회: open/draft/unmerged, HEAD 366892d9b71b117934f0668adea3f24fc369d017. ETF Shadow 연구 승인 전 보류 명시 | W01/W03/W05 귀속 미확정. 임의 병합·종료 금지 |
+
+이번 배치의 Issue/PR 종료 0건, 운영 PC/DB/Writer/Controller/Task 변경 0건.
+후속: #1026 영수증 보관 위치 조회, #1582 최신 실패 원인 로그 검토, 나머지 84건 원본 Run/Job/Artifacts/의존성 검증. 최종 판정 완료율은 0/88로 엄격히 분리한다.
