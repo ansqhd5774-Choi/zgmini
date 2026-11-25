@@ -809,7 +809,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
           <button type="button" className="cnn-period-button" aria-pressed={minuteInterval===null} onClick={()=>setMinuteInterval(null)}>확인 이력</button>
           {CNN_INTRADAY_MINUTES.map(minutes=><button type="button" key={minutes} className="cnn-period-button" data-cnn-minute={minutes} aria-pressed={minuteInterval===minutes} onClick={()=>setMinuteInterval(minutes)}>{minutes}분</button>)}
         </div>}
-        {archiveDelayedPeriod===selectedPeriod&&<small role="status">이력 갱신 지연</small>}
+        <small role="status" style={{display:"block",height:18,lineHeight:"18px",flexShrink:0,whiteSpace:"nowrap"}}>{archiveDelayedPeriod===selectedPeriod?"이력 갱신 지연":null}</small>
         <div style={{flex:1,minHeight:0,width:"100%"}} data-cnn-intraday-mode={minuteMode?minuteInterval:"checks"} data-cnn-bucket-count={minuteHistory?.buckets.length}>
         <MarketFearGreedChart
         showExtrema
