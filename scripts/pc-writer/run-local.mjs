@@ -60,9 +60,9 @@ if(process.argv.includes('--cnn-minute')){
  const core=localDatabase(file);
  const receipt={at:new Date().toISOString(),source,lane:'cnn-minute',providerCalls:0};
  try{
-  const remote=client(config,()=>credential(root),{onDiagnostic:diagnostic=>appendD1Diagnostic(base,{runAt:receipt.at,source},diagnostic)});
+  const minuteRemote=client(config,()=>credential(root),{onDiagnostic:diagnostic=>appendD1Diagnostic(base,{runAt:receipt.at,source},diagnostic)});
   const {publishCnnMinute}=await import('./cnn-observed-archive-publication-r1.mjs');
-  Object.assign(receipt,await publishCnnMinute(core,remote,config.core));
+  Object.assign(receipt,await publishCnnMinute(core,minuteRemote,config.core));
   if(receipt.status!=='VERIFIED')process.exitCode=1;
  }catch(error){
   receipt.status='FAILED';
