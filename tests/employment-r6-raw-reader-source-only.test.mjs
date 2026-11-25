@@ -6,7 +6,7 @@ import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {DatabaseSync} from 'node:sqlite';
 import {EMPLOYMENT_R6_TABLES} from '../lib/market-score/employment-r6-contract.mjs';
-import {readAndAggregateR6RawSourceOnly as read} from '../lib/market-score/employment-r6-raw-reader-source-only.mjs';
+import {readAndAggregateR6RawSourceOnly as read,assertR6DescriptorPlatformSupported} from '../lib/market-score/employment-r6-raw-reader-source-only.mjs';
 const digest=s=>createHash('sha256').update(s).digest('hex');
 function fixture({body='{"value":7}',tamper=false,chunkGap=false,invalidRun=false}={}){
  const dir=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-r6-raw-source-only-'));
@@ -129,4 +129,10 @@ test('unsupported platforms fail closed before resolving or opening a database',
   dbPath:'C:/unapproved/core.sqlite',approvedDbRealpath:'C:/unapproved/core.sqlite',
   asOfDate:'2026-11-25',beforeReadOnlyOpen:()=>{throw Error('SHOULD_NOT_OPEN');},
  }),/R6_READER_DESCRIPTOR_PLATFORM_UNSUPPORTED/);
+});
+
+test('platform security gate rejects Windows and macOS on every CI host',()=>{
+ for(const platform of ['win32','darwin','freebsd','aix','unknown'])
+  assert.throws(()=>assertR6DescriptorPlatformSupported(platform),/R6_READER_DESCRIPTOR_PLATFORM_UNSUPPORTED/);
+ assert.doesNotThrow(()=>assertR6DescriptorPlatformSupported('linux'));
 });
