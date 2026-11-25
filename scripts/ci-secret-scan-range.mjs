@@ -18,7 +18,16 @@ export function chooseSecretRange(eventName,event,sha){
   }else if(eventName==='pull_request'){
     before=event?.pull_request?.base?.sha;
     after=event?.pull_request?.head?.sha;
-    need(SHA.test(before)&&SHA.test(after)&&after===sha,'SECRET_PR_REFS_INVALID');
+    if(!(SHA.test(before)&&SHA.test(after)&&after===sha)){
+      console.error('SECRET_PR_REFS_DIAGNOSTIC '+JSON.stringify({
+        baseValid:typeof before==='string'&&SHA.test(before),
+        headValid:typeof after==='string'&&SHA.test(after),
+        expectedHeadMatchesEvent:after===sha,
+        eventHeadPresent:typeof after==='string',
+        eventBasePresent:typeof before==='string'
+      }));
+      throw Error('SECRET_PR_REFS_INVALID');
+    }
     need(event?.pull_request?.head?.repo?.full_name===event?.repository?.full_name,
       'SECRET_PR_UNTRUSTED_FORK');
   }else if(eventName!=='workflow_dispatch')throw Error('SECRET_EVENT_UNSUPPORTED');
