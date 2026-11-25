@@ -325,3 +325,20 @@ GitHub Search total_count 재조회: **86건 = 본체 Issue 1, PR 6 / PC Issue 7
 ### 배치 D 후 실시간 OPEN 재조회
 
 GitHub Search API total_count 직접 확인: **85건** = 본체 Issue 1/PR 6 + PC 제어 Issue 76/PR 2. 직전 배치 C 86건에서 이번 감사 직접 종결한 PC Issue #1000 1건을 제외한 구성 변화 없음. 고정 최초 감사 88건에서 직접 완료 종결 누적 3건(#1026/#939/#1000), 타 업무 PR 병합 및 신규 PR 유입은 별도 기록한다.
+
+
+## 2차 독립 증거 조회 — 배치 E (2026-11-25)
+
+| 항목 | 확인한 원본 증거 | 판정 |
+|---|---|---|
+| PC #964 | 원본 [Run 42545733840](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42545733840) `completed/success`, `results/42545733840-1-seat-1.json/.txt` 본문 직접 조회, 상위 12/12 필드 일치. `PASS/RELEASE_CALENDAR_SOURCE_INVENTORY_READONLY`. 그러나 `runtimeSourceVerified=false`, `CHECKPOINT_AND_SOURCE_INVENTORY_NOT_LIVE_PROCESS`, EarningsAPI 관측 `STATE_UNKNOWN/COLLECTION_EVENTS_PARTIAL_OR_INVALID` | 정적/체크포인트 재고 조사 성공. 실제 Core 프로세스·일별 GET 정책 증거 불충분, OPEN 보존 |
+| PC #976 | 원본 [Run 42562925788](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42562925788) `completed/success`, `results/42562925788-1-seat-4.json/.txt` 본문 직접 조회, 상위 12/12 필드 일치. `PASS/RELEASE_CALENDAR_SOURCE_INVENTORY_READONLY`. 그러나 `runtimeSourceVerified=false`, `CHECKPOINT_AND_SOURCE_INVENTORY_NOT_LIVE_PROCESS`, EarningsAPI 관측 `STATE_UNKNOWN/COLLECTION_EVENTS_PARTIAL_OR_INVALID` | 2027 Census 관련 운영 source·실제 GET/정책 충족까지 증명되지 않음, OPEN 보존 |
+| PC #1032 | 요청 ID `662f48fa-3801-43a8-b6b1-ea100ce813c0`, 기존 댓글에 원본 Run 42597285824 `PARTIAL/R6_B_PARTIAL_PUBLISH_VERIFIED`; 이번 배치에서 원본 영수증 전문은 미재검증 | 성공으로 소급 불가, OPEN 보존 |
+| PC #1169 | 요청 ID `a4e1dc0d-f7ef-4ff8-80df-9ce56ad3d796`, 제목 불일치 접수 경고 이후 Run 42710641027 `PARTIAL/R6_B_PARTIAL_PUBLISH_VERIFIED` 댓글 | 별도 정확 요청/후속 결과 증거 필요, OPEN 보존 |
+| PC #1064 | Writer B Run 42617820467 `WRITER_B_PREFLIGHT_STOP/WRITER_B_SHARED_INSTALL_BUSY_NOOP_STOP`, 후속 #1087 잠금 복구 기록과 원본의 실제 설치 성공은 다름 | 구 승인명세 재사용·원본 재실행 금지, OPEN 보존 |
+| PC #1152 | Writer B Run 42705165402 `WRITER_B_SETUP_STOP/WRITER_B_ENTRYPOINT_CONSUMER_MISSING_STOP`, 결과쌍 2/2 기록만 확인 | 원본 설치 성공 미입증, OPEN 보존 |
+| PC #1226 | 원본 `core-status` 요청, 댓글 0개 | 원본 실행 식별·결과쌍 미확인, OPEN 보존 |
+
+배치 E에서는 #964/#976 두 건에서 원본 Run 메타데이터 및 JSON/TXT 전문을 추가 독립 대조했다. 고정 코호트 88건 중 이전 부분검사 10건과 중복되지 않으므로 **2차 원본 증거 부분검사 누적 12/88건 (13.6%)**. 최종 증거기반 종결 누적 **3/88건** (#1026,#939,#1000), 이번 신규 종결 0건. 나머지 5건은 기존 본문·댓글 결과만 재확인했으므로 독립검사 완료 항목으로 세지 않는다.
+
+후속 목표: #1032/#1169의 `PARTIAL` 원본 JSON/TXT 고정 결과 직접 조회, #1064/#1152 Writer B 실패의 현재 source/명세 대조, #1226 실행 미등록 여부 확인. 운영 PC/Writer/Controller/DB 변경 없음.
