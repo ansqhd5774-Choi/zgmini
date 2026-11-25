@@ -113,6 +113,25 @@ try{
     assert.equal(overlap,false,'Theme description does not overlap the theme count');
    }
    if(route==='/about/'){
+    // A decorative image overlaps these text regions. Keep the effective
+    // foreground/background deterministic instead of claiming axe incomplete
+    // is equivalent to a verified contrast pass.
+    for(const [name,selector] of [
+     ['breadcrumb','main header > span'],
+     ['greeting','main section[aria-labelledby="about-headline"] p'],
+     ['headline','#about-headline']
+    ]){
+     const element=page.locator(selector);
+     assert.equal(await element.count(),1,'About '+name+' exists once');
+     const colors=await element.evaluate(el=>{
+      const s=getComputedStyle(el);
+      return {text:s.color,background:s.backgroundColor};
+     });
+     assert.equal(colors.background,'rgb(16, 23, 28)',
+      'About '+name+' must use an opaque page-matching background at '+width+'px');
+     assert.ok(contrastRatioCss(colors.text,colors.background)>=4.5,
+      'About '+name+' contrast below 4.5:1 at '+width+'px');
+    }
     const dashboard=page.locator('main footer a[href="/"]');
     assert.equal(await dashboard.count(),1,'About dashboard action exists once');
     await page.mouse.move(0,0);
