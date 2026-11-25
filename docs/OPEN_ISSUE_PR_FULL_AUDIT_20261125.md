@@ -1241,3 +1241,27 @@ GitHub Search API 실제 재조회: 본체 Issue **1** / PR **6**, PC 제어 Iss
 - PC #1969/#2059: 과거 out-of-band B `BLOCKED` 결과의 GitHub 파일·승인경로는 이미 추적했지만 **인증 Windows 원본 실행 세션/ledger** 증빙 미확보 상태 그대로, 증거를 만들어 내거나 재실행하지 않음.
 - 최신 GitHub Search OPEN: 본체 Issue 1/PR 6, PC 제어 Issue 54/PR 5 → **전체 66(이슈 55, PR 11)**. 이번 감사 직접 종결 0/누적 직접 종결 10, 운영 PC·Controller·Writer·DB/D1·Task·Provider·Actions 재실행·신규 PR/승인 변경 0.
 - 다음 핵심은 감사 등록부 검사기를 12개 테스트로 유지하며, 원담당의 W04 안전 이관/정규 HEAD CI와 허용된 운영 Windows 원본 레코드의 신원 증명을 확보할 때에만 **최종 잔여 4건**을 판정하는 것이다.
+
+
+## 배치 AR — W04 BLS fetch injection 원본 실증 및 Windows 외부 증거 접근 상태 검증 (2026-11-25 KST)
+
+**고정 88건 원본 독립증거검증 84/88 (95.5%) 유지**, 미검증 4건(#1031/#1266/#1969/#2059). 원본 검증 완료를 위해 실제로 필요한 추가 증거와 현재 연결된 실행 환경에서 수집할 수 없는 증거를 구분한다.
+
+### 본체 Draft #1031 — 원담당 소스 추적의 새로운 실행 연결 증거를 해당 PR에 직접 기록
+
+- [PR #1031](https://github.com/ansqhd5774-Choi/zgmini/pull/1031): `OPEN/Draft/dirty`, 정확 HEAD `80a6a462158c7ee44dd0cf8d0527ad3d093e9354`, 해당 SHA Actions 0/check-runs 0.
+- 새로운 [원본 추적 댓글 #7162526241](https://github.com/ansqhd5774-Choi/zgmini/pull/1031#issuecomment-7162526241)을 **기존 원담당 PR에 실제 등록**: `codex/employment-1y-reader-r1`의 `collect-local.mjs` → `globalThis.fetch` QuotaLedger wrapper → `employment-r6-collector.mjs` providerFactory → `employment-r6-provider.mjs` BLS POST까지의 **구체적 함수·줄 번호·Git blob SHA**를 연결했다.
+- `collect-local.mjs`는 `employmentR6AutoCollection`을 명시 활성화한 경우에만 wrapper가 주입된 R6 경로를 실행. 그 Provider의 POST body에는 `registrationkey`가 직접 들어가지 않지만 **다른 계층의 등록키 주입·실PC 실제 호출 여부는 원본 runtime 증거 없이는 불명**. owner quota ledger는 BLS 등록 500/day 정책을 사용하면서 무등록 물리 25/24h shared journal 보호가 별도로 없어 **잠재적 안전 간극**이 성립한다.
+- 해결 조건으로 owner에게 네트워크 0 테스트의 disabled 경로·등록 없는 POST 검출·R4+R6 shared physical cap·동시성/크래시·pre-network fail-close·registered 경로 보존을 분명히 전달. 구 15파일 PR의 바로 병합·재실행은 하지 않았다.
+
+### 본체 Draft #1266 — 현행 차단 조건 변화 없음
+
+- [PR #1266](https://github.com/ansqhd5774-Choi/zgmini/pull/1266): `OPEN/Draft/clean`, 정확 HEAD `0193056bdb47bcf6c911f17623b6c302c8199c4c`, 해당 SHA Actions 0/check-runs 0. 현재 W04 owner PIT0408/PIT0605 보호와 구 집계 구현의 안전 이관·정규 CI/승인 미완료. clean이 곧 GO는 아니다.
+
+### PC #1969/#2059 — 원격 Windows 원본 접근 가능성 실측
+
+- [PC #1969](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1969)와 [PC #2059](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2059)는 현재도 모두 GitHub **CLOSED**, 역사적 원본은 각각 `BLOCKED/BUNDLE_B_APPROVAL_CONTRACT_INVALID`, `BLOCKED/APPROVAL_MANIFEST_READ_FAILED`.
+- 이 회차 연결된 원격 디바이스 상태 조회에서 **등록된 운영용으로 보이는 PC는 Offline**. 따라서 승인된 운영 Windows의 원본 request ledger, session identity, 설치된 수신기 SHA와 원본 실행 단계에 대한 **실제 읽기 작업을 수행할 수 없음**. PC device ID·인증정보·보호 E: 파일은 공개 GitHub 원장에 기재하지 않는다. GitHub에서 이미 읽은 결과 JSON/TXT의 작성자만으로 Windows 세션 본인확인을 추정하지 않는다.
+- 인터넷으로 이용 가능한 GitHub out-of-band reporter source/결과 영수증과 로컬 승인 세션 추적은 서로 다른 증거다. PC가 온라인으로 연결되거나 원담당이 **이미 존재하는 허용된 비민감 상태 readback**을 제공한 경우에만 직접 검증을 계속한다. 과거 요청 재실행·새 B 승인·원장 초기화·운영자 인증 우회 없음.
+
+**성과 및 경계:** 신규 직접 종결 0, 감사 담당 누적 직접 종결 10. 이번 실제 원격 작업은 기존 본체 Draft #1031에 증거 댓글 1건 및 이 감사 문서 기록이며, 운영 PC/Controller/Writer/SQLite/D1/Task/Provider/GitHub Actions·새 PR/승인 변경 0건. **84/88(95.5%) 유지**, 정확 미검증 4건. 다음에는 #1031 원담당의 안전 guard 단위 소스/CI 변화, #1266 최신 PIT 보존형 이관 증거, #1969/#2059 승인된 Windows 원본 읽기 가능 여부를 각각 재확인한다. 상태가 변하지 않으면 같은 근거로 진척도를 허위 상향하지 않는다.
