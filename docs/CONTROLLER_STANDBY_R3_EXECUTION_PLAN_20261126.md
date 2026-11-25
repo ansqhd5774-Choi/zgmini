@@ -159,3 +159,31 @@ R2에서 확인한 설치 SHA·Runner online은 당시 읽기 증거로만 사�
 - **운영 보호:** `main` 미병합, Watchdog 또는 Controller 운영 파일 수정 0, 기존 6 Runner/Core/DB/Writer/D1/예약 변경 0. 새로운 공통 차단 Gate·서버·Runner·예약 생성 없음.
 
 **다음 필수 실행 하나:** 최신 CI #45715789661의 정확한 Job 결과를 회수하여 결함 여부를 판정한다. 정상이라면 실제 Windows 격리 IPC 검증과 변경 대상의 설치 preimage 확정으로 바로 진행한다.
+
+## 9. 신규 Standby 실행물 분리·운영 적용 인계 (2026-11-26)
+
+현재 구현 [PR #3738](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3738)의 소스 파일은 서로 다른 **두 기존 정규 설치 계열**에 걸쳐 있다. 단일 PR·단일 파일 복사로 운영 적용하지 않는다.
+
+| 운영 영향 | 설치 대상 | 기존 정규 적용 책임 | 의존 |
+|---|---|---|---|
+| Controller Active 실행·새 job 시작 소유권 검증 | `controller/common.mjs`, `controller/engine.mjs`, `controller/entry.mjs`, `controller/supervisor.mjs`, `controller/standby.mjs` 및 정확한 `host.json` manifest | Controller 독립 B 유지보수기 및 기존 Controller 승인 원장 | 먼저 설치. 기존 Watchdog의 Standby 활성화는 이때까지 OFF |
+| Watchdog의 유일 승격 경로·Standby 자식 기동 | `tools/runner-watchdog.mjs` → `E:/ZGmini/automation/pc-watchdog/runner-watchdog.mjs`, 승인된 `INSTALL.json` | 기존 별도 `watchdog-b/upgrade.mjs` 계열 정규 단회 B 및 Guardian 자연 재기동 경로 | Controller 새 파일의 실제 설치·6좌석 운영 readback 이후 |
+| 소스 검증 및 결과 공개 | `tests/controller-standby.test.mjs`, `tests/controller-standby-windows-isolation.test.mjs`, `.github/workflows/controller-maintenance-source-tests.yml`, `tools/automation-status.mjs` | GitHub CI·기존 허용 진단 | Controller/Watchdog 운영 설치 파일과 혼동하지 않음 |
+
+### 실제 확인·불확실성
+
+- Controller B는 기존 승인 source/target SHA·파일별 SHA256·백업·CAS·동일 승인 operation/6좌석·독립 후검사 계약을 따름. 원본 `main`과 운영 실제 SHA는 다를 수 있음.
+- Watchdog B 과거 고정 구현의 `NEXT_TARGET=a2ec241d98a2ca93508443deb5b4688ecbccb905`와 `NEXT_SOURCE_SHA=3f99ea3357c6731cc9000bde1273db915cb07ba5fa480718194deb6330c29072`는 **이번 Standby 변경 승인 해시가 아님**. [#1393](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1393)는 역사적 STAGED이고, [#1395](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1395)는 후속 새 Watchdog 프로세스의 당시 인증 증거로만 재사용. 현재 설치 SHA·계정·Startup 부팅 상태는 적용 전 재조회.
+- 정확한 새로운 Watchdog 설치 파일(코드+manifest) 범위와 **현재 설치 preimage**를 확인해 기존 정규 B 경로가 수용 가능한지 판단. 이전 고정 해시를 변경 없이 재사용하거나 `INSTALL.json` 설정을 수작업으로 활성화하지 않음.
+- 실제 새 Standby 활성화 시 `ACTIVE 1 + READY 1`, Standby Runner spawn 0, Watchdog 독립 복구 경합 0, source SHA·nonce/boot·원장·6좌석 readback을 분리해 확인.
+- Rollback은 정확한 검증된 백업·원본 CAS·승인된 복구 순서를 따름. 활성화된 Watchdog과 이전 Controller 버전의 불일치가 생기지 않도록 Watchdog 인계가 안전하게 비활성화된 증거를 우선 확보. 다른 공유 설치와 실제 충돌할 때만 #68 자원별 lease·정규 적용 조정 사용.
+- **실제 Runtime 한계:** 동일 PC의 Wrapper `cmd.exe` PID 종료만으로 Runner.Listener/Worker 종료가 증명되지 않으므로 새 코드에는 WMI 읽기 전용 독립 확인을 추가했음. 격리 테스트 결과를 운영 적용 증거라고 하지 않음.
+
+### 운영 적용 전 직접 필요한 증거만
+
+1. 최신 PR HEAD의 정확한 Windows source/경합 CI 결과 및 실패 코드
+2. 현재 운영 Controller 설치 SHA·Watchdog 설치 원본 SHA·설치 계정/경로·이전 백업 및 공유 B lease
+3. 실제 변경 파일별 승인 manifest와 기존 정규 B 실행 계약의 지원 여부
+4. 독립적으로 승인된 제한적 실제 전환 1회 및 기존 허용 읽기 작업 JSON/TXT 원장 readback
+
+과거 #3409 설치·복구나 #1393 Watchdog 스테이징을 재실행하지 않는다. 새 인프라·상주 모니터·예약·전역 Gate를 추가하지 않는다.
