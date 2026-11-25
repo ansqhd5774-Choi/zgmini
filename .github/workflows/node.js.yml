@@ -9,7 +9,7 @@ on:
 
 permissions:
   contents: read
-  actions: read # historical completed Actions job metadata only
+  actions: read # historical completed CI metadata and prior bundle artifacts only
 
 concurrency:
   group: node-ci-${{ github.workflow }}-${{ github.ref }}
