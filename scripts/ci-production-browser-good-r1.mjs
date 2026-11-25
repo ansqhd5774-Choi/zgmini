@@ -63,6 +63,8 @@ export function classifyProductionPage(sample){
   pageErrors:sample.pageErrors??[],error:sample.error??null,
   mobileInteraction:sample.mobileInteraction??null,
   mobileEventTiming:sample.mobileEventTiming??null,
+  // Presence only; never expose raw response policy, and never infer delivery.
+  rumCsp:sample.rumCsp??null,
   rumBeacon:{scope:'DOM_SCRIPT_AND_BLOCKED_REQUEST_MARKERS_ONLY',
    domScriptPresent:sample.rumDomScriptPresent,
    blockedScriptRequests:sample.blockedCfRumScriptRequests,
@@ -206,11 +208,20 @@ export async function runProductionLab({chromium,origin=PROD_ORIGIN,delayMs=1600
      });
      let documentStatus=null,mainFound=false,raw=null,navigationError=null;
      let rumDomScriptPresent=null,mobileInteraction=null,mobileEventTiming=null;
+     let rumCsp=null;
      try{
       const response=await page.goto(PROD_ORIGIN+route,{
        waitUntil:'domcontentloaded',timeout:45000
       });
       documentStatus=response?.status()??null;
+      // Inspect only response header *presence*. No beacon loads or writes.
+      const responseHeaders=response?.headers()??{};
+      rumCsp={
+       scope:'PRODUCTION_DOCUMENT_CSP_MARKERS_READONLY',
+       enforcedHeaderPresent:Object.hasOwn(responseHeaders,'content-security-policy'),
+       reportOnlyHeaderPresent:Object.hasOwn(responseHeaders,'content-security-policy-report-only'),
+       enforcedMetaPresent:null
+      };
       if(documentStatus!==200)throw Error('HTTP_'+documentStatus);
       await page.locator('main').first().waitFor({
        state:'attached',timeout:15000
@@ -229,12 +240,16 @@ export async function runProductionLab({chromium,origin=PROD_ORIGIN,delayMs=1600
           /^\/beacon\.min\.js(?:\/|$)/.test(target.pathname);
         }catch{return false;}
        });
-       return {rumScriptPresent,responseEndMs:nav?.responseEnd,
+       const rumCspMetaPresent=Array.from(
+        document.querySelectorAll('meta[http-equiv]')
+       ).some(tag=>tag.httpEquiv.toLowerCase()==='content-security-policy');
+       return {rumScriptPresent,rumCspMetaPresent,responseEndMs:nav?.responseEnd,
         domContentLoadedMs:nav?.domContentLoadedEventEnd,
         fcpMs:fcp?.startTime,lcpMs:r.lcpMs,
         cls:r.cls,longTaskTotalMs:r.longTaskTotalMs};
       });
       rumDomScriptPresent=raw.rumScriptPresent;
+      if(rumCsp)rumCsp.enforcedMetaPresent=raw.rumCspMetaPresent;
       if(route==='/economic-indicators/'&&viewport.width===390){
        mobileInteraction=await probeEconomicMobileInteraction(page);
        // Allow the buffered Event Timing observer to receive the final tap.
@@ -259,7 +274,7 @@ export async function runProductionLab({chromium,origin=PROD_ORIGIN,delayMs=1600
       documentStatus,mainFound,blockedWriteRequests,
       blockedThirdPartyRequests,pageErrors,
       blockedCfRumScriptRequests,rumDomScriptPresent,mobileInteraction,
-      mobileEventTiming,
+      mobileEventTiming,rumCsp,
       error:navigationError,metrics:normalizeRawMetrics(raw??{})});
     }finally{await context.close();}
    }
@@ -286,6 +301,7 @@ export async function main(){
    rumMarkerState:x.rumBeacon.markerState,
    rumDomScriptPresent:x.rumBeacon.domScriptPresent,
    blockedCfRumScriptRequests:x.rumBeacon.blockedScriptRequests,
+   ...(x.rumCsp?{rumCsp:x.rumCsp}:{}),
    ...(x.mobileInteraction?{mobileInteraction:x.mobileInteraction}:{}),
    ...(x.mobileEventTiming?{mobileEventTiming:x.mobileEventTiming}:{})
   })),mergeBlocking:false}));
