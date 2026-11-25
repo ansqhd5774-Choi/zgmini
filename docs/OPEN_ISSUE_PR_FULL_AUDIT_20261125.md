@@ -835,3 +835,7 @@ GitHub Search API 직접 재조회: `zgmini` Issue **1** / PR **6**, `zgmini-pc-
 - W04 담당자의 #3516 독립 Windows C 복구, History/SQLite 실측 작업은 별개 보호. 새 Job·Workflow 토글·Issue 재라벨·운영 작업 발행 없음.
 
 이번 감사 직접 종결 0, 기존 직접 종결 누적 **10건**. PC·Controller·Writer·SQLite/D1·Task·승인·PR 병합·신규 실행 **0건 변경**. 다음 기준 **69/88(78.4%)**, 미검증 **19건**. 다음 단계는 #3522/#3524 외의 고정 원본 중 최초 독립 실물 검증 및 W01/W03/W05 최종 귀속·종결 가능성 판정.
+
+### 배치 AB 종료 시점 최신 OPEN 재조회
+
+GitHub Search API 직접 재조회: `zgmini` Issue 1/PR 6, `zgmini-pc-control` Issue 54/PR 2, **총 OPEN 63건(이슈 55, PR 8)**. 배치 AA 66건 대비 PC Issue 3건 감소는 이 감사 회차의 직접 종결이 아니며 별도 동시 작업/상태 변동이다. 최초 고정 코호트 분모 88과 혼동하지 않는다.
