@@ -11,7 +11,7 @@
 ## 1. 현행 판정
 
 - 목표: CNN만 60초 기준 확인, 원본 보존, 표시값 변화 감지, 1·5·10·30분 선형 집계, 저장 전용 API 및 무새로고침 화면 반영.
-- 2026-11-26 현재: **1단계 진행 중, 5단계 독립 UI 소스 구현 진행 중**. 기존 #1521 복구 완료와 최신 main 소스 경로는 확정; 현재 운영 실행 source/실제 요청 간격과 기존 1분 실행 연결 여부는 미확정.
+- 2026-11-26 현재: **1단계 진행 중, 4단계 집계 소스 구현 및 5단계 독립 UI CI 진행 중**. 기존 #1521 복구 완료와 최신 main 소스 경로는 확정; 현재 운영 실행 source/실제 요청 간격과 기존 1분 실행 연결 여부는 미확정.
 - 계획서 및 원장 생성은 문서 작업으로만 집계한다. W06 운영 완료율은 미산정(실행 증거 부족), 기존 복구 완료 증거는 유지한다.
 - #1521은 2026-11-24 최종 운영 검증 후 CLOSED. 기존 복구는 완료이며 신규 W06 고도화와 구분한다.
 - 신규 60초 수집에는 현 소스의 15분 간격/5분 quota 및 5분 Core 실행 구조가 맞지 않는다. 실제 운영의 적용 값과 공급자 허용 범위는 미확정. 전체 업무 차단 아님; 독립 UI 구현 계속.
@@ -23,9 +23,9 @@
 | 1. 실제 경로 확정 | 진행 중 | #1521 CLOSED 및 종단 PASS 승계, 최신 main 소스 경로·15분/5분 제약 확인; 운영 설치본·실제 HTTP 요청 간격 및 기존 실행 연결 확인 필요 |
 | 2. CNN만 1분 확인 | 미착수 | 60초 자연 HTTP 요청 간격 미입증; 다른 지표 주기 보존 필요 |
 | 3. 원본 저장·변동 감지 | 미착수 | 기존 저장/검사 증거 재사용 가능; 신규 표시값 중복·복귀·정정 처리 미검증 |
-| 4. 1·5·10·30분 집계 | 미착수 | 네 구간·결측·진행 구간·시간대·선형 차트 검증 필요 |
+| 4. 1·5·10·30분 집계 | 진행 중 | 원본 전용 순수 집계/변동 표시 모듈과 5개 회귀시험 추가; UI 연결 및 실제 CI 미완료 |
 | 5. D1·API·자동 화면 갱신 | 진행 중 | 기존 D1/API 1D·1W PASS 승계; 관측 API 60초 재조회·실패 보존 소스 및 브라우저 회귀 추가, CI/운영 검증 미완료 |
-| 6. 회귀시험·운영 적용 | 미착수 | 신규 UI 브라우저 회귀 코드 추가; 실제 CI·운영 설치·배포 미실시 |
+| 6. 회귀시험·운영 적용 | 진행 중 | PR #1644 CI 실제 실행, 기존 HEAD Node Lint 실패 원인 수정; 새 HEAD CI 실행 중. 운영 설치/배포 미실시 |
 | 7. 실관측 종단 확인·종결 | 미착수 | 신규 실제 변동 전파 및 네 간격·PC/모바일·기존 여섯 기간 검증 필요 |
 
 상태는 미착수 / 진행 중 / 완료 / 해당 범위 차단으로 관리한다. 단계 개수로 운영 완료율을 환산하지 않는다.
@@ -53,7 +53,7 @@
 | CNN 요청 | 실제 checkedAt/HTTP 요청 간격, 실패로 건너뛴 주기, 공급자 정책, 다른 지표 주기 유지 | 미입증 |
 | 원본 보존 | observedAt·원본 정밀도·정정/충돌·늦은 관측 SQLite readback | 기존 일부 증거; 신규 동작 미검증 |
 | 변동점 | 동일 표시값 생략·상승/하락·복귀·원본 불변 | 미입증 |
-| 네 분 간격 | 원본 기반 대표값·실제 시각·결측·미완료 구간·NY/DST | 미입증 |
+| 네 분 간격 | 원본 기반 대표값·실제 시각·결측·미완료 구간·NY/DST | 집계 모듈/테스트 구현, UI·CI 미완료 |
 | 게시·API | 로컬과 정확 D1 키, 기간/간격 값·시각·버전 readback | 기존 1D/1W PASS; 신규 기능 미입증 |
 | 자동 반영 | 아카이브 주기 조회·경합 방지·공급자 직접 호출 없음·실화면 | 소스 구현 및 회귀 코드 추가, 실행 검증 미완료 |
 | PC·모바일 | 1440/390px, 네 간격 선택, hover/touch, 마지막점과 값·시각 | 미입증 |
@@ -68,7 +68,7 @@
 | 2026-11-24 | #1521 상태·최신 댓글 조회, 진행 원장 생성 | 문서 작업 완료; 단계 1 진행 중 | 본 원장 및 위 증거 링크 |
 
 2026-11-24 문서 작업 시 신규 기능 변경 없음. 2026-11-26 전용 브랜치에 최신 main 통합 및 UI 소스/회귀 코드 변경. main 기능 병합·운영 설치·예약·DB/D1 쓰기·배포 없음.
-진행 중 신규 PC requestId: 없음. 기존 타 담당자의 운영 요청을 중복 발행하지 않는다.
+2026-11-26 신규 PC A급 #3741 및 #3742 실행 및 JSON/TXT 회수 완료. 진행 중 신규 PC requestId: 없음. 동일 읽기 반복 및 타 담당자 요청 중복 금지.
 
 ## 6. 다음 직접 실행
 
@@ -103,3 +103,13 @@
 - 운영 #3300의 11/24 source pin `e4b768530335182f422ebd51d163a6f5b754361c`는 본체 GitHub 파일 ref 조회에서 404. 이는 과거 복구 실패가 아니라 운영 설치본 내용/최신 상태의 별도 미확인. 실제 1분 요청의 현행 허용 근거는 config의 공식 한도 미확인 기록에 비추어 추가 확인 필요. 기존 조회 `provider-activity-runtime-readonly`의 집계는 5분 미만 간격을 제외하므로 60초 실증으로 사용하지 않는다. 불필요한 PC 재실행·예약·추가 호출은 하지 않았다.
 
 **다음 실행:** 기존 UI 회귀 CI exact HEAD 확인과 실패 수정, 동시에 현재 설치본/등록 Task의 실행 연결 및 실제 CNN 확인 기록을 기존 승인 조회/영수증으로 대조한다. 60초 실행 연결이 없으면 최소 변경 하나를 특정하고 공급자 호출 정책과 확인 기록/원본 보존을 함께 구현한다. 새 예약·서비스·다른 지표의 주기 변경은 임의 수행하지 않는다.
+
+## 9. 2026-11-26 후속 실행 — 장중 이력 재정체 및 개발 진행
+
+- 신규 PC A [#3741](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3741), [Run 45714445280](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45714445280), [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/45714445280-1-seat-6.json) / [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/45714445280-1-seat-6.txt) 2/2, 07:35 KST PASS/FEAR_GREED_ARCHIVE_READONLY_DIAGNOSIS. PASS는 조회 성공이며 기능 정상 판정 아님. 실제 Controller 53fe24e22446d21a9fd4ee308d12b7cba7f37e25. 현재값 observedAt 2026-11-25T22:09:41Z score 15.2253164556962; original lastAt 2026-11-24T13:17:31Z, checks lastAt 2026-11-24T13:35:44.576Z. HISTORY_DIVERGENCE, Sidecar BLOCKED 및 SOURCE/SHA 범주. 글로벌 게시 VERIFIED는 CNN 정확 키의 정상 증거가 아님. #1521 당시 성공 이후 새로운 재발이며 과거 완료를 삭제하지 않음.
+- 신규 PC A [#3742](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3742), [Run 45714656794](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45714656794), [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/45714656794-1-seat-6.json) / [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/45714656794-1-seat-6.txt) 2/2, 07:36 KST PASS/CORE_READONLY_DIAGNOSIS. 실제 config.source=d8ac245003e7b8e006c2345382d5c639c6d5f18b, Core Task XML hash dd81987c7efa4b1e343af30329a580613bb920dec89c1aa7a436ef935f0bb028 유지. 두 A 모두 providerCalls/operationalWrites/d1Writes=0, 보호 전후 일치.
+- #3741 실제 archive-run.mjs SHA-256 583297b451f168a32a2a5de4b0b04c9b14449aab9a041c954a420203cf04f188은 #3300 승인 manifest after와 일치. 해당 [승인 원본 소스](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/37795e97bc90d8c43fbd7bb3b2e382184e72ea48/sidecar-b/approved/archive-run.mjs) L11/L21/L25의 APPROVED=e4b768530335182f422ebd51d163a6f5b754361c는 현 config.source와 다름. 즉 현 고정 pin 조건에서 source/config 일치 통과 불가능. 실제 최초 throw가 SOURCE_SHA_CHANGED인지 CONFIG_APPROVAL_MISMATCH인지와 현재 고정 SRC HEAD는 미입증; 보호 검사 우회 금지. 현 config.source GitHub 본체 직접 조회 404는 운영 source가 없다는 증거 아님. 단순 동일 Sidecar 재설치 금지. 현재 승인 source에 연동되는 정규 적용/복구 경로 필요(공통 실행 연결 변경은 기존 총괄 경로로 조정). 60초 실행 cadence 실증은 별도 미완료.
+- [PR #1644](https://github.com/ansqhd5774-Choi/zgmini/pull/1644) Draft, 이전 exact HEAD 7a8d761d11bf7fe73d2908e11d9a55159f98a04d: [Node #45713990992](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45713990992) Build/typecheck/architecture/Data CI/Regression/PC recovery PASS, ESLint FAIL(기존 cnn-panel.tsx 메인 이동 anchor의 next/no-html-link-for-pages). CodeQL #45713991100, Secret #45713990963 PASS. Browser #45713991044 회수 시 진행 중; 이전 HEAD 결과로 새 HEAD PASS 판정 금지.
+- [소스 커밋 16f0e96b](https://github.com/ansqhd5774-Choi/zgmini/commit/16f0e96b64fcb1aa91ee11d407704623fc228d5f): CNN 기존 CTA를 next/link로 변경(레이아웃/목적지 동일), lib/cnn-intraday-buckets-r1.mjs 및 tests/cnn-intraday-buckets-r1.test.mjs 추가. 1/5/10/30분 원본 최종 관측값 집계, NY 세션/DST, 표시 소수점 1자리, 동일값 연속 구간 축약, 복귀값 보존, 결측 null break, 미완료 구간 표시용 정보. 기존 원본/일별 이력/PC check 변경 없음. 아직 UI 연결 안 됨. 테스트 5개 작성, 실행 PASS 미확정. 정확 소스 HEAD의 신규 CI Node 45714854157, Browser 45714854009, CodeQL 45714853953, Secret 45714853987 시작 확인. 아래 원장 기록만의 후속 커밋은 그 정확 HEAD와 구분.
+
+다음 행동: 새 CI 결과 회수 및 실패 수정 → 실제 CNN 차트에 네 구간 집계와 provenance/결측 처리 연결(공유 스타일·기존 기간 보존) → Sidecar의 승인 source 연결 재발 원인을 정규 적용/복구 경로로 해소 → CNN 60초 실행 연결을 공급처/공통 quota 및 실제 운영 계약에 맞춰 구현. 기존 B 승인 대상이나 CAS를 새 변경에 재사용하지 않는다. 실제 변경은 승인 효과에 맞춘 새 정확 manifest 필요. 신규 예약·직접 운영 쓰기·main 병합 없음.
