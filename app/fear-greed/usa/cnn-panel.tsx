@@ -13,6 +13,7 @@ import {currentCnnSessionHistory,currentCnnSessionCheckedPoints} from '../../../
 import {cnnUsMultiDayTooltipDate} from '../../../lib/cnn-tooltip-calendar-date-r1.mjs';
 
 import {useStoredIndex} from '../../../components/use-stored-index';
+import {startStoredRefresh} from '../../../lib/market-score/live-refresh.mjs';
 import FactorAnalysisR2,{type FactorR2} from '../factor-analysis-r2';
 
 type HistoryPoint = {
@@ -501,19 +502,27 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
   // Stored public-score archive, never a provider fetch. The current 1D and
   // daily charts remain available until a verified archive window is published.
   const [archived, setArchived] = useState<{period: UsaPeriod; points: ObservedScorePoint[]; checkedPoints: CheckedScorePoint[]}|null>(null);
+  const [archiveDelayedPeriod,setArchiveDelayedPeriod]=useState<UsaPeriod|null>(null);
   useEffect(()=>{
-    const controller=new AbortController();
-    fetch(`/api/fear-greed/observations?period=${selectedPeriod}`,{signal:controller.signal})
-      .then(async response=>response.ok?response.json():null)
-      .then((response:unknown)=>{
-        if(controller.signal.aborted)return;
-        const data=response as {status?:string;period?:string;points?:ObservedScorePoint[];checkedPoints?:CheckedScorePoint[]} | null;
-        setArchived(data?.status==="READY"&&data?.period===selectedPeriod&&Array.isArray(data.points)
-          ? {period:selectedPeriod,points:data.points,checkedPoints:Array.isArray(data.checkedPoints)?data.checkedPoints:[]}
-          : null);
-      })
-      .catch(()=>{if(!controller.signal.aborted)setArchived(null)});
-    return ()=>controller.abort();
+    // Reuse the stored-reader scheduler: one in-flight GET, 60s cadence,
+    // visibility/focus refresh, bounded timeout, and abort on period change.
+    return startStoredRefresh(async (signal:AbortSignal)=>{
+      try{
+        const response=await fetch(`/api/fear-greed/observations?period=${selectedPeriod}`,{cache:'no-store',signal});
+        const data=(response.ok?await response.json():null) as {status?:string;period?:string;points?:ObservedScorePoint[];checkedPoints?:CheckedScorePoint[]} | null;
+        if(signal.aborted)return;
+        if(data?.status!=="READY"||data.period!==selectedPeriod||!Array.isArray(data.points)){
+          setArchiveDelayedPeriod(selectedPeriod);
+          return;
+        }
+        setArchived({period:selectedPeriod,points:data.points,checkedPoints:Array.isArray(data.checkedPoints)?data.checkedPoints:[]});
+        setArchiveDelayedPeriod(null);
+      }catch{
+        // Do not erase the last verified archive on a transient read failure.
+        // A superseded request may not change the newly selected period.
+        if(!signal.aborted)setArchiveDelayedPeriod(selectedPeriod);
+      }
+    });
   },[selectedPeriod]);
 
 
@@ -730,7 +739,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
         description: "S&P 500 · NASDAQ",
         dateLabel: "데이터 기준일",
         date: dateLabel(payload?.observedAt),
-        source: loading ? "확인 중" : status,
+        source: loading ? "확인 중" : archiveDelayedPeriod===selectedPeriod ? `${status} · 이력 갱신 지연` : status,
         rightContent: <MarketCardInsight text={marketInsight}/>,
       }}
       score={{arrowId:"usa",

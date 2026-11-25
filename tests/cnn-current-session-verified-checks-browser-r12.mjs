@@ -35,14 +35,20 @@ try{
   const page=await browser.newPage({viewport:{width,height:900},reducedMotion:'reduce',
    hasTouch:width===390,isMobile:width===390});
   let sourceAt=sourceObservedAt;
+  let archiveFailure=false,extraCheck=false;
   const requests=[],pageErrors=[];
+  await page.clock.install();
   page.on('pageerror',error=>pageErrors.push(error.message));
   await page.route('https://**',route=>route.abort());
   await page.route('**/api/**',route=>{
    const url=new URL(route.request().url());
    requests.push(url.pathname+url.search);
-   return route.fulfill({status:200,contentType:'application/json',
-    body:JSON.stringify(fixture(url.pathname,url.searchParams.get('period'),sourceAt))});
+   if(url.pathname==='/api/fear-greed/observations'&&archiveFailure)
+    return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({status:'PENDING'})});
+   const data=fixture(url.pathname,url.searchParams.get('period'),sourceAt);
+   if(url.pathname==='/api/fear-greed/observations'&&extraCheck)
+    data.checkedPoints.push({checkedAt:'2026-10-30T14:30:00.000Z',sourceObservedAt:sourceAt,score:26.2});
+   return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(data)});
   });
   await page.addInitScript(()=>sessionStorage.setItem('zgmini-about-intro-dismissed-r1','1'));
   await page.goto(base+'/fear-greed/usa/',{waitUntil:'networkidle',timeout:45000});
@@ -101,6 +107,24 @@ try{
   await chart.scrollIntoViewIfNeeded();
   await page.screenshot({path:`artifacts/cnn-current-session-checks/cnn-three-checks-${width}.png`});
   assert.deepEqual(pageErrors,[],width+'px chart should not trigger client exceptions');
+
+  // The archive reader must poll again without navigation or period changes.
+  // An unsuccessful read leaves the previous real curve intact; the next
+  // successful read advances its latest actual check and clears the delay.
+  archiveFailure=true;
+  await page.clock.fastForward(60_000);
+  await page.getByText(/이력 갱신 지연/).first().waitFor({state:'visible',timeout:12000});
+  assert.equal(await curve.getAttribute('d'),pathD,width+'px transient failure retains the last verified line');
+  archiveFailure=false;
+  extraCheck=true;
+  await page.clock.fastForward(60_000);
+  await page.waitForFunction(()=>{
+   const labels=[...document.querySelectorAll('.zg-fg-us .cnn-history-chart-hitbox .recharts-cartesian-axis-tick-value')];
+   return labels.some(label=>label.textContent?.includes('10:30'));
+  },null,{timeout:15000});
+  assert.equal(await page.getByText(/이력 갱신 지연/).count(),0);
+  assert.equal(await oneDay.getAttribute('aria-pressed'),'true');
+  extraCheck=false;
 
   // A check on another New York source session cannot be reinterpreted as a
   // newly published CNN observation or extend the current 1D chart.
