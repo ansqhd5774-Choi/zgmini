@@ -1215,3 +1215,29 @@ GitHub Search API 실제 재조회: 본체 Issue **1** / PR **6**, PC 제어 Iss
 - 이로써 남은 CI 쟁점은 테스트 파일의 추가 개발이 아니라 **정규 원담당 소스/PR 범위 승인 후 GitHub CI가 테스트를 실제 실행·통과했는지 확인**하는 것이다. 이 소스-only 감사 회차에서 임의의 새 PR/CI job은 생성하지 않았다.
 
 현재 고정 88건의 미검증 4건은 동일: #1969/#2059 인증 Windows out-of-band 원본 실행 신원 미확정, 본체 Draft #1031/#1266 정확 HEAD CI 및 현재 owner 소스 안전 이관 미완. **기검증 84/88(95.5%)**, 이번 신규 종결 0, 직접 종결 누적 10, 운영 시스템 변경 0.
+
+
+## 배치 AQ — 원본 88건 양쪽 파일 동시 변조 방지, 실제 Node 회귀 12/12 실증 (2026-11-25 KST)
+
+**고유 원본 증거검증 84/88(95.5%) 유지**, 미검증 4건(#1031/#1266/#1969/#2059). 감사의 기검증 합계를 추가 증명 없이 상향하지 않으며, 이번 목표는 과거 검사기가 **JSON 등록부와 Markdown 원장을 동시에 동일하게 바꾸면 오류를 놓치는 무결성 취약점**을 실제 수정하는 것이다.
+
+### 원본 집합 고정 취약점 및 구현
+
+- 기존 `scripts/audit/validate-open-issue-pr-cohort.mjs`는 등록부 `frozenCohort` 88행과 Markdown의 88행이 서로 일치하는지만 검증했다. **두 파일을 같은 다른 ID/종류로 동시 변경하면 서로 일치하므로 최초 88건이 바뀌는 것을 거부하지 못한다.**
+- 최초 원장 88행에서 **종류+Issue/PR 번호를 순서대로 인코딩한 독립 하드코딩 기준값** `FROZEN_COHORT_ANCHOR`를 검사기 소스에 추가. 종류 코드는 `MI`(본체 Issue), `MR`(본체 PR), `PI`(PC Issue), `PR`(PC PR). 실행 시 JSON 등록부 88행의 종류+번호 순서가 이 소스 기준값과 정확 일치해야 PASS하도록 변경. 등록부와 원장 둘 다 바꿔도 **검사기 소스까지 정규 리뷰 없이 수정하지 않는 한 차단**한다. 승인된 최초 원장 자체를 변경하지 않음.
+- 기존 테스트는 자체 만든 `1000..1087` 합성 원본 번호를 사용했으므로 새 불변식을 충족하지 않았다. 테스트가 **검사기의 immutable anchor를 읽어 fixture 88행을 생성**하도록 변경하고, 정상 pass/11개 기존 실패·중복검사 시나리오를 보존. 추가 12번째 회귀는 **원본 JSON과 Markdown 양쪽의 같은 고정 번호를 함께 변조해도 FAIL**이어야 함을 직접 검증한다.
+- 테스트 코드 초기 버전은 파일 내용 대신 경로 문자열에서 anchor를 찾는 fixture 작성 실수로 실패했으며, `fs.readFileSync(original,'utf8')`로 수정했다. 테스트 데이터 문제를 숨기거나 성공으로 간주하지 않았고 **수정된 정확 버전**으로 다시 실행함.
+
+### 원격 정확 Git blob과 Node 실행 증거
+
+- [검사기](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/issues-lifecycle-manager-20261123/scripts/audit/validate-open-issue-pr-cohort.mjs) Git blob `8d9272101c973074dd9210da666fa7f4b09bb38b`.
+- [회귀 테스트](https://github.com/ansqhd5774-Choi/zgmini/blob/codex/issues-lifecycle-manager-20261123/tests/audit-cohort-validator.test.mjs) Git blob `01f34505ea9afc002a70ccc60a317d13a58ab4ee`.
+- 원격에서 두 파일 재조회하여 실제 로컬 파일의 `git hash-object`와 **양쪽 2/2 정확 SHA 일치**. `node --check` 문법 검사 성공, `node --test tests/audit-cohort-validator.test.mjs` **실제 실행 12/12 PASS, 0 FAIL, 0 SKIP** (Node v22.16.0, 약 507ms). 시험은 네트워크·GitHub 서버·실PC가 아닌 **격리된 테스트 파일**로 원래 검사기 CLI를 서브프로세스 실행함.
+- 원본 실제 등록부의 Git blob `af6977bbaf2990954cc66bd6931c865776456c0f`은 불변, 88행을 새 기준값과 재조회 대조해 정확 88/88 일치. **84 고유 검증 / 4 pending**도 유지한다. 정규 GitHub Actions CI 실행·운영 PC 설치를 주장하지 않음.
+
+### 잔여 독립검증 및 실시간 OPEN
+
+- 본체 Draft #1031 HEAD `80a6a462158c7ee44dd0cf8d0527ad3d093e9354`: OPEN/Draft/dirty, 정확 HEAD Actions 0/check-runs 0. Draft #1266 HEAD `0193056bdb47bcf6c911f17623b6c302c8199c4c`: OPEN/Draft/clean, Actions 0/check-runs 0. 현행 W04 소스 안전 이관 승인 및 CI가 없는 상태로 원본 결론 유지.
+- PC #1969/#2059: 과거 out-of-band B `BLOCKED` 결과의 GitHub 파일·승인경로는 이미 추적했지만 **인증 Windows 원본 실행 세션/ledger** 증빙 미확보 상태 그대로, 증거를 만들어 내거나 재실행하지 않음.
+- 최신 GitHub Search OPEN: 본체 Issue 1/PR 6, PC 제어 Issue 54/PR 5 → **전체 66(이슈 55, PR 11)**. 이번 감사 직접 종결 0/누적 직접 종결 10, 운영 PC·Controller·Writer·DB/D1·Task·Provider·Actions 재실행·신규 PR/승인 변경 0.
+- 다음 핵심은 감사 등록부 검사기를 12개 테스트로 유지하며, 원담당의 W04 안전 이관/정규 HEAD CI와 허용된 운영 Windows 원본 레코드의 신원 증명을 확보할 때에만 **최종 잔여 4건**을 판정하는 것이다.
