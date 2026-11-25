@@ -169,6 +169,32 @@ test("Runner projection ignores injected source paths, raw values and unbounded 
   assert.ok(Buffer.byteLength(text)<12000);
 });
 
+test("Runner readback exposes only verified missing score-reference dates",async t=>{
+  const env=environment(t);fixture(env.core);fixture(env.candidate,{row:true});
+  const body=await stageEmploymentR6OneYear(runnerOptionsFrom(argv(env)));
+  const u3=body.indicators.find(x=>x.id==="U3_UNEMPLOYMENT");
+  const absent=body.indicators.find(x=>x.id==="U6_UNEMPLOYMENT");
+  assert.equal(u3.scoreStatus,"PARTIAL_HISTORY");
+  assert.match(u3.firstMissingReferenceDate,/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/);
+  const report=projectEmploymentR6RunnerResult({body});
+  assert.equal(report.indicators.find(x=>x.id==="U3_UNEMPLOYMENT").firstMissingReferenceDate,
+    u3.firstMissingReferenceDate);
+  assert.equal(Object.hasOwn(report.indicators.find(x=>x.id==="U6_UNEMPLOYMENT"),
+    "firstMissingReferenceDate"),false);
+  assert.doesNotMatch(JSON.stringify(report),/sourceHash|sourcePath|rawValue|geographyCode/);
+  for(const invalid of ["2026-11-31","2027-01-01","PRIVATE_SOURCE_KEY"]){
+    u3.firstMissingReferenceDate=invalid;
+    assert.throws(()=>projectEmploymentR6RunnerResult({body}),
+      /RUNNER_R6_INDICATOR_STATUS_INVALID/);
+  }
+  u3.firstMissingReferenceDate=null;
+  assert.equal(Object.hasOwn(projectEmploymentR6RunnerResult({body}).indicators.find(
+    x=>x.id==="U3_UNEMPLOYMENT"),"firstMissingReferenceDate"),false);
+  absent.firstMissingReferenceDate="2026-10-01";
+  assert.throws(()=>projectEmploymentR6RunnerResult({body}),
+    /RUNNER_R6_INDICATOR_STATUS_INVALID/);
+});
+
 test("PIT-04-02 Runner exposes only fixed History counts and an approved ambiguity HOLD",async t=>{
   const env=environment(t);fixture(env.core);fixture(env.candidate,{row:true});
   const options=runnerOptionsFrom(argv(env));

@@ -363,8 +363,19 @@ export function projectEmploymentR6RunnerResult({body=null,pitCoverage=null,pitC
         ||!CHART.has(item.chartStatus)||!SCORE.has(item.scoreStatus)){
         throw Error("RUNNER_R6_INDICATOR_STATUS_INVALID");
       }
+      // Already computed by the approved PIT score reader. Expose only the
+      // calendar date of the missing reference, never raw rows or source IDs.
+      const missing=item.firstMissingReferenceDate;
+      if(missing!==null&&missing!==undefined&&
+        (item.scoreStatus!=="PARTIAL_HISTORY"||
+         typeof missing!=="string"||!/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(missing)||
+         !Number.isFinite(Date.parse(missing+"T00:00:00Z"))||
+         new Date(missing+"T00:00:00Z").toISOString().slice(0,10)!==missing||
+         missing>body.asOfDate))throw Error("RUNNER_R6_INDICATOR_STATUS_INVALID");
       seen.add(item.id);
-      return {id:item.id,rawStatus:item.rawStatus,chartStatus:item.chartStatus,scoreStatus:item.scoreStatus};
+      return {id:item.id,rawStatus:item.rawStatus,chartStatus:item.chartStatus,
+        scoreStatus:item.scoreStatus,
+        ...(missing===null||missing===undefined?{}:{firstMissingReferenceDate:missing})};
     });
   }
   // PIT-08: expose only bounded public chart geometry from the already built
