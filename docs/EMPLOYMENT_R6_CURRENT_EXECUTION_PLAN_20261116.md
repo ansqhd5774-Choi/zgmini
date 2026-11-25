@@ -206,3 +206,10 @@ W04 원담당이 기존 권한 범위의 기능 작업을 끝까지 수행한다
 - 1·2·4단계의 유효 실제 완료 증거는 보존한다. 3·5단계 완료는 최신 자료/History 상태, 정상 자동 실행, 필요할 때만 계산·D1/API/UI를 **실제** 검증한 뒤 결정한다.
 
 **즉시 다음 작업 1건:** #3516 독립 유지보수기 **설치 source/현재 7-CAS/기존 승인 효과**를 정규 읽기 전용 증거로 확인해 exact approved recovery manifest가 구성 가능한지 판단한다. 그 외 History 조회/게시를 선행 성공으로 주장하지 않는다. **진행률 60% → 60%, 이번 변경은 실행계획·원장 정합화뿐.**
+
+### 17.4 A단계 실제 실증 갱신 — 유지보수기 소스 불일치 (2026-11-25 KST)
+<!-- W04-3516-3533-LIVE-MAINTAINER-A-17-4 -->
+- 운영 [#3533/Run #45584232896](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45584232896), `PC`/`zgmini-pc-05` 성공, 원격 JSON/TXT readback. 설치 유지보수기 `e34a20062e3ef3b77c78af0b4881c15609b36eb1`, 7-file installed integrity PASS, Receiver LISTENING, maintenance HEALTHY. 정확 소스의 복구 Receiver는 #2960만 허용하고 #3516 범위가 없음. 신규 PR #3530 소스와 **실제 installed maintainer가 불일치**한다.
+- 실제 Controller `83679b013ac9a9820331d93311ec97e572b18e13`는 목표 일치, install lock HELD/RECOVERY_REQUIRED, workflow active. 현재 자료로 Controller 재설치나 무조건 rollback을 정당화하지 않는다. #3533은 fresh 7-CAS 전체 조회가 아니라 설치 버전/lock 상태 조회이며, #3528의 과거 CAS를 최신값으로 소급 대체하지 않는다.
+- **갱신된 즉시 다음 실행:** 운영 Lease를 보존한 채 **독립 operator 경로와 기존 7-to-7 유지보수기 인계 승인 범위**를 대조하여, #3516 고정 복구를 현재 실행환경에서 허용하는 공식 방식과 원본 source/preimage/CAS 필요조건을 확인한다. B급 소스 교체는 정규 승인·백업·실제 소유 lease를 확인한 경우에만 수행한다. 현재 `approved:false` 복구 후보/일반 `main` 병합으로 복구를 실행하지 않는다.
+- #3516의 공식 복구 실행 자체가 승인·가용화될 때 fresh 7-CAS·독립 A #3528의 정확 원본 증명·원본 postcheck 이력과 함께 단회 판단한다. 원본 #3516/#3519 중복 실행·임의 CMD·lease 수동 해제 금지. **전체 단계율 60% 유지**.
