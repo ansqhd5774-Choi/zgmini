@@ -3,6 +3,20 @@ import {mkdirSync} from 'node:fs';
 import {chromium} from 'playwright';
 
 const base=process.env.CHAT_PREVIEW_URL??'http://127.0.0.1:5173';
+// Assert actual computed colors, including the interactive hover state that
+// default axe scans do not exercise. Normal-size button text requires 4.5:1.
+function contrastRatioCss(foreground,background){
+ const luminance=value=>{
+  const m=/^rgb\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)$/.exec(value);
+  assert.ok(m,'unexpected computed CSS color: '+value);
+  const rgb=[1,2,3].map(i=>Number(m[i])/255).map(v=>
+   v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4);
+  return rgb[0]*0.2126+rgb[1]*0.7152+rgb[2]*0.0722;
+ };
+ const a=luminance(foreground),b=luminance(background);
+ return (Math.max(a,b)+0.05)/(Math.min(a,b)+0.05);
+}
+
 mkdirSync('artifacts/fear-greed-education',{recursive:true});
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 try{
@@ -97,6 +111,25 @@ try{
      return !!intro&&!!count&&intro.left<count.right&&intro.right>count.left&&intro.top<count.bottom&&intro.bottom>count.top;
     });
     assert.equal(overlap,false,'Theme description does not overlap the theme count');
+   }
+   if(route==='/about/'){
+    const dashboard=page.locator('main footer a[href="/"]');
+    assert.equal(await dashboard.count(),1,'About dashboard action exists once');
+    await page.mouse.move(0,0);
+    await dashboard.scrollIntoViewIfNeeded();
+    for(const state of ['default','hover']){
+     if(state==='hover'){
+      await dashboard.hover();
+      await page.waitForTimeout(240); // allow existing 180ms CSS transition
+     }
+     const colors=await dashboard.evaluate(el=>{
+      const s=getComputedStyle(el);
+      return {text:s.color,background:s.backgroundColor};
+     });
+     assert.ok(contrastRatioCss(colors.text,colors.background)>=4.5,
+      'About dashboard '+state+' contrast below WCAG AA at '+width+'px: '+
+      JSON.stringify(colors));
+    }
    }
    await page.screenshot({path:`artifacts/fear-greed-education/search-${route.split('/').filter(Boolean).join('-')}-${width}.png`});
   }
