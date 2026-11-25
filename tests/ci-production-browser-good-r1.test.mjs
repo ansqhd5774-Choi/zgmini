@@ -159,7 +159,7 @@ test('economic mobile lab cannot certify interaction when the period does not ch
  const result=await probeEconomicMobileInteraction(page);
  assert.equal(result.state,'UNVERIFIED');
  assert.equal(result.reason,'CARD_CLICK_NOT_EXPANDED');
- assert.equal(result.scope,'LAB_FIRST_PARTY_CLICK_NO_RUM');
+ assert.equal(result.scope,'LAB_FIRST_PARTY_TOUCH_NO_RUM');
 });
 test('production mobile click probe remains behind first-party-only network filter',()=>{
  const src=readFileSync(new URL('../scripts/ci-production-browser-good-r1.mjs',import.meta.url),'utf8');
