@@ -20,10 +20,23 @@ import {collectReleaseCalendar} from './release-calendar.mjs';
 import {collectPinnedDeltaOnce} from './market-calendar-deltascreener-input.mjs';
 import {publicFeedStore} from '../../worker/public-feed-store.mjs';
 
+// Explicit CNN-only entry for the approved PC runner. No schedule is installed here.
 export async function collectLocal(base,{lane='core',importOnly=false,job=null}={}){
+ const cnnOnly=lane==='cnn-minute';
+ if(cnnOnly){
+  if(importOnly||job!==null)throw Object.assign(Error('CNN_MINUTE_SCOPE_STOP'),{code:'CNN_MINUTE_SCOPE_STOP'});
+  try{
+   const config=read(path.join(base,'config.json'));
+   const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
+   const runningSource=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
+   if(config.enabled!==true||config.collectionTarget!=='pc'||!/^[0-9a-f]{40}$/.test(runningSource)||config.source!==runningSource)throw Error('SOURCE_MISMATCH');
+   const dirty=execFileSync('git',['status','--porcelain','--untracked-files=all','--','lib','worker','scripts/pc-writer'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
+   if(dirty)throw Error('SOURCE_DIRTY');
+  }catch{throw Object.assign(Error('CNN_MINUTE_SOURCE_NOT_APPROVED'),{code:'CNN_MINUTE_SOURCE_NOT_APPROVED'});}
+ }
  const secGuardOptions=secGuardOptionsFromEnv(); // fail before opening SQLite
  const core=localDatabase(path.join(base,'storage','core.sqlite'));
- const history=localDatabase(path.join(base,'storage','history.sqlite'));
+ const history=cnnOnly?null:localDatabase(path.join(base,'storage','history.sqlite'));
  const env={...loadLocalProviders(base),DB:core,DB_CORE:core,DB_HISTORY:history,ZGMINI_COMPUTE_TARGET:'pc'};
  const hooks=installLocalRuntime(env);
  const originalFetch=globalThis.fetch,providers={};
@@ -56,6 +69,11 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   const {refreshKoreaRev7}=await import('../../worker/korea-rev7-refresh.mjs');
   const {Rev7D1Store}=await import('../../worker/korea-rev7-d1.mjs');
   if(importOnly)return {status:'LOCAL_IMPORT_PASS'};
+  if(cnnOnly){
+   const result=await runPublicFeeds({env,maxFeedsPerRun:1,cnnMinuteOnly:true});
+   // HTTP checks and quota reservations are already durable; never replace Core checkpoints.
+   return {at:new Date().toISOString(),lane,status:result.status,attempted:result.attempted??0,feeds:result.feeds?.map(({key,status})=>({key,status})),providers,providerDiagnosticWriteFailures};
+  }
   let result,releaseCalendar={status:'SKIPPED_KOREA_LANE',providerRequests:0},sectorFearGreedEtf={status:lane==='core'?'RETIRED_LEGACY_ALPACA':'SKIPPED_KOREA_LANE',providerRequests:0};
   let deltaScreener={status:'SKIPPED_KOREA_LANE',providerRequests:0};
   let employmentR6Collection={status:'DISABLED',providerRequests:0};
@@ -120,13 +138,15 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   recordCollectionChecks(base,report);
   try{alertCollectionReport(base,report);}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
   return report;
- }finally{globalThis.fetch=originalFetch;hooks.deregister();core.close();history.close();}
+ }finally{globalThis.fetch=originalFetch;hooks.deregister();core.close();history?.close();}
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  try{
   const jobArg=process.argv.find(arg=>arg.startsWith('--job='));
   const job=jobArg?jobArg.slice('--job='.length):null;
-  console.log(JSON.stringify(await collectLocal(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),{lane:process.argv.includes('--korea')?'korea':'core',importOnly:process.argv.includes('--import-only'),job})));
+  const cnnOnly=process.argv.includes('--cnn-minute');
+  if(cnnOnly&&process.argv.includes('--korea'))throw Object.assign(Error('CNN_MINUTE_SCOPE_STOP'),{code:'CNN_MINUTE_SCOPE_STOP'});
+  console.log(JSON.stringify(await collectLocal(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),{lane:cnnOnly?'cnn-minute':process.argv.includes('--korea')?'korea':'core',importOnly:process.argv.includes('--import-only'),job})));
  }
- catch(error){const report={at:new Date().toISOString(),lane:process.argv.includes('--korea')?'korea':'core',status:'FAILED',reason:'LOCAL_COLLECTION_FAILED',failureDiagnostic:safeCollectionFailure(error)};try{appendCollectionEvent(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),report);}catch{}console.log(JSON.stringify({...report,...(process.argv.includes('--import-only')?{importError:error.message}:{})}));process.exitCode=1;}
+ catch(error){const cnnOnly=process.argv.includes('--cnn-minute');const reason=cnnOnly&&['CNN_MINUTE_SCOPE_STOP','CNN_MINUTE_SOURCE_NOT_APPROVED'].includes(error?.code)?error.code:'LOCAL_COLLECTION_FAILED';const report={at:new Date().toISOString(),lane:cnnOnly?'cnn-minute':process.argv.includes('--korea')?'korea':'core',status:'FAILED',reason,failureDiagnostic:safeCollectionFailure(error)};if(!cnnOnly){try{appendCollectionEvent(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),report);}catch{}}console.log(JSON.stringify({...report,...(!cnnOnly&&process.argv.includes('--import-only')?{importError:error.message}:{})}));process.exitCode=1;}
 }
