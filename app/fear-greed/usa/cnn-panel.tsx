@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
 import { DEFAULT_MARKET_PERIOD, getMarketPeriodConfig, type MarketPeriod } from "../../market-card-shared";
 import { MarketPeriodControls } from "../../market-period-controls";
 import { FearGreedCardShell } from "../../fear-greed-card-shell";
@@ -978,7 +979,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
         <p>원시값의 절대 숫자만으로 매수·매도를 판단하지 않습니다. 각 구성요소가 자신의 기준에서 얼마나 벗어났는지를 정규화한 CNN 점수와 함께 읽습니다.</p>
       </aside>
 
-      <a className="cnn-return-cta" href="/">← 메인 대시보드로 돌아가기</a>
+      <Link className="cnn-return-cta" href="/">← 메인 대시보드로 돌아가기</Link>
     </section></details> : null}
   </>;
 }
