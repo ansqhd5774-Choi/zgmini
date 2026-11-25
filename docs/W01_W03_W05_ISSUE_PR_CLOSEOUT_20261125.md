@@ -7,7 +7,7 @@
 - 목적: **사용자가 완료를 확정한** W01·W03·W05 프로젝트의 *Issue·PR 정리*. 기능 개발, 운영 PC 설치, 미검증 기능 완료 선언은 범위 밖.
 - 원본 run/requestId/승인 manifest/영수증은 보존하며, 기존 단회 요청은 재실행하지 않음.
 
-## GitHub 직접 재확인한 신규 종결 원본 9건
+## GitHub 직접 재확인한 신규 종결 원본 11건
 
 | 프로젝트 | 저장소 | 항목 | 최종 상태 | 처리 이유 및 증거 |
 | --- | --- | --- | --- | --- |
@@ -21,10 +21,14 @@
 | W01 | zgmini-pc-control | [#1917](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1917) | CLOSED/not_planned | Event129 원본 STATE_UNKNOWN. 후속 W01 #2716/#2717/#2791 성공은 다른 범위. [댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1917#issuecomment-7158482375) |
 | W01 | zgmini-pc-control | [#1797](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1797) | CLOSED/not_planned | Census CDN 단회 시험 실행/결과 미확인. 후속 W01 데이터 검증과 별개로 원본 요청 폐기. [댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1797#issuecomment-7158503175) |
 
-**집계:** 이번 수명주기 정리에서 실제 종료한 이력은 Issue 8 + PR 1 = **9건**. W05 관련 구형 요청은 조사 시점에 이미 CLOSED였으므로 이 숫자에 산입하지 않음. 증거 없이 폐쇄하거나 성공으로 소급한 항목 없음.
+| W01 | zgmini-pc-control | [#1329](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1329) | CLOSED/not_planned | 2026-11-13 Core 계보 단회 조회 `STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE`; 원본 실행 성공 아님. [댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1329#issuecomment-7158751139) |
+| W01 | zgmini-pc-control | [#1331](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1331) | CLOSED/not_planned | 2026-11-13 Core 활성 계보 단회 조회 `STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE`; 원본 실행 성공 아님. [댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1331#issuecomment-7158753045) |
+
+**집계:** 이번 수명주기 정리에서 실제 종료한 이력은 Issue 10 + PR 1 = **11건**. W05 관련 구형 요청은 조사 시점에 이미 CLOSED였으므로 이 숫자에 산입하지 않음. 증거 없이 폐쇄하거나 성공으로 소급한 항목 없음.
 
 ## 현재 OPEN 대상 교차검증
 
+- 2026-11-25 후속 추적: 단순 `W01` 키워드 검색 외에도 원본 `pc-inflation-core-*-once` 요청 ID를 대조해 #1329/#1331 추가 종결. `STATE_UNKNOWN` 증거는 변경하지 않음.
 - 2026-11-25 GitHub 재검색: 두 저장소 모두 `W01`, `W03`, `W05` 명칭 검색에 걸리는 **OPEN PR 0건**.
 - 두 저장소의 OPEN Issue·PR 목록을 별도 조회한 결과, 프로젝트 이름/관련 작업 키워드와 직접 맞는 전용 잔여 항목은 발견하지 못했음. **이는 과거 전체 요청의 계보가 100% 조사됐다는 주장과 다름.**
 - 별도 **공통 Runner 장애** [pc-control #2237](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2237)은 OPEN 유지: 원본 #2227 취소/steps=[] 및 유사 W05 취소의 root cause 미확정. W03 기능 미완료나 Project W03 재개 사유로 계산하지 않음.
