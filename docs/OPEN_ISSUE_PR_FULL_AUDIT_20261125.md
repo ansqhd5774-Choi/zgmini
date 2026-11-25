@@ -22,16 +22,16 @@
 | 8 | PC Issue | [#3533](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3533) pc-process-inventory-readonly | `process-inventory-readonly` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; no standard result) |
 | 9 | PC Issue | [#3531](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3531) [CI] ZGMINI Controller Maintenance Source Tests / sourc | `본문 조사` | 공통 PC/CI | REVIEWED_NO_COMMENT (0 comments; no standard result) |
 | 10 | PC Issue | [#3528](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3528) pc-process-inventory-readonly | `process-inventory-readonly` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; STATUS_OBSERVED) |
-| 11 | PC Issue | [#3525](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3525) pc-process-inventory-readonly | `process-inventory-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 12 | PC Issue | [#3524](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3524) pc-job | `employment-r6-raw-run-attestation-readonly` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 13 | PC Issue | [#3522](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3522) pc-job | `employment-r6-raw-run-attestation-readonly` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 14 | PC Issue | [#3520](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3520) pc-process-inventory-readonly | `process-inventory-readonly` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 15 | PC Issue | [#3519](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3519) PC Update pc-update-c087fa10-88e2-42e3-bc60-c758ab93f0c | `core-status` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 16 | PC Issue | [#3518](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3518) [CI] ZGMINI Controller Maintenance Source Tests / sourc | `본문 조사` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 17 | PC Issue | [#3517](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3517) [CI] C996 R5 Readonly Source Checks / c996-source / Run | `본문 조사` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
-| 18 | PC Issue | [#3516](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3516) pc-controller-update | `controller-update` | 고용 R6/W04 | PENDING_EVIDENCE_REVIEW |
-| 19 | PC Issue | [#3073](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3073) agent-handoff handoff-24153d07cd492114dfde803e | `본문 조사` | 소속 미확정 | PENDING_EVIDENCE_REVIEW |
-| 20 | PC Issue | [#2427](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2427) ZGMINI Wide Scout 2026-11 #1 | `본문 조사` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
+| 11 | PC Issue | [#3525](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3525) pc-process-inventory-readonly | `process-inventory-readonly` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; no standard result) |
+| 12 | PC Issue | [#3524](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3524) pc-job | `employment-r6-raw-run-attestation-readonly` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; no standard result) |
+| 13 | PC Issue | [#3522](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3522) pc-job | `employment-r6-raw-run-attestation-readonly` | 고용 R6/W04 | REVIEWED_COMMENT (1 comments; no standard result) |
+| 14 | PC Issue | [#3520](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3520) pc-process-inventory-readonly | `process-inventory-readonly` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; no standard result) |
+| 15 | PC Issue | [#3519](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3519) PC Update pc-update-c087fa10-88e2-42e3-bc60-c758ab93f0c | `core-status` | 고용 R6/W04 | REVIEWED_NO_COMMENT (0 comments; no standard result) |
+| 16 | PC Issue | [#3518](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3518) [CI] ZGMINI Controller Maintenance Source Tests / sourc | `본문 조사` | 공통 PC/CI | REVIEWED_COMMENT (1 comments; no standard result) |
+| 17 | PC Issue | [#3517](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3517) [CI] C996 R5 Readonly Source Checks / c996-source / Run | `본문 조사` | 공통 PC/CI | REVIEWED_COMMENT (3 comments; no standard result) |
+| 18 | PC Issue | [#3516](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3516) pc-controller-update | `controller-update` | 고용 R6/W04 | REVIEWED_COMMENT (19 comments; STATUS: UNKNOWN;CODE: POSTCHECK_OUTCOME_UNKNOWN) |
+| 19 | PC Issue | [#3073](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3073) agent-handoff handoff-24153d07cd492114dfde803e | `본문 조사` | 소속 미확정 | REVIEWED_COMMENT (7 comments; no standard result) |
+| 20 | PC Issue | [#2427](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2427) ZGMINI Wide Scout 2026-11 #1 | `본문 조사` | 공통 PC/CI | REVIEWED_COMMENT (54 comments; STATUS_COVERAGE_20261124) |
 | 21 | PC Issue | [#2426](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2426) ZGMINI Proactive Diagnostics 2026-11 #1 | `본문 조사` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
 | 22 | PC Issue | [#2353](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2353) Runner roster readback HTTP 403 — repository Administra | `본문 조사` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
 | 23 | PC Issue | [#2237](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2237) [W03→프로세스 총괄] #2227 Runner 배정 후 13분 취소·steps 0·영수증 미생성  | `본문 조사` | 공통 PC/CI | PENDING_EVIDENCE_REVIEW |
@@ -115,3 +115,15 @@
 - zgmini-pc-control Issue #3533: REVIEWED_COMMENT, 댓글 1, no standard result
 - zgmini-pc-control Issue #3531: REVIEWED_NO_COMMENT, 댓글 0, no standard result
 - zgmini-pc-control Issue #3528: REVIEWED_COMMENT, 댓글 1, STATUS_OBSERVED
+
+### 감사 댓글 검증 11–20
+- zgmini-pc-control Issue #3525: REVIEWED_COMMENT, 댓글 1, no standard result
+- zgmini-pc-control Issue #3524: REVIEWED_COMMENT, 댓글 1, no standard result
+- zgmini-pc-control Issue #3522: REVIEWED_COMMENT, 댓글 1, no standard result
+- zgmini-pc-control Issue #3520: REVIEWED_COMMENT, 댓글 1, no standard result
+- zgmini-pc-control Issue #3519: REVIEWED_NO_COMMENT, 댓글 0, no standard result
+- zgmini-pc-control Issue #3518: REVIEWED_COMMENT, 댓글 1, no standard result
+- zgmini-pc-control Issue #3517: REVIEWED_COMMENT, 댓글 3, no standard result
+- zgmini-pc-control Issue #3516: REVIEWED_COMMENT, 댓글 19, STATUS: UNKNOWN;CODE: POSTCHECK_OUTCOME_UNKNOWN
+- zgmini-pc-control Issue #3073: REVIEWED_COMMENT, 댓글 7, no standard result
+- zgmini-pc-control Issue #2427: REVIEWED_COMMENT, 댓글 54, STATUS_COVERAGE_20261124
