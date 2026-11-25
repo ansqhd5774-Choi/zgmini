@@ -1,0 +1,653 @@
+{
+  "schema": "ZGMINI_FIXED_COHORT_AUDIT_REGISTER_V1",
+  "referenceDate": "2026-11-25",
+  "repository": "ansqhd5774-Choi/zgmini",
+  "branch": "codex/issues-lifecycle-manager-20261123",
+  "ledgerPath": "docs/OPEN_ISSUE_PR_FULL_AUDIT_20261125.md",
+  "warning": "Verification means original-evidence auditing, not the original feature's completion or approval; never double-count per fixed original row.",
+  "frozenCohort": [
+    {
+      "position": 1,
+      "kind": "본체 Issue",
+      "number": 1582
+    },
+    {
+      "position": 2,
+      "kind": "본체 PR",
+      "number": 1463
+    },
+    {
+      "position": 3,
+      "kind": "본체 PR",
+      "number": 1266
+    },
+    {
+      "position": 4,
+      "kind": "본체 PR",
+      "number": 1036
+    },
+    {
+      "position": 5,
+      "kind": "본체 PR",
+      "number": 1031
+    },
+    {
+      "position": 6,
+      "kind": "본체 PR",
+      "number": 933
+    },
+    {
+      "position": 7,
+      "kind": "본체 PR",
+      "number": 488
+    },
+    {
+      "position": 8,
+      "kind": "PC Issue",
+      "number": 3533
+    },
+    {
+      "position": 9,
+      "kind": "PC Issue",
+      "number": 3531
+    },
+    {
+      "position": 10,
+      "kind": "PC Issue",
+      "number": 3528
+    },
+    {
+      "position": 11,
+      "kind": "PC Issue",
+      "number": 3525
+    },
+    {
+      "position": 12,
+      "kind": "PC Issue",
+      "number": 3524
+    },
+    {
+      "position": 13,
+      "kind": "PC Issue",
+      "number": 3522
+    },
+    {
+      "position": 14,
+      "kind": "PC Issue",
+      "number": 3520
+    },
+    {
+      "position": 15,
+      "kind": "PC Issue",
+      "number": 3519
+    },
+    {
+      "position": 16,
+      "kind": "PC Issue",
+      "number": 3518
+    },
+    {
+      "position": 17,
+      "kind": "PC Issue",
+      "number": 3517
+    },
+    {
+      "position": 18,
+      "kind": "PC Issue",
+      "number": 3516
+    },
+    {
+      "position": 19,
+      "kind": "PC Issue",
+      "number": 3073
+    },
+    {
+      "position": 20,
+      "kind": "PC Issue",
+      "number": 2427
+    },
+    {
+      "position": 21,
+      "kind": "PC Issue",
+      "number": 2426
+    },
+    {
+      "position": 22,
+      "kind": "PC Issue",
+      "number": 2353
+    },
+    {
+      "position": 23,
+      "kind": "PC Issue",
+      "number": 2237
+    },
+    {
+      "position": 24,
+      "kind": "PC Issue",
+      "number": 2232
+    },
+    {
+      "position": 25,
+      "kind": "PC Issue",
+      "number": 2079
+    },
+    {
+      "position": 26,
+      "kind": "PC Issue",
+      "number": 2059
+    },
+    {
+      "position": 27,
+      "kind": "PC Issue",
+      "number": 2032
+    },
+    {
+      "position": 28,
+      "kind": "PC Issue",
+      "number": 1997
+    },
+    {
+      "position": 29,
+      "kind": "PC Issue",
+      "number": 1969
+    },
+    {
+      "position": 30,
+      "kind": "PC Issue",
+      "number": 1922
+    },
+    {
+      "position": 31,
+      "kind": "PC Issue",
+      "number": 1764
+    },
+    {
+      "position": 32,
+      "kind": "PC Issue",
+      "number": 1743
+    },
+    {
+      "position": 33,
+      "kind": "PC Issue",
+      "number": 1742
+    },
+    {
+      "position": 34,
+      "kind": "PC Issue",
+      "number": 1740
+    },
+    {
+      "position": 35,
+      "kind": "PC Issue",
+      "number": 1739
+    },
+    {
+      "position": 36,
+      "kind": "PC Issue",
+      "number": 1737
+    },
+    {
+      "position": 37,
+      "kind": "PC Issue",
+      "number": 1736
+    },
+    {
+      "position": 38,
+      "kind": "PC Issue",
+      "number": 1688
+    },
+    {
+      "position": 39,
+      "kind": "PC Issue",
+      "number": 1646
+    },
+    {
+      "position": 40,
+      "kind": "PC Issue",
+      "number": 1637
+    },
+    {
+      "position": 41,
+      "kind": "PC Issue",
+      "number": 1598
+    },
+    {
+      "position": 42,
+      "kind": "PC Issue",
+      "number": 1351
+    },
+    {
+      "position": 43,
+      "kind": "PC Issue",
+      "number": 1295
+    },
+    {
+      "position": 44,
+      "kind": "PC Issue",
+      "number": 1231
+    },
+    {
+      "position": 45,
+      "kind": "PC Issue",
+      "number": 1227
+    },
+    {
+      "position": 46,
+      "kind": "PC Issue",
+      "number": 1226
+    },
+    {
+      "position": 47,
+      "kind": "PC Issue",
+      "number": 1217
+    },
+    {
+      "position": 48,
+      "kind": "PC Issue",
+      "number": 1213
+    },
+    {
+      "position": 49,
+      "kind": "PC Issue",
+      "number": 1200
+    },
+    {
+      "position": 50,
+      "kind": "PC Issue",
+      "number": 1196
+    },
+    {
+      "position": 51,
+      "kind": "PC Issue",
+      "number": 1174
+    },
+    {
+      "position": 52,
+      "kind": "PC Issue",
+      "number": 1169
+    },
+    {
+      "position": 53,
+      "kind": "PC Issue",
+      "number": 1165
+    },
+    {
+      "position": 54,
+      "kind": "PC Issue",
+      "number": 1152
+    },
+    {
+      "position": 55,
+      "kind": "PC Issue",
+      "number": 1071
+    },
+    {
+      "position": 56,
+      "kind": "PC Issue",
+      "number": 1064
+    },
+    {
+      "position": 57,
+      "kind": "PC Issue",
+      "number": 1032
+    },
+    {
+      "position": 58,
+      "kind": "PC Issue",
+      "number": 1026
+    },
+    {
+      "position": 59,
+      "kind": "PC Issue",
+      "number": 1021
+    },
+    {
+      "position": 60,
+      "kind": "PC Issue",
+      "number": 1017
+    },
+    {
+      "position": 61,
+      "kind": "PC Issue",
+      "number": 1010
+    },
+    {
+      "position": 62,
+      "kind": "PC Issue",
+      "number": 1008
+    },
+    {
+      "position": 63,
+      "kind": "PC Issue",
+      "number": 1004
+    },
+    {
+      "position": 64,
+      "kind": "PC Issue",
+      "number": 1000
+    },
+    {
+      "position": 65,
+      "kind": "PC Issue",
+      "number": 996
+    },
+    {
+      "position": 66,
+      "kind": "PC Issue",
+      "number": 976
+    },
+    {
+      "position": 67,
+      "kind": "PC Issue",
+      "number": 965
+    },
+    {
+      "position": 68,
+      "kind": "PC Issue",
+      "number": 964
+    },
+    {
+      "position": 69,
+      "kind": "PC Issue",
+      "number": 946
+    },
+    {
+      "position": 70,
+      "kind": "PC Issue",
+      "number": 939
+    },
+    {
+      "position": 71,
+      "kind": "PC Issue",
+      "number": 936
+    },
+    {
+      "position": 72,
+      "kind": "PC Issue",
+      "number": 860
+    },
+    {
+      "position": 73,
+      "kind": "PC Issue",
+      "number": 835
+    },
+    {
+      "position": 74,
+      "kind": "PC Issue",
+      "number": 783
+    },
+    {
+      "position": 75,
+      "kind": "PC Issue",
+      "number": 702
+    },
+    {
+      "position": 76,
+      "kind": "PC Issue",
+      "number": 509
+    },
+    {
+      "position": 77,
+      "kind": "PC Issue",
+      "number": 503
+    },
+    {
+      "position": 78,
+      "kind": "PC Issue",
+      "number": 498
+    },
+    {
+      "position": 79,
+      "kind": "PC Issue",
+      "number": 496
+    },
+    {
+      "position": 80,
+      "kind": "PC Issue",
+      "number": 474
+    },
+    {
+      "position": 81,
+      "kind": "PC Issue",
+      "number": 473
+    },
+    {
+      "position": 82,
+      "kind": "PC Issue",
+      "number": 394
+    },
+    {
+      "position": 83,
+      "kind": "PC Issue",
+      "number": 369
+    },
+    {
+      "position": 84,
+      "kind": "PC Issue",
+      "number": 173
+    },
+    {
+      "position": 85,
+      "kind": "PC Issue",
+      "number": 155
+    },
+    {
+      "position": 86,
+      "kind": "PC Issue",
+      "number": 68
+    },
+    {
+      "position": 87,
+      "kind": "PC PR",
+      "number": 3543
+    },
+    {
+      "position": 88,
+      "kind": "PC PR",
+      "number": 3542
+    }
+  ],
+  "verifiedFirstSeenBatches": {
+    "A": [
+      1026,
+      1582,
+      3516,
+      488
+    ],
+    "B": [
+      1010,
+      1000,
+      1071,
+      946,
+      965
+    ],
+    "C": [
+      939
+    ],
+    "E": [
+      964,
+      976,
+      1032,
+      1169
+    ],
+    "F": [
+      1064,
+      1152,
+      1196,
+      1200
+    ],
+    "G": [
+      1008,
+      1017,
+      1021,
+      1165,
+      1174,
+      1231
+    ],
+    "H": [
+      1295,
+      1598,
+      1737,
+      1739,
+      1637,
+      1688,
+      1740,
+      1742
+    ],
+    "I": [
+      1764,
+      1922,
+      1997,
+      2032,
+      2079,
+      2232
+    ],
+    "J": [
+      3533,
+      3525,
+      3520,
+      3528
+    ],
+    "K": [
+      860,
+      1351
+    ],
+    "L": [
+      3517,
+      3518,
+      3531
+    ],
+    "M": [
+      155,
+      173
+    ],
+    "N": [
+      1463,
+      1036
+    ],
+    "O": [
+      1740,
+      1736,
+      1688,
+      1637,
+      1169
+    ],
+    "P": [
+      702,
+      946
+    ],
+    "Q": [
+      3543,
+      3542
+    ],
+    "T": [
+      1010,
+      936
+    ],
+    "U": [
+      2079,
+      1922,
+      1739,
+      1737
+    ],
+    "V": [
+      1598,
+      1174,
+      2232,
+      1764
+    ],
+    "X": [
+      933,
+      2237
+    ],
+    "Y": [
+      3073
+    ],
+    "Z": [
+      783,
+      2353
+    ],
+    "AA": [
+      835,
+      996
+    ],
+    "AB": [
+      1646
+    ],
+    "AC": [
+      3519,
+      3522,
+      3524
+    ],
+    "AD": [
+      1743,
+      2426,
+      2427
+    ],
+    "AE": [
+      1004,
+      68
+    ],
+    "AF": [
+      155,
+      173
+    ],
+    "AG": [
+      369,
+      394,
+      473,
+      474,
+      496,
+      498,
+      503,
+      509
+    ],
+    "AH": [
+      1213,
+      1217,
+      1226,
+      1227
+    ]
+  },
+  "pendingNumbers": [
+    1031,
+    1266,
+    1969,
+    2059
+  ],
+  "pendingGates": {
+    "1031": {
+      "kind": "PR",
+      "status": "DRAFT_OPEN",
+      "head": "80a6a462158c7ee44dd0cf8d0527ad3d093e9354",
+      "gate": "Exact head CI absent, dirty merge; W04 owner needs safe BLS quota port"
+    },
+    "1266": {
+      "kind": "PR",
+      "status": "DRAFT_OPEN",
+      "head": "0193056bdb47bcf6c911f17623b6c302c8199c4c",
+      "gate": "Exact head CI absent, W04 PIT0408/PIT0605 preservation and safe overlay required"
+    },
+    "1969": {
+      "kind": "Issue",
+      "status": "CLOSED",
+      "requestId": "pc-update-39484f8b-8194-4a68-82c5-5bd500180459",
+      "code": "BUNDLE_B_APPROVAL_CONTRACT_INVALID",
+      "gate": "Original Windows operating ledger and authorized execution provenance unverified"
+    },
+    "2059": {
+      "kind": "Issue",
+      "status": "CLOSED",
+      "requestId": "pc-update-58a7df44-3db7-488a-a4e2-0a08a95a8343",
+      "code": "APPROVAL_MANIFEST_READ_FAILED",
+      "gate": "Original Windows operating ledger and authorized execution provenance unverified"
+    }
+  },
+  "assertions": {
+    "frozenRows": 88,
+    "uniqueVerified": 84,
+    "remaining": 4,
+    "directAuditClosures": 10
+  },
+  "evidenceCountPolicy": "Every original number contributes at most once. Reinspection creates no new progress. Failed and skipped originals may be audited while functionality remains blocked."
+}
