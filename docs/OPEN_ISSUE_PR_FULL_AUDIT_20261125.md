@@ -376,3 +376,19 @@ GitHub Search API total_count 재조회 **84건** = 본체 Issue 1/PR 6 + PC 제
 ### 배치 F 후 실시간 OPEN 재조회
 
 GitHub Search API `total_count` 현재 **86건** = 본체 Issue 1/PR 6 + PC 제어 Issue 76/PR 3. PC 제어 신규 OPEN PR [#3545](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3545), [#3546](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3546), [#3547](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3547) 직접 확인. 최초 88건 고정 코호트와 달리 신규 PR이 추가되고 다른 PR이 병합되므로, OPEN 총량 상승을 본 감사 실패 또는 종결과 혼동하지 않는다. 이번 배치 직접 종결 0건.
+
+
+## 2차 독립 증거 조회 — 배치 G (2026-11-25)
+
+기준: 최초 고정 코호트 88건. 이전 배치 F 누적 부분검사 18건에서 **신규 6건**(#1008,#1017,#1021,#1165,#1174,#1231)을 Actions 실행·원본 JSON/TXT 직접 조회로 추가. **누적 24/88 (27.3%)**, 증거 기반 완료 종결 3건 유지. 이번 신규 종결 0건.
+
+| Issue | GitHub 원본 증거 직접 검증 | 현재 판정 |
+|---|---|---|
+| [#1008](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1008) | [Run 42590146541](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42590146541) `failure`, `results/employment-r6-registered-5636e5ae-b8d5-4545-afab-33371088e4f5.json/.txt`, JSON blob `add3cbf1dd0f4e6458e1959a98381ee17b986b92` / TXT blob `9f1718a30594cdc5e9d2076cf00613e469f371ba`; 요청·상태·결과 코드·Run 4/4 일치. `BLOCKED/R6_B_CORE_LOCK_OCCUPIED`, `firstFail=PREFLIGHT`, publication UNVERIFIED | 실행 차단, OPEN 유지 |
+| [#1017](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1017) | [Run 42593946234](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42593946234) `failure`, `results/employment-r6-registered-65f04f4f-a758-4f96-b82f-d77b85f2bb3c.json/.txt`, JSON blob `d8a522be40b6d75a2d9d15e3a537388cd4fa6d21` / TXT `7adc8e48d4a0d023be35a6b15807559a606833ee`. 4/4 필드 일치. `BLOCKED/R6_B_INSTALLED_SOURCE_STOP`, PREFLIGHT, publication UNVERIFIED | 설치 소스 불일치 차단, OPEN 유지 |
+| [#1021](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1021) | [Run 42594756629](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42594756629) `failure`, `results/employment-r6-registered-7689fd2d-0628-41c8-9980-86c20d1f1a68.json/.txt`, JSON blob `7b41b3e0385ece029b3c80eca23662c765e7b386` / TXT `d151e45491c026c381583fa7eb5d9e0d5b9995b0`. 4/4 일치. `BLOCKED/R6_B_CORE_LOCK_OCCUPIED`, PREFLIGHT, publication UNVERIFIED | 잠금 차단, OPEN 유지 |
+| [#1165](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1165) | [Run 42709699561](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42709699561) `failure`, `results/employment-r6-registered-d45cce6a-0f40-4163-a06d-a66513b808ca.json/.txt`, JSON blob `e51bbf8c5650c198251eb4c5fe9e1d134f28653e` / TXT `a6d15303ba53f072d33ddc62ed67e65c2af7fe8a`. 4/4 일치. `BLOCKED/R6_B_INSTALLED_SOURCE_STOP`, PREFLIGHT, publication UNVERIFIED | 추가로 원본 접수 제목 EXACT_ISSUE_TITLE_REQUIRED 기록. OPEN |
+| [#1174](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1174) | [Run 42712917820](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42712917820) Actions `success`, `results/42712917820-1-seat-1.json/.txt` 상위 9/9 필드 일치. JSON blob `19b1831712a2db5837b54401cc8995e389ae7a1a` / TXT `ff24cb734a9ad1ebef6f3e14aebfbc6368e9d3af`. 결과 `STATE_UNKNOWN/WRITER_PREIMAGE_CHECKOUT_NOT_CORROBORATED`, runtimeSourceVerified=false, sourceHead=null | 원본 Writer 사전검사 목적 미입증, OPEN |
+| [#1231](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1231) | [Run 42925054398](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/42925054398) Actions `success`, `results/42925054398-1-seat-5.json/.txt` 9/9 필드 일치. JSON blob `8f8cd91038ef49399a1de8cfb47c17a60b490cb7` / TXT `c0bd48ae51b891967a93f883a2947241d5355274`. 결과 `STATE_UNKNOWN/CORE_NO_ACTIVE_TASK_ENGINE`, runtimeSourceVerified=false | 원본 Core runtime 소스 미입증, OPEN |
+
+중요 판정: Actions job의 `success`는 Runner/보고 경로 완료일 수 있으며 업무 결과 성공과 동치가 아니다. 차단된 요청 requestId/manifest 원문 재실행 금지. 추가 읽기 전용 조회는 각 항목의 고유 요청 목적·의존성에 한정한다. 운영 PC·Controller·Writer·DB·Task 변경 0건.
