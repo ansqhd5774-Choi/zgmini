@@ -13,6 +13,8 @@ test('push scans all introduced history without first-parent filtering',()=>{
 test('same repository PR scans base..head; forks cannot enter privileged scanner',()=>{
  const event={repository:{full_name:repo},pull_request:{base:{sha:a},head:{sha:b,repo:{full_name:repo}}}};
  assert.equal(chooseSecretRange('pull_request',event,b),a+'..'+b);
+ // A synchronize event may have older payload head metadata than the checkout.
+ assert.equal(chooseSecretRange('pull_request',event,c),a+'..'+c);
  event.pull_request.head.repo.full_name='outside/fork';
  assert.throws(()=>chooseSecretRange('pull_request',event,b),/SECRET_PR_UNTRUSTED_FORK/);
 });
