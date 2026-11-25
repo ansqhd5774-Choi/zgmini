@@ -220,7 +220,7 @@ R2에서 확인한 설치 SHA·Runner online은 당시 읽기 증거로만 사�
 - 실제 Windows CI: [Controller #45717320783](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45717320783), Job `139566593926` — **SUCCESS**. 기존 TEMP 프로세스/lease 11/11 PASS(0 FAIL), 새 IPC 후보·원자적 소유권 시험 **5/5 PASS(0 FAIL, 0 SKIP)**.
 - IPC 실제 사례: `READY` 상태에서 lease/Worker 실행 없음 → 인증된 `PROMOTE` → TEMP Supervisor lease 소유권 원자 획득; 오래된 자식 종료 미입증 차단; 기존 owner 유지; Watchdog 신원 불일치 차단; 복수 후보 동시 승격에서 소유권 1개.
 - 새 IPC 시험은 운영 모듈의 인증·전환 로직을 Windows TEMP에 복사하고, Supervisor에만 최소 격리 대체 구현을 사용함. **실제 운영 Watchdog tick, 6 Runner/Worker 원장 인계, 현장 Controller source 설치·전환·복귀에 대한 성공 증거가 아님.**
-- 같은 SHA의 C996와 Secret Scan **SUCCESS**. Automation Status는 원장 갱신 당시 최종 결과를 별도로 확인 중.
+- 같은 SHA의 **C996·Secret Scan·Automation Status도 모두 SUCCESS**. 즉 최신 HEAD에 연결된 CI는 **4/4 SUCCESS**이며 각 Run ID는 Controller #45717320783, C996 #45717320700, Secret Scan #45717320687, Automation Status #45717320707.
 - Controller 정규 B 업그레이드의 `installablePath()`는 `controller/[a-z][a-z0-9-]*.mjs`를 허용해 새로운 `controller/standby.mjs`를 원천 차단하지 않음. 그러나 승인된 전체 Target tree·변경 목록·manifest 해시·독립 승인 및 운영 source CAS는 별도 검증 필수. Watchdog B는 역사적 한정 대상 해시로 이번 새 코드를 자동 적용할 수 없음.
 - **운영 적용 0회**, 이전 Controller/Watchdog 정상 운영 불변, PR Draft 유지. 신규 상주 서비스/예약/Runner·Provider/DB/D1 변경 없음.
 
