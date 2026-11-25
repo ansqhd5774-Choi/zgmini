@@ -424,3 +424,29 @@ GitHub Search API total_count 재조회: **87건 = 본체 Issue 1 / PR 6 + PC �
 ### 배치 H 후 실시간 OPEN 재조회
 
 GitHub Search API 실시간 total_count **84건** = 본체 Issue 1/PR 6 + PC 제어 Issue 75/PR 2. 직전 배치 G의 87건 대비 감소한 3건은 이번 감사의 직접 종결 결과가 아니다. PC 제어 OPEN PR은 [#3545](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3545), [#3547](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3547)로 조회. 총량 변화만으로 처리 완료 성과를 집계하지 않는다. 본 배치 직접 이슈/PR 종결 0건.
+
+
+## 2차 독립 증거 조회 — 배치 I (2026-11-25)
+
+고정 88건 중 기존 부분검사 32건. 이번 **6건** PC Job에 대해 원본 Actions `completed/success` + JSON/TXT 파일 전문 직접 대조로 **38/88 (43.2%)**. 추가 Controller maintenance 요청 #1969/#2059는 JSON/TXT 전문을 대조했으나 최초 Actions run 식별 및 독립 실행 검증이 미완이므로 동일 지표에 합산하지 않음. 이번 신규 종결 0, 누적 종결 3건.
+
+| Issue | 원본 Run | 원본 업무 결과 | 공통 필드 | JSON blob / TXT blob | 최종 판정 |
+|---|---|---|---|---|---|
+| [#1764](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1764) | [43884550303](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/43884550303) | `BLOCKED/R6_BUNDLE_NOT_APPROVED` | 9/9 일치 | `91c5ee7336306c909963bdc3ea2b41c3b3f3486f` / `e21d05e70f214e69bd01e7d5f8a0732c4831616c` | 목적 미달 OPEN |
+| [#1922](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1922) | [44035694966](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44035694966) | `STATE_UNKNOWN/CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE` | 9/9 일치 | `71bcfb2a40e285455b2d531285a1a295db4bcc99` / `cbc04f6255bd31156241d55b8764e535a0434750` | 목적 미달 OPEN |
+| [#1997](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/1997) | [44072642965](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44072642965) | `STATE_UNKNOWN/CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE` | 9/9 일치 | `931f1adf380d42df724c73350257f0f88242101d` / `86c3f7af02f893de246c4263fc89b791e6bceecd` | 목적 미달 OPEN |
+| [#2032](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2032) | [44086082448](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44086082448) | `BLOCKED/RETIRED_IRAN_INVENTORY_UNAVAILABLE` | 8/9 일치 | `e2218714b4b0b6411e3675798b69fefa7f168fa7` / `d7a6a180fa36a612ad1295138a7cd82f45c55634` | 목적 미달 OPEN |
+| [#2079](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2079) | [44224916064](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44224916064) | `STATE_UNKNOWN/CORE_TASK_RUNNING_INSTANCE_UNOBSERVABLE` | 9/9 일치 | `c5db9b61c9d46bed986d67d871c4a6e313260250` / `52dd90802dd161f04549d900b220672b411215f3` | 목적 미달 OPEN |
+| [#2232](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/2232) | [44439988087](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/44439988087) | `BLOCKED/RESOURCE_WAIT_MEMORY` | 9/9 일치 | `b15ee006ec5b3c8c1d0c95bf6d799a5d3d4dc883` / `605cf11c1c6dba38770c84e901b5119e6480f9e7` | 목적 미달 OPEN |
+
+### Controller Maintenance 원본 파일 검증 (실행 Run 계보 별도)
+
+| Issue | JSON blob | TXT blob | 증거 및 현재 판정 |
+|---|---|---|---|
+| #1969 | `7dc70d85887f5cc94ce1af95d9287eb6ca7f23a9` | `cbfecab895be8641678263e756d34deb22511000` | `results/maintenance-pc-update-39484f8b-8194-4a68-82c5-5bd500180459.json/.txt`; `BLOCKED/BUNDLE_B_APPROVAL_CONTRACT_INVALID`, `actualControllerSha=null`, `protectedStateUnchanged=false`. 실행 성공과 보호상태 보장 미입증, OPEN |
+| #2059 | `caaa41cd243aaf0eae7acdace990c249bdcb36e5` | `75feb1f809264ea2dd378af99311c6ccaabfc4c2` | `results/maintenance-pc-update-58a7df44-3db7-488a-a4e2-0a08a95a8343.json/.txt`; `BLOCKED/APPROVAL_MANIFEST_READ_FAILED`, `actualControllerSha=null`, `workflowEnabled=null`. 성공 미입증, OPEN |
+
+- #2232는 최초 댓글과 최신 담당 원장에서 `freeMiB=1228` vs 안전 최소 `1536`, 부족 308MiB 확인. 다른 시점의 PASS는 원본 검사를 소급 완료시키지 않는다.
+- #2032의 9개 상위 문자열 대조 중 1개 미일치는 저장된 TXT의 필드 표기/값 차이이므로 재검토 필요; `BLOCKED` 안전 중단 결론을 성공 처리하지 않는다.
+- 원본 #1997 제목의 Maintenance replay는 본문 명세상 `core-runtime-source-readonly` A 요청이므로 임의 실제 Maintenance 실행으로 승격하지 않음.
+- 운영 PC·Controller·Writer·DB·Task 변경 및 재실행 없음. 다음은 #1969/#2059의 정확 실행 계보 및 나머지 50건 추가 독립 검증.
