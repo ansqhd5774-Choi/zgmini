@@ -187,3 +187,13 @@ R2에서 확인한 설치 SHA·Runner online은 당시 읽기 증거로만 사�
 4. 독립적으로 승인된 제한적 실제 전환 1회 및 기존 허용 읽기 작업 JSON/TXT 원장 readback
 
 과거 #3409 설치·복구나 #1393 Watchdog 스테이징을 재실행하지 않는다. 새 인프라·상주 모니터·예약·전역 Gate를 추가하지 않는다.
+
+### 2026-11-26 후속 Windows 경합시험 동기화 수정
+
+- 구현 브랜치 최신 HEAD: `d050e4dfa54f3ea1a045db6d03320748eedc7403`.
+- 수정 파일: `tests/controller-standby-windows-isolation.test.mjs` 한 파일. 첫 후보의 소유권을 고정 350ms 뒤 해제하던 fixture는 Windows CI가 늦게 스케줄링할 때 두 후보의 순차 획득을 경쟁 실패로 오판할 위험이 확인됨.
+- 개선: 두 후보 `ACQUIRED`/`BUSY` 판단이 모두 관찰된 후, 부모가 release 신호 파일을 만들고 최초 점유자가 lease를 해제한다. 테스트는 운영 원본이 아니라 격리 TEMP 경로만 사용한다.
+- 해당 변경은 테스트 신뢰성 수정이며 Standby 운영 인계 성공이 아님.
+- 최신 Controller CI: [Run 45716201111](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45716201111) — 최종 결과 확인 전까지 `QUEUED/NOT_VERIFIED`. 같은 HEAD의 Automation Status는 SUCCESS, 다른 검사는 미완료. 오래된 HEAD의 PASS를 현재 HEAD에 전용하지 않는다.
+
+**인계할 단일 다음 행동:** Run 45716201111의 실제 Windows Job 로그와 18개 단위·11개 격리시험 결과를 회수하여 필요 시 실패한 경로만 수정한다. 이후 기존 B 계약으로 Controller→Watchdog 단계별 적용의 실제 SHA·CAS·소유권을 확정한다.
