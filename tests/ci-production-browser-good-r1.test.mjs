@@ -114,11 +114,11 @@ test('economic mobile lab click proves local card and period state only',async()
  const first={
   waitFor:async()=>{},
   getAttribute:async k=>k==='aria-expanded'?expanded:null,
-  click:async()=>{expanded=expanded==='false'?'true':'false';events.push('card');}
+  tap:async()=>{expanded=expanded==='false'?'true':'false';events.push('card');}
  };
  const period={
   waitFor:async()=>{},
-  click:async()=>{pressed='true';events.push('period');},
+  tap:async()=>{pressed='true';events.push('period');},
   getAttribute:async k=>k==='aria-pressed'?pressed:null
  };
  const page={
@@ -136,11 +136,11 @@ test('economic mobile lab click proves local card and period state only',async()
   }
  };
  assert.deepEqual(await probeEconomicMobileInteraction(page),{
-  scope:'LAB_FIRST_PARTY_CLICK_NO_RUM',state:'INTERACTION_WORKS',reason:null
+  scope:'LAB_FIRST_PARTY_TOUCH_NO_RUM',state:'INTERACTION_WORKS',reason:null
  });
  assert.deepEqual(events,['card','period','card']);
  const observed=sample('/economic-indicators/');
- observed.mobileInteraction={scope:'LAB_FIRST_PARTY_CLICK_NO_RUM',
+ observed.mobileInteraction={scope:'LAB_FIRST_PARTY_TOUCH_NO_RUM',
   state:'INTERACTION_WORKS',reason:null};
  assert.equal(classifyProductionPage(observed).mobileInteraction.state,'INTERACTION_WORKS');
  assert.equal(summarizeProductionLab(all()).inpFieldP75,'NOT_MEASURED');
@@ -150,7 +150,7 @@ test('economic mobile lab cannot certify interaction when the period does not ch
  const first={
   waitFor:async()=>{},
   getAttribute:async()=> 'false',
-  click:async()=>{}
+  tap:async()=>{}
  };
  const page={
   locator:selector=>selector==='#zg-about-intro-dialog'?
@@ -165,6 +165,10 @@ test('production mobile click probe remains behind first-party-only network filt
  const src=readFileSync(new URL('../scripts/ci-production-browser-good-r1.mjs',import.meta.url),'utf8');
  assert.match(src,/if\(route==='\/economic-indicators\/'&&viewport\.width===390\)/);
  assert.match(src,/mobileInteraction=await probeEconomicMobileInteraction\(page\)/);
+ assert.match(src,/hasTouch:viewport\.width===390/);
+ assert.match(src,/isMobile:viewport\.width===390/);
+ assert.match(src,/await first\.tap\(/);
+ assert.match(src,/await period\.tap\(/);
  assert.match(src,/if\(!sameOrigin\)/);
  assert.match(src,/return network\.abort\('blockedbyclient'\)/);
  assert.match(src,/\['GET','HEAD'\]\.includes\(request\.method\(\)\)/);
