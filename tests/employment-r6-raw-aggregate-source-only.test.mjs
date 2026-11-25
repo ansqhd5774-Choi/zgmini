@@ -34,7 +34,6 @@ test('output never exposes raw input fields',()=>{
  assert.deepEqual(Object.keys(o).sort(),['schema','status','metadataKeys','bodyVerifiedKeys','runCertifiedKeys','rawSnapshotByGroup','rawSnapshotByMonth'].sort());
  assert.ok(!JSON.stringify(o).includes('private'));
 });
-
 test('4000-row boundary remains within hard cap and 4001 fails closed',()=>{
  const rows=Array.from({length:4000},(_,i)=>entry('bounded-'+i));
  const out=run(rows);
