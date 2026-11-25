@@ -839,3 +839,27 @@ GitHub Search API 직접 재조회: `zgmini` Issue **1** / PR **6**, `zgmini-pc-
 ### 배치 AB 종료 시점 최신 OPEN 재조회
 
 GitHub Search API 직접 재조회: `zgmini` Issue 1/PR 6, `zgmini-pc-control` Issue 54/PR 2, **총 OPEN 63건(이슈 55, PR 8)**. 배치 AA 66건 대비 PC Issue 3건 감소는 이 감사 회차의 직접 종결이 아니며 별도 동시 작업/상태 변동이다. 최초 고정 코호트 분모 88과 혼동하지 않는다.
+
+
+## 배치 AC — W04 원본 PC Job 미등록 3건, GitHub 전체 Run 시간창 독립 재조회 (2026-11-25 KST)
+
+배치 AB 기준 **69/88(78.4%)**에서 출발. 고정 최초 88건의 원본 중 기존 회차에서 댓글·후속 실행으로만 추적하고 실제 *당시 전체 GitHub issues workflow 목록*을 독립 확인하지 못했던 **PC #3519, #3522, #3524** 3건에 대해 이벤트 시간창별 GitHub Actions 전체 Run 목록을 직접 재조회했다. 세 결과가 각각 완전한 목록(100건 이하)이므로 **신규 원본 증거검증 3건**, 누적 **72/88(81.8%)**, 잔여 **16건**. 이번 검증은 정확 Workflow의 **원래 실행 등록 누락**을 확인한 것이며, 실제 PC Job 성공 또는 W04 업무 완료가 아니다.
+
+| 고정 원본 | 원본 이슈·범위 | 원래 labeled 이벤트 인접 GitHub Actions `issues` Run 전체 조회 | 판정 |
+|---|---|---|---|
+| [PC #3519](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3519) | created 2026-11-25T08:21:33Z, labeled 08:21:38Z, requestId `pc-update-c087fa10-88e2-42e3-bc60-c758ab93f0c1-postcheck`, operation `core-status` | 08:21:20Z..08:22:25Z, 전체 **45/45** `issues` Run 조회; `ZGMINI PC Job` workflow ID `404502862`는 **0건** | 원본 postcheck 실행 **미등록/미실행**, 타 담당자에 의해 이미 CLOSED/not_planned; 기능 성공 미증명 |
+| [PC #3522](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3522) | created 2026-11-25T08:33:04Z, labeled 08:33:05Z, requestId `pc-c413c6a8-89f5-4d8d-9615-207e2d812851`, operation `employment-r6-raw-run-attestation-readonly` | 08:32:55Z..08:34:05Z, 전체 **45/45** `issues` Run 조회; target `404502862` **0건** | 최초 History attestation A 실행 **미등록/미실행**, 이미 CLOSED/not_planned; History 실제 조회 완료 아님 |
+| [PC #3524](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3524) | created 2026-11-25T08:39:45Z, labeled 08:39:46Z, requestId `pc-778e41e1-6d7d-4932-99f4-adb919a4ff75`, operation 동일 | 08:39:35Z..08:40:45Z, 전체 **45/45** `issues` Run 조회; target `404502862` **0건** | 후속 주석 재등록 비교 요청도 실행 **미등록/미실행**, 이미 CLOSED/not_planned; 해결책 입증 실패 |
+
+**정상 대조군:** [#3500 / Run 45493188146](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45493188146) 이벤트 시간창 2026-11-24T21:38:35Z..21:39:20Z의 전체 **47/47** `issues` Run 조회. 동일 target workflow ID `404502862`에 **2건 등록**, `45493188146=completed/success`, `45493189234=completed/skipped`. 이는 workflow 자체가 항상 미등록된다는 설명의 반례이나, 실패 당시의 내부 원인을 특정하지 못한다.
+
+**후속 요청 경계:** 원래 #3519/#3522/#3524의 requestId를 반복하거나 원래 시간의 성공으로 소급하지 않는다. 독립 후속 [#3554 / Run 45597878497](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45597878497)은 별도 requestId `pc-9b14d682-a4ab-49f9-9c38-478edadaa996`로 workflow `404502862` 완료 성공 및 `PASS/R6_RAW_RUN_AGGREGATE_READONLY` JSON/TXT 결과가 존재한다. **후속 등록 회복 관측 ≠ 과거 3건 성공 ≠ GitHub 내부 원인 해결·재발 방지 확정**. #3516 독립 Windows C 복구 및 실PC History/SQLite 전체 검증은 별개 미완료.
+
+### 배치 AC OPEN 재계수 및 실행 경계
+
+GitHub Search API 최신 OPEN: `zgmini` Issue **1** / PR **6**, `zgmini-pc-control` Issue **54** / PR **2** = **63건(이슈 55/PR 8)**. 최초 고정 코호트 88과 별도 집계.
+
+- 이번 감사 직접 Issue/PR 종결 **0**, 누적 직접 종결 **10건** 그대로. 이미 CLOSED인 #3519/#3522/#3524를 재종결하거나 감사 성과로 합산하지 않음.
+- 원본 시간창 `issues` Workflow 전체 Run 목록 45/45·45/45·45/45 및 정상군 47/47 직접 대조를 완료했으나 당시 GitHub 내부 등록 실패 원인은 `ROOT_CAUSE_UNKNOWN`.
+- PC·Controller·Writer·SQLite/D1·Task·승인·PR 병합·PC Job 신설·기존 요청 재실행·Workflow 토글 **0건**.
+- 후속: 미검증 **16건**의 원본 증거 최초 감사만 신규 산입, W01/W03/W05 완료 항목의 정당한 수명주기 종결 가능성 판정, 활성 W04·ER1·#3516 보호.
