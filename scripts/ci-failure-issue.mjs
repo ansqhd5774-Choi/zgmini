@@ -19,6 +19,45 @@ export const caseKeyFor=(workflow,job,step,runId,attempt,jobId,stepNumber)=>
   .update(JSON.stringify([workflow,job,step,runId,attempt,jobId,stepNumber]))
   .digest('hex').slice(0,24);
 
+// Exhaust the exact attempt inventory rather than silently ignoring later jobs.
+// GitHub caps per_page at 100. Fail closed if a page is short or inconsistent.
+const PAGE_SIZE=100;
+const MAX_PAGES=10;
+async function verifiedJobsForAttempt(request,run){
+ const prefix='actions/runs/'+run.id+'/attempts/'+run.run_attempt+'/jobs?per_page=100';
+ const first=await request(prefix);
+ const total=first?.total_count;
+ if(!Number.isSafeInteger(total)||total<0||total>PAGE_SIZE*MAX_PAGES||
+    !Array.isArray(first?.jobs)||first.jobs.length!==Math.min(PAGE_SIZE,total))
+   fail('JOB_INVENTORY_INCOMPLETE');
+ const jobs=[...first.jobs];
+ for(let page=2;jobs.length<total&&page<=MAX_PAGES;page++){
+  const result=await request(prefix+'&page='+page);
+  const expected=Math.min(PAGE_SIZE,total-jobs.length);
+  if(result?.total_count!==total||!Array.isArray(result?.jobs)||
+     result.jobs.length!==expected)fail('JOB_INVENTORY_INCOMPLETE');
+  jobs.push(...result.jobs);
+ }
+ if(jobs.length!==total)fail('JOB_INVENTORY_INCOMPLETE');
+ const identities=jobs.map(j=>j?.id);
+ if(identities.some(id=>!goodId(id))||new Set(identities).size!==identities.length)
+   fail('JOB_IDENTITY_INVALID');
+ return jobs;
+}
+
+async function verifiedIssueComments(request,issueNumber){
+ const comments=[];
+ for(let page=1;page<=MAX_PAGES;page++){
+  const path='issues/'+issueNumber+'/comments?per_page=100'+
+   (page===1?'':'&page='+page);
+  const batch=await request(path);
+  if(!Array.isArray(batch)||batch.length>PAGE_SIZE)fail('COMMENTS_UNVERIFIED');
+  comments.push(...batch);
+  if(batch.length<PAGE_SIZE)return comments;
+ }
+ fail('COMMENTS_UNVERIFIED');
+}
+
 export async function triage({event,repository=REPO,request}){
  if(typeof request!=='function')fail('IO_MISSING');
  const run=event?.workflow_run;
@@ -31,11 +70,7 @@ export async function triage({event,repository=REPO,request}){
   return {state:'IGNORED'};
  if(!goodId(run.id)||!goodId(run.run_attempt)||
     !/^[a-f0-9]{40}$/.test(run.head_sha??''))fail('RUN_IDENTITY_INVALID');
- const jobsResponse=await request('actions/runs/'+run.id+'/attempts/'+run.run_attempt+'/jobs?per_page=100');
- const jobs=jobsResponse?.jobs;
- if(!Array.isArray(jobs)||!Number.isSafeInteger(jobsResponse.total_count)||
-    jobsResponse.total_count>100||jobs.length!==jobsResponse.total_count)
-  fail('JOB_INVENTORY_INCOMPLETE');
+ const jobs=await verifiedJobsForAttempt(request,run);
  const broken=jobs.filter(j=>['failure','timed_out'].includes(j.conclusion))
    .sort((a,b)=>String(a.name).localeCompare(String(b.name))||a.id-b.id);
  if(broken.some(j=>!goodId(j.id)))fail('JOB_IDENTITY_INVALID');
@@ -88,12 +123,17 @@ export async function triage({event,repository=REPO,request}){
   if(matches.length>1)fail('DUPLICATE_INCIDENT_ISSUES');
   if(matches.length){
    const found=matches[0];
-   const comments=await request('issues/'+found.number+'/comments?per_page=100');
-   if(!Array.isArray(comments)||comments.length===100)fail('COMMENTS_UNVERIFIED');
+   const comments=await verifiedIssueComments(request,found.number);
    if(comments.some(c=>c.body?.includes(receipt))||found.body.includes(receipt)){
     results.push({state:'REUSED',issue:found.number});continue;
    }
-   await request('issues/'+found.number+'/comments',{method:'POST',body:{body:evidence}});
+   const posted=await request('issues/'+found.number+'/comments',
+    {method:'POST',body:{body:evidence}});
+   if(!goodId(posted?.id))fail('ISSUE_COMMENT_RESULT_UNKNOWN');
+   const confirmed=await request('issues/comments/'+posted.id);
+   if(confirmed?.id!==posted.id||typeof confirmed.body!=='string'||
+      !confirmed.body.includes(receipt)||!confirmed.body.includes(runUrl))
+     fail('ISSUE_COMMENT_READBACK');
    results.push({state:'COMMENTED',issue:found.number});continue;
   }
   const title='[CI] '+clean(run.name)+' / '+incident.jobName+' / '+incident.stepName+
