@@ -2,6 +2,8 @@
 // Never turn an unresolvable or unrelated git range into a successful scan.
 import {readFileSync,appendFileSync} from 'node:fs';
 import {execFileSync} from 'node:child_process';
+import {resolve} from 'node:path';
+import {pathToFileURL} from 'node:url';
 
 const SHA=/^[a-f0-9]{40}$/i;
 const ZERO='0'.repeat(40);
@@ -42,6 +44,6 @@ export function main(env=process.env){
   appendFileSync(env.GITHUB_OUTPUT,'log_opts='+range+'\n');
   console.log('SECRET_RANGE_VALIDATED (SHA refs only; merged parents included)');
 }
-if(process.argv[1]&&import.meta.url===new URL('file://'+process.argv[1]).href){
+if(process.argv[1]&&import.meta.url===pathToFileURL(resolve(process.argv[1])).href){
   try{main();}catch(error){console.error(error.message.startsWith('SECRET_')?error.message:'SECRET_RANGE_UNVERIFIED');process.exitCode=1;}
 }
