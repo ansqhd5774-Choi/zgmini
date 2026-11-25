@@ -28,6 +28,8 @@ export function classifyProductionPage(sample){
     typeof sample.blockedWriteRequests!=='number'||
     !Number.isSafeInteger(sample.blockedWriteRequests)||
     sample.blockedWriteRequests<0||
+    !Array.isArray(sample.pageErrors)||
+    sample.pageErrors.some(e=>typeof e!=='string')||
     typeof sample.documentStatus!=='number'&&sample.documentStatus!==null)
   error('CI_PRODUCTION_SPEED_SAMPLE_INVALID');
  const metrics=normalizeRawMetrics(sample.metrics??{});
@@ -40,6 +42,8 @@ export function classifyProductionPage(sample){
  const status=sample.error||sample.documentStatus!==200||!sample.mainFound?
   'PRODUCTION_LOAD_UNVERIFIED':
   states.includes('EXCEEDS_GOOD_TARGET')?'PRODUCTION_LAB_GOOD_EXCEEDED':
+  sample.pageErrors.length>0||sample.blockedWriteRequests>0?
+   'PRODUCTION_LAB_RUNTIME_UNVERIFIED':
   states.includes('UNVERIFIED')?'PRODUCTION_LAB_METRICS_UNVERIFIED':
   'PRODUCTION_LAB_MEASURED_TARGETS_MET';
  return {route:sample.route,url:sample.url,viewport:sample.viewport,
