@@ -15,6 +15,8 @@ export const SYMBOLS=Object.freeze([
   'MDB','CHWY','GME','COO','TTD','ESTC','NTAP','HPE','TOL','CASY'
 ]);
 const MAX_BYTES=2_000_000;
+// Only an explicitly pinned, separately approved entry may opt into 2-call resume.
+const RESUME_PAIR=Object.freeze(['TOL','CASY']);
 const stop=code=>{throw Error(code)};
 const safeCode=e=>/^DEC31_BATCH_[A-Z0-9_]+$/.test(String(e?.message))?
   e.message:'DEC31_BATCH_UNEXPECTED_STOP';
@@ -57,7 +59,7 @@ function getKey(root,env){
 }
 
 export async function runDec31Batch({pcHome=PC_HOME,env=process.env,
-  fetcher=fetch,clock=()=>Date.now()}={}){
+  fetcher=fetch,clock=()=>Date.now(),resumeMissingPairOnly=false}={}){
   const report={schema:'ZGMINI_DEC31_SYMBOL_BATCH_A_V1',status:'BLOCKED',
     code:'DEC31_BATCH_NOT_STARTED',source:'EarningsAPI /v1/earnings',
     range:['2026-12-01','2026-12-31'],candidateSymbols:SYMBOLS.length,
@@ -78,6 +80,26 @@ export async function runDec31Batch({pcHome=PC_HOME,env=process.env,
       stop('DEC31_BATCH_PROVIDER_KEY_UNAVAILABLE');
     fs.mkdirSync(dir,{recursive:true});
     try{fd=fs.openSync(lock,'wx')}catch{stop('DEC31_BATCH_ALREADY_RUNNING')}
+    if(typeof resumeMissingPairOnly!=='boolean')stop('DEC31_BATCH_RESUME_OPTION_INVALID');
+    if(resumeMissingPairOnly){
+      // Verify the complete fixed cohort *while holding the existing batch lock*.
+      // A broken symlink still counts as an existing unsafe file (unlike existsSync).
+      const missing=[];
+      for(const symbol of SYMBOLS){
+        const file=path.join(dir,symbol+'.json');
+        let exists;
+        try{fs.lstatSync(file);exists=true}
+        catch(error){
+          if(error?.code!=='ENOENT')stop('DEC31_BATCH_RESUME_INPUT_INVALID');
+          exists=false;
+        }
+        if(exists)inspectSavedSymbol(file,symbol,clock());
+        else missing.push(symbol);
+      }
+      if(missing.length!==RESUME_PAIR.length||
+        !RESUME_PAIR.every((symbol,i)=>symbol===missing[i]))
+        stop('DEC31_BATCH_RESUME_SCOPE_STOP');
+    }
     for(const symbol of SYMBOLS){
       const filename=path.join(dir,symbol+'.json');
       if(fs.existsSync(filename)){
@@ -90,6 +112,8 @@ export async function runDec31Batch({pcHome=PC_HOME,env=process.env,
         report.sourceStoredAt=storedAt;
         continue;
       }
+      if(resumeMissingPairOnly&&(report.providerCalls>=2||!RESUME_PAIR.includes(symbol)))
+        stop('DEC31_BATCH_RESUME_CALL_LIMIT');
       const url=new URL(ENDPOINT);
       url.searchParams.set('symbol',symbol);url.searchParams.set('apikey',key);
       report.providerCalls++;

@@ -181,3 +181,70 @@ test('valid empty response original archive is reused, not marked invalid',async
   assert.ok(!called.includes('ADBE'));
   assert.equal(fs.readFileSync(file,'utf8'),original);
 });
+
+
+test('approved pair-only preflight fails closed unless the exact prior 38 files exist',async t=>{
+  const root=temp(t);let calls=0;
+  const result=await runDec31Batch({pcHome:root,env:{EARNINGS_API_KEY:key},clock,
+    resumeMissingPairOnly:true,fetcher:async()=>{calls++;throw Error('UNAPPROVED_GET')}});
+  assert.equal(result.status,'BLOCKED');
+  assert.equal(result.code,'DEC31_BATCH_RESUME_SCOPE_STOP');
+  assert.equal(result.providerCalls,0);
+  assert.equal(calls,0);
+});
+
+test('pair-only preflight permits exactly TOL and CASY while preserving the 38 verified original files',async t=>{
+  const root=temp(t),dir=path.join(root,'er1-input','dec31-symbol-batch-a');
+  fs.mkdirSync(dir,{recursive:true});
+  const original=SYMBOLS.slice(0,38).map(symbol=>{
+    const file=path.join(dir,symbol+'.json');
+    const bytes=JSON.stringify({storedAt:'2026-11-04T09:00:00.000Z',body:[
+      {symbol,date:'2026-12-10'}]})+'\n';
+    fs.writeFileSync(file,bytes);
+    return [file,bytes];
+  });
+  const called=[];
+  const result=await runDec31Batch({pcHome:root,env:{EARNINGS_API_KEY:key},clock,
+    resumeMissingPairOnly:true,fetcher:async url=>{
+      const symbol=new URL(url).searchParams.get('symbol');called.push(symbol);
+      return {ok:true,status:200,text:async()=>JSON.stringify([{symbol,date:'2026-12-08'}])};
+    }});
+  assert.equal(result.status,'BATCH_COMPLETE');
+  assert.equal(result.providerCalls,2);
+  assert.equal(result.reusedStoredSymbols,38);
+  assert.equal(result.newStoredSymbols,2);
+  assert.deepEqual(called,['TOL','CASY']);
+  for(const [file,bytes] of original)assert.equal(fs.readFileSync(file,'utf8'),bytes);
+});
+
+test('pair-only preflight rejects corrupt one-of-38 archive before provider',async t=>{
+  const root=temp(t),dir=path.join(root,'er1-input','dec31-symbol-batch-a');
+  fs.mkdirSync(dir,{recursive:true});
+  for(const symbol of SYMBOLS.slice(0,38)){
+    const raw=symbol==='ADBE'?'broken':JSON.stringify({storedAt:'2026-11-04T09:00:00.000Z',body:[]});
+    fs.writeFileSync(path.join(dir,symbol+'.json'),raw);
+  }
+  let calls=0;
+  const result=await runDec31Batch({pcHome:root,env:{EARNINGS_API_KEY:key},clock,
+    resumeMissingPairOnly:true,fetcher:async()=>{calls++;throw Error('UNAPPROVED_GET')}});
+  assert.equal(result.status,'BLOCKED');
+  assert.equal(result.code,'DEC31_BATCH_EXISTING_FILE_INVALID');
+  assert.equal(result.providerCalls,0);
+  assert.equal(calls,0);
+});
+
+test('pair-only preflight rejects a broken symlink without provider call',async t=>{
+  const root=temp(t),dir=path.join(root,'er1-input','dec31-symbol-batch-a');
+  fs.mkdirSync(dir,{recursive:true});
+  for(const symbol of SYMBOLS.slice(0,38)){
+    fs.writeFileSync(path.join(dir,symbol+'.json'),JSON.stringify({storedAt:'2026-11-04T09:00:00.000Z',body:[]}));
+  }
+  fs.symlinkSync(path.join(dir,'missing-target.json'),path.join(dir,'TOL.json'));
+  let calls=0;
+  const result=await runDec31Batch({pcHome:root,env:{EARNINGS_API_KEY:key},clock,
+    resumeMissingPairOnly:true,fetcher:async()=>{calls++;throw Error('UNAPPROVED_GET')}});
+  assert.equal(result.status,'BLOCKED');
+  assert.equal(result.code,'DEC31_BATCH_EXISTING_FILE_INVALID');
+  assert.equal(result.providerCalls,0);
+  assert.equal(calls,0);
+});
