@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {REPO,WORKFLOWS,triage,keyFor,markerFor} from '../scripts/ci-failure-issue.mjs';
+import {REPO,WORKFLOWS,triage,markerFor,caseKeyFor} from '../scripts/ci-failure-issue.mjs';
 
 const event=(overrides={})=>({
  action:'completed',repository:{full_name:REPO,private:false},
@@ -13,7 +13,7 @@ const failureJob={id:87,name:'source-check',conclusion:'failure',steps:[
  {name:'checkout',conclusion:'success'},{name:'Regression tests',conclusion:'failure'}]};
 function fixture({existing=false,comments=[]}={}){
  const calls=[];
- const hash=keyFor(WORKFLOWS[0],'source-check','Regression tests');
+ const hash=caseKeyFor(WORKFLOWS[0],'source-check','Regression tests',123456,1,87,2);
  const marker=markerFor(hash);
  const issue={number:6200,body:marker+'\nold failure',
   user:{login:'github-actions[bot]'}};
@@ -51,7 +51,7 @@ test('same failure class links to existing Issue and repeated run is idempotent'
  assert.equal(f.calls.filter(x=>x.method==='POST'&&x.resource==='issues').length,0);
  assert.equal(f.calls.filter(x=>x.method==='POST'&&x.resource.endsWith('/comments')).length,1);
  const duplicate=fixture({existing:true,comments:[
-  {body:'<!-- zgmini-ci-run:123456:1 -->\nalready reported'}]});
+  {body:'<!-- zgmini-ci-run:123456:1:job:87:step:2 -->\nalready reported'}]});
  assert.deepEqual(await triage({event:event(),request:duplicate.request}),
   {state:'REUSED',issue:6200});
  assert.equal(duplicate.calls.filter(x=>x.method==='POST').length,0);
@@ -96,10 +96,10 @@ test('timed out second attempt records the exact attempt and timeout metadata',a
  const request=async(resource,{method='GET',body}={})=>{
   calls.push({resource,method,body});
   if(resource==='actions/runs/123456/attempts/2/jobs?per_page=100')
-   return {total_count:1,jobs:[{name:'CI timeout',conclusion:'timed_out',steps:[]}]};
+   return {total_count:1,jobs:[{id:88,name:'CI timeout',conclusion:'timed_out',steps:[]}]};
   if(resource==='issues?state=open&per_page=100&page=1')return [];
   if(resource==='issues'&&method==='POST')return {...issue,body:body.body};
-  if(resource==='issues/6201')return {...issue,body:markerFor(keyFor(WORKFLOWS[0],'CI timeout','JOB_TIMEOUT'))};
+  if(resource==='issues/6201')return {...issue,body:markerFor(caseKeyFor(WORKFLOWS[0],'CI timeout','JOB_TIMEOUT',123456,2,88,0))};
   throw Error('unexpected route '+resource);
  };
  assert.deepEqual(await triage({event:event({run_attempt:2,conclusion:'timed_out'}),request}),
@@ -161,10 +161,78 @@ test('nonempty GitHub job count with omitted jobs fails closed before Issue writ
  await assert.rejects(triage({event:event(),request}),/CI_INCIDENT_JOB_INVENTORY_INCOMPLETE/);
  assert.deepEqual(calls.map(c=>c.method),['GET']);
 });
-test('created Issue says grouping is by CI step, not by confirmed root cause',async()=>{
+test('created Issue isolates unverified causes by exact run and records its execution scope',async()=>{
  const f=fixture();
  assert.deepEqual(await triage({event:event(),request:f.request}),{state:'CREATED',issue:6200});
  const created=f.calls.find(x=>x.resource==='issues'&&x.method==='POST');
- assert.ok(created.body.body.includes('묶음 기준: 같은 Workflow/Job/Step'));
- assert.match(created.body.body,/근본 원인이 같다는 뜻은 아닙니다/);
+ assert.ok(created.body.body.includes('원인 미확정, 실행별 독립 사건'));
+ assert.ok(created.body.body.includes('분류: 실행·Job·Step 위치만 확인됨'));
+ assert.ok(created.body.body.includes('zgmini-ci-run:123456:1:job:87:step:2'));
+ assert.doesNotMatch(created.body.body,/묶음 기준: 같은 Workflow\/Job\/Step/);
+
+});
+
+test('unknown causes in identical CI steps are separated by run and attempt',()=>{
+ const a=caseKeyFor(WORKFLOWS[0],'source-check','Regression tests',123456,1,87,2);
+ const b=caseKeyFor(WORKFLOWS[0],'source-check','Regression tests',123457,1,87,2);
+ const c=caseKeyFor(WORKFLOWS[0],'source-check','Regression tests',123456,2,87,2);
+ assert.notEqual(a,b);
+ assert.notEqual(a,c);
+});
+
+test('all failing jobs and failed steps are reported without conflating causes',async()=>{
+ const calls=[],stored=new Map();
+ let issueNumber=6300;
+ const request=async(resource,{method='GET',body}={})=>{
+  calls.push({resource,method,body});
+  if(resource==='actions/runs/123456/attempts/1/jobs?per_page=100')
+   return {total_count:2,jobs:[
+    {id:87,name:'source-check',conclusion:'failure',steps:[
+     {number:1,name:'Unit',conclusion:'failure'},
+     {number:2,name:'Integration',conclusion:'failure'}]},
+    {id:88,name:'security-check',conclusion:'failure',steps:[
+     {number:1,name:'Secret scan',conclusion:'failure'}]}
+   ]};
+  if(resource==='issues?state=open&per_page=100&page=1')return [];
+  if(resource==='issues'&&method==='POST'){
+   const n=issueNumber++;
+   stored.set(n,{number:n,body:body.body});
+   return {number:n};
+  }
+  const match=resource.match(/^issues\/(\d+)$/);
+  if(match&&method==='GET')return stored.get(Number(match[1]));
+  throw Error('unexpected '+method+' '+resource);
+ };
+ const result=await triage({event:event(),request});
+ assert.equal(result.state,'MULTIPLE_INCIDENTS');
+ assert.deepEqual(result.incidents.map(i=>i.state),['CREATED','CREATED','CREATED']);
+ const posted=calls.filter(c=>c.resource==='issues'&&c.method==='POST');
+ assert.equal(posted.length,3);
+ assert.ok(posted.some(x=>x.body.body.includes('- Job ID: 88')));
+ assert.ok(posted.some(x=>x.body.body.includes('- Step: Integration')));
+ assert.ok(posted.every(x=>x.body.body.includes('원인 미확정')));
+ assert.equal(new Set(posted.map(x=>x.body.body.match(/zgmini-ci-failure:([a-f0-9]+)/)?.[1])).size,3);
+});
+
+test('missing failed-job identity is refused before incident writes',async()=>{
+ const calls=[];
+ await assert.rejects(triage({event:event(),request:async(resource,{method='GET'}={})=>{
+  calls.push({resource,method});
+  if(resource.startsWith('actions/runs/'))return {total_count:1,jobs:[
+   {name:'anonymous',conclusion:'failure',steps:[{name:'Unit',conclusion:'failure'}]}]};
+  throw Error('unexpected Issue access');
+ }}),/CI_INCIDENT_JOB_IDENTITY_INVALID/);
+ assert.equal(calls.length,1);
+});
+
+test('Node CI keeps independent source, security and audit checks observable after unrelated failures',()=>{
+ const yml=readFileSync(new URL('../.github/workflows/node.js.yml',import.meta.url),'utf8');
+ const independent=['Type check','Validate public-to-PC architecture boundaries',
+  'Verify stored data read and freshness contract','Regression tests',
+  'Lint changed source (ESLint)','Validate changed GitHub Actions YAML (actionlint)',
+  'Audit production dependency vulnerabilities (high or critical)'];
+ for(const name of independent)
+  assert.ok(yml.includes("      - name: "+name+"\n        if: "+String.fromCharCode(36)+"{{ !cancelled() && steps.install.outcome == 'success' }}"),
+   'missing isolated execution: '+name);
+ assert.doesNotMatch(yml,/continue-on-error:\s*true/);
 });
