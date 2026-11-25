@@ -7,12 +7,33 @@ import {save,read} from './d1.mjs';
 import {collectSupplyR10} from './supply-r10.mjs';
 import {refreshSp500ShadowIfDue} from './asset-r10-sp500-refresh.mjs';
 import {dispatchEarningsRiskProvisionalR23} from './earnings-risk-provisional-r23-hook.mjs';
-import {collectionPublicationPolicy} from './collection-publication-policy.mjs';
+import {collectionPublicationPolicy,runCnnMinuteCycle} from './collection-publication-policy.mjs';
 import {progressivePublication,auxiliaryInputCheckpoint} from './progressive-publication.mjs';
 import {updateDataAlert} from './local-data-alert.mjs';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
+// Explicit CNN scope uses the existing collection and publication entries.
+// No new scheduler, global Core lock, provider loop or Core checkpoint writes.
+if(process.argv.includes('--cnn-minute')){
+ if(process.argv.slice(2).length!==2||!process.argv.includes('--publish'))
+  throw Error('CNN_MINUTE_CYCLE_SCOPE_STOP');
+ const runChild=(name,args)=>{
+  const child=spawnSync(process.execPath,[path.join(here,name),...args],
+   {windowsHide:true,stdio:['ignore','pipe','pipe'],encoding:'utf8',timeout:5*60000});
+  if(child.error||child.signal||!Number.isInteger(child.status))throw Error('CNN_MINUTE_CHILD_OUTCOME_UNKNOWN');
+  let receipt;try{receipt=JSON.parse(child.stdout.trim().split(/\r?\n/).at(-1));}catch{throw Error('CNN_MINUTE_CHILD_RECEIPT_UNKNOWN');}
+  if(child.status!==0&&receipt?.status!=='FAILED'&&receipt?.status!=='PARTIAL')
+   throw Error('CNN_MINUTE_CHILD_OUTCOME_UNKNOWN');
+  return receipt;
+ };
+ const report=await runCnnMinuteCycle({
+  collect:()=>runChild('collect-local.mjs',['--cnn-minute']),
+  publish:()=>runChild('run-local.mjs',['--cnn-minute','--publish']),
+ });
+ console.log(JSON.stringify(report));
+ if(!['COMPLETE','COMPLETE_WITH_COLLECTION_GAPS','SKIPPED_ACTIVE_COLLECTION'].includes(report.status))process.exitCode=1;
+}else{
 const file=path.join(base,'local-cycle.lock');
 if(fs.existsSync(file)){
  let alive=true;try{process.kill(read(file).pid,0);}catch(error){if(error.code==='ESRCH')alive=false;}
@@ -223,3 +244,5 @@ try{
  if(publishRequested)try{updateDataAlert(base,{key:'publication',failed:publication.status!==0});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
  if(publication.status!==0)process.exitCode=1;
 }finally{fs.unlinkSync(file);}
+
+}
