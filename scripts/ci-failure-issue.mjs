@@ -12,6 +12,13 @@ export const keyFor=(workflow,job,step)=>createHash('sha256')
  .update(JSON.stringify([workflow,job,step])).digest('hex').slice(0,24);
 export const markerFor=key=>'<!-- zgmini-ci-failure:'+key+' -->';
 
+// A step locates a failed check; it does not prove the underlying cause.
+// Unknown causes stay isolated by Run, Attempt, Job and Step.
+export const caseKeyFor=(workflow,job,step,runId,attempt,jobId,stepNumber)=>
+ createHash('sha256')
+  .update(JSON.stringify([workflow,job,step,runId,attempt,jobId,stepNumber]))
+  .digest('hex').slice(0,24);
+
 export async function triage({event,repository=REPO,request}){
  if(typeof request!=='function')fail('IO_MISSING');
  const run=event?.workflow_run;
@@ -30,43 +37,79 @@ export async function triage({event,repository=REPO,request}){
     jobsResponse.total_count>100||jobs.length!==jobsResponse.total_count)
   fail('JOB_INVENTORY_INCOMPLETE');
  const broken=jobs.filter(j=>['failure','timed_out'].includes(j.conclusion))
-   .sort((a,b)=>String(a.name).localeCompare(String(b.name)));
- const job=broken[0];
- const jobName=clean(job?.name||'WORKFLOW_LEVEL_FAILURE');
- const stepName=clean(job?.steps?.find(s=>s.conclusion==='failure')?.name||
-    (job?.conclusion==='timed_out'?'JOB_TIMEOUT':'FAILURE_STEP_UNVERIFIED'));
- const key=keyFor(run.name,jobName,stepName),marker=markerFor(key);
- const receipt='<!-- zgmini-ci-run:'+run.id+':'+run.run_attempt+' -->';
- const runUrl='https://github.com/'+REPO+'/actions/runs/'+run.id;
- const evidence=[receipt,'**CI 실패 관측**', '- Workflow: '+clean(run.name),
-  '- Job: '+jobName,'- Step: '+stepName,'- Conclusion: '+run.conclusion,
-  '- Run: '+runUrl,'- Attempt: '+run.run_attempt,'- HEAD: `'+run.head_sha+'`',
-  '- 묶음 기준: 같은 Workflow/Job/Step이며, 실패의 근본 원인이 같다는 뜻은 아닙니다.'].join('\n');
- let found=null;
+   .sort((a,b)=>String(a.name).localeCompare(String(b.name))||a.id-b.id);
+ if(broken.some(j=>!goodId(j.id)))fail('JOB_IDENTITY_INVALID');
+ const cases=[];
+ for(const job of broken){
+  const steps=Array.isArray(job.steps)?job.steps:[];
+  const failedSteps=steps.map((step,index)=>({step,index}))
+   .filter(({step})=>['failure','timed_out'].includes(step?.conclusion));
+  if(!failedSteps.length)failedSteps.push({step:null,index:-1});
+  for(const {step,index} of failedSteps){
+   const jobName=clean(job.name||'FAILED_JOB_UNNAMED');
+   const stepName=clean(step?.name||
+    (job.conclusion==='timed_out'?'JOB_TIMEOUT':'FAILURE_STEP_UNVERIFIED'));
+   const stepNumber=step?.number??(index<0?0:index+1);
+   if(!Number.isSafeInteger(stepNumber)||stepNumber<0)fail('STEP_IDENTITY_INVALID');
+   cases.push({job,jobName,stepName,stepNumber,
+    key:caseKeyFor(run.name,jobName,stepName,run.id,run.run_attempt,job.id,stepNumber),
+    legacyMarker:markerFor(keyFor(run.name,jobName,stepName))});
+  }
+ }
+ if(!cases.length)cases.push({job:{id:0},jobName:'WORKFLOW_LEVEL_FAILURE',
+  stepName:'FAILURE_STEP_UNVERIFIED',stepNumber:0,
+  key:caseKeyFor(run.name,'WORKFLOW_LEVEL_FAILURE','FAILURE_STEP_UNVERIFIED',run.id,run.run_attempt,0,0),
+  legacyMarker:markerFor(keyFor(run.name,'WORKFLOW_LEVEL_FAILURE','FAILURE_STEP_UNVERIFIED'))});
+ const openIssues=[];
  for(let page=1;page<=10;page++){
   const list=await request('issues?state=open&per_page=100&page='+page);
   if(!Array.isArray(list))fail('ISSUE_INVENTORY_INVALID');
-  const matches=list.filter(i=>!i.pull_request&&typeof i.body==='string'&&
-    i.body.includes(marker)&&i.user?.login==='github-actions[bot]');
-  if(matches.length>1)fail('DUPLICATE_INCIDENT_ISSUES');
-  if(matches.length){found=matches[0];break;}
+  openIssues.push(...list.filter(i=>!i.pull_request&&typeof i.body==='string'&&
+    i.user?.login==='github-actions[bot]'));
   if(list.length<100)break;
   if(page===10)fail('ISSUE_INVENTORY_INCOMPLETE');
  }
- if(found){
-  const comments=await request('issues/'+found.number+'/comments?per_page=100');
-  if(!Array.isArray(comments)||comments.length===100)fail('COMMENTS_UNVERIFIED');
-  if(comments.some(c=>c.body?.includes(receipt)))return {state:'REUSED',issue:found.number};
-  await request('issues/'+found.number+'/comments',{method:'POST',body:{body:evidence}});
-  return {state:'COMMENTED',issue:found.number};
+ const results=[];
+ for(const incident of cases){
+  const marker=markerFor(incident.key);
+  const receipt='<!-- zgmini-ci-run:'+run.id+':'+run.run_attempt+
+    ':job:'+incident.job.id+':step:'+incident.stepNumber+' -->';
+  const runUrl='https://github.com/'+REPO+'/actions/runs/'+run.id;
+  const legacy=openIssues.find(i=>i.body.includes(incident.legacyMarker));
+  const evidence=[receipt,'**CI 실패 관측 (원인 미확정, 실행별 독립 사건)**',
+   '- Workflow: '+clean(run.name),'- Job: '+incident.jobName,
+   '- Job ID: '+incident.job.id,'- Step: '+incident.stepName,
+   '- Step number: '+incident.stepNumber,'- Conclusion: '+run.conclusion,
+   '- Run: '+runUrl,'- Attempt: '+run.run_attempt,
+   '- HEAD: '+String.fromCharCode(96)+run.head_sha+String.fromCharCode(96),
+   '- 분류: 실행·Job·Step 위치만 확인됨. 동일 근본 원인으로 추정하거나 로그를 게시하지 않음.'
+  ].join('\n');
+  const matches=openIssues.filter(i=>i.body.includes(marker));
+  if(matches.length>1)fail('DUPLICATE_INCIDENT_ISSUES');
+  if(matches.length){
+   const found=matches[0];
+   const comments=await request('issues/'+found.number+'/comments?per_page=100');
+   if(!Array.isArray(comments)||comments.length===100)fail('COMMENTS_UNVERIFIED');
+   if(comments.some(c=>c.body?.includes(receipt))||found.body.includes(receipt)){
+    results.push({state:'REUSED',issue:found.number});continue;
+   }
+   await request('issues/'+found.number+'/comments',{method:'POST',body:{body:evidence}});
+   results.push({state:'COMMENTED',issue:found.number});continue;
+  }
+  const title='[CI] '+clean(run.name)+' / '+incident.jobName+' / '+incident.stepName+
+   ' / Run '+run.id+' Attempt '+run.run_attempt;
+  const crossLink=legacy?'\n이전 Step 묶음 이력: #'+legacy.number+
+    ' (동일 원인이라는 뜻이 아님).':'';
+  const created=await request('issues',{method:'POST',
+   body:{title,body:[marker,evidence,crossLink,
+    '\n근본 원인이 확인되기 전에는 다른 Run과 합치지 않으며 자동 재실행·자동 종료하지 않습니다.'].join('\n')}});
+  if(!goodId(created?.number))fail('ISSUE_CREATE_RESULT_UNKNOWN');
+  const check=await request('issues/'+created.number);
+  if(check?.number!==created.number||!check?.body?.includes(marker))fail('ISSUE_CREATE_READBACK');
+  openIssues.push({number:created.number,body:check.body,user:{login:'github-actions[bot]'}});
+  results.push({state:'CREATED',issue:created.number});
  }
- const title='[CI] '+clean(run.name)+' / '+jobName+' / '+stepName;
- const created=await request('issues',{method:'POST',
-  body:{title,body:[marker,evidence,'\n동일 CI 단계의 후속 실패를 기록하되 원인별 조사는 구분합니다. 자동 재실행·자동 종료는 하지 않습니다.'].join('\n')}});
- if(!goodId(created?.number))fail('ISSUE_CREATE_RESULT_UNKNOWN');
- const check=await request('issues/'+created.number);
- if(check?.number!==created.number||!check?.body?.includes(marker))fail('ISSUE_CREATE_READBACK');
- return {state:'CREATED',issue:created.number};
+ return results.length===1?results[0]:{state:'MULTIPLE_INCIDENTS',incidents:results};
 }
 
 export async function main(env=process.env,fetcher=fetch){
