@@ -1,6 +1,7 @@
 // R2 #29 optional baseline discovery using the existing read-only Actions API.
 // Do not fetch logs, alter Actions, deploy, or introduce bundle-size thresholds.
-import {appendFile} from 'node:fs/promises';
+import {appendFile,mkdir} from 'node:fs/promises';
+import {spawnSync} from 'node:child_process';
 import {resolve} from 'node:path';
 import {fileURLToPath} from 'node:url';
 
@@ -25,7 +26,7 @@ export async function findExistingBundleBaseline({read,currentRunId=null}){
   if(!artifacts||!Array.isArray(artifacts.artifacts)||
      artifacts.artifacts.length>100||
      !Number.isSafeInteger(artifacts.total_count)||
-     artifacts.total_count<artifacts.artifacts.length)
+     artifacts.total_count!==artifacts.artifacts.length)
    throw Error('CI_BUNDLE_BASELINE_ARTIFACTS_UNVERIFIED');
   const candidates=artifacts.artifacts.filter(a=>
    a?.name==='client-bundle-size-report'&&a.expired===false);
@@ -36,6 +37,20 @@ export async function findExistingBundleBaseline({read,currentRunId=null}){
   return {runId:run.id,artifactId:candidates[0].id};
  }
  return null;
+}
+
+// GitHub-hosted runner has the official gh CLI. It downloads existing
+// Actions artifacts using read-only access; a missing optional baseline does
+// not fail unrelated required build and regression checks.
+export async function downloadExistingBundle({runId,run=spawnSync,makeDir=mkdir}){
+ if(!Number.isSafeInteger(runId)||runId<1)
+  throw Error('CI_BUNDLE_BASELINE_RUN_ID_UNVERIFIED');
+ const dir='artifacts/ci-bundle-size/baseline';
+ await makeDir(dir,{recursive:true});
+ const result=run('gh',['run','download',String(runId),
+  '--repo',REPO,'--name','client-bundle-size-report','--dir',dir],
+  {timeout:30000,windowsHide:true,stdio:'ignore'});
+ return result?.status===0&&!result.error;
 }
 
 export async function githubRead(resource,token,fetcher=fetch){
@@ -66,6 +81,9 @@ export async function main(){
    read:resource=>githubRead(resource,process.env.GITHUB_TOKEN)
   });
   if(!result){console.log('CI_BUNDLE_BASELINE=UNAVAILABLE_NO_ARTIFACT');return;}
+  if(!await downloadExistingBundle({runId:result.runId})){
+   console.log('CI_BUNDLE_BASELINE=UNVERIFIED_DOWNLOAD');return;
+  }
   await appendFile(process.env.GITHUB_OUTPUT,'run_id='+result.runId+'\n','utf8');
   console.log('CI_BUNDLE_BASELINE=AVAILABLE_RUN_'+result.runId);
  }catch(e){
