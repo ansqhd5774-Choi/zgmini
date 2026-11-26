@@ -48,15 +48,19 @@ async function assertRealLineStartsAtLeft(page,period,width){
  await line.first().waitFor({state:'attached',timeout:15000});
  const geometry=await page.locator('.zg-fg-us .cnn-history-chart-hitbox').evaluate(root=>{
   const path=root.querySelector('path.recharts-area-curve');
-  const tick=root.querySelector('.recharts-xAxis .recharts-cartesian-axis-tick text');
+  // ReferenceLine reaches the actual plot boundary and renders even when
+  // Recharts omits an X-axis tick label on compact mobile charts.
+  const guide=root.querySelector('.recharts-reference-line line');
+  const clip=root.querySelector('clipPath rect');
+  const left=guide?.getAttribute('x1')??clip?.getAttribute('x');
   const d=path?.getAttribute('d')??'';
   const start=d.match(/^M\s*([-\d.]+)/);
   return {firstX:start?Number(start[1]):null,
-    leftTickX:tick?Number(tick.getAttribute('x')):null};
+    leftEdgeX:left===null||left===undefined?null:Number(left)};
  });
- assert(Number.isFinite(geometry.firstX)&&Number.isFinite(geometry.leftTickX),
-  period+' '+width+'px must expose first line point and left axis tick: '+JSON.stringify(geometry));
- assert(Math.abs(geometry.firstX-geometry.leftTickX)<=3,
+ assert(Number.isFinite(geometry.firstX)&&Number.isFinite(geometry.leftEdgeX),
+  period+' '+width+'px must expose first real line point and plot boundary: '+JSON.stringify(geometry));
+ assert(Math.abs(geometry.firstX-geometry.leftEdgeX)<=3,
   period+' '+width+'px first real point must touch left plot edge: '+JSON.stringify(geometry));
 }
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
