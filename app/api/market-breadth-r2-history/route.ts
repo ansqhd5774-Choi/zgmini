@@ -9,7 +9,7 @@ export async function GET(request:Request){
       {status:404,headers:{'Cache-Control':'no-store'}});
   const native=env as unknown as {DB_CORE?:D1Database;DB?:D1Database};
   const result=await readPaidUsR2Feed(native.DB_CORE??native.DB,{mode:'history'});
-  if(!result.ok)return Response.json({status:'UNAVAILABLE',reason:result.reason},
+  if('reason' in result)return Response.json({status:'UNAVAILABLE',reason:result.reason},
     {status:result.httpStatus,headers:{'Cache-Control':'no-store'}});
   return Response.json(result.body,{status:200,headers:result.headers});
 }
