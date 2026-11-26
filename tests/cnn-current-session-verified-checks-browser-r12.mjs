@@ -50,7 +50,7 @@ async function assertRealLineStartsAtLeft(page,period,width){
   const path=root.querySelector('path.recharts-area-curve');
   const tick=root.querySelector('.recharts-xAxis .recharts-cartesian-axis-tick text');
   const d=path?.getAttribute('d')??'';
-  const start=d.match(/^M\\s*([-\\d.]+)/);
+  const start=d.match(/^M\s*([-\d.]+)/);
   return {firstX:start?Number(start[1]):null,
     leftTickX:tick?Number(tick.getAttribute('x')):null};
  });
