@@ -22,6 +22,8 @@ test('mobile latest-point touch tooltip shows timestamp and score with no recons
 });
 
 test('UI-only change preserves the historical chart series and does not invent a score', () => {
+ assert.match(chart, /<Area type="monotone" dataKey="reconstructedValue" stroke=\{color\} fill="none"/);
+ assert.doesNotMatch(chart, /dataKey="reconstructedValue"[^>]*strokeDasharray=/);
  assert.match(chart, /dataKey="reconstructedValue"/);
  assert.match(chart, /dataKey="legacyCalculatedValue"/);
  assert.match(chart, /dataKey="verifiedCalculatedValue"/);
