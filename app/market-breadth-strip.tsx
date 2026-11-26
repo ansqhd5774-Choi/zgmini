@@ -117,7 +117,8 @@ export function MarketBreadthStrip({ market, counts, period = "1Y", displayOnly 
   }, [market, displayOnly]);
   const activeProvisional = !displayOnly && market === "usa" && currentIexProvisional(provisional)
     ? provisional : null;
-  const data = displayOnly ? normalizedCounts(counts) : market === "usa" ? activeProvisional : normalizedCounts(counts);
+  const data = market === "usa" ? activeProvisional : normalizedCounts(counts);
+  const viewData = displayOnly && market === "usa" ? normalizedCounts(counts) : data;
   const sourceInfo = activeProvisional
     ? `장중 잠정 · Alpaca IEX 15분 · 뉴욕 ${new Intl.DateTimeFormat("ko-KR", {timeZone:"America/New_York", hour:"2-digit", minute:"2-digit", hour12:false}).format(new Date(activeProvisional.slotEndUtc))} 기준 · 미관측 ${activeProvisional.unobservedPct.toFixed(1)}%${activeProvisional.collectionStatus === "INCOMPLETE_PAGINATION" ? " · 페이지 일부 미수집" : ""}`
     : null;
@@ -125,14 +126,14 @@ export function MarketBreadthStrip({ market, counts, period = "1Y", displayOnly 
     ? `IEX·15분·${new Intl.DateTimeFormat("en-US", {timeZone:"America/New_York", hour:"2-digit", minute:"2-digit", hour12:false}).format(new Date(activeProvisional.slotEndUtc))}`
     : null;
 
-  const dominance = !data || Math.abs(data.risingPct - data.fallingPct) < 5
+  const dominance = !viewData || Math.abs(viewData.risingPct - viewData.fallingPct) < 5
     ? "none"
-    : data.risingPct > data.fallingPct ? "up" : "down";
+    : viewData.risingPct > viewData.fallingPct ? "up" : "down";
 
   const columns = [
-    { key: "up", label: "상승", symbol: "▲", pct: data?.risingPct },
-    { key: "flat", label: "보합", symbol: "―", pct: data?.unchangedPct },
-    { key: "down", label: "하락", symbol: "▼", pct: data?.fallingPct },
+    { key: "up", label: "상승", symbol: "▲", pct: viewData?.risingPct },
+    { key: "flat", label: "보합", symbol: "―", pct: viewData?.unchangedPct },
+    { key: "down", label: "하락", symbol: "▼", pct: viewData?.fallingPct },
   ] as const;
 
   const summary = <>
@@ -140,7 +141,7 @@ export function MarketBreadthStrip({ market, counts, period = "1Y", displayOnly 
         <div className={styles.heading}>
           <strong>{activeProvisional ? `${name} 잠정` : `${name} 등락 지수`}</strong>
           {sourceBadge && <small className={styles.pending} title={sourceInfo ?? undefined} style={{display:"block",minWidth:0,flex:"1 1 0",overflow:"hidden",textOverflow:"ellipsis"}}>{sourceBadge}</small>}
-          {!data && !activeProvisional && <small className={styles.pending}>{displayOnly ? "연결 예정" : market === "usa" ? "미제공" : "연결 예정"}</small>}
+          {!viewData && !activeProvisional && <small className={styles.pending}>{displayOnly ? "연결 예정" : market === "usa" ? "미제공" : "연결 예정"}</small>}
         </div>
         {columns.map(({ key, label, symbol, pct }) => (
           <div className={`${styles.stat} ${styles[key]}`} key={key} aria-label={`${label}: ${pct === undefined ? "미제공" : `${pct.toFixed(1)}%`}`}>
@@ -153,21 +154,21 @@ export function MarketBreadthStrip({ market, counts, period = "1Y", displayOnly 
         className={styles.track}
         data-dominance={dominance}
         role="img"
-        aria-label={data
-          ? `상승 ${data.risingPct.toFixed(1)}%, 보합 ${data.unchangedPct.toFixed(1)}%, 하락 ${data.fallingPct.toFixed(1)}%${activeProvisional ? `, 미관측 ${activeProvisional.unobservedPct.toFixed(1)}%` : ""}`
+        aria-label={viewData
+          ? `상승 ${viewData.risingPct.toFixed(1)}%, 보합 ${viewData.unchangedPct.toFixed(1)}%, 하락 ${viewData.fallingPct.toFixed(1)}%${activeProvisional ? `, 미관측 ${activeProvisional.unobservedPct.toFixed(1)}%` : ""}`
           : "검증된 등락 비율을 아직 표시할 수 없습니다"}
       >
-        {data && <>
-          <span className={styles.rising} style={{width:`${data.risingPct}%`}}/>
-          <span className={styles.unchanged} style={{width:`${data.unchangedPct}%`}}/>
-          <span className={styles.falling} style={{width:`${data.fallingPct}%`}}/>
+        {viewData && <>
+          <span className={styles.rising} style={{width:`${viewData.risingPct}%`}}/>
+          <span className={styles.unchanged} style={{width:`${viewData.unchangedPct}%`}}/>
+          <span className={styles.falling} style={{width:`${viewData.fallingPct}%`}}/>
         </>}
       </div>
   </>;
 
   return (
     <section className={styles.root}
-      aria-label={`${name} 등락 지수${sourceInfo ? `, ${sourceInfo}` : data ? "" : ", 데이터 미제공"}`}
+      aria-label={`${name} 등락 지수${sourceInfo ? `, ${sourceInfo}` : viewData ? "" : ", 데이터 미제공"}`}
       title={sourceInfo ?? undefined} data-market={market} data-expanded={expanded && hasHistoryToggle}>
       {hasHistoryToggle ? <button type="button" className={styles.summaryButton} aria-expanded={expanded}
         aria-controls={panelId} aria-label={`미국 등락 지수 확정 이력 ${expanded ? "접기" : "펼치기"}`}
