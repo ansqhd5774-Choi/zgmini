@@ -45,8 +45,8 @@ try{
   await page.screenshot({path:`artifacts/dashboard-history/introduction-${width}.png`,caret:'initial'});
   await intro.getByRole('button',{name:'닫기',exact:true}).click();
   await intro.waitFor({state:'hidden'});
-  // Reconstructed daily history is dashed; actual calculation-time samples
-  // form a separate solid line. Never bridge these different provenances.
+  // Reconstructed daily history and actual calculation-time samples use
+  // separate solid lines. Never bridge these different provenances.
   const chartSelector='.zg-r55-summary-chart';
   const chartSignature=()=>page.locator(chartSelector).evaluate(root=>[
    ...[...root.querySelectorAll('path.recharts-area-curve')].map(p=>p.getAttribute('d')??''),
@@ -114,13 +114,12 @@ try{
    assert.equal(await page.locator('.zg-r55-card-grid article').count(),12);
    if(label==='1W'){
     // Reconstructed daily and actual calculation histories retain separate
-    // line styles without a dot at every calculation timestamp.
+    // solid paths without a dot at every calculation timestamp.
     const curves=await page.locator(chartSelector+' path.recharts-area-curve').evaluateAll(paths=>
      paths.map(path=>({d:path.getAttribute('d')??'',dash:path.getAttribute('stroke-dasharray'),stroke:path.getAttribute('stroke')})));
     const drawn=curves.filter(p=>p.stroke!=='none'&&p.d);
     assert.equal(drawn.length,2,width+'px reconstructed and calculated histories draw separate lines');
-    assert.ok(drawn.some(p=>p.dash),width+'px reconstructed history remains dashed');
-    assert.ok(drawn.some(p=>!p.dash),width+'px actual calculation history has a solid line');
+    assert.ok(drawn.every(p=>!p.dash),width+'px reconstructed and calculated histories both use solid lines');
     assert.ok(/^M/.test(drawn[0].d)&&/[CLQ]/.test(drawn[0].d.slice(1))
      &&(drawn[0].d.match(/M/g)??[]).length===1,
      width+'px reconstructed history is one connected SVG subpath');
