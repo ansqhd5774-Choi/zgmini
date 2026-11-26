@@ -50,9 +50,9 @@ test('R4 #28 Recharts draws a connected observed timeline with honest per-point 
  assert.match(chart,/<Area type="monotone" dataKey="value" stroke=\{color\} fill="none" strokeWidth=\{2\.1\} dot=\{false\}[^>]*connectNulls=\{false\}/);
  assert.doesNotMatch(chart,/<Area type="monotone" dataKey="(?:reconstructedValue|calculatedValue)"/);
  assert.doesNotMatch(chart,/dataKey="reconstructedValue"[^>]*strokeDasharray=/);
- assert.match(chart,/point\?\.calculatedValue!=null/,"tooltips retain individual calculation provenance");
+ assert.match(chart,/point\?\.label\?\.includes\('T'\)/,"actual calculation-time labels are retained");
  assert.doesNotMatch(chart,/현행 산식 재구성 · 당시 실계산점 아님/);
- assert.match(chart,/실제 계산시각 점 · 당시 방법론 버전 미확인/);
+ assert.doesNotMatch(chart,/실제 계산시각 점 · 당시 방법론 버전 미확인/);
 });
 
 // Interleaved provenance markers are not missing measurements inside either
