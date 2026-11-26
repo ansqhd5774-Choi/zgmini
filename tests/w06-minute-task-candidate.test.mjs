@@ -20,6 +20,9 @@ test('W06 is a nonexecuting source candidate with exactly one 60s CNN-only Task'
  assert.doesNotMatch(result.taskXml,/<ExecutionTimeLimit>PT5M<\/ExecutionTimeLimit>/);
  assert.match(result.launcherText,/--cnn-minute --publish/);
  assert.match(result.taskXml,/run-local-cnn-minute\.vbs/);
+ assert.equal(result.effectRequiresApproval,'CREATE_ENABLE_ONE_TASK_CNN_HTTP_SQLITE_D1_WITH_EXACT_CAS_AND_ROLLBACK');
+ assert.deepEqual(result.scheduledRuntimeEffects,{cnnHttpRequests:true,
+  sqliteObservationWrites:true,d1PublicProjectionWrites:true});
  assert.equal(result.candidateWrites,0);
  assert.equal(result.coreTaskChanges,0);
  assert.equal(result.existingWriterTaskChanges,0);
