@@ -13,6 +13,50 @@ function cnnRetryAt(response,now){
  return Math.max(now+CNN_ERROR_DELAY_MS,Number.isSafeInteger(parsed)&&parsed<=8.64e15?parsed:0);
 }
 
+// PC minute child only: observe the existing CNN collector's one real fetch,
+// without changing its endpoint, parser, saved-input path, or legacy TS files.
+// The caller owns a dedicated single-feed process and its quota-wrapped fetch.
+export function observeCnnCollector(collect){
+ return async(store,now,{recordHttpCheck}={})=>{
+  if(typeof recordHttpCheck!=='function')throw Error('CNN_HTTP_RECEIPT_REQUIRED');
+  const original=globalThis.fetch;
+  let requestedAt=null,checkedAt=null,httpStatus=null,retryAfter=null,response;
+  let sourceObservedAt=null,score=null,outcome='FETCH_FAILED';
+  globalThis.fetch=async(input,init)=>{
+   if(requestedAt!==null)throw Error('CNN_MINUTE_MULTIPLE_FETCH_STOP');
+   requestedAt=Date.now();
+   try{
+    const actual=await original(input,init);
+    checkedAt=Date.now();httpStatus=actual.status;
+    outcome=actual.ok?'INVALID_OUTPUT':'HTTP_FAILED';
+    retryAfter=actual.headers.get('retry-after');
+    return actual;
+   }catch(error){checkedAt=Date.now();throw error;}
+  };
+  try{
+   response=await collect(store,now);
+   if(requestedAt===null)throw Error('CNN_MINUTE_NO_HTTP_REQUEST');
+   if(httpStatus>=200&&httpStatus<300&&response?.ok){
+    const body=await response.clone().json();
+    if(body?.status==='verified'){
+     assertFeedOutput('fear-greed',body);
+     if(typeof body.observedAt!=='string'||!Number.isFinite(Date.parse(body.observedAt))||
+        body.score<0||body.score>100)throw Error('CNN_HTTP_OUTPUT_INVALID');
+     sourceObservedAt=body.observedAt;score=body.score;outcome='VERIFIED';
+    }
+   }
+   // The legacy collector maps upstream non-2xx to 503. Preserve the observed
+   // 429 only in this private scheduler response, never in public GET output.
+   return httpStatus===429?Response.json({status:'unavailable',score:null},{status:429,
+     headers:retryAfter?{'Retry-After':retryAfter}:{}}):response;
+  }finally{
+   globalThis.fetch=original;
+   if(requestedAt!==null)await recordHttpCheck({requestedAt,checkedAt:checkedAt??Date.now(),
+    httpStatus,outcome,sourceObservedAt,score});
+  }
+ };
+}
+
 // Authenticated scheduler only. Independent source failures retain last good output.
 /** @param {{env?:import('./runtime-contracts').DataEnv,collectors?:Record<string,(store:ReturnType<typeof publicFeedStore>,now:number)=>Promise<unknown>>,now?:number,store?:ReturnType<typeof publicFeedStore>,locks?:ReturnType<typeof marketOperationalStore>,maxFeedsPerRun?:number,cnnMinuteOnly?:boolean}} [options] */
 export async function refreshPublicFeeds({env,collectors,now=Date.now(),store,locks,maxFeedsPerRun=Infinity,cnnMinuteOnly=false}={}){
