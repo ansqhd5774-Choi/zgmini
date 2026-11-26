@@ -11,6 +11,15 @@ const original=[
  {observedAt:sourceObservedAt,score:26.3},
 ];
 const newer={observedAt:'2026-10-30T13:22:00.000Z',score:26.4};
+const weekly=[
+ ...['13:00','13:30','14:00','14:30'].map((clock,i)=>({observedAt:'2026-10-27T'+clock+':00.000Z',score:20+i})),
+ ...['13:00','13:30','14:00'].map((clock,i)=>({observedAt:'2026-10-28T'+clock+':00.000Z',score:24+i})),
+ ...['13:00','13:30','14:00'].map((clock,i)=>({observedAt:'2026-10-29T'+clock+':00.000Z',score:27+i})),
+];
+const monthly=[
+ {observedAt:'2026-10-09T13:00:00.000Z',score:21},
+ {observedAt:'2026-10-09T18:30:00.000Z',score:22},
+];
 const checkTimes=[
  '2026-10-30T13:35:04.658Z',
  '2026-10-30T13:55:04.777Z',
@@ -23,7 +32,9 @@ const primary={status:'verified',score:26.3,rating:'공포',
 function fixture(path,period,checkSourceAt,includeNew){
  if(path==='/api/fear-greed')return primary;
  if(path==='/api/fear-greed/observations')return {
-  status:'READY',period:period??'1D',points:includeNew?[...original,newer]:original,
+  status:'READY',period:period??'1D',
+  points:period==='1D'?(includeNew?[...original,newer]:original):
+   period==='1W'?[...weekly,...original]:[...monthly,...weekly,...original],
   checkedPoints:checkTimes.map(checkedAt=>({checkedAt,sourceObservedAt:checkSourceAt,score:26.3})),
   verifiedCheckCount:3,checkTimeMeaning:'PC_VERIFIED_STORED_AT',
  };
@@ -122,8 +133,17 @@ try{
   await page.waitForFunction(()=>document.querySelector('[data-cnn-intraday-mode="1"]')
    ?.getAttribute('data-cnn-bucket-count')==='2',null,{timeout:15000});
   assert.equal(await page.locator('button[data-cnn-minute]').count(),0);
-  await toolbarReload.locator('button[data-period-short="1W"]').click();
-  assert.equal(await toolbarReload.locator('button[data-period-short="1W"]').getAttribute('aria-pressed'),'true');
+  for(const [period,minimum]of [['1W',11],['1M',6],['3M',5],['6M',5],['1Y',5]]){
+   const button=toolbarReload.locator('button[data-period-short="'+period+'"]');
+   await button.click();
+   assert.equal(await button.getAttribute('aria-pressed'),'true');
+   await page.waitForFunction(({min})=>Number(document.querySelector('[data-cnn-period-point-count]')
+    ?.getAttribute('data-cnn-period-point-count'))>=min,{min:minimum},{timeout:20000});
+   assert.equal(await page.locator('button[data-cnn-minute]').count(),0);
+   assert.ok(await page.locator('.zg-fg-us .cnn-history-chart-hitbox path.recharts-area-curve').count()>0);
+  }
+  assert.ok(requests.some(path=>path.includes('/api/fear-greed/observations?period=1W')));
+  assert.ok(requests.some(path=>path.includes('/api/fear-greed/observations?period=1M')));
   await toolbarReload.locator('button[data-period-short="1D"]').click();
   await page.waitForFunction(()=>document.querySelector('[data-cnn-intraday-mode="1"]')
    ?.getAttribute('data-cnn-bucket-count')==='2',null,{timeout:15000});
