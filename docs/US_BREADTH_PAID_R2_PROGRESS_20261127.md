@@ -261,7 +261,7 @@
 
 ## 다음 실제 실행
 
-1. #4135 **전 관측 167/167 ACTIVE** 이후 동일 잠금 관측·B 단회 반복은 진행 아님. 기존 Core Task·`local-cycle` 원장·수집/게시 checkpoint의 **시각/처리량 전진과 실제 실행시간**을 공식 읽기로 구별하여 긴 Core 점유 단계의 원인을 찾고, 운영/공통 총괄 권한 범위의 최소 복구를 적용한다. 강제 종료·잠금 삭제·Task 주기 변경 금지.
+1. **Core checkpoint 시각 전진 확인 완료[#4141]**: 수집 `COMPLETE` 갱신, Writer `VERIFIED`로 전진; R2는 30개 그대로. 같은 core-status/잠금/Writer B 단회 재조회 금지. 잔여 판단은 기존 Core Task의 **실제 시작·종료·재시작 구간 및 단계별 처리량**(별도 기존 Runtime 원장)이 필요할 때만 확인해, 정상 긴 실행/5분 주기와 실측 유휴 실패의 원인을 공통 총괄 범위에서 분리한다. 소스·예약·잠금 강제 변경 금지.
 2. 유휴 회복 또는 별도 정확 승인된 긴 drain 효과가 확보되면 새 유효 manifest·원본 CAS/lease·백업 후 **새 고유 1회** Writer B를 설치하고 local-only source SHA/4file after SHA·Core Task·config.source JSON/TXT 확인한다. #4068 및 #4135 고유 requestId 재실행 금지.
 3. 설치 검증 후 기존 40파일/주기 내 `stock_daily`만 필요 일자 bounded backfill → 정확 목표 251거래일 raw/projection SHA 확인 → 250점 저장/private SHA→D1 CAS→Production current/history API·PC/모바일 동일성 확인한다.
 
