@@ -80,13 +80,12 @@ test('US-only 1D button and observed ranges reuse the current chart; Korea gets 
  const store=read('worker/public-feed-store.mjs');
  assert.match(cnn,/<MarketPeriodControls[\s\S]*?includeOneDay\s*\/>/);
  assert.match(cnn,/observedRanges=\{observedRanges\}/);
-  // A PC check label is only shown for a real plotted check from the current NY source day.
-  // Old checks must neither create a current 1D point nor label CNN observations as PC checks.
+  // A real 1D minute bucket comes from CNN observedAt, never PC checkedAt.
   assert.match(cnn,/currentCnnSessionHistory\(payload\?\.observedAt/);
-  assert.match(cnn,/const checks=currentCnnSessionCheckedPoints\(payload\?\.observedAt,archived\.checkedPoints\)/);
-  assert.match(cnn,/if\(checks\.length<2\)return new Set<string>\(\)/);
+  assert.match(cnn,/checkedPoints:\[\],/);
+  assert.match(cnn,/minutes:1,now/);
+  assert.doesNotMatch(cnn,/currentSessionPcDates|CNN 원본 관측 간격|data-cnn-minute/);
   assert.ok(cnn.includes('formatTooltipLabel={selectedPeriod==="1D"'));
-  assert.ok(cnn.includes('currentSessionPcDates.has(value)'));
   assert.ok(cnn.includes('intradayLabel(value)'));
   assert.doesNotMatch(cnn,/archiveHistory\.length>=2\?combinedObserved:allIntraday/);
   assert.match(cnn,/daily\.filter\(point=>!observedDays\.has/);
