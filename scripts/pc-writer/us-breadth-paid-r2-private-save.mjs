@@ -7,7 +7,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import {createHash} from 'node:crypto';
 import {previousMarketSession} from '../../lib/market-score/breadth-b1-r6-marketparquet-provider.mjs';
-import {US_PAID_R2_SOURCE} from '../../lib/market-breadth/us-marketparquet-paid-r2-adapter.mjs';
+import {US_PAID_R2_SOURCE,US_PAID_R2_PRICE_MODE}
+  from '../../lib/market-breadth/us-marketparquet-paid-r2-adapter.mjs';
 
 const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
 const digest=s=>typeof s==='string'&&/^[a-f0-9]{64}$/.test(s);
@@ -19,7 +20,9 @@ const no=(status)=>({status,readbackVerified:false,operationalWrites:0,
   d1Writes:0,providerCalls:0});
 
 export function validPrivatePaidUsBreadthR2(r){
-  if(r?.status!=='PAID_R2_STORED_PRIVATE_CALCULATED'||r.prepared!==true
+  if(r?.status!=='PAID_R2_STORED_PRIVATE_CALCULATED'
+      ||r.source!==US_PAID_R2_SOURCE||r.priceMode!==US_PAID_R2_PRICE_MODE
+      ||r.prepared!==true
       ||r.publicationAllowed!==false
       ||!Number.isInteger(r.comparedSessions)||r.comparedSessions<1
       ||r.comparedSessions>250
@@ -56,7 +59,7 @@ export function savePrivatePaidUsBreadthR2(base,calculated,{saveEnabled=false}={
   // Serialize only the explicit private provenance and percent-only output.
   const record={
     schema:'ZGMINI_US_PAID_BREADTH_R2_PRIVATE_V1',
-    source:US_PAID_R2_SOURCE,
+    source:US_PAID_R2_SOURCE,priceMode:US_PAID_R2_PRICE_MODE,
     phase:'CONFIRMED',publicationAllowed:false,
     firstDate:calculated.firstDate,lastDate:calculated.lastDate,
     comparedSessions:calculated.comparedSessions,
@@ -80,13 +83,16 @@ export function savePrivatePaidUsBreadthR2(base,calculated,{saveEnabled=false}={
     }
     const saved=fs.readFileSync(file);
     if(sha(saved)!==fingerprint||!saved.equals(bytes))
-      return no('PAID_R2_PRIVATE_CONFLICT_PRESERVED');
+      return created
+        ? {...no('PAID_R2_PRIVATE_WRITE_OUTCOME_UNVERIFIED_NO_RETRY'),operationalWrites:null}
+        : no('PAID_R2_PRIVATE_CONFLICT_PRESERVED');
     return {status:created?'PAID_R2_PRIVATE_SAVED_READBACK_VERIFIED'
         :'PAID_R2_PRIVATE_UNCHANGED_READBACK_VERIFIED',
       readbackVerified:true,sha256:fingerprint,bytes:bytes.length,
       relativePath:relative,operationalWrites:created?1:0,d1Writes:0,
       providerCalls:0};
   }catch{
-    return no('PAID_R2_PRIVATE_WRITE_OUTCOME_UNVERIFIED_NO_RETRY');
+    // A write that throws may have left partial bytes. Do not declare zero writes.
+    return {...no('PAID_R2_PRIVATE_WRITE_OUTCOME_UNVERIFIED_NO_RETRY'),operationalWrites:null};
   }
 }
