@@ -528,3 +528,14 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - 정상 60초 실제 HTTP 간격의 누락·편차 원인을 가려내기 위한 **기존 A 조회만** 확장한 제어 [PR #3946](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3946), 브랜치 `codex/w06-cnn-http-cadence-evidence-20261127`: 저장된 요청 `requestedAt`으로 최근 간격 최소/중앙/최대 및 90초 초과 구간 수를 출력. 이 원장 반영 시 소스 PR 제출 상태이고 CI·병합·실PC 신규 결과는 아직 확정하지 않음. Task/공급자/SQLite/D1/타 지표 주기 쓰기 없음.
 
 **남은 직접 작업:** 제어 PR #3946 정확 HEAD 시험/검증 후 병합·운영 A 단회 수집, 실제 60초 요청 간격/누락 판단 → 마지막 Task 거부 코드와 충돌/시간 조건을 가능한 기존 Runtime 증거로 구분, 근본 원인이 확인된 부분만 최소 수정·정규 적용. 실제 CNN 원본 점수 변동시 SQLite·D1·공개 1D/1W·홈페이지 1/5/10/30분 및 PC 1440px·모바일 390px 실화면 대조. **종단 운영 완료율 0/1 유지**.
+
+
+### 20-22. 실제 W06 60초 HTTP 간격 정밀 측정과 잔여 실행 지연 범위 (2026-11-27 KST)
+
+- 제어 [PR #3946](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3946): 기존 `w06-cnn-task-cadence-readonly`의 로컬 PC SQLite read-only 결과에서 실제 `requestedAt` 차이만 계산하는 최소 보강. 정확 HEAD `7b1a535bda149c31dba69252aea07b8ced69fddd`의 C996·Secret Scan·격리 프로세스 회귀시험 **3/3 SUCCESS**, `main` merge `1e6eabbc08acc2ed9e38d5fd42de073d59e705a9`; 신규 Task·기존 Task·공급자 호출·SQLite/D1 쓰기 0.
+- 운영 PC A [Issue #3948](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3948) / [Run #45852269700](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45852269700), JSON/TXT 2/2 및 실제 관측 2026-11-26T15:46:13.378Z. Task `ZGMINI-PC-CNN-Minute` enabled=true, PT1M, `Ready`, 마지막 실행 15:46:01Z, LastTaskResult=0, 원본 owner lock 없음, 복구 완료 마커 일치. 단회 읽기 전용 요청을 성공 영수증 확인 후 CLOSED/completed.
+- 로컬 실제 HTTP 확인 기록 최근 2일 **26건**, Task 활성화 이후 **24건**; 전부 `VERIFIED/HTTP 200`; 429/5xx/네트워크 실패 0. 마지막 확인 15:46:07.943Z. 활성 이후 **연속 실제 요청 간격 23개**: 최소 **60초**, 중앙 **93초**, 최대 **321초**, 90초 초과 **12개**. 최근 12구간 [106,83,97,65,133,321,80,60,122,118,63,63]초. 이 수치는 Scheduler trigger 간격이 아니라 저장된 CNN HTTP `requestedAt` 간격이다.
+- 따라서 PT1M 설정과 실제 HTTP 수집은 **입증**, 하지만 매 60초 안정적인 HTTP 호출은 **미달**. 앞선 15:36Z PC A의 Task Running + LastTaskResult `0x800710E0`, 그리고 `IgnoreNew` 정책은 중첩/조건 거부 가능성과 양립하나, 자식 collector/publisher 실소요시간과 Scheduler 이벤트가 없으므로 정확 원인 단정·무조건 Task 변경 금지.
+- CNN 원본 observedAt이 2026-11-26T01:59:59Z/약14.9967점 그대로인 상태에서 동일 값의 새 관측점을 생성하지 않는 규칙 유지. R9 기존 최소 15분 변경 체크 정책·원본/PC 확인 구분 유지; 1분 HTTP 성공을 1분 새 원본 변화나 공개 이력 게시 성공으로 표시하지 않음.
+
+**다음 필수 단계:** 기존 운영 Runtime 증거에서 W06 collector/publisher 소요시간·Task 중첩/실행 거절 조건을 구분하는 최소 read-only 관측을 우선. 실제 병목이 증명되면 기존 승인 실행기/공유 경로에 한정해 최소 수정, 관련 회귀 및 승인된 B 정규 적용. CNN 원본 변동이 관측되면 SQLite 원본과 D1/API readback·1/5/10/30분 선형 차트·PC/모바일 실화면을 대조. 미관측 변동을 가짜 시계열로 채우지 않으며 **종단 운영 완료율 0/1 유지**.
