@@ -57,11 +57,52 @@ export function observeCnnCollector(collect){
  };
 }
 
+// This optional one-shot delay is bounded to the existing W06 minute Task.
+// When a fixed PT1M trigger arrives slightly before the previous durable
+// collection timestamp +60s, prefer a short wait over dropping the whole tick.
+// Never wait while holding the Core/shared public-feeds lease or during a 429
+// Retry-After cooldown. Recheck the exact stored state after acquiring the lease.
+export const CNN_MINUTE_ELIGIBILITY_WAIT_CAP_MS=25_000;
+export function planCnnMinuteEligibilityWait({now,previous,lastAttempt}={}){
+ if(!Number.isSafeInteger(now)||now<=0)return {waitMs:0,reason:'CLOCK_UNVERIFIED'};
+ if(Number.isSafeInteger(lastAttempt?.body?.retryAt)&&lastAttempt.body.retryAt>now)
+  return {waitMs:0,reason:'RETRY_COOLDOWN_PRESERVED'};
+ const timestamps=[previous?.storedAt,lastAttempt?.storedAt].filter(x=>
+  Number.isSafeInteger(x)&&x>0&&x<=now+300000);
+ if(!timestamps.length)return {waitMs:0,reason:'NO_VALID_LAST_TIMESTAMP'};
+ const due=Math.max(...timestamps)+CNN_MINUTE_INTERVAL_MS;
+ const waitMs=Math.ceil(due-now+500); // never fetch earlier than the minimum
+ if(waitMs<=0)return {waitMs:0,reason:'ALREADY_ELIGIBLE'};
+ if(waitMs>CNN_MINUTE_ELIGIBILITY_WAIT_CAP_MS)
+  return {waitMs:0,reason:'PRESERVE_EXISTING_CACHE_OR_COOLDOWN'};
+ return {waitMs,reason:'BOUNDED_WAIT_BEFORE_SHARED_LEASE'};
+}
+async function waitCnnMinuteEligibilityIfDue(store,now,{clock,sleep}){
+ // Synthetic/backfill timestamps, system clock drift and other lanes never
+ // cause a new delayed fetch; the old approved eligibility rule remains.
+ const first=clock();
+ if(!Number.isSafeInteger(first)||Math.abs(first-now)>15000)return now;
+ let previous,lastAttempt;
+ try{previous=await store.readOutput('fear-greed');
+  lastAttempt=await store.readAttempt('fear-greed');}
+ catch{return now}
+ const observed=clock();
+ if(!Number.isSafeInteger(observed)||Math.abs(observed-now)>15000)return now;
+ const plan=planCnnMinuteEligibilityWait({now:observed,previous,lastAttempt});
+ if(plan.waitMs===0)return now;
+ await sleep(plan.waitMs);
+ const after=clock();
+ if(!Number.isSafeInteger(after)||after<observed+plan.waitMs)
+  throw Error('CNN_MINUTE_WAIT_OUTCOME_UNKNOWN');
+ return after;
+}
+
 // Authenticated scheduler only. Independent source failures retain last good output.
 /** @param {{env?:import('./runtime-contracts').DataEnv,collectors?:Record<string,(store:ReturnType<typeof publicFeedStore>,now:number)=>Promise<unknown>>,now?:number,store?:ReturnType<typeof publicFeedStore>,locks?:ReturnType<typeof marketOperationalStore>,maxFeedsPerRun?:number,cnnMinuteOnly?:boolean}} [options] */
-export async function refreshPublicFeeds({env,collectors,now=Date.now(),store,locks,maxFeedsPerRun=Infinity,cnnMinuteOnly=false}={}){
+export async function refreshPublicFeeds({env,collectors,now=Date.now(),store,locks,maxFeedsPerRun=Infinity,cnnMinuteOnly=false,clock=Date.now,sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms))}={}){
  if(cnnMinuteOnly&&env?.ZGMINI_COMPUTE_TARGET!=='pc')throw Error('CNN_MINUTE_PC_ONLY');
  store??=publicFeedStore(env.DB);locks??=marketOperationalStore(env.DB);
+ if(cnnMinuteOnly)now=await waitCnnMinuteEligibilityIfDue(store,now,{clock,sleep});
  const lease=await locks.claim('public-feeds',now);if(!lease)return {status:'ALREADY_RUNNING'};
  const results=[];
  try{
