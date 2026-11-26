@@ -45,8 +45,8 @@ try{
   await page.screenshot({path:`artifacts/dashboard-history/introduction-${width}.png`,caret:'initial'});
   await intro.getByRole('button',{name:'닫기',exact:true}).click();
   await intro.waitFor({state:'hidden'});
-  // Reconstructed daily history and actual calculation-time samples use
-  // separate solid lines. Never bridge these different provenances.
+  // Render one solid time-ordered line through genuine observations.
+  // Keep daily/current-vintage and actual calculation origins in point metadata.
   const chartSelector='.zg-r55-summary-chart';
   const chartSignature=()=>page.locator(chartSelector).evaluate(root=>[
    ...[...root.querySelectorAll('path.recharts-area-curve')].map(p=>p.getAttribute('d')??''),
@@ -113,16 +113,16 @@ try{
     width+'px '+label+' provenance curves and discrete calculations have finite geometry');
    assert.equal(await page.locator('.zg-r55-card-grid article').count(),12);
    if(label==='1W'){
-    // Reconstructed daily and actual calculation histories retain separate
-    // solid paths without a dot at every calculation timestamp.
+    // Reconstructed daily and actual calculation observations share one
+    // visual curve; the data values and times remain distinct.
     const curves=await page.locator(chartSelector+' path.recharts-area-curve').evaluateAll(paths=>
      paths.map(path=>({d:path.getAttribute('d')??'',dash:path.getAttribute('stroke-dasharray'),stroke:path.getAttribute('stroke')})));
     const drawn=curves.filter(p=>p.stroke!=='none'&&p.d);
-    assert.equal(drawn.length,2,width+'px reconstructed and calculated histories draw separate lines');
-    assert.ok(drawn.every(p=>!p.dash),width+'px reconstructed and calculated histories both use solid lines');
+    assert.equal(drawn.length,1,width+'px real points form one continuous visual series');
+    assert.ok(!drawn[0].dash,width+'px mixed history is a solid line');
     assert.ok(/^M/.test(drawn[0].d)&&/[CLQ]/.test(drawn[0].d.slice(1))
      &&(drawn[0].d.match(/M/g)??[]).length===1,
-     width+'px reconstructed history is one connected SVG subpath');
+     width+'px verified observed-score timeline has exactly one connected SVG subpath');
     assert.equal(await page.locator(chartSelector+' circle.recharts-area-dot').count(),0,
      width+'px calculated history does not become a scatter plot');
     const domainLines=await page.locator('.zg-r55-card-grid article .zg-r55-mini-chart svg > path').evaluateAll(paths=>
