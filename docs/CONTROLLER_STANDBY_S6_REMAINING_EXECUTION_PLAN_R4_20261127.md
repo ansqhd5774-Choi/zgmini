@@ -161,3 +161,11 @@
 - R5 read-only source·test 2파일만 변경해 exact HEAD 지정 정상 **squash merge SHA `8e5f4dbee080c9b25ff06c5050d3d136fefec6ff`**, main에 `watchdogHealthState` 고정 enum 존재 readback. 기존 B 계약/안전판정 임계치·운영 source 변경 0.
 - 새로운 Owner read-only A [#4058](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4058) 고유 requestId `48aef0a2-73bd-48cd-916a-84f7ca124d22`, `controller-standby-r5-runtime-readonly`, **단 1회 접수**. 원본 #4052 재실행 0. 결과 JSON/TXT/Run은 별도로 회수 후 검증하며 아직 건강 상태 개선이나 S6 승격 성공으로 표시하지 않음.
 - **다음:** #4058 운영 실제 고정 상태 enum readback → 허용 상태의 실제 실패 경계·영향 확인 → 필요할 때만 최소 수정/관측 → 관련 lease/Runner 6개 idle 및 B exact CAS 확인. 원본 #3947 `UNKNOWN`, S6 운영 효과 0/1 유지.
+
+## 14. 2026-11-27 R5 실운영 정상화 확인 및 S6 승인 후보 재조회
+
+- 새 운영 A [#4058](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4058), [Run #45878586418](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45878586418): `results/pc-process-inventory-45878586418-1-operating.json/.txt` **2/2 readback**, 관측 UTC `2026-11-26T18:47:03.685Z`, `PASS/WATCHDOG_R5_ACTIVE_HEALTHY_TWO_STANDBY_IPC_READY`, `watchdogHealthState=HEALTHY`. installedMatch/controllerTargetMatch/naturalRestartObserved/statusFresh/watchdogOwnerVerified/activeSupervisorVerified/두 Standby READY = true, `standbyReadyCount=2`, `operationalWrites=0`. #4058은 읽기 완료 `closed/completed`.
+- 이 정상 신선도 관측은 이전 [#4052](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4052)의 `STATE_UNKNOWN/WATCHDOG_R5_HEALTH_STATUS_UNVERIFIED`와 **관측 시각이 다른 실제 상태**다. 이전 건강상태 비정상의 최초 원인은 미입증이며 자가 복귀 또는 상황 변화 가능성을 결과로 둔다. 재발 없음 보장 금지.
+- #4058의 `failoverTested=false`, `promotionApproved=false`: **S6 실제 승격 0/1**은 여전히 미완료. 임의 B 승인/실행 금지.
+- 서로 별개의 다음 A 고유 read-only 2건을 각 1회 접수: [#4059](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4059) `controller-s6-next-preimage-readonly` (승인 후보·CAS·source), [#4060](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4060) `controller-s6-predrain-inputs-readonly` (관련 대기/lease 입력). 각각 결과 미회수 상태에서는 PASS/승인 원본으로 간주하지 않는다. 기존 #3947 UNKNOWN/기존 B requestId 재실행 없음.
+- **다음:** #4059/#4060 실제 Run·JSON/TXT 결과 회수 및 단일 시점 범위 검증. 모든 원본 시점/권한/Runner 6석 idle·독립 설치 maintainer 안전 CAS를 확인하고 **이전 #3947 단회 효과 결과 미입증과 구분**해야만 신규 정확 B 효과의 허용 여부를 판단할 수 있다. 동시 Active 및 정상 업무 안전을 최우선한다.
