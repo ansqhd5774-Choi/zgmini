@@ -44,7 +44,7 @@ const CardTrend=memo(function CardTrend({data,label,color,periodDays,missingDate
   onPointerDown={event=>event.preventDefault()}>
   <div className="zg-r55-mini-y-labels" aria-hidden="true"><span>100</span><span>50</span><span>0</span></div>
    <svg width="100%" height="100%" viewBox="0 0 220 60" preserveAspectRatio="none" role="img" aria-label={chartLabel} style={{display:'block',pointerEvents:'none'}}>
-    {[0,25,50,75,100].map(value=><line key={value} x1={6} x2={214} y1={57-value*.54} y2={57-value*.54} stroke={value===0||value===100?'rgba(168,188,208,.4)':value===50?'rgba(170,197,220,.9)':'rgba(157,184,208,.8)'} strokeDasharray={value===0||value===100?undefined:'4 4'} strokeWidth={value===0||value===100?1:1.2} vectorEffect="non-scaling-stroke"/>)}
+    {[0,50,100].map(value=><line key={value} x1={6} x2={214} y1={57-value*.54} y2={57-value*.54} stroke={value===0||value===100?'rgba(168,188,208,.4)':value===50?'rgba(170,197,220,.9)':'rgba(157,184,208,.8)'} strokeDasharray={value===0||value===100?undefined:'4 4'} strokeWidth={value===0||value===100?1:1.2} vectorEffect="non-scaling-stroke"/>)}
     {geometry.path?<path d={geometry.path} fill="none" stroke={color} strokeWidth={1.8} vectorEffect="non-scaling-stroke"/>:<text x={115} y={32} textAnchor="middle" fill="var(--zg-text-meta,#a8bcd0)" fontSize={10}>이력 부족</text>}
    </svg>
  </div>;
