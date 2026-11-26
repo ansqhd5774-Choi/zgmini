@@ -352,3 +352,12 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - W06 기능 최종 미완료: 실제 60초 자연 트리거, CNN 원본 HTTP/SQLite 관측·D1/API·차트/모바일 운영 readback. `--cnn-minute`는 승인된 명시 CLI 분기이며 5분 Core의 동작만으로 분당 수집 완료라 할 수 없음. 실행기 연결의 정확한 Task/사용 권한·공급자 허용 정책 확인이 별도 필수.
 
 **다음 직접 행동:** #3839 A 실제 JSON/TXT 회수 및 자원 원인 식별 → #3840 exact-head CI 회수·문제 수정·정규 병합 → Sidecar는 실제 원인/충돌이 구분된 경우에 한해 새 정확 B 승인과 정상 유휴/lease로 설치 → 기존 실행기의 CNN 60초 경로 확인 및 실제 종단 검증. 동일 B requestId 재실행 금지.
+
+### 20-6. Sidecar 결과쌍 원자적 게시 수정 검증 및 통합
+
+- 직접 발생 #3836의 `SIDECAR_B_REPORT_READBACK_STOP`은 별도의 **순차 JSON/TXT create-only PUT 부분 게시 결함**임. 이전 B 파일 변경 0 및 `SIDECAR_B_PROBE_RESOURCE_STOP`과 분리. 기존 보고서 생성 단계만 수정한 제어 [PR #3840](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3840) HEAD `9cce021e41f1c72f378584f9f7e38b88df68f636`, CI [Secret 45808001447](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45808001447) SUCCESS, [C996 45808001859](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45808001859) SUCCESS, [Sidecar B Source 45808001848](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45808001848) SUCCESS(격리 소스 69/69 PASS, 신규 5시험 PASS). `main` squash `d72cddae07a3c5921a8e373a3a93dfac846c73a8`; PR merged verified.
+- reporter는 이제 기존 공통 `uploadResultPairAtomic`으로 **JSON/TXT 단일 Git commit, main non-force CAS, 각 바이트 재조회**를 수행함. 동시 main 변경 시 승인된 경계 내 결과 전용 재결합, 불명확한 PATCH 응답은 커밋 존재만 확인하며 **운영 B 업무는 절대 재실행하지 않음**. 외부 산출물 경로가 이미 존재하면 덮어쓰지 않음. 이 코드는 향후 독립적으로 승인된 PC B Run에만 적용; #3836의 없는 TXT를 원래 생성된 것으로 소급해서 채우지 않음. 원본 #3836은 `JSON 1/2`로 유지.
+- 아직 열린 [#3839](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3839) 기존 A 읽기 전용 `cnn-sidecar-b-core-readonly` 결과 미수신. 독립 Core Task instances/process/lock 관측이 모인 뒤 #3836 원인 분리 및 Task/락 소유자 보호를 만족시키는 기존 승인 경로만 적용. 같은 고유 요청 중복 금지.
+- 60초 자연 실행의 별도 조건: 기존 `local-cycle.mjs --cnn-minute --publish`는 **명시적 CLI 분기**로 실제 Writer B에 설치되었으나 5분 Core Task와 별개로 60초마다 이를 호출하는 기존 승인 실행 연결은 실측되지 않았음. 독립 예약 생성/공급자 무단 호출 없이 Task 트리거·기존 Runner 계약의 실제 등록·활성·마지막 실행을 확인한다. 이후 실제 HTTP 확인·SQLite 원본·D1/API·PC·모바일 점검한다.
+
+**다음 직접 행동:** #3839 실제 A 결과 회수 → Sidecar 자원 실패의 현재 상태 분리 → 기존 승인 maintenance source 연결·실제 B 보호 보존 → 60초 실행 연결 실증. 결과쌍 업로더 수정 완료를 Sidecar 설치 성공으로 계산하지 않는다.
