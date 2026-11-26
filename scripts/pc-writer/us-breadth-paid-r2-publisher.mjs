@@ -54,7 +54,7 @@ export async function publishPaidUsR2Final({
     &&typeof remote.query==='function'&&typeof dbId==='string'
     &&dbId.length>0,'US_PAID_R2_REMOTE_INVALID');
   need(validPaidUsR2Record(record),'US_PAID_R2_PUBLISH_RECORD_INVALID');
-  need(Number.isSafeInteger(now)&&now>Date.parse(record.finalizedAt)
+  need(Number.isSafeInteger(now)&&now>=Date.parse(record.finalizedAt)
     &&now>Number(preimage?.stored_at??0),
     'US_PAID_R2_CAS_TIME_INVALID');
   if(preimage){
