@@ -390,3 +390,13 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - 진행률은 범위별 확정: Writer 운영 파일 9/9 적용 유지; Sidecar 소스·격리시험 71/71+CI 완료, V2 **승인 명세 신규 PR 검증 중**, Sidecar 실제 설치 미완료; 60초 자연 수집/SQLite→D1/API/UI 미실증. 이 소스 변경 자체로 운영 완료율을 승격하지 않음.
 
 **다음 행동:** #3855 exact CI 2/2 → 병합 후 exact manifest 원문 SHA256 고정 → 현재 자원 충돌 없는 정규 단회 B 요청(실제 CAS/lease/backup/readback) → B 결과 분리 → 승인된 60초 실행 연결·실데이터 공개 검증.
+
+### 20-10. #3855 승인 명세 정확 HEAD 3/3 PASS·main 병합 및 신규 Sidecar B 1회 발행
+
+- [제어 PR #3855](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3855) exact HEAD `c2310e0e808cfaa0814fc8ed473b704f275102ec`: Sidecar isolated-source [Run 45811129737](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45811129737) SUCCESS, C996 [45811129461](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45811129461) SUCCESS, Secret Scan [45811129496](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45811129496) SUCCESS; **3/3 exact HEAD CI PASS**. `main` squash merge `e481f867cc538da0e6f272dd207719d2bd5f36f0` 및 manifest blob `0861629efa27982370c968c9c81bd34d88bdeffb` readback 확인.
+- 신규 승인 명세 `approvals/sidecar-b/w06-cnn-r3-installed-writer-v2-sevenmin-20261126.json`: raw SHA-256 **`f4ffaeaba492ae49be0dbcf9ef126c7bf14fc158960115f6315a17110ee3e1d9`** (이전 명세 원문 SHA-256 재현 후 requestId 한 항목만 치환하여 독립 확인). requestId `a7e845b2-39d3-4e52-8500-71c818b37d9f`, 이전 R3 대상 `583297b4…` → 후보 `eb3c43bf…`, 후보 소스 `e8d226d9…`, Writer source/config `393cee0d…`, Task·Wrapper 기존 해시, 효과 1파일·1회, Provider/DB/D1/Task 쓰기 불허. 과거 #3836 재실행 없음.
+- [운영 PC 단회 Sidecar B Issue #3857](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3857) 정확 제목 `cnn-sidecar-onefile-b-install` / 기존 label `pc-writer-b-install` / 고유 요청 식별자 / `controlHead=e481f867…`로 단 한 번 발행. [운영 Run #45812105430](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45812105430)에서 출처 checkout·승인 preflight·고정 후보 checkout 단계 PASS, 실제 보호 자원 확인·one-file 트랜잭션 실행 중인 것을 확인. **이 기록 시점 실제 결과 JSON/TXT/파일 교체는 아직 미확정**. 완료 또는 실패는 Run·실제 결과쌍을 별도로 읽어 판정.
+- 별개 #3850 자원 집계 진단 개선 PR은 main 충돌 상태의 독립 코드 작업이며 이 승인된 B의 exact source/원본 보호를 소급 변경하지 않음. 실제 60초 자연 수집·SQLite→D1/API→PC/모바일은 여전히 미실증; Sidecar B 소스 CI/병합/접수를 운영 종단 완료로 집계하지 않음.
+
+**다음 직접 행동:** #3857 Run #45812105430 actual status/code, JSON/TXT 2/2·백업/파일 before-after readback 회수 → 성공시에만 기존 승인된 CNN 60초 실행 연결·관측·게시·화면 실증. 실패 시 동일 ID/요청 재실행 없이 실제 stop 근거 분리.
+
