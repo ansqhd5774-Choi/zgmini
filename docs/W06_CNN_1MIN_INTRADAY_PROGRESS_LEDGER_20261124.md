@@ -280,3 +280,10 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - [#3806](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3806), HEAD 6abc20edb18ec6f7f03f157918faddfdb5e15f09. 정확 기존 범위 Writer B manifest approvals/writer-updates/w06-cnn-minute-ninefile-20261126.json 작성. 8 M(4 insert, 4 full) + 1 A(필수 미설치 history module), 보호 15, 실제 launcher/sidecar 소비자 3, Core XML 고정. candidate 0f0bb62e… (개발 4/4 PASS) 및 실제 base d8ac2450… 고정. 기존 자연 유휴 설치 계약만 사용, 별도 연장 drain/새 예약/공급자/DB/D1/Task definition/다른 source 변경 허용 없음. 실제 영수증과 명세 대조 회귀시험 추가. CI 상태 C996 R5 Readonly Source Checks queued (45798139698); ZGMINI PC Secret Scan queued (45798139707). 이 PR은 실제 설치 실행이 아님.
 - Sidecar R3는 기존 preimage와 APPROVED 고정 source 불일치로 여전히 blocked. Writer B는 실제 설치 로컬 합성 SHA를 반환하므로 현재 d8ac2450… 또는 개발 0f0bb62e…를 다음 Sidecar 승인 source로 추정하지 않는다. 실제 B 설치 영수증과 기존 승인/보호 계약에 연결된 후속 Sidecar 명세 필요. 기존 R3 재발행 금지. #3745의 Controller/TS 해결 증거는 본 W06의 #3800 결과와 동일 범위로 재사용.
 - 다음 직접 실행: #3806 CI/병합 및 승인 범위 정규 B → 실제 source/config/파일 설치 영수증 회수 → 실제 설치 SHA 기반 Sidecar 복구 → 승인된 60초 실행 연결 및 실제 HTTP/SQLite/D1/API/UI 검증. 운영 설치·예약/공급자/DB/D1/배포 변경 없음.
+
+
+### 18-1. 통합 명세 C996 실제 시험 통과
+
+- #3806 exact HEAD 6abc20edb18ec6f7f03f157918faddfdb5e15f09, [C996 Run 45798139698](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45798139698), 실제 job 139834012371 로그: SCOPED groups=writer extraTests=1, 기존 Writer 135/135 PASS + W06 exact nine-file scope 시험 1/1 PASS; 별도 5/5 PASS. Secret Scan [45798139707](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45798139707)는 마지막 조회 QUEUED. 통합 명세 CI 1/2, 병합/설치 미실행.
+- 기존 pc-writer-b-source-once.yml의 exact approval 검증 → candidate SHA checkout → generic source transaction 경로 확인. Workflow 활성 상태 전용 API는 현재 도구에서 조회 제한; 최근 실행 선례 및 기존 정규 경로는 보존. 동일 설치 manifest의 실제 B Issue는 미발행.
+- 다음 직접 실행: Secret Scan 결과 확인 후 #3806 exact HEAD 병합 및 승인 명세 바이트 SHA 고정 → 신규 고유 Writer B request 1회 → JSON/TXT 영수증 회수. 실제 운영 SHA 없이 Sidecar pin 선변경 금지. 추가 운영 변경/공급자 호출/예약/DB/D1 없음.
