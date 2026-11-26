@@ -14,6 +14,10 @@ test('W06 is a nonexecuting source candidate with exactly one 60s CNN-only Task'
  assert.match(result.taskXml,/<Interval>PT1M<\/Interval>/);
  assert.match(result.taskXml,/<StartBoundary>2026-11-26T12:08:00.000Z<\/StartBoundary>/);
  assert.match(result.taskXml,/<MultipleInstancesPolicy>IgnoreNew<\/MultipleInstancesPolicy>/);
+ // The 1-minute trigger is independent of execution timeout: collection and
+ // publication may each run for up to five minutes, and IgnoreNew prevents overlap.
+ assert.match(result.taskXml,/<ExecutionTimeLimit>PT30M<\/ExecutionTimeLimit>/);
+ assert.doesNotMatch(result.taskXml,/<ExecutionTimeLimit>PT5M<\/ExecutionTimeLimit>/);
  assert.match(result.launcherText,/--cnn-minute --publish/);
  assert.match(result.taskXml,/run-local-cnn-minute\.vbs/);
  assert.equal(result.candidateWrites,0);
