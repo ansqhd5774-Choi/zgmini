@@ -30,9 +30,10 @@ test('CNN published daily dates do not shift back one day when parsed in New Yor
  assert.equal(cnnUsMultiDayTooltipDate(''),'—');
  assert.equal(cnnUsMultiDayTooltipDate(null),'—');
 });
-test('USA 1D still identifies genuine Eastern observation time and verified PC checks',()=>{
+test('USA 1D shows genuine Eastern observation time without PC pseudo observations',()=>{
  assert.match(usa,/formatTooltipLabel=\{selectedPeriod==="1D"\s*\? \(value:string\)=>/);
- assert.match(usa,/currentSessionPcDates\.has\(value\)\?"PC 확인 ":""/);
+ assert.match(usa,/checkedPoints:\[\],/);
+ assert.doesNotMatch(usa,/currentSessionPcDates|data-cnn-minute/);
  assert.match(usa,/\$\{intradayLabel\(value\)\}/);
  assert.match(usa,/timeZone: "America\/New_York", month: "2-digit", day: "2-digit"/);
  assert.match(usa,/history = useMemo\(\(\) => \{/);
