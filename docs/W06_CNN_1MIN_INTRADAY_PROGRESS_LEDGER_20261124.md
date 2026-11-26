@@ -68,7 +68,7 @@
 | 2026-11-24 | #1521 상태·최신 댓글 조회, 진행 원장 생성 | 문서 작업 완료; 단계 1 진행 중 | 본 원장 및 위 증거 링크 |
 
 2026-11-24 문서 작업 시 신규 기능 변경 없음. 2026-11-26 전용 브랜치에 최신 main 통합 및 UI 소스/회귀 코드 변경. main 기능 병합·운영 설치·예약·DB/D1 쓰기·배포 없음.
-2026-11-26 #3741/#3742/#3766 및 #3786 A 결과 회수 완료. 후속 #3792 (90f59760-5dd7-4df4-95c5-af0139db34a2), #3793 (f4c41825-2985-4f8f-8ec3-b77e01947f24) 실제 결과 2/2 각각 회수·completed closed. #3795 (ca22b9ae-ff44-4a52-8cb8-b8484d87c401) PASS_READONLY, JSON/TXT 2/2 회수, completed closed. #3798 및 Controller 변경 후 #3800, 게시기 R2 #3804 실제 결과 각각 회수·completed closed. 현재 미회수 요청 없음. 동일 요청 중복 금지. §14 참조.
+2026-11-26 #3741/#3742/#3766 및 #3786 A 결과 회수 완료. 후속 #3792 (90f59760-5dd7-4df4-95c5-af0139db34a2), #3793 (f4c41825-2985-4f8f-8ec3-b77e01947f24) 실제 결과 2/2 각각 회수·completed closed. #3795 (ca22b9ae-ff44-4a52-8cb8-b8484d87c401) PASS_READONLY, JSON/TXT 2/2 회수, completed closed. #3798 및 Controller 변경 후 #3800, 게시기 R2 #3804 실제 결과 각각 회수·completed closed. 현재 미회수 정규 B #3812 (81857ab9-a467-49a5-8453-42ff8a522f97). 동일 요청 중복 금지. §14 참조.
 
 ## 6. 다음 직접 실행
 
@@ -295,3 +295,11 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - [#3811](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3811), HEAD 061b6d8b1d04876450a816dbbf231ec090d96f18. 실제 설치 R3 AFTER 583297b451f168a32a2a5de4b0b04c9b14449aab9a041c954a420203cf04f188만 후속 V2의 고정 before로 인정. 기존 V1 고정 PREIMAGE와 기존 승인 형식은 그대로 유지. V2 후보의 단일 APPROVED SHA literal을 이전 e4b76853…로 역치환했을 때 **전체 실제 R3 바이트 SHA** 일치해야 함. manifest installedHead=configSource, exact pinned candidate SHA/bytes, 기존 task/wrapper/lease/backup/CAS/rollback 검증 유지. 잘못된 pin·다른 파일/바이트·V1 재실행·기존 권한 변경 거부 시험 2개 추가. 별도 승인 manifest/실제 후속 pin 후보는 Writer B 실제 설치 SHA 이후에만 확정. 신규 workflow/예약/권한 추가 없음.
 - CI ZGMINI CNN Sidecar B Source Contract CI queued (45799496118); C996 R5 Readonly Source Checks queued (45799496164); ZGMINI PC Secret Scan in_progress (45799496004). 운영 #3745 복구 완료 아님.
 - 다음: #3806 CI 2/2 성공 시 정규 B 1회 제출, 실제 설치 영수증 회수. #3811 CI/병합 후 실제 설치 source SHA로 R3 단일 literal 교체 후보 및 정확 V2 manifest 확정. 기존 Core와 Sidecar의 별도 60초 지속 실행 연결 및 공급자 허용 범위는 여전히 미완료. 운영 쓰기/DB/D1/예약/공급자 호출 없음.
+
+
+### 19-1. Writer B/Sidecar V2 전체 CI 성공 및 정규 운영 설치 발행
+
+- #3806 exact HEAD 6abc20edb18ec6f7f03f157918faddfdb5e15f09 CI 2/2 SUCCESS (C996 45798139698, Secret 45798139707), main squash 6d01c2e89693b7eb535ccf8ee96c299d7ba6a9af.
+- #3811 exact HEAD 061b6d8b1d04876450a816dbbf231ec090d96f18 CI 3/3 SUCCESS (Secret 45799496004, Sidecar 45799496118, C996 45799496164). 실제 Sidecar isolated-source job 139838692321 로그 회수: 59/59 PASS, 0 fail, 0 skip, 신규 R3 V2 두 시험 PASS. main squash 8acf9284acfc897a0b3024c89d3b39dfd6142e61. 기존 V1 승인·실제 R3 설치 해시 보존.
+- [#3812 정규 Writer B](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3812) 고유 requestId 81857ab9-a467-49a5-8453-42ff8a522f97, chatId 8c83c47c-8117-4b44-9bc8-d53f340197b3, manifest approvals/writer-updates/w06-cnn-minute-ninefile-20261126.json, SHA256 2641e42ff01e68512e4525dedbce12cfb5d2e90e7cd1cf8aa2753872edb0c01e (main과 merge commit 원문 동일). 기존 승인 9파일 scope/15 protected/3 consumer/실제 base d8ac2450…/candidate 0f0bb62e… 고정. 자연 유휴 경로만 적용; 별도 drain 확대·예약 변경·공급자 호출·DB/D1 변경 승인 없음. 신규 설치 Issue 단회 발행, 실제 receipt 미회수. 같은 요청 중복 금지.
+- 다음: #3812의 실제 JSON/TXT (results/writer-b-source-install-81857ab9-a467-49a5-8453-42ff8a522f97.*), 설치 status/code, actual installed local SHA, config/Task/protected readback 회수. 실패 시 실제 firstFail에 따른 최소 수정/복구, 성공 시 실제 새 installed source SHA에 결합한 Sidecar V2 단일 literal 후보와 정확 manifest 작성·검증. 60초 실행 연결 및 실제 HTTP/SQLite/D1/API/UI 미완료. CI 및 발행은 설치 성공이 아님.
