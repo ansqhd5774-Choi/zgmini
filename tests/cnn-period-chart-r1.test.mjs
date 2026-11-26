@@ -68,6 +68,15 @@ test('source archive authority, zero, invalid records, missing periods and input
  assert.deepEqual(noSource.map(p=>p.score),[5,6,7],'daily-only fallback never fabricates 7 points');
 });
 
+test('New York evening source crossing UTC midnight removes only the matching daily session',()=>{
+ const source={observedAt:'2026-11-26T01:59:59.000Z',score:15};
+ const daily=[day('25',14),day('26',16),{date:'2026-11-26T00:30:00.000Z',score:17}];
+ const rows=make('1W',7,[source],daily);
+ assert.deepEqual(rows.map(p=>p.score),[16,15],'keep separate Nov26 daily and Nov25 late source');
+ assert.ok(rows.some(p=>p.date===source.observedAt));
+ assert.ok(!rows.some(p=>p.score===14||p.score===17),'do not duplicate November 25 from either timestamp form');
+});
+
 test('repeated PC verification is not a new CNN observedAt',()=>{
  const one=src('26T14:00:00',15);
  const rows=buildCnnPeriodChart({period:'1W',days:7,observedPoints:[one],
