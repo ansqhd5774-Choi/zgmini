@@ -112,3 +112,13 @@
 **실행 우선순위:** S6-01 → S6-02 → S6-03 → S6-04 → S6-05 → S6-06. 읽기·소스 검증은 충돌하지 않으면 병행, 공용 자원 쓰기 및 실제 B는 직렬화. 불필요한 새 서버/서비스/Runner/Cron/quorum/유료 서비스/두 번째 추가 Standby 도입은 완료조건이 아니다.
 
 **현재 종단 완료율: S6 0/1.** 진행 원장과 최종 운영 readback 없이는 계획 완료를 프로젝트 운영 완료로 표현하지 않는다.
+
+## 9. 2026-11-27 실제 작업 전진 — S6-01 소스 수정
+
+- 총괄 계획 원격 반영 커밋: `881226625b4a34fc9f9baae238e1f82b662300b1`.
+- 정확한 소스 결함 확인: `tools/pc-process-inventory-readonly.mjs`의 R5 read-only 판정은 과거 W06 Controller `182bb46f...`만 허용했다. #4036 승인된 현재 Controller `3c7d4cfe...`는 `controller/operations.mjs` 교체와 `controller/us-breadth-r2-private-readonly.mjs` 추가 때문에 #4043에서 `WATCHDOG_R5_STAGE_OR_CONTROLLER_SOURCE_UNVERIFIED`로 거부된다. 해당 오류는 **진단 pin 불일치의 근거**이며 Watchdog 실제 고장이나 S6 B authorization 여부의 직접 증거가 아니다.
+- 정확한 작업 브랜치: `zgmini-pc-control/codex/controller-s6-r5-runtime-pin-20261127`; [PR #4045](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4045), 현재 확인 HEAD `7aad7fb501c86ac908023e856899d2fe7e084946`.
+- 변경 파일 **2개**: `tools/pc-process-inventory-readonly.mjs`, `tests/pc-process-inventory-readonly.test.mjs`. #4036 승인 manifest의 2개 정확한 file SHA-256과 변경 후 source SHA만 추가 허용하며 기존 W06 roster, 모든 PID/READY/heartbeat·installed source/owner 검사는 유지한다. `__proto__` 등의 임의 source 문자열은 명시적 비교로 거부. 신규 정상/누락/변조/임의 source/오래된 heartbeat 회귀시험 작성.
+- Watchdog R5 **역사적 B 계약** `watchdog-b/standby-r5-contract.mjs`, Controller 운영 설치 source, Watchdog 실파일, S6 B 승인 원문 및 기존 #3947/#4019 effect는 **변경·재실행하지 않았다**.
+- **완료 증거 범위:** 소스/회귀시험 브랜치 커밋·PR 생성 완료. PR 최신 HEAD의 CI/병합, 운영 A #4043 원인 해소 readback, S6 #4042 heartbeat 원인, 신규 B 효과 및 실제 승격은 **아직 미완료**.
+- **다음 필수:** PR #4045 정확 HEAD CI 회수 → 소스 결함이면 최소 정정 → 검증 통과 후 충돌 없는 통합 → 기존 Read-only A 신규 고유 요청(필요한 경우만)으로 현재 Watchdog 실행 상태 재확인 → S6-02 heartbeat 기준 시각 원인 분해. S6 0/1 유지.
