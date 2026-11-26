@@ -129,11 +129,11 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays,curre
       </div>;
      }}
     />
-    {/* Keep reconstructed and actual calculation histories as separate lines.
-        Connecting real samples is a display choice, not proof of a shared
-        methodology version; the tooltip keeps that distinction explicit. */}
-    <Area type="monotone" dataKey="reconstructedValue" stroke={color} fill="none" strokeWidth={1.8} dot={false} activeDot={{r:3.5,strokeWidth:0,fill:color}} connectNulls={true} isAnimationActive={false}/>
-    <Area type="monotone" dataKey="calculatedValue" stroke={color} fill="none" strokeWidth={2.1} dot={false} activeDot={{r:3.5,strokeWidth:0,fill:color}} connectNulls={true} isAnimationActive={false}/>
+    {/* Draw one continuous visual path through saved, time-ordered points.
+        The individual reconstructed/calculated provenance remains on each point
+        for the tooltip; connecting known points does not assert equal model versions
+        or create a missing observation between them. */}
+    <Area type="monotone" dataKey="value" stroke={color} fill="none" strokeWidth={2.1} dot={false} activeDot={{r:3.5,strokeWidth:0,fill:color}} connectNulls={false} isAnimationActive={false}/>
     {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={4.4} fill={color} stroke="#fff7f7" strokeWidth={2}/>}
     {extrema.map(point=><ReferenceDot key={'extreme-'+point.kind} x={scaled.points[point.index].ts} y={point.value} ifOverflow="visible" shape={<ChartExtremumPoint point={point} peerIndex={extrema.find(p=>p.kind!==point.kind)?.index} samples={scaled.points.map(p=>({x:p.ts,value:p.value}))} count={scaled.points.length} color={color}/>}/>)}
    </AreaChart>
