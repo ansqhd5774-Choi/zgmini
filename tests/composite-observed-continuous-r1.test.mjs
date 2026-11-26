@@ -29,9 +29,9 @@ test('the displayed Nov 19, Nov 21, Nov 26 scores stay attached to their own tim
 });
 
 test('the single solid curve retains per-point provenance and makes no historical version claim',()=>{
- assert.equal((source.match(/<Area type="monotone"/g)??[]).length,1);
- assert.match(source,/<Area type="monotone" dataKey="value" stroke=\{color\} fill="none"[^>]*connectNulls=\{false\}/);
- assert.doesNotMatch(source,/<Area type="monotone" dataKey="(?:reconstructedValue|calculatedValue)"/);
+ assert.equal((source.match(/<Area type="linear"/g)??[]).length,1);
+ assert.match(source,/<Area type="linear" dataKey="value" stroke=\{color\} fill="none"[^>]*connectNulls=\{false\}/);
+ assert.doesNotMatch(source,/<Area type="linear" dataKey="(?:reconstructedValue|calculatedValue)"/);
  assert.match(source,/splitCompositeChartProvenance\(data\)/);
  assert.doesNotMatch(source,/publishedCompositeMethodLabel\(point,currentPublished\?\?null\)/,'UI does not claim model provenance in the tooltip');
  assert.match(source,/function summaryTooltipDate\(point:DashboardPoint&\{ts:number\}\)/,'both tooltips use a shared calendar-date formatter');

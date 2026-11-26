@@ -1,8 +1,6 @@
 'use client';
 import {memo,useId,useState} from 'react';
 import {useDashboardMobileAxis} from '../hooks/use-dashboard-mobile-axis';
-import ChartExtremumPoint from './chart-extremum-point';
-import {chartExtrema} from '../lib/chart-extrema.mjs';
 import {splitCompositeChartProvenance} from '../lib/market-score/composite-chart-provenance-r4.mjs';
 import type {DashboardPoint} from '../app/dashboard-ui';
 import {Area,AreaChart,ReferenceArea,ResponsiveContainer,XAxis,YAxis,ReferenceDot,ReferenceLine,Tooltip} from 'recharts';
@@ -13,7 +11,7 @@ function timeScaledTrend(data:DashboardPoint[],periodDays:number){
   return Number.isFinite(ts)?[{...point,ts}]:[];
  });
  const end=points.length?Math.max(...points.map(point=>point.ts)):Date.now();
- const start=end-Math.max(1,periodDays)*86400000;
+ const start=points.length>1?Math.min(...points.map(point=>point.ts)):end-Math.max(1,periodDays)*86400000;
  return {points,start,end};
 }
 
@@ -87,12 +85,11 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays}:{dat
  const scaled=timeScaledTrend(data,periodDays),latest=scaled.points.at(-1),axis=summaryAxisConfig(scaled.points,periodDays);
  const singlePointLabel=scaled.points.length===1&&latest?`${summaryTooltipDate(latest)} · ${latest.value.toFixed(1)}점`:null;
  const gradientId=`summary-${useId().replace(/:/g,'')}`;
- const extrema=chartExtrema(scaled.points.map(p=>({date:new Date(p.ts).toISOString().slice(0,10),value:p.value})));
  return <div className="zg-spark zg-r55-mini-chart zg-r55-summary-mini-chart" style={{height:120,minHeight:120,maxHeight:120,position:"relative"}} aria-label={`${label} 관측 추이${singlePointLabel?` · 단일 실제 관측점 ${singlePointLabel}`:""}`} title={singlePointLabel??undefined} data-w06-touch-tooltip-ready="true"
   onClick={event=>{if(latest&&touchedLatestAt===latest.ts)event.stopPropagation();}}
   onTouchStart={event=>{
    // Recharts does not reliably open its hover tooltip for a real touch tap.
-   // Only expose the actual latest calculated point when touched near its marker.
+   // Keep an invisible touch target at the latest real observation, not a visible dot.
    const touch=event.touches.item(0);
    const dot=event.currentTarget.querySelector('.recharts-reference-dot circle');
    if(!touch||!dot||!latest){setTouchedLatestAt(null);return;}
@@ -132,9 +129,8 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays}:{dat
         The individual reconstructed/calculated provenance remains on each point
         as source metadata; connecting known points does not assert equal model versions
         or create a missing observation between them. */}
-    <Area type="monotone" dataKey="value" stroke={color} fill="none" strokeWidth={2.1} dot={false} activeDot={{r:3.5,strokeWidth:0,fill:color}} connectNulls={false} isAnimationActive={false}/>
-    {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={4.4} fill={color} stroke="#fff7f7" strokeWidth={2}/>}
-    {extrema.map(point=><ReferenceDot key={'extreme-'+point.kind} x={scaled.points[point.index].ts} y={point.value} ifOverflow="visible" shape={<ChartExtremumPoint point={point} peerIndex={extrema.find(p=>p.kind!==point.kind)?.index} samples={scaled.points.map(p=>({x:p.ts,value:p.value}))} count={scaled.points.length} color={color}/>}/>)}
+    <Area type="linear" dataKey="value" stroke={color} fill="none" strokeWidth={2.1} dot={false} activeDot={false} connectNulls={false} isAnimationActive={false}/>
+    {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={8} fill="transparent" stroke="transparent" strokeWidth={0}/>}
    </AreaChart>
   </ResponsiveContainer>
   {latest&&touchedLatestAt===latest.ts&&<div data-testid="w06-touch-tooltip" role="status" aria-live="polite" className="cnn-history-tooltip" style={{position:'absolute',top:0,right:4,zIndex:5,pointerEvents:'none',maxWidth:'calc(100% - 8px)'}}>

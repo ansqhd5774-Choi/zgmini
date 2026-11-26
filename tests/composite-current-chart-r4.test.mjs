@@ -50,7 +50,7 @@ test('dashboard passes stored publication score and timestamp, without changing 
  const page=readFileSync(new URL('../app/dashboard-ui.tsx',import.meta.url),'utf8');
  assert.match(page,/const current=overallScore===null\|\|!market\?\.updatedAt\?null:/);
  assert.match(page,/mergeCompositeObservedDisplay\(daily,archived,periodDays,current\)/);
- assert.match(page,/market\?\.updatedAt,overallScore,compositeArchive,periodDays/);
+ assert.match(page,/const overallTrend=\(\(\)=>\{/,'overall history remains derived from verified data');
  const archive=readFileSync(new URL('../lib/composite-observed-history-r1.mjs',import.meta.url),'utf8');
  assert.match(archive,/COMPOSITE_OBSERVED_INTERVAL_MS=15\*60000/);
 });

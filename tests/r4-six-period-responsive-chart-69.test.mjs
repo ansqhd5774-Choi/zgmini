@@ -92,7 +92,7 @@ test('#69 all six domain chart periods retain native 0-100 scores without compos
 test('#69 domain charts show only actual dated observations, not a fabricated window-start sample',()=>{
  const sourceDates=new Set(normalize(raw).map(p=>p.label));
  const ui=readFileSync(new URL('../app/dashboard-ui.tsx',import.meta.url),'utf8');
- assert.ok(ui.includes('const daily=marketTrendWindowR1(normalizeMarketTrendPointsR4(domain?.trend,market?.updatedAt),periodDays,{includeBoundaryCarry:false});'), 'domain rendering opts out of synthetic boundary carry');
+ assert.ok(ui.includes('const daily=marketTrendWindowR1(normalizeMarketTrendPointsR4(domain?.trend,market?.updatedAt),domainChartDays,{includeBoundaryCarry:false});'), 'domain rendering opts out of synthetic boundary carry');
  for(const period of [7,30,90,180,365]){
   const cutoff=new Date(Date.parse('2026-11-16T00:00:00Z')-period*86400000).toISOString().slice(0,10);
   assert.equal(sourceDates.has(cutoff),false,'fixture has no real boundary sample: '+period);
@@ -171,7 +171,7 @@ test('#69 static mobile/desktop UI contracts cover 390, 768, 1440 and 1920 pixel
  assert.match(ui,/marketPeriods=\[\{label:'1D',days:1\},\{label:'1W',days:7\},\{label:'1M',days:30\},\{label:'3M',days:90\},\{label:'6M',days:180\},\{label:'1Y',days:365\}\]/);
  assert.match(ui,/normalizeMarketTrendPointsR4\(/);
  assert.match(ui,/mergeCompositeObservedDisplay\(daily,archived,periodDays,current\)/);
- assert.match(ui,/appendPublishedDomainCurrent\(daily,current,periodDays\)/);
+ assert.match(ui,/appendPublishedDomainCurrent\(daily,current,domainChartDays\)/);
  assert.match(chart,/<ResponsiveContainer width="100%" height="100%"/);
  assert.match(chart,/mobileAxisRight\?"right":"left"/);
  assert.match(chart,/timeZone:'Asia\/Seoul'/);
@@ -242,7 +242,7 @@ test('#69 dashboard wires only domain-verified update times into the shared char
  assert.match(src,/import \{appendPublishedDomainCurrent,verifiedPublishedDomainCurrentR4\} from/);
  assert.match(src,/const current=score===null\?null:verifiedPublishedDomainCurrentR4\(domain,market\?\.updatedAt\);/);
  assert.doesNotMatch(src,/const current=score===null\|\|!market\?\.updatedAt\?null:\{label:market\.updatedAt,value:score\}/);
- assert.match(src,/appendPublishedDomainCurrent\(daily,current,periodDays\)/);
+ assert.match(src,/appendPublishedDomainCurrent\(daily,current,domainChartDays\)/);
 });
 
 

@@ -54,6 +54,6 @@ test('mini card geometry uses the real published score as its last Y point',()=>
 test('dashboard only offers the latest published score for READY domains',()=>{
  const page=readFileSync(new URL('../app/dashboard-ui.tsx',import.meta.url),'utf8');
  assert.match(page,/domain\?\.status==='READY'&&validPublicScore\(domain\.score\)/);
- assert.match(page,/appendPublishedDomainCurrent\(daily,current,periodDays\)/);
- assert.match(page,/\[market\?\.domains,market\?\.updatedAt,periodDays\]/);
+ assert.match(page,/appendPublishedDomainCurrent\(daily,current,domainChartDays\)/);
+ assert.match(page,/\[market\?\.domains,market\?\.updatedAt\]/);
 });

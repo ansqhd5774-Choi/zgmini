@@ -46,9 +46,9 @@ test('R4 #28 zero score stays numeric, missing input stays missing, no mutation'
 test('R4 #28 Recharts keeps observed score provenance in data while tooltip shows only date and score',()=>{
  const chart=readFileSync(new URL('../components/dashboard-summary-chart.tsx',import.meta.url),'utf8');
  assert.match(chart,/splitCompositeChartProvenance\(data\)/);
- assert.equal((chart.match(/<Area type="monotone"/g)??[]).length,1,"one visible score series");
- assert.match(chart,/<Area type="monotone" dataKey="value" stroke=\{color\} fill="none" strokeWidth=\{2\.1\} dot=\{false\}[^>]*connectNulls=\{false\}/);
- assert.doesNotMatch(chart,/<Area type="monotone" dataKey="(?:reconstructedValue|calculatedValue)"/);
+ assert.equal((chart.match(/<Area type="linear"/g)??[]).length,1,"one visible score series");
+ assert.match(chart,/<Area type="linear" dataKey="value" stroke=\{color\} fill="none" strokeWidth=\{2\.1\} dot=\{false\}[^>]*connectNulls=\{false\}/);
+ assert.doesNotMatch(chart,/<Area type="linear" dataKey="(?:reconstructedValue|calculatedValue)"/);
  assert.doesNotMatch(chart,/dataKey="reconstructedValue"[^>]*strokeDasharray=/);
  assert.match(chart,/point.label.includes\('T'\)/,"actual timestamps remain preserved for the data layer");
  assert.doesNotMatch(chart,/현행 산식 재구성 · 당시 실계산점 아님/);
@@ -81,9 +81,9 @@ test('R4 #69 interleaved reconstructed and archived samples keep distinct line s
  assert.deepEqual(classified.filter(p=>p.calculatedValue!==null).map(p=>p.calculatedValue),[48,49]);
  assert.deepEqual({daily,archive},original);
  const chart=readFileSync(new URL('../components/dashboard-summary-chart.tsx',import.meta.url),'utf8');
- assert.equal((chart.match(/<Area type="monotone"/g)??[]).length,1);
+ assert.equal((chart.match(/<Area type="linear"/g)??[]).length,1);
  assert.match(chart,/dataKey="value"[^>]*connectNulls=\{false\}/);
- assert.doesNotMatch(chart,/<Area type="monotone" dataKey="(?:reconstructedValue|calculatedValue)"/);
+ assert.doesNotMatch(chart,/<Area type="linear" dataKey="(?:reconstructedValue|calculatedValue)"/);
 });
 
 test('W06 #28 impossible daily, archived, and published dates never become chart points',()=>{
