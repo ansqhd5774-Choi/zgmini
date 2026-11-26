@@ -400,3 +400,13 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 
 **다음 직접 행동:** #3857 Run #45812105430 actual status/code, JSON/TXT 2/2·백업/파일 before-after readback 회수 → 성공시에만 기존 승인된 CNN 60초 실행 연결·관측·게시·화면 실증. 실패 시 동일 ID/요청 재실행 없이 실제 stop 근거 분리.
 
+### 20-11. #3857 Sidecar B 실제 운영 1파일 설치·결과쌍·원본 지원 이슈 종결
+
+- [신규 독립 B #3857](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3857) / [실제 운영 Run #45812105430](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45812105430): **completed/success**. 고정 승인 preflight, 후보 checkout, 실제 Windows one-file transaction, 원본 JSON/TXT create-only atomic reporter 단계 모두 SUCCESS.
+- 현재 `main/results/cnn-sidecar-b-a7e845b2-39d3-4e52-8500-71c818b37d9f.json` / `.txt` **2/2 원격 직접 재조회**. 실제 영수증 `status=SIDECAR_B_APPLIED_VERIFIED`, `code=SIDECAR_B_EXACT_FILE_READBACK_PASS`, `applied=true`, `changedFileCount=1`, `backupVerified=true`, `controlSha=e481f867cc538da0e6f272dd207719d2bd5f36f0`, manifest SHA256 `f4ffaeaba492ae49be0dbcf9ef126c7bf14fc158960115f6315a17110ee3e1d9`, 정확 before `583297b451f168a32a2a5de4b0b04c9b14449aab9a041c954a420203cf04f188` → after `eb3c43bf8fba6ea4e51f3e84b77f9ec13000db9d9e38077ffd914950d7080b6b`. 신규 requestId 1회 실행, `retry=READ_ONLY_RECONCILE_NO_REPLAY`.
+- 설치 영수증은 **파일 1개 교체와 그 byte readback/백업**을 확인한다. Task·Wrapper·Writer source `393cee0d…` 고정 계약 유지, B에는 공급자 호출·SQLite/D1 쓰기·Task 변경 허용 없음. 기존 실패한 #3825/#3836 절대 재실행하지 않음. 신규 B 원본 Issue #3857은 성공 결과 댓글 확인 후 **CLOSED/completed**.
+- 원본 공통 지원 [#3745](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3745#issuecomment-7191123232)에 설치 실증과 60초 미완료를 명시적으로 회신하고, **Sidecar 승인 source 불일치라는 한정된 원래 차단 문제는 CLOSED/completed**. 전체 W06 기능 완료와 혼동하지 않음.
+- **W06 아직 미완료:** 별도 승인된 60초 자연 호출의 실제 등록·활성·실행, CNN HTTP 확인·SQLite 원본·D1/API readback, PC 1440px·모바일 390px UI 및 네 분 단위의 실관측. 이 B 결과만으로 60초 실행 또는 자연 Sidecar 재실행 성공을 주장하지 않음. App 본체 PR #1644는 여전히 별도 Draft 개발/배포 범위.
+
+**다음 직접 행동:** 현재 설치된 1분 W06 CLI lane을 호출할 기존 승인 실행 등록 경로(등록/활성/최근 실제 실행)를 확인하고, 필요한 정확한 Task/Runner 효과만 기존 계약·승인 범위에서 연결 → 자연 60초 CNN→SQLite→D1/API→PC·모바일 점검. 운영 읽기 A는 필요한 실측 때만 고유 요청으로 단회 수행.
+
