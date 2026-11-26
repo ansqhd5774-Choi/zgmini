@@ -130,3 +130,11 @@
 - 승인 #4036의 정확히 2개 변경 SHA-256과 PR 수정 소스 pin을 교차 대조함: `controller/operations.mjs` `bac7412c...`, `controller/us-breadth-r2-private-readonly.mjs` `e5f1d876...`. 역사적 `watchdog-b/standby-r5-contract.mjs`는 `main`과 변경 브랜치에서 동일 blob.
 - S6-02: 설치된 R5 Watchdog `45807c661ee7f5f11a20b5780e6fd31116b24f84`의 상태 쓰기는 `STATUS.json.at` 현재 시각, `tick` 주기는 **15초**. S6 A `projectS6ApprovalPreimageReadonly`은 heartbeat age **45초 미만**을 요구. #4042는 age가 45초 이상/미래/비정상 중 어디에 해당하는지 원시 시각을 기록하지 않았으므로 **원인 미입증**. #4043의 `statusFresh=false`는 Controller source mismatch 이후 기본값이어서 실제 오래된 heartbeat 증거로 사용 불가.
 - **다음:** 나머지 2개 CI가 동일 HEAD에서 완료되면 PR 통합 여부 판단. 실PC A readback과 실제 S6 효과는 별도 승인·안전 조건이 충족될 때만 실행. 운영 S6 0/1.
+
+## 10. 2026-11-27 S6-01 정확 HEAD CI 3/3 및 정규 main 통합
+
+- 제어 저장소 [PR #4045](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4045) 정확 HEAD `f697d7f5291ef5f30ff055b2f602fe19f41cdfdb`의 C996 [Run 45876810983](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45876810983), Secret Scan [Run 45876810978](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45876810978), Process Inventory Source [Run 45876811111](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45876811111)이 **모두 completed/success (3/3)**.
+- 그 사이 다른 작업으로 `main`이 전진했으나 두 변경 파일은 다른 변경과 겹치지 않음을 blob·diff로 확인했다. 정확 HEAD 지정 정규 **squash merge PASS**, merge SHA `b129b9bafda689222e70cb9dbe6650111b6754d4`. 새 `main`에서 R2 Controller source 및 정확 두 파일 digest 허용을 readback 완료.
+- **완료 범위: S6-01 소스 진단 결함 수정·회귀 CI·main 통합**. 역사적 Watchdog B 승인 contract 파일 불변. Controller/Watchdog 현장 재설치 0, S6 효과·Supervisor 종료 0.
+- 후속 실운영 read-only A [#4052](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4052), 새로운 고유 requestId `7b91ae42-6732-4f18-a9c0-2bd94e53ab71`, `controller-standby-r5-runtime-readonly`를 **1회** 생성. 원본 #4043 재실행 없음. 아직 실제 결과 원장·JSON/TXT readback 확인 전이므로 운영 R5 통과·S6-02 heartbeat 해결 주장 금지.
+- **다음 필수:** #4052의 실제 Workflow Run 및 A `status/code`·JSON/TXT readback 회수 → Controller source pin PASS와 신선도/Standby 신원 판정 분리 → 필요하면 S6 승인 후보 고유 read-only A와 기존 관련 idle/lease 상태를 확인한다. 새로운 S6 B 승인·실효 전환은 별도 안전 preimage 이후 진행한다. S6 종단 0/1 유지.
