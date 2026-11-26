@@ -128,3 +128,17 @@ test('W01 compatibility is pure and affects no existing scorer formulas or publi
  const writer=readFileSync('scripts/pc-writer/run-local.mjs','utf8');
  assert.match(writer,/await projectionWriter\(core\)\.write\(id,payload,Date\.now\(\),checkpoint\)/);
 });
+
+
+test('W06 shared Writer preserves installed W01 compatibility on both checkpoint paths',()=>{
+ const writer=readFileSync('scripts/pc-writer/run-local.mjs','utf8');
+ const matching=writer.indexOf('if(inflationR2DateRefresh&&p?.status');
+ const stored=writer.indexOf('inflationR2AsOfTrendCompatibility(envelope.payload)',matching);
+ const rebuild=writer.indexOf('const built=r10?.status',stored);
+ const repair=writer.indexOf("const payload=id==='inflation'?inflationR2AsOfTrendCompatibility(built):built;",rebuild);
+ assert.ok(matching>=0&&stored>matching&&rebuild>stored&&repair>rebuild);
+ assert.match(writer.slice(matching,rebuild),/p.sourceVersion===checkpoint.sourceVersion&&p.sourceStoredAt===checkpoint.sourceStoredAt/);
+ assert.match(writer.slice(stored,rebuild),/projectionWriter\(core\)\.write\(id,corrected,Date\.now\(\),checkpoint\)/);
+ assert.match(writer.slice(stored,rebuild),/return;/);
+ assert.match(writer.slice(repair),/projectionWriter\(core\)\.write\(id,payload,Date\.now\(\),checkpoint\)/);
+});

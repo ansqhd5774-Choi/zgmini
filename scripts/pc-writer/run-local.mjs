@@ -3,6 +3,7 @@ import {publishER1MonthlyVintages} from './er1-monthly-vintage-publication.mjs';
 import {appendD1Diagnostic} from './d1-diagnostics.mjs';
 import {r44D1Readback} from './market-calendar-r44-d1-readback.mjs';
 import fs from 'node:fs';
+import {coreCycleIdFromEnv} from './core-cycle-id.mjs';
 import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
@@ -21,7 +22,7 @@ import {buildSupplyR10} from './supply-r10.mjs';
 import {acceptsStoredUpdate} from '../../lib/market-score/live-refresh.mjs';
 import {publishCoreArrowState} from './score-arrow-publication.mjs';
 import {requiresRecessionR3DisplayRefresh} from './recession-r3-refresh.mjs';
-import {requiresInflationR2TrendDateRefresh} from './inflation-r2-trend-date-refresh.mjs';
+import {requiresInflationR2TrendDateRefresh,inflationR2AsOfTrendCompatibility} from './inflation-r2-trend-date-refresh.mjs';
 import {requiresLiquidityR2DisplayRefresh} from './liquidity-r2-refresh.mjs';
 import {requiresCreditR2DisplayRefresh} from './credit-r2-refresh.mjs';
 import {requiresDebtHistoryRefresh} from './debt-history-refresh.mjs';
@@ -48,6 +49,28 @@ if(publish){
  if(blocked)throw Error(blocked.status);
  execFileSync('git',['diff','--quiet','HEAD','--','worker','lib','scripts/pc-writer'],{cwd:root,stdio:'pipe',windowsHide:true});
 }
+// Explicit saved-only W06 lane; no Core calculation, provider fetch, history DB,
+// Core ledger overwrite, or installation/scheduler effect.
+if(process.argv.includes('--cnn-minute')){
+ if(!publish||process.argv.slice(2).some(arg=>!['--cnn-minute','--publish'].includes(arg)))throw Error('CNN_MINUTE_PUBLICATION_SCOPE_STOP');
+ if(config.source!==source)throw Error('CNN_MINUTE_SOURCE_NOT_APPROVED');
+ const dirty=execFileSync('git',['status','--porcelain','--untracked-files=all','--','lib','worker','scripts/pc-writer'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
+ if(dirty)throw Error('CNN_MINUTE_SOURCE_NOT_APPROVED');
+ const file=path.join(base,'storage','core.sqlite');
+ if(!fs.existsSync(file))throw Error('CNN_MINUTE_CORE_DB_MISSING');
+ const core=localDatabase(file);
+ const receipt={at:new Date().toISOString(),source,lane:'cnn-minute',providerCalls:0};
+ try{
+  const minuteRemote=client(config,()=>credential(root),{onDiagnostic:diagnostic=>appendD1Diagnostic(base,{runAt:receipt.at,source},diagnostic)});
+  const {publishCnnMinute}=await import('./cnn-observed-archive-publication-r1.mjs');
+  Object.assign(receipt,await publishCnnMinute(core,minuteRemote,config.core));
+  if(receipt.status!=='VERIFIED')process.exitCode=1;
+ }catch(error){
+  receipt.status='FAILED';
+  receipt.error=/^[A-Z0-9_]+$/.test(error.message??'')?error.message:'CNN_MINUTE_PUBLICATION_FAILED';
+  process.exitCode=1;
+ }finally{core.close();console.log(JSON.stringify(receipt));}
+}else{
 const seed=read(path.join(base,'local-seed-progress.json'));
 if(!Object.keys(seed).length||Object.values(seed).some(x=>!x.complete))throw Error('LOCAL_SEED_INCOMPLETE');
 const core=localDatabase(path.join(base,'storage','core.sqlite'));
@@ -55,6 +78,7 @@ const history=localDatabase(path.join(base,'storage','history.sqlite'));
 const env={DB:core,DB_CORE:core,DB_HISTORY:history};
 const hook=installLocalRuntime(env);
 const report={at:new Date().toISOString(),source,mode:publish?'PUBLISH':'DRY_RUN',inputLocation:'LOCAL_SQLITE',providerCalls:0,projections:[]};
+report.coreCycleId=coreCycleIdFromEnv();
 const originalFetch=globalThis.fetch;
 const originalWarn=console.warn;
 let liquidityCoverage=null;
@@ -252,9 +276,22 @@ try{
   // Repair only the legacy future-month-end evaluation label using saved PIT
   // inputs; unchanged checkpoints and unrelated projections remain untouched.
   const inflationR2DateRefresh=id==='inflation'&&requiresInflationR2TrendDateRefresh(envelope);
+  // Preserve the approved installed W01 compatibility path: a matching
+  // checkpoint needs only the stored trend-label repair, not recalculation.
+  if(inflationR2DateRefresh&&p?.status==='READY'&&p.sourceVersion===checkpoint.sourceVersion&&p.sourceStoredAt===checkpoint.sourceStoredAt){
+   const corrected=inflationR2AsOfTrendCompatibility(envelope.payload);
+   if(corrected!==envelope.payload){
+    await projectionWriter(core).write(id,corrected,Date.now(),checkpoint);
+    report.projections.push({id,status:'LOCAL_READY'});
+    return;
+   }
+  }
   if(p?.status!=='READY'||p.sourceVersion!==checkpoint.sourceVersion||p.sourceStoredAt!==checkpoint.sourceStoredAt||recessionR3Refresh||liquidityR2Refresh||creditR2Refresh||debtHistoryRefresh||inflationR2DateRefresh){
    const input=r10?.status==='READY'?null:await loadProjectionSource(id,scope,{now:checkpoint.sourceStoredAt});
-   const payload=r10?.status==='READY'?r10.payload:await builders[id](input);
+   const built=r10?.status==='READY'?r10.payload:await builders[id](input);
+   // A legacy installed builder can still return the old date label.
+   // Use the already approved, pure W01 repair; current builders are a no-op.
+   const payload=id==='inflation'?inflationR2AsOfTrendCompatibility(built):built;
    await projectionWriter(core).write(id,payload,Date.now(),checkpoint);
   }
   report.projections.push({id,status:'LOCAL_READY'});
@@ -411,6 +448,11 @@ try{
   };
   for(const row of outputs){
    await attemptOutput(report,'feed:'+row.feed_key,async()=>{
+   if(row.feed_key==='fear-greed'){
+    const {publishCnnCurrent}=await import('./cnn-observed-archive-publication-r1.mjs');
+    report.cnnCurrentPublication=await publishCnnCurrent(core,remote,config.core);
+    return;
+   }
    const existing=(await remote.query(config.core,"SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'",[row.feed_key])).results[0];
    if(isER1MonthlyFeedKey(row.feed_key)){
     const evidence=er1MonthlyD1Readback(row,existing);
@@ -475,3 +517,5 @@ try{
 }catch(error){report.status='FAILED';report.error=/^[A-Z0-9_]+$/.test(error.message??'')?error.message:error.code??'LOCAL_WRITER_FAILED';process.exitCode=1;}
 finally{globalThis.fetch=originalFetch;console.warn=originalWarn;hook.deregister();core.close();history.close();save(path.join(base,'local-writer-last-run.json'),report);if(publish){appendPublicationEvent(base,{at:report.at,source,status:report.status,error:report.error??null,recovery:report.recovery?.outcome??null});try{updateDataAlert(base,{key:'publication',failed:report.status!=='VERIFIED'});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}}console.log(JSON.stringify(report));}
 
+
+}

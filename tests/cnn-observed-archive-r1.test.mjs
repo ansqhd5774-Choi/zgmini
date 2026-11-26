@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {mergeCnnArchivedDay,groupVerifiedCnnObservations,CNN_OBSERVED_ARCHIVE_VERSION} from '../lib/cnn-observed-archive-r1.mjs';
 import {sampleCnnObservedPoints} from '../lib/cnn-observed-sampling-r1.mjs';
-import {publishCnnObservedArchive} from '../scripts/pc-writer/cnn-observed-archive-publication-r1.mjs';
+import {publishCnnObservedArchive,publishCnnCurrent,publishCnnMinute} from '../scripts/pc-writer/cnn-observed-archive-publication-r1.mjs';
 import {refreshPublicFeeds} from '../worker/public-feed-refresh.mjs';
 
 const point=(observedAt,score)=>({observedAt,score});
@@ -108,4 +108,95 @@ test('integration keeps current output, 15-minute cadence and read-only visitor 
  assert.doesNotMatch(read('app/api/fear-greed/observations/route.ts'),/fetch\(['"]https:\/\//);
  assert.match(read('app/fear-greed/usa/cnn-panel.tsx'),/\/api\/fear-greed\/observations\?period=/);
  assert.doesNotMatch(read('app/korea-composite-view.tsx'),/\/api\/fear-greed\/observations/);
+});
+
+
+test('late verified CNN original is archived without regressing current or replaying stale sidecars',async()=>{
+ const currentAt='2026-10-31T15:00:00.000Z',lateAt='2026-10-31T14:59:00.000Z';
+ const previous={body:verified(currentAt,20),storedAt:Date.parse(currentAt)};
+ const now=previous.storedAt+15*60000;
+ const events=[];
+ const store={initialize:async()=>{},readOutput:async k=>k==='fear-greed'?previous:null,
+  readAttempt:async()=>null,writeAttempt:async()=>{},
+  appendVerifiedObservations:async(body,at)=>{
+   const byDate=groupVerifiedCnnObservations(body,at);
+   const merged=mergeCnnArchivedDay(null,'2026-10-31',byDate.get('2026-10-31'),at);
+   events.push(merged.body.observations);
+  },
+  writeOutput:async()=>assert.fail('late source must not replace current')};
+ const locks={claim:async()=>1,finish:async()=>{}};
+ const collectors={'fear-greed':async()=>Response.json(verified(lateAt,19.831,[point(currentAt,5)]))};
+ const result=await refreshPublicFeeds({store,locks,collectors,now,maxFeedsPerRun:1});
+ assert.deepEqual(events,[[{observedAt:lateAt,score:19.831}]]);
+ assert.deepEqual(result.feeds.find(x=>x.key==='fear-greed'),{key:'fear-greed',status:'COMPLETE',archivedLateObservation:true});
+ assert.equal(previous.body.score,20);
+});
+test('invalid late CNN score and failed archive do not advance current',async()=>{
+ const priorAt='2026-10-31T15:00:00.000Z',now=Date.parse(priorAt)+15*60000;
+ const store={initialize:async()=>{},readOutput:async()=>({body:verified(priorAt,20),storedAt:Date.parse(priorAt)}),
+  readAttempt:async()=>null,writeAttempt:async()=>{},appendVerifiedObservations:async(body,at)=>{groupVerifiedCnnObservations(body,at);throw Error('ARCHIVE_WRITE_FAILED')},
+  writeOutput:async()=>assert.fail('failed archive must not replace current')};
+ const locks={claim:async()=>1,finish:async()=>{}};
+ for(const score of [101,19.831]){
+  const result=await refreshPublicFeeds({store,locks,collectors:{'fear-greed':async()=>Response.json(verified('2026-10-31T14:59:00.000Z',score))},now,maxFeedsPerRun:1});
+  assert.equal(result.feeds.find(x=>x.key==='fear-greed').status,'FAILED');
+ }
+});
+
+
+// Test the saved-only entry against the same public table contract, with no
+// real Cloudflare credential, network, or operating PC storage.
+function minutePublicationFixture(){
+ const t=Date.parse('2026-10-31T20:00:00Z'),date='2026-10-31';
+ const current={body:JSON.stringify(verified(new Date(t).toISOString(),17.9)),stored_at:t};
+ const archive={snapshot_key:date,body:JSON.stringify(mergeCnnArchivedDay(null,date,[point(new Date(t).toISOString(),17.9)],t).body),stored_at:t};
+ const rows=new Map(),writes=[];
+ const local={prepare(sql){assert.match(sql,/kind='output'/);return {bind(key){assert.ok(['fear-greed','fear-greed-observed'].includes(key));return {async first(){assert.equal(key,'fear-greed');return current},async all(){assert.equal(key,'fear-greed-observed');return {results:[archive]}}}}}}};
+ const remote={async query(db,sql,params){
+  assert.equal(db,'core');
+  if(sql.includes('SELECT snapshot_key,stored_at'))return {results:rows.has(date)?[{snapshot_key:date,stored_at:rows.get(date).stored_at}]:[]};
+  const key=params[0]==='fear-greed'?'current':params[1];
+  return {results:rows.has(key)?[rows.get(key)]:[]};
+ },async request(db,[statement]){
+  assert.equal(db,'core');
+  const [key,...p]=statement.params;
+  if(key==='fear-greed'){
+   const [body,stored_at,expectedAt,expectedBody]=p,previous=rows.get('current');
+   if(!previous||(previous.stored_at===expectedAt&&previous.body===expectedBody&&stored_at>previous.stored_at)){
+    rows.set('current',{body,stored_at});writes.push('current');
+   }
+  }else{
+   assert.equal(key,'fear-greed-observed');
+   const [day,body,stored_at]=p;rows.set(day,{body,stored_at});writes.push(day);
+  }
+ }};
+ return {t,date,current,archive,rows,writes,local,remote};
+}
+test('CNN minute publisher reuses archive, reads back current, and skips identical repeats',async()=>{
+ const f=minutePublicationFixture();
+ const r=await publishCnnMinute(f.local,f.remote,'core');
+ assert.equal(r.status,'VERIFIED');assert.equal(r.providerCalls,0);
+ assert.deepEqual(f.writes,[f.date,'current']);
+ assert.deepEqual(f.rows.get('current'),f.current);
+ const again=await publishCnnMinute(f.local,f.remote,'core');
+ assert.equal(again.status,'VERIFIED');assert.equal(again.current.writes,0);
+ assert.deepEqual(f.writes,[f.date,'current']);
+});
+test('CNN current CAS cannot overwrite a concurrently published newer observation',async()=>{
+ const f=minutePublicationFixture();
+ const request=f.remote.request.bind(f.remote);
+ const newer={body:JSON.stringify(verified(new Date(f.t+60000).toISOString(),18.1)),stored_at:f.t+60000};
+ f.remote.request=async(...args)=>{f.rows.set('current',newer);return request(...args)};
+ const r=await publishCnnCurrent(f.local,f.remote,'core');
+ assert.equal(r.status,'REMOTE_NEWER_PRESERVED');
+ assert.deepEqual(f.rows.get('current'),newer);assert.deepEqual(f.writes,[]);
+});
+test('CNN unknown write is verified by readback, equal-time conflict stops without overwrite',async()=>{
+ const f=minutePublicationFixture();
+ const request=f.remote.request.bind(f.remote);
+ f.remote.request=async(...args)=>{await request(...args);throw Error('D1_OUTCOME_UNKNOWN')};
+ assert.equal((await publishCnnCurrent(f.local,f.remote,'core')).status,'VERIFIED');
+ f.rows.set('current',{...f.current,body:JSON.stringify(verified(new Date(f.t).toISOString(),20))});
+ await assert.rejects(()=>publishCnnCurrent(f.local,f.remote,'core'),/CNN_CURRENT_PREIMAGE_CONFLICT/);
+ assert.equal(f.writes.length,1);
 });
