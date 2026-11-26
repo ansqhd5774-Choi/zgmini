@@ -136,6 +136,13 @@
 - 운영 [#4080](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4080) Run `45883221676` job `operating-process-snapshot` 재조회는 여전히 `queued`; Core 자연 유휴·원본 CAS 신규 증거가 아니다.
 - 따라서 #4050/#4081을 #4078 해결로 간주하지 않는다. #4078 기존 requestId 보존, Run/JSON/TXT 0건, 공통 [#4079](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4079) 접수 복구 미해결. 기본 `issues.opened` workflow-run 누락의 정확한 원인·접수 복구와 실제 A 영수증 후에만 설치 준비; 기존 B #4068 재요청·Core 강제 종료·lock 삭제 금지. 종단 5/8(62.5%) 유지.
 
+## 2026-11-27 360초 Writer B 실패 조건과 기존 장시간 정규 경로 분리
+
+- 정규 Writer B [#4068](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4068)은 `PAUSE_NEW_STARTS_DRAIN_360S_V1` 원본 manifest로 실행됐고, 종료 상태는 `WRITER_B_CORE_NATURAL_DRAIN_TIMEOUT_STOP` / `ORIGINAL_VERIFIED`. 승인된 360초 자연 종료 창 안에 Task·자식·lock이 모두 quiet가 되지 않은 실패이며 원본은 복원됐다. 360초 초과 자체는 Core 고장·정체 증거가 아니다.
+- 제어 최신 `writer-b/contract.mjs`와 `.github/workflows/pc-writer-b-source-once.yml` 확인: 이미 별도 `PAUSE_NEW_STARTS_DRAIN_1200S_V1` + 정확 `pc-writer-b-extended-drain-1200` 라벨 + 30분 Job 상한, `2400S_V1` + `pc-writer-b-extended-drain-2400` + 50분 Job 상한의 **독립적으로 승인돼야 하는** 경로가 구현돼 있다. 이 기능을 위해 새 실행기/예약/임의 종료 코드를 만들 필요는 없다.
+- **실행 판단:** 기존 #4068 요청/360초 승인 manifest를 1200/2400초로 변조·재실행하지 않는다. 자연 유휴가 확인되지 않을 경우에만 360초 실패의 직접 대안으로 사용자 별도 명시 승인, 신규 정확한 manifest/원본 Task XML·4파일 CAS 및 해당 라벨을 갖춘 고유 B 요청을 검토한다. 승인/현재 PC 영수증 없이 이 확장을 실행 완료로 기록하지 않는다. 1200초 안 정상 종료 보장 없음.
+- [#4078](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4078) workflow-run 0건과 [#4080](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4080) Run `45883221676` 운영 job `queued`는 여전히 서로 다른 접수/Runner 상태 문제다. 어느 것도 실제 Core 유휴 증거가 아니다. PC 실행·Writer B 설치·수집·게시 신규 완료 0, 종단 5/8(62.5%) 유지.
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
