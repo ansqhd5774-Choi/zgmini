@@ -37,8 +37,8 @@ export function validPaidUsR2Record(r){
      ||!iso(r.finalizedAt)||!sha(r.sourceFileSha256)
      ||!day(r.firstDate)||!day(r.lastDate)
      ||r.observationDate!==r.lastDate
-     ||!Array.isArray(r.points)||r.points.length<1||r.points.length>250
-     ||r.historyComplete!==(r.points.length===250)
+     ||!Array.isArray(r.points)||r.points.length!==250
+     ||r.historyComplete!==true
      ||r.points[0]?.date!==r.firstDate
      ||r.points.at(-1)?.date!==r.lastDate)return false;
   for(let i=0;i<r.points.length;i++){

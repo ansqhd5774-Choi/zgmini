@@ -1,27 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {US_PAID_R2_FEED_KEY,US_PAID_R2_VERSION,
-  US_PAID_R2_SOURCE,US_PAID_R2_METHOD,
+import {US_PAID_R2_FEED_KEY,
   validPaidUsR2Record,paidUsR2PublicProjection}
   from '../worker/us-breadth-paid-r2-contract.mjs';
+import {fullPaidUsR2Record}
+  from './helpers/us-breadth-paid-r2-full-year-fixture.mjs';
 
-const row=(date,risingPct,unchangedPct,fallingPct)=>
-  ({date,risingPct,unchangedPct,fallingPct});
-function sample(){
-  return {
-    version:US_PAID_R2_VERSION,
-    status:'READY',market:'usa',phase:'CONFIRMED',
-    publicationStage:'PUBLIC_FINAL',plan:'full',
-    source:US_PAID_R2_SOURCE,universe:'US_MARKETPARQUET_ACTIVE_STOCKS',
-    priceMode:'SPLIT_ADJUSTED_DAILY_CLOSE',
-    methodologyVersion:US_PAID_R2_METHOD,
-    finalizedAt:'2026-11-20T22:00:00.000Z',
-    sourceFileSha256:'a'.repeat(64),
-    firstDate:'2026-11-19',lastDate:'2026-11-20',
-    observationDate:'2026-11-20',historyComplete:false,
-    points:[row('2026-11-19',25,50,25),row('2026-11-20',50,25,25)],
-  };
-}
+const sample=()=>fullPaidUsR2Record();
 test('new paid R2 key differs from retired free and S&P500 B1-R5',()=>{
   assert.equal(US_PAID_R2_FEED_KEY,'us-breadth-paid-r2-v1');
   assert.notEqual(US_PAID_R2_FEED_KEY,'breadth-paid-b1-r5-v1');
@@ -54,10 +39,21 @@ test('free or falsified plan and any extra raw field is rejected',()=>{
 test('invalid percentages, implied missing days or fake history status fail',()=>{
   const x=sample();x.points[1].fallingPct=33;
   assert.equal(validPaidUsR2Record(x),false);
-  const y=sample();y.points[0].date='2026-11-18';
+  const y=sample();y.points[1].date=y.points[0].date;
   assert.equal(validPaidUsR2Record(y),false);
-  const z=sample();z.historyComplete=true;
+  const z=sample();z.historyComplete=false;
   assert.equal(validPaidUsR2Record(z),false);
   const a=sample();a.points[1].fallingPct=null;
   assert.equal(validPaidUsR2Record(a),false);
+});
+
+test('1, 2 or 249 real paid sessions are not PUBLIC_FINAL despite valid percent rows',()=>{
+  for(const count of [1,2,249]){
+    const partial=sample();
+    partial.points=partial.points.slice(-count);
+    partial.firstDate=partial.points[0].date;
+    partial.historyComplete=false;
+    assert.equal(validPaidUsR2Record(partial),false,`count=${count}`);
+    assert.equal(paidUsR2PublicProjection(partial),null);
+  }
 });
