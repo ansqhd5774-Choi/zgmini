@@ -19,7 +19,7 @@ async function fullMarketConfirmedR2GET(){
   // A purchased full-market R2 snapshot is a separate paid-only D1 row.
   // No legacy free R2/R1 or IEX fallback, even if that old data still exists.
   const result=await readPaidUsR2Feed(coreSnapshotsDb(),{mode:'current'});
-  if(!result.ok)return Response.json({status:'UNAVAILABLE',reason:result.reason},
+  if('reason' in result)return Response.json({status:'UNAVAILABLE',reason:result.reason},
     {status:result.httpStatus,headers:{'Cache-Control':'no-store'}});
   return Response.json(result.body,{status:200,headers:result.headers});
 }
