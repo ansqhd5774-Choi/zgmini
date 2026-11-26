@@ -4,7 +4,6 @@ import {calculateStoredPaidUsBreadthR2}
   from '../scripts/pc-writer/us-breadth-paid-r2-stored.mjs';
 
 const days=['2026-11-18','2026-11-19','2026-11-20'];
-const symbols=['A','B','C','NEW'];
 const row=(date,symbol,close)=>({
   date,symbol,close,volume:100,asset_type:'stock',
 });
