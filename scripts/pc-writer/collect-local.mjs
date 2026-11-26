@@ -1,4 +1,5 @@
 import path from 'node:path';
+import {coreCycleIdFromEnv} from './core-cycle-id.mjs';
 import os from 'node:os';
 import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
@@ -123,6 +124,7 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   }
   // Reports contain statuses only; provider URLs, credentials, and exception messages are excluded.
   const report={at:new Date().toISOString(),lane,status:result.status,job:result.job??null,attempted:result.attempted??null,feeds:result.feeds?.map(({key,status})=>({key,status})),sectorFearGreedEtf:{status:sectorFearGreedEtf.status,providerRequests:sectorFearGreedEtf.providerRequests??0,commonLatest:sectorFearGreedEtf.commonLatest??null,code:sectorFearGreedEtf.code??sectorFearGreedEtf.error??null},providers,quota:quota.summary()};
+  report.coreCycleId=coreCycleIdFromEnv();
   report.employmentR6Collection=employmentR6Collection;
   for(const key of ['phase','reason','sourceStatus'])if(typeof result?.[key]==='string'&&/^[A-Za-z0-9_.:-]{1,120}$/.test(result[key]))report[key]=result[key];
   report.releaseCalendar=releaseCalendar;

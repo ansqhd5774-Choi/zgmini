@@ -1,4 +1,7 @@
 import fs from 'node:fs';
+import {createHash} from 'node:crypto';
+import {newCoreCycleId} from './core-cycle-id.mjs';
+import {captureCoreOriginAtStart} from './core-origin-runtime.mjs';
 import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
@@ -41,6 +44,28 @@ if(fs.existsSync(file)){
  fs.renameSync(file,file+'.interrupted-'+Date.now());
 }
 fs.writeFileSync(file,JSON.stringify({pid:process.pid,at:Date.now()}),{flag:'wx'});
+const cycleStartedAt=Date.now(),coreCycleId=newCoreCycleId();
+process.env.ZGMINI_CORE_CYCLE_ID=coreCycleId;
+const coreOrigin=process.argv.includes('--publish')&&!process.argv.includes('--korea')?
+ captureCoreOriginAtStart({startedAt:cycleStartedAt}):
+ {status:'UNVERIFIED',code:'CORE_ORIGIN_OUTSIDE_APPROVED_LANE',ownerCreatedAtMs:null};
+const checkoutSourceAtStart=(()=>{
+ try{const p=spawnSync('git',['rev-parse','HEAD'],{cwd:path.resolve(here,'../..'),encoding:'utf8',windowsHide:true,timeout:4000});
+ const s=typeof p?.stdout==='string'?p.stdout.trim():'';
+ return p?.status===0&&/^[a-f0-9]{40}$/.test(s)?s:null;}catch{return null;}
+})();
+const fileHash=n=>{
+ try{const p=path.join(here,n),st=fs.lstatSync(p);
+ if(!st.isFile()||st.isSymbolicLink()||st.size<1||st.size>100000)return null;
+ const b=fs.readFileSync(p);return b.length===st.size?createHash('sha256').update(b).digest('hex'):null;}catch{return null;}
+};
+const entrypointSha256=(()=>{
+ try{return createHash('sha256').update(fs.readFileSync(fileURLToPath(import.meta.url))).digest('hex');}
+ catch{return null;}
+})();
+const coreProofFileSha256=Object.fromEntries([
+ 'core-cycle-id.mjs','core-origin-runtime.mjs','core-origin-wmi.mjs'
+].map(n=>[n,fileHash(n)]));
 try{
  const lane=process.argv.includes('--korea')?'korea':'core';
  // Paid sector/theme inputs share one stored archive; no extra Task or publisher.
@@ -240,6 +265,14 @@ try{
   error:sectorFearGreedR3Report?.error??(sectorFearGreedR3?.error?.code??null),
  }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
  const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,inflationRecurring,inflationCandidates,supplyR10,alpacaIncremental,sp500Shadow,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,publicationPolicy,progressive,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsRiskProvisionalR23,researchEarningsR5Prospective,status:publication.status===0?(publicationPolicy.collectionDegraded?'COMPLETE_WITH_COLLECTION_GAPS':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
+ report.coreCycleId=coreCycleId;
+ report.coreCycleStartedAt=new Date(cycleStartedAt).toISOString();
+ report.coreCheckoutSourceSha=checkoutSourceAtStart;
+ report.coreEntrypointSha256=entrypointSha256;
+ report.coreProofFileSha256=coreProofFileSha256;
+ report.coreProcessPid=process.pid;report.coreParentPid=process.ppid;
+ report.coreOriginEvidence=coreOrigin.status==='PASS'?'TASK_ENGINE_WMI_CAPTURED_AT_START':'START_ONLY_UNVERIFIED';
+ report.coreOriginCode=coreOrigin.code;report.coreNodeCreatedAtMs=coreOrigin.ownerCreatedAtMs;
  save(path.join(base,'local-cycle-last-run.json'),report);console.log(JSON.stringify(report));
  if(publishRequested)try{updateDataAlert(base,{key:'publication',failed:publication.status!==0});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
  if(publication.status!==0)process.exitCode=1;
