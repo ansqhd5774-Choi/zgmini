@@ -4,7 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { DEFAULT_MARKET_PERIOD, getMarketPeriodConfig, type MarketPeriod } from "../../market-card-shared";
 import { MarketPeriodControls } from "../../market-period-controls";
 import { FearGreedCardShell } from "../../fear-greed-card-shell";
-import { MarketBreadthStrip } from "../../market-breadth-strip";
+import { PaidUsBreadthR2Panel } from "../../market-breadth-paid-r2-panel";
 import { MarketCardInsight } from "../../market-card-insight";
 import { MarketFearGreedChart } from "../../market-fear-greed-chart";
 import {fearGreedStateColor} from '../../../lib/fear-greed-state-color.mjs';
@@ -727,7 +727,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
           : (selectedPeriod==="1D"||archiveHistory.length>=2?intradayLabel:dateLabel)}
         emptyLabel={selectedPeriod==="1D"?"시간별 관측값이 2개 이상 쌓이면 1일 추이가 표시됩니다":"이력 없음"}
       />}
-      breadth={showBreadth && !showEducation ? <MarketBreadthStrip market="usa" period={selectedPeriod}/> : undefined}
+      breadth={showBreadth && !showEducation ? <PaidUsBreadthR2Panel period={selectedPeriod}/> : undefined}
       detailHref={showEducation ? undefined : "/fear-greed/usa/"}
       footer={{
         href: "https://www.cnn.com/markets/fear-and-greed",
