@@ -124,12 +124,13 @@ export function PaidUsBreadthR2Panel({period="1Y"}:{period?:Period}){
           {!available&&<small className={styles.pending}>연결 예정</small>}
         </div>
         {([
-          ["up","▲ 상승",available?.risingPct],
-          ["flat","― 보합",available?.unchangedPct],
-          ["down","▼ 하락",available?.fallingPct],
-        ] as const).map(([key,label,value])=>
-          <div className={styles.stat} key={key}>
-            <span className={styles.symbol}>{label}</span>
+          ["up","상승","▲",available?.risingPct],
+          ["flat","보합","―",available?.unchangedPct],
+          ["down","하락","▼",available?.fallingPct],
+        ] as const).map(([key,label,symbol,value])=>
+          <div className={styles.stat} key={key}
+            aria-label={label+": "+(value===undefined?"미제공":percentLabel(value))}>
+            <span className={styles.symbol} aria-hidden="true">{symbol}</span>
             <span className={styles.percent}>{value===undefined?"—":percentLabel(value)}</span>
           </div>)}
       </div>
