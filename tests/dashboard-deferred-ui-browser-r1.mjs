@@ -40,6 +40,13 @@ try{
     :path==='/api/favorites'?{favorites:[]}
     :path==='/api/market-data'?{status:'fallback',updatedAt:'',indicators:{},summary:[]}
     :path==='/api/fear-greed'?{status:'verified',score:34.5,rating:'공포',observedAt:'2026-10-30T12:00:00Z',history:sampleHistory}
+    :path==='/api/fear-greed/observations'?{
+      status:'READY',period:url.searchParams.get('period'),
+      points:[
+       {observedAt:'2026-10-29T12:00:00Z',score:33.1},
+       {observedAt:'2026-10-30T12:00:00Z',score:34.5},
+      ],checkedPoints:[],
+    }
     :isPaidCurrent?breadthR2Current
     :isPaidHistory?breadthR2History
     :path.startsWith('/api/market-breadth')?(retiredBreadthRequests++,{status:'UNAVAILABLE'})

@@ -510,9 +510,13 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
   const [selectedPeriod, setSelectedPeriod] = useState<UsaPeriod>(DEFAULT_MARKET_PERIOD);
   // In 1D the chart always uses actual CNN source observations in 1-minute buckets.
   // Verified PC checks remain stored separately; they are not 1-minute candles.
-  // Stored public-score archive, never a provider fetch. The current 1D and
-  // daily charts remain available until a verified archive window is published.
-  const [archived, setArchived] = useState<{period: UsaPeriod; points: ObservedScorePoint[]; checkedPoints: CheckedScorePoint[];receivedAt:number}|null>(null);
+  // A selected period is displayed only with its verified detailed archive.
+  // Keep a separate last-good archive per period so switching back never
+  // flashes an incomplete daily-only curve before the GET finishes.
+  const [archiveByPeriod,setArchiveByPeriod]=useState<Partial<Record<UsaPeriod,{
+    points:ObservedScorePoint[];checkedPoints:CheckedScorePoint[];receivedAt:number
+  }>>>({});
+  const archived=archiveByPeriod[selectedPeriod]??null;
   const [archiveDelayedPeriod,setArchiveDelayedPeriod]=useState<UsaPeriod|null>(null);
   useEffect(()=>{
     // Reuse the stored-reader scheduler: one in-flight GET, 60s cadence,
@@ -530,7 +534,20 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
           setArchiveDelayedPeriod(selectedPeriod);
           return;
         }
-        setArchived({period:selectedPeriod,points:data.points,checkedPoints:Array.isArray(data.checkedPoints)?data.checkedPoints:[],receivedAt:Date.now()});
+        const points=data.points;
+        const checkedPoints=Array.isArray(data.checkedPoints)?data.checkedPoints:[];
+        setArchiveByPeriod(previous=>{
+          const saved=previous[selectedPeriod];
+          // Identical 60-second readbacks must not restart the chart animation
+          // or move its points. A genuinely new observedAt still replaces it.
+          if(saved&&saved.points.length===points.length
+            &&saved.points.every((point,index)=>point.observedAt===points[index].observedAt&&point.score===points[index].score)
+            &&saved.checkedPoints.length===checkedPoints.length
+            &&saved.checkedPoints.every((point,index)=>point.checkedAt===checkedPoints[index].checkedAt
+              &&point.sourceObservedAt===checkedPoints[index].sourceObservedAt
+              &&point.score===checkedPoints[index].score))return previous;
+          return {...previous,[selectedPeriod]:{points,checkedPoints,receivedAt:Date.now()}};
+        });
         setArchiveDelayedPeriod(null);
       }catch{
         // Do not erase the last verified archive on a transient read failure.
@@ -553,7 +570,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
   // After two real successful PC feed checks, the 1D/long-term chart uses their checkedAt time.
   // CNN sourceObservedAt stays separate and is never invented or rewritten.
   const archiveHistory=useMemo(()=>{
-    if(archived?.period!==selectedPeriod)return [];
+    if(!archived)return [];
     // Keep every authentic CNN point even when the PC verifies it twice.
     // On equal timestamps, a stored source observation wins over a PC check.
     const checks=archived.checkedPoints.length>=2
@@ -576,7 +593,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
       // Compare the CNN source's New York session, not a PC check's UTC day.
       return currentCnnSessionHistory(payload?.observedAt,{
         checkedPoints:[],
-        observedPoints:archived?.period===selectedPeriod?archived.points:[],
+        observedPoints:archived?.points??[],
         intradayObservations:observedSidecarReady?(payload?.intradayObservations??[]):[],
       });
     }
@@ -682,7 +699,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
   const minuteMode=selectedPeriod==='1D';
   const minuteHistory=useMemo(()=>{
     if(!minuteMode||!observedAt)return null;
-    const points=[...(archived?.period==='1D'?archived.points:[]),
+    const points=[...(archived?.points??[]),
       ...allIntraday.map(point=>({observedAt:point.date,score:point.score}))];
     const observedTime=Date.parse(observedAt);
     const now=Math.max(Number.isFinite(observedTime)?observedTime:0,archived?.receivedAt??0);
@@ -692,7 +709,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
   // source point per day when available. Check timestamps are never chart input.
   const periodChart=useMemo(()=>{
     if(selectedPeriod==='1D')return null;
-    const observedPoints=[...(archived?.period===selectedPeriod?archived.points:[]),
+    const observedPoints=[...(archived?.points??[]),
       ...(observedSidecarReady?(payload?.intradayObservations??[]):[])];
     return buildCnnPeriodChart({period:selectedPeriod,days:getMarketPeriodConfig(selectedPeriod).days,
       observedPoints,dailyPoints:allHistory});
@@ -813,7 +830,10 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
       chart={<div style={{display:"flex",flexDirection:"column",height:"100%",minHeight:0,width:"100%"}}>
         <small role="status" style={{display:"block",height:18,lineHeight:"18px",flexShrink:0,whiteSpace:"nowrap"}}>{archiveDelayedPeriod===selectedPeriod?"이력 갱신 지연":null}</small>
         <div style={{flex:1,minHeight:0,width:"100%"}} data-cnn-intraday-mode={minuteMode?1:"period"} data-cnn-bucket-count={minuteHistory?.buckets.length} data-cnn-period-point-count={periodChart?.length}>
-        <MarketFearGreedChart
+        {!archived?<div className="cnn-chart-empty" role="status"
+          data-cnn-archive-state={archiveDelayedPeriod===selectedPeriod?'delayed':'loading'}>
+          {archiveDelayedPeriod===selectedPeriod?'상세 이력 확인 지연':'상세 이력 불러오는 중'}
+        </div>:<MarketFearGreedChart
         showExtrema
         showIsolatedPoints={minuteMode||chartData.length===1}
         showLatestPointTouchTooltip
@@ -832,7 +852,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
             ? (value:string)=>value.includes('T')?intradayLabel(value):cnnUsMultiDayTooltipDate(value)
             : cnnUsMultiDayTooltipDate}
         emptyLabel={minuteMode?"해당 뉴욕 거래일의 CNN 원본 관측 없음":"이력 없음"}
-      /></div></div>}
+      />}</div></div>}
       breadth={showBreadth && !showEducation ? <PaidUsBreadthR2Panel period={selectedPeriod}/> : undefined}
       detailHref={showEducation ? undefined : "/fear-greed/usa/"}
       footer={{

@@ -82,12 +82,17 @@ try{
    hasTouch:width===390,isMobile:width===390});
   const errors=[],requests=[];
   let archiveFailure=false,includeNew=false,includeSameScore=false,checkSourceAt=sourceObservedAt;
+  let holdWeekly=false,releaseWeekly=null;
   await page.clock.install();
   page.on('pageerror',error=>errors.push(error.message));
   await page.route('https://**',route=>route.abort());
-  await page.route('**/api/**',route=>{
+  await page.route('**/api/**',async route=>{
    const url=new URL(route.request().url());
    requests.push(url.pathname+url.search);
+   if(url.pathname==='/api/fear-greed/observations'
+     &&url.searchParams.get('period')==='1W'&&holdWeekly){
+    await new Promise(resolve=>{releaseWeekly=resolve;});
+   }
    if(url.pathname==='/api/fear-greed/observations'&&archiveFailure)
     return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({status:'PENDING'})});
    return route.fulfill({status:200,contentType:'application/json',
@@ -191,14 +196,40 @@ try{
   assert.equal(await page.locator('button[data-cnn-minute]').count(),0);
   for(const [period,minimum]of [['1W',11],['1M',6],['3M',5],['6M',5],['1Y',5]]){
    const button=toolbarReload.locator('button[data-period-short="'+period+'"]');
+   if(period==='1W')holdWeekly=true;
    await button.click();
    assert.equal(await button.getAttribute('aria-pressed'),'true');
-   await page.waitForFunction(({min})=>Number(document.querySelector('[data-cnn-period-point-count]')
-    ?.getAttribute('data-cnn-period-point-count'))>=min,{min:minimum},{timeout:20000});
+   if(period==='1W'){
+    await page.locator('[data-cnn-archive-state="loading"]').waitFor({state:'visible',timeout:10000});
+    assert.equal(await page.locator('.zg-fg-us .cnn-history-chart-hitbox path.recharts-area-curve').count(),0,
+     width+'px must not show a coarse provisional weekly curve');
+    for(let tick=0;!releaseWeekly&&tick<40;tick++)await new Promise(resolve=>setTimeout(resolve,50));
+    assert(releaseWeekly,width+'px weekly GET must actually be pending');
+    holdWeekly=false;
+    releaseWeekly();
+    releaseWeekly=null;
+   }
+   await page.waitForFunction(({min})=>
+    !document.querySelector('[data-cnn-archive-state]')
+    &&Number(document.querySelector('[data-cnn-period-point-count]')
+     ?.getAttribute('data-cnn-period-point-count'))>=min
+    &&!!document.querySelector('.zg-fg-us .cnn-history-chart-hitbox path.recharts-area-curve'),
+    {min:minimum},{timeout:20000});
    assert.equal(await page.locator('button[data-cnn-minute]').count(),0);
-   assert.ok(await page.locator('.zg-fg-us .cnn-history-chart-hitbox path.recharts-area-curve').count()>0);
    await assertRealLineStartsAtLeft(page,period,width);
   }
+  // A cached detailed month must reappear without first drawing daily-only data.
+  const cachedMonth=toolbarReload.locator('button[data-period-short="1M"]');
+  await cachedMonth.click();
+  assert.equal(await cachedMonth.getAttribute('aria-pressed'),'true');
+  assert.equal(await page.locator('[data-cnn-archive-state]').count(),0,
+   width+'px cached month must render without incomplete-data placeholder');
+  const monthCurve=page.locator('.zg-fg-us .cnn-history-chart-hitbox path.recharts-area-curve').first();
+  const stableMonth=await monthCurve.getAttribute('d');
+  assert(stableMonth&&stableMonth.length>15,'cached month must retain real history geometry');
+  await page.waitForTimeout(250);
+  assert.equal(await monthCurve.getAttribute('d'),stableMonth,
+   width+'px unchanged monthly archive must keep the same curve');
   assert.ok(requests.some(path=>path.includes('/api/fear-greed/observations?period=1W')));
   assert.ok(requests.some(path=>path.includes('/api/fear-greed/observations?period=1M')));
   await toolbarReload.locator('button[data-period-short="1D"]').click();
