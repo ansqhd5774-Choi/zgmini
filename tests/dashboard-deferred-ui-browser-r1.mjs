@@ -7,7 +7,7 @@ const base=process.env.CHAT_PREVIEW_URL??'http://127.0.0.1:5173';
 mkdirSync('artifacts/dashboard-deferred-ui',{recursive:true});
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 const sampleHistory=Array.from({length:90},(_,i)=>({date:new Date(Date.UTC(2026,7,1)+i*86400000).toISOString().slice(0,10),score:45+Math.sin(i/8)*12}));
-// Removed breadth widget: no retired supplier fixtures or score-history calls needed.
+// Restored display-only breadth slots must not call retired suppliers or old history APIs.
 try{
  for(const width of [390,1440])for(const signedIn of [false,true]){
   const page=await browser.newPage({viewport:{width,height:900},hasTouch:width===390});
@@ -45,16 +45,20 @@ try{
    const score=card.querySelector('.fg-score-slot')?.getBoundingClientRect();
    const chart=card.querySelector('.fg-chart-slot')?.getBoundingClientRect();
    const breadth=card.querySelector('.fg-breadth-slot');
+   const breadthBox=breadth?.getBoundingClientRect();
    const footer=card.querySelector('.fg-footer-slot')?.getBoundingClientRect();
    const rows=getComputedStyle(card).gridTemplateRows.trim().split(/\s+/).map(Number.parseFloat);
    return {market,missing:false,inlineGridRows:card.style.gridTemplateRows,
     rows,scoreHeight:score?.height??0,chartHeight:chart?.height??0,
-    breadthPresent:Boolean(breadth),footerHeight:footer?.height??0};
+    breadthPresent:Boolean(breadth),breadthHeight:breadthBox?.height??0,
+    breadthBottom:breadthBox?.bottom??0,footerTop:footer?.top??0,footerHeight:footer?.height??0};
   }));
   for(const m of marketLayout){
    assert.equal(m.missing,false,m.market+' market card exists');
    assert.equal(m.inlineGridRows,'',m.market+' no obsolete breadth inline row override');
-   assert.equal(m.breadthPresent,false,m.market+' retired breadth strip is absent');
+   assert.equal(m.breadthPresent,true,m.market+' verified-data breadth display shell restored');
+   assert.ok(m.breadthHeight>=35,m.market+' restored summary height');
+   assert.ok(m.breadthBottom<=m.footerTop+1,m.market+' breadth and footer do not overlap');
    assert.ok(m.footerHeight>0,m.market+' existing footer remains visible');
    if(width===390){
     assert.ok(Math.abs(m.rows[1]-112)<1,m.market+' mobile grid preserves pre-breadth 112px row');
@@ -85,12 +89,22 @@ try{
    await tip.waitFor({state:'hidden',timeout:3000});
    console.log('PASS mobile chart tooltip disappears on touch release');
 
-   assert.equal(await page.locator('.usa-target-card .fg-breadth-slot, .korea-target-card .fg-breadth-slot').count(),0,
-    'Retired US and Korea breadth widgets must not be mounted');
+   assert.equal(await page.locator('.usa-target-card .fg-breadth-slot, .korea-target-card .fg-breadth-slot').count(),2,
+    'US and Korea display-only breadth slots must be restored');
+   for(const market of ['usa','korea']){
+    const slot=page.locator(`.${market}-target-card .fg-breadth-slot`);
+    await slot.getByText('연결 예정',{exact:true}).waitFor({state:'visible'});
+    assert.equal(await slot.locator('[aria-label$=": 미제공"]').count(),3,market+' rising, unchanged, falling unavailable labels');
+    assert.equal(await slot.getByText('—',{exact:true}).count(),3,market+' missing is never zero');
+   }
+   const historyToggle=page.getByRole('button',{name:'미국 등락 지수 확정 이력 펼치기'});
+   await historyToggle.click();
+   await page.getByRole('region',{name:'미국 등락 지수 확정 이력 차트'}).getByText('확정 이력 데이터 연결 예정').waitFor({state:'visible'});
+   await page.getByRole('button',{name:'미국 등락 지수 확정 이력 접기'}).click();
    assert.equal(breadthHistoryRequests,0,'No old breadth endpoint request');
    assert.equal(modules.filter(path=>path.startsWith('/api/market-breadth')).length,0,
     'Anonymous dashboard must not request retired breadth APIs');
-   console.log('PASS retired breadth UI absent; no legacy API requests');
+   console.log('PASS breadth UI restored without legacy API requests');
   }
 
   if(signedIn){

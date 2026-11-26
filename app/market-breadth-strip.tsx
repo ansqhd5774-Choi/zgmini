@@ -1,9 +1,10 @@
 "use client";
-import {useEffect, useState} from "react";
+import {useEffect, useId, useState} from "react";
 import styles from "./market-breadth-strip.module.css";
 import {startStoredRefresh} from "../lib/market-score/live-refresh.mjs";
 import {newestUsIexPercentPublication} from "../lib/market-breadth/us-provisional-ui-r4.mjs";
 import type {MarketPeriod} from "./market-card-shared";
+import {MarketBreadthHistoryChart, type UsBreadthHistory} from "./market-breadth-history-chart";
 
 /** Optional non-US input; US confirmed and provisional are strictly percentage-only public feeds. */
 export type MarketBreadthCounts = {
@@ -16,6 +17,10 @@ type MarketBreadthStripProps = {
   market: "usa" | "korea";
   counts?: MarketBreadthCounts | null;
   period?: MarketPeriod | '1D';
+  /** Presentation-only restoration: no legacy IEX polling; the data owner supplies verified counts. */
+  displayOnly?: boolean;
+  /** Optional owner-provided verified public daily history; never collected by the UI. */
+  history?: UsBreadthHistory | null;
 };
 
 type UsaIexProvisionalRecord = {
@@ -83,12 +88,15 @@ function normalizedCounts(counts?: MarketBreadthCounts | null) {
   };
 }
 
-export function MarketBreadthStrip({ market, counts }: MarketBreadthStripProps) {
+export function MarketBreadthStrip({ market, counts, period = "1Y", displayOnly = false, history = null }: MarketBreadthStripProps) {
   const [provisional, setProvisional] = useState<UsaIexProvisionalRecord | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  const panelId = useId();
+  const hasHistoryToggle = displayOnly && market === "usa";
   const name = market === "usa" ? "미국" : "한국";
 
   useEffect(() => {
-    if (market !== "usa") return;
+    if (market !== "usa" || displayOnly) return;
     let active = true;
     const stop = startStoredRefresh(async (signal: AbortSignal) => {
       let body: unknown = null;
@@ -106,10 +114,11 @@ export function MarketBreadthStrip({ market, counts }: MarketBreadthStripProps) 
         currentIexProvisional(previous) ? previous : null, incoming));
     });
     return () => { active = false; stop(); };
-  }, [market]);
-  const activeProvisional = market === "usa" && currentIexProvisional(provisional)
+  }, [market, displayOnly]);
+  const activeProvisional = !displayOnly && market === "usa" && currentIexProvisional(provisional)
     ? provisional : null;
   const data = market === "usa" ? activeProvisional : normalizedCounts(counts);
+  const viewData = displayOnly && market === "usa" ? normalizedCounts(counts) : data;
   const sourceInfo = activeProvisional
     ? `장중 잠정 · Alpaca IEX 15분 · 뉴욕 ${new Intl.DateTimeFormat("ko-KR", {timeZone:"America/New_York", hour:"2-digit", minute:"2-digit", hour12:false}).format(new Date(activeProvisional.slotEndUtc))} 기준 · 미관측 ${activeProvisional.unobservedPct.toFixed(1)}%${activeProvisional.collectionStatus === "INCOMPLETE_PAGINATION" ? " · 페이지 일부 미수집" : ""}`
     : null;
@@ -117,14 +126,14 @@ export function MarketBreadthStrip({ market, counts }: MarketBreadthStripProps) 
     ? `IEX·15분·${new Intl.DateTimeFormat("en-US", {timeZone:"America/New_York", hour:"2-digit", minute:"2-digit", hour12:false}).format(new Date(activeProvisional.slotEndUtc))}`
     : null;
 
-  const dominance = !data || Math.abs(data.risingPct - data.fallingPct) < 5
+  const dominance = !viewData || Math.abs(viewData.risingPct - viewData.fallingPct) < 5
     ? "none"
-    : data.risingPct > data.fallingPct ? "up" : "down";
+    : viewData.risingPct > viewData.fallingPct ? "up" : "down";
 
   const columns = [
-    { key: "up", label: "상승", symbol: "▲", pct: data?.risingPct },
-    { key: "flat", label: "보합", symbol: "―", pct: data?.unchangedPct },
-    { key: "down", label: "하락", symbol: "▼", pct: data?.fallingPct },
+    { key: "up", label: "상승", symbol: "▲", pct: viewData?.risingPct },
+    { key: "flat", label: "보합", symbol: "―", pct: viewData?.unchangedPct },
+    { key: "down", label: "하락", symbol: "▼", pct: viewData?.fallingPct },
   ] as const;
 
   const summary = <>
@@ -132,7 +141,7 @@ export function MarketBreadthStrip({ market, counts }: MarketBreadthStripProps) 
         <div className={styles.heading}>
           <strong>{activeProvisional ? `${name} 잠정` : `${name} 등락 지수`}</strong>
           {sourceBadge && <small className={styles.pending} title={sourceInfo ?? undefined} style={{display:"block",minWidth:0,flex:"1 1 0",overflow:"hidden",textOverflow:"ellipsis"}}>{sourceBadge}</small>}
-          {!data && !activeProvisional && <small className={styles.pending}>{market === "usa" ? "미제공" : "연결 예정"}</small>}
+          {!viewData && !activeProvisional && <small className={styles.pending}>{displayOnly ? "연결 예정" : market === "usa" ? "미제공" : "연결 예정"}</small>}
         </div>
         {columns.map(({ key, label, symbol, pct }) => (
           <div className={`${styles.stat} ${styles[key]}`} key={key} aria-label={`${label}: ${pct === undefined ? "미제공" : `${pct.toFixed(1)}%`}`}>
@@ -145,23 +154,31 @@ export function MarketBreadthStrip({ market, counts }: MarketBreadthStripProps) 
         className={styles.track}
         data-dominance={dominance}
         role="img"
-        aria-label={data
-          ? `상승 ${data.risingPct.toFixed(1)}%, 보합 ${data.unchangedPct.toFixed(1)}%, 하락 ${data.fallingPct.toFixed(1)}%${activeProvisional ? `, 미관측 ${activeProvisional.unobservedPct.toFixed(1)}%` : ""}`
+        aria-label={viewData
+          ? `상승 ${viewData.risingPct.toFixed(1)}%, 보합 ${viewData.unchangedPct.toFixed(1)}%, 하락 ${viewData.fallingPct.toFixed(1)}%${activeProvisional ? `, 미관측 ${activeProvisional.unobservedPct.toFixed(1)}%` : ""}`
           : "검증된 등락 비율을 아직 표시할 수 없습니다"}
       >
-        {data && <>
-          <span className={styles.rising} style={{width:`${data.risingPct}%`}}/>
-          <span className={styles.unchanged} style={{width:`${data.unchangedPct}%`}}/>
-          <span className={styles.falling} style={{width:`${data.fallingPct}%`}}/>
+        {viewData && <>
+          <span className={styles.rising} style={{width:`${viewData.risingPct}%`}}/>
+          <span className={styles.unchanged} style={{width:`${viewData.unchangedPct}%`}}/>
+          <span className={styles.falling} style={{width:`${viewData.fallingPct}%`}}/>
         </>}
       </div>
   </>;
 
   return (
     <section className={styles.root}
-      aria-label={`${name} 등락 지수${sourceInfo ? `, ${sourceInfo}` : data ? "" : ", 데이터 미제공"}`}
-      title={sourceInfo ?? undefined} data-market={market}>
-      <div className={styles.summaryStatic}>{summary}</div>
+      aria-label={`${name} 등락 지수${sourceInfo ? `, ${sourceInfo}` : viewData ? "" : ", 데이터 미제공"}`}
+      title={sourceInfo ?? undefined} data-market={market} data-expanded={expanded && hasHistoryToggle}>
+      {hasHistoryToggle ? <button type="button" className={styles.summaryButton} aria-expanded={expanded}
+        aria-controls={panelId} aria-label={`미국 등락 지수 확정 이력 ${expanded ? "접기" : "펼치기"}`}
+        onClick={()=>setExpanded(value=>!value)}>{summary}</button>
+        : <div className={styles.summaryStatic}>{summary}</div>}
+      {hasHistoryToggle && <div id={panelId} className={styles.details} role="region"
+        aria-label="미국 등락 지수 확정 이력 차트" hidden={!expanded}>
+        {history ? <MarketBreadthHistoryChart history={history} period={period}/> :
+          <p className={styles.historyEmpty} role="status">확정 이력 데이터 연결 예정</p>}
+      </div>}
     </section>
   );
 }
