@@ -86,18 +86,18 @@ test('R4 #28 mapping and identity checks never mutate source points or current p
  assert.deepEqual(current,identity);
 });
 
-test('R4 #28 production UI only passes current published modelVersion; historical fallback stays explicit',()=>{
+test('R4 #28 production UI shows verified current model only; unknown historical footer is hidden',()=>{
  const page=readFileSync(new URL('../app/dashboard-ui.tsx',import.meta.url),'utf8');
  const chart=readFileSync(new URL('../components/dashboard-summary-chart.tsx',import.meta.url),'utf8');
  assert.match(page,/currentPublished=\{overallScore!==null&&market\?\.updatedAt&&typeof market\?\.modelVersion==='string'/);
  assert.match(page,/updatedAt:market\.updatedAt,displayScore:overallScore,modelVersion:market\.modelVersion/);
  assert.match(chart,/publishedCompositeMethodLabel\(point,currentPublished\?\?null\)/);
- assert.match(chart,/현재 게시 계산점 · \$\{currentMethod\}/);
- assert.match(chart,/실제 계산시각 점 · 당시 방법론 버전 미확인/);
+ assert.match(chart,/currentMethod&&<span>현재 게시 계산점 · \{currentMethod\}<\/span>/);
+ assert.doesNotMatch(chart,/실제 계산시각 점 · 당시 방법론 버전 미확인/);
  assert.doesNotMatch(chart,/현행 산식 재구성 · 당시 실계산점 아님/);
  assert.match(chart,/latestCurrentMethod=latest\?publishedCompositeMethodLabel\(latest,currentPublished\?\?null\):null/);
  assert.match(chart,/data-testid="w06-touch-tooltip"/);
- assert.match(chart,/\(currentMethod\|\|point\?\.calculatedValue!=null\)&&<span>/);
- assert.match(chart,/\(latestCurrentMethod\|\|\(latest as DashboardPoint&\{calculatedValue\?:number\|null\}\)\.calculatedValue!=null\)&&<span>/);
+ assert.match(chart,/\{currentMethod&&<span>현재 게시 계산점 · \{currentMethod\}<\/span>\}/);
+ assert.match(chart,/\{latestCurrentMethod&&<span>현재 게시 계산점 · \{latestCurrentMethod\}<\/span>\}/);
  assert.match(chart,/<Area type="monotone" dataKey="value"[^>]*connectNulls=\{false\}/);
 });
