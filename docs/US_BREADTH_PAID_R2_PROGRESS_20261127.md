@@ -81,6 +81,15 @@
 - 과거 #4040 A의 Core checkpoint `local-cycle-last-run` 2026-11-26T17:51:58Z, collection 17:55:43Z, writer 18:03:17Z. 이후 실행의 증거를 확인하기 위한 별도 A [Issue #4074](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4074) `core-status` 단회 요청; 결과 전에는 장기 batch의 진전 여부 미확정. Core 자연 유휴 또는 실제 원인 복구 전 신규 Writer B 재요청 금지.
 - 계산·저장·D1/API/UI 성공 증거가 없으므로 종단 진행률 **5/8 (62.5%) 유지**.
 
+## 2026-11-27 Core 원장 전진 입증 — 자연 유휴 후 재개
+
+- 기존 Windows A급 [Issue #4074](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4074) / [Run 45881716545](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45881716545): `PASS/CORE_READONLY_DIAGNOSIS`, 보호 상태 불변, 공급자/DB/D1 호출 0.
+- 비교 기준 #4040 → #4074: `local-cycle-last-run` 2026-11-26T17:51:58Z → **18:58:33Z COMPLETE**, `local-collection-last-run` 17:55:43Z → **19:01:22Z COMPLETE**, `local-writer-last-run` 18:03:17Z → **19:05:55Z VERIFIED**. 실제 저장 checkpoint가 전진하여 Core는 단순 stale/hung으로 단정할 수 없고, 정상적인 장기 작업과 후속 실행이 살아 있음.
+- #4074 시점에도 `lockPresent=true`, 실제 Task Engine/WMI [#4073](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4073)에서는 `runningTaskInstances=1`, `lockOwner=VERIFIED_ACTIVE_CORE`; source/config `c8ed53a3991212dd1778742cda8a86ac133e0796`, Core Task XML SHA `dd81987c7efa4b1e343af30329a580613bb920dec89c1aa7a436ef935f0bb028` 불변.
+- R2 원자료는 **stock 30일 / ETF 29일**, `privateOutput=DIRECTORY_UNAVAILABLE`, 251거래일 수집/250비교 계산/D1 게시 미완료. A 조회 메타데이터로 raw/projection SHA 및 일별 연속성 PASS 주장 금지.
+- #4068 B는 `WRITER_B_CORE_NATURAL_DRAIN_TIMEOUT_STOP`, `ORIGINAL_VERIFIED`, `NO_REEXECUTE`; **자연 종료 전 동일 조건 요청 반복 금지**. 기존 Core Task/lock/lease를 변경하지 않음. 유효한 PC 자연 유휴 상태가 새로 관측됐을 때 원본 CAS/Task 핀 확인 후 이전 설치 실패와 구별되는 고유 신규 B 요청으로 정규 설치 계속. 별도 감시 Task·예약 생성 금지.
+- 종단 진행률 **5/8 (62.5%)**, Source PR/CI/승인·복구 완료와 실제 R2 데이터 게시 완료 구분.
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
