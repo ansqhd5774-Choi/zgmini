@@ -20,6 +20,14 @@
 - 로컬 저장 회귀시험 파일 `tests/us-breadth-paid-r2-private-save.test.mjs` (커밋 `d6ef09af050a1174537e865b5af5e081ef396d59`, 수정 `af2bb05c84ee7d0bb6b936fa1b996effb6b304db`)에는 격리 TEMP의 초회 생성/재실행/충돌, 금지 입력 무쓰기, raw 가격의 직렬화 제외를 검사하는 Node 시험을 추가했다. **Node CI 실행 결과는 아직 미확인**.
 - **남은 기능 실행:** 현재 main의 정확한 유료 원자료 저장 계약과 선택적 소스 통합 및 Node/CI 검증 → 승인된 Writer에서 로컬 자료 250회 계산·불변 파일 저장/재조회 → 공개 권리 범위를 지킨 R2 최종 파생값 D1 CAS/readback → percent-only API → 기존 UI 연결 및 Production 렌더링. 새 공급처·쿼터·예약·산식, 무료 샘플 게시, 과거 점수 임의 개정·가짜 이력 금지. **자연 예약 자동 갱신 검증은 기능 작업 완료 이후에만**.
 
+## 2026-11-27 — 유료 R2 선택적 릴리스 PR 및 실제 배포 경계
+
+- 기존 `release/us-breadth-history-r2-20261031` 브랜치의 종료된 PR #943은 병합되지 않았다. 기존 릴리스 이력을 보존하고 2026-11-27 당시 정확한 `main=4a13569367ff0f1afc5138f971d86a8fa99c3329`를 두 번째 부모로 갖는 **비강제 merge commit** `2b6cade0863fceff60a1f49966d0de6c86968b50`을 만든 뒤 18개 R2 변경 파일만 선별 적용했다. 범위 확인: 기존 파일 삭제 0, 신규 16+수정 2. 추가 회귀시험 2개는 무료 중단과 유료 재개의 계약을 명확히 분리하도록 변경했다.
+- **Draft [본체 PR #1702](https://github.com/ansqhd5774-Choi/zgmini/pull/1702)**: 현재 20개 관련 파일. 정확한 PR CI HEAD/Job 확인 후 병합을 판단한다. 새 임의 개발/실험 브랜치를 생성하지 않았다. 기존 `codex/us-breadth-public-r1-20261031` 원개발 이력을 보존했다.
+- 구현한 미공개 경로: 기존 유료 `stock_daily` 저장물의 SHA/연속일 검증 → R2 상승·보합·하락 비율 250점 후보 → opt-in 불변 비공개 파일/재조회 → 정확한 설치 config.source·paid plan 확인 → 독립 D1 `us-breadth-paid-r2-v1` CAS/readback → `confirmed-r2` 현재·이력 GET. 신규 Task·수집 루프·원자료 재게시 없음. `runPaidUsR2StoredCycle`는 **기존 PC Core에 호출 설치 전**이므로 GitHub PR이나 출처/plan 문자열만으로 운영 기능 완료가 아니다.
+- **UI 미완료 원인 확정:** 현행 `app/market-breadth-history-chart.tsx`는 `SP500` 종목 수(`eligibleCount/counts`)를 요구하고 원시 종목 수를 툴팁에 표시한다. 새로운 미국 **전체 시장** 유료 R2는 공개 비복원성 `risingPct/unchangedPct/fallingPct`만 반환한다. UI 담당 `codex/ui-improvements`에서 비율 전용 입력과 차트를 연결해야 하며 **가짜 counts 변환이나 기존 차트 무차별 재사용은 금지**.
+- **실제 남은 실행:** Node CI/CodeQL/Secret 검사 → 본체 PR 정확 HEAD 범위/승인 병합 → 기존 Core B 정규 설치/활성 SHA·백업/JSON/TXT 증명 → 실제 251일 원자료 계산/로컬 SHA → D1 CAS/readback → API/PC·모바일 비율 차트. 예약 자동 갱신 검증은 위 기능 완료 후 후속 단계만 수행.
+
 Date: 2026-11-02 KST. Repository: `ansqhd5774-Choi/zgmini`.
 Development branch: `codex/us-breadth-public-r1-20261031`.
 
