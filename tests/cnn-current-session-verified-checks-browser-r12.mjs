@@ -11,6 +11,8 @@ const original=[
  {observedAt:sourceObservedAt,score:26.3},
 ];
 const newer={observedAt:'2026-10-30T13:22:00.000Z',score:26.4};
+// A later genuine source observation has a different timestamp, not a different score.
+const newerSameScore={observedAt:'2026-10-30T13:23:00.000Z',score:26.4};
 const weekly=[
  ...['13:00','13:30','14:00','14:30'].map((clock,i)=>({observedAt:'2026-10-27T'+clock+':00.000Z',score:20+i})),
  ...['13:00','13:30','14:00'].map((clock,i)=>({observedAt:'2026-10-28T'+clock+':00.000Z',score:24+i})),
@@ -29,11 +31,20 @@ const primary={status:'verified',score:26.3,rating:'공포',
  observedAt:sourceObservedAt,observedHistoryVersion:'CNN_OBSERVED_HISTORY_R1',
  intradayObservations:original,history:[{timestamp:sourceObservedAt,score:26.3}],
  previous:{close:26.2},components:[]};
-function fixture(path,period,checkSourceAt,includeNew){
- if(path==='/api/fear-greed')return primary;
+function fixture(path,period,checkSourceAt,includeNew,includeSameScore){
+ if(path==='/api/fear-greed')return includeSameScore?{
+  ...primary,observedAt:newerSameScore.observedAt,score:newerSameScore.score,
+  intradayObservations:[...original,newer,newerSameScore],
+  history:[...primary.history,{timestamp:newer.observedAt,score:newer.score},
+   {timestamp:newerSameScore.observedAt,score:newerSameScore.score}],
+ }:includeNew?{
+  ...primary,observedAt:newer.observedAt,score:newer.score,
+  intradayObservations:[...original,newer],
+  history:[...primary.history,{timestamp:newer.observedAt,score:newer.score}],
+ }:primary;
  if(path==='/api/fear-greed/observations')return {
   status:'READY',period:period??'1D',
-  points:period==='1D'?(includeNew?[...original,newer]:original):
+  points:period==='1D'?(includeSameScore?[...original,newer,newerSameScore]:includeNew?[...original,newer]:original):
    period==='1W'?[...weekly,...original]:[...monthly,...weekly,...original],
   checkedPoints:checkTimes.map(checkedAt=>({checkedAt,sourceObservedAt:checkSourceAt,score:26.3})),
   verifiedCheckCount:3,checkTimeMeaning:'PC_VERIFIED_STORED_AT',
@@ -70,7 +81,7 @@ try{
   const page=await browser.newPage({viewport:{width,height:900},reducedMotion:'reduce',
    hasTouch:width===390,isMobile:width===390});
   const errors=[],requests=[];
-  let archiveFailure=false,includeNew=false,checkSourceAt=sourceObservedAt;
+  let archiveFailure=false,includeNew=false,includeSameScore=false,checkSourceAt=sourceObservedAt;
   await page.clock.install();
   page.on('pageerror',error=>errors.push(error.message));
   await page.route('https://**',route=>route.abort());
@@ -80,7 +91,7 @@ try{
    if(url.pathname==='/api/fear-greed/observations'&&archiveFailure)
     return route.fulfill({status:503,contentType:'application/json',body:JSON.stringify({status:'PENDING'})});
    return route.fulfill({status:200,contentType:'application/json',
-    body:JSON.stringify(fixture(url.pathname,url.searchParams.get('period'),checkSourceAt,includeNew))});
+    body:JSON.stringify(fixture(url.pathname,url.searchParams.get('period'),checkSourceAt,includeNew,includeSameScore))});
   });
   await page.addInitScript(()=>sessionStorage.setItem('zgmini-about-intro-dismissed-r1','1'));
   await page.goto(base+'/fear-greed/usa/',{waitUntil:'networkidle',timeout:45000});
@@ -144,10 +155,32 @@ try{
    ?.getAttribute('data-cnn-bucket-count')==='3',null,{timeout:15000});
   assert.equal(await page.getByText(/이력 갱신 지연/).count(),0);
   assert.equal(await oneDay.getAttribute('aria-pressed'),'true');
+
+  // New observedAt, unchanged score: update the current + archive via their
+  // normal mocked GETs, without a full page reload or fabricated PC samples.
+  const beforeSameScore=await curve.getAttribute('d');
+  includeSameScore=true;
+  await page.clock.fastForward(60_000);
+  await page.waitForFunction(()=>document.querySelector('[data-cnn-intraday-mode="1"]')
+   ?.getAttribute('data-cnn-bucket-count')==='4',null,{timeout:15000});
+  assert.notEqual(await curve.getAttribute('d'),beforeSameScore,
+   width+'px new source timestamp should extend the actual chart line');
+  assert.equal(await oneDay.getAttribute('aria-pressed'),'true');
+  await assertRealLineStartsAtLeft(page,'1D-same-score-new-source',width);
+  if(width===390){
+   const latest=chart.locator('.cnn-latest-point circle, circle.cnn-latest-point').first();
+   const b=await latest.boundingBox();
+   assert(b&&b.width>0&&b.height>0);
+   await page.touchscreen.tap(b.x+b.width/2,b.y+b.height/2);
+   const text=await page.getByTestId('w04-r54-latest-touch-tooltip').innerText();
+   assert(text.includes('26.4')&&text.includes('09:23'),
+    'latest genuine source timestamp 09:23 should be shown with unchanged score 26.4: '+text);
+  }
   await page.screenshot({path:'artifacts/cnn-current-session-checks/cnn-1d-minute-'+width+'.png'});
 
   // Mismatched verification source sessions cannot extend the genuine 1D series.
   includeNew=false;
+  includeSameScore=false;
   checkSourceAt=olderSourceAt;
   await page.reload({waitUntil:'networkidle',timeout:45000});
   const toolbarReload=page.getByRole('group',{name:'CNN 지수 기간 선택'});
@@ -173,7 +206,7 @@ try{
    ?.getAttribute('data-cnn-bucket-count')==='2',null,{timeout:15000});
   assert.deepEqual(errors,[]);
   console.log(JSON.stringify({status:'PASS',width,initialBuckets:2,afterRefresh:3,
-   oldChecksExcluded:true,periodCount:6,providerCalls:0,dbWrites:0}));
+   oldChecksExcluded:true,sameScoreNewObservedAt:true,periodCount:6,providerCalls:0,dbWrites:0}));
   await page.close();
  }
 }finally{await browser.close();}
