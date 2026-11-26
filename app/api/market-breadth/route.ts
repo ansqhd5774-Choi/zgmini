@@ -16,7 +16,7 @@ function coreSnapshotsDb():D1Database|undefined{
 async function fullMarketConfirmedR2GET(){
   // Restore ONLY paid full-US R2; no fallback to retired free R1/R2 or IEX.
   const result=await readPaidUsR2Feed(coreSnapshotsDb(),{mode:'current'});
-  if(!result.ok)return Response.json({status:'UNAVAILABLE',reason:result.reason},
+  if('reason' in result)return Response.json({status:'UNAVAILABLE',reason:result.reason},
     {status:result.httpStatus,headers:{'Cache-Control':'no-store'}});
   return Response.json(result.body,{status:200,headers:result.headers});
 }
