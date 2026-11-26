@@ -22,7 +22,8 @@ test('W06 is a nonexecuting source candidate with exactly one 60s CNN-only Task'
  // Task Scheduler does not guarantee an interactive account's custom env.
  // Pin only the child PROCESS environment; never modify USER/SYSTEM globally.
  assert.match(result.launcherText,/shell\.Environment\("PROCESS"\)/);
- assert.match(result.launcherText,/taskEnvironment\("ZGMINI_PC_HOME"\) = "E:\\\\ZGmini\\\\data\\\\pc-writer"/);
+ assert.ok(result.launcherText.includes('taskEnvironment("ZGMINI_PC_HOME") = "'+
+  String.raw`E:\ZGmini\data\pc-writer`+'"'));
  assert.doesNotMatch(result.launcherText,/Environment\("(?:USER|SYSTEM)"\)/i);
  assert.match(result.taskXml,/run-local-cnn-minute\.vbs/);
  assert.equal(result.effectRequiresApproval,'CREATE_ENABLE_ONE_TASK_CNN_HTTP_SQLITE_D1_WITH_EXACT_CAS_AND_ROLLBACK');
