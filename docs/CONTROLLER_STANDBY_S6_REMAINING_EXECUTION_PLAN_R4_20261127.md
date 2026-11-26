@@ -122,3 +122,11 @@
 - Watchdog R5 **역사적 B 계약** `watchdog-b/standby-r5-contract.mjs`, Controller 운영 설치 source, Watchdog 실파일, S6 B 승인 원문 및 기존 #3947/#4019 effect는 **변경·재실행하지 않았다**.
 - **완료 증거 범위:** 소스/회귀시험 브랜치 커밋·PR 생성 완료. PR 최신 HEAD의 CI/병합, 운영 A #4043 원인 해소 readback, S6 #4042 heartbeat 원인, 신규 B 효과 및 실제 승격은 **아직 미완료**.
 - **다음 필수:** PR #4045 정확 HEAD CI 회수 → 소스 결함이면 최소 정정 → 검증 통과 후 충돌 없는 통합 → 기존 Read-only A 신규 고유 요청(필요한 경우만)으로 현재 Watchdog 실행 상태 재확인 → S6-02 heartbeat 기준 시각 원인 분해. S6 0/1 유지.
+
+### 2026-11-27 S6-01 exact-head 회귀 CI 및 S6-02 초기 원인 분리
+
+- PR #4045 최신 HEAD `f697d7f5291ef5f30ff055b2f602fe19f41cdfdb`. 첫 CI에서 신규 fixture의 stale STATUS 시각을 Watchdog Owner 시작보다 **이전**으로 설정해 `WATCHDOG_R5_NATURAL_RESTART_PENDING`가 먼저 발생하는 **테스트 입력 오류**가 확인됐다. 제품 코드 오류나 런타임 실패가 아니었다. STATUS를 owner 생성 이후이면서 60초 초과 신선도 지연인 `2026-11-26T01:10:40Z`로 변경해 해당 순서 오류를 정정.
+- [C996 exact-head Run #45876810983](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45876810983): `completed/success`. 신규 read-only 인식 + 변조/누락/임의 ID/오래된 STATUS 거부 시험이 포함된 동일 HEAD. 다른 두 CI는 그 시점 **미완료**, 3/3이나 병합을 주장하지 않는다.
+- 승인 #4036의 정확히 2개 변경 SHA-256과 PR 수정 소스 pin을 교차 대조함: `controller/operations.mjs` `bac7412c...`, `controller/us-breadth-r2-private-readonly.mjs` `e5f1d876...`. 역사적 `watchdog-b/standby-r5-contract.mjs`는 `main`과 변경 브랜치에서 동일 blob.
+- S6-02: 설치된 R5 Watchdog `45807c661ee7f5f11a20b5780e6fd31116b24f84`의 상태 쓰기는 `STATUS.json.at` 현재 시각, `tick` 주기는 **15초**. S6 A `projectS6ApprovalPreimageReadonly`은 heartbeat age **45초 미만**을 요구. #4042는 age가 45초 이상/미래/비정상 중 어디에 해당하는지 원시 시각을 기록하지 않았으므로 **원인 미입증**. #4043의 `statusFresh=false`는 Controller source mismatch 이후 기본값이어서 실제 오래된 heartbeat 증거로 사용 불가.
+- **다음:** 나머지 2개 CI가 동일 HEAD에서 완료되면 PR 통합 여부 판단. 실PC A readback과 실제 S6 효과는 별도 승인·안전 조건이 충족될 때만 실행. 운영 S6 0/1.
