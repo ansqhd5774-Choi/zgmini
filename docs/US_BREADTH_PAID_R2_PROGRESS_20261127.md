@@ -112,6 +112,15 @@
 - Windows [#4074](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4074) `stock_daily.receiptDates=30`, `firstDate=2025-11-19`, `lastDate=2026-11-25` 확인. 2025-11-19는 목표집합 밖이므로 기존 30개가 모두 해당 집합에 포함될 수 없다. 목표 안에 존재 가능한 영수증은 최대 29개, **부족분 하한 251−29=222개**. 정확한 누락 날짜/수량은 PC `paidDates` 실제 30개 전체 날짜와 교집합·원파일 SHA 검증 후 확정. 완료/수집/게시로 표현 금지.
 - 이 계산은 독립 오프라인 달력 검산이며 PC 실수집·기존 영수증의 날짜·SHA 전체 검증이 아니다. 운영 신규 작업 6/8 완료 판정은 보류.
 
+## 2026-11-27 #4078 PC Job 접수 재확인 및 설치 source 계약 정정
+
+- 2026-11-26T19:23Z 이후 최신 원본 조회에서 [#4078](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4078) `open`, 고유 requestId `pc-usbreadthr2-resource-window-20261127-01`, `ZGMINI PC Job` 실행 ID 및 JSON/TXT 없음. Issue `labeled` 이벤트가 남았다는 것과 실제 A 실행은 별개. 지난 동일 Workflow #4074 Run `45881716545` PASS를 재사용.
+- [#4079](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4079) `HANDOFF_ROUTED` 및 `HANDOFF_SELECTOR_CANDIDATE_V1`, `AWAITING_AGENT_CONFIGURATION` / AI 자동 처리 `NOT_CONFIGURED` 확인. [2026-11-27 원인 구분 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4079#issuecomment-7201605526)에 접수 시점·변수 게이트·요청한 범위/정확 결과를 연결. 인계 등록이 실제 총괄 인수나 복구는 아님.
+- `.github/workflows/pc-job.yml`의 `labeled` 이벤트는 `vars.ZGMINI_PC_JOB_LATE_LABEL_ENABLED == 'true'` 게이트 적용. 연결 브라우저의 과거 변수 화면에는 해당 변수가 보이지 않았으나 현재 설정·최초 `opened` 이벤트 payload의 라벨 포함 여부를 확정하지 못해 **접수 누락 원인 미입증**. 임의 label 재부착·gate 제거 금지.
+- 로컬 오버레이 source pin 정정: `writer-b/windows-adapter.mjs`는 승인된 source 파일을 `baseHead` 위로 overlay한 **새 로컬 커밋**(`prepared.sha`)을 생성하고, 같은 커밋으로 source를 switch·config.source 적용·파일 after SHA 검증한다. 따라서 `scripts/pc-writer/us-breadth-paid-r2-cycle.mjs`의 `git diff --quiet HEAD` 조건과 삽입형 Core가 충돌한다는 미확인 가설은 **기각**. 설치 불가의 실제 확정 조건은 #4068 `WRITER_B_CORE_NATURAL_DRAIN_TIMEOUT_STOP`.
+- 다른 [#4080](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4080)의 독립 process inventory Workflow Run `45883221676`은 관측 시점 queued. 독립 보고의 완료 전에는 Core 유휴를 주장하지 않음. 원래 #4078 재발행하지 않으며 다음 행동은 공통 접수 복구/자연 유휴 증거 → 현재 원본 CAS → 승인된 정확 Writer B → 저장 데이터·게시 실측.
+- 종단 진행률 5/8(62.5%) 유지; 수집·계산·게시 미완료.
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
