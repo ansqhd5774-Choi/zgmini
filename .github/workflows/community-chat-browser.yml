@@ -130,7 +130,10 @@ jobs:
           done
           tail -n 120 /tmp/zgmini-chat-vite.log
           exit 1
-      # W05 is independent of the W06 home-chart 1D selection and must run first.
+      # Validate the changed composite chart before unrelated live W05 checks:
+      # W05 retains the same assertion and still fails this job if it breaks.
+      - name: Validate dashboard history period changes and newer snapshot refresh
+        run: node tests/dashboard-history-browser-r5.mjs
       - name: Verify W05 BEA actual Production API and 390/1440 hydrated UI read-only
         run: node tests/w05-bea-production-readonly-r1.mjs
       - name: Verify W06 latest-point genuine touchscreen and hover with local isolated fixture
@@ -163,8 +166,6 @@ jobs:
         run: node tests/dashboard-deferred-ui-browser-r1.mjs
       - name: Validate route-specific education styles and mobile layout
         run: node tests/fear-greed-education-browser-r4.mjs
-      - name: Validate dashboard history period changes and newer snapshot refresh
-        run: node tests/dashboard-history-browser-r5.mjs
       - name: Verify CNN actual PC-check 1D curve and stale-session exclusion at 390/1440
         run: node tests/cnn-current-session-verified-checks-browser-r12.mjs
       # Lab results are observations, not a new unapproved Lighthouse score gate.
