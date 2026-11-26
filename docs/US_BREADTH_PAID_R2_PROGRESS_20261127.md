@@ -121,6 +121,14 @@
 - 다른 [#4080](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4080)의 독립 process inventory Workflow Run `45883221676`은 관측 시점 queued. 독립 보고의 완료 전에는 Core 유휴를 주장하지 않음. 원래 #4078 재발행하지 않으며 다음 행동은 공통 접수 복구/자연 유휴 증거 → 현재 원본 CAS → 승인된 정확 Writer B → 저장 데이터·게시 실측.
 - 종단 진행률 5/8(62.5%) 유지; 수집·계산·게시 미완료.
 
+## 2026-11-27 #4078 workflow-run 누락 범위 확정
+
+- #4074 PASS: GitHub Actions `created=2026-11-26T19:10:50Z..2026-11-26T19:11:25Z` 원본 조회 `total_count=52` (issues 47), `ZGMINI PC Job` **2개** (Run `45881716545` success, `45881717018` skipped).
+- #4078 접수 누락: `created=2026-11-26T19:14:44Z..2026-11-26T19:15:05Z` 조회 `total_count=45`, 모두 `event=issues`, **`ZGMINI PC Job` 0개**. 당시 다른 GitHub workflow는 정상 run 생성 후 관련없는 jobs skipped. 좁은 조회 창 자체 전체 개수로 page-truncation 배제.
+- 차이: job-level `if:` false만으로 #4078의 workflow-run 0건을 설명하지 못함. GitHub Actions workflow 생성/등록/이벤트 라우팅 이전 단계가 미입증인 실제 차이. GitHub Actions 특정 워크플로 버전·`opened` payload 라벨·actor·당시 repo var는 불명. 상태 `AUTOMATION_BLOCKED` 유지.
+- 원본 [#4078](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4078#issuecomment-7201690228)에 대조 근거와 위험 조건을 직접 연결; 공통 [#4079](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4079#issuecomment-7201670813)에도 기록. #4078에 별도 진단자가 조건부 가설을 제시했으나 정확한 원인 입증 전 워크플로 조건·승인 변수·Core 보호장치 변경 금지. 중복 request/새 Writer B 없음.
+- 연관 [#4080](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4080) 별도 PC inventory Run `45883221676` 마지막 관측 queued, JSON/TXT 아직 없음. 실제 Core 유휴 확인 전 설치 승인 범위 확대 금지. 종단 5/8(62.5%) 동일.
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
