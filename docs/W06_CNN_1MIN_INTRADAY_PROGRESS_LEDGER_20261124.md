@@ -585,3 +585,17 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - 종단 완료율 **0/1 유지**. 새 PC 소스 실제 설치·HTTP 저장 지속·정합성·기존 UI CI 범위는 증명했으나 *설치 후 연속 60초 요청 간격의 독립 창*과 실제 원본 변경의 저장→게시→UI 최신점은 미관측.
 
 **다음 필수 작업:** 동일 승인된 W06 읽기 전용 Task/HTTP probe를 실제 추가 자연 주기가 지난 다음 1회 수행해 설치 이후 요청 간격만 구분한다(기존 전체 중앙값과 혼동 금지). 60초 미달 지속 시 실제 최근 요청 시각·Task state·Core shared lease 조건을 분리하여 확인한 실패 경로만 수정한다. 최신 CNN 원본 observedAt가 실제 변하면 SQLite↔D1↔API↔PC 1440/mobile 390 실제 차트 마지막점 재대조. 중복 Writer 설치/기존 A·B 요청 재실행 금지.
+
+
+### 20-27. W06 설치 후 순수 HTTP 약 60초 간격 실측 검증 (2026-11-27 KST)
+
+- 기존 인증된 설치 #3985 / Run 45863542119: `worker/public-feed-refresh.mjs` 1개만 PC release에 정규 B 설치, `WRITER_B_INSTALLED_VERIFIED`, 로컬 source `714d392ca079daa9fdb789f73762c407be3321a2`. 기존 운영 Task 활성/PT1M·최종 B 원본 CAS/Task 복구 검증 완료. B 중복 설치/실패했던 #3969 재실행 없음.
+- 이전 A #3992 / Run 45864894875: 2026-11-26T17:08:10Z 당시 설치 후까지 섞인 전체 기간 요청 간격 중앙 85.5초였지만 마지막 12간격 [127,61,88,80,61,67,61,60,60,61,62,59]초로 개선 확인. 타임스탬프 분리 전 전체값은 새 코드 효과 판정에 부적합.
+- 설치 후 기준점이 **실제 첫 사후 읽기 #3987의 2026-11-26T17:02:17.109Z**인 것을 명시해 SQLite 원본 `requestedAt` 이후만 계산하는 [제어 PR #3996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3996), 브랜치 `codex/w06-post-install-http-gap-readonly-20261127`. 정확 HEAD `7a65f2567f47e5b40ba89d16159a48b7f6df3757` C996·Secret·Two-PC source CI **3/3 SUCCESS**, merge `ca509d9b8f71fe393549fb4fe1371f0b23442905`. 고정 SQLite 2일 bounded query-only 조회에 집계만 추가, 운영 Task/공급자/SQLite/D1/기존 소스 쓰기 0.
+- 운영 단회 읽기 A [Issue #3998](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3998)/[Run #45865681482](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45865681482) **PASS/W06_TASK_CADENCE_COLLECTED**, JSON/TXT **2/2 원본 readback**, 2026-11-26T17:12:49.669Z, 실제 운영 runner zgmini-pc-02. CNN Task enabled=true/Ready, PT1M, lastTaskResult=0, lastRun=17:12:01Z.
+- HTTP 최근 2일 **85건 모두 VERIFIED/200**, 429/5xx/fetch 실패 0. **설치 후 독립 구간** 요청 10건 모두 VERIFIED, `17:03:12.161Z`~`17:12:26.923Z`, 연속 실제 HTTP requestedAt 간격 9개 **[60,60,61,62,59,71,62,60,60]초**, **중앙값 60초·최대 71초·90초 초과 0건**. 따라서 자연 약 1분 간격 실제 수집은 이 창에서 **입증**, 임의 데이터 보간·누락된 tick 생성 없음. 9개 표본이라 장기 100% 무누락·정확한 고정 60초를 보장하지 않음.
+- 명목 다음 tick 계산 `predictedGate=CACHED`/26,801ms 부족은 실제 자식 collection 시작 전의 한 시각만 예측하며 **과거 skip 확정이 아님**; 이미 해당 실측 구간에서 bounded wait가 있는 현재 소스의 실제 HTTP 간격 확인 완료. Scheduler Event322 channel disabled이므로 ignored Launch 개수는 **미관측 null**(0으로 오표시 금지).
+- 독립 D1/API 기존 A #3989 / Run 45864401383: SQLite 당일 원본 observed=1, 공개 R9 check=1, D1/APIs 1D/1W MATCHED(HTTP200), 관측 sourceObservedAt `2026-11-26T01:59:59Z`, score `14.9967450271248` 그대로. 이 값은 **실제 CNN 신규 원본 변동/체크/1·5·10·30분 새 차트점 게시 입증이 아님**. 이전 웹 UI Production 390/1440 및 1D·6기간 PASS도 재사용하되 새 데이터 표시 증거로 확대 금지.
+- #3998 A는 댓글에 원본 증거 기록 후 `closed/completed` 종결. 새로운 Task·유료 provider·반복 감시 예약 추가 없음. **W06 종단 운영 완료율 0/1 유지**(HTTP 60초 자연 창과 source 설치 단계는 검증 완료, 원본 신규 observedAt 변화 → SQLite 저장→D1 게시→API/UI 최종점 실제 검증 미완료).
+
+**다음 필수 작업:** 승인된 기존 자동 수집에서 CNN sourceObservedAt가 실제 전진한 시점의 첫 유효 원본·로컬 SQLite archive/checks·D1 공개 1D/1W·API 및 홈페이지 1/5/10/30분 차트 PC 1440px/모바일 390px 최신점 독립 대조. source가 동일할 동안에는 새 관측/차트 점을 만들지 않고 원본 미변동 상태 유지. 이미 정상화한 60초 Task/정규 소스 설치를 반복 실행하지 않음.
