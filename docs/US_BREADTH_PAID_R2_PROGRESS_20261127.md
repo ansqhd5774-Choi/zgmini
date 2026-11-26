@@ -59,6 +59,7 @@
 - 기존 Owner [Writer B #4055](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4055), request `77df231d-6619-46f0-8320-44ed546901c1`, [Run 45878033076](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45878033076): `WRITER_B_PREFLIGHT_STOP / WRITER_B_IMPORT_MISSING_DEPENDENCY_STOP`. JSON/TXT 2/2, 운영 source 변경 **없음**, `RECOVERY=NONE`, `NO_REEXECUTE`.
 - 정확한 missing dependency 진단 2개: 최신 공유 `scripts/pc-writer/local-cycle.mjs` → `asset-r10-sp500-refresh.mjs` 및 `earnings-risk-provisional-r23-hook.mjs`, 모두 `NOT_FOUND` (기존 설치된 Core 이력과 최신 main 전체파일 차이). 이 파일들은 미국 R2 범위 밖이므로 임의 추가 설치하지 않는다.
 - 수정 [PR #4057](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4057): **기존 PC Core 전체 교체를 피하고 2개 고유 anchor로만 insert-only R2 backfill**. 수정 지시 `approvals/writer-previews/us-breadth-paid-r2-archive-insert-20261127.json`. C996 PASS 확인, Secret Scan/병합은 별도 상태 확인 필요.
+- 신규 A급 프리뷰 대상 `approvals/writer-previews/us-breadth-paid-r2-archive-insert-20261127.json` 원문 SHA-256 `75cc0294e4282e2e609d6497ef652d3e7a6151e6f0697c4b586b36fe8128462f`. [PR #4057](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4057) HEAD `c2e563f112b33a865fa750462b2ce02a59273141` 기준 C996 PASS, Secret Scan Runner 대기 (마지막 관측). 실제 PC after SHA는 아직 미확보.
 - 새 A급 고정 `pc-writer-insert-preview`로 실제 PC after SHA를 확보하고, 새 정확 Writer B manifest+고유 Issue로 적용. #4055는 이미 소모되어 재실행 금지.
 - 원자료 251거래일·private/D1/API/UI 종단 5/8(62.5%) 유지. `WRITER_B_PREFLIGHT_STOP`은 실제 Source 설치 실패이지 공급자 데이터 결손 원인과 혼동 금지.
 
