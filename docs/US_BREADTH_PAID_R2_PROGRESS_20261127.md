@@ -181,6 +181,14 @@
 - 기존 A [#4040](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4040) `results/45873869837-1-seat-6.json` 실제 영수증 재조회: `stockDaily.receiptDates=30`, 최초 2025-11-19, 마지막 2026-11-25, `selectedMetadataValid=30`, `sourceShaReadbackVerified=false`, `calendarContinuityVerified=false`; 개별 30개 날짜 리스트는 결과에 **없음**. 따라서 30개 모두 목표 구간 포함이라고 가정할 수 없고, 최소 하나(2025-11-19)는 범위 밖이라 목표 251개 중 **미보유 최소 222개**, 정확 결손 일자는 승인된 PC `paidDates` 결과 없이는 미확정.
 - 완료된 작은 단계는 **목표 달력 구간 산정**뿐. 운영 251파일 raw/projection SHA 검증 및 bounded 수집이 필요한 6/8 전체 완료는 아님. 추가 공급자 호출·운영 쓰기·D1/API 변경 0, 종단 5/8(62.5%) 유지.
 
+## 2026-11-27 공개 D1·API 250점 완성 계약 종단 보강
+
+- 기존 [PR #1733](https://github.com/ansqhd5774-Choi/zgmini/pull/1733) `main d9e939afbafe3a64b5d2a8171bc2599d6c377f4a`는 Core R2 `publish=true` 입구에서 250점/251개 원자료 영수증을 요구한다. 추가로 실제 `worker/us-breadth-paid-r2-contract.mjs::validPaidUsR2Record`가 `1..249`점 `historyComplete=false`를 유효하게 인정하여 직접 D1 publisher primitive 및 public current/history GET에서 부분 FINAL을 인정할 수 있는 우회 경로를 소스에서 확인함(실제 잘못된 Production 데이터 게시 발생 증거 아님).
+- 최신 main 기준 최소 변경 [PR #1734](https://github.com/ansqhd5774-Choi/zgmini/pull/1734), 작업 브랜치 `codex/us-breadth-r2-public-contract-250-20261127`, 정확 HEAD `38c29d6be7b733661952b784fb606a115061d49b`에서 **Node.js CI / CodeQL JavaScript TypeScript / Source Secret Scan 3/3 SUCCESS**. Merge SHA **`f7ea89305df8471ffb1827d974fc2e0c223d0b09`**, `main` readback 및 6개 파일 diff 확인.
+- `validPaidUsR2Record` 공개 계약의 `points.length===250 && historyComplete===true`를 반드시 충족해야 한다. 동일 검증기를 사용하는 `buildPaidUsR2Final`, `publishPaidUsR2Final`, `readPaidUsR2Feed` 모두 미완성 부분 FINAL을 거부. 1/2/249 비교점 거부 및 250점 정상·stale current/history·CAS·민감 원문 비노출 시험은 실제 유료 원자료가 아닌 **합성 251-session 픽스처**에서 통과. 산식·수집기·DB·Task 변경 0. 운영 데이터 복구나 실제 공개 배포 증거 아님.
+- **향후 B 설치 종속성:** 기존 제어 Writer B 승인 `approvals/writer-updates/us-breadth-paid-r2-backfill-insert-fourfile-20261127.json`은 `scripts/pc-writer` 정확 4파일만 포함, `protectedFiles=[]`; 반면 `worker/us-breadth-paid-r2-contract.mjs`는 기존 승인 후보 blob `84658b73a7968566af67fd109dd5218ebeac7565` → 현재 main blob `693e3fb88a4cc00670315ca4abb4cc15f7490b9f`으로 변경됨. #1733의 R2 cycle 파일 SHA 차이 외에 **PC checkout shared worker 의존성**도 설치 전 정확 원본 CAS와 당시 실행 source pin으로 검증할 것. 과거 승인 manifest를 변조하거나 운영 PC가 새 worker를 설치했다고 간주하지 않음. 제어 [#4068 신규 종속성 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4068#issuecomment-7202381178).
+- 미완료: S6 #4069 원장 실제 판정, #4078 PC Job 정상 접수, #4080 운영 Runner 배정, 실제 Writer B/251 raw+SHA/250 저장+D1 CAS/API/UI. **종단 5/8(62.5%) 유지.**
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
