@@ -11,7 +11,7 @@
 ## 1. 현행 판정
 
 - 목표: CNN만 60초 기준 확인, 원본 보존, 표시값 변화 감지, 1·5·10·30분 선형 집계, 저장 전용 API 및 무새로고침 화면 반영.
-- 2026-11-26 현재: **1단계 진행 중, 4단계 집계 소스 구현 및 5단계 독립 UI CI 진행 중**. 기존 #1521 복구 완료와 최신 main 소스 경로는 확정; 현재 운영 실행 source/실제 요청 간격과 기존 1분 실행 연결 여부는 미확정.
+- 2026-11-26 현재: **개발 소스 CI 4/4 PASS, 운영 설치 후보 통합·검증 진행 중**. 기존 #1521 복구 완료 증거 유지. 실제 PC의 8개 원본 해시 확보, 7개 byte-equivalent 복원, 1개 기존 원본 보존 삽입 Preview PASS. #3790 수집/게시 삽입 명세 CI 2/2 및 main 병합 완료. 신규 60초 운영·Sidecar 복구·공개 종단은 미완료. 상세 최신 증거는 §14 참조.
 - 계획서 및 원장 생성은 문서 작업으로만 집계한다. W06 운영 완료율은 미산정(실행 증거 부족), 기존 복구 완료 증거는 유지한다.
 - #1521은 2026-11-24 최종 운영 검증 후 CLOSED. 기존 복구는 완료이며 신규 W06 고도화와 구분한다.
 - 신규 60초 수집에는 현 소스의 15분 간격/5분 quota 및 5분 Core 실행 구조가 맞지 않는다. 실제 운영의 적용 값과 공급자 허용 범위는 미확정. 전체 업무 차단 아님; 독립 UI 구현 계속.
@@ -20,12 +20,12 @@
 
 | 단계 | 상태 | 이번 원장 기준 증거 / 미완료 조건 |
 | --- | --- | --- |
-| 1. 실제 경로 확정 | 진행 중 | #1521 CLOSED 및 종단 PASS 승계, 최신 main 소스 경로·15분/5분 제약 확인; 운영 설치본·실제 HTTP 요청 간격 및 기존 실행 연결 확인 필요 |
-| 2. CNN만 1분 확인 | 진행 중 | 기존 refresh의 PC 전용 60초 단회 경로·durable cooldown 후보 구현; 실제 호출 연결/공급자 승인/운영 검증 미완료 |
-| 3. 원본 저장·변동 감지 | 진행 중 | 기존 archive 저장 계약 재사용; 늦은 정상 원본을 current 역행 없이 저장하는 분기/2개 회귀 추가. CI·운영 미검증 |
-| 4. 1·5·10·30분 집계 | 진행 중 | 원본 전용 순수 집계/변동 표시 모듈과 5개 회귀시험 추가; UI 연결 및 실제 CI 미완료 |
-| 5. D1·API·자동 화면 갱신 | 진행 중 | 기존 D1/API 1D·1W PASS 승계; 관측 API 60초 재조회·실패 보존 소스 및 브라우저 회귀 추가, CI/운영 검증 미완료 |
-| 6. 회귀시험·운영 적용 | 진행 중 | PR #1644 CI 실제 실행, 기존 HEAD Node Lint 실패 원인 수정; 새 HEAD CI 실행 중. 운영 설치/배포 미실시 |
+| 1. 실제 경로 확정 | 진행 중 | #1521 CLOSED 및 종단 PASS 승계; #3766 운영 원본 8/8 SHA 및 #3786 실제 삽입 afterSHA 확보; Sidecar source/CAS, 실행 연결·공급자 허용 범위 미완료 |
+| 2. CNN만 1분 확인 | 진행 중 | PC 전용 단회 CLI·60초 due/429 cooldown 개발 CI PASS. 실제 삽입 후보 #3786 PASS, #3792/3793 요청 진행. quota 공유 원장/실행 계약 및 실제 호출 미검증 |
+| 3. 원본 저장·변동 감지 | 진행 중 | 실제 HTTP 확인과 원본 observedAt 분리, 늦은 관측 archive 보존, 모의 저장 회귀 CI PASS; 운영 미검증 |
+| 4. 1·5·10·30분 집계 | 진행 중 | 원본 기반 집계 및 네 구간 UI 개발 CI PASS(0f0bb62e), Production 확인 미완료 |
+| 5. D1·API·자동 화면 갱신 | 진행 중 | 기존 D1/API 1D·1W PASS 승계; 60초 저장 조회·실패 보존·브라우저 CI PASS. CNN 전용 게시 경로 및 운영 D1/API/화면 미검증 |
+| 6. 회귀시험·운영 적용 | 진행 중 | #1644 0f0bb62e CI 4/4 PASS, #3785/#3790 제어 main 병합, #3786 PASS. 신규 #3792/#3793 회수, quota 및 의존성·정확 B/Sidecar 설치·배포 미완료 |
 | 7. 실관측 종단 확인·종결 | 미착수 | 신규 실제 변동 전파 및 네 간격·PC/모바일·기존 여섯 기간 검증 필요 |
 
 상태는 미착수 / 진행 중 / 완료 / 해당 범위 차단으로 관리한다. 단계 개수로 운영 완료율을 환산하지 않는다.
@@ -68,13 +68,14 @@
 | 2026-11-24 | #1521 상태·최신 댓글 조회, 진행 원장 생성 | 문서 작업 완료; 단계 1 진행 중 | 본 원장 및 위 증거 링크 |
 
 2026-11-24 문서 작업 시 신규 기능 변경 없음. 2026-11-26 전용 브랜치에 최신 main 통합 및 UI 소스/회귀 코드 변경. main 기능 병합·운영 설치·예약·DB/D1 쓰기·배포 없음.
-2026-11-26 신규 PC A급 #3741 및 #3742 실행 및 JSON/TXT 회수 완료. 진행 중 신규 PC requestId: 없음. 동일 읽기 반복 및 타 담당자 요청 중복 금지.
+2026-11-26 #3741/#3742/#3766 및 #3786 A 결과 회수 완료. 현재 미회수 신규 요청: #3792 (90f59760-5dd7-4df4-95c5-af0139db34a2), #3793 (f4c41825-2985-4f8f-8ec3-b77e01947f24). 동일 요청 중복 금지. §14 참조.
 
 ## 6. 다음 직접 실행
 
-1. 최신 main 및 전용 브랜치의 관련 소스 차이와 CNN 수집기/피드 정책, collect-local/quota, Sidecar 실제 실행 계약을 확인한다. 기존 운영 영수증의 정확한 실행 SHA·설정·요청 간격을 필요한 범위에서 재사용한다.
-2. CNN에 실제 적용되는 15분/5분 제한의 위치와 실행 주기를 구분하고 기존 승인 실행기가 CNN만 60초 확인 가능한지 판정한다. 불명확하면 기존 등록된 읽기 전용 경로로 최소 관측만 확보한다.
-3. 1단계 경로 확정 결과를 기록하고, 승인 범위의 최소 변경으로 2단계에 이어간다. 원본 저장과 표시 필터는 분리하며 독립 API/UI 작업은 공통 운영 문제에 묶지 않는다.
+1. #3792/#3793의 실제 JSON/TXT를 직접 회수하고 각각 사전 산출 after SHA와 대조한다. #3766/#3786의 유효한 원본·Preview 증거는 재사용한다.
+2. 기존 quota-fetch 및 quota-policy를 보존하는 공통 quota 동시 실행 보호와 실제 운영 의존성(특히 설치된 CNN TS collector, shared adapter)을 확인한다. 기존 현대 quota-ledger의 일반 예약 lock/재조회 시험을 재사용하되 운영 원본과의 계약 차이를 무시하지 않는다.
+3. 기존 B 정규 경로의 exact candidate/preimage/after SHA, runtimeDependencies, CAS/lease/backup을 확정한다. #3745의 Sidecar 고정 source 및 old preimage 조건을 별도로 해결한다. #3768 동일 실패 재시도 금지.
+4. 승인 범위의 실제 운영 적용 후 60초 HTTP 확인·SQLite 원본·D1/API·PC/모바일 화면을 종단 검증한다. 기존 Core·다른 지표 보존 및 공급처 제한 준수 확인. 개발 CI나 Preview만으로 종결하지 않는다.
 
 ## 7. 원장 갱신 규칙
 
@@ -139,3 +140,51 @@
 - exact HEAD 946c32c4 Node 45717279187: 변경된 TS 두 파일의 기존 explicit any 4건 Lint 실패. FeedStore/DataEnv 타입으로 교체. 회귀 assertion 유지. Secret PASS.
 - CNN 전용 tick에서 기존 collector의 실제 fetch 시작시각/HTTP 응답시각/상태 및 검증 결과를 기록하도록 callback 연결. HTTP 실패/transport 실패/검증 실패/정상 응답 구분. 동일 원본 반복 확인은 별도 checkedAt으로 보존하되 sourceObservedAt·원본 score 변경 없음. 기존 R9 PC_VERIFIED_STORED_AT의 공개 기록 의미 변경 없음. 기존 SQLite 테이블 kind=input, fear-greed-http-checks 날짜별 행과 readback 재사용, D1 게시 대상 아님. 모의 SQLite 반복 확인·실패·충돌 회귀 추가. Retry-After의 장기 서버 대기를 임의 24시간으로 단축하지 않도록 수정. 운영 PC 실제 확인 기록은 아직 미생성.
 - #3745는 HANDOFF_ROUTED/AWAITING_AGENT_CONFIGURATION, automaticAiExecution NOT_CONFIGURED. 인계 실제 인수 아님. 기존 Core 5분/공통 quota 공유 쓰기 계약 때문에 단회 60초 소스 옵션만 있고 지속 실행 연결은 미확정. 운영 변경 없음.
+
+
+## 14. 2026-11-26 — 운영 원본 복원·삽입 후보 및 실제 Preview
+
+### 개발·제어 소스 증거
+
+| 대상 | 상태 | 정확한 증거 |
+| --- | --- | --- |
+| 본체 기존 HEAD | 4/4 PASS | [0d5c94c0](https://github.com/ansqhd5774-Choi/zgmini/commit/0d5c94c0e7d348a5beb5599b3ed96757e2b7189e); TS 수집기 2개 복원, 런타임 후보 8 mjs |
+| Core092 보존 | 개발 수정 및 CI 완료 | [f1407b78](https://github.com/ansqhd5774-Choi/zgmini/commit/f1407b7842b57cc5f79292c4fca268c0928ecd51); 승인 모듈 3/3 SHA 일치, 실행 식별자/출처 증명 연결; CI 4/4 |
+| W01 보존 | 개발 수정 및 CI 완료 | [0f0bb62e](https://github.com/ansqhd5774-Choi/zgmini/commit/0f0bb62e4d4879369e061e9289ed1c79d91f0044); 저장 payload/변경 checkpoint 호환 경로 복원; [Node](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45729720637), [CodeQL](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45729720627), [Secret](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45729720651), [Browser](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45729720595) 모두 SUCCESS |
+| Writer 원본 조회 scope | 제어 main 병합 | [#3763](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3763) 4565e14820d4d2f4ad39b85088efe5798d325e99 |
+| 실제 cycle 삽입 명세 | 제어 main 병합 | [#3785](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3785) CI 2/2 PASS, e9ecfff820ac632f092be66639d765ae89578146 |
+| 수집/게시 삽입 명세 | 제어 main 병합 | [#3790](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3790) [C996](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45732002605)·[Secret](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45732002606) SUCCESS, 211d5e1d14a6f31c7a3d5cd7668fff494b8299a7 |
+
+본체 개발 PR #1644는 계속 open. 위 개발 CI는 정확 소스 HEAD에만 해당하며 이 원장 문서 커밋의 새 HEAD CI나 운영 설치 증거로 대체하지 않는다.
+
+### 실제 원본 및 삽입 후보
+
+[PC A #3766](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3766), [Run 45727629197 JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/45727629197-1-seat-5.json) / [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/45727629197-1-seat-5.txt): PASS/WRITER_APPROVED_PREIMAGE_READONLY. Controller 53fe24e22446d21a9fd4ee308d12b7cba7f37e25, 09:17 KST, PC config/checkout/checkpoint d8ac245003e7b8e006c2345382d5c639c6d5f18b. 보호 상태 동일, provider/DB/D1/운영 쓰기 0. runtimeSourceVerified=false/coreTaskSourceLinked=false; GitHub에서 합성 SHA 조회 불가를 PC 실패로 해석하지 않는다. #3766 completed closed, 재요청 금지.
+
+| 파일 | PC before SHA-256 | 원본 복원 / 후보 |
+| --- | --- | --- |
+| scripts/pc-writer/cnn-observed-archive-publication-r1.mjs | 9c52d17e82483fc35c1280d53687342e9c08e727ca1712b0c1d8290d0acb3f11 | 기존 base byte 일치 |
+| scripts/pc-writer/collect-local.mjs | 1648a62e26157868e9d4ed43ab9d36436068e08973ba56d495b7c1751e02c62e | 정확 11349 bytes, 승인 BLS 후보 58a8d800… + W02/wifi/SEC/Core092/Alpaca retirement 삽입 전후 모두 일치; projected after 6a750c854b18e419a5a44e6805c409a19efe9c6a9f8a416d76ea59ffa4dbdf43 |
+| scripts/pc-writer/collection-publication-policy.mjs | b8089b00c443722d64c17a1cde27200e8a77303d8030eae8015b5a2e8662a5ff | 기존 base CRLF 일치 |
+| scripts/pc-writer/local-cycle.mjs | 41912f24c2bdc13a9de52d2ee2b504fe90b733656a0d66827c617a5e2c6c0f4a | R17 합성 base 원본 전체 미복원, 실제 #3786 after 486536024cc0bf78f449594fbe31b762cf0578545502a17dbfce1bd12c73c484 |
+| scripts/pc-writer/quota-ledger.mjs | 379f56dd94dc8df8ca6ef46331a4fd831495759bddcc9cee22b0159c65559efe | 0f3074ee… CRLF 정확 4769 bytes; 동시 실행 보호 호환성 미확정 |
+| scripts/pc-writer/run-local.mjs | a96c0c7c3513fda6f9d51b35caee7d634e2a05c69ff3575d3b99c37072a60ec6 | 정확 32376 bytes, D05 55b83b83… + W02/wifi/taxonomy/composite/Core092/W01/W05 삽입 전후 모두 일치; projected after 431409ea5f544a023b55f80cd70072473f2e014f8b6d9e604c62105fb954de9a |
+| worker/public-feed-refresh.mjs | a5f11713d5089b9a5984e056f65a01c739286532c40dff12462343d734b37b4f | 52df1846… CRLF 정확 일치 |
+| worker/public-feed-store.mjs | b21f03057025bad7aed58c7bb1f69b2abba0f0b446c587869594eea732adfaa6 | 기존 base byte 일치 |
+
+[실측 #3786 JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/writer-b-insert-preview-3786-2e93ec19-4a8e-4bc5-b2d5-b983490d5be6.json) / [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/writer-b-insert-preview-3786-2e93ec19-4a8e-4bc5-b2d5-b983490d5be6.txt): PASS_READONLY/WRITER_B_INSERT_PREVIEW_VERIFIED, 실제 PC before/after 일치, Core taskXml dd81987c7efa4b1e343af30329a580613bb920dec89c1aa7a436ef935f0bb028, source/task/DB/D1/provider 쓰기 0. 해당 시점 Core instance 0, lock 없음; 현재 상태나 B 실행 시점의 보장 아님. A completed closed.
+
+### 최신 실행 요청 (미회수)
+
+| 요청 | 명세 SHA-256 | 예상 after | 상태 |
+| --- | --- | --- | --- |
+| [#3792](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3792) 수집기, requestId 90f59760-5dd7-4df4-95c5-af0139db34a2 | a22bed33e02ed359a692cdf40ffc235d463b24f340f7ec639d655a6d4a0f1007 | 6a750c85… | A 발행, 영수증 미회수 |
+| [#3793](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3793) 게시기, requestId f4c41825-2985-4f8f-8ec3-b77e01947f24 | cfa7e378d72539384797da2a202c7948ff40c56801cff4edd72673e83ce23887 | 431409ea… | A 발행, 영수증 미회수 |
+
+공통 quota: 기존 운영 원본은 constructor 시점 JSON을 읽고 persist하므로 CNN과 다른 Core 동시 쓰기의 lost-update 가능성이 있다. 최신 개발 후보는 기존 공통 reservation lock 및 lock 안 재조회, 별도 Alpaca ledger, 테스트를 포함한다. 0f0bb62e Node CI PASS는 개발 시험 증거. 기존 승인 정책 provider-health-krx-host-20261116의 candidate abb2e080…에서 CNN 5분 soft warning, BLS/SEC hard limit, Alpaca 140/120/60 보호 정의 확인; 현재 운영 정확 정책 hash와 소비자 경로는 별도. 기존 BLS activation/fetchR6WithLease/SEC adapter를 삭제하거나 quota-fetch/policy를 일괄 교체하지 않는다. CNN-only CLI는 기존 createQuotaFetch를 사용하고 Core 기존 bytes 보존. quota-ledger 교체의 실제 의존성 및 부작용 검증 필요; 이번에 운영 원장/정책 변경 없음.
+
+Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728377259, JSON/TXT 2/2). #3762/#3765 main 병합이 설치 계약 갱신을 뜻하지 않음. 원본 R3 B 재실행 금지. 현재 필수 운영 복구 미완료; 독립 W06 개발/Preview 계속.
+
+최신 정량 근거: 운영 preimage hash 8/8, 실제 원본 복원 7/8, 세 entrypoint 삽입 후보 3/3 산출, 실제 Preview 1/3 PASS/2건 영수증 미회수. 본체 개발 CI 4/4, 제어 명세 #3785/#3790 각각 2/2. 운영 완료율 미산정, 실제 신규 60초 요청·SQLite/D1/API/UI 종단 미검증. 운영 B/예약 변경/공급자 호출/DB/D1 쓰기/배포 실행 없음.
+
+관련 진행 댓글: [#1644 원본·Core092](https://github.com/ansqhd5774-Choi/zgmini/pull/1644#issuecomment-7178782373), [W01·quota 원본](https://github.com/ansqhd5774-Choi/zgmini/pull/1644#issuecomment-7178903507), [수집기 원본](https://github.com/ansqhd5774-Choi/zgmini/pull/1644#issuecomment-7178992869), [게시기 원본](https://github.com/ansqhd5774-Choi/zgmini/pull/1644#issuecomment-7179098072), [실측 Preview 및 후속 후보](https://github.com/ansqhd5774-Choi/zgmini/pull/1644#issuecomment-7179227525).
