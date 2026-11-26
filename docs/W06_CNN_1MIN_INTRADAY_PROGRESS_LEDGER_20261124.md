@@ -287,3 +287,11 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - #3806 exact HEAD 6abc20edb18ec6f7f03f157918faddfdb5e15f09, [C996 Run 45798139698](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45798139698), 실제 job 139834012371 로그: SCOPED groups=writer extraTests=1, 기존 Writer 135/135 PASS + W06 exact nine-file scope 시험 1/1 PASS; 별도 5/5 PASS. Secret Scan [45798139707](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45798139707)는 마지막 조회 QUEUED. 통합 명세 CI 1/2, 병합/설치 미실행.
 - 기존 pc-writer-b-source-once.yml의 exact approval 검증 → candidate SHA checkout → generic source transaction 경로 확인. Workflow 활성 상태 전용 API는 현재 도구에서 조회 제한; 최근 실행 선례 및 기존 정규 경로는 보존. 동일 설치 manifest의 실제 B Issue는 미발행.
 - 다음 직접 실행: Secret Scan 결과 확인 후 #3806 exact HEAD 병합 및 승인 명세 바이트 SHA 고정 → 신규 고유 Writer B request 1회 → JSON/TXT 영수증 회수. 실제 운영 SHA 없이 Sidecar pin 선변경 금지. 추가 운영 변경/공급자 호출/예약/DB/D1 없음.
+
+
+## 19. 2026-11-26 — Sidecar R3 후속 계약 (소스 수정)
+
+- #3806 통합 manifest exact HEAD 6abc20ed… C996 136/136 PASS 유지. Secret Scan 마지막 조회 queued / 미확정. 동일 대기 Run 재발행/우회 없음.
+- [#3811](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3811), HEAD 061b6d8b1d04876450a816dbbf231ec090d96f18. 실제 설치 R3 AFTER 583297b451f168a32a2a5de4b0b04c9b14449aab9a041c954a420203cf04f188만 후속 V2의 고정 before로 인정. 기존 V1 고정 PREIMAGE와 기존 승인 형식은 그대로 유지. V2 후보의 단일 APPROVED SHA literal을 이전 e4b76853…로 역치환했을 때 **전체 실제 R3 바이트 SHA** 일치해야 함. manifest installedHead=configSource, exact pinned candidate SHA/bytes, 기존 task/wrapper/lease/backup/CAS/rollback 검증 유지. 잘못된 pin·다른 파일/바이트·V1 재실행·기존 권한 변경 거부 시험 2개 추가. 별도 승인 manifest/실제 후속 pin 후보는 Writer B 실제 설치 SHA 이후에만 확정. 신규 workflow/예약/권한 추가 없음.
+- CI ZGMINI CNN Sidecar B Source Contract CI queued (45799496118); C996 R5 Readonly Source Checks queued (45799496164); ZGMINI PC Secret Scan in_progress (45799496004). 운영 #3745 복구 완료 아님.
+- 다음: #3806 CI 2/2 성공 시 정규 B 1회 제출, 실제 설치 영수증 회수. #3811 CI/병합 후 실제 설치 source SHA로 R3 단일 literal 교체 후보 및 정확 V2 manifest 확정. 기존 Core와 Sidecar의 별도 60초 지속 실행 연결 및 공급자 허용 범위는 여전히 미완료. 운영 쓰기/DB/D1/예약/공급자 호출 없음.
