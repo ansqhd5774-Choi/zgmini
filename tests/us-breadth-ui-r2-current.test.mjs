@@ -6,12 +6,13 @@ const source=fs.readFileSync(new URL('../app/market-breadth-strip.tsx',import.me
 const retired=fs.readFileSync(new URL('../app/api/market-breadth-r2-history/route.ts',import.meta.url),'utf8');
 const current=fs.readFileSync(new URL('../app/api/market-breadth/route.ts',import.meta.url),'utf8');
 
-test('disallowed R2 confirmed phase is explicitly retired in the existing API',()=>{
+test('only the paid full-US R2 reader replaces the retired free route',()=>{
  assert.match(current,/if\(phase==='confirmed-r2'\)return fullMarketConfirmedR2GET\(\)/);
- assert.match(current,/MARKETPARQUET_REMOVED_CODE/);
- assert.match(retired,/MARKETPARQUET_REMOVED_CODE/);
- assert.match(retired,/status:503/);
- assert.doesNotMatch(retired,/\.prepare\(/);
+ assert.match(current,/readPaidUsR2Feed\(coreSnapshotsDb\(\),\{mode:'current'\}\)/);
+ assert.match(retired,/readPaidUsR2Feed\(native.DB_CORE\?\?native.DB,\{mode:'history'\}\)/);
+ assert.doesNotMatch(current,/MARKETPARQUET_REMOVED_CODE|MARKETPARQUET_FREE_SAMPLE/);
+ assert.doesNotMatch(retired,/MARKETPARQUET_REMOVED_CODE|readFullMarketPercentHistory/);
+ assert.doesNotMatch(retired,/market_public_snapshots_v1/);
 });
 
 test('retired MarketParquet is neither fetched nor treated as last valid current in the UI',()=>{

@@ -86,6 +86,23 @@ try{
    console.log('BREADTH_PAID '+JSON.stringify(await runPaidBreadthCycle(base,{publish:process.argv.includes('--publish')})));
   }catch(e){const report={status:'FAILED_PREVIOUS_DATA_PRESERVED',code:/^BREADTH_PAID_[A-Z0-9_]+$/.test(e.code??'')?e.code:'BREADTH_PAID_RUNTIME_FAILED',d1Outcome:'CHECK_STORED_RESULT_BEFORE_RETRY'};console.warn('BREADTH_PAID '+JSON.stringify(report));try{save(path.join(base,'marketparquet-paid','breadth-last-run.json'),report);}catch{}}
  }
+ // Paid US full-market R2 reuses the same Core lock and previously
+ // authenticated stock_daily storage. No new Task, provider GET or legacy R1.
+ // Never run on the Korea lane or on a read-only Core invocation.
+ if(lane==='core'&&process.argv.includes('--publish')){
+  try{
+   const {runPaidUsR2StoredCycle}=await import('./us-breadth-paid-r2-cycle.mjs');
+   console.log('US_BREADTH_PAID_R2 '+JSON.stringify(
+    await runPaidUsR2StoredCycle(base,{publish:true})));
+  }catch(e){
+   const code=/^(?:US_PAID_R2_|PAID_R2_)[A-Z0-9_]+$/.test(String(e?.code??''))
+    ?e.code:'US_PAID_R2_RUNTIME_FAILED';
+   console.warn('US_BREADTH_PAID_R2 '+JSON.stringify({
+    status:'FAILED_PREVIOUS_DATA_PRESERVED',code,
+    d1Outcome:'CHECK_STORED_RESULT_BEFORE_RETRY',
+   }));
+  }
+ }
  const collection=spawnSync(process.execPath,[path.join(here,'collect-local.mjs'),...(lane==='korea'?['--korea']:[])],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:30*60000});
  try{updateDataAlert(base,{key:'collection',failed:collection.status!==0});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
  // A provider failure retains stored good data; publication still reads local storage.
