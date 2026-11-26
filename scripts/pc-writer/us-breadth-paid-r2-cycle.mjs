@@ -52,6 +52,22 @@ export function checkApprovedPcRuntime(base){
   }catch{return {ok:false,status:'US_PAID_R2_PC_CHECKOUT_UNVERIFIED'};}
 }
 
+/**
+ * The approved public R2 one-year output is exactly 250 consecutive
+ * comparison points backed by 251 saved private stock_daily receipts.
+ * Short stored previews stay read-only; they must not reach private
+ * write or D1 publication through the scheduled Core --publish lane.
+ */
+export function readyPaidUsR2FullYearPublication(result,maxPoints=250){
+  return maxPoints===250
+    &&result?.fullYearHistory===true
+    &&result.comparedSessions===250
+    &&Array.isArray(result.publicHistoryPreview)
+    &&result.publicHistoryPreview.length===250
+    &&Array.isArray(result.privateSourceReceipts)
+    &&result.privateSourceReceipts.length===251;
+}
+
 export async function runPaidUsR2StoredCycle(base,{
   publish=false,maxPoints=250,now=Date.now(),store=null,
 }={}){
@@ -70,6 +86,11 @@ export async function runPaidUsR2StoredCycle(base,{
     fullYearHistory:result.fullYearHistory,providerCalls:0,d1Writes:0,
     operationalWrites:0,
   };
+
+  if(!readyPaidUsR2FullYearPublication(result,maxPoints))
+    return {...stop('US_PAID_R2_FULL_YEAR_HISTORY_REQUIRED'),
+      comparedSessions:result.comparedSessions,
+      fullYearHistory:result.fullYearHistory,operationalWrites:0};
 
   if(result.lastDate!==latestCompletedSession(new Date(now)))
     return stop('US_PAID_R2_LATEST_SESSION_NOT_STORED');
