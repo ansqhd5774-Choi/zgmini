@@ -515,3 +515,16 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - 실제 CNN HTTP 시도와 게시 장애를 구분하도록 기존 A `w06-cnn-task-cadence-readonly`에서 로컬 SQLite `fear-greed-http-checks` 최근 2일을 **readOnly/query_only** 집계하는 제어 [PR #3937](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3937) 소스·격리시험을 작성. 이 원장 시점 PR CI/병합/운영 조회는 미완료; Task나 DB/D1 변경 없음.
 
 **남은 필수 작업:** 제어 PR #3937 정확 HEAD CI → main 병합 → 기존 운영 PC 고유 A로 CNN HTTP 2xx/429/실패·15:04Z 이후 요청 수 및 PC 마지막 verified-check 확인. 실제 실패가 수집 호출/공급자/저장/게시 어디인지 분리하고 승인된 기존 수집기·게시기의 최소 수정/정규 적용 → 자연 60초 저장 이력 및 D1/API readback, PC 1440px·모바일 390px 1/5/10/30분 차트의 실제 마지막값 확인. **종단 운영 완료율 0/1 유지.**
+
+
+### 20-21. W06 자연 HTTP 성공과 원본 미변동·공개 체크 계약 분리 (2026-11-27 KST)
+
+- 운영 A [#3940](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3940) / [Run #45850203201](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45850203201) 실제 JSON/TXT **2/2**: `ZGMINI-PC-CNN-Minute` enabled/Running, PT1M, 최종 복구 Claim·완료 marker `true`, 원본 owner lock 없음. 2026-11-26T15:36:01Z Task 실행, LastTaskResult `2147946720`(`0x800710E0`). 실행 결과 코드는 거부/미시작 종류지만, Task 동작 중·`IgnoreNew`와 동일 시각이라는 사정만으로 실제 거부의 근본 원인(중첩, 조건, 계정 등)을 확정하지 않음.
+- 같은 PC 로컬 `fear-greed-http-checks`의 저장된 HTTP 결과 2일 19건, Task 활성화 후 17건; `VERIFIED/HTTP 200` 19건, 429·5xx·fetch 실패 0건. 마지막 검증 `2026-11-26T15:32:20.793Z`. 이는 단순 Task 이름·예약 등록이 아니라 실제 CNN HTTP 확인·SQLite input 확인 이력을 입증. 60초마다 모든 tick의 완전 성공을 증명하지 않음. A #3940 읽기 결과 완료로 CLOSED/completed.
+- 별도 A [#3943](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3943) / Run 45850991363: **PASS/CNN_SQLITE_D1_API_1D_1W_MATCHED**. 현 시점 로컬/D1 공개 원본 1건, PC 확인 1건, 마지막 PC 공개 checkedAt `2026-11-26T11:45:35.868Z`. 양쪽 공개 API 1D·1W HTTP 200, 일치. 이것만으로 최신 CNN 원본 변동 전파를 실증했다고 판정하지 않음.
+- 별도 운영 A [#3944](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3944) / Run 45851206811: 로컬 현재 CNN score `14.9967450271248`, 원본 observedAt `2026-11-26T01:59:59Z` 유지, 현재 local storedAt `2026-11-26T15:39:01.763Z`. 독립 HTTP 확인이 정상이어도 CNN 원본 관측시각/점수가 동일하면 새 **원본 관측점**을 만들지 않는 데이터 계약 적용.
+- 실제 본체 메인 [PR #1644](https://github.com/ansqhd5774-Choi/zgmini/pull/1644)는 `merged=true`, merge SHA `cabbc1b75f96deb356fccd99b554ba8ec8ab7989`로 확인. 이 소스 병합은 별도 운영 PC source 설치·Cloudflare 배포/실화면 결과를 자동 증명하지 않음.
+- 본체 `tools/cnn-verified-checks-r9/verified-checks-r9.mjs`는 기존 승인 계약상 **동일 점수·원본 observedAt 재확인 시 새 공개 체크 점을 건너뛰며, 변동 체크도 최소 15분 조건**을 유지한다. W06의 60초 HTTP 확인과 CNN 원본 관측·기존 R9 공개 체크 이력을 혼합하거나 동일값으로 가짜 분봉 생성 금지. 현재 D1/차트 신규점 미관측을 곧바로 게시 실패로 단정하지 않음.
+- 정상 60초 실제 HTTP 간격의 누락·편차 원인을 가려내기 위한 **기존 A 조회만** 확장한 제어 [PR #3946](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3946), 브랜치 `codex/w06-cnn-http-cadence-evidence-20261127`: 저장된 요청 `requestedAt`으로 최근 간격 최소/중앙/최대 및 90초 초과 구간 수를 출력. 이 원장 반영 시 소스 PR 제출 상태이고 CI·병합·실PC 신규 결과는 아직 확정하지 않음. Task/공급자/SQLite/D1/타 지표 주기 쓰기 없음.
+
+**남은 직접 작업:** 제어 PR #3946 정확 HEAD 시험/검증 후 병합·운영 A 단회 수집, 실제 60초 요청 간격/누락 판단 → 마지막 Task 거부 코드와 충돌/시간 조건을 가능한 기존 Runtime 증거로 구분, 근본 원인이 확인된 부분만 최소 수정·정규 적용. 실제 CNN 원본 점수 변동시 SQLite·D1·공개 1D/1W·홈페이지 1/5/10/30분 및 PC 1440px·모바일 390px 실화면 대조. **종단 운영 완료율 0/1 유지**.
