@@ -25,14 +25,14 @@ test("market trend windows delegate to the exact-boundary anchor helper",()=>{
   assert.match(windowSource,/return marketTrendWindowR1\(data\?\?\[\],days\)/);
 });
 
-test("market charts use numeric time axes so selected periods keep their true duration",()=>{
+test("market charts span their actual observations while summary periods retain filtered data",()=>{
   const charts=sourceBetween("function timeScaledTrend(","// Stage 12");
   assert.match(charts,/function timeScaledTrend\(data:DashboardPoint\[\],periodDays:number\)/);
-  assert.match(charts,/const start=end-Math\.max\(1,periodDays\)\*86400000/);
+  assert.match(charts,/const start=points\.length>1\?Math\.min\(\.\.\.points\.map\(point=>point\.ts\)\)/);
   assert.match(charts,/<XAxis dataKey="ts" type="number" domain=\{\[scaled\.start,scaled\.end\]\}/);
   assert.match(charts,/miniTrendGeometry\(data,periodDays,missingDates\)/);
   assert.match(src,/SummaryTrend data=\{overallTrend\}[^\n]*periodDays=\{periodDays\}/);
-  assert.match(src,/CardTrend data=\{trend\}[^\n]*periodDays=\{periodDays\}/);
+  assert.match(src,/CardTrend data=\{trend\}[^\n]*periodDays=\{domainChartDays\}/);
 });
 
 test("domain mini charts keep the fixed 0-100 score scale while time spacing is numeric",()=>{
@@ -55,7 +55,7 @@ test("composite main chart matches fear-greed x-axis labeling style",()=>{
   assert.match(scale,/periodDays<=90/);
   assert.match(scale,/periodDays<=180/);
   assert.match(scale,/String\(group\.year\)\.slice\(-2\).*12/);
-  assert.match(scale,/ReferenceDot x=\{latest\.ts\} y=\{latest\.value\}/);
+  assert.match(scale,/ReferenceDot x=\{latest\.ts\} y=\{latest\.value\} r=\{8\} fill="transparent"/,'mobile tap target is invisible');
 });
 
 test("domain charts remain compact while the composite has visible dates",()=>{
@@ -66,23 +66,26 @@ test("domain charts remain compact while the composite has visible dates",()=>{
   assert.match(summary,/<Tooltip/);
   assert.doesNotMatch(card,/<XAxis|<ResponsiveContainer|<LineChart/);
   assert.match(card,/geometry\.path/);
+  assert.doesNotMatch(card,/<circle/,'mini charts have no visible point markers');
+  assert.doesNotMatch(card,/geometry\.bridge/,'no dashed observational bridge overlay');
 });
 
-test('static mini charts preserve true date spacing, missing breaks and latest zero',()=>{
+test('static mini charts join only observed scores edge to edge without visual dot markers',()=>{
  const chart=miniTrendGeometry([{label:'2026-01-01',value:50},{label:'2026-01-03',value:0}],4,['2026-01-02']);
- assert.equal(chart.path,'M115.000,30.000M217.000,57.000');
- assert.equal(chart.bridge,'M115.000,30.000L217.000,57.000');
+ assert.equal(chart.path,'M13.000,30.000L217.000,57.000');
+ assert.equal(chart.bridge,chart.path);
  assert.deepEqual(chart.last,{x:217,y:57});
  assert.equal(miniTrendGeometry([],365).last,null);
+ assert.equal(miniTrendGeometry([{label:'2026-01-03',value:0}],365).path,'','never fabricate a line from one sample');
 });
 
 test("composite uses sentiment area styling without the removed captions",()=>{
   const summary=sourceBetween("function SummaryTrend(","// Stage 12");
   assert.match(summary,/<AreaChart/);
-  assert.match(summary,/<Area type="monotone" dataKey="value" stroke=\{color\} fill="none" strokeWidth=\{2\.1\} dot=\{false\}/);
+  assert.match(summary,/<Area type="linear" dataKey="value" stroke=\{color\} fill="none" strokeWidth=\{2\.1\} dot=\{false\} activeDot=\{false\}/);
   assert.match(summary,/connecting known points does not assert equal model versions/);
-  assert.doesNotMatch(summary,/<Area type="monotone" dataKey="(?:reconstructedValue|calculatedValue)"/);
-  assert.equal((summary.match(/<Area type="monotone"/g)??[]).length,1);
+  assert.doesNotMatch(summary,/<Area type="linear" dataKey="(?:reconstructedValue|calculatedValue)"/);
+  assert.equal((summary.match(/<Area type="linear"/g)??[]).length,1);
   assert.match(summary,/<linearGradient/);
   assert.doesNotMatch(src,/className="zg-r55-main-period"|<span>종합 점수<\/span>|<span>\/ 100<\/span>/);
   assert.match(src,/ArrowUpRight size=\{18\}/);
