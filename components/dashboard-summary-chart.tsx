@@ -118,7 +118,7 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays}:{dat
     <Tooltip
      isAnimationActive={false}
      cursor={{stroke:'var(--zg-chart-crosshair,#aab2bc)',strokeDasharray:'3 4'}}
-     content={({active,payload,label:tooltipLabel})=>{
+     content={({active,payload})=>{
       if(!active||!payload?.length)return null;
       const point=payload[0]?.payload as DashboardPoint&{ts:number;calculatedValue:number|null;reconstructedValue:number|null};
       const value=point?.value;
@@ -130,7 +130,7 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays}:{dat
     />
     {/* Draw one continuous visual path through saved, time-ordered points.
         The individual reconstructed/calculated provenance remains on each point
-        for the tooltip; connecting known points does not assert equal model versions
+        as source metadata; connecting known points does not assert equal model versions
         or create a missing observation between them. */}
     <Area type="monotone" dataKey="value" stroke={color} fill="none" strokeWidth={2.1} dot={false} activeDot={{r:3.5,strokeWidth:0,fill:color}} connectNulls={false} isAnimationActive={false}/>
     {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={4.4} fill={color} stroke="#fff7f7" strokeWidth={2}/>}
