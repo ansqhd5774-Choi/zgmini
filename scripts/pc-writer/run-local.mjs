@@ -22,7 +22,7 @@ import {buildSupplyR10} from './supply-r10.mjs';
 import {acceptsStoredUpdate} from '../../lib/market-score/live-refresh.mjs';
 import {publishCoreArrowState} from './score-arrow-publication.mjs';
 import {requiresRecessionR3DisplayRefresh} from './recession-r3-refresh.mjs';
-import {requiresInflationR2TrendDateRefresh} from './inflation-r2-trend-date-refresh.mjs';
+import {requiresInflationR2TrendDateRefresh,inflationR2AsOfTrendCompatibility} from './inflation-r2-trend-date-refresh.mjs';
 import {requiresLiquidityR2DisplayRefresh} from './liquidity-r2-refresh.mjs';
 import {requiresCreditR2DisplayRefresh} from './credit-r2-refresh.mjs';
 import {requiresDebtHistoryRefresh} from './debt-history-refresh.mjs';
@@ -276,9 +276,22 @@ try{
   // Repair only the legacy future-month-end evaluation label using saved PIT
   // inputs; unchanged checkpoints and unrelated projections remain untouched.
   const inflationR2DateRefresh=id==='inflation'&&requiresInflationR2TrendDateRefresh(envelope);
+  // Preserve the approved installed W01 compatibility path: a matching
+  // checkpoint needs only the stored trend-label repair, not recalculation.
+  if(inflationR2DateRefresh&&p?.status==='READY'&&p.sourceVersion===checkpoint.sourceVersion&&p.sourceStoredAt===checkpoint.sourceStoredAt){
+   const corrected=inflationR2AsOfTrendCompatibility(envelope.payload);
+   if(corrected!==envelope.payload){
+    await projectionWriter(core).write(id,corrected,Date.now(),checkpoint);
+    report.projections.push({id,status:'LOCAL_READY'});
+    return;
+   }
+  }
   if(p?.status!=='READY'||p.sourceVersion!==checkpoint.sourceVersion||p.sourceStoredAt!==checkpoint.sourceStoredAt||recessionR3Refresh||liquidityR2Refresh||creditR2Refresh||debtHistoryRefresh||inflationR2DateRefresh){
    const input=r10?.status==='READY'?null:await loadProjectionSource(id,scope,{now:checkpoint.sourceStoredAt});
-   const payload=r10?.status==='READY'?r10.payload:await builders[id](input);
+   const built=r10?.status==='READY'?r10.payload:await builders[id](input);
+   // A legacy installed builder can still return the old date label.
+   // Use the already approved, pure W01 repair; current builders are a no-op.
+   const payload=id==='inflation'?inflationR2AsOfTrendCompatibility(built):built;
    await projectionWriter(core).write(id,payload,Date.now(),checkpoint);
   }
   report.projections.push({id,status:'LOCAL_READY'});
