@@ -381,3 +381,12 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - 지난 §20-7의 더 짧은 중복 PR #3845는 이미 main #3843 10분 A timeout 계약과 효과가 같아 **unmerged CLOSED**, main 표준을 덮어쓰지 않음. #3846/#3847 A와 #3849 Sidecar B 소스 수정은 서로 다른 검증·변경 단계로 분리.
 
 **다음 직접 실행:** #3849 해당 HEAD CI 및 소스 회귀 통과 → 병합 → 정확 이전 R3 대상 해시·실제 Writer HEAD/config·Task/Wrapper·보호 resource를 근거로 신규 V2 manifest와 단회 B (과거 #3836 무재실행) → 실제 JSON/TXT/로컬 결과 회수. 성공 이후 기존 승인 실행 경로 60초 자연 수집·SQLite/D1/API/UI 검증. 사용자 범위 밖 Task/예약 변경 금지.
+
+### 20-9. Sidecar 7분 안전 관측 소스 통합 및 기존 승인 후속 B 명세
+
+- [#3849](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3849) exact HEAD `e6e2c632bf6c953575cd43e05334fc13645a3e15`: Sidecar isolated-source [Run 45810144448](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45810144448) **71/71 PASS**, 신규 305초 후 자연 유휴·420초 안전 STOP 시험 PASS. C996 [45810144492](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45810144492) SUCCESS, Secret [45810144470](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45810144470) SUCCESS; 3/3 PASS. main squash `cce11989c404b31bdbdc9b7450dadf349089da0b` 확인. 실제 PC B 파일 교체/Sidecar 복구 성공은 아님.
+- [신규 정확 V2 승인 PR #3855](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3855), HEAD `c2310e0e808cfaa0814fc8ed473b704f275102ec`, 승인 파일 `approvals/sidecar-b/w06-cnn-r3-installed-writer-v2-sevenmin-20261126.json`, 신규 고유 requestId `a7e845b2-39d3-4e52-8500-71c818b37d9f`. 이전 실패 #3836 승인 명세에서 **requestId만 변경**하고 원본 R3 before 583297b4…, candidate after eb3c43…, approved candidate source e8d226d…, 실제 로컬 Writer 393cee0d…, Task dd81987c…, Wrapper 9d5bc…, runCount=1, provider/SQLite/D1/Task effect 금지 유지. 이전 B raw `applied=false` 0개 및 별도 실제 A #3846/#3847 바이트/상태와 결합한 승인 전용 회귀시험 추가. 동일 #3836 replay 불가, #3855 CI 2개 대기 중; 아직 병합/신규 B 요청 없음.
+- 동시 독립 PR [#3850](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3850)은 이전 유휴 관측 중 Core/Sidecar 자원표본 계수를 안전 반환하는 진단 개선안으로, #3849와 `natural-idle-window.mjs` 중첩 수정. 기존 보고 검증의 `windowMs<=240000`은 420000으로 증가한 실제 창과 맞지 않음. #3850 댓글로 충돌 및 420000 허용/초과 거부 회귀 필요성을 통보; 다른 작업자 변경을 reset/rebase/강제 통합하지 않음. 현재 #3850은 별도 open 상태. 임의 Task 중지/허용범위 밖 maintenance 권한 추가 금지.
+- 진행률은 범위별 확정: Writer 운영 파일 9/9 적용 유지; Sidecar 소스·격리시험 71/71+CI 완료, V2 **승인 명세 신규 PR 검증 중**, Sidecar 실제 설치 미완료; 60초 자연 수집/SQLite→D1/API/UI 미실증. 이 소스 변경 자체로 운영 완료율을 승격하지 않음.
+
+**다음 행동:** #3855 exact CI 2/2 → 병합 후 exact manifest 원문 SHA256 고정 → 현재 자원 충돌 없는 정규 단회 B 요청(실제 CAS/lease/backup/readback) → B 결과 분리 → 승인된 60초 실행 연결·실데이터 공개 검증.
