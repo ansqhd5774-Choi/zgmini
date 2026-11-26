@@ -550,3 +550,14 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - 단일 파일 정규 B 승인 명세 준비: 제어 [PR #3965](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3965), 브랜치 `codex/w06-minute-bounded-onefile-install-20261127`, 정확 후보 `4a13569...`/원본 `393cee...` CAS, W06 기존 launcher SHA, Core Task XML SHA, 파일 1개 M 이외 보호. 명세 원문 SHA-256 `5381e98e1bba3cbf65b5fb4af117a63d60d9a4fe70242895011998a0c67858ca` (1515 bytes). 이 원장 시점 **CI/병합/실PC B 설치는 미확정**. Task·수집 데이터·D1 운영 변경은 0.
 
 **다음 필수 단계:** 제어 #3965 정확 HEAD CI PASS/승인 명세 검증 → 기존 정규 Writer B 경로에서 source/config 원본 CAS, 공유 lease, Core 원본 Task/실행자격을 만족할 때만 단회 PC 설치 및 JSON/TXT 2/2 직접 readback. `CORE_ACTIVE_WINDOW_DEFERRED` 등 안전 STOP 시 원본 보존·동일 요청 재실행 금지. 적용 이후 자연 PT1M HTTP 요청 간격/Skipped tick 재실측, SQLite 원본 변화와 D1/API/1·5·10·30분 PC 1440px·모바일390px 차트 확인. 원본점수 미변동 시 신규 변동점은 미관측 유지. **운영 종단 완료율 0/1**.
+
+
+### 20-24. W06 one-file B 실제 Core 경합 실패·원본 복원과 안전 재관측 PR (2026-11-27 KST)
+
+- W06 기존 1분 캐시 경계 수정 [본체 #1701](https://github.com/ansqhd5774-Choi/zgmini/pull/1701)의 source-only 병합은 완료. 운영 실증 A #3960은 설치 원본 `393cee0da46515ff056543173fcd1253a858b3d7`와 config/checkpoint 일치·파일 CAS 확인. 정확 원본 승인 [제어 PR #3965](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3965), C996/Secret **2/2 PASS** → 제어 main merge `0389427654568ee1369f50d1f530b0a4976b34a4`.
+- 단일 기존 허용 Writer B 단회 [Issue #3969](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3969), requestId `e25c0b36-2949-45f0-ab49-083afcd5980d`, [실제 운영 Run 45858466994](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45858466994). 승인 manifest 검사·후보 checkout PASS. 설치 자체는 **`WRITER_B_INSTALL_STOP_RESTORED / WRITER_B_CORE_PREPAUSE_RACE_DEFERRED`**. 원본 JSON/TXT 2/2, `recovery=ORIGINAL_VERIFIED`, `sourceSha=null`. 실제 소스 교체/출력 게시 **미완료**, 해당 requestId 재실행 금지.
+- 실제 중단 지점: 공통 `writer-b/windows-guards.mjs::inhibitCoreStarts`가 두 번 자연 유휴를 확인한 직후의 최종 `coreReadyForMaintenance` CAS에서, 다른 정상 Core 시작/잠금과 충돌할 경우 **Task disable 전에** 해당 오류를 반환. 강제 Core 종료·Core lock 삭제·보호 검사 완화 금지. 이 오류만으로 어떤 Core PID/실행 단계가 충돌했는지 단정하지 않음.
+- 공통 총괄 원장 제어 Issue #68에 정확 Run/코드/복구 결과 직접 보고 완료. 공통 B의 단회 트랜잭션 내부에 한해 원본 HEAD/config/Task/파일 재조회 성공 시 최대 1회 `POST_PREPARE` 기존 자연 유휴 관측 재시행(추가 90초 상한)하는 [제어 PR #3974](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3974), 전용 브랜치 `codex/w06-writer-b-prepause-race-safe-recheck-20261127` source/격리 회귀시험 작성. 이 원장 시점 PR CI/병합 및 운영 설치 **미확정**. 유지보수 reserved mode, Task/공급자/DB/D1 효과와 보호 조건은 변경하지 않음.
+- 기능 운영 종단 상태 **0/1**. W06 Task/PT1M 활성화·직전 HTTP 200 성공과 소스 수정의 GitHub 병합은 이미 확정됐지만 새 W06 source 25초 경계 대기 기능은 PC에 미적용. 자연 60초 HTTP 안정화/원본 변동/저장→D1→API→UI는 미입증.
+
+**다음 필수 작업:** 제어 PR #3974 정확 HEAD 기존 C996/Secret·관련 Writer B 회귀시험 회수 및 병합, 최신 PC 운영 preimage/동일 승인효과 다시 대조 후 새로운 고유 B 단회 설치. 기존 #3969 재실행 금지. 운영 B 설치 성공 시 실제 활성 source/config+원본 백업·rollback 영수증 → 자연 60초 GET 간격과 SQLite→D1/API/PC·모바일 차트 결과 검증.
