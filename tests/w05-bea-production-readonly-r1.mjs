@@ -105,9 +105,18 @@ try{
    const button=indicator.getByRole('button',{name:'비금융기업 단위이익 도움말'});
    if(viewport.width===390)await button.tap();
    else await button.click();
-   const tooltip=page.getByRole('tooltip');
-   await tooltip.waitFor({state:'visible',timeout:12000});
-   const help=await tooltip.innerText();
+   // Radix tooltip may unmount between two awaited Playwright queries.
+   // Read the visible text and target link in the same browser task; do not
+   // weaken the content/URL assertions or treat a missing tooltip as PASS.
+   const tooltipSnapshot=await page.waitForFunction(()=>{
+    const node=document.querySelector('[role="tooltip"]');
+    if(!node||!node.getClientRects().length)return false;
+    const text=node.textContent??'';
+    const href=Array.from(node.querySelectorAll('a[href]')).find(link=>
+     link.textContent?.includes('BEA 공식 API 원자료'))?.getAttribute('href')??null;
+    return text&&href?{text,href}:false;
+   },null,{timeout:12000});
+   const {text:help,href:sourceHref}=await tooltipSnapshot.jsonValue();
    // The hydrated UI uses its own GET; the independent API request can observe
    // a different immutable publication if D1 advances between the two reads.
    const sourceKst=earningsCostPublicationKst(new Date(uiApi.sourceStoredAt).toISOString());
@@ -117,8 +126,7 @@ try{
    assert(help.includes('D1 공개 게시: '+publishedKst),
     'D1 publish KST label must match hydrated UI response');
    assert(help.includes('관측 분기와는 다른 시각입니다.'),'distinct dates');
-   const link=tooltip.getByRole('link',{name:'BEA 공식 API 원자료'});
-   assert.equal(await link.getAttribute('href'),data.indicator.sourceURL);
+   assert.equal(sourceHref,data.indicator.sourceURL);
    await page.screenshot({
     path:'artifacts/w05-bea-production-readonly/earnings-'+viewport.width+'.png',
     fullPage:false
