@@ -158,6 +158,14 @@
 - **원인 판정:** S6가 실제로 19:14Z에 `pc-job.yml`을 중지했을 가능성은 직접 코드 경로+시간축으로 지지되지만, 현행 Workflow state와 승인된 S6 journal `pausedAt/resumedAt` 및 마지막 phase가 확보되지 않아 인과 입증은 아직 안 됨. job-level late-label gate 단정은 종전처럼 기각. 시스템 전체 장애/소스 오류라고 임의 판정하거나 워크플로를 수동 활성화하지 않음.
 - 실제 소유 기능 #4069 [코드/시각 교차검증 인계](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4069#issuecomment-7201950058), 공통 #4079 [연결 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4079#issuecomment-7201956126). 원본 requestId 중복발행 0; Writer B 추가 실행 0; Core·Controller 상태 변경 0. 필수 다음 단계: S6 독립 원장/워크플로 상태 안전 확인 → 해당 window에 #4078 포함 여부 확정 → 기존 승인된 backlog 수습 → R2 Core 유휴/CAS 검증 후 Writer B 설치·251일 backfill. 종단 5/8(62.5%) 유지.
 
+## 2026-11-27 R2 250거래일 미완성 D1 게시 차단 — 소스 실제 통합
+
+- **확인된 운영 전 소스 실패 조건:** 최신 `main`의 `scripts/pc-writer/us-breadth-paid-r2-cycle.mjs`는 `calculateStoredPaidUsBreadthR2`가 250개 미만의 연속 이력을 `prepared=true`로 반환하더라도 마지막 날짜가 최신이면 `savePrivatePaidUsBreadthR2` → D1 CAS까지 진행할 수 있었다. 승인 R2.1의 251원자료/250비교점 완성 후 게시 계약과 불일치하는 코드상 취약 조건이며, 실제 불완전 D1 게시가 발생했다는 주장은 아님.
+- 원본 R2 전용 브랜치의 일부 PC source는 최신 `main`과 달라 전체 PR 병합 시 승인된 기존 Core 변경 역행 위험이 있었다. 따라서 main `1bd000a5218cee551efa1c1935cebc40695bfc4e`에서 제한적 수정 브랜치 `codex/us-breadth-r2-full-year-publication-20261127`을 분리하고 **정확 2파일**만 변경함.
+- [본체 PR #1733](https://github.com/ansqhd5774-Choi/zgmini/pull/1733) HEAD `66fcf335937382099336ef08bcd3568248323cd4`에서 Node.js CI / CodeQL JavaScript TypeScript / Source Secret Scan **3/3 SUCCESS**, squash merge SHA **`d9e939afbafe3a64b5d2a8171bc2599d6c377f4a`**. `main` 코드 및 regression test readback 확인.
+- **수정 계약:** 운영 `publish=true`에서 `maxPoints=250`, `fullYearHistory=true`, `comparedSessions=250`, `publicHistoryPreview.length=250`, `privateSourceReceipts.length=251`을 비공개 저장·D1 쓰기 **전에** 확인. 부족하면 `US_PAID_R2_FULL_YEAR_HISTORY_REQUIRED` + `operationalWrites=0`로 중지. 미리보기·수집기·산식·권리/DB/예약/Controller 변경 0.
+- **중요한 완료 경계:** 소스 수정 및 main 병합은 완료. 새 source의 **운영 설치/실행·원자료 251일·250점 계산·private SHA·D1/API/UI 게시**는 미완료. 마지막 Writer B #4068 원본 복원, A #4078 workflow-run 미생성, S6 #4069 `UNKNOWN`, Process Inventory #4080 운영 job `queued` 유지. 새로운 B 설치 시 독립 원본 CAS 승인·lease·Core 자연 유휴를 다시 확인해야 함. 종단 진행률 5/8(62.5%) 유지.
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
