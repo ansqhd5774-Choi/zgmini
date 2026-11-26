@@ -1,6 +1,8 @@
 'use client';
 import {memo,useId,useState} from 'react';
 import {useDashboardMobileAxis} from '../hooks/use-dashboard-mobile-axis';
+import ChartExtremumPoint from './chart-extremum-point';
+import {chartExtrema} from '../lib/chart-extrema.mjs';
 import {splitCompositeChartProvenance} from '../lib/market-score/composite-chart-provenance-r4.mjs';
 import type {DashboardPoint} from '../app/dashboard-ui';
 import {Area,AreaChart,ReferenceArea,ResponsiveContainer,XAxis,YAxis,ReferenceDot,ReferenceLine,Tooltip} from 'recharts';
@@ -85,6 +87,8 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays}:{dat
  const scaled=timeScaledTrend(data,periodDays),latest=scaled.points.at(-1),axis=summaryAxisConfig(scaled.points,periodDays);
  const singlePointLabel=scaled.points.length===1&&latest?`${summaryTooltipDate(latest)} · ${latest.value.toFixed(1)}점`:null;
  const gradientId=`summary-${useId().replace(/:/g,'')}`;
+ // Restore real period-specific minimum/maximum values and dates; no plotted dot markers.
+ const extrema=chartExtrema(scaled.points.map(p=>({date:new Date(p.ts).toISOString().slice(0,10),value:p.value})));
  return <div className="zg-spark zg-r55-mini-chart zg-r55-summary-mini-chart" style={{height:120,minHeight:120,maxHeight:120,position:"relative"}} aria-label={`${label} 관측 추이${singlePointLabel?` · 단일 실제 관측점 ${singlePointLabel}`:""}`} title={singlePointLabel??undefined} data-w06-touch-tooltip-ready="true"
   onClick={event=>{if(latest&&touchedLatestAt===latest.ts)event.stopPropagation();}}
   onTouchStart={event=>{
@@ -130,6 +134,7 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays}:{dat
         as source metadata; connecting known points does not assert equal model versions
         or create a missing observation between them. */}
     <Area type="linear" dataKey="value" stroke={color} fill="none" strokeWidth={2.1} dot={false} activeDot={false} connectNulls={false} isAnimationActive={false}/>
+    {extrema.map(point=><ReferenceDot key={'extreme-'+point.kind} x={scaled.points[point.index].ts} y={point.value} ifOverflow="visible" shape={<ChartExtremumPoint point={point} peerIndex={extrema.find(p=>p.kind!==point.kind)?.index} samples={scaled.points.map(p=>({x:p.ts,value:p.value}))} count={scaled.points.length} color={color} showMarker={false}/>}/>)}
     {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={8} fill="transparent" stroke="transparent" strokeWidth={0}/>}
    </AreaChart>
   </ResponsiveContainer>

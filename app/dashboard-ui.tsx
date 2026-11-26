@@ -38,7 +38,7 @@ const CardTrend=memo(function CardTrend({data,label,color,periodDays,missingDate
  const lastText=lastPoint?` · 마지막 차트점 ${lastPoint.label}, ${Number(lastPoint.score.toFixed(2))}점`:'';
  const missingText=missingDates.length?' · 결측 월 점수는 생성하지 않고 실제 관측점끼리 연결':'';
  const chartLabel=`${label} 관측 추이${lastText}${missingText}`;
- const chartTitle=lastPoint?`최근 1년 저장 이력 · 마지막 차트점: ${lastPoint.label}, ${Number(lastPoint.score.toFixed(2))}점${missingDates.length?' · 결측 월 점수 미생성':''}`:undefined;
+ const chartTitle=lastPoint?`선택 기간 실제 저장 이력 · 마지막 차트점: ${lastPoint.label}, ${Number(lastPoint.score.toFixed(2))}점${missingDates.length?' · 결측 월 점수 미생성':''}`:undefined;
  return <div className="zg-spark zg-r55-mini-chart" aria-label={chartLabel} title={chartTitle}
   data-last-chart-point-at={lastPoint?.label} data-last-chart-point-score={lastPoint?.score}
   onPointerDown={event=>event.preventDefault()}>
@@ -234,9 +234,9 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
  const hasDatedHistory=overallTrend.length>1||
   [verifiedOverallHistory,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPointsR4(data,market?.updatedAt),365).length>1);
  // Independent diagnostic responses and arrow expiry do not change these histories.
- // Compact domain sparklines display the most recent year of real observations,
- // independent of the interactive composite chart's selected period.
- const domainChartDays=365;
+ // All 12 domain charts use the same selected period as the composite chart.
+ // Sparse monthly history remains sparse; never invent points to fill the window.
+ const domainChartDays=periodDays;
  const domainChartTrends=useMemo(()=>r55DomainIds.map(id=>{
   const domain=market?.domains?.find(d=>d.id===id);
   const daily=marketTrendWindowR1(normalizeMarketTrendPointsR4(domain?.trend,market?.updatedAt),domainChartDays,{includeBoundaryCarry:false});
@@ -244,7 +244,7 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
   // The global snapshot time is not the source event time for old monthly data.
   const current=score===null?null:verifiedPublishedDomainCurrentR4(domain,market?.updatedAt);
   return appendPublishedDomainCurrent(daily,current,domainChartDays);
- }),[market?.domains,market?.updatedAt]);
+ }),[market?.domains,market?.updatedAt,periodDays]);
  const riskHeading=<h2><a href="/risk-indicators/"><ShieldCheck aria-hidden="true"/>8대 위험 지표<ArrowUpRight aria-hidden="true"/></a></h2>;
 
  return <section id="market" className="zg-section zg-r55-market">
