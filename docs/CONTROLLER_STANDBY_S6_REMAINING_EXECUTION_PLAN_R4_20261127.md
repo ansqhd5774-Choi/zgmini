@@ -138,3 +138,12 @@
 - **완료 범위: S6-01 소스 진단 결함 수정·회귀 CI·main 통합**. 역사적 Watchdog B 승인 contract 파일 불변. Controller/Watchdog 현장 재설치 0, S6 효과·Supervisor 종료 0.
 - 후속 실운영 read-only A [#4052](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4052), 새로운 고유 requestId `7b91ae42-6732-4f18-a9c0-2bd94e53ab71`, `controller-standby-r5-runtime-readonly`를 **1회** 생성. 원본 #4043 재실행 없음. 아직 실제 결과 원장·JSON/TXT readback 확인 전이므로 운영 R5 통과·S6-02 heartbeat 해결 주장 금지.
 - **다음 필수:** #4052의 실제 Workflow Run 및 A `status/code`·JSON/TXT readback 회수 → Controller source pin PASS와 신선도/Standby 신원 판정 분리 → 필요하면 S6 승인 후보 고유 read-only A와 기존 관련 idle/lease 상태를 확인한다. 새로운 S6 B 승인·실효 전환은 별도 안전 preimage 이후 진행한다. S6 종단 0/1 유지.
+
+## 11. 2026-11-27 S6-02 실제 Watchdog 상태 원인 분리 시작
+
+- 현장 읽기 전용 A [#4052](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4052) / [Run #45877539338](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45877539338) 결과 JSON/TXT 2/2 재조회: `2026-11-26T18:40:13.638Z` `STATE_UNKNOWN/WATCHDOG_R5_HEALTH_STATUS_UNVERIFIED`. `installedMatch=true`, `controllerTargetMatch=true`, `naturalRestartObserved=true`, `statusFresh=true`, `watchdogOwnerVerified=true`. 최초 Controller pin mismatch #4043은 **운영 읽기 전용 진단 기준에서 해소**되었음.
+- #4052의 이후 `activeSupervisorVerified=false`, `standbyReadyCount=0`는 조기 반환 기본값으로, 실제 운영 Active/Standby 0개라는 증거가 아님. WATCHDOG_R5_HEALTH_STATUS_UNVERIFIED 시점의 소스 분기상 신선도는 TRUE이므로 `status.state !== 'HEALTHY'`가 관측된 범위의 직접 실패 조건. 실제 `status.state` 값은 결과 JSON에서 공개되지 않아 PAUSED/BLOCKED/STARTING 여부 미확인.
+- 기존 READ_ONLY A 완료 자체는 정상 영수증으로 종결, #4052 `closed/completed` 처리. S6 효과 원본 #3947은 유지.
+- 원인 구분용 최소 소스 변경: 제어 저장소 `codex/controller-s6-r5-health-state-20261127` [PR #4054](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4054), 작성 HEAD `490f458b077d364d57740521b2f407eb57225ce7`. R5 A의 이미 검증된 Watchdog owner/STATUS 신선도 이후에만 설치된 R5 Watchdog 코드에서 사용된 고정 상태 enum(`PAUSED`, `BLOCKED_LIVE_OR_UNKNOWN` 등)을 `watchdogHealthState`로 제한 반환. 알 수 없는/raw 값은 `UNRECOGNIZED`, stale은 `STALE_OR_UNVERIFIED`만 반환. 임의 PID·nonce·파일 경로·환경/비밀 미반환, Runner/Workflow/Controller/Watchdog 실제 쓰기 0.
+- 역사적 Watchdog/S6 B 승인, 45초/60초 heartbeat, owner/fencing/IPC/READY 안전 검사 불변. 같은 코드에서 상태 원인을 추측하여 기동/강제종료하지 않음.
+- **다음:** #4054 exact-head C996/Process Inventory/Secret 3/3 및 병합 검증 → 필요시 새 고유 R5 read-only A **1회**로 실제 상태 enum 판정 → 최초 실패 조건에 맞는 최소 수정 또는 현장 자연 복귀 readback. 종단 S6 0/1 보존.
