@@ -354,7 +354,7 @@ export function KoreanCountryCard({detail=false,showBreadth=false}:{detail?:bool
    formatTooltipLabel={value=>formatDate(value)}
    emptyLabel={loading?'확인 중':c?.status==='WARMUP'?'계산 준비 중':'공통 관측 이력 없음'}
   />}
-  breadth={showBreadth && !detail ? <MarketBreadthStrip market="korea"/> : undefined}
+  breadth={showBreadth && !detail ? <MarketBreadthStrip market="korea" displayOnly/> : undefined}
   footer={{
    href:"/fear-greed/korea/",
    label:"자세히",
