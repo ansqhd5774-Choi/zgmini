@@ -18,7 +18,8 @@ const validAccount=value=>typeof value==='string'&&value.length>=1&&
 
 export function buildW06MinuteTaskCandidate({sourceRoot,pcHome=HOME,nodeExe=NODE,
  systemRoot=String.raw`C:\Windows`,account,now}={}){
- if(!validRoot(sourceRoot)||pcHome.toLowerCase()!==HOME.toLowerCase()||
+ if(!validRoot(sourceRoot)||typeof pcHome!=='string'||
+  pcHome.toLowerCase()!==HOME.toLowerCase()||typeof nodeExe!=='string'||
   nodeExe.toLowerCase()!==NODE.toLowerCase()||
   !/^[A-Za-z]:\\Windows$/i.test(systemRoot)||!validAccount(account)||
   !(now instanceof Date)||!Number.isFinite(now.getTime()))STOP('W06_MINUTE_TASK_INPUT_SCOPE_STOP');
