@@ -643,3 +643,14 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - W06 신규 CNN `observedAt`의 실제 SQLite→D1→API→UI 종단 진행률 **0/1 유지**. 이번 내용은 X축 배치 결함 수정이며 실제 수집·Writer·DB·D1·API·예약 작업을 반복 실행하거나 재설치하지 않음.
 
 **다음 필수 단계:** 실운영 새 observedAt 전진이 확인될 때 실제 저장 점수·시각과 1W/1M/3M 화면 첫 점·마지막 점을 readback 대조. 신규 원본이 없으면 원장에 미검증으로 남기고 가짜 데이터로 채우지 않는다.
+
+### 20-32. W06 잔여계획 R2-01 — 신규 자연 관측 기준점 실제 읽기 완료 (2026-11-27 KST)
+
+- 계획 정본: [R2](W06_REMAINING_EXECUTION_PLAN_R2_20261127.md). R1의 수집·설치·UI 기완료 증거를 초기화하거나 기존 성공 A를 동일 requestId로 반복하지 않음.
+- **신규 실제 A 읽기:** [제어 Issue #4047](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4047), 고유 requestId `pc-82ef17f0-3b02-4a80-ae76-6fd802ad1c4a`, 등록된 `cnn-public-d1-api-readback-readonly` A/light 사용. 실제 [Run #45876724451](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45876724451) `completed/success`, `PASS/CNN_SQLITE_D1_API_1D_1W_MATCHED`. 승인된 운영 PC가 `2026-11-26T18:32:33.088Z` 시작하여 `18:32:41.252Z` 완료. 응답 원본 `results/45876724451-1-seat-1.json/.txt` **2/2 GitHub main 원문 직접 readback**. 실제 제어 실행 SHA `3c7d4cfefacf072fd35cb19706b352c64c5e4fd2`, 요청 기능 main source SHA `10be1e52138d5a59b9464e9b04f39d5bdcdcfb32`. 별도 labeled 이벤트 Run #45876724865는 `completed/skipped`이며 완료 증거로 사용하지 않음.
+- **SQLite/원본:** `date=2026-11-26`, `observedCount=1`, `checkedCount=1`, `lastObservedAt=2026-11-26T01:59:59.000Z`, `lastCheckedAt=2026-11-26T11:45:35.868Z`, 정밀 `score=14.9967450271248`. 이들은 수집 확인 시각과 공급처 관측시각이 다르므로 섞지 않는다.
+- **D1/API:** D1 `MATCHED` observed/check 각 1건, `observedStoredAt=1795689353820`, `checkedStoredAt=1795693535868`. 공개 API 1D·1W 모두 HTTP 200 `MATCHED`, observed/checks 각 true. `sameDayMatched=true`, `publicPeriodsMatched=true`. `providerCalls=0`, `d1Writes=0`, `operationalWrites=0`, `protectedStateUnchanged=true`. 단순 상태 코드를 넘어 원본 정밀값·시각·D1/API 일치까지 확인.
+- **이전 #3989 대비 실제 변화:** 지난 `2026-11-26T17:04:15Z` 영수증의 원본 `observedAt`·정밀 score·`checkedAt`와 #4047 값이 **동일**. 따라서 이번에 새 CNN 관측 또는 표시 점수 변화를 입증하지 못함. `SOURCE_UNCHANGED`이며, 휴장/공급처 발표 미변동과 저장 장애를 단정적으로 동일시하지 않는다. 별도 60초 HTTP 실측 [#3998](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3998) 성공은 기존 증거로 보존.
+- **화면 재사용:** 기존 사용자 PC 실제 차트 왼쪽 정렬 확인과 본체 [PR #1720](https://github.com/ansqhd5774-Choi/zgmini/pull/1720) 390/1440 브라우저 fixture PASS를 보존. 본체 해당 변경 `main@7b29bd8dad6635cfa20ed26e11ad890b9f205c3d` 이후 현재 R2 기준 `main@10be1e52138d5a59b9464e9b04f39d5bdcdcfb32`까지 9개 신규 커밋의 파일 diff에는 W06 차트·관측 API 변경 **0건**. 운영 신규값의 실제 모바일/PC hydration 및 무새로고침 전파는 여전히 **미관측**.
+- **R2 단계 판정:** `R2-01 DONE` (실행/결과회수). `R2-02 SOURCE_UNCHANGED` (새 표시 점수 변동 미관측). `R2-03/04`는 **기존 기준시각 값의 SQLite↔D1↔API 연결 검증 PASS**, *신규 원본에 대한 종단 검증은 대기*. `R2-05`는 기존 UI 검증 재사용, 신규 변동 실제 Production 자동 표시 미확인. `R2-06` 직접 확인된 신규 결함 없음. **전체 운영 종단 완료율 0/1 유지.**
+- **다음 필수 실행:** 기존 승인 자연 수집에서 **새 `observedAt`과 실제 표시 점수 변화가 입증됐을 때만**, 그 단일 원본의 SQLite→D1→API 1D/1W(필요 시 1M)→실제 1440px/390px·무새로고침 전파를 연결하여 첫 불일치 단계만 최소 수정. 동일한 원본/설치/진단 재실행 금지, 새 예약·가짜 점수 금지.
