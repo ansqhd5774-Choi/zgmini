@@ -231,9 +231,8 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
   const current=overallScore===null||!market?.updatedAt?null:{label:market.updatedAt,value:overallScore,boundToPublishedCard:true};
   return mergeCompositeObservedDisplay(daily,archived,periodDays,current);
  })();
- const hasDatedHistory=useMemo(()=>overallTrend.length>1||
-  [verifiedOverallHistory,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPointsR4(data,market?.updatedAt),365).length>1),
-  [verifiedOverallHistory,market?.domains,market?.updatedAt,overallTrend]);
+ const hasDatedHistory=overallTrend.length>1||
+  [verifiedOverallHistory,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPointsR4(data,market?.updatedAt),365).length>1);
  // Independent diagnostic responses and arrow expiry do not change these histories.
  // Compact domain sparklines display the most recent year of real observations,
  // independent of the interactive composite chart's selected period.
