@@ -53,6 +53,15 @@
 - 승인 원문: `approvals/writer-updates/us-breadth-paid-r2-backfill-fourfile-20261127.json`; 원문 SHA-256 `8a1cb2a8686ac7c6dba5c41ce8e9f5d5ec5eb3af67f47b5b9b75bb7cf081c97b`. **PR #4051 CI/병합/Owner B 설치 영수증 전에 실제 운영 설치 완료 주장 금지**.
 - 기존 설치 #4008/#4036 중복 실행 금지; 원자료 251개 복구/계산/게시 미완료, 종단 5/8 유지.
 
+## 2026-11-27 설치 #4055 의존성 사전검사 및 최소 분리 수정
+
+- [PR #4051](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4051) 정확 HEAD `4fbc7488c87712f77256da4c49fa0d3ff7681041` C996 + Secret Scan PASS, merge `eb0250f550749445e571c07d1f59b4bfe71edee1`.
+- 기존 Owner [Writer B #4055](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4055), request `77df231d-6619-46f0-8320-44ed546901c1`, [Run 45878033076](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45878033076): `WRITER_B_PREFLIGHT_STOP / WRITER_B_IMPORT_MISSING_DEPENDENCY_STOP`. JSON/TXT 2/2, 운영 source 변경 **없음**, `RECOVERY=NONE`, `NO_REEXECUTE`.
+- 정확한 missing dependency 진단 2개: 최신 공유 `scripts/pc-writer/local-cycle.mjs` → `asset-r10-sp500-refresh.mjs` 및 `earnings-risk-provisional-r23-hook.mjs`, 모두 `NOT_FOUND` (기존 설치된 Core 이력과 최신 main 전체파일 차이). 이 파일들은 미국 R2 범위 밖이므로 임의 추가 설치하지 않는다.
+- 수정 [PR #4057](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4057): **기존 PC Core 전체 교체를 피하고 2개 고유 anchor로만 insert-only R2 backfill**. 수정 지시 `approvals/writer-previews/us-breadth-paid-r2-archive-insert-20261127.json`. C996 PASS 확인, Secret Scan/병합은 별도 상태 확인 필요.
+- 새 A급 고정 `pc-writer-insert-preview`로 실제 PC after SHA를 확보하고, 새 정확 Writer B manifest+고유 Issue로 적용. #4055는 이미 소모되어 재실행 금지.
+- 원자료 251거래일·private/D1/API/UI 종단 5/8(62.5%) 유지. `WRITER_B_PREFLIGHT_STOP`은 실제 Source 설치 실패이지 공급자 데이터 결손 원인과 혼동 금지.
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
