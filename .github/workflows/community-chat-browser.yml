@@ -162,12 +162,13 @@ jobs:
         run: node tests/risk-detail-side-rails-browser-r44.mjs
       - name: Validate scenarios at 390, 768, 1440 and 1920 px with mocked stored snapshots
         run: node tests/outbreak-scenarios-browser-r51.mjs
+      # Keep W06 evidence independent from unrelated deferred-dashboard failures.
+      - name: Verify CNN actual PC-check 1D curve and stale-session exclusion at 390/1440
+        run: node tests/cnn-current-session-verified-checks-browser-r12.mjs
       - name: Validate deferred dashboard modules and account settings with isolated fixtures
         run: node tests/dashboard-deferred-ui-browser-r1.mjs
       - name: Validate route-specific education styles and mobile layout
         run: node tests/fear-greed-education-browser-r4.mjs
-      - name: Verify CNN actual PC-check 1D curve and stale-session exclusion at 390/1440
-        run: node tests/cnn-current-session-verified-checks-browser-r12.mjs
       # Lab results are observations, not a new unapproved Lighthouse score gate.
       - name: Measure isolated Chromium performance laboratory
         run: node scripts/ci-performance-lab.mjs
