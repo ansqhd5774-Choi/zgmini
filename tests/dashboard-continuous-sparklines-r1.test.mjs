@@ -39,10 +39,11 @@ test('the mini curve joins only verified existing points and cannot invent a lin
  assert.match(geometry.path,/L217\.000,57\.000$/,'real zero is the last point');
 });
 
-test('dashboard cards use a year of genuine observations independent of composite selection',()=>{
- assert.match(ui,/const domainChartDays=365/);
+test('dashboard cards use the selected composite period and real observations',()=>{
+ assert.match(ui,/const domainChartDays=periodDays/);
  assert.match(ui,/domain\?\.trend,market\?\.updatedAt\),domainChartDays,\{includeBoundaryCarry:false\}/);
  assert.match(ui,/CardTrend data=\{trend\}[^\n]*periodDays=\{domainChartDays\}/);
+ assert.match(ui,/\[market\?\.domains,market\?\.updatedAt,periodDays\]/,'all 12 trends recompute on period selection');
  assert.doesNotMatch(ui,/<circle /,'mini charts do not draw marker dots');
  assert.doesNotMatch(ui,/geometry\.bridge/,'no dashed missing-data bridge overlay');
  assert.match(ui,/이력 부족/,'do not invent a line for a single observation');
@@ -50,7 +51,10 @@ test('dashboard cards use a year of genuine observations independent of composit
 test('composite and secondary plots are straight segments with no visible point markers',()=>{
  assert.match(summary,/const start=points\.length>1\?Math\.min\(\.\.\.points\.map\(point=>point\.ts\)\)/);
  assert.match(summary,/<Area type="linear" dataKey="value"[^>]*dot=\{false\} activeDot=\{false\}/);
- assert.doesNotMatch(summary,/ChartExtremumPoint|extrema\.map/);
+ assert.match(summary,/chartExtrema\(scaled\.points\.map/,'minimum and maximum are computed only from visible observations');
+ assert.match(summary,/showMarker=\{false\}/,'restore extrema value labels without point markers');
+ const extremaView=read('components/chart-extremum-point.tsx');
+ assert.match(extremaView,/showMarker&&<circle/,'extrema circles can be disabled without altering other chart consumers');
  assert.match(summary,/ReferenceDot x=\{latest\.ts\} y=\{latest\.value\} r=\{8\} fill="transparent" stroke="transparent"/,'invisible mobile touch target is retained');
  assert.doesNotMatch(extra,/type="monotone" dataKey="value"/);
  assert.doesNotMatch(extra,/activeDot=\{\{r:5\}\}/);
