@@ -10,6 +10,13 @@
 - 2026-11-27 최신 `main`과 이 브랜치는 **71커밋 ahead / 1203커밋 behind**, `diverged`. 옛 브랜치 전체 병합·main 직접 덮어쓰기 금지. 현행 `main`에는 유료 공통 저장기 `marketparquet-paid-store.mjs`가 있고 미국 전체 R2 공개 Reader는 과거 제거 상태. 2026-11-26 UI PR #1695에 별도 복구된 표시 쉘이 있으며 운영 사이트에서 '연결 예정' 확인.
 - **다음 필수 기능 단계:** 현재 `main`의 유료 `readPaidDaily/readPaidProjection` 검증 결과에 이 private R2 adapter를 **필요한 파일만 선별 통합** → 연속 실제 거래일로 최신/250회 이력 계산 및 로컬 SHA readback → 별도 유료 R2 key에 정확한 CAS/readback 게시 → GET percent-only/current+history → 기복구 UI 연결 및 PC/모바일 실측. 기존 무료 R1/IEX keys, 한국 지수, S&P500 B1-R5, 테마·섹터, 예약·원자료를 변경하지 않는다. 기능 완료 전 예약 자연 갱신 검증 금지.
 
+## 2026-11-27 추가 구현 — 기존 유료 stock_daily 저장자료 R2 계산 경로
+
+- 신규 source-only `scripts/pc-writer/us-breadth-paid-r2-stored.mjs` — 커밋 `e14cc67d8b3a80abed221de54428e22222bef9cb`. 기존 `marketparquet-paid-store.mjs`의 `paidDates/readPaidDaily/readPaidProjection` 계약을 런타임 호출 시 재사용하며, 유료 원자료 **수집/DB/원자료 쓰기 없음**. 현재 브랜치는 유료 공통 저장기가 추가되기 이전 시점이므로 기본 저장기 모듈은 여기에는 아직 없으며, 최신 main에 **정확한 소스만 선별 통합한 후** 실제 디스크 경로를 사용해야 한다. 격리 시험에는 동일 인터페이스를 주입한다.
+- 최대 실제 원자료 **251개 연속 거래일 → 250개 비교**만 후보. 날짜 인덱스 중복·역순·비연속 거래일·전체 선행 파일 누락·선택 날짜 부재는 실패 반환. 각각의 원본/정규화 SHA 재조회는 기존 유료 저장기 함수가 책임지고, 반환은 본일 비율 점·민감하지 않은 검증 메타와 비공개 원본 SHA로 분리한다. **공급자 최신 제공일은 이번 로컬 목록만으로 검증하지 않음**; `latestStoredDate`와 명시적으로 구분.
+- 회귀시험 `tests/us-breadth-paid-r2-stored.test.mjs` — 커밋 `6fb0657fdff0aeeb41c057a1ee9556b97a423167`. 실제 GitHub 계산기/adapter/저장자료 모듈을 격리 V8에 불러온 fixture 실행 **7/7 통과**: 두 실제 연속 거래일의 비율 계산, 전체 거래일 결손, 무료 영수증, 저장 readback 실패, 요청 날짜 부재, 날짜 인덱스 역순, 비정상 비교 길이. 이는 **Node CI나 실제 운영 PC/원자료 검산 PASS가 아님**.
+- **남은 기능 실행:** 현재 main의 정확한 유료 원자료 저장 계약과 선택적 소스 통합 및 Node/CI 검증 → 승인된 Writer에서 로컬 자료 250회 계산·불변 파일 저장/재조회 → 공개 권리 범위를 지킨 R2 최종 파생값 D1 CAS/readback → percent-only API → 기존 UI 연결 및 Production 렌더링. 새 공급처·쿼터·예약·산식, 무료 샘플 게시, 과거 점수 임의 개정·가짜 이력 금지. **자연 예약 자동 갱신 검증은 기능 작업 완료 이후에만**.
+
 Date: 2026-11-02 KST. Repository: `ansqhd5774-Choi/zgmini`.
 Development branch: `codex/us-breadth-public-r1-20261031`.
 
