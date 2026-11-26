@@ -94,8 +94,8 @@ try{
    for(const market of ['usa','korea']){
     const slot=page.locator(`.${market}-target-card .fg-breadth-slot`);
     await slot.getByText('연결 예정',{exact:true}).waitFor({state:'visible'});
-    assert.equal(await slot.locator('.stat').count(),3,market+' rising, unchanged, falling labels');
-    assert.equal(await slot.locator('.stat .percent').filter({hasText:'—'}).count(),3,market+' missing is never zero');
+    assert.equal(await slot.locator('[aria-label$=": 미제공"]').count(),3,market+' rising, unchanged, falling unavailable labels');
+    assert.equal(await slot.getByText('—',{exact:true}).count(),3,market+' missing is never zero');
    }
    const historyToggle=page.getByRole('button',{name:'미국 등락 지수 확정 이력 펼치기'});
    await historyToggle.click();
