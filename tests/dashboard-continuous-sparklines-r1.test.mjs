@@ -22,8 +22,8 @@ test('four monthly domains preserve genuine historical values while spanning the
   const plotted=marketTrendWindowR1(stored,365,{includeBoundaryCarry:false});
   const result=miniTrendGeometry(plotted,365);
   assert.equal(plotted.length,3,item.id+' historic data not discarded by 30-day filter');
-  assert.match(result.path,/^M13\.000,/);
-  assert.match(result.path,/L217\.000,[0-9.]+$/);
+  assert.match(result.path,/^M6\.000,/);
+  assert.match(result.path,/L214\.000,[0-9.]+$/);
   assert.equal((result.path.match(/M/g)??[]).length,1,item.id+' no disconnected segments');
   assert.equal((result.path.match(/L/g)??[]).length,plotted.length-1,item.id+' each two actual points joined by a line segment');
   assert.deepEqual(stored,before,item.id+' no source changes');
@@ -33,10 +33,10 @@ test('four monthly domains preserve genuine historical values while spanning the
 test('the mini curve joins only verified existing points and cannot invent a line from one point',()=>{
  const points=[{label:'2026-09-01',value:37.27},{label:'2026-11-01',value:40},{label:'2026-11-26',value:0}];
  const geometry=miniTrendGeometry(points,365,['2026-10-01']);
- assert.ok(geometry.path.startsWith('M13.000,'));
+ assert.ok(geometry.path.startsWith('M6.000,'));
  assert.equal((geometry.path.match(/L/g)??[]).length,2);
  assert.equal((geometry.path.match(/M/g)??[]).length,1);
- assert.match(geometry.path,/L217\.000,57\.000$/,'real zero is the last point');
+ assert.match(geometry.path,/L214\.000,57\.000$/,'real zero is the last point');
 });
 
 test('dashboard cards use the selected composite period and real observations',()=>{
@@ -60,4 +60,18 @@ test('composite and secondary plots are straight segments with no visible point 
  assert.doesNotMatch(extra,/activeDot=\{\{r:5\}\}/);
  assert.equal((extra.match(/activeDot=\{false\}/g)??[]).length,4,'all secondary plots suppress point markers even on hover');
  assert.match(extra,/<Line type="linear" dataKey="value"[^>]*dot=\{false\}/);
+});
+
+// 220-unit SVG plot has equal physical insets even when its CSS width is 141px.
+test('141px domain sparkline keeps symmetric left/right whitespace',()=>{
+ const measuredWidth=141;
+ const geometry=miniTrendGeometry([{label:'2026-11-01',value:50},{label:'2026-11-26',value:54}],365);
+ const x1=Number(geometry.path.match(/^M([0-9.]+),/)?.[1]);
+ const x2=geometry.last?.x;
+ assert.equal(x1,6);
+ assert.equal(x2,214);
+ const left=x1*measuredWidth/220;
+ const right=(220-x2)*measuredWidth/220;
+ assert.ok(Math.abs(left-right)<0.001);
+ assert.match(ui,/x1=\{6\} x2=\{214\}/,'reference guide lines align with plot endpoints');
 });

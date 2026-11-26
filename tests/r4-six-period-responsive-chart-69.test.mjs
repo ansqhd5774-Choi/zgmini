@@ -184,7 +184,7 @@ test('#69 geometry and UI preserve actual zero as bottom of fixed 0-100 scale, n
   {label:'2026-11-15',value:50},
   {label:'2026-11-16',value:0},
  ],1);
- assert.ok(geometry.path.includes('L217.000,57.000'));
+ assert.ok(geometry.path.includes('L214.000,57.000'));
  assert.equal(geometry.last.y,57);
  const ui=readFileSync(new URL('../app/dashboard-ui.tsx',import.meta.url),'utf8');
  assert.match(ui,/overallScore===null\?'—'/);
