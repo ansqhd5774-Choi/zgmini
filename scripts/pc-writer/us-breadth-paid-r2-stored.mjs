@@ -4,7 +4,8 @@
  * On current main it reuses marketparquet-paid-store.mjs exactly; the optional
  * store injection only supplies the same methods for isolated fixture tests.
  */
-import {preparePaidFullMarketR2} from '../../lib/market-breadth/us-marketparquet-paid-r2-adapter.mjs';
+import {preparePaidFullMarketR2,US_PAID_R2_SOURCE,US_PAID_R2_PRICE_MODE}
+  from '../../lib/market-breadth/us-marketparquet-paid-r2-adapter.mjs';
 import {previousMarketSession} from '../../lib/market-score/breadth-b1-r6-marketparquet-provider.mjs';
 
 const day=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)
@@ -90,6 +91,7 @@ export async function calculateStoredPaidUsBreadthR2(base,{
   }
   return {
     status:'PAID_R2_STORED_PRIVATE_CALCULATED',prepared:true,
+    source:US_PAID_R2_SOURCE,priceMode:US_PAID_R2_PRICE_MODE,
     publicationAllowed:false,providerCalls:0,d1Writes:0,operationalWrites:0,
     firstDate:points[0].date,lastDate:points.at(-1).date,
     comparedSessions:points.length,fullYearHistory:points.length===250,
