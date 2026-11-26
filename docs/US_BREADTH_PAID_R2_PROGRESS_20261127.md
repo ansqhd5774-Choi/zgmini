@@ -129,6 +129,13 @@
 - 원본 [#4078](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4078#issuecomment-7201690228)에 대조 근거와 위험 조건을 직접 연결; 공통 [#4079](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4079#issuecomment-7201670813)에도 기록. #4078에 별도 진단자가 조건부 가설을 제시했으나 정확한 원인 입증 전 워크플로 조건·승인 변수·Core 보호장치 변경 금지. 중복 request/새 Writer B 없음.
 - 연관 [#4080](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4080) 별도 PC inventory Run `45883221676` 마지막 관측 queued, JSON/TXT 아직 없음. 실제 Core 유휴 확인 전 설치 승인 범위 확대 금지. 종단 5/8(62.5%) 동일.
 
+## 2026-11-27 CI Native A 대체 경로 적용범위 확인 (신규 운영 진전 아님)
+
+- 제어 [PR #4050](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4050)은 merge `df779b037b5847574385104a9015c8eb33714edf`로 transport/영수증 모듈 소스만 병합. `native-dispatch.mjs`는 별도 설치·승인된 receiver policy, source CI 증거, 중복방지 영수증을 필수로 하고 dispatch 접수 자체를 PC 실행 성공으로 취급하지 않는다.
+- 후속 제어 [PR #4081](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4081) 병합 소스 `ci-approval/native-a-execute.mjs`의 A 실제 실행 허용 operation은 `runner-smoke`와 `core-status`뿐이다. 현재 #4078 요청의 `shared-resource-release-readonly`는 그 경로로 실행 **불가**. 새 receiver workflow 또한 `ZGMINI_CI_NATIVE_A_ENABLED` 및 별도 실제 실행 `ZGMINI_CI_NATIVE_A_EXEC_ENABLED`와 로컬 설치 scope 검증이 필요하며 변수 활성/설치·실제 실행 완료는 미입증.
+- 운영 [#4080](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4080) Run `45883221676` job `operating-process-snapshot` 재조회는 여전히 `queued`; Core 자연 유휴·원본 CAS 신규 증거가 아니다.
+- 따라서 #4050/#4081을 #4078 해결로 간주하지 않는다. #4078 기존 requestId 보존, Run/JSON/TXT 0건, 공통 [#4079](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4079) 접수 복구 미해결. 기본 `issues.opened` workflow-run 누락의 정확한 원인·접수 복구와 실제 A 영수증 후에만 설치 준비; 기존 B #4068 재요청·Core 강제 종료·lock 삭제 금지. 종단 5/8(62.5%) 유지.
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
