@@ -38,8 +38,11 @@ test("market charts span their actual observations while summary periods retain 
 
 test("domain mini charts keep the fixed 0-100 score scale while time spacing is numeric",()=>{
   const card=sourceBetween("function CardTrend(","function summaryDateParts(");
-  assert.match(card,/\[0,25,50,75,100\]\.map/);
+  assert.match(card,/\[0,50,100\]\.map/,'12 domain charts retain only 0, 50 and 100 guides');
   assert.match(card,/viewBox="0 0 220 60"/);
+  assert.doesNotMatch(card,/\[0,25,50,75,100\]/,'no 25 or 75 guide lines in compact domain charts');
+  assert.match(summarySource,/<ReferenceLine y=\{25\}/,'composite chart guides remain untouched');
+  assert.match(summarySource,/<ReferenceLine y=\{75\}/,'composite chart guides remain untouched');
   const chart=miniTrendGeometry([{label:'2026-01-01',value:0},{label:'2026-01-03',value:100}],2);
   assert.equal(chart.path,'M6.000,57.000L214.000,3.000');
   assert.deepEqual(chart.last,{x:214,y:3});
