@@ -42,7 +42,7 @@ test("domain mini charts keep the fixed 0-100 score scale while time spacing is 
   assert.match(card,/viewBox="0 0 220 60"/);
   const chart=miniTrendGeometry([{label:'2026-01-01',value:0},{label:'2026-01-03',value:100}],2);
   assert.equal(chart.path,'M6.000,57.000L214.000,3.000');
-  assert.deepEqual(chart.last,{x:217,y:3});
+  assert.deepEqual(chart.last,{x:214,y:3});
   assert.match(card,/>100<\/span><span>50<\/span><span>0<\/span>/);
 });
 
@@ -75,7 +75,7 @@ test('static mini charts join only observed scores edge to edge without visual d
  const chart=miniTrendGeometry([{label:'2026-01-01',value:50},{label:'2026-01-03',value:0}],4,['2026-01-02']);
  assert.equal(chart.path,'M6.000,30.000L214.000,57.000');
  assert.equal(chart.bridge,chart.path);
- assert.deepEqual(chart.last,{x:217,y:57});
+ assert.deepEqual(chart.last,{x:214,y:57});
  assert.equal(miniTrendGeometry([],365).last,null);
  assert.equal(miniTrendGeometry([{label:'2026-01-03',value:0}],365).path,'','never fabricate a line from one sample');
 });
