@@ -24,8 +24,8 @@ export async function GET(request:Request){
  const byTime=new Map<string,{observedAt:string,score:number}>();
  let validDays=0;
  for(const row of rows.results??[]){
-  let entry:any;
-  try{entry=JSON.parse(row.body)}catch{return Response.json({status:'STORED_ARCHIVE_INVALID'},{status:503});}
+  let entry:{version?:unknown;date?:unknown;observations?:unknown}|null;
+  try{entry=JSON.parse(row.body) as typeof entry;}catch{return Response.json({status:'STORED_ARCHIVE_INVALID'},{status:503});}
   if(entry?.version!==CNN_OBSERVED_ARCHIVE_VERSION||entry.date!==row.snapshot_key||!Array.isArray(entry.observations))
    return Response.json({status:'STORED_ARCHIVE_INVALID'},{status:503});
   validDays++;
@@ -45,8 +45,8 @@ export async function GET(request:Request){
    .bind(start,end).all<{snapshot_key:string,body:string}>();
  const checkedByTime=new Map<string,{checkedAt:string,sourceObservedAt:string,score:number}>();
  for(const row of checkedRows.results??[]){
-  let entry:any;
-  try{entry=JSON.parse(row.body)}catch{return Response.json({status:'STORED_CHECKS_INVALID'},{status:503});}
+  let entry:{version?:unknown;date?:unknown;checks?:unknown}|null;
+  try{entry=JSON.parse(row.body) as typeof entry;}catch{return Response.json({status:'STORED_CHECKS_INVALID'},{status:503});}
   if(entry?.version!=='CNN_VERIFIED_CHECKS_R1'||entry.date!==row.snapshot_key||!Array.isArray(entry.checks))
    return Response.json({status:'STORED_CHECKS_INVALID'},{status:503});
   for(const item of entry.checks){
