@@ -94,3 +94,42 @@ test('nonconforming stored index and invalid window are rejected',async()=>{
     store,maxPoints:251,
   })).status,'PAID_R2_STORED_ARGUMENTS_INVALID');
 });
+
+test('251 genuine stored sessions produce exactly 250 source-paired candidates',async()=>{
+  const {previousMarketSession}=await import(
+    '../lib/market-score/breadth-b1-r6-marketparquet-provider.mjs'
+  );
+  const backwards=['2026-11-20'];
+  while(backwards.length<251){
+    const prior=previousMarketSession(backwards.at(-1));
+    assert.ok(prior,'calendar should provide a previous session');
+    backwards.push(prior);
+  }
+  const listed=backwards.reverse();
+  const receipts=Object.fromEntries(listed.map((d,i)=>[d,{
+    schema:'ZGMINI_MP_PAID_FILE_V1',plan:'full',assetType:'stock_daily',
+    date:d,sha256:(i+1).toString(16).padStart(64,'0'),
+    projectionSha256:(i+1000).toString(16).padStart(64,'0'),
+    bytes:2048,rows:2,priceMode:'SPLIT_ADJUSTED_DAILY_CLOSE',
+    rawPublished:false,
+  }]));
+  const store={
+    paidDates:()=>listed,
+    readPaidDaily:(base,type,d)=>({receipt:receipts[d]}),
+    readPaidProjection:(base,type,d)=>[
+      row(d,'UP',100+listed.indexOf(d)),
+      row(d,'FLAT',50),
+    ],
+  };
+  const result=await calculateStoredPaidUsBreadthR2('/fixture',{
+    store,maxPoints:250,
+  });
+  assert.equal(result.status,'PAID_R2_STORED_PRIVATE_CALCULATED');
+  assert.equal(result.comparedSessions,250);
+  assert.equal(result.fullYearHistory,true);
+  assert.equal(result.publicHistoryPreview.length,250);
+  assert.equal(result.privateSourceReceipts.length,251);
+  assert.equal(result.publicationAllowed,false);
+  assert.equal(result.providerCalls,0);
+  assert.equal(result.d1Writes,0);
+});
