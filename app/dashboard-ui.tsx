@@ -168,8 +168,8 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
   try{storage=window.sessionStorage}catch{/* Storage may be disabled. */}
   const cached=storage?readMarketSnapshot(storage,Date.now()):null;
   let accepted=cached?.body??null;
-  if(cached){setMarket(cached.body);setMarketLoading(false)}
-  else setMarketLoading(true);
+  // Restore cached UI asynchronously; avoid synchronous state changes inside effects.
+  queueMicrotask(()=>{if(!alive)return;if(cached){setMarket(cached.body);setMarketLoading(false)}else setMarketLoading(true)});
   const publish=(body:MarketScoreResponse)=>{
    if(!acceptsStoredUpdate(accepted,body))return false;
    accepted=body;startTransition(()=>{setMarket(body);setMarketError(null);});
@@ -230,7 +230,7 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
   // may not yet contain its calculation time. Never synthesize earlier points.
   const current=overallScore===null||!market?.updatedAt?null:{label:market.updatedAt,value:overallScore,boundToPublishedCard:true};
   return mergeCompositeObservedDisplay(daily,archived,periodDays,current);
- },[verifiedOverallHistory,market?.updatedAt,overallScore,compositeArchive,periodDays,retiredCompositeHistory]);
+ },[verifiedOverallHistory,market,overallScore,compositeArchive,periodDays,retiredCompositeHistory]);
  const hasDatedHistory=useMemo(()=>overallTrend.length>1||
   [verifiedOverallHistory,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPointsR4(data,market?.updatedAt),365).length>1),
   [verifiedOverallHistory,market?.domains,market?.updatedAt,overallTrend]);
