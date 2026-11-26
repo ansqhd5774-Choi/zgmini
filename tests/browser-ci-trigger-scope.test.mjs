@@ -9,7 +9,7 @@ test('every browser script invoked by the existing Playwright workflow triggers 
  assert.match(trigger,/pull_request:\s*\n\s+branches: \[main\]/);
  const scripts=[...workflow.matchAll(/run:\s+node\s+(tests\/[^\s'"\\]+\.mjs)/g)]
    .map(match=>match[1]);
- assert.equal(scripts.length,18,'existing browser E2E step list changed; review CI trigger coverage');
+ assert.equal(scripts.length,19,'existing browser E2E step list changed; review CI trigger coverage');
  for(const script of scripts){
   assert.ok(trigger.includes("      - '"+script+"'"),'missing browser PR path: '+script);
  }
