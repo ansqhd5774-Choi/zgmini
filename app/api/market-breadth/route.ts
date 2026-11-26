@@ -4,7 +4,7 @@ import {US_BREADTH_CURRENT_KEY,validUsBreadthRecord} from '../../../lib/market-b
 import {US_BREADTH_PROVISIONAL_KEY,currentUsIexProvisional,usIexPublicPercentOnly} from '../../../lib/market-breadth/us-provisional-r1.mjs';
 import {US_SIP_PREMARKET_KEY,usSipPremarketSlot,currentUsSipPremarket,
   usSipPublicPercentOnly} from '../../../lib/market-breadth/us-premarket-sip-r1.mjs';
-import {readFullMarketPublicCurrent} from '../../../lib/market-breadth/us-marketparquet-confirmed-reader-r2.mjs';
+import {readPaidUsR2Feed} from '../../../worker/us-breadth-paid-r2-public.mjs';
 
 // The candidate binds the public snapshot table as DB_CORE; legacy Worker
 // deployments may still provide DB. Never route public snapshots to DB_HISTORY.
@@ -16,15 +16,12 @@ function coreSnapshotsDb():D1Database|undefined{
 // R2 full-market read alias is independent. The default confirmed endpoint
 // retains the existing R1 503-stock history until R2 operational approval.
 async function fullMarketConfirmedR2GET(){
-  const db=coreSnapshotsDb();
-  if(!db)return Response.json({reason:'FULL_MARKET_CORE_DATABASE_UNAVAILABLE'},
-    {status:503,headers:{'Cache-Control':'no-store'}});
-  const result=await readFullMarketPublicCurrent(async (key:string)=>
-    db.prepare('SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?')
-      .bind(key).first() as Promise<{body:string;stored_at:number}|null>);
-  if('reason' in result)return Response.json({reason:result.reason},
-    {status:503,headers:{'Cache-Control':'no-store'}});
-  return Response.json(result.body,{headers:result.headers});
+  // A purchased full-market R2 snapshot is a separate paid-only D1 row.
+  // No legacy free R2/R1 or IEX fallback, even if that old data still exists.
+  const result=await readPaidUsR2Feed(coreSnapshotsDb(),{mode:'current'});
+  if(!result.ok)return Response.json({status:'UNAVAILABLE',reason:result.reason},
+    {status:result.httpStatus,headers:{'Cache-Control':'no-store'}});
+  return Response.json(result.body,{status:200,headers:result.headers});
 }
 
 async function provisionalGET(){
