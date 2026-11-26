@@ -68,7 +68,7 @@
 | 2026-11-24 | #1521 상태·최신 댓글 조회, 진행 원장 생성 | 문서 작업 완료; 단계 1 진행 중 | 본 원장 및 위 증거 링크 |
 
 2026-11-24 문서 작업 시 신규 기능 변경 없음. 2026-11-26 전용 브랜치에 최신 main 통합 및 UI 소스/회귀 코드 변경. main 기능 병합·운영 설치·예약·DB/D1 쓰기·배포 없음.
-2026-11-26 #3741/#3742/#3766 및 #3786 A 결과 회수 완료. 후속 #3792 (90f59760-5dd7-4df4-95c5-af0139db34a2), #3793 (f4c41825-2985-4f8f-8ec3-b77e01947f24) 실제 결과 2/2 각각 회수·completed closed. 현재 신규 미회수 요청 없음. 동일 요청 중복 금지. §14 참조.
+2026-11-26 #3741/#3742/#3766 및 #3786 A 결과 회수 완료. 후속 #3792 (90f59760-5dd7-4df4-95c5-af0139db34a2), #3793 (f4c41825-2985-4f8f-8ec3-b77e01947f24) 실제 결과 2/2 각각 회수·completed closed. 현재 신규 미회수 요청 #3795 (ca22b9ae-ff44-4a52-8cb8-b8484d87c401). 동일 요청 중복 금지. §14 참조.
 
 ## 6. 다음 직접 실행
 
@@ -206,3 +206,11 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - projected after SHA256 68ee9e869c8bac308731c3748a67c644f37700dd038bc841ec06584fd064b2a9, spec approvals/writer-previews/w06-cnn-minute-quota-compat-20261126.json. 기존 Writer 삽입 계약 사용. 격리 TEMP의 정확한 historical original fixture SHA 검증 및 다중 인스턴스/세 Node 프로세스 테스트 2개 추가. CI 회수 시 상태: C996 R5 Readonly Source Checks completed/success (#45793228574); ZGMINI PC Secret Scan in_progress (#45793228636). 실제 PC Preview/B 설치 전.
 - #3745 후속 공통 진단 댓글 7180530119는 INSUFFICIENT_EVIDENCE, PC 변경 0으로 종료. 기존 실제 Sidecar preimage/source 불일치의 해결 증거가 아님. W06 독립 quota/Writer 작업 지속.
 - 다음: #3794 exact CI 회수 및 시험 실패 수정 → 실제 quota 삽입 afterSHA 확인 → 운영 의존성/모듈 소비자와 최종 B manifest 확정 → Sidecar 정규 복구와 승인된 실제 설치 → 60초 HTTP/저장/D1/API/화면. 기존 entrypoint Preview 3/3 PASS 및 원본 8/8 해시 재사용. 이번 운영 쓰기/공급자 호출 0. 신규 A/B 실행 없음.
+
+
+### 15-1. 격리 Windows CI 및 명세 main 병합
+
+- C996 [Run 45793228574](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45793228574) 실제 job 139817249925 로그 직접 회수. SCOPED groups=writer extraTests=1, 기존 Writer 135/135 PASS 및 신규 exact legacy quota 테스트 2/2 PASS. 3 Node 프로세스 CNN 30/FRED 15 reservation 보존, BLS 등 기존 policy 변경 없음(시험은 FRED hard/CNN soft 동작 검증), 임시 원장 사용. zizmor 별도 5/5 PASS. 운영 손실 실측이나 실제 설치 증거 아님.
+- Secret [Run 45793228636](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45793228636) SUCCESS. #3794 CI 2/2 PASS, squash main b86c4132398bbb1e6f81e6bde47cb936289735ff.
+- 신규 1회 읽기 전용 [#3795](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3795), requestId ca22b9ae-ff44-4a52-8cb8-b8484d87c401, spec SHA256 890eb8f937f636756bac3217b3053dc271c18a9004f104a06ba3c66f2bd0cf6d. 예상 after 68ee9e869c8bac308731c3748a67c644f37700dd038bc841ec06584fd064b2a9. 실제 결과 미회수. 기존 세 entrypoint PASS 유지; 이 요청은 quota만 별도 대상이며 기존 요청 반복 아님.
+- 다음 직접 실행: #3795 JSON/TXT 회수 → 최종 Writer 8개 파일/실제 의존성·동시 실행 보호 계약 확인 → 정확 B manifest 및 Sidecar 정규 복구 → 승인 범위 운영 적용/실제 60초 종단 검증. 운영 파일 설치·예약·DB/D1·공급자 호출 없음.
