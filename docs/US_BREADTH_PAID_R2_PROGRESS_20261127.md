@@ -44,6 +44,15 @@
 - **GitHub 병합과 원격 조회 범위 등록은 PC 신규 Writer B 설치·원자료 수집·계산·게시가 아니다.** 5/8 유지.
 - 완료한 #4008 Writer B, #4036 Controller B는 중복 실행하지 않는다.
 
+## 2026-11-27 선택적 Writer B 원본 CAS 및 승인 명세
+
+- 제어 [PR #4046](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4046): C996/Secret Scan PASS, merge `aed6469b65940d59813daf290106c819cd2737ba`.
+- A급 단회 [Issue #4049](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4049) / [Run 45877180462](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45877180462): `PASS/WRITER_APPROVED_PREIMAGE_READONLY`, 실PC 4파일 `M/PRESENT/trackedDirty=false`; HEAD=config.source=checkpoint `c8ed53a3991212dd1778742cda8a86ac133e0796`, 보호 상태 불변. `runtimeSourceVerified=false`: PC 정적 Checkout + 사전조회 증거이며 실행 중 프로세스 연결 증명은 아님.
+- 원본 SHA-256: `local-cycle.mjs=f69fb3cc1a6fdb85af34054f016b10dcbc7b1dcbf76e51c32b617121fe22d05d`, `marketparquet-paid-store.mjs=4ba0a487868a2a028f080c06bdde75f41ffef5c8018541a0a43e7bd15acdfc23`, `us-breadth-paid-r2-cycle.mjs=c350c8cf90bc989abef62c6764fa4c864d8fb64d72a8c3712ab06785ef1c1a88`, `us-breadth-paid-r2-stored.mjs=21209308df4d2704faa38481d3ee81e2a25ab255a0c9d8ec5049b460c357097e`.
+- [B manifest PR #4051](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4051): 4파일만 M, candidate source `10be1e52138d5a59b9464e9b04f39d5bdcdcfb32`, 실제 before/after SHA 고정, Task XML/launcher CAS, 단회 360초 Core 신규 시작 억제·자연 종료, 설치 중 provider/DB/D1/Task 변경 0.
+- 승인 원문: `approvals/writer-updates/us-breadth-paid-r2-backfill-fourfile-20261127.json`; 원문 SHA-256 `8a1cb2a8686ac7c6dba5c41ce8e9f5d5ec5eb3af67f47b5b9b75bb7cf081c97b`. **PR #4051 CI/병합/Owner B 설치 영수증 전에 실제 운영 설치 완료 주장 금지**.
+- 기존 설치 #4008/#4036 중복 실행 금지; 원자료 251개 복구/계산/게시 미완료, 종단 5/8 유지.
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
