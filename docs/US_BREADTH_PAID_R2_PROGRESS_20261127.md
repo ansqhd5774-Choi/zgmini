@@ -30,6 +30,13 @@
 
 **최소 221개 날짜가 모자라 보인다는 계산은 30개가 목표 251일에 모두 포함된다는 가정에 한정한 하한이며, 실제 결손 수는 정확한 목표 거래일과 intersection 검증 후 확정한다.**
 
+## 2026-11-27 개발 추가 진행 (운영 완료 아님)
+
+- 최신 main 기준 별도 최소 작업 브랜치 `codex/us-breadth-r2-paid-backfill-20261127` 생성. 원 담당 브랜치는 main 대비 과거 기능 이력 변경이 커 그대로 병합하지 않음.
+- [소스 PR #1722](https://github.com/ansqhd5774-Choi/zgmini/pull/1722): 변경 4파일만, 기존 공통 `collectPaidDaily`에 선택형 유료 `stock_daily` 수집을 추가하면서 기본 stock+ETF 동작 보존; 새 읽기 전용 `planStoredPaidUsR2Backfill`은 최신 완료일 기준 목표 날짜/결손 영수증 수만 계산.
+- 관련 회귀시험: stock-only vs ETF 경계, invalid type 사전 차단, 목표 거래일 결손/잘못된 인덱스, provider/D1/파일 쓰기 0.
+- 운영 소스 `c8ed53a...`는 변경되지 않았고, 이 PR만으로 공급자 수집·backfill·비공개 산출·D1/API 게시를 완료했다고 간주하지 않음. CI exact HEAD 확인 후 정규 승인/선택적 Writer B 적용 단계가 남음.
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
