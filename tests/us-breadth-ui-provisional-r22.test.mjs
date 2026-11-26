@@ -29,11 +29,14 @@ test('live US data is guarded by exact phase, source, NY date, percentages and s
  assert.match(code,/activeProvisional\.unobservedPct\.toFixed\(1\)/);
 });
 
-test('same card height, Korean counts and mobile colors are preserved without fake R2 expand',()=>{
+test('same card height and colors survive display-only expansion without fake history or legacy fetch',()=>{
  assert.match(style,/height: 41px;/);
  assert.match(code,/normalizedCounts\(counts\)/);
  assert.match(code,/market === "usa" \? "미제공" : "연결 예정"/);
- assert.doesNotMatch(code,/aria-expanded|styles\.toggleArrow|setExpanded\(/);
+ assert.match(code,/const hasHistoryToggle = displayOnly && market === "usa"/);
+ assert.match(code,/history \? <MarketBreadthHistoryChart history=\{history\} period=\{period\}\/>/);
+ assert.match(code,/확정 이력 데이터 연결 예정/);
+ assert.doesNotMatch(code,/fetch\(['"]\/api\/market-breadth\/history/,'display-only history must never request retired endpoint');
  assert.match(style,/\.stats\[data-provisional="true"\]/);
  assert.match(style,/\.up, \.rising \{ color: var\(--zg-positive\); \}/);
  assert.match(style,/\.down, \.falling \{ color: var\(--zg-danger\); \}/);
