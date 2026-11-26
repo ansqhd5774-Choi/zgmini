@@ -80,7 +80,7 @@ test('removed regional feeds have no polling or public routes while CNN and Kore
  const breadth=readFileSync(new URL('../app/market-breadth-strip.tsx',import.meta.url),'utf8');
  assert.match(breadth,/market !== "usa" \|\| displayOnly/,'display-only UI must skip retired free-feed polling');
  assert.match(readFileSync(new URL('../app/fear-greed/usa/cnn-panel.tsx',import.meta.url),'utf8'),/market="usa" period=\{selectedPeriod\} displayOnly/);
- assert.match(readFileSync(new URL('../app/korea-composite-view.tsx',import.meta.url),'utf8'),/market="korea" displayOnly/);
+ assert.match(readFileSync(new URL('../app/korea-composite-view.tsx',import.meta.url),'utf8'),/market="korea"\/>/);
  assert.doesNotMatch(ui,/ftse-fear-greed|nikkei-fear-greed|kospi-fear-greed|kospi-history/);
 });
 
