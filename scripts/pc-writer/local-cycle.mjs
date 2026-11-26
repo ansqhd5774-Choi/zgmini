@@ -69,9 +69,11 @@ const coreProofFileSha256=Object.fromEntries([
 try{
  const lane=process.argv.includes('--korea')?'korea':'core';
  // Paid sector/theme inputs share one stored archive; no extra Task or publisher.
+ let paidCurrentResult=null;
  if(lane==='core'){
   try{const {collectPaidCurrent}=await import('./marketparquet-paid-store.mjs');
-   console.log('MARKETPARQUET_PAID '+JSON.stringify(await collectPaidCurrent(base)));
+   paidCurrentResult=await collectPaidCurrent(base);
+   console.log('MARKETPARQUET_PAID '+JSON.stringify(paidCurrentResult));
   }catch(e){console.warn('MARKETPARQUET_PAID '+JSON.stringify({status:'FAILED_PREVIOUS_INPUTS_PRESERVED',code:/^MP_PAID_[A-Z0-9_]+$/.test(e.code??'')?e.code:'MP_PAID_COLLECTION_FAILED'}));}
  }
  // Independent registered-theme lane; a source wait never blocks Core or sector updates.
@@ -85,6 +87,52 @@ try{
   try{const {runPaidBreadthCycle}=await import('./breadth-paid-cycle.mjs');
    console.log('BREADTH_PAID '+JSON.stringify(await runPaidBreadthCycle(base,{publish:process.argv.includes('--publish')})));
   }catch(e){const report={status:'FAILED_PREVIOUS_DATA_PRESERVED',code:/^BREADTH_PAID_[A-Z0-9_]+$/.test(e.code??'')?e.code:'BREADTH_PAID_RUNTIME_FAILED',d1Outcome:'CHECK_STORED_RESULT_BEFORE_RETRY'};console.warn('BREADTH_PAID '+JSON.stringify(report));try{save(path.join(base,'marketparquet-paid','breadth-last-run.json'),report);}catch{}}
+ }
+ // Reuse the existing Core publish lane and shared paid daily collector.
+ // Current stock/ETF refresh has priority; stock-only historical backfill uses
+ // at most the remaining portion of the same 40-file Core-cycle budget.
+ if(lane==='core'&&process.argv.includes('--publish')){
+  try{
+   const {checkApprovedPcRuntime}=await import('./us-breadth-paid-r2-cycle.mjs');
+   const approved=checkApprovedPcRuntime(base);
+   if(!approved.ok){
+    console.log('US_BREADTH_PAID_R2_BACKFILL '+JSON.stringify({status:approved.status,downloaded:0}));
+   }else if(!paidCurrentResult||!['STORED_READBACK_VERIFIED','RUNNING','PARTIAL'].includes(paidCurrentResult.status)
+       ||!Number.isSafeInteger(paidCurrentResult.downloaded)
+       ||paidCurrentResult.downloaded<0||paidCurrentResult.downloaded>40){
+    console.log('US_BREADTH_PAID_R2_BACKFILL '+JSON.stringify({status:'PAID_R2_CURRENT_COLLECTION_UNVERIFIED',downloaded:0}));
+   }else{
+    const budget=40-paidCurrentResult.downloaded;
+    const {planStoredPaidUsR2Backfill}=await import('./us-breadth-paid-r2-stored.mjs');
+    const plan=await planStoredPaidUsR2Backfill(base);
+    if(plan.prepared!==true){
+     console.log('US_BREADTH_PAID_R2_BACKFILL '+JSON.stringify({status:plan.status,downloaded:0}));
+    }else if(plan.missingCount===0||budget===0){
+     console.log('US_BREADTH_PAID_R2_BACKFILL '+JSON.stringify({
+      status:plan.missingCount===0?plan.status:'PAID_R2_BACKFILL_BUDGET_EXHAUSTED',
+      missingCount:plan.missingCount,downloaded:0,
+     }));
+    }else{
+     const {collectPaidDaily}=await import('./marketparquet-paid-store.mjs');
+     const collection=await collectPaidDaily(base,{
+      start:plan.firstDate,end:plan.lastDate,maxFiles:budget,
+      assetTypes:['stock_daily'],
+     });
+     console.log('US_BREADTH_PAID_R2_BACKFILL '+JSON.stringify({
+      status:collection.status,firstDate:plan.firstDate,lastDate:plan.lastDate,
+      missingBefore:plan.missingCount,downloaded:collection.downloaded,
+      remaining:collection.remaining,providerCalls:collection.apiRequests,
+      d1Writes:collection.d1Writes,
+     }));
+    }
+   }
+  }catch(e){
+   console.warn('US_BREADTH_PAID_R2_BACKFILL '+JSON.stringify({
+    status:'FAILED_PREVIOUS_INPUTS_PRESERVED',
+    code:/^(?:US_PAID_R2_|PAID_R2_|MP_PAID_)[A-Z0-9_]+$/.test(String(e?.code??''))
+     ?e.code:'PAID_R2_BACKFILL_FAILED',
+   }));
+  }
  }
  // Paid US full-market R2 reuses the same Core lock and previously
  // authenticated stock_daily storage. No new Task, provider GET or legacy R1.

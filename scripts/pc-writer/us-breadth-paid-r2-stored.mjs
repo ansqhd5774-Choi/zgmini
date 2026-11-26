@@ -7,6 +7,7 @@
 import {preparePaidFullMarketR2,US_PAID_R2_SOURCE,US_PAID_R2_PRICE_MODE}
   from '../../lib/market-breadth/us-marketparquet-paid-r2-adapter.mjs';
 import {previousMarketSession} from '../../lib/market-score/breadth-b1-r6-marketparquet-provider.mjs';
+import {latestCompletedSession} from '../../lib/market-score/breadth-b1-r3-calendar.mjs';
 
 const day=s=>typeof s==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(s)
   &&Number.isFinite(Date.parse(s+'T00:00:00Z'))
@@ -15,6 +16,56 @@ const halt=(code,details={})=>({
   status:code,prepared:false,publicationAllowed:false,providerCalls:0,
   d1Writes:0,operationalWrites:0,...details,
 });
+
+/**
+ * Read-only R2 Archive target planner. The approved common paid collector owns
+ * network and file effects; this does not download or save anything.
+ * Actual raw/projection SHA verification remains a separate readback step.
+ */
+export async function planStoredPaidUsR2Backfill(base,{
+  store=null,maxPoints=250,now=Date.now(),
+}={}){
+  if(typeof base!=='string'||!base||!Number.isSafeInteger(maxPoints)
+      ||maxPoints<1||maxPoints>250||!Number.isSafeInteger(now)||now<=0)
+    return halt('PAID_R2_BACKFILL_ARGUMENTS_INVALID');
+  const lastDate=latestCompletedSession(new Date(now));
+  if(!day(lastDate))return halt('PAID_R2_BACKFILL_LATEST_SESSION_UNKNOWN');
+  const required=[lastDate];
+  for(let i=0;i<maxPoints;i++){
+    const prev=previousMarketSession(required[0]);
+    if(!day(prev)||prev>=required[0])
+      return halt('PAID_R2_BACKFILL_CALENDAR_INVALID');
+    required.unshift(prev);
+  }
+  let reader=store;
+  if(!reader){
+    try{reader=await import('./marketparquet-paid-store.mjs');}
+    catch{return halt('PAID_R2_APPROVED_STORE_UNAVAILABLE');}
+  }
+  if(typeof reader?.paidDates!=='function')
+    return halt('PAID_R2_STORE_CONTRACT_UNAVAILABLE');
+  let listed;
+  try{listed=reader.paidDates(base,'stock_daily');}
+  catch{return halt('PAID_R2_STORED_INDEX_UNAVAILABLE');}
+  if(!Array.isArray(listed)||listed.some(d=>!day(d))
+      ||new Set(listed).size!==listed.length
+      ||listed.some((d,i)=>i>0&&d<=listed[i-1]))
+    return halt('PAID_R2_STORED_DATES_INVALID');
+  const present=new Set(listed);
+  const missingDates=required.filter(d=>!present.has(d));
+  return {
+    status:missingDates.length?'PAID_R2_BACKFILL_REQUIRED':
+      'PAID_R2_TARGET_DATES_PRESENT_UNVERIFIED',
+    prepared:true,publicationAllowed:false,
+    firstDate:required[0],lastDate,
+    requiredSessions:required.length,
+    storedTargetDates:required.length-missingDates.length,
+    missingCount:missingDates.length,
+    missingDates,fullYearTarget:maxPoints===250,
+    rawShaVerified:false,projectionShaVerified:false,
+    providerCalls:0,d1Writes:0,operationalWrites:0,
+  };
+}
 
 /**
  * The user-approved 250-comparison one-year display requires at most 251

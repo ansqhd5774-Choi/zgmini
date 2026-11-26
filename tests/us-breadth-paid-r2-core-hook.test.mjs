@@ -18,6 +18,24 @@ test('US paid R2 uses existing Core publish lane after paid storage, no new Task
   assert.doesNotMatch(core,/--us-breadth-paid-r2/);
   assert.match(core,/CHECK_STORED_RESULT_BEFORE_RETRY/);
 });
+test('R2 Archive backfill reuses current Core paid collector budget and only publish lane',()=>{
+  assert.match(core,/let paidCurrentResult=null/);
+  assert.match(core,/paidCurrentResult=await collectPaidCurrent\(base\)/);
+  assert.match(core,/planStoredPaidUsR2Backfill\(base\)/);
+  assert.match(core,/checkApprovedPcRuntime\(base\)/);
+  assert.match(core,/const budget=40-paidCurrentResult\.downloaded/);
+  assert.match(core,/assetTypes:\['stock_daily'\]/);
+  assert.match(core,/maxFiles:budget/);
+  assert.match(core,/PAID_R2_BACKFILL_BUDGET_EXHAUSTED/);
+  assert.match(core,/PAID_R2_CURRENT_COLLECTION_UNVERIFIED/);
+  const historical=core.indexOf('planStoredPaidUsR2Backfill(base)');
+  const current=core.indexOf('paidCurrentResult=await collectPaidCurrent(base)');
+  const derived=core.indexOf('runPaidUsR2StoredCycle(base,{publish:true})');
+  assert.ok(current>=0&&current<historical&&historical<derived);
+  assert.equal(core.includes('--us-breadth-paid-r2-backfill'),false);
+  assert.match(cycle,/export function checkApprovedPcRuntime\(base\)/);
+});
+
 test('unapproved Writer is checked before 250-day source scan',()=>{
   assert.match(cycle,/const installed=publish\?checkApprovedPcRuntime\(base\):null/);
   assert.match(cycle,/if\(publish&&!installed\.ok\)return stop\(installed\.status\)/);

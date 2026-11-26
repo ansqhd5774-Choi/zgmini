@@ -64,8 +64,14 @@ export async function readPaidEtfSeries(base,{symbols,dates,readParquet}={}){
  }
  return {series,proofs,source:'MARKETPARQUET_PAID',priceMode:'SPLIT_ADJUSTED_DAILY_CLOSE',confirmedRaw1hCompatible:false};
 }
-export async function collectPaidDaily(base,{start,end,maxFiles=40,fetchImpl=fetch,readParquet,apiKey,sleep=ms=>new Promise(r=>setTimeout(r,ms))}={}){
+export async function collectPaidDaily(base,{start,end,maxFiles=40,assetTypes=TYPES,fetchImpl=fetch,readParquet,apiKey,sleep=ms=>new Promise(r=>setTimeout(r,ms))}={}){
  need(day(start)&&(!end||day(end))&&(!end||start<=end)&&Number.isSafeInteger(maxFiles)&&maxFiles>0,'MP_PAID_RANGE_INVALID');
+ // Preserve the existing stock+ETF default; an approved R2 archive chunk may
+ // restrict collection to stock_daily without downloading unrelated ETF history.
+ need(Array.isArray(assetTypes)&&assetTypes.length>0
+  &&new Set(assetTypes).size===assetTypes.length
+  &&assetTypes.every(type=>TYPES.includes(type)),'MP_PAID_ASSET_TYPES_INVALID');
+ const selectedTypes=assetTypes.slice();
  const home=paidRoot(base);fs.mkdirSync(home,{recursive:true});const lock=path.join(home,'collection.lock');
  try{fs.writeFileSync(lock,JSON.stringify({pid:process.pid,at:new Date().toISOString()}),{flag:'wx'});}catch(e){if(e.code==='EEXIST')return {status:'RUNNING_OTHER_CONSUMER',downloaded:0};throw e;}
  const report={status:'STARTED',downloaded:0,reused:0,remaining:0,apiRequests:0,fileRequests:0,dates:{},themeDatesExposed:0,themeExposureErrors:[],d1Writes:0};
@@ -74,7 +80,7 @@ export async function collectPaidDaily(base,{start,end,maxFiles=40,fetchImpl=fet
   const get=async route=>{await sleep(110);report.apiRequests++;const r=await fetchImpl(ORIGIN+route,{headers:{Authorization:'Bearer '+key},redirect:'error',signal:AbortSignal.timeout(30000)});need(r.ok,'MP_PAID_API_HTTP_'+r.status);return r.json();};
   const assets=await get('/api/v1/assets');need(assets.plan==='full','MP_PAID_FULL_PLAN_REQUIRED');
   const parse=readParquet??await paidDecoder();
-  for(const type of TYPES){
+  for(const type of selectedTypes){
    const asset=assets.assets?.find(x=>x.asset_type===type);need(asset?.access==='full'&&day(asset.latest_date),'MP_PAID_ASSET_UNAVAILABLE');
    const through=end&&end<asset.latest_date?end:asset.latest_date;report.dates[type]={latestPublished:asset.latest_date,requestedThrough:through};
    // REST manifest limit is 400 files. Calendar chunks of 365 cannot exceed it.
