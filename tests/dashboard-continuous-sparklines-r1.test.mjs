@@ -73,5 +73,5 @@ test('141px domain sparkline keeps symmetric left/right whitespace',()=>{
  const left=x1*measuredWidth/220;
  const right=(220-x2)*measuredWidth/220;
  assert.ok(Math.abs(left-right)<0.001);
- assert.match(ui,/x1=\\{6\\} x2=\\{214\\}/,'reference guide lines align with plot endpoints');
+ assert.match(ui,/x1=\{6\} x2=\{214\}/,'reference guide lines align with plot endpoints');
 });
