@@ -32,6 +32,7 @@ test("market charts span their actual observations while summary periods retain 
   assert.match(charts,/<XAxis dataKey="ts" type="number" domain=\{\[scaled\.start,scaled\.end\]\}/);
   assert.match(charts,/miniTrendGeometry\(data,periodDays,missingDates\)/);
   assert.match(src,/SummaryTrend data=\{overallTrend\}[^\n]*periodDays=\{periodDays\}/);
+  assert.match(src,/const domainChartDays=periodDays/);
   assert.match(src,/CardTrend data=\{trend\}[^\n]*periodDays=\{domainChartDays\}/);
 });
 
