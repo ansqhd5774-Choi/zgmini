@@ -96,15 +96,16 @@ test('stale verified checks cannot override current source sidecar observations'
  });
  assert.deepEqual(actual.map(p=>p.score),[30,31]);
 });
-test('actual CNN card 1D path invokes current session guard; other periods are unchanged',()=>{
+test('actual CNN card 1D shows genuine source minutes; other periods unchanged',()=>{
  const panel=readFileSync(new URL('../app/fear-greed/usa/cnn-panel.tsx',import.meta.url),'utf8');
  assert.match(panel,/currentCnnSessionHistory\(payload\?\.observedAt/);
- assert.match(panel,/checkedPoints:archived\?\.period===selectedPeriod/);
+ assert.match(panel,/checkedPoints:\[\],/);
  assert.match(panel,/intradayObservations:observedSidecarReady/);
  assert.match(panel,/if \(selectedPeriod === "6M" \|\| selectedPeriod === "1Y"\)/);
  assert.match(panel,/periodBaseline[\s\S]*?selectedPeriod === "1D"\) return history.length>=2/);
- assert.match(panel,/currentSessionPcDates\.has\(value\)/);
- assert.match(panel,/cnnObservedTimes=new Set\(\[\.\.\.allIntraday\.map\(point=>point\.date\),\.\.\.archived\.points\.map\(point=>point\.observedAt\)\]\)/);
+ assert.match(panel,/const minuteMode=selectedPeriod==='1D';/);
+ assert.match(panel,/minutes:1,now/);
+ assert.doesNotMatch(panel,/currentSessionPcDates|CNN 원본 관측 간격|data-cnn-minute/);
 });
 
 
