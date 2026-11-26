@@ -42,14 +42,14 @@ test('browser-specific layout and pageerror counts remain observations, not inve
  assert.equal(report.observations[0].javascriptErrors,2);
  assert.equal(report.baselineStatus,'NOT_APPROVED');
 });
-test('existing CI installs Firefox and WebKit without replacing 18 Chromium checks',()=>{
+test('existing CI installs Firefox and WebKit without replacing 19 Chromium checks',()=>{
  const y=readFileSync(new URL('../.github/workflows/community-chat-browser.yml',import.meta.url),'utf8');
  assert.match(y,/npx playwright install --with-deps chromium firefox webkit/);
  assert.match(y,/node scripts\/ci-cross-browser-core\.mjs/);
  assert.match(y,/artifacts\/ci-cross-browser\//);
  assert.match(y,/'scripts\/ci-cross-browser-core\.mjs'/);
  assert.match(y,/'tests\/ci-cross-browser-core\.test\.mjs'/);
- assert.equal([...y.matchAll(/run:\s+node\s+(tests\/[^\s'"]+\.mjs)/g)].length,18);
+ assert.equal([...y.matchAll(/run:\s+node\s+(tests\/[^\s'"]+\.mjs)/g)].length,19);
  assert.match(y,/node scripts\/ci-performance-lab\.mjs/);
  assert.doesNotMatch(y,/continue-on-error:\s*true/);
 });
