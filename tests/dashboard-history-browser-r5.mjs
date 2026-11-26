@@ -64,6 +64,9 @@ try{
   await intro.waitFor({state:'hidden'});
   await waitForGeometry();
   const year=await chartSignature();
+  const readDomainPaths=()=>page.locator('.zg-r55-card-grid article .zg-r55-mini-chart svg > path').evaluateAll(paths=>paths.map(p=>p.getAttribute('d')??''));
+  const yearDomainPaths=await readDomainPaths();
+  assert.equal(yearDomainPaths.length,12,width+'px 1Y domain paths');
   const periods=page.getByRole('group',{name:'종합 시장 점수 추이 기간'});
   await periods.getByRole('button',{name:'1M',exact:true}).click();
   await page.waitForFunction(({selector,old})=>{
@@ -74,6 +77,13 @@ try{
    ].join('|')!==old;
   },{selector:chartSelector,old:year});
   const month=await chartSignature();
+  const monthDomainPaths=await readDomainPaths();
+  assert.equal(monthDomainPaths.length,12,width+'px 1M domain paths');
+  assert.notDeepEqual(monthDomainPaths,yearDomainPaths,width+'px changing period must update 12 domain paths');
+  const extrema=page.locator(chartSelector+' .zg-chart-extremum');
+  assert.equal(await extrema.count(),2,width+'px actual-period maximum and minimum labels restored');
+  assert.equal(await extrema.locator('text').count(),2,width+'px extrema dates and values shown');
+  assert.equal(await extrema.locator('circle').count(),0,width+'px extrema labels do not add dot markers');
   revision=2;
   await page.evaluate(()=>window.dispatchEvent(new Event('focus')));
   await page.getByRole('img',{name:'종합 시장 점수 60.5점',exact:true}).waitFor({state:'visible'});
