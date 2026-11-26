@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import ts from 'typescript';
 import {CNN_OBSERVED_ARCHIVE_KEY,CNN_OBSERVED_ARCHIVE_VERSION} from '../lib/cnn-observed-archive-r1.mjs';
-import {sampleCnnObservedPoints} from '../lib/cnn-observed-sampling-r1.mjs';
+import {sampleCnnObservedPoints,projectCnnObservedPeriodPoints} from '../lib/cnn-observed-sampling-r1.mjs';
 import {addStoredCnnObservation,addStoredCnnVerifiedCheck} from '../lib/cnn-observed-reader-integrity-r1.mjs';
 
 // Exercise the real Cloudflare GET source against two SELECT-only D1 result
@@ -44,10 +44,10 @@ function harness({stored=[],verified=[]}={}){
  const exports={};
  const GET=new Function('exports','env','CNN_OBSERVED_ARCHIVE_KEY',
   'CNN_OBSERVED_ARCHIVE_VERSION','sampleCnnObservedPoints',
-  'addStoredCnnObservation','addStoredCnnVerifiedCheck','Date','Response','URL',
+  'projectCnnObservedPeriodPoints','addStoredCnnObservation','addStoredCnnVerifiedCheck','Date','Response','URL',
   compiled+'\nreturn exports.GET;')(
   exports,env,CNN_OBSERVED_ARCHIVE_KEY,CNN_OBSERVED_ARCHIVE_VERSION,
-  sampleCnnObservedPoints,addStoredCnnObservation,addStoredCnnVerifiedCheck,
+  sampleCnnObservedPoints,projectCnnObservedPeriodPoints,addStoredCnnObservation,addStoredCnnVerifiedCheck,
   Clock,Response,URL);
  return {GET,queries};
 }
@@ -154,4 +154,71 @@ test('R4 #36 1W returns only actual sorted original source timestamps',async()=>
  const body=await (await harness({stored}).GET(request('1W'))).json();
  assert.deepEqual(body.points.map(p=>p.score),[40,41]);
  assert.equal(body.availableDays,2);
+});
+
+
+test('R2 1M: index-based sampling cannot substitute the last real source in each 5-hour interval',async()=>{
+ const base=Date.parse('2026-11-10T00:00:00.000Z');
+ const original=Array.from({length:4000},(_,i)=>({
+  observedAt:new Date(base+i*60000).toISOString(),
+  score:[19,80,26,70][i%4],
+ }));
+ const byDay=new Map();
+ for(const point of original){
+  const date=point.observedAt.slice(0,10);
+  const list=byDay.get(date)??[];
+  list.push(point);byDay.set(date,list);
+ }
+ const stored=[...byDay].map(([date,points])=>archive(date,points));
+ const {GET,queries}=harness({stored});
+ const response=await GET(request('1M'));
+ assert.equal(response.status,200);
+ const actual=await response.json();
+ assert.equal(actual.status,'READY');
+ assert.equal(actual.totalObservedPoints,original.length);
+ assert.equal(actual.sampled,true);
+ assert.equal(queries.length,2,'the GET only reads public archive and PC check rows');
+ const lastByBucket=new Map();
+ for(const p of original)lastByBucket.set(Math.floor(Date.parse(p.observedAt)/(300*60000)),p);
+ const expected=[...lastByBucket.values()].map(p=>p.observedAt);
+ assert.deepEqual(actual.points.map(p=>p.observedAt),expected,
+  'every returned 5-hour bucket must end at its real last source observedAt');
+ assert.deepEqual(actual.points.map(p=>p.score),[...lastByBucket.values()].map(p=>p.score));
+ assert.equal(actual.points.at(-1).observedAt,original.at(-1).observedAt);
+ // Reproduce why index-extrema sampling used by other feeds is inappropriate here.
+ const extrema=sampleCnnObservedPoints(original);
+ const wrongByBucket=new Map();
+ for(const p of extrema)wrongByBucket.set(Math.floor(Date.parse(p.observedAt)/(300*60000)),p);
+ assert.ok(expected.some((at,i)=>wrongByBucket.get([...lastByBucket.keys()][i])?.observedAt!==at),
+  'the former pipeline can discard exact last-of-interval observations');
+ assert.deepEqual(original.at(-1),{observedAt:expected.at(-1),score:actual.points.at(-1).score});
+});
+
+test('R2 3M, 6M, 1Y: each New York day keeps the last real source across UTC midnight',async()=>{
+ const source=[
+  {observedAt:'2026-11-15T23:30:00.000Z',score:16},
+  {observedAt:'2026-11-16T01:30:00.000Z',score:17},
+  {observedAt:'2026-11-16T14:00:00.000Z',score:18},
+  {observedAt:'2026-11-16T23:30:00.000Z',score:0},
+ ];
+ const stored=[
+  archive('2026-11-15',source.slice(0,1)),
+  archive('2026-11-16',source.slice(1)),
+ ];
+ for(const period of ['3M','6M','1Y']){
+  const response=await harness({stored}).GET(request(period));
+  assert.equal(response.status,200);
+  const data=await response.json();
+  assert.deepEqual(data.points.map(p=>p.observedAt),[source[1].observedAt,source[3].observedAt],
+   period+' day boundary is America/New_York, not UTC midnight');
+  assert.deepEqual(data.points.map(p=>p.score),[17,0],period+' must preserve real zero');
+  assert.equal(data.totalObservedPoints,4);
+  assert.equal(data.sampled,true);
+  assert.deepEqual(data.checkedPoints,[]);
+ }
+ // Explicit <=7d historical lookups remain unsampled, regardless of the period button.
+ const customRequest=new Request('https://zgmini.kr/api/fear-greed/observations?period=3M&from=2026-11-15&to=2026-11-16');
+ const custom=await (await harness({stored}).GET(customRequest)).json();
+ assert.deepEqual(custom.points.map(p=>p.observedAt),source.map(p=>p.observedAt));
+ assert.equal(custom.sampled,false);
 });

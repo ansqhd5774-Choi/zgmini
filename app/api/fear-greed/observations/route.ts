@@ -1,6 +1,6 @@
 import {env} from 'cloudflare:workers';
 import {CNN_OBSERVED_ARCHIVE_KEY,CNN_OBSERVED_ARCHIVE_VERSION} from '../../../../lib/cnn-observed-archive-r1.mjs';
-import {sampleCnnObservedPoints} from '../../../../lib/cnn-observed-sampling-r1.mjs';
+import {sampleCnnObservedPoints,projectCnnObservedPeriodPoints} from '../../../../lib/cnn-observed-sampling-r1.mjs';
 import {addStoredCnnObservation,addStoredCnnVerifiedCheck} from '../../../../lib/cnn-observed-reader-integrity-r1.mjs';
 
 // Public stored-score reader only; never calls CNN or starts collection.
@@ -24,8 +24,8 @@ export async function GET(request:Request){
  const byTime=new Map<string,{observedAt:string,score:number}>();
  let validDays=0;
  for(const row of rows.results??[]){
-  let entry:any;
-  try{entry=JSON.parse(row.body)}catch{return Response.json({status:'STORED_ARCHIVE_INVALID'},{status:503});}
+  let entry:{version?:unknown;date?:unknown;observations?:unknown}|null;
+  try{entry=JSON.parse(row.body) as typeof entry;}catch{return Response.json({status:'STORED_ARCHIVE_INVALID'},{status:503});}
   if(entry?.version!==CNN_OBSERVED_ARCHIVE_VERSION||entry.date!==row.snapshot_key||!Array.isArray(entry.observations))
    return Response.json({status:'STORED_ARCHIVE_INVALID'},{status:503});
   validDays++;
@@ -45,8 +45,8 @@ export async function GET(request:Request){
    .bind(start,end).all<{snapshot_key:string,body:string}>();
  const checkedByTime=new Map<string,{checkedAt:string,sourceObservedAt:string,score:number}>();
  for(const row of checkedRows.results??[]){
-  let entry:any;
-  try{entry=JSON.parse(row.body)}catch{return Response.json({status:'STORED_CHECKS_INVALID'},{status:503});}
+  let entry:{version?:unknown;date?:unknown;checks?:unknown}|null;
+  try{entry=JSON.parse(row.body) as typeof entry;}catch{return Response.json({status:'STORED_CHECKS_INVALID'},{status:503});}
   if(entry?.version!=='CNN_VERIFIED_CHECKS_R1'||entry.date!==row.snapshot_key||!Array.isArray(entry.checks))
    return Response.json({status:'STORED_CHECKS_INVALID'},{status:503});
   for(const item of entry.checks){
@@ -65,7 +65,10 @@ export async function GET(request:Request){
    .map(({checkedAt,sourceObservedAt,score})=>({checkedAt,sourceObservedAt,score})));
 
  const all=[...byTime.values()].sort((a,b)=>a.observedAt.localeCompare(b.observedAt));
- const points=custom||period==='1D'||period==='1W'?all:sampleCnnObservedPoints(all);
+ // Do not apply index-based extrema sampling before a genuine period bucket.
+ // The 1M/3M/6M/1Y line must use the last *real* observedAt in each bucket.
+ // Keep 1D, 1W, custom <=7-day lookups and verified PC check sampling unchanged.
+ const points=custom||period==='1D'||period==='1W'?all:projectCnnObservedPeriodPoints(all,period as '1M'|'3M'|'6M'|'1Y');
  return Response.json({status:all.length||allChecks.length?'READY':'PENDING',version:CNN_OBSERVED_ARCHIVE_VERSION,period,range:{start,end},availableDays:validDays,totalObservedPoints:all.length,sampled:points.length<all.length,points,verifiedCheckCount:allChecks.length,checkedPoints,checkTimeMeaning:'PC_VERIFIED_STORED_AT'},{
   headers:{'cache-control':'public, max-age=60, must-revalidate','x-data-source':'STORED','x-content-type-options':'nosniff'}
  });
