@@ -37,6 +37,13 @@
 - 관련 회귀시험: stock-only vs ETF 경계, invalid type 사전 차단, 목표 거래일 결손/잘못된 인덱스, provider/D1/파일 쓰기 0.
 - 운영 소스 `c8ed53a...`는 변경되지 않았고, 이 PR만으로 공급자 수집·backfill·비공개 산출·D1/API 게시를 완료했다고 간주하지 않음. CI exact HEAD 확인 후 **실제 설치 CAS·승인 범위의 선택적 Writer B 적용**이 필요하며, 적용 후에만 기존 Core 자동 갱신으로 bounded backfill이 실행됨.
 
+## 2026-11-27 PR #1722 병합 확인 및 PC 사전조회 준비
+
+- [PR #1722](https://github.com/ansqhd5774-Choi/zgmini/pull/1722): 정확 HEAD `a2ee441ea7d2d696ffdc24105004f911ccfcd48f` Node CI / CodeQL / Secret Scan PASS, GitHub main merge `10be1e52138d5a59b9464e9b04f39d5bdcdcfb32`.
+- 승인된 기존 Controller `3c7d4cfefacf072fd35cb19706b352c64c5e4fd2`에서 `writer-install-preimage-readonly` 범위형 A 조회 지원 확인. 4개 대상 Writer 파일 SHA/현재 source/config CAS를 확보하기 위한 제어 [PR #4046](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4046) 진행.
+- **GitHub 병합과 원격 조회 범위 등록은 PC 신규 Writer B 설치·원자료 수집·계산·게시가 아니다.** 5/8 유지.
+- 완료한 #4008 Writer B, #4036 Controller B는 중복 실행하지 않는다.
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
