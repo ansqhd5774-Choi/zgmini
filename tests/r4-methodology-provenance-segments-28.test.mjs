@@ -8,7 +8,7 @@ const daily=[{label:'2026-11-14',value:44},{label:'2026-11-15',value:47}];
 const archive=[{label:'2026-11-16T12:00:00Z',value:50}];
 const published={label:'2026-11-16T12:05:00Z',value:53,boundToPublishedCard:true};
 
-test('R4 #28 actual 1W display keeps original points but never connects two provenance series',()=>{
+test('R4 #28 actual 1W display retains original values and two provenance types',()=>{
  const merged=mergeCompositeObservedDisplay(daily,archive,7,published);
  const classified=splitCompositeChartProvenance(merged);
  assert.deepEqual(classified.map(p=>({label:p.label,value:p.value})),merged);
@@ -43,14 +43,14 @@ test('R4 #28 zero score stays numeric, missing input stays missing, no mutation'
  assert.deepEqual(splitCompositeChartProvenance([]),[]);
 });
 
-test('R4 #28 Recharts uses two nullable provenance series with no bridge and honest tooltip',()=>{
+test('R4 #28 Recharts draws a connected observed timeline with honest per-point provenance',()=>{
  const chart=readFileSync(new URL('../components/dashboard-summary-chart.tsx',import.meta.url),'utf8');
  assert.match(chart,/splitCompositeChartProvenance\(data\)/);
- assert.match(chart,/<Area type="monotone" dataKey="reconstructedValue"[^>]*connectNulls=\{true\}/);
- assert.match(chart,/<Area type="monotone" dataKey="calculatedValue" stroke=\{color\} fill="none" strokeWidth=\{2\.1\} dot=\{false\}[^>]*connectNulls=\{true\}/);
- assert.match(chart,/<Area type="monotone" dataKey="reconstructedValue" stroke=\{color\} fill="none"/);
+ assert.equal((chart.match(/<Area type="monotone"/g)??[]).length,1,"one visible score series");
+ assert.match(chart,/<Area type="monotone" dataKey="value" stroke=\{color\} fill="none" strokeWidth=\{2\.1\} dot=\{false\}[^>]*connectNulls=\{false\}/);
+ assert.doesNotMatch(chart,/<Area type="monotone" dataKey="(?:reconstructedValue|calculatedValue)"/);
  assert.doesNotMatch(chart,/dataKey="reconstructedValue"[^>]*strokeDasharray=/);
- assert.doesNotMatch(chart,/<Area type="monotone" dataKey="value"/);
+ assert.match(chart,/point\?\.calculatedValue!=null/,"tooltips retain individual calculation provenance");
  assert.doesNotMatch(chart,/현행 산식 재구성 · 당시 실계산점 아님/);
  assert.match(chart,/실제 계산시각 점 · 당시 방법론 버전 미확인/);
 });
@@ -80,9 +80,9 @@ test('R4 #69 interleaved reconstructed and archived samples keep distinct line s
  assert.deepEqual(classified.filter(p=>p.calculatedValue!==null).map(p=>p.calculatedValue),[48,49]);
  assert.deepEqual({daily,archive},original);
  const chart=readFileSync(new URL('../components/dashboard-summary-chart.tsx',import.meta.url),'utf8');
- assert.equal((chart.match(/connectNulls=\{true\}/g)??[]).length,2);
- assert.match(chart,/dataKey="calculatedValue"[^>]*connectNulls=\{true\}/);
- assert.doesNotMatch(chart,/dataKey="value"/);
+ assert.equal((chart.match(/<Area type="monotone"/g)??[]).length,1);
+ assert.match(chart,/dataKey="value"[^>]*connectNulls=\{false\}/);
+ assert.doesNotMatch(chart,/<Area type="monotone" dataKey="(?:reconstructedValue|calculatedValue)"/);
 });
 
 test('W06 #28 impossible daily, archived, and published dates never become chart points',()=>{
