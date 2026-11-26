@@ -57,5 +57,5 @@ test('R4 #28 does not turn missing/partial values into flat or zero points',()=>
 test('R4 #28 composite and domain chart rendering both opt out of synthetic cutoff dates',()=>{
  const source=readFileSync(new URL('../app/dashboard-ui.tsx',import.meta.url),'utf8');
  assert.match(source,/marketTrendWindowR1\(amplifyCompositeDisplayTrend\(verifiedOverallHistory\),periodDays,\{includeBoundaryCarry:false\}\)/);
- assert.ok(source.includes('const daily=marketTrendWindowR1(normalizeMarketTrendPointsR4(domain?.trend,market?.updatedAt),periodDays,{includeBoundaryCarry:false});'));
+ assert.ok(source.includes('const daily=marketTrendWindowR1(normalizeMarketTrendPointsR4(domain?.trend,market?.updatedAt),domainChartDays,{includeBoundaryCarry:false});'));
 });
