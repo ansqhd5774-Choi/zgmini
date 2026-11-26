@@ -17,6 +17,54 @@ function setup(t,{plan='full',conflict=false}={}){
  if(conflict){const dir=path.join(root,'theme-market-history-r131','marketparquet-r165');fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(path.join(dir,'etf_daily_'+date+'.parquet'),'old-preserved');}
  return {base,date,bytes,rows,calls,options:{start:date,apiKey:'test-secret',fetchImpl,readParquet:async()=>rows,sleep:async()=>{}}};
 }
+test('stock-only Archive chunks resume actual stored dates within the file budget',async t=>{
+ const base=path.join(fs.mkdtempSync(path.join(os.tmpdir(),'mp-stock-archive-')),'pc-writer');
+ t.after(()=>fs.rmSync(path.dirname(base),{recursive:true,force:true}));
+ const dates=['2026-11-18','2026-11-19','2026-11-20'];
+ const files=dates.map(date=>({
+  date,file_size_bytes:Buffer.byteLength('PAR1'+date+'PAR1'),
+  download_url:'https://bucket.r2.cloudflarestorage.com/'+date,
+ }));
+ const requests=[];
+ const fetchImpl=async(url,init)=>{
+  const u=String(url);requests.push(u);
+  if(u.endsWith('/api/v1/assets'))return Response.json({
+   plan:'full',assets:[{asset_type:'stock_daily',access:'full',latest_date:dates.at(-1)}],
+  });
+  if(u.includes('/manifest/stock_daily'))return Response.json({
+   asset_type:'stock_daily',files,
+  });
+  if(u.startsWith('https://bucket.r2.cloudflarestorage.com/')){
+   assert.equal(init?.headers?.Authorization,undefined);
+   return new Response(Buffer.from('PAR1'+u.slice(-10)+'PAR1'));
+  }
+  throw Error('Unexpected provider request '+u);
+ };
+ const opts={start:dates[0],end:dates.at(-1),maxFiles:1,
+  assetTypes:['stock_daily'],fetchImpl,apiKey:'test-secret',
+  sleep:async()=>{},
+  readParquet:async bytes=>[{
+   date:Buffer.from(bytes).toString().slice(4,14),
+   symbol:'USONE',close:10,volume:1000,
+  }],
+ };
+ const first=await collectPaidDaily(base,opts);
+ assert.equal(first.status,'RUNNING');assert.equal(first.downloaded,1);
+ assert.equal(first.remaining,2);assert.equal(first.d1Writes,0);
+ const second=await collectPaidDaily(base,opts);
+ assert.equal(second.status,'RUNNING');assert.equal(second.downloaded,1);
+ assert.equal(second.reused,1);assert.equal(second.remaining,1);
+ const third=await collectPaidDaily(base,opts);
+ assert.equal(third.status,'STORED_READBACK_VERIFIED');assert.equal(third.downloaded,1);
+ assert.equal(third.reused,2);assert.equal(third.remaining,0);
+ for(const date of dates){
+  assert.equal(readPaidDaily(base,'stock_daily',date).receipt.date,date);
+  assert.equal(readPaidProjection(base,'stock_daily',date).length,1);
+ }
+ assert.equal(requests.filter(u=>u.includes('/manifest/etf_daily')).length,0);
+ assert.equal(fs.existsSync(path.join(paidRoot(base),'etf_daily')),false);
+});
+
 test('stock-only historical chunk does not fetch or write ETF files',async t=>{
  const fixture=setup(t);
  const result=await collectPaidDaily(fixture.base,{
