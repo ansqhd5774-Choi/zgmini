@@ -98,6 +98,14 @@
 - 정규 B manifest `approvals/writer-updates/us-breadth-paid-r2-backfill-insert-fourfile-20261127.json`은 PR #4066로 main 병합 및 A #4064 before/after SHA 확인 상태. **새 자연 유휴 + 원본 CAS/Task 핀을 확인하기 전 새 B 발행 보류**. 향후 결과가 CANDIDATE_CLEAR라도 B 내부 독립 안전검사를 다시 통과해야 설치 인정.
 - 종단 완료 증거는 아직 5/8(62.5%): raw 251 연속 거래일, private 250 포인트, D1 readback 및 API/UI 출력 미증명.
 
+## 2026-11-27 #4078 PC Job 무실행 사건 인계
+
+- 기존 읽기 전용 A [#4078](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4078), requestId `pc-usbreadthr2-resource-window-20261127-01`, `shared-resource-release-readonly`: 2026-11-26T19:14:52Z 작성·19:14:54Z `pc-job` 라벨 이벤트 확인. GitHub Actions의 다른 workflow는 이벤트를 받아 skipped 실행을 기록했으나 원 요청에 대한 `ZGMINI PC Job` 실행·댓글·JSON/TXT 없음(마지막 대조 19:20Z+). Windows 실행 실패가 아닌 **AUTOMATION_BLOCKED / ISSUE_EVENT_NO_PC_JOB_RUN**으로 구분한다.
+- 지난 동일 Workflow [#4074](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4074) / [Run 45881716545](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45881716545) 성공과 현재 `.github/workflows/pc-job.yml`의 `issues:[opened,labeled]` 계약을 비교. 등록 이벤트 누락의 근본 원인은 아직 미확정. `ZGMINI_PC_JOB_LATE_LABEL_ENABLED` 실환경 변수 확인 없이는 라벨 재첨부 우회/수동 중복 실행 금지.
+- 기존 공통 총괄 지원 계약으로 별도 [#4079](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4079) `ZGMINI_AGENT_HANDOFF_V1 / COMMON_RUNNER / PC_JOB_ISSUE_EVENT_NO_RUN` 등록. [원본 #4078 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4078#issuecomment-7201490741)에 LAST PASS #4074 / FIRST FAIL #4078, 원본 requestId와 필요한 정확한 실행·결과 복구 경로 연결. 접수 등록은 총괄 실제 인수/실행 완료 증명이 아니다.
+- 기존 Core 실행·Task/잠금·Writer B 원본 복구 그대로 보존. #4078 고유 요청 중복 발행 금지, 안전 유휴·CAS 검증 전 Writer B 재설치 금지. 원자료 251거래일, private 250점, D1·API/UI 증거 미완료 → 종단 진행률 5/8(62.5%) 유지.
+- 외부 공개 `zgmini.kr` API의 이번 실행 외부 직접 접근은 현재 도구 환경의 DNS 해석 실패로 **미검증**이다. 이를 운영 사이트 장애라고 단정하지 않는다.
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
