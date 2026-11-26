@@ -70,7 +70,9 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   const {Rev7D1Store}=await import('../../worker/korea-rev7-d1.mjs');
   if(importOnly)return {status:'LOCAL_IMPORT_PASS'};
   if(cnnOnly){
-   const result=await runPublicFeeds({env,maxFeedsPerRun:1,cnnMinuteOnly:true});
+   const {collect}=await import('../../worker/feed-collectors/fear-greed.ts');
+   const {refreshPublicFeeds,observeCnnCollector}=await import('../../worker/public-feed-refresh.mjs');
+   const result=await refreshPublicFeeds({env,maxFeedsPerRun:1,cnnMinuteOnly:true,collectors:{'fear-greed':observeCnnCollector(collect)}});
    // HTTP checks and quota reservations are already durable; never replace Core checkpoints.
    return {at:new Date().toISOString(),lane,status:result.status,attempted:result.attempted??0,feeds:result.feeds?.map(({key,status})=>({key,status})),providers,providerDiagnosticWriteFailures};
   }
