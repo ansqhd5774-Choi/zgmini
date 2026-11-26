@@ -174,6 +174,13 @@
 - 안전한 후속: 기존 manifest의 해시/승인을 임의 변경하거나 소진 #4068 반복 금지. **최신 250거래일 차단을 포함한 정확한 source SHA + 4파일 목표 SHA + 당시 PC 원본 CAS, 기존 Task/lease/유효 승인 명세**를 정규 B 경로로 재핀하고 실제 Writer B 영수증·설치 SHA를 확인. #4068 [운영 설치 주의 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4068#issuecomment-7202187717) 반영함.
 - S6 #4069 원본 상태 `UNKNOWN`, #4078 PC Job run 없음, #4080 운영 inventory job `queued`; 신규 B·공급자 수집·원자료/DB/D1 변경 **0**, R2 종단 진전 5/8(62.5%) 유지.
 
+## 2026-11-27 목표 251거래일 달력 독립 교차검증
+
+- 읽기 전용 소스 기준 고정 `latestCompletedSession=2026-11-25`의 `previousMarketSession` 역산 목표는 **2025-11-26~2026-11-25 251개 거래일**. 저장 비교점은 2025-11-28~2026-11-25 **250개**. 2025-11-27(추수감사절), 2026-11-26(추수감사절)은 시장 휴장; 2025-11-28과 2026-11-25는 거래일.
+- 저장소 `lib/market-score/breadth-b1-r3-calendar.mjs`의 공식 미국 휴장 계산을 읽기 전용으로 별도 재구현해 실제 `exchange_calendars.XNYS` 세션과 251개 날짜 **1:1 동일, 날짜 집합 불일치 0개** 확인. 구간 내 월별 거래일 수: 2025-11=2, 2025-12=22, 2026-01=20, 02=19, 03=22, 04=21, 05=20, 06=21, 07=22, 08=21, 09=21, 10=22, 11=18, 합계 251. 이는 독립 오프라인 달력 검증이며 PC 운영 원자료의 연속성 검증을 대체하지 않는다.
+- 기존 A [#4040](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4040) `results/45873869837-1-seat-6.json` 실제 영수증 재조회: `stockDaily.receiptDates=30`, 최초 2025-11-19, 마지막 2026-11-25, `selectedMetadataValid=30`, `sourceShaReadbackVerified=false`, `calendarContinuityVerified=false`; 개별 30개 날짜 리스트는 결과에 **없음**. 따라서 30개 모두 목표 구간 포함이라고 가정할 수 없고, 최소 하나(2025-11-19)는 범위 밖이라 목표 251개 중 **미보유 최소 222개**, 정확 결손 일자는 승인된 PC `paidDates` 결과 없이는 미확정.
+- 완료된 작은 단계는 **목표 달력 구간 산정**뿐. 운영 251파일 raw/projection SHA 검증 및 bounded 수집이 필요한 6/8 전체 완료는 아님. 추가 공급자 호출·운영 쓰기·D1/API 변경 0, 종단 5/8(62.5%) 유지.
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
