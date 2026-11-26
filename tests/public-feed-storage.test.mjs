@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync,existsSync} from 'node:fs';
 import {publicFeedStore,readPublicFeed,savedJson,FEED_POLICY} from '../worker/public-feed-store.mjs';
-import {refreshPublicFeeds} from '../worker/public-feed-refresh.mjs';
+import {refreshPublicFeeds,observeCnnCollector} from '../worker/public-feed-refresh.mjs';
 import {marketOperationalStore} from '../worker/market-operational-store.mjs';
 import {feedInput,feedOutput} from './helpers/public-feed-fixtures.mjs';
 function fixture(){
@@ -131,4 +131,32 @@ test('private CNN HTTP receipt preserves repeated source timestamps and failures
  assert.equal(records[1].requestedAt-records[0].requestedAt,60_000);
  assert.equal(sql.prepare("SELECT count(*) n FROM public_feed_snapshots_v1 WHERE kind='output'").get().n,0);
  sql.close();
+});
+
+test('PC transport adapter preserves actual 429 and Retry-After from unchanged CNN collector',async()=>{
+ const {collect}=await import('../worker/feed-collectors/fear-greed.ts');
+ const {sql,store,db,locks}=fixture();
+ const original=globalThis.fetch;
+ let requests=0;
+ const mock=async()=>{requests++;return new Response(null,{status:429,headers:{'retry-after':'600'}});};
+ globalThis.fetch=mock;
+ try{
+  const at=Date.now();
+  const args={env:{DB:db,ZGMINI_COMPUTE_TARGET:'pc'},store,locks,cnnMinuteOnly:true,collectors:{'fear-greed':observeCnnCollector(collect)}};
+  const result=await refreshPublicFeeds({...args,now:at});
+  assert.equal(result.status,'PARTIAL');
+  assert.equal(requests,1);
+  assert.equal(globalThis.fetch,mock);
+  assert.equal((await store.readAttempt('fear-greed')).body.retryAt,at+600000);
+  const receipt=JSON.parse(sql.prepare("SELECT body FROM public_feed_snapshots_v1 WHERE feed_key='fear-greed-http-checks'").get().body).checks;
+  assert.equal(receipt.length,1);
+  assert.equal(receipt[0].httpStatus,429);
+  assert.equal(receipt[0].outcome,'HTTP_FAILED');
+  assert.equal(receipt[0].sourceObservedAt,null);
+  assert.equal(receipt[0].score,null);
+  assert.ok(receipt[0].checkedAt>=receipt[0].requestedAt);
+  assert.equal(await store.readOutput('fear-greed'),null);
+  await refreshPublicFeeds({...args,now:at+60000});
+  assert.equal(requests,1);
+ }finally{globalThis.fetch=original;sql.close();}
 });
