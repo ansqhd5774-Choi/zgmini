@@ -99,5 +99,5 @@ test('R4 #28 production UI only passes current published modelVersion; historica
  assert.match(chart,/data-testid="w06-touch-tooltip"/);
  assert.match(chart,/\(currentMethod\|\|point\?\.calculatedValue!=null\)&&<span>/);
  assert.match(chart,/\(latestCurrentMethod\|\|\(latest as DashboardPoint&\{calculatedValue\?:number\|null\}\)\.calculatedValue!=null\)&&<span>/);
- assert.match(chart,/connectNulls=\{true\}/);
+ assert.match(chart,/<Area type="monotone" dataKey="value"[^>]*connectNulls=\{false\}/);
 });
