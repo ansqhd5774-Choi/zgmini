@@ -614,3 +614,14 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 **다음 필수 단계:** Cloudflare Git Integration이 해당 정확 main 배포 SHA로 Production 활성됐는지 읽기 확인, 공개 `/api/fear-greed/observations?period=1D`와 실제 390/1440 hydration의 1D 직접 1분 UI 대조. 새 원본이 실제 생성되면 SQLite·D1·API·화면의 원본 시각/값 전파만 추가 검증. 1·5·10·30분 보조 버튼 복구 금지, 수집/Task 재설치·무관 CI 실패 수정을 필수 조건으로 붙이지 않음.
 
 - **배포·도메인 사후 readback (같은 2026-11-27 KST):** 병합 main SHA `ee6f3aaa400b6faec99134a90daa21c9dbe1ec90`에 대한 Cloudflare `Workers Builds: zgmini-migration-candidate-r5` check **completed/success** (2026-11-26T17:41:01Z); 본체 [Production SEO Health Run #45869574998](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45869574998)에서 해당 SHA Cloudflare 성공 대기 이후 실제 `https://zgmini.kr` 공개 페이지 및 정규 경로 조회 **2개 단계 PASS** (`Verify production SEO after Cloudflare deployment`, `Verify canonical edge redirects`). Cloudflare Git Integration build·Production URL 조회 PASS는 확보. 다만 해당 Production 페이지에서 **1D를 직접 클릭한 새 자산 hydration·1분 끝점 UI 검증**은 독립 미관측이고, 승인된 W06 진짜 observedAt 새 값의 종단 전파도 아직 미관측으로 유지. 원장 내 앞선 ‘배포 확인 진행’은 이 사후 증거로 해당 범위만 갱신한다.
+
+### 20-29. 기간별 장중 시계열 표시 밀도 — 사용자 승인 및 본체 병합 (2026-11-27 KST)
+
+- 사용자 제공 Investing.com 1D·1W·1M 화면을 기준으로 1W/1M의 데이터 개수가 달력 일수(7/30)에 제한되면 안 된다는 요구를 확인했다. 변경은 W06 CNN의 실제 저장 시계열 표시이며 기존 장중 원본·일봉과 선형 스타일을 그대로 재사용한다.
+- **구현 기준:** 1D 1분(기존), 1W 30분, 1M 300분(5시간), 3M·6M·1Y NY 관측일당 마지막 실제 source point 1개 + 장중 source 없는 날짜의 기존 CNN 일별 이력. 시간 구간별 마지막 진짜 observedAt을 사용하고 반복 PC checkedAt 확인 이력은 차트에 혼입하지 않는다. 원본 결측/휴장에 가짜 점을 채우지 않는다.
+- **소스 브랜치:** 본체 최신 `main@3f08615a5097db0ab3fca7d6e6bb84e434f27238`를 기반으로 `codex/w06-period-chart-density-20261127`을 분리해 사용자·다른 담당자 변경을 건드리지 않았다. 기존 W06 장기 브랜치는 본 진행 원장과 계획 정본으로 보존하고 충돌 원본을 대량 병합하지 않았다.
+- **본체 통합:** [PR #1716](https://github.com/ansqhd5774-Choi/zgmini/pull/1716) / 병합 `7106f7f4d4553d0f625f966c1bc7744dfcb0ef91`. 변경 4파일: `app/fear-greed/usa/cnn-panel.tsx`, `lib/cnn-period-chart-r1.mjs`, `tests/cnn-period-chart-r1.test.mjs`, `tests/cnn-current-session-verified-checks-browser-r12.mjs`. 기존 API/DB/운영 Task/source 계산 및 CSS·차트 컴포넌트 변경 0.
+- **검증:** 관측치 밀도, 30분/5시간/NY 일 구간 마지막 실제 원본값, 0점, 일별 fallback, 구간 결측 및 뉴욕→UTC 날짜 변경, PC 재확인 제외를 포함한 집계 시험 7건 PASS. PR HEAD `479bb0387e73ca5884ebefeaac543624648ef205` Node CI·Secret Scan·CodeQL SUCCESS. 브라우저 UI Run `45872719729`의 W06 전용 PC 1440px·모바일 390px 6기간 검증 SUCCESS. 전체 브라우저 파이프라인 완료와 Cloudflare Production 실제 배포는 별도 상태로 판단한다.
+- **한계:** 실제 CNN 소스가 하루에 몇 회만 새로 발표되면 차트도 해당 횟수만 표현한다. 1M+ 기존 공개 API의 bounded sampling은 보존했으므로 샘플 밖 모든 개별 source를 5시간별 마지막 원본으로 검증한 것은 아니다. **W06 종단 운영 0/1 유지:** 실제 새 observedAt 원본→SQLite→D1→API→화면 반영 readback은 별도 필수 증거다.
+
+**이어갈 작업:** 병합 SHA의 Cloudflare Git Integration 성공 및 Production API/PC·모바일 1W/1M 실제 시계열의 원본 시각·점수 검증, 신규 observedAt 종단 전파 확인. 미승인 주기·공급자·저장계약 변경과 가짜 데이터 생성은 하지 않는다.
