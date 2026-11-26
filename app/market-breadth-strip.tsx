@@ -16,6 +16,8 @@ type MarketBreadthStripProps = {
   market: "usa" | "korea";
   counts?: MarketBreadthCounts | null;
   period?: MarketPeriod | '1D';
+  /** Presentation-only restoration: no legacy IEX polling; the data owner supplies verified counts. */
+  displayOnly?: boolean;
 };
 
 type UsaIexProvisionalRecord = {
@@ -83,12 +85,12 @@ function normalizedCounts(counts?: MarketBreadthCounts | null) {
   };
 }
 
-export function MarketBreadthStrip({ market, counts }: MarketBreadthStripProps) {
+export function MarketBreadthStrip({ market, counts, displayOnly = false }: MarketBreadthStripProps) {
   const [provisional, setProvisional] = useState<UsaIexProvisionalRecord | null>(null);
   const name = market === "usa" ? "미국" : "한국";
 
   useEffect(() => {
-    if (market !== "usa") return;
+    if (market !== "usa" || displayOnly) return;
     let active = true;
     const stop = startStoredRefresh(async (signal: AbortSignal) => {
       let body: unknown = null;
@@ -106,10 +108,10 @@ export function MarketBreadthStrip({ market, counts }: MarketBreadthStripProps) 
         currentIexProvisional(previous) ? previous : null, incoming));
     });
     return () => { active = false; stop(); };
-  }, [market]);
-  const activeProvisional = market === "usa" && currentIexProvisional(provisional)
+  }, [market, displayOnly]);
+  const activeProvisional = !displayOnly && market === "usa" && currentIexProvisional(provisional)
     ? provisional : null;
-  const data = market === "usa" ? activeProvisional : normalizedCounts(counts);
+  const data = displayOnly ? normalizedCounts(counts) : market === "usa" ? activeProvisional : normalizedCounts(counts);
   const sourceInfo = activeProvisional
     ? `장중 잠정 · Alpaca IEX 15분 · 뉴욕 ${new Intl.DateTimeFormat("ko-KR", {timeZone:"America/New_York", hour:"2-digit", minute:"2-digit", hour12:false}).format(new Date(activeProvisional.slotEndUtc))} 기준 · 미관측 ${activeProvisional.unobservedPct.toFixed(1)}%${activeProvisional.collectionStatus === "INCOMPLETE_PAGINATION" ? " · 페이지 일부 미수집" : ""}`
     : null;
@@ -132,7 +134,7 @@ export function MarketBreadthStrip({ market, counts }: MarketBreadthStripProps) 
         <div className={styles.heading}>
           <strong>{activeProvisional ? `${name} 잠정` : `${name} 등락 지수`}</strong>
           {sourceBadge && <small className={styles.pending} title={sourceInfo ?? undefined} style={{display:"block",minWidth:0,flex:"1 1 0",overflow:"hidden",textOverflow:"ellipsis"}}>{sourceBadge}</small>}
-          {!data && !activeProvisional && <small className={styles.pending}>{market === "usa" ? "미제공" : "연결 예정"}</small>}
+          {!data && !activeProvisional && <small className={styles.pending}>{displayOnly ? "연결 예정" : market === "usa" ? "미제공" : "연결 예정"}</small>}
         </div>
         {columns.map(({ key, label, symbol, pct }) => (
           <div className={`${styles.stat} ${styles[key]}`} key={key} aria-label={`${label}: ${pct === undefined ? "미제공" : `${pct.toFixed(1)}%`}`}>
