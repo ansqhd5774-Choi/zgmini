@@ -166,6 +166,14 @@
 - **수정 계약:** 운영 `publish=true`에서 `maxPoints=250`, `fullYearHistory=true`, `comparedSessions=250`, `publicHistoryPreview.length=250`, `privateSourceReceipts.length=251`을 비공개 저장·D1 쓰기 **전에** 확인. 부족하면 `US_PAID_R2_FULL_YEAR_HISTORY_REQUIRED` + `operationalWrites=0`로 중지. 미리보기·수집기·산식·권리/DB/예약/Controller 변경 0.
 - **중요한 완료 경계:** 소스 수정 및 main 병합은 완료. 새 source의 **운영 설치/실행·원자료 251일·250점 계산·private SHA·D1/API/UI 게시**는 미완료. 마지막 Writer B #4068 원본 복원, A #4078 workflow-run 미생성, S6 #4069 `UNKNOWN`, Process Inventory #4080 운영 job `queued` 유지. 새로운 B 설치 시 독립 원본 CAS 승인·lease·Core 자연 유휴를 다시 확인해야 함. 종단 진행률 5/8(62.5%) 유지.
 
+## 2026-11-27 4파일 Writer B 기존 승인 후보와 최신 R2 전체 이력 게시 차단 소스 충돌
+
+- Source-only 대조: 제어 저장소의 기존 승인 4파일 manifest `approvals/writer-updates/us-breadth-paid-r2-backfill-insert-fourfile-20261127.json` 후보 `candidateSourceSha=10be1e52138d5a59b9464e9b04f39d5bdcdcfb32`, R2 cycle 목표 해시 `e238cc56ae9c8f4068a033f3e549fef0daf29ed2617c29b5014ef3fd700c22cd`(실제 후보 원문 재계산 일치).
+- `main` 병합 [#1733](https://github.com/ansqhd5774-Choi/zgmini/pull/1733) `d9e939afbafe3a64b5d2a8171bc2599d6c377f4a`는 `US_PAID_R2_FULL_YEAR_HISTORY_REQUIRED` 사전 게시 차단을 추가함. 동일 파일 최신 원문 SHA-256 **`6f194b20a13c21e1c458094069a3f709f4833ab5fd10fc522844581fae191ea1`**, 이전 승인 `afterSha256`과 상충. 나머지 승인 4파일 중 `marketparquet-paid-store.mjs`, `us-breadth-paid-r2-stored.mjs`의 후보 원문은 `10be`와 `d9e` 사이 동일, `local-cycle.mjs` 후보 원문도 기존 승인 `candidateSha256=365a29ccabb34cf42b4c2eee83b2c63e703d6cdf18e7eff836fc3515113e3998`로 동일(삽입 후 after 별도).
+- **독립 장애:** 현재 GitHub의 `baseHead=c8ed53a3991212dd1778742cda8a86ac133e0796` commit 원문 조회는 422/404로 실패. 이는 운영 PC 이전 승인 `ORIGINAL_VERIFIED`의 반증이나 로컬 설치 불일치 증거가 아님. 옛 manifest의 Core preimage 재시뮬레이션은 이 조회 경로에서 불가능. 기존 #4068 360초 drain 거부 이후 운영 원본 CAS를 다시 확인해야 함.
+- 안전한 후속: 기존 manifest의 해시/승인을 임의 변경하거나 소진 #4068 반복 금지. **최신 250거래일 차단을 포함한 정확한 source SHA + 4파일 목표 SHA + 당시 PC 원본 CAS, 기존 Task/lease/유효 승인 명세**를 정규 B 경로로 재핀하고 실제 Writer B 영수증·설치 SHA를 확인. #4068 [운영 설치 주의 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4068#issuecomment-7202187717) 반영함.
+- S6 #4069 원본 상태 `UNKNOWN`, #4078 PC Job run 없음, #4080 운영 inventory job `queued`; 신규 B·공급자 수집·원자료/DB/D1 변경 **0**, R2 종단 진전 5/8(62.5%) 유지.
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
