@@ -154,3 +154,10 @@
 - [C996 R5 Readonly Source Checks Run #45877954112](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45877954112): **completed/success**. 동일 HEAD의 [Process Inventory Source Run #45877954098](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45877954098) 및 [Secret Scan Run #45877954178](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45877954178)은 **queued**. 3/3 미완료이므로 임의 병합/운영 A 재실행하지 않음.
 - 기존 [#4052](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4052)는 실제 `STATE_UNKNOWN/WATCHDOG_R5_HEALTH_STATUS_UNVERIFIED`, JSON/TXT readback 2/2 후 **조회 목적 완료로 closed**. 원본 S6 #3947은 UNKNOWN 및 실제 failover 0/1로 유지.
 - 다음 필요 행동: 남은 두 CI가 completed이면 exact-head 3/3 및 main 소스 검증·병합 → 새 고유 A로 실제 health-state 단회 재관측 → 확인된 상태의 실패 조건만 수정. 두 CI가 계속 queued이면 같은 검사를 재실행·별도 Runner 신설하지 않고 대기 사유 확인. #3947 원래 B requestId 반복 금지.
+
+## 13. 2026-11-27 S6-02 실제 상태 분류 코드 3/3 PASS 및 통합
+
+- [PR #4054](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4054), exact HEAD `490f458b077d364d57740521b2f407eb57225ce7`: [C996 #45877954112](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45877954112), [Process Source #45877954098](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45877954098), [Secret Scan #45877954178](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45877954178) **3/3 completed/success**.
+- R5 read-only source·test 2파일만 변경해 exact HEAD 지정 정상 **squash merge SHA `8e5f4dbee080c9b25ff06c5050d3d136fefec6ff`**, main에 `watchdogHealthState` 고정 enum 존재 readback. 기존 B 계약/안전판정 임계치·운영 source 변경 0.
+- 새로운 Owner read-only A [#4058](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4058) 고유 requestId `48aef0a2-73bd-48cd-916a-84f7ca124d22`, `controller-standby-r5-runtime-readonly`, **단 1회 접수**. 원본 #4052 재실행 0. 결과 JSON/TXT/Run은 별도로 회수 후 검증하며 아직 건강 상태 개선이나 S6 승격 성공으로 표시하지 않음.
+- **다음:** #4058 운영 실제 고정 상태 enum readback → 허용 상태의 실제 실패 경계·영향 확인 → 필요할 때만 최소 수정/관측 → 관련 lease/Runner 6개 idle 및 B exact CAS 확인. 원본 #3947 `UNKNOWN`, S6 운영 효과 0/1 유지.
