@@ -6,28 +6,11 @@ import {readPaidUsR2Feed}
   from '../worker/us-breadth-paid-r2-public.mjs';
 import {US_PAID_R2_FEED_KEY}
   from '../worker/us-breadth-paid-r2-contract.mjs';
+import {fullPaidUsR2Calculated}
+  from './helpers/us-breadth-paid-r2-full-year-fixture.mjs';
 
 const now=Date.parse('2026-11-20T22:01:00.000Z');
-const point=(date,risingPct,unchangedPct,fallingPct)=>
-  ({date,risingPct,unchangedPct,fallingPct});
-const calculated=()=>({
-  status:'PAID_R2_STORED_PRIVATE_CALCULATED',prepared:true,
-  source:'MARKETPARQUET_PAID_SPLIT_ADJUSTED_DAILY',
-  priceMode:'SPLIT_ADJUSTED_DAILY_CLOSE',
-  publicationAllowed:false,comparedSessions:2,fullYearHistory:false,
-  firstDate:'2026-11-19',lastDate:'2026-11-20',
-  sourceLatestProviderDateVerified:false,
-  publicHistoryPreview:[
-    point('2026-11-19',25,50,25),
-    point('2026-11-20',50,25,25),
-  ],
-  publicPercentPreview:point('2026-11-20',50,25,25),
-  privateSourceReceipts:[
-    {date:'2026-11-18',sha256:'a'.repeat(64),projectionSha256:'d'.repeat(64)},
-    {date:'2026-11-19',sha256:'b'.repeat(64),projectionSha256:'e'.repeat(64)},
-    {date:'2026-11-20',sha256:'c'.repeat(64),projectionSha256:'f'.repeat(64)},
-  ],
-});
+const calculated=()=>fullPaidUsR2Calculated();
 function memoryD1(){
   const rows=new Map();const log=[];
   const remote={
@@ -78,7 +61,9 @@ test('saved paid candidate -> one D1 CAS -> public current/history, never raw',a
   assert.equal(current.ok,true);
   assert.equal(history.ok,true);
   assert.equal('points' in current.body,false);
-  assert.deepEqual(current.body.current,point('2026-11-20',50,25,25));
+  assert.deepEqual(current.body.current,calculated().publicPercentPreview);
+  assert.equal(history.body.points.length,250);
+  assert.equal(history.body.historyComplete,true);
   assert.deepEqual(history.body.points,calculated().publicHistoryPreview);
   for(const response of [current,history]){
     const body=JSON.stringify(response.body);
