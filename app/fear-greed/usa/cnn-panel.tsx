@@ -79,7 +79,7 @@ const usIntradayDateTime = new Intl.DateTimeFormat("ko-KR", {
 });
 const intradayLabel = (value: string) => {
   const timestamp = Date.parse(value);
-  return Number.isFinite(timestamp) ? `${usIntradayDateTime.format(new Date(timestamp))} (미국 동부시간)` : "—";
+  return Number.isFinite(timestamp) ? usIntradayDateTime.format(new Date(timestamp)) : "—";
 };
 const dateLabel = (value?: string) => value
   ? koreanDateFormatter.format(new Date(value))
@@ -811,10 +811,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
         instanceKey={selectedPeriod}
         gradientId="cnn-fill"
         formatTooltipLabel={selectedPeriod==="1D"
-          ? (value:string)=>{
-            const bucket=minuteHistory?.buckets.find(item=>item.observedAt===value);
-            return `${intradayLabel(value)}${bucket?` · ${usIntradayClock.format(new Date(bucket.start))} 구간${bucket.complete?" 마감":" 진행 중"}`:""}`;
-          }
+          ? (value:string)=>intradayLabel(value)
           : cnnUsMultiDayTooltipDate}
         emptyLabel={minuteMode?"해당 뉴욕 거래일의 CNN 원본 관측 없음":"이력 없음"}
       /></div></div>}
