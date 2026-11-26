@@ -8,27 +8,27 @@
 계획 반영 커밋: [f21b2a7f3b5454172589ddff9ef96c66f349f7c9](https://github.com/ansqhd5774-Choi/zgmini/commit/f21b2a7f3b5454172589ddff9ef96c66f349f7c9)
 연계: [본체 #1521](https://github.com/ansqhd5774-Choi/zgmini/issues/1521) · [공통 #68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68)
 
-## 1. 현행 판정
+## 1. 현행 판정 — 2026-11-27 마지막 실증 반영
 
-- 목표: CNN만 60초 기준 확인, 원본 보존, 표시값 변화 감지, 1·5·10·30분 선형 집계, 저장 전용 API 및 무새로고침 화면 반영.
-- 2026-11-26 현재: **개발 소스 CI 4/4 PASS, 운영 설치 후보 통합·검증 진행 중**. 기존 #1521 복구 완료 증거 유지. 실제 PC의 8개 원본 해시 확보, 7개 byte-equivalent 복원, 1개 기존 원본 보존 삽입 Preview PASS. #3790 수집/게시 삽입 명세 CI 2/2 및 main 병합 완료, #3792/#3793 실PC PASS로 3개 entrypoint Preview 3/3 완료. 신규 60초 운영·Sidecar 복구·공개 종단은 미완료. 상세 최신 증거는 §14 참조.
-- 계획서 및 원장 생성은 문서 작업으로만 집계한다. W06 운영 완료율은 미산정(실행 증거 부족), 기존 복구 완료 증거는 유지한다.
-- #1521은 2026-11-24 최종 운영 검증 후 CLOSED. 기존 복구는 완료이며 신규 W06 고도화와 구분한다.
-- 신규 60초 수집에는 현 소스의 15분 간격/5분 quota 및 5분 Core 실행 구조가 맞지 않는다. 실제 운영의 적용 값과 공급자 허용 범위는 미확정. 전체 업무 차단 아님; 독립 UI 구현 계속.
+- **목표:** CNN만 60초 기준 *best-effort* 확인, 실제 CNN `observedAt` 단위 원본 보존·전파, 저장 자료 계산·게시·API·새로고침 없는 UI. 60초는 요청 시도 목표이지 항상 갱신되는 CNN 원본 또는 엄격한 호출 SLA가 아님.
+- **운영 반영 완료 범위:** 승인된 Writer B 원본 [#3985](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3985) 설치, 활성 CNN PT1M Task와 자연 HTTP [#3998](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3998)·[#4129](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4129) PASS, 이전 실제 CNN 원본의 SQLite↔D1↔공개 1D/1W API [#4132](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4132) MATCHED. 기존 B/Task/공유 자원은 다시 설치할 대상이 아님.
+- **UI 완료 범위:** 1D는 실제 CNN 관측값 기준 직접 1분 시계열(추가 5/10/30분 선택 UI는 사용자 승인으로 제거), 기존 1W~1Y 유지. 1M 임시 희소곡선 제거 [PR #1737](https://github.com/ansqhd5774-Choi/zgmini/pull/1737), 정규 배포 main `346dfe6` 및 실Production 1440px·390px 클릭·캐시 재선택 [Run #45907721954](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45907721954) PASS. 이 **1M UI 과제는 3/3 완료**.
+- **현재 유일한 신규 자연 관측 수락 미완료:** 마지막 실제 PC 원본 `observedAt=2026-11-26T01:59:59.000Z`, score `14.9967450271248`; 기존 원본의 SQLite/D1/API 정합까지만 실증. 이후 **새 `observedAt`의 생산→SQLite→D1→API→PC·모바일 무새로고침 전파**는 신규 원본 미입증이므로 **0/1 SOURCE_UNCHANGED**. 새 소스 부재를 수집기 장애 또는 완료로 단정하지 않는다.
+- 상단 진행표는 최신 §20-63의 완료 근거를 반영한 현재 단계 요약이다. 아래 §3·§5 및 §8~§20-63의 날짜별 과거 사건·초기 계획·당시 미설치 기록은 **역사적 증거**로 보존하고 현행 설치 상태로 사용하지 않는다. 새 승인, 재설치, 불변 조건의 반복 PC A 진단, 감시용 예약은 추가하지 않는다.
 
 ## 2. 단계별 진행표
 
-| 단계 | 상태 | 이번 원장 기준 증거 / 미완료 조건 |
+| 단계 | 현행 | 최종 유효 증거·남은 효과 |
 | --- | --- | --- |
-| 1. 실제 경로 확정 | 진행 중 | #1521 CLOSED 및 종단 PASS 승계; #3766 운영 원본 8/8 SHA 및 #3786 실제 삽입 afterSHA 확보; Sidecar source/CAS, 실행 연결·공급자 허용 범위 미완료 |
-| 2. CNN만 1분 확인 | 진행 중 | PC 전용 단회 CLI·60초 due/429 cooldown 개발 CI PASS. 실제 삽입 후보 #3786/#3792/#3793 3/3 PASS. quota 공유 원장/실행 계약 및 실제 호출 미검증 |
-| 3. 원본 저장·변동 감지 | 진행 중 | 실제 HTTP 확인과 원본 observedAt 분리, 늦은 관측 archive 보존, 모의 저장 회귀 CI PASS; 운영 미검증 |
-| 4. 1·5·10·30분 집계 | 진행 중 | 원본 기반 집계 및 네 구간 UI 개발 CI PASS(0f0bb62e), Production 확인 미완료 |
-| 5. D1·API·자동 화면 갱신 | 진행 중 | 기존 D1/API 1D·1W PASS 승계; 60초 저장 조회·실패 보존·브라우저 CI PASS. CNN 전용 게시 경로 및 운영 D1/API/화면 미검증 |
-| 6. 회귀시험·운영 적용 | 진행 중 | #1644 0f0bb62e CI 4/4 PASS, #3785/#3790 제어 main 병합, #3786/#3792/#3793 PASS 및 회수 완료; quota 및 의존성·정확 B/Sidecar 설치·배포 미완료 |
-| 7. 실관측 종단 확인·종결 | 미착수 | 신규 실제 변동 전파 및 네 간격·PC/모바일·기존 여섯 기간 검증 필요 |
+| 1. 실제 경로·설치 확정 | 완료 | Writer B #3985, 관련 Sidecar/Task 실증 §20-11~27. 승인 source·실제 설치 SHA는 구분 |
+| 2. CNN 60초 확인 | 완료(실증 범위) | #3998 사후 실제 HTTP 간격 중앙 60초·9표본, #4129 최근 HTTP VERIFIED와 활성 PT1M. 절대 60초 SLA 아님 |
+| 3. 원본 저장·변동 감지 | 진행 중 | 기존 observedAt 원본/체크 보존 및 #4132 정합 PASS; **신규 source observedAt 운영 전진 미입증**. 동일 점수 새 시각 회귀 CI PASS |
+| 4. 분 간격 집계·표시 | 진행 중 | 1·5·10·30분 집계 소스·회귀, 사용자 최종 1D 고정 1분 UI 및 기간별 실제 선형 CI PASS. 신규 원본으로 생성된 여러 분 점은 운영 미검증 |
+| 5. D1·API·자동 화면 반영 | 진행 중 | 기존 원본의 #4132 SQLite↔D1↔API 1D/1W MATCHED, 저장형 refresh·동일 점수 새 시각 모의 브라우저 PASS. 새 실제 source 자동 전파 0/1 |
+| 6. 회귀시험·승인 운영 적용 | 완료(설치·UI 범위) | Writer B #3985, 활성 Task #4129, main 346dfe6/Cloudflare 및 W06 Production 1M Run 45907721954 PASS. 신규 원본 종단 성공은 별도 |
+| 7. 신규 실관측 종단·종결 | 진행 중(0/1) | 동일 신규 observedAt의 SQLite→D1→API→PC1440/모바일390 무새로고침 화면 증거 아직 없음. 새 원본 발생 시에만 완료 판정 |
 
-상태는 미착수 / 진행 중 / 완료 / 해당 범위 차단으로 관리한다. 단계 개수로 운영 완료율을 환산하지 않는다.
+단계 개수만으로 운영 전체 완료율을 산출하지 않으며 1M UI 3/3과 신규 자연 관측 0/1은 분리한다.
 
 ## 3. 기존 유효 증거와 한계
 
@@ -46,18 +46,18 @@
 
 기존 복구의 로컬 2건 대체 기준 정정: [#1521 댓글](https://github.com/ansqhd5774-Choi/zgmini/issues/1521#issuecomment-7129679903). 설치 후 원본 2건을 #1521의 유일한 조건으로 새로 추가하지 않는다. W06의 실제 표시값 변동 전파는 별도 기능 목표다.
 
-## 4. W06 완료 증거표 (갱신 대상)
+## 4. W06 완료 증거표 (최신 근거 요약)
 
-| 대상 | 필수 증거 | 현행 |
+| 대상 | 현행 검증 | 미입증/범위 |
 | --- | --- | --- |
-| CNN 요청 | 실제 checkedAt/HTTP 요청 간격, 실패로 건너뛴 주기, 공급자 정책, 다른 지표 주기 유지 | 미입증 |
-| 원본 보존 | observedAt·원본 정밀도·정정/충돌·늦은 관측 SQLite readback | 기존 일부 증거; 신규 동작 미검증 |
-| 변동점 | 동일 표시값 생략·상승/하락·복귀·원본 불변 | 미입증 |
-| 네 분 간격 | 원본 기반 대표값·실제 시각·결측·미완료 구간·NY/DST | 집계 모듈/테스트 구현, UI·CI 미완료 |
-| 게시·API | 로컬과 정확 D1 키, 기간/간격 값·시각·버전 readback | 기존 1D/1W PASS; 신규 기능 미입증 |
-| 자동 반영 | 아카이브 주기 조회·경합 방지·공급자 직접 호출 없음·실화면 | 소스 구현 및 회귀 코드 추가, 실행 검증 미완료 |
-| PC·모바일 | 1440/390px, 네 간격 선택, hover/touch, 마지막점과 값·시각 | 미입증 |
-| 기존 기능 | 1D/1W/1M/3M/6M/1Y, 원본/일별 이력 및 타 지표 보존 | 신규 회귀 미검증 |
+| CNN HTTP 확인 | #3998 실제 설치 후 중앙 60초·#4129 자연 HTTP VERIFIED | 60초 강제 SLA 또는 매분 새로운 CNN 원본 보장하지 않음 |
+| 원본 보존 | #4132 기존 `observedAt=2026-11-26T01:59:59Z`·score SQLite↔D1 일치 | **신규** 원본시각 저장·정정 운영 증거 없음 |
+| 동일 점수 새 시각 | PR #1724 기존 수집/게시 격리 회귀 PASS | 새로운 실제 observedAt 운영 전파 미발생 |
+| 1·5·10·30분 | 원본 기반 집계 소스·회귀 PASS. 사용자 최종 UI는 1D **직접 1분봉**(5/10/30 선택바 제거) | 신규 다점 실제 소스 기준 분 집계 화면 미실증 |
+| 공개 D1·API | #4132 기존 1D/1W HTTP200/MATCHED | 새 source 정확 동일 시각의 D1 readback 미실증 |
+| UI 자동 반영 | 새 시각 동일 점수 모의 브라우저·60초 저장 GET 회귀 PASS | 실 신규 observedAt의 무새로고침 PC·모바일 반영 미실증 |
+| 실제 PC·모바일 | #45907721954 1440/390 1M 상세 34점/path1/캐시 재선택 PASS | 실제 신규 시각 마지막점은 미확인 |
+| 기존 기간 이력 | 1D·1W·1M·3M·6M·1Y 실운영 및 회귀 PASS | 과거 관측값을 새 원본으로 취급하지 않음 |
 
 ## 5. 변경·실행 원장
 
@@ -70,12 +70,12 @@
 2026-11-24 문서 작업 시 신규 기능 변경 없음. 2026-11-26 전용 브랜치에 최신 main 통합 및 UI 소스/회귀 코드 변경. main 기능 병합·운영 설치·예약·DB/D1 쓰기·배포 없음.
 2026-11-26 #3741/#3742/#3766 및 #3786 A 결과 회수 완료. 후속 #3792 (90f59760-5dd7-4df4-95c5-af0139db34a2), #3793 (f4c41825-2985-4f8f-8ec3-b77e01947f24) 실제 결과 2/2 각각 회수·completed closed. #3795 (ca22b9ae-ff44-4a52-8cb8-b8484d87c401) PASS_READONLY, JSON/TXT 2/2 회수, completed closed. #3798 및 Controller 변경 후 #3800, 게시기 R2 #3804 실제 결과 각각 회수·completed closed. 현재 미회수 정규 B #3812 (81857ab9-a467-49a5-8453-42ff8a522f97). 동일 요청 중복 금지. §14 참조.
 
-## 6. 다음 직접 실행
+## 6. 다음 직접 실행 — 신규 자연 원본 확인 후 조건부 종단
 
-1. #3766 및 #3786/#3792/#3793의 유효한 원본·Preview 3/3 증거를 재사용한다. 실제 B 적용 전 변경된 source/base/승인 효과만 필요한 범위에서 확인한다.
-2. 기존 quota-fetch 및 quota-policy를 보존하는 공통 quota 동시 실행 보호와 실제 운영 의존성(특히 설치된 CNN TS collector, shared adapter)을 확인한다. 기존 현대 quota-ledger의 일반 예약 lock/재조회 시험을 재사용하되 운영 원본과의 계약 차이를 무시하지 않는다.
-3. 기존 B 정규 경로의 exact candidate/preimage/after SHA, runtimeDependencies, CAS/lease/backup을 확정한다. #3745의 Sidecar 고정 source 및 old preimage 조건을 별도로 해결한다. #3768 동일 실패 재시도 금지.
-4. 승인 범위의 실제 운영 적용 후 60초 HTTP 확인·SQLite 원본·D1/API·PC/모바일 화면을 종단 검증한다. 기존 Core·다른 지표 보존 및 공급처 제한 준수 확인. 개발 CI나 Preview만으로 종결하지 않는다.
+1. 현재 확정된 마지막 실제 원본 `2026-11-26T01:59:59.000Z / 14.9967450271248`와 **달라진 실제 CNN source observedAt** 또는 직접적인 수집·게시·갱신 실패 증거가 나타나는지 기존 자연 실행 원장/공개값에서 판단한다. 화면 반올림값·HTTP checkedAt만으로 새 원본이라 선언하지 않는다.
+2. **새 원본이 확인되었을 때만** 기존 승인된 정확 A급 읽기 요청을 고유 requestId로 단회 수행하여 해당 source의 SQLite 원본·D1 현재값/아카이브·API 1D/1W 같은 observedAt/정밀 score/시각 readback을 대조한다. 기존 결과/원장을 먼저 확인하고 중복 요청하지 않는다.
+3. 동일한 신규 source로 PC 1440px·모바일 390px의 새로고침 없는 점수·마지막 선·날짜 자동 전파를 확인한다. 이전 모의 UI CI, HTTP 200, 배포 성공, 기존 source 일치만으로 신규 종단 1/1을 선언하지 않는다.
+4. 신규 원본이 아직 없고 새 실패도 없으면 **0/1 SOURCE_UNCHANGED** 유지. 이미 실증된 Writer B/Sidecar/CNN PT1M Task를 재설치하거나 추가 공급처 요청·관측점 보간·DB/D1 직접 쓰기·새 감시 예약을 만들지 않는다. 기존 W06 기능별 진행은 새 증거에 의해 영향을 받는 경계만 재개한다.
 
 ## 7. 원장 갱신 규칙
 
@@ -938,3 +938,10 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - **PC 1440px:** 실Production 저장 1M API HTTP200/READY, 반환 points 16. 최초 선택 시 실제 API GET만 브라우저에서 일시 보류 → archiveState=loading / 화면 curve path=0 (내부 미표시 계산 count=23). 응답 해제 후 최종 차트 34점, path 1, SVG SHA256 0ec67c59eab52b8b0d6fe4b348e30a310a7943f45091ac2aae2361f6b301fedb. 1D→1M 재선택 시 로딩 placeholder 없음, 같은 34점/path1/SHA; JS pageerror 0, 가로 넘침 0.
 - **모바일 390px:** 실Production 1M API HTTP200/READY, 원본 points 16, 로딩 중 visible path 0. 완료 후 차트 34점/path1, SHA256 5f0b1bdb8382a5a1036e005e9825e5541ee3277104e7bd7db0c4eedcc0a3e6d7. 1D→1M 재선택 시 같은 34점/path1/SHA, 로딩 placeholder 없음, JS pageerror 0, 넘침 0.
 - **결론:** 실제 배포된 CNN 1M은 첫 선택 시 성긴 임시곡선 없이 실제 상세 원본 준비까지 로딩을 표시하고, 수신 후 완성곡선을 그리며, 재선택에도 동일 상세 곡선을 사용. **이 UI 수정·회귀·정규 배포·운영 실클릭 검증은 3/3 완료.** 별도 신규 CNN source observedAt→SQLite→D1→API→PC/mobile 무새로고침 전파는 **0/1 SOURCE_UNCHANGED**, 이전 데이터 화면 PASS로 대체하지 않음. 진단 PR은 병합 없이 종료하고 원장·원본 Issue #4082에 결과만 남김. 새 실제 source 관측/실패 증거 없이는 동일 PC A 재실행·Task 재설치·가짜 source 데이터 생성을 하지 않음.
+
+
+### 20-64. 원장 상단 현재 상태·다음 행동 정합 복구 (2026-11-27 KST)
+
+- 새 기능 설치·데이터 발생 증거 없이 §1·§2·§4·§6의 2026-11-26 **설치 전** 설명을 현행 실제 증거로 수정. 단순 서식 변경이 아니라 과거 Preview/미설치 문구가 설치된 활성 W06 Task와 충돌하여 중복 Writer B/PC 작업을 잘못 유도하는 조건을 제거함.
+- 근거 재사용: 설치 [#3985](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3985), 사후 HTTP [#3998](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3998)·[#4129](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4129), 기존 source의 원장·D1·API [#4132](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4132), 1M Production [#45907721954](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45907721954). main/운영 source/PC/DB/D1/배포 변경 없음.
+- 2026-11-27 현재 GitHub W06 전용 branch f34a03a와 main 346dfe6, #4082 마지막 증거 확인. 일반 웹 공개 JSON 조회는 접근되지 않고 초기 SSR은 값을 증명하지 못함. 새 source 관측을 입증하는 후속 결과 없음. UI 3/3 완료 유지, 자연 source 종단 0/1 유지. 동일조건 A/PC 재요청 없음.
