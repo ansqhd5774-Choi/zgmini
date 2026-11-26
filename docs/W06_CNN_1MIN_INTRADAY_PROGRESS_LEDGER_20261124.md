@@ -599,3 +599,16 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - #3998 A는 댓글에 원본 증거 기록 후 `closed/completed` 종결. 새로운 Task·유료 provider·반복 감시 예약 추가 없음. **W06 종단 운영 완료율 0/1 유지**(HTTP 60초 자연 창과 source 설치 단계는 검증 완료, 원본 신규 observedAt 변화 → SQLite 저장→D1 게시→API/UI 최종점 실제 검증 미완료).
 
 **다음 필수 작업:** 승인된 기존 자동 수집에서 CNN sourceObservedAt가 실제 전진한 시점의 첫 유효 원본·로컬 SQLite archive/checks·D1 공개 1D/1W·API 및 홈페이지 1/5/10/30분 차트 PC 1440px/모바일 390px 최신점 독립 대조. source가 동일할 동안에는 새 관측/차트 점을 만들지 않고 원본 미변동 상태 유지. 이미 정상화한 60초 Task/정규 소스 설치를 반복 실행하지 않음.
+
+### 20-28. 사용자 승인 W06 UI 단순화 — 1D 직접 1분봉 (2026-11-27 KST)
+
+- 사용자가 현재 1D의 보조 메뉴 **'확인 이력 | 1분 | 5분 | 10분 | 30분'을 불필요하다고 명시**함. UI 변경의 정본 목적은 **1D 선택 즉시 CNN 실제 `observedAt` 기준 고정 1분 선형 차트**이며 보조 메뉴는 제거하는 것. 기존 1W·1M·3M·6M·1Y를 유지하며 PC의 `checkedAt` 성공 확인 기록은 데이터·D1/API에 그대로 보존하되 원본 관측점으로 위장하지 않음.
+- 현재 본체 main과 원래 W06 브랜치가 크게 분기되어 있어 기존 변경을 덮어쓰지 않고 `main@225a0806ce611b370a9fe451cf6c18ab78599af6`에서 W06 UI 전용 `codex/w06-1d-direct-minute-ui-20261127` 브랜치 생성. [본체 PR #1707](https://github.com/ansqhd5774-Choi/zgmini/pull/1707) 변경 7파일: `cnn-panel.tsx` UI 1, 관련 회귀시험 5, 브라우저 CI 시험 순서 1. 기존 PC 수집/Task·SQLite·D1·Cloudflare 설정·다른 기간·산식 변경 0.
+- 실제 코드: 1D의 `minuteMode`를 고정하고 `aggregateCnnIntraday(...minutes:1)` 사용, 확인 이력 및 1/5/10/30분 선택바 완전 제거, 원본 관측만 분봉 입력, 기존 원본 1분 결측 구간은 null gap 유지. 별도 유효 원본의 동등 표시값은 새 '점수 변동'으로 위조하지 않음.
+- **코드 정밀·회귀**: Node CI, CodeQL, Secret Scan 최신 후보 PASS. 초기 Node CI가 구 `currentSessionPcDates` UI 계약을 주장한 3개 테스트에서 실패하여 사용자 변경으로 폐기된 UI 기대값만 실제 현행 1D 계약으로 수정한 뒤 신규 Node PASS. 실제 `cnn-intraday-buckets` 함수의 4관측 fixture는 가짜 원본점 0.
+- **브라우저 독립 실증**: 전용 [UI Run #45869004372](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45869004372)에서 'Verify CNN actual PC-check 1D curve and stale-session exclusion at 390/1440'가 **success**. 이 검증은 390px 실제 터치·1440px 선형 그래프, 1D 1분 버킷·별도 메뉴 0, 정상 재조회·원본 추가·오래된 PC 체크 배제, 기존 1W 복귀를 테스트한 격리 mock UI이고 PC/D1 운영 직접 변경은 아님. 같은 Run의 W06 일반 터치 fixture·기존 Production 1D/6기간 read-only 단계도 각각 success.
+- **본체 소스 통합 완료**: PR #1707 HEAD `8788478008b75eba2bf0f87efdc152dc971275bc`가 `main`에 **merge `ee6f3aaa400b6faec99134a90daa21c9dbe1ec90`**. 병합·CI를 Production 배포 적용과 구별한다.
+- **배포 확인 진행**: GitHub에서 이 main SHA를 대상으로 Cloudflare Workers Build `zgmini-migration-candidate-r5`가 등록·진행 중임을 확인. Production API/HTML의 새 빌드·실제 hydration을 이 원장 시점 VERIFIED로 선표시하지 않음.
+- **W06 운영 종단 0/1 유지**: 실제 CNN 신규 `sourceObservedAt` 변경에 따른 SQLite→D1→API→PC·모바일 최신 분봉 전파는 여전히 미검증. 미국 추수감사절 휴장/원본 미변동을 결함으로 추정하지 않으며 60초 HTTP 설치·실측 #3985/#3998을 재실행하지 않음.
+
+**다음 필수 단계:** Cloudflare Git Integration이 해당 정확 main 배포 SHA로 Production 활성됐는지 읽기 확인, 공개 `/api/fear-greed/observations?period=1D`와 실제 390/1440 hydration의 1D 직접 1분 UI 대조. 새 원본이 실제 생성되면 SQLite·D1·API·화면의 원본 시각/값 전파만 추가 검증. 1·5·10·30분 보조 버튼 복구 금지, 수집/Task 재설치·무관 CI 실패 수정을 필수 조건으로 붙이지 않음.
