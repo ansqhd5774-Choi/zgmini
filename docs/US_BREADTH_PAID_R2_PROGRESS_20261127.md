@@ -151,6 +151,13 @@
 - 공개 홈페이지 서버 응답(2026-11-27 KST 재조회)에는 `미국 등락 지수 / 연결 예정 / —` 초기 마크업만 관측. 클라이언트 hydration 후 실제 상태를 단정하지 않는다. 공개 current/history API 직접 읽기는 조회 환경에서 URL 접근/DNS 오류로 실패했으므로 HTTP status·D1 최신성 판단 **미확인**이며 사이트 운영 장애로 취급하지 않는다.
 - 독립 소스 경로에 새 결함이 입증되지 않았으므로 UI 재개발/불필요한 웹 재배포는 보류. 남은 필수 실행은 #4078 접수 및 운영 Runner 가용 확인 → 기존 보호 조건에서 Writer B 설치 → 원자료 251일 → D1 readback → **실제** Production current/history·PC/모바일 숫자 검증. 종단 5/8 유지.
 
+## 2026-11-27 S6 워크플로 중지 시간창과 #4078 무실행 연관성
+
+- 신규 확인: 제어 최신 `tools/update.mjs::makeS6OnceOwnedOperatingPort`의 승인된 S6 유지보수 `pauseIntake`는 `pc-job.yml/disable` 호출 후 `disabled_manually` 상태 확인; `resumeIntake`는 `enable`+ `active` 검증. `tools/maintenance-apply.mjs`의 S6 조정기는 pause→drain→보호된 교체/전환→resume→backlog 회수 순서. `reconcileMaintenanceBacklog`는 paused window 안 원본 Owner Issues를 durable 원장·실제 실행 영수증으로 대조하므로, 중지 중 생긴 `issues.opened`가 자동 재전달된다고 가정하면 안 됨.
+- 이벤트 시계열: #4074 PC Job 성공 2026-11-26T19:11Z → [#4069](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4069) S6 ACK 19:12:02Z → #4078 opened 19:14:52Z 및 labeled 19:14:54Z이나 해당 workflow-run 0건 → #4082 19:29:59Z 별도 PC Job도 결과 없음. #4069 S6 결과는 19:42Z `UNKNOWN/S6_ONCE_OUTCOME_UNKNOWN`, `S6_ONCE_UPDATER_RESPONSE_UNKNOWN`으로 실제 단계/중지 상태 미확정.
+- **원인 판정:** S6가 실제로 19:14Z에 `pc-job.yml`을 중지했을 가능성은 직접 코드 경로+시간축으로 지지되지만, 현행 Workflow state와 승인된 S6 journal `pausedAt/resumedAt` 및 마지막 phase가 확보되지 않아 인과 입증은 아직 안 됨. job-level late-label gate 단정은 종전처럼 기각. 시스템 전체 장애/소스 오류라고 임의 판정하거나 워크플로를 수동 활성화하지 않음.
+- 실제 소유 기능 #4069 [코드/시각 교차검증 인계](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4069#issuecomment-7201950058), 공통 #4079 [연결 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4079#issuecomment-7201956126). 원본 requestId 중복발행 0; Writer B 추가 실행 0; Core·Controller 상태 변경 0. 필수 다음 단계: S6 독립 원장/워크플로 상태 안전 확인 → 해당 window에 #4078 포함 여부 확정 → 기존 승인된 backlog 수습 → R2 Core 유휴/CAS 검증 후 Writer B 설치·251일 backfill. 종단 5/8(62.5%) 유지.
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
