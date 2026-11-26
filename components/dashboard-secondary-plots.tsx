@@ -5,13 +5,13 @@ type IndicatorPlotItem={id:string;name:string;signal:string;chart:Point[];benchm
 export function MiniIndicatorPlot({item}:{item:IndicatorPlotItem}){const color=item.signal==='positive'?'#059669':item.signal==='negative'?'#e11d48':'#64748b';return (<ResponsiveContainer width="100%" height="100%">
         <LineChart data={item.chart} margin={{top:5,right:3,bottom:5,left:3}}>
           <ReferenceLine y={item.benchmark} stroke="#94a3b8" strokeDasharray="3 3" ifOverflow="extendDomain" />
-          <Line type="linear" dataKey="value" stroke={color} strokeWidth={2.2} dot={false} isAnimationActive={false} />
+          <Line type="linear" dataKey="value" stroke={color} strokeWidth={2.2} dot={false} activeDot={false} isAnimationActive={false} />
         </LineChart>
       </ResponsiveContainer>);}
 export function SentimentPlot({visible,color,kind,item}:{visible:Point[];color:string;kind:string;item:{name:string}}){return (<ResponsiveContainer width="100%" height="100%">
             <AreaChart data={visible} margin={{top:5,right:2,left:2,bottom:3}}>
               <defs><linearGradient id={`sentiment-${kind}-${item.name.replace(/[^a-zA-Z0-9가-힣]/g, "")}`} x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor={color} stopOpacity={0.28}/><stop offset="100%" stopColor={color} stopOpacity={0.02}/></linearGradient></defs>
-              <Area type="linear" dataKey="value" stroke={color} strokeWidth={2.2} fill={`url(#sentiment-${kind}-${item.name.replace(/[^a-zA-Z0-9가-힣]/g, "")})`} dot={false} isAnimationActive={false}/>
+              <Area type="linear" dataKey="value" stroke={color} strokeWidth={2.2} fill={`url(#sentiment-${kind}-${item.name.replace(/[^a-zA-Z0-9가-힣]/g, "")})`} dot={false} activeDot={false} isAnimationActive={false}/>
             </AreaChart>
           </ResponsiveContainer>);}
 export function IndicatorPlot({visible,item}:{visible:Point[];item:IndicatorPlotItem}){return (<ResponsiveContainer width="100%" height="100%">
@@ -27,6 +27,6 @@ export function IndicatorPlot({visible,item}:{visible:Point[];item:IndicatorPlot
           </ResponsiveContainer>);}
 export function SummaryPlot({visible,color}:{visible:Point[];color:string}){return (<ResponsiveContainer width="100%" height="100%">
         <AreaChart data={visible} margin={{top:4,right:1,left:1,bottom:2}}>
-          <Area type="linear" dataKey="value" stroke={color} strokeWidth={2.4} fill={color} fillOpacity={0.1} dot={false} isAnimationActive={false}/>
+          <Area type="linear" dataKey="value" stroke={color} strokeWidth={2.4} fill={color} fillOpacity={0.1} dot={false} activeDot={false} isAnimationActive={false}/>
         </AreaChart>
       </ResponsiveContainer>);}
