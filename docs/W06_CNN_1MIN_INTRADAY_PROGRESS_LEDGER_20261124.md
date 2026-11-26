@@ -632,3 +632,14 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - 동일 SHA 본체 [Production SEO Health Run #45873177162](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45873177162) **completed/success**, 실 공개 도메인 `zgmini.kr` 페이지/정규 경로 조회 확인. 이는 정확 SHA Build+실 사이트 기본 응답 증거이며, 모바일·PC 실제 프로덕션 1W/1M 차트 hydration 값까지 직접 읽어 확인한 결과는 아님.
 - 독립 순수함수 31일 시뮬레이션: 실제 sourceObservedAt 62개 입력 → 1W 30분 분봉 15개, 1M 5시간 분봉 62개, 원본 없는 신규 관측점 0개. 기간이 7/30개의 데이터점으로 제한되지 않음을 증명(실운영 CNN 원본 수량 증거가 아닌 고정 입력 시험).
 - W06 신뢰할 수 있는 운영 완료 기준은 불변: 새로운 CNN observedAt이 공급처에서 실제 전진한 시각의 SQLite→D1→API→390/1440 최신 시계열 연동을 확인할 때까지 **종단 0/1**이다. 신규 공개 API 데이터의 직접 readback은 이번 웹 조회 환경에서 실패했으므로 검증 완료라고 표현하지 않는다. 기존 60초 수집 실측 정상은 변경하지 않는다.
+
+### 20-31. CNN 기간별 선형 차트 실제 첫 점 왼쪽 정렬 — 2026-11-27 KST
+
+- 사용자 1W·1M·3M 실제 화면에서 선 시작이 왼쪽으로부터 떨어지는 문제를 지적. **실패 조건:** `app/fear-greed/usa/cnn-panel.tsx`의 `buildChartTimeAxis`가 X축 시작을 실제 첫 데이터와 무관하게 `latest - selectedPeriod.days * 86400000`으로 고정. 예를 들어 첫 원본이 11월 20일이라도 1W 축은 11월 19일부터 시작해 공백 발생.
+- **원인 수정:** 실제 관측점이 2개 이상일 때 `domain=[earliestActualTime,latestActualTime]`을 사용해 데이터로 선형 곡선을 그리는 첫 점을 왼쪽 그래프 경계에 고정. 중간 점의 실제 시간 간격은 정규 연속 X축으로 유지. 1개 데이터에서는 기존 기간 축을 사용해 가짜 선을 생성하지 않음. 기존 기간별 분봉 간격, 데이터/산식, 선형 스타일·색상·툴팁·기간 버튼 불변.
+- **개발/병합:** 본체 최신 main 기준 전용 변경 브랜치 `codex/w06-cnn-chart-left-anchor-20261127`; [PR #1720](https://github.com/ansqhd5774-Choi/zgmini/pull/1720) 총 3파일(위 소스 1, 테스트 2) 정확 PR HEAD `5b04f67a37d330d0269fe51298ffd6f771d3baa1`, **main merge `7b29bd8dad6635cfa20ed26e11ad890b9f205c3d`**.
+- **검증:** PR HEAD Node CI, CodeQL, Secret Scan PASS. 브라우저 Run #45874912582 W06 전용 390/1440px 6기간에서 실제 SVG 선 시작 X와 그래프 plot 왼쪽 경계 비교 PASS. 최초 브라우저 실패는 X축 tick 글자 DOM의 좌표가 없어 비교 기준이 null이 된 시험 코드의 오류이며, ReferenceLine 또는 실제 SVG clip rect 왼쪽 경계로 시험 코드를 수정해 동일 목적 검증 PASS. 오류 난 시험을 삭제·무시하지 않았음.
+- **자동 배포 및 공개 접근:** main merge SHA `7b29bd8dad6635cfa20ed26e11ad890b9f205c3d`의 Cloudflare Git Integration `zgmini-migration-candidate-r5` **Build SUCCESS** (build `80cc7ac0-3c0e-4c44-99c4-e1391ae0359f`, 2026-11-26T18:23:35Z). [Production SEO Health Run #45875348677](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45875348677) **PASS**, 실제 `zgmini.kr` 정규 URL 및 리다이렉트 조회 성공. Mock된 API fixture PC·모바일 렌더 검증과 실제 Production 1W/1M 데이터 hydration 직접 증거를 구분하며 후자는 별도 미확인.
+- W06 신규 CNN `observedAt`의 실제 SQLite→D1→API→UI 종단 진행률 **0/1 유지**. 이번 내용은 X축 배치 결함 수정이며 실제 수집·Writer·DB·D1·API·예약 작업을 반복 실행하거나 재설치하지 않음.
+
+**다음 필수 단계:** 실운영 새 observedAt 전진이 확인될 때 실제 저장 점수·시각과 1W/1M/3M 화면 첫 점·마지막 점을 readback 대조. 신규 원본이 없으면 원장에 미검증으로 남기고 가짜 데이터로 채우지 않는다.
