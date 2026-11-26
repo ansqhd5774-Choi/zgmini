@@ -68,7 +68,7 @@
 | 2026-11-24 | #1521 상태·최신 댓글 조회, 진행 원장 생성 | 문서 작업 완료; 단계 1 진행 중 | 본 원장 및 위 증거 링크 |
 
 2026-11-24 문서 작업 시 신규 기능 변경 없음. 2026-11-26 전용 브랜치에 최신 main 통합 및 UI 소스/회귀 코드 변경. main 기능 병합·운영 설치·예약·DB/D1 쓰기·배포 없음.
-2026-11-26 #3741/#3742/#3766 및 #3786 A 결과 회수 완료. 후속 #3792 (90f59760-5dd7-4df4-95c5-af0139db34a2), #3793 (f4c41825-2985-4f8f-8ec3-b77e01947f24) 실제 결과 2/2 각각 회수·completed closed. #3795 (ca22b9ae-ff44-4a52-8cb8-b8484d87c401) PASS_READONLY, JSON/TXT 2/2 회수, completed closed. 현재 미회수 요청 없음. 동일 요청 중복 금지. §14 참조.
+2026-11-26 #3741/#3742/#3766 및 #3786 A 결과 회수 완료. 후속 #3792 (90f59760-5dd7-4df4-95c5-af0139db34a2), #3793 (f4c41825-2985-4f8f-8ec3-b77e01947f24) 실제 결과 2/2 각각 회수·completed closed. #3795 (ca22b9ae-ff44-4a52-8cb8-b8484d87c401) PASS_READONLY, JSON/TXT 2/2 회수, completed closed. 현재 미회수 요청 #3798 (pc-4f156bb6-948e-46a5-8ae9-d1c0479218cf). 동일 요청 중복 금지. §14 참조.
 
 ## 6. 다음 직접 실행
 
@@ -236,3 +236,8 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - [#3797](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3797), HEAD 43928822dd64c681bc601d4486601892b23668ab. 기존 A scope의 고정 .mjs 경로 14개에 한해 실제 unchanged direct dependency hash 확보용 명세 추가. 변경 파일 8개와 이전 A 결과는 재사용, #3768 TS 실패 재시도나 새 권한/검사 경로 추가 없음. #3797 CI/병합 및 A 실제 결과는 미완료. TS는 별도 설치 계약 불일치 남음.
 - 기존 installed Core의 CNN current 게시 루프는 stored_at 조건과 readback을 쓰지만 새 minute publisher와 동일 CAS 함수는 아님. 동시 게시의 정상/경합 조건 및 Sidecar archive 동시 쓰기 보호 검증 필요. R3 고정 APPROVED는 source/config/Writer receipt 모두 해당 SHA를 요구한다. 신규 Writer install SHA를 모르는 상태에서 R3 pin만 현재 d8ac2450…로 교체해도 다음 Writer 설치 후 다시 불일치할 수 있다. 승인 source lineage를 실제 새 설치 SHA에 연결하는 정규 후속 계약 필요.
 - 다음 직접 작업: #3797 CI/병합 후 지정 A 1회 → 실제 dependency identities 및 API 호환성 대조, TS installed contract 별도 해결 → 정확 최종 B 및 Sidecar 복구 → 실제 60초 검증. 아직 B 승인/운영 설치/공급자 호출/DB/D1/예약/배포 변경 없음.
+
+### 16-1. 직접 의존성 A 요청
+
+- #3797 CI 2/2 SUCCESS ([Secret 45794831122](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45794831122), [C996 45794831136](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45794831136)); main merge 5475202f9824a1c65e326756586f32164e22df64.
+- [#3798](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3798) 기존 A급 writer-install-preimage-readonly 1회 발행. requestId pc-4f156bb6-948e-46a5-8ae9-d1c0479218cf, 고정 scope SHA256 f00dbe935ea497c8e0cb4afe94628338630e2b9089fbddcc3b6362a055a63ddb, source 0f0bb62e4d4879369e061e9289ed1c79d91f0044. 실제 결과 미회수. 동일 요청 재발행 금지. 신규 운영 변경 없음.
