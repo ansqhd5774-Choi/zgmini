@@ -54,5 +54,6 @@ test('composite and secondary plots are straight segments with no visible point 
  assert.match(summary,/ReferenceDot x=\{latest\.ts\} y=\{latest\.value\} r=\{8\} fill="transparent" stroke="transparent"/,'invisible mobile touch target is retained');
  assert.doesNotMatch(extra,/type="monotone" dataKey="value"/);
  assert.doesNotMatch(extra,/activeDot=\{\{r:5\}\}/);
+ assert.equal((extra.match(/activeDot=\{false\}/g)??[]).length,4,'all secondary plots suppress point markers even on hover');
  assert.match(extra,/<Line type="linear" dataKey="value"[^>]*dot=\{false\}/);
 });
