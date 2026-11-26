@@ -86,18 +86,26 @@ test('R4 #28 mapping and identity checks never mutate source points or current p
  assert.deepEqual(current,identity);
 });
 
-test('R4 #28 production UI shows verified current model only; unknown historical footer is hidden',()=>{
- const page=readFileSync(new URL('../app/dashboard-ui.tsx',import.meta.url),'utf8');
+test('R4 #28 desktop hover and mobile touch tooltips show date and score only',()=>{
  const chart=readFileSync(new URL('../components/dashboard-summary-chart.tsx',import.meta.url),'utf8');
- assert.match(page,/currentPublished=\{overallScore!==null&&market\?\.updatedAt&&typeof market\?\.modelVersion==='string'/);
- assert.match(page,/updatedAt:market\.updatedAt,displayScore:overallScore,modelVersion:market\.modelVersion/);
- assert.match(chart,/publishedCompositeMethodLabel\(point,currentPublished\?\?null\)/);
- assert.match(chart,/currentMethod&&<span>현재 게시 계산점 · \{currentMethod\}<\/span>/);
- assert.doesNotMatch(chart,/실제 계산시각 점 · 당시 방법론 버전 미확인/);
- assert.doesNotMatch(chart,/현행 산식 재구성 · 당시 실계산점 아님/);
- assert.match(chart,/latestCurrentMethod=latest\?publishedCompositeMethodLabel\(latest,currentPublished\?\?null\):null/);
- assert.match(chart,/data-testid="w06-touch-tooltip"/);
- assert.match(chart,/\{currentMethod&&<span>현재 게시 계산점 · \{currentMethod\}<\/span>\}/);
- assert.match(chart,/\{latestCurrentMethod&&<span>현재 게시 계산점 · \{latestCurrentMethod\}<\/span>\}/);
+ assert.match(chart,/splitCompositeChartProvenance\(data\)/,'source provenance classification stays in the data');
  assert.match(chart,/<Area type="monotone" dataKey="value"[^>]*connectNulls=\{false\}/);
+ assert.match(chart,/function summaryTooltipDate\(point:DashboardPoint&\{ts:number\}\)/);
+ const dateHelper=chart.split('function summaryTooltipDate(')[1].split('function sampleSummaryPoints')[0];
+ assert.match(dateHelper,/timeZone:'Asia\/Seoul',year:'numeric',month:'2-digit',day:'2-digit'/);
+ assert.doesNotMatch(dateHelper,/hour:|minute:|계산 시각|modelVersion/);
+ const desktop=chart.split('return <div className="cnn-history-tooltip">')[1]?.split('</div>;')[0];
+ assert.ok(desktop,'desktop hover tooltip exists');
+ assert.match(desktop,/<span>\{point\?summaryTooltipDate\(point\):'—'\}<\/span>/);
+ assert.match(desktop,/<strong[^>]*>\{typeof value/);
+ assert.equal((desktop.match(/<span>/g)??[]).length,1,'one date span on desktop');
+ const mobile=chart.split('data-testid="w06-touch-tooltip"')[1]?.split('</div>}')[0];
+ assert.ok(mobile,'mobile touch tooltip exists');
+ assert.match(mobile,/<span>\{summaryTooltipDate\(latest\)\}<\/span>/);
+ assert.match(mobile,/<strong[^>]*>\{latest.value.toFixed\(1\)\}<\/strong>/);
+ assert.equal((mobile.match(/<span>/g)??[]).length,1,'one date span on mobile');
+ for(const text of [desktop,mobile]){
+  assert.doesNotMatch(text,/\(계산 시각\)|계산시각|당시 방법론|현재 게시 계산점|modelVersion|hour:|minute:/);
+ }
+ assert.match(chart,/singlePointLabel=.*summaryTooltipDate\(latest\)/,'single-point fallback also has no time');
 });
