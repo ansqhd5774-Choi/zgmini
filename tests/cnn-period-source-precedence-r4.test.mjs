@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {currentCnnSessionCheckedPoints} from '../lib/cnn-current-session-history-r4.mjs';
 
 // Exercise the actual CNN UI useMemo logic, not a separate chart algorithm.
 // A synchronous useMemo adapter is sufficient for deterministic input fixtures.
@@ -21,10 +20,6 @@ const runHistory=new Function('selectedPeriod','payload','archived','observedSid
  'allHistory','allIntraday','archiveHistory','combinedObserved','currentCnnSessionHistory',
  'getMarketPeriodConfig','useMemo',
  block('  const history = useMemo(', '  const observedRanges = useMemo(')+'\nreturn history;');
-const runPcLabels=new Function('selectedPeriod','archived','payload','allIntraday',
- 'currentCnnSessionCheckedPoints','useMemo',
- block('  const currentSessionPcDates = useMemo(', '  const chartAxis = useMemo(')
-  .replaceAll('new Set<string>()','new Set()')+'\nreturn currentSessionPcDates;');
 const useMemo=fn=>fn();
 const normalizeHistory=(history=[])=>history.flatMap(p=>{
  const date=p?.date??p?.timestamp;
@@ -76,12 +71,17 @@ test('one archive observation plus one real sidecar is a genuine two-point trend
  assert.deepEqual(combinedObserved.map(p=>p.score),[40,55]);
  assert.deepEqual(history.map(p=>p.score),[40,55]);
 });
-test('CNN source timestamp cannot be mislabelled PC verification in the 1D tooltip',()=>{
- const at='2026-11-16T22:00:00.000Z';
- const archive={period:'1D',points:[obs(at,0)],checkedPoints:[
-  check(at,40),check('2026-11-16T22:15:00.000Z',40),
- ]};
- const labels=runPcLabels('1D',archive,{observedAt},[],currentCnnSessionCheckedPoints,useMemo);
- assert.equal(labels.has(at),false,'source is genuine CNN, not a PC check');
- assert.equal(labels.has('2026-11-16T22:15:00.000Z'),true);
+test('1D uses genuine 1-minute CNN observations without a check-history interval selector',()=>{
+  let received=null;
+  const archive={period:'1D',points:source,checkedPoints:checked};
+  runHistory('1D',{observedAt},archive,true,daily,normalizeHistory(
+    source.map(p=>({timestamp:p.observedAt,score:p.score}))),[],[],
+    (sourceAt,inputs)=>{received={sourceAt,...inputs};return [];},
+    getMarketPeriodConfig,useMemo);
+  assert.equal(received.sourceAt,observedAt);
+  assert.deepEqual(received.checkedPoints,[],'PC rechecks cannot generate 1-minute CNN observations');
+  assert.deepEqual(received.observedPoints,source);
+  assert.match(panel,/const minuteMode=selectedPeriod==='1D';/);
+  assert.match(panel,/aggregateCnnIntraday\(points,\{currentObservedAt:observedAt,minutes:1,now\}\)/);
+  assert.doesNotMatch(panel,/data-cnn-minute|CNN 원본 관측 간격|확인 이력<\/button>/);
 });
