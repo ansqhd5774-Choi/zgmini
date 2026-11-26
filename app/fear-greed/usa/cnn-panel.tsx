@@ -16,6 +16,7 @@ import {cnnUsMultiDayTooltipDate} from '../../../lib/cnn-tooltip-calendar-date-r
 import {useStoredIndex} from '../../../components/use-stored-index';
 import {startStoredRefresh} from '../../../lib/market-score/live-refresh.mjs';
 import {aggregateCnnIntraday,cnnDisplayScore} from '../../../lib/cnn-intraday-buckets-r1.mjs';
+import {buildCnnPeriodChart} from '../../../lib/cnn-period-chart-r1.mjs';
 import FactorAnalysisR2,{type FactorR2} from '../factor-analysis-r2';
 
 type HistoryPoint = {
@@ -681,7 +682,16 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
     const now=Math.max(Number.isFinite(observedTime)?observedTime:0,archived?.receivedAt??0);
     return aggregateCnnIntraday(points,{currentObservedAt:observedAt,minutes:1,now});
   },[minuteMode,observedAt,archived,allIntraday]);
-  const chartData=minuteMode?(minuteHistory?.linePoints??[]):history;
+  // Long periods keep their entire calendar window with more than one genuine
+  // source point per day when available. Check timestamps are never chart input.
+  const periodChart=useMemo(()=>{
+    if(selectedPeriod==='1D')return null;
+    const observedPoints=[...(archived?.period===selectedPeriod?archived.points:[]),
+      ...(observedSidecarReady?(payload?.intradayObservations??[]):[])];
+    return buildCnnPeriodChart({period:selectedPeriod,days:getMarketPeriodConfig(selectedPeriod).days,
+      observedPoints,dailyPoints:allHistory});
+  },[selectedPeriod,archived,observedSidecarReady,payload?.intradayObservations,allHistory]);
+  const chartData=minuteMode?(minuteHistory?.linePoints??[]):(periodChart??history);
   const realChartPoints=useMemo(()=>chartData.flatMap(point=>typeof point.score==='number'?[{date:point.date,time:point.time,score:point.score}]:[]),[chartData]);
   const latestHistoryPoint = realChartPoints.at(-1) ?? null;
   const chartAxis = useMemo(
@@ -796,10 +806,10 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
       />}
       chart={<div style={{display:"flex",flexDirection:"column",height:"100%",minHeight:0,width:"100%"}}>
         <small role="status" style={{display:"block",height:18,lineHeight:"18px",flexShrink:0,whiteSpace:"nowrap"}}>{archiveDelayedPeriod===selectedPeriod?"이력 갱신 지연":null}</small>
-        <div style={{flex:1,minHeight:0,width:"100%"}} data-cnn-intraday-mode={minuteMode?1:"period"} data-cnn-bucket-count={minuteHistory?.buckets.length}>
+        <div style={{flex:1,minHeight:0,width:"100%"}} data-cnn-intraday-mode={minuteMode?1:"period"} data-cnn-bucket-count={minuteHistory?.buckets.length} data-cnn-period-point-count={periodChart?.length}>
         <MarketFearGreedChart
         showExtrema
-        showIsolatedPoints={minuteMode}
+        showIsolatedPoints={minuteMode||chartData.length===1}
         showLatestPointTouchTooltip
         color={fearGreedStateColor(loading?'확인 중':stage)}
         data={chartData}
@@ -812,7 +822,9 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
         gradientId="cnn-fill"
         formatTooltipLabel={selectedPeriod==="1D"
           ? (value:string)=>intradayLabel(value)
-          : cnnUsMultiDayTooltipDate}
+          : selectedPeriod==="1W"||selectedPeriod==="1M"
+            ? (value:string)=>value.includes('T')?intradayLabel(value):cnnUsMultiDayTooltipDate(value)
+            : cnnUsMultiDayTooltipDate}
         emptyLabel={minuteMode?"해당 뉴욕 거래일의 CNN 원본 관측 없음":"이력 없음"}
       /></div></div>}
       breadth={showBreadth && !showEducation ? <PaidUsBreadthR2Panel period={selectedPeriod}/> : undefined}
