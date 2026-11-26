@@ -143,7 +143,9 @@ jobs:
       - name: Verify W06 latest-point genuine touchscreen and hover with local isolated fixture
         run: node tests/w06-mobile-touch-local-r1.mjs
       - name: Verify W06 actual Production 1D and 6 periods at 390/1440 read-only
-        run: node tests/w06-production-singlepoint-readonly-r1.mjs
+        run: |
+          node tests/w06-production-singlepoint-readonly-r1.mjs
+          node tests/w06-cnn-prod-1m-stability-readonly-r2.mjs
       - name: Verify Production first-party JavaScript assets with read-only Chromium
         run: node tests/production-assets-network-r1.mjs
       - name: Validate inflation criterion, previous/current values, dates and sources at 1440/390
@@ -207,6 +209,7 @@ jobs:
             artifacts/theme-visible-asof/
             artifacts/production-assets-network/
             artifacts/w06-production-readonly/
+            artifacts/w06-cnn-production-stability/
             artifacts/w06-touch-local/
           if-no-files-found: warn
           retention-days: 7
