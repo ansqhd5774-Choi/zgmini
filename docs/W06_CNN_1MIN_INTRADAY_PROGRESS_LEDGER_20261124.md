@@ -417,3 +417,13 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - 이미 설치 성공한 Sidecar #3857의 정확 1파일·원본 Task/Wrapper 무변경 readback은 그대로 유효. 이번 #3862 조회의 운영 데이터/공급자/D1 쓰기 0. CNN 60초 자연 HTTP `checkedAt` 반복 간격, SQLite observation, D1/API, PC·모바일 운영 차트는 여전히 **0/1 미검증**.
 
 **다음 필수 실행:** 현재 등록된 기존 Task/Runner 중 **정확한 60초 주기·실제 CNN 전용 entry 호출을 지원하는 경로**가 있는지 세부 Task trigger/action/최근 실제 실행 readback을 통해 확인한다. 경로가 확인되면 해당 경로의 기존 승인·원본 CAS·lease·복구를 사용해 연결하고 자연 수집/저장/게시를 검증한다. 별도 Task 신규 등록·기존 Task 주기 변경 또는 공급자 정책 변경이 필요하면 **정확한 변경 효과 및 승인 범위를 우선 대조**하고 미승인 효과는 실행하지 않는다. 이전 #3857/#3836 요청 재실행 없음.
+
+
+### 20-13. 기존 PC A를 재사용하는 W06 Task 트리거/액션/최근 실행 읽기 소스
+
+- [#3862](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3862) 실측은 15개 Task의 이름/상태만 보고하므로 60초 OS 호출·실행 명령·최근 실제 실행 경로를 확인할 수 없다. 기록된 CNN HTTP 2xx 관측 `2026-11-26T11:45:36.551Z` 1회는 지속적인 60초 수집 증거가 아니다.
+- 기존 운영 PC `pc-process-inventory-readonly` A의 고정 선택형 `probe` 계약과 동일 Workflow/Runner를 재사용하는 **W06 Task cadence 읽기 소스**를 독립 제어 브랜치 `codex/w06-cnn-task-cadence-probe-20261126`에 구현. [PR #3865](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3865), 최초 HEAD `c6b5f8a042c4bbbba01772e86bd2bccfa34d67fe`. 운영 PC 기존 Task 최대 48개의 Enabled/State, trigger repetition 초, 익명화된 액션 범주 및 CNN minute 인수 리터럴, LastRun/NextRun/LastResult를 요청 입력 경로 없이 확인하도록 했으며 원본 액션·XML·경로/비밀을 게시하지 않는다. 실패/미확인은 명시적으로 유지.
+- PR 변경은 **읽기 소스/격리 시험만**이며 신규 Windows Task, Core 주기 변경, Controller·Writer B 설치, Provider/DB/D1 쓰기, 신규 PC 실행 요청 **0**. 단회 PC 실측을 아직 실행하지 않았으므로 60초 자연 실행은 여전히 미입증이다.
+- PR #3865의 CI 시작 Run: C996 [45815609483](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45815609483), 기존 프로세스 읽기 테스트 [45815609368](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45815609368), Secret Scan [45815609480](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45815609480). 원장 작성 시 **완료 CI 미확정**이며 PASS를 선반영하지 않는다.
+
+**다음 직접 행동:** #3865 정확 HEAD 3개 CI 결과 회수·필요시 결함 수정 → 검증된 읽기 변경 통합 → 기존 사용자 승인 A 요청의 고유 ID 단회 발행 및 실제 PC JSON/TXT 2/2 수신 → Task 실행경로·승인 범위 대조. 실제 60초 트리거/액션 연결이 새 운영 효과를 요구하면 해당 범위를 별도 판단하며, 중복 #3862 요청이나 기존 #3857 B 재실행 금지. 연결 후에만 자연 HTTP/SQLite/D1/API/PC·모바일 실측. **W06 종단 완료 0/1 유지.**
