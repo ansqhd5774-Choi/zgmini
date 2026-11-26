@@ -625,3 +625,10 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - **한계:** 실제 CNN 소스가 하루에 몇 회만 새로 발표되면 차트도 해당 횟수만 표현한다. 1M+ 기존 공개 API의 bounded sampling은 보존했으므로 샘플 밖 모든 개별 source를 5시간별 마지막 원본으로 검증한 것은 아니다. **W06 종단 운영 0/1 유지:** 실제 새 observedAt 원본→SQLite→D1→API→화면 반영 readback은 별도 필수 증거다.
 
 **이어갈 작업:** 병합 SHA의 Cloudflare Git Integration 성공 및 Production API/PC·모바일 1W/1M 실제 시계열의 원본 시각·점수 검증, 신규 observedAt 종단 전파 확인. 미승인 주기·공급자·저장계약 변경과 가짜 데이터 생성은 하지 않는다.
+
+### 20-30. 기간별 차트 변경 Cloudflare Production 빌드·페이지 검증 (2026-11-27 KST)
+
+- 병합된 정확 본체 main SHA `7106f7f4d4553d0f625f966c1bc7744dfcb0ef91`의 Cloudflare Git Integration **Workers Builds: zgmini-migration-candidate-r5 completed/success**, build ID `44160f65-cf6b-4a3d-8ff0-c736d466e431` (2026-11-26T18:07:51Z). 정규 Git 연동 외 Wrangler·Sites 수동 배포 없음.
+- 동일 SHA 본체 [Production SEO Health Run #45873177162](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/45873177162) **completed/success**, 실 공개 도메인 `zgmini.kr` 페이지/정규 경로 조회 확인. 이는 정확 SHA Build+실 사이트 기본 응답 증거이며, 모바일·PC 실제 프로덕션 1W/1M 차트 hydration 값까지 직접 읽어 확인한 결과는 아님.
+- 독립 순수함수 31일 시뮬레이션: 실제 sourceObservedAt 62개 입력 → 1W 30분 분봉 15개, 1M 5시간 분봉 62개, 원본 없는 신규 관측점 0개. 기간이 7/30개의 데이터점으로 제한되지 않음을 증명(실운영 CNN 원본 수량 증거가 아닌 고정 입력 시험).
+- W06 신뢰할 수 있는 운영 완료 기준은 불변: 새로운 CNN observedAt이 공급처에서 실제 전진한 시각의 SQLite→D1→API→390/1440 최신 시계열 연동을 확인할 때까지 **종단 0/1**이다. 신규 공개 API 데이터의 직접 readback은 이번 웹 조회 환경에서 실패했으므로 검증 완료라고 표현하지 않는다. 기존 60초 수집 실측 정상은 변경하지 않는다.
