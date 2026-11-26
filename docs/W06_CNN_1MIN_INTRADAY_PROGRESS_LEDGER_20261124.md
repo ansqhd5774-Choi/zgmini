@@ -410,3 +410,10 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 
 **다음 직접 행동:** 현재 설치된 1분 W06 CLI lane을 호출할 기존 승인 실행 등록 경로(등록/활성/최근 실제 실행)를 확인하고, 필요한 정확한 Task/Runner 효과만 기존 계약·승인 범위에서 연결 → 자연 60초 CNN→SQLite→D1/API→PC·모바일 점검. 운영 읽기 A는 필요한 실측 때만 고유 요청으로 단회 수행.
 
+### 20-12. Sidecar 성공 이후 실제 Task 등록 목록 대조 — 60초 호출 연결 미입증
+
+- [운영 PC 읽기 전용 Issue #3862](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3862) / 실제 Run [#45813893596](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45813893596): 2026-11-26 11:49:19.740Z(20:49:19 KST) 실측 원본 [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/pc-process-inventory-45813893596-1-operating.json) 재조회. `PASS/PROCESS_INVENTORY_COLLECTED`, `snapshot.taskStatus=OK`, ZGMINI Task 목록 15개, `ZGMINI-PC-Local-Core=Running`. **CNN 1분 전용 이름의 ZGMINI Task는 목록에 없음**. 기존 #3862는 이미 요청·완료돼 추가 A 중복 발행 없음. A의 보고 범위는 Task 명칭/상태만이며 개별 trigger XML, last run, 다른 이름의 트리거 또는 서비스 호출 여부는 포함하지 않는다. 목록 부재만으로 전역 60초 실행 불가능을 단정하지 않는다.
+- 본체 [Draft PR #1644](https://github.com/ansqhd5774-Choi/zgmini/pull/1644)의 `scripts/pc-writer/local-cycle.mjs`는 `--cnn-minute --publish`일 때 기존 `collect-local.mjs --cnn-minute` 다음 `run-local.mjs --cnn-minute --publish`를 **명시적 1회 호출**하는 코드다. 이는 OS/Runner의 60초 트리거 생성·등록·활성 증거가 아니다. 5분 Core를 1분 주기로 변경하지 않는다.
+- 이미 설치 성공한 Sidecar #3857의 정확 1파일·원본 Task/Wrapper 무변경 readback은 그대로 유효. 이번 #3862 조회의 운영 데이터/공급자/D1 쓰기 0. CNN 60초 자연 HTTP `checkedAt` 반복 간격, SQLite observation, D1/API, PC·모바일 운영 차트는 여전히 **0/1 미검증**.
+
+**다음 필수 실행:** 현재 등록된 기존 Task/Runner 중 **정확한 60초 주기·실제 CNN 전용 entry 호출을 지원하는 경로**가 있는지 세부 Task trigger/action/최근 실제 실행 readback을 통해 확인한다. 경로가 확인되면 해당 경로의 기존 승인·원본 CAS·lease·복구를 사용해 연결하고 자연 수집/저장/게시를 검증한다. 별도 Task 신규 등록·기존 Task 주기 변경 또는 공급자 정책 변경이 필요하면 **정확한 변경 효과 및 승인 범위를 우선 대조**하고 미승인 효과는 실행하지 않는다. 이전 #3857/#3836 요청 재실행 없음.
