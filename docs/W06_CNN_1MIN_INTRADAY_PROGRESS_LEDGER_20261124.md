@@ -68,7 +68,7 @@
 | 2026-11-24 | #1521 상태·최신 댓글 조회, 진행 원장 생성 | 문서 작업 완료; 단계 1 진행 중 | 본 원장 및 위 증거 링크 |
 
 2026-11-24 문서 작업 시 신규 기능 변경 없음. 2026-11-26 전용 브랜치에 최신 main 통합 및 UI 소스/회귀 코드 변경. main 기능 병합·운영 설치·예약·DB/D1 쓰기·배포 없음.
-2026-11-26 #3741/#3742/#3766 및 #3786 A 결과 회수 완료. 후속 #3792 (90f59760-5dd7-4df4-95c5-af0139db34a2), #3793 (f4c41825-2985-4f8f-8ec3-b77e01947f24) 실제 결과 2/2 각각 회수·completed closed. 현재 신규 미회수 요청 #3795 (ca22b9ae-ff44-4a52-8cb8-b8484d87c401). 동일 요청 중복 금지. §14 참조.
+2026-11-26 #3741/#3742/#3766 및 #3786 A 결과 회수 완료. 후속 #3792 (90f59760-5dd7-4df4-95c5-af0139db34a2), #3793 (f4c41825-2985-4f8f-8ec3-b77e01947f24) 실제 결과 2/2 각각 회수·completed closed. #3795 (ca22b9ae-ff44-4a52-8cb8-b8484d87c401) PASS_READONLY, JSON/TXT 2/2 회수, completed closed. 현재 미회수 요청 없음. 동일 요청 중복 금지. §14 참조.
 
 ## 6. 다음 직접 실행
 
@@ -214,3 +214,25 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - Secret [Run 45793228636](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45793228636) SUCCESS. #3794 CI 2/2 PASS, squash main b86c4132398bbb1e6f81e6bde47cb936289735ff.
 - 신규 1회 읽기 전용 [#3795](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3795), requestId ca22b9ae-ff44-4a52-8cb8-b8484d87c401, spec SHA256 890eb8f937f636756bac3217b3053dc271c18a9004f104a06ba3c66f2bd0cf6d. 예상 after 68ee9e869c8bac308731c3748a67c644f37700dd038bc841ec06584fd064b2a9. 실제 결과 미회수. 기존 세 entrypoint PASS 유지; 이 요청은 quota만 별도 대상이며 기존 요청 반복 아님.
 - 다음 직접 실행: #3795 JSON/TXT 회수 → 최종 Writer 8개 파일/실제 의존성·동시 실행 보호 계약 확인 → 정확 B manifest 및 Sidecar 정규 복구 → 승인 범위 운영 적용/실제 60초 종단 검증. 운영 파일 설치·예약·DB/D1·공급자 호출 없음.
+
+
+## 16. 2026-11-26 — quota 실제 Preview 및 설치 후보 결합
+
+- [#3795 JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/writer-b-insert-preview-3795-ca22b9ae-ff44-4a52-8cb8-b8484d87c401.json) / [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/writer-b-insert-preview-3795-ca22b9ae-ff44-4a52-8cb8-b8484d87c401.txt) 실제 회수: PASS_READONLY/WRITER_B_INSERT_PREVIEW_VERIFIED, 7개 삽입, before 379f56dd… → after 68ee9e869c8bac308731c3748a67c644f37700dd038bc841ec06584fd064b2a9, 사전 산출과 일치. config/checkout base d8ac2450…, Core XML dd81987c…, writes/calls 모두 0. 당시 relatedProcesses=1, cycleLockPresent=true, 자연 drain 미준비. A completed closed. 기존 #3786/#3792/#3793과 합쳐 실제 삽입 Preview 4/4 PASS.
+- #3766의 실제 launcher inventory와 #3741의 Task 참조를 재사용. Core first hop E:\ZGmini\data\pc-writer\archive-sidecar-r7\run-original-then-archive.vbs SHA256 9d5bc3429cd74813207cfc393eb04eff11a78106096964b80bf7833440385b7c, 원래 Core launcher E:\ZGmini\data\pc-writer\cutover-evidence\inflation-r37-2026-10-20T19-39-19-549Z\run-local-core.vbs SHA256 bb3e11c0b5c8da07162b1c824e7b52e7a7c2f987c079f29713211a2413932b01, Sidecar archive-run.mjs 583297b4… 확인. 이 기록은 정적 launcher hash이며 현재 active runtime 연계 증거로 확대하지 않는다.
+- 8개 변경 후보의 정확한 GitHub source bytes(0f0bb62e) 및 실측 삽입 결과를 아래에 구분. 나머지 4개 full replacement는 원본 복원 소스와 line-level 대조 완료: collection-publication-policy 기존 로직 변경 없음, archive publisher 기존 archive 유지 및 current/분 전용 게시 추가, store 기존 attempt 옵션 확장 및 HTTP 확인 저장 추가, refresh 기존 Core 계약 유지하면서 CNN 원본/단회/실패 cooldown 추가. 실제 installed dependency closure와 TS 호환성은 미입증.
+
+| 경로 | GitHub candidate SHA-256 | 예상 설치 after SHA-256 | 방식 |
+| --- | --- | --- | --- |
+| scripts/pc-writer/cnn-observed-archive-publication-r1.mjs | e93914393007cc674bd890f3f7aef09a9d77796186c6ce9ff12d708f6e6ec1fb | 동일 | full |
+| scripts/pc-writer/collect-local.mjs | e7ea297d9da916d825ae2c942e026c7271fe7277787502b88fafbed679840e59 | 6a750c854b18e419a5a44e6805c409a19efe9c6a9f8a416d76ea59ffa4dbdf43 | 실제 insert PASS |
+| scripts/pc-writer/collection-publication-policy.mjs | 79f26277edfad02eebda0b9c8b65de7a13fefc2409b7239f9c73b6699f8fb1c1 | 동일 | full |
+| scripts/pc-writer/local-cycle.mjs | 5edcd0fbae45d6a9907f0452758a05ab25175e95e42ea0690a4b192bfd55e55e | 486536024cc0bf78f449594fbe31b762cf0578545502a17dbfce1bd12c73c484 | 실제 insert PASS |
+| scripts/pc-writer/quota-ledger.mjs | 6f44bbb26d91be0e7203f9ea6e4772b15fd95f9d2d31dfe3540206f48a416f97 | 68ee9e869c8bac308731c3748a67c644f37700dd038bc841ec06584fd064b2a9 | 실제 insert PASS |
+| scripts/pc-writer/run-local.mjs | b3aebce50971aef333c8c80ddeaf798f47605fa6e2db775d10720e69d5b9ae5e | 431409ea5f544a023b55f80cd70072473f2e014f8b6d9e604c62105fb954de9a | 실제 insert PASS |
+| worker/public-feed-refresh.mjs | 193034cadb0dc49af3f6f435402fd23fe3e76ac085ffe270490363903bc4d052 | 동일 | full |
+| worker/public-feed-store.mjs | dcfbf7c9665636ef60c142b39767835670cb69635ebfccbf6d1f63c57de1d667 | 동일 | full |
+
+- [#3797](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3797), HEAD 43928822dd64c681bc601d4486601892b23668ab. 기존 A scope의 고정 .mjs 경로 14개에 한해 실제 unchanged direct dependency hash 확보용 명세 추가. 변경 파일 8개와 이전 A 결과는 재사용, #3768 TS 실패 재시도나 새 권한/검사 경로 추가 없음. #3797 CI/병합 및 A 실제 결과는 미완료. TS는 별도 설치 계약 불일치 남음.
+- 기존 installed Core의 CNN current 게시 루프는 stored_at 조건과 readback을 쓰지만 새 minute publisher와 동일 CAS 함수는 아님. 동시 게시의 정상/경합 조건 및 Sidecar archive 동시 쓰기 보호 검증 필요. R3 고정 APPROVED는 source/config/Writer receipt 모두 해당 SHA를 요구한다. 신규 Writer install SHA를 모르는 상태에서 R3 pin만 현재 d8ac2450…로 교체해도 다음 Writer 설치 후 다시 불일치할 수 있다. 승인 source lineage를 실제 새 설치 SHA에 연결하는 정규 후속 계약 필요.
+- 다음 직접 작업: #3797 CI/병합 후 지정 A 1회 → 실제 dependency identities 및 API 호환성 대조, TS installed contract 별도 해결 → 정확 최종 B 및 Sidecar 복구 → 실제 60초 검증. 아직 B 승인/운영 설치/공급자 호출/DB/D1/예약/배포 변경 없음.
