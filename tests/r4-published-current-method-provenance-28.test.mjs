@@ -89,7 +89,7 @@ test('R4 #28 mapping and identity checks never mutate source points or current p
 test('R4 #28 desktop hover and mobile touch tooltips show date and score only',()=>{
  const chart=readFileSync(new URL('../components/dashboard-summary-chart.tsx',import.meta.url),'utf8');
  assert.match(chart,/splitCompositeChartProvenance\(data\)/,'source provenance classification stays in the data');
- assert.match(chart,/<Area type="monotone" dataKey="value"[^>]*connectNulls=\{false\}/);
+ assert.match(chart,/<Area type="linear" dataKey="value"[^>]*connectNulls=\{false\}/);
  assert.match(chart,/function summaryTooltipDate\(point:DashboardPoint&\{ts:number\}\)/);
  const dateHelper=chart.split('function summaryTooltipDate(')[1].split('function sampleSummaryPoints')[0];
  assert.match(dateHelper,/timeZone:'Asia\/Seoul',year:'numeric',month:'2-digit',day:'2-digit'/);
