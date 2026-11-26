@@ -143,6 +143,14 @@
 - **실행 판단:** 기존 #4068 요청/360초 승인 manifest를 1200/2400초로 변조·재실행하지 않는다. 자연 유휴가 확인되지 않을 경우에만 360초 실패의 직접 대안으로 사용자 별도 명시 승인, 신규 정확한 manifest/원본 Task XML·4파일 CAS 및 해당 라벨을 갖춘 고유 B 요청을 검토한다. 승인/현재 PC 영수증 없이 이 확장을 실행 완료로 기록하지 않는다. 1200초 안 정상 종료 보장 없음.
 - [#4078](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4078) workflow-run 0건과 [#4080](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4080) Run `45883221676` 운영 job `queued`는 여전히 서로 다른 접수/Runner 상태 문제다. 어느 것도 실제 Core 유휴 증거가 아니다. PC 실행·Writer B 설치·수집·게시 신규 완료 0, 종단 5/8(62.5%) 유지.
 
+## 2026-11-27 공개 R2 API·UI 소스 독립 대조
+
+- 최신 main `app/api/market-breadth/route.ts`의 `phase=confirmed-r2`와 `app/api/market-breadth-r2-history/route.ts`는 모두 `readPaidUsR2Feed`를 호출해 승인된 유료 D1 `us-breadth-paid-r2-v1`만 읽도록 연결돼 있음. 이전 무료/R1/IEX 데이터를 R2로 대체하지 않는다.
+- `worker/us-breadth-paid-r2-public.mjs`는 D1 미게시·불완전/오염 record를 503으로 거부하고, history는 과거 날짜 그대로 보존하되 current는 `latestCompletedSession`보다 오래된 값을 표시하지 않는다. 이는 **소스 계약 관측**이고 실제 D1 값/Production 200 응답 확인이 아니다.
+- `app/market-breadth-paid-r2-panel.tsx`는 두 API를 별도 GET으로 읽고 상승·보합·하락과 실거래일 선형 차트를 표시하며 `app/fear-greed/usa/cnn-panel.tsx` + `app/country-fear-greed.tsx`에서 홈페이지에 연결됨. 250포인트 정상 렌더링 실증은 아직 미완료.
+- 공개 홈페이지 서버 응답(2026-11-27 KST 재조회)에는 `미국 등락 지수 / 연결 예정 / —` 초기 마크업만 관측. 클라이언트 hydration 후 실제 상태를 단정하지 않는다. 공개 current/history API 직접 읽기는 조회 환경에서 URL 접근/DNS 오류로 실패했으므로 HTTP status·D1 최신성 판단 **미확인**이며 사이트 운영 장애로 취급하지 않는다.
+- 독립 소스 경로에 새 결함이 입증되지 않았으므로 UI 재개발/불필요한 웹 재배포는 보류. 남은 필수 실행은 #4078 접수 및 운영 Runner 가용 확인 → 기존 보호 조건에서 Writer B 설치 → 원자료 251일 → D1 readback → **실제** Production current/history·PC/모바일 숫자 검증. 종단 5/8 유지.
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
