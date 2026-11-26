@@ -53,6 +53,7 @@ on:
       - 'tests/inflation-criterion-browser-r1.mjs'
       - 'tests/employment-r6-public-browser-r1.mjs'
       - 'tests/w06-production-singlepoint-readonly-r1.mjs'
+      - 'tests/w06-cnn-usa-production-readonly-r1.mjs'
       - 'tests/w04-r54-production-ui-readonly-r1.mjs'
       - 'tests/w04-r54-touch-local-r1.mjs'
       - 'tests/cnn-current-session-verified-checks-browser-r12.mjs'
@@ -144,6 +145,8 @@ jobs:
         run: node tests/w06-mobile-touch-local-r1.mjs
       - name: Verify W06 actual Production 1D and 6 periods at 390/1440 read-only
         run: node tests/w06-production-singlepoint-readonly-r1.mjs
+      - name: Verify CNN USA real Production 1D-1Y stored UI at 1440/390 read-only
+        run: node tests/w06-cnn-usa-production-readonly-r1.mjs
       - name: Verify Production first-party JavaScript assets with read-only Chromium
         run: node tests/production-assets-network-r1.mjs
       - name: Validate inflation criterion, previous/current values, dates and sources at 1440/390
@@ -207,6 +210,7 @@ jobs:
             artifacts/theme-visible-asof/
             artifacts/production-assets-network/
             artifacts/w06-production-readonly/
+            artifacts/w06-cnn-usa-production/
             artifacts/w06-touch-local/
           if-no-files-found: warn
           retention-days: 7
