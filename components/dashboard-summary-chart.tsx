@@ -127,7 +127,7 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays,curre
       </div>;
      }}
     />
-    <Area type="monotone" dataKey="reconstructedValue" stroke={color} strokeDasharray="4 4" fill="none" strokeWidth={1.8} dot={false} connectNulls={true} isAnimationActive={false}/>
+    <Area type="monotone" dataKey="reconstructedValue" stroke={color} fill="none" strokeWidth={1.8} dot={false} connectNulls={true} isAnimationActive={false}/>
     <Area type="monotone" dataKey="legacyCalculatedValue" stroke="none" fill="none" dot={{r:2.4,fill:color,strokeWidth:0}} connectNulls={false} isAnimationActive={false}/>
     <Area type="monotone" dataKey="verifiedCalculatedValue" stroke="none" fill="none" dot={{r:3,fill:color,strokeWidth:0}} connectNulls={false} isAnimationActive={false}/>
     {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={4.4} fill={color} stroke="#fff7f7" strokeWidth={2}/>}
