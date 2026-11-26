@@ -361,3 +361,13 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - 60초 자연 실행의 별도 조건: 기존 `local-cycle.mjs --cnn-minute --publish`는 **명시적 CLI 분기**로 실제 Writer B에 설치되었으나 5분 Core Task와 별개로 60초마다 이를 호출하는 기존 승인 실행 연결은 실측되지 않았음. 독립 예약 생성/공급자 무단 호출 없이 Task 트리거·기존 Runner 계약의 실제 등록·활성·마지막 실행을 확인한다. 이후 실제 HTTP 확인·SQLite 원본·D1/API·PC·모바일 점검한다.
 
 **다음 직접 행동:** #3839 실제 A 결과 회수 → Sidecar 자원 실패의 현재 상태 분리 → 기존 승인 maintenance source 연결·실제 B 보호 보존 → 60초 실행 연결 실증. 결과쌍 업로더 수정 완료를 Sidecar 설치 성공으로 계산하지 않는다.
+
+### 20-7. #3839 A timeout 원인 재현·수정 CI 및 중복 제거
+
+- [#3839](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3839) 원래 A Request `09d5e0af-27e8-48ef-a8b1-58a2b28f957f`에 대응하는 GitHub Run [45807639185](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45807639185), job `139866964148` 로그 직접 회수. 실행 2026-11-26 11:07:16Z → 11:11:43Z, `operating-process-snapshot` CANCELLED. `actions/checkout` 저장소 fetch·sparse-checkout/branch checkout이 11:11:26Z까지 지속되었고 워크플로의 정확 `timeout-minutes: 4`에 걸려 취소. `Collect read-only runtime process snapshot` 단계는 SKIPPED, 실제 Core Task/프로세스/lock 수치는 한 건도 관측되지 않음. #3839를 Sidecar 자원 Ready/Busy 판정으로 사용하지 않는다.
+- 해당 결함에 다른 담당자가 이미 동일 정확 범위 [PR #3843](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3843)을 작성. 기존 `pc-process-inventory-readonly.yml`의 **operating-only** A job 제한을 4→10분으로 수정, 다른 job/Runner/권한/업무 범위 불변. 정확 HEAD `832f359ced9fcd824bbd491f4e6e8afb4d9bfb80`의 CI 3/3 SUCCESS (Two-PC Process Inventory #45809048663, C996 #45809048597, Secret Scan #45809048649), main merge `cdbb5247913b97294fbb35de6dc043ec62e2626c`.
+- 위 이미 병합된 PR을 최초 확인하기 전 같은 실패 조건에 독립 PR [#3845](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3845) 운영 job 4→8분을 작성했으나, **효과가 중복**인 것을 발견 즉시 병합하지 않고 CLOSED. #3843의 10분 계약을 정본으로 유지; 다른 작업 소스 되돌리지 않음.
+- 변경된 10분 계약 및 새 환경을 기반으로 다른 담당자가 **새 고유 읽기 전용 A** [#3846](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3846), requestId `83f2d192-e257-4dc3-ae9c-62e81842c5d1`, 동일 `cnn-sidecar-b-core-readonly` probe 1회 발행. GitHub Run [45809374212](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45809374212) `in_progress` at read, source `cdbb5247…`. 기존 #3839를 재실행하지 않으며 #3846도 중복 발행하지 않음.
+- 향후 A 결과의 실제 Core Task enabled/state/instances, Core process 및 unknown process, local-cycle lock, `coreQuiet`를 대조해 #3836의 240초 Sidecar 자원 STOP과 **당시 실측/현재 샘플 차이**를 구분. 필요한 경우 정확한 owner/lease/설치 전 안전 조건만 최소 변경. 60초 자연 실행, D1/API/PC·모바일은 여전히 미검증.
+
+**다음 직접 행동:** #3846 실제 JSON/TXT 및 실행 로그 회수 → 원인 증거와 승인된 기존 Sidecar 계약을 대조 → 가능한 최소 후속 실행 후 60초 종단 검증. 단순 날짜·CI·이슈 CLOSED를 운영 완료 증거로 사용하지 않는다.
