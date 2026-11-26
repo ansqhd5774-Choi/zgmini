@@ -72,6 +72,14 @@
 - Owner 신규 정규 [Writer B #4068](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4068) / [Run 45880411492](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45880411492), request `e2f63c0a-89d4-433e-a589-28b5de070f63`: manifest 승인·후보 checkout PASS, 실제 Writer 트랜잭션 진입 (관측 시점 RUNNING). 실제 설치·백업·config/source/Task readback 결과 전에는 운영 변경 완료로 평가하지 않는다.
 - 원래 B #4055는 preflight STOP·요청 소모이며 절대 재실행하지 않는다. 신규 B 성공 전 운영 source `c8ed53...` 불변, 원자료 251일·250 비교점·D1/API/UI는 여전히 미완료. **종단 5/8 유지.**
 
+## 2026-11-27 Writer B #4068 Core 자연 종료 미충족
+
+- [Issue #4068](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4068), [Run #45880411492](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45880411492) 결과 JSON/TXT 2/2: `WRITER_B_INSTALL_STOP_RESTORED/WRITER_B_CORE_NATURAL_DRAIN_TIMEOUT_STOP`, `RECOVERY=ORIGINAL_VERIFIED`, `RETRY=READ_ONLY_RECONCILE_NO_REEXECUTE`. 승인 manifest·candidate checkout 검증 완료 후 실제 Core 유휴창 미충족으로 B 중단. `SOURCE_SHA=NONE`: 새 Writer source 설치 완료 증거 없음.
+- 기존 #4055의 import missing 조건과는 독립 원인. #4068은 원본 복구 확인·요청 소모이므로 재실행/lock 삭제/프로세스 강제 종료 금지.
+- 마지막 A 프리뷰 [#4064](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4064)의 Core snapshot에서 `enabled=true,state=4,instances=0,relatedProcesses=2,cycleLockPresent=true,drainReadyIfDisabled=false`였음. Task 상태와 잠금 소유 연결은 아직 미확정이므로 stale lock이나 임의 외부 프로세스를 원인으로 단정 금지.
+- 실제 소유자 판별을 위해 기존 Windows A `core-runtime-source-readonly` [Issue #4073](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4073) 단회 발행. 정확 Task Engine/WMI 부모 연결 및 lock PID/생성 시각, SHA source identity를 조사. 정상 RUNNING이면 자연 종료 후 해당 기능 작업만 재계획; 부정확·미관측 시 정규 유지보수 계약으로 추가 원인 분리. 현재 A 결과 미회수.
+- 계산·저장·D1/API/UI 성공 증거가 없으므로 종단 진행률 **5/8 (62.5%) 유지**.
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
