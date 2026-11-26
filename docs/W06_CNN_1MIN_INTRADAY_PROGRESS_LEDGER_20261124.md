@@ -676,3 +676,12 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - **가설 분리 필요:** 3건의 `FETCH_FAILED` 뒤 기존 5분 cooldown에 의해 길어진 구간과 `VERIFIED` 뒤의 장시간 작업 경합·Task IgnoreNew·fetch 지연을 구분해야 한다. 현 A는 개별 gap의 직전 HTTP outcome을 출력하지 않아 **실제 최초 원인을 아직 입증하지 못함**. `nextMinuteGate=CACHED`는 단일 미래 예상값, `Task Event 322` 채널 비활성은 skip 0건 증명이 아님.
 - **비파괴 최소 진단:** 제어 [PR #4062](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4062) 기존 W06 A 읽기 projection에 **90초 초과 간격 직전 실제 결과의 범주별 건수·직전 HTTP 소요시간·최근 12건의 무기밀 범주 데이터**만 추가. Source·운영 Writer/Task/DB/API/공급자·수집 주기/쿨다운은 변경하지 않으며, 기존 CI/승인 결과를 확인한 후 동일 read-only probe에서 추가 구분 근거를 확보한다.
 - **분리된 완료 조건:** 원본의 신규 `observedAt`·표시 점수 변화→SQLite→D1→API→UI는 아직 **0/1**. 동시에 최근 긴 간격 현상은 기존 완료로 표시하지 않고 최초 실패 경계만 확인·최소 복구; 사용자 승인 범위 밖 정책을 임의 변경하지 않는다.
+
+### 20-35. 사용자 운영 기준 정정 — PT1M best-effort, 원본 전파가 실제 목표 (2026-11-27 KST)
+
+- **판단 정정:** 이전 20-34에서 수집 간격 90초 초과 11건을 별도 안정성 미달 문제로 격상하고 해당 간격을 필수 진단 대상으로 삼았던 것은 **W06 목표에 비해 과도한 완료조건**이었다. 사용자 확정 기준은 **'CNN에서 유효 원본을 수집했으면 저장·D1·API·화면에 반영'**이며, 60초 Task는 실행 **목표 주기**다. 정확한 60초 간격·90초 초과 0건·FETCH_FAILED 0건을 필수 준수율/SLA 또는 DONE Gate로 만들지 않는다.
+- **기존 실제 자료 보존:** [Issue #4056](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4056) / [Run #45878346822](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45878346822)의 77건·74건 VERIFIED·3건 FETCH_FAILED·90초 초과 11구간·최장 421초 관측은 사실로 보존한다. 당시 Task enabled/Ready, PT1M, 마지막 Task 결과 0, 최신 정상 수집 있음. 따라서 시간 간격만으로 기능 장애/수집 중단/신규 원본 누락/게시 실패를 **입증할 수 없다**. 긴 구간은 직접 관련 실패가 나타나기 전까지 `NON_BLOCKING`으로 분리한다.
+- **추가 작업 철회:** 간격 직전 HTTP outcome 통계 확장용 제어 [PR #4062](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4062)는 사용자 최종 목적에 불필요한 검사 증가를 막기 위해 **병합하지 않고 closed** 처리했다. 관련 소스 변경은 제어 `main`이나 운영 PC에 적용하지 않았다. Task·기존 타임아웃/쿨다운·운영 데이터·API·화면도 변경하지 않는다.
+- **R2 완료 대상 재정의:** 새 `observedAt`을 가진 진짜 CNN 원본이 기존 자연 수집으로 들어오면 동일 점수라도 SQLite→D1→API→실제 PC/모바일 최신 표시·차트 반영을 검사한다. 새 원본 점수가 동일하다면 기존 표시 점수는 그대로이되 신규 관측시각·이력이 정상 반영되어야 한다. `checkedAt`만 전진하면 원본 미변동으로, 신규 점수/점 생성 금지.
+- **실패 판단:** 실제 신규 원본을 받은 뒤 SQLite 저장 실패, D1 게시 누락, 공개 API 구버전, UI 반영 오류 또는 Task 자체의 실질적 장기 중단이 입증될 때만 그 해당 경계를 수정한다. **단순 간격 불규칙 또는 일시 fetch 실패를 이유로 새로운 기준·Controller·예약/운영 변경을 추가하지 않는다.**
+- **현재 W06 종단 0/1:** 최신 직접 확인된 원본 `observedAt=2026-11-26T01:59:59.000Z`, 정밀 `score=14.9967450271248`, 앞선 SQLite·D1·1D/1W API 일치 PASS. 아직 신규 CNN `observedAt` 전파의 실제 end-to-end 증거가 없으므로 R2-03~05 신규 원본 대상만 미완료. 독립적으로 완료한 UI/설치/수집 경로 검증은 보존한다.
