@@ -6,7 +6,7 @@ import {addVerifiedDcPower} from './theme-data-center-power-r1.mjs';
 import {addVerifiedDcPowerProvisionalR1} from './theme-data-center-power-provisional-r1.mjs';
 import {addVerifiedSpaceSatellite} from './theme-space-satellite-r1.mjs';
 import {addVerifiedSpaceProvisionalR1} from './theme-space-satellite-provisional-r1.mjs';
-import {addVerifiedNineR37} from './theme-nine-r37-public.mjs';
+import {addVerifiedNineR37,readIndependentNineR37Confirmed} from './theme-nine-r37-public.mjs';
 import {addVerifiedNineR88} from './theme-nine-r88-provisional.mjs';
 import {readRollingPublic} from './theme-etf-rolling-public.mjs';
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
@@ -62,7 +62,32 @@ async function addBiotechSidecars(db,base,opts){
  // Keep both independent provisional sidecars intact before verifying its
  // byte-for-byte legacy provisional lineage and replacing the eight scores.
  if(opts.includeNineR37===false)return withDcProvisional;
- return addVerifiedNineR37(db,withDcProvisional,{now:opts.now});
+ const advanced=await addVerifiedNineR37(db,withDcProvisional,{now:opts.now});
+ if(advanced.observationDate<=withDcProvisional.observationDate)return advanced;
+ // Optional records can now match the independently verified newer anchor.
+ // Keep the original pre-overlay projection for the publication-base caller.
+ // Recheck biotech against the verified R37 date before applying R32 scores.
+ // Its initial read may have rejected a valid newer R2 sidecar because the
+ // legacy confirmed date was older. The R37 replay preserves that original
+ // projection's provisional lineage and updates the newly restored theme.
+ const newerBase={...withDcProvisional,observationDate:advanced.observationDate,
+  confirmedObservationDate:advanced.confirmedObservationDate};
+ const renewedBiotech=await addVerifiedBiotechContinuationR2(db,newerBase,{now:opts.now});
+ // Verify the biotech provisional score against its own confirmed PAIR50
+ // sidecar before R37 replaces that confirmed score with the R32 value.
+ const renewedBiotechProvisional=renewedBiotech===newerBase?newerBase:
+  await addVerifiedBiotechProvisionalR1(db,renewedBiotech,{now:opts.now});
+ const replayed=renewedBiotech===newerBase?advanced:
+  await addVerifiedNineR37(db,renewedBiotechProvisional,{now:opts.now});
+ // The second read may fail or the R37 record may expire between reads.
+ // Never expose the temporary anchor with legacy 7-theme histories.
+ const rebased=replayed===renewedBiotechProvisional?advanced:replayed;
+ const currentDc=await addVerifiedDcPower(db,rebased,{now:opts.now});
+ const currentSpace=await addVerifiedSpaceSatellite(db,currentDc,{now:opts.now});
+ const spaceProvisional=currentSpace===currentDc?currentSpace:
+  await addVerifiedSpaceProvisionalR1(db,currentSpace,{now:opts.now});
+ return currentDc===rebased?spaceProvisional:
+  addVerifiedDcPowerProvisionalR1(db,spaceProvisional,{now:opts.now});
 }
 export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(db),includeNineR37=true}={}){
  const headers={'cache-control':'no-store','x-robots-tag':'noindex, nofollow','x-content-type-options':'nosniff','x-data-source':'STORED'};
@@ -85,8 +110,24 @@ export async function readThemeEtfOnly(db,{now=Date.now(),store=publicFeedStore(
  }
  const observedAt=Date.parse(record.observationDate+'T23:59:59Z');
  const sourceAt=Date.parse(record.sourceStoredAt),storedAt=Number(row.stored_at);
- if(!Number.isFinite(storedAt)||storedAt>now||sourceAt>now||observedAt>now||now-observedAt>=PUBLIC_DISPLAY_MAX_AGE_MS)
+ if(!Number.isFinite(storedAt)||storedAt>now||sourceAt>now||observedAt>now||now-observedAt>=PUBLIC_DISPLAY_MAX_AGE_MS){
+  // Independently verified R37 confirmed scores must not inherit L7 seed expiry.
+  // Publication-base requests keep their exact original L7/PIT contract.
+  if(includeNineR37){
+   const confirmed=await readIndependentNineR37Confirmed(db,{now});
+   if(confirmed){
+    const withDc=await addVerifiedDcPower(db,confirmed,{now});
+    const withSpace=await addVerifiedSpaceSatellite(db,withDc,{now});
+    const withSpaceProvisional=await addVerifiedSpaceProvisionalR1(db,withSpace,{now});
+    const withDcProvisional=await addVerifiedDcPowerProvisionalR1(db,withSpaceProvisional,{now});
+    const exposed=await addVerifiedNineR88(db,withDcProvisional,{now});
+    return Response.json(exposed,{headers:{...headers,
+     'cache-control':'public, max-age=60, must-revalidate',
+     'x-data-snapshot-at':confirmed.sourceStoredAt}});
+   }
+  }
   return Response.json({status:'UNAVAILABLE',reason:'STORED_DATA_STALE',themes:[]},{status:503,headers});
+ }
  // Whitelist public derived score points: never return raw price/volume or internal audit rows.
  // Keep the confirmed 252 sessions immutable; read optional derived two-day output.
  // A missing/invalid provisional record never blocks the last good confirmed result.

@@ -3,7 +3,8 @@
 .zg-header-tools .zg-toolbar-header .zg-collection-health>button{min-width:36px;min-height:36px;width:36px;height:36px;background:transparent;border:1px solid currentColor;border-radius:6px;color:inherit}
 .zg-header-tools .zg-toolbar-header .zg-collection-health>button svg{color:inherit;width:18px;height:18px}
 .zg-collection-health.healthy{color:#10b981}
-.zg-collection-health.partial,.zg-collection-health.stale,.zg-collection-health.unknown{color:#f5b942}
+.zg-collection-health.partial{color:#f5b942}
+.zg-collection-health.stale,.zg-collection-health.unknown{color:#94a3b8}
 .zg-collection-health>button{display:grid;place-items:center;width:36px;height:36px;border:1px solid currentColor;border-radius:6px;background:transparent;cursor:pointer}
 .zg-collection-health>button:focus-visible{outline:2px solid #fff;outline-offset:3px}
 .zg-collection-health.partial>button svg{animation:zg-collection-pulse 2.5s ease-in-out infinite}
@@ -12,3 +13,7 @@
 .zg-collection-health [role=status] time{color:#94a3b8}
 @keyframes zg-collection-pulse{0%,100%{opacity:1}50%{opacity:.4}}
 @media(prefers-reduced-motion:reduce){.zg-collection-health.partial>button svg{animation:none}}
+
+.zg-collection-health .zg-api-connection-list{list-style:none;display:grid;gap:7px;margin:4px 0;padding:0;max-height:280px;overflow-y:auto;min-width:min(290px,calc(100vw - 70px))}
+.zg-collection-health .zg-api-connection-list li{display:grid;gap:1px;padding:4px 0;border-top:1px solid #31516a;overflow-wrap:anywhere}
+.zg-collection-health .zg-api-connection-list li span:last-child{color:#94a3b8;font-size:11px}

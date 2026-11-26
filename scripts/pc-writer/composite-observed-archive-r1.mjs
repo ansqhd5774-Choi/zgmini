@@ -11,7 +11,9 @@ export async function appendCompositeObservedFromCurrent(db,expectedAt){
  // Compare with the last stored point across UTC date boundaries as well.
  const previousRow=prior?null:await db.prepare("SELECT body FROM market_public_snapshots_v1 WHERE snapshot_key LIKE 'composite-observed:%' AND snapshot_key<? ORDER BY snapshot_key DESC LIMIT 1").bind(key).first();
  const lastStored=prior?JSON.parse(prior.body).points.at(-1):previousRow?JSON.parse(previousRow.body).points?.at(-1):null;
- if(lastStored?.signature===sample.signature)return {status:'UNCHANGED',date,points:prior?JSON.parse(prior.body).points.length:0};
+ // A short FNV signature is not a unique score key: never lose an actual score
+ // change solely because two different observations share the same fingerprint.
+ if(lastStored?.signature===sample.signature&&lastStored.score===sample.score)return {status:'UNCHANGED',date,points:prior?JSON.parse(prior.body).points.length:0};
  const merged=mergeCompositeObservedDay(prior?JSON.parse(prior.body):null,date,sample);
  if(!merged.changed)return {status:'UNCHANGED',date,points:prior?JSON.parse(prior.body).points.length:0};
  const encoded=JSON.stringify(merged.body);
@@ -32,6 +34,16 @@ export async function publishCompositeObservedArchive(local,remote,coreDb,{maxDa
  if(!Number.isSafeInteger(remoteCurrent?.stored_at))return {status:'PENDING_VERIFIED_MARKET',storedDays:rows.length,publishedDays:0,deferredDays:rows.length};
  const snapshots=(await remote.query(coreDb,"SELECT snapshot_key,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key LIKE 'composite-observed:%'")).results??[];
  const saved=new Map(snapshots.map(row=>[row.snapshot_key,row.stored_at]));
+ // A matching timestamp is not proof of a matching archived calculation.
+ // Verify the exact D1 body before treating the replay as already published.
+ // Fail before any new CAS writes if an equal-timestamp body differs; never
+ // overwrite a conflicting record or bypass the existing newer-remote guard.
+ for(const row of rows){
+  if(row.stored_at>remoteCurrent.stored_at||saved.get(row.snapshot_key)!==row.stored_at)continue;
+  const equal=(await remote.query(coreDb,"SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?",[row.snapshot_key])).results?.[0];
+  if(equal?.body!==row.body||equal?.stored_at!==row.stored_at)
+   throw Error('COMPOSITE_ARCHIVE_EQUAL_TIMESTAMP_BODY_MISMATCH');
+ }
  const pending=rows.filter(row=>row.stored_at<=remoteCurrent.stored_at&&(!saved.has(row.snapshot_key)||saved.get(row.snapshot_key)<row.stored_at));
  let published=0;
  for(const row of pending.slice(0,maxDaysPerRun)){

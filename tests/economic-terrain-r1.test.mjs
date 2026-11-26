@@ -32,7 +32,7 @@ test('economic terrain renders twelve indicators collapsed by default, five fixe
  assert.equal((html.match(/<button class="zg-terrain-row(?: is-selected)?"/g)??[]).length,12);
  for(const card of catalog.ECONOMIC_CARDS)assert.ok(html.includes(`id="${card.id}"`),card.id);
  const axis=html.split('class="zg-terrain-axis-bands"')[1].split('class="zg-terrain-axis-ticks"')[0];
- assert.deepEqual([...axis.matchAll(/style="width:(\d+)%"/g)].map(m=>Number(m[1])),[25,20,10,20,25]);
+ assert.deepEqual([...axis.matchAll(/style="width:(\d+)%"/g)].map(m=>Number(m[1])),[25,15,20,15,25]);
  assert.equal((html.match(/aria-expanded="false"/g)??[]).length,12);
  assert.doesNotMatch(html,/class="zg-terrain-detail"/);
  assert.match(html,/>15\.5<\/strong>/);
@@ -44,6 +44,27 @@ test('economic terrain renders twelve indicators collapsed by default, five fixe
  const employment=html.split('id="employment"')[1].split('class="zg-terrain-item"')[0];
  assert.match(employment,/>—<\/strong>/);
  assert.doesNotMatch(employment,/>88\.0/);
+});
+
+test('economic stability labels align with dashboard and detail at 40/60 boundaries',()=>{
+ const html=render([
+  {id:'employment',status:'READY',score:42.7},
+  {id:'growth',status:'READY',score:59.1},
+  {id:'rates',status:'READY',score:15.8},
+  {id:'earnings',status:'READY',score:76.45},
+ ]);
+ const accent=id=>{
+  const m=html.match(new RegExp('class="zg-terrain-item" id="'+id+'" style="--terrain-accent:([^"]+)"'));
+  assert.ok(m,'missing '+id);
+  return m[1];
+ };
+ assert.equal(accent('employment'),'#a6bdd0','42.7 is neutral');
+ assert.equal(accent('growth'),'#a6bdd0','59.1 is neutral');
+ assert.equal(accent('rates'),'#fa628b','15.8 is danger');
+ assert.equal(accent('earnings'),'#13bfa7','76.45 is stable');
+ const axis=html.split('class="zg-terrain-axis-bands"')[1].split('class="zg-terrain-axis-ticks"')[0];
+ assert.match(axis,/>위험<\/strong>/);
+ assert.match(axis,/>안정<\/strong>/);
 });
 
 test('terrain sorts by real score and places unavailable domains last',()=>{

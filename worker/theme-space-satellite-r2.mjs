@@ -1,3 +1,4 @@
+import {hasMarketParquetProvenance} from '../lib/marketparquet-retirement.mjs';
 // Separate immutable R32 publication key. R1 stays readable as a safe fallback.
 // Visitor requests only read a verified D1 snapshot; no calculation or writes.
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
@@ -18,6 +19,7 @@ const score=v=>typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=100;
 const validTime=v=>typeof v==='string'&&Number.isFinite(Date.parse(v));
 
 export function eligibleSpaceSatelliteR2(record,base,{now=Date.now(),storedAt=now}={}){
+ if(hasMarketParquetProvenance(record))return false;
  if(base?.status!=='READY'||!Array.isArray(base.themes)||base.themes.length<7||
   !validDate(base.observationDate)||base.themes[0]?.history?.length!==252)return false;
  if(!record||record.status!=='READY'||

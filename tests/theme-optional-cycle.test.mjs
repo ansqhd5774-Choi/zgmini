@@ -164,13 +164,13 @@ test('AI may inherit secondary provenance only from the exact seven-theme verifi
   observationDate:latest,provisional:{points:[{date:'2026-10-22'},{date:'2026-10-23'}]},
   lineage:{primarySource:'GETMARKETHISTORY_1H_CLOSE',secondarySource:'MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED',
    secondaryPendingCount:2,latestCompletedSession:'2026-10-23'}};
- assert.equal(verifySevenProvisionalAuthority(rolling,reference),true);
+ assert.throws(()=>verifySevenProvisionalAuthority(rolling,reference),/PROVIDER_REMOVED_MARKETPARQUET_PUBLICATION_DENIED/);
  for(const invalid of [
   {...rolling,derivedLicenseVerified:false},
   {...rolling,lineage:{...rolling.lineage,secondarySource:'UNKNOWN'}},
   {...rolling,provisional:{points:[{date:'2026-10-23'}]}},
   {...rolling,lineage:{...rolling.lineage,secondaryPendingCount:1}},
- ])assert.throws(()=>verifySevenProvisionalAuthority(invalid,reference),/AI_SEVEN_SECONDARY_RIGHTS_OR_LINEAGE_UNVERIFIED/);
+ ])assert.throws(()=>verifySevenProvisionalAuthority(invalid,reference),/PROVIDER_REMOVED_MARKETPARQUET_PUBLICATION_DENIED/);
 });
 test('the 22 Oct biotech-only union point is not a seven-theme provisional session',()=>{
  const sevenScores=Object.fromEntries(THEME_ETF_ONLY_PAIRS.map(t=>[t.theme,54]));
@@ -188,7 +188,7 @@ test('the 22 Oct biotech-only union point is not a seven-theme provisional sessi
   observationDate:'2026-10-22',provisional:{points:[{date:'2026-10-23'}]},
   lineage:{primarySource:'GETMARKETHISTORY_1H_CLOSE',secondarySource:'MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED',
    secondaryPendingCount:1,latestCompletedSession:'2026-10-23'}};
- assert.equal(verifySevenProvisionalAuthority(rolling,reference),true);
+ assert.throws(()=>verifySevenProvisionalAuthority(rolling,reference),/PROVIDER_REMOVED_MARKETPARQUET_PUBLICATION_DENIED/);
 });
 test('the actual rolling publisher matches the seven scores after optional-theme union is projected away',async()=>{
  const seed=approvedCoreSeed(),core=approvedCurrent(),scores=Object.fromEntries(THEME_ETF_ONLY_PAIRS.map(t=>[t.theme,54]));
@@ -209,10 +209,10 @@ test('the actual rolling publisher matches the seven scores after optional-theme
   readSeed:async()=>seed};
  const report=await diagnoseSevenProvisionalLane({storage:db,readPublic:async()=>feed,now:()=>NOW});
  assert.equal(report.status,'READONLY_REPORTED');
- assert.equal(report.activeLane,'ROLLING_R178');
- assert.equal(report.rolling.allAuthorityGatesPass,true);
- assert.equal(report.rolling.readerValidatorPass,true);
- assert.equal(report.rolling.exactPublicScoreMatch,true);
+ assert.equal(report.activeLane,'UNVERIFIED_NO_PUBLIC_SCORE_PARITY');
+ assert.equal(report.rolling.allAuthorityGatesPass,false);
+ assert.equal(report.rolling.readerValidatorPass,false);
+ assert.equal(report.rolling.exactPublicScoreMatch,false);
  assert.deepEqual(report.publicReference.visibleUnionDates,[latest,'2026-10-22']);
  assert.deepEqual(report.publicReference.pendingDates,['2026-10-22']);
  assert.equal(reads,2);assert.equal(report.d1Writes,0);
@@ -235,12 +235,90 @@ test('read-only authority diagnostic detects the actual seed + provisional sidec
   readSeed:async()=>{seedReads++;return seed;},replace:async()=>{writes++;}};
  const actual=await diagnoseSevenProvisionalLane({storage:db,readPublic:async()=>publicFeed,now:()=>NOW});
  assert.equal(actual.status,'READONLY_REPORTED');
- assert.equal(actual.activeLane,'SEED_PLUS_PROVISIONAL_SIDECAR');
+ assert.equal(actual.activeLane,'UNVERIFIED_NO_PUBLIC_SCORE_PARITY');
  assert.equal(actual.rolling.gates.confirmedDate,false);
- assert.equal(actual.fallback.readerValidatorPass,true);
- assert.equal(actual.fallback.exactPublicScoreMatch,true);
+ assert.equal(actual.fallback.readerValidatorPass,false);
+ assert.equal(actual.fallback.exactPublicScoreMatch,false);
  assert.equal(actual.providerCalls,0);assert.equal(actual.d1Writes,0);
  assert.equal(actual.schedulerWrites,0);assert.equal(reads,2);assert.equal(seedReads,1);assert.equal(writes,0);
+});
+test('stale public 503 still permits D1-only lineage diagnosis, never public parity',async()=>{
+ const seed=approvedCoreSeed();
+ let reads=0,seedReads=0,writes=0;
+ const db={read:async key=>{reads++;return {storedAt:NOW-1000,body:key==='theme-etf-only-rolling'?
+  {status:'READY',version:'THEME_ETF_ROLLING_R178',observationDate:latest,
+   publicationAuthorized:true,upstreamCommercialRightsVerified:true,
+   derivedLicenseVerified:true,sourcePriceReconciled:true,
+   sourceStoredAt:'2026-10-23T01:00:00Z',asOf:'2026-10-23T01:00:00Z',
+   lineage:{primarySource:'GETMARKETHISTORY_1H_CLOSE',
+    secondarySource:'MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED'}}:{status:'UNAVAILABLE'}};},
+  readSeed:async()=>{seedReads++;return seed;},replace:async()=>{writes++;}};
+ const report=await diagnoseSevenProvisionalLane({storage:db,now:()=>NOW,
+  readPublic:async()=>({status:'UNAVAILABLE',reason:'STORED_DATA_STALE',themes:[]})});
+ assert.equal(report.status,'READONLY_REPORTED');
+ assert.deepEqual(report.publicReference,{status:'UNAVAILABLE',
+  reason:'STORED_DATA_STALE',phase:null,confirmedDate:null,
+  visibleUnionDates:[],pendingDates:[]});
+ assert.equal(report.activeLane,'PUBLIC_REFERENCE_UNAVAILABLE');
+ assert.equal(report.rolling.available,true);
+ assert.equal(report.rolling.gates.confirmedDate,false);
+ assert.equal(report.rolling.readerValidatorPass,false);
+ assert.equal(report.rolling.exactPublicScoreMatch,false);
+ assert.equal(report.fallback.exactPublicScoreMatch,false);
+ assert.equal(report.rolling.sourceStoredAt,'2026-10-23T01:00:00Z');
+ assert.equal(report.rolling.gates.secondarySource,false);
+ assert.equal(report.providerCalls,0);assert.equal(report.d1Writes,0);
+ assert.equal(report.schedulerWrites,0);assert.equal(reads,2);
+ assert.equal(seedReads,1);assert.equal(writes,0);
+});
+test('public transport failure keeps read-only D1 diagnosis available without claiming PASS',async()=>{
+ let reads=0;
+ const db={read:async()=>{reads++;throw Error('mock D1 failure');},
+  readSeed:async()=>{throw Error('mock seed failure');}};
+ const report=await diagnoseSevenProvisionalLane({storage:db,now:()=>NOW,
+  readPublic:async()=>{throw Error('HTTP 503 with untrusted secret');}});
+ assert.equal(report.status,'READONLY_REPORTED');
+ assert.equal(report.publicReference.reason,'PUBLIC_API_UNREADABLE');
+ assert.equal(report.activeLane,'PUBLIC_REFERENCE_UNAVAILABLE');
+ assert.equal(report.rolling.available,false);
+ assert.equal(report.fallback.available,false);
+ assert.equal(report.rolling.exactPublicScoreMatch,false);
+ assert.equal(report.fallback.exactPublicScoreMatch,false);
+ assert.equal(reads,2);assert.equal(report.d1Writes,0);
+ assert.equal(report.providerCalls,0);
+ assert.doesNotMatch(JSON.stringify(report),/untrusted secret/);
+});
+test('confirmed GMH-only R178 has an actual completed latest session without provisional dates',async()=>{
+ const seed=approvedCoreSeed(),core=approvedCurrent();
+ const rolling={status:'READY',version:'THEME_ETF_ROLLING_R178',
+  phase:'CONFIRMED',methodologyVersion:'ETF_ONLY_T40_R20_V40_PAIR50',
+  publicationAuthorized:true,upstreamCommercialRightsVerified:true,
+  derivedLicenseVerified:true,sourcePriceReconciled:true,
+  individualStocksUsed:0,baseObservationDate:seed.observationDate,
+  baseHash:await immutableBaseHash(seed),
+  coverage:{etfs:13,benchmark:'SPY',complete:true},
+  asOf:'2026-10-23T01:00:00Z',sourceStoredAt:'2026-10-23T01:00:00Z',
+  observationDate:latest,confirmedObservationDate:latest,
+  themes:core.themes,provisional:{points:[]},
+  lineage:{confirmedPrimaryCount:252,secondaryPendingCount:0,
+   latestCompletedSession:latest,primarySource:'GETMARKETHISTORY_1H_CLOSE',
+   secondarySource:null}};
+ let reads=0,writes=0;
+ const db={read:async key=>{reads++;return {storedAt:NOW-1000,
+  body:key==='theme-etf-only-rolling'?rolling:null};},
+  readSeed:async()=>seed,replace:async()=>{writes++;}};
+ const report=await diagnoseSevenProvisionalLane({storage:db,
+  readPublic:async()=>core,now:()=>NOW});
+ assert.equal(report.status,'READONLY_REPORTED');
+ assert.equal(report.rolling.readerValidatorPass,true);
+ assert.equal(report.rolling.gates.secondarySource,true);
+ assert.equal(report.rolling.gates.latestSession,true);
+ assert.equal(report.rolling.allAuthorityGatesPass,true);
+ assert.equal(report.rolling.exactPublicScoreMatch,true);
+ assert.equal(report.activeLane,'ROLLING_R178');
+ assert.equal(report.providerCalls,0);assert.equal(report.d1Writes,0);
+ assert.equal(report.schedulerWrites,0);assert.equal(writes,0);
+ assert.equal(reads,2);
 });
 test('AI private cycle attaches only date-exact verified 23rd secondary score and does not write D1',async()=>{
  await fixture('ai-semiconductor',async({root})=>{
@@ -261,11 +339,9 @@ test('AI private cycle attaches only date-exact verified 23rd secondary score an
    secondary:async()=>{scoreCalls++;return {status:'PRIVATE_PROVISIONAL_SCORES_VERIFIED',
     points:[{date:provisionalDate,score:62.13456}],lineage:{source:'MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED',
      maxOverlapDifference:0.003}};}});
-  assert.equal(result.status,'CANDIDATE_VERIFIED_NOT_PUBLISHED');
-  assert.deepEqual(result.provisionalDates,[provisionalDate]);
-  assert.deepEqual(result.provisionalScores,[62.13456]);
-  assert.equal(result.sourcePriceMaxOverlapDifference,0.003);
-  assert.equal(writes,0);assert.equal(reads,2);assert.equal(scoreCalls,1);
+  assert.equal(result.status,'BLOCKED');
+  assert.equal(result.reason,'PROVIDER_REMOVED_MARKETPARQUET_PUBLICATION_DENIED');
+  assert.equal(writes,0);assert.equal(reads,2);assert.equal(scoreCalls,0);
  });
 });
 test('read-only AI diagnostic uses existing local audit and D1 SELECT with zero provider calls and writes',async()=>{

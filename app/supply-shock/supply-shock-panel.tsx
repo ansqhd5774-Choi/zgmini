@@ -12,12 +12,13 @@ import {MarketTrendFrame} from "../market-trend-frame";
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from "../market-fear-greed-chart";
 import {InflationMiniChart} from "../inflation/inflation-mini-chart";
 import {SupplyFavoriteButton,SupplyFavoriteHeaderIcon} from "./supply-favorite-button";
+import {supplyR10VerifiedDisplayScore,supplyR10VerifiedDisplayTrend} from '../../lib/supply-r10-stored-display-r4.mjs';
 import "./supply-indicator-r2.css";
 import "../risk-last3-hero-parity-r2.css";
 import "../shared-risk-indicator-width-r1.css";
 
 type Row={id:string;name:string;status:string;score:number|null;value:number|null;unit:string;observationDate:string|null;source:string;weight:number;previousValue?:number|null;previousObservationDate?:string|null;trend?:Array<{date:string;value:number}>;nextReleaseDate?:string|null};
-type Payload={status:string;score:number|null;asOfDate?:string|null;scoreObservationMonth?:string;methodologyVersion?:string;notes?:string[];missingFactors?:string[];indicators?:Row[];trend?:Array<{label:string;value:number}>;scoreComparisons?:{week?:number|null;month?:number|null;threeMonth?:number|null;sixMonth?:number|null;year?:number|null}};
+type Payload={status:string;score:number|null;asOfDate?:string|null;scoreObservationMonth?:string;methodologyVersion?:string;historyMode?:string;lookAheadSafe?:boolean;inputCount?:number;sourceVersion?:string;sourceStoredAt?:number;notes?:string[];missingFactors?:string[];indicators?:Row[];trend?:Array<{label:string;value:number}>;scoreComparisons?:{week?:number|null;month?:number|null;threeMonth?:number|null;sixMonth?:number|null;year?:number|null}};
 
 const meta:Record<string,{label:string;content:string;criterion:string;help:string}>={
  G:{label:'글로벌 공급망 압력',content:'NY Fed GSCPI의 공급망 압력',criterion:'압력이 낮을수록 양호',help:'세계 운송·제조업 자료를 종합합니다. 정규분포 함수로 변환한 위험점수이며 충격 발생 확률이 아닙니다. 가중치 35%입니다.'},
@@ -50,8 +51,8 @@ function HelpTip({label,text}:{label:string;text:string}){return <ContentHelp la
 
 export default function SupplyShockPanel(){
  const {payload,loading}=useStoredIndex<Payload>('/api/supply-shock-detail');
- const score=typeof payload?.score==="number"&&Number.isFinite(payload.score)?payload.score:null;
- const trend=useMemo(()=>(payload?.trend??[]).filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[payload?.trend]);
+ const score=supplyR10VerifiedDisplayScore(payload);
+ const trend=useMemo(()=>supplyR10VerifiedDisplayTrend(payload,score).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint)),[payload,score]);
  const latest=trend.at(-1),latestPoint:MarketFearGreedChartValidPoint|null=latest?{date:latest.date,score:latest.score as number}:null;
  const axisTicks=trend.filter((_,i)=>i===0||i===trend.length-1||i%Math.max(1,Math.ceil((trend.length-1)/4))===0).map(p=>p.date),axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(2,7).replace("-","/")]));
  // The public saved comparison object takes precedence, including intentional nulls.
@@ -64,7 +65,7 @@ export default function SupplyShockPanel(){
   {label:"3개월",value:storedComparison?.threeMonth??null},
   {label:"6개월",value:storedComparison?.sixMonth??null},
   {label:"1년",value:storedComparison?.year??null},
- ];
+ ].map(item=>score===null||trend.length===0?{...item,value:null}:item);
  const rows=new Map((payload?.indicators??[]).map(x=>[x.id,x]));
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell supply-shock-target-card" data-testid="supply-shock-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>

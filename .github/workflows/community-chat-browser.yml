@@ -10,8 +10,20 @@ on:
       - 'lib/about-intro-bootstrap.mjs'
       - 'tests/about-intro-bootstrap-browser-r6.mjs'
       - 'app/layout.tsx'
+      # Direct dependencies of the existing home/about browser checks.
+      - 'app/responsive.css'
+      - 'app/about/about.module.css'
+      - 'components/site-header.tsx'
+      - 'components/site-footer.tsx'
+      - 'components/dashboard-side-rails.tsx'
+      - 'components/live-score-value.tsx'
+      - 'components/score-arrow-provider.tsx'
       - 'app/sector-fear-greed/page.tsx'
       - 'app/theme-fear-greed/page.tsx'
+      - 'app/theme-fear-greed/theme-detail-charts.tsx'
+      - 'lib/theme-visible-asof-r1.mjs'
+      - 'lib/theme-chart-day-r62.mjs'
+      - 'tests/theme-visible-asof-browser-r1.mjs'
       - 'app/search-intent-intro.tsx'
       - 'app/about/page.tsx'
       - 'app/guides/**'
@@ -36,6 +48,14 @@ on:
       - 'lib/dashboard-chart-startup.mjs'
       - 'lib/market-score/market-trend-window-r1.mjs'
       - 'tests/dashboard-history-browser-r5.mjs'
+      - 'tests/w06-mobile-touch-local-r1.mjs'
+      - 'tests/production-assets-network-r1.mjs'
+      - 'tests/inflation-criterion-browser-r1.mjs'
+      - 'tests/employment-r6-public-browser-r1.mjs'
+      - 'tests/w06-production-singlepoint-readonly-r1.mjs'
+      - 'tests/w04-r54-production-ui-readonly-r1.mjs'
+      - 'tests/w04-r54-touch-local-r1.mjs'
+      - 'tests/cnn-current-session-verified-checks-browser-r12.mjs'
       - 'app/globals.css'
       - 'public/styles/fear-greed-education-r1.css'
       - 'app/fear-greed/usa/page.tsx'
@@ -43,6 +63,9 @@ on:
       - 'tests/community-chat-browser-r1.mjs'
       - 'tests/dashboard-deferred-ui-browser-r1.mjs'
       - 'components/risk-detail-side-rails.*'
+      - 'app/earnings-recession/**'
+      - 'tests/earnings-r511-browser-r1.mjs'
+      - 'tests/w05-bea-production-readonly-r1.mjs'
       - 'tests/risk-detail-side-rails-browser-r44.mjs'
       - 'app/outbreak-events.tsx'
       - 'app/outbreak-beginner-fed-r53.tsx'
@@ -55,15 +78,27 @@ on:
       - 'tests/outbreak-beginner-approved-r53.test.mjs'
       - 'app/outbreak-scenarios-r51.css'
       - 'tests/outbreak-scenarios-browser-r51.mjs'
+      # npm packages and Vite runtime affect every Playwright browser route.
+      - 'package.json'
+      - 'package-lock.json'
+      - 'vite.config.ts'
+      - 'scripts/ci-accessibility-axe.mjs'
+      - 'tests/ci-accessibility-axe.test.mjs'
+      - 'scripts/ci-cross-browser-core.mjs'
+      - 'tests/ci-cross-browser-core.test.mjs'
+      # R2 performance lab shares the existing installed Playwright Chromium.
+      - 'scripts/ci-performance-lab.mjs'
+      - 'tests/ci-performance-lab.test.mjs'
       - '.github/workflows/community-chat-browser.yml'
   workflow_dispatch:
 
 permissions:
   contents: read
+  actions: read # inspect earlier same-workflow Actions artifacts, not other repositories
 
 jobs:
   ui:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 20
     env:
       CI: 'true'
@@ -77,9 +112,11 @@ jobs:
       - name: Install locked repository dependencies
         run: npm ci
       - name: Install test-only Playwright without changing lockfile
-        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1 axe-core@4.14.1
       - name: Install browser for offline UI interactions
-        run: npx playwright install --with-deps chromium
+        run: npx playwright install --with-deps chromium firefox webkit
+      # Independent W06 public chart test runs before unrelated risk-page asset checks.
+      # Both retain their assertions; a failure in either still fails the overall job.
       - name: Start local dev UI (no remote bindings and no deployment)
         run: |
           npm run dev > /tmp/zgmini-chat-vite.log 2>&1 &
@@ -93,6 +130,30 @@ jobs:
           done
           tail -n 120 /tmp/zgmini-chat-vite.log
           exit 1
+      # Validate the changed composite chart before unrelated live W05 checks:
+      # W05 retains the same assertion and still fails this job if it breaks.
+      - name: Validate dashboard history period changes and newer snapshot refresh
+        run: node tests/dashboard-history-browser-r5.mjs
+      - name: Verify W05 BEA actual Production API and 390/1440 hydrated UI read-only
+        run: node tests/w05-bea-production-readonly-r1.mjs
+      - name: Verify W06 latest-point genuine touchscreen and hover with local isolated fixture
+        run: node tests/w06-mobile-touch-local-r1.mjs
+      - name: Verify W06 actual Production 1D and 6 periods at 390/1440 read-only
+        run: node tests/w06-production-singlepoint-readonly-r1.mjs
+      - name: Verify Production first-party JavaScript assets with read-only Chromium
+        run: node tests/production-assets-network-r1.mjs
+      - name: Validate inflation criterion, previous/current values, dates and sources at 1440/390
+        run: node tests/inflation-criterion-browser-r1.mjs
+      - name: Validate W05 R5-11 BLS stored observations and gap-safe charts at 390/768/1440/1920
+        run: node tests/earnings-r511-browser-r1.mjs
+      - name: Validate employment R6 stored 29-row presentation at 1440/390
+        run: node tests/employment-r6-public-browser-r1.mjs
+      - name: Verify W04 R54 latest-point mobile tap using local stored UI fixture
+        run: node tests/w04-r54-touch-local-r1.mjs
+      - name: Verify W04 actual Production R54 employment UI at 1440/390 read-only
+        run: node tests/w04-r54-production-ui-readonly-r1.mjs
+      - name: Validate W06 latest visible theme date in mocked Chromium at 390/1440
+        run: node tests/theme-visible-asof-browser-r1.mjs
       - name: Validate introduction before hydration and dismissal preferences
         run: node tests/about-intro-bootstrap-browser-r6.mjs
       - name: Validate chat UI at 390, 768, 1440 and 1920 px with mocked backend
@@ -105,22 +166,48 @@ jobs:
         run: node tests/dashboard-deferred-ui-browser-r1.mjs
       - name: Validate route-specific education styles and mobile layout
         run: node tests/fear-greed-education-browser-r4.mjs
-      - name: Validate dashboard history period changes and newer snapshot refresh
-        run: node tests/dashboard-history-browser-r5.mjs
+      - name: Verify CNN actual PC-check 1D curve and stale-session exclusion at 390/1440
+        run: node tests/cnn-current-session-verified-checks-browser-r12.mjs
+      # Lab results are observations, not a new unapproved Lighthouse score gate.
+      - name: Measure isolated Chromium performance laboratory
+        run: node scripts/ci-performance-lab.mjs
+      # Accessibility results are observations; reviewed baseline approval is separate.
+      - name: Measure local WCAG A/AA accessibility with axe-core
+        timeout-minutes: 2
+        run: node scripts/ci-accessibility-axe.mjs
+      # #23: core routes only; non-gating browser difference observations.
+      - name: Observe local Firefox and WebKit core routes
+        timeout-minutes: 4
+        run: node scripts/ci-cross-browser-core.mjs
       - name: Upload browser UI evidence
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: community-chat-browser-r1
           path: |
+            artifacts/ci-cross-browser/
+            artifacts/ci-accessibility/
+            artifacts/performance-lab/
             artifacts/community-chat-browser/
             artifacts/risk-detail-side-rails/
             artifacts/outbreak-scenarios/
             artifacts/dashboard-deferred-ui/
             artifacts/fear-greed-education/
             artifacts/dashboard-history/
+            artifacts/cnn-current-session-checks/
             artifacts/about-intro-bootstrap/
+            artifacts/inflation-criterion-review/
+            artifacts/earnings-r511-browser/
+            artifacts/w05-bea-production-readonly/
+            artifacts/employment-r6-browser/
+            artifacts/w04-r54-production-ui/
+            artifacts/w04-r54-touch-local/
+            artifacts/theme-visible-asof/
+            artifacts/production-assets-network/
+            artifacts/w06-production-readonly/
+            artifacts/w06-touch-local/
           if-no-files-found: warn
+          retention-days: 7
       - name: Show local dev errors on failure
         if: failure()
         run: tail -n 120 /tmp/zgmini-chat-vite.log || true

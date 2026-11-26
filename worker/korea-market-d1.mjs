@@ -11,6 +11,32 @@ const STATUSES = ['IDLE','RUNNING','PAUSED','COMPLETE','ERROR'];
 const fail = code => { throw Error(code); };
 const integer = n => Number.isSafeInteger(n) && n >= 0;
 const utcDateKey = (now=Date.now()) => new Date(now).toISOString().slice(0,10).replaceAll('-','');
+const KST_OFFSET_MS=9*3600_000;
+const RESEARCH_MAX_CALENDAR_AGE_DAYS=7;
+// Conservative calendar-age upper bound; an exchange holiday calendar is separate.
+// An internally matching D1 checkpoint does NOT prove current-market freshness.
+export function assessKoreaResearchFreshness(snapshotDate,latestStoredDate,now=Date.now()){
+ const dateEpoch=value=>{
+  if(typeof value!=='string'||! /^[0-9]{8}$/.test(value))return null;
+  const iso=`${value.slice(0,4)}-${value.slice(4,6)}-${value.slice(6,8)}`;
+  const epoch=Date.parse(iso+'T00:00:00+09:00');
+  return Number.isFinite(epoch)&&new Date(epoch+KST_OFFSET_MS).toISOString().slice(0,10)===iso?epoch:null;
+ };
+ const n=now instanceof Date?now.getTime():now,observed=dateEpoch(snapshotDate);
+ const base={snapshotObservationDate:snapshotDate,latestStoredObservationDate:latestStoredDate??null,
+  maxCalendarAgeDays:RESEARCH_MAX_CALENDAR_AGE_DAYS};
+ if(!Number.isFinite(n)||observed===null)
+  return {...base,status:'UNVERIFIED',reasonCode:'OBSERVATION_DATE_INVALID',observationAgeDays:null};
+ const dayIndex=value=>Math.floor((value+KST_OFFSET_MS)/86_400_000);
+ const ageDays=dayIndex(n)-dayIndex(observed);
+ if(ageDays<0)return {...base,status:'UNVERIFIED',reasonCode:'OBSERVATION_DATE_IN_FUTURE',observationAgeDays:ageDays};
+ if(latestStoredDate&&latestStoredDate>snapshotDate)
+  return {...base,status:'UPDATE_PENDING',reasonCode:'NEWER_MARKET_DATA_STORED',observationAgeDays:ageDays};
+ if(ageDays>RESEARCH_MAX_CALENDAR_AGE_DAYS)
+  return {...base,status:'STALE_OBSERVATION',reasonCode:'OBSERVATION_TOO_OLD',observationAgeDays:ageDays};
+ return {...base,status:'CURRENT',reasonCode:null,observationAgeDays:ageDays};
+}
+
 const factorOf = s => ({factor:'Breadth', advanceRatio:s.breadth.advanceRatio,
   advanceValueShare:s.breadth.advanceValueShare, score:s.breadth.score, status:s.breadth.status,
   coverage:{return:s.returnCoverage,tradingValue:s.tradingValueCoverage,marketCap:s.marketCapCoverage}});
@@ -249,8 +275,9 @@ export class D1KoreaMarketHistoryStore {
     if(!row) return null;
     const latestStored=(await this.#statement("SELECT MAX(date) AS date FROM kfg_v2_market_dates WHERE status='COMPLETE'").first())?.date??null;
     const composite=JSON.parse(row.composite_json);
-    const freshnessStatus=latestStored&&latestStored>row.date?'UPDATE_PENDING':'CURRENT';
-    return {date:row.date,methodologyVersion:row.methodology_version,factors:JSON.parse(row.factors_json),composite,historyMode:row.history_mode,pointInTimeVerified:Boolean(row.point_in_time_verified),historicalVintageVerified:Boolean(row.historical_vintage_verified),currentProductionEligible:composite?.status==='READY' && composite?.observationDate===row.date,historicalBacktestEligible:Boolean(row.historical_vintage_verified),freshness:{status:freshnessStatus,snapshotObservationDate:row.date,latestStoredObservationDate:latestStored},sourcePublishedAt:row.source_published_at,sourceObservedAt:row.source_observed_at,fetchedAt:row.fetched_at,calculatedAt:row.calculated_at,correctionFingerprint:row.correction_fingerprint};
+    const freshness=assessKoreaResearchFreshness(row.date,latestStored);
+    const currentProductionEligible=composite?.status==='READY' && composite?.observationDate===row.date && freshness.status==='CURRENT';
+    return {date:row.date,methodologyVersion:row.methodology_version,factors:JSON.parse(row.factors_json),composite,historyMode:row.history_mode,pointInTimeVerified:Boolean(row.point_in_time_verified),historicalVintageVerified:Boolean(row.historical_vintage_verified),currentProductionEligible,historicalBacktestEligible:Boolean(row.historical_vintage_verified),freshness,sourcePublishedAt:row.source_published_at,sourceObservedAt:row.source_observed_at,fetchedAt:row.fetched_at,calculatedAt:row.calculated_at,correctionFingerprint:row.correction_fingerprint};
   }
   async saveFactorSnapshot(date,factor) {
     // Breadth is committed with the date. Standalone overwrites/repairs are forbidden.

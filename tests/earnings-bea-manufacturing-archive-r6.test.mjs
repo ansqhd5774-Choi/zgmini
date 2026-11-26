@@ -42,3 +42,145 @@ test('metadata conflicts and stale observation fail closed',()=>fixture(({root,f
   fs.writeFileSync(path.join(folder,hash+'.json'),JSON.stringify(meta));
   assert.throws(()=>readArchivedBeaMfgR6({root,sourceSha:hash,now:now+170*86_400_000}),/ARCHIVE_STALE/);
 }));
+
+test('archive CSV and metadata symlinks fail before digest or parsing',
+  {skip:process.platform==='win32'},()=>fixture(({root,folder})=>{
+  for(const suffix of ['csv','json']){
+    const source=path.join(folder,hash+'.'+suffix);
+    const outside=path.join(root,'unapproved-'+suffix);
+    fs.renameSync(source,outside);
+    fs.symlinkSync(outside,source);
+    assert.throws(()=>readArchivedBeaMfgR6({root,sourceSha:hash,now}),
+      /BEA_MFG_ARCHIVE_UNSAFE_PATH/);
+    fs.unlinkSync(source);
+    fs.renameSync(outside,source);
+  }
+}));
+
+test('linked ancestor directory cannot redirect BEA archive outside its raw family',
+  {skip:process.platform==='win32'},()=>fixture(({root,folder})=>{
+  const diverted=path.join(root,'unapproved-archive');
+  fs.renameSync(folder,diverted);
+  fs.symlinkSync(diverted,folder,'dir');
+  assert.throws(()=>readArchivedBeaMfgR6({root,sourceSha:hash,now}),
+    /BEA_MFG_ARCHIVE_UNSAFE_PATH/);
+}));
+
+const archiveChanged=(folder,meta,text,{storedAt=now}={})=>{
+  const sha=createHash('sha256').update(text).digest('hex');
+  fs.writeFileSync(path.join(folder,sha+'.csv'),text);
+  fs.writeFileSync(path.join(folder,sha+'.json'),JSON.stringify({
+    ...meta,sourceVersion:sha,file:sha+'.csv',
+    sourceStoredAt:storedAt,sourceRetrievedAt:new Date(storedAt).toISOString()
+  }));
+  return sha;
+};
+
+test('identical archived SHA yields deterministic period, YoY and five-point source lineage',()=>fixture(({root})=>{
+  const a=readArchivedBeaMfgR6({root,sourceSha:hash,now});
+  const b=readArchivedBeaMfgR6({root,sourceSha:hash,now});
+  assert.deepEqual(a,b);
+  assert.equal(a.sourceVersion,hash);
+  assert.equal(a.sourceStoredAt,now);
+  assert.equal(a.indicator.history.length,5);
+  assert.equal(a.indicator.yearAgoPeriod,'2025-Q2');
+  assert.equal(a.indicator.observationPeriod,'2026-Q2');
+  assert.equal(a.historicalMode,'CURRENT_VINTAGE_NOT_PIT');
+}));
+
+test('revised raw CSV changes SHA and output only for that valid source checkpoint',()=>fixture(({root,folder,meta})=>{
+  const base=readArchivedBeaMfgR6({root,sourceSha:hash,now});
+  const revisedText=csv.replace('1053.304','1153.304');
+  const revisionAt=now+10_000;
+  const revisionSha=archiveChanged(folder,meta,revisedText,{storedAt:revisionAt});
+  assert.notEqual(revisionSha,hash);
+  const revised=readArchivedBeaMfgR6({root,sourceSha:revisionSha,now:revisionAt});
+  assert.notEqual(revised.indicator.value,base.indicator.value);
+  assert.equal(revised.sourceVersion,revisionSha);
+  assert.equal(revised.sourceStoredAt,revisionAt);
+  assert.equal(revised.indicator.observationPeriod,'2026-Q2');
+  assert.equal(revised.indicator.history[4].profitsBillionsUsdAnnualRate,1153.304);
+  assert.deepEqual(readArchivedBeaMfgR6({root,sourceSha:hash,now:revisionAt}).indicator,base.indicator);
+  assert.deepEqual(readArchivedBeaMfgR6({root,sourceSha:revisionSha,now:revisionAt}),revised);
+}));
+
+test('current observed zero remains numeric YoY -100; zero base and missing values fail closed',()=>fixture(({root,folder,meta})=>{
+  const zeroText=csv.replace('1053.304','0');
+  const zeroSha=archiveChanged(folder,meta,zeroText);
+  const zero=readArchivedBeaMfgR6({root,sourceSha:zeroSha,now});
+  assert.equal(zero.indicator.currentProfitsBillionsUsdAnnualRate,0);
+  assert.equal(zero.indicator.value,-100);
+  const zeroBaseText=csv.replace('681.285','0');
+  const zeroBaseSha=archiveChanged(folder,meta,zeroBaseText);
+  assert.throws(()=>readArchivedBeaMfgR6({root,sourceSha:zeroBaseSha,now}),/BEA_MFG_YOY_BASE_NONPOSITIVE/);
+  for(const missing of ['.','null','']){
+    const unavailable=csv.replace('1053.304',missing);
+    const sha=archiveChanged(folder,meta,unavailable);
+    assert.throws(()=>readArchivedBeaMfgR6({root,sourceSha:sha,now}),/BEA_MFG_INVALID_VALUE/);
+  }
+  assert.equal(readArchivedBeaMfgR6({root,sourceSha:hash,now}).indicator.value,
+    (1053.304/681.285-1)*100);
+}));
+
+test('noncontiguous or duplicated archived quarters never create synthetic history',()=>fixture(({root,folder,meta})=>{
+  const missingQuarter=csv.replace('2025-10-01,801.724\n','');
+  const missingSha=archiveChanged(folder,{...meta,rowCount:4},missingQuarter);
+  assert.throws(()=>readArchivedBeaMfgR6({root,sourceSha:missingSha,now}),
+    /BEA_MFG_NONCONTIGUOUS_QUARTERS|BEA_MFG_INSUFFICIENT_HISTORY/);
+  const duplicateQuarter=csv.replace('2025-10-01','2025-07-01');
+  const duplicateSha=archiveChanged(folder,meta,duplicateQuarter);
+  assert.throws(()=>readArchivedBeaMfgR6({root,sourceSha:duplicateSha,now}),
+    /BEA_MFG_NONCONTIGUOUS_QUARTERS/);
+}));
+
+test('null or array archive metadata fails with a bounded source-contract error',()=>fixture(({root,folder})=>{
+  const metadata=path.join(folder,hash+'.json');
+  for(const invalid of ['null','[]']){
+    fs.writeFileSync(metadata,invalid);
+    assert.throws(()=>readArchivedBeaMfgR6({root,sourceSha:hash,now}),
+      /BEA_MFG_ARCHIVE_METADATA_MISMATCH/);
+  }
+}));
+
+test('dangling CSV/meta and raw directory links are unsafe rather than missing',
+  {skip:process.platform==='win32'},()=>fixture(({root,folder})=>{
+    for(const suffix of ['csv','json']){
+      const file=path.join(folder,hash+'.'+suffix);
+      fs.unlinkSync(file);
+      fs.symlinkSync(path.join(root,'nonexistent-'+suffix),file);
+      assert.throws(()=>readArchivedBeaMfgR6({root,sourceSha:hash,now}),
+        /BEA_MFG_ARCHIVE_UNSAFE_PATH/);
+      fs.unlinkSync(file);
+      if(suffix==='csv')fs.writeFileSync(file,csv);
+    }
+    const linked=path.join(root,'raw','earnings-recession','bea-manufacturing-profits-r5');
+    fs.rmSync(linked,{recursive:true,force:true});
+    fs.symlinkSync(path.join(root,'nonexistent-folder'),linked,'dir');
+    assert.throws(()=>readArchivedBeaMfgR6({root,sourceSha:hash,now}),
+      /BEA_MFG_ARCHIVE_UNSAFE_PATH/);
+}));
+
+
+test('B result contract publishes source checkpoint and exact D1 stored timestamp without changing data',()=>{
+ const source=fs.readFileSync(new URL('../scripts/pc-writer/EARNINGS_BEA_MFG_PROFIT_R6_D1_ONE_SHOT.mjs',import.meta.url),'utf8');
+ assert.equal((source.match(/sourceStoredAt:payload\.sourceStoredAt/g)??[]).length,2);
+ assert.match(source,/storedAt:result\.storedAt/);
+ assert.match(source,/status:'PASS_READONLY_ARCHIVE_PREFLIGHT'/);
+ assert.match(source,/d1Readback:result\.status/);
+ assert.match(source,/--confirm-bea-manufacturing-d1-write/);
+ assert.match(source,/--source-sha/);
+});
+
+
+test('shared B preflight pins SHA, retrieval time and observed period before manufacturing D1 access',()=>{
+ const source=fs.readFileSync(new URL('../scripts/pc-writer/EARNINGS_BEA_MFG_PROFIT_R6_D1_ONE_SHOT.mjs',import.meta.url),'utf8');
+ const gate=source.indexOf("ZGMINI_EARNINGS_BEA_MFG_B_PIN_REQUIRED==='1'");
+ const firstD1=source.indexOf("await import('./d1.mjs')");
+ assert.ok(gate>0&&firstD1>gate);
+ for(const field of ['ZGMINI_EARNINGS_BEA_MFG_SOURCE_VERSION',
+   'ZGMINI_EARNINGS_BEA_MFG_SOURCE_STORED_AT',
+   'ZGMINI_EARNINGS_BEA_MFG_OBSERVED_THROUGH'])
+   assert.ok(source.includes(field));
+ assert.match(source,/BEA_MFG_APPLY_SOURCE_DRIFT_NO_WRITE/);
+ assert.match(source,/String\(payload\.sourceStoredAt\)/);
+});

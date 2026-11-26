@@ -6,10 +6,11 @@ const css=readFileSync("app/outbreak-scenarios-r51.css","utf8");
 const page=readFileSync("app/page.tsx","utf8");
 const iran=readFileSync("app/iran-progress.tsx","utf8");
 
-test("redesign only scenarios view and leave the dashboard summary unchanged",()=>{
+test("standalone scenarios remain available after removing the dashboard summary",()=>{
  const standalone=readFileSync('app/outbreak/page.tsx','utf8');
  assert.match(standalone,/<OutbreakEvents\/>/);
- assert.match(page,/<OutbreakSummary onOpen=/);
+ assert.doesNotMatch(page,/<OutbreakSummary/);
+ assert.match(page,/<DeferredDashboardCharts\/>/);
  assert.doesNotMatch(page,/<OutbreakEvents/);
  assert.match(src,/import '\.\/outbreak-scenarios-r51\.css';/);
  assert.match(css,/\.ob-events \.ob-cards/);

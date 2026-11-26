@@ -5,7 +5,8 @@ import {Readable} from "node:stream";
 import {finished} from "node:stream/promises";
 import {createWriteStream} from "node:fs";
 import {fileURLToPath} from "node:url";
-import {createQuotaFetch} from "./quota-fetch.mjs";
+import {createCompatibleSecQuotaFetch} from "./sec-legacy-quota-bridge.mjs";
+import {secGuardOptionsFromEnv} from "./sec-guard-runtime-config.mjs";
 import {save} from "./d1.mjs";
 import {readZipIndex,readZipEntryText,parseTsv} from "./sec-dera-zip-r1.mjs";
 
@@ -247,11 +248,12 @@ function ncenNeeded(state,targetQuarter){
 }
 
 export async function backfillSecRawFundFlows(base=process.env.ZGMINI_PC_HOME??DEFAULT_BASE){
+  const secGuardOptions=secGuardOptionsFromEnv();
   const stateFile=path.join(base,STATE_NAME),legacyStateFile=path.join(base,LEGACY_STATE_NAME),reportFile=path.join(base,REPORT_NAME),tempDir=path.join(base,TEMP_DIR_NAME);
   const state=loadState(stateFile,legacyStateFile);
   const target=NPORT_QUARTERS.find(q=>!state.nportProcessed.includes(q))??null;
   const originalFetch=globalThis.fetch;
-  const quota=createQuotaFetch({base,originalFetch,mode:"enforce"});
+  const quota=createCompatibleSecQuotaFetch({base,originalFetch,mode:"enforce",...secGuardOptions});
   globalThis.fetch=quota.fetch;
   const report={version:2,methodologyVersion:METHODOLOGY_VERSION,status:"RUNNING",at:new Date().toISOString(),noPublish:true,dbSchemaChanged:false,providerCalls:0,targetQuarter:target,ncenProcessedThisRun:[],nportProcessedThisRun:null,
     migratedFromLegacyR1:Boolean(state.migratedFromLegacyR1)};

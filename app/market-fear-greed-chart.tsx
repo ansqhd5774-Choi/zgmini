@@ -20,6 +20,12 @@ export type MarketObservedRange = {
   high: number;
 };
 
+// Opt-in continuous timeline; other consumers retain their categorical X axis.
+export type MarketChartTimeAxis = {
+  domain: [number, number];
+  ticks: number[];
+  labels: ReadonlyMap<number, string>;
+};
 
 export type MarketFearGreedChartProps = {
   data: MarketFearGreedChartPoint[];
@@ -40,12 +46,15 @@ export type MarketFearGreedChartProps = {
   axisTickInterval?: 0 | 'preserveStartEnd';
   marketScoreBands?: boolean;
   observedRanges?: MarketObservedRange[];
+  timeAxis?: MarketChartTimeAxis;
+  showLatestPointTouchTooltip?: boolean;
+  showIsolatedPoints?: boolean;
 };
 const Renderer=lazy(()=>import('./market-fear-greed-chart-renderer'));
 export function MarketFearGreedChart(props:MarketFearGreedChartProps){
  const animate=useContext(MarketChartAnimationContext);
  const ready=useDashboardChartStartup(!animate);
- if(props.data.length===0||(!props.compact&&props.data.length===1))return <div className="cnn-chart-empty"><CircleAlert size={18}/><span>{props.emptyLabel??'이력 없음'}</span></div>;
+ if(props.data.length===0||(!props.compact&&!props.showIsolatedPoints&&props.data.length===1))return <div className="cnn-chart-empty"><CircleAlert size={18}/><span>{props.emptyLabel??'이력 없음'}</span></div>;
  const placeholder=<div className="cnn-history-chart-hitbox"/>;
  return ready?<Suspense fallback={placeholder}><Renderer {...props}/></Suspense>:placeholder;
 }

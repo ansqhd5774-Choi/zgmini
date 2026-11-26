@@ -1,3 +1,4 @@
+import {hasMarketParquetProvenance} from '../lib/marketparquet-retirement.mjs';
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
 import {themeHistoryReference} from './theme-history-reference.mjs';
 // R189: Optional read-only AI ETF score; never changes the seven-theme seed,
@@ -22,6 +23,7 @@ function validSourceProvenance(record){
   record.sourceFileSha256===record.sourceVersion.slice(R187_SHA_PREFIX.length);
 }
 export function eligibleAiTheme(record,base,{now=Date.now(),storedAt=now}={}){
+ if(hasMarketParquetProvenance(record))return false;
  if(base?.status!=='READY'||base.themes?.length!==7||!date(base.observationDate)||!Array.isArray(base.themes[0]?.history)||base.themes[0].history.length!==252)return false;
  if(!record||record.status!=='READY'||record.version!==AI_THEME_PUBLIC_VERSION||record.theme!=='AI 반도체'||!same(record.etfs,['SMH','SOXX']))return false;
  if(record.methodologyVersion!=='ETF_ONLY_T40_R20_V40_PAIR50'||base.methodologyVersion!==record.methodologyVersion||record.individualStocksUsed!==0||record.scoreMethod!=='ETF_ONLY_PROXY')return false;

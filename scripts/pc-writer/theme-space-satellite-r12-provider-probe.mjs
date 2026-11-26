@@ -51,7 +51,8 @@ export async function probeProvider({symbols=SPACE_CANDIDATES,fetchImpl=fetch}={
   for(const ticker of symbols){
     try{
       const catalogUrl=new URL('/api/v1/symbols',HOST);
-      for(const [k,v] of Object.entries({source:'stocks',timeframe:'1m',prefix:ticker,limit:'10'}))
+      // GMH 2026-11: `source` is rejected (400 renamed_parameter).
+      for(const [k,v] of Object.entries({dataset:'stocks/us',timeframe:'1m',prefix:ticker,limit:'10'}))
         catalogUrl.searchParams.set(k,v);
       providerCalls++;
       const {data:index}=await readSmallJson(fetchImpl,catalogUrl);
@@ -61,7 +62,7 @@ export async function probeProvider({symbols=SPACE_CANDIDATES,fetchImpl=fetch}={
       if(!Number.isFinite(Date.parse(catalog.last_timestamp)))
         throw Error('R12_CATALOG_TIMESTAMP_INVALID');
       const date=catalog.last_timestamp.slice(0,10);
-      const url=new URL(`/api/v1/bars/stocks/${ticker}/1h`,HOST);
+      const url=new URL(`/api/v1/bars/stocks/us/${ticker}/1h`,HOST);
       for(const [k,v] of Object.entries({start:date,end:date,limit:'3',format:'json'}))
         url.searchParams.set(k,v);
       providerCalls++;

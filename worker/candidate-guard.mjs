@@ -7,6 +7,15 @@ export function readOnlyDatabase(db) {
   },batch:deny,exec:deny,dump:deny});
 }
 export function readOnlyEnv(native) { return Object.freeze({DB:native.DB?readOnlyDatabase(native.DB):undefined,ASSETS:native.ASSETS}); }
+export function retiredSignInResponse(request) {
+  if(!['GET','HEAD'].includes(request.method))return null;
+  let path;
+  try{path=decodeURIComponent(new URL(request.url).pathname);}catch{return null;}
+  if(!/^\/signin-with-chatgpt\/?$/.test(path))return null;
+  return new Response(request.method==='HEAD'?null:'This sign-in endpoint is no longer available.',{
+    status:410,headers:{'content-type':'text/plain; charset=utf-8','x-robots-tag':'noindex, nofollow','cache-control':'no-store'},
+  });
+}
 export function candidateRequest(request) {
   if (!['GET','HEAD'].includes(request.method)) return null;
   let p=new URL(request.url).pathname;
@@ -18,6 +27,7 @@ export function candidateRequest(request) {
   return new Request(request,{headers});
 }
 export function candidateWorker(handler) {return Object.freeze({async fetch(request,native,ctx) {
+  const retired=retiredSignInResponse(request);if(retired)return retired;
   const safe=candidateRequest(request);
   if(!safe) return new Response('CANDIDATE_WRITE_DISABLED',{status:403});
   return handler.fetch(safe,readOnlyEnv(native),ctx);

@@ -3,20 +3,23 @@ import {useEffect,useMemo,useRef,useState} from 'react';
 import {usePlotArea,useXAxisScale,useYAxisScale,ReferenceDot} from 'recharts';
 import {extremaLeader,placeExtremaLabels} from '../../lib/chart-extrema.mjs';
 import {themeTooltipRows} from '../../lib/theme-tooltip-rows.mjs';
+import {mergeConfiguredThemeFeed} from '../../lib/theme-configured-merge.mjs';
+import {latestVisibleThemeDay} from '../../lib/theme-visible-asof-r1.mjs';
+import {validThemeChartDay} from '../../lib/theme-chart-day-r62.mjs';
 import {Search} from 'lucide-react';
 import {CartesianGrid,Line,LineChart,ReferenceArea,ReferenceLine,ResponsiveContainer,Tooltip,XAxis,YAxis} from 'recharts';
 import {THEME_GROUPS} from '../../components/market-explorer-catalog';
 import {useStoredIndex} from '../../components/use-stored-index';
 
 type Point={date:string;score:number|null};
-type ThemeScore={theme:string;etfs:string[];score:number;history:Point[]};
+type ThemeScore={id?:string;configured?:boolean;theme:string;etfs:string[];score:number;history:Point[]};
 type PublicThemeFeed={status:string;observationDate?:string;phase?:string;themes?:ThemeScore[];provisional?:{points:{date:string;scores:Record<string,number>}[]}};
 type Theme={name:string;group:string;color:string;key:string;etfs:string[];points:Point[];provisionalFrom:number;score:number;date:string};
 const CATALOG=THEME_GROUPS.flatMap(g=>g.items.map(name=>({name,group:g.name})));
 const COLORS=['#a3e635','#2dd4bf','#38bdf8','#ff8729','#b777ed','#ffd438','#f15aa7','#ff6464','#9fb1c5','#16d8d7','#e76aba'];
 const PERIODS=[['1W',7],['1M',30],['3M',90],['6M',180],['1Y',365]] as const;
 const validScore=(v:unknown):v is number=>typeof v==='number'&&Number.isFinite(v)&&v>=0&&v<=100;
-const validDate=(v:unknown):v is string=>typeof v==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(v)&&Number.isFinite(Date.parse(v+'T00:00:00Z'));
+const validDate=(v:unknown):v is string=>validThemeChartDay(v);
 const deltaText=(v:number|null)=>v===null?'—':(v>0?'+':'')+v.toFixed(1)+'p';
 const deltaState=(v:number|null)=>v===null?'is-missing':v>0?'is-up':v<0?'is-down':'is-flat';
 const scoreColor=(v:number|null)=>v===null?'#8299ac':v>=75?'var(--zg-score-extreme-greed)':v>=55?'var(--zg-score-greed)':v>=45?'var(--zg-score-neutral)':v>=25?'var(--zg-score-fear)':'var(--zg-score-extreme-fear)';
@@ -25,20 +28,22 @@ function acceptedThemes(feed:PublicThemeFeed|null):Theme[]{
  const provisional=feed.phase==='PROVISIONAL'&&Array.isArray(feed.provisional?.points)?feed.provisional.points:[];
  return feed.themes.flatMap(item=>{
   const index=CATALOG.findIndex(t=>t.name===item?.theme);
-  if(index<0||!validScore(item.score)||!Array.isArray(item.history)||item.history.length!==252)return [];
-  const allowMissing=item.theme==='우주·위성';
+  if((index<0&&!item.configured)||!validScore(item.score)||!Array.isArray(item.history)||
+   (!item.configured&&item.history.length!==252)||(item.configured&&(!item.history.length||item.history.length>252)))return [];
+  const allowMissing=item.configured||item.theme==='우주·위성';
   if(!item.history.every((p,i)=>validDate(p?.date)&&
    (validScore(p?.score)||(allowMissing&&p?.score===null))&&
    (!i||p.date>item.history[i-1].date)))return [];
-  if(!validScore(item.history[251].score)||
-   Math.abs(item.history[251].score-item.score)>0.000001)return [];
+  if(!validScore(item.history.at(-1)!.score)||
+   Math.abs(item.history.at(-1)!.score!-item.score)>0.000001)return [];
   const points=item.history.map(p=>({...p})),provisionalFrom=points.length;
   for(const extra of provisional){
    if(validDate(extra?.date)&&extra.date>points[points.length-1].date&&validScore(extra.scores?.[item.theme]))points.push({date:extra.date,score:extra.scores[item.theme]});
   }
   const currentScore=points.at(-1)?.score;
   if(!validScore(currentScore))return [];
-  return [{name:item.theme,group:CATALOG[index].group,color:COLORS[index%COLORS.length],key:'theme_'+index,etfs:Array.isArray(item.etfs)?item.etfs:[],points,provisionalFrom,score:currentScore,date:points.at(-1)!.date}];
+  const colorIndex=index>=0?index:Array.from(item.id??item.theme).reduce((n,c)=>((n*31+c.charCodeAt(0))>>>0),0);
+  return [{name:item.theme,group:index>=0?CATALOG[index].group:'기타',color:COLORS[colorIndex%COLORS.length],key:item.configured?'registered_'+item.id:'theme_'+index,etfs:Array.isArray(item.etfs)?item.etfs:[],points,provisionalFrom,score:currentScore,date:points.at(-1)!.date}];
  }).sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name,'ko'));
 }
 function comparisonDate(date:string,months:number,days:number){
@@ -114,13 +119,17 @@ function SoloChartMarkers({rows,low,high,current}:{rows:SoloPoint[];low:SoloPoin
 }
 export default function ThemeDetailCharts(){
  const {payload,error,loading}=useStoredIndex<PublicThemeFeed>('/api/theme-fear-greed');
+ const {payload:configured,error:configuredError}=useStoredIndex<{status:string;themes:unknown[]}>('/api/theme-configured');
  const [group,setGroup]=useState('전체'),[query,setQuery]=useState('');
  const [searchOpen,setSearchOpen]=useState(false);
  const searchContainerRef=useRef<HTMLDivElement>(null),searchInputRef=useRef<HTMLInputElement>(null);
  const [visible,setVisible]=useState<Set<string>|null>(null);
  const [compareDays,setCompareDays]=useState(90),[comparisonPinned,setComparisonPinned]=useState(false);
  // Never display a cached score once the stored-only API has failed.
- const ready=useMemo(()=>acceptedThemes(error?null:payload),[error,payload]);
+ const ready=useMemo(()=>acceptedThemes(mergeConfiguredThemeFeed(error?null:payload,configuredError?null:configured)),[error,payload,configuredError,configured]);
+ // Show the newest date of a displayed validated score, not the (possibly
+ // stale/unavailable) legacy payload's independent observationDate.
+ const displayAsOf=latestVisibleThemeDay(ready);
  const topOne=useMemo(()=>new Set(ready.slice(0,1).map(t=>t.name)),[ready]);
  const currentVisible=visible??topOne;
  const matches=(name:string,g:string)=>(group==='전체'||group===g)&&name.toLocaleLowerCase('ko').includes(query.trim().toLocaleLowerCase('ko'));
@@ -162,13 +171,13 @@ export default function ThemeDetailCharts(){
  const soloHigh=soloPoints.reduce<(typeof soloPoints)[number]|null>((best,p)=>!best||p.score>best.score?p:best,null);
  const soloCurrent=soloPoints.at(-1);
  return <div className="zg-sfg-content zg-tfg-content">
-  <p className="zg-sfg-as-of">{ready.length?'기준일 '+(payload?.observationDate??ready[0].date).replaceAll('-','.')+' · 공개 '+ready.length+'개 / 전체 '+CATALOG.length+'개':'전체 '+CATALOG.length+'개 테마'}</p>
+  <p className="zg-sfg-as-of">{ready.length?(displayAsOf?'최신 관측일 '+displayAsOf.replaceAll('-','.'):'관측일 미확인')+' · 공개 '+ready.length+'개':'테마 데이터 대기'}</p>
   <div className="zg-tfg-toolbar">
    <div className="zg-tfg-search-control" ref={searchContainerRef}>
     <button type="button" className="zg-tfg-search-toggle" aria-label={searchOpen?'테마 검색 닫기':'테마 검색 열기'} aria-expanded={searchOpen} aria-controls="zg-tfg-search-popover" onClick={()=>{if(searchOpen)closeSearch();else setSearchOpen(true);}}><Search size={16} aria-hidden="true"/></button>
     {searchOpen&&<div className="zg-tfg-search-popover" id="zg-tfg-search-popover"><label className="zg-explorer-search"><Search size={16} aria-hidden="true"/><input ref={searchInputRef} aria-label="테마 검색" type="search" value={query} onChange={e=>applyThemeFilter(group,e.target.value)} placeholder="테마 검색"/></label></div>}
    </div>
-   <div className="zg-explorer-filters" role="group" aria-label="테마 분류">{['전체',...THEME_GROUPS.map(g=>g.name)].map(name=><button type="button" key={name} aria-pressed={group===name} onClick={()=>{setSearchOpen(false);applyThemeFilter(name,'');}}>{name}</button>)}</div>
+   <div className="zg-explorer-filters" role="group" aria-label="테마 분류">{[...new Set(['전체',...THEME_GROUPS.map(g=>g.name),...ready.map(t=>t.group)])].map(name=><button type="button" key={name} aria-pressed={group===name} onClick={()=>{setSearchOpen(false);applyThemeFilter(name,'');}}>{name}</button>)}</div>
   </div>
   {ready.length?<>
    <section className="zg-sfg-ranking" aria-label="공개 테마 투자심리 순위">

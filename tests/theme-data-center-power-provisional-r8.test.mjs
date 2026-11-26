@@ -27,19 +27,7 @@ const record={status:'READY',version:DC_POWER_PROVISIONAL_VERSION,phase:'PROVISI
  sourceFiles:[{date:'2026-10-23',sha256:SHA},{date:'2026-10-26',sha256:SHA}],
  overlapPriceDifferences:{DTCR:0.0005902,GRID:0.00092291,SPY:0.00007896}};
 
-test('R8 DC provisional valid, only provisional points appended, confirmed unchanged',async()=>{
- assert.equal(validDcPowerProvisionalR1(record,confirmed,{now:NOW,storedAt:NOW-100}),true);
- const other={date:'2026-10-26',scores:{'우주·위성':47.35703}};
- const base={status:'READY',phase:'PROVISIONAL',themes:[confirmed,{theme:'우주·위성',score:44}],
-  provisional:{asOf:'2026-10-27T10:00:00Z',points:[other]}};
- const snapshot=JSON.stringify(base);
- const db={prepare:()=>({bind:()=>({first:async()=>({body:JSON.stringify(record),stored_at:NOW-100})})})};
- const after=await addVerifiedDcPowerProvisionalR1(db,base,{now:NOW});
- assert.equal(JSON.stringify(base),snapshot);
- assert.equal(after.themes[0],confirmed);
- assert.deepEqual(after.provisional.points[0].scores,
-  {'우주·위성':47.35703,'데이터센터·전력':14.38294});
-});
+test("retired provider contract: R8 DC provisional valid, only provisional points appended, confirmed unchanged",async()=>{assert.equal(validDcPowerProvisionalR1(record,confirmed,{now:NOW,storedAt:NOW-100}),false);let reads=0;const base={status:'READY',themes:[confirmed]};assert.equal(await addVerifiedDcPowerProvisionalR1({prepare(){reads++;throw Error('READ');}},base,{now:NOW}),base);assert.equal(reads,0);});
 
 test('R8 DC reader fails closed for stale, wrong rights, drift, bridge and date',()=>{
  const check=(change)=>validDcPowerProvisionalR1({...record,...change},confirmed,
@@ -55,18 +43,4 @@ test('R8 DC reader fails closed for stale, wrong rights, drift, bridge and date'
    {date:'2026-10-24',sha256:SHA}]}),false);
 });
 
-test('R8 publisher writes DC key only, and readback checks full content',async()=>{
- const requests=[],rows=new Map([[DC_POWER_PUBLIC_KEY,{body:confirmed,storedAt:NOW-300}]]);
- const db={read:async key=>rows.get(key)??null,
-  writeVersioned:async(key,payload,stamp)=>{
-   requests.push({key,stamp});rows.set(key,{body:payload,storedAt:NOW-50});
-   return {status:'WRITTEN',changes:1};
-  }};
- const result=await runDcPowerR8({dataRoot:'fake',db,allowPublish:true,now:()=>NOW,
-  build:async()=>({status:'PRIVATE_PROVISIONAL_CANDIDATE',record})});
- assert.equal(result.status,'D1_READBACK_VERIFIED_API_PENDING');
- assert.equal(result.provisionalScore,14.38294);
- assert.equal(result.d1Writes,1);
- assert.deepEqual(requests,[{key:DC_POWER_PROVISIONAL_KEY,stamp:null}]);
- assert.equal(rows.get(DC_POWER_PUBLIC_KEY).body,confirmed);
-});
+test("retired provider contract: R8 publisher writes DC key only, and readback checks full content",async()=>{let writes=0;await assert.rejects(()=>runDcPowerR8({db:{writeVersioned(){writes++;}},allowPublish:true}),{code:'PROVIDER_REMOVED_MARKETPARQUET_PUBLICATION_DENIED'});assert.equal(writes,0);});

@@ -27,12 +27,11 @@
       },
       "runtime": {
         "collector": "theme-market-history-r131/marketparquet-r167/r181-primary-cycle.mjs",
-        "calculator": "theme-market-history-r131/marketparquet-r167/r179-publish-core.mjs",
-        "publisher": "theme-market-history-r131/marketparquet-r167/r171-publish.mjs"
+        "calculator": null,
+        "publisher": null
       },
       "tasks": [
-        "ZGMINI-PC-GetMarketHistory-ETF",
-        "ZGMINI-PC-MarketParquet-ETF"
+        "ZGMINI-PC-GetMarketHistory-ETF"
       ],
       "public": {
         "table": "public_feed_snapshots_v1",
@@ -43,7 +42,8 @@
       "blockers": [],
       "followUps": [
         "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
-        "RAW_MANIFEST_NOT_REGISTERED"
+        "RAW_MANIFEST_NOT_REGISTERED",
+        "RECONNECT_GMH_ONLY_CALCULATION_AND_PUBLICATION_WITHOUT_RETIRED_PROVIDER"
       ]
     },
     {
@@ -66,12 +66,11 @@
       },
       "runtime": {
         "collector": "theme-market-history-r131/marketparquet-r167/r181-primary-cycle.mjs",
-        "calculator": "theme-market-history-r131/marketparquet-r167/r179-publish-core.mjs",
-        "publisher": "theme-market-history-r131/marketparquet-r167/r171-publish.mjs"
+        "calculator": null,
+        "publisher": null
       },
       "tasks": [
-        "ZGMINI-PC-GetMarketHistory-ETF",
-        "ZGMINI-PC-MarketParquet-ETF"
+        "ZGMINI-PC-GetMarketHistory-ETF"
       ],
       "public": {
         "table": "public_feed_snapshots_v1",
@@ -82,7 +81,8 @@
       "blockers": [],
       "followUps": [
         "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
-        "RAW_MANIFEST_NOT_REGISTERED"
+        "RAW_MANIFEST_NOT_REGISTERED",
+        "RECONNECT_GMH_ONLY_CALCULATION_AND_PUBLICATION_WITHOUT_RETIRED_PROVIDER"
       ]
     },
     {
@@ -105,12 +105,11 @@
       },
       "runtime": {
         "collector": "theme-market-history-r131/marketparquet-r167/r181-primary-cycle.mjs",
-        "calculator": "theme-market-history-r131/marketparquet-r167/r179-publish-core.mjs",
-        "publisher": "theme-market-history-r131/marketparquet-r167/r171-publish.mjs"
+        "calculator": null,
+        "publisher": null
       },
       "tasks": [
-        "ZGMINI-PC-GetMarketHistory-ETF",
-        "ZGMINI-PC-MarketParquet-ETF"
+        "ZGMINI-PC-GetMarketHistory-ETF"
       ],
       "public": {
         "table": "public_feed_snapshots_v1",
@@ -121,7 +120,8 @@
       "blockers": [],
       "followUps": [
         "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
-        "RAW_MANIFEST_NOT_REGISTERED"
+        "RAW_MANIFEST_NOT_REGISTERED",
+        "RECONNECT_GMH_ONLY_CALCULATION_AND_PUBLICATION_WITHOUT_RETIRED_PROVIDER"
       ]
     },
     {
@@ -144,12 +144,11 @@
       },
       "runtime": {
         "collector": "theme-market-history-r131/marketparquet-r167/r181-primary-cycle.mjs",
-        "calculator": "theme-market-history-r131/marketparquet-r167/r179-publish-core.mjs",
-        "publisher": "theme-market-history-r131/marketparquet-r167/r171-publish.mjs"
+        "calculator": null,
+        "publisher": null
       },
       "tasks": [
-        "ZGMINI-PC-GetMarketHistory-ETF",
-        "ZGMINI-PC-MarketParquet-ETF"
+        "ZGMINI-PC-GetMarketHistory-ETF"
       ],
       "public": {
         "table": "public_feed_snapshots_v1",
@@ -160,7 +159,8 @@
       "blockers": [],
       "followUps": [
         "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
-        "RAW_MANIFEST_NOT_REGISTERED"
+        "RAW_MANIFEST_NOT_REGISTERED",
+        "RECONNECT_GMH_ONLY_CALCULATION_AND_PUBLICATION_WITHOUT_RETIRED_PROVIDER"
       ]
     },
     {
@@ -183,12 +183,11 @@
       },
       "runtime": {
         "collector": "theme-market-history-r131/marketparquet-r167/r181-primary-cycle.mjs",
-        "calculator": "theme-market-history-r131/marketparquet-r167/r179-publish-core.mjs",
-        "publisher": "theme-market-history-r131/marketparquet-r167/r171-publish.mjs"
+        "calculator": null,
+        "publisher": null
       },
       "tasks": [
-        "ZGMINI-PC-GetMarketHistory-ETF",
-        "ZGMINI-PC-MarketParquet-ETF"
+        "ZGMINI-PC-GetMarketHistory-ETF"
       ],
       "public": {
         "table": "public_feed_snapshots_v1",
@@ -199,7 +198,8 @@
       "blockers": [],
       "followUps": [
         "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
-        "RAW_MANIFEST_NOT_REGISTERED"
+        "RAW_MANIFEST_NOT_REGISTERED",
+        "RECONNECT_GMH_ONLY_CALCULATION_AND_PUBLICATION_WITHOUT_RETIRED_PROVIDER"
       ]
     },
     {
@@ -222,12 +222,11 @@
       },
       "runtime": {
         "collector": "theme-market-history-r131/marketparquet-r167/r181-primary-cycle.mjs",
-        "calculator": "theme-market-history-r131/marketparquet-r167/r179-publish-core.mjs",
-        "publisher": "theme-market-history-r131/marketparquet-r167/r171-publish.mjs"
+        "calculator": null,
+        "publisher": null
       },
       "tasks": [
-        "ZGMINI-PC-GetMarketHistory-ETF",
-        "ZGMINI-PC-MarketParquet-ETF"
+        "ZGMINI-PC-GetMarketHistory-ETF"
       ],
       "public": {
         "table": "public_feed_snapshots_v1",
@@ -238,7 +237,8 @@
       "blockers": [],
       "followUps": [
         "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
-        "RAW_MANIFEST_NOT_REGISTERED"
+        "RAW_MANIFEST_NOT_REGISTERED",
+        "RECONNECT_GMH_ONLY_CALCULATION_AND_PUBLICATION_WITHOUT_RETIRED_PROVIDER"
       ]
     },
     {
@@ -261,12 +261,11 @@
       },
       "runtime": {
         "collector": "theme-market-history-r131/marketparquet-r167/r181-primary-cycle.mjs",
-        "calculator": "theme-market-history-r131/marketparquet-r167/r179-publish-core.mjs",
-        "publisher": "theme-market-history-r131/marketparquet-r167/r171-publish.mjs"
+        "calculator": null,
+        "publisher": null
       },
       "tasks": [
-        "ZGMINI-PC-GetMarketHistory-ETF",
-        "ZGMINI-PC-MarketParquet-ETF"
+        "ZGMINI-PC-GetMarketHistory-ETF"
       ],
       "public": {
         "table": "public_feed_snapshots_v1",
@@ -277,7 +276,8 @@
       "blockers": [],
       "followUps": [
         "LEGACY_CODE_NOT_FULLY_ARCHIVED_IN_REPOSITORY",
-        "RAW_MANIFEST_NOT_REGISTERED"
+        "RAW_MANIFEST_NOT_REGISTERED",
+        "RECONNECT_GMH_ONLY_CALCULATION_AND_PUBLICATION_WITHOUT_RETIRED_PROVIDER"
       ]
     },
     {
@@ -461,35 +461,19 @@
         "taskRegistrationVerified": true
       },
       "plannedProvisionalR8": {
-        "approvalDate": "2026-10-24",
-        "status": "GITHUB_SOURCE_STAGED_PC_RUNTIME_NOT_YET_APPLIED",
-        "scope": "BIOTECH_ONLY_SEVEN_THEME_DATA_AND_SCHEDULERS_UNMODIFIED",
-        "symbols": [
-          "IBB",
-          "XBI",
-          "SPY"
-        ],
-        "confirmedFeedKey": "theme-biotech-optional-r2",
-        "provisionalFeedKey": "theme-biotech-provisional-r1",
-        "existingSevenParquetArchive": "theme-market-history-r131/marketparquet-r165",
-        "existingSevenParquetAudits": "theme-market-history-r131/marketparquet-r167",
-        "collector": "REUSE_EXISTING_SEVEN_THEME_MARKETPARQUET_R165_FILES_NO_EXTRA_PROVIDER_GET",
-        "calculator": "scripts/pc-writer/theme-biotech-provisional-r8.mjs",
-        "publisher": "scripts/pc-writer/theme-biotech-provisional-d1-r8.mjs",
-        "taskWrapper": "scripts/pc-writer/theme-biotech-auto-r8.mjs",
-        "taskRetarget": "EXISTING_ZGMINI-PC-Theme-Biotech_ACTION_ONLY_TRIGGER_UNCHANGED",
-        "reader": "worker/theme-biotech-provisional-r1.mjs",
+        "status": "REMOVED_PROVIDER_NOT_SUPPORTED",
+        "reason": "PROVIDER_DENIED_FREE_DERIVED_PUBLICATION_AND_USER_ORDERED_REMOVAL_20261116",
         "installed": false,
-        "publicApiVerified": false,
-        "provisionalPriceMode": "GMH_15_HOURLY_UNADJUSTED_PLUS_MARKETPARQUET_EOD_SPLIT_ADJUSTED",
-        "publicationPolicy": "ONLY_VERIFIED_REAL_PARQUET_IBB_XBI_SPY_WITH_OVERLAP_GUARD_PRESERVE_252_CONFIRMED",
-        "decoder": "EXISTING_HYPARQUET_PACKAGE_DEPENDENCY"
+        "publicApiVerified": false
       }
     },
     {
       "id": "data-center-power",
       "label": "데이터센터·전력",
-      "symbols": ["DTCR", "GRID"],
+      "symbols": [
+        "DTCR",
+        "GRID"
+      ],
       "benchmark": "SPY",
       "methodologyVersion": "ETF_ONLY_T40_R20_V40_PAIR50",
       "status": "PRIVATE_PC_SCORE_AND_TASK_VERIFIED_PUBLICATION_PENDING",
@@ -503,15 +487,81 @@
         "taskInstaller": "scripts/pc-writer/theme-data-center-power-task-r5.mjs",
         "reader": "worker/theme-data-center-power-r1.mjs"
       },
-      "runtime": {"collector": null, "calculator": null, "publisher": null},
-      "tasks": ["ZGMINI-PC-Theme-Data-Center-Power (REGISTERED_ACTION_TRIGGER_VERIFIED_PRIVATE_ONLY)"],
-      "pcEvidence": {"date": "2026-10-25", "sourceSha": "2f0f1a2c1b31e20f9e943e90824885d586448d29", "privateScoreStatus": "PRIVATE_CANDIDATE_VERIFIED_NOT_PUBLISHED", "observationDate": "2026-10-23", "score": 12.32143, "providerCalls": 3, "d1Writes": 0, "schedulerWrites": 0, "artifactSha256": "4fe811c0c5480d3ccb67010ddcd356fb2d5ab0cdace5aadd8c63e5a927a7a4e8", "evidence": "DATA_CENTER_POWER_R4_RESULT.txt"},
-      "taskEvidence": {"date": "2026-10-25", "report": "DATA_CENTER_POWER_R5_TASK", "status": "EXISTING_TENTH_TASK_VERIFIED", "sourceTask": "ZGMINI-PC-GetMarketHistory-ETF", "targetTask": "ZGMINI-PC-Theme-Data-Center-Power", "triggerCount": 1, "taskWrites": 0, "existingNineTaskChanges": 0, "d1Writes": 0, "providerCalls": 0, "observationDate": "2026-10-23", "privateScore": 12.32143, "evidence": "DATA_CENTER_POWER_R5_RESULT.txt"},
-      "deploymentEvidence": {"date": "2026-10-25", "githubMainSha": "0676246bf4995b0684776c056841edaca8de94b0", "pullRequest": 692, "githubCi": "SUCCESS", "cloudflareGithubCheck": "SUCCESS", "cloudflareWorker": "zgmini-migration-candidate-r5", "cloudflareBuildId": "6aef651b-88ad-4a75-b17a-8adb9242e63c", "publicHttpStatus": 200, "publicApiStatus": "READY", "publicVisibleThemes": 8, "publicBaseThemes": 7, "optionalBiotechPresent": true, "optionalAiPresent": false, "tenthPublished": false},
-      "public": {"table": "public_feed_snapshots_v1", "feedKey": "theme-data-center-power-r1",
-        "snapshotKey": "current", "api": "/api/theme-fear-greed"},
-      "blockers": ["ANONYMOUS_DERIVED_LICENSE_SCOPE_UNCONFIRMED_NEW_THEME_RISK_OPT_IN_REQUIRED", "TENTH_D1_PUBLICATION_AND_SCHEDULED_PUBLIC_RUN_PENDING"],
-      "followUps": ["EXISTING_9_THEME_LANES_UNCHANGED", "NO_SYNTHETIC_VALUES", "PUBLIC_R3_EXPLICIT_RISK_OPT_IN_ONLY", "D1_CAS_READBACK_NOT_YET_RUN"]
+      "runtime": {
+        "collector": null,
+        "calculator": null,
+        "publisher": null
+      },
+      "tasks": [
+        "ZGMINI-PC-Theme-Data-Center-Power (REGISTERED_ACTION_TRIGGER_VERIFIED_PRIVATE_ONLY)"
+      ],
+      "pcEvidence": {
+        "date": "2026-10-25",
+        "sourceSha": "2f0f1a2c1b31e20f9e943e90824885d586448d29",
+        "privateScoreStatus": "PRIVATE_CANDIDATE_VERIFIED_NOT_PUBLISHED",
+        "observationDate": "2026-10-23",
+        "score": 12.32143,
+        "providerCalls": 3,
+        "d1Writes": 0,
+        "schedulerWrites": 0,
+        "artifactSha256": "4fe811c0c5480d3ccb67010ddcd356fb2d5ab0cdace5aadd8c63e5a927a7a4e8",
+        "evidence": "DATA_CENTER_POWER_R4_RESULT.txt"
+      },
+      "taskEvidence": {
+        "date": "2026-10-25",
+        "report": "DATA_CENTER_POWER_R5_TASK",
+        "status": "EXISTING_TENTH_TASK_VERIFIED",
+        "sourceTask": "ZGMINI-PC-GetMarketHistory-ETF",
+        "targetTask": "ZGMINI-PC-Theme-Data-Center-Power",
+        "triggerCount": 1,
+        "taskWrites": 0,
+        "existingNineTaskChanges": 0,
+        "d1Writes": 0,
+        "providerCalls": 0,
+        "observationDate": "2026-10-23",
+        "privateScore": 12.32143,
+        "evidence": "DATA_CENTER_POWER_R5_RESULT.txt"
+      },
+      "deploymentEvidence": {
+        "date": "2026-10-25",
+        "githubMainSha": "0676246bf4995b0684776c056841edaca8de94b0",
+        "pullRequest": 692,
+        "githubCi": "SUCCESS",
+        "cloudflareGithubCheck": "SUCCESS",
+        "cloudflareWorker": "zgmini-migration-candidate-r5",
+        "cloudflareBuildId": "6aef651b-88ad-4a75-b17a-8adb9242e63c",
+        "publicHttpStatus": 200,
+        "publicApiStatus": "READY",
+        "publicVisibleThemes": 8,
+        "publicBaseThemes": 7,
+        "optionalBiotechPresent": true,
+        "optionalAiPresent": false,
+        "tenthPublished": false
+      },
+      "public": {
+        "table": "public_feed_snapshots_v1",
+        "feedKey": "theme-data-center-power-r1",
+        "snapshotKey": "current",
+        "api": "/api/theme-fear-greed"
+      },
+      "blockers": [
+        "ANONYMOUS_DERIVED_LICENSE_SCOPE_UNCONFIRMED_NEW_THEME_RISK_OPT_IN_REQUIRED",
+        "TENTH_D1_PUBLICATION_AND_SCHEDULED_PUBLIC_RUN_PENDING"
+      ],
+      "followUps": [
+        "EXISTING_9_THEME_LANES_UNCHANGED",
+        "NO_SYNTHETIC_VALUES",
+        "PUBLIC_R3_EXPLICIT_RISK_OPT_IN_ONLY",
+        "D1_CAS_READBACK_NOT_YET_RUN"
+      ]
     }
-  ]
+  ],
+  "providerPolicy": {
+    "removedProviders": [
+      "MARKETPARQUET"
+    ],
+    "reason": "PROVIDER_DENIED_FREE_DERIVED_PUBLICATION_AND_USER_ORDERED_REMOVAL_20261116",
+    "provisional": "UNAVAILABLE_UNTIL_ELIGIBLE_EXISTING_INPUT_VERIFIED",
+    "autoProviderSubstitution": false
+  }
 }

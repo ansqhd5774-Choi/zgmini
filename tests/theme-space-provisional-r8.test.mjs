@@ -30,15 +30,7 @@ const record={status:'READY',version:SPACE_PROVISIONAL_VERSION,
 const db=({body=record,stamp=now-1000}={})=>({prepare:()=>({bind:()=>({first:async()=>({
  body:JSON.stringify(body),stored_at:stamp})})})});
 
-test('R8 merges only space provisional score, retaining other scores and confirmed history',async()=>{
- assert.equal(validSpaceProvisionalR1(record,space,{now,storedAt:now-1000}),true);
- const result=await addVerifiedSpaceProvisionalR1(db(),base,{now});
- assert.equal(result.provisional.points[0].scores['로봇·자동화'],21);
- assert.equal(result.provisional.points[0].scores['우주·위성'],47.35703);
- assert.deepEqual(result.themes,base.themes);
- assert.equal(result.themes[1].history.at(-1).score,44.65075);
- assert.deepEqual(base.provisional.points,[{date:'2026-10-26',scores:{'로봇·자동화':21}}]);
-});
+test("retired provider contract: R8 merges only space provisional score, retaining other scores and confirmed history",async()=>{assert.equal(validSpaceProvisionalR1(record,space,{now,storedAt:now-1000}),false);let reads=0;assert.equal(await addVerifiedSpaceProvisionalR1({prepare(){reads++;throw Error('READ');}},base,{now}),base);assert.equal(reads,0);assert.equal(base.themes[1].history.at(-1).score,44.65075);});
 test('wrong confirmed baseline, stale source, fabricated WARP and changed rights are rejected',async()=>{
  const invalid=[
   {...record,confirmedScore:40},

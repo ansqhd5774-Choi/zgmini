@@ -1,18 +1,42 @@
 import fs from 'node:fs';
+import {createHash} from 'node:crypto';
+import {newCoreCycleId} from './core-cycle-id.mjs';
+import {captureCoreOriginAtStart} from './core-origin-runtime.mjs';
 import path from 'node:path';
 import os from 'node:os';
 import {fileURLToPath} from 'node:url';
 import {spawnSync} from 'node:child_process';
 import {save,read} from './d1.mjs';
 import {collectSupplyR10} from './supply-r10.mjs';
-import {collectAlpacaIncremental} from './alpaca-incremental.mjs';
+import {refreshSp500ShadowIfDue} from './asset-r10-sp500-refresh.mjs';
 import {dispatchEarningsRiskProvisionalR23} from './earnings-risk-provisional-r23-hook.mjs';
-import {collectionPublicationPolicy} from './collection-publication-policy.mjs';
+import {collectionPublicationPolicy,runCnnMinuteCycle} from './collection-publication-policy.mjs';
 import {progressivePublication,auxiliaryInputCheckpoint} from './progressive-publication.mjs';
 import {updateDataAlert} from './local-data-alert.mjs';
 
 const here=path.dirname(fileURLToPath(import.meta.url));
 const base=process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer');
+// Explicit CNN scope uses the existing collection and publication entries.
+// No new scheduler, global Core lock, provider loop or Core checkpoint writes.
+if(process.argv.includes('--cnn-minute')){
+ if(process.argv.slice(2).length!==2||!process.argv.includes('--publish'))
+  throw Error('CNN_MINUTE_CYCLE_SCOPE_STOP');
+ const runChild=(name,args)=>{
+  const child=spawnSync(process.execPath,[path.join(here,name),...args],
+   {windowsHide:true,stdio:['ignore','pipe','pipe'],encoding:'utf8',timeout:5*60000});
+  if(child.error||child.signal||!Number.isInteger(child.status))throw Error('CNN_MINUTE_CHILD_OUTCOME_UNKNOWN');
+  let receipt;try{receipt=JSON.parse(child.stdout.trim().split(/\r?\n/).at(-1));}catch{throw Error('CNN_MINUTE_CHILD_RECEIPT_UNKNOWN');}
+  if(child.status!==0&&receipt?.status!=='FAILED'&&receipt?.status!=='PARTIAL')
+   throw Error('CNN_MINUTE_CHILD_OUTCOME_UNKNOWN');
+  return receipt;
+ };
+ const report=await runCnnMinuteCycle({
+  collect:()=>runChild('collect-local.mjs',['--cnn-minute']),
+  publish:()=>runChild('run-local.mjs',['--cnn-minute','--publish']),
+ });
+ console.log(JSON.stringify(report));
+ if(!['COMPLETE','COMPLETE_WITH_COLLECTION_GAPS','SKIPPED_ACTIVE_COLLECTION'].includes(report.status))process.exitCode=1;
+}else{
 const file=path.join(base,'local-cycle.lock');
 if(fs.existsSync(file)){
  let alive=true;try{process.kill(read(file).pid,0);}catch(error){if(error.code==='ESRCH')alive=false;}
@@ -20,8 +44,48 @@ if(fs.existsSync(file)){
  fs.renameSync(file,file+'.interrupted-'+Date.now());
 }
 fs.writeFileSync(file,JSON.stringify({pid:process.pid,at:Date.now()}),{flag:'wx'});
+const cycleStartedAt=Date.now(),coreCycleId=newCoreCycleId();
+process.env.ZGMINI_CORE_CYCLE_ID=coreCycleId;
+const coreOrigin=process.argv.includes('--publish')&&!process.argv.includes('--korea')?
+ captureCoreOriginAtStart({startedAt:cycleStartedAt}):
+ {status:'UNVERIFIED',code:'CORE_ORIGIN_OUTSIDE_APPROVED_LANE',ownerCreatedAtMs:null};
+const checkoutSourceAtStart=(()=>{
+ try{const p=spawnSync('git',['rev-parse','HEAD'],{cwd:path.resolve(here,'../..'),encoding:'utf8',windowsHide:true,timeout:4000});
+ const s=typeof p?.stdout==='string'?p.stdout.trim():'';
+ return p?.status===0&&/^[a-f0-9]{40}$/.test(s)?s:null;}catch{return null;}
+})();
+const fileHash=n=>{
+ try{const p=path.join(here,n),st=fs.lstatSync(p);
+ if(!st.isFile()||st.isSymbolicLink()||st.size<1||st.size>100000)return null;
+ const b=fs.readFileSync(p);return b.length===st.size?createHash('sha256').update(b).digest('hex'):null;}catch{return null;}
+};
+const entrypointSha256=(()=>{
+ try{return createHash('sha256').update(fs.readFileSync(fileURLToPath(import.meta.url))).digest('hex');}
+ catch{return null;}
+})();
+const coreProofFileSha256=Object.fromEntries([
+ 'core-cycle-id.mjs','core-origin-runtime.mjs','core-origin-wmi.mjs'
+].map(n=>[n,fileHash(n)]));
 try{
  const lane=process.argv.includes('--korea')?'korea':'core';
+ // Paid sector/theme inputs share one stored archive; no extra Task or publisher.
+ if(lane==='core'){
+  try{const {collectPaidCurrent}=await import('./marketparquet-paid-store.mjs');
+   console.log('MARKETPARQUET_PAID '+JSON.stringify(await collectPaidCurrent(base)));
+  }catch(e){console.warn('MARKETPARQUET_PAID '+JSON.stringify({status:'FAILED_PREVIOUS_INPUTS_PRESERVED',code:/^MP_PAID_[A-Z0-9_]+$/.test(e.code??'')?e.code:'MP_PAID_COLLECTION_FAILED'}));}
+ }
+ // Independent registered-theme lane; a source wait never blocks Core or sector updates.
+ if(lane==='core'){
+  try{const {runPaidThemeCycle}=await import('./theme-paid-cycle.mjs');
+   console.log('THEME_PAID '+JSON.stringify(await runPaidThemeCycle(base,{publish:process.argv.includes('--publish')})));
+  }catch(e){const report={status:'FAILED_PREVIOUS_DATA_PRESERVED',code:/^PAID_[A-Z0-9_]+$/.test(e.code??'')?e.code:'PAID_THEME_RUNTIME_FAILED',d1Outcome:'CHECK_STORED_RESULT_BEFORE_RETRY'};console.warn('THEME_PAID '+JSON.stringify(report));try{save(path.join(base,'marketparquet-paid','theme-last-run.json'),report);}catch{}}
+ }
+ // Paid breadth uses the existing Core and approved B1-R5 formula only.
+ if(lane==='core'){
+  try{const {runPaidBreadthCycle}=await import('./breadth-paid-cycle.mjs');
+   console.log('BREADTH_PAID '+JSON.stringify(await runPaidBreadthCycle(base,{publish:process.argv.includes('--publish')})));
+  }catch(e){const report={status:'FAILED_PREVIOUS_DATA_PRESERVED',code:/^BREADTH_PAID_[A-Z0-9_]+$/.test(e.code??'')?e.code:'BREADTH_PAID_RUNTIME_FAILED',d1Outcome:'CHECK_STORED_RESULT_BEFORE_RETRY'};console.warn('BREADTH_PAID '+JSON.stringify(report));try{save(path.join(base,'marketparquet-paid','breadth-last-run.json'),report);}catch{}}
+ }
  const collection=spawnSync(process.execPath,[path.join(here,'collect-local.mjs'),...(lane==='korea'?['--korea']:[])],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:30*60000});
  try{updateDataAlert(base,{key:'collection',failed:collection.status!==0});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
  // A provider failure retains stored good data; publication still reads local storage.
@@ -31,7 +95,35 @@ try{
  const publicationPolicy=collectionPublicationPolicy({requested:publishRequested,collectionExit:collection.status,collectionStatus:collectionReport?.status,quotaGuarded});
  const publishAllowed=publicationPolicy.publishAllowed;
  const publishSkipped=null;
- let supplyR10=null,alpacaIncremental=null,sectorFearGreedR3=null,sectorFearGreedR3Report=null;
+ // Optional 19-input research collection uses the existing Core lock and
+ // occurs before the early Writer publication pass. Off by default.
+ // An unrelated collect-local exit must not prevent separately approved
+ // inflation collection; its own release, quota, credential and checkpoint
+ // gates remain enforced inside runInflation19RecurringFromCore.
+ let inflationRecurring={status:lane==='core'?'DISABLED':'SKIPPED_KOREA_LANE',providerRequests:0};
+ if(lane==='core'){
+  try{
+   const {runInflation19RecurringFromCore}=await import('./inflation-causal-recurring-r1.mjs');
+   inflationRecurring=await runInflation19RecurringFromCore(base);
+  }catch{
+   inflationRecurring={status:'FAILED_PREVIOUS_INPUTS_PRESERVED',providerRequests:null};
+  }
+ }
+ // Candidate research inputs share the existing Core lock and run before
+ // the early Writer pass; their own approved provider gate is default-off.
+ // CPI candidates are independent of other provider collection exits;
+ // retain the existing Core lock, approved provider flags and quota gates.
+ let inflationCandidates={status:lane==='core'?'DISABLED':'SKIPPED_KOREA_LANE',providerRequests:0};
+ if(lane==='core'){
+  try{
+   const {runInflationCandidatesFromCore}=await import('./inflation-causal-candidate-core-bridge.mjs');
+   inflationCandidates=await runInflationCandidatesFromCore(base);
+  }catch{
+   inflationCandidates={status:'FAILED_PREVIOUS_INPUTS_PRESERVED',providerRequests:null};
+  }
+ }
+ // R10 Alpaca-only job is retired; unrelated registered providers are not disabled.
+ let supplyR10=null,alpacaIncremental={status:'EXCLUDED_BY_USER',runRequests:0},sp500Shadow=null,sectorFearGreedR3=null,sectorFearGreedR3Report=null;
  const {publication,progressive}=await progressivePublication({
   enabled:lane==='core'&&publishAllowed,
   publish:async({early})=>{
@@ -42,13 +134,20 @@ try{
   collectAuxiliary:async()=>{
   supplyR10=lane==='core'?await collectSupplyR10(base):{status:'SKIPPED_KOREA_LANE'};
  if(lane==='core'){
-  try{const result=await collectAlpacaIncremental(base);alpacaIncremental={status:result.status,runRequests:result.runRequests??0};}
-  catch{alpacaIncremental={status:'FAILED_PREVIOUS_INPUTS_PRESERVED',runRequests:null};}
+  // Refresh R10's saved benchmark input on its own bounded cadence.
+  // A source failure cannot interrupt the existing Core publication lane.
+  try{
+   const result=await refreshSp500ShadowIfDue(base);
+   sp500Shadow={status:result.status,providerRequests:result.providerRequests===null?null:result.providerRequests??0,observationDate:result.observationDate??null};
+  }catch{
+   sp500Shadow={status:'FAILED_PREVIOUS_INPUTS_PRESERVED',providerRequests:null};
+  }
  }
 
  if(lane==='core'){
-  // Separate provisional inputs/output; failures never block the confirmed publisher.
-  spawnSync(process.execPath,[path.join(here,'sector-provisional-cycle.mjs'),'--write-local'],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
+  // Retire the independent Alpaca provisional fetch. The approved paid feed
+  // supplies observed dates; a missing intraday paid bar stays unavailable.
+  // Retain existing provisional rows and the separate confirmed publication.
   sectorFearGreedR3=spawnSync(process.execPath,[path.join(here,'sector-fear-greed-r3-local-cycle.mjs'),'--write-local'],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:5*60000});
   const sectorFearGreedR3File=path.join(base,'local-sector-fear-greed-r3-last-run.json');
   sectorFearGreedR3Report=fs.existsSync(sectorFearGreedR3File)?read(sectorFearGreedR3File):null;
@@ -86,19 +185,8 @@ try{
   }
  }
  let breadthV9ShadowRun=null,breadthV9ShadowReport=null,breadthV9ShadowFresh=false;
- const breadthV9OptIn=lane==='core'&&process.env.ZGMINI_R10_V9_SHADOW_ENABLED==='1';
- if(breadthV9OptIn){
-  const startedAt=Date.now();
-  breadthV9ShadowRun=spawnSync(process.execPath,[path.join(here,'breadth-r10-v9-shadow-r1.mjs'),'--write-local'],{windowsHide:true,stdio:['ignore','pipe','pipe'],timeout:2*60000});
-  const resultPath=path.join(base,'local-breadth-r10-v9-shadow-last-run.json');
-  if(fs.existsSync(resultPath)){
-   try{
-    const candidate=read(resultPath),timestamp=Date.parse(candidate?.at??'');
-    breadthV9ShadowFresh=breadthV9ShadowRun.status===0&&Number.isFinite(timestamp)&&timestamp>=startedAt-1000;
-    if(breadthV9ShadowFresh)breadthV9ShadowReport=candidate;
-   }catch{breadthV9ShadowFresh=false;}
-  }
- }
+ const breadthV9OptIn=false; // MarketParquet-derived automatic lane removed 2026-11-16.
+ // Removed MarketParquet-derived automatic shadow dispatch.
  const researchProspective=lane==='core'?{
   nonBlocking:true,
   exit:prospective?.status??null,
@@ -176,8 +264,18 @@ try{
   sectors:sectorFearGreedR3Report?.sectors??null,
   error:sectorFearGreedR3Report?.error??(sectorFearGreedR3?.error?.code??null),
  }:{nonBlocking:true,status:'SKIPPED_KOREA_LANE'};
- const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,supplyR10,alpacaIncremental,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,publicationPolicy,progressive,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsRiskProvisionalR23,researchEarningsR5Prospective,status:publication.status===0?(publicationPolicy.collectionDegraded?'COMPLETE_WITH_COLLECTION_GAPS':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
+ const report={at:new Date().toISOString(),lane,collectionExit:collection.status,collectionStatus:collectionReport?.status??null,inflationRecurring,inflationCandidates,supplyR10,alpacaIncremental,sp500Shadow,sectorFearGreed,researchBreadthR10V9Shadow,publicationExit:publication.status,publishRequested,publishSkipped,publicationPolicy,progressive,researchProspective,researchFundFlowProspective,researchBreadthProspective,researchEarningsR5OfficialRefresh,researchEarningsRiskProvisionalR23,researchEarningsR5Prospective,status:publication.status===0?(publicationPolicy.collectionDegraded?'COMPLETE_WITH_COLLECTION_GAPS':'COMPLETE'):'PUBLICATION_NOT_VERIFIED'};
+ report.coreCycleId=coreCycleId;
+ report.coreCycleStartedAt=new Date(cycleStartedAt).toISOString();
+ report.coreCheckoutSourceSha=checkoutSourceAtStart;
+ report.coreEntrypointSha256=entrypointSha256;
+ report.coreProofFileSha256=coreProofFileSha256;
+ report.coreProcessPid=process.pid;report.coreParentPid=process.ppid;
+ report.coreOriginEvidence=coreOrigin.status==='PASS'?'TASK_ENGINE_WMI_CAPTURED_AT_START':'START_ONLY_UNVERIFIED';
+ report.coreOriginCode=coreOrigin.code;report.coreNodeCreatedAtMs=coreOrigin.ownerCreatedAtMs;
  save(path.join(base,'local-cycle-last-run.json'),report);console.log(JSON.stringify(report));
  if(publishRequested)try{updateDataAlert(base,{key:'publication',failed:publication.status!==0});}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
  if(publication.status!==0)process.exitCode=1;
 }finally{fs.unlinkSync(file);}
+
+}

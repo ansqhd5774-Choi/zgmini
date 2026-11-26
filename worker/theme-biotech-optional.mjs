@@ -1,3 +1,4 @@
+import {hasMarketParquetProvenance} from '../lib/marketparquet-retirement.mjs';
 import {PUBLIC_DISPLAY_MAX_AGE_MS} from './public-display-freshness.mjs';
 import {themeHistoryReference} from './theme-history-reference.mjs';
 
@@ -20,6 +21,7 @@ const same=(a,b)=>Array.isArray(a)&&Array.isArray(b)&&a.length===b.length&&a.eve
 const datesFrom=rows=>rows.map(x=>x.date);
 
 export function eligibleBiotechTheme(record,base,{now=Date.now(),storedAt=now}={}){
+ if(hasMarketParquetProvenance(record))return false;
  if(base?.status!=='READY'||base.methodologyVersion!==METHOD||base.themes?.length!==8||base.themes[7]?.theme!=='AI 반도체'||!date(base.observationDate))return false;
  const baseline=base.themes[0]?.history;
  if(!Array.isArray(baseline)||baseline.length!==252||!same(base.themes[7]?.history?.map(x=>x.date),datesFrom(baseline)))return false;

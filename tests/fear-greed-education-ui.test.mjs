@@ -9,7 +9,7 @@ const css=fs.readFileSync(new URL("../public/styles/fear-greed-education-r1.css"
 
 test("Fear & Greed education stays scoped to the USA detail page",()=>{
   assert.match(panel,/function CnnPanel\(\{ showEducation = false(?:, showBreadth = false)? \}/);
-  assert.match(country,/<CnnPanel\s+showBreadth\s*\/>/);
+  assert.match(country,/<CnnPanel showBreadth\/>/);
   assert.doesNotMatch(country,/showEducation/);
   assert.match(detail,/<CnnPanel showEducation\s*\/>/);
   assert.match(detail,/rel="stylesheet" href="\/styles\/fear-greed-education-r1\.css"/);

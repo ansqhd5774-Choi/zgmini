@@ -15,9 +15,15 @@ export async function validRollingPublic(rolling,base,{now=Date.now(),expectedMe
  if(!rolling||rolling.status!=='READY'||rolling.version!==THEME_ETF_ROLLING_VERSION||!['CONFIRMED','PROVISIONAL'].includes(rolling.phase)||rolling.methodologyVersion!==expectedMethod)return false;
  for(const flag of ['publicationAuthorized','upstreamCommercialRightsVerified','derivedLicenseVerified','sourcePriceReconciled'])if(rolling[flag]!==true)return false;
  if(rolling.individualStocksUsed!==0||rolling.baseObservationDate!==base.observationDate||rolling.coverage?.etfs!==13||rolling.coverage?.benchmark!=='SPY'||rolling.coverage?.complete!==true)return false;
- if(!stamp(rolling.asOf)||!stamp(rolling.sourceStoredAt)||Date.parse(rolling.asOf)>now||Date.parse(rolling.sourceStoredAt)>now||now-Date.parse(rolling.asOf)>=PUBLIC_DISPLAY_MAX_AGE_MS)return false;
+ // New D1 publication time cannot refresh an expired underlying GMH request.
+ if(!stamp(rolling.asOf)||!stamp(rolling.sourceStoredAt)||Date.parse(rolling.asOf)>now||Date.parse(rolling.sourceStoredAt)>now||now-Date.parse(rolling.asOf)>=PUBLIC_DISPLAY_MAX_AGE_MS||now-Date.parse(rolling.sourceStoredAt)>=PUBLIC_DISPLAY_MAX_AGE_MS)return false;
+
  if(!/^([a-f0-9]{64})$/.test(rolling.baseHash??'')||rolling.baseHash!==await immutableBaseHash(base))return false;
  if(!Array.isArray(rolling.themes)||rolling.themes.length!==base.themes.length||!date(rolling.observationDate)||rolling.confirmedObservationDate!==rolling.observationDate)return false;
+ // A future-dated completed session is not made real by a fresh D1 write.
+ // The immutable source request must be no earlier than the reported session.
+ const observationStart=Date.parse(rolling.observationDate+'T00:00:00Z');
+ if(observationStart>now||observationStart>Date.parse(rolling.sourceStoredAt))return false;
  let common=null;
  for(let i=0;i<base.themes.length;i++){
   const x=rolling.themes[i],seed=base.themes[i];
@@ -32,14 +38,18 @@ export async function validRollingPublic(rolling,base,{now=Date.now(),expectedMe
  for(const p of points){if(!date(p?.date)||p.date<=prev||Date.parse(p.date+'T00:00:00Z')>now||!p.scores||typeof p.scores!=='object'||Array.isArray(p.scores))return false;
   const names=base.themes.map(t=>t.theme);if(Object.keys(p.scores).length!==names.length||names.some(name=>!Object.hasOwn(p.scores,name)||!score(p.scores[name])))return false;prev=p.date;}
  if(rolling.lineage?.latestCompletedSession!==prev||!Number.isInteger(rolling.lineage?.confirmedPrimaryCount)||!Number.isInteger(rolling.lineage?.secondaryPendingCount)||rolling.lineage?.secondaryPendingCount!==points.length)return false;
- if(rolling.lineage.primarySource!=='GETMARKETHISTORY_1H_CLOSE'||rolling.lineage.secondarySource!=='MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED')return false;
+ if(rolling.lineage.primarySource!=='GETMARKETHISTORY_1H_CLOSE'||rolling.lineage.secondarySource!==null||points.length!==0||rolling.lineage.secondaryPendingCount!==0)return false;
  return now-Date.parse(prev+'T23:59:59Z')<PUBLIC_DISPLAY_MAX_AGE_MS;
 }
 export async function readRollingPublic(db,base,{now=Date.now()}={}){
  let row=null;try{row=await db.prepare("SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key='current'").bind(THEME_ETF_ROLLING_KEY).first()}catch{return null}
  if(!row||!Number.isSafeInteger(Number(row.stored_at))||Number(row.stored_at)>now||now-Number(row.stored_at)>=PUBLIC_DISPLAY_MAX_AGE_MS)return null;
  let payload;try{payload=JSON.parse(row.body)}catch{return null}
- if(!await validRollingPublic(payload,base,{now}))return null;
+ // A corrupt/missing optional seed or malformed rolling record must not turn
+ // the legacy ten-theme public route into HTTP 500. Ignore this optional overlay.
+ let eligible=false;
+ try{eligible=await validRollingPublic(payload,base,{now});}catch{return null;}
+ if(!eligible)return null;
  // Emit only the public derived-score schema already consumed by the dashboard.
  return {status:'READY',version:base.version,methodologyVersion:base.methodologyVersion,
   observationDate:payload.observationDate,confirmedObservationDate:payload.confirmedObservationDate,

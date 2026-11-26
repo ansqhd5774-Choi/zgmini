@@ -16,14 +16,99 @@ export function publicFeedStore(db){
   if(kind==='input')assertFeedInput(key,body,now);
   if(kind==='output')assertFeedOutput(key,body);
   const encoded=JSON.stringify(body);if(new TextEncoder().encode(encoded).length>1800000)throw Error('FEED_STORAGE_LIMIT');
-  const statements=[new Date(now).toISOString().slice(0,10),'current'].map(snapshot=>db.prepare('INSERT INTO public_feed_snapshots_v1(kind,feed_key,snapshot_key,body,stored_at) VALUES(?,?,?,?,?) ON CONFLICT(kind,feed_key,snapshot_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at').bind(kind,key,snapshot,encoded,now));
+  // ER1 monthly observations use the New York asOf day, not the UTC write day.
+  // Two NY observations may occur during one UTC date; never collapse them.
+  const month=/^market-calendar:earnings-er1-score-(20\d\d-\d\d)-public$/.exec(key)?.[1];
+  // This shared store also ships in unrelated PC release packages. Resolve
+  // ER1-only validators only for monthly ER1 writes, keeping those packages'
+  // import closure independent of the earnings calendar.
+  const er1=kind==='output'&&month&&
+   (await import('../lib/market-calendar-er1-month-key.mjs')).er1MonthlyPublicKey(month)===key;
+  const validateER1PublicDisplay=er1?
+   (await import('../lib/market-calendar-er1-public-display.mjs')).validateER1PublicDisplay:null;
+  if(er1&&!validateER1PublicDisplay(body,{now}))throw Error('ER1_MONTHLY_PUBLIC_VINTAGE_INVALID');
+  const vintage=er1?body.asOf:new Date(now).toISOString().slice(0,10);
+  const onConflict=er1?' WHERE excluded.stored_at>=public_feed_snapshots_v1.stored_at':'';
+  const insert='INSERT INTO public_feed_snapshots_v1(kind,feed_key,snapshot_key,body,stored_at) VALUES(?,?,?,?,?) ON CONFLICT(kind,feed_key,snapshot_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at'+onConflict;
+  const statements=[];
+  if(er1){
+   // Old UTC-keyed days can form a *chain* of one-day-shifted rows. Migrate
+   // oldest-first within one batch; moving only the newest loses earlier PIT.
+   const displaced=[];
+   let cursor=vintage;
+   while(displaced.length<96){
+    const old=await db.prepare("SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key=?").bind(key,cursor).first();
+    if(!old)break;
+    let prior;try{prior=JSON.parse(old.body);}catch{throw Error('ER1_VINTAGE_COLLISION_INVALID');}
+    if(prior?.asOf===cursor)break;
+    if(!validateER1PublicDisplay(prior,{now:old.stored_at}))
+     throw Error('ER1_VINTAGE_COLLISION_INVALID');
+    const next=new Date(Date.parse(prior.asOf+'T00:00:00Z')+86400000).toISOString().slice(0,10);
+    if(next!==cursor)throw Error('ER1_VINTAGE_COLLISION_INVALID');
+    displaced.push({snapshot:prior.asOf,body:old.body,storedAt:old.stored_at});
+    cursor=prior.asOf;
+   }
+   if(displaced.length===96)throw Error('ER1_VINTAGE_COLLISION_BOUND_STOP');
+   for(const old of displaced.reverse())
+    statements.push(db.prepare(insert).bind(kind,key,old.snapshot,old.body,old.storedAt));
+  }
+  statements.push(...[vintage,'current'].map(snapshot=>db.prepare(insert).bind(kind,key,snapshot,encoded,now)));
   await db.batch(statements);
  };
  return {
   async initialize(){await db.prepare('CREATE TABLE IF NOT EXISTS public_feed_snapshots_v1(kind TEXT NOT NULL,feed_key TEXT NOT NULL,snapshot_key TEXT NOT NULL,body TEXT NOT NULL,stored_at INTEGER NOT NULL,PRIMARY KEY(kind,feed_key,snapshot_key))').run()},
   readInput:key=>read('input',key), readOutput:key=>read('output',key),
-  readAttempt:key=>read('attempt',key),writeAttempt:(key,now)=>write('attempt',key,{status:'ATTEMPTED'},now),
+  // Fixed feed_key supplied by the stored calendar projection, never by GET
+  // parameters. Date rows contain only sanitized public derived scores.
+  async readOutputVintages(key,{days=[],limit=80}={}){
+   if(!Number.isInteger(limit)||limit<1||limit>80)throw Error('FEED_VINTAGE_LIMIT_INVALID');
+   if(!Array.isArray(days)||days.length<1||days.length>40||
+    days.some(day=>typeof day!=='string'||!/^20\d\d-\d\d-\d\d$/.test(day)||
+     !Number.isFinite(Date.parse(day+'T00:00:00Z'))||
+     new Date(day+'T00:00:00Z').toISOString().slice(0,10)!==day))
+    throw Error('FEED_VINTAGE_DAYS_INVALID');
+   const unique=[...new Set(days)];
+   // Two indexed lookups per actual event day: the nearest NY observation
+   // on/before the date (forecast) and strictly before it (actual-only).
+   // DISTINCT keys avoid fetching every full monthly JSON on every visitor GET.
+   const values=unique.map(()=>'(?)').join(',');
+   const sql=`WITH visible_days(day) AS (VALUES ${values}), vintage_keys(snapshot_key) AS (
+    SELECT (SELECT MAX(snapshot_key) FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key GLOB '????-??-??' AND snapshot_key<=day) FROM visible_days
+    UNION
+    SELECT (SELECT MAX(snapshot_key) FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key GLOB '????-??-??' AND snapshot_key<day) FROM visible_days
+   ) SELECT body,stored_at,snapshot_key FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=?
+    AND snapshot_key IN (SELECT snapshot_key FROM vintage_keys WHERE snapshot_key IS NOT NULL)
+    ORDER BY snapshot_key DESC LIMIT ?`;
+   const rows=(await db.prepare(sql).bind(...unique,key,key,key,limit).all()).results??[];
+   return rows.map(row=>({body:JSON.parse(row.body),storedAt:row.stored_at,snapshotKey:row.snapshot_key}));
+  },
+  readAttempt:key=>read('attempt',key),writeAttempt:(key,now,{retryAt}={})=>write('attempt',key,{status:'ATTEMPTED',...(Number.isSafeInteger(retryAt)&&retryAt>now?{retryAt}:{})},now),
   writeInput:(key,body,now)=>write('input',key,body,now),writeOutput:(key,body,now)=>write('output',key,body,now),
+  /** @param {{requestedAt:number,checkedAt:number,httpStatus:number|null,outcome:'FETCH_FAILED'|'HTTP_FAILED'|'INVALID_OUTPUT'|'VERIFIED',sourceObservedAt:string|null,score:number|null}} check */
+  async appendCnnHttpCheck(check){
+   const {requestedAt,checkedAt,httpStatus,outcome,sourceObservedAt,score}=check;
+   const observed=Date.parse(sourceObservedAt??'');
+   const verified=outcome==='VERIFIED';
+   if(!Number.isSafeInteger(requestedAt)||requestedAt<=0||!Number.isSafeInteger(checkedAt)||checkedAt<requestedAt||checkedAt>8.64e15||
+      !['FETCH_FAILED','HTTP_FAILED','INVALID_OUTPUT','VERIFIED'].includes(outcome)||
+      (outcome==='FETCH_FAILED'?httpStatus!==null:!Number.isInteger(httpStatus)||httpStatus<100||httpStatus>599)||
+      (verified?!(httpStatus>=200&&httpStatus<300&&Number.isFinite(observed)&&observed<=checkedAt+300000&&typeof score==='number'&&Number.isFinite(score)&&score>=0&&score<=100):sourceObservedAt!==null||score!==null))throw Error('CNN_HTTP_CHECK_INVALID');
+   const date=new Date(checkedAt).toISOString().slice(0,10),key='fear-greed-http-checks';
+   const row=await db.prepare("SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='input' AND feed_key=? AND snapshot_key=?").bind(key,date).first();
+   const previous=row?JSON.parse(row.body):{version:'CNN_HTTP_CHECKS_R1',date,checks:[]};
+   if(previous.version!=='CNN_HTTP_CHECKS_R1'||previous.date!==date||!Array.isArray(previous.checks))throw Error('CNN_HTTP_CHECK_HISTORY_INVALID');
+   const sample={requestedAt,checkedAt,httpStatus,outcome,sourceObservedAt:verified?new Date(observed).toISOString():null,score};
+   const existing=previous.checks.find(x=>x.requestedAt===requestedAt);
+   if(existing){if(JSON.stringify(existing)!==JSON.stringify(sample))throw Error('CNN_HTTP_CHECK_CONFLICT');return {status:'UNCHANGED'};}
+   const checks=[...previous.checks,sample].sort((a,b)=>a.requestedAt-b.requestedAt);
+   if(checks.length>1500)throw Error('CNN_HTTP_CHECK_DAY_LIMIT');
+   const body=JSON.stringify({version:'CNN_HTTP_CHECKS_R1',date,checks});
+   const storedAt=Math.max(checkedAt,row?.stored_at??0);
+   await db.prepare("INSERT INTO public_feed_snapshots_v1(kind,feed_key,snapshot_key,body,stored_at) VALUES('input',?,?,?,?) ON CONFLICT(kind,feed_key,snapshot_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at WHERE excluded.stored_at>=public_feed_snapshots_v1.stored_at").bind(key,date,body,storedAt).run();
+   const saved=await db.prepare("SELECT body,stored_at FROM public_feed_snapshots_v1 WHERE kind='input' AND feed_key=? AND snapshot_key=?").bind(key,date).first();
+   if(saved?.body!==body||saved.stored_at!==storedAt)throw Error('CNN_HTTP_CHECK_READBACK_FAILED');
+   return {status:'LOCAL_STORED',date,checks:checks.length};
+  },
   // Uses the already-existing table in PC core.sqlite; no new DB schema or
   // additional provider request. Only observed public scores enter this lane.
   async appendVerifiedObservations(body,now){

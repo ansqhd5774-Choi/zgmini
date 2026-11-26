@@ -1,6 +1,7 @@
 "use client";
 import {useMemo} from "react";
 import {useStoredIndex} from "../../components/use-stored-index";
+import {earningsInfoStatus} from "../../lib/earnings-info-projection-status-r1.mjs";
 import {liquidityStoredScoreComparisons} from "../../worker/projection-builders/liquidity-stored-history.mjs";
 import {MarketCardHeader} from "../market-card-header";
 import {MarketScoreOrb} from "../market-score-orb";
@@ -10,6 +11,8 @@ import {ContentHelp} from "../content-help";
 import {EarningsFavoriteButton,EarningsFavoriteHeaderIcon} from "./earnings-favorite-button";
 import {EARNINGS_RISK_HISTORY_KIND} from "../../lib/market-score/earnings-recession-history-r1.mjs";
 import {readBeaStoredS6,type BeaIndicator} from "./earnings-bea-s6-source";
+import {earningsCostRetrievalDay,earningsCostDisplayStatus,earningsCostSparkGeometry,earningsCostPublicationKst} from "./earnings-cost-observation-display-r1.mjs";
+import {buildEarningsCostIndicatorView} from "./earnings-cost-indicator-list.mjs";
 import "./earnings-indicator-r2.css";
 import "./earnings-inflation-layout.css";
 
@@ -41,7 +44,8 @@ const labels:Record<string,{name:string;description:string;direction:string}>={
  earningsGrowthBreadth:{name:"이익 성장 기업 비율",description:"이익 개선이 여러 기업으로 확산되는 정도",direction:"높을수록 방어력 양호"},
 };
 const validScore=(value:unknown):value is number=>typeof value==="number"&&Number.isFinite(value)&&value>=0&&value<=100;
-const validDate=(value:unknown):value is string=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&!Number.isNaN(Date.parse(value+"T00:00:00Z"));
+const validDate=(value:unknown):value is string=>typeof value==="string"&&/^\d{4}-\d{2}-\d{2}$/.test(value)&&
+ !Number.isNaN(Date.parse(value+"T00:00:00Z"))&&new Date(value+"T00:00:00Z").toISOString().slice(0,10)===value;
 const dateLabel=(value:unknown)=>validDate(value)?value.replaceAll("-",". ")+".":"—";
 const stage=(score:number|null)=>score===null?"데이터 준비 중":score>=75?"매우 양호":score>=60?"양호":score>=45?"중립":score>=25?"실적 주의":"실적 침체 위험";
 const tone=(score:number|null)=>score===null?"#94a3b8":score>=60?"#45d99f":score>=45?"#94a3b8":"#ff7076";
@@ -53,6 +57,7 @@ type CostRow={
  observationPeriod:string;previousPeriod:string|null;previousValue:number|null;change:number|null;
  frequency:"MONTHLY"|"QUARTERLY";history:CostHistoryPoint[];
  freshness?:{status:string;reason:string|null};seriesId:string;sourceURL:string;
+ retrievedAt?:string|null;
 };
 type CostPayload={
  schemaVersion:string;status:string;historicalMode:string;rows:CostRow[];
@@ -60,11 +65,23 @@ type CostPayload={
 type BeaUnitPoint={date:string;value:number};
 type BeaUnitPayload={
  schemaVersion:string;status:string;historyMode:string;
+ sourceStoredAt?:number;publishedAt?:string;
  freshness?:{status:string;reason:string|null};
  indicator?:{
-  id:string;unit:string;observationPeriodEnd:string;previousPeriodEnd:string;
+  id:string;unit:string;seriesId:string;sourceURL:string;transport:string;
+  observationPeriodEnd:string;previousPeriodEnd:string;
   value:number;previousValue:number;change:number;history:BeaUnitPoint[];
  };
+};
+type QfrPoint={period:string;value:number};
+type QfrPayload={
+ schemaVersion:string;status:string;historicalMode:string;observedThrough:string;
+ freshness?:{status:string;reason:string|null};
+ rows?:Array<{
+  indicatorId:string;status:string;unit:string;adjustment:string;changeUnit:string;
+  observationPeriod:string;previousPeriod:string;value:number;previousValue:number;
+  change:number;history:QfrPoint[];
+ }>;
 };
 type BeaMfgHistoryPoint={period:string;periodEnd:string;profitsBillionsUsdAnnualRate:number};
 type BeaMfgPayload={
@@ -80,14 +97,6 @@ type BeaMfgPayload={
 };
 const MFG_SCHEMA="earnings-bea-manufacturing-profits-r1-v1";
 const MFG_SERIES="N400RC1Q027SBEA";
-const COST_SCHEMA="earnings-companion-c-r4-v1";
-const costIndicators=[
- {id:"bls_ppi_final_demand_yoy_sa",name:"최종수요 생산자물가 상승률",description:"최종수요 생산자물가의 전년 대비 변화",series:"WPSFD4"},
- {id:"bls_ppi_final_demand_index",name:"최종수요 생산자물가 지수",description:"최종수요 생산자물가의 지수 수준",series:"WPSFD4"},
- {id:"bls_ppi_goods_yoy_sa",name:"재화 생산자물가 상승률",description:"재화 생산자물가의 전년 대비 변화",series:"WPSFD41"},
- {id:"bls_ppi_goods_index",name:"재화 생산자물가 지수",description:"재화 생산자물가의 지수 수준",series:"WPSFD41"},
- {id:"bls_unit_labor_cost_yoy",name:"비농업 단위노동비용 증가율",description:"비농업 단위노동비용의 전년 대비 변화",series:"PRS85006111"},
-] as const;
 const finiteCost=(value:unknown):value is number=>typeof value==="number"&&Number.isFinite(value);
 const riskRawUsable=(raw:RiskFourRawPayload|null|undefined,risk:RiskPayload|null|undefined)=>Boolean(
  raw?.schemaVersion==="earnings-recession-risk-four-raw-r1-v1"&&raw.status==="READY"&&
@@ -132,6 +141,18 @@ const unitUsable=(payload:BeaUnitPayload|null|undefined)=>Boolean(
 );
 const unitFormat=(value:number|null|undefined)=>finiteCost(value)?"$"+value.toFixed(3):"—";
 const unitChange=(value:number|null|undefined)=>finiteCost(value)?(value>0?"+":"")+value.toFixed(3)+"달러":"—";
+const qfrUsable=(payload:QfrPayload|null|undefined)=>Boolean(
+ payload?.schemaVersion==="earnings-companion-c-qfr-r1-v1"&&payload.status==="READY"&&
+ payload.historicalMode==="CURRENT_RETRIEVAL_NOT_PIT"&&payload.freshness?.status==="FRESH"&&
+ payload.rows?.length===1&&payload.rows[0].indicatorId==="census_qfr_manufacturing_after_tax_margin_nsa"&&
+ payload.rows[0].status==="READY"&&payload.rows[0].unit==="PERCENT"&&
+ payload.rows[0].adjustment==="NSA"&&payload.rows[0].changeUnit==="PERCENTAGE_POINTS"&&
+ payload.rows[0].observationPeriod===payload.observedThrough&&
+ finiteCost(payload.rows[0].value)&&finiteCost(payload.rows[0].previousValue)&&
+ finiteCost(payload.rows[0].change)&&Array.isArray(payload.rows[0].history)&&
+ payload.rows[0].history.length===5&&payload.rows[0].history.every(point=>
+  /^\d{4}-Q[1-4]$/.test(point.period)&&finiteCost(point.value))
+);
 const mfgProfitFormat=(value:number|null|undefined)=>finiteCost(value)?
  value.toLocaleString("ko-KR",{minimumFractionDigits:2,maximumFractionDigits:2})+" 십억 달러":"—";
 const mfgYoYFormat=(value:number|null|undefined)=>finiteCost(value)?
@@ -177,49 +198,52 @@ const beaUsable=(row:BeaIndicator|undefined)=>Boolean(
 // Cost-series points are raw BLS observations, never inputs to the E1 risk score.
 function CostSpark({history,label="저장된 비용 압력 관측치 추이. 결측 구간은 연결하지 않음"}:
  {history:Array<{value:number|null}>;label?:string}){
- const points=Array.isArray(history)?history:[];
- const valid=points.map((point,index)=>({index,value:point?.value}))
-  .filter((point):point is {index:number;value:number}=>finiteCost(point.value));
- if(valid.length<2)return <span className="earnings-r2-cost-chart-empty">이력 부족</span>;
- const min=Math.min(...valid.map(point=>point.value));
- const max=Math.max(...valid.map(point=>point.value));
- const x=(index:number)=>5+index*110/Math.max(1,points.length-1);
- const y=(value:number)=>max===min?18:30-24*(value-min)/(max-min);
- let path="";let previous=-2;
- for(const point of valid){
-  path+=(previous===point.index-1?" L":" M")+x(point.index).toFixed(1)+" "+y(point.value).toFixed(1);
-  previous=point.index;
- }
- const latest=valid.at(-1)!;
+ const geometry=earningsCostSparkGeometry(history);
+ if(!geometry)return <span className="earnings-r2-cost-chart-empty">이력 부족</span>;
  return <svg className="earnings-r2-cost-spark" viewBox="0 0 120 36" role="img"
   aria-label={label}>
-  <path d={path.trim()} fill="none" stroke="#73c9d9" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-  <circle cx={x(latest.index)} cy={y(latest.value)} r="2.5" fill="#b0eef3"/>
+  <path d={geometry.path} fill="none" stroke="#73c9d9" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+  {geometry.marker&&<circle cx={geometry.marker.cx} cy={geometry.marker.cy} r="2.5" fill="#b0eef3"/>}
  </svg>;
 }
-
 export default function EarningsRiskOnlyPanel(){
  const {payload,loading}=useStoredIndex<RiskPayload>("/api/earnings-recession-detail");
  const {payload:riskRawPayload}=useStoredIndex<RiskFourRawPayload>("/api/earnings-recession-risk-four-raw");
  const riskRawReady=riskRawUsable(riskRawPayload,payload);
  const rawFactors=new Map<string,RiskRawFactor>(riskRawReady?riskRawPayload!.factors.map(row=>[row.id,row]):[]);
- const {payload:costPayload,loading:costLoading,error:costError}=
+ const {payload:costPayload,loading:costLoading,error:costError,publishedAt:costPublishedAt}=
   useStoredIndex<CostPayload>("/api/earnings-recession-indicators");
   const {payload:unitPayload,loading:unitLoading,error:unitError}=
-   useStoredIndex<BeaUnitPayload>("/api/earnings-recession-bea-unit-profit");
+   useStoredIndex<BeaUnitPayload>("/api/earnings-recession-bea-unit-profit",null,true,true);
+  const {payload:qfrPayload,loading:qfrLoading,error:qfrError}=
+   useStoredIndex<QfrPayload>("/api/earnings-recession-census-qfr-margin",null,true,true);
   const unitReady=unitUsable(unitPayload);
   const unitRow=unitReady?unitPayload?.indicator:null;
-  const unitStatus=unitLoading?"연결 확인 중":unitReady?"연결 완료":unitError?"자료 확인 대기":"자료 확인 대기";
+ const unitPcSavedKst=unitReady&&Number.isSafeInteger(unitPayload?.sourceStoredAt)&&
+  (unitPayload?.sourceStoredAt??0)>0?
+  earningsCostPublicationKst(new Date(unitPayload!.sourceStoredAt!).toISOString()):"—";
+ const unitD1PublishedKst=unitReady?earningsCostPublicationKst(unitPayload?.publishedAt):"—";
+  const unitNativeBea=unitRow?.transport==="BEA_API_JSON"&&unitRow?.seriesId==="A463RD"&&
+   unitRow?.sourceURL==="https://apps.bea.gov/api/data";
+  const unitSourceUrl=unitNativeBea?"https://apps.bea.gov/api/data":
+   "https://fred.stlouisfed.org/series/A463RD3Q052SBEA";
+  const unitSourceLabel=unitNativeBea?"BEA 공식 API 원자료":"BEA·FRED 원자료";
+  const unitStatus=earningsInfoStatus({loading:unitLoading,ready:unitReady,error:unitError,hasPayload:unitPayload!==null});
+  const qfrReady=qfrUsable(qfrPayload);
+  const qfrRow=qfrReady?qfrPayload?.rows?.[0]:null;
+  const qfrStatus=earningsInfoStatus({loading:qfrLoading,ready:qfrReady,error:qfrError,hasPayload:qfrPayload!==null});
   const {payload:mfgPayload}=useStoredIndex<BeaMfgPayload>("/api/earnings-recession-bea-manufacturing-profit");
   const mfgReady=mfgUsable(mfgPayload);
   const mfgRow=mfgReady?mfgPayload?.indicator:null;
   const mfgHistory=mfgRow?.history.map(point=>({value:point.profitsBillionsUsdAnnualRate}))??[];
- const costValid=costPayload?.schemaVersion===COST_SCHEMA&&
-  costPayload?.historicalMode==="CURRENT_RETRIEVAL_NOT_PIT"&&Array.isArray(costPayload.rows);
+ // Reuse the stored-API indicator adapter for desktop and mobile. Before D1
+ // publishes the service pair, the existing five indicators remain unchanged.
+ const costView=buildEarningsCostIndicatorView(costPayload);
+ const costValid=costView.valid;
+ const costIndicators=costView.indicators;
  const costRows=new Map<string,CostRow>(
-  (costValid&&costPayload?costPayload.rows:[])
-   .filter(row=>costIndicators.some(meta=>meta.id===row.indicatorId))
-   .map(row=>[row.indicatorId,row])
+  costView.rows.filter((row:CostRow)=>costIndicators.some(meta=>meta.id===row.indicatorId))
+   .map((row:CostRow)=>[row.indicatorId,row])
  );
  const costReady=costIndicators.filter(meta=>costUsable(costRows.get(meta.id))).length;
  const costStatus=costLoading?"연결 확인 중":costValid?
@@ -312,7 +336,7 @@ export default function EarningsRiskOnlyPanel(){
   <section className="inflation-indicator-section earnings-r2-indicators" aria-labelledby="earnings-risk-factor-title">
    <header><div><p className="cnn-eyebrow">EARNINGS RECESSION RISK FACTORS</p>
     <h2 id="earnings-risk-factor-title">실적 침체 분석 지표</h2></div>
-     <p>기존 4개는 {riskRawReady?"저장된 SEC 재무 원자료 수치와 기존 진단 점수를 구분":"기존 실적 침체 방어 진단 점수"}하여 표시합니다. 추가 5개는 BLS 비용 압력 원자료, {mfgReady?"3개":"2개"}는 BEA 기업이익 원자료입니다. 추가 원자료는 진단 점수에 합산하지 않습니다. <span className="earnings-r2-cost-status" role="status">SEC 원자료 {riskRawReady?"4/4 연결":"게시 확인 대기"} · {costStatus} · BEA 기업이익 {beaReady?"연결 완료":"자료 확인 대기"} · BEA 단위이익 {unitStatus}</span></p>
+     <p>기존 4개는 {riskRawReady?"저장된 SEC 재무 원자료 수치와 기존 진단 점수를 구분해 표시합니다.":"기존 실적 침체 방어 진단 점수를 표시합니다."} 추가 {costIndicators.length}개는 BLS 비용 압력 원자료, {mfgReady?"3개":"2개"}는 BEA 기업이익 원자료입니다. 추가 원자료와 Census QFR 제조업 세후이익률은 진단 점수에 합산하지 않습니다. <span className="earnings-r2-cost-status" role="status">SEC 원자료 {riskRawReady?"4/4 연결":"게시 확인 대기"} · {costStatus} · BEA 기업이익 {beaReady?"연결 완료":"자료 확인 대기"} · BEA 단위이익 {unitStatus} · Census QFR {qfrStatus}</span> <span className="earnings-r2-published-at">BLS 게시 {costValid?earningsCostPublicationKst(costPublishedAt):"—"}</span></p>
    </header>
    <div className="inflation-table-wrap earnings-r2-table-wrap"><table className="inflation-indicator-table earnings-r2-table">
     <colgroup><col className="earnings-col-favorite"/><col className="earnings-col-name"/><col className="earnings-col-content"/><col className="earnings-col-criterion"/><col className="earnings-col-prior"/><col className="earnings-col-current"/><col className="earnings-col-release"/><col className="earnings-col-judgement"/><col className="earnings-col-spark"/><col className="earnings-col-help"/></colgroup>
@@ -339,9 +363,9 @@ export default function EarningsRiskOnlyPanel(){
      <td className="earnings-r2-value"><strong>{ok&&row?costFormat(row.value,row.unit):"—"}</strong>
       <small>변동 {ok&&row?costChange(row.change,row.unit):"—"}</small></td>
      <td className="earnings-r2-release"><strong>—</strong>
-      <small>관측 {row?.observationPeriod??"—"}</small></td>
-     <td>{ok?"참고":row?.status==="STALE"?"갱신 지연":"확인 대기"}</td>
-     <td className="earnings-r2-spark">{ok&&row?<CostSpark history={row.history}/>:"—"}</td>
+      <small>관측 {row?.observationPeriod??"—"} · 수집 {earningsCostRetrievalDay(row?.retrievedAt)}</small></td>
+     <td>{earningsCostDisplayStatus(row,ok)}</td>
+     <td className="earnings-r2-spark">{ok&&row?<CostSpark history={row.history} label={meta.name+" 저장된 BLS 관측 추이, 결측 구간은 연결하지 않음"}/>:"—"}</td>
      <td><ContentHelp label={meta.name+" 도움말"}><p>{meta.description}. BLS 관측값이며 실적 침체 방어 점수에는 합산하지 않습니다. 수집 시점 기준 자료로, 발표일이 확인되지 않으면 —로 표시합니다.</p>
       <a href={"https://data.bls.gov/timeseries/"+meta.series} target="_blank" rel="noopener noreferrer">BLS 원자료</a></ContentHelp></td>
     </tr>})}
@@ -378,7 +402,26 @@ export default function EarningsRiskOnlyPanel(){
       <td><ContentHelp label="비금융기업 단위이익 도움말">
        <p>BEA NIPA 표 1.15의 비금융기업 단위이익(A463RD)입니다. 실질 총부가가치 한 단위당 이익을 달러로 표시합니다. 이익률(%)이나 전년 대비 성장률이 아닙니다.</p>
        <p>최근 저장한 원자료의 개정분을 보여주며 발표 당시 확정 자료(PIT)는 아닙니다. 실적 침체 방어 점수에도 합산하지 않습니다.</p>
-       <a href="https://fred.stlouisfed.org/series/A463RD3Q052SBEA" target="_blank" rel="noopener noreferrer">BEA·FRED 원자료</a>
+       {unitReady&&<p>PC 원자료 저장: {unitPcSavedKst} · D1 공개 게시: {unitD1PublishedKst}. 관측 분기와는 다른 시각입니다.</p>}
+       <a href={unitSourceUrl} target="_blank" rel="noopener noreferrer">{unitSourceLabel}</a>
+      </ContentHelp></td>
+     </tr>
+     <tr className="earnings-r2-cost-row" data-source="census-qfr-margin">
+      <td><EarningsFavoriteButton id="census_qfr_manufacturing_after_tax_margin_nsa" label="미국 제조업 세후이익률"/></td>
+      <th scope="row">미국 제조업 세후이익률</th>
+      <td>제조업 세후이익 ÷ 순매출액 · 계절조정 전(NSA)</td>
+      <td>Census QFR 참고<small>점수 미반영</small></td>
+      <td className="earnings-r2-prior">{qfrReady?costFormat(qfrRow?.previousValue,"PERCENT"):"—"}</td>
+      <td className="earnings-r2-value"><strong>{qfrReady?costFormat(qfrRow?.value,"PERCENT"):"—"}</strong>
+       <small>직전 분기 대비 {qfrReady?costChange(qfrRow?.change,"PERCENT"):"—"}</small></td>
+      <td className="earnings-r2-release"><strong>—</strong>
+       <small>관측 {qfrReady?qfrRow?.observationPeriod:"—"}</small></td>
+      <td>{qfrReady?"참고":"확인 대기"}</td>
+      <td className="earnings-r2-spark">{qfrReady&&qfrRow?<CostSpark history={qfrRow.history} label="미국 제조업 세후이익률 최근 5개 분기 관측 추이"/>:"—"}</td>
+      <td><ContentHelp label="미국 제조업 세후이익률 도움말">
+       <p>미국 Census QFR 제조업의 세후이익을 순매출액으로 나눈 비율(%)입니다. 직전 분기 대비 차이는 퍼센트포인트(%p)입니다. 계절조정 전(NSA)이며 진단 점수에는 합산하지 않습니다.</p>
+       <p>수집 시점 기준 개정 자료로 발표 당시 원본(PIT)은 아닙니다. 공식 발표일은 확인되지 않아 표시하지 않습니다.</p>
+       <a href="https://www.census.gov/econ_getzippedfile/?programCode=QFR" target="_blank" rel="noopener noreferrer">Census QFR 원자료</a>
       </ContentHelp></td>
      </tr>
      {mfgReady&&mfgRow&&<tr className="earnings-r2-cost-row" data-source="bea-manufacturing-profit">
@@ -415,7 +458,7 @@ export default function EarningsRiskOnlyPanel(){
     {costIndicators.map(meta=>{const row=costRows.get(meta.id),ok=costUsable(row);return <article className="earnings-r2-mobile-card earnings-r2-cost-mobile-card" key={meta.id}>
      <div className="earnings-r2-mobile-head"><div className="earnings-r2-mobile-title">
       <EarningsFavoriteButton id={meta.id} label={meta.name}/><div>
-       <strong>{meta.name}</strong><small>비용 압력 참고 · 점수 미반영</small>
+       <strong>{meta.name}</strong><small>비용 압력 참고 · 점수 미반영 · {earningsCostDisplayStatus(row,ok)}</small>
       </div></div><ContentHelp label={meta.name+" 도움말"}><p>{meta.description}. BLS 관측값으로 실적 침체 방어 점수에 합산하지 않습니다.</p>
        <a href={"https://data.bls.gov/timeseries/"+meta.series} target="_blank" rel="noopener noreferrer">BLS 원자료</a>
       </ContentHelp></div>
@@ -425,10 +468,10 @@ export default function EarningsRiskOnlyPanel(){
       <div><span>현재</span><strong>{ok&&row?costFormat(row.value,row.unit):"—"}</strong>
        <small>변동 {ok&&row?costChange(row.change,row.unit):"—"}</small></div>
       <div><span>관측 기간</span><strong>{row?.observationPeriod??"—"}</strong>
-       <small>{row?.frequency==="MONTHLY"?"월간":row?.frequency==="QUARTERLY"?"분기":""}</small></div>
+       <small>{row?.frequency==="MONTHLY"?"월간":row?.frequency==="QUARTERLY"?"분기":""} · 수집 {earningsCostRetrievalDay(row?.retrievedAt)}</small></div>
      </div>
      <div className="earnings-r2-mobile-spark">
-      <span>최근 이력</span>{ok&&row?<CostSpark history={row.history}/>:<span className="earnings-r2-cost-chart-empty">이력 확인 필요</span>}
+      <span>최근 이력</span>{ok&&row?<CostSpark history={row.history} label={meta.name+" 저장된 BLS 관측 추이, 결측 구간은 연결하지 않음"}/>:<span className="earnings-r2-cost-chart-empty">이력 확인 필요</span>}
      </div>
     </article>})}
     <article className="earnings-r2-mobile-card earnings-r2-cost-mobile-card" data-source="bea-s6">
@@ -457,7 +500,8 @@ export default function EarningsRiskOnlyPanel(){
         <strong>비금융기업 단위이익</strong><small>BEA · 실질 부가가치 한 단위당 달러 · 점수 미반영</small>
        </div></div><ContentHelp label="비금융기업 단위이익 도움말">
         <p>실질 부가가치 한 단위당 비금융기업 이익입니다. 비율(%) 또는 기업의 통상적인 이익률이 아니며 진단 점수에 포함하지 않습니다. 저장 당시 개정분입니다.</p>
-        <a href="https://fred.stlouisfed.org/series/A463RD3Q052SBEA" target="_blank" rel="noopener noreferrer">BEA·FRED 원자료</a>
+        {unitReady&&<p>PC 원자료 저장: {unitPcSavedKst} · D1 공개 게시: {unitD1PublishedKst}. 관측 분기와는 다른 시각입니다.</p>}
+        <a href={unitSourceUrl} target="_blank" rel="noopener noreferrer">{unitSourceLabel}</a>
        </ContentHelp></div>
       <p className="earnings-r2-mobile-content">미국 비금융기업의 실질 부가가치 한 단위당 이익</p>
       <div className="earnings-r2-mobile-metrics">
@@ -469,6 +513,26 @@ export default function EarningsRiskOnlyPanel(){
       </div>
       <div className="earnings-r2-mobile-spark">
        <span>최근 이력</span>{unitReady&&unitRow?<CostSpark history={unitRow.history} label="BEA 비금융기업 단위이익 최근 5개 분기 추이"/>:<span className="earnings-r2-cost-chart-empty">이력 확인 필요</span>}
+      </div>
+     </article>
+     <article className="earnings-r2-mobile-card earnings-r2-cost-mobile-card" data-source="census-qfr-margin">
+      <div className="earnings-r2-mobile-head"><div className="earnings-r2-mobile-title">
+       <EarningsFavoriteButton id="census_qfr_manufacturing_after_tax_margin_nsa" label="미국 제조업 세후이익률"/><div>
+        <strong>미국 제조업 세후이익률</strong><small>Census QFR · 계절조정 전(NSA) · 점수 미반영</small>
+       </div></div><ContentHelp label="미국 제조업 세후이익률 도움말">
+        <p>제조업 세후이익을 순매출액으로 나눈 비율(%)입니다. 분기 대비 차이는 %p이며 저장 당시 개정분으로 발표 당시 원본(PIT)은 아닙니다. 진단 점수에는 합산하지 않습니다.</p>
+        <a href="https://www.census.gov/econ_getzippedfile/?programCode=QFR" target="_blank" rel="noopener noreferrer">Census QFR 원자료</a>
+       </ContentHelp></div>
+      <p className="earnings-r2-mobile-content">미국 제조업의 세후이익 ÷ 순매출액</p>
+      <div className="earnings-r2-mobile-metrics">
+       <div><span>이전 분기</span><strong>{qfrReady?costFormat(qfrRow?.previousValue,"PERCENT"):"—"}</strong></div>
+       <div><span>현재</span><strong>{qfrReady?costFormat(qfrRow?.value,"PERCENT"):"—"}</strong>
+        <small>변동 {qfrReady?costChange(qfrRow?.change,"PERCENT"):"—"}</small></div>
+       <div><span>관측 분기</span><strong>{qfrReady?qfrRow?.observationPeriod:"—"}</strong>
+        <small>{qfrReady?"분기 원자료":"자료 확인 대기"}</small></div>
+      </div>
+      <div className="earnings-r2-mobile-spark">
+       <span>최근 이력</span>{qfrReady&&qfrRow?<CostSpark history={qfrRow.history} label="미국 제조업 세후이익률 최근 5개 분기 추이"/>:<span className="earnings-r2-cost-chart-empty">이력 확인 필요</span>}
       </div>
      </article>
      {mfgReady&&mfgRow&&<article className="earnings-r2-mobile-card earnings-r2-cost-mobile-card" data-source="bea-manufacturing-profit">
@@ -490,7 +554,7 @@ export default function EarningsRiskOnlyPanel(){
        <span>최근 이력</span><CostSpark history={mfgHistory} label="BEA 제조업 기업이익 최근 5개 분기 금액 추이"/>
       </div>
      </article>}</div>
-    <p className="earnings-r2-cost-footnote">BLS 저장 관측값은 수집 당시의 자료로, 잠정 추정치나 위험 점수가 아닙니다. 같은 시계열의 상승률과 지수를 각각 표시한 항목은 별도의 독립 근거로 계산하지 않습니다. BEA 기업이익 변화율은 일반 전년비 성장률과 다른 대칭 변화율이며, BEA 비금융기업 단위이익은 달러/실질 부가가치 단위로 표시합니다. 모두 저장 당시 개정분이며 진단 점수에는 반영하지 않습니다. {mfgReady?"제조업 기업이익은 재고평가 조정분의 일반 전년비 증가율이며, 금액은 십억 달러·계절조정 연율(SAAR)입니다.":""}</p>
+    <p className="earnings-r2-cost-footnote">BLS 저장 관측값은 수집 당시의 자료로, 잠정 추정치나 위험 점수가 아닙니다. 같은 시계열의 상승률과 지수를 각각 표시한 항목은 별도의 독립 근거로 계산하지 않습니다. BEA 기업이익 변화율은 일반 전년비 성장률과 다른 대칭 변화율이며, BEA 비금융기업 단위이익은 달러/실질 부가가치 단위로 표시합니다. Census QFR 제조업 세후이익률은 계절조정 전 비율(%)이며 전 분기 대비 차이는 %p입니다. 모두 저장 당시 개정분이며 진단 점수에는 반영하지 않습니다. {mfgReady?"제조업 기업이익은 재고평가 조정분의 일반 전년비 증가율이며, 금액은 십억 달러·계절조정 연율(SAAR)입니다.":""}</p>
   </section>
   <a className="cnn-return-cta" href="/">← 메인 대시보드로 돌아가기</a>
  </>;

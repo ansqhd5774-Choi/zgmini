@@ -5,6 +5,9 @@ export const BEA_UNIT_SNAPSHOT_KEY='detail:earnings-bea-unit-profit:v1';
 export const BEA_UNIT_SCHEMA='earnings-bea-unit-profit-r1-v1';
 const SERIES='A463RD3Q052SBEA';
 const PAGE=`https://fred.stlouisfed.org/series/${SERIES}`;
+// Official BEA NIPA JSON is a distinct provenance, never a FRED_CSV alias.
+const NIPA_SERIES='A463RD';
+const NIPA_PAGE='https://apps.bea.gov/api/data';
 const DAY=86_400_000,MAX_AGE=165*DAY;
 const finite=value=>typeof value==='number'&&Number.isFinite(value);
 const object=value=>value!==null&&typeof value==='object'&&!Array.isArray(value);
@@ -31,7 +34,8 @@ export function validateBeaUnitProfit(payload,{now=Date.now()}={}){
  if(!keys(i,['id','source','seriesId','sourceURL','transport','unit','observationPeriodEnd',
  'previousPeriodEnd','value','previousValue','change','history'])
  ||i.id!=='bea_nonfinancial_unit_profit'||i.source!=='BEA NIPA Table 1.15 A463RD'
- ||i.seriesId!==SERIES||i.sourceURL!==PAGE||i.transport!=='FRED_CSV'
+ ||!((i.transport==='FRED_CSV'&&i.seriesId===SERIES&&i.sourceURL===PAGE)
+    ||(i.transport==='BEA_API_JSON'&&i.seriesId===NIPA_SERIES&&i.sourceURL===NIPA_PAGE))
  ||i.unit!=='USD_PER_REAL_GVA_UNIT'||!finite(i.value)||!finite(i.previousValue)
  ||!finite(i.change)||Math.abs(i.change-(i.value-i.previousValue))>1e-9
  ||quarter(i.observationPeriodEnd)===null
@@ -80,11 +84,14 @@ export async function readBeaUnitResponse(request,db,{now=Date.now()}={}){
   const payload=validateBeaUnitProfit(envelope.payload,{now}),p=envelope.projection;
   if(p.status!=='READY'||p.sourceStoredAt!==payload.sourceStoredAt
    ||p.sourceVersion!==payload.sourceVersion||!Number.isSafeInteger(p.builtAt)
-   ||p.builtAt>now||Number(raw.stored_at)!==p.builtAt)
+   ||p.builtAt<payload.sourceStoredAt||p.builtAt>now
+   ||Number(raw.stored_at)!==p.builtAt)
    throw Error('BEA_UNIT_CHECKPOINT_MISMATCH');
   const freshness=beaUnitFreshness(payload,{now});
   if(freshness.status==='STALE')return reply({status:'unavailable',reason:freshness.reason},503);
-  return reply({...payload,freshness});
+  // D1 stored_at is verified against the immutable projection checkpoint above.
+  // Expose publication time distinctly from the source's original stored time.
+  return reply({...payload,freshness,publishedAt:new Date(p.builtAt).toISOString()});
  }catch{return reply({status:'unavailable',reason:'STORED_PROJECTION_INVALID'},503);}
 }
 
@@ -106,9 +113,14 @@ export function beaUnitWriter(db){
    if(old.payload.sourceStoredAt===payload.sourceStoredAt
     &&old.payload.sourceVersion!==payload.sourceVersion)
     throw Error('BEA_UNIT_CONFLICTING_VERSION');
-   if(old.payload.sourceVersion===payload.sourceVersion
-    &&JSON.stringify(old.payload.indicator)===JSON.stringify(payload.indicator))
+   if(old.payload.sourceVersion===payload.sourceVersion){
+    // Immutable source bytes cannot yield a different statistical projection.
+    // A changed calculation for the same hash requires an independently
+    // approved source/methodology version; never silently overwrite D1.
+    if(JSON.stringify(old.payload.indicator)!==JSON.stringify(payload.indicator))
+     throw Error('BEA_UNIT_CONFLICTING_CONTENT');
     return {status:'ALREADY_STORED',key:BEA_UNIT_SNAPSHOT_KEY,storedAt:Number(previous.stored_at)};
+   }
   }
   const envelope={payload,projection:{status:'READY',builtAt:storedAt,
    sourceStoredAt:payload.sourceStoredAt,sourceVersion:payload.sourceVersion}};

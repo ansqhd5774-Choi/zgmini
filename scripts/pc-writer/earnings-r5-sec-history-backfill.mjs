@@ -3,6 +3,8 @@ import os from "node:os";
 import path from "node:path";
 import {createHash} from "node:crypto";
 import {fileURLToPath} from "node:url";
+import {createCompatibleSecQuotaFetch} from "./sec-legacy-quota-bridge.mjs";
+import {secGuardOptionsFromEnv} from "./sec-guard-runtime-config.mjs";
 
 export const E1_R5_SEC_HISTORY_BACKFILL_VERSION="E1-R5-SEC-HISTORY-BACKFILL-R1";
 export const E1_R5_SEC_HISTORY_BACKFILL_CONTRACT=Object.freeze({
@@ -170,6 +172,8 @@ function formatText(report){
 }
 
 export async function collectEarningsR5SecHistory({base=DEFAULT_BASE,lookbackDays=550,priorPerIssuer=2,maxRequests=100,fetchImpl=globalThis.fetch,sleepImpl=sleep}={}){
+  const secGuardOptions=secGuardOptionsFromEnv();
+  const guardedFetch=secGuardOptions.secSharedGuard?createCompatibleSecQuotaFetch({base,originalFetch:fetchImpl,mode:"observe",...secGuardOptions}).fetch:fetchImpl;
   if(!Number.isInteger(maxRequests)||maxRequests<1||maxRequests>E1_R5_SEC_HISTORY_BACKFILL_CONTRACT.maxRequestsPerRun)throw Object.assign(new Error("HISTORY_MAX_REQUESTS_INVALID"),{code:"HISTORY_MAX_REQUESTS_INVALID"});
   if(!Number.isInteger(lookbackDays)||lookbackDays<1||!Number.isInteger(priorPerIssuer)||priorPerIssuer<1||priorPerIssuer>4)throw Object.assign(new Error("HISTORY_ARGUMENT_INVALID"),{code:"HISTORY_ARGUMENT_INVALID"});
   const root=path.join(base,"manual-input","e1-r5","sec-guidance-r17"),documentsRoot=path.join(root,"documents"),checkpointFile=path.join(root,"checkpoint.json"),ledgerFile=path.join(root,"historical-backfill-r1.json"),incoming=path.join(base,"manual-input","e1-r5","incoming"),reportsDir=path.join(base,"manual-input","e1-r5","reports");
@@ -186,10 +190,10 @@ export async function collectEarningsR5SecHistory({base=DEFAULT_BASE,lookbackDay
     for(const candidate of planning.plan){
       if(ledger.completed[candidate.accessionNumber])continue;
       const primaryUrl=buildSecArchiveDocumentUrl(candidate);if(!primaryUrl)throw Object.assign(new Error("PRIMARY_URL_INVALID"),{code:"PRIMARY_URL_INVALID"});
-      const primaryFile=localDocumentPath(documentsRoot,candidate,primaryUrl),primary=await fetchToFile(primaryUrl,primaryFile,{fetchImpl,state,report,sleepImpl});if(primary.status==="BUDGET")break;
+      const primaryFile=localDocumentPath(documentsRoot,candidate,primaryUrl),primary=await fetchToFile(primaryUrl,primaryFile,{fetchImpl:guardedFetch,state,report,sleepImpl});if(primary.status==="BUDGET")break;
       const sourceFiles=[{role:"PRIMARY",url:primaryUrl,sha256:primary.sha256,file:path.relative(root,primaryFile).replaceAll("\\","/")}];
       const exhibitUrl=extractFirstExhibitLink(primary.bytes.toString("utf8"),{baseUrl:primaryUrl});
-      if(exhibitUrl){const exhibitFile=localDocumentPath(documentsRoot,candidate,exhibitUrl),exhibit=await fetchToFile(exhibitUrl,exhibitFile,{fetchImpl,state,report,sleepImpl});if(exhibit.status==="BUDGET")break;sourceFiles.push({role:"EXHIBIT",url:exhibitUrl,sha256:exhibit.sha256,file:path.relative(root,exhibitFile).replaceAll("\\","/")});}
+      if(exhibitUrl){const exhibitFile=localDocumentPath(documentsRoot,candidate,exhibitUrl),exhibit=await fetchToFile(exhibitUrl,exhibitFile,{fetchImpl:guardedFetch,state,report,sleepImpl});if(exhibit.status==="BUDGET")break;sourceFiles.push({role:"EXHIBIT",url:exhibitUrl,sha256:exhibit.sha256,file:path.relative(root,exhibitFile).replaceAll("\\","/")});}
       ledger.completed[candidate.accessionNumber]={cik:candidate.cik,filed:candidate.filed,acceptedAt:candidate.acceptedAt,accessionNumber:candidate.accessionNumber,form:candidate.form,items:candidate.items,currentAccessionNumber:candidate.currentAccessionNumber,currentFiled:candidate.currentFiled,sourceFiles,storedAt:new Date().toISOString()};ledger.updatedAt=new Date().toISOString();writeJsonAtomic(ledgerFile,ledger);
     }
   }catch(error){report.status="FAILED";report.errorCode=safeCode(error);}

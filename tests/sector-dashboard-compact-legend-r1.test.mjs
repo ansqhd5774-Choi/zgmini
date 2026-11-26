@@ -72,16 +72,17 @@ test('theme and sector OFF legends share the same readable contrast without chan
  assert.match(css,/\.zg-theme-selected-label\{[^}]*background:#102b3b;color:#e2e8f0;/);
 });
 
-test('hover tooltip stays compact for one visible series and grows only for multiple series',()=>{
- assert.match(css,/\.zg-sector-tooltip\{width:max-content;min-width:160px;max-width:min\(220px,calc\(100vw - 32px\)\)/);
- assert.match(css,/\.zg-sector-tooltip:has\(li:nth-child\(2\)\)\{width:min\(320px,calc\(100vw - 32px\)\);max-width:none\}/);
- assert.match(css,/\.zg-sector-tooltip:has\(li:nth-child\(2\)\) ul\{grid-template-columns:repeat\(2,minmax\(0,1fr\)\)\}/);
- assert.match(css,/\.zg-sector-tooltip li::before\{content:"";width:6px;height:6px;border-radius:50%;flex:none;background:currentColor\}/);
- assert.match(css,/\.zg-sector-tooltip strong\{flex:none;color:#fff;font-size:14px;/);
- assert.match(css,/\.zg-sector-tooltip p\{margin:0 0 6px;color:#b8ccd9;font-size:14px;/);
- assert.match(css,/\.zg-sector-tooltip li span\{[^}]*font-size:14px;/);
- assert.match(chart,/className="zg-sector-held-tooltip zg-sector-tooltip"/);
- assert.match(chart,/className="zg-sector-tooltip" role="status"/);
+test('sector and theme hover share the Korea 92px tooltip and expand only for multiple visible series',()=>{
+ assert.match(css,/\.zg-sector-tooltip\{min-width:92px;max-width:min\(320px,calc\(100vw - 24px\)\)/);
+ assert.match(css,/\.zg-sector-tooltip\.is-multi\{width:min\(320px,calc\(100vw - 24px\)\)/);
+ assert.match(css,/\.zg-sector-tooltip \.zg-sector-tooltip-values\{display:grid;grid-template-columns:repeat\(2,minmax\(0,1fr\)\)/);
+ assert.match(css,/\.zg-sector-tooltip \.zg-sector-tooltip-values li::before\{[^}]*background:currentColor\}/);
+ assert.match(css,/\.zg-sector-tooltip \.zg-sector-tooltip-values li strong\{[^}]*font-size:11px;/);
+ assert.match(chart,/function SectorTooltipCard\(/);
+ assert.match(chart,/cnn-history-tooltip zg-sector-tooltip/);
+ assert.match(chart,/className="zg-sector-held-tooltip"/);
+ assert.match(chart,/offset=\{12\} allowEscapeViewBox=\{\{x:false,y:false\}\}/);
+ assert.doesNotMatch(chart,/position=\{\{x:0,y:0\}\}/);
 });
 
 test('chart keeps full plotting width while single-series extremes remain available',()=>{
@@ -92,7 +93,7 @@ test('chart keeps full plotting width while single-series extremes remain availa
  assert.doesNotMatch(chart,/ChartCurrentPoint|currentPoint|zg-chart-current|usePlotArea/);
 });
 
-test('numeric values use the established five fear-greed bands without recoloring series identity',()=>{
+test('numeric labels keep all five fear-greed bands without recoloring series identity',()=>{
  const match=chart.match(/function scoreBand\(value:number\|null\|undefined\)\{([\s\S]*?)\n\}/);
  assert.ok(match,'fear-greed score-band helper missing');
  const scoreBand=new Function('value',match[1]);
@@ -101,10 +102,12 @@ test('numeric values use the established five fear-greed bands without recolorin
  for(const band of ['extreme-fear','fear','neutral','greed','extreme-greed'])assert.match(css,new RegExp('data-score-band="'+band+'"\\]\\{color:var\\(--zg-score-'+band+'\\)'));
  assert.match(chart,/className="zg-theme-legend-score" data-score-band=\{scoreBand\(/);
  assert.match(chart,/className="zg-sector-legend-score" data-score-band=\{scoreBand\(/);
- assert.match(chart,/zg-sector-held-tooltip[\s\S]*?<strong data-score-band=\{scoreBand\(Number\(heldRow\[s\.id\]\)\)\}/);
- assert.match(chart,/uniqueChartTooltipEntries\(payload\)[\s\S]*?<strong data-score-band=\{scoreBand\(Number\(entry\.value\)\)\}/);
+ assert.match(chart,/className="zg-sector-tooltip-score" data-score-band=\{scoreBand\(entries\[0\]\.score\)\}/);
+ assert.match(chart,/data-score-band=\{scoreBand\(entry\.score\)\}/);
+ assert.match(chart,/uniqueChartTooltipEntries\(payload\)/);
+ assert.match(chart,/shownSeries\.flatMap\(item=>/);
  assert.doesNotMatch(chart,/zg-chart-current/);
- assert.match(css,/\.zg-sector-tooltip li::before\{[^}]*background:currentColor\}/);
+ assert.match(css,/\.zg-sector-tooltip \.zg-sector-tooltip-values li::before\{[^}]*background:currentColor\}/);
 });
 
 test('eleven compact legends fit full energy and real-estate names without reducing score font',()=>{

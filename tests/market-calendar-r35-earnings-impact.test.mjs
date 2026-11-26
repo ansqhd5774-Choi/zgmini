@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import {fileURLToPath} from 'node:url';
 import {earningsDisplaySnapshot,earningsDisplayHtml,earningsDisplayResponse} from '../lib/earnings-api-display.mjs';
+import {koreanCompanyName} from '../lib/market-calendar-company-ko.mjs';
 
 const base=Date.parse('2026-10-29T00:00:00Z');
 const days=Array.from({length:14},(_,i)=>new Date(base+i*86400000).toISOString().slice(0,10));
@@ -16,23 +17,23 @@ const projection=events=>({status:'READY_PRIVATE',scope:'PC_PRIVATE',publicDispl
 const snapshot=events=>earningsDisplaySnapshot(projection(events));
 const display=(data,opts={})=>earningsDisplayHtml(data,{start:days[0],end:days[1],...opts});
 
-test('R35 assigns three stars to megacap tech and preserves two/one remaining levels',()=>{
+test('ER1 removes old core/priority stars when no verified EPS-revenue score is available',()=>{
  const state=snapshot([event('GOOG',days[0],'after_market',true,'Alphabet Inc.'),
   event('MSFT',days[0],'after_market',true,'Microsoft'),
   event('AMD',days[0],'before_market',true,'AMD'),event('ZM',days[0])]);
  assert.equal(state.recordCount,4);
  const result=display(state);
- assert.match(result.html,/aria-label="중요도 3">★★★/);
- assert.match(result.html,/aria-label="중요도 2">★★/);
- assert.match(result.html,/aria-label="중요도 1">★/);
+ assert.equal((result.html.match(/aria-label="기업 실적 점수 없음">-<\/div>/g)??[]).length,4);
+ assert.doesNotMatch(result.html,/★/);
  assert.ok(result.html.indexOf('Alphabet')<result.html.indexOf('AMD'));
 });
 
-test('R35 upgrades already-stored R32 HTML from two stars without republishing',()=>{
+test('ER1 removes stars even in legacy stored R32 HTML',()=>{
  const state=snapshot([event('NVDA',days[0],'after_market',true,'NVIDIA')]);
- state.byDay[days[0]][0]=state.byDay[days[0]][0].replace('중요도 3">★★★','중요도 2">★★');
+ state.byDay[days[0]][0]=state.byDay[days[0]][0].replace('기업 실적 점수 없음">-','중요도 2">★★');
  assert.match(state.byDay[days[0]][0],/중요도 2/);
- assert.match(display(state).html,/aria-label="중요도 3">★★★/);
+ assert.match(display(state).html,/aria-label="기업 실적 점수 없음">-<\/div>/);
+ assert.doesNotMatch(display(state).html,/★/);
 });
 
 test('R35 merges GOOG and GOOGL on same day, preserving both searchable aliases',()=>{
@@ -56,35 +57,180 @@ test('R35 refuses to invent a market session when two Alphabet classes disagree'
  assert.match(result.html,/<time class=mc-time>시각 미정<\/time>/);
 });
 
-test('R35 importance filter applies to selected-day HTML and whole-range counts',async()=>{
+test('ER1 importance filter excludes issuers without verified numeric scores',async()=>{
  const state=snapshot([event('GOOG',days[0],'after_market',true,'Alphabet'),
   event('GOOGL',days[0],'after_market',true,'Alphabet'),
   event('AMD',days[0],'after_market',true,'AMD'),
   event('ZM',days[0]),event('AAPL',days[1],'after_market',true,'Apple')]);
- for(const [level,count] of [[3,2],[2,1],[1,1]]){
+ for(const [level,count] of [[3,0],[2,0],[1,0]]){
   const result=display(state,{importance:level});
   assert.equal(result.count,count);
  }
  const url=`https://zgmini.kr/api/earnings-calendar-display?start=${days[0]}&end=${days[1]}&day=${days[0]}&importance=3`;
  const response=earningsDisplayResponse(state,url);
  assert.equal(response.status,200);
- assert.equal(response.headers.get('x-display-day-counts'),`${days[0]}:1,${days[1]}:1`);
- assert.equal(response.headers.get('x-display-count'),'1');
- assert.match(await response.text(),/GOOG·GOOGL/);
+ assert.equal(response.headers.get('x-display-day-counts'),`${days[0]}:0,${days[1]}:0`);
+ assert.equal(response.headers.get('x-display-count'),'0');
+ assert.equal(await response.text(),'');
  const bad=earningsDisplayResponse(state,url.replace('importance=3','importance=4'));
  assert.equal(bad.status,400);
 });
 
-test('R35 calendar controls apply same star selection to official rows and vendor HTML',()=>{
+test('R36 main preserves multi-select star control while vendor ER1 score uses the same filter',()=>{
  const client=fs.readFileSync(fileURLToPath(new URL('../app/market-calendar/market-calendar-client.tsx',import.meta.url)),'utf8');
  const vendor=fs.readFileSync(fileURLToPath(new URL('../app/market-calendar/earnings-display-client.tsx',import.meta.url)),'utf8');
- assert.match(client,/aria-label="별등급 필터: 경제지표 시장 영향도, 기업 실적 연간 재무건전성/);
- assert.match(client,/R43 시장 중요도 배지는 필터 대상 아님/);
- assert.match(client,/mc-importance-heading[^\n]+별등급/);
+ assert.match(client,/aria-label="별등급 필터/);
  assert.match(client,/importance\.includes\(row\.importance\)/);
  assert.match(client,/importance=\{importance\}/);
- assert.match(vendor,/params\.set\('importance',importance\.join\(','\)\)/);
+ assert.match(vendor,/importance\.join\(','\)/);
  const page=fs.readFileSync(fileURLToPath(new URL('../app/market-calendar/page.tsx',import.meta.url)),'utf8');
  assert.doesNotMatch(page,/미연결 기업 실적과 한국 일정은 제공하지 않습니다/);
  assert.match(page,/중요도 필터/);
+});
+
+test('ER1 excludes former R42 five issuer exceptions from unearned stars',()=>{
+ const tickers=['BRK.A','ARM','ANET','SHOP','DE'];
+ const state=snapshot([...tickers.map(ticker=>event(ticker,days[0],'after_market',false,ticker)),
+  event('AMD',days[0],'after_market',true,'AMD')]);
+ assert.equal(state.recordCount,6);
+ assert.equal(display(state,{importance:3}).count,0);
+ assert.equal(display(state,{importance:2}).count,0);
+ assert.equal(display(state,{importance:1}).count,0);
+ const old=state.byDay[days[0]].find(html=>html.includes('data-search="arm arm"'));
+ state.byDay[days[0]]=state.byDay[days[0]].map(html=>html===old?
+  html.replace('기업 실적 점수 없음">-','중요도 1">★'):html);
+ assert.equal(display(state,{importance:3}).count,0); // old stored grade ignored
+ assert.doesNotMatch(display(state).html,/★/);
+});
+
+test('R42 Berkshire share classes merge by issuer, with both tickers searchable',()=>{
+ const state=snapshot([event('BRK.A',days[0],'after_market',false,'Berkshire Hathaway'),
+  event('BRK.B',days[0],'after_market',false,'Berkshire Hathaway')]);
+ assert.equal(state.recordCount,2); // source observations preserved
+ const result=display(state);
+ assert.equal(result.count,1);
+ assert.equal(display(state,{importance:3}).count,0);
+ assert.match(result.html,/BRK\.A·BRK\.B/);
+ assert.equal(display(state,{query:'BRK.A'}).count,1);
+ assert.equal(display(state,{query:'BRK.B'}).count,1);
+ assert.doesNotMatch(result.html,/동일 날짜 정보 상충/);
+});
+
+test('known Korean company name is visible with untouched English issuer and ticker',()=>{
+ const state=snapshot([event('AAPL',days[0],'after_market',true,'Apple Inc.'),
+  event('PLTR',days[0],'after_market',false,'Palantir Technologies Inc.')]);
+ const original=JSON.stringify(state.byDay);
+ const result=display(state);
+ assert.match(result.html,/애플 \(Apple Inc\. · AAPL\)/);
+ assert.match(result.html,/팔란티어 테크놀로지스 \(Palantir Technologies Inc\. · PLTR\)/);
+ assert.equal(JSON.stringify(state.byDay),original); // display only, saved HTML unchanged
+ assert.equal(display(state,{query:'애플'}).count,1);
+ assert.equal(display(state,{query:'팔란티어'}).count,1);
+ assert.equal(display(state,{query:'apple'}).count,1);
+ assert.equal(display(state,{query:'AAPL'}).count,1);
+ assert.equal(display(state,{query:'pltr'}).count,1);
+});
+
+test('unverified names retain vendor English and search does not fabricate Korean names',()=>{
+ const state=snapshot([event('AMD',days[0],'after_market',false,'Advanced Micro Devices, Inc.'),
+  event('ZZZZ',days[0],'after_market',false,'Unknown & <Test>'),
+  event('AAPL',days[0],'after_market',false,'Unrelated Company Inc.')]);
+ const html=display(state).html;
+ assert.match(html,/Advanced Micro Devices, Inc\. \(AMD\)/);
+ assert.match(html,/Unknown &amp; &lt;Test&gt; \(ZZZZ\)/);
+ assert.equal(display(state,{query:'에이엠디'}).count,0);
+ assert.equal(display(state,{query:'Unknown'}).count,1);
+ assert.match(html,/Unrelated Company Inc\. \(AAPL\)/);
+ assert.equal(display(state,{query:'애플'}).count,0); // ticker reuse never mislabels a company
+});
+
+test('Korean issuer alias does not bypass escaping of an English company name',()=>{
+ const state=snapshot([event('AAPL',days[0],'after_market',false,'Apple & <Partners>')]);
+ const result=display(state);
+ assert.match(result.html,/애플 \(Apple &amp; &lt;Partners&gt; · AAPL\)/);
+ assert.doesNotMatch(result.html,/<Partners>/);
+ assert.equal(display(state,{query:'애플'}).count,1);
+});
+
+test('Korean aliases preserve class deduplication, source HTML and star filters',()=>{
+ const state=snapshot([event('BRK.A',days[0],'after_market',true,'Berkshire Hathaway Inc.'),
+  event('BRK.B',days[0],'after_market',true,'Berkshire Hathaway Inc.')]);
+ const result=display(state);
+ assert.equal(result.count,1);
+ assert.match(result.html,/버크셔 해서웨이 \(Berkshire Hathaway Inc\. · BRK\.A·BRK\.B\)/);
+ assert.equal(display(state,{query:'버크셔'}).count,1);
+ assert.equal(display(state,{query:'BRK.B'}).count,1);
+ assert.equal(display(state,{importance:3}).count,0);
+});
+
+test('Alphabet share classes use a single Korean display name and both English tickers remain searchable',()=>{
+ const state=snapshot([event('GOOG',days[0],'after_market',true,'Alphabet Inc.'),
+  event('GOOGL',days[0],'after_market',true,'Alphabet Inc.')]);
+ const result=display(state);
+ assert.equal(result.count,1);
+ assert.match(result.html,/알파벳 \(Alphabet Inc\. · GOOG·GOOGL\)/);
+ assert.equal(display(state,{query:'알파벳'}).count,1);
+ assert.equal(display(state,{query:'Alphabet'}).count,1);
+ assert.equal(display(state,{query:'GOOGL'}).count,1);
+});
+
+test('new three-star and two-star issuer aliases preserve the English issuer and support Korean search',()=>{
+ const samples=[
+  ['CHTR','Charter Communications, Inc.','차터 커뮤니케이션스'],
+  ['AMG','Affiliated Managers Group, Inc.','어필리에이티드 매니저스 그룹'],
+  ['WF','Woori Bank','우리은행'],
+  ['VST','Vistra Corp.','비스트라 에너지'],
+  ['OXY','Occidental Petroleum Corporation','옥시덴탈 페트롤리움'],
+  ['GTN.A','Gray Media, Inc.','그레이 미디어'],
+  ['PBR.A','Petroleo Brasileiro S.A.- Petrobras','페트로브라스'],
+  ['MOG.A','Moog Inc.','무그'],
+  ['A','Agilent Technologies, Inc.','애질런트 테크놀로지스'],
+  ['ZM','Zoom Communications, Inc.','줌 커뮤니케이션즈'],
+  ['KR','Kroger Company (The)','크로거'],
+  ['DG','Dollar General Corporation','달러 제너럴'],
+  ['HPE','Hewlett Packard Enterprise Company','휴렛팩커드 엔터프라이즈'],
+  ['LEN','Lennar Corporation','레나'],
+  ['ACN','Accenture plc','액센츄어'],
+  ['MU','Micron Technology, Inc.','마이크론 테크놀로지'],
+ ];
+ const state=snapshot(samples.map(([ticker,company])=>event(ticker,days[0],'after_market',false,company)));
+ const original=JSON.stringify(state.byDay);
+ const html=display(state).html;
+ for(const [ticker,company,ko] of samples){
+  assert.equal(koreanCompanyName([ticker],company),ko);
+  assert.ok(html.includes(`${ko} (${company} · ${ticker})`),ticker);
+  assert.equal(display(state,{query:ko}).count,1,ticker);
+  // Substring searches can also match another issuer (LEN in Agilent).
+  // Isolate each ticker when asserting an exact single-result search.
+  if(ticker.length>1)assert.equal(display(snapshot([
+   event(ticker,days[0],'after_market',false,company),
+  ]),{query:ticker}).count,1,ticker);
+ }
+ assert.equal(JSON.stringify(state.byDay),original);
+});
+
+test('expanded aliases reject recycled short symbols and unrelated issuer names',()=>{
+ for(const [ticker,company] of [
+  ['B','Other Bank Inc.'],['J','Just Another Inc.'],
+  ['A','A Fictional Business'],['GTN.A','Different Media Inc.'],
+  ['PBR','Power Brands Inc.'],['ZM','Zebra Mining Inc.'],
+  ['KR','Korean Retail Inc.'],['DG','Different Gas Company'],
+  ['HPE','HPE Finance Services'],['LEN','Lending Holdings'],
+  ['ACN','Account Networks'],['MU','Multi Utilities Inc.'],
+ ])assert.equal(koreanCompanyName([ticker],company),null,`${ticker}:${company}`);
+});
+
+test('expanded aliases identify issuer names escaped in saved HTML without weakening HTML escaping',()=>{
+ const state=snapshot([
+  event('KKR',days[0],'after_market',false,'KKR & Co. Inc.'),
+  event('JJSF',days[0],'after_market',false,'J & J Snack Foods Corp.'),
+  event('BJ',days[0],'after_market',false,"BJ's Wholesale Club Holdings, Inc."),
+ ]);
+ const html=display(state).html;
+ assert.match(html,/케이케이알 \(KKR &amp; Co\. Inc\. · KKR\)/);
+ assert.match(html,/J&amp;J 스낵 푸즈 \(J &amp; J Snack Foods Corp\. · JJSF\)/);
+ assert.match(html,/BJ스 홀세일 클럽 \(BJ&#39;s Wholesale Club Holdings, Inc\. · BJ\)/);
+ assert.equal(display(state,{query:'케이케이알'}).count,1);
+ assert.equal(display(state,{query:'스낵'}).count,1);
+ assert.equal(display(state,{query:'홀세일'}).count,1);
 });

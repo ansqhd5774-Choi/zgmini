@@ -23,6 +23,8 @@ const quarterOf=x=>x.slice(0,4)+'-Q'+Math.ceil(Number(x.slice(5,7))/3);
 const previousQuarter=q=>q.endsWith('Q1')?`${Number(q.slice(0,4))-1}-Q4`
  :q.slice(0,6)+(Number(q.at(-1))-1);
 const near=(a,b)=>finite(a)&&finite(b)&&Math.abs(a-b)<1e-7;
+const quarterEnd=q=>new Date(Date.UTC(Number(q.slice(0,4)),Number(q.at(-1))*3,0))
+ .toISOString().slice(0,10);
 
 export function validateAssetR10Raw(payload,{now=Date.now()}={}){
  if(!isObject(payload)||payload.schemaVersion!==ASSET_R10_RAW_SCHEMA
@@ -56,6 +58,22 @@ export function validateAssetR10Raw(payload,{now=Date.now()}={}){
    ||(factor.previousObservationDate!==null
     &&quarterOf(factor.previousObservationDate)!==previous))
    throw Error('ASSET_R10_RAW_INVALID_FACTOR');
+  if(factor.latestObservation!==undefined){
+   const latest=factor.latestObservation;
+   if(!isObject(latest)||!quarter(latest.quarter)
+    ||latest.quarter<=q||quarterEnd(latest.quarter)>=payload.asOfDate
+    ||!finite(latest.value)||!date(latest.observationDate)
+    ||latest.observationDate>payload.asOfDate
+    ||quarterOf(latest.observationDate)!==latest.quarter
+    ||!finite(latest.previousValue)
+    ||!date(latest.previousObservationDate)
+    ||quarterOf(latest.previousObservationDate)!==previousQuarter(latest.quarter)
+    ||latest.previousObservationDate>=latest.observationDate
+    ||(previousQuarter(latest.quarter)===q
+     &&(!near(latest.previousValue,factor.value)
+      ||latest.previousObservationDate!==factor.observationDate)))
+    throw Error('ASSET_R10_RAW_INVALID_LATEST_OBSERVATION');
+  }
  }
  return payload;
 }

@@ -1,4 +1,26 @@
+## 저장소·담당 소속 — 2026-11-23 사용자 지정
+
+프로세스 총괄은 **`zgmini` / `codex/controller-ops-lessons-20261105`**, **본체 이슈·PR 담당자**는 **`zgmini` / `codex/issues-lifecycle-manager-20261123`**, **PC 제어 이슈·PR 담당자**는 **`zgmini-pc-control` / `codex/issues-lifecycle-manager-20261118`**, 자동화 담당자는 **`zgmini-pc-control` / `codex/pc-automation-process-improvement-20261119`**에 소속된다. [역할 정본](https://github.com/ansqhd5774-Choi/zgmini/blob/main/docs/REPOSITORY_ROLES.md)을 따른다. 아래 과거 소속·호칭과 충돌하면 이 결정을 우선한다. 업무 소속과 실제 코드 변경 저장소는 구분하며 기존 승인·운영 보호·기능 담당자의 독립 작업은 유지한다. 새 승인 Gate를 추가하지 않는다.
+
 ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
+
+## CI 1차·2차 19개 공통 사용 기준 — 2026-11-26
+- 최초 R1은 **8개 검사 영역**(Lint·Type Check·Build·Unit·Integration·E2E·Security·Secret), 차세대 R2는 **11개 적용 기술**(#1 Dynamic CI, #6 Architecture Testing, #12 Workflow Governance, #15 Supply Chain Security, #19 CI Observability, #20 Data CI, #23 Cross-browser CI, #24 격리 Chromium Performance CI, #25 Accessibility CI, #29 Bundle Size CI, #36 Continuous Benchmarking)이다. 각 코드·UI·데이터·Workflow 변경에 영향 있는 **기존 검사만 재사용**하고 PR 정확 HEAD 실행 PASS/트리거/merge SHA를 확인한다. 문서·조회만으로 전 19종 재실행을 요구하지 않는다.
+- 공통 사용 절차·저장소별 N/A·범위/증거의 정본: [PC 제어 공통 작업 표준](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/docs/PC_AUTOMATION_STANDARD.md#ci-19개-공통-사용-계약--2026-11-26-사용자-확정), [19개 항목 및 원본 PR 목록](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/docs/CI_R1_R2_FINAL_LIST_20261126.md). 기존 [웹 R1 8영역 판정](docs/CI_EIGHT_AREA_STANDARD_R1.md)은 그대로 유지한다.
+- 원안 R2 **#8 Performance Budget/실사용자 Good·P75는 사용자 결정으로 제외·전용 CI 삭제**([#1631](https://github.com/ansqhd5774-Choi/zgmini/pull/1631)). #8을 성공/미완료 후속 과제로 세거나 복원하지 않는다. **#24 격리 성능 CI는 유지**한다. 새 글로벌 Gate·예약·유료 서비스·운영 쓰기 권한을 추가하지 않고, CI PASS를 수집·DB/D1·배포·Production 검증 완료로 확대하지 않는다.
+
+## MarketParquet — 유료 연결 재승인 (2026-11-20 사용자 지시)
+- [공급자 결정 정본](docs/MARKETPARQUET_REMOVAL.md)의 최신 결정을 적용한다. 사용자가 Complete Archive와 Keep Current 구매 및 섹터·테마 연결을 명시 승인했다. 기존 공개 이용권 해결 결과를 재사용하고 같은 권리 조사를 반복하지 않는다.
+- 무료 예외 거절 기록은 보존한다. 과거 무료 실행기 전체 복원이나 무료 데이터 공개 승격 대신 검증된 유료 일봉 저장소를 공유한다. 섹터 기존 산식은 유지한다. 추가 사용자 결정으로 테마 확정·잠정 입력을 모두 MarketParquet 분할조정 시간봉으로 통합하며 R32/승인 프로필·ETF·기존 공개 이력을 보존한다. 새 관측일의 가격 기준을 명시하고 원가격을 공개하지 않는다.
+
+## 외부 데이터 공급자 API 이용권 정본 (2026-11-08)
+- 외부 API 공급자 조사·권한 문의·게시 판단 **전에** [공급자별 이용권·회신 대장](docs/API_SOURCE_RIGHTS_REGISTRY.md)을 조회하고, 같은 공급자의 Gmail 발신·수신 스레드 및 상품·플랜·사용 범위를 대조한다. 대장에는 과거 문의 10개사의 사람 직접 답변·AI 안내·답변 대기·인증 필요·배달 실패가 분리 기록되어 있다. 기존 확정 거절·답변 완료 및 유효한 동일 질문 발신은 새 문의 대상으로 반복 제안하지 않는다. 최종 직접 회신이 도착하면 대장의 해당 항목을 즉시 갱신하고, 독립 연구·운영 절차까지 임의로 중단하지 않는다.
+- 무료 API 호출·개인 분석 허용·원자료 재배포·공개 비복원성 파생 점수/차트·유료 라이선스는 서로 다른 권한이다. 코드의 내부 플래그는 공급자 승인 증거가 아니다. 공개 권리가 없는 신규 사용은 허가로 간주하지 않고, 기존 게시의 조정은 실제 운영 근거와 명시 승인에 따른다. **공급자별 변동 상태를 이 지침에 중복 기재하지 않으며 권한 대장을 단일 정본으로 유지한다. **GitHub 코드검색 스니펫은 이전 커밋을 가리킬 수 있으므로 최신 `main`의 파일 원문과 SHA로 확인한다.****
+
+## 테마 확장 공통 기준
+- 신규 테마·산식 작업의 정본은 기존 전용 브랜치 `codex/theme-fear-greed-integration-20261025`의 `docs/THEME_PLATFORM_STANDARD.md`, `docs/THEME_ONBOARDING_PLAYBOOK.md`, `config/theme-platform-delegation.json`이다. 일반챗·CMD 실행 방식은 같은 브랜치 `docs/CMD_EXECUTION_PLAYBOOK.md`를 함께 참조한다. 전체 브랜치에 중복 커밋하지 않고 이 공통 원본을 확인한다.
+- R18→R33은 같은 R32 개발·적용 작업이다. 테마 수·ETF 후보 수의 사업상 최대/목표 개수를 두지 않는다. 승인 범위의 통상 등록·검증·운영 작업은 반복 승인 없이 진행하되 기술·권리·인증 검증을 우회하지 않는다.
+- PAIR50 복귀·산식 임의 변경·테마별 별도 실행기/예약의 무분별한 추가를 피하고 공통 V2 등록·R25/R32·확정/잠정 게시 경로를 재사용한다. 기존 공개10개의 보호와 데이터센터 R32 전환 누락은 별도로 구분한다.
 
 ## 0. 최상위 원칙
 - 승인된 산식·데이터 구조·Revision·작업 기준 최우선.
@@ -10,6 +32,14 @@ ZGMINI PLUGIN & EXECUTION RULES — COMPACT R5 FINAL
 - 무료 우선. 유료·종량제는 무료 대안이 충분하면 사용 금지.
 - 상위 시스템·보안 제한을 준수한다. 동일 범위에서는 사용자의 최신 명시 지시·승인이 과거 프로젝트 지침보다 우선한다.
 - 지침과 최신 승인 contract 충돌 시 실행 중단 후 최신 contract 기준으로 지침 갱신.
+
+## 0.1. 두 저장소 이슈·PR 담당자와 PC 역할 구분 (2026-11-23 사용자 지정)
+
+- **본체 담당:** `zgmini / codex/issues-lifecycle-manager-20261123`. [본체 이슈·PR R2 지침](docs/ISSUE_LIFECYCLE_MANAGEMENT_STANDARD_20261123.md)을 따른다. 본체 Issue·PR의 실제 원인 수정→시험·CI→승인된 병합→운영 검증→원본 종결까지 담당한다.
+- **PC 제어 담당:** `zgmini-pc-control / codex/issues-lifecycle-manager-20261118`. [PC 제어 이슈·PR R2 지침](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/codex/issues-lifecycle-manager-20261118/docs/ISSUE_LIFECYCLE_MANAGEMENT_STANDARD_20261118.md)을 따른다. 제어 저장소의 문제를 동일 권한·절차로 해결한다.
+- 두 담당자는 인수한 업무에서 프로세스 총괄과 동등한 **작업 범위**를 갖지만 총괄 직책·전체 작업 분장을 대신하지 않는다. 계정/도구의 실제 허용 작업, 사용자 승인, B/C 안전 검사, CAS·lease·백업, 기존 기능 담당자 권한은 그대로 유지한다. 과거의 검토·인계 전용 또는 운영 변경 일괄 금지 문구를 현행 R2 담당자에게 적용하지 않는다.
+- 별도 공통 대기열 PC `DESKTOP-N62L0NG`의 기존 격리 Runner는 승인된 접수·관제·테스트 범위만 수행한다. **격리 Runner 자체**가 곧바로 운영 PC 실행 권한을 가지는 것은 아니다. 운영 설치·게시 등은 각각 기존 정규 승인 경로와 실제 실행 가능한 호스트에서 검증한다.
+- 본체 담당자는 본체 이슈를, PC 제어 담당자는 제어 이슈를 우선 인수한다. 교차 저장소 작업·기능 원담당의 진행 중 업무는 원본 Issue/PR에서 단일 소유자를 확인해 중복 실행하지 않는다. PR/CI PASS·병합·PC 설치·실제 Runtime PASS는 각각 별개 증거다.
 
 ## 1. GitHub — SOURCE OF TRUTH
 - 기준 소스는 GitHub 최신 `main`.
@@ -261,3 +291,10 @@ candidate -> Production 전환 전 모두 PASS:
 - 새 테마는 독립 수집→저장→계산→확정/잠정 게시→D1 readback→공개 API/UI와 다음 정규 실행 검증까지 연결해야 운영 완료다. 기존 테마 수집 목록에 자동 포함된다고 가정하지 않는다.
 - 경로 검사: `node scripts/pc-writer/theme-data-inventory.mjs`. `UNREGISTERED/MISSING/BLOCKED`를 숨기거나 기존 점수를 최신으로 다시 저장하지 않는다.
 - 다른 테마의 실패가 정상 테마의 확정/잠정 게시를 막지 않게 한다. 과거 관측일과 결측을 보존하고 산식·권리 검증을 약화하지 않는다.
+
+## 22. Core 공유 API 한도 보호 — Alpaca 적용 게이트 (2026-11-02)
+- Core 5분은 **실행 시작 주기**이며 공급자 API 호출 주기가 아니다. 기존 Task/launcher/`local-cycle.lock`/승인 PC source/원자료/D1 계약을 한도 조절 목적으로 변경하지 않는다.
+- 동일 Alpaca 계정을 쓰는 모든 독립 Node·자식 프로세스·수동 수집기는 승인된 **같은 PC 데이터 루트**로 `docs/ALPACA_SHARED_QUOTA_R1.md`의 공통 예약에 참여해야 한다. 이미 래핑된 `collect-local.mjs` fetch는 중복 래핑하지 않는다.
+- Basic 200회/분 기준 최근 60초 120회 주의·140회 강제 제한·서버 잔여 최소 60회 보호를 적용한다. 응답 헤더가 더 엄격하면 따른다. 429 및 quota guard는 즉시 반복하지 않고 원자료·체크포인트를 유지해 다음 정상 기회에 이월한다.
+- 오프라인 테스트와 운영 PC 실제 계정 요청량 실측은 분리한다. 미연결 Alpaca 호출자가 하나라도 있으면 **계정 전체 30% 보호 PASS 금지**. 요청 전 차단과 요청 후 원장 기록 실패의 실제 API 호출 수는 구분한다.
+- 필수 운영 검증: 승인 source/Task Action→실행기, 같은 `base`, 호출자 전수, 60초 원장·remote header, 기존 raw 보존, 자연 Core 2회와 D1/API 재조회. 상세 안전 절차는 `docs/PC_CORE_5MIN_CONFLICT_RUNBOOK.md` 및 `docs/ALPACA_SHARED_QUOTA_R1.md`를 따른다.

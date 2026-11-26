@@ -21,7 +21,7 @@ const projection={status:'READY_PRIVATE',scope:'PC_PRIVATE',publicDisplay:false,
 const display=earningsDisplaySnapshot(projection);
 const url=`https://zgmini.kr/api/earnings-calendar-display?start=${asOf}&end=${asOf}`;
 
-test('response includes separately labelled R43 market badge alongside FHS annual stars',async()=>{
+test('historical R43/FHS objects cannot write earnings stars after ER1 transition',async()=>{
  const annual={status:'READY_R3_PROVISIONAL',version:'ZGMINI-FHS-R3',
   asOf,sourceStoredAt:now,recordCount:2,
   grades:{[top]:[1,31],ARM:[3,92]}};
@@ -29,25 +29,44 @@ test('response includes separately labelled R43 market badge alongside FHS annua
  assert.equal(response.status,200);
  const html=await response.text();
  assert.match(html,new RegExp(`${top}\\)`));
- assert.match(html,/재무건전성 별 1개/);
- assert.match(html,/재무건전성 별 3개/);
- assert.match(html,/시장 중요도 ★★★/);
- assert.equal((html.match(/class="mc-market-importance-r43 mc-tag-major"/g)??[]).length,1);
+ assert.equal((html.match(/aria-label="기업 실적 점수 없음">-<\/div>/g)??[]).length,2);
+ assert.doesNotMatch(html,/★|재무건전성|시장 중요도/);
+ assert.doesNotMatch(html,/class="mc-market-importance-r43/);
  assert.match(html,/ARM/);
 });
 
-test('without a verified R43 snapshot, old FHS grade and fallback rendering remain',async()=>{
+test('absence of ER1 snapshot means hyphen even for former R42 priorities',async()=>{
  const base=await earningsDisplayResponse(display,url,null,null).text();
  assert.doesNotMatch(base,/시장 중요도 ★★★/);
- assert.match(base,/중요도 3/); // Existing R42 ARM fallback remains untouched.
+ assert.equal((base.match(/aria-label="기업 실적 점수 없음">-<\/div>/g)??[]).length,2);
  const invalid=await earningsDisplayResponse(display,url,null,{...compact,topCount:100}).text();
  assert.equal(invalid,base);
 });
 
-test('R43 badge does not silently rewire the existing FHS importance filter',async()=>{
+test('historical R43 selection cannot enter ER1 three-star filter',async()=>{
  const annual={status:'READY_R3_PROVISIONAL',version:'ZGMINI-FHS-R3',
   asOf,sourceStoredAt:now,recordCount:2,grades:{[top]:[1,31],ARM:[3,92]}};
  const html=await earningsDisplayResponse(display,url+'&importance=3',annual,compact).text();
  assert.doesNotMatch(html,new RegExp(`${top}\\)`));
- assert.match(html,/ARM/);
+ assert.doesNotMatch(html,/ARM \(ARM\)/);
+ assert.equal(html,'');
 });
+
+test('2634 historical rows with 400 FHS stars expose zero earnings stars until ER1 is verified',async()=>{
+ const tickers=Array.from({length:2634},(_,i)=>`T${i}`);
+ const full={...projection,recordCount:tickers.length,priorityCount:0,
+  events:tickers.map(event)};
+ const whole=earningsDisplaySnapshot(full);
+ const grades=Object.fromEntries(tickers.map((ticker,i)=>[ticker,i<400?[3,90]:[2,70]]));
+ const annual={status:'READY_R3_PROVISIONAL',version:'ZGMINI-FHS-R3',
+  asOf,sourceStoredAt:now,recordCount:tickers.length,grades};
+ const response=earningsDisplayResponse(whole,url,annual,compact);
+ assert.equal(response.status,200);
+ const html=await response.text();
+ assert.equal((html.match(/aria-label="기업 실적 점수 없음">-<\/div>/g)??[]).length,2634);
+ assert.doesNotMatch(html,/★/);
+ const filtered=earningsDisplayResponse(whole,url+'&importance=3',annual,compact);
+ assert.equal(filtered.headers.get('x-display-count'),'0');
+ assert.equal(await filtered.text(),'');
+});
+

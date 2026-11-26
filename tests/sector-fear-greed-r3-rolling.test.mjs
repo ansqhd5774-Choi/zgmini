@@ -40,11 +40,14 @@ test('validated rolling 252 source is accepted by the unchanged public transform
  assert.equal(body.sourceVersion,SECTOR_FEAR_GREED_R3_ROLLING_SOURCE_VERSION);
 });
 
-test('collection owns provider transport while rolling calculation remains stored-only',()=>{
+test('paid Core owns provider transport while rolling calculation remains stored-only',()=>{
+ const cycle=fs.readFileSync('scripts/pc-writer/local-cycle.mjs','utf8');
  const collection=fs.readFileSync('scripts/pc-writer/collect-local.mjs','utf8');
  const local=fs.readFileSync('scripts/pc-writer/sector-fear-greed-r3-local-cycle.mjs','utf8');
  const rolling=fs.readFileSync('scripts/pc-writer/sector-fear-greed-r3-rolling-local.mjs','utf8');
- assert.match(collection,/collectSectorFearGreedR3EtfIncremental/);
+ assert.match(cycle,/collectPaidCurrent\(base\)/);
+ assert.doesNotMatch(collection,/collectSectorFearGreedR3EtfIncremental/);
+ assert.match(rolling,/readPaidProjection\(base,'etf_daily',date\)/);
  assert.doesNotMatch(local,/\bfetch\s*\(/);
  assert.doesNotMatch(local,/APCA_API_KEY/);
  assert.doesNotMatch(rolling,/\bfetch\s*\(/);

@@ -8,11 +8,12 @@ import {MarketBreadthStrip} from './market-breadth-strip';
 import {MarketCardInsight} from './market-card-insight';
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from './market-fear-greed-chart';
 import {fearGreedStateColor} from '../lib/fear-greed-state-color.mjs';
+import {koreaRev7DisplayDayMs,koreaRev7VisibleHistoryDays,koreaRev7ChartScore} from '../lib/korea-rev7-display-day-r4.mjs';
 
 const KoreaCompositePlot=lazy(()=>import('../components/korea-composite-plot'));
 
 export const formatDate=(s:string|null)=>s?`${s.slice(0,4)}-${s.slice(4,6)}-${s.slice(6,8)}`:'—';
-const time=(d:string)=>Date.parse(`${formatDate(d)}T00:00:00Z`);
+const time=(d:string)=>koreaRev7DisplayDayMs(d);
 const colors:Record<string,string>={EXTREME_FEAR:'#b91c1c',FEAR:'#dc2626',NEUTRAL:'#64748b',GREED:'#15803d',EXTREME_GREED:'#166534'};
 
 const periodComparisonLabels:Record<MarketPeriod,string>={
@@ -24,10 +25,9 @@ const periodComparisonLabels:Record<MarketPeriod,string>={
 };
 
 function cardDate(value:string|null|undefined){
- if(!value||!/^\d{8}$/.test(value))return '—';
- const date=new Date(`${value.slice(0,4)}-${value.slice(4,6)}-${value.slice(6,8)}T00:00:00Z`);
- return Number.isFinite(date.getTime())
-  ?new Intl.DateTimeFormat('ko-KR',{dateStyle:'medium',timeZone:'Asia/Seoul'}).format(date)
+ const ms=koreaRev7DisplayDayMs(value);
+ return Number.isFinite(ms)
+  ?new Intl.DateTimeFormat('ko-KR',{dateStyle:'medium',timeZone:'Asia/Seoul'}).format(new Date(ms))
   :'—';
 }
 
@@ -36,12 +36,7 @@ function normalizeCompositeHistory(history:Composite['history']):Array<MarketFea
   if(!/^\d{8}$/.test(point.date))return [];
   const pointTime=time(point.date);
   if(!Number.isFinite(pointTime))return [];
-  const visibleScore=typeof point.displayScore==='number'&&Number.isFinite(point.displayScore)
-   ?point.displayScore
-   :point.score;
-  const score=typeof visibleScore==='number'&&Number.isFinite(visibleScore)&&visibleScore>=0&&visibleScore<=100
-   ?visibleScore
-   :null;
+  const score=koreaRev7ChartScore(point);
   return [{date:point.date,time:pointTime,score}];
  }).sort((a,b)=>a.time-b.time);
 }
@@ -198,10 +193,9 @@ export function CompositeChart({
  const [internalPeriod,setInternalPeriod]=useState<MarketPeriod>(initialPeriod);
  const activePeriod=period??internalPeriod;
  const activeDays=getMarketPeriodDays(activePeriod);
- const end=item.history.at(-1)?.date;
- const rows=item.history
-  .filter(p=>end&&time(p.date)>=time(end)-activeDays*86400000)
-  .map(p=>({...p,time:time(p.date)}));
+ // The published completed trading day, not the last raw-row insertion,
+ // fixes the chart endpoint. Invalid/future days are never plotted.
+ const rows=koreaRev7VisibleHistoryDays(item.history,item.observationDate,activeDays);
 
  const handlePeriodChange=(nextPeriod:MarketPeriod)=>{
   if(onPeriodChange) onPeriodChange(nextPeriod);
@@ -223,14 +217,15 @@ export function CompositeChart({
 
 export function KoreaCompositeView({detail=false}:{detail?:boolean}){
  const {composite:c,loading}=useKoreaFunds();
- const valid=c?.displayScore!==null&&typeof c?.displayScore==='number';
+ const valid=typeof c?.displayScore==='number'&&Number.isFinite(c.displayScore)&&c.displayScore>=0&&c.displayScore<=100
+  &&Number.isFinite(koreaRev7DisplayDayMs(c?.observationDate));
  return <div className="min-w-0" data-testid="kr-composite" aria-busy={loading}>
   <p className="mt-1 text-sm text-slate-600">ZGmini 자체 산출 · 베타</p>
   <div className="my-5 min-h-12" aria-live="polite"><strong className="text-5xl font-black text-slate-950">{valid?c!.displayScore!.toFixed(1):'—'}</strong><span className="ml-3 text-sm font-bold" style={{color:colors[c?.stageCode??'']??'#64748b'}}>{valid?c!.stageLabel:loading?'확인 중':c?.status==='WARMUP'?'준비기간':'확인 불가'}</span></div>
   {valid&&<div role="meter" aria-label="한국 공포·탐욕지수" aria-valuemin={0} aria-valuemax={100} aria-valuenow={c!.displayScore!} className="h-2 overflow-hidden rounded bg-slate-200"><div className="h-full" style={{width:`${c!.displayScore}%`,background:colors[c!.stageCode??'']}}/></div>}
-  <p className="mt-3 text-xs text-slate-600">관측 기준일 {formatDate(c?.observationDate??null)}</p>
-  <p className="mt-2 text-sm text-slate-700">이전 관측 대비 {c?.changePoints!=null?`${c.changePoints>=0?'+':''}${c.changePoints.toFixed(1)}점 (${formatDate(c.previousObservationDate)})`:'비교 자료 없음'}</p>
-  {c?.status==='STALE'&&<p role="status" className="mt-2 text-sm text-amber-700">갱신 대기 · Revision 7의 최근 유효 관측값을 표시합니다.</p>}
+  <p className="mt-3 text-xs text-slate-600">관측 기준일 {cardDate(c?.observationDate)}</p>
+  <p className="mt-2 text-sm text-slate-700">이전 관측 대비 {valid&&c?.changePoints!=null&&Number.isFinite(koreaRev7DisplayDayMs(c?.previousObservationDate))?`${c.changePoints>=0?'+':''}${c.changePoints.toFixed(1)}점 (${formatDate(c.previousObservationDate)})`:'비교 자료 없음'}</p>
+  {valid&&c?.status==='STALE'&&<p role="status" className="mt-2 text-sm text-amber-700">갱신 대기 · Revision 7의 최근 유효 관측값을 표시합니다.</p>}
   {c&&<CompositeChart item={c} mini={!detail}/>}
   {detail&&<p className="mt-3 text-xs">과거 점수는 현재 확보한 원자료로 재구성한 이력이며 당시 point-in-time 빈티지는 검증되지 않았습니다. 현재는 연구용 베타입니다.</p>}
  </div>;
@@ -239,14 +234,13 @@ export function KoreaCompositeView({detail=false}:{detail?:boolean}){
 export function KoreanCountryCard({detail=false,showBreadth=false}:{detail?:boolean;showBreadth?:boolean}={}){
  const {composite:c,loading}=useKoreaFunds();
  const [selectedPeriod,setSelectedPeriod]=useState<MarketPeriod>(DEFAULT_KOREA_MARKET_PERIOD);
- const valid=typeof c?.displayScore==='number'&&Number.isFinite(c.displayScore);
+ const valid=typeof c?.displayScore==='number'&&Number.isFinite(c.displayScore)&&c.displayScore>=0&&c.displayScore<=100
+  &&Number.isFinite(koreaRev7DisplayDayMs(c?.observationDate));
  const allHistory=useMemo(()=>normalizeCompositeHistory(c?.history??[]),[c?.history]);
  const observedTime=c?.observationDate?time(c.observationDate):null;
- const chartHistory=useMemo(()=>{
-  if(observedTime===null||!Number.isFinite(observedTime))return allHistory;
-  const days=getMarketPeriodConfig(selectedPeriod).days;
-  return allHistory.filter(point=>point.time<=observedTime&&point.time>=observedTime-days*86400000);
- },[allHistory,observedTime,selectedPeriod]);
+ const chartHistory=useMemo(()=>koreaRev7VisibleHistoryDays(
+  allHistory,c?.observationDate,getMarketPeriodConfig(selectedPeriod).days,
+ ),[allHistory,c?.observationDate,selectedPeriod]);
 
  const dayBaseline=useMemo(
   ()=>previousHistoryBaseline(allHistory,c?.observationDate),
@@ -287,7 +281,7 @@ export function KoreanCountryCard({detail=false,showBreadth=false}:{detail?:bool
  const periodLabel=periodComparisonLabels[selectedPeriod];
  const latestHistoryPoint=validHistory(chartHistory).at(-1)??null;
  const chartAxis=useMemo(()=>buildKoreaAxisTicks(chartHistory,selectedPeriod),[chartHistory,selectedPeriod]);
- const insight=buildKoreaInsight({composite:c,dayDelta,periodDelta,periodLabel,loading});
+ const insight=buildKoreaInsight({composite:valid?c:null,dayDelta,periodDelta,periodLabel,loading});
  const source=c?.sourceAttribution??'한국거래소 통계정보 · 한국은행 ECOS · ZGmini 자체 가공';
 
  return <FearGreedCardShell

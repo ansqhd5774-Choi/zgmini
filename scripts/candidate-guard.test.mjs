@@ -14,7 +14,10 @@ test('real stored public feed reader works through SELECT-only boundary',async()
 test('mutation and internal GET fail closed before handler',async()=>{
  let calls=0;const w=candidateWorker({fetch(){calls++;return new Response('ok');}});
  for(const method of ['POST','PUT','PATCH','DELETE']) assert.equal((await w.fetch(new Request('https://candidate/api/market-score',{method}),{},{})).status,403);
- for(const p of ['/api/internal/market-refresh','/api/%69nternal/market-refresh','/api/favorites','/signin-with-chatgpt']) assert.equal((await w.fetch(new Request('https://candidate'+p),{},{})).status,403);
+ for(const p of ['/api/internal/market-refresh','/api/%69nternal/market-refresh','/api/favorites']) assert.equal((await w.fetch(new Request('https://candidate'+p),{},{})).status,403);
+ const retired=await w.fetch(new Request('https://candidate/signin-with-chatgpt?return_to=/'),{},{});
+ assert.equal(retired.status,410);assert.equal(retired.headers.get('x-robots-tag'),'noindex, nofollow');
+ assert.equal((await w.fetch(new Request('https://candidate/signin-with-chatgpt',{method:'POST'}),{},{})).status,403);
  assert.equal(calls,0);assert.equal(w.scheduled,undefined);
 });
 test('public GET maintained and spoofed identity removed',async()=>{
@@ -66,4 +69,19 @@ test('candidate import boundary rewrites app operational-store imports only',()=
  const out=p.transform(source,process.cwd()+'/app/api/x/route.ts').code;
  assert.match(out,/candidate-market-operational-store\.mjs/);
  assert.doesNotMatch(out,/from ["']\.\.\/\.\.\/\.\.\/worker\/market-operational-store\.mjs["']/);
+});
+
+test('retired sign-in HEAD and URL variants stay noindex without calling application',async()=>{
+ let calls=0;
+ const w=candidateWorker({fetch(){calls++;return new Response('unexpected')}});
+ for(const route of ['/signin-with-chatgpt','/signin-with-chatgpt/?return_to=%2F','/%73ignin-with-chatgpt']){
+  const response=await w.fetch(new Request('https://candidate'+route,{method:'HEAD'}),{},{});
+  assert.equal(response.status,410);
+  assert.equal(response.headers.get('x-robots-tag'),'noindex, nofollow');
+  assert.equal(response.headers.get('cache-control'),'no-store');
+  assert.equal(await response.text(),'');
+ }
+ for(const route of ['/signout-with-chatgpt','/%2573ignin-with-chatgpt'])
+  assert.equal((await w.fetch(new Request('https://candidate'+route),{},{})).status,403);
+ assert.equal(calls,0);
 });

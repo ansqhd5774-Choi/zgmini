@@ -16,7 +16,7 @@ const sample=(theme,score)=>({theme,score,etfs:['ETF1','ETF2'],history:days.map(
 const feed={status:'READY',observationDate:days.at(-1),phase:'CONFIRMED',themes:[
  sample('로봇·자동화',40),sample('바이오·신약',50),sample('클라우드·SaaS',60),sample('핀테크',70),
 ]};
-function render(payload,error=null,filter={}){
+function render(payload,error=null,filter={},configured=null){
  const file=new URL('../app/theme-fear-greed/theme-detail-charts.tsx',import.meta.url),module={exports:{}};
  const script=ts.transpileModule(readFileSync(file,'utf8'),{compilerOptions:{jsx:ts.JsxEmit.ReactJSX,module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022}}).outputText;
  const require=createRequire(file);
@@ -31,7 +31,7 @@ function render(payload,error=null,filter={}){
    }};
   }
   if(id==='../../components/market-explorer-catalog')return catalog.exports;
-  if(id==='../../components/use-stored-index')return {useStoredIndex:()=>({payload,error,loading:false})};
+  if(id==='../../components/use-stored-index')return {useStoredIndex:url=>url==='/api/theme-configured'?({payload:configured,error:null,loading:false}):({payload,error,loading:false})};
   return require(id);
  },module,module.exports);
  return renderToStaticMarkup(React.createElement(module.exports.default));
@@ -53,10 +53,19 @@ test('theme screen never invents a missing or invalid score',()=>{
  const html=render({status:'READY',themes:[{...sample('핀테크',60),history:days.slice(0,251).map(date=>({date,score:60}))}]});
  assert.doesNotMatch(html,/class="zg-sfg-rank-row"/);
  assert.match(html,/ETF 전용 3축 연구 · 공개 데이터 대기/);
- assert.match(html,/30개/);
+ assert.match(html,/테마 데이터 대기/);
+ assert.doesNotMatch(html,/전체 30개/);
  const failed=render(feed,'UPDATE_FAILED');
  assert.doesNotMatch(failed,/class="zg-sfg-rank-row"/);
- assert.match(failed,/30개/);
+ assert.match(failed,/테마 데이터 대기/);
+});
+
+test('registered themes outside the historical catalogue share the same ranking without a theme-count cap',()=>{
+ const configured={status:'READY',themes:Array.from({length:51},(_,i)=>({id:'registered-'+i,...sample('신규 '+i,30+i/10),observationDate:days.at(-1)}))};
+ const html=render(feed,null,{},configured);
+ assert.equal((html.match(/class="zg-sfg-rank-row"/g)??[]).length,55);
+ assert.match(html,/공개 55개/);assert.match(html,/기타/);
+ assert.doesNotMatch(html,/추가 승인 테마|전체 30개/);
 });
 test('theme page preserves only stored API, provisional dash and synchronized legend interaction',()=>{
  const page=readFileSync('app/theme-fear-greed/page.tsx','utf8');

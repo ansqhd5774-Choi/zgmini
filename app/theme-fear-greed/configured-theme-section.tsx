@@ -3,22 +3,24 @@
 import {useMemo} from 'react';
 import {CartesianGrid,Line,LineChart,ResponsiveContainer,Tooltip,XAxis,YAxis} from 'recharts';
 import {useStoredIndex} from '../../components/use-stored-index';
-import {configuredChartSeries,type ConfiguredHistoryPoint} from '../../lib/theme-configured-series';
+import {configuredChartSeries,type ConfiguredHistoryPoint,type ConfiguredProvisionalPoint} from '../../lib/theme-configured-series';
 
 type PublicConfiguredTheme={
  id:string;theme:string;etfs:string[];methodologyVersion:string;
  observationDate:string;sourceStoredAt:string;score:number;
  history:ConfiguredHistoryPoint[];
+ provisionalStatus?:'PENDING'|'READY';provisional?:ConfiguredProvisionalPoint;
 };
 type PublicIndex={status:'READY'|'PENDING'|'UNAVAILABLE';themes:PublicConfiguredTheme[]};
 
 function ConfiguredChart({theme}:{theme:PublicConfiguredTheme}){
- const values=useMemo(()=>configuredChartSeries(theme.history),[theme.history]);
+ const values=useMemo(()=>configuredChartSeries(theme.history,
+  theme.provisionalStatus==='READY'?theme.provisional:null),[theme.history,theme.provisionalStatus,theme.provisional]);
  const latest=theme.history.at(-1);
  return <article className="zg-tfg-configured-card" aria-label={`${theme.theme} 공포·탐욕`}>
   <header className="zg-tfg-configured-card-head">
    <div><h3>{theme.theme}</h3><p>{theme.etfs.join(' · ')} + SPY · {theme.observationDate} 관측</p></div>
-   <div className="zg-tfg-configured-score"><strong>{theme.score.toFixed(1)}</strong><span>{latest?.status==='R188_COMPATIBLE'?'확정':'잠정'}</span></div>
+   <div className="zg-tfg-configured-score"><strong>{theme.score.toFixed(1)}</strong><span>{latest?.phase==='CONFIRMED'||latest?.status==='R188_COMPATIBLE'?'확정':'잠정'}</span></div>
   </header>
   <div className="zg-tfg-configured-graph" role="img" aria-label={`${theme.theme} 실제 거래일별 점수 그래프, 빈 거래일은 연결하지 않음`}>
    <ResponsiveContainer width="100%" height="100%">

@@ -124,6 +124,31 @@ test('failed source does not fabricate score and releases lease',async()=>{
  assert.ok(failureDiagnostic.location?.module.startsWith('worker/'));assert.equal(await store.readScore(),null);assert.ok(await store.claim('pipeline',now+1));sqlite.close();
 });
 
+
+test('older NFCICREDIT never overwrites stored last-good and reports a safe collection reason',async()=>{
+ const {store,db,sqlite}=fixture();
+ try{
+  const old={...fullMacro(),series:{...fullMacro().series,NFCICREDIT:[{observationDate:'2026-09-30',value:0}]}};
+  await store.writeInput('macro',old,now-1);
+  await store.writeScore(score,now-1);
+  let calculateCalls=0;
+  const result=await runMarketOperationalRefresh({
+   env:{DB:db},store,job:'macroCredit',now,
+   collectors:{macroCredit:async()=>({status:'READY_CURRENT_VINTAGE',series:{NFCICREDIT:[{observationDate:'2026-09-29',value:1}]}})},
+   calculate:()=>{calculateCalls++;throw Error('MUST_NOT_CALCULATE')},
+  });
+  assert.equal(result.status,'ERROR');
+  assert.equal(result.job,'macroCredit');
+  assert.equal(result.phase,'STORE');
+  assert.equal(result.reason,'MACRO_CREDIT_OBSERVATION_REGRESSION');
+  assert.equal(calculateCalls,0);
+  assert.deepEqual((await store.readInput('macro')).body,old);
+  assert.equal((await store.readScore()).storedAt,now-1);
+  assert.equal(sqlite.prepare("SELECT status FROM market_collection_jobs_v1 WHERE job='macroCredit'").get().status,'STORE_FAILED');
+  assert.ok(await store.claim('pipeline',now+1));
+ }finally{sqlite.close()}
+});
+
 test('growth BLS transport failure retains safe HTTP metadata and releases the lease',async()=>{
  const {store,db,sqlite}=fixture();
  const sourceDiagnostic={provider:'BLS',httpStatus:503,attempts:2,registered:true};

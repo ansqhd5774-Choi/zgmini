@@ -3,6 +3,20 @@ import {mkdirSync} from 'node:fs';
 import {chromium} from 'playwright';
 
 const base=process.env.CHAT_PREVIEW_URL??'http://127.0.0.1:5173';
+// Assert actual computed colors, including the interactive hover state that
+// default axe scans do not exercise. Normal-size button text requires 4.5:1.
+function contrastRatioCss(foreground,background){
+ const luminance=value=>{
+  const m=/^rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/.exec(value);
+  assert.ok(m,'unexpected computed CSS color: '+value);
+  const rgb=[1,2,3].map(i=>Number(m[i])/255).map(v=>
+   v<=0.04045?v/12.92:((v+0.055)/1.055)**2.4);
+  return rgb[0]*0.2126+rgb[1]*0.7152+rgb[2]*0.0722;
+ };
+ const a=luminance(foreground),b=luminance(background);
+ return (Math.max(a,b)+0.05)/(Math.min(a,b)+0.05);
+}
+
 mkdirSync('artifacts/fear-greed-education',{recursive:true});
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 try{
@@ -13,7 +27,7 @@ try{
   page.on('request',request=>{if(request.url().includes('/styles/fear-greed-education-r1.css'))educationRequests.push(request.url());});
   await page.addInitScript(()=>sessionStorage.setItem('zgmini-about-intro-dismissed-r1','1'));
   await page.route('https://**',route=>route.abort());
-  await page.route('**/api/**',route=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({status:'UNAVAILABLE',user:null})}));
+  await page.route('**/api/**',route=>{const employment=route.request().url().includes('/api/employment-r6/observations');return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(employment?{kind:'employment-r6',status:'UNAVAILABLE',sourceStoredAt:0,indicators:[],summary:{chartReadyFeatures:0,chartPartialFeatures:0,scoredFeatures:0,recentlyScoredFeatures:0}}:{status:'UNAVAILABLE',user:null})});});
   await page.goto(base,{waitUntil:'networkidle',timeout:45000});
   assert.equal(educationRequests.length,0,'Dashboard must not request detail education CSS');
   await page.locator('[data-testid="investor-search-dashboard"]').scrollIntoViewIfNeeded();
@@ -44,13 +58,44 @@ try{
   await disclosure.locator('summary').click();
   await education.waitFor({state:'hidden'});
   await page.goto(base+'/fear-greed/korea/',{waitUntil:'networkidle',timeout:45000});
-  await page.locator('.zg-fg-korea .zg-fg-intro').waitFor({state:'visible'});
+  const koreaIntro=page.locator('.zg-fg-korea .zg-fg-intro');
+  const koreaIntroButton=page.locator('.zg-fg-korea .zg-fg-intro-button');
+  {
+   // Both mobile and desktop approved Korea headers use a collapsed info disclosure.
+   await koreaIntro.waitFor({state:'hidden'});
+   assert.equal(await koreaIntroButton.getAttribute('aria-expanded'),'false','Mobile Korea intro starts collapsed');
+   await koreaIntroButton.click();
+   assert.equal(await koreaIntroButton.getAttribute('aria-expanded'),'true','Mobile Korea intro expands');
+   try { await koreaIntro.waitFor({state:'visible',timeout:10000}); }
+   catch(error){
+    const diagnostic=await page.evaluate(()=>{
+     const el=document.querySelector('.zg-fg-korea .zg-fg-intro');
+     const parent=el?.closest('.zg-fg-korea-intro-content');
+     const button=document.querySelector('.zg-fg-korea .zg-fg-intro-button');
+     const inspect=node=>node?{className:node.className,display:getComputedStyle(node).display,visibility:getComputedStyle(node).visibility,rect:node.getBoundingClientRect().toJSON()}:null;
+     return {intro:inspect(el),parent:inspect(parent),button:inspect(button),expanded:button?.getAttribute('aria-expanded'),styleSheets:[...document.styleSheets].map(s=>s.href).filter(Boolean)};
+    });
+    console.error('KOREA_INTRO_FIRST_FAIL',JSON.stringify({width,diagnostic,pageErrors:errors}));
+    await page.screenshot({path:`artifacts/fear-greed-education/korea-intro-fail-${width}.png`,fullPage:true});
+    throw error;
+   }
+  }
   assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,'Korea introduction has no horizontal overflow');
   await page.screenshot({path:`artifacts/fear-greed-education/korea-intro-${width}.png`});
   for(const route of ['/economic-indicators/employment/','/theme-fear-greed/','/sector-fear-greed/','/guides/fomc/','/inflation/','/risk-indicators/','/economic-indicators/','/about/']){
    await page.goto(base+route,{waitUntil:'networkidle',timeout:45000});
    assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth+1),false,route+' has no horizontal overflow');
-   assert.equal(await page.locator('h1').count(),1,route+' has one visible heading');
+   const headingCount=await page.locator('h1').count();
+   if(headingCount!==1){
+    const diagnostic=await page.evaluate(()=>({
+     title:document.title,url:location.href,readyState:document.readyState,
+     bodyText:document.body?.innerText?.slice(0,1200)??'',
+     rootHtml:document.querySelector('main')?.outerHTML?.slice(0,1600)??'',
+    }));
+    console.error('HEADING_FIRST_FAIL',JSON.stringify({route,width,headingCount,diagnostic,pageErrors:errors}));
+    await page.screenshot({path:`artifacts/fear-greed-education/heading-fail-${width}.png`,fullPage:true});
+   }
+   assert.equal(headingCount,1,route+' has one visible heading');
    assert.ok((await page.locator('h1').innerText()).trim(),route+' nonempty heading');
    const searchGuide=page.locator('[data-testid^="investor-search-"]');
    if(await searchGuide.count()){
@@ -66,6 +111,44 @@ try{
      return !!intro&&!!count&&intro.left<count.right&&intro.right>count.left&&intro.top<count.bottom&&intro.bottom>count.top;
     });
     assert.equal(overlap,false,'Theme description does not overlap the theme count');
+   }
+   if(route==='/about/'){
+    // A decorative image overlaps these text regions. Keep the effective
+    // foreground/background deterministic instead of claiming axe incomplete
+    // is equivalent to a verified contrast pass.
+    for(const [name,selector] of [
+     ['breadcrumb','main header > span'],
+     ['greeting','main section[aria-labelledby="about-headline"] p:first-of-type'],
+     ['headline','#about-headline']
+    ]){
+     const element=page.locator(selector);
+     assert.equal(await element.count(),1,'About '+name+' exists once');
+     const colors=await element.evaluate(el=>{
+      const s=getComputedStyle(el);
+      return {text:s.color,background:s.backgroundColor};
+     });
+     assert.equal(colors.background,'rgb(16, 23, 28)',
+      'About '+name+' must use an opaque page-matching background at '+width+'px');
+     assert.ok(contrastRatioCss(colors.text,colors.background)>=4.5,
+      'About '+name+' contrast below 4.5:1 at '+width+'px');
+    }
+    const dashboard=page.locator('main footer a[href="/"]');
+    assert.equal(await dashboard.count(),1,'About dashboard action exists once');
+    await page.mouse.move(0,0);
+    await dashboard.scrollIntoViewIfNeeded();
+    for(const state of ['default','hover']){
+     if(state==='hover'){
+      await dashboard.hover();
+      await page.waitForTimeout(240); // allow existing 180ms CSS transition
+     }
+     const colors=await dashboard.evaluate(el=>{
+      const s=getComputedStyle(el);
+      return {text:s.color,background:s.backgroundColor};
+     });
+     assert.ok(contrastRatioCss(colors.text,colors.background)>=4.5,
+      'About dashboard '+state+' contrast below WCAG AA at '+width+'px: '+
+      JSON.stringify(colors));
+    }
    }
    await page.screenshot({path:`artifacts/fear-greed-education/search-${route.split('/').filter(Boolean).join('-')}-${width}.png`});
   }

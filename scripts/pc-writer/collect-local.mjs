@@ -1,29 +1,49 @@
 import path from 'node:path';
+import {coreCycleIdFromEnv} from './core-cycle-id.mjs';
 import os from 'node:os';
+import {execFileSync} from 'node:child_process';
 import {fileURLToPath} from 'node:url';
 import {localDatabase} from './local-db.mjs';
 import {loadLocalProviders,installLocalRuntime} from './local-env.mjs';
 import {save} from './d1.mjs';
-import {createQuotaFetch} from './quota-fetch.mjs';
+import {read} from './d1.mjs';
+import {createCompatibleSecQuotaFetch} from './sec-legacy-quota-bridge.mjs';
+import {secGuardOptionsFromEnv} from './sec-guard-runtime-config.mjs';
 import {recordCollectionChecks} from './collection-checks.mjs';
 import {appendCollectionEvent,appendProviderFailure} from './collection-events.mjs';
+import {providerEndpointFingerprint,PROVIDER_ENDPOINTS_PER_HOST_MAX,appendProviderEndpointEvent} from './provider-endpoint-fingerprint.mjs';
 import {safeMacroDiagnostic} from '../../worker/macro-result-contract-r61.mjs';
 import {safeCollectionFailure} from '../../worker/collection-failure-diagnostic.mjs';
 import {alertCollectionReport,dueCollectionRecovery} from './local-data-alert.mjs';
 import {collectConsumptionR5} from './consumption-r5.mjs';
 import {overdueRateJob} from './rate-refresh-priority.mjs';
-import {collectSectorFearGreedR3EtfIncremental} from './sector-fear-greed-r3-etf-incremental.mjs';
 import {collectReleaseCalendar} from './release-calendar.mjs';
+import {collectPinnedDeltaOnce} from './market-calendar-deltascreener-input.mjs';
+import {publicFeedStore} from '../../worker/public-feed-store.mjs';
 
+// Explicit CNN-only entry for the approved PC runner. No schedule is installed here.
 export async function collectLocal(base,{lane='core',importOnly=false,job=null}={}){
+ const cnnOnly=lane==='cnn-minute';
+ if(cnnOnly){
+  if(importOnly||job!==null)throw Object.assign(Error('CNN_MINUTE_SCOPE_STOP'),{code:'CNN_MINUTE_SCOPE_STOP'});
+  try{
+   const config=read(path.join(base,'config.json'));
+   const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
+   const runningSource=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
+   if(config.enabled!==true||config.collectionTarget!=='pc'||!/^[0-9a-f]{40}$/.test(runningSource)||config.source!==runningSource)throw Error('SOURCE_MISMATCH');
+   const dirty=execFileSync('git',['status','--porcelain','--untracked-files=all','--','lib','worker','scripts/pc-writer'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
+   if(dirty)throw Error('SOURCE_DIRTY');
+  }catch{throw Object.assign(Error('CNN_MINUTE_SOURCE_NOT_APPROVED'),{code:'CNN_MINUTE_SOURCE_NOT_APPROVED'});}
+ }
+ const secGuardOptions=secGuardOptionsFromEnv(); // fail before opening SQLite
  const core=localDatabase(path.join(base,'storage','core.sqlite'));
- const history=localDatabase(path.join(base,'storage','history.sqlite'));
+ const history=cnnOnly?null:localDatabase(path.join(base,'storage','history.sqlite'));
  const env={...loadLocalProviders(base),DB:core,DB_CORE:core,DB_HISTORY:history,ZGMINI_COMPUTE_TARGET:'pc'};
  const hooks=installLocalRuntime(env);
  const originalFetch=globalThis.fetch,providers={};
  let providerDiagnosticWriteFailures=0;
  const recordProviderFailure=(input,event)=>{try{appendProviderFailure(base,input,event);}catch{providerDiagnosticWriteFailures++;}};
- const quota=createQuotaFetch({base,originalFetch});
+ const quota=createCompatibleSecQuotaFetch({base,originalFetch,...secGuardOptions});
  globalThis.fetch=async(input,init)=>{
   const host=new URL(typeof input==='string'||input instanceof URL?input:input.url).hostname;
   const item=providers[host]??={requests:0,statuses:{}};item.requests++;
@@ -31,21 +51,67 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   catch(error){recordProviderFailure(input,{phase:'FETCH',error});const status=error?.code==='PROVIDER_QUOTA_GUARD'?'PROVIDER_QUOTA_GUARD':'NETWORK_ERROR';item.statuses[status]=(item.statuses[status]??0)+1;if(error?.code==='PROVIDER_QUOTA_GUARD')throw error;const failure=Error('LOCAL_PROVIDER_NETWORK_ERROR');failure.code='LOCAL_PROVIDER_NETWORK_ERROR';throw failure;}
  };
  try{
+  // Observe the real HTTP fetch wrapper without changing its quota/response behavior.
+  // The single-child collector log remains append-only and never stores URLs.
+  const endpointPaths={};let endpointTrackingOmitted=0;
+  const previousCollectorFetch=globalThis.fetch;
+  globalThis.fetch=async(input,init)=>{
+   const route=providerEndpointFingerprint(input,init);
+   const bucket=route?(endpointPaths[route.host]??={}):null;
+   const entry=bucket&&(bucket[route.id]??(Object.keys(bucket).length<PROVIDER_ENDPOINTS_PER_HOST_MAX?
+    (bucket[route.id]={requests:0,statuses:{}}):null));
+   if(!entry)endpointTrackingOmitted++;
+   const count=status=>{if(entry){entry.requests++;entry.statuses[status]=(entry.statuses[status]??0)+1;}};
+   try{const response=await previousCollectorFetch(input,init);count(response.status);return response;}
+   catch(error){count(error?.code==='PROVIDER_QUOTA_GUARD'?'PROVIDER_QUOTA_GUARD':'NETWORK_ERROR');throw error;}
+  };
   const {runPublicFeeds}=await import('../../worker/public-feed-collectors.ts');
   const {runMarketOperationalRefresh}=await import('../../worker/market-operational-refresh.mjs');
   const {refreshKoreaRev7}=await import('../../worker/korea-rev7-refresh.mjs');
   const {Rev7D1Store}=await import('../../worker/korea-rev7-d1.mjs');
   if(importOnly)return {status:'LOCAL_IMPORT_PASS'};
-  let result,releaseCalendar={status:'SKIPPED_KOREA_LANE',providerRequests:0},sectorFearGreedEtf={status:'SKIPPED_KOREA_LANE',providerRequests:0};
+  if(cnnOnly){
+   const {collect}=await import('../../worker/feed-collectors/fear-greed.ts');
+   const {refreshPublicFeeds,observeCnnCollector}=await import('../../worker/public-feed-refresh.mjs');
+   const result=await refreshPublicFeeds({env,maxFeedsPerRun:1,cnnMinuteOnly:true,collectors:{'fear-greed':observeCnnCollector(collect)}});
+   // HTTP checks and quota reservations are already durable; never replace Core checkpoints.
+   return {at:new Date().toISOString(),lane,status:result.status,attempted:result.attempted??0,feeds:result.feeds?.map(({key,status})=>({key,status})),providers,providerDiagnosticWriteFailures};
+  }
+  let result,releaseCalendar={status:'SKIPPED_KOREA_LANE',providerRequests:0},sectorFearGreedEtf={status:lane==='core'?'RETIRED_LEGACY_ALPACA':'SKIPPED_KOREA_LANE',providerRequests:0};
+  let deltaScreener={status:'SKIPPED_KOREA_LANE',providerRequests:0};
+  let employmentR6Collection={status:'DISABLED',providerRequests:0};
   if(lane==='korea')result=await refreshKoreaRev7({env:{...env,DB:history},store:new Rev7D1Store(history,{leaseMs:600000}),now:new Date(),maxDates:1,deferCalculation:true});
   else{
+   // This side lane is inert unless the installed PC config explicitly opts in
+   // and approves the exact source SHA. Existing market collection is isolated.
+   try{
+    const config=read(path.join(base,'config.json'));
+    if(config.enabled===true&&config.collectionTarget==='pc'
+      &&config.employmentR6AutoCollection===true){
+     const root=path.resolve(path.dirname(fileURLToPath(import.meta.url)),'../..');
+     const runningSource=execFileSync('git',['rev-parse','HEAD'],{cwd:root,encoding:'utf8',windowsHide:true}).trim();
+     execFileSync('git',['diff','--quiet','HEAD','--','lib','worker','scripts/pc-writer'],
+      {cwd:root,stdio:'pipe',windowsHide:true});
+     const {runEmploymentR6AutoCollection}=await import('./employment-r6-auto-collection.mjs');
+     employmentR6Collection=await runEmploymentR6AutoCollection({
+      enabled:true,approvedSource:config.source,runningSource,
+      db:core,fetchImpl:globalThis.fetch,now:()=>new Date(),
+     });
+    }
+   }catch(error){
+    const code=String(error?.code??error?.message??'');
+    employmentR6Collection={status:'FAILED_PRESERVE_EXISTING',providerRequests:0,
+     code:/^EMPLOYMENT_R6_[A-Z_]+$/.test(code)?code:'EMPLOYMENT_R6_COLLECTION_FAILED'};
+   }
    // Independent calendar failures cannot block market collection/publication.
    try{releaseCalendar=await collectReleaseCalendar(core,{fetchImpl:globalThis.fetch});}catch{releaseCalendar={status:'FAILED_PRESERVE_EXISTING',providerRequests:0};}
-   try{
-    sectorFearGreedEtf=await collectSectorFearGreedR3EtfIncremental(base,{fetchImpl:globalThis.fetch,now:Date.now()});
-   }catch(error){
-    sectorFearGreedEtf={status:'FAILED_PRESERVE_EXISTING',providerRequests:0,code:/^[A-Z0-9_:.-]+$/.test(error?.code??error?.message??'')?(error.code??error.message):'SECTOR_FEAR_GREED_R3_ETF_COLLECTION_FAILED'};
-   }
+   // Immutable dated market-cap source: one request ever, private input only.
+   // Its absence or invalidity must not stop the existing Core collection.
+   try{deltaScreener=await collectPinnedDeltaOnce({store:publicFeedStore(core),fetchImpl:globalThis.fetch,now:Date.now()});}
+   catch{deltaScreener={status:'FAILED_PREVIOUS_INPUT_PRESERVED',providerRequests:0};}
+   // Historical Alpaca ETF bars stay stored. New paid ETF daily rows are
+   // collected once by local-cycle and reused by the Sector rolling reader.
+   // Never fall back to the retired independent Alpaca fetch.
    const collectors={consumption:()=>collectConsumptionR5({db:core,fetchImpl:globalThis.fetch})};
    const now=Date.now();
    job??=await overdueRateJob(core,now);
@@ -58,26 +124,33 @@ export async function collectLocal(base,{lane='core',importOnly=false,job=null}=
   }
   // Reports contain statuses only; provider URLs, credentials, and exception messages are excluded.
   const report={at:new Date().toISOString(),lane,status:result.status,job:result.job??null,attempted:result.attempted??null,feeds:result.feeds?.map(({key,status})=>({key,status})),sectorFearGreedEtf:{status:sectorFearGreedEtf.status,providerRequests:sectorFearGreedEtf.providerRequests??0,commonLatest:sectorFearGreedEtf.commonLatest??null,code:sectorFearGreedEtf.code??sectorFearGreedEtf.error??null},providers,quota:quota.summary()};
+  report.coreCycleId=coreCycleIdFromEnv();
+  report.employmentR6Collection=employmentR6Collection;
   for(const key of ['phase','reason','sourceStatus'])if(typeof result?.[key]==='string'&&/^[A-Za-z0-9_.:-]{1,120}$/.test(result[key]))report[key]=result[key];
   report.releaseCalendar=releaseCalendar;
+  report.deltaScreener=deltaScreener;
   if(result.failureDiagnostic)report.failureDiagnostic=result.failureDiagnostic;
   if(result?.sourceDiagnostic?.provider==='BLS')report.sourceDiagnostic=result.sourceDiagnostic;
   if(result?.sourceDiagnostic?.provider==='FRED')report.sourceDiagnostic=safeMacroDiagnostic(result.sourceDiagnostic);
   if(result.job==='earnings'&&result?.sourceDiagnostic?.provider==='WIKIPEDIA'&&result.sourceDiagnostic.stage==='UNIVERSE_REQUEST'&&Number.isInteger(result.sourceDiagnostic.httpStatus))
    report.sourceDiagnostic={provider:'WIKIPEDIA',stage:'UNIVERSE_REQUEST',httpStatus:result.sourceDiagnostic.httpStatus};
   report.providerDiagnosticWriteFailures=providerDiagnosticWriteFailures;
+  report.endpointPaths=endpointPaths;report.endpointTrackingOmitted=endpointTrackingOmitted;
+  try{appendProviderEndpointEvent(base,report);}catch{report.endpointDiagnosticWriteFailures=1;}
   appendCollectionEvent(base,report);
   save(path.join(base,'local-collection-last-run.json'),report);
   recordCollectionChecks(base,report);
   try{alertCollectionReport(base,report);}catch{console.warn('LOCAL_DATA_ALERT_RECORD_FAILED');}
   return report;
- }finally{globalThis.fetch=originalFetch;hooks.deregister();core.close();history.close();}
+ }finally{globalThis.fetch=originalFetch;hooks.deregister();core.close();history?.close();}
 }
 if(process.argv[1]&&path.resolve(process.argv[1])===fileURLToPath(import.meta.url)){
  try{
   const jobArg=process.argv.find(arg=>arg.startsWith('--job='));
   const job=jobArg?jobArg.slice('--job='.length):null;
-  console.log(JSON.stringify(await collectLocal(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),{lane:process.argv.includes('--korea')?'korea':'core',importOnly:process.argv.includes('--import-only'),job})));
+  const cnnOnly=process.argv.includes('--cnn-minute');
+  if(cnnOnly&&process.argv.includes('--korea'))throw Object.assign(Error('CNN_MINUTE_SCOPE_STOP'),{code:'CNN_MINUTE_SCOPE_STOP'});
+  console.log(JSON.stringify(await collectLocal(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),{lane:cnnOnly?'cnn-minute':process.argv.includes('--korea')?'korea':'core',importOnly:process.argv.includes('--import-only'),job})));
  }
- catch(error){const report={at:new Date().toISOString(),lane:process.argv.includes('--korea')?'korea':'core',status:'FAILED',reason:'LOCAL_COLLECTION_FAILED',failureDiagnostic:safeCollectionFailure(error)};try{appendCollectionEvent(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),report);}catch{}console.log(JSON.stringify({...report,...(process.argv.includes('--import-only')?{importError:error.message}:{})}));process.exitCode=1;}
+ catch(error){const cnnOnly=process.argv.includes('--cnn-minute');const reason=cnnOnly&&['CNN_MINUTE_SCOPE_STOP','CNN_MINUTE_SOURCE_NOT_APPROVED'].includes(error?.code)?error.code:'LOCAL_COLLECTION_FAILED';const report={at:new Date().toISOString(),lane:cnnOnly?'cnn-minute':process.argv.includes('--korea')?'korea':'core',status:'FAILED',reason,failureDiagnostic:safeCollectionFailure(error)};if(!cnnOnly){try{appendCollectionEvent(process.env.ZGMINI_PC_HOME??path.join(os.homedir(),'.zgmini','pc-writer'),report);}catch{}}console.log(JSON.stringify({...report,...(!cnnOnly&&process.argv.includes('--import-only')?{importError:error.message}:{})}));process.exitCode=1;}
 }

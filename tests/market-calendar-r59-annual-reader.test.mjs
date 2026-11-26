@@ -10,27 +10,26 @@ const snapshot=earningsDisplaySnapshot({status:'READY_PRIVATE',scope:'PC_PRIVATE
  coveredDays,recordCount:3,priorityCount:1,events:[event('NVDA',true),event('ABBV'),event('ZM')]});
 const annual=validateFhsAnnualSnapshot({status:'READY_R3_PROVISIONAL',version:'ZGMINI-FHS-R3',asOf:start,sourceStoredAt:1793332803791,recordCount:2,grades:{NVDA:[1,31],ABBV:[3,90]}});
 const url='https://zgmini.kr/api/earnings-calendar-display?start='+start+'&end='+start;
-test('annual grades filter earnings rows and cannot be overridden by legacy core company',async()=>{
+test('old annual FHS object cannot give earnings stars or qualify for the three-star filter',async()=>{
  const res=earningsDisplayResponse(snapshot,url+'&importance=3',annual),html=await res.text();
  assert.equal(res.status,200);
- assert.equal(res.headers.get('x-display-count'),'1');
- assert.equal(res.headers.get('x-zgmini-fhs-r3-reader'),'ZGMINI-FHS-R3');
- assert.match(html,/ABBV/);
- assert.match(html,/재무건전성 별 3개/);
+ assert.equal(res.headers.get('x-display-count'),'0');
+ assert.equal(res.headers.get('x-zgmini-earnings-grade-reader'),'ZGMINI-ER1-97');
+ assert.equal(html,'');
  assert.doesNotMatch(html,/NVDA/);
 });
-test('annual ungraded rows remain visible without importance filter and show dash',async()=>{
+test('annual-graded and ungraded issuers all show hyphen before ER1 score publication',async()=>{
  const res=earningsDisplayResponse(snapshot,url,annual),html=await res.text();
  assert.equal(res.status,200);
  assert.equal(res.headers.get('x-display-count'),'3');
- assert.match(html,/재무건전성 미평가/);
- assert.match(html,/>—<\/div>/);
+ assert.equal((html.match(/aria-label="기업 실적 점수 없음">-<\/div>/g)??[]).length,3);
+ assert.doesNotMatch(html,/★/);
 });
-test('absence of annual snapshot preserves original public importance results and reader proof',async()=>{
+test('absence of ER1 score does not restore old core company three stars',async()=>{
  const res=earningsDisplayResponse(snapshot,url+'&importance=3'),html=await res.text();
  assert.equal(res.status,200);
- assert.equal(res.headers.get('x-display-count'),'1');
- assert.match(html,/NVDA/);
+ assert.equal(res.headers.get('x-display-count'),'0');
+ assert.doesNotMatch(html,/NVDA/);
  assert.doesNotMatch(html,/ABBV/);
- assert.equal(res.headers.get('x-zgmini-fhs-r3-reader'),'ZGMINI-FHS-R3');
+ assert.equal(res.headers.get('x-zgmini-earnings-grade-reader'),'ZGMINI-ER1-97');
 });

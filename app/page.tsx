@@ -1,7 +1,6 @@
 "use client";
 import {CompositeMarketSection,ScenarioSection} from "./dashboard-ui";
 import DeferredDashboardCharts from '../components/deferred-dashboard-charts';
-import {OutbreakSummary} from './outbreak-events';
 
 
 import { lazy, Suspense, useEffect, useMemo, useRef, useState, type CSSProperties, type PointerEvent as ReactPointerEvent } from "react";
@@ -961,7 +960,6 @@ export default function Home() {
         {view==='dashboard'&&<>
           <CompositeMarketSection demo={false}/>
           <div className="zg-dashboard-secondary">
-            <OutbreakSummary onOpen={id=>{window.location.assign('/outbreak/?event='+encodeURIComponent(id));}}/>
             <DeferredDashboardCharts/>
           </div>
         </>}

@@ -6,16 +6,34 @@ import path from 'node:path';
 import {execFileSync} from 'node:child_process';
 import {pathToFileURL} from 'node:url';
 import {createHash} from 'node:crypto';
-import {rankR43Issuers,selectR43ReviewedExceptions,r43ImportanceIndex} from '../../lib/market-calendar-r43-issuer-rank.mjs';
+import {rankR43Issuers,selectR43ReviewedExceptions,r43ImportanceIndex,r43IssuerKey} from '../../lib/market-calendar-r43-issuer-rank.mjs';
 import {makeR43MarketImportanceDisplay,r43MarketImportanceDisplayIndex,
  R43_MARKET_IMPORTANCE_PUBLIC_KEY} from '../../lib/market-calendar-r43-display-overlay.mjs';
 
 const DEFAULT_INPUT='local-market-calendar-r43-input.json';
+const APPROVED_ROSTER='local-market-calendar-r43-reviewed-issuers.json';
+const PRECOMPUTED_RV_SOURCE='local-market-calendar-r43-precomputed-rv-stored.json';
+const PRECOMPUTED_RV_MODE='APPROVED_PC_STORED_PRECOMPUTED_RV_R1';
 const READER_HEADER='ZGMINI-R43-MARKET-IMPORTANCE';
 const DAY=/^20\d\d-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])$/;
+const TICKER=/^[A-Z0-9][A-Z0-9.\-]{0,11}$/;
 const sha=x=>createHash('sha256').update(x).digest('hex');
 const fail=code=>{throw Error(code)};
 function file(p){try{return fs.statSync(p).isFile()}catch{return false}}
+function reviewedTradingSessionsValid(sessions,asOf){
+ if(!Array.isArray(sessions)||sessions.length!==21||sessions[0]!==asOf||
+  new Set(sessions).size!==21)return false;
+ return sessions.every((day,i)=>{
+  if(typeof day!=='string'||!DAY.test(day))return false;
+  const millis=Date.parse(day+'T00:00:00Z');
+  if(!Number.isFinite(millis)||new Date(millis).toISOString().slice(0,10)!==day)return false;
+  const weekday=new Date(millis).getUTCDay();
+  if(weekday===0||weekday===6)return false;
+  if(!i)return true;
+  const gap=Date.parse(sessions[i-1]+'T00:00:00Z')-millis;
+  return gap>0&&gap<=5*86400000;
+ });
+}
 function checkedJson(p,maxBytes){
  if(!file(p))fail('R43_MANUAL_INPUT_MISSING_STOP');
  const size=fs.statSync(p).size;
@@ -24,7 +42,92 @@ function checkedJson(p,maxBytes){
  catch{fail('R43_MANUAL_JSON_INVALID_STOP')}
 }
 
-export function prepareR43ManualSnapshot(input,{now=Date.now()}={}){
+function verifiedPrecomputedRV(input,universe,proof){
+ const evidence=universe?.precomputedRelativeVolume;
+ if(input?.relativeVolumeSourceMode!==PRECOMPUTED_RV_MODE||
+  evidence?.mode!==PRECOMPUTED_RV_MODE||
+  evidence.reviewed!==true||
+  typeof evidence.sourceReference!=='string'||
+  evidence.sourceReference.trim().length<12||evidence.sourceReference.length>512||
+  typeof evidence.rowsSha256!=='string'||!/^[a-f0-9]{64}$/.test(evidence.rowsSha256)||
+  evidence.asOf!==input.asOf||
+  proof?.version!==1||proof.method!==PRECOMPUTED_RV_MODE||
+  proof.provenance!=='APPROVED_PC_STORED_DATA'||
+  proof.asOf!==input.asOf||
+  proof.sourceReference!==evidence.sourceReference||
+  proof.marketCapApiUsed!==false||
+  proof.permissionForDerivedScores!==true||
+  proof.rightsReviewReference!==input.rightsReviewReference||
+  !Array.isArray(proof.rows)||
+  proof.rows.length!==input.rows.length)return false;
+ // A separately persisted, reviewed PC source must match the exact scored rows.
+ // A self-declared source flag or hash on the input alone is never sufficient.
+ const actual=sha(JSON.stringify(proof.rows));
+ return actual===evidence.rowsSha256&&
+  actual===sha(JSON.stringify(input.rows));
+}
+
+function dynamicExpectedFromReviewedRoster(input,approvedUniverse,{precomputedRVSource=null}={}){
+ const supplied=Object.hasOwn(input,'expectedEligibleIssuers')||
+   Object.hasOwn(input,'approvedUniverseSha256');
+ if(!supplied)return null; // Preserve the explicitly pre-existing 2634 legacy path.
+ if(!Number.isInteger(input.expectedEligibleIssuers)||
+  input.expectedEligibleIssuers<2500||input.expectedEligibleIssuers>3500||
+  typeof input.approvedUniverseSha256!=='string'||
+  !/^[a-f0-9]{64}$/.test(input.approvedUniverseSha256)||
+  !approvedUniverse||typeof approvedUniverse!=='object'||
+  input.approvedUniverseSha256!==sha(JSON.stringify(approvedUniverse)))
+  fail('R43_MANUAL_APPROVED_UNIVERSE_ATTESTATION_STOP');
+ const u=approvedUniverse;
+ if(u.version!==1||u.method!=='R57_REVIEWED_ISSUER_MEMBERSHIP_R1'||
+  u.universeReviewed!==true||u.marketCapApiUsed!==false||
+  u.permissionForDerivedScores!==true||
+  u.rightsReviewReference!==input.rightsReviewReference||
+  !DAY.test(u.reviewedAsOf)||u.reviewedAsOf>input.asOf||
+  Date.parse(input.asOf+'T00:00:00Z')-Date.parse(u.reviewedAsOf+'T00:00:00Z')>90*86400000||
+  u.expectedEligibleIssuers!==input.expectedEligibleIssuers||
+  !(input.relativeVolumeSourceMode===undefined&&
+      u.marketSessionsReviewed===true&&
+      reviewedTradingSessionsValid(u.reviewedTradingSessions,input.asOf) ||
+    verifiedPrecomputedRV(input,u,precomputedRVSource))||
+  !Array.isArray(u.members)||u.members.length<2500||u.members.length>25000||
+  !Array.isArray(input.rows)||input.rows.length!==u.members.length)
+  fail('R43_MANUAL_APPROVED_UNIVERSE_CONTRACT_STOP');
+ const source=new Map(),issuers=new Set();
+ for(const member of u.members){
+  if(!member||typeof member.ticker!=='string'||!TICKER.test(member.ticker)||
+   source.has(member.ticker)||typeof member.eligible!=='boolean')
+   fail('R43_MANUAL_APPROVED_UNIVERSE_MEMBERS_STOP');
+  let issuer;
+  try{issuer=r43IssuerKey(member.ticker,member.issuerId??null)}
+  catch{fail('R43_MANUAL_APPROVED_UNIVERSE_MEMBERS_STOP')}
+  if(member.eligible){
+   if(typeof member.issuerId!=='string'||!member.issuerId.trim())
+    fail('R43_MANUAL_APPROVED_UNIVERSE_MEMBERS_STOP');
+   issuers.add(issuer);
+  }
+  source.set(member.ticker,member);
+ }
+ if(issuers.size<Math.ceil(u.expectedEligibleIssuers*.98)||
+  issuers.size>u.expectedEligibleIssuers*1.05)
+  fail('R43_MANUAL_APPROVED_UNIVERSE_SCOPE_STOP');
+ const seen=new Set();
+ for(const row of input.rows){
+  const member=source.get(row?.ticker);
+  if(!member||seen.has(row.ticker)||row.eligible!==member.eligible||
+   (row.issuerId??null)!==(member.issuerId??null))
+   fail('R43_MANUAL_APPROVED_UNIVERSE_ROWS_STOP');
+  for(const key of ['dividendYield','eps','epsGrowthPct']){
+   const expected=u.fundamentalsVerified===true?member[key]??null:null;
+   if((row[key]??null)!==expected)
+    fail('R43_MANUAL_APPROVED_UNIVERSE_ROWS_STOP');
+  }
+  seen.add(row.ticker);
+ }
+ return u.expectedEligibleIssuers; // Independent reviewed roster, never input alone.
+}
+
+export function prepareR43ManualSnapshot(input,{now=Date.now(),approvedUniverse=null,precomputedRVSource=null}={}){
  if(input?.version!==1||input.provenance!=='APPROVED_PC_STORED_DATA'||
   input.marketCapApiUsed!==false||input.permissionForDerivedScores!==true||
   typeof input.rightsReviewReference!=='string'||
@@ -32,8 +135,15 @@ export function prepareR43ManualSnapshot(input,{now=Date.now()}={}){
   !DAY.test(input.asOf)||!Array.isArray(input.rows)||
   input.rows.length<100||input.rows.length>12000)
   fail('R43_MANUAL_SOURCE_RIGHTS_UNVERIFIED_STOP');
+ if(input.relativeVolumeSourceMode!==undefined&&
+  (input.relativeVolumeSourceMode!==PRECOMPUTED_RV_MODE||
+   !Object.hasOwn(input,'approvedUniverseSha256')||
+   !Object.hasOwn(input,'expectedEligibleIssuers')))
+  fail('R43_MANUAL_PRECOMPUTED_RV_ROSTER_REQUIRED_STOP');
+ const expectedEligibleIssuers=dynamicExpectedFromReviewedRoster(input,approvedUniverse,{precomputedRVSource});
  let base,ranked;
- try{base=rankR43Issuers(input.rows,{asOf:input.asOf})}
+ try{base=rankR43Issuers(input.rows,{asOf:input.asOf,
+  ...(expectedEligibleIssuers===null?{}:{expectedEligibleIssuers})})}
  catch{fail('R43_MANUAL_RANKING_FAILED_STOP')}
  if(base.status!=='READY_SHADOW')fail('R43_MANUAL_UNIVERSE_OR_DATE_STOP');
  try{ranked=selectR43ReviewedExceptions(base)}
@@ -67,7 +177,21 @@ export async function publishR43MarketImportanceOnce({
  const sourceFile=inputPath??path.join(pcHome,DEFAULT_INPUT);
  if(!path.isAbsolute(sourceFile))fail('R43_MANUAL_INPUT_PATH_STOP');
  const input=checkedJson(sourceFile,8_000_000);
- const snapshot=prepareR43ManualSnapshot(input,{now});
+ const dynamic=Object.hasOwn(input,'expectedEligibleIssuers')||
+  Object.hasOwn(input,'approvedUniverseSha256');
+ const rosterFile=path.join(pcHome,APPROVED_ROSTER);
+ if(dynamic){
+  try{if(!fs.lstatSync(rosterFile).isFile())fail('R43_MANUAL_APPROVED_UNIVERSE_FILE_STOP')}
+  catch{fail('R43_MANUAL_APPROVED_UNIVERSE_FILE_STOP')}
+ }
+ // The review roster comes from a fixed, separately approved PC file.
+ // Never follow an input-supplied roster path or trust its count alone.
+ const approvedUniverse=dynamic?checkedJson(rosterFile,8_000_000):null;
+ // Only the explicit annual precomputed-RV mode reads this second PC-local
+ // source snapshot; 21 daily raw files are never needed by this mode.
+ const precomputedRVSource=input.relativeVolumeSourceMode===PRECOMPUTED_RV_MODE?
+  checkedJson(path.join(pcHome,PRECOMPUTED_RV_SOURCE),8_000_000):null;
+ const snapshot=prepareR43ManualSnapshot(input,{now,approvedUniverse,precomputedRVSource});
  const body=JSON.stringify(snapshot),digest=sha(body);
  if(Buffer.byteLength(body,'utf8')>1_750_000)fail('R43_MANUAL_PUBLIC_PAYLOAD_SIZE_STOP');
  const config=checkedJson(path.join(pcHome,'config.json'),64_000);

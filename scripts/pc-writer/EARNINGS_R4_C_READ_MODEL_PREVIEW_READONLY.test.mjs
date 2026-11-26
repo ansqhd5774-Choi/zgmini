@@ -2,15 +2,24 @@
 import assert from 'node:assert/strict';
 import {test} from 'node:test';
 import {DatabaseSync} from 'node:sqlite';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import {fileURLToPath} from 'node:url';
+import {execFileSync} from 'node:child_process';
+import {createHash} from 'node:crypto';
 import {normalizeSeries,buildPlans,insertPlans} from './EARNINGS_R3C_BLS_STORE_ONCE.mjs';
-import {buildPreview,reportLines,SCHEMA_VERSION} from './EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs';
+import {buildPreview,buildServiceSourcePreview,parseR4PreviewMode,reportLines,SCHEMA_VERSION}
+  from './EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs';
+import {validateEarningsCompanionPayload,earningsCompanionFreshness} from '../../worker/earnings-companion-c-r4.mjs';
+import {buildEarningsCostIndicatorView} from '../../app/earnings-recession/earnings-cost-indicator-list.mjs';
 
 const RETRIEVED='2026-10-26T17:02:53.996Z';
 const GENERATED='2026-10-27T02:35:01.000Z';
 const hash='b'.repeat(64);
 
-function testDb() {
-  const db=new DatabaseSync(':memory:');
+function testDb(filename=':memory:') {
+  const db=new DatabaseSync(filename);
   db.exec(`CREATE TABLE api_history_chunks_v1 (
     provider TEXT NOT NULL,dataset TEXT NOT NULL,chunk_sha256 TEXT NOT NULL,
     first_observation_date TEXT,last_observation_date TEXT,row_count INTEGER NOT NULL,
@@ -28,7 +37,7 @@ function testDb() {
 }
 
 function response({omit=[],sep2025=null,sep2026=null,zeroLatest=false,
-  zeroBase=false,ulcLatest='1.4'}={}) {
+  zeroBase=false,ulcLatest='1.4',services=false,serviceBaseMissing=false}={}) {
   const monthly=[];
   for(let year=2025;year<=2026;year++) {
     for(let month=1;month<=(year===2025?12:9);month++) {
@@ -54,6 +63,10 @@ function response({omit=[],sep2025=null,sep2026=null,zeroLatest=false,
     {seriesID:'WPSFD4',data:monthly},
     {seriesID:'WPSFD41',data:monthly.map(x=>({...x,value:String(Number(x.value)*2)}))},
     {seriesID:'PRS85006111',data:quarterly},
+    ...(services?[{seriesID:'WPSFD42',data:monthly
+      .filter(x=>!serviceBaseMissing||!(x.year==='2025'&&x.period==='M09'))
+      .map(x=>({...x,value:x.year==='2025'&&x.period==='M09'?'150.273':
+        x.year==='2026'&&x.period==='M09'?'157.666':x.value}))}]:[]),
   ]}};
 }
 
@@ -64,6 +77,203 @@ function seeded(options={}) {
 }
 
 function withDb(options,fn) { const db=seeded(options);try{return fn(db);}finally{db.close();} }
+
+function withServiceDb(options,fn) {
+  const db=seeded(options);
+  const service=response({...options,services:true}).Results.series.at(-1);
+  insertPlans(db,buildPlans(normalizeSeries({Results:{series:[service]}},['WPSFD42']),
+    '2026-10-26T18:00:00.000Z','c'.repeat(64)));
+  try{return fn(db);}finally{db.close();}
+}
+
+test('separate service D1 checkpoint uses service first_seen and never modifies baseline identity',()=>{
+  const baseline=(()=>{const db=seeded();try{return buildPreview(db,{generatedAt:GENERATED}).payload;}finally{db.close();}})();
+  withServiceDb({},db=>{
+    const core=buildPreview(db,{generatedAt:GENERATED,includeServices:false});
+    const service=buildServiceSourcePreview(db,{generatedAt:GENERATED});
+    assert.deepEqual(core.payload,baseline);
+    assert.equal(core.diagnostics.snapshotsChecked,3);
+    assert.equal(service.payload.rows.length,2);
+    assert.deepEqual(service.payload.rows.map(row=>row.seriesId),['WPSFD42','WPSFD42']);
+    assert.equal(service.payload.sourceStoredAt,Date.parse('2026-10-26T18:00:00.000Z'));
+    assert.notEqual(service.payload.sourceStoredAt,core.payload.sourceStoredAt);
+    assert.match(service.payload.sourceVersion,/^[a-f0-9]{64}$/);
+    assert.notEqual(service.payload.sourceVersion,core.payload.sourceVersion);
+    assert.deepEqual(service.payload.observedThroughBySeries,{WPSFD42:'2026-09'});
+    assert.equal(service.diagnostics.snapshotsChecked,1);
+    assert.equal(service.diagnostics.sourcePartition,'WPSFD42_ONLY_NO_BASE_REWRITE');
+    assert.equal(validateEarningsCompanionPayload(service.payload,{now:Date.parse(GENERATED)}),
+      service.payload);
+  });
+  withDb({},db=>assert.throws(()=>buildServiceSourcePreview(db,{generatedAt:GENERATED}),
+    /R4_SERVICE_SOURCE_NOT_STORED/));
+});
+
+test('actual service-only child process reads isolated SQLite without changing its bytes',()=>{
+  const fixture=fs.mkdtempSync(path.join(os.tmpdir(),'zgmini-w05-service-cli-'));
+  const home=path.join(fixture,'home'),storage=path.join(home,'storage');
+  const scripts=path.join(fixture,'scripts'),temp=path.join(fixture,'temp');
+  fs.mkdirSync(storage,{recursive:true});
+  fs.mkdirSync(scripts,{recursive:true});
+  fs.mkdirSync(temp,{recursive:true});
+  const here=path.dirname(fileURLToPath(import.meta.url));
+  for(const name of ['EARNINGS_R3D_STORED_BLS_CALC_READONLY.mjs',
+    'EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs'])
+    fs.copyFileSync(path.join(here,name),path.join(scripts,name));
+  const dbPath=path.join(storage,'core.sqlite');
+  const hashFile=()=>createHash('sha256').update(fs.readFileSync(dbPath)).digest('hex');
+  try{
+    const db=testDb(dbPath);
+    try{
+      const service=response({services:true}).Results.series.at(-1);
+      insertPlans(db,buildPlans(normalizeSeries({Results:{series:[service]}},['WPSFD42']),
+        '2026-10-26T18:00:00.000Z','c'.repeat(64)));
+    }finally{db.close();}
+    const originalHash=hashFile();
+    const stdout=execFileSync(process.execPath,
+      [path.join(scripts,'EARNINGS_R4_C_READ_MODEL_PREVIEW_READONLY.mjs'),'--service-only'],
+      {env:{...process.env,ZGMINI_PC_HOME:home,TMPDIR:temp,TEMP:temp,TMP:temp},cwd:fixture,
+        encoding:'utf8',timeout:15_000,maxBuffer:100_000});
+    assert.match(stdout,/R4_LOCAL_PREVIEW=FINISHED/);
+    assert.equal(hashFile(),originalHash,'original stored SQLite bytes remain unchanged');
+    const jsonName=stdout.match(/^JSON_CREATED=(.+)$/m)?.[1]?.trim();
+    const txtName=stdout.match(/^TXT_CREATED=(.+)$/m)?.[1]?.trim();
+    assert.match(jsonName??'',/^EARNINGS_R4_C_SERVICE_ONLY_READ_MODEL_PREVIEW_RESULT_.*\.json$/);
+    assert.match(txtName??'',/^EARNINGS_R4_C_SERVICE_ONLY_READ_MODEL_PREVIEW_RESULT_.*\.txt$/);
+    const payload=JSON.parse(fs.readFileSync(path.join(temp,jsonName),'utf8'));
+    const txt=fs.readFileSync(path.join(temp,txtName),'utf8');
+    assert.equal(payload.status,'READY');
+    assert.equal(payload.rows.length,2);
+    assert.deepEqual(payload.rows.map(row=>row.seriesId),['WPSFD42','WPSFD42']);
+    assert.deepEqual(payload.observedThroughBySeries,{WPSFD42:'2026-09'});
+    assert.match(payload.sourceVersion,/^[a-f0-9]{64}$/);
+    assert.match(txt,/BLS_WPSFD42_SNAPSHOT_SHA256=[a-f0-9]{64}/);
+    assert.match(txt,/SQLITE_WRITES=0/);
+    assert.match(txt,/API_REQUESTS=0/);
+    assert.match(txt,/D1_WRITES=0/);
+    assert.equal(fs.readdirSync(temp).filter(name=>/RESULT_/.test(name)).length,2);
+    assert.equal(fs.readdirSync(scripts).filter(name=>/RESULT_/.test(name)).length,0,
+      'read-only source checkout cannot receive diagnostic JSON/TXT');
+  }finally{fs.rmSync(fixture,{recursive:true,force:true});}
+});
+
+test('service-only CLI mode is explicit and defaults to existing full preview',()=>{
+  assert.equal(parseR4PreviewMode([]),'BASE_AND_OPTIONAL_SERVICE');
+  assert.equal(parseR4PreviewMode(['--service-only']),'SERVICE_ONLY');
+  for(const args of [['--apply'],['--service-only','--apply'],['--dry-run'],['--service-only','--service-only']]){
+    assert.throws(()=>parseR4PreviewMode(args),/R4_PREVIEW_MODE_INVALID/);
+  }
+});
+
+test('service-only saved WPSFD42 remains calculable when base BLS cohort is absent',()=>{
+  withServiceDb({},db=>{
+    db.prepare("DELETE FROM api_history_snapshots_v1 WHERE provider='BLS' AND dataset IN ('WPSFD4','WPSFD41','PRS85006111')").run();
+    assert.throws(()=>buildPreview(db,{generatedAt:GENERATED}),
+      /BLS_DIRECT_SNAPSHOTS_MISSING/);
+    const {payload,diagnostics}=buildServiceSourcePreview(db,{generatedAt:GENERATED});
+    assert.equal(payload.status,'READY');
+    assert.deepEqual(payload.rows.map(row=>row.seriesId),['WPSFD42','WPSFD42']);
+    assert.equal(payload.rows[0].value,100*(157.666/150.273-1));
+    assert.equal(payload.rows[1].value,157.666);
+    assert.equal(diagnostics.r3dStatus,'NOT_APPLICABLE_INDEPENDENT_SERVICE');
+    assert.equal(diagnostics.snapshotsChecked,1);
+    assert.equal(validateEarningsCompanionPayload(payload,{now:Date.parse(GENERATED)}),payload);
+  });
+});
+
+test('service-only preview ignores corrupted unrelated baseline lineage',()=>{
+  withServiceDb({},db=>{
+    db.prepare("UPDATE api_history_snapshots_v1 SET provenance_json='{}' WHERE provider='BLS' AND dataset='WPSFD4'").run();
+    assert.throws(()=>buildPreview(db,{generatedAt:GENERATED}),
+      /BLS_SOURCE_PROVENANCE_INVALID/);
+    const {payload}=buildServiceSourcePreview(db,{generatedAt:GENERATED});
+    assert.equal(payload.status,'READY');
+    assert.equal(payload.rows.length,2);
+    assert.equal(payload.observedThroughBySeries.WPSFD42,'2026-09');
+  });
+});
+
+test('optional WPSFD42 adds two verified service indicators without changing five existing rows',()=>{
+  const baseline=(()=>{const db=seeded();try{return buildPreview(db,{generatedAt:GENERATED}).payload;}finally{db.close();}})();
+  withServiceDb({},db=>{
+    const {payload,diagnostics}=buildPreview(db,{generatedAt:GENERATED});
+    assert.equal(payload.status,'READY');
+    assert.equal(payload.coverage.configured,7);
+    assert.equal(payload.coverage.ready,7);
+    assert.deepEqual(payload.rows.slice(0,5),baseline.rows);
+    assert.equal(payload.rows[5].indicatorId,'bls_ppi_services_yoy_sa');
+    assert.equal(payload.rows[5].kind,'DERIVED');
+    assert.equal(payload.rows[5].value,100*(157.666/150.273-1));
+    assert.equal(payload.rows[6].indicatorId,'bls_ppi_services_index');
+    assert.equal(payload.rows[6].kind,'RAW');
+    assert.equal(payload.rows[6].value,157.666);
+    assert.equal(payload.observedThroughBySeries.WPSFD42,'2026-09');
+    assert.equal(diagnostics.snapshotsChecked,4);
+    assert.equal(diagnostics.bySeries.length,4);
+    assert.notEqual(payload.sourceVersion,baseline.sourceVersion);
+  });
+});
+
+test('end-to-end offline seven rows validate through C worker schema and existing page registry',()=>{
+  withServiceDb({},db=>{
+    const {payload}=buildPreview(db,{generatedAt:GENERATED});
+    assert.equal(validateEarningsCompanionPayload(payload,{now:Date.parse(GENERATED)}),payload);
+    // The raw PC preview has no published freshness annotations: it must not
+    // expose the optional service UI before the verified GET projection.
+    const previewView=buildEarningsCostIndicatorView(payload);
+    assert.equal(previewView.indicators.length,5);
+    // Mirror the public GET's actual worker freshness calculation, not a
+    // fabricated READY flag or a hard-coded value.
+    const now=Date.parse(GENERATED);
+    const publishedRows=payload.rows.map(row=>({...row,
+      freshness:earningsCompanionFreshness(row,{now})}));
+    assert.ok(publishedRows.slice(5).every(row=>row.freshness.status==='FRESH'));
+    const view=buildEarningsCostIndicatorView({...payload,rows:publishedRows});
+    assert.equal(view.valid,true);
+    assert.equal(view.rows.length,7);
+    assert.equal(view.indicators.length,7);
+    assert.deepEqual(view.indicators.slice(5).map(x=>x.name),
+      ['서비스 생산자물가 상승률','서비스 생산자물가 지수']);
+    assert.deepEqual(view.rows.slice(5).map(x=>x.seriesId),['WPSFD42','WPSFD42']);
+  });
+});
+
+test('missing service year-ago observation leaves its YoY null, not invented',()=>{
+  withServiceDb({serviceBaseMissing:true},db=>{
+    const {payload}=buildPreview(db,{generatedAt:GENERATED});
+    assert.equal(payload.status,'PARTIAL');
+    assert.equal(payload.coverage.ready,6);
+    assert.equal(payload.rows[5].status,'PARTIAL');
+    assert.equal(payload.rows[5].value,null);
+    assert.equal(payload.rows[6].value,157.666);
+  });
+});
+
+test('service source forgery is rejected independently of the original BLS three-series cohort',()=>{
+  withServiceDb({},db=>{
+    const s=db.prepare(`SELECT provenance_json FROM api_history_snapshots_v1
+      WHERE provider='BLS' AND dataset='WPSFD42'`).get();
+    const corrupted=JSON.parse(s.provenance_json);
+    corrupted.seriesID='WPSFD41';
+    db.prepare(`UPDATE api_history_snapshots_v1 SET provenance_json=?
+      WHERE provider='BLS' AND dataset='WPSFD42'`).run(JSON.stringify(corrupted));
+    assert.throws(()=>buildPreview(db,{generatedAt:GENERATED}),
+      /BLS_SOURCE_PROVENANCE_INVALID/);
+  });
+});
+
+test('new independent service capture adds rows even when existing core observations remain unchanged',()=>{
+  withDb({},db=>{
+    const service=response({services:true}).Results.series.at(-1);
+    insertPlans(db,buildPlans(normalizeSeries({Results:{series:[service]}},['WPSFD42']),
+      '2026-10-27T00:00:00.000Z','d'.repeat(64)));
+    const {payload}=buildPreview(db,{generatedAt:GENERATED});
+    assert.equal(payload.coverage.configured,7);
+    assert.equal(payload.observedThroughBySeries.WPSFD42,'2026-09');
+    assert.equal(payload.rows[5].retrievedAt,'2026-10-27T00:00:00.000Z');
+    assert.equal(payload.rows[0].retrievedAt,RETRIEVED);
+  });
+});
 
 test('R4 builds five source-backed rows; two PPI trends have only nine actual YoY points',()=>{
   withDb({},db=>{
@@ -197,7 +407,7 @@ test('inconsistent first_seen_at fails; earliest verified first_seen_at is conse
   });
 });
 
-test('a newer incomplete cohort is previewed as partial, not ready',()=>{
+test('a newer incomplete cohort retains verified READY rows while diagnostics flag the gap',()=>{
   withDb({},db=>{
     // Create a genuinely different single-series snapshot after the full cohort.
     const changed=response({sep2026:130});
@@ -218,8 +428,67 @@ test('a newer incomplete cohort is previewed as partial, not ready',()=>{
         'EARNINGS_COMPANION_R3C_BLS_DIRECT_V1',single.rows.length,
         single.rows.at(-1).observationDate,JSON.stringify([single.chunkHash]),single.provenanceJson);
     const {payload,diagnostics}=buildPreview(db,{generatedAt:GENERATED});
-    assert.equal(payload.status,'PARTIAL');
+    assert.equal(payload.status,'READY');
     assert.equal(diagnostics.newerIncomplete,true);
     assert.equal(diagnostics.cohortRetrievedAt,RETRIEVED);
+  });
+});
+
+test('service conflicting revisions at equal retrieval time stop before choosing any score',()=>{
+  withServiceDb({},db=>{
+    const old=response({services:true}).Results.series.at(-1);
+    const amended={...old,data:old.data.map(item=>
+      item.year==='2026'&&item.period==='M09'
+        ?{...item,value:'157.667'}:item)};
+    const plans=buildPlans(
+      normalizeSeries({Results:{series:[amended]}},['WPSFD42']),
+      '2026-10-26T18:00:00.000Z','e'.repeat(64));
+    assert.deepEqual(insertPlans(db,plans),
+      {insertedChunks:1,insertedSnapshots:1,verified:1});
+    assert.throws(()=>buildServiceSourcePreview(db,{generatedAt:GENERATED}),
+      /R4_SERVICE_REVISION_ORDER_AMBIGUOUS/);
+  });
+});
+
+test('older service revision corruption invalidates the selected newer stored preview',()=>{
+  withServiceDb({},db=>{
+    const old=db.prepare(`SELECT chunk_hashes_json FROM api_history_snapshots_v1
+      WHERE provider='BLS' AND dataset='WPSFD42'`).get();
+    const olderChunk=JSON.parse(old.chunk_hashes_json)[0];
+    const amended=response({services:true}).Results.series.at(-1);
+    amended.data=amended.data.map(item=>
+      item.year==='2026'&&item.period==='M09'
+        ?{...item,value:'157.668'}:item);
+    const newer=buildPlans(
+      normalizeSeries({Results:{series:[amended]}},['WPSFD42']),
+      '2026-10-27T00:00:00.000Z','e'.repeat(64));
+    insertPlans(db,newer);
+    const before=buildServiceSourcePreview(db,{generatedAt:GENERATED});
+    assert.equal(before.payload.rows[1].value,157.668);
+    assert.equal(before.diagnostics.snapshotsChecked,2);
+    db.prepare(`UPDATE api_history_chunks_v1 SET payload_json='[]'
+      WHERE provider='BLS' AND dataset='WPSFD42' AND chunk_sha256=?`)
+      .run(olderChunk);
+    assert.throws(()=>buildServiceSourcePreview(db,{generatedAt:GENERATED}),
+      /CHUNK_SHA256_MISMATCH/);
+  });
+});
+
+test('older service snapshot provenance tampering rejects a newer valid stored source',()=>{
+  withServiceDb({},db=>{
+    const original=db.prepare(`SELECT snapshot_sha256,provenance_json
+      FROM api_history_snapshots_v1 WHERE provider='BLS' AND dataset='WPSFD42'`).get();
+    const amended=response({services:true}).Results.series.at(-1);
+    amended.data=amended.data.map(item=>item.year==='2026'&&item.period==='M09'
+      ?{...item,value:'157.669'}:item);
+    insertPlans(db,buildPlans(
+      normalizeSeries({Results:{series:[amended]}},['WPSFD42']),
+      '2026-10-27T00:00:00.000Z','e'.repeat(64)));
+    const forged={...JSON.parse(original.provenance_json),seriesID:'WPSFD4'};
+    db.prepare(`UPDATE api_history_snapshots_v1 SET provenance_json=?
+      WHERE provider='BLS' AND dataset='WPSFD42' AND snapshot_sha256=?`)
+      .run(JSON.stringify(forged),original.snapshot_sha256);
+    assert.throws(()=>buildServiceSourcePreview(db,{generatedAt:GENERATED}),
+      /BLS_SOURCE_PROVENANCE_INVALID/);
   });
 });

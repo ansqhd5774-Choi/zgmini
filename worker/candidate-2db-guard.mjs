@@ -1,4 +1,4 @@
-import {readOnlyDatabase,candidateRequest} from './candidate-guard.mjs';
+import {readOnlyDatabase,candidateRequest,retiredSignInResponse} from './candidate-guard.mjs';
 export function readOnlyDualEnv(native){
  const core=native.DB_CORE?readOnlyDatabase(native.DB_CORE):undefined;
  const history=native.DB_HISTORY?readOnlyDatabase(native.DB_HISTORY):undefined;
@@ -6,6 +6,7 @@ export function readOnlyDualEnv(native){
 }
 export function candidate2dbWorker(handler){return Object.freeze({async fetch(request,native,ctx){
  let canonical;try{const url=new URL(request.url);const path=decodeURIComponent(url.pathname);if(path.includes(String.fromCharCode(92))||/%[0-9a-f]{2}/i.test(path))return new Response('CANDIDATE_WRITE_DISABLED',{status:403});url.pathname=path.replace(/\/+/g,'/');canonical=new Request(url,request);}catch{return new Response('CANDIDATE_WRITE_DISABLED',{status:403});}
+ const retired=retiredSignInResponse(canonical);if(retired)return retired;
  const safe=candidateRequest(canonical);if(!safe)return new Response('CANDIDATE_WRITE_DISABLED',{status:403});
  return handler.fetch(safe,readOnlyDualEnv(native),ctx);
 }});}

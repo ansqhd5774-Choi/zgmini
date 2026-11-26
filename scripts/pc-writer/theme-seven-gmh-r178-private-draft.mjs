@@ -1,0 +1,148 @@
+// W03 stage 13: SHA-attested saved GMH 7x252 -> R178-shaped PRIVATE draft.
+// No provider/SQLite/D1/public API calls, publishing approval or rights change.
+// Reuse existing 7-theme immutable-seed parity and existing R178 reader schema.
+import {createHash} from 'node:crypto';
+import {attestSavedGmhSevenCollectionTime}
+ from './theme-gmh-seven-saved-input-r1.mjs';
+import {prepareGmhSevenPrivateSeed} from './theme-seven-gmh-private-seed-r1.mjs';
+import {THEME_ETF_ROLLING_VERSION,validRollingPublic}
+ from '../../worker/theme-etf-rolling-public.mjs';
+
+const HEX=/^[a-f0-9]{64}$/;
+const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
+const fail=code=>{throw Object.assign(Error('W03_R178_'+code),{
+ code:'W03_R178_'+code});};
+const need=(yes,code)=>{if(!yes)fail(code);};
+
+// SHA expectations must originate from a separately verified PC manifest and
+// immutable private-artifact receipt, not from this object or the user's GET.
+export async function prepareGmhSevenR178PrivateDraft({
+ privateArtifactBytes,privateArtifactSha256,expectedManifestSha256,
+ legacySeed,sourceStoredAt,now=Date.now()
+}={}){
+ need(Buffer.isBuffer(privateArtifactBytes)&&
+  privateArtifactBytes.length>0&&privateArtifactBytes.length<=1_000_000&&
+  HEX.test(privateArtifactSha256??'')&&
+  HEX.test(expectedManifestSha256??'')&&
+  sha(privateArtifactBytes)===privateArtifactSha256,
+  'PRIVATE_ARTIFACT_SHA_MISMATCH');
+ const text=privateArtifactBytes.toString('utf8');
+ need(!text.includes('\0')&&Buffer.from(text,'utf8').equals(privateArtifactBytes),
+  'PRIVATE_ARTIFACT_ENCODING');
+ let candidate;
+ try{candidate=JSON.parse(text);}catch{fail('PRIVATE_ARTIFACT_JSON');}
+ need(candidate?.rawManifestSha256===expectedManifestSha256,
+  'MANIFEST_LINEAGE_MISMATCH');
+ const checked=prepareGmhSevenPrivateSeed(candidate,{
+  legacySeed,sourceStoredAt,now});
+ const {draft,reconciliation}=checked;
+ // The existing R144 private-seed bridge accepts a 1e-5 historical
+ // reconciliation tolerance. R178's actual public reader allows only 1e-6.
+ // Stop here rather than reporting a projection that the unchanged reader
+ // would inevitably reject after operational approval.
+ for(let i=0;i<legacySeed.themes.length;i++){
+  const old=new Map(legacySeed.themes[i].history.map(p=>[p.date,p.score]));
+  for(const p of draft.themes[i].history){
+   if(old.has(p.date)&&Math.abs(old.get(p.date)-p.score)>0.000001)
+    fail('R178_READER_OVERLAP_MISMATCH');
+  }
+ }
+ // Source recency MUST remain the attested provider-storage timestamp.
+ // Neither this draft's creation time nor publication time refreshes it.
+ need(Number.isSafeInteger(now)&&Number.isFinite(Date.parse(sourceStoredAt))&&
+  Date.parse(sourceStoredAt)<=now,'SOURCE_STORED_AT_INVALID');
+ const baseHash=sha(Buffer.from(JSON.stringify(legacySeed.themes.map(t=>({
+  theme:t.theme,etfs:t.etfs,history:t.history
+ })))));
+ const rolling={
+  status:'CANDIDATE_GMH_ONLY_PRIVATE_NOT_APPROVED',
+  version:THEME_ETF_ROLLING_VERSION,
+  phase:'CONFIRMED',methodologyVersion:draft.methodologyVersion,
+  publicationAuthorized:false,
+  upstreamCommercialRightsVerified:false,
+  derivedLicenseVerified:false,sourcePriceReconciled:false,
+  individualStocksUsed:0,baseObservationDate:legacySeed.observationDate,
+  baseHash,coverage:{etfs:13,benchmark:'SPY',complete:true},
+  observationDate:draft.observationDate,
+  confirmedObservationDate:draft.observationDate,
+  sourceVersion:draft.sourceVersion,
+  sourceStoredAt,asOf:sourceStoredAt,
+  themes:draft.themes.map(t=>({
+   theme:t.theme,etfs:[...t.etfs],
+   score:t.latestScore,
+   history:t.history.map(p=>({date:p.date,score:p.score}))
+  })),
+  provisional:{points:[]},
+  lineage:{confirmedPrimaryCount:252,secondaryPendingCount:0,
+   latestCompletedSession:draft.observationDate,
+   primarySource:'GETMARKETHISTORY_1H_CLOSE',secondarySource:null}
+ };
+ need(await validRollingPublic(rolling,legacySeed,{now})===false,
+  'DRAFT_MUST_NOT_BECOME_PUBLIC_READY');
+ return Object.freeze({
+  status:'R178_GMH_ONLY_PRIVATE_DRAFT_NOT_PUBLISHED',
+  rolling,provenance:{
+   inputManifestSha256:expectedManifestSha256,
+   privateArtifactSha256,legacySeedHistorySha256:baseHash,
+   sourceStoredAtIsCallerSupplied:true,
+   sourceStoredAtAttestedByManifest:false,
+   rawFilesRehashedNow:false,providerOnlyGmh:true,
+   rightsVerified:false,publicationAuthorized:false,
+   d1CasVerified:false,r32NonRegressionVerified:false
+  },
+  reconciliation:{
+   legacyObservationDate:reconciliation.legacyObservationDate,
+   candidateObservationDate:reconciliation.candidateObservationDate,
+   overlapDates:reconciliation.overlapDates,
+   matchedScores:reconciliation.matchedScores,
+   mismatchedScores:reconciliation.mismatchedScores
+  },
+  providerCalls:0,sqliteOpened:false,sqliteWrites:0,d1Writes:0,
+  publicWrites:0,schedulerWrites:0
+ });
+}
+
+// Only this stronger path may claim the source time is bound to verified
+// provider GET receipts. The caller still must supply independently approved
+// manifest, checkpoint and private artifact SHA pins from existing PC evidence.
+export async function prepareGmhSevenR178AttestedDraft({
+ saved,privateArtifactBytes,privateArtifactSha256,
+ expectedManifestSha256,expectedCheckpointSha256,
+ legacySeed,now=Date.now()
+}={}){
+ need(saved&&saved.manifestSha256===expectedManifestSha256&&
+  saved.checkpointSha256===expectedCheckpointSha256&&
+  HEX.test(expectedCheckpointSha256??'')&&
+  Buffer.isBuffer(privateArtifactBytes)&&
+  HEX.test(privateArtifactSha256??'')&&
+  sha(privateArtifactBytes)===privateArtifactSha256,
+  'APPROVED_SOURCE_PINS_MISMATCH');
+ let observationDate;
+ try{observationDate=JSON.parse(privateArtifactBytes.toString('utf8'))
+  .observationDate;}
+ catch{fail('PRIVATE_ARTIFACT_JSON');}
+ const collected=attestSavedGmhSevenCollectionTime({
+  ...saved,observationDate,now
+ });
+ need(collected.rawManifestSha256===expectedManifestSha256&&
+  collected.checkpointSha256===expectedCheckpointSha256,
+  'COLLECTION_LINEAGE_MISMATCH');
+ const projected=await prepareGmhSevenR178PrivateDraft({
+  privateArtifactBytes,privateArtifactSha256,expectedManifestSha256,
+  legacySeed,sourceStoredAt:collected.sourceStoredAt,now
+ });
+ return Object.freeze({
+  ...projected,
+  provenance:Object.freeze({
+   ...projected.provenance,
+   checkpointSha256:expectedCheckpointSha256,
+   sourceStoredAtIsCallerSupplied:false,
+   sourceStoredAtAttestedByManifest:true,
+   sourceTimestampBasis:collected.sourceTimestampBasis,
+   sourceTimestampIsFileCommitTime:false,
+   rawFilesRehashedNow:collected.rawFilesRehashedInMemory,
+   verifiedSymbols:collected.verifiedSymbols,
+   rawPagesVerified:collected.checkedRawPages
+  })
+ });
+}

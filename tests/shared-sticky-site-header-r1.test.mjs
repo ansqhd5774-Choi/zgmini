@@ -14,7 +14,7 @@ test("dashboard and eight analytical details share one sticky navigational heade
  assert.match(shared,/<CollectionHealthIndicator\/>/);
  assert.match(shared,/<nav aria-label="주 메뉴">/);
  assert.match(shared,/href="\/"/);
- assert.match(shared,/href="\/outbreak\/"/);
+ assert.doesNotMatch(shared,/href="\/outbreak\/"/);
  assert.match(shared,/aria-label="ZGmini 대시보드로 이동"/);
  assert.match(home,/<SiteHeader accountTools=\{/);
  assert.doesNotMatch(home,/<header className="zg-header text-white"/);
@@ -27,7 +27,7 @@ test("dashboard and eight analytical details share one sticky navigational heade
  }
 });
 
-test("outbreak has an independent route and dashboard drilldown preserves selected event",()=>{
+test("outbreak retains its independent route but is absent from dashboard navigation",()=>{
  const standalone=read("app/outbreak/page.tsx");
  const events=read("app/outbreak-events.tsx");
  const shell=read("worker/candidate-shell-r7.mjs");
@@ -35,11 +35,11 @@ test("outbreak has an independent route and dashboard drilldown preserves select
  assert.match(standalone,/url='https:\/\/zgmini\.kr\/outbreak\/'/);
  assert.match(standalone,/<OutbreakEvents\/>/);
  assert.match(standalone,/<SiteHeader\/>/);
- assert.match(home,/window.location.assign\('\/outbreak\/\?event='/);
+ assert.doesNotMatch(home,/<OutbreakSummary/);
  assert.doesNotMatch(home,/<OutbreakEvents/);
  assert.match(events,/new URLSearchParams\(window.location.search\).get\('event'\)/);
  assert.match(shell,/url.searchParams.get\('view'\)==='scenarios'/);
- assert.match(shared,/href="\/outbreak\/"/);
+ assert.doesNotMatch(shared,/href="\/outbreak\/"/);
 });
 
 test("dashboard sign-in settings and stored favorites are preserved inside shared header",()=>{

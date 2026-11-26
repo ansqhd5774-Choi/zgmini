@@ -80,11 +80,15 @@ test('US-only 1D button and observed ranges reuse the current chart; Korea gets 
  const store=read('worker/public-feed-store.mjs');
  assert.match(cnn,/<MarketPeriodControls[\s\S]*?includeOneDay\s*\/>/);
  assert.match(cnn,/observedRanges=\{observedRanges\}/);
-  // The original source tooltip remains the fallback, but genuine PC check time is explicitly labeled.
-  assert.ok(cnn.includes('formatTooltipLabel={selectedPeriod==="1D"&&(archived?.checkedPoints?.length??0)>=2'));
-  assert.ok(cnn.includes('`PC 확인 ${intradayLabel(value)}`'));
-  assert.ok(cnn.includes('(selectedPeriod==="1D"||archiveHistory.length>=2?intradayLabel:dateLabel)'));
-  assert.match(cnn,/archiveHistory\.length>=2\?combinedObserved:allIntraday/);
+  // A PC check label is only shown for a real plotted check from the current NY source day.
+  // Old checks must neither create a current 1D point nor label CNN observations as PC checks.
+  assert.match(cnn,/currentCnnSessionHistory\(payload\?\.observedAt/);
+  assert.match(cnn,/const checks=currentCnnSessionCheckedPoints\(payload\?\.observedAt,archived\.checkedPoints\)/);
+  assert.match(cnn,/if\(checks\.length<2\)return new Set<string>\(\)/);
+  assert.ok(cnn.includes('formatTooltipLabel={selectedPeriod==="1D"'));
+  assert.ok(cnn.includes('currentSessionPcDates.has(value)'));
+  assert.ok(cnn.includes('intradayLabel(value)'));
+  assert.doesNotMatch(cnn,/archiveHistory\.length>=2\?combinedObserved:allIntraday/);
   assert.match(cnn,/daily\.filter\(point=>!observedDays\.has/);
   assert.match(cnn,/const maxTime=end\?\?Number\.POSITIVE_INFINITY/);
  assert.doesNotMatch(kr,/includeOneDay/);
@@ -116,7 +120,7 @@ test('US mobile 1D joins the same rounded period bar without detaching buttons',
  assert.ok(detail.includes('grid-template-rows: 176px;'));
  assert.ok(detail.includes('width:30px;\n  min-width:30px;\n  max-width:30px;\n  height:170px;'));
  assert.ok(detail.includes('border-radius:6px;\n  overflow:hidden;'));
- assert.ok(detail.includes('position:static;\n  flex:0 0 28px;'));
+ assert.ok(detail.includes('position:relative;\n  flex:0 0 28px;'));
  assert.ok(!detail.includes('right:calc(100% + 4px)'));
  assert.ok(!detail.includes('.zg-fg-korea'));
 });

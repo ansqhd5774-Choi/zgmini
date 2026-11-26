@@ -7,21 +7,29 @@ import {kstCalendarDate} from "../lib/iran-progress/chart-history.mjs";
 mkdirSync("artifacts/outbreak-scenarios",{recursive:true});
 const base=process.env.CHAT_PREVIEW_URL??"http://127.0.0.1:5173";
 const browser=await chromium.launch({headless:true,args:["--no-sandbox"]});
+// Current mocked H.15 observation: 22 saved trading points ending on the
+// last weekday, with the last 10 observations inside the 14-day calendar view.
+const lastRateDay=new Date();lastRateDay.setUTCHours(0,0,0,0);
+while([0,6].includes(lastRateDay.getUTCDay()))lastRateDay.setUTCDate(lastRateDay.getUTCDate()-1);
+const rateObservationDate=lastRateDay.toISOString().slice(0,10);
+const rateDays=[],walk=new Date(lastRateDay);
+while(rateDays.length<22){
+ if(![0,6].includes(walk.getUTCDay()))rateDays.unshift(walk.toISOString().slice(0,10));
+ walk.setUTCDate(walk.getUTCDate()-1);
+}
+const recentRateValues=[60.1,59.9,60.7,60.4,59.7,61.4,60.3,59.1,58.2,57.8];
+const rateMonth=rateDays.map((label,i)=>({label,value:i<12?62.5:recentRateValues[i-12]}));
+const expectedRateLabel=rateObservationDate.slice(5).replace('-','.');
 const errors=[];
 try{
  for(const width of [390,430,620,768,1024,1349,1350,1440,1920]){
   const page=await browser.newPage({viewport:{width,height:950},reducedMotion:width===390?"reduce":"no-preference"});
   page.on("pageerror",error=>errors.push(width+": "+error.message));
   await page.route("**/api/rate-sentiment",r=>r.fulfill({status:200,contentType:"application/json",body:JSON.stringify({
-   status:"READY",score:57.8,version:"R1",observationDate:"2026-10-19",sourceStoredAt:1792368000,
-   week:[
-    {label:"2026-10-13",value:61.4},{label:"2026-10-14",value:60.3},
-    {label:"2026-10-15",value:59.1},{label:"2026-10-16",value:58.2},{label:"2026-10-19",value:57.8}
-   ],
-   oneMonth:[{label:"2026-10-06",value:60.1},{label:"2026-10-07",value:59.9},
-    {label:"2026-10-08",value:60.7},{label:"2026-10-09",value:60.4},{label:"2026-10-12",value:59.7},
-    {label:"2026-10-13",value:61.4},{label:"2026-10-14",value:60.3},
-    {label:"2026-10-15",value:59.1},{label:"2026-10-16",value:58.2},{label:"2026-10-19",value:57.8}]
+   status:"READY",score:57.8,version:"RATE_SENTIMENT_R1_RESEARCH",
+   source:"FEDERAL_RESERVE_H15_STORED_RATES",historyMode:"CURRENT_VINTAGE_ONLY",
+   observationDate:rateObservationDate,sourceStoredAt:Date.now()-3600000,
+   week:rateMonth.slice(-5),oneMonth:rateMonth
   })}));
   // A contract-valid R5 *fixture*. It is not a live war observation or production score.
   const now=Date.now(),asOfDate=kstCalendarDate(now);
@@ -74,7 +82,7 @@ try{
    assert(mobileChart.newsFits&&mobileChart.extraHidden,"News fits mobile and redundant beginner cards remain hidden");
   }
   const rateTickText=width<=700?await root.locator(".ob61-fed-compact .ob58-mini-axis").textContent():await rateChart.textContent();
-   assert(rateTickText?.includes("10.19"),"Last calendar tick retains its observed date");
+   assert(rateTickText?.includes(expectedRateLabel),"Last calendar tick retains its observed date");
   assert.equal(await root.locator(".ob53-chart-heading>span").textContent(),"관측 10일 / 14일");
   assert.equal(await root.locator(".ob53-tone-pill").textContent(),"중립");
   assert.equal(await root.locator(".ob53-scale-colors [data-band]").count(),5);

@@ -7,9 +7,7 @@ const base=process.env.CHAT_PREVIEW_URL??'http://127.0.0.1:5173';
 mkdirSync('artifacts/dashboard-deferred-ui',{recursive:true});
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 const sampleHistory=Array.from({length:90},(_,i)=>({date:new Date(Date.UTC(2026,7,1)+i*86400000).toISOString().slice(0,10),score:45+Math.sin(i/8)*12}));
-const breadthHistory={market:'usa',universe:'SP500',window:'1Y',from:'2025-10-30',to:'2026-10-30',
- records:Array.from({length:366},(_,i)=>({observationDate:new Date(Date.UTC(2025,9,30)+i*86400000).toISOString().slice(0,10),
-  eligibleCount:500,counts:{rising:250+i%20,unchanged:0,falling:250-i%20}}))};
+// Restored display-only breadth slots must not call retired suppliers or old history APIs.
 try{
  for(const width of [390,1440])for(const signedIn of [false,true]){
   const page=await browser.newPage({viewport:{width,height:900},hasTouch:width===390});
@@ -25,7 +23,7 @@ try{
     :path==='/api/favorites'?{favorites:[]}
     :path==='/api/market-data'?{status:'fallback',updatedAt:'',indicators:{},summary:[]}
     :path==='/api/fear-greed'?{status:'verified',score:34.5,rating:'공포',observedAt:'2026-10-30T12:00:00Z',history:sampleHistory}
-    :path==='/api/market-breadth/history'?(breadthHistoryRequests++,breadthHistory)
+    :path.startsWith('/api/market-breadth')?(breadthHistoryRequests++,{status:'UNAVAILABLE'})
     :{status:'UNAVAILABLE'};
    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(payload)});
   });
@@ -46,16 +44,22 @@ try{
    if(!card)return {market,missing:true};
    const score=card.querySelector('.fg-score-slot')?.getBoundingClientRect();
    const chart=card.querySelector('.fg-chart-slot')?.getBoundingClientRect();
-   const breadth=card.querySelector('.fg-breadth-slot')?.getBoundingClientRect();
+   const breadth=card.querySelector('.fg-breadth-slot');
+   const breadthBox=breadth?.getBoundingClientRect();
+   const footer=card.querySelector('.fg-footer-slot')?.getBoundingClientRect();
    const rows=getComputedStyle(card).gridTemplateRows.trim().split(/\s+/).map(Number.parseFloat);
    return {market,missing:false,inlineGridRows:card.style.gridTemplateRows,
     rows,scoreHeight:score?.height??0,chartHeight:chart?.height??0,
-    breadthGap:breadth&&chart?breadth.top-chart.bottom:null};
+    breadthPresent:Boolean(breadth),breadthHeight:breadthBox?.height??0,
+    breadthBottom:breadthBox?.bottom??0,footerTop:footer?.top??0,footerHeight:footer?.height??0};
   }));
   for(const m of marketLayout){
    assert.equal(m.missing,false,m.market+' market card exists');
    assert.equal(m.inlineGridRows,'',m.market+' no obsolete breadth inline row override');
-   assert.ok(m.breadthGap!==null&&Math.abs(m.breadthGap)<3,m.market+' breadth touches chart with no empty grid gap');
+   assert.equal(m.breadthPresent,true,m.market+' verified-data breadth display shell restored');
+   assert.ok(m.breadthHeight>=35,m.market+' restored summary height');
+   assert.ok(m.breadthBottom<=m.footerTop+1,m.market+' breadth and footer do not overlap');
+   assert.ok(m.footerHeight>0,m.market+' existing footer remains visible');
    if(width===390){
     assert.ok(Math.abs(m.rows[1]-112)<1,m.market+' mobile grid preserves pre-breadth 112px row');
     assert.ok(Math.abs(m.scoreHeight-112)<1,m.market+' mobile score remains 112px');
@@ -85,24 +89,22 @@ try{
    await tip.waitFor({state:'hidden',timeout:3000});
    console.log('PASS mobile chart tooltip disappears on touch release');
 
-   const breadth=page.locator('.usa-target-card .fg-breadth-slot');
-   await breadth.locator('button[aria-expanded="false"]').click();
-   const detail=breadth.locator('[role="region"]');
-   await detail.locator('svg[role="img"]').waitFor({state:'visible',timeout:5000});
-   const windows=[['3M',93,'3개월'],['1M',31,'1개월'],['1W',7,'1주'],['1D',1,'1일'],['6M',186,'6개월'],['1Y',366,'1년'],['3M',93,'3개월']];
-   for(const [period,days,label] of windows){
-    await page.locator(`.usa-target-card .cnn-period-button[data-period-short="${period}"]`).click();
-    const from=period==='1Y'?breadthHistory.from:new Date(Date.UTC(2026,9,30)-(days-1)*86400000).toISOString().slice(0,10);
-    const expected=from.replaceAll('-','.');
-    await page.waitForFunction(value=>document.querySelector('.usa-target-card .fg-breadth-slot [role="region"] time')?.textContent===value,
-     expected,{timeout:5000});
-    const dates=await detail.locator('time').allTextContents();
-    assert.deepEqual(dates,[expected,'2026.10.30'],period+' breadth dates follow CNN selection');
-    const aria=await detail.locator('svg[role="img"]').getAttribute('aria-label');
-    assert.ok(aria?.includes(`${label} 이력`)&&aria.includes(`${days}개 거래일`),period+' breadth record window');
+   assert.equal(await page.locator('.usa-target-card .fg-breadth-slot, .korea-target-card .fg-breadth-slot').count(),2,
+    'US and Korea display-only breadth slots must be restored');
+   for(const market of ['usa','korea']){
+    const slot=page.locator(`.${market}-target-card .fg-breadth-slot`);
+    await slot.getByText('연결 예정',{exact:true}).waitFor({state:'visible'});
+    assert.equal(await slot.locator('[aria-label$=": 미제공"]').count(),3,market+' rising, unchanged, falling unavailable labels');
+    assert.equal(await slot.getByText('—',{exact:true}).count(),3,market+' missing is never zero');
    }
-   assert.equal(breadthHistoryRequests,1,'Period switching filters fetched 1Y history without new API calls');
-   console.log('PASS breadth chart matches 1D/1W/1M/3M/6M/1Y market period with one history request');
+   const historyToggle=page.getByRole('button',{name:'미국 등락 지수 확정 이력 펼치기'});
+   await historyToggle.click();
+   await page.getByRole('region',{name:'미국 등락 지수 확정 이력 차트'}).getByText('확정 이력 데이터 연결 예정').waitFor({state:'visible'});
+   await page.getByRole('button',{name:'미국 등락 지수 확정 이력 접기'}).click();
+   assert.equal(breadthHistoryRequests,0,'No old breadth endpoint request');
+   assert.equal(modules.filter(path=>path.startsWith('/api/market-breadth')).length,0,
+    'Anonymous dashboard must not request retired breadth APIs');
+   console.log('PASS breadth UI restored without legacy API requests');
   }
 
   if(signedIn){

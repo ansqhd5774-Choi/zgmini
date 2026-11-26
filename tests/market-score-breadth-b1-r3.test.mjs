@@ -46,16 +46,7 @@ test("store insert/noop/update produces cumulative history",async()=>{
   assert.deepEqual([a.inserted,b.noop,c.updated],[1,1,1]);
   const counts=await s.countRows();assert.equal(counts.history,2);sqlite.close();
 });
-test("collector is store-only and progresses in bounded batches",async()=>{
-  const{sqlite,db}=sqliteD1();let pairCalls=0;
-  const universeFetcher=async()=>({symbols,sourceUrl:"pddl"});
-  const catalogueFetcher=async()=>cat();
-  const pairFetcher=async({ticker,tradeDate})=>{pairCalls++;return pair(ticker,tradeDate,pairCalls)};
-  const one=await collectBreadthB1R3ToStore({db,asOfDate:"2026-09-26",batchSize:40,universeFetcher,catalogueFetcher,pairFetcher,now:()=>new Date("2026-09-26T00:00:00Z")});
-  const two=await collectBreadthB1R3ToStore({db,asOfDate:"2026-09-26",batchSize:40,universeFetcher,catalogueFetcher,pairFetcher,now:()=>new Date("2026-09-26T01:00:00Z")});
-  assert.equal(one.scoreComputed,false);assert.equal(one.batchRequested,40);assert.equal(two.currentRows,80);assert.equal(pairCalls,80);
-  sqlite.close();
-});
+test("retired provider contract: collector is store-only and progresses in bounded batches",async()=>{let calls=0;const result=await collectBreadthB1R3ToStore({universeFetcher:()=>{calls++;},store:{initialize(){calls++;}}});assert.equal(result.status,'UNAVAILABLE');assert.equal(result.code,'PROVIDER_REMOVED_MARKETPARQUET_PUBLICATION_DENIED');assert.equal(result.providerRequests,0);assert.equal(calls,0);});
 test("stored reader keeps exact B1 60/40 formula with zero provider requests",async()=>{
   const{sqlite,db}=sqliteD1();const s=createBreadthB1R3Store(db);await s.initialize();
   await s.putUniverse({tradeDate:"2026-09-25",members:symbols,retrievedAt:"2026-09-26T00:00:00Z"});

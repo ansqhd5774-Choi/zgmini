@@ -168,6 +168,7 @@ export function MarketScoreOrb({
   marketScoreBands = false,
   inlineDayDelta = false,
   mobileInlineDayDelta = false,
+  startScoreFromZero = true,
 }: {
   score: string;
   state: string;
@@ -184,6 +185,7 @@ export function MarketScoreOrb({
   marketScoreBands?: boolean;
   inlineDayDelta?: boolean;
   mobileInlineDayDelta?: boolean;
+  startScoreFromZero?: boolean;
 }) {
   const arrows=useScoreArrows(),showArrows=arrowId?arrows(arrowId,numericScore(score)):false;
   const tone = state.includes('공포') ? 'is-fear' : state.includes('탐욕') ? 'is-greed' : '';
@@ -192,7 +194,7 @@ export function MarketScoreOrb({
   const animatedScore = useAnimatedNumber(targetScore, {
     enabled: variant === 'hero',
     duration: 950,
-    startFromZero: true,
+    startFromZero: startScoreFromZero,
   });
   const animatedDayDelta = useAnimatedNumber(dayDelta, {
     enabled: variant === 'hero',

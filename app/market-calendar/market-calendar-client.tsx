@@ -7,8 +7,10 @@ import {collapseCrossSourceTradeDuplicates} from '../../lib/market-calendar-cros
 import {toggleStarImportance} from '../../lib/market-calendar-importance-toggle.mjs';
 import {cftcCotReleaseAt} from '../../lib/market-calendar-cftc-time.mjs';
 import {ticReleaseAt} from '../../lib/market-calendar-tic-time.mjs';
+import {economicInputCalendarCoverage,modelInputsForCalendarEvent} from '../../lib/market-calendar-economic-input-display.mjs';
 import snapshot from '../guides/release-snapshot.json';
 import EarningsDisplayClient from './earnings-display-client';
+import {sectorKo,industryKo} from '../../lib/market-calendar-taxonomy-ko.mjs';
 
 type EventKind='economic'|'earnings';
 type Country='US'|'KR';
@@ -19,10 +21,10 @@ type FilterImportance=number[]|null;
 type OfficialEvent={id:string;date:string;title:string;source:string;sourceUrl:string};
 type SourceState={status:string;checkedAt?:string|null};
 type CalendarFeed={status:string;updatedAt?:string;sources?:Record<string,SourceState>;events?:OfficialEvent[]};
-type CalendarRow={key:string;date:string;at:string|null;name:string;country:Country;category:string;kind:EventKind;actual:string|null;forecast:string|null;previous:string|null;major:boolean;importance:number;source:string;sourceUrl:string;checkedAt:string|null;status:'scheduled'|'released';fresh:boolean};
+type CalendarRow={key:string;date:string;at:string|null;name:string;country:Country;category:string;kind:EventKind;actual:string|null;forecast:string|null;previous:string|null;major:boolean;importance:number;source:string;sourceUrl:string;checkedAt:string|null;status:'scheduled'|'released';fresh:boolean;modelInputCount?:number};
 
 const dayLabels=['일','월','화','수','목','금','토'];
-const sourceNames:Record<string,string>={bls:'BLS',bea:'BEA',fed:'연준',fed_calendar:'연준',census:'Census',eia:'EIA',usda:'USDA',cftc:'CFTC',treasury:'미국 재무부',tic:'미국 재무부 TIC'};
+const sourceNames:Record<string,string>={bls:'BLS',bea:'BEA',fed:'연준',fed_calendar:'연준',fed_fomc:'연준',census:'Census',eia:'EIA',usda:'USDA',usda_nass:'USDA NASS',cftc:'CFTC',treasury:'미국 재무부',tic:'미국 재무부 TIC',eia_epm:'EIA',nyfed:'뉴욕 연은'};
 const eventKinds:Record<string,{category:string;name:string;major:boolean}>={
  employment:{category:'고용',name:'미국 고용보고서 · 비농업고용·실업률',major:true},
  pce:{category:'물가',name:'미국 개인소득·지출(PCE)',major:true},
@@ -40,6 +42,9 @@ const eventKinds:Record<string,{category:string;name:string;major:boolean}>={
  'employer-compensation':{category:'고용',name:'미국 고용주 인건비 조사',major:false},
  'usda-wasde':{category:'원자재',name:'미국 농산물 수급전망(WASDE)',major:false},
  'cftc-cot':{category:'시장',name:'미국 선물시장 포지션 보고서(COT)',major:false},
+ 'eia-epm':{category:'에너지',name:'미국 전력 월간 보고서(EPM)',major:false},
+ 'nyfed-gscpi':{category:'공급망',name:'글로벌 공급망압력지수(GSCPI)',major:false},
+ 'nyfed-sce':{category:'물가',name:'뉴욕 연은 소비자 기대인플레이션(SCE)',major:false},
  fomc:{category:'금리',name:'미국 FOMC 기준금리 결정',major:true},
  press:{category:'금리',name:'FOMC 기자회견',major:false},
 };
@@ -73,8 +78,13 @@ const diffDays=(a:string,b:string)=>Math.round((parseDay(a).getTime()-parseDay(b
 const dateCaption=(key:string)=>`${Number(key.slice(5,7))}.${key.slice(8,10)}`;
 const weekTitle=(start:string)=>`${Number(start.slice(5,7))}월 ${Math.ceil(Number(start.slice(8,10))/7)}주차`;
 const officialName=(item:OfficialEvent,defaultName:string)=>{
+ // Fed's 2026-11-12 revision makes the 2027-10-27 meeting strategy-only:
+ // no interest-rate vote or policy decision. Preserve schedule and importance.
+ const name=item.source==='fed_fomc'&&item.id==='fomc'&&item.date==='2027-10-27'
+  ?'미국 FOMC 통화정책 전략 회의 · 금리 결정 없음':defaultName;
  if(item.id==='cftc-cot')return /Holiday-delayed/i.test(item.title)?`${defaultName} · 공휴일 지연`:defaultName;
- if(item.id!=='gdp')return defaultName;
+ if(item.id==='fomc'&&/잠정|tentative/i.test(item.title))return `${name} · 일정 잠정`;
+ if(item.id!=='gdp')return name;
  const stage=/\bAdvance Estimate\b/i.test(item.title)?'1차 추정':/\bSecond Estimate\b/i.test(item.title)?'2차 추정':/\bThird Estimate\b/i.test(item.title)?'3차 추정':/\bInitial Estimate\b/i.test(item.title)?'초기 추정':/\bUpdated Estimate\b/i.test(item.title)?'수정 추정':null;
  return stage?`${defaultName} · ${stage}`:defaultName;
 };
@@ -99,36 +109,47 @@ function mergeOfficial(feed:CalendarFeed|null):CalendarRow[]{
  const fromFeed:CalendarRow[]=[];
  const seen=new Set<string>();
  for(const item of collapseCrossSourceTradeDuplicates(feed.events)){
+  const fomcEvent=item.source==='fed_fomc'&&item.id==='fomc';
   const fedCalendarEvent=item.source==='fed_calendar'&&item.id.startsWith('fed-calendar-');
   const eiaEvent=item.source==='eia'&&['eia-wpsr','eia-wngsr','eia-steo'].includes(item.id);
+  const eiaEpmEvent=item.source==='eia_epm'&&item.id==='eia-epm';
+  const nyfedEvent=item.source==='nyfed'&&['nyfed-gscpi','nyfed-sce'].includes(item.id);
+  // New-source event IDs are accepted only from their matching official provider.
+  if(['eia-epm','nyfed-gscpi','nyfed-sce'].includes(item.id)&&!eiaEpmEvent&&!nyfedEvent)continue;
   const usdaEvent=item.source==='usda'&&item.id==='usda-wasde';
+  const nassEvent=item.source==='usda_nass'&&/^usda-nass-(?:crop-production|crop-progress|prospective-plantings)$/.test(item.id);
+  if(item.id.startsWith('usda-nass-')&&!nassEvent)continue;
   const cftcEvent=item.source==='cftc'&&item.id==='cftc-cot';
   const treasuryEvent=item.source==='treasury'&&/^treasury-(?:auction|announcement)-[a-z0-9]{9}$/.test(item.id);
   const ticEvent=item.source==='tic'&&/^tic-(?:monthly|quarterly-nonfinancial|quarterly-external-debt|annual-foreign-us-(?:preliminary|final)|annual-us-foreign-(?:preliminary|final))-20\d\d-(?:0[1-9]|1[0-2])$/.test(item.id);
-  if(!validDate(item.date)||!(eventKinds[item.id]||fedCalendarEvent||eiaEvent||usdaEvent||cftcEvent||treasuryEvent||ticEvent||((item.source==='bls'||item.source==='bea'||item.source==='census')&&item.id.startsWith(`${item.source}-`)))||typeof item.sourceUrl!=='string'||!item.sourceUrl.startsWith('https://'))continue;
-  if(item.id==='fomc'||item.id==='press')continue;
+  if(!validDate(item.date)||!(eventKinds[item.id]||fedCalendarEvent||eiaEvent||eiaEpmEvent||nyfedEvent||usdaEvent||nassEvent||cftcEvent||treasuryEvent||ticEvent||((item.source==='bls'||item.source==='bea'||item.source==='census')&&item.id.startsWith(`${item.source}-`)))||typeof item.sourceUrl!=='string'||!item.sourceUrl.startsWith('https://'))continue;
+  if(item.id==='press'||(item.id==='fomc'&&!fomcEvent))continue;
   const duplicate=`${item.id}:${item.date}`;
   if(seen.has(duplicate))continue;
   seen.add(duplicate);
   const sourceState=feed.sources?.[item.source];
   const checkedAt=sourceState?.checkedAt??null;
   const fresh=sourceState?.status==='READY'&&!!checkedAt&&Date.now()-Date.parse(checkedAt)>=0&&Date.now()-Date.parse(checkedAt)<=48*3600000;
-  const category=item.source==='tic'?'국제자본':item.source==='treasury'?'국채':item.source==='cftc'?'시장':item.source==='usda'?'원자재':item.source==='eia'?'에너지':item.id==='fed-calendar-fomc-minutes'?'금리':item.id==='fed-calendar-beige-book'?'경기':item.source==='bls'?'고용·노동':'경제';
+  const category=item.source==='nyfed'?(item.id==='nyfed-gscpi'?'공급망':'물가'):item.source==='eia_epm'?'에너지':item.source==='tic'?'국제자본':item.source==='treasury'?'국채':item.source==='cftc'?'시장':item.source==='usda'?'원자재':item.source==='usda_nass'?'원자재':item.source==='eia'?'에너지':item.id==='fed-calendar-fomc-minutes'?'금리':item.id==='fed-calendar-beige-book'?'경기':item.source==='bls'?'고용·노동':'경제';
   const meta=eventKinds[item.id]??{category,name:item.title,major:false};
   // Provider feed supplies dates only. Keep an exact clock time solely when
   // the already verified manual snapshot matches this event and day.
-  const timed=manual.find(row=>row.key.startsWith(`manual-${item.id}-`)&&row.date===item.date);
+  const timed=manual.find(row=>row.key.startsWith(`manual-${item.id}-`)&&
+   (row.date===item.date||(fomcEvent&&row.at&&usDay(new Date(row.at))===item.date)));
   const cftcAt=cftcEvent?cftcCotReleaseAt(item.date):null;
   const ticAt=ticEvent?ticReleaseAt(item.date):null;
   const eventAt=timed?.at??cftcAt??ticAt;
   const displayDate=eventAt&&(cftcAt||ticAt)?kstDay(new Date(eventAt)):item.date;
+  const fomcDisplayDate=fomcEvent&&timed?timed.date:displayDate;
   // Existing verified actuals supersede past date-only schedule placeholders.
   const hasActual=manual.some(row=>row.status==='released'&&row.date===item.date&&((item.id==='cpi'&&row.source==='BLS')||(item.id==='pce'&&row.source==='BEA')));
   if(hasActual)continue;
-  fromFeed.push({key:`official-${duplicate}`,date:displayDate,at:eventAt,name:officialName(item,meta.name),country:'US',category:meta.category,kind:'economic',actual:null,forecast:null,previous:null,major:meta.major,importance:releaseImportance(item.id,item.title),source:sourceNames[item.source]??item.source,sourceUrl:item.sourceUrl,checkedAt:timed?.checkedAt??checkedAt,fresh:timed?false:fresh,status:'scheduled'});
+  fromFeed.push({key:`official-${duplicate}`,date:fomcDisplayDate,at:eventAt,name:officialName(item,meta.name),country:'US',category:meta.category,kind:'economic',actual:null,forecast:null,previous:null,major:meta.major,importance:releaseImportance(item.id,item.title),source:sourceNames[item.source]??item.source,sourceUrl:item.sourceUrl,checkedAt:timed?.checkedAt??checkedAt,fresh:timed?false:fresh,status:'scheduled',modelInputCount:modelInputsForCalendarEvent(item)});
  }
  const scheduledIds=new Set(fromFeed.map(row=>row.key.slice('official-'.length)));
- return [...fromFeed,...manual.filter(row=>row.status==='released'||!scheduledIds.has(`${row.key.split('-')[1]}:${row.date}`))];
+ return [...fromFeed,...manual.filter(row=>row.status==='released'||
+  !(scheduledIds.has(`${row.key.split('-')[1]}:${row.date}`)||
+   (row.key.startsWith('manual-fomc-')&&row.at&&scheduledIds.has(`fomc:${usDay(new Date(row.at))}`))))];
 }
 
 export default function MarketCalendar(){
@@ -142,6 +163,10 @@ export default function MarketCalendar(){
  const [country,setCountry]=useState<FilterCountry>('all');
  const [importance,setImportance]=useState<FilterImportance>(null);
  const [query,setQuery]=useState('');
+ const [sector,setSector]=useState('');
+ const [industry,setIndustry]=useState('');
+ const [filterOpen,setFilterOpen]=useState(false);
+ const [taxonomyOptions,setTaxonomyOptions]=useState<Record<string,string[]>|null>(null);
  const [vendorCounts,setVendorCounts]=useState<Record<string,number>>({});
  const [nowMs,setNowMs]=useState(0);
  const stripRef=useRef<HTMLDivElement>(null);
@@ -159,9 +184,23 @@ export default function MarketCalendar(){
   return()=>{window.clearInterval(timer);controller.abort();};
  },[]);
 
+ useEffect(()=>{
+  const controller=new AbortController();
+  fetch('/api/earnings-calendar-taxonomy',{signal:controller.signal,cache:'no-store'})
+   .then(async r=>r.status===204?null:r.ok?await r.json() as {status?:string;sectors?:Record<string,string[]>}:null)
+   .then(data=>{
+    if(!controller.signal.aborted&&data?.status==='READY_TAXONOMY_OPTIONS'&&
+     data.sectors&&typeof data.sectors==='object')setTaxonomyOptions(data.sectors);
+   }).catch(()=>{});
+  return()=>controller.abort();
+ },[]);
+ const industries=useMemo(()=>sector&&taxonomyOptions?.[sector]?
+  taxonomyOptions[sector]:[],[sector,taxonomyOptions]);
  const range=useMemo(()=>view==='week'?{start:monday(selected),end:plusDays(monday(selected),6)}:{start:monthStart(selected),end:monthEnd(selected)},[selected,view]);
  const allRows=useMemo(()=>mergeOfficial(feed),[feed]);
- const periodRows=useMemo(()=>allRows.filter(row=>row.date>=range.start&&row.date<=range.end&&(kind==='all'||row.kind===kind)&&(country==='all'||row.country===country)&&(importance===null||importance.includes(row.importance))&&(!query||`${row.name} ${row.category} ${row.source} ${row.country}`.toLowerCase().includes(query.trim().toLowerCase()))).sort((a,b)=>a.date.localeCompare(b.date)||(a.at??'').localeCompare(b.at??'')||a.name.localeCompare(b.name)),[allRows,range,kind,country,importance,query]);
+ const nextCalendarYear=Number(today.slice(0,4))+1;
+ const modelCoverage=useMemo(()=>economicInputCalendarCoverage(feed,{nextYear:nextCalendarYear}),[feed,nextCalendarYear]);
+ const periodRows=useMemo(()=>allRows.filter(row=>row.date>=range.start&&row.date<=range.end&&(kind==='all'||row.kind===kind)&&(country==='all'||row.country===country)&&(!sector&&!industry)&&(importance===null||importance.includes(row.importance))&&(!query||`${row.name} ${row.category} ${row.source} ${row.country}`.toLowerCase().includes(query.trim().toLowerCase()))).sort((a,b)=>a.date.localeCompare(b.date)||(a.at??'').localeCompare(b.at??'')||a.name.localeCompare(b.name)),[allRows,range,kind,country,importance,query,sector,industry]);
  const filtered=useMemo(()=>rowsForSelectedDay(periodRows,activeDate) as CalendarRow[],[periodRows,activeDate]);
  const days=useMemo(()=>Array.from({length:diffDays(range.end,range.start)+1},(_,i)=>plusDays(range.start,i)),[range]);
  const vendorCount=useMemo(()=>activeDate?vendorCounts[activeDate]??0:Object.values(vendorCounts).reduce((sum,n)=>sum+n,0),[vendorCounts,activeDate]);
@@ -191,24 +230,42 @@ export default function MarketCalendar(){
   return {label:`D-${daysLeft} · 시각 미정`,style:''};
  };
 
- return <section className="mc-panel" aria-label="시장 발표 일정">
-  <div className="mc-controls">
+ return <section className={`mc-panel ${taxonomyOptions?"mc-nine-column":""}`} aria-label="시장 발표 일정">
+  <div className={`mc-controls ${filterOpen?"filters-open":""}`}>
    <label className="mc-search"><Search size={15} aria-hidden="true"/><input value={query} onChange={event=>setQuery(event.target.value)} type="search" placeholder="지표·기업명 검색" aria-label="지표 또는 기업명 검색"/></label>
+   <button type="button" className="mc-filter-toggle" aria-expanded={filterOpen}
+    aria-label="일정 필터 펼치기" onClick={()=>setFilterOpen(v=>!v)}>{filterOpen?'필터 접기':'필터 펼치기'}</button>
    <div className="mc-filter"><span className="mc-filter-label">일정</span><div className="mc-pills" role="group" aria-label="일정 유형">
-    {([['all','전체'],['economic','경제지표'],['earnings','기업 실적']] as const).map(([key,label])=><button key={key} type="button" className={kind===key?'active':''} onClick={()=>setKind(key)} aria-pressed={kind===key}>{label}</button>)}
+    {([['all','전체'],['economic','경제지표'],['earnings','기업 실적']] as const).map(([key,label])=><button key={key} type="button" className={kind===key?'active':''} onClick={()=>{setKind(key);if(key==='economic'){setSector('');setIndustry('');}}} aria-pressed={kind===key}>{label}</button>)}
    </div></div>
    <div className="mc-filter"><span className="mc-filter-label">국가</span><div className="mc-pills" role="group" aria-label="국가 선택">
     {([['all','전체'],['US','미국'],['KR','한국']] as const).map(([key,label])=><button key={key} type="button" className={country===key?'active':''} onClick={()=>setCountry(key)} aria-pressed={country===key}>{label}</button>)}
    </div></div>
-   <div className="mc-filter"><span className="mc-filter-label" title="경제지표: 시장 영향도 / 기업 실적: 연간 재무건전성 / R43 시장 중요도는 별도 배지">별등급</span><div className="mc-pills" role="group" aria-label="별등급 필터: 경제지표 시장 영향도, 기업 실적 연간 재무건전성. R43 시장 중요도 배지는 필터 대상 아님">
+   <div className="mc-filter"><span className="mc-filter-label" title="경제지표: 시장 영향도 / 기업 실적: 게시된 시총 중요도 또는 실적 점수">별등급</span><div className="mc-pills" role="group" aria-label="별등급 필터: 경제지표 시장 영향도 및 기업 실적 게시 등급">
     {([['all','전체'],[3,'★★★'],[2,'★★'],[1,'★']] as const).map(([key,label])=>{
      const active=key==='all'?importance===null:importance?.includes(key)??false;
      return <button key={key} type="button" className={active?'active':''} onClick={()=>{
       if(key==='all'){setImportance(null);return;}
       setImportance(current=>toggleStarImportance(current,key));
-     }} aria-pressed={active} aria-label={key==='all'?'모든 별등급':`별등급 ${key}개 (경제지표 시장 영향도·기업 실적 재무건전성)`}>{label}</button>;
+     }} aria-pressed={active} aria-label={key==='all'?'모든 별등급':`별등급 ${key}개 (경제지표 영향도·기업 실적 게시 등급)`}>{label}</button>;
     })}
    </div></div>
+   {taxonomyOptions&&<><label className="mc-filter mc-taxonomy-filter"><span className="mc-filter-label">섹터</span>
+    <select aria-label="섹터" value={sector} disabled={!taxonomyOptions}
+     onChange={e=>{setSector(e.target.value);setIndustry('');if(e.target.value)setKind('earnings');}}>
+     <option value="">전체 섹터</option>
+     {Object.keys(taxonomyOptions??{}).map(key=><option key={key} value={key}>{sectorKo(key)}</option>)}
+    </select>
+   </label>
+   <label className="mc-filter mc-taxonomy-filter"><span className="mc-filter-label">산업</span>
+    <select aria-label="세부 산업" value={industry} disabled={!sector||!taxonomyOptions}
+     onChange={e=>setIndustry(e.target.value)}>
+     <option value="">전체 산업</option>
+     {industries.map(key=><option key={key} value={key}>{industryKo(key)}</option>)}
+    </select>
+   </label>
+   <button type="button" className="mc-taxonomy-reset" onClick={()=>{setSector('');setIndustry('');}}
+    disabled={!sector&&!industry}>초기화</button></>}
    <div className="mc-range" role="group" aria-label="기간 선택과 이동">
     <button type="button" className={view==='week'?'active':''} aria-pressed={view==='week'} onClick={()=>{setView('week');setActiveDate(null);}}>주간</button>
     <button type="button" className={view==='month'?'active':''} aria-pressed={view==='month'} onClick={()=>{setView('month');setActiveDate(null);}}>월간</button>
@@ -227,9 +284,12 @@ export default function MarketCalendar(){
     {days.map(key=><button type="button" key={key} aria-label={`${key.slice(0,4)}년 ${Number(key.slice(5,7))}월 ${Number(key.slice(8))}일`} aria-pressed={activeDate===key} className={`mc-day ${activeDate===key?'selected':''} ${today===key?'today':''} ${shownDates.has(key)?'has-event':''}`} onClick={()=>{setSelected(key);setActiveDate(current=>current===key?null:key);}}><strong>{Number(key.slice(8,10))}</strong><small>{dayLabels[parseDay(key).getUTCDay()]}</small></button>)}
    </div>
   </div>
-  <div className="mc-head" aria-hidden="true"><span className="mc-importance-heading" title="경제지표: 예상 시장 영향도 / 기업 실적: ZGMINI 연간 재무건전성 잠정평가 / R43 시장 중요도는 별도 배지"><Star size={12} fill="currentColor" aria-hidden="true"/>별등급</span><span>날짜</span><span>시간</span><span>국가</span><span>구분</span><span>발표 일정</span><span>발표</span><span>예상</span><span>이전</span><span>남은 시간</span></div>
+  <div className="mc-head" aria-hidden="true"><span className="mc-importance-heading" title="경제지표: 예상 시장 영향도 / 기업 실적: 시총 중요도 또는 실적 점수(행별 적용 기준)"><Star size={12} fill="currentColor" aria-hidden="true"/>별등급</span><span>날짜</span><span>시간</span><span>국가</span><span>구분</span><span>기업명·지표명</span>{taxonomyOptions
+   ? <><span>섹터</span><span>산업</span></>
+   : <><span>발표</span><span>예상</span><span>이전</span></>}<span>남은 시간</span></div>
   <div className="mc-results" aria-live="polite">
-   <EarningsDisplayClient start={range.start} end={range.end} activeDate={activeDate} query={query} importance={importance} enabled={(kind==='all'||kind==='earnings')&&country!=='KR'} onCounts={setVendorCounts}/>
+   {loadState==='ready'&&modelCoverage&&<p className="mc-data-state" title="개발 코드 모델 입력 기준입니다. 발표 주기 별도 관리 72개 · 시장 일별 자료 21개 · 비정기·파생 신호 4개. PC 원자료의 활성·저장 완료 수가 아닙니다. 연도별 연결 수는 모델 입력마다 그해 공식 발표일이 1건 이상 있는지를 세며, 연중 전체 발표 회차의 수집 완료율이 아닙니다. 공급자 일부가 실패한 경우 숫자는 확인된 저장 일정으로 계산한 최소 연결 수이며, 미연결·전체 수집 완료를 확정하지 않습니다.">{modelCoverage.feedPartial?'공식 일정 일부 공급자 수집 실패 · 확인된 저장 일정만 기준 · ':''}경제 모델 입력 {modelCoverage.totalInputs}개(코드 기준) · 공식 발표 연결 {modelCoverage.officialStored}/{modelCoverage.officialEligible}개({modelCoverage.feedPartial?'확인된 저장 일정 기준·미수집 불확정':'전체 저장 이력'}) · {modelCoverage.nextYear}년 일정 연결 {modelCoverage.nextYearConfirmed}/{modelCoverage.officialEligible}개({modelCoverage.feedPartial?'확인된 일정 기준·추가 발표 미확정':'입력별 1건 이상'}) · 개별 발표일 비대상 {modelCoverage.nonRelease}개</p>}
+   <EarningsDisplayClient start={range.start} end={range.end} activeDate={activeDate} query={query} importance={importance} sector={sector} industry={industry} enabled={(kind==='all'||kind==='earnings')&&country!=='KR'} onCounts={setVendorCounts}/>
    {loadState!=='ready'&&<p className="mc-data-state">{loadState==='loading'?'공식 일정 저장본 확인 중':'공식 일정 저장본 조회 실패'} · 수동 확인 자료와 분리하여 표시합니다.</p>}
    {loadState==='ready'&&feed?.status!=='READY'&&<p className="mc-data-state">공식 일정 저장본 미확정 · 기존 확인 자료는 확인일 기준으로 표시합니다.</p>}
    {!filtered.length&&!vendorCount&&<div className="mc-empty"><strong>{activeDate?'선택한 날짜에 일정이 없습니다.':'표시할 일정이 없습니다.'}</strong><span>{kind==='earnings'?'선택한 조건에 표시할 기업 실적 일정이 없습니다.':country==='KR'?'한국 공식 발표 일정은 수집 경로 연결 전입니다.':'해당 조건에 확인된 공식 발표 일정이 없습니다.'}</span></div>}
@@ -241,10 +301,17 @@ export default function MarketCalendar(){
      <time className="mc-time" dateTime={row.at??row.date}>{row.at?kstTime(row.at):'미정'}</time>
      <span className="mc-country">{row.country==='US'?'미국':'한국'}</span>
       <span className="mc-kind mc-kind-indicator">지표</span>
-     <div className="mc-event"><a href={row.sourceUrl} target="_blank" rel="noopener noreferrer" title="공식 발표 일정 출처로 이동">{row.name}</a><span className={`mc-tag-status ${row.status==='released'?'released':''}`}>{row.status==='released'?'확인된 발표값':row.fresh?'공식 저장':'확인일 기준'}</span><small className="mc-source">{row.category} · {row.source} · {row.checkedAt?`확인 ${row.checkedAt.slice(0,10)}`:'확인일 미제공'}</small></div>
-     <div className="mc-number" data-kind="actual"><span className="mc-mobile-label">발표</span>{row.actual??'—'}</div>
-     <div className="mc-number muted" data-kind="forecast"><span className="mc-mobile-label">예상</span>{row.forecast??'—'}</div>
-     <div className="mc-number muted" data-kind="previous"><span className="mc-mobile-label">이전</span>{row.previous??'—'}</div>
+     <div className="mc-event"><a href={row.sourceUrl} target="_blank" rel="noopener noreferrer" title="공식 발표 일정 출처로 이동">{row.name}</a><span className={`mc-tag-status ${row.status==='released'?'released':''}`}>{row.status==='released'?'확인된 발표값':row.fresh?'공식 저장':'확인일 기준'}</span><small className="mc-source">{row.category} · {row.source} · {row.checkedAt?`확인 ${row.checkedAt.slice(0,10)}`:'확인일 미제공'}{row.modelInputCount?` · 관련 모델 입력 ${row.modelInputCount}개(코드 기준)`:''}</small>
+     {taxonomyOptions&&(row.actual!==null||row.forecast!==null||row.previous!==null)&&
+      <details className="mc-actual-detail"><summary>발표값 상세</summary>
+       <span>발표 {row.actual??'—'} · 예상 {row.forecast??'—'} · 이전 {row.previous??'—'}</span>
+      </details>}</div>
+     {taxonomyOptions
+      ? <><span className="mc-sector is-empty">—</span>
+          <span className="mc-industry is-empty">—</span></>
+      : <><div className="mc-number" data-kind="actual"><span className="mc-mobile-label">발표</span>{row.actual??'—'}</div>
+          <div className="mc-number muted" data-kind="forecast"><span className="mc-mobile-label">예상</span>{row.forecast??'—'}</div>
+          <div className="mc-number muted" data-kind="previous"><span className="mc-mobile-label">이전</span>{row.previous??'—'}</div></>}
      <div className={`mc-remaining ${remain.style}`} aria-label={`남은 시간: ${remain.label}`}>{remain.label}</div>
     </article>;})}
    </div>)}

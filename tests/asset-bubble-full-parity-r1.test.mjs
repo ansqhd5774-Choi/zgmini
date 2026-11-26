@@ -12,7 +12,7 @@ test("R9/R10 source and candidate publication metadata remain isolated from disp
  assert.match(panel,/ASSET_BUBBLE_R10_CANDIDATE/);
  assert.match(panel,/USER_APPROVED_CURRENT_VINTAGE_UNVERIFIED_SOURCES/);
  for(const x of ["sourceStoredAt","historyMode","scoreObservationQuarter","diagnosticQuarter","rightsStatus","publicationPolicy"])assert.ok(panel.includes(x),x);
- assert.match(panel,/!candidate\|\|payload\?\.status==='READY'/);
+ assert.match(panel,/assetBubbleVerifiedDisplayScore\(payload\)/);
  assert.match(panel,/공개 전환 전 검증 중입니다/);
  assert.equal((panel.match(/메인 대시보드로 돌아가기/g)||[]).length,1);
 });
@@ -34,7 +34,8 @@ test("ten-column table and mobile cards preserve six live identifiers, four pend
  assert.equal((panel.match(/order\.map\(/g)||[]).length,2);
  assert.equal((panel.match(/dev\.map\(/g)||[]).length,2);
  assert.equal((panel.match(/points=\{row\?\.trend\}/g)||[]).length,2);
- assert.equal((panel.match(/fmtValue\(row\?\.previousValue,row\?\.unit\)/g)||[]).length,2);
+ assert.match(panel,/const displayedPrevious=\(r:Row\|null\|undefined\)=>r\?\.latestObservation\?\.previousValue\?\?r\?\.previousValue/);
+ assert.equal((panel.match(/fmtValue\(displayedPrevious\(row\),row\?\.unit\)/g)||[]).length,2);
  assert.match(panel,/data-development="true"/);
  assert.match(css,/min-width:1090px!important/);
  assert.match(css,/@media\(max-width:767px\)/);

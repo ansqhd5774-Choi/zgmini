@@ -29,3 +29,23 @@ test('null and unsupported states remain gaps; no line crosses missing data',()=
   {date:'2026-10-27',confirmed:null,provisional:42},
  ]);
 });
+
+test('R32 confirmed modes are not confused with provisional feed phase',()=>{
+ const rows=configuredChartSeries([
+  {date:'2026-11-02',score:40,status:'NORMALIZED_DATED_OFFICIAL_AUM_THREE_PLUS',phase:'CONFIRMED'},
+  {date:'2026-11-03',score:42,status:'R32_APPROVED_SINGLE_REAL_ETF',phase:'CONFIRMED'},
+ ],{date:'2026-11-04',score:44,phase:'PROVISIONAL'});
+ assert.deepEqual(rows,[
+  {date:'2026-11-02',confirmed:40,provisional:null},
+  {date:'2026-11-03',confirmed:42,provisional:42},
+  {date:'2026-11-04',confirmed:null,provisional:44},
+ ]);
+});
+
+test('unverified or stale R32 provisional dates never create phantom points',()=>{
+ const history=[{date:'2026-11-03',score:42,status:'NORMALIZED_DATED_OFFICIAL_AUM_THREE_PLUS',phase:'CONFIRMED'}];
+ assert.deepEqual(configuredChartSeries(history,{date:'2026-11-03',score:99,phase:'PROVISIONAL'}),
+  [{date:'2026-11-03',confirmed:42,provisional:null}]);
+ assert.deepEqual(configuredChartSeries(history),
+  [{date:'2026-11-03',confirmed:42,provisional:null}]);
+});

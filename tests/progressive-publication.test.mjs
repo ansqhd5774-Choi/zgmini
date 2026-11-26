@@ -36,5 +36,26 @@ test('checkpoint reads actual stored outputs and supply inputs without DB initia
  const write=new DatabaseSync(path.join(base,'storage','core.sqlite'));write.exec('UPDATE public_feed_snapshots_v1 SET stored_at=2');write.close();
  assert.notEqual(auxiliaryInputCheckpoint(base),a);
  const b=auxiliaryInputCheckpoint(base);fs.mkdirSync(path.join(base,'supply-r10'));fs.writeFileSync(path.join(base,'supply-r10','inputs.json'),'{}');assert.notEqual(auxiliaryInputCheckpoint(base),b);
- const c=auxiliaryInputCheckpoint(base);fs.mkdirSync(path.join(base,'asset-r10-alpaca'));fs.writeFileSync(path.join(base,'asset-r10-alpaca','incremental-checkpoint.json'),'{"through":"2026-10-20"}');assert.notEqual(auxiliaryInputCheckpoint(base),c);
+ const c=auxiliaryInputCheckpoint(base);fs.mkdirSync(path.join(base,'asset-r10-alpaca'));fs.writeFileSync(path.join(base,'asset-r10-alpaca','incremental-checkpoint.json'),'{"through":"2026-10-20"}');assert.equal(auxiliaryInputCheckpoint(base),c);
+});
+
+test('Core progressive timing distinguishes early, auxiliary and final Writer without changing results',async()=>{
+ const unchanged=await cycle();
+ const t=unchanged.result.progressive.stageTiming;
+ assert.equal(t.scope,'MONOTONIC_CORE_PROGRESSIVE_PUBLICATION_ONLY');
+ assert.equal(t.finalPublicationMs,0);
+ for(const key of ['totalMs','earlyPublicationMs','auxiliaryMs','checkpointMs'])
+  assert.ok(Number.isFinite(t[key])&&t[key]>=0);
+ assert.ok(t.totalMs>=t.earlyPublicationMs+t.auxiliaryMs+t.checkpointMs);
+ assert.deepEqual(unchanged.calls,['early','auxiliary']);
+
+ const changed=await cycle({after:'b'});
+ assert.equal(changed.result.progressive.finalSkipped,false);
+ assert.ok(Number.isFinite(changed.result.progressive.stageTiming.finalPublicationMs));
+ assert.deepEqual(changed.calls,['early','auxiliary','final']);
+
+ const disabled=await cycle({enabled:false});
+ assert.equal(disabled.result.progressive.stageTiming.earlyPublicationMs,null);
+ assert.ok(disabled.result.progressive.stageTiming.finalPublicationMs>=0);
+ assert.deepEqual(disabled.calls,['auxiliary','final']);
 });

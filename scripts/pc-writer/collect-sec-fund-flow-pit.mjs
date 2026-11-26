@@ -3,7 +3,8 @@ import os from "node:os";
 import {createHash} from "node:crypto";
 import {fileURLToPath} from "node:url";
 import {localDatabase} from "./local-db.mjs";
-import {createQuotaFetch} from "./quota-fetch.mjs";
+import {createCompatibleSecQuotaFetch} from "./sec-legacy-quota-bridge.mjs";
+import {secGuardOptionsFromEnv} from "./sec-guard-runtime-config.mjs";
 import {marketOperationalStore} from "../../worker/market-operational-store.mjs";
 import {save} from "./d1.mjs";
 import {SEC_FUND_FLOW_VINTAGE_CATALOG_R1,validateSecFundFlowVintageCatalogR1} from "../../lib/market-score/sec-fund-flow-vintage-catalog-r1.mjs";
@@ -89,12 +90,13 @@ async function fetchSecSupportingData(item,{fetchImpl=globalThis.fetch,report}={
 }
 
 export async function collectSecFundFlowPit(base=process.env.ZGMINI_PC_HOME??DEFAULT_BASE){
+  const secGuardOptions=secGuardOptionsFromEnv();
   const catalogCheck=validateSecFundFlowVintageCatalogR1();
   if(catalogCheck.status!=="PASS")throw new Error("SEC_FUND_FLOW_VINTAGE_CATALOG_INVALID");
   const core=localDatabase(path.join(base,"storage","core.sqlite"));
   const store=marketOperationalStore(core);
   const originalFetch=globalThis.fetch;
-  const quota=createQuotaFetch({base,originalFetch,mode:"enforce"});
+  const quota=createCompatibleSecQuotaFetch({base,originalFetch,mode:"enforce",...secGuardOptions});
   globalThis.fetch=quota.fetch;
   const report={version:1,status:"RUNNING",at:new Date().toISOString(),noPublish:true,dbSchemaChanged:false,providerCalls:0,reused:0,fetched:0,stored:false};
   try{

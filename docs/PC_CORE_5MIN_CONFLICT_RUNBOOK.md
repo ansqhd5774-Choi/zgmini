@@ -85,3 +85,15 @@ git -C "E:\ZGmini\projects\zgmini-earnings-history-pc-release" status --porcelai
 - [PR #498 — 운영 승인 source와 개발 main의 분리](https://github.com/ansqhd5774-Choi/zgmini/pull/498)
 - [PR #759 — D1 불명확한 쓰기 상태 재조회](https://github.com/ansqhd5774-Choi/zgmini/pull/759)
 - [PC 수집·저장·계산 운영 계약](PC_WRITER_R2.md) · [E: 경로 운영 계약](PC_STORAGE_E_DRIVE.md)
+
+## 7. Alpaca 공유 한도·독립 Node 연결 게이트 (2026-11-02 추가)
+
+이 절은 [Alpaca 공통 예약 계약](ALPACA_SHARED_QUOTA_R1.md) 및 선별 보호 PR #953에 대한 **운영 검증 절차**다. Core의 5분 시작 주기와 공급자 API 요청 주기를 혼동하지 않는다. 모의시험 통과나 `main` 병합은 실제 PC 설치·계정 전체 보호 PASS가 아니다.
+
+1. **READ_ONLY 경로:** 실제 등록 Task Action → VBS/launcher → Core → R10/섹터/기타 자식 Node·수동 백필의 호출 경로를 확인한다. 같은 Alpaca 계정인지와 모든 프로세스의 실제 데이터 루트가 동일한지 **일치 여부만** 기록한다. API 키/비밀값, 전체 요청 URL, 개인 경로는 보고하지 않는다.
+2. **참여 여부:** `data.alpaca.markets` 호출은 같은 `base`의 `createQuotaFetch(...mode:'enforce')`를 통과해야 한다. `collect-local.mjs`가 전달한 래핑 fetch는 중복 보호하지 않는다. 미참여 호출 또는 알 수 없는 계정 외부 호출이 있으면 `ACCOUNT_WIDE_30_PERCENT=UNVERIFIED`다.
+3. **정책·이월:** Basic 기준 최근 60초 120회 주의, 140회 요청 예약 상한, 서버 잔여 최소 60회(또는 변경된 서버 한도의 30%)를 지킨다. 요청 전 `PROVIDER_QUOTA_GUARD`는 실제 호출 0회, HTTP 429는 실제 호출 1회다. 이미 호출한 뒤 원장 확인에 실패한 `requestReserved=true`는 **호출 1회, 원장 미확정**으로 기록한다. 세 경우 모두 즉시 재시도·페이지 건너뛰기 없이 `DEFERRED_QUOTA`로 다음 수집 기회에 이월한다.
+4. **격리 모의시험:** 동시 Node 1/2/3개, 140회 예약 상한, 429, 원장 잠금·손상, 120페이지 뒤 121페이지 재개 시험은 **임시 데이터 루트에서만** 한다. 실제 PC 운영 `base`의 quota 원장을 인위적으로 140회 채우거나 lock을 만들지 않는다.
+5. **실 PC 사전 점검:** 승인 `config.source`·실행 checkout SHA/clean·Task XML/launcher, 공통 원장 `alpaca-quota-ledger.json`의 최근 60초 예약/마지막 서버 헤더·리셋 및 각 수집기 보고서를 읽기 전용 확인한다. 헤더가 없으면 `REMOTE_HEADER_UNOBSERVED`, 관측기간 요청이 없으면 `NO_LIVE_TRAFFIC_EVIDENCE`로 남긴다. 기존 `local-cycle.lock`/quota lock은 강제 삭제하지 않는다.
+6. **승인 적용 후:** Core 자연 실행 두 차례의 수집 결과·체크포인트·원자료 SHA/기존 확정 점수 보존·D1/API readback을 분리 확인한다. 공급자 입력이 바뀌지 않은 `UNCHANGED`, 보호 이월 `DEFERRED_QUOTA`, 실제 수집 실패를 구별한다. 요청 헤더와 공통 원장 실측 없이 계정 전체 PASS 선언 금지.
+7. **실행기 보안:** 공개 저장소의 일반 PR을 운영 PC에서 임의 실행할 수 있는 범용 self-hosted runner를 등록하지 않는다. 자동화가 필요하면 GitHub 호스팅 CI와 승인된 로컬 읽기 전용 진단을 분리하고, 신규 원격 실행 권한·명령 허용 목록·비밀값 격리는 별도 보안 검토 및 사용자 승인 후 정한다.

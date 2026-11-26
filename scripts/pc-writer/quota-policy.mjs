@@ -5,6 +5,7 @@ const day=24*hour;
 // Provider limits are operational guardrails, not scoring or storage rules.
 // null means the supplied source did not publish a reliable hard quota.
 export const PROVIDER_QUOTA_POLICY=Object.freeze({
+ ALPACA:Object.freeze({label:'Alpaca Market Data Basic',hard:true,perMinute:140,warningPerMinute:120,protectedRemaining:60,alwaysEnforce:true,limitSource:'Alpaca Basic 200/min with 30% reserved'}),
  FRED:Object.freeze({label:'FRED/ALFRED',hard:true,perMinute:120,minIntervalMs:500,limitSource:'provider-report'}),
  BLS:Object.freeze({label:'BLS registered v2',hard:true,per10Sec:50,perDay:500,minIntervalMs:200,limitSource:'provider-report'}),
  BEA:Object.freeze({label:'BEA',hard:true,perMinute:100,maxErrorPerMinute:30,minIntervalMs:300,limitSource:'provider-report'}),
@@ -17,23 +18,26 @@ export const PROVIDER_QUOTA_POLICY=Object.freeze({
  OFR:Object.freeze({label:'OFR',hard:false,perDay:null,minIntervalMs:1_000,limitSource:'unknown',note:'data release frequency is usually daily'}),
  BIS:Object.freeze({label:'BIS',hard:false,perDay:null,minIntervalMs:1_000,limitSource:'unknown'}),
  WORLDBANK:Object.freeze({label:'World Bank',hard:false,perDay:null,minIntervalMs:1_000,limitSource:'unknown'}),
- MARKETPARQUET:Object.freeze({label:'MarketParquet',hard:false,perMinute:60,minIntervalMs:1_000,limitSource:'provider-report',note:'free tier; paid tier may differ'}),
  NYFED:Object.freeze({label:'NY Fed',hard:false,perDay:null,minIntervalMs:1_000,limitSource:'release-frequency'}),
+ TREASURY:Object.freeze({label:'US Treasury FiscalData',hard:false,perDay:null,minIntervalMs:1_000,limitSource:'unknown',note:'MTS monthly official feed; no published hard quota assumed'}),
+ FEDBOARD:Object.freeze({label:'Federal Reserve Board data',hard:false,perDay:null,minIntervalMs:1_000,limitSource:'unknown',note:'G.17 monthly official text; no published hard quota assumed'}),
  CNN:Object.freeze({label:'CNN internal feed',hard:false,perMinute:12,minIntervalMs:5*minute,limitSource:'cache-policy',note:'unofficial endpoint; no SLA'}),
  FEARGREEDCHART:Object.freeze({label:'FearGreedChart',hard:false,perMinute:12,minIntervalMs:5*minute,limitSource:'cache-policy'})
 });
 
 const HOSTS=[
+ ['data.alpaca.markets','ALPACA'],
  ['api.stlouisfed.org','FRED'],['fred.stlouisfed.org','FRED'],
  ['api.bls.gov','BLS'],['apps.bea.gov','BEA'],
  ['api.census.gov','CENSUS'],['api.eia.gov','EIA'],
  ['data.sec.gov','SEC'],['www.sec.gov','SEC'],['sec.gov','SEC'],
- ['openapi.krx.co.kr','KRX'],['data.krx.co.kr','KRX'],
+ ['openapi.krx.co.kr','KRX'],['data.krx.co.kr','KRX'],['data-dbg.krx.co.kr','KRX'],
  ['kosis.kr','KOSIS'],['ecos.bok.or.kr','BOK'],
  ['financialresearch.gov','OFR'],['data.financialresearch.gov','OFR'],
  ['data.bis.org','BIS'],['api.worldbank.org','WORLDBANK'],['thedocs.worldbank.org','WORLDBANK'],
  ['marketparquet.com','MARKETPARQUET'],['api.marketparquet.com','MARKETPARQUET'],
  ['markets.newyorkfed.org','NYFED'],['www.newyorkfed.org','NYFED'],
+ ['api.fiscaldata.treasury.gov','TREASURY'],['www.federalreserve.gov','FEDBOARD'],
  ['production.dataviz.cnn.io','CNN']
 ];
 

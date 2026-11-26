@@ -3,13 +3,14 @@ import {useStoredIndex} from '../../components/use-stored-index';
 import {ContentHelp} from '../content-help';
 import {HelpText} from '../help-copy';
 
-import {useMemo} from "react";
+import {useEffect,useMemo,useState} from "react";
 import {MarketCardHeader} from "../market-card-header";
 import {MarketScoreOrb} from "../market-score-orb";
 import {MarketTrendFrame} from "../market-trend-frame";
 import {MarketFearGreedChart,type MarketFearGreedChartPoint,type MarketFearGreedChartValidPoint} from "../market-fear-greed-chart";
 import {InflationFavoriteButton,InflationFavoriteHeaderIcon} from "./inflation-favorite-button";
 import {InflationMiniChart,type InflationMiniTrendPoint} from "./inflation-mini-chart";
+import {inflationR2VisibleTrend} from './inflation-r2-trend-display-r1.mjs';
 import "./inflation-indicator-r2.css";
 import "./inflation-score-comparisons-r1.css";
 import "./inflation-hero-typography-r1.css";
@@ -133,8 +134,15 @@ function releaseUrgency(days:number|null):ReleaseUrgency{
  if(days<=30)return "month";
  return "distant";
 }
-function releaseInfo(feature:string,today:string){
+function releaseInfo(feature:string,today:string|null){
  const meta=featureMeta[feature];
+ // The initial server HTML and first client render must not depend on a clock.
+ // A prerendered HTML snapshot may have been generated on a different KST day.
+ if(today===null)return {
+  cadence:meta.cadence,next:null,
+  countdown:meta.schedule?"일정 확인 중":"일정 미정",
+  urgency:"unknown" as ReleaseUrgency,
+ };
  const next=meta.schedule?releaseSchedules[meta.schedule].find(date=>date>=today)??null:null;
  const days=next?daysBetween(today,next):null;
  return {
@@ -192,8 +200,9 @@ export default function InflationPanel(){
  const {payload,loading}=useStoredIndex<InflationPayload>('/api/inflation-detail');
 
  const score=typeof payload?.score==="number"&&Number.isFinite(payload.score)?payload.score:null;
- const allTrend=useMemo(()=>Array.isArray(payload?.trend)?payload!.trend!.filter(p=>typeof p.value==="number"&&Number.isFinite(p.value)):[],[payload?.trend]);
- const trend=allTrend.slice(-12).map(p=>({date:p.label,score:p.value} satisfies MarketFearGreedChartPoint));
+ const trend:MarketFearGreedChartPoint[]=useMemo(()=>inflationR2VisibleTrend({
+  status:payload?.status,score:payload?.score,asOfDate:payload?.asOfDate,trend:payload?.trend,
+ }),[payload?.status,payload?.score,payload?.asOfDate,payload?.trend]);
  const latest=trend.at(-1);
  const latestPoint:MarketFearGreedChartValidPoint|null=latest&&typeof latest.score==="number"?{date:latest.date,score:latest.score}:null;
  const axisLabels=new Map(trend.map(p=>[p.date,p.date.slice(5,7)]));
@@ -206,7 +215,14 @@ export default function InflationPanel(){
   {label:"1년",value:payload?.scoreComparisons?.year??null},
  ] as const;
  const features=payload?.features??{};
- const today=kstTodayKey();
+ const [today,setToday]=useState<string|null>(null);
+ // Compute the live KST date only after hydration; refresh across midnight.
+ useEffect(()=>{
+  const refresh=()=>setToday(kstTodayKey());
+  refresh();
+  const interval=window.setInterval(refresh,60_000);
+  return()=>window.clearInterval(interval);
+ },[]);
 
  return <>
   <section className="cnn-reference-panel fg-card fg-shared-shell inflation-target-card" data-testid="inflation-detail-hero" data-market-state={loading?"loading":score===null?"unavailable":"ready"} aria-busy={loading}>
@@ -215,7 +231,7 @@ export default function InflationPanel(){
    </div>
    <div className="fg-content-slot">
     <div className="fg-score-slot">
-     <MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" comparisonItems={scoreComparisonItems} comparisonAriaLabel="인플레이션 압력 완화 점수 변화" metaDate={dateLabel(payload?.asOfDate)}/>
+     <MarketScoreOrb score={loading||score===null?"—":score.toFixed(1)} state={loading?"확인 중":stage(score)} variant="hero" startScoreFromZero={false} comparisonItems={scoreComparisonItems} comparisonAriaLabel="인플레이션 압력 완화 점수 변화" metaDate={dateLabel(payload?.asOfDate)}/>
     </div>
     <MarketTrendFrame className="fg-analysis-slot">
      <div className="fg-chart-slot"><div className="fg-renderer"><MarketFearGreedChart showExtrema data={trend} axisTicks={axisTicks} axisLabels={axisLabels} latestPoint={latestPoint} instanceKey="1Y" gradientId="inflation-fill" formatTooltipLabel={dateLabel} emptyLabel={loading?"확인 중":"이력 없음"}/></div></div>

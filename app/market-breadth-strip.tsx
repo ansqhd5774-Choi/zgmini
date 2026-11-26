@@ -1,12 +1,12 @@
 "use client";
 import {useEffect, useId, useState} from "react";
 import styles from "./market-breadth-strip.module.css";
-import {useStoredIndex} from "../components/use-stored-index";
-import {validUsBreadthRecord} from "../lib/market-breadth/us-public-r1.mjs";
-import {MarketBreadthHistoryChart, type MarketBreadthPeriod, type UsBreadthHistory} from "./market-breadth-history-chart";
-import {getMarketPeriodConfig} from "./market-card-shared";
+import {startStoredRefresh} from "../lib/market-score/live-refresh.mjs";
+import {newestUsIexPercentPublication} from "../lib/market-breadth/us-provisional-ui-r4.mjs";
+import type {MarketPeriod} from "./market-card-shared";
+import {MarketBreadthHistoryChart, type UsBreadthHistory} from "./market-breadth-history-chart";
 
-/** Verified issue-direction counts; only the US stored-output route is enabled. */
+/** Optional non-US input; US confirmed and provisional are strictly percentage-only public feeds. */
 export type MarketBreadthCounts = {
   rising: number;
   unchanged: number;
@@ -16,16 +16,60 @@ export type MarketBreadthCounts = {
 type MarketBreadthStripProps = {
   market: "usa" | "korea";
   counts?: MarketBreadthCounts | null;
-  period?: MarketBreadthPeriod;
+  period?: MarketPeriod | '1D';
+  /** Presentation-only restoration: no legacy IEX polling; the data owner supplies verified counts. */
+  displayOnly?: boolean;
+  /** Optional owner-provided verified public daily history; never collected by the UI. */
+  history?: UsBreadthHistory | null;
 };
 
-type UsaBreadthRecord = {
+type UsaIexProvisionalRecord = {
   market: "usa";
+  phase: "PROVISIONAL";
+  status: "PROVISIONAL";
+  source: "ALPACA_IEX_15MIN_SPLIT";
   observationDate: string;
-  counts: MarketBreadthCounts;
+  slotEndUtc: string;
+  collectedAt: string;
+  collectionStatus: "COMPLETE" | "INCOMPLETE_PAGINATION";
+  risingPct: number;
+  fallingPct: number;
+  unchangedPct: number;
+  unobservedPct: number;
 };
 
-const numberFormat = new Intl.NumberFormat("ko-KR");
+const validPercent = (n: unknown): n is number => typeof n === "number" && Number.isFinite(n) && n >= 0 && n <= 100;
+const near100 = (...parts: number[]) => Math.abs(parts.reduce((sum, n) => sum + n, 0) - 100) <= 0.2;
+
+/** IEX current-only public-percent gate; no confirmed-source coverage or direction requirements. */
+function currentIexProvisional(value: unknown): value is UsaIexProvisionalRecord {
+  if (!value || typeof value !== "object") return false;
+  const record = value as UsaIexProvisionalRecord;
+  if (record.market !== "usa" || record.phase !== "PROVISIONAL" || record.status !== "PROVISIONAL" ||
+    record.source !== "ALPACA_IEX_15MIN_SPLIT" ||
+    ![record.risingPct, record.fallingPct, record.unchangedPct, record.unobservedPct].every(validPercent) ||
+    !near100(record.risingPct, record.fallingPct, record.unchangedPct, record.unobservedPct) ||
+    !["COMPLETE", "INCOMPLETE_PAGINATION"].includes(record.collectionStatus)) return false;
+  // A stored row with 100% unobserved members is not a genuine 0% breadth reading.
+  // Preserve real 0% categories only when at least one member was observed.
+  if (record.risingPct + record.fallingPct + record.unchangedPct <= 0) return false;
+  const stamp = Date.parse(record.slotEndUtc);
+  const collected = Date.parse(record.collectedAt);
+  const age = Date.now() - stamp;
+  if (!Number.isFinite(stamp) || !Number.isFinite(collected) || collected < stamp ||
+    collected > Date.now() + 60_000 || age < 0 || age > 30 * 60_000) return false;
+  const nyFormat = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/New_York", year: "numeric", month: "2-digit", day: "2-digit"
+  });
+  const nyDay = (date: Date) => {
+    const parts = Object.fromEntries(nyFormat.formatToParts(date).map(part => [part.type, part.value]));
+    return `${parts.year}-${parts.month}-${parts.day}`;
+  };
+  // A previous NY day's stored slot must never masquerade as today's session
+  // at the local midnight rollover, even if it was collected <30m ago.
+  return record.observationDate === nyDay(new Date()) &&
+    record.observationDate === nyDay(new Date(stamp));
+}
 
 function normalizedCounts(counts?: MarketBreadthCounts | null) {
   if (!counts) return null;
@@ -44,63 +88,65 @@ function normalizedCounts(counts?: MarketBreadthCounts | null) {
   };
 }
 
-export function MarketBreadthStrip({ market, counts, period = '1Y' }: MarketBreadthStripProps) {
-  const panelId = useId();
+export function MarketBreadthStrip({ market, counts, period = "1Y", displayOnly = false, history = null }: MarketBreadthStripProps) {
+  const [provisional, setProvisional] = useState<UsaIexProvisionalRecord | null>(null);
   const [expanded, setExpanded] = useState(false);
-  const [history, setHistory] = useState<UsBreadthHistory | null>(null);
-  const [historyLoading, setHistoryLoading] = useState(false);
-  const [historyError, setHistoryError] = useState(false);
+  const panelId = useId();
+  const hasHistoryToggle = displayOnly && market === "usa";
   const name = market === "usa" ? "미국" : "한국";
-  const periodLabel = period === '1D' ? '1일' : getMarketPeriodConfig(period).label;
-  const {payload} = useStoredIndex<UsaBreadthRecord>(
-    "/api/market-breadth?market=usa", null, market === "usa" && counts === undefined
-  );
-  const stored = market === "usa" && validUsBreadthRecord(payload) ? payload : null;
-  const data = normalizedCounts(counts === undefined ? stored?.counts : counts);
-  const sourceInfo = stored && counts === undefined ? `S&P 500 · ${stored.observationDate} 기준` : null;
-  const canExpand = market === "usa" && counts === undefined;
 
   useEffect(() => {
-    if (!expanded || !canExpand) return;
-    const controller = new AbortController();
-    setHistoryLoading(true);
-    setHistoryError(false);
-    fetch('/api/market-breadth/history?market=usa', {cache: 'no-store', signal: controller.signal})
-      .then(async response => {
-        if (!response.ok) throw new Error('HISTORY_UNAVAILABLE');
-        const body: UsBreadthHistory = await response.json();
-        if (body.market !== 'usa' || body.universe !== 'SP500' || body.window !== '1Y' || !Array.isArray(body.records))
-          throw new Error('INVALID_HISTORY_RESPONSE');
-        return body;
-      })
-      .then(body => { if (!controller.signal.aborted) setHistory(body); })
-      .catch(() => { if (!controller.signal.aborted) setHistoryError(true); })
-      .finally(() => { if (!controller.signal.aborted) setHistoryLoading(false); });
-    return () => controller.abort();
-  }, [expanded, canExpand]);
-  const dominance = !data || Math.abs(data.risingPct - data.fallingPct) < 5
+    if (market !== "usa" || displayOnly) return;
+    let active = true;
+    const stop = startStoredRefresh(async (signal: AbortSignal) => {
+      let body: unknown = null;
+      try {
+        const response = await fetch('/api/market-breadth?market=usa&phase=provisional', {
+          cache: "no-store", signal
+        });
+        if (response.ok) body = await response.json() as unknown;
+      } catch {
+        body = null;
+      }
+      if (!active || signal.aborted) return;
+      const incoming = currentIexProvisional(body) ? body : null;
+      setProvisional(previous => newestUsIexPercentPublication(
+        currentIexProvisional(previous) ? previous : null, incoming));
+    });
+    return () => { active = false; stop(); };
+  }, [market, displayOnly]);
+  const activeProvisional = !displayOnly && market === "usa" && currentIexProvisional(provisional)
+    ? provisional : null;
+  const data = market === "usa" ? activeProvisional : normalizedCounts(counts);
+  const viewData = displayOnly && market === "usa" ? normalizedCounts(counts) : data;
+  const sourceInfo = activeProvisional
+    ? `장중 잠정 · Alpaca IEX 15분 · 뉴욕 ${new Intl.DateTimeFormat("ko-KR", {timeZone:"America/New_York", hour:"2-digit", minute:"2-digit", hour12:false}).format(new Date(activeProvisional.slotEndUtc))} 기준 · 미관측 ${activeProvisional.unobservedPct.toFixed(1)}%${activeProvisional.collectionStatus === "INCOMPLETE_PAGINATION" ? " · 페이지 일부 미수집" : ""}`
+    : null;
+  const sourceBadge = activeProvisional
+    ? `IEX·15분·${new Intl.DateTimeFormat("en-US", {timeZone:"America/New_York", hour:"2-digit", minute:"2-digit", hour12:false}).format(new Date(activeProvisional.slotEndUtc))}`
+    : null;
+
+  const dominance = !viewData || Math.abs(viewData.risingPct - viewData.fallingPct) < 5
     ? "none"
-    : data.risingPct > data.fallingPct ? "up" : "down";
+    : viewData.risingPct > viewData.fallingPct ? "up" : "down";
 
   const columns = [
-    { key: "up", label: "상승", symbol: "▲", count: data?.rising, pct: data?.risingPct },
-    { key: "flat", label: "보합", symbol: "―", count: data?.unchanged, pct: data?.unchangedPct },
-    { key: "down", label: "하락", symbol: "▼", count: data?.falling, pct: data?.fallingPct },
+    { key: "up", label: "상승", symbol: "▲", pct: viewData?.risingPct },
+    { key: "flat", label: "보합", symbol: "―", pct: viewData?.unchangedPct },
+    { key: "down", label: "하락", symbol: "▼", pct: viewData?.fallingPct },
   ] as const;
 
   const summary = <>
-      <div className={styles.stats}>
+      <div className={styles.stats} data-provisional={activeProvisional ? "true" : undefined}>
         <div className={styles.heading}>
-          <strong>{name} 등락 지수</strong>
-          {data && sourceInfo && <small className={styles.pending}>{stored!.observationDate.slice(5).replace('-', '.')}</small>}
-          {!data && <small className={styles.pending}>연결 예정</small>}
-          {canExpand && <span className={styles.toggleArrow} aria-hidden="true">{expanded ? '▴' : '▾'}</span>}
+          <strong>{activeProvisional ? `${name} 잠정` : `${name} 등락 지수`}</strong>
+          {sourceBadge && <small className={styles.pending} title={sourceInfo ?? undefined} style={{display:"block",minWidth:0,flex:"1 1 0",overflow:"hidden",textOverflow:"ellipsis"}}>{sourceBadge}</small>}
+          {!viewData && !activeProvisional && <small className={styles.pending}>{displayOnly ? "연결 예정" : market === "usa" ? "미제공" : "연결 예정"}</small>}
         </div>
-        {columns.map(({ key, label, symbol, count, pct }) => (
-          <div className={`${styles.stat} ${styles[key]}`} key={key} aria-label={`${label}: ${count === undefined ? "미제공" : `${numberFormat.format(count)}개, ${pct!.toFixed(1)}%`}`}>
+        {columns.map(({ key, label, symbol, pct }) => (
+          <div className={`${styles.stat} ${styles[key]}`} key={key} aria-label={`${label}: ${pct === undefined ? "미제공" : `${pct.toFixed(1)}%`}`}>
             <span className={styles.symbol} aria-hidden="true">{symbol}</span>
-            <span className={styles.count}>{count === undefined ? "—" : numberFormat.format(count)}</span>
-            <span className={styles.percent}>({pct === undefined ? "—" : `${pct.toFixed(1)}%`})</span>
+            <span className={styles.percent}>{pct === undefined ? "—" : `${pct.toFixed(1)}%`}</span>
           </div>
         ))}
       </div>
@@ -108,30 +154,32 @@ export function MarketBreadthStrip({ market, counts, period = '1Y' }: MarketBrea
         className={styles.track}
         data-dominance={dominance}
         role="img"
-        aria-label={data
-          ? `상승 ${data.risingPct.toFixed(1)}%, 보합 ${data.unchangedPct.toFixed(1)}%, 하락 ${data.fallingPct.toFixed(1)}%`
-          : "실제 등락 종목 데이터는 아직 연결되지 않았습니다"}
+        aria-label={viewData
+          ? `상승 ${viewData.risingPct.toFixed(1)}%, 보합 ${viewData.unchangedPct.toFixed(1)}%, 하락 ${viewData.fallingPct.toFixed(1)}%${activeProvisional ? `, 미관측 ${activeProvisional.unobservedPct.toFixed(1)}%` : ""}`
+          : "검증된 등락 비율을 아직 표시할 수 없습니다"}
       >
-        {data && <>
-          <span className={styles.rising} style={{width:`${data.risingPct}%`}}/>
-          <span className={styles.unchanged} style={{width:`${data.unchangedPct}%`}}/>
-          <span className={styles.falling} style={{width:`${data.fallingPct}%`}}/>
+        {viewData && <>
+          <span className={styles.rising} style={{width:`${viewData.risingPct}%`}}/>
+          <span className={styles.unchanged} style={{width:`${viewData.unchangedPct}%`}}/>
+          <span className={styles.falling} style={{width:`${viewData.fallingPct}%`}}/>
         </>}
       </div>
   </>;
 
   return (
-    <section className={styles.root} data-expanded={expanded && canExpand} aria-label={`${name} 등락 지수${sourceInfo ? `, ${sourceInfo}` : data ? "" : ", 데이터 연결 예정"}`} title={sourceInfo ?? undefined} data-market={market}>
-      {canExpand ? <button type="button" className={styles.summaryButton}
-        aria-expanded={expanded} aria-controls={panelId}
-        aria-label={`미국 등락 지수 ${periodLabel} 확정치 이력 ${expanded ? '접기' : '펼치기'}`}
-        onClick={() => setExpanded(value => !value)}>{summary}</button>
+    <section className={styles.root}
+      aria-label={`${name} 등락 지수${sourceInfo ? `, ${sourceInfo}` : viewData ? "" : ", 데이터 미제공"}`}
+      title={sourceInfo ?? undefined} data-market={market} data-expanded={expanded && hasHistoryToggle}>
+      {hasHistoryToggle ? <button type="button" className={styles.summaryButton} aria-expanded={expanded}
+        aria-controls={panelId} aria-label={`미국 등락 지수 확정 이력 ${expanded ? "접기" : "펼치기"}`}
+        onClick={()=>setExpanded(value=>!value)}>{summary}</button>
         : <div className={styles.summaryStatic}>{summary}</div>}
-      {canExpand && <div id={panelId} className={styles.details} role="region" aria-label={`미국 등락 지수 ${periodLabel} 확정치 차트`} hidden={!expanded}>
-        {historyLoading && <p className={styles.historyEmpty} role="status">확정치 이력을 불러오는 중입니다.</p>}
-        {!historyLoading && historyError && <p className={styles.historyEmpty} role="alert">저장된 이력을 불러오지 못했습니다. 접었다 다시 펼쳐 재시도할 수 있습니다.</p>}
-        {!historyLoading && !historyError && history && <MarketBreadthHistoryChart key={period} history={history} period={period}/>}
+      {hasHistoryToggle && <div id={panelId} className={styles.details} role="region"
+        aria-label="미국 등락 지수 확정 이력 차트" hidden={!expanded}>
+        {history ? <MarketBreadthHistoryChart history={history} period={period}/> :
+          <p className={styles.historyEmpty} role="status">확정 이력 데이터 연결 예정</p>}
       </div>}
     </section>
   );
 }
+

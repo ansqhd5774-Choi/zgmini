@@ -6,7 +6,7 @@ import {createHash} from 'node:crypto';
 import {fileURLToPath,pathToFileURL} from 'node:url';
 import {collectOptional} from './theme-optional-collect.mjs';
 import {auditOptionalPrices} from './theme-optional-audit.mjs';
-import {buildAiProvisionalFromExistingSeven} from './theme-ai-marketparquet-provisional-r2.mjs';
+import {throwMarketParquetRemoved} from '../../lib/marketparquet-retirement.mjs';
 import {containedFile,inspectManifest} from './theme-data-inventory.mjs';
 import {eligibleAiTheme,AI_THEME_PUBLIC_KEY,AI_THEME_PUBLIC_VERSION} from '../../worker/theme-ai-semiconductor-optional.mjs';
 import {themeHistoryReference} from '../../worker/theme-history-reference.mjs';
@@ -123,19 +123,7 @@ export function buildAiCandidate({audit,prior,reference,manifest,manifestBytes,n
 // Do not transfer GMH rights flags to the second provider. Require the exact
 // existing seven-theme rolling publisher's source/rights attestation for the
 // same confirmed and provisional dates, even though no raw is published.
-export function verifySevenProvisionalAuthority(rolling,reference){
- const expected=(reference?.phase==='PROVISIONAL'?reference.provisional?.points??[]:[]).map(p=>p.date);
- ensure(rolling?.status==='READY'&&rolling.version===THEME_ETF_ROLLING_VERSION&&
-  rolling.publicationAuthorized===true&&rolling.upstreamCommercialRightsVerified===true&&
-  rolling.derivedLicenseVerified===true&&rolling.sourcePriceReconciled===true&&
-  rolling.lineage?.primarySource==='GETMARKETHISTORY_1H_CLOSE'&&
-  rolling.lineage?.secondarySource==='MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED'&&
-  rolling.lineage?.secondaryPendingCount===expected.length&&
-  rolling.observationDate===reference.observationDate&&
-  equal((rolling.provisional?.points??[]).map(p=>p.date),expected)&&
-  rolling.lineage?.latestCompletedSession===expected.at(-1),'AI_SEVEN_SECONDARY_RIGHTS_OR_LINEAGE_UNVERIFIED');
- return true;
-}
+export function verifySevenProvisionalAuthority(){return throwMarketParquetRemoved();}
 
 // The public API is a UNION of theme-specific provisional dates: biotech can
 // add 22 Oct even when the original seven have confirmed 22 Oct and only a 23
@@ -165,12 +153,26 @@ export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPu
  const result={report:'AI_SEVEN_PROVISIONAL_AUTHORITY_READONLY_R3',status:'STARTED',
   providerCalls:0,d1Writes:0,schedulerWrites:0,reason:null};
  try{
-  const db=storage??await cloudflareD1({dataRoot}),feed=await readPublic();
-  ensure(feed?.status==='READY'&&feed.themes?.length>=7,'PUBLIC_SEVEN_REFERENCE_MISSING');
-  const reference=sevenCoreReference(feed),clock=now();
-  const pending=reference.phase==='PROVISIONAL'?(reference.provisional?.points??[]).map(p=>p.date):[];
-  result.publicReference={phase:reference.phase,confirmedDate:reference.observationDate,
-   visibleUnionDates:(feed.provisional?.points??[]).map(p=>p.date),pendingDates:pending};
+  const db=storage??await cloudflareD1({dataRoot});
+  // A stale/unavailable public GET must not block *read-only* D1 diagnosis.
+  // Absence of a verified public reference still forbids claiming score parity.
+  let feed=null,reference=null,publicReadFailed=false,publicInvalid=false;
+  try{feed=await readPublic();}catch{publicReadFailed=true;}
+  if(feed?.status==='READY'&&Array.isArray(feed.themes)&&feed.themes.length>=7){
+   try{reference=sevenCoreReference(feed);}catch{publicInvalid=true;}
+  }
+  const safeReasons=new Set(['STORED_DATA_STALE','STORED_DATA_PENDING',
+   'STORED_DATA_NOT_APPROVED','STORED_READ_UNAVAILABLE','STORED_DATA_INVALID']);
+  const clock=now();
+  const pending=reference?.phase==='PROVISIONAL'?(reference.provisional?.points??[]).map(p=>p.date):[];
+  result.publicReference=reference?
+   {status:'READY',phase:reference.phase,confirmedDate:reference.observationDate,
+    visibleUnionDates:(feed.provisional?.points??[]).map(p=>p.date),pendingDates:pending}:
+   {status:'UNAVAILABLE',
+    reason:publicReadFailed?'PUBLIC_API_UNREADABLE':
+     publicInvalid?'PUBLIC_SEVEN_REFERENCE_INVALID':
+     safeReasons.has(feed?.reason)?feed.reason:'PUBLIC_SEVEN_REFERENCE_MISSING',
+    phase:null,confirmedDate:null,visibleUnionDates:[],pendingDates:[]};
   const fetchOptional=async key=>{try{
    const row=await db.read(key);return {body:row.body,storedAt:row.storedAt,error:null};
   }catch{return {body:null,storedAt:null,error:'D1_OUTPUT_NOT_READABLE'};}};
@@ -186,16 +188,17 @@ export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPu
    derivedLicenseVerified:r?.derivedLicenseVerified===true,
    sourcePriceReconciled:r?.sourcePriceReconciled===true,
    primarySource:r?.lineage?.primarySource==='GETMARKETHISTORY_1H_CLOSE',
-   secondarySource:r?.lineage?.secondarySource==='MARKETPARQUET_ETF_DAILY_SPLIT_ADJUSTED',
-   pendingCount:r?.lineage?.secondaryPendingCount===pending.length,
-   confirmedDate:r?.observationDate===reference.observationDate,
-   pendingDates:equal((r?.provisional?.points??[]).map(p=>p.date),pending),
-   latestSession:r?.lineage?.latestCompletedSession===pending.at(-1),
+   secondarySource:r?.lineage?.secondarySource===null&&r?.lineage?.secondaryPendingCount===0,
+   pendingCount:!!reference&&r?.lineage?.secondaryPendingCount===pending.length,
+   confirmedDate:!!reference&&r?.observationDate===reference.observationDate,
+   pendingDates:!!reference&&equal((r?.provisional?.points??[]).map(p=>p.date),pending),
+   latestSession:!!reference&&r?.lineage?.latestCompletedSession===
+    (pending.at(-1)??reference.observationDate),
   };
   const rollingRowFresh=Number.isSafeInteger(roll.storedAt)&&roll.storedAt<=clock&&
    clock-roll.storedAt<PUBLIC_DISPLAY_MAX_AGE_MS;
   const rollingValid=rollingRowFresh&&!!seed&&!!r&&await validRollingPublic(r,seed,{now:clock});
-  const scoreMatches=(themes,points,confirmed)=>confirmed===reference.observationDate&&
+  const scoreMatches=(themes,points,confirmed)=>!!reference&&confirmed===reference.observationDate&&
    Array.isArray(themes)&&themes.length===7&&themes.every((t,i)=>
     t.theme===reference.themes[i].theme&&t.score===reference.themes[i].score&&
     equal(t.history?.map(p=>p.date),reference.themes[i].history?.map(p=>p.date))&&
@@ -203,7 +206,8 @@ export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPu
    equal(points?.map(p=>p.date)??[],pending)&&
    (points??[]).every((p,i)=>reference.themes.every(t=>p.scores?.[t.theme]===reference.provisional?.points?.[i]?.scores?.[t.theme]));
   const rollingMatches=rollingValid&&scoreMatches(r.themes,r.provisional?.points??[],r.observationDate);
-  result.rolling={available:!!r,error:roll.error,observationDate:r?.observationDate??null,
+  result.rolling={available:!!r,error:roll.error,storedAt:roll.storedAt??null,
+   sourceStoredAt:r?.sourceStoredAt??null,asOf:r?.asOf??null,observationDate:r?.observationDate??null,
    pendingDates:(r?.provisional?.points??[]).map(p=>p.date),latestSession:r?.lineage?.latestCompletedSession??null,
    secondarySourceName:r?.lineage?.secondarySource??null,gates,
    allAuthorityGatesPass:Object.values(gates).every(Boolean),storedRowFresh:rollingRowFresh,
@@ -213,7 +217,7 @@ export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPu
   const fallbackRowValid=Number.isSafeInteger(side.storedAt)&&side.storedAt<=clock;
   const fallbackValid=fallbackRowValid&&!!seed&&!!p&&
    validThemeEtfProvisional(p,seed.observationDate,{now:clock,themes:seed.themes});
-  const fallbackSeedMatches=!!seed&&reference.observationDate===seed.observationDate&&
+  const fallbackSeedMatches=!!reference&&!!seed&&reference.observationDate===seed.observationDate&&
    seed.themes.every((t,i)=>t.theme===reference.themes[i].theme&&
     t.latestScore===reference.themes[i].score&&
     equal(t.history?.map(p=>p.date),reference.themes[i].history?.map(p=>p.date))&&
@@ -221,7 +225,8 @@ export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPu
   const fallbackMatches=fallbackValid&&fallbackSeedMatches&&
    equal(p.points.map(z=>z.date),pending)&&p.points.every((z,i)=>
     reference.themes.every(t=>z.scores?.[t.theme]===reference.provisional?.points?.[i]?.scores?.[t.theme]));
-  result.fallback={available:!!p,error:side.error,sourceName:p?.sourceName??null,
+  result.fallback={available:!!p,error:side.error,storedAt:side.storedAt??null,
+   sourceStoredAt:p?.sourceStoredAt??null,asOf:p?.asOf??null,sourceName:p?.sourceName??null,
    confirmedDate:p?.confirmedObservationDate??null,pendingDates:(p?.points??[]).map(x=>x.date),
    rights:{publicationAuthorized:p?.publicationAuthorized===true,
     upstreamCommercialRightsVerified:p?.upstreamCommercialRightsVerified===true,
@@ -229,7 +234,8 @@ export async function diagnoseSevenProvisionalLane({dataRoot,storage=null,readPu
     sourcePriceReconciled:p?.sourcePriceReconciled===true},
    storedRowValid:fallbackRowValid,readerValidatorPass:fallbackValid,
    seedScoresMatch:fallbackSeedMatches,exactPublicScoreMatch:fallbackMatches};
-  result.activeLane=rollingMatches?'ROLLING_R178':fallbackMatches?'SEED_PLUS_PROVISIONAL_SIDECAR':
+  result.activeLane=!reference?'PUBLIC_REFERENCE_UNAVAILABLE':
+   rollingMatches?'ROLLING_R178':fallbackMatches?'SEED_PLUS_PROVISIONAL_SIDECAR':
    'UNVERIFIED_NO_PUBLIC_SCORE_PARITY';
   result.status='READONLY_REPORTED';
  }catch(e){result.status='BLOCKED';result.reason=e?.code??'UNKNOWN_ERROR';}
@@ -312,7 +318,7 @@ const api=async(fetchImpl=fetch)=>{
  ensure(res.ok,'PUBLIC_API_NOT_READY');const value=await res.json();ensure(value.status==='READY','PUBLIC_API_NOT_READY');return value;
 };
 export async function runOptionalTheme({themeId,dataRoot,readPublic=api,storage=null,collect=collectOptional,
- audit=auditOptionalPrices,secondary=buildAiProvisionalFromExistingSeven,allowPublish=false,now=Date.now}={}){
+ audit=auditOptionalPrices,secondary=throwMarketParquetRemoved,allowPublish=false,now=Date.now}={}){
  const result={themeId,status:'STARTED',providerCalls:0,d1Writes:0,publicVerified:false,reason:null};
  try{
   ensure(TARGETS.includes(themeId),'UNREGISTERED_THEME');

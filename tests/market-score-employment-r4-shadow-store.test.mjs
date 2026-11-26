@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { DatabaseSync } from "node:sqlite";
 import { createEmploymentR4ShadowStore } from "../lib/market-score/employment-r4-shadow-store.mjs";
+import { inspectStateClaimsPitReconciliation } from "../lib/market-score/employment-r6-claims-pit-recovery.mjs";
 import { EMPLOYMENT_R4_PIT_CLASSES, EMPLOYMENT_R4_SHADOW_TABLES } from "../lib/market-score/employment-r4-shadow-contract.mjs";
 
 function sqliteD1(){
@@ -73,4 +74,152 @@ test("latestRun returns newest run and supports status filter",async()=>{
   assert.equal((await store.latestRun()).run_id,"r2");
   assert.equal((await store.latestRun({status:"FAIL"})).run_id,"r1");
   sqlite.close();
+});
+
+test("PIT-06-03 replay of identical stored state Claims is NOOP without duplicate History revisions",async()=>{
+  const {sqlite,db}=sqliteD1();
+  try{
+    const store=createEmploymentR4ShadowStore(db);
+    const original=row({
+      pitClass:EMPLOYMENT_R4_PIT_CLASSES.historicalCurrentOrRevised,
+      availableAt:null,retrievedAt:"2026-11-09T09:00:00Z",
+      sourceRevision:"ETA539:RPTDATE:2026-11-07",
+    });
+    const initial=await store.upsertRows({rows:[original],retrievedAt:original.retrievedAt});
+    assert.deepEqual([initial.inserted,initial.revised,initial.noop,initial.historyRowsAdded],[1,0,0,1]);
+    const firstHistory=(await store.getHistoryRows())[0];
+    const before=structuredClone(firstHistory);
+    for(const [retrievedAt,parserRun] of [
+      ["2026-11-10T09:00:00Z","RUN_A"],
+      ["2026-11-11T09:00:00Z","RUN_B"],
+    ]){
+      const replay=await store.upsertRows({rows:[{
+        ...original,retrievedAt,availableAt:retrievedAt,
+        provenance:{parserRun,rawRecordHash:"a".repeat(64)},
+      }],retrievedAt});
+      assert.deepEqual([replay.inserted,replay.revised,replay.noop,replay.historyRowsAdded],[0,0,1,0]);
+    }
+    assert.deepEqual(await store.getHistoryRows(),[before]);
+    const audit=inspectStateClaimsPitReconciliation({
+      currentRows:await store.getCurrentRows(),
+      historyRows:await store.getHistoryRows(),
+      asOfIso:"2026-11-16T14:00:00Z",
+    });
+    assert.equal(audit.status,"CURRENT_HISTORY_MATCHED");
+    assert.equal(audit.historyMatchedKeys,1);
+    assert.equal(audit.missingHistoryKeys,0);
+    assert.equal(audit.duplicateCurrentKeys,0);
+    assert.equal(audit.repairAuthorized,false);
+    assert.equal(audit.operationalWrites,0);
+
+    // One genuine provider revision creates one append-only event, not one per poll.
+    const revised={...original,value:1235,sourceHash:"b".repeat(64),
+      sourceRevision:"ETA539:RPTDATE:2026-11-14",
+      retrievedAt:"2026-11-12T09:00:00Z"};
+    const one=await store.upsertRows({rows:[revised],retrievedAt:revised.retrievedAt});
+    const two=await store.upsertRows({rows:[{...revised,
+      retrievedAt:"2026-11-13T09:00:00Z",
+      provenance:{parserRun:"REPLAY_AFTER_REVISION"},
+    }],retrievedAt:"2026-11-13T09:00:00Z"});
+    assert.deepEqual([one.inserted,one.revised,one.noop,one.historyRowsAdded],[0,1,0,1]);
+    assert.deepEqual([two.inserted,two.revised,two.noop,two.historyRowsAdded],[0,0,1,0]);
+    const history=await store.getHistoryRows();
+    assert.equal(history.length,2);
+    assert.deepEqual(history.map(r=>r.change_type),["INSERT","UPDATE"]);
+    assert.deepEqual(history.map(r=>r.value),[1234,1235]);
+    const end=inspectStateClaimsPitReconciliation({
+      currentRows:await store.getCurrentRows(),historyRows:history,
+      asOfIso:"2026-11-16T14:00:00Z",
+    });
+    assert.equal(end.status,"CURRENT_HISTORY_MATCHED");
+    assert.equal(end.revisionDisagreements,0);
+    assert.equal(end.repairAuthorized,false);
+  }finally{sqlite.close();}
+});
+
+test("PIT-06-03 absent History stays missing on ordinary replay; no synthetic repair or repeated INSERT",async()=>{
+  const {sqlite,db}=sqliteD1();
+  try{
+    const store=createEmploymentR4ShadowStore(db);
+    const originals=["AL","AK"].map(geographyCode=>row({
+      geographyCode,pitClass:EMPLOYMENT_R4_PIT_CLASSES.historicalCurrentOrRevised,
+      availableAt:null,retrievedAt:"2026-11-09T09:00:00Z",
+      sourceRevision:"ETA539:RPTDATE:2026-11-07",
+    }));
+    const initial=await store.upsertRows({rows:originals,retrievedAt:"2026-11-09T09:00:00Z"});
+    assert.equal(initial.historyRowsAdded,2);
+    // Simulate the known Core CURRENT/HISTORY gap in an isolated :memory: DB.
+    // This is not a History repair and is never run on the operating PC.
+    sqlite.prepare(`DELETE FROM ${EMPLOYMENT_R4_SHADOW_TABLES.history} WHERE geography_code=?`).run("AK");
+    assert.equal((await store.getHistoryRows()).length,1);
+    for(const retrievedAt of ["2026-11-10T09:00:00Z","2026-11-11T09:00:00Z"]){
+      const out=await store.upsertRows({rows:originals.map(x=>({...x,retrievedAt,
+        provenance:{parserRun:retrievedAt}})),retrievedAt});
+      assert.deepEqual([out.inserted,out.revised,out.noop,out.historyRowsAdded],[0,0,2,0]);
+      assert.equal((await store.getHistoryRows()).length,1);
+    }
+    const audit=inspectStateClaimsPitReconciliation({
+      currentRows:await store.getCurrentRows(),
+      historyRows:await store.getHistoryRows(),
+      asOfIso:"2026-11-16T14:00:00Z",
+    });
+    assert.equal(audit.currentKnownKeys,2);
+    assert.equal(audit.historyMatchedKeys,1);
+    assert.equal(audit.missingHistoryKeys,1);
+    assert.equal(audit.metadataEligibleMissingKeys,1);
+    assert.equal(audit.duplicateCurrentKeys,0);
+    assert.equal(audit.status,"REVIEW_MISSING_HISTORY");
+    assert.equal(audit.repairAuthorized,false);
+    assert.equal(audit.promotionApproved,false);
+    assert.equal(audit.operationalWrites,0);
+  }finally{sqlite.close();}
+});
+
+test("W04 interrupted 80-statement batch never leaves CURRENT-only keys and retries safely",async()=>{
+  const {sqlite,db}=sqliteD1();
+  const normalBatch=db.batch;
+  const stamp="2026-11-09T09:00:00Z";
+  let calls=0;
+  db.batch=async statements=>{
+    calls++;
+    if(calls===2)throw new Error("SIMULATED_BATCH_ABORT");
+    return normalBatch(statements);
+  };
+  try{
+    const store=createEmploymentR4ShadowStore(db);
+    const records=Array.from({length:45},(_,index)=>row({
+      geographyCode:"ST"+String(index).padStart(2,"0"),
+      retrievedAt:stamp,availableAt:null,
+      pitClass:EMPLOYMENT_R4_PIT_CLASSES.historicalCurrentOrRevised,
+    }));
+    await assert.rejects(store.upsertRows({rows:records,retrievedAt:stamp}),
+      /SIMULATED_BATCH_ABORT/);
+    assert.equal(calls,2);
+    const currentBefore=await store.getCurrentRows();
+    const historyBefore=await store.getHistoryRows();
+    // Each group is [CURRENT, HISTORY] and both are in one SQLite batch.
+    // Under the original 2026-09 current-first/history-later 80-item
+    // algorithm, this fault would strand 10 CURRENT rows without HISTORY.
+    assert.equal(currentBefore.length,40);
+    assert.equal(historyBefore.length,40);
+    const orphanCount=()=>sqlite.prepare(`SELECT COUNT(*) AS n FROM
+      ${EMPLOYMENT_R4_SHADOW_TABLES.current} AS c
+      WHERE NOT EXISTS (SELECT 1 FROM ${EMPLOYMENT_R4_SHADOW_TABLES.history} AS h
+      WHERE h.logical_series_id=c.logical_series_id
+        AND h.geography_type=c.geography_type
+        AND h.geography_code=c.geography_code
+        AND h.observation_date=c.observation_date)`).get().n;
+    assert.equal(orphanCount(),0);
+
+    db.batch=normalBatch;
+    const replay=await store.upsertRows({rows:records,retrievedAt:stamp});
+    assert.deepEqual([replay.inserted,replay.revised,replay.noop,replay.historyRowsAdded],
+      [5,0,40,5]);
+    assert.equal((await store.getCurrentRows()).length,45);
+    assert.equal((await store.getHistoryRows()).length,45);
+    assert.equal(orphanCount(),0);
+    assert.equal(sqlite.prepare(`SELECT COUNT(*) AS n FROM
+      ${EMPLOYMENT_R4_SHADOW_TABLES.history}
+      WHERE change_type='INSERT'`).get().n,45);
+  }finally{sqlite.close();}
 });

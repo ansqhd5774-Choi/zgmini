@@ -1,3 +1,4 @@
+import {throwMarketParquetRemoved} from '../../lib/marketparquet-retirement.mjs';
 /**
  * Independent PC-only, stored-result publisher for V9 display output.
  * Default is preview. --publish is an explicit operations action.
@@ -32,25 +33,7 @@ export function publicationDecision(next,previous){
  return comparable(next,previous)?'UNCHANGED':'PUBLISH';
 }
 const selectSql='SELECT body,stored_at FROM market_public_snapshots_v1 WHERE snapshot_key=?';
-export async function publishRecord({remote,db,record,now=Date.now()}){
- const first=(await remote.query(db,selectSql,[V9_PUBLIC_KEY])).results?.[0]??null;
- const decision=publicationDecision(record,first?parse(first.body):null);
- if(decision!=='PUBLISH')return {status:decision,observationDate:record.observationDate};
- if(first&&!projectV9PublicDomain(parse(first.body)))throw Error('V9_REMOTE_BODY_NOT_VERIFIED');
- if(first?.stored_at>now)throw Error('V9_REMOTE_STORED_AT_NEWER');
- const encoded=JSON.stringify(record);
- // Reuse the existing D1 public-snapshot table; only update if remote has not changed.
- const sql="INSERT INTO market_public_snapshots_v1(snapshot_key,body,stored_at) SELECT ?,?,? WHERE NOT EXISTS(SELECT 1 FROM market_public_snapshots_v1 WHERE snapshot_key=?) OR EXISTS(SELECT 1 FROM market_public_snapshots_v1 WHERE snapshot_key=? AND body=?) ON CONFLICT(snapshot_key) DO UPDATE SET body=excluded.body,stored_at=excluded.stored_at WHERE market_public_snapshots_v1.body=?";
- let err=null;
- try{await remote.request(db,[{sql,params:[V9_PUBLIC_KEY,encoded,now,V9_PUBLIC_KEY,V9_PUBLIC_KEY,first?.body??'',first?.body??'']}]);}
- catch(e){err=e}
- // Unknown submit outcome must be resolved by readback before any retry.
- let row;
- try{row=(await remote.query(db,selectSql,[V9_PUBLIC_KEY])).results?.[0]??null;}
- catch{throw Error('V9_PUBLICATION_STATE_UNKNOWN')}
- if(row?.body!==encoded||row.stored_at!==now)throw Error(err?'V9_PUBLICATION_STATE_UNKNOWN':'V9_PUBLICATION_CAS_OR_READBACK_FAILED');
- return {status:'VERIFIED',asOfDate:record.asOfDate,observationDate:record.observationDate,score:record.score,phase:record.phase};
-}
+export async function publishRecord(){return throwMarketParquetRemoved();}
 export async function main(args=process.argv.slice(2),now=new Date()){
  const publish=args.includes('--publish');
  const result={task:'ZGMINI_BREADTH_R10_V9_PUBLIC_DISPLAY',mode:publish?'PUBLISH':'PREVIEW',

@@ -35,19 +35,19 @@ const snapshot=earningsDisplaySnapshot({status:'READY_PRIVATE',scope:'PC_PRIVATE
  redistribution:false,publicationStatus:'HELD_UNCONFIRMED',checkedAt:'2026-10-29T09:00:00Z',
  coveredDays,recordCount:3,priorityCount:2,events:[raw('GOOG'),raw('AMD'),raw('ZM')]});
 
-test('R36 earnings HTML accepts simultaneous 3+2, 3+2+1 and all with no extra vendor request',async()=>{
+test('R36 multi-select never resurrects unverified historical earnings stars',async()=>{
  const html=importance=>earningsDisplayHtml(snapshot,{start:date,end:date,importance});
- assert.equal(html([3,2]).count,2);
- assert.equal(html([3,2,1]).count,3);
+ assert.equal(html([3,2]).count,0);
+ assert.equal(html([3,2,1]).count,0);
  assert.equal(html(null).count,3);
- assert.equal(html([3]).count,1);
+ assert.equal(html([3]).count,0);
  const url=`https://zgmini.kr/api/earnings-calendar-display?start=${date}&end=${date}&importance=3,2`;
  const response=earningsDisplayResponse(snapshot,url);
  assert.equal(response.status,200);
- assert.equal(response.headers.get('x-display-count'),'2');
- assert.equal(response.headers.get('x-display-day-counts'),`${date}:2`);
+ assert.equal(response.headers.get('x-display-count'),'0');
+ assert.equal(response.headers.get('x-display-day-counts'),`${date}:0`);
  const body=await response.text();
- assert.match(body,/GOOG/);assert.match(body,/AMD/);assert.doesNotMatch(body,/ZM/);
+ assert.equal(body,'');
  for(const impact of ['','4','3,4','3,3','3,,2','3,2,1,2']){
   assert.equal(earningsDisplayResponse(snapshot,url.replace('importance=3,2',`importance=${impact}`)).status,400,impact);
  }

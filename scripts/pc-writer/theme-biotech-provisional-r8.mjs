@@ -1,3 +1,4 @@
+import {throwMarketParquetRemoved} from '../../lib/marketparquet-retirement.mjs';
 // R8: additive biotech-only secondary lane over the existing R7 confirmed lane.
 // Reuse the seven-theme MarketParquet R165 archive, never collect it a second time.
 // All prices are read from previously stored SHA-checked raw files before scoring.
@@ -93,45 +94,7 @@ async function defaultParquetReader(filename,verifiedBytes){
  return decodeVerifiedBiotechParquetR8(mod,verifiedBytes);
 }
 
-export async function readVerifiedMarketParquetBiotech(dataRoot,{confirmedDate,parquetReader=defaultParquetReader}={}){
- check(date(confirmedDate),'R8_BASE_DATE_INVALID');
- const parent=path.join(dataRoot,'theme-market-history-r131');
- const archive=path.join(parent,'marketparquet-r165'),audits=path.join(parent,'marketparquet-r167');
- check(fs.existsSync(archive)&&fs.existsSync(audits),'R8_SEVEN_THEME_ARCHIVE_UNAVAILABLE');
- const available=fs.readdirSync(archive).filter(n=>/^etf_daily_\d{4}-\d{2}-\d{2}\.parquet$/.test(n))
-  .map(name=>({name,date:name.slice(10,20)})).filter(x=>x.date>=confirmedDate).sort((a,b)=>a.date.localeCompare(b.date));
- // Always verify an overlap date before appending secondary prices.
- if(!available.some(x=>x.date===confirmedDate))return {status:'NO_OVERLAP_PARQUET',dates:[]};
- const relevant=available.slice(0,3);
- const results=[];
- for(const {name,date:observation} of relevant){
-  const filename=path.join(archive,name),bytes=fs.readFileSync(filename);
-  check(bytes.length>=12&&bytes.toString('ascii',0,4)==='PAR1'&&bytes.toString('ascii',bytes.length-4)==='PAR1',
-   'R8_PARQUET_MAGIC_INVALID');
-  const footer=bytes.readUInt32LE(bytes.length-8);
-  check(footer>0&&footer<=bytes.length-12,'R8_PARQUET_FOOTER_INVALID');
-  const digest=hash(bytes),auditPath=path.join(audits,name.replace('.parquet','.audit.json'));
-  check(fs.existsSync(auditPath),'R8_SEVEN_THEME_AUDIT_MISSING');
-  const audit=JSON.parse(fs.readFileSync(auditPath,'utf8'));
-  check(audit.date===observation&&audit.sha256===digest&&audit.complete===true&&audit.source===SOURCE,
-   'R8_SEVEN_THEME_AUDIT_MISMATCH');
-  const rows=await parquetReader(filename,bytes),actual={};
-  check(Array.isArray(rows),'R8_PARQUET_ROWS_INVALID');
-  for(const row of rows){
-   const ticker=typeof row.symbol==='string'?row.symbol.toUpperCase():null;
-   if(!SYMBOLS.includes(ticker))continue;
-   const rowDate=dateOnly(row.date);
-   check(rowDate===observation&&price(row.close)&&
-    (!row.asset_type||String(row.asset_type).toLowerCase()==='etf'),'R8_PARQUET_TARGET_ROW_INVALID');
-   check(!Object.hasOwn(actual,ticker),'R8_PARQUET_TARGET_DUPLICATE');
-   actual[ticker]=row.close;
-  }
-  if(SYMBOLS.some(t=>!price(actual[t])))return {status:'MISSING_REAL_TARGET_ROWS',dates:results.map(r=>r.date),missingDate:observation};
-  results.push({date:observation,prices:actual,fileSha256:digest,
-   sourceStoredAt:new Date(fs.statSync(filename).mtimeMs).toISOString()});
- }
- return {status:'VERIFIED',dates:results};
-}
+export function readVerifiedMarketParquetBiotech(){return throwMarketParquetRemoved();}
 
 export function calculateBiotechProvisionalR8({confirmed,gmh,parquet,now=Date.now()}={}){
  check(confirmed?.status==='READY'&&confirmed.phase==='CONFIRMED'&&
@@ -181,9 +144,4 @@ export function calculateBiotechProvisionalR8({confirmed,gmh,parquet,now=Date.no
  return {status:'PRIVATE_PROVISIONAL_CANDIDATE',record:output,points};
 }
 
-export async function buildBiotechProvisionalFromStorageR8({dataRoot,confirmed,now=Date.now(),parquetReader}={}){
- const gmh=readVerifiedBiotechGmhPrices(dataRoot);
- const parquet=await readVerifiedMarketParquetBiotech(dataRoot,{confirmedDate:confirmed.observationDate,parquetReader});
- if(parquet.status!=='VERIFIED')return parquet;
- return calculateBiotechProvisionalR8({confirmed,gmh,parquet,now});
-}
+export function buildBiotechProvisionalFromStorageR8(){return throwMarketParquetRemoved();}

@@ -16,11 +16,11 @@ type Period='1M'|'3M'|'6M'|'1Y';
 const isScore=(value:unknown):value is number=>typeof value==='number'&&Number.isFinite(value)&&value>=0&&value<=100;
 const readyScore=(domain?:{status?:string;score?:number|null}|null)=>domain?.status==='READY'&&isScore(domain.score)?domain.score:null;
 const BANDS=[
- {name:'취약',min:0,max:25,range:'0–25',width:25,color:'#fa628b'},
- {name:'주의',min:25,max:45,range:'25–45',width:20,color:'#ffc64b'},
- {name:'중립',min:45,max:55,range:'45–55',width:10,color:'#a6bdd0'},
- {name:'양호',min:55,max:75,range:'55–75',width:20,color:'#2de0c4'},
- {name:'우수',min:75,max:100,range:'75–100',width:25,color:'#13bfa7'},
+ {name:'위험',min:0,max:25,range:'0–25',width:25,color:'#fa628b'},
+ {name:'주의',min:25,max:40,range:'25–40',width:15,color:'#ffc64b'},
+ {name:'중립',min:40,max:60,range:'40–60',width:20,color:'#a6bdd0'},
+ {name:'양호',min:60,max:75,range:'60–75',width:15,color:'#2de0c4'},
+ {name:'안정',min:75,max:100,range:'75–100',width:25,color:'#13bfa7'},
 ] as const;
 const bandOf=(score:number|null)=>score===null?null:BANDS.find(b=>score<b.max)??BANDS.at(-1)!;
 const PERIOD_DAYS:Record<Period,number>={'1M':31,'3M':93,'6M':183,'1Y':366};
@@ -72,7 +72,7 @@ export default function EconomicTerrain(){
   <div className="zg-terrain-section-heading"><div className="zg-terrain-title"><Activity size={27} aria-hidden="true"/><div><h2 id="zg-terrain-heading">경제 지형도</h2><p>12개 경제 지표의 안정 점수 분포</p></div></div></div>
   {error&&<p className="zg-terrain-notice" role="status">데이터 갱신이 지연되고 있습니다. 현재 제공 가능한 저장 점수만 표시합니다.</p>}
   <div className="zg-terrain-list">
-   <div className="zg-terrain-axis" aria-hidden="true"><div className="zg-terrain-axis-label"><span>순위</span><span>경제 지표</span><span className="zg-terrain-axis-score-label">안정 점수<small>100점 기준</small></span></div><div className="zg-terrain-axis-plot"><div className="zg-terrain-axis-bands">{BANDS.map(b=><div key={b.name} style={{width:`${b.width}%`}}><strong>{b.name}</strong><span>{b.range}</span><i style={{background:b.color}}/></div>)}</div><div className="zg-terrain-axis-ticks">{[0,25,45,55,75,100].map(v=><span key={v} style={{left:`${v}%`}}>{v}</span>)}</div></div></div>
+   <div className="zg-terrain-axis" aria-hidden="true"><div className="zg-terrain-axis-label"><span>순위</span><span>경제 지표</span><span className="zg-terrain-axis-score-label">안정 점수<small>100점 기준</small></span></div><div className="zg-terrain-axis-plot"><div className="zg-terrain-axis-bands">{BANDS.map(b=><div key={b.name} style={{width:`${b.width}%`}}><strong>{b.name}</strong><span>{b.range}</span><i style={{background:b.color}}/></div>)}</div><div className="zg-terrain-axis-ticks">{[0,25,40,60,75,100].map(v=><span key={v} style={{left:`${v}%`}}>{v}</span>)}</div></div></div>
    {shown.map((card,index)=>{
     const band=bandOf(card.score),active=selected===card.id;
     return <div className="zg-terrain-item" key={card.id} id={card.id} style={{'--terrain-accent':band?.color??'#8fa4b8'} as CSSProperties}>

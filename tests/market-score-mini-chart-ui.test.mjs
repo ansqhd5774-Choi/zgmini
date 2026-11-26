@@ -25,23 +25,27 @@ test("market trend windows delegate to the exact-boundary anchor helper",()=>{
   assert.match(windowSource,/return marketTrendWindowR1\(data\?\?\[\],days\)/);
 });
 
-test("market charts use numeric time axes so selected periods keep their true duration",()=>{
+test("market charts span their actual observations while summary periods retain filtered data",()=>{
   const charts=sourceBetween("function timeScaledTrend(","// Stage 12");
   assert.match(charts,/function timeScaledTrend\(data:DashboardPoint\[\],periodDays:number\)/);
-  assert.match(charts,/const start=end-Math\.max\(1,periodDays\)\*86400000/);
+  assert.match(charts,/const start=points\.length>1\?Math\.min\(\.\.\.points\.map\(point=>point\.ts\)\)/);
   assert.match(charts,/<XAxis dataKey="ts" type="number" domain=\{\[scaled\.start,scaled\.end\]\}/);
   assert.match(charts,/miniTrendGeometry\(data,periodDays,missingDates\)/);
   assert.match(src,/SummaryTrend data=\{overallTrend\}[^\n]*periodDays=\{periodDays\}/);
-  assert.match(src,/CardTrend data=\{trend\}[^\n]*periodDays=\{periodDays\}/);
+  assert.match(src,/const domainChartDays=periodDays/);
+  assert.match(src,/CardTrend data=\{trend\}[^\n]*periodDays=\{domainChartDays\}/);
 });
 
 test("domain mini charts keep the fixed 0-100 score scale while time spacing is numeric",()=>{
   const card=sourceBetween("function CardTrend(","function summaryDateParts(");
-  assert.match(card,/\[0,25,50,75,100\]\.map/);
+  assert.match(card,/\[0,50,100\]\.map/,'12 domain charts retain only 0, 50 and 100 guides');
   assert.match(card,/viewBox="0 0 220 60"/);
+  assert.doesNotMatch(card,/\[0,25,50,75,100\]/,'no 25 or 75 guide lines in compact domain charts');
+  assert.match(summarySource,/<ReferenceLine y=\{25\}/,'composite chart guides remain untouched');
+  assert.match(summarySource,/<ReferenceLine y=\{75\}/,'composite chart guides remain untouched');
   const chart=miniTrendGeometry([{label:'2026-01-01',value:0},{label:'2026-01-03',value:100}],2);
-  assert.equal(chart.path,'M13.000,57.000L217.000,3.000');
-  assert.deepEqual(chart.last,{x:217,y:3});
+  assert.equal(chart.path,'M6.000,57.000L214.000,3.000');
+  assert.deepEqual(chart.last,{x:214,y:3});
   assert.match(card,/>100<\/span><span>50<\/span><span>0<\/span>/);
 });
 
@@ -55,7 +59,7 @@ test("composite main chart matches fear-greed x-axis labeling style",()=>{
   assert.match(scale,/periodDays<=90/);
   assert.match(scale,/periodDays<=180/);
   assert.match(scale,/String\(group\.year\)\.slice\(-2\).*12/);
-  assert.match(scale,/ReferenceDot x=\{latest\.ts\} y=\{latest\.value\}/);
+  assert.match(scale,/ReferenceDot x=\{latest\.ts\} y=\{latest\.value\} r=\{8\} fill="transparent"/,'mobile tap target is invisible');
 });
 
 test("domain charts remain compact while the composite has visible dates",()=>{
@@ -66,20 +70,26 @@ test("domain charts remain compact while the composite has visible dates",()=>{
   assert.match(summary,/<Tooltip/);
   assert.doesNotMatch(card,/<XAxis|<ResponsiveContainer|<LineChart/);
   assert.match(card,/geometry\.path/);
+  assert.doesNotMatch(card,/<circle/,'mini charts have no visible point markers');
+  assert.doesNotMatch(card,/geometry\.bridge/,'no dashed observational bridge overlay');
 });
 
-test('static mini charts preserve true date spacing, missing breaks and latest zero',()=>{
+test('static mini charts join only observed scores edge to edge without visual dot markers',()=>{
  const chart=miniTrendGeometry([{label:'2026-01-01',value:50},{label:'2026-01-03',value:0}],4,['2026-01-02']);
- assert.equal(chart.path,'M115.000,30.000M217.000,57.000');
- assert.equal(chart.bridge,'M115.000,30.000L217.000,57.000');
- assert.deepEqual(chart.last,{x:217,y:57});
+ assert.equal(chart.path,'M6.000,30.000L214.000,57.000');
+ assert.equal(chart.bridge,chart.path);
+ assert.deepEqual(chart.last,{x:214,y:57});
  assert.equal(miniTrendGeometry([],365).last,null);
+ assert.equal(miniTrendGeometry([{label:'2026-01-03',value:0}],365).path,'','never fabricate a line from one sample');
 });
 
 test("composite uses sentiment area styling without the removed captions",()=>{
   const summary=sourceBetween("function SummaryTrend(","// Stage 12");
   assert.match(summary,/<AreaChart/);
-  assert.match(summary,/<Area type="monotone" dataKey="value" stroke=\{color\}/);
+  assert.match(summary,/<Area type="linear" dataKey="value" stroke=\{color\} fill="none" strokeWidth=\{2\.1\} dot=\{false\} activeDot=\{false\}/);
+  assert.match(summary,/connecting known points does not assert equal model versions/);
+  assert.doesNotMatch(summary,/<Area type="linear" dataKey="(?:reconstructedValue|calculatedValue)"/);
+  assert.equal((summary.match(/<Area type="linear"/g)??[]).length,1);
   assert.match(summary,/<linearGradient/);
   assert.doesNotMatch(src,/className="zg-r55-main-period"|<span>종합 점수<\/span>|<span>\/ 100<\/span>/);
   assert.match(src,/ArrowUpRight size=\{18\}/);

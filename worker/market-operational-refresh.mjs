@@ -6,8 +6,7 @@ import {assertCompleteMarket} from './market-publication-validation.mjs';
 import {collectionDisposition} from './collection-result-contract.mjs';
 import {fetchDiagnosticFredSeries} from '../lib/diagnostic-layer/official-macro-adapters.mjs';
 import {collectRateR2Inputs,RATE_R2_PROVIDER_CONTRACT} from '../lib/market-score/rate-r2-provider.mjs';
-import {collectBreadthB1R3StoreOnlyR1} from '../lib/market-score/breadth-b1-r3-worker-domain.mjs';
-import {readBreadthB1R5StoredPublicDomainR1} from '../lib/market-score/breadth-b1-r5-worker-domain.mjs';
+import {retiredBreadthPublicDomain} from './market-retired-breadth-domain.mjs';
 import {collectInflationR2StoreOnly} from './inflation-r2-collector.mjs';
 import {collectEarningsE1R4ToStore} from '../lib/market-score/sec-earnings-e1-r4-provider.mjs';
 import {runEmploymentR4ShadowRuntimeStep} from '../lib/market-score/employment-r4-runtime-trigger.mjs';
@@ -42,7 +41,7 @@ const unavailableFetch=async()=>{throw Error('SCORE_CALCULATION_NETWORK_FORBIDDE
 export async function calculateStoredMarketScore(env,store,now){
  const handler=createMarketScoreR1Handler({env,fetchImpl:unavailableFetch,
   collectInputs:()=>readStoredMarketInputs(store,now),orchestrate:buildStoredDiagnostic,
-  collectBreadthDomain:readBreadthB1R5StoredPublicDomainR1,now:()=>new Date(now)});
+  collectBreadthDomain:retiredBreadthPublicDomain,now:()=>new Date(now)});
  const response=await handler(new Request('https://zgmini.kr/api/market-score'));
  if(!response.ok)throw Error('STORED_CALCULATION_FAILED');
  const body=await response.json();
@@ -68,7 +67,7 @@ export async function refreshStoredMarketScoreSnapshot({env,store,now=Date.now()
   const result=await calculateStoredMarketScore(env,store,now);
   return {status:'COMPLETE',providerRequests:0,...result};
  }catch(error){
-  const reason=['STORED_CALCULATION_FAILED','SCORE_CONTRACT_FAILED','MARKET_REQUIRED_SCORE_MISSING','MARKET_REQUIRED_TREND_MISSING'].includes(error?.message)?error.message:'STORED_PRECOMPUTE_FAILED';
+  const reason=['STORED_CALCULATION_FAILED','SCORE_CONTRACT_FAILED','MARKET_REQUIRED_SCORE_MISSING','MARKET_REQUIRED_TREND_MISSING','MACRO_CREDIT_OBSERVATION_REGRESSION'].includes(error?.message)?error.message:'STORED_PRECOMPUTE_FAILED';
   return {status:'ERROR',providerRequests:0,reason};
  }
 }
@@ -104,7 +103,6 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
    rates:()=>collectRateR2Inputs(args),
    earnings:()=>collectEarningsE1R4ToStore({...args,db:env.DB}),
    consumption:()=>runConsumptionR3OperationalRefresh({...args,maxSourcesPerRun:1}),
-   breadth:()=>collectBreadthB1R3StoreOnlyR1(args),
    inflation:()=>collectInflationR2StoreOnly(args),
    employment:()=>runEmploymentR4ShadowRuntimeStep(args),
    growth:()=>collectGrowthR2StoreOnlyR1(args),
@@ -168,13 +166,12 @@ export async function runMarketOperationalRefresh({env,job,store,now=Date.now(),
   phase='CALCULATE';profile('calculate-start');const result=await calculate(env,store,now);profile('calculate-complete');
   const sourceStatus=collected?.status??collected?.rateR2?.status??'COLLECTED';
   const failed=/^(FAIL|FAILED|ERROR)$/.test(sourceStatus);
-  const backlog=selected==='breadth'&&sourceStatus==='PARTIAL_BATCH';
-  const finalStatus=failed?'SOURCE_FAILED':backlog?'BACKLOG':'COMPLETE';
+  const finalStatus=failed?'SOURCE_FAILED':'COMPLETE';
   await store.finish(selected,jobLease,now,finalStatus);
   return {status:finalStatus,job:selected,sourceStatus,...result};
  }catch(error){
   if(jobLease)await store.finish(selected,jobLease,now,`${phase}_FAILED`).catch(()=>{});
-  const reason=['INPUT_STORAGE_LIMIT','INPUT_NOT_VALID','STORED_CALCULATION_FAILED','SCORE_CONTRACT_FAILED','MARKET_REQUIRED_SCORE_MISSING','MARKET_REQUIRED_TREND_MISSING'].includes(error?.message)?error.message:(String(error?.message??'').match(/^GROWTH_R2_[A-Z0-9_]+/)?.[0]??null);
+  const reason=['INPUT_STORAGE_LIMIT','INPUT_NOT_VALID','MACRO_CREDIT_OBSERVATION_REGRESSION','STORED_CALCULATION_FAILED','SCORE_CONTRACT_FAILED','MARKET_REQUIRED_SCORE_MISSING','MARKET_REQUIRED_TREND_MISSING'].includes(error?.message)?error.message:(String(error?.message??'').match(/^GROWTH_R2_[A-Z0-9_]+/)?.[0]??null);
   const source=error?.sourceDiagnostic;
   const sourceDiagnostic=source?.provider==='BLS'&&Number.isInteger(source.attempts)&&source.attempts>=1&&source.attempts<=2
    ?{provider:'BLS',httpStatus:Number.isInteger(source.httpStatus)?source.httpStatus:null,attempts:source.attempts,registered:source.registered===true}:null;

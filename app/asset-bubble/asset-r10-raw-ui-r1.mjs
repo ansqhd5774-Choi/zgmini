@@ -1,5 +1,6 @@
 // Presentation-only join of the scored R10 response and validated raw sidecar.
 import {sameR10StoredSourceOrContent} from './asset-r10-source-vintage-r2.mjs';
+import {validateAssetR10Raw} from '../../worker/asset-bubble-r10-raw-r1.mjs';
 // No score change, score rounding, date extrapolation, or invented observations.
 const IDS=Object.freeze(['valuationPressure','priceAcceleration','riskAssetShare',
  'speculativeFlows','breadthDivergence','excessLiquidity']);
@@ -46,4 +47,47 @@ export function mergeAssetR10RawForUi(scored,raw){
   source:raw.factors[i].source,
   trend:observedPair(raw.factors[i]),
  }))};
+}
+
+// A component can have a newer verified observation while the *aggregate*
+// score remains on the last quarter shared by all six components. Keep the
+// scored/history value untouched; the table reads this optional display field.
+export function mergeAssetR10LatestForUi(joined,raw){
+ try{validateAssetR10Raw(raw);}catch{return joined;}
+ if(!joined||joined.status!=='READY'||!Array.isArray(joined.indicators)
+  ||joined.indicators.length!==IDS.length
+  ||!sameR10StoredSourceOrContent(joined,raw)
+  ||joined.scoreObservationQuarter!==raw.scoreObservationQuarter
+  ||joined.rightsStatus!==raw.rightsStatus
+  ||!near(joined.score,raw.diagnosticScore))return joined;
+ for(let i=0;i<IDS.length;i++){
+  const row=joined.indicators[i],factor=raw.factors[i];
+  if(row?.id!==IDS[i]||factor?.id!==IDS[i]
+   ||row.rawUnit!==factor.unit||row.source!==factor.source
+   ||!near(row.score,factor.score)||!near(row.value,factor.value)
+   ||row.observationDate!==factor.observationDate
+   ||row.previousObservationDate!==factor.previousObservationDate
+   ||(factor.previousValue===null?row.previousValue!==null
+    :!near(row.previousValue,factor.previousValue)))return joined;
+ }
+ return {...joined,indicators:joined.indicators.map((row,i)=>{
+  const latest=raw.factors[i].latestObservation;
+  if(!latest)return row;
+  const trend=[...(Array.isArray(row.trend)?row.trend:[])];
+  for(const point of [
+   {date:latest.previousObservationDate,value:latest.previousValue},
+   {date:latest.observationDate,value:latest.value},
+  ]){
+   if(!isoDate(point.date)||!finite(point.value))continue;
+   const last=trend.at(-1);
+   if(last?.date===point.date){
+    if(!near(last.value,point.value))return row;
+   }else if(!last||point.date>last.date)trend.push(point);
+  }
+  if(trend.at(-1)?.date!==latest.observationDate)return row;
+  const points=trend.slice(-5);
+  return {...row,latestObservation:latest,trend:points,
+   trendPeriodLabel:row.historyStatus==='READY_1Y'&&points.length===5
+    ?'1년 · 실제 5개 분기':`실제 ${points.length}개 분기 · 부분 이력`};
+ })};
 }
