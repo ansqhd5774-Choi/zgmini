@@ -50,7 +50,7 @@ test('R4 #28 Recharts uses two nullable provenance series with no bridge and hon
  assert.match(chart,/<Area type="monotone" dataKey="calculatedValue" stroke=\{color\} fill="none" strokeWidth=\{2\.1\} dot=\{false\}[^>]*connectNulls=\{true\}/);
  assert.match(chart,/<Area type="monotone" dataKey="reconstructedValue" stroke=\{color\} strokeDasharray="4 4"/);
  assert.doesNotMatch(chart,/<Area type="monotone" dataKey="value"/);
- assert.match(chart,/현행 산식 재구성 · 당시 실계산점 아님/);
+ assert.doesNotMatch(chart,/현행 산식 재구성 · 당시 실계산점 아님/);
  assert.match(chart,/실제 계산시각 점 · 당시 방법론 버전 미확인/);
 });
 
