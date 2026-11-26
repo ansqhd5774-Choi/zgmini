@@ -182,6 +182,52 @@ test('CNN minute publisher reuses archive, reads back current, and skips identic
  assert.equal(again.status,'VERIFIED');assert.equal(again.current.writes,0);
  assert.deepEqual(f.writes,[f.date,'current']);
 });
+test('CNN minute stores and publishes a new observedAt even when the real score stays identical',async()=>{
+ const oldAt='2026-10-31T20:00:00.000Z',newAt='2026-10-31T20:01:00.000Z',score=17.9;
+ const start=Date.parse(oldAt),newTime=Date.parse(newAt),archiveRows=new Map();
+ let current={body:verified(oldAt,score),storedAt:start},archiveWrites=0;
+ const store={
+  initialize:async()=>{},
+  readOutput:async key=>key==='fear-greed'?current:null,
+  readAttempt:async()=>null,writeAttempt:async()=>{},
+  appendVerifiedObservations:async(body,at)=>{
+   for(const [date,points]of groupVerifiedCnnObservations(body,at)){
+    const merged=mergeCnnArchivedDay(archiveRows.get(date)??null,date,points,at);
+    if(merged.changed){archiveRows.set(date,merged.body);archiveWrites++;}
+   }
+  },
+  writeOutput:async(key,body,at)=>{assert.equal(key,'fear-greed');current={body,storedAt:at};},
+ };
+ const locks={claim:async()=>1,finish:async()=>{}};
+ const collectors={'fear-greed':async()=>Response.json(verified(newAt,score))};
+ const collectAt=newTime+1000;
+ const first=await refreshPublicFeeds({env:{ZGMINI_COMPUTE_TARGET:'pc'},store,locks,collectors,
+  now:collectAt,cnnMinuteOnly:true,maxFeedsPerRun:1,clock:()=>collectAt});
+ assert.equal(first.feeds[0].status,'COMPLETE');
+ assert.equal(current.body.score,score,'a real new source timestamp does not require a score change');
+ assert.equal(current.body.observedAt,newAt);
+ assert.deepEqual(archiveRows.get('2026-10-31').observations.map(p=>p.observedAt),[oldAt,newAt]);
+ assert.equal(archiveWrites,1);
+ const repeated=await refreshPublicFeeds({env:{ZGMINI_COMPUTE_TARGET:'pc'},store,locks,collectors,
+  now:collectAt+61000,cnnMinuteOnly:true,maxFeedsPerRun:1,clock:()=>collectAt+61000});
+ assert.equal(repeated.feeds[0].status,'COMPLETE');
+ assert.equal(archiveWrites,1,'identical source timestamp does not create a second observation');
+ assert.equal(archiveRows.get('2026-10-31').observations.length,2);
+
+ const f=minutePublicationFixture();
+ assert.equal((await publishCnnMinute(f.local,f.remote,'core')).status,'VERIFIED');
+ f.current.body=JSON.stringify(current.body);f.current.stored_at=collectAt+61000;
+ f.archive.body=JSON.stringify(archiveRows.get('2026-10-31'));
+ f.archive.stored_at=collectAt+61000;
+ const posted=await publishCnnMinute(f.local,f.remote,'core');
+ assert.equal(posted.status,'VERIFIED');
+ assert.equal(posted.archive.publishedDays,1);
+ assert.equal(posted.current.writes,1);
+ assert.deepEqual(JSON.parse(f.rows.get('2026-10-31').body).observations.map(p=>p.observedAt),[oldAt,newAt]);
+ assert.equal(JSON.parse(f.rows.get('current').body).observedAt,newAt);
+ assert.equal(JSON.parse(f.rows.get('current').body).score,score);
+ assert.equal((await publishCnnMinute(f.local,f.remote,'core')).current.writes,0);
+});
 test('CNN current CAS cannot overwrite a concurrently published newer observation',async()=>{
  const f=minutePublicationFixture();
  const request=f.remote.request.bind(f.remote);
