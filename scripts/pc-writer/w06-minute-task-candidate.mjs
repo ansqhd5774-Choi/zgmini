@@ -31,7 +31,11 @@ export function buildW06MinuteTaskCandidate({sourceRoot,pcHome=HOME,nodeExe=NODE
  const taskXml=`<?xml version="1.0" encoding="UTF-16"?><Task version="1.2" xmlns="http://schemas.microsoft.com/windows/2004/02/mit/task"><RegistrationInfo><Description>ZGMINI W06 CNN-only 60-second saved observation and publication. Existing Core unchanged.</Description></RegistrationInfo><Triggers><TimeTrigger><Repetition><Interval>PT1M</Interval><StopAtDurationEnd>false</StopAtDurationEnd></Repetition><StartBoundary>${next}</StartBoundary><Enabled>true</Enabled></TimeTrigger></Triggers><Principals><Principal id="User"><UserId>${xmlEscape(account)}</UserId><LogonType>InteractiveToken</LogonType><RunLevel>LeastPrivilege</RunLevel></Principal></Principals><Settings><MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy><DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries><StopIfGoingOnBatteries>false</StopIfGoingOnBatteries><StartWhenAvailable>true</StartWhenAvailable><RunOnlyIfNetworkAvailable>true</RunOnlyIfNetworkAvailable><Enabled>true</Enabled><Hidden>true</Hidden><ExecutionTimeLimit>PT30M</ExecutionTimeLimit></Settings><Actions Context="User"><Exec><Command>${xmlEscape(path.win32.join(systemRoot,'System32','wscript.exe'))}</Command><Arguments>&quot;${xmlEscape(launcher)}&quot;</Arguments><WorkingDirectory>${xmlEscape(sourceRoot)}</WorkingDirectory></Exec></Actions></Task>`;
  return {status:'SOURCE_CANDIDATE_NOT_APPROVED',taskName:W06_MINUTE_TASK_NAME,
   repetitionInterval:W06_MINUTE_TASK_INTERVAL,launcher,launcherText,taskXml,
-  effectRequiresApproval:'CREATE_ONE_TASK_WITH_EXACT_CAS_AND_ROLLBACK',
+  effectRequiresApproval:'CREATE_ENABLE_ONE_TASK_CNN_HTTP_SQLITE_D1_WITH_EXACT_CAS_AND_ROLLBACK',
+  // No effect occurs by building this candidate. Activating the Task is a
+  // distinct B-grade operating change that can make external writes each tick.
+  scheduledRuntimeEffects:Object.freeze({cnnHttpRequests:true,
+   sqliteObservationWrites:true,d1PublicProjectionWrites:true}),
   // This candidate itself only describes the Task; it never registers it.
   candidateWrites:0,coreTaskChanges:0,existingWriterTaskChanges:0,
   providerCalls:0,dbWrites:0,d1Writes:0};
