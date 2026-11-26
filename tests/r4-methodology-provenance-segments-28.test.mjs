@@ -43,16 +43,17 @@ test('R4 #28 zero score stays numeric, missing input stays missing, no mutation'
  assert.deepEqual(splitCompositeChartProvenance([]),[]);
 });
 
-test('R4 #28 Recharts draws a connected observed timeline with honest per-point provenance',()=>{
+test('R4 #28 Recharts keeps observed score provenance in data while tooltip shows only date and score',()=>{
  const chart=readFileSync(new URL('../components/dashboard-summary-chart.tsx',import.meta.url),'utf8');
  assert.match(chart,/splitCompositeChartProvenance\(data\)/);
  assert.equal((chart.match(/<Area type="monotone"/g)??[]).length,1,"one visible score series");
  assert.match(chart,/<Area type="monotone" dataKey="value" stroke=\{color\} fill="none" strokeWidth=\{2\.1\} dot=\{false\}[^>]*connectNulls=\{false\}/);
  assert.doesNotMatch(chart,/<Area type="monotone" dataKey="(?:reconstructedValue|calculatedValue)"/);
  assert.doesNotMatch(chart,/dataKey="reconstructedValue"[^>]*strokeDasharray=/);
- assert.match(chart,/point\?\.label\?\.includes\('T'\)/,"actual calculation-time labels are retained");
+ assert.match(chart,/point.label.includes\('T'\)/,"actual timestamps remain preserved for the data layer");
  assert.doesNotMatch(chart,/현행 산식 재구성 · 당시 실계산점 아님/);
  assert.doesNotMatch(chart,/실제 계산시각 점 · 당시 방법론 버전 미확인/);
+ assert.doesNotMatch(chart,/\(계산 시각\)|현재 게시 계산점 ·/);
 });
 
 // Interleaved provenance markers are not missing measurements inside either
