@@ -90,6 +90,14 @@
 - #4068 B는 `WRITER_B_CORE_NATURAL_DRAIN_TIMEOUT_STOP`, `ORIGINAL_VERIFIED`, `NO_REEXECUTE`; **자연 종료 전 동일 조건 요청 반복 금지**. 기존 Core Task/lock/lease를 변경하지 않음. 유효한 PC 자연 유휴 상태가 새로 관측됐을 때 원본 CAS/Task 핀 확인 후 이전 설치 실패와 구별되는 고유 신규 B 요청으로 정규 설치 계속. 별도 감시 Task·예약 생성 금지.
 - 종단 진행률 **5/8 (62.5%)**, Source PR/CI/승인·복구 완료와 실제 R2 데이터 게시 완료 구분.
 
+## 2026-11-27 B 재개 전 새 자연유휴 A 조회
+
+- 마지막 실운영 검증: B [#4068](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4068) `WRITER_B_CORE_NATURAL_DRAIN_TIMEOUT_STOP`, `ORIGINAL_VERIFIED`; A [#4073](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4073) `VERIFIED_ACTIVE_CORE` task-owned lock; A [#4074](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4074)에서 2026-11-26T18:58/19:01/19:05Z checkpoint 전진. 이는 영구 교착·stale lock의 증거가 아니므로 해당 이유로 안전검사를 제거하지 않는다.
+- 독립적인 실제 상태 변화 가능성을 확인하기 위해 기존 허용목록 `shared-resource-release-readonly` 한정 A [Issue #4078](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4078) 단회 발행. requestId `pc-usbreadthr2-resource-window-20261127-01`, source `7579dea082d0f7a671113e52e39cefc9be8c9a87`. 이 조회는 1.5초 간격 2회 Task/잠금/Task XML/config source 상태를 관측하며 PC operational writes 0.
+- **2026-11-26T19:17Z 최신 관측:** #4078 OPEN, 아직 bot 댓글·JSON/TXT 없음. GitHub workflow 목록에는 #4078에서 생성된 `ZGMINI PC Job` 실행 ID도 식별되지 않음. 원인을 Runtime 실패로 단정하지 말고 `AUTOMATION_BLOCKED / RESULT_PENDING`으로 분리. 이 요청을 중복 발행하거나 허용목록/승인 Gate를 우회하지 않는다.
+- 정규 B manifest `approvals/writer-updates/us-breadth-paid-r2-backfill-insert-fourfile-20261127.json`은 PR #4066로 main 병합 및 A #4064 before/after SHA 확인 상태. **새 자연 유휴 + 원본 CAS/Task 핀을 확인하기 전 새 B 발행 보류**. 향후 결과가 CANDIDATE_CLEAR라도 B 내부 독립 안전검사를 다시 통과해야 설치 인정.
+- 종단 완료 증거는 아직 5/8(62.5%): raw 251 연속 거래일, private 250 포인트, D1 readback 및 API/UI 출력 미증명.
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
