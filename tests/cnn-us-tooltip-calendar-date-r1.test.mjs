@@ -34,7 +34,14 @@ test('USA 1D shows genuine Eastern observation time without PC pseudo observatio
  assert.match(usa,/formatTooltipLabel=\{selectedPeriod==="1D"\s*\? \(value:string\)=>/);
  assert.match(usa,/checkedPoints:\[\],/);
  assert.doesNotMatch(usa,/currentSessionPcDates|data-cnn-minute/);
- assert.match(usa,/\$\{intradayLabel\(value\)\}/);
+ assert.match(usa,/\? \(value:string\)=>intradayLabel\(value\)/);
+ assert.match(usa,/Number\.isFinite\(timestamp\) \? usIntradayDateTime\.format\(new Date\(timestamp\)\) : "—"/);
+ const from=usa.indexOf('formatTooltipLabel={selectedPeriod==="1D"');
+ const to=usa.indexOf('emptyLabel=',from);
+ assert.ok(from>=0 && to>from,'CNN 1D tooltip definition is present');
+ const oneDayTooltip=usa.slice(from,to);
+ assert.doesNotMatch(oneDayTooltip,/bucket|구간|마감|진행 중|동부시간/,'no unsolicited 1D tooltip metadata');
+ assert.doesNotMatch(usa.slice(usa.indexOf('const intradayLabel'),usa.indexOf('const dateLabel')),/동부시간/);
  assert.match(usa,/timeZone: "America\/New_York", month: "2-digit", day: "2-digit"/);
  assert.match(usa,/history = useMemo\(\(\) => \{/);
  assert.match(usa,/currentCnnSessionHistory\(payload\?\.observedAt/);

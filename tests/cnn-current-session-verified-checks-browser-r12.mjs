@@ -95,6 +95,7 @@ try{
    const text=await tip.innerText();
    assert(text.includes('26.3')&&text.includes('09:21'),
     'touch tooltip shows actual score and NY observation clock: '+text);
+   assert.doesNotMatch(text,/미국 동부시간|구간 마감|진행 중/,'1D tooltip is only real date/time and score');
   }
   assert.ok(requests.some(p=>p.includes('/api/fear-greed/observations?period=1D')));
 
