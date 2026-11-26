@@ -33,9 +33,9 @@
 ## 2026-11-27 개발 추가 진행 (운영 완료 아님)
 
 - 최신 main 기준 별도 최소 작업 브랜치 `codex/us-breadth-r2-paid-backfill-20261127` 생성. 원 담당 브랜치는 main 대비 과거 기능 이력 변경이 커 그대로 병합하지 않음.
-- [소스 PR #1722](https://github.com/ansqhd5774-Choi/zgmini/pull/1722): 변경 4파일만, 기존 공통 `collectPaidDaily`에 선택형 유료 `stock_daily` 수집을 추가하면서 기본 stock+ETF 동작 보존; 새 읽기 전용 `planStoredPaidUsR2Backfill`은 최신 완료일 기준 목표 날짜/결손 영수증 수만 계산.
+- [소스 PR #1722](https://github.com/ansqhd5774-Choi/zgmini/pull/1722): 변경 7파일, 기존 공통 `collectPaidDaily`에 선택형 유료 `stock_daily` 수집을 추가하면서 기본 stock+ETF 동작 보존; 새 읽기 전용 `planStoredPaidUsR2Backfill`은 최신 완료일 기준 목표 날짜/결손 영수증을 계산. 기존 Core `--publish` 경로에만 추가하여 현재 stock+ETF 우선 수집 후 한 Core 실행당 총 40파일의 잔여 예산으로 과거 stock-only 누락분을 분할 수집. 기존 source pin 검사를 재사용하며 신규 Task/예약 없음.
 - 관련 회귀시험: stock-only vs ETF 경계, invalid type 사전 차단, 목표 거래일 결손/잘못된 인덱스, provider/D1/파일 쓰기 0.
-- 운영 소스 `c8ed53a...`는 변경되지 않았고, 이 PR만으로 공급자 수집·backfill·비공개 산출·D1/API 게시를 완료했다고 간주하지 않음. CI exact HEAD 확인 후 정규 승인/선택적 Writer B 적용 단계가 남음.
+- 운영 소스 `c8ed53a...`는 변경되지 않았고, 이 PR만으로 공급자 수집·backfill·비공개 산출·D1/API 게시를 완료했다고 간주하지 않음. CI exact HEAD 확인 후 **실제 설치 CAS·승인 범위의 선택적 Writer B 적용**이 필요하며, 적용 후에만 기존 Core 자동 갱신으로 bounded backfill이 실행됨.
 
 ## 현재 남은 3개 종단 단계
 
