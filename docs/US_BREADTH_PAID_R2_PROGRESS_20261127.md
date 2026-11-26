@@ -63,6 +63,14 @@
 - 새 A급 고정 `pc-writer-insert-preview`로 실제 PC after SHA를 확보하고, 새 정확 Writer B manifest+고유 Issue로 적용. #4055는 이미 소모되어 재실행 금지.
 - 원자료 251거래일·private/D1/API/UI 종단 5/8(62.5%) 유지. `WRITER_B_PREFLIGHT_STOP`은 실제 Source 설치 실패이지 공급자 데이터 결손 원인과 혼동 금지.
 
+## 2026-11-27 PC 삽입 A PASS 및 신규 B 재승인
+
+- 제어 [PR #4057](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4057): 정확 HEAD `c2e563f112b33a865fa750462b2ce02a59273141`, C996/Secret Scan PASS, merge `e7c2d316be1d46f9ea8ab3c4893cec19e54a3ba6`. 기존 Core의 안정된 2개 anchor에만 R2 archive 코드를 삽입하는 방식. 무관한 `asset-r10-sp500-refresh` / `earnings-risk-provisional-r23-hook` 신규 설치 금지.
+- Owner A급 [Issue #4064](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4064), [Run 45879559742](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45879559742): `PASS_READONLY/WRITER_B_INSERT_PREVIEW_VERIFIED`, JSON/TXT 2/2. PC 실제 before SHA `f69fb3cc1a6fdb85af34054f016b10dcbc7b1dcbf76e51c32b617121fe22d05d`, 삽입 2곳 after SHA `06ff928141a68378d3011106261cb5b38eaa6ef5791e7e0f9b77f5d041906844`. Task XML SHA `dd81987c7efa4b1e343af30329a580613bb920dec89c1aa7a436ef935f0bb028`, 실제 운영 쓰기 0.
+- 동일 A 읽기 관측 `coreDrain: state=4, instances=0, relatedProcesses=2, cycleLockPresent=true, drainReadyIfDisabled=false`. 시점 스냅샷이며 오래된 lock 또는 소유자 장애 확정 아님. 정규 B 설치에서 실제 소유자·lease·Core 자연 종료 확인; 임의 lock 삭제/강제 종료 금지.
+- 신규 4파일 B 승인 명세 [PR #4066](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4066), `approvals/writer-updates/us-breadth-paid-r2-backfill-insert-fourfile-20261127.json`: 기존 3파일 M 원본/목표 SHA 유지, `local-cycle.mjs`만 A검증 insert-only after SHA 적용. 승인 원문 SHA-256 `b1f3ea8c36d568f60498d89b3454916a0f5c5ea0b5e9e0fefa7e49cb54baf2e8`. C996/Secret Scan/병합/Owner B 실제 영수증은 별도 검증 필요.
+- 원래 B #4055는 preflight STOP·요청 소모이며 절대 재실행하지 않는다. 신규 B 성공 전 운영 source `c8ed53...` 불변, 원자료 251일·250 비교점·D1/API/UI는 여전히 미완료. **종단 5/8 유지.**
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
