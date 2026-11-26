@@ -36,19 +36,16 @@ const CardTrend=memo(function CardTrend({data,label,color,periodDays,missingDate
  // Some monthly domain charts intentionally end months before today's card.
  const lastPoint=miniTrendLastPointMetadata(data);
  const lastText=lastPoint?` · 마지막 차트점 ${lastPoint.label}, ${Number(lastPoint.score.toFixed(2))}점`:'';
- const missingText=missingDates.length?' · 점선은 결측 구간 연결이며 관측값이 아닙니다':'';
+ const missingText=missingDates.length?' · 결측 월 점수는 생성하지 않고 실제 관측점끼리 연결':'';
  const chartLabel=`${label} 관측 추이${lastText}${missingText}`;
- const chartTitle=lastPoint?`마지막 차트점: ${lastPoint.label}, ${Number(lastPoint.score.toFixed(2))}점${missingDates.length?' · 점선은 미발표 구간 연결':''}`:
-  missingDates.length?'점선: 미발표 자료가 있는 구간의 시각적 연결. 해당 월 점수는 결측입니다.':undefined;
+ const chartTitle=lastPoint?`최근 1년 저장 이력 · 마지막 차트점: ${lastPoint.label}, ${Number(lastPoint.score.toFixed(2))}점${missingDates.length?' · 결측 월 점수 미생성':''}`:undefined;
  return <div className="zg-spark zg-r55-mini-chart" aria-label={chartLabel} title={chartTitle}
   data-last-chart-point-at={lastPoint?.label} data-last-chart-point-score={lastPoint?.score}
   onPointerDown={event=>event.preventDefault()}>
   <div className="zg-r55-mini-y-labels" aria-hidden="true"><span>100</span><span>50</span><span>0</span></div>
    <svg width="100%" height="100%" viewBox="0 0 220 60" preserveAspectRatio="none" role="img" aria-label={chartLabel} style={{display:'block',pointerEvents:'none'}}>
     {[0,25,50,75,100].map(value=><line key={value} x1={13} x2={217} y1={57-value*.54} y2={57-value*.54} stroke={value===0||value===100?'rgba(168,188,208,.4)':value===50?'rgba(170,197,220,.9)':'rgba(157,184,208,.8)'} strokeDasharray={value===0||value===100?undefined:'4 4'} strokeWidth={value===0||value===100?1:1.2} vectorEffect="non-scaling-stroke"/>)}
-    {missingDates.length>0&&<path d={geometry.bridge} fill="none" stroke={color} strokeOpacity={.65} strokeDasharray="2 3" strokeWidth={1.2} vectorEffect="non-scaling-stroke"/>}
-    <path d={geometry.path} fill="none" stroke={color} strokeWidth={1.8} vectorEffect="non-scaling-stroke"/>
-    {geometry.last&&<circle cx={geometry.last.x} cy={geometry.last.y} r={2.5} fill={color}/>}
+    {geometry.path?<path d={geometry.path} fill="none" stroke={color} strokeWidth={1.8} vectorEffect="non-scaling-stroke"/>:<text x={115} y={32} textAnchor="middle" fill="var(--zg-text-meta,#a8bcd0)" fontSize={10}>이력 부족</text>}
    </svg>
  </div>;
 });
@@ -238,14 +235,17 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
   [verifiedOverallHistory,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPointsR4(data,market?.updatedAt),365).length>1),
   [verifiedOverallHistory,market?.domains,market?.updatedAt,overallTrend]);
  // Independent diagnostic responses and arrow expiry do not change these histories.
+ // Compact domain sparklines display the most recent year of real observations,
+ // independent of the interactive composite chart's selected period.
+ const domainChartDays=365;
  const domainChartTrends=useMemo(()=>r55DomainIds.map(id=>{
   const domain=market?.domains?.find(d=>d.id===id);
-  const daily=marketTrendWindowR1(normalizeMarketTrendPointsR4(domain?.trend,market?.updatedAt),periodDays,{includeBoundaryCarry:false});
+  const daily=marketTrendWindowR1(normalizeMarketTrendPointsR4(domain?.trend,market?.updatedAt),domainChartDays,{includeBoundaryCarry:false});
   const score=domain?.status==='READY'&&validPublicScore(domain.score)?domain.score:null;
   // The global snapshot time is not the source event time for old monthly data.
   const current=score===null?null:verifiedPublishedDomainCurrentR4(domain,market?.updatedAt);
-  return appendPublishedDomainCurrent(daily,current,periodDays);
- }),[market?.domains,market?.updatedAt,periodDays]);
+  return appendPublishedDomainCurrent(daily,current,domainChartDays);
+ }),[market?.domains,market?.updatedAt]);
  const riskHeading=<h2><a href="/risk-indicators/"><ShieldCheck aria-hidden="true"/>8대 위험 지표<ArrowUpRight aria-hidden="true"/></a></h2>;
 
  return <section id="market" className="zg-section zg-r55-market">
@@ -369,7 +369,7 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
          </div>
          <div className="zg-r55-card-visual">
           {trend.length>0
-           ?<CardTrend data={trend} label={m.label} color={score===null?'#94a3b8':scoreColor(score)} periodDays={periodDays} missingDates={r55DomainIds[index]==='consumption'?(domain?.trend??[]).filter(point=>point.value==null&&point.score==null).map(point=>point.date??point.label??''):undefined}/>
+           ?<CardTrend data={trend} label={m.label} color={score===null?'#94a3b8':scoreColor(score)} periodDays={domainChartDays} missingDates={r55DomainIds[index]==='consumption'?(domain?.trend??[]).filter(point=>point.value==null&&point.score==null).map(point=>point.date??point.label??''):undefined}/>
            :<div className="zg-r55-card-spark-empty" aria-label={`${m.label} 추이 데이터 없음`}>—</div>}
          </div>
         </div>
