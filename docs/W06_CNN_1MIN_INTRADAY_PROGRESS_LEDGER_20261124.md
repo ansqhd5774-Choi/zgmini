@@ -68,7 +68,7 @@
 | 2026-11-24 | #1521 상태·최신 댓글 조회, 진행 원장 생성 | 문서 작업 완료; 단계 1 진행 중 | 본 원장 및 위 증거 링크 |
 
 2026-11-24 문서 작업 시 신규 기능 변경 없음. 2026-11-26 전용 브랜치에 최신 main 통합 및 UI 소스/회귀 코드 변경. main 기능 병합·운영 설치·예약·DB/D1 쓰기·배포 없음.
-2026-11-26 #3741/#3742/#3766 및 #3786 A 결과 회수 완료. 후속 #3792 (90f59760-5dd7-4df4-95c5-af0139db34a2), #3793 (f4c41825-2985-4f8f-8ec3-b77e01947f24) 실제 결과 2/2 각각 회수·completed closed. #3795 (ca22b9ae-ff44-4a52-8cb8-b8484d87c401) PASS_READONLY, JSON/TXT 2/2 회수, completed closed. 현재 미회수 요청 #3798 (pc-4f156bb6-948e-46a5-8ae9-d1c0479218cf). 동일 요청 중복 금지. §14 참조.
+2026-11-26 #3741/#3742/#3766 및 #3786 A 결과 회수 완료. 후속 #3792 (90f59760-5dd7-4df4-95c5-af0139db34a2), #3793 (f4c41825-2985-4f8f-8ec3-b77e01947f24) 실제 결과 2/2 각각 회수·completed closed. #3795 (ca22b9ae-ff44-4a52-8cb8-b8484d87c401) PASS_READONLY, JSON/TXT 2/2 회수, completed closed. #3798 및 Controller 변경 후 #3800 실제 결과 2/2 각각 회수·completed closed. 현재 미회수 요청 없음. 동일 요청 중복 금지. §14 참조.
 
 ## 6. 다음 직접 실행
 
@@ -241,3 +241,32 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 
 - #3797 CI 2/2 SUCCESS ([Secret 45794831122](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45794831122), [C996 45794831136](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45794831136)); main merge 5475202f9824a1c65e326756586f32164e22df64.
 - [#3798](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3798) 기존 A급 writer-install-preimage-readonly 1회 발행. requestId pc-4f156bb6-948e-46a5-8ae9-d1c0479218cf, 고정 scope SHA256 f00dbe935ea497c8e0cb4afe94628338630e2b9089fbddcc3b6362a055a63ddb, source 0f0bb62e4d4879369e061e9289ed1c79d91f0044. 실제 결과 미회수. 동일 요청 재발행 금지. 신규 운영 변경 없음.
+
+
+## 17. 2026-11-26 — 직접 의존성 실측·설치 대상 보완 및 Core CAS
+
+- [#3798 실제 JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/45795171248-1-seat-2.json) / [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/45795171248-1-seat-2.txt), PASS/WRITER_APPROVED_PREIMAGE_READONLY, 18:47:13 KST. Controller 실제 실행 182bb46f2838306ba40d8b4ec32bac40ab75b69a, config/checkout/checkpoint d8ac2450… 동일. 보호 상태 동일, operational/provider/D1/SQLite write/open 없음. 14경로 중 13 PRESENT, 1 ABSENT. 실제 기능 호환성 또는 현재 Core Runtime source 연결 PASS 아님. A 종결 완료.
+- 실제 **lib/cnn-observed-history-r1.mjs ABSENT**. 현재 CNN refresh가 정적 import 하므로 이전 8개 파일만 적용하면 import 실패. 설치 후보에 A(신규 추가), beforeSha256=null, afterSha256=bb8e1692e4a49c28b747804f365c0576328d042ac9616df2a5a7e4c207be5e74 (0f0bb62e… exact GitHub bytes)로 포함. 9개 변경 대상이며 별도 기능/공급자 권한 확대 아님. 아직 B manifest/설치 미실행.
+
+| 보호 의존성 (변경 금지) | 실제 PC SHA-256 | 확인된 소스 대응 |
+| --- | --- | --- |
+| lib/cnn-index.mjs | cde0a679768aee34a994f5f73b000875478c7c536afdcb38ab9e6e806a994c1d | 0f0bb62e CRLF |
+| lib/cnn-observed-archive-r1.mjs | f9cb4c8da02e2175527c389a54563a6f45c6f2815f5af524c27b071a6059ec63 | 0f0bb62e raw |
+| lib/market-score/live-refresh.mjs | ea4368c62e7cec7746393c2379802044c18cbc5ce3d590d1fac503e8f499c05e | 7437c01b9a656396ca8dfff5cc59b195caf042de CRLF; acceptsStoredUpdate 존재 |
+| scripts/pc-writer/d1-diagnostics.mjs | eb5ffbcdb56805ca15affac876493217de52b21e0f90f99976bbcff8ddc13037 | 0f0bb62e CRLF |
+| scripts/pc-writer/d1.mjs | 10beefecc524b569eba9abf826036fc8e069b4b6f0c3b3340a7bd6a5ab6353a5 | 0f0bb62e CRLF |
+| scripts/pc-writer/local-db.mjs | 0f9fae1bd16d515f83bf187bc20c4aa1222d741bba9c7f3fe945d2a1cb39f38e | 0f0bb62e CRLF |
+| scripts/pc-writer/local-env.mjs | 8b5a4f388ebbc94c37d6d50478344e4666140f1bee5d70c9315dfde1e584029c | 0f0bb62e CRLF |
+| scripts/pc-writer/publication-guard.mjs | 75b2ef617becd7ef3ba3d4392d9a146edffb01fb5037f1c7fd30f36a06634fb3 | 0f0bb62e CRLF |
+| scripts/pc-writer/quota-fetch.mjs | 5ff750e1abf607e4a207bed16c20394406ca2ba8fe4ca42e2c514a155c87818b | 58a8d800738384437d4acc24c9e12fb0fa804df8 raw; createQuotaFetch/fetchR6WithLease 유지 |
+| scripts/pc-writer/quota-policy.mjs | 8559df2b2eb3fd228cbb9c825ca2bfddd01d07c30991771b64b6bc9f1aa89963 | abb2e0807e939c1c656f248245c424e54e6954de raw |
+| worker/market-operational-store.mjs | 330b29c25dafb63e5b8fdd75ecf52e886480e7d44b40e2dc9d7d3643e952ef8b | W04 R54 승인 after와 일치, base c4af0ecf… + 2삽입. 전체 원본 아직 미복원 |
+| worker/public-display-freshness.mjs | abdf00a5c1c5c7ae9e978dd27ceb1c4c572e15ac67c0378cc971204129714878 | 0f0bb62e CRLF |
+| worker/public-feed-input-safety.mjs | 1d4dd5e1039a538d314a9f9b122aef89bfb2f4d21867582c32a6352ff1699fa8 | 0f0bb62e CRLF |
+| worker/feed-collectors/fear-greed.ts | d0422e663218ba113fb5ec2ad0167236f58337f8d6d896f8e7028b9b983fbdcb | 0f0bb62e CRLF |
+| worker/public-feed-collectors.ts | cd36fe7e754604d7df9404418e9d0dd480afd09a4d55ede937dd27dea6ca9373 | 0f0bb62e CRLF |
+
+- #3768 기존 실패 이후 실제 Controller 변경(독립 #3774 설치 증거, #3798 실행 182bb46f…의 preimage-manifest-contract blob e32ad0bf…에서 두 TS allowlist 확인, 이전 53fe24e… blob 35cd662c…에는 없음). 환경 변화 근거로 기존 정확 TS scope에 대해 신규 requestId pc-74f427d4-9d50-4e0c-9bfb-2cfc7f66be8d, [#3800](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3800) 한 번 실행. [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/45795567743-1-seat-1.json)/[TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/45795567743-1-seat-1.txt) PASS, 보호 동일, 실제 실행 182bb46f…, 2/2 존재 및 exact CRLF 일치. TS 두 파일 교체 불필요, 보호 대상으로만 명세. #3800 completed closed. 기존 #3768 실패 소급 변경 없음.
+- 의존성 16/16 상태 실측: 기존 15개(14개 정확 원본 대응, 1개 W04 승인 lineage hash 일치/전체 bytes 미복원), 추가 필요 1개. 실제 모듈 통합 실행은 별도.
+- Core 일반 게시 루프도 분 전용 게시기와 같은 CNN current CAS를 사용해야 한다. 현대 개발 run-local은 이미 공유 publishCnnCurrent 호출을 포함하지만, 운영 R1 삽입 명세는 CNN CLI만 추가하여 legacy Core 경로를 유지했음. 이를 현재 설치 원본을 다시 정확 복원한 뒤 CNN 분기에 한해 공유 함수 호출로 정정. [PR #3803](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/3803) HEAD 9cd69c518f0ae8792127bd30cb75ea8ae01d913f, 기존 #3793 첫 삽입 유지 + 기존 generic feed read 직전 CNN-only 분기 1개. 다른 feed/ER1/R44 보존. R2 projected after 92d98c3cbc115ddef3773e19c3cd200653d35c2f6d16caee495fe08e68d8a13f; old #3793 after 431409ea…는 R1 증거이며 R2 운영 후보로 사용 금지. CI ZGMINI PC Secret Scan in_progress (45796365915); C996 R5 Readonly Source Checks completed/success (45796362949). R2 실제 Preview 미발행.
+- 다음: #3803 CI 및 R2 preview → W04 store 원본/공유 lease 호환 확인 → 9개 변경 파일 및 15개 보호 모듈과 실제 launcher hash를 정확 B manifest에 연결 → Sidecar 정규 복구와 60초 실증. 새 Sidecar pin/실제 설치 SHA 계약은 미해결. 운영 B/파일/DB/D1/예약/배포/공급자 변경 없음.
