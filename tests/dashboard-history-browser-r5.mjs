@@ -32,6 +32,14 @@ try{
     }:path==='/api/fear-greed'?{
     status:'verified',score:21,rating:'공포',observedAt:'2026-10-24T12:00:00Z',
     history:snapshot(1).overall.trend.map(p=>({date:p.label,score:p.value})),
+   }:path==='/api/fear-greed/observations'?{
+    // Mock a verified stored source archive: the detailed chart must not
+    // present an incomplete daily-only curve as its final state.
+    status:'READY',period:new URL(route.request().url()).searchParams.get('period'),
+    points:[
+     {observedAt:'2026-10-23T12:00:00Z',score:22},
+     {observedAt:'2026-10-24T12:00:00Z',score:21},
+    ],checkedPoints:[],
    }:path==='/api/session'?{user:null}:path==='/api/market-data'?{status:'fallback',indicators:{},summary:[]}:{status:'UNAVAILABLE'};
    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(body)});
   });
