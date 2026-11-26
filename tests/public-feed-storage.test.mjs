@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {DatabaseSync} from 'node:sqlite';
 import {readFileSync,existsSync} from 'node:fs';
 import {publicFeedStore,readPublicFeed,savedJson,FEED_POLICY} from '../worker/public-feed-store.mjs';
-import {refreshPublicFeeds,observeCnnCollector} from '../worker/public-feed-refresh.mjs';
+import {refreshPublicFeeds,observeCnnCollector,planCnnMinuteEligibilityWait,CNN_MINUTE_ELIGIBILITY_WAIT_CAP_MS} from '../worker/public-feed-refresh.mjs';
 import {marketOperationalStore} from '../worker/market-operational-store.mjs';
 import {feedInput,feedOutput} from './helpers/public-feed-fixtures.mjs';
 function fixture(){
@@ -162,4 +162,54 @@ test('PC transport adapter preserves actual 429 and Retry-After from unchanged C
   await refreshPublicFeeds({...args,now:at+60000});
   assert.equal(requests,1);
  }finally{globalThis.fetch=original;sql.close();}
+});
+
+test('W06 eligible minute phase waits only within cap, preserves 429 retry and synthetic timestamps',()=>{
+ const start=Date.parse('2026-11-26T16:01:01.000Z');
+ const prior={storedAt:Date.parse('2026-11-26T16:00:22.627Z')};
+ const attempt={storedAt:prior.storedAt,body:{status:'ATTEMPTED'}};
+ const planned=planCnnMinuteEligibilityWait({now:start,previous:prior,lastAttempt:attempt});
+ assert.equal(CNN_MINUTE_ELIGIBILITY_WAIT_CAP_MS,25_000);
+ assert.equal(planned.reason,'BOUNDED_WAIT_BEFORE_SHARED_LEASE');
+ assert.equal(planned.waitMs,22_127);
+ assert.equal(planCnnMinuteEligibilityWait({now:start-10_000,previous:prior,lastAttempt:attempt}).waitMs,0);
+ assert.equal(planCnnMinuteEligibilityWait({now:start,previous:prior,
+  lastAttempt:{...attempt,body:{status:'ATTEMPTED',retryAt:start+600_000}}}).reason,'RETRY_COOLDOWN_PRESERVED');
+ assert.equal(planCnnMinuteEligibilityWait({now:start+60_000,previous:prior,lastAttempt:attempt}).waitMs,0);
+ assert.equal(planCnnMinuteEligibilityWait({now:start,previous:null,lastAttempt:null}).waitMs,0);
+});
+
+test('W06 short due wait releases shared lease and resumes exact stored-output/readback path',async()=>{
+ const {sql,db,store,locks}=fixture();await store.initialize();
+ let calls=0,slept=0;
+ const collector=async(s,at)=>{calls++;
+  await s.writeInput('fear-greed',feedInput('fear-greed',at),at);
+  return Response.json(feedOutput('fear-greed',at));};
+ const args={env:{DB:db,ZGMINI_COMPUTE_TARGET:'pc'},store,locks,
+  cnnMinuteOnly:true,collectors:{'fear-greed':collector}};
+ let clockTime=now;
+ const clock=()=>clockTime;
+ const sleep=async ms=>{
+  slept=ms;
+  const lease=sql.prepare("SELECT lease_until,status FROM market_collection_jobs_v1 WHERE job='public-feeds'").get();
+  assert.equal(lease.lease_until,0,'must not hold shared Core feed lease during bounded wait');
+  clockTime+=ms;
+ };
+ const first=await refreshPublicFeeds({...args,now,clock,sleep});
+ assert.equal(first.status,'COMPLETE');
+ assert.equal(calls,1);assert.equal(slept,0);
+ clockTime=now+45_000;
+ const second=await refreshPublicFeeds({...args,now:clockTime,clock,sleep});
+ assert.equal(second.status,'COMPLETE');
+ assert.equal(second.feeds[0].status,'COMPLETE');
+ assert.equal(calls,2);
+ assert.equal(slept,15_500);
+ assert.equal((await store.readOutput('fear-greed')).storedAt,now+60_500);
+ const before=clockTime;
+ clockTime+=15_000;const third=await refreshPublicFeeds({...args,now:clockTime,clock,sleep});
+ assert.equal(third.feeds[0].status,'CACHED');
+ assert.equal(calls,2);
+ assert.equal(slept,15_500,'out-of-cap waits must not change duration');
+ assert.equal(before,now+60_500);
+ sql.close();
 });
