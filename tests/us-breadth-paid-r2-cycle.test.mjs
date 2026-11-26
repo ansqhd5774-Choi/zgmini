@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import {runPaidUsR2StoredCycle}
+import {runPaidUsR2StoredCycle,readyPaidUsR2FullYearPublication}
   from '../scripts/pc-writer/us-breadth-paid-r2-cycle.mjs';
 
 const dates=['2026-11-18','2026-11-19','2026-11-20'];
@@ -68,4 +68,31 @@ test('missing full session fails both preview and requested publication',async()
   assert.equal(res.status,'PAID_R2_STORED_SESSION_GAP');
   assert.equal(res.publicationComplete,false);
   assert.equal(res.d1Writes,0);
+});
+
+test('full-year R2 publication rejects partial points or receipts without requiring PC effects',()=>{
+  const complete={
+    comparedSessions:250,fullYearHistory:true,
+    publicHistoryPreview:Array.from({length:250},()=>({})),
+    privateSourceReceipts:Array.from({length:251},()=>({})),
+  };
+  assert.equal(readyPaidUsR2FullYearPublication(complete),true);
+  assert.equal(readyPaidUsR2FullYearPublication(complete,2),false);
+  assert.equal(readyPaidUsR2FullYearPublication({...complete,fullYearHistory:false}),false);
+  assert.equal(readyPaidUsR2FullYearPublication({...complete,comparedSessions:249}),false);
+  assert.equal(readyPaidUsR2FullYearPublication({...complete,
+    publicHistoryPreview:complete.publicHistoryPreview.slice(1)}),false);
+  assert.equal(readyPaidUsR2FullYearPublication({...complete,
+    privateSourceReceipts:complete.privateSourceReceipts.slice(1)}),false);
+  assert.equal(readyPaidUsR2FullYearPublication(null),false);
+});
+
+test('Core public-year gate precedes private output and D1 promotion',()=>{
+  const cycle=fs.readFileSync(
+    new URL('../scripts/pc-writer/us-breadth-paid-r2-cycle.mjs',import.meta.url),'utf8');
+  const guard=cycle.indexOf('if(!readyPaidUsR2FullYearPublication(result,maxPoints))');
+  const privateSave=cycle.indexOf('const save=savePrivatePaidUsBreadthR2(');
+  const d1Import=cycle.indexOf("await import('./d1.mjs')");
+  assert.ok(guard>0&&guard<privateSave&&privateSave<d1Import);
+  assert.match(cycle,/US_PAID_R2_FULL_YEAR_HISTORY_REQUIRED/);
 });
