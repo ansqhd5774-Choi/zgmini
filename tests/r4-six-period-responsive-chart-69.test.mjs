@@ -92,7 +92,7 @@ test('#69 all six domain chart periods retain native 0-100 scores without compos
 test('#69 domain charts show only actual dated observations, not a fabricated window-start sample',()=>{
  const sourceDates=new Set(normalize(raw).map(p=>p.label));
  const ui=readFileSync(new URL('../app/dashboard-ui.tsx',import.meta.url),'utf8');
- assert.ok(ui.includes('const daily=marketTrendWindowR1(normalizeMarketTrendPointsR4(domain?.trend,market?.updatedAt),periodDays,{includeBoundaryCarry:false});'), 'domain rendering opts out of synthetic boundary carry');
+ assert.ok(ui.includes('const daily=marketTrendWindowR1(normalizeMarketTrendPointsR4(domain?.trend,market?.updatedAt),domainChartDays,{includeBoundaryCarry:false});'), 'domain rendering opts out of synthetic boundary carry');
  for(const period of [7,30,90,180,365]){
   const cutoff=new Date(Date.parse('2026-11-16T00:00:00Z')-period*86400000).toISOString().slice(0,10);
   assert.equal(sourceDates.has(cutoff),false,'fixture has no real boundary sample: '+period);
