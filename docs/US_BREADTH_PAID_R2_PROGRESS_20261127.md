@@ -189,6 +189,13 @@
 - **향후 B 설치 종속성:** 기존 제어 Writer B 승인 `approvals/writer-updates/us-breadth-paid-r2-backfill-insert-fourfile-20261127.json`은 `scripts/pc-writer` 정확 4파일만 포함, `protectedFiles=[]`; 반면 `worker/us-breadth-paid-r2-contract.mjs`는 기존 승인 후보 blob `84658b73a7968566af67fd109dd5218ebeac7565` → 현재 main blob `693e3fb88a4cc00670315ca4abb4cc15f7490b9f`으로 변경됨. #1733의 R2 cycle 파일 SHA 차이 외에 **PC checkout shared worker 의존성**도 설치 전 정확 원본 CAS와 당시 실행 source pin으로 검증할 것. 과거 승인 manifest를 변조하거나 운영 PC가 새 worker를 설치했다고 간주하지 않음. 제어 [#4068 신규 종속성 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4068#issuecomment-7202381178).
 - 미완료: S6 #4069 원장 실제 판정, #4078 PC Job 정상 접수, #4080 운영 Runner 배정, 실제 Writer B/251 raw+SHA/250 저장+D1 CAS/API/UI. **종단 5/8(62.5%) 유지.**
 
+## 2026-11-27 PC Job 접수 공백의 시간 상·하한 독립확인
+
+- GitHub Actions REST `GET /actions/runs?event=issues&per_page=100&page=1..3`에서 총 300개 실제 Run의 `path=.github/workflows/pc-job.yml`만 필터. UTC 2026-11-26T19:11:07Z의 [PC Job 성공 45881716545](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45881716545) 및 skip 45881717018 이후, **19:20:40Z** [Run 45882940790](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45882940790)/45882941002(skip) 전까지 해당 PC Job workflow Run 없음. 원본 R2 [#4078](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4078) 생성 19:14:52Z 및 라벨 19:14:54Z는 바로 이 공백 안임.
+- **19:20:40 이후 PC Job workflow Run 생성이 재개**됐음을 직접 확인(19:22:53Z Run 45883221639 skipped, 19:30:02Z Run 45884082348 queued, 19:30:03Z Run 45884083567 pending). 따라서 #4078은 Run 미생성 단계의 과거 누락이고, #4080 운영 Runner `queued`는 이후 **서로 다른 단계**의 신규 대기. 이 결과는 `issues.opened` 라벨 job.if만으로 #4078 누락을 설명할 수 없다는 기존 반증을 보강함.
+- S6 [#4069](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4069)의 `pauseIntake`가 19:11~19:20 사이 수행됐을 가능성은 높지만, 승인된 journal `pausedAt/resumedAt`이 없으므로 실제 원인 확정 금지. [#4078 신규 증거 기록](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4078#issuecomment-7202427892). 현재 원본 B 승인 재발행·R2 Collector 실행·PC 파일 수정 0.
+- 다음 실행은 기존 S6 고유 journal 및 durable backlog readback 확보 후 #4078 원본 requestId를 정규 접수 복구하는 것. 이후 운영 Runner·Core 자연유휴·실제 source CAS 검증과 최신 5파일 종속성 명세 재검토, 251 raw/projection SHA 수집·250점 계산·D1/API/UI 실증 순서. **종단 5/8(62.5%) 유지**.
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
