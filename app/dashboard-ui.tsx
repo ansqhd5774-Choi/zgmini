@@ -219,7 +219,7 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
  // A retired source is not a valid historical chart license. The saved
  // archive is preserved privately; this display must not graph its scores.
  const retiredCompositeHistory=market?.overall?.state==='PROVIDER_REMOVED_MARKETPARQUET_PUBLICATION_DENIED';
- const overallTrend=useMemo(()=>{
+ const overallTrend=(()=>{
   if(retiredCompositeHistory)return [];
   const daily=marketTrendWindowR1(amplifyCompositeDisplayTrend(verifiedOverallHistory),periodDays,{includeBoundaryCarry:false});
   const archived=compositeArchive?.days===periodDays?compositeArchive.points.flatMap(point=>{
@@ -230,7 +230,7 @@ export const CompositeMarketSection=memo(function CompositeMarketSection({demo}:
   // may not yet contain its calculation time. Never synthesize earlier points.
   const current=overallScore===null||!market?.updatedAt?null:{label:market.updatedAt,value:overallScore,boundToPublishedCard:true};
   return mergeCompositeObservedDisplay(daily,archived,periodDays,current);
- },[verifiedOverallHistory,market,overallScore,compositeArchive,periodDays,retiredCompositeHistory]);
+ })();
  const hasDatedHistory=useMemo(()=>overallTrend.length>1||
   [verifiedOverallHistory,...(market?.domains??[]).map(d=>d.trend)].some(data=>marketTrendWindow(normalizeMarketTrendPointsR4(data,market?.updatedAt),365).length>1),
   [verifiedOverallHistory,market?.domains,market?.updatedAt,overallTrend]);
