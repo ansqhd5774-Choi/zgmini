@@ -123,7 +123,7 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays,curre
         ?new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(point.ts))+' (계산 시각)'
         :parts?`${parts.year}. ${parts.monthText}. ${parts.dayText}.`:point?.label??'—'}</span>
        <strong style={{color:typeof value==='number'&&Number.isFinite(value)?scoreColor(value):'#94a3b8'}}>{typeof value==='number'&&Number.isFinite(value)?value.toFixed(1):'—'}</strong>
-       {(point.verifiedModelVersion||point.legacyCalculatedValue!==null)&&<span>{point.verifiedModelVersion?`현재 게시 계산점 · ${point.verifiedModelVersion}`:'실제 계산시각 점 · 당시 방법론 버전 미확인'}</span>}
+       {point.verifiedModelVersion&&<span>현재 게시 계산점 · {point.verifiedModelVersion}</span>}
       </div>;
      }}
     />
@@ -137,7 +137,7 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays,curre
   {latest&&touchedLatestAt===latest.ts&&<div data-testid="w06-touch-tooltip" role="status" aria-live="polite" className="cnn-history-tooltip" style={{position:'absolute',top:0,right:4,zIndex:5,pointerEvents:'none',maxWidth:'calc(100% - 8px)'}}>
    <span>{new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(latest.ts))} (계산 시각)</span>
    <strong style={{color:scoreColor(latest.value)}}>{latest.value.toFixed(1)}</strong>
-   {(latest.verifiedModelVersion||latest.legacyCalculatedValue!==null)&&<span>{latest.verifiedModelVersion?`현재 게시 계산점 · ${latest.verifiedModelVersion}`:'실제 계산시각 점 · 당시 방법론 버전 미확인'}</span>}
+   {latest.verifiedModelVersion&&<span>현재 게시 계산점 · {latest.verifiedModelVersion}</span>}
   </div>}
   {singlePointLabel&&<span role="status" title={singlePointLabel} style={{position:"absolute",top:0,right:6,maxWidth:"90%",fontSize:10,color:"var(--zg-text-meta,#a8bcd0)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>실제 관측점 1개 · {singlePointLabel}</span>}
  </div>;
