@@ -17,6 +17,41 @@ function setup(t,{plan='full',conflict=false}={}){
  if(conflict){const dir=path.join(root,'theme-market-history-r131','marketparquet-r165');fs.mkdirSync(dir,{recursive:true});fs.writeFileSync(path.join(dir,'etf_daily_'+date+'.parquet'),'old-preserved');}
  return {base,date,bytes,rows,calls,options:{start:date,apiKey:'test-secret',fetchImpl,readParquet:async()=>rows,sleep:async()=>{}}};
 }
+test('stock-only historical chunk does not fetch or write ETF files',async t=>{
+ const fixture=setup(t);
+ const result=await collectPaidDaily(fixture.base,{
+  ...fixture.options,assetTypes:['stock_daily'],maxFiles:1,
+ });
+ assert.equal(result.status,'STORED_READBACK_VERIFIED');
+ assert.equal(result.downloaded,1);
+ assert.equal(result.reused,0);
+ assert.equal(result.fileRequests,1);
+ assert.equal(result.themeDatesExposed,0);
+ assert.equal(result.d1Writes,0);
+ assert.deepEqual(Object.keys(result.dates),['stock_daily']);
+ assert.ok(readPaidDaily(fixture.base,'stock_daily',fixture.date));
+ assert.equal(fs.existsSync(path.join(paidRoot(fixture.base),'etf_daily')),false);
+ assert.ok(fixture.calls.some(c=>c.url.includes('/manifest/stock_daily')));
+ assert.equal(fixture.calls.some(c=>c.url.includes('/manifest/etf_daily')),false);
+ const again=await collectPaidDaily(fixture.base,{
+  ...fixture.options,assetTypes:['stock_daily'],maxFiles:1,
+ });
+ assert.equal(again.downloaded,0);
+ assert.equal(again.reused,1);
+ assert.equal(again.fileRequests,0);
+});
+
+test('invalid selected asset types fail before any network or storage effects',async t=>{
+ const fixture=setup(t);
+ for(const assetTypes of [[],['unknown'],['stock_daily','stock_daily'],'stock_daily']){
+  await assert.rejects(collectPaidDaily(fixture.base,{
+   ...fixture.options,assetTypes,
+  }),{code:'MP_PAID_ASSET_TYPES_INVALID'});
+ }
+ assert.equal(fixture.calls.length,0);
+ assert.equal(fs.existsSync(paidRoot(fixture.base)),false);
+});
+
 test('paid stock + ETF stored, read back and reused; signed URLs receive no credential',async t=>{
  const s=setup(t);const first=await collectPaidDaily(s.base,s.options);
  assert.equal(first.status,'STORED_READBACK_VERIFIED');assert.equal(first.downloaded,2);assert.equal(first.themeDatesExposed,1);
