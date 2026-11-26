@@ -3,7 +3,7 @@ import {memo,useId,useState} from 'react';
 import {useDashboardMobileAxis} from '../hooks/use-dashboard-mobile-axis';
 import ChartExtremumPoint from './chart-extremum-point';
 import {chartExtrema} from '../lib/chart-extrema.mjs';
-import {publishedCompositeMethodLabel,splitCompositeChartProvenance} from '../lib/market-score/composite-chart-provenance-r4.mjs';
+import {splitCompositeChartProvenance} from '../lib/market-score/composite-chart-provenance-r4.mjs';
 import type {DashboardPoint} from '../app/dashboard-ui';
 import {Area,AreaChart,ReferenceArea,ResponsiveContainer,XAxis,YAxis,ReferenceDot,ReferenceLine,Tooltip} from 'recharts';
 const scoreColor=(score:number)=>score<25?'#ef4444':score<40?'#f59e0b':score<60?'#94a3b8':score<75?'#22c55e':'#10b981';
@@ -21,6 +21,11 @@ function summaryDateParts(ts:number){
  const date=new Date(ts);
  if(!Number.isFinite(date.getTime()))return null;
  return {year:date.getUTCFullYear(),month:date.getUTCMonth()+1,monthText:String(date.getUTCMonth()+1).padStart(2,'0'),dayText:String(date.getUTCDate()).padStart(2,'0')};
+}
+function summaryTooltipDate(point:DashboardPoint&{ts:number}){
+ if(point.label.includes('T'))return new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(point.ts));
+ const parts=summaryDateParts(point.ts);
+ return parts?`${parts.year}. ${parts.monthText}. ${parts.dayText}.`:point.label;
 }
 function sampleSummaryPoints<T>(points:T[],count:number){
  if(points.length<=count)return points;
@@ -76,12 +81,11 @@ function summaryAxisConfig(points:Array<DashboardPoint&{ts:number}>,periodDays:n
  return {ticks:[...labels.keys()],labels};
 }
 
-const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays,currentPublished}:{data:DashboardPoint[];label:string;color:string;periodDays:number;currentPublished?:{updatedAt:string;displayScore:number;modelVersion:string}|null}){
+const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays}:{data:DashboardPoint[];label:string;color:string;periodDays:number;currentPublished?:{updatedAt:string;displayScore:number;modelVersion:string}|null}){
  const mobileAxisRight=useDashboardMobileAxis();
  const [touchedLatestAt,setTouchedLatestAt]=useState<number|null>(null);
  const scaled=timeScaledTrend(data,periodDays),latest=scaled.points.at(-1),axis=summaryAxisConfig(scaled.points,periodDays);
- const latestCurrentMethod=latest?publishedCompositeMethodLabel(latest,currentPublished??null):null;
- const singlePointLabel=scaled.points.length===1&&latest?`${new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(latest.ts))} (계산 시각) · ${latest.value.toFixed(1)}점`:null;
+ const singlePointLabel=scaled.points.length===1&&latest?`${summaryTooltipDate(latest)} · ${latest.value.toFixed(1)}점`:null;
  const gradientId=`summary-${useId().replace(/:/g,'')}`;
  const extrema=chartExtrema(scaled.points.map(p=>({date:new Date(p.ts).toISOString().slice(0,10),value:p.value})));
  return <div className="zg-spark zg-r55-mini-chart zg-r55-summary-mini-chart" style={{height:120,minHeight:120,maxHeight:120,position:"relative"}} aria-label={`${label} 관측 추이${singlePointLabel?` · 단일 실제 관측점 ${singlePointLabel}`:""}`} title={singlePointLabel??undefined} data-w06-touch-tooltip-ready="true"
@@ -114,24 +118,19 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays,curre
     <Tooltip
      isAnimationActive={false}
      cursor={{stroke:'var(--zg-chart-crosshair,#aab2bc)',strokeDasharray:'3 4'}}
-     content={({active,payload,label:tooltipLabel})=>{
+     content={({active,payload})=>{
       if(!active||!payload?.length)return null;
       const point=payload[0]?.payload as DashboardPoint&{ts:number;calculatedValue:number|null;reconstructedValue:number|null};
-      const parts=summaryDateParts(Number(tooltipLabel));
       const value=point?.value;
-      const currentMethod=publishedCompositeMethodLabel(point,currentPublished??null);
       return <div className="cnn-history-tooltip">
-       <span>{point?.label?.includes('T')
-        ?new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(point.ts))+' (계산 시각)'
-        :parts?`${parts.year}. ${parts.monthText}. ${parts.dayText}.`:point?.label??'—'}</span>
+       <span>{point?summaryTooltipDate(point):'—'}</span>
        <strong style={{color:typeof value==='number'&&Number.isFinite(value)?scoreColor(value):'#94a3b8'}}>{typeof value==='number'&&Number.isFinite(value)?value.toFixed(1):'—'}</strong>
-       {currentMethod&&<span>현재 게시 계산점 · {currentMethod}</span>}
       </div>;
      }}
     />
     {/* Draw one continuous visual path through saved, time-ordered points.
         The individual reconstructed/calculated provenance remains on each point
-        for the tooltip; connecting known points does not assert equal model versions
+        as source metadata; connecting known points does not assert equal model versions
         or create a missing observation between them. */}
     <Area type="monotone" dataKey="value" stroke={color} fill="none" strokeWidth={2.1} dot={false} activeDot={{r:3.5,strokeWidth:0,fill:color}} connectNulls={false} isAnimationActive={false}/>
     {latest&&<ReferenceDot x={latest.ts} y={latest.value} r={4.4} fill={color} stroke="#fff7f7" strokeWidth={2}/>}
@@ -139,11 +138,10 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays,curre
    </AreaChart>
   </ResponsiveContainer>
   {latest&&touchedLatestAt===latest.ts&&<div data-testid="w06-touch-tooltip" role="status" aria-live="polite" className="cnn-history-tooltip" style={{position:'absolute',top:0,right:4,zIndex:5,pointerEvents:'none',maxWidth:'calc(100% - 8px)'}}>
-   <span>{new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(latest.ts))} (계산 시각)</span>
+   <span>{summaryTooltipDate(latest)}</span>
    <strong style={{color:scoreColor(latest.value)}}>{latest.value.toFixed(1)}</strong>
-   {latestCurrentMethod&&<span>현재 게시 계산점 · {latestCurrentMethod}</span>}
   </div>}
-  {singlePointLabel&&<span role="status" title={singlePointLabel} style={{position:"absolute",top:0,right:6,maxWidth:"90%",fontSize:10,color:"var(--zg-text-meta,#a8bcd0)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>실제 관측점 1개 · {singlePointLabel}</span>}
+  {singlePointLabel&&<span role="status" title={singlePointLabel} style={{position:"absolute",top:0,right:6,maxWidth:"90%",fontSize:10,color:"var(--zg-text-meta,#a8bcd0)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis"}}>{singlePointLabel}</span>}
  </div>;
 });
 

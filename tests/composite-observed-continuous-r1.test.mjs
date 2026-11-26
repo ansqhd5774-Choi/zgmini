@@ -33,7 +33,9 @@ test('the single solid curve retains per-point provenance and makes no historica
  assert.match(source,/<Area type="monotone" dataKey="value" stroke=\{color\} fill="none"[^>]*connectNulls=\{false\}/);
  assert.doesNotMatch(source,/<Area type="monotone" dataKey="(?:reconstructedValue|calculatedValue)"/);
  assert.match(source,/splitCompositeChartProvenance\(data\)/);
- assert.match(source,/publishedCompositeMethodLabel\(point,currentPublished\?\?null\)/);
+ assert.doesNotMatch(source,/publishedCompositeMethodLabel\(point,currentPublished\?\?null\)/,'UI does not claim model provenance in the tooltip');
+ assert.match(source,/function summaryTooltipDate\(point:DashboardPoint&\{ts:number\}\)/,'both tooltips use a shared calendar-date formatter');
+ assert.doesNotMatch(source,/\(계산 시각\)|현재 게시 계산점 ·/,'tooltip is strictly date and score');
  const points=splitCompositeChartProvenance([
   {label:'2026-11-19',value:41.5},
   {label:'2026-11-21T00:05:00.000Z',value:33.5}

@@ -41,7 +41,7 @@ try{
     const svg=chart.locator('svg.recharts-surface');
     const empty=chart.getByText('추이 데이터 준비 중');
     if(period==='1D'&&body.points.length===1){
-     await page.getByText('실제 관측점 1개',{exact:false}).waitFor({timeout:20000});
+     await chart.locator('span[role="status"]').first().waitFor({timeout:20000});
      assert.equal(await empty.count(),0,'one actual point must not be hidden as empty');
      assert((await svg.count())>0,'single point actual SVG must mount');
      const marker=chart.locator('.recharts-reference-dot circle');
@@ -50,8 +50,8 @@ try{
      const displayed=Math.max(0,Math.min(100,50+(current.score-50)*3.5)).toFixed(1);
      const statusText=await chart.locator('[role=status]').innerText();
      assert(statusText.includes(displayed+'점'),'display sensitivity matches published raw point');
-     const kst=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(current.observedAt));
-     assert(statusText.includes(kst),'actual KST calculated time is shown');
+     const date=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(current.observedAt));
+     assert(statusText.includes(date),'actual KST calendar date is shown without requiring a time label');
      // Recharts tooltip is driven by chart mouse movement, not the ReferenceDot alone.
      const bounds=await marker.first().boundingBox();
      assert(bounds,'rendered marker has real page coordinates');
@@ -77,7 +77,7 @@ try{
      assert((await svg.count())>0,'multipoint actual SVG must mount');
      const latest=body.points.at(-1);
      const displayed=Math.max(0,Math.min(100,50+(latest.score-50)*3.5)).toFixed(1);
-     const kst=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(latest.observedAt));
+     const date=new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(latest.observedAt));
      const latestDot=chart.locator('.recharts-reference-dot circle').first();
      await latestDot.waitFor({state:'visible',timeout:15000});
      await latestDot.evaluate(el=>el.scrollIntoView({block:'center',inline:'nearest'}));
@@ -99,7 +99,7 @@ try{
      const tipExists=(await tip.count())>0;
      const tipText=tipExists?await tip.innerText():'';
      const tipVisibility=tipExists?await tip.evaluate(el=>getComputedStyle(el).visibility):'missing';
-     const evidence={width:viewport.width,points:body.points.length,lastAt:latest.observedAt,displayed,kst,tipVisibility,tipText,center};
+     const evidence={width:viewport.width,points:body.points.length,lastAt:latest.observedAt,displayed,date,tipVisibility,tipText,center};
      console.log('W06_MULTIPOINT_INTERACTION '+JSON.stringify(evidence));
      await page.screenshot({path:'artifacts/w06-production-readonly/multipoint-'+viewport.width+'.png',fullPage:false});
      const deployedTouchCapability=(await chart.locator('[data-w06-touch-tooltip-ready="true"]').count())>0;
@@ -110,7 +110,7 @@ try{
       const sideVeil=page.locator('button.zg-risk-side-veil[aria-label="열린 패널 닫기"]');
       assert(!(await sideVeil.isVisible()),'latest chart-point touch must not open market chat overlay');
      }
-     assert(tipExists&&tipVisibility==='visible'&&tipText.includes(displayed)&&tipText.includes(kst),
+     assert(tipExists&&tipVisibility==='visible'&&tipText.includes(displayed)&&tipText.includes(date),
        'actual '+(viewport.width===390?'mobile touch':'desktop hover')+' latest 1D point tooltip matches public data');
     }
     assert.equal(await selected.getAttribute('aria-pressed'),'true',period+' selected');
