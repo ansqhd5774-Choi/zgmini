@@ -1,7 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {US_PAID_R2_FEED_KEY,US_PAID_R2_VERSION,
-  US_PAID_R2_SOURCE,US_PAID_R2_METHOD,
+import {US_PAID_R2_FEED_KEY,
   validPaidUsR2Record,paidUsR2PublicProjection}
   from '../worker/us-breadth-paid-r2-contract.mjs';
 import {fullPaidUsR2Record}
