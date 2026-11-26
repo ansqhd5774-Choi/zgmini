@@ -57,6 +57,10 @@ export async function runPaidUsR2StoredCycle(base,{
 }={}){
   if(typeof publish!=='boolean'||!Number.isSafeInteger(now)||now<=0)
     return stop('US_PAID_R2_CYCLE_ARGUMENTS_INVALID');
+  // Fast fail: an unapproved or unpinned Writer must not even scan private
+  // history on each scheduled Core cycle, let alone stage or publish it.
+  const installed=publish?checkApprovedPcRuntime(base):null;
+  if(publish&&!installed.ok)return stop(installed.status);
   // Existing shared stored output is the only permitted calculation input.
   const result=await calculateStoredPaidUsBreadthR2(base,{maxPoints,store});
   if(result.prepared!==true)return {...result,publicationComplete:false};
@@ -67,8 +71,6 @@ export async function runPaidUsR2StoredCycle(base,{
     operationalWrites:0,
   };
 
-  const installed=checkApprovedPcRuntime(base);
-  if(!installed.ok)return stop(installed.status);
   if(result.lastDate!==latestCompletedSession(new Date(now)))
     return stop('US_PAID_R2_LATEST_SESSION_NOT_STORED');
   const save=savePrivatePaidUsBreadthR2(base,result,{saveEnabled:true});
