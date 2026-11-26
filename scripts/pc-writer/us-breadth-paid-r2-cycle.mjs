@@ -27,7 +27,7 @@ const sha=bytes=>createHash('sha256').update(bytes).digest('hex');
  * For publish=true, source and paid account are checked against the actual
  * installed checkout and local account connection, never a passed boolean.
  */
-function checkApprovedPcRuntime(base){
+export function checkApprovedPcRuntime(base){
   let config,connection;
   try{
     config=JSON.parse(fs.readFileSync(path.join(base,'config.json'),'utf8'));
