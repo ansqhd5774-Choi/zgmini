@@ -1,5 +1,15 @@
 # US Breadth R44 — verified R2 D1 final and remaining release gates
 
+
+## 2026-11-27 — 유료 MarketParquet 기반 기능 재개 (최신 판단)
+
+- 사용자가 **Complete Archive + Keep Current** 구매를 확인했다. Gmail의 2026-11-20 두 활성화 회신과 최신 `main/docs/MARKETPARQUET_REMOVAL.md`의 `plan=full` 실PC 조회·공통 유료 원자료 저장 증거를 재사용한다. 이전 무료 샘플 공개 거절·11/16 사용 중단 기록은 **무료 상품에 한정된 역사 증거**이며 유료 이용권까지 부정하지 않는다. 새 API 키·메일 문의·유료 구매는 필요 없다.
+- 기존 미국 **전체 주식** R2와 S&P500 기반 유료 경제지표 B1-R5는 다른 출력 계약이다. R2는 거래일별 `stock_daily` 전체 종목의 상승·보합·하락 **비율**만 공개하며 S&P500 수급·폭 4요인 점수를 R2라고 대체하지 않는다.
+- 기존 전용 브랜치를 보존해 source-only 파일 `lib/market-breadth/us-marketparquet-paid-r2-adapter.mjs`, `tests/us-marketparquet-paid-r2-adapter.test.mjs` 추가. 유료 `plan=full` 영수증·같은 분할조정 기준·두 실제 거래일을 확인하고 기존 R2 `MISSING_AS_UNCHANGED` 계산기를 재사용한다. 결측 *전일 종목*은 보합 분류하지만 *전 거래일 파일 자체*가 없으면 차단한다. private 수량/원자료는 공개하지 않으며 계산 후보의 `publicationAllowed=false`를 유지한다.
+- 격리 순수 함수 시험(실제 GitHub 소스, 거래일 확인 fixture) 5/5: 정상 상승/보합/하락, 무료 영수증 거부, 비연속일 거부, 중복 소스 거부, 무효 가격 거부. **실제 Node CI·실PC 수집·설치·D1·Production 통과 아님**.
+- 2026-11-27 최신 `main`과 이 브랜치는 **71커밋 ahead / 1203커밋 behind**, `diverged`. 옛 브랜치 전체 병합·main 직접 덮어쓰기 금지. 현행 `main`에는 유료 공통 저장기 `marketparquet-paid-store.mjs`가 있고 미국 전체 R2 공개 Reader는 과거 제거 상태. 2026-11-26 UI PR #1695에 별도 복구된 표시 쉘이 있으며 운영 사이트에서 '연결 예정' 확인.
+- **다음 필수 기능 단계:** 현재 `main`의 유료 `readPaidDaily/readPaidProjection` 검증 결과에 이 private R2 adapter를 **필요한 파일만 선별 통합** → 연속 실제 거래일로 최신/250회 이력 계산 및 로컬 SHA readback → 별도 유료 R2 key에 정확한 CAS/readback 게시 → GET percent-only/current+history → 기복구 UI 연결 및 PC/모바일 실측. 기존 무료 R1/IEX keys, 한국 지수, S&P500 B1-R5, 테마·섹터, 예약·원자료를 변경하지 않는다. 기능 완료 전 예약 자연 갱신 검증 금지.
+
 Date: 2026-11-02 KST. Repository: `ansqhd5774-Choi/zgmini`.
 Development branch: `codex/us-breadth-public-r1-20261031`.
 
