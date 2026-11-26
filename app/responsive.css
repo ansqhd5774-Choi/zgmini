@@ -648,3 +648,9 @@
   --mobile-period-width:calc(6 * var(--zg-ui-period-width) + 2px);
  }
 }
+
+/* Composite tooltip layering parity with USA/Korea: keep the shared opaque
+   .cnn-history-tooltip above Recharts' painted SVG at desktop and mobile widths. */
+.zg-dashboard[data-view="dashboard"] .zg-r55-summary-mini-chart .recharts-tooltip-wrapper{
+  z-index:5;
+}
