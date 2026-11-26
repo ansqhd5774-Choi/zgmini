@@ -28,7 +28,7 @@ test('W06 is a nonexecuting source candidate with exactly one 60s CNN-only Task'
 
 test('W06 requires fixed installed roots and explicit Windows account',()=>{
  for(const patch of [{sourceRoot:'C:\\tmp'},{sourceRoot:'E:\\ZGmini\\projects\\..'},
-  {pcHome:'C:\\Temp'},{nodeExe:'C:\\node.exe'},{systemRoot:'C:\\Something'},
+  {pcHome:null},{nodeExe:null},{pcHome:'C:\\Temp'},{nodeExe:'C:\\node.exe'},{systemRoot:'C:\\Something'},
   {account:'x\nmalicious'},{account:''},{now:new Date('invalid')}]){
   assert.throws(()=>buildW06MinuteTaskCandidate({...args(),...patch}),
    e=>e.code==='W06_MINUTE_TASK_INPUT_SCOPE_STOP');
