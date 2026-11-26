@@ -196,6 +196,12 @@
 - S6 [#4069](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4069)의 `pauseIntake`가 19:11~19:20 사이 수행됐을 가능성은 높지만, 승인된 journal `pausedAt/resumedAt`이 없으므로 실제 원인 확정 금지. [#4078 신규 증거 기록](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4078#issuecomment-7202427892). 현재 원본 B 승인 재발행·R2 Collector 실행·PC 파일 수정 0.
 - 다음 실행은 기존 S6 고유 journal 및 durable backlog readback 확보 후 #4078 원본 requestId를 정규 접수 복구하는 것. 이후 운영 Runner·Core 자연유휴·실제 source CAS 검증과 최신 5파일 종속성 명세 재검토, 251 raw/projection SHA 수집·250점 계산·D1/API/UI 실증 순서. **종단 5/8(62.5%) 유지**.
 
+## 2026-11-27 최신 R2 게시 가드 포함 Writer B 미승인 4파일 후보 검증
+
+- 제어 저장소 [PR #4090](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4090) exact HEAD `3a0fe0f8ccd952bf594e6a0e0c3727e6e94f6f43`, C996 R5 + Secret Scan **2/2 SUCCESS**, merge SHA **`7e797955ad76ce13c61d02d1e1bc8a226e2dfa39`**. 새 후보는 `approvals/writer-updates/us-breadth-paid-r2-post-250-guard-proposal-20261127.json`, 상태 **`PROPOSED_NOT_APPROVED`**: Writer B validator에서 반드시 거부됨. 기존 #4066 승인 원본의 `APPROVED_B` 상태·해시·승인 SHA는 변경하지 않음.
+- 새 정확 후보 source `f7ea89305df8471ffb1827d974fc2e0c223d0b09`, R2 실행기 `scripts/pc-writer/us-breadth-paid-r2-cycle.mjs` 목표 SHA-256 **`6f194b20a13c21e1c458094069a3f709f4833ab5fd10fc522844581fae191ea1`**. 4파일 candidate 실제 원문 SHA-256 재계산 **4/4 정확 일치**. 기존 manifest에서 source SHA와 R2 실행기 after SHA만 다르고 A #4064 검증 Core 2삽입/원본 before·after, 4파일 경계, Task/VBS 고정, `PAUSE_NEW_STARTS_DRAIN_360S_V1`, 설치 중 기타 효과 0을 그대로 보존.
+- **주의:** 이 source-only 후보는 새 B 승인도 실제 설치도 아님. 사용자가 승인한 효과의 정규 Owner 승인 연결·정확 manifest SHA, 실제 PC 원본 CAS/lease/유휴 및 S6 #4069 원장 복구가 필수. #4080 `operating-process-snapshot` queued와 #4078 원본 워크플로 누락 때문에 새 B 요청/PC 공급자 호출은 하지 않음. 설치 B #4068 `ORIGINAL_VERIFIED` 유지, 종단 **5/8(62.5%)**.
+
 ## 현재 남은 3개 종단 단계
 
 - [ ] 6/8: 목표 251거래일 도출·유료 `stock_daily` 결손일 bounded backfill·원본/projection SHA 전체 검증. `etf_daily` 전 기간 수집은 미국 R2 완료조건이 아니다.
