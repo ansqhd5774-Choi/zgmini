@@ -9,6 +9,8 @@ import {savePrivatePaidUsBreadthR2,validPrivatePaidUsBreadthR2}
 function candidate(){
   return {
     status:'PAID_R2_STORED_PRIVATE_CALCULATED',prepared:true,
+    source:'MARKETPARQUET_PAID_SPLIT_ADJUSTED_DAILY',
+    priceMode:'SPLIT_ADJUSTED_DAILY_CLOSE',
     publicationAllowed:false,firstDate:'2026-11-19',
     lastDate:'2026-11-19',comparedSessions:1,fullYearHistory:false,
     sourceLatestProviderDateVerified:false,
