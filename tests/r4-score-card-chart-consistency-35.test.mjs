@@ -118,7 +118,7 @@ test('R4 #35 UI uses exactly the same publication for both current cards and cha
  assert.match(page,/const current=overallScore===null\|\|!market\?\.updatedAt\?null:/);
  assert.match(page,/mergeCompositeObservedDisplay\(daily,archived,periodDays,current\)/);
  assert.match(page,/domain\?\.status==='READY'&&validPublicScore\(domain\.score\)/);
- assert.match(page,/appendPublishedDomainCurrent\(daily,current,periodDays\)/);
+ assert.match(page,/appendPublishedDomainCurrent\(daily,current,domainChartDays\)/);
 });
 
 test('R4 #35 generic unbound display keeps newer actual archive as existing contract requires',()=>{
