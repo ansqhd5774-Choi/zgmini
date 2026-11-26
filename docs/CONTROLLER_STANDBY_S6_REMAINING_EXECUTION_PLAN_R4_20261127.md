@@ -147,3 +147,10 @@
 - 원인 구분용 최소 소스 변경: 제어 저장소 `codex/controller-s6-r5-health-state-20261127` [PR #4054](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4054), 작성 HEAD `490f458b077d364d57740521b2f407eb57225ce7`. R5 A의 이미 검증된 Watchdog owner/STATUS 신선도 이후에만 설치된 R5 Watchdog 코드에서 사용된 고정 상태 enum(`PAUSED`, `BLOCKED_LIVE_OR_UNKNOWN` 등)을 `watchdogHealthState`로 제한 반환. 알 수 없는/raw 값은 `UNRECOGNIZED`, stale은 `STALE_OR_UNVERIFIED`만 반환. 임의 PID·nonce·파일 경로·환경/비밀 미반환, Runner/Workflow/Controller/Watchdog 실제 쓰기 0.
 - 역사적 Watchdog/S6 B 승인, 45초/60초 heartbeat, owner/fencing/IPC/READY 안전 검사 불변. 같은 코드에서 상태 원인을 추측하여 기동/강제종료하지 않음.
 - **다음:** #4054 exact-head C996/Process Inventory/Secret 3/3 및 병합 검증 → 필요시 새 고유 R5 read-only A **1회**로 실제 상태 enum 판정 → 최초 실패 조건에 맞는 최소 수정 또는 현장 자연 복귀 readback. 종단 S6 0/1 보존.
+
+## 12. 2026-11-27 S6-02 원인분류 PR #4054 CI 진행
+
+- 제어 저장소 [PR #4054](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4054), exact HEAD `490f458b077d364d57740521b2f407eb57225ce7`, 변경 2파일만 포함. 허용된 Watchdog 상태 분류를 A 운영 결과에만 추가하고 owner 검증 이전·임의 raw state는 공개하지 않는다. R5/S6 B 승인, Watchdog/Runner/Controller 운영 source, heartbeat 기준 불변.
+- [C996 R5 Readonly Source Checks Run #45877954112](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45877954112): **completed/success**. 동일 HEAD의 [Process Inventory Source Run #45877954098](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45877954098) 및 [Secret Scan Run #45877954178](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45877954178)은 **queued**. 3/3 미완료이므로 임의 병합/운영 A 재실행하지 않음.
+- 기존 [#4052](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4052)는 실제 `STATE_UNKNOWN/WATCHDOG_R5_HEALTH_STATUS_UNVERIFIED`, JSON/TXT readback 2/2 후 **조회 목적 완료로 closed**. 원본 S6 #3947은 UNKNOWN 및 실제 failover 0/1로 유지.
+- 다음 필요 행동: 남은 두 CI가 completed이면 exact-head 3/3 및 main 소스 검증·병합 → 새 고유 A로 실제 health-state 단회 재관측 → 확인된 상태의 실패 조건만 수정. 두 CI가 계속 queued이면 같은 검사를 재실행·별도 Runner 신설하지 않고 대기 사유 확인. #3947 원래 B requestId 반복 금지.
