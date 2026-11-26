@@ -110,7 +110,7 @@ const SummaryTrend=memo(function SummaryTrend({data,label,color,periodDays,curre
         ?new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(point.ts))+' (계산 시각)'
         :parts?`${parts.year}. ${parts.monthText}. ${parts.dayText}.`:point?.label??'—'}</span>
        <strong style={{color:typeof value==='number'&&Number.isFinite(value)?scoreColor(value):'#94a3b8'}}>{typeof value==='number'&&Number.isFinite(value)?value.toFixed(1):'—'}</strong>
-       <span>{point.verifiedModelVersion?`현재 게시 계산점 · ${point.verifiedModelVersion}`:point.legacyCalculatedValue!==null?'실제 계산시각 점 · 당시 방법론 버전 미확인':'현행 산식 재구성 · 당시 실계산점 아님'}</span>
+       {(point.verifiedModelVersion||point.legacyCalculatedValue!==null)&&<span>{point.verifiedModelVersion?`현재 게시 계산점 · ${point.verifiedModelVersion}`:'실제 계산시각 점 · 당시 방법론 버전 미확인'}</span>}
       </div>;
      }}
     />
