@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {calculateStoredPaidUsBreadthR2}
+import {calculateStoredPaidUsBreadthR2,planStoredPaidUsR2Backfill}
   from '../scripts/pc-writer/us-breadth-paid-r2-stored.mjs';
 
 const days=['2026-11-18','2026-11-19','2026-11-20'];
@@ -33,6 +33,42 @@ function fixture(){
   };
   return {rows,receipts,store,called};
 }
+
+test('exact Archive target planner identifies missing stock days without external effects',async()=>{
+  const {store,called}=fixture();
+  const now=Date.parse('2026-11-20T23:00:00.000Z');
+  const complete=await planStoredPaidUsR2Backfill('/fixture',{
+    store,maxPoints:2,now,
+  });
+  assert.equal(complete.status,'PAID_R2_TARGET_DATES_PRESENT_UNVERIFIED');
+  assert.equal(complete.firstDate,'2026-11-18');
+  assert.equal(complete.lastDate,'2026-11-20');
+  assert.equal(complete.requiredSessions,3);
+  assert.equal(complete.storedTargetDates,3);
+  assert.equal(complete.missingCount,0);
+  assert.equal(complete.rawShaVerified,false);
+  assert.equal(complete.providerCalls,0);
+  assert.equal(complete.operationalWrites,0);
+  const gap=await planStoredPaidUsR2Backfill('/fixture',{
+    store,maxPoints:3,now,
+  });
+  assert.equal(gap.status,'PAID_R2_BACKFILL_REQUIRED');
+  assert.equal(gap.requiredSessions,4);
+  assert.equal(gap.storedTargetDates,3);
+  assert.deepEqual(gap.missingDates,['2026-11-17']);
+  assert.ok(called.every(x=>x[0]==='dates'));
+});
+
+test('Archive planner rejects invalid stored index and out-of-range inputs',async()=>{
+  const {store}=fixture();
+  assert.equal((await planStoredPaidUsR2Backfill('/fixture',{
+    store,maxPoints:251,now:Date.parse('2026-11-20T23:00:00Z'),
+  })).status,'PAID_R2_BACKFILL_ARGUMENTS_INVALID');
+  store.paidDates=()=>[days[2],days[0],days[1]];
+  assert.equal((await planStoredPaidUsR2Backfill('/fixture',{
+    store,maxPoints:2,now:Date.parse('2026-11-20T23:00:00Z'),
+  })).status,'PAID_R2_STORED_DATES_INVALID');
+});
 
 test('verified paid current + consecutive history; only public percentages',async()=>{
   const {store,called}=fixture();
