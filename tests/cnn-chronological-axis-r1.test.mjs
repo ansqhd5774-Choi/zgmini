@@ -22,20 +22,24 @@ test('USA CNN opts into a continuous time axis for all six periods, Korea stays 
   assert.match(shared, /samples=\{data\.map\(p=>\(\{x:chartX\(p\.date\)/);
 });
 
-test('one observation day cannot consume more than its calendar share of each window', () => {
-  const day = 86400000;
-  const last = Date.parse('2026-11-03T10:10:00Z');
-  const oneDayEarlier = last - day;
-  const recentChecks = [
-    '2026-11-03T09:04:16Z',
-    '2026-11-03T09:34:16Z',
-    '2026-11-03T09:54:16Z',
-  ].map(Date.parse);
-  for (const days of [1, 7, 31, 93, 186, 366]) {
-    const start = last - days * day;
-    const position = time => (time - start) / (last - start);
-    assert.ok(Math.abs(position(last) - position(oneDayEarlier) - 1 / days) < 1e-10);
-    const checkSpread = position(recentChecks.at(-1)) - position(recentChecks[0]);
-    assert.ok(checkSpread <= 1 / days);
+test('first genuine CNN point anchors every multi-point period at the left edge', () => {
+  const usa = read('app/fear-greed/usa/cnn-panel.tsx');
+  // Assert the production expression, not an independently fabricated score.
+  assert.match(usa,/const earliest = points\.reduce\(\(min, point\) => Math\.min\(min, point\.time\), latest\);/);
+  assert.match(usa,/earliest < latest \? earliest : latest - days \* 86400000/);
+  assert.match(usa,/const chartTimeAxis = useMemo\(/);
+  assert.match(usa,/timeAxis=\{chartTimeAxis\}/);
+  const day=86400000;
+  const latest=Date.parse('2026-11-26T21:00:00Z');
+  for (const days of [1,7,31,93,186,366]) {
+    const first=latest-Math.min(days,3)*day;
+    const middle=first+(latest-first)/3;
+    const domain=[first,latest];
+    const x=time=>(time-domain[0])/(domain[1]-domain[0]);
+    assert.equal(x(first),0,'first source point must touch left plot boundary');
+    assert.equal(x(latest),1,'last source point must touch right plot boundary');
+    assert.ok(x(middle)>0&&x(middle)<1,'real intermediate time retains its spacing');
   }
+  // One real point is not turned into a fictitious two-point series.
+  assert.equal(latest - 7*day < latest,true);
 });

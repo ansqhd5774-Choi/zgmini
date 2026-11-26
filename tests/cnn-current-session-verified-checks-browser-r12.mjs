@@ -41,6 +41,28 @@ function fixture(path,period,checkSourceAt,includeNew){
  if(path==='/api/session')return {user:null};
  return {status:'UNAVAILABLE'};
 }
+// Both the first plotted source point and first continuous-axis tick must be
+// at the same left plot coordinate; do not insert a fake calendar-start point.
+async function assertRealLineStartsAtLeft(page,period,width){
+ const line=page.locator('.zg-fg-us .cnn-history-chart-hitbox path.recharts-area-curve');
+ await line.first().waitFor({state:'attached',timeout:15000});
+ const geometry=await page.locator('.zg-fg-us .cnn-history-chart-hitbox').evaluate(root=>{
+  const path=root.querySelector('path.recharts-area-curve');
+  // ReferenceLine reaches the actual plot boundary and renders even when
+  // Recharts omits an X-axis tick label on compact mobile charts.
+  const guide=root.querySelector('.recharts-reference-line line');
+  const clip=root.querySelector('clipPath rect');
+  const left=guide?.getAttribute('x1')??clip?.getAttribute('x');
+  const d=path?.getAttribute('d')??'';
+  const start=d.match(/^M\s*([-\d.]+)/);
+  return {firstX:start?Number(start[1]):null,
+    leftEdgeX:left===null||left===undefined?null:Number(left)};
+ });
+ assert(Number.isFinite(geometry.firstX)&&Number.isFinite(geometry.leftEdgeX),
+  period+' '+width+'px must expose first real line point and plot boundary: '+JSON.stringify(geometry));
+ assert(Math.abs(geometry.firstX-geometry.leftEdgeX)<=3,
+  period+' '+width+'px first real point must touch left plot edge: '+JSON.stringify(geometry));
+}
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 mkdirSync('artifacts/cnn-current-session-checks',{recursive:true});
 try{
@@ -94,6 +116,7 @@ try{
   const curve=chart.locator('path.recharts-area-curve');
   const before=await curve.getAttribute('d');
   assert.ok(before?.length>20,width+'px two real 1-minute points draw a curve');
+  await assertRealLineStartsAtLeft(page,'1D',width);
 
   if(width===390){
    const latest=chart.locator('.cnn-latest-point circle, circle.cnn-latest-point').first();
@@ -141,6 +164,7 @@ try{
     ?.getAttribute('data-cnn-period-point-count'))>=min,{min:minimum},{timeout:20000});
    assert.equal(await page.locator('button[data-cnn-minute]').count(),0);
    assert.ok(await page.locator('.zg-fg-us .cnn-history-chart-hitbox path.recharts-area-curve').count()>0);
+   await assertRealLineStartsAtLeft(page,period,width);
   }
   assert.ok(requests.some(path=>path.includes('/api/fear-greed/observations?period=1W')));
   assert.ok(requests.some(path=>path.includes('/api/fear-greed/observations?period=1M')));

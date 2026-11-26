@@ -217,14 +217,20 @@ function buildChartAxisTicks(
   return { ticks: [...labels.keys()], labels };
 }
 
-// USA-only continuous X axis: a dense observation day must never occupy more
-// horizontal space than its actual share of the selected calendar window.
-// Tick positions are labels, not new or interpolated score observations.
+// USA-only continuous X axis: the first genuine displayed observation starts
+// at the left plot boundary. Preserve proportional spacing between real points.
+// Never create a synthetic observation at the calendar-window boundary.
 function buildChartTimeAxis(points: ReturnType<typeof normalizeHistory>, period: UsaPeriod) {
   const latest = points.at(-1)?.time;
   if (latest === undefined || !Number.isFinite(latest)) return undefined;
   const days = period === "1D" ? 1 : getMarketPeriodConfig(period).days;
-  const domain: [number, number] = [latest - days * 86400000, latest];
+  const earliest = points.reduce((min, point) => Math.min(min, point.time), latest);
+  // For a single real point preserve the normal time span; for a series place
+  // its first real point at the left edge without inventing a leading score.
+  const domain: [number, number] = [
+    earliest < latest ? earliest : latest - days * 86400000,
+    latest,
+  ];
   const count = period === "1D" ? 5 : period === "1W" ? 4 : period === "1M" ? 5
     : period === "3M" ? 4 : period === "6M" ? 6 : 7;
   const ticks = Array.from({length: count}, (_, index) =>
