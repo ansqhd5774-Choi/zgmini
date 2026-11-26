@@ -1,9 +1,10 @@
 "use client";
-import {useEffect, useState} from "react";
+import {useEffect, useId, useState} from "react";
 import styles from "./market-breadth-strip.module.css";
 import {startStoredRefresh} from "../lib/market-score/live-refresh.mjs";
 import {newestUsIexPercentPublication} from "../lib/market-breadth/us-provisional-ui-r4.mjs";
 import type {MarketPeriod} from "./market-card-shared";
+import {MarketBreadthHistoryChart, type UsBreadthHistory} from "./market-breadth-history-chart";
 
 /** Optional non-US input; US confirmed and provisional are strictly percentage-only public feeds. */
 export type MarketBreadthCounts = {
@@ -18,6 +19,8 @@ type MarketBreadthStripProps = {
   period?: MarketPeriod | '1D';
   /** Presentation-only restoration: no legacy IEX polling; the data owner supplies verified counts. */
   displayOnly?: boolean;
+  /** Optional owner-provided verified public daily history; never collected by the UI. */
+  history?: UsBreadthHistory | null;
 };
 
 type UsaIexProvisionalRecord = {
@@ -85,8 +88,11 @@ function normalizedCounts(counts?: MarketBreadthCounts | null) {
   };
 }
 
-export function MarketBreadthStrip({ market, counts, displayOnly = false }: MarketBreadthStripProps) {
+export function MarketBreadthStrip({ market, counts, period = "1Y", displayOnly = false, history = null }: MarketBreadthStripProps) {
   const [provisional, setProvisional] = useState<UsaIexProvisionalRecord | null>(null);
+  const [expanded, setExpanded] = useState(false);
+  const panelId = useId();
+  const hasHistoryToggle = displayOnly && market === "usa";
   const name = market === "usa" ? "미국" : "한국";
 
   useEffect(() => {
@@ -162,8 +168,16 @@ export function MarketBreadthStrip({ market, counts, displayOnly = false }: Mark
   return (
     <section className={styles.root}
       aria-label={`${name} 등락 지수${sourceInfo ? `, ${sourceInfo}` : data ? "" : ", 데이터 미제공"}`}
-      title={sourceInfo ?? undefined} data-market={market}>
-      <div className={styles.summaryStatic}>{summary}</div>
+      title={sourceInfo ?? undefined} data-market={market} data-expanded={expanded && hasHistoryToggle}>
+      {hasHistoryToggle ? <button type="button" className={styles.summaryButton} aria-expanded={expanded}
+        aria-controls={panelId} aria-label={`미국 등락 지수 확정 이력 ${expanded ? "접기" : "펼치기"}`}
+        onClick={()=>setExpanded(value=>!value)}>{summary}</button>
+        : <div className={styles.summaryStatic}>{summary}</div>}
+      {hasHistoryToggle && <div id={panelId} className={styles.details} role="region"
+        aria-label="미국 등락 지수 확정 이력 차트" hidden={!expanded}>
+        {history ? <MarketBreadthHistoryChart history={history} period={period}/> :
+          <p className={styles.historyEmpty} role="status">확정 이력 데이터 연결 예정</p>}
+      </div>}
     </section>
   );
 }
