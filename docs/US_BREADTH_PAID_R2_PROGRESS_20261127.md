@@ -266,3 +266,11 @@
 3. 설치 검증 후 기존 40파일/주기 내 `stock_daily`만 필요 일자 bounded backfill → 정확 목표 251거래일 raw/projection SHA 확인 → 250점 저장/private SHA→D1 CAS→Production current/history API·PC/모바일 동일성 확인한다.
 
 기존 #4036 Controller 승인 설치 증거는 보존하며, 1200s/2400s Task 신규 시작 유예 등 승인 범위 밖 운영 효과는 자동 적용하지 않는다.
+
+## 2026-11-27 공유 Core 개별 실행시간 관측 계약 분리 및 공통 지원 요청
+
+- 실증 [Writer B #4135](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4135) 360초 167/167 ACTIVE와 [A #4141](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4141) Core checkpoint 전진의 공통 부분은 이미 확인했고 **같은 `core-status`/자연유휴 B를 반복하지 않음**. Core의 개별 실행시간/단계 처리량은 미확인으로 보존.
+- 제어 소스 `controller/operations.mjs::runOperation('core-status')` / `readCore()`는 `local-cycle-last-run.json`, `local-collection-last-run.json`, `local-writer-last-run.json` 수정시각과 상태만 투영한다. 코드에 별도로 존재하는 `controller/core-completed-lineage-readonly.mjs`는 유효한 동일 cycle의 `coreCycleStartedAt`·완료 `cycle.at`로 시작/종료시각을 판별할 수 있지만 현재 공통 `runOperation`의 A 목록에 직접 연결되지 않았다. **코드 존재만으로 실제 PC 실행·현재 duration 증거를 주장하지 않음**.
+- 공개 후보 소스 `zgmini@f7ea89305df8471ffb1827d974fc2e0c223d0b09`의 `scripts/pc-writer/local-cycle.mjs`에는 순차 자식 collection/publication과 긴 timeout, 후속 작업들이 존재한다. 그러나 이는 현재 PC 소스 `c8ed53a3991212dd1778742cda8a86ac133e0796`와 다르므로 실제 어느 단계가 길었는지나 5분 Task XML의 현재 트리거를 확정하지 않는다.
+- 중앙 [#68 지원 댓글 7204531581](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-7204531581)에 **기존 승인 Runtime/Task 이벤트 읽기를 우선 사용해 최근 2회 이상 완결된 Core cycle 시작→끝, 단계별 처리량, 트리거/겹침 여부 판별**을 명시적으로 요청. 운영 변경, 신규 작업 허용목록 우회, 360초 초과 유예 적용은 모두 0. 해당 댓글은 다른 대화의 자동 인수/운영 적용 증거가 아님.
+- 다음 분기: 공통 Core 담당이 실제 병목 증거와 승인된 최소 개선 결과를 반환하면 설치 가능 창·CAS/lease를 재판정한다. 정상 점유 구조에서 360초 유휴가 불가능하면 `PAUSE_NEW_STARTS_DRAIN_1200S_V1/2400S`는 기존 승인 밖이므로 **사용자 별도 명시 승인 후** 정확 B 명세·단회 실행. 기능 251거래일/250점/private SHA/D1/API/UI 미완료, **5/8(62.5%)** 유지.
