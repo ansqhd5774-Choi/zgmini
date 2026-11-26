@@ -1,7 +1,7 @@
 # ZGMINI W06 잔여 실행계획 R2 — 실제 CNN 관측값 종단 완료
 
 기준일: 2026-11-27 KST  
-상태: **R2-01 SQLite·D1·observations API 실제 기준점 PASS / R2-02 SOURCE_UNCHANGED / 운영 종단 0/1**  
+상태: **R2-01 SQLite·D1·observations API 기준점 PASS / R2-02 신규 읽기 확인 SOURCE_UNCHANGED / 운영 종단 0/1**  
 담당: W06 — 미국 CNN 공포·탐욕지수 60초 수집·저장·공개·화면 연동  
 기능 저장소: `ansqhd5774-Choi/zgmini`  
 계획·진행 원장 브랜치: `codex/w06-cnn-1min-intraday-20261124`  
@@ -11,6 +11,8 @@
 이 문서는 R1의 1~6단계를 재시작하지 않고 **3·5단계의 미입증 부분과 7단계**를 끝내기 위한 잔여 실행 문서다. 설치·병합·검사만으로 종단 완료를 선언하지 않는다.
 
 > 실행 기록 (2026-11-27 KST): [제어 Issue #4047](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4047) / [Run #45876724451](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45876724451) `PASS/CNN_SQLITE_D1_API_1D_1W_MATCHED`. SQLite·D1·공개 observations API 1D/1W 동일 원본 시각과 정밀 점수 일치, JSON/TXT 2/2 직접 확인. CNN 원본 `2026-11-26T01:59:59.000Z`, 점수 `14.9967450271248`로 이전 #3989 대비 미변동. 실제 공개 브라우저의 CNN 카드 **15.0점·관측일 2026-11-26**은 같은 원본의 표시값과 일치했으나, 별도 `/api/fear-greed` JSON 현재값 GET 및 실제 신규 원본의 Production 무새로고침 자동 반영은 아직 직접 확인하지 않았다. 실제 비교·다음 상태는 [기존 진행 원장](W06_CNN_1MIN_INTRADAY_PROGRESS_LEDGER_20261124.md)의 20-32에 기록했으며 같은 A 요청을 반복하지 않는다.
+
+> R2-02 실제 운영 확인 (2026-11-27 KST): [Issue #4053](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4053) / [Run #45877652042](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45877652042) `PASS/FEAR_GREED_ARCHIVE_READONLY_DIAGNOSIS`, 실제 원본 `observedAt=2026-11-26T01:59:59.000Z`, `score=14.9967450271248`로 #4047 대비 미변동. 구형 Core Archive Sidecar의 별도 `BLOCKED` 진단은 원인 미확정이며, 승인된 설치 SHA가 구형 진단 allowlist에 없는 문제와 W06 독립 `--cnn-minute` 경로를 분리했다. 신규 관측 전파 미확인은 유지하고 기존 성공 진단을 반복하지 않는다. 자세한 대상별 근거는 [진행 원장 20-33](W06_CNN_1MIN_INTRADAY_PROGRESS_LEDGER_20261124.md)에 기록.
 
 ## 1. 목적·승인 범위·확정된 기준
 
