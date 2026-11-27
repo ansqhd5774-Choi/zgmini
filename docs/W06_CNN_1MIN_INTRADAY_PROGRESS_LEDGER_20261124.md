@@ -1071,3 +1071,12 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - **무새로고침 검증 경계:** 선택한 같은 페이지에서 16:06:57Z→16:08:27Z 점수 ARIA와 path d가 동일했다. 16:08 이후 공개 API를 재조회해도 최신 CNN 원본은 여전히 `16:02:16Z / 24.5714285714286`이고 1D 88점 그대로였다. **그 시간에 새 원본이 없었으므로 화면 미변화를 자동 갱신 실패 또는 성공으로 판정하지 않는다.** 1440px·390px 각각의 실제 viewport와 새 값 도착 순간의 무새로고침 동시 전파는 미확인.
 - **공통 차단 상태:** 제어 [#4156](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4156)의 최신 근거상 Public Owner A [Draft PR #4232](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4232) 소스 89/89 PASS이나 미병합·미설치, PC 일반 A 실행 readback 없음. 따라서 로컬 SQLite와 공개 D1 원본 동일 키 감사를 우회하지 않는다.
 - **진행 판정:** 운영 저장 API와 실제 데스크톱 1D 렌더링 확인은 전진. W06 신규 원본 `observedAt/score`의 SQLite→D1→API→PC1440/모바일390 무새로고침 한 체인 검증은 **0/1** 유지. 이번 조회에서 코드·PC Task·DB/D1·배포·공급자 호출 변경 0.
+
+
+### 20-78. 실제 공개 1D 직접 클릭 선분·무점 렌더 검증 (2026-11-28 KST)
+
+- **실제 브라우저 관측:** 공개 `https://zgmini.kr/fear-greed/usa/` 3M 상태에서 CNN `1일` 버튼을 직접 클릭한 [브라우저 Run 4472d04f-1607-41c2-834b-efee5ace0053](https://agent.tinyfish.ai/runs/4472d04f-1607-41c2-834b-efee5ace0053) completed. `CNN 원본 기준 최근 24시간` 출력, **실제 연결된 빨간색 1D 선분 표시**, **각 원본 관측점의 점 마커는 보이지 않음**. 표시 점수 24.4, NY 눈금 11/26 11:11 → 11/27 11:11. 데이터 읽기 중 `data-cnn-archive-state=loading`은 transient였다가 화면 표시로 전환됨. 운영 쓰기/사용자 인증/PC 수집 재호출 없음.
+- **증거 한계:** 브라우저가 정확한 PC1440·모바일390 viewport을 보고하지 않아 기기별 2/2 완료 아님. `data-cnn-intraday-mode`와 `data-cnn-bucket-count` DOM 속성 직접 검사 불발, 1D 점별 정밀 시각/점수 전체를 렌더링 픽셀에서 역검증한 것은 아님. 60초 무새로고침 자동 반영 실험 없음. UI 24.4와 기존 API 24.5714285714286은 시각이 다른 관측이므로 동일 시점 불일치 근거가 아님.
+- **독립 공개 API·집계 증거 재사용:** `current 24.5714285714286 / observedAt 2026-11-27T16:02:16.000Z` 당시 공개 `1D 88`·`1W 100` 정확 일치, `aggregateCnnIntraday` 88 source→88 connectedLinePoints, 합성시각 0. 이 계산 증거와 새 실브라우저 연결선·무점 관측을 구분.
+- **차단 경계:** `zgmini-pc-control` Public 상태에서 Private-only PC Job 계속 차단. Public A 복구 [Draft #4232](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4232) 운영 적용 미확인. 마지막 목표인 **SQLite local observedAt/score ↔ D1 공개 projection 직접 readback** 및 **1440/390 각각 실화면 1D 60초 no-reload**는 미완료. 전체 W06 종단 0/1 유지. 더 이상 이미 검증된 Supervisor/Runner·API를 무의미하게 재조사/재시도하지 않음.
+- **운영 기록:** [제어 W06 #4082 검증 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4082#issuecomment-7223110149). 이번 턴 소스/운영 DB/D1/Task/Controller/Cloudflare 코드·설정 변경 0.
