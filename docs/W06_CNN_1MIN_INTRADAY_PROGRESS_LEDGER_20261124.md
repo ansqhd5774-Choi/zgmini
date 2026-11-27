@@ -1015,3 +1015,9 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - **PC 실행 경계 최신화:** [제어 #4156](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4156#issuecomment-7221443694)의 2026-11-27 23:42~23:50 KST 직접 PC 원본에서는 Supervisor owner/Runner 6/6/Watchdog HEALTHY와 Standby 2/2 READY가 각각 확인됐다. 그러나 현재 제어 저장소 Public 설정과 기존 private-only 정책이 충돌해 유지보수기는 `POLL_WAIT/GITHUB_PRIVATE_REPOSITORY_REQUIRED`, runner-smoke #4230은 SKIPPED. 따라서 Supervisor를 여전히 DEAD로 표기하지 않되, W06 정밀 A 조회 성공도 추정하지 않는다. Public 전환이나 private-only 보호를 W06에서 변경하지 않는다.
 - **진행 판정:** 코드 정합·17건 로컬 회귀까지 전진. 전용 브랜치만 변경되었고 main PR/병합/Cloudflare 배포/운영 D1 조회는 없음. 신규 CNN `observedAt` 정밀 score가 SQLite→D1→API→PC1440/모바일390에 전파된 동일 키 증거는 여전히 **0/1**. 전용 브랜치의 무관한 146개 앞선 커밋을 통째 PR로 보내지 않는다.
 - **다음 실행:** 현 제어 저장소의 Public/private-only 충돌이 정규 승인 경로로 해소되어 실제 읽기 작업 PASS가 생기면 기존 허용 `cnn-public-d1-api-readback-readonly`를 새 고유 requestId로 단회 수행한다. 동시에 최신 main을 바탕으로 이번 API·필수 시험 파일만 통합하는 정규 PR 범위를 확보하고 정확 HEAD CI→Cloudflare Git Integration→주말·휴장일 Production 실화면을 검증한다. 기존 W06 60초 Task 재설치나 임의 공급자 호출은 하지 않는다.
+
+
+### 20-72. 전용 브랜치 원격 반영 확인 (2026-11-28 KST)
+
+- GitHub 연결 경로로 위 5개 파일을 사용자 지정 전용 브랜치에 반영했고, 각 파일 원문을 원격 재조회하여 작성 내용과 **5/5 동일**함을 확인했다. 최종 원격 HEAD [`2b5e6c0f80d7f7de2d9f5e9f3a1a3f8ac96706ac`](https://github.com/ansqhd5774-Choi/zgmini/commit/2b5e6c0f80d7f7de2d9f5e9f3a1a3f8ac96706ac). 일반 Git HTTPS push는 이 환경에서 자격증명 부재로 실패했으나 GitHub 연결 저장과 원격 readback은 성공했다.
+- 정확 최종 HEAD의 GitHub workflow run 조회 결과 **0건**. 로컬 17/17 PASS를 CI PASS로 확대하지 않는다. `main`은 `e6ca2cba11382358d1c568cc52f8b0112d14fdad` 그대로이며 PR/병합/Production 반영 없음. W06 자연 신규 원본 종단 0/1 유지.
