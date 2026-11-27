@@ -3,6 +3,15 @@
 총괄: zgmini / codex/controller-ops-lessons-20261105
 이 문서는 R3/R4의 과거 기록을 보존하면서 현재 다음 행동을 정정한다.
 
+## PR #4300 후속 정확 HEAD CI 및 PR 충돌 해소 — 2026-11-28 KST
+
+- B 제안 [PR #4302](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4302) Draft·미병합 그대로. `checks.status=PASS`는 검증된 후보의 **소스 테스트** 상태만 나타내며 사용자 B 효과 승인/운영 설치를 뜻하지 않는다. 정확 HEAD `75bec5d5d115eb150fa4dfd1347c1063c42b74f7`, [Actions #46074638935](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46074638935) `public-source-only SUCCESS`/Windows source-only `SKIPPED`. B manifest 원본은 status 변경으로 바뀌었으므로 과거 후보 원문 해시/승인 영수증을 신설하지 않는다.
+- 독립 실행 경로 [PR #4304](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4304)는 PR #4302와의 중복 `tests/automation-status.test.mjs` 수정을 제거; 새 테스트는 기존 `tests/public-source-ci-guard.test.mjs` 진입점으로 계속 실행. 변경 6파일만 남음. 정확 HEAD `057a17c891eeb4e6528247a1d1062538303ae00f`, [Actions #46074565688](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46074565688) `public-source-only SUCCESS`/Windows source-only `SKIPPED`.
+- 두 브랜치 최신 main 대비 각각 `ahead`, `behind=0`; 서로 다른 테스트 진입점 사용으로 승인 PR 선병합 시 단순 중복 충돌을 방지. **두 PR 모두 Draft·미병합**; 새 effect-specific 승인 기록·Windows CAS/lease/backup·설치/사후 영수증 없음. 별도 기록 없이 `PENDING_PR_4302_APPROVAL_MERGE`를 진짜 승인 SHA로 바꾸거나 B 요청 생성하지 않는다.
+- **다음 실제 필수 작업:** PR #4302 정확 변경 효과에 대한 사용자 명시 승인 확인 후 해당 승인 범위에서 소스 병합 SHA를 확정한다. 그때 PR #4304의 승인 SHA 핀·최종 소스 CI·source 병합을 마치고 공식 독립 Windows Owner `inspect`/보호 적용/실제 postcheck 결과를 단회 회수한다. 기존 #4299/#4301/#4156은 완료 유지, 재실행 금지.
+
+---
+
 ## PR #4300 후속 실행 경로 소스 검증 — 2026-11-28 KST (운영 미적용)
 
 - 기존 #4156 운영 Controller `cde1dd372210e4658ae348cb9e2577967cb11634`·#4299/#4301 실제 PASS 및 독립 감사 2/2, inventory 83/83는 완료 증거로 보존. 원 요청/Claim/설치를 재실행하지 않음.
