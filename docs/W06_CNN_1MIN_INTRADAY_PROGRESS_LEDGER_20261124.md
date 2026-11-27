@@ -969,3 +969,12 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - **기존 이슈 원장 연결:** [W06 #4082 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4082#issuecomment-7216784791)에 수정된 현행 상태와 공개 24h 화면 관측·필수 정밀 검증 경계를 공유. 이번 실제 소스/운영 PC/Task/Controller/Provider/SQLite/D1 수정·설치·요청 **0**. 본 진행 원장만 갱신한다.
 
 **다음 필수 행동:** 공통 Supervisor 정상 owner·R6 HEALTHY·Standby2 READY·Runner smoke 영수증이 실제 확인되면 기존 승인 `cnn-public-d1-api-readback-readonly`를 **새 고유 requestId 1회**로 실행, 최신 실제 `observedAt`·정밀 점수를 SQLite/D1/API 1D/1W에 교차 대조한다. 이 신규 원본으로 실제 공개 UI 1440/390 무새로고침 전파까지 확인해 **W06 종단 0/1 → 1/1**을 판정한다. #4164 replay 및 기존 60초 Task 재설치 금지.
+
+
+### 20-67. 미국 선물·주말·휴장일 1D 마지막 유효 원본 이력 조회 개선 (2026-11-27 KST)
+
+- **사용자 요구:** 정규장·선물장·주말/휴장 여부와 관계없이 CNN 원본 `observedAt`을 진실원으로 보존하고, 주말에 현재 UTC 날짜 기준 이틀치 API 조회 때문에 마지막 정상 24h 선분이 사라지지 않게 한다. 화면 시간축을 무조건 현재 시각 기준으로 밀거나, PC `checkedAt`을 원본 관측으로 만드는 방안은 철회.
+- **실제 수정:** W06 전용 브랜치 `app/api/fear-greed/observations/route.ts` 커밋 `1daf3ad387584b01000765e76ffea9b67519e5c5`. 비사용자 지정 기간의 1D 조회만 D1 공개 원본 아카이브에서 최신 보존 UTC 날짜 최대 2행(읽기 전용)을 가져온 뒤 마지막 원본 `observedAt` 기준 24시간으로 걸러낸다. 다른 기간·명시적 `from/to`·PC 확인시각 `checkedAt` 조회 계약은 보존. 새 공급자·Scheduler·SQLite/D1 쓰기 없음.
+- **회귀시험 추가:** `tests/r4-cnn-public-observed-route-36.test.mjs` 커밋 `f20c43c1a01f61673c417a80bf4bf0f48d5211e0`. 금요일 마지막 원본→일요일 조회/별도 PC 확인 기록, 월요일 신규 실제 관측→1D 오래된 금요일 점 제외 및 1W 유지 두 사례 추가. 모의 D1도 `ORDER BY snapshot_key DESC LIMIT 2` 읽기를 재현하도록 변경.
+- **현재 검증 경계:** GitHub 소스 커밋 반영 완료, 정확 HEAD `f20c43c1`의 CI check-runs **0개**(PASS 아님), PR·main 병합·Production 배포 **없음**. 전용 브랜치는 main에 대해 기존 분기 이력이 커서 직접 PR 시 무관한 변경 혼입 위험이 있다. 사용자 기존 브랜치와 상대 작업자 이력은 변경하지 않았다. 현재 운영 1D가 고쳐졌다고 주장하지 않는다.
+- **다음 행동:** 소스 이력 보존 상태에서 최신 main과 이 API·회귀시험 변경만 충돌 없이 통합하는 정규 PR 경로 확보 → 정확 PR HEAD에서 Node/타입/관련 CI 검증 → 승인된 Git Integration Production 배포와 휴장일 실화면 검증. W06 신규 원본 SQLite→D1→API→화면 종단은 여전히 **0/1**, 공통 Supervisor 복구와 분리 관리.
