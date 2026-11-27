@@ -74,6 +74,37 @@ async function assertRealLineStartsAtLeft(page,period,width){
  assert(Math.abs(geometry.firstX-geometry.leftEdgeX)<=3,
   period+' '+width+'px first real point must touch left plot edge: '+JSON.stringify(geometry));
 }
+// A real 1D graph spans 24h even when only a few minutes of source history
+// exist. The empty time is left blank, not filled by fake points or isolated dots.
+async function assertTrueOneDayWindow(page,width){
+ const chart=page.locator('.zg-fg-us .cnn-history-chart-hitbox');
+ const geometry=await chart.evaluate(root=>{
+  const labels=[...root.querySelectorAll('.recharts-xAxis .recharts-cartesian-axis-tick-value')]
+   .map(node=>node.textContent.trim()).filter(Boolean);
+  const line=root.querySelector('path.recharts-area-curve');
+  const latest=root.querySelector('.cnn-latest-point circle, circle.cnn-latest-point');
+  const clip=root.querySelector('clipPath rect');
+  const d=line?.getAttribute('d')??'';
+  const start=d.match(/^M\\s*([-\\d.]+)/);
+  return {labels,d,firstX:start?Number(start[1]):null,
+   left:clip?Number(clip.getAttribute('x')):null,
+   width:clip?Number(clip.getAttribute('width')):null,
+   latestFill:latest?.getAttribute('fill'),
+   isolated:root.querySelectorAll('[class*="isolated-"]').length};
+ });
+ assert(geometry.labels.length>=2,width+'px shows 1D time-axis ticks: '+JSON.stringify(geometry));
+ const first=geometry.labels[0],last=geometry.labels.at(-1);
+ assert.match(first,/\\d{2}\\/\\d{2}\\s+\\d{2}:\\d{2}/);
+ assert.match(last,/\\d{2}\\/\\d{2}\\s+\\d{2}:\\d{2}/);
+ assert.notEqual(first.slice(0,5),last.slice(0,5),'day boundaries are not hidden by a 2-minute zoom');
+ assert(/^M/.test(geometry.d)&&/[CLQ]/.test(geometry.d.slice(1)),'source line is connected');
+ assert(!/NaN|Infinity/.test(geometry.d));
+ assert(Number.isFinite(geometry.firstX)&&Number.isFinite(geometry.left)&&geometry.width>0);
+ assert(geometry.firstX>geometry.left+geometry.width*0.9,
+  'a sparse genuine source must not be fabricated at the 24h left boundary: '+JSON.stringify(geometry));
+ assert.equal(geometry.latestFill,'transparent','latest mobile tap hotspot has no visible dot');
+ assert.equal(geometry.isolated,0,'no dots are drawn at missing-minute intervals');
+}
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 mkdirSync('artifacts/cnn-current-session-checks',{recursive:true});
 try{
@@ -132,7 +163,7 @@ try{
   const curve=chart.locator('path.recharts-area-curve');
   const before=await curve.getAttribute('d');
   assert.ok(before?.length>20,width+'px two real 1-minute points draw a curve');
-  await assertRealLineStartsAtLeft(page,'1D',width);
+  await assertTrueOneDayWindow(page,width);
 
   if(width===390){
    const latest=chart.locator('.cnn-latest-point circle, circle.cnn-latest-point').first();
@@ -171,7 +202,7 @@ try{
   assert.notEqual(await curve.getAttribute('d'),beforeSameScore,
    width+'px new source timestamp should extend the actual chart line');
   assert.equal(await oneDay.getAttribute('aria-pressed'),'true');
-  await assertRealLineStartsAtLeft(page,'1D-same-score-new-source',width);
+  await assertTrueOneDayWindow(page,width);
   if(width===390){
    const latest=chart.locator('.cnn-latest-point circle, circle.cnn-latest-point').first();
    const b=await latest.boundingBox();
