@@ -1126,3 +1126,11 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - **운영 결과 검색:** 중앙 #4270 최신 댓글은 V3 정확 승인·소스 pin [PR #4289](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4289)/[#4290](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4290) 소스 적용 완료, 실제 독립 Windows `inspect/apply`·Sidecar 설치 SHA 결과 미등록. 사용자 다른 대화의 현재 V3 `inspect` 출력도 찾지 못했으며 과거 **Controller** Public B 별도 기능의 `inspect` PASS를 W06 **Sidecar** PASS로 전용하지 않음. 원장·채팅 검색 부재는 PC 미실행의 절대 증거가 아니므로 해당 설치 상태는 **STATE_UNKNOWN / UNVERIFIED** 유지.
 - **차단 조건:** 실행기 원본은 `REVIEWED_SOURCE_PR=4290` source lineage, 소유자 Windows Explorer 독립 ancestry, 현재 CAS/idle/lease가 충족되어야 실제 보호 교체 가능. 현재 ChatGPT GitHub 연결은 이 독립 Windows 실행 권한을 제공하지 않음; RDC/임의 셸로 우회하지 않음. 별도 B 요청·Workflow·미승인 운영 변경 없음. Browser Use 독립 페이지 확인은 해당 서비스 크레딧 부족으로 실패했고, 이미 검증된 Production PC/모바일·자동 GET 결과를 불필요하게 무효화하지 않음.
 - **다음 필수:** 인증된 운영 PC에서 승인된 동일 `public-v3-independent-owner-b-once.mjs inspect` 단회 결과를 기존 정규 영수증으로 회수(신규 실행 또는 기존 실행 여부 구분) → PASS이면 `apply` 1회 정규 보호 적용·SHA/백업/복구 결과 → 자연 신규 verified-checks 및 SQLite↔D1↔API↔PC·모바일 같은 실제 관측 대조. **W06 종단 0/1** 유지.
+
+
+### 20-83. 사용자 PC V3 최초 inspect 실패 — MODULE_NOT_FOUND (실행기 파일 경로 미존재)
+
+- **사용자 PC 실제 CMD 화면:** 작업 디렉터리 `E:\\ZGmini\\projects\\zgmini-pc-control`, Node `E:\\ZGmini\\runtime\\node.exe` v24.19.0. 기존 안내 명령 `sidecar-b/public-v3-independent-owner-b-once.mjs inspect`에 대해 Node 로더가 `Error: Cannot find module 'E:\\ZGmini\\projects\\zgmini-pc-control\\sidecar-b\\public-v3-independent-owner-b-once.mjs'` / `MODULE_NOT_FOUND` 반환. Node 실행 자체는 정상. **실제 W06 V3 검사 함수에 진입하지 못했으며 CAS/lease/승인 실패가 아님.** `inspect` 완료 0, `apply` 0, 운영 파일 교체 0.
+- **비교 근거:** 제어 GitHub `main`에는 정확 파일 `sidecar-b/public-v3-independent-owner-b-once.mjs` 존재, blob `75d589b51e838d65ceb98846a06e646a058fde09`. PR #4290 소스 병합과 **운영 PC 로컬 저장소 반영/파일 존재는 별도**임. 현재 확인되지 않은 로컬 worktree HEAD/dirty·상위 디렉터리·출처를 추정하지 않음.
+- **원인 판별 후속:** PC 로컬 `E:\\ZGmini\\projects\\zgmini-pc-control`에 대해 git HEAD/status 및 정확 경로 존재만 읽기 전용 확인 → 기존 승인 source 전달/갱신 절차가 안전한지 대조. `git pull` 무검증 실행·임의 다운로드·동일 실패 명령 반복·`apply` 금지. 사전검사 경로가 실제 설치되어 있는 것이 입증될 때만 운영자 검증과 원래 기능 목표로 복귀.
+- **제어 원장:** [#4270 사용자 PC 실패 증거 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4270#issuecomment-7227899348). 기존 정확 1파일 승인과 소스 CI/병합 완료 유지. 운영 종단 **0/1**.
