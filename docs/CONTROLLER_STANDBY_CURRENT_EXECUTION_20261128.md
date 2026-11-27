@@ -3,6 +3,31 @@
 총괄: zgmini / codex/controller-ops-lessons-20261105
 이 문서는 R3/R4의 과거 기록을 보존하면서 현재 다음 행동을 정정한다.
 
+## 0A. 2026-11-28 후속 지시 — Public B 신규 2파일 효과 및 #4156 감사
+
+**업무 구분:** 아래는 기존 Public A 정상 복구 8/8과 별개인 *신규 Public B Controller 2파일 적용*의 잔여 작업 지시다. 위 §0의 복구 완료, #4263·#4266·#4267 원본 성공을 다시 설치·재실행하지 않는다. 문서 작성과 GitHub 병합은 Windows 운영 설치/전환의 증거가 아니다.
+
+**대상:** 총괄 `zgmini/codex/controller-ops-lessons-20261105`; 구현·승인 `zgmini-pc-control`의 PR [#4276](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4276), [#4283](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4283), [#4287](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4287), 중앙 [#68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68), 감사 [#4156](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4156).
+
+**최근 인계 보고(이 문서 반영 시 별도 현재 Runtime 재실증 아님):** Public B 고정 source `4d3fe664a90f`가 당시 `main`의 조상으로 비교되어 기존 `diverged` 차단 해소. 고정 SHA를 바꾸거나 출처 검증을 우회하지 않는다. Controller 2파일 승인 기록은 존재한다고 보고됐으나 독립 Windows 설치 정책의 정확한 2파일 허용 효과, CAS·lease·백업·복구 및 이번 신규 설치의 실PC 영수증은 미확인이다. 최신 원본에 반대 증거가 있으면 이 보고보다 실측을 우선한다.
+
+### 실행 순서 및 단계별 완료 근거
+
+| 단계 | 필수 실행 | DONE 근거 |
+|---|---|---|
+| PB1 소스·승인 계약 | 현재 `main`·해당 PR/승인 원장과 정확한 신규 2파일 path·target SHA·raw SHA-256·허용 효과를 비교. 조상 검증은 새로운 상충 증거가 없으면 이전 증거 재사용 | 현재 소스/승인/정책 일치 및 파일별 대상 목록 |
+| PB2 독립 Windows 정책 보호 | 기존 승인된 Windows 설치기에서 신규 2파일 효과의 허용목록, 현장 원본 CAS, owner/관련 lease, 백업/복구 계약을 정규 읽기 경로로 확인. 과거 4파일 정책의 SHA만 교체하지 않음 | 정확한 사전 상태와 적용 가능/보류 판정 |
+| PB3 정규 단회 설치 | PB1~2 충족 시 기존 승인된 독립 유지보수기 경로로 정확한 신규 효과 **한 번만** 실행하고 사후 Controller/host manifest SHA 및 Supervisor·Watchdog·6 Runner 보호 확인 | 운영 실측 status/code, 설치·실행 SHA, JSON/TXT/백업·복구 영수증 |
+| PB4 결과 회수 | requestId, Run/Job/seat, operation, status/code, actualExecutionSha, 사후 파일 해시와 원장 확인. 공개 축약 결과를 비공개 원문과 혼동 금지 | 실제 로컬/허용 공개 증거의 동일 요청 대조 |
+| AUD1 [#4156](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4156) Standby | 기존 공식 Windows 읽기 경로로 `STATUS.json`의 `standbyRole`, `secondStandbyRole`, `standbyReadyCount`, `at`와 owner PID를 **동일 최신 관측**으로 확인 | 두 역할 READY·count 2의 원본 증거 또는 UNVERIFIED |
+| AUD2 [#4156](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4156) 로컬 원장 | #4266/#4267 고유 requestId에 해당하는 영구 `ledger/<requestId>.json`의 report·jobId·operation·status·actualExecutionSha와 기존 공개 JSON/TXT 대조 | 원본 대조 또는 UNVERIFIED; 임시 RESULT 정리만으로 유실 단정 금지 |
+
+**독립성:** PB1~4의 설치 차단을 AUD1~2 또는 다른 독립 승인 업무의 전역 BLOCKER로 확대하지 않는다. 현재 건강한 Supervisor/Runner/Watchdog을 일괄 중단하거나, 원래 #4156·#3947·#4069 요청, 기존 A·B 복구, 승인 C 인계를 반복하지 않는다. 임의 shell/SQL·lease 삭제·직접 Controller 자기 교체·인증 완화·운영 데이터 변경 금지. 공유 자원 충돌이 실제 확인된 단계만 HOLD한다.
+
+**진행 원장 시작값(이번 지시 반영, 실행 성과 아님):** Public B 소스 계보 비교 **2/2 완료 보고**, 신규 Controller 2파일 운영 설치 **0/1 확인**, #4156 추가 읽기 감사 **0/2 확인**. 신규 설치와 감사는 각 원본 증거를 회수할 때만 DONE으로 바꾼다. 결과는 기존 [#68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68) 및 이 원장에 원본 링크·관측시각·정확 실행/설치 SHA·미완료 원인을 기록한다. 전체 HA 전원/호스트 장애 복구의 완료 보증으로 확장하지 않는다.
+
+---
+
 ## 0. 2026-11-28 03:51 KST 복구 후 우선 판정 — 과거 4/8 기록 대체
 
 **현재 우선 결론:** Public 저장소에서 일반 작업자 PC 업무 재개에 필요한 Controller 설치·실행 복구 **8/8(100%) 완료**. 아래 §1 및 §5~§6의 `3c7d4cfe…`, `POLL_WAIT`, `4/8(50%)`, B 미설치·A 미실행 문구는 **각 관측 시점의 복구 전 역사 기록**이며 최신 운영 상태/실행 지시가 아니다. S6 원본 `#3947/#4069`의 과거 불확실성 및 전원·호스트 장애까지 포함한 모든 HA 전환 보증은 이 완료 범위에 포함하지 않는다.
