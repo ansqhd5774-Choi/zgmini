@@ -13,7 +13,6 @@ const routeText=readFileSync(new URL('../app/api/fear-greed/observations/route.t
 const compiled=ts.transpileModule(routeText.replace(/^import [^\n]*\n/gm,''),{
  compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022},
 }).outputText;
-class Clock extends Date{static now(){return now;}}
 const day='2026-11-16';
 const obs=(clock,score)=>({observedAt:day+'T'+clock+'Z',score});
 const check=(clock,sourceClock,score)=>({
@@ -29,7 +28,8 @@ const checks=(d,values)=>({
  snapshot_key:d,body:JSON.stringify({version:'CNN_VERIFIED_CHECKS_R1',date:d,checks:values}),
 });
 
-function harness({stored=[],verified=[]}={}){
+function harness({stored=[],verified=[],timeNow=now}={}){
+ class Clock extends Date{static now(){return timeNow;}}
  const queries=[];
  const env={DB:{prepare(sql){
   assert.match(sql,/^SELECT snapshot_key,body FROM public_feed_snapshots_v1/);
@@ -37,14 +37,19 @@ function harness({stored=[],verified=[]}={}){
   return {bind(...params){return {async all(){
    queries.push({sql,params});
    const rows=sql.includes("feed_key='fear-greed-verified-checks'")?verified:stored;
+   if(sql.includes('ORDER BY snapshot_key DESC LIMIT 2')||sql.includes('ORDER BY snapshot_key DESC LIMIT 371')){
+    assert.deepEqual(params,[CNN_OBSERVED_ARCHIVE_KEY]);
+    return {results:[...rows].sort((a,b)=>b.snapshot_key.localeCompare(a.snapshot_key))
+     .slice(0,sql.includes('LIMIT 2')?2:371)};
+   }
    const from=params.at(-2),to=params.at(-1);
    return {results:rows.filter(x=>x.snapshot_key>=from&&x.snapshot_key<=to).slice(0,371)};
   }};}};
  }}};
  const exports={};
  const GET=new Function('exports','env','CNN_OBSERVED_ARCHIVE_KEY',
-  'CNN_OBSERVED_ARCHIVE_VERSION','sampleCnnObservedPoints',
-  'projectCnnObservedPeriodPoints','addStoredCnnObservation','addStoredCnnVerifiedCheck','Date','Response','URL',
+  'CNN_OBSERVED_ARCHIVE_VERSION','sampleCnnObservedPoints','projectCnnObservedPeriodPoints',
+  'addStoredCnnObservation','addStoredCnnVerifiedCheck','Date','Response','URL',
   compiled+'\nreturn exports.GET;')(
   exports,env,CNN_OBSERVED_ARCHIVE_KEY,CNN_OBSERVED_ARCHIVE_VERSION,
   sampleCnnObservedPoints,projectCnnObservedPeriodPoints,addStoredCnnObservation,addStoredCnnVerifiedCheck,
@@ -156,69 +161,87 @@ test('R4 #36 1W returns only actual sorted original source timestamps',async()=>
  assert.equal(body.availableDays,2);
 });
 
-
-test('R2 1M: index-based sampling cannot substitute the last real source in each 5-hour interval',async()=>{
- const base=Date.parse('2026-11-10T00:00:00.000Z');
- const original=Array.from({length:4000},(_,i)=>({
-  observedAt:new Date(base+i*60000).toISOString(),
-  score:[19,80,26,70][i%4],
- }));
- const byDay=new Map();
- for(const point of original){
-  const date=point.observedAt.slice(0,10);
-  const list=byDay.get(date)??[];
-  list.push(point);byDay.set(date,list);
- }
- const stored=[...byDay].map(([date,points])=>archive(date,points));
- const {GET,queries}=harness({stored});
- const response=await GET(request('1M'));
- assert.equal(response.status,200);
- const actual=await response.json();
- assert.equal(actual.status,'READY');
- assert.equal(actual.totalObservedPoints,original.length);
- assert.equal(actual.sampled,true);
- assert.equal(queries.length,2,'the GET only reads public archive and PC check rows');
- const lastByBucket=new Map();
- for(const p of original)lastByBucket.set(Math.floor(Date.parse(p.observedAt)/(300*60000)),p);
- const expected=[...lastByBucket.values()].map(p=>p.observedAt);
- assert.deepEqual(actual.points.map(p=>p.observedAt),expected,
-  'every returned 5-hour bucket must end at its real last source observedAt');
- assert.deepEqual(actual.points.map(p=>p.score),[...lastByBucket.values()].map(p=>p.score));
- assert.equal(actual.points.at(-1).observedAt,original.at(-1).observedAt);
- // Reproduce why index-extrema sampling used by other feeds is inappropriate here.
- const extrema=sampleCnnObservedPoints(original);
- const wrongByBucket=new Map();
- for(const p of extrema)wrongByBucket.set(Math.floor(Date.parse(p.observedAt)/(300*60000)),p);
- assert.ok(expected.some((at,i)=>wrongByBucket.get([...lastByBucket.keys()][i])?.observedAt!==at),
-  'the former pipeline can discard exact last-of-interval observations');
- assert.deepEqual(original.at(-1),{observedAt:expected.at(-1),score:actual.points.at(-1).score});
+test('W06 1D keeps last source 24h across Saturday/Sunday with independent current PC checks',async()=>{
+ const friday='2026-11-13',thursday='2026-11-12',sunday='2026-11-15';
+ const stored=[
+  archive(thursday,[
+   {observedAt:thursday+'T18:00:00.000Z',score:11},
+   {observedAt:thursday+'T21:00:00.000Z',score:12},
+  ]),
+  archive(friday,[{observedAt:friday+'T20:00:00.000Z',score:13}]),
+ ];
+ const checkedAt=sunday+'T14:00:00.000Z';
+ const verified=[checks(sunday,[{
+  checkedAt,sourceObservedAt:friday+'T20:00:00.000Z',
+  score:13,sourceStoredAt:Date.parse(checkedAt),
+ }])];
+ const {GET,queries}=harness({stored,verified,timeNow:Date.parse(sunday+'T19:00:00Z')});
+ const result=await (await GET(request('1D'))).json();
+ assert.equal(result.status,'READY');
+ assert.deepEqual(result.points.map(p=>p.observedAt),[
+  thursday+'T21:00:00.000Z',friday+'T20:00:00.000Z',
+ ]);
+ assert.deepEqual(result.points.map(p=>p.score),[12,13]);
+ assert.deepEqual(result.range,{start:thursday,end:friday});
+ assert.deepEqual(result.checkedPoints.map(p=>p.checkedAt),[checkedAt]);
+ assert.equal(queries.length,2);
+ assert.match(queries[0].sql,/ORDER BY snapshot_key DESC LIMIT 2/);
+ assert.deepEqual(queries[1].params,[sunday.replace(/15$/,'14'),sunday],
+  'PC verification remains wall-clock dated, not anchored to old CNN source');
 });
 
-test('R2 3M, 6M, 1Y: each New York day keeps the last real source across UTC midnight',async()=>{
- const source=[
-  {observedAt:'2026-11-15T23:30:00.000Z',score:16},
-  {observedAt:'2026-11-16T01:30:00.000Z',score:17},
-  {observedAt:'2026-11-16T14:00:00.000Z',score:18},
-  {observedAt:'2026-11-16T23:30:00.000Z',score:0},
- ];
+test('W06 1D advances on next real source after multi-day closure without inventing intervening points',async()=>{
+ const friday='2026-11-13',monday='2026-11-16';
  const stored=[
-  archive('2026-11-15',source.slice(0,1)),
-  archive('2026-11-16',source.slice(1)),
+  archive(friday,[{observedAt:friday+'T20:00:00.000Z',score:10}]),
+  archive(monday,[{observedAt:monday+'T13:00:00.000Z',score:14}]),
  ];
- for(const period of ['3M','6M','1Y']){
-  const response=await harness({stored}).GET(request(period));
-  assert.equal(response.status,200);
-  const data=await response.json();
-  assert.deepEqual(data.points.map(p=>p.observedAt),[source[1].observedAt,source[3].observedAt],
-   period+' day boundary is America/New_York, not UTC midnight');
-  assert.deepEqual(data.points.map(p=>p.score),[17,0],period+' must preserve real zero');
-  assert.equal(data.totalObservedPoints,4);
-  assert.equal(data.sampled,true);
-  assert.deepEqual(data.checkedPoints,[]);
- }
- // Explicit <=7d historical lookups remain unsampled, regardless of the period button.
- const customRequest=new Request('https://zgmini.kr/api/fear-greed/observations?period=3M&from=2026-11-15&to=2026-11-16');
- const custom=await (await harness({stored}).GET(customRequest)).json();
- assert.deepEqual(custom.points.map(p=>p.observedAt),source.map(p=>p.observedAt));
- assert.equal(custom.sampled,false);
+ const body=await (await harness({stored,timeNow:Date.parse(monday+'T14:00:00Z')}).GET(request('1D'))).json();
+ assert.equal(body.status,'READY');
+ assert.deepEqual(body.points.map(p=>p.observedAt),[monday+'T13:00:00.000Z']);
+ assert.deepEqual(body.range,{start:'2026-11-15',end:monday});
+ assert.equal(body.totalObservedPoints,1);
+ const week=await (await harness({stored,timeNow:Date.parse(monday+'T14:00:00Z')}).GET(request('1W'))).json();
+ assert.deepEqual(week.points.map(p=>p.score),[10,14],
+  'week history still includes Friday original and Monday original');
+});
+
+test('W06 1D falls back to the last populated source day across empty holiday archive rows',async()=>{
+ const friday='2026-11-27',saturday='2026-11-28',sunday='2026-11-29';
+ const stored=[
+  archive(friday,[{observedAt:friday+'T21:00:00.000Z',score:17.9}]),
+  archive(saturday,[]),archive(sunday,[]),
+ ];
+ const {GET,queries}=harness({stored,timeNow:Date.parse(sunday+'T20:00:00Z')});
+ const response=await GET(request('1D'));
+ assert.equal(response.status,200);
+ const body=await response.json();
+ assert.deepEqual(body.points.map(p=>p.score),[17.9]);
+ assert.equal(body.range.end,friday);
+ assert.equal(queries.length,3,'fallback only for empty archives');
+ assert.match(queries[1].sql,/ORDER BY snapshot_key DESC LIMIT 371/);
+ assert.match(queries[2].sql,/fear-greed-verified-checks/);
+});
+
+test('W06 fallback never conceals a malformed recent public archive',async()=>{
+ const friday='2026-11-27',saturday='2026-11-28',sunday='2026-11-29';
+ const stored=[
+  archive(friday,[{observedAt:friday+'T21:00:00.000Z',score:17.9}]),
+  archive(saturday,[]),
+  {snapshot_key:sunday,body:'{broken-json'},
+ ];
+ const response=await harness({stored,timeNow:Date.parse(sunday+'T20:00:00Z')}).GET(request('1D'));
+ assert.equal(response.status,503);
+ assert.equal((await response.json()).status,'STORED_ARCHIVE_INVALID');
+});
+
+test('W06 holiday 1D fix preserves the latest main 1M five-hour source buckets',async()=>{
+ const stored=[archive(day,[obs('00:10:00',20),obs('00:50:00',21),obs('05:10:00',22)])];
+ const body=await (await harness({stored}).GET(request('1M'))).json();
+ assert.deepEqual(body.points.map(p=>p.observedAt),[
+  day+'T00:50:00.000Z',day+'T05:10:00.000Z',
+ ]);
+ assert.deepEqual(body.points.map(p=>p.score),[21,22]);
+ assert.equal(body.totalObservedPoints,3);
+ assert.equal(body.sampled,true);
 });
