@@ -37,9 +37,10 @@ function harness({stored=[],verified=[],timeNow=now}={}){
   return {bind(...params){return {async all(){
    queries.push({sql,params});
    const rows=sql.includes("feed_key='fear-greed-verified-checks'")?verified:stored;
-   if(sql.includes('ORDER BY snapshot_key DESC LIMIT 2')){
+   if(sql.includes('ORDER BY snapshot_key DESC LIMIT 2')||sql.includes('ORDER BY snapshot_key DESC LIMIT 371')){
     assert.deepEqual(params,[CNN_OBSERVED_ARCHIVE_KEY]);
-    return {results:[...rows].sort((a,b)=>b.snapshot_key.localeCompare(a.snapshot_key)).slice(0,2)};
+    return {results:[...rows].sort((a,b)=>b.snapshot_key.localeCompare(a.snapshot_key))
+     .slice(0,sql.includes('LIMIT 2')?2:371)};
    }
    const from=params.at(-2),to=params.at(-1);
    return {results:rows.filter(x=>x.snapshot_key>=from&&x.snapshot_key<=to).slice(0,371)};
@@ -203,4 +204,33 @@ test('W06 1D advances on next real source after multi-day closure without invent
  const week=await (await harness({stored,timeNow:Date.parse(monday+'T14:00:00Z')}).GET(request('1W'))).json();
  assert.deepEqual(week.points.map(p=>p.score),[10,14],
   'week history still includes Friday original and Monday original');
+});
+
+test('W06 1D falls back to the last populated source day across empty holiday archive rows',async()=>{
+ const friday='2026-11-27',saturday='2026-11-28',sunday='2026-11-29';
+ const stored=[
+  archive(friday,[{observedAt:friday+'T21:00:00.000Z',score:17.9}]),
+  archive(saturday,[]),archive(sunday,[]),
+ ];
+ const {GET,queries}=harness({stored,timeNow:Date.parse(sunday+'T20:00:00Z')});
+ const response=await GET(request('1D'));
+ assert.equal(response.status,200);
+ const body=await response.json();
+ assert.deepEqual(body.points.map(p=>p.score),[17.9]);
+ assert.equal(body.range.end,friday);
+ assert.equal(queries.length,3,'fallback only for empty archives');
+ assert.match(queries[1].sql,/ORDER BY snapshot_key DESC LIMIT 371/);
+ assert.match(queries[2].sql,/fear-greed-verified-checks/);
+});
+
+test('W06 fallback never conceals a malformed recent public archive',async()=>{
+ const friday='2026-11-27',saturday='2026-11-28',sunday='2026-11-29';
+ const stored=[
+  archive(friday,[{observedAt:friday+'T21:00:00.000Z',score:17.9}]),
+  archive(saturday,[]),
+  {snapshot_key:sunday,body:'{broken-json'},
+ ];
+ const response=await harness({stored,timeNow:Date.parse(sunday+'T20:00:00Z')}).GET(request('1D'));
+ assert.equal(response.status,503);
+ assert.equal((await response.json()).status,'STORED_ARCHIVE_INVALID');
 });
