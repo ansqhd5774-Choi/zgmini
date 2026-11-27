@@ -1,0 +1,43 @@
+name: W06 CNN Production 1D Viewport Readonly
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'tests/w06-cnn-production-1d-viewport-readonly-r1.mjs'
+      - '.github/workflows/w06-cnn-production-viewport-readonly.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  cnn-live-ui:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    env:
+      CI: 'true'
+      NEXT_TELEMETRY_DISABLED: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - name: Install locked repository dependencies
+        run: npm ci
+      - name: Add test-only Playwright without modifying lockfile
+        run: npm install --no-save --package-lock=false --ignore-scripts playwright@1.56.1
+      - name: Install Chromium for public read-only checks
+        run: npx playwright install --with-deps chromium
+      - name: Check test syntax
+        run: node --check tests/w06-cnn-production-1d-viewport-readonly-r1.mjs
+      - name: Verify actual CNN 1D render and live 60s polling at 390 and 1440
+        run: node tests/w06-cnn-production-1d-viewport-readonly-r1.mjs
+      - name: Upload read-only production UI screenshots and result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: w06-cnn-production-1d-readonly
+          path: artifacts/w06-cnn-production-1d/
+          if-no-files-found: warn
+          retention-days: 7
