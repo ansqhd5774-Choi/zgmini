@@ -1,3 +1,5 @@
+> **2026-11-28 현재 상태 정정:** 아래 기록은 당시의 역사적 증거입니다. Supervisor·Watchdog·Standby 2 READY는 이후 직접 확인됐습니다. 현재 실행 지점은 [현재 인수 원장](CONTROLLER_STANDBY_CURRENT_EXECUTION_20261128.md)을 먼저 확인하세요. 건강한 Runner에 고아-six 종료를 재실행하지 않습니다.
+
 # ZGMINI 보조 Controller 구축 — 실행계획 R3 및 승인 범위
 
 - 기준일: 2026-11-26 KST
