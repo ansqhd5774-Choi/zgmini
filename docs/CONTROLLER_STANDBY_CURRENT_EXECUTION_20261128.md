@@ -18,6 +18,10 @@
 
 **다음 읽기 전용 확인:** 기존 공식 Windows 상태 계약으로 동일 관측시각의 Standby 2개 READY 원본을 확인하고, 허용된 기존 경로에서 로컬 전체 결과의 존재·내용을 독립 대조한다. 재조회가 불가능하면 해당 두 항목만 `UNVERIFIED`로 남긴다. 새 Controller 설치·B 재승인·Runner/Watchdog 재시작·Workflow 수동 변경·복구명령 재실행·장애 주입은 하지 않는다.
 
+**조회 경로의 소스 확인(2026-11-28, 운영 변경 없음):** 제어 `main`의 `tools/automation-status.mjs`는 Watchdog 요약에 단수 `standbyRole`만 투영하므로 그 출력의 `READY`를 `2/2 READY`로 승격할 수 없다. 기존 `tools/runner-watchdog.mjs`는 운영 `E:/ZGmini/automation/pc-watchdog/STATUS.json`에 `standbyRole`, `secondStandbyRole`, `standbyReadyCount`, `at`를 기록한다. **동일한 최신 시각·소유 PID 검증과 역할 둘 다 READY/개수 2를 읽은 Windows 증거**가 필요하다. 웹/GitHub 소스 조회는 이 로컬 파일을 읽지 못한다.
+
+로컬 전체 A 결과는 `E:/ZGmini/automation/pc-control/ledger/<requestId>.json`의 `report`가 보존 기준이다(`controller/engine.mjs`). `jobs/run-<runId>-1-seat-6/RESULT.json`·`RESULT.txt`는 공개 결과/댓글 검증 후 정상 임시 정리되는 구조이므로 해당 임시 파일 부재만으로 결과 소실을 추정하지 않는다(`controller/report-temp-retention.mjs`). `#4266`과 `#4267`의 서로 다른 고유 requestId에 대해 로컬 ledger의 원문 `jobId`/`operation`/`status`/`actualExecutionSha` 및 보호 결과를 **승인된 Windows 읽기 경로에서 직접 대조할 때만** 비공개 원문 확인으로 승격한다. GitHub의 축약 JSON/TXT 2쌍은 이미 대조 완료했으므로 다시 A Job을 발행하지 않는다. 이 대화에서 독립 Windows 호스트 로컬 파일 접근 경로는 확인되지 않았으며, 미확인 2건을 임의 PASS로 처리하지 않는다.
+
 ---
 
 ## 1. 현재 완료·미완료
