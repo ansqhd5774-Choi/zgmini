@@ -3,6 +3,16 @@
 총괄: zgmini / codex/controller-ops-lessons-20261105
 이 문서는 R3/R4의 과거 기록을 보존하면서 현재 다음 행동을 정정한다.
 
+## PR #4300 후속 실행 경로 소스 검증 — 2026-11-28 KST (운영 미적용)
+
+- 기존 #4156 운영 Controller `cde1dd372210e4658ae348cb9e2577967cb11634`·#4299/#4301 실제 PASS 및 독립 감사 2/2, inventory 83/83는 완료 증거로 보존. 원 요청/Claim/설치를 재실행하지 않음.
+- 새 단일 파일 후보 `d3764580fdb08ecddd5f9b1064051eec30f90492`의 B 효과 Draft [PR #4302](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4302)에 승인 manifest/pin 및 음성 회귀시험을 추가. `checks.status=PROPOSED_NOT_APPROVED` 보존. 해당 정확 HEAD `377097bb88b5cad0ff36a0fcdbf1fc9efc64e935`의 GitHub-hosted [Actions #46074396580](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46074396580) **public-source-only SUCCESS**; Windows source-only는 정책 SKIPPED.
+- 새 독립 Windows Owner 경로, `tools/update.mjs`의 3번째 *정확 1파일* 정책 후보, Public A 기존 SHA 2개 보존 + 신규 SHA 및 `controller/operations.mjs` SHA-256 정확 검증, 거부·lease 보존 회귀시험을 신규 Draft [PR #4304](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4304)로 제안. 해당 source HEAD `db1677c06dc46baf1c17a1b95ea7248056e9bc61`의 [Actions #46074296651](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46074296651) GitHub-hosted **public-source-only SUCCESS**; Windows source-only SKIPPED.
+- **고의 fail-closed:** 새 Owner 정책의 승인 merge SHA는 `PENDING_PR_4302_APPROVAL_MERGE`, 실행 경로는 Source PR #4304 병합을 요구. 둘 다 Draft/미병합이며 PR #4302의 새 B 효과 승인 미입증. GitHub 소스 PASS를 운영 적용 또는 승인으로 주장하지 않는다.
+- **다음 실행 의존성:** #4302 효과별 실제 승인·정확 manifest `PASS` 검증·소스 CI/병합 SHA 확보 → #4304 정확 승인 merge pin 수정·최종 CI/소스 병합 → 공식 독립 운영 Windows Owner의 현재 CAS/lease/백업/복구 inspect 및 승인된 고유 B 1회 → postcheck 실제 JSON/TXT·새 설치 SHA readback. 기존 #4156 감사 재실행 불필요. DB/D1·원자료·예약·기존 운영 Controller 변경 없음.
+
+---
+
 ## PR #4300 후속 선별 설치 후보 — 2026-11-28 KST (소스 준비, Windows 미적용)
 
 **기존 운영 복구 상태 보존:** #4299 Controller `cde1dd372210e4658ae348cb9e2577967cb11634` 실제 설치·사후 #4301 PASS, #4156 독립 2/2 PASS, host inventory 83/83 일치. 원 요청·Claim·보호 lease/설치 재실행하지 않는다.
