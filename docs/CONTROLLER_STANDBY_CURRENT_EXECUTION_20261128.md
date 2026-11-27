@@ -3,6 +3,24 @@
 총괄: zgmini / codex/controller-ops-lessons-20261105
 이 문서는 R3/R4의 과거 기록을 보존하면서 현재 다음 행동을 정정한다.
 
+## 최신 실제 운영 증거 — 2026-11-28 06:53 KST (아래 과거 미완료 보고보다 우선)
+
+**승인된 Controller 운영 설치와 추가 독립 감사 2건을 실제 PC에서 완료했다.** 소스 CI로 완료를 추정한 결과가 아니다.
+
+- PB2: 공식 독립 Explorer Owner inspect **1/1 PASS**, 2026-11-27T21:44:04.844Z, PUBLIC_B_OPERATOR_PREFLIGHT_READY_ONLY.
+- PB3: 승인 #4283/#4287 및 실행 source #4295를 사용한 **설치 #4299 1/1 PASS**. requestId=pc-update-3d816cf2-37c1-4bbc-a0dd-d62a4e0ad782. 실제 설치 SHA **cde1dd372210e4658ae348cb9e2577967cb11634** (이전 555f95708984580cd7d5a0fd05a80b718e867710).
+- PB4: 2026-11-27T21:51:44.520Z 영수증 **APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED / PASS**. 공식 PC 사후 Job [#4301](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4301), [Actions 46072941694](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46072941694), seat 4, actualExecutionSha=cde1dd... PASS. protectedStateUnchanged/runnerSetVerified/postSourceVerified/workflowEnabled 모두 true. Claim FINAL_RESULT/PASS, 활성 설치 lease 없음.
+- AUD1: 독립 Windows Owner에서 Watchdog HEALTHY, 보조 2/2 READY·실제 생존, 현재 Supervisor/host 동일 SHA 및 6개 좌석 확인 **PASS**.
+- AUD2: 원래 #4266/#4267에 대응하는 로컬 postcheck/smoke 원장을 고정 요청·Job·당시 실행 source와 대조 **2건 모두 PASS**. 과거 실행 원문이나 nonce를 공개하지 않음.
+- 설치 후 83개 host inventory 실제 파일 해시 **83/83 CAS 일치**, 2026-11-27T21:53:15.064Z, INDEPENDENT_OPERATOR_VERIFIED / OPERATING_AUDIT_READONLY_VERIFIED. 감사 자체 운영 쓰기/공급처/D1/SQLite 0.
+- [실행·검증 최종 증거](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4156#issuecomment-7228857254). 기존 복구 8/8 및 #4270 CNN 복구 성공 증거를 보존하며 같은 요청을 재실행하지 않는다.
+
+**진단기 소스 discrepancy (운영 복구와 구분):** 새 설치 후보의 역사 원장 검사는 과거 실행 SHA를 현재 설치 SHA와 비교하여 업그레이드 뒤 오판하는 결함이 있었다. [PR #4300](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4300), main e5bfdf58b0876fa51b75fe3c694f420504a69885에서 과거 고정 요청은 당시 555f957 source로 검증하고 현재 Supervisor는 현재 host와 비교하도록 수정, 회귀 **48/48 PASS** 및 hosted source CI SUCCESS. 이번 AUD1/AUD2는 이 수정된 source를 공식 독립 Owner에서 별도 실행한 실제 PC 증거다. 설치본 cde1dd가 후속 #4300까지 포함한다고 주장하거나 설치된 새 A handler 자체의 PASS를 주장하지 않는다. #4300의 설치본 반영은 다음 정규 유지보수 개선으로 구분한다. 알려진 자동 검사 오판 때문에 이 실제 운영 완료 증거를 무효화하거나 전체 담당자의 업무를 다시 정지하지 않는다.
+
+**현재 다음 행동:** 일반 승인 업무를 재개한다. #4299/단회 Owner apply는 재실행하지 않는다. 공통 복구 설치와 두 실제 감사는 완료이며, 과거 104차 보고의 Windows 0/5·AUD 0/2는 현재 상태가 아니다. 공개 저장소 유지, 원자료/DB/D1/산식/예약 및 보안 권한 변경 없음.
+
+---
+
 ## 최신 실행 증거 — 2026-11-28 06:35 KST (기존 §0A보다 우선)
 
 **실제 신규 진전: Public Controller B 승인 2파일에 대한 독립 Windows Owner 실행 경로의 소스 통합 완료.** 운영 설치나 #4156 감사 PASS는 아님.
