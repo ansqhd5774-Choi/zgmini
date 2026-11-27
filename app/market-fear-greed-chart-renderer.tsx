@@ -58,6 +58,7 @@ export function MarketFearGreedChart({
   timeAxis,
   showLatestPointTouchTooltip = false,
   showIsolatedPoints = false,
+  hideLatestPointMarker = false,
 }: {
   data: MarketFearGreedChartPoint[];
   axisTicks: string[];
@@ -80,6 +81,7 @@ export function MarketFearGreedChart({
   timeAxis?: MarketChartTimeAxis;
   showLatestPointTouchTooltip?: boolean;
   showIsolatedPoints?: boolean;
+  hideLatestPointMarker?: boolean;
 }) {
   const mobileAxisRight=useDashboardMobileAxis();
   const animate=useContext(MarketChartAnimationContext);
@@ -183,9 +185,10 @@ export function MarketFearGreedChart({
         x={chartX(latestPoint.date)}
         y={latestPoint.score}
         r={compact ? 3 : 4.4}
-        fill={color}
-        stroke="#fff7f7"
-        strokeWidth={2}
+        // Retain the mobile tap hitbox without drawing a point on a line.
+        fill={hideLatestPointMarker ? "transparent" : color}
+        stroke={hideLatestPointMarker ? "none" : "#fff7f7"}
+        strokeWidth={hideLatestPointMarker ? 0 : 2}
         ifOverflow="visible"
       /> : null}
       <Tooltip
