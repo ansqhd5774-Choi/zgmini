@@ -7,7 +7,7 @@ const base=process.env.CHAT_PREVIEW_URL??'http://127.0.0.1:5173';
 const sourceObservedAt='2026-10-30T13:21:00.000Z';
 const olderSourceAt='2026-10-29T13:20:00.000Z';
 const original=[
- {observedAt:'2026-10-30T13:20:00.000Z',score:26.2},
+ {observedAt:'2026-10-30T11:20:00.000Z',score:26.2},
  {observedAt:sourceObservedAt,score:26.3},
 ];
 const newer={observedAt:'2026-10-30T13:22:00.000Z',score:26.4};
@@ -85,17 +85,19 @@ async function assertTrueOneDayWindow(page,width){
   const latest=root.querySelector('.cnn-latest-point circle, circle.cnn-latest-point');
   const clip=root.querySelector('clipPath rect');
   const d=line?.getAttribute('d')??'';
-  const start=d.match(/^M\\s*([-\\d.]+)/);
+  const start=d.match(/^M\s*([-\d.]+)/);
   return {labels,d,firstX:start?Number(start[1]):null,
    left:clip?Number(clip.getAttribute('x')):null,
    width:clip?Number(clip.getAttribute('width')):null,
    latestFill:latest?.getAttribute('fill'),
-   isolated:root.querySelectorAll('[class*="isolated-"]').length};
+   latestX:latest?Number(latest.getAttribute('cx')):null,
+   visibleReferenceDots:[...root.querySelectorAll('circle.recharts-reference-dot, .recharts-reference-dot circle')]
+    .filter(circle=>circle.getAttribute('fill')!=='transparent').length};
  });
  assert(geometry.labels.length>=2,width+'px shows 1D time-axis ticks: '+JSON.stringify(geometry));
  const first=geometry.labels[0],last=geometry.labels.at(-1);
- assert.match(first,/\\d{2}\\/\\d{2}\\s+\\d{2}:\\d{2}/);
- assert.match(last,/\\d{2}\\/\\d{2}\\s+\\d{2}:\\d{2}/);
+ assert.match(first,/\d{2}\/\d{2}\s+\d{2}:\d{2}/);
+ assert.match(last,/\d{2}\/\d{2}\s+\d{2}:\d{2}/);
  assert.notEqual(first.slice(0,5),last.slice(0,5),'day boundaries are not hidden by a 2-minute zoom');
  assert(/^M/.test(geometry.d)&&/[CLQ]/.test(geometry.d.slice(1)),'source line is connected');
  assert(!/NaN|Infinity/.test(geometry.d));
@@ -103,7 +105,9 @@ async function assertTrueOneDayWindow(page,width){
  assert(geometry.firstX>geometry.left+geometry.width*0.9,
   'a sparse genuine source must not be fabricated at the 24h left boundary: '+JSON.stringify(geometry));
  assert.equal(geometry.latestFill,'transparent','latest mobile tap hotspot has no visible dot');
- assert.equal(geometry.isolated,0,'no dots are drawn at missing-minute intervals');
+ assert(Number.isFinite(geometry.latestX)&&geometry.latestX-geometry.firstX>=10,
+  'two hours of genuine history must draw a visible line, not a cluster of dots: '+JSON.stringify(geometry));
+ assert.equal(geometry.visibleReferenceDots,0,'no visible dot markers are drawn at 1D source points');
 }
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 mkdirSync('artifacts/cnn-current-session-checks',{recursive:true});
@@ -162,7 +166,7 @@ try{
   },null,{timeout:20000});
   const curve=chart.locator('path.recharts-area-curve');
   const before=await curve.getAttribute('d');
-  assert.ok(before?.length>20,width+'px two real 1-minute points draw a curve');
+  assert.ok(before?.length>20,width+'px two genuine one-minute buckets separated by 2h must draw a line');
   await assertTrueOneDayWindow(page,width);
 
   if(width===390){
