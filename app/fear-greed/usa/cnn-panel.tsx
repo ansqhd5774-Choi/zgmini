@@ -10,6 +10,7 @@ import { MarketCardInsight } from "../../market-card-insight";
 import { MarketFearGreedChart } from "../../market-fear-greed-chart";
 import {fearGreedStateColor} from '../../../lib/fear-greed-state-color.mjs';
 import {CNN_OBSERVED_HISTORY_VERSION} from '../../../lib/cnn-observed-history-r1.mjs';
+import {cnnNyObservationDay} from '../../../lib/cnn-current-session-history-r4.mjs';
 import {cnnUsMultiDayTooltipDate} from '../../../lib/cnn-tooltip-calendar-date-r1.mjs';
 
 import {useStoredIndex} from '../../../components/use-stored-index';
@@ -599,7 +600,8 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
       if(!Number.isFinite(anchor))return [];
       const archive=normalizeHistory((archived?.points??[]).map(point=>({timestamp:point.observedAt,score:point.score})));
       const byTime=new Map([...archive,...allIntraday].map(point=>[point.date,point]));
-      return [...byTime.values()].filter(point=>point.time>=anchor-86400000&&point.time<=anchor)
+      return [...byTime.values()].filter(point=>cnnNyObservationDay(point.date)!==null
+        &&point.time>=anchor-86400000&&point.time<=anchor)
         .sort((a,b)=>a.time-b.time);
     }
     // Long ranges use the existing CNN daily closes only.
