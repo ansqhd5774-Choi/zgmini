@@ -1037,3 +1037,13 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - **Cloudflare:** `0d7b5bbc`에 연결된 정상 Git Integration Workers Build `zgmini-migration-candidate-r5` **SUCCESS**, 정확 Production build `b5320bc2-dc59-44a7-ad1e-2ff75620951d`. [Production SEO Health #46027308957](https://github.com/ansqhd5774-Choi/zgmini/actions/runs/46027308957)의 실제 URL SEO·canonical edge redirects **SUCCESS**. 이 증거는 정확 API 응답 body와 1D 실선분 hydration/모바일 무새로고침 값의 종단 readback과 구분한다.
 - **운영 제약:** Supervisor/Watchdog/Runner 6/6/Standby2 READY 현장 복구 증거 재사용. 제어 저장소 Public vs `pc-job.yml` private-only/유지보수 `GITHUB_PRIVATE_REPOSITORY_REQUIRED` 문제는 그대로여서 정확 신규 원본 `observedAt`↔SQLite↔D1↔API↔PC1440/모바일390 **0/1 미검증**. 임의 Private 전환/보안 게이트 해제/중복 PC A/수집기 재설치·주기 변경/운영 DB·D1 쓰기 0.
 - **중앙 기록:** [W06 #4082 결과 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4082#issuecomment-7222438826).
+
+
+### 20-75. 공개 CNN 현재·1D·1W 신규 관측 게시 정확 동기화 (2026-11-28 KST)
+
+- **새 운영 원본 직접 검증:** 공개 `https://zgmini.kr/api/fear-greed`, `/api/fear-greed/observations?period=1D`, `period=1W`를 강제 최신 HTTPS GET, JSON body 추출, 실제 HTTP **200/verified/READY** 확인. GitHub `main@0d7b5bbc82d50b3d9097318d0b016981ac29b006` 및 정확 Cloudflare Git Integration SUCCESS Build `b5320bc2-dc59-44a7-ad1e-2ff75620951d` 후 실시. 개인인증/비공개 원본·운영 DB/D1 쓰기·수집기·Task 변경 없음.
+- **1차 정밀 일치:** `current.observedAt=2026-11-27T15:47:46.000Z` / `score=23.7428571428571`. 1D `READY` 85점, 1W `READY` 97점; **1D 85/85 관측시각과 점수가 1W에 일치**, 불일치 0. 양쪽 최신 관측과 current 정확 일치. 실제 CNN 원본시각 간격 중앙값 **5분**; PC PT1M HTTP 체크와 동일시하지 않음.
+- **신규 값 실제 전파:** 곧 `current.observedAt=2026-11-27T15:52:46.000Z` / `score=24.0571428571429` 관측. 최신 1D **85→86**, 1W **97→98점**으로 전진하고 둘 다 정확 원본 시각·점수에 일치. 이는 사용자 공개 API에서 **실제 신규 원본→공개 현재/보관 이력 동시 반영**을 확인한 증거이며 출처 공급자 직접 호출/SQLite→D1 동일 원본 감사와 구분.
+- **UI 읽기 한계:** 별도 Public 상세 모바일 HTML ARIA `24.1점 극심한 공포`은 공개 정밀 24.057의 1자리 반올림과 일치. 그러나 그 페이지 기본 기간 3M에서 1D 실제 선분/PC1440·390 새 페이지 60초 자동 전파 검증은 아님. 기존 사용자 탭에 남은 21.4는 비활성 탭일 수 있고 `startStoredRefresh`는 visible/focus/pageshow에 갱신하므로 UI 결함 단정 금지. 외부 수집 도구가 애니메이션 초기 `0.0`을 보이는 경우는 ARIA 올바른 값과 분리; 정지 후 최종 픽셀 직접 확인 미실시.
+- **차단/경계:** `zgmini-pc-control` 공개화·Private-only PC Job/유지보수 수신기 충돌 지속. 이번 최신 `main`의 `public-readonly-intake`는 `executionAuthorized=false,selfHostedAuthorized=false`이므로 정밀 PC SQLite readback을 대신하지 않음. 공개 current↔1D↔1W 정합성 PASS, 원본 `observedAt/score`가 로컬 SQLite·D1·API·PC1440/모바일390에 동일한 종단 **0/1 미완료**. 보안 정책 임의 변경/Private 전환·새 PC A 중복 요청·추가 수집/게시 0.
+- **인계 원본:** [제어 W06 #4082 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4082#issuecomment-7222685219). 마지막 차단을 해소할 사용자 별도 승인된 보안 경계/기존 PC 읽기 정상 경로 후 정밀 readback 1회와 UI 실화면 검증.
