@@ -85,7 +85,7 @@ D27은 #3094 정적 매핑상 `/api/iran-progress`의 별도 보조 대상이다
 | D01 미국 CNN 공포·탐욕 | 별도 기능 값 | 별도 원본 | 미검증 | 미검증 | /api/fear-greed | 미검증 | [#3094](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3094#issuecomment-7123924603) 정적 매핑 | 로컬→D1→API 동일 사건 확인 |
 | D02 한국 공포·탐욕 | 별도 기능 값 | KR-R7 | 미검증 | 미검증 | 미확인 | 미검증 | [#3094](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3094#issuecomment-7123924603) 정적 매핑 | 로컬→D1→API 동일 사건 확인 |
 | D03 미국 등락 비율 | 별도 기능 값 | 별도 breadth | 미검증 | 미검증 | /api/market-breadth | 미검증 | [#3094](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3094#issuecomment-7123924603) 정적 매핑 | 로컬→D1→API 동일 사건 확인 |
-| D04 한국 등락 비율 | 별도 기능 값 | 별도 breadth | 미검증 | 미검증 | 미확인 | 미검증 | [#3094](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3094#issuecomment-7123924603) 정적 매핑 | 기존 화면 counts 연결 결함 확인 |
+| D04 한국 등락 비율 | 별도 기능 값 | 별도 breadth | 미검증 | 미검증 | 현행 `/api/market-breadth`는 한국 404 | 빈 출력 소스 확인 | [#3094](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3094#issuecomment-7123924603) 정적 매핑 | 검증된 한국 counts 저장·공개 소스 확인 후 연결 |
 | D05 미국 종합 overall | 최종 점수 | CM-R1 / market | market_public_snapshots_v1 경로 확인, 실값 미검증 | market_public_snapshots_v1 / current·UTC일 | /api/market-score | 미검증 | [#3094](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3094#issuecomment-7123924603) 정적 매핑 | 로컬→D1→API 동일 사건 확인 |
 | D06 inflationStability | 별도 기능 값 | 별도 위험 projection | 미검증 | 미검증 | 미확인 | 미검증 | [#3094](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3094#issuecomment-7123924603) 정적 매핑 | 로컬→D1→API 동일 사건 확인 |
 | D07 recessionDefense | 별도 기능 값 | 별도 위험 projection | 미검증 | 미검증 | 미확인 | 미검증 | [#3094](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/3094#issuecomment-7123924603) 정적 매핑 | 로컬→D1→API 동일 사건 확인 |
@@ -143,7 +143,11 @@ D27은 #3094 정적 매핑상 `/api/iran-progress`의 별도 보조 대상이다
 
 ## 6. 차단 및 독립 작업
 
-운영 PC Registry·로컬 SQLite 및 D1 최신 사건에 대한 유효 읽기 증거가 아직 없다. 이는 1~4단계 운영 검증의 현재 미확인 지점이며, 공통 실행 장애의 현행 상태를 이 실행에서 단정하지 않는다.
+운영 PC Registry·로컬 SQLite 및 D1 최신 사건에 대한 유효 읽기 증거가 아직 없다. 2026-11-28 00:51:54 KST [공통 #68 실측](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-7222629739)은 Supervisor `HEALTHY`와 유지보수기 `POLL_WAIT`를 구분하며 일반 A의 실제 성공을 입증하지 않는다. 현재 Public 저장소의 [일반 pc-job Workflow](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/.github/workflows/pc-job.yml)는 운영 Job을 `repository.private == true`로 제한하고 Public 경로에서는 후보 관측만 수행한다. [독립 인벤토리 Workflow](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/.github/workflows/pc-process-inventory-readonly.yml)도 운영 Job에 같은 Private 조건이 있다. 따라서 지금 새 D05 A 요청은 PC 결과 확보 경로가 아니다. 공통 복구 후보 [PR #4232](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4232)는 새 HEAD CI·운영 설치 전이므로 D05가 Controller 범위를 변경하지 않는다.
+
+기존 A 목록에는 `d05-lineage-readonly`, `sector-r3-d1-api-readback-readonly`, `writer-publication-evidence-readonly`가 있다. 독립 인벤토리의 `d05-theme-final-outputs-readonly`와 `d05-configured-registration-readonly`는 개수·해시만 반환하고 현행 공개 ID는 반환하지 않는다. 이 두 probe만으로 1단계 테마 행을 확정할 수 없다. 기존 유료 테마 공개 API 계약은 `themes[].id`와 `dataQuality.expectedPublicIds`를 반환하므로, 접근 가능한 실제 API 응답 또는 승인된 운영 Registry/D1 읽기 결과로만 현행 ID를 확정한다.
+
+D04는 최신 `main`의 `KoreanCountryCard`가 `<MarketBreadthStrip market="korea"/>`에 `counts`를 전달하지 않고, `Composite` 타입에도 counts가 없다. [시장 등락 API](https://github.com/ansqhd5774-Choi/zgmini/blob/0d7b5bbc82d50b3d9097318d0b016981ac29b006/app/api/market-breadth/route.ts)는 `market=usa`만 허용하고 한국 요청은 404다. 검증된 한국 counts 입력 없이 UI prop만 채우거나 숫자를 만들지 않는다.
 PR #3239 / 신규 A급 operation은 필요할 때 사용하는 관측 수단이지 전역 선행조건이 아니다.
 공통 장애 발생 시 정확한 대상·실행·오류·최소 지원 조치·반환 결과를 기존 공통 담당 경로에 인계하며 독립 D1/API/소스/화면 검증은 계속한다.
 추가 Gate, 예약, 진단 체계, 임의 산식/공급자/운영 DB 변경 금지.
@@ -156,10 +160,11 @@ PR #3239 / 신규 A급 operation은 필요할 때 사용하는 관측 수단이�
 | 2026-11-24 | 진행 원장 초기화 및 기존 영수증 확인 | #3128 / #3215 및 상기 링크 | 신규 운영 실행 없음; 다음 1·2단계 |
 | 2026-11-28 | 1단계 시장 27개·업종 11개 정적 ID 연결, 테마 과거 10개 후보 분리 | main `e6ca2cba`; #3094; R3 업종 소스 | 1단계 진행 중; 현행 운영 테마 승인 목록·각 사건 미확인 |
 | 2026-11-28 | 2단계 시장 시간 계약 소스 추적 | run-local / market-operational-store / publish | 사이클 시작 `now`가 저장시각으로 재사용됨; 계산 완료시각 증거 아님 |
+| 2026-11-28 | PC 읽기 경로·D04 입력 경계 확인 | [공통 #68](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-7222629739), pc-job/인벤토리 Workflow, 최신 본체 main `0d7b5bbc` | Public A 운영 Job은 Private 조건으로 미실행; 테마 기존 probe는 ID 미반환; D04 한국 counts 저장 소스 미확인 |
 
 다음 직접 실행:
-1. 운영 PC의 설치된 `loadPaidRegistry()` 결과와 D1 `theme-fear-greed-paid-hourly-v1/current`의 `expectedPublicIds`를 읽어 현행 공개 승인 테마 ID를 확정한다.
-2. 기존 승인된 읽기 경로에서 시장 `current`·UTC 일별 저장본과 Writer 완료 영수증을 대조해 저장 스냅샷과 실제 계산 완료 사건을 구분한다.
-3. 업종 11개·현행 테마 공개 ID의 최신 로컬→D1→API 동일 사건을 비교하고, D04 화면 counts 전달 결함은 별도 담당 경계에 따라 최소 수정 범위를 확정한다.
+1. 공통 담당의 Public A 실제 Windows Run/JSON/TXT PASS가 확인되면 기존 승인 A 경로로 시장 Writer·업종 D1/API 읽기를 각각 1회 수행한다. 단순 Supervisor HEALTHY나 PR/CI PASS로 재개를 추정하지 않는다.
+2. 접근 가능한 실제 유료 테마 공개 API의 `themes[].id`·`dataQuality.expectedPublicIds` 또는 승인 운영 Registry/D1 결과로 현행 공개 승인 ID를 확정한다. 기존 개수 전용 probe만 반복하지 않는다.
+3. 시장 저장 스냅샷과 Writer 완료 영수증을 대조해 계산 사건시각 계약을 확정하고, 업종·테마 최신 동일 사건을 로컬→D1→API로 비교한다. D04는 검증된 한국 counts 저장 소스를 먼저 찾은 뒤 화면 연결을 수정한다.
 
 최종 종료는 계획 R1의 실제 저장·공개·이력·PC/모바일 검증 기준으로 판단한다. 문서 커밋 자체는 기능 완료가 아니다.
