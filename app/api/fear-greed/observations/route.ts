@@ -19,8 +19,15 @@ export async function GET(request:Request){
  const now=Date.now();
  const start=custom?from!:new Date(now-(days-1)*MS_DAY).toISOString().slice(0,10);
  const end=custom?to!:new Date(now).toISOString().slice(0,10);
- const rows=await env.DB.prepare("SELECT snapshot_key,body FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key BETWEEN ? AND ? ORDER BY snapshot_key ASC LIMIT 371")
-   .bind(CNN_OBSERVED_ARCHIVE_KEY,start,end).all<{snapshot_key:string,body:string}>();
+ // 1D is anchored to CNN's last stored source day, not the wall-clock day:
+ // weekends and multi-day exchange holidays must retain the last real 24h.
+ // At most two UTC day rows can contain a 24h source-observation window.
+ const latestSourceDay=period==='1D'&&!custom;
+ const rows=latestSourceDay
+  ? await env.DB.prepare("SELECT snapshot_key,body FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? ORDER BY snapshot_key DESC LIMIT 2")
+    .bind(CNN_OBSERVED_ARCHIVE_KEY).all<{snapshot_key:string,body:string}>()
+  : await env.DB.prepare("SELECT snapshot_key,body FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key BETWEEN ? AND ? ORDER BY snapshot_key ASC LIMIT 371")
+    .bind(CNN_OBSERVED_ARCHIVE_KEY,start,end).all<{snapshot_key:string,body:string}>();
  const byTime=new Map<string,{observedAt:string,score:number}>();
  let validDays=0;
  for(const row of rows.results??[]){
@@ -64,9 +71,19 @@ export async function GET(request:Request){
   sampleCnnObservedPoints(allChecks.map(p=>({...p,observedAt:p.checkedAt})))
    .map(({checkedAt,sourceObservedAt,score})=>({checkedAt,sourceObservedAt,score})));
 
- const all=[...byTime.values()].sort((a,b)=>a.observedAt.localeCompare(b.observedAt));
+ const saved=[...byTime.values()].sort((a,b)=>a.observedAt.localeCompare(b.observedAt));
+ const lastSource=saved.at(-1)?.observedAt;
+ const lastSourceTime=lastSource?Date.parse(lastSource):NaN;
+ // Other dates returned by the bounded two-row read are not part of this 1D.
+ const all=latestSourceDay&&Number.isFinite(lastSourceTime)
+  ? saved.filter(point=>Date.parse(point.observedAt)>=lastSourceTime-MS_DAY)
+  : saved;
  const points=custom||period==='1D'||period==='1W'?all:sampleCnnObservedPoints(all);
- return Response.json({status:all.length||allChecks.length?'READY':'PENDING',version:CNN_OBSERVED_ARCHIVE_VERSION,period,range:{start,end},availableDays:validDays,totalObservedPoints:all.length,sampled:points.length<all.length,points,verifiedCheckCount:allChecks.length,checkedPoints,checkTimeMeaning:'PC_VERIFIED_STORED_AT'},{
+ const rangeEnd=latestSourceDay&&lastSource?lastSource.slice(0,10):end;
+ const rangeStart=latestSourceDay&&lastSource
+  ? new Date(Date.parse(rangeEnd+'T00:00:00Z')-MS_DAY).toISOString().slice(0,10)
+  : start;
+ return Response.json({status:all.length||allChecks.length?'READY':'PENDING',version:CNN_OBSERVED_ARCHIVE_VERSION,period,range:{start:rangeStart,end:rangeEnd},availableDays:validDays,totalObservedPoints:all.length,sampled:points.length<all.length,points,verifiedCheckCount:allChecks.length,checkedPoints,checkTimeMeaning:'PC_VERIFIED_STORED_AT'},{
   headers:{'cache-control':'public, max-age=60, must-revalidate','x-data-source':'STORED','x-content-type-options':'nosniff'}
  });
 }
