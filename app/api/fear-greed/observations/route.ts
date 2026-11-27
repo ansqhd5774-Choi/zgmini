@@ -19,11 +19,37 @@ export async function GET(request:Request){
  const now=Date.now();
  const start=custom?from!:new Date(now-(days-1)*MS_DAY).toISOString().slice(0,10);
  const end=custom?to!:new Date(now).toISOString().slice(0,10);
- const rows=await env.DB.prepare("SELECT snapshot_key,body FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key BETWEEN ? AND ? ORDER BY snapshot_key ASC LIMIT 371")
-   .bind(CNN_OBSERVED_ARCHIVE_KEY,start,end).all<{snapshot_key:string,body:string}>();
+ // Use the last stored CNN source day for the default 1D view. A weekend or
+ // holiday must not make the last real observations disappear from the chart.
+ const latestSourceDay=period==='1D'&&!custom;
+ const initialRows=latestSourceDay
+  ? await env.DB.prepare("SELECT snapshot_key,body FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? ORDER BY snapshot_key DESC LIMIT 2")
+    .bind(CNN_OBSERVED_ARCHIVE_KEY).all<{snapshot_key:string,body:string}>()
+  : await env.DB.prepare("SELECT snapshot_key,body FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key BETWEEN ? AND ? ORDER BY snapshot_key ASC LIMIT 371")
+    .bind(CNN_OBSERVED_ARCHIVE_KEY,start,end).all<{snapshot_key:string,body:string}>();
+ const isEmptyArchiveDay=(row:{snapshot_key:string,body:string})=>{
+  try{
+   const body=JSON.parse(row.body);
+   return body?.version===CNN_OBSERVED_ARCHIVE_VERSION&&body.date===row.snapshot_key
+    &&Array.isArray(body.observations)&&body.observations.length===0;
+  }catch{return false;}
+ };
+ let archiveRows=initialRows.results??[];
+ if(latestSourceDay&&archiveRows.some(isEmptyArchiveDay)){
+  const fallback=await env.DB.prepare("SELECT snapshot_key,body FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? ORDER BY snapshot_key DESC LIMIT 371")
+   .bind(CNN_OBSERVED_ARCHIVE_KEY).all<{snapshot_key:string,body:string}>();
+  const selected:typeof archiveRows=[];
+  let populatedDays=0;
+  for(const row of fallback.results??[]){
+   selected.push(row);
+   if(!isEmptyArchiveDay(row))populatedDays++;
+   if(populatedDays===2)break;
+  }
+  archiveRows=selected;
+ }
  const byTime=new Map<string,{observedAt:string,score:number}>();
  let validDays=0;
- for(const row of rows.results??[]){
+ for(const row of archiveRows){
   let entry:{version?:unknown;date?:unknown;observations?:unknown}|null;
   try{entry=JSON.parse(row.body) as typeof entry;}catch{return Response.json({status:'STORED_ARCHIVE_INVALID'},{status:503});}
   if(entry?.version!==CNN_OBSERVED_ARCHIVE_VERSION||entry.date!==row.snapshot_key||!Array.isArray(entry.observations))
@@ -64,12 +90,21 @@ export async function GET(request:Request){
   sampleCnnObservedPoints(allChecks.map(p=>({...p,observedAt:p.checkedAt})))
    .map(({checkedAt,sourceObservedAt,score})=>({checkedAt,sourceObservedAt,score})));
 
- const all=[...byTime.values()].sort((a,b)=>a.observedAt.localeCompare(b.observedAt));
+ const saved=[...byTime.values()].sort((a,b)=>a.observedAt.localeCompare(b.observedAt));
+ const lastSource=saved.at(-1)?.observedAt;
+ const lastSourceTime=lastSource?Date.parse(lastSource):NaN;
+ const all=latestSourceDay&&Number.isFinite(lastSourceTime)
+  ? saved.filter(point=>Date.parse(point.observedAt)>=lastSourceTime-MS_DAY)
+  : saved;
  // Do not apply index-based extrema sampling before a genuine period bucket.
  // The 1M/3M/6M/1Y line must use the last *real* observedAt in each bucket.
  // Keep 1D, 1W, custom <=7-day lookups and verified PC check sampling unchanged.
  const points=custom||period==='1D'||period==='1W'?all:projectCnnObservedPeriodPoints(all,period as '1M'|'3M'|'6M'|'1Y');
- return Response.json({status:all.length||allChecks.length?'READY':'PENDING',version:CNN_OBSERVED_ARCHIVE_VERSION,period,range:{start,end},availableDays:validDays,totalObservedPoints:all.length,sampled:points.length<all.length,points,verifiedCheckCount:allChecks.length,checkedPoints,checkTimeMeaning:'PC_VERIFIED_STORED_AT'},{
+ const rangeEnd=latestSourceDay&&lastSource?lastSource.slice(0,10):end;
+ const rangeStart=latestSourceDay&&lastSource
+  ? new Date(Date.parse(rangeEnd+'T00:00:00Z')-MS_DAY).toISOString().slice(0,10)
+  : start;
+ return Response.json({status:all.length||allChecks.length?'READY':'PENDING',version:CNN_OBSERVED_ARCHIVE_VERSION,period,range:{start:rangeStart,end:rangeEnd},availableDays:validDays,totalObservedPoints:all.length,sampled:points.length<all.length,points,verifiedCheckCount:allChecks.length,checkedPoints,checkTimeMeaning:'PC_VERIFIED_STORED_AT'},{
   headers:{'cache-control':'public, max-age=60, must-revalidate','x-data-source':'STORED','x-content-type-options':'nosniff'}
  });
 }
