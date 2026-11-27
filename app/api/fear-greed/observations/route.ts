@@ -23,11 +23,33 @@ export async function GET(request:Request){
  // weekends and multi-day exchange holidays must retain the last real 24h.
  // At most two UTC day rows can contain a 24h source-observation window.
  const latestSourceDay=period==='1D'&&!custom;
- const rows=latestSourceDay
+ const initialRows=latestSourceDay
   ? await env.DB.prepare("SELECT snapshot_key,body FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? ORDER BY snapshot_key DESC LIMIT 2")
     .bind(CNN_OBSERVED_ARCHIVE_KEY).all<{snapshot_key:string,body:string}>()
   : await env.DB.prepare("SELECT snapshot_key,body FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key BETWEEN ? AND ? ORDER BY snapshot_key ASC LIMIT 371")
     .bind(CNN_OBSERVED_ARCHIVE_KEY,start,end).all<{snapshot_key:string,body:string}>();
+ // Empty archived dates are legal but must not hide the last populated day.
+ // The wide, bounded read is only needed for this exceptional case.
+ const isEmptyArchiveDay=(row:{snapshot_key:string,body:string})=>{
+  try{
+   const body=JSON.parse(row.body);
+   return body?.version===CNN_OBSERVED_ARCHIVE_VERSION&&body.date===row.snapshot_key
+    &&Array.isArray(body.observations)&&body.observations.length===0;
+  }catch{return false;} // Keep invalid rows for the existing 503 validation.
+ };
+ let rows=initialRows;
+ if(latestSourceDay&&(initialRows.results??[]).some(isEmptyArchiveDay)){
+  const fallback=await env.DB.prepare("SELECT snapshot_key,body FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? ORDER BY snapshot_key DESC LIMIT 371")
+   .bind(CNN_OBSERVED_ARCHIVE_KEY).all<{snapshot_key:string,body:string}>();
+  const selected:typeof initialRows.results=[];
+  let populatedDays=0;
+  for(const row of fallback.results??[]){
+   selected.push(row);
+   if(!isEmptyArchiveDay(row))populatedDays++;
+   if(populatedDays===2)break;
+  }
+  rows={results:selected};
+ }
  const byTime=new Map<string,{observedAt:string,score:number}>();
  let validDays=0;
  for(const row of rows.results??[]){
