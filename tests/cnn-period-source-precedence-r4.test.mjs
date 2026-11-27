@@ -88,7 +88,7 @@ test('1D uses the previous 24h source observations without copying PC checks',()
  assert.deepEqual(returned.map(p=>p.score),[12,40,55],'real previous US day points survive in 24h window');
  assert.equal(returned.some(p=>checked.some(c=>p.date===c.checkedAt)),false,'PC rechecks are not source points');
  assert.match(panel,/const minuteMode=selectedPeriod==='1D';/);
- assert.match(panel,/aggregateCnnIntraday\\(points,\\{currentObservedAt:observedAt,minutes:1,now,windowMinutes:1440\\}\\)/);
- assert.match(panel,/minuteHistory\\?\\.connectedLinePoints/);
- assert.doesNotMatch(panel,/data-cnn-minute|CNN 원본 관측 간격|확인 이력<\\/button>/);
+ assert.match(panel,/aggregateCnnIntraday\(points,\{currentObservedAt:observedAt,minutes:1,now,windowMinutes:1440\}\)/);
+ assert.match(panel,/minuteHistory\?\.connectedLinePoints/);
+ assert.doesNotMatch(panel,/data-cnn-minute|CNN 원본 관측 간격|확인 이력<\/button>/);
 });
