@@ -219,16 +219,16 @@ function buildChartAxisTicks(
   return { ticks: [...labels.keys()], labels };
 }
 
-// USA-only continuous X axis: the first genuine displayed observation starts
-// at the left plot boundary. Preserve proportional spacing between real points.
-// Never create a synthetic observation at the calendar-window boundary.
+// USA-only continuous X axis: 1D is exactly 24 hours ending at the latest
+// genuine source timestamp. Missing hours remain blank rather than shrinking
+// the axis. Longer periods retain the first-real-point left-edge contract.
 function buildChartTimeAxis(points: ReturnType<typeof normalizeHistory>, period: UsaPeriod) {
   const latest = points.at(-1)?.time;
   if (latest === undefined || !Number.isFinite(latest)) return undefined;
   const days = period === "1D" ? 1 : getMarketPeriodConfig(period).days;
   const earliest = points.reduce((min, point) => Math.min(min, point.time), latest);
-  // For a single real point preserve the normal time span; for a series place
-  // its first real point at the left edge without inventing a leading score.
+  // Longer ranges fit the genuine observed span; 1D never shrinks to
+  // the first and last available minutes of a partial day's data.
   const domain: [number, number] = period === "1D"
     ? [latest - 24 * 60 * 60000, latest]
     : [earliest < latest ? earliest : latest - days * 86400000, latest];
@@ -857,7 +857,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
           : selectedPeriod==="1W"||selectedPeriod==="1M"
             ? (value:string)=>value.includes('T')?intradayLabel(value):cnnUsMultiDayTooltipDate(value)
             : cnnUsMultiDayTooltipDate}
-        emptyLabel={minuteMode?"해당 뉴욕 거래일의 CNN 원본 관측 없음":"이력 없음"}
+        emptyLabel={minuteMode?"최근 24시간 CNN 원본 관측 없음":"이력 없음"}
       />}</div></div>}
       breadth={showBreadth && !showEducation ? <PaidUsBreadthR2Panel period={selectedPeriod}/> : undefined}
       detailHref={showEducation ? undefined : "/fear-greed/usa/"}
