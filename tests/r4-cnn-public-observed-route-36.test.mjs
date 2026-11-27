@@ -13,7 +13,6 @@ const routeText=readFileSync(new URL('../app/api/fear-greed/observations/route.t
 const compiled=ts.transpileModule(routeText.replace(/^import [^\n]*\n/gm,''),{
  compilerOptions:{module:ts.ModuleKind.CommonJS,target:ts.ScriptTarget.ES2022},
 }).outputText;
-class Clock extends Date{static now(){return now;}}
 const day='2026-11-16';
 const obs=(clock,score)=>({observedAt:day+'T'+clock+'Z',score});
 const check=(clock,sourceClock,score)=>({
@@ -29,7 +28,8 @@ const checks=(d,values)=>({
  snapshot_key:d,body:JSON.stringify({version:'CNN_VERIFIED_CHECKS_R1',date:d,checks:values}),
 });
 
-function harness({stored=[],verified=[]}={}){
+function harness({stored=[],verified=[],timeNow=now}={}){
+ class Clock extends Date{static now(){return timeNow;}}
  const queries=[];
  const env={DB:{prepare(sql){
   assert.match(sql,/^SELECT snapshot_key,body FROM public_feed_snapshots_v1/);
@@ -37,6 +37,10 @@ function harness({stored=[],verified=[]}={}){
   return {bind(...params){return {async all(){
    queries.push({sql,params});
    const rows=sql.includes("feed_key='fear-greed-verified-checks'")?verified:stored;
+   if(sql.includes('ORDER BY snapshot_key DESC LIMIT 2')){
+    assert.deepEqual(params,[CNN_OBSERVED_ARCHIVE_KEY]);
+    return {results:[...rows].sort((a,b)=>b.snapshot_key.localeCompare(a.snapshot_key)).slice(0,2)};
+   }
    const from=params.at(-2),to=params.at(-1);
    return {results:rows.filter(x=>x.snapshot_key>=from&&x.snapshot_key<=to).slice(0,371)};
   }};}};
@@ -154,4 +158,49 @@ test('R4 #36 1W returns only actual sorted original source timestamps',async()=>
  const body=await (await harness({stored}).GET(request('1W'))).json();
  assert.deepEqual(body.points.map(p=>p.score),[40,41]);
  assert.equal(body.availableDays,2);
+});
+
+test('W06 1D keeps last source 24h across Saturday/Sunday with independent current PC checks',async()=>{
+ const friday='2026-11-13',thursday='2026-11-12',sunday='2026-11-15';
+ const stored=[
+  archive(thursday,[
+   {observedAt:thursday+'T18:00:00.000Z',score:11},
+   {observedAt:thursday+'T21:00:00.000Z',score:12},
+  ]),
+  archive(friday,[{observedAt:friday+'T20:00:00.000Z',score:13}]),
+ ];
+ const checkedAt=sunday+'T14:00:00.000Z';
+ const verified=[checks(sunday,[{
+  checkedAt,sourceObservedAt:friday+'T20:00:00.000Z',
+  score:13,sourceStoredAt:Date.parse(checkedAt),
+ }])];
+ const {GET,queries}=harness({stored,verified,timeNow:Date.parse(sunday+'T19:00:00Z')});
+ const result=await (await GET(request('1D'))).json();
+ assert.equal(result.status,'READY');
+ assert.deepEqual(result.points.map(p=>p.observedAt),[
+  thursday+'T21:00:00.000Z',friday+'T20:00:00.000Z',
+ ]);
+ assert.deepEqual(result.points.map(p=>p.score),[12,13]);
+ assert.deepEqual(result.range,{start:thursday,end:friday});
+ assert.deepEqual(result.checkedPoints.map(p=>p.checkedAt),[checkedAt]);
+ assert.equal(queries.length,2);
+ assert.match(queries[0].sql,/ORDER BY snapshot_key DESC LIMIT 2/);
+ assert.deepEqual(queries[1].params,[sunday.replace(/15$/,'14'),sunday],
+  'PC verification remains wall-clock dated, not anchored to old CNN source');
+});
+
+test('W06 1D advances on next real source after multi-day closure without inventing intervening points',async()=>{
+ const friday='2026-11-13',monday='2026-11-16';
+ const stored=[
+  archive(friday,[{observedAt:friday+'T20:00:00.000Z',score:10}]),
+  archive(monday,[{observedAt:monday+'T13:00:00.000Z',score:14}]),
+ ];
+ const body=await (await harness({stored,timeNow:Date.parse(monday+'T14:00:00Z')}).GET(request('1D'))).json();
+ assert.equal(body.status,'READY');
+ assert.deepEqual(body.points.map(p=>p.observedAt),[monday+'T13:00:00.000Z']);
+ assert.deepEqual(body.range,{start:'2026-11-15',end:monday});
+ assert.equal(body.totalObservedPoints,1);
+ const week=await (await harness({stored,timeNow:Date.parse(monday+'T14:00:00Z')}).GET(request('1W'))).json();
+ assert.deepEqual(week.points.map(p=>p.score),[10,14],
+  'week history still includes Friday original and Monday original');
 });
