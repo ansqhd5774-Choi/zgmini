@@ -40,18 +40,25 @@
 - 이것은 보조 Controller 관련 공개 CI 분리이며 기존 모든 CI의 완전한 이관·무제한 무료 보장을 의미하지 않는다.
 - 기존 운영 저장소에 GitHub-hosted job을 사용하는 Workflow 5개가 있어 비공개 전환 시 할당량 사용 범위가 남는다. self-hosted 운영 작업 자체와 구분한다.
 
-## 5. 다음 필수 행동
-운영 PC를 멈추거나 보안 게이트를 삭제하지 않고, 공개 CI와 운영 제어의 경계를 확정한다.
-가장 작은 운영 변경 후보는 기존 zgmini-pc-control의 비공개 전환이며 저장소 이름/Runner 등록/설치 바이트를 보존한다.
-그러나 이전 사용자 Public 지시를 임의로 뒤집지 않는다. 공개 CI 준비와 요금 영향 차이를 제시한 뒤 이 가시성 변경을 명시 확인받는다.
-승인 전 현재 공개 설정은 그대로 유지한다. 비공개 전환 승인 시에는 현장 상태를 재확인하고:
-1. 기존 유지보수기의 자연 poll에서 LISTENING 회복
-2. 원본 UNKNOWN이 자동 재실행되지 않았는지 확인
-3. 새 고유 runner-smoke A 한 건의 실제 JSON/TXT/실행 SHA 회수
-4. Controller·Watchdog·2 READY·6 Runner·원장 보존 확인
-5. 실제 확인 범위로 운영 완료와 잔여 warm-failover 검증을 구분
-원래 S6 재실행이나 새 장애 주입을 단순히 진척 수치를 채우기 위해 수행하지 않는다.
+## 5. 다음 필수 행동 — Public 유지 및 실제 PC 재개
+2026-11-28 사용자가 `zgmini-pc-control` Public 유지를 확정했으므로 과거 비공개 전환 후보는 **폐기**한다. 요금제 변경·가시성 변경을 실행 재개의 대안으로 되살리지 않는다.
+
+확정된 직접 원인: 기존 `pc-job.yml` Private 전용 Job과 설치 Controller의 Private 검증 때문에 Public에서 A Job SKIPPED (#4230), 독립 유지보수기 Private 검증 때문에 `POLL_WAIT / GITHUB_PRIVATE_REPOSITORY_REQUIRED` (#4156). 기존 Supervisor/6 Listener/Watchdog/Standby2 정상 상태와 구분한다.
+
+### 현재 완료된 GitHub 소스 작업
+- 제어 저장소 [PR #4241](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4241) → main merge `feaf0a380890663d8881881bea63587576188c76`: 유지보수기 owner/repo 숫자 신원 검증 후 Public metadata-only poll, B 효과 `PUBLIC_B_EFFECT_SEPARATE_AUTH_REQUIRED`. 기존 `pc-job.yml`·Controller 실행물 불변. 정확 HEAD CI [#46030250470](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46030250470) SUCCESS.
+- 제어 저장소 [PR #4244](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4244) → main merge `b757143036bb98059080e4abfb64692b1a49c7f5`: C/독립 운영자 전용 handoff manifest `approvals/maintenance-handoffs/feaf0a380890663d8881881bea63587576188c76.json`, 설치 소스 `b08f3a482e9bb39523f47675ae06bc6e02e01d2d` → 목표 `feaf0a380890663d8881881bea63587576188c76`, 고정 9파일 raw SHA256 비교에서 기존 8개 동일, `tools/maintenance-agent.mjs` 1개만 변경. 정확 HEAD CI [#46030662722](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46030662722) SUCCESS. Controller B 설치 정책·워크플로/Runner 운영 효과 승인 확대 없음.
+- Public A 소스 후보 [Draft PR #4232](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4232)는 미병합. 이전 통합 HEAD `8583b22454c5d7a50f3d6592778212dd8858eb22`의 GitHub-hosted CI [#46029482365](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46029482365) 92/92 PASS는 운영 설치가 아니다. 다른 담당자가 수정한 뒤 최신 HEAD 재확인 필요.
+
+### 다음 실제 필수 실행
+1. **독립 C급 Windows 운영자 경로**에서 기존 source/설치 manifest 7파일 raw CAS·startup·Receiver WMI origin·lease·보호 백업 및 복구 조건을 fresh 확인. 기존 `tools/handoff-maintenance.mjs --source-sha feaf0a380890663d8881881bea63587576188c76`의 승인된 범위로 단회 인계하고 실제 새 receiver origin/status readback을 확보한다. 일반 Runner·Supervisor·Watchdog를 중단하지 않는다.
+2. 위 metadata-only 인계로 **Controller B effect가 활성화되지는 않는다**. 기존 B GitHub Issue 경로가 Public에서 안전하게 실행될 수 있는 별도 인증된 운영 적용 경로는 아직 미확보다. Controller entry의 정확 설치 SHA/파일 preimage·승인·독립 보안 실행 경로를 확인하기 전에는 Draft #4232 Public A Job을 병합·활성화하지 않는다. 임의 shell·private gate 삭제로 우회하지 않는다.
+3. 안전한 Controller/Workflow 실제 적용 후 Owner 신규 고유 A `runner-smoke` 1건만 실행하여 Run/Job/seat·Supervisor owner 검사·로컬 JSON/TXT 및 공개용 안전 projection 원격 readback을 확인한다.
+4. 유지보수기 `PUBLIC_SOURCE_ONLY`는 B `LISTENING`과 구분하고, B effect는 별도 승인 전 HOLD한다. 기존 UNKNOWN #3947/#4069/#4156 미재실행, Supervisor·Runner6·Watchdog·Standby2·원장/SQLite/D1 변경 없음 확인 후 실제 재개 범위만 닫는다.
+
+중앙 원장 [#68/7222876454](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-7222876454). 사용자에게 임의 CMD 반복이나 추가 장애 주입 시험을 요구하지 않는다.
 
 ## 6. 완료 판정
-현재: Active+Standby2 운용 확인 / 공개 Windows CI 확인 / 운영 접수 및 작업 성공 검증 미완료.
-문서 수정·13개 격리시험을 운영 HA 전체 완료로 집계하지 않는다.
+현재: Supervisor/6 Runner/Watchdog/Standby2 운영 정상 관측 + 공개 Windows CI 격리시험 + **Public 유지보수기 source-only main 반영 및 1파일 인계 승인 manifest 준비 완료**.
+**미완료:** 운영 유지보수기 실제 설치와 receiver origin 검증, Controller Public-safe 설치 및 정규 Public A Workflow 활성화, 새 A급 작업 실행·JSON/TXT 원격 readback, B effect 인증 수신 경로.
+문서·CI·main 병합만으로 실제 PC 자동 업무 재개 또는 전체 HA 완료를 선언하지 않는다.
