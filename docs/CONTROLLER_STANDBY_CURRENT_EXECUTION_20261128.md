@@ -3,6 +3,23 @@
 총괄: zgmini / codex/controller-ops-lessons-20261105
 이 문서는 R3/R4의 과거 기록을 보존하면서 현재 다음 행동을 정정한다.
 
+## 0. 2026-11-28 03:51 KST 복구 후 우선 판정 — 과거 4/8 기록 대체
+
+**현재 우선 결론:** Public 저장소에서 일반 작업자 PC 업무 재개에 필요한 Controller 설치·실행 복구 **8/8(100%) 완료**. 아래 §1 및 §5~§6의 `3c7d4cfe…`, `POLL_WAIT`, `4/8(50%)`, B 미설치·A 미실행 문구는 **각 관측 시점의 복구 전 역사 기록**이며 최신 운영 상태/실행 지시가 아니다. S6 원본 `#3947/#4069`의 과거 불확실성 및 전원·호스트 장애까지 포함한 모든 HA 전환 보증은 이 완료 범위에 포함하지 않는다.
+
+| 검증 대상 | 현재 증거 기반 판정 |
+|---|---|
+| B급 Controller 복구 | 독립 인증 Windows 운영자 원본 요청 [#4263](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4263#issuecomment-7225893906) `PASS/B4263_ORIGINAL_REQUEST_RECOVERED`. 실제 설치 Controller `555f95708984580cd7d5a0fd05a80b718e867710`. 원본 요청 중복 실행·신규 B 요청 없음. |
+| Public 일반 A 실행 | [#4266 Run 46051863226](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46051863226) `core-status`, [#4267 Run 46052065337](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46052065337) `runner-smoke`: Windows `public-approved-a` 각각 SUCCESS, seat 6, 설치 SHA 일치. 기존 고유 원본 요청과 [공개 JSON/TXT 2쌍](https://github.com/ansqhd5774-Choi/zgmini-pc-control/tree/main/results) 필드 일치. 별도 재실행 불필요. |
+| 복구 후 Runtime·수신기 | 운영 PC 읽기 전용 관측 `2026-11-27T18:51:09.042Z`(28일 03:51 KST): `runtimeState=HEALTHY`, Controller 파일 검증, Supervisor owner/heartbeat/6 children, Runner 6/6 online·idle, Workflow active, Watchdog HEALTHY, 설치 lease 미보유·backlog open 0. 유지보수기 신원·최신성 검증, `PUBLIC_SOURCE_ONLY/SOURCE_ONLY_VERIFIED` 정상 보호. [#4263 최종 관측](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4263#issuecomment-7225955420). |
+| Standby **2개 최신 동시** READY | **재확인 미완료**. 이전 [#4156 원본](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4156#issuecomment-7221305213)은 11월 27일 23:49:41 KST `standby1=READY, standby2=READY, standbyReadyCount=2`를 증명. 03:51 복구 후 관측에는 `standby=READY`만 명시되어 2개를 그 시각 동시에 검증했다고 주장할 수 없음. 이것은 이미 복구된 일반 A 업무의 전역 BLOCKER가 아님. |
+| 로컬 비공개 전체 JSON/TXT | **독립 재열람 미확인**. 공개 `results/46051863226-1-seat-6.{json,txt}` 및 `results/46052065337-1-seat-6.{json,txt}`의 `PASS`·requestId·operation·SHA 일치는 GitHub에서 직접 재조회. 그러나 `SUMMARY_ONLY/PUBLIC_RESULT_CODE_REDACTED`이므로 Windows 로컬 비공개 원문 전체 확인의 대체가 아님. 운영 비공개 원문을 GitHub에 올리지 않는다. |
+| 비신뢰 요청 차단 | Public B 자동적용 금지 및 소스/부정 회귀시험 증거는 유효. 추가 악성 요청 실주입은 수행하지 않았으며 이번 복구 종단 성공의 필수 재시험으로 확대하지 않는다. |
+
+**다음 읽기 전용 확인:** 기존 공식 Windows 상태 계약으로 동일 관측시각의 Standby 2개 READY 원본을 확인하고, 허용된 기존 경로에서 로컬 전체 결과의 존재·내용을 독립 대조한다. 재조회가 불가능하면 해당 두 항목만 `UNVERIFIED`로 남긴다. 새 Controller 설치·B 재승인·Runner/Watchdog 재시작·Workflow 수동 변경·복구명령 재실행·장애 주입은 하지 않는다.
+
+---
+
 ## 1. 현재 완료·미완료
 - 현재 Supervisor PID 25256, Watchdog PID 43904, Controller source 3c7d4cfefacf072fd35cb19706b352c64c5e4fd2.
 - 2026-11-27 23:36 KST 직접 사후검증 11/11: 정상 heartbeat/owner, Controller manifest 바이트, 살아 있는 6자식, Watchdog HEALTHY, 두 Standby READY, GitHub Runner 6/6 Online.
@@ -40,7 +57,7 @@
 - 이것은 보조 Controller 관련 공개 CI 분리이며 기존 모든 CI의 완전한 이관·무제한 무료 보장을 의미하지 않는다.
 - 기존 운영 저장소에 GitHub-hosted job을 사용하는 Workflow 5개가 있어 비공개 전환 시 할당량 사용 범위가 남는다. self-hosted 운영 작업 자체와 구분한다.
 
-## 5. 다음 필수 행동 — Public 유지 및 실제 PC 재개
+## 5. 과거 다음 필수 행동 — Public 유지 및 실제 PC 재개(복구 전 당시 기록)
 2026-11-28 사용자가 `zgmini-pc-control` Public 유지를 확정했으므로 과거 비공개 전환 후보는 **폐기**한다. 요금제 변경·가시성 변경을 실행 재개의 대안으로 되살리지 않는다.
 
 확정된 직접 원인: 기존 `pc-job.yml` Private 전용 Job과 설치 Controller의 Private 검증 때문에 Public에서 A Job SKIPPED (#4230), 독립 유지보수기 Private 검증 때문에 `POLL_WAIT / GITHUB_PRIVATE_REPOSITORY_REQUIRED` (#4156). 기존 Supervisor/6 Listener/Watchdog/Standby2 정상 상태와 구분한다.
@@ -94,7 +111,7 @@
 - 기존 `tools/update.mjs`의 안전한 적용 순서는 별도 인증+원본 CAS·원장 → staging → Public Workflow pause → 6 Runner/업로드 drain+lease → snapshot/보호 readback → 독립 Supervisor owner 정확 stop/4파일 교체/6 Runner reconnect → Workflow resume/backlog 보존 → 기존 고유 postcheck 최초 1회 실행·원본/공개 결과 비교 → 필요 시 정규 rollback. 현장 실제 B 적용은 미실행, 건강한 6 Runner/Watchdog/Standby·DB/D1·UNKNOWN 보존. [Issue #68 실증/차단 근거](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-7224557021).
 - **완료 판정**: 5단계 SHA/4파일 원본·소스 검증 및 사후검사 연결 후보는 완료, **B 별도 운영 승인·인증된 독립 Windows 적용 경로·직전 CAS 미확보로 5단계 미완료**, 전체 **4/8(50%)** 유지. 4-6 Public A 접수·조기 실행 차단은 실Run 완료, 그러나 목표 설치 후 A PASS 아님.
 
-### 다음 실제 필수 실행
+### 당시 다음 실제 필수 실행(복구 전 역사 기록, 재실행 지시 아님)
 1. **유지보수기 독립 C급 handoff 이미 완료**: 사용자 제공 Windows 실행 원본에서 `status=PASS`, `code=STOPPED_RECEIVER_HANDOFF_AND_WINDOWS_ORIGIN_VERIFIED`, 교체 source `feaf0a380890663d8881881bea63587576188c76`. [Issue #68/7223128772](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-7223128772). 동일 인계 **재실행 금지**. 이는 인계 시점 Receiver origin 검증이지 이후 지속 `PUBLIC_SOURCE_ONLY` poll 검증은 아니다. 정상 Supervisor·Runner·Watchdog는 변경하지 않는다.
 2. **Public Controller B 설치 효과 승인·인증 경로가 별도 필요**: 현 유지보수기 `3bed26ec...`는 `PUBLIC_SOURCE_ONLY`이며 `PUBLIC_B_EFFECT_SEPARATE_AUTH_REQUIRED`를 유지한다. 정상 Supervisor·Runner를 일괄 중단하지 않고 새 Controller 4파일 선택적 적용을 위한 host/file CAS·owner·lease·스냅샷·복구 조건 및 별도 인증된 적용 경로를 확보한다. **Public A Workflow는 위 4-6에서 이미 활성화됐으나** 운영 Controller가 구버전이면 설치본 검사에서 안전하게 차단된다. 따라서 B 설치 후 postcheck Issue 최초 이벤트에서 가드를 통과하는지 검증해야 하며, C 인계를 B 권한으로 재해석하지 않는다.
 3. **이미 활성인** Public A Workflow가 실제 target Controller 설치 뒤 정상 `runner-smoke`를 수행하는지, 새 고유 Owner A 한 건에서 Run/Job/seat·Supervisor owner 검사·로컬 JSON/TXT·공개용 안전 projection 원격 readback을 대조한다. 기존 구버전 차단 시험 Issue #4255/#4257은 재실행하지 않는다.
@@ -102,7 +119,7 @@
 
 최신 중앙 원장 [#68/7223430357](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-7223430357). 사용자에게 임의 CMD 반복이나 추가 장애 주입 시험을 요구하지 않는다.
 
-## 6. 완료 판정
-현재: Supervisor/6 Runner/Watchdog/Standby2 운영 정상 관측 + 공개 Windows CI 격리시험 + **Public 유지보수기 독립 인계 실제 PASS(해당 시점 신규 Receiver 출처 검증)** + Public-safe Controller 소스 main 반영 + 정확한 4파일 선택 통합 후보·source-only 회귀시험 완료.
-**최신 완료:** 유지보수기 `3bed26ec...` 독립 Windows C 인계 PASS 및 Public SOURCE_ONLY 실측, Stage 4-6 Public owner A Workflow `main` 병합·GitHub 실Run·Windows Runner 배정·구버전 차단·hosted 후보 정상 readback까지 확인. **최종 정상 A 업무 미복구:** Controller 4파일 `20d5bbbf...` 실제 B 설치 효과 인증/현장 CAS·백업·복구/실행, 설치 후 최초 owner A 정상 PASS, 로컬 원본 및 원격 안전 JSON/TXT 회수. Public B 효과 계속 HOLD. 4/8단계(50%)지만 종단 기능 복구가 아님.
+## 6. 과거 완료 판정(복구 전 당시 기록)
+당시: Supervisor/6 Runner/Watchdog/Standby2 운영 정상 관측 + 공개 Windows CI 격리시험 + **Public 유지보수기 독립 인계 실제 PASS(해당 시점 신규 Receiver 출처 검증)** + Public-safe Controller 소스 main 반영 + 정확한 4파일 선택 통합 후보·source-only 회귀시험 완료.
+**당시 마지막 완료:** 유지보수기 `3bed26ec...` 독립 Windows C 인계 PASS 및 Public SOURCE_ONLY 실측, Stage 4-6 Public owner A Workflow `main` 병합·GitHub 실Run·Windows Runner 배정·구버전 차단·hosted 후보 정상 readback까지 확인. **최종 정상 A 업무 미복구:** Controller 4파일 `20d5bbbf...` 실제 B 설치 효과 인증/현장 CAS·백업·복구/실행, 설치 후 최초 owner A 정상 PASS, 로컬 원본 및 원격 안전 JSON/TXT 회수. Public B 효과 계속 HOLD. 4/8단계(50%)지만 종단 기능 복구가 아님.
 문서·CI·main 병합만으로 실제 PC 자동 업무 재개 또는 전체 HA 완료를 선언하지 않는다.
