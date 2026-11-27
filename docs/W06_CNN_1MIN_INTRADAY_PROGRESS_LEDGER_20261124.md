@@ -978,3 +978,13 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - **회귀시험 추가:** `tests/r4-cnn-public-observed-route-36.test.mjs` 커밋 `f20c43c1a01f61673c417a80bf4bf0f48d5211e0`. 금요일 마지막 원본→일요일 조회/별도 PC 확인 기록, 월요일 신규 실제 관측→1D 오래된 금요일 점 제외 및 1W 유지 두 사례 추가. 모의 D1도 `ORDER BY snapshot_key DESC LIMIT 2` 읽기를 재현하도록 변경.
 - **현재 검증 경계:** GitHub 소스 커밋 반영 완료, 정확 HEAD `f20c43c1`의 CI check-runs **0개**(PASS 아님), PR·main 병합·Production 배포 **없음**. 전용 브랜치는 main에 대해 기존 분기 이력이 커서 직접 PR 시 무관한 변경 혼입 위험이 있다. 사용자 기존 브랜치와 상대 작업자 이력은 변경하지 않았다. 현재 운영 1D가 고쳐졌다고 주장하지 않는다.
 - **다음 행동:** 소스 이력 보존 상태에서 최신 main과 이 API·회귀시험 변경만 충돌 없이 통합하는 정규 PR 경로 확보 → 정확 PR HEAD에서 Node/타입/관련 CI 검증 → 승인된 Git Integration Production 배포와 휴장일 실화면 검증. W06 신규 원본 SQLite→D1→API→화면 종단은 여전히 **0/1**, 공통 Supervisor 복구와 분리 관리.
+
+
+### 20-68. W06 주말·연휴 1D API 실제 소스 격리 시뮬레이션·예외 보완 (2026-11-27 KST)
+
+- **시뮬레이션 기준:** `app/api/fear-greed/observations/route.ts`의 GitHub 전용 브랜치 원문을 취득해 TS 타입만 제거한 실제 요청 처리 함수를 격리 V8에서 실행. 원본 `cnn-observed-archive-r1.mjs`, `cnn-observed-reader-integrity-r1.mjs`, `cnn-observed-sampling-r1.mjs` 재사용; Cloudflare D1 `SELECT`만 합성, 동작 시각·UTC 날짜·원본 관측을 합성 입력. 실제 운영 PC·CNN 공급처·DB/D1·배포 쓰기/조회 **0**. 이는 CI/Production 실측이 아니다.
+- **초기 원본 API (blob `c939e083...`) 격리 결과:** 19개 시나리오 중 **18 PASS, 1 FAIL**. 금요일→토·일·월 휴장, 월요일 신규 원본과 1W 보존, 원본·PC 확인 구분, 중복/상충/0점, UTC 24h 경계·DST·custom range는 PASS. 반례는 최근 UTC 두 날짜가 허용 형식의 `observations:[]` 행일 때 실제 금요일 원본이 가려지는 실패였다. 처음의 테스트 변환 오류(논리 연산자 손상)는 시뮬레이터 자체 결함으로 분리·수정하여 위 18/19는 그 이후 실제 계산 결과다.
+- **원인 최소 보완:** API 커밋 `69f789343009c3600b29dfd021ab6be2451e86ab` → 타입 보존 정리 `2bb7a7b614b522fada3bc89d5f078d9b3890a1db`. 정상 시 최근 원본 날짜 D1 2행 조회 유지, 빈 날짜 아카이브가 감지된 경우에만 최대 371행의 별도 읽기로 원본이 있는 최근 두 날짜를 찾음. 잘못된 JSON/버전/시각은 기존 실패 닫힘 503 유지. D1 읽기 계약만 변경; PC 정책/Task/원본/DB/D1 쓰기 없음.
+- **실제 시험 코드:** 기존 `tests/r4-cnn-public-observed-route-36.test.mjs`에 빈 아카이브 복원·손상된 최신 행 503 회귀 2건 추가, 커밋 `027e0afe864fca5d849721b7d77738f7cb195dd2`. 기존 금요일 주말·월요일 복귀 테스트 2건과 합쳐 신규 4건. 시험 파일 GitHub 반영은 실제 CI PASS와 구분한다.
+- **수정 후 재시뮬레이션:** 수정된 API blob `4220f26142fda0cd770e3f3fe62ce8a950b0dc56`의 실제 로직을 같은 격리 V8에서 재실행, 정상·주말·연휴·월요일 복귀·빈 날짜 1/2개·손상된 최신 JSON 503·1W 보존·PC 체크 비합성 등 **핵심 12/12 PASS**. 정상 1D는 SELECT 2회(아카이브·PC 확인), 예외 빈 날짜 시 SELECT 3회. 시뮬레이션은 Cloudflare D1 실제 실행/성능, 빌드 CI, 배포·운영 데이터 일치를 증명하지 않는다.
+- **현 상태:** 기존 W06 전용 브랜치에만 API+테스트+원장 커밋. 정확 HEAD Node.js/TypeScript/CI 검증 미실행, `main` 미병합, Production 미반영, 신규 CNN SQLite→D1→API→화면 종단 **0/1** 유지. 기존 W06 브랜치는 main과 큰 폭으로 분기해 직접 PR 시 무관 변경 혼입 위험을 보존한다.
