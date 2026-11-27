@@ -3,6 +3,18 @@
 총괄: zgmini / codex/controller-ops-lessons-20261105
 이 문서는 R3/R4의 과거 기록을 보존하면서 현재 다음 행동을 정정한다.
 
+## PR #4300 후속 선별 설치 후보 — 2026-11-28 KST (소스 준비, Windows 미적용)
+
+**기존 운영 복구 상태 보존:** #4299 Controller `cde1dd372210e4658ae348cb9e2577967cb11634` 실제 설치·사후 #4301 PASS, #4156 독립 2/2 PASS, host inventory 83/83 일치. 원 요청·Claim·보호 lease/설치 재실행하지 않는다.
+
+- 원인: 설치된 `controller/operations.mjs`는 #4266/#4267 과거 원장의 당시 `actualExecutionSha`를 **현재** `host.controllerSourceSha`와 비교하여 정상 업그레이드 뒤 오판. [PR #4300](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4300) main `e5bfdf58b0876fa51b75fe3c694f420504a69885`에서 당시 `555f95708984580cd7d5a0fd05a80b718e867710`으로 고정한 수정과 해당 함수 비교 일치.
+- 소스 후보: [전용 브랜치](https://github.com/ansqhd5774-Choi/zgmini-pc-control/tree/codex/controller-audit-4300-selective-20261128)·커밋 [`d3764580fdb08ecddd5f9b1064051eec30f90492`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/commit/d3764580fdb08ecddd5f9b1064051eec30f90492). sole parent `cde1dd...`; GitHub compare `ahead=1/behind=0`, `controller/operations.mjs` 단 1파일 +1/-1. 후보 파일 SHA-256 `6c0441108c244d1d5dd58e7793b785a371169a9d96b69e606200d905e8f59966`; 기존 설치 파일의 SHA-256 `0507663515206b97bb2cad72a2b3fb19032d5ab0f3c2bdd1305eaa6d225d5375`와 별도 대조. 단일 파일 manifest fingerprint `ded54e837f8dfac59bed4b8bb83258668a9e3693cb5dffe1d1c9e2e9ef0aa6b5`.
+- [Draft PR #4302](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4302): 새 정확 1파일 효과의 selective pin과 B manifest 초안 작성. `checks.status=PROPOSED_NOT_APPROVED`; 승인·설치 가능 manifest가 아님. 이전 승인 #4283과 독립. 본문 PR 번호에 연결했고 다음 범위는 새 효과별 승인/정확 source 보호 구현이 필요하다.
+- **현재 운영 적용 상태:** 새 후보 `d376...`은 **미설치**. 기존 설치 `cde1dd...` 계속 유지. #4300 main 소스 48/48 회귀 PASS와 이번 정확 함수 비교/선별 diff는 소스 증거일 뿐 새 Windows A handler PASS·운영 설치 증거가 아니다.
+- **남은 필수 행동:** Draft #4302의 정확 변경 효과를 사용자 승인/소스 CI 계약으로 확정하고, 현 독립 operator·`tools/update.mjs`의 과거 #4283 한정 정책과 Public A 설치 SHA/파일 가드를 신규 1파일 효과에 맞게 정규 확장·검증. 승인 뒤 실제 Windows preimage CAS·lease·backup/rollback과 새로운 고유 B 실행 및 A 사후 JSON/TXT를 회수한다. 기존 #4299·#4301·#4156 결과는 재실행/재해석 금지. 승인 없는 추가 운영 변경 없음.
+
+---
+
 ## 최신 실제 운영 증거 — 2026-11-28 06:53 KST (아래 과거 미완료 보고보다 우선)
 
 **승인된 Controller 운영 설치와 추가 독립 감사 2건을 실제 PC에서 완료했다.** 소스 CI로 완료를 추정한 결과가 아니다.
