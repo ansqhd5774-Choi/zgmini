@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import ts from 'typescript';
 import {CNN_OBSERVED_ARCHIVE_KEY,CNN_OBSERVED_ARCHIVE_VERSION} from '../lib/cnn-observed-archive-r1.mjs';
-import {sampleCnnObservedPoints} from '../lib/cnn-observed-sampling-r1.mjs';
+import {sampleCnnObservedPoints,projectCnnObservedPeriodPoints} from '../lib/cnn-observed-sampling-r1.mjs';
 import {addStoredCnnObservation,addStoredCnnVerifiedCheck} from '../lib/cnn-observed-reader-integrity-r1.mjs';
 
 // Exercise the real Cloudflare GET source against two SELECT-only D1 result
@@ -48,11 +48,11 @@ function harness({stored=[],verified=[],timeNow=now}={}){
  }}};
  const exports={};
  const GET=new Function('exports','env','CNN_OBSERVED_ARCHIVE_KEY',
-  'CNN_OBSERVED_ARCHIVE_VERSION','sampleCnnObservedPoints',
+  'CNN_OBSERVED_ARCHIVE_VERSION','sampleCnnObservedPoints','projectCnnObservedPeriodPoints',
   'addStoredCnnObservation','addStoredCnnVerifiedCheck','Date','Response','URL',
   compiled+'\nreturn exports.GET;')(
   exports,env,CNN_OBSERVED_ARCHIVE_KEY,CNN_OBSERVED_ARCHIVE_VERSION,
-  sampleCnnObservedPoints,addStoredCnnObservation,addStoredCnnVerifiedCheck,
+  sampleCnnObservedPoints,projectCnnObservedPeriodPoints,addStoredCnnObservation,addStoredCnnVerifiedCheck,
   Clock,Response,URL);
  return {GET,queries};
 }
@@ -233,4 +233,15 @@ test('W06 fallback never conceals a malformed recent public archive',async()=>{
  const response=await harness({stored,timeNow:Date.parse(sunday+'T20:00:00Z')}).GET(request('1D'));
  assert.equal(response.status,503);
  assert.equal((await response.json()).status,'STORED_ARCHIVE_INVALID');
+});
+
+test('W06 holiday 1D fix preserves the latest main 1M five-hour source buckets',async()=>{
+ const stored=[archive(day,[obs('00:10:00',20),obs('00:50:00',21),obs('05:10:00',22)])];
+ const body=await (await harness({stored}).GET(request('1M'))).json();
+ assert.deepEqual(body.points.map(p=>p.observedAt),[
+  day+'T00:50:00.000Z',day+'T05:10:00.000Z',
+ ]);
+ assert.deepEqual(body.points.map(p=>p.score),[21,22]);
+ assert.equal(body.totalObservedPoints,3);
+ assert.equal(body.sampled,true);
 });
