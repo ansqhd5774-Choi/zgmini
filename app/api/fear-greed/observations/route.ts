@@ -1,6 +1,6 @@
 import {env} from 'cloudflare:workers';
 import {CNN_OBSERVED_ARCHIVE_KEY,CNN_OBSERVED_ARCHIVE_VERSION} from '../../../../lib/cnn-observed-archive-r1.mjs';
-import {sampleCnnObservedPoints} from '../../../../lib/cnn-observed-sampling-r1.mjs';
+import {sampleCnnObservedPoints,projectCnnObservedPeriodPoints} from '../../../../lib/cnn-observed-sampling-r1.mjs';
 import {addStoredCnnObservation,addStoredCnnVerifiedCheck} from '../../../../lib/cnn-observed-reader-integrity-r1.mjs';
 
 // Public stored-score reader only; never calls CNN or starts collection.
@@ -19,23 +19,20 @@ export async function GET(request:Request){
  const now=Date.now();
  const start=custom?from!:new Date(now-(days-1)*MS_DAY).toISOString().slice(0,10);
  const end=custom?to!:new Date(now).toISOString().slice(0,10);
- // 1D is anchored to CNN's last stored source day, not the wall-clock day:
- // weekends and multi-day exchange holidays must retain the last real 24h.
- // At most two UTC day rows can contain a 24h source-observation window.
+ // Use the last stored CNN source day for the default 1D view. A weekend or
+ // holiday must not make the last real observations disappear from the chart.
  const latestSourceDay=period==='1D'&&!custom;
  const initialRows=latestSourceDay
   ? await env.DB.prepare("SELECT snapshot_key,body FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? ORDER BY snapshot_key DESC LIMIT 2")
     .bind(CNN_OBSERVED_ARCHIVE_KEY).all<{snapshot_key:string,body:string}>()
   : await env.DB.prepare("SELECT snapshot_key,body FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? AND snapshot_key BETWEEN ? AND ? ORDER BY snapshot_key ASC LIMIT 371")
     .bind(CNN_OBSERVED_ARCHIVE_KEY,start,end).all<{snapshot_key:string,body:string}>();
- // Empty archived dates are legal but must not hide the last populated day.
- // The wide, bounded read is only needed for this exceptional case.
  const isEmptyArchiveDay=(row:{snapshot_key:string,body:string})=>{
   try{
    const body=JSON.parse(row.body);
    return body?.version===CNN_OBSERVED_ARCHIVE_VERSION&&body.date===row.snapshot_key
     &&Array.isArray(body.observations)&&body.observations.length===0;
-  }catch{return false;} // Keep invalid rows for the existing 503 validation.
+  }catch{return false;}
  };
  let archiveRows=initialRows.results??[];
  if(latestSourceDay&&archiveRows.some(isEmptyArchiveDay)){
@@ -53,8 +50,8 @@ export async function GET(request:Request){
  const byTime=new Map<string,{observedAt:string,score:number}>();
  let validDays=0;
  for(const row of archiveRows){
-  let entry:any;
-  try{entry=JSON.parse(row.body)}catch{return Response.json({status:'STORED_ARCHIVE_INVALID'},{status:503});}
+  let entry:{version?:unknown;date?:unknown;observations?:unknown}|null;
+  try{entry=JSON.parse(row.body) as typeof entry;}catch{return Response.json({status:'STORED_ARCHIVE_INVALID'},{status:503});}
   if(entry?.version!==CNN_OBSERVED_ARCHIVE_VERSION||entry.date!==row.snapshot_key||!Array.isArray(entry.observations))
    return Response.json({status:'STORED_ARCHIVE_INVALID'},{status:503});
   validDays++;
@@ -74,8 +71,8 @@ export async function GET(request:Request){
    .bind(start,end).all<{snapshot_key:string,body:string}>();
  const checkedByTime=new Map<string,{checkedAt:string,sourceObservedAt:string,score:number}>();
  for(const row of checkedRows.results??[]){
-  let entry:any;
-  try{entry=JSON.parse(row.body)}catch{return Response.json({status:'STORED_CHECKS_INVALID'},{status:503});}
+  let entry:{version?:unknown;date?:unknown;checks?:unknown}|null;
+  try{entry=JSON.parse(row.body) as typeof entry;}catch{return Response.json({status:'STORED_CHECKS_INVALID'},{status:503});}
   if(entry?.version!=='CNN_VERIFIED_CHECKS_R1'||entry.date!==row.snapshot_key||!Array.isArray(entry.checks))
    return Response.json({status:'STORED_CHECKS_INVALID'},{status:503});
   for(const item of entry.checks){
@@ -96,11 +93,13 @@ export async function GET(request:Request){
  const saved=[...byTime.values()].sort((a,b)=>a.observedAt.localeCompare(b.observedAt));
  const lastSource=saved.at(-1)?.observedAt;
  const lastSourceTime=lastSource?Date.parse(lastSource):NaN;
- // Other dates returned by the bounded two-row read are not part of this 1D.
  const all=latestSourceDay&&Number.isFinite(lastSourceTime)
   ? saved.filter(point=>Date.parse(point.observedAt)>=lastSourceTime-MS_DAY)
   : saved;
- const points=custom||period==='1D'||period==='1W'?all:sampleCnnObservedPoints(all);
+ // Do not apply index-based extrema sampling before a genuine period bucket.
+ // The 1M/3M/6M/1Y line must use the last *real* observedAt in each bucket.
+ // Keep 1D, 1W, custom <=7-day lookups and verified PC check sampling unchanged.
+ const points=custom||period==='1D'||period==='1W'?all:projectCnnObservedPeriodPoints(all,period as '1M'|'3M'|'6M'|'1Y');
  const rangeEnd=latestSourceDay&&lastSource?lastSource.slice(0,10):end;
  const rangeStart=latestSourceDay&&lastSource
   ? new Date(Date.parse(rangeEnd+'T00:00:00Z')-MS_DAY).toISOString().slice(0,10)
