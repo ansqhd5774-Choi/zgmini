@@ -37,22 +37,22 @@ export async function GET(request:Request){
     &&Array.isArray(body.observations)&&body.observations.length===0;
   }catch{return false;} // Keep invalid rows for the existing 503 validation.
  };
- let rows=initialRows;
- if(latestSourceDay&&(initialRows.results??[]).some(isEmptyArchiveDay)){
+ let archiveRows=initialRows.results??[];
+ if(latestSourceDay&&archiveRows.some(isEmptyArchiveDay)){
   const fallback=await env.DB.prepare("SELECT snapshot_key,body FROM public_feed_snapshots_v1 WHERE kind='output' AND feed_key=? ORDER BY snapshot_key DESC LIMIT 371")
    .bind(CNN_OBSERVED_ARCHIVE_KEY).all<{snapshot_key:string,body:string}>();
-  const selected:typeof initialRows.results=[];
+  const selected:typeof archiveRows=[];
   let populatedDays=0;
   for(const row of fallback.results??[]){
    selected.push(row);
    if(!isEmptyArchiveDay(row))populatedDays++;
    if(populatedDays===2)break;
   }
-  rows={results:selected};
+  archiveRows=selected;
  }
  const byTime=new Map<string,{observedAt:string,score:number}>();
  let validDays=0;
- for(const row of rows.results??[]){
+ for(const row of archiveRows){
   let entry:any;
   try{entry=JSON.parse(row.body)}catch{return Response.json({status:'STORED_ARCHIVE_INVALID'},{status:503});}
   if(entry?.version!==CNN_OBSERVED_ARCHIVE_VERSION||entry.date!==row.snapshot_key||!Array.isArray(entry.observations))
