@@ -1021,3 +1021,10 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 
 - GitHub 연결 경로로 위 5개 파일을 사용자 지정 전용 브랜치에 반영했고, 각 파일 원문을 원격 재조회하여 작성 내용과 **5/5 동일**함을 확인했다. 최종 원격 HEAD [`2b5e6c0f80d7f7de2d9f5e9f3a1a3f8ac96706ac`](https://github.com/ansqhd5774-Choi/zgmini/commit/2b5e6c0f80d7f7de2d9f5e9f3a1a3f8ac96706ac). 일반 Git HTTPS push는 이 환경에서 자격증명 부재로 실패했으나 GitHub 연결 저장과 원격 readback은 성공했다.
 - 정확 최종 HEAD의 GitHub workflow run 조회 결과 **0건**. 로컬 17/17 PASS를 CI PASS로 확대하지 않는다. `main`은 `e6ca2cba11382358d1c568cc52f8b0112d14fdad` 그대로이며 PR/병합/Production 반영 없음. W06 자연 신규 원본 종단 0/1 유지.
+
+### 20-73. 현재 main과 W06 주말 1D 실제 코드 동등 입력 재현 (2026-11-28 KST)
+
+- **동일 날짜·시각·점수로 비교:** main API route blob `d54a867d518486ddb9cea64d78b352892f6b0b76`와 W06 route blob `978d4ddbb105d7665d47e9fe12422067d0772f6d`를 직접 취득하고 TypeScript 타입 표지만 제거해 별도 V8 GET으로 실행, D1 `SELECT`만 합성했다. 실제 운영 D1/SQLite/공급자 쓰기/읽기 0. [W06 이슈 원장](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4082#issuecomment-7222069766)에 시험 입력과 판정 기록.
+- **결과:** 토요일 보존 원본 `main 1점 / W06 2점`; 일요일(금요일 마지막 원본) `main PENDING 0점 / W06 READY 2점`; 일요일 빈 날짜 아카이브 2건 `main PENDING 0점 / W06 READY 1점`. 운영 main UTC 오늘·어제 날짜 조회 결함과 수집 시작 24시간 미만의 정상 공백은 독립 현상. synthetic 입력의 운영 발생 여부는 미확인.
+- **적용 제약:** main `e6ca2cba11382358d1c568cc52f8b0112d14fdad`; W06 전용 HEAD 조회 당시 `79c9fd0bac81b4f70ef56ee0b17bf0fcf0776659`; `ahead=152/behind=126`, PR diff 32파일. 전체 W06 PR/병합은 무관 변경을 초래하므로 금지. 기존 AGENTS.md의 지정 브랜치 밖 신규 임의 브랜치 금지 및 main PR 계약을 지켜 **현 단계 main 수정/운영 배포 0**. 최신 main 기반 선별 API+test만 통합할 명시적 브랜치 경로가 확보되어야 함.
+- **PC 최신 상태:** Supervisor/Watchdog/Runner 6/6/Standby2 READY 현장 직접 관측 PASS(23:42~23:50 KST), 그러나 `zgmini-pc-control` Public + private-only workflow/maintainer가 일반 Job/maintenance intake 차단. 기존 고유 [#4230](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4230) SKIPPED. 보안 제한 제거·Public/Private 임의 변경·중복 A 실행 없음. 전체 신규 CNN observedAt 원본→SQLite→D1→API→PC/모바일 종단 0/1 유지.
