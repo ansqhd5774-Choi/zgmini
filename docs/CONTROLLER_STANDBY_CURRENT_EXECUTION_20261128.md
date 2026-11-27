@@ -3,6 +3,17 @@
 총괄: zgmini / codex/controller-ops-lessons-20261105
 이 문서는 R3/R4의 과거 기록을 보존하면서 현재 다음 행동을 정정한다.
 
+## PR #4300 신규 1파일 효과 승인/소스 main 통합 — 2026-11-28 KST
+
+- 사용자는 #4302 신규 정확 1파일 B 효과 승인이 필요하다는 안내 직후 현 대화에서 **“작업해라”**라고 지시. 해당 변경 진행 지시를 [PR #4302 댓글 #7229078819](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4302#issuecomment-7229078819)에 범위별로 기록했다. 이는 독립 Windows/GitHub Owner의 인증이나 이미 수행한 운영 적용을 대신하지 않는다.
+- B 효과 명세 [PR #4302](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4302) **MERGED**; 정확 approval merge `b7b7eb92802d0e974ee3ad9a2d2689e37ae41bb4`, 원 HEAD `75bec5d5d115eb150fa4dfd1347c1063c42b74f7`. 기존 `cde1dd372210e4658ae348cb9e2577967cb11634` → 선별 후보 `d3764580fdb08ecddd5f9b1064051eec30f90492`, `controller/operations.mjs` 정확 1파일 SHA-256 `6c0441108c244d1d5dd58e7793b785a371169a9d96b69e606200d905e8f59966`; 배포 산식·데이터·DB/D1·예약 변경 없음.
+- 독립 Windows Owner 실행기·정확 B 보호 정책·Public A 3-SHA guard [PR #4304](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4304) **MERGED**; 정확 reviewed source merge `0c60109f03b41fae4cd81a26d04733a02e23bb4e`, 원 HEAD `748f34c79645805e4665bbff4a1018d20a2e88b1`. 실행기 `tools/controller-lineage-public-b-operator-once.mjs`에서 `SOURCE_PR=4304`, `APPROVAL_MERGE=b7b7eb92802d0e974ee3ad9a2d2689e37ae41bb4` 및 출처 CAS/host CAS/lease/단회 Claim, backup·rollback 계약으로 고정.
+- [Actions #46074638935](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46074638935) (#4302 HEAD) 및 [Actions #46074932419](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46074932419) (#4304 HEAD) 모두 GitHub-hosted `public-source-only SUCCESS`; Windows `source-only SKIPPED`. main에서 `tools/controller-lineage-public-b-operator-once.mjs`, `tools/update.mjs`, 승인 manifest의 정확 SHA/readback 확인; source PR merge `0c601...`와 해당 시점 main 동일.
+- **현재 실제 설치:** 여전히 기존 성공 Controller `cde1dd...`이며 `d376...`의 Windows 독립 Owner `inspect/apply`와 새 PC 사후 JSON/TXT는 **미실행/미회수**. 기존 #4299/#4301/#4156 실제 83/83·Standby 2/2·독립 감사 2/2 PASS 유지, 재실행하지 않는다.
+- **다음 정확 필수 단계 (C급 독립 PC operator):** Windows `PC` 공식 Owner Explorer 세션에서 정규 checkout의 merged source/main bytes CAS를 확인하고 기존 단회 실행기 `tools/controller-lineage-public-b-operator-once.mjs inspect` 1회 수행. `PASS/PUBLIC_B_OPERATOR_PREFLIGHT_READY_ONLY`와 원본 host `cde1dd...`, 설치 lease free, 기존 Claim 부재 및 백업/복구 준비가 사실일 때만 동일 경로 `apply`를 1회 수행. 결과 불명/차단 시 새 Issue나 같은 apply 반복 금지; 기존 Claim/lease/원장 reconciliation. 성공 시 신규 requestId·issue·최종 영수증/신규 설치 SHA 및 `core-status` A postcheck의 고유 JSON/TXT readback으로 실제 적용 검증한다. ChatGPT GitHub 소스 병합만으로 독립 Windows 운영자 인증을 주장하지 않는다.
+
+---
+
 ## PR #4300 후속 정확 HEAD CI 및 PR 충돌 해소 — 2026-11-28 KST
 
 - B 제안 [PR #4302](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4302) Draft·미병합 그대로. `checks.status=PASS`는 검증된 후보의 **소스 테스트** 상태만 나타내며 사용자 B 효과 승인/운영 설치를 뜻하지 않는다. 정확 HEAD `75bec5d5d115eb150fa4dfd1347c1063c42b74f7`, [Actions #46074638935](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46074638935) `public-source-only SUCCESS`/Windows source-only `SKIPPED`. B manifest 원본은 status 변경으로 바뀌었으므로 과거 후보 원문 해시/승인 영수증을 신설하지 않는다.
