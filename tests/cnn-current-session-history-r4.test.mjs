@@ -100,7 +100,8 @@ test('actual CNN card 1D shows genuine source minutes; other periods unchanged',
  const panel=readFileSync(new URL('../app/fear-greed/usa/cnn-panel.tsx',import.meta.url),'utf8');
  assert.match(panel,/selectedPeriod === "1D"[\s\S]*?anchor-86400000/);
  assert.doesNotMatch(panel,/currentCnnSessionHistory\(payload\?\.observedAt/);
- assert.match(panel,/intradayObservations:observedSidecarReady/);
+ assert.match(panel,/windowMinutes:1440/);
+ assert.match(panel,/minuteHistory\?\.connectedLinePoints/);
  assert.match(panel,/if \(selectedPeriod === "6M" \|\| selectedPeriod === "1Y"\)/);
  assert.match(panel,/periodBaseline[\s\S]*?selectedPeriod === "1D"\) return history.length>=2/);
  assert.match(panel,/const minuteMode=selectedPeriod==='1D';/);
