@@ -49,6 +49,7 @@ export type MarketFearGreedChartProps = {
   timeAxis?: MarketChartTimeAxis;
   showLatestPointTouchTooltip?: boolean;
   showIsolatedPoints?: boolean;
+  hideLatestPointMarker?: boolean;
 };
 const Renderer=lazy(()=>import('./market-fear-greed-chart-renderer'));
 export function MarketFearGreedChart(props:MarketFearGreedChartProps){
