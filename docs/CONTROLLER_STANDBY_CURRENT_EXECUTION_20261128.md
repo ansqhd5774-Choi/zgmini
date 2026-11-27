@@ -28,6 +28,15 @@
 
 ---
 
+### 2026-11-28 최신 GitHub 직접 재검증 — PB1 완료 / Windows 보호 단계 미실증
+
+- **PB1 원격 소스 확인 DONE:** #4276, #4283, #4287은 현재 모두 `merged=true`·`closed`. `compare(4d3fe664a90f...main)` 결과 `ahead_by=47, behind_by=0, status=ahead`로 기존 Public B checkout 고정 SHA의 main 조상 조건 충족. 원래 PR 본문의 Draft/미병합/diverged 문구는 당시 이력이며 지금의 운영 상태가 아니다.
+- **정확한 신규 B 효과 승인 내용 대조:** #4283 승인 기록은 설치 원본 `555f95708984580cd7d5a0fd05a80b718e867710` → 목표 `cde1dd372210e4658ae348cb9e2577967cb11634`, 변경 `config/operations.json` SHA-256 `177cb15b40ca34fc415a091bf93f8f6ac6d607ce4d6f7f429a77d73c8abdcccf` 및 `controller/operations.mjs` SHA-256 `0507663515206b97bb2cad72a2b3fb19032d5ab0f3c2bdd1305eaa6d225d5375`로 승인 JSON 두 개와 일치. #4287은 기존 SHA 4파일 guard 유지 및 이 목표 SHA만 추가 2파일 해시로 허용하도록 병합됨.
+- **PB2 현재 직접 차단:** `tools/controller-public-b-operator-once.mjs`는 주석·상수·원본 검증 모두 과거 #4260 `3c7d4cfe... → 555f957...` **4파일 단회 효과 전용**. 신규 #4283 2파일에 상수만 교체해 실행하지 않는다. `tools/maintenance-request.mjs`의 일반 Owner 제출은 Private 전제이고 Public receiver는 별도의 설치된 V2 단일 효과 정책/정확 CI 영수증을 요구한다. 소스 #4276 병합과 GitHub 승인 댓글만으로 Windows V2 설치 정책이 활성화됐음을 증명할 수 없다.
+- **운영 실증 한계:** 이번 조회는 GitHub 원격 조회만 수행. Windows 현재 installed SHA/원본 CAS/owner·lease·백업·복구와 신규 B JSON/TXT **미회수**. #4156의 동시 두 Standby 프로세스 신원·생존 및 두 비공개 A ledger 전체 원본 **0/2 독립 확인**. 정확 신규 target 설치 요청의 검색 결과는 #68/#4156 원장뿐이며 *실제 설치 요청 부재의 완전 증명으로 확대하지 않는다*.
+- **다음 필수:** 설치 계약이 갖춰진 기존 공식 독립 Windows V2 정책의 실제 존재/허용 범위를 안전한 읽기 전용 경로에서 확인 → 정확 2파일 효과의 current CAS·lease·백업/복구를 확인 → 유효한 정규 인가 경로에서만 단회 설치 및 영수증 회수. V2 정책 자체가 아직 없다면 기존 승인과 정확 효과에 부합하는 독립 정책 설치 경로부터 안전하게 구현·검증하며 사용자 승인을 새로 중복 요구하지 않는다. 설치를 기다리는 동안 독립적으로 가능한 #4156 기존 Windows read-only 감사 결과는 회수한다.
+- **현재 단계 결과:** PB1 GitHub 소스/승인 비교 확인 완료, PB2 운영 Windows 독립 정책·CAS 확인 미완료, PB3 설치 0/1, AUD1/AUD2 0/2. 이번 검사에 운영 설치/신규 B·A Issue/워크플로 변수/DB/D1/Runner 변경 없음.
+
 ## 0. 2026-11-28 03:51 KST 복구 후 우선 판정 — 과거 4/8 기록 대체
 
 **현재 우선 결론:** Public 저장소에서 일반 작업자 PC 업무 재개에 필요한 Controller 설치·실행 복구 **8/8(100%) 완료**. 아래 §1 및 §5~§6의 `3c7d4cfe…`, `POLL_WAIT`, `4/8(50%)`, B 미설치·A 미실행 문구는 **각 관측 시점의 복구 전 역사 기록**이며 최신 운영 상태/실행 지시가 아니다. S6 원본 `#3947/#4069`의 과거 불확실성 및 전원·호스트 장애까지 포함한 모든 HA 전환 보증은 이 완료 범위에 포함하지 않는다.
