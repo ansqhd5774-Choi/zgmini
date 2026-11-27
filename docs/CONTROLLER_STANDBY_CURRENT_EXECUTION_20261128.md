@@ -3,6 +3,18 @@
 총괄: zgmini / codex/controller-ops-lessons-20261105
 이 문서는 R3/R4의 과거 기록을 보존하면서 현재 다음 행동을 정정한다.
 
+<!-- process-owner-us-breadth-marketparquet-exclusion-20261128 -->
+## #4135 / 미국 전체 등락지수 R2 — MarketParquet 제외 조건과 실제 Windows 실행 계약 (2026-11-28 재대조)
+
+- **브랜치/권한:** 실제 총괄 브랜치는 `zgmini/codex/controller-ops-lessons-20261105`이며, 표시 접미 `-105`는 현재 GitHub 브랜치로 확인되지 않는다. 연결 GitHub 계정의 `zgmini`/제어 저장소 권한은 admin·push이지만 운영 Windows Owner 인증·B급 설치 승인을 대신하지 않는다. 이 계획 갱신은 브랜치 문서에만 적용하며 운영 source/main/설치와 무관하다.
+- **현행 R2 source가 MarketParquet 기반:** `zgmini/main`의 `scripts/pc-writer/local-cycle.mjs`는 `marketparquet-paid-store.mjs`를 직접 사용한다. `us-breadth-paid-r2-stored.mjs`는 `us-marketparquet-paid-r2-adapter.mjs`와 MarketParquet 달력 provider를 import하고, `worker/us-breadth-paid-r2-contract.mjs`는 `US_PAID_R2_SOURCE=MARKETPARQUET_PAID_SPLIT_ADJUSTED_DAILY`와 `US_PAID_R2_UNIVERSE=US_MARKETPARQUET_ACTIVE_STOCKS`를 강제한다. 따라서 현 소스의 R2 자료 경로는 사용자 제외 조건을 충족하지 못하며, 기존 R2 경로를 MarketParquet 없는 검증된 대체 경로라고 주장하지 않는다. [R2 저장 계산](https://github.com/ansqhd5774-Choi/zgmini/blob/main/scripts/pc-writer/us-breadth-paid-r2-stored.mjs), [공개 계약](https://github.com/ansqhd5774-Choi/zgmini/blob/main/worker/us-breadth-paid-r2-contract.mjs).
+- **기존 승인 불일치:** #4135의 `approvals/writer-updates/us-breadth-paid-r2-guarded-fourfile-natural-idle-20261127.json`은 `APPROVED_B`이지만, 정확 4파일·runCount 1에 `marketparquet-paid-store.mjs` 사용/추가를 포함한다. 현재 제외 지시와 효과가 상충하므로 승인 명세를 그대로 적용·재발행하지 않는다. 설치 source/승인 source, Git blob SHA와 실PC 바이트 SHA-256을 구분한다.
+- **Windows 정규 경로 한계:** 현재 제어 저장소는 Public이다. `.github/workflows/pc-writer-b-source-once.yml`의 B 작업과 `.github/workflows/pc-process-inventory-readonly.yml` 운영 작업에는 `github.event.repository.private == true` 제약이 있다. Public A는 별도 경로로 실행됐지만 공개 결과는 `SUMMARY_ONLY/PUBLIC_RESULT_CODE_REDACTED`여서 동시각 Task·Process·Core lock·checkout probe 원시 SHA를 증명하지 못한다. 별도 기존 승인 독립 Windows Owner의 이 R2 효과 접근·실행 권한은 미입증으로 남긴다. Public/private Gate 또는 결과 공개 제한을 임의 제거하지 않는다.
+- **원본 실행 보존:** [#4135](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4135#issuecomment-7230523766) / [Run 45901622751](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45901622751)은 `WRITER_B_CORE_ACTIVE_WINDOW_DEFERRED`, 167/167 ACTIVE, **설치 전 STOP**이다. 별도 #4134에서 시작 약 62초 전 Core Task Running 관측은 있으나 원본 167개 표본 각각의 원인을 입증하지 않는다. #4314/#4315 source 병합·103/103 hosted CI PASS는 운영 적용 증거가 아니다.
+- **다음 필수 순서:** (1) 현행 MarketParquet 제외 범위에서 **검증된 R2 입력/저장 자료·데이터 정의 및 소유자 승인 효과**를 특정 → (2) 그 효과에 필요한 최소 소스·공개 계약·후보 바이트·manifest·회귀 CI를 정합화 → (3) 정규 인증 Windows Owner의 대상별 읽기/설치 권한·preimage CAS·자원 lease·백업/복구·실제 유휴 증거 확인 → (4) 그 범위에서만 단회 적용 → (5) 원본 requestId/Run·설치 SHA-256·JSON/TXT·저장/공개 결과 readback. (1)~(3) 미충족 상태에서 원본 B 재실행, 새 공급처/Task/DB/D1/보안 정책 변경, 임의 shell 우회를 금지한다. 독립 승인 업무는 계속한다.
+
+<!-- end process-owner-us-breadth-marketparquet-exclusion-20261128 -->
+
 <!-- process-owner-4312-source-ci-reconciliation-20261128 -->
 ## #4312 계보·CI 완료 및 후속 S6/Writer 증거 — 2026-11-28 KST
 
