@@ -988,3 +988,12 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - **실제 시험 코드:** 기존 `tests/r4-cnn-public-observed-route-36.test.mjs`에 빈 아카이브 복원·손상된 최신 행 503 회귀 2건 추가, 커밋 `027e0afe864fca5d849721b7d77738f7cb195dd2`. 기존 금요일 주말·월요일 복귀 테스트 2건과 합쳐 신규 4건. 시험 파일 GitHub 반영은 실제 CI PASS와 구분한다.
 - **수정 후 재시뮬레이션:** 수정된 API blob `4220f26142fda0cd770e3f3fe62ce8a950b0dc56`의 실제 로직을 같은 격리 V8에서 재실행, 정상·주말·연휴·월요일 복귀·빈 날짜 1/2개·손상된 최신 JSON 503·1W 보존·PC 체크 비합성 등 **핵심 12/12 PASS**. 정상 1D는 SELECT 2회(아카이브·PC 확인), 예외 빈 날짜 시 SELECT 3회. 시뮬레이션은 Cloudflare D1 실제 실행/성능, 빌드 CI, 배포·운영 데이터 일치를 증명하지 않는다.
 - **현 상태:** 기존 W06 전용 브랜치에만 API+테스트+원장 커밋. 정확 HEAD Node.js/TypeScript/CI 검증 미실행, `main` 미병합, Production 미반영, 신규 CNN SQLite→D1→API→화면 종단 **0/1** 유지. 기존 W06 브랜치는 main과 큰 폭으로 분기해 직접 PR 시 무관 변경 혼입 위험을 보존한다.
+
+
+### 20-69. PC 자연 수집 HTTP 로그 최종 확인 (2026-11-27 21:40 KST)
+
+- **실행 성공:** 기존 A급 `pc-process-inventory-readonly` / `w06-cnn-task-cadence-readonly`를 새로운 고유 ID로 단회 요청. 제어 [Issue #4226](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4226), [Run 46000525326](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46000525326) `completed/success`, 실제 PC Runner `zgmini-pc-06`. [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/pc-process-inventory-46000525326-1-operating.json) / TXT readback `PASS/W06_TASK_CADENCE_COLLECTED`; 당시 `operationalWrites=0, providerCalls=0, d1Writes=0`.
+- **실제 자연 이력:** `ZGMINI-PC-CNN-Minute` Enabled/Ready/PT1M, lastRun `2026-11-27T12:40:01Z`, lastTaskResult=0. 같은 결과에서 PC 로컬 SQLite HTTP 원장 `CNN_HTTP_LOCAL_2DAY_READ`, 활성화 후 요청 1108건, 최종 설치 readback 이후 **1035요청/1021 VERIFIED**, 요청간격 중앙값 **61초**, 90초 초과 63개, 최대 552초. 최근 10분 HTTP 6건, 마지막 확인 `12:36:59.478Z` 상태 HTTP 200/`INVALID_OUTPUT`, 최신 `VERIFIED` `12:35:20.779Z`. 이 데이터는 매분 신규 `observedAt` 1035건을 뜻하지 않음.
+- **현상 구분:** 다음 12:41:00 UTC 명목 tick은 `lastRetryAt=12:41:43.144Z`보다 먼저여서 `COOLDOWN_RETRY_AFTER` 예정. 기존 Reader와 Source timestamp 혼동 없이 HTTP 결과가 INVALID_OUTPUT인 정확 원인 재현은 미실시. 기존 동작을 임의 수정/재예약하지 않음.
+- **공개 브라우저 참고:** 사용자 연결된 두 기존 홈 화면 탭에서 CNN 점수 17.9 동일, 뉴욕 시간 1D 최종 눈금 06:17→06:52 전진. D1 원본 정밀 `observedAt`/로컬 DB 바이트 일치로 확대하지 않음.
+- **인계:** 관련 실측과 W06 0/1 미완료 경계를 제어 [#4082 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4082#issuecomment-7218572020)에 기록. #4164 일반 A `SUPERVISOR_OWNERSHIP_LOST` 차단은 별도, 본 독립 PC task 조회 성공은 Supervisor 복구 증거 아님. 다음은 Supervisor 정상 복구 후 정밀 `cnn-public-d1-api-readback-readonly` 한 번과 신규 원본 `observedAt/score` 동일성 검증. 추가 Task/PC/Controller/원본 DB/D1 변경 0.
