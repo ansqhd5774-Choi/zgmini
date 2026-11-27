@@ -3,6 +3,19 @@
 총괄: zgmini / codex/controller-ops-lessons-20261105
 이 문서는 R3/R4의 과거 기록을 보존하면서 현재 다음 행동을 정정한다.
 
+<!-- process-owner-4312-source-ci-reconciliation-20261128 -->
+## #4312 계보·CI 완료 및 후속 S6/Writer 증거 — 2026-11-28 KST
+
+- **[Draft PR #4312](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4312)**: 제어 `main@704713392b5394c128104910293e027028b16011`의 Writer B probe 수정과 기존 A 결과 영수증을 보존하는 2-parent merge `ccb2d70dd4bb2c1f9b667ffddc162c44bf521443` 반영. S6 7파일·시험 보존, **behind 3→0, mergeable=true**. 소스 계보 통합을 운영 효과 승인으로 취급하지 않는다.
+- 첫 정확 HEAD [Actions #46083735840](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46083735840) FAIL은 신규 CI paths 6줄이 기존 **불변 Workflow blob pin `a8f49337…`**과 충돌한 2건이었다. 실제 실패 조건을 수정해 Workflow를 원본 blob으로 복원한 `b5cef2045d43bf0b6c1ada887272c947b5e7f766`에서 [Actions #46083807424](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46083807424) **public-source-only SUCCESS**, 유지보수 통합 **110/110**, CI 승인·관측 **43/43 PASS**, Windows private-only SKIPPED. 정확 [PR 검증 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4312#issuecomment-7230334518). 승인 pin 완화·새 Runner/Workflow·운영 설치 없음.
+- **[#4078](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4078#issuecomment-7230370441):** 원본 source SHA `7579dea082d0f7a671113e52e39cefc9be8c9a87`는 현 웹 `main`의 정상 선조(ahead 12/behind 0). 원본 소스 계보 자체는 차단 원인이 아니다. 별도 backlog-only POST 효과의 독립 승인·Windows Owner/lease·journal/backlog CAS 및 원본 요청 Run/JSON·TXT가 **없으므로 원본 재발행 금지**. 후속 #4313 A PASS는 역사적 누락 영수증이 아니다. #4312 DRAFT/HOLD / NO MERGE.
+- **[#4069](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4069):** 실제 Guardian 단회 복구와 운영 6 Runner 정상화는 확인된 별개 완료. 원본 S6 원장 `RECOVERY_REQUIRED`·`WATCHDOG_RELEASE_OUTCOME_UNVERIFIED`, `backlog4078=NOT_RECORDED`를 원래 승격 성공으로 바꾸지 않는다. 원본 S6 재실행 없음.
+- **[#4135](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4135#issuecomment-7230370010):** 원본 B [#45901622751](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/45901622751)에서 167/167 ACTIVE·설치 전 STOP 보존. 별도 A #45898383016(21:28:59Z)/#45899361744(21:37:49Z)에서 Core lock 존재·writer lock 없음이 각각 관측됐지만 원본 B 시작 21:57Z와 **동시각 아님**. 오탐 source 수정 PR #4314 병합과 운영 probe 적용·실제 B 실패 원인·설치 성공을 구분한다.
+
+**다음 정확 행동:** #4078은 승인된 독립 Owner effect와 원본 CAS가 먼저 확인되는 경우에만 단회 POST→PC Job→동일 requestId 영수증 확인. 별도로 #4135의 같은 시각 Task/프로세스/lock/설치 probe 증거를 정규 읽기로 분리, #4069 역사적 원장 유지. 현재 정상 Controller `d3764580…` 설치 83/83·#4308/#4310 PASS는 재실행하지 않는다. 이번 변경은 **진행계획 문서·원장 갱신**일 뿐 신규 PC 운영 변경이 아니다.
+<!-- end process-owner-4312-source-ci-reconciliation-20261128 -->
+
+
 <!-- d376-operational-install-and-runner-audit-completed-20261128 -->
 ## 최신 후속 운영 결과 — 2026-11-28: #4302/#4304 범위 5/5 완료
 
