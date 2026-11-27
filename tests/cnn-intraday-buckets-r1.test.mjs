@@ -54,3 +54,21 @@ test('flat run anchors preserve its real endpoints without duplicate change even
  assert.deepEqual(result.displayPoints.map(p=>p.score),[15.8,null,15.8]);
  assert.deepEqual(result.linePoints.map(p=>[p.date,p.score]),[[at(0),15.8],[at(2),15.8],[at(3),null],[at(6),15.8]]);
 });
+
+test('1D rolling 24h connects real source observations across missing buckets without dots or fabricated samples',()=>{
+ const anchor='2026-11-27T10:00:00.000Z';
+ const points=[
+  {observedAt:'2026-11-26T09:59:00.000Z',score:90},
+  {observedAt:'2026-11-26T12:00:00.000Z',score:17.9},
+  {observedAt:'2026-11-27T08:00:00.000Z',score:0},
+  {observedAt:'2026-11-27T10:00:00.000Z',score:17.9},
+ ];
+ const result=aggregateCnnIntraday(points,{currentObservedAt:anchor,now:Date.parse(anchor),windowMinutes:1440});
+ assert.equal(result.buckets.length,3,'old observations outside 24h are excluded');
+ assert.deepEqual(result.connectedLinePoints.map(p=>p.score),[17.9,0,17.9]);
+ assert.deepEqual(result.connectedLinePoints.map(p=>p.date),points.slice(1).map(p=>p.observedAt));
+ assert.equal(result.connectedLinePoints.some(p=>p.score===null),false,'the path has no null separators');
+ assert.equal(result.buckets.some(p=>p.score===90),false);
+ assert.equal(result.linePoints.some(p=>p.kind==='gap'),true,'legacy gap projection remains available');
+ assert.throws(()=>aggregateCnnIntraday(points,{currentObservedAt:anchor,windowMinutes:0}),/CNN_INTRADAY_WINDOW_INVALID/);
+});
