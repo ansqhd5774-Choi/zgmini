@@ -3,6 +3,20 @@
 총괄: zgmini / codex/controller-ops-lessons-20261105
 이 문서는 R3/R4의 과거 기록을 보존하면서 현재 다음 행동을 정정한다.
 
+## 최신 실행 증거 — 2026-11-28 06:35 KST (기존 §0A보다 우선)
+
+**실제 신규 진전: Public Controller B 승인 2파일에 대한 독립 Windows Owner 실행 경로의 소스 통합 완료.** 운영 설치나 #4156 감사 PASS는 아님.
+
+- 기존 효과별 승인 [#4283](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4283) 재사용: 설치 기준 `555f95708984580cd7d5a0fd05a80b718e867710` → 대상 `cde1dd372210e4658ae348cb9e2577967cb11634`, `config/operations.json` + `controller/operations.mjs` **정확 2파일**. [#4287](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4287) old/new Public A SHA 보호 병합 증거 보존.
+- 신규 [PR #4295](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4295) `main@72852739c0139c0ef2649c8dd9032dd2ab5a83ff` **MERGED**, 수정 5파일: 독립 `tools/controller-audit-public-b-operator-once.mjs` 추가, 기존 `tools/update.mjs`에 정확 #4283 효과만 추가 허용, 회귀시험 3개 파일. 구 #4260 4파일 승인·원본·Public receiver 차단·lease/backup/rollback 및 정확 출처 검증 보존. 신규 실행기는 Reviewed Source PR #4295 병합 원문과 main/local 바이트 CAS 대조 후에만 내부 모듈을 로드한다.
+- 정확 최종 합동 HEAD `979561b1887255f34d4315ecacb7da1edb11d9d7`에서 [GitHub Actions #46071249777](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46071249777) GitHub-hosted `public-source-only` **SUCCESS**. 원본 부정 회귀·기존 4파일/새 2파일 scope·불명 결과 잠금 유지 PASS. Windows `source-only`는 정책상 SKIPPED. 리뷰 HEAD CI와 병합 후 운영 설치를 동일시하지 않음.
+- CI 첫 시도에서는 W06 리뷰 PR #4293 변경에 대한 기존 기대값 #4290이 불일치. #4296의 독립 수정을 보존하고 새 회귀 import만 통합한 정상 병합 HEAD에서 CI SUCCESS. 반대 이력은 삭제하지 않음.
+- **현재 단계**: PB1 승인/소스 완료, PB2 **독립 Owner 소스 구현·GitHub CI 완료 / 현장 Windows `inspect`·CAS/lease 미실행**, PB3 승인 B 단회 운영 설치 **0/1**, PB4 결과 영수증 **0/1**, AUD1/AUD2 추가 실측 **0/2**. 기존 Public A 복구 8/8 완료 유지; 기존 #4263/#4266/#4267 및 #4270 재실행 금지.
+- **다음 1개 필수 실행**: 정확한 운영 PC의 공식 독립 Windows Owner 환경에서 기존 허용된 소스 동기화/출처 확인과 신규 `tools/controller-audit-public-b-operator-once.mjs inspect`만 수행하여 설치 기준, 승인, 7파일 출처, owner·lease·backup/rollback 가능성과 이미 사용된 claim 유무를 조회. `PASS/PUBLIC_B_OPERATOR_PREFLIGHT_READY_ONLY` 전에는 `apply` 금지. PASS 후에도 해당 동일 인증된 PC에서만 승인된 정확 1회 `apply`, 로컬·원격 원장 및 B postcheck를 회수한다. Public CI 자동 B 경로·일반 Issue 직접 발행이나 과거 4파일 정책의 SHA 교체로 우회하지 않음.
+- Windows 현장 접근·사후 SHA·원장/Standby 동시 실측은 **여전히 미확인**. 이 현재 사실을 무관한 독립 기능 전체의 blocker로 확대하지 않음.
+
+---
+
 ## 0A. 2026-11-28 후속 지시 — Public B 신규 2파일 효과 및 #4156 감사
 
 **업무 구분:** 아래는 기존 Public A 정상 복구 8/8과 별개인 *신규 Public B Controller 2파일 적용*의 잔여 작업 지시다. 위 §0의 복구 완료, #4263·#4266·#4267 원본 성공을 다시 설치·재실행하지 않는다. 문서 작성과 GitHub 병합은 Windows 운영 설치/전환의 증거가 아니다.
