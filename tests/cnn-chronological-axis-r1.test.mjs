@@ -27,7 +27,7 @@ test('one-day displays an honest 24-hour axis; longer periods begin at first obs
   // Assert the production expression, not an independently fabricated score.
   assert.match(usa,/const earliest = points\.reduce\(\(min, point\) => Math\.min\(min, point\.time\), latest\);/);
   assert.match(usa,/period === "1D"\s*\? \[latest - 24 \* 60 \* 60000, latest\]/);
-  assert.match(usa,/earliest < latest \\? earliest : latest - days \\* 86400000/);
+  assert.match(usa,/earliest < latest \? earliest : latest - days \* 86400000/);
   assert.match(usa,/CNN 원본 기준 최근 24시간/);
   assert.match(usa,/const chartTimeAxis = useMemo\(/);
   assert.match(usa,/timeAxis=\{chartTimeAxis\}/);
