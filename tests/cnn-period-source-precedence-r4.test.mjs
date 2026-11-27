@@ -17,10 +17,15 @@ const runArchive=new Function('archived','selectedPeriod','normalizeHistory','us
 const runCombined=new Function('archiveHistory','allIntraday','useMemo',
  block('  const combinedObserved=useMemo(', '  const history = useMemo(')+'\nreturn combinedObserved;');
 const runHistory=new Function('selectedPeriod','payload','archived','observedSidecarReady',
- 'allHistory','allIntraday','archiveHistory','combinedObserved','currentCnnSessionHistory',
+ 'allHistory','allIntraday','archiveHistory','combinedObserved','normalizeHistory','cnnNyObservationDay',
  'getMarketPeriodConfig','useMemo',
  block('  const history = useMemo(', '  const observedRanges = useMemo(')+'\nreturn history;');
 const useMemo=fn=>fn();
+const cnnNyObservationDay=value=>{
+ const ms=Date.parse(value);
+ if(!Number.isFinite(ms))return null;
+ return new Intl.DateTimeFormat('en-CA',{timeZone:'America/New_York',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(ms));
+};
 const normalizeHistory=(history=[])=>history.flatMap(p=>{
  const date=p?.date??p?.timestamp;
  const score=typeof p?.score==='number'?p.score:p?.value;
@@ -41,7 +46,7 @@ function render(period,points,checks=[],sidecar=[],dailyPoints=daily){
  const allIntraday=normalizeHistory(sidecar.map(p=>({timestamp:p.observedAt,score:p.score})));
  const combinedObserved=runCombined(archiveHistory,allIntraday,useMemo);
  const history=runHistory(period,{observedAt},archived,true,dailyPoints,allIntraday,
-  archiveHistory,combinedObserved,()=>[],getMarketPeriodConfig,useMemo);
+  archiveHistory,combinedObserved,normalizeHistory,cnnNyObservationDay,getMarketPeriodConfig,useMemo);
  return {archived,archiveHistory,combinedObserved,history};
 }
 
@@ -71,17 +76,19 @@ test('one archive observation plus one real sidecar is a genuine two-point trend
  assert.deepEqual(combinedObserved.map(p=>p.score),[40,55]);
  assert.deepEqual(history.map(p=>p.score),[40,55]);
 });
-test('1D uses genuine 1-minute CNN observations without a check-history interval selector',()=>{
-  let received=null;
-  const archive={period:'1D',points:source,checkedPoints:checked};
-  runHistory('1D',{observedAt},archive,true,daily,normalizeHistory(
-    source.map(p=>({timestamp:p.observedAt,score:p.score}))),[],[],
-    (sourceAt,inputs)=>{received={sourceAt,...inputs};return [];},
-    getMarketPeriodConfig,useMemo);
-  assert.equal(received.sourceAt,observedAt);
-  assert.deepEqual(received.checkedPoints,[],'PC rechecks cannot generate 1-minute CNN observations');
-  assert.deepEqual(received.observedPoints,source);
-  assert.match(panel,/const minuteMode=selectedPeriod==='1D';/);
-  assert.match(panel,/aggregateCnnIntraday\(points,\{currentObservedAt:observedAt,minutes:1,now\}\)/);
-  assert.doesNotMatch(panel,/data-cnn-minute|CNN 원본 관측 간격|확인 이력<\/button>/);
+test('1D uses the previous 24h source observations without copying PC checks',()=>{
+ const sourceAt='2026-11-16T22:59:30.000Z';
+ const archive={period:'1D',points:[
+  obs('2026-11-15T23:15:00.000Z',12),
+  obs('2026-11-16T21:30:00.000Z',40),
+  obs(sourceAt,55),
+ ],checkedPoints:checked};
+ const returned=runHistory('1D',{observedAt:sourceAt},archive,true,daily,[],[],[],
+  normalizeHistory,cnnNyObservationDay,getMarketPeriodConfig,useMemo);
+ assert.deepEqual(returned.map(p=>p.score),[12,40,55],'real previous US day points survive in 24h window');
+ assert.equal(returned.some(p=>checked.some(c=>p.date===c.checkedAt)),false,'PC rechecks are not source points');
+ assert.match(panel,/const minuteMode=selectedPeriod==='1D';/);
+ assert.match(panel,/aggregateCnnIntraday\(points,\{currentObservedAt:observedAt,minutes:1,now,windowMinutes:1440\}\)/);
+ assert.match(panel,/minuteHistory\?\.connectedLinePoints/);
+ assert.doesNotMatch(panel,/data-cnn-minute|CNN 원본 관측 간격|확인 이력<\/button>/);
 });

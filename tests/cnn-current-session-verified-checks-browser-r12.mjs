@@ -7,7 +7,7 @@ const base=process.env.CHAT_PREVIEW_URL??'http://127.0.0.1:5173';
 const sourceObservedAt='2026-10-30T13:21:00.000Z';
 const olderSourceAt='2026-10-29T13:20:00.000Z';
 const original=[
- {observedAt:'2026-10-30T13:20:00.000Z',score:26.2},
+ {observedAt:'2026-10-30T11:20:00.000Z',score:26.2},
  {observedAt:sourceObservedAt,score:26.3},
 ];
 const newer={observedAt:'2026-10-30T13:22:00.000Z',score:26.4};
@@ -74,6 +74,40 @@ async function assertRealLineStartsAtLeft(page,period,width){
  assert(Math.abs(geometry.firstX-geometry.leftEdgeX)<=3,
   period+' '+width+'px first real point must touch left plot edge: '+JSON.stringify(geometry));
 }
+// A real 1D graph spans 24h even when only a few minutes of source history
+// exist. The empty time is left blank, not filled by fake points or isolated dots.
+async function assertTrueOneDayWindow(page,width,latestObservedAt){
+ const chart=page.locator('.zg-fg-us .cnn-history-chart-hitbox');
+ const geometry=await chart.evaluate(root=>{
+  const line=root.querySelector('path.recharts-area-curve');
+  const latest=root.querySelector('.cnn-latest-point circle, circle.cnn-latest-point');
+  const clip=root.querySelector('clipPath rect');
+  const d=line?.getAttribute('d')??'';
+  const start=d.match(/^M\s*([-\d.]+)/);
+  return {d,firstX:start?Number(start[1]):null,
+   left:clip?Number(clip.getAttribute('x')):null,
+   width:clip?Number(clip.getAttribute('width')):null,
+   latestFill:latest?.getAttribute('fill'),
+   latestX:latest?Number(latest.getAttribute('cx')):null,
+   visibleReferenceDots:[...root.querySelectorAll('circle.recharts-reference-dot, .recharts-reference-dot circle')]
+    .filter(circle=>circle.getAttribute('fill')!=='transparent').length};
+ });
+ assert(/^M/.test(geometry.d)&&/[CLQ]/.test(geometry.d.slice(1)),'source line is connected');
+ assert(!/NaN|Infinity/.test(geometry.d));
+ assert(Number.isFinite(geometry.firstX)&&Number.isFinite(geometry.left)&&geometry.width>0);
+ const oldest=Date.parse(original[0].observedAt),newest=Date.parse(latestObservedAt);
+ const expectedFraction=(newest-oldest)/(24*60*60000);
+ const drawnFraction=(geometry.latestX-geometry.firstX)/geometry.width;
+ assert(newest>oldest&&expectedFraction>0&&expectedFraction<1);
+ assert(Math.abs(drawnFraction-expectedFraction)<0.008,
+  width+'px 1D must use a real 24-hour numeric domain, not a 2-hour zoom: '+JSON.stringify({geometry,expectedFraction,drawnFraction}));
+ assert(geometry.firstX>geometry.left+geometry.width*0.9,
+  'a sparse genuine source must not be fabricated at the 24h left boundary: '+JSON.stringify(geometry));
+ assert.equal(geometry.latestFill,'transparent','latest mobile tap hotspot has no visible dot');
+ assert(Number.isFinite(geometry.latestX)&&geometry.latestX-geometry.firstX>=10,
+  'two hours of genuine history must draw a visible line, not a cluster of dots: '+JSON.stringify(geometry));
+ assert.equal(geometry.visibleReferenceDots,0,'no visible dot markers are drawn at 1D source points');
+}
 const browser=await chromium.launch({headless:true,args:['--no-sandbox']});
 mkdirSync('artifacts/cnn-current-session-checks',{recursive:true});
 try{
@@ -131,8 +165,8 @@ try{
   },null,{timeout:20000});
   const curve=chart.locator('path.recharts-area-curve');
   const before=await curve.getAttribute('d');
-  assert.ok(before?.length>20,width+'px two real 1-minute points draw a curve');
-  await assertRealLineStartsAtLeft(page,'1D',width);
+  assert.ok(before?.length>20,width+'px two genuine one-minute buckets separated by 2h must draw a line');
+  await assertTrueOneDayWindow(page,width,sourceObservedAt);
 
   if(width===390){
    const latest=chart.locator('.cnn-latest-point circle, circle.cnn-latest-point').first();
@@ -171,7 +205,7 @@ try{
   assert.notEqual(await curve.getAttribute('d'),beforeSameScore,
    width+'px new source timestamp should extend the actual chart line');
   assert.equal(await oneDay.getAttribute('aria-pressed'),'true');
-  await assertRealLineStartsAtLeft(page,'1D-same-score-new-source',width);
+  await assertTrueOneDayWindow(page,width,newerSameScore.observedAt);
   if(width===390){
    const latest=chart.locator('.cnn-latest-point circle, circle.cnn-latest-point').first();
    const b=await latest.boundingBox();

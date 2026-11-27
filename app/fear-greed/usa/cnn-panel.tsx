@@ -10,7 +10,7 @@ import { MarketCardInsight } from "../../market-card-insight";
 import { MarketFearGreedChart } from "../../market-fear-greed-chart";
 import {fearGreedStateColor} from '../../../lib/fear-greed-state-color.mjs';
 import {CNN_OBSERVED_HISTORY_VERSION} from '../../../lib/cnn-observed-history-r1.mjs';
-import {currentCnnSessionHistory} from '../../../lib/cnn-current-session-history-r4.mjs';
+import {cnnNyObservationDay} from '../../../lib/cnn-current-session-history-r4.mjs';
 import {cnnUsMultiDayTooltipDate} from '../../../lib/cnn-tooltip-calendar-date-r1.mjs';
 
 import {useStoredIndex} from '../../../components/use-stored-index';
@@ -70,6 +70,9 @@ const chartDateFormatter = new Intl.DateTimeFormat("en-US", {
   year: "numeric",
   month: "2-digit",
   day: "2-digit",
+});
+const usIntradayDay = new Intl.DateTimeFormat("en-US", {
+  timeZone: "America/New_York", month: "2-digit", day: "2-digit",
 });
 const usIntradayClock = new Intl.DateTimeFormat("en-US", {
   timeZone: "America/New_York", hour: "2-digit", minute: "2-digit", hour12: false,
@@ -217,29 +220,31 @@ function buildChartAxisTicks(
   return { ticks: [...labels.keys()], labels };
 }
 
-// USA-only continuous X axis: the first genuine displayed observation starts
-// at the left plot boundary. Preserve proportional spacing between real points.
-// Never create a synthetic observation at the calendar-window boundary.
+// USA-only continuous X axis: 1D is exactly 24 hours ending at the latest
+// genuine source timestamp. Missing hours remain blank rather than shrinking
+// the axis. Longer periods retain the first-real-point left-edge contract.
 function buildChartTimeAxis(points: ReturnType<typeof normalizeHistory>, period: UsaPeriod) {
   const latest = points.at(-1)?.time;
   if (latest === undefined || !Number.isFinite(latest)) return undefined;
   const days = period === "1D" ? 1 : getMarketPeriodConfig(period).days;
   const earliest = points.reduce((min, point) => Math.min(min, point.time), latest);
-  // For a single real point preserve the normal time span; for a series place
-  // its first real point at the left edge without inventing a leading score.
-  const domain: [number, number] = [
-    earliest < latest ? earliest : latest - days * 86400000,
-    latest,
-  ];
+  // Longer ranges fit the genuine observed span; 1D never shrinks to
+  // the first and last available minutes of a partial day's data.
+  const domain: [number, number] = period === "1D"
+    ? [latest - 24 * 60 * 60000, latest]
+    : [earliest < latest ? earliest : latest - days * 86400000, latest];
   const count = period === "1D" ? 5 : period === "1W" ? 4 : period === "1M" ? 5
     : period === "3M" ? 4 : period === "6M" ? 6 : 7;
   const ticks = Array.from({length: count}, (_, index) =>
     Math.round(domain[0] + (domain[1] - domain[0]) * index / (count - 1)));
   const labels = new Map<number, string>();
   const latestYear = chartDateParts(new Date(latest).toISOString())?.year;
-  for (const tick of ticks) {
+  for (const [index, tick] of ticks.entries()) {
     if (period === "1D") {
-      labels.set(tick, usIntradayClock.format(new Date(tick)));
+      const at = new Date(tick);
+      const clock = usIntradayClock.format(at);
+      labels.set(tick, index === 0 || index === ticks.length - 1
+        ? `${usIntradayDay.format(at)} ${clock}` : clock);
       continue;
     }
     const parts = chartDateParts(new Date(tick).toISOString());
@@ -266,7 +271,7 @@ function normalizeHistory(history: HistoryPoint[] = []) {
 
 
 const periodComparisonLabels: Record<UsaPeriod, string> = {
-  "1D": "장중 첫 관측 대비",
+  "1D": "1일 첫 관측 대비",
   "1W": "1주 대비",
   "1M": "1개월 대비",
   "3M": "3개월 대비",
@@ -589,13 +594,15 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
   },[archiveHistory,allIntraday]);
   const history = useMemo(() => {
     if (selectedPeriod === "1D") {
-      // A verified CNN current score must not be compared with stale PC checks.
-      // Compare the CNN source's New York session, not a PC check's UTC day.
-      return currentCnnSessionHistory(payload?.observedAt,{
-        checkedPoints:[],
-        observedPoints:archived?.points??[],
-        intradayObservations:observedSidecarReady?(payload?.intradayObservations??[]):[],
-      });
+      // Genuine CNN source timestamps from the last 24 hours only; PC
+      // checkedAt times and previous-day daily closes are never inserted.
+      const anchor=Date.parse(payload?.observedAt??'');
+      if(!Number.isFinite(anchor))return [];
+      const archive=normalizeHistory((archived?.points??[]).map(point=>({timestamp:point.observedAt,score:point.score})));
+      const byTime=new Map([...archive,...allIntraday].map(point=>[point.date,point]));
+      return [...byTime.values()].filter(point=>cnnNyObservationDay(point.date)!==null
+        &&point.time>=anchor-86400000&&point.time<=anchor)
+        .sort((a,b)=>a.time-b.time);
     }
     // Long ranges use the existing CNN daily closes only.
     if (selectedPeriod === "6M" || selectedPeriod === "1Y") {
@@ -703,7 +710,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
       ...allIntraday.map(point=>({observedAt:point.date,score:point.score}))];
     const observedTime=Date.parse(observedAt);
     const now=Math.max(Number.isFinite(observedTime)?observedTime:0,archived?.receivedAt??0);
-    return aggregateCnnIntraday(points,{currentObservedAt:observedAt,minutes:1,now});
+    return aggregateCnnIntraday(points,{currentObservedAt:observedAt,minutes:1,now,windowMinutes:1440});
   },[minuteMode,observedAt,archived,allIntraday]);
   // Long periods keep their entire calendar window with more than one genuine
   // source point per day when available. Check timestamps are never chart input.
@@ -714,7 +721,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
     return buildCnnPeriodChart({period:selectedPeriod,days:getMarketPeriodConfig(selectedPeriod).days,
       observedPoints,dailyPoints:allHistory});
   },[selectedPeriod,archived,observedSidecarReady,payload?.intradayObservations,allHistory]);
-  const chartData=minuteMode?(minuteHistory?.linePoints??[]):(periodChart??history);
+  const chartData=minuteMode?(minuteHistory?.connectedLinePoints??[]):(periodChart??history);
   const realChartPoints=useMemo(()=>chartData.flatMap(point=>typeof point.score==='number'?[{date:point.date,time:point.time,score:point.score}]:[]),[chartData]);
   const latestHistoryPoint = realChartPoints.at(-1) ?? null;
   const chartAxis = useMemo(
@@ -775,7 +782,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
       className="usa-target-card"
       layoutVariant="shared"
       testId="cnn-reference-panel"
-      marketState={loading ? "loading" : score === null ? "unavailable" : history.length > 1 ? "ready" : "empty"}
+      marketState={loading ? "loading" : score === null ? "unavailable" : realChartPoints.length > 1 ? "ready" : "empty"}
       busy={loading}
       showHeaderDate={showEducation}
       titleLink={!showEducation}
@@ -828,14 +835,15 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
         includeOneDay
       />}
       chart={<div style={{display:"flex",flexDirection:"column",height:"100%",minHeight:0,width:"100%"}}>
-        <small role="status" style={{display:"block",height:18,lineHeight:"18px",flexShrink:0,whiteSpace:"nowrap"}}>{archiveDelayedPeriod===selectedPeriod?"이력 갱신 지연":null}</small>
+        <small role="status" style={{display:"block",height:18,lineHeight:"18px",flexShrink:0,whiteSpace:"nowrap"}}>{archiveDelayedPeriod===selectedPeriod?"이력 갱신 지연":minuteMode?"CNN 원본 기준 최근 24시간":null}</small>
         <div style={{flex:1,minHeight:0,width:"100%"}} data-cnn-intraday-mode={minuteMode?1:"period"} data-cnn-bucket-count={minuteHistory?.buckets.length} data-cnn-period-point-count={periodChart?.length}>
         {!archived?<div className="cnn-chart-empty" role="status"
           data-cnn-archive-state={archiveDelayedPeriod===selectedPeriod?'delayed':'loading'}>
           {archiveDelayedPeriod===selectedPeriod?'상세 이력 확인 지연':'상세 이력 불러오는 중'}
         </div>:<MarketFearGreedChart
-        showExtrema
-        showIsolatedPoints={minuteMode||chartData.length===1}
+        showExtrema={!minuteMode}
+        showIsolatedPoints={realChartPoints.length===1}
+        hideLatestPointMarker={minuteMode&&realChartPoints.length>1}
         showLatestPointTouchTooltip
         color={fearGreedStateColor(loading?'확인 중':stage)}
         data={chartData}
@@ -851,7 +859,7 @@ export default function CnnPanel({ showEducation = false, showBreadth = false }:
           : selectedPeriod==="1W"||selectedPeriod==="1M"
             ? (value:string)=>value.includes('T')?intradayLabel(value):cnnUsMultiDayTooltipDate(value)
             : cnnUsMultiDayTooltipDate}
-        emptyLabel={minuteMode?"해당 뉴욕 거래일의 CNN 원본 관측 없음":"이력 없음"}
+        emptyLabel={minuteMode?"최근 24시간 CNN 원본 관측 없음":"이력 없음"}
       />}</div></div>}
       breadth={showBreadth && !showEducation ? <PaidUsBreadthR2Panel period={selectedPeriod}/> : undefined}
       detailHref={showEducation ? undefined : "/fear-greed/usa/"}
