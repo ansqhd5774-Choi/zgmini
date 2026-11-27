@@ -220,7 +220,7 @@ export function MarketFearGreedChart({
         strokeWidth={2.2}
         dot={false}
         connectNulls={false}
-        activeDot={{ r: 3.5, strokeWidth: 0, fill: color }}
+        activeDot={hideLatestPointMarker ? false : { r: 3.5, strokeWidth: 0, fill: color }}
         isAnimationActive={animate && !compact && !prefersReducedMotion}
         animationBegin={120}
         animationDuration={950}
