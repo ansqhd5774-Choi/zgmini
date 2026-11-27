@@ -3,6 +3,25 @@
 총괄: zgmini / codex/controller-ops-lessons-20261105
 이 문서는 R3/R4의 과거 기록을 보존하면서 현재 다음 행동을 정정한다.
 
+<!-- d376-operational-install-and-runner-audit-completed-20261128 -->
+## 최신 후속 운영 결과 — 2026-11-28: #4302/#4304 범위 5/5 완료
+
+**이 절이 아래 과거 0/5·checkout 조정 대기·#4300 설치 미반영 기록보다 우선한다.**
+
+- 실제 PC의 공유 checkout 활성 관련 프로세스/Git 잠금/설치 lease 없음과 clean 상태를 쓰기 직전에 확인한 뒤 정상 fast-forward로 72852739… → source PR #4304 merge **0c60109f03b41fae4cd81a26d04733a02e23bb4e** 동기화. 강제 쓰기·잠금 해제·새 전역 Gate 없음. 실행 source 6개 원본 바이트 일치.
+- 공식 독립 Explorer Owner inspect: 2026-11-27T22:35:28.627Z **PASS / PUBLIC_B_OPERATOR_PREFLIGHT_READY_ONLY**.
+- 승인 #4302, 실행 source #4304의 정확 1파일 B 설치 **[#4307](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4307)** 완료. requestId=pc-update-9ff0e6ed-3b61-44b7-a3ec-b854be06853d. 2026-11-27T22:41:02.699Z **PASS / APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED**.
+- 실제 설치 SHA **d3764580fdb08ecddd5f9b1064051eec30f90492**, 이전 cde1dd372210e4658ae348cb9e2577967cb11634. 설치 host inventory **83/83 파일 CAS 일치**, operations.mjs SHA256 **6c0441108c244d1d5dd58e7793b785a371169a9d96b69e606200d905e8f59966**.
+- 실제 PC 사후검사 **[#4308](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4308#issuecomment-7229528707)** / Actions **46078055056**, seat 6, core-status **PASS**, actualExecutionSha=d3764580….
+- **설치된 새 검사기의 실제 A 실행 [#4310](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4310#issuecomment-7229580896)** / Actions **46078431643**, seat 5, **PASS / OPERATING_AUDIT_READONLY_VERIFIED**, actualExecutionSha=d3764580…. watchdogReady/standbyPairReady/supervisorVerified/localPostcheckLedgerVerified/localRunnerSmokeLedgerVerified 모두 true. 보호 상태 불변, A 작업 쓰기/공급처/D1/SQLite 0. 이제 수정 source 단독 실행에만 의존하는 검증이 아니다.
+- 신규 Listener 6개·GitHub 온라인 6개, Watchdog HEALTHY·보조 2/2 READY, Workflow active·활성 설치 lease 없음 확인. 기존 #4156/#4299/#4301 성공을 보존하고 재실행하지 않음.
+- 제가 잘못된 설명형 제목으로 만든 최초 A 요청 #4309는 hosted 접수에서 거부돼 PC 실행 0건. NOT_PLANNED로 정리 후 고정 제목 pc-job/새 ID인 #4310으로 정상 1회 실행했다. 이를 Controller 장애로 기록하거나 허용 기준을 완화하지 않는다.
+- [중앙 원장 실제 증거](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-7229602662).
+
+**현재 다음 행동:** 일반 승인 업무를 계속한다. 이 후속 범위의 설치·자동 감사 미완료는 해소됐고 동일 Owner apply를 재실행하지 않는다. 결과 업로드에 따른 main HEAD 전진만으로 완료된 실행 source/CAS/Runtime 증거를 취소하거나 같은 동기화·설치를 반복하지 않는다. 실제 source가 변하는 다음 작업의 영향 범위만 새로 확인한다. Public 저장소 유지, 원자료/DB/D1/산식/예약/보안 권한의 변경 없음.
+
+---
+
 ## PR #4300 신규 1파일 효과 승인/소스 main 통합 — 2026-11-28 KST
 
 - 사용자는 #4302 신규 정확 1파일 B 효과 승인이 필요하다는 안내 직후 현 대화에서 **“작업해라”**라고 지시. 해당 변경 진행 지시를 [PR #4302 댓글 #7229078819](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4302#issuecomment-7229078819)에 범위별로 기록했다. 이는 독립 Windows/GitHub Owner의 인증이나 이미 수행한 운영 적용을 대신하지 않는다.
