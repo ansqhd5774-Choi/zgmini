@@ -81,9 +81,10 @@ test('US-only 1D button and observed ranges reuse the current chart; Korea gets 
  assert.match(cnn,/<MarketPeriodControls[\s\S]*?includeOneDay\s*\/>/);
  assert.match(cnn,/observedRanges=\{observedRanges\}/);
   // A real 1D minute bucket comes from CNN observedAt, never PC checkedAt.
-  assert.match(cnn,/currentCnnSessionHistory\(payload\?\.observedAt/);
-  assert.match(cnn,/checkedPoints:\[\],/);
+  assert.match(cnn,/windowMinutes:1440/);
+  assert.match(cnn,/minuteHistory\?\.connectedLinePoints/);
   assert.match(cnn,/minutes:1,now/);
+  assert.doesNotMatch(cnn,/currentCnnSessionHistory\(payload\?\.observedAt/);
   assert.doesNotMatch(cnn,/currentSessionPcDates|CNN 원본 관측 간격|data-cnn-minute/);
   assert.ok(cnn.includes('formatTooltipLabel={selectedPeriod==="1D"'));
   assert.ok(cnn.includes('intradayLabel(value)'));
