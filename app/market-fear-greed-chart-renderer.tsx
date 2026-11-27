@@ -185,7 +185,6 @@ export function MarketFearGreedChart({
         x={chartX(latestPoint.date)}
         y={latestPoint.score}
         r={compact ? 3 : 4.4}
-        // Retain the mobile tap hitbox without drawing a point on a line.
         fill={hideLatestPointMarker ? "transparent" : color}
         stroke={hideLatestPointMarker ? "none" : "#fff7f7"}
         strokeWidth={hideLatestPointMarker ? 0 : 2}
