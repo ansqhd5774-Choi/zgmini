@@ -32,7 +32,8 @@ test('CNN published daily dates do not shift back one day when parsed in New Yor
 });
 test('USA 1D shows genuine Eastern observation time without PC pseudo observations',()=>{
  assert.match(usa,/formatTooltipLabel=\{selectedPeriod==="1D"\s*\? \(value:string\)=>/);
- assert.match(usa,/checkedPoints:\[\],/);
+ assert.match(usa,/windowMinutes:1440/);
+ assert.match(usa,/CNN 원본 기준 최근 24시간/);
  assert.doesNotMatch(usa,/currentSessionPcDates|data-cnn-minute/);
  assert.match(usa,/\? \(value:string\)=>intradayLabel\(value\)/);
  assert.match(usa,/Number\.isFinite\(timestamp\) \? usIntradayDateTime\.format\(new Date\(timestamp\)\) : "—"/);
@@ -44,7 +45,8 @@ test('USA 1D shows genuine Eastern observation time without PC pseudo observatio
  assert.doesNotMatch(usa.slice(usa.indexOf('const intradayLabel'),usa.indexOf('const dateLabel')),/동부시간/);
  assert.match(usa,/timeZone: "America\/New_York", month: "2-digit", day: "2-digit"/);
  assert.match(usa,/history = useMemo\(\(\) => \{/);
- assert.match(usa,/currentCnnSessionHistory\(payload\?\.observedAt/);
+ assert.doesNotMatch(usa,/currentCnnSessionHistory\(payload\?\.observedAt/);
+ assert.match(usa,/point\.time>=anchor-86400000&&point\.time<=anchor/);
 });
 test('USA and Korea still use the same existing tooltip card and value band palette',()=>{
  assert.match(renderer,/<div className="cnn-history-tooltip">/);
