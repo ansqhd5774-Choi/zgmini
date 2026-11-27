@@ -997,3 +997,11 @@ Sidecar: #3745 open, #3768 BLOCKED/PREIMAGE_STAGE_MANIFEST_SCOPE_STOP (Run 45728
 - **현상 구분:** 다음 12:41:00 UTC 명목 tick은 `lastRetryAt=12:41:43.144Z`보다 먼저여서 `COOLDOWN_RETRY_AFTER` 예정. 기존 Reader와 Source timestamp 혼동 없이 HTTP 결과가 INVALID_OUTPUT인 정확 원인 재현은 미실시. 기존 동작을 임의 수정/재예약하지 않음.
 - **공개 브라우저 참고:** 사용자 연결된 두 기존 홈 화면 탭에서 CNN 점수 17.9 동일, 뉴욕 시간 1D 최종 눈금 06:17→06:52 전진. D1 원본 정밀 `observedAt`/로컬 DB 바이트 일치로 확대하지 않음.
 - **인계:** 관련 실측과 W06 0/1 미완료 경계를 제어 [#4082 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4082#issuecomment-7218572020)에 기록. #4164 일반 A `SUPERVISOR_OWNERSHIP_LOST` 차단은 별도, 본 독립 PC task 조회 성공은 Supervisor 복구 증거 아님. 다음은 Supervisor 정상 복구 후 정밀 `cnn-public-d1-api-readback-readonly` 한 번과 신규 원본 `observedAt/score` 동일성 검증. 추가 Task/PC/Controller/원본 DB/D1 변경 0.
+
+
+### 20-70. 자연 수집 로컬 출력 저장시각과 공개 점수 후보 분리 (2026-11-27 KST)
+
+- **기존 운영 PC 결과 새 범위 확인:** [제어 #4226 / Run 46000525326](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46000525326)의 정확 `results/pc-process-inventory-46000525326-1-operating.json`를 다시 읽어 `nextMinuteGate.lastOutputStoredAt=2026-11-27T12:35:19.845Z`, `lastAttemptStoredAt=2026-11-27T12:36:43.144Z`, `lastRetryAt=2026-11-27T12:41:43.144Z`, `sqliteOpened=true` 확인. 실제 PC 로컬 output 저장이 11/27 21:35 KST까지 전진했다는 저장시각 증거이나 CNN 원본 `observedAt`/고유 점수 수/D1 게시 시각과 다름.
+- **현재 공개 표시 후보:** 연결된 사용자 ZGMINI 홈 탭 두 곳에서 `17.9` / 표시일 `2026-11-27` 확인. 과거 [#4132](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4132) `observedAt=2026-11-26T01:59:59.000Z`, 정확 `score=14.9967450271248`의 종단 일치 PASS와 **서로 다른 표시값**이다. 실제 웹 화면 값이 전진한 증거이지 두 원본의 정밀 키가 동일하다는 증거가 아님.
+- **접근 범위:** 외부 공개 `/api/fear-greed/observations?period=1D,1W` 조회 도구는 URL 접근 실패. 서비스 5xx나 데이터 유실을 뜻하지 않는다. 로컬 HTTP 자연수집 1021 VERIFIED는 CNN 고유 observedAt 1021개가 아님. #4156 최신 원장에는 Supervisor Owner 정상 복구·R6 HEALTHY·Standby 2 READY의 새 성공 증거 없어 #4164 동일 실패 경로 재발행 금지 유지.
+- **판정·인계:** 새 근거를 [제어 #4082 댓글](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4082#issuecomment-7218689258)에 기록. 로컬 저장 시각 실증, 공개 17.9 표시 실증으로 범위를 진전시켰지만 **신규 원본 `observedAt`·정밀 score 일치 / SQLite↔D1↔API↔UI 종단 0/1** 유지. 기존 W06 Task/DB/D1/Controller/Cloudflare 설정 및 배포 **변경 없음**. Supervisor 인증 복구 후 기존 허용 정밀 readback 단회 시행하고 같은 관측 키로 확인.
