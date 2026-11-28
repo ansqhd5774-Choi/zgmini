@@ -3,6 +3,17 @@
 총괄: zgmini / codex/controller-ops-lessons-20261105
 이 문서는 R3/R4의 과거 기록을 보존하면서 현재 다음 행동을 정정한다.
 
+<!-- process-owner-operational-delegation-20261128 -->
+## 2026-11-28 총괄 운영 변경 승인 위임 — 사용자 직접 지시
+
+- **승인 주체·효과:** 사용자가 본 대화에서 프로세스 총괄에게 ZGMINI **운영 승인 권한을 추가 위임**했다. 총괄은 사용자가 요청한 프로젝트 업무와 필요한 연속 운영·복구 작업에 관해 작업 범위 내 승인 필요성을 스스로 판단하며, 기존에 승인된 동일 효과는 매번 재승인받지 않는다. 본 기록은 **총괄의 사용자 측 의사결정 위임**이며 다른 담당자의 권한 변경이나 설치된 PC 신원 자격 증명은 아니다.
+- **실행까지 직접 책임:** 소스/승인 효과 정합화 → 필요한 공식 승인 명세와 대상 source/원본 CAS 확정 → 독립 Windows Owner·정규 유지보수기/Runner 인증 → 자원별 lease·백업·복구 → 단회 설치/실행 → 운영 원장·JSON/TXT·SQLite/D1·API/UI 해당 결과 readback의 기존 계약을 보존한다. GitHub admin/merge 또는 이 문서의 문구를 Windows 인증 토큰, B급 운영 설치 영수증이나 기계의 권한 증명으로 간주하지 않는다.
+- **허용 범위와 예외:** 현재 요청에서 명시된 **MarketParquet 제외** 범위를 지키며, 역사적으로 별도 승인된 다른 유료 데이터 기능을 일괄 중단하거나 재승인 요구하지 않는다. 신규 유료 결제·구독, 승인 범위를 벗어난 신규 공급처/데이터 권리·산식/DB·DNS/배포 방식 변경, 보안 우회나 private-only gate 완화는 이 포괄 위임으로 자동 허용되지 않는다. 독립 Owner의 설치·인증 정책과 정규 source/approval manifest 원본 검증은 그대로 필수다.
+- **즉시 적용 판정:** 이전 기록의 “GitHub admin은 B 설치 승인 아님”은 **기술적 Windows 실행·신원 인증 경계**에 한정한다. 이번 사용자 운영 승인 위임으로 총괄의 사용자 측 승인 판단 권한은 추가됐다. 다만 #4135 기존 4파일 manifest의 MarketParquet 의존 소스 충돌과 인증된 Writer B Windows 경로 미입증은 여전히 각각 해결해야 한다. #4078 backlog-only 효과는 원본 S6 승인과 구분하여 정확한 독립 실행 효과·CAS를 수립하고, #4069 원본 S6는 복구 영수증과 구분해 재실행 금지 상태를 유지한다.
+- **이번 GitHub 반영 효과:** 총괄 브랜치 문서 변경만 수행. 운영 PC source/Controller/Writer/Runner, Task·Workflow, 원자료·DB/D1, 실제 B 적용 및 비용 변화 **0**. 본 위임만으로 과거 차단 상태나 운영 결과를 소급 성공 판정하지 않는다.
+
+<!-- end process-owner-operational-delegation-20261128 -->
+
 <!-- process-owner-us-breadth-marketparquet-exclusion-20261128 -->
 ## #4135 / 미국 전체 등락지수 R2 — MarketParquet 제외 조건과 실제 Windows 실행 계약 (2026-11-28 재대조)
 
