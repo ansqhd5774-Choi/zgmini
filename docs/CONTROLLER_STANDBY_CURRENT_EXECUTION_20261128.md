@@ -14,6 +14,15 @@
 
 <!-- end process-owner-operational-delegation-20261128 -->
 
+<!-- process-owner-4312-source-merge-20261128 -->
+### 위임 후 첫 독립 실행 — #4312 소스 병합 완료 / #4078 운영은 별도
+
+- **정확 source 승인·반영:** 제어 저장소 기존 [Draft PR #4312](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4312)의 실제 7파일 diff와 HEAD `404c8de4a5c6e6e1297765007973b37b29e4634c`를 확인했다. `main` 대비 ahead 42/behind 0, 충돌 없음. 정확 [Actions #46085704726](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46085704726) `public-source-only` SUCCESS, 관련 통합 시험 157/157 PASS, Windows private-only SKIPPED. 총괄 위임을 사용자 측 판단 근거로 하여 소스-only PR을 ready-for-review로 변경하고 **squash merge `4fe6fc0705be0802b1674cb2cd8bec89f18f0b6d` 완료**. `main` 핵심 코드·전용 테스트 파일 재조회 검증. 예전 본문에 있던 Draft/HOLD는 병합 **이전 시점의 기록**이다.
+- **효과 경계:** 추가된 `tools/s6-4078-backlog-only-plan.mjs`·`-transaction.mjs`·`-windows-local-readonly.mjs`는 승인되지 않은 운영 POST를 스스로 실행하지 않는다. `executeApprovedS64078Replay`은 9개 인증된 외부 포트 미제공 시 `BLOCKED/S6_4078_INDEPENDENT_PORT_UNAVAILABLE`; 원장 reader의 `ownerAndLeaseCasVerified`와 `mutationAuthorized`는 false. 별도 B/C Windows Owner 신원과 source/approval/CAS/lease 없이 #4078 원본을 재발행하거나 #4069 원본 S6을 재실행하지 않는다.
+- **기록·현장 상태:** [#4078 후속 원장](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4078#issuecomment-7230719630) 작성. `SOURCE_MERGED / OPERATING_REPLAY_NOT_EXECUTED`; 추가 PC Job·Windows 설치·Runner/Task/DB/D1 변경 0. #4135는 유효한 비-MarketParquet 251일 입력·정확 manifest/독립 Writer B Owner 미입증, 원본 B 재실행 금지. #4069 실제 Guardian Runner 6/6 복구와 원래 S6 원장 `RECOVERY_REQUIRED`는 계속 구분.
+- **다음 최소 실작업:** #4078의 독립 Windows Owner 신원·기존 원장 journal/backlog·현재 owner/lease CAS, 같은 시점 정상 Runtime 및 GitHub 중복 Run/Issue/결과쌍을 정규 **읽기**로 확인 → 실행 가능한 승인 효과에 맞는 기존 신뢰 포트가 확인된 경우에만 `POSTING` 기록 후 단회 재접수·정확 JSON/TXT 회수. #4135의 비-MarketParquet 입력 확보 전 B 설치 없음. 신규 인증 우회/공개 private gate 해제/원장 초기화 금지.
+<!-- end process-owner-4312-source-merge-20261128 -->
+
 <!-- process-owner-us-breadth-marketparquet-exclusion-20261128 -->
 ## #4135 / 미국 전체 등락지수 R2 — MarketParquet 제외 조건과 실제 Windows 실행 계약 (2026-11-28 재대조)
 
