@@ -27,6 +27,14 @@
 
 현재 완료 범위는 **이번에 승인한 단일 Public CI B 효과의 자동 발행 → 운영 설치 → 자동 A 사후검사 → 결과 회수**다. 다음 B 작업은 현재 설치 SHA와 새 정확 승인 범위를 기준으로 한다. 소진된 과거 grant·Claim·요청을 재사용하지 않는다. #4078의 역사적 원본 요청은 재실행하지 않았으며 이 완료 범위의 선행조건으로 확대하지 않는다. 다른 HA 기능 및 기능 담당 업무의 완료율을 임의로 변경하지 않는다.
 
+
+### 19:16 KST 후속 총괄 상태 대조
+
+- #4356 설치 JSON/TXT 및 #4357 공개 사후검사 JSON을 GitHub main에서 직접 재조회: 동일 실제 SHA `15c109dcc2e64a9d2d443f50efc7fe4ce06ff807`, SUCCEEDED/PASS. 기존 PC 84/84 및 7/7 실측 기록은 재사용하며 새 현장 관측으로 표시하지 않는다.
+- [#4078](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4078)은 현재 OPEN. 과거 CLOSED 기록은 역사 상태다. 원래 pause 시간창의 replay는 미기록이며, #4313의 독립 A 성공과 #4356 설치로 소급 복원하지 않는다. 정확한 별도 replay 효과, 인증된 독립 실행 포트 및 원본 #4069 open-state/owner/lease CAS가 충족되지 않아 원본 재발행하지 않는다.
+- [#4135](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4135)은 현재 OPEN. 비-MarketParquet 251거래일 입력·권리·새 정확 Writer 명세 미확보; 기존 MarketParquet 의존 B 요청을 재발행하지 않는다. 이 독립 기능의 장애는 이번 Controller B 완료를 취소하지 않는다.
+- 신규 자동화 장애 인계 검색 결과 0건(검색 범위 한정), 중앙 #68 최신 댓글은 #4356 종단 완료 기록. 이번 후속 대조에서 새 설치/PC job/공급자 호출/DB·D1 쓰기 0. 추가 B 실증 목적만의 가짜 효과를 만들지 않는다.
+
 ---
 
 이하 과거 실행·설계 기록은 당시 증거로 보존한다.
