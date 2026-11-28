@@ -1,3 +1,36 @@
+# 2026-11-28 최신 운영 실증 — 승인된 Public CI 단일 B 종단 완료
+
+이 절이 이번 승인 범위의 최신 실행 상태다. 아래의 50%, V1/권한 미확보, Windows 설치 미완료 기록은 당시 상태로 보존하며 현재 설치·실행 증거를 취소하는 근거로 사용하지 않는다.
+
+| 구간 | 실제 확인 결과 |
+| --- | --- |
+| 발행·실행 역할 분리 | 격리 PC는 Owner 병합 정본과 durable receipt로 발행만 수행. 운영 유지보수기 복사·설치 불필요 |
+| V2 운영 유지보수기 | source `e588d2f42e49d5cad734ce6137ada510387810d4`, 7/7 해시 일치, 독립 Windows Receiver 계보 검증 PASS |
+| 실제 자동 발행 | Run [46133002395](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46133002395), 격리 Runner `zgmini-handoff-ci-spare-01`, Bot 요청 [#4356](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4356) |
+| 실제 Controller 설치 | `SUCCEEDED / APPROVED_UPDATE_AND_DIAGNOSTIC_VERIFIED`, SHA `15c109dcc2e64a9d2d443f50efc7fe4ce06ff807` |
+| 자동 A 사후검사 | [#4357](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4357), Run [46133404850](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46133404850), core-status PASS·동일 실행 SHA·보호 불변·Runner set·post source 검증 |
+| 독립 읽기 재검산 | 승인 Git target → host metadata → 실제 설치 파일 84/84 SHA256 일치. 공개 A SUMMARY_ONLY를 전체 inventory 증거로 해석하지 않고 본기에서 직접 대조 |
+| 공유 운영 상태 | Supervisor LISTENING, 관리 자식 6개 생존, 운영 6개+격리 1개 Runner Online/Busy 0, controller-install lease 없음, pc-job active |
+
+최종 [설치 영수증 JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/maintenance-pc-update-565fd980-82c6-420b-9a2b-a2a76c39356e.json) 및 [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/maintenance-pc-update-565fd980-82c6-420b-9a2b-a2a76c39356e.txt)는 원격 Git blob 및 상태·설치 SHA·보호·workflow 값까지 재조회했다. #4356·#4357은 실제 검증 후 completed로 종결했다. [중앙 결과 원장](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/68#issuecomment-7237688160).
+
+## 재발 방지 및 인계 기준
+
+- GitHub 연결 도구의 기능 미지원과 실제 계정 권한 부족을 구분한다. 이번 Actions 변수 등록은 기존 인증된 공식 `gh api`로 수행했다. 공개 저장소는 유지한다.
+- 발행기에 운영 Receiver 7파일 설치를 요구하지 않는다. 운영 Receiver는 별도 설치 V2와 실제 CAS·lease·승인·백업/원복 검증을 유지한다.
+- GitHub compare API의 존재하지 않는 `head_commit` 조건을 제거하고 공식 commit 응답과 base/merge-base로 같은 계보를 검증한다.
+- Receiver와 updater의 Actions 로그 읽기는 공통 고정 machine-only pipe를 사용한다. ANSI 원문은 터미널/공개 결과로 내보내지 않고 정확한 영수증 행만 대조한다.
+- 설치 전 명확한 거부의 이어가기는 정확한 Owner 정본·원장 SHA·미변경 baseline·운영 artifact 부재에 한정한다. 원장·Claim·기존 보고서를 보존하고 revision 영수증을 분리한다. 일반 실패/UNKNOWN 자동 재시도는 허용하지 않는다.
+- 일시 Offline 관측은 기존 30초 stop 대기 안에서 재확인한다. 실제 중지에는 여전히 6개 Online/Idle·같은 Owner·보호 상태가 필요하며 누락 roster와 지속 Offline은 거부한다.
+
+이전 [#4345](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4345)는 성공 설치로 집계하지 않는다. 전환 전 실패 뒤 [정규 원복 #4352](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4352)가 `INTERRUPTED_ROLLBACK_VERIFIED`를 반환했고 기존 정상본·원본 journal·lease를 보존했다. 원본 요청을 재실행하지 않고 동일 runtime tree의 새 정규 후보와 승인으로 #4356을 완료했다.
+
+현재 완료 범위는 **이번에 승인한 단일 Public CI B 효과의 자동 발행 → 운영 설치 → 자동 A 사후검사 → 결과 회수**다. 다음 B 작업은 현재 설치 SHA와 새 정확 승인 범위를 기준으로 한다. 소진된 과거 grant·Claim·요청을 재사용하지 않는다. #4078의 역사적 원본 요청은 재실행하지 않았으며 이 완료 범위의 선행조건으로 확대하지 않는다. 다른 HA 기능 및 기능 담당 업무의 완료율을 임의로 변경하지 않는다.
+
+---
+
+이하 과거 실행·설계 기록은 당시 증거로 보존한다.
+
 # 보조 Controller — 현재 실행 상태 및 인수 원장
 기준일: 2026-11-28 KST
 총괄: zgmini / codex/controller-ops-lessons-20261105
