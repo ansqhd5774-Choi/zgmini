@@ -22,3 +22,8 @@ GitHub 요청 → 기존 Actions 검증 → 승인된 독립 Windows 유지보�
 
 ## 진행률 계약
 권한/구조 확인 10%, 권한 정합화 10%, 독립 계약 설계 10%, 연결 20%, 회귀 10%, 실제 읽기 10%, 설치 15%, 사후검증 10%, 원장 5%. 각 단계는 해당 효과의 증거로만 집계. 이번 문서 반영은 실제 Windows 실행이 아니다. 운영 변경 0.
+
+## 원본 증거 회수 결과
+- #4326 Run 46090590261: public-approved-a SUCCESS (job 140810318884), public-readonly-intake SUCCESS, approved-pc-job SKIPPED. 실제 Actions 로그 직접 회수.
+- [JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/46090590261-1-seat-3.json) / [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/46090590261-1-seat-3.txt) 원본 2/2 재조회 및 jobId/requestId/operation/seat/status/code/actualExecutionSha 일치. core-status PASS, seat 3, d3764580fdb08ecddd5f9b1064051eec30f90492. SUMMARY_ONLY/PUBLIC_REPOSITORY_REDACTED; 로컬 #4069 원장 자체를 읽었다는 증거 아님.
+- 기존 public A 재사용 가능 확인. 신규 target 설치/Owner 직접 실행 미입증. 관리자 권한 추가 부여 불필요; GitHub 설정/운영 변경 0. 현재 단계는 권한 및 구조 확인 완료(10/100), 권한 정합화는 기존 admin 권한 확인과 별개로 도구별 쓰기/실행 범위 미완료. 다음 설계는 기존 독립 실행 계약을 유지하며 필요한 추가 권한 효과만 분리; 공개 B polling이나 C급 직접 인증 우회 금지.
