@@ -23,6 +23,16 @@
 - **현재 우선순위 정정:** #4078 동일 현재 A 읽기는 #4313 성공 증거를 재사용하며 재실행·재오픈 불필요. #4069 기존 `RECOVERY_REQUIRED`·Guardian 사후 6 Runner 정상은 독립 판정으로 유지. #4135는 MarketParquet 제외 R2 251거래일 입력·권리/정확 manifest 및 Writer B 정규 Windows 인증이 실제 남은 기능 차단 조건. 신규 Owner 실측 없이 Windows POST/lease/원장 조작 없음.
 <!-- end process-owner-4078-closed-reconcile-20261128 -->
 
+<!-- process-owner-s6-r2-contract-boundary-20261128 -->
+### #4069 원본 원장 readback 및 #4135 대체 입력 검증 경계 — 2026-11-28 09:17 KST 이후
+
+- #4069 원본 [#4092 JSON](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/pc-process-inventory-45896563100-1-operating.json) / [TXT](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/results/pc-process-inventory-45896563100-1-operating.txt) 2/2 직접 재조회. 관측 2026-11-27 06:13:51 KST, PC seat5, 원본 requestId 일치, `RECOVERY_REQUIRED / WATCHDOG_RELEASE_OUTCOME_UNVERIFIED / S6_PORT_PROMOTION_UNVERIFIED`, leaseReleaseAcknowledged=true, backlogState=RESUMED, successEstablished=false, recoveryAuthorized=false, originalRequestRetried=false. #4092 진단 결과는 READ_ONLY_OBSERVED이고 Actions는 failure로 종결된 과거 진단이다. 이를 PASS 또는 S6 성공으로 변경하지 않는다.
+- [Guardian 복구](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4069#issuecomment-7203513913) 및 [#4310 후속 운영 A](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4310), #4313 후속 A는 기존 유효 증거로 재사용한다. 원본 S6 성공 미입증과 운영 Runner 복구 정상은 양립한다. 현재 공개 저장소의 기존 pc-process-inventory-readonly workflow 운영 job에는 private==true 조건이 있고 최신 A 영수증은 SUMMARY_ONLY다. 현재 시점 원본 journal의 새 로컬 readback이나 S6 terminal reconcile은 미수행; 보안 조건 우회·재실행·과거 원장 변경 금지.
+- #4135 추가 실제 코드 확인: 기존 제어 [us-breadth-r2-private-readonly.mjs](https://github.com/ansqhd5774-Choi/zgmini-pc-control/blob/main/controller/us-breadth-r2-private-readonly.mjs) (blob aa8e0a2113d39c004551add5e6e588702e78c21d)는 `pc-writer/marketparquet-paid`만 고정 조회하고 source=FIXED_PC_MARKETPARQUET_PAID_RECEIPTS, evidenceLevel=FILE_METADATA_ONLY를 사용한다. 비-MarketParquet 저장 자료의 존재/부재·권리·251일 원가격 무결성을 증명하는 reader가 아니다. 동일 reader 재실행을 대체 원자료 조사로 계산하지 않는다.
+- 앱 [R2 cycle](https://github.com/ansqhd5774-Choi/zgmini/blob/main/scripts/pc-writer/us-breadth-paid-r2-cycle.mjs) blob ab5d0698c3151295fbcfb6e0386229387b70e496은 실제 marketparquet-paid/connection.json full 계정 및 설치 source pin을 검사하고, 251 receipt/250 points 이후 marketparquet-paid/derived/us-breadth-r2 경로를 검증한다. [공개 계약](https://github.com/ansqhd5774-Choi/zgmini/blob/main/worker/us-breadth-paid-r2-contract.mjs)도 source/universe/plan을 강제한다. 기존 adapter만 바꾸거나 출처 문자열을 유지한 채 대체 데이터를 넣는 방식은 부적합하다. 기존 250점·가격모드·정확 유니버스·결측/달력·비복원성·권리 계약 유지.
+- 실제 비-MarketParquet 원자료/공개권 미확보. 현재 승인 자료와 고정 reader의 한계가 확인된 것이며 실제 PC 전체 저장장치를 조사해 대체 자료가 없음을 증명한 것은 아니다. 대체 입력의 적법한 승인·실제 저장 증거 확보 후 해당 source/저장/공개 계약을 정합화하고 기존 Writer B CAS/lease/백업/독립 Windows 인증 경로로만 적용. 기존 #4135 원본 B 재발행 금지. #4069/#4135 OPEN 유지, 새 PC job/운영 변경/공급처 호출/DB/D1 쓰기 0.
+<!-- end process-owner-s6-r2-contract-boundary-20261128 -->
+
 <!-- process-owner-4312-source-merge-20261128 -->
 ### 위임 후 첫 독립 실행 — #4312 소스 병합 완료 / #4078 운영은 별도
 
