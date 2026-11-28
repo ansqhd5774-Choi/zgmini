@@ -14,6 +14,15 @@
 
 <!-- end process-owner-operational-delegation-20261128 -->
 
+<!-- process-owner-4078-closed-reconcile-20261128 -->
+### #4078 실상태 정정 — CLOSED/completed와 원본 S6 역사 증거 구분
+
+- **정규 GitHub 최신 상태(2026-11-28):** 원본 [#4078](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4078)은 `2026-11-28T00:10:57Z`에 **CLOSED/completed**로 변경됐다. 본문·requestId `pc-usbreadthr2-resource-window-20261127-01`, Owner, `pc-job` 라벨 및 생성 `2026-11-26T19:14:52Z` 유지. 이전 절의 `#4078 OPEN`·“원본을 재발행할 예정”은 **이전 시점 기록**이며 현재 실행 지시가 아니다.
+- **동일 현행 읽기 수행 완료:** 별도 [#4313](https://github.com/ansqhd5774-Choi/zgmini-pc-control/issues/4313)은 동일 `shared-resource-release-readonly` 연산의 **새 고유** `requestId=pc-6b4df91a-0e76-4ad1-ae43-57fd213893c0`를 사용. [Windows Run #46080544017](https://github.com/ansqhd5774-Choi/zgmini-pc-control/actions/runs/46080544017) seat1 `public-approved-a=success`, 공개 JSON/TXT 2/2 `status=PASS`, `actualExecutionSha=d3764580fdb08ecddd5f9b1064051eec30f90492`. 공개 정보는 `SUMMARY_ONLY/PUBLIC_RESULT_CODE_REDACTED`; **shared-resource releaseVerified=true, 과거 #4078 자체의 Run, 원본 S6 backlog/replays= DONE, #4135 설치 완료를 증명하지 않음**.
+- **#4312 main 코드와 이번 종료 상태 정합성:** [병합 `4fe6fc0705be0802b1674cb2cd8bec89f18f0b6d`](https://github.com/ansqhd5774-Choi/zgmini-pc-control/pull/4312)의 `inspectS64078BacklogOnly`는 원본 Issue가 `open`이 아니면 `BLOCKED/S6_ORIGINAL_ISSUE_UNVERIFIED`로 차단한다. 따라서 현재 CLOSED 원본으로 **과거 원본 효과 재발행을 시도하지 않는다**. Issue 종료 자체가 S6 역사 결과를 소급 확정하는 것은 아니며 과거 원본 1회 실패/미입증은 보존한다.
+- **현재 우선순위 정정:** #4078 동일 현재 A 읽기는 #4313 성공 증거를 재사용하며 재실행·재오픈 불필요. #4069 기존 `RECOVERY_REQUIRED`·Guardian 사후 6 Runner 정상은 독립 판정으로 유지. #4135는 MarketParquet 제외 R2 251거래일 입력·권리/정확 manifest 및 Writer B 정규 Windows 인증이 실제 남은 기능 차단 조건. 신규 Owner 실측 없이 Windows POST/lease/원장 조작 없음.
+<!-- end process-owner-4078-closed-reconcile-20261128 -->
+
 <!-- process-owner-4312-source-merge-20261128 -->
 ### 위임 후 첫 독립 실행 — #4312 소스 병합 완료 / #4078 운영은 별도
 
